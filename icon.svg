@@ -1,0 +1,34 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title desc">
+  <title id="title">Strata icon</title>
+  <desc id="desc">Three stacked geometric layers representing declarative UI strata.</desc>
+
+  <!-- Top layer -->
+  <path
+    d="M256 72 438 166 256 260 74 166Z"
+    fill="#F4F4F5"
+  />
+
+  <!-- Middle layer -->
+  <path
+    d="M74 212 256 306 438 212 438 278 256 372 74 278Z"
+    fill="#A1A1AA"
+  />
+
+  <!-- Bottom layer -->
+  <path
+    d="M74 324 256 418 438 324 438 390 256 484 74 390Z"
+    fill="#52525B"
+  />
+
+  <!-- Inner cut / UI surface -->
+  <path
+    d="M256 119 358 172 256 225 154 172Z"
+    fill="#18181B"
+  />
+
+  <!-- Small declarative node -->
+  <path
+    d="M256 147 304 172 256 197 208 172Z"
+    fill="#F4F4F5"
+  />
+</svg>
