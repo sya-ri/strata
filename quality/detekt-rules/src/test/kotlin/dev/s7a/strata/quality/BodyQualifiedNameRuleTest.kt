@@ -23,6 +23,26 @@ internal class BodyQualifiedNameRuleTest {
     }
 
     /**
+     * Ignores package and import directives while reporting qualified references in bodies.
+     */
+    @Test
+    internal fun ignoresPackageAndImportDirectives() {
+        val source =
+            """
+            package example.feature
+
+            import java.util.UUID
+            import java.util.Collections.emptyList
+            import kotlin.collections.List as KotlinList
+
+            fun create(): UUID = UUID.randomUUID()
+            fun values(): KotlinList<String> = emptyList()
+            """.trimIndent()
+
+        assertEquals(0, BodyQualifiedNameRule(Config.empty).lint(source).size)
+    }
+
+    /**
      * Preserves ordinary member chains, string contents, and Gradle catalog access.
      */
     @Test

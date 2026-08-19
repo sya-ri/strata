@@ -1,12 +1,15 @@
 package dev.s7a.strata.quality
 
+import com.intellij.psi.PsiElement
 import dev.detekt.api.Config
 import dev.detekt.api.Entity
 import dev.detekt.api.Finding
 import dev.detekt.api.Rule
 import org.jetbrains.kotlin.psi.KtDotQualifiedExpression
 import org.jetbrains.kotlin.psi.KtExpression
+import org.jetbrains.kotlin.psi.KtImportDirective
 import org.jetbrains.kotlin.psi.KtNameReferenceExpression
+import org.jetbrains.kotlin.psi.KtPackageDirective
 import org.jetbrains.kotlin.psi.KtQualifiedExpression
 import org.jetbrains.kotlin.psi.KtTypeReference
 import org.jetbrains.kotlin.psi.KtUserType
@@ -29,7 +32,7 @@ internal class BodyQualifiedNameRule(
      */
     override fun visitTypeReference(typeReference: KtTypeReference) {
         val userType = typeReference.typeElement as? KtUserType
-        if (userType != null && isQualifiedType(userType)) {
+        if (isHeaderElement(typeReference).not() && userType != null && isQualifiedType(userType)) {
             report(
                 Finding(
                     entity = Entity.from(typeReference),
@@ -46,7 +49,10 @@ internal class BodyQualifiedNameRule(
      * @param expression the qualified expression currently being visited.
      */
     override fun visitDotQualifiedExpression(expression: KtDotQualifiedExpression) {
-        if (expression.parent !is KtQualifiedExpression && isQualifiedStaticReference(expression)) {
+        if (isHeaderElement(expression).not() &&
+            expression.parent !is KtQualifiedExpression &&
+            isQualifiedStaticReference(expression)
+        ) {
             report(
                 Finding(
                     entity = Entity.from(expression),
@@ -55,6 +61,17 @@ internal class BodyQualifiedNameRule(
             )
         }
         super.visitDotQualifiedExpression(expression)
+    }
+
+    private fun isHeaderElement(element: PsiElement): Boolean {
+        var current: PsiElement? = element
+        while (current != null) {
+            if (current is KtPackageDirective || current is KtImportDirective) {
+                return true
+            }
+            current = current.parent
+        }
+        return false
     }
 
     private fun isQualifiedType(userType: KtUserType): Boolean {
