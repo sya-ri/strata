@@ -1,7 +1,7 @@
 package dev.s7a.strata.runtime
 
 /**
- * Verifies that retained-tree operations run on one owning thread.
+ * Verifies that retained runtime operations run on one owning thread.
  *
  * @property owner the thread captured when this guard was created.
  */
@@ -15,9 +15,14 @@ internal class ThreadGuard private constructor(
      */
     internal fun check() {
         check(Thread.currentThread() === owner) {
-            "This retained tree is owned by ${owner.name}."
+            "This runtime object is owned by ${owner.name}."
         }
     }
+
+    /**
+     * Returns whether the current thread owns this guard without throwing.
+     */
+    internal fun isOwnerThread(): Boolean = Thread.currentThread() === owner
 
     /**
      * Factory methods for thread guards.

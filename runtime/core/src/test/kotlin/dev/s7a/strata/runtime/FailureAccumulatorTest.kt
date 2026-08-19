@@ -2,6 +2,7 @@ package dev.s7a.strata.runtime
 
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertSame
+import org.junit.jupiter.api.Assertions.assertThrows
 import org.junit.jupiter.api.Test
 
 /**
@@ -66,5 +67,29 @@ internal class FailureAccumulatorTest {
 
         assertSame(first, accumulator.first)
         assertEquals(listOf(later, nested), first.suppressed.toList())
+    }
+
+    @Test
+    fun optionalLaterFailureFlattensNestedSuppressionByIdentityInTraversalOrder() {
+        val first = IllegalStateException("first")
+        val later = IllegalStateException("later")
+        val nested = IllegalStateException("nested")
+        val deepest = IllegalStateException("deepest")
+        nested.addSuppressed(deepest)
+        later.addSuppressed(nested)
+        deepest.addSuppressed(later)
+        val accumulator = FailureAccumulator(first)
+
+        accumulator.addOptional(later)
+
+        assertSame(first, accumulator.first)
+        assertEquals(listOf(later, nested, deepest), first.suppressed.toList())
+    }
+
+    @Test
+    fun throwingWithoutARecordedFailureIsRejected() {
+        val accumulator = FailureAccumulator()
+
+        assertThrows(IllegalStateException::class.java) { accumulator.throwFirst() }
     }
 }

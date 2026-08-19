@@ -4,7 +4,7 @@ import java.util.Collections
 import java.util.IdentityHashMap
 
 /**
- * Accumulates cleanup failures without self-suppression or duplicate throwable instances.
+ * Accumulates failures without self-suppression or duplicate throwable instances.
  */
 internal class FailureAccumulator(
     initial: Throwable? = null,
@@ -19,8 +19,7 @@ internal class FailureAccumulator(
 
     init {
         initial?.let { failure ->
-            seen.add(failure)
-            failure.suppressed.forEach(seen::add)
+            markSeen(failure)
         }
     }
 
@@ -36,22 +35,26 @@ internal class FailureAccumulator(
         val current = first
         if (current == null) {
             first = failure
-            failure.suppressed.forEach(seen::add)
+            failure.suppressed.forEach(::markSeen)
         } else {
             current.addSuppressed(failure)
         }
     }
 
     /**
-     * Records [failure] when it exists.
+     * Records [failure] when it exists and flattens its distinct suppressed graph onto an existing primary failure.
      *
      * @param failure an optional failure returned by a cleanup operation.
      */
     fun addOptional(failure: Throwable?) {
-        if (failure != null) {
-            add(failure)
-            failure.suppressed.forEach { suppressed -> add(suppressed) }
+        if (failure == null) {
+            return
         }
+        if (first == null) {
+            add(failure)
+            return
+        }
+        addFlattened(failure)
     }
 
     /**
@@ -61,7 +64,7 @@ internal class FailureAccumulator(
      */
     fun capture(action: () -> Unit) {
         runCatching(action).exceptionOrNull()?.let { failure ->
-            add(failure)
+            addOptional(failure)
         }
     }
 
@@ -81,5 +84,21 @@ internal class FailureAccumulator(
      */
     fun throwIfPresent() {
         first?.let { failure -> throw failure }
+    }
+
+    private fun addFlattened(failure: Throwable) {
+        if (seen.contains(failure)) {
+            return
+        }
+        val nested = failure.suppressed.toList()
+        add(failure)
+        nested.forEach(::addFlattened)
+    }
+
+    private fun markSeen(failure: Throwable) {
+        if (seen.add(failure).not()) {
+            return
+        }
+        failure.suppressed.forEach(::markSeen)
     }
 }

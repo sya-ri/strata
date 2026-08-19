@@ -10,7 +10,7 @@ A module joins the build only with working behavior and tests.
 
 - `api` contains the public, platform-neutral contracts and value types.
 - `runtime:core` is configured as a publishable, Minecraft-independent retained engine built on `api`.
-  It includes reconciliation, layout, input dispatch, painting, and unresolved semantics flattening.
+  It includes reconciliation, layout, input dispatch, painting, unresolved semantics flattening, and internal screen-session orchestration.
   It is not an externally published artifact yet.
 - `integration:api` verifies an external primitive against the public `api` and `runtime:core` boundaries.
 Future platform adapters may depend on these boundaries once their artifacts are published, but they are outside the current build.
@@ -21,7 +21,8 @@ The process and compatibility requirements for a new version adapter are defined
 
 The public API currently defines element descriptions, retained node capabilities, lifecycle ownership, geometry, input, drawing, semantics, unresolved text, and revisioned external state sources.
 The state-source contract is specified and exercised by concurrency tests described in [External state sources](state-sources.md).
-It remains coroutine-free and does not include a runtime session or platform lifecycle adapter.
+It remains coroutine-free and does not include a platform lifecycle adapter.
+The retained core's tested internal session contract is described in [UI sessions](ui-sessions.md).
 
 ## Retained operation contract
 

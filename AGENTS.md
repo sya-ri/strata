@@ -14,6 +14,8 @@ Update the canonical document when its contract changes.
   Public SPI code must not dispatch on concrete component types; use extensible contracts.
 - Modifiers are active behavior, while parent data is exposed only by the layout scope that consumes it.
   Do not turn either into a passive settings bag or hidden global state.
+- Keep shared screen-session orchestration in `runtime:core` and follow [docs/ui-sessions.md](docs/ui-sessions.md) for lifecycle, state cutoff, coroutine generation, and failure behavior.
+  External source callbacks only enqueue revisions, and declarative frame phases do not mutate session state.
 - Preserve null-safety and do not use `!!` in production or test code.
 
 ## Source and documentation
