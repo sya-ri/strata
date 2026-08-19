@@ -1,0 +1,65 @@
+# Gradle and IDE state
+.gradle/
+**/.gradle/
+build/
+**/build/
+out/
+**/out/
+.idea/
+*.iml
+*.ipr
+*.iws
+.classpath
+.project
+.settings/
+
+# Kotlin and Java compiler output
+**/.kotlin
+**/classes/
+**/tmp/
+*.class
+*.jar
+
+# Minecraft/Fabric run state and generated worlds
+run/
+**/run/
+logs/
+**/logs/
+saves/
+**/saves/
+crash-reports/
+**/crash-reports/
+*.log
+*.log.gz
+*.mca
+*.dat
+*.dat_old
+
+# Resource fixtures are source inputs, not generated game-world state.
+!**/src/main/resources/**/*.mca
+!**/src/main/resources/**/*.dat
+!**/src/main/resources/**/*.dat_old
+!**/src/test/resources/**/*.mca
+!**/src/test/resources/**/*.dat
+!**/src/test/resources/**/*.dat_old
+
+# Local credentials and signing material
+local.properties
+*.jks
+*.p12
+*.gpg
+.env
+.env.*
+
+# Operating-system files
+.DS_Store
+Thumbs.db
+
+# Generated reports
+**/reports/
+**/test-results/
+.qodana/
+**/.qodana/
+
+# Keep the Gradle wrapper executable JAR under version control.
+!gradle/wrapper/gradle-wrapper.jar

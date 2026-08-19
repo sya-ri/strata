@@ -1,0 +1,27 @@
+# Keep correctness, API-safety, complexity, resource-handling, and unused-code checks from the default profile enabled.
+# MagicNumber is disabled because extracting local geometry and color values can hide their rendering context; domain discriminators remain required to use typed state.
+# ReturnCount is disabled because early returns make validation and lifecycle failure paths more direct.
+# MaxLineLength is disabled because code and documentation break at semantic boundaries instead of a fixed column.
+style:
+  MagicNumber:
+    active: false
+  ReturnCount:
+    active: false
+  MaxLineLength:
+    active: false
+
+strata:
+  NoNonNullAssertion:
+    active: true
+  BodyQualifiedName:
+    active: true
+  OneTopLevelTypePerFile:
+    active: true
+  MultilineKDoc:
+    active: true
+  BooleanPrefixNegation:
+    active: true
+  GreaterThanComparison:
+    active: true
+  StringLiteralComparison:
+    active: true

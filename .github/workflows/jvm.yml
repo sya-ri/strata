@@ -1,0 +1,32 @@
+name: JVM checks
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  checks:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v6
+      - name: Set up Java
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: |
+            17
+            25
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v6
+      - name: Run JVM checks
+        run: bash ./gradlew check koverHtmlReport koverXmlReport
+      - name: Upload coverage reports
+        uses: actions/upload-artifact@v7
+        with:
+          name: kover-reports
+          path: build/reports/kover
+          if-no-files-found: error

@@ -1,0 +1,24 @@
+[versions]
+kotlin = "2.4.10"
+detekt = "2.0.0-alpha.5"
+junit = "6.1.2"
+kotlinter = "5.7.0"
+kover = "0.9.9"
+vanniktech-maven-publish = "0.37.0"
+dokka = "2.1.0"
+
+[libraries]
+detekt-api = { module = "dev.detekt:detekt-api", version.ref = "detekt" }
+detekt-test = { module = "dev.detekt:detekt-test", version.ref = "detekt" }
+detekt-test-utils = { module = "dev.detekt:detekt-test-utils", version.ref = "detekt" }
+junit-jupiter = { module = "org.junit.jupiter:junit-jupiter", version.ref = "junit" }
+junit-platform-launcher = { module = "org.junit.platform:junit-platform-launcher", version.ref = "junit" }
+
+[plugins]
+kotlin-jvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
+kover = { id = "org.jetbrains.kotlinx.kover", version.ref = "kover" }
+detekt = { id = "dev.detekt", version.ref = "detekt" }
+kotlinter = { id = "org.jmailen.kotlinter", version.ref = "kotlinter" }
+vanniktechMavenPublish = { id = "com.vanniktech.maven.publish", version.ref = "vanniktech-maven-publish" }
+dokka = { id = "org.jetbrains.dokka", version.ref = "dokka" }
+dokkaJavadocPlugin = { id = "org.jetbrains.dokka-javadoc", version.ref = "dokka" }

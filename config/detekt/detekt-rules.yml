@@ -1,0 +1,12 @@
+# The custom rule implementation cannot load itself as a Detekt plugin.
+# Keep this module on the built-in profile while consumer modules load the Strata rule set through detektPlugins.
+# MagicNumber is disabled because PSI fixtures legitimately contain local counts and offsets; domain discriminators remain required to use typed state.
+# ReturnCount is disabled because early returns keep syntax classification paths direct.
+# MaxLineLength is disabled because code and documentation break at semantic boundaries instead of a fixed column.
+style:
+  MagicNumber:
+    active: false
+  ReturnCount:
+    active: false
+  MaxLineLength:
+    active: false

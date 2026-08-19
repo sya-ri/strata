@@ -1,0 +1,207 @@
+import com.vanniktech.maven.publish.JavadocJar
+import com.vanniktech.maven.publish.KotlinJvm
+import com.vanniktech.maven.publish.MavenPublishBaseExtension
+import com.vanniktech.maven.publish.SourcesJar
+import dev.detekt.gradle.extensions.DetektExtension
+import kotlinx.kover.gradle.plugin.dsl.KoverProjectExtension
+import org.gradle.api.plugins.JavaPluginExtension
+import org.gradle.api.publish.tasks.GenerateModuleMetadata
+import org.gradle.api.tasks.compile.JavaCompile
+import org.gradle.api.tasks.testing.Test
+import org.gradle.jvm.toolchain.JavaLanguageVersion
+import org.jetbrains.dokka.gradle.DokkaExtension
+import org.jetbrains.kotlin.gradle.dsl.KotlinJvmProjectExtension
+import org.jetbrains.kotlin.gradle.dsl.abi.BinariesSource.MAVEN_PUBLICATIONS
+import org.jetbrains.kotlin.gradle.dsl.abi.ExperimentalAbiValidation
+import org.jetbrains.kotlin.gradle.dsl.JvmTarget
+import org.jetbrains.kotlin.gradle.tasks.KotlinJvmCompile
+
+plugins {
+    alias(libs.plugins.kotlin.jvm) apply false
+    alias(libs.plugins.kover)
+    alias(libs.plugins.detekt) apply false
+    alias(libs.plugins.kotlinter) apply false
+    alias(libs.plugins.vanniktechMavenPublish) apply false
+    alias(libs.plugins.dokka) apply false
+    alias(libs.plugins.dokkaJavadocPlugin) apply false
+}
+
+group = "dev.s7a.strata"
+version = "0.1.0"
+
+val detektRulesProject = project(":quality:detekt-rules")
+
+allprojects {
+    group = rootProject.group
+    version = rootProject.version
+}
+
+subprojects {
+    if (file("build.gradle.kts").isFile.not()) {
+        return@subprojects
+    }
+
+    apply(plugin = "org.jetbrains.kotlin.jvm")
+    apply(plugin = "java-library")
+    apply(plugin = "org.jetbrains.kotlinx.kover")
+    apply(plugin = "dev.detekt")
+    apply(plugin = "org.jmailen.kotlinter")
+
+    if (this != detektRulesProject) {
+        dependencies {
+            add("detektPlugins", detektRulesProject)
+        }
+    }
+
+    extensions.configure<DetektExtension> {
+        buildUponDefaultConfig = true
+        val configFile = if (this@subprojects == detektRulesProject) {
+            "config/detekt/detekt-rules.yml"
+        } else {
+            "config/detekt/detekt.yml"
+        }
+        config.setFrom(rootProject.file(configFile))
+    }
+
+    val publishableModule = path in setOf(
+        ":api",
+        ":runtime:headless",
+        ":runtime:minecraft",
+        ":runtime:minecraft-fabric-26.2",
+    )
+    if (publishableModule) {
+        apply(plugin = "com.vanniktech.maven.publish")
+        apply(plugin = "org.jetbrains.dokka")
+        apply(plugin = "org.jetbrains.dokka-javadoc")
+    }
+
+    val versionSpecificMinecraftModules =
+        setOf(
+            ":runtime:minecraft-fabric-26.2",
+            ":integration:minecraft-fabric-26.2",
+        )
+    val javaVersion = if (path in versionSpecificMinecraftModules) 25 else 17
+
+    extensions.configure<JavaPluginExtension> {
+        toolchain {
+            languageVersion.set(JavaLanguageVersion.of(javaVersion))
+        }
+        withSourcesJar()
+    }
+
+    tasks.withType<JavaCompile>().configureEach {
+        options.release.set(javaVersion)
+        options.isWarnings = true
+        options.compilerArgs.addAll(listOf("-Xlint:all", "-Werror"))
+    }
+
+    tasks.withType<KotlinJvmCompile>().configureEach {
+        compilerOptions {
+            jvmTarget.set(JvmTarget.fromTarget(javaVersion.toString()))
+            allWarningsAsErrors.set(true)
+            freeCompilerArgs.add("-Xexplicit-api=strict")
+        }
+    }
+
+    if (publishableModule) {
+        extensions.configure<KotlinJvmProjectExtension> {
+            @OptIn(ExperimentalAbiValidation::class)
+            abiValidation {
+                binariesSource.set(MAVEN_PUBLICATIONS)
+            }
+        }
+    }
+
+    tasks.withType<Test>().configureEach {
+        useJUnitPlatform()
+    }
+
+    if (publishableModule) {
+        val artifactId =
+            mapOf(
+                ":api" to "strata-api",
+                ":runtime:headless" to "strata-runtime-headless",
+                ":runtime:minecraft" to "strata-runtime-minecraft",
+                ":runtime:minecraft-fabric-26.2" to "strata-runtime-minecraft-fabric-26.2",
+            ).getValue(path)
+        extensions.configure<MavenPublishBaseExtension> {
+            coordinates(group.toString(), artifactId, version.toString())
+            configure(
+                KotlinJvm(
+                    javadocJar = JavadocJar.Dokka("dokkaGeneratePublicationJavadoc"),
+                    sourcesJar = SourcesJar.Sources(),
+                ),
+            )
+            publishToMavenCentral()
+            signAllPublications()
+            pom {
+                name.set("Strata ${project.name}")
+                description.set("A declarative, reactive UI framework for Minecraft.")
+                url.set("https://github.com/sya-ri/strata")
+                inceptionYear.set("2026")
+                licenses {
+                    license {
+                        name.set("The MIT License")
+                        url.set("https://opensource.org/licenses/MIT")
+                        distribution.set("repo")
+                    }
+                }
+                developers {
+                    developer {
+                        id.set("sya-ri")
+                        name.set("sya-ri")
+                        url.set("https://github.com/sya-ri")
+                    }
+                }
+                scm {
+                    connection.set("scm:git:https://github.com/sya-ri/strata.git")
+                    developerConnection.set("scm:git:ssh://git@github.com/sya-ri/strata.git")
+                    tag.set("HEAD")
+                    url.set("https://github.com/sya-ri/strata")
+                }
+                issueManagement {
+                    system.set("GitHub")
+                    url.set("https://github.com/sya-ri/strata/issues")
+                }
+            }
+        }
+
+        extensions.configure<DokkaExtension> {
+            val sourcePath = path.removePrefix(":").replace(":", "/")
+            dokkaSourceSets.named("main") {
+                sourceLink {
+                    localDirectory.set(file("src/main/kotlin"))
+                    remoteUrl("https://github.com/sya-ri/strata/tree/master/$sourcePath/src/main/kotlin")
+                    remoteLineSuffix.set("#L")
+                }
+            }
+        }
+
+        tasks.withType<GenerateModuleMetadata>().configureEach {
+            dependsOn("dokkaJavadocJar")
+        }
+
+        tasks.named("check").configure {
+            dependsOn("dokkaGeneratePublicationJavadoc")
+        }
+    }
+}
+
+dependencies {
+    subprojects.filter { project -> project.file("build.gradle.kts").isFile }.forEach { project ->
+        add("kover", project)
+    }
+}
+
+extensions.configure<KoverProjectExtension> {
+    reports {
+        total {
+            html { onCheck = true }
+            xml { onCheck = true }
+        }
+    }
+}
+
+tasks.matching { task -> task.name in setOf("koverHtmlReport", "koverXmlReport") }.configureEach {
+    dependsOn(subprojects.flatMap { project -> project.tasks.withType<Test>() })
+}
