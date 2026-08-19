@@ -23,7 +23,7 @@ jobs:
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v6
       - name: Run JVM checks
-        run: bash ./gradlew check koverHtmlReport koverXmlReport
+        run: bash ./gradlew check koverJvmTests koverHtmlReport koverXmlReport -Pkover
       - name: Upload coverage reports
         uses: actions/upload-artifact@v7
         with:

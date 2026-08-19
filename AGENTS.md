@@ -7,7 +7,7 @@ Update the canonical document when its contract changes.
 
 ## Architecture and API
 
-- Keep the module DAG acyclic: `api` is the platform-neutral public SPI; `runtime:headless` and `runtime:minecraft` depend on it; the versioned Fabric runtime may depend on both `api` and `runtime:minecraft`.
+- Keep the module DAG acyclic: `api` is the platform-neutral public SPI; published `runtime:core` depends on it and owns the retained engine; `runtime:headless` and `runtime:minecraft` may depend on the public contracts and core as their implementation requires; the versioned Fabric runtime may depend on both `api` and `runtime:minecraft`.
 - Include a module only when it contains working, tested behavior.
   Do not publish empty artifacts or add placeholder source sets, tests, adapters, or documentation.
 - Keep platform integration at runtime/integration boundaries.
@@ -52,7 +52,7 @@ Update the canonical document when its contract changes.
   Use a Fabric GameTest only when the behavior genuinely needs the game environment.
 - Keep Detekt, Kotlinter, Qodana, Kotlin explicit API mode, warnings-as-errors, ABI validation, and Kover HTML/XML reports enabled.
   Kover reports must run after JVM tests and do not enforce a coverage threshold.
-- Before review, run `./gradlew check koverHtmlReport koverXmlReport` and inspect publication metadata with `./gradlew publishToMavenLocal` when publication code changes.
+- Before review, run `./gradlew check koverHtmlReport koverXmlReport -Pkover` and inspect publication metadata with `./gradlew publishToMavenLocal` when publication code changes.
 - For Minecraft-specific facts, use the Minecraft evidence tools first, then inspect authoritative local files or search authoritative web sources.
   Do not infer version-sensitive behavior.
 

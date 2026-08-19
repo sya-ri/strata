@@ -31,9 +31,10 @@ internal class GreaterThanComparisonRuleTest {
     @Test
     internal fun ignoresOtherSyntax() {
         val greaterThan = ">"
+        val documentation = "/" + "** The text `left $greaterThan right` is documentation, not code. " + "*/"
         val source =
             """
-            /** The text `left $greaterThan right` is documentation, not code. */
+            $documentation
             fun compare(left: Int, right: Int): Boolean = left < right && left <= right && left == right
             val text = "left $greaterThan right"
             val values = listOf(1, 2)

@@ -6,6 +6,7 @@ Common modules target the baseline Java toolchain; version-specific Minecraft mo
 Every Kotlin compilation uses explicit API mode and treats warnings as errors.
 Detekt and Kotlinter are applied to all project modules.
 Kover exposes HTML and XML reports without enforcing a coverage threshold.
+Run aggregate coverage with `./gradlew koverHtmlReport koverXmlReport -Pkover`; each report task first runs the ordinary JVM test suite selected by `koverJvmTests`.
 
 Each publishable JVM module has a Maven publication with source and Javadoc artifacts, MIT license metadata, SCM metadata, and an optional in-memory signing setup.
 Provide `mavenCentralUsername`, `mavenCentralPassword`, `signingInMemoryKey`, optional `signingInMemoryKeyId`, and optional `signingInMemoryKeyPassword` Gradle properties when publishing to Maven Central.

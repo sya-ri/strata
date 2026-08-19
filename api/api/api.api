@@ -1,0 +1,526 @@
+public abstract class dev/s7a/strata/element/Element {
+	public fun <init> (Ldev/s7a/strata/element/ElementIdentity;Ldev/s7a/strata/element/ElementType;Ljava/util/List;)V
+	public synthetic fun <init> (Ldev/s7a/strata/element/ElementIdentity;Ldev/s7a/strata/element/ElementType;Ljava/util/List;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun getChildren ()Ljava/util/List;
+	public final fun getIdentity ()Ldev/s7a/strata/element/ElementIdentity;
+	public final fun getType ()Ldev/s7a/strata/element/ElementType;
+}
+
+public abstract interface class dev/s7a/strata/element/ElementIdentity {
+}
+
+public final class dev/s7a/strata/element/ElementIdentity$Keyed : dev/s7a/strata/element/ElementIdentity {
+	public fun <init> (Ldev/s7a/strata/element/ElementKey;)V
+	public final fun component1 ()Ldev/s7a/strata/element/ElementKey;
+	public final fun copy (Ldev/s7a/strata/element/ElementKey;)Ldev/s7a/strata/element/ElementIdentity$Keyed;
+	public static synthetic fun copy$default (Ldev/s7a/strata/element/ElementIdentity$Keyed;Ldev/s7a/strata/element/ElementKey;ILjava/lang/Object;)Ldev/s7a/strata/element/ElementIdentity$Keyed;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getKey ()Ldev/s7a/strata/element/ElementKey;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class dev/s7a/strata/element/ElementIdentity$Positional : dev/s7a/strata/element/ElementIdentity {
+	public static final field INSTANCE Ldev/s7a/strata/element/ElementIdentity$Positional;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class dev/s7a/strata/element/ElementKey {
+	public fun <init> (Ljava/lang/Object;)V
+	public final fun component1 ()Ljava/lang/Object;
+	public final fun copy (Ljava/lang/Object;)Ldev/s7a/strata/element/ElementKey;
+	public static synthetic fun copy$default (Ldev/s7a/strata/element/ElementKey;Ljava/lang/Object;ILjava/lang/Object;)Ldev/s7a/strata/element/ElementKey;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getValue ()Ljava/lang/Object;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class dev/s7a/strata/element/ElementType {
+	public fun <init> (Lkotlin/reflect/KClass;Lkotlin/reflect/KClass;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function3;)V
+	public final fun createErased (Ldev/s7a/strata/element/Element;)Ldev/s7a/strata/node/Node;
+	public final fun updateErased-g-c3zcg (Ldev/s7a/strata/element/Element;Ldev/s7a/strata/element/Element;Ldev/s7a/strata/node/Node;)I
+	public final fun validateErased (Ldev/s7a/strata/element/Element;)V
+}
+
+public final class dev/s7a/strata/geometry/Constraints {
+	public static final field Companion Ldev/s7a/strata/geometry/Constraints$Companion;
+	public fun <init> ()V
+	public fun <init> (IIII)V
+	public synthetic fun <init> (IIIIILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()I
+	public final fun component2 ()I
+	public final fun component3 ()I
+	public final fun component4 ()I
+	public final fun constrain (Ldev/s7a/strata/geometry/IntSize;)Ldev/s7a/strata/geometry/IntSize;
+	public final fun copy (IIII)Ldev/s7a/strata/geometry/Constraints;
+	public static synthetic fun copy$default (Ldev/s7a/strata/geometry/Constraints;IIIIILjava/lang/Object;)Ldev/s7a/strata/geometry/Constraints;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getMaxHeight ()I
+	public final fun getMaxWidth ()I
+	public final fun getMinHeight ()I
+	public final fun getMinWidth ()I
+	public fun hashCode ()I
+	public final fun isSatisfiedBy (Ldev/s7a/strata/geometry/IntSize;)Z
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class dev/s7a/strata/geometry/Constraints$Companion {
+	public final fun fixed (II)Ldev/s7a/strata/geometry/Constraints;
+}
+
+public final class dev/s7a/strata/geometry/IntOffset {
+	public static final field Companion Ldev/s7a/strata/geometry/IntOffset$Companion;
+	public fun <init> (II)V
+	public final fun component1 ()I
+	public final fun component2 ()I
+	public final fun copy (II)Ldev/s7a/strata/geometry/IntOffset;
+	public static synthetic fun copy$default (Ldev/s7a/strata/geometry/IntOffset;IIILjava/lang/Object;)Ldev/s7a/strata/geometry/IntOffset;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getX ()I
+	public final fun getY ()I
+	public fun hashCode ()I
+	public final fun minus (Ldev/s7a/strata/geometry/IntOffset;)Ldev/s7a/strata/geometry/IntOffset;
+	public final fun plus (Ldev/s7a/strata/geometry/IntOffset;)Ldev/s7a/strata/geometry/IntOffset;
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class dev/s7a/strata/geometry/IntOffset$Companion {
+	public final fun getZero ()Ldev/s7a/strata/geometry/IntOffset;
+}
+
+public final class dev/s7a/strata/geometry/IntRect {
+	public fun <init> (IIII)V
+	public final fun component1 ()I
+	public final fun component2 ()I
+	public final fun component3 ()I
+	public final fun component4 ()I
+	public final fun contains (Ldev/s7a/strata/geometry/IntOffset;)Z
+	public final fun copy (IIII)Ldev/s7a/strata/geometry/IntRect;
+	public static synthetic fun copy$default (Ldev/s7a/strata/geometry/IntRect;IIIIILjava/lang/Object;)Ldev/s7a/strata/geometry/IntRect;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getBottom ()I
+	public final fun getHeight ()I
+	public final fun getLeft ()I
+	public final fun getRight ()I
+	public final fun getSize ()Ldev/s7a/strata/geometry/IntSize;
+	public final fun getTop ()I
+	public final fun getWidth ()I
+	public fun hashCode ()I
+	public final fun plus (Ldev/s7a/strata/geometry/IntOffset;)Ldev/s7a/strata/geometry/IntRect;
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class dev/s7a/strata/geometry/IntSize {
+	public static final field Companion Ldev/s7a/strata/geometry/IntSize$Companion;
+	public fun <init> (II)V
+	public final fun component1 ()I
+	public final fun component2 ()I
+	public final fun copy (II)Ldev/s7a/strata/geometry/IntSize;
+	public static synthetic fun copy$default (Ldev/s7a/strata/geometry/IntSize;IIILjava/lang/Object;)Ldev/s7a/strata/geometry/IntSize;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getHeight ()I
+	public final fun getWidth ()I
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class dev/s7a/strata/geometry/IntSize$Companion {
+	public final fun getZero ()Ldev/s7a/strata/geometry/IntSize;
+}
+
+public final class dev/s7a/strata/input/InputResult : java/lang/Enum {
+	public static final field Consumed Ldev/s7a/strata/input/InputResult;
+	public static final field Ignored Ldev/s7a/strata/input/InputResult;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public static fun valueOf (Ljava/lang/String;)Ldev/s7a/strata/input/InputResult;
+	public static fun values ()[Ldev/s7a/strata/input/InputResult;
+}
+
+public abstract interface class dev/s7a/strata/input/PointerButton {
+}
+
+public final class dev/s7a/strata/input/PointerButton$Auxiliary : dev/s7a/strata/input/PointerButton {
+	public fun <init> (I)V
+	public final fun component1 ()I
+	public final fun copy (I)Ldev/s7a/strata/input/PointerButton$Auxiliary;
+	public static synthetic fun copy$default (Ldev/s7a/strata/input/PointerButton$Auxiliary;IILjava/lang/Object;)Ldev/s7a/strata/input/PointerButton$Auxiliary;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getIndex ()I
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class dev/s7a/strata/input/PointerButton$Middle : dev/s7a/strata/input/PointerButton {
+	public static final field INSTANCE Ldev/s7a/strata/input/PointerButton$Middle;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class dev/s7a/strata/input/PointerButton$Primary : dev/s7a/strata/input/PointerButton {
+	public static final field INSTANCE Ldev/s7a/strata/input/PointerButton$Primary;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class dev/s7a/strata/input/PointerButton$Secondary : dev/s7a/strata/input/PointerButton {
+	public static final field INSTANCE Ldev/s7a/strata/input/PointerButton$Secondary;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public abstract interface class dev/s7a/strata/input/PointerEvent {
+	public abstract fun getPosition ()Ldev/s7a/strata/geometry/IntOffset;
+}
+
+public final class dev/s7a/strata/input/PointerEvent$Move : dev/s7a/strata/input/PointerEvent {
+	public fun <init> (Ldev/s7a/strata/geometry/IntOffset;)V
+	public final fun component1 ()Ldev/s7a/strata/geometry/IntOffset;
+	public final fun copy (Ldev/s7a/strata/geometry/IntOffset;)Ldev/s7a/strata/input/PointerEvent$Move;
+	public static synthetic fun copy$default (Ldev/s7a/strata/input/PointerEvent$Move;Ldev/s7a/strata/geometry/IntOffset;ILjava/lang/Object;)Ldev/s7a/strata/input/PointerEvent$Move;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun getPosition ()Ldev/s7a/strata/geometry/IntOffset;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class dev/s7a/strata/input/PointerEvent$Press : dev/s7a/strata/input/PointerEvent {
+	public fun <init> (Ldev/s7a/strata/geometry/IntOffset;Ldev/s7a/strata/input/PointerButton;)V
+	public final fun component1 ()Ldev/s7a/strata/geometry/IntOffset;
+	public final fun component2 ()Ldev/s7a/strata/input/PointerButton;
+	public final fun copy (Ldev/s7a/strata/geometry/IntOffset;Ldev/s7a/strata/input/PointerButton;)Ldev/s7a/strata/input/PointerEvent$Press;
+	public static synthetic fun copy$default (Ldev/s7a/strata/input/PointerEvent$Press;Ldev/s7a/strata/geometry/IntOffset;Ldev/s7a/strata/input/PointerButton;ILjava/lang/Object;)Ldev/s7a/strata/input/PointerEvent$Press;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getButton ()Ldev/s7a/strata/input/PointerButton;
+	public fun getPosition ()Ldev/s7a/strata/geometry/IntOffset;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class dev/s7a/strata/input/PointerEvent$Release : dev/s7a/strata/input/PointerEvent {
+	public fun <init> (Ldev/s7a/strata/geometry/IntOffset;Ldev/s7a/strata/input/PointerButton;)V
+	public final fun component1 ()Ldev/s7a/strata/geometry/IntOffset;
+	public final fun component2 ()Ldev/s7a/strata/input/PointerButton;
+	public final fun copy (Ldev/s7a/strata/geometry/IntOffset;Ldev/s7a/strata/input/PointerButton;)Ldev/s7a/strata/input/PointerEvent$Release;
+	public static synthetic fun copy$default (Ldev/s7a/strata/input/PointerEvent$Release;Ldev/s7a/strata/geometry/IntOffset;Ldev/s7a/strata/input/PointerButton;ILjava/lang/Object;)Ldev/s7a/strata/input/PointerEvent$Release;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getButton ()Ldev/s7a/strata/input/PointerButton;
+	public fun getPosition ()Ldev/s7a/strata/geometry/IntOffset;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class dev/s7a/strata/input/PointerEvent$Scroll : dev/s7a/strata/input/PointerEvent {
+	public fun <init> (Ldev/s7a/strata/geometry/IntOffset;DD)V
+	public final fun component1 ()Ldev/s7a/strata/geometry/IntOffset;
+	public final fun component2 ()D
+	public final fun component3 ()D
+	public final fun copy (Ldev/s7a/strata/geometry/IntOffset;DD)Ldev/s7a/strata/input/PointerEvent$Scroll;
+	public static synthetic fun copy$default (Ldev/s7a/strata/input/PointerEvent$Scroll;Ldev/s7a/strata/geometry/IntOffset;DDILjava/lang/Object;)Ldev/s7a/strata/input/PointerEvent$Scroll;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getDeltaX ()D
+	public final fun getDeltaY ()D
+	public fun getPosition ()Ldev/s7a/strata/geometry/IntOffset;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public abstract interface class dev/s7a/strata/layout/LayoutScope {
+	public abstract fun getChildCount ()I
+	public abstract fun getSize ()Ldev/s7a/strata/geometry/IntSize;
+	public abstract fun measuredChildSize (I)Ldev/s7a/strata/geometry/IntSize;
+	public abstract fun placeChild (ILdev/s7a/strata/geometry/IntOffset;)V
+}
+
+public abstract interface class dev/s7a/strata/layout/MeasureScope {
+	public abstract fun getChildCount ()I
+	public abstract fun measureChild (ILdev/s7a/strata/geometry/Constraints;)Ldev/s7a/strata/geometry/IntSize;
+}
+
+public final class dev/s7a/strata/node/DirtyMask {
+	public static final field Companion Ldev/s7a/strata/node/DirtyMask$Companion;
+	public static final synthetic fun box-impl (I)Ldev/s7a/strata/node/DirtyMask;
+	public static final fun contains-impl (ILdev/s7a/strata/node/DirtyPhase;)Z
+	public fun equals (Ljava/lang/Object;)Z
+	public static fun equals-impl (ILjava/lang/Object;)Z
+	public static final fun equals-impl0 (II)Z
+	public fun hashCode ()I
+	public static fun hashCode-impl (I)I
+	public static final fun minus-OO1BmiM (II)I
+	public static final fun plus-OO1BmiM (II)I
+	public fun toString ()Ljava/lang/String;
+	public static fun toString-impl (I)Ljava/lang/String;
+	public final synthetic fun unbox-impl ()I
+}
+
+public final class dev/s7a/strata/node/DirtyMask$Companion {
+	public final fun getAll-dvAQds4 ()I
+	public final fun getNone-dvAQds4 ()I
+	public final fun of-FtRg8Cc ([Ldev/s7a/strata/node/DirtyPhase;)I
+}
+
+public final class dev/s7a/strata/node/DirtyPhase : java/lang/Enum {
+	public static final field Layout Ldev/s7a/strata/node/DirtyPhase;
+	public static final field Measure Ldev/s7a/strata/node/DirtyPhase;
+	public static final field Paint Ldev/s7a/strata/node/DirtyPhase;
+	public static final field Semantics Ldev/s7a/strata/node/DirtyPhase;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public static fun valueOf (Ljava/lang/String;)Ldev/s7a/strata/node/DirtyPhase;
+	public static fun values ()[Ldev/s7a/strata/node/DirtyPhase;
+}
+
+public abstract interface class dev/s7a/strata/node/LayoutNode {
+	public abstract fun layout (Ldev/s7a/strata/layout/LayoutScope;)V
+}
+
+public abstract interface class dev/s7a/strata/node/LifecycleNode {
+	public abstract fun attach ()V
+	public abstract fun detach ()V
+	public abstract fun dispose ()V
+}
+
+public abstract interface class dev/s7a/strata/node/MeasureNode {
+	public abstract fun measure (Ldev/s7a/strata/layout/MeasureScope;Ldev/s7a/strata/geometry/Constraints;)Ldev/s7a/strata/geometry/IntSize;
+}
+
+public abstract class dev/s7a/strata/node/Node {
+	public fun <init> ()V
+	public final fun bindRuntime (Lkotlin/jvm/functions/Function1;)Lkotlin/jvm/functions/Function0;
+	protected final fun invalidate-Kf-UNOA (I)V
+}
+
+public abstract interface class dev/s7a/strata/node/PaintNode {
+	public abstract fun paint (Ldev/s7a/strata/render/PaintScope;)V
+}
+
+public abstract interface class dev/s7a/strata/node/PointerInputNode {
+	public abstract fun onPointerEvent (Ldev/s7a/strata/input/PointerEvent;Ldev/s7a/strata/geometry/IntOffset;)Ldev/s7a/strata/input/InputResult;
+}
+
+public abstract interface class dev/s7a/strata/node/SemanticsNode {
+	public abstract fun semantics (Ldev/s7a/strata/semantics/SemanticsScope;)V
+}
+
+public final class dev/s7a/strata/render/ArgbColor {
+	public static final synthetic fun box-impl (I)Ldev/s7a/strata/render/ArgbColor;
+	public static fun constructor-impl (I)I
+	public fun equals (Ljava/lang/Object;)Z
+	public static fun equals-impl (ILjava/lang/Object;)Z
+	public static final fun equals-impl0 (II)Z
+	public final fun getValue ()I
+	public fun hashCode ()I
+	public static fun hashCode-impl (I)I
+	public fun toString ()Ljava/lang/String;
+	public static fun toString-impl (I)Ljava/lang/String;
+	public final synthetic fun unbox-impl ()I
+}
+
+public abstract interface class dev/s7a/strata/render/PaintScope {
+	public abstract fun fillRectangle-RtejO-o (Ldev/s7a/strata/geometry/IntRect;I)V
+	public abstract fun getSize ()Ldev/s7a/strata/geometry/IntSize;
+}
+
+public final class dev/s7a/strata/semantics/Semantics {
+	public fun <init> ()V
+	public fun <init> (Ldev/s7a/strata/text/UiText;Ldev/s7a/strata/semantics/SemanticsRole;Ldev/s7a/strata/text/UiText;Z)V
+	public synthetic fun <init> (Ldev/s7a/strata/text/UiText;Ldev/s7a/strata/semantics/SemanticsRole;Ldev/s7a/strata/text/UiText;ZILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Ldev/s7a/strata/text/UiText;
+	public final fun component2 ()Ldev/s7a/strata/semantics/SemanticsRole;
+	public final fun component3 ()Ldev/s7a/strata/text/UiText;
+	public final fun component4 ()Z
+	public final fun copy (Ldev/s7a/strata/text/UiText;Ldev/s7a/strata/semantics/SemanticsRole;Ldev/s7a/strata/text/UiText;Z)Ldev/s7a/strata/semantics/Semantics;
+	public static synthetic fun copy$default (Ldev/s7a/strata/semantics/Semantics;Ldev/s7a/strata/text/UiText;Ldev/s7a/strata/semantics/SemanticsRole;Ldev/s7a/strata/text/UiText;ZILjava/lang/Object;)Ldev/s7a/strata/semantics/Semantics;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getDisabled ()Z
+	public final fun getLabel ()Ldev/s7a/strata/text/UiText;
+	public final fun getRole ()Ldev/s7a/strata/semantics/SemanticsRole;
+	public final fun getValue ()Ldev/s7a/strata/text/UiText;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public abstract interface class dev/s7a/strata/semantics/SemanticsRole {
+}
+
+public final class dev/s7a/strata/semantics/SemanticsRole$Button : dev/s7a/strata/semantics/SemanticsRole {
+	public static final field INSTANCE Ldev/s7a/strata/semantics/SemanticsRole$Button;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class dev/s7a/strata/semantics/SemanticsRole$Text : dev/s7a/strata/semantics/SemanticsRole {
+	public static final field INSTANCE Ldev/s7a/strata/semantics/SemanticsRole$Text;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public abstract interface class dev/s7a/strata/semantics/SemanticsScope {
+	public abstract fun emit (Ldev/s7a/strata/semantics/Semantics;)V
+}
+
+public abstract interface annotation class dev/s7a/strata/spi/InternalStrataRuntimeApi : java/lang/annotation/Annotation {
+}
+
+public abstract interface class dev/s7a/strata/text/PlatformText {
+}
+
+public abstract interface class dev/s7a/strata/text/TranslationFallback {
+}
+
+public final class dev/s7a/strata/text/TranslationFallback$Literal : dev/s7a/strata/text/TranslationFallback {
+	public fun <init> (Ljava/lang/String;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun copy (Ljava/lang/String;)Ldev/s7a/strata/text/TranslationFallback$Literal;
+	public static synthetic fun copy$default (Ldev/s7a/strata/text/TranslationFallback$Literal;Ljava/lang/String;ILjava/lang/Object;)Ldev/s7a/strata/text/TranslationFallback$Literal;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getValue ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class dev/s7a/strata/text/TranslationFallback$UseKey : dev/s7a/strata/text/TranslationFallback {
+	public static final field INSTANCE Ldev/s7a/strata/text/TranslationFallback$UseKey;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public abstract interface class dev/s7a/strata/text/UiText {
+	public static final field Companion Ldev/s7a/strata/text/UiText$Companion;
+}
+
+public final class dev/s7a/strata/text/UiText$Companion {
+	public final fun concat ([Ldev/s7a/strata/text/UiText;)Ldev/s7a/strata/text/UiText;
+}
+
+public final class dev/s7a/strata/text/UiText$Concatenated : dev/s7a/strata/text/UiText {
+	public fun <init> (Ljava/util/List;)V
+	public fun <init> ([Ldev/s7a/strata/text/UiText;)V
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getParts ()Ljava/util/List;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class dev/s7a/strata/text/UiText$Literal : dev/s7a/strata/text/UiText {
+	public fun <init> (Ljava/lang/String;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun copy (Ljava/lang/String;)Ldev/s7a/strata/text/UiText$Literal;
+	public static synthetic fun copy$default (Ldev/s7a/strata/text/UiText$Literal;Ljava/lang/String;ILjava/lang/Object;)Ldev/s7a/strata/text/UiText$Literal;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getValue ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class dev/s7a/strata/text/UiText$Platform : dev/s7a/strata/text/UiText {
+	public fun <init> (Ldev/s7a/strata/text/PlatformText;)V
+	public final fun component1 ()Ldev/s7a/strata/text/PlatformText;
+	public final fun copy (Ldev/s7a/strata/text/PlatformText;)Ldev/s7a/strata/text/UiText$Platform;
+	public static synthetic fun copy$default (Ldev/s7a/strata/text/UiText$Platform;Ldev/s7a/strata/text/PlatformText;ILjava/lang/Object;)Ldev/s7a/strata/text/UiText$Platform;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getPayload ()Ldev/s7a/strata/text/PlatformText;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class dev/s7a/strata/text/UiText$Translated : dev/s7a/strata/text/UiText {
+	public fun <init> (Ljava/lang/String;Ljava/lang/String;)V
+	public fun <init> (Ljava/lang/String;Ljava/util/List;Ldev/s7a/strata/text/TranslationFallback;)V
+	public synthetic fun <init> (Ljava/lang/String;Ljava/util/List;Ldev/s7a/strata/text/TranslationFallback;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public fun <init> (Ljava/lang/String;Ljava/util/List;Ljava/lang/String;)V
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getArguments ()Ljava/util/List;
+	public final fun getFallback ()Ldev/s7a/strata/text/TranslationFallback;
+	public final fun getKey ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public abstract interface class dev/s7a/strata/text/UiTextArgument {
+}
+
+public final class dev/s7a/strata/text/UiTextArgument$BooleanValue : dev/s7a/strata/text/UiTextArgument {
+	public fun <init> (Z)V
+	public final fun component1 ()Z
+	public final fun copy (Z)Ldev/s7a/strata/text/UiTextArgument$BooleanValue;
+	public static synthetic fun copy$default (Ldev/s7a/strata/text/UiTextArgument$BooleanValue;ZILjava/lang/Object;)Ldev/s7a/strata/text/UiTextArgument$BooleanValue;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getValue ()Z
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class dev/s7a/strata/text/UiTextArgument$DoubleValue : dev/s7a/strata/text/UiTextArgument {
+	public fun <init> (D)V
+	public final fun component1 ()D
+	public final fun copy (D)Ldev/s7a/strata/text/UiTextArgument$DoubleValue;
+	public static synthetic fun copy$default (Ldev/s7a/strata/text/UiTextArgument$DoubleValue;DILjava/lang/Object;)Ldev/s7a/strata/text/UiTextArgument$DoubleValue;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getValue ()D
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class dev/s7a/strata/text/UiTextArgument$FloatValue : dev/s7a/strata/text/UiTextArgument {
+	public fun <init> (F)V
+	public final fun component1 ()F
+	public final fun copy (F)Ldev/s7a/strata/text/UiTextArgument$FloatValue;
+	public static synthetic fun copy$default (Ldev/s7a/strata/text/UiTextArgument$FloatValue;FILjava/lang/Object;)Ldev/s7a/strata/text/UiTextArgument$FloatValue;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getValue ()F
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class dev/s7a/strata/text/UiTextArgument$IntValue : dev/s7a/strata/text/UiTextArgument {
+	public fun <init> (I)V
+	public final fun component1 ()I
+	public final fun copy (I)Ldev/s7a/strata/text/UiTextArgument$IntValue;
+	public static synthetic fun copy$default (Ldev/s7a/strata/text/UiTextArgument$IntValue;IILjava/lang/Object;)Ldev/s7a/strata/text/UiTextArgument$IntValue;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getValue ()I
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class dev/s7a/strata/text/UiTextArgument$LongValue : dev/s7a/strata/text/UiTextArgument {
+	public fun <init> (J)V
+	public final fun component1 ()J
+	public final fun copy (J)Ldev/s7a/strata/text/UiTextArgument$LongValue;
+	public static synthetic fun copy$default (Ldev/s7a/strata/text/UiTextArgument$LongValue;JILjava/lang/Object;)Ldev/s7a/strata/text/UiTextArgument$LongValue;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getValue ()J
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class dev/s7a/strata/text/UiTextArgument$StringValue : dev/s7a/strata/text/UiTextArgument {
+	public fun <init> (Ljava/lang/String;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun copy (Ljava/lang/String;)Ldev/s7a/strata/text/UiTextArgument$StringValue;
+	public static synthetic fun copy$default (Ldev/s7a/strata/text/UiTextArgument$StringValue;Ljava/lang/String;ILjava/lang/Object;)Ldev/s7a/strata/text/UiTextArgument$StringValue;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getValue ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class dev/s7a/strata/text/UiTextArgument$Text : dev/s7a/strata/text/UiTextArgument {
+	public fun <init> (Ldev/s7a/strata/text/UiText;)V
+	public final fun component1 ()Ldev/s7a/strata/text/UiText;
+	public final fun copy (Ldev/s7a/strata/text/UiText;)Ldev/s7a/strata/text/UiTextArgument$Text;
+	public static synthetic fun copy$default (Ldev/s7a/strata/text/UiTextArgument$Text;Ldev/s7a/strata/text/UiText;ILjava/lang/Object;)Ldev/s7a/strata/text/UiTextArgument$Text;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getValue ()Ldev/s7a/strata/text/UiText;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+

@@ -3,7 +3,6 @@ import com.vanniktech.maven.publish.KotlinJvm
 import com.vanniktech.maven.publish.MavenPublishBaseExtension
 import com.vanniktech.maven.publish.SourcesJar
 import dev.detekt.gradle.extensions.DetektExtension
-import kotlinx.kover.gradle.plugin.dsl.KoverProjectExtension
 import org.gradle.api.plugins.JavaPluginExtension
 import org.gradle.api.publish.tasks.GenerateModuleMetadata
 import org.gradle.api.tasks.compile.JavaCompile
@@ -18,7 +17,6 @@ import org.jetbrains.kotlin.gradle.tasks.KotlinJvmCompile
 
 plugins {
     alias(libs.plugins.kotlin.jvm) apply false
-    alias(libs.plugins.kover)
     alias(libs.plugins.detekt) apply false
     alias(libs.plugins.kotlinter) apply false
     alias(libs.plugins.vanniktechMavenPublish) apply false
@@ -43,7 +41,6 @@ subprojects {
 
     apply(plugin = "org.jetbrains.kotlin.jvm")
     apply(plugin = "java-library")
-    apply(plugin = "org.jetbrains.kotlinx.kover")
     apply(plugin = "dev.detekt")
     apply(plugin = "org.jmailen.kotlinter")
 
@@ -65,6 +62,7 @@ subprojects {
 
     val publishableModule = path in setOf(
         ":api",
+        ":runtime:core",
         ":runtime:headless",
         ":runtime:minecraft",
         ":runtime:minecraft-fabric-26.2",
@@ -120,6 +118,7 @@ subprojects {
         val artifactId =
             mapOf(
                 ":api" to "strata-api",
+                ":runtime:core" to "strata-runtime-core",
                 ":runtime:headless" to "strata-runtime-headless",
                 ":runtime:minecraft" to "strata-runtime-minecraft",
                 ":runtime:minecraft-fabric-26.2" to "strata-runtime-minecraft-fabric-26.2",
@@ -136,7 +135,9 @@ subprojects {
             signAllPublications()
             pom {
                 name.set("Strata ${project.name}")
-                description.set("A declarative, reactive UI framework for Minecraft.")
+                description.set(
+                    "Declarative Minecraft UI with reusable component trees, version-independent layout and state, and headless testing without launching Minecraft.",
+                )
                 url.set("https://github.com/sya-ri/strata")
                 inceptionYear.set("2026")
                 licenses {
@@ -156,7 +157,7 @@ subprojects {
                 scm {
                     connection.set("scm:git:https://github.com/sya-ri/strata.git")
                     developerConnection.set("scm:git:ssh://git@github.com/sya-ri/strata.git")
-                    tag.set("HEAD")
+                    tag.set("v${project.version}")
                     url.set("https://github.com/sya-ri/strata")
                 }
                 issueManagement {
@@ -187,21 +188,16 @@ subprojects {
     }
 }
 
-dependencies {
-    subprojects.filter { project -> project.file("build.gradle.kts").isFile }.forEach { project ->
-        add("kover", project)
-    }
-}
-
-extensions.configure<KoverProjectExtension> {
-    reports {
-        total {
-            html { onCheck = true }
-            xml { onCheck = true }
-        }
-    }
+val koverJvmTests = tasks.register("koverJvmTests") {
+    group = "verification"
+    description = "Runs ordinary JVM test tasks selected for Kover aggregation."
+    dependsOn(
+        subprojects.flatMap { project ->
+            project.tasks.withType<Test>().matching { task -> task.name == "test" }
+        },
+    )
 }
 
 tasks.matching { task -> task.name in setOf("koverHtmlReport", "koverXmlReport") }.configureEach {
-    dependsOn(subprojects.flatMap { project -> project.tasks.withType<Test>() })
+    dependsOn(koverJvmTests)
 }
