@@ -23,14 +23,14 @@ internal class PaintPipeline(
      * @param root the laid-out retained root.
      * @return tree-coordinate draw commands.
      */
-    fun paint(root: RetainedNode): List<DrawCommand> {
+    fun paint(root: RetainedEntry): List<DrawCommand> {
         val output = ArrayList<DrawCommand>()
         paintNode(root, output)
         return Collections.unmodifiableList(output.toList())
     }
 
     private fun paintNode(
-        retained: RetainedNode,
+        retained: RetainedEntry,
         output: MutableList<DrawCommand>,
     ) {
         val paintNode = retained.node as? PaintNode
@@ -52,7 +52,8 @@ internal class PaintPipeline(
             retained.localCommands = emptyList()
             retained.dirty -= DirtyMask.of(DirtyPhase.Paint)
         }
-        retained.children.forEach { child ->
+        for (index in 0 until retained.effectiveChildCount) {
+            val child = retained.effectiveChildAt(index)
             if (child.placed) {
                 paintNode(child, output)
             }

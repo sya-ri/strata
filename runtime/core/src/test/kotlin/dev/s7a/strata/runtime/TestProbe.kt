@@ -12,6 +12,7 @@ import dev.s7a.strata.input.InputResult
 import dev.s7a.strata.input.PointerEvent
 import dev.s7a.strata.layout.LayoutScope
 import dev.s7a.strata.layout.MeasureScope
+import dev.s7a.strata.modifier.Modifier
 import dev.s7a.strata.node.DirtyMask
 import dev.s7a.strata.node.DirtyPhase
 import dev.s7a.strata.node.LayoutNode
@@ -103,9 +104,13 @@ internal class TestProbe(
      * Creates a root description.
      *
      * @param children direct child descriptions.
+     * @param modifier active modifier descriptions.
      * @return an immutable root description.
      */
-    fun root(children: List<Element>): ProbeElement = element(ProbeId("root"), children = children)
+    fun root(
+        children: List<Element>,
+        modifier: Modifier = Modifier.Empty,
+    ): ProbeElement = element(ProbeId("root"), children = children, modifier = modifier)
 
     /**
      * Creates one immutable probe description.
@@ -114,7 +119,10 @@ internal class TestProbe(
      * @param key optional direct-sibling key.
      * @param sharedNode optional deliberately aliased node for ownership tests.
      * @param children direct child descriptions.
+     * @param measureDirty property that reports a measure-phase update when changed.
+     * @param modifier active modifier descriptions.
      * @param onAttach callback invoked from this node's attach hook.
+     * @param onDetach callback invoked from this node's detach hook.
      * @param onUpdate callback invoked from this element's update hook.
      * @return an immutable element description.
      */
@@ -123,7 +131,10 @@ internal class TestProbe(
         key: ProbeId? = null,
         sharedNode: ProbeNode? = null,
         children: List<Element> = emptyList(),
+        modifier: Modifier = Modifier.Empty,
+        measureDirty: Boolean = false,
         onAttach: (() -> Unit)? = null,
+        onDetach: (() -> Unit)? = null,
         onUpdate: (() -> Unit)? = null,
         onMeasure: (() -> Unit)? = null,
         onLayout: (() -> Unit)? = null,
@@ -138,7 +149,10 @@ internal class TestProbe(
             key,
             sharedNode,
             children,
+            modifier,
+            measureDirty,
             onAttach,
+            onDetach,
             onUpdate,
             onMeasure,
             onLayout,
@@ -179,6 +193,7 @@ internal class TestProbe(
                 element.onSemantics,
                 element.onDispose,
             )
+        fresh.onDetach = element.onDetach
         created.add(fresh)
         return fresh
     }
@@ -201,7 +216,11 @@ internal class TestProbe(
             node.tag = current.tag
             mask += DirtyMask.of(DirtyPhase.Semantics)
         }
+        if (previous.measureDirty != current.measureDirty) {
+            mask += DirtyMask.of(DirtyPhase.Measure)
+        }
         node.onAttach = current.onAttach
+        node.onDetach = current.onDetach
         node.onMeasure = current.onMeasure
         node.onLayout = current.onLayout
         node.onPaint = current.onPaint
@@ -437,7 +456,10 @@ internal class TestProbe(
         key: ProbeId?,
         internal val sharedNode: ProbeNode?,
         children: List<Element>,
+        modifier: Modifier,
+        internal val measureDirty: Boolean,
         internal val onAttach: (() -> Unit)?,
+        internal val onDetach: (() -> Unit)?,
         internal val onUpdate: (() -> Unit)?,
         internal val onMeasure: (() -> Unit)?,
         internal val onLayout: (() -> Unit)?,
@@ -449,6 +471,7 @@ internal class TestProbe(
             identity = key?.let { value -> ElementIdentity.Keyed(ElementKey(value)) } ?: ElementIdentity.Positional,
             type = TYPE,
             children = children,
+            modifier = modifier,
         ) {
         /**
          * Stable test token and typed element hooks.

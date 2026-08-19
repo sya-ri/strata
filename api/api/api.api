@@ -1,8 +1,9 @@
 public abstract class dev/s7a/strata/element/Element {
-	public fun <init> (Ldev/s7a/strata/element/ElementIdentity;Ldev/s7a/strata/element/ElementType;Ljava/util/List;)V
-	public synthetic fun <init> (Ldev/s7a/strata/element/ElementIdentity;Ldev/s7a/strata/element/ElementType;Ljava/util/List;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public fun <init> (Ldev/s7a/strata/element/ElementIdentity;Ldev/s7a/strata/element/ElementType;Ljava/util/List;Ldev/s7a/strata/modifier/Modifier;)V
+	public synthetic fun <init> (Ldev/s7a/strata/element/ElementIdentity;Ldev/s7a/strata/element/ElementType;Ljava/util/List;Ldev/s7a/strata/modifier/Modifier;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public final fun getChildren ()Ljava/util/List;
 	public final fun getIdentity ()Ldev/s7a/strata/element/ElementIdentity;
+	public final fun getModifier ()Ldev/s7a/strata/modifier/Modifier;
 	public final fun getType ()Ldev/s7a/strata/element/ElementType;
 }
 
@@ -242,6 +243,31 @@ public abstract interface class dev/s7a/strata/layout/MeasureScope {
 	public abstract fun measureChild (ILdev/s7a/strata/geometry/Constraints;)Ldev/s7a/strata/geometry/IntSize;
 }
 
+public final class dev/s7a/strata/modifier/Modifier {
+	public static final field Companion Ldev/s7a/strata/modifier/Modifier$Companion;
+	public final fun elements ()Ljava/util/List;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun hashCode ()I
+	public final fun then (Ldev/s7a/strata/modifier/Modifier;)Ldev/s7a/strata/modifier/Modifier;
+	public final fun then (Ldev/s7a/strata/modifier/ModifierElement;)Ldev/s7a/strata/modifier/Modifier;
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class dev/s7a/strata/modifier/Modifier$Companion {
+	public final fun getEmpty ()Ldev/s7a/strata/modifier/Modifier;
+}
+
+public abstract interface class dev/s7a/strata/modifier/ModifierElement {
+	public abstract fun getType ()Ldev/s7a/strata/modifier/ModifierNodeType;
+}
+
+public final class dev/s7a/strata/modifier/ModifierNodeType {
+	public fun <init> (Lkotlin/reflect/KClass;Lkotlin/reflect/KClass;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function3;)V
+	public final fun createErased (Ldev/s7a/strata/modifier/ModifierElement;)Ldev/s7a/strata/node/ModifierNode;
+	public final fun updateErased-g-c3zcg (Ldev/s7a/strata/modifier/ModifierElement;Ldev/s7a/strata/modifier/ModifierElement;Ldev/s7a/strata/node/ModifierNode;)I
+	public final fun validateErased (Ldev/s7a/strata/modifier/ModifierElement;)V
+}
+
 public final class dev/s7a/strata/node/DirtyMask {
 	public static final field Companion Ldev/s7a/strata/node/DirtyMask$Companion;
 	public static final synthetic fun box-impl (I)Ldev/s7a/strata/node/DirtyMask;
@@ -286,6 +312,12 @@ public abstract interface class dev/s7a/strata/node/LifecycleNode {
 
 public abstract interface class dev/s7a/strata/node/MeasureNode {
 	public abstract fun measure (Ldev/s7a/strata/layout/MeasureScope;Ldev/s7a/strata/geometry/Constraints;)Ldev/s7a/strata/geometry/IntSize;
+}
+
+public abstract class dev/s7a/strata/node/ModifierNode : dev/s7a/strata/node/Node, dev/s7a/strata/node/LayoutNode, dev/s7a/strata/node/MeasureNode {
+	public fun <init> ()V
+	public fun layout (Ldev/s7a/strata/layout/LayoutScope;)V
+	public fun measure (Ldev/s7a/strata/layout/MeasureScope;Ldev/s7a/strata/geometry/Constraints;)Ldev/s7a/strata/geometry/IntSize;
 }
 
 public abstract class dev/s7a/strata/node/Node {

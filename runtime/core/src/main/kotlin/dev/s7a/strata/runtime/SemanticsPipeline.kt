@@ -20,14 +20,14 @@ internal class SemanticsPipeline(
      * @param root the laid-out retained root.
      * @return immutable tree-coordinate entries.
      */
-    fun semantics(root: RetainedNode): List<SemanticsEntry> {
+    fun semantics(root: RetainedEntry): List<SemanticsEntry> {
         val output = ArrayList<SemanticsEntry>()
         semanticsNode(root, output)
         return Collections.unmodifiableList(output.toList())
     }
 
     private fun semanticsNode(
-        retained: RetainedNode,
+        retained: RetainedEntry,
         output: MutableList<SemanticsEntry>,
     ) {
         if (DirtyPhase.Semantics in retained.dirty || retained.localSemantics == null) {
@@ -44,7 +44,8 @@ internal class SemanticsPipeline(
         retained.localSemantics.orEmpty().forEach { semantics ->
             output.add(SemanticsEntry(retained.bounds, semantics))
         }
-        retained.children.forEach { child ->
+        for (index in 0 until retained.effectiveChildCount) {
+            val child = retained.effectiveChildAt(index)
             if (child.placed) {
                 semanticsNode(child, output)
             }

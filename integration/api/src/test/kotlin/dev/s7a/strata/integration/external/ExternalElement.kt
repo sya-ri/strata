@@ -4,6 +4,7 @@ import dev.s7a.strata.element.Element
 import dev.s7a.strata.element.ElementIdentity
 import dev.s7a.strata.element.ElementKey
 import dev.s7a.strata.element.ElementType
+import dev.s7a.strata.modifier.Modifier
 import dev.s7a.strata.node.DirtyMask
 import dev.s7a.strata.node.DirtyPhase
 import dev.s7a.strata.render.ArgbColor
@@ -24,10 +25,12 @@ public class ExternalElement public constructor(
     private val label: UiText = UiText.Literal("external"),
     private val nodeId: ExternalNodeId = ExternalNodeId.Root,
     children: List<Element> = emptyList(),
+    modifier: Modifier = Modifier.Empty,
 ) : Element(
         identity = key?.let(ElementIdentity::Keyed) ?: ElementIdentity.Positional,
         type = TYPE,
         children = children,
+        modifier = modifier,
     ) {
     init {
         require(0 <= width) { "Width must be non-negative." }
@@ -53,6 +56,7 @@ public class ExternalElement public constructor(
                     }
                 },
                 updateNode = { previous, current, node ->
+                    current.probe.componentUpdateCalls += 1
                     var dirty = DirtyMask.None
                     if (previous.width != current.width) {
                         node.width = current.width

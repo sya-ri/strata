@@ -17,15 +17,16 @@ internal class InputPipeline {
      * @return consumed when a node handles the event, otherwise ignored.
      */
     fun dispatch(
-        root: RetainedNode,
+        root: RetainedEntry,
         event: PointerEvent,
     ): InputResult = dispatchNode(root, event)
 
     private fun dispatchNode(
-        retained: RetainedNode,
+        retained: RetainedEntry,
         event: PointerEvent,
     ): InputResult {
-        retained.children.asReversed().forEach { child ->
+        for (index in (0 until retained.effectiveChildCount).reversed()) {
+            val child = retained.effectiveChildAt(index)
             if (child.placed) {
                 val result = dispatchNode(child, event)
                 if (result === InputResult.Consumed) {

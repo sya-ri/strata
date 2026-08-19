@@ -3,6 +3,9 @@ package dev.s7a.strata.runtime
 import dev.s7a.strata.element.Element
 import dev.s7a.strata.element.ElementIdentity
 import dev.s7a.strata.element.ElementKey
+import dev.s7a.strata.modifier.ModifierElement
+import dev.s7a.strata.node.DirtyMask
+import dev.s7a.strata.node.ModifierNode
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
 import java.util.Collections
 import java.util.IdentityHashMap
@@ -12,6 +15,7 @@ import java.util.LinkedHashSet
  * Reconciles immutable descriptions into retained nodes with linear direct-sibling matching.
  */
 @OptIn(InternalStrataRuntimeApi::class)
+@Suppress("TooManyFunctions", "TooGenericExceptionCaught")
 internal class Reconciler(
     private val lifecycle: LifecycleManager,
     private val dirtyTracker: DirtyTracker,
@@ -82,11 +86,14 @@ internal class Reconciler(
         lifecycle.bind(retained)
         val result =
             runCatching {
+                createModifiers(retained, description.modifier.elements())
                 description.children.forEach { childDescription ->
                     val child = createSubtree(childDescription)
-                    child.parent = retained
+                    child.logicalParent = retained
+                    linkEntries(child)
                     retained.children.add(child)
                 }
+                linkEntries(retained)
             }
         return result
             .getOrElse { failure ->
@@ -102,9 +109,89 @@ internal class Reconciler(
     ) {
         val previous = retained.element
         val mask = description.type.updateErased(previous, description, retained.node)
+        val modifierUpdate = reconcileModifiers(retained, description.modifier.elements())
         retained.element = description
         dirtyTracker.record(retained, mask)
+        modifierUpdate.masks.forEach { update -> dirtyTracker.record(update.entry, update.mask) }
+        if (modifierUpdate.structural) {
+            dirtyTracker.structural(retained)
+        }
         reconcileChildren(retained, description.children)
+    }
+
+    private fun createModifiers(
+        retained: RetainedNode,
+        descriptions: List<ModifierElement>,
+    ) {
+        descriptions.forEach { description ->
+            val node = description.type.createErased(description)
+            val modifier = RetainedModifier(description, node)
+            lifecycle.bind(modifier)
+            retained.modifiers.add(modifier)
+        }
+    }
+
+    private fun reconcileModifiers(
+        retained: RetainedNode,
+        descriptions: List<ModifierElement>,
+    ): ModifierUpdate {
+        val oldModifiers = retained.modifiers.toList()
+        val nextModifiers = ArrayList<RetainedModifier>(descriptions.size)
+        val reused = Collections.newSetFromMap(IdentityHashMap<RetainedModifier, Boolean>())
+        val created = ArrayList<RetainedModifier>()
+        val updates = ArrayList<ModifierMask>()
+        var removed = emptyList<RetainedModifier>()
+        try {
+            descriptions.forEachIndexed { index, description ->
+                val previous = oldModifiers.getOrNull(index)
+                if (previous != null && previous.element.type === description.type) {
+                    val mask = description.type.updateErased(previous.element, description, previous.modifierNode)
+                    previous.element = description
+                    reused.add(previous)
+                    nextModifiers.add(previous)
+                    updates.add(ModifierMask(previous, mask))
+                } else {
+                    val node = description.type.createErased(description)
+                    val modifier = RetainedModifier(description, node)
+                    lifecycle.bind(modifier)
+                    created.add(modifier)
+                    nextModifiers.add(modifier)
+                }
+            }
+            removed = oldModifiers.filter { modifier -> reused.contains(modifier).not() }
+            retained.modifiers.clear()
+            retained.modifiers.addAll(nextModifiers)
+            linkEntries(retained)
+            val removedFailures = FailureAccumulator()
+            removed.asReversed().forEach { modifier ->
+                removedFailures.addOptional(lifecycle.cleanupModifier(modifier))
+            }
+            removedFailures.first?.let { removedFailures.throwFirst() }
+            return ModifierUpdate(
+                updates,
+                oldModifiers.size != nextModifiers.size ||
+                    oldModifiers.zip(nextModifiers).any { pair -> pair.first !== pair.second },
+            )
+        } catch (failure: Throwable) {
+            val failures = FailureAccumulator(failure)
+            removed.asReversed().forEach { modifier ->
+                failures.addOptional(lifecycle.cleanupModifier(modifier))
+            }
+            created.asReversed().forEach { modifier ->
+                if (retained.modifiers.contains(modifier).not()) {
+                    failures.addOptional(lifecycle.cleanupModifier(modifier))
+                }
+            }
+            failures.throwFirst()
+        }
+    }
+
+    private fun linkEntries(retained: RetainedNode) {
+        retained.modifiers.forEachIndexed { index, modifier ->
+            modifier.parent = if (0 < index) retained.modifiers[index - 1] else retained.logicalParent
+            modifier.virtualChild = retained.modifiers.getOrNull(index + 1) ?: retained
+        }
+        retained.parent = retained.modifiers.lastOrNull() ?: retained.logicalParent
     }
 
     private fun reconcileChildren(
@@ -131,7 +218,8 @@ internal class Reconciler(
             } else {
                 used.add(candidate)
                 updateInPlace(candidate, childDescription)
-                candidate.parent = parent
+                candidate.logicalParent = parent
+                linkEntries(candidate)
                 nextChildren.add(candidate)
             }
         }
@@ -150,7 +238,8 @@ internal class Reconciler(
         parent.children.clear()
         parent.children.addAll(nextChildren)
         newlyCreated.forEach { created ->
-            created.parent = parent
+            created.logicalParent = parent
+            linkEntries(created)
             provisionalRoots.remove(created)
         }
         if (changed) {
@@ -221,4 +310,14 @@ internal class Reconciler(
         }
         return same
     }
+
+    private data class ModifierMask(
+        val entry: RetainedModifier,
+        val mask: DirtyMask,
+    )
+
+    private data class ModifierUpdate(
+        val masks: List<ModifierMask>,
+        val structural: Boolean,
+    )
 }

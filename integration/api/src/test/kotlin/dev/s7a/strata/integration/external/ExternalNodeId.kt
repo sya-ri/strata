@@ -13,4 +13,9 @@ public enum class ExternalNodeId {
      * The external child node.
      */
     Child,
+
+    /**
+     * The external modifier node.
+     */
+    Modifier,
 }

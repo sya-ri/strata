@@ -19,7 +19,7 @@ Minecraft and Fabric dependencies remain confined to future runtime and integrat
 
 The process and compatibility requirements for a new version adapter are defined in [Supporting a new Minecraft version](minecraft-versions.md).
 
-The public API currently defines element descriptions, retained node capabilities, lifecycle ownership, geometry, input, drawing, semantics, unresolved text, and revisioned external state sources.
+The public API currently defines element and modifier descriptions, retained node capabilities, lifecycle ownership, geometry, input, drawing, semantics, unresolved text, and revisioned external state sources.
 The state-source contract is specified and exercised by concurrency tests described in [External state sources](state-sources.md).
 It remains coroutine-free and does not include a platform lifecycle adapter.
 The retained core's tested internal session contract is described in [UI sessions](ui-sessions.md).
@@ -59,6 +59,12 @@ Draw commands and semantics entries preserve parent-before-child and local emiss
 The backend must execute draw commands in that order.
 The core applies no implicit node or parent clipping; valid local paint overflow is retained, and a placed child can receive input outside its parent's bounds.
 Pointer hit testing uses half-open bounds, visits deepest and latest-painted candidates first, and bubbles ignored events.
+
+Modifiers are active retained nodes in the effective pipeline ancestry and do not become settings copied into component nodes.
+Component scopes continue to expose logical children, while a modifier scope exposes its one virtual child.
+Modifier-chain changes preserve the retained component and its logical subtree.
+Removed modifier nodes finish cleanup during reconciliation, and newly created modifier nodes attach only after the complete incoming tree reconciles successfully.
+The full modifier contract and external implementation guidance are defined in [Modifiers](modifiers.md).
 
 ## Testing strategy
 

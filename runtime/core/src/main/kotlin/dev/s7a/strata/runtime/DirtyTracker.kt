@@ -14,7 +14,7 @@ internal class DirtyTracker {
      * @param mask the phases reported by an element or node-local change.
      */
     fun record(
-        retained: RetainedNode,
+        retained: RetainedEntry,
         mask: DirtyMask,
     ) {
         val expanded = expand(mask)
@@ -34,8 +34,8 @@ internal class DirtyTracker {
      *
      * @param retained the parent whose direct-child structure changed.
      */
-    fun structural(retained: RetainedNode) {
-        var current: RetainedNode? = retained
+    fun structural(retained: RetainedEntry) {
+        var current: RetainedEntry? = retained
         while (current != null) {
             current.dirty += DirtyMask.All
             current = current.parent

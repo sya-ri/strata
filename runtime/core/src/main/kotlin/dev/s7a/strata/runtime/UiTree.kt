@@ -120,8 +120,7 @@ public class UiTree : AutoCloseable {
     public fun layout() {
         pipelineOperation {
             val retainedRoot = root ?: return@pipelineOperation Unit
-            check(retainedRoot.measured) { "The tree must be measured before layout." }
-            check(pipeline.hasPendingMeasure(retainedRoot).not()) { "The tree must be measured before layout." }
+            pipeline.requireMeasuredRoot(retainedRoot)
             pipeline.layout(retainedRoot)
         }
     }
@@ -146,8 +145,7 @@ public class UiTree : AutoCloseable {
     public fun paint(): List<DrawCommand> =
         pipelineOperation {
             val retainedRoot = root ?: return@pipelineOperation emptyList()
-            check(retainedRoot.placed) { "The tree must be laid out before paint." }
-            check(pipeline.hasPendingGeometry(retainedRoot).not()) { "The tree must be laid out before paint." }
+            pipeline.requirePlacedRoot(retainedRoot)
             pipeline.paint(retainedRoot)
         }
 
@@ -173,8 +171,7 @@ public class UiTree : AutoCloseable {
     public fun dispatchPointer(event: PointerEvent): InputResult =
         pipelineOperation {
             val retainedRoot = root ?: return@pipelineOperation InputResult.Ignored
-            check(retainedRoot.placed) { "The tree must be laid out before input dispatch." }
-            check(pipeline.hasPendingGeometry(retainedRoot).not()) { "The tree must be laid out before input dispatch." }
+            pipeline.requirePlacedRoot(retainedRoot)
             pipeline.dispatch(retainedRoot, event)
         }
 
@@ -199,8 +196,7 @@ public class UiTree : AutoCloseable {
     public fun semantics(): List<SemanticsEntry> =
         pipelineOperation {
             val retainedRoot = root ?: return@pipelineOperation emptyList()
-            check(retainedRoot.placed) { "The tree must be laid out before semantics collection." }
-            check(pipeline.hasPendingGeometry(retainedRoot).not()) { "The tree must be laid out before semantics collection." }
+            pipeline.requirePlacedRoot(retainedRoot)
             pipeline.semantics(retainedRoot)
         }
 

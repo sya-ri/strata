@@ -16,8 +16,12 @@ import dev.s7a.strata.runtime.render.DrawCommand
 import dev.s7a.strata.runtime.semantics.SemanticsEntry
 
 /**
- * Executes retained measure and layout work and delegates other pipeline stages.
+ * Executes retained measure and layout work through virtual modifier ancestry.
+ *
+ * Logical component scopes expose logical children only.
+ * Each modifier scope exposes exactly one virtual child.
  */
+@Suppress("TooManyFunctions")
 internal class Pipeline(
     private val threadGuard: ThreadGuard,
 ) {
@@ -28,96 +32,96 @@ internal class Pipeline(
     /**
      * Measures [root] under [constraints].
      *
-     * @param root the installed retained root.
+     * @param root the installed logical root.
      * @param constraints the root constraints.
-     * @return the measured root size.
+     * @return the measured effective root size.
      */
     fun measure(
         root: RetainedNode,
         constraints: Constraints,
-    ): IntSize = measureNode(root, constraints)
+    ): IntSize = measureEntry(root.effectiveRoot, constraints)
 
     /**
-     * Lays out [root] after its measure pass.
+     * Lays out [root] after its effective measure pass.
      *
-     * @param root the installed retained root.
+     * @param root the installed logical root.
      */
     fun layout(root: RetainedNode) {
-        root.bounds = IntRect(0, 0, root.measuredSize.width, root.measuredSize.height)
-        root.placed = true
-        layoutNode(root)
+        val effective = root.effectiveRoot
+        effective.bounds = IntRect(0, 0, effective.measuredSize.width, effective.measuredSize.height)
+        effective.placed = true
+        layoutEntry(effective)
     }
 
     /**
-     * Paints [root] in parent-before-child order.
+     * Paints [root] in effective parent-before-child order.
      *
-     * @param root the installed laid-out root.
+     * @param root the installed logical root.
      * @return commands in accumulated tree coordinates.
      */
-    fun paint(root: RetainedNode): List<DrawCommand> = paintPipeline.paint(root)
+    fun paint(root: RetainedNode): List<DrawCommand> = paintPipeline.paint(root.effectiveRoot)
 
     /**
-     * Dispatches [event] in reverse paint order.
+     * Dispatches [event] through effective modifier and component ancestry.
      *
-     * @param root the installed laid-out root.
+     * @param root the installed logical root.
      * @param event the tree-coordinate event.
-     * @return consumed when a node handles the event, otherwise ignored.
+     * @return consumed when one node handles the event, otherwise ignored.
      */
     fun dispatch(
         root: RetainedNode,
         event: PointerEvent,
-    ): InputResult = inputPipeline.dispatch(root, event)
+    ): InputResult = inputPipeline.dispatch(root.effectiveRoot, event)
 
     /**
-     * Collects semantics from [root] in parent-before-child order.
+     * Collects unresolved semantics through effective ancestry.
      *
-     * @param root the installed laid-out root.
-     * @return immutable tree-coordinate entries.
+     * @param root the installed logical root.
+     * @return entries in effective parent-before-child order.
      */
-    fun semantics(root: RetainedNode): List<SemanticsEntry> = semanticsPipeline.semantics(root)
+    fun semantics(root: RetainedNode): List<SemanticsEntry> = semanticsPipeline.semantics(root.effectiveRoot)
 
     /**
      * Returns whether a measured subtree still has pending measurement work.
      *
-     * @param root the installed root.
-     * @return true when reachable measured geometry is stale.
+     * @param root the installed logical root.
+     * @return true when reachable effective entries need measurement.
      */
-    fun hasPendingMeasure(root: RetainedNode): Boolean = pendingMeasure(root)
+    fun hasPendingMeasure(root: RetainedNode): Boolean = pendingMeasure(root.effectiveRoot)
 
     /**
      * Returns whether a measured subtree still has pending geometry work.
      *
-     * @param root the installed root.
-     * @return true when measure or layout work remains.
+     * @param root the installed logical root.
+     * @return true when measurement or layout work remains.
      */
-    fun hasPendingGeometry(root: RetainedNode): Boolean = pendingMeasure(root) || pendingLayout(root)
+    fun hasPendingGeometry(root: RetainedNode): Boolean = pendingMeasure(root.effectiveRoot) || pendingLayout(root.effectiveRoot)
 
-    private fun pendingMeasure(retained: RetainedNode): Boolean {
-        if (DirtyPhase.Measure in retained.dirty) {
-            return true
-        }
-        retained.children.forEachIndexed { index, child ->
-            if (retained.measuredChildren.contains(index) && pendingMeasure(child)) {
-                return true
-            }
-        }
-        return false
+    /**
+     * Checks that the effective root has completed measurement and has no pending measurement work.
+     *
+     * @param root the installed logical root.
+     */
+    fun requireMeasuredRoot(root: RetainedNode) {
+        val effective = root.effectiveRoot
+        check(effective.measured) { "The tree must be measured before layout." }
+        check(pendingMeasure(effective).not()) { "The tree must be measured before layout." }
     }
 
-    private fun pendingLayout(retained: RetainedNode): Boolean {
-        if (DirtyPhase.Layout in retained.dirty) {
-            return true
-        }
-        retained.children.forEach { child ->
-            if (child.placed && pendingLayout(child)) {
-                return true
-            }
-        }
-        return false
+    /**
+     * Checks that the effective root has completed layout and has no pending geometry work.
+     *
+     * @param root the installed logical root.
+     */
+    fun requirePlacedRoot(root: RetainedNode) {
+        val effective = root.effectiveRoot
+        check(effective.placed) { "The tree must be laid out before this operation." }
+        check(pendingMeasure(effective).not()) { "The tree must be laid out before this operation." }
+        check(pendingLayout(effective).not()) { "The tree must be laid out before this operation." }
     }
 
-    private fun measureNode(
-        retained: RetainedNode,
+    private fun measureEntry(
+        retained: RetainedEntry,
         constraints: Constraints,
     ): IntSize {
         if (DirtyPhase.Measure in retained.dirty || retained.measuredConstraints != constraints) {
@@ -130,7 +134,7 @@ internal class Pipeline(
                     override val childCount: Int
                         get() {
                             guard.check()
-                            return retained.children.size
+                            return retained.effectiveChildCount
                         }
 
                     override fun measureChild(
@@ -140,7 +144,7 @@ internal class Pipeline(
                         guard.check()
                         require(index in 0 until childCount) { "Child index is outside the measurement scope." }
                         check(measuredChildren.add(index)) { "A child may be measured only once per pass." }
-                        return measureNode(retained.children[index], constraints)
+                        return measureEntry(retained.effectiveChildAt(index), constraints)
                     }
                 }
             val measured =
@@ -165,7 +169,7 @@ internal class Pipeline(
         return retained.measuredSize
     }
 
-    private fun layoutNode(retained: RetainedNode) {
+    private fun layoutEntry(retained: RetainedEntry) {
         val mustLayout = retained.laidOut.not() || DirtyPhase.Layout in retained.dirty
         if (mustLayout) {
             retained.dirty -= DirtyMask.of(DirtyPhase.Layout)
@@ -185,14 +189,14 @@ internal class Pipeline(
                         override val childCount: Int
                             get() {
                                 guard.check()
-                                return retained.children.size
+                                return retained.effectiveChildCount
                             }
 
                         override fun measuredChildSize(index: Int): IntSize {
                             guard.check()
                             require(index in 0 until childCount) { "Child index is outside the layout scope." }
                             check(index in retained.measuredChildren) { "The child was not measured in this pass." }
-                            return retained.children[index].measuredSize
+                            return retained.effectiveChildAt(index).measuredSize
                         }
 
                         override fun placeChild(
@@ -216,7 +220,8 @@ internal class Pipeline(
             }
             retained.laidOut = true
         }
-        retained.children.forEachIndexed { index, child ->
+        for (index in 0 until retained.effectiveChildCount) {
+            val child = retained.effectiveChildAt(index)
             val offset = retained.placements[index]
             if (offset == null || retained.measuredChildren.contains(index).not()) {
                 child.placed = false
@@ -232,8 +237,33 @@ internal class Pipeline(
                         Math.addExact(top, child.measuredSize.height),
                     )
                 child.placed = true
-                layoutNode(child)
+                layoutEntry(child)
             }
         }
+    }
+
+    private fun pendingMeasure(retained: RetainedEntry): Boolean {
+        if (DirtyPhase.Measure in retained.dirty) {
+            return true
+        }
+        for (index in 0 until retained.effectiveChildCount) {
+            if (retained.measuredChildren.contains(index) && pendingMeasure(retained.effectiveChildAt(index))) {
+                return true
+            }
+        }
+        return false
+    }
+
+    private fun pendingLayout(retained: RetainedEntry): Boolean {
+        if (DirtyPhase.Layout in retained.dirty) {
+            return true
+        }
+        for (index in 0 until retained.effectiveChildCount) {
+            val child = retained.effectiveChildAt(index)
+            if (child.placed && pendingLayout(child)) {
+                return true
+            }
+        }
+        return false
     }
 }

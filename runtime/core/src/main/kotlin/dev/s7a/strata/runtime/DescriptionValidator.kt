@@ -28,6 +28,7 @@ internal class DescriptionValidator {
     ) {
         require(active.add(element)) { "An element description contains a cycle." }
         element.type.validateErased(element)
+        element.modifier.elements().forEach { modifier -> modifier.type.validateErased(modifier) }
         val keys = HashSet<ElementKey<*>>()
         element.children.forEach { child ->
             val identity = child.identity

@@ -96,6 +96,14 @@ A same-parent keyed move and a property-only update reuse the node and do not at
 The root follows the same identity and token rules.
 Keyed movement is not a general node move across parents; a node crossing a parent boundary is replaced.
 
+## Modifiers
+
+An element may carry an immutable ordered `Modifier` chain.
+Each description creates an active `ModifierNode`, and no modifier property is flattened into the component node.
+Modifiers form virtual pipeline ancestry without changing logical component children or keyed component identity.
+The default modifier node measures its one virtual child with unchanged constraints and places that child at its origin.
+See [Modifiers](modifiers.md) for reconciliation, lifecycle, failure behavior, and the third-party extension contract.
+
 ## Exceptions and threads
 
 The complete new description is validated before reconciliation.
