@@ -29,7 +29,7 @@ internal class BodyQualifiedNameRuleTest {
     internal fun ignoresPackageAndImportDirectives() {
         val source =
             """
-            package example.feature
+            package dev.example.feature
 
             import java.util.UUID
             import java.util.Collections.emptyList
