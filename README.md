@@ -1,17 +1,15 @@
 <div align="center">
   <img src="icon.svg" alt="Strata" width="112">
   <h1>Strata</h1>
-  <p>Declarative Minecraft UI with reusable component trees, version-independent layout and state, and headless testing without launching Minecraft.</p>
 </div>
 
+A declarative UI framework for Minecraft with reusable component trees, version-independent layout and state, and headless testing.
+
 Strata is pronounced “STRAY-tuh” (`/ˈstreɪtə/`) and is the plural of *stratum*, meaning a layer.
-The name reflects how the framework separates a declarative component tree, retained UI behavior, portable rendering, and environment-specific adapters into distinct layers that work together as one interface.
+The name reflects its layered design: declarative components, retained UI behavior, portable rendering, and environment-specific adapters.
 
-Strata describes screens as trees of reusable components, keeps layout and state behavior independent from a particular game version, and tests UI behavior through a headless runtime without launching Minecraft.
-
-The first release target is `0.1.0`.
-Only behavior backed by executable tests and generated examples is documented as available while that release is being completed.
-The repository currently contains the build and quality foundation only; no installable Strata module or public API is available yet.
+Strata is under development toward `0.1.0`; public artifacts are not available yet.
+Features are documented as available only after executable tests and generated examples verify them.
 
 ## Why Strata exists
 
