@@ -19,8 +19,9 @@ Minecraft and Fabric dependencies remain confined to future runtime and integrat
 
 The process and compatibility requirements for a new version adapter are defined in [Supporting a new Minecraft version](minecraft-versions.md).
 
-The public API currently defines element descriptions, retained node capabilities, lifecycle ownership, geometry, input, drawing, semantics, and unresolved text.
-It does not yet define a shipped state-management API.
+The public API currently defines element descriptions, retained node capabilities, lifecycle ownership, geometry, input, drawing, semantics, unresolved text, and revisioned external state sources.
+The state-source contract is specified and exercised by concurrency tests described in [External state sources](state-sources.md).
+It remains coroutine-free and does not include a runtime session or platform lifecycle adapter.
 
 ## Retained operation contract
 

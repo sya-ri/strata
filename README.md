@@ -42,6 +42,7 @@ See [Architecture](docs/architecture.md) for dependency boundaries and extension
 
 - [Architecture](docs/architecture.md) explains the public SPI, runtime boundaries, and testing strategy.
 - [Element SPI](docs/element-spi.md) explains node ownership, lifecycle, retained phases, and extension points.
+- [External state sources](docs/state-sources.md) specifies linearizable revisioned state observation across threads.
 - [Build and release](docs/build.md) lists local quality checks and publication requirements.
 - [Supporting a new Minecraft version](docs/minecraft-versions.md) defines the evidence, implementation, and compatibility process for another adapter.
 
