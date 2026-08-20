@@ -87,6 +87,7 @@ public class ExternalNode internal constructor(
     ): IntSize {
         measures += 1
         probe.componentChildCounts += scope.childCount
+        probe.componentMeasureOrder += id
         probe.componentMeasureConstraints += constraints
         val childSize = if (0 < scope.childCount) scope.measureChild(0, constraints) else IntSize.Zero
         return constraints.constrain(IntSize(width, childSize.height.coerceAtLeast(height)))

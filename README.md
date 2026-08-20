@@ -23,7 +23,7 @@ The design separates those concerns into layers:
 - retained nodes perform incremental measurement, layout, painting, input, semantics, and lifecycle work;
 - active modifiers provide checked padding, size constraints, background painting, unresolved semantics, and typed layout parent data without changing component implementations;
 - the retained core runtime emits draw commands and unresolved semantics on the JVM;
-- a versioned Minecraft runtime resolves native text, assets, drawing, input, and screen lifecycle behavior.
+- a future versioned Minecraft runtime will resolve native text, assets, drawing, input, and screen lifecycle behavior.
 
 The public element, node, and drawing contracts are designed for extension.
 A custom primitive must work through those contracts without registering its concrete class in a central component dispatcher.
@@ -59,6 +59,7 @@ See [Architecture](docs/architecture.md) for dependency boundaries and extension
 ## Documentation
 
 - [Architecture](docs/architecture.md) explains the public SPI, runtime boundaries, and testing strategy.
+- [Built-in layout components](docs/layout.md) specifies Row, Column, Box, and Spacer measurement, arrangement, alignment, and weight behavior.
 - [Element SPI](docs/element-spi.md) explains node ownership, lifecycle, retained phases, and extension points.
 - [Modifiers](docs/modifiers.md) explains active modifier nodes, typed parent data, positional reconciliation, lifecycle, and extension failures.
 - [External state sources](docs/state-sources.md) specifies linearizable revisioned state observation across threads.

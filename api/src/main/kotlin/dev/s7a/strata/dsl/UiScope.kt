@@ -1,6 +1,8 @@
 package dev.s7a.strata.dsl
 
 import dev.s7a.strata.element.Element
+import java.util.Collections
+import kotlin.jvm.JvmSynthetic
 
 /**
  * Callback-lifetime scope used to emit immutable element descriptions.
@@ -24,13 +26,38 @@ public sealed class UiScope protected constructor() {
      * @throws IllegalStateException when called from another thread or after the callback has completed.
      */
     public fun element(element: Element) {
+        checkUsable()
+        emittedElements += element
+    }
+
+    /**
+     * Checks the callback-lifetime and owner-thread capability of this scope.
+     *
+     * Internal scope extensions use this guard before creating behavior tied to a scope.
+     *
+     * @throws IllegalStateException when called from another thread or after the callback has completed.
+     */
+    @JvmSynthetic
+    internal fun checkUsable() {
         check(Thread.currentThread() === ownerThread) {
             "UiScope can only be used from its constructing thread."
         }
         check(active) {
             "UiScope cannot be used after its callback has completed."
         }
-        emittedElements += element
+    }
+
+    /**
+     * Copies all descriptions emitted by this scope in declaration order.
+     *
+     * The copy remains valid after this scope is closed, which releases the scope's references to the descriptions.
+     *
+     * @return an unmodifiable snapshot for a new parent description.
+     */
+    @JvmSynthetic
+    internal fun childElementsSnapshot(): List<Element> {
+        checkUsable()
+        return Collections.unmodifiableList(emittedElements.toList())
     }
 
     /**
@@ -39,6 +66,7 @@ public sealed class UiScope protected constructor() {
      * @return the sole emitted element instance.
      * @throws IllegalArgumentException when no element or multiple elements were emitted.
      */
+    @JvmSynthetic
     internal fun rootElement(): Element =
         when (emittedElements.size) {
             0 -> throw IllegalArgumentException(
@@ -56,6 +84,7 @@ public sealed class UiScope protected constructor() {
      * Closes this scope so later emission attempts fail and releases its temporary element references.
      * The builder invokes this method after normal return, cardinality failure, or callback failure.
      */
+    @JvmSynthetic
     internal fun close() {
         active = false
         emittedElements.clear()
@@ -72,7 +101,8 @@ public sealed class UiScope protected constructor() {
          *
          * @return a fresh callback-lifetime scope.
          */
-        fun createRoot(): UiScope = RootScope()
+        @JvmSynthetic
+        internal fun createRoot(): UiScope = RootScope()
     }
 }
 

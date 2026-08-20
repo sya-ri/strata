@@ -19,12 +19,13 @@ Minecraft and Fabric dependencies remain confined to future runtime and integrat
 
 The process and compatibility requirements for a new version adapter are defined in [Supporting a new Minecraft version](minecraft-versions.md).
 
-The public API currently defines declarative tree building, element and modifier descriptions, typed layout parent data, retained node capabilities, lifecycle ownership, geometry, input, drawing, semantics, unresolved text, and revisioned external state sources.
+The public API currently defines declarative tree building, Row, Column, Box, and Spacer components, element and modifier descriptions, typed layout parent data, retained node capabilities, lifecycle ownership, geometry, input, drawing, semantics, unresolved text, and revisioned external state sources.
 `buildUi` invokes its callback synchronously and returns the exact caller-owned `Element` emitted as its single root.
 Its scope is confined to the invoking thread and callback lifetime, and callback failures take precedence over root-cardinality validation.
 The state-source contract is specified and exercised by concurrency tests described in [External state sources](state-sources.md).
 It remains coroutine-free and does not include a platform lifecycle adapter.
 The retained core's tested internal session contract is described in [UI sessions](ui-sessions.md).
+The exact built-in layout measurement, weight, arrangement, alignment, and overflow contracts are defined in [Built-in layout components](layout.md).
 
 ## Retained operation contract
 

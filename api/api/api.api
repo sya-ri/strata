@@ -1,4 +1,31 @@
+public abstract class dev/s7a/strata/dsl/BoxScope : dev/s7a/strata/dsl/UiScope {
+	public final fun align (Ldev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/layout/Alignment;)Ldev/s7a/strata/modifier/Modifier;
+}
+
+public abstract class dev/s7a/strata/dsl/ColumnScope : dev/s7a/strata/dsl/UiScope {
+	public final fun align (Ldev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/layout/HorizontalAlignment;)Ldev/s7a/strata/modifier/Modifier;
+	public final fun weight (Ldev/s7a/strata/modifier/Modifier;FZ)Ldev/s7a/strata/modifier/Modifier;
+	public static synthetic fun weight$default (Ldev/s7a/strata/dsl/ColumnScope;Ldev/s7a/strata/modifier/Modifier;FZILjava/lang/Object;)Ldev/s7a/strata/modifier/Modifier;
+}
+
+public abstract class dev/s7a/strata/dsl/RowScope : dev/s7a/strata/dsl/UiScope {
+	public final fun align (Ldev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/layout/VerticalAlignment;)Ldev/s7a/strata/modifier/Modifier;
+	public final fun weight (Ldev/s7a/strata/modifier/Modifier;FZ)Ldev/s7a/strata/modifier/Modifier;
+	public static synthetic fun weight$default (Ldev/s7a/strata/dsl/RowScope;Ldev/s7a/strata/modifier/Modifier;FZILjava/lang/Object;)Ldev/s7a/strata/modifier/Modifier;
+}
+
 public abstract interface annotation class dev/s7a/strata/dsl/StrataDsl : java/lang/annotation/Annotation {
+}
+
+public final class dev/s7a/strata/dsl/UiComponentsKt {
+	public static final fun Box (Ldev/s7a/strata/dsl/UiScope;Ldev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/element/ElementKey;Ldev/s7a/strata/layout/Alignment;Lkotlin/jvm/functions/Function1;)V
+	public static synthetic fun Box$default (Ldev/s7a/strata/dsl/UiScope;Ldev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/element/ElementKey;Ldev/s7a/strata/layout/Alignment;Lkotlin/jvm/functions/Function1;ILjava/lang/Object;)V
+	public static final fun Column (Ldev/s7a/strata/dsl/UiScope;Ldev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/element/ElementKey;ILdev/s7a/strata/layout/Arrangement;Ldev/s7a/strata/layout/HorizontalAlignment;Lkotlin/jvm/functions/Function1;)V
+	public static synthetic fun Column$default (Ldev/s7a/strata/dsl/UiScope;Ldev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/element/ElementKey;ILdev/s7a/strata/layout/Arrangement;Ldev/s7a/strata/layout/HorizontalAlignment;Lkotlin/jvm/functions/Function1;ILjava/lang/Object;)V
+	public static final fun Row (Ldev/s7a/strata/dsl/UiScope;Ldev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/element/ElementKey;ILdev/s7a/strata/layout/Arrangement;Ldev/s7a/strata/layout/VerticalAlignment;Lkotlin/jvm/functions/Function1;)V
+	public static synthetic fun Row$default (Ldev/s7a/strata/dsl/UiScope;Ldev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/element/ElementKey;ILdev/s7a/strata/layout/Arrangement;Ldev/s7a/strata/layout/VerticalAlignment;Lkotlin/jvm/functions/Function1;ILjava/lang/Object;)V
+	public static final fun Spacer (Ldev/s7a/strata/dsl/UiScope;Ldev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/element/ElementKey;)V
+	public static synthetic fun Spacer$default (Ldev/s7a/strata/dsl/UiScope;Ldev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/element/ElementKey;ILjava/lang/Object;)V
 }
 
 public abstract class dev/s7a/strata/dsl/UiScope {
@@ -268,6 +295,44 @@ public final class dev/s7a/strata/input/PointerEvent$Scroll : dev/s7a/strata/inp
 	public fun toString ()Ljava/lang/String;
 }
 
+public final class dev/s7a/strata/layout/Alignment : java/lang/Enum {
+	public static final field BottomCenter Ldev/s7a/strata/layout/Alignment;
+	public static final field BottomEnd Ldev/s7a/strata/layout/Alignment;
+	public static final field BottomStart Ldev/s7a/strata/layout/Alignment;
+	public static final field Center Ldev/s7a/strata/layout/Alignment;
+	public static final field CenterEnd Ldev/s7a/strata/layout/Alignment;
+	public static final field CenterStart Ldev/s7a/strata/layout/Alignment;
+	public static final field TopCenter Ldev/s7a/strata/layout/Alignment;
+	public static final field TopEnd Ldev/s7a/strata/layout/Alignment;
+	public static final field TopStart Ldev/s7a/strata/layout/Alignment;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public final fun getHorizontalAlignment ()Ldev/s7a/strata/layout/HorizontalAlignment;
+	public final fun getVerticalAlignment ()Ldev/s7a/strata/layout/VerticalAlignment;
+	public static fun valueOf (Ljava/lang/String;)Ldev/s7a/strata/layout/Alignment;
+	public static fun values ()[Ldev/s7a/strata/layout/Alignment;
+}
+
+public final class dev/s7a/strata/layout/Arrangement : java/lang/Enum {
+	public static final field Center Ldev/s7a/strata/layout/Arrangement;
+	public static final field End Ldev/s7a/strata/layout/Arrangement;
+	public static final field SpaceAround Ldev/s7a/strata/layout/Arrangement;
+	public static final field SpaceBetween Ldev/s7a/strata/layout/Arrangement;
+	public static final field SpaceEvenly Ldev/s7a/strata/layout/Arrangement;
+	public static final field Start Ldev/s7a/strata/layout/Arrangement;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public static fun valueOf (Ljava/lang/String;)Ldev/s7a/strata/layout/Arrangement;
+	public static fun values ()[Ldev/s7a/strata/layout/Arrangement;
+}
+
+public final class dev/s7a/strata/layout/HorizontalAlignment : java/lang/Enum {
+	public static final field Center Ldev/s7a/strata/layout/HorizontalAlignment;
+	public static final field End Ldev/s7a/strata/layout/HorizontalAlignment;
+	public static final field Start Ldev/s7a/strata/layout/HorizontalAlignment;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public static fun valueOf (Ljava/lang/String;)Ldev/s7a/strata/layout/HorizontalAlignment;
+	public static fun values ()[Ldev/s7a/strata/layout/HorizontalAlignment;
+}
+
 public abstract interface class dev/s7a/strata/layout/LayoutScope : dev/s7a/strata/layout/ParentDataScope {
 	public abstract fun getChildCount ()I
 	public abstract fun getSize ()Ldev/s7a/strata/geometry/IntSize;
@@ -287,6 +352,15 @@ public final class dev/s7a/strata/layout/ParentDataKey {
 
 public abstract interface class dev/s7a/strata/layout/ParentDataScope {
 	public abstract fun childParentData (ILdev/s7a/strata/layout/ParentDataKey;)Ljava/lang/Object;
+}
+
+public final class dev/s7a/strata/layout/VerticalAlignment : java/lang/Enum {
+	public static final field Bottom Ldev/s7a/strata/layout/VerticalAlignment;
+	public static final field Center Ldev/s7a/strata/layout/VerticalAlignment;
+	public static final field Top Ldev/s7a/strata/layout/VerticalAlignment;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public static fun valueOf (Ljava/lang/String;)Ldev/s7a/strata/layout/VerticalAlignment;
+	public static fun values ()[Ldev/s7a/strata/layout/VerticalAlignment;
 }
 
 public final class dev/s7a/strata/modifier/BackgroundExtensionsKt {

@@ -42,6 +42,11 @@ public class ExternalProbe {
     internal val componentMeasureConstraints: MutableList<Constraints> = ArrayList()
 
     /**
+     * External component identifiers recorded in exact measure-callback order.
+     */
+    internal val componentMeasureOrder: MutableList<ExternalNodeId> = ArrayList()
+
+    /**
      * Virtual direct-child counts observed by external modifier measure hooks.
      */
     internal val modifierVirtualChildCounts: MutableList<Int> = ArrayList()
