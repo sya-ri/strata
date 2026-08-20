@@ -1,0 +1,23 @@
+public abstract interface class dev/s7a/strata/runtime/headless/HeadlessFrame {
+	public abstract fun getImage ()Ldev/s7a/strata/runtime/headless/HeadlessImage;
+	public abstract fun getPixelScale ()I
+	public abstract fun getSemantics ()Ljava/util/List;
+	public abstract fun getViewport ()Ldev/s7a/strata/geometry/IntSize;
+}
+
+public abstract interface class dev/s7a/strata/runtime/headless/HeadlessImage {
+	public abstract fun argbAt (II)I
+	public abstract fun copyArgb ()[I
+	public abstract fun encodePng ()[B
+	public abstract fun getSize ()Ldev/s7a/strata/geometry/IntSize;
+}
+
+public final class dev/s7a/strata/runtime/headless/HeadlessRendering {
+	public static final fun rasterizeHeadless (Ljava/util/List;Ldev/s7a/strata/geometry/IntSize;)Ldev/s7a/strata/runtime/headless/HeadlessImage;
+	public static final fun rasterizeHeadless (Ljava/util/List;Ldev/s7a/strata/geometry/IntSize;I)Ldev/s7a/strata/runtime/headless/HeadlessImage;
+	public static synthetic fun rasterizeHeadless$default (Ljava/util/List;Ldev/s7a/strata/geometry/IntSize;IILjava/lang/Object;)Ldev/s7a/strata/runtime/headless/HeadlessImage;
+	public static final fun renderHeadless (Ldev/s7a/strata/element/Element;Ldev/s7a/strata/geometry/IntSize;)Ldev/s7a/strata/runtime/headless/HeadlessFrame;
+	public static final fun renderHeadless (Ldev/s7a/strata/element/Element;Ldev/s7a/strata/geometry/IntSize;I)Ldev/s7a/strata/runtime/headless/HeadlessFrame;
+	public static synthetic fun renderHeadless$default (Ldev/s7a/strata/element/Element;Ldev/s7a/strata/geometry/IntSize;IILjava/lang/Object;)Ldev/s7a/strata/runtime/headless/HeadlessFrame;
+}
+

@@ -28,4 +28,5 @@ include(
     ":integration:api",
     ":quality:detekt-rules",
     ":runtime:core",
+    ":runtime:headless",
 )

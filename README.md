@@ -52,6 +52,8 @@ The dependency boundaries are:
 
 - `api` is the platform-neutral public contract used by application and primitive code.
 - `runtime/core` is configured as a publishable retained engine that measures, lays out, paints, dispatches input, and flattens unresolved semantics on the JVM. It has not been published to an external repository.
+- `runtime/headless` is configured as a publishable headless adapter over the retained core.
+  Its verified synchronous entry points render a positive fixed viewport into immutable scaled ARGB pixels, deterministic metadata-free RGBA8 PNG bytes, and logical unscaled semantics.
 - `integration/api` compiles and exercises a third-party primitive against the public contracts and runtime core.
 
 See [Architecture](docs/architecture.md) for dependency boundaries and extension rules, and [Element SPI](docs/element-spi.md) for the smallest complete custom primitive.

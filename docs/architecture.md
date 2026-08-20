@@ -12,8 +12,10 @@ A module joins the build only with working behavior and tests.
 - `runtime:core` is configured as a publishable, Minecraft-independent retained engine built on `api`.
   It includes reconciliation, layout, input dispatch, painting, unresolved semantics flattening, and internal screen-session orchestration.
   It is not an externally published artifact yet.
+- `runtime:headless` is a publishable headless adapter built on `runtime:core`.
+  It synchronously renders a fixed positive viewport, rasterizes core draw commands into deterministic ARGB pixels, and encodes metadata-free RGBA8 PNG output without a desktop graphics dependency.
 - `integration:api` verifies an external primitive against the public `api` and `runtime:core` boundaries.
-Future platform adapters may depend on these boundaries once their artifacts are published, but they are outside the current build.
+Further environment-specific and Minecraft adapters are outside the current build.
 Platform-independent code must not depend on a Minecraft runtime.
 Minecraft and Fabric dependencies remain confined to future runtime and integration layers that require them.
 
@@ -25,7 +27,24 @@ Its scope is confined to the invoking thread and callback lifetime, and callback
 The state-source contract is specified and exercised by concurrency tests described in [External state sources](state-sources.md).
 It remains coroutine-free and does not include a platform lifecycle adapter.
 The retained core's tested internal session contract is described in [UI sessions](ui-sessions.md).
+
+## Headless rendering
+
+The headless facade validates positive logical width, height, and scale before description validation, node creation, or lifecycle hooks.
+It checks physical width, height, and row-major area with checked integer arithmetic and reports arithmetic failure instead of wrapping or allocating an invalid image.
+Low-level commands are snapshotted in list order, clipped to the positive logical viewport before exact scale replication, and painted onto transparent black.
+Coordinates are top-left origin, x-right, y-down, and half-open.
+
+Painting uses straight ARGB Porter-Duff source-over with Long intermediates.
+For source alpha `sa`, destination alpha `da`, and channel values `sc` and `dc`, `alphaN = sa * 255 + da * (255 - sa)`, `oa = floor((alphaN + 127) / 255)`, and when `alphaN != 0` each channel is `floor((sc * sa * 255 + dc * da * (255 - sa) + floor(alphaN / 2)) / alphaN)`.
+When `alphaN == 0`, the result is exactly `0x00000000`.
+Transparent sources are no-ops, opaque sources replace, and there is no interpolation, gamma conversion, saturation, or implicit clipping beyond the viewport.
+
+Images expose only immutable reads, fresh pixel copies, and deterministic PNG encoding.
+PNG output contains exactly one IHDR, one IDAT, and one IEND in that order, uses noninterlaced RGBA8 filter-zero rows, deterministic stored DEFLATE blocks no larger than 65,535 bytes, and checked CRC32 and Adler32 values.
+Frames retain no description, tree, or draw-command list; semantics are defensive, logical, unscaled, unclipped, and in core emission order.
 The exact built-in layout measurement, weight, arrangement, alignment, and overflow contracts are defined in [Built-in layout components](layout.md).
+The headless adapter's fixed-viewport, clipping, source-over, scaling, PNG, and immutable semantics contracts are exercised by its module tests.
 
 ## Retained operation contract
 
@@ -73,6 +92,6 @@ The full modifier contract and external implementation guidance are defined in [
 
 ## Testing strategy
 
-The test suite exercises `api` and `runtime:core` with ordinary JVM tests.
+The test suite exercises `api`, `runtime:core`, and `runtime:headless` with ordinary JVM tests.
 Integration tests belong at the narrowest module boundary that needs them.
 Fabric GameTests are reserved for behavior that genuinely requires Minecraft's loaded game environment.

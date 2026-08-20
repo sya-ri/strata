@@ -4,6 +4,7 @@
 .gitattributes text eol=lf
 .gitignore text eol=lf
 *.bat text eol=crlf
+*.api text eol=lf whitespace=-blank-at-eof
 *.gradle text eol=lf
 *.jar binary
 *.java text eol=lf
