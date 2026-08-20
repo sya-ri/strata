@@ -110,17 +110,13 @@ private object HeadlessImplementation {
         return ImageImpl.create(dimensions.physicalSize, pixels)
     }
 
-    private fun snapshotCommands(commands: List<DrawCommand>): List<DrawCommand> {
-        val snapshot = ArrayList<DrawCommand>(commands.size)
-        commands.forEach { command ->
-            when {
-                command is DrawCommand.FillRectangle -> snapshot += command
-                command is DrawCommand.BlitImage -> snapshot += command
-                else -> throw IllegalArgumentException("Unsupported or null draw command.")
+    private fun snapshotCommands(commands: List<DrawCommand>): List<DrawCommand> =
+        commands.map { command ->
+            when (val checkedCommand = requireNotNull(command) { "Unsupported or null draw command." }) {
+                is DrawCommand.FillRectangle -> checkedCommand
+                is DrawCommand.BlitImage -> checkedCommand
             }
         }
-        return snapshot
-    }
 
     private fun paint(
         pixels: IntArray,

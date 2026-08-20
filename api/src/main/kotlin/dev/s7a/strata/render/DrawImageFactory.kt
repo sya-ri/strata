@@ -42,12 +42,9 @@ private class DrawImageSnapshot private constructor(
 
     override fun copyArgb(): IntArray = pixels.copyOf()
 
-    override fun equals(other: Any?): Boolean {
-        if (this === other) {
-            return true
-        }
-        return other is DrawImageSnapshot && size == other.size && pixels.contentEquals(other.pixels)
-    }
+    override fun equals(other: Any?): Boolean =
+        this === other ||
+            (other is DrawImageSnapshot && size == other.size && pixels.contentEquals(other.pixels))
 
     override fun hashCode(): Int = 31 * size.hashCode() + pixels.contentHashCode()
 

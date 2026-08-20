@@ -2,6 +2,7 @@ package dev.s7a.strata.runtime
 
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.ExecutorCoroutineDispatcher
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.asCoroutineDispatcher
 import kotlinx.coroutines.awaitCancellation
@@ -13,6 +14,7 @@ import org.junit.jupiter.api.Assertions.assertThrows
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import java.util.concurrent.CountDownLatch
+import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
 import java.util.concurrent.FutureTask
 import java.util.concurrent.LinkedBlockingQueue
@@ -278,34 +280,68 @@ internal class UiSessionCoroutineGenerationTest {
             }) {
                 TestProbe().root(emptyList())
             }
-        holder.delegate = session.state(0)
-        session.attach()
-        session.screenScope.launch(worker) {
-            workerStarted.countDown()
-            holder.value
-        }
-        assertTrue(workerStarted.await(5, TimeUnit.SECONDS))
-        assertTrue(dispatcher.runNext(5_000))
-        assertEquals(1, failures.size)
-        assertSame(Thread.currentThread(), failureOnOwner[0])
-
-        val workerResumed = CountDownLatch(1)
-        var resumedThread: Thread? = null
-        session.screenScope.launch {
-            withContext(worker) {
-                workerResumed.countDown()
+        val releaseWorker = CountDownLatch(1)
+        var primaryFailure: Throwable? = null
+        var cleanupFailures: FailureAccumulator? = null
+        try {
+            holder.delegate = session.state(0)
+            session.attach()
+            session.screenScope.launch(worker) {
+                workerStarted.countDown()
+                holder.value
             }
-            resumedThread = Thread.currentThread()
+            assertTrue(workerStarted.await(5, TimeUnit.SECONDS))
+            assertTrue(dispatcher.runNext(5_000))
+            assertEquals(1, failures.size)
+            assertSame(Thread.currentThread(), failureOnOwner[0])
+
+            val workerResumed = CountDownLatch(1)
+            var resumedThread: Thread? = null
+            session.screenScope.launch {
+                withContext(worker) {
+                    workerResumed.countDown()
+                    check(releaseWorker.await(5, TimeUnit.SECONDS)) { "Worker continuation did not receive its release." }
+                }
+                resumedThread = Thread.currentThread()
+            }
+            assertTrue(dispatcher.runNext(5_000))
+            assertTrue(workerResumed.await(5, TimeUnit.SECONDS))
+            assertEquals(null, resumedThread)
+            releaseWorker.countDown()
+            assertTrue(dispatcher.runNext(5_000))
+            assertSame(Thread.currentThread(), resumedThread)
+        } catch (failure: Throwable) {
+            primaryFailure = failure
+            throw failure
+        } finally {
+            val cleanup = cleanupWorkerStateAccess(session, worker, workerExecutor, releaseWorker, primaryFailure)
+            if (primaryFailure == null) {
+                cleanupFailures = cleanup
+            }
         }
-        assertTrue(dispatcher.runNext(5_000))
-        assertTrue(workerResumed.await(5, TimeUnit.SECONDS))
-        assertEquals(null, resumedThread)
-        assertTrue(dispatcher.runNext(5_000))
-        assertSame(Thread.currentThread(), resumedThread)
-        worker.close()
-        workerExecutor.shutdown()
-        workerExecutor.awaitTermination(5, TimeUnit.SECONDS)
-        session.close()
+        if (primaryFailure == null) {
+            cleanupFailures?.throwIfPresent()
+        }
+    }
+
+    private fun cleanupWorkerStateAccess(
+        session: UiSession,
+        worker: ExecutorCoroutineDispatcher,
+        workerExecutor: ExecutorService,
+        releaseWorker: CountDownLatch,
+        primaryFailure: Throwable?,
+    ): FailureAccumulator {
+        releaseWorker.countDown()
+        val cleanup = FailureAccumulator(primaryFailure)
+        cleanup.capture { session.close() }
+        cleanup.capture { worker.close() }
+        cleanup.capture { workerExecutor.shutdownNow() }
+        cleanup.capture {
+            check(workerExecutor.awaitTermination(5, TimeUnit.SECONDS)) {
+                "Worker executor did not terminate during test cleanup."
+            }
+        }
+        return cleanup
     }
 
     @Test

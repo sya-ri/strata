@@ -35,7 +35,7 @@ exclude:
   - name: KotlinArrayToString
     paths:
       - integration/docs/src/main/kotlin/dev/s7a/strata/integration/docs/ShowcaseReadme.kt
-  # Public SPI declarations are consumed by external clients even when this repository has no call site.
+  # Public SPI declarations, including PaintScope drawing operations, are consumed by external clients even when this repository has no call site.
   # These two main functions are JavaExec reflection entry points, not Kotlin call graph roots.
   # ShowcaseOutput members are consumed across the storage/markdown generation pipeline.
   - name: UnusedSymbol
@@ -44,6 +44,7 @@ exclude:
       - api/src/main/kotlin/dev/s7a/strata/input/PointerEvent.kt
       - api/src/main/kotlin/dev/s7a/strata/layout/Alignment.kt
       - api/src/main/kotlin/dev/s7a/strata/node/PointerInputNode.kt
+      - api/src/main/kotlin/dev/s7a/strata/render/PaintScope.kt
       - integration/docs/src/main/kotlin/dev/s7a/strata/integration/docs/ComponentShowcaseChecker.kt
       - integration/docs/src/main/kotlin/dev/s7a/strata/integration/docs/ComponentShowcaseGenerator.kt
       - integration/docs/src/main/kotlin/dev/s7a/strata/integration/docs/ShowcaseOutput.kt
