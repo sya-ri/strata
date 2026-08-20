@@ -14,6 +14,7 @@ import dev.s7a.strata.text.UiText
  * A third-party element implemented only against the public API contracts.
  *
  * @property width the preferred width.
+ * @property height the preferred height.
  * @property color the fill color.
  * @property label unresolved semantics label.
  */
@@ -21,6 +22,7 @@ public class ExternalElement public constructor(
     private val probe: ExternalProbe = ExternalProbe(),
     key: ElementKey<*>? = null,
     private val width: Int = 4,
+    private val height: Int = 4,
     private val color: ArgbColor = ArgbColor(0xFF00FF00.toInt()),
     private val label: UiText = UiText.Literal("external"),
     private val nodeId: ExternalNodeId = ExternalNodeId.Root,
@@ -34,6 +36,7 @@ public class ExternalElement public constructor(
     ) {
     init {
         require(0 <= width) { "Width must be non-negative." }
+        require(0 <= height) { "Height must be non-negative." }
     }
 
     /**
@@ -47,10 +50,15 @@ public class ExternalElement public constructor(
             ElementType(
                 elementClass = ExternalElement::class,
                 nodeClass = ExternalNode::class,
-                validateLocal = { element -> require(0 <= element.width) },
+                validateLocal = { element ->
+                    require(0 <= element.width)
+                    require(0 <= element.height)
+                },
                 createNode = { element ->
                     ExternalNode(element.probe, element.nodeId).also { node ->
+                        element.probe.componentNodes[element.nodeId] = node
                         node.width = element.width
+                        node.height = element.height
                         node.color = element.color
                         node.label = element.label
                     }
@@ -60,6 +68,10 @@ public class ExternalElement public constructor(
                     var dirty = DirtyMask.None
                     if (previous.width != current.width) {
                         node.width = current.width
+                        dirty += DirtyMask.of(DirtyPhase.Measure)
+                    }
+                    if (previous.height != current.height) {
+                        node.height = current.height
                         dirty += DirtyMask.of(DirtyPhase.Measure)
                     }
                     if (previous.color != current.color) {

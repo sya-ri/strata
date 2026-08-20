@@ -8,6 +8,8 @@ import dev.s7a.strata.input.InputResult
 import dev.s7a.strata.input.PointerEvent
 import dev.s7a.strata.layout.LayoutScope
 import dev.s7a.strata.layout.MeasureScope
+import dev.s7a.strata.node.DirtyMask
+import dev.s7a.strata.node.DirtyPhase
 import dev.s7a.strata.node.LayoutNode
 import dev.s7a.strata.node.LifecycleNode
 import dev.s7a.strata.node.MeasureNode
@@ -40,6 +42,11 @@ public class ExternalNode internal constructor(
     internal var width: Int = 4
 
     /**
+     * The current preferred height.
+     */
+    internal var height: Int = 4
+
+    /**
      * The current fill color.
      */
     internal var color: ArgbColor = ArgbColor(0xFF00FF00.toInt())
@@ -55,9 +62,19 @@ public class ExternalNode internal constructor(
     internal var measures: Int = 0
 
     /**
+     * Number of layout passes observed.
+     */
+    internal var layouts: Int = 0
+
+    /**
      * Number of paint passes observed.
      */
     internal var paints: Int = 0
+
+    /**
+     * Number of semantics passes observed.
+     */
+    internal var semanticsCalls: Int = 0
 
     /**
      * Number of consumed presses observed.
@@ -70,11 +87,13 @@ public class ExternalNode internal constructor(
     ): IntSize {
         measures += 1
         probe.componentChildCounts += scope.childCount
+        probe.componentMeasureConstraints += constraints
         val childSize = if (0 < scope.childCount) scope.measureChild(0, constraints) else IntSize.Zero
-        return constraints.constrain(IntSize(width, childSize.height.coerceAtLeast(4)))
+        return constraints.constrain(IntSize(width, childSize.height.coerceAtLeast(height)))
     }
 
     override fun layout(scope: LayoutScope) {
+        layouts += 1
         if (0 < scope.childCount) {
             scope.placeChild(0, IntOffset.Zero)
         }
@@ -97,6 +116,7 @@ public class ExternalNode internal constructor(
     }
 
     override fun semantics(scope: SemanticsScope) {
+        semanticsCalls += 1
         scope.emit(Semantics(label = label))
     }
 
@@ -110,5 +130,14 @@ public class ExternalNode internal constructor(
 
     override fun dispose() {
         probe.lifecycle += ExternalLifecycleEvent.Dispose(id)
+    }
+
+    /**
+     * Exercises protected node invalidation from an external test callback.
+     *
+     * @param phase the phase to invalidate.
+     */
+    public fun invalidateForTest(phase: DirtyPhase) {
+        invalidate(DirtyMask.of(phase))
     }
 }

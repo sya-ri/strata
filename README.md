@@ -21,6 +21,7 @@ The design separates those concerns into layers:
 - application code declares components and owns application state;
 - layout components measure and place their children from constraints instead of visual-tuning coordinates;
 - retained nodes perform incremental measurement, layout, painting, input, semantics, and lifecycle work;
+- active modifiers provide checked padding, size constraints, background painting, and unresolved semantics without changing component implementations;
 - the retained core runtime emits draw commands and unresolved semantics on the JVM;
 - a versioned Minecraft runtime resolves native text, assets, drawing, input, and screen lifecycle behavior.
 

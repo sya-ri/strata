@@ -27,6 +27,25 @@ Only after the complete incoming tree reconciles successfully does attachment vi
 Removed and replacement lifecycle resources therefore do not overlap.
 Final cleanup visits the component subtree and component first, then modifiers from innermost to outermost.
 
+## Built-in modifiers
+
+Every built-in function appends one active node inside the existing modifier chain.
+Earlier descriptions therefore remain outermost and affect the constraints or bounds seen by later descriptions.
+
+`size`, `width`, and `height` request exact non-negative extents that are clamped into the parent constraints.
+`sizeIn`, `widthIn`, and `heightIn` apply inclusive non-negative ranges independently to each selected axis.
+A requested range that does not overlap its parent range is pinned to the nearest parent boundary.
+`fillMaxSize`, `fillMaxWidth`, and `fillMaxHeight` fill selected bounded axes while preserving selected unbounded axes.
+
+`padding` reduces child constraints by checked `Insets`, preserves an unbounded maximum, and floors each smaller finite endpoint at zero.
+It places the measured child at the left and top inset and reports the child extent plus both inset totals, constrained by the parent.
+An extent addition that cannot be represented as an `Int` fails instead of wrapping or saturating.
+
+`background` emits one fill over its complete local bounds before content is painted.
+`semantics` emits one separate unresolved entry before content semantics and does not merge descendant values.
+Changing size or padding invalidates measurement, changing a background invalidates paint, and changing semantics invalidates only semantics.
+An equal value does not invalidate a phase.
+
 ## Extension guide
 
 An extension defines an immutable `ModifierElement` value and one stable `ModifierNodeType` token.
@@ -47,5 +66,4 @@ Pointer dispatch visits the component after its logical descendants and then bub
 Semantics are emitted in effective parent-before-child order and remain unresolved until an adapter consumes them.
 Future modifier-specific capabilities can add typed contracts without changing the component child scope.
 
-The active modifier SPI has a third-party integration TCK.
-Layout and paint convenience modifiers are added only with their own reviewed contracts and behavioral tests.
+The active modifier SPI and built-in modifiers are exercised through a third-party integration TCK.

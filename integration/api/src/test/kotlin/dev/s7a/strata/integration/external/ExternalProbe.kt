@@ -1,5 +1,7 @@
 package dev.s7a.strata.integration.external
 
+import dev.s7a.strata.geometry.Constraints
+
 /**
  * Test-owned observation probe passed explicitly through an external element description.
  */
@@ -15,6 +17,11 @@ public class ExternalProbe {
     internal var modifierNode: ExternalModifierNode? = null
 
     /**
+     * External component nodes grouped by their typed identifiers.
+     */
+    internal val componentNodes: MutableMap<ExternalNodeId, ExternalNode> = HashMap()
+
+    /**
      * Number of external component update hooks observed.
      */
     internal var componentUpdateCalls: Int = 0
@@ -28,6 +35,11 @@ public class ExternalProbe {
      * Logical direct-child counts observed by external component measure hooks.
      */
     internal val componentChildCounts: MutableList<Int> = ArrayList()
+
+    /**
+     * Exact constraints supplied to external component measure callbacks in order.
+     */
+    internal val componentMeasureConstraints: MutableList<Constraints> = ArrayList()
 
     /**
      * Virtual direct-child counts observed by external modifier measure hooks.

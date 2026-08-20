@@ -52,6 +52,11 @@ public class ExternalModifierNode internal constructor(
      */
     internal var pointerCalls: Int = 0
 
+    /**
+     * Number of semantics callbacks observed by the external modifier node.
+     */
+    internal var semanticsCalls: Int = 0
+
     override fun measure(
         scope: MeasureScope,
         constraints: Constraints,
@@ -74,6 +79,7 @@ public class ExternalModifierNode internal constructor(
     }
 
     override fun semantics(scope: SemanticsScope) {
+        semanticsCalls += 1
         scope.emit(Semantics(label = label))
     }
 

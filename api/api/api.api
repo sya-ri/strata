@@ -72,6 +72,32 @@ public final class dev/s7a/strata/geometry/Constraints$Companion {
 	public final fun fixed (II)Ldev/s7a/strata/geometry/Constraints;
 }
 
+public final class dev/s7a/strata/geometry/Insets {
+	public static final field Companion Ldev/s7a/strata/geometry/Insets$Companion;
+	public fun <init> ()V
+	public fun <init> (IIII)V
+	public synthetic fun <init> (IIIIILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()I
+	public final fun component2 ()I
+	public final fun component3 ()I
+	public final fun component4 ()I
+	public final fun copy (IIII)Ldev/s7a/strata/geometry/Insets;
+	public static synthetic fun copy$default (Ldev/s7a/strata/geometry/Insets;IIIIILjava/lang/Object;)Ldev/s7a/strata/geometry/Insets;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getBottom ()I
+	public final fun getLeft ()I
+	public final fun getRight ()I
+	public final fun getTop ()I
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class dev/s7a/strata/geometry/Insets$Companion {
+	public final fun all (I)Ldev/s7a/strata/geometry/Insets;
+	public final fun getZero ()Ldev/s7a/strata/geometry/Insets;
+	public final fun symmetric (II)Ldev/s7a/strata/geometry/Insets;
+}
+
 public final class dev/s7a/strata/geometry/IntOffset {
 	public static final field Companion Ldev/s7a/strata/geometry/IntOffset$Companion;
 	public fun <init> (II)V
@@ -243,6 +269,10 @@ public abstract interface class dev/s7a/strata/layout/MeasureScope {
 	public abstract fun measureChild (ILdev/s7a/strata/geometry/Constraints;)Ldev/s7a/strata/geometry/IntSize;
 }
 
+public final class dev/s7a/strata/modifier/BackgroundExtensionsKt {
+	public static final fun background-RtejO-o (Ldev/s7a/strata/modifier/Modifier;I)Ldev/s7a/strata/modifier/Modifier;
+}
+
 public final class dev/s7a/strata/modifier/Modifier {
 	public static final field Companion Ldev/s7a/strata/modifier/Modifier$Companion;
 	public final fun elements ()Ljava/util/List;
@@ -266,6 +296,31 @@ public final class dev/s7a/strata/modifier/ModifierNodeType {
 	public final fun createErased (Ldev/s7a/strata/modifier/ModifierElement;)Ldev/s7a/strata/node/ModifierNode;
 	public final fun updateErased-g-c3zcg (Ldev/s7a/strata/modifier/ModifierElement;Ldev/s7a/strata/modifier/ModifierElement;Ldev/s7a/strata/node/ModifierNode;)I
 	public final fun validateErased (Ldev/s7a/strata/modifier/ModifierElement;)V
+}
+
+public final class dev/s7a/strata/modifier/PaddingExtensionsKt {
+	public static final fun padding (Ldev/s7a/strata/modifier/Modifier;I)Ldev/s7a/strata/modifier/Modifier;
+	public static final fun padding (Ldev/s7a/strata/modifier/Modifier;II)Ldev/s7a/strata/modifier/Modifier;
+	public static final fun padding (Ldev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/geometry/Insets;)Ldev/s7a/strata/modifier/Modifier;
+}
+
+public final class dev/s7a/strata/modifier/SemanticsExtensionsKt {
+	public static final fun semantics (Ldev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/semantics/Semantics;)Ldev/s7a/strata/modifier/Modifier;
+}
+
+public final class dev/s7a/strata/modifier/SizeExtensionsKt {
+	public static final fun fillMaxHeight (Ldev/s7a/strata/modifier/Modifier;)Ldev/s7a/strata/modifier/Modifier;
+	public static final fun fillMaxSize (Ldev/s7a/strata/modifier/Modifier;)Ldev/s7a/strata/modifier/Modifier;
+	public static final fun fillMaxWidth (Ldev/s7a/strata/modifier/Modifier;)Ldev/s7a/strata/modifier/Modifier;
+	public static final fun height (Ldev/s7a/strata/modifier/Modifier;I)Ldev/s7a/strata/modifier/Modifier;
+	public static final fun heightIn (Ldev/s7a/strata/modifier/Modifier;II)Ldev/s7a/strata/modifier/Modifier;
+	public static synthetic fun heightIn$default (Ldev/s7a/strata/modifier/Modifier;IIILjava/lang/Object;)Ldev/s7a/strata/modifier/Modifier;
+	public static final fun size (Ldev/s7a/strata/modifier/Modifier;II)Ldev/s7a/strata/modifier/Modifier;
+	public static final fun sizeIn (Ldev/s7a/strata/modifier/Modifier;IIII)Ldev/s7a/strata/modifier/Modifier;
+	public static synthetic fun sizeIn$default (Ldev/s7a/strata/modifier/Modifier;IIIIILjava/lang/Object;)Ldev/s7a/strata/modifier/Modifier;
+	public static final fun width (Ldev/s7a/strata/modifier/Modifier;I)Ldev/s7a/strata/modifier/Modifier;
+	public static final fun widthIn (Ldev/s7a/strata/modifier/Modifier;II)Ldev/s7a/strata/modifier/Modifier;
+	public static synthetic fun widthIn$default (Ldev/s7a/strata/modifier/Modifier;IIILjava/lang/Object;)Ldev/s7a/strata/modifier/Modifier;
 }
 
 public final class dev/s7a/strata/node/DirtyMask {
