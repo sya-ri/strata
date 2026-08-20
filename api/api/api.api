@@ -268,16 +268,25 @@ public final class dev/s7a/strata/input/PointerEvent$Scroll : dev/s7a/strata/inp
 	public fun toString ()Ljava/lang/String;
 }
 
-public abstract interface class dev/s7a/strata/layout/LayoutScope {
+public abstract interface class dev/s7a/strata/layout/LayoutScope : dev/s7a/strata/layout/ParentDataScope {
 	public abstract fun getChildCount ()I
 	public abstract fun getSize ()Ldev/s7a/strata/geometry/IntSize;
 	public abstract fun measuredChildSize (I)Ldev/s7a/strata/geometry/IntSize;
 	public abstract fun placeChild (ILdev/s7a/strata/geometry/IntOffset;)V
 }
 
-public abstract interface class dev/s7a/strata/layout/MeasureScope {
+public abstract interface class dev/s7a/strata/layout/MeasureScope : dev/s7a/strata/layout/ParentDataScope {
 	public abstract fun getChildCount ()I
 	public abstract fun measureChild (ILdev/s7a/strata/geometry/Constraints;)Ldev/s7a/strata/geometry/IntSize;
+}
+
+public final class dev/s7a/strata/layout/ParentDataKey {
+	public fun <init> (Lkotlin/reflect/KClass;)V
+	public final fun castErased (Ljava/lang/Object;)Ljava/lang/Object;
+}
+
+public abstract interface class dev/s7a/strata/layout/ParentDataScope {
+	public abstract fun childParentData (ILdev/s7a/strata/layout/ParentDataKey;)Ljava/lang/Object;
 }
 
 public final class dev/s7a/strata/modifier/BackgroundExtensionsKt {
@@ -394,6 +403,11 @@ public abstract class dev/s7a/strata/node/Node {
 
 public abstract interface class dev/s7a/strata/node/PaintNode {
 	public abstract fun paint (Ldev/s7a/strata/render/PaintScope;)V
+}
+
+public abstract interface class dev/s7a/strata/node/ParentDataModifierNode {
+	public abstract fun getParentDataKey ()Ldev/s7a/strata/layout/ParentDataKey;
+	public abstract fun parentData ()Ljava/lang/Object;
 }
 
 public abstract interface class dev/s7a/strata/node/PointerInputNode {

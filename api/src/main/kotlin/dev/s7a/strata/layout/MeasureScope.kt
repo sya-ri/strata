@@ -14,7 +14,7 @@ import dev.s7a.strata.node.MeasureNode
  * An index outside the direct-child range or a second measurement of the same child throws.
  * The tree is poisoned once pipeline work has started only when that exception escapes the owning measure callback.
  */
-public interface MeasureScope {
+public interface MeasureScope : ParentDataScope {
     /**
      * The number of direct retained children.
      *

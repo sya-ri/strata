@@ -46,6 +46,27 @@ An extent addition that cannot be represented as an `Int` fails instead of wrapp
 Changing size or padding invalidates measurement, changing a background invalidates paint, and changing semantics invalidates only semantics.
 An equal value does not invalidate a phase.
 
+## Parent data
+
+Parent data lets an active modifier provide typed layout metadata to the logical parent that consumes it.
+A provider implements `ParentDataModifierNode<D>` with one referential `ParentDataKey<D>` and returns an immutable value of that key's runtime type.
+Keys with the same value class remain distinct when they are different key instances.
+Changing a provider key or value invalidates measurement, while an equal update may leave the phase clean.
+
+`MeasureScope` and `LayoutScope` expose `childParentData(index, key)` for a direct child.
+The runtime scans only that child's consecutive modifier chain from outermost to innermost and stops before the component node.
+The innermost provider with the exact key instance wins.
+The selected provider is read only after the complete chain has been scanned, so a shadowed outer provider is never invoked.
+The component node, its logical children, and their modifier chains are outside the lookup.
+
+A lookup does not measure or place the child.
+It follows the enclosing callback scope's owner-thread and lifetime restrictions.
+An invalid child index fails before reading a provider.
+A selected provider's failure escapes unchanged through the current measure or layout operation.
+A value outside the key's runtime type fails with `IllegalArgumentException` at the erased runtime boundary.
+Both failures follow the tree's pipeline failure rules.
+The contract needs no resolved settings object, global map, or component-kind dispatch.
+
 ## Extension guide
 
 An extension defines an immutable `ModifierElement` value and one stable `ModifierNodeType` token.

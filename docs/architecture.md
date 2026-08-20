@@ -19,7 +19,7 @@ Minecraft and Fabric dependencies remain confined to future runtime and integrat
 
 The process and compatibility requirements for a new version adapter are defined in [Supporting a new Minecraft version](minecraft-versions.md).
 
-The public API currently defines declarative tree building, element and modifier descriptions, retained node capabilities, lifecycle ownership, geometry, input, drawing, semantics, unresolved text, and revisioned external state sources.
+The public API currently defines declarative tree building, element and modifier descriptions, typed layout parent data, retained node capabilities, lifecycle ownership, geometry, input, drawing, semantics, unresolved text, and revisioned external state sources.
 `buildUi` invokes its callback synchronously and returns the exact caller-owned `Element` emitted as its single root.
 Its scope is confined to the invoking thread and callback lifetime, and callback failures take precedence over root-cardinality validation.
 The state-source contract is specified and exercised by concurrency tests described in [External state sources](state-sources.md).
@@ -66,6 +66,8 @@ Modifiers are active retained nodes in the effective pipeline ancestry and do no
 Component scopes continue to expose logical children, while a modifier scope exposes its one virtual child.
 Modifier-chain changes preserve the retained component and its logical subtree.
 Removed modifier nodes finish cleanup during reconciliation, and newly created modifier nodes attach only after the complete incoming tree reconciles successfully.
+Typed parent data is supplied by active modifier capabilities and queried only through measure or layout scopes.
+Lookup uses a referential key, scans the requested direct child's modifier chain, selects the innermost match, and stops before the component node without measuring or placing the child.
 The full modifier contract and external implementation guidance are defined in [Modifiers](modifiers.md).
 
 ## Testing strategy

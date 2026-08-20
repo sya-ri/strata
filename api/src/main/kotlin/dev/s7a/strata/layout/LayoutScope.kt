@@ -14,7 +14,7 @@ import dev.s7a.strata.node.LayoutNode
  * An invalid index, an unmeasured child, or a second placement throws.
  * The tree is poisoned once pipeline work has started only when that exception escapes the owning layout callback.
  */
-public interface LayoutScope {
+public interface LayoutScope : ParentDataScope {
     /**
      * The size assigned to this node.
      *

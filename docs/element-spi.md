@@ -62,6 +62,14 @@ Each measured child may be placed once using `placeChild`.
 Children that were not measured or were not placed are excluded from layout, paint, input, and semantics for that pass.
 Placement offsets and accumulated bounds use checked integer arithmetic.
 
+Both scopes expose typed parent data from a direct child's active modifier chain.
+Define a stable `ParentDataKey<D>` and implement `ParentDataModifierNode<D>` on the providing modifier node.
+`childParentData(index, key)` scans only the requested direct child's consecutive modifiers, selects the innermost provider with the same key instance, and stops before the component node.
+The lookup does not measure or place the child.
+The selected provider runs on the tree owner thread inside the current callback lifetime and must return an immutable value of the key's runtime type.
+Changing the key or value requires measure invalidation.
+See [Modifiers](modifiers.md#parent-data) for ordering and failure behavior.
+
 ## Paint, input, and semantics
 
 `PaintNode.paint` emits a complete local display list through `PaintScope`.
@@ -102,6 +110,7 @@ An element may carry an immutable ordered `Modifier` chain.
 Each description creates an active `ModifierNode`, and no modifier property is flattened into the component node.
 Modifiers form virtual pipeline ancestry without changing logical component children or keyed component identity.
 The default modifier node measures its one virtual child with unchanged constraints and places that child at its origin.
+Typed parent-data providers remain active modifier capabilities and are read only by the parent scope that consumes them.
 See [Modifiers](modifiers.md) for reconciliation, lifecycle, failure behavior, and the third-party extension contract.
 
 ## Exceptions and threads

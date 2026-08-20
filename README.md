@@ -21,7 +21,7 @@ The design separates those concerns into layers:
 - application code declares components and owns application state;
 - layout components measure and place their children from constraints instead of visual-tuning coordinates;
 - retained nodes perform incremental measurement, layout, painting, input, semantics, and lifecycle work;
-- active modifiers provide checked padding, size constraints, background painting, and unresolved semantics without changing component implementations;
+- active modifiers provide checked padding, size constraints, background painting, unresolved semantics, and typed layout parent data without changing component implementations;
 - the retained core runtime emits draw commands and unresolved semantics on the JVM;
 - a versioned Minecraft runtime resolves native text, assets, drawing, input, and screen lifecycle behavior.
 
@@ -60,7 +60,7 @@ See [Architecture](docs/architecture.md) for dependency boundaries and extension
 
 - [Architecture](docs/architecture.md) explains the public SPI, runtime boundaries, and testing strategy.
 - [Element SPI](docs/element-spi.md) explains node ownership, lifecycle, retained phases, and extension points.
-- [Modifiers](docs/modifiers.md) explains active modifier nodes, positional reconciliation, lifecycle, and extension failures.
+- [Modifiers](docs/modifiers.md) explains active modifier nodes, typed parent data, positional reconciliation, lifecycle, and extension failures.
 - [External state sources](docs/state-sources.md) specifies linearizable revisioned state observation across threads.
 - [UI sessions](docs/ui-sessions.md) specifies retained state, frame cutoffs, coroutine generations, and failure handling inside the core runtime.
 - [Build and release](docs/build.md) lists local quality checks and publication requirements.

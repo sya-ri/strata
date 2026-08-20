@@ -8,12 +8,15 @@ import dev.s7a.strata.input.InputResult
 import dev.s7a.strata.input.PointerEvent
 import dev.s7a.strata.layout.LayoutScope
 import dev.s7a.strata.layout.MeasureScope
+import dev.s7a.strata.layout.ParentDataKey
 import dev.s7a.strata.node.DirtyMask
 import dev.s7a.strata.node.DirtyPhase
 import dev.s7a.strata.node.LayoutNode
 import dev.s7a.strata.node.MeasureNode
+import dev.s7a.strata.node.ParentDataModifierNode
 import dev.s7a.strata.runtime.render.DrawCommand
 import dev.s7a.strata.runtime.semantics.SemanticsEntry
+import dev.s7a.strata.spi.InternalStrataRuntimeApi
 
 /**
  * Executes retained measure and layout work through virtual modifier ancestry.
@@ -22,6 +25,7 @@ import dev.s7a.strata.runtime.semantics.SemanticsEntry
  * Each modifier scope exposes exactly one virtual child.
  */
 @Suppress("TooManyFunctions")
+@OptIn(InternalStrataRuntimeApi::class)
 internal class Pipeline(
     private val threadGuard: ThreadGuard,
 ) {
@@ -146,6 +150,15 @@ internal class Pipeline(
                         check(measuredChildren.add(index)) { "A child may be measured only once per pass." }
                         return measureEntry(retained.effectiveChildAt(index), constraints)
                     }
+
+                    override fun <D : Any> childParentData(
+                        index: Int,
+                        key: ParentDataKey<D>,
+                    ): D? {
+                        guard.check()
+                        require(index in 0 until childCount) { "Child index is outside the measurement scope." }
+                        return resolveParentData(retained.effectiveChildAt(index), key)
+                    }
                 }
             val measured =
                 try {
@@ -199,6 +212,15 @@ internal class Pipeline(
                             return retained.effectiveChildAt(index).measuredSize
                         }
 
+                        override fun <D : Any> childParentData(
+                            index: Int,
+                            key: ParentDataKey<D>,
+                        ): D? {
+                            guard.check()
+                            require(index in 0 until childCount) { "Child index is outside the layout scope." }
+                            return resolveParentData(retained.effectiveChildAt(index), key)
+                        }
+
                         override fun placeChild(
                             index: Int,
                             offset: IntOffset,
@@ -240,6 +262,23 @@ internal class Pipeline(
                 layoutEntry(child)
             }
         }
+    }
+
+    private fun <D : Any> resolveParentData(
+        child: RetainedEntry,
+        key: ParentDataKey<D>,
+    ): D? {
+        var current: RetainedEntry = child
+        var matchingProvider: ParentDataModifierNode<*>? = null
+        while (current is RetainedModifier) {
+            val provider = current.modifierNode as? ParentDataModifierNode<*>
+            if (provider != null && provider.parentDataKey === key) {
+                matchingProvider = provider
+            }
+            current = current.effectiveChildAt(0)
+        }
+        // Scan the complete chain before reading data so an outer provider is never invoked when shadowed.
+        return matchingProvider?.let { provider -> key.castErased(provider.parentData()) }
     }
 
     private fun pendingMeasure(retained: RetainedEntry): Boolean {
