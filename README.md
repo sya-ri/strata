@@ -23,7 +23,8 @@ The design separates those concerns into layers:
 - retained nodes perform incremental measurement, layout, painting, input, semantics, and lifecycle work;
 - active modifiers provide checked padding, size constraints, background painting, unresolved semantics, and typed layout parent data without changing component implementations;
 - the retained core runtime emits draw commands and unresolved semantics on the JVM;
-- a future versioned Minecraft runtime will resolve native text, assets, drawing, input, and screen lifecycle behavior.
+- the common Minecraft runtime owns reusable screen definitions and a synchronous fixed-viewport host over the retained core;
+- a future versioned Minecraft runtime will resolve native text, assets, drawing, input, and game screen lifecycle behavior.
 
 The public element, node, and drawing contracts are designed for extension.
 A custom primitive must work through those contracts without registering its concrete class in a central component dispatcher.
@@ -156,7 +157,9 @@ The dependency boundaries are:
 - `runtime/core` is configured as a publishable retained engine that measures, lays out, paints, dispatches input, and flattens unresolved semantics on the JVM. It has not been published to an external repository.
 - `runtime/headless` is configured as a publishable headless adapter over the retained core.
   Its verified synchronous entry points render a positive fixed viewport into immutable scaled ARGB pixels, deterministic metadata-free RGBA8 PNG bytes, and logical unscaled semantics.
-- `integration/api` compiles and exercises a third-party primitive against the public contracts and runtime core.
+- `runtime/minecraft` is configured as a publishable Minecraft-independent screen definition and owner-thread host over the retained core.
+  It applies every frame to exact fixed logical viewport constraints without exposing Fabric or mapped game types.
+- `integration/api` compiles and exercises a third-party primitive against the public contracts, retained core, and common Minecraft host.
 - `integration/docs` contains compiled JVM-headless component showcase scenarios and freshness tasks; it is not published.
 
 See [Architecture](docs/architecture.md) for dependency boundaries and extension rules, and [Element SPI](docs/element-spi.md) for the smallest complete custom primitive.

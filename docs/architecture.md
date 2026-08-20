@@ -16,9 +16,12 @@ A module joins the build only with working behavior and tests.
   It returns immutable defensive frame snapshots and delegates first-frame input gating, exact primary-failure propagation, and cleanup semantics to the retained session.
 - `runtime:headless` is a publishable headless adapter built on `runtime:core`.
   It synchronously renders a fixed positive viewport, rasterizes core draw commands into deterministic ARGB pixels, and encodes metadata-free RGBA8 PNG output without a desktop graphics dependency.
-- `integration:api` verifies an external primitive against the public `api` and `runtime:core` boundaries.
+- `runtime:minecraft` is a publishable Minecraft-independent adapter boundary built on `runtime:core`.
+  It owns reusable screen definitions with private content and synchronous owner-thread hosts that convert every non-negative logical viewport into exact fixed root constraints.
+  Hosts retain the core tree across transient detach and reattach, gate input until a successful frame, and expose no mapped game, Fabric, resource, renderer, version, coroutine, state, or source-binding type.
+- `integration:api` verifies an external primitive against the public `api`, `runtime:core`, and `runtime:minecraft` boundaries.
 - `integration:docs` compiles the typed showcase scenarios against the shipped APIs and owns generated component documentation; it is not published.
-Further environment-specific and Minecraft adapters are outside the current build.
+Further environment-specific and versioned Minecraft adapters are outside the current build.
 Platform-independent code must not depend on a Minecraft runtime.
 Minecraft and Fabric dependencies remain confined to future runtime and integration layers that require them.
 
@@ -97,6 +100,6 @@ The full modifier contract and external implementation guidance are defined in [
 
 ## Testing strategy
 
-The test suite exercises `api`, `runtime:core`, `runtime:headless`, and the showcase compiler with ordinary JVM tests.
+The test suite exercises `api`, `runtime:core`, `runtime:headless`, `runtime:minecraft`, and the showcase compiler with ordinary JVM tests.
 Integration tests belong at the narrowest module boundary that needs them.
 Fabric GameTests are reserved for behavior that genuinely requires Minecraft's loaded game environment.

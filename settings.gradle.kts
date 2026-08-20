@@ -30,4 +30,5 @@ include(
     ":quality:detekt-rules",
     ":runtime:core",
     ":runtime:headless",
+    ":runtime:minecraft",
 )

@@ -1,0 +1,209 @@
+package dev.s7a.strata.runtime.minecraft
+
+import dev.s7a.strata.element.Element
+import dev.s7a.strata.geometry.Constraints
+import dev.s7a.strata.geometry.IntOffset
+import dev.s7a.strata.geometry.IntSize
+import dev.s7a.strata.input.InputResult
+import dev.s7a.strata.input.PointerEvent
+import dev.s7a.strata.spi.InternalStrataRuntimeApi
+import dev.s7a.strata.text.UiText
+import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertSame
+import org.junit.jupiter.api.Assertions.assertThrows
+import org.junit.jupiter.api.Assertions.assertTrue
+import org.junit.jupiter.api.Test
+import java.util.concurrent.FutureTask
+import java.util.concurrent.TimeUnit
+
+/**
+ * Verifies fixed-viewport, lifecycle, input, threading, and failure delegation through the Minecraft host.
+ */
+@OptIn(InternalStrataRuntimeApi::class)
+internal class MinecraftUiHostTest {
+    @Test
+    fun fixedViewportRetainedInvalidationAndTransientReattachRemainCoherent() {
+        val probe = MinecraftHostProbe()
+        var contentCalls = 0
+        val host =
+            host {
+                contentCalls += 1
+                probe.element()
+            }
+
+        assertThrows(IllegalStateException::class.java) { host.detach() }
+        assertThrows(IllegalStateException::class.java) { host.frame(IntSize(4, 3)) }
+        assertThrows(IllegalStateException::class.java) { host.dispatchPointer(PointerEvent.Move(IntOffset.Zero)) }
+        host.attach()
+        assertEquals(InputResult.Ignored, host.dispatchPointer(PointerEvent.Move(IntOffset.Zero)))
+
+        val first = host.frame(IntSize(4, 3))
+        val retained = probe.nodes.single()
+        assertEquals(IntSize(4, 3), first.size)
+        assertEquals(listOf(Constraints.fixed(4, 3)), probe.constraints)
+        assertEquals(InputResult.Consumed, host.dispatchPointer(PointerEvent.Move(IntOffset.Zero)))
+        assertThrows(UnsupportedOperationException::class.java) { (first.drawCommands as MutableList).clear() }
+        assertThrows(UnsupportedOperationException::class.java) { (first.semantics as MutableList).clear() }
+
+        retained.invalidatePaint()
+        val paintsBeforeReattach = probe.paintCalls
+        host.frame(IntSize(4, 3))
+        assertEquals(paintsBeforeReattach + 1, probe.paintCalls)
+        assertEquals(1, contentCalls)
+
+        val constraintsBeforeReattach = probe.constraints.size
+        val paintsAfterInvalidation = probe.paintCalls
+        host.detach()
+        host.attach()
+        assertSame(retained, probe.nodes.single())
+        assertEquals(
+            listOf(MinecraftHostProbe.LifecycleStage.Attach),
+            probe.lifecycle,
+        )
+        assertEquals(InputResult.Ignored, host.dispatchPointer(PointerEvent.Move(IntOffset.Zero)))
+        host.frame(IntSize(4, 3))
+        assertEquals(constraintsBeforeReattach, probe.constraints.size)
+        assertEquals(paintsAfterInvalidation, probe.paintCalls)
+        assertEquals(InputResult.Consumed, host.dispatchPointer(PointerEvent.Move(IntOffset.Zero)))
+
+        host.close()
+        host.close()
+        assertEquals(
+            listOf(
+                MinecraftHostProbe.LifecycleStage.Attach,
+                MinecraftHostProbe.LifecycleStage.Detach,
+                MinecraftHostProbe.LifecycleStage.Dispose,
+            ),
+            probe.lifecycle,
+        )
+        assertThrows(IllegalStateException::class.java) { host.attach() }
+        assertThrows(IllegalStateException::class.java) { host.detach() }
+        assertThrows(IllegalStateException::class.java) { host.frame(IntSize(4, 3)) }
+        assertThrows(IllegalStateException::class.java) { host.dispatchPointer(PointerEvent.Move(IntOffset.Zero)) }
+    }
+
+    @Test
+    fun zeroAxesUseExactFixedConstraints() {
+        val probe = MinecraftHostProbe()
+        val host = host(probe::element)
+        host.attach()
+
+        val zero = host.frame(IntSize.Zero)
+        val zeroWidth = host.frame(IntSize(0, 3))
+        val zeroHeight = host.frame(IntSize(4, 0))
+
+        assertEquals(IntSize.Zero, zero.size)
+        assertEquals(IntSize(0, 3), zeroWidth.size)
+        assertEquals(IntSize(4, 0), zeroHeight.size)
+        assertEquals(
+            listOf(
+                Constraints.fixed(0, 0),
+                Constraints.fixed(0, 3),
+                Constraints.fixed(4, 0),
+            ),
+            probe.constraints,
+        )
+        host.close()
+    }
+
+    @Test
+    fun everyOperationRejectsTheWrongThreadIncludingRepeatedClose() {
+        val host = host(MinecraftHostProbe()::element)
+        assertTrue(wrongThread { host.attach() } is IllegalStateException)
+        host.attach()
+        assertTrue(wrongThread { host.detach() } is IllegalStateException)
+        assertTrue(wrongThread { host.frame(IntSize(2, 1)) } is IllegalStateException)
+        assertTrue(wrongThread { host.dispatchPointer(PointerEvent.Move(IntOffset.Zero)) } is IllegalStateException)
+        assertTrue(wrongThread { host.close() } is IllegalStateException)
+        host.close()
+        assertTrue(wrongThread { host.close() } is IllegalStateException)
+    }
+
+    @Test
+    fun contentAndFrameFailuresPreserveExactIdentityAndCleanupOrder() {
+        val contentFailure = IllegalArgumentException("content")
+        val failingContent = host { throw contentFailure }
+        assertSame(contentFailure, assertThrows(IllegalArgumentException::class.java) { failingContent.attach() })
+        failingContent.close()
+
+        val paintFailure = IllegalStateException("paint")
+        val detachFailure = IllegalStateException("detach")
+        val disposeFailure = IllegalStateException("dispose")
+        val probe = MinecraftHostProbe(paintFailure = paintFailure, detachFailure = detachFailure, disposeFailure = disposeFailure)
+        val failingFrame = host(probe::element)
+        failingFrame.attach()
+
+        val thrown = assertThrows(IllegalStateException::class.java) { failingFrame.frame(IntSize(2, 1)) }
+        assertSame(paintFailure, thrown)
+        assertEquals(listOf(detachFailure, disposeFailure), thrown.suppressed.toList())
+        assertEquals(
+            listOf(
+                MinecraftHostProbe.LifecycleStage.Attach,
+                MinecraftHostProbe.LifecycleStage.Detach,
+                MinecraftHostProbe.LifecycleStage.Dispose,
+            ),
+            probe.lifecycle,
+        )
+        failingFrame.close()
+        assertEquals(3, probe.lifecycle.size)
+    }
+
+    @Test
+    fun inputAndCloseFailuresPreserveExactIdentityAndCleanupOrder() {
+        val inputFailure = IllegalStateException("input")
+        val inputDetachFailure = IllegalStateException("input-detach")
+        val inputDisposeFailure = IllegalStateException("input-dispose")
+        val inputProbe =
+            MinecraftHostProbe(
+                inputFailure = inputFailure,
+                detachFailure = inputDetachFailure,
+                disposeFailure = inputDisposeFailure,
+            )
+        val failingInput = host(inputProbe::element)
+        failingInput.attach()
+        failingInput.frame(IntSize(2, 1))
+
+        val inputThrown =
+            assertThrows(IllegalStateException::class.java) {
+                failingInput.dispatchPointer(PointerEvent.Move(IntOffset.Zero))
+            }
+        assertSame(inputFailure, inputThrown)
+        assertEquals(listOf(inputDetachFailure, inputDisposeFailure), inputThrown.suppressed.toList())
+        failingInput.close()
+
+        val closeDetachFailure = IllegalStateException("close-detach")
+        val closeDisposeFailure = IllegalStateException("close-dispose")
+        val closeProbe = MinecraftHostProbe(detachFailure = closeDetachFailure, disposeFailure = closeDisposeFailure)
+        val failingClose = host(closeProbe::element)
+        failingClose.attach()
+
+        val closeThrown = assertThrows(IllegalStateException::class.java) { failingClose.close() }
+        assertSame(closeDetachFailure, closeThrown)
+        assertEquals(listOf(closeDisposeFailure), closeThrown.suppressed.toList())
+        failingClose.close()
+        assertEquals(
+            listOf(
+                MinecraftHostProbe.LifecycleStage.Attach,
+                MinecraftHostProbe.LifecycleStage.Detach,
+                MinecraftHostProbe.LifecycleStage.Dispose,
+            ),
+            closeProbe.lifecycle,
+        )
+    }
+
+    private fun host(content: () -> Element): MinecraftUiHost =
+        createMinecraftUiHost(
+            createMinecraftScreenDefinition(
+                title = UiText.Literal("test"),
+                pausesGame = false,
+                content = content,
+            ),
+        )
+
+    private fun wrongThread(action: () -> Unit): Throwable? {
+        val task = FutureTask<Throwable?> { runCatching(action).exceptionOrNull() }
+        val thread = Thread(task)
+        thread.start()
+        return task.get(5, TimeUnit.SECONDS)
+    }
+}

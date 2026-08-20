@@ -1,0 +1,18 @@
+public final class dev/s7a/strata/runtime/minecraft/MinecraftRuntimeFactories {
+	public static final fun createMinecraftScreenDefinition (Ldev/s7a/strata/text/UiText;ZLkotlin/jvm/functions/Function0;)Ldev/s7a/strata/runtime/minecraft/MinecraftScreenDefinition;
+	public static final fun createMinecraftUiHost (Ldev/s7a/strata/runtime/minecraft/MinecraftScreenDefinition;)Ldev/s7a/strata/runtime/minecraft/MinecraftUiHost;
+}
+
+public abstract interface class dev/s7a/strata/runtime/minecraft/MinecraftScreenDefinition {
+	public abstract fun getPausesGame ()Z
+	public abstract fun getTitle ()Ldev/s7a/strata/text/UiText;
+}
+
+public abstract interface class dev/s7a/strata/runtime/minecraft/MinecraftUiHost : java/lang/AutoCloseable {
+	public abstract fun attach ()V
+	public abstract fun close ()V
+	public abstract fun detach ()V
+	public abstract fun dispatchPointer (Ldev/s7a/strata/input/PointerEvent;)Ldev/s7a/strata/input/InputResult;
+	public abstract fun frame (Ldev/s7a/strata/geometry/IntSize;)Ldev/s7a/strata/runtime/spi/RuntimeUiFrame;
+}
+
