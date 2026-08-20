@@ -45,6 +45,108 @@ fun buildScreen(root: Element): Element =
 
 The external primitive integration test compiles this path and exercises the returned tree through measurement, layout, painting, input, semantics, and lifecycle cleanup.
 
+<!-- strata-component-showcase:start -->
+<!-- Generated file. Do not edit. -->
+
+## Headless component showcase
+
+This deterministic JVM-headless output is not a Minecraft screenshot or capture.
+
+![Strata component showcase](docs/components/images/overview.png)
+
+### Overview source
+
+```kotlin
+import dev.s7a.strata.dsl.Box
+import dev.s7a.strata.dsl.Column
+import dev.s7a.strata.dsl.Row
+import dev.s7a.strata.dsl.Spacer
+import dev.s7a.strata.dsl.buildUi
+import dev.s7a.strata.element.Element
+import dev.s7a.strata.geometry.IntSize
+import dev.s7a.strata.layout.Alignment
+import dev.s7a.strata.layout.Arrangement
+import dev.s7a.strata.layout.HorizontalAlignment
+import dev.s7a.strata.layout.VerticalAlignment
+import dev.s7a.strata.modifier.Modifier
+import dev.s7a.strata.modifier.background
+import dev.s7a.strata.modifier.fillMaxSize
+import dev.s7a.strata.modifier.padding
+import dev.s7a.strata.modifier.size
+import dev.s7a.strata.render.ArgbColor
+import dev.s7a.strata.runtime.headless.HeadlessFrame
+import dev.s7a.strata.runtime.headless.renderHeadless
+
+/**
+ * Builds the overview tree shared by its metadata and renderer.
+ *
+ * @return the public element tree before rendering.
+ */
+internal fun overviewDescription(): Element =
+    buildUi {
+        Column(
+            modifier =
+                Modifier.Empty
+                    .fillMaxSize()
+                    .background(ArgbColor(0xFF111827.toInt()))
+                    .padding(4),
+            spacing = 4,
+            verticalArrangement = Arrangement.Center,
+            horizontalAlignment = HorizontalAlignment.Center,
+        ) {
+            Row(
+                modifier = Modifier.Empty.size(60, 12),
+                horizontalArrangement = Arrangement.SpaceEvenly,
+                verticalAlignment = VerticalAlignment.Center,
+            ) {
+                Spacer(
+                    modifier =
+                        Modifier.Empty
+                            .size(10, 8)
+                            .background(ArgbColor(0xFF22D3EE.toInt())),
+                )
+                Spacer(
+                    modifier =
+                        Modifier.Empty
+                            .size(10, 10)
+                            .background(ArgbColor(0xFFA78BFA.toInt())),
+                )
+                Spacer(
+                    modifier =
+                        Modifier.Empty
+                            .size(10, 6)
+                            .background(ArgbColor(0xFFFBBF24.toInt())),
+                )
+            }
+            Box(
+                modifier =
+                    Modifier.Empty
+                        .size(44, 16)
+                        .background(ArgbColor(0xFF1F2937.toInt())),
+                contentAlignment = Alignment.Center,
+            ) {
+                Spacer(
+                    modifier =
+                        Modifier.Empty
+                            .size(24, 8)
+                            .background(ArgbColor(0xFFFB7185.toInt()))
+                            .align(Alignment.Center),
+                )
+            }
+        }
+    }
+
+/**
+ * Renders the overview scene into a deterministic headless frame.
+ *
+ * @return the rendered overview frame.
+ */
+internal fun overview(): HeadlessFrame = renderHeadless(overviewDescription(), IntSize(72, 44), scale = 3)
+```
+
+[Open the component showcase index](docs/components/README.md)
+<!-- strata-component-showcase:end -->
+
 ## Module layout
 
 Modules enter the build only with working behavior and tests.
@@ -55,6 +157,7 @@ The dependency boundaries are:
 - `runtime/headless` is configured as a publishable headless adapter over the retained core.
   Its verified synchronous entry points render a positive fixed viewport into immutable scaled ARGB pixels, deterministic metadata-free RGBA8 PNG bytes, and logical unscaled semantics.
 - `integration/api` compiles and exercises a third-party primitive against the public contracts and runtime core.
+- `integration/docs` contains compiled JVM-headless component showcase scenarios and freshness tasks; it is not published.
 
 See [Architecture](docs/architecture.md) for dependency boundaries and extension rules, and [Element SPI](docs/element-spi.md) for the smallest complete custom primitive.
 
@@ -62,6 +165,7 @@ See [Architecture](docs/architecture.md) for dependency boundaries and extension
 
 - [Architecture](docs/architecture.md) explains the public SPI, runtime boundaries, and testing strategy.
 - [Built-in layout components](docs/layout.md) specifies Row, Column, Box, and Spacer measurement, arrangement, alignment, and weight behavior.
+- [Component showcase](docs/components/README.md) contains generated JVM-headless examples when the showcase files are synchronized.
 - [Element SPI](docs/element-spi.md) explains node ownership, lifecycle, retained phases, and extension points.
 - [Modifiers](docs/modifiers.md) explains active modifier nodes, typed parent data, positional reconciliation, lifecycle, and extension failures.
 - [External state sources](docs/state-sources.md) specifies linearizable revisioned state observation across threads.

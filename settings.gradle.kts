@@ -26,6 +26,7 @@ rootProject.name = "strata"
 include(
     ":api",
     ":integration:api",
+    ":integration:docs",
     ":quality:detekt-rules",
     ":runtime:core",
     ":runtime:headless",

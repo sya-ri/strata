@@ -14,3 +14,8 @@ Environment variables use the `ORG_GRADLE_PROJECT_` prefix followed by the same 
 
 Qodana runs its recommended JVM inspection profile in CI without a baseline.
 Static-analysis rules are enabled when they produce actionable improvements; rules that systematically make code less clear are disabled with a durable rationale in the checked-in configuration.
+
+The nonpublished `integration:docs` module owns two source-safe showcase tasks.
+`./gradlew :integration:docs:checkComponentShowcase` renders compiled scenarios into an isolated build staging directory and checks freshness without modifying repository files.
+`./gradlew :integration:docs:generateComponentShowcase` renders and synchronizes the checked showcase Markdown and PNG files and the anchored root README region.
+Generated output is owned by the showcase generator; manual edits are reported as stale by the checker.
