@@ -125,7 +125,10 @@ It includes a stable typed `ElementType`, a measured and placed child, painting,
 Its behavior is exercised by the [external integration test](../integration/api/src/test/kotlin/dev/s7a/strata/integration/external/ExternalPrimitiveIntegrationTest.kt).
 
 Use that fixture as the executable example.
-Install the element in a `UiTree`.
+Pass the external element through `buildUi { element(external) }` to declare the exact single root.
+The builder callback runs synchronously, and its scope cannot be used for later or cross-thread emission.
+Zero or multiple roots fail without reaching `UiTree`; a callback failure is propagated unchanged before cardinality validation.
+Install the returned element in a `UiTree`.
 Call `measure` with constraints.
 Call `layout`.
 Consume `paint`, `dispatchPointer`, or `semantics` output at the platform boundary.

@@ -28,6 +28,23 @@ The design separates those concerns into layers:
 The public element, node, and drawing contracts are designed for extension.
 A custom primitive must work through those contracts without registering its concrete class in a central component dispatcher.
 
+## Declarative root
+
+The verified `buildUi` entry point synchronously collects exactly one caller-defined element without copying or registering its concrete type.
+The callback scope is limited to the invoking thread and callback lifetime.
+
+```kotlin
+import dev.s7a.strata.dsl.buildUi
+import dev.s7a.strata.element.Element
+
+fun buildScreen(root: Element): Element =
+    buildUi {
+        element(root)
+    }
+```
+
+The external primitive integration test compiles this path and exercises the returned tree through measurement, layout, painting, input, semantics, and lifecycle cleanup.
+
 ## Module layout
 
 Modules enter the build only with working behavior and tests.

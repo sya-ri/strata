@@ -1,5 +1,7 @@
 package dev.s7a.strata.integration.external
 
+import dev.s7a.strata.dsl.buildUi
+import dev.s7a.strata.element.Element
 import dev.s7a.strata.element.ElementKey
 import dev.s7a.strata.geometry.Constraints
 import dev.s7a.strata.geometry.IntOffset
@@ -13,6 +15,7 @@ import dev.s7a.strata.runtime.UiTree
 import dev.s7a.strata.runtime.render.DrawCommand
 import dev.s7a.strata.text.UiText
 import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertSame
 import org.junit.jupiter.api.Test
 
 /**
@@ -32,7 +35,7 @@ internal class ExternalPrimitiveIntegrationTest {
                 nodeId = ExternalNodeId.Child,
             )
         val root = ExternalElement(probe = probe, key = ElementKey("root"), children = listOf(child))
-        tree.update(root)
+        tree.update(buildScreen(root))
         assertEquals(IntSize(4, 4), tree.measure(Constraints(maxWidth = 20, maxHeight = 20)))
         tree.layout()
         val firstPaint = tree.paint()
@@ -74,4 +77,23 @@ internal class ExternalPrimitiveIntegrationTest {
             probe.lifecycle,
         )
     }
+
+    @Test
+    fun builderReturnsAnExternalElementWithoutMutationOrCopy() {
+        val probe = ExternalProbe()
+        val child = ExternalElement(probe = probe, nodeId = ExternalNodeId.Child)
+        val root = ExternalElement(probe = probe, children = listOf(child))
+        val childrenBefore = root.children
+
+        val built = buildScreen(root)
+
+        assertSame(root, built)
+        assertSame(childrenBefore, built.children)
+        assertEquals(listOf(child), built.children)
+    }
+
+    private fun buildScreen(root: Element): Element =
+        buildUi {
+            element(root)
+        }
 }
