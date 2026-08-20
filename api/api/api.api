@@ -506,7 +506,18 @@ public final class dev/s7a/strata/render/ArgbColor {
 	public final synthetic fun unbox-impl ()I
 }
 
+public abstract interface class dev/s7a/strata/render/DrawImage {
+	public abstract fun argbAt (II)I
+	public abstract fun copyArgb ()[I
+	public abstract fun getSize ()Ldev/s7a/strata/geometry/IntSize;
+}
+
+public final class dev/s7a/strata/render/DrawImages {
+	public static final fun createDrawImage (Ldev/s7a/strata/geometry/IntSize;[I)Ldev/s7a/strata/render/DrawImage;
+}
+
 public abstract interface class dev/s7a/strata/render/PaintScope {
+	public abstract fun blitImage (Ldev/s7a/strata/render/DrawImage;Ldev/s7a/strata/geometry/IntRect;Ldev/s7a/strata/geometry/IntRect;)V
 	public abstract fun fillRectangle-RtejO-o (Ldev/s7a/strata/geometry/IntRect;I)V
 	public abstract fun getSize ()Ldev/s7a/strata/geometry/IntSize;
 }

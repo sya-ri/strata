@@ -3,6 +3,7 @@ package dev.s7a.strata.runtime.headless
 import dev.s7a.strata.geometry.IntRect
 import dev.s7a.strata.geometry.IntSize
 import dev.s7a.strata.render.ArgbColor
+import dev.s7a.strata.render.createDrawImage
 import dev.s7a.strata.runtime.render.DrawCommand
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
@@ -127,6 +128,27 @@ internal class HeadlessPngTest {
                 ),
                 raw.map { value -> value.toInt() and 0xFF },
             )
+        } finally {
+            inflater.end()
+        }
+    }
+
+    @Test
+    fun blittedPixelInflatesToFilterZeroRgbaBytes() {
+        val source = createDrawImage(IntSize(1, 1), intArrayOf(0x80123456.toInt()))
+        val image =
+            rasterizeHeadless(
+                listOf(DrawCommand.BlitImage(source, IntRect(0, 0, 1, 1), IntRect(0, 0, 1, 1))),
+                IntSize(1, 1),
+            )
+        val idat = parseChunks(image.encodePng()).single { chunk -> chunk.type === PngChunkType.IDAT }.payload
+        val inflater = Inflater()
+        try {
+            inflater.setInput(idat)
+            val raw = ByteArray(5)
+            assertEquals(5, inflater.inflate(raw))
+            assertTrue(inflater.finished())
+            assertEquals(listOf(0, 0x12, 0x34, 0x56, 0x80), raw.map { value -> value.toInt() and 0xFF })
         } finally {
             inflater.end()
         }

@@ -16,6 +16,7 @@ import dev.s7a.strata.runtime.semantics.SemanticsEntry
  * The caller must not mutate the supplied list or command graph concurrently with this call.
  * Each call owns its raster storage and shares no mutable state with another call.
  * Rectangles use the logical origin at the top-left, x increasing rightward, y increasing downward, and half-open edges; only the positive [viewport] is clipped before each logical pixel is replicated by [scale].
+ * BlitImage uses nearest pixel-center sampling: for destination-relative coordinate `d`, source extent `S`, and destination extent `D`, the sampled source offset is `floor(((2 * d + 1) * S) / (2 * D))`; viewport clipping preserves this mapping against the original unclipped destination rectangle.
  * Painting starts with transparent black and uses straight ARGB source-over with Long intermediates.
  * For source alpha `sa`, destination alpha `da`, and channel values `sc` and `dc`, `alphaN = sa * 255 + da * (255 - sa)`, `oa = floor((alphaN + 127) / 255)`, and when `alphaN != 0` each channel is `floor((sc * sa * 255 + dc * da * (255 - sa) + floor(alphaN / 2)) / alphaN)`.
  * When `alphaN == 0`, the result is exactly `0x00000000`.
@@ -109,18 +110,30 @@ private object HeadlessImplementation {
         return ImageImpl.create(dimensions.physicalSize, pixels)
     }
 
-    private fun snapshotCommands(commands: List<DrawCommand>): List<DrawCommand.FillRectangle> {
-        val snapshot = ArrayList<DrawCommand.FillRectangle>(commands.size)
+    private fun snapshotCommands(commands: List<DrawCommand>): List<DrawCommand> {
+        val snapshot = ArrayList<DrawCommand>(commands.size)
         commands.forEach { command ->
-            val fill =
-                command as? DrawCommand.FillRectangle
-                    ?: throw IllegalArgumentException("Unsupported or null draw command.")
-            snapshot += fill
+            when {
+                command is DrawCommand.FillRectangle -> snapshot += command
+                command is DrawCommand.BlitImage -> snapshot += command
+                else -> throw IllegalArgumentException("Unsupported or null draw command.")
+            }
         }
         return snapshot
     }
 
     private fun paint(
+        pixels: IntArray,
+        dimensions: PhysicalDimensions,
+        command: DrawCommand,
+    ) {
+        when (command) {
+            is DrawCommand.FillRectangle -> paintFill(pixels, dimensions, command)
+            is DrawCommand.BlitImage -> paintBlit(pixels, dimensions, command)
+        }
+    }
+
+    private fun paintFill(
         pixels: IntArray,
         dimensions: PhysicalDimensions,
         command: DrawCommand.FillRectangle,
@@ -135,17 +148,56 @@ private object HeadlessImplementation {
         }
         val source = command.color.value
         for (logicalY in top until bottom) {
-            val physicalY = Math.multiplyExact(logicalY, dimensions.scale)
             for (logicalX in left until right) {
-                val physicalX = Math.multiplyExact(logicalX, dimensions.scale)
-                val color = blend(source, pixels[index(dimensions, physicalX, physicalY)])
-                for (dy in 0 until dimensions.scale) {
-                    val row = Math.multiplyExact(Math.addExact(physicalY, dy), dimensions.physicalSize.width)
-                    val first = Math.addExact(row, physicalX)
-                    for (dx in 0 until dimensions.scale) {
-                        pixels[Math.addExact(first, dx)] = color
-                    }
-                }
+                paintLogicalPixel(pixels, dimensions, logicalX, logicalY, source)
+            }
+        }
+    }
+
+    private fun paintBlit(
+        pixels: IntArray,
+        dimensions: PhysicalDimensions,
+        command: DrawCommand.BlitImage,
+    ) {
+        val bounds = command.destination
+        val left = maxOf(0, bounds.left)
+        val top = maxOf(0, bounds.top)
+        val right = minOf(dimensions.viewport.width, bounds.right)
+        val bottom = minOf(dimensions.viewport.height, bounds.bottom)
+        if (right <= left || bottom <= top) {
+            return
+        }
+        val sourceWidth = command.source.width.toLong()
+        val sourceHeight = command.source.height.toLong()
+        val destinationWidth = bounds.width.toLong()
+        val destinationHeight = bounds.height.toLong()
+        for (logicalY in top until bottom) {
+            val destinationY = Math.subtractExact(logicalY, bounds.top)
+            val sourceY = RasterMath.sampleSourceCoordinate(destinationY, command.source.top, sourceHeight, destinationHeight)
+            for (logicalX in left until right) {
+                val destinationX = Math.subtractExact(logicalX, bounds.left)
+                val sourceX = RasterMath.sampleSourceCoordinate(destinationX, command.source.left, sourceWidth, destinationWidth)
+                val sourceColor = command.image.argbAt(sourceX, sourceY)
+                paintLogicalPixel(pixels, dimensions, logicalX, logicalY, sourceColor)
+            }
+        }
+    }
+
+    private fun paintLogicalPixel(
+        pixels: IntArray,
+        dimensions: PhysicalDimensions,
+        logicalX: Int,
+        logicalY: Int,
+        source: Int,
+    ) {
+        val physicalX = Math.multiplyExact(logicalX, dimensions.scale)
+        val physicalY = Math.multiplyExact(logicalY, dimensions.scale)
+        val color = RasterMath.blend(source, pixels[index(dimensions, physicalX, physicalY)])
+        for (dy in 0 until dimensions.scale) {
+            val row = Math.multiplyExact(Math.addExact(physicalY, dy), dimensions.physicalSize.width)
+            val first = Math.addExact(row, physicalX)
+            for (dx in 0 until dimensions.scale) {
+                pixels[Math.addExact(first, dx)] = color
             }
         }
     }
@@ -155,37 +207,6 @@ private object HeadlessImplementation {
         x: Int,
         y: Int,
     ): Int = Math.addExact(Math.multiplyExact(y, dimensions.physicalSize.width), x)
-
-    private fun blend(
-        source: Int,
-        destination: Int,
-    ): Int {
-        val sourceAlpha = source ushr 24 and 0xFF
-        val destinationAlpha = destination ushr 24 and 0xFF
-        val alphaNumerator =
-            sourceAlpha.toLong() * 255L + destinationAlpha.toLong() * (255 - sourceAlpha).toLong()
-        if (alphaNumerator == 0L) {
-            return 0
-        }
-        val outputAlpha = (alphaNumerator + 127L) / 255L
-        val red = channel(source ushr 16 and 0xFF, destination ushr 16 and 0xFF, sourceAlpha, destinationAlpha, alphaNumerator)
-        val green = channel(source ushr 8 and 0xFF, destination ushr 8 and 0xFF, sourceAlpha, destinationAlpha, alphaNumerator)
-        val blue = channel(source and 0xFF, destination and 0xFF, sourceAlpha, destinationAlpha, alphaNumerator)
-        return (outputAlpha.toInt() shl 24) or (red shl 16) or (green shl 8) or blue
-    }
-
-    private fun channel(
-        source: Int,
-        destination: Int,
-        sourceAlpha: Int,
-        destinationAlpha: Int,
-        alphaNumerator: Long,
-    ): Int {
-        val numerator =
-            source.toLong() * sourceAlpha.toLong() * 255L +
-                destination.toLong() * destinationAlpha.toLong() * (255 - sourceAlpha).toLong()
-        return ((numerator + alphaNumerator / 2L) / alphaNumerator).toInt()
-    }
 
     private fun checkedDimensions(
         viewport: IntSize,
@@ -210,6 +231,78 @@ private object HeadlessImplementation {
         } catch (_: ArithmeticException) {
             throw ArithmeticException("$label exceeds Int.MAX_VALUE.")
         }
+
+    private object RasterMath {
+        /**
+         * Applies nearest pixel-center mapping with checked Long intermediates.
+         *
+         * Positive Int extents bound `(2 * d + 1) * S` below Long.MAX_VALUE, so every legal command is represented exactly.
+         */
+        fun sampleSourceCoordinate(
+            destinationRelative: Int,
+            sourceStart: Int,
+            sourceExtent: Long,
+            destinationExtent: Long,
+        ): Int {
+            val centerNumerator = Math.addExact(Math.multiplyExact(destinationRelative.toLong(), 2L), 1L)
+            val numerator = Math.multiplyExact(centerNumerator, sourceExtent)
+            val denominator = Math.multiplyExact(destinationExtent, 2L)
+            val sourceOffset = numerator / denominator
+            return Math.toIntExact(Math.addExact(sourceStart.toLong(), sourceOffset))
+        }
+
+        fun blend(
+            source: Int,
+            destination: Int,
+        ): Int {
+            val sourceAlpha = source ushr 24 and 0xFF
+            val destinationAlpha = destination ushr 24 and 0xFF
+            val alphaNumerator =
+                sourceAlpha.toLong() * 255L + destinationAlpha.toLong() * (255 - sourceAlpha).toLong()
+            if (alphaNumerator == 0L) {
+                return 0
+            }
+            val outputAlpha = (alphaNumerator + 127L) / 255L
+            val red =
+                channel(
+                    source ushr 16 and 0xFF,
+                    destination ushr 16 and 0xFF,
+                    sourceAlpha,
+                    destinationAlpha,
+                    alphaNumerator,
+                )
+            val green =
+                channel(
+                    source ushr 8 and 0xFF,
+                    destination ushr 8 and 0xFF,
+                    sourceAlpha,
+                    destinationAlpha,
+                    alphaNumerator,
+                )
+            val blue =
+                channel(
+                    source and 0xFF,
+                    destination and 0xFF,
+                    sourceAlpha,
+                    destinationAlpha,
+                    alphaNumerator,
+                )
+            return (outputAlpha.toInt() shl 24) or (red shl 16) or (green shl 8) or blue
+        }
+
+        private fun channel(
+            source: Int,
+            destination: Int,
+            sourceAlpha: Int,
+            destinationAlpha: Int,
+            alphaNumerator: Long,
+        ): Int {
+            val numerator =
+                source.toLong() * sourceAlpha.toLong() * 255L +
+                    destination.toLong() * destinationAlpha.toLong() * (255 - sourceAlpha).toLong()
+            return ((numerator + alphaNumerator / 2L) / alphaNumerator).toInt()
+        }
+    }
 
     private class ImageImpl private constructor(
         override val size: IntSize,

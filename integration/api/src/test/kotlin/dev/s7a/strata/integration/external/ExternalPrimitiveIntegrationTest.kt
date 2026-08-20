@@ -11,6 +11,7 @@ import dev.s7a.strata.input.InputResult
 import dev.s7a.strata.input.PointerButton
 import dev.s7a.strata.input.PointerEvent
 import dev.s7a.strata.render.ArgbColor
+import dev.s7a.strata.render.createDrawImage
 import dev.s7a.strata.runtime.UiTree
 import dev.s7a.strata.runtime.render.DrawCommand
 import dev.s7a.strata.text.UiText
@@ -90,6 +91,31 @@ internal class ExternalPrimitiveIntegrationTest {
         assertSame(root, built)
         assertSame(childrenBefore, built.children)
         assertEquals(listOf(child), built.children)
+    }
+
+    @Test
+    fun thirdPartyPaintNodeBlitsPublicImageWithoutRegistration() {
+        val probe = ExternalProbe()
+        val image = createDrawImage(IntSize(2, 1), intArrayOf(0xFFFF0000.toInt(), 0xFF00FF00.toInt()))
+        val tree = UiTree()
+        tree.update(
+            buildScreen(
+                ExternalImageElement(
+                    probe = probe,
+                    image = image,
+                    source = IntRect(0, 0, 2, 1),
+                    destination = IntRect(1, 1, 3, 3),
+                ),
+            ),
+        )
+        tree.measure(Constraints(maxWidth = 8, maxHeight = 8))
+        tree.layout()
+
+        val command = tree.paint().single() as DrawCommand.BlitImage
+        assertSame(image, command.image)
+        assertEquals(IntRect(0, 0, 2, 1), command.source)
+        assertEquals(IntRect(1, 1, 3, 3), command.destination)
+        tree.close()
     }
 
     private fun buildScreen(root: Element): Element =

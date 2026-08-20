@@ -7,6 +7,7 @@ import dev.s7a.strata.node.DirtyMask
 import dev.s7a.strata.node.DirtyPhase
 import dev.s7a.strata.node.PaintNode
 import dev.s7a.strata.render.ArgbColor
+import dev.s7a.strata.render.DrawImage
 import dev.s7a.strata.render.PaintScope
 import dev.s7a.strata.runtime.render.DrawCommand
 import java.util.Collections
@@ -66,7 +67,13 @@ internal class PaintPipeline(
         y: Int,
     ): DrawCommand =
         when (command) {
-            is LocalDrawCommand.FillRectangle -> DrawCommand.FillRectangle(command.bounds + IntOffset(x, y), command.color)
+            is LocalDrawCommand.FillRectangle -> {
+                DrawCommand.FillRectangle(command.bounds + IntOffset(x, y), command.color)
+            }
+
+            is LocalDrawCommand.BlitImage -> {
+                DrawCommand.BlitImage(command.image, command.source, command.destination + IntOffset(x, y))
+            }
         }
 
     /**
@@ -95,6 +102,15 @@ internal class PaintPipeline(
         ) {
             guard.check()
             commands.add(LocalDrawCommand.FillRectangle(localBounds, color))
+        }
+
+        override fun blitImage(
+            image: DrawImage,
+            source: IntRect,
+            localDestination: IntRect,
+        ) {
+            guard.check()
+            commands.add(LocalDrawCommand.BlitImage(image, source, localDestination))
         }
 
         /**

@@ -34,4 +34,23 @@ public interface PaintScope {
         localBounds: IntRect,
         color: ArgbColor,
     )
+
+    /**
+     * Adds a local image blit command.
+     *
+     * The immutable [image] reference is retained without copying its pixels.
+     * The source is expressed in image pixel coordinates and must be nonempty and contained in [image].
+     * The destination is a nonempty local half-open rectangle; core translates it to tree coordinates with checked arithmetic.
+     *
+     * @param image the immutable source image.
+     * @param source the nonempty source rectangle in image coordinates.
+     * @param localDestination the nonempty destination rectangle in this node's local coordinates.
+     * @throws IllegalArgumentException when either rectangle is empty or the source is outside [image].
+     * @throws IllegalStateException when the scope is no longer valid.
+     */
+    public fun blitImage(
+        image: DrawImage,
+        source: IntRect,
+        localDestination: IntRect,
+    )
 }

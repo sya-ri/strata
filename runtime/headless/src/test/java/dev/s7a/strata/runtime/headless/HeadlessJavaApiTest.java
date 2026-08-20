@@ -55,6 +55,7 @@ final class HeadlessJavaApiTest {
 
         int publicMethodCount = 0;
         for (Method method : HeadlessRendering.class.getDeclaredMethods()) {
+            assertFalse(method.getName().startsWith("access$"), method.toString());
             if (Modifier.isPublic(method.getModifiers())) {
                 if (method.isSynthetic()) {
                     continue;
