@@ -11,7 +11,9 @@ A module joins the build only with working behavior and tests.
 - `api` contains the public, platform-neutral contracts and value types.
 - `runtime:core` is configured as a publishable, Minecraft-independent retained engine built on `api`.
   It includes reconciliation, layout, input dispatch, painting, unresolved semantics flattening, and internal screen-session orchestration.
-  It is not an externally published artifact yet.
+  Its opt-in runtime adapter bridge is a narrow integration contract, not an application screen API.
+  The bridge exposes synchronous owner-thread lifecycle, frame, and input operations and does not expose coroutines, internal session state, or internal retained-engine implementation types.
+  It returns immutable defensive frame snapshots and delegates first-frame input gating, exact primary-failure propagation, and cleanup semantics to the retained session.
 - `runtime:headless` is a publishable headless adapter built on `runtime:core`.
   It synchronously renders a fixed positive viewport, rasterizes core draw commands into deterministic ARGB pixels, and encodes metadata-free RGBA8 PNG output without a desktop graphics dependency.
 - `integration:api` verifies an external primitive against the public `api` and `runtime:core` boundaries.

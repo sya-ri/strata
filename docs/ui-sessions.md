@@ -4,6 +4,18 @@
 It is not yet a public screen-definition API.
 Keeping this orchestration in the Minecraft-independent runtime gives headless and game adapters the same lifecycle and state semantics.
 
+## Runtime adapter bridge
+
+`dev.s7a.strata.runtime.spi` provides a public but opt-in runtime adapter bridge for platform runtimes that need to drive this session.
+It is not an application screen-definition API and does not expose coroutines, state declarations, source bindings, `UiSession`, `UiFrame`, session state, or task-failure decision types.
+`attach`, `detach`, `frame`, pointer input, and `close` are synchronous calls that must already run on the construction and owner thread.
+The synchronous bridge exposes no task-launching or dispatcher facility.
+Its content lambda is evaluated during the first attach, after which the retained tree handles frames and input until terminal failure or close.
+Each successful frame owns immutable defensive snapshots of size, drawing commands, and semantics, and pointer input is ignored until the first successful frame commits.
+The bridge delegates exact primary-failure identity, suppression order, lifecycle transitions, and cleanup-once behavior to the retained session.
+It retains the content lambda while created, attached, or detached and releases it before cleanup callbacks after terminal failure or close.
+Session detach retains the active `UiTree` and its node ownership; it clears the committed-frame marker without rerunning node attach or detach lifecycle callbacks until terminal close.
+
 ## Ownership and lifecycle
 
 A session captures the thread that creates it.

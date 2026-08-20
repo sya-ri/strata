@@ -63,3 +63,21 @@ public final class dev/s7a/strata/runtime/semantics/SemanticsEntry {
 	public fun toString ()Ljava/lang/String;
 }
 
+public abstract interface class dev/s7a/strata/runtime/spi/RuntimeUiFrame {
+	public abstract fun getDrawCommands ()Ljava/util/List;
+	public abstract fun getSemantics ()Ljava/util/List;
+	public abstract fun getSize ()Ldev/s7a/strata/geometry/IntSize;
+}
+
+public abstract interface class dev/s7a/strata/runtime/spi/RuntimeUiSession : java/lang/AutoCloseable {
+	public abstract fun attach ()V
+	public abstract fun close ()V
+	public abstract fun detach ()V
+	public abstract fun dispatchPointer (Ldev/s7a/strata/input/PointerEvent;)Ldev/s7a/strata/input/InputResult;
+	public abstract fun frame (Ldev/s7a/strata/geometry/Constraints;)Ldev/s7a/strata/runtime/spi/RuntimeUiFrame;
+}
+
+public final class dev/s7a/strata/runtime/spi/RuntimeUiSessionFactory {
+	public static final fun createRuntimeUiSession (Lkotlin/jvm/functions/Function0;)Ldev/s7a/strata/runtime/spi/RuntimeUiSession;
+}
+

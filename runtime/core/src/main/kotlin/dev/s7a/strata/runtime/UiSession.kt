@@ -30,14 +30,42 @@ import kotlin.properties.ReadWriteProperty
  *
  * @param ownerDispatcher is caller-owned, always queues onto the construction thread, never runs inline, and remains serviced until cancelled generations finish.
  * @param taskFailureHandler receives non-cancellation root coroutine failures on the owner thread and selects whether the session continues or fails.
- * @param content produces the complete element description on the owner thread.
+ * @param contentOwner owns and evaluates the content description until terminal failure or close releases it.
  */
 @Suppress("TooManyFunctions")
-internal class UiSession(
+internal class UiSession private constructor(
     private val ownerDispatcher: CoroutineDispatcher,
-    private val taskFailureHandler: (Throwable) -> UiTaskFailureDecision = { UiTaskFailureDecision.FailSession },
-    private val content: () -> Element,
+    private val taskFailureHandler: (Throwable) -> UiTaskFailureDecision,
+    private val contentOwner: SessionContent,
 ) : AutoCloseable {
+    /**
+     * Creates a session that owns a content lambda.
+     *
+     * @param ownerDispatcher the dispatcher used by retained coroutine generations.
+     * @param taskFailureHandler the typed task-failure policy.
+     * @param content the owner-thread content evaluator.
+     */
+    internal constructor(
+        ownerDispatcher: CoroutineDispatcher,
+        taskFailureHandler: (Throwable) -> UiTaskFailureDecision = { UiTaskFailureDecision.FailSession },
+        content: () -> Element,
+    ) : this(ownerDispatcher, taskFailureHandler, SessionContent(content))
+
+    /**
+     * Creates a session from an existing content owner.
+     *
+     * The supplied owner follows the same terminal-release contract as content created by the other constructor.
+     *
+     * @param ownerDispatcher the dispatcher used by retained coroutine generations.
+     * @param contentOwner the owner of the content evaluator.
+     * @param taskFailureHandler the typed task-failure policy.
+     */
+    internal constructor(
+        ownerDispatcher: CoroutineDispatcher,
+        contentOwner: SessionContent,
+        taskFailureHandler: (Throwable) -> UiTaskFailureDecision = { UiTaskFailureDecision.FailSession },
+    ) : this(ownerDispatcher, taskFailureHandler, contentOwner)
+
     private val threadGuard: ThreadGuard = ThreadGuard.currentThread()
     private val bindings: MutableList<UiSessionBinding<*>> = ArrayList()
     private val screenScopeFacade = SessionScreenScope()
@@ -282,11 +310,13 @@ internal class UiSession(
         check(operationKind == null) { "A session operation is already active." }
         if (currentState is UiSessionState.Failed) {
             currentState = UiSessionState.Closed
+            releaseContent()
             return
         }
         operationKind = SessionOperation.Close
         try {
             currentState = UiSessionState.Closed
+            releaseContent()
             retireGeneration()
             val failures = cleanupResources()
             failures?.let { failure -> throw failure }
@@ -300,7 +330,7 @@ internal class UiSession(
         evaluatingContent = true
         val description =
             try {
-                content()
+                contentOwner.evaluate()
             } finally {
                 evaluatingContent = false
             }
@@ -380,6 +410,7 @@ internal class UiSession(
 
     private fun fail(primary: Throwable): Nothing {
         currentState = UiSessionState.Failed(primary)
+        releaseContent()
         frameAvailable = false
         retireGeneration()
         val failures = FailureAccumulator(primary)
@@ -400,6 +431,10 @@ internal class UiSession(
             failures.capture { retainedTree.close() }
         }
         return failures.first
+    }
+
+    private fun releaseContent() {
+        contentOwner.release()
     }
 
     private fun closeBinding(
@@ -527,6 +562,7 @@ internal class UiSession(
     ): Nothing {
         check(operationKind === SessionOperation.TaskFailure) { "Task failure delivery is not active." }
         currentState = UiSessionState.Failed(failure)
+        releaseContent()
         frameAvailable = false
         retireGeneration()
         val failures = FailureAccumulator(failure)
