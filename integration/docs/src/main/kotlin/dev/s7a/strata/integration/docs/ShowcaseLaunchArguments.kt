@@ -12,7 +12,6 @@ import java.nio.file.Path
  */
 internal class ShowcaseLaunchArguments private constructor(
     internal val projectRoot: Path,
-    internal val moduleBuildRoot: Path,
     internal val stagingRoot: Path,
     internal val apiClassDirectories: List<Path>,
 ) {
@@ -61,7 +60,7 @@ internal class ShowcaseLaunchArguments private constructor(
                 ShowcasePaths.requireSafeSegments(directory, "API class directory")
                 ShowcasePaths.requireDirectory(directory, "API class directory")
             }
-            return ShowcaseLaunchArguments(projectRoot, moduleBuildRoot, stagingRoot, normalized)
+            return ShowcaseLaunchArguments(projectRoot, stagingRoot, normalized)
         }
 
         private fun parsePath(

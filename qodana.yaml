@@ -3,3 +3,47 @@ linter: jetbrains/qodana-jvm-community:2026.2
 profile:
   name: qodana.recommended
 failThreshold: 0
+exclude:
+  # Kotlin explicit API mode requires visibility modifiers on declarations that Qodana marks as redundant.
+  - name: RedundantVisibilityModifier
+  # Dokka validates these links successfully; Qodana misses valid Kotlin/JVM exception tags and cross-module API links.
+  - name: KDocUnresolvedReference
+  # The Kotlin compiler enforces these custom RequiresOptIn boundaries; Qodana does not recognize every cross-module use.
+  - name: UnnecessaryOptInAnnotation
+  # UpperCamel names are the intentional composable DSL surface.
+  - name: FunctionName
+    paths:
+      - api/src/main/kotlin/dev/s7a/strata/dsl/UiComponents.kt
+  # Gradle's settings model exposes unstable APIs by design in this build configuration.
+  - name: UnstableApiUsage
+    paths:
+      - settings.gradle.kts
+  # These geometry checks keep overflow-explicit comparisons instead of relying on range construction.
+  - name: ConvertTwoComparisonsToRangeCheck
+    paths:
+      - api/src/main/kotlin/dev/s7a/strata/geometry/Constraints.kt
+      - api/src/main/kotlin/dev/s7a/strata/geometry/IntRect.kt
+  # Reflection-driven inventory control flow is covered by the showcase integration tests.
+  - name: KotlinUnreachableCode
+    paths:
+      - integration/docs/src/main/kotlin/dev/s7a/strata/integration/docs/ShowcaseInventory.kt
+  # Dokka resolves IOException from KDoc in this file, while the source analyzer sees no executable use.
+  - name: KotlinUnusedImport
+    paths:
+      - integration/docs/src/main/kotlin/dev/s7a/strata/integration/docs/ShowcaseStorage.kt
+  # Qodana misresolves ByteArray.plus as array string rendering; byte-exact tests verify the replacement operation.
+  - name: KotlinArrayToString
+    paths:
+      - integration/docs/src/main/kotlin/dev/s7a/strata/integration/docs/ShowcaseReadme.kt
+  # Public SPI declarations are consumed by external clients even when this repository has no call site.
+  # These two main functions are JavaExec reflection entry points, not Kotlin call graph roots.
+  # ShowcaseOutput members are consumed across the storage/markdown generation pipeline.
+  - name: UnusedSymbol
+    paths:
+      - api/src/main/kotlin/dev/s7a/strata/geometry/Constraints.kt
+      - api/src/main/kotlin/dev/s7a/strata/input/PointerEvent.kt
+      - api/src/main/kotlin/dev/s7a/strata/layout/Alignment.kt
+      - api/src/main/kotlin/dev/s7a/strata/node/PointerInputNode.kt
+      - integration/docs/src/main/kotlin/dev/s7a/strata/integration/docs/ComponentShowcaseChecker.kt
+      - integration/docs/src/main/kotlin/dev/s7a/strata/integration/docs/ComponentShowcaseGenerator.kt
+      - integration/docs/src/main/kotlin/dev/s7a/strata/integration/docs/ShowcaseOutput.kt

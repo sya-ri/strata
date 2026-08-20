@@ -4,10 +4,13 @@ package dev.s7a.strata.runtime.spi
 
 import dev.s7a.strata.element.Element
 import dev.s7a.strata.geometry.Constraints
+import dev.s7a.strata.geometry.IntSize
 import dev.s7a.strata.input.InputResult
 import dev.s7a.strata.input.PointerEvent
 import dev.s7a.strata.runtime.UiFrame
 import dev.s7a.strata.runtime.UiSession
+import dev.s7a.strata.runtime.render.DrawCommand
+import dev.s7a.strata.runtime.semantics.SemanticsEntry
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlin.coroutines.CoroutineContext
@@ -73,12 +76,12 @@ private object RuntimeUiSessionImplementation {
     }
 
     private class RuntimeUiFrameSnapshot private constructor(
-        private val frame: UiFrame,
+        frame: UiFrame,
     ) : RuntimeUiFrame {
-        // Why: UiFrame already owns defensive unmodifiable snapshots, so retaining it avoids copying both lists on every frame.
-        override val size = frame.size
-        override val drawCommands = frame.drawCommands
-        override val semantics = frame.semantics
+        // Why: UiFrame already owns defensive unmodifiable list snapshots, so reusing those lists avoids copying them on every frame.
+        override val size: IntSize = frame.size
+        override val drawCommands: List<DrawCommand> = frame.drawCommands
+        override val semantics: List<SemanticsEntry> = frame.semantics
 
         companion object {
             /**

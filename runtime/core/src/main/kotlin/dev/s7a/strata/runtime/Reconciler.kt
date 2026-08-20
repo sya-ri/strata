@@ -5,7 +5,6 @@ import dev.s7a.strata.element.ElementIdentity
 import dev.s7a.strata.element.ElementKey
 import dev.s7a.strata.modifier.ModifierElement
 import dev.s7a.strata.node.DirtyMask
-import dev.s7a.strata.node.ModifierNode
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
 import java.util.Collections
 import java.util.IdentityHashMap
@@ -280,20 +279,17 @@ internal class Reconciler(
     private fun isCompatible(
         retained: RetainedNode,
         description: Element,
-    ): Boolean {
-        if (retained.element.type !== description.type) {
-            return false
-        }
-        return when (val identity = description.identity) {
-            ElementIdentity.Positional -> {
-                retained.element.identity === ElementIdentity.Positional
-            }
+    ): Boolean =
+        retained.element.type === description.type &&
+            when (val identity = description.identity) {
+                ElementIdentity.Positional -> {
+                    retained.element.identity === ElementIdentity.Positional
+                }
 
-            is ElementIdentity.Keyed -> {
-                retained.element.identity == identity
+                is ElementIdentity.Keyed -> {
+                    retained.element.identity == identity
+                }
             }
-        }
-    }
 
     private fun sameChildren(
         oldChildren: List<RetainedNode>,

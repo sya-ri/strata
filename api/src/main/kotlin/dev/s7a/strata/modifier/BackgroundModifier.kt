@@ -33,11 +33,9 @@ internal object BackgroundModifier {
      * @param color the initial local fill color.
      */
     internal class Node(
-        color: ArgbColor,
+        private var color: ArgbColor,
     ) : ModifierNode(),
         PaintNode {
-        private var color: ArgbColor = color
-
         /**
          * Fills the complete local modifier bounds before descendant content.
          *

@@ -35,12 +35,9 @@ internal object SizeModifier {
      * @param height the initial height resolution policy.
      */
     internal class Node(
-        width: AxisConstraint,
-        height: AxisConstraint,
+        private var width: AxisConstraint,
+        private var height: AxisConstraint,
     ) : ModifierNode() {
-        private var width: AxisConstraint = width
-        private var height: AxisConstraint = height
-
         /**
          * Measures exactly one virtual child under the resolved width and height ranges.
          *

@@ -450,10 +450,7 @@ internal class UiSession private constructor(
     }
 
     private fun checkGenerationForLifecycleAccess() {
-        val generation = SessionGenerationContext.current()
-        if (generation == null) {
-            return
-        }
+        val generation = SessionGenerationContext.current() ?: return
         check(
             generation.active && generation === currentGeneration?.token && currentState === UiSessionState.Attached,
         ) {

@@ -35,10 +35,8 @@ internal object PaddingModifier {
      * @param insets the initial checked distances around the child.
      */
     internal class Node(
-        insets: Insets,
+        private var insets: Insets,
     ) : ModifierNode() {
-        private var insets: Insets = insets
-
         /**
          * Measures the virtual child under constraints reduced by the four insets.
          *

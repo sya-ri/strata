@@ -119,7 +119,7 @@ public class UiTree : AutoCloseable {
      */
     public fun layout() {
         pipelineOperation {
-            val retainedRoot = root ?: return@pipelineOperation Unit
+            val retainedRoot = root ?: return@pipelineOperation
             pipeline.requireMeasuredRoot(retainedRoot)
             pipeline.layout(retainedRoot)
         }

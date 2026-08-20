@@ -23,11 +23,10 @@ internal class UiFrame internal constructor(
     val semantics: List<SemanticsEntry> = immutableList(semantics)
 
     override fun equals(other: Any?): Boolean =
-        if (other is UiFrame) {
-            size == other.size && drawCommands == other.drawCommands && semantics == other.semantics
-        } else {
-            false
-        }
+        other is UiFrame &&
+            size == other.size &&
+            drawCommands == other.drawCommands &&
+            semantics == other.semantics
 
     override fun hashCode(): Int {
         var result = size.hashCode()

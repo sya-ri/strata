@@ -22,10 +22,7 @@ internal class SessionContent(
      * @throws IllegalStateException when this owner has already been released.
      * @throws Throwable when the retained content evaluator fails.
      */
-    internal fun evaluate(): Element {
-        val content = checkNotNull(retainedContent) { "Session content has already been released." }
-        return content()
-    }
+    internal fun evaluate(): Element = checkNotNull(retainedContent) { "Session content has already been released." }.invoke()
 
     /**
      * Releases the retained content exactly once.

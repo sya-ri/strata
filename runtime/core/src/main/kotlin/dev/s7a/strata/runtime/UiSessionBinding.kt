@@ -112,7 +112,7 @@ internal class UiSessionBinding<T>(
      * @return true when the committed value changed by equality.
      */
     fun applyPending(): Boolean {
-        var oldValue: T? = null
+        var oldValue: T?
         var nextValue: T
         lock.lock()
         try {
@@ -151,7 +151,7 @@ internal class UiSessionBinding<T>(
      * @return the source cleanup failure, if any.
      */
     fun closeSubscription(): Throwable? {
-        var toClose: StateSubscription<T>? = null
+        var toClose: StateSubscription<T>?
         lock.lock()
         try {
             closeRequested = true

@@ -1,6 +1,5 @@
 package dev.s7a.strata.runtime.minecraft
 
-import dev.s7a.strata.element.Element
 import dev.s7a.strata.text.UiText
 
 /**

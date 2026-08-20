@@ -94,14 +94,6 @@ internal class Pipeline(
     fun hasPendingMeasure(root: RetainedNode): Boolean = pendingMeasure(root.effectiveRoot)
 
     /**
-     * Returns whether a measured subtree still has pending geometry work.
-     *
-     * @param root the installed logical root.
-     * @return true when measurement or layout work remains.
-     */
-    fun hasPendingGeometry(root: RetainedNode): Boolean = pendingMeasure(root.effectiveRoot) || pendingLayout(root.effectiveRoot)
-
-    /**
      * Checks that the effective root has completed measurement and has no pending measurement work.
      *
      * @param root the installed logical root.

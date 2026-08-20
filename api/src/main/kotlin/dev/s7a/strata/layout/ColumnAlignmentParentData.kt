@@ -43,11 +43,9 @@ internal object ColumnAlignmentParentData {
      * @param data the initial column child alignment value.
      */
     internal class Node(
-        data: Data,
+        private var data: Data,
     ) : ModifierNode(),
         ParentDataModifierNode<Data> {
-        private var data: Data = data
-
         override val parentDataKey: ParentDataKey<Data>
             get() = KEY
 

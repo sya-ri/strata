@@ -56,16 +56,12 @@ internal class LinearElement(
      */
     @Suppress("TooManyFunctions")
     internal class Node(
-        orientation: LinearOrientation,
-        spacing: Int,
-        arrangement: Arrangement,
+        private var orientation: LinearOrientation,
+        private var spacing: Int,
+        private var arrangement: Arrangement,
     ) : RetainedNode(),
         MeasureNode,
         LayoutNode {
-        private var orientation: LinearOrientation = orientation
-        private var spacing: Int = spacing
-        private var arrangement: Arrangement = arrangement
-
         override fun measure(
             scope: MeasureScope,
             constraints: Constraints,

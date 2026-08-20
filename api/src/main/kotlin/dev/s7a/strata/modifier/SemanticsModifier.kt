@@ -32,11 +32,9 @@ internal object SemanticsModifier {
      * @param value the initial unresolved semantics payload.
      */
     internal class Node(
-        value: Semantics,
+        private var value: Semantics,
     ) : ModifierNode(),
         SemanticsNode {
-        private var value: Semantics = value
-
         /**
          * Emits this modifier's unresolved semantics payload.
          *

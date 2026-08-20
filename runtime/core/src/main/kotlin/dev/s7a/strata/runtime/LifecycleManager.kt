@@ -1,7 +1,6 @@
 package dev.s7a.strata.runtime
 
 import dev.s7a.strata.node.LifecycleNode
-import dev.s7a.strata.node.Node
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
 
 /**

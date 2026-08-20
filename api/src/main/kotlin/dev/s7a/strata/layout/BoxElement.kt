@@ -43,12 +43,10 @@ internal class BoxElement(
      * @param contentAlignment the initial default child placement policy.
      */
     internal class Node(
-        contentAlignment: Alignment,
+        private var contentAlignment: Alignment,
     ) : RetainedNode(),
         MeasureNode,
         LayoutNode {
-        private var contentAlignment: Alignment = contentAlignment
-
         override fun measure(
             scope: MeasureScope,
             constraints: Constraints,
