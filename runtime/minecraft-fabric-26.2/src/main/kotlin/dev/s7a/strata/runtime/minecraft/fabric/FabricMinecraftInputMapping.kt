@@ -74,3 +74,21 @@ internal fun mapMinecraftScroll(
     if (nativeDeltaX.isFinite().not() || nativeDeltaY.isFinite().not()) return null
     return nativeDeltaX to mapMinecraftVerticalScroll(nativeDeltaY)
 }
+
+/**
+ * Maps one native drag displacement when both axes are finite.
+ *
+ * Native GUI drag coordinates already use the common increasing-x and increasing-y directions.
+ *
+ * @param nativeDeltaX native horizontal displacement.
+ * @param nativeDeltaY native vertical displacement.
+ * @return unchanged logical displacement, or `null` for invalid native input.
+ */
+@JvmSynthetic
+internal fun mapMinecraftDrag(
+    nativeDeltaX: Double,
+    nativeDeltaY: Double,
+): Pair<Double, Double>? {
+    if (nativeDeltaX.isFinite().not() || nativeDeltaY.isFinite().not()) return null
+    return nativeDeltaX to nativeDeltaY
+}

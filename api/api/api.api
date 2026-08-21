@@ -243,6 +243,23 @@ public abstract interface class dev/s7a/strata/input/PointerEvent {
 	public abstract fun getPosition ()Ldev/s7a/strata/geometry/IntOffset;
 }
 
+public final class dev/s7a/strata/input/PointerEvent$Drag : dev/s7a/strata/input/PointerEvent {
+	public fun <init> (Ldev/s7a/strata/geometry/IntOffset;Ldev/s7a/strata/input/PointerButton;DD)V
+	public final fun component1 ()Ldev/s7a/strata/geometry/IntOffset;
+	public final fun component2 ()Ldev/s7a/strata/input/PointerButton;
+	public final fun component3 ()D
+	public final fun component4 ()D
+	public final fun copy (Ldev/s7a/strata/geometry/IntOffset;Ldev/s7a/strata/input/PointerButton;DD)Ldev/s7a/strata/input/PointerEvent$Drag;
+	public static synthetic fun copy$default (Ldev/s7a/strata/input/PointerEvent$Drag;Ldev/s7a/strata/geometry/IntOffset;Ldev/s7a/strata/input/PointerButton;DDILjava/lang/Object;)Ldev/s7a/strata/input/PointerEvent$Drag;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getButton ()Ldev/s7a/strata/input/PointerButton;
+	public final fun getDeltaX ()D
+	public final fun getDeltaY ()D
+	public fun getPosition ()Ldev/s7a/strata/geometry/IntOffset;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
 public final class dev/s7a/strata/input/PointerEvent$Move : dev/s7a/strata/input/PointerEvent {
 	public fun <init> (Ldev/s7a/strata/geometry/IntOffset;)V
 	public final fun component1 ()Ldev/s7a/strata/geometry/IntOffset;
@@ -404,6 +421,11 @@ public final class dev/s7a/strata/modifier/PaddingExtensionsKt {
 	public static final fun padding (Ldev/s7a/strata/modifier/Modifier;I)Ldev/s7a/strata/modifier/Modifier;
 	public static final fun padding (Ldev/s7a/strata/modifier/Modifier;II)Ldev/s7a/strata/modifier/Modifier;
 	public static final fun padding (Ldev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/geometry/Insets;)Ldev/s7a/strata/modifier/Modifier;
+}
+
+public final class dev/s7a/strata/modifier/PointerDragExtensionsKt {
+	public static final fun onDrag (Ldev/s7a/strata/modifier/Modifier;Lkotlin/jvm/functions/Function0;)Ldev/s7a/strata/modifier/Modifier;
+	public static final fun onDrag (Ldev/s7a/strata/modifier/Modifier;Lkotlin/jvm/functions/Function2;)Ldev/s7a/strata/modifier/Modifier;
 }
 
 public final class dev/s7a/strata/modifier/PointerInputExtensionsKt {

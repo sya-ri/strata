@@ -9,6 +9,7 @@ import dev.s7a.strata.modifier.fillMaxSize
 import dev.s7a.strata.modifier.fillMaxWidth
 import dev.s7a.strata.modifier.height
 import dev.s7a.strata.modifier.heightIn
+import dev.s7a.strata.modifier.onDrag
 import dev.s7a.strata.modifier.onHover
 import dev.s7a.strata.modifier.onMove
 import dev.s7a.strata.modifier.onPointerEvent
@@ -194,6 +195,8 @@ internal class BuiltinModifierContractTest {
                 Modifier.Empty.onRelease {},
                 Modifier.Empty.onMove { _, _ -> InputResult.Ignored },
                 Modifier.Empty.onMove {},
+                Modifier.Empty.onDrag { _, _ -> InputResult.Ignored },
+                Modifier.Empty.onDrag {},
                 Modifier.Empty.onScroll { _, _ -> InputResult.Ignored },
                 Modifier.Empty.onScroll {},
                 Modifier.Empty.onHover {},

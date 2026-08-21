@@ -9,6 +9,7 @@ import dev.s7a.strata.input.PointerButton
 import dev.s7a.strata.input.PointerEvent
 import dev.s7a.strata.input.PointerHoverEvent
 import dev.s7a.strata.modifier.Modifier
+import dev.s7a.strata.modifier.onDrag
 import dev.s7a.strata.modifier.onHover
 import dev.s7a.strata.modifier.onMove
 import dev.s7a.strata.modifier.onPointerEvent
@@ -90,6 +91,38 @@ internal class PointerInputModifierTest {
     }
 
     @Test
+    fun dragHandlersReceiveTypedLocalInputAndUpdateHover() {
+        val observations = ArrayList<Observation>()
+        val modifier =
+            Modifier.Empty
+                .size(10, 10)
+                .onPointerEvent { event, local ->
+                    observations += Observation.Raw(event, local)
+                    InputResult.Ignored
+                }.onDrag { event, local ->
+                    observations += Observation.Drag(event, local)
+                    InputResult.Ignored
+                }.onHover { event -> observations += Observation.Hover(event) }
+        val tree = tree(modifier)
+        val inside = IntOffset(3, 4)
+        val drag = PointerEvent.Drag(inside, PointerButton.Primary, 1.25, -0.5)
+
+        assertEquals(InputResult.Ignored, tree.dispatchPointer(drag))
+        assertEquals(
+            listOf(
+                Observation.Hover(PointerHoverEvent.Enter),
+                Observation.Drag(drag, inside),
+                Observation.Raw(drag, inside),
+            ),
+            observations,
+        )
+        observations.clear()
+        tree.dispatchPointer(PointerEvent.Drag(IntOffset(10, 10), PointerButton.Primary, 7.0, 6.0))
+        assertEquals(listOf(Observation.Hover(PointerHoverEvent.Exit)), observations)
+        tree.close()
+    }
+
+    @Test
     fun simpleActionsUseTheirDocumentedConsumptionDefaults() {
         val calls = ArrayList<EventKind>()
         val modifier =
@@ -98,6 +131,7 @@ internal class PointerInputModifierTest {
                 .onPress { calls += EventKind.Press }
                 .onRelease { calls += EventKind.Release }
                 .onMove { calls += EventKind.Move }
+                .onDrag { calls += EventKind.Drag }
                 .onScroll { calls += EventKind.Scroll }
         val tree = tree(modifier)
         val position = IntOffset(1, 1)
@@ -105,8 +139,9 @@ internal class PointerInputModifierTest {
         assertEquals(InputResult.Consumed, tree.dispatchPointer(PointerEvent.Press(position, PointerButton.Primary)))
         assertEquals(InputResult.Consumed, tree.dispatchPointer(PointerEvent.Release(position, PointerButton.Primary)))
         assertEquals(InputResult.Ignored, tree.dispatchPointer(PointerEvent.Move(position)))
+        assertEquals(InputResult.Ignored, tree.dispatchPointer(PointerEvent.Drag(position, PointerButton.Primary, 1.0, -1.0)))
         assertEquals(InputResult.Consumed, tree.dispatchPointer(PointerEvent.Scroll(position, 0.0, 1.0)))
-        assertEquals(listOf(EventKind.Press, EventKind.Release, EventKind.Move, EventKind.Scroll), calls)
+        assertEquals(listOf(EventKind.Press, EventKind.Release, EventKind.Move, EventKind.Drag, EventKind.Scroll), calls)
         tree.close()
     }
 
@@ -150,6 +185,7 @@ internal class PointerInputModifierTest {
         Press,
         Release,
         Move,
+        Drag,
         Scroll,
     }
 
@@ -171,6 +207,11 @@ internal class PointerInputModifierTest {
 
         data class Move(
             val event: PointerEvent.Move,
+            val local: IntOffset,
+        ) : Observation
+
+        data class Drag(
+            val event: PointerEvent.Drag,
             val local: IntOffset,
         ) : Observation
 

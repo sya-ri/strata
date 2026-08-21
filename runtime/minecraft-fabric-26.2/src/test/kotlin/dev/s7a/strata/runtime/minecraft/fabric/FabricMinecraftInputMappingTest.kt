@@ -43,4 +43,12 @@ internal class FabricMinecraftInputMappingTest {
         assertEquals(null, mapMinecraftScroll(Double.NaN, 1.0))
         assertEquals(null, mapMinecraftScroll(1.0, Double.POSITIVE_INFINITY))
     }
+
+    @Test
+    fun mapsOnlyFiniteNativeDragDisplacementWithoutChangingDirection() {
+        assertEquals(2.5 to -3.5, mapMinecraftDrag(2.5, -3.5))
+        assertEquals(0.0 to -0.0, mapMinecraftDrag(0.0, -0.0))
+        assertEquals(null, mapMinecraftDrag(Double.NaN, 1.0))
+        assertEquals(null, mapMinecraftDrag(1.0, Double.NEGATIVE_INFINITY))
+    }
 }

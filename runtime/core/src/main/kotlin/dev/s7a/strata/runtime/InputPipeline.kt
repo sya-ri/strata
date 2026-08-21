@@ -21,8 +21,15 @@ internal class InputPipeline {
         root: RetainedEntry,
         event: PointerEvent,
     ): InputResult {
-        if (event is PointerEvent.Move) {
-            updateHover(root, event)
+        when (event) {
+            is PointerEvent.Move -> updateHover(root, event.position)
+
+            is PointerEvent.Drag -> updateHover(root, event.position)
+
+            is PointerEvent.Press,
+            is PointerEvent.Release,
+            is PointerEvent.Scroll,
+            -> Unit
         }
         return dispatchNode(root, event)
     }
@@ -39,9 +46,9 @@ internal class InputPipeline {
 
     private fun updateHover(
         root: RetainedEntry,
-        event: PointerEvent.Move,
+        position: IntOffset,
     ) {
-        visitHover(root) { retained -> event.position in retained.bounds }
+        visitHover(root) { retained -> position in retained.bounds }
     }
 
     private fun visitHover(

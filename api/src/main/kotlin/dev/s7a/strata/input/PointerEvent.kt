@@ -45,6 +45,30 @@ public sealed interface PointerEvent {
     ) : PointerEvent
 
     /**
+     * A pointer movement event while one typed button remains held.
+     *
+     * Positive [deltaX] requests motion toward increasing logical x.
+     * Positive [deltaY] requests motion toward increasing logical y.
+     * Adapters normalize native coordinates and units into this logical displacement.
+     *
+     * @property position current tree-coordinate event position.
+     * @property button logical button held for the drag.
+     * @property deltaX horizontal logical displacement since the previous native drag event.
+     * @property deltaY vertical logical displacement since the previous native drag event.
+     */
+    public data class Drag(
+        override val position: IntOffset,
+        public val button: PointerButton,
+        public val deltaX: Double,
+        public val deltaY: Double,
+    ) : PointerEvent {
+        init {
+            require(deltaX.isFinite()) { "Horizontal drag displacement must be finite." }
+            require(deltaY.isFinite()) { "Vertical drag displacement must be finite." }
+        }
+    }
+
+    /**
      * A pointer scroll event with finite logical input displacement.
      *
      * Positive [deltaX] requests motion toward increasing logical x.

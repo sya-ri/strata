@@ -237,14 +237,12 @@ public class FabricMinecraftScreen private constructor(
     }
 
     /**
-     * Delivers native movement while a mouse button is held as one common move event.
-     *
-     * Drag displacement does not have a separate common representation; the event's absolute finite position is authoritative.
+     * Delivers native movement while a mouse button is held as one typed common drag event.
      *
      * @param event native mouse-button event carrying the current logical position.
-     * @param deltaX native drag displacement along x, represented by the absolute event position instead.
-     * @param deltaY native drag displacement along y, represented by the absolute event position instead.
-     * @return true only when the common host consumes the move.
+     * @param deltaX native drag displacement along x.
+     * @param deltaY native drag displacement along y.
+     * @return true only when the common host consumes the drag.
      * @throws Throwable when common input, its callback, or terminal cleanup fails.
      * @throws IllegalStateException when invoked away from the Minecraft client thread.
      */
@@ -255,7 +253,9 @@ public class FabricMinecraftScreen private constructor(
     ): Boolean {
         requireClientThread()
         val position = positionOrNull(event.x(), event.y()) ?: return false
-        return dispatch(PointerEvent.Move(position))
+        val button = buttonOrNull(event.button()) ?: return false
+        val displacement = mapMinecraftDrag(deltaX, deltaY) ?: return false
+        return dispatch(PointerEvent.Drag(position, button, displacement.first, displacement.second))
     }
 
     /**

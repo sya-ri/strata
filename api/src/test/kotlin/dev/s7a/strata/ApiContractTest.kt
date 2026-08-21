@@ -161,6 +161,13 @@ internal class ApiContractTest {
         assertEquals(PointerButton.Primary, PointerEvent.Press(IntOffset.Zero, PointerButton.Primary).button)
         assertEquals(PointerButton.Secondary, PointerEvent.Press(IntOffset.Zero, PointerButton.Secondary).button)
         assertEquals(PointerButton.Middle, PointerEvent.Release(IntOffset.Zero, PointerButton.Middle).button)
+        assertEquals(PointerButton.Primary, PointerEvent.Drag(IntOffset.Zero, PointerButton.Primary, 1.5, -2.0).button)
+        assertThrows(IllegalArgumentException::class.java) {
+            PointerEvent.Drag(IntOffset.Zero, PointerButton.Primary, Double.NaN, 0.0)
+        }
+        assertThrows(IllegalArgumentException::class.java) {
+            PointerEvent.Drag(IntOffset.Zero, PointerButton.Primary, 0.0, Double.NEGATIVE_INFINITY)
+        }
         assertEquals(2.5, PointerEvent.Scroll(IntOffset.Zero, 2.5, -1.0).deltaX)
         assertThrows(IllegalArgumentException::class.java) { PointerEvent.Scroll(IntOffset.Zero, Double.NaN, 0.0) }
         assertThrows(IllegalArgumentException::class.java) {

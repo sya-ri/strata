@@ -44,10 +44,10 @@ An extent addition that cannot be represented as an `Int` fails instead of wrapp
 `background` emits one fill over its complete local bounds before content is painted.
 `semantics` emits one separate unresolved entry before content semantics and does not merge descendant values.
 `onPointerEvent` handles the complete typed pointer protocol and returns an explicit propagation result.
-`onPress`, `onRelease`, `onMove`, and `onScroll` provide typed event-specific handlers; their simple action overloads consume press, release, and scroll while move remains non-consuming.
+`onPress`, `onRelease`, `onMove`, `onDrag`, and `onScroll` provide typed event-specific handlers; their simple action overloads consume press, release, and scroll while move and drag remain non-consuming.
 The simple press overload handles only the primary button, while the typed overload can inspect and decide every button.
 `onHover` observes distinct typed enter and exit transitions without consuming movement.
-Hover uses half-open accumulated bounds, is recomputed for every pointer move before ordinary move dispatch, and exits during retained session detachment.
+Hover uses half-open accumulated bounds, is recomputed before every pointer move or drag dispatch, and exits during retained session detachment.
 Layout movement below a stationary pointer does not create a transition until another move event arrives.
 Changing size or padding invalidates measurement, changing a background invalidates paint, and changing semantics invalidates only semantics.
 Changing a pointer callback updates live input behavior without invalidating a frame phase.

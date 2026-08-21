@@ -70,6 +70,15 @@ internal object PointerInputModifier {
         ) : Action
 
         /**
+         * Handles drag events that hit the modifier bounds.
+         *
+         * @property callback callback receiving the typed event and modifier-local position.
+         */
+        data class Drag(
+            val callback: (PointerEvent.Drag, IntOffset) -> InputResult,
+        ) : Action
+
+        /**
          * Handles scroll events.
          *
          * @property callback callback receiving the typed event and modifier-local position.
@@ -117,6 +126,7 @@ internal object PointerInputModifier {
                 is Action.Press -> if (event is PointerEvent.Press) current.callback(event, localPosition) else InputResult.Ignored
                 is Action.Release -> if (event is PointerEvent.Release) current.callback(event, localPosition) else InputResult.Ignored
                 is Action.Move -> if (event is PointerEvent.Move) current.callback(event, localPosition) else InputResult.Ignored
+                is Action.Drag -> if (event is PointerEvent.Drag) current.callback(event, localPosition) else InputResult.Ignored
                 is Action.Scroll -> if (event is PointerEvent.Scroll) current.callback(event, localPosition) else InputResult.Ignored
                 is Action.Hover, Action.Released -> InputResult.Ignored
             }
