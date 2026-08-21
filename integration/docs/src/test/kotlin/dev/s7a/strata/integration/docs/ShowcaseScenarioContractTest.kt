@@ -25,15 +25,16 @@ internal class ShowcaseScenarioContractTest {
                 "integration/minecraft-fabric-26.2/src/gametest/kotlin/dev/s7a/strata/integration/minecraft/fabric/MinecraftScrollExample.kt",
                 "integration/minecraft-fabric-26.2/src/gametest/kotlin/dev/s7a/strata/integration/minecraft/fabric/MinecraftSlotExample.kt",
                 "integration/minecraft-fabric-26.2/src/gametest/kotlin/dev/s7a/strata/integration/minecraft/fabric/MinecraftIndustrialExample.kt",
+                "integration/minecraft-fabric-26.2/src/gametest/kotlin/dev/s7a/strata/integration/minecraft/fabric/MinecraftPlayerHeadExample.kt",
             ),
             scenarios.map { scenario -> scenario.source.relativePath },
         )
-        assertEquals(listOf("text", "text-field", "button", "scroll", "slot", "image"), scenarios.map { scenario -> scenario.source.slug })
+        assertEquals(listOf("text", "text-field", "button", "scroll", "slot", "image", "player-head"), scenarios.map { scenario -> scenario.source.slug })
         assertEquals(
-            listOf(IntSize(150, 20), IntSize(200, 20), IntSize(150, 20), IntSize(320, 94), IntSize(24, 24), IntSize(32, 32)),
+            listOf(IntSize(150, 20), IntSize(200, 20), IntSize(150, 20), IntSize(320, 94), IntSize(24, 24), IntSize(32, 32), IntSize(24, 24)),
             scenarios.map { scenario -> scenario.viewport },
         )
-        assertEquals(List(6) { 1 }, scenarios.map { scenario -> scenario.scale })
+        assertEquals(List(7) { 1 }, scenarios.map { scenario -> scenario.scale })
     }
 
     @Test
@@ -47,7 +48,8 @@ internal class ShowcaseScenarioContractTest {
         assertTrue(scenarios[3].tree.children.all { child -> child.details.isEmpty() && child.children.isEmpty() })
         assertEquals(listOf(ShowcaseTreeDetail.SlotHighlightable(true), ShowcaseTreeDetail.Size(18, 18)), scenarios[4].tree.details)
         assertEquals(listOf(ShowcaseTreeDetail.Size(32, 32)), scenarios[5].tree.details)
-        listOf(scenarios[0], scenarios[1], scenarios[2], scenarios[4], scenarios[5]).forEach { scenario ->
+        assertEquals(listOf(ShowcaseTreeDetail.Size(24, 24)), scenarios[6].tree.details)
+        listOf(scenarios[0], scenarios[1], scenarios[2], scenarios[4], scenarios[5], scenarios[6]).forEach { scenario ->
             assertEquals(scenario.component, scenario.tree.component)
             assertTrue(scenario.tree.children.isEmpty())
         }

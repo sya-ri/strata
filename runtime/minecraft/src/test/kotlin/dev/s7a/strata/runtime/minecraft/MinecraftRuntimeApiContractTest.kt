@@ -160,7 +160,7 @@ internal class MinecraftRuntimeApiContractTest {
                 .forName("dev.s7a.strata.runtime.minecraft.MinecraftUiModifiers")
                 .declaredMethods
                 .filter { method -> method.isSynthetic.not() }
-        assertEquals(9, componentMethods.size)
+        assertEquals(10, componentMethods.size)
         assertEquals(3, modifierMethods.size)
         assertBackgroundModifierDescriptors(modifierMethods)
         assertTextDescriptors(componentMethods)
@@ -168,6 +168,19 @@ internal class MinecraftRuntimeApiContractTest {
         assertTextFieldDescriptor(componentMethods)
         assertButtonDescriptors(componentMethods)
         assertScrollDescriptor(componentMethods)
+        val playerHead = componentMethods.single { method -> method.name == DslMethodName.PlayerHead.jvmName }
+        assertMethod(
+            playerHead,
+            listOf(
+                UiScope::class.java,
+                DrawImage::class.java,
+                checkNotNull(Int::class.javaPrimitiveType),
+                checkNotNull(Boolean::class.javaPrimitiveType),
+                UiModifier::class.java,
+                ElementKey::class.java,
+            ),
+            Void.TYPE,
+        )
         val image = componentMethods.single { method -> method.name == DslMethodName.Image.jvmName }
         assertMethod(
             image,
@@ -314,6 +327,7 @@ internal class MinecraftRuntimeApiContractTest {
             "dev.s7a.strata.runtime.minecraft.MinecraftTextFieldElement",
             "dev.s7a.strata.runtime.minecraft.MinecraftContainerBackgroundModifier",
             "dev.s7a.strata.runtime.minecraft.MinecraftSlotElement",
+            "dev.s7a.strata.runtime.minecraft.MinecraftPlayerHeadElement",
         ).forEach { name ->
             val implementation = Class.forName(name)
             assertTrue(implementation.declaredMethods.none { method -> method.name.startsWith("access$") })
@@ -394,6 +408,7 @@ internal class MinecraftRuntimeApiContractTest {
             Class.forName("dev.s7a.strata.runtime.minecraft.MinecraftTextFieldElement"),
             Class.forName("dev.s7a.strata.runtime.minecraft.MinecraftContainerBackgroundModifier"),
             Class.forName("dev.s7a.strata.runtime.minecraft.MinecraftSlotElement"),
+            Class.forName("dev.s7a.strata.runtime.minecraft.MinecraftPlayerHeadElement"),
         ).forEach { type ->
             assertFalse(Modifier.isPublic(type.modifiers), type.name)
             assertFalse(Modifier.isProtected(type.modifiers), type.name)
@@ -406,6 +421,7 @@ internal class MinecraftRuntimeApiContractTest {
             Class.forName("dev.s7a.strata.runtime.minecraft.MinecraftTextFieldElementKt"),
             Class.forName("dev.s7a.strata.runtime.minecraft.MinecraftContainerBackgroundModifierKt"),
             Class.forName("dev.s7a.strata.runtime.minecraft.MinecraftSlotElementKt"),
+            Class.forName("dev.s7a.strata.runtime.minecraft.MinecraftPlayerHeadElementKt"),
         ).flatMap { type -> type.declaredMethods.toList() }.forEach { method ->
             assertTrue(method.isSynthetic, method.toString())
         }
@@ -591,6 +607,7 @@ internal class MinecraftRuntimeApiContractTest {
         MenuBackground("menuBackground"),
         ImageBackground("imageBackground"),
         Image("Image"),
+        PlayerHead("PlayerHead"),
         Text("Text"),
         ContainerBackground("containerBackground"),
         Slot("Slot"),

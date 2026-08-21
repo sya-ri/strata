@@ -60,6 +60,7 @@ internal class ShowcaseMarkdownTest {
         assertTrue(sections.getValue(DocumentedComponent.Slot).contains("back-item-front highlight order"))
         assertTrue(sections.getValue(DocumentedComponent.Text).contains("extracted Minecraft glyph advances, shadow layer, foreground layer, and native baseline"))
         assertTrue(sections.getValue(DocumentedComponent.TextField).contains("200 by 20 Minecraft EditBox sprites"))
+        assertTrue(sections.getValue(DocumentedComponent.PlayerHead).contains("face-then-hat"))
         val button = sections.getValue(DocumentedComponent.Button)
         listOf("onPointerEvent", "onPress", "onRelease", "onMove", "onDrag", "onScroll", "onHover").forEach { action ->
             assertTrue(button.contains("`$action`"))

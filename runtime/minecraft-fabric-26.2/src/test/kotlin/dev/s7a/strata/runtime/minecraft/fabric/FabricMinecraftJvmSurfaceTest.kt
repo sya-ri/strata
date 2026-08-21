@@ -57,6 +57,9 @@ internal class FabricMinecraftJvmSurfaceTest {
         val imageFactory = Class.forName(assetFacade).getDeclaredMethod("loadMinecraftUiImage", MinecraftAssetId::class.java)
         assertTrue(Modifier.isStatic(imageFactory.modifiers))
         assertEquals(DrawImage::class.java, imageFactory.returnType)
+        val skinFactory = Class.forName(assetFacade).getDeclaredMethod("loadCurrentMinecraftPlayerSkin")
+        assertTrue(Modifier.isStatic(skinFactory.modifiers))
+        assertEquals(DrawImage::class.java, skinFactory.returnType)
 
         val screenFactory =
             Class.forName(screenFacade).getDeclaredMethod(
@@ -137,7 +140,7 @@ internal class FabricMinecraftJvmSurfaceTest {
                 "$packageName.FabricMinecraftFontContractKt" to emptySet(),
                 "$packageName.FabricMinecraftFocusedInputMappingKt" to emptySet(),
                 "$packageName.FabricMinecraftInputMappingKt" to emptySet(),
-                assetFacade to setOf("loadMinecraftUiImage"),
+                assetFacade to setOf("loadMinecraftUiImage", "loadCurrentMinecraftPlayerSkin"),
                 profileFacade to setOf("extractMinecraftUiProfile"),
                 "$packageName.FabricMinecraftScreen" to
                     setOf(

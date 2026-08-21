@@ -1,10 +1,12 @@
 package dev.s7a.strata.runtime.minecraft.fabric.external
 
+import dev.s7a.strata.render.DrawImage
 import dev.s7a.strata.runtime.minecraft.MinecraftScreenDefinition
 import dev.s7a.strata.runtime.minecraft.MinecraftUiProfile
 import dev.s7a.strata.runtime.minecraft.fabric.FabricMinecraftScreen
 import dev.s7a.strata.runtime.minecraft.fabric.createMinecraftScreen
 import dev.s7a.strata.runtime.minecraft.fabric.extractMinecraftUiProfile
+import dev.s7a.strata.runtime.minecraft.fabric.loadCurrentMinecraftPlayerSkin
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
 import net.minecraft.client.gui.screens.Screen
 import org.junit.jupiter.api.Assertions.assertEquals
@@ -24,11 +26,13 @@ internal class FabricMinecraftExternalUseTest {
     @Test
     fun adapterFactoriesCompileFromAnExternalPackage() {
         val profileFactory: () -> MinecraftUiProfile = ::extractMinecraftUiProfile
+        val skinFactory: () -> DrawImage = ::loadCurrentMinecraftPlayerSkin
         val explicitScreenFactory: (MinecraftScreenDefinition, MinecraftUiProfile, Screen?) -> FabricMinecraftScreen = ::createMinecraftScreen
         val defaultParentFactory: (MinecraftScreenDefinition, MinecraftUiProfile) -> FabricMinecraftScreen = { definition, profile ->
             createMinecraftScreen(definition, profile)
         }
         assertNotNull(profileFactory)
+        assertNotNull(skinFactory)
         assertNotNull(explicitScreenFactory)
         assertNotNull(defaultParentFactory)
     }

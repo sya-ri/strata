@@ -1,4 +1,5 @@
 public final class dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftAssets {
+	public static final fun loadCurrentMinecraftPlayerSkin ()Ldev/s7a/strata/render/DrawImage;
 	public static final fun loadMinecraftUiImage (Ldev/s7a/strata/runtime/minecraft/MinecraftAssetId;)Ldev/s7a/strata/render/DrawImage;
 }
 

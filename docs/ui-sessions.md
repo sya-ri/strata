@@ -19,7 +19,7 @@ Session detach retains the active `UiTree` and its node ownership; it clears act
 The common `runtime:minecraft` adapter consumes a one-shot screen definition and a complete immutable profile.
 Definition close and host transfer race atomically, and a transferred host exposes only owner-thread metadata, lifecycle, fixed-viewport frames, and typed pointer, keyboard, committed-character, and preedit input.
 Its screen-content callback is an ordinary `UiScope`, while the host installs its selected Minecraft profile behind that callback for top-level Minecraft components and modifiers.
-Callers therefore declare `Text`, `Button`, `Slot`, `TextField`, `Scroll`, and `Image` directly without an additional `buildUi` block or an explicit Minecraft context receiver.
+Callers therefore declare `Text`, `Button`, `Slot`, `TextField`, `Scroll`, `Image`, and `PlayerHead` directly without an additional `buildUi` block or an explicit Minecraft context receiver.
 Application code emits those components directly and composes profile-backed `menuBackground()`, `containerBackground(rows)`, or immutable `imageBackground(image, scale)` behavior into ordinary modifier chains; screen definitions, `Text`, and `Button` accept `String` literals without requiring `UiText.Literal`, while typed overloads retain unresolved `UiText` values when needed.
 The fixed-height profile-backed Button owns appearance, hover visuals, and enabled semantics, while reusable pointer, keyboard, text-input, preedit, focus, press, release, move, drag, scroll, and hover actions are active modifiers shared with other component kinds.
 TextField owns the verified 200 by 20 EditBox sprites, text colors, cursor, bounded printable-ASCII editing policy, and semantics while caller-owned owner-thread `MinecraftTextFieldState` owns the value and maximum length.
@@ -31,6 +31,7 @@ That live overload is intentionally unavailable to portable-only hosts because a
 Button does not install keyboard focus or activation implicitly; callers compose those policies from the shared modifiers when required.
 The common component boundary exposes only structural resource-pack identifiers and detached immutable pixels, not resource-manager objects, native Minecraft values, renderers, input mappers, or task facilities.
 Client and server code may share a `MinecraftAssetId`; only the versioned client resolves its pixels through the active resource-pack stack before building an `Image` or image-background modifier.
+The Fabric adapter snapshots the current selected player skin from either its resource-backed default path or registered downloaded texture; `PlayerHead` then renders the native face layer followed by the optional hat layer without retaining a player or platform texture.
 
 ## Ownership and lifecycle
 

@@ -17,6 +17,7 @@ import dev.s7a.strata.runtime.minecraft.createMinecraftUiHost
 import dev.s7a.strata.runtime.minecraft.fabric.FabricMinecraftScreen
 import dev.s7a.strata.runtime.minecraft.fabric.createMinecraftScreen
 import dev.s7a.strata.runtime.minecraft.fabric.extractMinecraftUiProfile
+import dev.s7a.strata.runtime.minecraft.fabric.loadCurrentMinecraftPlayerSkin
 import dev.s7a.strata.runtime.minecraft.fabric.loadMinecraftUiImage
 import dev.s7a.strata.runtime.render.DrawCommand
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
@@ -29,6 +30,7 @@ import net.fabricmc.fabric.api.client.gametest.v1.screenshot.TestScreenshotOptio
 import net.minecraft.client.Minecraft
 import net.minecraft.client.gui.GuiGraphicsExtractor
 import net.minecraft.client.gui.components.ObjectSelectionList
+import net.minecraft.client.gui.components.PlayerFaceExtractor
 import net.minecraft.client.gui.screens.ConfirmScreen
 import net.minecraft.client.gui.screens.DirectJoinServerScreen
 import net.minecraft.client.gui.screens.Screen
@@ -38,6 +40,7 @@ import net.minecraft.client.renderer.RenderPipelines
 import net.minecraft.network.chat.Component
 import net.minecraft.resources.Identifier
 import net.minecraft.world.entity.player.Inventory
+import net.minecraft.world.entity.player.PlayerSkin
 import net.minecraft.world.inventory.ChestMenu
 import org.apache.commons.lang3.function.FailableConsumer
 import org.apache.commons.lang3.function.FailableFunction
@@ -53,7 +56,7 @@ import kotlin.io.path.inputStream
  * Proves exact Minecraft 26.2 native, Fabric-adapter, and headless pixels for the shipped component showcase scene.
  *
  * The test runs on Fabric's client GameTest thread and performs all Minecraft and common-host operations on the client thread through [ClientGameTestContext].
- * It reads the active 26.2 assets and font, uses native [Button] components as the oracle, and writes only deterministic evidence below the configured build directory.
+ * It reads the active 26.2 assets, font, and selected player skin, uses native [Button] and [PlayerFaceExtractor] rendering as the oracle, and writes only deterministic evidence below the configured build directory.
  */
 public class StrataMinecraftClientGameTest : FabricClientGameTest {
     /**
@@ -71,6 +74,7 @@ public class StrataMinecraftClientGameTest : FabricClientGameTest {
             FailableConsumer<Minecraft, RuntimeException> { minecraft ->
                 minecraft.options.guiScale().set(1)
                 minecraft.options.forceUnicodeFont().set(false)
+                minecraft.options.showAutosaveIndicator().set(false)
                 require(minecraft.options.languageCode == "en_us") {
                     "Minecraft parity requires the en_us language profile."
                 }
@@ -213,6 +217,62 @@ public class StrataMinecraftClientGameTest : FabricClientGameTest {
         return headless
     }
 
+    @OptIn(InternalStrataRuntimeApi::class)
+    private fun runPlayerHeadParity(
+        context: ClientGameTestContext,
+        profile: MinecraftUiProfile,
+        output: Path,
+    ): HeadlessImage {
+        val skin =
+            context.computeOnClient(
+                FailableFunction<Minecraft, DrawImage, RuntimeException> { loadCurrentMinecraftPlayerSkin() },
+            )
+        context.input.resizeWindow(playerHeadViewport.width, playerHeadViewport.height)
+        context.runOnClient(
+            FailableConsumer<Minecraft, RuntimeException> { minecraft -> minecraft.resizeGui() },
+        )
+        context.input.setCursorPos(0.0, 0.0)
+        context.setScreen { DeterministicPlayerHeadScreen(checkNotNull(Minecraft.getInstance().player).skin) }
+        context.waitForScreen(DeterministicPlayerHeadScreen::class.java)
+        context.waitTicks(2)
+        val nativePath =
+            context.takeScreenshot(
+                TestScreenshotOptions
+                    .of("strata-player-head-native")
+                    .disableCounterPrefix()
+                    .withSize(playerHeadViewport.width, playerHeadViewport.height)
+                    .withDestinationDir(output),
+            )
+        val headless =
+            NativeImage.read(nativePath.inputStream()).use { native ->
+                requireImageSize(native, playerHeadViewport)
+                val rendered =
+                    context.computeOnClient(
+                        FailableFunction<Minecraft, HeadlessImage, RuntimeException> {
+                            renderHeadless(profile, createPlayerHeadScreenDefinition(skin), playerHeadViewport)
+                        },
+                    )
+                Files.write(output.resolve("strata-player-head-headless.png"), rendered.encodePng())
+                requireExactPixels(native, rendered)
+
+                context.setScreen { createMinecraftScreen(createPlayerHeadScreenDefinition(skin), profile, parent = null) }
+                context.waitForScreen(FabricMinecraftScreen::class.java)
+                context.waitTicks(2)
+                context.assertScreenshotEquals(
+                    TestScreenshotComparisonOptions
+                        .of(native)
+                        .withAlgorithm(TestScreenshotComparisonAlgorithm.exact())
+                        .saveWithFileName("strata-player-head-fabric")
+                        .disableCounterPrefix()
+                        .withSize(playerHeadViewport.width, playerHeadViewport.height)
+                        .withDestinationDir(output),
+                )
+                rendered
+            }
+        closeFabricScreen(context)
+        return headless
+    }
+
     private fun closeFabricScreen(context: ClientGameTestContext) {
         context.runOnClient(
             FailableConsumer<Minecraft, RuntimeException> { minecraft ->
@@ -283,6 +343,7 @@ public class StrataMinecraftClientGameTest : FabricClientGameTest {
         containerBackground: HeadlessImage,
         slot: HeadlessImage,
         industrial: HeadlessImage,
+        playerHead: HeadlessImage,
     ) {
         val imageDirectory = output.resolve("components")
         Files.createDirectories(imageDirectory)
@@ -293,6 +354,7 @@ public class StrataMinecraftClientGameTest : FabricClientGameTest {
                 ParityScene.DirectJoin to createDrawImage(directJoin.size, directJoin.copyArgb()),
                 ParityScene.Slot to createDrawImage(slot.size, slot.copyArgb()),
                 ParityScene.Industrial to createDrawImage(industrial.size, industrial.copyArgb()),
+                ParityScene.PlayerHead to createDrawImage(playerHead.size, playerHead.copyArgb()),
             )
         val pngHashes = LinkedHashMap<ParityCrop, String>()
         for (crop in ParityCrop.entries) {
@@ -341,6 +403,9 @@ public class StrataMinecraftClientGameTest : FabricClientGameTest {
                 append('\n')
                 append("fabric.headless.industrial.argb.sha256=")
                 append(sha256Argb(industrial))
+                append('\n')
+                append("native.fabric.headless.player-head.argb.sha256=")
+                append(sha256Argb(playerHead))
                 append('\n')
                 ParityCrop.entries.forEach { crop ->
                     append("component.")
@@ -514,7 +579,8 @@ public class StrataMinecraftClientGameTest : FabricClientGameTest {
                     InventorySlotSynchronizationGameTest.run(context, profile, output)
                     closeFabricScreen(context)
                     val industrial = runIndustrialAssetParity(context, profile, output)
-                    writeParityEvidence(output, confirm, scroll, directJoin, containerBackground, slot, industrial)
+                    val playerHead = runPlayerHeadParity(context, profile, output)
+                    writeParityEvidence(output, confirm, scroll, directJoin, containerBackground, slot, industrial, playerHead)
                 }
             }
             closeFabricScreen(context)
@@ -652,6 +718,28 @@ public class StrataMinecraftClientGameTest : FabricClientGameTest {
 
     private class EmptyParentScreen : Screen(Component.empty())
 
+    private class DeterministicPlayerHeadScreen(
+        private val skin: PlayerSkin,
+    ) : Screen(Component.literal("Player head parity")) {
+        override fun extractBackground(
+            graphics: GuiGraphicsExtractor,
+            mouseX: Int,
+            mouseY: Int,
+            partialTick: Float,
+        ) {
+            graphics.fill(0, 0, width, height, opaqueBlack)
+        }
+
+        override fun extractRenderState(
+            graphics: GuiGraphicsExtractor,
+            mouseX: Int,
+            mouseY: Int,
+            partialTick: Float,
+        ) {
+            PlayerFaceExtractor.extractRenderState(graphics, skin, 20, 20, 24)
+        }
+    }
+
     private class DeterministicSelectionList(
         minecraft: Minecraft,
     ) : ObjectSelectionList<DeterministicEntry>(minecraft, 320, 94, 33, 18) {
@@ -709,6 +797,7 @@ public class StrataMinecraftClientGameTest : FabricClientGameTest {
         private val industrialViewport = IntSize(320, 180)
         private val industrialPointer = IntOffset.Zero
         private val industrialAssetSize = IntSize(1254, 1254)
+        private val playerHeadViewport = IntSize(64, 64)
     }
 
     private enum class ParityCrop(
@@ -724,6 +813,7 @@ public class StrataMinecraftClientGameTest : FabricClientGameTest {
         TextField("text-field", ParityScene.DirectJoin, IntOffset(60, 116), IntSize(200, 20)),
         Slot("slot", ParityScene.Slot, IntOffset(76, 50), IntSize(24, 24)),
         Image("image", ParityScene.Industrial, IntOffset(144, 30), IntSize(32, 32)),
+        PlayerHead("player-head", ParityScene.PlayerHead, IntOffset(20, 20), IntSize(24, 24)),
     }
 
     private enum class ParityScene {
@@ -732,5 +822,6 @@ public class StrataMinecraftClientGameTest : FabricClientGameTest {
         DirectJoin,
         Slot,
         Industrial,
+        PlayerHead,
     }
 }

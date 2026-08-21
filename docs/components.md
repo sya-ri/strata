@@ -85,6 +85,7 @@ The tree shows Minecraft components in logical draw order; platform-neutral layo
 - [Scroll](#scroll)
 - [Slot](#slot)
 - [Image](#image)
+- [PlayerHead](#player-head)
 
 <a id="text"></a>
 
@@ -594,6 +595,65 @@ The tree shows the featured Minecraft component; platform-neutral layout scaffol
 
 ```text
 `- Image [Size(width=32, height=32)]
+```
+
+</details>
+
+<a id="player-head"></a>
+
+## PlayerHead
+
+PlayerHead reproduces Minecraft 26.2 face-then-hat rendering from a 64 by 64 skin; its default 24 by 24 extent matches Social Interactions while remaining reusable in lists, profiles, scoreboards, and Mod screens.
+
+This image is a 24 by 24 component crop from the exact native/Fabric/headless parity frame recorded in [the verification receipt](components/minecraft-26.2-parity.properties).
+
+![PlayerHead headless showcase](components/player-head.png)
+
+### Compiled example
+
+```kotlin
+import dev.s7a.strata.dsl.Box
+import dev.s7a.strata.layout.Alignment
+import dev.s7a.strata.modifier.Modifier
+import dev.s7a.strata.modifier.background
+import dev.s7a.strata.modifier.size
+import dev.s7a.strata.render.ArgbColor
+import dev.s7a.strata.render.DrawImage
+import dev.s7a.strata.runtime.minecraft.MinecraftScreenDefinition
+import dev.s7a.strata.runtime.minecraft.PlayerHead
+import dev.s7a.strata.runtime.minecraft.createMinecraftScreenDefinition
+
+/**
+ * Builds a reusable player-head screen from a detached skin selected by the version adapter.
+ *
+ * @param skin immutable 64 by 64 player skin from Minecraft's resource or downloaded-texture path.
+ * @return one-shot definition reproducing the Social Interactions 24 by 24 face and hat layers.
+ */
+internal fun createPlayerHeadScreenDefinition(skin: DrawImage): MinecraftScreenDefinition =
+    createMinecraftScreenDefinition("Player head") {
+        Box(
+            modifier = Modifier.Empty.size(64, 64).background(ArgbColor(0xFF000000.toInt())),
+            contentAlignment = Alignment.Center,
+        ) {
+            PlayerHead(skin)
+        }
+    }
+```
+
+### Modifiers
+
+Sizing and placement modifiers compose around `PlayerHead`; its immutable skin argument stays separate from Social, player-list, scoreboard, profile, and Mod-specific row state.
+
+### Parent scope
+
+`PlayerHead` is a top-level extension on the active `UiScope`. The Fabric skin loader snapshots the current selected resource or downloaded texture first, and the retained component owns only detached pixels.
+
+<details><summary>Component tree</summary>
+
+The tree shows the featured Minecraft component; platform-neutral layout scaffolding remains visible in the compiled source.
+
+```text
+`- PlayerHead [Size(width=24, height=24)]
 ```
 
 </details>

@@ -36,6 +36,11 @@ internal enum class DocumentedComponent(
      * The immutable nearest-sampled image component identity.
      */
     Image("Image", "image"),
+
+    /**
+     * The reusable layered player-head component identity.
+     */
+    PlayerHead("PlayerHead", "player-head"),
     ;
 
     /**

@@ -80,6 +80,16 @@ internal object ShowcaseScenarioCatalog {
                 viewportMetadata = ShowcaseViewport(IntSize(32, 32), 1),
                 tree = tree(DocumentedComponent.Image, listOf(ShowcaseTreeDetail.Size(32, 32))),
             ),
+            ComponentScenario(
+                component = DocumentedComponent.PlayerHead,
+                source =
+                    SourceReference(
+                        "integration/minecraft-fabric-26.2/src/gametest/kotlin/dev/s7a/strata/integration/minecraft/fabric/MinecraftPlayerHeadExample.kt",
+                        "player-head",
+                    ),
+                viewportMetadata = ShowcaseViewport(IntSize(24, 24), 1),
+                tree = tree(DocumentedComponent.PlayerHead, listOf(ShowcaseTreeDetail.Size(24, 24))),
+            ),
         )
 
     /**

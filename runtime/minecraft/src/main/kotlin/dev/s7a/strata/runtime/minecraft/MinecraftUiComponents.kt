@@ -34,6 +34,31 @@ public fun UiScope.Image(
 }
 
 /**
+ * Emits one square Minecraft player head from an immutable 64 by 64 skin snapshot.
+ *
+ * The component reproduces Minecraft 26.2 `PlayerFaceExtractor`: it maps the face region at 8,8 through 16,16 to the complete destination, then optionally maps the hat region at 40,8 through 48,16 over the same pixels.
+ * Social Interactions uses the default 24-pixel size, while callers may choose another positive square extent without changing layer order.
+ *
+ * @receiver active owner-thread UI scope supplied by [createMinecraftScreenDefinition] or a nested component callback.
+ * @param skin immutable complete 64 by 64 player skin retained without a copy.
+ * @param size positive logical width and height; defaults to the Social Interactions head size.
+ * @param showHat whether the outer hat layer is painted after the face.
+ * @param modifier active behavior applied to the head.
+ * @param key optional stable sibling identity.
+ * @throws IllegalArgumentException when [skin] is not exactly 64 by 64, [size] is not positive, or later constraints do not contain the requested square.
+ * @throws IllegalStateException when used from another thread or outside its active callback.
+ */
+public fun UiScope.PlayerHead(
+    skin: DrawImage,
+    size: Int = 24,
+    showHat: Boolean = true,
+    modifier: Modifier = Modifier.Empty,
+    key: ElementKey<*>? = null,
+) {
+    element(createMinecraftPlayerHeadElement(skin, size, showHat, modifier, key))
+}
+
+/**
  * Emits one Minecraft 26.2 container Slot with an optional 16 by 16 item child.
  *
  * The component occupies the exact 18 by 18 pointer region used by `AbstractContainerScreen`, with the item child inset by one pixel.
