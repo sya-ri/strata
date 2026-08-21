@@ -10,7 +10,7 @@ import java.nio.file.LinkOption
 import java.nio.file.Path
 
 /**
- * Discovers component entry points from compiled API class directories.
+ * Discovers component entry points from the compiled [MinecraftUiContext][dev.s7a.strata.runtime.minecraft.MinecraftUiContext] contract.
  *
  * Classes are loaded without initialization so inventory cannot run component code while inspecting declarations.
  */
@@ -18,38 +18,42 @@ internal object ShowcaseInventory {
     private const val CLASS_SUFFIX = ".class"
 
     /**
-     * Finds every public static non-synthetic component method in the supplied class directories.
+     * Finds every public non-static non-synthetic member extension on the compiled Minecraft UI context.
      *
-     * @param classDirectories compiled API directories to scan.
+     * @param classDirectories compiled Minecraft runtime directories to scan.
      * @return decoded component identities with one identity for each overload name.
      * @throws IllegalArgumentException when directories or component method declarations violate the inventory contract.
      * @throws IllegalStateException when class loading or reflection fails.
      */
     internal fun discover(classDirectories: List<Path>): Set<DocumentedComponent> {
         val directories = classDirectories.map { directory -> directory.toAbsolutePath().normalize() }
-        require(directories.isNotEmpty()) { "API class directories are missing." }
-        require(directories.toSet().size == directories.size) { "API class directories are duplicated." }
-        directories.forEach { directory -> ShowcasePaths.requireDirectory(directory, "API class directory") }
+        require(directories.isNotEmpty()) { "Minecraft component class directories are missing." }
+        require(directories.toSet().size == directories.size) { "Minecraft component class directories are duplicated." }
+        directories.forEach { directory -> ShowcasePaths.requireDirectory(directory, "Minecraft component class directory") }
         val urls = directories.map { directory -> directory.toUri().toURL() }.toTypedArray()
         val loader = ApiClassLoader(urls, ShowcaseInventory::class.java.classLoader)
         return loader.use {
-            val uiScopeType = loadClass(loader, "dev.s7a.strata.dsl.UiScope")
+            val uiScopeType = loadClass(loader, UI_SCOPE_CLASS_NAME)
             val classNames =
                 directories
                     .flatMap { directory -> classFiles(directory).map { path -> binaryName(directory, path) } }
                     .sorted()
-            require(classNames.toSet().size == classNames.size) { "API class binary names are duplicated." }
+            require(classNames.toSet().size == classNames.size) { "Minecraft component class binary names are duplicated." }
+            require(classNames.count { className -> className == MINECRAFT_CONTEXT_CLASS_NAME } == 1) {
+                "Minecraft UI context class must occur exactly once in component outputs."
+            }
+            val context = loadClass(loader, MINECRAFT_CONTEXT_CLASS_NAME)
+            requireClassOrigin(context, directories)
             val methods =
-                classNames
-                    .flatMap { className -> inspectClass(loader, className, directories, uiScopeType) }
+                declaredMethods(context, context.name, origin(context), uiScopeType)
                     .sortedWith(compareBy({ method -> method.declaringClass.name }, { method -> method.name }, { method -> descriptor(method) }))
                     .groupBy { method -> method.name }
                     .toSortedMap()
             require(methods.keys.all { name -> DocumentedComponent.fromApiMethodName(name) != null }) {
-                "API inventory contains an undecoded component method: ${methods.keys}."
+                "Minecraft component inventory contains an undecoded component method: ${methods.keys}."
             }
             require(methods.values.all { overloads -> overloads.isNotEmpty() }) {
-                "API inventory contains an empty component overload group."
+                "Minecraft component inventory contains an empty component overload group."
             }
             methods.keys
                 .mapNotNull { name -> DocumentedComponent.fromApiMethodName(name) }
@@ -57,26 +61,25 @@ internal object ShowcaseInventory {
         }
     }
 
-    private fun inspectClass(
-        loader: ClassLoader,
-        className: String,
+    private fun requireClassOrigin(
+        type: Class<*>,
         directories: List<Path>,
-        uiScopeType: Class<*>,
-    ): List<Method> {
-        val type = loadClass(loader, className)
-        val codeSource = type.protectionDomain?.codeSource ?: error("API class has no code origin: $className")
-        val origin =
-            try {
-                Path.of(codeSource.location.toURI()).toAbsolutePath().normalize()
-            } catch (error: URISyntaxException) {
-                throw IllegalStateException("API class origin is malformed: $className", error)
-            } catch (error: IllegalArgumentException) {
-                throw IllegalStateException("API class origin is malformed: $className", error)
-            }
-        require(directories.any { directory -> directory == origin }) {
-            "API class was loaded from an unintended origin: $className origin=$origin"
+    ) {
+        val classOrigin = origin(type)
+        require(directories.any { directory -> directory == classOrigin }) {
+            "Minecraft UI context was loaded from an unintended origin: ${type.name} origin=$classOrigin"
         }
-        return declaredMethods(type, className, origin, uiScopeType)
+    }
+
+    private fun origin(type: Class<*>): Path {
+        val codeSource = type.protectionDomain?.codeSource ?: error("Minecraft component class has no code origin: ${type.name}")
+        return try {
+            Path.of(codeSource.location.toURI()).toAbsolutePath().normalize()
+        } catch (error: URISyntaxException) {
+            throw IllegalStateException("Minecraft component class origin is malformed: ${type.name}", error)
+        } catch (error: IllegalArgumentException) {
+            throw IllegalStateException("Minecraft component class origin is malformed: ${type.name}", error)
+        }
     }
 
     private fun loadClass(
@@ -86,9 +89,9 @@ internal object ShowcaseInventory {
         try {
             Class.forName(className, false, loader)
         } catch (error: ClassNotFoundException) {
-            throw IllegalStateException("API class could not be loaded without initialization: $className", error)
+            throw IllegalStateException("Minecraft component class could not be loaded without initialization: $className", error)
         } catch (error: LinkageError) {
-            throw IllegalStateException("API class linkage failed without initialization: $className", error)
+            throw IllegalStateException("Minecraft component class linkage failed without initialization: $className", error)
         }
 
     private fun declaredMethods(
@@ -100,18 +103,18 @@ internal object ShowcaseInventory {
         try {
             type.declaredMethods.filter { method -> isComponentMethod(method, uiScopeType) }
         } catch (error: SecurityException) {
-            throw IllegalStateException("API reflection failed for $className origin=$origin", error)
+            throw IllegalStateException("Minecraft component reflection failed for $className origin=$origin", error)
         } catch (error: LinkageError) {
-            throw IllegalStateException("API reflection linkage failed for $className origin=$origin", error)
+            throw IllegalStateException("Minecraft component reflection linkage failed for $className origin=$origin", error)
         }
 
     private fun classFiles(directory: Path): List<Path> =
         Files.walk(directory).use { stream ->
             val paths = stream.toList().sortedBy { path -> path.toString() }
             paths.forEach { path ->
-                ShowcasePaths.requireSafeSegments(path, "API class tree")
+                ShowcasePaths.requireSafeSegments(path, "Minecraft component class tree")
                 require(Files.isDirectory(path, LinkOption.NOFOLLOW_LINKS) || Files.isRegularFile(path, LinkOption.NOFOLLOW_LINKS)) {
-                    "API class tree contains a non-regular entry: $path"
+                    "Minecraft component class tree contains a non-regular entry: $path"
                 }
             }
             paths.filter { path -> Files.isRegularFile(path, LinkOption.NOFOLLOW_LINKS) && path.toString().endsWith(CLASS_SUFFIX) }
@@ -128,9 +131,9 @@ internal object ShowcaseInventory {
                 .asSequence()
                 .map { part -> part.toString() }
                 .toList()
-        require(parts.isNotEmpty()) { "API class path is empty: $classFile" }
+        require(parts.isNotEmpty()) { "Minecraft component class path is empty: $classFile" }
         val last = parts.last()
-        require(last.endsWith(CLASS_SUFFIX) && 6 < last.length) { "Malformed API class path: $classFile" }
+        require(last.endsWith(CLASS_SUFFIX) && 6 < last.length) { "Malformed Minecraft component class path: $classFile" }
         val binaryParts = parts.dropLast(1) + last.removeSuffix(CLASS_SUFFIX)
         val invalidPart =
             binaryParts.firstOrNull { part ->
@@ -148,7 +151,7 @@ internal object ShowcaseInventory {
     ): Boolean {
         val parameters = method.parameterTypes
         return Modifier.isPublic(method.modifiers) &&
-            Modifier.isStatic(method.modifiers) &&
+            Modifier.isStatic(method.modifiers).not() &&
             method.isSynthetic.not() &&
             isUpperCamel(method.name) &&
             parameters.isNotEmpty() &&
@@ -180,6 +183,9 @@ internal object ShowcaseInventory {
             type.isArray -> type.name.replace('.', '/')
             else -> "L${type.name.replace('.', '/')};"
         }
+
+    private const val MINECRAFT_CONTEXT_CLASS_NAME = "dev.s7a.strata.runtime.minecraft.MinecraftUiContext"
+    private const val UI_SCOPE_CLASS_NAME = "dev.s7a.strata.dsl.UiScope"
 
     private class ApiClassLoader(
         urls: Array<URL>,

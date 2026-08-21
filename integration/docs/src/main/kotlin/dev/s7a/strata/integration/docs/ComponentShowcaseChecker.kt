@@ -7,7 +7,7 @@ internal object ComponentShowcaseChecker {
     /**
      * Renders expected output into staging and compares every owned source artifact byte-for-byte.
      *
-     * @param args project root, module build root, exact check staging root, and compiled API class directories.
+     * @param args project root, module build root, exact check staging root, parity root, and compiled Minecraft component class directories.
      */
     @JvmStatic
     public fun main(args: Array<String>) {

@@ -22,7 +22,7 @@ internal sealed interface ShowcaseScenario {
     val scale: Int
 
     /**
-     * Authoritative layout-only topology copied from the compiled panel source.
+     * Authoritative Minecraft-component topology copied from the compiled scenario source.
      */
     val tree: ShowcaseTree
 }

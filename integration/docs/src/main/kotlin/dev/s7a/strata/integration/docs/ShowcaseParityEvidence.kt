@@ -36,7 +36,7 @@ internal class ShowcaseParityEvidence private constructor(
     /**
      * Returns one verified component crop as a fresh byte array.
      *
-     * @param component documented layout component selecting the crop.
+     * @param component documented Minecraft component selecting the crop.
      * @return independent deterministic PNG bytes.
      */
     internal fun componentPng(component: DocumentedComponent): ByteArray = componentSnapshots.getValue(component).copyOf()
@@ -53,7 +53,7 @@ internal class ShowcaseParityEvidence private constructor(
      */
     companion object {
         /**
-         * Reads the fixed receipt and five component images without following symbolic paths.
+         * Reads the fixed receipt and four component images without following symbolic paths.
          *
          * @param root validated GameTest parity output directory.
          * @return detached verified evidence snapshots.
@@ -67,7 +67,7 @@ internal class ShowcaseParityEvidence private constructor(
                 "Minecraft parity receipt fields differ from the locked contract: ${values.keys}."
             }
             requireMinecraftVersion(values.getValue("minecraft.version"))
-            require(values.getValue("viewport.width").toIntOrNull() == 640 && values.getValue("viewport.height").toIntOrNull() == 540) {
+            require(values.getValue("viewport.width").toIntOrNull() == 320 && values.getValue("viewport.height").toIntOrNull() == 180) {
                 "Minecraft parity receipt has the wrong full-frame viewport."
             }
             require(values.getValue("gui.scale").toIntOrNull() == 1) {
@@ -76,10 +76,10 @@ internal class ShowcaseParityEvidence private constructor(
             requireLocale(values.getValue("locale"))
             requireHash(values.getValue("native.fabric.headless.argb.sha256"), "full-frame pixel hash")
 
-            val overview = readVerifiedPng(root, "overview", values)
+            val overview = readVerifiedPng(root, "overview", values, IntSize(320, 180))
             val components =
                 DocumentedComponent.entries.associateWith { component ->
-                    readVerifiedPng(root, component.slug, values)
+                    readVerifiedPng(root, component.slug, values, expectedPngSize(component))
                 }
             return ShowcaseParityEvidence(receiptBytes, overview, components)
         }
@@ -112,9 +112,10 @@ internal class ShowcaseParityEvidence private constructor(
             root: Path,
             slug: String,
             values: Map<String, String>,
+            expectedSize: IntSize,
         ): ByteArray {
             val bytes = readRegular(root.resolve("components/$slug.png"), "Minecraft parity image $slug")
-            requirePngSize(bytes, IntSize(320, 180), slug)
+            requirePngSize(bytes, expectedSize, slug)
             val expectedHash = values.getValue("component.$slug.png.sha256")
             requireHash(expectedHash, "$slug PNG hash")
             require(sha256(bytes) == expectedHash) { "Minecraft parity image hash differs for $slug." }
@@ -169,6 +170,13 @@ internal class ShowcaseParityEvidence private constructor(
                 "Minecraft parity image has the wrong dimensions for $slug."
             }
         }
+
+        private fun expectedPngSize(component: DocumentedComponent): IntSize =
+            when (component) {
+                DocumentedComponent.MenuBackground -> IntSize(32, 32)
+                DocumentedComponent.Text -> IntSize(150, 20)
+                DocumentedComponent.Button -> IntSize(150, 20)
+            }
 
         private fun requireHash(
             value: String,

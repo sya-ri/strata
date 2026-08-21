@@ -20,14 +20,16 @@ internal class ShowcaseParityEvidenceTest {
     @Test
     fun validEvidenceIsDetachedFromEveryReturnedArray() {
         val png = png(320, 180)
-        writeEvidence(png)
+        writeEvidence()
 
         val evidence = ShowcaseParityEvidence.load(temporaryRoot)
         val first = evidence.overviewPng()
         first[0] = 0
 
         assertArrayEquals(png, evidence.overviewPng())
-        DocumentedComponent.entries.forEach { component -> assertArrayEquals(png, evidence.componentPng(component)) }
+        assertArrayEquals(png(32, 32), evidence.componentPng(DocumentedComponent.MenuBackground))
+        assertArrayEquals(png(150, 20), evidence.componentPng(DocumentedComponent.Text))
+        assertArrayEquals(png(150, 20), evidence.componentPng(DocumentedComponent.Button))
         val receipt = evidence.receipt()
         receipt[0] = 0
         assertArrayEquals(Files.readAllBytes(temporaryRoot.resolve("receipt.properties")), evidence.receipt())
@@ -35,28 +37,27 @@ internal class ShowcaseParityEvidenceTest {
 
     @Test
     fun staleHashAndWrongDimensionsAreRejected() {
-        val png = png(320, 180)
-        writeEvidence(png)
-        Files.write(temporaryRoot.resolve("components/row.png"), png(319, 180))
+        writeEvidence()
+        Files.write(temporaryRoot.resolve("components/button.png"), png(149, 20))
         assertThrows(IllegalArgumentException::class.java) { ShowcaseParityEvidence.load(temporaryRoot) }
 
-        writeEvidence(png)
+        writeEvidence()
         val receipt = Files.readString(temporaryRoot.resolve("receipt.properties"))
+        val buttonPng = png(150, 20)
         Files.writeString(
             temporaryRoot.resolve("receipt.properties"),
-            receipt.replace("component.row.png.sha256=${sha256(png)}", "component.row.png.sha256=${"0".repeat(64)}"),
+            receipt.replace("component.button.png.sha256=${sha256(buttonPng)}", "component.button.png.sha256=${"0".repeat(64)}"),
         )
         assertThrows(IllegalArgumentException::class.java) { ShowcaseParityEvidence.load(temporaryRoot) }
     }
 
     @Test
     fun malformedUtf8AndExtraTerminalLineAreRejected() {
-        val png = png(320, 180)
-        writeEvidence(png)
+        writeEvidence()
         Files.write(temporaryRoot.resolve("receipt.properties"), byteArrayOf(0xC3.toByte(), 0x28))
         assertThrows(IllegalArgumentException::class.java) { ShowcaseParityEvidence.load(temporaryRoot) }
 
-        writeEvidence(png)
+        writeEvidence()
         Files.writeString(
             temporaryRoot.resolve("receipt.properties"),
             Files.readString(temporaryRoot.resolve("receipt.properties")) + "\n",
@@ -64,21 +65,26 @@ internal class ShowcaseParityEvidenceTest {
         assertThrows(IllegalArgumentException::class.java) { ShowcaseParityEvidence.load(temporaryRoot) }
     }
 
-    private fun writeEvidence(png: ByteArray) {
+    private fun writeEvidence() {
         val components = temporaryRoot.resolve("components")
         Files.createDirectories(components)
-        val slugs = listOf("overview") + DocumentedComponent.entries.map { component -> component.slug }
-        slugs.forEach { slug -> Files.write(components.resolve("$slug.png"), png) }
-        val hash = sha256(png)
+        val images =
+            linkedMapOf(
+                "overview" to png(320, 180),
+                DocumentedComponent.MenuBackground.slug to png(32, 32),
+                DocumentedComponent.Text.slug to png(150, 20),
+                DocumentedComponent.Button.slug to png(150, 20),
+            )
+        images.forEach { (slug, bytes) -> Files.write(components.resolve("$slug.png"), bytes) }
         val receipt =
             buildString {
                 appendLine("minecraft.version=26.2")
-                appendLine("viewport.width=640")
-                appendLine("viewport.height=540")
+                appendLine("viewport.width=320")
+                appendLine("viewport.height=180")
                 appendLine("gui.scale=1")
                 appendLine("locale=en_us")
                 appendLine("native.fabric.headless.argb.sha256=${"1".repeat(64)}")
-                slugs.forEach { slug -> appendLine("component.$slug.png.sha256=$hash") }
+                images.forEach { (slug, bytes) -> appendLine("component.$slug.png.sha256=${sha256(bytes)}") }
             }
         Files.writeString(temporaryRoot.resolve("receipt.properties"), receipt)
     }

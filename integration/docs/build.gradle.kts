@@ -9,12 +9,13 @@ import java.nio.file.LinkOption
 
 dependencies {
     implementation(project(":runtime:headless"))
+    implementation(project(":runtime:minecraft"))
     testImplementation(libs.junit.jupiter)
     testRuntimeOnly(libs.junit.platform.launcher)
 }
 
-val apiMainClasses =
-    rootProject.project(":api").extensions
+val minecraftMainClasses =
+    rootProject.project(":runtime:minecraft").extensions
         .getByType<SourceSetContainer>()
         .named("main")
         .map { sourceSet -> sourceSet.output.classesDirs }
@@ -30,22 +31,22 @@ class ShowcaseArgumentProvider(
     private val moduleBuildRoot: Provider<Directory>,
     private val stagingRoot: Provider<Directory>,
     private val parityRoot: Provider<Directory>,
-    private val apiClasses: Provider<FileCollection>,
+    private val componentClasses: Provider<FileCollection>,
 ) : CommandLineArgumentProvider {
     override fun asArguments(): Iterable<String> {
         val classDirectories =
-            apiClasses
+            componentClasses
                 .get()
                 .files
                 .filter { file -> file.exists() }
                 .sortedBy { file -> file.absolutePath }
-        require(classDirectories.isNotEmpty()) { "API class output has no existing classes directory." }
+        require(classDirectories.isNotEmpty()) { "Minecraft component class output has no existing classes directory." }
         classDirectories.forEach { directory ->
             require(Files.isDirectory(directory.toPath(), LinkOption.NOFOLLOW_LINKS)) {
-                "API class output is not a directory: ${directory.absolutePath}"
+                "Minecraft component class output is not a directory: ${directory.absolutePath}"
             }
             require(Files.isSymbolicLink(directory.toPath()).not()) {
-                "API class output is symbolic: ${directory.absolutePath}"
+                "Minecraft component class output is symbolic: ${directory.absolutePath}"
             }
         }
         return buildList {
@@ -63,7 +64,7 @@ fun JavaExec.configureShowcaseLauncher(
     staging: Provider<Directory>,
     synchronizeSource: Boolean,
 ) {
-    dependsOn(":api:classes", ":runtime:headless:classes", ":integration:minecraft-fabric-26.2:runClientGameTest", "classes")
+    dependsOn(":runtime:minecraft:classes", ":runtime:headless:classes", ":integration:minecraft-fabric-26.2:runClientGameTest", "classes")
     mainClass.set(mainClassName)
     classpath = sourceSets.main.get().runtimeClasspath
     argumentProviders.add(
@@ -72,12 +73,12 @@ fun JavaExec.configureShowcaseLauncher(
             layout.buildDirectory,
             staging,
             parityOutput,
-            apiMainClasses,
+            minecraftMainClasses,
         ),
     )
     inputs.dir(showcaseSources)
     inputs.dir(parityOutput)
-    inputs.files(apiMainClasses)
+    inputs.files(minecraftMainClasses)
     outputs.dir(staging)
     outputs.upToDateWhen { false }
     if (synchronizeSource.not()) {

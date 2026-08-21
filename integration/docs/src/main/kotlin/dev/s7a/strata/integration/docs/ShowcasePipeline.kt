@@ -1,6 +1,5 @@
 package dev.s7a.strata.integration.docs
 
-import dev.s7a.strata.geometry.IntSize
 import java.nio.file.Path
 
 /**
@@ -12,20 +11,20 @@ internal object ShowcasePipeline {
     /**
      * Preflights every overview and component scenario against exact Minecraft parity evidence.
      *
-     * @param launch validated repository, build, staging, and API class paths.
+     * @param launch validated repository, build, staging, and Minecraft component class paths.
      * @return verified output ready for the synchronizer.
      * @throws IllegalArgumentException when catalog, inventory, source, receipt, image, or metadata validation fails.
-     * @throws IllegalStateException when API class loading or reflection fails.
+     * @throws IllegalStateException when Minecraft component class loading or reflection fails.
      * @throws java.io.IOException when source or evidence reading fails.
      */
     internal fun prepare(launch: ShowcaseLaunchArguments): ShowcaseOutput {
         val normalizedProject = launch.projectRoot
         val normalizedStaging = launch.stagingRoot
         ShowcaseScenarioCatalog.validate()
-        val discovered = ShowcaseInventory.discover(launch.apiClassDirectories)
+        val discovered = ShowcaseInventory.discover(launch.componentClassDirectories)
         val expected = DocumentedComponent.entries.toSet()
         require(discovered == expected) {
-            "API component inventory mismatch. Expected $expected but found $discovered."
+            "Minecraft component inventory mismatch. Expected $expected but found $discovered."
         }
         val sourceRoot = normalizedProject
         val evidence = ShowcaseParityEvidence.load(launch.parityRoot)
@@ -67,7 +66,9 @@ internal object ShowcasePipeline {
         region: SourceRegion,
         evidence: ShowcaseParityEvidence,
     ): ShowcaseOutput.Overview {
-        require(scenario.viewport == expectedCropSize && scenario.scale == 1) { "Overview crop metadata differs from the parity contract." }
+        require(scenario.viewport.width == 320 && scenario.viewport.height == 180 && scenario.scale == 1) {
+            "Overview crop metadata differs from the parity contract."
+        }
         return ShowcaseOutput.Overview(region.source, ShowcaseMarkdown.tree(scenario.tree), evidence.overviewPng())
     }
 
@@ -76,7 +77,7 @@ internal object ShowcasePipeline {
         region: SourceRegion,
         evidence: ShowcaseParityEvidence,
     ): ShowcaseOutput.Page {
-        require(scenario.viewport == expectedCropSize && scenario.scale == 1) {
+        require(scenario.scale == 1) {
             "${scenario.component.apiMethodName} crop metadata differs from the parity contract."
         }
         return ShowcaseOutput.Page(
@@ -85,6 +86,4 @@ internal object ShowcasePipeline {
             evidence.componentPng(scenario.component),
         )
     }
-
-    private val expectedCropSize = IntSize(320, 180)
 }

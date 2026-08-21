@@ -51,7 +51,7 @@ internal class ShowcaseLauncherContractTest {
 
         assertEquals(check, checkArguments.stagingRoot)
         assertEquals(generate, generateArguments.stagingRoot)
-        assertEquals(listOf(classes), checkArguments.apiClassDirectories)
+        assertEquals(listOf(classes), checkArguments.componentClassDirectories)
     }
 
     @Test

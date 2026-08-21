@@ -49,41 +49,69 @@ The external primitive integration test compiles this path and exercises the ret
 <!-- strata-component-showcase:start -->
 <!-- Generated file. Do not edit. -->
 
-## Headless component showcase
+## Minecraft component showcase
 
-This deterministic headless crop uses Minecraft 26.2 assets and font pixels from the same frame that passed exact native-screen and Fabric-adapter comparison.
+This deterministic image is the actual 320 by 180 `ConfirmScreen` reconstruction from the frame that passed exact native-screen, Fabric-adapter, and headless comparison.
 
 ![Strata component showcase](docs/components/images/overview.png)
 
 ### Overview source
 
 ```kotlin
+import dev.s7a.strata.dsl.Box
 import dev.s7a.strata.dsl.Column
-import dev.s7a.strata.dsl.RowScope
-import dev.s7a.strata.dsl.Spacer
-import dev.s7a.strata.geometry.IntSize
+import dev.s7a.strata.dsl.Row
+import dev.s7a.strata.dsl.buildUi
+import dev.s7a.strata.element.Element
+import dev.s7a.strata.geometry.Insets
+import dev.s7a.strata.layout.Alignment
 import dev.s7a.strata.layout.HorizontalAlignment
 import dev.s7a.strata.modifier.Modifier
-import dev.s7a.strata.modifier.height
+import dev.s7a.strata.modifier.fillMaxSize
+import dev.s7a.strata.modifier.onPress
+import dev.s7a.strata.modifier.padding
 import dev.s7a.strata.modifier.size
 import dev.s7a.strata.runtime.minecraft.MinecraftUiContext
 
 /**
- * Builds the overview panel used by the native, Fabric, and headless parity paths.
+ * Builds the deterministic Minecraft 26.2 ConfirmScreen content used by the Fabric and headless parity paths.
  *
- * @param minecraft callback-lifetime Minecraft component context.
+ * @return callback-lifetime content reproducing the native title, message, and button-row geometry.
  */
-internal fun RowScope.overviewPanel(minecraft: MinecraftUiContext) {
-    Column(
-        modifier = Modifier.Empty.size(320, 180),
-        horizontalAlignment = HorizontalAlignment.Center,
-    ) {
-        Spacer(modifier = Modifier.Empty.height(20))
-        with(minecraft) { Text("Overview") }
-        Spacer(modifier = Modifier.Empty.height(11))
-        with(minecraft) { Button("Continue") }
+internal fun confirmScreenContent(): MinecraftUiContext.() -> Element =
+    {
+        buildUi {
+            Box(
+                modifier = Modifier.Empty.size(320, 180),
+                contentAlignment = Alignment.Center,
+            ) {
+                MenuBackground(modifier = Modifier.Empty.fillMaxSize())
+                Column(
+                    spacing = 8,
+                    horizontalAlignment = HorizontalAlignment.Center,
+                ) {
+                    Text("Confirm action")
+                    Text("Continue with this action?")
+                    Row(spacing = 4) {
+                        Button(
+                            "Yes",
+                            modifier =
+                                Modifier.Empty
+                                    .padding(Insets(top = 16))
+                                    .onPress {},
+                        )
+                        Button(
+                            "No",
+                            modifier =
+                                Modifier.Empty
+                                    .padding(Insets(top = 16))
+                                    .onPress {},
+                        )
+                    }
+                }
+            }
+        }
     }
-}
 ```
 
 [Open the component showcase index](docs/components/README.md)

@@ -21,6 +21,6 @@ The nonpublished `integration:minecraft-fabric-26.2` module owns the loaded clie
 `./gradlew :integration:minecraft-fabric-26.2:runClientGameTest` fixes the viewport, GUI scale, locale, resource profile, and pointer state, then requires exact native-Screen, Fabric-adapter, and headless ARGB equality before writing build-only evidence.
 
 The nonpublished `integration:docs` module owns two source-safe showcase tasks.
-`./gradlew :integration:docs:checkComponentShowcase` depends on that loaded GameTest, verifies its receipt and image hashes, stages the compiled panel sources and verified crops, and checks freshness without modifying repository files.
+`./gradlew :integration:docs:checkComponentShowcase` depends on that loaded GameTest, verifies its receipt and image hashes, stages the compiled Minecraft-component scenario sources and verified crops, and checks freshness without modifying repository files.
 `./gradlew :integration:docs:generateComponentShowcase` performs the same parity preflight and synchronizes the checked showcase Markdown, parity receipt, PNG files, and anchored root README region.
 Generated output is owned by the showcase generator; manual edits are reported as stale by the checker.

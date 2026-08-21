@@ -1,31 +1,26 @@
 package dev.s7a.strata.integration.docs
 
 /**
- * Typed component identities discovered at the API boundary and used by the showcase catalog.
+ * Typed Minecraft component identities discovered at the runtime API boundary and used by the showcase catalog.
  */
 internal enum class DocumentedComponent(
     internal val apiMethodName: String,
     internal val slug: String,
 ) {
     /**
-     * The row component identity.
+     * The menu-background component identity.
      */
-    Row("Row", "row"),
+    MenuBackground("MenuBackground", "menu-background"),
 
     /**
-     * The column component identity.
+     * The text component identity.
      */
-    Column("Column", "column"),
+    Text("Text", "text"),
 
     /**
-     * The box component identity.
+     * The pointer-button component identity.
      */
-    Box("Box", "box"),
-
-    /**
-     * The spacer component identity.
-     */
-    Spacer("Spacer", "spacer"),
+    Button("Button", "button"),
     ;
 
     /**

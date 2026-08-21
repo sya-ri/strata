@@ -6,7 +6,7 @@ import java.nio.file.LinkOption
 import java.nio.file.Path
 
 /**
- * Validated launcher paths and API class directories.
+ * Validated launcher paths and Minecraft component class directories.
  *
  * Construction rejects malformed, duplicated, missing, or symlinked paths before rendering starts.
  */
@@ -14,7 +14,7 @@ internal class ShowcaseLaunchArguments private constructor(
     internal val projectRoot: Path,
     internal val stagingRoot: Path,
     internal val parityRoot: Path,
-    internal val apiClassDirectories: List<Path>,
+    internal val componentClassDirectories: List<Path>,
 ) {
     /**
      * Factory for validating task launcher arguments.
@@ -23,7 +23,7 @@ internal class ShowcaseLaunchArguments private constructor(
         /**
          * Parses and validates one task-specific launcher invocation.
          *
-         * @param args five argument groups: project root, module build root, exact staging root, Minecraft parity root, and one or more API class directories.
+         * @param args five argument groups: project root, module build root, exact staging root, Minecraft parity root, and one or more Minecraft component class directories.
          * @param kind typed task staging kind expected by this launcher.
          * @return validated immutable launcher arguments.
          * @throws IllegalArgumentException when any path or containment invariant fails.
@@ -33,7 +33,7 @@ internal class ShowcaseLaunchArguments private constructor(
             kind: ShowcaseStagingKind,
         ): ShowcaseLaunchArguments {
             require(5 <= args.size) {
-                "Showcase launcher requires a repository root, module build root, staging directory, Minecraft parity root, and API class directory."
+                "Showcase launcher requires a repository root, module build root, staging directory, Minecraft parity root, and Minecraft component class directory."
             }
             val projectRoot = parsePath(args[0], "repository root")
             val moduleBuildRoot = parsePath(args[1], "module build root")
@@ -60,13 +60,13 @@ internal class ShowcaseLaunchArguments private constructor(
             }
             requireDirectory(parityRoot, "Minecraft parity root")
             requireNotSymlinkAncestry(parityRoot, "Minecraft parity root")
-            val classDirectories = args.drop(4).map { value -> parsePath(value, "API class directory") }
-            require(classDirectories.isNotEmpty()) { "At least one API class directory is required." }
+            val classDirectories = args.drop(4).map { value -> parsePath(value, "Minecraft component class directory") }
+            require(classDirectories.isNotEmpty()) { "At least one Minecraft component class directory is required." }
             val normalized = classDirectories.map { directory -> directory.toAbsolutePath().normalize() }
-            require(normalized.toSet().size == normalized.size) { "API class directories must be unique after normalization." }
+            require(normalized.toSet().size == normalized.size) { "Minecraft component class directories must be unique after normalization." }
             normalized.forEach { directory ->
-                ShowcasePaths.requireSafeSegments(directory, "API class directory")
-                ShowcasePaths.requireDirectory(directory, "API class directory")
+                ShowcasePaths.requireSafeSegments(directory, "Minecraft component class directory")
+                ShowcasePaths.requireDirectory(directory, "Minecraft component class directory")
             }
             return ShowcaseLaunchArguments(projectRoot, stagingRoot, parityRoot, normalized)
         }

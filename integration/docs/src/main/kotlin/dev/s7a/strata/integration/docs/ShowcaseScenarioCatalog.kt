@@ -1,82 +1,50 @@
 package dev.s7a.strata.integration.docs
 
 import dev.s7a.strata.geometry.IntSize
-import dev.s7a.strata.layout.Alignment
-import dev.s7a.strata.layout.HorizontalAlignment
 
 /**
- * Owns the deterministic typed catalog used by both generator launchers.
+ * Owns the deterministic Minecraft component catalog used by both generator launchers.
  */
 internal object ShowcaseScenarioCatalog {
     /**
-     * Component scenarios in the required Row, Column, Box, Spacer order.
+     * Component scenarios in the required MenuBackground, Text, Button order.
      */
     internal val components: List<ComponentScenario> =
         listOf(
             ComponentScenario(
-                component = DocumentedComponent.Row,
-                source = SourceReference("integration/minecraft-fabric-26.2/src/gametest/kotlin/dev/s7a/strata/integration/minecraft/fabric/MinecraftRowExample.kt", "row"),
-                viewportMetadata = ShowcaseViewport(IntSize(320, 180), 1),
-                tree =
-                    tree(
-                        DocumentedComponent.Column,
-                        listOf(
-                            ShowcaseTreeDetail.Size(320, 180),
-                            ShowcaseTreeDetail.ColumnDefaultAlignment(HorizontalAlignment.Center),
-                        ),
-                        tree(DocumentedComponent.Spacer, listOf(ShowcaseTreeDetail.Height(20))),
-                        tree(DocumentedComponent.Spacer, listOf(ShowcaseTreeDetail.Height(11))),
-                        tree(DocumentedComponent.Row, listOf(ShowcaseTreeDetail.Spacing(10))),
+                component = DocumentedComponent.MenuBackground,
+                source =
+                    SourceReference(
+                        "integration/minecraft-fabric-26.2/src/gametest/kotlin/dev/s7a/strata/integration/minecraft/fabric/MinecraftMenuBackgroundExample.kt",
+                        "menu-background",
                     ),
+                viewportMetadata = ShowcaseViewport(IntSize(32, 32), 1),
+                tree = tree(DocumentedComponent.MenuBackground, listOf(ShowcaseTreeDetail.FillMaxSize)),
             ),
             ComponentScenario(
-                component = DocumentedComponent.Column,
-                source = SourceReference("integration/minecraft-fabric-26.2/src/gametest/kotlin/dev/s7a/strata/integration/minecraft/fabric/MinecraftColumnExample.kt", "column"),
-                viewportMetadata = ShowcaseViewport(IntSize(320, 180), 1),
-                tree =
-                    tree(
-                        DocumentedComponent.Column,
-                        listOf(
-                            ShowcaseTreeDetail.Size(320, 180),
-                            ShowcaseTreeDetail.ColumnDefaultAlignment(HorizontalAlignment.Center),
-                        ),
-                        tree(DocumentedComponent.Spacer, listOf(ShowcaseTreeDetail.Height(20))),
-                        tree(DocumentedComponent.Spacer, listOf(ShowcaseTreeDetail.Height(11))),
-                        tree(DocumentedComponent.Spacer, listOf(ShowcaseTreeDetail.Height(4))),
+                component = DocumentedComponent.Text,
+                source =
+                    SourceReference(
+                        "integration/minecraft-fabric-26.2/src/gametest/kotlin/dev/s7a/strata/integration/minecraft/fabric/MinecraftTextExample.kt",
+                        "text",
                     ),
+                viewportMetadata = ShowcaseViewport(IntSize(150, 20), 1),
+                tree = tree(DocumentedComponent.Text, listOf(ShowcaseTreeDetail.Size(150, 20))),
             ),
             ComponentScenario(
-                component = DocumentedComponent.Box,
-                source = SourceReference("integration/minecraft-fabric-26.2/src/gametest/kotlin/dev/s7a/strata/integration/minecraft/fabric/MinecraftBoxExample.kt", "box"),
-                viewportMetadata = ShowcaseViewport(IntSize(320, 180), 1),
-                tree =
-                    tree(
-                        DocumentedComponent.Box,
-                        listOf(
-                            ShowcaseTreeDetail.Size(320, 180),
-                            ShowcaseTreeDetail.BoxContentAlignment(Alignment.Center),
-                        ),
+                component = DocumentedComponent.Button,
+                source =
+                    SourceReference(
+                        "integration/minecraft-fabric-26.2/src/gametest/kotlin/dev/s7a/strata/integration/minecraft/fabric/MinecraftButtonExample.kt",
+                        "button",
                     ),
-            ),
-            ComponentScenario(
-                component = DocumentedComponent.Spacer,
-                source = SourceReference("integration/minecraft-fabric-26.2/src/gametest/kotlin/dev/s7a/strata/integration/minecraft/fabric/MinecraftSpacerExample.kt", "spacer"),
-                viewportMetadata = ShowcaseViewport(IntSize(320, 180), 1),
-                tree =
-                    tree(
-                        DocumentedComponent.Column,
-                        listOf(
-                            ShowcaseTreeDetail.Size(320, 180),
-                            ShowcaseTreeDetail.ColumnDefaultAlignment(HorizontalAlignment.Center),
-                        ),
-                        tree(DocumentedComponent.Spacer, listOf(ShowcaseTreeDetail.Height(20))),
-                        tree(DocumentedComponent.Spacer, listOf(ShowcaseTreeDetail.Height(51))),
-                    ),
+                viewportMetadata = ShowcaseViewport(IntSize(150, 20), 1),
+                tree = tree(DocumentedComponent.Button, emptyList()),
             ),
         )
 
     /**
-     * Overview scenario rendered before component pages.
+     * Verified ConfirmScreen overview rendered before component pages.
      */
     internal val overview: OverviewScenario =
         OverviewScenario(
@@ -85,14 +53,13 @@ internal object ShowcaseScenarioCatalog {
             scale = 1,
             tree =
                 ShowcaseTree(
-                    DocumentedComponent.Column,
+                    DocumentedComponent.MenuBackground,
+                    listOf(ShowcaseTreeDetail.FillMaxSize),
                     listOf(
-                        ShowcaseTreeDetail.Size(320, 180),
-                        ShowcaseTreeDetail.ColumnDefaultAlignment(HorizontalAlignment.Center),
-                    ),
-                    listOf(
-                        ShowcaseTree(DocumentedComponent.Spacer, listOf(ShowcaseTreeDetail.Height(20)), emptyList()),
-                        ShowcaseTree(DocumentedComponent.Spacer, listOf(ShowcaseTreeDetail.Height(11)), emptyList()),
+                        ShowcaseTree(DocumentedComponent.Text, emptyList(), emptyList()),
+                        ShowcaseTree(DocumentedComponent.Text, emptyList(), emptyList()),
+                        ShowcaseTree(DocumentedComponent.Button, emptyList(), emptyList()),
+                        ShowcaseTree(DocumentedComponent.Button, emptyList(), emptyList()),
                     ),
                 ),
         )

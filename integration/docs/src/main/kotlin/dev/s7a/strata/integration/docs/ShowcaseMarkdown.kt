@@ -18,10 +18,10 @@ internal object ShowcaseMarkdown {
         markdown(
             """<!-- Generated file. Do not edit. -->
 
-# Headless component showcase
+# Minecraft component showcase
 
-These deterministic headless crops use the active Minecraft 26.2 menu texture, button sprites, ASCII font, component geometry, and logical draw order.
-One loaded Fabric GameTest requires exact ARGB equality between the native screen, the Fabric adapter, and the headless frame before producing these files.
+These deterministic crops come from a real Minecraft 26.2 `ConfirmScreen` reconstructed with Strata's `MenuBackground`, `Text`, and `Button` components.
+One loaded Fabric GameTest requires exact ARGB equality among the native screen, the Fabric adapter, and the headless frame before it emits these component images.
 
 [Open the machine-readable parity receipt](minecraft-26.2-parity.properties)
 
@@ -35,7 +35,7 @@ ${overview.source}
 
 <details><summary>Overview component tree</summary>
 
-The tree shows layout components; Minecraft text and pointer-button leaves are omitted and remain visible in the compiled source.
+The tree shows Minecraft components in logical draw order; platform-neutral layout scaffolding remains visible in the compiled source.
 
 ```text
 ${overview.tree}
@@ -59,9 +59,9 @@ ${pages.joinToString("\n") { page -> "- [${page.title}](${page.slug}.md)" }}
         markdown(
             """<!-- Generated file. Do not edit. -->
 
-## Headless component showcase
+## Minecraft component showcase
 
-This deterministic headless crop uses Minecraft 26.2 assets and font pixels from the same frame that passed exact native-screen and Fabric-adapter comparison.
+This deterministic image is the actual 320 by 180 `ConfirmScreen` reconstruction from the frame that passed exact native-screen, Fabric-adapter, and headless comparison.
 
 ![Strata component showcase](docs/components/images/overview.png)
 
@@ -93,7 +93,7 @@ ${overview.source}
 
 ${typedSummary(spec.component)}
 
-This image is a 320 by 180 crop from the exact native/Fabric/headless parity frame recorded in [the verification receipt](minecraft-26.2-parity.properties).
+This image is a ${spec.viewport.width} by ${spec.viewport.height} component crop from the exact native/Fabric/headless parity frame recorded in [the verification receipt](minecraft-26.2-parity.properties).
 
 ![${spec.component.apiMethodName} headless showcase](images/${spec.component.slug}.png)
 
@@ -113,7 +113,7 @@ ${parentScopeGuidance(spec.component)}
 
 <details><summary>Component tree</summary>
 
-The tree shows layout components; Minecraft text and pointer-button leaves are omitted and remain visible in the compiled source.
+The tree shows the featured Minecraft component; platform-neutral layout scaffolding remains visible in the compiled source.
 
 ```text
 ${tree(spec.tree)}
@@ -149,26 +149,23 @@ ${tree(spec.tree)}
 
     private fun modifierGuidance(component: DocumentedComponent): String =
         when (component) {
-            DocumentedComponent.Row -> "The compiled panel fixes its outer size, uses Spacer height modifiers for vertical placement, and sets Row spacing to 10. Its Minecraft button children use no RowScope parent data."
-            DocumentedComponent.Column -> "The compiled panel fixes Column to 320 by 180, centers children horizontally, and uses Spacer height modifiers for exact native vertical placement."
-            DocumentedComponent.Box -> "The compiled panel fixes Box to 320 by 180 with Center as its default. Its two pointer-button children use BoxScope.align with TopStart and BottomEnd overrides."
-            DocumentedComponent.Spacer -> "The compiled panel uses Spacer height modifiers to reproduce native vertical gaps. Spacer remains an intrinsic-zero, non-painting leaf."
+            DocumentedComponent.MenuBackground -> "`Modifier.fillMaxSize()` supplies the finite viewport that `MenuBackground` fills with the active Minecraft menu texture."
+            DocumentedComponent.Text -> "Ordinary sizing, padding, placement, and paint modifiers compose around `Text`; text content remains a typed component argument."
+            DocumentedComponent.Button -> "Pointer behavior is active modifier behavior. `onPointerEvent`, `onPress`, `onRelease`, `onMove`, `onDrag`, `onScroll`, and `onHover` can be composed without adding component-specific callback parameters."
         }
 
     private fun parentScopeGuidance(component: DocumentedComponent): String =
         when (component) {
-            DocumentedComponent.Row -> "Row's content callback runs with RowScope; weight and vertical align modifiers apply only to direct children while that scope is active."
-            DocumentedComponent.Column -> "Column's content callback runs with ColumnScope; weight and horizontal align modifiers apply only to direct children while that scope is active."
-            DocumentedComponent.Box -> "Box's content callback runs with BoxScope; align applies only to direct children while that scope is active."
-            DocumentedComponent.Spacer -> "Spacer has no content callback or Spacer-specific parent-data API. In this example it is a direct Column child, while its ordinary height modifier is not Column parent data."
+            DocumentedComponent.MenuBackground -> "`MenuBackground` is a member extension on the active `UiScope`. The runtime supplies `MinecraftUiContext` implicitly for the screen-content callback; application code never names or retains it."
+            DocumentedComponent.Text -> "`Text` is a member extension on the active `UiScope`. The runtime supplies `MinecraftUiContext` implicitly, and the component has no content callback or parent-data API."
+            DocumentedComponent.Button -> "`Button` is a member extension on the active `UiScope`. The runtime supplies `MinecraftUiContext` implicitly, and pointer event modifiers remain valid only through their retained modifier-node lifetime."
         }
 
     private fun typedSummary(component: DocumentedComponent): String =
         when (component) {
-            DocumentedComponent.Row -> "Row lays out direct children horizontally with typed spacing, arrangement, and vertical alignment."
-            DocumentedComponent.Column -> "Column lays out direct children vertically with typed spacing, arrangement, and horizontal alignment."
-            DocumentedComponent.Box -> "Box overlays direct children and positions each with its default alignment or a direct-child override."
-            DocumentedComponent.Spacer -> "Spacer has no intrinsic size or paint; height modifiers make the native vertical gaps visible around Minecraft text and buttons."
+            DocumentedComponent.MenuBackground -> "MenuBackground paints the selected Minecraft menu texture with the same tiling, clipping, and draw order as the verified native screen."
+            DocumentedComponent.Text -> "Text renders a printable-ASCII literal with the extracted Minecraft glyph advances, shadow layer, foreground layer, and native baseline."
+            DocumentedComponent.Button -> "Button renders the verified 150 by 20 Minecraft sprite and label states while reusable input actions live in modifiers."
         }
 
     private fun details(details: List<ShowcaseTreeDetail>): String = if (details.isEmpty()) "" else " [${details.joinToString(", ") { detail -> ShowcaseDetailMarkdown.text(detail) }}]"

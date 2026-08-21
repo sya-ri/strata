@@ -19,15 +19,15 @@ A module joins the build only with working behavior and tests.
 - `runtime:minecraft` is a publishable Minecraft-independent adapter boundary built on `runtime:core`.
   Its opt-in host consumes a one-shot screen definition and a complete immutable profile, then converts every non-negative logical viewport into exact fixed root constraints.
   Its callback-scoped implicit receiver provides menu background, printable text, and a fixed profile-backed pointer button inside ordinary `buildUi` scopes.
-  Button owns profile-backed appearance and enabled semantics, while platform-neutral active modifiers own raw pointer, press, release, move, scroll, and hover actions reusable by future Minecraft components.
+  Button owns profile-backed appearance and enabled semantics, while platform-neutral active modifiers own raw pointer, press, release, move, drag, scroll, and hover actions reusable by future Minecraft components.
   Hosts retain the core tree across transient detach and reattach, gate input until a successful frame, and expose no mapped game, Fabric, resource, renderer, version, coroutine, state, or source-binding type.
   The common button contract does not claim focus, keyboard, sound, or a platform-native widget system; hover changes only in response to delivered pointer movement.
 - `integration:api` verifies an external primitive against the public `api`, `runtime:core`, and `runtime:minecraft` boundaries.
 - `runtime:minecraft-fabric-26.2` is the client-only boundary for the current latest Java release.
   It extracts the 26.2 vanilla profile from the active resource manager, maps the common host to a native Screen, rasterizes through the tested headless path, and forwards typed mouse input.
   Its loaded client GameTest compares one native Screen using the actual menu background, font, and Button widgets against both the Fabric adapter and the common headless compositor with exact ARGB equality.
-- `integration:minecraft-fabric-26.2` owns that loaded client parity scene, its compiled five-panel examples, and build-only verification evidence; it is not published.
-- `integration:docs` discovers the public layout components, extracts those compiled panel sources, verifies the Minecraft parity receipt and PNG hashes, and owns generated component documentation; it is not published.
+- `integration:minecraft-fabric-26.2` owns that loaded client `ConfirmScreen` parity scene, its compiled Minecraft-component examples, and build-only verification evidence; it is not published.
+- `integration:docs` discovers the public Minecraft components from `MinecraftUiContext`, extracts those compiled scenario sources, verifies the Minecraft parity receipt and PNG hashes, and owns generated component documentation; it is not published.
 Platform-independent code must not depend on a Minecraft runtime.
 Minecraft and Fabric dependencies remain confined to the versioned runtime boundary that requires them.
 
@@ -57,8 +57,8 @@ PNG output contains exactly one IHDR, one IDAT, and one IEND in that order, uses
 Frames retain no description, tree, or draw-command list; semantics are defensive, logical, unscaled, unclipped, and in core emission order.
 The exact built-in layout measurement, weight, arrangement, alignment, and overflow contracts are defined in [Built-in layout components](layout.md).
 The headless adapter's fixed-viewport, clipping, source-over, scaling, PNG, and immutable semantics contracts are exercised by its module tests.
-The loaded 26.2 client GameTest first requires exact native-Screen, Fabric-adapter, and headless ARGB equality for a fixed 640 by 540 scene, then writes five deterministic 320 by 180 headless crops and their hashes below its build directory.
-The showcase generator accepts only those receipt-matched crops and the compiled GameTest panel sources before staging Markdown and PNG output.
+The loaded 26.2 client GameTest first requires exact ARGB equality among a deterministic native `ConfirmScreen`, its Fabric-adapter reconstruction, and the common headless frame at 320 by 180, then writes the full screen and typed MenuBackground, Text, and Button crops with their hashes below its build directory.
+The showcase generator accepts only those receipt-matched crops and the compiled GameTest scenario sources before staging Markdown and PNG output.
 The checker reruns the parity prerequisite and compares that staging output with `docs/components` and the anchored root README region without writing source files.
 
 ## Retained operation contract
