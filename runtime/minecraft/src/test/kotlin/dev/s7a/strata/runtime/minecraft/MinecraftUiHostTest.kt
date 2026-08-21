@@ -1,12 +1,23 @@
 package dev.s7a.strata.runtime.minecraft
 
+import dev.s7a.strata.dsl.Spacer
 import dev.s7a.strata.dsl.buildUi
 import dev.s7a.strata.element.Element
 import dev.s7a.strata.geometry.Constraints
 import dev.s7a.strata.geometry.IntOffset
 import dev.s7a.strata.geometry.IntSize
+import dev.s7a.strata.input.FocusEvent
 import dev.s7a.strata.input.InputResult
+import dev.s7a.strata.input.KeyCode
+import dev.s7a.strata.input.KeyboardEvent
 import dev.s7a.strata.input.PointerEvent
+import dev.s7a.strata.input.TextInputEvent
+import dev.s7a.strata.modifier.Modifier
+import dev.s7a.strata.modifier.initialFocus
+import dev.s7a.strata.modifier.onCharacterInput
+import dev.s7a.strata.modifier.onFocusChanged
+import dev.s7a.strata.modifier.onKeyPress
+import dev.s7a.strata.modifier.size
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
 import dev.s7a.strata.text.UiText
 import org.junit.jupiter.api.Assertions.assertEquals
@@ -23,6 +34,51 @@ import java.util.concurrent.TimeUnit
  */
 @OptIn(InternalStrataRuntimeApi::class)
 internal class MinecraftUiHostTest {
+    @Test
+    fun focusedInputIsFirstFrameGatedAndReacquiredAfterTransientDetach() {
+        val focus = ArrayList<FocusEvent>()
+        val keys = ArrayList<KeyboardEvent.Press>()
+        val characters = ArrayList<TextInputEvent.Character>()
+        val host =
+            host {
+                buildUi {
+                    Spacer(
+                        modifier =
+                            Modifier.Empty
+                                .size(4, 3)
+                                .initialFocus()
+                                .onKeyPress { event ->
+                                    keys += event
+                                    InputResult.Consumed
+                                }.onCharacterInput { event ->
+                                    characters += event
+                                    InputResult.Consumed
+                                }.onFocusChanged { event -> focus += event },
+                    )
+                }
+            }
+        val key = KeyboardEvent.Press(KeyCode.Enter, 12)
+        val character = TextInputEvent.Character('a'.code)
+
+        host.attach()
+        assertEquals(InputResult.Ignored, host.dispatchKeyboard(key))
+        assertEquals(InputResult.Ignored, host.dispatchTextInput(character))
+        host.frame(IntSize(4, 3))
+        assertEquals(listOf(FocusEvent.Gained), focus)
+        assertEquals(InputResult.Consumed, host.dispatchKeyboard(key))
+        assertEquals(InputResult.Consumed, host.dispatchTextInput(character))
+        assertEquals(listOf(key), keys)
+        assertEquals(listOf(character), characters)
+
+        host.detach()
+        assertEquals(listOf(FocusEvent.Gained, FocusEvent.Lost), focus)
+        host.attach()
+        assertEquals(InputResult.Ignored, host.dispatchKeyboard(key))
+        host.frame(IntSize(4, 3))
+        assertEquals(listOf(FocusEvent.Gained, FocusEvent.Lost, FocusEvent.Gained), focus)
+        host.close()
+    }
+
     @Test
     fun fixedViewportRetainedInvalidationAndTransientReattachRemainCoherent() {
         val probe = MinecraftHostProbe()
@@ -118,6 +174,8 @@ internal class MinecraftUiHostTest {
         assertTrue(wrongThread { host.detach() } is IllegalStateException)
         assertTrue(wrongThread { host.frame(IntSize(2, 1)) } is IllegalStateException)
         assertTrue(wrongThread { host.dispatchPointer(PointerEvent.Move(IntOffset.Zero)) } is IllegalStateException)
+        assertTrue(wrongThread { host.dispatchKeyboard(KeyboardEvent.Press(KeyCode.Enter, 0)) } is IllegalStateException)
+        assertTrue(wrongThread { host.dispatchTextInput(TextInputEvent.Character('a'.code)) } is IllegalStateException)
         assertTrue(wrongThread { host.close() } is IllegalStateException)
         host.close()
         assertTrue(wrongThread { host.close() } is IllegalStateException)

@@ -5,7 +5,9 @@ import dev.s7a.strata.dsl.buildUi
 import dev.s7a.strata.element.ElementKey
 import dev.s7a.strata.geometry.IntSize
 import dev.s7a.strata.input.InputResult
+import dev.s7a.strata.input.KeyboardEvent
 import dev.s7a.strata.input.PointerEvent
+import dev.s7a.strata.input.TextInputEvent
 import dev.s7a.strata.runtime.spi.RuntimeUiFrame
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
 import dev.s7a.strata.text.UiText
@@ -27,7 +29,7 @@ internal class MinecraftRuntimeApiContractTest {
         assertInterfaceSurface(MinecraftScreenDefinition::class.java, setOf("close"))
         assertInterfaceSurface(
             MinecraftUiHost::class.java,
-            setOf("getTitle", "getPausesGame", "attach", "detach", "frame", "dispatchPointer", "close"),
+            setOf("getTitle", "getPausesGame", "attach", "detach", "frame", "dispatchPointer", "dispatchKeyboard", "dispatchTextInput", "close"),
         )
         assertInterfaceSurface(
             MinecraftUiContext::class.java,
@@ -93,7 +95,13 @@ internal class MinecraftRuntimeApiContractTest {
         assertMethod(methods.getValue("close"), emptyList(), Void.TYPE)
         assertMethod(methods.getValue("frame"), listOf(IntSize::class.java), RuntimeUiFrame::class.java)
         assertMethod(methods.getValue("dispatchPointer"), listOf(PointerEvent::class.java), InputResult::class.java)
+        assertMethod(methods.getValue("dispatchKeyboard"), listOf(KeyboardEvent::class.java), InputResult::class.java)
+        assertMethod(methods.getValue("dispatchTextInput"), listOf(TextInputEvent::class.java), InputResult::class.java)
 
+        assertContextMethodDescriptors()
+    }
+
+    private fun assertContextMethodDescriptors() {
         val contextMethods = MinecraftUiContext::class.java.declaredMethods.toList()
         assertEquals(
             setOf(

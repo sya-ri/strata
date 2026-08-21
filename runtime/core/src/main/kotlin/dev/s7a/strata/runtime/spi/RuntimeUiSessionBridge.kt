@@ -6,7 +6,9 @@ import dev.s7a.strata.element.Element
 import dev.s7a.strata.geometry.Constraints
 import dev.s7a.strata.geometry.IntSize
 import dev.s7a.strata.input.InputResult
+import dev.s7a.strata.input.KeyboardEvent
 import dev.s7a.strata.input.PointerEvent
+import dev.s7a.strata.input.TextInputEvent
 import dev.s7a.strata.runtime.UiFrame
 import dev.s7a.strata.runtime.UiSession
 import dev.s7a.strata.runtime.render.DrawCommand
@@ -58,6 +60,10 @@ private object RuntimeUiSessionImplementation {
             }
 
         override fun dispatchPointer(event: PointerEvent): InputResult = session.dispatchPointer(event)
+
+        override fun dispatchKeyboard(event: KeyboardEvent): InputResult = session.dispatchKeyboard(event)
+
+        override fun dispatchTextInput(event: TextInputEvent): InputResult = session.dispatchTextInput(event)
 
         override fun close() {
             session.close()

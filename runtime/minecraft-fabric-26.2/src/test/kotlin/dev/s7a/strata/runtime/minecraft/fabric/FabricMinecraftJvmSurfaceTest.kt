@@ -128,6 +128,7 @@ internal class FabricMinecraftJvmSurfaceTest {
         private val expectedPublicMethods =
             mapOf(
                 "$packageName.FabricMinecraftFontContractKt" to emptySet(),
+                "$packageName.FabricMinecraftFocusedInputMappingKt" to emptySet(),
                 "$packageName.FabricMinecraftInputMappingKt" to emptySet(),
                 profileFacade to setOf("extractMinecraftUiProfile"),
                 "$packageName.FabricMinecraftScreen" to
@@ -142,6 +143,10 @@ internal class FabricMinecraftJvmSurfaceTest {
                         "mouseReleased",
                         "mouseDragged",
                         "mouseScrolled",
+                        "keyPressed",
+                        "keyReleased",
+                        "charTyped",
+                        "preeditUpdated",
                         "onClose",
                         "close",
                     ),

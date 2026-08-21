@@ -5,7 +5,9 @@ import dev.s7a.strata.geometry.IntOffset
 import dev.s7a.strata.geometry.IntRect
 import dev.s7a.strata.geometry.IntSize
 import dev.s7a.strata.input.InputResult
+import dev.s7a.strata.input.KeyboardEvent
 import dev.s7a.strata.input.PointerEvent
+import dev.s7a.strata.input.TextInputEvent
 import dev.s7a.strata.layout.LayoutScope
 import dev.s7a.strata.layout.MeasureScope
 import dev.s7a.strata.layout.ParentDataKey
@@ -30,7 +32,8 @@ internal class Pipeline(
     private val threadGuard: ThreadGuard,
 ) {
     private val paintPipeline = PaintPipeline(threadGuard)
-    private val inputPipeline = InputPipeline()
+    private val focusedInputPipeline = FocusedInputPipeline()
+    private val inputPipeline = InputPipeline(focusedInputPipeline)
     private val semanticsPipeline = SemanticsPipeline(threadGuard)
 
     /**
@@ -55,6 +58,7 @@ internal class Pipeline(
         effective.bounds = IntRect(0, 0, effective.measuredSize.width, effective.measuredSize.height)
         effective.placed = true
         layoutEntry(effective)
+        focusedInputPipeline.layoutCommitted(root)
     }
 
     /**
@@ -75,16 +79,33 @@ internal class Pipeline(
     fun dispatch(
         root: RetainedNode,
         event: PointerEvent,
-    ): InputResult = inputPipeline.dispatch(root.effectiveRoot, event)
+    ): InputResult = inputPipeline.dispatch(root, event)
 
     /**
-     * Clears hover from every placed capable node in [root].
+     * Dispatches [event] through the focused logical component.
+     *
+     * @param event immutable keyboard event.
+     * @return consumed when focused behavior handles it, otherwise ignored.
+     */
+    fun dispatchKeyboard(event: KeyboardEvent): InputResult = focusedInputPipeline.dispatchKeyboard(event)
+
+    /**
+     * Dispatches [event] through the focused logical component.
+     *
+     * @param event immutable committed-character or preedit event.
+     * @return consumed when focused behavior handles it, otherwise ignored.
+     */
+    fun dispatchTextInput(event: TextInputEvent): InputResult = focusedInputPipeline.dispatchTextInput(event)
+
+    /**
+     * Clears hover and focused ownership from the placed tree rooted at [root].
      *
      * @param root the installed logical root retained across session detachment.
-     * @throws Throwable when a hover callback rejects the exit transition.
+     * @throws Throwable when a hover or focus callback rejects the exit transition.
      */
-    fun clearPointerHover(root: RetainedNode) {
-        inputPipeline.clearHover(root.effectiveRoot)
+    fun clearInputState(root: RetainedNode) {
+        inputPipeline.clearHover(root)
+        focusedInputPipeline.clear()
     }
 
     /**

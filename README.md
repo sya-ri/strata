@@ -21,10 +21,10 @@ The design separates those concerns into layers:
 - application code declares components and owns application state;
 - layout components measure and place their children from constraints instead of visual-tuning coordinates;
 - retained nodes perform incremental measurement, layout, painting, input, semantics, and lifecycle work;
-- active modifiers provide checked padding, size constraints, background painting, unresolved semantics, and typed layout parent data without changing component implementations;
+- active modifiers provide checked padding, size constraints, background painting, unresolved semantics, typed pointer/keyboard/text/focus actions, and typed layout parent data without changing component implementations;
 - the retained core runtime emits draw commands and unresolved semantics on the JVM;
 - the common Minecraft runtime owns one-shot screen definitions, immutable asset profiles, callback-scoped menu/text/pointer-button/selection-list components, and a synchronous fixed-viewport host over the retained core;
-- the latest Java release, Minecraft 26.2, has a Fabric boundary that extracts the supported native asset/font/list profile and adapts common frames, input, and screen lifecycle on the client thread; loaded client GameTests verify exact native/Fabric/headless ARGB parity for `ConfirmScreen` and `ObjectSelectionList` scenes.
+- the latest Java release, Minecraft 26.2, has a Fabric boundary that extracts the supported native asset/font/list profile and adapts common frames, typed mouse/keyboard/text input, and screen lifecycle on the client thread; loaded client GameTests verify exact native/Fabric/headless ARGB parity for `ConfirmScreen` and `ObjectSelectionList` scenes.
 
 The public element, node, and drawing contracts are designed for extension.
 A custom primitive must work through those contracts without registering its concrete class in a central component dispatcher.

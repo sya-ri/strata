@@ -4,10 +4,14 @@ import dev.s7a.strata.element.Element
 import dev.s7a.strata.geometry.Constraints
 import dev.s7a.strata.geometry.IntSize
 import dev.s7a.strata.input.InputResult
+import dev.s7a.strata.input.KeyboardEvent
 import dev.s7a.strata.input.PointerEvent
+import dev.s7a.strata.input.TextInputEvent
 import dev.s7a.strata.runtime.render.DrawCommand
 import dev.s7a.strata.runtime.semantics.SemanticsEntry
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
+
+// Why: this public owner intentionally exposes each retained lifecycle, frame, input, and inspection operation through one guarded boundary.
 
 /**
  * A retained, platform-neutral UI tree.
@@ -24,6 +28,7 @@ import dev.s7a.strata.spi.InternalStrataRuntimeApi
  * Cleanup preserves the primary [Throwable] instance and suppresses later distinct failures on it.
  */
 @OptIn(InternalStrataRuntimeApi::class)
+@Suppress("TooManyFunctions")
 public class UiTree : AutoCloseable {
     private val threadGuard: ThreadGuard = ThreadGuard.currentThread()
     private val dirtyTracker = DirtyTracker()
@@ -176,19 +181,57 @@ public class UiTree : AutoCloseable {
         }
 
     /**
-     * Clears hover state before an internal retained session detaches without disposing this tree.
+     * Dispatches [event] to the currently focused logical component.
+     *
+     * An empty tree or a tree without focus returns [InputResult.Ignored].
+     * A non-empty tree must have completed layout with no pending geometry work.
+     * Focused component and modifier nodes run from the component node toward outer modifiers until one consumes the event.
+     *
+     * @param event immutable keyboard event.
+     * @return consumed when focused behavior handles the event, otherwise ignored.
+     * @throws IllegalStateException when layout is incomplete, the call is from another thread, another operation is active, or the tree is not active.
+     * @throws Throwable when focused behavior fails; the original throwable escapes unchanged after cleanup attempts.
+     */
+    public fun dispatchKeyboard(event: KeyboardEvent): InputResult =
+        pipelineOperation {
+            val retainedRoot = root ?: return@pipelineOperation InputResult.Ignored
+            pipeline.requirePlacedRoot(retainedRoot)
+            pipeline.dispatchKeyboard(event)
+        }
+
+    /**
+     * Dispatches [event] to the currently focused logical component.
+     *
+     * An empty tree or a tree without focus returns [InputResult.Ignored].
+     * A non-empty tree must have completed layout with no pending geometry work.
+     * Focused component and modifier nodes run from the component node toward outer modifiers until one consumes the event.
+     *
+     * @param event immutable committed-character or preedit event.
+     * @return consumed when focused behavior handles the event, otherwise ignored.
+     * @throws IllegalStateException when layout is incomplete, the call is from another thread, another operation is active, or the tree is not active.
+     * @throws Throwable when focused behavior fails; the original throwable escapes unchanged after cleanup attempts.
+     */
+    public fun dispatchTextInput(event: TextInputEvent): InputResult =
+        pipelineOperation {
+            val retainedRoot = root ?: return@pipelineOperation InputResult.Ignored
+            pipeline.requirePlacedRoot(retainedRoot)
+            pipeline.dispatchTextInput(event)
+        }
+
+    /**
+     * Clears hover and focused ownership before an internal retained session detaches without disposing this tree.
      *
      * The operation is owner-thread confined and uses the most recently committed placement bounds even when later geometry became dirty.
      * It invokes capable placed nodes in deepest/latest-painted-first order and retains the tree for reattachment.
      *
      * @throws IllegalStateException when the call is from another thread, another operation is active, or this tree is not active.
-     * @throws Throwable when a hover callback fails; the exact failure remains primary while the tree is poisoned and cleaned.
+     * @throws Throwable when a hover or focus callback fails; the exact failure remains primary while the tree is poisoned and cleaned.
      */
     @JvmSynthetic
-    internal fun clearPointerHover() {
+    internal fun clearInputState() {
         pipelineOperation {
             val retainedRoot = root ?: return@pipelineOperation
-            pipeline.clearPointerHover(retainedRoot)
+            pipeline.clearInputState(retainedRoot)
         }
     }
 

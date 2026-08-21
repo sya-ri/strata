@@ -3,7 +3,9 @@ package dev.s7a.strata.runtime
 import dev.s7a.strata.geometry.Constraints
 import dev.s7a.strata.geometry.IntSize
 import dev.s7a.strata.input.InputResult
+import dev.s7a.strata.input.KeyboardEvent
 import dev.s7a.strata.input.PointerEvent
+import dev.s7a.strata.input.TextInputEvent
 import dev.s7a.strata.runtime.spi.RuntimeUiFrame
 import dev.s7a.strata.runtime.spi.RuntimeUiSession
 import dev.s7a.strata.runtime.spi.createRuntimeUiSession
@@ -29,7 +31,7 @@ internal class RuntimeUiSessionBridgeApiContractTest {
         )
         assertInterfaceSurface(
             RuntimeUiSession::class.java,
-            setOf("attach", "detach", "frame", "dispatchPointer", "close"),
+            setOf("attach", "detach", "frame", "dispatchPointer", "dispatchKeyboard", "dispatchTextInput", "close"),
         )
     }
 
@@ -115,19 +117,26 @@ internal class RuntimeUiSessionBridgeApiContractTest {
             assertEquals(List::class.java, semantics.returnType)
             assertEquals(0, semantics.parameterCount)
         } else {
-            val attach = orderedMethods[0]
-            val close = orderedMethods[1]
-            val detach = orderedMethods[2]
-            val input = orderedMethods[3]
-            val frame = orderedMethods[4]
+            val byName = methods.associateBy { method -> method.name }
+            val attach = byName.getValue("attach")
+            val close = byName.getValue("close")
+            val detach = byName.getValue("detach")
+            val frame = byName.getValue("frame")
             assertEquals(Void.TYPE, attach.returnType)
             assertEquals(0, attach.parameterCount)
             assertEquals(Void.TYPE, detach.returnType)
             assertEquals(0, detach.parameterCount)
             assertEquals(RuntimeUiFrame::class.java, frame.returnType)
             assertEquals(listOf(Constraints::class.java), frame.parameterTypes.toList())
-            assertEquals(InputResult::class.java, input.returnType)
-            assertEquals(listOf(PointerEvent::class.java), input.parameterTypes.toList())
+            mapOf(
+                "dispatchKeyboard" to KeyboardEvent::class.java,
+                "dispatchPointer" to PointerEvent::class.java,
+                "dispatchTextInput" to TextInputEvent::class.java,
+            ).forEach { (name, parameter) ->
+                val input = byName.getValue(name)
+                assertEquals(InputResult::class.java, input.returnType)
+                assertEquals(listOf(parameter), input.parameterTypes.toList())
+            }
             assertEquals(Void.TYPE, close.returnType)
             assertEquals(0, close.parameterCount)
         }

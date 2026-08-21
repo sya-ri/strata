@@ -151,8 +151,8 @@ internal class PointerInputModifierTest {
         val tree = tree(Modifier.Empty.size(10, 10).onHover(transitions::add))
         tree.dispatchPointer(PointerEvent.Move(IntOffset(1, 1)))
 
-        tree.clearPointerHover()
-        tree.clearPointerHover()
+        tree.clearInputState()
+        tree.clearInputState()
         assertEquals(listOf(PointerHoverEvent.Enter, PointerHoverEvent.Exit), transitions)
 
         tree.dispatchPointer(PointerEvent.Move(IntOffset(1, 1)))

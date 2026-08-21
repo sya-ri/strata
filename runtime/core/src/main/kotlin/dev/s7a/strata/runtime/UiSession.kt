@@ -3,7 +3,9 @@ package dev.s7a.strata.runtime
 import dev.s7a.strata.element.Element
 import dev.s7a.strata.geometry.Constraints
 import dev.s7a.strata.input.InputResult
+import dev.s7a.strata.input.KeyboardEvent
 import dev.s7a.strata.input.PointerEvent
+import dev.s7a.strata.input.TextInputEvent
 import dev.s7a.strata.state.StateSource
 import kotlinx.coroutines.CompletableJob
 import kotlinx.coroutines.CoroutineDispatcher
@@ -218,7 +220,7 @@ internal class UiSession private constructor(
             }
             runCatching {
                 if (frameAvailable) {
-                    checkNotNull(tree) { "An attached session has no retained tree." }.clearPointerHover()
+                    checkNotNull(tree) { "An attached session has no retained tree." }.clearInputState()
                 }
                 currentState = UiSessionState.Detached
                 frameAvailable = false
@@ -289,6 +291,41 @@ internal class UiSession private constructor(
             }
             return runCatching {
                 checkNotNull(tree) { "An attached session has no retained tree." }.dispatchPointer(event)
+            }.getOrElse { failure -> fail(failure) }
+        } finally {
+            endOperation()
+        }
+    }
+
+    /**
+     * Dispatches one keyboard event through the most recently committed attached tree.
+     *
+     * @param event immutable keyboard event.
+     * @return focused input result, or [InputResult.Ignored] without a committed frame.
+     * @throws Throwable when focused keyboard dispatch fails.
+     */
+    internal fun dispatchKeyboard(event: KeyboardEvent): InputResult = dispatchFocusedInput { retainedTree -> retainedTree.dispatchKeyboard(event) }
+
+    /**
+     * Dispatches one text-input event through the most recently committed attached tree.
+     *
+     * @param event immutable committed-character or preedit event.
+     * @return focused input result, or [InputResult.Ignored] without a committed frame.
+     * @throws Throwable when focused text dispatch fails.
+     */
+    internal fun dispatchTextInput(event: TextInputEvent): InputResult = dispatchFocusedInput { retainedTree -> retainedTree.dispatchTextInput(event) }
+
+    private fun dispatchFocusedInput(dispatch: (UiTree) -> InputResult): InputResult {
+        beginOperation(SessionOperation.Input)
+        try {
+            check(currentState === UiSessionState.Attached) {
+                "A session can dispatch focused input only while Attached."
+            }
+            if (frameAvailable.not()) {
+                return InputResult.Ignored
+            }
+            return runCatching {
+                dispatch(checkNotNull(tree) { "An attached session has no retained tree." })
             }.getOrElse { failure -> fail(failure) }
         } finally {
             endOperation()

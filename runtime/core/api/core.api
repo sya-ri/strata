@@ -25,7 +25,9 @@ public final class dev/s7a/strata/runtime/TreeState$Poisoned : dev/s7a/strata/ru
 public final class dev/s7a/strata/runtime/UiTree : java/lang/AutoCloseable {
 	public fun <init> ()V
 	public fun close ()V
+	public final fun dispatchKeyboard (Ldev/s7a/strata/input/KeyboardEvent;)Ldev/s7a/strata/input/InputResult;
 	public final fun dispatchPointer (Ldev/s7a/strata/input/PointerEvent;)Ldev/s7a/strata/input/InputResult;
+	public final fun dispatchTextInput (Ldev/s7a/strata/input/TextInputEvent;)Ldev/s7a/strata/input/InputResult;
 	public final fun getState ()Ldev/s7a/strata/runtime/TreeState;
 	public final fun layout ()V
 	public final fun measure (Ldev/s7a/strata/geometry/Constraints;)Ldev/s7a/strata/geometry/IntSize;
@@ -106,7 +108,9 @@ public abstract interface class dev/s7a/strata/runtime/spi/RuntimeUiSession : ja
 	public abstract fun attach ()V
 	public abstract fun close ()V
 	public abstract fun detach ()V
+	public abstract fun dispatchKeyboard (Ldev/s7a/strata/input/KeyboardEvent;)Ldev/s7a/strata/input/InputResult;
 	public abstract fun dispatchPointer (Ldev/s7a/strata/input/PointerEvent;)Ldev/s7a/strata/input/InputResult;
+	public abstract fun dispatchTextInput (Ldev/s7a/strata/input/TextInputEvent;)Ldev/s7a/strata/input/InputResult;
 	public abstract fun frame (Ldev/s7a/strata/geometry/Constraints;)Ldev/s7a/strata/runtime/spi/RuntimeUiFrame;
 }
 

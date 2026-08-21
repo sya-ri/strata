@@ -56,7 +56,9 @@ public abstract interface class dev/s7a/strata/runtime/minecraft/MinecraftUiHost
 	public abstract fun attach ()V
 	public abstract fun close ()V
 	public abstract fun detach ()V
+	public abstract fun dispatchKeyboard (Ldev/s7a/strata/input/KeyboardEvent;)Ldev/s7a/strata/input/InputResult;
 	public abstract fun dispatchPointer (Ldev/s7a/strata/input/PointerEvent;)Ldev/s7a/strata/input/InputResult;
+	public abstract fun dispatchTextInput (Ldev/s7a/strata/input/TextInputEvent;)Ldev/s7a/strata/input/InputResult;
 	public abstract fun frame (Ldev/s7a/strata/geometry/IntSize;)Ldev/s7a/strata/runtime/spi/RuntimeUiFrame;
 	public abstract fun getPausesGame ()Z
 	public abstract fun getTitle ()Ldev/s7a/strata/text/UiText;

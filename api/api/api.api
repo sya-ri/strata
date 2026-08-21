@@ -196,12 +196,112 @@ public final class dev/s7a/strata/geometry/IntSize$Companion {
 	public final fun getZero ()Ldev/s7a/strata/geometry/IntSize;
 }
 
+public final class dev/s7a/strata/input/FocusEvent : java/lang/Enum {
+	public static final field Gained Ldev/s7a/strata/input/FocusEvent;
+	public static final field Lost Ldev/s7a/strata/input/FocusEvent;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public static fun valueOf (Ljava/lang/String;)Ldev/s7a/strata/input/FocusEvent;
+	public static fun values ()[Ldev/s7a/strata/input/FocusEvent;
+}
+
 public final class dev/s7a/strata/input/InputResult : java/lang/Enum {
 	public static final field Consumed Ldev/s7a/strata/input/InputResult;
 	public static final field Ignored Ldev/s7a/strata/input/InputResult;
 	public static fun getEntries ()Lkotlin/enums/EnumEntries;
 	public static fun valueOf (Ljava/lang/String;)Ldev/s7a/strata/input/InputResult;
 	public static fun values ()[Ldev/s7a/strata/input/InputResult;
+}
+
+public final class dev/s7a/strata/input/KeyCode {
+	public static final field Companion Ldev/s7a/strata/input/KeyCode$Companion;
+	public fun <init> (I)V
+	public final fun component1 ()I
+	public final fun copy (I)Ldev/s7a/strata/input/KeyCode;
+	public static synthetic fun copy$default (Ldev/s7a/strata/input/KeyCode;IILjava/lang/Object;)Ldev/s7a/strata/input/KeyCode;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getValue ()I
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class dev/s7a/strata/input/KeyCode$Companion {
+	public final fun getBackspace ()Ldev/s7a/strata/input/KeyCode;
+	public final fun getDelete ()Ldev/s7a/strata/input/KeyCode;
+	public final fun getDown ()Ldev/s7a/strata/input/KeyCode;
+	public final fun getEnd ()Ldev/s7a/strata/input/KeyCode;
+	public final fun getEnter ()Ldev/s7a/strata/input/KeyCode;
+	public final fun getEscape ()Ldev/s7a/strata/input/KeyCode;
+	public final fun getHome ()Ldev/s7a/strata/input/KeyCode;
+	public final fun getInsert ()Ldev/s7a/strata/input/KeyCode;
+	public final fun getLeft ()Ldev/s7a/strata/input/KeyCode;
+	public final fun getPageDown ()Ldev/s7a/strata/input/KeyCode;
+	public final fun getPageUp ()Ldev/s7a/strata/input/KeyCode;
+	public final fun getRight ()Ldev/s7a/strata/input/KeyCode;
+	public final fun getSpace ()Ldev/s7a/strata/input/KeyCode;
+	public final fun getTab ()Ldev/s7a/strata/input/KeyCode;
+	public final fun getUnknown ()Ldev/s7a/strata/input/KeyCode;
+	public final fun getUp ()Ldev/s7a/strata/input/KeyCode;
+}
+
+public abstract interface class dev/s7a/strata/input/KeyboardEvent {
+	public abstract fun getKey ()Ldev/s7a/strata/input/KeyCode;
+	public abstract fun getModifiers ()Ldev/s7a/strata/input/KeyboardModifiers;
+	public abstract fun getScanCode ()I
+}
+
+public final class dev/s7a/strata/input/KeyboardEvent$Press : dev/s7a/strata/input/KeyboardEvent {
+	public fun <init> (Ldev/s7a/strata/input/KeyCode;ILdev/s7a/strata/input/KeyboardModifiers;)V
+	public synthetic fun <init> (Ldev/s7a/strata/input/KeyCode;ILdev/s7a/strata/input/KeyboardModifiers;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Ldev/s7a/strata/input/KeyCode;
+	public final fun component2 ()I
+	public final fun component3 ()Ldev/s7a/strata/input/KeyboardModifiers;
+	public final fun copy (Ldev/s7a/strata/input/KeyCode;ILdev/s7a/strata/input/KeyboardModifiers;)Ldev/s7a/strata/input/KeyboardEvent$Press;
+	public static synthetic fun copy$default (Ldev/s7a/strata/input/KeyboardEvent$Press;Ldev/s7a/strata/input/KeyCode;ILdev/s7a/strata/input/KeyboardModifiers;ILjava/lang/Object;)Ldev/s7a/strata/input/KeyboardEvent$Press;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun getKey ()Ldev/s7a/strata/input/KeyCode;
+	public fun getModifiers ()Ldev/s7a/strata/input/KeyboardModifiers;
+	public fun getScanCode ()I
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class dev/s7a/strata/input/KeyboardEvent$Release : dev/s7a/strata/input/KeyboardEvent {
+	public fun <init> (Ldev/s7a/strata/input/KeyCode;ILdev/s7a/strata/input/KeyboardModifiers;)V
+	public synthetic fun <init> (Ldev/s7a/strata/input/KeyCode;ILdev/s7a/strata/input/KeyboardModifiers;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Ldev/s7a/strata/input/KeyCode;
+	public final fun component2 ()I
+	public final fun component3 ()Ldev/s7a/strata/input/KeyboardModifiers;
+	public final fun copy (Ldev/s7a/strata/input/KeyCode;ILdev/s7a/strata/input/KeyboardModifiers;)Ldev/s7a/strata/input/KeyboardEvent$Release;
+	public static synthetic fun copy$default (Ldev/s7a/strata/input/KeyboardEvent$Release;Ldev/s7a/strata/input/KeyCode;ILdev/s7a/strata/input/KeyboardModifiers;ILjava/lang/Object;)Ldev/s7a/strata/input/KeyboardEvent$Release;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun getKey ()Ldev/s7a/strata/input/KeyCode;
+	public fun getModifiers ()Ldev/s7a/strata/input/KeyboardModifiers;
+	public fun getScanCode ()I
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class dev/s7a/strata/input/KeyboardModifiers {
+	public fun <init> ()V
+	public fun <init> (ZZZZZZ)V
+	public synthetic fun <init> (ZZZZZZILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Z
+	public final fun component2 ()Z
+	public final fun component3 ()Z
+	public final fun component4 ()Z
+	public final fun component5 ()Z
+	public final fun component6 ()Z
+	public final fun copy (ZZZZZZ)Ldev/s7a/strata/input/KeyboardModifiers;
+	public static synthetic fun copy$default (Ldev/s7a/strata/input/KeyboardModifiers;ZZZZZZILjava/lang/Object;)Ldev/s7a/strata/input/KeyboardModifiers;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getAlt ()Z
+	public final fun getCapsLock ()Z
+	public final fun getControl ()Z
+	public final fun getNumLock ()Z
+	public final fun getShift ()Z
+	public final fun getSuperKey ()Z
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
 }
 
 public abstract interface class dev/s7a/strata/input/PointerButton {
@@ -320,6 +420,32 @@ public final class dev/s7a/strata/input/PointerHoverEvent : java/lang/Enum {
 	public static fun values ()[Ldev/s7a/strata/input/PointerHoverEvent;
 }
 
+public abstract interface class dev/s7a/strata/input/TextInputEvent {
+}
+
+public final class dev/s7a/strata/input/TextInputEvent$Character : dev/s7a/strata/input/TextInputEvent {
+	public fun <init> (I)V
+	public final fun asString ()Ljava/lang/String;
+	public final fun component1 ()I
+	public final fun copy (I)Ldev/s7a/strata/input/TextInputEvent$Character;
+	public static synthetic fun copy$default (Ldev/s7a/strata/input/TextInputEvent$Character;IILjava/lang/Object;)Ldev/s7a/strata/input/TextInputEvent$Character;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getCodePoint ()I
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class dev/s7a/strata/input/TextInputEvent$Preedit : dev/s7a/strata/input/TextInputEvent {
+	public fun <init> (Ljava/lang/String;ILjava/util/List;I)V
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getBlocks ()Ljava/util/List;
+	public final fun getCaretPosition ()I
+	public final fun getFocusedBlock ()I
+	public final fun getFullText ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
 public final class dev/s7a/strata/layout/Alignment : java/lang/Enum {
 	public static final field BottomCenter Ldev/s7a/strata/layout/Alignment;
 	public static final field BottomEnd Ldev/s7a/strata/layout/Alignment;
@@ -390,6 +516,18 @@ public final class dev/s7a/strata/layout/VerticalAlignment : java/lang/Enum {
 
 public final class dev/s7a/strata/modifier/BackgroundExtensionsKt {
 	public static final fun background-RtejO-o (Ldev/s7a/strata/modifier/Modifier;I)Ldev/s7a/strata/modifier/Modifier;
+}
+
+public final class dev/s7a/strata/modifier/FocusedInputExtensionsKt {
+	public static final fun focusable (Ldev/s7a/strata/modifier/Modifier;)Ldev/s7a/strata/modifier/Modifier;
+	public static final fun initialFocus (Ldev/s7a/strata/modifier/Modifier;)Ldev/s7a/strata/modifier/Modifier;
+	public static final fun onCharacterInput (Ldev/s7a/strata/modifier/Modifier;Lkotlin/jvm/functions/Function1;)Ldev/s7a/strata/modifier/Modifier;
+	public static final fun onFocusChanged (Ldev/s7a/strata/modifier/Modifier;Lkotlin/jvm/functions/Function1;)Ldev/s7a/strata/modifier/Modifier;
+	public static final fun onKeyEvent (Ldev/s7a/strata/modifier/Modifier;Lkotlin/jvm/functions/Function1;)Ldev/s7a/strata/modifier/Modifier;
+	public static final fun onKeyPress (Ldev/s7a/strata/modifier/Modifier;Lkotlin/jvm/functions/Function1;)Ldev/s7a/strata/modifier/Modifier;
+	public static final fun onKeyRelease (Ldev/s7a/strata/modifier/Modifier;Lkotlin/jvm/functions/Function1;)Ldev/s7a/strata/modifier/Modifier;
+	public static final fun onPreedit (Ldev/s7a/strata/modifier/Modifier;Lkotlin/jvm/functions/Function1;)Ldev/s7a/strata/modifier/Modifier;
+	public static final fun onTextInput (Ldev/s7a/strata/modifier/Modifier;Lkotlin/jvm/functions/Function1;)Ldev/s7a/strata/modifier/Modifier;
 }
 
 public final class dev/s7a/strata/modifier/Modifier {
@@ -495,6 +633,20 @@ public final class dev/s7a/strata/node/DirtyPhase : java/lang/Enum {
 	public static fun values ()[Ldev/s7a/strata/node/DirtyPhase;
 }
 
+public abstract interface class dev/s7a/strata/node/FocusTargetNode {
+	public abstract fun getAcceptsFocus ()Z
+	public fun getRequestsInitialFocus ()Z
+	public abstract fun onFocusChanged (Z)V
+}
+
+public final class dev/s7a/strata/node/FocusTargetNode$DefaultImpls {
+	public static fun getRequestsInitialFocus (Ldev/s7a/strata/node/FocusTargetNode;)Z
+}
+
+public abstract interface class dev/s7a/strata/node/KeyboardInputNode {
+	public abstract fun onKeyboardEvent (Ldev/s7a/strata/input/KeyboardEvent;)Ldev/s7a/strata/input/InputResult;
+}
+
 public abstract interface class dev/s7a/strata/node/LayoutNode {
 	public abstract fun layout (Ldev/s7a/strata/layout/LayoutScope;)V
 }
@@ -544,6 +696,10 @@ public abstract interface class dev/s7a/strata/node/PointerInputNode {
 
 public abstract interface class dev/s7a/strata/node/SemanticsNode {
 	public abstract fun semantics (Ldev/s7a/strata/semantics/SemanticsScope;)V
+}
+
+public abstract interface class dev/s7a/strata/node/TextInputNode {
+	public abstract fun onTextInput (Ldev/s7a/strata/input/TextInputEvent;)Ldev/s7a/strata/input/InputResult;
 }
 
 public final class dev/s7a/strata/render/ArgbColor {

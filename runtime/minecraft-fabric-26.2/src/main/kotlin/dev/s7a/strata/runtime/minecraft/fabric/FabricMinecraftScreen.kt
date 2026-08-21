@@ -6,8 +6,11 @@ import com.mojang.blaze3d.platform.NativeImage
 import dev.s7a.strata.geometry.IntOffset
 import dev.s7a.strata.geometry.IntSize
 import dev.s7a.strata.input.InputResult
+import dev.s7a.strata.input.KeyCode
+import dev.s7a.strata.input.KeyboardEvent
 import dev.s7a.strata.input.PointerButton
 import dev.s7a.strata.input.PointerEvent
+import dev.s7a.strata.input.TextInputEvent
 import dev.s7a.strata.runtime.headless.HeadlessImage
 import dev.s7a.strata.runtime.headless.rasterizeHeadless
 import dev.s7a.strata.runtime.minecraft.MinecraftScreenDefinition
@@ -20,6 +23,9 @@ import net.minecraft.client.gui.GuiGraphicsExtractor
 import net.minecraft.client.gui.screens.Screen
 import net.minecraft.client.input.MouseButtonEvent
 import net.minecraft.client.renderer.texture.DynamicTexture
+import net.minecraft.client.input.CharacterEvent as MinecraftCharacterEvent
+import net.minecraft.client.input.KeyEvent as MinecraftKeyEvent
+import net.minecraft.client.input.PreeditEvent as MinecraftPreeditEvent
 
 // Why: the screen owns one cohesive set of native lifecycle/input hooks and must preserve arbitrary user failures exactly.
 
@@ -282,6 +288,66 @@ public class FabricMinecraftScreen private constructor(
     }
 
     /**
+     * Preserves Minecraft's screen-level Escape handling before delivering other key presses to the focused retained component and then inherited focus-navigation behavior.
+     *
+     * @param event native immutable key record.
+     * @return true when common focused behavior or inherited screen behavior consumes the event.
+     * @throws Throwable when focused behavior, inherited navigation, or terminal cleanup fails.
+     * @throws IllegalStateException when invoked away from the Minecraft client thread.
+     */
+    override fun keyPressed(event: MinecraftKeyEvent): Boolean {
+        requireClientThread()
+        val mapped = mapMinecraftKeyPress(event) ?: return false
+        if (mapped.key == KeyCode.Escape) {
+            return dispatchInherited { super.keyPressed(event) }
+        }
+        return dispatchFocused(KeyboardInput(mapped)) { super.keyPressed(event) }
+    }
+
+    /**
+     * Delivers a native key release to the focused retained component before inherited screen behavior.
+     *
+     * @param event native immutable key record.
+     * @return true when common focused behavior or inherited screen behavior consumes the event.
+     * @throws Throwable when focused behavior or terminal cleanup fails.
+     * @throws IllegalStateException when invoked away from the Minecraft client thread.
+     */
+    override fun keyReleased(event: MinecraftKeyEvent): Boolean {
+        requireClientThread()
+        val mapped = mapMinecraftKeyRelease(event) ?: return false
+        return dispatchFocused(KeyboardInput(mapped)) { super.keyReleased(event) }
+    }
+
+    /**
+     * Delivers one committed Unicode character to the focused retained component before inherited screen behavior.
+     *
+     * @param event native immutable character record.
+     * @return true when common focused behavior or inherited screen behavior consumes the event.
+     * @throws Throwable when focused behavior or terminal cleanup fails.
+     * @throws IllegalStateException when invoked away from the Minecraft client thread.
+     */
+    override fun charTyped(event: MinecraftCharacterEvent): Boolean {
+        requireClientThread()
+        val mapped = mapMinecraftCharacter(event) ?: return false
+        return dispatchFocused(TextInput(mapped)) { super.charTyped(event) }
+    }
+
+    /**
+     * Delivers one input-method preedit snapshot to the focused retained component before inherited screen behavior.
+     *
+     * @param event native immutable preedit record.
+     * @return true when common focused behavior or inherited screen behavior consumes the event.
+     * @throws Throwable when focused behavior or terminal cleanup fails.
+     * @throws IllegalStateException when invoked away from the Minecraft client thread.
+     */
+    override fun preeditUpdated(event: MinecraftPreeditEvent?): Boolean {
+        requireClientThread()
+        val current = event ?: return false
+        val mapped = mapMinecraftPreedit(current) ?: return false
+        return dispatchFocused(TextInput(mapped)) { super.preeditUpdated(current) }
+    }
+
+    /**
      * Closes the host and always navigates to the transferred parent screen.
      *
      * Cleanup and parent navigation are each attempted at most once. If both fail, the cleanup failure remains primary and the navigation failure is suppressed.
@@ -322,6 +388,30 @@ public class FabricMinecraftScreen private constructor(
             lifecycle.run {
                 host.dispatchPointer(event) == InputResult.Consumed
             }
+        } catch (failure: Throwable) {
+            terminalFailure(failure)
+        }
+
+    private fun dispatchFocused(
+        input: FocusedInput,
+        inherited: () -> Boolean,
+    ): Boolean =
+        try {
+            lifecycle.run {
+                val result =
+                    when (input) {
+                        is KeyboardInput -> host.dispatchKeyboard(input.event)
+                        is TextInput -> host.dispatchTextInput(input.event)
+                    }
+                if (result === InputResult.Consumed) true else inherited()
+            }
+        } catch (failure: Throwable) {
+            terminalFailure(failure)
+        }
+
+    private fun dispatchInherited(inherited: () -> Boolean): Boolean =
+        try {
+            lifecycle.run(inherited)
         } catch (failure: Throwable) {
             terminalFailure(failure)
         }
@@ -457,6 +547,16 @@ public class FabricMinecraftScreen private constructor(
             minecraft: Minecraft,
         ): FabricMinecraftScreen = FabricMinecraftScreen(host, parent, minecraft)
     }
+
+    private sealed interface FocusedInput
+
+    private data class KeyboardInput(
+        val event: KeyboardEvent,
+    ) : FocusedInput
+
+    private data class TextInput(
+        val event: TextInputEvent,
+    ) : FocusedInput
 }
 
 /**

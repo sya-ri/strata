@@ -4,7 +4,9 @@ import dev.s7a.strata.element.Element
 import dev.s7a.strata.geometry.Constraints
 import dev.s7a.strata.geometry.IntSize
 import dev.s7a.strata.input.InputResult
+import dev.s7a.strata.input.KeyboardEvent
 import dev.s7a.strata.input.PointerEvent
+import dev.s7a.strata.input.TextInputEvent
 import dev.s7a.strata.runtime.spi.RuntimeUiFrame
 import dev.s7a.strata.runtime.spi.RuntimeUiSession
 import dev.s7a.strata.runtime.spi.createRuntimeUiSession
@@ -58,6 +60,8 @@ internal object MinecraftHostImplementation {
         val pausesGame: Boolean,
     )
 
+    // Why: one host owns the complete state transition surface and delegates each public operation through the same failure boundary.
+    @Suppress("TooManyFunctions")
     private class Host private constructor(
         private val session: RuntimeUiSession,
         initialEvaluator: () -> Element,
@@ -133,6 +137,22 @@ internal object MinecraftHostImplementation {
                 runCatching { session.dispatchPointer(event) }.getOrElse { failure -> fail(failure) }
             } finally {
                 operation = null
+            }
+        }
+
+        override fun dispatchKeyboard(event: KeyboardEvent): InputResult = runInput { session.dispatchKeyboard(event) }
+
+        override fun dispatchTextInput(event: TextInputEvent): InputResult = runInput { session.dispatchTextInput(event) }
+
+        private fun runInput(operation: () -> InputResult): InputResult {
+            checkOwner()
+            check(this.operation == null) { "Minecraft UI host operations are non-reentrant." }
+            check(state == State.Attached) { "Minecraft UI host must be attached before focused input." }
+            this.operation = Operation.Input
+            try {
+                return runCatching(operation).getOrElse { failure -> fail(failure) }
+            } finally {
+                this.operation = null
             }
         }
 

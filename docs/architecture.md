@@ -19,12 +19,12 @@ A module joins the build only with working behavior and tests.
 - `runtime:minecraft` is a publishable Minecraft-independent adapter boundary built on `runtime:core`.
   Its opt-in host consumes a one-shot screen definition and a complete immutable profile, then converts every non-negative logical viewport into exact fixed root constraints.
   Its callback-scoped implicit receiver provides menu background, printable text, a fixed profile-backed pointer button, and a clipped retained selection-list Scroll inside ordinary `buildUi` scopes.
-  Button owns profile-backed appearance and enabled semantics, while platform-neutral active modifiers own raw pointer, press, release, move, drag, scroll, and hover actions reusable by future Minecraft components.
+  Button owns profile-backed appearance and enabled semantics, while platform-neutral active modifiers own raw pointer, keyboard, committed-character, preedit, focus, press, release, move, drag, scroll, and hover actions reusable by future Minecraft components.
   Hosts retain the core tree across transient detach and reattach, gate input until a successful frame, and expose no mapped game, Fabric, resource, renderer, version, coroutine, state, or source-binding type.
-  The common button contract does not claim focus, keyboard, sound, or a platform-native widget system; hover changes only in response to delivered pointer movement.
+  Button does not install focus or keyboard activation implicitly; callers compose those policies from shared modifiers, and hover changes only in response to delivered pointer movement.
 - `integration:api` verifies an external primitive against the public `api`, `runtime:core`, and `runtime:minecraft` boundaries.
 - `runtime:minecraft-fabric-26.2` is the client-only boundary for the current latest Java release.
-  It extracts the 26.2 vanilla profile from the active resource manager, maps the common host to a native Screen, rasterizes through the tested headless path, and forwards typed mouse input.
+  It extracts the 26.2 vanilla profile from the active resource manager, maps the common host to a native Screen, rasterizes through the tested headless path, and forwards typed mouse, keyboard, committed-character, and preedit input.
   Its loaded client GameTest compares native screens using the actual menu background, font, Button, and `ObjectSelectionList` assets and widgets against both the Fabric adapter and the common headless compositor with exact ARGB equality.
 - `integration:minecraft-fabric-26.2` owns the loaded client `ConfirmScreen` and selection-list parity scenes, their compiled Minecraft-component examples, and build-only verification evidence; it is not published.
 - `integration:docs` discovers the public Minecraft components from `MinecraftUiContext`, extracts those compiled scenario sources, verifies the Minecraft parity receipt and PNG hashes, and owns generated component documentation; it is not published.
@@ -33,7 +33,7 @@ Minecraft and Fabric dependencies remain confined to the versioned runtime bound
 
 The process and compatibility requirements for a new version adapter are defined in [Supporting a new Minecraft version](minecraft-versions.md).
 
-The public API currently defines declarative tree building, Row, Column, Box, and Spacer components, element and modifier descriptions, typed layout parent data, retained node capabilities, lifecycle ownership, geometry, input, drawing, semantics, unresolved text, and revisioned external state sources.
+The public API currently defines declarative tree building, Row, Column, Box, and Spacer components, element and modifier descriptions, typed layout parent data, retained node capabilities, lifecycle ownership, geometry, pointer and focused input, drawing, semantics, unresolved text, and revisioned external state sources.
 `buildUi` invokes its callback synchronously and returns the exact caller-owned `Element` emitted as its single root.
 Its scope is confined to the invoking thread and callback lifetime, and callback failures take precedence over root-cardinality validation.
 The state-source contract is specified and exercised by concurrency tests described in [External state sources](state-sources.md).

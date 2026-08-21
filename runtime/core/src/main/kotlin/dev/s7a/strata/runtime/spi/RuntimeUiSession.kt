@@ -2,7 +2,9 @@ package dev.s7a.strata.runtime.spi
 
 import dev.s7a.strata.geometry.Constraints
 import dev.s7a.strata.input.InputResult
+import dev.s7a.strata.input.KeyboardEvent
 import dev.s7a.strata.input.PointerEvent
+import dev.s7a.strata.input.TextInputEvent
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
 
 /**
@@ -67,6 +69,26 @@ public sealed interface RuntimeUiSession : AutoCloseable {
      * @throws Throwable when pointer dispatch or cleanup fails; the first failure remains primary with later distinct failures suppressed.
      */
     public fun dispatchPointer(event: PointerEvent): InputResult
+
+    /**
+     * Dispatches one keyboard event synchronously to the focused component in the most recently committed frame.
+     *
+     * @param event immutable keyboard event.
+     * @return focused retained result, or [InputResult.Ignored] without a committed frame or focus target.
+     * @throws IllegalStateException when called from the wrong thread, reentrantly, or while detached.
+     * @throws Throwable when focused behavior or cleanup fails; the first failure remains primary.
+     */
+    public fun dispatchKeyboard(event: KeyboardEvent): InputResult
+
+    /**
+     * Dispatches one committed-character or preedit event synchronously to the focused component in the most recently committed frame.
+     *
+     * @param event immutable text-input event.
+     * @return focused retained result, or [InputResult.Ignored] without a committed frame or focus target.
+     * @throws IllegalStateException when called from the wrong thread, reentrantly, or while detached.
+     * @throws Throwable when focused behavior or cleanup fails; the first failure remains primary.
+     */
+    public fun dispatchTextInput(event: TextInputEvent): InputResult
 
     /**
      * Closes this session synchronously on its owner thread.

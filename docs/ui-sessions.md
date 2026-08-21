@@ -8,26 +8,27 @@ Keeping this orchestration in the Minecraft-independent runtime gives headless a
 
 `dev.s7a.strata.runtime.spi` provides a public but opt-in runtime adapter bridge for platform runtimes that need to drive this session.
 It is not an application screen-definition API and does not expose coroutines, state declarations, source bindings, `UiSession`, `UiFrame`, session state, or task-failure decision types.
-`attach`, `detach`, `frame`, pointer input, and `close` are synchronous calls that must already run on the construction and owner thread.
+`attach`, `detach`, `frame`, pointer input, focused keyboard and text input, and `close` are synchronous calls that must already run on the construction and owner thread.
 The synchronous bridge exposes no task-launching or dispatcher facility.
 Its content lambda is evaluated during the first attach, after which the retained tree handles frames and input until terminal failure or close.
-Each successful frame owns immutable defensive snapshots of size, drawing commands, and semantics, and pointer input is ignored until the first successful frame commits.
+Each successful frame owns immutable defensive snapshots of size, drawing commands, and semantics, and all input is ignored until the first successful frame commits.
 The bridge delegates exact primary-failure identity, suppression order, lifecycle transitions, and cleanup-once behavior to the retained session.
 It retains the content lambda while created, attached, or detached and releases it before cleanup callbacks after terminal failure or close.
-Session detach retains the active `UiTree` and its node ownership; it clears active modifier and component hover before clearing the committed-frame marker, without rerunning node attach or detach lifecycle callbacks until terminal close.
+Session detach retains the active `UiTree` and its node ownership; it clears active hover and focused ownership before clearing the committed-frame marker, without rerunning node attach or detach lifecycle callbacks until terminal close.
 
 The common `runtime:minecraft` adapter consumes a one-shot screen definition and a complete immutable profile.
-Definition close and host transfer race atomically, and a transferred host exposes only owner-thread metadata, lifecycle, fixed-viewport frames, and pointer input.
+Definition close and host transfer race atomically, and a transferred host exposes only owner-thread metadata, lifecycle, fixed-viewport frames, and typed pointer, keyboard, committed-character, and preedit input.
 Its screen-content callback provides an implicit Minecraft component receiver around ordinary `buildUi` scopes.
 Application code emits `MenuBackground`, `Text`, `Button`, and `Scroll` directly; `Text` and `Button` accept either `String` literals or unresolved `UiText` values.
-The fixed-size profile-backed Button owns appearance, hover visuals, and enabled semantics, while reusable press, release, move, scroll, raw pointer, and hover actions are active modifiers shared with other component kinds.
+The fixed-size profile-backed Button owns appearance, hover visuals, and enabled semantics, while reusable pointer, keyboard, text-input, preedit, focus, press, release, move, drag, scroll, and hover actions are active modifiers shared with other component kinds.
 Scroll owns the active 26.2 menu-list background, child clipping, separators, scrollbar sprites, retained wheel offset, proportional thumb dragging, and the native background-to-content-to-overlay paint order.
-The button contract does not claim focus, keyboard, sound, or a native widget system, and it does not expose resources, native Minecraft values, renderers, input mappers, or task facilities.
+Button does not install keyboard focus or activation implicitly; callers compose those policies from the shared modifiers when required.
+The common component boundary does not expose resources, native Minecraft values, renderers, input mappers, or task facilities.
 
 ## Ownership and lifecycle
 
 A session captures the thread that creates it.
-Lifecycle operations, delegate access, frame production, and pointer dispatch are confined to that owner thread.
+Lifecycle operations, delegate access, frame production, and every input dispatch are confined to that owner thread.
 Revisioned source callbacks are the exception: they may arrive on any thread, only replace a lock-protected pending snapshot, and never execute session work.
 
 The lifecycle is:
@@ -72,10 +73,10 @@ Attach creates a retained tree when necessary, activates one task generation, ap
 A frame applies another source cutoff, rebuilds dirty content at most once, then measures, lays out, paints, and collects semantics in order.
 Its size, drawing commands, and semantics entries are immutable defensive snapshots.
 
-Pointer input is ignored until one complete frame has committed.
+Pointer, keyboard, committed-character, and preedit input are ignored until one complete frame has committed.
 Afterward it targets the most recently committed tree.
 State changed by an input callback becomes visible to retained UI behavior after the next successful frame.
-Detach emits exit for active pointer-hover observers, invalidates the committed-frame marker, and retains the tree and state.
+Detach emits exit for active pointer-hover observers, clears focused ownership, invalidates the committed-frame marker, and retains the tree and state.
 
 ## Coroutine generations
 
