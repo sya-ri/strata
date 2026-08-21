@@ -1,5 +1,7 @@
 [versions]
 kotlin = "2.4.10"
+java-baseline = "17"
+java-minecraft = "25"
 detekt = "2.0.0-alpha.5"
 junit = "6.1.2"
 kotlinter = "5.7.0"
@@ -7,6 +9,11 @@ kover = "0.9.9"
 vanniktech-maven-publish = "0.37.0"
 dokka = "2.1.0"
 kotlinx-coroutines = "1.11.0"
+minecraft = "26.2"
+fabric-loader = "0.19.3"
+fabric-language-kotlin = "1.13.13+kotlin.2.4.10"
+fabric-loom = "1.17.19"
+fabric-api = "0.158.0+26.2"
 
 [libraries]
 detekt-api = { module = "dev.detekt:detekt-api", version.ref = "detekt" }
@@ -15,6 +22,10 @@ detekt-test-utils = { module = "dev.detekt:detekt-test-utils", version.ref = "de
 junit-jupiter = { module = "org.junit.jupiter:junit-jupiter", version.ref = "junit" }
 junit-platform-launcher = { module = "org.junit.platform:junit-platform-launcher", version.ref = "junit" }
 kotlinx-coroutines-core = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-core", version.ref = "kotlinx-coroutines" }
+minecraft = { module = "com.mojang:minecraft", version.ref = "minecraft" }
+fabric-loader = { module = "net.fabricmc:fabric-loader", version.ref = "fabric-loader" }
+fabric-language-kotlin = { module = "net.fabricmc:fabric-language-kotlin", version.ref = "fabric-language-kotlin" }
+fabric-api = { module = "net.fabricmc.fabric-api:fabric-api", version.ref = "fabric-api" }
 
 [plugins]
 kotlin-jvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
@@ -24,3 +35,4 @@ kotlinter = { id = "org.jmailen.kotlinter", version.ref = "kotlinter" }
 vanniktechMavenPublish = { id = "com.vanniktech.maven.publish", version.ref = "vanniktech-maven-publish" }
 dokka = { id = "org.jetbrains.dokka", version.ref = "dokka" }
 dokkaJavadocPlugin = { id = "org.jetbrains.dokka-javadoc", version.ref = "dokka" }
+fabricLoom = { id = "net.fabricmc.fabric-loom", version.ref = "fabric-loom" }

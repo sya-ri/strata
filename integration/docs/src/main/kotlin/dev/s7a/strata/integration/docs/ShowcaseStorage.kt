@@ -34,6 +34,7 @@ internal object ShowcaseStorage {
             writeBytes(components.resolve("images/${page.slug}.png"), page.png())
         }
         writeBytes(components.resolve("images/overview.png"), result.overview.png())
+        writeBytes(components.resolve("minecraft-26.2-parity.properties"), result.receipt())
         writeText(staging.resolve("root-readme-region.md"), result.rootReadmeRegion)
     }
 
@@ -58,7 +59,7 @@ internal object ShowcaseStorage {
         }
         val expected =
             generated.pages.flatMap { page -> listOf("${page.slug}.md", "images/${page.slug}.png") } +
-                listOf("README.md", "images/overview.png")
+                listOf("README.md", "images/overview.png", "minecraft-26.2-parity.properties")
         val actual =
             if (Files.exists(components)) {
                 Files.walk(components).use { stream ->

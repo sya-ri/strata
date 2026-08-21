@@ -18,15 +18,18 @@ val apiMainClasses =
         .getByType<SourceSetContainer>()
         .named("main")
         .map { sourceSet -> sourceSet.output.classesDirs }
-val showcaseSources = layout.projectDirectory.dir("src/main/kotlin")
+val showcaseSources = rootProject.layout.projectDirectory.dir("integration/minecraft-fabric-26.2/src/gametest/kotlin")
 val checkStaging = layout.buildDirectory.dir("component-showcase/check")
 val generateStaging = layout.buildDirectory.dir("component-showcase/generate")
 val repositoryRoot = providers.provider { rootProject.layout.projectDirectory }
+val parityProject = rootProject.project(":integration:minecraft-fabric-26.2")
+val parityOutput = parityProject.layout.buildDirectory.dir("minecraft-parity")
 
 class ShowcaseArgumentProvider(
     private val repositoryRoot: Provider<Directory>,
     private val moduleBuildRoot: Provider<Directory>,
     private val stagingRoot: Provider<Directory>,
+    private val parityRoot: Provider<Directory>,
     private val apiClasses: Provider<FileCollection>,
 ) : CommandLineArgumentProvider {
     override fun asArguments(): Iterable<String> {
@@ -49,6 +52,7 @@ class ShowcaseArgumentProvider(
             add(repositoryRoot.get().asFile.absolutePath)
             add(moduleBuildRoot.get().asFile.absolutePath)
             add(stagingRoot.get().asFile.absolutePath)
+            add(parityRoot.get().asFile.absolutePath)
             addAll(classDirectories.map { file -> file.absolutePath })
         }
     }
@@ -59,7 +63,7 @@ fun JavaExec.configureShowcaseLauncher(
     staging: Provider<Directory>,
     synchronizeSource: Boolean,
 ) {
-    dependsOn(":api:classes", ":runtime:headless:classes", "classes")
+    dependsOn(":api:classes", ":runtime:headless:classes", ":integration:minecraft-fabric-26.2:runClientGameTest", "classes")
     mainClass.set(mainClassName)
     classpath = sourceSets.main.get().runtimeClasspath
     argumentProviders.add(
@@ -67,10 +71,12 @@ fun JavaExec.configureShowcaseLauncher(
             repositoryRoot,
             layout.buildDirectory,
             staging,
+            parityOutput,
             apiMainClasses,
         ),
     )
     inputs.dir(showcaseSources)
+    inputs.dir(parityOutput)
     inputs.files(apiMainClasses)
     outputs.dir(staging)
     outputs.upToDateWhen { false }
@@ -83,14 +89,14 @@ fun JavaExec.configureShowcaseLauncher(
 val generateComponentShowcase =
     tasks.register<JavaExec>("generateComponentShowcase") {
         group = "documentation"
-        description = "Renders and synchronizes the checked component showcase."
+        description = "Verifies loaded Minecraft parity and synchronizes the checked component showcase."
         configureShowcaseLauncher("dev.s7a.strata.integration.docs.ComponentShowcaseGenerator", generateStaging, true)
     }
 
 val checkComponentShowcase =
     tasks.register<JavaExec>("checkComponentShowcase") {
         group = "verification"
-        description = "Checks generated component showcase files without changing source files."
+        description = "Verifies loaded Minecraft parity and checks showcase files without changing source files."
         configureShowcaseLauncher("dev.s7a.strata.integration.docs.ComponentShowcaseChecker", checkStaging, false)
     }
 

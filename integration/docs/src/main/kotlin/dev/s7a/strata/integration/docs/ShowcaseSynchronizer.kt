@@ -266,7 +266,7 @@ internal object ShowcaseSynchronizer {
     private fun expectedFiles(output: ShowcaseOutput): Set<String> =
         (
             output.pages.flatMap { page -> listOf("${page.slug}.md", "images/${page.slug}.png") } +
-                listOf("README.md", "images/overview.png")
+                listOf("README.md", "images/overview.png", "minecraft-26.2-parity.properties")
         ).toSortedSet()
 
     private fun fileSet(root: Path): Set<String> =

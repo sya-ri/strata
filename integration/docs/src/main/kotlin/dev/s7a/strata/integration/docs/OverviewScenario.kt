@@ -1,17 +1,15 @@
 package dev.s7a.strata.integration.docs
 
-import dev.s7a.strata.element.Element
 import dev.s7a.strata.geometry.IntSize
-import dev.s7a.strata.runtime.headless.HeadlessFrame
 
 /**
- * Immutable metadata for the overview showcase scenario.
+ * Immutable metadata connecting the overview to its compiled GameTest source, verified crop dimensions, and layout-only tree.
+ *
+ * Constructor inputs are snapshotted by their owning value types and are read synchronously by the documentation pipeline.
  */
 internal class OverviewScenario internal constructor(
     override val source: SourceReference,
     override val viewport: IntSize,
     override val scale: Int,
     override val tree: ShowcaseTree,
-    override val description: () -> Element,
-    override val render: () -> HeadlessFrame,
 ) : ShowcaseScenario

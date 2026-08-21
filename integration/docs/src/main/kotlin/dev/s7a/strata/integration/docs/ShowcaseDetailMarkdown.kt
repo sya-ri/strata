@@ -33,11 +33,15 @@ internal object ShowcaseDetailMarkdown {
      *
      * @param detail detail to render.
      * @return stable documentation text.
+     *
+     * The single exhaustive branch makes newly added metadata impossible to omit silently.
      */
+    @Suppress("CyclomaticComplexMethod")
     internal fun text(detail: ShowcaseTreeDetail): String =
         when (detail) {
             ShowcaseTreeDetail.FillMaxSize -> "FillMaxSize"
             is ShowcaseTreeDetail.Size -> "Size(width=${detail.width}, height=${detail.height})"
+            is ShowcaseTreeDetail.Height -> "Height(value=${detail.value})"
             is ShowcaseTreeDetail.Padding -> "Padding(all=${detail.all})"
             is ShowcaseTreeDetail.Background -> "Background(color=0x${detail.color.value.toUInt().toString(16).padStart(8, '0').uppercase()})"
             is ShowcaseTreeDetail.Weight -> "Weight(weight=${detail.weight}, fill=${detail.fill})"
@@ -63,6 +67,7 @@ internal object ShowcaseDetailMarkdown {
         when (detail) {
             ShowcaseTreeDetail.FillMaxSize,
             is ShowcaseTreeDetail.Size,
+            is ShowcaseTreeDetail.Height,
             is ShowcaseTreeDetail.Padding,
             is ShowcaseTreeDetail.Background,
             -> Category.GenericModifier

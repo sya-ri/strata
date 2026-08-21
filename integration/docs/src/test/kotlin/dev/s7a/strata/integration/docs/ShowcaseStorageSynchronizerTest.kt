@@ -118,7 +118,7 @@ internal class ShowcaseStorageSynchronizerTest {
         ShowcaseSynchronizer.synchronize(launch, output)
 
         assertEquals(
-            setOf("README.md", "row.md", "images/overview.png", "images/row.png"),
+            setOf("README.md", "row.md", "images/overview.png", "images/row.png", "minecraft-26.2-parity.properties"),
             snapshot(target).keys,
         )
     }
@@ -498,11 +498,13 @@ internal class ShowcaseStorageSynchronizerTest {
     private fun launch(root: Path = temporaryRoot): ShowcaseLaunchArguments {
         val moduleBuild = root.resolve("integration/docs/build")
         val staging = moduleBuild.resolve("component-showcase/generate")
+        val parity = root.resolve("integration/minecraft-fabric-26.2/build/minecraft-parity")
         val classes = root.resolve("api/classes")
         Files.createDirectories(staging)
+        Files.createDirectories(parity)
         Files.createDirectories(classes)
         return ShowcaseLaunchArguments.parse(
-            arrayOf(root.toString(), moduleBuild.toString(), staging.toString(), classes.toString()),
+            arrayOf(root.toString(), moduleBuild.toString(), staging.toString(), parity.toString(), classes.toString()),
             ShowcaseStagingKind.Generate,
         )
     }
@@ -512,6 +514,7 @@ internal class ShowcaseStorageSynchronizerTest {
             ShowcaseOutput.Overview("overview\n", "`- Row\n", byteArrayOf(1, 2, 3)),
             listOf(ShowcaseOutput.Page(DocumentedComponent.Row, "# Row\n", byteArrayOf(4, 5, 6))),
             staging,
+            "verified=true\n".toByteArray(),
         )
 
     private fun writeReadme(

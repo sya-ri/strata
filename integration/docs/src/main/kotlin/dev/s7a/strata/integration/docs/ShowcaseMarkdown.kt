@@ -20,7 +20,10 @@ internal object ShowcaseMarkdown {
 
 # Headless component showcase
 
-This deterministic showcase is portable headless DrawCommand output, not a Minecraft screenshot or capture.
+These deterministic headless crops use the active Minecraft 26.2 menu texture, button sprites, ASCII font, component geometry, and logical draw order.
+One loaded Fabric GameTest requires exact ARGB equality between the native screen, the Fabric adapter, and the headless frame before producing these files.
+
+[Open the machine-readable parity receipt](minecraft-26.2-parity.properties)
 
 ![Overview headless showcase](images/overview.png)
 
@@ -31,6 +34,8 @@ ${overview.source}
 ```
 
 <details><summary>Overview component tree</summary>
+
+The tree shows layout components; Minecraft text and pointer-button leaves are omitted and remain visible in the compiled source.
 
 ```text
 ${overview.tree}
@@ -56,7 +61,7 @@ ${pages.joinToString("\n") { page -> "- [${page.title}](${page.slug}.md)" }}
 
 ## Headless component showcase
 
-This deterministic JVM-headless output is not a Minecraft screenshot or capture.
+This deterministic headless crop uses Minecraft 26.2 assets and font pixels from the same frame that passed exact native-screen and Fabric-adapter comparison.
 
 ![Strata component showcase](docs/components/images/overview.png)
 
@@ -80,14 +85,15 @@ ${overview.source}
     internal fun page(
         spec: ComponentScenario,
         source: String,
-    ): String {
-        val featured = spec.tree.featured(spec.component)
-        return markdown(
+    ): String =
+        markdown(
             """<!-- Generated file. Do not edit. -->
 
 # ${spec.component.apiMethodName}
 
-${typedSummary(featured)}
+${typedSummary(spec.component)}
+
+This image is a 320 by 180 crop from the exact native/Fabric/headless parity frame recorded in [the verification receipt](minecraft-26.2-parity.properties).
 
 ![${spec.component.apiMethodName} headless showcase](images/${spec.component.slug}.png)
 
@@ -99,13 +105,15 @@ $source
 
 ## Modifiers
 
-${modifierGuidance(spec.component, featured)}
+${modifierGuidance(spec.component)}
 
 ## Parent scope
 
 ${parentScopeGuidance(spec.component)}
 
 <details><summary>Component tree</summary>
+
+The tree shows layout components; Minecraft text and pointer-button leaves are omitted and remain visible in the compiled source.
 
 ```text
 ${tree(spec.tree)}
@@ -114,7 +122,6 @@ ${tree(spec.tree)}
 </details>
 """,
         )
-    }
 
     /**
      * Renders a logical tree for the overview and page metadata blocks.
@@ -140,33 +147,28 @@ ${tree(spec.tree)}
         return lines.joinToString("\n")
     }
 
-    private fun modifierGuidance(
-        component: DocumentedComponent,
-        featured: ShowcaseTree,
-    ): String {
-        val parentDataSource =
-            if (component == DocumentedComponent.Spacer) featured.details else featured.children.flatMap { child -> child.details }
-        return listOf(
-            "Generic modifiers used: ${ShowcaseDetailMarkdown.genericGuidance(featured.details)}.",
-            "Component parameters shown: ${ShowcaseDetailMarkdown.componentParameterGuidance(featured.details)}.",
-            "Direct-child parent data used: ${ShowcaseDetailMarkdown.parentDataGuidance(parentDataSource)}.",
-        ).joinToString("\n")
-    }
+    private fun modifierGuidance(component: DocumentedComponent): String =
+        when (component) {
+            DocumentedComponent.Row -> "The compiled panel fixes its outer size, uses Spacer height modifiers for vertical placement, and sets Row spacing to 10. Its Minecraft button children use no RowScope parent data."
+            DocumentedComponent.Column -> "The compiled panel fixes Column to 320 by 180, centers children horizontally, and uses Spacer height modifiers for exact native vertical placement."
+            DocumentedComponent.Box -> "The compiled panel fixes Box to 320 by 180 with Center as its default. Its two pointer-button children use BoxScope.align with TopStart and BottomEnd overrides."
+            DocumentedComponent.Spacer -> "The compiled panel uses Spacer height modifiers to reproduce native vertical gaps. Spacer remains an intrinsic-zero, non-painting leaf."
+        }
 
     private fun parentScopeGuidance(component: DocumentedComponent): String =
         when (component) {
             DocumentedComponent.Row -> "Row's content callback runs with RowScope; weight and vertical align modifiers apply only to direct children while that scope is active."
             DocumentedComponent.Column -> "Column's content callback runs with ColumnScope; weight and horizontal align modifiers apply only to direct children while that scope is active."
             DocumentedComponent.Box -> "Box's content callback runs with BoxScope; align applies only to direct children while that scope is active."
-            DocumentedComponent.Spacer -> "Spacer has no content callback. In this example, its direct Box parent provides BoxScope.align while the parent callback is active."
+            DocumentedComponent.Spacer -> "Spacer has no content callback or Spacer-specific parent-data API. In this example it is a direct Column child, while its ordinary height modifier is not Column parent data."
         }
 
-    private fun typedSummary(tree: ShowcaseTree): String =
-        when (tree.component) {
+    private fun typedSummary(component: DocumentedComponent): String =
+        when (component) {
             DocumentedComponent.Row -> "Row lays out direct children horizontally with typed spacing, arrangement, and vertical alignment."
             DocumentedComponent.Column -> "Column lays out direct children vertically with typed spacing, arrangement, and horizontal alignment."
             DocumentedComponent.Box -> "Box overlays direct children and positions each with its default alignment or a direct-child override."
-            DocumentedComponent.Spacer -> "Spacer has no intrinsic size or paint; size and background modifiers make this example visible."
+            DocumentedComponent.Spacer -> "Spacer has no intrinsic size or paint; height modifiers make the native vertical gaps visible around Minecraft text and buttons."
         }
 
     private fun details(details: List<ShowcaseTreeDetail>): String = if (details.isEmpty()) "" else " [${details.joinToString(", ") { detail -> ShowcaseDetailMarkdown.text(detail) }}]"

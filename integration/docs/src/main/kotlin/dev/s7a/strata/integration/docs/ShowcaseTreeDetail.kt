@@ -24,6 +24,13 @@ internal sealed interface ShowcaseTreeDetail {
     ) : ShowcaseTreeDetail
 
     /**
+     * An explicit logical height.
+     */
+    data class Height(
+        internal val value: Int,
+    ) : ShowcaseTreeDetail
+
+    /**
      * Uniform logical padding.
      */
     data class Padding(

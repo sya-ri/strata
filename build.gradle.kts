@@ -22,12 +22,15 @@ plugins {
     alias(libs.plugins.vanniktechMavenPublish) apply false
     alias(libs.plugins.dokka) apply false
     alias(libs.plugins.dokkaJavadocPlugin) apply false
+    alias(libs.plugins.fabricLoom) apply false
 }
 
 group = "dev.s7a.strata"
 version = "0.1.0"
 
 val detektRulesProject = project(":quality:detekt-rules")
+val baselineJavaVersion = libs.versions.java.baseline.get().toInt()
+val minecraftJavaVersion = libs.versions.java.minecraft.get().toInt()
 
 allprojects {
     group = rootProject.group
@@ -78,7 +81,12 @@ subprojects {
             ":runtime:minecraft-fabric-26.2",
             ":integration:minecraft-fabric-26.2",
         )
-    val javaVersion = if (path in versionSpecificMinecraftModules) 25 else 17
+    val javaVersion =
+        if (path in versionSpecificMinecraftModules) {
+            minecraftJavaVersion
+        } else {
+            baselineJavaVersion
+        }
 
     extensions.configure<JavaPluginExtension> {
         toolchain {

@@ -22,10 +22,13 @@ A module joins the build only with working behavior and tests.
   Hosts retain the core tree across transient detach and reattach, gate input until a successful frame, and expose no mapped game, Fabric, resource, renderer, version, coroutine, state, or source-binding type.
   The common button contract does not claim focus, keyboard, sound, or a platform-native widget system; hover changes only in response to delivered pointer movement.
 - `integration:api` verifies an external primitive against the public `api`, `runtime:core`, and `runtime:minecraft` boundaries.
-- `integration:docs` compiles the typed showcase scenarios against the shipped APIs and owns generated component documentation; it is not published.
-Further environment-specific and versioned Minecraft adapters are outside the current build.
+- `runtime:minecraft-fabric-26.2` is the client-only boundary for the current latest Java release.
+  It extracts the 26.2 vanilla profile from the active resource manager, maps the common host to a native Screen, rasterizes through the tested headless path, and forwards typed mouse input.
+  Its loaded client GameTest compares one native Screen using the actual menu background, font, and Button widgets against both the Fabric adapter and the common headless compositor with exact ARGB equality.
+- `integration:minecraft-fabric-26.2` owns that loaded client parity scene, its compiled five-panel examples, and build-only verification evidence; it is not published.
+- `integration:docs` discovers the public layout components, extracts those compiled panel sources, verifies the Minecraft parity receipt and PNG hashes, and owns generated component documentation; it is not published.
 Platform-independent code must not depend on a Minecraft runtime.
-Minecraft and Fabric dependencies remain confined to future runtime and integration layers that require them.
+Minecraft and Fabric dependencies remain confined to the versioned runtime boundary that requires them.
 
 The process and compatibility requirements for a new version adapter are defined in [Supporting a new Minecraft version](minecraft-versions.md).
 
@@ -53,8 +56,9 @@ PNG output contains exactly one IHDR, one IDAT, and one IEND in that order, uses
 Frames retain no description, tree, or draw-command list; semantics are defensive, logical, unscaled, unclipped, and in core emission order.
 The exact built-in layout measurement, weight, arrangement, alignment, and overflow contracts are defined in [Built-in layout components](layout.md).
 The headless adapter's fixed-viewport, clipping, source-over, scaling, PNG, and immutable semantics contracts are exercised by its module tests.
-The showcase generator renders the compiled scenario descriptions through the headless facade before staging Markdown and PNG output.
-The checker compares that staging output with `docs/components` and the anchored root README region without writing source files.
+The loaded 26.2 client GameTest first requires exact native-Screen, Fabric-adapter, and headless ARGB equality for a fixed 640 by 540 scene, then writes five deterministic 320 by 180 headless crops and their hashes below its build directory.
+The showcase generator accepts only those receipt-matched crops and the compiled GameTest panel sources before staging Markdown and PNG output.
+The checker reruns the parity prerequisite and compares that staging output with `docs/components` and the anchored root README region without writing source files.
 
 ## Retained operation contract
 
@@ -105,3 +109,4 @@ The full modifier contract and external implementation guidance are defined in [
 The test suite exercises `api`, `runtime:core`, `runtime:headless`, `runtime:minecraft`, and the showcase compiler with ordinary JVM tests.
 Integration tests belong at the narrowest module boundary that needs them.
 Fabric GameTests are reserved for behavior that genuinely requires Minecraft's loaded game environment.
+The 26.2 client GameTest is the release and documentation gate for native asset, font, widget, placement, logical draw-order, and final-pixel parity.

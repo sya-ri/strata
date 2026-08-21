@@ -11,8 +11,17 @@ internal class ShowcaseOutput internal constructor(
     internal val overview: Overview,
     pages: List<Page>,
     internal val stagingRoot: Path,
+    receipt: ByteArray,
 ) {
     internal val pages: List<Page> = pages.toList()
+    private val receiptSnapshot: ByteArray = receipt.copyOf()
+
+    /**
+     * Returns the Minecraft parity receipt as fresh bytes.
+     *
+     * @return independent verified receipt bytes.
+     */
+    internal fun receipt(): ByteArray = receiptSnapshot.copyOf()
 
     /**
      * Markdown for the generated component index.

@@ -22,7 +22,8 @@ A version adapter reproduces the behavior and presentation of its own Vanilla ve
    Do not add component-type dispatch or a parallel component registry.
 4. Express Vanilla asset, color, geometry, and behavior differences through the version profile or replaceable variants.
    Never inherit the latest profile as an undocumented fallback.
-5. Package the remapped runtime artifact with the common Strata artifacts nested exactly once.
+5. Package the target's distribution artifact with the common Strata artifacts nested exactly once.
+   Remap only versions whose mappings and distribution format require it; verify an unobfuscated no-remap artifact directly when that is the target contract.
    Keep integration fixtures and test code out of the mod artifact.
 
 ## Verify behavior
@@ -31,14 +32,14 @@ A version adapter reproduces the behavior and presentation of its own Vanilla ve
 2. Add Fabric GameTests for text resolution, resources, layout, input, lifecycle, threading, and the Vanilla screens used to validate the adapter.
 3. Capture screenshots at a fixed viewport, GUI scale, locale, resource pack, focus, pointer state, and game state.
    Store expected, actual, and diff output on visual failure; verification tasks must never rewrite goldens.
-4. For the latest supported version, provide the complete asset-backed headless profile and require tree, measurement, draw-command, and tolerance-based image parity with the game capture.
+4. For the latest supported version, provide the complete asset-backed headless profile and require tree, measurement, logical draw-command, and exact ARGB image parity with the game capture for the supported scene and fixed environment.
 5. When the new adapter becomes the latest version, move the canonical asset-backed headless and README examples to it.
    Older adapters keep their version-specific GameTests and structural headless tests; only complete asset-dependent headless pixel parity may be relaxed.
 
 ## Release the version
 
-1. Add the adapter to the CI matrix and run formatting, static analysis, ABI checks, JVM tests, Kover reports, remapping, GameTests, and visual comparison.
+1. Add the adapter to the CI matrix and run formatting, static analysis, ABI checks, JVM tests, Kover reports, target-appropriate packaging, GameTests, and visual comparison.
 2. Publish all artifacts to an isolated Maven repository and build a clean external consumer using only those publications.
-3. Inspect the remapped jar, nested jars, POM, Gradle metadata, bytecode target, Fabric metadata, dependency bounds, license, and absence of integration classes or local paths.
+3. Inspect the target distribution jar, nested jars, POM, Gradle metadata, bytecode target, Fabric metadata, dependency bounds, license, and absence of integration classes or local paths.
 4. Update the README support table, compatibility document, screenshots, and release notes.
    Every compatibility claim must be backed by a passing test or an explicitly documented limitation.

@@ -1,0 +1,15 @@
+{
+  "schemaVersion": 1,
+  "id": "strata-integration-minecraft-fabric-26-2",
+  "version": "0.1.0",
+  "name": "Strata Minecraft 26.2 integration verification",
+  "environment": "client",
+  "entrypoints": {
+    "fabric-client-gametest": [
+      "dev.s7a.strata.integration.minecraft.fabric.StrataMinecraftClientGameTest"
+    ]
+  },
+  "depends": {
+    "strata-runtime-minecraft-fabric-26-2": "*"
+  }
+}

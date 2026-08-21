@@ -4,80 +4,46 @@
 
 Column lays out direct children vertically with typed spacing, arrangement, and horizontal alignment.
 
+This image is a 320 by 180 crop from the exact native/Fabric/headless parity frame recorded in [the verification receipt](minecraft-26.2-parity.properties).
+
 ![Column headless showcase](images/column.png)
 
 ## Compiled example
 
 ```kotlin
 import dev.s7a.strata.dsl.Column
+import dev.s7a.strata.dsl.RowScope
 import dev.s7a.strata.dsl.Spacer
-import dev.s7a.strata.dsl.buildUi
-import dev.s7a.strata.element.Element
-import dev.s7a.strata.geometry.IntSize
-import dev.s7a.strata.layout.Arrangement
 import dev.s7a.strata.layout.HorizontalAlignment
 import dev.s7a.strata.modifier.Modifier
-import dev.s7a.strata.modifier.background
-import dev.s7a.strata.modifier.fillMaxSize
-import dev.s7a.strata.modifier.padding
+import dev.s7a.strata.modifier.height
 import dev.s7a.strata.modifier.size
-import dev.s7a.strata.render.ArgbColor
-import dev.s7a.strata.runtime.headless.HeadlessFrame
-import dev.s7a.strata.runtime.headless.renderHeadless
+import dev.s7a.strata.runtime.minecraft.MinecraftUiContext
+import dev.s7a.strata.text.UiText
 
 /**
- * Builds the Column element description used for topology validation and rendering.
+ * Builds the Column panel used by the native, Fabric, and headless parity paths.
  *
- * @return the public Column element tree.
+ * @param minecraft callback-lifetime Minecraft component context.
  */
-internal fun columnDescription(): Element =
-    buildUi {
-        Column(
-            modifier =
-                Modifier.Empty
-                    .fillMaxSize()
-                    .background(ArgbColor(0xFF111827.toInt()))
-                    .padding(4),
-            spacing = 2,
-            verticalArrangement = Arrangement.SpaceAround,
-            horizontalAlignment = HorizontalAlignment.Center,
-        ) {
-            Spacer(
-                modifier =
-                    Modifier.Empty
-                        .size(12, 12)
-                        .background(ArgbColor(0xFF22D3EE.toInt())),
-            )
-            Spacer(
-                modifier =
-                    Modifier.Empty
-                        .size(14, 16)
-                        .background(ArgbColor(0xFFA78BFA.toInt()))
-                        .weight(1f, fill = false),
-            )
-            Spacer(
-                modifier =
-                    Modifier.Empty
-                        .size(12, 8)
-                        .background(ArgbColor(0xFFFBBF24.toInt()))
-                        .align(HorizontalAlignment.End),
-            )
-        }
+internal fun RowScope.columnPanel(minecraft: MinecraftUiContext) {
+    Column(
+        modifier = Modifier.Empty.size(320, 180),
+        horizontalAlignment = HorizontalAlignment.Center,
+    ) {
+        Spacer(modifier = Modifier.Empty.height(20))
+        element(minecraft.text(UiText.Literal("Column")))
+        Spacer(modifier = Modifier.Empty.height(11))
+        element(minecraft.pointerButton(UiText.Literal("Enabled")) {})
+        Spacer(modifier = Modifier.Empty.height(4))
+        element(minecraft.pointerButton(UiText.Literal("Disabled"), enabled = false) {})
     }
-
-/**
- * Renders the Column showcase scene into a deterministic headless frame.
- *
- * @return the rendered Column frame.
- */
-internal fun column(): HeadlessFrame = renderHeadless(columnDescription(), IntSize(36, 68), scale = 3)
+}
 ```
 
 ## Modifiers
 
-Generic modifiers used: FillMaxSize, Background(color=0xFF111827), Padding(all=4).
-Component parameters shown: Spacing(value=2), Arrangement(value=SpaceAround), ColumnDefaultAlignment(alignment=Center).
-Direct-child parent data used: Weight(weight=1.0, fill=false), ColumnAlign(alignment=End).
+The compiled panel fixes Column to 320 by 180, centers children horizontally, and uses Spacer height modifiers for exact native vertical placement.
 
 ## Parent scope
 
@@ -85,11 +51,13 @@ Column's content callback runs with ColumnScope; weight and horizontal align mod
 
 <details><summary>Component tree</summary>
 
+The tree shows layout components; Minecraft text and pointer-button leaves are omitted and remain visible in the compiled source.
+
 ```text
-`- Column [FillMaxSize, Background(color=0xFF111827), Padding(all=4), Spacing(value=2), Arrangement(value=SpaceAround), ColumnDefaultAlignment(alignment=Center)]
-  |- Spacer [Size(width=12, height=12), Background(color=0xFF22D3EE)]
-  |- Spacer [Size(width=14, height=16), Background(color=0xFFA78BFA), Weight(weight=1.0, fill=false)]
-  `- Spacer [Size(width=12, height=8), Background(color=0xFFFBBF24), ColumnAlign(alignment=End)]
+`- Column [Size(width=320, height=180), ColumnDefaultAlignment(alignment=Center)]
+  |- Spacer [Height(value=20)]
+  |- Spacer [Height(value=11)]
+  `- Spacer [Height(value=4)]
 ```
 
 </details>

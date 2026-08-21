@@ -30,7 +30,10 @@ internal class ShowcaseMarkdownTest {
 
 # Headless component showcase
 
-This deterministic showcase is portable headless DrawCommand output, not a Minecraft screenshot or capture.
+These deterministic headless crops use the active Minecraft 26.2 menu texture, button sprites, ASCII font, component geometry, and logical draw order.
+One loaded Fabric GameTest requires exact ARGB equality between the native screen, the Fabric adapter, and the headless frame before producing these files.
+
+[Open the machine-readable parity receipt](minecraft-26.2-parity.properties)
 
 ![Overview headless showcase](images/overview.png)
 
@@ -42,6 +45,8 @@ internal fun overview() {}
 ```
 
 <details><summary>Overview component tree</summary>
+
+The tree shows layout components; Minecraft text and pointer-button leaves are omitted and remain visible in the compiled source.
 
 ```text
 `- Column
@@ -59,7 +64,7 @@ internal fun overview() {}
             index,
         )
         assertTrue(index.contains(overview.source))
-        assertTrue(index.contains("not a Minecraft screenshot or capture"))
+        assertTrue(index.contains("exact ARGB equality"))
     }
 
     @Test
@@ -72,7 +77,7 @@ internal fun overview() {}
 
 ## Headless component showcase
 
-This deterministic JVM-headless output is not a Minecraft screenshot or capture.
+This deterministic headless crop uses Minecraft 26.2 assets and font pixels from the same frame that passed exact native-screen and Fabric-adapter comparison.
 
 ![Strata component showcase](docs/components/images/overview.png)
 
@@ -88,7 +93,7 @@ internal fun overview() {}
             root,
         )
         assertTrue(root.contains(overview.source))
-        assertTrue(root.contains("not a Minecraft screenshot or capture"))
+        assertTrue(root.contains("exact native-screen and Fabric-adapter comparison"))
     }
 
     @Test
@@ -106,9 +111,9 @@ internal fun overview() {}
                         "row",
                         source,
                         "Row lays out direct children horizontally with typed spacing, arrangement, and vertical alignment.",
-                        "Generic modifiers used: FillMaxSize, Background(color=0xFF111827), Padding(all=4).\nComponent parameters shown: Spacing(value=2), Arrangement(value=SpaceEvenly), RowDefaultAlignment(alignment=Center).\nDirect-child parent data used: Weight(weight=1.0, fill=false), RowAlign(alignment=Bottom).",
+                        "The compiled panel fixes its outer size, uses Spacer height modifiers for vertical placement, and sets Row spacing to 10. Its Minecraft button children use no RowScope parent data.",
                         "Row's content callback runs with RowScope; weight and vertical align modifiers apply only to direct children while that scope is active.",
-                        "`- Row [FillMaxSize, Background(color=0xFF111827), Padding(all=4), Spacing(value=2), Arrangement(value=SpaceEvenly), RowDefaultAlignment(alignment=Center)]\n  |- Spacer [Size(width=12, height=12), Background(color=0xFF22D3EE)]\n  |- Spacer [Size(width=14, height=16), Background(color=0xFFA78BFA), Weight(weight=1.0, fill=false)]\n  `- Spacer [Size(width=12, height=8), Background(color=0xFFFBBF24), RowAlign(alignment=Bottom)]",
+                        "`- Column [Size(width=320, height=180), ColumnDefaultAlignment(alignment=Center)]\n  |- Spacer [Height(value=20)]\n  |- Spacer [Height(value=11)]\n  `- Row [Spacing(value=10)]",
                     ),
                 DocumentedComponent.Column to
                     expectedPage(
@@ -116,9 +121,9 @@ internal fun overview() {}
                         "column",
                         source,
                         "Column lays out direct children vertically with typed spacing, arrangement, and horizontal alignment.",
-                        "Generic modifiers used: FillMaxSize, Background(color=0xFF111827), Padding(all=4).\nComponent parameters shown: Spacing(value=2), Arrangement(value=SpaceAround), ColumnDefaultAlignment(alignment=Center).\nDirect-child parent data used: Weight(weight=1.0, fill=false), ColumnAlign(alignment=End).",
+                        "The compiled panel fixes Column to 320 by 180, centers children horizontally, and uses Spacer height modifiers for exact native vertical placement.",
                         "Column's content callback runs with ColumnScope; weight and horizontal align modifiers apply only to direct children while that scope is active.",
-                        "`- Column [FillMaxSize, Background(color=0xFF111827), Padding(all=4), Spacing(value=2), Arrangement(value=SpaceAround), ColumnDefaultAlignment(alignment=Center)]\n  |- Spacer [Size(width=12, height=12), Background(color=0xFF22D3EE)]\n  |- Spacer [Size(width=14, height=16), Background(color=0xFFA78BFA), Weight(weight=1.0, fill=false)]\n  `- Spacer [Size(width=12, height=8), Background(color=0xFFFBBF24), ColumnAlign(alignment=End)]",
+                        "`- Column [Size(width=320, height=180), ColumnDefaultAlignment(alignment=Center)]\n  |- Spacer [Height(value=20)]\n  |- Spacer [Height(value=11)]\n  `- Spacer [Height(value=4)]",
                     ),
                 DocumentedComponent.Box to
                     expectedPage(
@@ -126,19 +131,19 @@ internal fun overview() {}
                         "box",
                         source,
                         "Box overlays direct children and positions each with its default alignment or a direct-child override.",
-                        "Generic modifiers used: FillMaxSize, Background(color=0xFF111827), Padding(all=4).\nComponent parameters shown: BoxContentAlignment(alignment=Center).\nDirect-child parent data used: BoxAlign(alignment=TopStart), BoxAlign(alignment=BottomEnd).",
+                        "The compiled panel fixes Box to 320 by 180 with Center as its default. Its two pointer-button children use BoxScope.align with TopStart and BottomEnd overrides.",
                         "Box's content callback runs with BoxScope; align applies only to direct children while that scope is active.",
-                        "`- Box [FillMaxSize, Background(color=0xFF111827), Padding(all=4), BoxContentAlignment(alignment=Center)]\n  |- Spacer [Size(width=28, height=16), Background(color=0xFF22D3EE), BoxAlign(alignment=TopStart)]\n  |- Spacer [Size(width=36, height=20), Background(color=0xFFA78BFA)]\n  `- Spacer [Size(width=20, height=12), Background(color=0xFFFBBF24), BoxAlign(alignment=BottomEnd)]",
+                        "`- Box [Size(width=320, height=180), BoxContentAlignment(alignment=Center)]",
                     ),
                 DocumentedComponent.Spacer to
                     expectedPage(
                         "Spacer",
                         "spacer",
                         source,
-                        "Spacer has no intrinsic size or paint; size and background modifiers make this example visible.",
-                        "Generic modifiers used: Size(width=36, height=12), Background(color=0xFFFB7185).\nComponent parameters shown: none.\nDirect-child parent data used: BoxAlign(alignment=Center).",
-                        "Spacer has no content callback. In this example, its direct Box parent provides BoxScope.align while the parent callback is active.",
-                        "`- Box [FillMaxSize, Background(color=0xFF111827), Padding(all=4), BoxContentAlignment(alignment=Center)]\n  `- Spacer [Size(width=36, height=12), Background(color=0xFFFB7185), BoxAlign(alignment=Center)]",
+                        "Spacer has no intrinsic size or paint; height modifiers make the native vertical gaps visible around Minecraft text and buttons.",
+                        "The compiled panel uses Spacer height modifiers to reproduce native vertical gaps. Spacer remains an intrinsic-zero, non-painting leaf.",
+                        "Spacer has no content callback or Spacer-specific parent-data API. In this example it is a direct Column child, while its ordinary height modifier is not Column parent data.",
+                        "`- Column [Size(width=320, height=180), ColumnDefaultAlignment(alignment=Center)]\n  |- Spacer [Height(value=20)]\n  `- Spacer [Height(value=51)]",
                     ),
             )
         expected.forEach { (component, fixture) -> assertEquals(fixture, pages.getValue(component)) }
@@ -159,6 +164,7 @@ internal fun overview() {}
                 listOf(
                     ShowcaseTreeDetail.FillMaxSize,
                     ShowcaseTreeDetail.Size(7, 9),
+                    ShowcaseTreeDetail.Height(11),
                     ShowcaseTreeDetail.Padding(2),
                     ShowcaseTreeDetail.Background(ArgbColor(0x80ABCDEF.toInt())),
                     ShowcaseTreeDetail.Weight(1.5f, false),
@@ -176,6 +182,7 @@ internal fun overview() {}
         listOf(
             "FillMaxSize",
             "Size(width=7, height=9)",
+            "Height(value=11)",
             "Padding(all=2)",
             "Background(color=0x80ABCDEF)",
             "Weight(weight=1.5, fill=false)",
@@ -191,7 +198,7 @@ internal fun overview() {}
         val spacerPage = ShowcaseMarkdown.page(ShowcaseScenarioCatalog.components.last(), "import sample\ninternal fun spacer() {}")
         assertTrue(spacerPage.contains("# Spacer"))
         assertTrue(spacerPage.contains("Spacer has no intrinsic size or paint"))
-        assertTrue(spacerPage.contains("BoxScope.align"))
+        assertTrue(spacerPage.contains("direct Column child"))
         assertTrue(spacerPage.indexOf("# Spacer") < spacerPage.indexOf("![Spacer headless showcase]"))
     }
 
@@ -211,6 +218,8 @@ internal fun overview() {}
 
 $summary
 
+This image is a 320 by 180 crop from the exact native/Fabric/headless parity frame recorded in [the verification receipt](minecraft-26.2-parity.properties).
+
 ![$title headless showcase](images/$slug.png)
 
 ## Compiled example
@@ -228,6 +237,8 @@ $modifiers
 $parentScope
 
 <details><summary>Component tree</summary>
+
+The tree shows layout components; Minecraft text and pointer-button leaves are omitted and remain visible in the compiled source.
 
 ```text
 $tree

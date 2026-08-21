@@ -1,27 +1,9 @@
 package dev.s7a.strata.integration.docs
 
 /**
- * Finds the single logical node documented by a component page.
+ * Immutable layout-component topology copied from one compiled Minecraft parity panel.
  *
- * @param component typed component identity to locate.
- * @return the unique matching logical node.
- * @throws IllegalArgumentException when the tree contains zero or multiple matches.
- */
-internal fun ShowcaseTree.featured(component: DocumentedComponent): ShowcaseTree {
-    val matches =
-        buildList {
-            fun visit(node: ShowcaseTree) {
-                if (node.component == component) add(node)
-                node.children.forEach(::visit)
-            }
-            visit(this@featured)
-        }
-    require(matches.size == 1) { "Showcase page must have exactly one featured ${component.apiMethodName} node." }
-    return matches.single()
-}
-
-/**
- * Immutable logical component topology used to validate returned public element trees.
+ * Minecraft-specific text and pointer-button leaves are deliberately represented by the compiled source and pixels rather than this layout-only tree.
  */
 internal class ShowcaseTree internal constructor(
     internal val component: DocumentedComponent,

@@ -1,11 +1,9 @@
 package dev.s7a.strata.integration.docs
 
-import dev.s7a.strata.element.Element
 import dev.s7a.strata.geometry.IntSize
-import dev.s7a.strata.runtime.headless.HeadlessFrame
 
 /**
- * Typed immutable metadata and compiled callbacks for one showcase render.
+ * Typed immutable metadata for one loaded-game-verified showcase crop.
  */
 internal sealed interface ShowcaseScenario {
     /**
@@ -14,27 +12,17 @@ internal sealed interface ShowcaseScenario {
     val source: SourceReference
 
     /**
-     * Logical viewport supplied to the headless renderer.
+     * Logical dimensions of the verified GameTest crop.
      */
     val viewport: IntSize
 
     /**
-     * Logical-to-physical pixel scale supplied to the headless renderer.
+     * Logical-to-physical pixel scale recorded by the verified GameTest crop.
      */
     val scale: Int
 
     /**
-     * Expected logical tree topology.
+     * Authoritative layout-only topology copied from the compiled panel source.
      */
     val tree: ShowcaseTree
-
-    /**
-     * Compiled public element description callback.
-     */
-    val description: () -> Element
-
-    /**
-     * Compiled headless render callback.
-     */
-    val render: () -> HeadlessFrame
 }

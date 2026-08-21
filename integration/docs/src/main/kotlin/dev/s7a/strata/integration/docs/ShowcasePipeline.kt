@@ -1,24 +1,22 @@
 package dev.s7a.strata.integration.docs
 
-import dev.s7a.strata.element.Element
 import dev.s7a.strata.geometry.IntSize
-import dev.s7a.strata.runtime.headless.HeadlessFrame
 import java.nio.file.Path
 
 /**
- * Runs typed showcase catalog validation, source extraction, topology checks, and rendering.
+ * Runs typed showcase catalog validation, source extraction, and loaded-game evidence verification.
  *
- * No source synchronization occurs until this pipeline returns a fully rendered output.
+ * No source synchronization occurs until this pipeline returns output backed by a verified receipt and detached image snapshots.
  */
 internal object ShowcasePipeline {
     /**
-     * Preflights and renders every overview and component scenario.
+     * Preflights every overview and component scenario against exact Minecraft parity evidence.
      *
      * @param launch validated repository, build, staging, and API class paths.
-     * @return fully rendered output ready for the synchronizer.
-     * @throws IllegalArgumentException when catalog, inventory, source, topology, or metadata validation fails.
+     * @return verified output ready for the synchronizer.
+     * @throws IllegalArgumentException when catalog, inventory, source, receipt, image, or metadata validation fails.
      * @throws IllegalStateException when API class loading or reflection fails.
-     * @throws Throwable when scenario rendering or PNG encoding fails; the exact failure propagates.
+     * @throws java.io.IOException when source or evidence reading fails.
      */
     internal fun prepare(launch: ShowcaseLaunchArguments): ShowcaseOutput {
         val normalizedProject = launch.projectRoot
@@ -29,16 +27,17 @@ internal object ShowcasePipeline {
         require(discovered == expected) {
             "API component inventory mismatch. Expected $expected but found $discovered."
         }
-        val sourceRoot = normalizedProject.resolve("integration/docs/src/main/kotlin").normalize()
+        val sourceRoot = normalizedProject
+        val evidence = ShowcaseParityEvidence.load(launch.parityRoot)
         val overviewScenario = ShowcaseScenarioCatalog.overview
         val overviewRegion = ShowcaseSources.extract(overviewScenario.source, sourceRoot)
-        val overview = renderOverview(overviewScenario, overviewRegion)
+        val overview = renderOverview(overviewScenario, overviewRegion, evidence)
         val pages =
             ShowcaseScenarioCatalog.components.map { scenario ->
                 val region = ShowcaseSources.extract(scenario.source, sourceRoot)
-                renderComponent(scenario, region)
+                renderComponent(scenario, region, evidence)
             }
-        return ShowcaseOutput(overview, pages, normalizedStaging)
+        return ShowcaseOutput(overview, pages, normalizedStaging, evidence.receipt())
     }
 
     /**
@@ -66,64 +65,26 @@ internal object ShowcasePipeline {
     private fun renderOverview(
         scenario: OverviewScenario,
         region: SourceRegion,
+        evidence: ShowcaseParityEvidence,
     ): ShowcaseOutput.Overview {
-        val description = scenario.description()
-        validateTreeArity(scenario.tree, description, "overview")
-        val frame = scenario.render()
-        validateFrame(frame, scenario.viewport, scenario.scale, "overview")
-        return ShowcaseOutput.Overview(region.source, ShowcaseMarkdown.tree(scenario.tree), frame.image.encodePng())
+        require(scenario.viewport == expectedCropSize && scenario.scale == 1) { "Overview crop metadata differs from the parity contract." }
+        return ShowcaseOutput.Overview(region.source, ShowcaseMarkdown.tree(scenario.tree), evidence.overviewPng())
     }
 
     private fun renderComponent(
         scenario: ComponentScenario,
         region: SourceRegion,
+        evidence: ShowcaseParityEvidence,
     ): ShowcaseOutput.Page {
-        val description = scenario.description()
-        validateTreeArity(scenario.tree, description, scenario.component.apiMethodName)
-        val frame = scenario.render()
-        validateFrame(frame, scenario.viewport, scenario.scale, scenario.component.apiMethodName)
+        require(scenario.viewport == expectedCropSize && scenario.scale == 1) {
+            "${scenario.component.apiMethodName} crop metadata differs from the parity contract."
+        }
         return ShowcaseOutput.Page(
             scenario.component,
             ShowcaseMarkdown.page(scenario, region.source),
-            frame.image.encodePng(),
+            evidence.componentPng(scenario.component),
         )
     }
 
-    private fun validateFrame(
-        frame: HeadlessFrame,
-        viewport: IntSize,
-        scale: Int,
-        label: String,
-    ) {
-        require(frame.viewport == viewport) { "$label frame viewport differs from catalog metadata." }
-        require(frame.pixelScale == scale) { "$label frame scale differs from catalog metadata." }
-        val width = Math.multiplyExact(viewport.width, scale)
-        val height = Math.multiplyExact(viewport.height, scale)
-        require(frame.image.size == IntSize(width, height)) {
-            "$label frame image size differs from catalog metadata."
-        }
-        require(frame.semantics.isEmpty()) { "$label frame semantics must be empty." }
-        val pixels = frame.image.copyArgb()
-        require(pixels.isNotEmpty()) { "$label frame image must not be empty." }
-        require(pixels.all { pixel -> pixel ushr 24 == 0xFF }) { "$label frame must be fully opaque." }
-        require(2 <= pixels.toSet().size) { "$label frame must contain at least two colors." }
-    }
-
-    /**
-     * Validates only direct-child arity against the returned public element tree.
-     *
-     * Modifier details remain authoritative typed catalog metadata because concrete element implementations are not inspected.
-     */
-    private fun validateTreeArity(
-        expected: ShowcaseTree,
-        actual: Element,
-        path: String,
-    ) {
-        require(expected.children.size == actual.children.size) {
-            "Showcase topology mismatch at $path: expected ${expected.children.size} children but found ${actual.children.size}."
-        }
-        expected.children.forEachIndexed { index, child ->
-            validateTreeArity(child, actual.children[index], "$path/$index")
-        }
-    }
+    private val expectedCropSize = IntSize(320, 180)
 }
