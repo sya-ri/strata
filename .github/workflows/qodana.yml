@@ -11,7 +11,6 @@ permissions:
   contents: read
   checks: write
   pull-requests: write
-  security-events: write
 
 jobs:
   qodana:
@@ -28,15 +27,12 @@ jobs:
           java-version: |
             17
             25
+      - name: Assemble analysis dependencies
+        run: ./gradlew assemble
       - name: Run Qodana
         uses: JetBrains/qodana-action@v2026.2
         with:
           args: --fail-threshold 0
-      - name: Upload SARIF
-        if: always()
-        uses: github/codeql-action/upload-sarif@v4
-        with:
-          sarif_file: ${{ runner.temp }}/qodana/results/qodana.sarif.json
       - name: Upload Qodana report
         if: always()
         uses: actions/upload-artifact@v7

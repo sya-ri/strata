@@ -558,7 +558,9 @@ public final class dev/s7a/strata/modifier/ModifierNodeType {
 public final class dev/s7a/strata/modifier/PaddingExtensionsKt {
 	public static final fun padding (Ldev/s7a/strata/modifier/Modifier;I)Ldev/s7a/strata/modifier/Modifier;
 	public static final fun padding (Ldev/s7a/strata/modifier/Modifier;II)Ldev/s7a/strata/modifier/Modifier;
+	public static final fun padding (Ldev/s7a/strata/modifier/Modifier;IIII)Ldev/s7a/strata/modifier/Modifier;
 	public static final fun padding (Ldev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/geometry/Insets;)Ldev/s7a/strata/modifier/Modifier;
+	public static synthetic fun padding$default (Ldev/s7a/strata/modifier/Modifier;IIIIILjava/lang/Object;)Ldev/s7a/strata/modifier/Modifier;
 }
 
 public final class dev/s7a/strata/modifier/PointerDragExtensionsKt {

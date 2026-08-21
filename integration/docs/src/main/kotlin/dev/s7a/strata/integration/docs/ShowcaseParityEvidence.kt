@@ -101,12 +101,14 @@ internal class ShowcaseParityEvidence private constructor(
         }
 
         private enum class MinecraftVersion(
+            @Suppress("unused")
             val receiptValue: String,
         ) {
             Current("26.2"),
         }
 
         private enum class ParityLocale(
+            @Suppress("unused")
             val receiptValue: String,
         ) {
             EnglishUnitedStates("en_us"),

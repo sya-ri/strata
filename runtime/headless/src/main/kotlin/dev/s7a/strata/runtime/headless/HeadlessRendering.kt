@@ -113,29 +113,30 @@ private object HeadlessImplementation {
 
     private fun snapshotCommands(commands: List<DrawCommand>): List<DrawCommand> {
         var clipDepth = 0
-        val snapshot =
-            commands.map { command ->
-                when (val checkedCommand = requireNotNull(command) { "Unsupported or null draw command." }) {
-                    is DrawCommand.FillRectangle -> {
-                        checkedCommand
-                    }
+        val snapshot = ArrayList<DrawCommand>(commands.size)
+        commands.forEach { command ->
+            val checkedCommand = requireNotNull(command) { "Unsupported or null draw command." }
+            when (checkedCommand) {
+                is DrawCommand.FillRectangle -> {
+                    snapshot.add(checkedCommand)
+                }
 
-                    is DrawCommand.BlitImage -> {
-                        checkedCommand
-                    }
+                is DrawCommand.BlitImage -> {
+                    snapshot.add(checkedCommand)
+                }
 
-                    is DrawCommand.PushClip -> {
-                        clipDepth = Math.incrementExact(clipDepth)
-                        checkedCommand
-                    }
+                is DrawCommand.PushClip -> {
+                    clipDepth = Math.incrementExact(clipDepth)
+                    snapshot.add(checkedCommand)
+                }
 
-                    DrawCommand.PopClip -> {
-                        require(0 < clipDepth) { "Clip pop has no matching push." }
-                        clipDepth -= 1
-                        checkedCommand
-                    }
+                DrawCommand.PopClip -> {
+                    require(0 < clipDepth) { "Clip pop has no matching push." }
+                    clipDepth -= 1
+                    snapshot.add(checkedCommand)
                 }
             }
+        }
         require(clipDepth == 0) { "Clip push has no matching pop." }
         return snapshot
     }

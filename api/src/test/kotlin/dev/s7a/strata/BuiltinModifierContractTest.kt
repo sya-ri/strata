@@ -123,9 +123,19 @@ internal class BuiltinModifierContractTest {
         assertThrows(IllegalArgumentException::class.java) { Modifier.Empty.padding(-1) }
         assertThrows(IllegalArgumentException::class.java) { Modifier.Empty.padding(horizontal = -1, vertical = 0) }
         assertThrows(IllegalArgumentException::class.java) { Modifier.Empty.padding(horizontal = 0, vertical = -1) }
+        assertThrows(IllegalArgumentException::class.java) { Modifier.Empty.padding(left = -1) }
+        assertThrows(IllegalArgumentException::class.java) { Modifier.Empty.padding(top = -1) }
+        assertThrows(IllegalArgumentException::class.java) { Modifier.Empty.padding(right = -1) }
+        assertThrows(IllegalArgumentException::class.java) { Modifier.Empty.padding(bottom = -1) }
         assertThrows(ArithmeticException::class.java) { Modifier.Empty.padding(Int.MAX_VALUE) }
         assertThrows(ArithmeticException::class.java) {
             Modifier.Empty.padding(horizontal = Int.MAX_VALUE, vertical = 0)
+        }
+        assertThrows(ArithmeticException::class.java) {
+            Modifier.Empty.padding(left = Int.MAX_VALUE, right = 1)
+        }
+        assertThrows(ArithmeticException::class.java) {
+            Modifier.Empty.padding(top = Int.MAX_VALUE, bottom = 1)
         }
     }
 

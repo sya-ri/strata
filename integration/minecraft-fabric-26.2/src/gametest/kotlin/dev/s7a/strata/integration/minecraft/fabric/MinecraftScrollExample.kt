@@ -7,6 +7,7 @@ import dev.s7a.strata.dsl.Spacer
 import dev.s7a.strata.layout.Alignment
 import dev.s7a.strata.layout.HorizontalAlignment
 import dev.s7a.strata.modifier.Modifier
+import dev.s7a.strata.modifier.fillMaxSize
 import dev.s7a.strata.modifier.size
 import dev.s7a.strata.runtime.minecraft.MinecraftScreenDefinition
 import dev.s7a.strata.runtime.minecraft.Scroll
@@ -22,7 +23,7 @@ import dev.s7a.strata.runtime.minecraft.menuBackground
 internal fun createScrollScreenDefinition(): MinecraftScreenDefinition =
     createMinecraftScreenDefinition("Strata Scroll parity") {
         Box(modifier = Modifier.Empty.size(320, 180).menuBackground()) {
-            Column(modifier = Modifier.Empty.size(320, 180)) {
+            Column(modifier = Modifier.Empty.fillMaxSize()) {
                 Spacer(modifier = Modifier.Empty.size(320, 33))
                 Scroll(modifier = Modifier.Empty.size(320, 94)) {
                     Column(

@@ -43,7 +43,7 @@ internal fun createSlotScreenDefinition(): MinecraftScreenDefinition =
             Box(
                 modifier =
                     Modifier.Empty
-                        .padding(Insets(left = 72, top = 36))
+                        .padding(left = 72, top = 36)
                         .containerBackground(rows = 3),
             ) {
                 Text(

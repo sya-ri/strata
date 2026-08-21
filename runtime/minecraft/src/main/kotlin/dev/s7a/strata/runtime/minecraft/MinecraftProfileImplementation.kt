@@ -780,6 +780,7 @@ internal object MinecraftProfileImplementation {
             }
         }
 
+        @Suppress("unused")
         fun release() {
             check(Thread.currentThread() === ownerThread) { "Minecraft content release requires the host owner thread." }
             profile = null

@@ -86,7 +86,6 @@ private class MinecraftScrollElement private constructor(
         ClipChildrenNode,
         PointerInputNode,
         LifecycleNode {
-        private val listTileSize = IntSize(32, 32)
         private val scrollbarSize = IntSize(6, 32)
         private val separatorSize = IntSize(32, 2)
         private var listBackground: DrawImage? = initialListBackground
@@ -233,6 +232,7 @@ private class MinecraftScrollElement private constructor(
          * @param current next immutable description.
          * @return exact dirty phases required by the update.
          */
+        @Suppress("unused")
         @JvmSynthetic
         internal fun updateFrom(current: MinecraftScrollElement): DirtyMask {
             val imagesChanged =

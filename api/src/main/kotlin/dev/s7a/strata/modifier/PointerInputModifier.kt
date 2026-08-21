@@ -132,14 +132,17 @@ internal object PointerInputModifier {
             }
 
         override fun onPointerHover(hovered: Boolean) {
-            val current = action
-            if (current is Action.Hover && this.hovered != hovered) {
-                this.hovered = hovered
-                current.callback(if (hovered) PointerHoverEvent.Enter else PointerHoverEvent.Exit)
-            } else if (current is Action.Hover) {
-                this.hovered = hovered
-            } else {
-                this.hovered = false
+            when (val current = action) {
+                is Action.Hover -> {
+                    if (this.hovered != hovered) {
+                        this.hovered = hovered
+                        current.callback(if (hovered) PointerHoverEvent.Enter else PointerHoverEvent.Exit)
+                    }
+                }
+
+                else -> {
+                    this.hovered = false
+                }
             }
         }
 

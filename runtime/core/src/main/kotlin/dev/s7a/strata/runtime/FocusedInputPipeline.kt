@@ -152,7 +152,7 @@ internal class FocusedInputPipeline {
             for (index in (0 until retained.effectiveChildCount).reversed()) {
                 val child = retained.effectiveChildAt(index)
                 if (child.placed) {
-                    val owner = focusOwnerAt(child, position, descendantsAllowHit)
+                    val owner = focusOwnerAt(child, position, ancestorAllowsHit = true)
                     if (owner != null) return owner
                 }
             }

@@ -11,7 +11,7 @@ The row, column, and box scopes are owner-thread capabilities and are closed imm
 
 `Row`, `Column`, and `Box` accept an ordered `modifier` chain for the container itself.
 The same active behaviors available to other components can therefore size the container, add padding around its complete child group, paint a background, emit semantics, accept focus, or handle input without adding a component-specific parameter for each behavior.
-For example, `Row(modifier = Modifier.Empty.padding(Insets(top = 16)))` offsets the complete row once; applying the same padding separately to each child changes every child's measured box and is not equivalent.
+For example, `Row(modifier = Modifier.Empty.padding(top = 16))` offsets the complete row once; applying the same padding separately to each child changes every child's measured box and is not equivalent.
 The typed layout parameters remain limited to behavior owned by the container algorithm: spacing, main-axis arrangement, and default cross-axis alignment.
 Direct-child `weight` and `align` remain parent-data modifiers available only from the corresponding callback scope.
 

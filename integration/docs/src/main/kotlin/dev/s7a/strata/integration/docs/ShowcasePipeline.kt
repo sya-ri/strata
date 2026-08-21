@@ -26,14 +26,13 @@ internal object ShowcasePipeline {
         require(discovered == expected) {
             "Minecraft component inventory mismatch. Expected $expected but found $discovered."
         }
-        val sourceRoot = normalizedProject
         val evidence = ShowcaseParityEvidence.load(launch.parityRoot)
         val overviewScenario = ShowcaseScenarioCatalog.overview
-        val overviewRegion = ShowcaseSources.extract(overviewScenario.source, sourceRoot)
+        val overviewRegion = ShowcaseSources.extract(overviewScenario.source, normalizedProject)
         val overview = renderOverview(overviewScenario, overviewRegion, evidence)
         val pages =
             ShowcaseScenarioCatalog.components.map { scenario ->
-                val region = ShowcaseSources.extract(scenario.source, sourceRoot)
+                val region = ShowcaseSources.extract(scenario.source, normalizedProject)
                 renderComponent(scenario, region, evidence)
             }
         return ShowcaseOutput(overview, pages, normalizedStaging, evidence.receipt())

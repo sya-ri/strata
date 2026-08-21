@@ -159,6 +159,7 @@ private class MinecraftPointerButtonElement private constructor(
          * @param current next immutable button description.
          * @return dirty phases required for the retained update.
          */
+        @Suppress("unused")
         @JvmSynthetic
         internal fun updateFrom(current: MinecraftPointerButtonElement): DirtyMask {
             val spriteChanged =

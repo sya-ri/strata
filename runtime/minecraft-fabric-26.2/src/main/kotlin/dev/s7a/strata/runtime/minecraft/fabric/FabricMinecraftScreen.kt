@@ -403,7 +403,10 @@ public class FabricMinecraftScreen private constructor(
                         is KeyboardInput -> host.dispatchKeyboard(input.event)
                         is TextInput -> host.dispatchTextInput(input.event)
                     }
-                if (result === InputResult.Consumed) true else inherited()
+                when (result) {
+                    InputResult.Consumed -> true
+                    InputResult.Ignored -> inherited()
+                }
             }
         } catch (failure: Throwable) {
             terminalFailure(failure)
@@ -493,7 +496,7 @@ public class FabricMinecraftScreen private constructor(
             current?.close()
             return
         }
-        fillTexture(checkNotNull(current), image)
+        fillTexture(current, image)
     }
 
     private fun fillTexture(

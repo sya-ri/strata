@@ -77,6 +77,7 @@ private object MinecraftMenuBackgroundModifier {
          * @param element incoming immutable description.
          * @return Paint when pixels changed, otherwise no dirty phase.
          */
+        @Suppress("unused")
         fun update(element: Element): DirtyMask {
             val changed = image != element.image
             image = element.image

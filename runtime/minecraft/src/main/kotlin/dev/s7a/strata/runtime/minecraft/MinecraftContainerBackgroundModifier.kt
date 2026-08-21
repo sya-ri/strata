@@ -96,6 +96,7 @@ private object MinecraftContainerBackgroundModifier {
          * @param element incoming immutable description.
          * @return Measure for row changes, Paint for image-only changes, or no dirty phase for equality.
          */
+        @Suppress("unused")
         fun update(element: Element): DirtyMask {
             val imageChanged = image != element.image
             val rowsChanged = rows != element.rows

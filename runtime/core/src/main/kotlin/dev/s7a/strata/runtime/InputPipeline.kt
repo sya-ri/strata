@@ -92,7 +92,7 @@ internal class InputPipeline(
             for (index in (0 until retained.effectiveChildCount).reversed()) {
                 val child = retained.effectiveChildAt(index)
                 if (child.placed) {
-                    val result = dispatchNode(child, event, ancestorAllowsHit = descendantsAllowHit)
+                    val result = dispatchNode(child, event, ancestorAllowsHit = true)
                     if (result.result === InputResult.Consumed) {
                         return result
                     }

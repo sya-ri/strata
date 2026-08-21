@@ -37,3 +37,22 @@ public fun Modifier.padding(
     horizontal: Int,
     vertical: Int,
 ): Modifier = padding(Insets.symmetric(horizontal, vertical))
+
+/**
+ * Adds independently specified distances around the virtual child.
+ * Unspecified sides default to zero, and the new behavior is appended inside the existing modifier chain.
+ *
+ * @param left the non-negative distance applied to the left side.
+ * @param top the non-negative distance applied to the top side.
+ * @param right the non-negative distance applied to the right side.
+ * @param bottom the non-negative distance applied to the bottom side.
+ * @return this chain with one appended padding modifier.
+ * @throws IllegalArgumentException when any distance is negative.
+ * @throws ArithmeticException when either axis total cannot be represented as an [Int].
+ */
+public fun Modifier.padding(
+    left: Int = 0,
+    top: Int = 0,
+    right: Int = 0,
+    bottom: Int = 0,
+): Modifier = padding(Insets(left = left, top = top, right = right, bottom = bottom))

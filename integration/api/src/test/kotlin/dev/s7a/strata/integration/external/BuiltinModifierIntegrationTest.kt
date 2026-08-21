@@ -141,7 +141,7 @@ internal class BuiltinModifierIntegrationTest {
         assertEquals(
             IntSize(7, 11),
             measure(
-                Modifier.Empty.padding(Insets(left = 1, top = 3, right = 2, bottom = 4)),
+                Modifier.Empty.padding(left = 1, top = 3, right = 2, bottom = 4),
                 Constraints(maxWidth = 10),
             ),
         )

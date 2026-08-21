@@ -117,6 +117,7 @@ private class MinecraftSlotElement private constructor(
          * @param current next immutable Slot description.
          * @return Paint when observable visual output changes, otherwise no dirty phase.
          */
+        @Suppress("unused")
         @JvmSynthetic
         internal fun updateFrom(current: MinecraftSlotElement): DirtyMask {
             val imagesChanged = backHighlight != current.backHighlight || frontHighlight != current.frontHighlight

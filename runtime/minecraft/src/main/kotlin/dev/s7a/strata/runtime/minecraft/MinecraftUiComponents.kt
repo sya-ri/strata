@@ -79,7 +79,7 @@ public fun UiScope.Text(
     modifier: Modifier = Modifier.Empty,
     key: ElementKey<*>? = null,
 ) {
-    Text(UiText.Literal(text), style, modifier, key)
+    this.Text(UiText.Literal(text), style, modifier, key)
 }
 
 /**
@@ -157,7 +157,7 @@ public fun UiScope.Button(
     modifier: Modifier = Modifier.Empty,
     key: ElementKey<*>? = null,
 ) {
-    Button(UiText.Literal(label), width, enabled, modifier, key)
+    this.Button(UiText.Literal(label), width, enabled, modifier, key)
 }
 
 /**
