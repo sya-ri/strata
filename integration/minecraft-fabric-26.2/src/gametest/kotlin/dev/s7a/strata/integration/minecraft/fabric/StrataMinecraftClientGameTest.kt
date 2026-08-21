@@ -348,9 +348,12 @@ public class StrataMinecraftClientGameTest : FabricClientGameTest {
         industrial: HeadlessImage,
         playerHead: HeadlessImage,
         social: HeadlessImage,
+        progress: HeadlessImage,
     ) {
         val imageDirectory = output.resolve("components")
         Files.createDirectories(imageDirectory)
+        val screenDirectory = output.resolve("screens")
+        Files.createDirectories(screenDirectory)
         val sources =
             mapOf(
                 ParityScene.Confirm to createDrawImage(confirm.size, confirm.copyArgb()),
@@ -383,6 +386,16 @@ public class StrataMinecraftClientGameTest : FabricClientGameTest {
             Files.write(imageDirectory.resolve("${crop.slug}.png"), png)
             pngHashes[crop] = sha256(png)
         }
+        val screenPngHashes =
+            mapOf(
+                ParityScreen.Social to social.encodePng(),
+                ParityScreen.Inventory to Files.readAllBytes(output.resolve("strata-inventory-slot-fabric.png")),
+                ParityScreen.Industrial to industrial.encodePng(),
+                ParityScreen.Progress to progress.encodePng(),
+            ).mapValues { (screen, png) ->
+                Files.write(screenDirectory.resolve("${screen.slug}.png"), png)
+                sha256(png)
+            }
         val receipt =
             buildString {
                 append("minecraft.version=26.2\n")
@@ -414,11 +427,21 @@ public class StrataMinecraftClientGameTest : FabricClientGameTest {
                 append("native.fabric.headless.social.argb.sha256=")
                 append(sha256Argb(social))
                 append('\n')
+                append("fabric.headless.progress.argb.sha256=")
+                append(sha256Argb(progress))
+                append('\n')
                 ParityCrop.entries.forEach { crop ->
                     append("component.")
                     append(crop.slug)
                     append(".png.sha256=")
                     append(pngHashes.getValue(crop))
+                    append('\n')
+                }
+                ParityScreen.entries.forEach { screen ->
+                    append("screen.")
+                    append(screen.slug)
+                    append(".png.sha256=")
+                    append(screenPngHashes.getValue(screen))
                     append('\n')
                 }
             }
@@ -589,7 +612,8 @@ public class StrataMinecraftClientGameTest : FabricClientGameTest {
                     val industrial = runIndustrialAssetParity(context, profile, output)
                     val playerHead = runPlayerHeadParity(context, profile, output)
                     val social = MinecraftSocialParity.run(context, profile, output)
-                    writeParityEvidence(output, confirm, scroll, directJoin, containerBackground, slot, industrial, playerHead, social)
+                    val progress = MinecraftProgressParity.run(context, profile, output)
+                    writeParityEvidence(output, confirm, scroll, directJoin, containerBackground, slot, industrial, playerHead, social, progress)
                 }
             }
             closeFabricScreen(context)
@@ -852,5 +876,14 @@ public class StrataMinecraftClientGameTest : FabricClientGameTest {
         Slot,
         Industrial,
         PlayerHead,
+    }
+
+    private enum class ParityScreen(
+        val slug: String,
+    ) {
+        Social("social"),
+        Inventory("inventory"),
+        Industrial("industrial"),
+        Progress("progress"),
     }
 }

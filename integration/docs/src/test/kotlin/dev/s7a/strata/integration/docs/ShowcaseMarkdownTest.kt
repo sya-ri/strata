@@ -24,7 +24,15 @@ internal class ShowcaseMarkdownTest {
                     byteArrayOf(scenario.component.ordinal.toByte()),
                 )
             }
-        val document = ShowcaseMarkdown.components(overview, sections)
+        val screens =
+            ShowcaseScenarioCatalog.screens.map { scenario ->
+                ShowcaseOutput.Screen(
+                    scenario.screen,
+                    ShowcaseScreenMarkdown.section(scenario, "import sample\ninternal fun screen() {}"),
+                    byteArrayOf(scenario.screen.ordinal.toByte()),
+                )
+            }
+        val document = ShowcaseMarkdown.components(overview, sections, screens)
         assertTrue(document.startsWith("<!-- Generated file. Do not edit. -->\n\n# Minecraft component showcase\n"))
         assertTrue(document.contains("real Minecraft 26.2 `ConfirmScreen`"))
         assertTrue(
@@ -37,6 +45,7 @@ internal class ShowcaseMarkdownTest {
         assertTrue(document.contains("exact ARGB equality"))
         assertEquals(1, "<!-- Generated file. Do not edit. -->".toRegex().findAll(document).count())
         DocumentedComponent.entries.forEach { component -> assertTrue(document.contains("<a id=\"${component.slug}\"></a>")) }
+        DocumentedScreen.entries.forEach { screen -> assertTrue(document.contains("<a id=\"screen-${screen.slug}\"></a>")) }
     }
 
     @Test
@@ -72,6 +81,27 @@ internal class ShowcaseMarkdownTest {
             assertTrue(value.endsWith("\n"))
             assertTrue(value.endsWith("\n\n").not())
             assertTrue(value.contains('\r').not())
+        }
+    }
+
+    @Test
+    fun allCompleteScreenSectionsStateEvidenceAndPrimitiveBoundaryTruthfully() {
+        val sections =
+            ShowcaseScenarioCatalog.screens.associate { scenario ->
+                scenario.screen to ShowcaseScreenMarkdown.section(scenario, "import sample\ninternal fun screen() {}")
+            }
+
+        assertTrue(sections.getValue(DocumentedScreen.SocialInteractions).contains("exact ARGB equality between the native Minecraft screen"))
+        assertTrue(sections.getValue(DocumentedScreen.SocialInteractions).contains("without introducing a purpose-specific SocialEntry component"))
+        assertTrue(sections.getValue(DocumentedScreen.SynchronizedInventory).contains("loaded Fabric client/server GameTest"))
+        assertTrue(sections.getValue(DocumentedScreen.SynchronizedInventory).contains("ender-chest, furnace, or custom inventory"))
+        assertTrue(sections.getValue(DocumentedScreen.IndustrialController).contains("resource-pack-aware Mod controller"))
+        assertTrue(sections.getValue(DocumentedScreen.PowerMilestones).contains("ExampleProgressGraph` deliberately stays in downstream example code"))
+        sections.forEach { (screen, value) ->
+            assertTrue(value.contains("![${screen.title} screen showcase](components/screen-${screen.slug}.png)"))
+            assertTrue(value.contains("### Compiled screen"))
+            assertTrue(value.contains("### Primitive boundary"))
+            assertTrue(value.endsWith("\n"))
         }
     }
 

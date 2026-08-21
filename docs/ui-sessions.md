@@ -33,6 +33,7 @@ That live overload is intentionally unavailable to portable-only hosts because a
 Button does not install keyboard focus or activation implicitly; callers compose those policies from the shared modifiers when required.
 The common component boundary exposes only structural resource-pack identifiers and detached immutable pixels, not resource-manager objects, native Minecraft values, renderers, input mappers, or task facilities.
 Client and server code may share a `MinecraftAssetId`; only the versioned client resolves its pixels through the active resource-pack stack before building an `Image` or image-background modifier.
+Image may retain either the complete immutable asset or one nonempty contained source rectangle, allowing sprite-atlas regions to map to an independent destination size without copying pixels or introducing a purpose-specific component.
 The Fabric adapter snapshots the current selected player skin from either its resource-backed default path or registered downloaded texture; `PlayerHead` then renders the native face layer followed by the optional hat layer without retaining a player or platform texture.
 
 ## Ownership and lifecycle

@@ -1,10 +1,11 @@
 @file:JvmName("MinecraftUiComponents")
-@file:Suppress("FunctionNaming", "ktlint:standard:function-naming")
+@file:Suppress("FunctionNaming", "TooManyFunctions", "ktlint:standard:function-naming")
 
 package dev.s7a.strata.runtime.minecraft
 
 import dev.s7a.strata.dsl.UiScope
 import dev.s7a.strata.element.ElementKey
+import dev.s7a.strata.geometry.IntRect
 import dev.s7a.strata.geometry.IntSize
 import dev.s7a.strata.modifier.Modifier
 import dev.s7a.strata.render.DrawImage
@@ -30,7 +31,32 @@ public fun UiScope.Image(
     modifier: Modifier = Modifier.Empty,
     key: ElementKey<*>? = null,
 ) {
-    element(createMinecraftImageElement(image, size, modifier, key))
+    element(createMinecraftImageElement(image, IntRect(0, 0, image.size.width, image.size.height), size, modifier, key))
+}
+
+/**
+ * Emits one immutable nearest-sampled source region from an image.
+ *
+ * This overload preserves sprite-atlas ownership by retaining the complete immutable image while mapping only [source] to [size].
+ * Resource-pack and Mod screens can therefore use a subregion without copying pixels or introducing a purpose-specific component.
+ *
+ * @receiver active owner-thread UI scope.
+ * @param image immutable complete source pixels retained without a copy.
+ * @param source nonempty half-open source rectangle contained by [image].
+ * @param size exact positive logical destination size; defaults to the source rectangle size.
+ * @param modifier active behavior applied to the image.
+ * @param key optional stable sibling identity.
+ * @throws IllegalArgumentException when [source] is empty or outside [image], [size] has an empty axis, or later constraints do not contain [size].
+ * @throws IllegalStateException when used from another thread or outside its active callback.
+ */
+public fun UiScope.Image(
+    image: DrawImage,
+    source: IntRect,
+    size: IntSize = IntSize(source.width, source.height),
+    modifier: Modifier = Modifier.Empty,
+    key: ElementKey<*>? = null,
+) {
+    element(createMinecraftImageElement(image, source, size, modifier, key))
 }
 
 /**

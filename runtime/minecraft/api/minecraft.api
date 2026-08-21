@@ -97,7 +97,9 @@ public final class dev/s7a/strata/runtime/minecraft/MinecraftUiComponents {
 	public static final fun Button (Ldev/s7a/strata/dsl/UiScope;Ljava/lang/String;IZLdev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/element/ElementKey;)V
 	public static synthetic fun Button$default (Ldev/s7a/strata/dsl/UiScope;Ldev/s7a/strata/text/UiText;IZLdev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/element/ElementKey;ILjava/lang/Object;)V
 	public static synthetic fun Button$default (Ldev/s7a/strata/dsl/UiScope;Ljava/lang/String;IZLdev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/element/ElementKey;ILjava/lang/Object;)V
+	public static final fun Image (Ldev/s7a/strata/dsl/UiScope;Ldev/s7a/strata/render/DrawImage;Ldev/s7a/strata/geometry/IntRect;Ldev/s7a/strata/geometry/IntSize;Ldev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/element/ElementKey;)V
 	public static final fun Image (Ldev/s7a/strata/dsl/UiScope;Ldev/s7a/strata/render/DrawImage;Ldev/s7a/strata/geometry/IntSize;Ldev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/element/ElementKey;)V
+	public static synthetic fun Image$default (Ldev/s7a/strata/dsl/UiScope;Ldev/s7a/strata/render/DrawImage;Ldev/s7a/strata/geometry/IntRect;Ldev/s7a/strata/geometry/IntSize;Ldev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/element/ElementKey;ILjava/lang/Object;)V
 	public static synthetic fun Image$default (Ldev/s7a/strata/dsl/UiScope;Ldev/s7a/strata/render/DrawImage;Ldev/s7a/strata/geometry/IntSize;Ldev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/element/ElementKey;ILjava/lang/Object;)V
 	public static final fun PlayerHead (Ldev/s7a/strata/dsl/UiScope;Ldev/s7a/strata/render/DrawImage;IZLdev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/element/ElementKey;)V
 	public static synthetic fun PlayerHead$default (Ldev/s7a/strata/dsl/UiScope;Ldev/s7a/strata/render/DrawImage;IZLdev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/element/ElementKey;ILjava/lang/Object;)V

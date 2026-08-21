@@ -307,6 +307,7 @@ internal object ShowcaseSynchronizer {
     private fun expectedFiles(output: ShowcaseOutput): Set<String> =
         (
             output.sections.map { section -> "${section.slug}.png" } +
+                output.screens.map { screen -> "${screen.slug}.png" } +
                 listOf("overview.png", "minecraft-26.2-parity.properties")
         ).toSortedSet()
 

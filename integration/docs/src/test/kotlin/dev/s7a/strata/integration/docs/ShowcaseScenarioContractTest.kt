@@ -84,5 +84,26 @@ internal class ShowcaseScenarioContractTest {
             assertEquals(1, scenario.scale)
             assertTrue(scenario.source.relativePath.startsWith("integration/minecraft-fabric-26.2/src/gametest/kotlin/"))
         }
+        ShowcaseScenarioCatalog.screens.forEach { scenario ->
+            assertEquals(1, scenario.scale)
+            assertTrue(scenario.source.relativePath.startsWith("integration/minecraft-fabric-26.2/src/gametest/kotlin/"))
+        }
+    }
+
+    @Test
+    fun completeScreensHaveExactTypedOrderSourcesAndViewports() {
+        val screens = ShowcaseScenarioCatalog.screens
+        assertEquals(DocumentedScreen.entries, screens.map { scenario -> scenario.screen })
+        assertEquals(
+            listOf(
+                "MinecraftSocialExample.kt" to "social-screen",
+                "MinecraftInventoryExample.kt" to "inventory-screen",
+                "MinecraftIndustrialExample.kt" to "image",
+                "MinecraftProgressExample.kt" to "progress-screen",
+            ),
+            screens.map { scenario -> scenario.source.relativePath.substringAfterLast('/') to scenario.source.slug },
+        )
+        assertEquals(listOf(320, 320, 320, 320), screens.map { scenario -> scenario.viewportWidth })
+        assertEquals(listOf(240, 240, 180, 180), screens.map { scenario -> scenario.viewportHeight })
     }
 }

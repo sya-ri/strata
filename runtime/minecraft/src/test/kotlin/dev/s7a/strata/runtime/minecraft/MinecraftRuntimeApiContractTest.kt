@@ -3,6 +3,7 @@ package dev.s7a.strata.runtime.minecraft
 import dev.s7a.strata.dsl.UiScope
 import dev.s7a.strata.element.ElementKey
 import dev.s7a.strata.geometry.Insets
+import dev.s7a.strata.geometry.IntRect
 import dev.s7a.strata.geometry.IntSize
 import dev.s7a.strata.input.InputResult
 import dev.s7a.strata.input.KeyboardEvent
@@ -168,7 +169,7 @@ internal class MinecraftRuntimeApiContractTest {
                 .forName("dev.s7a.strata.runtime.minecraft.MinecraftUiModifiers")
                 .declaredMethods
                 .filter { method -> method.isSynthetic.not() }
-        assertEquals(11, componentMethods.size)
+        assertEquals(12, componentMethods.size)
         assertEquals(4, modifierMethods.size)
         assertBackgroundModifierDescriptors(modifierMethods)
         assertTextDescriptors(componentMethods)
@@ -189,11 +190,22 @@ internal class MinecraftRuntimeApiContractTest {
             ),
             Void.TYPE,
         )
-        val image = componentMethods.single { method -> method.name == DslMethodName.Image.jvmName }
-        assertMethod(
-            image,
-            listOf(UiScope::class.java, DrawImage::class.java, IntSize::class.java, UiModifier::class.java, ElementKey::class.java),
-            Void.TYPE,
+        assertEquals(
+            setOf(
+                listOf(UiScope::class.java, DrawImage::class.java, IntSize::class.java, UiModifier::class.java, ElementKey::class.java),
+                listOf(
+                    UiScope::class.java,
+                    DrawImage::class.java,
+                    IntRect::class.java,
+                    IntSize::class.java,
+                    UiModifier::class.java,
+                    ElementKey::class.java,
+                ),
+            ),
+            componentMethods
+                .filter { method -> method.name == DslMethodName.Image.jvmName }
+                .map { method -> method.parameterTypes.toList() }
+                .toSet(),
         )
         componentMethods.forEach { method ->
             assertTrue(Modifier.isPublic(method.modifiers))

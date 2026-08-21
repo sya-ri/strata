@@ -9,11 +9,13 @@ internal object ShowcaseMarkdown {
      *
      * @param overview rendered overview output.
      * @param sections rendered component sections.
+     * @param screens verified complete-screen use cases.
      * @return UTF-8-ready LF Markdown with one terminal newline.
      */
     internal fun components(
         overview: ShowcaseOutput.Overview,
         sections: List<ShowcaseOutput.Section>,
+        screens: List<ShowcaseOutput.Screen>,
     ): String =
         markdown(
             """<!-- Generated file. Do not edit. -->
@@ -49,6 +51,15 @@ ${overview.tree}
 ${sections.joinToString("\n") { section -> "- [${section.title}](#${section.slug})" }}
 
 ${sections.joinToString("\n\n") { section -> section.section.trimEnd('\n') }}
+
+## Complete screens
+
+These screens exercise the primitives in real vanilla-shaped and Mod-shaped use cases.
+Purpose-specific compositions stay in the compiled examples instead of becoming standard components; reusable capabilities remain available as general layout, image, text, input, slot-binding, and player-rendering primitives.
+
+${screens.joinToString("\n") { screen -> "- [${screen.title}](#${screen.slug})" }}
+
+${screens.joinToString("\n\n") { screen -> screen.section.trimEnd('\n') }}
 """,
         )
 

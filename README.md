@@ -24,7 +24,7 @@ The design separates those concerns into layers:
 - active modifiers provide checked padding, size constraints, background painting, unresolved semantics, typed pointer/keyboard/text/focus actions, and typed layout parent data without changing component implementations;
 - the retained core runtime emits draw commands and unresolved semantics on the JVM;
 - the common Minecraft runtime owns one-shot screen definitions, immutable asset profiles, callback-scoped menu/container/image background modifiers and Slot/Text/TextField/Button/Scroll/Image/PlayerHead components, including a Fabric-backed Slot overload synchronized with player inventory or any server-owned active Container, and a synchronous fixed-viewport host over the retained core;
-- the latest Java release, Minecraft 26.2, has a Fabric boundary that extracts the supported native profile, resolves Mod images and current-player skin pixels through the active resource and texture paths, and adapts common frames, typed mouse/keyboard/text input, and screen lifecycle on the client thread; loaded client GameTests verify exact native/Fabric/headless ARGB parity for vanilla screens, PlayerHead, and a primitive-composed Social Interactions screen plus exact Fabric/headless parity for a resource-pack-backed industrial Mod screen.
+- the latest Java release, Minecraft 26.2, has a Fabric boundary that extracts the supported native profile, resolves Mod images and current-player skin pixels through the active resource and texture paths, and adapts common frames, typed mouse/keyboard/text input, and screen lifecycle on the client thread; loaded client GameTests verify exact native/Fabric/headless ARGB parity for vanilla screens, PlayerHead, and a primitive-composed Social Interactions screen, exact Fabric/headless parity for resource-pack-backed industrial and progression Mod screens, and live server-authoritative inventory interaction.
 
 The public element, node, and drawing contracts are designed for extension.
 A custom primitive must work through those contracts without registering its concrete class in a central component dispatcher.
@@ -128,8 +128,8 @@ The dependency boundaries are:
 - `runtime/minecraft-fabric-26.2` is the client-only Java 25 version boundary for the latest Java release's resource, screen, rendering, and input adapter.
   It nests the common runtime jars in the mod artifact, keeps Minecraft types out of the common modules, and passes an exact loaded-game native/Fabric/headless pixel comparison.
 - `integration/api` compiles and exercises a third-party primitive against the public contracts, retained core, and common Minecraft host.
-- `integration/minecraft-fabric-26.2` runs loaded client parity scenes against actual 26.2 resources, vanilla screens, the selected player skin, server-synchronized player/custom/ender-chest Slots, and a custom resource-pack-backed industrial screen; it is not published.
-- `integration/docs` extracts the compiled parity-panel sources and synchronizes only images carrying the matching GameTest receipt; it is not published.
+- `integration/minecraft-fabric-26.2` runs loaded client parity scenes against actual 26.2 resources, vanilla screens, the selected player skin, server-synchronized player/custom/ender-chest Slots, and resource-pack-aware industrial and progression screens; it is not published.
+- `integration/docs` extracts the compiled component and complete-screen sources and synchronizes only images carrying the matching GameTest receipt into one generated document; it is not published.
 
 See [Architecture](docs/architecture.md) for dependency boundaries and extension rules, and [Element SPI](docs/element-spi.md) for the smallest complete custom primitive.
 

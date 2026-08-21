@@ -558,6 +558,7 @@ internal class ShowcaseStorageSynchronizerTest {
         ShowcaseOutput(
             ShowcaseOutput.Overview("overview\n", "`- Text\n", byteArrayOf(1, 2, 3)),
             listOf(ShowcaseOutput.Section(DocumentedComponent.Text, "## Text\n", byteArrayOf(4, 5, 6))),
+            emptyList(),
             staging,
             "verified=true\n".toByteArray(),
         )

@@ -35,7 +35,12 @@ internal object ShowcasePipeline {
                 val region = ShowcaseSources.extract(scenario.source, normalizedProject)
                 renderComponent(scenario, region, evidence)
             }
-        return ShowcaseOutput(overview, sections, normalizedStaging, evidence.receipt())
+        val screens =
+            ShowcaseScenarioCatalog.screens.map { scenario ->
+                val region = ShowcaseSources.extract(scenario.source, normalizedProject)
+                renderScreen(scenario, region, evidence)
+            }
+        return ShowcaseOutput(overview, sections, screens, normalizedStaging, evidence.receipt())
     }
 
     /**
@@ -83,6 +88,21 @@ internal object ShowcasePipeline {
             scenario.component,
             ShowcaseMarkdown.section(scenario, region.source),
             evidence.componentPng(scenario.component),
+        )
+    }
+
+    private fun renderScreen(
+        scenario: ScreenScenario,
+        region: SourceRegion,
+        evidence: ShowcaseParityEvidence,
+    ): ShowcaseOutput.Screen {
+        require(scenario.scale == 1) {
+            "${scenario.screen.title} frame metadata differs from the parity contract."
+        }
+        return ShowcaseOutput.Screen(
+            scenario.screen,
+            ShowcaseScreenMarkdown.section(scenario, region.source),
+            evidence.screenPng(scenario.screen),
         )
     }
 }

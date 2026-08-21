@@ -110,6 +110,45 @@ internal object ShowcaseScenarioCatalog {
         )
 
     /**
+     * Complete vanilla and Mod use cases rendered after the primitive component catalog.
+     */
+    internal val screens: List<ScreenScenario> =
+        listOf(
+            ScreenScenario(
+                DocumentedScreen.SocialInteractions,
+                SourceReference(
+                    "integration/minecraft-fabric-26.2/src/gametest/kotlin/dev/s7a/strata/integration/minecraft/fabric/MinecraftSocialExample.kt",
+                    "social-screen",
+                ),
+                ShowcaseViewport(IntSize(320, 240), 1),
+            ),
+            ScreenScenario(
+                DocumentedScreen.SynchronizedInventory,
+                SourceReference(
+                    "integration/minecraft-fabric-26.2/src/gametest/kotlin/dev/s7a/strata/integration/minecraft/fabric/MinecraftInventoryExample.kt",
+                    "inventory-screen",
+                ),
+                ShowcaseViewport(IntSize(320, 240), 1),
+            ),
+            ScreenScenario(
+                DocumentedScreen.IndustrialController,
+                SourceReference(
+                    "integration/minecraft-fabric-26.2/src/gametest/kotlin/dev/s7a/strata/integration/minecraft/fabric/MinecraftIndustrialExample.kt",
+                    "image",
+                ),
+                ShowcaseViewport(IntSize(320, 180), 1),
+            ),
+            ScreenScenario(
+                DocumentedScreen.PowerMilestones,
+                SourceReference(
+                    "integration/minecraft-fabric-26.2/src/gametest/kotlin/dev/s7a/strata/integration/minecraft/fabric/MinecraftProgressExample.kt",
+                    "progress-screen",
+                ),
+                ShowcaseViewport(IntSize(320, 180), 1),
+            ),
+        )
+
+    /**
      * Checks catalog order, uniqueness, and exact component coverage.
      *
      * @throws IllegalArgumentException when the typed catalog is incomplete, duplicated, or invalid.
@@ -119,12 +158,17 @@ internal object ShowcaseScenarioCatalog {
         val actual = components.map { scenario -> scenario.component }
         require(actual == expected) { "Showcase catalog does not cover components in typed order." }
         require(actual.toSet().size == actual.size) { "Showcase catalog contains duplicate components." }
-        val sources = listOf(overview.source) + components.map { scenario -> scenario.source }
-        require(sources.map { source -> source.slug }.toSet().size == sources.size) { "Showcase source slugs must be unique." }
-        require(sources.map { source -> source.relativePath }.toSet().size == sources.size) { "Showcase source paths must be unique." }
+        val sources = listOf(overview.source) + components.map { scenario -> scenario.source } + screens.map { scenario -> scenario.source }
+        sources.groupBy { source -> source.slug }.forEach { (slug, references) ->
+            require(references.distinctBy { reference -> reference.relativePath to reference.slug }.size == 1) {
+                "Showcase source slug $slug identifies multiple regions."
+            }
+        }
         val outputPaths =
             listOf("components.md", "overview.png", "minecraft-26.2-parity.properties") +
-                components.map { scenario -> "${scenario.component.slug}.png" }
+                components
+                    .map { scenario -> "${scenario.component.slug}.png" }
+                    .plus(screens.map { scenario -> "screen-${scenario.screen.slug}.png" })
         require(outputPaths.toSet().size == outputPaths.size) { "Showcase output paths must be unique." }
         require(0 < overview.viewport.width && 0 < overview.viewport.height && 0 < overview.scale) {
             "Overview viewport metadata must be positive."
@@ -132,6 +176,14 @@ internal object ShowcaseScenarioCatalog {
         components.forEach { scenario ->
             require(0 < scenario.viewport.width && 0 < scenario.viewport.height && 0 < scenario.scale) {
                 "Component viewport metadata must be positive for ${scenario.component.apiMethodName}."
+            }
+        }
+        require(screens.map { scenario -> scenario.screen } == DocumentedScreen.entries) {
+            "Showcase screen catalog does not cover screens in typed order."
+        }
+        screens.forEach { scenario ->
+            require(0 < scenario.viewportWidth && 0 < scenario.viewportHeight && scenario.scale == 1) {
+                "Screen viewport metadata must be positive at scale one for ${scenario.screen.title}."
             }
         }
         overview.trees.forEach(::validateDetails)

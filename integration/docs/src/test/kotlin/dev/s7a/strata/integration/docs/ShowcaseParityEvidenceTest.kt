@@ -34,6 +34,10 @@ internal class ShowcaseParityEvidenceTest {
         assertArrayEquals(png(24, 24), evidence.componentPng(DocumentedComponent.Slot))
         assertArrayEquals(png(32, 32), evidence.componentPng(DocumentedComponent.Image))
         assertArrayEquals(png(24, 24), evidence.componentPng(DocumentedComponent.PlayerHead))
+        assertArrayEquals(png(320, 240), evidence.screenPng(DocumentedScreen.SocialInteractions))
+        assertArrayEquals(png(320, 240), evidence.screenPng(DocumentedScreen.SynchronizedInventory))
+        assertArrayEquals(png(320, 180), evidence.screenPng(DocumentedScreen.IndustrialController))
+        assertArrayEquals(png(320, 180), evidence.screenPng(DocumentedScreen.PowerMilestones))
         val receipt = evidence.receipt()
         receipt[0] = 0
         assertArrayEquals(Files.readAllBytes(temporaryRoot.resolve("receipt.properties")), evidence.receipt())
@@ -72,6 +76,8 @@ internal class ShowcaseParityEvidenceTest {
     private fun writeEvidence() {
         val components = temporaryRoot.resolve("components")
         Files.createDirectories(components)
+        val screens = temporaryRoot.resolve("screens")
+        Files.createDirectories(screens)
         val images =
             linkedMapOf(
                 "overview" to png(320, 180),
@@ -84,6 +90,14 @@ internal class ShowcaseParityEvidenceTest {
                 DocumentedComponent.PlayerHead.slug to png(24, 24),
             )
         images.forEach { (slug, bytes) -> Files.write(components.resolve("$slug.png"), bytes) }
+        val screenImages =
+            linkedMapOf(
+                DocumentedScreen.SocialInteractions.slug to png(320, 240),
+                DocumentedScreen.SynchronizedInventory.slug to png(320, 240),
+                DocumentedScreen.IndustrialController.slug to png(320, 180),
+                DocumentedScreen.PowerMilestones.slug to png(320, 180),
+            )
+        screenImages.forEach { (slug, bytes) -> Files.write(screens.resolve("$slug.png"), bytes) }
         val receipt =
             buildString {
                 appendLine("minecraft.version=26.2")
@@ -99,7 +113,9 @@ internal class ShowcaseParityEvidenceTest {
                 appendLine("fabric.headless.industrial.argb.sha256=${"6".repeat(64)}")
                 appendLine("native.fabric.headless.player-head.argb.sha256=${"7".repeat(64)}")
                 appendLine("native.fabric.headless.social.argb.sha256=${"8".repeat(64)}")
+                appendLine("fabric.headless.progress.argb.sha256=${"9".repeat(64)}")
                 images.forEach { (slug, bytes) -> appendLine("component.$slug.png.sha256=${sha256(bytes)}") }
+                screenImages.forEach { (slug, bytes) -> appendLine("screen.$slug.png.sha256=${sha256(bytes)}") }
             }
         Files.writeString(temporaryRoot.resolve("receipt.properties"), receipt)
     }

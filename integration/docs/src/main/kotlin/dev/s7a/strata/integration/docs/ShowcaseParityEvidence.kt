@@ -20,11 +20,13 @@ internal class ShowcaseParityEvidence private constructor(
     receipt: ByteArray,
     overview: ByteArray,
     components: Map<DocumentedComponent, ByteArray>,
+    screens: Map<DocumentedScreen, ByteArray>,
 ) {
     private val receiptSnapshot: ByteArray = receipt.copyOf()
     private val overviewSnapshot: ByteArray = overview.copyOf()
     private val componentSnapshots: Map<DocumentedComponent, ByteArray> =
         components.mapValues { (_, bytes) -> bytes.copyOf() }
+    private val screenSnapshots: Map<DocumentedScreen, ByteArray> = screens.mapValues { (_, bytes) -> bytes.copyOf() }
 
     /**
      * Returns the verified overview crop as a fresh byte array.
@@ -40,6 +42,14 @@ internal class ShowcaseParityEvidence private constructor(
      * @return independent deterministic PNG bytes.
      */
     internal fun componentPng(component: DocumentedComponent): ByteArray = componentSnapshots.getValue(component).copyOf()
+
+    /**
+     * Returns one verified complete-screen image as a fresh byte array.
+     *
+     * @param screen typed documented use case.
+     * @return independent deterministic PNG bytes.
+     */
+    internal fun screenPng(screen: DocumentedScreen): ByteArray = screenSnapshots.getValue(screen).copyOf()
 
     /**
      * Returns the exact GameTest verification receipt as a fresh byte array.
@@ -81,13 +91,33 @@ internal class ShowcaseParityEvidence private constructor(
             requireHash(values.getValue("native.fabric.headless.slot.argb.sha256"), "Slot full-frame pixel hash")
             requireHash(values.getValue("native.fabric.headless.player-head.argb.sha256"), "PlayerHead full-frame pixel hash")
             requireHash(values.getValue("native.fabric.headless.social.argb.sha256"), "Social Interactions full-frame pixel hash")
+            requireHash(values.getValue("fabric.headless.progress.argb.sha256"), "progress full-frame pixel hash")
 
             val overview = readVerifiedPng(root, "overview", values, IntSize(320, 180))
             val components =
                 DocumentedComponent.entries.associateWith { component ->
                     readVerifiedPng(root, component.slug, values, expectedPngSize(component))
                 }
-            return ShowcaseParityEvidence(receiptBytes, overview, components)
+            val screens =
+                DocumentedScreen.entries.associateWith { screen ->
+                    val expectedSize =
+                        when (screen) {
+                            DocumentedScreen.SocialInteractions,
+                            DocumentedScreen.SynchronizedInventory,
+                            -> IntSize(320, 240)
+
+                            DocumentedScreen.IndustrialController,
+                            DocumentedScreen.PowerMilestones,
+                            -> IntSize(320, 180)
+                        }
+                    val bytes = readRegular(root.resolve("screens/${screen.slug}.png"), "Minecraft parity screen ${screen.slug}")
+                    requirePngSize(bytes, expectedSize, screen.slug)
+                    val expectedHash = values.getValue("screen.${screen.slug}.png.sha256")
+                    requireHash(expectedHash, "${screen.slug} screen PNG hash")
+                    require(sha256(bytes) == expectedHash) { "Minecraft parity screen image hash differs for ${screen.slug}." }
+                    bytes
+                }
+            return ShowcaseParityEvidence(receiptBytes, overview, components, screens)
         }
 
         private fun requireMinecraftVersion(value: String) {
@@ -216,8 +246,10 @@ internal class ShowcaseParityEvidence private constructor(
                 add("fabric.headless.industrial.argb.sha256")
                 add("native.fabric.headless.player-head.argb.sha256")
                 add("native.fabric.headless.social.argb.sha256")
+                add("fabric.headless.progress.argb.sha256")
                 add("component.overview.png.sha256")
                 DocumentedComponent.entries.forEach { component -> add("component.${component.slug}.png.sha256") }
+                DocumentedScreen.entries.forEach { screen -> add("screen.${screen.slug}.png.sha256") }
             }
     }
 }

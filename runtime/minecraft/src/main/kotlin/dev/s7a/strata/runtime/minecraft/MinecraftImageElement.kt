@@ -21,12 +21,14 @@ import dev.s7a.strata.node.Node as RetainedNode
  * Internal immutable description for one nearest-sampled image component.
  *
  * @param image immutable source pixels retained without a copy.
+ * @param sourceRegion nonempty source rectangle retained by value.
  * @param destinationSize exact logical component extent.
  * @param modifier active behavior applied to the component.
  * @param key optional stable sibling identity.
  */
 private class MinecraftImageElement private constructor(
     private val image: DrawImage,
+    private val sourceRegion: IntRect,
     private val destinationSize: IntSize,
     modifier: Modifier,
     key: ElementKey<*>?,
@@ -39,10 +41,12 @@ private class MinecraftImageElement private constructor(
      * Retained image node that measures exactly and emits one complete-source blit.
      *
      * @param image initial immutable source pixels.
+     * @param sourceRegion initial source rectangle.
      * @param destinationSize initial exact logical extent.
      */
     private class Node(
         private var image: DrawImage,
+        private var sourceRegion: IntRect,
         private var destinationSize: IntSize,
     ) : RetainedNode(),
         MeasureNode,
@@ -61,7 +65,7 @@ private class MinecraftImageElement private constructor(
             if (destinationSize.width == 0 || destinationSize.height == 0) return
             scope.blitImage(
                 image,
-                IntRect(0, 0, image.size.width, image.size.height),
+                sourceRegion,
                 IntRect(0, 0, destinationSize.width, destinationSize.height),
             )
         }
@@ -74,9 +78,10 @@ private class MinecraftImageElement private constructor(
          */
         fun update(element: MinecraftImageElement): DirtyMask {
             val sizeChanged = destinationSize != element.destinationSize
-            val imageChanged = image != element.image
+            val imageChanged = image != element.image || sourceRegion != element.sourceRegion
             destinationSize = element.destinationSize
             image = element.image
+            sourceRegion = element.sourceRegion
             return when {
                 sizeChanged -> DirtyMask.of(DirtyPhase.Measure)
                 imageChanged -> DirtyMask.of(DirtyPhase.Paint)
@@ -97,8 +102,22 @@ private class MinecraftImageElement private constructor(
                     require(0 < element.image.size.width && 0 < element.image.size.height) {
                         "Minecraft Image source dimensions must be positive."
                     }
+                    require(0 < element.sourceRegion.width && 0 < element.sourceRegion.height) {
+                        "Minecraft Image source region must be nonempty."
+                    }
+                    require(
+                        0 <= element.sourceRegion.left &&
+                            0 <= element.sourceRegion.top &&
+                            element.sourceRegion.right <= element.image.size.width &&
+                            element.sourceRegion.bottom <= element.image.size.height,
+                    ) {
+                        "Minecraft Image source region must be contained by the source image."
+                    }
+                    require(0 < element.destinationSize.width && 0 < element.destinationSize.height) {
+                        "Minecraft Image destination dimensions must be positive."
+                    }
                 },
-                createNode = { element -> Node(element.image, element.destinationSize) },
+                createNode = { element -> Node(element.image, element.sourceRegion, element.destinationSize) },
                 updateNode = { _, current, node -> node.update(current) },
             )
 
@@ -106,6 +125,7 @@ private class MinecraftImageElement private constructor(
          * Creates one private image description.
          *
          * @param image immutable source pixels.
+         * @param sourceRegion nonempty contained source rectangle.
          * @param destinationSize exact logical component size.
          * @param modifier active component behavior.
          * @param key optional stable sibling identity.
@@ -114,10 +134,11 @@ private class MinecraftImageElement private constructor(
         @JvmSynthetic
         internal fun create(
             image: DrawImage,
+            sourceRegion: IntRect,
             destinationSize: IntSize,
             modifier: Modifier,
             key: ElementKey<*>?,
-        ): Element = MinecraftImageElement(image, destinationSize, modifier, key)
+        ): Element = MinecraftImageElement(image, sourceRegion, destinationSize, modifier, key)
     }
 }
 
@@ -125,6 +146,7 @@ private class MinecraftImageElement private constructor(
  * Creates one internal image description through its private retained implementation.
  *
  * @param image immutable source pixels.
+ * @param sourceRegion nonempty contained source rectangle.
  * @param destinationSize exact logical component size.
  * @param modifier active component behavior.
  * @param key optional stable sibling identity.
@@ -133,7 +155,8 @@ private class MinecraftImageElement private constructor(
 @JvmSynthetic
 internal fun createMinecraftImageElement(
     image: DrawImage,
+    sourceRegion: IntRect,
     destinationSize: IntSize,
     modifier: Modifier,
     key: ElementKey<*>?,
-): Element = MinecraftImageElement.create(image, destinationSize, modifier, key)
+): Element = MinecraftImageElement.create(image, sourceRegion, destinationSize, modifier, key)
