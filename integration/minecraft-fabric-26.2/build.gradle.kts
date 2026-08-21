@@ -35,6 +35,10 @@ tasks.named("check") {
     dependsOn("runClientGameTest")
 }
 
+tasks.matching { task -> task.name == "koverGenerateArtifact" }.configureEach {
+    dependsOn("gametestClasses")
+}
+
 tasks.named<JavaExec>("runClientGameTest") {
     val parityOutput = layout.buildDirectory.dir("minecraft-parity")
     inputs.property("strataMinecraftParityOutput", parityOutput.map { it.asFile.absolutePath })

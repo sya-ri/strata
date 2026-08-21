@@ -31,7 +31,7 @@ public fun UiScope.Image(
     modifier: Modifier = Modifier.Empty,
     key: ElementKey<*>? = null,
 ) {
-    element(createMinecraftImageElement(image, IntRect(0, 0, image.size.width, image.size.height), size, modifier, key))
+    this.element(createMinecraftImageElement(image, IntRect(0, 0, image.size.width, image.size.height), size, modifier, key))
 }
 
 /**
@@ -56,7 +56,7 @@ public fun UiScope.Image(
     modifier: Modifier = Modifier.Empty,
     key: ElementKey<*>? = null,
 ) {
-    element(createMinecraftImageElement(image, source, size, modifier, key))
+    this.element(createMinecraftImageElement(image, source, size, modifier, key))
 }
 
 /**
@@ -81,7 +81,7 @@ public fun UiScope.PlayerHead(
     modifier: Modifier = Modifier.Empty,
     key: ElementKey<*>? = null,
 ) {
-    element(createMinecraftPlayerHeadElement(skin, size, showHat, modifier, key))
+    this.element(createMinecraftPlayerHeadElement(skin, size, showHat, modifier, key))
 }
 
 /**

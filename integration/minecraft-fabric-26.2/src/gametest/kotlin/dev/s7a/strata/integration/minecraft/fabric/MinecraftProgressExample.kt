@@ -9,7 +9,6 @@ import dev.s7a.strata.dsl.Spacer
 import dev.s7a.strata.dsl.UiScope
 import dev.s7a.strata.element.ElementKey
 import dev.s7a.strata.geometry.IntRect
-import dev.s7a.strata.geometry.IntSize
 import dev.s7a.strata.modifier.Modifier
 import dev.s7a.strata.modifier.background
 import dev.s7a.strata.modifier.onPress

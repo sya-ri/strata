@@ -22,7 +22,7 @@ import dev.s7a.strata.render.DrawImage
 public fun Modifier.imageBackground(
     image: DrawImage,
     scale: MinecraftImageScale = MinecraftImageScale.Stretch,
-): Modifier = then(createMinecraftImageBackgroundModifier(image, scale))
+): Modifier = this.then(createMinecraftImageBackgroundModifier(image, scale))
 
 /**
  * Paints arbitrary immutable image pixels as a Minecraft-compatible nine-slice background behind content.
@@ -45,7 +45,7 @@ public fun Modifier.imageBackground(
     image: DrawImage,
     border: Insets,
     centerMode: MinecraftNineSliceCenterMode = MinecraftNineSliceCenterMode.Tiled,
-): Modifier = then(createMinecraftNineSliceImageBackgroundModifier(image, border, centerMode))
+): Modifier = this.then(createMinecraftNineSliceImageBackgroundModifier(image, border, centerMode))
 
 /**
  * Paints the selected Minecraft menu texture behind the modified component's content.

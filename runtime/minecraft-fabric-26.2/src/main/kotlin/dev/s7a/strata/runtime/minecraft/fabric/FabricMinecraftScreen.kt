@@ -581,7 +581,7 @@ public class FabricMinecraftScreen private constructor(
         val current = textures.getOrNull(index)
         val needsResize = current == null || current.getPixels().getWidth() != image.size.width || current.getPixels().getHeight() != image.size.height
         if (needsResize.not()) {
-            fillTexture(checkNotNull(current), image)
+            fillTexture(current, image)
             return current
         }
         val native = NativeImage(image.size.width, image.size.height, false)

@@ -24,6 +24,7 @@ import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.inventory.ContainerInput;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * Bridges retained Strata Slots to the active 26.2 menu and native item renderer.
@@ -98,7 +99,7 @@ final class FabricMinecraftInventoryBridge implements MinecraftUiPlatform {
         }
 
         @Override
-        public AutoCloseable observe(Function0<Unit> callback) {
+        public @NotNull AutoCloseable observe(@NotNull Function0<Unit> callback) {
             requireUsable();
             checkState(observer == null, "Minecraft inventory Slot already has a retained observer.");
             observer = callback;
@@ -111,7 +112,7 @@ final class FabricMinecraftInventoryBridge implements MinecraftUiPlatform {
         }
 
         @Override
-        public InputResult dispatchPointer(PointerEvent event) {
+        public @NotNull InputResult dispatchPointer(@NotNull PointerEvent event) {
             requireUsable();
             NativeInput current = input;
             if (event instanceof PointerEvent.Move || event instanceof PointerEvent.Drag) {
@@ -191,7 +192,7 @@ final class FabricMinecraftInventoryBridge implements MinecraftUiPlatform {
     }
 
     @Override
-    public MinecraftInventorySlotBinding inventorySlot(MinecraftSlotBinding locator) {
+    public @NotNull MinecraftInventorySlotBinding inventorySlot(@NotNull MinecraftSlotBinding locator) {
         requireUsable();
         java.util.Objects.requireNonNull(locator, "Minecraft Slot binding must not be null.");
         int index = locator.getIndex();

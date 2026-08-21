@@ -409,8 +409,6 @@ import dev.s7a.strata.modifier.padding
 import dev.s7a.strata.modifier.size
 import dev.s7a.strata.render.ArgbColor
 import dev.s7a.strata.runtime.minecraft.MinecraftScreenDefinition
-import dev.s7a.strata.runtime.minecraft.MinecraftSlotBinding
-import dev.s7a.strata.runtime.minecraft.MinecraftSlots
 import dev.s7a.strata.runtime.minecraft.MinecraftTextStyle
 import dev.s7a.strata.runtime.minecraft.Slot
 import dev.s7a.strata.runtime.minecraft.Text
@@ -1023,7 +1021,6 @@ import dev.s7a.strata.dsl.Spacer
 import dev.s7a.strata.dsl.UiScope
 import dev.s7a.strata.element.ElementKey
 import dev.s7a.strata.geometry.IntRect
-import dev.s7a.strata.geometry.IntSize
 import dev.s7a.strata.modifier.Modifier
 import dev.s7a.strata.modifier.background
 import dev.s7a.strata.modifier.onPress
