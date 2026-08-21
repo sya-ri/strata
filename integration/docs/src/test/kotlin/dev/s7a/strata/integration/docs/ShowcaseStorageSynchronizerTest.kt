@@ -47,7 +47,7 @@ internal class ShowcaseStorageSynchronizerTest {
         ShowcaseStorage.writeStaging(output)
         ShowcaseSynchronizer.synchronize(launch, output)
         Files.delete(temporaryRoot.resolve("docs/components.md"))
-        Files.write(temporaryRoot.resolve("docs/components/images/overview.png"), byteArrayOf(9))
+        Files.write(temporaryRoot.resolve("docs/components/overview.png"), byteArrayOf(9))
         Files.writeString(temporaryRoot.resolve("docs/components/unexpected.md"), "unexpected")
         Files.writeString(temporaryRoot.resolve("README.md"), "changed")
 
@@ -58,7 +58,7 @@ internal class ShowcaseStorageSynchronizerTest {
 
         assertTrue(failure.message.orEmpty().contains("components.md: missing or not regular"))
         assertTrue(failure.message.orEmpty().contains("unexpected: unexpected.md"))
-        assertTrue(failure.message.orEmpty().contains("different: images/overview.png"))
+        assertTrue(failure.message.orEmpty().contains("different: overview.png"))
         assertTrue(failure.message.orEmpty().contains("README:"))
     }
 
@@ -133,15 +133,15 @@ internal class ShowcaseStorageSynchronizerTest {
         val output = output(launch.stagingRoot)
         writeReadme()
         val target = temporaryRoot.resolve("docs/components")
-        Files.createDirectories(target.resolve("images"))
+        Files.createDirectories(target)
         Files.writeString(target.resolve("stale.md"), "stale")
-        Files.write(target.resolve("images/stale.png"), byteArrayOf(8))
+        Files.write(target.resolve("stale.png"), byteArrayOf(8))
         ShowcaseStorage.writeStaging(output)
 
         ShowcaseSynchronizer.synchronize(launch, output)
 
         assertEquals(
-            setOf("images/overview.png", "images/text.png", "minecraft-26.2-parity.properties"),
+            setOf("overview.png", "text.png", "minecraft-26.2-parity.properties"),
             snapshot(target).keys,
         )
         assertArrayEquals(Files.readAllBytes(launch.stagingRoot.resolve("components.md")), Files.readAllBytes(temporaryRoot.resolve("docs/components.md")))
@@ -441,7 +441,7 @@ internal class ShowcaseStorageSynchronizerTest {
 
         assertSame(cleanupTreeFailure, thrown)
         assertEquals(listOf(cleanupReadmeFailure), thrown.suppressed.toList())
-        assertTrue(Files.exists(target.resolve("images/text.png"), LinkOption.NOFOLLOW_LINKS))
+        assertTrue(Files.exists(target.resolve("text.png"), LinkOption.NOFOLLOW_LINKS))
         assertTrue(Files.exists(temporaryRoot.resolve("docs/components.md"), LinkOption.NOFOLLOW_LINKS))
         assertTrue(Files.exists(temporaryRoot.resolve("docs/.strata-components-backup"), LinkOption.NOFOLLOW_LINKS))
         assertTrue(Files.exists(temporaryRoot.resolve(".strata-readme-backup"), LinkOption.NOFOLLOW_LINKS))

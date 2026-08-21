@@ -26,7 +26,7 @@ One loaded Fabric GameTest requires exact ARGB equality among each native screen
 
 [Open the machine-readable parity receipt](components/minecraft-26.2-parity.properties)
 
-![Overview headless showcase](components/images/overview.png)
+![Overview headless showcase](components/overview.png)
 
 ## Overview source
 
@@ -66,7 +66,7 @@ ${sections.joinToString("\n\n") { section -> section.section.trimEnd('\n') }}
 
 This deterministic image is the actual 320 by 180 `ConfirmScreen` reconstruction from the frame that passed exact native-screen, Fabric-adapter, and headless comparison.
 
-![Strata component showcase](docs/components/images/overview.png)
+![Strata component showcase](docs/components/overview.png)
 
 ### Overview source
 
@@ -98,7 +98,7 @@ ${typedSummary(spec.component)}
 
 This image is a ${spec.viewport.width} by ${spec.viewport.height} component crop from the exact native/Fabric/headless parity frame recorded in [the verification receipt](components/minecraft-26.2-parity.properties).
 
-![${spec.component.apiMethodName} headless showcase](components/images/${spec.component.slug}.png)
+![${spec.component.apiMethodName} headless showcase](components/${spec.component.slug}.png)
 
 ### Compiled example
 

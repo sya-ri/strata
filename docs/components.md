@@ -8,7 +8,7 @@ One loaded Fabric GameTest requires exact ARGB equality among each native screen
 
 [Open the machine-readable parity receipt](components/minecraft-26.2-parity.properties)
 
-![Overview headless showcase](components/images/overview.png)
+![Overview headless showcase](components/overview.png)
 
 ## Overview source
 
@@ -93,7 +93,7 @@ Text renders a printable-ASCII literal with the extracted Minecraft glyph advanc
 
 This image is a 150 by 20 component crop from the exact native/Fabric/headless parity frame recorded in [the verification receipt](components/minecraft-26.2-parity.properties).
 
-![Text headless showcase](components/images/text.png)
+![Text headless showcase](components/text.png)
 
 ### Compiled example
 
@@ -148,7 +148,7 @@ TextField reproduces the 200 by 20 Minecraft EditBox sprites, text origin, glyph
 
 This image is a 200 by 20 component crop from the exact native/Fabric/headless parity frame recorded in [the verification receipt](components/minecraft-26.2-parity.properties).
 
-![TextField headless showcase](components/images/text-field.png)
+![TextField headless showcase](components/text-field.png)
 
 ### Compiled example
 
@@ -235,7 +235,7 @@ Button renders verified fixed-height Minecraft sprite and label states, includin
 
 This image is a 150 by 20 component crop from the exact native/Fabric/headless parity frame recorded in [the verification receipt](components/minecraft-26.2-parity.properties).
 
-![Button headless showcase](components/images/button.png)
+![Button headless showcase](components/button.png)
 
 ### Compiled example
 
@@ -290,7 +290,7 @@ Scroll reproduces the verified Minecraft 26.2 menu-list background, clipped cent
 
 This image is a 320 by 94 component crop from the exact native/Fabric/headless parity frame recorded in [the verification receipt](components/minecraft-26.2-parity.properties).
 
-![Scroll headless showcase](components/images/scroll.png)
+![Scroll headless showcase](components/scroll.png)
 
 ### Compiled example
 
@@ -394,7 +394,7 @@ Slot reproduces the native 18 by 18 hit region and the 24 by 24 back-content-fro
 
 This image is a 24 by 24 component crop from the exact native/Fabric/headless parity frame recorded in [the verification receipt](components/minecraft-26.2-parity.properties).
 
-![Slot headless showcase](components/images/slot.png)
+![Slot headless showcase](components/slot.png)
 
 ### Compiled example
 

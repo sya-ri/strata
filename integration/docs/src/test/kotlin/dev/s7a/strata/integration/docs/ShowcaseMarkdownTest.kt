@@ -45,7 +45,7 @@ internal class ShowcaseMarkdownTest {
         val root = ShowcaseMarkdown.rootReadme(overview)
         assertTrue(root.contains("## Minecraft component showcase"))
         assertTrue(root.contains("actual 320 by 180 `ConfirmScreen` reconstruction"))
-        assertTrue(root.contains("![Strata component showcase](docs/components/images/overview.png)"))
+        assertTrue(root.contains("![Strata component showcase](docs/components/overview.png)"))
         assertTrue(root.contains(overview.source))
         assertTrue(root.contains("exact native-screen, Fabric-adapter, and headless comparison"))
     }

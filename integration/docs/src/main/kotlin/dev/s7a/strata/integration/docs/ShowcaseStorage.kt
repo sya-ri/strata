@@ -30,9 +30,9 @@ internal object ShowcaseStorage {
         Files.createDirectories(components)
         writeText(staging.resolve("components.md"), result.componentsMarkdown)
         result.sections.forEach { section ->
-            writeBytes(components.resolve("images/${section.slug}.png"), section.png())
+            writeBytes(components.resolve("${section.slug}.png"), section.png())
         }
-        writeBytes(components.resolve("images/overview.png"), result.overview.png())
+        writeBytes(components.resolve("overview.png"), result.overview.png())
         writeBytes(components.resolve("minecraft-26.2-parity.properties"), result.receipt())
         writeText(staging.resolve("root-readme-region.md"), result.rootReadmeRegion)
     }
@@ -59,8 +59,8 @@ internal object ShowcaseStorage {
             "Showcase component root is not a directory: $components"
         }
         val expected =
-            generated.sections.map { section -> "images/${section.slug}.png" } +
-                listOf("images/overview.png", "minecraft-26.2-parity.properties")
+            generated.sections.map { section -> "${section.slug}.png" } +
+                listOf("overview.png", "minecraft-26.2-parity.properties")
         val actual =
             if (Files.exists(components)) {
                 Files.walk(components).use { stream ->

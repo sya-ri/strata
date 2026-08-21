@@ -53,7 +53,7 @@ The external primitive integration test compiles this path and exercises the ret
 
 This deterministic image is the actual 320 by 180 `ConfirmScreen` reconstruction from the frame that passed exact native-screen, Fabric-adapter, and headless comparison.
 
-![Strata component showcase](docs/components/images/overview.png)
+![Strata component showcase](docs/components/overview.png)
 
 ### Overview source
 
