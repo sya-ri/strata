@@ -3,7 +3,7 @@ package dev.s7a.strata.runtime.minecraft
 import dev.s7a.strata.render.DrawImage
 
 /**
- * Immutable eight-layer representation of one printable-ASCII Minecraft glyph.
+ * Immutable nine-layer representation of one printable-ASCII Minecraft glyph.
  *
  * @property advance logical cursor advance derived from the source bitmap.
  * @property normalShadow opaque dark-gray shadow layer with transparent-white background.
@@ -14,6 +14,7 @@ import dev.s7a.strata.render.DrawImage
  * @property textFieldForeground exact enabled EditBox foreground layer.
  * @property textFieldDisabledShadow exact disabled EditBox shadow layer.
  * @property textFieldDisabledForeground exact disabled EditBox foreground layer.
+ * @property containerForeground exact shadow-free container-label foreground layer.
  */
 internal class MinecraftGlyphSnapshot private constructor(
     @get:JvmSynthetic
@@ -34,6 +35,8 @@ internal class MinecraftGlyphSnapshot private constructor(
     internal val textFieldDisabledShadow: DrawImage,
     @get:JvmSynthetic
     internal val textFieldDisabledForeground: DrawImage,
+    @get:JvmSynthetic
+    internal val containerForeground: DrawImage,
 ) {
     /**
      * Owns the synthetic constructor bridge for immutable glyph snapshots.
@@ -51,7 +54,8 @@ internal class MinecraftGlyphSnapshot private constructor(
          * @param textFieldForeground enabled EditBox foreground pixels.
          * @param textFieldDisabledShadow disabled EditBox shadow pixels.
          * @param textFieldDisabledForeground disabled EditBox foreground pixels.
-         * @return an eight-layer glyph snapshot.
+         * @param containerForeground shadow-free container-label foreground pixels.
+         * @return a nine-layer glyph snapshot.
          */
         @JvmSynthetic
         internal fun create(
@@ -64,6 +68,7 @@ internal class MinecraftGlyphSnapshot private constructor(
             textFieldForeground: DrawImage,
             textFieldDisabledShadow: DrawImage,
             textFieldDisabledForeground: DrawImage,
+            containerForeground: DrawImage,
         ): MinecraftGlyphSnapshot =
             MinecraftGlyphSnapshot(
                 advance,
@@ -75,6 +80,7 @@ internal class MinecraftGlyphSnapshot private constructor(
                 textFieldForeground,
                 textFieldDisabledShadow,
                 textFieldDisabledForeground,
+                containerForeground,
             )
     }
 }

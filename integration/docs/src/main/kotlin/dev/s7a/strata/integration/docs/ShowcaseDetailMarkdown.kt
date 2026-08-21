@@ -50,6 +50,8 @@ internal object ShowcaseDetailMarkdown {
             is ShowcaseTreeDetail.BoxAlign -> "BoxAlign(alignment=${detail.alignment})"
             is ShowcaseTreeDetail.Spacing -> "Spacing(value=${detail.value})"
             is ShowcaseTreeDetail.ScrollRate -> "ScrollRate(value=${detail.value})"
+            is ShowcaseTreeDetail.ContainerRows -> "ContainerRows(value=${detail.value})"
+            is ShowcaseTreeDetail.SlotHighlightable -> "SlotHighlightable(value=${detail.value})"
             is ShowcaseTreeDetail.Arrangement -> "Arrangement(value=${detail.arrangement})"
             is ShowcaseTreeDetail.RowDefaultAlignment -> "RowDefaultAlignment(alignment=${detail.alignment})"
             is ShowcaseTreeDetail.ColumnDefaultAlignment -> "ColumnDefaultAlignment(alignment=${detail.alignment})"
@@ -81,6 +83,8 @@ internal object ShowcaseDetailMarkdown {
 
             is ShowcaseTreeDetail.Spacing,
             is ShowcaseTreeDetail.ScrollRate,
+            is ShowcaseTreeDetail.ContainerRows,
+            is ShowcaseTreeDetail.SlotHighlightable,
             is ShowcaseTreeDetail.Arrangement,
             is ShowcaseTreeDetail.RowDefaultAlignment,
             is ShowcaseTreeDetail.ColumnDefaultAlignment,

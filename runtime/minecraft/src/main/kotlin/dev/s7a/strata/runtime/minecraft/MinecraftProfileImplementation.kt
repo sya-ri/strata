@@ -104,6 +104,8 @@ internal object MinecraftProfileImplementation {
     private class Builder : MinecraftUiProfileBuilder {
         private val ownerThread = Thread.currentThread()
         private val menuSize = IntSize(16, 16)
+        private val containerSize = IntSize(256, 256)
+        private val slotHighlightSize = IntSize(24, 24)
         private val glyphSize = IntSize(8, 8)
         private val buttonSize = IntSize(200, 20)
         private val listSeparatorSize = IntSize(32, 2)
@@ -118,9 +120,13 @@ internal object MinecraftProfileImplementation {
         private val textFieldShadowColor = ArgbColor(-0xC7C7C8)
         private val textFieldDisabledForegroundColor = ArgbColor(-0x8F8F90)
         private val textFieldDisabledShadowColor = ArgbColor(-0xE3E3E4)
+        private val containerForegroundColor = ArgbColor(-0xBFBFC0)
         private val glyphs = LinkedHashMap<Int, MinecraftGlyphSnapshot>()
         private var active = true
         private var menu: DrawImage? = null
+        private var containerBackground: DrawImage? = null
+        private var slotHighlightBack: DrawImage? = null
+        private var slotHighlightFront: DrawImage? = null
         private var listBackground: DrawImage? = null
         private var listHeaderSeparator: DrawImage? = null
         private var listFooterSeparator: DrawImage? = null
@@ -139,6 +145,27 @@ internal object MinecraftProfileImplementation {
                 "Menu background must be 16 by 16 pixels."
             }
             menu = image
+        }
+
+        override fun containerBackground(image: DrawImage) {
+            checkUsable()
+            require(containerBackground == null) { "Container background was already declared." }
+            require(image.size == containerSize) { "Container background must be 256 by 256 pixels." }
+            containerBackground = image
+        }
+
+        override fun slotHighlightBack(image: DrawImage) {
+            checkUsable()
+            require(slotHighlightBack == null) { "Slot back highlight was already declared." }
+            require(image.size == slotHighlightSize) { "Slot highlights must be 24 by 24 pixels." }
+            slotHighlightBack = image
+        }
+
+        override fun slotHighlightFront(image: DrawImage) {
+            checkUsable()
+            require(slotHighlightFront == null) { "Slot front highlight was already declared." }
+            require(image.size == slotHighlightSize) { "Slot highlights must be 24 by 24 pixels." }
+            slotHighlightFront = image
         }
 
         override fun listBackground(image: DrawImage) {
@@ -245,6 +272,9 @@ internal object MinecraftProfileImplementation {
             }
             return ProfileSnapshot.create(
                 menuBackground = requireNotNull(menu) { "Menu background must be declared." },
+                containerBackground = requireNotNull(containerBackground) { "Container background must be declared." },
+                slotHighlightBack = requireNotNull(slotHighlightBack) { "Slot back highlight must be declared." },
+                slotHighlightFront = requireNotNull(slotHighlightFront) { "Slot front highlight must be declared." },
                 listBackground = requireNotNull(listBackground) { "List background must be declared." },
                 listHeaderSeparator = requireNotNull(listHeaderSeparator) { "List header separator must be declared." },
                 listFooterSeparator = requireNotNull(listFooterSeparator) { "List footer separator must be declared." },
@@ -263,6 +293,9 @@ internal object MinecraftProfileImplementation {
             active = false
             glyphs.clear()
             menu = null
+            containerBackground = null
+            slotHighlightBack = null
+            slotHighlightFront = null
             listBackground = null
             listHeaderSeparator = null
             listFooterSeparator = null
@@ -290,6 +323,7 @@ internal object MinecraftProfileImplementation {
             val textFieldForeground = IntArray(pixels.size)
             val textFieldDisabledShadow = IntArray(pixels.size)
             val textFieldDisabledForeground = IntArray(pixels.size)
+            val containerForeground = IntArray(pixels.size)
             var rightmost = -1
             for (index in pixels.indices) {
                 when (ArgbColor(pixels[index])) {
@@ -302,6 +336,7 @@ internal object MinecraftProfileImplementation {
                         textFieldForeground[index] = transparentWhite.value
                         textFieldDisabledShadow[index] = transparentWhite.value
                         textFieldDisabledForeground[index] = transparentWhite.value
+                        containerForeground[index] = transparentWhite.value
                     }
 
                     opaqueWhite -> {
@@ -315,6 +350,7 @@ internal object MinecraftProfileImplementation {
                         textFieldForeground[index] = textFieldForegroundColor.value
                         textFieldDisabledShadow[index] = textFieldDisabledShadowColor.value
                         textFieldDisabledForeground[index] = textFieldDisabledForegroundColor.value
+                        containerForeground[index] = containerForegroundColor.value
                     }
 
                     else -> {
@@ -332,6 +368,7 @@ internal object MinecraftProfileImplementation {
                 textFieldForeground = createDrawImage(glyphSize, textFieldForeground),
                 textFieldDisabledShadow = createDrawImage(glyphSize, textFieldDisabledShadow),
                 textFieldDisabledForeground = createDrawImage(glyphSize, textFieldDisabledForeground),
+                containerForeground = createDrawImage(glyphSize, containerForeground),
             )
         }
 
@@ -353,6 +390,9 @@ internal object MinecraftProfileImplementation {
 
     private class ProfileSnapshot private constructor(
         val menuBackground: DrawImage,
+        val containerBackground: DrawImage,
+        val slotHighlightBack: DrawImage,
+        val slotHighlightFront: DrawImage,
         val listBackground: DrawImage,
         val listHeaderSeparator: DrawImage,
         val listFooterSeparator: DrawImage,
@@ -376,6 +416,9 @@ internal object MinecraftProfileImplementation {
              * Creates one private complete profile snapshot.
              *
              * @param menuBackground immutable menu image.
+             * @param containerBackground immutable generic-container image.
+             * @param slotHighlightBack immutable back-highlight image.
+             * @param slotHighlightFront immutable front-highlight image.
              * @param glyphs complete printable-ASCII glyph map.
              * @param listBackground immutable menu-list background image.
              * @param listHeaderSeparator immutable menu-list header separator.
@@ -392,6 +435,9 @@ internal object MinecraftProfileImplementation {
             @JvmSynthetic
             internal fun create(
                 menuBackground: DrawImage,
+                containerBackground: DrawImage,
+                slotHighlightBack: DrawImage,
+                slotHighlightFront: DrawImage,
                 listBackground: DrawImage,
                 listHeaderSeparator: DrawImage,
                 listFooterSeparator: DrawImage,
@@ -406,6 +452,9 @@ internal object MinecraftProfileImplementation {
             ): ProfileSnapshot =
                 ProfileSnapshot(
                     menuBackground,
+                    containerBackground,
+                    slotHighlightBack,
+                    slotHighlightFront,
                     listBackground,
                     listHeaderSeparator,
                     listFooterSeparator,
@@ -435,6 +484,35 @@ internal object MinecraftProfileImplementation {
             element(description)
         }
 
+        override fun UiScope.ContainerBackground(
+            rows: Int,
+            modifier: Modifier,
+            key: ElementKey<*>?,
+        ) {
+            val currentProfile = requireProfile()
+            element(createMinecraftContainerBackgroundElement(currentProfile.containerBackground, rows, modifier, key))
+        }
+
+        override fun UiScope.Slot(
+            highlightable: Boolean,
+            modifier: Modifier,
+            key: ElementKey<*>?,
+            content: (UiScope.() -> Unit)?,
+        ) {
+            val currentProfile = requireProfile()
+            val child = content?.let(::buildUi)
+            element(
+                createMinecraftSlotElement(
+                    currentProfile.slotHighlightBack,
+                    currentProfile.slotHighlightFront,
+                    highlightable,
+                    child,
+                    modifier,
+                    key,
+                ),
+            )
+        }
+
         override fun UiScope.Text(
             text: UiText,
             style: MinecraftTextStyle,
@@ -447,6 +525,7 @@ internal object MinecraftProfileImplementation {
                     when (style) {
                         MinecraftTextStyle.Normal -> MinecraftTextRun.createNormal(text, currentProfile::glyph)
                         MinecraftTextStyle.Inactive -> MinecraftTextRun.createInactive(text, currentProfile::glyph)
+                        MinecraftTextStyle.ContainerLabel -> MinecraftTextRun.createContainerLabel(text, currentProfile::glyph)
                     },
                     modifier,
                     key,

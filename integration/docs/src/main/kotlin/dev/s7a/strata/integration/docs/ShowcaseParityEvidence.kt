@@ -77,6 +77,8 @@ internal class ShowcaseParityEvidence private constructor(
             requireHash(values.getValue("native.fabric.headless.argb.sha256"), "full-frame pixel hash")
             requireHash(values.getValue("native.fabric.headless.scroll.argb.sha256"), "Scroll full-frame pixel hash")
             requireHash(values.getValue("native.fabric.headless.direct-join.argb.sha256"), "Direct Join full-frame pixel hash")
+            requireHash(values.getValue("native.fabric.headless.container-background.argb.sha256"), "ContainerBackground full-frame pixel hash")
+            requireHash(values.getValue("native.fabric.headless.slot.argb.sha256"), "Slot full-frame pixel hash")
 
             val overview = readVerifiedPng(root, "overview", values, IntSize(320, 180))
             val components =
@@ -176,6 +178,8 @@ internal class ShowcaseParityEvidence private constructor(
         private fun expectedPngSize(component: DocumentedComponent): IntSize =
             when (component) {
                 DocumentedComponent.MenuBackground -> IntSize(32, 32)
+                DocumentedComponent.ContainerBackground -> IntSize(176, 168)
+                DocumentedComponent.Slot -> IntSize(24, 24)
                 DocumentedComponent.Text -> IntSize(150, 20)
                 DocumentedComponent.TextField -> IntSize(200, 20)
                 DocumentedComponent.Button -> IntSize(150, 20)
@@ -203,6 +207,8 @@ internal class ShowcaseParityEvidence private constructor(
                 add("native.fabric.headless.argb.sha256")
                 add("native.fabric.headless.scroll.argb.sha256")
                 add("native.fabric.headless.direct-join.argb.sha256")
+                add("native.fabric.headless.container-background.argb.sha256")
+                add("native.fabric.headless.slot.argb.sha256")
                 add("component.overview.png.sha256")
                 DocumentedComponent.entries.forEach { component -> add("component.${component.slug}.png.sha256") }
             }

@@ -88,6 +88,20 @@ internal sealed interface ShowcaseTreeDetail {
     ) : ShowcaseTreeDetail
 
     /**
+     * A Minecraft generic-container row count.
+     */
+    data class ContainerRows(
+        internal val value: Int,
+    ) : ShowcaseTreeDetail
+
+    /**
+     * Whether a Minecraft Slot participates in native hover highlighting.
+     */
+    data class SlotHighlightable(
+        internal val value: Boolean,
+    ) : ShowcaseTreeDetail
+
+    /**
      * A linear child arrangement.
      */
     data class Arrangement(

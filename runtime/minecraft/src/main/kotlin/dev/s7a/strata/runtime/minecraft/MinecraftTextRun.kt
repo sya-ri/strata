@@ -12,6 +12,7 @@ import java.util.Collections
  * Validated single-line printable-ASCII text with immutable positioned glyph ownership.
  *
  * The run retains only glyph layers used by its literal and never retains the complete profile.
+ * Shadow-free styles omit the shadow image and command rather than retaining a transparent placeholder.
  *
  * @property text exact literal retained for unresolved semantics.
  * @property size natural Minecraft text size before constraints.
@@ -28,7 +29,7 @@ internal class MinecraftTextRun private constructor(
     private val glyphs: List<PositionedGlyph> = Collections.unmodifiableList(glyphs.toList())
 
     /**
-     * Emits every glyph in character order with that glyph's shadow immediately before its foreground.
+     * Emits every glyph in character order with an optional shadow immediately before its foreground.
      *
      * @param scope active node-local paint collector.
      * @param originX local horizontal text origin.
@@ -45,16 +46,18 @@ internal class MinecraftTextRun private constructor(
             val glyphX = Math.addExact(originX, positioned.x)
             val shadowLeft = Math.addExact(glyphX, shadowOffset.x)
             val shadowTop = Math.addExact(originY, shadowOffset.y)
-            scope.blitImage(
-                positioned.shadow,
-                source,
-                IntRect(
-                    shadowLeft,
-                    shadowTop,
-                    Math.addExact(shadowLeft, glyphSize.width),
-                    Math.addExact(shadowTop, glyphSize.height),
-                ),
-            )
+            positioned.shadow?.let { shadow ->
+                scope.blitImage(
+                    shadow,
+                    source,
+                    IntRect(
+                        shadowLeft,
+                        shadowTop,
+                        Math.addExact(shadowLeft, glyphSize.width),
+                        Math.addExact(shadowTop, glyphSize.height),
+                    ),
+                )
+            }
             scope.blitImage(
                 positioned.foreground,
                 source,
@@ -79,7 +82,7 @@ internal class MinecraftTextRun private constructor(
 
     private data class PositionedGlyph(
         val x: Int,
-        val shadow: DrawImage,
+        val shadow: DrawImage?,
         val foreground: DrawImage,
     )
 
@@ -117,6 +120,22 @@ internal class MinecraftTextRun private constructor(
         ): MinecraftTextRun =
             create(text, glyphAt) { glyph ->
                 PositionedColors(glyph.inactiveShadow, glyph.inactiveForeground)
+            }
+
+        /**
+         * Creates a shadow-free container-label run retaining only 0xFF404040 foreground images.
+         *
+         * @param text unresolved value supplied by the application.
+         * @param glyphAt synchronous lookup for one printable-ASCII glyph.
+         * @return a shadow-free container-label text run.
+         */
+        @JvmSynthetic
+        internal fun createContainerLabel(
+            text: UiText,
+            glyphAt: (Int) -> MinecraftGlyphSnapshot,
+        ): MinecraftTextRun =
+            create(text, glyphAt) { glyph ->
+                PositionedColors(null, glyph.containerForeground)
             }
 
         /**
@@ -181,7 +200,7 @@ internal class MinecraftTextRun private constructor(
         }
 
         private data class PositionedColors(
-            val shadow: DrawImage,
+            val shadow: DrawImage?,
             val foreground: DrawImage,
         )
     }

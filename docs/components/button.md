@@ -12,19 +12,19 @@ This image is a 150 by 20 component crop from the exact native/Fabric/headless p
 
 ```kotlin
 import dev.s7a.strata.dsl.buildUi
-import dev.s7a.strata.element.Element
 import dev.s7a.strata.modifier.Modifier
 import dev.s7a.strata.modifier.onHover
 import dev.s7a.strata.modifier.onPress
-import dev.s7a.strata.runtime.minecraft.MinecraftUiContext
+import dev.s7a.strata.runtime.minecraft.MinecraftScreenDefinition
+import dev.s7a.strata.runtime.minecraft.createMinecraftScreenDefinition
 
 /**
  * Builds the pointer Button used by the verified ConfirmScreen action row.
  *
- * @return callback-lifetime content using the implicit Minecraft component context.
+ * @return one-shot screen definition whose content uses the implicit Minecraft component context.
  */
-internal fun buttonExample(): MinecraftUiContext.() -> Element =
-    {
+internal fun buttonExample(): MinecraftScreenDefinition =
+    createMinecraftScreenDefinition("Button") {
         buildUi {
             Button(
                 "Yes",

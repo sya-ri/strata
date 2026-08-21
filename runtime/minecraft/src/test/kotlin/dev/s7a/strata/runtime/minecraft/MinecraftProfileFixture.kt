@@ -14,6 +14,9 @@ internal object MinecraftProfileFixture {
      * Creates a profile whose glyph widths are stable and whose assets are immutable.
      *
      * @param menu immutable 16 by 16 menu image.
+     * @param containerBackground immutable 256 by 256 generic-container image.
+     * @param slotHighlightBack immutable 24 by 24 back-highlight image.
+     * @param slotHighlightFront immutable 24 by 24 front-highlight image.
      * @param listBackground immutable 16 by 16 menu-list image.
      * @param listHeaderSeparator immutable 32 by 2 list header separator.
      * @param listFooterSeparator immutable 32 by 2 list footer separator.
@@ -29,6 +32,9 @@ internal object MinecraftProfileFixture {
      */
     fun create(
         menu: DrawImage = image(IntSize(16, 16), 0xFF101010.toInt()),
+        containerBackground: DrawImage = image(IntSize(256, 256), 0xFF161616.toInt()),
+        slotHighlightBack: DrawImage = image(IntSize(24, 24), 0x80171717.toInt()),
+        slotHighlightFront: DrawImage = image(IntSize(24, 24), 0x80181818.toInt()),
         listBackground: DrawImage = image(IntSize(16, 16), 0xFF111111.toInt()),
         listHeaderSeparator: DrawImage = image(IntSize(32, 2), 0xFF121212.toInt()),
         listFooterSeparator: DrawImage = image(IntSize(32, 2), 0xFF131313.toInt()),
@@ -45,6 +51,9 @@ internal object MinecraftProfileFixture {
     ): MinecraftUiProfile =
         createMinecraftUiProfile {
             menuBackground(menu)
+            containerBackground(containerBackground)
+            slotHighlightBack(slotHighlightBack)
+            slotHighlightFront(slotHighlightFront)
             listBackground(listBackground)
             listHeaderSeparator(listHeaderSeparator)
             listFooterSeparator(listFooterSeparator)

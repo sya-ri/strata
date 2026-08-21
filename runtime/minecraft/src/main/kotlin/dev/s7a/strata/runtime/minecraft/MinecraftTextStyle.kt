@@ -13,4 +13,9 @@ public enum class MinecraftTextStyle {
      * Opaque gray foreground and shadow used by inactive labels.
      */
     Inactive,
+
+    /**
+     * Opaque 0xFF404040 foreground without a shadow, matching labels inside 26.2 container screens.
+     */
+    ContainerLabel,
 }

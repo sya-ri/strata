@@ -20,6 +20,8 @@ internal class ShowcaseScenarioContractTest {
         assertEquals(
             listOf(
                 "integration/minecraft-fabric-26.2/src/gametest/kotlin/dev/s7a/strata/integration/minecraft/fabric/MinecraftMenuBackgroundExample.kt",
+                "integration/minecraft-fabric-26.2/src/gametest/kotlin/dev/s7a/strata/integration/minecraft/fabric/MinecraftContainerBackgroundExample.kt",
+                "integration/minecraft-fabric-26.2/src/gametest/kotlin/dev/s7a/strata/integration/minecraft/fabric/MinecraftSlotExample.kt",
                 "integration/minecraft-fabric-26.2/src/gametest/kotlin/dev/s7a/strata/integration/minecraft/fabric/MinecraftTextExample.kt",
                 "integration/minecraft-fabric-26.2/src/gametest/kotlin/dev/s7a/strata/integration/minecraft/fabric/MinecraftTextFieldExample.kt",
                 "integration/minecraft-fabric-26.2/src/gametest/kotlin/dev/s7a/strata/integration/minecraft/fabric/MinecraftButtonExample.kt",
@@ -27,26 +29,31 @@ internal class ShowcaseScenarioContractTest {
             ),
             scenarios.map { scenario -> scenario.source.relativePath },
         )
-        assertEquals(listOf("menu-background", "text", "text-field", "button", "scroll"), scenarios.map { scenario -> scenario.source.slug })
-        assertEquals(listOf(IntSize(32, 32), IntSize(150, 20), IntSize(200, 20), IntSize(150, 20), IntSize(320, 94)), scenarios.map { scenario -> scenario.viewport })
-        assertEquals(List(5) { 1 }, scenarios.map { scenario -> scenario.scale })
+        assertEquals(listOf("menu-background", "container-background", "slot", "text", "text-field", "button", "scroll"), scenarios.map { scenario -> scenario.source.slug })
+        assertEquals(
+            listOf(IntSize(32, 32), IntSize(176, 168), IntSize(24, 24), IntSize(150, 20), IntSize(200, 20), IntSize(150, 20), IntSize(320, 94)),
+            scenarios.map { scenario -> scenario.viewport },
+        )
+        assertEquals(List(7) { 1 }, scenarios.map { scenario -> scenario.scale })
     }
 
     @Test
     fun componentTreesHaveExactTypedDetailsAndNoInventedChildren() {
         val scenarios = ShowcaseScenarioCatalog.components
         assertEquals(listOf(ShowcaseTreeDetail.FillMaxSize), scenarios[0].tree.details)
-        assertEquals(listOf(ShowcaseTreeDetail.Size(150, 20)), scenarios[1].tree.details)
-        assertEquals(listOf(ShowcaseTreeDetail.Size(200, 20)), scenarios[2].tree.details)
-        assertTrue(scenarios[3].tree.details.isEmpty())
-        assertEquals(listOf(ShowcaseTreeDetail.Size(320, 94), ShowcaseTreeDetail.ScrollRate(9)), scenarios[4].tree.details)
-        assertEquals(List(12) { DocumentedComponent.Text }, scenarios[4].tree.children.map { child -> child.component })
-        assertTrue(scenarios[4].tree.children.all { child -> child.details.isEmpty() && child.children.isEmpty() })
-        scenarios.take(4).forEach { scenario ->
+        assertEquals(listOf(ShowcaseTreeDetail.ContainerRows(3), ShowcaseTreeDetail.Size(176, 168)), scenarios[1].tree.details)
+        assertEquals(listOf(ShowcaseTreeDetail.SlotHighlightable(true), ShowcaseTreeDetail.Size(18, 18)), scenarios[2].tree.details)
+        assertEquals(listOf(ShowcaseTreeDetail.Size(150, 20)), scenarios[3].tree.details)
+        assertEquals(listOf(ShowcaseTreeDetail.Size(200, 20)), scenarios[4].tree.details)
+        assertTrue(scenarios[5].tree.details.isEmpty())
+        assertEquals(listOf(ShowcaseTreeDetail.Size(320, 94), ShowcaseTreeDetail.ScrollRate(9)), scenarios[6].tree.details)
+        assertEquals(List(12) { DocumentedComponent.Text }, scenarios[6].tree.children.map { child -> child.component })
+        assertTrue(scenarios[6].tree.children.all { child -> child.details.isEmpty() && child.children.isEmpty() })
+        scenarios.take(6).forEach { scenario ->
             assertEquals(scenario.component, scenario.tree.component)
             assertTrue(scenario.tree.children.isEmpty())
         }
-        assertEquals(scenarios[4].component, scenarios[4].tree.component)
+        assertEquals(scenarios[6].component, scenarios[6].tree.component)
     }
 
     @Test

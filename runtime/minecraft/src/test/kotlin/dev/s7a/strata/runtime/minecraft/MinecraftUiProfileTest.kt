@@ -232,6 +232,7 @@ internal class MinecraftUiProfileTest {
         assertEquals(0xFFFFFFFF.toInt(), left.normalForeground.argbAt(0, 0))
         assertEquals(0xFF282828.toInt(), left.inactiveShadow.argbAt(0, 0))
         assertEquals(0xFFA0A0A0.toInt(), left.inactiveForeground.argbAt(0, 0))
+        assertEquals(0xFF404040.toInt(), left.containerForeground.argbAt(0, 0))
         assertEquals(0x00FFFFFF, left.normalForeground.argbAt(1, 0))
         assertEquals(0xFFFFFFFF.toInt(), right.normalForeground.argbAt(7, 0))
     }
@@ -251,6 +252,37 @@ internal class MinecraftUiProfileTest {
         }
         assertThrows(IllegalArgumentException::class.java) {
             completeProfile(button = image(IntSize(200, 19)))
+        }
+    }
+
+    @Test
+    fun containerAssetSlotsRejectMissingDuplicateAndWrongSizes() {
+        ContainerAsset.entries.forEach { omitted ->
+            assertThrows(IllegalArgumentException::class.java) {
+                createMinecraftUiProfile {
+                    menuBackground(image(IntSize(16, 16)))
+                    completeContainerAssets(omitted)
+                    completeScrollAssets()
+                    completeTextFieldAssets()
+                    completeGlyphs()
+                    completeButtons()
+                }
+            }
+        }
+        ContainerAsset.entries.forEach { duplicated ->
+            assertThrows(IllegalArgumentException::class.java) {
+                createMinecraftUiProfile {
+                    declareContainerAsset(duplicated)
+                    declareContainerAsset(duplicated)
+                }
+            }
+        }
+        ContainerAsset.entries.forEach { slot ->
+            assertThrows(IllegalArgumentException::class.java) {
+                createMinecraftUiProfile {
+                    declareContainerAsset(slot, IntSize(slot.size.width - 1, slot.size.height))
+                }
+            }
         }
     }
 
@@ -404,9 +436,26 @@ internal class MinecraftUiProfileTest {
         glyphMask: (Int) -> DrawImage = { image(IntSize(8, 8)) },
     ) {
         menuBackground(menu)
+        completeContainerAssets()
         completeScrollAssets()
         completeTextFieldAssets()
         completeGlyphs(glyphMask)
+    }
+
+    private fun MinecraftUiProfileBuilder.completeContainerAssets(omitted: ContainerAsset? = null) {
+        ContainerAsset.entries.filter { slot -> slot != omitted }.forEach { slot -> declareContainerAsset(slot) }
+    }
+
+    private fun MinecraftUiProfileBuilder.declareContainerAsset(
+        slot: ContainerAsset,
+        size: IntSize = slot.size,
+    ) {
+        val asset = image(size)
+        when (slot) {
+            ContainerAsset.Background -> containerBackground(asset)
+            ContainerAsset.HighlightBack -> slotHighlightBack(asset)
+            ContainerAsset.HighlightFront -> slotHighlightFront(asset)
+        }
     }
 
     private fun MinecraftUiProfileBuilder.completeTextFieldAssets(omitted: TextFieldAsset? = null) {
@@ -475,6 +524,14 @@ internal class MinecraftUiProfileTest {
         FooterSeparator(IntSize(32, 2)),
         ScrollbarBackground(IntSize(6, 32)),
         ScrollbarThumb(IntSize(6, 32)),
+    }
+
+    private enum class ContainerAsset(
+        val size: IntSize,
+    ) {
+        Background(IntSize(256, 256)),
+        HighlightBack(IntSize(24, 24)),
+        HighlightFront(IntSize(24, 24)),
     }
 
     private enum class TextFieldAsset {

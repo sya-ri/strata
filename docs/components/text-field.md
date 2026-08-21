@@ -13,7 +13,6 @@ This image is a 200 by 20 component crop from the exact native/Fabric/headless p
 ```kotlin
 import dev.s7a.strata.dsl.Box
 import dev.s7a.strata.dsl.buildUi
-import dev.s7a.strata.element.Element
 import dev.s7a.strata.geometry.Insets
 import dev.s7a.strata.layout.Alignment
 import dev.s7a.strata.modifier.Modifier
@@ -21,18 +20,19 @@ import dev.s7a.strata.modifier.fillMaxSize
 import dev.s7a.strata.modifier.onPress
 import dev.s7a.strata.modifier.padding
 import dev.s7a.strata.modifier.size
+import dev.s7a.strata.runtime.minecraft.MinecraftScreenDefinition
 import dev.s7a.strata.runtime.minecraft.MinecraftTextStyle
-import dev.s7a.strata.runtime.minecraft.MinecraftUiContext
+import dev.s7a.strata.runtime.minecraft.createMinecraftScreenDefinition
 import dev.s7a.strata.runtime.minecraft.createMinecraftTextFieldState
 
 /**
  * Builds the Minecraft 26.2 Direct Connection screen used by native, Fabric, and headless parity paths.
  *
- * @return callback-lifetime screen content with the actual EditBox and 200-pixel Button geometry.
+ * @return one-shot screen definition with the actual EditBox and 200-pixel Button geometry.
  */
-internal fun directJoinScreenContent(): MinecraftUiContext.() -> Element {
+internal fun createDirectJoinScreenDefinition(): MinecraftScreenDefinition {
     val address = createMinecraftTextFieldState("play.example.net", maxLength = 128)
-    return {
+    return createMinecraftScreenDefinition("Direct Connection") {
         buildUi {
             Box(modifier = Modifier.Empty.size(320, 240)) {
                 MenuBackground(modifier = Modifier.Empty.fillMaxSize())

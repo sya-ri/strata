@@ -23,8 +23,8 @@ The design separates those concerns into layers:
 - retained nodes perform incremental measurement, layout, painting, input, semantics, and lifecycle work;
 - active modifiers provide checked padding, size constraints, background painting, unresolved semantics, typed pointer/keyboard/text/focus actions, and typed layout parent data without changing component implementations;
 - the retained core runtime emits draw commands and unresolved semantics on the JVM;
-- the common Minecraft runtime owns one-shot screen definitions, immutable asset profiles, callback-scoped menu/text/TextField/Button/Scroll components, and a synchronous fixed-viewport host over the retained core;
-- the latest Java release, Minecraft 26.2, has a Fabric boundary that extracts the supported native asset/font/list/TextField profile and adapts common frames, typed mouse/keyboard/text input, and screen lifecycle on the client thread; loaded client GameTests verify exact native/Fabric/headless ARGB parity for `ConfirmScreen`, `DirectJoinServerScreen`, and `ObjectSelectionList` scenes.
+- the common Minecraft runtime owns one-shot screen definitions, immutable asset profiles, callback-scoped MenuBackground/ContainerBackground/Slot/Text/TextField/Button/Scroll components, and a synchronous fixed-viewport host over the retained core;
+- the latest Java release, Minecraft 26.2, has a Fabric boundary that extracts the supported native menu/container/slot/font/list/TextField profile and adapts common frames, typed mouse/keyboard/text input, and screen lifecycle on the client thread; loaded client GameTests verify exact native/Fabric/headless ARGB parity for `ConfirmScreen`, `DirectJoinServerScreen`, `ContainerScreen`, and `ObjectSelectionList` scenes.
 
 The public element, node, and drawing contracts are designed for extension.
 A custom primitive must work through those contracts without registering its concrete class in a central component dispatcher.
@@ -62,7 +62,6 @@ import dev.s7a.strata.dsl.Box
 import dev.s7a.strata.dsl.Column
 import dev.s7a.strata.dsl.Row
 import dev.s7a.strata.dsl.buildUi
-import dev.s7a.strata.element.Element
 import dev.s7a.strata.geometry.Insets
 import dev.s7a.strata.layout.Alignment
 import dev.s7a.strata.layout.HorizontalAlignment
@@ -71,15 +70,16 @@ import dev.s7a.strata.modifier.fillMaxSize
 import dev.s7a.strata.modifier.onPress
 import dev.s7a.strata.modifier.padding
 import dev.s7a.strata.modifier.size
-import dev.s7a.strata.runtime.minecraft.MinecraftUiContext
+import dev.s7a.strata.runtime.minecraft.MinecraftScreenDefinition
+import dev.s7a.strata.runtime.minecraft.createMinecraftScreenDefinition
 
 /**
  * Builds the deterministic Minecraft 26.2 ConfirmScreen content used by the Fabric and headless parity paths.
  *
- * @return callback-lifetime content reproducing the native title, message, and button-row geometry.
+ * @return one-shot screen definition reproducing the native title, message, and button-row geometry.
  */
-internal fun confirmScreenContent(): MinecraftUiContext.() -> Element =
-    {
+internal fun createConfirmScreenDefinition(): MinecraftScreenDefinition =
+    createMinecraftScreenDefinition("Strata parity") {
         buildUi {
             Box(
                 modifier = Modifier.Empty.size(320, 180),
@@ -126,7 +126,7 @@ The dependency boundaries are:
 - `runtime/core` is configured as a publishable retained engine that measures, lays out, paints, dispatches input, and flattens unresolved semantics on the JVM. It has not been published to an external repository.
 - `runtime/headless` is configured as a publishable headless adapter over the retained core.
   Its verified synchronous entry points render a positive fixed viewport into immutable scaled ARGB pixels, deterministic metadata-free RGBA8 PNG bytes, and logical unscaled semantics.
-- `runtime/minecraft` is configured as a publishable Minecraft-independent one-shot screen definition, immutable profile, callback-scoped MenuBackground/Text/TextField/Button/Scroll component set, and owner-thread host over the retained core.
+- `runtime/minecraft` is configured as a publishable Minecraft-independent one-shot screen definition, immutable profile, callback-scoped MenuBackground/ContainerBackground/Slot/Text/TextField/Button/Scroll component set, and owner-thread host over the retained core.
   It applies every frame to exact fixed logical viewport constraints without exposing Fabric, resources, or mapped game types.
 - `runtime/minecraft-fabric-26.2` is the client-only Java 25 version boundary for the latest Java release's resource, screen, rendering, and input adapter.
   It nests the common runtime jars in the mod artifact, keeps Minecraft types out of the common modules, and passes an exact loaded-game native/Fabric/headless pixel comparison.

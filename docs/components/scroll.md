@@ -15,21 +15,21 @@ import dev.s7a.strata.dsl.Box
 import dev.s7a.strata.dsl.Column
 import dev.s7a.strata.dsl.Spacer
 import dev.s7a.strata.dsl.buildUi
-import dev.s7a.strata.element.Element
 import dev.s7a.strata.layout.Alignment
 import dev.s7a.strata.layout.HorizontalAlignment
 import dev.s7a.strata.modifier.Modifier
 import dev.s7a.strata.modifier.fillMaxSize
 import dev.s7a.strata.modifier.size
-import dev.s7a.strata.runtime.minecraft.MinecraftUiContext
+import dev.s7a.strata.runtime.minecraft.MinecraftScreenDefinition
+import dev.s7a.strata.runtime.minecraft.createMinecraftScreenDefinition
 
 /**
  * Builds the deterministic Minecraft 26.2 selection-list screen used by the native, Fabric, and headless parity paths.
  *
- * @return callback-lifetime content reproducing the native list viewport, row geometry, separators, scrollbar, and text.
+ * @return one-shot screen definition reproducing the native list viewport, row geometry, separators, scrollbar, and text.
  */
-internal fun scrollScreenContent(): MinecraftUiContext.() -> Element =
-    {
+internal fun createScrollScreenDefinition(): MinecraftScreenDefinition =
+    createMinecraftScreenDefinition("Strata Scroll parity") {
         buildUi {
             Box(modifier = Modifier.Empty.size(320, 180)) {
                 MenuBackground(modifier = Modifier.Empty.fillMaxSize())

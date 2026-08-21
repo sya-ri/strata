@@ -19,11 +19,12 @@ Session detach retains the active `UiTree` and its node ownership; it clears act
 The common `runtime:minecraft` adapter consumes a one-shot screen definition and a complete immutable profile.
 Definition close and host transfer race atomically, and a transferred host exposes only owner-thread metadata, lifecycle, fixed-viewport frames, and typed pointer, keyboard, committed-character, and preedit input.
 Its screen-content callback provides an implicit Minecraft component receiver around ordinary `buildUi` scopes.
-Application code emits `MenuBackground`, `Text`, `TextField`, `Button`, and `Scroll` directly; `Text` and `Button` accept either `String` literals or unresolved `UiText` values.
+Application code emits `MenuBackground`, `ContainerBackground`, `Slot`, `Text`, `TextField`, `Button`, and `Scroll` directly; screen definitions, `Text`, and `Button` accept `String` literals without requiring `UiText.Literal`, while typed overloads retain unresolved `UiText` values when needed.
 The fixed-height profile-backed Button owns appearance, hover visuals, and enabled semantics, while reusable pointer, keyboard, text-input, preedit, focus, press, release, move, drag, scroll, and hover actions are active modifiers shared with other component kinds.
 TextField owns the verified 200 by 20 EditBox sprites, text colors, cursor, bounded printable-ASCII editing policy, and semantics while caller-owned owner-thread `MinecraftTextFieldState` owns the value and maximum length.
 Focused input modifiers run before TextField's built-in editor, so consuming a typed event overrides its default action and ignoring the event permits the editor to handle it.
 Scroll owns the active 26.2 menu-list background, child clipping, separators, scrollbar sprites, retained wheel offset, proportional thumb dragging, and the native background-to-content-to-overlay paint order.
+ContainerBackground owns the verified row-dependent generic chest geometry and two native texture regions, while Slot owns the exact 18 by 18 pointer region, optional 16 by 16 content root, and back-content-front hover layers.
 Button does not install keyboard focus or activation implicitly; callers compose those policies from the shared modifiers when required.
 The common component boundary does not expose resources, native Minecraft values, renderers, input mappers, or task facilities.
 

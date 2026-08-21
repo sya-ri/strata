@@ -13,19 +13,19 @@ This image is a 150 by 20 component crop from the exact native/Fabric/headless p
 ```kotlin
 import dev.s7a.strata.dsl.Box
 import dev.s7a.strata.dsl.buildUi
-import dev.s7a.strata.element.Element
 import dev.s7a.strata.layout.Alignment
 import dev.s7a.strata.modifier.Modifier
 import dev.s7a.strata.modifier.size
-import dev.s7a.strata.runtime.minecraft.MinecraftUiContext
+import dev.s7a.strata.runtime.minecraft.MinecraftScreenDefinition
+import dev.s7a.strata.runtime.minecraft.createMinecraftScreenDefinition
 
 /**
  * Builds the literal Text component used by the verified ConfirmScreen title.
  *
- * @return callback-lifetime content using the implicit Minecraft component context.
+ * @return one-shot screen definition whose content uses the implicit Minecraft component context.
  */
-internal fun textExample(): MinecraftUiContext.() -> Element =
-    {
+internal fun textExample(): MinecraftScreenDefinition =
+    createMinecraftScreenDefinition("Text") {
         buildUi {
             Box(
                 modifier = Modifier.Empty.size(150, 20),

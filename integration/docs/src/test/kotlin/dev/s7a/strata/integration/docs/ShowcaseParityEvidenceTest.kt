@@ -28,6 +28,8 @@ internal class ShowcaseParityEvidenceTest {
 
         assertArrayEquals(png, evidence.overviewPng())
         assertArrayEquals(png(32, 32), evidence.componentPng(DocumentedComponent.MenuBackground))
+        assertArrayEquals(png(176, 168), evidence.componentPng(DocumentedComponent.ContainerBackground))
+        assertArrayEquals(png(24, 24), evidence.componentPng(DocumentedComponent.Slot))
         assertArrayEquals(png(150, 20), evidence.componentPng(DocumentedComponent.Text))
         assertArrayEquals(png(200, 20), evidence.componentPng(DocumentedComponent.TextField))
         assertArrayEquals(png(150, 20), evidence.componentPng(DocumentedComponent.Button))
@@ -74,6 +76,8 @@ internal class ShowcaseParityEvidenceTest {
             linkedMapOf(
                 "overview" to png(320, 180),
                 DocumentedComponent.MenuBackground.slug to png(32, 32),
+                DocumentedComponent.ContainerBackground.slug to png(176, 168),
+                DocumentedComponent.Slot.slug to png(24, 24),
                 DocumentedComponent.Text.slug to png(150, 20),
                 DocumentedComponent.TextField.slug to png(200, 20),
                 DocumentedComponent.Button.slug to png(150, 20),
@@ -90,6 +94,8 @@ internal class ShowcaseParityEvidenceTest {
                 appendLine("native.fabric.headless.argb.sha256=${"1".repeat(64)}")
                 appendLine("native.fabric.headless.scroll.argb.sha256=${"2".repeat(64)}")
                 appendLine("native.fabric.headless.direct-join.argb.sha256=${"3".repeat(64)}")
+                appendLine("native.fabric.headless.container-background.argb.sha256=${"4".repeat(64)}")
+                appendLine("native.fabric.headless.slot.argb.sha256=${"5".repeat(64)}")
                 images.forEach { (slug, bytes) -> appendLine("component.$slug.png.sha256=${sha256(bytes)}") }
             }
         Files.writeString(temporaryRoot.resolve("receipt.properties"), receipt)

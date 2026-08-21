@@ -20,7 +20,7 @@ internal object ShowcaseMarkdown {
 
 # Minecraft component showcase
 
-These deterministic crops come from real Minecraft 26.2 `ConfirmScreen`, `DirectJoinServerScreen`, and native `ObjectSelectionList` screens reconstructed with Strata's `MenuBackground`, `Text`, `TextField`, `Button`, and `Scroll` components.
+These deterministic crops come from real Minecraft 26.2 `ConfirmScreen`, `DirectJoinServerScreen`, `ContainerScreen`, and native `ObjectSelectionList` screens reconstructed with Strata's `MenuBackground`, `ContainerBackground`, `Slot`, `Text`, `TextField`, `Button`, and `Scroll` components.
 One loaded Fabric GameTest requires exact ARGB equality among each native screen, the Fabric adapter, and the headless frame before it emits these component images.
 
 [Open the machine-readable parity receipt](minecraft-26.2-parity.properties)
@@ -150,6 +150,8 @@ ${tree(spec.tree)}
     private fun modifierGuidance(component: DocumentedComponent): String =
         when (component) {
             DocumentedComponent.MenuBackground -> "`Modifier.fillMaxSize()` supplies the finite viewport that `MenuBackground` fills with the active Minecraft menu texture."
+            DocumentedComponent.ContainerBackground -> "Sizing and placement modifiers position the fixed 176-pixel-wide panel; `rows` selects the native one-through-six-row height and texture regions."
+            DocumentedComponent.Slot -> "Sizing is native-fixed at 18 by 18. Pointer action modifiers compose around `Slot`, while `highlightable` controls only its built-in back/front hover layers."
             DocumentedComponent.Text -> "Ordinary sizing, padding, placement, and paint modifiers compose around `Text`; text content remains a typed component argument."
             DocumentedComponent.TextField -> "Pointer, keyboard, committed-character, preedit, and focus modifiers run as active retained behavior around `TextField`; a consuming focused modifier overrides built-in editing."
             DocumentedComponent.Button -> "Pointer behavior is active modifier behavior. `onPointerEvent`, `onPress`, `onRelease`, `onMove`, `onDrag`, `onScroll`, and `onHover` can be composed without adding component-specific callback parameters."
@@ -159,6 +161,8 @@ ${tree(spec.tree)}
     private fun parentScopeGuidance(component: DocumentedComponent): String =
         when (component) {
             DocumentedComponent.MenuBackground -> "`MenuBackground` is a member extension on the active `UiScope`. The runtime supplies `MinecraftUiContext` implicitly for the screen-content callback; application code never names or retains it."
+            DocumentedComponent.ContainerBackground -> "`ContainerBackground` is a leaf member extension on the active `UiScope`. The implicit runtime context supplies the selected `generic_54.png` snapshot, and the component exposes no content scope or parent data."
+            DocumentedComponent.Slot -> "`Slot` is a member extension on the active `UiScope`. Its optional callback emits at most one 16 by 16 content root between the native highlight-back and highlight-front phases."
             DocumentedComponent.Text -> "`Text` is a member extension on the active `UiScope`. The runtime supplies `MinecraftUiContext` implicitly, and the component has no content callback or parent-data API."
             DocumentedComponent.TextField -> "`TextField` is a member extension on the active `UiScope`. The implicit runtime context supplies assets, while caller-owned `MinecraftTextFieldState` owns the editable value."
             DocumentedComponent.Button -> "`Button` is a member extension on the active `UiScope`. The runtime supplies `MinecraftUiContext` implicitly, and pointer event modifiers remain valid only through their retained modifier-node lifetime."
@@ -168,6 +172,8 @@ ${tree(spec.tree)}
     private fun typedSummary(component: DocumentedComponent): String =
         when (component) {
             DocumentedComponent.MenuBackground -> "MenuBackground paints the selected Minecraft menu texture with the same tiling, clipping, and draw order as the verified native screen."
+            DocumentedComponent.ContainerBackground -> "ContainerBackground reproduces the generic chest panel's row-dependent height and exact upper-then-lower `generic_54.png` blits."
+            DocumentedComponent.Slot -> "Slot reproduces the native 18 by 18 hit region and the 24 by 24 back-content-front highlight order used by an actual empty chest screen."
             DocumentedComponent.Text -> "Text renders a printable-ASCII literal with the extracted Minecraft glyph advances, shadow layer, foreground layer, and native baseline."
             DocumentedComponent.TextField -> "TextField reproduces the 200 by 20 Minecraft EditBox sprites, text origin, glyph colors, owner-thread value state, focus, and bounded editing behavior."
             DocumentedComponent.Button -> "Button renders verified fixed-height Minecraft sprite and label states, including the native 150- and 200-pixel widths, while reusable input actions live in modifiers."

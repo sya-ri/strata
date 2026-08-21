@@ -24,6 +24,22 @@ public fun createMinecraftScreenDefinition(
 ): MinecraftScreenDefinition = MinecraftDefinitionImplementation.create(title, pausesGame, content)
 
 /**
+ * Creates a one-shot Minecraft screen definition with a literal title.
+ *
+ * This overload converts [title] to [UiText.Literal] and otherwise has the same ownership, threading, evaluation, and failure contract as the typed overload.
+ *
+ * @param title literal screen title.
+ * @param pausesGame whether the screen pauses the game.
+ * @param content the owner-thread element evaluator invoked with an implicit Minecraft component receiver during the transferred host's first attach.
+ * @return a one-shot definition with referential identity.
+ */
+public fun createMinecraftScreenDefinition(
+    title: String,
+    pausesGame: Boolean = false,
+    content: MinecraftUiContext.() -> Element,
+): MinecraftScreenDefinition = createMinecraftScreenDefinition(UiText.Literal(title), pausesGame, content)
+
+/**
  * Creates owner-thread state for one Minecraft TextField.
  *
  * @param initialValue initial printable-ASCII value.

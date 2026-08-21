@@ -7,7 +7,7 @@ import dev.s7a.strata.geometry.IntSize
  */
 internal object ShowcaseScenarioCatalog {
     /**
-     * Component scenarios in the required MenuBackground, Text, TextField, Button, Scroll order.
+     * Component scenarios in the required MenuBackground, ContainerBackground, Slot, Text, TextField, Button, Scroll order.
      */
     internal val components: List<ComponentScenario> =
         listOf(
@@ -20,6 +20,34 @@ internal object ShowcaseScenarioCatalog {
                     ),
                 viewportMetadata = ShowcaseViewport(IntSize(32, 32), 1),
                 tree = tree(DocumentedComponent.MenuBackground, listOf(ShowcaseTreeDetail.FillMaxSize)),
+            ),
+            ComponentScenario(
+                component = DocumentedComponent.ContainerBackground,
+                source =
+                    SourceReference(
+                        "integration/minecraft-fabric-26.2/src/gametest/kotlin/dev/s7a/strata/integration/minecraft/fabric/MinecraftContainerBackgroundExample.kt",
+                        "container-background",
+                    ),
+                viewportMetadata = ShowcaseViewport(IntSize(176, 168), 1),
+                tree =
+                    tree(
+                        DocumentedComponent.ContainerBackground,
+                        listOf(ShowcaseTreeDetail.ContainerRows(3), ShowcaseTreeDetail.Size(176, 168)),
+                    ),
+            ),
+            ComponentScenario(
+                component = DocumentedComponent.Slot,
+                source =
+                    SourceReference(
+                        "integration/minecraft-fabric-26.2/src/gametest/kotlin/dev/s7a/strata/integration/minecraft/fabric/MinecraftSlotExample.kt",
+                        "slot",
+                    ),
+                viewportMetadata = ShowcaseViewport(IntSize(24, 24), 1),
+                tree =
+                    tree(
+                        DocumentedComponent.Slot,
+                        listOf(ShowcaseTreeDetail.SlotHighlightable(true), ShowcaseTreeDetail.Size(18, 18)),
+                    ),
             ),
             ComponentScenario(
                 component = DocumentedComponent.Text,
@@ -151,6 +179,10 @@ internal object ShowcaseScenarioCatalog {
             is ShowcaseTreeDetail.Spacing -> require(0 <= detail.value) { "Showcase spacing must be nonnegative." }
 
             is ShowcaseTreeDetail.ScrollRate -> require(0 < detail.value) { "Showcase Scroll rates must be positive." }
+
+            is ShowcaseTreeDetail.ContainerRows -> require(detail.value in 1..6) { "Showcase ContainerBackground rows must be from one through six." }
+
+            is ShowcaseTreeDetail.SlotHighlightable -> Unit
 
             is ShowcaseTreeDetail.Weight -> require(detail.weight.isFinite() && 0 < detail.weight) { "Showcase weights must be positive finite values." }
         }

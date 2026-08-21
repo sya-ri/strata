@@ -27,7 +27,7 @@ import java.io.IOException
  * The call belongs on the active Minecraft client thread; resource-manager and native-image failures escape without substitution.
  * The active client must use the regular bitmap font selection; the forced Unicode font option is outside this profile's verified ASCII contract.
  *
- * @return an immutable profile containing the active conforming menu, button, and ASCII assets.
+ * @return an immutable profile containing the active conforming menu, container, Slot, button, and ASCII assets.
  * @throws IllegalArgumentException when a required resource, dimension, metadata contract, or font contract is invalid.
  * @throws IllegalStateException when called away from the Minecraft client thread.
  * @throws IOException when a required resource cannot be read.
@@ -45,6 +45,9 @@ public fun extractMinecraftUiProfile(): MinecraftUiProfile {
     }
     val manager = minecraft.getResourceManager()
     val menu = manager.readImage("textures/gui/menu_background.png", IntSize(16, 16))
+    val containerBackground = manager.readImage("textures/gui/container/generic_54.png", IntSize(256, 256))
+    val slotHighlightBack = manager.readImage("textures/gui/sprites/container/slot_highlight_back.png", IntSize(24, 24))
+    val slotHighlightFront = manager.readImage("textures/gui/sprites/container/slot_highlight_front.png", IntSize(24, 24))
     val listBackground = manager.readImage("textures/gui/menu_list_background.png", IntSize(16, 16))
     val headerSeparator = manager.readImage("textures/gui/header_separator.png", IntSize(32, 2))
     val footerSeparator = manager.readImage("textures/gui/footer_separator.png", IntSize(32, 2))
@@ -62,6 +65,9 @@ public fun extractMinecraftUiProfile(): MinecraftUiProfile {
 
     return createMinecraftUiProfile {
         menuBackground(menu)
+        containerBackground(containerBackground)
+        slotHighlightBack(slotHighlightBack)
+        slotHighlightFront(slotHighlightFront)
         listBackground(listBackground)
         listHeaderSeparator(headerSeparator)
         listFooterSeparator(footerSeparator)

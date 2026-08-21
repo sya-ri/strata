@@ -32,8 +32,14 @@ import org.junit.jupiter.api.Test
 internal class ExternalMinecraftUiHostIntegrationTest {
     @Test
     fun externalContentBuildsMenuAndTextThroughPublicContextWithoutRegistration() {
+        assertExternalMenuAndText()
+        assertExternalTextFieldAndStyle()
+        assertExternalContainerAndSlot()
+    }
+
+    private fun assertExternalMenuAndText() {
         val menuHost =
-            createMinecraftScreenDefinition(UiText.Literal("external menu")) {
+            createMinecraftScreenDefinition("external menu") {
                 buildUi { MenuBackground() }
             }.let { definition -> createMinecraftUiHost(definition, profile()) }
         menuHost.attach()
@@ -51,7 +57,9 @@ internal class ExternalMinecraftUiHostIntegrationTest {
         val textSemantics = textFrame.semantics.single { entry -> entry.semantics.role == SemanticsRole.Text }
         assertEquals(UiText.Literal("A B"), textSemantics.semantics.label)
         textHost.close()
+    }
 
+    private fun assertExternalTextFieldAndStyle() {
         val state = createMinecraftTextFieldState("A", maxLength = 8)
         val fieldHost =
             createMinecraftScreenDefinition(UiText.Literal("external field")) {
@@ -82,6 +90,38 @@ internal class ExternalMinecraftUiHostIntegrationTest {
         inactiveHost.attach()
         assertEquals(IntSize(1, 9), inactiveHost.frame(IntSize(1, 9)).size)
         inactiveHost.close()
+    }
+
+    private fun assertExternalContainerAndSlot() {
+        val containerHost =
+            createMinecraftScreenDefinition("external container") {
+                buildUi { ContainerBackground() }
+            }.let { definition -> createMinecraftUiHost(definition, profile()) }
+        containerHost.attach()
+        assertEquals(
+            2,
+            containerHost
+                .frame(IntSize(176, 168))
+                .drawCommands
+                .count { command -> command is DrawCommand.BlitImage },
+        )
+        containerHost.close()
+
+        val slotHost =
+            createMinecraftScreenDefinition("external slot") {
+                buildUi { Slot() }
+            }.let { definition -> createMinecraftUiHost(definition, profile()) }
+        slotHost.attach()
+        slotHost.frame(IntSize(18, 18))
+        assertEquals(InputResult.Ignored, slotHost.dispatchPointer(PointerEvent.Move(IntOffset(1, 1))))
+        assertEquals(
+            2,
+            slotHost
+                .frame(IntSize(18, 18))
+                .drawCommands
+                .count { command -> command is DrawCommand.BlitImage },
+        )
+        slotHost.close()
     }
 
     @Test
@@ -162,6 +202,9 @@ internal class ExternalMinecraftUiHostIntegrationTest {
     private fun profile() =
         createMinecraftUiProfile {
             menuBackground(image(IntSize(16, 16)))
+            containerBackground(image(IntSize(256, 256)))
+            slotHighlightBack(image(IntSize(24, 24)))
+            slotHighlightFront(image(IntSize(24, 24)))
             listBackground(image(IntSize(16, 16)))
             listHeaderSeparator(image(IntSize(32, 2)))
             listFooterSeparator(image(IntSize(32, 2)))

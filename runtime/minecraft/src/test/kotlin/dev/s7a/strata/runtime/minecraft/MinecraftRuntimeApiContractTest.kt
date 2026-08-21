@@ -33,7 +33,7 @@ internal class MinecraftRuntimeApiContractTest {
         )
         assertInterfaceSurface(
             MinecraftUiContext::class.java,
-            setOf("MenuBackground", "Text", "TextField", "Button", "Scroll"),
+            setOf("MenuBackground", "ContainerBackground", "Slot", "Text", "TextField", "Button", "Scroll"),
             allowDefaultImpls = true,
         )
         assertInterfaceSurface(MinecraftUiProfile::class.java, emptySet())
@@ -42,6 +42,9 @@ internal class MinecraftRuntimeApiContractTest {
             MinecraftUiProfileBuilder::class.java,
             setOf(
                 "menuBackground",
+                "containerBackground",
+                "slotHighlightBack",
+                "slotHighlightFront",
                 "listBackground",
                 "listHeaderSeparator",
                 "listFooterSeparator",
@@ -58,10 +61,16 @@ internal class MinecraftRuntimeApiContractTest {
     }
 
     @Test
-    fun facadeContainsExactlyTheFourTypedFactories() {
+    fun facadeContainsExactlyTheTypedFactoriesAndLiteralTitleOverload() {
         val factory = Class.forName("dev.s7a.strata.runtime.minecraft.MinecraftRuntimeFactories")
         val methods = factory.declaredMethods.filter { method -> Modifier.isPublic(method.modifiers) && method.isSynthetic.not() }
-        assertEquals(4, methods.size)
+        assertEquals(5, methods.size)
+        assertFactory(
+            methods,
+            "createMinecraftScreenDefinition",
+            listOf(String::class.java, checkNotNull(Boolean::class.javaPrimitiveType), Function1::class.java),
+            MinecraftScreenDefinition::class.java,
+        )
         assertFactory(
             methods,
             "createMinecraftScreenDefinition",
@@ -113,10 +122,43 @@ internal class MinecraftRuntimeApiContractTest {
     private fun assertContextMethodDescriptors() {
         val contextMethods = MinecraftUiContext::class.java.declaredMethods.toList()
         assertTextDescriptors(contextMethods)
+        assertContainerDescriptors(contextMethods)
         assertTextFieldDescriptor(contextMethods)
         assertButtonDescriptors(contextMethods)
         assertScrollDescriptor(contextMethods)
         contextMethods.forEach { method -> assertEquals(Void.TYPE, method.returnType) }
+    }
+
+    private fun assertContainerDescriptors(contextMethods: List<Method>) {
+        assertEquals(
+            setOf(
+                listOf(
+                    UiScope::class.java,
+                    checkNotNull(Int::class.javaPrimitiveType),
+                    UiModifier::class.java,
+                    ElementKey::class.java,
+                ),
+            ),
+            contextMethods
+                .filter { method -> method.name == ContextMethodName.ContainerBackground.jvmName }
+                .map { method -> method.parameterTypes.toList() }
+                .toSet(),
+        )
+        assertEquals(
+            setOf(
+                listOf(
+                    UiScope::class.java,
+                    checkNotNull(Boolean::class.javaPrimitiveType),
+                    UiModifier::class.java,
+                    ElementKey::class.java,
+                    Function1::class.java,
+                ),
+            ),
+            contextMethods
+                .filter { method -> method.name == ContextMethodName.Slot.jvmName }
+                .map { method -> method.parameterTypes.toList() }
+                .toSet(),
+        )
     }
 
     private fun assertTextDescriptors(contextMethods: List<Method>) {
@@ -207,6 +249,8 @@ internal class MinecraftRuntimeApiContractTest {
             "dev.s7a.strata.runtime.minecraft.MinecraftPointerButtonElement",
             "dev.s7a.strata.runtime.minecraft.MinecraftScrollElement",
             "dev.s7a.strata.runtime.minecraft.MinecraftTextFieldElement",
+            "dev.s7a.strata.runtime.minecraft.MinecraftContainerBackgroundElement",
+            "dev.s7a.strata.runtime.minecraft.MinecraftSlotElement",
         ).forEach { name ->
             val implementation = Class.forName(name)
             assertTrue(implementation.declaredMethods.none { method -> method.name.startsWith("access$") })
@@ -285,6 +329,8 @@ internal class MinecraftRuntimeApiContractTest {
             Class.forName("dev.s7a.strata.runtime.minecraft.MinecraftTextElement"),
             Class.forName("dev.s7a.strata.runtime.minecraft.MinecraftScrollElement"),
             Class.forName("dev.s7a.strata.runtime.minecraft.MinecraftTextFieldElement"),
+            Class.forName("dev.s7a.strata.runtime.minecraft.MinecraftContainerBackgroundElement"),
+            Class.forName("dev.s7a.strata.runtime.minecraft.MinecraftSlotElement"),
         ).forEach { type ->
             assertFalse(Modifier.isPublic(type.modifiers), type.name)
             assertFalse(Modifier.isProtected(type.modifiers), type.name)
@@ -295,6 +341,8 @@ internal class MinecraftRuntimeApiContractTest {
             Class.forName("dev.s7a.strata.runtime.minecraft.MinecraftTextElementKt"),
             Class.forName("dev.s7a.strata.runtime.minecraft.MinecraftScrollElementKt"),
             Class.forName("dev.s7a.strata.runtime.minecraft.MinecraftTextFieldElementKt"),
+            Class.forName("dev.s7a.strata.runtime.minecraft.MinecraftContainerBackgroundElementKt"),
+            Class.forName("dev.s7a.strata.runtime.minecraft.MinecraftSlotElementKt"),
         ).flatMap { type -> type.declaredMethods.toList() }.forEach { method ->
             assertTrue(method.isSynthetic, method.toString())
         }
@@ -447,7 +495,10 @@ internal class MinecraftRuntimeApiContractTest {
         parameters: List<Class<*>>,
         returnType: Class<*>,
     ) {
-        val method = methods.single { candidate -> candidate.name == name }
+        val method =
+            methods.single { candidate ->
+                candidate.name == name && candidate.parameterTypes.toList() == parameters
+            }
         assertTrue(Modifier.isStatic(method.modifiers))
         assertEquals(parameters, method.parameterTypes.toList())
         assertEquals(returnType, method.returnType)
@@ -466,6 +517,8 @@ internal class MinecraftRuntimeApiContractTest {
         val jvmName: String,
     ) {
         Text("Text"),
+        ContainerBackground("ContainerBackground"),
+        Slot("Slot"),
         TextField("TextField"),
         Button("Button"),
         Scroll("Scroll"),

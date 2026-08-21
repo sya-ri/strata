@@ -22,7 +22,11 @@ internal class ShowcaseMarkdownTest {
         val index = ShowcaseMarkdown.index(overview, pages)
         assertTrue(index.startsWith("<!-- Generated file. Do not edit. -->\n\n# Minecraft component showcase\n"))
         assertTrue(index.contains("real Minecraft 26.2 `ConfirmScreen`"))
-        assertTrue(index.contains("- [MenuBackground](menu-background.md)\n- [Text](text.md)\n- [TextField](text-field.md)\n- [Button](button.md)\n- [Scroll](scroll.md)"))
+        assertTrue(
+            index.contains(
+                "- [MenuBackground](menu-background.md)\n- [ContainerBackground](container-background.md)\n- [Slot](slot.md)\n- [Text](text.md)\n- [TextField](text-field.md)\n- [Button](button.md)\n- [Scroll](scroll.md)",
+            ),
+        )
         assertTrue(index.contains("The tree shows Minecraft components in logical draw order"))
         assertTrue(index.contains(overview.source))
         assertTrue(index.contains("exact ARGB equality"))
@@ -48,6 +52,8 @@ internal class ShowcaseMarkdownTest {
             }
         assertTrue(pages.getValue(DocumentedComponent.MenuBackground).contains("This image is a 32 by 32 component crop"))
         assertTrue(pages.getValue(DocumentedComponent.MenuBackground).contains("`Modifier.fillMaxSize()`"))
+        assertTrue(pages.getValue(DocumentedComponent.ContainerBackground).contains("176-pixel-wide panel"))
+        assertTrue(pages.getValue(DocumentedComponent.Slot).contains("back-content-front highlight order"))
         assertTrue(pages.getValue(DocumentedComponent.Text).contains("extracted Minecraft glyph advances, shadow layer, foreground layer, and native baseline"))
         assertTrue(pages.getValue(DocumentedComponent.TextField).contains("200 by 20 Minecraft EditBox sprites"))
         val button = pages.getValue(DocumentedComponent.Button)
@@ -84,6 +90,8 @@ internal class ShowcaseMarkdownTest {
                     ShowcaseTreeDetail.ColumnDefaultAlignment(HorizontalAlignment.Center),
                     ShowcaseTreeDetail.BoxContentAlignment(Alignment.Center),
                     ShowcaseTreeDetail.ScrollRate(9),
+                    ShowcaseTreeDetail.ContainerRows(3),
+                    ShowcaseTreeDetail.SlotHighlightable(true),
                 ),
             )
         val rendered = ShowcaseMarkdown.tree(tree)
@@ -103,6 +111,8 @@ internal class ShowcaseMarkdownTest {
             "ColumnDefaultAlignment(alignment=Center)",
             "BoxContentAlignment(alignment=Center)",
             "ScrollRate(value=9)",
+            "ContainerRows(value=3)",
+            "SlotHighlightable(value=true)",
         ).forEach { detail -> assertTrue(rendered.contains(detail)) }
         val buttonScenario = ShowcaseScenarioCatalog.components.single { scenario -> scenario.component == DocumentedComponent.Button }
         val buttonPage = ShowcaseMarkdown.page(buttonScenario, "import sample\ninternal fun button() {}")

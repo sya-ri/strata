@@ -12,7 +12,7 @@ import dev.s7a.strata.text.UiText
  *
  * The context is confined to the thread and dynamic extent of its screen-content callback.
  * Calls from another thread or after the callback returns fail before retaining arguments.
- * Member extensions emit directly into the active [UiScope], so application code uses [MenuBackground], [Text], [TextField], [Button], and [Scroll] without naming or retaining this context.
+ * Member extensions emit directly into the active [UiScope], so application code uses [MenuBackground], [ContainerBackground], [Slot], [Text], [TextField], [Button], and [Scroll] without naming or retaining this context.
  */
 public sealed interface MinecraftUiContext {
     /**
@@ -33,6 +33,48 @@ public sealed interface MinecraftUiContext {
     )
 
     /**
+     * Emits one fixed-size Minecraft 26.2 generic chest-container background.
+     *
+     * The natural size is 176 by `114 + rows * 18` logical pixels.
+     * Paint emits the same upper and lower source regions from `generic_54.png` in the same order as `ContainerScreen.extractBackground`; the final logical row remains outside those two native blits.
+     *
+     * @param rows chest row count from one through six.
+     * @param modifier active behavior applied to the background.
+     * @param key optional stable identity among direct siblings.
+     * @throws IllegalArgumentException when [rows] is outside one through six or later constraints do not contain the exact natural size.
+     * @throws ArithmeticException when checked size arithmetic overflows.
+     * @throws IllegalStateException when either receiver is used from another thread or outside its callback.
+     */
+    public fun UiScope.ContainerBackground(
+        rows: Int = 3,
+        modifier: Modifier = Modifier.Empty,
+        key: ElementKey<*>? = null,
+    )
+
+    /**
+     * Emits one Minecraft 26.2 container Slot with an optional 16 by 16 item child.
+     *
+     * The component occupies the exact 18 by 18 pointer region used by `AbstractContainerScreen`, with the item child inset by one pixel.
+     * A highlighted Slot paints the native 24 by 24 back layer, then its child, then the native front layer, each overflowing three pixels beyond the component bounds.
+     * The enclosing [ContainerBackground] supplies ordinary empty-slot frame pixels; an unhighlighted empty Slot intentionally emits no draw command.
+     * Reusable pointer actions are supplied through active modifiers rather than component callbacks.
+     *
+     * @param highlightable whether pointer hover selects the native highlight layers.
+     * @param modifier active behavior applied to the Slot.
+     * @param key optional stable identity among direct siblings.
+     * @param content optional callback that must emit exactly one 16 by 16 item root when present.
+     * @throws IllegalArgumentException when [content] emits zero or multiple roots, its child does not measure to 16 by 16, or later constraints do not contain 18 by 18.
+     * @throws IllegalStateException when either receiver is used from another thread or outside its callback.
+     * @throws Throwable when [content] fails; the exact callback failure escapes unchanged and no Slot description is emitted.
+     */
+    public fun UiScope.Slot(
+        highlightable: Boolean = true,
+        modifier: Modifier = Modifier.Empty,
+        key: ElementKey<*>? = null,
+        content: (UiScope.() -> Unit)? = null,
+    )
+
+    /**
      * Creates one single-line printable-ASCII text element.
      *
      * Only [UiText.Literal] values containing U+0020 through U+007E are accepted.
@@ -40,7 +82,7 @@ public sealed interface MinecraftUiContext {
      * A later measure requires constraints containing that exact natural size; this component does not clip, wrap, shrink, or substitute unsupported text.
      *
      * @param text unresolved printable-ASCII literal retained unchanged for semantics.
-     * @param style typed profile-backed foreground and shadow layers.
+     * @param style typed profile-backed foreground and optional shadow layers.
      * @param modifier active behavior applied to the text.
      * @param key optional stable identity among direct siblings.
      * @throws IllegalArgumentException when the text is not a literal or contains an unsupported code point.

@@ -13,6 +13,16 @@ internal enum class DocumentedComponent(
     MenuBackground("MenuBackground", "menu-background"),
 
     /**
+     * The generic container-panel component identity.
+     */
+    ContainerBackground("ContainerBackground", "container-background"),
+
+    /**
+     * The container slot component identity.
+     */
+    Slot("Slot", "slot"),
+
+    /**
      * The text component identity.
      */
     Text("Text", "text"),

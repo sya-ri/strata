@@ -5,7 +5,6 @@ import dev.s7a.strata.dsl.Box
 import dev.s7a.strata.dsl.Column
 import dev.s7a.strata.dsl.Row
 import dev.s7a.strata.dsl.buildUi
-import dev.s7a.strata.element.Element
 import dev.s7a.strata.geometry.Insets
 import dev.s7a.strata.layout.Alignment
 import dev.s7a.strata.layout.HorizontalAlignment
@@ -14,15 +13,16 @@ import dev.s7a.strata.modifier.fillMaxSize
 import dev.s7a.strata.modifier.onPress
 import dev.s7a.strata.modifier.padding
 import dev.s7a.strata.modifier.size
-import dev.s7a.strata.runtime.minecraft.MinecraftUiContext
+import dev.s7a.strata.runtime.minecraft.MinecraftScreenDefinition
+import dev.s7a.strata.runtime.minecraft.createMinecraftScreenDefinition
 
 /**
  * Builds the deterministic Minecraft 26.2 ConfirmScreen content used by the Fabric and headless parity paths.
  *
- * @return callback-lifetime content reproducing the native title, message, and button-row geometry.
+ * @return one-shot screen definition reproducing the native title, message, and button-row geometry.
  */
-internal fun confirmScreenContent(): MinecraftUiContext.() -> Element =
-    {
+internal fun createConfirmScreenDefinition(): MinecraftScreenDefinition =
+    createMinecraftScreenDefinition("Strata parity") {
         buildUi {
             Box(
                 modifier = Modifier.Empty.size(320, 180),

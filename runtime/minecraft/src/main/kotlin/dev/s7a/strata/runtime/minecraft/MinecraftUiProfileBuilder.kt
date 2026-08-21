@@ -7,7 +7,7 @@ import dev.s7a.strata.spi.InternalStrataRuntimeApi
  * Callback-lifetime builder for one complete Minecraft UI profile.
  *
  * The builder is confined to its creator thread and rejects use after the profile callback returns.
- * Menu, Scroll, TextField, and Button declarations retain immutable image references, while glyph declarations synchronously copy a binary mask into eight derived immutable layers and retain no mask reference.
+ * Menu, container, Slot, Scroll, TextField, and Button declarations retain immutable image references, while glyph declarations synchronously copy a binary mask into nine derived immutable layers and retain no mask reference.
  * Every method rejects duplicate slots.
  */
 @InternalStrataRuntimeApi
@@ -22,6 +22,33 @@ public sealed interface MinecraftUiProfileBuilder {
      * @throws IllegalStateException when called from another thread or after the builder callback ends.
      */
     public fun menuBackground(image: DrawImage)
+
+    /**
+     * Supplies the exact 256 by 256 generic-container texture used by 26.2 chest screens.
+     *
+     * @param image immutable generic-container pixels.
+     * @throws IllegalArgumentException when the slot is duplicated or the image size is not 256 by 256.
+     * @throws IllegalStateException when called from another thread or after the builder callback ends.
+     */
+    public fun containerBackground(image: DrawImage)
+
+    /**
+     * Supplies the exact 24 by 24 back layer painted behind a highlighted container Slot.
+     *
+     * @param image immutable back-highlight pixels.
+     * @throws IllegalArgumentException when the slot is duplicated or the image size is not 24 by 24.
+     * @throws IllegalStateException when called from another thread or after the builder callback ends.
+     */
+    public fun slotHighlightBack(image: DrawImage)
+
+    /**
+     * Supplies the exact 24 by 24 front layer painted over a highlighted container Slot.
+     *
+     * @param image immutable front-highlight pixels.
+     * @throws IllegalArgumentException when the slot is duplicated or the image size is not 24 by 24.
+     * @throws IllegalStateException when called from another thread or after the builder callback ends.
+     */
+    public fun slotHighlightFront(image: DrawImage)
 
     /**
      * Supplies the exact 16 by 16 menu-list background texture.
