@@ -12,6 +12,13 @@ public enum class MinecraftSlotSource {
     PlayerInventory,
 
     /**
+     * Resolves a logical index in the one non-player Container exposed by the active server menu.
+     *
+     * A menu with no matching slot or with ambiguous matching slots from multiple Containers fails instead of selecting storage by declaration order.
+     */
+    Container,
+
+    /**
      * Resolves a raw slot index in the player's current active menu.
      */
     ActiveMenu,

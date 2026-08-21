@@ -112,12 +112,15 @@ internal class MinecraftRuntimeApiContractTest {
             MinecraftSlots::class.java.declaredMethods.filter { method ->
                 Modifier.isPublic(method.modifiers) && method.isSynthetic.not()
             }
-        assertEquals(setOf("playerInventory", "activeMenu"), methods.map { method -> method.name }.toSet())
+        assertEquals(setOf("playerInventory", "container", "activeMenu"), methods.map { method -> method.name }.toSet())
         methods.forEach { method ->
             assertTrue(Modifier.isStatic(method.modifiers))
             assertMethod(method, listOf(checkNotNull(Int::class.javaPrimitiveType)), MinecraftSlotBinding::class.java)
         }
-        assertEquals(setOf(MinecraftSlotSource.PlayerInventory, MinecraftSlotSource.ActiveMenu), MinecraftSlotSource.entries.toSet())
+        assertEquals(
+            setOf(MinecraftSlotSource.PlayerInventory, MinecraftSlotSource.Container, MinecraftSlotSource.ActiveMenu),
+            MinecraftSlotSource.entries.toSet(),
+        )
     }
 
     @Test

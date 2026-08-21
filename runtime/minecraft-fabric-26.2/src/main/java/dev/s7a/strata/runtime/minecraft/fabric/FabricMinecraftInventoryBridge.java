@@ -162,6 +162,9 @@ final class FabricMinecraftInventoryBridge implements MinecraftUiPlatform {
                         () -> new IllegalArgumentException("Player inventory index is not exposed by the active menu: " + index));
                 return menu.getSlot(menuIndex);
             }
+            if (locator.getSource() == MinecraftSlotSource.Container) {
+                return resolveContainerSlot(menu, player.getInventory(), index);
+            }
             if (locator.getSource() == MinecraftSlotSource.ActiveMenu) {
                 if (index < 0 || menu.slots.size() <= index) {
                     throw new IllegalArgumentException("Active menu slot index is outside the current menu: " + index);
@@ -200,6 +203,8 @@ final class FabricMinecraftInventoryBridge implements MinecraftUiPlatform {
             if (inventory.getContainerSize() <= index) {
                 throw new IllegalArgumentException("Player inventory index is outside the active inventory: " + index);
             }
+        } else if (locator.getSource() == MinecraftSlotSource.Container) {
+            resolveContainerSlot(activeMenu(), requirePlayer().getInventory(), index);
         } else if (locator.getSource() == MinecraftSlotSource.ActiveMenu) {
             if (activeMenu().slots.size() <= index) {
                 throw new IllegalArgumentException("Active menu slot index is outside the current menu: " + index);
@@ -566,6 +571,23 @@ final class FabricMinecraftInventoryBridge implements MinecraftUiPlatform {
 
     private AbstractContainerMenu activeMenu() {
         return requirePlayer().containerMenu;
+    }
+
+    private static Slot resolveContainerSlot(AbstractContainerMenu menu, Inventory playerInventory, int index) {
+        Slot resolved = null;
+        for (Slot slot : menu.slots) {
+            if (slot.container == playerInventory || slot.getContainerSlot() != index) {
+                continue;
+            }
+            if (resolved != null && resolved.container != slot.container) {
+                throw new IllegalArgumentException("Container slot index is ambiguous across the active menu: " + index);
+            }
+            resolved = slot;
+        }
+        if (resolved == null) {
+            throw new IllegalArgumentException("Container slot index is not exposed by the active menu: " + index);
+        }
+        return resolved;
     }
 
     private Minecraft requireMinecraft() {

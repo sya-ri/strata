@@ -173,7 +173,7 @@ ${tree(spec.tree)}
 
     private fun modifierGuidance(component: DocumentedComponent): String =
         when (component) {
-            DocumentedComponent.Slot -> "Sizing is native-fixed at 18 by 18. `Slot(bind = MinecraftSlots.playerInventory(index))` binds player inventory while `MinecraftSlots.activeMenu(index)` covers vanilla and custom container menus; the optional-content overload remains portable for custom item visuals."
+            DocumentedComponent.Slot -> "Sizing is native-fixed at 18 by 18. `MinecraftSlots.playerInventory(index)` binds player storage, `MinecraftSlots.container(index)` addresses logical storage exposed by chests, ender chests, furnaces, and custom server menus, and `MinecraftSlots.activeMenu(index)` remains the raw-menu escape hatch; the optional-content overload remains portable for custom item visuals."
             DocumentedComponent.Text -> "Ordinary sizing, padding, placement, and paint modifiers compose around `Text`; text content remains a typed component argument."
             DocumentedComponent.TextField -> "Pointer, keyboard, committed-character, preedit, and focus modifiers run as active retained behavior around `TextField`; a consuming focused modifier overrides built-in editing."
             DocumentedComponent.Button -> "Pointer behavior is active modifier behavior. `onPointerEvent`, `onPress`, `onRelease`, `onMove`, `onDrag`, `onScroll`, and `onHover` can be composed without adding component-specific callback parameters."

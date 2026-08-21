@@ -92,7 +92,7 @@ public fun UiScope.Slot(
  * This overload therefore requires a versioned Minecraft platform host and is intentionally unsupported by a portable-only host.
  *
  * @receiver active owner-thread UI scope supplied by [createMinecraftScreenDefinition] or a nested component callback.
- * @param bind immutable player-inventory or active-menu locator created by [MinecraftSlots].
+ * @param bind immutable player-inventory, logical Container, or raw active-menu locator created by [MinecraftSlots].
  * @param highlightable whether pointer hover selects the native highlight layers.
  * @param modifier active behavior applied to the Slot before built-in inventory handling.
  * @param key optional stable identity among direct siblings.

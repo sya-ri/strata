@@ -86,11 +86,17 @@ internal class MinecraftSynchronizedSlotTest {
         assertSame(MinecraftSlotSource.PlayerInventory, player.source)
         assertEquals(7, player.index)
 
+        val container = MinecraftSlots.container(2)
+        assertEquals(container, MinecraftSlots.container(2))
+        assertSame(MinecraftSlotSource.Container, container.source)
+        assertEquals(2, container.index)
+
         val active = MinecraftSlots.activeMenu(3)
         assertEquals(active, MinecraftSlots.activeMenu(3))
         assertSame(MinecraftSlotSource.ActiveMenu, active.source)
         assertEquals(3, active.index)
         assertThrows(IllegalArgumentException::class.java) { MinecraftSlots.playerInventory(-1) }
+        assertThrows(IllegalArgumentException::class.java) { MinecraftSlots.container(-1) }
         assertThrows(IllegalArgumentException::class.java) { MinecraftSlots.activeMenu(-1) }
 
         val platform = FakePlatform(active)

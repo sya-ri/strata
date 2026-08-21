@@ -19,9 +19,22 @@ public object MinecraftSlots {
     public fun playerInventory(index: Int): MinecraftSlotBinding = create(MinecraftSlotSource.PlayerInventory, index)
 
     /**
+     * Locates one logical slot index in the non-player Container exposed by the current server-owned menu.
+     *
+     * This is independent of where a chest, ender chest, furnace, or custom Container places its slots within the menu.
+     * Menus that expose multiple non-player Containers with the same logical index must use [activeMenu] to select an unambiguous raw menu slot.
+     *
+     * @param index non-negative logical Container slot index.
+     * @return an immutable reusable locator.
+     * @throws IllegalArgumentException when [index] is negative.
+     */
+    @JvmStatic
+    public fun container(index: Int): MinecraftSlotBinding = create(MinecraftSlotSource.Container, index)
+
+    /**
      * Locates one raw slot index in the player's current active menu.
      *
-     * This covers vanilla chests, ender chests, furnaces, and custom server-authoritative menus without exposing their version-specific types.
+     * This is the explicit escape hatch for menus with multiple backing Containers or a purpose-specific slot ordering.
      *
      * @param index non-negative active-menu slot index.
      * @return an immutable reusable locator.

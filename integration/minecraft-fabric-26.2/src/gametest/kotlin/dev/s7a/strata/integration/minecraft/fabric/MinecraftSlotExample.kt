@@ -87,14 +87,16 @@ internal fun createSlotScreenDefinition(): MinecraftScreenDefinition =
 /**
  * Builds a generic chest-shaped screen whose lower 36 Slots are bound to the active player's inventory.
  *
- * The upper grid remains empty because this standalone showcase is not opened by a server-owned container menu; real container screens bind those cells with [MinecraftSlots.activeMenu].
+ * The upper grid remains empty unless [primaryContainerBinding] is supplied by a server-owned container test.
  * The returned definition requires the Fabric version adapter and is not renderable by the portable-only headless host.
  *
- * @param primarySlotBinding binding used by the first hotbar cell so loaded tests can cover either locator family.
+ * @param primaryPlayerBinding binding used by the first hotbar cell.
+ * @param primaryContainerBinding optional binding used by the first upper Container cell.
  * @return one-shot screen definition used to verify live item rendering and authoritative container input in a loaded client.
  */
 internal fun createInventorySlotScreenDefinition(
-    primarySlotBinding: MinecraftSlotBinding = MinecraftSlots.playerInventory(0),
+    primaryPlayerBinding: MinecraftSlotBinding = MinecraftSlots.playerInventory(0),
+    primaryContainerBinding: MinecraftSlotBinding? = null,
 ): MinecraftScreenDefinition =
     createMinecraftScreenDefinition("Synchronized inventory") {
         Box(
@@ -122,9 +124,12 @@ internal fun createInventorySlotScreenDefinition(
                 )
                 repeat(3) { row ->
                     repeat(9) { column ->
-                        Slot(
-                            modifier = Modifier.Empty.padding(left = 7 + column * 18, top = 17 + row * 18),
-                        )
+                        val cellModifier = Modifier.Empty.padding(left = 7 + column * 18, top = 17 + row * 18)
+                        if (row == 0 && column == 0 && primaryContainerBinding != null) {
+                            Slot(bind = primaryContainerBinding, modifier = cellModifier)
+                        } else {
+                            Slot(modifier = cellModifier)
+                        }
                     }
                 }
                 repeat(3) { row ->
@@ -137,7 +142,7 @@ internal fun createInventorySlotScreenDefinition(
                 }
                 repeat(9) { column ->
                     Slot(
-                        bind = if (column == 0) primarySlotBinding else MinecraftSlots.playerInventory(column),
+                        bind = if (column == 0) primaryPlayerBinding else MinecraftSlots.playerInventory(column),
                         modifier = Modifier.Empty.padding(left = 7 + column * 18, top = 142),
                     )
                 }
