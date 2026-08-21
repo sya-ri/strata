@@ -129,6 +129,11 @@ internal class ExternalMinecraftUiHostIntegrationTest {
     private fun profile() =
         createMinecraftUiProfile {
             menuBackground(image(IntSize(16, 16)))
+            listBackground(image(IntSize(16, 16)))
+            listHeaderSeparator(image(IntSize(32, 2)))
+            listFooterSeparator(image(IntSize(32, 2)))
+            scrollbarBackground(image(IntSize(6, 32)))
+            scrollbarThumb(image(IntSize(6, 32)))
             for (codePoint in 0x21..0x7E) {
                 printableAsciiGlyph(codePoint, image(IntSize(8, 8)))
             }

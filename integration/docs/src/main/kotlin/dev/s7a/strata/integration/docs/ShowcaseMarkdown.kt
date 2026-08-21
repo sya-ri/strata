@@ -20,8 +20,8 @@ internal object ShowcaseMarkdown {
 
 # Minecraft component showcase
 
-These deterministic crops come from a real Minecraft 26.2 `ConfirmScreen` reconstructed with Strata's `MenuBackground`, `Text`, and `Button` components.
-One loaded Fabric GameTest requires exact ARGB equality among the native screen, the Fabric adapter, and the headless frame before it emits these component images.
+These deterministic crops come from a real Minecraft 26.2 `ConfirmScreen` and a native `ObjectSelectionList` screen reconstructed with Strata's `MenuBackground`, `Text`, `Button`, and `Scroll` components.
+One loaded Fabric GameTest requires exact ARGB equality among each native screen, the Fabric adapter, and the headless frame before it emits these component images.
 
 [Open the machine-readable parity receipt](minecraft-26.2-parity.properties)
 
@@ -152,6 +152,7 @@ ${tree(spec.tree)}
             DocumentedComponent.MenuBackground -> "`Modifier.fillMaxSize()` supplies the finite viewport that `MenuBackground` fills with the active Minecraft menu texture."
             DocumentedComponent.Text -> "Ordinary sizing, padding, placement, and paint modifiers compose around `Text`; text content remains a typed component argument."
             DocumentedComponent.Button -> "Pointer behavior is active modifier behavior. `onPointerEvent`, `onPress`, `onRelease`, `onMove`, `onDrag`, `onScroll`, and `onHover` can be composed without adding component-specific callback parameters."
+            DocumentedComponent.Scroll -> "Ordinary sizing and placement modifiers define the viewport. Pointer action modifiers compose outside the component while native wheel and scrollbar motion remain retained Scroll behavior."
         }
 
     private fun parentScopeGuidance(component: DocumentedComponent): String =
@@ -159,6 +160,7 @@ ${tree(spec.tree)}
             DocumentedComponent.MenuBackground -> "`MenuBackground` is a member extension on the active `UiScope`. The runtime supplies `MinecraftUiContext` implicitly for the screen-content callback; application code never names or retains it."
             DocumentedComponent.Text -> "`Text` is a member extension on the active `UiScope`. The runtime supplies `MinecraftUiContext` implicitly, and the component has no content callback or parent-data API."
             DocumentedComponent.Button -> "`Button` is a member extension on the active `UiScope`. The runtime supplies `MinecraftUiContext` implicitly, and pointer event modifiers remain valid only through their retained modifier-node lifetime."
+            DocumentedComponent.Scroll -> "`Scroll` is a member extension on the active `UiScope`. Its callback emits exactly one content root, remains callback-lifetime and owner-thread confined, and may use the same implicit Minecraft component DSL."
         }
 
     private fun typedSummary(component: DocumentedComponent): String =
@@ -166,6 +168,7 @@ ${tree(spec.tree)}
             DocumentedComponent.MenuBackground -> "MenuBackground paints the selected Minecraft menu texture with the same tiling, clipping, and draw order as the verified native screen."
             DocumentedComponent.Text -> "Text renders a printable-ASCII literal with the extracted Minecraft glyph advances, shadow layer, foreground layer, and native baseline."
             DocumentedComponent.Button -> "Button renders the verified 150 by 20 Minecraft sprite and label states while reusable input actions live in modifiers."
+            DocumentedComponent.Scroll -> "Scroll reproduces the verified Minecraft 26.2 menu-list background, clipped centered content, separators, tiled scrollbar sprites, wheel rate, and proportional thumb movement in native draw order."
         }
 
     private fun details(details: List<ShowcaseTreeDetail>): String = if (details.isEmpty()) "" else " [${details.joinToString(", ") { detail -> ShowcaseDetailMarkdown.text(detail) }}]"

@@ -1,6 +1,7 @@
 package dev.s7a.strata.runtime.minecraft
 
 import dev.s7a.strata.dsl.UiScope
+import dev.s7a.strata.dsl.buildUi
 import dev.s7a.strata.element.Element
 import dev.s7a.strata.element.ElementKey
 import dev.s7a.strata.geometry.IntSize
@@ -68,12 +69,15 @@ internal object MinecraftProfileImplementation {
         evaluator.release()
     }
 
+    @Suppress("TooManyFunctions")
     private class Builder : MinecraftUiProfileBuilder {
         private val ownerThread = Thread.currentThread()
         private val menuSize = IntSize(16, 16)
         private val glyphSize = IntSize(8, 8)
         private val buttonSize = IntSize(200, 20)
         private val renderedButtonSize = IntSize(150, 20)
+        private val listSeparatorSize = IntSize(32, 2)
+        private val scrollbarSize = IntSize(6, 32)
         private val glyphRange = 0x21..0x7E
         private val transparentWhite = ArgbColor(0x00FFFFFF)
         private val opaqueWhite = ArgbColor(-1)
@@ -83,6 +87,11 @@ internal object MinecraftProfileImplementation {
         private val glyphs = LinkedHashMap<Int, MinecraftGlyphSnapshot>()
         private var active = true
         private var menu: DrawImage? = null
+        private var listBackground: DrawImage? = null
+        private var listHeaderSeparator: DrawImage? = null
+        private var listFooterSeparator: DrawImage? = null
+        private var scrollbarBackground: DrawImage? = null
+        private var scrollbarThumb: DrawImage? = null
         private var normalButton: MinecraftButtonSpriteSnapshot? = null
         private var highlightedButton: MinecraftButtonSpriteSnapshot? = null
         private var disabledButton: MinecraftButtonSpriteSnapshot? = null
@@ -94,6 +103,41 @@ internal object MinecraftProfileImplementation {
                 "Menu background must be 16 by 16 pixels."
             }
             menu = image
+        }
+
+        override fun listBackground(image: DrawImage) {
+            checkUsable()
+            require(listBackground == null) { "List background was already declared." }
+            require(image.size == menuSize) { "List background must be 16 by 16 pixels." }
+            listBackground = image
+        }
+
+        override fun listHeaderSeparator(image: DrawImage) {
+            checkUsable()
+            require(listHeaderSeparator == null) { "List header separator was already declared." }
+            require(image.size == listSeparatorSize) { "List header separator must be 32 by 2 pixels." }
+            listHeaderSeparator = image
+        }
+
+        override fun listFooterSeparator(image: DrawImage) {
+            checkUsable()
+            require(listFooterSeparator == null) { "List footer separator was already declared." }
+            require(image.size == listSeparatorSize) { "List footer separator must be 32 by 2 pixels." }
+            listFooterSeparator = image
+        }
+
+        override fun scrollbarBackground(image: DrawImage) {
+            checkUsable()
+            require(scrollbarBackground == null) { "Scrollbar background was already declared." }
+            require(image.size == scrollbarSize) { "Scrollbar background must be 6 by 32 pixels." }
+            scrollbarBackground = image
+        }
+
+        override fun scrollbarThumb(image: DrawImage) {
+            checkUsable()
+            require(scrollbarThumb == null) { "Scrollbar thumb was already declared." }
+            require(image.size == scrollbarSize) { "Scrollbar thumb must be 6 by 32 pixels." }
+            scrollbarThumb = image
         }
 
         override fun printableAsciiGlyph(
@@ -151,6 +195,11 @@ internal object MinecraftProfileImplementation {
             }
             return ProfileSnapshot.create(
                 menuBackground = requireNotNull(menu) { "Menu background must be declared." },
+                listBackground = requireNotNull(listBackground) { "List background must be declared." },
+                listHeaderSeparator = requireNotNull(listHeaderSeparator) { "List header separator must be declared." },
+                listFooterSeparator = requireNotNull(listFooterSeparator) { "List footer separator must be declared." },
+                scrollbarBackground = requireNotNull(scrollbarBackground) { "Scrollbar background must be declared." },
+                scrollbarThumb = requireNotNull(scrollbarThumb) { "Scrollbar thumb must be declared." },
                 glyphs = glyphs,
                 normalButton = requireNotNull(normalButton) { "Normal Button sprite must be declared." },
                 highlightedButton = requireNotNull(highlightedButton) { "Highlighted Button sprite must be declared." },
@@ -162,6 +211,11 @@ internal object MinecraftProfileImplementation {
             active = false
             glyphs.clear()
             menu = null
+            listBackground = null
+            listHeaderSeparator = null
+            listFooterSeparator = null
+            scrollbarBackground = null
+            scrollbarThumb = null
             normalButton = null
             highlightedButton = null
             disabledButton = null
@@ -232,6 +286,11 @@ internal object MinecraftProfileImplementation {
 
     private class ProfileSnapshot private constructor(
         val menuBackground: DrawImage,
+        val listBackground: DrawImage,
+        val listHeaderSeparator: DrawImage,
+        val listFooterSeparator: DrawImage,
+        val scrollbarBackground: DrawImage,
+        val scrollbarThumb: DrawImage,
         glyphs: Map<Int, MinecraftGlyphSnapshot>,
         val normalButton: MinecraftButtonSpriteSnapshot,
         val highlightedButton: MinecraftButtonSpriteSnapshot,
@@ -247,6 +306,11 @@ internal object MinecraftProfileImplementation {
              *
              * @param menuBackground immutable menu image.
              * @param glyphs complete printable-ASCII glyph map.
+             * @param listBackground immutable menu-list background image.
+             * @param listHeaderSeparator immutable menu-list header separator.
+             * @param listFooterSeparator immutable menu-list footer separator.
+             * @param scrollbarBackground immutable scrollbar-track sprite.
+             * @param scrollbarThumb immutable scrollbar-thumb sprite.
              * @param normalButton normal sprite policy.
              * @param highlightedButton highlighted sprite policy.
              * @param disabledButton disabled sprite policy.
@@ -255,11 +319,28 @@ internal object MinecraftProfileImplementation {
             @JvmSynthetic
             internal fun create(
                 menuBackground: DrawImage,
+                listBackground: DrawImage,
+                listHeaderSeparator: DrawImage,
+                listFooterSeparator: DrawImage,
+                scrollbarBackground: DrawImage,
+                scrollbarThumb: DrawImage,
                 glyphs: Map<Int, MinecraftGlyphSnapshot>,
                 normalButton: MinecraftButtonSpriteSnapshot,
                 highlightedButton: MinecraftButtonSpriteSnapshot,
                 disabledButton: MinecraftButtonSpriteSnapshot,
-            ): ProfileSnapshot = ProfileSnapshot(menuBackground, glyphs, normalButton, highlightedButton, disabledButton)
+            ): ProfileSnapshot =
+                ProfileSnapshot(
+                    menuBackground,
+                    listBackground,
+                    listHeaderSeparator,
+                    listFooterSeparator,
+                    scrollbarBackground,
+                    scrollbarThumb,
+                    glyphs,
+                    normalButton,
+                    highlightedButton,
+                    disabledButton,
+                )
         }
     }
 
@@ -310,6 +391,30 @@ internal object MinecraftProfileImplementation {
                     inactiveText,
                     normalText.text,
                     enabled,
+                    modifier,
+                    key,
+                ),
+            )
+        }
+
+        override fun UiScope.Scroll(
+            modifier: Modifier,
+            key: ElementKey<*>?,
+            scrollRate: Int,
+            content: UiScope.() -> Unit,
+        ) {
+            val currentProfile = requireProfile()
+            require(0 < scrollRate) { "Minecraft Scroll rate must be positive." }
+            val child = buildUi(content)
+            element(
+                createMinecraftScrollElement(
+                    currentProfile.listBackground,
+                    currentProfile.listHeaderSeparator,
+                    currentProfile.listFooterSeparator,
+                    currentProfile.scrollbarBackground,
+                    currentProfile.scrollbarThumb,
+                    scrollRate,
+                    child,
                     modifier,
                     key,
                 ),

@@ -12,7 +12,7 @@ import dev.s7a.strata.text.UiText
  *
  * The context is confined to the thread and dynamic extent of its screen-content callback.
  * Calls from another thread or after the callback returns fail before retaining arguments.
- * Member extensions emit directly into the active [UiScope], so application code uses [MenuBackground], [Text], and [Button] without naming or retaining this context.
+ * Member extensions emit directly into the active [UiScope], so application code uses [MenuBackground], [Text], [Button], and [Scroll] without naming or retaining this context.
  */
 public sealed interface MinecraftUiContext {
     /**
@@ -117,4 +117,28 @@ public sealed interface MinecraftUiContext {
     ) {
         Button(UiText.Literal(label), enabled, modifier, key)
     }
+
+    /**
+     * Emits one Minecraft 26.2 menu-list scroll viewport containing exactly one root description.
+     *
+     * Measurement fills finite maximum constraints and measures the content with a bounded width and unbounded height.
+     * The content is centered horizontally, begins two logical pixels below the viewport before scrolling, and is clipped to the viewport for paint and pointer hit testing.
+     * The component paints the active list texture before its content, then paints the header separator, footer separator, scrollbar track, and scrollbar thumb in native order.
+     * Positive logical vertical scroll input moves toward later content, and primary-button scrollbar dragging follows the native proportional displacement while the pointer remains in the viewport.
+     *
+     * @param modifier active behavior applied to the scroll viewport.
+     * @param key optional stable identity among direct siblings.
+     * @param scrollRate positive logical displacement multiplier; the Language screen uses the default value of nine.
+     * @param content callback that must emit exactly one content root.
+     * @throws IllegalArgumentException when [scrollRate] is not positive or [content] emits zero or multiple roots.
+     * @throws ArithmeticException when checked viewport, content, tiling, or scrollbar arithmetic overflows.
+     * @throws IllegalStateException when either receiver is used from another thread or outside its callback.
+     * @throws Throwable when [content] fails; the exact callback failure escapes unchanged and no Scroll description is emitted.
+     */
+    public fun UiScope.Scroll(
+        modifier: Modifier = Modifier.Empty,
+        key: ElementKey<*>? = null,
+        scrollRate: Int = 9,
+        content: UiScope.() -> Unit,
+    )
 }

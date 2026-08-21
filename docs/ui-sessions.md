@@ -19,8 +19,9 @@ Session detach retains the active `UiTree` and its node ownership; it clears act
 The common `runtime:minecraft` adapter consumes a one-shot screen definition and a complete immutable profile.
 Definition close and host transfer race atomically, and a transferred host exposes only owner-thread metadata, lifecycle, fixed-viewport frames, and pointer input.
 Its screen-content callback provides an implicit Minecraft component receiver around ordinary `buildUi` scopes.
-Application code emits `MenuBackground`, `Text`, and `Button` directly; `Text` and `Button` accept either `String` literals or unresolved `UiText` values.
+Application code emits `MenuBackground`, `Text`, `Button`, and `Scroll` directly; `Text` and `Button` accept either `String` literals or unresolved `UiText` values.
 The fixed-size profile-backed Button owns appearance, hover visuals, and enabled semantics, while reusable press, release, move, scroll, raw pointer, and hover actions are active modifiers shared with other component kinds.
+Scroll owns the active 26.2 menu-list background, child clipping, separators, scrollbar sprites, retained wheel offset, proportional thumb dragging, and the native background-to-content-to-overlay paint order.
 The button contract does not claim focus, keyboard, sound, or a native widget system, and it does not expose resources, native Minecraft values, renderers, input mappers, or task facilities.
 
 ## Ownership and lifecycle

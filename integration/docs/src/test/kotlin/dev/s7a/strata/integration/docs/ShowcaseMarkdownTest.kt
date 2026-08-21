@@ -22,7 +22,7 @@ internal class ShowcaseMarkdownTest {
         val index = ShowcaseMarkdown.index(overview, pages)
         assertTrue(index.startsWith("<!-- Generated file. Do not edit. -->\n\n# Minecraft component showcase\n"))
         assertTrue(index.contains("real Minecraft 26.2 `ConfirmScreen`"))
-        assertTrue(index.contains("- [MenuBackground](menu-background.md)\n- [Text](text.md)\n- [Button](button.md)"))
+        assertTrue(index.contains("- [MenuBackground](menu-background.md)\n- [Text](text.md)\n- [Button](button.md)\n- [Scroll](scroll.md)"))
         assertTrue(index.contains("The tree shows Minecraft components in logical draw order"))
         assertTrue(index.contains(overview.source))
         assertTrue(index.contains("exact ARGB equality"))
@@ -82,6 +82,7 @@ internal class ShowcaseMarkdownTest {
                     ShowcaseTreeDetail.RowDefaultAlignment(VerticalAlignment.Center),
                     ShowcaseTreeDetail.ColumnDefaultAlignment(HorizontalAlignment.Center),
                     ShowcaseTreeDetail.BoxContentAlignment(Alignment.Center),
+                    ShowcaseTreeDetail.ScrollRate(9),
                 ),
             )
         val rendered = ShowcaseMarkdown.tree(tree)
@@ -100,8 +101,10 @@ internal class ShowcaseMarkdownTest {
             "RowDefaultAlignment(alignment=Center)",
             "ColumnDefaultAlignment(alignment=Center)",
             "BoxContentAlignment(alignment=Center)",
+            "ScrollRate(value=9)",
         ).forEach { detail -> assertTrue(rendered.contains(detail)) }
-        val buttonPage = ShowcaseMarkdown.page(ShowcaseScenarioCatalog.components.last(), "import sample\ninternal fun button() {}")
+        val buttonScenario = ShowcaseScenarioCatalog.components.single { scenario -> scenario.component == DocumentedComponent.Button }
+        val buttonPage = ShowcaseMarkdown.page(buttonScenario, "import sample\ninternal fun button() {}")
         assertTrue(buttonPage.contains("# Button"))
         assertTrue(buttonPage.contains("reusable input actions live in modifiers"))
         assertTrue(buttonPage.contains("runtime supplies `MinecraftUiContext` implicitly"))

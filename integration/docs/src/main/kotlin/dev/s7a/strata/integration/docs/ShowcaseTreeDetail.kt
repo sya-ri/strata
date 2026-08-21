@@ -81,6 +81,13 @@ internal sealed interface ShowcaseTreeDetail {
     ) : ShowcaseTreeDetail
 
     /**
+     * A Minecraft Scroll logical wheel-displacement multiplier.
+     */
+    data class ScrollRate(
+        internal val value: Int,
+    ) : ShowcaseTreeDetail
+
+    /**
      * A linear child arrangement.
      */
     data class Arrangement(

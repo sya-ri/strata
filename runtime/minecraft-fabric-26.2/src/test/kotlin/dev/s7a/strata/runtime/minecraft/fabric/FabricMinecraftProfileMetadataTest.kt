@@ -33,11 +33,40 @@ internal class FabricMinecraftProfileMetadataTest {
         }
     }
 
+    @Test
+    fun acceptsThe26Point2ScrollbarNineSliceValues() {
+        assertDoesNotThrow { validateMinecraftScrollbarScaling(scrollbarNineSlice()) }
+    }
+
+    @Test
+    fun rejectsMismatchedScrollbarScalingContract() {
+        val variants =
+            listOf(
+                GuiSpriteScaling.Stretch(),
+                scrollbarNineSlice(width = 5),
+                scrollbarNineSlice(height = 31),
+                scrollbarNineSlice(borderValue = GuiSpriteScaling.NineSlice.Border(1, 2, 1, 1)),
+                scrollbarNineSlice(stretchInner = true),
+            )
+        variants.forEach { scaling ->
+            assertThrows(IllegalArgumentException::class.java) {
+                validateMinecraftScrollbarScaling(scaling)
+            }
+        }
+    }
+
     private fun nineSlice(
         border: Int,
         width: Int = 200,
         height: Int = 20,
         stretchInner: Boolean = false,
         borderValue: GuiSpriteScaling.NineSlice.Border = GuiSpriteScaling.NineSlice.Border(border, border, border, border),
+    ): GuiSpriteScaling.NineSlice = GuiSpriteScaling.NineSlice(width, height, borderValue, stretchInner)
+
+    private fun scrollbarNineSlice(
+        width: Int = 6,
+        height: Int = 32,
+        stretchInner: Boolean = false,
+        borderValue: GuiSpriteScaling.NineSlice.Border = GuiSpriteScaling.NineSlice.Border(1, 1, 1, 1),
     ): GuiSpriteScaling.NineSlice = GuiSpriteScaling.NineSlice(width, height, borderValue, stretchInner)
 }

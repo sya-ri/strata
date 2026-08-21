@@ -45,6 +45,11 @@ public fun extractMinecraftUiProfile(): MinecraftUiProfile {
     }
     val manager = minecraft.getResourceManager()
     val menu = manager.readImage("textures/gui/menu_background.png", IntSize(16, 16))
+    val listBackground = manager.readImage("textures/gui/menu_list_background.png", IntSize(16, 16))
+    val headerSeparator = manager.readImage("textures/gui/header_separator.png", IntSize(32, 2))
+    val footerSeparator = manager.readImage("textures/gui/footer_separator.png", IntSize(32, 2))
+    val scrollbarBackground = manager.readScrollbarImage("textures/gui/sprites/widget/scroller_background.png")
+    val scrollbarThumb = manager.readScrollbarImage("textures/gui/sprites/widget/scroller.png")
     val normal = manager.readNineSliceImage("textures/gui/sprites/widget/button.png", 3)
     val highlighted = manager.readNineSliceImage("textures/gui/sprites/widget/button_highlighted.png", 3)
     val disabled = manager.readNineSliceImage("textures/gui/sprites/widget/button_disabled.png", 1)
@@ -55,6 +60,11 @@ public fun extractMinecraftUiProfile(): MinecraftUiProfile {
 
     return createMinecraftUiProfile {
         menuBackground(menu)
+        listBackground(listBackground)
+        listHeaderSeparator(headerSeparator)
+        listFooterSeparator(footerSeparator)
+        scrollbarBackground(scrollbarBackground)
+        scrollbarThumb(scrollbarThumb)
         buttonNormal(normal, 3, MinecraftNineSliceCenterMode.Tiled)
         buttonHighlighted(highlighted, 3, MinecraftNineSliceCenterMode.Tiled)
         buttonDisabled(disabled, 1, MinecraftNineSliceCenterMode.Tiled)
@@ -97,6 +107,17 @@ private fun ResourceManager.readNineSliceImage(
             IllegalArgumentException("Minecraft button resource $path has no GUI metadata.")
         }
     validateMinecraftNineSliceScaling(metadata.scaling(), expectedBorder)
+    return image
+}
+
+private fun ResourceManager.readScrollbarImage(path: String): DrawImage {
+    val resource = requiredResource(path)
+    val image = readImage(resource, path, scrollbarImageSize)
+    val metadata =
+        resource.metadata().getSection(GuiMetadataSection.TYPE).orElseThrow {
+            IllegalArgumentException("Minecraft scrollbar resource $path has no GUI metadata.")
+        }
+    validateMinecraftScrollbarScaling(metadata.scaling())
     return image
 }
 
@@ -179,7 +200,34 @@ internal fun validateMinecraftNineSliceScaling(
     }
 }
 
+/**
+ * Validates one decoded 26.2 scrollbar scaling value without retaining its resource.
+ *
+ * @param scaling typed GUI scaling selected with the scrollbar image resource.
+ * @throws IllegalArgumentException when the scaling differs from the fixed 26.2 six-by-thirty-two, one-pixel-border, tiled-center contract.
+ */
+@JvmSynthetic
+internal fun validateMinecraftScrollbarScaling(scaling: GuiSpriteScaling) {
+    require(scaling is GuiSpriteScaling.NineSlice) {
+        "Minecraft scrollbar metadata must use nine-slice scaling."
+    }
+    require(scaling.width() == scrollbarImageSize.width) {
+        "Minecraft scrollbar metadata must use a 6 pixel source width."
+    }
+    require(scaling.height() == scrollbarImageSize.height) {
+        "Minecraft scrollbar metadata must use a 32 pixel source height."
+    }
+    val border = scaling.border()
+    require(border.left() == 1 && border.top() == 1 && border.right() == 1 && border.bottom() == 1) {
+        "Minecraft scrollbar metadata must use one-pixel borders."
+    }
+    require(scaling.stretchInner().not()) {
+        "Minecraft scrollbar metadata must keep the center tiled."
+    }
+}
+
 private val buttonImageSize: IntSize = IntSize(200, 20)
+private val scrollbarImageSize: IntSize = IntSize(6, 32)
 private val printableAsciiRange: IntRange = 0x21..0x7E
 private val transparentMaskPixel: ArgbColor = ArgbColor(0x00FFFFFF)
 private val opaqueMaskPixel: ArgbColor = ArgbColor(-1)

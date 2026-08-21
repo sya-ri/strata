@@ -102,6 +102,43 @@ internal class MinecraftUiProfileTest {
                 buttonDisabled(buttonImage(), 1, MinecraftNineSliceCenterMode.Tiled)
             }
         }
+        ScrollAsset.entries.forEach { duplicate ->
+            assertThrows(IllegalArgumentException::class.java) {
+                createMinecraftUiProfile {
+                    completeMenuAndGlyphs()
+                    declareScrollAsset(duplicate)
+                }
+            }
+        }
+    }
+
+    @Test
+    fun eachRequiredScrollAssetIsRequiredAndHasAnExactSize() {
+        ScrollAsset.entries.forEach { omitted ->
+            assertThrows(IllegalArgumentException::class.java) {
+                createMinecraftUiProfile {
+                    menuBackground(image(IntSize(16, 16)))
+                    completeScrollAssets(omitted)
+                    completeGlyphs()
+                    completeButtons()
+                }
+            }
+        }
+        val wrongSizes =
+            mapOf(
+                ScrollAsset.ListBackground to IntSize(15, 16),
+                ScrollAsset.HeaderSeparator to IntSize(31, 2),
+                ScrollAsset.FooterSeparator to IntSize(32, 1),
+                ScrollAsset.ScrollbarBackground to IntSize(5, 32),
+                ScrollAsset.ScrollbarThumb to IntSize(6, 31),
+            )
+        wrongSizes.forEach { (slot, size) ->
+            assertThrows(IllegalArgumentException::class.java) {
+                createMinecraftUiProfile {
+                    declareScrollAsset(slot, size)
+                }
+            }
+        }
     }
 
     @Test
@@ -334,7 +371,26 @@ internal class MinecraftUiProfileTest {
         glyphMask: (Int) -> DrawImage = { image(IntSize(8, 8)) },
     ) {
         menuBackground(menu)
+        completeScrollAssets()
         completeGlyphs(glyphMask)
+    }
+
+    private fun MinecraftUiProfileBuilder.completeScrollAssets(omitted: ScrollAsset? = null) {
+        ScrollAsset.entries.filter { slot -> slot != omitted }.forEach { slot -> declareScrollAsset(slot) }
+    }
+
+    private fun MinecraftUiProfileBuilder.declareScrollAsset(
+        slot: ScrollAsset,
+        size: IntSize = slot.size,
+    ) {
+        val asset = image(size)
+        when (slot) {
+            ScrollAsset.ListBackground -> listBackground(asset)
+            ScrollAsset.HeaderSeparator -> listHeaderSeparator(asset)
+            ScrollAsset.FooterSeparator -> listFooterSeparator(asset)
+            ScrollAsset.ScrollbarBackground -> scrollbarBackground(asset)
+            ScrollAsset.ScrollbarThumb -> scrollbarThumb(asset)
+        }
     }
 
     private fun MinecraftUiProfileBuilder.completeGlyphs(
@@ -360,6 +416,16 @@ internal class MinecraftUiProfileTest {
         buttonNormal(button, 1, MinecraftNineSliceCenterMode.Tiled)
         buttonHighlighted(button, 1, MinecraftNineSliceCenterMode.Tiled)
         buttonDisabled(button, 1, MinecraftNineSliceCenterMode.Tiled)
+    }
+
+    private enum class ScrollAsset(
+        val size: IntSize,
+    ) {
+        ListBackground(IntSize(16, 16)),
+        HeaderSeparator(IntSize(32, 2)),
+        FooterSeparator(IntSize(32, 2)),
+        ScrollbarBackground(IntSize(6, 32)),
+        ScrollbarThumb(IntSize(6, 32)),
     }
 
     private fun buttonImage(): DrawImage = image(IntSize(200, 20))

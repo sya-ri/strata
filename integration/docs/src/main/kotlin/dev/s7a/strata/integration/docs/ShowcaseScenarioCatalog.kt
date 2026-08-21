@@ -7,7 +7,7 @@ import dev.s7a.strata.geometry.IntSize
  */
 internal object ShowcaseScenarioCatalog {
     /**
-     * Component scenarios in the required MenuBackground, Text, Button order.
+     * Component scenarios in the required MenuBackground, Text, Button, Scroll order.
      */
     internal val components: List<ComponentScenario> =
         listOf(
@@ -40,6 +40,21 @@ internal object ShowcaseScenarioCatalog {
                     ),
                 viewportMetadata = ShowcaseViewport(IntSize(150, 20), 1),
                 tree = tree(DocumentedComponent.Button, emptyList()),
+            ),
+            ComponentScenario(
+                component = DocumentedComponent.Scroll,
+                source =
+                    SourceReference(
+                        "integration/minecraft-fabric-26.2/src/gametest/kotlin/dev/s7a/strata/integration/minecraft/fabric/MinecraftScrollExample.kt",
+                        "scroll",
+                    ),
+                viewportMetadata = ShowcaseViewport(IntSize(320, 94), 1),
+                tree =
+                    tree(
+                        DocumentedComponent.Scroll,
+                        listOf(ShowcaseTreeDetail.Size(320, 94), ShowcaseTreeDetail.ScrollRate(9)),
+                        *Array(12) { tree(DocumentedComponent.Text, emptyList()) },
+                    ),
             ),
         )
 
@@ -124,6 +139,8 @@ internal object ShowcaseScenarioCatalog {
             is ShowcaseTreeDetail.Padding -> require(0 <= detail.all) { "Showcase padding must be nonnegative." }
 
             is ShowcaseTreeDetail.Spacing -> require(0 <= detail.value) { "Showcase spacing must be nonnegative." }
+
+            is ShowcaseTreeDetail.ScrollRate -> require(0 < detail.value) { "Showcase Scroll rates must be positive." }
 
             is ShowcaseTreeDetail.Weight -> require(detail.weight.isFinite() && 0 < detail.weight) { "Showcase weights must be positive finite values." }
         }

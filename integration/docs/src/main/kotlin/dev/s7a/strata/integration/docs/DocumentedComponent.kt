@@ -21,6 +21,11 @@ internal enum class DocumentedComponent(
      * The pointer-button component identity.
      */
     Button("Button", "button"),
+
+    /**
+     * The menu-list scroll viewport component identity.
+     */
+    Scroll("Scroll", "scroll"),
     ;
 
     /**

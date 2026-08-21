@@ -2,8 +2,8 @@
 
 # Minecraft component showcase
 
-These deterministic crops come from a real Minecraft 26.2 `ConfirmScreen` reconstructed with Strata's `MenuBackground`, `Text`, and `Button` components.
-One loaded Fabric GameTest requires exact ARGB equality among the native screen, the Fabric adapter, and the headless frame before it emits these component images.
+These deterministic crops come from a real Minecraft 26.2 `ConfirmScreen` and a native `ObjectSelectionList` screen reconstructed with Strata's `MenuBackground`, `Text`, `Button`, and `Scroll` components.
+One loaded Fabric GameTest requires exact ARGB equality among each native screen, the Fabric adapter, and the headless frame before it emits these component images.
 
 [Open the machine-readable parity receipt](minecraft-26.2-parity.properties)
 
@@ -87,3 +87,4 @@ The tree shows Minecraft components in logical draw order; platform-neutral layo
 - [MenuBackground](menu-background.md)
 - [Text](text.md)
 - [Button](button.md)
+- [Scroll](scroll.md)

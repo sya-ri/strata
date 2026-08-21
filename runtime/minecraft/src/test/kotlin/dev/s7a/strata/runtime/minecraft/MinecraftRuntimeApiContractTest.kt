@@ -31,13 +31,24 @@ internal class MinecraftRuntimeApiContractTest {
         )
         assertInterfaceSurface(
             MinecraftUiContext::class.java,
-            setOf("MenuBackground", "Text", "Button"),
+            setOf("MenuBackground", "Text", "Button", "Scroll"),
             allowDefaultImpls = true,
         )
         assertInterfaceSurface(MinecraftUiProfile::class.java, emptySet())
         assertInterfaceSurface(
             MinecraftUiProfileBuilder::class.java,
-            setOf("menuBackground", "printableAsciiGlyph", "buttonNormal", "buttonHighlighted", "buttonDisabled"),
+            setOf(
+                "menuBackground",
+                "listBackground",
+                "listHeaderSeparator",
+                "listFooterSeparator",
+                "scrollbarBackground",
+                "scrollbarThumb",
+                "printableAsciiGlyph",
+                "buttonNormal",
+                "buttonHighlighted",
+                "buttonDisabled",
+            ),
         )
     }
 
@@ -116,6 +127,21 @@ internal class MinecraftRuntimeApiContractTest {
                 .map { method -> method.parameterTypes.toList() }
                 .toSet(),
         )
+        assertEquals(
+            setOf(
+                listOf(
+                    UiScope::class.java,
+                    UiModifier::class.java,
+                    ElementKey::class.java,
+                    checkNotNull(Int::class.javaPrimitiveType),
+                    Function1::class.java,
+                ),
+            ),
+            contextMethods
+                .filter { method -> method.name == ContextMethodName.Scroll.jvmName }
+                .map { method -> method.parameterTypes.toList() }
+                .toSet(),
+        )
         contextMethods.forEach { method -> assertEquals(Void.TYPE, method.returnType) }
     }
 
@@ -129,6 +155,7 @@ internal class MinecraftRuntimeApiContractTest {
             "dev.s7a.strata.runtime.minecraft.MinecraftProfileImplementation",
             "dev.s7a.strata.runtime.minecraft.MinecraftTextRun",
             "dev.s7a.strata.runtime.minecraft.MinecraftPointerButtonElement",
+            "dev.s7a.strata.runtime.minecraft.MinecraftScrollElement",
         ).forEach { name ->
             val implementation = Class.forName(name)
             assertTrue(implementation.declaredMethods.none { method -> method.name.startsWith("access$") })
@@ -205,6 +232,7 @@ internal class MinecraftRuntimeApiContractTest {
         listOf(
             Class.forName("dev.s7a.strata.runtime.minecraft.MinecraftMenuBackgroundElement"),
             Class.forName("dev.s7a.strata.runtime.minecraft.MinecraftTextElement"),
+            Class.forName("dev.s7a.strata.runtime.minecraft.MinecraftScrollElement"),
         ).forEach { type ->
             assertFalse(Modifier.isPublic(type.modifiers), type.name)
             assertFalse(Modifier.isProtected(type.modifiers), type.name)
@@ -213,6 +241,7 @@ internal class MinecraftRuntimeApiContractTest {
         listOf(
             Class.forName("dev.s7a.strata.runtime.minecraft.MinecraftMenuBackgroundElementKt"),
             Class.forName("dev.s7a.strata.runtime.minecraft.MinecraftTextElementKt"),
+            Class.forName("dev.s7a.strata.runtime.minecraft.MinecraftScrollElementKt"),
         ).flatMap { type -> type.declaredMethods.toList() }.forEach { method ->
             assertTrue(method.isSynthetic, method.toString())
         }
@@ -384,5 +413,6 @@ internal class MinecraftRuntimeApiContractTest {
     ) {
         Text("Text"),
         Button("Button"),
+        Scroll("Scroll"),
     }
 }

@@ -33,6 +33,8 @@ public abstract interface class dev/s7a/strata/runtime/minecraft/MinecraftUiCont
 	public static synthetic fun Button$default (Ldev/s7a/strata/runtime/minecraft/MinecraftUiContext;Ldev/s7a/strata/dsl/UiScope;Ljava/lang/String;ZLdev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/element/ElementKey;ILjava/lang/Object;)V
 	public abstract fun MenuBackground (Ldev/s7a/strata/dsl/UiScope;Ldev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/element/ElementKey;)V
 	public static synthetic fun MenuBackground$default (Ldev/s7a/strata/runtime/minecraft/MinecraftUiContext;Ldev/s7a/strata/dsl/UiScope;Ldev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/element/ElementKey;ILjava/lang/Object;)V
+	public abstract fun Scroll (Ldev/s7a/strata/dsl/UiScope;Ldev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/element/ElementKey;ILkotlin/jvm/functions/Function1;)V
+	public static synthetic fun Scroll$default (Ldev/s7a/strata/runtime/minecraft/MinecraftUiContext;Ldev/s7a/strata/dsl/UiScope;Ldev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/element/ElementKey;ILkotlin/jvm/functions/Function1;ILjava/lang/Object;)V
 	public abstract fun Text (Ldev/s7a/strata/dsl/UiScope;Ldev/s7a/strata/text/UiText;Ldev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/element/ElementKey;)V
 	public fun Text (Ldev/s7a/strata/dsl/UiScope;Ljava/lang/String;Ldev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/element/ElementKey;)V
 	public static synthetic fun Text$default (Ldev/s7a/strata/runtime/minecraft/MinecraftUiContext;Ldev/s7a/strata/dsl/UiScope;Ldev/s7a/strata/text/UiText;Ldev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/element/ElementKey;ILjava/lang/Object;)V
@@ -44,6 +46,7 @@ public final class dev/s7a/strata/runtime/minecraft/MinecraftUiContext$DefaultIm
 	public static synthetic fun Button$default (Ldev/s7a/strata/runtime/minecraft/MinecraftUiContext;Ldev/s7a/strata/dsl/UiScope;Ldev/s7a/strata/text/UiText;ZLdev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/element/ElementKey;ILjava/lang/Object;)V
 	public static synthetic fun Button$default (Ldev/s7a/strata/runtime/minecraft/MinecraftUiContext;Ldev/s7a/strata/dsl/UiScope;Ljava/lang/String;ZLdev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/element/ElementKey;ILjava/lang/Object;)V
 	public static synthetic fun MenuBackground$default (Ldev/s7a/strata/runtime/minecraft/MinecraftUiContext;Ldev/s7a/strata/dsl/UiScope;Ldev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/element/ElementKey;ILjava/lang/Object;)V
+	public static synthetic fun Scroll$default (Ldev/s7a/strata/runtime/minecraft/MinecraftUiContext;Ldev/s7a/strata/dsl/UiScope;Ldev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/element/ElementKey;ILkotlin/jvm/functions/Function1;ILjava/lang/Object;)V
 	public static fun Text (Ldev/s7a/strata/runtime/minecraft/MinecraftUiContext;Ldev/s7a/strata/dsl/UiScope;Ljava/lang/String;Ldev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/element/ElementKey;)V
 	public static synthetic fun Text$default (Ldev/s7a/strata/runtime/minecraft/MinecraftUiContext;Ldev/s7a/strata/dsl/UiScope;Ldev/s7a/strata/text/UiText;Ldev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/element/ElementKey;ILjava/lang/Object;)V
 	public static synthetic fun Text$default (Ldev/s7a/strata/runtime/minecraft/MinecraftUiContext;Ldev/s7a/strata/dsl/UiScope;Ljava/lang/String;Ldev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/element/ElementKey;ILjava/lang/Object;)V
@@ -66,7 +69,12 @@ public abstract interface class dev/s7a/strata/runtime/minecraft/MinecraftUiProf
 	public abstract fun buttonDisabled (Ldev/s7a/strata/render/DrawImage;ILdev/s7a/strata/runtime/minecraft/MinecraftNineSliceCenterMode;)V
 	public abstract fun buttonHighlighted (Ldev/s7a/strata/render/DrawImage;ILdev/s7a/strata/runtime/minecraft/MinecraftNineSliceCenterMode;)V
 	public abstract fun buttonNormal (Ldev/s7a/strata/render/DrawImage;ILdev/s7a/strata/runtime/minecraft/MinecraftNineSliceCenterMode;)V
+	public abstract fun listBackground (Ldev/s7a/strata/render/DrawImage;)V
+	public abstract fun listFooterSeparator (Ldev/s7a/strata/render/DrawImage;)V
+	public abstract fun listHeaderSeparator (Ldev/s7a/strata/render/DrawImage;)V
 	public abstract fun menuBackground (Ldev/s7a/strata/render/DrawImage;)V
 	public abstract fun printableAsciiGlyph (ILdev/s7a/strata/render/DrawImage;)V
+	public abstract fun scrollbarBackground (Ldev/s7a/strata/render/DrawImage;)V
+	public abstract fun scrollbarThumb (Ldev/s7a/strata/render/DrawImage;)V
 }
 

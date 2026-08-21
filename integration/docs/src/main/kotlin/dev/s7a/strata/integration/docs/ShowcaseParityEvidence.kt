@@ -53,7 +53,7 @@ internal class ShowcaseParityEvidence private constructor(
      */
     companion object {
         /**
-         * Reads the fixed receipt and four component images without following symbolic paths.
+         * Reads the fixed receipt and all typed component images without following symbolic paths.
          *
          * @param root validated GameTest parity output directory.
          * @return detached verified evidence snapshots.
@@ -75,6 +75,7 @@ internal class ShowcaseParityEvidence private constructor(
             }
             requireLocale(values.getValue("locale"))
             requireHash(values.getValue("native.fabric.headless.argb.sha256"), "full-frame pixel hash")
+            requireHash(values.getValue("native.fabric.headless.scroll.argb.sha256"), "Scroll full-frame pixel hash")
 
             val overview = readVerifiedPng(root, "overview", values, IntSize(320, 180))
             val components =
@@ -176,6 +177,7 @@ internal class ShowcaseParityEvidence private constructor(
                 DocumentedComponent.MenuBackground -> IntSize(32, 32)
                 DocumentedComponent.Text -> IntSize(150, 20)
                 DocumentedComponent.Button -> IntSize(150, 20)
+                DocumentedComponent.Scroll -> IntSize(320, 94)
             }
 
         private fun requireHash(
@@ -197,6 +199,7 @@ internal class ShowcaseParityEvidence private constructor(
                 add("gui.scale")
                 add("locale")
                 add("native.fabric.headless.argb.sha256")
+                add("native.fabric.headless.scroll.argb.sha256")
                 add("component.overview.png.sha256")
                 DocumentedComponent.entries.forEach { component -> add("component.${component.slug}.png.sha256") }
             }

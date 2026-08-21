@@ -30,6 +30,7 @@ internal class ShowcaseParityEvidenceTest {
         assertArrayEquals(png(32, 32), evidence.componentPng(DocumentedComponent.MenuBackground))
         assertArrayEquals(png(150, 20), evidence.componentPng(DocumentedComponent.Text))
         assertArrayEquals(png(150, 20), evidence.componentPng(DocumentedComponent.Button))
+        assertArrayEquals(png(320, 94), evidence.componentPng(DocumentedComponent.Scroll))
         val receipt = evidence.receipt()
         receipt[0] = 0
         assertArrayEquals(Files.readAllBytes(temporaryRoot.resolve("receipt.properties")), evidence.receipt())
@@ -74,6 +75,7 @@ internal class ShowcaseParityEvidenceTest {
                 DocumentedComponent.MenuBackground.slug to png(32, 32),
                 DocumentedComponent.Text.slug to png(150, 20),
                 DocumentedComponent.Button.slug to png(150, 20),
+                DocumentedComponent.Scroll.slug to png(320, 94),
             )
         images.forEach { (slug, bytes) -> Files.write(components.resolve("$slug.png"), bytes) }
         val receipt =
@@ -84,6 +86,7 @@ internal class ShowcaseParityEvidenceTest {
                 appendLine("gui.scale=1")
                 appendLine("locale=en_us")
                 appendLine("native.fabric.headless.argb.sha256=${"1".repeat(64)}")
+                appendLine("native.fabric.headless.scroll.argb.sha256=${"2".repeat(64)}")
                 images.forEach { (slug, bytes) -> appendLine("component.$slug.png.sha256=${sha256(bytes)}") }
             }
         Files.writeString(temporaryRoot.resolve("receipt.properties"), receipt)
