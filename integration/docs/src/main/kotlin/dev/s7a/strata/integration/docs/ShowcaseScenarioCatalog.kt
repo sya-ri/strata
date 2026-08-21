@@ -7,7 +7,7 @@ import dev.s7a.strata.geometry.IntSize
  */
 internal object ShowcaseScenarioCatalog {
     /**
-     * Component scenarios in the required MenuBackground, Text, Button, Scroll order.
+     * Component scenarios in the required MenuBackground, Text, TextField, Button, Scroll order.
      */
     internal val components: List<ComponentScenario> =
         listOf(
@@ -30,6 +30,16 @@ internal object ShowcaseScenarioCatalog {
                     ),
                 viewportMetadata = ShowcaseViewport(IntSize(150, 20), 1),
                 tree = tree(DocumentedComponent.Text, listOf(ShowcaseTreeDetail.Size(150, 20))),
+            ),
+            ComponentScenario(
+                component = DocumentedComponent.TextField,
+                source =
+                    SourceReference(
+                        "integration/minecraft-fabric-26.2/src/gametest/kotlin/dev/s7a/strata/integration/minecraft/fabric/MinecraftTextFieldExample.kt",
+                        "text-field",
+                    ),
+                viewportMetadata = ShowcaseViewport(IntSize(200, 20), 1),
+                tree = tree(DocumentedComponent.TextField, listOf(ShowcaseTreeDetail.Size(200, 20))),
             ),
             ComponentScenario(
                 component = DocumentedComponent.Button,

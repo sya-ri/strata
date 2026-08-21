@@ -28,6 +28,23 @@ import org.junit.jupiter.api.Test
 @OptIn(InternalStrataRuntimeApi::class)
 internal class MinecraftPointerButtonTest {
     @Test
+    fun directJoinWidthUsesTheCompleteNativeTwoHundredPixelSprite() {
+        val host = host { buildUi { Button("A", width = 200) } }
+        host.attach()
+        val commands = host.frame(IntSize(200, 20)).drawCommands.filterIsInstance<DrawCommand.BlitImage>()
+        assertEquals(
+            listOf(
+                IntRect(0, 0, 3, 20),
+                IntRect(3, 0, 197, 20),
+                IntRect(197, 0, 200, 20),
+            ),
+            commands.take(3).map { command -> command.destination },
+        )
+        assertEquals(commands.take(3).map { command -> command.source }, commands.take(3).map { command -> command.destination })
+        host.close()
+    }
+
+    @Test
     fun fixedButtonEmitsNineSliceThenGlyphCommandsAndSemantics() {
         var presses = 0
         val host =

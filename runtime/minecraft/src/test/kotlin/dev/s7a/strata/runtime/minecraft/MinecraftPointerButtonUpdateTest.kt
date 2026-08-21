@@ -183,6 +183,7 @@ internal class MinecraftPointerButtonUpdateTest {
             normalText,
             inactiveText,
             literal,
+            150,
             enabled,
             Modifier.Empty,
             null,
@@ -208,7 +209,7 @@ internal class MinecraftPointerButtonUpdateTest {
     private fun glyph(color: Int): MinecraftGlyphSnapshot {
         val normal = image(color, IntSize(8, 8))
         val inactive = image(0xFFA0A0A0.toInt(), IntSize(8, 8))
-        return MinecraftGlyphSnapshot.create(2, normal, normal, inactive, inactive)
+        return MinecraftGlyphSnapshot.create(2, normal, normal, inactive, inactive, normal, normal, inactive, inactive)
     }
 
     private fun image(

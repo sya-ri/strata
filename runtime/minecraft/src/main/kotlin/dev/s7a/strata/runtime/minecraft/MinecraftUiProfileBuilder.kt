@@ -7,10 +7,12 @@ import dev.s7a.strata.spi.InternalStrataRuntimeApi
  * Callback-lifetime builder for one complete Minecraft UI profile.
  *
  * The builder is confined to its creator thread and rejects use after the profile callback returns.
- * Menu, Scroll, and Button declarations retain immutable image references, while glyph declarations synchronously copy a binary mask into four derived immutable layers and retain no mask reference.
+ * Menu, Scroll, TextField, and Button declarations retain immutable image references, while glyph declarations synchronously copy a binary mask into eight derived immutable layers and retain no mask reference.
  * Every method rejects duplicate slots.
  */
 @InternalStrataRuntimeApi
+// Why: one callback must declare every required asset slot atomically before a complete immutable profile can exist.
+@Suppress("TooManyFunctions")
 public sealed interface MinecraftUiProfileBuilder {
     /**
      * Supplies the profile's exact 16 by 16 Minecraft menu texture.
@@ -71,6 +73,24 @@ public sealed interface MinecraftUiProfileBuilder {
     public fun scrollbarThumb(image: DrawImage)
 
     /**
+     * Supplies the exact 200 by 20 unfocused TextField sprite.
+     *
+     * @param image immutable normal text-field pixels.
+     * @throws IllegalArgumentException when the slot is duplicated or the image size is not 200 by 20.
+     * @throws IllegalStateException when called from another thread or after the builder callback ends.
+     */
+    public fun textFieldNormal(image: DrawImage)
+
+    /**
+     * Supplies the exact 200 by 20 focused TextField sprite.
+     *
+     * @param image immutable highlighted text-field pixels.
+     * @throws IllegalArgumentException when the slot is duplicated or the image size is not 200 by 20.
+     * @throws IllegalStateException when called from another thread or after the builder callback ends.
+     */
+    public fun textFieldHighlighted(image: DrawImage)
+
+    /**
      * Supplies one exact 8 by 8 transparent-white or opaque-white printable-ASCII glyph mask.
      *
      * @param codePoint one code point from U+0021 through U+007E.
@@ -87,7 +107,7 @@ public sealed interface MinecraftUiProfileBuilder {
      * Supplies the normal 200 by 20 Button sprite.
      *
      * @param image immutable sprite pixels.
-     * @param border positive horizontal border width that leaves nonempty 200-pixel source and 150-pixel destination centers.
+     * @param border positive horizontal border width that leaves a nonempty 200-pixel source center.
      * @param centerMode typed center sampling policy.
      * @throws IllegalArgumentException when the slot, image size, or border is invalid.
      * @throws IllegalStateException when called from another thread or after the builder callback ends.
@@ -102,7 +122,7 @@ public sealed interface MinecraftUiProfileBuilder {
      * Supplies the highlighted 200 by 20 Button sprite.
      *
      * @param image immutable sprite pixels.
-     * @param border positive horizontal border width that leaves nonempty 200-pixel source and 150-pixel destination centers.
+     * @param border positive horizontal border width that leaves a nonempty 200-pixel source center.
      * @param centerMode typed center sampling policy.
      * @throws IllegalArgumentException when the slot, image size, or border is invalid.
      * @throws IllegalStateException when called from another thread or after the builder callback ends.
@@ -117,7 +137,7 @@ public sealed interface MinecraftUiProfileBuilder {
      * Supplies the disabled 200 by 20 Button sprite.
      *
      * @param image immutable sprite pixels.
-     * @param border positive horizontal border width that leaves nonempty 200-pixel source and 150-pixel destination centers.
+     * @param border positive horizontal border width that leaves a nonempty 200-pixel source center.
      * @param centerMode typed center sampling policy.
      * @throws IllegalArgumentException when the slot, image size, or border is invalid.
      * @throws IllegalStateException when called from another thread or after the builder callback ends.

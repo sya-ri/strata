@@ -33,10 +33,11 @@ internal class MinecraftRuntimeApiContractTest {
         )
         assertInterfaceSurface(
             MinecraftUiContext::class.java,
-            setOf("MenuBackground", "Text", "Button", "Scroll"),
+            setOf("MenuBackground", "Text", "TextField", "Button", "Scroll"),
             allowDefaultImpls = true,
         )
         assertInterfaceSurface(MinecraftUiProfile::class.java, emptySet())
+        assertInterfaceSurface(MinecraftTextFieldState::class.java, setOf("getValue", "setValue", "getMaxLength"))
         assertInterfaceSurface(
             MinecraftUiProfileBuilder::class.java,
             setOf(
@@ -46,6 +47,8 @@ internal class MinecraftRuntimeApiContractTest {
                 "listFooterSeparator",
                 "scrollbarBackground",
                 "scrollbarThumb",
+                "textFieldNormal",
+                "textFieldHighlighted",
                 "printableAsciiGlyph",
                 "buttonNormal",
                 "buttonHighlighted",
@@ -55,15 +58,21 @@ internal class MinecraftRuntimeApiContractTest {
     }
 
     @Test
-    fun facadeContainsExactlyTheThreeTypedFactories() {
+    fun facadeContainsExactlyTheFourTypedFactories() {
         val factory = Class.forName("dev.s7a.strata.runtime.minecraft.MinecraftRuntimeFactories")
         val methods = factory.declaredMethods.filter { method -> Modifier.isPublic(method.modifiers) && method.isSynthetic.not() }
-        assertEquals(3, methods.size)
+        assertEquals(4, methods.size)
         assertFactory(
             methods,
             "createMinecraftScreenDefinition",
             listOf(UiText::class.java, checkNotNull(Boolean::class.javaPrimitiveType), Function1::class.java),
             MinecraftScreenDefinition::class.java,
+        )
+        assertFactory(
+            methods,
+            "createMinecraftTextFieldState",
+            listOf(String::class.java, checkNotNull(Int::class.javaPrimitiveType)),
+            MinecraftTextFieldState::class.java,
         )
         assertFactory(
             methods,
@@ -103,21 +112,51 @@ internal class MinecraftRuntimeApiContractTest {
 
     private fun assertContextMethodDescriptors() {
         val contextMethods = MinecraftUiContext::class.java.declaredMethods.toList()
+        assertTextDescriptors(contextMethods)
+        assertTextFieldDescriptor(contextMethods)
+        assertButtonDescriptors(contextMethods)
+        assertScrollDescriptor(contextMethods)
+        contextMethods.forEach { method -> assertEquals(Void.TYPE, method.returnType) }
+    }
+
+    private fun assertTextDescriptors(contextMethods: List<Method>) {
         assertEquals(
             setOf(
-                listOf(UiScope::class.java, UiText::class.java, UiModifier::class.java, ElementKey::class.java),
-                listOf(UiScope::class.java, String::class.java, UiModifier::class.java, ElementKey::class.java),
+                listOf(UiScope::class.java, UiText::class.java, MinecraftTextStyle::class.java, UiModifier::class.java, ElementKey::class.java),
+                listOf(UiScope::class.java, String::class.java, MinecraftTextStyle::class.java, UiModifier::class.java, ElementKey::class.java),
             ),
             contextMethods
                 .filter { method -> method.name == ContextMethodName.Text.jvmName }
                 .map { method -> method.parameterTypes.toList() }
                 .toSet(),
         )
+    }
+
+    private fun assertTextFieldDescriptor(contextMethods: List<Method>) {
+        assertEquals(
+            setOf(
+                listOf(
+                    UiScope::class.java,
+                    MinecraftTextFieldState::class.java,
+                    checkNotNull(Boolean::class.javaPrimitiveType),
+                    UiModifier::class.java,
+                    ElementKey::class.java,
+                ),
+            ),
+            contextMethods
+                .filter { method -> method.name == ContextMethodName.TextField.jvmName }
+                .map { method -> method.parameterTypes.toList() }
+                .toSet(),
+        )
+    }
+
+    private fun assertButtonDescriptors(contextMethods: List<Method>) {
         assertEquals(
             setOf(
                 listOf(
                     UiScope::class.java,
                     UiText::class.java,
+                    checkNotNull(Int::class.javaPrimitiveType),
                     checkNotNull(Boolean::class.javaPrimitiveType),
                     UiModifier::class.java,
                     ElementKey::class.java,
@@ -125,6 +164,7 @@ internal class MinecraftRuntimeApiContractTest {
                 listOf(
                     UiScope::class.java,
                     String::class.java,
+                    checkNotNull(Int::class.javaPrimitiveType),
                     checkNotNull(Boolean::class.javaPrimitiveType),
                     UiModifier::class.java,
                     ElementKey::class.java,
@@ -135,6 +175,9 @@ internal class MinecraftRuntimeApiContractTest {
                 .map { method -> method.parameterTypes.toList() }
                 .toSet(),
         )
+    }
+
+    private fun assertScrollDescriptor(contextMethods: List<Method>) {
         assertEquals(
             setOf(
                 listOf(
@@ -150,7 +193,6 @@ internal class MinecraftRuntimeApiContractTest {
                 .map { method -> method.parameterTypes.toList() }
                 .toSet(),
         )
-        contextMethods.forEach { method -> assertEquals(Void.TYPE, method.returnType) }
     }
 
     @Test
@@ -164,6 +206,7 @@ internal class MinecraftRuntimeApiContractTest {
             "dev.s7a.strata.runtime.minecraft.MinecraftTextRun",
             "dev.s7a.strata.runtime.minecraft.MinecraftPointerButtonElement",
             "dev.s7a.strata.runtime.minecraft.MinecraftScrollElement",
+            "dev.s7a.strata.runtime.minecraft.MinecraftTextFieldElement",
         ).forEach { name ->
             val implementation = Class.forName(name)
             assertTrue(implementation.declaredMethods.none { method -> method.name.startsWith("access$") })
@@ -241,6 +284,7 @@ internal class MinecraftRuntimeApiContractTest {
             Class.forName("dev.s7a.strata.runtime.minecraft.MinecraftMenuBackgroundElement"),
             Class.forName("dev.s7a.strata.runtime.minecraft.MinecraftTextElement"),
             Class.forName("dev.s7a.strata.runtime.minecraft.MinecraftScrollElement"),
+            Class.forName("dev.s7a.strata.runtime.minecraft.MinecraftTextFieldElement"),
         ).forEach { type ->
             assertFalse(Modifier.isPublic(type.modifiers), type.name)
             assertFalse(Modifier.isProtected(type.modifiers), type.name)
@@ -250,6 +294,7 @@ internal class MinecraftRuntimeApiContractTest {
             Class.forName("dev.s7a.strata.runtime.minecraft.MinecraftMenuBackgroundElementKt"),
             Class.forName("dev.s7a.strata.runtime.minecraft.MinecraftTextElementKt"),
             Class.forName("dev.s7a.strata.runtime.minecraft.MinecraftScrollElementKt"),
+            Class.forName("dev.s7a.strata.runtime.minecraft.MinecraftTextFieldElementKt"),
         ).flatMap { type -> type.declaredMethods.toList() }.forEach { method ->
             assertTrue(method.isSynthetic, method.toString())
         }
@@ -358,6 +403,7 @@ internal class MinecraftRuntimeApiContractTest {
                 MinecraftUiContext::class.java,
                 MinecraftUiProfile::class.java,
                 MinecraftUiProfileBuilder::class.java,
+                MinecraftTextFieldState::class.java,
                 Class.forName("dev.s7a.strata.runtime.minecraft.MinecraftRuntimeFactories"),
             )
         types.flatMap { type -> type.declaredMethods.toList() }.forEach { method ->
@@ -420,6 +466,7 @@ internal class MinecraftRuntimeApiContractTest {
         val jvmName: String,
     ) {
         Text("Text"),
+        TextField("TextField"),
         Button("Button"),
         Scroll("Scroll"),
     }

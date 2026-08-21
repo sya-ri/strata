@@ -460,6 +460,10 @@ internal class MinecraftUiElementTest {
             foreground,
             inactiveShadow,
             inactiveForeground,
+            shadow,
+            foreground,
+            inactiveShadow,
+            inactiveForeground,
         )
 
     private fun image(color: Int) = createDrawImage(IntSize(8, 8), IntArray(64) { color })

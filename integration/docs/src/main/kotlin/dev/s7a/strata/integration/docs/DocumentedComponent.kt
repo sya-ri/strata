@@ -18,6 +18,11 @@ internal enum class DocumentedComponent(
     Text("Text", "text"),
 
     /**
+     * The editable single-line field component identity.
+     */
+    TextField("TextField", "text-field"),
+
+    /**
      * The pointer-button component identity.
      */
     Button("Button", "button"),

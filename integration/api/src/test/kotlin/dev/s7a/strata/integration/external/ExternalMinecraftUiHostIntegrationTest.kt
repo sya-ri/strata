@@ -12,7 +12,9 @@ import dev.s7a.strata.modifier.onPress
 import dev.s7a.strata.node.DirtyPhase
 import dev.s7a.strata.render.createDrawImage
 import dev.s7a.strata.runtime.minecraft.MinecraftNineSliceCenterMode
+import dev.s7a.strata.runtime.minecraft.MinecraftTextStyle
 import dev.s7a.strata.runtime.minecraft.createMinecraftScreenDefinition
+import dev.s7a.strata.runtime.minecraft.createMinecraftTextFieldState
 import dev.s7a.strata.runtime.minecraft.createMinecraftUiHost
 import dev.s7a.strata.runtime.minecraft.createMinecraftUiProfile
 import dev.s7a.strata.runtime.render.DrawCommand
@@ -49,6 +51,37 @@ internal class ExternalMinecraftUiHostIntegrationTest {
         val textSemantics = textFrame.semantics.single { entry -> entry.semantics.role == SemanticsRole.Text }
         assertEquals(UiText.Literal("A B"), textSemantics.semantics.label)
         textHost.close()
+
+        val state = createMinecraftTextFieldState("A", maxLength = 8)
+        val fieldHost =
+            createMinecraftScreenDefinition(UiText.Literal("external field")) {
+                buildUi {
+                    TextField(state)
+                }
+            }.let { definition -> createMinecraftUiHost(definition, profile()) }
+        fieldHost.attach()
+        val fieldFrame = fieldHost.frame(IntSize(200, 20))
+        assertEquals(
+            SemanticsRole.TextField,
+            fieldFrame.semantics
+                .single()
+                .semantics.role,
+        )
+        assertEquals(
+            UiText.Literal("A"),
+            fieldFrame.semantics
+                .single()
+                .semantics.label,
+        )
+        fieldHost.close()
+
+        val inactiveHost =
+            createMinecraftScreenDefinition(UiText.Literal("external styled text")) {
+                buildUi { Text("A", style = MinecraftTextStyle.Inactive) }
+            }.let { definition -> createMinecraftUiHost(definition, profile()) }
+        inactiveHost.attach()
+        assertEquals(IntSize(1, 9), inactiveHost.frame(IntSize(1, 9)).size)
+        inactiveHost.close()
     }
 
     @Test
@@ -134,6 +167,8 @@ internal class ExternalMinecraftUiHostIntegrationTest {
             listFooterSeparator(image(IntSize(32, 2)))
             scrollbarBackground(image(IntSize(6, 32)))
             scrollbarThumb(image(IntSize(6, 32)))
+            textFieldNormal(image(IntSize(200, 20)))
+            textFieldHighlighted(image(IntSize(200, 20)))
             for (codePoint in 0x21..0x7E) {
                 printableAsciiGlyph(codePoint, image(IntSize(8, 8)))
             }

@@ -58,7 +58,7 @@ public fun Modifier.onPreedit(callback: (TextInputEvent.Preedit) -> InputResult)
 /**
  * Makes the logical component a keyboard and text-input focus target.
  *
- * Pointer focus is acquired only after a consuming primary press within the component's laid-out hit path.
+ * A primary press focuses the deepest and latest-painted accepting target within the laid-out hit path independently of ordinary pointer-event consumption.
  *
  * @return a modifier with active focus-target behavior appended nearest the component.
  */

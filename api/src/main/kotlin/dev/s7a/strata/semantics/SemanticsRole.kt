@@ -16,4 +16,9 @@ public interface SemanticsRole {
      * A text presentation.
      */
     public data object Text : SemanticsRole
+
+    /**
+     * An editable single-line text field.
+     */
+    public data object TextField : SemanticsRole
 }

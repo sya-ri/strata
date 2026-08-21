@@ -34,6 +34,8 @@ internal object MinecraftProfileFixture {
         listFooterSeparator: DrawImage = image(IntSize(32, 2), 0xFF131313.toInt()),
         scrollbarBackground: DrawImage = image(IntSize(6, 32), 0xFF141414.toInt()),
         scrollbarThumb: DrawImage = image(IntSize(6, 32), 0xFF151515.toInt()),
+        normalTextField: DrawImage = image(IntSize(200, 20), 0xFF505050.toInt()),
+        highlightedTextField: DrawImage = image(IntSize(200, 20), 0xFF606060.toInt()),
         normalBorder: Int = 3,
         normalCenterMode: MinecraftNineSliceCenterMode = MinecraftNineSliceCenterMode.Tiled,
         highlightedBorder: Int = 3,
@@ -48,6 +50,8 @@ internal object MinecraftProfileFixture {
             listFooterSeparator(listFooterSeparator)
             scrollbarBackground(scrollbarBackground)
             scrollbarThumb(scrollbarThumb)
+            textFieldNormal(normalTextField)
+            textFieldHighlighted(highlightedTextField)
             for (codePoint in 0x21..0x7E) {
                 val x = (codePoint - 0x21) % 8
                 val pixels = IntArray(64) { 0x00FFFFFF }

@@ -768,6 +768,13 @@ public final class dev/s7a/strata/semantics/SemanticsRole$Text : dev/s7a/strata/
 	public fun toString ()Ljava/lang/String;
 }
 
+public final class dev/s7a/strata/semantics/SemanticsRole$TextField : dev/s7a/strata/semantics/SemanticsRole {
+	public static final field INSTANCE Ldev/s7a/strata/semantics/SemanticsRole$TextField;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
 public abstract interface class dev/s7a/strata/semantics/SemanticsScope {
 	public abstract fun emit (Ldev/s7a/strata/semantics/Semantics;)V
 }

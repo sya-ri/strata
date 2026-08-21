@@ -50,11 +50,11 @@ The simple press overload handles only the primary button, while the typed overl
 Hover uses half-open accumulated bounds, is recomputed before every pointer move or drag dispatch, and exits during retained session detachment.
 Layout movement below a stationary pointer does not create a transition until another move event arrives.
 `focusable` adds retained keyboard and text-input focus, while `initialFocus` requests the single unambiguous target selected after layout.
-A consuming primary press focuses the logical component containing the consuming node; focus is retained across ordinary reconciliation and cleared on session detach.
+A primary press focuses the deepest and latest-painted accepting target in its laid-out hit path independently of whether pointer behavior consumes the event; focus is retained across ordinary reconciliation and cleared on session detach.
 `onKeyEvent`, `onKeyPress`, and `onKeyRelease` receive physical key identity, scan code, and modifier state through the focused component.
 `onTextInput`, `onCharacterInput`, and `onPreedit` receive committed Unicode scalar values and immutable input-method composition snapshots through that same owner.
 `onFocusChanged` observes distinct gain and loss transitions.
-Focused delivery begins at the component node and then visits modifier nodes from innermost to outermost until one returns `Consumed`.
+Focused delivery visits modifier nodes from innermost to outermost and then the component node until one returns `Consumed`, allowing active modifiers to override a component's built-in editor behavior.
 Changing size or padding invalidates measurement, changing a background invalidates paint, and changing semantics invalidates only semantics.
 Changing a pointer, keyboard, text-input, preedit, or focus callback updates live input behavior without invalidating a frame phase.
 An equal value does not invalidate a phase.

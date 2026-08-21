@@ -120,6 +120,28 @@ internal class MinecraftTextRun private constructor(
             }
 
         /**
+         * Creates an EditBox-color run retaining only the selected enabled or disabled layers.
+         *
+         * @param text printable-ASCII literal value.
+         * @param enabled whether enabled EditBox colors are selected.
+         * @param glyphAt synchronous printable-ASCII glyph lookup.
+         * @return one EditBox text run.
+         */
+        @JvmSynthetic
+        internal fun createTextField(
+            text: String,
+            enabled: Boolean,
+            glyphAt: (Int) -> MinecraftGlyphSnapshot,
+        ): MinecraftTextRun =
+            create(UiText.Literal(text), glyphAt) { glyph ->
+                if (enabled) {
+                    PositionedColors(glyph.textFieldShadow, glyph.textFieldForeground)
+                } else {
+                    PositionedColors(glyph.textFieldDisabledShadow, glyph.textFieldDisabledForeground)
+                }
+            }
+
+        /**
          * Validates and snapshots one literal through a complete profile.
          *
          * @param text unresolved value supplied by the application.

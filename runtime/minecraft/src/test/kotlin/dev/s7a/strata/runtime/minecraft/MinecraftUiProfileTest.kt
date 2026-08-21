@@ -59,6 +59,17 @@ internal class MinecraftUiProfileTest {
                 buttonDisabled(buttonImage(), 1, MinecraftNineSliceCenterMode.Tiled)
             }
         }
+        TextFieldAsset.entries.forEach { omitted ->
+            assertThrows(IllegalArgumentException::class.java) {
+                createMinecraftUiProfile {
+                    menuBackground(image(IntSize(16, 16)))
+                    completeScrollAssets()
+                    completeTextFieldAssets(omitted)
+                    completeGlyphs()
+                    completeButtons()
+                }
+            }
+        }
     }
 
     @Test
@@ -110,6 +121,14 @@ internal class MinecraftUiProfileTest {
                 }
             }
         }
+        TextFieldAsset.entries.forEach { duplicate ->
+            assertThrows(IllegalArgumentException::class.java) {
+                createMinecraftUiProfile {
+                    completeMenuAndGlyphs()
+                    declareTextFieldAsset(duplicate)
+                }
+            }
+        }
     }
 
     @Test
@@ -136,6 +155,22 @@ internal class MinecraftUiProfileTest {
             assertThrows(IllegalArgumentException::class.java) {
                 createMinecraftUiProfile {
                     declareScrollAsset(slot, size)
+                }
+            }
+        }
+    }
+
+    @Test
+    fun eachTextFieldSpriteRequiresTheExactSize() {
+        TextFieldAsset.entries.forEach { slot ->
+            assertThrows(IllegalArgumentException::class.java) {
+                createMinecraftUiProfile {
+                    declareTextFieldAsset(slot, IntSize(199, 20))
+                }
+            }
+            assertThrows(IllegalArgumentException::class.java) {
+                createMinecraftUiProfile {
+                    declareTextFieldAsset(slot, IntSize(200, 19))
                 }
             }
         }
@@ -220,17 +255,15 @@ internal class MinecraftUiProfileTest {
     }
 
     @Test
-    fun zeroNegativeAndSourceAndDestinationCenterBordersAreValidated() {
+    fun zeroNegativeAndSourceCenterBordersAreValidated() {
         assertThrows(IllegalArgumentException::class.java) { completeProfile(border = 0) }
         assertThrows(IllegalArgumentException::class.java) { completeProfile(border = -1) }
-        completeProfile(border = 74)
-        assertThrows(IllegalArgumentException::class.java) { completeProfile(border = 75) }
-        assertThrows(IllegalArgumentException::class.java) { completeProfile(border = 99) }
+        completeProfile(border = 99)
         assertThrows(IllegalArgumentException::class.java) { completeProfile(border = 100) }
 
-        assertThrows(IllegalArgumentException::class.java) { completeProfile(normalBorder = 75) }
-        assertThrows(IllegalArgumentException::class.java) { completeProfile(highlightedBorder = 75) }
-        assertThrows(IllegalArgumentException::class.java) { completeProfile(disabledBorder = 75) }
+        assertThrows(IllegalArgumentException::class.java) { completeProfile(normalBorder = 100) }
+        assertThrows(IllegalArgumentException::class.java) { completeProfile(highlightedBorder = 100) }
+        assertThrows(IllegalArgumentException::class.java) { completeProfile(disabledBorder = 100) }
     }
 
     @Test
@@ -372,7 +405,23 @@ internal class MinecraftUiProfileTest {
     ) {
         menuBackground(menu)
         completeScrollAssets()
+        completeTextFieldAssets()
         completeGlyphs(glyphMask)
+    }
+
+    private fun MinecraftUiProfileBuilder.completeTextFieldAssets(omitted: TextFieldAsset? = null) {
+        TextFieldAsset.entries.filter { slot -> slot !== omitted }.forEach { slot -> declareTextFieldAsset(slot) }
+    }
+
+    private fun MinecraftUiProfileBuilder.declareTextFieldAsset(
+        slot: TextFieldAsset,
+        size: IntSize = IntSize(200, 20),
+    ) {
+        val asset = image(size)
+        when (slot) {
+            TextFieldAsset.Normal -> textFieldNormal(asset)
+            TextFieldAsset.Highlighted -> textFieldHighlighted(asset)
+        }
     }
 
     private fun MinecraftUiProfileBuilder.completeScrollAssets(omitted: ScrollAsset? = null) {
@@ -426,6 +475,11 @@ internal class MinecraftUiProfileTest {
         FooterSeparator(IntSize(32, 2)),
         ScrollbarBackground(IntSize(6, 32)),
         ScrollbarThumb(IntSize(6, 32)),
+    }
+
+    private enum class TextFieldAsset {
+        Normal,
+        Highlighted,
     }
 
     private fun buttonImage(): DrawImage = image(IntSize(200, 20))

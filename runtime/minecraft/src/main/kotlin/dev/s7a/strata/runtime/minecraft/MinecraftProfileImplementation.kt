@@ -38,6 +38,37 @@ internal object MinecraftProfileImplementation {
     }
 
     /**
+     * Creates one owner-thread mutable TextField state.
+     *
+     * @param initialValue initial printable-ASCII value.
+     * @param maxLength positive maximum UTF-16 length.
+     * @return detached state with no live observer.
+     * @throws IllegalArgumentException when the value or length is invalid.
+     */
+    @JvmSynthetic
+    fun createTextFieldState(
+        initialValue: String,
+        maxLength: Int,
+    ): MinecraftTextFieldState = TextFieldState.create(initialValue, maxLength)
+
+    /**
+     * Installs the sole live observer for one state.
+     *
+     * @param state state created by this runtime.
+     * @param observer owner-thread callback invoked after distinct successful writes.
+     * @return idempotent owner-thread release callback.
+     * @throws IllegalStateException when the state is foreign, observed already, or used from another thread.
+     */
+    @JvmSynthetic
+    fun observeTextFieldState(
+        state: MinecraftTextFieldState,
+        observer: (String) -> Unit,
+    ): () -> Unit =
+        when (state) {
+            is TextFieldState -> state.observe(observer)
+        }
+
+    /**
      * Creates one core-session evaluator from a complete profile and transferred content callback.
      *
      * The evaluator retains its complete profile and content callback until one evaluation or explicit release and then clears them.
@@ -75,7 +106,6 @@ internal object MinecraftProfileImplementation {
         private val menuSize = IntSize(16, 16)
         private val glyphSize = IntSize(8, 8)
         private val buttonSize = IntSize(200, 20)
-        private val renderedButtonSize = IntSize(150, 20)
         private val listSeparatorSize = IntSize(32, 2)
         private val scrollbarSize = IntSize(6, 32)
         private val glyphRange = 0x21..0x7E
@@ -84,6 +114,10 @@ internal object MinecraftProfileImplementation {
         private val normalShadowColor = ArgbColor(-0xC0C0C1)
         private val inactiveForegroundColor = ArgbColor(-0x5F5F60)
         private val inactiveShadowColor = ArgbColor(-0xD7D7D8)
+        private val textFieldForegroundColor = ArgbColor(-0x1F1F20)
+        private val textFieldShadowColor = ArgbColor(-0xC7C7C8)
+        private val textFieldDisabledForegroundColor = ArgbColor(-0x8F8F90)
+        private val textFieldDisabledShadowColor = ArgbColor(-0xE3E3E4)
         private val glyphs = LinkedHashMap<Int, MinecraftGlyphSnapshot>()
         private var active = true
         private var menu: DrawImage? = null
@@ -92,6 +126,8 @@ internal object MinecraftProfileImplementation {
         private var listFooterSeparator: DrawImage? = null
         private var scrollbarBackground: DrawImage? = null
         private var scrollbarThumb: DrawImage? = null
+        private var normalTextField: DrawImage? = null
+        private var highlightedTextField: DrawImage? = null
         private var normalButton: MinecraftButtonSpriteSnapshot? = null
         private var highlightedButton: MinecraftButtonSpriteSnapshot? = null
         private var disabledButton: MinecraftButtonSpriteSnapshot? = null
@@ -138,6 +174,20 @@ internal object MinecraftProfileImplementation {
             require(scrollbarThumb == null) { "Scrollbar thumb was already declared." }
             require(image.size == scrollbarSize) { "Scrollbar thumb must be 6 by 32 pixels." }
             scrollbarThumb = image
+        }
+
+        override fun textFieldNormal(image: DrawImage) {
+            checkUsable()
+            require(normalTextField == null) { "Normal TextField sprite was already declared." }
+            require(image.size == buttonSize) { "TextField sprites must be 200 by 20 pixels." }
+            normalTextField = image
+        }
+
+        override fun textFieldHighlighted(image: DrawImage) {
+            checkUsable()
+            require(highlightedTextField == null) { "Highlighted TextField sprite was already declared." }
+            require(image.size == buttonSize) { "TextField sprites must be 200 by 20 pixels." }
+            highlightedTextField = image
         }
 
         override fun printableAsciiGlyph(
@@ -200,6 +250,8 @@ internal object MinecraftProfileImplementation {
                 listFooterSeparator = requireNotNull(listFooterSeparator) { "List footer separator must be declared." },
                 scrollbarBackground = requireNotNull(scrollbarBackground) { "Scrollbar background must be declared." },
                 scrollbarThumb = requireNotNull(scrollbarThumb) { "Scrollbar thumb must be declared." },
+                normalTextField = requireNotNull(normalTextField) { "Normal TextField sprite must be declared." },
+                highlightedTextField = requireNotNull(highlightedTextField) { "Highlighted TextField sprite must be declared." },
                 glyphs = glyphs,
                 normalButton = requireNotNull(normalButton) { "Normal Button sprite must be declared." },
                 highlightedButton = requireNotNull(highlightedButton) { "Highlighted Button sprite must be declared." },
@@ -216,6 +268,8 @@ internal object MinecraftProfileImplementation {
             listFooterSeparator = null
             scrollbarBackground = null
             scrollbarThumb = null
+            normalTextField = null
+            highlightedTextField = null
             normalButton = null
             highlightedButton = null
             disabledButton = null
@@ -232,6 +286,10 @@ internal object MinecraftProfileImplementation {
             val normalForeground = IntArray(pixels.size)
             val inactiveShadow = IntArray(pixels.size)
             val inactiveForeground = IntArray(pixels.size)
+            val textFieldShadow = IntArray(pixels.size)
+            val textFieldForeground = IntArray(pixels.size)
+            val textFieldDisabledShadow = IntArray(pixels.size)
+            val textFieldDisabledForeground = IntArray(pixels.size)
             var rightmost = -1
             for (index in pixels.indices) {
                 when (ArgbColor(pixels[index])) {
@@ -240,6 +298,10 @@ internal object MinecraftProfileImplementation {
                         normalForeground[index] = transparentWhite.value
                         inactiveShadow[index] = transparentWhite.value
                         inactiveForeground[index] = transparentWhite.value
+                        textFieldShadow[index] = transparentWhite.value
+                        textFieldForeground[index] = transparentWhite.value
+                        textFieldDisabledShadow[index] = transparentWhite.value
+                        textFieldDisabledForeground[index] = transparentWhite.value
                     }
 
                     opaqueWhite -> {
@@ -249,6 +311,10 @@ internal object MinecraftProfileImplementation {
                         normalForeground[index] = opaqueWhite.value
                         inactiveShadow[index] = inactiveShadowColor.value
                         inactiveForeground[index] = inactiveForegroundColor.value
+                        textFieldShadow[index] = textFieldShadowColor.value
+                        textFieldForeground[index] = textFieldForegroundColor.value
+                        textFieldDisabledShadow[index] = textFieldDisabledShadowColor.value
+                        textFieldDisabledForeground[index] = textFieldDisabledForegroundColor.value
                     }
 
                     else -> {
@@ -262,6 +328,10 @@ internal object MinecraftProfileImplementation {
                 normalForeground = createDrawImage(glyphSize, normalForeground),
                 inactiveShadow = createDrawImage(glyphSize, inactiveShadow),
                 inactiveForeground = createDrawImage(glyphSize, inactiveForeground),
+                textFieldShadow = createDrawImage(glyphSize, textFieldShadow),
+                textFieldForeground = createDrawImage(glyphSize, textFieldForeground),
+                textFieldDisabledShadow = createDrawImage(glyphSize, textFieldDisabledShadow),
+                textFieldDisabledForeground = createDrawImage(glyphSize, textFieldDisabledForeground),
             )
         }
 
@@ -277,9 +347,6 @@ internal object MinecraftProfileImplementation {
             require(border < buttonSize.width / 2) {
                 "Button sprite borders must leave a nonempty source center."
             }
-            require(border < renderedButtonSize.width / 2) {
-                "Button sprite borders must leave a nonempty fixed destination center."
-            }
             return MinecraftButtonSpriteSnapshot.create(image, border, centerMode)
         }
     }
@@ -291,6 +358,8 @@ internal object MinecraftProfileImplementation {
         val listFooterSeparator: DrawImage,
         val scrollbarBackground: DrawImage,
         val scrollbarThumb: DrawImage,
+        val normalTextField: DrawImage,
+        val highlightedTextField: DrawImage,
         glyphs: Map<Int, MinecraftGlyphSnapshot>,
         val normalButton: MinecraftButtonSpriteSnapshot,
         val highlightedButton: MinecraftButtonSpriteSnapshot,
@@ -299,6 +368,8 @@ internal object MinecraftProfileImplementation {
         private val glyphs: Map<Int, MinecraftGlyphSnapshot> = Collections.unmodifiableMap(LinkedHashMap(glyphs))
 
         fun glyph(codePoint: Int): MinecraftGlyphSnapshot = glyphs.getValue(codePoint)
+
+        fun glyphSnapshot(): Map<Int, MinecraftGlyphSnapshot> = glyphs
 
         companion object {
             /**
@@ -311,6 +382,8 @@ internal object MinecraftProfileImplementation {
              * @param listFooterSeparator immutable menu-list footer separator.
              * @param scrollbarBackground immutable scrollbar-track sprite.
              * @param scrollbarThumb immutable scrollbar-thumb sprite.
+             * @param normalTextField normal TextField sprite.
+             * @param highlightedTextField focused TextField sprite.
              * @param normalButton normal sprite policy.
              * @param highlightedButton highlighted sprite policy.
              * @param disabledButton disabled sprite policy.
@@ -324,6 +397,8 @@ internal object MinecraftProfileImplementation {
                 listFooterSeparator: DrawImage,
                 scrollbarBackground: DrawImage,
                 scrollbarThumb: DrawImage,
+                normalTextField: DrawImage,
+                highlightedTextField: DrawImage,
                 glyphs: Map<Int, MinecraftGlyphSnapshot>,
                 normalButton: MinecraftButtonSpriteSnapshot,
                 highlightedButton: MinecraftButtonSpriteSnapshot,
@@ -336,6 +411,8 @@ internal object MinecraftProfileImplementation {
                     listFooterSeparator,
                     scrollbarBackground,
                     scrollbarThumb,
+                    normalTextField,
+                    highlightedTextField,
                     glyphs,
                     normalButton,
                     highlightedButton,
@@ -360,13 +437,17 @@ internal object MinecraftProfileImplementation {
 
         override fun UiScope.Text(
             text: UiText,
+            style: MinecraftTextStyle,
             modifier: Modifier,
             key: ElementKey<*>?,
         ) {
             val currentProfile = requireProfile()
             element(
                 createMinecraftTextElement(
-                    MinecraftTextRun.createNormal(text, currentProfile::glyph),
+                    when (style) {
+                        MinecraftTextStyle.Normal -> MinecraftTextRun.createNormal(text, currentProfile::glyph)
+                        MinecraftTextStyle.Inactive -> MinecraftTextRun.createInactive(text, currentProfile::glyph)
+                    },
                     modifier,
                     key,
                 ),
@@ -375,11 +456,16 @@ internal object MinecraftProfileImplementation {
 
         override fun UiScope.Button(
             label: UiText,
+            width: Int,
             enabled: Boolean,
             modifier: Modifier,
             key: ElementKey<*>?,
         ) {
             val currentProfile = requireProfile()
+            require(0 < width && width <= 200) { "Minecraft Button width must be positive and no larger than 200." }
+            require(currentProfile.normalButton.border * 2 < width) { "Minecraft Button width must leave a nonempty normal center." }
+            require(currentProfile.highlightedButton.border * 2 < width) { "Minecraft Button width must leave a nonempty highlighted center." }
+            require(currentProfile.disabledButton.border * 2 < width) { "Minecraft Button width must leave a nonempty disabled center." }
             val normalText = MinecraftTextRun.createNormal(label, currentProfile::glyph)
             val inactiveText = MinecraftTextRun.createInactive(label, currentProfile::glyph)
             element(
@@ -390,6 +476,27 @@ internal object MinecraftProfileImplementation {
                     normalText,
                     inactiveText,
                     normalText.text,
+                    width,
+                    enabled,
+                    modifier,
+                    key,
+                ),
+            )
+        }
+
+        override fun UiScope.TextField(
+            state: MinecraftTextFieldState,
+            enabled: Boolean,
+            modifier: Modifier,
+            key: ElementKey<*>?,
+        ) {
+            val currentProfile = requireProfile()
+            element(
+                createMinecraftTextFieldElement(
+                    currentProfile.normalTextField,
+                    currentProfile.highlightedTextField,
+                    currentProfile.glyphSnapshot(),
+                    state,
                     enabled,
                     modifier,
                     key,
@@ -486,6 +593,71 @@ internal object MinecraftProfileImplementation {
                 profile: ProfileSnapshot,
                 content: MinecraftUiContext.() -> Element,
             ): Evaluator = Evaluator(profile, content)
+        }
+    }
+
+    private class TextFieldState private constructor(
+        initialValue: String,
+        override val maxLength: Int,
+    ) : MinecraftTextFieldState {
+        private val ownerThread = Thread.currentThread()
+        private var observer: ((String) -> Unit)? = null
+        private var currentValue: String = validate(initialValue, maxLength)
+
+        override var value: String
+            get() {
+                checkThread()
+                return currentValue
+            }
+            set(value) {
+                checkThread()
+                val validated = validate(value, maxLength)
+                if (currentValue == validated) return
+                currentValue = validated
+                observer?.invoke(validated)
+            }
+
+        fun observe(callback: (String) -> Unit): () -> Unit {
+            checkThread()
+            check(observer == null) { "Minecraft TextField state already has a live observer." }
+            observer = callback
+            return {
+                checkThread()
+                if (observer === callback) observer = null
+            }
+        }
+
+        private fun checkThread() {
+            check(Thread.currentThread() === ownerThread) { "Minecraft TextField state requires its creator thread." }
+        }
+
+        companion object {
+            /**
+             * Creates validated private state.
+             *
+             * @param initialValue initial printable-ASCII value.
+             * @param maxLength positive maximum UTF-16 length.
+             * @return owner-thread state.
+             */
+            @JvmSynthetic
+            internal fun create(
+                initialValue: String,
+                maxLength: Int,
+            ): TextFieldState {
+                require(0 < maxLength) { "Minecraft TextField maximum length must be positive." }
+                return TextFieldState(initialValue, maxLength)
+            }
+
+            private fun validate(
+                value: String,
+                maxLength: Int,
+            ): String {
+                require(value.length <= maxLength) { "Minecraft TextField value exceeds its maximum length." }
+                require(value.all { character -> character.code in 0x20..0x7E }) {
+                    "Minecraft TextField supports only U+0020 through U+007E."
+                }
+                return value
+            }
         }
     }
 }

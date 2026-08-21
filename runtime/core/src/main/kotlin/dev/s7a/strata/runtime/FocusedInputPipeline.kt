@@ -1,8 +1,10 @@
 package dev.s7a.strata.runtime
 
+import dev.s7a.strata.geometry.IntOffset
 import dev.s7a.strata.input.InputResult
 import dev.s7a.strata.input.KeyboardEvent
 import dev.s7a.strata.input.TextInputEvent
+import dev.s7a.strata.node.ClipChildrenNode
 import dev.s7a.strata.node.FocusTargetNode
 import dev.s7a.strata.node.KeyboardInputNode
 import dev.s7a.strata.node.Node
@@ -38,19 +40,20 @@ internal class FocusedInputPipeline {
     }
 
     /**
-     * Acquires focus for the logical component containing one consumed pointer-input entry when it has an accepting target.
+     * Acquires focus for the deepest and latest-painted logical component at one pointer position when it has an accepting target.
      *
-     * @param entry retained pointer-input entry that consumed a primary press.
+     * @param root current logical root after placement.
+     * @param position pointer position in root coordinates.
      */
-    fun acquireFromPointer(entry: RetainedEntry) {
-        val owner = logicalOwner(entry)
-        if (focusTargets(owner).any { target -> target.acceptsFocus }) {
-            setFocusedOwner(owner)
-        }
+    fun acquireFromPointer(
+        root: RetainedNode,
+        position: IntOffset,
+    ) {
+        setFocusedOwner(focusOwnerAt(root.effectiveRoot, position, ancestorAllowsHit = true))
     }
 
     /**
-     * Dispatches one keyboard event through the focused component from its node toward outer modifiers.
+     * Dispatches one keyboard event through the focused component from its innermost modifier toward its node.
      *
      * @param event immutable key event.
      * @return consumed when focused behavior handles the event, otherwise ignored.
@@ -68,7 +71,7 @@ internal class FocusedInputPipeline {
     }
 
     /**
-     * Dispatches one text-input event through the focused component from its node toward outer modifiers.
+     * Dispatches one text-input event through the focused component from its innermost modifier toward its node.
      *
      * @param event immutable committed-character or preedit event.
      * @return consumed when focused behavior handles the event, otherwise ignored.
@@ -137,10 +140,34 @@ internal class FocusedInputPipeline {
         return current as RetainedNode
     }
 
+    private fun focusOwnerAt(
+        retained: RetainedEntry,
+        position: IntOffset,
+        ancestorAllowsHit: Boolean,
+    ): RetainedNode? {
+        val descendantsAllowHit =
+            ancestorAllowsHit &&
+                ((retained.node is ClipChildrenNode).not() || position in retained.bounds)
+        if (descendantsAllowHit) {
+            for (index in (0 until retained.effectiveChildCount).reversed()) {
+                val child = retained.effectiveChildAt(index)
+                if (child.placed) {
+                    val owner = focusOwnerAt(child, position, descendantsAllowHit)
+                    if (owner != null) return owner
+                }
+            }
+        }
+        if (ancestorAllowsHit && retained.placed && position in retained.bounds) {
+            val owner = logicalOwner(retained)
+            if (focusTargets(owner).any { target -> target.acceptsFocus }) return owner
+        }
+        return null
+    }
+
     private fun focusedNodes(owner: RetainedNode): List<Node> =
         buildList {
-            add(owner.node)
             owner.modifiers.asReversed().forEach { modifier -> add(modifier.node) }
+            add(owner.node)
         }
 
     private fun focusTargets(owner: RetainedNode): List<FocusTargetNode> = focusedNodes(owner).filterIsInstance<FocusTargetNode>()

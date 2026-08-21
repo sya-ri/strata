@@ -76,6 +76,7 @@ internal class ShowcaseParityEvidence private constructor(
             requireLocale(values.getValue("locale"))
             requireHash(values.getValue("native.fabric.headless.argb.sha256"), "full-frame pixel hash")
             requireHash(values.getValue("native.fabric.headless.scroll.argb.sha256"), "Scroll full-frame pixel hash")
+            requireHash(values.getValue("native.fabric.headless.direct-join.argb.sha256"), "Direct Join full-frame pixel hash")
 
             val overview = readVerifiedPng(root, "overview", values, IntSize(320, 180))
             val components =
@@ -176,6 +177,7 @@ internal class ShowcaseParityEvidence private constructor(
             when (component) {
                 DocumentedComponent.MenuBackground -> IntSize(32, 32)
                 DocumentedComponent.Text -> IntSize(150, 20)
+                DocumentedComponent.TextField -> IntSize(200, 20)
                 DocumentedComponent.Button -> IntSize(150, 20)
                 DocumentedComponent.Scroll -> IntSize(320, 94)
             }
@@ -200,6 +202,7 @@ internal class ShowcaseParityEvidence private constructor(
                 add("locale")
                 add("native.fabric.headless.argb.sha256")
                 add("native.fabric.headless.scroll.argb.sha256")
+                add("native.fabric.headless.direct-join.argb.sha256")
                 add("component.overview.png.sha256")
                 DocumentedComponent.entries.forEach { component -> add("component.${component.slug}.png.sha256") }
             }

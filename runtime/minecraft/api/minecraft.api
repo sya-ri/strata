@@ -18,6 +18,8 @@ public final class dev/s7a/strata/runtime/minecraft/MinecraftNineSliceCenterMode
 public final class dev/s7a/strata/runtime/minecraft/MinecraftRuntimeFactories {
 	public static final fun createMinecraftScreenDefinition (Ldev/s7a/strata/text/UiText;ZLkotlin/jvm/functions/Function1;)Ldev/s7a/strata/runtime/minecraft/MinecraftScreenDefinition;
 	public static synthetic fun createMinecraftScreenDefinition$default (Ldev/s7a/strata/text/UiText;ZLkotlin/jvm/functions/Function1;ILjava/lang/Object;)Ldev/s7a/strata/runtime/minecraft/MinecraftScreenDefinition;
+	public static final fun createMinecraftTextFieldState (Ljava/lang/String;I)Ldev/s7a/strata/runtime/minecraft/MinecraftTextFieldState;
+	public static synthetic fun createMinecraftTextFieldState$default (Ljava/lang/String;IILjava/lang/Object;)Ldev/s7a/strata/runtime/minecraft/MinecraftTextFieldState;
 	public static final fun createMinecraftUiHost (Ldev/s7a/strata/runtime/minecraft/MinecraftScreenDefinition;Ldev/s7a/strata/runtime/minecraft/MinecraftUiProfile;)Ldev/s7a/strata/runtime/minecraft/MinecraftUiHost;
 	public static final fun createMinecraftUiProfile (Lkotlin/jvm/functions/Function1;)Ldev/s7a/strata/runtime/minecraft/MinecraftUiProfile;
 }
@@ -26,30 +28,47 @@ public abstract interface class dev/s7a/strata/runtime/minecraft/MinecraftScreen
 	public abstract fun close ()V
 }
 
+public abstract interface class dev/s7a/strata/runtime/minecraft/MinecraftTextFieldState {
+	public abstract fun getMaxLength ()I
+	public abstract fun getValue ()Ljava/lang/String;
+	public abstract fun setValue (Ljava/lang/String;)V
+}
+
+public final class dev/s7a/strata/runtime/minecraft/MinecraftTextStyle : java/lang/Enum {
+	public static final field Inactive Ldev/s7a/strata/runtime/minecraft/MinecraftTextStyle;
+	public static final field Normal Ldev/s7a/strata/runtime/minecraft/MinecraftTextStyle;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public static fun valueOf (Ljava/lang/String;)Ldev/s7a/strata/runtime/minecraft/MinecraftTextStyle;
+	public static fun values ()[Ldev/s7a/strata/runtime/minecraft/MinecraftTextStyle;
+}
+
 public abstract interface class dev/s7a/strata/runtime/minecraft/MinecraftUiContext {
-	public abstract fun Button (Ldev/s7a/strata/dsl/UiScope;Ldev/s7a/strata/text/UiText;ZLdev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/element/ElementKey;)V
-	public fun Button (Ldev/s7a/strata/dsl/UiScope;Ljava/lang/String;ZLdev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/element/ElementKey;)V
-	public static synthetic fun Button$default (Ldev/s7a/strata/runtime/minecraft/MinecraftUiContext;Ldev/s7a/strata/dsl/UiScope;Ldev/s7a/strata/text/UiText;ZLdev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/element/ElementKey;ILjava/lang/Object;)V
-	public static synthetic fun Button$default (Ldev/s7a/strata/runtime/minecraft/MinecraftUiContext;Ldev/s7a/strata/dsl/UiScope;Ljava/lang/String;ZLdev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/element/ElementKey;ILjava/lang/Object;)V
+	public abstract fun Button (Ldev/s7a/strata/dsl/UiScope;Ldev/s7a/strata/text/UiText;IZLdev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/element/ElementKey;)V
+	public fun Button (Ldev/s7a/strata/dsl/UiScope;Ljava/lang/String;IZLdev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/element/ElementKey;)V
+	public static synthetic fun Button$default (Ldev/s7a/strata/runtime/minecraft/MinecraftUiContext;Ldev/s7a/strata/dsl/UiScope;Ldev/s7a/strata/text/UiText;IZLdev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/element/ElementKey;ILjava/lang/Object;)V
+	public static synthetic fun Button$default (Ldev/s7a/strata/runtime/minecraft/MinecraftUiContext;Ldev/s7a/strata/dsl/UiScope;Ljava/lang/String;IZLdev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/element/ElementKey;ILjava/lang/Object;)V
 	public abstract fun MenuBackground (Ldev/s7a/strata/dsl/UiScope;Ldev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/element/ElementKey;)V
 	public static synthetic fun MenuBackground$default (Ldev/s7a/strata/runtime/minecraft/MinecraftUiContext;Ldev/s7a/strata/dsl/UiScope;Ldev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/element/ElementKey;ILjava/lang/Object;)V
 	public abstract fun Scroll (Ldev/s7a/strata/dsl/UiScope;Ldev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/element/ElementKey;ILkotlin/jvm/functions/Function1;)V
 	public static synthetic fun Scroll$default (Ldev/s7a/strata/runtime/minecraft/MinecraftUiContext;Ldev/s7a/strata/dsl/UiScope;Ldev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/element/ElementKey;ILkotlin/jvm/functions/Function1;ILjava/lang/Object;)V
-	public abstract fun Text (Ldev/s7a/strata/dsl/UiScope;Ldev/s7a/strata/text/UiText;Ldev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/element/ElementKey;)V
-	public fun Text (Ldev/s7a/strata/dsl/UiScope;Ljava/lang/String;Ldev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/element/ElementKey;)V
-	public static synthetic fun Text$default (Ldev/s7a/strata/runtime/minecraft/MinecraftUiContext;Ldev/s7a/strata/dsl/UiScope;Ldev/s7a/strata/text/UiText;Ldev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/element/ElementKey;ILjava/lang/Object;)V
-	public static synthetic fun Text$default (Ldev/s7a/strata/runtime/minecraft/MinecraftUiContext;Ldev/s7a/strata/dsl/UiScope;Ljava/lang/String;Ldev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/element/ElementKey;ILjava/lang/Object;)V
+	public abstract fun Text (Ldev/s7a/strata/dsl/UiScope;Ldev/s7a/strata/text/UiText;Ldev/s7a/strata/runtime/minecraft/MinecraftTextStyle;Ldev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/element/ElementKey;)V
+	public fun Text (Ldev/s7a/strata/dsl/UiScope;Ljava/lang/String;Ldev/s7a/strata/runtime/minecraft/MinecraftTextStyle;Ldev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/element/ElementKey;)V
+	public static synthetic fun Text$default (Ldev/s7a/strata/runtime/minecraft/MinecraftUiContext;Ldev/s7a/strata/dsl/UiScope;Ldev/s7a/strata/text/UiText;Ldev/s7a/strata/runtime/minecraft/MinecraftTextStyle;Ldev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/element/ElementKey;ILjava/lang/Object;)V
+	public static synthetic fun Text$default (Ldev/s7a/strata/runtime/minecraft/MinecraftUiContext;Ldev/s7a/strata/dsl/UiScope;Ljava/lang/String;Ldev/s7a/strata/runtime/minecraft/MinecraftTextStyle;Ldev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/element/ElementKey;ILjava/lang/Object;)V
+	public abstract fun TextField (Ldev/s7a/strata/dsl/UiScope;Ldev/s7a/strata/runtime/minecraft/MinecraftTextFieldState;ZLdev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/element/ElementKey;)V
+	public static synthetic fun TextField$default (Ldev/s7a/strata/runtime/minecraft/MinecraftUiContext;Ldev/s7a/strata/dsl/UiScope;Ldev/s7a/strata/runtime/minecraft/MinecraftTextFieldState;ZLdev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/element/ElementKey;ILjava/lang/Object;)V
 }
 
 public final class dev/s7a/strata/runtime/minecraft/MinecraftUiContext$DefaultImpls {
-	public static fun Button (Ldev/s7a/strata/runtime/minecraft/MinecraftUiContext;Ldev/s7a/strata/dsl/UiScope;Ljava/lang/String;ZLdev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/element/ElementKey;)V
-	public static synthetic fun Button$default (Ldev/s7a/strata/runtime/minecraft/MinecraftUiContext;Ldev/s7a/strata/dsl/UiScope;Ldev/s7a/strata/text/UiText;ZLdev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/element/ElementKey;ILjava/lang/Object;)V
-	public static synthetic fun Button$default (Ldev/s7a/strata/runtime/minecraft/MinecraftUiContext;Ldev/s7a/strata/dsl/UiScope;Ljava/lang/String;ZLdev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/element/ElementKey;ILjava/lang/Object;)V
+	public static fun Button (Ldev/s7a/strata/runtime/minecraft/MinecraftUiContext;Ldev/s7a/strata/dsl/UiScope;Ljava/lang/String;IZLdev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/element/ElementKey;)V
+	public static synthetic fun Button$default (Ldev/s7a/strata/runtime/minecraft/MinecraftUiContext;Ldev/s7a/strata/dsl/UiScope;Ldev/s7a/strata/text/UiText;IZLdev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/element/ElementKey;ILjava/lang/Object;)V
+	public static synthetic fun Button$default (Ldev/s7a/strata/runtime/minecraft/MinecraftUiContext;Ldev/s7a/strata/dsl/UiScope;Ljava/lang/String;IZLdev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/element/ElementKey;ILjava/lang/Object;)V
 	public static synthetic fun MenuBackground$default (Ldev/s7a/strata/runtime/minecraft/MinecraftUiContext;Ldev/s7a/strata/dsl/UiScope;Ldev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/element/ElementKey;ILjava/lang/Object;)V
 	public static synthetic fun Scroll$default (Ldev/s7a/strata/runtime/minecraft/MinecraftUiContext;Ldev/s7a/strata/dsl/UiScope;Ldev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/element/ElementKey;ILkotlin/jvm/functions/Function1;ILjava/lang/Object;)V
-	public static fun Text (Ldev/s7a/strata/runtime/minecraft/MinecraftUiContext;Ldev/s7a/strata/dsl/UiScope;Ljava/lang/String;Ldev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/element/ElementKey;)V
-	public static synthetic fun Text$default (Ldev/s7a/strata/runtime/minecraft/MinecraftUiContext;Ldev/s7a/strata/dsl/UiScope;Ldev/s7a/strata/text/UiText;Ldev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/element/ElementKey;ILjava/lang/Object;)V
-	public static synthetic fun Text$default (Ldev/s7a/strata/runtime/minecraft/MinecraftUiContext;Ldev/s7a/strata/dsl/UiScope;Ljava/lang/String;Ldev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/element/ElementKey;ILjava/lang/Object;)V
+	public static fun Text (Ldev/s7a/strata/runtime/minecraft/MinecraftUiContext;Ldev/s7a/strata/dsl/UiScope;Ljava/lang/String;Ldev/s7a/strata/runtime/minecraft/MinecraftTextStyle;Ldev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/element/ElementKey;)V
+	public static synthetic fun Text$default (Ldev/s7a/strata/runtime/minecraft/MinecraftUiContext;Ldev/s7a/strata/dsl/UiScope;Ldev/s7a/strata/text/UiText;Ldev/s7a/strata/runtime/minecraft/MinecraftTextStyle;Ldev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/element/ElementKey;ILjava/lang/Object;)V
+	public static synthetic fun Text$default (Ldev/s7a/strata/runtime/minecraft/MinecraftUiContext;Ldev/s7a/strata/dsl/UiScope;Ljava/lang/String;Ldev/s7a/strata/runtime/minecraft/MinecraftTextStyle;Ldev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/element/ElementKey;ILjava/lang/Object;)V
+	public static synthetic fun TextField$default (Ldev/s7a/strata/runtime/minecraft/MinecraftUiContext;Ldev/s7a/strata/dsl/UiScope;Ldev/s7a/strata/runtime/minecraft/MinecraftTextFieldState;ZLdev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/element/ElementKey;ILjava/lang/Object;)V
 }
 
 public abstract interface class dev/s7a/strata/runtime/minecraft/MinecraftUiHost : java/lang/AutoCloseable {
@@ -78,5 +97,7 @@ public abstract interface class dev/s7a/strata/runtime/minecraft/MinecraftUiProf
 	public abstract fun printableAsciiGlyph (ILdev/s7a/strata/render/DrawImage;)V
 	public abstract fun scrollbarBackground (Ldev/s7a/strata/render/DrawImage;)V
 	public abstract fun scrollbarThumb (Ldev/s7a/strata/render/DrawImage;)V
+	public abstract fun textFieldHighlighted (Ldev/s7a/strata/render/DrawImage;)V
+	public abstract fun textFieldNormal (Ldev/s7a/strata/render/DrawImage;)V
 }
 

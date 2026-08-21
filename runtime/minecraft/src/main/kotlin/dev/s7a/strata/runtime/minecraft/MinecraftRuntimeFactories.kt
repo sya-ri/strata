@@ -24,6 +24,19 @@ public fun createMinecraftScreenDefinition(
 ): MinecraftScreenDefinition = MinecraftDefinitionImplementation.create(title, pausesGame, content)
 
 /**
+ * Creates owner-thread state for one Minecraft TextField.
+ *
+ * @param initialValue initial printable-ASCII value.
+ * @param maxLength positive maximum UTF-16 length; Minecraft EditBox defaults to 32 and individual screens may select a larger bound.
+ * @return mutable state detached from any UI tree.
+ * @throws IllegalArgumentException when [maxLength] is not positive or [initialValue] is unsupported or too long.
+ */
+public fun createMinecraftTextFieldState(
+    initialValue: String = "",
+    maxLength: Int = 32,
+): MinecraftTextFieldState = MinecraftProfileImplementation.createTextFieldState(initialValue, maxLength)
+
+/**
  * Creates one owner-thread host by atomically consuming a definition.
  *
  * Successful construction leaves the definition empty and transfers metadata and content to the new host.

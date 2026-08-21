@@ -3,13 +3,17 @@ package dev.s7a.strata.runtime.minecraft
 import dev.s7a.strata.render.DrawImage
 
 /**
- * Immutable four-layer representation of one printable-ASCII Minecraft glyph.
+ * Immutable eight-layer representation of one printable-ASCII Minecraft glyph.
  *
  * @property advance logical cursor advance derived from the source bitmap.
  * @property normalShadow opaque dark-gray shadow layer with transparent-white background.
  * @property normalForeground opaque white foreground layer with transparent-white background.
  * @property inactiveShadow opaque inactive dark-gray shadow layer with transparent-white background.
  * @property inactiveForeground opaque inactive gray foreground layer with transparent-white background.
+ * @property textFieldShadow exact enabled EditBox shadow layer.
+ * @property textFieldForeground exact enabled EditBox foreground layer.
+ * @property textFieldDisabledShadow exact disabled EditBox shadow layer.
+ * @property textFieldDisabledForeground exact disabled EditBox foreground layer.
  */
 internal class MinecraftGlyphSnapshot private constructor(
     @get:JvmSynthetic
@@ -22,6 +26,14 @@ internal class MinecraftGlyphSnapshot private constructor(
     internal val inactiveShadow: DrawImage,
     @get:JvmSynthetic
     internal val inactiveForeground: DrawImage,
+    @get:JvmSynthetic
+    internal val textFieldShadow: DrawImage,
+    @get:JvmSynthetic
+    internal val textFieldForeground: DrawImage,
+    @get:JvmSynthetic
+    internal val textFieldDisabledShadow: DrawImage,
+    @get:JvmSynthetic
+    internal val textFieldDisabledForeground: DrawImage,
 ) {
     /**
      * Owns the synthetic constructor bridge for immutable glyph snapshots.
@@ -35,7 +47,11 @@ internal class MinecraftGlyphSnapshot private constructor(
          * @param normalForeground normal foreground pixels.
          * @param inactiveShadow inactive shadow pixels.
          * @param inactiveForeground inactive foreground pixels.
-         * @return a four-layer glyph snapshot.
+         * @param textFieldShadow enabled EditBox shadow pixels.
+         * @param textFieldForeground enabled EditBox foreground pixels.
+         * @param textFieldDisabledShadow disabled EditBox shadow pixels.
+         * @param textFieldDisabledForeground disabled EditBox foreground pixels.
+         * @return an eight-layer glyph snapshot.
          */
         @JvmSynthetic
         internal fun create(
@@ -44,6 +60,10 @@ internal class MinecraftGlyphSnapshot private constructor(
             normalForeground: DrawImage,
             inactiveShadow: DrawImage,
             inactiveForeground: DrawImage,
+            textFieldShadow: DrawImage,
+            textFieldForeground: DrawImage,
+            textFieldDisabledShadow: DrawImage,
+            textFieldDisabledForeground: DrawImage,
         ): MinecraftGlyphSnapshot =
             MinecraftGlyphSnapshot(
                 advance,
@@ -51,6 +71,10 @@ internal class MinecraftGlyphSnapshot private constructor(
                 normalForeground,
                 inactiveShadow,
                 inactiveForeground,
+                textFieldShadow,
+                textFieldForeground,
+                textFieldDisabledShadow,
+                textFieldDisabledForeground,
             )
     }
 }

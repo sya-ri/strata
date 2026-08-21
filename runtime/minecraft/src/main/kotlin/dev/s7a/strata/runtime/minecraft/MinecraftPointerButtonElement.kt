@@ -25,7 +25,7 @@ import dev.s7a.strata.text.UiText
 import dev.s7a.strata.node.Node as RetainedNode
 
 /**
- * Internal immutable description for one profile-backed fixed-size pointer button.
+ * Internal immutable description for one profile-backed fixed-height pointer button.
  *
  * @param normalSprite normal unhovered sprite policy.
  * @param highlightedSprite enabled hovered sprite policy.
@@ -33,6 +33,7 @@ import dev.s7a.strata.node.Node as RetainedNode
  * @param normalText normal glyph layers retained for enabled states.
  * @param inactiveText inactive glyph layers retained for disabled state.
  * @param label validated literal retained for semantics.
+ * @param width fixed logical button width.
  * @param enabled whether the button uses enabled semantics and hover visuals.
  * @param modifier active behavior applied to the component.
  * @param key optional stable identity among direct siblings.
@@ -52,6 +53,8 @@ private class MinecraftPointerButtonElement private constructor(
     @get:JvmSynthetic
     internal val label: UiText.Literal,
     @get:JvmSynthetic
+    internal val width: Int,
+    @get:JvmSynthetic
     internal val enabled: Boolean,
     modifier: Modifier,
     key: ElementKey<*>?,
@@ -61,7 +64,7 @@ private class MinecraftPointerButtonElement private constructor(
         modifier = modifier,
     ) {
     /**
-     * Retained fixed-size node that paints the nine-slice button, observes hover, and emits semantics.
+     * Retained fixed-height node that paints the nine-slice button, observes hover, and emits semantics.
      */
     private class Node(
         initialNormalSprite: MinecraftButtonSpriteSnapshot,
@@ -70,6 +73,7 @@ private class MinecraftPointerButtonElement private constructor(
         initialNormalText: MinecraftTextRun,
         initialInactiveText: MinecraftTextRun,
         initialLabel: UiText.Literal,
+        initialWidth: Int,
         initialEnabled: Boolean,
     ) : RetainedNode(),
         MeasureNode,
@@ -77,8 +81,7 @@ private class MinecraftPointerButtonElement private constructor(
         PointerHoverNode,
         SemanticsNode,
         LifecycleNode {
-        private val buttonSize = IntSize(150, 20)
-        private val centerX = 75
+        private var width = initialWidth
         private val textOriginY = 6
         private var normalSprite: MinecraftButtonSpriteSnapshot? = initialNormalSprite
         private var highlightedSprite: MinecraftButtonSpriteSnapshot? = initialHighlightedSprite
@@ -94,8 +97,9 @@ private class MinecraftPointerButtonElement private constructor(
             scope: MeasureScope,
             constraints: Constraints,
         ): IntSize {
+            val buttonSize = IntSize(width, 20)
             require(constraints.isSatisfiedBy(buttonSize)) {
-                "Minecraft pointer buttons require constraints that contain 150 by 20."
+                "Minecraft pointer-button constraints must contain its requested width by 20."
             }
             return buttonSize
         }
@@ -109,7 +113,7 @@ private class MinecraftPointerButtonElement private constructor(
                 }
             paintSprite(scope, currentSprite)
             val currentText = if (enabled) checkNotNull(normalText) else checkNotNull(inactiveText)
-            val textLeft = Math.subtractExact(centerX, currentText.size.width / 2)
+            val textLeft = Math.subtractExact(width / 2, currentText.size.width / 2)
             currentText.paint(scope, textLeft, textOriginY)
         }
 
@@ -164,6 +168,7 @@ private class MinecraftPointerButtonElement private constructor(
             val normalTextChanged = checkNotNull(normalText).equivalentTo(current.normalText).not()
             val inactiveTextChanged = checkNotNull(inactiveText).equivalentTo(current.inactiveText).not()
             val labelChanged = label != current.label
+            val widthChanged = width != current.width
             val enabledChanged = enabled != current.enabled
             val wasHovered = hovered
             if (enabledChanged) {
@@ -175,11 +180,15 @@ private class MinecraftPointerButtonElement private constructor(
             normalText = current.normalText
             inactiveText = current.inactiveText
             label = current.label
+            width = current.width
             enabled = current.enabled
             var dirty = DirtyMask.None
             val paintChanged = spriteChanged || normalTextChanged || inactiveTextChanged
             if (paintChanged || (enabledChanged && wasHovered)) {
                 dirty += DirtyMask.of(DirtyPhase.Paint)
+            }
+            if (widthChanged) {
+                dirty += DirtyMask.of(DirtyPhase.Measure)
             }
             if (labelChanged || enabledChanged) {
                 dirty += DirtyMask.of(DirtyPhase.Semantics)
@@ -201,18 +210,18 @@ private class MinecraftPointerButtonElement private constructor(
             )
             val centerSource =
                 when (sprite.centerMode) {
-                    MinecraftNineSliceCenterMode.Tiled -> IntRect(border, 0, 150 - border, sourceHeight)
+                    MinecraftNineSliceCenterMode.Tiled -> IntRect(border, 0, width - border, sourceHeight)
                     MinecraftNineSliceCenterMode.Stretched -> IntRect(border, 0, 200 - border, sourceHeight)
                 }
             scope.blitImage(
                 sprite.image,
                 centerSource,
-                IntRect(border, 0, 150 - border, sourceHeight),
+                IntRect(border, 0, width - border, sourceHeight),
             )
             scope.blitImage(
                 sprite.image,
                 IntRect(200 - border, 0, 200, sourceHeight),
-                IntRect(150 - border, 0, 150, sourceHeight),
+                IntRect(width - border, 0, width, sourceHeight),
             )
         }
     }
@@ -226,8 +235,8 @@ private class MinecraftPointerButtonElement private constructor(
                 elementClass = MinecraftPointerButtonElement::class,
                 nodeClass = Node::class,
                 validateLocal = { element ->
-                    require(element.normalText.size.width <= 146) {
-                        "Minecraft pointer button labels must fit within 146 logical pixels."
+                    require(element.normalText.size.width <= element.width - 4) {
+                        "Minecraft pointer-button labels must fit within two-pixel horizontal margins."
                     }
                     require(element.inactiveText.size == element.normalText.size) {
                         "Minecraft pointer button label layers must have equal natural sizes."
@@ -241,6 +250,7 @@ private class MinecraftPointerButtonElement private constructor(
                         element.normalText,
                         element.inactiveText,
                         element.label,
+                        element.width,
                         element.enabled,
                     )
                 },
@@ -256,10 +266,11 @@ private class MinecraftPointerButtonElement private constructor(
          * @param normalText enabled label layers.
          * @param inactiveText disabled label layers.
          * @param label validated literal retained for semantics.
+         * @param width fixed logical width.
          * @param enabled whether the button uses enabled semantics and hover visuals.
          * @param modifier active behavior.
          * @param key optional stable sibling identity.
-         * @return a private fixed-size button element.
+         * @return a private fixed-height button element.
          */
         @JvmSynthetic
         internal fun create(
@@ -269,6 +280,7 @@ private class MinecraftPointerButtonElement private constructor(
             normalText: MinecraftTextRun,
             inactiveText: MinecraftTextRun,
             label: UiText.Literal,
+            width: Int,
             enabled: Boolean,
             modifier: Modifier,
             key: ElementKey<*>?,
@@ -280,6 +292,7 @@ private class MinecraftPointerButtonElement private constructor(
                 normalText,
                 inactiveText,
                 label,
+                width,
                 enabled,
                 modifier,
                 key,
@@ -296,10 +309,11 @@ private class MinecraftPointerButtonElement private constructor(
  * @param normalText enabled label layers.
  * @param inactiveText disabled label layers.
  * @param label validated literal retained for semantics.
+ * @param width fixed logical width.
  * @param enabled whether the button uses enabled semantics and hover visuals.
  * @param modifier active behavior.
  * @param key optional stable sibling identity.
- * @return a private fixed-size button element.
+ * @return a private fixed-height button element.
  */
 @JvmSynthetic
 internal fun createMinecraftPointerButtonElement(
@@ -309,6 +323,7 @@ internal fun createMinecraftPointerButtonElement(
     normalText: MinecraftTextRun,
     inactiveText: MinecraftTextRun,
     label: UiText.Literal,
+    width: Int,
     enabled: Boolean,
     modifier: Modifier,
     key: ElementKey<*>?,
@@ -320,6 +335,7 @@ internal fun createMinecraftPointerButtonElement(
         normalText,
         inactiveText,
         label,
+        width,
         enabled,
         modifier,
         key,

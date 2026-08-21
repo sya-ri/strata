@@ -2,7 +2,7 @@
 
 # Button
 
-Button renders the verified 150 by 20 Minecraft sprite and label states while reusable input actions live in modifiers.
+Button renders verified fixed-height Minecraft sprite and label states, including the native 150- and 200-pixel widths, while reusable input actions live in modifiers.
 
 This image is a 150 by 20 component crop from the exact native/Fabric/headless parity frame recorded in [the verification receipt](minecraft-26.2-parity.properties).
 

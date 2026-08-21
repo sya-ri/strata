@@ -2,6 +2,7 @@ package dev.s7a.strata.runtime
 
 import dev.s7a.strata.geometry.IntOffset
 import dev.s7a.strata.input.InputResult
+import dev.s7a.strata.input.PointerButton
 import dev.s7a.strata.input.PointerEvent
 import dev.s7a.strata.node.ClipChildrenNode
 import dev.s7a.strata.node.PointerHoverNode
@@ -34,10 +35,10 @@ internal class InputPipeline(
             is PointerEvent.Scroll,
             -> Unit
         }
-        val result = dispatchNode(root.effectiveRoot, event, ancestorAllowsHit = true)
-        if (event is PointerEvent.Press && result.consumedEntry != null) {
-            focusedInputPipeline.acquireFromPointer(result.consumedEntry)
+        if (event is PointerEvent.Press && event.button === PointerButton.Primary) {
+            focusedInputPipeline.acquireFromPointer(root, event.position)
         }
+        val result = dispatchNode(root.effectiveRoot, event, ancestorAllowsHit = true)
         return result.result
     }
 
@@ -106,13 +107,12 @@ internal class InputPipeline(
                     Math.subtractExact(event.position.y, retained.bounds.top),
                 )
             val result = input.onPointerEvent(event, local)
-            return PointerDispatch(result, if (result === InputResult.Consumed) retained else null)
+            return PointerDispatch(result)
         }
-        return PointerDispatch(InputResult.Ignored, null)
+        return PointerDispatch(InputResult.Ignored)
     }
 
     private data class PointerDispatch(
         val result: InputResult,
-        val consumedEntry: RetainedEntry?,
     )
 }
