@@ -1,16 +1,18 @@
+@file:Suppress("FunctionNaming", "ktlint:standard:function-naming")
+
 package dev.s7a.strata.runtime.minecraft
 
-import dev.s7a.strata.element.Element
+import dev.s7a.strata.dsl.UiScope
 import dev.s7a.strata.element.ElementKey
 import dev.s7a.strata.modifier.Modifier
 import dev.s7a.strata.text.UiText
 
 /**
- * Callback-lifetime factory context for Minecraft-backed element descriptions.
+ * Callback-lifetime implicit receiver for Minecraft-backed component DSL functions.
  *
  * The context is confined to the thread and dynamic extent of its screen-content callback.
  * Calls from another thread or after the callback returns fail before retaining arguments.
- * Returned elements retain only the immutable assets required by their behavior, plus the value, callback, and host-coordinator ownership needed by that behavior.
+ * Member extensions emit directly into the active [UiScope], so application code uses [MenuBackground], [Text], and [Button] without naming or retaining this context.
  */
 public sealed interface MinecraftUiContext {
     /**
@@ -21,13 +23,14 @@ public sealed interface MinecraftUiContext {
      *
      * @param modifier active behavior applied to the background.
      * @param key optional stable identity among direct siblings.
-     * @return a platform-neutral element backed by the transferred Minecraft profile.
-     * @throws IllegalStateException when the context is used from another thread or outside its callback.
+     * The emitted description retains the immutable background asset required by its behavior.
+     *
+     * @throws IllegalStateException when either receiver is used from another thread or outside its callback.
      */
-    public fun menuBackground(
+    public fun UiScope.MenuBackground(
         modifier: Modifier = Modifier.Empty,
         key: ElementKey<*>? = null,
-    ): Element
+    )
 
     /**
      * Creates one single-line printable-ASCII text element.
@@ -39,43 +42,79 @@ public sealed interface MinecraftUiContext {
      * @param text unresolved printable-ASCII literal retained unchanged for semantics.
      * @param modifier active behavior applied to the text.
      * @param key optional stable identity among direct siblings.
-     * @return a platform-neutral element backed by immutable glyph layers.
      * @throws IllegalArgumentException when the text is not a literal or contains an unsupported code point.
      * @throws ArithmeticException when checked natural-width arithmetic overflows.
-     * @throws IllegalStateException when the context is used from another thread or outside its callback.
+     * @throws IllegalStateException when either receiver is used from another thread or outside its callback.
      */
-    public fun text(
+    public fun UiScope.Text(
         text: UiText,
         modifier: Modifier = Modifier.Empty,
         key: ElementKey<*>? = null,
-    ): Element
+    )
 
     /**
-     * Creates one fixed-size printable-ASCII pointer button.
+     * Emits one single-line printable-ASCII literal text component into this UI scope.
+     *
+     * This convenience overload converts [text] to [UiText.Literal] and otherwise has the same ownership, threading, sizing, and failure behavior as [Text].
+     *
+     * @param text printable-ASCII literal retained unchanged for semantics.
+     * @param modifier active behavior applied to the text.
+     * @param key optional stable identity among direct siblings.
+     * @throws IllegalArgumentException when [text] contains an unsupported code point.
+     * @throws ArithmeticException when checked natural-width arithmetic overflows.
+     * @throws IllegalStateException when either receiver is used from another thread or outside its callback.
+     */
+    public fun UiScope.Text(
+        text: String,
+        modifier: Modifier = Modifier.Empty,
+        key: ElementKey<*>? = null,
+    ) {
+        Text(UiText.Literal(text), modifier, key)
+    }
+
+    /**
+     * Emits one fixed-size printable-ASCII pointer button.
      *
      * The natural size is exactly 150 by 20 logical pixels and constraints must admit that size.
      * The label is centered on the fixed button and must fit within 146 logical pixels.
      * Pointer movement updates hover only when the host receives an event; a stationary pointer does not create an implicit update.
-     * Primary presses invoke [onPress] synchronously when enabled and otherwise remain available to lower hit targets.
-     * The retained engine description and live node keep the [onPress] capture graph until reconciliation replaces them or terminal disposal releases the node.
-     * An old description retained separately by application code remains caller-owned and continues retaining its callback.
+     * The component owns enabled or disabled semantics and event-driven hover visuals.
+     * Reusable pointer actions are supplied through active modifiers such as `Modifier.onPress`, `Modifier.onRelease`, `Modifier.onMove`, `Modifier.onScroll`, and `Modifier.onHover`.
      *
      * @param label unresolved printable-ASCII literal retained for semantics.
-     * @param enabled whether the button can hover and consume a primary press.
+     * @param enabled whether the button uses enabled semantics and hover visuals.
      * @param modifier active behavior applied to the button.
      * @param key optional stable identity among direct siblings.
-     * @param onPress callback invoked once for each consumed primary press.
-     * @return a platform-neutral fixed-size button element.
      * @throws IllegalArgumentException when [label] is unsupported or wider than 146 logical pixels.
      * @throws ArithmeticException when checked label-width arithmetic overflows.
-     * @throws IllegalStateException when the context is used from another thread or outside its callback.
-     * @throws Throwable when [onPress] fails during pointer dispatch; the exact failure remains primary after host cleanup.
+     * @throws IllegalStateException when either receiver is used from another thread or outside its callback.
      */
-    public fun pointerButton(
+    public fun UiScope.Button(
         label: UiText,
         enabled: Boolean = true,
         modifier: Modifier = Modifier.Empty,
         key: ElementKey<*>? = null,
-        onPress: () -> Unit,
-    ): Element
+    )
+
+    /**
+     * Emits one fixed-size printable-ASCII literal pointer button into this UI scope.
+     *
+     * This convenience overload converts [label] to [UiText.Literal] and otherwise has the same ownership, threading, interaction, sizing, and failure behavior as [Button].
+     *
+     * @param label printable-ASCII label shown by the button and exposed as button semantics.
+     * @param enabled whether the button uses enabled semantics and hover visuals.
+     * @param modifier active behavior applied to the button.
+     * @param key optional stable identity among direct siblings.
+     * @throws IllegalArgumentException when [label] contains an unsupported code point or is wider than 146 logical pixels.
+     * @throws ArithmeticException when checked label-width arithmetic overflows.
+     * @throws IllegalStateException when either receiver is used from another thread or outside its callback.
+     */
+    public fun UiScope.Button(
+        label: String,
+        enabled: Boolean = true,
+        modifier: Modifier = Modifier.Empty,
+        key: ElementKey<*>? = null,
+    ) {
+        Button(UiText.Literal(label), enabled, modifier, key)
+    }
 }

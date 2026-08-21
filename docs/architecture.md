@@ -18,7 +18,8 @@ A module joins the build only with working behavior and tests.
   It synchronously renders a fixed positive viewport, rasterizes core draw commands into deterministic ARGB pixels, and encodes metadata-free RGBA8 PNG output without a desktop graphics dependency.
 - `runtime:minecraft` is a publishable Minecraft-independent adapter boundary built on `runtime:core`.
   Its opt-in host consumes a one-shot screen definition and a complete immutable profile, then converts every non-negative logical viewport into exact fixed root constraints.
-  Its callback-scoped context provides menu, printable text, and a fixed profile-backed pointer button with event-driven hover and primary-press callbacks.
+  Its callback-scoped implicit receiver provides menu background, printable text, and a fixed profile-backed pointer button inside ordinary `buildUi` scopes.
+  Button owns profile-backed appearance and enabled semantics, while platform-neutral active modifiers own raw pointer, press, release, move, scroll, and hover actions reusable by future Minecraft components.
   Hosts retain the core tree across transient detach and reattach, gate input until a successful frame, and expose no mapped game, Fabric, resource, renderer, version, coroutine, state, or source-binding type.
   The common button contract does not claim focus, keyboard, sound, or a platform-native widget system; hover changes only in response to delivered pointer movement.
 - `integration:api` verifies an external primitive against the public `api`, `runtime:core`, and `runtime:minecraft` boundaries.
@@ -95,6 +96,7 @@ Draw commands and semantics entries preserve parent-before-child and local emiss
 The backend must execute draw commands in that order.
 The core applies no implicit node or parent clipping; valid local paint overflow is retained, and a placed child can receive input outside its parent's bounds.
 Pointer hit testing uses half-open bounds, visits deepest and latest-painted candidates first, and bubbles ignored events.
+Pointer hover is a separate typed node capability evaluated for every placed node before move dispatch, producing distinct enter and exit transitions without changing ordinary consumption.
 
 Modifiers are active retained nodes in the effective pipeline ancestry and do not become settings copied into component nodes.
 Component scopes continue to expose logical children, while a modifier scope exposes its one virtual child.

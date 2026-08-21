@@ -295,6 +295,14 @@ public final class dev/s7a/strata/input/PointerEvent$Scroll : dev/s7a/strata/inp
 	public fun toString ()Ljava/lang/String;
 }
 
+public final class dev/s7a/strata/input/PointerHoverEvent : java/lang/Enum {
+	public static final field Enter Ldev/s7a/strata/input/PointerHoverEvent;
+	public static final field Exit Ldev/s7a/strata/input/PointerHoverEvent;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public static fun valueOf (Ljava/lang/String;)Ldev/s7a/strata/input/PointerHoverEvent;
+	public static fun values ()[Ldev/s7a/strata/input/PointerHoverEvent;
+}
+
 public final class dev/s7a/strata/layout/Alignment : java/lang/Enum {
 	public static final field BottomCenter Ldev/s7a/strata/layout/Alignment;
 	public static final field BottomEnd Ldev/s7a/strata/layout/Alignment;
@@ -398,6 +406,19 @@ public final class dev/s7a/strata/modifier/PaddingExtensionsKt {
 	public static final fun padding (Ldev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/geometry/Insets;)Ldev/s7a/strata/modifier/Modifier;
 }
 
+public final class dev/s7a/strata/modifier/PointerInputExtensionsKt {
+	public static final fun onHover (Ldev/s7a/strata/modifier/Modifier;Lkotlin/jvm/functions/Function1;)Ldev/s7a/strata/modifier/Modifier;
+	public static final fun onMove (Ldev/s7a/strata/modifier/Modifier;Lkotlin/jvm/functions/Function0;)Ldev/s7a/strata/modifier/Modifier;
+	public static final fun onMove (Ldev/s7a/strata/modifier/Modifier;Lkotlin/jvm/functions/Function2;)Ldev/s7a/strata/modifier/Modifier;
+	public static final fun onPointerEvent (Ldev/s7a/strata/modifier/Modifier;Lkotlin/jvm/functions/Function2;)Ldev/s7a/strata/modifier/Modifier;
+	public static final fun onPress (Ldev/s7a/strata/modifier/Modifier;Lkotlin/jvm/functions/Function0;)Ldev/s7a/strata/modifier/Modifier;
+	public static final fun onPress (Ldev/s7a/strata/modifier/Modifier;Lkotlin/jvm/functions/Function2;)Ldev/s7a/strata/modifier/Modifier;
+	public static final fun onRelease (Ldev/s7a/strata/modifier/Modifier;Lkotlin/jvm/functions/Function0;)Ldev/s7a/strata/modifier/Modifier;
+	public static final fun onRelease (Ldev/s7a/strata/modifier/Modifier;Lkotlin/jvm/functions/Function2;)Ldev/s7a/strata/modifier/Modifier;
+	public static final fun onScroll (Ldev/s7a/strata/modifier/Modifier;Lkotlin/jvm/functions/Function0;)Ldev/s7a/strata/modifier/Modifier;
+	public static final fun onScroll (Ldev/s7a/strata/modifier/Modifier;Lkotlin/jvm/functions/Function2;)Ldev/s7a/strata/modifier/Modifier;
+}
+
 public final class dev/s7a/strata/modifier/SemanticsExtensionsKt {
 	public static final fun semantics (Ldev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/semantics/Semantics;)Ldev/s7a/strata/modifier/Modifier;
 }
@@ -482,6 +503,10 @@ public abstract interface class dev/s7a/strata/node/PaintNode {
 public abstract interface class dev/s7a/strata/node/ParentDataModifierNode {
 	public abstract fun getParentDataKey ()Ldev/s7a/strata/layout/ParentDataKey;
 	public abstract fun parentData ()Ljava/lang/Object;
+}
+
+public abstract interface class dev/s7a/strata/node/PointerHoverNode {
+	public abstract fun onPointerHover (Z)V
 }
 
 public abstract interface class dev/s7a/strata/node/PointerInputNode {

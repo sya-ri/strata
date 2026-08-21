@@ -1,11 +1,14 @@
 package dev.s7a.strata.integration.external
 
+import dev.s7a.strata.dsl.buildUi
 import dev.s7a.strata.geometry.Constraints
 import dev.s7a.strata.geometry.IntOffset
 import dev.s7a.strata.geometry.IntSize
 import dev.s7a.strata.input.InputResult
 import dev.s7a.strata.input.PointerButton
 import dev.s7a.strata.input.PointerEvent
+import dev.s7a.strata.modifier.Modifier
+import dev.s7a.strata.modifier.onPress
 import dev.s7a.strata.node.DirtyPhase
 import dev.s7a.strata.render.createDrawImage
 import dev.s7a.strata.runtime.minecraft.MinecraftNineSliceCenterMode
@@ -28,8 +31,8 @@ internal class ExternalMinecraftUiHostIntegrationTest {
     @Test
     fun externalContentBuildsMenuAndTextThroughPublicContextWithoutRegistration() {
         val menuHost =
-            createMinecraftScreenDefinition(UiText.Literal("external menu")) { context ->
-                context.menuBackground()
+            createMinecraftScreenDefinition(UiText.Literal("external menu")) {
+                buildUi { MenuBackground() }
             }.let { definition -> createMinecraftUiHost(definition, profile()) }
         menuHost.attach()
         val menuFrame = menuHost.frame(IntSize(32, 32))
@@ -37,8 +40,8 @@ internal class ExternalMinecraftUiHostIntegrationTest {
         menuHost.close()
 
         val textHost =
-            createMinecraftScreenDefinition(UiText.Literal("external text")) { context ->
-                context.text(UiText.Literal("A B"))
+            createMinecraftScreenDefinition(UiText.Literal("external text")) {
+                buildUi { Text("A B") }
             }.let { definition -> createMinecraftUiHost(definition, profile()) }
         textHost.attach()
         val textFrame = textHost.frame(IntSize(6, 9))
@@ -56,7 +59,7 @@ internal class ExternalMinecraftUiHostIntegrationTest {
             createMinecraftScreenDefinition(
                 title = UiText.Literal("external"),
                 pausesGame = false,
-            ) { _ ->
+            ) {
                 contentCalls += 1
                 ExternalElement(probe = probe, width = 4, height = 3)
             }
@@ -96,8 +99,10 @@ internal class ExternalMinecraftUiHostIntegrationTest {
         var presses = 0
         val host =
             createMinecraftUiHost(
-                createMinecraftScreenDefinition(UiText.Literal("external button")) { context ->
-                    context.pointerButton(UiText.Literal("A")) { presses += 1 }
+                createMinecraftScreenDefinition(UiText.Literal("external button")) {
+                    buildUi {
+                        Button("A", modifier = Modifier.Empty.onPress { presses += 1 })
+                    }
                 },
                 profile(),
             )

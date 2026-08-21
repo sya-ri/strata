@@ -176,6 +176,23 @@ public class UiTree : AutoCloseable {
         }
 
     /**
+     * Clears hover state before an internal retained session detaches without disposing this tree.
+     *
+     * The operation is owner-thread confined and uses the most recently committed placement bounds even when later geometry became dirty.
+     * It invokes capable placed nodes in deepest/latest-painted-first order and retains the tree for reattachment.
+     *
+     * @throws IllegalStateException when the call is from another thread, another operation is active, or this tree is not active.
+     * @throws Throwable when a hover callback fails; the exact failure remains primary while the tree is poisoned and cleaned.
+     */
+    @JvmSynthetic
+    internal fun clearPointerHover() {
+        pipelineOperation {
+            val retainedRoot = root ?: return@pipelineOperation
+            pipeline.clearPointerHover(retainedRoot)
+        }
+    }
+
+    /**
      * Collects unresolved semantics in parent-before-child order.
      *
      * An empty tree returns an empty immutable list.

@@ -206,7 +206,9 @@ internal class UiSession private constructor(
      * Detaches the session while retaining its tree, state values, and source subscriptions.
      *
      * Detachment is owner-thread confined and legal only from the attached state.
+     * A previously committed frame clears every active pointer-hover transition before the tree is retained.
      * Pending source values remain queued and are applied at the next frame after reattachment.
+     * A hover callback failure poisons the session and closes retained ownership while preserving the exact failure as primary.
      */
     internal fun detach() {
         beginOperation(SessionOperation.Detach)
@@ -214,9 +216,14 @@ internal class UiSession private constructor(
             check(currentState === UiSessionState.Attached) {
                 "A session can detach only from Attached."
             }
-            currentState = UiSessionState.Detached
-            frameAvailable = false
-            retireGeneration()
+            runCatching {
+                if (frameAvailable) {
+                    checkNotNull(tree) { "An attached session has no retained tree." }.clearPointerHover()
+                }
+                currentState = UiSessionState.Detached
+                frameAvailable = false
+                retireGeneration()
+            }.getOrElse { failure -> fail(failure) }
         } finally {
             endOperation()
         }

@@ -16,7 +16,7 @@ internal class TransferredMinecraftDefinition private constructor(
     @get:JvmSynthetic
     internal val pausesGame: Boolean,
     @get:JvmSynthetic
-    internal val content: (MinecraftUiContext) -> Element,
+    internal val content: MinecraftUiContext.() -> Element,
 ) {
     /**
      * Owns the synthetic constructor bridge for the internal carrier.
@@ -34,7 +34,7 @@ internal class TransferredMinecraftDefinition private constructor(
         internal fun create(
             title: UiText,
             pausesGame: Boolean,
-            content: (MinecraftUiContext) -> Element,
+            content: MinecraftUiContext.() -> Element,
         ): TransferredMinecraftDefinition = TransferredMinecraftDefinition(title, pausesGame, content)
     }
 }

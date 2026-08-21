@@ -9,7 +9,6 @@ import dev.s7a.strata.modifier.Modifier
 import dev.s7a.strata.modifier.height
 import dev.s7a.strata.modifier.size
 import dev.s7a.strata.runtime.minecraft.MinecraftUiContext
-import dev.s7a.strata.text.UiText
 
 /**
  * Builds the Column panel used by the native, Fabric, and headless parity paths.
@@ -22,11 +21,11 @@ internal fun RowScope.columnPanel(minecraft: MinecraftUiContext) {
         horizontalAlignment = HorizontalAlignment.Center,
     ) {
         Spacer(modifier = Modifier.Empty.height(20))
-        element(minecraft.text(UiText.Literal("Column")))
+        with(minecraft) { Text("Column") }
         Spacer(modifier = Modifier.Empty.height(11))
-        element(minecraft.pointerButton(UiText.Literal("Enabled")) {})
+        with(minecraft) { Button("Enabled") }
         Spacer(modifier = Modifier.Empty.height(4))
-        element(minecraft.pointerButton(UiText.Literal("Disabled"), enabled = false) {})
+        with(minecraft) { Button("Disabled", enabled = false) }
     }
 }
 // showcase-source-end:column

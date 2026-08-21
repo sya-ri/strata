@@ -64,8 +64,8 @@ public sealed interface MinecraftUiHost : AutoCloseable {
     /**
      * Dispatches one pointer event through the most recently committed frame.
      *
-     * Pointer-button hover is updated only by delivered [PointerEvent.Move] events; a stationary pointer has no implicit hover transition.
-     * Primary button callbacks run synchronously, while non-primary, release, and scroll events remain ignored by the common button element.
+     * Hover observers and hover-aware components update only from delivered [PointerEvent.Move] events; a stationary pointer has no implicit hover transition.
+     * Active modifiers decide whether raw, press, release, move, and scroll events are consumed or continue through earlier painted candidates.
      *
      * @param event the pointer event in host coordinates.
      * @return the retained core input result.

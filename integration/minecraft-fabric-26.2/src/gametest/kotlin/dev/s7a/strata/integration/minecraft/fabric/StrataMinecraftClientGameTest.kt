@@ -150,14 +150,14 @@ public class StrataMinecraftClientGameTest : FabricClientGameTest {
     }
 
     private fun createDefinition() =
-        createMinecraftScreenDefinition(UiText.Literal("Strata parity")) { minecraft ->
-            createDescription(minecraft)
+        createMinecraftScreenDefinition(UiText.Literal("Strata parity")) {
+            createDescription(this)
         }
 
     private fun createDescription(minecraft: MinecraftUiContext): Element =
         buildUi {
             Box(modifier = Modifier.Empty.size(viewport.width, viewport.height)) {
-                element(minecraft.menuBackground(modifier = Modifier.Empty.fillMaxSize()))
+                with(minecraft) { MenuBackground(modifier = Modifier.Empty.fillMaxSize()) }
                 Column(modifier = Modifier.Empty.fillMaxSize()) {
                     Row(modifier = Modifier.Empty.size(viewport.width, panelSize.height)) {
                         overviewPanel(minecraft)

@@ -1,5 +1,6 @@
 package dev.s7a.strata.runtime.minecraft
 
+import dev.s7a.strata.dsl.buildUi
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
 import dev.s7a.strata.text.UiText
 import org.junit.jupiter.api.Assertions.assertEquals
@@ -59,8 +60,8 @@ internal class MinecraftScreenDefinitionTest {
     @Test
     fun definitionCanBeTransferredExactlyOnce() {
         val definition =
-            createMinecraftScreenDefinition(UiText.Literal("one")) { context ->
-                context.text(UiText.Literal("A"))
+            createMinecraftScreenDefinition(UiText.Literal("one")) {
+                buildUi { Text("A") }
             }
         val profile = MinecraftProfileFixture.create()
         val host = createMinecraftUiHost(definition, profile)
@@ -81,8 +82,8 @@ internal class MinecraftScreenDefinitionTest {
         val closedStateClass = closedStateClass()
         repeat(20) {
             val definition =
-                createMinecraftScreenDefinition(UiText.Literal("race")) { context ->
-                    context.text(UiText.Literal("A"))
+                createMinecraftScreenDefinition(UiText.Literal("race")) {
+                    buildUi { Text("A") }
                 }
             val profile = MinecraftProfileFixture.create()
             val ready = CountDownLatch(2)

@@ -1,5 +1,6 @@
 package dev.s7a.strata.runtime.minecraft
 
+import dev.s7a.strata.dsl.UiScope
 import dev.s7a.strata.element.Element
 import dev.s7a.strata.element.ElementKey
 import dev.s7a.strata.geometry.IntSize
@@ -38,21 +39,19 @@ internal object MinecraftProfileImplementation {
     /**
      * Creates one core-session evaluator from a complete profile and transferred content callback.
      *
-     * The evaluator retains its complete profile, content callback, and hover coordinator until one evaluation or explicit release and then clears them.
+     * The evaluator retains its complete profile and content callback until one evaluation or explicit release and then clears them.
      *
      * @param profile complete profile produced by this runtime.
      * @param content transferred application callback.
-     * @param coordinator host-owned owner-thread hover coordinator transferred for button elements.
      * @return an owner-thread one-shot element evaluator.
      */
     @JvmSynthetic
     fun createEvaluator(
         profile: MinecraftUiProfile,
-        content: (MinecraftUiContext) -> Element,
-        coordinator: MinecraftButtonHoverCoordinator,
+        content: MinecraftUiContext.() -> Element,
     ): () -> Element =
         when (profile) {
-            is ProfileSnapshot -> Evaluator.create(profile, content, coordinator)
+            is ProfileSnapshot -> Evaluator.create(profile, content)
         }
 
     /**
@@ -266,60 +265,60 @@ internal object MinecraftProfileImplementation {
 
     private class Context private constructor(
         initialProfile: ProfileSnapshot,
-        initialCoordinator: MinecraftButtonHoverCoordinator,
     ) : MinecraftUiContext {
         private val ownerThread = Thread.currentThread()
         private var profile: ProfileSnapshot? = initialProfile
-        private var coordinator: MinecraftButtonHoverCoordinator? = initialCoordinator
 
-        override fun menuBackground(
+        override fun UiScope.MenuBackground(
             modifier: Modifier,
             key: ElementKey<*>?,
-        ): Element = createMinecraftMenuBackgroundElement(requireProfile().menuBackground, modifier, key)
+        ) {
+            val description = createMinecraftMenuBackgroundElement(requireProfile().menuBackground, modifier, key)
+            element(description)
+        }
 
-        override fun text(
+        override fun UiScope.Text(
             text: UiText,
             modifier: Modifier,
             key: ElementKey<*>?,
-        ): Element {
+        ) {
             val currentProfile = requireProfile()
-            return createMinecraftTextElement(
-                MinecraftTextRun.createNormal(text, currentProfile::glyph),
-                modifier,
-                key,
+            element(
+                createMinecraftTextElement(
+                    MinecraftTextRun.createNormal(text, currentProfile::glyph),
+                    modifier,
+                    key,
+                ),
             )
         }
 
-        override fun pointerButton(
+        override fun UiScope.Button(
             label: UiText,
             enabled: Boolean,
             modifier: Modifier,
             key: ElementKey<*>?,
-            onPress: () -> Unit,
-        ): Element {
+        ) {
             val currentProfile = requireProfile()
-            val currentCoordinator = requireCoordinator()
             val normalText = MinecraftTextRun.createNormal(label, currentProfile::glyph)
             val inactiveText = MinecraftTextRun.createInactive(label, currentProfile::glyph)
-            return createMinecraftPointerButtonElement(
-                currentProfile.normalButton,
-                currentProfile.highlightedButton,
-                currentProfile.disabledButton,
-                normalText,
-                inactiveText,
-                normalText.text,
-                enabled,
-                onPress,
-                currentCoordinator,
-                modifier,
-                key,
+            element(
+                createMinecraftPointerButtonElement(
+                    currentProfile.normalButton,
+                    currentProfile.highlightedButton,
+                    currentProfile.disabledButton,
+                    normalText,
+                    inactiveText,
+                    normalText.text,
+                    enabled,
+                    modifier,
+                    key,
+                ),
             )
         }
 
         fun close() {
             check(Thread.currentThread() === ownerThread) { "Minecraft UI context requires its creator thread." }
             profile = null
-            coordinator = null
         }
 
         private fun requireProfile(): ProfileSnapshot {
@@ -327,48 +326,37 @@ internal object MinecraftProfileImplementation {
             return checkNotNull(profile) { "Minecraft UI context is closed." }
         }
 
-        private fun requireCoordinator(): MinecraftButtonHoverCoordinator {
-            check(Thread.currentThread() === ownerThread) { "Minecraft UI context requires its creator thread." }
-            return checkNotNull(coordinator) { "Minecraft UI context is closed." }
-        }
-
         companion object {
             /**
              * Creates one private callback-lifetime context.
              *
              * @param profile complete immutable profile available during evaluation.
-             * @param coordinator host-owned owner-thread hover coordinator available during evaluation.
              * @return an active context bound to the current thread.
              */
             @JvmSynthetic
             internal fun create(
                 profile: ProfileSnapshot,
-                coordinator: MinecraftButtonHoverCoordinator,
-            ): Context = Context(profile, coordinator)
+            ): Context = Context(profile)
         }
     }
 
     private class Evaluator private constructor(
         initialProfile: ProfileSnapshot,
-        initialContent: (MinecraftUiContext) -> Element,
-        initialCoordinator: MinecraftButtonHoverCoordinator,
+        initialContent: MinecraftUiContext.() -> Element,
     ) : () -> Element {
         private val ownerThread = Thread.currentThread()
         private var profile: ProfileSnapshot? = initialProfile
-        private var content: ((MinecraftUiContext) -> Element)? = initialContent
-        private var coordinator: MinecraftButtonHoverCoordinator? = initialCoordinator
+        private var content: (MinecraftUiContext.() -> Element)? = initialContent
 
         override fun invoke(): Element {
             check(Thread.currentThread() === ownerThread) { "Minecraft content evaluation requires the host owner thread." }
             val currentProfile = checkNotNull(profile) { "Minecraft screen content was already evaluated." }
             val currentContent = checkNotNull(content) { "Minecraft screen content was already evaluated." }
-            val currentCoordinator = checkNotNull(coordinator) { "Minecraft screen content was already evaluated." }
             profile = null
             content = null
-            coordinator = null
-            val context = Context.create(currentProfile, currentCoordinator)
+            val context = Context.create(currentProfile)
             return try {
-                currentContent(context)
+                context.currentContent()
             } finally {
                 context.close()
             }
@@ -378,7 +366,6 @@ internal object MinecraftProfileImplementation {
             check(Thread.currentThread() === ownerThread) { "Minecraft content release requires the host owner thread." }
             profile = null
             content = null
-            coordinator = null
         }
 
         companion object {
@@ -387,15 +374,13 @@ internal object MinecraftProfileImplementation {
              *
              * @param profile complete profile retained until evaluation or release.
              * @param content application content retained until evaluation or release.
-             * @param coordinator host-owned hover coordinator retained until evaluation or release.
              * @return a one-shot evaluator.
              */
             @JvmSynthetic
             internal fun create(
                 profile: ProfileSnapshot,
-                content: (MinecraftUiContext) -> Element,
-                coordinator: MinecraftButtonHoverCoordinator,
-            ): Evaluator = Evaluator(profile, content, coordinator)
+                content: MinecraftUiContext.() -> Element,
+            ): Evaluator = Evaluator(profile, content)
         }
     }
 }

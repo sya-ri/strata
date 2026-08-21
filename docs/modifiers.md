@@ -43,7 +43,14 @@ An extent addition that cannot be represented as an `Int` fails instead of wrapp
 
 `background` emits one fill over its complete local bounds before content is painted.
 `semantics` emits one separate unresolved entry before content semantics and does not merge descendant values.
+`onPointerEvent` handles the complete typed pointer protocol and returns an explicit propagation result.
+`onPress`, `onRelease`, `onMove`, and `onScroll` provide typed event-specific handlers; their simple action overloads consume press, release, and scroll while move remains non-consuming.
+The simple press overload handles only the primary button, while the typed overload can inspect and decide every button.
+`onHover` observes distinct typed enter and exit transitions without consuming movement.
+Hover uses half-open accumulated bounds, is recomputed for every pointer move before ordinary move dispatch, and exits during retained session detachment.
+Layout movement below a stationary pointer does not create a transition until another move event arrives.
 Changing size or padding invalidates measurement, changing a background invalidates paint, and changing semantics invalidates only semantics.
+Changing a pointer callback updates live input behavior without invalidating a frame phase.
 An equal value does not invalidate a phase.
 
 ## Parent data
@@ -84,6 +91,7 @@ Cleanup failures are suppressed on the primary failure and every owned node is a
 
 Paint currently runs outer modifier, inner modifier, and component in parent-before-child order.
 Pointer dispatch visits the component after its logical descendants and then bubbles through inner and outer modifiers.
+Hover observation independently visits every placed capable node deepest and latest-painted first, so ordinary move consumption does not hide enter or exit state from another overlapping observer.
 Semantics are emitted in effective parent-before-child order and remain unresolved until an adapter consumes them.
 Future modifier-specific capabilities can add typed contracts without changing the component child scope.
 

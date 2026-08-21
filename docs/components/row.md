@@ -20,7 +20,6 @@ import dev.s7a.strata.modifier.Modifier
 import dev.s7a.strata.modifier.height
 import dev.s7a.strata.modifier.size
 import dev.s7a.strata.runtime.minecraft.MinecraftUiContext
-import dev.s7a.strata.text.UiText
 
 /**
  * Builds the Row panel used by the native, Fabric, and headless parity paths.
@@ -33,11 +32,11 @@ internal fun RowScope.rowPanel(minecraft: MinecraftUiContext) {
         horizontalAlignment = HorizontalAlignment.Center,
     ) {
         Spacer(modifier = Modifier.Empty.height(20))
-        element(minecraft.text(UiText.Literal("Row")))
+        with(minecraft) { Text("Row") }
         Spacer(modifier = Modifier.Empty.height(11))
         Row(spacing = 10) {
-            element(minecraft.pointerButton(UiText.Literal("Left")) {})
-            element(minecraft.pointerButton(UiText.Literal("Right")) {})
+            with(minecraft) { Button("Left") }
+            with(minecraft) { Button("Right") }
         }
     }
 }

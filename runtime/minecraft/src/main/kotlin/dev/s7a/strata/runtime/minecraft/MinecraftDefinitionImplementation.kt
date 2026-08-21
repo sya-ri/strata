@@ -20,7 +20,7 @@ internal object MinecraftDefinitionImplementation {
     fun create(
         title: UiText,
         pausesGame: Boolean,
-        content: (MinecraftUiContext) -> Element,
+        content: MinecraftUiContext.() -> Element,
     ): MinecraftScreenDefinition = ScreenDefinition.create(TransferredMinecraftDefinition.create(title, pausesGame, content))
 
     /**

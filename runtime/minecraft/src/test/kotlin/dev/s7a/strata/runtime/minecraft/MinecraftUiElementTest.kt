@@ -1,5 +1,6 @@
 package dev.s7a.strata.runtime.minecraft
 
+import dev.s7a.strata.dsl.buildUi
 import dev.s7a.strata.element.Element
 import dev.s7a.strata.geometry.Constraints
 import dev.s7a.strata.geometry.IntOffset
@@ -33,7 +34,7 @@ import java.util.concurrent.TimeUnit
 internal class MinecraftUiElementTest {
     @Test
     fun menuBackgroundUsesFullSourceAndRowMajorThirtyTwoPixelTiles() {
-        val host = host { context -> context.menuBackground() }
+        val host = host { buildUi { MenuBackground() } }
         host.attach()
 
         val frame = host.frame(IntSize(64, 48))
@@ -61,7 +62,7 @@ internal class MinecraftUiElementTest {
             )
         val host =
             createMinecraftUiHost(
-                createMinecraftScreenDefinition(UiText.Literal("menu")) { context -> context.menuBackground() },
+                createMinecraftScreenDefinition(UiText.Literal("menu")) { buildUi { MenuBackground() } },
                 MinecraftProfileFixture.create(source),
             )
         host.attach()
@@ -86,7 +87,7 @@ internal class MinecraftUiElementTest {
 
     @Test
     fun zeroMenuAxisEmitsNoCommands() {
-        val host = host { context -> context.menuBackground() }
+        val host = host { buildUi { MenuBackground() } }
         host.attach()
         assertEquals(emptyList<DrawCommand>(), host.frame(IntSize(0, 8)).drawCommands)
         assertEquals(emptyList<DrawCommand>(), host.frame(IntSize(8, 0)).drawCommands)
@@ -95,7 +96,7 @@ internal class MinecraftUiElementTest {
 
     @Test
     fun menuPreflightsFinalTileOverflowBeforeIteration() {
-        val host = host { context -> context.menuBackground() }
+        val host = host { buildUi { MenuBackground() } }
         host.attach()
         assertThrows(ArithmeticException::class.java) {
             host.frame(IntSize(Int.MAX_VALUE - 1, 1))
@@ -106,7 +107,7 @@ internal class MinecraftUiElementTest {
     @Test
     fun menuBackgroundRejectsAnUnboundedAxisInTheCoreTree() {
         var element: Element? = null
-        val host = host { context -> context.menuBackground().also { element = it } }
+        val host = host { buildUi { MenuBackground() }.also { element = it } }
         host.attach()
         try {
             listOf(
@@ -174,7 +175,7 @@ internal class MinecraftUiElementTest {
     @Test
     fun textPaintsShadowBeforeForegroundAndEmitsExactSemantics() {
         val text = UiText.Literal("A B")
-        val host = host { context -> context.text(text) }
+        val host = host { buildUi { Text(text) } }
         host.attach()
 
         val frame = host.frame(IntSize(9, 9))
@@ -208,29 +209,29 @@ internal class MinecraftUiElementTest {
 
     @Test
     fun textUsesRightmostAdvanceAndImplicitSpaceWidth() {
-        val emptyHost = host { context -> context.text(UiText.Literal("")) }
+        val emptyHost = host { buildUi { Text("") } }
         emptyHost.attach()
         assertEquals(IntSize(0, 9), emptyHost.frame(IntSize(0, 9)).size)
         emptyHost.close()
 
-        val spaceHost = host { context -> context.text(UiText.Literal(" ")) }
+        val spaceHost = host { buildUi { Text(" ") } }
         spaceHost.attach()
         assertEquals(IntSize(4, 9), spaceHost.frame(IntSize(4, 9)).size)
         spaceHost.close()
 
-        val leftmostHost = host { context -> context.text(UiText.Literal("A")) }
+        val leftmostHost = host { buildUi { Text("A") } }
         leftmostHost.attach()
         assertEquals(IntSize(2, 9), leftmostHost.frame(IntSize(2, 9)).size)
         leftmostHost.close()
 
-        val rightmostHost = host { context -> context.text(UiText.Literal("H")) }
+        val rightmostHost = host { buildUi { Text("H") } }
         rightmostHost.attach()
         assertEquals(IntSize(9, 9), rightmostHost.frame(IntSize(9, 9)).size)
         rightmostHost.close()
 
         val allPrintable = (0x21..0x7E).map(Int::toChar).joinToString(separator = "")
         val allWidth = (0x21..0x7E).sumOf { codePoint -> (codePoint - 0x21) % 8 + 2 }
-        val allHost = host { context -> context.text(UiText.Literal(allPrintable)) }
+        val allHost = host { buildUi { Text(allPrintable) } }
         allHost.attach()
         val allFrame = allHost.frame(IntSize(allWidth, 9))
         assertEquals(IntSize(allWidth, 9), allFrame.size)
@@ -340,7 +341,7 @@ internal class MinecraftUiElementTest {
     fun unsupportedTextFailsDuringFirstAttach() {
         val failure =
             assertThrows(IllegalArgumentException::class.java) {
-                val host = host { context -> context.text(UiText.Translated("menu.title")) }
+                val host = host { buildUi { Text(UiText.Translated("menu.title")) } }
                 host.attach()
             }
         assertEquals("Common Minecraft text currently requires UiText.Literal.", failure.message)
@@ -360,7 +361,7 @@ internal class MinecraftUiElementTest {
                 UiText.Literal("\uD83D\uDE00"),
             )
         unsupported.forEach { text ->
-            val unsupportedHost = host { context -> context.text(text) }
+            val unsupportedHost = host { buildUi { Text(text) } }
             assertThrows(IllegalArgumentException::class.java) { unsupportedHost.attach() }
             unsupportedHost.close()
         }
@@ -368,11 +369,11 @@ internal class MinecraftUiElementTest {
 
     @Test
     fun surrogateAndInsufficientConstraintsFailWithoutFallback() {
-        val surrogateHost = host { context -> context.text(UiText.Literal("\uD83D\uDE00")) }
+        val surrogateHost = host { buildUi { Text("\uD83D\uDE00") } }
         assertThrows(IllegalArgumentException::class.java) { surrogateHost.attach() }
         surrogateHost.close()
 
-        val constrainedHost = host { context -> context.text(UiText.Literal("A")) }
+        val constrainedHost = host { buildUi { Text("A") } }
         constrainedHost.attach()
         assertThrows(IllegalArgumentException::class.java) {
             constrainedHost.frame(IntSize(1, 1))
@@ -382,13 +383,13 @@ internal class MinecraftUiElementTest {
 
     @Test
     fun emptyAndSpaceTextUseNaturalSizeWithoutGlyphCommands() {
-        val emptyHost = host { context -> context.text(UiText.Literal("")) }
+        val emptyHost = host { buildUi { Text("") } }
         emptyHost.attach()
         assertEquals(IntSize(0, 9), emptyHost.frame(IntSize(0, 9)).size)
         assertEquals(emptyList<DrawCommand>(), emptyHost.frame(IntSize(0, 9)).drawCommands)
         emptyHost.close()
 
-        val spaceHost = host { context -> context.text(UiText.Literal(" ")) }
+        val spaceHost = host { buildUi { Text(" ") } }
         spaceHost.attach()
         val frame = spaceHost.frame(IntSize(4, 9))
         assertEquals(IntSize(4, 9), frame.size)
@@ -400,12 +401,14 @@ internal class MinecraftUiElementTest {
     fun escapedContextIsClosedAfterContentCallback() {
         var escaped: MinecraftUiContext? = null
         val host =
-            host { context ->
-                escaped = context
-                context.menuBackground()
+            host {
+                escaped = this
+                buildUi { MenuBackground() }
             }
         host.attach()
-        assertThrows(IllegalStateException::class.java) { checkNotNull(escaped).menuBackground() }
+        assertThrows(IllegalStateException::class.java) {
+            with(checkNotNull(escaped)) { buildUi { MenuBackground() } }
+        }
         val profileField = checkNotNull(escaped).javaClass.getDeclaredField("profile")
         profileField.isAccessible = true
         assertNull(profileField.get(escaped))
@@ -417,16 +420,17 @@ internal class MinecraftUiElementTest {
         var wrongThreadFailure: Throwable? = null
         var wrongThreadRunner: Thread? = null
         val host =
-            host { context ->
+            host {
+                val context = this
                 val task =
                     FutureTask<Throwable?> {
-                        runCatching { context.menuBackground() }.exceptionOrNull()
+                        runCatching { with(context) { buildUi { MenuBackground() } } }.exceptionOrNull()
                     }
                 val runner = Thread(task)
                 wrongThreadRunner = runner
                 runner.start()
                 wrongThreadFailure = task.get(5, TimeUnit.SECONDS)
-                context.menuBackground()
+                buildUi { MenuBackground() }
             }
         try {
             host.attach()
@@ -437,7 +441,7 @@ internal class MinecraftUiElementTest {
         }
     }
 
-    private fun host(content: (MinecraftUiContext) -> Element): MinecraftUiHost =
+    private fun host(content: MinecraftUiContext.() -> Element): MinecraftUiHost =
         createMinecraftUiHost(
             createMinecraftScreenDefinition(UiText.Literal("test"), content = content),
             MinecraftProfileFixture.create(),

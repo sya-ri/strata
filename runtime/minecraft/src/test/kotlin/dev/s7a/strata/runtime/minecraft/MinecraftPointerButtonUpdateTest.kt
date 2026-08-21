@@ -1,181 +1,135 @@
 package dev.s7a.strata.runtime.minecraft
 
+import dev.s7a.strata.dsl.buildUi
 import dev.s7a.strata.element.Element
-import dev.s7a.strata.geometry.IntOffset
 import dev.s7a.strata.geometry.IntSize
-import dev.s7a.strata.input.InputResult
-import dev.s7a.strata.input.PointerButton
-import dev.s7a.strata.input.PointerEvent
 import dev.s7a.strata.modifier.Modifier
 import dev.s7a.strata.node.DirtyMask
 import dev.s7a.strata.node.DirtyPhase
 import dev.s7a.strata.node.LifecycleNode
-import dev.s7a.strata.node.PointerInputNode
+import dev.s7a.strata.node.PointerHoverNode
 import dev.s7a.strata.render.DrawImage
 import dev.s7a.strata.render.createDrawImage
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
 import dev.s7a.strata.text.UiText
 import org.junit.jupiter.api.Assertions.assertEquals
-import org.junit.jupiter.api.Assertions.assertSame
-import org.junit.jupiter.api.Assertions.assertThrows
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 
 /**
- * Verifies retained pointer-button mask classification, callback replacement, and hover retention.
+ * Verifies retained pointer-button mask classification, hover state, and asset release.
  */
 @OptIn(InternalStrataRuntimeApi::class)
 internal class MinecraftPointerButtonUpdateTest {
     @Test
-    fun equalAndCallbackOnlyUpdatesAreCleanAndUseTheReplacementCallback() {
-        var oldCalls = 0
-        var newCalls = 0
-        val coordinator = MinecraftButtonHoverCoordinator.create()
+    fun equalUpdatesAreClean() {
         val assets = assets()
-        val previous = button(assets, coordinator, onPress = { oldCalls += 1 })
-        val current = button(assets, coordinator, onPress = { newCalls += 1 })
+        val previous = button(assets)
+        val current = button(assets)
         val node = previous.type.createErased(previous)
         val release = node.bindRuntime { }
         try {
             assertEquals(DirtyMask.None, previous.type.updateErased(previous, previous, node))
             assertEquals(DirtyMask.None, previous.type.updateErased(previous, current, node))
-            val result =
-                (node as PointerInputNode).onPointerEvent(
-                    PointerEvent.Press(IntOffset.Zero, PointerButton.Primary),
-                    IntOffset.Zero,
-                )
-            assertEquals(InputResult.Consumed, result)
-            assertEquals(0, oldCalls)
-            assertEquals(1, newCalls)
         } finally {
             release()
             (node as LifecycleNode).dispose()
-            coordinator.abandon()
         }
     }
 
     @Test
     fun spriteAndSameLabelGlyphLayerChangesInvalidatePaintOnly() {
-        val coordinator = MinecraftButtonHoverCoordinator.create()
         val base = assets()
-        val previous = button(base, coordinator)
-        try {
-            val changedSprite =
-                base.copy(
-                    normalSprite = sprite(0xFF505050.toInt()),
-                )
-            assertEquals(
-                DirtyMask.of(DirtyPhase.Paint),
-                updateMask(previous, button(changedSprite, coordinator)),
+        val previous = button(base)
+        val changedSprite =
+            base.copy(
+                normalSprite = sprite(0xFF505050.toInt()),
             )
+        assertEquals(
+            DirtyMask.of(DirtyPhase.Paint),
+            updateMask(previous, button(changedSprite)),
+        )
 
-            val glyphPrevious = button(base, coordinator)
-            val changedGlyph =
-                base.copy(
-                    normalGlyph = glyph(0xFF505050.toInt()),
-                )
-            assertEquals(
-                DirtyMask.of(DirtyPhase.Paint),
-                updateMask(glyphPrevious, button(changedGlyph, coordinator)),
+        val glyphPrevious = button(base)
+        val changedGlyph =
+            base.copy(
+                normalGlyph = glyph(0xFF505050.toInt()),
             )
-        } finally {
-            coordinator.abandon()
-        }
+        assertEquals(
+            DirtyMask.of(DirtyPhase.Paint),
+            updateMask(glyphPrevious, button(changedGlyph)),
+        )
     }
 
     @Test
     fun labelAndEnabledChangesInvalidatePaintAndSemantics() {
-        val coordinator = MinecraftButtonHoverCoordinator.create()
         val assets = assets()
-        val previous = button(assets, coordinator)
-        try {
-            val labelChanged = button(assets, coordinator, label = "B")
-            assertEquals(
-                DirtyMask.of(DirtyPhase.Paint) + DirtyMask.of(DirtyPhase.Semantics),
-                updateMask(previous, labelChanged),
-            )
-            val disabled = button(assets, coordinator, enabled = false)
-            assertEquals(
-                DirtyMask.of(DirtyPhase.Paint) + DirtyMask.of(DirtyPhase.Semantics),
-                updateMask(previous, disabled),
-            )
-        } finally {
-            coordinator.abandon()
-        }
+        val previous = button(assets)
+        val labelChanged = button(assets, label = "B")
+        assertEquals(
+            DirtyMask.of(DirtyPhase.Paint) + DirtyMask.of(DirtyPhase.Semantics),
+            updateMask(previous, labelChanged),
+        )
+        val disabled = button(assets, enabled = false)
+        assertEquals(
+            DirtyMask.of(DirtyPhase.Paint) + DirtyMask.of(DirtyPhase.Semantics),
+            updateMask(previous, disabled),
+        )
     }
 
     @Test
-    fun equalUpdatePreservesHoveredIdentityAndCoordinatorSwapClearsItWithPaintOnly() {
-        val oldCoordinator = MinecraftButtonHoverCoordinator.create()
-        val newCoordinator = MinecraftButtonHoverCoordinator.create()
+    fun equalUpdatePreservesHoverAndDisablingClearsIt() {
         val base = assets()
-        val previous = button(base, oldCoordinator)
+        val previous = button(base)
         val node = previous.type.createErased(previous)
         val invalidations = ArrayList<DirtyMask>()
         val release = node.bindRuntime(invalidations::add)
-        val target = node as MinecraftButtonHoverCoordinator.Target
+        val hover = node as PointerHoverNode
         try {
-            oldCoordinator.beginMove()
-            oldCoordinator.offer(target)
-            oldCoordinator.finishMove()
+            hover.onPointerHover(true)
             invalidations.clear()
 
-            val equal = button(base, oldCoordinator)
+            val equal = button(base)
             assertEquals(DirtyMask.None, previous.type.updateErased(previous, equal, node))
             assertTrue(invalidations.isEmpty())
+            assertTrue(readPrivateField(node, "hovered") as Boolean)
 
-            val swapped = button(base, newCoordinator)
+            val disabled = button(base, enabled = false)
             assertEquals(
-                DirtyMask.of(DirtyPhase.Paint),
-                previous.type.updateErased(equal, swapped, node),
+                DirtyMask.of(DirtyPhase.Paint) + DirtyMask.of(DirtyPhase.Semantics),
+                previous.type.updateErased(equal, disabled, node),
             )
+            assertEquals(false, readPrivateField(node, "hovered"))
             assertTrue(invalidations.isEmpty())
         } finally {
             release()
             (node as LifecycleNode).dispose()
-            oldCoordinator.abandon()
-            newCoordinator.abandon()
         }
     }
 
     @Test
-    fun hoveredNodeForgetDoesNotInvalidateAndDisposeReleasesCallbackAndAssets() {
-        val coordinator = MinecraftButtonHoverCoordinator.create()
-        var calls = 0
-        val element = button(assets(), coordinator, onPress = { calls += 1 })
+    fun disposeReleasesAssetsAndHoverState() {
+        val element = button(assets())
         val node = element.type.createErased(element)
         val release = node.bindRuntime { }
-        val target = node as MinecraftButtonHoverCoordinator.Target
         try {
-            coordinator.beginMove()
-            coordinator.offer(target)
-            coordinator.finishMove()
+            (node as PointerHoverNode).onPointerHover(true)
             assertTrue(readPrivateField(node, "hovered") as Boolean)
-
-            coordinator.forget(target)
-            coordinator.beginMove()
-            coordinator.finishMove()
-            assertTrue(readPrivateField(node, "hovered") as Boolean)
-
             (node as LifecycleNode).dispose()
-            assertEquals(null, readPrivateField(node, "onPress"))
-            assertEquals(null, readPrivateField(node, "coordinator"))
             assertEquals(null, readPrivateField(node, "normalSprite"))
-            assertEquals(0, calls)
+            assertEquals(false, readPrivateField(node, "hovered"))
             (node as LifecycleNode).dispose()
         } finally {
             release()
-            coordinator.abandon()
         }
     }
 
     @Test
-    fun terminalHostClearsCoordinatorAndEvaluatorOwnership() {
-        var callbackCalls = 0
+    fun terminalHostClearsEvaluatorAndMetadataOwnership() {
         val host =
             createMinecraftUiHost(
-                createMinecraftScreenDefinition(UiText.Literal("button")) { context ->
-                    context.pointerButton(UiText.Literal("A")) { callbackCalls += 1 }
+                createMinecraftScreenDefinition(UiText.Literal("button")) {
+                    buildUi { Button("A") }
                 },
                 MinecraftProfileFixture.create(),
             )
@@ -185,38 +139,8 @@ internal class MinecraftPointerButtonUpdateTest {
         } finally {
             host.close()
         }
-        assertEquals(null, readPrivateField(host, "coordinator"))
         assertEquals(null, readPrivateField(host, "evaluator"))
         assertEquals(null, readPrivateField(host, "metadata"))
-        assertEquals(0, callbackCalls)
-
-        val primary = IllegalStateException("button callback")
-        val failingHost =
-            createMinecraftUiHost(
-                createMinecraftScreenDefinition(UiText.Literal("button")) { context ->
-                    context.pointerButton(UiText.Literal("A")) { throw primary }
-                },
-                MinecraftProfileFixture.create(),
-            )
-        try {
-            failingHost.attach()
-            failingHost.frame(IntSize(150, 20))
-            val failure =
-                assertThrows(IllegalStateException::class.java) {
-                    failingHost.dispatchPointer(
-                        PointerEvent.Press(
-                            IntOffset(1, 1),
-                            PointerButton.Primary,
-                        ),
-                    )
-                }
-            assertSame(primary, failure)
-            assertEquals(null, readPrivateField(failingHost, "coordinator"))
-            assertEquals(null, readPrivateField(failingHost, "evaluator"))
-            assertEquals(null, readPrivateField(failingHost, "metadata"))
-        } finally {
-            failingHost.close()
-        }
     }
 
     private class Assets(
@@ -246,10 +170,8 @@ internal class MinecraftPointerButtonUpdateTest {
 
     private fun button(
         assets: Assets,
-        coordinator: MinecraftButtonHoverCoordinator,
         label: String = "A",
         enabled: Boolean = true,
-        onPress: () -> Unit = {},
     ): Element {
         val literal = UiText.Literal(label)
         val normalText = MinecraftTextRun.createNormal(literal) { assets.normalGlyph }
@@ -262,8 +184,6 @@ internal class MinecraftPointerButtonUpdateTest {
             inactiveText,
             literal,
             enabled,
-            onPress,
-            coordinator,
             Modifier.Empty,
             null,
         )

@@ -1,6 +1,7 @@
 package dev.s7a.strata.runtime.minecraft
 
-import dev.s7a.strata.element.Element
+import dev.s7a.strata.dsl.UiScope
+import dev.s7a.strata.dsl.buildUi
 import dev.s7a.strata.element.ElementKey
 import dev.s7a.strata.geometry.IntSize
 import dev.s7a.strata.input.InputResult
@@ -30,7 +31,7 @@ internal class MinecraftRuntimeApiContractTest {
         )
         assertInterfaceSurface(
             MinecraftUiContext::class.java,
-            setOf("menuBackground", "text", "pointerButton"),
+            setOf("MenuBackground", "Text", "Button"),
             allowDefaultImpls = true,
         )
         assertInterfaceSurface(MinecraftUiProfile::class.java, emptySet())
@@ -82,18 +83,40 @@ internal class MinecraftRuntimeApiContractTest {
         assertMethod(methods.getValue("frame"), listOf(IntSize::class.java), RuntimeUiFrame::class.java)
         assertMethod(methods.getValue("dispatchPointer"), listOf(PointerEvent::class.java), InputResult::class.java)
 
-        val contextMethods = MinecraftUiContext::class.java.declaredMethods.associateBy { method -> method.name }
-        assertMethod(
-            contextMethods.getValue("pointerButton"),
-            listOf(
-                UiText::class.java,
-                checkNotNull(Boolean::class.javaPrimitiveType),
-                UiModifier::class.java,
-                ElementKey::class.java,
-                Function0::class.java,
+        val contextMethods = MinecraftUiContext::class.java.declaredMethods.toList()
+        assertEquals(
+            setOf(
+                listOf(UiScope::class.java, UiText::class.java, UiModifier::class.java, ElementKey::class.java),
+                listOf(UiScope::class.java, String::class.java, UiModifier::class.java, ElementKey::class.java),
             ),
-            Element::class.java,
+            contextMethods
+                .filter { method -> method.name == ContextMethodName.Text.jvmName }
+                .map { method -> method.parameterTypes.toList() }
+                .toSet(),
         )
+        assertEquals(
+            setOf(
+                listOf(
+                    UiScope::class.java,
+                    UiText::class.java,
+                    checkNotNull(Boolean::class.javaPrimitiveType),
+                    UiModifier::class.java,
+                    ElementKey::class.java,
+                ),
+                listOf(
+                    UiScope::class.java,
+                    String::class.java,
+                    checkNotNull(Boolean::class.javaPrimitiveType),
+                    UiModifier::class.java,
+                    ElementKey::class.java,
+                ),
+            ),
+            contextMethods
+                .filter { method -> method.name == ContextMethodName.Button.jvmName }
+                .map { method -> method.parameterTypes.toList() }
+                .toSet(),
+        )
+        contextMethods.forEach { method -> assertEquals(Void.TYPE, method.returnType) }
     }
 
     @Test
@@ -105,7 +128,6 @@ internal class MinecraftRuntimeApiContractTest {
             "dev.s7a.strata.runtime.minecraft.MinecraftDefinitionImplementation",
             "dev.s7a.strata.runtime.minecraft.MinecraftProfileImplementation",
             "dev.s7a.strata.runtime.minecraft.MinecraftTextRun",
-            "dev.s7a.strata.runtime.minecraft.MinecraftButtonHoverCoordinator",
             "dev.s7a.strata.runtime.minecraft.MinecraftPointerButtonElement",
         ).forEach { name ->
             val implementation = Class.forName(name)
@@ -124,7 +146,7 @@ internal class MinecraftRuntimeApiContractTest {
     }
 
     @Test
-    fun pointerButtonAndHoverCarriersHaveNoNonsyntheticJvmSurface() {
+    fun pointerButtonCarriersHaveNoNonsyntheticJvmSurface() {
         val button = Class.forName("dev.s7a.strata.runtime.minecraft.MinecraftPointerButtonElement")
         assertFalse(Modifier.isPublic(button.modifiers), button.name)
         assertFalse(Modifier.isProtected(button.modifiers), button.name)
@@ -133,9 +155,6 @@ internal class MinecraftRuntimeApiContractTest {
                 button,
                 Class.forName("dev.s7a.strata.runtime.minecraft.MinecraftPointerButtonElementKt"),
                 Class.forName("dev.s7a.strata.runtime.minecraft.MinecraftPointerButtonElement\$Companion"),
-                MinecraftButtonHoverCoordinator::class.java,
-                Class.forName("dev.s7a.strata.runtime.minecraft.MinecraftButtonHoverCoordinator\$Target"),
-                Class.forName("dev.s7a.strata.runtime.minecraft.MinecraftButtonHoverCoordinator\$Companion"),
             )
         carriers.forEach { type ->
             assertTrue(type.declaredMethods.none { method -> method.name.startsWith("access$") }, type.name)
@@ -202,16 +221,16 @@ internal class MinecraftRuntimeApiContractTest {
     @Test
     fun privateImplementationsKeepStatePrivateAndNoContentAccessor() {
         val definition =
-            createMinecraftScreenDefinition(UiText.Literal("surface")) { context ->
-                context.menuBackground()
+            createMinecraftScreenDefinition(UiText.Literal("surface")) {
+                buildUi { MenuBackground() }
             }
         val profile = MinecraftProfileFixture.create()
         var context: MinecraftUiContext? = null
         val host =
             createMinecraftUiHost(
-                createMinecraftScreenDefinition(UiText.Literal("surface")) { currentContext ->
-                    context = currentContext
-                    currentContext.menuBackground()
+                createMinecraftScreenDefinition(UiText.Literal("surface")) {
+                    context = this
+                    buildUi { MenuBackground() }
                 },
                 profile,
             )
@@ -268,7 +287,6 @@ internal class MinecraftRuntimeApiContractTest {
                     "createEvaluator",
                     MinecraftUiProfile::class.java,
                     Function1::class.java,
-                    MinecraftButtonHoverCoordinator::class.java,
                 ).isSynthetic,
         )
         assertTrue(
@@ -333,7 +351,9 @@ internal class MinecraftRuntimeApiContractTest {
         assertEquals(expectedMethods, declaredMethods.map { method -> method.name }.toSet())
         declaredMethods.forEach { method ->
             assertTrue(Modifier.isPublic(method.modifiers))
-            assertTrue(Modifier.isAbstract(method.modifiers))
+            if (allowDefaultImpls.not()) {
+                assertTrue(Modifier.isAbstract(method.modifiers))
+            }
             assertFalse(method.isSynthetic)
         }
     }
@@ -357,5 +377,12 @@ internal class MinecraftRuntimeApiContractTest {
     ) {
         assertEquals(parameters, method.parameterTypes.toList())
         assertEquals(returnType, method.returnType)
+    }
+
+    private enum class ContextMethodName(
+        val jvmName: String,
+    ) {
+        Text("Text"),
+        Button("Button"),
     }
 }

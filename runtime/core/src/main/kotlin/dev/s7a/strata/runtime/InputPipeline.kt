@@ -3,6 +3,7 @@ package dev.s7a.strata.runtime
 import dev.s7a.strata.geometry.IntOffset
 import dev.s7a.strata.input.InputResult
 import dev.s7a.strata.input.PointerEvent
+import dev.s7a.strata.node.PointerHoverNode
 import dev.s7a.strata.node.PointerInputNode
 
 /**
@@ -19,7 +20,45 @@ internal class InputPipeline {
     fun dispatch(
         root: RetainedEntry,
         event: PointerEvent,
-    ): InputResult = dispatchNode(root, event)
+    ): InputResult {
+        if (event is PointerEvent.Move) {
+            updateHover(root, event)
+        }
+        return dispatchNode(root, event)
+    }
+
+    /**
+     * Clears hover from every placed capable node before a retained session detaches.
+     *
+     * @param root the laid-out retained root.
+     * @throws Throwable when a hover callback rejects the exit transition.
+     */
+    fun clearHover(root: RetainedEntry) {
+        visitHover(root) { _ -> false }
+    }
+
+    private fun updateHover(
+        root: RetainedEntry,
+        event: PointerEvent.Move,
+    ) {
+        visitHover(root) { retained -> event.position in retained.bounds }
+    }
+
+    private fun visitHover(
+        retained: RetainedEntry,
+        hovered: (RetainedEntry) -> Boolean,
+    ) {
+        for (index in (0 until retained.effectiveChildCount).reversed()) {
+            val child = retained.effectiveChildAt(index)
+            if (child.placed) {
+                visitHover(child, hovered)
+            }
+        }
+        val hover = retained.node as? PointerHoverNode
+        if (hover != null && retained.placed) {
+            hover.onPointerHover(hovered(retained))
+        }
+    }
 
     private fun dispatchNode(
         retained: RetainedEntry,

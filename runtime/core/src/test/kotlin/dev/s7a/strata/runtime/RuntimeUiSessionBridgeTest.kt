@@ -1,9 +1,15 @@
 package dev.s7a.strata.runtime
 
+import dev.s7a.strata.dsl.Spacer
+import dev.s7a.strata.dsl.buildUi
 import dev.s7a.strata.geometry.Constraints
 import dev.s7a.strata.geometry.IntOffset
 import dev.s7a.strata.input.InputResult
 import dev.s7a.strata.input.PointerEvent
+import dev.s7a.strata.input.PointerHoverEvent
+import dev.s7a.strata.modifier.Modifier
+import dev.s7a.strata.modifier.onHover
+import dev.s7a.strata.modifier.size
 import dev.s7a.strata.runtime.spi.RuntimeUiSession
 import dev.s7a.strata.runtime.spi.createRuntimeUiSession
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
@@ -80,6 +86,34 @@ internal class RuntimeUiSessionBridgeTest {
         session.close()
         assertEquals(1, probe.events.count { event -> event is TestProbe.Event.Detach })
         assertEquals(1, probe.events.count { event -> event is TestProbe.Event.Dispose })
+    }
+
+    @Test
+    fun detachEmitsOneHoverExitBeforeRetainedReattach() {
+        val transitions = ArrayList<PointerHoverEvent>()
+        val session =
+            createRuntimeUiSession {
+                buildUi {
+                    Spacer(
+                        modifier =
+                            Modifier.Empty
+                                .size(2, 1)
+                                .onHover(transitions::add),
+                    )
+                }
+            }
+
+        session.attach()
+        session.frame(Constraints.fixed(2, 1))
+        assertEquals(InputResult.Ignored, session.dispatchPointer(PointerEvent.Move(IntOffset.Zero)))
+        session.detach()
+        assertEquals(listOf(PointerHoverEvent.Enter, PointerHoverEvent.Exit), transitions)
+
+        session.attach()
+        session.frame(Constraints.fixed(2, 1))
+        session.detach()
+        assertEquals(listOf(PointerHoverEvent.Enter, PointerHoverEvent.Exit), transitions)
+        session.close()
     }
 
     @Test

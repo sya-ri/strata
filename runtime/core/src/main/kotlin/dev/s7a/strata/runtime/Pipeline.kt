@@ -78,6 +78,16 @@ internal class Pipeline(
     ): InputResult = inputPipeline.dispatch(root.effectiveRoot, event)
 
     /**
+     * Clears hover from every placed capable node in [root].
+     *
+     * @param root the installed logical root retained across session detachment.
+     * @throws Throwable when a hover callback rejects the exit transition.
+     */
+    fun clearPointerHover(root: RetainedNode) {
+        inputPipeline.clearHover(root.effectiveRoot)
+    }
+
+    /**
      * Collects unresolved semantics through effective ancestry.
      *
      * @param root the installed logical root.

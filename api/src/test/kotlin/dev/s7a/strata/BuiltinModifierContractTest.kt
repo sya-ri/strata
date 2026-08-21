@@ -1,6 +1,7 @@
 package dev.s7a.strata
 
 import dev.s7a.strata.geometry.Insets
+import dev.s7a.strata.input.InputResult
 import dev.s7a.strata.modifier.Modifier
 import dev.s7a.strata.modifier.background
 import dev.s7a.strata.modifier.fillMaxHeight
@@ -8,6 +9,12 @@ import dev.s7a.strata.modifier.fillMaxSize
 import dev.s7a.strata.modifier.fillMaxWidth
 import dev.s7a.strata.modifier.height
 import dev.s7a.strata.modifier.heightIn
+import dev.s7a.strata.modifier.onHover
+import dev.s7a.strata.modifier.onMove
+import dev.s7a.strata.modifier.onPointerEvent
+import dev.s7a.strata.modifier.onPress
+import dev.s7a.strata.modifier.onRelease
+import dev.s7a.strata.modifier.onScroll
 import dev.s7a.strata.modifier.padding
 import dev.s7a.strata.modifier.semantics
 import dev.s7a.strata.modifier.size
@@ -69,6 +76,7 @@ internal class BuiltinModifierContractTest {
         val fillHeight = fillWidth.fillMaxHeight()
         val background = fillHeight.background(ArgbColor(0xFF112233.toInt()))
         val semantics = background.semantics(Semantics(label = UiText.Literal("label")))
+        val pointer = semantics.onPointerEvent { _, _ -> InputResult.Ignored }
 
         assertEquals(0, empty.elements().size)
         assertEquals(1, padding.elements().size)
@@ -83,7 +91,8 @@ internal class BuiltinModifierContractTest {
         assertEquals(10, fillHeight.elements().size)
         assertEquals(11, background.elements().size)
         assertEquals(12, semantics.elements().size)
-        assertNotSame(empty, semantics)
+        assertEquals(13, pointer.elements().size)
+        assertNotSame(empty, pointer)
         assertSame(padding.elements()[0].type, size.elements()[0].type)
         assertEquals(empty, Modifier.Empty)
     }
@@ -141,6 +150,11 @@ internal class BuiltinModifierContractTest {
             second = Modifier.Empty.semantics(Semantics(label = UiText.Literal("second"))),
             expected = DirtyMask.of(DirtyPhase.Semantics),
         )
+        assertUpdateMask(
+            first = Modifier.Empty.onPress { _, _ -> InputResult.Ignored },
+            second = Modifier.Empty.onPress { _, _ -> InputResult.Consumed },
+            expected = DirtyMask.None,
+        )
     }
 
     @Test
@@ -156,6 +170,33 @@ internal class BuiltinModifierContractTest {
                 Modifier.Empty.fillMaxSize(),
                 Modifier.Empty.fillMaxWidth(),
                 Modifier.Empty.fillMaxHeight(),
+            )
+        val token =
+            modifiers
+                .first()
+                .elements()
+                .single()
+                .type
+
+        modifiers.drop(1).forEach { modifier ->
+            assertSame(token, modifier.elements().single().type)
+        }
+    }
+
+    @Test
+    fun everyPointerActionFactorySharesOneStableToken() {
+        val modifiers =
+            listOf(
+                Modifier.Empty.onPointerEvent { _, _ -> InputResult.Ignored },
+                Modifier.Empty.onPress { _, _ -> InputResult.Ignored },
+                Modifier.Empty.onPress {},
+                Modifier.Empty.onRelease { _, _ -> InputResult.Ignored },
+                Modifier.Empty.onRelease {},
+                Modifier.Empty.onMove { _, _ -> InputResult.Ignored },
+                Modifier.Empty.onMove {},
+                Modifier.Empty.onScroll { _, _ -> InputResult.Ignored },
+                Modifier.Empty.onScroll {},
+                Modifier.Empty.onHover {},
             )
         val token =
             modifiers

@@ -1,5 +1,7 @@
 package dev.s7a.strata.runtime.minecraft
 
+import dev.s7a.strata.dsl.Box
+import dev.s7a.strata.dsl.buildUi
 import dev.s7a.strata.element.Element
 import dev.s7a.strata.geometry.IntOffset
 import dev.s7a.strata.geometry.IntRect
@@ -7,6 +9,8 @@ import dev.s7a.strata.geometry.IntSize
 import dev.s7a.strata.input.InputResult
 import dev.s7a.strata.input.PointerButton
 import dev.s7a.strata.input.PointerEvent
+import dev.s7a.strata.modifier.Modifier
+import dev.s7a.strata.modifier.onPress
 import dev.s7a.strata.runtime.headless.rasterizeHeadless
 import dev.s7a.strata.runtime.render.DrawCommand
 import dev.s7a.strata.semantics.SemanticsRole
@@ -27,8 +31,8 @@ internal class MinecraftPointerButtonTest {
     fun fixedButtonEmitsNineSliceThenGlyphCommandsAndSemantics() {
         var presses = 0
         val host =
-            host { context ->
-                context.pointerButton(UiText.Literal("A")) { presses += 1 }
+            host {
+                buildUi { Button("A", modifier = Modifier.Empty.onPress { presses += 1 }) }
             }
         host.attach()
 
@@ -76,7 +80,7 @@ internal class MinecraftPointerButtonTest {
 
     @Test
     fun hoverChangesOnlyAfterMoveAndUsesHighlightedSprite() {
-        val host = host { context -> context.pointerButton(UiText.Literal("A")) {} }
+        val host = host { buildUi { Button("A") } }
         host.attach()
         val normal = host.frame(IntSize(150, 20)).drawCommands.filterIsInstance<DrawCommand.BlitImage>()
         val normalSprite = normal.first().image
@@ -96,7 +100,7 @@ internal class MinecraftPointerButtonTest {
     @Test
     fun nonPrimaryReleaseAndScrollAreIgnoredWhilePrimaryIsConsumed() {
         var presses = 0
-        val host = host { context -> context.pointerButton(UiText.Literal("A")) { presses += 1 } }
+        val host = host { buildUi { Button("A", modifier = Modifier.Empty.onPress { presses += 1 }) } }
         host.attach()
         host.frame(IntSize(150, 20))
 
@@ -112,8 +116,8 @@ internal class MinecraftPointerButtonTest {
     fun disabledButtonDoesNotConsumeAndUsesInactiveSemantics() {
         var presses = 0
         val host =
-            host { context ->
-                context.pointerButton(UiText.Literal("A"), enabled = false) { presses += 1 }
+            host {
+                buildUi { Button("A", enabled = false) }
             }
         host.attach()
         val frame = host.frame(IntSize(150, 20))
@@ -130,13 +134,13 @@ internal class MinecraftPointerButtonTest {
 
     @Test
     fun exactLabelWidthBoundaryIsAcceptedAndNextWidthFails() {
-        val accepted = host { context -> context.pointerButton(UiText.Literal("H".repeat(16) + "A")) {} }
+        val accepted = host { buildUi { Button("H".repeat(16) + "A") } }
         accepted.attach()
         val acceptedCommands = accepted.frame(IntSize(150, 20)).drawCommands.filterIsInstance<DrawCommand.BlitImage>()
         assertEquals(37, acceptedCommands.size)
         accepted.close()
 
-        val rejected = host { context -> context.pointerButton(UiText.Literal("H".repeat(16) + "B")) {} }
+        val rejected = host { buildUi { Button("H".repeat(16) + "B") } }
         assertThrows(IllegalArgumentException::class.java) { rejected.attach() }
         rejected.close()
     }
@@ -144,7 +148,7 @@ internal class MinecraftPointerButtonTest {
     @Test
     fun everyViewportMismatchIsRejectedByTheFixedButtonMeasurement() {
         listOf(IntSize(149, 20), IntSize(150, 19), IntSize(151, 20), IntSize(150, 21)).forEach { viewport ->
-            val host = host { context -> context.pointerButton(UiText.Literal("A")) {} }
+            val host = host { buildUi { Button("A") } }
             host.attach()
             assertThrows(IllegalArgumentException::class.java) { host.frame(viewport) }
             host.close()
@@ -162,7 +166,7 @@ internal class MinecraftPointerButtonTest {
                 disabledBorder = 1,
                 disabledCenterMode = MinecraftNineSliceCenterMode.Tiled,
             )
-        val normalHost = host(profile) { context -> context.pointerButton(UiText.Literal("A")) {} }
+        val normalHost = host(profile) { buildUi { Button("A") } }
         normalHost.attach()
         val normal = normalHost.frame(IntSize(150, 20)).drawCommands.filterIsInstance<DrawCommand.BlitImage>()
         assertEquals(
@@ -183,7 +187,7 @@ internal class MinecraftPointerButtonTest {
         )
         normalHost.close()
 
-        val disabledHost = host(profile) { context -> context.pointerButton(UiText.Literal("A"), enabled = false) {} }
+        val disabledHost = host(profile) { buildUi { Button("A", enabled = false) } }
         disabledHost.attach()
         val disabled = disabledHost.frame(IntSize(150, 20)).drawCommands.filterIsInstance<DrawCommand.BlitImage>()
         assertEquals(
@@ -207,14 +211,14 @@ internal class MinecraftPointerButtonTest {
 
     @Test
     fun oddAndEvenLabelWidthsUseTheLockedCenteredOriginAndBaseline() {
-        val evenHost = host { context -> context.pointerButton(UiText.Literal("A")) {} }
+        val evenHost = host { buildUi { Button("A") } }
         evenHost.attach()
         val even = evenHost.frame(IntSize(150, 20)).drawCommands.filterIsInstance<DrawCommand.BlitImage>()
         assertEquals(IntRect(74, 6, 82, 14), even[4].destination)
         assertEquals(IntRect(75, 7, 83, 15), even[3].destination)
         evenHost.close()
 
-        val oddHost = host { context -> context.pointerButton(UiText.Literal("H")) {} }
+        val oddHost = host { buildUi { Button("H") } }
         oddHost.attach()
         val odd = oddHost.frame(IntSize(150, 20)).drawCommands.filterIsInstance<DrawCommand.BlitImage>()
         assertEquals(IntRect(71, 6, 79, 14), odd[4].destination)
@@ -224,7 +228,7 @@ internal class MinecraftPointerButtonTest {
 
     @Test
     fun hoverStaysUntilMoveLeavesAndDetachClearsItBeforeReattach() {
-        val host = host { context -> context.pointerButton(UiText.Literal("A")) {} }
+        val host = host { buildUi { Button("A") } }
         host.attach()
         val normal =
             host
@@ -281,7 +285,7 @@ internal class MinecraftPointerButtonTest {
 
     @Test
     fun headlessPixelsFollowNormalHoverDisabledSpritesAndTextLayers() {
-        val host = host { context -> context.pointerButton(UiText.Literal("A")) {} }
+        val host = host { buildUi { Button("A") } }
         host.attach()
         val normal = rasterizeHeadless(host.frame(IntSize(150, 20)).drawCommands, IntSize(150, 20))
         assertEquals(0xFF202020.toInt(), normal.argbAt(5, 5))
@@ -292,7 +296,7 @@ internal class MinecraftPointerButtonTest {
         assertEquals(0xFF303030.toInt(), highlighted.argbAt(5, 5))
         host.close()
 
-        val disabledHost = host { context -> context.pointerButton(UiText.Literal("A"), enabled = false) {} }
+        val disabledHost = host { buildUi { Button("A", enabled = false) } }
         disabledHost.attach()
         val disabled = rasterizeHeadless(disabledHost.frame(IntSize(150, 20)).drawCommands, IntSize(150, 20))
         assertEquals(0xFF404040.toInt(), disabled.argbAt(5, 5))
@@ -304,7 +308,7 @@ internal class MinecraftPointerButtonTest {
     @Test
     fun primaryCallbackFailureRemainsTheExactTerminalFailure() {
         val primary = IllegalArgumentException("button callback")
-        val host = host { context -> context.pointerButton(UiText.Literal("A")) { throw primary } }
+        val host = host { buildUi { Button("A", modifier = Modifier.Empty.onPress { throw primary }) } }
         host.attach()
         host.frame(IntSize(150, 20))
         val failure =
@@ -320,13 +324,13 @@ internal class MinecraftPointerButtonTest {
         var lowerPresses = 0
         var upperPresses = 0
         val host =
-            host { context ->
-                MinecraftButtonContainerElement.create(
-                    listOf(
-                        context.pointerButton(UiText.Literal("A")) { lowerPresses += 1 },
-                        context.pointerButton(UiText.Literal("B")) { upperPresses += 1 },
-                    ),
-                )
+            host {
+                buildUi {
+                    Box {
+                        Button("A", modifier = Modifier.Empty.onPress { lowerPresses += 1 })
+                        Button("B", modifier = Modifier.Empty.onPress { upperPresses += 1 })
+                    }
+                }
             }
         host.attach()
         val normal = host.frame(IntSize(150, 20)).drawCommands.filterIsInstance<DrawCommand.BlitImage>()
@@ -349,13 +353,13 @@ internal class MinecraftPointerButtonTest {
         var lowerPresses = 0
         var upperPresses = 0
         val host =
-            host { context ->
-                MinecraftButtonContainerElement.create(
-                    listOf(
-                        context.pointerButton(UiText.Literal("A")) { lowerPresses += 1 },
-                        context.pointerButton(UiText.Literal("B"), enabled = false) { upperPresses += 1 },
-                    ),
-                )
+            host {
+                buildUi {
+                    Box {
+                        Button("A", modifier = Modifier.Empty.onPress { lowerPresses += 1 })
+                        Button("B", enabled = false)
+                    }
+                }
             }
         host.attach()
         val normal = host.frame(IntSize(150, 20)).drawCommands.filterIsInstance<DrawCommand.BlitImage>()
@@ -373,13 +377,13 @@ internal class MinecraftPointerButtonTest {
     fun allDisabledButtonsIgnorePrimaryPress() {
         var presses = 0
         val host =
-            host { context ->
-                MinecraftButtonContainerElement.create(
-                    listOf(
-                        context.pointerButton(UiText.Literal("A"), enabled = false) { presses += 1 },
-                        context.pointerButton(UiText.Literal("B"), enabled = false) { presses += 1 },
-                    ),
-                )
+            host {
+                buildUi {
+                    Box {
+                        Button("A", enabled = false)
+                        Button("B", enabled = false)
+                    }
+                }
             }
         host.attach()
         host.frame(IntSize(150, 20))
@@ -390,7 +394,7 @@ internal class MinecraftPointerButtonTest {
 
     private fun host(
         profile: MinecraftUiProfile = MinecraftProfileFixture.create(),
-        content: (MinecraftUiContext) -> Element,
+        content: MinecraftUiContext.() -> Element,
     ): MinecraftUiHost =
         createMinecraftUiHost(
             createMinecraftScreenDefinition(UiText.Literal("button"), content = content),

@@ -14,13 +14,13 @@ import dev.s7a.strata.text.UiText
  *
  * @param title the unresolved screen title.
  * @param pausesGame whether the screen pauses the game.
- * @param content the owner-thread element evaluator invoked during the transferred host's first attach.
+ * @param content the owner-thread element evaluator invoked with an implicit Minecraft component receiver during the transferred host's first attach.
  * @return a one-shot definition with referential identity.
  */
 public fun createMinecraftScreenDefinition(
     title: UiText,
     pausesGame: Boolean = false,
-    content: (MinecraftUiContext) -> Element,
+    content: MinecraftUiContext.() -> Element,
 ): MinecraftScreenDefinition = MinecraftDefinitionImplementation.create(title, pausesGame, content)
 
 /**

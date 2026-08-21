@@ -32,10 +32,9 @@ internal object MinecraftHostImplementation {
         profile: MinecraftUiProfile,
     ): MinecraftUiHost {
         val transferred = MinecraftDefinitionImplementation.take(definition)
-        val coordinator = MinecraftButtonHoverCoordinator.create()
-        val evaluator = MinecraftProfileImplementation.createEvaluator(profile, transferred.content, coordinator)
+        val evaluator = MinecraftProfileImplementation.createEvaluator(profile, transferred.content)
         val session = createRuntimeUiSession(evaluator)
-        return Host.create(session, evaluator, coordinator, transferred.title, transferred.pausesGame)
+        return Host.create(session, evaluator, transferred.title, transferred.pausesGame)
     }
 
     private enum class State {
@@ -62,13 +61,11 @@ internal object MinecraftHostImplementation {
     private class Host private constructor(
         private val session: RuntimeUiSession,
         initialEvaluator: () -> Element,
-        initialCoordinator: MinecraftButtonHoverCoordinator,
         title: UiText,
         pausesGame: Boolean,
     ) : MinecraftUiHost {
         private val ownerThread = Thread.currentThread()
         private var evaluator: (() -> Element)? = initialEvaluator
-        private var coordinator: MinecraftButtonHoverCoordinator? = initialCoordinator
         private var metadata: Metadata? = Metadata(title, pausesGame)
         private var state = State.Created
         private var operation: Operation? = null
@@ -106,8 +103,6 @@ internal object MinecraftHostImplementation {
             operation = Operation.Detach
             try {
                 runCatching {
-                    val currentCoordinator = checkNotNull(coordinator)
-                    currentCoordinator.clearHover()
                     session.detach()
                     state = State.Detached
                 }.getOrElse { failure -> fail(failure) }
@@ -135,14 +130,7 @@ internal object MinecraftHostImplementation {
             check(state == State.Attached) { "Minecraft UI host must be attached before pointer input." }
             operation = Operation.Input
             return try {
-                runCatching {
-                    val moving = event is PointerEvent.Move
-                    val currentCoordinator = checkNotNull(coordinator)
-                    if (moving) currentCoordinator.beginMove()
-                    val result = session.dispatchPointer(event)
-                    if (moving) currentCoordinator.finishMove()
-                    result
-                }.getOrElse { failure -> fail(failure) }
+                runCatching { session.dispatchPointer(event) }.getOrElse { failure -> fail(failure) }
             } finally {
                 operation = null
             }
@@ -156,9 +144,6 @@ internal object MinecraftHostImplementation {
             state = State.Closed
             metadata = null
             try {
-                val currentCoordinator = coordinator
-                coordinator = null
-                currentCoordinator?.abandon()
                 session.close()
             } finally {
                 releaseEvaluator()
@@ -181,9 +166,6 @@ internal object MinecraftHostImplementation {
         private fun fail(primary: Throwable): Nothing {
             state = State.Failed
             metadata = null
-            val currentCoordinator = coordinator
-            coordinator = null
-            runCatching { currentCoordinator?.abandon() }.exceptionOrNull()?.let { cleanup -> addSuppressed(primary, cleanup) }
             runCatching { session.close() }.exceptionOrNull()?.let { cleanup -> addSuppressed(primary, cleanup) }
             releaseEvaluator()
             operation = null
@@ -229,7 +211,6 @@ internal object MinecraftHostImplementation {
              *
              * @param session independently owned core runtime session.
              * @param evaluator one-shot content evaluator released with the host.
-             * @param coordinator owner-thread hover coordinator released with the host.
              * @param title exact unresolved transferred title.
              * @param pausesGame whether the transferred screen pauses the game.
              * @return a new owner-thread host.
@@ -238,10 +219,9 @@ internal object MinecraftHostImplementation {
             internal fun create(
                 session: RuntimeUiSession,
                 evaluator: () -> Element,
-                coordinator: MinecraftButtonHoverCoordinator,
                 title: UiText,
                 pausesGame: Boolean,
-            ): Host = Host(session, evaluator, coordinator, title, pausesGame)
+            ): Host = Host(session, evaluator, title, pausesGame)
         }
     }
 }

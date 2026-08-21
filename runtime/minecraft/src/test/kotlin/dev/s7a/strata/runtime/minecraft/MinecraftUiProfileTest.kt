@@ -1,5 +1,6 @@
 package dev.s7a.strata.runtime.minecraft
 
+import dev.s7a.strata.dsl.buildUi
 import dev.s7a.strata.geometry.IntSize
 import dev.s7a.strata.render.DrawImage
 import dev.s7a.strata.render.createDrawImage
@@ -288,8 +289,8 @@ internal class MinecraftUiProfileTest {
                         check(start.await(5, TimeUnit.SECONDS)) { "Timed out waiting to start host." }
                         host =
                             createMinecraftUiHost(
-                                createMinecraftScreenDefinition(UiText.Literal("reuse")) { context ->
-                                    context.menuBackground()
+                                createMinecraftScreenDefinition(UiText.Literal("reuse")) {
+                                    buildUi { MenuBackground() }
                                 },
                                 profile,
                             )

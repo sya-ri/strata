@@ -21,7 +21,6 @@ import dev.s7a.strata.modifier.Modifier
 import dev.s7a.strata.modifier.height
 import dev.s7a.strata.modifier.size
 import dev.s7a.strata.runtime.minecraft.MinecraftUiContext
-import dev.s7a.strata.text.UiText
 
 /**
  * Builds the overview panel used by the native, Fabric, and headless parity paths.
@@ -34,9 +33,9 @@ internal fun RowScope.overviewPanel(minecraft: MinecraftUiContext) {
         horizontalAlignment = HorizontalAlignment.Center,
     ) {
         Spacer(modifier = Modifier.Empty.height(20))
-        element(minecraft.text(UiText.Literal("Overview")))
+        with(minecraft) { Text("Overview") }
         Spacer(modifier = Modifier.Empty.height(11))
-        element(minecraft.pointerButton(UiText.Literal("Continue")) {})
+        with(minecraft) { Button("Continue") }
     }
 }
 ```

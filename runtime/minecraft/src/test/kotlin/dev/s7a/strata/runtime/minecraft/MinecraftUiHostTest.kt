@@ -1,5 +1,6 @@
 package dev.s7a.strata.runtime.minecraft
 
+import dev.s7a.strata.dsl.buildUi
 import dev.s7a.strata.element.Element
 import dev.s7a.strata.geometry.Constraints
 import dev.s7a.strata.geometry.IntOffset
@@ -27,7 +28,7 @@ internal class MinecraftUiHostTest {
         val probe = MinecraftHostProbe()
         var contentCalls = 0
         val host =
-            host { _ ->
+            host {
                 contentCalls += 1
                 probe.element()
             }
@@ -86,7 +87,7 @@ internal class MinecraftUiHostTest {
     @Test
     fun zeroAxesUseExactFixedConstraints() {
         val probe = MinecraftHostProbe()
-        val host = host { _ -> probe.element() }
+        val host = host { probe.element() }
         host.attach()
 
         val zero = host.frame(IntSize.Zero)
@@ -109,7 +110,7 @@ internal class MinecraftUiHostTest {
 
     @Test
     fun everyOperationRejectsTheWrongThreadIncludingRepeatedClose() {
-        val host = host { _ -> MinecraftHostProbe().element() }
+        val host = host { MinecraftHostProbe().element() }
         assertTrue(wrongThread { host.attach() } is IllegalStateException)
         assertTrue(wrongThread { host.title } is IllegalStateException)
         assertTrue(wrongThread { host.pausesGame } is IllegalStateException)
@@ -124,18 +125,18 @@ internal class MinecraftUiHostTest {
 
     @Test
     fun evaluatorOwnershipClearsBeforeCloseAndAfterEvaluationOrFailure() {
-        val beforeAttach = host { _ -> MinecraftHostProbe().element() }
+        val beforeAttach = host { MinecraftHostProbe().element() }
         assertTrue(readPrivateField(beforeAttach, "evaluator") != null)
         beforeAttach.close()
         assertNull(readPrivateField(beforeAttach, "evaluator"))
 
-        val afterAttach = host { _ -> MinecraftHostProbe().element() }
+        val afterAttach = host { MinecraftHostProbe().element() }
         afterAttach.attach()
         assertNull(readPrivateField(afterAttach, "evaluator"))
         afterAttach.close()
 
         val failure = IllegalStateException("content")
-        val failed = host { _ -> throw failure }
+        val failed = host { throw failure }
         assertSame(failure, assertThrows(IllegalStateException::class.java) { failed.attach() })
         assertNull(readPrivateField(failed, "evaluator"))
         assertNull(readPrivateField(failed, "metadata"))
@@ -147,7 +148,7 @@ internal class MinecraftUiHostTest {
         lateinit var host: MinecraftUiHost
         var reentryFailures: List<Throwable?> = emptyList()
         host =
-            host { context ->
+            host {
                 reentryFailures =
                     listOf(
                         runCatching { host.title }.exceptionOrNull(),
@@ -158,7 +159,7 @@ internal class MinecraftUiHostTest {
                         runCatching { host.dispatchPointer(PointerEvent.Move(IntOffset.Zero)) }.exceptionOrNull(),
                         runCatching { host.close() }.exceptionOrNull(),
                     )
-                context.menuBackground()
+                buildUi { MenuBackground() }
             }
         host.attach()
         assertEquals(7, reentryFailures.size)
@@ -177,7 +178,7 @@ internal class MinecraftUiHostTest {
                     host.close()
                 },
             )
-        host = host { _ -> probe.element() }
+        host = host { probe.element() }
         host.attach()
 
         host.close()
@@ -196,7 +197,7 @@ internal class MinecraftUiHostTest {
     @Test
     fun contentAndFrameFailuresPreserveExactIdentityAndCleanupOrder() {
         val contentFailure = IllegalArgumentException("content")
-        val failingContent = host { _ -> throw contentFailure }
+        val failingContent = host { throw contentFailure }
         assertSame(contentFailure, assertThrows(IllegalArgumentException::class.java) { failingContent.attach() })
         failingContent.close()
 
@@ -204,7 +205,7 @@ internal class MinecraftUiHostTest {
         val detachFailure = IllegalStateException("detach")
         val disposeFailure = IllegalStateException("dispose")
         val probe = MinecraftHostProbe(paintFailure = paintFailure, detachFailure = detachFailure, disposeFailure = disposeFailure)
-        val failingFrame = host { _ -> probe.element() }
+        val failingFrame = host { probe.element() }
         failingFrame.attach()
 
         val thrown = assertThrows(IllegalStateException::class.java) { failingFrame.frame(IntSize(2, 1)) }
@@ -233,7 +234,7 @@ internal class MinecraftUiHostTest {
                 detachFailure = inputDetachFailure,
                 disposeFailure = inputDisposeFailure,
             )
-        val failingInput = host { _ -> inputProbe.element() }
+        val failingInput = host { inputProbe.element() }
         failingInput.attach()
         failingInput.frame(IntSize(2, 1))
 
@@ -248,7 +249,7 @@ internal class MinecraftUiHostTest {
         val closeDetachFailure = IllegalStateException("close-detach")
         val closeDisposeFailure = IllegalStateException("close-dispose")
         val closeProbe = MinecraftHostProbe(detachFailure = closeDetachFailure, disposeFailure = closeDisposeFailure)
-        val failingClose = host { _ -> closeProbe.element() }
+        val failingClose = host { closeProbe.element() }
         failingClose.attach()
 
         val closeThrown = assertThrows(IllegalStateException::class.java) { failingClose.close() }
@@ -265,7 +266,7 @@ internal class MinecraftUiHostTest {
         )
     }
 
-    private fun host(content: (MinecraftUiContext) -> Element): MinecraftUiHost =
+    private fun host(content: MinecraftUiContext.() -> Element): MinecraftUiHost =
         createMinecraftUiHost(
             createMinecraftScreenDefinition(
                 title = UiText.Literal("test"),

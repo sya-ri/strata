@@ -5,12 +5,8 @@ import dev.s7a.strata.element.ElementIdentity
 import dev.s7a.strata.element.ElementKey
 import dev.s7a.strata.element.ElementType
 import dev.s7a.strata.geometry.Constraints
-import dev.s7a.strata.geometry.IntOffset
 import dev.s7a.strata.geometry.IntRect
 import dev.s7a.strata.geometry.IntSize
-import dev.s7a.strata.input.InputResult
-import dev.s7a.strata.input.PointerButton
-import dev.s7a.strata.input.PointerEvent
 import dev.s7a.strata.layout.MeasureScope
 import dev.s7a.strata.modifier.Modifier
 import dev.s7a.strata.node.DirtyMask
@@ -18,7 +14,7 @@ import dev.s7a.strata.node.DirtyPhase
 import dev.s7a.strata.node.LifecycleNode
 import dev.s7a.strata.node.MeasureNode
 import dev.s7a.strata.node.PaintNode
-import dev.s7a.strata.node.PointerInputNode
+import dev.s7a.strata.node.PointerHoverNode
 import dev.s7a.strata.node.SemanticsNode
 import dev.s7a.strata.render.PaintScope
 import dev.s7a.strata.semantics.Semantics
@@ -37,9 +33,7 @@ import dev.s7a.strata.node.Node as RetainedNode
  * @param normalText normal glyph layers retained for enabled states.
  * @param inactiveText inactive glyph layers retained for disabled state.
  * @param label validated literal retained for semantics.
- * @param enabled whether the button accepts hover and primary presses.
- * @param onPress callback retained until the node is disposed or host ownership ends.
- * @param coordinator host-owned hover identity coordinator.
+ * @param enabled whether the button uses enabled semantics and hover visuals.
  * @param modifier active behavior applied to the component.
  * @param key optional stable identity among direct siblings.
  */
@@ -59,10 +53,6 @@ private class MinecraftPointerButtonElement private constructor(
     internal val label: UiText.Literal,
     @get:JvmSynthetic
     internal val enabled: Boolean,
-    @get:JvmSynthetic
-    internal val onPress: () -> Unit,
-    @get:JvmSynthetic
-    internal val coordinator: MinecraftButtonHoverCoordinator,
     modifier: Modifier,
     key: ElementKey<*>?,
 ) : Element(
@@ -71,7 +61,7 @@ private class MinecraftPointerButtonElement private constructor(
         modifier = modifier,
     ) {
     /**
-     * Retained fixed-size node that paints the nine-slice button, dispatches pointer input, and emits semantics.
+     * Retained fixed-size node that paints the nine-slice button, observes hover, and emits semantics.
      */
     private class Node(
         initialNormalSprite: MinecraftButtonSpriteSnapshot,
@@ -81,15 +71,12 @@ private class MinecraftPointerButtonElement private constructor(
         initialInactiveText: MinecraftTextRun,
         initialLabel: UiText.Literal,
         initialEnabled: Boolean,
-        initialOnPress: () -> Unit,
-        initialCoordinator: MinecraftButtonHoverCoordinator,
     ) : RetainedNode(),
         MeasureNode,
         PaintNode,
-        PointerInputNode,
+        PointerHoverNode,
         SemanticsNode,
-        LifecycleNode,
-        MinecraftButtonHoverCoordinator.Target {
+        LifecycleNode {
         private val buttonSize = IntSize(150, 20)
         private val centerX = 75
         private val textOriginY = 6
@@ -100,8 +87,6 @@ private class MinecraftPointerButtonElement private constructor(
         private var inactiveText: MinecraftTextRun? = initialInactiveText
         private var label: UiText.Literal? = initialLabel
         private var enabled = initialEnabled
-        private var onPress: (() -> Unit)? = initialOnPress
-        private var coordinator: MinecraftButtonHoverCoordinator? = initialCoordinator
         private var hovered = false
         private var disposed = false
 
@@ -128,34 +113,13 @@ private class MinecraftPointerButtonElement private constructor(
             currentText.paint(scope, textLeft, textOriginY)
         }
 
-        override fun onPointerEvent(
-            event: PointerEvent,
-            localPosition: IntOffset,
-        ): InputResult =
-            when (event) {
-                is PointerEvent.Move -> {
-                    coordinator?.offer(this)
-                    InputResult.Ignored
-                }
-
-                is PointerEvent.Press -> {
-                    if (enabled && event.button === PointerButton.Primary) {
-                        val callback = onPress
-                        if (callback == null) {
-                            InputResult.Ignored
-                        } else {
-                            callback()
-                            InputResult.Consumed
-                        }
-                    } else {
-                        InputResult.Ignored
-                    }
-                }
-
-                is PointerEvent.Release, is PointerEvent.Scroll -> {
-                    InputResult.Ignored
-                }
+        override fun onPointerHover(hovered: Boolean) {
+            val next = enabled && hovered
+            if (this.hovered != next) {
+                this.hovered = next
+                invalidate(DirtyMask.of(DirtyPhase.Paint))
             }
+        }
 
         override fun semantics(scope: SemanticsScope) {
             scope.emit(
@@ -170,47 +134,23 @@ private class MinecraftPointerButtonElement private constructor(
         override fun attach() = Unit
 
         override fun detach() {
-            coordinator?.forget(this)
             hovered = false
         }
 
         override fun dispose() {
             if (disposed) return
             disposed = true
-            coordinator?.forget(this)
-            coordinator = null
             normalSprite = null
             highlightedSprite = null
             disabledSprite = null
             normalText = null
             inactiveText = null
             label = null
-            onPress = null
             hovered = false
         }
 
         /**
-         * Returns whether this live node can participate in the current hover transaction.
-         *
-         * @return true when the node is enabled and not disposed.
-         */
-        @JvmSynthetic
-        override fun isEnabledForHover(): Boolean = enabled && disposed.not()
-
-        /**
-         * Applies one owner-thread hover transition and invalidates only live paint state.
-         *
-         * @param value whether this node is in the committed hover identity set.
-         */
-        @JvmSynthetic
-        override fun setHoveredFromCoordinator(value: Boolean) {
-            if (disposed || hovered == value) return
-            hovered = value
-            invalidate(DirtyMask.of(DirtyPhase.Paint))
-        }
-
-        /**
-         * Updates retained visual, callback, and coordinator references from one reconciled element.
+         * Updates retained visual and semantic values from one reconciled element.
          *
          * @param current next immutable button description.
          * @return dirty phases required for the retained update.
@@ -224,11 +164,9 @@ private class MinecraftPointerButtonElement private constructor(
             val normalTextChanged = checkNotNull(normalText).equivalentTo(current.normalText).not()
             val inactiveTextChanged = checkNotNull(inactiveText).equivalentTo(current.inactiveText).not()
             val labelChanged = label != current.label
-            val coordinatorChanged = coordinator !== current.coordinator
             val enabledChanged = enabled != current.enabled
             val wasHovered = hovered
-            if (coordinatorChanged || enabledChanged) {
-                coordinator?.forget(this)
+            if (enabledChanged) {
                 hovered = false
             }
             normalSprite = current.normalSprite
@@ -238,11 +176,9 @@ private class MinecraftPointerButtonElement private constructor(
             inactiveText = current.inactiveText
             label = current.label
             enabled = current.enabled
-            onPress = current.onPress
-            coordinator = current.coordinator
             var dirty = DirtyMask.None
             val paintChanged = spriteChanged || normalTextChanged || inactiveTextChanged
-            if (paintChanged || (coordinatorChanged && wasHovered)) {
+            if (paintChanged || (enabledChanged && wasHovered)) {
                 dirty += DirtyMask.of(DirtyPhase.Paint)
             }
             if (labelChanged || enabledChanged) {
@@ -306,8 +242,6 @@ private class MinecraftPointerButtonElement private constructor(
                         element.inactiveText,
                         element.label,
                         element.enabled,
-                        element.onPress,
-                        element.coordinator,
                     )
                 },
                 updateNode = { _, current, node -> node.updateFrom(current) },
@@ -322,9 +256,7 @@ private class MinecraftPointerButtonElement private constructor(
          * @param normalText enabled label layers.
          * @param inactiveText disabled label layers.
          * @param label validated literal retained for semantics.
-         * @param enabled whether the button accepts input.
-         * @param onPress synchronous primary-press callback.
-         * @param coordinator host-owned hover coordinator.
+         * @param enabled whether the button uses enabled semantics and hover visuals.
          * @param modifier active behavior.
          * @param key optional stable sibling identity.
          * @return a private fixed-size button element.
@@ -338,8 +270,6 @@ private class MinecraftPointerButtonElement private constructor(
             inactiveText: MinecraftTextRun,
             label: UiText.Literal,
             enabled: Boolean,
-            onPress: () -> Unit,
-            coordinator: MinecraftButtonHoverCoordinator,
             modifier: Modifier,
             key: ElementKey<*>?,
         ): Element =
@@ -351,8 +281,6 @@ private class MinecraftPointerButtonElement private constructor(
                 inactiveText,
                 label,
                 enabled,
-                onPress,
-                coordinator,
                 modifier,
                 key,
             )
@@ -368,9 +296,7 @@ private class MinecraftPointerButtonElement private constructor(
  * @param normalText enabled label layers.
  * @param inactiveText disabled label layers.
  * @param label validated literal retained for semantics.
- * @param enabled whether the button accepts input.
- * @param onPress synchronous primary-press callback.
- * @param coordinator host-owned hover identity coordinator.
+ * @param enabled whether the button uses enabled semantics and hover visuals.
  * @param modifier active behavior.
  * @param key optional stable sibling identity.
  * @return a private fixed-size button element.
@@ -384,8 +310,6 @@ internal fun createMinecraftPointerButtonElement(
     inactiveText: MinecraftTextRun,
     label: UiText.Literal,
     enabled: Boolean,
-    onPress: () -> Unit,
-    coordinator: MinecraftButtonHoverCoordinator,
     modifier: Modifier,
     key: ElementKey<*>?,
 ): Element =
@@ -397,8 +321,6 @@ internal fun createMinecraftPointerButtonElement(
         inactiveText,
         label,
         enabled,
-        onPress,
-        coordinator,
         modifier,
         key,
     )
