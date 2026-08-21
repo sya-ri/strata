@@ -20,13 +20,29 @@ plugins {
     alias(libs.plugins.detekt) apply false
     alias(libs.plugins.kotlinter) apply false
     alias(libs.plugins.vanniktechMavenPublish) apply false
-    alias(libs.plugins.dokka) apply false
+    alias(libs.plugins.dokka)
     alias(libs.plugins.dokkaJavadocPlugin) apply false
     alias(libs.plugins.fabricLoom) apply false
 }
 
 group = "dev.s7a.strata"
 version = "0.1.0"
+
+dependencies {
+    dokka(project(":api"))
+    dokka(project(":runtime:core"))
+    dokka(project(":runtime:headless"))
+    dokka(project(":runtime:minecraft"))
+    dokka(project(":runtime:minecraft-fabric-26.2"))
+}
+
+extensions.configure<DokkaExtension> {
+    moduleName.set("Strata")
+    dokkaPublications.named("html") {
+        outputDirectory.set(layout.buildDirectory.dir("dokka/html"))
+        includes.from(layout.projectDirectory.file("README.md"))
+    }
+}
 
 val detektRulesProject = project(":quality:detekt-rules")
 val baselineJavaVersion = libs.versions.java.baseline.get().toInt()

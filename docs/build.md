@@ -14,6 +14,10 @@ Each publishable JVM module has a Maven publication with source and Javadoc arti
 Provide `mavenCentralUsername`, `mavenCentralPassword`, `signingInMemoryKey`, optional `signingInMemoryKeyId`, and optional `signingInMemoryKeyPassword` Gradle properties when publishing to Maven Central.
 Environment variables use the `ORG_GRADLE_PROJECT_` prefix followed by the same property name.
 
+The root `dokkaGenerate` task aggregates every published module into `build/dokka/html`.
+The Documentation workflow builds that exact directory on pushes to `master` and deploys it through GitHub Pages' artifact and OIDC deployment path.
+Repository settings must select GitHub Actions as the Pages source; the workflow requires only read access to contents plus `pages: write` and `id-token: write`.
+
 Qodana runs its recommended JVM inspection profile in CI without a baseline.
 Static-analysis rules are enabled when they produce actionable improvements; rules that systematically make code less clear are disabled with a durable rationale in the checked-in configuration.
 
