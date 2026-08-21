@@ -19,8 +19,8 @@ Session detach retains the active `UiTree` and its node ownership; it clears act
 The common `runtime:minecraft` adapter consumes a one-shot screen definition and a complete immutable profile.
 Definition close and host transfer race atomically, and a transferred host exposes only owner-thread metadata, lifecycle, fixed-viewport frames, and typed pointer, keyboard, committed-character, and preedit input.
 Its screen-content callback is an ordinary `UiScope`, while the host installs its selected Minecraft profile behind that callback for top-level Minecraft components and modifiers.
-Callers therefore declare `Text`, `Button`, `Slot`, `TextField`, and `Scroll` directly without an additional `buildUi` block or an explicit Minecraft context receiver.
-Application code emits `Slot`, `Text`, `TextField`, `Button`, and `Scroll` directly and composes profile-backed `menuBackground()` and `containerBackground(rows)` behavior into ordinary modifier chains; screen definitions, `Text`, and `Button` accept `String` literals without requiring `UiText.Literal`, while typed overloads retain unresolved `UiText` values when needed.
+Callers therefore declare `Text`, `Button`, `Slot`, `TextField`, `Scroll`, and `Image` directly without an additional `buildUi` block or an explicit Minecraft context receiver.
+Application code emits those components directly and composes profile-backed `menuBackground()`, `containerBackground(rows)`, or immutable `imageBackground(image, scale)` behavior into ordinary modifier chains; screen definitions, `Text`, and `Button` accept `String` literals without requiring `UiText.Literal`, while typed overloads retain unresolved `UiText` values when needed.
 The fixed-height profile-backed Button owns appearance, hover visuals, and enabled semantics, while reusable pointer, keyboard, text-input, preedit, focus, press, release, move, drag, scroll, and hover actions are active modifiers shared with other component kinds.
 TextField owns the verified 200 by 20 EditBox sprites, text colors, cursor, bounded printable-ASCII editing policy, and semantics while caller-owned owner-thread `MinecraftTextFieldState` owns the value and maximum length.
 Focused input modifiers run before TextField's built-in editor, so consuming a typed event overrides its default action and ignoring the event permits the editor to handle it.
@@ -29,7 +29,8 @@ The container-background modifier owns the verified row-dependent generic chest 
 The Fabric-backed `Slot(bind = MinecraftSlots.playerInventory(index))` and `Slot(bind = MinecraftSlots.activeMenu(index))` forms obtain their version platform implicitly, poll the current authoritative menu before each frame, insert native item rendering at the Slot's ordered item phase, and send pointer transactions through Minecraft's container-input operation instead of mutating inventory storage.
 That live overload is intentionally unavailable to portable-only hosts because arbitrary `ItemStack` models are native version assets; the optional-content overload remains the headless-compatible Slot contract.
 Button does not install keyboard focus or activation implicitly; callers compose those policies from the shared modifiers when required.
-The common component boundary does not expose resources, native Minecraft values, renderers, input mappers, or task facilities.
+The common component boundary exposes only structural resource-pack identifiers and detached immutable pixels, not resource-manager objects, native Minecraft values, renderers, input mappers, or task facilities.
+Client and server code may share a `MinecraftAssetId`; only the versioned client resolves its pixels through the active resource-pack stack before building an `Image` or image-background modifier.
 
 ## Ownership and lifecycle
 

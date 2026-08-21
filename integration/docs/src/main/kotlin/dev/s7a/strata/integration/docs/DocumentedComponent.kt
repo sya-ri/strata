@@ -31,6 +31,11 @@ internal enum class DocumentedComponent(
      * The container slot component identity.
      */
     Slot("Slot", "slot"),
+
+    /**
+     * The immutable nearest-sampled image component identity.
+     */
+    Image("Image", "image"),
     ;
 
     /**

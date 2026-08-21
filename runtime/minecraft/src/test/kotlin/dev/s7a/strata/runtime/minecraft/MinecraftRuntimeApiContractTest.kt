@@ -7,6 +7,7 @@ import dev.s7a.strata.input.InputResult
 import dev.s7a.strata.input.KeyboardEvent
 import dev.s7a.strata.input.PointerEvent
 import dev.s7a.strata.input.TextInputEvent
+import dev.s7a.strata.render.DrawImage
 import dev.s7a.strata.runtime.spi.RuntimeUiFrame
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
 import dev.s7a.strata.text.UiText
@@ -31,6 +32,7 @@ internal class MinecraftRuntimeApiContractTest {
             setOf("getTitle", "getPausesGame", "attach", "detach", "frame", "dispatchPointer", "dispatchKeyboard", "dispatchTextInput", "close"),
         )
         assertInterfaceSurface(MinecraftUiProfile::class.java, emptySet())
+        assertInterfaceSurface(MinecraftAssetId::class.java, setOf("getNamespace", "getPath"))
         assertInterfaceSurface(MinecraftSlotBinding::class.java, setOf("getSource", "getIndex"))
         assertInterfaceSurface(MinecraftTextFieldState::class.java, setOf("getValue", "setValue", "getMaxLength"))
         assertInterfaceSurface(
@@ -119,6 +121,19 @@ internal class MinecraftRuntimeApiContractTest {
     }
 
     @Test
+    fun assetFactoryAndImageScaleExposeOnlyTypedValues() {
+        val methods =
+            MinecraftAssets::class.java.declaredMethods.filter { method ->
+                Modifier.isPublic(method.modifiers) && method.isSynthetic.not()
+            }
+        val resource = methods.single()
+        assertEquals("resource", resource.name)
+        assertTrue(Modifier.isStatic(resource.modifiers))
+        assertMethod(resource, listOf(String::class.java, String::class.java), MinecraftAssetId::class.java)
+        assertEquals(setOf(MinecraftImageScale.Stretch, MinecraftImageScale.Tile), MinecraftImageScale.entries.toSet())
+    }
+
+    @Test
     fun hostMethodsHaveExactDescriptors() {
         val methods = MinecraftUiHost::class.java.declaredMethods.associateBy { method -> method.name }
         assertMethod(methods.getValue("getTitle"), emptyList(), UiText::class.java)
@@ -145,14 +160,20 @@ internal class MinecraftRuntimeApiContractTest {
                 .forName("dev.s7a.strata.runtime.minecraft.MinecraftUiModifiers")
                 .declaredMethods
                 .filter { method -> method.isSynthetic.not() }
-        assertEquals(8, componentMethods.size)
-        assertEquals(2, modifierMethods.size)
+        assertEquals(9, componentMethods.size)
+        assertEquals(3, modifierMethods.size)
         assertBackgroundModifierDescriptors(modifierMethods)
         assertTextDescriptors(componentMethods)
         assertContainerDescriptors(componentMethods)
         assertTextFieldDescriptor(componentMethods)
         assertButtonDescriptors(componentMethods)
         assertScrollDescriptor(componentMethods)
+        val image = componentMethods.single { method -> method.name == DslMethodName.Image.jvmName }
+        assertMethod(
+            image,
+            listOf(UiScope::class.java, DrawImage::class.java, IntSize::class.java, UiModifier::class.java, ElementKey::class.java),
+            Void.TYPE,
+        )
         componentMethods.forEach { method ->
             assertTrue(Modifier.isPublic(method.modifiers))
             assertTrue(Modifier.isStatic(method.modifiers))
@@ -174,6 +195,8 @@ internal class MinecraftRuntimeApiContractTest {
             listOf(UiModifier::class.java, checkNotNull(Int::class.javaPrimitiveType)),
             UiModifier::class.java,
         )
+        val image = methods.single { method -> method.name == DslMethodName.ImageBackground.jvmName }
+        assertMethod(image, listOf(UiModifier::class.java, DrawImage::class.java, MinecraftImageScale::class.java), UiModifier::class.java)
     }
 
     private fun assertContainerDescriptors(methods: List<Method>) {
@@ -494,6 +517,9 @@ internal class MinecraftRuntimeApiContractTest {
                 MinecraftUiProfileBuilder::class.java,
                 MinecraftTextFieldState::class.java,
                 MinecraftSlotBinding::class.java,
+                MinecraftAssetId::class.java,
+                MinecraftAssets::class.java,
+                MinecraftImageScale::class.java,
                 MinecraftSlotSource::class.java,
                 MinecraftSlots::class.java,
                 Class.forName("dev.s7a.strata.runtime.minecraft.MinecraftRuntimeFactories"),
@@ -563,6 +589,8 @@ internal class MinecraftRuntimeApiContractTest {
         val jvmName: String,
     ) {
         MenuBackground("menuBackground"),
+        ImageBackground("imageBackground"),
+        Image("Image"),
         Text("Text"),
         ContainerBackground("containerBackground"),
         Slot("Slot"),

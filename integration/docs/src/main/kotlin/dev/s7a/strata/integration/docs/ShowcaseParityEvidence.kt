@@ -184,6 +184,7 @@ internal class ShowcaseParityEvidence private constructor(
                 DocumentedComponent.Button -> IntSize(150, 20)
                 DocumentedComponent.Scroll -> IntSize(320, 94)
                 DocumentedComponent.Slot -> IntSize(24, 24)
+                DocumentedComponent.Image -> IntSize(32, 32)
             }
 
         private fun requireHash(
@@ -209,6 +210,7 @@ internal class ShowcaseParityEvidence private constructor(
                 add("native.fabric.headless.direct-join.argb.sha256")
                 add("native.fabric.headless.container-background.argb.sha256")
                 add("native.fabric.headless.slot.argb.sha256")
+                add("fabric.headless.industrial.argb.sha256")
                 add("component.overview.png.sha256")
                 DocumentedComponent.entries.forEach { component -> add("component.${component.slug}.png.sha256") }
             }

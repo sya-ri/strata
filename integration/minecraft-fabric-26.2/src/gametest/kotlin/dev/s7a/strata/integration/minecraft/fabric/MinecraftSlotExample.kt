@@ -10,9 +10,9 @@ import dev.s7a.strata.modifier.size
 import dev.s7a.strata.render.ArgbColor
 import dev.s7a.strata.runtime.minecraft.MinecraftScreenDefinition
 import dev.s7a.strata.runtime.minecraft.MinecraftSlotBinding
+import dev.s7a.strata.runtime.minecraft.MinecraftSlots
 import dev.s7a.strata.runtime.minecraft.MinecraftTextStyle
 import dev.s7a.strata.runtime.minecraft.Slot
-import dev.s7a.strata.runtime.minecraft.MinecraftSlots
 import dev.s7a.strata.runtime.minecraft.Text
 import dev.s7a.strata.runtime.minecraft.containerBackground
 import dev.s7a.strata.runtime.minecraft.createMinecraftScreenDefinition

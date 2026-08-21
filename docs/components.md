@@ -2,7 +2,7 @@
 
 # Minecraft component showcase
 
-These deterministic crops come from real Minecraft 26.2 `ConfirmScreen`, `DirectJoinServerScreen`, `ContainerScreen`, and native `ObjectSelectionList` screens reconstructed with Strata's `Text`, `TextField`, `Button`, `Scroll`, and `Slot` components.
+These deterministic crops come from real Minecraft 26.2 `ConfirmScreen`, `DirectJoinServerScreen`, `ContainerScreen`, and native `ObjectSelectionList` screens reconstructed with Strata's `Text`, `TextField`, `Button`, `Scroll`, and `Slot` components, plus a test Mod screen built with `Image` and a resource-pack asset.
 The menu and generic-container images are active background modifiers on layout components rather than logical component entries.
 One loaded Fabric GameTest requires exact ARGB equality among each native screen, the Fabric adapter, and the headless frame before it emits these component images.
 
@@ -84,6 +84,7 @@ The tree shows Minecraft components in logical draw order; platform-neutral layo
 - [Button](#button)
 - [Scroll](#scroll)
 - [Slot](#slot)
+- [Image](#image)
 
 <a id="text"></a>
 
@@ -408,9 +409,9 @@ import dev.s7a.strata.modifier.size
 import dev.s7a.strata.render.ArgbColor
 import dev.s7a.strata.runtime.minecraft.MinecraftScreenDefinition
 import dev.s7a.strata.runtime.minecraft.MinecraftSlotBinding
+import dev.s7a.strata.runtime.minecraft.MinecraftSlots
 import dev.s7a.strata.runtime.minecraft.MinecraftTextStyle
 import dev.s7a.strata.runtime.minecraft.Slot
-import dev.s7a.strata.runtime.minecraft.MinecraftSlots
 import dev.s7a.strata.runtime.minecraft.Text
 import dev.s7a.strata.runtime.minecraft.containerBackground
 import dev.s7a.strata.runtime.minecraft.createMinecraftScreenDefinition
@@ -496,6 +497,103 @@ The tree shows the featured Minecraft component; platform-neutral layout scaffol
 
 ```text
 `- Slot [SlotHighlightable(value=true), Size(width=18, height=18)]
+```
+
+</details>
+
+<a id="image"></a>
+
+## Image
+
+Image maps one immutable resource-pack image to an exact logical size with deterministic nearest sampling; it is reusable for icons, portraits, diagrams, and Mod-owned panels.
+
+This image is a 32 by 32 component crop from the exact Fabric/headless Mod-screen comparison recorded in [the verification receipt](components/minecraft-26.2-parity.properties).
+
+![Image headless showcase](components/image.png)
+
+### Compiled example
+
+```kotlin
+import dev.s7a.strata.dsl.Box
+import dev.s7a.strata.dsl.Column
+import dev.s7a.strata.dsl.Row
+import dev.s7a.strata.dsl.Spacer
+import dev.s7a.strata.dsl.UiScope
+import dev.s7a.strata.geometry.IntSize
+import dev.s7a.strata.layout.Alignment
+import dev.s7a.strata.layout.HorizontalAlignment
+import dev.s7a.strata.modifier.Modifier
+import dev.s7a.strata.modifier.background
+import dev.s7a.strata.modifier.onPress
+import dev.s7a.strata.modifier.size
+import dev.s7a.strata.render.ArgbColor
+import dev.s7a.strata.render.DrawImage
+import dev.s7a.strata.runtime.minecraft.Button
+import dev.s7a.strata.runtime.minecraft.Image
+import dev.s7a.strata.runtime.minecraft.MinecraftScreenDefinition
+import dev.s7a.strata.runtime.minecraft.Slot
+import dev.s7a.strata.runtime.minecraft.Text
+import dev.s7a.strata.runtime.minecraft.createMinecraftScreenDefinition
+import dev.s7a.strata.runtime.minecraft.imageBackground
+
+/**
+ * Builds a reusable industrial Mod screen from general-purpose Strata primitives and one replaceable resource-pack asset.
+ *
+ * @param panel immutable panel pixels loaded by the version adapter from the active resource manager.
+ * @return one-shot definition containing image, text, slot, layout, gauge composition, and button primitives.
+ */
+internal fun createIndustrialScreenDefinition(panel: DrawImage): MinecraftScreenDefinition =
+    createMinecraftScreenDefinition("Industrial controller") {
+        Box(
+            modifier = Modifier.Empty.size(320, 180).imageBackground(panel),
+            contentAlignment = Alignment.Center,
+        ) {
+            Column(
+                spacing = 8,
+                horizontalAlignment = HorizontalAlignment.Center,
+            ) {
+                Image(panel, IntSize(32, 32))
+                Text("ENERGY CONTROL")
+                Box(
+                    modifier = Modifier.Empty.size(150, 8).background(ArgbColor(0xFF101820.toInt())),
+                ) {
+                    Spacer(modifier = Modifier.Empty.size(112, 8).background(ArgbColor(0xFF22D3EE.toInt())))
+                }
+                Row(spacing = 4) {
+                    machineSlot(ArgbColor(0xFFFBBF24.toInt()))
+                    machineSlot(ArgbColor(0xFF22D3EE.toInt()))
+                    machineSlot(ArgbColor(0xFFA78BFA.toInt()))
+                }
+                Button(
+                    "Toggle power",
+                    width = 100,
+                    modifier = Modifier.Empty.onPress {},
+                )
+            }
+        }
+    }
+
+private fun UiScope.machineSlot(color: ArgbColor) {
+    Slot {
+        Spacer(modifier = Modifier.Empty.size(16, 16).background(color))
+    }
+}
+```
+
+### Modifiers
+
+Sizing and placement modifiers compose around `Image`; `imageBackground` paints the same immutable resource behind any layout component with typed stretch or tile mapping.
+
+### Parent scope
+
+`Image` is a top-level extension on the active `UiScope`. It retains detached pixels rather than a Minecraft resource object, so the Fabric loader may resolve a resource-pack replacement before the description is built.
+
+<details><summary>Component tree</summary>
+
+The tree shows the featured Minecraft component; platform-neutral layout scaffolding remains visible in the compiled source.
+
+```text
+`- Image [Size(width=32, height=32)]
 ```
 
 </details>

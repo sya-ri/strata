@@ -3,6 +3,25 @@
 package dev.s7a.strata.runtime.minecraft
 
 import dev.s7a.strata.modifier.Modifier
+import dev.s7a.strata.render.DrawImage
+
+/**
+ * Paints arbitrary immutable image pixels behind the modified component's content.
+ *
+ * The image may be loaded from the active resource manager by a version adapter, preserving resource-pack replacement while the retained modifier remains platform-neutral.
+ * This behavior does not alter measurement.
+ *
+ * @receiver immutable modifier chain.
+ * @param image immutable source pixels retained without a copy.
+ * @param scale typed nearest-sampled destination mapping.
+ * @return a new chain containing one active background-image node.
+ * @throws IllegalArgumentException when the source image has an empty axis.
+ * @throws ArithmeticException when tiled destination coordinates overflow.
+ */
+public fun Modifier.imageBackground(
+    image: DrawImage,
+    scale: MinecraftImageScale = MinecraftImageScale.Stretch,
+): Modifier = then(createMinecraftImageBackgroundModifier(image, scale))
 
 /**
  * Paints the selected Minecraft menu texture behind the modified component's content.

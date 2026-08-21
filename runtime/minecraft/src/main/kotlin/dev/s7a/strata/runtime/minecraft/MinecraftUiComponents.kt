@@ -5,8 +5,33 @@ package dev.s7a.strata.runtime.minecraft
 
 import dev.s7a.strata.dsl.UiScope
 import dev.s7a.strata.element.ElementKey
+import dev.s7a.strata.geometry.IntSize
 import dev.s7a.strata.modifier.Modifier
+import dev.s7a.strata.render.DrawImage
 import dev.s7a.strata.text.UiText
+
+/**
+ * Emits one immutable nearest-sampled image component.
+ *
+ * The source pixels may come from a version adapter's active resource manager, so Mod assets remain replaceable by resource packs without making the retained component platform-specific.
+ * The component reports exactly [size] and maps the complete source image to those logical bounds.
+ *
+ * @receiver active owner-thread UI scope.
+ * @param image immutable source pixels retained without a copy.
+ * @param size exact logical destination size; defaults to the source pixel size.
+ * @param modifier active behavior applied to the image.
+ * @param key optional stable sibling identity.
+ * @throws IllegalArgumentException when the source has an empty axis or later constraints do not contain [size].
+ * @throws IllegalStateException when used from another thread or outside its active callback.
+ */
+public fun UiScope.Image(
+    image: DrawImage,
+    size: IntSize = image.size,
+    modifier: Modifier = Modifier.Empty,
+    key: ElementKey<*>? = null,
+) {
+    element(createMinecraftImageElement(image, size, modifier, key))
+}
 
 /**
  * Emits one Minecraft 26.2 container Slot with an optional 16 by 16 item child.

@@ -62,6 +62,7 @@ An equal value does not invalidate a phase.
 Inside a Minecraft screen-content callback, the host-installed profile contributes top-level profile-backed background modifiers without exposing a context object to application code.
 `menuBackground()` paints the active menu texture across the modified component's existing bounds and does not change measurement.
 `containerBackground(rows)` measures the modified component at the exact generic-container size and paints the selected `generic_54.png` regions before its content.
+`imageBackground(image, scale)` paints arbitrary detached resource-pack pixels with typed stretch or clipped tile mapping without changing measurement.
 These are active modifier nodes rather than standalone components, so they can be composed directly with `Row`, `Column`, `Box`, or another component and participate in normal modifier identity, update, lifecycle, and failure behavior.
 
 ## Parent data

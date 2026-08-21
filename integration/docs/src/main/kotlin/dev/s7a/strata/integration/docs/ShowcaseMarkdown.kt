@@ -20,7 +20,7 @@ internal object ShowcaseMarkdown {
 
 # Minecraft component showcase
 
-These deterministic crops come from real Minecraft 26.2 `ConfirmScreen`, `DirectJoinServerScreen`, `ContainerScreen`, and native `ObjectSelectionList` screens reconstructed with Strata's `Text`, `TextField`, `Button`, `Scroll`, and `Slot` components.
+These deterministic crops come from real Minecraft 26.2 `ConfirmScreen`, `DirectJoinServerScreen`, `ContainerScreen`, and native `ObjectSelectionList` screens reconstructed with Strata's `Text`, `TextField`, `Button`, `Scroll`, and `Slot` components, plus a test Mod screen built with `Image` and a resource-pack asset.
 The menu and generic-container images are active background modifiers on layout components rather than logical component entries.
 One loaded Fabric GameTest requires exact ARGB equality among each native screen, the Fabric adapter, and the headless frame before it emits these component images.
 
@@ -88,15 +88,26 @@ ${overview.source}
     internal fun section(
         spec: ComponentScenario,
         source: String,
-    ): String =
-        markdown(
+    ): String {
+        val paritySentence =
+            when (spec.component) {
+                DocumentedComponent.Image -> "This image is a ${spec.viewport.width} by ${spec.viewport.height} component crop from the exact Fabric/headless Mod-screen comparison recorded in [the verification receipt](components/minecraft-26.2-parity.properties)."
+
+                DocumentedComponent.Text,
+                DocumentedComponent.TextField,
+                DocumentedComponent.Button,
+                DocumentedComponent.Scroll,
+                DocumentedComponent.Slot,
+                -> "This image is a ${spec.viewport.width} by ${spec.viewport.height} component crop from the exact native/Fabric/headless parity frame recorded in [the verification receipt](components/minecraft-26.2-parity.properties)."
+            }
+        return markdown(
             """<a id="${spec.component.slug}"></a>
 
 ## ${spec.component.apiMethodName}
 
 ${typedSummary(spec.component)}
 
-This image is a ${spec.viewport.width} by ${spec.viewport.height} component crop from the exact native/Fabric/headless parity frame recorded in [the verification receipt](components/minecraft-26.2-parity.properties).
+$paritySentence
 
 ![${spec.component.apiMethodName} headless showcase](components/${spec.component.slug}.png)
 
@@ -125,6 +136,7 @@ ${tree(spec.tree)}
 </details>
 """,
         )
+    }
 
     /**
      * Renders a logical tree for the overview and page metadata blocks.
@@ -165,6 +177,7 @@ ${tree(spec.tree)}
             DocumentedComponent.TextField -> "Pointer, keyboard, committed-character, preedit, and focus modifiers run as active retained behavior around `TextField`; a consuming focused modifier overrides built-in editing."
             DocumentedComponent.Button -> "Pointer behavior is active modifier behavior. `onPointerEvent`, `onPress`, `onRelease`, `onMove`, `onDrag`, `onScroll`, and `onHover` can be composed without adding component-specific callback parameters."
             DocumentedComponent.Scroll -> "Ordinary sizing and placement modifiers define the viewport. Pointer action modifiers compose outside the component while native wheel and scrollbar motion remain retained Scroll behavior."
+            DocumentedComponent.Image -> "Sizing and placement modifiers compose around `Image`; `imageBackground` paints the same immutable resource behind any layout component with typed stretch or tile mapping."
         }
 
     private fun parentScopeGuidance(component: DocumentedComponent): String =
@@ -174,6 +187,7 @@ ${tree(spec.tree)}
             DocumentedComponent.TextField -> "`TextField` is a member extension on the active `UiScope`. The implicit runtime context supplies assets, while caller-owned `MinecraftTextFieldState` owns the editable value."
             DocumentedComponent.Button -> "`Button` is a top-level extension on the active `UiScope`. The screen runtime installs its selected Minecraft profile only for the definition callback, and pointer event modifiers remain valid only through their retained modifier-node lifetime."
             DocumentedComponent.Scroll -> "`Scroll` is a member extension on the active `UiScope`. Its callback emits exactly one content root, remains callback-lifetime and owner-thread confined, and may use the same implicit Minecraft component DSL."
+            DocumentedComponent.Image -> "`Image` is a top-level extension on the active `UiScope`. It retains detached pixels rather than a Minecraft resource object, so the Fabric loader may resolve a resource-pack replacement before the description is built."
         }
 
     private fun typedSummary(component: DocumentedComponent): String =
@@ -183,6 +197,7 @@ ${tree(spec.tree)}
             DocumentedComponent.TextField -> "TextField reproduces the 200 by 20 Minecraft EditBox sprites, text origin, glyph colors, owner-thread value state, focus, and bounded editing behavior."
             DocumentedComponent.Button -> "Button renders verified fixed-height Minecraft sprite and label states, including the native 150- and 200-pixel widths, while reusable input actions live in modifiers."
             DocumentedComponent.Scroll -> "Scroll reproduces the verified Minecraft 26.2 menu-list background, clipped centered content, separators, tiled scrollbar sprites, wheel rate, and proportional thumb movement in native draw order."
+            DocumentedComponent.Image -> "Image maps one immutable resource-pack image to an exact logical size with deterministic nearest sampling; it is reusable for icons, portraits, diagrams, and Mod-owned panels."
         }
 
     private fun details(details: List<ShowcaseTreeDetail>): String = if (details.isEmpty()) "" else " [${details.joinToString(", ") { detail -> ShowcaseDetailMarkdown.text(detail) }}]"

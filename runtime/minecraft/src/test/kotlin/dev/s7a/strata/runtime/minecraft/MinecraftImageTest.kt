@@ -1,0 +1,126 @@
+package dev.s7a.strata.runtime.minecraft
+
+import dev.s7a.strata.dsl.Box
+import dev.s7a.strata.geometry.IntRect
+import dev.s7a.strata.geometry.IntSize
+import dev.s7a.strata.modifier.Modifier
+import dev.s7a.strata.render.DrawImage
+import dev.s7a.strata.render.createDrawImage
+import dev.s7a.strata.runtime.headless.rasterizeHeadless
+import dev.s7a.strata.runtime.render.DrawCommand
+import dev.s7a.strata.spi.InternalStrataRuntimeApi
+import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertNotSame
+import org.junit.jupiter.api.Assertions.assertSame
+import org.junit.jupiter.api.Assertions.assertThrows
+import org.junit.jupiter.api.Test
+
+/**
+ * Verifies arbitrary resource-pack image components and backgrounds through the public common boundary.
+ */
+@OptIn(InternalStrataRuntimeApi::class)
+internal class MinecraftImageTest {
+    @Test
+    fun assetIdentifiersAreStructuralAndValidateBothParts() {
+        val first = MinecraftAssets.resource("example", "textures/gui/panel.png")
+        val equal = MinecraftAssets.resource("example", "textures/gui/panel.png")
+        val other = MinecraftAssets.resource("example", "textures/gui/other.png")
+
+        assertEquals("example", first.namespace)
+        assertEquals("textures/gui/panel.png", first.path)
+        assertEquals(first, equal)
+        assertEquals(first.hashCode(), equal.hashCode())
+        assertNotSame(first, equal)
+        assertEquals(false, first == other)
+        assertThrows(IllegalArgumentException::class.java) { MinecraftAssets.resource("Example", "textures/gui/panel.png") }
+        assertThrows(IllegalArgumentException::class.java) { MinecraftAssets.resource("example", "../panel.png") }
+    }
+
+    @Test
+    fun imageMapsCompleteSourceToRequestedLogicalSize() {
+        val source =
+            createDrawImage(
+                IntSize(2, 2),
+                intArrayOf(
+                    0xFFFF0000.toInt(),
+                    0xFF00FF00.toInt(),
+                    0xFF0000FF.toInt(),
+                    0xFFFFFFFF.toInt(),
+                ),
+            )
+        val host =
+            createMinecraftUiHost(
+                createMinecraftScreenDefinition("Image") {
+                    Image(source, IntSize(4, 4))
+                },
+                MinecraftProfileFixture.create(),
+            )
+        try {
+            host.attach()
+            val frame = host.frame(IntSize(4, 4))
+            val command = frame.drawCommands.single() as DrawCommand.BlitImage
+            assertSame(source, command.image)
+            assertEquals(IntRect(0, 0, 2, 2), command.source)
+            assertEquals(IntRect(0, 0, 4, 4), command.destination)
+            val rendered = rasterizeHeadless(frame.drawCommands, IntSize(4, 4))
+            assertEquals(0xFFFF0000.toInt(), rendered.argbAt(0, 0))
+            assertEquals(0xFF00FF00.toInt(), rendered.argbAt(3, 0))
+            assertEquals(0xFF0000FF.toInt(), rendered.argbAt(0, 3))
+            assertEquals(0xFFFFFFFF.toInt(), rendered.argbAt(3, 3))
+        } finally {
+            host.close()
+        }
+    }
+
+    @Test
+    fun backgroundSupportsStretchAndRowMajorTiles() {
+        val source = createDrawImage(IntSize(2, 2), IntArray(4) { 0xFF123456.toInt() })
+        val stretched = hostWithBackground(source, MinecraftImageScale.Stretch)
+        val tiled = hostWithBackground(source, MinecraftImageScale.Tile)
+        try {
+            stretched.attach()
+            val stretchCommand = stretched.frame(IntSize(5, 3)).drawCommands.single() as DrawCommand.BlitImage
+            assertEquals(IntRect(0, 0, 5, 3), stretchCommand.destination)
+
+            tiled.attach()
+            val tileCommands = tiled.frame(IntSize(5, 3)).drawCommands.map { command -> command as DrawCommand.BlitImage }
+            assertEquals(
+                listOf(
+                    IntRect(0, 0, 2, 2),
+                    IntRect(2, 0, 4, 2),
+                    IntRect(4, 0, 5, 2),
+                    IntRect(0, 2, 2, 3),
+                    IntRect(2, 2, 4, 3),
+                    IntRect(4, 2, 5, 3),
+                ),
+                tileCommands.map { command -> command.destination },
+            )
+            assertEquals(
+                listOf(
+                    IntRect(0, 0, 2, 2),
+                    IntRect(0, 0, 2, 2),
+                    IntRect(0, 0, 1, 2),
+                    IntRect(0, 0, 2, 1),
+                    IntRect(0, 0, 2, 1),
+                    IntRect(0, 0, 1, 1),
+                ),
+                tileCommands.map { command -> command.source },
+            )
+            tileCommands.forEach { command -> assertSame(source, command.image) }
+        } finally {
+            stretched.close()
+            tiled.close()
+        }
+    }
+
+    private fun hostWithBackground(
+        source: DrawImage,
+        scale: MinecraftImageScale,
+    ): MinecraftUiHost =
+        createMinecraftUiHost(
+            createMinecraftScreenDefinition("Background") {
+                Box(modifier = Modifier.Empty.imageBackground(source, scale)) {}
+            },
+            MinecraftProfileFixture.create(),
+        )
+}

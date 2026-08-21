@@ -70,6 +70,16 @@ internal object ShowcaseScenarioCatalog {
                         listOf(ShowcaseTreeDetail.SlotHighlightable(true), ShowcaseTreeDetail.Size(18, 18)),
                     ),
             ),
+            ComponentScenario(
+                component = DocumentedComponent.Image,
+                source =
+                    SourceReference(
+                        "integration/minecraft-fabric-26.2/src/gametest/kotlin/dev/s7a/strata/integration/minecraft/fabric/MinecraftIndustrialExample.kt",
+                        "image",
+                    ),
+                viewportMetadata = ShowcaseViewport(IntSize(32, 32), 1),
+                tree = tree(DocumentedComponent.Image, listOf(ShowcaseTreeDetail.Size(32, 32))),
+            ),
         )
 
     /**

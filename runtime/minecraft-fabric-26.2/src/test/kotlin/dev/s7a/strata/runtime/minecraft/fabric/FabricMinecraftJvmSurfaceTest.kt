@@ -1,5 +1,7 @@
 package dev.s7a.strata.runtime.minecraft.fabric
 
+import dev.s7a.strata.render.DrawImage
+import dev.s7a.strata.runtime.minecraft.MinecraftAssetId
 import dev.s7a.strata.runtime.minecraft.MinecraftScreenDefinition
 import dev.s7a.strata.runtime.minecraft.MinecraftUiProfile
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
@@ -15,7 +17,7 @@ import java.nio.file.Path
 import kotlin.jvm.java
 
 /**
- * Verifies that the Fabric adapter exposes only its two intended factories and screen type.
+ * Verifies that the Fabric adapter exposes only its intended asset, profile, screen factories and screen type.
  */
 @OptIn(InternalStrataRuntimeApi::class)
 internal class FabricMinecraftJvmSurfaceTest {
@@ -51,6 +53,10 @@ internal class FabricMinecraftJvmSurfaceTest {
         val profileFactory = Class.forName(profileFacade).getDeclaredMethod("extractMinecraftUiProfile")
         assertTrue(Modifier.isStatic(profileFactory.modifiers))
         assertEquals(MinecraftUiProfile::class.java, profileFactory.returnType)
+
+        val imageFactory = Class.forName(assetFacade).getDeclaredMethod("loadMinecraftUiImage", MinecraftAssetId::class.java)
+        assertTrue(Modifier.isStatic(imageFactory.modifiers))
+        assertEquals(DrawImage::class.java, imageFactory.returnType)
 
         val screenFactory =
             Class.forName(screenFacade).getDeclaredMethod(
@@ -120,6 +126,7 @@ internal class FabricMinecraftJvmSurfaceTest {
 
     private companion object {
         private val packageName = FabricMinecraftScreen::class.java.packageName
+        private val assetFacade = "$packageName.FabricMinecraftAssets"
         private val profileFacade = "$packageName.FabricMinecraftProfiles"
         private val screenFacade = "$packageName.FabricMinecraftScreens"
         private val lifecycleClass = "$packageName.FabricScreenLifecycleTransaction"
@@ -130,6 +137,7 @@ internal class FabricMinecraftJvmSurfaceTest {
                 "$packageName.FabricMinecraftFontContractKt" to emptySet(),
                 "$packageName.FabricMinecraftFocusedInputMappingKt" to emptySet(),
                 "$packageName.FabricMinecraftInputMappingKt" to emptySet(),
+                assetFacade to setOf("loadMinecraftUiImage"),
                 profileFacade to setOf("extractMinecraftUiProfile"),
                 "$packageName.FabricMinecraftScreen" to
                     setOf(
