@@ -411,10 +411,10 @@ internal class MinecraftPointerButtonTest {
 
     private fun host(
         profile: MinecraftUiProfile = MinecraftProfileFixture.create(),
-        content: MinecraftUiContext.() -> Element,
+        content: () -> Element,
     ): MinecraftUiHost =
         createMinecraftUiHost(
-            createMinecraftScreenDefinition(UiText.Literal("button"), content = content),
+            createMinecraftScreenDefinition(UiText.Literal("button")) { element(content()) },
             profile,
         )
 }

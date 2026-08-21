@@ -1,6 +1,5 @@
 package dev.s7a.strata.runtime.minecraft
 
-import dev.s7a.strata.dsl.buildUi
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
 import dev.s7a.strata.text.UiText
 import org.junit.jupiter.api.Assertions.assertEquals
@@ -24,7 +23,7 @@ internal class MinecraftScreenDefinitionTest {
         val definition =
             createMinecraftScreenDefinition(UiText.Literal("lazy")) {
                 contentCalls += 1
-                MinecraftHostProbe().element()
+                element(MinecraftHostProbe().element())
             }
 
         definition.close()
@@ -44,7 +43,7 @@ internal class MinecraftScreenDefinitionTest {
         val definition =
             createMinecraftScreenDefinition(title, pausesGame = true) {
                 contentCalls += 1
-                probe.element()
+                element(probe.element())
             }
         val host = createMinecraftUiHost(definition, profile)
 
@@ -61,7 +60,7 @@ internal class MinecraftScreenDefinitionTest {
     fun definitionCanBeTransferredExactlyOnce() {
         val definition =
             createMinecraftScreenDefinition(UiText.Literal("one")) {
-                buildUi { Text("A") }
+                Text("A")
             }
         val profile = MinecraftProfileFixture.create()
         val host = createMinecraftUiHost(definition, profile)
@@ -83,7 +82,7 @@ internal class MinecraftScreenDefinitionTest {
         repeat(20) {
             val definition =
                 createMinecraftScreenDefinition(UiText.Literal("race")) {
-                    buildUi { Text("A") }
+                    Text("A")
                 }
             val profile = MinecraftProfileFixture.create()
             val ready = CountDownLatch(2)
@@ -122,7 +121,7 @@ internal class MinecraftScreenDefinitionTest {
     fun closingAnAvailableDefinitionDropsItsPayload() {
         val definition =
             createMinecraftScreenDefinition(UiText.Literal("closed")) {
-                MinecraftHostProbe().element()
+                element(MinecraftHostProbe().element())
             }
         definition.close()
         assertSame(closedStateClass(), readDefinitionState(definition).javaClass)

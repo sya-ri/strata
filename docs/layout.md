@@ -7,6 +7,14 @@ A same-key row-to-column or column-to-row update preserves the retained node and
 Container callbacks may emit zero or more direct children.
 The row, column, and box scopes are owner-thread capabilities and are closed immediately after their callbacks return.
 
+## Container modifiers
+
+`Row`, `Column`, and `Box` accept an ordered `modifier` chain for the container itself.
+The same active behaviors available to other components can therefore size the container, add padding around its complete child group, paint a background, emit semantics, accept focus, or handle input without adding a component-specific parameter for each behavior.
+For example, `Row(modifier = Modifier.Empty.padding(Insets(top = 16)))` offsets the complete row once; applying the same padding separately to each child changes every child's measured box and is not equivalent.
+The typed layout parameters remain limited to behavior owned by the container algorithm: spacing, main-axis arrangement, and default cross-axis alignment.
+Direct-child `weight` and `align` remain parent-data modifiers available only from the corresponding callback scope.
+
 ## Constraints and natural size
 
 Rows and columns measure fixed children with zero minimums and the incoming maximums.

@@ -1,7 +1,9 @@
 package dev.s7a.strata.runtime.minecraft
 
+import dev.s7a.strata.dsl.Box
 import dev.s7a.strata.dsl.buildUi
 import dev.s7a.strata.geometry.IntSize
+import dev.s7a.strata.modifier.Modifier
 import dev.s7a.strata.render.DrawImage
 import dev.s7a.strata.render.createDrawImage
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
@@ -392,7 +394,7 @@ internal class MinecraftUiProfileTest {
                         host =
                             createMinecraftUiHost(
                                 createMinecraftScreenDefinition(UiText.Literal("reuse")) {
-                                    buildUi { MenuBackground() }
+                                    Box(modifier = Modifier.Empty.menuBackground()) {}
                                 },
                                 profile,
                             )

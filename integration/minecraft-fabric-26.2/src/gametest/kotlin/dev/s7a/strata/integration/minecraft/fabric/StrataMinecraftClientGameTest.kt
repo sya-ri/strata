@@ -238,7 +238,6 @@ public class StrataMinecraftClientGameTest : FabricClientGameTest {
                 ParityScene.Confirm to createDrawImage(confirm.size, confirm.copyArgb()),
                 ParityScene.Scroll to createDrawImage(scroll.size, scroll.copyArgb()),
                 ParityScene.DirectJoin to createDrawImage(directJoin.size, directJoin.copyArgb()),
-                ParityScene.ContainerBackground to createDrawImage(containerBackground.size, containerBackground.copyArgb()),
                 ParityScene.Slot to createDrawImage(slot.size, slot.copyArgb()),
             )
         val pngHashes = LinkedHashMap<ParityCrop, String>()
@@ -656,12 +655,10 @@ public class StrataMinecraftClientGameTest : FabricClientGameTest {
         val size: IntSize,
     ) {
         Overview("overview", ParityScene.Confirm, IntOffset.Zero, IntSize(320, 180)),
-        MenuBackground("menu-background", ParityScene.Confirm, IntOffset.Zero, IntSize(32, 32)),
         Text("text", ParityScene.Confirm, IntOffset(85, 50), IntSize(150, 20)),
         Button("button", ParityScene.Confirm, IntOffset(8, 105), IntSize(150, 20)),
         Scroll("scroll", ParityScene.Scroll, IntOffset(0, 33), IntSize(320, 94)),
         TextField("text-field", ParityScene.DirectJoin, IntOffset(60, 116), IntSize(200, 20)),
-        ContainerBackground("container-background", ParityScene.ContainerBackground, IntOffset(72, 36), IntSize(176, 168)),
         Slot("slot", ParityScene.Slot, IntOffset(76, 50), IntSize(24, 24)),
     }
 
@@ -669,7 +666,6 @@ public class StrataMinecraftClientGameTest : FabricClientGameTest {
         Confirm,
         Scroll,
         DirectJoin,
-        ContainerBackground,
         Slot,
     }
 }

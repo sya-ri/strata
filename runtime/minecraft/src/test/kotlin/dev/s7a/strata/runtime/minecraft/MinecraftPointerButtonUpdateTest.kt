@@ -129,7 +129,7 @@ internal class MinecraftPointerButtonUpdateTest {
         val host =
             createMinecraftUiHost(
                 createMinecraftScreenDefinition(UiText.Literal("button")) {
-                    buildUi { Button("A") }
+                    Button("A")
                 },
                 MinecraftProfileFixture.create(),
             )

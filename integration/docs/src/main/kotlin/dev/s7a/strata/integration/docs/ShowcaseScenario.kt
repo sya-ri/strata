@@ -20,9 +20,4 @@ internal sealed interface ShowcaseScenario {
      * Logical-to-physical pixel scale recorded by the verified GameTest crop.
      */
     val scale: Int
-
-    /**
-     * Authoritative Minecraft-component topology copied from the compiled scenario source.
-     */
-    val tree: ShowcaseTree
 }

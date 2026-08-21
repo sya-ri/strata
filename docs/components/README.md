@@ -2,7 +2,8 @@
 
 # Minecraft component showcase
 
-These deterministic crops come from real Minecraft 26.2 `ConfirmScreen`, `DirectJoinServerScreen`, `ContainerScreen`, and native `ObjectSelectionList` screens reconstructed with Strata's `MenuBackground`, `ContainerBackground`, `Slot`, `Text`, `TextField`, `Button`, and `Scroll` components.
+These deterministic crops come from real Minecraft 26.2 `ConfirmScreen`, `DirectJoinServerScreen`, `ContainerScreen`, and native `ObjectSelectionList` screens reconstructed with Strata's `Text`, `TextField`, `Button`, `Scroll`, and `Slot` components.
+The menu and generic-container images are active background modifiers on layout components rather than logical component entries.
 One loaded Fabric GameTest requires exact ARGB equality among each native screen, the Fabric adapter, and the headless frame before it emits these component images.
 
 [Open the machine-readable parity receipt](minecraft-26.2-parity.properties)
@@ -15,17 +16,18 @@ One loaded Fabric GameTest requires exact ARGB equality among each native screen
 import dev.s7a.strata.dsl.Box
 import dev.s7a.strata.dsl.Column
 import dev.s7a.strata.dsl.Row
-import dev.s7a.strata.dsl.buildUi
 import dev.s7a.strata.geometry.Insets
 import dev.s7a.strata.layout.Alignment
 import dev.s7a.strata.layout.HorizontalAlignment
 import dev.s7a.strata.modifier.Modifier
-import dev.s7a.strata.modifier.fillMaxSize
 import dev.s7a.strata.modifier.onPress
 import dev.s7a.strata.modifier.padding
 import dev.s7a.strata.modifier.size
+import dev.s7a.strata.runtime.minecraft.Button
 import dev.s7a.strata.runtime.minecraft.MinecraftScreenDefinition
+import dev.s7a.strata.runtime.minecraft.Text
 import dev.s7a.strata.runtime.minecraft.createMinecraftScreenDefinition
+import dev.s7a.strata.runtime.minecraft.menuBackground
 
 /**
  * Builds the deterministic Minecraft 26.2 ConfirmScreen content used by the Fabric and headless parity paths.
@@ -34,34 +36,28 @@ import dev.s7a.strata.runtime.minecraft.createMinecraftScreenDefinition
  */
 internal fun createConfirmScreenDefinition(): MinecraftScreenDefinition =
     createMinecraftScreenDefinition("Strata parity") {
-        buildUi {
-            Box(
-                modifier = Modifier.Empty.size(320, 180),
-                contentAlignment = Alignment.Center,
+        Box(
+            modifier = Modifier.Empty.size(320, 180).menuBackground(),
+            contentAlignment = Alignment.Center,
+        ) {
+            Column(
+                spacing = 8,
+                horizontalAlignment = HorizontalAlignment.Center,
             ) {
-                MenuBackground(modifier = Modifier.Empty.fillMaxSize())
-                Column(
-                    spacing = 8,
-                    horizontalAlignment = HorizontalAlignment.Center,
+                Text("Confirm action")
+                Text("Continue with this action?")
+                Row(
+                    modifier = Modifier.Empty.padding(Insets(top = 16)),
+                    spacing = 4,
                 ) {
-                    Text("Confirm action")
-                    Text("Continue with this action?")
-                    Row(spacing = 4) {
-                        Button(
-                            "Yes",
-                            modifier =
-                                Modifier.Empty
-                                    .padding(Insets(top = 16))
-                                    .onPress {},
-                        )
-                        Button(
-                            "No",
-                            modifier =
-                                Modifier.Empty
-                                    .padding(Insets(top = 16))
-                                    .onPress {},
-                        )
-                    }
+                    Button(
+                        "Yes",
+                        modifier = Modifier.Empty.onPress {},
+                    )
+                    Button(
+                        "No",
+                        modifier = Modifier.Empty.onPress {},
+                    )
                 }
             }
         }
@@ -73,21 +69,18 @@ internal fun createConfirmScreenDefinition(): MinecraftScreenDefinition =
 The tree shows Minecraft components in logical draw order; platform-neutral layout scaffolding remains visible in the compiled source.
 
 ```text
-`- MenuBackground [FillMaxSize]
-  |- Text
-  |- Text
-  |- Button
-  `- Button
+|- Text
+|- Text
+|- Button
+`- Button
 ```
 
 </details>
 
 ## Components
 
-- [MenuBackground](menu-background.md)
-- [ContainerBackground](container-background.md)
-- [Slot](slot.md)
 - [Text](text.md)
 - [TextField](text-field.md)
 - [Button](button.md)
 - [Scroll](scroll.md)
+- [Slot](slot.md)

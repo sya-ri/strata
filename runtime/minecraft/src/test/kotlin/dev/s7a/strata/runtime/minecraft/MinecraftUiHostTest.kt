@@ -1,5 +1,6 @@
 package dev.s7a.strata.runtime.minecraft
 
+import dev.s7a.strata.dsl.Box
 import dev.s7a.strata.dsl.Spacer
 import dev.s7a.strata.dsl.buildUi
 import dev.s7a.strata.element.Element
@@ -217,7 +218,7 @@ internal class MinecraftUiHostTest {
                         runCatching { host.dispatchPointer(PointerEvent.Move(IntOffset.Zero)) }.exceptionOrNull(),
                         runCatching { host.close() }.exceptionOrNull(),
                     )
-                buildUi { MenuBackground() }
+                buildUi { Box(modifier = Modifier.Empty.menuBackground()) {} }
             }
         host.attach()
         assertEquals(7, reentryFailures.size)
@@ -324,13 +325,12 @@ internal class MinecraftUiHostTest {
         )
     }
 
-    private fun host(content: MinecraftUiContext.() -> Element): MinecraftUiHost =
+    private fun host(content: () -> Element): MinecraftUiHost =
         createMinecraftUiHost(
             createMinecraftScreenDefinition(
                 title = UiText.Literal("test"),
                 pausesGame = false,
-                content = content,
-            ),
+            ) { element(content()) },
             MinecraftProfileFixture.create(),
         )
 

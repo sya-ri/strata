@@ -7,11 +7,15 @@ import dev.s7a.strata.dsl.Spacer
 import dev.s7a.strata.dsl.buildUi
 import dev.s7a.strata.element.ElementKey
 import dev.s7a.strata.geometry.Constraints
+import dev.s7a.strata.geometry.Insets
 import dev.s7a.strata.geometry.IntRect
 import dev.s7a.strata.geometry.IntSize
 import dev.s7a.strata.layout.Alignment
 import dev.s7a.strata.layout.Arrangement
 import dev.s7a.strata.modifier.Modifier
+import dev.s7a.strata.modifier.background
+import dev.s7a.strata.modifier.padding
+import dev.s7a.strata.render.ArgbColor
 import dev.s7a.strata.runtime.UiTree
 import dev.s7a.strata.runtime.render.DrawCommand
 import org.junit.jupiter.api.Assertions.assertEquals
@@ -41,6 +45,39 @@ internal class LayoutIntegrationTest {
 
         val commands = tree.paint().map { command -> (command as DrawCommand.FillRectangle).bounds }
         assertEquals(listOf(IntRect(0, 0, 3, 4), IntRect(15, 0, 20, 2)), commands)
+        tree.close()
+    }
+
+    @Test
+    fun rowModifierAppliesContainerPaddingAndBackgroundOnce() {
+        val tree = UiTree()
+        val probe = ExternalProbe()
+        val background = ArgbColor(0xFF102030.toInt())
+        tree.update(
+            buildUi {
+                Row(
+                    modifier =
+                        Modifier.Empty
+                            .background(background)
+                            .padding(Insets(left = 2, top = 5, right = 3, bottom = 4)),
+                    spacing = 1,
+                ) {
+                    element(ExternalElement(probe = probe, width = 3, height = 2, nodeId = ExternalNodeId.Child))
+                    element(ExternalElement(probe = probe, width = 4, height = 3, nodeId = ExternalNodeId.Modifier))
+                }
+            },
+        )
+
+        assertEquals(IntSize(13, 12), tree.measure(Constraints(maxWidth = 50, maxHeight = 50)))
+        tree.layout()
+        assertEquals(
+            listOf(
+                IntRect(0, 0, 13, 12),
+                IntRect(2, 5, 5, 7),
+                IntRect(6, 5, 10, 8),
+            ),
+            tree.paint().map { command -> (command as DrawCommand.FillRectangle).bounds },
+        )
         tree.close()
     }
 

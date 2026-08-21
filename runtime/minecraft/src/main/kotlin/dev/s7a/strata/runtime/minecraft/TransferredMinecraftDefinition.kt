@@ -1,6 +1,6 @@
 package dev.s7a.strata.runtime.minecraft
 
-import dev.s7a.strata.element.Element
+import dev.s7a.strata.dsl.UiScope
 import dev.s7a.strata.text.UiText
 
 /**
@@ -16,7 +16,7 @@ internal class TransferredMinecraftDefinition private constructor(
     @get:JvmSynthetic
     internal val pausesGame: Boolean,
     @get:JvmSynthetic
-    internal val content: MinecraftUiContext.() -> Element,
+    internal val content: UiScope.() -> Unit,
 ) {
     /**
      * Owns the synthetic constructor bridge for the internal carrier.
@@ -34,7 +34,7 @@ internal class TransferredMinecraftDefinition private constructor(
         internal fun create(
             title: UiText,
             pausesGame: Boolean,
-            content: MinecraftUiContext.() -> Element,
+            content: UiScope.() -> Unit,
         ): TransferredMinecraftDefinition = TransferredMinecraftDefinition(title, pausesGame, content)
     }
 }

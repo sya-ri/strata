@@ -18,7 +18,7 @@ import dev.s7a.strata.modifier.Modifier
  *
  * The callback scope is confined to the constructing thread and is closed immediately after the callback returns.
  *
- * @param modifier active behavior applied to the row.
+ * @param modifier ordered active behavior applied to the row itself, including sizing, padding, paint, semantics, focus, and input behavior.
  * @param key optional stable identity among direct siblings.
  * @param spacing non-negative fixed spacing between direct children.
  * @param horizontalArrangement main-axis child arrangement.
@@ -63,7 +63,7 @@ public fun UiScope.Row(
  *
  * The callback scope is confined to the constructing thread and is closed immediately after the callback returns.
  *
- * @param modifier active behavior applied to the column.
+ * @param modifier ordered active behavior applied to the column itself, including sizing, padding, paint, semantics, focus, and input behavior.
  * @param key optional stable identity among direct siblings.
  * @param spacing non-negative fixed spacing between direct children.
  * @param verticalArrangement main-axis child arrangement.
@@ -108,7 +108,7 @@ public fun UiScope.Column(
  *
  * The callback scope is confined to the constructing thread and is closed immediately after the callback returns.
  *
- * @param modifier active behavior applied to the box.
+ * @param modifier ordered active behavior applied to the box itself, including sizing, padding, paint, semantics, focus, and input behavior.
  * @param key optional stable identity among direct siblings.
  * @param contentAlignment default two-axis child alignment.
  * @param content callback that emits zero or more direct children.

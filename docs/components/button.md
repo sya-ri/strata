@@ -11,29 +11,27 @@ This image is a 150 by 20 component crop from the exact native/Fabric/headless p
 ## Compiled example
 
 ```kotlin
-import dev.s7a.strata.dsl.buildUi
 import dev.s7a.strata.modifier.Modifier
 import dev.s7a.strata.modifier.onHover
 import dev.s7a.strata.modifier.onPress
+import dev.s7a.strata.runtime.minecraft.Button
 import dev.s7a.strata.runtime.minecraft.MinecraftScreenDefinition
 import dev.s7a.strata.runtime.minecraft.createMinecraftScreenDefinition
 
 /**
  * Builds the pointer Button used by the verified ConfirmScreen action row.
  *
- * @return one-shot screen definition whose content uses the implicit Minecraft component context.
+ * @return one-shot screen definition whose content resolves components from the host-installed Minecraft profile.
  */
 internal fun buttonExample(): MinecraftScreenDefinition =
     createMinecraftScreenDefinition("Button") {
-        buildUi {
-            Button(
-                "Yes",
-                modifier =
-                    Modifier.Empty
-                        .onPress {}
-                        .onHover {},
-            )
-        }
+        Button(
+            "Yes",
+            modifier =
+                Modifier.Empty
+                    .onPress {}
+                    .onHover {},
+        )
     }
 ```
 
@@ -43,7 +41,7 @@ Pointer behavior is active modifier behavior. `onPointerEvent`, `onPress`, `onRe
 
 ## Parent scope
 
-`Button` is a member extension on the active `UiScope`. The runtime supplies `MinecraftUiContext` implicitly, and pointer event modifiers remain valid only through their retained modifier-node lifetime.
+`Button` is a top-level extension on the active `UiScope`. The screen runtime installs its selected Minecraft profile only for the definition callback, and pointer event modifiers remain valid only through their retained modifier-node lifetime.
 
 <details><summary>Component tree</summary>
 

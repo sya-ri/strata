@@ -27,13 +27,11 @@ internal class ShowcaseParityEvidenceTest {
         first[0] = 0
 
         assertArrayEquals(png, evidence.overviewPng())
-        assertArrayEquals(png(32, 32), evidence.componentPng(DocumentedComponent.MenuBackground))
-        assertArrayEquals(png(176, 168), evidence.componentPng(DocumentedComponent.ContainerBackground))
-        assertArrayEquals(png(24, 24), evidence.componentPng(DocumentedComponent.Slot))
         assertArrayEquals(png(150, 20), evidence.componentPng(DocumentedComponent.Text))
         assertArrayEquals(png(200, 20), evidence.componentPng(DocumentedComponent.TextField))
         assertArrayEquals(png(150, 20), evidence.componentPng(DocumentedComponent.Button))
         assertArrayEquals(png(320, 94), evidence.componentPng(DocumentedComponent.Scroll))
+        assertArrayEquals(png(24, 24), evidence.componentPng(DocumentedComponent.Slot))
         val receipt = evidence.receipt()
         receipt[0] = 0
         assertArrayEquals(Files.readAllBytes(temporaryRoot.resolve("receipt.properties")), evidence.receipt())
@@ -75,13 +73,11 @@ internal class ShowcaseParityEvidenceTest {
         val images =
             linkedMapOf(
                 "overview" to png(320, 180),
-                DocumentedComponent.MenuBackground.slug to png(32, 32),
-                DocumentedComponent.ContainerBackground.slug to png(176, 168),
-                DocumentedComponent.Slot.slug to png(24, 24),
                 DocumentedComponent.Text.slug to png(150, 20),
                 DocumentedComponent.TextField.slug to png(200, 20),
                 DocumentedComponent.Button.slug to png(150, 20),
                 DocumentedComponent.Scroll.slug to png(320, 94),
+                DocumentedComponent.Slot.slug to png(24, 24),
             )
         images.forEach { (slug, bytes) -> Files.write(components.resolve("$slug.png"), bytes) }
         val receipt =

@@ -151,7 +151,7 @@ internal class MinecraftTextFieldTest {
     ): MinecraftUiHost =
         createMinecraftUiHost(
             createMinecraftScreenDefinition(UiText.Literal("TextField")) {
-                buildUi { TextField(state, modifier = modifier) }
+                TextField(state, modifier = modifier)
             },
             MinecraftProfileFixture.create(),
         )

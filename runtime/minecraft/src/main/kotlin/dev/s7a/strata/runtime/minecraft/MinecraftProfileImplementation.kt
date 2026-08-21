@@ -14,9 +14,10 @@ import dev.s7a.strata.text.UiText
 import java.util.Collections
 
 /**
- * Owns callback-lifetime profile construction and validation.
+ * Owns callback-lifetime profile construction, validation, retained evaluation, and dynamically scoped component dispatch.
  */
 @OptIn(InternalStrataRuntimeApi::class)
+@Suppress("TooManyFunctions") // These operations share one profile/context ownership boundary.
 internal object MinecraftProfileImplementation {
     /**
      * Creates one complete immutable profile through a callback-lifetime builder.
@@ -80,11 +81,142 @@ internal object MinecraftProfileImplementation {
     @JvmSynthetic
     fun createEvaluator(
         profile: MinecraftUiProfile,
-        content: MinecraftUiContext.() -> Element,
+        content: UiScope.() -> Unit,
     ): () -> Element =
         when (profile) {
             is ProfileSnapshot -> Evaluator.create(profile, content)
         }
+
+    /**
+     * Appends the active profile's menu-background behavior.
+     *
+     * @param modifier caller-owned immutable chain.
+     * @return a new chain retaining the selected asset.
+     * @throws IllegalStateException when no screen-content callback is active on this thread.
+     */
+    @JvmSynthetic
+    fun menuBackground(modifier: Modifier): Modifier = currentContext().menuBackground(modifier)
+
+    /**
+     * Appends the active profile's generic-container behavior.
+     *
+     * @param modifier caller-owned immutable chain.
+     * @param rows requested chest row count.
+     * @return a new chain retaining the selected asset and row policy.
+     * @throws IllegalStateException when no screen-content callback is active on this thread.
+     */
+    @JvmSynthetic
+    fun containerBackground(
+        modifier: Modifier,
+        rows: Int,
+    ): Modifier = currentContext().containerBackground(modifier, rows)
+
+    /**
+     * Emits one Slot through the active profile context.
+     *
+     * @param scope active destination scope.
+     * @param highlightable whether native hover layers are enabled.
+     * @param modifier active Slot behavior.
+     * @param key optional sibling identity.
+     * @param content optional single item-root callback.
+     * @throws IllegalStateException when no matching screen-content callback is active on this thread.
+     */
+    @JvmSynthetic
+    fun emitSlot(
+        scope: UiScope,
+        highlightable: Boolean,
+        modifier: Modifier,
+        key: ElementKey<*>?,
+        content: (UiScope.() -> Unit)?,
+    ) {
+        currentContext().emitSlot(scope, highlightable, modifier, key, content)
+    }
+
+    /**
+     * Emits one Text through the active profile context.
+     *
+     * @param scope active destination scope.
+     * @param text unresolved text value.
+     * @param style typed profile-backed style.
+     * @param modifier active Text behavior.
+     * @param key optional sibling identity.
+     * @throws IllegalStateException when no matching screen-content callback is active on this thread.
+     */
+    @JvmSynthetic
+    fun emitText(
+        scope: UiScope,
+        text: UiText,
+        style: MinecraftTextStyle,
+        modifier: Modifier,
+        key: ElementKey<*>?,
+    ) {
+        currentContext().emitText(scope, text, style, modifier, key)
+    }
+
+    /**
+     * Emits one TextField through the active profile context.
+     *
+     * @param scope active destination scope.
+     * @param state caller-owned field state.
+     * @param enabled whether editing and focus are enabled.
+     * @param modifier active TextField behavior.
+     * @param key optional sibling identity.
+     * @throws IllegalStateException when no matching screen-content callback is active on this thread.
+     */
+    @JvmSynthetic
+    fun emitTextField(
+        scope: UiScope,
+        state: MinecraftTextFieldState,
+        enabled: Boolean,
+        modifier: Modifier,
+        key: ElementKey<*>?,
+    ) {
+        currentContext().emitTextField(scope, state, enabled, modifier, key)
+    }
+
+    /**
+     * Emits one Button through the active profile context.
+     *
+     * @param scope active destination scope.
+     * @param label unresolved button label.
+     * @param width requested logical width.
+     * @param enabled whether enabled appearance and semantics are used.
+     * @param modifier active Button behavior.
+     * @param key optional sibling identity.
+     * @throws IllegalStateException when no matching screen-content callback is active on this thread.
+     */
+    @JvmSynthetic
+    fun emitButton(
+        scope: UiScope,
+        label: UiText,
+        width: Int,
+        enabled: Boolean,
+        modifier: Modifier,
+        key: ElementKey<*>?,
+    ) {
+        currentContext().emitButton(scope, label, width, enabled, modifier, key)
+    }
+
+    /**
+     * Emits one Scroll through the active profile context.
+     *
+     * @param scope active destination scope.
+     * @param modifier active Scroll behavior.
+     * @param key optional sibling identity.
+     * @param scrollRate positive logical wheel multiplier.
+     * @param content single content-root callback.
+     * @throws IllegalStateException when no matching screen-content callback is active on this thread.
+     */
+    @JvmSynthetic
+    fun emitScroll(
+        scope: UiScope,
+        modifier: Modifier,
+        key: ElementKey<*>?,
+        scrollRate: Int,
+        content: UiScope.() -> Unit,
+    ) {
+        currentContext().emitScroll(scope, modifier, key, scrollRate, content)
+    }
 
     /**
      * Releases a one-shot evaluator created by [createEvaluator].
@@ -472,28 +604,19 @@ internal object MinecraftProfileImplementation {
 
     private class Context private constructor(
         initialProfile: ProfileSnapshot,
-    ) : MinecraftUiContext {
+    ) {
         private val ownerThread = Thread.currentThread()
         private var profile: ProfileSnapshot? = initialProfile
 
-        override fun UiScope.MenuBackground(
-            modifier: Modifier,
-            key: ElementKey<*>?,
-        ) {
-            val description = createMinecraftMenuBackgroundElement(requireProfile().menuBackground, modifier, key)
-            element(description)
-        }
+        fun menuBackground(modifier: Modifier): Modifier = modifier.then(createMinecraftMenuBackgroundModifier(requireProfile().menuBackground))
 
-        override fun UiScope.ContainerBackground(
+        fun containerBackground(
+            modifier: Modifier,
             rows: Int,
-            modifier: Modifier,
-            key: ElementKey<*>?,
-        ) {
-            val currentProfile = requireProfile()
-            element(createMinecraftContainerBackgroundElement(currentProfile.containerBackground, rows, modifier, key))
-        }
+        ): Modifier = modifier.then(createMinecraftContainerBackgroundModifier(requireProfile().containerBackground, rows))
 
-        override fun UiScope.Slot(
+        fun emitSlot(
+            scope: UiScope,
             highlightable: Boolean,
             modifier: Modifier,
             key: ElementKey<*>?,
@@ -501,7 +624,7 @@ internal object MinecraftProfileImplementation {
         ) {
             val currentProfile = requireProfile()
             val child = content?.let(::buildUi)
-            element(
+            scope.element(
                 createMinecraftSlotElement(
                     currentProfile.slotHighlightBack,
                     currentProfile.slotHighlightFront,
@@ -513,14 +636,15 @@ internal object MinecraftProfileImplementation {
             )
         }
 
-        override fun UiScope.Text(
+        fun emitText(
+            scope: UiScope,
             text: UiText,
             style: MinecraftTextStyle,
             modifier: Modifier,
             key: ElementKey<*>?,
         ) {
             val currentProfile = requireProfile()
-            element(
+            scope.element(
                 createMinecraftTextElement(
                     when (style) {
                         MinecraftTextStyle.Normal -> MinecraftTextRun.createNormal(text, currentProfile::glyph)
@@ -533,7 +657,8 @@ internal object MinecraftProfileImplementation {
             )
         }
 
-        override fun UiScope.Button(
+        fun emitButton(
+            scope: UiScope,
             label: UiText,
             width: Int,
             enabled: Boolean,
@@ -547,7 +672,7 @@ internal object MinecraftProfileImplementation {
             require(currentProfile.disabledButton.border * 2 < width) { "Minecraft Button width must leave a nonempty disabled center." }
             val normalText = MinecraftTextRun.createNormal(label, currentProfile::glyph)
             val inactiveText = MinecraftTextRun.createInactive(label, currentProfile::glyph)
-            element(
+            scope.element(
                 createMinecraftPointerButtonElement(
                     currentProfile.normalButton,
                     currentProfile.highlightedButton,
@@ -563,14 +688,15 @@ internal object MinecraftProfileImplementation {
             )
         }
 
-        override fun UiScope.TextField(
+        fun emitTextField(
+            scope: UiScope,
             state: MinecraftTextFieldState,
             enabled: Boolean,
             modifier: Modifier,
             key: ElementKey<*>?,
         ) {
             val currentProfile = requireProfile()
-            element(
+            scope.element(
                 createMinecraftTextFieldElement(
                     currentProfile.normalTextField,
                     currentProfile.highlightedTextField,
@@ -583,7 +709,8 @@ internal object MinecraftProfileImplementation {
             )
         }
 
-        override fun UiScope.Scroll(
+        fun emitScroll(
+            scope: UiScope,
             modifier: Modifier,
             key: ElementKey<*>?,
             scrollRate: Int,
@@ -592,7 +719,7 @@ internal object MinecraftProfileImplementation {
             val currentProfile = requireProfile()
             require(0 < scrollRate) { "Minecraft Scroll rate must be positive." }
             val child = buildUi(content)
-            element(
+            scope.element(
                 createMinecraftScrollElement(
                     currentProfile.listBackground,
                     currentProfile.listHeaderSeparator,
@@ -633,11 +760,11 @@ internal object MinecraftProfileImplementation {
 
     private class Evaluator private constructor(
         initialProfile: ProfileSnapshot,
-        initialContent: MinecraftUiContext.() -> Element,
+        initialContent: UiScope.() -> Unit,
     ) : () -> Element {
         private val ownerThread = Thread.currentThread()
         private var profile: ProfileSnapshot? = initialProfile
-        private var content: (MinecraftUiContext.() -> Element)? = initialContent
+        private var content: (UiScope.() -> Unit)? = initialContent
 
         override fun invoke(): Element {
             check(Thread.currentThread() === ownerThread) { "Minecraft content evaluation requires the host owner thread." }
@@ -647,7 +774,7 @@ internal object MinecraftProfileImplementation {
             content = null
             val context = Context.create(currentProfile)
             return try {
-                context.currentContent()
+                ContextBinding.withContext(context) { buildUi(currentContent) }
             } finally {
                 context.close()
             }
@@ -670,8 +797,33 @@ internal object MinecraftProfileImplementation {
             @JvmSynthetic
             internal fun create(
                 profile: ProfileSnapshot,
-                content: MinecraftUiContext.() -> Element,
+                content: UiScope.() -> Unit,
             ): Evaluator = Evaluator(profile, content)
+        }
+    }
+
+    private fun currentContext(): Context = ContextBinding.current()
+
+    private object ContextBinding {
+        private val active = ThreadLocal<Context?>()
+
+        fun current(): Context = checkNotNull(active.get()) { "Minecraft UI functions require an active screen-content callback on this thread." }
+
+        fun <T> withContext(
+            context: Context,
+            operation: () -> T,
+        ): T {
+            val previous = active.get()
+            active.set(context)
+            return try {
+                operation()
+            } finally {
+                if (previous == null) {
+                    active.remove()
+                } else {
+                    active.set(previous)
+                }
+            }
         }
     }
 

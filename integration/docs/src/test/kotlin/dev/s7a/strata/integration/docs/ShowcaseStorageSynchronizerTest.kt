@@ -44,7 +44,7 @@ internal class ShowcaseStorageSynchronizerTest {
         writeReadme()
         ShowcaseStorage.writeStaging(output)
         ShowcaseSynchronizer.synchronize(launch, output)
-        Files.delete(temporaryRoot.resolve("docs/components/menu-background.md"))
+        Files.delete(temporaryRoot.resolve("docs/components/text.md"))
         Files.write(temporaryRoot.resolve("docs/components/images/overview.png"), byteArrayOf(9))
         Files.writeString(temporaryRoot.resolve("docs/components/unexpected.md"), "unexpected")
         Files.writeString(temporaryRoot.resolve("README.md"), "changed")
@@ -54,7 +54,7 @@ internal class ShowcaseStorageSynchronizerTest {
                 ShowcaseStorage.checkSource(temporaryRoot, output)
             }
 
-        assertTrue(failure.message.orEmpty().contains("missing: menu-background.md"))
+        assertTrue(failure.message.orEmpty().contains("missing: text.md"))
         assertTrue(failure.message.orEmpty().contains("unexpected: unexpected.md"))
         assertTrue(failure.message.orEmpty().contains("different: images/overview.png"))
         assertTrue(failure.message.orEmpty().contains("README:"))
@@ -118,7 +118,7 @@ internal class ShowcaseStorageSynchronizerTest {
         ShowcaseSynchronizer.synchronize(launch, output)
 
         assertEquals(
-            setOf("README.md", "menu-background.md", "images/overview.png", "images/menu-background.png", "minecraft-26.2-parity.properties"),
+            setOf("README.md", "text.md", "images/overview.png", "images/text.png", "minecraft-26.2-parity.properties"),
             snapshot(target).keys,
         )
     }
@@ -399,7 +399,7 @@ internal class ShowcaseStorageSynchronizerTest {
 
         assertSame(cleanupTreeFailure, thrown)
         assertEquals(listOf(cleanupReadmeFailure), thrown.suppressed.toList())
-        assertTrue(Files.exists(target.resolve("menu-background.md"), LinkOption.NOFOLLOW_LINKS))
+        assertTrue(Files.exists(target.resolve("text.md"), LinkOption.NOFOLLOW_LINKS))
         assertTrue(Files.exists(temporaryRoot.resolve("docs/.strata-components-backup"), LinkOption.NOFOLLOW_LINKS))
         assertTrue(Files.exists(temporaryRoot.resolve(".strata-readme-backup"), LinkOption.NOFOLLOW_LINKS))
     }
@@ -511,8 +511,8 @@ internal class ShowcaseStorageSynchronizerTest {
 
     private fun output(staging: Path): ShowcaseOutput =
         ShowcaseOutput(
-            ShowcaseOutput.Overview("overview\n", "`- MenuBackground\n", byteArrayOf(1, 2, 3)),
-            listOf(ShowcaseOutput.Page(DocumentedComponent.MenuBackground, "# MenuBackground\n", byteArrayOf(4, 5, 6))),
+            ShowcaseOutput.Overview("overview\n", "`- Text\n", byteArrayOf(1, 2, 3)),
+            listOf(ShowcaseOutput.Page(DocumentedComponent.Text, "# Text\n", byteArrayOf(4, 5, 6))),
             staging,
             "verified=true\n".toByteArray(),
         )

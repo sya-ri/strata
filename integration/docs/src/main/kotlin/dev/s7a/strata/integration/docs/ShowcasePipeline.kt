@@ -69,7 +69,7 @@ internal object ShowcasePipeline {
         require(scenario.viewport.width == 320 && scenario.viewport.height == 180 && scenario.scale == 1) {
             "Overview crop metadata differs from the parity contract."
         }
-        return ShowcaseOutput.Overview(region.source, ShowcaseMarkdown.tree(scenario.tree), evidence.overviewPng())
+        return ShowcaseOutput.Overview(region.source, ShowcaseMarkdown.forest(scenario.trees), evidence.overviewPng())
     }
 
     private fun renderComponent(

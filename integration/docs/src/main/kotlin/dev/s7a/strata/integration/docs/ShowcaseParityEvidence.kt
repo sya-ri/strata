@@ -177,13 +177,11 @@ internal class ShowcaseParityEvidence private constructor(
 
         private fun expectedPngSize(component: DocumentedComponent): IntSize =
             when (component) {
-                DocumentedComponent.MenuBackground -> IntSize(32, 32)
-                DocumentedComponent.ContainerBackground -> IntSize(176, 168)
-                DocumentedComponent.Slot -> IntSize(24, 24)
                 DocumentedComponent.Text -> IntSize(150, 20)
                 DocumentedComponent.TextField -> IntSize(200, 20)
                 DocumentedComponent.Button -> IntSize(150, 20)
                 DocumentedComponent.Scroll -> IntSize(320, 94)
+                DocumentedComponent.Slot -> IntSize(24, 24)
             }
 
         private fun requireHash(

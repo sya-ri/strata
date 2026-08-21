@@ -218,10 +218,10 @@ internal class MinecraftScrollTest {
 
     private fun host(
         profile: MinecraftUiProfile,
-        content: MinecraftUiContext.() -> Element,
-    ): MinecraftUiHost = createMinecraftUiHost(createMinecraftScreenDefinition(UiText.Literal("scroll"), content = content), profile)
+        content: () -> Element,
+    ): MinecraftUiHost = createMinecraftUiHost(createMinecraftScreenDefinition(UiText.Literal("scroll")) { element(content()) }, profile)
 
-    private fun MinecraftUiContext.scrollContent(): Element =
+    private fun scrollContent(): Element =
         buildUi {
             Scroll {
                 Spacer(modifier = Modifier.Empty.size(270, 180).background(contentColor))

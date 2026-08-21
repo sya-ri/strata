@@ -1,6 +1,6 @@
 package dev.s7a.strata.integration.external
 
-import dev.s7a.strata.dsl.buildUi
+import dev.s7a.strata.dsl.Box
 import dev.s7a.strata.geometry.Constraints
 import dev.s7a.strata.geometry.IntOffset
 import dev.s7a.strata.geometry.IntSize
@@ -11,12 +11,18 @@ import dev.s7a.strata.modifier.Modifier
 import dev.s7a.strata.modifier.onPress
 import dev.s7a.strata.node.DirtyPhase
 import dev.s7a.strata.render.createDrawImage
+import dev.s7a.strata.runtime.minecraft.Button
 import dev.s7a.strata.runtime.minecraft.MinecraftNineSliceCenterMode
 import dev.s7a.strata.runtime.minecraft.MinecraftTextStyle
+import dev.s7a.strata.runtime.minecraft.Slot
+import dev.s7a.strata.runtime.minecraft.Text
+import dev.s7a.strata.runtime.minecraft.TextField
+import dev.s7a.strata.runtime.minecraft.containerBackground
 import dev.s7a.strata.runtime.minecraft.createMinecraftScreenDefinition
 import dev.s7a.strata.runtime.minecraft.createMinecraftTextFieldState
 import dev.s7a.strata.runtime.minecraft.createMinecraftUiHost
 import dev.s7a.strata.runtime.minecraft.createMinecraftUiProfile
+import dev.s7a.strata.runtime.minecraft.menuBackground
 import dev.s7a.strata.runtime.render.DrawCommand
 import dev.s7a.strata.semantics.SemanticsRole
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
@@ -31,7 +37,7 @@ import org.junit.jupiter.api.Test
 @OptIn(InternalStrataRuntimeApi::class)
 internal class ExternalMinecraftUiHostIntegrationTest {
     @Test
-    fun externalContentBuildsMenuAndTextThroughPublicContextWithoutRegistration() {
+    fun externalContentBuildsMenuAndTextWithoutPublicContextOrRegistration() {
         assertExternalMenuAndText()
         assertExternalTextFieldAndStyle()
         assertExternalContainerAndSlot()
@@ -40,7 +46,7 @@ internal class ExternalMinecraftUiHostIntegrationTest {
     private fun assertExternalMenuAndText() {
         val menuHost =
             createMinecraftScreenDefinition("external menu") {
-                buildUi { MenuBackground() }
+                Box(modifier = Modifier.Empty.menuBackground()) {}
             }.let { definition -> createMinecraftUiHost(definition, profile()) }
         menuHost.attach()
         val menuFrame = menuHost.frame(IntSize(32, 32))
@@ -49,7 +55,7 @@ internal class ExternalMinecraftUiHostIntegrationTest {
 
         val textHost =
             createMinecraftScreenDefinition(UiText.Literal("external text")) {
-                buildUi { Text("A B") }
+                Text("A B")
             }.let { definition -> createMinecraftUiHost(definition, profile()) }
         textHost.attach()
         val textFrame = textHost.frame(IntSize(6, 9))
@@ -63,9 +69,7 @@ internal class ExternalMinecraftUiHostIntegrationTest {
         val state = createMinecraftTextFieldState("A", maxLength = 8)
         val fieldHost =
             createMinecraftScreenDefinition(UiText.Literal("external field")) {
-                buildUi {
-                    TextField(state)
-                }
+                TextField(state)
             }.let { definition -> createMinecraftUiHost(definition, profile()) }
         fieldHost.attach()
         val fieldFrame = fieldHost.frame(IntSize(200, 20))
@@ -85,7 +89,7 @@ internal class ExternalMinecraftUiHostIntegrationTest {
 
         val inactiveHost =
             createMinecraftScreenDefinition(UiText.Literal("external styled text")) {
-                buildUi { Text("A", style = MinecraftTextStyle.Inactive) }
+                Text("A", style = MinecraftTextStyle.Inactive)
             }.let { definition -> createMinecraftUiHost(definition, profile()) }
         inactiveHost.attach()
         assertEquals(IntSize(1, 9), inactiveHost.frame(IntSize(1, 9)).size)
@@ -95,7 +99,7 @@ internal class ExternalMinecraftUiHostIntegrationTest {
     private fun assertExternalContainerAndSlot() {
         val containerHost =
             createMinecraftScreenDefinition("external container") {
-                buildUi { ContainerBackground() }
+                Box(modifier = Modifier.Empty.containerBackground()) {}
             }.let { definition -> createMinecraftUiHost(definition, profile()) }
         containerHost.attach()
         assertEquals(
@@ -109,7 +113,7 @@ internal class ExternalMinecraftUiHostIntegrationTest {
 
         val slotHost =
             createMinecraftScreenDefinition("external slot") {
-                buildUi { Slot() }
+                Slot()
             }.let { definition -> createMinecraftUiHost(definition, profile()) }
         slotHost.attach()
         slotHost.frame(IntSize(18, 18))
@@ -134,7 +138,7 @@ internal class ExternalMinecraftUiHostIntegrationTest {
                 pausesGame = false,
             ) {
                 contentCalls += 1
-                ExternalElement(probe = probe, width = 4, height = 3)
+                element(ExternalElement(probe = probe, width = 4, height = 3))
             }
         val host = createMinecraftUiHost(definition, profile())
         host.attach()
@@ -168,14 +172,12 @@ internal class ExternalMinecraftUiHostIntegrationTest {
     }
 
     @Test
-    fun externalContextBuildsAndDispatchesPointerButtonWithoutRegistration() {
+    fun externalDslBuildsAndDispatchesPointerButtonWithoutRegistration() {
         var presses = 0
         val host =
             createMinecraftUiHost(
                 createMinecraftScreenDefinition(UiText.Literal("external button")) {
-                    buildUi {
-                        Button("A", modifier = Modifier.Empty.onPress { presses += 1 })
-                    }
+                    Button("A", modifier = Modifier.Empty.onPress { presses += 1 })
                 },
                 profile(),
             )

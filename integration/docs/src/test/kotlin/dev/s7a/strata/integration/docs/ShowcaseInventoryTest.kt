@@ -13,7 +13,7 @@ import java.nio.file.StandardCopyOption
 import javax.tools.ToolProvider
 
 /**
- * Verifies Minecraft-context class-directory inventory discovery, filtering, ordering, and failure causes.
+ * Verifies Minecraft component-facade inventory discovery, filtering, ordering, and failure causes.
  */
 internal class ShowcaseInventoryTest {
     @TempDir
@@ -38,8 +38,8 @@ internal class ShowcaseInventoryTest {
 
         val first = temporaryRoot.resolve("first")
         val second = temporaryRoot.resolve("second")
-        copyClass(classes, first, "dev/s7a/strata/runtime/minecraft/MinecraftUiContext.class")
-        copyClass(classes, second, "dev/s7a/strata/runtime/minecraft/MinecraftUiContext.class")
+        copyClass(classes, first, "dev/s7a/strata/runtime/minecraft/MinecraftUiComponents.class")
+        copyClass(classes, second, "dev/s7a/strata/runtime/minecraft/MinecraftUiComponents.class")
         val duplicateBinary =
             assertThrows(IllegalArgumentException::class.java) {
                 ShowcaseInventory.discover(listOf(first, second))
@@ -61,16 +61,17 @@ internal class ShowcaseInventoryTest {
     fun classifiersExcludeNonStaticLowercasePrivateWrongParameterAndInstanceMethods() {
         val classes =
             compile(
-                "dev/s7a/strata/runtime/minecraft/MinecraftUiContext.java",
+                "dev/s7a/strata/runtime/minecraft/MinecraftUiComponents.java",
                 """
                 package dev.s7a.strata.runtime.minecraft;
                 import dev.s7a.strata.dsl.UiScope;
-                public interface MinecraftUiContext {
-                    void lowercase(UiScope scope);
-                    static void Static(UiScope scope) {}
-                    void Wrong(String value);
-                    void Array(UiScope[] value);
-                    Object WrongReturn(UiScope scope);
+                public final class MinecraftUiComponents {
+                    public void Instance(UiScope scope) {}
+                    public static void lowercase(UiScope scope) {}
+                    private static void Private(UiScope scope) {}
+                    public static void Wrong(String value) {}
+                    public static void Array(UiScope[] value) {}
+                    public static Object WrongReturn(UiScope scope) { return null; }
                 }
                 """.trimIndent(),
             )
@@ -82,12 +83,12 @@ internal class ShowcaseInventoryTest {
     fun unknownUpperCamelAndCorruptClassPreserveDeterministicFailureContext() {
         val unknown =
             compile(
-                "dev/s7a/strata/runtime/minecraft/MinecraftUiContext.java",
+                "dev/s7a/strata/runtime/minecraft/MinecraftUiComponents.java",
                 """
                 package dev.s7a.strata.runtime.minecraft;
                 import dev.s7a.strata.dsl.UiScope;
-                public interface MinecraftUiContext {
-                    void Unknown(UiScope scope);
+                public final class MinecraftUiComponents {
+                    public static void Unknown(UiScope scope) {}
                 }
                 """.trimIndent(),
             )
@@ -97,11 +98,11 @@ internal class ShowcaseInventoryTest {
         val corrupt = temporaryRoot.resolve("corrupt")
         Files.createDirectories(corrupt.resolve("dev/s7a/strata/runtime/minecraft"))
         Files.write(
-            corrupt.resolve("dev/s7a/strata/runtime/minecraft/MinecraftUiContext.class"),
+            corrupt.resolve("dev/s7a/strata/runtime/minecraft/MinecraftUiComponents.class"),
             byteArrayOf(0xCA.toByte(), 0xFE.toByte(), 0xBA.toByte(), 0xBE.toByte()),
         )
         val corruptFailure = assertThrows(IllegalStateException::class.java) { ShowcaseInventory.discover(listOf(corrupt)) }
-        assertTrue(corruptFailure.message.orEmpty().contains("MinecraftUiContext"))
+        assertTrue(corruptFailure.message.orEmpty().contains("MinecraftUiComponents"))
         assertTrue(corruptFailure.cause is LinkageError)
     }
 
@@ -111,15 +112,15 @@ internal class ShowcaseInventoryTest {
         val markerPath = marker.toString().replace('\\', '/')
         val classes =
             compile(
-                "dev/s7a/strata/runtime/minecraft/MinecraftUiContext.java",
+                "dev/s7a/strata/runtime/minecraft/MinecraftUiComponents.java",
                 """
                 package dev.s7a.strata.runtime.minecraft;
                 import dev.s7a.strata.dsl.UiScope;
-                public interface MinecraftUiContext {
-                    Object MARKER = initialize();
+                public final class MinecraftUiComponents {
+                    static Object MARKER = initialize();
                     static Object initialize() { try { java.nio.file.Files.writeString(java.nio.file.Path.of("$markerPath"), "initialized"); } catch (Exception ignored) {} return new Object(); }
-                    void Button(UiScope scope);
-                    void Button(UiScope scope, int value);
+                    public static void Button(UiScope scope) {}
+                    public static void Button(UiScope scope, int value) {}
                 }
                 """.trimIndent(),
             )
@@ -127,7 +128,7 @@ internal class ShowcaseInventoryTest {
         assertEquals(setOf(DocumentedComponent.Button), ShowcaseInventory.discover(listOf(classes)))
         assertTrue(Files.exists(marker).not())
         val duplicateClass = temporaryRoot.resolve("duplicate")
-        copyClass(classes, duplicateClass, "dev/s7a/strata/runtime/minecraft/MinecraftUiContext.class")
+        copyClass(classes, duplicateClass, "dev/s7a/strata/runtime/minecraft/MinecraftUiComponents.class")
         val duplicate =
             assertThrows(IllegalArgumentException::class.java) {
                 ShowcaseInventory.discover(listOf(classes, duplicateClass))

@@ -1,5 +1,6 @@
 package dev.s7a.strata.runtime.minecraft
 
+import dev.s7a.strata.dsl.Box
 import dev.s7a.strata.dsl.Spacer
 import dev.s7a.strata.dsl.buildUi
 import dev.s7a.strata.element.Element
@@ -11,6 +12,8 @@ import dev.s7a.strata.input.PointerEvent
 import dev.s7a.strata.modifier.Modifier
 import dev.s7a.strata.modifier.background
 import dev.s7a.strata.modifier.size
+import dev.s7a.strata.node.DirtyMask
+import dev.s7a.strata.node.DirtyPhase
 import dev.s7a.strata.render.ArgbColor
 import dev.s7a.strata.render.DrawImage
 import dev.s7a.strata.render.createDrawImage
@@ -33,7 +36,10 @@ internal class MinecraftContainerSlotTest {
     fun containerBackgroundUsesExactNativeSizesAndTwoBlits() {
         listOf(1, 3, 6).forEach { rows ->
             val texture = image(IntSize(256, 256), 0xFF202020.toInt())
-            val host = host(MinecraftProfileFixture.create(containerBackground = texture)) { buildUi { ContainerBackground(rows) } }
+            val host =
+                host(MinecraftProfileFixture.create(containerBackground = texture)) {
+                    buildUi { Box(modifier = Modifier.Empty.containerBackground(rows)) {} }
+                }
             val expectedHeight = Math.addExact(114, Math.multiplyExact(rows, 18))
             host.attach()
             val frame = host.frame(IntSize(176, expectedHeight))
@@ -53,14 +59,30 @@ internal class MinecraftContainerSlotTest {
     @Test
     fun containerRowsAndExactConstraintsAreValidated() {
         listOf(0, 7).forEach { rows ->
-            val host = host { buildUi { ContainerBackground(rows) } }
+            val host = host { buildUi { Box(modifier = Modifier.Empty.containerBackground(rows)) {} } }
             assertThrows(IllegalArgumentException::class.java) { host.attach() }
             host.close()
         }
-        val host = host { buildUi { ContainerBackground(3) } }
+        val host = host { buildUi { Box(modifier = Modifier.Empty.containerBackground(3)) {} } }
         host.attach()
         assertThrows(IllegalArgumentException::class.java) { host.frame(IntSize(175, 168)) }
         host.close()
+    }
+
+    @Test
+    fun containerBackgroundUsesOneStableModifierTypeAndExactUpdateMasks() {
+        val firstImage = image(IntSize(256, 256), 0xFF202020.toInt())
+        val secondImage = image(IntSize(256, 256), 0xFF303030.toInt())
+        val first = createMinecraftContainerBackgroundModifier(firstImage, 3)
+        val equal = createMinecraftContainerBackgroundModifier(firstImage, 3)
+        val imageChanged = createMinecraftContainerBackgroundModifier(secondImage, 3)
+        val rowsChanged = createMinecraftContainerBackgroundModifier(secondImage, 4)
+        val node = first.type.createErased(first)
+
+        assertSame(first.type, equal.type)
+        assertEquals(DirtyMask.None, first.type.updateErased(first, equal, node))
+        assertEquals(DirtyMask.of(DirtyPhase.Paint), first.type.updateErased(equal, imageChanged, node))
+        assertEquals(DirtyMask.of(DirtyPhase.Measure), first.type.updateErased(imageChanged, rowsChanged, node))
     }
 
     @Test
@@ -141,10 +163,10 @@ internal class MinecraftContainerSlotTest {
 
     private fun host(
         profile: MinecraftUiProfile = MinecraftProfileFixture.create(),
-        content: MinecraftUiContext.() -> Element,
+        content: () -> Element,
     ): MinecraftUiHost =
         createMinecraftUiHost(
-            createMinecraftScreenDefinition(UiText.Literal("container"), content = content),
+            createMinecraftScreenDefinition(UiText.Literal("container")) { element(content()) },
             profile,
         )
 

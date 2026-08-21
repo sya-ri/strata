@@ -11,7 +11,7 @@ internal class ComponentScenario internal constructor(
     internal val component: DocumentedComponent,
     override val source: SourceReference,
     internal val viewportMetadata: ShowcaseViewport,
-    override val tree: ShowcaseTree,
+    internal val tree: ShowcaseTree,
 ) : ShowcaseScenario {
     override val viewport: IntSize = viewportMetadata.size
     override val scale: Int = viewportMetadata.scale

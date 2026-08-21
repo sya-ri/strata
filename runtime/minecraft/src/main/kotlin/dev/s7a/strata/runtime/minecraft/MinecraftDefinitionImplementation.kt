@@ -1,6 +1,6 @@
 package dev.s7a.strata.runtime.minecraft
 
-import dev.s7a.strata.element.Element
+import dev.s7a.strata.dsl.UiScope
 import dev.s7a.strata.text.UiText
 import java.util.concurrent.atomic.AtomicReference
 
@@ -20,7 +20,7 @@ internal object MinecraftDefinitionImplementation {
     fun create(
         title: UiText,
         pausesGame: Boolean,
-        content: MinecraftUiContext.() -> Element,
+        content: UiScope.() -> Unit,
     ): MinecraftScreenDefinition = ScreenDefinition.create(TransferredMinecraftDefinition.create(title, pausesGame, content))
 
     /**

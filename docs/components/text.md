@@ -12,27 +12,25 @@ This image is a 150 by 20 component crop from the exact native/Fabric/headless p
 
 ```kotlin
 import dev.s7a.strata.dsl.Box
-import dev.s7a.strata.dsl.buildUi
 import dev.s7a.strata.layout.Alignment
 import dev.s7a.strata.modifier.Modifier
 import dev.s7a.strata.modifier.size
 import dev.s7a.strata.runtime.minecraft.MinecraftScreenDefinition
+import dev.s7a.strata.runtime.minecraft.Text
 import dev.s7a.strata.runtime.minecraft.createMinecraftScreenDefinition
 
 /**
  * Builds the literal Text component used by the verified ConfirmScreen title.
  *
- * @return one-shot screen definition whose content uses the implicit Minecraft component context.
+ * @return one-shot screen definition whose content resolves components from the host-installed Minecraft profile.
  */
 internal fun textExample(): MinecraftScreenDefinition =
     createMinecraftScreenDefinition("Text") {
-        buildUi {
-            Box(
-                modifier = Modifier.Empty.size(150, 20),
-                contentAlignment = Alignment.Center,
-            ) {
-                Text("Confirm action")
-            }
+        Box(
+            modifier = Modifier.Empty.size(150, 20),
+            contentAlignment = Alignment.Center,
+        ) {
+            Text("Confirm action")
         }
     }
 ```
@@ -43,7 +41,7 @@ Ordinary sizing, padding, placement, and paint modifiers compose around `Text`; 
 
 ## Parent scope
 
-`Text` is a member extension on the active `UiScope`. The runtime supplies `MinecraftUiContext` implicitly, and the component has no content callback or parent-data API.
+`Text` is a top-level extension on the active `UiScope`. The screen runtime installs its selected Minecraft profile only for the definition callback, and the component has no content callback or parent-data API.
 
 <details><summary>Component tree</summary>
 

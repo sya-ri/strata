@@ -1,5 +1,7 @@
 package dev.s7a.strata.runtime.minecraft
 
+import dev.s7a.strata.dsl.Box
+import dev.s7a.strata.dsl.Spacer
 import dev.s7a.strata.dsl.buildUi
 import dev.s7a.strata.element.Element
 import dev.s7a.strata.geometry.Constraints
@@ -9,6 +11,7 @@ import dev.s7a.strata.geometry.IntSize
 import dev.s7a.strata.input.InputResult
 import dev.s7a.strata.input.PointerEvent
 import dev.s7a.strata.modifier.Modifier
+import dev.s7a.strata.modifier.size
 import dev.s7a.strata.render.DrawImage
 import dev.s7a.strata.render.createDrawImage
 import dev.s7a.strata.runtime.UiTree
@@ -28,13 +31,13 @@ import java.util.concurrent.FutureTask
 import java.util.concurrent.TimeUnit
 
 /**
- * Verifies the menu and printable-text elements exposed by the callback context.
+ * Verifies callback-scoped menu-background and printable-text behavior without a public context object.
  */
 @OptIn(InternalStrataRuntimeApi::class)
 internal class MinecraftUiElementTest {
     @Test
     fun menuBackgroundUsesFullSourceAndRowMajorThirtyTwoPixelTiles() {
-        val host = host { buildUi { MenuBackground() } }
+        val host = host { buildUi { Box(modifier = Modifier.Empty.menuBackground()) {} } }
         host.attach()
 
         val frame = host.frame(IntSize(64, 48))
@@ -62,7 +65,9 @@ internal class MinecraftUiElementTest {
             )
         val host =
             createMinecraftUiHost(
-                createMinecraftScreenDefinition(UiText.Literal("menu")) { buildUi { MenuBackground() } },
+                createMinecraftScreenDefinition(UiText.Literal("menu")) {
+                    Box(modifier = Modifier.Empty.menuBackground()) {}
+                },
                 MinecraftProfileFixture.create(source),
             )
         host.attach()
@@ -87,7 +92,7 @@ internal class MinecraftUiElementTest {
 
     @Test
     fun zeroMenuAxisEmitsNoCommands() {
-        val host = host { buildUi { MenuBackground() } }
+        val host = host { buildUi { Box(modifier = Modifier.Empty.menuBackground()) {} } }
         host.attach()
         assertEquals(emptyList<DrawCommand>(), host.frame(IntSize(0, 8)).drawCommands)
         assertEquals(emptyList<DrawCommand>(), host.frame(IntSize(8, 0)).drawCommands)
@@ -96,7 +101,7 @@ internal class MinecraftUiElementTest {
 
     @Test
     fun menuPreflightsFinalTileOverflowBeforeIteration() {
-        val host = host { buildUi { MenuBackground() } }
+        val host = host { buildUi { Box(modifier = Modifier.Empty.menuBackground()) {} } }
         host.attach()
         assertThrows(ArithmeticException::class.java) {
             host.frame(IntSize(Int.MAX_VALUE - 1, 1))
@@ -105,24 +110,22 @@ internal class MinecraftUiElementTest {
     }
 
     @Test
-    fun menuBackgroundRejectsAnUnboundedAxisInTheCoreTree() {
+    fun menuBackgroundDoesNotInventSizeUnderLooseConstraints() {
         var element: Element? = null
-        val host = host { buildUi { MenuBackground() }.also { element = it } }
+        val host =
+            host {
+                buildUi {
+                    Spacer(modifier = Modifier.Empty.size(7, 5).menuBackground())
+                }.also { element = it }
+            }
         host.attach()
         try {
-            listOf(
-                Constraints(maxWidth = Int.MAX_VALUE, maxHeight = 8),
-                Constraints(maxWidth = 8, maxHeight = Int.MAX_VALUE),
-            ).forEach { constraints ->
-                val tree = UiTree()
-                try {
-                    tree.update(checkNotNull(element))
-                    assertThrows(IllegalArgumentException::class.java) {
-                        tree.measure(constraints)
-                    }
-                } finally {
-                    tree.close()
-                }
+            val tree = UiTree()
+            try {
+                tree.update(checkNotNull(element))
+                assertEquals(IntSize(7, 5), tree.measure(Constraints()))
+            } finally {
+                tree.close()
             }
         } finally {
             host.close()
@@ -136,9 +139,9 @@ internal class MinecraftUiElementTest {
         val tree = UiTree()
         try {
             assertThrows(IllegalArgumentException::class.java) {
-                tree.update(createMinecraftMenuBackgroundElement(image(0), Modifier.Empty, null))
+                tree.update(menuModifierElement(image(0)))
             }
-            tree.update(createMinecraftMenuBackgroundElement(first, Modifier.Empty, null))
+            tree.update(menuModifierElement(first))
             tree.measure(Constraints.fixed(32, 32))
             tree.layout()
             assertSame(
@@ -149,7 +152,7 @@ internal class MinecraftUiElementTest {
                     .single()
                     .image,
             )
-            tree.update(createMinecraftMenuBackgroundElement(first, Modifier.Empty, null))
+            tree.update(menuModifierElement(first))
             assertSame(
                 first,
                 tree
@@ -158,7 +161,7 @@ internal class MinecraftUiElementTest {
                     .single()
                     .image,
             )
-            tree.update(createMinecraftMenuBackgroundElement(second, Modifier.Empty, null))
+            tree.update(menuModifierElement(second))
             assertSame(
                 second,
                 tree
@@ -398,40 +401,39 @@ internal class MinecraftUiElementTest {
     }
 
     @Test
-    fun escapedContextIsClosedAfterContentCallback() {
-        var escaped: MinecraftUiContext? = null
+    fun profileBackedExtensionsRejectUseAfterContentCallback() {
+        var escaped: (() -> Modifier)? = null
         val host =
-            host {
-                escaped = this
-                buildUi { MenuBackground() }
-            }
+            createMinecraftUiHost(
+                createMinecraftScreenDefinition(UiText.Literal("test")) {
+                    escaped = { Modifier.Empty.menuBackground() }
+                    Box(modifier = Modifier.Empty.menuBackground()) {}
+                },
+                MinecraftProfileFixture.create(),
+            )
         host.attach()
         assertThrows(IllegalStateException::class.java) {
-            with(checkNotNull(escaped)) { buildUi { MenuBackground() } }
+            checkNotNull(escaped).invoke()
         }
-        val profileField = checkNotNull(escaped).javaClass.getDeclaredField("profile")
-        profileField.isAccessible = true
-        assertNull(profileField.get(escaped))
         host.close()
     }
 
     @Test
-    fun contextRejectsWrongThreadWhileCallbackIsActive() {
+    fun profileBackedExtensionsRejectWrongThreadWhileCallbackIsActive() {
         var wrongThreadFailure: Throwable? = null
         var wrongThreadRunner: Thread? = null
         val host =
-            host {
-                val context = this
-                val task =
-                    FutureTask<Throwable?> {
-                        runCatching { with(context) { buildUi { MenuBackground() } } }.exceptionOrNull()
-                    }
-                val runner = Thread(task)
-                wrongThreadRunner = runner
-                runner.start()
-                wrongThreadFailure = task.get(5, TimeUnit.SECONDS)
-                buildUi { MenuBackground() }
-            }
+            createMinecraftUiHost(
+                createMinecraftScreenDefinition(UiText.Literal("test")) {
+                    val task = FutureTask<Throwable?> { runCatching { Modifier.Empty.menuBackground() }.exceptionOrNull() }
+                    val runner = Thread(task)
+                    wrongThreadRunner = runner
+                    runner.start()
+                    wrongThreadFailure = task.get(5, TimeUnit.SECONDS)
+                    Box(modifier = Modifier.Empty.menuBackground()) {}
+                },
+                MinecraftProfileFixture.create(),
+            )
         try {
             host.attach()
             assertTrue(wrongThreadFailure is IllegalStateException)
@@ -441,11 +443,21 @@ internal class MinecraftUiElementTest {
         }
     }
 
-    private fun host(content: MinecraftUiContext.() -> Element): MinecraftUiHost =
+    private fun host(content: () -> Element): MinecraftUiHost =
         createMinecraftUiHost(
-            createMinecraftScreenDefinition(UiText.Literal("test"), content = content),
+            createMinecraftScreenDefinition(UiText.Literal("test")) { element(content()) },
             MinecraftProfileFixture.create(),
         )
+
+    private fun menuModifierElement(image: DrawImage): Element =
+        buildUi {
+            Spacer(
+                modifier =
+                    Modifier.Empty
+                        .size(32, 32)
+                        .then(createMinecraftMenuBackgroundModifier(image)),
+            )
+        }
 
     private fun glyph(
         advance: Int,

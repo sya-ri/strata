@@ -14,7 +14,7 @@ import org.junit.jupiter.api.Test
 internal class ShowcaseMarkdownTest {
     @Test
     fun indexIsExactAndUsesOverviewSource() {
-        val overview = ShowcaseOutput.Overview("import sample\ninternal fun overview() {}", "`- MenuBackground", byteArrayOf(1))
+        val overview = ShowcaseOutput.Overview("import sample\ninternal fun overview() {}", "|- Text\n`- Button", byteArrayOf(1))
         val pages =
             DocumentedComponent.entries.map { component ->
                 ShowcaseOutput.Page(component, component.slug, byteArrayOf(component.ordinal.toByte()))
@@ -24,7 +24,7 @@ internal class ShowcaseMarkdownTest {
         assertTrue(index.contains("real Minecraft 26.2 `ConfirmScreen`"))
         assertTrue(
             index.contains(
-                "- [MenuBackground](menu-background.md)\n- [ContainerBackground](container-background.md)\n- [Slot](slot.md)\n- [Text](text.md)\n- [TextField](text-field.md)\n- [Button](button.md)\n- [Scroll](scroll.md)",
+                "- [Text](text.md)\n- [TextField](text-field.md)\n- [Button](button.md)\n- [Scroll](scroll.md)\n- [Slot](slot.md)",
             ),
         )
         assertTrue(index.contains("The tree shows Minecraft components in logical draw order"))
@@ -34,7 +34,7 @@ internal class ShowcaseMarkdownTest {
 
     @Test
     fun rootRegionIsExactAndUsesOverviewSource() {
-        val overview = ShowcaseOutput.Overview("import sample\ninternal fun overview() {}", "`- MenuBackground", byteArrayOf(1))
+        val overview = ShowcaseOutput.Overview("import sample\ninternal fun overview() {}", "|- Text\n`- Button", byteArrayOf(1))
         val root = ShowcaseMarkdown.rootReadme(overview)
         assertTrue(root.contains("## Minecraft component showcase"))
         assertTrue(root.contains("actual 320 by 180 `ConfirmScreen` reconstruction"))
@@ -50,9 +50,6 @@ internal class ShowcaseMarkdownTest {
             ShowcaseScenarioCatalog.components.associate { scenario ->
                 scenario.component to ShowcaseMarkdown.page(scenario, source)
             }
-        assertTrue(pages.getValue(DocumentedComponent.MenuBackground).contains("This image is a 32 by 32 component crop"))
-        assertTrue(pages.getValue(DocumentedComponent.MenuBackground).contains("`Modifier.fillMaxSize()`"))
-        assertTrue(pages.getValue(DocumentedComponent.ContainerBackground).contains("176-pixel-wide panel"))
         assertTrue(pages.getValue(DocumentedComponent.Slot).contains("back-content-front highlight order"))
         assertTrue(pages.getValue(DocumentedComponent.Text).contains("extracted Minecraft glyph advances, shadow layer, foreground layer, and native baseline"))
         assertTrue(pages.getValue(DocumentedComponent.TextField).contains("200 by 20 Minecraft EditBox sprites"))
@@ -73,7 +70,7 @@ internal class ShowcaseMarkdownTest {
     fun everyTypedTreeDetailRendersWithFixedArgbAndMinecraftFeatureSelection() {
         val tree =
             ShowcaseTree(
-                DocumentedComponent.MenuBackground,
+                DocumentedComponent.Text,
                 listOf(
                     ShowcaseTreeDetail.FillMaxSize,
                     ShowcaseTreeDetail.Size(7, 9),
@@ -90,7 +87,6 @@ internal class ShowcaseMarkdownTest {
                     ShowcaseTreeDetail.ColumnDefaultAlignment(HorizontalAlignment.Center),
                     ShowcaseTreeDetail.BoxContentAlignment(Alignment.Center),
                     ShowcaseTreeDetail.ScrollRate(9),
-                    ShowcaseTreeDetail.ContainerRows(3),
                     ShowcaseTreeDetail.SlotHighlightable(true),
                 ),
             )
@@ -111,14 +107,13 @@ internal class ShowcaseMarkdownTest {
             "ColumnDefaultAlignment(alignment=Center)",
             "BoxContentAlignment(alignment=Center)",
             "ScrollRate(value=9)",
-            "ContainerRows(value=3)",
             "SlotHighlightable(value=true)",
         ).forEach { detail -> assertTrue(rendered.contains(detail)) }
         val buttonScenario = ShowcaseScenarioCatalog.components.single { scenario -> scenario.component == DocumentedComponent.Button }
         val buttonPage = ShowcaseMarkdown.page(buttonScenario, "import sample\ninternal fun button() {}")
         assertTrue(buttonPage.contains("# Button"))
         assertTrue(buttonPage.contains("reusable input actions live in modifiers"))
-        assertTrue(buttonPage.contains("runtime supplies `MinecraftUiContext` implicitly"))
+        assertTrue(buttonPage.contains("screen runtime installs its selected Minecraft profile only for the definition callback"))
         assertTrue(buttonPage.indexOf("# Button") < buttonPage.indexOf("![Button headless showcase]"))
     }
 }

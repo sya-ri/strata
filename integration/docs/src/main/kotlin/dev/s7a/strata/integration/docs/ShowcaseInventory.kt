@@ -10,7 +10,7 @@ import java.nio.file.LinkOption
 import java.nio.file.Path
 
 /**
- * Discovers component entry points from the compiled [MinecraftUiContext][dev.s7a.strata.runtime.minecraft.MinecraftUiContext] contract.
+ * Discovers top-level component entry points from compiled Minecraft runtime classes.
  *
  * Classes are loaded without initialization so inventory cannot run component code while inspecting declarations.
  */
@@ -18,7 +18,7 @@ internal object ShowcaseInventory {
     private const val CLASS_SUFFIX = ".class"
 
     /**
-     * Finds every public non-static non-synthetic member extension on the compiled Minecraft UI context.
+     * Finds every public static non-synthetic UpperCamel extension whose first JVM parameter is exactly `UiScope` and whose return type is void.
      *
      * @param classDirectories compiled Minecraft runtime directories to scan.
      * @return decoded component identities with one identity for each overload name.
@@ -38,15 +38,15 @@ internal object ShowcaseInventory {
                 directories
                     .flatMap { directory -> classFiles(directory).map { path -> binaryName(directory, path) } }
                     .sorted()
+            require(classNames.isNotEmpty()) { "Minecraft component class outputs contain no classes." }
             require(classNames.toSet().size == classNames.size) { "Minecraft component class binary names are duplicated." }
-            require(classNames.count { className -> className == MINECRAFT_CONTEXT_CLASS_NAME } == 1) {
-                "Minecraft UI context class must occur exactly once in component outputs."
-            }
-            val context = loadClass(loader, MINECRAFT_CONTEXT_CLASS_NAME)
-            requireClassOrigin(context, directories)
             val methods =
-                declaredMethods(context, context.name, origin(context), uiScopeType)
-                    .sortedWith(compareBy({ method -> method.declaringClass.name }, { method -> method.name }, { method -> descriptor(method) }))
+                classNames
+                    .flatMap { className ->
+                        val type = loadClass(loader, className)
+                        requireClassOrigin(type, directories)
+                        declaredMethods(type, className, origin(type), uiScopeType)
+                    }.sortedWith(compareBy({ method -> method.declaringClass.name }, { method -> method.name }, { method -> descriptor(method) }))
                     .groupBy { method -> method.name }
                     .toSortedMap()
             require(methods.keys.all { name -> DocumentedComponent.fromApiMethodName(name) != null }) {
@@ -67,7 +67,7 @@ internal object ShowcaseInventory {
     ) {
         val classOrigin = origin(type)
         require(directories.any { directory -> directory == classOrigin }) {
-            "Minecraft UI context was loaded from an unintended origin: ${type.name} origin=$classOrigin"
+            "Minecraft component class was loaded from an unintended origin: ${type.name} origin=$classOrigin"
         }
     }
 
@@ -151,7 +151,7 @@ internal object ShowcaseInventory {
     ): Boolean {
         val parameters = method.parameterTypes
         return Modifier.isPublic(method.modifiers) &&
-            Modifier.isStatic(method.modifiers).not() &&
+            Modifier.isStatic(method.modifiers) &&
             method.isSynthetic.not() &&
             isUpperCamel(method.name) &&
             parameters.isNotEmpty() &&
@@ -184,7 +184,6 @@ internal object ShowcaseInventory {
             else -> "L${type.name.replace('.', '/')};"
         }
 
-    private const val MINECRAFT_CONTEXT_CLASS_NAME = "dev.s7a.strata.runtime.minecraft.MinecraftUiContext"
     private const val UI_SCOPE_CLASS_NAME = "dev.s7a.strata.dsl.UiScope"
 
     private class ApiClassLoader(
