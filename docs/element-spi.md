@@ -74,8 +74,10 @@ See [Modifiers](modifiers.md#parent-data) for ordering and failure behavior.
 
 `PaintNode.paint` emits a complete local display list through `PaintScope`.
 A clean paint pass reuses that immutable list and translates it to current accumulated tree coordinates.
-The runtime returns `DrawCommand` values in parent-before-child and local emission order.
-The core applies no implicit node or parent clipping, so valid local paint overflow is preserved.
+`OverlayPaintNode.paintOverlay` emits a separately cached local display list after all effective descendants.
+`ClipChildrenNode` inserts balanced tree-coordinate clip commands around effective descendant drawing without clipping the node's own regular or overlay commands.
+The runtime returns `DrawCommand` values in regular-paint, clipped-descendant, and overlay-paint order.
+Nodes without `ClipChildrenNode` preserve valid local and descendant paint overflow.
 Use `UiText` in semantics without resolving it.
 `SemanticsNode` emits a complete unresolved payload through `SemanticsScope`.
 The runtime-owned `SemanticsEntry` values combine cached local payloads with current accumulated bounds in parent-before-child and local emission order.
@@ -84,7 +86,8 @@ A dirty bit is cleared before each callback, so node-local invalidation during t
 
 Pointer dispatch happens after layout.
 The tree tests half-open node bounds and visits reverse paint order, so the deepest and latest-painted node receives the event first.
-A child can receive an event outside its parent's bounds because the core applies no implicit parent clipping.
+A child can receive an event outside its parent's bounds unless that parent implements `ClipChildrenNode`.
+The marker skips the clipped effective descendant subtree for pointer hit testing and hover while retaining ordinary hit testing for the clipping node itself.
 An ignored result continues dispatch and a consumed result stops it.
 Positive scroll `deltaX` requests motion toward increasing logical x, and positive `deltaY` requests motion toward increasing logical y.
 Adapters normalize native signs and units into this finite logical displacement.

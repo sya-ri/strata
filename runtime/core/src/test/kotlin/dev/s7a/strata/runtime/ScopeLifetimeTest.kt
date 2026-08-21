@@ -15,6 +15,7 @@ import dev.s7a.strata.node.DirtyPhase
 import dev.s7a.strata.node.LayoutNode
 import dev.s7a.strata.node.MeasureNode
 import dev.s7a.strata.node.Node
+import dev.s7a.strata.node.OverlayPaintNode
 import dev.s7a.strata.node.PaintNode
 import dev.s7a.strata.node.SemanticsNode
 import dev.s7a.strata.render.ArgbColor
@@ -42,13 +43,16 @@ internal class ScopeLifetimeTest {
         tree.paint()
         tree.semantics()
 
+        assertEquals(1, probe.overlayPaintCalls)
         assertEquals(1, probe.measureThreadFailures.size)
         assertEquals(1, probe.layoutThreadFailures.size)
         assertEquals(1, probe.paintThreadFailures.size)
+        assertEquals(1, probe.overlayPaintThreadFailures.size)
         assertEquals(1, probe.semanticsThreadFailures.size)
         assertThrows(IllegalStateException::class.java) { requireNotNull(probe.measureScope).childCount }
         assertThrows(IllegalStateException::class.java) { requireNotNull(probe.layoutScope).size }
         assertThrows(IllegalStateException::class.java) { requireNotNull(probe.paintScope).size }
+        assertThrows(IllegalStateException::class.java) { requireNotNull(probe.overlayPaintScope).size }
         assertThrows(IllegalStateException::class.java) {
             requireNotNull(probe.semanticsScope).emit(Semantics(label = UiText.Literal("late")))
         }
@@ -64,6 +68,20 @@ internal class ScopeLifetimeTest {
             tree.measure(Constraints.fixed(4, 4))
         }
         assertThrows(IllegalStateException::class.java) { requireNotNull(probe.measureScope).childCount }
+        tree.close()
+    }
+
+    @Test
+    fun overlayPaintScopeClosesAndPoisonsTreeWhenItsCallbackThrows() {
+        val probe = ScopeProbe(throwFromOverlayPaint = true)
+        val tree = UiTree()
+        tree.update(ScopeElement(probe))
+        tree.measure(Constraints.fixed(4, 4))
+        tree.layout()
+
+        assertThrows(IllegalStateException::class.java) { tree.paint() }
+        assertThrows(IllegalStateException::class.java) { requireNotNull(probe.overlayPaintScope).size }
+        assertEquals(TreeState.Poisoned, tree.state)
         tree.close()
     }
 
@@ -371,6 +389,7 @@ internal class ScopeLifetimeTest {
         private val selfInvalidatePaint: Boolean = false,
         private val selfInvalidateSemantics: Boolean = false,
         private val throwFromMeasure: Boolean = false,
+        private val throwFromOverlayPaint: Boolean = false,
     ) {
         private var measureInvalidated: Boolean = false
         private var layoutInvalidated: Boolean = false
@@ -379,15 +398,18 @@ internal class ScopeLifetimeTest {
         var measureScope: MeasureScope? = null
         var layoutScope: LayoutScope? = null
         var paintScope: PaintScope? = null
+        var overlayPaintScope: PaintScope? = null
         var semanticsScope: SemanticsScope? = null
         var layoutSize: IntSize = IntSize.Zero
         val measureThreadFailures: MutableList<Throwable> = ArrayList()
         val layoutThreadFailures: MutableList<Throwable> = ArrayList()
         val paintThreadFailures: MutableList<Throwable> = ArrayList()
+        val overlayPaintThreadFailures: MutableList<Throwable> = ArrayList()
         val semanticsThreadFailures: MutableList<Throwable> = ArrayList()
         var measureCalls: Int = 0
         var layoutCalls: Int = 0
         var paintCalls: Int = 0
+        var overlayPaintCalls: Int = 0
         var semanticsCalls: Int = 0
         var node: ScopeNode? = null
 
@@ -434,6 +456,17 @@ internal class ScopeLifetimeTest {
         fun checkPaint(scope: PaintScope) {
             paintScope = scope
             paintThreadFailures.add(otherThreadFailure { scope.size })
+        }
+
+        /**
+         * Retains and probes a post-child overlay paint scope.
+         */
+        fun checkOverlayPaint(scope: PaintScope) {
+            overlayPaintScope = scope
+            overlayPaintThreadFailures.add(otherThreadFailure { scope.size })
+            if (throwFromOverlayPaint) {
+                throw IllegalStateException("overlay paint failure")
+            }
         }
 
         /**
@@ -716,6 +749,7 @@ internal class ScopeLifetimeTest {
         MeasureNode,
         LayoutNode,
         PaintNode,
+        OverlayPaintNode,
         SemanticsNode {
         override fun measure(
             scope: MeasureScope,
@@ -744,6 +778,11 @@ internal class ScopeLifetimeTest {
             if (probe.shouldInvalidatePaint()) {
                 invalidate(DirtyMask.of(DirtyPhase.Paint))
             }
+        }
+
+        override fun paintOverlay(scope: PaintScope) {
+            probe.overlayPaintCalls += 1
+            probe.checkOverlayPaint(scope)
         }
 
         override fun semantics(scope: SemanticsScope) {

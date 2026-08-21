@@ -4,6 +4,7 @@ package dev.s7a.strata.runtime.headless
 
 import dev.s7a.strata.element.Element
 import dev.s7a.strata.geometry.Constraints
+import dev.s7a.strata.geometry.IntRect
 import dev.s7a.strata.geometry.IntSize
 import dev.s7a.strata.runtime.UiTree
 import dev.s7a.strata.runtime.render.DrawCommand
@@ -15,7 +16,7 @@ import dev.s7a.strata.runtime.semantics.SemanticsEntry
  * Commands are snapshotted in their supplied order before pixel allocation or painting.
  * The caller must not mutate the supplied list or command graph concurrently with this call.
  * Each call owns its raster storage and shares no mutable state with another call.
- * Rectangles use the logical origin at the top-left, x increasing rightward, y increasing downward, and half-open edges; only the positive [viewport] is clipped before each logical pixel is replicated by [scale].
+ * Rectangles use the logical origin at the top-left, x increasing rightward, y increasing downward, and half-open edges; the positive [viewport] and every active nested child clip are intersected before each logical pixel is replicated by [scale].
  * BlitImage uses nearest pixel-center sampling: for destination-relative coordinate `d`, source extent `S`, and destination extent `D`, the sampled source offset is `floor(((2 * d + 1) * S) / (2 * D))`; viewport clipping preserves this mapping against the original unclipped destination rectangle.
  * Painting starts with transparent black and uses straight ARGB source-over with Long intermediates.
  * For source alpha `sa`, destination alpha `da`, and channel values `sc` and `dc`, `alphaN = sa * 255 + da * (255 - sa)`, `oa = floor((alphaN + 127) / 255)`, and when `alphaN != 0` each channel is `floor((sc * sa * 255 + dc * da * (255 - sa) + floor(alphaN / 2)) / alphaN)`.
@@ -28,7 +29,7 @@ import dev.s7a.strata.runtime.semantics.SemanticsEntry
  * @param scale the positive integer logical-to-physical scale.
  * @return an immutable physical ARGB image with transparent-black initial pixels.
  * The physical size is the checked viewport width and height multiplied by [scale].
- * @throws IllegalArgumentException when the viewport or scale is invalid, or a command is unsupported or null from Java.
+ * @throws IllegalArgumentException when the viewport or scale is invalid, a command is unsupported or null from Java, or the clip stack is unbalanced.
  * @throws ArithmeticException when checked physical dimensions, pixel area, or derived raster storage exceeds Int.MAX_VALUE.
  */
 @JvmOverloads
@@ -72,7 +73,7 @@ private object HeadlessImplementation {
         val dimensions = checkedDimensions(viewport, scale)
         val snapshot = snapshotCommands(commands)
         val pixels = IntArray(dimensions.area)
-        snapshot.forEach { command -> paint(pixels, dimensions, command) }
+        paintSnapshot(pixels, dimensions, snapshot)
         return ImageImpl.create(dimensions.physicalSize, pixels)
     }
 
@@ -106,26 +107,64 @@ private object HeadlessImplementation {
     ): HeadlessImage {
         val snapshot = snapshotCommands(commands)
         val pixels = IntArray(dimensions.area)
-        snapshot.forEach { command -> paint(pixels, dimensions, command) }
+        paintSnapshot(pixels, dimensions, snapshot)
         return ImageImpl.create(dimensions.physicalSize, pixels)
     }
 
-    private fun snapshotCommands(commands: List<DrawCommand>): List<DrawCommand> =
-        commands.map { command ->
-            when (val checkedCommand = requireNotNull(command) { "Unsupported or null draw command." }) {
-                is DrawCommand.FillRectangle -> checkedCommand
-                is DrawCommand.BlitImage -> checkedCommand
-            }
-        }
+    private fun snapshotCommands(commands: List<DrawCommand>): List<DrawCommand> {
+        var clipDepth = 0
+        val snapshot =
+            commands.map { command ->
+                when (val checkedCommand = requireNotNull(command) { "Unsupported or null draw command." }) {
+                    is DrawCommand.FillRectangle -> {
+                        checkedCommand
+                    }
 
-    private fun paint(
+                    is DrawCommand.BlitImage -> {
+                        checkedCommand
+                    }
+
+                    is DrawCommand.PushClip -> {
+                        clipDepth = Math.incrementExact(clipDepth)
+                        checkedCommand
+                    }
+
+                    DrawCommand.PopClip -> {
+                        require(0 < clipDepth) { "Clip pop has no matching push." }
+                        clipDepth -= 1
+                        checkedCommand
+                    }
+                }
+            }
+        require(clipDepth == 0) { "Clip push has no matching pop." }
+        return snapshot
+    }
+
+    private fun paintSnapshot(
         pixels: IntArray,
         dimensions: PhysicalDimensions,
-        command: DrawCommand,
+        commands: List<DrawCommand>,
     ) {
-        when (command) {
-            is DrawCommand.FillRectangle -> paintFill(pixels, dimensions, command)
-            is DrawCommand.BlitImage -> paintBlit(pixels, dimensions, command)
+        val clips = ArrayList<IntRect>()
+        commands.forEach { command ->
+            when (command) {
+                is DrawCommand.FillRectangle -> {
+                    paintFill(pixels, dimensions, command, clips.lastOrNull())
+                }
+
+                is DrawCommand.BlitImage -> {
+                    paintBlit(pixels, dimensions, command, clips.lastOrNull())
+                }
+
+                is DrawCommand.PushClip -> {
+                    val outer = clips.lastOrNull() ?: IntRect(0, 0, dimensions.viewport.width, dimensions.viewport.height)
+                    clips.add(RasterMath.intersection(outer, command.bounds))
+                }
+
+                DrawCommand.PopClip -> {
+                    clips.removeAt(clips.lastIndex)
+                }
+            }
         }
     }
 
@@ -133,12 +172,15 @@ private object HeadlessImplementation {
         pixels: IntArray,
         dimensions: PhysicalDimensions,
         command: DrawCommand.FillRectangle,
+        clip: IntRect?,
     ) {
         val bounds = command.bounds
-        val left = maxOf(0, bounds.left)
-        val top = maxOf(0, bounds.top)
-        val right = minOf(dimensions.viewport.width, bounds.right)
-        val bottom = minOf(dimensions.viewport.height, bounds.bottom)
+        val viewport = IntRect(0, 0, dimensions.viewport.width, dimensions.viewport.height)
+        val visible = RasterMath.intersection(viewport, clip ?: bounds, bounds)
+        val left = visible.left
+        val top = visible.top
+        val right = visible.right
+        val bottom = visible.bottom
         if (right <= left || bottom <= top) {
             return
         }
@@ -154,12 +196,15 @@ private object HeadlessImplementation {
         pixels: IntArray,
         dimensions: PhysicalDimensions,
         command: DrawCommand.BlitImage,
+        clip: IntRect?,
     ) {
         val bounds = command.destination
-        val left = maxOf(0, bounds.left)
-        val top = maxOf(0, bounds.top)
-        val right = minOf(dimensions.viewport.width, bounds.right)
-        val bottom = minOf(dimensions.viewport.height, bounds.bottom)
+        val viewport = IntRect(0, 0, dimensions.viewport.width, dimensions.viewport.height)
+        val visible = RasterMath.intersection(viewport, clip ?: bounds, bounds)
+        val left = visible.left
+        val top = visible.top
+        val right = visible.right
+        val bottom = visible.bottom
         if (right <= left || bottom <= top) {
             return
         }
@@ -229,6 +274,18 @@ private object HeadlessImplementation {
         }
 
     private object RasterMath {
+        fun intersection(
+            first: IntRect,
+            second: IntRect,
+            third: IntRect = second,
+        ): IntRect {
+            val left = maxOf(first.left, second.left, third.left)
+            val top = maxOf(first.top, second.top, third.top)
+            val right = maxOf(left, minOf(first.right, second.right, third.right))
+            val bottom = maxOf(top, minOf(first.bottom, second.bottom, third.bottom))
+            return IntRect(left, top, right, bottom)
+        }
+
         /**
          * Applies nearest pixel-center mapping with checked Long intermediates.
          *

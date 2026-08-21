@@ -460,6 +460,9 @@ public final class dev/s7a/strata/modifier/SizeExtensionsKt {
 	public static synthetic fun widthIn$default (Ldev/s7a/strata/modifier/Modifier;IIILjava/lang/Object;)Ldev/s7a/strata/modifier/Modifier;
 }
 
+public abstract interface class dev/s7a/strata/node/ClipChildrenNode {
+}
+
 public final class dev/s7a/strata/node/DirtyMask {
 	public static final field Companion Ldev/s7a/strata/node/DirtyMask$Companion;
 	public static final synthetic fun box-impl (I)Ldev/s7a/strata/node/DirtyMask;
@@ -516,6 +519,10 @@ public abstract class dev/s7a/strata/node/Node {
 	public fun <init> ()V
 	public final fun bindRuntime (Lkotlin/jvm/functions/Function1;)Lkotlin/jvm/functions/Function0;
 	protected final fun invalidate-Kf-UNOA (I)V
+}
+
+public abstract interface class dev/s7a/strata/node/OverlayPaintNode {
+	public abstract fun paintOverlay (Ldev/s7a/strata/render/PaintScope;)V
 }
 
 public abstract interface class dev/s7a/strata/node/PaintNode {

@@ -8,9 +8,10 @@ import dev.s7a.strata.runtime.validateBlitImage
 /**
  * A platform-neutral retained drawing command in accumulated tree coordinates.
  *
- * Commands are returned in parent-before-child and local emission order.
+ * Commands are returned in retained paint order, including explicit nested child clips and post-child overlays.
  * A backend must execute the list in that order.
- * The core does not add clipping, blending, or other backend policy.
+ * Backends must intersect drawing with every active [PushClip] until the matching [PopClip].
+ * The core does not define blending or sampling policy.
  */
 public sealed interface DrawCommand {
     /**
@@ -45,4 +46,23 @@ public sealed interface DrawCommand {
             validateBlitImage(image, source, destination)
         }
     }
+
+    /**
+     * Begins clipping subsequent drawing to [bounds] intersected with every active outer clip.
+     *
+     * Clips are nested and use half-open tree coordinates.
+     * Empty bounds are valid and hide drawing until the matching [PopClip].
+     *
+     * @property bounds the clip rectangle in accumulated tree coordinates.
+     */
+    public data class PushClip(
+        public val bounds: IntRect,
+    ) : DrawCommand
+
+    /**
+     * Ends the most recently begun child clip.
+     *
+     * A backend rejects an unmatched pop or an unterminated push before producing output.
+     */
+    public data object PopClip : DrawCommand
 }

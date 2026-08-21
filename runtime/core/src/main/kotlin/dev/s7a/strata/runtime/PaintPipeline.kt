@@ -3,8 +3,10 @@ package dev.s7a.strata.runtime
 import dev.s7a.strata.geometry.IntOffset
 import dev.s7a.strata.geometry.IntRect
 import dev.s7a.strata.geometry.IntSize
+import dev.s7a.strata.node.ClipChildrenNode
 import dev.s7a.strata.node.DirtyMask
 import dev.s7a.strata.node.DirtyPhase
+import dev.s7a.strata.node.OverlayPaintNode
 import dev.s7a.strata.node.PaintNode
 import dev.s7a.strata.render.ArgbColor
 import dev.s7a.strata.render.DrawImage
@@ -34,30 +36,62 @@ internal class PaintPipeline(
         retained: RetainedEntry,
         output: MutableList<DrawCommand>,
     ) {
-        val paintNode = retained.node as? PaintNode
-        if (paintNode != null) {
-            if (DirtyPhase.Paint in retained.dirty || retained.localCommands == null) {
-                retained.dirty -= DirtyMask.of(DirtyPhase.Paint)
-                val collector = LocalPaintScope(threadGuard, retained.measuredSize)
-                try {
-                    paintNode.paint(collector)
-                    retained.localCommands = collector.snapshot()
-                } finally {
-                    collector.close()
-                }
-            }
-            retained.localCommands.orEmpty().forEach { command ->
-                output.add(translate(command, retained.bounds.left, retained.bounds.top))
-            }
-        } else {
-            retained.localCommands = emptyList()
-            retained.dirty -= DirtyMask.of(DirtyPhase.Paint)
+        updateLocalCommands(retained)
+        appendTranslated(retained.localCommands.orEmpty(), retained, output)
+        val clipsChildren = retained.node is ClipChildrenNode
+        if (clipsChildren) {
+            output.add(DrawCommand.PushClip(retained.bounds))
         }
         for (index in 0 until retained.effectiveChildCount) {
             val child = retained.effectiveChildAt(index)
             if (child.placed) {
                 paintNode(child, output)
             }
+        }
+        if (clipsChildren) {
+            output.add(DrawCommand.PopClip)
+        }
+        appendTranslated(retained.localOverlayCommands.orEmpty(), retained, output)
+    }
+
+    private fun updateLocalCommands(retained: RetainedEntry) {
+        val paintNode = retained.node as? PaintNode
+        val overlayNode = retained.node as? OverlayPaintNode
+        if (
+            DirtyPhase.Paint !in retained.dirty &&
+            retained.localCommands != null &&
+            retained.localOverlayCommands != null
+        ) {
+            return
+        }
+        retained.dirty -= DirtyMask.of(DirtyPhase.Paint)
+        retained.localCommands = collect(retained, paintNode?.let { node -> node::paint })
+        retained.localOverlayCommands = collect(retained, overlayNode?.let { node -> node::paintOverlay })
+    }
+
+    private fun collect(
+        retained: RetainedEntry,
+        callback: ((PaintScope) -> Unit)?,
+    ): List<LocalDrawCommand> {
+        if (callback == null) {
+            return emptyList()
+        }
+        val collector = LocalPaintScope(threadGuard, retained.measuredSize)
+        return try {
+            callback(collector)
+            collector.snapshot()
+        } finally {
+            collector.close()
+        }
+    }
+
+    private fun appendTranslated(
+        commands: List<LocalDrawCommand>,
+        retained: RetainedEntry,
+        output: MutableList<DrawCommand>,
+    ) {
+        commands.forEach { command ->
+            output.add(translate(command, retained.bounds.left, retained.bounds.top))
         }
     }
 

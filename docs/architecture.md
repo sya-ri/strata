@@ -44,13 +44,13 @@ The retained core's tested internal session contract is described in [UI session
 
 The headless facade validates positive logical width, height, and scale before description validation, node creation, or lifecycle hooks.
 It checks physical width, height, and row-major area with checked integer arithmetic and reports arithmetic failure instead of wrapping or allocating an invalid image.
-Low-level commands are snapshotted in list order, clipped to the positive logical viewport before exact scale replication, and painted onto transparent black.
+Low-level commands are snapshotted in list order, validated for balanced nested child clips, intersected with those clips and the positive logical viewport before exact scale replication, and painted onto transparent black.
 Coordinates are top-left origin, x-right, y-down, and half-open.
 
 Painting uses straight ARGB Porter-Duff source-over with Long intermediates.
 For source alpha `sa`, destination alpha `da`, and channel values `sc` and `dc`, `alphaN = sa * 255 + da * (255 - sa)`, `oa = floor((alphaN + 127) / 255)`, and when `alphaN != 0` each channel is `floor((sc * sa * 255 + dc * da * (255 - sa) + floor(alphaN / 2)) / alphaN)`.
 When `alphaN == 0`, the result is exactly `0x00000000`.
-Transparent sources are no-ops, opaque sources replace, and there is no interpolation, gamma conversion, saturation, or implicit clipping beyond the viewport.
+Transparent sources are no-ops, opaque sources replace, and there is no interpolation, gamma conversion, saturation, or clipping beyond the viewport and explicit retained child clips.
 
 Images expose only immutable reads, fresh pixel copies, and deterministic PNG encoding.
 PNG output contains exactly one IHDR, one IDAT, and one IEND in that order, uses noninterlaced RGBA8 filter-zero rows, deterministic stored DEFLATE blocks no larger than 65,535 bytes, and checked CRC32 and Adler32 values.
@@ -94,7 +94,8 @@ The same failures from another thread are rejected before state mutation.
 The core returns non-premultiplied ARGB values with alpha in the high byte followed by red, green, and blue.
 Draw commands and semantics entries preserve parent-before-child and local emission order.
 The backend must execute draw commands in that order.
-The core applies no implicit node or parent clipping; valid local paint overflow is retained, and a placed child can receive input outside its parent's bounds.
+The core preserves local and descendant overflow by default.
+A node that implements `ClipChildrenNode` emits a balanced clip around effective descendant painting and gates descendant pointer hit testing to its measured half-open bounds, while its own regular and post-child overlay paint remain unclipped by that marker.
 Pointer hit testing uses half-open bounds, visits deepest and latest-painted candidates first, and bubbles ignored events.
 Pointer hover is a separate typed node capability evaluated for every placed node before move dispatch, producing distinct enter and exit transitions without changing ordinary consumption.
 

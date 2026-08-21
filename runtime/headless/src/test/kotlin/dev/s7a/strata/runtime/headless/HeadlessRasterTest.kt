@@ -166,6 +166,53 @@ internal class HeadlessRasterTest {
     }
 
     @Test
+    fun nestedChildClipsIntersectAndRestoreInCommandOrder() {
+        val image =
+            rasterizeHeadless(
+                listOf(
+                    fill(IntRect(0, 0, 5, 5), 0xFF101010.toInt()),
+                    DrawCommand.PushClip(IntRect(1, 1, 5, 5)),
+                    fill(IntRect(0, 0, 5, 5), 0xFFFF0000.toInt()),
+                    DrawCommand.PushClip(IntRect(0, 0, 3, 3)),
+                    fill(IntRect(0, 0, 5, 5), 0xFF00FF00.toInt()),
+                    DrawCommand.PopClip,
+                    fill(IntRect(4, 4, 5, 5), 0xFF0000FF.toInt()),
+                    DrawCommand.PopClip,
+                    fill(IntRect(0, 0, 1, 1), 0xFFFFFF00.toInt()),
+                ),
+                IntSize(5, 5),
+            )
+
+        assertEquals(0xFFFFFF00.toInt(), image.argbAt(0, 0))
+        assertEquals(0xFF00FF00.toInt(), image.argbAt(1, 1))
+        assertEquals(0xFF00FF00.toInt(), image.argbAt(2, 2))
+        assertEquals(0xFFFF0000.toInt(), image.argbAt(3, 3))
+        assertEquals(0xFF0000FF.toInt(), image.argbAt(4, 4))
+        assertEquals(0xFF101010.toInt(), image.argbAt(0, 4))
+    }
+
+    @Test
+    fun emptyClipHidesDrawingAndMalformedStacksFailBeforeOutput() {
+        val hidden =
+            rasterizeHeadless(
+                listOf(
+                    DrawCommand.PushClip(IntRect(1, 1, 1, 1)),
+                    fill(IntRect(0, 0, 2, 2), 0xFFFFFFFF.toInt()),
+                    DrawCommand.PopClip,
+                ),
+                IntSize(2, 2),
+            )
+
+        assertArrayEquals(intArrayOf(0, 0, 0, 0), hidden.copyArgb())
+        assertThrows<IllegalArgumentException> {
+            rasterizeHeadless(listOf(DrawCommand.PopClip), IntSize(1, 1))
+        }
+        assertThrows<IllegalArgumentException> {
+            rasterizeHeadless(listOf(DrawCommand.PushClip(IntRect(0, 0, 1, 1))), IntSize(1, 1))
+        }
+    }
+
+    @Test
     fun nonemptyRectBelowViewportTakesBottomClippingBranch() {
         val image =
             rasterizeHeadless(

@@ -86,6 +86,11 @@ internal sealed class RetainedEntry(
     var localCommands: List<LocalDrawCommand>? = null
 
     /**
+     * Cached local post-child overlay commands, or null before the first paint.
+     */
+    var localOverlayCommands: List<LocalDrawCommand>? = null
+
+    /**
      * Cached immutable local semantics payloads, or null before the first pass.
      */
     var localSemantics: List<Semantics>? = null
