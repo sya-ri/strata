@@ -109,7 +109,7 @@ internal fun createConfirmScreenDefinition(): MinecraftScreenDefinition =
     }
 ```
 
-[Open the component showcase index](docs/components/README.md)
+[Open the complete component showcase](docs/components.md)
 <!-- strata-component-showcase:end -->
 
 ## Module layout
@@ -135,7 +135,7 @@ See [Architecture](docs/architecture.md) for dependency boundaries and extension
 
 - [Architecture](docs/architecture.md) explains the public SPI, runtime boundaries, and testing strategy.
 - [Built-in layout components](docs/layout.md) specifies Row, Column, Box, and Spacer measurement, arrangement, alignment, and weight behavior.
-- [Component showcase](docs/components/README.md) contains generated examples and Minecraft-backed images from the exact native/Fabric/headless parity frame.
+- [Component showcase](docs/components.md) contains every generated example and Minecraft-backed image from the exact native/Fabric/headless parity frame in one document.
 - [Element SPI](docs/element-spi.md) explains node ownership, lifecycle, retained phases, and extension points.
 - [Modifiers](docs/modifiers.md) explains active modifier nodes, typed parent data, positional reconciliation, lifecycle, and extension failures.
 - [External state sources](docs/state-sources.md) specifies linearizable revisioned state observation across threads.

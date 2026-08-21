@@ -60,7 +60,7 @@ The headless adapter's fixed-viewport, clipping, source-over, scaling, PNG, and 
 The loaded 26.2 client GameTest requires exact ARGB equality among deterministic native screens, their Fabric-adapter reconstructions, and common headless frames at 320 by 180.
 It covers `ConfirmScreen`, `DirectJoinServerScreen`, `ContainerScreen`, and an actual `ObjectSelectionList`, then writes the verified full frames and typed Slot, Text, TextField, Button, and Scroll crops with their hashes below its build directory.
 The showcase generator accepts only those receipt-matched crops and the compiled GameTest scenario sources before staging Markdown and PNG output.
-The checker reruns the parity prerequisite and compares that staging output with `docs/components` and the anchored root README region without writing source files.
+The checker reruns the parity prerequisite and compares that staging output with the combined `docs/components.md` document, the `docs/components` asset tree, and the anchored root README region without writing source files.
 
 ## Retained operation contract
 

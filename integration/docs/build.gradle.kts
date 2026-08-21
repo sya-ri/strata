@@ -83,6 +83,7 @@ fun JavaExec.configureShowcaseLauncher(
     outputs.upToDateWhen { false }
     if (synchronizeSource.not()) {
         inputs.file(rootProject.layout.projectDirectory.file("README.md"))
+        inputs.file(rootProject.layout.projectDirectory.file("docs/components.md"))
         inputs.files(rootProject.layout.projectDirectory.dir("docs/components"))
     }
 }

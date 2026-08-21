@@ -30,12 +30,12 @@ internal object ShowcasePipeline {
         val overviewScenario = ShowcaseScenarioCatalog.overview
         val overviewRegion = ShowcaseSources.extract(overviewScenario.source, normalizedProject)
         val overview = renderOverview(overviewScenario, overviewRegion, evidence)
-        val pages =
+        val sections =
             ShowcaseScenarioCatalog.components.map { scenario ->
                 val region = ShowcaseSources.extract(scenario.source, normalizedProject)
                 renderComponent(scenario, region, evidence)
             }
-        return ShowcaseOutput(overview, pages, normalizedStaging, evidence.receipt())
+        return ShowcaseOutput(overview, sections, normalizedStaging, evidence.receipt())
     }
 
     /**
@@ -75,13 +75,13 @@ internal object ShowcasePipeline {
         scenario: ComponentScenario,
         region: SourceRegion,
         evidence: ShowcaseParityEvidence,
-    ): ShowcaseOutput.Page {
+    ): ShowcaseOutput.Section {
         require(scenario.scale == 1) {
             "${scenario.component.apiMethodName} crop metadata differs from the parity contract."
         }
-        return ShowcaseOutput.Page(
+        return ShowcaseOutput.Section(
             scenario.component,
-            ShowcaseMarkdown.page(scenario, region.source),
+            ShowcaseMarkdown.section(scenario, region.source),
             evidence.componentPng(scenario.component),
         )
     }

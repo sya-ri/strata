@@ -5,6 +5,7 @@ import dev.s7a.strata.layout.Arrangement
 import dev.s7a.strata.layout.HorizontalAlignment
 import dev.s7a.strata.layout.VerticalAlignment
 import dev.s7a.strata.render.ArgbColor
+import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 
@@ -13,23 +14,29 @@ import org.junit.jupiter.api.Test
  */
 internal class ShowcaseMarkdownTest {
     @Test
-    fun indexIsExactAndUsesOverviewSource() {
+    fun combinedDocumentIsExactAndUsesOverviewSource() {
         val overview = ShowcaseOutput.Overview("import sample\ninternal fun overview() {}", "|- Text\n`- Button", byteArrayOf(1))
-        val pages =
-            DocumentedComponent.entries.map { component ->
-                ShowcaseOutput.Page(component, component.slug, byteArrayOf(component.ordinal.toByte()))
+        val sections =
+            ShowcaseScenarioCatalog.components.map { scenario ->
+                ShowcaseOutput.Section(
+                    scenario.component,
+                    ShowcaseMarkdown.section(scenario, "import sample\ninternal fun example() {}"),
+                    byteArrayOf(scenario.component.ordinal.toByte()),
+                )
             }
-        val index = ShowcaseMarkdown.index(overview, pages)
-        assertTrue(index.startsWith("<!-- Generated file. Do not edit. -->\n\n# Minecraft component showcase\n"))
-        assertTrue(index.contains("real Minecraft 26.2 `ConfirmScreen`"))
+        val document = ShowcaseMarkdown.components(overview, sections)
+        assertTrue(document.startsWith("<!-- Generated file. Do not edit. -->\n\n# Minecraft component showcase\n"))
+        assertTrue(document.contains("real Minecraft 26.2 `ConfirmScreen`"))
         assertTrue(
-            index.contains(
-                "- [Text](text.md)\n- [TextField](text-field.md)\n- [Button](button.md)\n- [Scroll](scroll.md)\n- [Slot](slot.md)",
+            document.contains(
+                "- [Text](#text)\n- [TextField](#text-field)\n- [Button](#button)\n- [Scroll](#scroll)\n- [Slot](#slot)",
             ),
         )
-        assertTrue(index.contains("The tree shows Minecraft components in logical draw order"))
-        assertTrue(index.contains(overview.source))
-        assertTrue(index.contains("exact ARGB equality"))
+        assertTrue(document.contains("The tree shows Minecraft components in logical draw order"))
+        assertTrue(document.contains(overview.source))
+        assertTrue(document.contains("exact ARGB equality"))
+        assertEquals(1, "<!-- Generated file. Do not edit. -->".toRegex().findAll(document).count())
+        DocumentedComponent.entries.forEach { component -> assertTrue(document.contains("<a id=\"${component.slug}\"></a>")) }
     }
 
     @Test
@@ -44,21 +51,22 @@ internal class ShowcaseMarkdownTest {
     }
 
     @Test
-    fun allComponentPagesMatchExactTypedFixturesAndSectionOrder() {
+    fun allComponentSectionsMatchExactTypedFixturesAndSectionOrder() {
         val source = "import sample\ninternal fun example() {}"
-        val pages =
+        val sections =
             ShowcaseScenarioCatalog.components.associate { scenario ->
-                scenario.component to ShowcaseMarkdown.page(scenario, source)
+                scenario.component to ShowcaseMarkdown.section(scenario, source)
             }
-        assertTrue(pages.getValue(DocumentedComponent.Slot).contains("back-content-front highlight order"))
-        assertTrue(pages.getValue(DocumentedComponent.Text).contains("extracted Minecraft glyph advances, shadow layer, foreground layer, and native baseline"))
-        assertTrue(pages.getValue(DocumentedComponent.TextField).contains("200 by 20 Minecraft EditBox sprites"))
-        val button = pages.getValue(DocumentedComponent.Button)
+        assertTrue(sections.getValue(DocumentedComponent.Slot).contains("back-content-front highlight order"))
+        assertTrue(sections.getValue(DocumentedComponent.Text).contains("extracted Minecraft glyph advances, shadow layer, foreground layer, and native baseline"))
+        assertTrue(sections.getValue(DocumentedComponent.TextField).contains("200 by 20 Minecraft EditBox sprites"))
+        val button = sections.getValue(DocumentedComponent.Button)
         listOf("onPointerEvent", "onPress", "onRelease", "onMove", "onDrag", "onScroll", "onHover").forEach { action ->
             assertTrue(button.contains("`$action`"))
         }
-        pages.values.forEach { value ->
-            assertTrue(value.contains("<!-- Generated file. Do not edit. -->\n\n# "))
+        sections.values.forEach { value ->
+            assertTrue(value.startsWith("<a id=\""))
+            assertTrue(value.contains("\n\n## "))
             assertTrue(value.contains("\n\n<details><summary>Component tree</summary>\n"))
             assertTrue(value.endsWith("\n"))
             assertTrue(value.endsWith("\n\n").not())
@@ -110,10 +118,10 @@ internal class ShowcaseMarkdownTest {
             "SlotHighlightable(value=true)",
         ).forEach { detail -> assertTrue(rendered.contains(detail)) }
         val buttonScenario = ShowcaseScenarioCatalog.components.single { scenario -> scenario.component == DocumentedComponent.Button }
-        val buttonPage = ShowcaseMarkdown.page(buttonScenario, "import sample\ninternal fun button() {}")
-        assertTrue(buttonPage.contains("# Button"))
+        val buttonPage = ShowcaseMarkdown.section(buttonScenario, "import sample\ninternal fun button() {}")
+        assertTrue(buttonPage.contains("## Button"))
         assertTrue(buttonPage.contains("reusable input actions live in modifiers"))
         assertTrue(buttonPage.contains("screen runtime installs its selected Minecraft profile only for the definition callback"))
-        assertTrue(buttonPage.indexOf("# Button") < buttonPage.indexOf("![Button headless showcase]"))
+        assertTrue(buttonPage.indexOf("## Button") < buttonPage.indexOf("![Button headless showcase]"))
     }
 }

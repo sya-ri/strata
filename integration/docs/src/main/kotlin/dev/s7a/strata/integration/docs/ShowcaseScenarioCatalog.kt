@@ -73,7 +73,7 @@ internal object ShowcaseScenarioCatalog {
         )
 
     /**
-     * Verified ConfirmScreen overview rendered before component pages.
+     * Verified ConfirmScreen overview rendered before component sections.
      */
     internal val overview: OverviewScenario =
         OverviewScenario(
@@ -103,8 +103,8 @@ internal object ShowcaseScenarioCatalog {
         require(sources.map { source -> source.slug }.toSet().size == sources.size) { "Showcase source slugs must be unique." }
         require(sources.map { source -> source.relativePath }.toSet().size == sources.size) { "Showcase source paths must be unique." }
         val outputPaths =
-            listOf("README.md", "images/overview.png", "minecraft-26.2-parity.properties") +
-                components.flatMap { scenario -> listOf("${scenario.component.slug}.md", "images/${scenario.component.slug}.png") }
+            listOf("components.md", "images/overview.png", "minecraft-26.2-parity.properties") +
+                components.map { scenario -> "images/${scenario.component.slug}.png" }
         require(outputPaths.toSet().size == outputPaths.size) { "Showcase output paths must be unique." }
         require(0 < overview.viewport.width && 0 < overview.viewport.height && 0 < overview.scale) {
             "Overview viewport metadata must be positive."

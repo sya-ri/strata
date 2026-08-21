@@ -22,5 +22,5 @@ The nonpublished `integration:minecraft-fabric-26.2` module owns the loaded clie
 
 The nonpublished `integration:docs` module owns two source-safe showcase tasks.
 `./gradlew :integration:docs:checkComponentShowcase` depends on that loaded GameTest, verifies its receipt and image hashes, stages the compiled Minecraft-component scenario sources and verified crops, and checks freshness without modifying repository files.
-`./gradlew :integration:docs:generateComponentShowcase` performs the same parity preflight and synchronizes the checked showcase Markdown, parity receipt, PNG files, and anchored root README region.
+`./gradlew :integration:docs:generateComponentShowcase` performs the same parity preflight and synchronizes the combined `docs/components.md` showcase, parity receipt, PNG files, and anchored root README region.
 Generated output is owned by the showcase generator; manual edits are reported as stale by the checker.

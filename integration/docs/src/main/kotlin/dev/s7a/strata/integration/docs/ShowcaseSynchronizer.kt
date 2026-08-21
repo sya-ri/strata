@@ -8,7 +8,7 @@ import java.util.Collections
 import java.util.IdentityHashMap
 
 /**
- * Synchronizes the generator-owned component tree and README region as one recoverable replacement.
+ * Synchronizes the generator-owned component assets, combined Markdown, and README region as one recoverable replacement.
  *
  * All source paths and replacement bytes are preflighted before sibling transaction files are created.
  * Recovery derives ownership from physical transaction paths, including when a delegate completes an operation before reporting a failure.
@@ -18,7 +18,7 @@ import java.util.IdentityHashMap
 @Suppress("TooManyFunctions")
 internal object ShowcaseSynchronizer {
     /**
-     * Replaces the exact owned component tree and README region, attempting independent restoration of each original when replacement fails.
+     * Replaces the exact owned component assets, combined Markdown, and README region, attempting independent restoration of each original when replacement fails.
      *
      * @param launch validated repository, build, and staging paths.
      * @param output fully rendered and serialized output.
@@ -58,6 +58,12 @@ internal object ShowcaseSynchronizer {
         validateDirectoryTree(staged, "component staging", required = true)
         require(fileSet(staged) == expectedFiles(output)) { "Staged component file set is not exact." }
 
+        val markdown = ShowcasePaths.contained(docs, docs.resolve("components.md"), "component Markdown")
+        val stagedMarkdown = ShowcasePaths.contained(output.stagingRoot, output.stagingRoot.resolve("components.md"), "component Markdown staging")
+        validateRegularFile(markdown, "component Markdown", required = false)
+        validateRegularFile(stagedMarkdown, "component Markdown staging", required = true)
+        val updatedMarkdown = Files.readAllBytes(stagedMarkdown)
+
         val readme = root.resolve("README.md").toAbsolutePath().normalize()
         ShowcasePaths.requireSafeSegments(readme, "README")
         require(Files.isRegularFile(readme, LinkOption.NOFOLLOW_LINKS)) { "README is not a regular file: $readme" }
@@ -70,9 +76,12 @@ internal object ShowcaseSynchronizer {
             Transaction(
                 staged = staged,
                 target = target,
+                markdown = markdown,
+                updatedMarkdown = updatedMarkdown,
                 readme = readme,
                 updatedReadme = updatedReadme,
                 hadTarget = Files.exists(target, LinkOption.NOFOLLOW_LINKS),
+                hadMarkdown = Files.exists(markdown, LinkOption.NOFOLLOW_LINKS),
             )
         transaction.transientPaths().forEach { path ->
             ShowcasePaths.requireSafeSegments(path, "showcase transaction")
@@ -88,6 +97,7 @@ internal object ShowcaseSynchronizer {
         fileSystem: ShowcaseFileSystem,
     ) {
         fileSystem.copy(transaction.staged, transaction.nextTarget)
+        fileSystem.write(transaction.nextMarkdown, transaction.updatedMarkdown)
         fileSystem.write(transaction.nextReadme, transaction.updatedReadme)
     }
 
@@ -99,6 +109,10 @@ internal object ShowcaseSynchronizer {
             fileSystem.move(transaction.target, transaction.backupTarget)
         }
         fileSystem.move(transaction.nextTarget, transaction.target)
+        if (transaction.hadMarkdown) {
+            fileSystem.move(transaction.markdown, transaction.backupMarkdown)
+        }
+        fileSystem.move(transaction.nextMarkdown, transaction.markdown)
         fileSystem.move(transaction.readme, transaction.backupReadme)
         fileSystem.move(transaction.nextReadme, transaction.readme)
     }
@@ -109,7 +123,25 @@ internal object ShowcaseSynchronizer {
         primary: Throwable,
     ) {
         rollbackReadme(transaction, fileSystem, primary)
+        rollbackMarkdown(transaction, fileSystem, primary)
         rollbackTarget(transaction, fileSystem, primary)
+    }
+
+    private fun rollbackMarkdown(
+        transaction: Transaction,
+        fileSystem: ShowcaseFileSystem,
+        primary: Throwable,
+    ) {
+        if (exists(transaction.backupMarkdown)) {
+            attempt(primary) {
+                if (exists(transaction.markdown)) fileSystem.delete(transaction.markdown)
+            }
+            attempt(primary) {
+                if (exists(transaction.backupMarkdown)) fileSystem.move(transaction.backupMarkdown, transaction.markdown)
+            }
+        } else if (transaction.hadMarkdown.not() && exists(transaction.markdown)) {
+            attempt(primary) { fileSystem.delete(transaction.markdown) }
+        }
     }
 
     private fun rollbackReadme(
@@ -153,6 +185,9 @@ internal object ShowcaseSynchronizer {
             if (exists(transaction.nextTarget)) fileSystem.deleteTree(transaction.nextTarget)
         }
         attempt(primary) {
+            if (exists(transaction.nextMarkdown)) fileSystem.delete(transaction.nextMarkdown)
+        }
+        attempt(primary) {
             if (exists(transaction.nextReadme)) fileSystem.delete(transaction.nextReadme)
         }
     }
@@ -179,10 +214,16 @@ internal object ShowcaseSynchronizer {
             if (exists(transaction.nextTarget)) fileSystem.deleteTree(transaction.nextTarget)
         }
         cleanup {
+            if (exists(transaction.nextMarkdown)) fileSystem.delete(transaction.nextMarkdown)
+        }
+        cleanup {
             if (exists(transaction.nextReadme)) fileSystem.delete(transaction.nextReadme)
         }
         cleanup {
             if (exists(transaction.backupTarget)) fileSystem.deleteTree(transaction.backupTarget)
+        }
+        cleanup {
+            if (exists(transaction.backupMarkdown)) fileSystem.delete(transaction.backupMarkdown)
         }
         cleanup {
             if (exists(transaction.backupReadme)) fileSystem.delete(transaction.backupReadme)
@@ -265,8 +306,8 @@ internal object ShowcaseSynchronizer {
 
     private fun expectedFiles(output: ShowcaseOutput): Set<String> =
         (
-            output.pages.flatMap { page -> listOf("${page.slug}.md", "images/${page.slug}.png") } +
-                listOf("README.md", "images/overview.png", "minecraft-26.2-parity.properties")
+            output.sections.map { section -> "images/${section.slug}.png" } +
+                listOf("images/overview.png", "minecraft-26.2-parity.properties")
         ).toSortedSet()
 
     private fun fileSet(root: Path): Set<String> =
@@ -299,18 +340,36 @@ internal object ShowcaseSynchronizer {
         }
     }
 
+    private fun validateRegularFile(
+        path: Path,
+        label: String,
+        required: Boolean,
+    ) {
+        ShowcasePaths.requireSafeSegments(path, label)
+        if (Files.exists(path, LinkOption.NOFOLLOW_LINKS).not()) {
+            require(required.not()) { "$label is missing: $path" }
+            return
+        }
+        require(Files.isRegularFile(path, LinkOption.NOFOLLOW_LINKS)) { "$label is not a regular file: $path" }
+    }
+
     private class Transaction(
         val staged: Path,
         val target: Path,
+        val markdown: Path,
+        val updatedMarkdown: ByteArray,
         val readme: Path,
         val updatedReadme: ByteArray,
         val hadTarget: Boolean,
+        val hadMarkdown: Boolean,
     ) {
         val nextTarget: Path = requireNotNull(target.parent).resolve(".strata-components-next")
         val backupTarget: Path = requireNotNull(target.parent).resolve(".strata-components-backup")
+        val nextMarkdown: Path = requireNotNull(markdown.parent).resolve(".strata-components-markdown-next")
+        val backupMarkdown: Path = requireNotNull(markdown.parent).resolve(".strata-components-markdown-backup")
         val nextReadme: Path = requireNotNull(readme.parent).resolve(".strata-readme-next")
         val backupReadme: Path = requireNotNull(readme.parent).resolve(".strata-readme-backup")
 
-        fun transientPaths(): List<Path> = listOf(nextTarget, backupTarget, nextReadme, backupReadme)
+        fun transientPaths(): List<Path> = listOf(nextTarget, backupTarget, nextMarkdown, backupMarkdown, nextReadme, backupReadme)
     }
 }

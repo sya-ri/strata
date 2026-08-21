@@ -9,11 +9,11 @@ import java.nio.file.Path
  */
 internal class ShowcaseOutput internal constructor(
     internal val overview: Overview,
-    pages: List<Page>,
+    sections: List<Section>,
     internal val stagingRoot: Path,
     receipt: ByteArray,
 ) {
-    internal val pages: List<Page> = pages.toList()
+    internal val sections: List<Section> = sections.toList()
     private val receiptSnapshot: ByteArray = receipt.copyOf()
 
     /**
@@ -24,9 +24,9 @@ internal class ShowcaseOutput internal constructor(
     internal fun receipt(): ByteArray = receiptSnapshot.copyOf()
 
     /**
-     * Markdown for the generated component index.
+     * Markdown containing the overview and every generated component section.
      */
-    internal val indexMarkdown: String = ShowcaseMarkdown.index(overview, this.pages)
+    internal val componentsMarkdown: String = ShowcaseMarkdown.components(overview, this.sections)
 
     /**
      * Markdown inserted between the manually maintained root README anchors.
@@ -52,11 +52,11 @@ internal class ShowcaseOutput internal constructor(
     }
 
     /**
-     * A rendered component page and its extracted source-backed Markdown.
+     * A rendered component section and its extracted source-backed Markdown.
      */
-    internal class Page internal constructor(
-        internal val component: DocumentedComponent,
-        internal val markdown: String,
+    internal class Section internal constructor(
+        component: DocumentedComponent,
+        internal val section: String,
         png: ByteArray,
     ) {
         private val pngSnapshot: ByteArray = png.copyOf()

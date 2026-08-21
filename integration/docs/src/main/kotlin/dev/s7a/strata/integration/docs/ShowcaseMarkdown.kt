@@ -1,19 +1,19 @@
 package dev.s7a.strata.integration.docs
 
 /**
- * Produces deterministic Markdown for the component showcase pages and README region.
+ * Produces deterministic Markdown for the combined component showcase and README region.
  */
 internal object ShowcaseMarkdown {
     /**
-     * Builds the generated component index in catalog order.
+     * Builds the generated component document in catalog order.
      *
      * @param overview rendered overview output.
-     * @param pages rendered component pages.
+     * @param sections rendered component sections.
      * @return UTF-8-ready LF Markdown with one terminal newline.
      */
-    internal fun index(
+    internal fun components(
         overview: ShowcaseOutput.Overview,
-        pages: List<ShowcaseOutput.Page>,
+        sections: List<ShowcaseOutput.Section>,
     ): String =
         markdown(
             """<!-- Generated file. Do not edit. -->
@@ -24,9 +24,9 @@ These deterministic crops come from real Minecraft 26.2 `ConfirmScreen`, `Direct
 The menu and generic-container images are active background modifiers on layout components rather than logical component entries.
 One loaded Fabric GameTest requires exact ARGB equality among each native screen, the Fabric adapter, and the headless frame before it emits these component images.
 
-[Open the machine-readable parity receipt](minecraft-26.2-parity.properties)
+[Open the machine-readable parity receipt](components/minecraft-26.2-parity.properties)
 
-![Overview headless showcase](images/overview.png)
+![Overview headless showcase](components/images/overview.png)
 
 ## Overview source
 
@@ -46,7 +46,9 @@ ${overview.tree}
 
 ## Components
 
-${pages.joinToString("\n") { page -> "- [${page.title}](${page.slug}.md)" }}
+${sections.joinToString("\n") { section -> "- [${section.title}](#${section.slug})" }}
+
+${sections.joinToString("\n\n") { section -> section.section.trimEnd('\n') }}
 """,
         )
 
@@ -72,43 +74,43 @@ This deterministic image is the actual 320 by 180 `ConfirmScreen` reconstruction
 ${overview.source}
 ```
 
-[Open the component showcase index](docs/components/README.md)
+[Open the complete component showcase](docs/components.md)
 """,
         )
 
     /**
-     * Builds one component page containing its image, source, modifier guidance, parent-scope guidance, and tree.
+     * Builds one component section containing its image, source, modifier guidance, parent-scope guidance, and tree.
      *
      * @param spec typed catalog metadata.
      * @param source extracted compiled-example source.
      * @return UTF-8-ready LF Markdown with one terminal newline.
      */
-    internal fun page(
+    internal fun section(
         spec: ComponentScenario,
         source: String,
     ): String =
         markdown(
-            """<!-- Generated file. Do not edit. -->
+            """<a id="${spec.component.slug}"></a>
 
-# ${spec.component.apiMethodName}
+## ${spec.component.apiMethodName}
 
 ${typedSummary(spec.component)}
 
-This image is a ${spec.viewport.width} by ${spec.viewport.height} component crop from the exact native/Fabric/headless parity frame recorded in [the verification receipt](minecraft-26.2-parity.properties).
+This image is a ${spec.viewport.width} by ${spec.viewport.height} component crop from the exact native/Fabric/headless parity frame recorded in [the verification receipt](components/minecraft-26.2-parity.properties).
 
-![${spec.component.apiMethodName} headless showcase](images/${spec.component.slug}.png)
+![${spec.component.apiMethodName} headless showcase](components/images/${spec.component.slug}.png)
 
-## Compiled example
+### Compiled example
 
 ```kotlin
 $source
 ```
 
-## Modifiers
+### Modifiers
 
 ${modifierGuidance(spec.component)}
 
-## Parent scope
+### Parent scope
 
 ${parentScopeGuidance(spec.component)}
 
