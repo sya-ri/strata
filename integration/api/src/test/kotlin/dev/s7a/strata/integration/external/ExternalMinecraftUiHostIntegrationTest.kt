@@ -13,6 +13,7 @@ import dev.s7a.strata.node.DirtyPhase
 import dev.s7a.strata.render.createDrawImage
 import dev.s7a.strata.runtime.minecraft.Button
 import dev.s7a.strata.runtime.minecraft.MinecraftNineSliceCenterMode
+import dev.s7a.strata.runtime.minecraft.MinecraftSlots
 import dev.s7a.strata.runtime.minecraft.MinecraftTextStyle
 import dev.s7a.strata.runtime.minecraft.Slot
 import dev.s7a.strata.runtime.minecraft.Text
@@ -29,6 +30,7 @@ import dev.s7a.strata.spi.InternalStrataRuntimeApi
 import dev.s7a.strata.text.UiText
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertSame
+import org.junit.jupiter.api.Assertions.assertThrows
 import org.junit.jupiter.api.Test
 
 /**
@@ -126,6 +128,17 @@ internal class ExternalMinecraftUiHostIntegrationTest {
                 .count { command -> command is DrawCommand.BlitImage },
         )
         slotHost.close()
+
+        val synchronizedSlotHost =
+            createMinecraftScreenDefinition("external synchronized slot") {
+                Slot(bind = MinecraftSlots.playerInventory(0))
+            }.let { definition -> createMinecraftUiHost(definition, profile()) }
+        val failure = assertThrows(IllegalStateException::class.java) { synchronizedSlotHost.attach() }
+        assertEquals(
+            "Bound inventory Slots require a versioned Minecraft platform host.",
+            failure.message,
+        )
+        synchronizedSlotHost.close()
     }
 
     @Test
@@ -169,6 +182,24 @@ internal class ExternalMinecraftUiHostIntegrationTest {
         host.close()
         assertEquals(1, probe.lifecycle.count { event -> event is ExternalLifecycleEvent.Detach })
         assertEquals(1, probe.lifecycle.count { event -> event is ExternalLifecycleEvent.Dispose })
+    }
+
+    @Test
+    fun externalPurposeSpecificCompositionRunsWithoutBecomingAStandardBuiltIn() {
+        val host =
+            createMinecraftUiHost(
+                createMinecraftScreenDefinition("external energy") {
+                    EnergyGauge(energy = 3, capacity = 4)
+                },
+                profile(),
+            )
+        host.attach()
+        val frame = host.frame(IntSize(20, 4))
+        val fills = frame.drawCommands.filterIsInstance<DrawCommand.FillRectangle>()
+        assertEquals(2, fills.size)
+        assertEquals(20, fills[0].bounds.width)
+        assertEquals(15, fills[1].bounds.width)
+        host.close()
     }
 
     @Test

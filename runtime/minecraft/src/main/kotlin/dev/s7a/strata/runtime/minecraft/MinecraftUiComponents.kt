@@ -35,6 +35,31 @@ public fun UiScope.Slot(
 }
 
 /**
+ * Emits one Minecraft 26.2 Slot synchronized with a declarative inventory binding.
+ *
+ * [bind] is resolved through the player's current menu, item/count/component changes are polled before every frame, and pointer actions are sent through Minecraft's container-input path rather than mutating inventory storage directly.
+ * Item rendering uses the active version adapter's native ItemStack renderer between the Slot's back and front highlight layers.
+ * This overload therefore requires a versioned Minecraft platform host and is intentionally unsupported by a portable-only host.
+ *
+ * @receiver active owner-thread UI scope supplied by [createMinecraftScreenDefinition] or a nested component callback.
+ * @param bind immutable player-inventory or active-menu locator created by [MinecraftSlots].
+ * @param highlightable whether pointer hover selects the native highlight layers.
+ * @param modifier active behavior applied to the Slot before built-in inventory handling.
+ * @param key optional stable identity among direct siblings.
+ * @throws IllegalArgumentException when [bind] cannot be resolved by the current menu or later constraints do not contain 18 by 18.
+ * @throws IllegalStateException when no versioned platform is active, or when used from another thread or outside its active callback.
+ * @throws Throwable when synchronized inventory observation, drawing, or container input fails.
+ */
+public fun UiScope.Slot(
+    bind: MinecraftSlotBinding,
+    highlightable: Boolean = true,
+    modifier: Modifier = Modifier.Empty,
+    key: ElementKey<*>? = null,
+) {
+    MinecraftProfileImplementation.emitBoundSlot(this, bind, highlightable, modifier, key)
+}
+
+/**
  * Emits one single-line printable-ASCII text component.
  *
  * Only [UiText.Literal] values containing U+0020 through U+007E are accepted.

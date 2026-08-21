@@ -26,6 +26,8 @@ TextField owns the verified 200 by 20 EditBox sprites, text colors, cursor, boun
 Focused input modifiers run before TextField's built-in editor, so consuming a typed event overrides its default action and ignoring the event permits the editor to handle it.
 Scroll owns the active 26.2 menu-list background, child clipping, separators, scrollbar sprites, retained wheel offset, proportional thumb dragging, and the native background-to-content-to-overlay paint order.
 The container-background modifier owns the verified row-dependent generic chest geometry and two native texture regions, while Slot owns the exact 18 by 18 pointer region, optional 16 by 16 content root, and back-content-front hover layers.
+The Fabric-backed `Slot(bind = MinecraftSlots.playerInventory(index))` and `Slot(bind = MinecraftSlots.activeMenu(index))` forms obtain their version platform implicitly, poll the current authoritative menu before each frame, insert native item rendering at the Slot's ordered item phase, and send pointer transactions through Minecraft's container-input operation instead of mutating inventory storage.
+That live overload is intentionally unavailable to portable-only hosts because arbitrary `ItemStack` models are native version assets; the optional-content overload remains the headless-compatible Slot contract.
 Button does not install keyboard focus or activation implicitly; callers compose those policies from the shared modifiers when required.
 The common component boundary does not expose resources, native Minecraft values, renderers, input mappers, or task facilities.
 

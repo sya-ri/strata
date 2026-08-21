@@ -454,6 +454,7 @@ public class StrataMinecraftClientGameTest : FabricClientGameTest {
                             .withSize(containerViewport.width, containerViewport.height)
                             .withDestinationDir(output),
                     )
+                    InventorySlotSynchronizationGameTest.run(context, profile, output)
                     writeParityEvidence(output, confirm, scroll, directJoin, containerBackground, slot)
                 }
             }

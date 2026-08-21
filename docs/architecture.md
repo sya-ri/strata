@@ -18,7 +18,8 @@ A module joins the build only with working behavior and tests.
   It synchronously renders a fixed positive viewport, rasterizes core draw commands into deterministic ARGB pixels, and encodes metadata-free RGBA8 PNG output without a desktop graphics dependency.
 - `runtime:minecraft` is a publishable Minecraft-independent adapter boundary built on `runtime:core`.
   Its opt-in host consumes a one-shot screen definition and a complete immutable profile, then converts every non-negative logical viewport into exact fixed root constraints.
-  Its screen-definition callback is itself an ordinary `UiScope`; the runtime installs the selected profile for that dynamic callback so top-level menu and generic-container background modifiers plus highlighted Slot, printable Text, an owner-thread TextField, fixed-height profile-backed Button, and clipped retained selection-list Scroll work without an additional `buildUi` wrapper or a public context object.
+  Its screen-definition callback is itself an ordinary `UiScope`; the runtime installs the selected profile and optional version-platform services for that dynamic callback so top-level menu and generic-container background modifiers plus highlighted Slot, printable Text, an owner-thread TextField, fixed-height profile-backed Button, and clipped retained selection-list Scroll work without an additional `buildUi` wrapper or a public context object.
+  A version-backed bound Slot uses an opaque ordered platform draw command for the native `ItemStack` phase and delegates mutation to the active container menu; declarative locators cover player-inventory and raw active-menu indices, core preserves ordering and clipping without depending on a Minecraft type, and portable-only rasterization rejects the unsupported payload before producing output.
   Button owns profile-backed appearance and enabled semantics, while platform-neutral active modifiers own raw pointer, keyboard, committed-character, preedit, focus, press, release, move, drag, scroll, and hover actions reusable by future Minecraft components.
   Hosts retain the core tree across transient detach and reattach, gate input until a successful frame, and expose no mapped game, Fabric, resource, renderer, version, coroutine, state, or source-binding type.
   Button does not install focus or keyboard activation implicitly; callers compose those policies from shared modifiers, and hover changes only in response to delivered pointer movement.
@@ -30,6 +31,18 @@ A module joins the build only with working behavior and tests.
 - `integration:docs` discovers public top-level Minecraft component extensions mechanically from compiled runtime classes, extracts those compiled scenario sources, verifies the Minecraft parity receipt and PNG hashes, and owns generated component documentation; it is not published.
 Platform-independent code must not depend on a Minecraft runtime.
 Minecraft and Fabric dependencies remain confined to the versioned runtime boundary that requires them.
+
+## Component extension policy
+
+Strata standardizes only focused primitives that serve at least two natural independent uses and do not encode one screen or application-domain model.
+Every proposal for a standard built-in is reviewed for excessive specialization and for whether an ordinary composition of existing primitives is sufficient.
+Minecraft-specific primitives remain eligible when their responsibility is broadly reusable across Minecraft UI; a player-head renderer can serve social lists, player lists, profiles, teams, and ownership displays, while a social-entry row or an advancement graph remains application composition.
+
+This standard-library gate does not constrain downstream code.
+An application or Mod may define a purpose-specific component such as an energy gauge or social entry as an ordinary `UiScope` composition function, or implement new retained behavior with a custom immutable `Element`, stable singleton `ElementType`, and capability-bearing `Node`.
+`UiScope.element` inserts that description without registration, and the retained core never dispatches on the concrete component class.
+External component implementations receive the same reconciliation, key, modifier, cache, input, semantics, lifecycle, and failure contracts as Strata's built-ins.
+The complete external implementation contract is documented in [Element SPI](element-spi.md).
 
 The process and compatibility requirements for a new version adapter are defined in [Supporting a new Minecraft version](minecraft-versions.md).
 

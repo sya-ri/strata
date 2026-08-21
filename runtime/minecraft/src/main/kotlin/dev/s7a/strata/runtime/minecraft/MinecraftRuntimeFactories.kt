@@ -69,6 +69,26 @@ public fun createMinecraftUiHost(
 ): MinecraftUiHost = MinecraftHostImplementation.create(definition, profile)
 
 /**
+ * Creates one owner-thread host with version-specific services by atomically consuming a definition.
+ *
+ * Successful construction transfers [platform] to the host, which refreshes it before frames and closes it on every terminal path.
+ * This privileged overload is for a versioned runtime adapter; application code receives the resulting screen from that adapter instead.
+ *
+ * @param definition the available one-shot definition.
+ * @param profile the complete immutable Minecraft asset profile.
+ * @param platform version-specific services transferred to the host.
+ * @return a distinct owner-thread host.
+ * @throws IllegalStateException when [definition] was already transferred or closed.
+ * @throws Throwable when construction fails; [platform] remains caller-owned unless transfer completes.
+ */
+@InternalStrataRuntimeApi
+public fun createMinecraftUiHost(
+    definition: MinecraftScreenDefinition,
+    profile: MinecraftUiProfile,
+    platform: MinecraftUiPlatform,
+): MinecraftUiHost = MinecraftHostImplementation.create(definition, profile, platform)
+
+/**
  * Creates one complete immutable Minecraft UI profile.
  *
  * The callback and builder are confined to the calling thread and the callback's dynamic lifetime.

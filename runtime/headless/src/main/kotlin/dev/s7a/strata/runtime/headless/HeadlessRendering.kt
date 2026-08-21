@@ -9,9 +9,10 @@ import dev.s7a.strata.geometry.IntSize
 import dev.s7a.strata.runtime.UiTree
 import dev.s7a.strata.runtime.render.DrawCommand
 import dev.s7a.strata.runtime.semantics.SemanticsEntry
+import dev.s7a.strata.spi.InternalStrataRuntimeApi
 
 /**
- * Rasterizes platform-neutral draw commands into a deterministic physical image.
+ * Rasterizes portable draw commands into a deterministic physical image.
  *
  * Commands are snapshotted in their supplied order before pixel allocation or painting.
  * The caller must not mutate the supplied list or command graph concurrently with this call.
@@ -24,7 +25,7 @@ import dev.s7a.strata.runtime.semantics.SemanticsEntry
  * Each channel and alpha is rounded half-up per command, with canonical zero for transparent output.
  * Transparent sources are no-ops, opaque sources replace, and no gamma conversion, interpolation, or saturation is applied.
  *
- * @param commands the core-emitted draw commands in execution order.
+ * @param commands the core-emitted draw commands in execution order; opaque platform commands are unsupported.
  * @param viewport the positive logical viewport.
  * @param scale the positive integer logical-to-physical scale.
  * @return an immutable physical ARGB image with transparent-black initial pixels.
@@ -64,6 +65,7 @@ public fun renderHeadless(
 /**
  * Owns the private implementation of the public headless facade.
  */
+@OptIn(InternalStrataRuntimeApi::class)
 private object HeadlessImplementation {
     fun rasterize(
         commands: List<DrawCommand>,
@@ -125,6 +127,10 @@ private object HeadlessImplementation {
                     snapshot.add(checkedCommand)
                 }
 
+                is DrawCommand.Platform -> {
+                    throw IllegalArgumentException("Headless rendering does not support platform draw commands.")
+                }
+
                 is DrawCommand.PushClip -> {
                     clipDepth = Math.incrementExact(clipDepth)
                     snapshot.add(checkedCommand)
@@ -155,6 +161,10 @@ private object HeadlessImplementation {
 
                 is DrawCommand.BlitImage -> {
                     paintBlit(pixels, dimensions, command, clips.lastOrNull())
+                }
+
+                is DrawCommand.Platform -> {
+                    error("Platform draw commands are rejected during snapshot preflight.")
                 }
 
                 is DrawCommand.PushClip -> {

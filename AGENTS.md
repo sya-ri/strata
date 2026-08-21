@@ -12,6 +12,9 @@ Update the canonical document when its contract changes.
   Do not publish empty artifacts or add placeholder source sets, tests, adapters, or documentation.
 - Keep platform integration at runtime/integration boundaries.
   Public SPI code must not dispatch on concrete component types; use extensible contracts.
+- Admit a component to Strata's standard public built-ins only when it has one focused UI responsibility, does not encode one screen or application-domain model, and has at least two natural independent use cases.
+  Every built-in component review must explicitly check whether the proposal is too specialized and whether composition from existing primitives is sufficient.
+  This gate does not restrict downstream applications or Mods: consumers may freely define purpose-specific composition functions or retained primitives through the public `Element` and `Node` SPI without registration.
 - Modifiers are active behavior, while parent data is exposed only by the layout scope that consumes it.
   Do not turn either into a passive settings bag or hidden global state.
   Follow [docs/modifiers.md](docs/modifiers.md) for modifier identity, virtual ancestry, lifecycle, and extension behavior.

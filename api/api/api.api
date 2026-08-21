@@ -730,8 +730,12 @@ public final class dev/s7a/strata/render/DrawImages {
 
 public abstract interface class dev/s7a/strata/render/PaintScope {
 	public abstract fun blitImage (Ldev/s7a/strata/render/DrawImage;Ldev/s7a/strata/geometry/IntRect;Ldev/s7a/strata/geometry/IntRect;)V
+	public abstract fun drawPlatform (Ldev/s7a/strata/render/PlatformDrawCommand;Ldev/s7a/strata/geometry/IntRect;)V
 	public abstract fun fillRectangle-RtejO-o (Ldev/s7a/strata/geometry/IntRect;I)V
 	public abstract fun getSize ()Ldev/s7a/strata/geometry/IntSize;
+}
+
+public abstract interface class dev/s7a/strata/render/PlatformDrawCommand {
 }
 
 public final class dev/s7a/strata/semantics/Semantics {

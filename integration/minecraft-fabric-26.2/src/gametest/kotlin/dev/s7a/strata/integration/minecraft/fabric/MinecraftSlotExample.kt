@@ -9,8 +9,10 @@ import dev.s7a.strata.modifier.padding
 import dev.s7a.strata.modifier.size
 import dev.s7a.strata.render.ArgbColor
 import dev.s7a.strata.runtime.minecraft.MinecraftScreenDefinition
+import dev.s7a.strata.runtime.minecraft.MinecraftSlotBinding
 import dev.s7a.strata.runtime.minecraft.MinecraftTextStyle
 import dev.s7a.strata.runtime.minecraft.Slot
+import dev.s7a.strata.runtime.minecraft.MinecraftSlots
 import dev.s7a.strata.runtime.minecraft.Text
 import dev.s7a.strata.runtime.minecraft.containerBackground
 import dev.s7a.strata.runtime.minecraft.createMinecraftScreenDefinition
@@ -81,3 +83,64 @@ internal fun createSlotScreenDefinition(): MinecraftScreenDefinition =
         }
     }
 // showcase-source-end:slot
+
+/**
+ * Builds a generic chest-shaped screen whose lower 36 Slots are bound to the active player's inventory.
+ *
+ * The upper grid remains empty because this standalone showcase is not opened by a server-owned container menu; real container screens bind those cells with [MinecraftSlots.activeMenu].
+ * The returned definition requires the Fabric version adapter and is not renderable by the portable-only headless host.
+ *
+ * @param primarySlotBinding binding used by the first hotbar cell so loaded tests can cover either locator family.
+ * @return one-shot screen definition used to verify live item rendering and authoritative container input in a loaded client.
+ */
+internal fun createInventorySlotScreenDefinition(
+    primarySlotBinding: MinecraftSlotBinding = MinecraftSlots.playerInventory(0),
+): MinecraftScreenDefinition =
+    createMinecraftScreenDefinition("Synchronized inventory") {
+        Box(
+            modifier =
+                Modifier.Empty
+                    .size(320, 240)
+                    .background(ArgbColor(0xFF000000.toInt()))
+                    .menuBackground(),
+        ) {
+            Box(
+                modifier =
+                    Modifier.Empty
+                        .padding(left = 72, top = 36)
+                        .containerBackground(rows = 3),
+            ) {
+                Text(
+                    "Chest",
+                    style = MinecraftTextStyle.ContainerLabel,
+                    modifier = Modifier.Empty.padding(left = 8, top = 6),
+                )
+                Text(
+                    "Inventory",
+                    style = MinecraftTextStyle.ContainerLabel,
+                    modifier = Modifier.Empty.padding(left = 8, top = 74),
+                )
+                repeat(3) { row ->
+                    repeat(9) { column ->
+                        Slot(
+                            modifier = Modifier.Empty.padding(left = 7 + column * 18, top = 17 + row * 18),
+                        )
+                    }
+                }
+                repeat(3) { row ->
+                    repeat(9) { column ->
+                        Slot(
+                            bind = MinecraftSlots.playerInventory(9 + row * 9 + column),
+                            modifier = Modifier.Empty.padding(left = 7 + column * 18, top = 84 + row * 18),
+                        )
+                    }
+                }
+                repeat(9) { column ->
+                    Slot(
+                        bind = if (column == 0) primarySlotBinding else MinecraftSlots.playerInventory(column),
+                        modifier = Modifier.Empty.padding(left = 7 + column * 18, top = 142),
+                    )
+                }
+            }
+        }
+    }

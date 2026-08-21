@@ -76,15 +76,17 @@ internal object MinecraftProfileImplementation {
      *
      * @param profile complete profile produced by this runtime.
      * @param content transferred application callback.
+     * @param platform optional version services retained until evaluation or explicit release.
      * @return an owner-thread one-shot element evaluator.
      */
     @JvmSynthetic
     fun createEvaluator(
         profile: MinecraftUiProfile,
         content: UiScope.() -> Unit,
+        platform: MinecraftUiPlatform? = null,
     ): () -> Element =
         when (profile) {
-            is ProfileSnapshot -> Evaluator.create(profile, content)
+            is ProfileSnapshot -> Evaluator.create(profile, content, platform)
         }
 
     /**
@@ -130,6 +132,28 @@ internal object MinecraftProfileImplementation {
         content: (UiScope.() -> Unit)?,
     ) {
         currentContext().emitSlot(scope, highlightable, modifier, key, content)
+    }
+
+    /**
+     * Emits one bound inventory Slot through the active profile and platform context.
+     *
+     * @param scope active destination scope.
+     * @param binding immutable player-inventory or active-menu locator.
+     * @param highlightable whether native hover layers are enabled.
+     * @param modifier active Slot behavior.
+     * @param key optional sibling identity.
+     * @throws IllegalArgumentException when [binding] cannot be resolved by the active menu.
+     * @throws IllegalStateException when no matching versioned screen-content callback is active on this thread.
+     */
+    @JvmSynthetic
+    fun emitBoundSlot(
+        scope: UiScope,
+        binding: MinecraftSlotBinding,
+        highlightable: Boolean,
+        modifier: Modifier,
+        key: ElementKey<*>?,
+    ) {
+        currentContext().emitBoundSlot(scope, binding, highlightable, modifier, key)
     }
 
     /**
@@ -604,9 +628,11 @@ internal object MinecraftProfileImplementation {
 
     private class Context private constructor(
         initialProfile: ProfileSnapshot,
+        initialPlatform: MinecraftUiPlatform?,
     ) {
         private val ownerThread = Thread.currentThread()
         private var profile: ProfileSnapshot? = initialProfile
+        private var platform: MinecraftUiPlatform? = initialPlatform
 
         fun menuBackground(modifier: Modifier): Modifier = modifier.then(createMinecraftMenuBackgroundModifier(requireProfile().menuBackground))
 
@@ -630,6 +656,29 @@ internal object MinecraftProfileImplementation {
                     currentProfile.slotHighlightFront,
                     highlightable,
                     child,
+                    null,
+                    modifier,
+                    key,
+                ),
+            )
+        }
+
+        fun emitBoundSlot(
+            scope: UiScope,
+            binding: MinecraftSlotBinding,
+            highlightable: Boolean,
+            modifier: Modifier,
+            key: ElementKey<*>?,
+        ) {
+            val currentProfile = requireProfile()
+            val currentPlatform = checkNotNull(platform) { "Bound inventory Slots require a versioned Minecraft platform host." }
+            scope.element(
+                createMinecraftSlotElement(
+                    currentProfile.slotHighlightBack,
+                    currentProfile.slotHighlightFront,
+                    highlightable,
+                    null,
+                    currentPlatform.inventorySlot(binding),
                     modifier,
                     key,
                 ),
@@ -737,6 +786,7 @@ internal object MinecraftProfileImplementation {
         fun close() {
             check(Thread.currentThread() === ownerThread) { "Minecraft UI context requires its creator thread." }
             profile = null
+            platform = null
         }
 
         private fun requireProfile(): ProfileSnapshot {
@@ -749,30 +799,36 @@ internal object MinecraftProfileImplementation {
              * Creates one private callback-lifetime context.
              *
              * @param profile complete immutable profile available during evaluation.
+             * @param platform optional version services available only during evaluation.
              * @return an active context bound to the current thread.
              */
             @JvmSynthetic
             internal fun create(
                 profile: ProfileSnapshot,
-            ): Context = Context(profile)
+                platform: MinecraftUiPlatform?,
+            ): Context = Context(profile, platform)
         }
     }
 
     private class Evaluator private constructor(
         initialProfile: ProfileSnapshot,
         initialContent: UiScope.() -> Unit,
+        initialPlatform: MinecraftUiPlatform?,
     ) : () -> Element {
         private val ownerThread = Thread.currentThread()
         private var profile: ProfileSnapshot? = initialProfile
         private var content: (UiScope.() -> Unit)? = initialContent
+        private var platform: MinecraftUiPlatform? = initialPlatform
 
         override fun invoke(): Element {
             check(Thread.currentThread() === ownerThread) { "Minecraft content evaluation requires the host owner thread." }
             val currentProfile = checkNotNull(profile) { "Minecraft screen content was already evaluated." }
             val currentContent = checkNotNull(content) { "Minecraft screen content was already evaluated." }
+            val currentPlatform = platform
             profile = null
             content = null
-            val context = Context.create(currentProfile)
+            platform = null
+            val context = Context.create(currentProfile, currentPlatform)
             return try {
                 ContextBinding.withContext(context) { buildUi(currentContent) }
             } finally {
@@ -785,6 +841,7 @@ internal object MinecraftProfileImplementation {
             check(Thread.currentThread() === ownerThread) { "Minecraft content release requires the host owner thread." }
             profile = null
             content = null
+            platform = null
         }
 
         companion object {
@@ -793,13 +850,15 @@ internal object MinecraftProfileImplementation {
              *
              * @param profile complete profile retained until evaluation or release.
              * @param content application content retained until evaluation or release.
+             * @param platform optional version services retained until evaluation or release.
              * @return a one-shot evaluator.
              */
             @JvmSynthetic
             internal fun create(
                 profile: ProfileSnapshot,
                 content: UiScope.() -> Unit,
-            ): Evaluator = Evaluator(profile, content)
+                platform: MinecraftUiPlatform?,
+            ): Evaluator = Evaluator(profile, content, platform)
         }
     }
 

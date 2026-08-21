@@ -4,6 +4,7 @@ package dev.s7a.strata.runtime.minecraft.fabric
 
 import com.mojang.blaze3d.platform.NativeImage
 import dev.s7a.strata.geometry.IntOffset
+import dev.s7a.strata.geometry.IntRect
 import dev.s7a.strata.geometry.IntSize
 import dev.s7a.strata.input.InputResult
 import dev.s7a.strata.input.KeyCode
@@ -17,6 +18,7 @@ import dev.s7a.strata.runtime.minecraft.MinecraftScreenDefinition
 import dev.s7a.strata.runtime.minecraft.MinecraftUiHost
 import dev.s7a.strata.runtime.minecraft.MinecraftUiProfile
 import dev.s7a.strata.runtime.minecraft.createMinecraftUiHost
+import dev.s7a.strata.runtime.render.DrawCommand
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
 import net.minecraft.client.Minecraft
 import net.minecraft.client.gui.GuiGraphicsExtractor
@@ -34,9 +36,9 @@ import net.minecraft.client.input.PreeditEvent as MinecraftPreeditEvent
  *
  * The host is created by transferring the one-shot [MinecraftScreenDefinition] and is confined to the Minecraft client thread.
  * Added and removed screen callbacks attach and detach the retained tree; removal is transient and never closes the screen.
- * Terminal close releases the host and any transient dynamic texture. A caller that permanently abandons a removed or never-presented instance must close it on the client thread.
+ * Terminal close releases the host and every transient dynamic texture layer. A caller that permanently abandons a removed or never-presented instance must close it on the client thread.
  * The optional parent is retained for navigation but is never owned or closed.
- * Rendering rasterizes common draw commands through the headless adapter before issuing one native texture blit, so this adapter has no second compositor.
+ * Rendering rasterizes portable command runs through the headless adapter and submits synchronized ItemStack commands through Minecraft's native extractor at their exact display-list positions.
  * Mouse coordinates are floored after finite and integer-range checks. Horizontal scroll is forwarded unchanged, while vertical scroll is negated to match the common increasing-y contract.
  *
  * @see createMinecraftScreen
@@ -45,13 +47,14 @@ import net.minecraft.client.input.PreeditEvent as MinecraftPreeditEvent
 @Suppress("TooManyFunctions", "TooGenericExceptionCaught")
 public class FabricMinecraftScreen private constructor(
     private val host: MinecraftUiHost,
+    private val inventory: FabricMinecraftInventoryBridge,
     private val parent: Screen?,
     private val minecraftClient: Minecraft,
 ) : Screen(mapMinecraftText(host.title)),
     AutoCloseable {
     private var closed = false
     private var attached = false
-    private var texture: DynamicTexture? = null
+    private val textures: MutableList<DynamicTexture> = ArrayList()
     private val pausePolicy = host.pausesGame
     private val lifecycle =
         FabricScreenLifecycleTransaction.create(
@@ -154,30 +157,16 @@ public class FabricMinecraftScreen private constructor(
                 host.frame(viewport)
                 if (lifecycle.hasPendingExit()) return@run
                 if (width == 0 || height == 0) {
-                    releaseTexture()
+                    releaseTextures()
                     return@run
                 }
                 val currentPointer = IntOffset(mouseX, mouseY)
-                host.dispatchPointer(PointerEvent.Move(currentPointer))
+                inventory.withPointerMove { host.dispatchPointer(PointerEvent.Move(currentPointer)) == InputResult.Consumed }
                 if (lifecycle.hasPendingExit()) return@run
                 val frame = host.frame(viewport)
                 if (lifecycle.hasPendingExit()) return@run
-                val image = rasterizeHeadless(frame.drawCommands, frame.size)
-                upload(image)
-                texture?.let { currentTexture ->
-                    graphics.blit(
-                        currentTexture.getTextureView(),
-                        currentTexture.getSampler(),
-                        0,
-                        0,
-                        image.size.width,
-                        image.size.height,
-                        0f,
-                        1f,
-                        0f,
-                        1f,
-                    )
-                }
+                extractFrame(graphics, frame.drawCommands, frame.size)
+                inventory.renderCarried(graphics, minecraftClient.font, mouseX, mouseY)
             }
         } catch (failure: Throwable) {
             terminalFailure(failure)
@@ -205,7 +194,7 @@ public class FabricMinecraftScreen private constructor(
     ) {
         requireClientThread()
         val position = positionOrNull(mouseX, mouseY) ?: return
-        dispatch(PointerEvent.Move(position))
+        inventory.withPointerMove { dispatch(PointerEvent.Move(position)) }
     }
 
     /**
@@ -224,7 +213,7 @@ public class FabricMinecraftScreen private constructor(
         requireClientThread()
         val position = positionOrNull(event.x(), event.y()) ?: return false
         val button = buttonOrNull(event.button()) ?: return false
-        return dispatch(PointerEvent.Press(position, button))
+        return inventory.withMousePress(event, doubleClick) { dispatch(PointerEvent.Press(position, button)) }
     }
 
     /**
@@ -239,7 +228,7 @@ public class FabricMinecraftScreen private constructor(
         requireClientThread()
         val position = positionOrNull(event.x(), event.y()) ?: return false
         val button = buttonOrNull(event.button()) ?: return false
-        return dispatch(PointerEvent.Release(position, button))
+        return inventory.withMouseRelease(event) { dispatch(PointerEvent.Release(position, button)) }
     }
 
     /**
@@ -261,7 +250,7 @@ public class FabricMinecraftScreen private constructor(
         val position = positionOrNull(event.x(), event.y()) ?: return false
         val button = buttonOrNull(event.button()) ?: return false
         val displacement = mapMinecraftDrag(deltaX, deltaY) ?: return false
-        return dispatch(PointerEvent.Drag(position, button, displacement.first, displacement.second))
+        return inventory.withMouseDrag(event) { dispatch(PointerEvent.Drag(position, button, displacement.first, displacement.second)) }
     }
 
     /**
@@ -297,6 +286,7 @@ public class FabricMinecraftScreen private constructor(
      */
     override fun keyPressed(event: MinecraftKeyEvent): Boolean {
         requireClientThread()
+        if (inventory.handleKeyPressed(event)) return true
         val mapped = mapMinecraftKeyPress(event) ?: return false
         if (mapped.key == KeyCode.Escape) {
             return dispatchInherited { super.keyPressed(event) }
@@ -451,7 +441,7 @@ public class FabricMinecraftScreen private constructor(
             failure = caught
         }
         try {
-            releaseTexture()
+            releaseTextures()
         } catch (caught: Throwable) {
             if (failure == null) {
                 failure = caught
@@ -462,41 +452,167 @@ public class FabricMinecraftScreen private constructor(
         failure?.let { throw it }
     }
 
-    private fun upload(image: HeadlessImage) {
-        if (image.size.width == 0 || image.size.height == 0) {
-            releaseTexture()
-            return
-        }
-        val current = texture
-        val needsResize = current == null || current.getPixels().getWidth() != image.size.width || current.getPixels().getHeight() != image.size.height
-        if (needsResize) {
-            val native = NativeImage(image.size.width, image.size.height, false)
-            val replacement =
-                try {
-                    DynamicTexture({ "Strata runtime frame" }, native)
-                } catch (failure: Throwable) {
-                    try {
-                        native.close()
-                    } catch (cleanup: Throwable) {
-                        FabricMinecraftFailures.addSuppressed(failure, cleanup)
-                    }
-                    throw failure
+    private fun extractFrame(
+        graphics: GuiGraphicsExtractor,
+        commands: List<DrawCommand>,
+        viewport: IntSize,
+    ) {
+        val layers = partitionFrame(commands, viewport)
+        var textureIndex = 0
+        layers.forEach { layer ->
+            when (layer) {
+                is PortableLayer -> {
+                    val image = rasterizeHeadless(layer.commands, viewport)
+                    val current = upload(textureIndex, image)
+                    textureIndex += 1
+                    graphics.blit(
+                        current.getTextureView(),
+                        current.getSampler(),
+                        0,
+                        0,
+                        image.size.width,
+                        image.size.height,
+                        0f,
+                        1f,
+                        0f,
+                        1f,
+                    )
                 }
+
+                is PlatformLayer -> {
+                    extractPlatformLayer(graphics, layer, viewport)
+                }
+            }
+        }
+        trimTextures(textureIndex)
+    }
+
+    private fun extractPlatformLayer(
+        graphics: GuiGraphicsExtractor,
+        layer: PlatformLayer,
+        viewport: IntSize,
+    ) {
+        val visible = intersection(IntRect(0, 0, viewport.width, viewport.height), layer.command.bounds)
+        if (visible.width <= 0 || visible.height <= 0) return
+        val clip = layer.clip
+        if (clip != null) graphics.enableScissor(clip.left, clip.top, clip.right, clip.bottom)
+        try {
+            inventory.renderItem(
+                graphics,
+                minecraftClient.font,
+                layer.command.command,
+                layer.command.bounds.left,
+                layer.command.bounds.top,
+            )
+        } finally {
+            if (clip != null) graphics.disableScissor()
+        }
+    }
+
+    private fun partitionFrame(
+        commands: List<DrawCommand>,
+        viewport: IntSize,
+    ): List<FrameLayer> {
+        val layers = ArrayList<FrameLayer>()
+        val activeClips = ArrayList<IntRect>()
+        var portable = ArrayList<DrawCommand>()
+        var portableHasOutput = false
+
+        fun flushPortable() {
+            if (portableHasOutput) {
+                repeat(activeClips.size) { portable.add(DrawCommand.PopClip) }
+                layers.add(PortableLayer(portable.toList()))
+            }
+            portable = ArrayList()
+            activeClips.forEach { clip -> portable.add(DrawCommand.PushClip(clip)) }
+            portableHasOutput = false
+        }
+        commands.forEach { command ->
+            when (command) {
+                is DrawCommand.FillRectangle,
+                is DrawCommand.BlitImage,
+                -> {
+                    portable.add(command)
+                    portableHasOutput = true
+                }
+
+                is DrawCommand.PushClip -> {
+                    activeClips.add(command.bounds)
+                    portable.add(command)
+                }
+
+                DrawCommand.PopClip -> {
+                    require(activeClips.isNotEmpty()) { "Clip pop has no matching push." }
+                    activeClips.removeAt(activeClips.lastIndex)
+                    portable.add(command)
+                }
+
+                is DrawCommand.Platform -> {
+                    flushPortable()
+                    val viewportBounds = IntRect(0, 0, viewport.width, viewport.height)
+                    val clip = activeClips.fold(viewportBounds, ::intersection)
+                    layers.add(PlatformLayer(command, clip.takeIf { activeClips.isNotEmpty() }))
+                }
+            }
+        }
+        require(activeClips.isEmpty()) { "Clip push has no matching pop." }
+        flushPortable()
+        return layers
+    }
+
+    private fun trimTextures(retainedCount: Int) {
+        var failure: Throwable? = null
+        while (retainedCount < textures.size) {
+            val current = textures.removeAt(textures.lastIndex)
             try {
-                fillTexture(replacement, image)
+                current.close()
+            } catch (caught: Throwable) {
+                val primary = failure
+                if (primary == null) failure = caught else FabricMinecraftFailures.addSuppressed(primary, caught)
+            }
+        }
+        failure?.let { throw it }
+    }
+
+    private fun upload(
+        index: Int,
+        image: HeadlessImage,
+    ): DynamicTexture {
+        val current = textures.getOrNull(index)
+        val needsResize = current == null || current.getPixels().getWidth() != image.size.width || current.getPixels().getHeight() != image.size.height
+        if (needsResize.not()) {
+            fillTexture(checkNotNull(current), image)
+            return current
+        }
+        val native = NativeImage(image.size.width, image.size.height, false)
+        val replacement =
+            try {
+                DynamicTexture({ "Strata runtime frame layer" }, native)
             } catch (failure: Throwable) {
                 try {
-                    replacement.close()
+                    native.close()
                 } catch (cleanup: Throwable) {
                     FabricMinecraftFailures.addSuppressed(failure, cleanup)
                 }
                 throw failure
             }
-            texture = replacement
-            current?.close()
-            return
+        try {
+            fillTexture(replacement, image)
+        } catch (failure: Throwable) {
+            try {
+                replacement.close()
+            } catch (cleanup: Throwable) {
+                FabricMinecraftFailures.addSuppressed(failure, cleanup)
+            }
+            throw failure
         }
-        fillTexture(current, image)
+        if (current == null) {
+            textures.add(replacement)
+        } else {
+            textures[index] = replacement
+            current.close()
+        }
+        return replacement
     }
 
     private fun fillTexture(
@@ -512,10 +628,18 @@ public class FabricMinecraftScreen private constructor(
         target.upload()
     }
 
-    private fun releaseTexture() {
-        val current = texture
-        texture = null
-        current?.close()
+    private fun releaseTextures() {
+        var failure: Throwable? = null
+        while (textures.isNotEmpty()) {
+            val current = textures.removeAt(textures.lastIndex)
+            try {
+                current.close()
+            } catch (caught: Throwable) {
+                val primary = failure
+                if (primary == null) failure = caught else FabricMinecraftFailures.addSuppressed(primary, caught)
+            }
+        }
+        failure?.let { throw it }
     }
 
     private fun positionOrNull(
@@ -524,6 +648,17 @@ public class FabricMinecraftScreen private constructor(
     ): IntOffset? = mapMinecraftPosition(mouseX, mouseY)
 
     private fun buttonOrNull(button: Int): PointerButton? = mapMinecraftButton(button)
+
+    private fun intersection(
+        first: IntRect,
+        second: IntRect,
+    ): IntRect {
+        val left = maxOf(first.left, second.left)
+        val top = maxOf(first.top, second.top)
+        val right = maxOf(left, minOf(first.right, second.right))
+        val bottom = maxOf(top, minOf(first.bottom, second.bottom))
+        return IntRect(left, top, right, bottom)
+    }
 
     private fun requireClientThread() {
         check(minecraftClient.isSameThread()) { "Fabric Minecraft screens are confined to the client thread." }
@@ -538,6 +673,7 @@ public class FabricMinecraftScreen private constructor(
          * Creates one private screen implementation after host construction has transferred its definition.
          *
          * @param host transferred common host.
+         * @param inventory borrowed platform bridge owned by [host].
          * @param parent screen restored after terminal close.
          * @param minecraft client used for parent navigation.
          * @return a private screen implementation.
@@ -546,9 +682,10 @@ public class FabricMinecraftScreen private constructor(
         @JvmSynthetic
         internal fun create(
             host: MinecraftUiHost,
+            inventory: FabricMinecraftInventoryBridge,
             parent: Screen?,
             minecraft: Minecraft,
-        ): FabricMinecraftScreen = FabricMinecraftScreen(host, parent, minecraft)
+        ): FabricMinecraftScreen = FabricMinecraftScreen(host, inventory, parent, minecraft)
     }
 
     private sealed interface FocusedInput
@@ -560,6 +697,17 @@ public class FabricMinecraftScreen private constructor(
     private data class TextInput(
         val event: TextInputEvent,
     ) : FocusedInput
+
+    private sealed interface FrameLayer
+
+    private data class PortableLayer(
+        val commands: List<DrawCommand>,
+    ) : FrameLayer
+
+    private data class PlatformLayer(
+        val command: DrawCommand.Platform,
+        val clip: IntRect?,
+    ) : FrameLayer
 }
 
 /**
@@ -585,9 +733,20 @@ public fun createMinecraftScreen(
 ): FabricMinecraftScreen {
     val minecraft = Minecraft.getInstance()
     check(minecraft.isSameThread()) { "Fabric Minecraft screens must be created on the client thread." }
-    val host = createMinecraftUiHost(definition, profile)
+    val inventory = FabricMinecraftInventoryBridge.create(minecraft)
+    val host =
+        try {
+            createMinecraftUiHost(definition, profile, inventory)
+        } catch (failure: Throwable) {
+            try {
+                inventory.close()
+            } catch (cleanup: Throwable) {
+                FabricMinecraftFailures.addSuppressed(failure, cleanup)
+            }
+            throw failure
+        }
     return try {
-        FabricMinecraftScreen.create(host, parent, minecraft)
+        FabricMinecraftScreen.create(host, inventory, parent, minecraft)
     } catch (failure: Throwable) {
         try {
             host.close()

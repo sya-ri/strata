@@ -3,15 +3,18 @@ package dev.s7a.strata.runtime.render
 import dev.s7a.strata.geometry.IntRect
 import dev.s7a.strata.render.ArgbColor
 import dev.s7a.strata.render.DrawImage
+import dev.s7a.strata.render.PlatformDrawCommand
 import dev.s7a.strata.runtime.validateBlitImage
+import dev.s7a.strata.spi.InternalStrataRuntimeApi
 
 /**
- * A platform-neutral retained drawing command in accumulated tree coordinates.
+ * A retained drawing command in accumulated tree coordinates.
  *
  * Commands are returned in retained paint order, including explicit nested child clips and post-child overlays.
  * A backend must execute the list in that order.
  * Backends must intersect drawing with every active [PushClip] until the matching [PopClip].
  * The core does not define blending or sampling policy.
+ * Portable commands carry platform-neutral values, while the opt-in [Platform] variant preserves an opaque version-adapter payload without teaching core its type.
  */
 public sealed interface DrawCommand {
     /**
@@ -44,6 +47,27 @@ public sealed interface DrawCommand {
     ) : DrawCommand {
         init {
             validateBlitImage(image, source, destination)
+        }
+    }
+
+    /**
+     * Preserves an opaque platform payload at one tree-coordinate rectangle.
+     *
+     * Core retains [command] by reference and does not interpret, copy, or clip it.
+     * A matching backend executes it in list order while applying the active [PushClip] stack.
+     * Other backends must reject the payload before producing partial output.
+     *
+     * @property command immutable platform-owned payload.
+     * @property bounds nonempty half-open tree-coordinate bounds.
+     * @throws IllegalArgumentException when [bounds] is empty.
+     */
+    @InternalStrataRuntimeApi
+    public data class Platform(
+        public val command: PlatformDrawCommand,
+        public val bounds: IntRect,
+    ) : DrawCommand {
+        init {
+            require(0 < bounds.width && 0 < bounds.height) { "Platform draw bounds must be nonempty." }
         }
     }
 

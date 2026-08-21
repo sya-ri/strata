@@ -11,12 +11,15 @@ import dev.s7a.strata.node.PaintNode
 import dev.s7a.strata.render.ArgbColor
 import dev.s7a.strata.render.DrawImage
 import dev.s7a.strata.render.PaintScope
+import dev.s7a.strata.render.PlatformDrawCommand
 import dev.s7a.strata.runtime.render.DrawCommand
+import dev.s7a.strata.spi.InternalStrataRuntimeApi
 import java.util.Collections
 
 /**
  * Executes retained local paint and translates commands into tree coordinates.
  */
+@OptIn(InternalStrataRuntimeApi::class)
 internal class PaintPipeline(
     private val threadGuard: ThreadGuard,
 ) {
@@ -108,6 +111,10 @@ internal class PaintPipeline(
             is LocalDrawCommand.BlitImage -> {
                 DrawCommand.BlitImage(command.image, command.source, command.destination + IntOffset(x, y))
             }
+
+            is LocalDrawCommand.Platform -> {
+                DrawCommand.Platform(command.command, command.bounds + IntOffset(x, y))
+            }
         }
 
     /**
@@ -145,6 +152,14 @@ internal class PaintPipeline(
         ) {
             guard.check()
             commands.add(LocalDrawCommand.BlitImage(image, source, localDestination))
+        }
+
+        override fun drawPlatform(
+            command: PlatformDrawCommand,
+            localBounds: IntRect,
+        ) {
+            guard.check()
+            commands.add(LocalDrawCommand.Platform(command, localBounds))
         }
 
         /**

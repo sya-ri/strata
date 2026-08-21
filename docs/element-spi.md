@@ -4,6 +4,21 @@ The public `api` module is enough to implement a Strata primitive description an
 The retained engine lives in `runtime:core`.
 A primitive contributes an immutable element description and a retained node, and does not register a component class or enter a central dispatcher.
 
+## Two extension levels
+
+Prefer a composition component when existing primitives already provide the required measurement, painting, input, and semantics.
+Define a normal Kotlin function or `UiScope` extension, validate its typed domain arguments, and emit exactly one composed root.
+This is the appropriate form for application-specific components such as an industrial Mod's `EnergyGauge` or one server's `SocialEntry`.
+Purpose-specific downstream components are intentionally allowed and are not subject to Strata's standard-built-in generality review.
+
+Implement a retained primitive when the component needs behavior that existing primitives cannot express.
+Create an immutable `Element`, retain one singleton `ElementType` for that logical kind, and create a `Node` implementing only the measure, layout, paint, input, semantics, and lifecycle capabilities it owns.
+Emit the description with `UiScope.element`; no registry, annotation, generated adapter, or core dispatcher change is required.
+External primitive implementations receive the same retention and cleanup rules as built-ins and may be used inside a Minecraft screen definition.
+
+The `integration:api` module compiles both forms outside the implementation packages.
+Its purpose-specific `EnergyGauge` composes public layout and drawing modifiers, while `ExternalElement` and `ExternalNode` exercise custom retained measurement, painting, pointer input, semantics, invalidation, reconciliation, and lifecycle through the published SPI.
+
 ## Ownership and lifetime
 
 An element is a short-lived immutable description.
@@ -77,6 +92,8 @@ A clean paint pass reuses that immutable list and translates it to current accum
 `OverlayPaintNode.paintOverlay` emits a separately cached local display list after all effective descendants.
 `ClipChildrenNode` inserts balanced tree-coordinate clip commands around effective descendant drawing without clipping the node's own regular or overlay commands.
 The runtime returns `DrawCommand` values in regular-paint, clipped-descendant, and overlay-paint order.
+Portable primitive nodes emit only platform-neutral fill and image commands.
+An opt-in version adapter may instead pass an immutable opaque `PlatformDrawCommand` through `PaintScope.drawPlatform`; core translates its declared bounds and preserves clip and draw order without interpreting the payload, the matching adapter executes it, and unsupported backends reject it before producing partial output.
 Nodes without `ClipChildrenNode` preserve valid local and descendant paint overflow.
 Use `UiText` in semantics without resolving it.
 `SemanticsNode` emits a complete unresolved payload through `SemanticsScope`.

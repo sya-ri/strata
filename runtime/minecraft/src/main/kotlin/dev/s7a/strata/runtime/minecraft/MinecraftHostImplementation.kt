@@ -25,6 +25,7 @@ internal object MinecraftHostImplementation {
      *
      * @param definition available one-shot definition.
      * @param profile complete profile created by this runtime.
+     * @param platform optional version services transferred to the host.
      * @return an owner-thread host with transferred metadata and content.
      * @throws IllegalStateException when [definition] is unavailable.
      */
@@ -32,11 +33,12 @@ internal object MinecraftHostImplementation {
     fun create(
         definition: MinecraftScreenDefinition,
         profile: MinecraftUiProfile,
+        platform: MinecraftUiPlatform? = null,
     ): MinecraftUiHost {
         val transferred = MinecraftDefinitionImplementation.take(definition)
-        val evaluator = MinecraftProfileImplementation.createEvaluator(profile, transferred.content)
+        val evaluator = MinecraftProfileImplementation.createEvaluator(profile, transferred.content, platform)
         val session = createRuntimeUiSession(evaluator)
-        return Host.create(session, evaluator, transferred.title, transferred.pausesGame)
+        return Host.create(session, evaluator, platform, transferred.title, transferred.pausesGame)
     }
 
     private enum class State {
@@ -67,11 +69,13 @@ internal object MinecraftHostImplementation {
     private class Host private constructor(
         private val session: RuntimeUiSession,
         initialEvaluator: () -> Element,
+        initialPlatform: MinecraftUiPlatform?,
         title: UiText,
         pausesGame: Boolean,
     ) : MinecraftUiHost {
         private val ownerThread = Thread.currentThread()
         private var evaluator: (() -> Element)? = initialEvaluator
+        private var platform: MinecraftUiPlatform? = initialPlatform
         private var metadata: Metadata? = Metadata(title, pausesGame)
         private var state = State.Created
         private var operation: Operation? = null
@@ -123,8 +127,10 @@ internal object MinecraftHostImplementation {
             check(state == State.Attached) { "Minecraft UI host must be attached before frame." }
             operation = Operation.Frame
             return try {
-                runCatching { session.frame(Constraints.fixed(viewport.width, viewport.height)) }
-                    .getOrElse { failure -> fail(failure) }
+                runCatching {
+                    platform?.refresh()
+                    session.frame(Constraints.fixed(viewport.width, viewport.height))
+                }.getOrElse { failure -> fail(failure) }
             } finally {
                 operation = null
             }
@@ -165,12 +171,15 @@ internal object MinecraftHostImplementation {
             operation = Operation.Close
             state = State.Closed
             metadata = null
-            try {
-                session.close()
-            } finally {
-                releaseEvaluator()
-                operation = null
+            val sessionFailure = runCatching { session.close() }.exceptionOrNull()
+            val platformFailure = runCatching { releasePlatform() }.exceptionOrNull()
+            val failure = sessionFailure ?: platformFailure
+            if (sessionFailure != null && platformFailure != null) {
+                addSuppressed(sessionFailure, platformFailure)
             }
+            releaseEvaluator()
+            operation = null
+            failure?.let { throw it }
         }
 
         private fun checkOwner() {
@@ -189,6 +198,7 @@ internal object MinecraftHostImplementation {
             state = State.Failed
             metadata = null
             runCatching { session.close() }.exceptionOrNull()?.let { cleanup -> addSuppressed(primary, cleanup) }
+            runCatching { releasePlatform() }.exceptionOrNull()?.let { cleanup -> addSuppressed(primary, cleanup) }
             releaseEvaluator()
             operation = null
             throw primary
@@ -198,6 +208,12 @@ internal object MinecraftHostImplementation {
             val retained = evaluator ?: return
             evaluator = null
             MinecraftProfileImplementation.releaseEvaluator(retained)
+        }
+
+        private fun releasePlatform() {
+            val retained = platform ?: return
+            platform = null
+            retained.close()
         }
 
         private fun addSuppressed(
@@ -233,6 +249,7 @@ internal object MinecraftHostImplementation {
              *
              * @param session independently owned core runtime session.
              * @param evaluator one-shot content evaluator released with the host.
+             * @param platform optional version services owned until terminal close.
              * @param title exact unresolved transferred title.
              * @param pausesGame whether the transferred screen pauses the game.
              * @return a new owner-thread host.
@@ -241,9 +258,10 @@ internal object MinecraftHostImplementation {
             internal fun create(
                 session: RuntimeUiSession,
                 evaluator: () -> Element,
+                platform: MinecraftUiPlatform?,
                 title: UiText,
                 pausesGame: Boolean,
-            ): Host = Host(session, evaluator, title, pausesGame)
+            ): Host = Host(session, evaluator, platform, title, pausesGame)
         }
     }
 }

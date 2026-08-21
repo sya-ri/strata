@@ -3,7 +3,9 @@ package dev.s7a.strata.runtime.headless
 import dev.s7a.strata.geometry.IntRect
 import dev.s7a.strata.geometry.IntSize
 import dev.s7a.strata.render.ArgbColor
+import dev.s7a.strata.render.PlatformDrawCommand
 import dev.s7a.strata.runtime.render.DrawCommand
+import dev.s7a.strata.spi.InternalStrataRuntimeApi
 import org.junit.jupiter.api.Assertions.assertArrayEquals
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertNotSame
@@ -13,6 +15,7 @@ import org.junit.jupiter.api.assertThrows
 /**
  * Verifies low-level headless raster semantics independent of the retained tree.
  */
+@OptIn(InternalStrataRuntimeApi::class)
 internal class HeadlessRasterTest {
     @Test
     fun emptyCommandsProduceTransparentBlackPixels() {
@@ -21,6 +24,19 @@ internal class HeadlessRasterTest {
         assertEquals(IntSize(2, 2), image.size)
         assertArrayEquals(intArrayOf(0, 0, 0, 0), image.copyArgb())
         assertEquals(0, image.argbAt(0, 0))
+    }
+
+    @Test
+    fun platformCommandsFailDuringPreflight() {
+        val failure =
+            assertThrows<IllegalArgumentException> {
+                rasterizeHeadless(
+                    listOf(DrawCommand.Platform(TestPlatformCommand, IntRect(0, 0, 1, 1))),
+                    IntSize(1, 1),
+                )
+            }
+
+        assertEquals("Headless rendering does not support platform draw commands.", failure.message)
     }
 
     @Test
@@ -314,4 +330,6 @@ internal class HeadlessRasterTest {
         bounds: IntRect,
         color: Int,
     ): DrawCommand.FillRectangle = DrawCommand.FillRectangle(bounds, ArgbColor(color))
+
+    private data object TestPlatformCommand : PlatformDrawCommand
 }

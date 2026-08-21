@@ -8,18 +8,23 @@ import dev.s7a.strata.geometry.Constraints
 import dev.s7a.strata.geometry.IntOffset
 import dev.s7a.strata.geometry.IntRect
 import dev.s7a.strata.geometry.IntSize
+import dev.s7a.strata.input.InputResult
+import dev.s7a.strata.input.PointerEvent
 import dev.s7a.strata.layout.LayoutScope
 import dev.s7a.strata.layout.MeasureScope
 import dev.s7a.strata.modifier.Modifier
 import dev.s7a.strata.node.DirtyMask
 import dev.s7a.strata.node.DirtyPhase
 import dev.s7a.strata.node.LayoutNode
+import dev.s7a.strata.node.LifecycleNode
 import dev.s7a.strata.node.MeasureNode
 import dev.s7a.strata.node.OverlayPaintNode
 import dev.s7a.strata.node.PaintNode
 import dev.s7a.strata.node.PointerHoverNode
+import dev.s7a.strata.node.PointerInputNode
 import dev.s7a.strata.render.DrawImage
 import dev.s7a.strata.render.PaintScope
+import dev.s7a.strata.spi.InternalStrataRuntimeApi
 import dev.s7a.strata.node.Node as RetainedNode
 
 /**
@@ -32,9 +37,11 @@ import dev.s7a.strata.node.Node as RetainedNode
  * @param frontHighlight immutable highlight painted over the optional item child.
  * @param highlightable whether pointer hover selects the two highlight layers.
  * @param child optional sole item description.
+ * @param binding optional synchronized inventory binding, mutually exclusive with [child].
  * @param modifier active behavior applied to the component.
  * @param key optional stable identity among direct siblings.
  */
+@OptIn(InternalStrataRuntimeApi::class)
 private class MinecraftSlotElement private constructor(
     @get:JvmSynthetic
     internal val backHighlight: DrawImage,
@@ -43,6 +50,8 @@ private class MinecraftSlotElement private constructor(
     @get:JvmSynthetic
     internal val highlightable: Boolean,
     child: Element?,
+    @get:JvmSynthetic
+    internal val binding: MinecraftInventorySlotBinding?,
     modifier: Modifier,
     key: ElementKey<*>?,
 ) : Element(
@@ -58,17 +67,22 @@ private class MinecraftSlotElement private constructor(
         var backHighlight: DrawImage,
         var frontHighlight: DrawImage,
         var highlightable: Boolean,
+        var binding: MinecraftInventorySlotBinding?,
     ) : RetainedNode(),
         MeasureNode,
         LayoutNode,
         PaintNode,
         OverlayPaintNode,
-        PointerHoverNode {
+        PointerHoverNode,
+        PointerInputNode,
+        LifecycleNode {
         private val slotSize = IntSize(18, 18)
         private val itemSize = IntSize(16, 16)
         private val highlightSource = IntRect(0, 0, 24, 24)
         private val highlightDestination = IntRect(-3, -3, 21, 21)
         private var hovered = false
+        private var attached = false
+        private var subscription: AutoCloseable? = null
 
         override fun measure(
             scope: MeasureScope,
@@ -95,6 +109,9 @@ private class MinecraftSlotElement private constructor(
             if (hovered) {
                 scope.blitImage(backHighlight, highlightSource, highlightDestination)
             }
+            binding?.drawCommand()?.let { command ->
+                scope.drawPlatform(command, IntRect(1, 1, 17, 17))
+            }
         }
 
         override fun paintOverlay(scope: PaintScope) {
@@ -111,6 +128,28 @@ private class MinecraftSlotElement private constructor(
             }
         }
 
+        override fun onPointerEvent(
+            event: PointerEvent,
+            localPosition: IntOffset,
+        ): InputResult = binding?.dispatchPointer(event) ?: InputResult.Ignored
+
+        override fun attach() {
+            check(attached.not()) { "Minecraft Slot binding is already attached." }
+            attached = true
+            subscription = binding?.observe { invalidate(DirtyMask.of(DirtyPhase.Paint)) }
+        }
+
+        override fun detach() {
+            attached = false
+            releaseSubscription()
+        }
+
+        override fun dispose() {
+            attached = false
+            releaseSubscription()
+            binding = null
+        }
+
         /**
          * Updates retained profile images and highlightability from one reconciled description.
          *
@@ -122,16 +161,31 @@ private class MinecraftSlotElement private constructor(
         internal fun updateFrom(current: MinecraftSlotElement): DirtyMask {
             val imagesChanged = backHighlight != current.backHighlight || frontHighlight != current.frontHighlight
             val highlightabilityChanged = highlightable != current.highlightable
+            val bindingChanged = binding !== current.binding
             val wasHovered = hovered
             if (current.highlightable.not()) hovered = false
+            if (bindingChanged) {
+                releaseSubscription()
+                binding = current.binding
+                if (attached) {
+                    subscription = binding?.observe { invalidate(DirtyMask.of(DirtyPhase.Paint)) }
+                }
+            }
             backHighlight = current.backHighlight
             frontHighlight = current.frontHighlight
             highlightable = current.highlightable
-            return if (imagesChanged || (highlightabilityChanged && wasHovered)) {
+            val hoverVisualChanged = highlightabilityChanged && wasHovered
+            return if (imagesChanged || bindingChanged || hoverVisualChanged) {
                 DirtyMask.of(DirtyPhase.Paint)
             } else {
                 DirtyMask.None
             }
+        }
+
+        private fun releaseSubscription() {
+            val current = subscription
+            subscription = null
+            current?.close()
         }
     }
 
@@ -152,8 +206,11 @@ private class MinecraftSlotElement private constructor(
                         "Minecraft Slot front highlight must be 24 by 24 pixels."
                     }
                     require(element.children.size <= 1) { "Minecraft Slot accepts at most one item child." }
+                    require(element.binding == null || element.children.isEmpty()) {
+                        "Minecraft Slot cannot combine a synchronized binding with a custom item child."
+                    }
                 },
-                createNode = { element -> Node(element.backHighlight, element.frontHighlight, element.highlightable) },
+                createNode = { element -> Node(element.backHighlight, element.frontHighlight, element.highlightable, element.binding) },
                 updateNode = { _, current, node -> node.updateFrom(current) },
             )
 
@@ -164,6 +221,7 @@ private class MinecraftSlotElement private constructor(
          * @param frontHighlight immutable front-highlight image.
          * @param highlightable whether hover paints the highlight layers.
          * @param child optional sole 16 by 16 item child.
+         * @param binding optional synchronized inventory binding, mutually exclusive with [child].
          * @param modifier active component behavior.
          * @param key optional stable sibling identity.
          * @return one fixed-size Slot element.
@@ -174,9 +232,10 @@ private class MinecraftSlotElement private constructor(
             frontHighlight: DrawImage,
             highlightable: Boolean,
             child: Element?,
+            binding: MinecraftInventorySlotBinding?,
             modifier: Modifier,
             key: ElementKey<*>?,
-        ): Element = MinecraftSlotElement(backHighlight, frontHighlight, highlightable, child, modifier, key)
+        ): Element = MinecraftSlotElement(backHighlight, frontHighlight, highlightable, child, binding, modifier, key)
     }
 }
 
@@ -187,16 +246,19 @@ private class MinecraftSlotElement private constructor(
  * @param frontHighlight immutable front-highlight image.
  * @param highlightable whether hover paints the highlight layers.
  * @param child optional sole 16 by 16 item child.
+ * @param binding optional synchronized inventory binding, mutually exclusive with [child].
  * @param modifier active component behavior.
  * @param key optional stable sibling identity.
  * @return one fixed-size Slot element.
  */
 @JvmSynthetic
+@InternalStrataRuntimeApi
 internal fun createMinecraftSlotElement(
     backHighlight: DrawImage,
     frontHighlight: DrawImage,
     highlightable: Boolean,
     child: Element?,
+    binding: MinecraftInventorySlotBinding?,
     modifier: Modifier,
     key: ElementKey<*>?,
-): Element = MinecraftSlotElement.create(backHighlight, frontHighlight, highlightable, child, modifier, key)
+): Element = MinecraftSlotElement.create(backHighlight, frontHighlight, highlightable, child, binding, modifier, key)

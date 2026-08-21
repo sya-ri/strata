@@ -3,6 +3,7 @@ package dev.s7a.strata.render
 import dev.s7a.strata.geometry.IntRect
 import dev.s7a.strata.geometry.IntSize
 import dev.s7a.strata.node.PaintNode
+import dev.s7a.strata.spi.InternalStrataRuntimeApi
 
 /**
  * Collects drawing commands for one node in its local coordinate space.
@@ -52,5 +53,22 @@ public interface PaintScope {
         image: DrawImage,
         source: IntRect,
         localDestination: IntRect,
+    )
+
+    /**
+     * Adds one opaque platform draw command at a local half-open rectangle.
+     *
+     * Core retains [command] by reference, translates [localBounds] into tree coordinates, and preserves the command among portable draw and clip commands.
+     * Only a matching platform backend may interpret the payload; portable backends reject it before producing output.
+     *
+     * @param command immutable platform-owned payload.
+     * @param localBounds nonempty local bounds used for translation, clipping, and backend placement.
+     * @throws IllegalArgumentException when [localBounds] is empty.
+     * @throws IllegalStateException when the scope is no longer valid.
+     */
+    @InternalStrataRuntimeApi
+    public fun drawPlatform(
+        command: PlatformDrawCommand,
+        localBounds: IntRect,
     )
 }

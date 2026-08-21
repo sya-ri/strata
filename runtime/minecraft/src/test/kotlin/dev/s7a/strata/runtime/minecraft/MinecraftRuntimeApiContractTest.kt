@@ -31,6 +31,7 @@ internal class MinecraftRuntimeApiContractTest {
             setOf("getTitle", "getPausesGame", "attach", "detach", "frame", "dispatchPointer", "dispatchKeyboard", "dispatchTextInput", "close"),
         )
         assertInterfaceSurface(MinecraftUiProfile::class.java, emptySet())
+        assertInterfaceSurface(MinecraftSlotBinding::class.java, setOf("getSource", "getIndex"))
         assertInterfaceSurface(MinecraftTextFieldState::class.java, setOf("getValue", "setValue", "getMaxLength"))
         assertInterfaceSurface(
             MinecraftUiProfileBuilder::class.java,
@@ -58,7 +59,7 @@ internal class MinecraftRuntimeApiContractTest {
     fun facadeContainsExactlyTheTypedFactoriesAndLiteralTitleOverload() {
         val factory = Class.forName("dev.s7a.strata.runtime.minecraft.MinecraftRuntimeFactories")
         val methods = factory.declaredMethods.filter { method -> Modifier.isPublic(method.modifiers) && method.isSynthetic.not() }
-        assertEquals(5, methods.size)
+        assertEquals(6, methods.size)
         assertFactory(
             methods,
             "createMinecraftScreenDefinition",
@@ -85,6 +86,12 @@ internal class MinecraftRuntimeApiContractTest {
         )
         assertFactory(
             methods,
+            "createMinecraftUiHost",
+            listOf(MinecraftScreenDefinition::class.java, MinecraftUiProfile::class.java, MinecraftUiPlatform::class.java),
+            MinecraftUiHost::class.java,
+        )
+        assertFactory(
+            methods,
             "createMinecraftUiProfile",
             listOf(Function1::class.java),
             MinecraftUiProfile::class.java,
@@ -95,6 +102,20 @@ internal class MinecraftRuntimeApiContractTest {
             assertFalse(descriptor.contains("UiSession"), descriptor)
             assertFalse(descriptor.contains("kotlinx.coroutines"), descriptor)
         }
+    }
+
+    @Test
+    fun slotLocatorFactoryExposesOnlyTypedConstructors() {
+        val methods =
+            MinecraftSlots::class.java.declaredMethods.filter { method ->
+                Modifier.isPublic(method.modifiers) && method.isSynthetic.not()
+            }
+        assertEquals(setOf("playerInventory", "activeMenu"), methods.map { method -> method.name }.toSet())
+        methods.forEach { method ->
+            assertTrue(Modifier.isStatic(method.modifiers))
+            assertMethod(method, listOf(checkNotNull(Int::class.javaPrimitiveType)), MinecraftSlotBinding::class.java)
+        }
+        assertEquals(setOf(MinecraftSlotSource.PlayerInventory, MinecraftSlotSource.ActiveMenu), MinecraftSlotSource.entries.toSet())
     }
 
     @Test
@@ -124,7 +145,7 @@ internal class MinecraftRuntimeApiContractTest {
                 .forName("dev.s7a.strata.runtime.minecraft.MinecraftUiModifiers")
                 .declaredMethods
                 .filter { method -> method.isSynthetic.not() }
-        assertEquals(7, componentMethods.size)
+        assertEquals(8, componentMethods.size)
         assertEquals(2, modifierMethods.size)
         assertBackgroundModifierDescriptors(modifierMethods)
         assertTextDescriptors(componentMethods)
@@ -164,6 +185,13 @@ internal class MinecraftRuntimeApiContractTest {
                     UiModifier::class.java,
                     ElementKey::class.java,
                     Function1::class.java,
+                ),
+                listOf(
+                    UiScope::class.java,
+                    MinecraftSlotBinding::class.java,
+                    checkNotNull(Boolean::class.javaPrimitiveType),
+                    UiModifier::class.java,
+                    ElementKey::class.java,
                 ),
             ),
             methods
@@ -412,8 +440,12 @@ internal class MinecraftRuntimeApiContractTest {
         )
         assertTrue(
             MinecraftHostImplementation::class.java
-                .getDeclaredMethod("create", MinecraftScreenDefinition::class.java, MinecraftUiProfile::class.java)
-                .isSynthetic,
+                .getDeclaredMethod(
+                    "create",
+                    MinecraftScreenDefinition::class.java,
+                    MinecraftUiProfile::class.java,
+                    MinecraftUiPlatform::class.java,
+                ).isSynthetic,
         )
         assertTrue(
             MinecraftProfileImplementation::class.java
@@ -426,6 +458,7 @@ internal class MinecraftRuntimeApiContractTest {
                     "createEvaluator",
                     MinecraftUiProfile::class.java,
                     Function1::class.java,
+                    MinecraftUiPlatform::class.java,
                 ).isSynthetic,
         )
         assertTrue(
@@ -460,6 +493,9 @@ internal class MinecraftRuntimeApiContractTest {
                 MinecraftUiProfile::class.java,
                 MinecraftUiProfileBuilder::class.java,
                 MinecraftTextFieldState::class.java,
+                MinecraftSlotBinding::class.java,
+                MinecraftSlotSource::class.java,
+                MinecraftSlots::class.java,
                 Class.forName("dev.s7a.strata.runtime.minecraft.MinecraftRuntimeFactories"),
                 Class.forName("dev.s7a.strata.runtime.minecraft.MinecraftUiComponents"),
                 Class.forName("dev.s7a.strata.runtime.minecraft.MinecraftUiModifiers"),
