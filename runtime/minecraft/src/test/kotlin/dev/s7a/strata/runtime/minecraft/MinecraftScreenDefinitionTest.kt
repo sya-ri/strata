@@ -3,98 +3,163 @@ package dev.s7a.strata.runtime.minecraft
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
 import dev.s7a.strata.text.UiText
 import org.junit.jupiter.api.Assertions.assertEquals
-import org.junit.jupiter.api.Assertions.assertNotSame
 import org.junit.jupiter.api.Assertions.assertSame
 import org.junit.jupiter.api.Assertions.assertThrows
+import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
+import java.util.concurrent.CountDownLatch
+import java.util.concurrent.FutureTask
+import java.util.concurrent.TimeUnit
+import java.util.concurrent.atomic.AtomicReference
 
 /**
- * Verifies reusable screen-definition metadata and content ownership boundaries.
+ * Verifies one-shot definition ownership and lazy content evaluation.
  */
 @OptIn(InternalStrataRuntimeApi::class)
 internal class MinecraftScreenDefinitionTest {
     @Test
-    fun constructionRetainsExactMetadataWithoutEvaluatingContent() {
-        val title = UiText.Translated("screen.strata.test")
+    fun constructionIsLazyAndCloseDoesNotEvaluateContent() {
         var contentCalls = 0
-        val paused =
+        val definition =
+            createMinecraftScreenDefinition(UiText.Literal("lazy")) {
+                contentCalls += 1
+                MinecraftHostProbe().element()
+            }
+
+        definition.close()
+        definition.close()
+        assertEquals(0, contentCalls)
+        assertThrows(IllegalStateException::class.java) {
+            createMinecraftUiHost(definition, MinecraftProfileFixture.create())
+        }
+    }
+
+    @Test
+    fun transferExposesMetadataAndEvaluatesContentOnlyOnAttach() {
+        val title = UiText.Translated("screen.strata.test")
+        val profile = MinecraftProfileFixture.create()
+        val probe = MinecraftHostProbe()
+        var contentCalls = 0
+        val definition =
             createMinecraftScreenDefinition(title, pausesGame = true) {
                 contentCalls += 1
-                MinecraftHostProbe().element()
-            }
-        val unpaused =
-            createMinecraftScreenDefinition(title, pausesGame = false) {
-                contentCalls += 1
-                MinecraftHostProbe().element()
-            }
-
-        assertSame(title, paused.title)
-        assertSame(title, unpaused.title)
-        assertEquals(true, paused.pausesGame)
-        assertEquals(false, unpaused.pausesGame)
-        assertEquals(0, contentCalls)
-    }
-
-    @Test
-    fun hostConstructionAndCloseBeforeAttachNeverEvaluateContent() {
-        var contentCalls = 0
-        val definition =
-            createMinecraftScreenDefinition(UiText.Literal("lazy"), pausesGame = false) {
-                contentCalls += 1
-                MinecraftHostProbe().element()
-            }
-
-        val host = createMinecraftUiHost(definition)
-        assertEquals(0, contentCalls)
-        host.close()
-        host.close()
-        assertEquals(0, contentCalls)
-    }
-
-    @Test
-    fun reusableDefinitionCreatesIndependentSessions() {
-        val probe = MinecraftHostProbe()
-        var contentCalls = 0
-        val definition =
-            createMinecraftScreenDefinition(UiText.Literal("reusable"), pausesGame = true) {
-                contentCalls += 1
                 probe.element()
             }
-        val first = createMinecraftUiHost(definition)
+        val host = createMinecraftUiHost(definition, profile)
 
-        first.attach()
-        first.close()
-        val second = createMinecraftUiHost(definition)
-        second.attach()
-
-        assertEquals(2, contentCalls)
-        assertEquals(2, probe.nodes.size)
-        assertNotSame(probe.nodes[0], probe.nodes[1])
-        second.close()
+        assertSame(title, host.title)
+        assertEquals(true, host.pausesGame)
+        assertEquals(0, contentCalls)
+        host.attach()
+        assertEquals(1, contentCalls)
+        host.close()
+        assertThrows(IllegalStateException::class.java) { host.title }
     }
 
     @Test
-    fun definitionRemainsReusableAfterAnIndependentHostFails() {
-        val contentFailure = IllegalStateException("first-host")
-        val probe = MinecraftHostProbe()
-        var contentCalls = 0
+    fun definitionCanBeTransferredExactlyOnce() {
         val definition =
-            createMinecraftScreenDefinition(UiText.Literal("failure"), pausesGame = false) {
-                contentCalls += 1
-                if (contentCalls == 1) {
-                    throw contentFailure
+            createMinecraftScreenDefinition(UiText.Literal("one")) { context ->
+                context.text(UiText.Literal("A"))
+            }
+        val profile = MinecraftProfileFixture.create()
+        val host = createMinecraftUiHost(definition, profile)
+        val transferredState = readDefinitionState(definition)
+
+        assertPayloadReleased(definition)
+        assertThrows(IllegalStateException::class.java) {
+            createMinecraftUiHost(definition, profile)
+        }
+        definition.close()
+        assertSame(transferredState, readDefinitionState(definition))
+        host.close()
+    }
+
+    @Test
+    fun transferAndCloseHaveExactlyOneWinner() {
+        val transferredStateClass = transferredStateClass()
+        val closedStateClass = closedStateClass()
+        repeat(20) {
+            val definition =
+                createMinecraftScreenDefinition(UiText.Literal("race")) { context ->
+                    context.text(UiText.Literal("A"))
                 }
-                probe.element()
+            val profile = MinecraftProfileFixture.create()
+            val ready = CountDownLatch(2)
+            val start = CountDownLatch(1)
+            val transfer =
+                FutureTask<Boolean> {
+                    ready.countDown()
+                    start.await(5, TimeUnit.SECONDS)
+                    runCatching {
+                        val host = createMinecraftUiHost(definition, profile)
+                        host.close()
+                    }.isSuccess
+                }
+            val close =
+                FutureTask<Boolean> {
+                    ready.countDown()
+                    start.await(5, TimeUnit.SECONDS)
+                    definition.close()
+                    true
+                }
+            val transferThread = Thread(transfer)
+            val closeThread = Thread(close)
+            transferThread.start()
+            closeThread.start()
+            assertEquals(true, ready.await(5, TimeUnit.SECONDS))
+            start.countDown()
+            assertEquals(true, close.get(5, TimeUnit.SECONDS))
+            val transferred = transfer.get(5, TimeUnit.SECONDS)
+            val expectedStateClass = if (transferred) transferredStateClass else closedStateClass
+            assertSame(expectedStateClass, readDefinitionState(definition).javaClass)
+            assertPayloadReleased(definition)
+        }
+    }
+
+    @Test
+    fun closingAnAvailableDefinitionDropsItsPayload() {
+        val definition =
+            createMinecraftScreenDefinition(UiText.Literal("closed")) {
+                MinecraftHostProbe().element()
             }
-        val failingHost = createMinecraftUiHost(definition)
+        definition.close()
+        assertSame(closedStateClass(), readDefinitionState(definition).javaClass)
+        assertPayloadReleased(definition)
+        assertThrows(IllegalStateException::class.java) {
+            createMinecraftUiHost(definition, MinecraftProfileFixture.create())
+        }
+    }
 
-        assertSame(contentFailure, assertThrows(IllegalStateException::class.java) { failingHost.attach() })
-        failingHost.close()
-        val recoveredHost = createMinecraftUiHost(definition)
-        recoveredHost.attach()
+    private fun transferredStateClass(): Class<*> {
+        val definition =
+            createMinecraftScreenDefinition(UiText.Literal("transferred-state")) {
+                MinecraftHostProbe().element()
+            }
+        val host = createMinecraftUiHost(definition, MinecraftProfileFixture.create())
+        val stateClass = readDefinitionState(definition).javaClass
+        host.close()
+        return stateClass
+    }
 
-        assertEquals(2, contentCalls)
-        assertEquals(1, probe.nodes.size)
-        recoveredHost.close()
+    private fun closedStateClass(): Class<*> {
+        val definition =
+            createMinecraftScreenDefinition(UiText.Literal("closed-state")) {
+                MinecraftHostProbe().element()
+            }
+        definition.close()
+        return readDefinitionState(definition).javaClass
+    }
+
+    private fun assertPayloadReleased(definition: MinecraftScreenDefinition) {
+        val state = readDefinitionState(definition)
+        assertTrue(state.javaClass.declaredFields.none { field -> field.type == TransferredMinecraftDefinition::class.java })
+    }
+
+    private fun readDefinitionState(definition: MinecraftScreenDefinition): Any {
+        val stateField = definition.javaClass.getDeclaredField("state")
+        stateField.isAccessible = true
+        val reference = stateField.get(definition) as AtomicReference<*>
+        return checkNotNull(reference.get())
     }
 }

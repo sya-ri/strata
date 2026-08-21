@@ -16,6 +16,11 @@ The bridge delegates exact primary-failure identity, suppression order, lifecycl
 It retains the content lambda while created, attached, or detached and releases it before cleanup callbacks after terminal failure or close.
 Session detach retains the active `UiTree` and its node ownership; it clears the committed-frame marker without rerunning node attach or detach lifecycle callbacks until terminal close.
 
+The common `runtime:minecraft` adapter consumes a one-shot screen definition and a complete immutable profile.
+Definition close and host transfer race atomically, and a transferred host exposes only owner-thread metadata, lifecycle, fixed-viewport frames, and pointer input.
+Its callback-scoped context creates menu-background, printable-text, and fixed-size profile-backed pointer-button elements; button hover is event-driven and primary press callbacks run synchronously on the owner thread.
+The button contract does not claim focus, keyboard, sound, or a native widget system, and it does not expose resources, native Minecraft values, renderers, input mappers, or task facilities.
+
 ## Ownership and lifecycle
 
 A session captures the thread that creates it.

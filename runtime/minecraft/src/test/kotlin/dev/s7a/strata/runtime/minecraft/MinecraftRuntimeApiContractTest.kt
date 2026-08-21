@@ -1,11 +1,11 @@
 package dev.s7a.strata.runtime.minecraft
 
 import dev.s7a.strata.element.Element
+import dev.s7a.strata.element.ElementKey
 import dev.s7a.strata.geometry.IntSize
 import dev.s7a.strata.input.InputResult
 import dev.s7a.strata.input.PointerEvent
 import dev.s7a.strata.runtime.spi.RuntimeUiFrame
-import dev.s7a.strata.runtime.spi.RuntimeUiSession
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
 import dev.s7a.strata.text.UiText
 import org.junit.jupiter.api.Assertions.assertEquals
@@ -14,6 +14,7 @@ import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import java.lang.reflect.Method
 import java.lang.reflect.Modifier
+import dev.s7a.strata.modifier.Modifier as UiModifier
 
 /**
  * Verifies the intentionally minimal JVM-visible common Minecraft runtime surface.
@@ -22,114 +23,315 @@ import java.lang.reflect.Modifier
 internal class MinecraftRuntimeApiContractTest {
     @Test
     fun sealedContractsExposeOnlyTheirLockedMethods() {
-        val booleanType = checkNotNull(Boolean::class.javaPrimitiveType)
+        assertInterfaceSurface(MinecraftScreenDefinition::class.java, setOf("close"))
         assertInterfaceSurface(
-            type = MinecraftScreenDefinition::class.java,
-            expectedMethods = setOf("getTitle", "getPausesGame"),
+            MinecraftUiHost::class.java,
+            setOf("getTitle", "getPausesGame", "attach", "detach", "frame", "dispatchPointer", "close"),
         )
         assertInterfaceSurface(
-            type = MinecraftUiHost::class.java,
-            expectedMethods = setOf("attach", "detach", "frame", "dispatchPointer", "close"),
+            MinecraftUiContext::class.java,
+            setOf("menuBackground", "text", "pointerButton"),
+            allowDefaultImpls = true,
         )
-        assertEquals(
-            setOf(UiText::class.java, booleanType),
-            MinecraftScreenDefinition::class.java.declaredMethods
-                .map { method -> method.returnType }
-                .toSet(),
+        assertInterfaceSurface(MinecraftUiProfile::class.java, emptySet())
+        assertInterfaceSurface(
+            MinecraftUiProfileBuilder::class.java,
+            setOf("menuBackground", "printableAsciiGlyph", "buttonNormal", "buttonHighlighted", "buttonDisabled"),
         )
     }
 
     @Test
-    fun implementationsHaveNoPublicConstructionOrContentAccess() {
-        listOf(MinecraftScreenDefinition::class.java, MinecraftUiHost::class.java).forEach { type ->
-            val implementations = type.permittedSubclasses.toList()
-            assertEquals(1, implementations.size)
-            val implementation = implementations.single()
-            assertFalse(Modifier.isPublic(implementation.modifiers))
-            assertFalse(Modifier.isProtected(implementation.modifiers))
-            assertTrue(
-                implementation.declaredConstructors.none { constructor ->
-                    Modifier.isPublic(constructor.modifiers) && constructor.isSynthetic.not()
-                },
-            )
-            assertTrue(
-                implementation.declaredMethods.none { method ->
-                    method.name.contains("content", ignoreCase = true)
-                },
-            )
-        }
-
-        val booleanType = checkNotNull(Boolean::class.javaPrimitiveType)
-        val definitionImplementation = MinecraftScreenDefinition::class.java.permittedSubclasses.single()
-        val definitionFields = definitionImplementation.declaredFields.filter { field -> Modifier.isStatic(field.modifiers).not() }
-        assertEquals(3, definitionFields.size)
-        assertEquals(
-            setOf(UiText::class.java, booleanType, Function0::class.java),
-            definitionFields.map { field -> field.type }.toSet(),
-        )
-        assertTrue(definitionFields.all { field -> Modifier.isPrivate(field.modifiers) })
-        assertEquals(1, definitionFields.count { field -> field.type == Function0::class.java })
-
-        val hostImplementation = MinecraftUiHost::class.java.permittedSubclasses.single()
-        val hostFields = hostImplementation.declaredFields.filter { field -> Modifier.isStatic(field.modifiers).not() }
-        assertEquals(listOf(RuntimeUiSession::class.java), hostFields.map { field -> field.type })
-        assertTrue(hostFields.all { field -> Modifier.isPrivate(field.modifiers) })
-    }
-
-    @Test
-    fun facadeContainsExactlyTheTwoTypedFactories() {
-        val booleanType = checkNotNull(Boolean::class.javaPrimitiveType)
+    fun facadeContainsExactlyTheThreeTypedFactories() {
         val factory = Class.forName("dev.s7a.strata.runtime.minecraft.MinecraftRuntimeFactories")
-        val methods =
-            factory.declaredMethods.filter { method ->
-                Modifier.isPublic(method.modifiers) && method.isSynthetic.not()
-            }
-        assertEquals(2, methods.size)
-        val definitionFactory =
-            assertFactory(
-                methods = methods,
-                name = "createMinecraftScreenDefinition",
-                parameters = listOf(UiText::class.java, booleanType, Function0::class.java),
-                returnType = MinecraftScreenDefinition::class.java,
-            )
-        val hostFactory =
-            assertFactory(
-                methods = methods,
-                name = "createMinecraftUiHost",
-                parameters = listOf(MinecraftScreenDefinition::class.java),
-                returnType = MinecraftUiHost::class.java,
-            )
-        val descriptors = listOf(definitionFactory, hostFactory).joinToString(separator = "\n") { method -> method.toGenericString() }
-        listOf(
-            "kotlinx.coroutines",
-            "net.minecraft",
-            "net.fabricmc",
-            "RuntimeUiSession",
-            "UiSession",
-        ).forEach { forbidden -> assertFalse(descriptors.contains(forbidden), descriptors) }
+        val methods = factory.declaredMethods.filter { method -> Modifier.isPublic(method.modifiers) && method.isSynthetic.not() }
+        assertEquals(3, methods.size)
+        assertFactory(
+            methods,
+            "createMinecraftScreenDefinition",
+            listOf(UiText::class.java, checkNotNull(Boolean::class.javaPrimitiveType), Function1::class.java),
+            MinecraftScreenDefinition::class.java,
+        )
+        assertFactory(
+            methods,
+            "createMinecraftUiHost",
+            listOf(MinecraftScreenDefinition::class.java, MinecraftUiProfile::class.java),
+            MinecraftUiHost::class.java,
+        )
+        assertFactory(
+            methods,
+            "createMinecraftUiProfile",
+            listOf(Function1::class.java),
+            MinecraftUiProfile::class.java,
+        )
+        methods.forEach { method ->
+            val descriptor = method.toGenericString()
+            assertFalse(descriptor.contains("RuntimeUiSession"), descriptor)
+            assertFalse(descriptor.contains("UiSession"), descriptor)
+            assertFalse(descriptor.contains("kotlinx.coroutines"), descriptor)
+        }
     }
 
     @Test
     fun hostMethodsHaveExactDescriptors() {
         val methods = MinecraftUiHost::class.java.declaredMethods.associateBy { method -> method.name }
+        assertMethod(methods.getValue("getTitle"), emptyList(), UiText::class.java)
+        assertMethod(methods.getValue("getPausesGame"), emptyList(), checkNotNull(Boolean::class.javaPrimitiveType))
         assertMethod(methods.getValue("attach"), emptyList(), Void.TYPE)
         assertMethod(methods.getValue("detach"), emptyList(), Void.TYPE)
         assertMethod(methods.getValue("close"), emptyList(), Void.TYPE)
         assertMethod(methods.getValue("frame"), listOf(IntSize::class.java), RuntimeUiFrame::class.java)
         assertMethod(methods.getValue("dispatchPointer"), listOf(PointerEvent::class.java), InputResult::class.java)
+
+        val contextMethods = MinecraftUiContext::class.java.declaredMethods.associateBy { method -> method.name }
+        assertMethod(
+            contextMethods.getValue("pointerButton"),
+            listOf(
+                UiText::class.java,
+                checkNotNull(Boolean::class.javaPrimitiveType),
+                UiModifier::class.java,
+                ElementKey::class.java,
+                Function0::class.java,
+            ),
+            Element::class.java,
+        )
+    }
+
+    @Test
+    fun privateImplementationFacadesDoNotLeakAccessors() {
+        listOf(
+            "dev.s7a.strata.runtime.minecraft.MinecraftMenuBackgroundElement",
+            "dev.s7a.strata.runtime.minecraft.MinecraftTextElement",
+            "dev.s7a.strata.runtime.minecraft.MinecraftHostImplementation",
+            "dev.s7a.strata.runtime.minecraft.MinecraftDefinitionImplementation",
+            "dev.s7a.strata.runtime.minecraft.MinecraftProfileImplementation",
+            "dev.s7a.strata.runtime.minecraft.MinecraftTextRun",
+            "dev.s7a.strata.runtime.minecraft.MinecraftButtonHoverCoordinator",
+            "dev.s7a.strata.runtime.minecraft.MinecraftPointerButtonElement",
+        ).forEach { name ->
+            val implementation = Class.forName(name)
+            assertTrue(implementation.declaredMethods.none { method -> method.name.startsWith("access$") })
+        }
+        val permitted =
+            MinecraftNineSliceCenterMode::class.java.permittedSubclasses
+                .toSet()
+        assertEquals(
+            setOf(
+                MinecraftNineSliceCenterMode.Tiled::class.java,
+                MinecraftNineSliceCenterMode.Stretched::class.java,
+            ),
+            permitted,
+        )
+    }
+
+    @Test
+    fun pointerButtonAndHoverCarriersHaveNoNonsyntheticJvmSurface() {
+        val button = Class.forName("dev.s7a.strata.runtime.minecraft.MinecraftPointerButtonElement")
+        assertFalse(Modifier.isPublic(button.modifiers), button.name)
+        assertFalse(Modifier.isProtected(button.modifiers), button.name)
+        val carriers =
+            listOf(
+                button,
+                Class.forName("dev.s7a.strata.runtime.minecraft.MinecraftPointerButtonElementKt"),
+                Class.forName("dev.s7a.strata.runtime.minecraft.MinecraftPointerButtonElement\$Companion"),
+                MinecraftButtonHoverCoordinator::class.java,
+                Class.forName("dev.s7a.strata.runtime.minecraft.MinecraftButtonHoverCoordinator\$Target"),
+                Class.forName("dev.s7a.strata.runtime.minecraft.MinecraftButtonHoverCoordinator\$Companion"),
+            )
+        carriers.forEach { type ->
+            assertTrue(type.declaredMethods.none { method -> method.name.startsWith("access$") }, type.name)
+            type.declaredConstructors
+                .filter { constructor -> Modifier.isPublic(constructor.modifiers) }
+                .forEach { constructor -> assertTrue(constructor.isSynthetic, constructor.toString()) }
+            type.declaredMethods
+                .filter { method -> Modifier.isPublic(method.modifiers) }
+                .forEach { method -> assertTrue(method.isSynthetic, method.toString()) }
+            type.declaredFields
+                .filter { field -> Modifier.isPublic(field.modifiers) }
+                .forEach { field ->
+                    assertEquals("Companion", field.name)
+                    assertTrue(Modifier.isStatic(field.modifiers))
+                    assertTrue(Modifier.isFinal(field.modifiers))
+                }
+        }
+    }
+
+    @Test
+    fun internalJavaCarriersExposeNoNonsyntheticPublicEntryPoint() {
+        val carriers =
+            listOf(
+                TransferredMinecraftDefinition::class.java,
+                MinecraftGlyphSnapshot::class.java,
+                MinecraftButtonSpriteSnapshot::class.java,
+                MinecraftTextRun::class.java,
+            )
+        carriers
+            .flatMap { type -> listOf(type) + type.declaredClasses }
+            .filter { type -> Modifier.isPublic(type.modifiers) }
+            .forEach { type ->
+                type.declaredConstructors
+                    .filter { constructor -> Modifier.isPublic(constructor.modifiers) }
+                    .forEach { constructor -> assertTrue(constructor.isSynthetic, constructor.toString()) }
+                type.declaredMethods
+                    .filter { method -> Modifier.isPublic(method.modifiers) }
+                    .forEach { method -> assertTrue(method.isSynthetic, method.toString()) }
+                type.declaredFields
+                    .filter { field -> Modifier.isPublic(field.modifiers) }
+                    .forEach { field ->
+                        assertEquals("Companion", field.name)
+                        assertTrue(Modifier.isStatic(field.modifiers))
+                        assertTrue(Modifier.isFinal(field.modifiers))
+                    }
+            }
+
+        listOf(
+            Class.forName("dev.s7a.strata.runtime.minecraft.MinecraftMenuBackgroundElement"),
+            Class.forName("dev.s7a.strata.runtime.minecraft.MinecraftTextElement"),
+        ).forEach { type ->
+            assertFalse(Modifier.isPublic(type.modifiers), type.name)
+            assertFalse(Modifier.isProtected(type.modifiers), type.name)
+        }
+
+        listOf(
+            Class.forName("dev.s7a.strata.runtime.minecraft.MinecraftMenuBackgroundElementKt"),
+            Class.forName("dev.s7a.strata.runtime.minecraft.MinecraftTextElementKt"),
+        ).flatMap { type -> type.declaredMethods.toList() }.forEach { method ->
+            assertTrue(method.isSynthetic, method.toString())
+        }
+    }
+
+    @Test
+    fun privateImplementationsKeepStatePrivateAndNoContentAccessor() {
+        val definition =
+            createMinecraftScreenDefinition(UiText.Literal("surface")) { context ->
+                context.menuBackground()
+            }
+        val profile = MinecraftProfileFixture.create()
+        var context: MinecraftUiContext? = null
+        val host =
+            createMinecraftUiHost(
+                createMinecraftScreenDefinition(UiText.Literal("surface")) { currentContext ->
+                    context = currentContext
+                    currentContext.menuBackground()
+                },
+                profile,
+            )
+        host.attach()
+        val types =
+            listOf(
+                definition.javaClass,
+                profile.javaClass,
+                host.javaClass,
+                checkNotNull(context).javaClass,
+            )
+        types.forEach { type ->
+            assertFalse(Modifier.isPublic(type.modifiers), type.name)
+            assertFalse(Modifier.isProtected(type.modifiers), type.name)
+            type.declaredFields
+                .filter { field -> Modifier.isStatic(field.modifiers).not() }
+                .forEach { field -> assertTrue(Modifier.isPrivate(field.modifiers), "${type.name}.${field.name}") }
+            type.declaredConstructors
+                .filter { constructor -> constructor.isSynthetic.not() }
+                .forEach { constructor -> assertTrue(Modifier.isPrivate(constructor.modifiers), constructor.toString()) }
+            assertTrue(type.declaredFields.none { field -> field.type == Function1::class.java })
+            assertTrue(type.declaredMethods.none { method -> method.returnType == Function1::class.java })
+            assertTrue(type.declaredMethods.none { method -> method.name.startsWith("access$") })
+        }
+        definition.close()
+        host.close()
+    }
+
+    @Test
+    fun internalEntryPointsAreJvmSynthetic() {
+        assertTrue(
+            MinecraftDefinitionImplementation::class.java
+                .getDeclaredMethod("create", UiText::class.java, Boolean::class.javaPrimitiveType, Function1::class.java)
+                .isSynthetic,
+        )
+        assertTrue(
+            MinecraftDefinitionImplementation::class.java
+                .getDeclaredMethod("take", MinecraftScreenDefinition::class.java)
+                .isSynthetic,
+        )
+        assertTrue(
+            MinecraftHostImplementation::class.java
+                .getDeclaredMethod("create", MinecraftScreenDefinition::class.java, MinecraftUiProfile::class.java)
+                .isSynthetic,
+        )
+        assertTrue(
+            MinecraftProfileImplementation::class.java
+                .getDeclaredMethod("create", Function1::class.java)
+                .isSynthetic,
+        )
+        assertTrue(
+            MinecraftProfileImplementation::class.java
+                .getDeclaredMethod(
+                    "createEvaluator",
+                    MinecraftUiProfile::class.java,
+                    Function1::class.java,
+                    MinecraftButtonHoverCoordinator::class.java,
+                ).isSynthetic,
+        )
+        assertTrue(
+            MinecraftProfileImplementation::class.java
+                .getDeclaredMethod("releaseEvaluator", Function0::class.java)
+                .isSynthetic,
+        )
+    }
+
+    @Test
+    fun nineSliceObjectsHaveOnlyTheirValueMethods() {
+        listOf(MinecraftNineSliceCenterMode.Tiled::class.java, MinecraftNineSliceCenterMode.Stretched::class.java)
+            .forEach { type ->
+                assertTrue(Modifier.isFinal(type.modifiers))
+                assertTrue(type.declaredConstructors.single().let { constructor -> Modifier.isPrivate(constructor.modifiers) })
+                assertEquals(
+                    setOf("equals", "hashCode", "toString"),
+                    type.declaredMethods
+                        .filter { method -> method.isSynthetic.not() }
+                        .map { method -> method.name }
+                        .toSet(),
+                )
+            }
+    }
+
+    @Test
+    fun newSurfaceDoesNotExposePlatformOrResourceDescriptors() {
+        val types =
+            listOf(
+                MinecraftScreenDefinition::class.java,
+                MinecraftUiHost::class.java,
+                MinecraftUiContext::class.java,
+                MinecraftUiProfile::class.java,
+                MinecraftUiProfileBuilder::class.java,
+                Class.forName("dev.s7a.strata.runtime.minecraft.MinecraftRuntimeFactories"),
+            )
+        types.flatMap { type -> type.declaredMethods.toList() }.forEach { method ->
+            val descriptor = method.toGenericString()
+            assertFalse(descriptor.contains("net.minecraft"), descriptor)
+            assertFalse(descriptor.contains("net.fabricmc"), descriptor)
+            assertFalse(descriptor.contains("kotlinx.coroutines"), descriptor)
+            assertFalse(descriptor.contains("Resource"), descriptor)
+        }
     }
 
     private fun assertInterfaceSurface(
         type: Class<*>,
         expectedMethods: Set<String>,
+        allowDefaultImpls: Boolean = false,
     ) {
         assertTrue(type.isInterface)
         assertTrue(type.isSealed)
+        val implementation = type.permittedSubclasses.single()
+        assertTrue(Modifier.isPrivate(implementation.modifiers), implementation.name)
         assertTrue(type.declaredConstructors.isEmpty())
         assertTrue(type.declaredFields.isEmpty())
-        assertTrue(type.declaredClasses.isEmpty())
-        assertEquals(expectedMethods, type.declaredMethods.map { method -> method.name }.toSet())
-        type.declaredMethods.forEach { method ->
+        assertTrue(
+            allowDefaultImpls || type.declaredClasses.isEmpty(),
+            "Unexpected nested types: ${type.name} ${type.declaredClasses.toList()}",
+        )
+        val declaredMethods = type.declaredMethods.filter { method -> method.isSynthetic.not() }
+        assertEquals(expectedMethods, declaredMethods.map { method -> method.name }.toSet())
+        declaredMethods.forEach { method ->
             assertTrue(Modifier.isPublic(method.modifiers))
             assertTrue(Modifier.isAbstract(method.modifiers))
             assertFalse(method.isSynthetic)
@@ -141,12 +343,11 @@ internal class MinecraftRuntimeApiContractTest {
         name: String,
         parameters: List<Class<*>>,
         returnType: Class<*>,
-    ): Method {
+    ) {
         val method = methods.single { candidate -> candidate.name == name }
         assertTrue(Modifier.isStatic(method.modifiers))
         assertEquals(parameters, method.parameterTypes.toList())
         assertEquals(returnType, method.returnType)
-        return method
     }
 
     private fun assertMethod(

@@ -5,13 +5,14 @@ import dev.s7a.strata.input.InputResult
 import dev.s7a.strata.input.PointerEvent
 import dev.s7a.strata.runtime.spi.RuntimeUiFrame
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
+import dev.s7a.strata.text.UiText
 
 /**
  * Owner-thread bridge for one Minecraft screen definition host.
  *
  * Lifecycle, frame, input, and close calls are synchronous and must run on the construction thread.
- * The host retains only its independent core runtime session and does not directly retain the definition object or its metadata.
- * The caller owns every object, including a definition reference, captured by the shared content evaluator.
+ * The host retains its independent core runtime session, transferred metadata, and one-shot evaluator until evaluation or terminal release, but does not directly retain the definition object.
+ * The evaluator temporarily retains the complete profile and every caller object, including a definition reference, captured by application content.
  * Content evaluates during the first [attach], while later synchronous changes use retained node invalidation before another [frame].
  * The host exposes no coroutine, local-state, source-binding, resource, rendering, or version-specific contract.
  * Core lifecycle, first-frame input gating, failure identity, suppression order, and cleanup behavior are delegated unchanged.
@@ -19,6 +20,20 @@ import dev.s7a.strata.spi.InternalStrataRuntimeApi
  */
 @InternalStrataRuntimeApi
 public sealed interface MinecraftUiHost : AutoCloseable {
+    /**
+     * Exact unresolved title transferred from the one-shot definition.
+     *
+     * @throws IllegalStateException when read from another thread, reentrantly, or after terminal failure or close.
+     */
+    public val title: UiText
+
+    /**
+     * Whether the transferred screen pauses the game while active.
+     *
+     * @throws IllegalStateException when read from another thread, reentrantly, or after terminal failure or close.
+     */
+    public val pausesGame: Boolean
+
     /**
      * Attaches this host on its owner thread.
      *
@@ -48,6 +63,9 @@ public sealed interface MinecraftUiHost : AutoCloseable {
 
     /**
      * Dispatches one pointer event through the most recently committed frame.
+     *
+     * Pointer-button hover is updated only by delivered [PointerEvent.Move] events; a stationary pointer has no implicit hover transition.
+     * Primary button callbacks run synchronously, while non-primary, release, and scroll events remain ignored by the common button element.
      *
      * @param event the pointer event in host coordinates.
      * @return the retained core input result.

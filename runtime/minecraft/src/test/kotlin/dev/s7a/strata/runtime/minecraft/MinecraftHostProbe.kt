@@ -30,6 +30,7 @@ import dev.s7a.strata.text.UiText
  * Test-owned public-contract primitive and observations for the common Minecraft host.
  *
  * Each content evaluation creates a fresh element whose runtime hook creates a fresh node.
+ * The optional detach action runs after recording detach and before an optional configured failure.
  * Configured callback failures are thrown as their exact supplied instances after the corresponding observation is recorded.
  */
 internal class MinecraftHostProbe(
@@ -37,6 +38,7 @@ internal class MinecraftHostProbe(
     private val inputFailure: Throwable? = null,
     private val detachFailure: Throwable? = null,
     private val disposeFailure: Throwable? = null,
+    private val detachAction: (() -> Unit)? = null,
 ) {
     /**
      * Exact measurement constraints observed in callback order.
@@ -145,6 +147,7 @@ internal class MinecraftHostProbe(
 
         override fun detach() {
             probe.lifecycle += LifecycleStage.Detach
+            probe.detachAction?.invoke()
             probe.detachFailure?.let { failure -> throw failure }
         }
 

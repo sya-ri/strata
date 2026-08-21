@@ -7,8 +7,13 @@ import dev.s7a.strata.input.InputResult
 import dev.s7a.strata.input.PointerButton
 import dev.s7a.strata.input.PointerEvent
 import dev.s7a.strata.node.DirtyPhase
+import dev.s7a.strata.render.createDrawImage
+import dev.s7a.strata.runtime.minecraft.MinecraftNineSliceCenterMode
 import dev.s7a.strata.runtime.minecraft.createMinecraftScreenDefinition
 import dev.s7a.strata.runtime.minecraft.createMinecraftUiHost
+import dev.s7a.strata.runtime.minecraft.createMinecraftUiProfile
+import dev.s7a.strata.runtime.render.DrawCommand
+import dev.s7a.strata.semantics.SemanticsRole
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
 import dev.s7a.strata.text.UiText
 import org.junit.jupiter.api.Assertions.assertEquals
@@ -21,6 +26,29 @@ import org.junit.jupiter.api.Test
 @OptIn(InternalStrataRuntimeApi::class)
 internal class ExternalMinecraftUiHostIntegrationTest {
     @Test
+    fun externalContentBuildsMenuAndTextThroughPublicContextWithoutRegistration() {
+        val menuHost =
+            createMinecraftScreenDefinition(UiText.Literal("external menu")) { context ->
+                context.menuBackground()
+            }.let { definition -> createMinecraftUiHost(definition, profile()) }
+        menuHost.attach()
+        val menuFrame = menuHost.frame(IntSize(32, 32))
+        assertEquals(1, menuFrame.drawCommands.count { command -> command is DrawCommand.BlitImage })
+        menuHost.close()
+
+        val textHost =
+            createMinecraftScreenDefinition(UiText.Literal("external text")) { context ->
+                context.text(UiText.Literal("A B"))
+            }.let { definition -> createMinecraftUiHost(definition, profile()) }
+        textHost.attach()
+        val textFrame = textHost.frame(IntSize(6, 9))
+        assertEquals(4, textFrame.drawCommands.count { command -> command is DrawCommand.BlitImage })
+        val textSemantics = textFrame.semantics.single { entry -> entry.semantics.role == SemanticsRole.Text }
+        assertEquals(UiText.Literal("A B"), textSemantics.semantics.label)
+        textHost.close()
+    }
+
+    @Test
     fun externalPrimitiveUsesFixedViewportAndRetainedInvalidationWithoutRegistration() {
         val probe = ExternalProbe()
         var contentCalls = 0
@@ -28,11 +56,11 @@ internal class ExternalMinecraftUiHostIntegrationTest {
             createMinecraftScreenDefinition(
                 title = UiText.Literal("external"),
                 pausesGame = false,
-            ) {
+            ) { _ ->
                 contentCalls += 1
                 ExternalElement(probe = probe, width = 4, height = 3)
             }
-        val host = createMinecraftUiHost(definition)
+        val host = createMinecraftUiHost(definition, profile())
         host.attach()
 
         val firstFrame = host.frame(IntSize(6, 5))
@@ -62,4 +90,48 @@ internal class ExternalMinecraftUiHostIntegrationTest {
         assertEquals(1, probe.lifecycle.count { event -> event is ExternalLifecycleEvent.Detach })
         assertEquals(1, probe.lifecycle.count { event -> event is ExternalLifecycleEvent.Dispose })
     }
+
+    @Test
+    fun externalContextBuildsAndDispatchesPointerButtonWithoutRegistration() {
+        var presses = 0
+        val host =
+            createMinecraftUiHost(
+                createMinecraftScreenDefinition(UiText.Literal("external button")) { context ->
+                    context.pointerButton(UiText.Literal("A")) { presses += 1 }
+                },
+                profile(),
+            )
+        host.attach()
+        val frame = host.frame(IntSize(150, 20))
+        assertEquals(IntSize(150, 20), frame.size)
+        assertEquals(
+            SemanticsRole.Button,
+            frame.semantics
+                .single()
+                .semantics.role,
+        )
+        assertEquals(
+            InputResult.Consumed,
+            host.dispatchPointer(PointerEvent.Press(IntOffset(1, 1), PointerButton.Primary)),
+        )
+        assertEquals(1, presses)
+        host.detach()
+        host.attach()
+        assertEquals(InputResult.Ignored, host.dispatchPointer(PointerEvent.Move(IntOffset(1, 1))))
+        host.close()
+    }
+
+    private fun profile() =
+        createMinecraftUiProfile {
+            menuBackground(image(IntSize(16, 16)))
+            for (codePoint in 0x21..0x7E) {
+                printableAsciiGlyph(codePoint, image(IntSize(8, 8)))
+            }
+            val button = image(IntSize(200, 20))
+            buttonNormal(button, 1, MinecraftNineSliceCenterMode.Tiled)
+            buttonHighlighted(button, 1, MinecraftNineSliceCenterMode.Tiled)
+            buttonDisabled(button, 1, MinecraftNineSliceCenterMode.Tiled)
+        }
+
+    private fun image(size: IntSize) = createDrawImage(size, IntArray(Math.multiplyExact(size.width, size.height)) { 0x00FFFFFF })
 }

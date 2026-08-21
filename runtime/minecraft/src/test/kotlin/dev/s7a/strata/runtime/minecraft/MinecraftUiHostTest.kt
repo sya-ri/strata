@@ -9,6 +9,7 @@ import dev.s7a.strata.input.PointerEvent
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
 import dev.s7a.strata.text.UiText
 import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Assertions.assertSame
 import org.junit.jupiter.api.Assertions.assertThrows
 import org.junit.jupiter.api.Assertions.assertTrue
@@ -26,7 +27,7 @@ internal class MinecraftUiHostTest {
         val probe = MinecraftHostProbe()
         var contentCalls = 0
         val host =
-            host {
+            host { _ ->
                 contentCalls += 1
                 probe.element()
             }
@@ -85,7 +86,7 @@ internal class MinecraftUiHostTest {
     @Test
     fun zeroAxesUseExactFixedConstraints() {
         val probe = MinecraftHostProbe()
-        val host = host(probe::element)
+        val host = host { _ -> probe.element() }
         host.attach()
 
         val zero = host.frame(IntSize.Zero)
@@ -108,8 +109,10 @@ internal class MinecraftUiHostTest {
 
     @Test
     fun everyOperationRejectsTheWrongThreadIncludingRepeatedClose() {
-        val host = host(MinecraftHostProbe()::element)
+        val host = host { _ -> MinecraftHostProbe().element() }
         assertTrue(wrongThread { host.attach() } is IllegalStateException)
+        assertTrue(wrongThread { host.title } is IllegalStateException)
+        assertTrue(wrongThread { host.pausesGame } is IllegalStateException)
         host.attach()
         assertTrue(wrongThread { host.detach() } is IllegalStateException)
         assertTrue(wrongThread { host.frame(IntSize(2, 1)) } is IllegalStateException)
@@ -120,9 +123,80 @@ internal class MinecraftUiHostTest {
     }
 
     @Test
+    fun evaluatorOwnershipClearsBeforeCloseAndAfterEvaluationOrFailure() {
+        val beforeAttach = host { _ -> MinecraftHostProbe().element() }
+        assertTrue(readPrivateField(beforeAttach, "evaluator") != null)
+        beforeAttach.close()
+        assertNull(readPrivateField(beforeAttach, "evaluator"))
+
+        val afterAttach = host { _ -> MinecraftHostProbe().element() }
+        afterAttach.attach()
+        assertNull(readPrivateField(afterAttach, "evaluator"))
+        afterAttach.close()
+
+        val failure = IllegalStateException("content")
+        val failed = host { _ -> throw failure }
+        assertSame(failure, assertThrows(IllegalStateException::class.java) { failed.attach() })
+        assertNull(readPrivateField(failed, "evaluator"))
+        assertNull(readPrivateField(failed, "metadata"))
+        failed.close()
+    }
+
+    @Test
+    fun hostOperationsRejectReentryFromContentEvaluation() {
+        lateinit var host: MinecraftUiHost
+        var reentryFailures: List<Throwable?> = emptyList()
+        host =
+            host { context ->
+                reentryFailures =
+                    listOf(
+                        runCatching { host.title }.exceptionOrNull(),
+                        runCatching { host.pausesGame }.exceptionOrNull(),
+                        runCatching { host.attach() }.exceptionOrNull(),
+                        runCatching { host.detach() }.exceptionOrNull(),
+                        runCatching { host.frame(IntSize(2, 1)) }.exceptionOrNull(),
+                        runCatching { host.dispatchPointer(PointerEvent.Move(IntOffset.Zero)) }.exceptionOrNull(),
+                        runCatching { host.close() }.exceptionOrNull(),
+                    )
+                context.menuBackground()
+            }
+        host.attach()
+        assertEquals(7, reentryFailures.size)
+        assertTrue(reentryFailures.all { failure -> failure is IllegalStateException })
+        host.close()
+    }
+
+    @Test
+    fun recursiveCloseIsNoOpWhileCleanupMetadataReadRejects() {
+        lateinit var host: MinecraftUiHost
+        var metadataFailure: Throwable? = null
+        val probe =
+            MinecraftHostProbe(
+                detachAction = {
+                    metadataFailure = runCatching { host.title }.exceptionOrNull()
+                    host.close()
+                },
+            )
+        host = host { _ -> probe.element() }
+        host.attach()
+
+        host.close()
+
+        assertTrue(metadataFailure is IllegalStateException)
+        assertEquals(
+            listOf(
+                MinecraftHostProbe.LifecycleStage.Attach,
+                MinecraftHostProbe.LifecycleStage.Detach,
+                MinecraftHostProbe.LifecycleStage.Dispose,
+            ),
+            probe.lifecycle,
+        )
+    }
+
+    @Test
     fun contentAndFrameFailuresPreserveExactIdentityAndCleanupOrder() {
         val contentFailure = IllegalArgumentException("content")
-        val failingContent = host { throw contentFailure }
+        val failingContent = host { _ -> throw contentFailure }
         assertSame(contentFailure, assertThrows(IllegalArgumentException::class.java) { failingContent.attach() })
         failingContent.close()
 
@@ -130,7 +204,7 @@ internal class MinecraftUiHostTest {
         val detachFailure = IllegalStateException("detach")
         val disposeFailure = IllegalStateException("dispose")
         val probe = MinecraftHostProbe(paintFailure = paintFailure, detachFailure = detachFailure, disposeFailure = disposeFailure)
-        val failingFrame = host(probe::element)
+        val failingFrame = host { _ -> probe.element() }
         failingFrame.attach()
 
         val thrown = assertThrows(IllegalStateException::class.java) { failingFrame.frame(IntSize(2, 1)) }
@@ -159,7 +233,7 @@ internal class MinecraftUiHostTest {
                 detachFailure = inputDetachFailure,
                 disposeFailure = inputDisposeFailure,
             )
-        val failingInput = host(inputProbe::element)
+        val failingInput = host { _ -> inputProbe.element() }
         failingInput.attach()
         failingInput.frame(IntSize(2, 1))
 
@@ -174,7 +248,7 @@ internal class MinecraftUiHostTest {
         val closeDetachFailure = IllegalStateException("close-detach")
         val closeDisposeFailure = IllegalStateException("close-dispose")
         val closeProbe = MinecraftHostProbe(detachFailure = closeDetachFailure, disposeFailure = closeDisposeFailure)
-        val failingClose = host(closeProbe::element)
+        val failingClose = host { _ -> closeProbe.element() }
         failingClose.attach()
 
         val closeThrown = assertThrows(IllegalStateException::class.java) { failingClose.close() }
@@ -191,13 +265,14 @@ internal class MinecraftUiHostTest {
         )
     }
 
-    private fun host(content: () -> Element): MinecraftUiHost =
+    private fun host(content: (MinecraftUiContext) -> Element): MinecraftUiHost =
         createMinecraftUiHost(
             createMinecraftScreenDefinition(
                 title = UiText.Literal("test"),
                 pausesGame = false,
                 content = content,
             ),
+            MinecraftProfileFixture.create(),
         )
 
     private fun wrongThread(action: () -> Unit): Throwable? {
@@ -205,5 +280,14 @@ internal class MinecraftUiHostTest {
         val thread = Thread(task)
         thread.start()
         return task.get(5, TimeUnit.SECONDS)
+    }
+
+    private fun readPrivateField(
+        host: MinecraftUiHost,
+        name: String,
+    ): Any? {
+        val field = host.javaClass.getDeclaredField(name)
+        field.isAccessible = true
+        return field.get(host)
     }
 }

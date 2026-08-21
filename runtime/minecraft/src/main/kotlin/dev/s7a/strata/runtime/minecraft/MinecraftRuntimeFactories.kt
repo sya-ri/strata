@@ -3,115 +3,52 @@
 package dev.s7a.strata.runtime.minecraft
 
 import dev.s7a.strata.element.Element
-import dev.s7a.strata.geometry.Constraints
-import dev.s7a.strata.geometry.IntSize
-import dev.s7a.strata.input.InputResult
-import dev.s7a.strata.input.PointerEvent
-import dev.s7a.strata.runtime.spi.RuntimeUiFrame
-import dev.s7a.strata.runtime.spi.RuntimeUiSession
-import dev.s7a.strata.runtime.spi.createRuntimeUiSession
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
 import dev.s7a.strata.text.UiText
 
 /**
- * Creates a reusable Minecraft screen definition.
+ * Creates a one-shot Minecraft screen definition.
  *
  * Construction does not evaluate [content].
- * The returned definition retains [content] for its own lifetime.
- * Each host created from the result owns an independent core runtime session while sharing the caller-owned captured values.
+ * The returned definition owns its arguments until one host atomically transfers them or [MinecraftScreenDefinition.close] releases them.
  *
  * @param title the unresolved screen title.
  * @param pausesGame whether the screen pauses the game.
- * @param content the element description evaluator invoked on each host's owner thread during its first attach.
- * @return a reusable screen definition with a private content evaluator.
+ * @param content the owner-thread element evaluator invoked during the transferred host's first attach.
+ * @return a one-shot definition with referential identity.
  */
 public fun createMinecraftScreenDefinition(
     title: UiText,
-    pausesGame: Boolean,
-    content: () -> Element,
-): MinecraftScreenDefinition = MinecraftRuntimeImplementation.createDefinition(title, pausesGame, content)
+    pausesGame: Boolean = false,
+    content: (MinecraftUiContext) -> Element,
+): MinecraftScreenDefinition = MinecraftDefinitionImplementation.create(title, pausesGame, content)
 
 /**
- * Creates one independent owner-thread host from a reusable screen definition.
+ * Creates one owner-thread host by atomically consuming a definition.
  *
- * The definition is read synchronously during construction, remains reusable, and is not directly retained by the host.
- * The content evaluator is retained by the core runtime session until its lifecycle reaches failure or close.
- * Objects captured by that evaluator, including a definition reference, remain caller-owned.
+ * Successful construction leaves the definition empty and transfers metadata and content to the new host.
  *
- * @param definition the reusable screen definition created by [createMinecraftScreenDefinition].
- * @return a distinct private implementation exposing only the opt-in Minecraft host contract.
+ * @param definition the available one-shot definition.
+ * @param profile the complete immutable Minecraft asset profile.
+ * @return a distinct owner-thread host.
+ * @throws IllegalStateException when [definition] was already transferred or closed.
  */
 @InternalStrataRuntimeApi
-public fun createMinecraftUiHost(definition: MinecraftScreenDefinition): MinecraftUiHost = MinecraftRuntimeImplementation.createHost(definition)
+public fun createMinecraftUiHost(
+    definition: MinecraftScreenDefinition,
+    profile: MinecraftUiProfile,
+): MinecraftUiHost = MinecraftHostImplementation.create(definition, profile)
 
-private object MinecraftRuntimeImplementation {
-    fun createDefinition(
-        title: UiText,
-        pausesGame: Boolean,
-        content: () -> Element,
-    ): MinecraftScreenDefinition = ScreenDefinitionImpl.create(title, pausesGame, content)
-
-    @OptIn(InternalStrataRuntimeApi::class)
-    fun createHost(definition: MinecraftScreenDefinition): MinecraftUiHost =
-        when (definition) {
-            is ScreenDefinitionImpl -> definition.createHost()
-        }
-
-    private class ScreenDefinitionImpl private constructor(
-        override val title: UiText,
-        override val pausesGame: Boolean,
-        private val content: () -> Element,
-    ) : MinecraftScreenDefinition {
-        @OptIn(InternalStrataRuntimeApi::class)
-        fun createHost(): MinecraftUiHost = UiHostImpl.create(createRuntimeUiSession(content))
-
-        companion object {
-            /**
-             * Creates one reusable private definition without evaluating its content.
-             *
-             * @param title the exact unresolved title retained by the definition.
-             * @param pausesGame whether the definition pauses the game.
-             * @param content the caller-owned evaluator retained privately for later host creation.
-             * @return a new definition with referential identity.
-             */
-            @JvmSynthetic
-            internal fun create(
-                title: UiText,
-                pausesGame: Boolean,
-                content: () -> Element,
-            ): ScreenDefinitionImpl = ScreenDefinitionImpl(title, pausesGame, content)
-        }
-    }
-
-    @OptIn(InternalStrataRuntimeApi::class)
-    private class UiHostImpl private constructor(
-        private val session: RuntimeUiSession,
-    ) : MinecraftUiHost {
-        override fun attach() {
-            session.attach()
-        }
-
-        override fun detach() {
-            session.detach()
-        }
-
-        override fun frame(viewport: IntSize): RuntimeUiFrame = session.frame(Constraints.fixed(viewport.width, viewport.height))
-
-        override fun dispatchPointer(event: PointerEvent): InputResult = session.dispatchPointer(event)
-
-        override fun close() {
-            session.close()
-        }
-
-        companion object {
-            /**
-             * Wraps one independently owned core session in the Minecraft host boundary.
-             *
-             * @param session the session whose owner-thread lifecycle is delegated unchanged.
-             * @return a new private host with referential identity.
-             */
-            @JvmSynthetic
-            internal fun create(session: RuntimeUiSession): UiHostImpl = UiHostImpl(session)
-        }
-    }
-}
+/**
+ * Creates one complete immutable Minecraft UI profile.
+ *
+ * The callback and builder are confined to the calling thread and the callback's dynamic lifetime.
+ * The builder closes in `finally`, so escaped use fails after both success and failure.
+ *
+ * @param content the profile declaration callback.
+ * @return a complete immutable profile with referential identity.
+ * @throws IllegalArgumentException when a declared slot is invalid, duplicated, or missing.
+ * @throws Throwable when [content] fails; the exact callback failure is propagated unchanged.
+ */
+@InternalStrataRuntimeApi
+public fun createMinecraftUiProfile(content: MinecraftUiProfileBuilder.() -> Unit): MinecraftUiProfile = MinecraftProfileImplementation.create(content)

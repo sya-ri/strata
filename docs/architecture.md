@@ -17,8 +17,10 @@ A module joins the build only with working behavior and tests.
 - `runtime:headless` is a publishable headless adapter built on `runtime:core`.
   It synchronously renders a fixed positive viewport, rasterizes core draw commands into deterministic ARGB pixels, and encodes metadata-free RGBA8 PNG output without a desktop graphics dependency.
 - `runtime:minecraft` is a publishable Minecraft-independent adapter boundary built on `runtime:core`.
-  It owns reusable screen definitions with private content and synchronous owner-thread hosts that convert every non-negative logical viewport into exact fixed root constraints.
+  Its opt-in host consumes a one-shot screen definition and a complete immutable profile, then converts every non-negative logical viewport into exact fixed root constraints.
+  Its callback-scoped context provides menu, printable text, and a fixed profile-backed pointer button with event-driven hover and primary-press callbacks.
   Hosts retain the core tree across transient detach and reattach, gate input until a successful frame, and expose no mapped game, Fabric, resource, renderer, version, coroutine, state, or source-binding type.
+  The common button contract does not claim focus, keyboard, sound, or a platform-native widget system; hover changes only in response to delivered pointer movement.
 - `integration:api` verifies an external primitive against the public `api`, `runtime:core`, and `runtime:minecraft` boundaries.
 - `integration:docs` compiles the typed showcase scenarios against the shipped APIs and owns generated component documentation; it is not published.
 Further environment-specific and versioned Minecraft adapters are outside the current build.

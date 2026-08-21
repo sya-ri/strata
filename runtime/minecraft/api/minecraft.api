@@ -1,11 +1,44 @@
-public final class dev/s7a/strata/runtime/minecraft/MinecraftRuntimeFactories {
-	public static final fun createMinecraftScreenDefinition (Ldev/s7a/strata/text/UiText;ZLkotlin/jvm/functions/Function0;)Ldev/s7a/strata/runtime/minecraft/MinecraftScreenDefinition;
-	public static final fun createMinecraftUiHost (Ldev/s7a/strata/runtime/minecraft/MinecraftScreenDefinition;)Ldev/s7a/strata/runtime/minecraft/MinecraftUiHost;
+public abstract interface class dev/s7a/strata/runtime/minecraft/MinecraftNineSliceCenterMode {
 }
 
-public abstract interface class dev/s7a/strata/runtime/minecraft/MinecraftScreenDefinition {
-	public abstract fun getPausesGame ()Z
-	public abstract fun getTitle ()Ldev/s7a/strata/text/UiText;
+public final class dev/s7a/strata/runtime/minecraft/MinecraftNineSliceCenterMode$Stretched : dev/s7a/strata/runtime/minecraft/MinecraftNineSliceCenterMode {
+	public static final field INSTANCE Ldev/s7a/strata/runtime/minecraft/MinecraftNineSliceCenterMode$Stretched;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class dev/s7a/strata/runtime/minecraft/MinecraftNineSliceCenterMode$Tiled : dev/s7a/strata/runtime/minecraft/MinecraftNineSliceCenterMode {
+	public static final field INSTANCE Ldev/s7a/strata/runtime/minecraft/MinecraftNineSliceCenterMode$Tiled;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class dev/s7a/strata/runtime/minecraft/MinecraftRuntimeFactories {
+	public static final fun createMinecraftScreenDefinition (Ldev/s7a/strata/text/UiText;ZLkotlin/jvm/functions/Function1;)Ldev/s7a/strata/runtime/minecraft/MinecraftScreenDefinition;
+	public static synthetic fun createMinecraftScreenDefinition$default (Ldev/s7a/strata/text/UiText;ZLkotlin/jvm/functions/Function1;ILjava/lang/Object;)Ldev/s7a/strata/runtime/minecraft/MinecraftScreenDefinition;
+	public static final fun createMinecraftUiHost (Ldev/s7a/strata/runtime/minecraft/MinecraftScreenDefinition;Ldev/s7a/strata/runtime/minecraft/MinecraftUiProfile;)Ldev/s7a/strata/runtime/minecraft/MinecraftUiHost;
+	public static final fun createMinecraftUiProfile (Lkotlin/jvm/functions/Function1;)Ldev/s7a/strata/runtime/minecraft/MinecraftUiProfile;
+}
+
+public abstract interface class dev/s7a/strata/runtime/minecraft/MinecraftScreenDefinition : java/lang/AutoCloseable {
+	public abstract fun close ()V
+}
+
+public abstract interface class dev/s7a/strata/runtime/minecraft/MinecraftUiContext {
+	public abstract fun menuBackground (Ldev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/element/ElementKey;)Ldev/s7a/strata/element/Element;
+	public static synthetic fun menuBackground$default (Ldev/s7a/strata/runtime/minecraft/MinecraftUiContext;Ldev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/element/ElementKey;ILjava/lang/Object;)Ldev/s7a/strata/element/Element;
+	public abstract fun pointerButton (Ldev/s7a/strata/text/UiText;ZLdev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/element/ElementKey;Lkotlin/jvm/functions/Function0;)Ldev/s7a/strata/element/Element;
+	public static synthetic fun pointerButton$default (Ldev/s7a/strata/runtime/minecraft/MinecraftUiContext;Ldev/s7a/strata/text/UiText;ZLdev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/element/ElementKey;Lkotlin/jvm/functions/Function0;ILjava/lang/Object;)Ldev/s7a/strata/element/Element;
+	public abstract fun text (Ldev/s7a/strata/text/UiText;Ldev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/element/ElementKey;)Ldev/s7a/strata/element/Element;
+	public static synthetic fun text$default (Ldev/s7a/strata/runtime/minecraft/MinecraftUiContext;Ldev/s7a/strata/text/UiText;Ldev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/element/ElementKey;ILjava/lang/Object;)Ldev/s7a/strata/element/Element;
+}
+
+public final class dev/s7a/strata/runtime/minecraft/MinecraftUiContext$DefaultImpls {
+	public static synthetic fun menuBackground$default (Ldev/s7a/strata/runtime/minecraft/MinecraftUiContext;Ldev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/element/ElementKey;ILjava/lang/Object;)Ldev/s7a/strata/element/Element;
+	public static synthetic fun pointerButton$default (Ldev/s7a/strata/runtime/minecraft/MinecraftUiContext;Ldev/s7a/strata/text/UiText;ZLdev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/element/ElementKey;Lkotlin/jvm/functions/Function0;ILjava/lang/Object;)Ldev/s7a/strata/element/Element;
+	public static synthetic fun text$default (Ldev/s7a/strata/runtime/minecraft/MinecraftUiContext;Ldev/s7a/strata/text/UiText;Ldev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/element/ElementKey;ILjava/lang/Object;)Ldev/s7a/strata/element/Element;
 }
 
 public abstract interface class dev/s7a/strata/runtime/minecraft/MinecraftUiHost : java/lang/AutoCloseable {
@@ -14,5 +47,18 @@ public abstract interface class dev/s7a/strata/runtime/minecraft/MinecraftUiHost
 	public abstract fun detach ()V
 	public abstract fun dispatchPointer (Ldev/s7a/strata/input/PointerEvent;)Ldev/s7a/strata/input/InputResult;
 	public abstract fun frame (Ldev/s7a/strata/geometry/IntSize;)Ldev/s7a/strata/runtime/spi/RuntimeUiFrame;
+	public abstract fun getPausesGame ()Z
+	public abstract fun getTitle ()Ldev/s7a/strata/text/UiText;
+}
+
+public abstract interface class dev/s7a/strata/runtime/minecraft/MinecraftUiProfile {
+}
+
+public abstract interface class dev/s7a/strata/runtime/minecraft/MinecraftUiProfileBuilder {
+	public abstract fun buttonDisabled (Ldev/s7a/strata/render/DrawImage;ILdev/s7a/strata/runtime/minecraft/MinecraftNineSliceCenterMode;)V
+	public abstract fun buttonHighlighted (Ldev/s7a/strata/render/DrawImage;ILdev/s7a/strata/runtime/minecraft/MinecraftNineSliceCenterMode;)V
+	public abstract fun buttonNormal (Ldev/s7a/strata/render/DrawImage;ILdev/s7a/strata/runtime/minecraft/MinecraftNineSliceCenterMode;)V
+	public abstract fun menuBackground (Ldev/s7a/strata/render/DrawImage;)V
+	public abstract fun printableAsciiGlyph (ILdev/s7a/strata/render/DrawImage;)V
 }
 
