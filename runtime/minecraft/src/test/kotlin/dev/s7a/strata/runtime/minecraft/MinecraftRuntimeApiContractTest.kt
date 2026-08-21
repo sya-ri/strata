@@ -2,6 +2,7 @@ package dev.s7a.strata.runtime.minecraft
 
 import dev.s7a.strata.dsl.UiScope
 import dev.s7a.strata.element.ElementKey
+import dev.s7a.strata.geometry.Insets
 import dev.s7a.strata.geometry.IntSize
 import dev.s7a.strata.input.InputResult
 import dev.s7a.strata.input.KeyboardEvent
@@ -134,6 +135,10 @@ internal class MinecraftRuntimeApiContractTest {
         assertTrue(Modifier.isStatic(resource.modifiers))
         assertMethod(resource, listOf(String::class.java, String::class.java), MinecraftAssetId::class.java)
         assertEquals(setOf(MinecraftImageScale.Stretch, MinecraftImageScale.Tile), MinecraftImageScale.entries.toSet())
+        assertEquals(
+            setOf(MinecraftTextStyle.Normal, MinecraftTextStyle.Inactive, MinecraftTextStyle.ContainerLabel, MinecraftTextStyle.TextField),
+            MinecraftTextStyle.entries.toSet(),
+        )
     }
 
     @Test
@@ -163,8 +168,8 @@ internal class MinecraftRuntimeApiContractTest {
                 .forName("dev.s7a.strata.runtime.minecraft.MinecraftUiModifiers")
                 .declaredMethods
                 .filter { method -> method.isSynthetic.not() }
-        assertEquals(10, componentMethods.size)
-        assertEquals(3, modifierMethods.size)
+        assertEquals(11, componentMethods.size)
+        assertEquals(4, modifierMethods.size)
         assertBackgroundModifierDescriptors(modifierMethods)
         assertTextDescriptors(componentMethods)
         assertContainerDescriptors(componentMethods)
@@ -211,8 +216,14 @@ internal class MinecraftRuntimeApiContractTest {
             listOf(UiModifier::class.java, checkNotNull(Int::class.javaPrimitiveType)),
             UiModifier::class.java,
         )
-        val image = methods.single { method -> method.name == DslMethodName.ImageBackground.jvmName }
-        assertMethod(image, listOf(UiModifier::class.java, DrawImage::class.java, MinecraftImageScale::class.java), UiModifier::class.java)
+        val image = methods.filter { method -> method.name == DslMethodName.ImageBackground.jvmName }
+        assertEquals(
+            setOf(
+                listOf(UiModifier::class.java, DrawImage::class.java, MinecraftImageScale::class.java),
+                listOf(UiModifier::class.java, DrawImage::class.java, Insets::class.java, MinecraftNineSliceCenterMode::class.java),
+            ),
+            image.map { method -> method.parameterTypes.toList() }.toSet(),
+        )
     }
 
     private fun assertContainerDescriptors(methods: List<Method>) {
@@ -260,6 +271,16 @@ internal class MinecraftRuntimeApiContractTest {
                     UiScope::class.java,
                     MinecraftTextFieldState::class.java,
                     checkNotNull(Boolean::class.javaPrimitiveType),
+                    MinecraftTextStyle::class.java,
+                    UiModifier::class.java,
+                    ElementKey::class.java,
+                ),
+                listOf(
+                    UiScope::class.java,
+                    MinecraftTextFieldState::class.java,
+                    IntSize::class.java,
+                    checkNotNull(Boolean::class.javaPrimitiveType),
+                    MinecraftTextStyle::class.java,
                     UiModifier::class.java,
                     ElementKey::class.java,
                 ),

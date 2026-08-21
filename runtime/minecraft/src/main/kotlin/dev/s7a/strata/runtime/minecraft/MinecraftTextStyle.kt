@@ -18,4 +18,9 @@ public enum class MinecraftTextStyle {
      * Opaque 0xFF404040 foreground without a shadow, matching labels inside 26.2 container screens.
      */
     ContainerLabel,
+
+    /**
+     * Profile-backed EditBox colors selected from the field's enabled state.
+     */
+    TextField,
 }

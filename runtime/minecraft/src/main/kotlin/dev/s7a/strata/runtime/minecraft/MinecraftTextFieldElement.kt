@@ -5,6 +5,7 @@ import dev.s7a.strata.element.ElementIdentity
 import dev.s7a.strata.element.ElementKey
 import dev.s7a.strata.element.ElementType
 import dev.s7a.strata.geometry.Constraints
+import dev.s7a.strata.geometry.Insets
 import dev.s7a.strata.geometry.IntOffset
 import dev.s7a.strata.geometry.IntRect
 import dev.s7a.strata.geometry.IntSize
@@ -37,7 +38,7 @@ import java.util.Collections
 import dev.s7a.strata.node.Node as RetainedNode
 
 /**
- * Private retained implementation of the fixed Minecraft 26.2 TextField component.
+ * Private retained implementation of the explicitly sized Minecraft 26.2 TextField component.
  *
  * The description snapshots the two sprites and printable font references but retains no complete profile.
  */
@@ -50,7 +51,11 @@ private class MinecraftTextFieldElement private constructor(
     @get:JvmSynthetic
     internal val state: MinecraftTextFieldState,
     @get:JvmSynthetic
+    internal val fieldSize: IntSize,
+    @get:JvmSynthetic
     internal val enabled: Boolean,
+    @get:JvmSynthetic
+    internal val textStyle: MinecraftTextStyle,
     modifier: Modifier,
     key: ElementKey<*>?,
 ) : Element(
@@ -70,7 +75,9 @@ private class MinecraftTextFieldElement private constructor(
         initialHighlightedSprite: DrawImage,
         initialGlyphs: Map<Int, MinecraftGlyphSnapshot>,
         initialState: MinecraftTextFieldState,
+        initialFieldSize: IntSize,
         initialEnabled: Boolean,
+        initialTextStyle: MinecraftTextStyle,
     ) : RetainedNode(),
         MeasureNode,
         PaintNode,
@@ -80,15 +87,18 @@ private class MinecraftTextFieldElement private constructor(
         TextInputNode,
         SemanticsNode,
         LifecycleNode {
-        private val fieldSize = IntSize(200, 20)
-        private val textOrigin = IntOffset(4, 6)
-        private val innerWidth = 192
-        private val cursorColor = ArgbColor(-0x2F2F30)
+        private var fieldSize = initialFieldSize
+        private val textOrigin: IntOffset
+            get() = IntOffset(4, Math.subtractExact(fieldSize.height, 8) / 2)
+        private val innerWidth: Int
+            get() = Math.subtractExact(fieldSize.width, 8)
+        private val cursorColor = ArgbColor(0xFFFFFFFF.toInt())
         private var normalSprite: DrawImage? = initialNormalSprite
         private var highlightedSprite: DrawImage? = initialHighlightedSprite
         private var glyphs: Map<Int, MinecraftGlyphSnapshot>? = initialGlyphs
         private var state: MinecraftTextFieldState? = initialState
         private var enabled = initialEnabled
+        private var textStyle = initialTextStyle
         private var focused = false
         private var attached = false
         private var cursor = initialState.value.length
@@ -103,14 +113,14 @@ private class MinecraftTextFieldElement private constructor(
             constraints: Constraints,
         ): IntSize {
             require(constraints.isSatisfiedBy(fieldSize)) {
-                "Minecraft TextField constraints must contain 200 by 20."
+                "Minecraft TextField constraints must contain its requested size."
             }
             return fieldSize
         }
 
         override fun paint(scope: PaintScope) {
             val sprite = if (focused && enabled) checkNotNull(highlightedSprite) else checkNotNull(normalSprite)
-            scope.blitImage(sprite, IntRect(0, 0, 200, 20), IntRect(0, 0, 200, 20))
+            paintMinecraftNineSlice(scope, sprite, Insets.all(1), MinecraftNineSliceCenterMode.Tiled)
             val currentValue = checkNotNull(state).value
             val composed = currentValue.substring(0, cursor) + preedit + currentValue.substring(cursor)
             val visualCursor = Math.addExact(cursor, preedit.length)
@@ -119,7 +129,16 @@ private class MinecraftTextFieldElement private constructor(
             run.paint(scope, textOrigin.x, textOrigin.y)
             if (focused && enabled) {
                 val cursorX = Math.addExact(textOrigin.x, width(visible.text.substring(0, visualCursor - visible.start)))
-                scope.fillRectangle(IntRect(cursorX, 5, Math.addExact(cursorX, 1), 16), cursorColor)
+                val appendCursor = preedit.isEmpty() && cursor == currentValue.length && currentValue.length < checkNotNull(state).maxLength
+                if (appendCursor) {
+                    createRun("_").paint(scope, cursorX, textOrigin.y)
+                } else {
+                    val cursorTop = Math.subtractExact(textOrigin.y, 1)
+                    scope.fillRectangle(
+                        IntRect(cursorX, cursorTop, Math.addExact(cursorX, 1), Math.addExact(textOrigin.y, 10)),
+                        cursorColor,
+                    )
+                }
             }
         }
 
@@ -215,20 +234,32 @@ private class MinecraftTextFieldElement private constructor(
                     highlightedSprite !== current.highlightedSprite ||
                     glyphs != current.glyphs ||
                     stateChanged ||
-                    enabled != current.enabled
+                    enabled != current.enabled ||
+                    textStyle != current.textStyle
             val semanticsChanged = stateChanged || enabled != current.enabled
+            val sizeChanged = fieldSize != current.fieldSize
             normalSprite = current.normalSprite
             highlightedSprite = current.highlightedSprite
             glyphs = current.glyphs
             state = current.state
+            fieldSize = current.fieldSize
             enabled = current.enabled
+            textStyle = current.textStyle
             if (enabled.not()) {
                 focused = false
                 preedit = ""
             }
             cursor = cursor.coerceIn(0, current.state.value.length)
             if (stateChanged && attached) observeState()
-            var dirty = DirtyMask.None
+            return updateMask(sizeChanged, paintChanged, semanticsChanged)
+        }
+
+        private fun updateMask(
+            sizeChanged: Boolean,
+            paintChanged: Boolean,
+            semanticsChanged: Boolean,
+        ): DirtyMask {
+            var dirty = if (sizeChanged) DirtyMask.of(DirtyPhase.Measure) else DirtyMask.None
             if (paintChanged) dirty += DirtyMask.of(DirtyPhase.Paint)
             if (semanticsChanged) dirty += DirtyMask.of(DirtyPhase.Semantics)
             return dirty
@@ -321,9 +352,14 @@ private class MinecraftTextFieldElement private constructor(
         private fun width(text: String): Int = createRun(text).size.width
 
         private fun createRun(text: String): MinecraftTextRun =
-            MinecraftTextRun.createTextField(text, enabled) { codePoint ->
-                checkNotNull(glyphs).getValue(codePoint)
+            when (textStyle) {
+                MinecraftTextStyle.Normal -> MinecraftTextRun.createNormal(UiText.Literal(text), ::glyphAt)
+                MinecraftTextStyle.Inactive -> MinecraftTextRun.createInactive(UiText.Literal(text), ::glyphAt)
+                MinecraftTextStyle.ContainerLabel -> MinecraftTextRun.createContainerLabel(UiText.Literal(text), ::glyphAt)
+                MinecraftTextStyle.TextField -> MinecraftTextRun.createTextField(UiText.Literal(text), enabled, ::glyphAt)
             }
+
+        private fun glyphAt(codePoint: Int): MinecraftGlyphSnapshot = checkNotNull(glyphs).getValue(codePoint)
 
         private data class VisibleText(
             val text: String,
@@ -340,6 +376,9 @@ private class MinecraftTextFieldElement private constructor(
                     require(element.state.value.length <= element.state.maxLength) {
                         "Minecraft TextField state exceeds its maximum length."
                     }
+                    require(9 <= element.fieldSize.width && 9 <= element.fieldSize.height) {
+                        "Minecraft TextField size must be at least 9 by 9."
+                    }
                 },
                 createNode = { element ->
                     Node(
@@ -347,7 +386,9 @@ private class MinecraftTextFieldElement private constructor(
                         element.highlightedSprite,
                         element.glyphs,
                         element.state,
+                        element.fieldSize,
                         element.enabled,
+                        element.textStyle,
                     )
                 },
                 updateNode = { _, current, node -> node.updateFrom(current) },
@@ -359,10 +400,12 @@ private class MinecraftTextFieldElement private constructor(
             highlightedSprite: DrawImage,
             glyphs: Map<Int, MinecraftGlyphSnapshot>,
             state: MinecraftTextFieldState,
+            fieldSize: IntSize,
             enabled: Boolean,
+            textStyle: MinecraftTextStyle,
             modifier: Modifier,
             key: ElementKey<*>?,
-        ): Element = MinecraftTextFieldElement(normalSprite, highlightedSprite, glyphs, state, enabled, modifier, key)
+        ): Element = MinecraftTextFieldElement(normalSprite, highlightedSprite, glyphs, state, fieldSize, enabled, textStyle, modifier, key)
     }
 }
 
@@ -373,7 +416,9 @@ private class MinecraftTextFieldElement private constructor(
  * @param highlightedSprite exact focused sprite.
  * @param glyphs complete immutable printable-ASCII glyph map.
  * @param state owner-thread mutable value.
+ * @param fieldSize requested logical extent.
  * @param enabled whether editing and focus are accepted.
+ * @param textStyle profile-backed glyph layers used by the field.
  * @param modifier active behavior.
  * @param key optional stable identity.
  * @return private retained TextField description.
@@ -384,7 +429,9 @@ internal fun createMinecraftTextFieldElement(
     highlightedSprite: DrawImage,
     glyphs: Map<Int, MinecraftGlyphSnapshot>,
     state: MinecraftTextFieldState,
+    fieldSize: IntSize,
     enabled: Boolean,
+    textStyle: MinecraftTextStyle,
     modifier: Modifier,
     key: ElementKey<*>?,
-): Element = MinecraftTextFieldElement.create(normalSprite, highlightedSprite, glyphs, state, enabled, modifier, key)
+): Element = MinecraftTextFieldElement.create(normalSprite, highlightedSprite, glyphs, state, fieldSize, enabled, textStyle, modifier, key)

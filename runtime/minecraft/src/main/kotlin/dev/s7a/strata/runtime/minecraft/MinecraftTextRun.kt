@@ -149,11 +149,11 @@ internal class MinecraftTextRun private constructor(
          */
         @JvmSynthetic
         internal fun createTextField(
-            text: String,
+            text: UiText,
             enabled: Boolean,
             glyphAt: (Int) -> MinecraftGlyphSnapshot,
         ): MinecraftTextRun =
-            create(UiText.Literal(text), glyphAt) { glyph ->
+            create(text, glyphAt) { glyph ->
                 if (enabled) {
                     PositionedColors(glyph.textFieldShadow, glyph.textFieldForeground)
                 } else {

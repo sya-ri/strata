@@ -1,6 +1,7 @@
 package dev.s7a.strata.runtime.minecraft
 
 import dev.s7a.strata.dsl.Box
+import dev.s7a.strata.geometry.Insets
 import dev.s7a.strata.geometry.IntRect
 import dev.s7a.strata.geometry.IntSize
 import dev.s7a.strata.modifier.Modifier
@@ -113,6 +114,78 @@ internal class MinecraftImageTest {
         }
     }
 
+    @Test
+    fun nineSliceUsesNativeVerticalOrderAndClippedTiles() {
+        val source =
+            createDrawImage(
+                IntSize(4, 4),
+                IntArray(16) { index -> 0xFF000000.toInt() or index },
+            )
+        val host = hostWithNineSliceBackground(source, Insets.all(1), MinecraftNineSliceCenterMode.Tiled)
+        try {
+            host.attach()
+            val commands = host.frame(IntSize(4, 7)).drawCommands.map { command -> command as DrawCommand.BlitImage }
+            assertEquals(
+                listOf(
+                    IntRect(0, 0, 4, 1),
+                    IntRect(0, 1, 4, 3),
+                    IntRect(0, 3, 4, 5),
+                    IntRect(0, 5, 4, 6),
+                    IntRect(0, 6, 4, 7),
+                ),
+                commands.map { command -> command.destination },
+            )
+            assertEquals(
+                listOf(
+                    IntRect(0, 0, 4, 1),
+                    IntRect(0, 1, 4, 3),
+                    IntRect(0, 1, 4, 3),
+                    IntRect(0, 1, 4, 2),
+                    IntRect(0, 3, 4, 4),
+                ),
+                commands.map { command -> command.source },
+            )
+            commands.forEach { command -> assertSame(source, command.image) }
+            val rendered = rasterizeHeadless(commands, IntSize(4, 7))
+            assertEquals(source.argbAt(2, 0), rendered.argbAt(2, 0))
+            assertEquals(source.argbAt(2, 1), rendered.argbAt(2, 5))
+            assertEquals(source.argbAt(2, 3), rendered.argbAt(2, 6))
+        } finally {
+            host.close()
+        }
+    }
+
+    @Test
+    fun nineSliceUsesRowMajorGridAndValidatesSourceCenters() {
+        val source = createDrawImage(IntSize(3, 3), IntArray(9) { index -> 0xFF101010.toInt() + index })
+        val host = hostWithNineSliceBackground(source, Insets.all(1), MinecraftNineSliceCenterMode.Stretched)
+        try {
+            host.attach()
+            val commands = host.frame(IntSize(5, 5)).drawCommands.map { command -> command as DrawCommand.BlitImage }
+            assertEquals(9, commands.size)
+            assertEquals(
+                listOf(
+                    IntRect(0, 0, 1, 1),
+                    IntRect(1, 0, 4, 1),
+                    IntRect(4, 0, 5, 1),
+                    IntRect(0, 1, 1, 4),
+                    IntRect(1, 1, 4, 4),
+                    IntRect(4, 1, 5, 4),
+                    IntRect(0, 4, 1, 5),
+                    IntRect(1, 4, 4, 5),
+                    IntRect(4, 4, 5, 5),
+                ),
+                commands.map { command -> command.destination },
+            )
+        } finally {
+            host.close()
+        }
+
+        val invalid = hostWithNineSliceBackground(source, Insets(left = 1, right = 2), MinecraftNineSliceCenterMode.Tiled)
+        assertThrows(IllegalArgumentException::class.java) { invalid.attach() }
+        invalid.close()
+    }
+
     private fun hostWithBackground(
         source: DrawImage,
         scale: MinecraftImageScale,
@@ -120,6 +193,18 @@ internal class MinecraftImageTest {
         createMinecraftUiHost(
             createMinecraftScreenDefinition("Background") {
                 Box(modifier = Modifier.Empty.imageBackground(source, scale)) {}
+            },
+            MinecraftProfileFixture.create(),
+        )
+
+    private fun hostWithNineSliceBackground(
+        source: DrawImage,
+        border: Insets,
+        centerMode: MinecraftNineSliceCenterMode,
+    ): MinecraftUiHost =
+        createMinecraftUiHost(
+            createMinecraftScreenDefinition("Nine slice") {
+                Box(modifier = Modifier.Empty.imageBackground(source, border, centerMode)) {}
             },
             MinecraftProfileFixture.create(),
         )

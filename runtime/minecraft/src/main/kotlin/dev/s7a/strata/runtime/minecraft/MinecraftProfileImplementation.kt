@@ -182,7 +182,9 @@ internal object MinecraftProfileImplementation {
      *
      * @param scope active destination scope.
      * @param state caller-owned field state.
+     * @param size requested logical field extent.
      * @param enabled whether editing and focus are enabled.
+     * @param textStyle profile-backed glyph layers used by the field.
      * @param modifier active TextField behavior.
      * @param key optional sibling identity.
      * @throws IllegalStateException when no matching screen-content callback is active on this thread.
@@ -191,11 +193,13 @@ internal object MinecraftProfileImplementation {
     fun emitTextField(
         scope: UiScope,
         state: MinecraftTextFieldState,
+        size: IntSize,
         enabled: Boolean,
+        textStyle: MinecraftTextStyle,
         modifier: Modifier,
         key: ElementKey<*>?,
     ) {
-        currentContext().emitTextField(scope, state, enabled, modifier, key)
+        currentContext().emitTextField(scope, state, size, enabled, textStyle, modifier, key)
     }
 
     /**
@@ -699,6 +703,7 @@ internal object MinecraftProfileImplementation {
                         MinecraftTextStyle.Normal -> MinecraftTextRun.createNormal(text, currentProfile::glyph)
                         MinecraftTextStyle.Inactive -> MinecraftTextRun.createInactive(text, currentProfile::glyph)
                         MinecraftTextStyle.ContainerLabel -> MinecraftTextRun.createContainerLabel(text, currentProfile::glyph)
+                        MinecraftTextStyle.TextField -> MinecraftTextRun.createTextField(text, true, currentProfile::glyph)
                     },
                     modifier,
                     key,
@@ -740,7 +745,9 @@ internal object MinecraftProfileImplementation {
         fun emitTextField(
             scope: UiScope,
             state: MinecraftTextFieldState,
+            size: IntSize,
             enabled: Boolean,
+            textStyle: MinecraftTextStyle,
             modifier: Modifier,
             key: ElementKey<*>?,
         ) {
@@ -751,7 +758,9 @@ internal object MinecraftProfileImplementation {
                     currentProfile.highlightedTextField,
                     currentProfile.glyphSnapshot(),
                     state,
+                    size,
                     enabled,
+                    textStyle,
                     modifier,
                     key,
                 ),

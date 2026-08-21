@@ -1,7 +1,7 @@
 package dev.s7a.strata.runtime.minecraft
 
-import dev.s7a.strata.dsl.buildUi
 import dev.s7a.strata.geometry.IntOffset
+import dev.s7a.strata.geometry.IntRect
 import dev.s7a.strata.geometry.IntSize
 import dev.s7a.strata.input.InputResult
 import dev.s7a.strata.input.KeyCode
@@ -82,6 +82,64 @@ internal class MinecraftTextFieldTest {
     }
 
     @Test
+    fun explicitlySizedFieldUsesVerticalNineSliceAndCenteredText() {
+        val state = createMinecraftTextFieldState("A")
+        val compactSize = IntSize(200, 15)
+        val host = host(state, size = compactSize)
+        try {
+            host.attach()
+            val frame = host.frame(compactSize)
+            val commands = frame.drawCommands.map { command -> command as DrawCommand.BlitImage }
+            assertEquals(
+                listOf(
+                    IntRect(0, 0, 200, 1),
+                    IntRect(0, 1, 200, 14),
+                    IntRect(0, 14, 200, 15),
+                ),
+                commands.take(3).map { command -> command.destination },
+            )
+            assertEquals(
+                listOf(
+                    IntRect(0, 0, 200, 1),
+                    IntRect(0, 1, 200, 14),
+                    IntRect(0, 19, 200, 20),
+                ),
+                commands.take(3).map { command -> command.source },
+            )
+            val image = rasterizeHeadless(frame.drawCommands, compactSize)
+            assertEquals(0xFFE0E0E0.toInt(), image.argbAt(4, 3))
+            assertEquals(0xFF383838.toInt(), image.argbAt(5, 4))
+        } finally {
+            host.close()
+        }
+
+        val invalid = host(state, size = IntSize(8, 15))
+        assertThrows(IllegalArgumentException::class.java) { invalid.attach() }
+        invalid.close()
+    }
+
+    @Test
+    fun focusedEmptyFieldUsesTheNativeAppendCursorGlyphAndSelectedTextStyle() {
+        val compactSize = IntSize(200, 15)
+        val state = createMinecraftTextFieldState("", maxLength = 16)
+        val host = host(state, Modifier.Empty.initialFocus(), compactSize, MinecraftTextStyle.Normal)
+        try {
+            host.attach()
+            val commands = host.frame(compactSize).drawCommands
+            assertTrue(commands.all { command -> command is DrawCommand.BlitImage })
+            assertEquals(
+                listOf(IntRect(5, 4, 13, 12), IntRect(4, 3, 12, 11)),
+                commands.takeLast(2).map { command -> (command as DrawCommand.BlitImage).destination },
+            )
+            val cursorCommands = commands.takeLast(2).map { command -> command as DrawCommand.BlitImage }
+            assertTrue(cursorCommands[0].image.copyArgb().contains(0xFF3F3F3F.toInt()))
+            assertTrue(cursorCommands[1].image.copyArgb().contains(0xFFFFFFFF.toInt()))
+        } finally {
+            host.close()
+        }
+    }
+
+    @Test
     fun primaryPressFocusesWithoutConsumingAndEditorHandlesTypedKeys() {
         val state = createMinecraftTextFieldState("AB", maxLength = 4)
         val host = host(state)
@@ -148,10 +206,12 @@ internal class MinecraftTextFieldTest {
     private fun host(
         state: MinecraftTextFieldState,
         modifier: Modifier = Modifier.Empty,
+        size: IntSize = fieldSize,
+        textStyle: MinecraftTextStyle = MinecraftTextStyle.TextField,
     ): MinecraftUiHost =
         createMinecraftUiHost(
             createMinecraftScreenDefinition(UiText.Literal("TextField")) {
-                TextField(state, modifier = modifier)
+                TextField(state, size = size, textStyle = textStyle, modifier = modifier)
             },
             MinecraftProfileFixture.create(),
         )

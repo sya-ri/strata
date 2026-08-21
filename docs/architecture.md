@@ -72,7 +72,8 @@ Frames retain no description, tree, or draw-command list; semantics are defensiv
 The exact built-in layout measurement, weight, arrangement, alignment, and overflow contracts are defined in [Built-in layout components](layout.md).
 The headless adapter's fixed-viewport, clipping, source-over, scaling, PNG, and immutable semantics contracts are exercised by its module tests.
 The loaded 26.2 client GameTest requires exact ARGB equality among deterministic native screens, their Fabric-adapter reconstructions, and common headless frames at 320 by 180.
-It covers `ConfirmScreen`, `DirectJoinServerScreen`, `ContainerScreen`, an actual `ObjectSelectionList`, native `PlayerFaceExtractor`, and a custom industrial Mod screen, then writes the verified full frames and typed Slot, Text, TextField, Button, Scroll, Image, and PlayerHead crops with their hashes below its build directory.
+It covers `ConfirmScreen`, `DirectJoinServerScreen`, `ContainerScreen`, an actual `ObjectSelectionList`, `SocialInteractionsScreen`, native `PlayerFaceExtractor`, and a custom industrial Mod screen, then writes the verified full frames and typed Slot, Text, TextField, Button, Scroll, Image, and PlayerHead crops with their hashes below its build directory.
+The Social comparison composes the public primitives with the active social panel and search assets, a compact profile-colored TextField, and PlayerHead, then requires the complete 320 by 240 native, Fabric, and headless images to match exactly.
 The showcase generator accepts only those receipt-matched crops and the compiled GameTest scenario sources before staging Markdown and PNG output.
 The checker reruns the parity prerequisite and compares that staging output with the combined `docs/components.md` document, the `docs/components` asset tree, and the anchored root README region without writing source files.
 

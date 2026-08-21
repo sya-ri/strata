@@ -105,6 +105,7 @@ internal object InventorySlotSynchronizationGameTest {
         }
     }
 
+    @Suppress("LongParameterList")
     private fun runContainerScenario(
         context: ClientGameTestContext,
         profile: MinecraftUiProfile,
@@ -222,13 +223,10 @@ internal object InventorySlotSynchronizationGameTest {
         val failure = AtomicReference<Throwable?>()
         server.execute(
             Runnable {
-                try {
-                    operation(checkNotNull(server.playerList.getPlayer(playerId)))
-                } catch (throwable: Throwable) {
-                    failure.set(throwable)
-                } finally {
-                    completed.set(true)
-                }
+                runCatching { operation(checkNotNull(server.playerList.getPlayer(playerId))) }
+                    .exceptionOrNull()
+                    ?.let(failure::set)
+                completed.set(true)
             },
         )
         context.waitFor(Predicate<Minecraft> { completed.get() })
@@ -253,13 +251,10 @@ internal object InventorySlotSynchronizationGameTest {
                     if (pending.compareAndSet(false, true)) {
                         server.execute(
                             Runnable {
-                                try {
-                                    matched.set(condition(checkNotNull(server.playerList.getPlayer(playerId))))
-                                } catch (throwable: Throwable) {
-                                    failure.set(throwable)
-                                } finally {
-                                    pending.set(false)
-                                }
+                                runCatching { matched.set(condition(checkNotNull(server.playerList.getPlayer(playerId)))) }
+                                    .exceptionOrNull()
+                                    ?.let(failure::set)
+                                pending.set(false)
                             },
                         )
                     }
@@ -301,12 +296,28 @@ internal object InventorySlotSynchronizationGameTest {
 
     private val playerSlotPointer = IntOffset(82, 181)
     private val containerSlotPointer = IntOffset(82, 56)
+
+    @Suppress("MayBeConstant")
     private val playerInventoryIndex = 0
+
+    @Suppress("MayBeConstant")
     private val containerSlotIndex = 0
+
+    @Suppress("MayBeConstant")
     private val containerSize = 27
+
+    @Suppress("MayBeConstant")
     private val itemCount = 7
+
+    @Suppress("MayBeConstant")
     private val primaryMouseButton = 0
+
+    @Suppress("MayBeConstant")
     private val noModifiers = 0
+
+    @Suppress("MayBeConstant")
     private val viewportWidth = 320
+
+    @Suppress("MayBeConstant")
     private val viewportHeight = 240
 }

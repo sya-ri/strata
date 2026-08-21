@@ -98,6 +98,7 @@ internal class ShowcaseParityEvidenceTest {
                 appendLine("native.fabric.headless.slot.argb.sha256=${"5".repeat(64)}")
                 appendLine("fabric.headless.industrial.argb.sha256=${"6".repeat(64)}")
                 appendLine("native.fabric.headless.player-head.argb.sha256=${"7".repeat(64)}")
+                appendLine("native.fabric.headless.social.argb.sha256=${"8".repeat(64)}")
                 images.forEach { (slug, bytes) -> appendLine("component.$slug.png.sha256=${sha256(bytes)}") }
             }
         Files.writeString(temporaryRoot.resolve("receipt.properties"), receipt)

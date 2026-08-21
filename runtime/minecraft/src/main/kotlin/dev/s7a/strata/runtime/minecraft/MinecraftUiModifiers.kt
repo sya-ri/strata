@@ -2,6 +2,7 @@
 
 package dev.s7a.strata.runtime.minecraft
 
+import dev.s7a.strata.geometry.Insets
 import dev.s7a.strata.modifier.Modifier
 import dev.s7a.strata.render.DrawImage
 
@@ -22,6 +23,29 @@ public fun Modifier.imageBackground(
     image: DrawImage,
     scale: MinecraftImageScale = MinecraftImageScale.Stretch,
 ): Modifier = then(createMinecraftImageBackgroundModifier(image, scale))
+
+/**
+ * Paints arbitrary immutable image pixels as a Minecraft-compatible nine-slice background behind content.
+ *
+ * When the destination matches both source axes, paint emits one complete image.
+ * When one axis matches, paint emits the native three-segment order; otherwise it emits top-left through bottom-right in row-major order.
+ * [MinecraftNineSliceCenterMode.Tiled] repeats each expandable source segment from its top-left and clips the final tile, while [MinecraftNineSliceCenterMode.Stretched] maps each complete expandable segment once.
+ * Destination borders are clamped independently to half of the destination axis exactly like Minecraft 26.2.
+ * This behavior does not alter measurement.
+ *
+ * @receiver immutable modifier chain.
+ * @param image immutable source pixels retained without a copy.
+ * @param border non-negative source border widths that leave a nonempty center on both axes.
+ * @param centerMode typed mapping for expandable edges and the center.
+ * @return a new chain containing one active nine-slice background node.
+ * @throws IllegalArgumentException when the source image has an empty axis or the borders consume a source center.
+ * @throws ArithmeticException when source validation, segment, or tiled destination arithmetic overflows.
+ */
+public fun Modifier.imageBackground(
+    image: DrawImage,
+    border: Insets,
+    centerMode: MinecraftNineSliceCenterMode = MinecraftNineSliceCenterMode.Tiled,
+): Modifier = then(createMinecraftNineSliceImageBackgroundModifier(image, border, centerMode))
 
 /**
  * Paints the selected Minecraft menu texture behind the modified component's content.

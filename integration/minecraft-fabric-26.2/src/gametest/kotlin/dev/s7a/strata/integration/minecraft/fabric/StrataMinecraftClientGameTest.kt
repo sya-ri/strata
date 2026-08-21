@@ -58,6 +58,7 @@ import kotlin.io.path.inputStream
  * The test runs on Fabric's client GameTest thread and performs all Minecraft and common-host operations on the client thread through [ClientGameTestContext].
  * It reads the active 26.2 assets, font, and selected player skin, uses native [Button] and [PlayerFaceExtractor] rendering as the oracle, and writes only deterministic evidence below the configured build directory.
  */
+@Suppress("TooManyFunctions")
 public class StrataMinecraftClientGameTest : FabricClientGameTest {
     /**
      * Executes the exact three-path comparison and writes the verified headless frame.
@@ -67,6 +68,7 @@ public class StrataMinecraftClientGameTest : FabricClientGameTest {
      * @throws Throwable when Minecraft resource, rendering, input, or filesystem work fails.
      */
     @OptIn(InternalStrataRuntimeApi::class)
+    @Suppress("LongMethod")
     override fun runTest(context: ClientGameTestContext) {
         context.restoreDefaultGameOptions()
         context.input.resizeWindow(viewport.width, viewport.height)
@@ -75,7 +77,7 @@ public class StrataMinecraftClientGameTest : FabricClientGameTest {
                 minecraft.options.guiScale().set(1)
                 minecraft.options.forceUnicodeFont().set(false)
                 minecraft.options.showAutosaveIndicator().set(false)
-                require(minecraft.options.languageCode == "en_us") {
+                require(ParityLocale.parse(minecraft.options.languageCode) === ParityLocale.EnglishUnitedStates) {
                     "Minecraft parity requires the en_us language profile."
                 }
                 minecraft.resizeGui()
@@ -335,6 +337,7 @@ public class StrataMinecraftClientGameTest : FabricClientGameTest {
         }
     }
 
+    @Suppress("LongMethod", "LongParameterList")
     private fun writeParityEvidence(
         output: Path,
         confirm: HeadlessImage,
@@ -344,6 +347,7 @@ public class StrataMinecraftClientGameTest : FabricClientGameTest {
         slot: HeadlessImage,
         industrial: HeadlessImage,
         playerHead: HeadlessImage,
+        social: HeadlessImage,
     ) {
         val imageDirectory = output.resolve("components")
         Files.createDirectories(imageDirectory)
@@ -406,6 +410,9 @@ public class StrataMinecraftClientGameTest : FabricClientGameTest {
                 append('\n')
                 append("native.fabric.headless.player-head.argb.sha256=")
                 append(sha256Argb(playerHead))
+                append('\n')
+                append("native.fabric.headless.social.argb.sha256=")
+                append(sha256Argb(social))
                 append('\n')
                 ParityCrop.entries.forEach { crop ->
                     append("component.")
@@ -480,6 +487,7 @@ public class StrataMinecraftClientGameTest : FabricClientGameTest {
     }
 
     @OptIn(InternalStrataRuntimeApi::class)
+    @Suppress("LongMethod", "LongParameterList")
     private fun runContainerParity(
         context: ClientGameTestContext,
         profile: MinecraftUiProfile,
@@ -580,7 +588,8 @@ public class StrataMinecraftClientGameTest : FabricClientGameTest {
                     closeFabricScreen(context)
                     val industrial = runIndustrialAssetParity(context, profile, output)
                     val playerHead = runPlayerHeadParity(context, profile, output)
-                    writeParityEvidence(output, confirm, scroll, directJoin, containerBackground, slot, industrial, playerHead)
+                    val social = MinecraftSocialParity.run(context, profile, output)
+                    writeParityEvidence(output, confirm, scroll, directJoin, containerBackground, slot, industrial, playerHead, social)
                 }
             }
             closeFabricScreen(context)
@@ -766,6 +775,20 @@ public class StrataMinecraftClientGameTest : FabricClientGameTest {
         override fun getNarration(): Component = Component.literal(label)
     }
 
+    private enum class ParityLocale(
+        val code: String,
+    ) {
+        EnglishUnitedStates("en_us"),
+        ;
+
+        companion object {
+            fun parse(value: String): ParityLocale =
+                requireNotNull(entries.singleOrNull { locale -> locale.code == value }) {
+                    "Minecraft parity requires a recognized locale."
+                }
+        }
+    }
+
     private companion object {
         private val viewport = IntSize(320, 180)
         private val directJoinViewport = IntSize(320, 240)
@@ -773,8 +796,14 @@ public class StrataMinecraftClientGameTest : FabricClientGameTest {
         private val pointer = IntOffset(100, 110)
         private val containerOutsidePointer = IntOffset(0, 0)
         private val containerPointer = IntOffset(80, 54)
+
+        @Suppress("MayBeConstant")
         private val directJoinAddress = "play.example.net"
+
+        @Suppress("MayBeConstant")
         private val confirmTitle = "Confirm action"
+
+        @Suppress("MayBeConstant")
         private val confirmMessage = "Continue with this action?"
         private val listEntries =
             listOf(

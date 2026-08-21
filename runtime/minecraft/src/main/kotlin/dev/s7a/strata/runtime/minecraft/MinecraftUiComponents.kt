@@ -168,6 +168,7 @@ public fun UiScope.Text(
  * @receiver active owner-thread UI scope supplied by [createMinecraftScreenDefinition] or a nested component callback.
  * @param state owner-thread text value and maximum length.
  * @param enabled whether focus and editing are accepted.
+ * @param textStyle profile-backed glyph style; [MinecraftTextStyle.TextField] selects ordinary enabled or disabled EditBox colors.
  * @param modifier active behavior applied to the field.
  * @param key optional stable identity among direct siblings.
  * @throws IllegalStateException when the receiver or [state] is used from another thread or outside its active callback.
@@ -175,10 +176,39 @@ public fun UiScope.Text(
 public fun UiScope.TextField(
     state: MinecraftTextFieldState,
     enabled: Boolean = true,
+    textStyle: MinecraftTextStyle = MinecraftTextStyle.TextField,
     modifier: Modifier = Modifier.Empty,
     key: ElementKey<*>? = null,
 ) {
-    MinecraftProfileImplementation.emitTextField(this, state, enabled, modifier, key)
+    MinecraftProfileImplementation.emitTextField(this, state, IntSize(200, 20), enabled, textStyle, modifier, key)
+}
+
+/**
+ * Emits one explicitly sized Minecraft single-line TextField.
+ *
+ * This overload uses the same retained editor, profile sprites, event order, and state ownership as the ordinary 200 by 20 [TextField].
+ * Sprite borders use Minecraft-compatible nine-slice mapping, text begins four pixels from the left, and the eight-pixel glyph line is vertically centered with integer-floor placement.
+ * Width must retain eight pixels for horizontal text padding and height must contain the eight-pixel font row.
+ *
+ * @receiver active owner-thread UI scope supplied by [createMinecraftScreenDefinition] or a nested component callback.
+ * @param state owner-thread text value and maximum length.
+ * @param size requested logical field extent with both axes at least nine.
+ * @param enabled whether focus and editing are accepted.
+ * @param textStyle profile-backed glyph style; [MinecraftTextStyle.TextField] selects ordinary enabled or disabled EditBox colors.
+ * @param modifier active behavior applied to the field.
+ * @param key optional stable identity among direct siblings.
+ * @throws IllegalArgumentException when [size] cannot contain the text and sprite center or later constraints do not contain it.
+ * @throws IllegalStateException when the receiver or [state] is used from another thread or outside its active callback.
+ */
+public fun UiScope.TextField(
+    state: MinecraftTextFieldState,
+    size: IntSize,
+    enabled: Boolean = true,
+    textStyle: MinecraftTextStyle = MinecraftTextStyle.TextField,
+    modifier: Modifier = Modifier.Empty,
+    key: ElementKey<*>? = null,
+) {
+    MinecraftProfileImplementation.emitTextField(this, state, size, enabled, textStyle, modifier, key)
 }
 
 /**

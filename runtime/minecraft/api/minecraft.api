@@ -86,6 +86,7 @@ public final class dev/s7a/strata/runtime/minecraft/MinecraftTextStyle : java/la
 	public static final field ContainerLabel Ldev/s7a/strata/runtime/minecraft/MinecraftTextStyle;
 	public static final field Inactive Ldev/s7a/strata/runtime/minecraft/MinecraftTextStyle;
 	public static final field Normal Ldev/s7a/strata/runtime/minecraft/MinecraftTextStyle;
+	public static final field TextField Ldev/s7a/strata/runtime/minecraft/MinecraftTextStyle;
 	public static fun getEntries ()Lkotlin/enums/EnumEntries;
 	public static fun valueOf (Ljava/lang/String;)Ldev/s7a/strata/runtime/minecraft/MinecraftTextStyle;
 	public static fun values ()[Ldev/s7a/strata/runtime/minecraft/MinecraftTextStyle;
@@ -110,8 +111,10 @@ public final class dev/s7a/strata/runtime/minecraft/MinecraftUiComponents {
 	public static final fun Text (Ldev/s7a/strata/dsl/UiScope;Ljava/lang/String;Ldev/s7a/strata/runtime/minecraft/MinecraftTextStyle;Ldev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/element/ElementKey;)V
 	public static synthetic fun Text$default (Ldev/s7a/strata/dsl/UiScope;Ldev/s7a/strata/text/UiText;Ldev/s7a/strata/runtime/minecraft/MinecraftTextStyle;Ldev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/element/ElementKey;ILjava/lang/Object;)V
 	public static synthetic fun Text$default (Ldev/s7a/strata/dsl/UiScope;Ljava/lang/String;Ldev/s7a/strata/runtime/minecraft/MinecraftTextStyle;Ldev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/element/ElementKey;ILjava/lang/Object;)V
-	public static final fun TextField (Ldev/s7a/strata/dsl/UiScope;Ldev/s7a/strata/runtime/minecraft/MinecraftTextFieldState;ZLdev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/element/ElementKey;)V
-	public static synthetic fun TextField$default (Ldev/s7a/strata/dsl/UiScope;Ldev/s7a/strata/runtime/minecraft/MinecraftTextFieldState;ZLdev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/element/ElementKey;ILjava/lang/Object;)V
+	public static final fun TextField (Ldev/s7a/strata/dsl/UiScope;Ldev/s7a/strata/runtime/minecraft/MinecraftTextFieldState;Ldev/s7a/strata/geometry/IntSize;ZLdev/s7a/strata/runtime/minecraft/MinecraftTextStyle;Ldev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/element/ElementKey;)V
+	public static final fun TextField (Ldev/s7a/strata/dsl/UiScope;Ldev/s7a/strata/runtime/minecraft/MinecraftTextFieldState;ZLdev/s7a/strata/runtime/minecraft/MinecraftTextStyle;Ldev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/element/ElementKey;)V
+	public static synthetic fun TextField$default (Ldev/s7a/strata/dsl/UiScope;Ldev/s7a/strata/runtime/minecraft/MinecraftTextFieldState;Ldev/s7a/strata/geometry/IntSize;ZLdev/s7a/strata/runtime/minecraft/MinecraftTextStyle;Ldev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/element/ElementKey;ILjava/lang/Object;)V
+	public static synthetic fun TextField$default (Ldev/s7a/strata/dsl/UiScope;Ldev/s7a/strata/runtime/minecraft/MinecraftTextFieldState;ZLdev/s7a/strata/runtime/minecraft/MinecraftTextStyle;Ldev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/element/ElementKey;ILjava/lang/Object;)V
 }
 
 public abstract interface class dev/s7a/strata/runtime/minecraft/MinecraftUiHost : java/lang/AutoCloseable {
@@ -129,7 +132,9 @@ public abstract interface class dev/s7a/strata/runtime/minecraft/MinecraftUiHost
 public final class dev/s7a/strata/runtime/minecraft/MinecraftUiModifiers {
 	public static final fun containerBackground (Ldev/s7a/strata/modifier/Modifier;I)Ldev/s7a/strata/modifier/Modifier;
 	public static synthetic fun containerBackground$default (Ldev/s7a/strata/modifier/Modifier;IILjava/lang/Object;)Ldev/s7a/strata/modifier/Modifier;
+	public static final fun imageBackground (Ldev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/render/DrawImage;Ldev/s7a/strata/geometry/Insets;Ldev/s7a/strata/runtime/minecraft/MinecraftNineSliceCenterMode;)Ldev/s7a/strata/modifier/Modifier;
 	public static final fun imageBackground (Ldev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/render/DrawImage;Ldev/s7a/strata/runtime/minecraft/MinecraftImageScale;)Ldev/s7a/strata/modifier/Modifier;
+	public static synthetic fun imageBackground$default (Ldev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/render/DrawImage;Ldev/s7a/strata/geometry/Insets;Ldev/s7a/strata/runtime/minecraft/MinecraftNineSliceCenterMode;ILjava/lang/Object;)Ldev/s7a/strata/modifier/Modifier;
 	public static synthetic fun imageBackground$default (Ldev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/render/DrawImage;Ldev/s7a/strata/runtime/minecraft/MinecraftImageScale;ILjava/lang/Object;)Ldev/s7a/strata/modifier/Modifier;
 	public static final fun menuBackground (Ldev/s7a/strata/modifier/Modifier;)Ldev/s7a/strata/modifier/Modifier;
 }
