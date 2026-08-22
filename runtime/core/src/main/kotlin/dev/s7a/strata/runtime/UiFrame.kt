@@ -9,6 +9,7 @@ import java.util.Collections
  * Immutable output of one successful synchronous UI session frame.
  *
  * The frame owns defensive immutable snapshots of its drawing and semantics collections.
+ * An owning session may retain and reuse this instance while the retained tree revision and root constraints remain unchanged.
  *
  * @property size the measured root size.
  * @property drawCommands the drawing commands in tree coordinates and emission order.

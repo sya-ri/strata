@@ -109,6 +109,15 @@ internal class Pipeline(
     }
 
     /**
+     * Releases retained input-pipeline references without invoking behavior callbacks.
+     *
+     * The owning tree calls this only after entering a terminal state and performs lifecycle cleanup independently.
+     */
+    fun releaseRetainedReferences() {
+        focusedInputPipeline.releaseRetainedReferences()
+    }
+
+    /**
      * Collects unresolved semantics through effective ancestry.
      *
      * @param root the installed logical root.

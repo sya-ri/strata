@@ -54,6 +54,7 @@ include(
     ":integration:docs",
     ":integration:minecraft-fabric-26.1",
     ":integration:minecraft-fabric-26.2",
+    ":quality:benchmarks",
     ":quality:detekt-rules",
     ":runtime:core",
     ":runtime:headless",

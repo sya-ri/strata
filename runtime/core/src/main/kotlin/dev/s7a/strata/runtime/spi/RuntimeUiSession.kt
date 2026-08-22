@@ -26,6 +26,7 @@ public sealed interface RuntimeUiSession : AutoCloseable {
      * Attaches this session on its owner thread.
      *
      * A created or detached session becomes attached, and the first attach evaluates and reconciles the content once.
+     * Attachment starts a new frame lifetime, so the first frame after reattachment reruns the retained pipeline even when content and constraints are unchanged.
      * Invalid lifecycle transitions leave state unchanged; content and reconciliation failures poison the session and perform cleanup before rethrowing the exact primary failure.
      *
      * @throws IllegalStateException when called from the wrong thread, reentrantly, or from an invalid lifecycle state.
@@ -37,6 +38,7 @@ public sealed interface RuntimeUiSession : AutoCloseable {
      * Detaches this attached session on its owner thread while retaining its tree and content ownership.
      *
      * Reattachment preserves the retained tree and requires another successful frame before input resumes.
+     * Detachment releases the last immutable frame and resets layout-dependent input ownership.
      * Invalid lifecycle transitions leave state unchanged.
      *
      * @throws IllegalStateException when called from the wrong thread, reentrantly, or when the session is not attached.
@@ -46,7 +48,8 @@ public sealed interface RuntimeUiSession : AutoCloseable {
     /**
      * Produces one immutable frame synchronously on the owner thread.
      *
-     * Measurement, layout, paint, and semantics run in order on the retained tree.
+     * Pending content changes are reconciled before measurement, layout, paint, and semantics run in order on the retained tree.
+     * When content was not rebuilt and both constraints and the whole-tree revision are unchanged, implementations may return the same immutable frame instance without rerunning the pipeline.
      * The returned frame owns detached unmodifiable snapshots and does not retain the session or source collections.
      * A pipeline failure poisons the session and performs cleanup before rethrowing the exact primary failure.
      *

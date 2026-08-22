@@ -1,15 +1,27 @@
+@file:OptIn(InternalStrataRuntimeApi::class)
+
 package dev.s7a.strata.runtime
 
+import dev.s7a.strata.component.Spacer
+import dev.s7a.strata.component.evaluateComponentTree
 import dev.s7a.strata.geometry.Constraints
 import dev.s7a.strata.geometry.IntOffset
 import dev.s7a.strata.geometry.IntRect
 import dev.s7a.strata.geometry.IntSize
+import dev.s7a.strata.input.FocusEvent
 import dev.s7a.strata.input.InputResult
 import dev.s7a.strata.input.PointerEvent
+import dev.s7a.strata.modifier.Modifier
+import dev.s7a.strata.modifier.initialFocus
+import dev.s7a.strata.modifier.onFocusChanged
+import dev.s7a.strata.modifier.size
+import dev.s7a.strata.node.DirtyMask
+import dev.s7a.strata.node.DirtyPhase
 import dev.s7a.strata.render.ArgbColor
 import dev.s7a.strata.runtime.render.DrawCommand
 import dev.s7a.strata.runtime.semantics.SemanticsEntry
 import dev.s7a.strata.semantics.Semantics
+import dev.s7a.strata.spi.InternalStrataRuntimeApi
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertNotEquals
 import org.junit.jupiter.api.Assertions.assertNotSame
@@ -44,7 +56,7 @@ internal class UiSessionFrameInputTest {
     }
 
     @Test
-    fun unchangedFramesReuseRetainedPipelineCaches() {
+    fun unchangedFramesReuseTheCompleteImmutableSnapshot() {
         val probe = TestProbe()
         val session = UiSession(TestOwnerDispatcher()) { probe.root(emptyList()) }
         session.attach()
@@ -58,8 +70,124 @@ internal class UiSessionFrameInputTest {
         assertEquals(layoutCalls, probe.layoutCalls)
         assertEquals(paintCalls, probe.paintCalls)
         assertEquals(semanticsCalls, probe.semanticsCalls)
-        assertEquals(first, second)
-        assertNotSame(first.drawCommands, second.drawCommands)
+        assertSame(first, second)
+        assertSame(first.drawCommands, second.drawCommands)
+        assertSame(first.semantics, second.semantics)
+        session.close()
+    }
+
+    @Test
+    fun contentRebuildCreatesFreshFrameEvenWhenTheRetainedTreeStaysClean() {
+        val probe = TestProbe()
+        val holder = LocalHolder<Int>()
+        val contentValues = ArrayList<Int>()
+        val session =
+            UiSession(TestOwnerDispatcher()) {
+                contentValues.add(holder.value)
+                probe.root(emptyList())
+            }
+        holder.delegate = session.state(0)
+        session.attach()
+        val first = session.frame(Constraints.fixed(2, 1))
+
+        holder.value = 1
+        val rebuilt = session.frame(Constraints.fixed(2, 1))
+        val clean = session.frame(Constraints.fixed(2, 1))
+
+        assertEquals(listOf(0, 1), contentValues)
+        assertEquals(first, rebuilt)
+        assertNotSame(first, rebuilt)
+        assertNotSame(first.drawCommands, rebuilt.drawCommands)
+        assertNotSame(first.semantics, rebuilt.semantics)
+        assertSame(rebuilt, clean)
+        session.close()
+    }
+
+    @Test
+    fun dirtyRevisionAndChangedConstraintsEachRebuildTheFrame() {
+        val probe = TestProbe()
+        val session = UiSession(TestOwnerDispatcher()) { probe.root(emptyList()) }
+        session.attach()
+        val constraints = Constraints.fixed(2, 1)
+        val first = session.frame(constraints)
+        val paintCalls = probe.paintCalls
+
+        probe.nodeForTag(TestProbe.ProbeId("root")).invalidateForTest(DirtyMask.of(DirtyPhase.Paint))
+        val repainted = session.frame(constraints)
+        assertEquals(paintCalls + 1, probe.paintCalls)
+        assertNotSame(first, repainted)
+        assertNotSame(first.drawCommands, repainted.drawCommands)
+        assertSame(repainted, session.frame(constraints))
+
+        val measureCalls = probe.measureCalls
+        val resized = session.frame(Constraints.fixed(3, 1))
+        assertEquals(measureCalls + 1, probe.measureCalls)
+        assertNotSame(repainted, resized)
+        assertNotSame(repainted.drawCommands, resized.drawCommands)
+        assertSame(resized, session.frame(Constraints.fixed(3, 1)))
+        session.close()
+    }
+
+    @Test
+    fun paintInvalidationDuringAFramePreventsReuseUntilTheNextFrame() {
+        val probe = TestProbe()
+        val tag = TestProbe.ProbeId("self-invalidating")
+        var invalidateOnPaint = true
+        val session =
+            UiSession(TestOwnerDispatcher()) {
+                probe.element(
+                    tag,
+                    onPaint = {
+                        if (invalidateOnPaint) {
+                            invalidateOnPaint = false
+                            probe.nodeForTag(tag).invalidateForTest(DirtyMask.of(DirtyPhase.Paint))
+                        }
+                    },
+                )
+            }
+        session.attach()
+
+        val first = session.frame(Constraints.fixed(2, 1))
+        val settled = session.frame(Constraints.fixed(2, 1))
+        val clean = session.frame(Constraints.fixed(2, 1))
+
+        assertEquals(2, probe.paintCalls)
+        assertNotSame(first, settled)
+        assertNotSame(first.drawCommands, settled.drawCommands)
+        assertSame(settled, clean)
+        session.close()
+    }
+
+    @Test
+    fun detachDropsTheCachedFrameAndReacquiresInitialFocusAfterReattach() {
+        val focusEvents = ArrayList<FocusEvent>()
+        val session =
+            UiSession(TestOwnerDispatcher()) {
+                evaluateComponentTree {
+                    Spacer(
+                        modifier =
+                            Modifier.Empty
+                                .size(2, 1)
+                                .initialFocus()
+                                .onFocusChanged(focusEvents::add),
+                    )
+                }
+            }
+        val constraints = Constraints.fixed(2, 1)
+        session.attach()
+        val first = session.frame(constraints)
+        assertEquals(listOf(FocusEvent.Gained), focusEvents)
+
+        session.detach()
+        assertEquals(listOf(FocusEvent.Gained, FocusEvent.Lost), focusEvents)
+        session.attach()
+        val reattached = session.frame(constraints)
+
+        assertNotSame(first, reattached)
+        assertNotSame(first.drawCommands, reattached.drawCommands)
+        assertNotSame(first.semantics, reattached.semantics)
+        assertEquals(listOf(FocusEvent.Gained, FocusEvent.Lost, FocusEvent.Gained), focusEvents)
+        assertSame(reattached, session.frame(constraints))
         session.close()
     }
 

@@ -87,6 +87,9 @@ internal class UiSession private constructor(
     private var dirty: Boolean = true
     private var tree: UiTree? = null
     private var frameAvailable: Boolean = false
+    private var cachedFrame: UiFrame? = null
+    private var cachedFrameConstraints: Constraints? = null
+    private var cachedTreeRevision: Long = 0L
 
     /**
      * Provides one stable coroutine scope whose job is replaced for every attachment.
@@ -209,6 +212,7 @@ internal class UiSession private constructor(
      *
      * Detachment is owner-thread confined and legal only from the attached state.
      * A previously committed frame clears every active pointer-hover transition before the tree is retained.
+     * The immutable frame cache is released so reattachment always commits layout-dependent input state again.
      * Pending source values remain queued and are applied at the next frame after reattachment.
      * A hover callback failure poisons the session and closes retained ownership while preserving the exact failure as primary.
      */
@@ -222,6 +226,7 @@ internal class UiSession private constructor(
                 if (frameAvailable) {
                     checkNotNull(tree) { "An attached session has no retained tree." }.clearInputState()
                 }
+                clearCachedFrame()
                 currentState = UiSessionState.Detached
                 frameAvailable = false
                 retireGeneration()
@@ -236,7 +241,9 @@ internal class UiSession private constructor(
      *
      * Pending source snapshots are atomically cut off and applied before content is rebuilt.
      * A callback arriving after the cutoff remains pending for the following frame.
-     * Content runs at most once per frame, followed by measure, layout, paint, and semantics on the retained tree.
+     * Dirty content runs at most once per frame and always produces a fresh immutable snapshot after measure, layout, paint, and semantics complete.
+     * A frame that did not rebuild content reuses the previous immutable snapshot only while constraints and the whole-tree revision remain unchanged.
+     * Invalidation raised by a pipeline callback prevents that new snapshot from being cached, leaving its work pending for the following frame.
      * A failure poisons the session and closes all bindings and the tree.
      *
      * @param constraints the root measurement constraints.
@@ -252,17 +259,38 @@ internal class UiSession private constructor(
             }
             return runCatching {
                 applyBindingCutoff()
+                var contentRebuilt = false
                 if (dirty) {
                     rebuildContent()
+                    contentRebuilt = true
                 }
                 val retainedTree = checkNotNull(tree) { "An attached session has no retained tree." }
+                val revision = retainedTree.revision
+                if (contentRebuilt.not()) {
+                    val retainedFrame = cachedFrame
+                    if (
+                        retainedFrame != null &&
+                        cachedFrameConstraints == constraints &&
+                        cachedTreeRevision == revision
+                    ) {
+                        frameAvailable = true
+                        return@runCatching retainedFrame
+                    }
+                }
+                clearCachedFrame()
                 frameAvailable = false
                 val size = retainedTree.measure(constraints)
                 retainedTree.layout()
                 val draw = retainedTree.paint()
                 val semantics = retainedTree.semantics()
+                val frame = UiFrame(size, draw, semantics)
                 frameAvailable = true
-                UiFrame(size, draw, semantics)
+                if (retainedTree.revision == revision) {
+                    cachedFrameConstraints = constraints
+                    cachedTreeRevision = revision
+                    cachedFrame = frame
+                }
+                frame
             }.getOrElse { failure -> fail(failure) }
         } finally {
             endOperation()
@@ -354,12 +382,14 @@ internal class UiSession private constructor(
         check(operationKind == null) { "A session operation is already active." }
         if (currentState is UiSessionState.Failed) {
             currentState = UiSessionState.Closed
+            clearCachedFrame()
             releaseContent()
             return
         }
         operationKind = SessionOperation.Close
         try {
             currentState = UiSessionState.Closed
+            clearCachedFrame()
             releaseContent()
             retireGeneration()
             val failures = cleanupResources()
@@ -371,6 +401,7 @@ internal class UiSession private constructor(
 
     private fun rebuildContent() {
         val retainedTree = checkNotNull(tree) { "A session must have a tree before rebuilding." }
+        clearCachedFrame()
         evaluatingContent = true
         val description =
             try {
@@ -454,6 +485,7 @@ internal class UiSession private constructor(
 
     private fun fail(primary: Throwable): Nothing {
         currentState = UiSessionState.Failed(primary)
+        clearCachedFrame()
         releaseContent()
         frameAvailable = false
         retireGeneration()
@@ -464,6 +496,7 @@ internal class UiSession private constructor(
 
     private fun cleanupResources(): Throwable? {
         val failures = FailureAccumulator()
+        clearCachedFrame()
         val ownedBindings = bindings.toList()
         bindings.clear()
         val retainedTree = tree
@@ -475,6 +508,12 @@ internal class UiSession private constructor(
             failures.capture { retainedTree.close() }
         }
         return failures.first
+    }
+
+    private fun clearCachedFrame() {
+        cachedFrame = null
+        cachedFrameConstraints = null
+        cachedTreeRevision = 0L
     }
 
     private fun releaseContent() {

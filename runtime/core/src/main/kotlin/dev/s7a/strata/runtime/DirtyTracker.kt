@@ -7,6 +7,19 @@ import dev.s7a.strata.node.DirtyPhase
  * Expands downstream local phases and propagates measurement work to ancestors.
  */
 internal class DirtyTracker {
+    private var currentRevision: Long = 0L
+
+    /**
+     * Whole-tree change token used to reject stale frame snapshots.
+     *
+     * The token changes whenever nonempty phase work or structural work is recorded.
+     * Reads and writes are confined to the owning tree thread by the enclosing [UiTree].
+     *
+     * @return the current whole-tree change token.
+     */
+    val revision: Long
+        get() = currentRevision
+
     /**
      * Records [mask] on [retained] and conservatively expands downstream work.
      *
@@ -17,6 +30,9 @@ internal class DirtyTracker {
         retained: RetainedEntry,
         mask: DirtyMask,
     ) {
+        if (mask != DirtyMask.None) {
+            advanceRevision()
+        }
         val expanded = expand(mask)
         retained.dirty += expanded
         if (DirtyPhase.Measure in mask) {
@@ -35,6 +51,7 @@ internal class DirtyTracker {
      * @param retained the parent whose direct-child structure changed.
      */
     fun structural(retained: RetainedEntry) {
+        advanceRevision()
         var current: RetainedEntry? = retained
         while (current != null) {
             current.dirty += DirtyMask.All
@@ -50,5 +67,9 @@ internal class DirtyTracker {
             expanded += DirtyMask.of(DirtyPhase.Paint, DirtyPhase.Semantics)
         }
         return expanded
+    }
+
+    private fun advanceRevision() {
+        currentRevision += 1L
     }
 }

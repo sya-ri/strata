@@ -51,6 +51,7 @@ public interface MinecraftUiPlatform : AutoCloseable {
      * Polls current game state and synchronously notifies bindings whose immutable item snapshots changed.
      *
      * The host invokes this immediately before every attached frame so direct inventory packets and menu transactions share one update boundary.
+     * A version adapter may coalesce calls that belong to one atomic native presentation batch; an asynchronous result arriving after that batch's first poll remains pending for the next presentation batch.
      *
      * @throws IllegalStateException when called from another thread or after platform close.
      * @throws Throwable when platform state cannot be read or an observer fails.

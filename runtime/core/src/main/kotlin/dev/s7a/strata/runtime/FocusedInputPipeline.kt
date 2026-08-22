@@ -97,6 +97,15 @@ internal class FocusedInputPipeline {
         setFocusedOwner(null)
     }
 
+    /**
+     * Releases the retained focus owner without invoking focus callbacks.
+     *
+     * Terminal tree cleanup owns lifecycle notification separately, and this method only severs the pipeline's strong retained-node reference.
+     */
+    fun releaseRetainedReferences() {
+        focusedOwner = null
+    }
+
     private fun setFocusedOwner(owner: RetainedNode?) {
         val previous = focusedOwner
         if (previous === owner) return

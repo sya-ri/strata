@@ -11,6 +11,7 @@ import dev.s7a.strata.spi.InternalStrataRuntimeApi
  * The owner thread creates the frame and owns the detached, defensive snapshots of its output collections.
  * After construction, all frame reads are safe from any thread when the contained public value contracts are honored.
  * The frame does not retain the session, content description, retained tree, or mutable source collections.
+ * A session may return the same frame and collection instances for consecutive clean calls, so consumers must treat identity as an optimization rather than a semantic revision.
  */
 @InternalStrataRuntimeApi
 public sealed interface RuntimeUiFrame {

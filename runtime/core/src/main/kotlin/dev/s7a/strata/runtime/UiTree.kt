@@ -53,6 +53,20 @@ public class UiTree : AutoCloseable {
         }
 
     /**
+     * Returns the whole-tree change token used by an owning session's frame cache.
+     *
+     * The token changes when retained phase or structural work is recorded and is read only on the tree's owner thread.
+     *
+     * @return the current whole-tree change token.
+     * @throws IllegalStateException when read from another thread.
+     */
+    internal val revision: Long
+        get() {
+            threadGuard.check()
+            return dirtyTracker.revision
+        }
+
+    /**
      * Reconciles a complete immutable element description.
      *
      * Validation visits the complete description and runs each element's local validation hook.
@@ -265,7 +279,7 @@ public class UiTree : AutoCloseable {
      *
      * Close is owner-thread confined and non-reentrant.
      * It records [TreeState.Closed] before any cleanup callback.
-     * It clears retained ownership and remains closed even when cleanup fails.
+     * It clears retained ownership and pipeline-held references before cleanup and remains closed even when cleanup fails.
      * Cleanup visits descendants before parents and later siblings before earlier siblings.
      * Cleanup attempts detach only after an attach attempt.
      * Cleanup disposes every claimed node.
@@ -287,6 +301,7 @@ public class UiTree : AutoCloseable {
             currentState = TreeState.Closed
             val capturedRoot = root
             root = null
+            pipeline.releaseRetainedReferences()
             registry.clear()
             val failures = FailureAccumulator()
             if (capturedRoot != null) {
@@ -319,6 +334,7 @@ public class UiTree : AutoCloseable {
         currentState = TreeState.Poisoned
         val capturedRoot = root
         root = null
+        pipeline.releaseRetainedReferences()
         registry.clear()
         val failures = FailureAccumulator(failure)
         if (capturedRoot != null) {

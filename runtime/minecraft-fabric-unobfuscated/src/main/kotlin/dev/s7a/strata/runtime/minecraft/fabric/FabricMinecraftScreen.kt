@@ -55,6 +55,17 @@ public class FabricMinecraftScreen private constructor(
     private var closed = false
     private var attached = false
     private val textures: MutableList<DynamicTexture> = ArrayList()
+    private var preparedCommands: List<DrawCommand>? = null
+    private var preparedViewport: IntSize? = null
+    private var preparedLayers: List<FrameLayer> = emptyList()
+    private var pointerPosition: IntOffset? = null
+    private var pointerFrameCommands: List<DrawCommand>? = null
+    private var renderExtractionCount: Long = 0L
+    private var hostFrameCount: Long = 0L
+    private var extractedPointerDispatchCount: Long = 0L
+    private var framePreparationCount: Long = 0L
+    private var portableRasterizationCount: Long = 0L
+    private var textureUploadCount: Long = 0L
     private val pausePolicy = host.pausesGame
     private val lifecycle =
         FabricScreenLifecycleTransaction.create(
@@ -90,6 +101,7 @@ public class FabricMinecraftScreen private constructor(
 
     /**
      * Detaches the common retained tree while retaining it for a later add callback.
+     * Detached screens release their prepared display list and dynamic textures so a parent screen cannot retain presentation-only data while hidden.
      *
      * @throws Throwable when the common host rejects detachment or cleanup fails.
      * @throws IllegalStateException when invoked away from the Minecraft client thread.
@@ -134,7 +146,8 @@ public class FabricMinecraftScreen private constructor(
     /**
      * Extracts one render state from the common frame and presents it at the logical GUI origin.
      *
-     * Geometry is committed first, the current native pointer move is delivered against those bounds, and a second frame captures the resulting hover state.
+     * Geometry is committed first, and a native pointer move is delivered only when its position or the committed display list changed.
+     * A second frame captures resulting hover state only after that dispatch.
      * A zero-axis viewport still commits geometry and releases any prior texture without submitting a native blit.
      *
      * @param graphics the native extraction target.
@@ -152,21 +165,32 @@ public class FabricMinecraftScreen private constructor(
     ) {
         requireClientThread()
         try {
-            lifecycle.run {
-                val viewport = IntSize(width, height)
-                host.frame(viewport)
-                if (lifecycle.hasPendingExit()) return@run
-                if (width == 0 || height == 0) {
-                    releaseTextures()
-                    return@run
+            renderExtractionCount += 1L
+            inventory.withRefreshBatch {
+                lifecycle.run {
+                    val viewport = IntSize(width, height)
+                    hostFrameCount += 1L
+                    var frame = host.frame(viewport)
+                    if (lifecycle.hasPendingExit()) return@run
+                    if (width == 0 || height == 0) {
+                        releaseTextures()
+                        return@run
+                    }
+                    val currentPointer = IntOffset(mouseX, mouseY)
+                    val pointerNeedsDispatch = currentPointer != pointerPosition || frame.drawCommands !== pointerFrameCommands
+                    if (pointerNeedsDispatch) {
+                        extractedPointerDispatchCount += 1L
+                        inventory.withPointerMove { host.dispatchPointer(PointerEvent.Move(currentPointer)) == InputResult.Consumed }
+                        pointerPosition = currentPointer
+                        pointerFrameCommands = frame.drawCommands
+                        if (lifecycle.hasPendingExit()) return@run
+                        hostFrameCount += 1L
+                        frame = host.frame(viewport)
+                        if (lifecycle.hasPendingExit()) return@run
+                    }
+                    extractFrame(graphics, frame.drawCommands, frame.size)
+                    inventory.renderCarried(graphics, minecraftClient.font, mouseX, mouseY)
                 }
-                val currentPointer = IntOffset(mouseX, mouseY)
-                inventory.withPointerMove { host.dispatchPointer(PointerEvent.Move(currentPointer)) == InputResult.Consumed }
-                if (lifecycle.hasPendingExit()) return@run
-                val frame = host.frame(viewport)
-                if (lifecycle.hasPendingExit()) return@run
-                extractFrame(graphics, frame.drawCommands, frame.size)
-                inventory.renderCarried(graphics, minecraftClient.font, mouseX, mouseY)
             }
         } catch (failure: Throwable) {
             terminalFailure(failure)
@@ -195,6 +219,8 @@ public class FabricMinecraftScreen private constructor(
         requireClientThread()
         val position = positionOrNull(mouseX, mouseY) ?: return
         inventory.withPointerMove { dispatch(PointerEvent.Move(position)) }
+        pointerPosition = position
+        pointerFrameCommands = preparedCommands
     }
 
     /**
@@ -421,12 +447,15 @@ public class FabricMinecraftScreen private constructor(
     private fun attachHost() {
         host.attach()
         attached = true
+        pointerPosition = null
+        pointerFrameCommands = null
     }
 
     private fun detachHost() {
         if (attached) {
             host.detach()
             attached = false
+            releaseTextures()
         }
     }
 
@@ -457,21 +486,45 @@ public class FabricMinecraftScreen private constructor(
         commands: List<DrawCommand>,
         viewport: IntSize,
     ) {
-        val layers = partitionFrame(commands, viewport)
+        val reusePreparedFrame = commands === preparedCommands && viewport == preparedViewport
+        val layers =
+            if (reusePreparedFrame) {
+                preparedLayers
+            } else {
+                framePreparationCount += 1L
+                partitionFrame(commands, viewport)
+            }
+        val previousPortableLayers =
+            if (reusePreparedFrame || viewport != preparedViewport) {
+                emptyList()
+            } else {
+                preparedLayers.filterIsInstance<PortableLayer>()
+            }
         var textureIndex = 0
         layers.forEach { layer ->
             when (layer) {
                 is PortableLayer -> {
-                    val image = rasterizeHeadless(layer.commands, viewport)
-                    val current = upload(textureIndex, image)
+                    val retainedTexture = textures.getOrNull(textureIndex)
+                    val reusePortableLayer =
+                        reusePreparedFrame ||
+                            (retainedTexture != null && previousPortableLayers.getOrNull(textureIndex)?.commands == layer.commands)
+                    val current =
+                        if (reusePortableLayer) {
+                            checkNotNull(retainedTexture) {
+                                "A cached portable frame layer has no retained texture."
+                            }
+                        } else {
+                            portableRasterizationCount += 1L
+                            upload(textureIndex, rasterizeHeadless(layer.commands, viewport))
+                        }
                     textureIndex += 1
                     graphics.blit(
                         current.getTextureView(),
                         current.getSampler(),
                         0,
                         0,
-                        image.size.width,
-                        image.size.height,
+                        viewport.width,
+                        viewport.height,
                         0f,
                         1f,
                         0f,
@@ -484,7 +537,12 @@ public class FabricMinecraftScreen private constructor(
                 }
             }
         }
-        trimTextures(textureIndex)
+        if (reusePreparedFrame.not()) {
+            trimTextures(textureIndex)
+            preparedCommands = commands
+            preparedViewport = viewport
+            preparedLayers = layers
+        }
     }
 
     private fun extractPlatformLayer(
@@ -626,9 +684,15 @@ public class FabricMinecraftScreen private constructor(
             }
         }
         target.upload()
+        textureUploadCount += 1L
     }
 
     private fun releaseTextures() {
+        preparedCommands = null
+        preparedViewport = null
+        preparedLayers = emptyList()
+        pointerPosition = null
+        pointerFrameCommands = null
         var failure: Throwable? = null
         while (textures.isNotEmpty()) {
             val current = textures.removeAt(textures.lastIndex)

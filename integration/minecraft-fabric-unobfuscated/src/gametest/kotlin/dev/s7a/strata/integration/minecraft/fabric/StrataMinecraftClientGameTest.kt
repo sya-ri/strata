@@ -128,6 +128,7 @@ public class StrataMinecraftClientGameTest : FabricClientGameTest {
                         .withSize(viewport.width, viewport.height)
                         .withDestinationDir(output),
                 )
+                assertCleanFabricFrameReuse(context)
                 headless
             }
 
@@ -312,10 +313,159 @@ public class StrataMinecraftClientGameTest : FabricClientGameTest {
         context.runOnClient(
             FailableConsumer<Minecraft, RuntimeException> { minecraft ->
                 val current = MinecraftClientScreenAccess.currentScreen(minecraft)
-                if (current is FabricMinecraftScreen) current.onClose()
+                if (current is FabricMinecraftScreen) {
+                    MinecraftClientScreenAccess.setScreen(minecraft, null)
+                    assertFabricPresentationReleased(current)
+                    current.onClose()
+                }
             },
         )
         context.waitFor(Predicate<Minecraft> { minecraft -> (MinecraftClientScreenAccess.currentScreen(minecraft) is FabricMinecraftScreen).not() })
+    }
+
+    private fun assertFabricPresentationReleased(screen: FabricMinecraftScreen) {
+        val fields = FabricMinecraftScreen::class.java.declaredFields.associateBy { field -> field.name }
+
+        fun retained(name: String): Any? {
+            val field = fields[name] ?: error("Fabric presentation field is missing: $name")
+            check(field.trySetAccessible()) { "Fabric presentation field is inaccessible: $name" }
+            return field.get(screen)
+        }
+
+        require((retained("textures") as List<*>).isEmpty()) { "A detached Fabric screen retained dynamic textures." }
+        require(retained("preparedCommands") == null) { "A detached Fabric screen retained its display list." }
+        require(retained("preparedViewport") == null) { "A detached Fabric screen retained its prepared viewport." }
+        require((retained("preparedLayers") as List<*>).isEmpty()) { "A detached Fabric screen retained prepared layers." }
+        require(retained("pointerPosition") == null) { "A detached Fabric screen retained its native pointer position." }
+        require(retained("pointerFrameCommands") == null) { "A detached Fabric screen retained pointer display-list ownership." }
+    }
+
+    private fun assertCleanFabricFrameReuse(context: ClientGameTestContext) {
+        val beforeBatch =
+            context.computeOnClient(
+                FailableFunction<Minecraft, RenderWork, RuntimeException> { minecraft ->
+                    val before = readRenderWork(minecraft)
+                    val screen = activeFabricScreen(minecraft)
+                    listOf("pointerPosition", "pointerFrameCommands").forEach { name ->
+                        val field = FabricMinecraftScreen::class.java.getDeclaredField(name)
+                        check(field.trySetAccessible()) { "Fabric pointer cache field is inaccessible: $name" }
+                        field.set(screen, null)
+                    }
+                    before
+                },
+            )
+        context.waitFor(
+            Predicate<Minecraft> { minecraft ->
+                val current = readRenderWork(minecraft)
+                beforeBatch.pointerDispatches < current.pointerDispatches && beforeBatch.renderExtractions < current.renderExtractions
+            },
+        )
+        val afterBatch = renderWork(context)
+        val batchExtractions = afterBatch.renderExtractions - beforeBatch.renderExtractions
+        val batchPointerDispatches = afterBatch.pointerDispatches - beforeBatch.pointerDispatches
+        require(afterBatch.hostFrames - beforeBatch.hostFrames == batchExtractions + batchPointerDispatches) {
+            "Each extraction must produce one host frame plus one after each pointer dispatch: before=$beforeBatch, after=$afterBatch"
+        }
+        require(afterBatch.refreshPasses - beforeBatch.refreshPasses == batchExtractions) {
+            "Repeated host frames in one extraction must share one platform refresh: before=$beforeBatch, after=$afterBatch"
+        }
+
+        var previous = afterBatch
+        context.waitFor(
+            Predicate<Minecraft> { minecraft ->
+                val current = readRenderWork(minecraft)
+                val settled = previous.renderExtractions < current.renderExtractions && previous.pointerDispatches == current.pointerDispatches
+                previous = current
+                settled
+            },
+        )
+        val before = renderWork(context)
+        context.waitFor(Predicate<Minecraft> { minecraft -> before.renderExtractions < readRenderWork(minecraft).renderExtractions })
+        val after = renderWork(context)
+        val extractionDelta = after.renderExtractions - before.renderExtractions
+        require(0L < extractionDelta) { "The clean-frame verification observed no native render extraction." }
+        require(after.hostFrames - before.hostFrames == extractionDelta) {
+            "A clean native render extraction must produce exactly one common host frame: before=$before, after=$after"
+        }
+        require(after.refreshPasses - before.refreshPasses == extractionDelta) {
+            "A clean native render extraction must perform exactly one platform refresh: before=$before, after=$after"
+        }
+        require(after.pointerDispatches == before.pointerDispatches) {
+            "A stationary pointer must not be redispatched while the display list is unchanged: before=$before, after=$after"
+        }
+        require(after.framePreparations == before.framePreparations) {
+            "An unchanged display list must not be repartitioned: before=$before, after=$after"
+        }
+        require(after.rasterizations == before.rasterizations) {
+            "An unchanged portable layer must not be rasterized again: before=$before, after=$after"
+        }
+        require(after.textureUploads == before.textureUploads) {
+            "An unchanged portable layer must not be uploaded again: before=$before, after=$after"
+        }
+
+        val beforeEquivalentLayers =
+            context.computeOnClient(
+                FailableFunction<Minecraft, RenderWork, RuntimeException> { minecraft ->
+                    val screen = activeFabricScreen(minecraft)
+                    val commandsField = FabricMinecraftScreen::class.java.getDeclaredField("preparedCommands")
+                    check(commandsField.trySetAccessible()) { "The Fabric prepared command cache is inaccessible." }
+                    val commands = commandsField.get(screen) as? List<*> ?: error("The Fabric screen has no prepared command list.")
+                    commandsField.set(screen, ArrayList(commands))
+                    readRenderWork(minecraft)
+                },
+            )
+        context.waitFor(
+            Predicate<Minecraft> { minecraft ->
+                beforeEquivalentLayers.renderExtractions < readRenderWork(minecraft).renderExtractions
+            },
+        )
+        val afterEquivalentLayers = renderWork(context)
+        require(afterEquivalentLayers.framePreparations == beforeEquivalentLayers.framePreparations + 1L) {
+            "A new but equivalent display-list snapshot must be repartitioned exactly once: before=$beforeEquivalentLayers, after=$afterEquivalentLayers"
+        }
+        require(afterEquivalentLayers.rasterizations == beforeEquivalentLayers.rasterizations) {
+            "Equivalent portable layers must reuse their raster textures: before=$beforeEquivalentLayers, after=$afterEquivalentLayers"
+        }
+        require(afterEquivalentLayers.textureUploads == beforeEquivalentLayers.textureUploads) {
+            "Equivalent portable layers must not be uploaded again: before=$beforeEquivalentLayers, after=$afterEquivalentLayers"
+        }
+    }
+
+    private fun renderWork(context: ClientGameTestContext): RenderWork =
+        context.computeOnClient(
+            FailableFunction<Minecraft, RenderWork, RuntimeException> { minecraft -> readRenderWork(minecraft) },
+        )
+
+    private fun readRenderWork(minecraft: Minecraft): RenderWork {
+        val screen = activeFabricScreen(minecraft)
+        val fields = FabricMinecraftScreen::class.java.declaredFields.associateBy { field -> field.name }
+
+        fun counter(name: String): Long {
+            val field = fields[name] ?: error("Fabric performance counter is missing: $name")
+            check(field.trySetAccessible()) { "Fabric performance counter is inaccessible: $name" }
+            return field.getLong(screen)
+        }
+
+        val inventoryField = fields["inventory"] ?: error("The Fabric performance screen has no inventory bridge.")
+        check(inventoryField.trySetAccessible()) { "The Fabric inventory bridge is inaccessible." }
+        val inventory = inventoryField.get(screen)
+        val refreshField = inventory.javaClass.getDeclaredField("refreshPassCount")
+        check(refreshField.trySetAccessible()) { "The Fabric refresh counter is inaccessible." }
+
+        return RenderWork(
+            renderExtractions = counter("renderExtractionCount"),
+            hostFrames = counter("hostFrameCount"),
+            pointerDispatches = counter("extractedPointerDispatchCount"),
+            refreshPasses = refreshField.getLong(inventory),
+            framePreparations = counter("framePreparationCount"),
+            rasterizations = counter("portableRasterizationCount"),
+            textureUploads = counter("textureUploadCount"),
+        )
+    }
+
+    private fun activeFabricScreen(minecraft: Minecraft): FabricMinecraftScreen {
+        val activeScreen = MinecraftClientScreenAccess.currentScreen(minecraft)
+        return activeScreen as? FabricMinecraftScreen ?: error("The Fabric performance screen is not active.")
     }
 
     @OptIn(InternalStrataRuntimeApi::class)
@@ -349,6 +499,16 @@ public class StrataMinecraftClientGameTest : FabricClientGameTest {
         if (image.getWidth() == expected.width && image.getHeight() == expected.height) return
         throw AssertionError("Native screenshot size was ${image.getWidth()}x${image.getHeight()}, expected ${expected.width}x${expected.height}.")
     }
+
+    private data class RenderWork(
+        val renderExtractions: Long,
+        val hostFrames: Long,
+        val pointerDispatches: Long,
+        val refreshPasses: Long,
+        val framePreparations: Long,
+        val rasterizations: Long,
+        val textureUploads: Long,
+    )
 
     private fun requireExactPixels(
         native: NativeImage,

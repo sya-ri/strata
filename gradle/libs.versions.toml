@@ -6,6 +6,8 @@ detekt = "2.0.0-alpha.6"
 junit = "6.1.3"
 kotlinter = "5.7.0"
 kover = "0.9.9"
+jmh-gradle = "0.7.3"
+benchmark-harness = "1.37"
 vanniktech-maven-publish = "0.37.0"
 dokka = "2.2.0"
 kotlinx-coroutines = "1.11.0"
@@ -34,6 +36,7 @@ fabric-api261 = { module = "net.fabricmc.fabric-api:fabric-api", version.ref = "
 [plugins]
 kotlin-jvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
 kover = { id = "org.jetbrains.kotlinx.kover", version.ref = "kover" }
+jmh = { id = "me.champeau.jmh", version.ref = "jmh-gradle" }
 detekt = { id = "dev.detekt", version.ref = "detekt" }
 kotlinter = { id = "org.jmailen.kotlinter", version.ref = "kotlinter" }
 vanniktechMavenPublish = { id = "com.vanniktech.maven.publish", version.ref = "vanniktech-maven-publish" }

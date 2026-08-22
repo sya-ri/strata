@@ -44,29 +44,64 @@ private object RuntimeUiSessionImplementation {
     private class RuntimeUiSessionBridge private constructor(
         content: () -> Element,
     ) : RuntimeUiSession {
+        private val ownerThread: Thread = Thread.currentThread()
         private val session: UiSession = UiSession(SynchronousBridgeDispatcher, content = content)
+        private var cachedSourceFrame: UiFrame? = null
+        private var cachedSnapshot: RuntimeUiFrame? = null
 
         override fun attach() {
-            session.attach()
+            lifecycleOperation(session::attach)
         }
 
         override fun detach() {
-            session.detach()
+            lifecycleOperation(session::detach)
         }
 
-        override fun frame(constraints: Constraints): RuntimeUiFrame =
-            session.frame(constraints).let { frame ->
-                RuntimeUiFrameSnapshot.create(frame)
+        override fun frame(constraints: Constraints): RuntimeUiFrame {
+            val frame = cachedOperation { session.frame(constraints) }
+            val retainedSnapshot = cachedSnapshot
+            if (cachedSourceFrame === frame && retainedSnapshot != null) {
+                return retainedSnapshot
             }
+            val snapshot = RuntimeUiFrameSnapshot.create(frame)
+            cachedSourceFrame = frame
+            cachedSnapshot = snapshot
+            return snapshot
+        }
 
-        override fun dispatchPointer(event: PointerEvent): InputResult = session.dispatchPointer(event)
+        override fun dispatchPointer(event: PointerEvent): InputResult = cachedOperation { session.dispatchPointer(event) }
 
-        override fun dispatchKeyboard(event: KeyboardEvent): InputResult = session.dispatchKeyboard(event)
+        override fun dispatchKeyboard(event: KeyboardEvent): InputResult = cachedOperation { session.dispatchKeyboard(event) }
 
-        override fun dispatchTextInput(event: TextInputEvent): InputResult = session.dispatchTextInput(event)
+        override fun dispatchTextInput(event: TextInputEvent): InputResult = cachedOperation { session.dispatchTextInput(event) }
 
         override fun close() {
-            session.close()
+            val result = runCatching(session::close)
+            clearCachedFrameOnOwnerThread()
+            result.getOrThrow()
+        }
+
+        private inline fun <T> cachedOperation(operation: () -> T): T =
+            runCatching(operation).getOrElse { failure ->
+                clearCachedFrameOnOwnerThread()
+                throw failure
+            }
+
+        private inline fun lifecycleOperation(operation: () -> Unit) {
+            val result = runCatching(operation)
+            clearCachedFrameOnOwnerThread()
+            result.getOrThrow()
+        }
+
+        private fun clearCachedFrameOnOwnerThread() {
+            if (Thread.currentThread() === ownerThread) {
+                clearCachedFrame()
+            }
+        }
+
+        private fun clearCachedFrame() {
+            cachedSourceFrame = null
+            cachedSnapshot = null
         }
 
         companion object {

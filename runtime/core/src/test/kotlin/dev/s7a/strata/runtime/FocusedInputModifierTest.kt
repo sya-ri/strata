@@ -28,6 +28,8 @@ import dev.s7a.strata.modifier.onTextInput
 import dev.s7a.strata.modifier.size
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
 import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertNotNull
+import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Assertions.assertSame
 import org.junit.jupiter.api.Assertions.assertThrows
 import org.junit.jupiter.api.Test
@@ -176,6 +178,62 @@ internal class FocusedInputModifierTest {
         failing.close()
     }
 
+    @Test
+    fun closeReleasesFocusedOwnerWithoutSynthesizingAnotherTransition() {
+        val transitions = ArrayList<FocusEvent>()
+        val tree =
+            tree(
+                Modifier.Empty
+                    .size(10, 10)
+                    .initialFocus()
+                    .onFocusChanged(transitions::add),
+            )
+        assertNotNull(retainedFocusOwner(tree))
+
+        tree.close()
+
+        assertNull(retainedFocusOwner(tree))
+        assertEquals(listOf(FocusEvent.Gained), transitions)
+    }
+
+    @Test
+    fun poisonReleasesFocusedOwnerEvenWhenCleanupFails() {
+        val primary = IllegalArgumentException("focused callback")
+        val cleanup = IllegalStateException("dispose")
+        val transitions = ArrayList<FocusEvent>()
+        val probe =
+            TestProbe(
+                failingDisposeTag = TestProbe.ProbeId("root"),
+                disposeFailure = cleanup,
+            )
+        val tree = UiTree()
+        tree.update(
+            probe.root(
+                emptyList(),
+                modifier =
+                    Modifier.Empty
+                        .size(10, 10)
+                        .initialFocus()
+                        .onFocusChanged(transitions::add)
+                        .onKeyPress { throw primary },
+            ),
+        )
+        tree.measure(Constraints.fixed(10, 10))
+        tree.layout()
+        assertNotNull(retainedFocusOwner(tree))
+
+        val thrown =
+            assertThrows(IllegalArgumentException::class.java) {
+                tree.dispatchKeyboard(KeyboardEvent.Press(KeyCode.Enter, 0))
+            }
+
+        assertSame(primary, thrown)
+        assertEquals(listOf(cleanup), thrown.suppressed.toList())
+        assertNull(retainedFocusOwner(tree))
+        assertEquals(listOf(FocusEvent.Gained), transitions)
+        tree.close()
+    }
+
     private fun focusableModifier(
         target: Target,
         transitions: MutableList<Transition>,
@@ -195,6 +253,21 @@ internal class FocusedInputModifierTest {
             tree.measure(Constraints.fixed(10, 10))
             tree.layout()
         }
+
+    private fun retainedFocusOwner(tree: UiTree): Any? {
+        val pipeline = reflectedField(tree, "pipeline")
+        val focusedInputPipeline = reflectedField(checkNotNull(pipeline), "focusedInputPipeline")
+        return reflectedField(checkNotNull(focusedInputPipeline), "focusedOwner")
+    }
+
+    private fun reflectedField(
+        owner: Any,
+        name: String,
+    ): Any? {
+        val field = owner.javaClass.getDeclaredField(name)
+        check(field.trySetAccessible()) { "Test inspection could not access $name." }
+        return field.get(owner)
+    }
 
     private sealed interface Observation {
         data class KeyEvery(

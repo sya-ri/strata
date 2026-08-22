@@ -19,4 +19,14 @@ final class MinecraftClientScreenAccess {
     static Screen currentScreen(Minecraft minecraft) {
         return minecraft.gui.screen();
     }
+
+    /**
+     * Replaces the active client screen.
+     *
+     * @param minecraft client GUI owner
+     * @param screen replacement screen, or null
+     */
+    static void setScreen(Minecraft minecraft, Screen screen) {
+        minecraft.gui.setScreen(screen);
+    }
 }

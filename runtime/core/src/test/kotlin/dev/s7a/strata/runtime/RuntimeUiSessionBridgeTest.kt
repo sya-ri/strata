@@ -16,6 +16,7 @@ import dev.s7a.strata.runtime.spi.RuntimeUiSession
 import dev.s7a.strata.runtime.spi.createRuntimeUiSession
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
 import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertNotSame
 import org.junit.jupiter.api.Assertions.assertSame
 import org.junit.jupiter.api.Assertions.assertThrows
 import org.junit.jupiter.api.Assertions.assertTrue
@@ -59,6 +60,7 @@ internal class RuntimeUiSessionBridgeTest {
             session.dispatchPointer(PointerEvent.Move(IntOffset.Zero)),
         )
         val firstFrame = session.frame(Constraints.fixed(2, 1))
+        assertSame(firstFrame, session.frame(Constraints.fixed(2, 1)))
         val retainedNode = probe.nodeForTag(TestProbe.ProbeId("root"))
         val measureCalls = probe.measureCalls
         val layoutCalls = probe.layoutCalls
@@ -80,6 +82,9 @@ internal class RuntimeUiSessionBridgeTest {
         assertEquals(layoutCalls, probe.layoutCalls)
         assertEquals(paintCalls, probe.paintCalls)
         assertEquals(semanticsCalls, probe.semanticsCalls)
+        assertNotSame(firstFrame, secondFrame)
+        assertNotSame(firstFrame.drawCommands, secondFrame.drawCommands)
+        assertNotSame(firstFrame.semantics, secondFrame.semantics)
         assertEquals(firstFrame.size, secondFrame.size)
         assertEquals(1, probe.events.count { event -> event is TestProbe.Event.Attach })
         assertEquals(0, probe.events.count { event -> event is TestProbe.Event.Detach })
@@ -133,7 +138,9 @@ internal class RuntimeUiSessionBridgeTest {
         session.attach()
         assertThrows(IllegalStateException::class.java) { session.attach() }
         assertTrue(wrongThread { session.detach() } is IllegalStateException)
+        val retainedFrame = session.frame(Constraints.fixed(2, 1))
         assertTrue(wrongThread { session.frame(Constraints.fixed(2, 1)) } is IllegalStateException)
+        assertSame(retainedFrame, session.frame(Constraints.fixed(2, 1)))
         assertTrue(
             wrongThread { session.dispatchPointer(PointerEvent.Move(IntOffset.Zero)) } is IllegalStateException,
         )
