@@ -1,21 +1,16 @@
 import groovy.json.JsonSlurper
-import org.gradle.api.JavaVersion
 import org.gradle.api.tasks.SourceSetContainer
 import org.gradle.api.tasks.bundling.AbstractArchiveTask
 import org.gradle.language.jvm.tasks.ProcessResources
-import org.gradle.plugins.ide.idea.model.IdeaLanguageLevel
 import org.jetbrains.kotlin.gradle.dsl.KotlinJvmProjectExtension
 import java.util.zip.ZipFile
 
 plugins {
     `java-library`
-    idea
     alias(libs.plugins.fabricLoomRemap)
 }
 
 val sharedRuntime = rootProject.file("runtime/minecraft-fabric-shared/src/main")
-val mainSourceSet = extensions.getByType<SourceSetContainer>().named("main")
-val minecraftJavaVersion = libs.versions.java.minecraft12111.get()
 
 extensions.configure<SourceSetContainer> {
     named("main") {
@@ -23,27 +18,9 @@ extensions.configure<SourceSetContainer> {
     }
 }
 
-val kotlinMainSourceSet =
-    extensions
-        .getByType<KotlinJvmProjectExtension>()
-        .sourceSets
-        .named("main")
-
 extensions.configure<KotlinJvmProjectExtension> {
     sourceSets.named("main") {
         kotlin.srcDir(sharedRuntime.resolve("kotlin"))
-    }
-}
-
-idea {
-    module {
-        languageLevel = IdeaLanguageLevel(minecraftJavaVersion)
-        targetBytecodeVersion = JavaVersion.toVersion(minecraftJavaVersion)
-        sourceDirs.addAll(mainSourceSet.get().java.srcDirs)
-        sourceDirs.addAll(kotlinMainSourceSet.get().kotlin.srcDirs)
-        resourceDirs.addAll(mainSourceSet.get().resources.srcDirs)
-        scopes.getValue("COMPILE").getValue("plus").add(configurations.getByName("compileClasspath"))
-        scopes.getValue("RUNTIME").getValue("plus").add(configurations.getByName("runtimeClasspath"))
     }
 }
 

@@ -9,8 +9,6 @@ All three Fabric runtime modules declare fixed Loader, Minecraft, Fabric Languag
 The 26.x projects compile the complete neutral `runtime/minecraft-fabric-shared` and `runtime/minecraft-fabric-unobfuscated` source trees and add only their version-specific current-screen bridge and metadata.
 The 1.21.11 project compiles the complete cross-version shared tree and owns its older screen, focused-input, inventory, and current-screen bridges locally.
 Every source directory is linked as a whole root because Gradle file-tree include filters are not a reliable IDE or static-analysis ownership boundary.
-The two remapped 1.21.11 projects also expose their Java 21 language level, complete source roots, and resolved named main or GameTest classpaths through Gradle's IDEA model.
-IDE and Qodana analysis must therefore resolve the same mapped Minecraft, Fabric, and Strata dependencies as compilation even when the remap plugin does not publish source-set modules through the importer.
 Consumers select exactly one versioned runtime artifact because the adapters deliberately expose the same packages and public class names.
 
 Every Kotlin compilation uses explicit API mode and treats warnings as errors.
@@ -27,6 +25,7 @@ The Documentation workflow builds that exact directory on pushes to `master` and
 Repository settings must select GitHub Actions as the Pages source; the workflow requires only read access to contents plus `pages: write` and `id-token: write`.
 
 Qodana runs its recommended JVM inspection profile in CI without a baseline.
+The workflow makes every required Java toolchain available inside the Qodana container so Gradle's IDE importer can resolve the Java 17, Java 21, and Java 25 source-set models and their dependencies.
 Static-analysis rules are enabled when they produce actionable improvements; rules that systematically make code less clear are disabled with a durable rationale in the checked-in configuration.
 
 The nonpublished `integration:minecraft-fabric-26.2` and `integration:minecraft-fabric-26.1` modules compile the same neutral loaded-client suite against their exact game and Fabric API dependencies.
