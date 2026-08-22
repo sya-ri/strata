@@ -2,7 +2,7 @@
 kotlin = "2.4.10"
 java-baseline = "17"
 java-minecraft = "25"
-detekt = "2.0.0-alpha.5"
+detekt = "2.0.0-alpha.6"
 junit = "6.1.2"
 kotlinter = "5.7.0"
 kover = "0.9.9"
