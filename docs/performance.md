@@ -76,19 +76,20 @@ Owner-thread draining must transfer an accepted completion at most once, and a c
 
 ## Post-fix results
 
-Record the first verified post-fix run in this section after all three fixes and their deterministic tests land together.
-Copy the rounded values from the temporary JSON report into this table and identify the measured commit, but do not commit the report itself.
-
-Post-fix commit: `Pending`.
+The first verified post-fix run was measured from commit `01d0705` after all three fixes and their deterministic tests landed together.
+The clean retained-frame path now rounds to zero bytes per operation at every viewport and takes 0.004 microseconds per operation, removing the former 20,056-byte snapshot allocation and reducing measured time by more than 99.9% on this host.
+Dirty-frame allocation is unchanged, and its measured time ranges from 1.3% faster to 0.1% slower than the baseline.
+Headless rasterization retains the expected viewport-sized pixel allocation and measured between 1.7% and 4.4% faster than the baseline.
+These comparisons confirm the intended clean-frame improvement without moving work into the dirty or raster paths; they remain diagnostic measurements subject to the environmental limits described above.
 
 | Benchmark | Viewport | Average time (µs/op) | Allocation (B/op) |
 | --- | --- | ---: | ---: |
-| Clean session frame | Compact | Pending | Pending |
-| Clean session frame | Windowed | Pending | Pending |
-| Clean session frame | FullHd | Pending | Pending |
-| Dirty session frame | Compact | Pending | Pending |
-| Dirty session frame | Windowed | Pending | Pending |
-| Dirty session frame | FullHd | Pending | Pending |
-| Headless rasterization | Compact | Pending | Pending |
-| Headless rasterization | Windowed | Pending | Pending |
-| Headless rasterization | FullHd | Pending | Pending |
+| Clean session frame | Compact | 0.004 | 0 |
+| Clean session frame | Windowed | 0.004 | 0 |
+| Clean session frame | FullHd | 0.004 | 0 |
+| Dirty session frame | Compact | 14.309 | 58,648 |
+| Dirty session frame | Windowed | 13.669 | 58,648 |
+| Dirty session frame | FullHd | 13.905 | 58,648 |
+| Headless rasterization | Compact | 505.134 | 230,796 |
+| Headless rasterization | Windowed | 3,208.000 | 1,643,616 |
+| Headless rasterization | FullHd | 16,631.944 | 8,298,491 |
