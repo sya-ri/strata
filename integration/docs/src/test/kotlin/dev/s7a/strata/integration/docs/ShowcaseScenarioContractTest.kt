@@ -85,7 +85,7 @@ internal class ShowcaseScenarioContractTest {
     fun overviewHasExactRootAndContainerDetails() {
         val overview = ShowcaseScenarioCatalog.overview
         assertEquals(
-            "integration/minecraft-fabric-26.2/src/gametest/kotlin/dev/s7a/strata/integration/minecraft/fabric/MinecraftOverviewExample.kt",
+            "integration/minecraft-fabric-unobfuscated/src/gametest/kotlin/dev/s7a/strata/integration/minecraft/fabric/MinecraftOverviewExample.kt",
             overview.source.relativePath,
         )
         assertEquals("overview", overview.source.slug)
@@ -113,11 +113,11 @@ internal class ShowcaseScenarioContractTest {
     fun everyScenarioUsesLoadedGameSourcesAndScaleOne() {
         (listOf(ShowcaseScenarioCatalog.overview) + ShowcaseScenarioCatalog.components).forEach { scenario ->
             assertEquals(1, scenario.scale)
-            assertTrue(scenario.source.relativePath.startsWith("integration/minecraft-fabric-26.2/src/gametest/kotlin/"))
+            assertTrue(scenario.source.relativePath.startsWith("integration/minecraft-fabric-unobfuscated/src/gametest/kotlin/"))
         }
         ShowcaseScenarioCatalog.screens.forEach { scenario ->
             assertEquals(1, scenario.scale)
-            assertTrue(scenario.source.relativePath.startsWith("integration/minecraft-fabric-26.2/src/gametest/kotlin/"))
+            assertTrue(scenario.source.relativePath.startsWith("integration/minecraft-fabric-unobfuscated/src/gametest/kotlin/"))
         }
     }
 

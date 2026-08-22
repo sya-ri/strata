@@ -1,4 +1,6 @@
 import org.gradle.api.tasks.SourceSetContainer
+import org.gradle.language.jvm.tasks.ProcessResources
+import org.jetbrains.kotlin.gradle.dsl.KotlinJvmProjectExtension
 
 plugins {
     `java-library`
@@ -10,6 +12,7 @@ val runtimeFabricMain =
         .extensions
         .getByType<SourceSetContainer>()
         .named("main")
+val sharedGameTest = rootProject.file("integration/minecraft-fabric-unobfuscated/src/gametest")
 
 fabricApi {
     configureTests {
@@ -21,10 +24,38 @@ fabricApi {
     }
 }
 
+extensions.configure<SourceSetContainer> {
+    named("gametest") {
+        java.srcDir("src/gametest26/java")
+        resources.srcDir(sharedGameTest.resolve("resources"))
+    }
+}
+
+extensions.configure<KotlinJvmProjectExtension> {
+    sourceSets.named("gametest") {
+        kotlin.srcDir(sharedGameTest.resolve("kotlin"))
+    }
+}
+
+tasks.named<ProcessResources>("processGametestResources") {
+    inputs.property("version", project.version)
+    inputs.property("minecraftVersion", libs.versions.minecraft262)
+    inputs.property("integrationModId", "strata-integration-minecraft-fabric-26-2")
+    inputs.property("runtimeModId", "strata-runtime-minecraft-fabric-26-2")
+    filesMatching("fabric.mod.json") {
+        expand(
+            "version" to project.version,
+            "minecraftVersion" to libs.versions.minecraft262.get(),
+            "integrationModId" to "strata-integration-minecraft-fabric-26-2",
+            "runtimeModId" to "strata-runtime-minecraft-fabric-26-2",
+        )
+    }
+}
+
 dependencies {
-    minecraft(libs.minecraft)
+    minecraft(libs.minecraft262)
     implementation(libs.fabric.loader)
-    implementation(libs.fabric.api)
+    implementation(libs.fabric.api262)
     add("gametestImplementation", files(runtimeFabricMain.map { sourceSet -> sourceSet.output }))
     add("gametestImplementation", project(":runtime:headless"))
     add("gametestImplementation", project(":runtime:minecraft"))
@@ -44,5 +75,6 @@ tasks.named<JavaExec>("runClientGameTest") {
     inputs.property("strataMinecraftParityOutput", parityOutput.map { it.asFile.absolutePath })
     doFirst {
         systemProperty("strata.minecraftParityOutput", parityOutput.get().asFile.absolutePath)
+        systemProperty("strata.minecraftVersion", libs.versions.minecraft262.get())
     }
 }

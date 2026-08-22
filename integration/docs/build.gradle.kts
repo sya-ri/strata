@@ -19,7 +19,7 @@ val apiMainClasses =
         .getByType<SourceSetContainer>()
         .named("main")
         .map { sourceSet -> sourceSet.output.classesDirs }
-val showcaseSources = rootProject.layout.projectDirectory.dir("integration/minecraft-fabric-26.2/src/gametest/kotlin")
+val showcaseSources = rootProject.layout.projectDirectory.dir("integration/minecraft-fabric-unobfuscated/src/gametest/kotlin")
 val checkStaging = layout.buildDirectory.dir("component-showcase/check")
 val generateStaging = layout.buildDirectory.dir("component-showcase/generate")
 val repositoryRoot = providers.provider { rootProject.layout.projectDirectory }

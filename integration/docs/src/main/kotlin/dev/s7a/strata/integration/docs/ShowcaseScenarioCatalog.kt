@@ -89,7 +89,7 @@ internal object ShowcaseScenarioCatalog {
                 component = DocumentedComponent.Text,
                 source =
                     SourceReference(
-                        "integration/minecraft-fabric-26.2/src/gametest/kotlin/dev/s7a/strata/integration/minecraft/fabric/MinecraftTextExample.kt",
+                        "integration/minecraft-fabric-unobfuscated/src/gametest/kotlin/dev/s7a/strata/integration/minecraft/fabric/MinecraftTextExample.kt",
                         "text",
                     ),
                 viewportMetadata = ShowcaseViewport(IntSize(150, 20), 1),
@@ -99,7 +99,7 @@ internal object ShowcaseScenarioCatalog {
                 component = DocumentedComponent.TextField,
                 source =
                     SourceReference(
-                        "integration/minecraft-fabric-26.2/src/gametest/kotlin/dev/s7a/strata/integration/minecraft/fabric/MinecraftTextFieldExample.kt",
+                        "integration/minecraft-fabric-unobfuscated/src/gametest/kotlin/dev/s7a/strata/integration/minecraft/fabric/MinecraftTextFieldExample.kt",
                         "text-field",
                     ),
                 viewportMetadata = ShowcaseViewport(IntSize(200, 20), 1),
@@ -109,7 +109,7 @@ internal object ShowcaseScenarioCatalog {
                 component = DocumentedComponent.Button,
                 source =
                     SourceReference(
-                        "integration/minecraft-fabric-26.2/src/gametest/kotlin/dev/s7a/strata/integration/minecraft/fabric/MinecraftButtonExample.kt",
+                        "integration/minecraft-fabric-unobfuscated/src/gametest/kotlin/dev/s7a/strata/integration/minecraft/fabric/MinecraftButtonExample.kt",
                         "button",
                     ),
                 viewportMetadata = ShowcaseViewport(IntSize(150, 20), 1),
@@ -125,7 +125,7 @@ internal object ShowcaseScenarioCatalog {
                 component = DocumentedComponent.Scroll,
                 source =
                     SourceReference(
-                        "integration/minecraft-fabric-26.2/src/gametest/kotlin/dev/s7a/strata/integration/minecraft/fabric/MinecraftScrollExample.kt",
+                        "integration/minecraft-fabric-unobfuscated/src/gametest/kotlin/dev/s7a/strata/integration/minecraft/fabric/MinecraftScrollExample.kt",
                         "scroll",
                     ),
                 viewportMetadata = ShowcaseViewport(IntSize(320, 94), 1),
@@ -156,7 +156,7 @@ internal object ShowcaseScenarioCatalog {
                 component = DocumentedComponent.PlayerHead,
                 source =
                     SourceReference(
-                        "integration/minecraft-fabric-26.2/src/gametest/kotlin/dev/s7a/strata/integration/minecraft/fabric/MinecraftPlayerHeadExample.kt",
+                        "integration/minecraft-fabric-unobfuscated/src/gametest/kotlin/dev/s7a/strata/integration/minecraft/fabric/MinecraftPlayerHeadExample.kt",
                         "player-head",
                     ),
                 viewportMetadata = ShowcaseViewport(IntSize(24, 24), 1),
@@ -205,7 +205,7 @@ internal object ShowcaseScenarioCatalog {
             ScreenScenario(
                 DocumentedScreen.SocialInteractions,
                 SourceReference(
-                    "integration/minecraft-fabric-26.2/src/gametest/kotlin/dev/s7a/strata/integration/minecraft/fabric/MinecraftSocialExample.kt",
+                    "integration/minecraft-fabric-unobfuscated/src/gametest/kotlin/dev/s7a/strata/integration/minecraft/fabric/MinecraftSocialExample.kt",
                     "social-screen",
                 ),
                 ShowcaseViewport(IntSize(320, 240), 1),
@@ -213,7 +213,7 @@ internal object ShowcaseScenarioCatalog {
             ScreenScenario(
                 DocumentedScreen.SynchronizedInventory,
                 SourceReference(
-                    "integration/minecraft-fabric-26.2/src/gametest/kotlin/dev/s7a/strata/integration/minecraft/fabric/MinecraftInventoryExample.kt",
+                    "integration/minecraft-fabric-unobfuscated/src/gametest/kotlin/dev/s7a/strata/integration/minecraft/fabric/MinecraftInventoryExample.kt",
                     "inventory-screen",
                 ),
                 ShowcaseViewport(IntSize(320, 240), 1),
@@ -226,7 +226,7 @@ internal object ShowcaseScenarioCatalog {
             ScreenScenario(
                 DocumentedScreen.PowerMilestones,
                 SourceReference(
-                    "integration/minecraft-fabric-26.2/src/gametest/kotlin/dev/s7a/strata/integration/minecraft/fabric/MinecraftProgressExample.kt",
+                    "integration/minecraft-fabric-unobfuscated/src/gametest/kotlin/dev/s7a/strata/integration/minecraft/fabric/MinecraftProgressExample.kt",
                     "progress-screen",
                 ),
                 ShowcaseViewport(IntSize(320, 180), 1),
@@ -283,31 +283,31 @@ internal object ShowcaseScenarioCatalog {
 
     private fun overviewSource(): SourceReference =
         SourceReference(
-            "integration/minecraft-fabric-26.2/src/gametest/kotlin/dev/s7a/strata/integration/minecraft/fabric/MinecraftOverviewExample.kt",
+            "integration/minecraft-fabric-unobfuscated/src/gametest/kotlin/dev/s7a/strata/integration/minecraft/fabric/MinecraftOverviewExample.kt",
             "overview",
         )
 
     private fun slotSource(): SourceReference =
         SourceReference(
-            "integration/minecraft-fabric-26.2/src/gametest/kotlin/dev/s7a/strata/integration/minecraft/fabric/MinecraftSlotExample.kt",
+            "integration/minecraft-fabric-unobfuscated/src/gametest/kotlin/dev/s7a/strata/integration/minecraft/fabric/MinecraftSlotExample.kt",
             "slot",
         )
 
     private fun socialSource(): SourceReference =
         SourceReference(
-            "integration/minecraft-fabric-26.2/src/gametest/kotlin/dev/s7a/strata/integration/minecraft/fabric/MinecraftSocialExample.kt",
+            "integration/minecraft-fabric-unobfuscated/src/gametest/kotlin/dev/s7a/strata/integration/minecraft/fabric/MinecraftSocialExample.kt",
             "social-screen",
         )
 
     private fun progressSource(): SourceReference =
         SourceReference(
-            "integration/minecraft-fabric-26.2/src/gametest/kotlin/dev/s7a/strata/integration/minecraft/fabric/MinecraftProgressExample.kt",
+            "integration/minecraft-fabric-unobfuscated/src/gametest/kotlin/dev/s7a/strata/integration/minecraft/fabric/MinecraftProgressExample.kt",
             "progress-screen",
         )
 
     private fun industrialSource(): SourceReference =
         SourceReference(
-            "integration/minecraft-fabric-26.2/src/gametest/kotlin/dev/s7a/strata/integration/minecraft/fabric/MinecraftIndustrialExample.kt",
+            "integration/minecraft-fabric-unobfuscated/src/gametest/kotlin/dev/s7a/strata/integration/minecraft/fabric/MinecraftIndustrialExample.kt",
             "industrial-screen",
         )
 

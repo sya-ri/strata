@@ -1,0 +1,33 @@
+public final class dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftAssets {
+	public static final fun loadCurrentMinecraftPlayerSkin ()Ldev/s7a/strata/render/DrawImage;
+	public static final fun loadMinecraftUiImage (Ldev/s7a/strata/resource/ResourceId;)Ldev/s7a/strata/render/DrawImage;
+}
+
+public final class dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftProfiles {
+	public static final fun extractMinecraftUiProfile ()Ldev/s7a/strata/runtime/minecraft/MinecraftUiProfile;
+}
+
+public final class dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreen : net/minecraft/client/gui/screens/Screen, java/lang/AutoCloseable {
+	public fun added ()V
+	public fun charTyped (Lnet/minecraft/client/input/CharacterEvent;)Z
+	public fun close ()V
+	public fun extractBackground (Lnet/minecraft/client/gui/GuiGraphicsExtractor;IIF)V
+	public fun extractRenderState (Lnet/minecraft/client/gui/GuiGraphicsExtractor;IIF)V
+	public fun isPauseScreen ()Z
+	public fun keyPressed (Lnet/minecraft/client/input/KeyEvent;)Z
+	public fun keyReleased (Lnet/minecraft/client/input/KeyEvent;)Z
+	public fun mouseClicked (Lnet/minecraft/client/input/MouseButtonEvent;Z)Z
+	public fun mouseDragged (Lnet/minecraft/client/input/MouseButtonEvent;DD)Z
+	public fun mouseMoved (DD)V
+	public fun mouseReleased (Lnet/minecraft/client/input/MouseButtonEvent;)Z
+	public fun mouseScrolled (DDDD)Z
+	public fun onClose ()V
+	public fun preeditUpdated (Lnet/minecraft/client/input/PreeditEvent;)Z
+	public fun removed ()V
+}
+
+public final class dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreens {
+	public static final fun createMinecraftScreen (Ldev/s7a/strata/screen/ScreenDefinition;Ldev/s7a/strata/runtime/minecraft/MinecraftUiProfile;Lnet/minecraft/client/gui/screens/Screen;)Ldev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreen;
+	public static synthetic fun createMinecraftScreen$default (Ldev/s7a/strata/screen/ScreenDefinition;Ldev/s7a/strata/runtime/minecraft/MinecraftUiProfile;Lnet/minecraft/client/gui/screens/Screen;ILjava/lang/Object;)Ldev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreen;
+}
+

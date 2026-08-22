@@ -44,6 +44,14 @@ dependencies {
 ```
 
 The selected host adapter is a runtime concern.
+
+| Minecraft | Fabric runtime artifact | Required Java | Loaded verification |
+| --- | --- | --- | --- |
+| 26.2 | `strata-runtime-minecraft-fabric-26.2` | 25 | Exact native/Fabric/headless parity, Mod-screen parity, and synchronized inventory GameTests |
+| 26.1 | `strata-runtime-minecraft-fabric-26.1` | 25 | The same loaded suite; every recorded ARGB hash matches 26.2 for the fixed verified scenes |
+
+Select exactly one versioned Fabric runtime at execution time.
+The version artifacts intentionally expose the same package and public API, so depending on more than one creates duplicate classes.
 `ScreenDefinition` evaluates its callback after the Minecraft runtime has installed the active profile, so `Text(...)`, `Button(...)`, resources, slot bindings, and other components require neither a public `MinecraftUiContext` nor an extra root builder.
 
 ```kotlin
@@ -99,7 +107,7 @@ import dev.s7a.strata.modifier.size
 import dev.s7a.strata.screen.ScreenDefinition
 
 /**
- * Builds the deterministic Minecraft 26.2 ConfirmScreen content used by the Fabric and headless parity paths.
+ * Builds the deterministic Minecraft ConfirmScreen content used by the Fabric and headless parity paths.
  *
  * @return one-shot screen definition reproducing the native title, message, and button-row geometry.
  */
@@ -152,7 +160,10 @@ The dependency boundaries are:
   It applies every frame to exact fixed logical viewport constraints without exposing Fabric, resource-manager objects, or mapped game types.
 - `runtime/minecraft-fabric-26.2` is the client-only Java 25 version boundary for the latest Java release's resource, screen, rendering, and input adapter.
   It nests the common runtime jars in the mod artifact, keeps Minecraft types out of the common modules, and passes an exact loaded-game native/Fabric/headless pixel comparison.
+- `runtime/minecraft-fabric-26.1` is the client-only Java 25 boundary for Minecraft 26.1.
+  It shares the verified unobfuscated adapter contract with 26.2 and isolates the release's `Minecraft.screen` access behind its version boundary.
 - `integration/api` proves API-only application compilation, then exercises a third-party primitive and the common Minecraft host from its test classpath.
+- `integration/minecraft-fabric-26.1` runs the shared loaded client and integrated-server suite against actual 26.1 dependencies; it is not published.
 - `integration/minecraft-fabric-26.2` runs loaded client parity scenes against actual 26.2 resources, vanilla screens, the selected player skin, server-synchronized player/custom/ender-chest Slots, and resource-pack-aware industrial and progression screens; it is not published.
 - `integration/docs` extracts the compiled component and complete-screen sources and synchronizes only images carrying the matching GameTest receipt into one generated document; it is not published.
 

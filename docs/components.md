@@ -27,7 +27,7 @@ import dev.s7a.strata.modifier.size
 import dev.s7a.strata.screen.ScreenDefinition
 
 /**
- * Builds the deterministic Minecraft 26.2 ConfirmScreen content used by the Fabric and headless parity paths.
+ * Builds the deterministic Minecraft ConfirmScreen content used by the Fabric and headless parity paths.
  *
  * @return one-shot screen definition reproducing the native title, message, and button-row geometry.
  */
@@ -123,7 +123,7 @@ import dev.s7a.strata.modifier.size
 import dev.s7a.strata.screen.ScreenDefinition
 
 /**
- * Builds the deterministic Minecraft 26.2 ConfirmScreen content used by the Fabric and headless parity paths.
+ * Builds the deterministic Minecraft ConfirmScreen content used by the Fabric and headless parity paths.
  *
  * @return one-shot screen definition reproducing the native title, message, and button-row geometry.
  */
@@ -206,7 +206,7 @@ import dev.s7a.strata.modifier.size
 import dev.s7a.strata.screen.ScreenDefinition
 
 /**
- * Builds the deterministic Minecraft 26.2 ConfirmScreen content used by the Fabric and headless parity paths.
+ * Builds the deterministic Minecraft ConfirmScreen content used by the Fabric and headless parity paths.
  *
  * @return one-shot screen definition reproducing the native title, message, and button-row geometry.
  */
@@ -293,7 +293,7 @@ import dev.s7a.strata.modifier.size
 import dev.s7a.strata.screen.ScreenDefinition
 
 /**
- * Builds the deterministic Minecraft 26.2 ConfirmScreen content used by the Fabric and headless parity paths.
+ * Builds the deterministic Minecraft ConfirmScreen content used by the Fabric and headless parity paths.
  *
  * @return one-shot screen definition reproducing the native title, message, and button-row geometry.
  */
@@ -378,7 +378,7 @@ import dev.s7a.strata.render.ArgbColor
 import dev.s7a.strata.screen.ScreenDefinition
 
 /**
- * Builds the empty three-row Minecraft 26.2 chest screen used by native, Fabric, and headless parity paths.
+ * Builds the empty three-row Minecraft chest screen used by native, Fabric, and headless parity paths.
  *
  * @return one-shot screen definition reproducing the generic container, labels, 63 Slot hit regions, and hovered highlight order.
  */
@@ -740,7 +740,7 @@ import dev.s7a.strata.modifier.size
 import dev.s7a.strata.screen.ScreenDefinition
 
 /**
- * Builds the Minecraft 26.2 Direct Connection screen used by native, Fabric, and headless parity paths.
+ * Builds the Minecraft Direct Connection screen used by native, Fabric, and headless parity paths.
  *
  * @return one-shot screen definition with the actual EditBox and 200-pixel Button geometry.
  */
@@ -908,7 +908,7 @@ import dev.s7a.strata.resource.ResourceId
 import dev.s7a.strata.screen.ScreenDefinition
 
 /**
- * Builds the deterministic one-player Minecraft 26.2 Social Interactions screen from general-purpose primitives.
+ * Builds the deterministic one-player Minecraft Social Interactions screen from general-purpose primitives.
  *
  * Social-entry composition remains application code: the public runtime supplies PlayerHead, text, actions, images, fields, layout, and active backgrounds without exposing a purpose-specific SocialEntry component.
  *
@@ -1055,7 +1055,7 @@ import dev.s7a.strata.modifier.size
 import dev.s7a.strata.screen.ScreenDefinition
 
 /**
- * Builds the deterministic Minecraft 26.2 selection-list screen used by the native, Fabric, and headless parity paths.
+ * Builds the deterministic Minecraft selection-list screen used by the native, Fabric, and headless parity paths.
  *
  * @return one-shot screen definition reproducing the native list viewport, row geometry, separators, scrollbar, and text.
  */
@@ -1303,7 +1303,7 @@ import dev.s7a.strata.render.ArgbColor
 import dev.s7a.strata.screen.ScreenDefinition
 
 /**
- * Builds the empty three-row Minecraft 26.2 chest screen used by native, Fabric, and headless parity paths.
+ * Builds the empty three-row Minecraft chest screen used by native, Fabric, and headless parity paths.
  *
  * @return one-shot screen definition reproducing the generic container, labels, 63 Slot hit regions, and hovered highlight order.
  */
@@ -1494,7 +1494,7 @@ import dev.s7a.strata.resource.ResourceId
 import dev.s7a.strata.screen.ScreenDefinition
 
 /**
- * Builds the deterministic one-player Minecraft 26.2 Social Interactions screen from general-purpose primitives.
+ * Builds the deterministic one-player Minecraft Social Interactions screen from general-purpose primitives.
  *
  * Social-entry composition remains application code: the public runtime supplies PlayerHead, text, actions, images, fields, layout, and active backgrounds without exposing a purpose-specific SocialEntry component.
  *

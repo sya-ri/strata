@@ -29,6 +29,11 @@ A module joins the build only with working behavior and tests.
 - `runtime:minecraft-fabric-26.2` is the client-only boundary for the current latest Java release.
   It extracts the 26.2 vanilla profile and arbitrary Mod images from the active resource manager, maps the common host to a native Screen, rasterizes through the tested headless path, and forwards typed mouse, keyboard, committed-character, and preedit input.
   Its loaded client GameTest compares native screens using the actual menu background, generic container, Slot highlights, font, EditBox, Button, `ObjectSelectionList`, and `PlayerFaceExtractor` assets and widgets against both the Fabric adapter and the common headless compositor with exact ARGB equality, then compares the custom industrial and progression Mod screens through the same Fabric/headless pixels.
+- `runtime:minecraft-fabric-26.1` is the client-only boundary for Minecraft 26.1.
+  Both unobfuscated releases compile the same neutral adapter sources and tests; only current-screen access is implemented per release, and the loaded 26.1 suite records the same fixed-scene ARGB hashes as 26.2.
+- `runtime/minecraft-fabric-unobfuscated` is a neutral source root rather than a Gradle project or published artifact.
+  It owns only behavior proven identical by both 26.1 and 26.2 compilers and loaded clients; each versioned project owns its metadata, dependency graph, screen-access bridge, ABI, publication, and verification task.
+- `integration:minecraft-fabric-26.1` compiles and runs the neutral loaded-client scenarios against the 26.1 runtime and integrated server; it is not published.
 - `integration:minecraft-fabric-26.2` owns the loaded client vanilla parity scenes, integrated-server player/custom/ender-chest Slot scenarios, resource-pack-aware industrial and advancement-inspired progression screens, compiled Minecraft-component examples, and build-only verification evidence; it is not published.
 - `integration:docs` discovers public top-level component extensions mechanically from compiled API classes, extracts compiled component and complete-screen sources, verifies the Minecraft parity receipt and PNG hashes, and owns the combined generated component document; it is not published.
 Platform-independent code must not depend on a Minecraft runtime.

@@ -33,6 +33,7 @@ dependencies {
     dokka(project(":runtime:core"))
     dokka(project(":runtime:headless"))
     dokka(project(":runtime:minecraft"))
+    dokka(project(":runtime:minecraft-fabric-26.1"))
     dokka(project(":runtime:minecraft-fabric-26.2"))
 }
 
@@ -84,6 +85,7 @@ subprojects {
         ":runtime:core",
         ":runtime:headless",
         ":runtime:minecraft",
+        ":runtime:minecraft-fabric-26.1",
         ":runtime:minecraft-fabric-26.2",
     )
     if (publishableModule) {
@@ -94,6 +96,8 @@ subprojects {
 
     val versionSpecificMinecraftModules =
         setOf(
+            ":runtime:minecraft-fabric-26.1",
+            ":integration:minecraft-fabric-26.1",
             ":runtime:minecraft-fabric-26.2",
             ":integration:minecraft-fabric-26.2",
         )
@@ -145,6 +149,7 @@ subprojects {
                 ":runtime:core" to "strata-runtime-core",
                 ":runtime:headless" to "strata-runtime-headless",
                 ":runtime:minecraft" to "strata-runtime-minecraft",
+                ":runtime:minecraft-fabric-26.1" to "strata-runtime-minecraft-fabric-26.1",
                 ":runtime:minecraft-fabric-26.2" to "strata-runtime-minecraft-fabric-26.2",
             ).getValue(path)
         extensions.configure<MavenPublishBaseExtension> {
@@ -192,10 +197,15 @@ subprojects {
         }
 
         extensions.configure<DokkaExtension> {
-            val sourcePath = path.removePrefix(":").replace(":", "/")
+            val sourcePath =
+                if (path in setOf(":runtime:minecraft-fabric-26.1", ":runtime:minecraft-fabric-26.2")) {
+                    "runtime/minecraft-fabric-unobfuscated"
+                } else {
+                    path.removePrefix(":").replace(":", "/")
+                }
             dokkaSourceSets.named("main") {
                 sourceLink {
-                    localDirectory.set(file("src/main/kotlin"))
+                    localDirectory.set(rootProject.file("$sourcePath/src/main/kotlin"))
                     remoteUrl("https://github.com/sya-ri/strata/tree/master/$sourcePath/src/main/kotlin")
                     remoteLineSuffix.set("#L")
                 }

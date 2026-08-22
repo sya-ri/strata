@@ -52,10 +52,12 @@ include(
     ":api",
     ":integration:api",
     ":integration:docs",
+    ":integration:minecraft-fabric-26.1",
     ":integration:minecraft-fabric-26.2",
     ":quality:detekt-rules",
     ":runtime:core",
     ":runtime:headless",
     ":runtime:minecraft",
+    ":runtime:minecraft-fabric-26.1",
     ":runtime:minecraft-fabric-26.2",
 )

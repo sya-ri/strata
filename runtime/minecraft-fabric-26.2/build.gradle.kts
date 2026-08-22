@@ -1,6 +1,8 @@
 import groovy.json.JsonSlurper
 import org.gradle.language.jvm.tasks.ProcessResources
+import org.gradle.api.tasks.SourceSetContainer
 import org.gradle.jvm.tasks.Jar
+import org.jetbrains.kotlin.gradle.dsl.KotlinJvmProjectExtension
 import java.util.zip.ZipFile
 
 plugins {
@@ -8,17 +10,39 @@ plugins {
     alias(libs.plugins.fabricLoom)
 }
 
+val sharedRuntime = rootProject.file("runtime/minecraft-fabric-unobfuscated/src/main")
+val sharedTests = rootProject.file("runtime/minecraft-fabric-unobfuscated/src/test")
+
+extensions.configure<SourceSetContainer> {
+    named("main") {
+        java.srcDir(sharedRuntime.resolve("java"))
+        java.srcDir("src/version/java")
+    }
+    named("test") {
+        java.srcDir(sharedTests.resolve("java"))
+    }
+}
+
+extensions.configure<KotlinJvmProjectExtension> {
+    sourceSets.named("main") {
+        kotlin.srcDir(sharedRuntime.resolve("kotlin"))
+    }
+    sourceSets.named("test") {
+        kotlin.srcDir(sharedTests.resolve("kotlin"))
+    }
+}
+
 tasks.named<ProcessResources>("processResources") {
     inputs.property("version", project.version)
     inputs.property("fabricLoaderVersion", libs.versions.fabric.loader)
-    inputs.property("minecraftVersion", libs.versions.minecraft)
+    inputs.property("minecraftVersion", libs.versions.minecraft262)
     inputs.property("fabricLanguageKotlinVersion", libs.versions.fabric.language.kotlin)
     inputs.property("javaVersion", libs.versions.java.minecraft)
     filesMatching("fabric.mod.json") {
         expand(
             "version" to project.version,
             "fabricLoader" to libs.versions.fabric.loader.get(),
-            "minecraft" to libs.versions.minecraft.get(),
+            "minecraft" to libs.versions.minecraft262.get(),
             "fabricLanguageKotlin" to libs.versions.fabric.language.kotlin.get(),
             "java" to libs.versions.java.minecraft.get(),
         )
@@ -32,7 +56,7 @@ val verifyFabricModArtifact = tasks.register("verifyFabricModArtifact") {
     dependsOn(jarArtifact)
     inputs.file(jarArtifact.flatMap { task -> task.archiveFile })
     inputs.property("fabricLoaderVersion", libs.versions.fabric.loader)
-    inputs.property("minecraftVersion", libs.versions.minecraft)
+    inputs.property("minecraftVersion", libs.versions.minecraft262)
     inputs.property("fabricLanguageKotlinVersion", libs.versions.fabric.language.kotlin)
     inputs.property("javaVersion", libs.versions.java.minecraft)
     doLast {
@@ -90,7 +114,7 @@ val verifyFabricModArtifact = tasks.register("verifyFabricModArtifact") {
                 metadata["depends"] ==
                     mapOf(
                         "fabricloader" to ">=${libs.versions.fabric.loader.get()}",
-                        "minecraft" to libs.versions.minecraft.get(),
+                        "minecraft" to libs.versions.minecraft262.get(),
                         "fabric-language-kotlin" to ">=${libs.versions.fabric.language.kotlin.get()}",
                         "java" to ">=${libs.versions.java.minecraft.get()}",
                     ),
@@ -108,7 +132,7 @@ tasks.named("check") {
 dependencies {
     api(project(":runtime:minecraft"))
     implementation(project(":runtime:headless"))
-    minecraft(libs.minecraft)
+    minecraft(libs.minecraft262)
     implementation(libs.fabric.loader)
     runtimeOnly(libs.fabric.language.kotlin)
     include(project(":api"))

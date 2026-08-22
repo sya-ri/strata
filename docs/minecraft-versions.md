@@ -43,3 +43,16 @@ A version adapter reproduces the behavior and presentation of its own Vanilla ve
 3. Inspect the target distribution jar, nested jars, POM, Gradle metadata, bytecode target, Fabric metadata, dependency bounds, license, and absence of integration classes or local paths.
 4. Update the README support table, compatibility document, screenshots, and release notes.
    Every compatibility claim must be backed by a passing test or an explicitly documented limitation.
+
+## Current compatibility
+
+Exactly one versioned Fabric runtime belongs on a consumer runtime classpath.
+The artifacts expose the same package and public API intentionally, so combining them is unsupported and produces duplicate classes.
+
+| Minecraft | Java | Distribution mapping | Version boundary | Verified compatibility |
+| --- | --- | --- | --- | --- |
+| 26.2 | 25 | Unobfuscated, no remap | `Minecraft.gui.screen()` and `Minecraft.gui.setScreen` | Latest profile and documentation source; exact native/Fabric/headless pixels for the fixed vanilla scenes, exact Fabric/headless Mod scenes, and synchronized inventory behavior |
+| 26.1 | 25 | Unobfuscated, no remap | `Minecraft.screen` and `Minecraft.setScreen` | The complete loaded suite passes; the used UI assets are byte-identical and every fixed-scene ARGB receipt hash matches 26.2 |
+
+The neutral `runtime/minecraft-fabric-unobfuscated` and `integration/minecraft-fabric-unobfuscated` trees are source ownership boundaries, not Gradle modules or fallback profiles.
+Code enters those trees only after both supported releases prove the behavior independently; unexplained divergence remains in a versioned project until resolved.
