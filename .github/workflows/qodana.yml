@@ -37,7 +37,6 @@ jobs:
             --fail-threshold 0
             --volume "${{ env.JAVA_HOME_17_X64 }}:/root/.jdks/temurin-17"
             --volume "${{ env.JAVA_HOME_21_X64 }}:/root/.jdks/temurin-21"
-          use-caches: false
       - name: Upload Qodana report
         if: always()
         uses: actions/upload-artifact@v7
