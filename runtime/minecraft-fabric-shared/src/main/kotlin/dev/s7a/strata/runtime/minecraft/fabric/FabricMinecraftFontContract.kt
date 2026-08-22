@@ -7,8 +7,6 @@ import com.google.gson.JsonParseException
 import com.google.gson.JsonParser
 import dev.s7a.strata.geometry.IntSize
 import dev.s7a.strata.render.DrawImage
-import net.minecraft.IdentifierException
-import net.minecraft.resources.Identifier
 import java.math.BigDecimal
 
 /**
@@ -26,16 +24,16 @@ import java.math.BigDecimal
 @JvmSynthetic
 internal fun validateMinecraftRegularFontContract(
     ascii: DrawImage,
-    readDocument: (Identifier) -> String,
+    readDocument: (MinecraftResourceLocation) -> String,
 ) {
     MinecraftFontContractValidator(ascii, readDocument).validate()
 }
 
 private class MinecraftFontContractValidator(
     private val ascii: DrawImage,
-    private val readDocument: (Identifier) -> String,
+    private val readDocument: (MinecraftResourceLocation) -> String,
 ) {
-    private val seen = HashSet<Identifier>()
+    private val seen = HashSet<MinecraftResourceLocation>()
     private val glyphs = HashSet<Int>()
     private var ascent: Int? = null
     private var spaceAdvance: Int? = null
@@ -48,7 +46,7 @@ private class MinecraftFontContractValidator(
         }
     }
 
-    private fun visit(identifier: Identifier) {
+    private fun visit(identifier: MinecraftResourceLocation) {
         if (seen.add(identifier).not()) return
         val root = JsonBoundary.parseDocument(readDocument(identifier), identifier)
         for (providerElement in JsonBoundary.requiredArray(root, "providers")) {
@@ -75,7 +73,7 @@ private class MinecraftFontContractValidator(
 
     private fun visitReference(provider: JsonObject) {
         val id = JsonBoundary.parseIdentifier(JsonBoundary.requiredString(provider, "id"), "font reference")
-        visit(Identifier.fromNamespaceAndPath(id.getNamespace(), "font/${id.getPath()}.json"))
+        visit(MinecraftResourceLocation.fromNamespaceAndPath(id.getNamespace(), "font/${id.getPath()}.json"))
     }
 
     private fun visitSpace(provider: JsonObject) {
@@ -161,7 +159,7 @@ private class MinecraftFontContractValidator(
     private object JsonBoundary {
         fun parseDocument(
             document: String,
-            identifier: Identifier,
+            identifier: MinecraftResourceLocation,
         ): JsonObject =
             try {
                 objectOrNull(JsonParser.parseString(document))
@@ -173,10 +171,10 @@ private class MinecraftFontContractValidator(
         fun parseIdentifier(
             value: String,
             label: String,
-        ): Identifier =
+        ): MinecraftResourceLocation =
             try {
-                Identifier.parse(value)
-            } catch (failure: IdentifierException) {
+                MinecraftResourceLocation.parse(value)
+            } catch (failure: MinecraftResourceLocationException) {
                 throw IllegalArgumentException("Minecraft $label identifier is invalid.", failure)
             }
 
@@ -257,7 +255,9 @@ private class MinecraftFontContractValidator(
                 "bitmap" to ProviderKind.Bitmap,
             )
         private val printableAsciiRange: IntRange = 0x21..0x7E
-        private val asciiIdentifier: Identifier = Identifier.fromNamespaceAndPath("minecraft", "font/ascii.png")
-        private val defaultFontIdentifier: Identifier = Identifier.fromNamespaceAndPath("minecraft", "font/default.json")
+        private val asciiIdentifier: MinecraftResourceLocation =
+            MinecraftResourceLocation.fromNamespaceAndPath("minecraft", "font/ascii.png")
+        private val defaultFontIdentifier: MinecraftResourceLocation =
+            MinecraftResourceLocation.fromNamespaceAndPath("minecraft", "font/default.json")
     }
 }

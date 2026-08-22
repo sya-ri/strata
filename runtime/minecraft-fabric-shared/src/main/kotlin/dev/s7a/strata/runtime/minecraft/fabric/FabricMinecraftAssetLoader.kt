@@ -10,7 +10,6 @@ import dev.s7a.strata.resource.ResourceId
 import net.minecraft.client.Minecraft
 import net.minecraft.client.renderer.texture.DynamicTexture
 import net.minecraft.core.ClientAsset
-import net.minecraft.resources.Identifier
 import java.io.IOException
 
 /**
@@ -28,7 +27,7 @@ import java.io.IOException
 public fun loadMinecraftUiImage(asset: ResourceId): DrawImage {
     val minecraft = Minecraft.getInstance()
     check(minecraft.isSameThread()) { "Minecraft UI images must be loaded on the client thread." }
-    val identifier = Identifier.fromNamespaceAndPath(asset.namespace, asset.path)
+    val identifier = MinecraftResourceLocation.fromNamespaceAndPath(asset.namespace, asset.path)
     val resource =
         minecraft
             .getResourceManager()

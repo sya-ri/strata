@@ -11,16 +11,18 @@ plugins {
 }
 
 val sharedRuntime = rootProject.file("runtime/minecraft-fabric-shared/src/main")
+val identifierRuntime = rootProject.file("runtime/minecraft-fabric-identifier/src/main")
+val legacyRuntime = rootProject.file("runtime/minecraft-fabric-1.21-legacy/src/main")
 
 extensions.configure<SourceSetContainer> {
     named("main") {
-        java.srcDir(sharedRuntime.resolve("java"))
+        java.srcDirs(sharedRuntime.resolve("java"), identifierRuntime.resolve("java"), legacyRuntime.resolve("java"))
     }
 }
 
 extensions.configure<KotlinJvmProjectExtension> {
     sourceSets.named("main") {
-        kotlin.srcDir(sharedRuntime.resolve("kotlin"))
+        kotlin.srcDirs(sharedRuntime.resolve("kotlin"), identifierRuntime.resolve("kotlin"), legacyRuntime.resolve("kotlin"))
     }
 }
 
@@ -29,14 +31,14 @@ tasks.named<ProcessResources>("processResources") {
     inputs.property("fabricLoaderVersion", libs.versions.fabric.loader)
     inputs.property("minecraftVersion", libs.versions.minecraft12111)
     inputs.property("fabricLanguageKotlinVersion", libs.versions.fabric.language.kotlin)
-    inputs.property("javaVersion", libs.versions.java.minecraft12111)
+    inputs.property("javaVersion", libs.versions.java.minecraft121)
     filesMatching("fabric.mod.json") {
         expand(
             "version" to project.version,
             "fabricLoader" to libs.versions.fabric.loader.get(),
             "minecraft" to libs.versions.minecraft12111.get(),
             "fabricLanguageKotlin" to libs.versions.fabric.language.kotlin.get(),
-            "java" to libs.versions.java.minecraft12111.get(),
+            "java" to libs.versions.java.minecraft121.get(),
         )
     }
 }
@@ -50,7 +52,7 @@ val verifyFabricModArtifact = tasks.register("verifyFabricModArtifact") {
     inputs.property("fabricLoaderVersion", libs.versions.fabric.loader)
     inputs.property("minecraftVersion", libs.versions.minecraft12111)
     inputs.property("fabricLanguageKotlinVersion", libs.versions.fabric.language.kotlin)
-    inputs.property("javaVersion", libs.versions.java.minecraft12111)
+    inputs.property("javaVersion", libs.versions.java.minecraft121)
     doLast {
         val artifact = remappedJarArtifact.get().archiveFile.get().asFile
         ZipFile(artifact).use { archive ->
@@ -108,7 +110,7 @@ val verifyFabricModArtifact = tasks.register("verifyFabricModArtifact") {
                         "fabricloader" to ">=${libs.versions.fabric.loader.get()}",
                         "minecraft" to libs.versions.minecraft12111.get(),
                         "fabric-language-kotlin" to ">=${libs.versions.fabric.language.kotlin.get()}",
-                        "java" to ">=${libs.versions.java.minecraft12111.get()}",
+                        "java" to ">=${libs.versions.java.minecraft121.get()}",
                     ),
             ) {
                 "Fabric metadata dependencies must match the version catalog: ${metadata["depends"]}"

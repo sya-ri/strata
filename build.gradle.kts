@@ -35,6 +35,7 @@ dependencies {
     dokka(project(":runtime:core"))
     dokka(project(":runtime:headless"))
     dokka(project(":runtime:minecraft"))
+    dokka(project(":runtime:minecraft-fabric-1.21.10"))
     dokka(project(":runtime:minecraft-fabric-1.21.11"))
     dokka(project(":runtime:minecraft-fabric-26.1"))
     dokka(project(":runtime:minecraft-fabric-26.2"))
@@ -51,7 +52,24 @@ extensions.configure<DokkaExtension> {
 val detektRulesProject = project(":quality:detekt-rules")
 val baselineJavaVersion = libs.versions.java.baseline.get().toInt()
 val minecraftJavaVersion = libs.versions.java.minecraft.get().toInt()
-val minecraft12111JavaVersion = libs.versions.java.minecraft12111.get().toInt()
+val minecraft121JavaVersion = libs.versions.java.minecraft121.get().toInt()
+val minecraftGameTestProjects =
+    listOf(
+        ":integration:minecraft-fabric-26.2",
+        ":integration:minecraft-fabric-26.1",
+        ":integration:minecraft-fabric-1.21.11",
+        ":integration:minecraft-fabric-1.21.10",
+    )
+val minecraftAssetPreparationTasks = minecraftGameTestProjects.map { projectPath -> "$projectPath:downloadAssets" }
+val minecraftClientVerificationTasks =
+    listOf(
+        ":integration:minecraft-fabric-26.2:runClientGameTest",
+        ":integration:minecraft-fabric-26.1:runClientGameTest",
+        ":integration:minecraft-fabric-1.21.11:runClientGameTest",
+        ":integration:minecraft-fabric-1.21.11:runProductionClientGameTest",
+        ":integration:minecraft-fabric-1.21.10:runClientGameTest",
+        ":integration:minecraft-fabric-1.21.10:runProductionClientGameTest",
+    )
 
 allprojects {
     group = rootProject.group
@@ -67,6 +85,24 @@ subprojects {
     apply(plugin = "java-library")
     apply(plugin = "dev.detekt")
     apply(plugin = "org.jmailen.kotlinter")
+
+    val minecraftGameTestProjectIndex = minecraftGameTestProjects.indexOf(path)
+    if (minecraftGameTestProjectIndex != -1) {
+        tasks
+            .matching { task -> task.name in setOf("runClientGameTest", "runProductionClientGameTest") }
+            .configureEach {
+                mustRunAfter(minecraftAssetPreparationTasks)
+                val verificationTaskIndex = minecraftClientVerificationTasks.indexOf(path)
+                if (verificationTaskIndex != -1) {
+                    mustRunAfter(minecraftClientVerificationTasks.take(verificationTaskIndex))
+                }
+            }
+        tasks.matching { task -> task.name == "downloadAssets" }.configureEach {
+            mustRunAfter(
+                minecraftAssetPreparationTasks.take(minecraftGameTestProjectIndex),
+            )
+        }
+    }
 
     if (this != detektRulesProject) {
         dependencies {
@@ -89,6 +125,7 @@ subprojects {
         ":runtime:core",
         ":runtime:headless",
         ":runtime:minecraft",
+        ":runtime:minecraft-fabric-1.21.10",
         ":runtime:minecraft-fabric-1.21.11",
         ":runtime:minecraft-fabric-26.1",
         ":runtime:minecraft-fabric-26.2",
@@ -101,6 +138,8 @@ subprojects {
 
     val versionSpecificMinecraftModules =
         setOf(
+            ":runtime:minecraft-fabric-1.21.10",
+            ":integration:minecraft-fabric-1.21.10",
             ":runtime:minecraft-fabric-1.21.11",
             ":integration:minecraft-fabric-1.21.11",
             ":runtime:minecraft-fabric-26.1",
@@ -110,8 +149,12 @@ subprojects {
         )
     val javaVersion =
         when (path) {
-            in setOf(":runtime:minecraft-fabric-1.21.11", ":integration:minecraft-fabric-1.21.11") ->
-                minecraft12111JavaVersion
+            in setOf(
+                ":runtime:minecraft-fabric-1.21.10",
+                ":integration:minecraft-fabric-1.21.10",
+                ":runtime:minecraft-fabric-1.21.11",
+                ":integration:minecraft-fabric-1.21.11",
+            ) -> minecraft121JavaVersion
             in versionSpecificMinecraftModules -> minecraftJavaVersion
             else -> baselineJavaVersion
         }
@@ -160,6 +203,7 @@ subprojects {
                 ":runtime:core" to "strata-runtime-core",
                 ":runtime:headless" to "strata-runtime-headless",
                 ":runtime:minecraft" to "strata-runtime-minecraft",
+                ":runtime:minecraft-fabric-1.21.10" to "strata-runtime-minecraft-fabric-1.21.10",
                 ":runtime:minecraft-fabric-1.21.11" to "strata-runtime-minecraft-fabric-1.21.11",
                 ":runtime:minecraft-fabric-26.1" to "strata-runtime-minecraft-fabric-26.1",
                 ":runtime:minecraft-fabric-26.2" to "strata-runtime-minecraft-fabric-26.2",
@@ -211,13 +255,22 @@ subprojects {
         extensions.configure<DokkaExtension> {
             val sourcePaths =
                 when (path) {
+                    ":runtime:minecraft-fabric-1.21.10" ->
+                        listOf(
+                            "runtime/minecraft-fabric-1.21.10",
+                            "runtime/minecraft-fabric-1.21-legacy",
+                            "runtime/minecraft-fabric-shared",
+                        )
                     ":runtime:minecraft-fabric-1.21.11" ->
                         listOf(
                             "runtime/minecraft-fabric-1.21.11",
+                            "runtime/minecraft-fabric-1.21-legacy",
+                            "runtime/minecraft-fabric-identifier",
                             "runtime/minecraft-fabric-shared",
                         )
                     ":runtime:minecraft-fabric-26.1", ":runtime:minecraft-fabric-26.2" ->
                         listOf(
+                            "runtime/minecraft-fabric-identifier",
                             "runtime/minecraft-fabric-shared",
                             "runtime/minecraft-fabric-unobfuscated",
                         )

@@ -11,12 +11,14 @@ plugins {
 }
 
 val sharedRuntime = rootProject.file("runtime/minecraft-fabric-shared/src/main")
+val identifierRuntime = rootProject.file("runtime/minecraft-fabric-identifier/src/main")
 val unobfuscatedRuntime = rootProject.file("runtime/minecraft-fabric-unobfuscated/src/main")
 val sharedTests = rootProject.file("runtime/minecraft-fabric-unobfuscated/src/test")
 
 extensions.configure<SourceSetContainer> {
     named("main") {
         java.srcDir(sharedRuntime.resolve("java"))
+        java.srcDir(identifierRuntime.resolve("java"))
         java.srcDir(unobfuscatedRuntime.resolve("java"))
     }
     named("test") {
@@ -27,6 +29,7 @@ extensions.configure<SourceSetContainer> {
 extensions.configure<KotlinJvmProjectExtension> {
     sourceSets.named("main") {
         kotlin.srcDir(sharedRuntime.resolve("kotlin"))
+        kotlin.srcDir(identifierRuntime.resolve("kotlin"))
         kotlin.srcDir(unobfuscatedRuntime.resolve("kotlin"))
     }
     sourceSets.named("test") {

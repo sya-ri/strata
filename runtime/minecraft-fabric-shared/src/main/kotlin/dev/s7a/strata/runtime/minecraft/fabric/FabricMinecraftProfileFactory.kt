@@ -14,7 +14,6 @@ import dev.s7a.strata.spi.InternalStrataRuntimeApi
 import net.minecraft.client.Minecraft
 import net.minecraft.client.resources.metadata.gui.GuiMetadataSection
 import net.minecraft.client.resources.metadata.gui.GuiSpriteScaling
-import net.minecraft.resources.Identifier
 import net.minecraft.server.packs.resources.Resource
 import net.minecraft.server.packs.resources.ResourceManager
 import java.io.IOException
@@ -165,14 +164,14 @@ internal fun extractMinecraftAsciiGlyph(
     return createDrawImage(IntSize(8, 8), pixels)
 }
 
-private fun ResourceManager.requiredResource(path: String): Resource = requiredResource(Identifier.fromNamespaceAndPath("minecraft", path))
+private fun ResourceManager.requiredResource(path: String): Resource = requiredResource(MinecraftResourceLocation.fromNamespaceAndPath("minecraft", path))
 
-private fun ResourceManager.requiredResource(identifier: Identifier): Resource =
+private fun ResourceManager.requiredResource(identifier: MinecraftResourceLocation): Resource =
     getResource(identifier).orElseThrow {
         IllegalArgumentException("Missing Minecraft resource: $identifier")
     }
 
-private fun ResourceManager.readSingleFontDocument(identifier: Identifier): String {
+private fun ResourceManager.readSingleFontDocument(identifier: MinecraftResourceLocation): String {
     val resources = getResourceStack(identifier)
     require(resources.size == 1) {
         "Minecraft font resource $identifier must come from exactly one active resource pack."

@@ -70,7 +70,6 @@ tasks.matching { task -> task.name == "koverGenerateArtifact" }.configureEach {
 }
 
 tasks.named<JavaExec>("runClientGameTest") {
-    mustRunAfter(":integration:minecraft-fabric-26.2:runClientGameTest")
     val parityOutput = layout.buildDirectory.dir("minecraft-parity")
     inputs.property("strataMinecraftParityOutput", parityOutput.map { it.asFile.absolutePath })
     doFirst {

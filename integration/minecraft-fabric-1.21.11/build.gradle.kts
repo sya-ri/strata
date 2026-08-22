@@ -3,6 +3,7 @@ import org.gradle.api.tasks.Delete
 import org.gradle.api.tasks.SourceSetContainer
 import org.gradle.api.tasks.bundling.Jar
 import org.gradle.language.jvm.tasks.ProcessResources
+import org.jetbrains.kotlin.gradle.dsl.KotlinJvmProjectExtension
 
 plugins {
     `java-library`
@@ -19,6 +20,7 @@ val runtimeRemappedJar =
     runtimeFabricProject.layout.buildDirectory.file(
         "libs/${runtimeFabricProject.name}-${project.version}.jar",
     )
+val sharedLegacyGameTest = rootProject.file("integration/minecraft-fabric-1.21-legacy/src/gametest")
 
 fabricApi {
     configureTests {
@@ -27,6 +29,12 @@ fabricApi {
         enableGameTests = false
         enableClientGameTests = true
         eula = true
+    }
+}
+
+extensions.configure<KotlinJvmProjectExtension> {
+    sourceSets.named("gametest") {
+        kotlin.srcDir(sharedLegacyGameTest.resolve("kotlin"))
     }
 }
 
@@ -76,12 +84,11 @@ val runProductionClientGameTest = tasks.register<ClientProductionRunTask>("runPr
     group = "verification"
     description = "Runs the client GameTest from the actual remapped integration and runtime mod jars."
     dependsOn(deleteProductionGameTestRunDir, ":runtime:minecraft-fabric-1.21.11:remapJar")
-    mustRunAfter("runClientGameTest")
     mods.from(runtimeRemappedJar)
     runDir.set(productionRunDirectory)
     jvmArgs.add("-Dfabric.client.gametest")
     val verificationOutput = layout.buildDirectory.dir("minecraft-production-verification")
-    jvmArgs.add(verificationOutput.map { directory -> "-Dstrata.minecraft12111Output=${directory.asFile.absolutePath}" })
+    jvmArgs.add(verificationOutput.map { directory -> "-Dstrata.minecraftLegacyOutput=${directory.asFile.absolutePath}" })
     jvmArgs.add(libs.versions.minecraft12111.map { version -> "-Dstrata.minecraftVersion=$version" })
 }
 
@@ -94,11 +101,10 @@ tasks.matching { task -> task.name == "koverGenerateArtifact" }.configureEach {
 }
 
 tasks.named<JavaExec>("runClientGameTest") {
-    mustRunAfter(":integration:minecraft-fabric-26.1:runClientGameTest")
     val verificationOutput = layout.buildDirectory.dir("minecraft-verification")
-    inputs.property("strataMinecraft12111Output", verificationOutput.map { it.asFile.absolutePath })
+    inputs.property("strataMinecraftLegacyOutput", verificationOutput.map { it.asFile.absolutePath })
     doFirst {
-        systemProperty("strata.minecraft12111Output", verificationOutput.get().asFile.absolutePath)
+        systemProperty("strata.minecraftLegacyOutput", verificationOutput.get().asFile.absolutePath)
         systemProperty("strata.minecraftVersion", libs.versions.minecraft12111.get())
     }
 }
