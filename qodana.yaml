@@ -114,7 +114,8 @@ exclude:
   # Public SPI declarations, including PaintScope drawing operations, are consumed by external clients even when this repository has no call site.
   # Public component configuration and modifier entry points are likewise consumed by downstream Mods rather than every repository fixture.
   # Component evaluation and screen-transfer bridges are cross-module runtime boundaries that the local Kotlin call graph does not resolve reliably.
-  # These two main functions are JavaExec reflection entry points, not Kotlin call graph roots.
+  # Main functions and JMH benchmark methods are reflection entry points, not Kotlin call graph roots.
+  # Fabric Client GameTest classes are discovered from Fabric metadata rather than Kotlin call sites.
   # ShowcaseOutput members are consumed across the storage/markdown generation pipeline.
   # The Minecraft example functions are compiled standalone documentation sources consumed by the showcase generator.
   # Retained element and modifier update callbacks plus screen metadata accessors are exercised through typed factories and integration tests that Qodana's local call graph does not follow.
@@ -148,8 +149,12 @@ exclude:
       - integration/docs/src/main/kotlin/dev/s7a/strata/integration/docs/ShowcaseOutput.kt
       - integration/docs/src/main/kotlin/dev/s7a/strata/integration/docs/ScreenScenario.kt
       - integration/minecraft-fabric-unobfuscated/src/gametest/kotlin/dev/s7a/strata/integration/minecraft/fabric/MinecraftButtonExample.kt
+      - integration/minecraft-fabric-unobfuscated/src/gametest/kotlin/dev/s7a/strata/integration/minecraft/fabric/MinecraftIndustrialExample.kt
       - integration/minecraft-fabric-unobfuscated/src/gametest/kotlin/dev/s7a/strata/integration/minecraft/fabric/MinecraftProgressExample.kt
       - integration/minecraft-fabric-unobfuscated/src/gametest/kotlin/dev/s7a/strata/integration/minecraft/fabric/MinecraftTextExample.kt
+      - integration/minecraft-fabric-1.21.11/src/gametest/kotlin/dev/s7a/strata/integration/minecraft/fabric/StrataMinecraft12111ClientGameTest.kt
+      - integration/minecraft-fabric-unobfuscated/src/gametest/kotlin/dev/s7a/strata/integration/minecraft/fabric/StrataMinecraftClientGameTest.kt
+      - quality/benchmarks/src/jmh/kotlin/dev/s7a/strata/quality/benchmark/RenderingBenchmark.kt
       - runtime/minecraft/src/main/kotlin/dev/s7a/strata/runtime/minecraft/MinecraftImageBackgroundModifier.kt
       - runtime/minecraft/src/main/kotlin/dev/s7a/strata/runtime/minecraft/MinecraftImageElement.kt
       - runtime/minecraft/src/main/kotlin/dev/s7a/strata/runtime/minecraft/MinecraftNineSliceImageBackgroundModifier.kt

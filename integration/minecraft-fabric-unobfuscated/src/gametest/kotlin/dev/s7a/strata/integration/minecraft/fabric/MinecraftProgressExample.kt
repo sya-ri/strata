@@ -125,7 +125,7 @@ private fun UiScope.progressNode(
     color: ArgbColor,
     label: String,
 ) {
-    Column(
+    this.Column(
         horizontalAlignment = HorizontalAlignment.Center,
         spacing = 1,
     ) {

@@ -300,16 +300,10 @@ public open class RenderingBenchmark {
             previous: TileElement,
             current: TileElement,
         ): DirtyMask {
-            var dirty = DirtyMask.None
-            if (previous.size != current.size) {
-                dirty += DirtyMask.of(DirtyPhase.Measure)
-            }
-            if (previous.color != current.color) {
-                dirty += DirtyMask.of(DirtyPhase.Paint)
-            }
-            if (previous.semantics != current.semantics) {
-                dirty += DirtyMask.of(DirtyPhase.Semantics)
-            }
+            val measureDirty = if (previous.size != current.size) DirtyMask.of(DirtyPhase.Measure) else DirtyMask.None
+            val paintDirty = if (previous.color != current.color) DirtyMask.of(DirtyPhase.Paint) else DirtyMask.None
+            val semanticsDirty = if (previous.semantics != current.semantics) DirtyMask.of(DirtyPhase.Semantics) else DirtyMask.None
+            val dirty = measureDirty + paintDirty + semanticsDirty
             size = current.size
             color = current.color
             semantics = current.semantics

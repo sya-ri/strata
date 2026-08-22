@@ -401,7 +401,7 @@ public class StrataMinecraft12111ClientGameTest : FabricClientGameTest {
         require(runCatching { inventory.refresh() }.exceptionOrNull() is IllegalStateException) {
             "A terminally closed Fabric screen left its Minecraft platform usable."
         }
-        val inventoryFields = inventory.javaClass.declaredFields.associateBy { field -> field.name }
+        val inventoryFields = inventory::class.java.declaredFields.associateBy { field -> field.name }
 
         fun inventoryRetained(name: String): Any? {
             val field = inventoryFields[name] ?: error("Fabric inventory terminal field is missing: $name")

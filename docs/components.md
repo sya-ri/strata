@@ -615,7 +615,7 @@ private fun UiScope.progressNode(
     color: ArgbColor,
     label: String,
 ) {
-    Column(
+    this.Column(
         horizontalAlignment = HorizontalAlignment.Center,
         spacing = 1,
     ) {
@@ -1140,13 +1140,13 @@ import dev.s7a.strata.component.Grid
 import dev.s7a.strata.component.ImageScale
 import dev.s7a.strata.component.ImageSource
 import dev.s7a.strata.component.Row
-import dev.s7a.strata.component.RowScope
 import dev.s7a.strata.component.Slot
 import dev.s7a.strata.component.SlotBinding
 import dev.s7a.strata.component.Slots
 import dev.s7a.strata.component.Spacer
 import dev.s7a.strata.component.Stack
 import dev.s7a.strata.component.Text
+import dev.s7a.strata.component.UiScope
 import dev.s7a.strata.layout.Alignment
 import dev.s7a.strata.layout.Arrangement
 import dev.s7a.strata.layout.HorizontalAlignment
@@ -1237,11 +1237,11 @@ internal fun createIndustrialScreenDefinition(
         }
     }
 
-private fun RowScope.machineSlot(
+private fun UiScope.machineSlot(
     label: String,
     binding: SlotBinding?,
 ) {
-    Column(
+    this.Column(
         spacing = 1,
         horizontalAlignment = HorizontalAlignment.Center,
     ) {
@@ -1731,13 +1731,13 @@ import dev.s7a.strata.component.Grid
 import dev.s7a.strata.component.ImageScale
 import dev.s7a.strata.component.ImageSource
 import dev.s7a.strata.component.Row
-import dev.s7a.strata.component.RowScope
 import dev.s7a.strata.component.Slot
 import dev.s7a.strata.component.SlotBinding
 import dev.s7a.strata.component.Slots
 import dev.s7a.strata.component.Spacer
 import dev.s7a.strata.component.Stack
 import dev.s7a.strata.component.Text
+import dev.s7a.strata.component.UiScope
 import dev.s7a.strata.layout.Alignment
 import dev.s7a.strata.layout.Arrangement
 import dev.s7a.strata.layout.HorizontalAlignment
@@ -1828,11 +1828,11 @@ internal fun createIndustrialScreenDefinition(
         }
     }
 
-private fun RowScope.machineSlot(
+private fun UiScope.machineSlot(
     label: String,
     binding: SlotBinding?,
 ) {
-    Column(
+    this.Column(
         spacing = 1,
         horizontalAlignment = HorizontalAlignment.Center,
     ) {
@@ -1985,7 +1985,7 @@ private fun UiScope.progressNode(
     color: ArgbColor,
     label: String,
 ) {
-    Column(
+    this.Column(
         horizontalAlignment = HorizontalAlignment.Center,
         spacing = 1,
     ) {
