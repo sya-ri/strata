@@ -1,12 +1,15 @@
+@file:OptIn(InternalStrataRuntimeApi::class)
+
 package dev.s7a.strata.runtime.headless
 
-import dev.s7a.strata.dsl.Row
-import dev.s7a.strata.dsl.buildUi
+import dev.s7a.strata.component.Row
+import dev.s7a.strata.component.evaluateComponentTree
 import dev.s7a.strata.geometry.IntRect
 import dev.s7a.strata.geometry.IntSize
 import dev.s7a.strata.render.ArgbColor
 import dev.s7a.strata.runtime.render.DrawCommand
 import dev.s7a.strata.runtime.semantics.SemanticsEntry
+import dev.s7a.strata.spi.InternalStrataRuntimeApi
 import org.junit.jupiter.api.Assertions.assertArrayEquals
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertSame
@@ -79,7 +82,7 @@ internal class HeadlessConcurrencyTest {
     fun oneReturnedFrameSupportsConcurrentExactPropertyReads() {
         val probe = HeadlessProbe()
         val description =
-            buildUi {
+            evaluateComponentTree {
                 Row {
                     element(HeadlessPrimitive(probe, color = ArgbColor(0xFF123456.toInt())))
                 }

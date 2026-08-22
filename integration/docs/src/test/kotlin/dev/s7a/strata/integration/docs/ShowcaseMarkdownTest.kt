@@ -35,11 +35,8 @@ internal class ShowcaseMarkdownTest {
         val document = ShowcaseMarkdown.components(overview, sections, screens)
         assertTrue(document.startsWith("<!-- Generated file. Do not edit. -->\n\n# Minecraft component showcase\n"))
         assertTrue(document.contains("real Minecraft 26.2 `ConfirmScreen`"))
-        assertTrue(
-            document.contains(
-                "- [Text](#text)\n- [TextField](#text-field)\n- [Button](#button)\n- [Scroll](#scroll)\n- [Slot](#slot)",
-            ),
-        )
+        val componentLinks = DocumentedComponent.entries.joinToString("\n") { component -> "- [${component.apiMethodName}](#${component.slug})" }
+        assertTrue(document.contains(componentLinks))
         assertTrue(document.contains("The tree shows Minecraft components in logical draw order"))
         assertTrue(document.contains(overview.source))
         assertTrue(document.contains("exact ARGB equality"))
@@ -70,6 +67,9 @@ internal class ShowcaseMarkdownTest {
         assertTrue(sections.getValue(DocumentedComponent.Text).contains("extracted Minecraft glyph advances, shadow layer, foreground layer, and native baseline"))
         assertTrue(sections.getValue(DocumentedComponent.TextField).contains("200 by 20 Minecraft EditBox sprites"))
         assertTrue(sections.getValue(DocumentedComponent.PlayerHead).contains("face-then-hat"))
+        assertTrue(sections.getValue(DocumentedComponent.Grid).contains("incomplete final row"))
+        assertTrue(sections.getValue(DocumentedComponent.Tab).contains("external selection semantics"))
+        assertTrue(sections.getValue(DocumentedComponent.Stack).contains("not a generic div-like container"))
         val button = sections.getValue(DocumentedComponent.Button)
         listOf("onPointerEvent", "onPress", "onRelease", "onMove", "onDrag", "onScroll", "onHover").forEach { action ->
             assertTrue(button.contains("`$action`"))
@@ -119,12 +119,15 @@ internal class ShowcaseMarkdownTest {
                     ShowcaseTreeDetail.Weight(1.5f, false),
                     ShowcaseTreeDetail.RowAlign(VerticalAlignment.Bottom),
                     ShowcaseTreeDetail.ColumnAlign(HorizontalAlignment.End),
-                    ShowcaseTreeDetail.BoxAlign(Alignment.BottomEnd),
+                    ShowcaseTreeDetail.StackAlign(Alignment.BottomEnd),
+                    ShowcaseTreeDetail.GridAlign(Alignment.CenterStart),
+                    ShowcaseTreeDetail.GridColumns(9),
                     ShowcaseTreeDetail.Spacing(3),
                     ShowcaseTreeDetail.Arrangement(Arrangement.SpaceBetween),
                     ShowcaseTreeDetail.RowDefaultAlignment(VerticalAlignment.Center),
                     ShowcaseTreeDetail.ColumnDefaultAlignment(HorizontalAlignment.Center),
-                    ShowcaseTreeDetail.BoxContentAlignment(Alignment.Center),
+                    ShowcaseTreeDetail.StackContentAlignment(Alignment.Center),
+                    ShowcaseTreeDetail.GridContentAlignment(Alignment.TopStart),
                     ShowcaseTreeDetail.ScrollRate(9),
                     ShowcaseTreeDetail.SlotHighlightable(true),
                 ),
@@ -139,12 +142,15 @@ internal class ShowcaseMarkdownTest {
             "Weight(weight=1.5, fill=false)",
             "RowAlign(alignment=Bottom)",
             "ColumnAlign(alignment=End)",
-            "BoxAlign(alignment=BottomEnd)",
+            "StackAlign(alignment=BottomEnd)",
+            "GridAlign(alignment=CenterStart)",
+            "GridColumns(value=9)",
             "Spacing(value=3)",
             "Arrangement(value=SpaceBetween)",
             "RowDefaultAlignment(alignment=Center)",
             "ColumnDefaultAlignment(alignment=Center)",
-            "BoxContentAlignment(alignment=Center)",
+            "StackContentAlignment(alignment=Center)",
+            "GridContentAlignment(alignment=TopStart)",
             "ScrollRate(value=9)",
             "SlotHighlightable(value=true)",
         ).forEach { detail -> assertTrue(rendered.contains(detail)) }

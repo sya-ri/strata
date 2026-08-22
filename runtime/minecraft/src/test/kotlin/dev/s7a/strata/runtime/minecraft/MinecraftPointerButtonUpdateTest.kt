@@ -1,6 +1,12 @@
+@file:OptIn(InternalStrataRuntimeApi::class)
+
 package dev.s7a.strata.runtime.minecraft
 
-import dev.s7a.strata.dsl.buildUi
+import dev.s7a.strata.component.Button
+import dev.s7a.strata.component.Image
+import dev.s7a.strata.component.NineSliceCenterMode
+import dev.s7a.strata.component.Text
+import dev.s7a.strata.component.evaluateComponentTree
 import dev.s7a.strata.element.Element
 import dev.s7a.strata.geometry.IntSize
 import dev.s7a.strata.modifier.Modifier
@@ -10,6 +16,7 @@ import dev.s7a.strata.node.LifecycleNode
 import dev.s7a.strata.node.PointerHoverNode
 import dev.s7a.strata.render.DrawImage
 import dev.s7a.strata.render.createDrawImage
+import dev.s7a.strata.screen.ScreenDefinition
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
 import dev.s7a.strata.text.UiText
 import org.junit.jupiter.api.Assertions.assertEquals
@@ -128,7 +135,7 @@ internal class MinecraftPointerButtonUpdateTest {
     fun terminalHostClearsEvaluatorAndMetadataOwnership() {
         val host =
             createMinecraftUiHost(
-                createMinecraftScreenDefinition(UiText.Literal("button")) {
+                ScreenDefinition(UiText.Literal("button")) {
                     Button("A")
                 },
                 MinecraftProfileFixture.create(),
@@ -162,7 +169,7 @@ internal class MinecraftPointerButtonUpdateTest {
         return Assets(
             sprite(0xFF202020.toInt()),
             sprite(0xFF303030.toInt()),
-            MinecraftButtonSpriteSnapshot.create(image(0xFF404040.toInt(), IntSize(200, 20)), 1, MinecraftNineSliceCenterMode.Tiled),
+            MinecraftButtonSpriteSnapshot.create(image(0xFF404040.toInt(), IntSize(200, 20)), 1, NineSliceCenterMode.Tiled),
             normalGlyph,
             inactiveGlyph,
         )
@@ -190,7 +197,7 @@ internal class MinecraftPointerButtonUpdateTest {
         )
     }
 
-    private fun sprite(color: Int): MinecraftButtonSpriteSnapshot = MinecraftButtonSpriteSnapshot.create(image(color, IntSize(200, 20)), 3, MinecraftNineSliceCenterMode.Tiled)
+    private fun sprite(color: Int): MinecraftButtonSpriteSnapshot = MinecraftButtonSpriteSnapshot.create(image(color, IntSize(200, 20)), 3, NineSliceCenterMode.Tiled)
 
     private fun updateMask(
         previous: Element,

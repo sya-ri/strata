@@ -64,7 +64,7 @@ Inside a Minecraft screen-content callback, the host-installed profile contribut
 `containerBackground(rows)` measures the modified component at the exact generic-container size and paints the selected `generic_54.png` regions before its content.
 `imageBackground(image, scale)` paints arbitrary detached resource-pack pixels with typed stretch or clipped tile mapping without changing measurement.
 `imageBackground(image, border, centerMode)` applies the same active behavior with Minecraft-compatible horizontal, vertical, or full nine-slice mapping.
-These are active modifier nodes rather than standalone components, so they can be composed directly with `Row`, `Column`, `Box`, or another component and participate in normal modifier identity, update, lifecycle, and failure behavior.
+These are active modifier nodes rather than standalone components, so they can be composed directly with `Row`, `Column`, `Stack`, or another component and participate in normal modifier identity, update, lifecycle, and failure behavior.
 
 ## Parent data
 

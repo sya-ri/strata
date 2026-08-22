@@ -10,12 +10,12 @@ exclude:
   - name: KDocUnresolvedReference
   # The Kotlin compiler enforces these custom RequiresOptIn boundaries; Qodana does not recognize every cross-module use.
   - name: UnnecessaryOptInAnnotation
-  # UpperCamel names are the intentional composable DSL surface.
+  # UpperCamel names are the intentional declarative component surface.
   - name: FunctionName
     paths:
-      - api/src/main/kotlin/dev/s7a/strata/dsl/UiComponents.kt
+      - api/src/main/kotlin/dev/s7a/strata/component/ProfileComponents.kt
+      - api/src/main/kotlin/dev/s7a/strata/component/UiComponents.kt
       - integration/minecraft-fabric-26.2/src/gametest/kotlin/dev/s7a/strata/integration/minecraft/fabric/MinecraftProgressExample.kt
-      - runtime/minecraft/src/main/kotlin/dev/s7a/strata/runtime/minecraft/MinecraftUiComponents.kt
   # Gradle's settings model and the Fabric Client GameTest boundary expose experimental APIs required by their current public integrations.
   - name: UnstableApiUsage
     paths:
@@ -97,6 +97,8 @@ exclude:
     paths:
       - runtime/minecraft-fabric-26.2/src/main/java/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftInventoryBridge.java
   # Public SPI declarations, including PaintScope drawing operations, are consumed by external clients even when this repository has no call site.
+  # Public component configuration and modifier entry points are likewise consumed by downstream Mods rather than every repository fixture.
+  # Component evaluation and screen-transfer bridges are cross-module runtime boundaries that the local Kotlin call graph does not resolve reliably.
   # These two main functions are JavaExec reflection entry points, not Kotlin call graph roots.
   # ShowcaseOutput members are consumed across the storage/markdown generation pipeline.
   # The Minecraft example functions are compiled standalone documentation sources consumed by the showcase generator.
@@ -107,12 +109,25 @@ exclude:
       - api/src/main/kotlin/dev/s7a/strata/input/PointerEvent.kt
       - api/src/main/kotlin/dev/s7a/strata/input/KeyCode.kt
       - api/src/main/kotlin/dev/s7a/strata/layout/Alignment.kt
+      - api/src/main/kotlin/dev/s7a/strata/component/ImageScale.kt
+      - api/src/main/kotlin/dev/s7a/strata/component/ImageSource.kt
+      - api/src/main/kotlin/dev/s7a/strata/component/PlayerSkinSource.kt
+      - api/src/main/kotlin/dev/s7a/strata/component/ProfileComponents.kt
+      - api/src/main/kotlin/dev/s7a/strata/component/Slots.kt
+      - api/src/main/kotlin/dev/s7a/strata/component/TextFieldState.kt
+      - api/src/main/kotlin/dev/s7a/strata/component/TextStyle.kt
+      - api/src/main/kotlin/dev/s7a/strata/component/UiScope.kt
+      - api/src/main/kotlin/dev/s7a/strata/component/UiComponents.kt
       - api/src/main/kotlin/dev/s7a/strata/modifier/FocusedInputExtensions.kt
+      - api/src/main/kotlin/dev/s7a/strata/modifier/ImageBackgroundExtensions.kt
       - api/src/main/kotlin/dev/s7a/strata/node/ClipChildrenNode.kt
       - api/src/main/kotlin/dev/s7a/strata/node/OverlayPaintNode.kt
       - api/src/main/kotlin/dev/s7a/strata/node/PointerInputNode.kt
       - api/src/main/kotlin/dev/s7a/strata/render/PaintScope.kt
+      - api/src/main/kotlin/dev/s7a/strata/screen/ScreenDefinition.kt
       - api/src/main/kotlin/dev/s7a/strata/semantics/SemanticsRole.kt
+      - api/src/main/kotlin/dev/s7a/strata/spi/ComponentRuntimeBridge.kt
+      - integration/api/src/main/kotlin/dev/s7a/strata/integration/consumer/ApiOnlyScreenDefinition.kt
       - integration/docs/src/main/kotlin/dev/s7a/strata/integration/docs/ComponentShowcaseChecker.kt
       - integration/docs/src/main/kotlin/dev/s7a/strata/integration/docs/ComponentShowcaseGenerator.kt
       - integration/docs/src/main/kotlin/dev/s7a/strata/integration/docs/ShowcaseOutput.kt
@@ -123,5 +138,6 @@ exclude:
       - runtime/minecraft/src/main/kotlin/dev/s7a/strata/runtime/minecraft/MinecraftImageBackgroundModifier.kt
       - runtime/minecraft/src/main/kotlin/dev/s7a/strata/runtime/minecraft/MinecraftImageElement.kt
       - runtime/minecraft/src/main/kotlin/dev/s7a/strata/runtime/minecraft/MinecraftNineSliceImageBackgroundModifier.kt
+      - runtime/minecraft/src/main/kotlin/dev/s7a/strata/runtime/minecraft/MinecraftAsyncPlayerHeadElement.kt
       - runtime/minecraft/src/main/kotlin/dev/s7a/strata/runtime/minecraft/MinecraftPlayerHeadElement.kt
-      - runtime/minecraft/src/main/kotlin/dev/s7a/strata/runtime/minecraft/MinecraftUiComponents.kt
+      - runtime/minecraft/src/main/kotlin/dev/s7a/strata/runtime/minecraft/MinecraftTabElement.kt

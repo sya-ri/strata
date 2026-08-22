@@ -1,7 +1,7 @@
 package dev.s7a.strata
 
-import dev.s7a.strata.dsl.UiScope
-import dev.s7a.strata.dsl.buildUi
+import dev.s7a.strata.component.UiScope
+import dev.s7a.strata.component.buildComponentTree
 import dev.s7a.strata.element.Element
 import dev.s7a.strata.element.ElementIdentity
 import dev.s7a.strata.element.ElementType
@@ -24,17 +24,17 @@ internal class UiBuilderContractTest {
     fun oneRootReturnsTheExactEmittedInstance() {
         val root = BuilderElement()
 
-        val result = buildUi { element(root) }
+        val result = buildComponentTree { element(root) }
 
         assertSame(root, result)
     }
 
     @Test
     fun zeroRootsFailWithStableCardinalityMessage() {
-        val failure = assertThrows(IllegalArgumentException::class.java) { buildUi { } }
+        val failure = assertThrows(IllegalArgumentException::class.java) { buildComponentTree { } }
 
         assertEquals(
-            "buildUi requires exactly one root element, but no elements were emitted.",
+            "A component callback requires exactly one root element, but no elements were emitted.",
             failure.message,
         )
     }
@@ -46,14 +46,14 @@ internal class UiBuilderContractTest {
 
         val failure =
             assertThrows(IllegalArgumentException::class.java) {
-                buildUi {
+                buildComponentTree {
                     element(first)
                     element(second)
                 }
             }
 
         assertEquals(
-            "buildUi requires exactly one root element, but multiple elements were emitted.",
+            "A component callback requires exactly one root element, but multiple elements were emitted.",
             failure.message,
         )
     }
@@ -65,7 +65,7 @@ internal class UiBuilderContractTest {
 
         val propagated =
             assertThrows(IllegalStateException::class.java) {
-                buildUi {
+                buildComponentTree {
                     capturedScope = this
                     element(BuilderElement())
                     element(BuilderElement())
@@ -84,7 +84,7 @@ internal class UiBuilderContractTest {
         var capturedScope: UiScope? = null
 
         val result =
-            buildUi {
+            buildComponentTree {
                 capturedScope = this
                 element(root)
             }
@@ -100,7 +100,7 @@ internal class UiBuilderContractTest {
         var capturedScope: UiScope? = null
 
         assertThrows(IllegalArgumentException::class.java) {
-            buildUi {
+            buildComponentTree {
                 capturedScope = this
                 element(BuilderElement())
                 element(BuilderElement())
@@ -132,7 +132,7 @@ internal class UiBuilderContractTest {
             }
 
         val result =
-            buildUi {
+            buildComponentTree {
                 capturedScope = this
                 worker.start()
                 entered.countDown()

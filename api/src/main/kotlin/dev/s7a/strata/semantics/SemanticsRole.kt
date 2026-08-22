@@ -21,4 +21,9 @@ public interface SemanticsRole {
      * An editable single-line text field.
      */
     public data object TextField : SemanticsRole
+
+    /**
+     * One selectable tab in an externally controlled tab group.
+     */
+    public data object Tab : SemanticsRole
 }

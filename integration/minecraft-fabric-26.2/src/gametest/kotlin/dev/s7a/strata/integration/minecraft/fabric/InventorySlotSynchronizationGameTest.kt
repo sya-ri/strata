@@ -1,8 +1,8 @@
 package dev.s7a.strata.integration.minecraft.fabric
 
+import dev.s7a.strata.component.SlotBinding
+import dev.s7a.strata.component.Slots
 import dev.s7a.strata.geometry.IntOffset
-import dev.s7a.strata.runtime.minecraft.MinecraftSlotBinding
-import dev.s7a.strata.runtime.minecraft.MinecraftSlots
 import dev.s7a.strata.runtime.minecraft.MinecraftUiProfile
 import dev.s7a.strata.runtime.minecraft.fabric.FabricMinecraftScreen
 import dev.s7a.strata.runtime.minecraft.fabric.createMinecraftScreen
@@ -64,6 +64,69 @@ internal object InventorySlotSynchronizationGameTest {
         runPlayerInventoryScenario(context, profile, output, server, playerId)
         runContainerScenario(context, profile, output, server, playerId, ContainerScenario.Custom)
         runContainerScenario(context, profile, output, server, playerId, ContainerScenario.EnderChest)
+        runIndustrialContainerScenario(context, profile, output, server, playerId)
+    }
+
+    private fun runIndustrialContainerScenario(
+        context: ClientGameTestContext,
+        profile: MinecraftUiProfile,
+        output: Path,
+        server: MinecraftServer,
+        playerId: UUID,
+    ) {
+        val containerReference = AtomicReference<SimpleContainer>()
+        onServer(context, server, playerId) { player ->
+            val container = SimpleContainer(containerSize)
+            containerReference.set(container)
+            container.setItem(fuelSlotIndex, ItemStack(Items.COAL, itemCount))
+            container.setItem(chargeSlotIndex, ItemStack(Items.REDSTONE, itemCount))
+            val provider =
+                SimpleMenuProvider(
+                    MenuConstructor { containerId, inventory, _ -> ChestMenu.threeRows(containerId, inventory, container) },
+                    Component.literal("Coal Generator"),
+                )
+            check(player.openMenu(provider).isPresent) { "The server-owned coal generator menu must open." }
+        }
+        context.waitFor(
+            Predicate<Minecraft> { minecraft ->
+                val menu = minecraft.player?.containerMenu ?: return@Predicate false
+                menu is ChestMenu &&
+                    stackMatches(menu.getSlot(fuelSlotIndex).item, Items.COAL) &&
+                    stackMatches(menu.getSlot(chargeSlotIndex).item, Items.REDSTONE)
+            },
+        )
+        context.input.resizeWindow(industrialViewportWidth, industrialViewportHeight)
+        context.runOnClient(FailableConsumer<Minecraft, RuntimeException> { minecraft -> minecraft.resizeGui() })
+        context.setScreen { createMinecraftScreen(createIndustrialScreenDefinition(), profile, parent = null) }
+        context.waitForScreen(FabricMinecraftScreen::class.java)
+        context.waitTicks(2)
+        context.takeScreenshot(
+            TestScreenshotOptions
+                .of("strata-industrial-synchronized-fabric")
+                .disableCounterPrefix()
+                .withSize(industrialViewportWidth, industrialViewportHeight)
+                .withDestinationDir(output),
+        )
+
+        clickSlot(context, industrialFuelPointer)
+        waitForServer(context, server, playerId) { player ->
+            containerReference.get().getItem(fuelSlotIndex).isEmpty && carriedMatches(player, Items.COAL)
+        }
+        clickSlot(context, industrialFuelPointer)
+        waitForServer(context, server, playerId) { player ->
+            stackMatches(containerReference.get().getItem(fuelSlotIndex), Items.COAL) && player.containerMenu.carried.isEmpty
+        }
+
+        clickSlot(context, industrialChargePointer)
+        waitForServer(context, server, playerId) { player ->
+            containerReference.get().getItem(chargeSlotIndex).isEmpty && carriedMatches(player, Items.REDSTONE)
+        }
+        clickSlot(context, industrialChargePointer)
+        waitForServer(context, server, playerId) { player ->
+            stackMatches(containerReference.get().getItem(chargeSlotIndex), Items.REDSTONE) && player.containerMenu.carried.isEmpty
+        }
+        closeFabricScreen(context)
+        onServer(context, server, playerId) { player -> player.closeContainer() }
     }
 
     private fun runPlayerInventoryScenario(
@@ -81,7 +144,7 @@ internal object InventorySlotSynchronizationGameTest {
             player.inventoryMenu.broadcastChanges()
         }
         waitForPlayerItem(context, playerInventoryIndex, Items.DIRT)
-        showBoundScreen(context, profile, MinecraftSlots.playerInventory(playerInventoryIndex))
+        showBoundScreen(context, profile, Slots.playerInventory(playerInventoryIndex))
         context.takeScreenshot(
             TestScreenshotOptions
                 .of("strata-inventory-slot-fabric")
@@ -142,7 +205,7 @@ internal object InventorySlotSynchronizationGameTest {
         showBoundScreen(
             context,
             profile,
-            MinecraftSlots.playerInventory(playerInventoryIndex),
+            Slots.playerInventory(playerInventoryIndex),
             scenario.binding,
         )
         if (scenario == ContainerScenario.Custom) {
@@ -172,8 +235,8 @@ internal object InventorySlotSynchronizationGameTest {
     private fun showBoundScreen(
         context: ClientGameTestContext,
         profile: MinecraftUiProfile,
-        playerBinding: MinecraftSlotBinding,
-        containerBinding: MinecraftSlotBinding? = null,
+        playerBinding: SlotBinding,
+        containerBinding: SlotBinding? = null,
     ) {
         context.setScreen {
             createMinecraftScreen(
@@ -288,20 +351,28 @@ internal object InventorySlotSynchronizationGameTest {
     private enum class ContainerScenario(
         val title: String,
         val item: Item,
-        val binding: MinecraftSlotBinding,
+        val binding: SlotBinding,
     ) {
-        Custom("Custom storage", Items.PAPER, MinecraftSlots.container(containerSlotIndex)),
-        EnderChest("Ender Chest", Items.FEATHER, MinecraftSlots.activeMenu(containerSlotIndex)),
+        Custom("Custom storage", Items.PAPER, Slots.container(containerSlotIndex)),
+        EnderChest("Ender Chest", Items.FEATHER, Slots.activeMenu(containerSlotIndex)),
     }
 
     private val playerSlotPointer = IntOffset(82, 181)
     private val containerSlotPointer = IntOffset(82, 56)
+    private val industrialFuelPointer = IntOffset(90, 49)
+    private val industrialChargePointer = IntOffset(223, 49)
 
     @Suppress("MayBeConstant")
     private val playerInventoryIndex = 0
 
     @Suppress("MayBeConstant")
     private val containerSlotIndex = 0
+
+    @Suppress("MayBeConstant")
+    private val fuelSlotIndex = 0
+
+    @Suppress("MayBeConstant")
+    private val chargeSlotIndex = 1
 
     @Suppress("MayBeConstant")
     private val containerSize = 27
@@ -320,4 +391,10 @@ internal object InventorySlotSynchronizationGameTest {
 
     @Suppress("MayBeConstant")
     private val viewportHeight = 240
+
+    @Suppress("MayBeConstant")
+    private val industrialViewportWidth = 320
+
+    @Suppress("MayBeConstant")
+    private val industrialViewportHeight = 180
 }

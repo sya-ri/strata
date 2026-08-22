@@ -1,9 +1,11 @@
+@file:OptIn(InternalStrataRuntimeApi::class)
+
 package dev.s7a.strata.integration.external
 
-import dev.s7a.strata.dsl.Box
-import dev.s7a.strata.dsl.Column
-import dev.s7a.strata.dsl.Row
-import dev.s7a.strata.dsl.buildUi
+import dev.s7a.strata.component.Column
+import dev.s7a.strata.component.Row
+import dev.s7a.strata.component.Stack
+import dev.s7a.strata.component.evaluateComponentTree
 import dev.s7a.strata.geometry.Constraints
 import dev.s7a.strata.geometry.IntRect
 import dev.s7a.strata.layout.Alignment
@@ -12,6 +14,7 @@ import dev.s7a.strata.layout.VerticalAlignment
 import dev.s7a.strata.modifier.Modifier
 import dev.s7a.strata.runtime.UiTree
 import dev.s7a.strata.runtime.render.DrawCommand
+import dev.s7a.strata.spi.InternalStrataRuntimeApi
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
 
@@ -66,7 +69,7 @@ internal class LayoutAlignmentIntegrationTest {
     fun publicDefaultArgumentsPlaceChildrenAtTheTopStartEdges() {
         val rowTree = UiTree()
         rowTree.update(
-            buildUi {
+            evaluateComponentTree {
                 Row {
                     element(ExternalElement(width = 3, height = 3))
                 }
@@ -79,7 +82,7 @@ internal class LayoutAlignmentIntegrationTest {
 
         val columnTree = UiTree()
         columnTree.update(
-            buildUi {
+            evaluateComponentTree {
                 Column {
                     element(ExternalElement(width = 3, height = 3))
                 }
@@ -92,8 +95,8 @@ internal class LayoutAlignmentIntegrationTest {
 
         val boxTree = UiTree()
         boxTree.update(
-            buildUi {
-                Box {
+            evaluateComponentTree {
+                Stack {
                     element(ExternalElement(width = 3, height = 3))
                 }
             },
@@ -115,7 +118,7 @@ internal class LayoutAlignmentIntegrationTest {
         val rowTree = UiTree()
         val rowProbe = ExternalProbe()
         rowTree.update(
-            buildUi {
+            evaluateComponentTree {
                 Row {
                     element(
                         ExternalElement(
@@ -138,7 +141,7 @@ internal class LayoutAlignmentIntegrationTest {
         val columnTree = UiTree()
         val columnProbe = ExternalProbe()
         columnTree.update(
-            buildUi {
+            evaluateComponentTree {
                 Column {
                     element(
                         ExternalElement(
@@ -161,8 +164,8 @@ internal class LayoutAlignmentIntegrationTest {
         val boxTree = UiTree()
         val boxProbe = ExternalProbe()
         boxTree.update(
-            buildUi {
-                Box {
+            evaluateComponentTree {
+                Stack {
                     element(
                         ExternalElement(
                             probe = boxProbe,
@@ -187,8 +190,8 @@ internal class LayoutAlignmentIntegrationTest {
         val probe = ExternalProbe()
         val tree = UiTree()
         tree.update(
-            buildUi {
-                Box(contentAlignment = contentAlignment) {
+            evaluateComponentTree {
+                Stack(contentAlignment = contentAlignment) {
                     val modifier =
                         if (childAlignment == null) {
                             Modifier.Empty
@@ -213,7 +216,7 @@ internal class LayoutAlignmentIntegrationTest {
         val probe = ExternalProbe()
         val tree = UiTree()
         tree.update(
-            buildUi {
+            evaluateComponentTree {
                 Row(verticalAlignment = alignment) {
                     val modifier =
                         if (childAlignment == null) {
@@ -239,7 +242,7 @@ internal class LayoutAlignmentIntegrationTest {
         val probe = ExternalProbe()
         val tree = UiTree()
         tree.update(
-            buildUi {
+            evaluateComponentTree {
                 Column(horizontalAlignment = alignment) {
                     val modifier =
                         if (childAlignment == null) {

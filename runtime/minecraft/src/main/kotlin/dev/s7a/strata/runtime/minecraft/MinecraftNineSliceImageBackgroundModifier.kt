@@ -1,5 +1,6 @@
 package dev.s7a.strata.runtime.minecraft
 
+import dev.s7a.strata.component.NineSliceCenterMode
 import dev.s7a.strata.geometry.Insets
 import dev.s7a.strata.modifier.ModifierElement
 import dev.s7a.strata.modifier.ModifierNodeType
@@ -24,7 +25,7 @@ private object MinecraftNineSliceImageBackgroundModifier {
     data class Element(
         val image: DrawImage,
         val border: Insets,
-        val centerMode: MinecraftNineSliceCenterMode,
+        val centerMode: NineSliceCenterMode,
     ) : ModifierElement {
         override val type: ModifierNodeType<*, *>
             get() = TYPE
@@ -40,7 +41,7 @@ private object MinecraftNineSliceImageBackgroundModifier {
     class Node(
         private var image: DrawImage,
         private var border: Insets,
-        private var centerMode: MinecraftNineSliceCenterMode,
+        private var centerMode: NineSliceCenterMode,
     ) : ModifierNode(),
         PaintNode {
         override fun paint(scope: PaintScope) {
@@ -92,7 +93,7 @@ private object MinecraftNineSliceImageBackgroundModifier {
     fun element(
         image: DrawImage,
         border: Insets,
-        centerMode: MinecraftNineSliceCenterMode,
+        centerMode: NineSliceCenterMode,
     ): ModifierElement = Element(image, border, centerMode)
 }
 
@@ -108,5 +109,5 @@ private object MinecraftNineSliceImageBackgroundModifier {
 internal fun createMinecraftNineSliceImageBackgroundModifier(
     image: DrawImage,
     border: Insets,
-    centerMode: MinecraftNineSliceCenterMode,
+    centerMode: NineSliceCenterMode,
 ): ModifierElement = MinecraftNineSliceImageBackgroundModifier.element(image, border, centerMode)

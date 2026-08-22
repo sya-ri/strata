@@ -2,14 +2,16 @@ package dev.s7a.strata
 
 import dev.s7a.strata.layout.Alignment
 import dev.s7a.strata.layout.Arrangement
-import dev.s7a.strata.layout.BoxAlignmentParentData
-import dev.s7a.strata.layout.BoxElement
 import dev.s7a.strata.layout.ColumnAlignmentParentData
+import dev.s7a.strata.layout.GridAlignmentParentData
+import dev.s7a.strata.layout.GridElement
 import dev.s7a.strata.layout.HorizontalAlignment
 import dev.s7a.strata.layout.LinearElement
 import dev.s7a.strata.layout.LinearOrientation
 import dev.s7a.strata.layout.RowAlignmentParentData
 import dev.s7a.strata.layout.SpacerElement
+import dev.s7a.strata.layout.StackAlignmentParentData
+import dev.s7a.strata.layout.StackElement
 import dev.s7a.strata.layout.VerticalAlignment
 import dev.s7a.strata.layout.WeightParentData
 import dev.s7a.strata.modifier.Modifier
@@ -31,18 +33,24 @@ internal class LayoutTokenContractTest {
     fun layoutElementTypesAreStableAndLinearVariantsShareOneToken() {
         val row = linearRow()
         val column = linearColumn()
-        val box = BoxElement(Alignment.TopStart, null, emptyList(), Modifier.Empty)
+        val stack = StackElement(Alignment.TopStart, null, emptyList(), Modifier.Empty)
+        val grid = grid()
         val spacer = SpacerElement(null, Modifier.Empty)
 
         assertSame(row.type, column.type)
-        assertSame(box.type, BoxElement(Alignment.Center, null, emptyList(), Modifier.Empty).type)
+        assertSame(stack.type, StackElement(Alignment.Center, null, emptyList(), Modifier.Empty).type)
+        assertSame(grid.type, grid(alignment = Alignment.Center).type)
         assertSame(spacer.type, SpacerElement(null, Modifier.Empty).type)
-        assertNotSame(row.type, box.type)
+        assertNotSame(row.type, stack.type)
         assertNotSame(row.type, spacer.type)
-        assertNotSame(box.type, spacer.type)
+        assertNotSame(stack.type, spacer.type)
+        assertNotSame(grid.type, row.type)
+        assertNotSame(grid.type, stack.type)
+        assertNotSame(grid.type, spacer.type)
     }
 
     @Test
+    @Suppress("LongMethod")
     fun layoutElementUpdatesReportOnlyAffectedPhases() {
         val linearEqual = linearRow()
         assertEquals(
@@ -69,6 +77,17 @@ internal class LayoutTokenContractTest {
                 LinearElement.TYPE.createErased(linearRow()),
             ),
         )
+
+        val grid = grid()
+        assertEquals(DirtyMask.None, GridElement.TYPE.updateErased(grid, grid, GridElement.TYPE.createErased(grid)))
+        assertEquals(
+            DirtyMask.of(DirtyPhase.Measure),
+            GridElement.TYPE.updateErased(grid, grid(columns = 3), GridElement.TYPE.createErased(grid)),
+        )
+        assertEquals(
+            DirtyMask.of(DirtyPhase.Layout),
+            GridElement.TYPE.updateErased(grid, grid(alignment = Alignment.BottomEnd), GridElement.TYPE.createErased(grid)),
+        )
         assertEquals(
             DirtyMask.of(DirtyPhase.Layout),
             LinearElement.TYPE.updateErased(
@@ -86,17 +105,17 @@ internal class LayoutTokenContractTest {
             ),
         )
 
-        val box = BoxElement(Alignment.TopStart, null, emptyList(), Modifier.Empty)
+        val stack = StackElement(Alignment.TopStart, null, emptyList(), Modifier.Empty)
         assertEquals(
             DirtyMask.None,
-            BoxElement.TYPE.updateErased(box, box, BoxElement.TYPE.createErased(box)),
+            StackElement.TYPE.updateErased(stack, stack, StackElement.TYPE.createErased(stack)),
         )
         assertEquals(
             DirtyMask.of(DirtyPhase.Layout),
-            BoxElement.TYPE.updateErased(
-                box,
-                BoxElement(Alignment.BottomEnd, null, emptyList(), Modifier.Empty),
-                BoxElement.TYPE.createErased(box),
+            StackElement.TYPE.updateErased(
+                stack,
+                StackElement(Alignment.BottomEnd, null, emptyList(), Modifier.Empty),
+                StackElement.TYPE.createErased(stack),
             ),
         )
 
@@ -110,7 +129,8 @@ internal class LayoutTokenContractTest {
         assertWeightContract()
         assertRowAlignmentContract()
         assertColumnAlignmentContract()
-        assertBoxAlignmentContract()
+        assertStackAlignmentContract()
+        assertGridAlignmentContract()
     }
 
     @Test
@@ -180,17 +200,32 @@ internal class LayoutTokenContractTest {
         )
     }
 
-    private fun assertBoxAlignmentContract() {
-        val first = BoxAlignmentParentData.Element(BoxAlignmentParentData.Data(Alignment.TopStart))
-        val equal = BoxAlignmentParentData.Element(BoxAlignmentParentData.Data(Alignment.TopStart))
-        val changed = BoxAlignmentParentData.Element(BoxAlignmentParentData.Data(Alignment.BottomEnd))
+    private fun assertStackAlignmentContract() {
+        val first = StackAlignmentParentData.Element(StackAlignmentParentData.Data(Alignment.TopStart))
+        val equal = StackAlignmentParentData.Element(StackAlignmentParentData.Data(Alignment.TopStart))
+        val changed = StackAlignmentParentData.Element(StackAlignmentParentData.Data(Alignment.BottomEnd))
         assertSame(first.type, equal.type)
-        assertSame(BoxAlignmentParentData.TYPE, first.type)
+        assertSame(StackAlignmentParentData.TYPE, first.type)
         val equalNode = first.type.createErased(first)
-        assertSame(BoxAlignmentParentData.KEY, (equalNode as BoxAlignmentParentData.Node).parentDataKey)
+        assertSame(StackAlignmentParentData.KEY, (equalNode as StackAlignmentParentData.Node).parentDataKey)
         assertEquals(DirtyMask.None, first.type.updateErased(first, equal, equalNode))
         assertEquals(
             DirtyMask.of(DirtyPhase.Measure),
+            first.type.updateErased(first, changed, first.type.createErased(first)),
+        )
+    }
+
+    private fun assertGridAlignmentContract() {
+        val first = GridAlignmentParentData.Element(GridAlignmentParentData.Data(Alignment.TopStart))
+        val equal = GridAlignmentParentData.Element(GridAlignmentParentData.Data(Alignment.TopStart))
+        val changed = GridAlignmentParentData.Element(GridAlignmentParentData.Data(Alignment.BottomEnd))
+        assertSame(first.type, equal.type)
+        assertSame(GridAlignmentParentData.TYPE, first.type)
+        val equalNode = first.type.createErased(first)
+        assertSame(GridAlignmentParentData.KEY, (equalNode as GridAlignmentParentData.Node).parentDataKey)
+        assertEquals(DirtyMask.None, first.type.updateErased(first, equal, equalNode))
+        assertEquals(
+            DirtyMask.of(DirtyPhase.Layout),
             first.type.updateErased(first, changed, first.type.createErased(first)),
         )
     }
@@ -214,6 +249,20 @@ internal class LayoutTokenContractTest {
             orientation = LinearOrientation.Column(HorizontalAlignment.Start),
             spacing = 0,
             arrangement = Arrangement.Start,
+            key = null,
+            children = emptyList(),
+            modifier = Modifier.Empty,
+        )
+
+    private fun grid(
+        columns: Int = 2,
+        alignment: Alignment = Alignment.TopStart,
+    ): GridElement =
+        GridElement(
+            columns = columns,
+            horizontalSpacing = 0,
+            verticalSpacing = 0,
+            contentAlignment = alignment,
             key = null,
             children = emptyList(),
             modifier = Modifier.Empty,

@@ -1,12 +1,37 @@
 package dev.s7a.strata.integration.docs
 
 /**
- * Typed Minecraft component identities discovered at the runtime API boundary and used by the showcase catalog.
+ * Typed standard component identities discovered from the public API artifact and used by the showcase catalog.
  */
 internal enum class DocumentedComponent(
     internal val apiMethodName: String,
     internal val slug: String,
 ) {
+    /**
+     * The horizontal linear-layout component identity.
+     */
+    Row("Row", "row"),
+
+    /**
+     * The vertical linear-layout component identity.
+     */
+    Column("Column", "column"),
+
+    /**
+     * The overlay-layout component identity.
+     */
+    Stack("Stack", "stack"),
+
+    /**
+     * The fixed-column grid-layout component identity.
+     */
+    Grid("Grid", "grid"),
+
+    /**
+     * The empty layout-footprint component identity.
+     */
+    Spacer("Spacer", "spacer"),
+
     /**
      * The text component identity.
      */
@@ -23,19 +48,24 @@ internal enum class DocumentedComponent(
     Button("Button", "button"),
 
     /**
+     * The externally selected tab component identity.
+     */
+    Tab("Tab", "tab"),
+
+    /**
      * The menu-list scroll viewport component identity.
      */
     Scroll("Scroll", "scroll"),
 
     /**
-     * The container slot component identity.
-     */
-    Slot("Slot", "slot"),
-
-    /**
      * The immutable nearest-sampled image component identity.
      */
     Image("Image", "image"),
+
+    /**
+     * The container slot component identity.
+     */
+    Slot("Slot", "slot"),
 
     /**
      * The reusable layered player-head component identity.

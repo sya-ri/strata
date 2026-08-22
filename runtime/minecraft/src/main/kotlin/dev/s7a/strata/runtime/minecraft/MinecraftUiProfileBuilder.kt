@@ -1,5 +1,6 @@
 package dev.s7a.strata.runtime.minecraft
 
+import dev.s7a.strata.component.NineSliceCenterMode
 import dev.s7a.strata.render.DrawImage
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
 
@@ -142,7 +143,7 @@ public sealed interface MinecraftUiProfileBuilder {
     public fun buttonNormal(
         image: DrawImage,
         border: Int,
-        centerMode: MinecraftNineSliceCenterMode,
+        centerMode: NineSliceCenterMode,
     )
 
     /**
@@ -157,7 +158,7 @@ public sealed interface MinecraftUiProfileBuilder {
     public fun buttonHighlighted(
         image: DrawImage,
         border: Int,
-        centerMode: MinecraftNineSliceCenterMode,
+        centerMode: NineSliceCenterMode,
     )
 
     /**
@@ -172,6 +173,6 @@ public sealed interface MinecraftUiProfileBuilder {
     public fun buttonDisabled(
         image: DrawImage,
         border: Int,
-        centerMode: MinecraftNineSliceCenterMode,
+        centerMode: NineSliceCenterMode,
     )
 }

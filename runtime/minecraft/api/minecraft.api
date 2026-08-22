@@ -1,122 +1,48 @@
-public abstract interface class dev/s7a/strata/runtime/minecraft/MinecraftAssetId {
-	public abstract fun getNamespace ()Ljava/lang/String;
-	public abstract fun getPath ()Ljava/lang/String;
-}
-
-public final class dev/s7a/strata/runtime/minecraft/MinecraftAssets {
-	public static final field INSTANCE Ldev/s7a/strata/runtime/minecraft/MinecraftAssets;
-	public static final fun resource (Ljava/lang/String;Ljava/lang/String;)Ldev/s7a/strata/runtime/minecraft/MinecraftAssetId;
-}
-
-public final class dev/s7a/strata/runtime/minecraft/MinecraftImageScale : java/lang/Enum {
-	public static final field Stretch Ldev/s7a/strata/runtime/minecraft/MinecraftImageScale;
-	public static final field Tile Ldev/s7a/strata/runtime/minecraft/MinecraftImageScale;
-	public static fun getEntries ()Lkotlin/enums/EnumEntries;
-	public static fun valueOf (Ljava/lang/String;)Ldev/s7a/strata/runtime/minecraft/MinecraftImageScale;
-	public static fun values ()[Ldev/s7a/strata/runtime/minecraft/MinecraftImageScale;
-}
-
-public abstract interface class dev/s7a/strata/runtime/minecraft/MinecraftInventorySlotBinding {
+public abstract interface class dev/s7a/strata/runtime/minecraft/MinecraftInventorySlotBinding : java/lang/AutoCloseable {
+	public abstract fun close ()V
 	public abstract fun dispatchPointer (Ldev/s7a/strata/input/PointerEvent;)Ldev/s7a/strata/input/InputResult;
 	public abstract fun drawCommand ()Ldev/s7a/strata/render/PlatformDrawCommand;
 	public abstract fun observe (Lkotlin/jvm/functions/Function0;)Ljava/lang/AutoCloseable;
 }
 
-public abstract interface class dev/s7a/strata/runtime/minecraft/MinecraftNineSliceCenterMode {
+public abstract interface class dev/s7a/strata/runtime/minecraft/MinecraftPlayerSkinBinding : java/lang/AutoCloseable {
+	public abstract fun close ()V
+	public abstract fun observe (Lkotlin/jvm/functions/Function0;)Ljava/lang/AutoCloseable;
+	public abstract fun snapshot ()Ldev/s7a/strata/runtime/minecraft/MinecraftPlayerSkinBinding$Snapshot;
 }
 
-public final class dev/s7a/strata/runtime/minecraft/MinecraftNineSliceCenterMode$Stretched : dev/s7a/strata/runtime/minecraft/MinecraftNineSliceCenterMode {
-	public static final field INSTANCE Ldev/s7a/strata/runtime/minecraft/MinecraftNineSliceCenterMode$Stretched;
+public abstract interface class dev/s7a/strata/runtime/minecraft/MinecraftPlayerSkinBinding$Snapshot {
+}
+
+public final class dev/s7a/strata/runtime/minecraft/MinecraftPlayerSkinBinding$Snapshot$Failed : dev/s7a/strata/runtime/minecraft/MinecraftPlayerSkinBinding$Snapshot {
+	public static final field INSTANCE Ldev/s7a/strata/runtime/minecraft/MinecraftPlayerSkinBinding$Snapshot$Failed;
 	public fun equals (Ljava/lang/Object;)Z
 	public fun hashCode ()I
 	public fun toString ()Ljava/lang/String;
 }
 
-public final class dev/s7a/strata/runtime/minecraft/MinecraftNineSliceCenterMode$Tiled : dev/s7a/strata/runtime/minecraft/MinecraftNineSliceCenterMode {
-	public static final field INSTANCE Ldev/s7a/strata/runtime/minecraft/MinecraftNineSliceCenterMode$Tiled;
+public final class dev/s7a/strata/runtime/minecraft/MinecraftPlayerSkinBinding$Snapshot$Pending : dev/s7a/strata/runtime/minecraft/MinecraftPlayerSkinBinding$Snapshot {
+	public static final field INSTANCE Ldev/s7a/strata/runtime/minecraft/MinecraftPlayerSkinBinding$Snapshot$Pending;
 	public fun equals (Ljava/lang/Object;)Z
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class dev/s7a/strata/runtime/minecraft/MinecraftPlayerSkinBinding$Snapshot$Ready : dev/s7a/strata/runtime/minecraft/MinecraftPlayerSkinBinding$Snapshot {
+	public fun <init> (Ldev/s7a/strata/render/DrawImage;)V
+	public final fun component1 ()Ldev/s7a/strata/render/DrawImage;
+	public final fun copy (Ldev/s7a/strata/render/DrawImage;)Ldev/s7a/strata/runtime/minecraft/MinecraftPlayerSkinBinding$Snapshot$Ready;
+	public static synthetic fun copy$default (Ldev/s7a/strata/runtime/minecraft/MinecraftPlayerSkinBinding$Snapshot$Ready;Ldev/s7a/strata/render/DrawImage;ILjava/lang/Object;)Ldev/s7a/strata/runtime/minecraft/MinecraftPlayerSkinBinding$Snapshot$Ready;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getSkin ()Ldev/s7a/strata/render/DrawImage;
 	public fun hashCode ()I
 	public fun toString ()Ljava/lang/String;
 }
 
 public final class dev/s7a/strata/runtime/minecraft/MinecraftRuntimeFactories {
-	public static final fun createMinecraftScreenDefinition (Ldev/s7a/strata/text/UiText;ZLkotlin/jvm/functions/Function1;)Ldev/s7a/strata/runtime/minecraft/MinecraftScreenDefinition;
-	public static final fun createMinecraftScreenDefinition (Ljava/lang/String;ZLkotlin/jvm/functions/Function1;)Ldev/s7a/strata/runtime/minecraft/MinecraftScreenDefinition;
-	public static synthetic fun createMinecraftScreenDefinition$default (Ldev/s7a/strata/text/UiText;ZLkotlin/jvm/functions/Function1;ILjava/lang/Object;)Ldev/s7a/strata/runtime/minecraft/MinecraftScreenDefinition;
-	public static synthetic fun createMinecraftScreenDefinition$default (Ljava/lang/String;ZLkotlin/jvm/functions/Function1;ILjava/lang/Object;)Ldev/s7a/strata/runtime/minecraft/MinecraftScreenDefinition;
-	public static final fun createMinecraftTextFieldState (Ljava/lang/String;I)Ldev/s7a/strata/runtime/minecraft/MinecraftTextFieldState;
-	public static synthetic fun createMinecraftTextFieldState$default (Ljava/lang/String;IILjava/lang/Object;)Ldev/s7a/strata/runtime/minecraft/MinecraftTextFieldState;
-	public static final fun createMinecraftUiHost (Ldev/s7a/strata/runtime/minecraft/MinecraftScreenDefinition;Ldev/s7a/strata/runtime/minecraft/MinecraftUiProfile;)Ldev/s7a/strata/runtime/minecraft/MinecraftUiHost;
-	public static final fun createMinecraftUiHost (Ldev/s7a/strata/runtime/minecraft/MinecraftScreenDefinition;Ldev/s7a/strata/runtime/minecraft/MinecraftUiProfile;Ldev/s7a/strata/runtime/minecraft/MinecraftUiPlatform;)Ldev/s7a/strata/runtime/minecraft/MinecraftUiHost;
+	public static final fun createMinecraftUiHost (Ldev/s7a/strata/screen/ScreenDefinition;Ldev/s7a/strata/runtime/minecraft/MinecraftUiProfile;)Ldev/s7a/strata/runtime/minecraft/MinecraftUiHost;
+	public static final fun createMinecraftUiHost (Ldev/s7a/strata/screen/ScreenDefinition;Ldev/s7a/strata/runtime/minecraft/MinecraftUiProfile;Ldev/s7a/strata/runtime/minecraft/MinecraftUiPlatform;)Ldev/s7a/strata/runtime/minecraft/MinecraftUiHost;
 	public static final fun createMinecraftUiProfile (Lkotlin/jvm/functions/Function1;)Ldev/s7a/strata/runtime/minecraft/MinecraftUiProfile;
-}
-
-public abstract interface class dev/s7a/strata/runtime/minecraft/MinecraftScreenDefinition : java/lang/AutoCloseable {
-	public abstract fun close ()V
-}
-
-public abstract interface class dev/s7a/strata/runtime/minecraft/MinecraftSlotBinding {
-	public abstract fun getIndex ()I
-	public abstract fun getSource ()Ldev/s7a/strata/runtime/minecraft/MinecraftSlotSource;
-}
-
-public final class dev/s7a/strata/runtime/minecraft/MinecraftSlotSource : java/lang/Enum {
-	public static final field ActiveMenu Ldev/s7a/strata/runtime/minecraft/MinecraftSlotSource;
-	public static final field Container Ldev/s7a/strata/runtime/minecraft/MinecraftSlotSource;
-	public static final field PlayerInventory Ldev/s7a/strata/runtime/minecraft/MinecraftSlotSource;
-	public static fun getEntries ()Lkotlin/enums/EnumEntries;
-	public static fun valueOf (Ljava/lang/String;)Ldev/s7a/strata/runtime/minecraft/MinecraftSlotSource;
-	public static fun values ()[Ldev/s7a/strata/runtime/minecraft/MinecraftSlotSource;
-}
-
-public final class dev/s7a/strata/runtime/minecraft/MinecraftSlots {
-	public static final field INSTANCE Ldev/s7a/strata/runtime/minecraft/MinecraftSlots;
-	public static final fun activeMenu (I)Ldev/s7a/strata/runtime/minecraft/MinecraftSlotBinding;
-	public static final fun container (I)Ldev/s7a/strata/runtime/minecraft/MinecraftSlotBinding;
-	public static final fun playerInventory (I)Ldev/s7a/strata/runtime/minecraft/MinecraftSlotBinding;
-}
-
-public abstract interface class dev/s7a/strata/runtime/minecraft/MinecraftTextFieldState {
-	public abstract fun getMaxLength ()I
-	public abstract fun getValue ()Ljava/lang/String;
-	public abstract fun setValue (Ljava/lang/String;)V
-}
-
-public final class dev/s7a/strata/runtime/minecraft/MinecraftTextStyle : java/lang/Enum {
-	public static final field ContainerLabel Ldev/s7a/strata/runtime/minecraft/MinecraftTextStyle;
-	public static final field Inactive Ldev/s7a/strata/runtime/minecraft/MinecraftTextStyle;
-	public static final field Normal Ldev/s7a/strata/runtime/minecraft/MinecraftTextStyle;
-	public static final field TextField Ldev/s7a/strata/runtime/minecraft/MinecraftTextStyle;
-	public static fun getEntries ()Lkotlin/enums/EnumEntries;
-	public static fun valueOf (Ljava/lang/String;)Ldev/s7a/strata/runtime/minecraft/MinecraftTextStyle;
-	public static fun values ()[Ldev/s7a/strata/runtime/minecraft/MinecraftTextStyle;
-}
-
-public final class dev/s7a/strata/runtime/minecraft/MinecraftUiComponents {
-	public static final fun Button (Ldev/s7a/strata/dsl/UiScope;Ldev/s7a/strata/text/UiText;IZLdev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/element/ElementKey;)V
-	public static final fun Button (Ldev/s7a/strata/dsl/UiScope;Ljava/lang/String;IZLdev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/element/ElementKey;)V
-	public static synthetic fun Button$default (Ldev/s7a/strata/dsl/UiScope;Ldev/s7a/strata/text/UiText;IZLdev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/element/ElementKey;ILjava/lang/Object;)V
-	public static synthetic fun Button$default (Ldev/s7a/strata/dsl/UiScope;Ljava/lang/String;IZLdev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/element/ElementKey;ILjava/lang/Object;)V
-	public static final fun Image (Ldev/s7a/strata/dsl/UiScope;Ldev/s7a/strata/render/DrawImage;Ldev/s7a/strata/geometry/IntRect;Ldev/s7a/strata/geometry/IntSize;Ldev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/element/ElementKey;)V
-	public static final fun Image (Ldev/s7a/strata/dsl/UiScope;Ldev/s7a/strata/render/DrawImage;Ldev/s7a/strata/geometry/IntSize;Ldev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/element/ElementKey;)V
-	public static synthetic fun Image$default (Ldev/s7a/strata/dsl/UiScope;Ldev/s7a/strata/render/DrawImage;Ldev/s7a/strata/geometry/IntRect;Ldev/s7a/strata/geometry/IntSize;Ldev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/element/ElementKey;ILjava/lang/Object;)V
-	public static synthetic fun Image$default (Ldev/s7a/strata/dsl/UiScope;Ldev/s7a/strata/render/DrawImage;Ldev/s7a/strata/geometry/IntSize;Ldev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/element/ElementKey;ILjava/lang/Object;)V
-	public static final fun PlayerHead (Ldev/s7a/strata/dsl/UiScope;Ldev/s7a/strata/render/DrawImage;IZLdev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/element/ElementKey;)V
-	public static synthetic fun PlayerHead$default (Ldev/s7a/strata/dsl/UiScope;Ldev/s7a/strata/render/DrawImage;IZLdev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/element/ElementKey;ILjava/lang/Object;)V
-	public static final fun Scroll (Ldev/s7a/strata/dsl/UiScope;Ldev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/element/ElementKey;ILkotlin/jvm/functions/Function1;)V
-	public static synthetic fun Scroll$default (Ldev/s7a/strata/dsl/UiScope;Ldev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/element/ElementKey;ILkotlin/jvm/functions/Function1;ILjava/lang/Object;)V
-	public static final fun Slot (Ldev/s7a/strata/dsl/UiScope;Ldev/s7a/strata/runtime/minecraft/MinecraftSlotBinding;ZLdev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/element/ElementKey;)V
-	public static final fun Slot (Ldev/s7a/strata/dsl/UiScope;ZLdev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/element/ElementKey;Lkotlin/jvm/functions/Function1;)V
-	public static synthetic fun Slot$default (Ldev/s7a/strata/dsl/UiScope;Ldev/s7a/strata/runtime/minecraft/MinecraftSlotBinding;ZLdev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/element/ElementKey;ILjava/lang/Object;)V
-	public static synthetic fun Slot$default (Ldev/s7a/strata/dsl/UiScope;ZLdev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/element/ElementKey;Lkotlin/jvm/functions/Function1;ILjava/lang/Object;)V
-	public static final fun Text (Ldev/s7a/strata/dsl/UiScope;Ldev/s7a/strata/text/UiText;Ldev/s7a/strata/runtime/minecraft/MinecraftTextStyle;Ldev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/element/ElementKey;)V
-	public static final fun Text (Ldev/s7a/strata/dsl/UiScope;Ljava/lang/String;Ldev/s7a/strata/runtime/minecraft/MinecraftTextStyle;Ldev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/element/ElementKey;)V
-	public static synthetic fun Text$default (Ldev/s7a/strata/dsl/UiScope;Ldev/s7a/strata/text/UiText;Ldev/s7a/strata/runtime/minecraft/MinecraftTextStyle;Ldev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/element/ElementKey;ILjava/lang/Object;)V
-	public static synthetic fun Text$default (Ldev/s7a/strata/dsl/UiScope;Ljava/lang/String;Ldev/s7a/strata/runtime/minecraft/MinecraftTextStyle;Ldev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/element/ElementKey;ILjava/lang/Object;)V
-	public static final fun TextField (Ldev/s7a/strata/dsl/UiScope;Ldev/s7a/strata/runtime/minecraft/MinecraftTextFieldState;Ldev/s7a/strata/geometry/IntSize;ZLdev/s7a/strata/runtime/minecraft/MinecraftTextStyle;Ldev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/element/ElementKey;)V
-	public static final fun TextField (Ldev/s7a/strata/dsl/UiScope;Ldev/s7a/strata/runtime/minecraft/MinecraftTextFieldState;ZLdev/s7a/strata/runtime/minecraft/MinecraftTextStyle;Ldev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/element/ElementKey;)V
-	public static synthetic fun TextField$default (Ldev/s7a/strata/dsl/UiScope;Ldev/s7a/strata/runtime/minecraft/MinecraftTextFieldState;Ldev/s7a/strata/geometry/IntSize;ZLdev/s7a/strata/runtime/minecraft/MinecraftTextStyle;Ldev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/element/ElementKey;ILjava/lang/Object;)V
-	public static synthetic fun TextField$default (Ldev/s7a/strata/dsl/UiScope;Ldev/s7a/strata/runtime/minecraft/MinecraftTextFieldState;ZLdev/s7a/strata/runtime/minecraft/MinecraftTextStyle;Ldev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/element/ElementKey;ILjava/lang/Object;)V
 }
 
 public abstract interface class dev/s7a/strata/runtime/minecraft/MinecraftUiHost : java/lang/AutoCloseable {
@@ -131,19 +57,11 @@ public abstract interface class dev/s7a/strata/runtime/minecraft/MinecraftUiHost
 	public abstract fun getTitle ()Ldev/s7a/strata/text/UiText;
 }
 
-public final class dev/s7a/strata/runtime/minecraft/MinecraftUiModifiers {
-	public static final fun containerBackground (Ldev/s7a/strata/modifier/Modifier;I)Ldev/s7a/strata/modifier/Modifier;
-	public static synthetic fun containerBackground$default (Ldev/s7a/strata/modifier/Modifier;IILjava/lang/Object;)Ldev/s7a/strata/modifier/Modifier;
-	public static final fun imageBackground (Ldev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/render/DrawImage;Ldev/s7a/strata/geometry/Insets;Ldev/s7a/strata/runtime/minecraft/MinecraftNineSliceCenterMode;)Ldev/s7a/strata/modifier/Modifier;
-	public static final fun imageBackground (Ldev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/render/DrawImage;Ldev/s7a/strata/runtime/minecraft/MinecraftImageScale;)Ldev/s7a/strata/modifier/Modifier;
-	public static synthetic fun imageBackground$default (Ldev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/render/DrawImage;Ldev/s7a/strata/geometry/Insets;Ldev/s7a/strata/runtime/minecraft/MinecraftNineSliceCenterMode;ILjava/lang/Object;)Ldev/s7a/strata/modifier/Modifier;
-	public static synthetic fun imageBackground$default (Ldev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/render/DrawImage;Ldev/s7a/strata/runtime/minecraft/MinecraftImageScale;ILjava/lang/Object;)Ldev/s7a/strata/modifier/Modifier;
-	public static final fun menuBackground (Ldev/s7a/strata/modifier/Modifier;)Ldev/s7a/strata/modifier/Modifier;
-}
-
 public abstract interface class dev/s7a/strata/runtime/minecraft/MinecraftUiPlatform : java/lang/AutoCloseable {
 	public abstract fun close ()V
-	public abstract fun inventorySlot (Ldev/s7a/strata/runtime/minecraft/MinecraftSlotBinding;)Ldev/s7a/strata/runtime/minecraft/MinecraftInventorySlotBinding;
+	public abstract fun image (Ldev/s7a/strata/resource/ResourceId;)Ldev/s7a/strata/render/DrawImage;
+	public abstract fun inventorySlot (Ldev/s7a/strata/component/SlotBinding;)Ldev/s7a/strata/runtime/minecraft/MinecraftInventorySlotBinding;
+	public abstract fun playerSkin (Ldev/s7a/strata/component/PlayerSkinSource;)Ldev/s7a/strata/runtime/minecraft/MinecraftPlayerSkinBinding;
 	public abstract fun refresh ()V
 }
 
@@ -151,9 +69,9 @@ public abstract interface class dev/s7a/strata/runtime/minecraft/MinecraftUiProf
 }
 
 public abstract interface class dev/s7a/strata/runtime/minecraft/MinecraftUiProfileBuilder {
-	public abstract fun buttonDisabled (Ldev/s7a/strata/render/DrawImage;ILdev/s7a/strata/runtime/minecraft/MinecraftNineSliceCenterMode;)V
-	public abstract fun buttonHighlighted (Ldev/s7a/strata/render/DrawImage;ILdev/s7a/strata/runtime/minecraft/MinecraftNineSliceCenterMode;)V
-	public abstract fun buttonNormal (Ldev/s7a/strata/render/DrawImage;ILdev/s7a/strata/runtime/minecraft/MinecraftNineSliceCenterMode;)V
+	public abstract fun buttonDisabled (Ldev/s7a/strata/render/DrawImage;ILdev/s7a/strata/component/NineSliceCenterMode;)V
+	public abstract fun buttonHighlighted (Ldev/s7a/strata/render/DrawImage;ILdev/s7a/strata/component/NineSliceCenterMode;)V
+	public abstract fun buttonNormal (Ldev/s7a/strata/render/DrawImage;ILdev/s7a/strata/component/NineSliceCenterMode;)V
 	public abstract fun containerBackground (Ldev/s7a/strata/render/DrawImage;)V
 	public abstract fun listBackground (Ldev/s7a/strata/render/DrawImage;)V
 	public abstract fun listFooterSeparator (Ldev/s7a/strata/render/DrawImage;)V

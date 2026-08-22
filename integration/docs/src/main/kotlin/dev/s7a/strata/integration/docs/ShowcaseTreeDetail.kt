@@ -67,10 +67,24 @@ internal sealed interface ShowcaseTreeDetail {
     ) : ShowcaseTreeDetail
 
     /**
-     * A Box direct-child alignment.
+     * A Stack direct-child alignment.
      */
-    data class BoxAlign(
+    data class StackAlign(
         internal val alignment: Alignment,
+    ) : ShowcaseTreeDetail
+
+    /**
+     * A Grid direct-child alignment inside its measured cell.
+     */
+    data class GridAlign(
+        internal val alignment: Alignment,
+    ) : ShowcaseTreeDetail
+
+    /**
+     * The fixed number of columns in a Grid.
+     */
+    data class GridColumns(
+        internal val value: Int,
     ) : ShowcaseTreeDetail
 
     /**
@@ -116,9 +130,16 @@ internal sealed interface ShowcaseTreeDetail {
     ) : ShowcaseTreeDetail
 
     /**
-     * The default Box child alignment.
+     * The default Stack child alignment.
      */
-    data class BoxContentAlignment(
+    data class StackContentAlignment(
+        internal val alignment: Alignment,
+    ) : ShowcaseTreeDetail
+
+    /**
+     * The default alignment of a Grid child inside its measured cell.
+     */
+    data class GridContentAlignment(
         internal val alignment: Alignment,
     ) : ShowcaseTreeDetail
 }

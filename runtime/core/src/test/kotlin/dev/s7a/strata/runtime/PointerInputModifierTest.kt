@@ -1,7 +1,9 @@
+@file:OptIn(InternalStrataRuntimeApi::class)
+
 package dev.s7a.strata.runtime
 
-import dev.s7a.strata.dsl.Spacer
-import dev.s7a.strata.dsl.buildUi
+import dev.s7a.strata.component.Spacer
+import dev.s7a.strata.component.evaluateComponentTree
 import dev.s7a.strata.geometry.Constraints
 import dev.s7a.strata.geometry.IntOffset
 import dev.s7a.strata.input.InputResult
@@ -17,6 +19,7 @@ import dev.s7a.strata.modifier.onPress
 import dev.s7a.strata.modifier.onRelease
 import dev.s7a.strata.modifier.onScroll
 import dev.s7a.strata.modifier.size
+import dev.s7a.strata.spi.InternalStrataRuntimeApi
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertSame
 import org.junit.jupiter.api.Assertions.assertThrows
@@ -176,7 +179,7 @@ internal class PointerInputModifierTest {
 
     private fun tree(modifier: Modifier): UiTree =
         UiTree().also { tree ->
-            tree.update(buildUi { Spacer(modifier = modifier) })
+            tree.update(evaluateComponentTree { Spacer(modifier = modifier) })
             tree.measure(Constraints.fixed(10, 10))
             tree.layout()
         }

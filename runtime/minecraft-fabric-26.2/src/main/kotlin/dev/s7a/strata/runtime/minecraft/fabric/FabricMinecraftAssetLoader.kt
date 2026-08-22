@@ -6,8 +6,7 @@ import com.mojang.blaze3d.platform.NativeImage
 import dev.s7a.strata.geometry.IntSize
 import dev.s7a.strata.render.DrawImage
 import dev.s7a.strata.render.createDrawImage
-import dev.s7a.strata.runtime.minecraft.MinecraftAssetId
-import dev.s7a.strata.runtime.minecraft.MinecraftAssets
+import dev.s7a.strata.resource.ResourceId
 import net.minecraft.client.Minecraft
 import net.minecraft.client.renderer.texture.DynamicTexture
 import net.minecraft.core.ClientAsset
@@ -26,7 +25,7 @@ import java.io.IOException
  * @throws IllegalStateException when called away from the Minecraft client thread.
  * @throws IOException when the selected resource cannot be decoded.
  */
-public fun loadMinecraftUiImage(asset: MinecraftAssetId): DrawImage {
+public fun loadMinecraftUiImage(asset: ResourceId): DrawImage {
     val minecraft = Minecraft.getInstance()
     check(minecraft.isSameThread()) { "Minecraft UI images must be loaded on the client thread." }
     val identifier = Identifier.fromNamespaceAndPath(asset.namespace, asset.path)
@@ -66,7 +65,7 @@ public fun loadCurrentMinecraftPlayerSkin(): DrawImage {
     return when (val body = player.skin.body()) {
         is ClientAsset.ResourceTexture -> {
             loadMinecraftUiImage(
-                MinecraftAssets.resource(body.texturePath().namespace, body.texturePath().path),
+                ResourceId(body.texturePath().namespace, body.texturePath().path),
             )
         }
 

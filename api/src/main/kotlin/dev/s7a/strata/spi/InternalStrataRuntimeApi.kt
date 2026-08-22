@@ -8,7 +8,12 @@ package dev.s7a.strata.spi
  * The bridge requires no friend access, reflective discovery, or component registry.
  * Opting in grants access to bridge declarations; it does not itself enforce thread confinement.
  */
-@Target(AnnotationTarget.CLASS, AnnotationTarget.FUNCTION)
+@Target(
+    AnnotationTarget.CLASS,
+    AnnotationTarget.FUNCTION,
+    AnnotationTarget.PROPERTY,
+    AnnotationTarget.PROPERTY_GETTER,
+)
 @Retention(AnnotationRetention.BINARY)
 @RequiresOptIn(
     message = "Internal Strata runtime bridge is an opt-in integration contract.",

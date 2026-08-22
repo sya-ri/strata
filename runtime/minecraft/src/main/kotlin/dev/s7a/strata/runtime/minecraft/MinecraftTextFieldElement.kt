@@ -1,5 +1,8 @@
 package dev.s7a.strata.runtime.minecraft
 
+import dev.s7a.strata.component.NineSliceCenterMode
+import dev.s7a.strata.component.TextFieldState
+import dev.s7a.strata.component.TextStyle
 import dev.s7a.strata.element.Element
 import dev.s7a.strata.element.ElementIdentity
 import dev.s7a.strata.element.ElementKey
@@ -33,6 +36,7 @@ import dev.s7a.strata.render.PaintScope
 import dev.s7a.strata.semantics.Semantics
 import dev.s7a.strata.semantics.SemanticsRole
 import dev.s7a.strata.semantics.SemanticsScope
+import dev.s7a.strata.spi.InternalStrataRuntimeApi
 import dev.s7a.strata.text.UiText
 import java.util.Collections
 import dev.s7a.strata.node.Node as RetainedNode
@@ -49,13 +53,13 @@ private class MinecraftTextFieldElement private constructor(
     internal val highlightedSprite: DrawImage,
     glyphs: Map<Int, MinecraftGlyphSnapshot>,
     @get:JvmSynthetic
-    internal val state: MinecraftTextFieldState,
+    internal val state: TextFieldState,
     @get:JvmSynthetic
     internal val fieldSize: IntSize,
     @get:JvmSynthetic
     internal val enabled: Boolean,
     @get:JvmSynthetic
-    internal val textStyle: MinecraftTextStyle,
+    internal val textStyle: TextStyle,
     modifier: Modifier,
     key: ElementKey<*>?,
 ) : Element(
@@ -74,10 +78,10 @@ private class MinecraftTextFieldElement private constructor(
         initialNormalSprite: DrawImage,
         initialHighlightedSprite: DrawImage,
         initialGlyphs: Map<Int, MinecraftGlyphSnapshot>,
-        initialState: MinecraftTextFieldState,
+        initialState: TextFieldState,
         initialFieldSize: IntSize,
         initialEnabled: Boolean,
-        initialTextStyle: MinecraftTextStyle,
+        initialTextStyle: TextStyle,
     ) : RetainedNode(),
         MeasureNode,
         PaintNode,
@@ -96,14 +100,14 @@ private class MinecraftTextFieldElement private constructor(
         private var normalSprite: DrawImage? = initialNormalSprite
         private var highlightedSprite: DrawImage? = initialHighlightedSprite
         private var glyphs: Map<Int, MinecraftGlyphSnapshot>? = initialGlyphs
-        private var state: MinecraftTextFieldState? = initialState
+        private var state: TextFieldState? = initialState
         private var enabled = initialEnabled
         private var textStyle = initialTextStyle
         private var focused = false
         private var attached = false
         private var cursor = initialState.value.length
         private var preedit = ""
-        private var releaseObserver: (() -> Unit)? = null
+        private var releaseObserver: AutoCloseable? = null
 
         override val acceptsFocus: Boolean
             get() = enabled
@@ -120,7 +124,7 @@ private class MinecraftTextFieldElement private constructor(
 
         override fun paint(scope: PaintScope) {
             val sprite = if (focused && enabled) checkNotNull(highlightedSprite) else checkNotNull(normalSprite)
-            paintMinecraftNineSlice(scope, sprite, Insets.all(1), MinecraftNineSliceCenterMode.Tiled)
+            paintMinecraftNineSlice(scope, sprite, Insets.all(1), NineSliceCenterMode.Tiled)
             val currentValue = checkNotNull(state).value
             val composed = currentValue.substring(0, cursor) + preedit + currentValue.substring(cursor)
             val visualCursor = Math.addExact(cursor, preedit.length)
@@ -202,7 +206,7 @@ private class MinecraftTextFieldElement private constructor(
         }
 
         override fun detach() {
-            releaseObserver?.invoke()
+            releaseObserver?.close()
             releaseObserver = null
             attached = false
             focused = false
@@ -210,7 +214,7 @@ private class MinecraftTextFieldElement private constructor(
         }
 
         override fun dispose() {
-            releaseObserver?.invoke()
+            releaseObserver?.close()
             releaseObserver = null
             attached = false
             normalSprite = null
@@ -226,7 +230,7 @@ private class MinecraftTextFieldElement private constructor(
             val previousState = checkNotNull(state)
             val stateChanged = previousState !== current.state
             if (stateChanged && attached) {
-                releaseObserver?.invoke()
+                releaseObserver?.close()
                 releaseObserver = null
             }
             val paintChanged =
@@ -265,9 +269,10 @@ private class MinecraftTextFieldElement private constructor(
             return dirty
         }
 
+        @OptIn(InternalStrataRuntimeApi::class)
         private fun observeState() {
             releaseObserver =
-                MinecraftProfileImplementation.observeTextFieldState(checkNotNull(state)) { value ->
+                checkNotNull(state).observe { value ->
                     cursor = cursor.coerceIn(0, value.length)
                     preedit = ""
                     invalidate(DirtyMask.of(DirtyPhase.Paint, DirtyPhase.Semantics))
@@ -353,10 +358,10 @@ private class MinecraftTextFieldElement private constructor(
 
         private fun createRun(text: String): MinecraftTextRun =
             when (textStyle) {
-                MinecraftTextStyle.Normal -> MinecraftTextRun.createNormal(UiText.Literal(text), ::glyphAt)
-                MinecraftTextStyle.Inactive -> MinecraftTextRun.createInactive(UiText.Literal(text), ::glyphAt)
-                MinecraftTextStyle.ContainerLabel -> MinecraftTextRun.createContainerLabel(UiText.Literal(text), ::glyphAt)
-                MinecraftTextStyle.TextField -> MinecraftTextRun.createTextField(UiText.Literal(text), enabled, ::glyphAt)
+                TextStyle.Normal -> MinecraftTextRun.createNormal(UiText.Literal(text), ::glyphAt)
+                TextStyle.Inactive -> MinecraftTextRun.createInactive(UiText.Literal(text), ::glyphAt)
+                TextStyle.ContainerLabel -> MinecraftTextRun.createContainerLabel(UiText.Literal(text), ::glyphAt)
+                TextStyle.TextField -> MinecraftTextRun.createTextField(UiText.Literal(text), enabled, ::glyphAt)
             }
 
         private fun glyphAt(codePoint: Int): MinecraftGlyphSnapshot = checkNotNull(glyphs).getValue(codePoint)
@@ -399,10 +404,10 @@ private class MinecraftTextFieldElement private constructor(
             normalSprite: DrawImage,
             highlightedSprite: DrawImage,
             glyphs: Map<Int, MinecraftGlyphSnapshot>,
-            state: MinecraftTextFieldState,
+            state: TextFieldState,
             fieldSize: IntSize,
             enabled: Boolean,
-            textStyle: MinecraftTextStyle,
+            textStyle: TextStyle,
             modifier: Modifier,
             key: ElementKey<*>?,
         ): Element = MinecraftTextFieldElement(normalSprite, highlightedSprite, glyphs, state, fieldSize, enabled, textStyle, modifier, key)
@@ -428,10 +433,10 @@ internal fun createMinecraftTextFieldElement(
     normalSprite: DrawImage,
     highlightedSprite: DrawImage,
     glyphs: Map<Int, MinecraftGlyphSnapshot>,
-    state: MinecraftTextFieldState,
+    state: TextFieldState,
     fieldSize: IntSize,
     enabled: Boolean,
-    textStyle: MinecraftTextStyle,
+    textStyle: TextStyle,
     modifier: Modifier,
     key: ElementKey<*>?,
 ): Element = MinecraftTextFieldElement.create(normalSprite, highlightedSprite, glyphs, state, fieldSize, enabled, textStyle, modifier, key)

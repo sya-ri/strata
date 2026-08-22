@@ -1,14 +1,17 @@
+@file:OptIn(InternalStrataRuntimeApi::class)
+
 package dev.s7a.strata.integration.external
 
-import dev.s7a.strata.dsl.Column
-import dev.s7a.strata.dsl.Row
-import dev.s7a.strata.dsl.buildUi
+import dev.s7a.strata.component.Column
+import dev.s7a.strata.component.Row
+import dev.s7a.strata.component.evaluateComponentTree
 import dev.s7a.strata.geometry.Constraints
 import dev.s7a.strata.geometry.IntRect
 import dev.s7a.strata.geometry.IntSize
 import dev.s7a.strata.layout.Arrangement
 import dev.s7a.strata.runtime.UiTree
 import dev.s7a.strata.runtime.render.DrawCommand
+import dev.s7a.strata.spi.InternalStrataRuntimeApi
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
 
@@ -146,7 +149,7 @@ internal class LayoutArrangementIntegrationTest {
         val probe = ExternalProbe()
         val tree = UiTree()
         tree.update(
-            buildUi {
+            evaluateComponentTree {
                 Row(horizontalArrangement = arrangement, spacing = spacing) {
                     children.forEach { child -> element(child.element(probe)) }
                 }
@@ -163,7 +166,7 @@ internal class LayoutArrangementIntegrationTest {
     private fun defaultRowBounds(children: List<ChildSpec>): List<IntRect> {
         val tree = UiTree()
         tree.update(
-            buildUi {
+            evaluateComponentTree {
                 Row {
                     children.forEach { child -> element(child.element(ExternalProbe())) }
                 }
@@ -184,7 +187,7 @@ internal class LayoutArrangementIntegrationTest {
         val probe = ExternalProbe()
         val tree = UiTree()
         tree.update(
-            buildUi {
+            evaluateComponentTree {
                 Column(verticalArrangement = arrangement, spacing = spacing) {
                     children.forEach { child -> element(child.element(probe)) }
                 }
@@ -201,7 +204,7 @@ internal class LayoutArrangementIntegrationTest {
     private fun defaultColumnBounds(children: List<ChildSpec>): List<IntRect> {
         val tree = UiTree()
         tree.update(
-            buildUi {
+            evaluateComponentTree {
                 Column {
                     children.forEach { child -> element(child.element(ExternalProbe())) }
                 }

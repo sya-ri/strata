@@ -10,7 +10,7 @@ import java.nio.file.LinkOption
 import java.nio.file.Path
 
 /**
- * Discovers top-level component entry points from compiled Minecraft runtime classes.
+ * Discovers top-level standard component entry points from compiled public API classes.
  *
  * Classes are loaded without initialization so inventory cannot run component code while inspecting declarations.
  */
@@ -20,7 +20,7 @@ internal object ShowcaseInventory {
     /**
      * Finds every public static non-synthetic UpperCamel extension whose first JVM parameter is exactly `UiScope` and whose return type is void.
      *
-     * @param classDirectories compiled Minecraft runtime directories to scan.
+     * @param classDirectories compiled public API directories to scan.
      * @return decoded component identities with one identity for each overload name.
      * @throws IllegalArgumentException when directories or component method declarations violate the inventory contract.
      * @throws IllegalStateException when class loading or reflection fails.
@@ -184,7 +184,7 @@ internal object ShowcaseInventory {
             else -> "L${type.name.replace('.', '/')};"
         }
 
-    private const val UI_SCOPE_CLASS_NAME = "dev.s7a.strata.dsl.UiScope"
+    private const val UI_SCOPE_CLASS_NAME = "dev.s7a.strata.component.UiScope"
 
     private class ApiClassLoader(
         urls: Array<URL>,

@@ -1,5 +1,6 @@
 package dev.s7a.strata.runtime.minecraft
 
+import dev.s7a.strata.component.ImageScale
 import dev.s7a.strata.geometry.IntRect
 import dev.s7a.strata.modifier.ModifierElement
 import dev.s7a.strata.modifier.ModifierNodeType
@@ -22,7 +23,7 @@ private object MinecraftImageBackgroundModifier {
      */
     data class Element(
         val image: DrawImage,
-        val scale: MinecraftImageScale,
+        val scale: ImageScale,
     ) : ModifierElement {
         override val type: ModifierNodeType<*, *>
             get() = TYPE
@@ -36,13 +37,13 @@ private object MinecraftImageBackgroundModifier {
      */
     class Node(
         private var image: DrawImage,
-        private var scale: MinecraftImageScale,
+        private var scale: ImageScale,
     ) : ModifierNode(),
         PaintNode {
         override fun paint(scope: PaintScope) {
             if (scope.size.width == 0 || scope.size.height == 0) return
             when (scale) {
-                MinecraftImageScale.Stretch -> {
+                ImageScale.Stretch -> {
                     scope.blitImage(
                         image,
                         IntRect(0, 0, image.size.width, image.size.height),
@@ -50,7 +51,7 @@ private object MinecraftImageBackgroundModifier {
                     )
                 }
 
-                MinecraftImageScale.Tile -> {
+                ImageScale.Tile -> {
                     paintTiles(scope)
                 }
             }
@@ -118,7 +119,7 @@ private object MinecraftImageBackgroundModifier {
      */
     fun element(
         image: DrawImage,
-        scale: MinecraftImageScale,
+        scale: ImageScale,
     ): ModifierElement = Element(image, scale)
 }
 
@@ -132,5 +133,5 @@ private object MinecraftImageBackgroundModifier {
 @JvmSynthetic
 internal fun createMinecraftImageBackgroundModifier(
     image: DrawImage,
-    scale: MinecraftImageScale,
+    scale: ImageScale,
 ): ModifierElement = MinecraftImageBackgroundModifier.element(image, scale)

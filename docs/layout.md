@@ -1,18 +1,18 @@
 # Built-in layout components
 
-The platform-neutral API provides `UiScope.Row`, `UiScope.Column`, `UiScope.Box`, and `UiScope.Spacer`.
+The platform-neutral API provides `UiScope.Row`, `UiScope.Column`, `UiScope.Stack`, `UiScope.Grid`, and `UiScope.Spacer`.
 Each component emits one immutable description into its enclosing callback-lifetime scope.
 Rows and columns share one retained linear `ElementType` and one axis-polymorphic node implementation.
 A same-key row-to-column or column-to-row update preserves the retained node and reconciles its logical descendants under the changed orientation.
 Container callbacks may emit zero or more direct children.
-The row, column, and box scopes are owner-thread capabilities and are closed immediately after their callbacks return.
+The row, column, stack, and grid scopes are owner-thread capabilities and are closed immediately after their callbacks return.
 
 ## Container modifiers
 
-`Row`, `Column`, and `Box` accept an ordered `modifier` chain for the container itself.
+`Row`, `Column`, `Stack`, and `Grid` accept an ordered `modifier` chain for the container itself.
 The same active behaviors available to other components can therefore size the container, add padding around its complete child group, paint a background, emit semantics, accept focus, or handle input without adding a component-specific parameter for each behavior.
 For example, `Row(modifier = Modifier.Empty.padding(top = 16))` offsets the complete row once; applying the same padding separately to each child changes every child's measured box and is not equivalent.
-The typed layout parameters remain limited to behavior owned by the container algorithm: spacing, main-axis arrangement, and default cross-axis alignment.
+The typed layout parameters remain limited to behavior owned by the container algorithm: linear spacing and arrangement, stack alignment, or grid columns, track spacing, and cell alignment.
 Direct-child `weight` and `align` remain parent-data modifiers available only from the corresponding callback scope.
 
 ## Constraints and natural size
@@ -23,8 +23,10 @@ Their natural cross extent is the maximum measured cross extent.
 The reported size is the natural size constrained by the incoming constraints.
 Empty containers are valid and report the constrained zero size.
 
-Boxes measure every child with zero minimums and unchanged incoming maximums.
+Stacks measure every child with zero minimums and unchanged incoming maximums.
 Their natural width and height are the maxima of their measured children, then constrained by the incoming constraints.
+Grids assign children to fixed columns in row-major order, use only columns occupied by at least one child, and allow an incomplete final row without synthetic placeholders.
+Each grid column takes the greatest measured width assigned to that column, each row takes its greatest measured height, and the natural extent is the checked sum of those tracks and their configured gaps.
 Spacers measure `IntSize.Zero` through the incoming constraints.
 
 Whenever a built-in container's measure or layout callback executes, it requests the corresponding operation exactly once for each direct child.
@@ -53,10 +55,21 @@ Overflow uses start arrangement and extends toward the end or bottom edge.
 Every sum, product, cursor, and offset conversion is checked and fails instead of wrapping or saturating.
 
 Rows use vertical cross-axis alignment and columns use horizontal cross-axis alignment.
-Boxes use typed two-axis alignment.
+Stacks use typed two-axis alignment within the overlay extent.
+Grids use typed two-axis alignment within each measured cell.
 A direct child's innermost matching parent-data modifier overrides its container default.
 
 Spacing changes invalidate measurement.
 Arrangement and container-default alignment changes invalidate layout.
 Weight and child-alignment parent-data changes conservatively invalidate measurement.
+Grid column-count or track-spacing changes invalidate measurement, while default or per-child cell alignment changes invalidate layout.
 Equal property updates remain clean.
+
+## Structural composition
+
+Choose containers from the logical relationship among siblings rather than from copied screen coordinates.
+Use Row for a horizontal group, Column for a vertical group, Grid for repeated cells, and Stack only when children intentionally overlap or align within the same rectangle.
+A single child does not need a Row or Column solely to position it; apply alignment through the nearest layout scope or size and align the child in its existing parent.
+Container padding represents an inset around the whole group, while spacing represents the repeated distance between siblings.
+Large padding is not a substitute for arrangement or alignment; showcase code treats padding of 20 logical pixels or more as an exception that requires a geometry or native-frame rationale.
+Spacer is reserved for a visible separator, connector, fill, or other intentional empty visual primitive, not for routine sibling distance that spacing or padding already expresses.

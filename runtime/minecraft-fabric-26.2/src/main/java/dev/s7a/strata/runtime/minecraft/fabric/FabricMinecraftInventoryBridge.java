@@ -1,15 +1,26 @@
 package dev.s7a.strata.runtime.minecraft.fabric;
 
+import com.mojang.authlib.GameProfile;
+import com.mojang.blaze3d.platform.NativeImage;
+import dev.s7a.strata.component.PlayerSkinSource;
+import dev.s7a.strata.component.SlotBinding;
+import dev.s7a.strata.geometry.IntSize;
 import dev.s7a.strata.input.InputResult;
 import dev.s7a.strata.input.PointerButton;
 import dev.s7a.strata.input.PointerEvent;
-import dev.s7a.strata.runtime.minecraft.MinecraftInventorySlotBinding;
-import dev.s7a.strata.runtime.minecraft.MinecraftSlotBinding;
-import dev.s7a.strata.runtime.minecraft.MinecraftSlotSource;
-import dev.s7a.strata.runtime.minecraft.MinecraftUiPlatform;
+import dev.s7a.strata.render.DrawImage;
+import dev.s7a.strata.render.DrawImages;
 import dev.s7a.strata.render.PlatformDrawCommand;
+import dev.s7a.strata.resource.ResourceId;
+import dev.s7a.strata.runtime.minecraft.MinecraftInventorySlotBinding;
+import dev.s7a.strata.runtime.minecraft.MinecraftPlayerSkinBinding;
+import dev.s7a.strata.runtime.minecraft.MinecraftUiPlatform;
 import java.util.LinkedHashSet;
+import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BooleanSupplier;
 import kotlin.Unit;
 import kotlin.jvm.functions.Function0;
@@ -19,11 +30,15 @@ import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.input.KeyEvent;
 import net.minecraft.client.input.MouseButtonEvent;
 import net.minecraft.client.player.LocalPlayer;
+import net.minecraft.client.renderer.texture.DynamicTexture;
+import net.minecraft.core.ClientAsset;
 import net.minecraft.world.entity.player.Inventory;
+import net.minecraft.world.entity.player.PlayerSkin;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.inventory.ContainerInput;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.component.ResolvableProfile;
 import org.jetbrains.annotations.NotNull;
 
 /**
@@ -34,6 +49,7 @@ import org.jetbrains.annotations.NotNull;
 final class FabricMinecraftInventoryBridge implements MinecraftUiPlatform {
     private final Thread ownerThread = Thread.currentThread();
     private final Set<Binding> bindings = new LinkedHashSet<>();
+    private final Set<SkinBinding> skinBindings = new LinkedHashSet<>();
     private final Set<Binding> quickCraftSlots = new LinkedHashSet<>();
     private Minecraft minecraft;
     private NativeInput input;
@@ -81,11 +97,12 @@ final class FabricMinecraftInventoryBridge implements MinecraftUiPlatform {
     }
 
     private final class Binding implements MinecraftInventorySlotBinding {
-        private final MinecraftSlotBinding locator;
+        private final SlotBinding locator;
         private ItemStack snapshot = ItemStack.EMPTY;
         private Function0<Unit> observer;
+        private boolean released;
 
-        private Binding(MinecraftSlotBinding locator) {
+        private Binding(SlotBinding locator) {
             this.locator = locator;
         }
 
@@ -136,6 +153,24 @@ final class FabricMinecraftInventoryBridge implements MinecraftUiPlatform {
             return InputResult.Ignored;
         }
 
+        @Override
+        public void close() {
+            requireOwnerThread();
+            if (released) {
+                return;
+            }
+            released = true;
+            releaseState();
+            bindings.remove(this);
+            quickCraftSlots.remove(this);
+            if (hovered == this) {
+                hovered = null;
+            }
+            if (offeredHover == this) {
+                offeredHover = null;
+            }
+        }
+
         private void refresh() {
             ItemStack current = resolveSlot().getItem();
             if (ItemStack.matches(snapshot, current)) {
@@ -148,31 +183,139 @@ final class FabricMinecraftInventoryBridge implements MinecraftUiPlatform {
             }
         }
 
-        private void release() {
+        private void releaseFromPlatform() {
+            released = true;
+            releaseState();
+        }
+
+        private void releaseState() {
             observer = null;
             snapshot = ItemStack.EMPTY;
+        }
+
+        private void requireUsable() {
+            requireOwnerThread();
+            checkState(released == false, "Minecraft inventory Slot binding is closed.");
+            FabricMinecraftInventoryBridge.this.requireUsable();
         }
 
         private Slot resolveSlot() {
             LocalPlayer player = requirePlayer();
             AbstractContainerMenu menu = activeMenu();
             int index = locator.getIndex();
-            if (locator.getSource() == MinecraftSlotSource.PlayerInventory) {
+            if (locator.getSource() == SlotBinding.Source.PlayerInventory) {
                 Inventory inventory = player.getInventory();
                 int menuIndex = menu.findSlot(inventory, index).orElseThrow(
                         () -> new IllegalArgumentException("Player inventory index is not exposed by the active menu: " + index));
                 return menu.getSlot(menuIndex);
             }
-            if (locator.getSource() == MinecraftSlotSource.Container) {
+            if (locator.getSource() == SlotBinding.Source.Container) {
                 return resolveContainerSlot(menu, player.getInventory(), index);
             }
-            if (locator.getSource() == MinecraftSlotSource.ActiveMenu) {
+            if (locator.getSource() == SlotBinding.Source.ActiveMenu) {
                 if (index < 0 || menu.slots.size() <= index) {
                     throw new IllegalArgumentException("Active menu slot index is outside the current menu: " + index);
                 }
                 return menu.getSlot(index);
             }
             throw new IllegalArgumentException("Unsupported Minecraft Slot source: " + locator.getSource());
+        }
+    }
+
+    private interface SkinCompletion {
+    }
+
+    private static final class SkinReady implements SkinCompletion {
+        private final PlayerSkin skin;
+
+        private SkinReady(PlayerSkin skin) {
+            this.skin = skin;
+        }
+    }
+
+    private enum SkinFailed implements SkinCompletion {
+        INSTANCE
+    }
+
+    private final class SkinBinding implements MinecraftPlayerSkinBinding {
+        private final AtomicBoolean released = new AtomicBoolean();
+        private final AtomicReference<SkinCompletion> pending = new AtomicReference<>();
+        private MinecraftPlayerSkinBinding.Snapshot snapshot = MinecraftPlayerSkinBinding.Snapshot.Pending.INSTANCE;
+        private Function0<Unit> observer;
+
+        private SkinBinding(PlayerSkinSource source) {
+            lookupSkin(source).whenComplete((resolved, failure) -> {
+                if (released.get()) {
+                    return;
+                }
+                if (failure == null && resolved.isPresent()) {
+                    pending.set(new SkinReady(resolved.get()));
+                } else {
+                    pending.set(SkinFailed.INSTANCE);
+                }
+            });
+        }
+
+        @Override
+        public @NotNull MinecraftPlayerSkinBinding.Snapshot snapshot() {
+            requireUsable();
+            return snapshot;
+        }
+
+        @Override
+        public @NotNull AutoCloseable observe(@NotNull Function0<Unit> callback) {
+            requireUsable();
+            checkState(observer == null, "Minecraft player skin already has a retained observer.");
+            observer = callback;
+            return () -> {
+                requireOwnerThread();
+                if (observer == callback) {
+                    observer = null;
+                }
+            };
+        }
+
+        @Override
+        public void close() {
+            requireOwnerThread();
+            if (released.compareAndSet(false, true)) {
+                pending.set(null);
+                observer = null;
+            }
+        }
+
+        private void refresh() {
+            if (released.get()) {
+                return;
+            }
+            SkinCompletion completion = pending.getAndSet(null);
+            if (completion == null) {
+                return;
+            }
+            MinecraftPlayerSkinBinding.Snapshot next;
+            if (completion instanceof SkinReady ready) {
+                try {
+                    next = new MinecraftPlayerSkinBinding.Snapshot.Ready(snapshotSkin(ready.skin));
+                } catch (RuntimeException failure) {
+                    next = MinecraftPlayerSkinBinding.Snapshot.Failed.INSTANCE;
+                }
+            } else {
+                next = MinecraftPlayerSkinBinding.Snapshot.Failed.INSTANCE;
+            }
+            if (snapshot.equals(next)) {
+                return;
+            }
+            snapshot = next;
+            Function0<Unit> callback = observer;
+            if (callback != null) {
+                callback.invoke();
+            }
+        }
+
+        private void requireUsable() {
+            requireOwnerThread();
+            checkState(released.get() == false, "Minecraft player skin binding is closed.");
+            FabricMinecraftInventoryBridge.this.requireUsable();
         }
     }
 
@@ -192,21 +335,21 @@ final class FabricMinecraftInventoryBridge implements MinecraftUiPlatform {
     }
 
     @Override
-    public @NotNull MinecraftInventorySlotBinding inventorySlot(@NotNull MinecraftSlotBinding locator) {
+    public @NotNull MinecraftInventorySlotBinding inventorySlot(@NotNull SlotBinding locator) {
         requireUsable();
         java.util.Objects.requireNonNull(locator, "Minecraft Slot binding must not be null.");
         int index = locator.getIndex();
         if (index < 0) {
             throw new IllegalArgumentException("Minecraft Slot binding index must be non-negative: " + index);
         }
-        if (locator.getSource() == MinecraftSlotSource.PlayerInventory) {
+        if (locator.getSource() == SlotBinding.Source.PlayerInventory) {
             Inventory inventory = requirePlayer().getInventory();
             if (inventory.getContainerSize() <= index) {
                 throw new IllegalArgumentException("Player inventory index is outside the active inventory: " + index);
             }
-        } else if (locator.getSource() == MinecraftSlotSource.Container) {
+        } else if (locator.getSource() == SlotBinding.Source.Container) {
             resolveContainerSlot(activeMenu(), requirePlayer().getInventory(), index);
-        } else if (locator.getSource() == MinecraftSlotSource.ActiveMenu) {
+        } else if (locator.getSource() == SlotBinding.Source.ActiveMenu) {
             if (activeMenu().slots.size() <= index) {
                 throw new IllegalArgumentException("Active menu slot index is outside the current menu: " + index);
             }
@@ -219,9 +362,29 @@ final class FabricMinecraftInventoryBridge implements MinecraftUiPlatform {
     }
 
     @Override
+    public @NotNull DrawImage image(@NotNull ResourceId resource) {
+        requireUsable();
+        return FabricMinecraftAssets.loadMinecraftUiImage(resource);
+    }
+
+    @Override
+    public @NotNull MinecraftPlayerSkinBinding playerSkin(@NotNull PlayerSkinSource source) {
+        requireUsable();
+        if (source instanceof PlayerSkinSource.Pixels) {
+            throw new IllegalArgumentException("Direct player skin pixels do not require a platform lookup.");
+        }
+        SkinBinding binding = new SkinBinding(source);
+        skinBindings.add(binding);
+        return binding;
+    }
+
+    @Override
     public void refresh() {
         requireUsable();
         for (Binding binding : bindings) {
+            binding.refresh();
+        }
+        for (SkinBinding binding : skinBindings) {
             binding.refresh();
         }
     }
@@ -239,9 +402,13 @@ final class FabricMinecraftInventoryBridge implements MinecraftUiPlatform {
         quickCraftSlots.clear();
         lastQuickMoved = ItemStack.EMPTY;
         for (Binding binding : bindings) {
-            binding.release();
+            binding.releaseFromPlatform();
         }
         bindings.clear();
+        for (SkinBinding binding : skinBindings) {
+            binding.close();
+        }
+        skinBindings.clear();
         minecraft = null;
     }
 
@@ -589,6 +756,45 @@ final class FabricMinecraftInventoryBridge implements MinecraftUiPlatform {
             throw new IllegalArgumentException("Container slot index is not exposed by the active menu: " + index);
         }
         return resolved;
+    }
+
+    private CompletableFuture<Optional<PlayerSkin>> lookupSkin(PlayerSkinSource source) {
+        Minecraft client = requireMinecraft();
+        CompletableFuture<GameProfile> profile;
+        if (source == PlayerSkinSource.CurrentPlayer.INSTANCE) {
+            profile = CompletableFuture.completedFuture(client.getGameProfile());
+        } else if (source instanceof PlayerSkinSource.Name name) {
+            profile = ResolvableProfile.createUnresolved(name.getValue()).resolveProfile(client.services().profileResolver());
+        } else if (source instanceof PlayerSkinSource.Uuid uuid) {
+            profile = ResolvableProfile.createUnresolved(uuid.getValue()).resolveProfile(client.services().profileResolver());
+        } else {
+            throw new IllegalArgumentException("Unsupported player skin source: " + source.getClass().getName());
+        }
+        return profile.thenCompose(client.getSkinManager()::get);
+    }
+
+    private DrawImage snapshotSkin(PlayerSkin skin) {
+        ClientAsset.Texture body = skin.body();
+        if (body instanceof ClientAsset.ResourceTexture resource) {
+            var identifier = resource.texturePath();
+            return FabricMinecraftAssets.loadMinecraftUiImage(new ResourceId(identifier.getNamespace(), identifier.getPath()));
+        }
+        if (body instanceof ClientAsset.DownloadedTexture downloaded) {
+            var texture = requireMinecraft().getTextureManager().getTexture(downloaded.texturePath());
+            if ((texture instanceof DynamicTexture) == false) {
+                throw new IllegalStateException("The downloaded player skin is not backed by a dynamic texture.");
+            }
+            NativeImage image = ((DynamicTexture) texture).getPixels();
+            if (image.isClosed()) {
+                throw new IllegalStateException("The downloaded player skin has already been released.");
+            }
+            IntSize size = new IntSize(image.getWidth(), image.getHeight());
+            if (size.equals(new IntSize(64, 64)) == false) {
+                throw new IllegalArgumentException("Minecraft player skins must normalize to exactly 64 by 64 pixels.");
+            }
+            return DrawImages.createDrawImage(size, image.getPixels());
+        }
+        throw new IllegalArgumentException("Unsupported Minecraft player skin texture kind: " + body.getClass().getName());
     }
 
     private Minecraft requireMinecraft() {

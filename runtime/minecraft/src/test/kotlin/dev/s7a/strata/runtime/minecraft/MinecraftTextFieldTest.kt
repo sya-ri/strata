@@ -1,5 +1,10 @@
 package dev.s7a.strata.runtime.minecraft
 
+import dev.s7a.strata.component.Image
+import dev.s7a.strata.component.Text
+import dev.s7a.strata.component.TextField
+import dev.s7a.strata.component.TextFieldState
+import dev.s7a.strata.component.TextStyle
 import dev.s7a.strata.geometry.IntOffset
 import dev.s7a.strata.geometry.IntRect
 import dev.s7a.strata.geometry.IntSize
@@ -14,6 +19,7 @@ import dev.s7a.strata.modifier.initialFocus
 import dev.s7a.strata.modifier.onCharacterInput
 import dev.s7a.strata.runtime.headless.rasterizeHeadless
 import dev.s7a.strata.runtime.render.DrawCommand
+import dev.s7a.strata.screen.ScreenDefinition
 import dev.s7a.strata.semantics.SemanticsRole
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
 import dev.s7a.strata.text.UiText
@@ -32,11 +38,11 @@ import java.util.concurrent.TimeUnit
 internal class MinecraftTextFieldTest {
     @Test
     fun stateValidatesPrintableAsciiLengthThreadAndDistinctWrites() {
-        assertThrows(IllegalArgumentException::class.java) { createMinecraftTextFieldState("", 0) }
-        assertThrows(IllegalArgumentException::class.java) { createMinecraftTextFieldState("\n") }
-        assertThrows(IllegalArgumentException::class.java) { createMinecraftTextFieldState("abc", 2) }
+        assertThrows(IllegalArgumentException::class.java) { TextFieldState("", 0) }
+        assertThrows(IllegalArgumentException::class.java) { TextFieldState("\n") }
+        assertThrows(IllegalArgumentException::class.java) { TextFieldState("abc", 2) }
 
-        val state = createMinecraftTextFieldState("abc", 3)
+        val state = TextFieldState("abc", 3)
         state.value = "xyz"
         assertEquals("xyz", state.value)
         assertThrows(IllegalArgumentException::class.java) { state.value = "long" }
@@ -54,7 +60,7 @@ internal class MinecraftTextFieldTest {
 
     @Test
     fun unfocusedFieldUsesExactSpriteEditBoxColorsAndSemantics() {
-        val state = createMinecraftTextFieldState("A")
+        val state = TextFieldState("A")
         val host = host(state)
         host.attach()
 
@@ -83,7 +89,7 @@ internal class MinecraftTextFieldTest {
 
     @Test
     fun explicitlySizedFieldUsesVerticalNineSliceAndCenteredText() {
-        val state = createMinecraftTextFieldState("A")
+        val state = TextFieldState("A")
         val compactSize = IntSize(200, 15)
         val host = host(state, size = compactSize)
         try {
@@ -121,8 +127,8 @@ internal class MinecraftTextFieldTest {
     @Test
     fun focusedEmptyFieldUsesTheNativeAppendCursorGlyphAndSelectedTextStyle() {
         val compactSize = IntSize(200, 15)
-        val state = createMinecraftTextFieldState("", maxLength = 16)
-        val host = host(state, Modifier.Empty.initialFocus(), compactSize, MinecraftTextStyle.Normal)
+        val state = TextFieldState("", maxLength = 16)
+        val host = host(state, Modifier.Empty.initialFocus(), compactSize, TextStyle.Normal)
         try {
             host.attach()
             val commands = host.frame(compactSize).drawCommands
@@ -141,7 +147,7 @@ internal class MinecraftTextFieldTest {
 
     @Test
     fun primaryPressFocusesWithoutConsumingAndEditorHandlesTypedKeys() {
-        val state = createMinecraftTextFieldState("AB", maxLength = 4)
+        val state = TextFieldState("AB", maxLength = 4)
         val host = host(state)
         host.attach()
         host.frame(fieldSize)
@@ -163,7 +169,7 @@ internal class MinecraftTextFieldTest {
 
     @Test
     fun focusedModifierCanOverrideBuiltInCharacterEditing() {
-        val state = createMinecraftTextFieldState("A")
+        val state = TextFieldState("A")
         var intercepted = 0
         val modifier =
             Modifier.Empty
@@ -184,7 +190,7 @@ internal class MinecraftTextFieldTest {
 
     @Test
     fun externalStateWritesInvalidatePaintAndSemanticsOnce() {
-        val state = createMinecraftTextFieldState("A")
+        val state = TextFieldState("A")
         val host = host(state)
         host.attach()
         val first = host.frame(fieldSize)
@@ -204,13 +210,13 @@ internal class MinecraftTextFieldTest {
     }
 
     private fun host(
-        state: MinecraftTextFieldState,
+        state: TextFieldState,
         modifier: Modifier = Modifier.Empty,
         size: IntSize = fieldSize,
-        textStyle: MinecraftTextStyle = MinecraftTextStyle.TextField,
+        textStyle: TextStyle = TextStyle.TextField,
     ): MinecraftUiHost =
         createMinecraftUiHost(
-            createMinecraftScreenDefinition(UiText.Literal("TextField")) {
+            ScreenDefinition(UiText.Literal("TextField")) {
                 TextField(state, size = size, textStyle = textStyle, modifier = modifier)
             },
             MinecraftProfileFixture.create(),

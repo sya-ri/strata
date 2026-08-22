@@ -1,6 +1,10 @@
 package dev.s7a.strata.runtime.minecraft
 
+import dev.s7a.strata.component.Image
+import dev.s7a.strata.component.NineSliceCenterMode
 import dev.s7a.strata.geometry.IntSize
+import dev.s7a.strata.modifier.containerBackground
+import dev.s7a.strata.modifier.menuBackground
 import dev.s7a.strata.render.DrawImage
 import dev.s7a.strata.render.createDrawImage
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
@@ -43,11 +47,11 @@ internal object MinecraftProfileFixture {
         normalTextField: DrawImage = image(IntSize(200, 20), 0xFF505050.toInt()),
         highlightedTextField: DrawImage = image(IntSize(200, 20), 0xFF606060.toInt()),
         normalBorder: Int = 3,
-        normalCenterMode: MinecraftNineSliceCenterMode = MinecraftNineSliceCenterMode.Tiled,
+        normalCenterMode: NineSliceCenterMode = NineSliceCenterMode.Tiled,
         highlightedBorder: Int = 3,
-        highlightedCenterMode: MinecraftNineSliceCenterMode = MinecraftNineSliceCenterMode.Tiled,
+        highlightedCenterMode: NineSliceCenterMode = NineSliceCenterMode.Tiled,
         disabledBorder: Int = 1,
-        disabledCenterMode: MinecraftNineSliceCenterMode = MinecraftNineSliceCenterMode.Tiled,
+        disabledCenterMode: NineSliceCenterMode = NineSliceCenterMode.Tiled,
     ): MinecraftUiProfile =
         createMinecraftUiProfile {
             menuBackground(menu)

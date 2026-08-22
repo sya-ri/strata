@@ -1,5 +1,6 @@
 package dev.s7a.strata.runtime.minecraft
 
+import dev.s7a.strata.component.NineSliceCenterMode
 import dev.s7a.strata.geometry.Insets
 import dev.s7a.strata.geometry.IntRect
 import dev.s7a.strata.render.DrawImage
@@ -22,7 +23,7 @@ internal fun paintMinecraftNineSlice(
     scope: PaintScope,
     image: DrawImage,
     border: Insets,
-    centerMode: MinecraftNineSliceCenterMode,
+    centerMode: NineSliceCenterMode,
 ) {
     if (scope.size.width == 0 || scope.size.height == 0) return
     val left = minOf(border.left, scope.size.width / 2)
@@ -40,7 +41,7 @@ internal fun paintMinecraftNineSlice(
 private fun paintHorizontal(
     scope: PaintScope,
     image: DrawImage,
-    centerMode: MinecraftNineSliceCenterMode,
+    centerMode: NineSliceCenterMode,
     left: Int,
     right: Int,
 ) {
@@ -59,7 +60,7 @@ private fun paintHorizontal(
 private fun paintVertical(
     scope: PaintScope,
     image: DrawImage,
-    centerMode: MinecraftNineSliceCenterMode,
+    centerMode: NineSliceCenterMode,
     top: Int,
     bottom: Int,
 ) {
@@ -79,7 +80,7 @@ private fun paintVertical(
 private fun paintGrid(
     scope: PaintScope,
     image: DrawImage,
-    centerMode: MinecraftNineSliceCenterMode,
+    centerMode: NineSliceCenterMode,
     left: Int,
     top: Int,
     right: Int,
@@ -120,15 +121,15 @@ private fun paintGrid(
 private fun inner(
     scope: PaintScope,
     image: DrawImage,
-    centerMode: MinecraftNineSliceCenterMode,
+    centerMode: NineSliceCenterMode,
     source: IntRect,
     destination: IntRect,
 ) {
     if (source.width == 0 || source.height == 0) return
     if (destination.width == 0 || destination.height == 0) return
     when (centerMode) {
-        MinecraftNineSliceCenterMode.Stretched -> blit(scope, image, source, destination)
-        MinecraftNineSliceCenterMode.Tiled -> tile(scope, image, source, destination)
+        NineSliceCenterMode.Stretched -> blit(scope, image, source, destination)
+        NineSliceCenterMode.Tiled -> tile(scope, image, source, destination)
     }
 }
 

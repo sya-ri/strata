@@ -1,24 +1,23 @@
 package dev.s7a.strata.integration.minecraft.fabric
 
 // showcase-source-begin:inventory-screen
-import dev.s7a.strata.dsl.Box
-import dev.s7a.strata.dsl.Column
-import dev.s7a.strata.dsl.Row
+import dev.s7a.strata.component.Column
+import dev.s7a.strata.component.Grid
+import dev.s7a.strata.component.Slot
+import dev.s7a.strata.component.SlotBinding
+import dev.s7a.strata.component.Slots
+import dev.s7a.strata.component.Stack
+import dev.s7a.strata.component.Text
+import dev.s7a.strata.component.TextStyle
 import dev.s7a.strata.layout.Alignment
 import dev.s7a.strata.modifier.Modifier
 import dev.s7a.strata.modifier.background
+import dev.s7a.strata.modifier.containerBackground
+import dev.s7a.strata.modifier.menuBackground
 import dev.s7a.strata.modifier.padding
 import dev.s7a.strata.modifier.size
 import dev.s7a.strata.render.ArgbColor
-import dev.s7a.strata.runtime.minecraft.MinecraftScreenDefinition
-import dev.s7a.strata.runtime.minecraft.MinecraftSlotBinding
-import dev.s7a.strata.runtime.minecraft.MinecraftSlots
-import dev.s7a.strata.runtime.minecraft.MinecraftTextStyle
-import dev.s7a.strata.runtime.minecraft.Slot
-import dev.s7a.strata.runtime.minecraft.Text
-import dev.s7a.strata.runtime.minecraft.containerBackground
-import dev.s7a.strata.runtime.minecraft.createMinecraftScreenDefinition
-import dev.s7a.strata.runtime.minecraft.menuBackground
+import dev.s7a.strata.screen.ScreenDefinition
 
 /**
  * Builds a generic chest-shaped screen whose lower 36 Slots are bound to the active player's inventory.
@@ -31,11 +30,11 @@ import dev.s7a.strata.runtime.minecraft.menuBackground
  * @return one-shot screen definition used to verify live item rendering and authoritative container input in a loaded client.
  */
 internal fun createInventorySlotScreenDefinition(
-    primaryPlayerBinding: MinecraftSlotBinding = MinecraftSlots.playerInventory(0),
-    primaryContainerBinding: MinecraftSlotBinding? = null,
-): MinecraftScreenDefinition =
-    createMinecraftScreenDefinition("Synchronized inventory") {
-        Box(
+    primaryPlayerBinding: SlotBinding = Slots.playerInventory(0),
+    primaryContainerBinding: SlotBinding? = null,
+): ScreenDefinition =
+    ScreenDefinition("Synchronized inventory") {
+        Stack(
             modifier =
                 Modifier.Empty
                     .size(320, 240)
@@ -43,7 +42,7 @@ internal fun createInventorySlotScreenDefinition(
                     .menuBackground(),
             contentAlignment = Alignment.Center,
         ) {
-            Box(
+            Stack(
                 modifier = Modifier.Empty.containerBackground(rows = 3),
                 contentAlignment = Alignment.Center,
             ) {
@@ -54,19 +53,15 @@ internal fun createInventorySlotScreenDefinition(
                     Column(spacing = 2) {
                         Text(
                             "Chest",
-                            style = MinecraftTextStyle.ContainerLabel,
+                            style = TextStyle.ContainerLabel,
                             modifier = Modifier.Empty.padding(left = 1),
                         )
-                        Column {
-                            repeat(3) { row ->
-                                Row {
-                                    repeat(9) { column ->
-                                        if (row == 0 && column == 0 && primaryContainerBinding != null) {
-                                            Slot(bind = primaryContainerBinding)
-                                        } else {
-                                            Slot()
-                                        }
-                                    }
+                        Grid(columns = 9) {
+                            repeat(27) { index ->
+                                if (index == 0 && primaryContainerBinding != null) {
+                                    Slot(bind = primaryContainerBinding)
+                                } else {
+                                    Slot()
                                 }
                             }
                         }
@@ -74,26 +69,22 @@ internal fun createInventorySlotScreenDefinition(
                     Column {
                         Text(
                             "Inventory",
-                            style = MinecraftTextStyle.ContainerLabel,
+                            style = TextStyle.ContainerLabel,
                             modifier = Modifier.Empty.padding(left = 1),
                         )
-                        Column(modifier = Modifier.Empty.padding(top = 1)) {
-                            repeat(3) { row ->
-                                Row {
-                                    repeat(9) { column ->
-                                        Slot(bind = MinecraftSlots.playerInventory(9 + row * 9 + column))
-                                    }
-                                }
+                        Grid(columns = 9, modifier = Modifier.Empty.padding(top = 1)) {
+                            repeat(27) { index ->
+                                Slot(bind = Slots.playerInventory(9 + index))
                             }
                         }
-                        Row(modifier = Modifier.Empty.padding(top = 4)) {
-                            repeat(9) { column ->
+                        Grid(columns = 9, modifier = Modifier.Empty.padding(top = 4)) {
+                            repeat(9) { index ->
                                 Slot(
                                     bind =
-                                        if (column == 0) {
+                                        if (index == 0) {
                                             primaryPlayerBinding
                                         } else {
-                                            MinecraftSlots.playerInventory(column)
+                                            Slots.playerInventory(index)
                                         },
                                 )
                             }

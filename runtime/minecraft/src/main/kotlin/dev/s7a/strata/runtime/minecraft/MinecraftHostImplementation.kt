@@ -10,6 +10,7 @@ import dev.s7a.strata.input.TextInputEvent
 import dev.s7a.strata.runtime.spi.RuntimeUiFrame
 import dev.s7a.strata.runtime.spi.RuntimeUiSession
 import dev.s7a.strata.runtime.spi.createRuntimeUiSession
+import dev.s7a.strata.screen.ScreenDefinition
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
 import dev.s7a.strata.text.UiText
 import java.util.Collections
@@ -31,11 +32,11 @@ internal object MinecraftHostImplementation {
      */
     @JvmSynthetic
     fun create(
-        definition: MinecraftScreenDefinition,
+        definition: ScreenDefinition,
         profile: MinecraftUiProfile,
         platform: MinecraftUiPlatform? = null,
     ): MinecraftUiHost {
-        val transferred = MinecraftDefinitionImplementation.take(definition)
+        val transferred = definition.transfer()
         val evaluator = MinecraftProfileImplementation.createEvaluator(profile, transferred.content, platform)
         val session = createRuntimeUiSession(evaluator)
         return Host.create(session, evaluator, platform, transferred.title, transferred.pausesGame)

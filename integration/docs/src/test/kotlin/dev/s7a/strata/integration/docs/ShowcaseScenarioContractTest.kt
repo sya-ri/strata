@@ -19,41 +19,66 @@ internal class ShowcaseScenarioContractTest {
         )
         assertEquals(
             listOf(
-                "integration/minecraft-fabric-26.2/src/gametest/kotlin/dev/s7a/strata/integration/minecraft/fabric/MinecraftTextExample.kt",
-                "integration/minecraft-fabric-26.2/src/gametest/kotlin/dev/s7a/strata/integration/minecraft/fabric/MinecraftTextFieldExample.kt",
-                "integration/minecraft-fabric-26.2/src/gametest/kotlin/dev/s7a/strata/integration/minecraft/fabric/MinecraftButtonExample.kt",
-                "integration/minecraft-fabric-26.2/src/gametest/kotlin/dev/s7a/strata/integration/minecraft/fabric/MinecraftScrollExample.kt",
-                "integration/minecraft-fabric-26.2/src/gametest/kotlin/dev/s7a/strata/integration/minecraft/fabric/MinecraftSlotExample.kt",
-                "integration/minecraft-fabric-26.2/src/gametest/kotlin/dev/s7a/strata/integration/minecraft/fabric/MinecraftIndustrialExample.kt",
-                "integration/minecraft-fabric-26.2/src/gametest/kotlin/dev/s7a/strata/integration/minecraft/fabric/MinecraftPlayerHeadExample.kt",
+                "MinecraftOverviewExample.kt" to "overview",
+                "MinecraftOverviewExample.kt" to "overview",
+                "MinecraftOverviewExample.kt" to "overview",
+                "MinecraftSlotExample.kt" to "slot",
+                "MinecraftProgressExample.kt" to "progress-screen",
+                "MinecraftTextExample.kt" to "text",
+                "MinecraftTextFieldExample.kt" to "text-field",
+                "MinecraftButtonExample.kt" to "button",
+                "MinecraftSocialExample.kt" to "social-screen",
+                "MinecraftScrollExample.kt" to "scroll",
+                "MinecraftIndustrialExample.kt" to "industrial-screen",
+                "MinecraftSlotExample.kt" to "slot",
+                "MinecraftPlayerHeadExample.kt" to "player-head",
             ),
-            scenarios.map { scenario -> scenario.source.relativePath },
+            scenarios.map { scenario -> scenario.source.relativePath.substringAfterLast('/') to scenario.source.slug },
         )
-        assertEquals(listOf("text", "text-field", "button", "scroll", "slot", "image", "player-head"), scenarios.map { scenario -> scenario.source.slug })
         assertEquals(
-            listOf(IntSize(150, 20), IntSize(200, 20), IntSize(150, 20), IntSize(320, 94), IntSize(24, 24), IntSize(32, 32), IntSize(24, 24)),
+            listOf(
+                IntSize(320, 180),
+                IntSize(320, 180),
+                IntSize(320, 180),
+                IntSize(320, 240),
+                IntSize(320, 180),
+                IntSize(150, 20),
+                IntSize(200, 20),
+                IntSize(150, 20),
+                IntSize(320, 240),
+                IntSize(320, 94),
+                IntSize(32, 32),
+                IntSize(24, 24),
+                IntSize(24, 24),
+            ),
             scenarios.map { scenario -> scenario.viewport },
         )
-        assertEquals(List(7) { 1 }, scenarios.map { scenario -> scenario.scale })
+        assertEquals(List(DocumentedComponent.entries.size) { 1 }, scenarios.map { scenario -> scenario.scale })
     }
 
     @Test
     fun componentTreesHaveExactTypedDetailsAndNoInventedChildren() {
-        val scenarios = ShowcaseScenarioCatalog.components
-        assertEquals(listOf(ShowcaseTreeDetail.Size(150, 20)), scenarios[0].tree.details)
-        assertEquals(listOf(ShowcaseTreeDetail.Size(200, 20)), scenarios[1].tree.details)
-        assertTrue(scenarios[2].tree.details.isEmpty())
-        assertEquals(listOf(ShowcaseTreeDetail.Size(320, 94), ShowcaseTreeDetail.ScrollRate(9)), scenarios[3].tree.details)
-        assertEquals(List(12) { DocumentedComponent.Text }, scenarios[3].tree.children.map { child -> child.component })
-        assertTrue(scenarios[3].tree.children.all { child -> child.details.isEmpty() && child.children.isEmpty() })
-        assertEquals(listOf(ShowcaseTreeDetail.SlotHighlightable(true), ShowcaseTreeDetail.Size(18, 18)), scenarios[4].tree.details)
-        assertEquals(listOf(ShowcaseTreeDetail.Size(32, 32)), scenarios[5].tree.details)
-        assertEquals(listOf(ShowcaseTreeDetail.Size(24, 24)), scenarios[6].tree.details)
-        listOf(scenarios[0], scenarios[1], scenarios[2], scenarios[4], scenarios[5], scenarios[6]).forEach { scenario ->
-            assertEquals(scenario.component, scenario.tree.component)
-            assertTrue(scenario.tree.children.isEmpty())
-        }
-        assertEquals(scenarios[3].component, scenarios[3].tree.component)
+        val scenarios = ShowcaseScenarioCatalog.components.associateBy { scenario -> scenario.component }
+        assertEquals(listOf(ShowcaseTreeDetail.Size(150, 20)), scenarios.getValue(DocumentedComponent.Text).tree.details)
+        assertEquals(listOf(ShowcaseTreeDetail.Size(200, 20)), scenarios.getValue(DocumentedComponent.TextField).tree.details)
+        assertTrue(
+            scenarios
+                .getValue(DocumentedComponent.Button)
+                .tree.details
+                .isEmpty(),
+        )
+        val scroll = scenarios.getValue(DocumentedComponent.Scroll).tree
+        assertEquals(listOf(ShowcaseTreeDetail.Size(320, 94), ShowcaseTreeDetail.ScrollRate(9)), scroll.details)
+        assertEquals(List(12) { DocumentedComponent.Text }, scroll.children.map { child -> child.component })
+        assertTrue(scroll.children.all { child -> child.details.isEmpty() && child.children.isEmpty() })
+        val grid = scenarios.getValue(DocumentedComponent.Grid).tree
+        assertEquals(listOf(ShowcaseTreeDetail.GridColumns(9)), grid.details)
+        assertEquals(List(27) { DocumentedComponent.Slot }, grid.children.map { child -> child.component })
+        assertEquals(
+            listOf(ShowcaseTreeDetail.SlotHighlightable(true), ShowcaseTreeDetail.Size(18, 18)),
+            scenarios.getValue(DocumentedComponent.Slot).tree.details,
+        )
+        scenarios.values.forEach { scenario -> assertEquals(scenario.component, scenario.tree.component) }
     }
 
     @Test
@@ -66,16 +91,22 @@ internal class ShowcaseScenarioContractTest {
         assertEquals("overview", overview.source.slug)
         assertEquals(IntSize(320, 180), overview.viewport)
         assertEquals(1, overview.scale)
-        assertEquals(
-            listOf(DocumentedComponent.Text, DocumentedComponent.Text, DocumentedComponent.Button, DocumentedComponent.Button),
-            overview.trees.map { tree -> tree.component },
-        )
+        assertEquals(listOf(DocumentedComponent.Stack), overview.trees.map { tree -> tree.component })
     }
 
     @Test
     fun overviewHasExactLeafTopologyAndDetails() {
         val overview = ShowcaseScenarioCatalog.overview
-        assertTrue(overview.trees.all { tree -> tree.details.isEmpty() && tree.children.isEmpty() })
+        val stack = overview.trees.single()
+        assertEquals(listOf(ShowcaseTreeDetail.Size(320, 180)), stack.details)
+        assertEquals(listOf(DocumentedComponent.Column), stack.children.map { child -> child.component })
+        assertEquals(
+            listOf(DocumentedComponent.Column, DocumentedComponent.Row),
+            stack.children
+                .single()
+                .children
+                .map { child -> child.component },
+        )
     }
 
     @Test
@@ -98,7 +129,7 @@ internal class ShowcaseScenarioContractTest {
             listOf(
                 "MinecraftSocialExample.kt" to "social-screen",
                 "MinecraftInventoryExample.kt" to "inventory-screen",
-                "MinecraftIndustrialExample.kt" to "image",
+                "MinecraftIndustrialExample.kt" to "industrial-screen",
                 "MinecraftProgressExample.kt" to "progress-screen",
             ),
             screens.map { scenario -> scenario.source.relativePath.substringAfterLast('/') to scenario.source.slug },

@@ -1,8 +1,14 @@
+@file:OptIn(InternalStrataRuntimeApi::class)
+
 package dev.s7a.strata.runtime.minecraft
 
-import dev.s7a.strata.dsl.Box
-import dev.s7a.strata.dsl.Spacer
-import dev.s7a.strata.dsl.buildUi
+import dev.s7a.strata.component.Image
+import dev.s7a.strata.component.Slot
+import dev.s7a.strata.component.Spacer
+import dev.s7a.strata.component.Stack
+import dev.s7a.strata.component.Text
+import dev.s7a.strata.component.TextStyle
+import dev.s7a.strata.component.evaluateComponentTree
 import dev.s7a.strata.element.Element
 import dev.s7a.strata.geometry.IntOffset
 import dev.s7a.strata.geometry.IntRect
@@ -11,6 +17,7 @@ import dev.s7a.strata.input.InputResult
 import dev.s7a.strata.input.PointerEvent
 import dev.s7a.strata.modifier.Modifier
 import dev.s7a.strata.modifier.background
+import dev.s7a.strata.modifier.containerBackground
 import dev.s7a.strata.modifier.size
 import dev.s7a.strata.node.DirtyMask
 import dev.s7a.strata.node.DirtyPhase
@@ -19,6 +26,7 @@ import dev.s7a.strata.render.DrawImage
 import dev.s7a.strata.render.createDrawImage
 import dev.s7a.strata.runtime.headless.rasterizeHeadless
 import dev.s7a.strata.runtime.render.DrawCommand
+import dev.s7a.strata.screen.ScreenDefinition
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
 import dev.s7a.strata.text.UiText
 import org.junit.jupiter.api.Assertions.assertEquals
@@ -38,7 +46,7 @@ internal class MinecraftContainerSlotTest {
             val texture = image(IntSize(256, 256), 0xFF202020.toInt())
             val host =
                 host(MinecraftProfileFixture.create(containerBackground = texture)) {
-                    buildUi { Box(modifier = Modifier.Empty.containerBackground(rows)) {} }
+                    evaluateComponentTree { Stack(modifier = Modifier.Empty.containerBackground(rows)) {} }
                 }
             val expectedHeight = Math.addExact(114, Math.multiplyExact(rows, 18))
             host.attach()
@@ -59,11 +67,11 @@ internal class MinecraftContainerSlotTest {
     @Test
     fun containerRowsAndExactConstraintsAreValidated() {
         listOf(0, 7).forEach { rows ->
-            val host = host { buildUi { Box(modifier = Modifier.Empty.containerBackground(rows)) {} } }
+            val host = host { evaluateComponentTree { Stack(modifier = Modifier.Empty.containerBackground(rows)) {} } }
             assertThrows(IllegalArgumentException::class.java) { host.attach() }
             host.close()
         }
-        val host = host { buildUi { Box(modifier = Modifier.Empty.containerBackground(3)) {} } }
+        val host = host { evaluateComponentTree { Stack(modifier = Modifier.Empty.containerBackground(3)) {} } }
         host.attach()
         assertThrows(IllegalArgumentException::class.java) { host.frame(IntSize(175, 168)) }
         host.close()
@@ -89,7 +97,7 @@ internal class MinecraftContainerSlotTest {
     fun emptySlotIsCommandFreeUntilHoverAndUsesTheNativeExpandedHitRegion() {
         val back = image(IntSize(24, 24), 0xFF101010.toInt())
         val front = image(IntSize(24, 24), 0xFF202020.toInt())
-        val host = host(MinecraftProfileFixture.create(slotHighlightBack = back, slotHighlightFront = front)) { buildUi { Slot() } }
+        val host = host(MinecraftProfileFixture.create(slotHighlightBack = back, slotHighlightFront = front)) { evaluateComponentTree { Slot() } }
         host.attach()
         assertTrue(host.frame(IntSize(18, 18)).drawCommands.isEmpty())
 
@@ -116,7 +124,7 @@ internal class MinecraftContainerSlotTest {
         val itemColor = ArgbColor(0xFF22D3EE.toInt())
         val host =
             host(MinecraftProfileFixture.create(slotHighlightBack = back, slotHighlightFront = front)) {
-                buildUi {
+                evaluateComponentTree {
                     Slot {
                         Spacer(Modifier.Empty.size(16, 16).background(itemColor))
                     }
@@ -140,7 +148,7 @@ internal class MinecraftContainerSlotTest {
 
     @Test
     fun nonhighlightableSlotNeverPaintsHighlightLayers() {
-        val host = host { buildUi { Slot(highlightable = false) } }
+        val host = host { evaluateComponentTree { Slot(highlightable = false) } }
         host.attach()
         host.frame(IntSize(18, 18))
         host.dispatchPointer(PointerEvent.Move(IntOffset(5, 5)))
@@ -150,7 +158,7 @@ internal class MinecraftContainerSlotTest {
 
     @Test
     fun containerLabelUsesOneShadowFreeDarkCommandPerGlyph() {
-        val host = host { buildUi { Text("AB", style = MinecraftTextStyle.ContainerLabel) } }
+        val host = host { evaluateComponentTree { Text("AB", style = TextStyle.ContainerLabel) } }
         host.attach()
         val frame = host.frame(IntSize(5, 9))
         val commands = frame.drawCommands.filterIsInstance<DrawCommand.BlitImage>()
@@ -166,7 +174,7 @@ internal class MinecraftContainerSlotTest {
         content: () -> Element,
     ): MinecraftUiHost =
         createMinecraftUiHost(
-            createMinecraftScreenDefinition(UiText.Literal("container")) { element(content()) },
+            ScreenDefinition(UiText.Literal("container")) { element(content()) },
             profile,
         )
 

@@ -1,11 +1,12 @@
 package dev.s7a.strata.integration.minecraft.fabric
 
 import com.mojang.blaze3d.platform.NativeImage
+import dev.s7a.strata.component.ImageSource
 import dev.s7a.strata.geometry.IntSize
 import dev.s7a.strata.render.DrawImage
+import dev.s7a.strata.resource.ResourceId
 import dev.s7a.strata.runtime.headless.HeadlessImage
 import dev.s7a.strata.runtime.headless.rasterizeHeadless
-import dev.s7a.strata.runtime.minecraft.MinecraftAssets
 import dev.s7a.strata.runtime.minecraft.MinecraftUiProfile
 import dev.s7a.strata.runtime.minecraft.createMinecraftUiHost
 import dev.s7a.strata.runtime.minecraft.fabric.FabricMinecraftScreen
@@ -74,10 +75,10 @@ internal object MinecraftProgressParity {
         context.computeOnClient(
             FailableFunction<Minecraft, ProgressAssets, RuntimeException> {
                 ProgressAssets(
-                    loadMinecraftUiImage(MinecraftAssets.resource("minecraft", "textures/gui/advancements/window.png")),
-                    loadMinecraftUiImage(MinecraftAssets.resource("minecraft", "textures/gui/advancements/backgrounds/stone.png")),
-                    loadMinecraftUiImage(MinecraftAssets.resource("minecraft", "textures/gui/sprites/advancements/task_frame_obtained.png")),
-                    loadMinecraftUiImage(MinecraftAssets.resource("minecraft", "textures/gui/sprites/advancements/task_frame_unobtained.png")),
+                    loadMinecraftUiImage(ResourceId("minecraft", "textures/gui/advancements/window.png")),
+                    loadMinecraftUiImage(ResourceId("minecraft", "textures/gui/advancements/backgrounds/stone.png")),
+                    loadMinecraftUiImage(ResourceId("minecraft", "textures/gui/sprites/advancements/task_frame_obtained.png")),
+                    loadMinecraftUiImage(ResourceId("minecraft", "textures/gui/sprites/advancements/task_frame_unobtained.png")),
                 ).also { assets ->
                     require(assets.window.size == IntSize(256, 256)) { "The active advancement window has the wrong size." }
                     require(assets.background.size == IntSize(16, 16)) { "The active advancement background has the wrong size." }
@@ -103,7 +104,13 @@ internal object MinecraftProgressParity {
         }
     }
 
-    private fun definition(assets: ProgressAssets) = createProgressScreenDefinition(assets.window, assets.background, assets.obtained, assets.unobtained)
+    private fun definition(assets: ProgressAssets) =
+        createProgressScreenDefinition(
+            ImageSource.Pixels(assets.window),
+            ImageSource.Pixels(assets.background),
+            ImageSource.Pixels(assets.obtained),
+            ImageSource.Pixels(assets.unobtained),
+        )
 
     private fun closeFabricScreen(context: ClientGameTestContext) {
         context.runOnClient(

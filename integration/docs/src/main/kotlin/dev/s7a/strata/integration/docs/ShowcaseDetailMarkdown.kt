@@ -23,13 +23,16 @@ internal object ShowcaseDetailMarkdown {
             is ShowcaseTreeDetail.Weight -> "Weight(weight=${detail.weight}, fill=${detail.fill})"
             is ShowcaseTreeDetail.RowAlign -> "RowAlign(alignment=${detail.alignment})"
             is ShowcaseTreeDetail.ColumnAlign -> "ColumnAlign(alignment=${detail.alignment})"
-            is ShowcaseTreeDetail.BoxAlign -> "BoxAlign(alignment=${detail.alignment})"
+            is ShowcaseTreeDetail.StackAlign -> "StackAlign(alignment=${detail.alignment})"
+            is ShowcaseTreeDetail.GridAlign -> "GridAlign(alignment=${detail.alignment})"
+            is ShowcaseTreeDetail.GridColumns -> "GridColumns(value=${detail.value})"
             is ShowcaseTreeDetail.Spacing -> "Spacing(value=${detail.value})"
             is ShowcaseTreeDetail.ScrollRate -> "ScrollRate(value=${detail.value})"
             is ShowcaseTreeDetail.SlotHighlightable -> "SlotHighlightable(value=${detail.value})"
             is ShowcaseTreeDetail.Arrangement -> "Arrangement(value=${detail.arrangement})"
             is ShowcaseTreeDetail.RowDefaultAlignment -> "RowDefaultAlignment(alignment=${detail.alignment})"
             is ShowcaseTreeDetail.ColumnDefaultAlignment -> "ColumnDefaultAlignment(alignment=${detail.alignment})"
-            is ShowcaseTreeDetail.BoxContentAlignment -> "BoxContentAlignment(alignment=${detail.alignment})"
+            is ShowcaseTreeDetail.StackContentAlignment -> "StackContentAlignment(alignment=${detail.alignment})"
+            is ShowcaseTreeDetail.GridContentAlignment -> "GridContentAlignment(alignment=${detail.alignment})"
         }
 }

@@ -9,10 +9,10 @@ import dev.s7a.strata.spi.InternalStrataRuntimeApi
  * Owner-thread binding between one retained Slot and a platform-managed Minecraft inventory slot.
  *
  * The binding snapshots platform item rendering, delegates pointer transactions, and notifies its one retained consumer when synchronized content changes.
- * Implementations retain no observer after the returned subscription closes and reject use after their owning [MinecraftUiPlatform] closes.
+ * Implementations retain no observer after the returned subscription closes and reject use after this binding or its owning [MinecraftUiPlatform] closes.
  */
 @InternalStrataRuntimeApi
-public interface MinecraftInventorySlotBinding {
+public interface MinecraftInventorySlotBinding : AutoCloseable {
     /**
      * Returns the current immutable item draw payload, or null for an empty slot.
      *
@@ -43,4 +43,11 @@ public interface MinecraftInventorySlotBinding {
      * @throws Throwable when the platform container operation fails.
      */
     public fun dispatchPointer(event: PointerEvent): InputResult
+
+    /**
+     * Releases this retained-node binding and removes it from platform refresh and input bookkeeping.
+     *
+     * Close is idempotent and owner-thread confined.
+     */
+    override fun close()
 }

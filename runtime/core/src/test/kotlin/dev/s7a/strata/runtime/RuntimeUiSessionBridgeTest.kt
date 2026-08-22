@@ -1,7 +1,9 @@
+@file:OptIn(InternalStrataRuntimeApi::class)
+
 package dev.s7a.strata.runtime
 
-import dev.s7a.strata.dsl.Spacer
-import dev.s7a.strata.dsl.buildUi
+import dev.s7a.strata.component.Spacer
+import dev.s7a.strata.component.evaluateComponentTree
 import dev.s7a.strata.geometry.Constraints
 import dev.s7a.strata.geometry.IntOffset
 import dev.s7a.strata.input.InputResult
@@ -93,7 +95,7 @@ internal class RuntimeUiSessionBridgeTest {
         val transitions = ArrayList<PointerHoverEvent>()
         val session =
             createRuntimeUiSession {
-                buildUi {
+                evaluateComponentTree {
                     Spacer(
                         modifier =
                             Modifier.Empty

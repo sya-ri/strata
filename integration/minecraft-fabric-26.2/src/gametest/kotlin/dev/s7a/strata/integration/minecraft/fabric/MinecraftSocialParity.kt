@@ -1,11 +1,13 @@
 package dev.s7a.strata.integration.minecraft.fabric
 
 import com.mojang.blaze3d.platform.NativeImage
+import dev.s7a.strata.component.ImageSource
+import dev.s7a.strata.component.PlayerSkinSource
 import dev.s7a.strata.geometry.IntSize
 import dev.s7a.strata.render.DrawImage
+import dev.s7a.strata.resource.ResourceId
 import dev.s7a.strata.runtime.headless.HeadlessImage
 import dev.s7a.strata.runtime.headless.rasterizeHeadless
-import dev.s7a.strata.runtime.minecraft.MinecraftAssets
 import dev.s7a.strata.runtime.minecraft.MinecraftUiProfile
 import dev.s7a.strata.runtime.minecraft.createMinecraftUiHost
 import dev.s7a.strata.runtime.minecraft.fabric.FabricMinecraftScreen
@@ -98,8 +100,8 @@ internal object MinecraftSocialParity {
         context.computeOnClient(
             FailableFunction<Minecraft, SocialAssets, RuntimeException> {
                 SocialAssets(
-                    loadMinecraftUiImage(MinecraftAssets.resource("minecraft", "textures/gui/sprites/social_interactions/background.png")),
-                    loadMinecraftUiImage(MinecraftAssets.resource("minecraft", "textures/gui/sprites/icon/search.png")),
+                    loadMinecraftUiImage(ResourceId("minecraft", "textures/gui/sprites/social_interactions/background.png")),
+                    loadMinecraftUiImage(ResourceId("minecraft", "textures/gui/sprites/icon/search.png")),
                     loadCurrentMinecraftPlayerSkin(),
                 )
             },
@@ -120,7 +122,12 @@ internal object MinecraftSocialParity {
         }
     }
 
-    private fun definition(assets: SocialAssets) = createSocialScreenDefinition(assets.panel, assets.search, assets.skin)
+    private fun definition(assets: SocialAssets) =
+        createSocialScreenDefinition(
+            ImageSource.Pixels(assets.panel),
+            ImageSource.Pixels(assets.search),
+            PlayerSkinSource.Pixels(assets.skin),
+        )
 
     private fun requireExactPixels(
         native: NativeImage,

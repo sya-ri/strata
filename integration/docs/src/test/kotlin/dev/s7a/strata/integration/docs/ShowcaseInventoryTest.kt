@@ -1,6 +1,6 @@
 package dev.s7a.strata.integration.docs
 
-import dev.s7a.strata.dsl.UiScope
+import dev.s7a.strata.component.UiScope
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertThrows
 import org.junit.jupiter.api.Assertions.assertTrue
@@ -13,7 +13,7 @@ import java.nio.file.StandardCopyOption
 import javax.tools.ToolProvider
 
 /**
- * Verifies Minecraft component-facade inventory discovery, filtering, ordering, and failure causes.
+ * Verifies public API component inventory discovery, filtering, ordering, and failure causes.
  */
 internal class ShowcaseInventoryTest {
     @TempDir
@@ -21,7 +21,7 @@ internal class ShowcaseInventoryTest {
 
     @Test
     fun realApiOutputDiscoversOnlyDocumentedComponents() {
-        val classes = repositoryRoot().resolve("runtime/minecraft/build/classes/kotlin/main")
+        val classes = repositoryRoot().resolve("api/build/classes/kotlin/main")
         assertTrue(Files.isDirectory(classes))
 
         assertEquals(DocumentedComponent.entries.toSet(), ShowcaseInventory.discover(listOf(classes)))
@@ -29,7 +29,7 @@ internal class ShowcaseInventoryTest {
 
     @Test
     fun duplicateDirectoriesBinaryNamesAndUnsafeRootsAreRejected() {
-        val classes = repositoryRoot().resolve("runtime/minecraft/build/classes/kotlin/main")
+        val classes = repositoryRoot().resolve("api/build/classes/kotlin/main")
         val duplicate =
             assertThrows(IllegalArgumentException::class.java) {
                 ShowcaseInventory.discover(listOf(classes, classes))
@@ -38,8 +38,8 @@ internal class ShowcaseInventoryTest {
 
         val first = temporaryRoot.resolve("first")
         val second = temporaryRoot.resolve("second")
-        copyClass(classes, first, "dev/s7a/strata/runtime/minecraft/MinecraftUiComponents.class")
-        copyClass(classes, second, "dev/s7a/strata/runtime/minecraft/MinecraftUiComponents.class")
+        copyClass(classes, first, "dev/s7a/strata/component/UiComponentsKt.class")
+        copyClass(classes, second, "dev/s7a/strata/component/UiComponentsKt.class")
         val duplicateBinary =
             assertThrows(IllegalArgumentException::class.java) {
                 ShowcaseInventory.discover(listOf(first, second))
@@ -61,11 +61,10 @@ internal class ShowcaseInventoryTest {
     fun classifiersExcludeNonStaticLowercasePrivateWrongParameterAndInstanceMethods() {
         val classes =
             compile(
-                "dev/s7a/strata/runtime/minecraft/MinecraftUiComponents.java",
+                "dev/s7a/strata/component/ProfileComponents.java",
                 """
-                package dev.s7a.strata.runtime.minecraft;
-                import dev.s7a.strata.dsl.UiScope;
-                public final class MinecraftUiComponents {
+                package dev.s7a.strata.component;
+                public final class ProfileComponents {
                     public void Instance(UiScope scope) {}
                     public static void lowercase(UiScope scope) {}
                     private static void Private(UiScope scope) {}
@@ -83,11 +82,10 @@ internal class ShowcaseInventoryTest {
     fun unknownUpperCamelAndCorruptClassPreserveDeterministicFailureContext() {
         val unknown =
             compile(
-                "dev/s7a/strata/runtime/minecraft/MinecraftUiComponents.java",
+                "dev/s7a/strata/component/ProfileComponents.java",
                 """
-                package dev.s7a.strata.runtime.minecraft;
-                import dev.s7a.strata.dsl.UiScope;
-                public final class MinecraftUiComponents {
+                package dev.s7a.strata.component;
+                public final class ProfileComponents {
                     public static void Unknown(UiScope scope) {}
                 }
                 """.trimIndent(),
@@ -96,13 +94,13 @@ internal class ShowcaseInventoryTest {
         assertTrue(unknownFailure.message.orEmpty().contains("undecoded"))
 
         val corrupt = temporaryRoot.resolve("corrupt")
-        Files.createDirectories(corrupt.resolve("dev/s7a/strata/runtime/minecraft"))
+        Files.createDirectories(corrupt.resolve("dev/s7a/strata/component"))
         Files.write(
-            corrupt.resolve("dev/s7a/strata/runtime/minecraft/MinecraftUiComponents.class"),
+            corrupt.resolve("dev/s7a/strata/component/ProfileComponents.class"),
             byteArrayOf(0xCA.toByte(), 0xFE.toByte(), 0xBA.toByte(), 0xBE.toByte()),
         )
         val corruptFailure = assertThrows(IllegalStateException::class.java) { ShowcaseInventory.discover(listOf(corrupt)) }
-        assertTrue(corruptFailure.message.orEmpty().contains("MinecraftUiComponents"))
+        assertTrue(corruptFailure.message.orEmpty().contains("ProfileComponents"))
         assertTrue(corruptFailure.cause is LinkageError)
     }
 
@@ -112,11 +110,10 @@ internal class ShowcaseInventoryTest {
         val markerPath = marker.toString().replace('\\', '/')
         val classes =
             compile(
-                "dev/s7a/strata/runtime/minecraft/MinecraftUiComponents.java",
+                "dev/s7a/strata/component/ProfileComponents.java",
                 """
-                package dev.s7a.strata.runtime.minecraft;
-                import dev.s7a.strata.dsl.UiScope;
-                public final class MinecraftUiComponents {
+                package dev.s7a.strata.component;
+                public final class ProfileComponents {
                     static Object MARKER = initialize();
                     static Object initialize() { try { java.nio.file.Files.writeString(java.nio.file.Path.of("$markerPath"), "initialized"); } catch (Exception ignored) {} return new Object(); }
                     public static void Button(UiScope scope) {}
@@ -128,7 +125,7 @@ internal class ShowcaseInventoryTest {
         assertEquals(setOf(DocumentedComponent.Button), ShowcaseInventory.discover(listOf(classes)))
         assertTrue(Files.exists(marker).not())
         val duplicateClass = temporaryRoot.resolve("duplicate")
-        copyClass(classes, duplicateClass, "dev/s7a/strata/runtime/minecraft/MinecraftUiComponents.class")
+        copyClass(classes, duplicateClass, "dev/s7a/strata/component/ProfileComponents.class")
         val duplicate =
             assertThrows(IllegalArgumentException::class.java) {
                 ShowcaseInventory.discover(listOf(classes, duplicateClass))
@@ -138,7 +135,7 @@ internal class ShowcaseInventoryTest {
 
     private fun repositoryRoot(): Path {
         val current = Path.of(System.getProperty("user.dir")).toAbsolutePath().normalize()
-        return if (Files.isDirectory(current.resolve("runtime/minecraft/build/classes/kotlin/main"))) current else current.resolve("../..").normalize()
+        return if (Files.isDirectory(current.resolve("api/build/classes/kotlin/main"))) current else current.resolve("../..").normalize()
     }
 
     private fun copyClass(

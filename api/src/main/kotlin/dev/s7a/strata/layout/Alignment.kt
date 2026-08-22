@@ -1,7 +1,7 @@
 package dev.s7a.strata.layout
 
 /**
- * Typed two-axis placement policy for box children.
+ * Typed two-axis placement policy for overlay and grid children.
  *
  * @property horizontalAlignment the horizontal placement policy.
  * @property verticalAlignment the vertical placement policy.

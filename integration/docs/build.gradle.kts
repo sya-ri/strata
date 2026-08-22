@@ -14,8 +14,8 @@ dependencies {
     testRuntimeOnly(libs.junit.platform.launcher)
 }
 
-val minecraftMainClasses =
-    rootProject.project(":runtime:minecraft").extensions
+val apiMainClasses =
+    rootProject.project(":api").extensions
         .getByType<SourceSetContainer>()
         .named("main")
         .map { sourceSet -> sourceSet.output.classesDirs }
@@ -40,13 +40,13 @@ class ShowcaseArgumentProvider(
                 .files
                 .filter { file -> file.exists() }
                 .sortedBy { file -> file.absolutePath }
-        require(classDirectories.isNotEmpty()) { "Minecraft component class output has no existing classes directory." }
+        require(classDirectories.isNotEmpty()) { "API component class output has no existing classes directory." }
         classDirectories.forEach { directory ->
             require(Files.isDirectory(directory.toPath(), LinkOption.NOFOLLOW_LINKS)) {
-                "Minecraft component class output is not a directory: ${directory.absolutePath}"
+                "API component class output is not a directory: ${directory.absolutePath}"
             }
             require(Files.isSymbolicLink(directory.toPath()).not()) {
-                "Minecraft component class output is symbolic: ${directory.absolutePath}"
+                "API component class output is symbolic: ${directory.absolutePath}"
             }
         }
         return buildList {
@@ -64,7 +64,7 @@ fun JavaExec.configureShowcaseLauncher(
     staging: Provider<Directory>,
     synchronizeSource: Boolean,
 ) {
-    dependsOn(":runtime:minecraft:classes", ":runtime:headless:classes", ":integration:minecraft-fabric-26.2:runClientGameTest", "classes")
+    dependsOn(":api:classes", ":runtime:minecraft:classes", ":runtime:headless:classes", ":integration:minecraft-fabric-26.2:runClientGameTest", "classes")
     mainClass.set(mainClassName)
     classpath = sourceSets.main.get().runtimeClasspath
     argumentProviders.add(
@@ -73,12 +73,12 @@ fun JavaExec.configureShowcaseLauncher(
             layout.buildDirectory,
             staging,
             parityOutput,
-            minecraftMainClasses,
+            apiMainClasses,
         ),
     )
     inputs.dir(showcaseSources)
     inputs.dir(parityOutput)
-    inputs.files(minecraftMainClasses)
+    inputs.files(apiMainClasses)
     outputs.dir(staging)
     outputs.upToDateWhen { false }
     if (synchronizeSource.not()) {

@@ -1,16 +1,19 @@
+@file:OptIn(InternalStrataRuntimeApi::class)
+
 package dev.s7a.strata.integration.external
 
-import dev.s7a.strata.dsl.Box
-import dev.s7a.strata.dsl.Column
-import dev.s7a.strata.dsl.Row
-import dev.s7a.strata.dsl.Spacer
-import dev.s7a.strata.dsl.UiScope
-import dev.s7a.strata.dsl.buildUi
+import dev.s7a.strata.component.Column
+import dev.s7a.strata.component.Row
+import dev.s7a.strata.component.Spacer
+import dev.s7a.strata.component.Stack
+import dev.s7a.strata.component.UiScope
+import dev.s7a.strata.component.evaluateComponentTree
 import dev.s7a.strata.geometry.Constraints
 import dev.s7a.strata.geometry.IntRect
 import dev.s7a.strata.geometry.IntSize
 import dev.s7a.strata.runtime.UiTree
 import dev.s7a.strata.runtime.render.DrawCommand
+import dev.s7a.strata.spi.InternalStrataRuntimeApi
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
 
@@ -24,7 +27,7 @@ internal class LayoutConstraintIntegrationTest {
 
         assertEquals(IntSize(7, 9), measureRoot(constraints) { Row { } })
         assertEquals(IntSize(7, 9), measureRoot(constraints) { Column { } })
-        assertEquals(IntSize(7, 9), measureRoot(constraints) { Box { } })
+        assertEquals(IntSize(7, 9), measureRoot(constraints) { Stack { } })
         assertEquals(IntSize(7, 9), measureRoot(constraints) { Spacer() })
     }
 
@@ -33,8 +36,8 @@ internal class LayoutConstraintIntegrationTest {
         val probe = ExternalProbe()
         val tree = UiTree()
         tree.update(
-            buildUi {
-                Box {
+            evaluateComponentTree {
+                Stack {
                     element(
                         ExternalElement(
                             probe = probe,
@@ -120,7 +123,7 @@ internal class LayoutConstraintIntegrationTest {
         val rowProbe = ExternalProbe()
         val rowTree = UiTree()
         rowTree.update(
-            buildUi {
+            evaluateComponentTree {
                 Row(spacing = 2) {
                     element(ExternalElement(probe = rowProbe, width = 3, height = 4, nodeId = ExternalNodeId.Child))
                     element(ExternalElement(probe = rowProbe, width = 5, height = 2, nodeId = ExternalNodeId.Modifier))
@@ -137,7 +140,7 @@ internal class LayoutConstraintIntegrationTest {
         val columnProbe = ExternalProbe()
         val columnTree = UiTree()
         columnTree.update(
-            buildUi {
+            evaluateComponentTree {
                 Column(spacing = 2) {
                     element(ExternalElement(probe = columnProbe, width = 3, height = 4, nodeId = ExternalNodeId.Child))
                     element(ExternalElement(probe = columnProbe, width = 5, height = 2, nodeId = ExternalNodeId.Modifier))
@@ -157,7 +160,7 @@ internal class LayoutConstraintIntegrationTest {
         content: UiScope.() -> Unit,
     ): IntSize {
         val tree = UiTree()
-        tree.update(buildUi(content))
+        tree.update(evaluateComponentTree(content))
         val size = tree.measure(constraints)
         tree.close()
         return size
@@ -168,8 +171,8 @@ internal class LayoutConstraintIntegrationTest {
     ): UiTree {
         val tree = UiTree()
         tree.update(
-            buildUi {
-                Box {
+            evaluateComponentTree {
+                Stack {
                     children.forEach { child -> element(child) }
                 }
             },

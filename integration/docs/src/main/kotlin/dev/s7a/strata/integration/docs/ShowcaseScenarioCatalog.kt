@@ -1,16 +1,90 @@
 package dev.s7a.strata.integration.docs
 
 import dev.s7a.strata.geometry.IntSize
+import dev.s7a.strata.layout.Alignment
+import dev.s7a.strata.render.ArgbColor
 
 /**
  * Owns the deterministic Minecraft component catalog used by both generator launchers.
  */
 internal object ShowcaseScenarioCatalog {
     /**
-     * Component scenarios in the required Text, TextField, Button, Scroll, Slot order.
+     * Component scenarios in the exact public API inventory order.
      */
     internal val components: List<ComponentScenario> =
         listOf(
+            ComponentScenario(
+                component = DocumentedComponent.Row,
+                source = overviewSource(),
+                viewportMetadata = ShowcaseViewport(IntSize(320, 180), 1),
+                tree =
+                    tree(
+                        DocumentedComponent.Row,
+                        listOf(ShowcaseTreeDetail.Spacing(4)),
+                        tree(DocumentedComponent.Button, emptyList()),
+                        tree(DocumentedComponent.Button, emptyList()),
+                    ),
+            ),
+            ComponentScenario(
+                component = DocumentedComponent.Column,
+                source = overviewSource(),
+                viewportMetadata = ShowcaseViewport(IntSize(320, 180), 1),
+                tree =
+                    tree(
+                        DocumentedComponent.Column,
+                        listOf(ShowcaseTreeDetail.Spacing(24)),
+                        tree(
+                            DocumentedComponent.Column,
+                            listOf(ShowcaseTreeDetail.Spacing(8)),
+                            tree(DocumentedComponent.Text, emptyList()),
+                            tree(DocumentedComponent.Text, emptyList()),
+                        ),
+                        tree(
+                            DocumentedComponent.Row,
+                            listOf(ShowcaseTreeDetail.Spacing(4)),
+                            tree(DocumentedComponent.Button, emptyList()),
+                            tree(DocumentedComponent.Button, emptyList()),
+                        ),
+                    ),
+            ),
+            ComponentScenario(
+                component = DocumentedComponent.Stack,
+                source = overviewSource(),
+                viewportMetadata = ShowcaseViewport(IntSize(320, 180), 1),
+                tree =
+                    tree(
+                        DocumentedComponent.Stack,
+                        listOf(
+                            ShowcaseTreeDetail.Size(320, 180),
+                            ShowcaseTreeDetail.StackContentAlignment(Alignment.Center),
+                        ),
+                        tree(DocumentedComponent.Column, listOf(ShowcaseTreeDetail.Spacing(24))),
+                    ),
+            ),
+            ComponentScenario(
+                component = DocumentedComponent.Grid,
+                source = slotSource(),
+                viewportMetadata = ShowcaseViewport(IntSize(320, 240), 1),
+                tree =
+                    tree(
+                        DocumentedComponent.Grid,
+                        listOf(ShowcaseTreeDetail.GridColumns(9)),
+                        *Array(27) { tree(DocumentedComponent.Slot, emptyList()) },
+                    ),
+            ),
+            ComponentScenario(
+                component = DocumentedComponent.Spacer,
+                source = progressSource(),
+                viewportMetadata = ShowcaseViewport(IntSize(320, 180), 1),
+                tree =
+                    tree(
+                        DocumentedComponent.Spacer,
+                        listOf(
+                            ShowcaseTreeDetail.Size(32, 2),
+                            ShowcaseTreeDetail.Background(ArgbColor(0xFF7A7A7A.toInt())),
+                        ),
+                    ),
+            ),
             ComponentScenario(
                 component = DocumentedComponent.Text,
                 source =
@@ -42,6 +116,12 @@ internal object ShowcaseScenarioCatalog {
                 tree = tree(DocumentedComponent.Button, emptyList()),
             ),
             ComponentScenario(
+                component = DocumentedComponent.Tab,
+                source = socialSource(),
+                viewportMetadata = ShowcaseViewport(IntSize(320, 240), 1),
+                tree = tree(DocumentedComponent.Tab, listOf(ShowcaseTreeDetail.Size(73, 20))),
+            ),
+            ComponentScenario(
                 component = DocumentedComponent.Scroll,
                 source =
                     SourceReference(
@@ -57,28 +137,20 @@ internal object ShowcaseScenarioCatalog {
                     ),
             ),
             ComponentScenario(
+                component = DocumentedComponent.Image,
+                source = industrialSource(),
+                viewportMetadata = ShowcaseViewport(IntSize(32, 32), 1),
+                tree = tree(DocumentedComponent.Image, listOf(ShowcaseTreeDetail.Size(32, 32))),
+            ),
+            ComponentScenario(
                 component = DocumentedComponent.Slot,
-                source =
-                    SourceReference(
-                        "integration/minecraft-fabric-26.2/src/gametest/kotlin/dev/s7a/strata/integration/minecraft/fabric/MinecraftSlotExample.kt",
-                        "slot",
-                    ),
+                source = slotSource(),
                 viewportMetadata = ShowcaseViewport(IntSize(24, 24), 1),
                 tree =
                     tree(
                         DocumentedComponent.Slot,
                         listOf(ShowcaseTreeDetail.SlotHighlightable(true), ShowcaseTreeDetail.Size(18, 18)),
                     ),
-            ),
-            ComponentScenario(
-                component = DocumentedComponent.Image,
-                source =
-                    SourceReference(
-                        "integration/minecraft-fabric-26.2/src/gametest/kotlin/dev/s7a/strata/integration/minecraft/fabric/MinecraftIndustrialExample.kt",
-                        "image",
-                    ),
-                viewportMetadata = ShowcaseViewport(IntSize(32, 32), 1),
-                tree = tree(DocumentedComponent.Image, listOf(ShowcaseTreeDetail.Size(32, 32))),
             ),
             ComponentScenario(
                 component = DocumentedComponent.PlayerHead,
@@ -97,15 +169,31 @@ internal object ShowcaseScenarioCatalog {
      */
     internal val overview: OverviewScenario =
         OverviewScenario(
-            source = SourceReference("integration/minecraft-fabric-26.2/src/gametest/kotlin/dev/s7a/strata/integration/minecraft/fabric/MinecraftOverviewExample.kt", "overview"),
+            source = overviewSource(),
             viewport = IntSize(320, 180),
             scale = 1,
             trees =
                 listOf(
-                    ShowcaseTree(DocumentedComponent.Text, emptyList(), emptyList()),
-                    ShowcaseTree(DocumentedComponent.Text, emptyList(), emptyList()),
-                    ShowcaseTree(DocumentedComponent.Button, emptyList(), emptyList()),
-                    ShowcaseTree(DocumentedComponent.Button, emptyList(), emptyList()),
+                    tree(
+                        DocumentedComponent.Stack,
+                        listOf(ShowcaseTreeDetail.Size(320, 180)),
+                        tree(
+                            DocumentedComponent.Column,
+                            listOf(ShowcaseTreeDetail.Spacing(24)),
+                            tree(
+                                DocumentedComponent.Column,
+                                listOf(ShowcaseTreeDetail.Spacing(8)),
+                                tree(DocumentedComponent.Text, emptyList()),
+                                tree(DocumentedComponent.Text, emptyList()),
+                            ),
+                            tree(
+                                DocumentedComponent.Row,
+                                listOf(ShowcaseTreeDetail.Spacing(4)),
+                                tree(DocumentedComponent.Button, emptyList()),
+                                tree(DocumentedComponent.Button, emptyList()),
+                            ),
+                        ),
+                    ),
                 ),
         )
 
@@ -132,10 +220,7 @@ internal object ShowcaseScenarioCatalog {
             ),
             ScreenScenario(
                 DocumentedScreen.IndustrialController,
-                SourceReference(
-                    "integration/minecraft-fabric-26.2/src/gametest/kotlin/dev/s7a/strata/integration/minecraft/fabric/MinecraftIndustrialExample.kt",
-                    "image",
-                ),
+                industrialSource(),
                 ShowcaseViewport(IntSize(320, 180), 1),
             ),
             ScreenScenario(
@@ -196,6 +281,36 @@ internal object ShowcaseScenarioCatalog {
         vararg children: ShowcaseTree,
     ): ShowcaseTree = ShowcaseTree(component, details, children.toList())
 
+    private fun overviewSource(): SourceReference =
+        SourceReference(
+            "integration/minecraft-fabric-26.2/src/gametest/kotlin/dev/s7a/strata/integration/minecraft/fabric/MinecraftOverviewExample.kt",
+            "overview",
+        )
+
+    private fun slotSource(): SourceReference =
+        SourceReference(
+            "integration/minecraft-fabric-26.2/src/gametest/kotlin/dev/s7a/strata/integration/minecraft/fabric/MinecraftSlotExample.kt",
+            "slot",
+        )
+
+    private fun socialSource(): SourceReference =
+        SourceReference(
+            "integration/minecraft-fabric-26.2/src/gametest/kotlin/dev/s7a/strata/integration/minecraft/fabric/MinecraftSocialExample.kt",
+            "social-screen",
+        )
+
+    private fun progressSource(): SourceReference =
+        SourceReference(
+            "integration/minecraft-fabric-26.2/src/gametest/kotlin/dev/s7a/strata/integration/minecraft/fabric/MinecraftProgressExample.kt",
+            "progress-screen",
+        )
+
+    private fun industrialSource(): SourceReference =
+        SourceReference(
+            "integration/minecraft-fabric-26.2/src/gametest/kotlin/dev/s7a/strata/integration/minecraft/fabric/MinecraftIndustrialExample.kt",
+            "industrial-screen",
+        )
+
     private fun validateDetails(tree: ShowcaseTree) {
         tree.details.forEach(::validateDetail)
         tree.children.forEach { child -> validateDetails(child) }
@@ -207,11 +322,13 @@ internal object ShowcaseScenarioCatalog {
             is ShowcaseTreeDetail.Background,
             is ShowcaseTreeDetail.RowAlign,
             is ShowcaseTreeDetail.ColumnAlign,
-            is ShowcaseTreeDetail.BoxAlign,
+            is ShowcaseTreeDetail.StackAlign,
+            is ShowcaseTreeDetail.GridAlign,
             is ShowcaseTreeDetail.Arrangement,
             is ShowcaseTreeDetail.RowDefaultAlignment,
             is ShowcaseTreeDetail.ColumnDefaultAlignment,
-            is ShowcaseTreeDetail.BoxContentAlignment,
+            is ShowcaseTreeDetail.StackContentAlignment,
+            is ShowcaseTreeDetail.GridContentAlignment,
             -> Unit
 
             is ShowcaseTreeDetail.Size -> require(0 < detail.width && 0 < detail.height) { "Showcase sizes must be positive." }
@@ -221,6 +338,8 @@ internal object ShowcaseScenarioCatalog {
             is ShowcaseTreeDetail.Padding -> require(0 <= detail.all) { "Showcase padding must be nonnegative." }
 
             is ShowcaseTreeDetail.Spacing -> require(0 <= detail.value) { "Showcase spacing must be nonnegative." }
+
+            is ShowcaseTreeDetail.GridColumns -> require(0 < detail.value) { "Showcase Grid columns must be positive." }
 
             is ShowcaseTreeDetail.ScrollRate -> require(0 < detail.value) { "Showcase Scroll rates must be positive." }
 

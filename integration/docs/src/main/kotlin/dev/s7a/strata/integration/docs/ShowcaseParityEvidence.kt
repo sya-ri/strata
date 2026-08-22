@@ -211,12 +211,28 @@ internal class ShowcaseParityEvidence private constructor(
 
         private fun expectedPngSize(component: DocumentedComponent): IntSize =
             when (component) {
+                DocumentedComponent.Row,
+                DocumentedComponent.Column,
+                DocumentedComponent.Stack,
+                DocumentedComponent.Spacer,
+                -> IntSize(320, 180)
+
+                DocumentedComponent.Grid,
+                DocumentedComponent.Tab,
+                -> IntSize(320, 240)
+
                 DocumentedComponent.Text -> IntSize(150, 20)
+
                 DocumentedComponent.TextField -> IntSize(200, 20)
+
                 DocumentedComponent.Button -> IntSize(150, 20)
+
                 DocumentedComponent.Scroll -> IntSize(320, 94)
+
                 DocumentedComponent.Slot -> IntSize(24, 24)
+
                 DocumentedComponent.Image -> IntSize(32, 32)
+
                 DocumentedComponent.PlayerHead -> IntSize(24, 24)
             }
 

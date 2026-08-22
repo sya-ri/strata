@@ -1,10 +1,12 @@
+@file:OptIn(InternalStrataRuntimeApi::class)
+
 package dev.s7a.strata.integration.external
 
-import dev.s7a.strata.dsl.Box
-import dev.s7a.strata.dsl.Column
-import dev.s7a.strata.dsl.Row
-import dev.s7a.strata.dsl.Spacer
-import dev.s7a.strata.dsl.buildUi
+import dev.s7a.strata.component.Column
+import dev.s7a.strata.component.Row
+import dev.s7a.strata.component.Spacer
+import dev.s7a.strata.component.Stack
+import dev.s7a.strata.component.evaluateComponentTree
 import dev.s7a.strata.element.ElementKey
 import dev.s7a.strata.geometry.Constraints
 import dev.s7a.strata.geometry.Insets
@@ -18,6 +20,7 @@ import dev.s7a.strata.modifier.padding
 import dev.s7a.strata.render.ArgbColor
 import dev.s7a.strata.runtime.UiTree
 import dev.s7a.strata.runtime.render.DrawCommand
+import dev.s7a.strata.spi.InternalStrataRuntimeApi
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
 
@@ -30,7 +33,7 @@ internal class LayoutIntegrationTest {
         val tree = UiTree()
         val probe = ExternalProbe()
         val root =
-            buildUi {
+            evaluateComponentTree {
                 Row(
                     spacing = 2,
                     horizontalArrangement = Arrangement.SpaceBetween,
@@ -54,7 +57,7 @@ internal class LayoutIntegrationTest {
         val probe = ExternalProbe()
         val background = ArgbColor(0xFF102030.toInt())
         tree.update(
-            buildUi {
+            evaluateComponentTree {
                 Row(
                     modifier =
                         Modifier.Empty
@@ -86,7 +89,7 @@ internal class LayoutIntegrationTest {
         val weightedProbe = ExternalProbe()
         val weightedTree = UiTree()
         weightedTree.update(
-            buildUi {
+            evaluateComponentTree {
                 Row {
                     element(
                         ExternalElement(
@@ -113,7 +116,7 @@ internal class LayoutIntegrationTest {
         weightedTree.close()
 
         val spacerTree = UiTree()
-        spacerTree.update(buildUi { Spacer() })
+        spacerTree.update(evaluateComponentTree { Spacer() })
         assertEquals(IntSize(7, 9), spacerTree.measure(Constraints(minWidth = 7, minHeight = 9)))
         spacerTree.close()
     }
@@ -123,7 +126,7 @@ internal class LayoutIntegrationTest {
         val largeFirstProbe = ExternalProbe()
         val largeFirstTree = UiTree()
         largeFirstTree.update(
-            buildUi {
+            evaluateComponentTree {
                 Row {
                     element(
                         ExternalElement(
@@ -148,7 +151,7 @@ internal class LayoutIntegrationTest {
         val smallFirstProbe = ExternalProbe()
         val smallFirstTree = UiTree()
         smallFirstTree.update(
-            buildUi {
+            evaluateComponentTree {
                 Row {
                     element(
                         ExternalElement(
@@ -176,8 +179,8 @@ internal class LayoutIntegrationTest {
         val tree = UiTree()
         val probe = ExternalProbe()
         tree.update(
-            buildUi {
-                Box(contentAlignment = Alignment.TopStart) {
+            evaluateComponentTree {
+                Stack(contentAlignment = Alignment.TopStart) {
                     element(
                         ExternalElement(
                             probe = probe,
@@ -215,14 +218,14 @@ internal class LayoutIntegrationTest {
     }
 
     private fun keyedRow(probe: ExternalProbe) =
-        buildUi {
+        evaluateComponentTree {
             Row(key = ElementKey("linear")) {
                 keyedChildren(probe).forEach(::element)
             }
         }
 
     private fun keyedColumn(probe: ExternalProbe) =
-        buildUi {
+        evaluateComponentTree {
             Column(key = ElementKey("linear")) {
                 keyedChildren(probe).forEach(::element)
             }

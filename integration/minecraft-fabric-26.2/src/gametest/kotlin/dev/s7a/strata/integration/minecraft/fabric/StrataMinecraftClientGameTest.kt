@@ -1,6 +1,8 @@
 package dev.s7a.strata.integration.minecraft.fabric
 
 import com.mojang.blaze3d.platform.NativeImage
+import dev.s7a.strata.component.ImageSource
+import dev.s7a.strata.component.PlayerSkinSource
 import dev.s7a.strata.geometry.IntOffset
 import dev.s7a.strata.geometry.IntRect
 import dev.s7a.strata.geometry.IntSize
@@ -8,10 +10,9 @@ import dev.s7a.strata.input.PointerEvent
 import dev.s7a.strata.render.ArgbColor
 import dev.s7a.strata.render.DrawImage
 import dev.s7a.strata.render.createDrawImage
+import dev.s7a.strata.resource.ResourceId
 import dev.s7a.strata.runtime.headless.HeadlessImage
 import dev.s7a.strata.runtime.headless.rasterizeHeadless
-import dev.s7a.strata.runtime.minecraft.MinecraftAssets
-import dev.s7a.strata.runtime.minecraft.MinecraftScreenDefinition
 import dev.s7a.strata.runtime.minecraft.MinecraftUiProfile
 import dev.s7a.strata.runtime.minecraft.createMinecraftUiHost
 import dev.s7a.strata.runtime.minecraft.fabric.FabricMinecraftScreen
@@ -20,6 +21,7 @@ import dev.s7a.strata.runtime.minecraft.fabric.extractMinecraftUiProfile
 import dev.s7a.strata.runtime.minecraft.fabric.loadCurrentMinecraftPlayerSkin
 import dev.s7a.strata.runtime.minecraft.fabric.loadMinecraftUiImage
 import dev.s7a.strata.runtime.render.DrawCommand
+import dev.s7a.strata.screen.ScreenDefinition
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
 import it.unimi.dsi.fastutil.booleans.BooleanConsumer
 import net.fabricmc.fabric.api.client.gametest.v1.FabricClientGameTest
@@ -180,9 +182,9 @@ public class StrataMinecraftClientGameTest : FabricClientGameTest {
             context.computeOnClient(
                 FailableFunction<Minecraft, DrawImage, RuntimeException> {
                     loadMinecraftUiImage(
-                        MinecraftAssets.resource(
+                        ResourceId(
                             "strata_test",
-                            "textures/gui/industrial_panel.png",
+                            "textures/gui/coal_generator.png",
                         ),
                     )
                 },
@@ -195,14 +197,35 @@ public class StrataMinecraftClientGameTest : FabricClientGameTest {
         val headless =
             context.computeOnClient(
                 FailableFunction<Minecraft, HeadlessImage, RuntimeException> {
-                    renderHeadless(profile, createIndustrialScreenDefinition(panel), industrialViewport, industrialPointer)
+                    renderHeadless(
+                        profile,
+                        createIndustrialScreenDefinition(
+                            panel = ImageSource.Pixels(panel),
+                            fuelBinding = null,
+                            chargeBinding = null,
+                            playerInventory = { null },
+                        ),
+                        industrialViewport,
+                        industrialPointer,
+                    )
                 },
             )
         val headlessPath = output.resolve("strata-industrial-headless.png")
         Files.write(headlessPath, headless.encodePng())
         context.input.setCursorPos(industrialPointer.x.toDouble(), industrialPointer.y.toDouble())
-        context.setScreen { createMinecraftScreen(createIndustrialScreenDefinition(panel), profile, parent = null) }
+        context.setScreen {
+            createMinecraftScreen(
+                createIndustrialScreenDefinition(
+                    fuelBinding = null,
+                    chargeBinding = null,
+                    playerInventory = { null },
+                ),
+                profile,
+                parent = null,
+            )
+        }
         context.waitForScreen(FabricMinecraftScreen::class.java)
+        context.input.setCursorPos(industrialPointer.x.toDouble(), industrialPointer.y.toDouble())
         context.waitTicks(2)
         NativeImage.read(headlessPath.inputStream()).use { expected ->
             context.assertScreenshotEquals(
@@ -251,13 +274,23 @@ public class StrataMinecraftClientGameTest : FabricClientGameTest {
                 val rendered =
                     context.computeOnClient(
                         FailableFunction<Minecraft, HeadlessImage, RuntimeException> {
-                            renderHeadless(profile, createPlayerHeadScreenDefinition(skin), playerHeadViewport)
+                            renderHeadless(
+                                profile,
+                                createPlayerHeadScreenDefinition(PlayerSkinSource.Pixels(skin)),
+                                playerHeadViewport,
+                            )
                         },
                     )
                 Files.write(output.resolve("strata-player-head-headless.png"), rendered.encodePng())
                 requireExactPixels(native, rendered)
 
-                context.setScreen { createMinecraftScreen(createPlayerHeadScreenDefinition(skin), profile, parent = null) }
+                context.setScreen {
+                    createMinecraftScreen(
+                        createPlayerHeadScreenDefinition(PlayerSkinSource.Pixels(skin)),
+                        profile,
+                        parent = null,
+                    )
+                }
                 context.waitForScreen(FabricMinecraftScreen::class.java)
                 context.waitTicks(2)
                 context.assertScreenshotEquals(
@@ -288,7 +321,7 @@ public class StrataMinecraftClientGameTest : FabricClientGameTest {
     @OptIn(InternalStrataRuntimeApi::class)
     private fun renderHeadless(
         profile: MinecraftUiProfile,
-        definition: MinecraftScreenDefinition,
+        definition: ScreenDefinition,
         viewport: IntSize,
         pointerPosition: IntOffset = pointer,
     ): HeadlessImage {
@@ -362,6 +395,8 @@ public class StrataMinecraftClientGameTest : FabricClientGameTest {
                 ParityScene.Slot to createDrawImage(slot.size, slot.copyArgb()),
                 ParityScene.Industrial to createDrawImage(industrial.size, industrial.copyArgb()),
                 ParityScene.PlayerHead to createDrawImage(playerHead.size, playerHead.copyArgb()),
+                ParityScene.Social to createDrawImage(social.size, social.copyArgb()),
+                ParityScene.Progress to createDrawImage(progress.size, progress.copyArgb()),
             )
         val pngHashes = LinkedHashMap<ParityCrop, String>()
         for (crop in ParityCrop.entries) {
@@ -849,7 +884,7 @@ public class StrataMinecraftClientGameTest : FabricClientGameTest {
         private val containerBackgroundIdentifier = Identifier.withDefaultNamespace("textures/gui/container/generic_54.png")
         private val industrialViewport = IntSize(320, 180)
         private val industrialPointer = IntOffset.Zero
-        private val industrialAssetSize = IntSize(1254, 1254)
+        private val industrialAssetSize = IntSize(1229, 1280)
         private val playerHeadViewport = IntSize(64, 64)
     }
 
@@ -860,12 +895,18 @@ public class StrataMinecraftClientGameTest : FabricClientGameTest {
         val size: IntSize,
     ) {
         Overview("overview", ParityScene.Confirm, IntOffset.Zero, IntSize(320, 180)),
+        Row("row", ParityScene.Confirm, IntOffset.Zero, IntSize(320, 180)),
+        Column("column", ParityScene.Confirm, IntOffset.Zero, IntSize(320, 180)),
+        Stack("stack", ParityScene.Confirm, IntOffset.Zero, IntSize(320, 180)),
+        Grid("grid", ParityScene.Slot, IntOffset.Zero, IntSize(320, 240)),
+        Spacer("spacer", ParityScene.Progress, IntOffset.Zero, IntSize(320, 180)),
         Text("text", ParityScene.Confirm, IntOffset(85, 50), IntSize(150, 20)),
-        Button("button", ParityScene.Confirm, IntOffset(8, 105), IntSize(150, 20)),
-        Scroll("scroll", ParityScene.Scroll, IntOffset(0, 33), IntSize(320, 94)),
         TextField("text-field", ParityScene.DirectJoin, IntOffset(60, 116), IntSize(200, 20)),
-        Slot("slot", ParityScene.Slot, IntOffset(76, 50), IntSize(24, 24)),
+        Button("button", ParityScene.Confirm, IntOffset(8, 105), IntSize(150, 20)),
+        Tab("tab", ParityScene.Social, IntOffset.Zero, IntSize(320, 240)),
+        Scroll("scroll", ParityScene.Scroll, IntOffset(0, 33), IntSize(320, 94)),
         Image("image", ParityScene.Industrial, IntOffset(144, 30), IntSize(32, 32)),
+        Slot("slot", ParityScene.Slot, IntOffset(76, 50), IntSize(24, 24)),
         PlayerHead("player-head", ParityScene.PlayerHead, IntOffset(20, 20), IntSize(24, 24)),
     }
 
@@ -876,6 +917,8 @@ public class StrataMinecraftClientGameTest : FabricClientGameTest {
         Slot,
         Industrial,
         PlayerHead,
+        Social,
+        Progress,
     }
 
     private enum class ParityScreen(

@@ -1,14 +1,21 @@
 package dev.s7a.strata.runtime.minecraft
 
-import dev.s7a.strata.dsl.Box
+import dev.s7a.strata.component.Image
+import dev.s7a.strata.component.ImageScale
+import dev.s7a.strata.component.ImageSource
+import dev.s7a.strata.component.NineSliceCenterMode
+import dev.s7a.strata.component.Stack
 import dev.s7a.strata.geometry.Insets
 import dev.s7a.strata.geometry.IntRect
 import dev.s7a.strata.geometry.IntSize
 import dev.s7a.strata.modifier.Modifier
+import dev.s7a.strata.modifier.imageBackground
 import dev.s7a.strata.render.DrawImage
 import dev.s7a.strata.render.createDrawImage
+import dev.s7a.strata.resource.ResourceId
 import dev.s7a.strata.runtime.headless.rasterizeHeadless
 import dev.s7a.strata.runtime.render.DrawCommand
+import dev.s7a.strata.screen.ScreenDefinition
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertNotSame
@@ -23,9 +30,9 @@ import org.junit.jupiter.api.Test
 internal class MinecraftImageTest {
     @Test
     fun assetIdentifiersAreStructuralAndValidateBothParts() {
-        val first = MinecraftAssets.resource("example", "textures/gui/panel.png")
-        val equal = MinecraftAssets.resource("example", "textures/gui/panel.png")
-        val other = MinecraftAssets.resource("example", "textures/gui/other.png")
+        val first = ResourceId("example", "textures/gui/panel.png")
+        val equal = ResourceId("example", "textures/gui/panel.png")
+        val other = ResourceId("example", "textures/gui/other.png")
 
         assertEquals("example", first.namespace)
         assertEquals("textures/gui/panel.png", first.path)
@@ -33,8 +40,8 @@ internal class MinecraftImageTest {
         assertEquals(first.hashCode(), equal.hashCode())
         assertNotSame(first, equal)
         assertEquals(false, first == other)
-        assertThrows(IllegalArgumentException::class.java) { MinecraftAssets.resource("Example", "textures/gui/panel.png") }
-        assertThrows(IllegalArgumentException::class.java) { MinecraftAssets.resource("example", "../panel.png") }
+        assertThrows(IllegalArgumentException::class.java) { ResourceId("Example", "textures/gui/panel.png") }
+        assertThrows(IllegalArgumentException::class.java) { ResourceId("example", "../panel.png") }
     }
 
     @Test
@@ -51,8 +58,8 @@ internal class MinecraftImageTest {
             )
         val host =
             createMinecraftUiHost(
-                createMinecraftScreenDefinition("Image") {
-                    Image(source, IntSize(4, 4))
+                ScreenDefinition("Image") {
+                    Image(ImageSource.Pixels(source), IntSize(4, 4))
                 },
                 MinecraftProfileFixture.create(),
             )
@@ -78,8 +85,8 @@ internal class MinecraftImageTest {
         val source = createDrawImage(IntSize(3, 2), IntArray(6) { index -> 0xFF000000.toInt() or index })
         val host =
             createMinecraftUiHost(
-                createMinecraftScreenDefinition("Image region") {
-                    Image(source, IntRect(1, 0, 3, 2), IntSize(4, 2))
+                ScreenDefinition("Image region") {
+                    Image(ImageSource.Pixels(source), IntRect(1, 0, 3, 2), IntSize(4, 2))
                 },
                 MinecraftProfileFixture.create(),
             )
@@ -105,8 +112,8 @@ internal class MinecraftImageTest {
         ).forEach { invalid ->
             val invalidHost =
                 createMinecraftUiHost(
-                    createMinecraftScreenDefinition("Invalid image region") {
-                        Image(source, invalid)
+                    ScreenDefinition("Invalid image region") {
+                        Image(ImageSource.Pixels(source), invalid)
                     },
                     MinecraftProfileFixture.create(),
                 )
@@ -118,8 +125,8 @@ internal class MinecraftImageTest {
     @Test
     fun backgroundSupportsStretchAndRowMajorTiles() {
         val source = createDrawImage(IntSize(2, 2), IntArray(4) { 0xFF123456.toInt() })
-        val stretched = hostWithBackground(source, MinecraftImageScale.Stretch)
-        val tiled = hostWithBackground(source, MinecraftImageScale.Tile)
+        val stretched = hostWithBackground(source, ImageScale.Stretch)
+        val tiled = hostWithBackground(source, ImageScale.Tile)
         try {
             stretched.attach()
             val stretchCommand = stretched.frame(IntSize(5, 3)).drawCommands.single() as DrawCommand.BlitImage
@@ -163,7 +170,7 @@ internal class MinecraftImageTest {
                 IntSize(4, 4),
                 IntArray(16) { index -> 0xFF000000.toInt() or index },
             )
-        val host = hostWithNineSliceBackground(source, Insets.all(1), MinecraftNineSliceCenterMode.Tiled)
+        val host = hostWithNineSliceBackground(source, Insets.all(1), NineSliceCenterMode.Tiled)
         try {
             host.attach()
             val commands = host.frame(IntSize(4, 7)).drawCommands.map { command -> command as DrawCommand.BlitImage }
@@ -200,7 +207,7 @@ internal class MinecraftImageTest {
     @Test
     fun nineSliceUsesRowMajorGridAndValidatesSourceCenters() {
         val source = createDrawImage(IntSize(3, 3), IntArray(9) { index -> 0xFF101010.toInt() + index })
-        val host = hostWithNineSliceBackground(source, Insets.all(1), MinecraftNineSliceCenterMode.Stretched)
+        val host = hostWithNineSliceBackground(source, Insets.all(1), NineSliceCenterMode.Stretched)
         try {
             host.attach()
             val commands = host.frame(IntSize(5, 5)).drawCommands.map { command -> command as DrawCommand.BlitImage }
@@ -223,18 +230,18 @@ internal class MinecraftImageTest {
             host.close()
         }
 
-        val invalid = hostWithNineSliceBackground(source, Insets(left = 1, right = 2), MinecraftNineSliceCenterMode.Tiled)
+        val invalid = hostWithNineSliceBackground(source, Insets(left = 1, right = 2), NineSliceCenterMode.Tiled)
         assertThrows(IllegalArgumentException::class.java) { invalid.attach() }
         invalid.close()
     }
 
     private fun hostWithBackground(
         source: DrawImage,
-        scale: MinecraftImageScale,
+        scale: ImageScale,
     ): MinecraftUiHost =
         createMinecraftUiHost(
-            createMinecraftScreenDefinition("Background") {
-                Box(modifier = Modifier.Empty.imageBackground(source, scale)) {}
+            ScreenDefinition("Background") {
+                Stack(modifier = Modifier.Empty.imageBackground(ImageSource.Pixels(source), scale)) {}
             },
             MinecraftProfileFixture.create(),
         )
@@ -242,11 +249,11 @@ internal class MinecraftImageTest {
     private fun hostWithNineSliceBackground(
         source: DrawImage,
         border: Insets,
-        centerMode: MinecraftNineSliceCenterMode,
+        centerMode: NineSliceCenterMode,
     ): MinecraftUiHost =
         createMinecraftUiHost(
-            createMinecraftScreenDefinition("Nine slice") {
-                Box(modifier = Modifier.Empty.imageBackground(source, border, centerMode)) {}
+            ScreenDefinition("Nine slice") {
+                Stack(modifier = Modifier.Empty.imageBackground(ImageSource.Pixels(source), border, centerMode)) {}
             },
             MinecraftProfileFixture.create(),
         )

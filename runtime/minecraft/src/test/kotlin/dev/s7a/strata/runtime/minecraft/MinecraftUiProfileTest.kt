@@ -1,11 +1,21 @@
+@file:OptIn(InternalStrataRuntimeApi::class)
+
 package dev.s7a.strata.runtime.minecraft
 
-import dev.s7a.strata.dsl.Box
-import dev.s7a.strata.dsl.buildUi
+import dev.s7a.strata.component.Button
+import dev.s7a.strata.component.Image
+import dev.s7a.strata.component.NineSliceCenterMode
+import dev.s7a.strata.component.Slot
+import dev.s7a.strata.component.Stack
+import dev.s7a.strata.component.Text
+import dev.s7a.strata.component.evaluateComponentTree
 import dev.s7a.strata.geometry.IntSize
 import dev.s7a.strata.modifier.Modifier
+import dev.s7a.strata.modifier.containerBackground
+import dev.s7a.strata.modifier.menuBackground
 import dev.s7a.strata.render.DrawImage
 import dev.s7a.strata.render.createDrawImage
+import dev.s7a.strata.screen.ScreenDefinition
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
 import dev.s7a.strata.text.UiText
 import org.junit.jupiter.api.Assertions.assertEquals
@@ -43,22 +53,22 @@ internal class MinecraftUiProfileTest {
         assertThrows(IllegalArgumentException::class.java) {
             createMinecraftUiProfile {
                 completeMenuAndGlyphs()
-                buttonNormal(buttonImage(), 1, MinecraftNineSliceCenterMode.Tiled)
-                buttonHighlighted(buttonImage(), 1, MinecraftNineSliceCenterMode.Tiled)
+                buttonNormal(buttonImage(), 1, NineSliceCenterMode.Tiled)
+                buttonHighlighted(buttonImage(), 1, NineSliceCenterMode.Tiled)
             }
         }
         assertThrows(IllegalArgumentException::class.java) {
             createMinecraftUiProfile {
                 completeMenuAndGlyphs()
-                buttonNormal(buttonImage(), 1, MinecraftNineSliceCenterMode.Tiled)
-                buttonDisabled(buttonImage(), 1, MinecraftNineSliceCenterMode.Tiled)
+                buttonNormal(buttonImage(), 1, NineSliceCenterMode.Tiled)
+                buttonDisabled(buttonImage(), 1, NineSliceCenterMode.Tiled)
             }
         }
         assertThrows(IllegalArgumentException::class.java) {
             createMinecraftUiProfile {
                 completeMenuAndGlyphs()
-                buttonHighlighted(buttonImage(), 1, MinecraftNineSliceCenterMode.Tiled)
-                buttonDisabled(buttonImage(), 1, MinecraftNineSliceCenterMode.Tiled)
+                buttonHighlighted(buttonImage(), 1, NineSliceCenterMode.Tiled)
+                buttonDisabled(buttonImage(), 1, NineSliceCenterMode.Tiled)
             }
         }
         TextFieldAsset.entries.forEach { omitted ->
@@ -91,28 +101,28 @@ internal class MinecraftUiProfileTest {
         assertThrows(IllegalArgumentException::class.java) {
             createMinecraftUiProfile {
                 completeMenuAndGlyphs()
-                buttonNormal(buttonImage(), 1, MinecraftNineSliceCenterMode.Tiled)
-                buttonNormal(buttonImage(), 1, MinecraftNineSliceCenterMode.Tiled)
-                buttonHighlighted(buttonImage(), 1, MinecraftNineSliceCenterMode.Tiled)
-                buttonDisabled(buttonImage(), 1, MinecraftNineSliceCenterMode.Tiled)
+                buttonNormal(buttonImage(), 1, NineSliceCenterMode.Tiled)
+                buttonNormal(buttonImage(), 1, NineSliceCenterMode.Tiled)
+                buttonHighlighted(buttonImage(), 1, NineSliceCenterMode.Tiled)
+                buttonDisabled(buttonImage(), 1, NineSliceCenterMode.Tiled)
             }
         }
         assertThrows(IllegalArgumentException::class.java) {
             createMinecraftUiProfile {
                 completeMenuAndGlyphs()
-                buttonNormal(buttonImage(), 1, MinecraftNineSliceCenterMode.Tiled)
-                buttonHighlighted(buttonImage(), 1, MinecraftNineSliceCenterMode.Tiled)
-                buttonHighlighted(buttonImage(), 1, MinecraftNineSliceCenterMode.Tiled)
-                buttonDisabled(buttonImage(), 1, MinecraftNineSliceCenterMode.Tiled)
+                buttonNormal(buttonImage(), 1, NineSliceCenterMode.Tiled)
+                buttonHighlighted(buttonImage(), 1, NineSliceCenterMode.Tiled)
+                buttonHighlighted(buttonImage(), 1, NineSliceCenterMode.Tiled)
+                buttonDisabled(buttonImage(), 1, NineSliceCenterMode.Tiled)
             }
         }
         assertThrows(IllegalArgumentException::class.java) {
             createMinecraftUiProfile {
                 completeMenuAndGlyphs()
-                buttonNormal(buttonImage(), 1, MinecraftNineSliceCenterMode.Tiled)
-                buttonHighlighted(buttonImage(), 1, MinecraftNineSliceCenterMode.Tiled)
-                buttonDisabled(buttonImage(), 1, MinecraftNineSliceCenterMode.Tiled)
-                buttonDisabled(buttonImage(), 1, MinecraftNineSliceCenterMode.Tiled)
+                buttonNormal(buttonImage(), 1, NineSliceCenterMode.Tiled)
+                buttonHighlighted(buttonImage(), 1, NineSliceCenterMode.Tiled)
+                buttonDisabled(buttonImage(), 1, NineSliceCenterMode.Tiled)
+                buttonDisabled(buttonImage(), 1, NineSliceCenterMode.Tiled)
             }
         }
         ScrollAsset.entries.forEach { duplicate ->
@@ -309,9 +319,9 @@ internal class MinecraftUiProfileTest {
         assertEquals(3, normal.border)
         assertEquals(3, highlighted.border)
         assertEquals(1, disabled.border)
-        assertSame(MinecraftNineSliceCenterMode.Tiled, normal.centerMode)
-        assertSame(MinecraftNineSliceCenterMode.Tiled, highlighted.centerMode)
-        assertSame(MinecraftNineSliceCenterMode.Tiled, disabled.centerMode)
+        assertSame(NineSliceCenterMode.Tiled, normal.centerMode)
+        assertSame(NineSliceCenterMode.Tiled, highlighted.centerMode)
+        assertSame(NineSliceCenterMode.Tiled, disabled.centerMode)
     }
 
     @Test
@@ -393,8 +403,8 @@ internal class MinecraftUiProfileTest {
                         check(start.await(5, TimeUnit.SECONDS)) { "Timed out waiting to start host." }
                         host =
                             createMinecraftUiHost(
-                                createMinecraftScreenDefinition(UiText.Literal("reuse")) {
-                                    Box(modifier = Modifier.Empty.menuBackground()) {}
+                                ScreenDefinition(UiText.Literal("reuse")) {
+                                    Stack(modifier = Modifier.Empty.menuBackground()) {}
                                 },
                                 profile,
                             )
@@ -428,9 +438,9 @@ internal class MinecraftUiProfileTest {
     ): MinecraftUiProfile =
         createMinecraftUiProfile {
             completeMenuAndGlyphs(menu, glyphMask)
-            buttonNormal(button, normalBorder, MinecraftNineSliceCenterMode.Tiled)
-            buttonHighlighted(button, highlightedBorder, MinecraftNineSliceCenterMode.Tiled)
-            buttonDisabled(button, disabledBorder, MinecraftNineSliceCenterMode.Tiled)
+            buttonNormal(button, normalBorder, NineSliceCenterMode.Tiled)
+            buttonHighlighted(button, highlightedBorder, NineSliceCenterMode.Tiled)
+            buttonDisabled(button, disabledBorder, NineSliceCenterMode.Tiled)
         }
 
     private fun MinecraftUiProfileBuilder.completeMenuAndGlyphs(
@@ -505,17 +515,17 @@ internal class MinecraftUiProfileTest {
         button: DrawImage = buttonImage(),
         border: Int = 1,
     ) {
-        buttonNormal(button, border, MinecraftNineSliceCenterMode.Tiled)
-        buttonHighlighted(button, border, MinecraftNineSliceCenterMode.Tiled)
-        buttonDisabled(button, border, MinecraftNineSliceCenterMode.Tiled)
+        buttonNormal(button, border, NineSliceCenterMode.Tiled)
+        buttonHighlighted(button, border, NineSliceCenterMode.Tiled)
+        buttonDisabled(button, border, NineSliceCenterMode.Tiled)
     }
 
     private fun MinecraftUiProfileBuilder.completeProfileDeclarations() {
         completeMenuAndGlyphs()
         val button = buttonImage()
-        buttonNormal(button, 1, MinecraftNineSliceCenterMode.Tiled)
-        buttonHighlighted(button, 1, MinecraftNineSliceCenterMode.Tiled)
-        buttonDisabled(button, 1, MinecraftNineSliceCenterMode.Tiled)
+        buttonNormal(button, 1, NineSliceCenterMode.Tiled)
+        buttonHighlighted(button, 1, NineSliceCenterMode.Tiled)
+        buttonDisabled(button, 1, NineSliceCenterMode.Tiled)
     }
 
     private enum class ScrollAsset(

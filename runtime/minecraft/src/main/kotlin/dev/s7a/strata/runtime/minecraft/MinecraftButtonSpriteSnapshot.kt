@@ -1,5 +1,6 @@
 package dev.s7a.strata.runtime.minecraft
 
+import dev.s7a.strata.component.NineSliceCenterMode
 import dev.s7a.strata.render.DrawImage
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
 
@@ -17,7 +18,7 @@ internal class MinecraftButtonSpriteSnapshot private constructor(
     @get:JvmSynthetic
     internal val border: Int,
     @get:JvmSynthetic
-    internal val centerMode: MinecraftNineSliceCenterMode,
+    internal val centerMode: NineSliceCenterMode,
 ) {
     /**
      * Owns the synthetic constructor bridge for immutable sprite snapshots.
@@ -35,7 +36,7 @@ internal class MinecraftButtonSpriteSnapshot private constructor(
         internal fun create(
             image: DrawImage,
             border: Int,
-            centerMode: MinecraftNineSliceCenterMode,
+            centerMode: NineSliceCenterMode,
         ): MinecraftButtonSpriteSnapshot = MinecraftButtonSpriteSnapshot(image, border, centerMode)
     }
 }

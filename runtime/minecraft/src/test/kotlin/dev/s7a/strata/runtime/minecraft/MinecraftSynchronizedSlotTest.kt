@@ -1,13 +1,20 @@
 package dev.s7a.strata.runtime.minecraft
 
+import dev.s7a.strata.component.PlayerSkinSource
+import dev.s7a.strata.component.Slot
+import dev.s7a.strata.component.SlotBinding
+import dev.s7a.strata.component.Slots
 import dev.s7a.strata.geometry.IntOffset
 import dev.s7a.strata.geometry.IntRect
 import dev.s7a.strata.geometry.IntSize
 import dev.s7a.strata.input.InputResult
 import dev.s7a.strata.input.PointerButton
 import dev.s7a.strata.input.PointerEvent
+import dev.s7a.strata.render.DrawImage
 import dev.s7a.strata.render.PlatformDrawCommand
+import dev.s7a.strata.resource.ResourceId
 import dev.s7a.strata.runtime.render.DrawCommand
+import dev.s7a.strata.screen.ScreenDefinition
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertNull
@@ -26,6 +33,7 @@ internal class MinecraftSynchronizedSlotTest {
         val platform = FakePlatform()
         platform.binding.command = ItemCommand.First
         val host = createHost(platform)
+        assertNull(platform.requestedBinding)
         host.attach()
 
         val initial = host.frame(IntSize(18, 18))
@@ -55,6 +63,8 @@ internal class MinecraftSynchronizedSlotTest {
 
         host.close()
         assertTrue(platform.closed)
+        assertEquals(1, platform.inventorySlotCount)
+        assertEquals(1, platform.binding.closeCount)
         assertNull(platform.binding.observer)
     }
 
@@ -71,7 +81,7 @@ internal class MinecraftSynchronizedSlotTest {
 
         val portable =
             createMinecraftUiHost(
-                createMinecraftScreenDefinition("portable") { Slot(bind = MinecraftSlots.playerInventory(0)) },
+                ScreenDefinition("portable") { Slot(bind = Slots.playerInventory(0)) },
                 MinecraftProfileFixture.create(),
             )
         val failure = assertThrows(IllegalStateException::class.java) { portable.attach() }
@@ -81,23 +91,23 @@ internal class MinecraftSynchronizedSlotTest {
 
     @Test
     fun slotLocatorsAreTypedImmutableValuesAndActiveMenuBindingsReachThePlatform() {
-        val player = MinecraftSlots.playerInventory(7)
-        assertEquals(player, MinecraftSlots.playerInventory(7))
-        assertSame(MinecraftSlotSource.PlayerInventory, player.source)
+        val player = Slots.playerInventory(7)
+        assertEquals(player, Slots.playerInventory(7))
+        assertSame(SlotBinding.Source.PlayerInventory, player.source)
         assertEquals(7, player.index)
 
-        val container = MinecraftSlots.container(2)
-        assertEquals(container, MinecraftSlots.container(2))
-        assertSame(MinecraftSlotSource.Container, container.source)
+        val container = Slots.container(2)
+        assertEquals(container, Slots.container(2))
+        assertSame(SlotBinding.Source.Container, container.source)
         assertEquals(2, container.index)
 
-        val active = MinecraftSlots.activeMenu(3)
-        assertEquals(active, MinecraftSlots.activeMenu(3))
-        assertSame(MinecraftSlotSource.ActiveMenu, active.source)
+        val active = Slots.activeMenu(3)
+        assertEquals(active, Slots.activeMenu(3))
+        assertSame(SlotBinding.Source.ActiveMenu, active.source)
         assertEquals(3, active.index)
-        assertThrows(IllegalArgumentException::class.java) { MinecraftSlots.playerInventory(-1) }
-        assertThrows(IllegalArgumentException::class.java) { MinecraftSlots.container(-1) }
-        assertThrows(IllegalArgumentException::class.java) { MinecraftSlots.activeMenu(-1) }
+        assertThrows(IllegalArgumentException::class.java) { Slots.playerInventory(-1) }
+        assertThrows(IllegalArgumentException::class.java) { Slots.container(-1) }
+        assertThrows(IllegalArgumentException::class.java) { Slots.activeMenu(-1) }
 
         val platform = FakePlatform(active)
         val host = createHost(platform, active)
@@ -134,10 +144,10 @@ internal class MinecraftSynchronizedSlotTest {
 
     private fun createHost(
         platform: FakePlatform,
-        binding: MinecraftSlotBinding = MinecraftSlots.playerInventory(7),
+        binding: SlotBinding = Slots.playerInventory(7),
     ): MinecraftUiHost =
         createMinecraftUiHost(
-            createMinecraftScreenDefinition("inventory") { Slot(bind = binding) },
+            ScreenDefinition("inventory") { Slot(bind = binding) },
             MinecraftProfileFixture.create(),
             platform,
         )
@@ -148,21 +158,27 @@ internal class MinecraftSynchronizedSlotTest {
     }
 
     private class FakePlatform(
-        private val expectedBinding: MinecraftSlotBinding = MinecraftSlots.playerInventory(7),
+        private val expectedBinding: SlotBinding = Slots.playerInventory(7),
         private val refreshFailure: Throwable? = null,
         private val closeFailure: Throwable? = null,
     ) : MinecraftUiPlatform {
         val binding = FakeBinding()
         var refreshCount = 0
+        var inventorySlotCount = 0
         var closeCount = 0
         var closed = false
-        var requestedBinding: MinecraftSlotBinding? = null
+        var requestedBinding: SlotBinding? = null
 
-        override fun inventorySlot(binding: MinecraftSlotBinding): MinecraftInventorySlotBinding {
+        override fun inventorySlot(binding: SlotBinding): MinecraftInventorySlotBinding {
             assertEquals(expectedBinding, binding)
+            inventorySlotCount += 1
             requestedBinding = binding
             return this.binding
         }
+
+        override fun image(resource: ResourceId): DrawImage = throw UnsupportedOperationException("This Slot fixture does not resolve images: $resource")
+
+        override fun playerSkin(source: PlayerSkinSource): MinecraftPlayerSkinBinding = throw UnsupportedOperationException("This Slot fixture does not resolve player skins: $source")
 
         override fun refresh() {
             check(closed.not())
@@ -185,6 +201,7 @@ internal class MinecraftSynchronizedSlotTest {
         var observer: (() -> Unit)? = null
         var changed = false
         var lastEvent: PointerEvent? = null
+        var closeCount = 0
 
         override fun drawCommand(): PlatformDrawCommand? = command
 
@@ -199,6 +216,12 @@ internal class MinecraftSynchronizedSlotTest {
         override fun dispatchPointer(event: PointerEvent): InputResult {
             lastEvent = event
             return if (event is PointerEvent.Press) InputResult.Consumed else InputResult.Ignored
+        }
+
+        override fun close() {
+            if (closeCount != 0) return
+            closeCount += 1
+            observer = null
         }
 
         fun refresh() {

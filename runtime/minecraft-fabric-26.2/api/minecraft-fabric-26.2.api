@@ -1,6 +1,6 @@
 public final class dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftAssets {
 	public static final fun loadCurrentMinecraftPlayerSkin ()Ldev/s7a/strata/render/DrawImage;
-	public static final fun loadMinecraftUiImage (Ldev/s7a/strata/runtime/minecraft/MinecraftAssetId;)Ldev/s7a/strata/render/DrawImage;
+	public static final fun loadMinecraftUiImage (Ldev/s7a/strata/resource/ResourceId;)Ldev/s7a/strata/render/DrawImage;
 }
 
 public final class dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftProfiles {
@@ -27,7 +27,7 @@ public final class dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreen
 }
 
 public final class dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreens {
-	public static final fun createMinecraftScreen (Ldev/s7a/strata/runtime/minecraft/MinecraftScreenDefinition;Ldev/s7a/strata/runtime/minecraft/MinecraftUiProfile;Lnet/minecraft/client/gui/screens/Screen;)Ldev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreen;
-	public static synthetic fun createMinecraftScreen$default (Ldev/s7a/strata/runtime/minecraft/MinecraftScreenDefinition;Ldev/s7a/strata/runtime/minecraft/MinecraftUiProfile;Lnet/minecraft/client/gui/screens/Screen;ILjava/lang/Object;)Ldev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreen;
+	public static final fun createMinecraftScreen (Ldev/s7a/strata/screen/ScreenDefinition;Ldev/s7a/strata/runtime/minecraft/MinecraftUiProfile;Lnet/minecraft/client/gui/screens/Screen;)Ldev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreen;
+	public static synthetic fun createMinecraftScreen$default (Ldev/s7a/strata/screen/ScreenDefinition;Ldev/s7a/strata/runtime/minecraft/MinecraftUiProfile;Lnet/minecraft/client/gui/screens/Screen;ILjava/lang/Object;)Ldev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreen;
 }
 

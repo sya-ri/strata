@@ -2,7 +2,7 @@
 
 # Minecraft component showcase
 
-These deterministic crops come from real Minecraft 26.2 `ConfirmScreen`, `DirectJoinServerScreen`, `ContainerScreen`, and native `ObjectSelectionList` screens reconstructed with Strata's `Text`, `TextField`, `Button`, `Scroll`, and `Slot` components, plus a test Mod screen built with `Image` and a resource-pack asset.
+These deterministic crops come from real Minecraft 26.2 `ConfirmScreen`, `DirectJoinServerScreen`, `ContainerScreen`, Social Interactions, and native `ObjectSelectionList` screens reconstructed with Strata's complete standard component set, plus test Mod screens built from the same primitives and resource-pack assets.
 The menu and generic-container images are active background modifiers on layout components rather than logical component entries.
 One loaded Fabric GameTest requires exact ARGB equality among each native screen, the Fabric adapter, and the headless frame before it emits these component images.
 
@@ -13,28 +13,27 @@ One loaded Fabric GameTest requires exact ARGB equality among each native screen
 ## Overview source
 
 ```kotlin
-import dev.s7a.strata.dsl.Box
-import dev.s7a.strata.dsl.Column
-import dev.s7a.strata.dsl.Row
+import dev.s7a.strata.component.Button
+import dev.s7a.strata.component.Column
+import dev.s7a.strata.component.Row
+import dev.s7a.strata.component.Stack
+import dev.s7a.strata.component.Text
 import dev.s7a.strata.layout.Alignment
 import dev.s7a.strata.layout.HorizontalAlignment
 import dev.s7a.strata.modifier.Modifier
+import dev.s7a.strata.modifier.menuBackground
 import dev.s7a.strata.modifier.onPress
 import dev.s7a.strata.modifier.size
-import dev.s7a.strata.runtime.minecraft.Button
-import dev.s7a.strata.runtime.minecraft.MinecraftScreenDefinition
-import dev.s7a.strata.runtime.minecraft.Text
-import dev.s7a.strata.runtime.minecraft.createMinecraftScreenDefinition
-import dev.s7a.strata.runtime.minecraft.menuBackground
+import dev.s7a.strata.screen.ScreenDefinition
 
 /**
  * Builds the deterministic Minecraft 26.2 ConfirmScreen content used by the Fabric and headless parity paths.
  *
  * @return one-shot screen definition reproducing the native title, message, and button-row geometry.
  */
-internal fun createConfirmScreenDefinition(): MinecraftScreenDefinition =
-    createMinecraftScreenDefinition("Strata parity") {
-        Box(
+internal fun createConfirmScreenDefinition(): ScreenDefinition =
+    ScreenDefinition("Strata parity") {
+        Stack(
             modifier = Modifier.Empty.size(320, 180).menuBackground(),
             contentAlignment = Alignment.Center,
         ) {
@@ -69,23 +68,592 @@ internal fun createConfirmScreenDefinition(): MinecraftScreenDefinition =
 The tree shows Minecraft components in logical draw order; platform-neutral layout scaffolding remains visible in the compiled source.
 
 ```text
-|- Text
-|- Text
-|- Button
-`- Button
+`- Stack [Size(width=320, height=180)]
+  `- Column [Spacing(value=24)]
+    |- Column [Spacing(value=8)]
+    | |- Text
+    | `- Text
+    `- Row [Spacing(value=4)]
+      |- Button
+      `- Button
 ```
 
 </details>
 
 ## Components
 
+- [Row](#row)
+- [Column](#column)
+- [Stack](#stack)
+- [Grid](#grid)
+- [Spacer](#spacer)
 - [Text](#text)
 - [TextField](#text-field)
 - [Button](#button)
+- [Tab](#tab)
 - [Scroll](#scroll)
-- [Slot](#slot)
 - [Image](#image)
+- [Slot](#slot)
 - [PlayerHead](#player-head)
+
+<a id="row"></a>
+
+## Row
+
+Row places an ordered sibling sequence on one horizontal main axis, with typed arrangement, spacing, default vertical alignment, and direct-child overrides.
+
+This image is a 320 by 180 component crop from the exact native/Fabric/headless parity frame recorded in [the verification receipt](components/minecraft-26.2-parity.properties).
+
+![Row headless showcase](components/row.png)
+
+### Compiled example
+
+```kotlin
+import dev.s7a.strata.component.Button
+import dev.s7a.strata.component.Column
+import dev.s7a.strata.component.Row
+import dev.s7a.strata.component.Stack
+import dev.s7a.strata.component.Text
+import dev.s7a.strata.layout.Alignment
+import dev.s7a.strata.layout.HorizontalAlignment
+import dev.s7a.strata.modifier.Modifier
+import dev.s7a.strata.modifier.menuBackground
+import dev.s7a.strata.modifier.onPress
+import dev.s7a.strata.modifier.size
+import dev.s7a.strata.screen.ScreenDefinition
+
+/**
+ * Builds the deterministic Minecraft 26.2 ConfirmScreen content used by the Fabric and headless parity paths.
+ *
+ * @return one-shot screen definition reproducing the native title, message, and button-row geometry.
+ */
+internal fun createConfirmScreenDefinition(): ScreenDefinition =
+    ScreenDefinition("Strata parity") {
+        Stack(
+            modifier = Modifier.Empty.size(320, 180).menuBackground(),
+            contentAlignment = Alignment.Center,
+        ) {
+            Column(
+                spacing = 24,
+                horizontalAlignment = HorizontalAlignment.Center,
+            ) {
+                Column(
+                    spacing = 8,
+                    horizontalAlignment = HorizontalAlignment.Center,
+                ) {
+                    Text("Confirm action")
+                    Text("Continue with this action?")
+                }
+                Row(spacing = 4) {
+                    Button(
+                        "Yes",
+                        modifier = Modifier.Empty.onPress {},
+                    )
+                    Button(
+                        "No",
+                        modifier = Modifier.Empty.onPress {},
+                    )
+                }
+            }
+        }
+    }
+```
+
+### Modifiers
+
+Sizing, padding, paint, semantics, focus, and input modifiers apply to the Row itself; `spacing` and `horizontalArrangement` express structure, while `RowScope.weight` and `RowScope.align` affect only direct children.
+
+### Parent scope
+
+`Row` evaluates a callback-lifetime `RowScope`, emits children in declaration order, and exposes only vertical alignment and weight parent data to its direct children.
+
+<details><summary>Component tree</summary>
+
+The tree shows the featured Minecraft component; platform-neutral layout scaffolding remains visible in the compiled source.
+
+```text
+`- Row [Spacing(value=4)]
+  |- Button
+  `- Button
+```
+
+</details>
+
+<a id="column"></a>
+
+## Column
+
+Column places an ordered sibling sequence on one vertical main axis, with typed arrangement, spacing, default horizontal alignment, and direct-child overrides.
+
+This image is a 320 by 180 component crop from the exact native/Fabric/headless parity frame recorded in [the verification receipt](components/minecraft-26.2-parity.properties).
+
+![Column headless showcase](components/column.png)
+
+### Compiled example
+
+```kotlin
+import dev.s7a.strata.component.Button
+import dev.s7a.strata.component.Column
+import dev.s7a.strata.component.Row
+import dev.s7a.strata.component.Stack
+import dev.s7a.strata.component.Text
+import dev.s7a.strata.layout.Alignment
+import dev.s7a.strata.layout.HorizontalAlignment
+import dev.s7a.strata.modifier.Modifier
+import dev.s7a.strata.modifier.menuBackground
+import dev.s7a.strata.modifier.onPress
+import dev.s7a.strata.modifier.size
+import dev.s7a.strata.screen.ScreenDefinition
+
+/**
+ * Builds the deterministic Minecraft 26.2 ConfirmScreen content used by the Fabric and headless parity paths.
+ *
+ * @return one-shot screen definition reproducing the native title, message, and button-row geometry.
+ */
+internal fun createConfirmScreenDefinition(): ScreenDefinition =
+    ScreenDefinition("Strata parity") {
+        Stack(
+            modifier = Modifier.Empty.size(320, 180).menuBackground(),
+            contentAlignment = Alignment.Center,
+        ) {
+            Column(
+                spacing = 24,
+                horizontalAlignment = HorizontalAlignment.Center,
+            ) {
+                Column(
+                    spacing = 8,
+                    horizontalAlignment = HorizontalAlignment.Center,
+                ) {
+                    Text("Confirm action")
+                    Text("Continue with this action?")
+                }
+                Row(spacing = 4) {
+                    Button(
+                        "Yes",
+                        modifier = Modifier.Empty.onPress {},
+                    )
+                    Button(
+                        "No",
+                        modifier = Modifier.Empty.onPress {},
+                    )
+                }
+            }
+        }
+    }
+```
+
+### Modifiers
+
+Sizing, padding, paint, semantics, focus, and input modifiers apply to the Column itself; `spacing` and `verticalArrangement` express structure, while `ColumnScope.weight` and `ColumnScope.align` affect only direct children.
+
+### Parent scope
+
+`Column` evaluates a callback-lifetime `ColumnScope`, emits children in declaration order, and exposes only horizontal alignment and weight parent data to its direct children.
+
+<details><summary>Component tree</summary>
+
+The tree shows the featured Minecraft component; platform-neutral layout scaffolding remains visible in the compiled source.
+
+```text
+`- Column [Spacing(value=24)]
+  |- Column [Spacing(value=8)]
+  | |- Text
+  | `- Text
+  `- Row [Spacing(value=4)]
+    |- Button
+    `- Button
+```
+
+</details>
+
+<a id="stack"></a>
+
+## Stack
+
+Stack is the explicit overlay primitive: children share one content rectangle, receive two-axis alignment, and paint in declaration order. It is not a generic div-like container.
+
+This image is a 320 by 180 component crop from the exact native/Fabric/headless parity frame recorded in [the verification receipt](components/minecraft-26.2-parity.properties).
+
+![Stack headless showcase](components/stack.png)
+
+### Compiled example
+
+```kotlin
+import dev.s7a.strata.component.Button
+import dev.s7a.strata.component.Column
+import dev.s7a.strata.component.Row
+import dev.s7a.strata.component.Stack
+import dev.s7a.strata.component.Text
+import dev.s7a.strata.layout.Alignment
+import dev.s7a.strata.layout.HorizontalAlignment
+import dev.s7a.strata.modifier.Modifier
+import dev.s7a.strata.modifier.menuBackground
+import dev.s7a.strata.modifier.onPress
+import dev.s7a.strata.modifier.size
+import dev.s7a.strata.screen.ScreenDefinition
+
+/**
+ * Builds the deterministic Minecraft 26.2 ConfirmScreen content used by the Fabric and headless parity paths.
+ *
+ * @return one-shot screen definition reproducing the native title, message, and button-row geometry.
+ */
+internal fun createConfirmScreenDefinition(): ScreenDefinition =
+    ScreenDefinition("Strata parity") {
+        Stack(
+            modifier = Modifier.Empty.size(320, 180).menuBackground(),
+            contentAlignment = Alignment.Center,
+        ) {
+            Column(
+                spacing = 24,
+                horizontalAlignment = HorizontalAlignment.Center,
+            ) {
+                Column(
+                    spacing = 8,
+                    horizontalAlignment = HorizontalAlignment.Center,
+                ) {
+                    Text("Confirm action")
+                    Text("Continue with this action?")
+                }
+                Row(spacing = 4) {
+                    Button(
+                        "Yes",
+                        modifier = Modifier.Empty.onPress {},
+                    )
+                    Button(
+                        "No",
+                        modifier = Modifier.Empty.onPress {},
+                    )
+                }
+            }
+        }
+    }
+```
+
+### Modifiers
+
+Use Stack only when children intentionally overlap. Ordinary sizing and background modifiers belong on the Stack; `StackScope.align` positions an individual overlay child without coordinate padding.
+
+### Parent scope
+
+`Stack` evaluates a callback-lifetime `StackScope`; it measures and paints overlapping direct children in declaration order and exposes two-axis alignment parent data.
+
+<details><summary>Component tree</summary>
+
+The tree shows the featured Minecraft component; platform-neutral layout scaffolding remains visible in the compiled source.
+
+```text
+`- Stack [Size(width=320, height=180), StackContentAlignment(alignment=Center)]
+  `- Column [Spacing(value=24)]
+```
+
+</details>
+
+<a id="grid"></a>
+
+## Grid
+
+Grid assigns children row-major to a fixed column count, measures each column and row from its largest member, and supports an incomplete final row without placeholders.
+
+This image is a 320 by 240 component crop from the exact native/Fabric/headless parity frame recorded in [the verification receipt](components/minecraft-26.2-parity.properties).
+
+![Grid headless showcase](components/grid.png)
+
+### Compiled example
+
+```kotlin
+import dev.s7a.strata.component.Column
+import dev.s7a.strata.component.Grid
+import dev.s7a.strata.component.Slot
+import dev.s7a.strata.component.Stack
+import dev.s7a.strata.component.Text
+import dev.s7a.strata.component.TextStyle
+import dev.s7a.strata.layout.Alignment
+import dev.s7a.strata.modifier.Modifier
+import dev.s7a.strata.modifier.background
+import dev.s7a.strata.modifier.containerBackground
+import dev.s7a.strata.modifier.menuBackground
+import dev.s7a.strata.modifier.padding
+import dev.s7a.strata.modifier.size
+import dev.s7a.strata.render.ArgbColor
+import dev.s7a.strata.screen.ScreenDefinition
+
+/**
+ * Builds the empty three-row Minecraft 26.2 chest screen used by native, Fabric, and headless parity paths.
+ *
+ * @return one-shot screen definition reproducing the generic container, labels, 63 Slot hit regions, and hovered highlight order.
+ */
+internal fun createSlotScreenDefinition(): ScreenDefinition =
+    ScreenDefinition("Chest") {
+        Stack(
+            modifier =
+                Modifier.Empty
+                    .size(320, 240)
+                    .background(ArgbColor(0xFF000000.toInt()))
+                    .menuBackground(),
+            contentAlignment = Alignment.Center,
+        ) {
+            Stack(
+                modifier = Modifier.Empty.containerBackground(rows = 3),
+                contentAlignment = Alignment.Center,
+            ) {
+                Column(
+                    modifier = Modifier.Empty.size(162, 156),
+                    spacing = 3,
+                ) {
+                    Column(spacing = 2) {
+                        Text(
+                            "Chest",
+                            style = TextStyle.ContainerLabel,
+                            modifier = Modifier.Empty.padding(left = 1),
+                        )
+                        Grid(columns = 9) {
+                            repeat(27) {
+                                Slot()
+                            }
+                        }
+                    }
+                    Column {
+                        Text(
+                            "Inventory",
+                            style = TextStyle.ContainerLabel,
+                            modifier = Modifier.Empty.padding(left = 1),
+                        )
+                        Grid(columns = 9, modifier = Modifier.Empty.padding(top = 1)) {
+                            repeat(27) {
+                                Slot()
+                            }
+                        }
+                        Grid(columns = 9, modifier = Modifier.Empty.padding(top = 4)) {
+                            repeat(9) {
+                                Slot()
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+```
+
+### Modifiers
+
+Sizing, padding, and paint modifiers apply to the Grid. Fixed columns, independent horizontal and vertical spacing, and `GridScope.align` replace repeated Row declarations and per-cell coordinate padding.
+
+### Parent scope
+
+`Grid` evaluates a callback-lifetime `GridScope`; it assigns direct children row-major and exposes two-axis alignment only inside each measured cell.
+
+<details><summary>Component tree</summary>
+
+The tree shows the featured Minecraft component; platform-neutral layout scaffolding remains visible in the compiled source.
+
+```text
+`- Grid [GridColumns(value=9)]
+  |- Slot
+  |- Slot
+  |- Slot
+  |- Slot
+  |- Slot
+  |- Slot
+  |- Slot
+  |- Slot
+  |- Slot
+  |- Slot
+  |- Slot
+  |- Slot
+  |- Slot
+  |- Slot
+  |- Slot
+  |- Slot
+  |- Slot
+  |- Slot
+  |- Slot
+  |- Slot
+  |- Slot
+  |- Slot
+  |- Slot
+  |- Slot
+  |- Slot
+  |- Slot
+  `- Slot
+```
+
+</details>
+
+<a id="spacer"></a>
+
+## Spacer
+
+Spacer is an empty measurable primitive for genuine visual separators, connectors, and weighted empty regions; it carries no screen-specific meaning.
+
+This image is a 320 by 180 component crop from the exact Fabric/headless Mod-screen comparison recorded in [the verification receipt](components/minecraft-26.2-parity.properties).
+
+![Spacer headless showcase](components/spacer.png)
+
+### Compiled example
+
+```kotlin
+import dev.s7a.strata.component.Button
+import dev.s7a.strata.component.Column
+import dev.s7a.strata.component.Image
+import dev.s7a.strata.component.ImageScale
+import dev.s7a.strata.component.ImageSource
+import dev.s7a.strata.component.Row
+import dev.s7a.strata.component.Spacer
+import dev.s7a.strata.component.Stack
+import dev.s7a.strata.component.Text
+import dev.s7a.strata.component.TextStyle
+import dev.s7a.strata.component.UiScope
+import dev.s7a.strata.element.ElementKey
+import dev.s7a.strata.geometry.IntRect
+import dev.s7a.strata.layout.Alignment
+import dev.s7a.strata.layout.Arrangement
+import dev.s7a.strata.layout.HorizontalAlignment
+import dev.s7a.strata.layout.VerticalAlignment
+import dev.s7a.strata.modifier.Modifier
+import dev.s7a.strata.modifier.background
+import dev.s7a.strata.modifier.imageBackground
+import dev.s7a.strata.modifier.menuBackground
+import dev.s7a.strata.modifier.onPress
+import dev.s7a.strata.modifier.padding
+import dev.s7a.strata.modifier.size
+import dev.s7a.strata.render.ArgbColor
+import dev.s7a.strata.resource.ResourceId
+import dev.s7a.strata.screen.ScreenDefinition
+
+/**
+ * Builds one advancement-inspired Mod screen from resource-pack sources and an application-owned component.
+ *
+ * The standard runtime remains limited to reusable primitives; [ExampleProgressGraph] may encode this Mod's progression domain because it remains downstream application code.
+ *
+ * @param window active advancement-window source.
+ * @param background active advancement-background tile source.
+ * @param obtained active obtained task-frame source.
+ * @param unobtained active unobtained task-frame source.
+ * @return one-shot definition for the verified Fabric and headless screen.
+ */
+internal fun createProgressScreenDefinition(
+    window: ImageSource = advancementWindow,
+    background: ImageSource = advancementBackground,
+    obtained: ImageSource = obtainedTaskFrame,
+    unobtained: ImageSource = unobtainedTaskFrame,
+): ScreenDefinition =
+    ScreenDefinition("Power milestones") {
+        Stack(
+            modifier =
+                Modifier.Empty
+                    .size(320, 180)
+                    .background(ArgbColor(0xFF000000.toInt()))
+                    .menuBackground(),
+            contentAlignment = Alignment.Center,
+        ) {
+            Stack(modifier = Modifier.Empty.size(252, 140)) {
+                Image(window, sourceRegion = IntRect(0, 0, 252, 140))
+                Column(
+                    modifier = Modifier.Empty.padding(left = 9, top = 6, right = 9, bottom = 9),
+                    spacing = 4,
+                    horizontalAlignment = HorizontalAlignment.Center,
+                ) {
+                    Text("Power milestones", style = TextStyle.ContainerLabel)
+                    ExampleProgressGraph(background, obtained, unobtained)
+                }
+            }
+            Button(
+                "Done",
+                width = 200,
+                modifier =
+                    Modifier.Empty
+                        .padding(bottom = 6)
+                        .align(Alignment.BottomCenter)
+                        .onPress {},
+            )
+        }
+    }
+
+/**
+ * Emits one application-owned progression graph by composing only public Strata primitives.
+ *
+ * This downstream component is deliberately not part of the standard runtime because its node meanings and progression domain belong to the application.
+ * It retains no callback or scope after synchronous emission.
+ *
+ * @receiver active owner-thread UI scope.
+ * @param background immutable or resource-backed background tile.
+ * @param obtained immutable or resource-backed obtained frame.
+ * @param unobtained immutable or resource-backed unobtained frame.
+ * @param modifier active behavior surrounding the fixed graph.
+ * @param key optional stable sibling identity.
+ * @throws IllegalStateException when used from another thread or outside its callback lifetime.
+ */
+internal fun UiScope.ExampleProgressGraph(
+    background: ImageSource,
+    obtained: ImageSource,
+    unobtained: ImageSource,
+    modifier: Modifier = Modifier.Empty,
+    key: ElementKey<*>? = null,
+) {
+    Row(
+        modifier = modifier.size(234, 113).imageBackground(background, ImageScale.Tile),
+        key = key,
+        horizontalArrangement = Arrangement.Center,
+        verticalAlignment = VerticalAlignment.Center,
+    ) {
+        progressNode(obtained, ArgbColor(0xFF22D3EE.toInt()), "Generator")
+        Spacer(modifier = Modifier.Empty.size(32, 2).background(connectionColor))
+        Column(
+            spacing = 4,
+            horizontalAlignment = HorizontalAlignment.Center,
+        ) {
+            progressNode(obtained, ArgbColor(0xFFFBBF24.toInt()), "Storage")
+            Spacer(modifier = Modifier.Empty.size(2, 12).background(connectionColor))
+            progressNode(unobtained, ArgbColor(0xFFA78BFA.toInt()), "Automation")
+        }
+    }
+}
+
+private fun UiScope.progressNode(
+    frame: ImageSource,
+    color: ArgbColor,
+    label: String,
+) {
+    Column(
+        horizontalAlignment = HorizontalAlignment.Center,
+        spacing = 1,
+    ) {
+        Stack(
+            modifier = Modifier.Empty.size(26, 26),
+            contentAlignment = Alignment.Center,
+        ) {
+            Image(frame)
+            Spacer(modifier = Modifier.Empty.size(16, 16).background(color))
+        }
+        Text(label)
+    }
+}
+
+private val advancementWindow = ImageSource.Resource(ResourceId("minecraft", "textures/gui/advancements/window.png"))
+private val advancementBackground = ImageSource.Resource(ResourceId("minecraft", "textures/gui/advancements/backgrounds/stone.png"))
+private val obtainedTaskFrame = ImageSource.Resource(ResourceId("minecraft", "textures/gui/sprites/advancements/task_frame_obtained.png"))
+private val unobtainedTaskFrame = ImageSource.Resource(ResourceId("minecraft", "textures/gui/sprites/advancements/task_frame_unobtained.png"))
+private val connectionColor = ArgbColor(0xFF7A7A7A.toInt())
+```
+
+### Modifiers
+
+Sizing, weight, and paint modifiers give Spacer a deliberate empty footprint, such as a separator or progress connector; ordinary parent spacing and alignment should remain layout arguments rather than placeholder children.
+
+### Parent scope
+
+`Spacer` has no content scope or children. Its size and modifier chain alone define its retained layout and paint behavior.
+
+<details><summary>Component tree</summary>
+
+The tree shows the featured Minecraft component; platform-neutral layout scaffolding remains visible in the compiled source.
+
+```text
+`- Spacer [Size(width=32, height=2), Background(color=0xFF7A7A7A)]
+```
+
+</details>
 
 <a id="text"></a>
 
@@ -100,22 +668,21 @@ This image is a 150 by 20 component crop from the exact native/Fabric/headless p
 ### Compiled example
 
 ```kotlin
-import dev.s7a.strata.dsl.Box
+import dev.s7a.strata.component.Stack
+import dev.s7a.strata.component.Text
 import dev.s7a.strata.layout.Alignment
 import dev.s7a.strata.modifier.Modifier
 import dev.s7a.strata.modifier.size
-import dev.s7a.strata.runtime.minecraft.MinecraftScreenDefinition
-import dev.s7a.strata.runtime.minecraft.Text
-import dev.s7a.strata.runtime.minecraft.createMinecraftScreenDefinition
+import dev.s7a.strata.screen.ScreenDefinition
 
 /**
  * Builds the literal Text component used by the verified ConfirmScreen title.
  *
  * @return one-shot screen definition whose content resolves components from the host-installed Minecraft profile.
  */
-internal fun textExample(): MinecraftScreenDefinition =
-    createMinecraftScreenDefinition("Text") {
-        Box(
+internal fun textExample(): ScreenDefinition =
+    ScreenDefinition("Text") {
+        Stack(
             modifier = Modifier.Empty.size(150, 20),
             contentAlignment = Alignment.Center,
         ) {
@@ -155,39 +722,38 @@ This image is a 200 by 20 component crop from the exact native/Fabric/headless p
 ### Compiled example
 
 ```kotlin
-import dev.s7a.strata.dsl.Box
-import dev.s7a.strata.dsl.Column
+import dev.s7a.strata.component.Button
+import dev.s7a.strata.component.Column
+import dev.s7a.strata.component.Stack
+import dev.s7a.strata.component.Text
+import dev.s7a.strata.component.TextField
+import dev.s7a.strata.component.TextFieldState
+import dev.s7a.strata.component.TextStyle
 import dev.s7a.strata.layout.Alignment
 import dev.s7a.strata.layout.Arrangement
 import dev.s7a.strata.layout.HorizontalAlignment
 import dev.s7a.strata.modifier.Modifier
+import dev.s7a.strata.modifier.menuBackground
 import dev.s7a.strata.modifier.onPress
 import dev.s7a.strata.modifier.padding
 import dev.s7a.strata.modifier.size
-import dev.s7a.strata.runtime.minecraft.Button
-import dev.s7a.strata.runtime.minecraft.MinecraftScreenDefinition
-import dev.s7a.strata.runtime.minecraft.MinecraftTextStyle
-import dev.s7a.strata.runtime.minecraft.Text
-import dev.s7a.strata.runtime.minecraft.TextField
-import dev.s7a.strata.runtime.minecraft.createMinecraftScreenDefinition
-import dev.s7a.strata.runtime.minecraft.createMinecraftTextFieldState
-import dev.s7a.strata.runtime.minecraft.menuBackground
+import dev.s7a.strata.screen.ScreenDefinition
 
 /**
  * Builds the Minecraft 26.2 Direct Connection screen used by native, Fabric, and headless parity paths.
  *
  * @return one-shot screen definition with the actual EditBox and 200-pixel Button geometry.
  */
-internal fun createDirectJoinScreenDefinition(): MinecraftScreenDefinition {
-    val address = createMinecraftTextFieldState("play.example.net", maxLength = 128)
-    return createMinecraftScreenDefinition("Direct Connection") {
-        Box(modifier = Modifier.Empty.size(320, 240).menuBackground()) {
+internal fun createDirectJoinScreenDefinition(): ScreenDefinition {
+    val address = TextFieldState("play.example.net", maxLength = 128)
+    return ScreenDefinition("Direct Connection") {
+        Stack(modifier = Modifier.Empty.size(320, 240).menuBackground()) {
             Column(
                 modifier = Modifier.Empty.size(320, 212),
                 verticalArrangement = Arrangement.SpaceBetween,
                 horizontalAlignment = HorizontalAlignment.Center,
             ) {
-                Box(
+                Stack(
                     modifier = Modifier.Empty.size(320, 29),
                     contentAlignment = Alignment.BottomCenter,
                 ) {
@@ -200,7 +766,7 @@ internal fun createDirectJoinScreenDefinition(): MinecraftScreenDefinition {
                     Column(spacing = 7) {
                         Text(
                             "Server Address",
-                            style = MinecraftTextStyle.Inactive,
+                            style = TextStyle.Inactive,
                             modifier = Modifier.Empty.padding(left = 1),
                         )
                         TextField(address)
@@ -230,7 +796,7 @@ Pointer, keyboard, committed-character, preedit, and focus modifiers run as acti
 
 ### Parent scope
 
-`TextField` is a member extension on the active `UiScope`. The implicit runtime context supplies assets, while caller-owned `MinecraftTextFieldState` owns the editable value.
+`TextField` is a member extension on the active `UiScope`. The implicit runtime context supplies assets, while caller-owned `TextFieldState` owns the editable value.
 
 <details><summary>Component tree</summary>
 
@@ -255,20 +821,19 @@ This image is a 150 by 20 component crop from the exact native/Fabric/headless p
 ### Compiled example
 
 ```kotlin
+import dev.s7a.strata.component.Button
 import dev.s7a.strata.modifier.Modifier
 import dev.s7a.strata.modifier.onHover
 import dev.s7a.strata.modifier.onPress
-import dev.s7a.strata.runtime.minecraft.Button
-import dev.s7a.strata.runtime.minecraft.MinecraftScreenDefinition
-import dev.s7a.strata.runtime.minecraft.createMinecraftScreenDefinition
+import dev.s7a.strata.screen.ScreenDefinition
 
 /**
  * Builds the pointer Button used by the verified ConfirmScreen action row.
  *
  * @return one-shot screen definition whose content resolves components from the host-installed Minecraft profile.
  */
-internal fun buttonExample(): MinecraftScreenDefinition =
-    createMinecraftScreenDefinition("Button") {
+internal fun buttonExample(): ScreenDefinition =
+    ScreenDefinition("Button") {
         Button(
             "Yes",
             modifier =
@@ -297,6 +862,173 @@ The tree shows the featured Minecraft component; platform-neutral layout scaffol
 
 </details>
 
+<a id="tab"></a>
+
+## Tab
+
+Tab combines the verified button surface with external selection semantics and a reusable underline or caller-defined selected indicator, without encoding a particular screen's tab model.
+
+This image is a 320 by 240 component crop from the exact native/Fabric/headless parity frame recorded in [the verification receipt](components/minecraft-26.2-parity.properties).
+
+![Tab headless showcase](components/tab.png)
+
+### Compiled example
+
+```kotlin
+import dev.s7a.strata.component.Button
+import dev.s7a.strata.component.Column
+import dev.s7a.strata.component.Image
+import dev.s7a.strata.component.ImageSource
+import dev.s7a.strata.component.NineSliceCenterMode
+import dev.s7a.strata.component.PlayerHead
+import dev.s7a.strata.component.PlayerSkinSource
+import dev.s7a.strata.component.Row
+import dev.s7a.strata.component.Stack
+import dev.s7a.strata.component.Tab
+import dev.s7a.strata.component.Text
+import dev.s7a.strata.component.TextField
+import dev.s7a.strata.component.TextFieldState
+import dev.s7a.strata.component.TextStyle
+import dev.s7a.strata.geometry.Insets
+import dev.s7a.strata.geometry.IntSize
+import dev.s7a.strata.layout.Alignment
+import dev.s7a.strata.layout.Arrangement
+import dev.s7a.strata.layout.HorizontalAlignment
+import dev.s7a.strata.layout.VerticalAlignment
+import dev.s7a.strata.modifier.Modifier
+import dev.s7a.strata.modifier.background
+import dev.s7a.strata.modifier.imageBackground
+import dev.s7a.strata.modifier.initialFocus
+import dev.s7a.strata.modifier.menuBackground
+import dev.s7a.strata.modifier.onPress
+import dev.s7a.strata.modifier.padding
+import dev.s7a.strata.modifier.size
+import dev.s7a.strata.render.ArgbColor
+import dev.s7a.strata.resource.ResourceId
+import dev.s7a.strata.screen.ScreenDefinition
+
+/**
+ * Builds the deterministic one-player Minecraft 26.2 Social Interactions screen from general-purpose primitives.
+ *
+ * Social-entry composition remains application code: the public runtime supplies PlayerHead, text, actions, images, fields, layout, and active backgrounds without exposing a purpose-specific SocialEntry component.
+ *
+ * @param panel active-resource `social_interactions/background` source.
+ * @param searchIcon active-resource `icon/search` source.
+ * @param playerSkin selected player lookup or detached skin source.
+ * @return one-shot screen definition reproducing the native screen geometry and draw order.
+ */
+internal fun createSocialScreenDefinition(
+    panel: ImageSource = socialPanel,
+    searchIcon: ImageSource = socialSearchIcon,
+    playerSkin: PlayerSkinSource = PlayerSkinSource.Name("Player0"),
+): ScreenDefinition {
+    val search = TextFieldState("", maxLength = 16)
+    return ScreenDefinition("Social Interactions") {
+        Stack(
+            modifier =
+                Modifier.Empty
+                    .size(320, 240)
+                    .background(ArgbColor(0xFF000000.toInt()))
+                    .menuBackground(),
+        ) {
+            Stack(
+                modifier = Modifier.Empty.size(320, 176),
+                contentAlignment = Alignment.BottomCenter,
+            ) {
+                Stack(
+                    modifier =
+                        Modifier.Empty
+                            .padding(left = 4)
+                            .size(236, 112)
+                            .imageBackground(
+                                panel,
+                                Insets.all(8),
+                                NineSliceCenterMode.Tiled,
+                            ),
+                ) {}
+            }
+            Column(
+                modifier = Modifier.Empty.size(222, 234).align(Alignment.TopCenter),
+                verticalArrangement = Arrangement.SpaceBetween,
+            ) {
+                Column(modifier = Modifier.Empty.padding(top = 12)) {
+                    Column(
+                        modifier = Modifier.Empty.size(222, 32),
+                        spacing = 14,
+                    ) {
+                        Text(
+                            "Social Interactions",
+                            modifier = Modifier.Empty.align(HorizontalAlignment.Center),
+                        )
+                        Text("Player0 - New World - 1 player")
+                    }
+                    Row(modifier = Modifier.Empty.padding(left = 1, top = 1), spacing = 1) {
+                        Tab("All", selected = true, width = 73, modifier = Modifier.Empty.onPress {})
+                        Tab("Hidden", selected = false, width = 73, modifier = Modifier.Empty.onPress {})
+                        Tab("Blocked", selected = false, width = 73, modifier = Modifier.Empty.onPress {})
+                    }
+                    Row(
+                        modifier = Modifier.Empty.padding(left = 5, top = 9),
+                        spacing = 3,
+                        verticalAlignment = VerticalAlignment.Center,
+                    ) {
+                        Image(
+                            searchIcon,
+                            size = IntSize(12, 12),
+                            modifier = Modifier.Empty.padding(top = 2),
+                        )
+                        TextField(
+                            search,
+                            size = IntSize(200, 15),
+                            textStyle = TextStyle.Normal,
+                            modifier = Modifier.Empty.initialFocus(),
+                        )
+                    }
+                    Row(
+                        modifier =
+                            Modifier.Empty
+                                .padding(left = 3, top = 3)
+                                .size(216, 32)
+                                .background(ArgbColor(0xFF4A4A4A.toInt())),
+                        spacing = 4,
+                        verticalAlignment = VerticalAlignment.Center,
+                    ) {
+                        PlayerHead(source = playerSkin, modifier = Modifier.Empty.padding(left = 4))
+                        Text("Player0")
+                    }
+                }
+                Button(
+                    "Done",
+                    width = 200,
+                    modifier = Modifier.Empty.align(HorizontalAlignment.Center).onPress {},
+                )
+            }
+        }
+    }
+}
+
+private val socialPanel = ImageSource.Resource(ResourceId("minecraft", "textures/gui/sprites/social_interactions/background.png"))
+private val socialSearchIcon = ImageSource.Resource(ResourceId("minecraft", "textures/gui/sprites/icon/search.png"))
+```
+
+### Modifiers
+
+Selection is caller-owned data, while `Underline` or `Custom` controls its reusable selected-state presentation. All pointer actions remain ordinary event modifiers, exactly as for Button and other interactive components.
+
+### Parent scope
+
+`Tab` is a top-level extension on the active `UiScope`. A custom selected indicator emits exactly one nested root; the selected value and event actions remain application-owned.
+
+<details><summary>Component tree</summary>
+
+The tree shows the featured Minecraft component; platform-neutral layout scaffolding remains visible in the compiled source.
+
+```text
+`- Tab [Size(width=73, height=20)]
+```
+
+</details>
+
 <a id="scroll"></a>
 
 ## Scroll
@@ -310,62 +1042,51 @@ This image is a 320 by 94 component crop from the exact native/Fabric/headless p
 ### Compiled example
 
 ```kotlin
-import dev.s7a.strata.dsl.Box
-import dev.s7a.strata.dsl.Column
-import dev.s7a.strata.dsl.Spacer
-import dev.s7a.strata.layout.Alignment
+import dev.s7a.strata.component.Column
+import dev.s7a.strata.component.Scroll
+import dev.s7a.strata.component.Stack
+import dev.s7a.strata.component.Text
 import dev.s7a.strata.layout.HorizontalAlignment
 import dev.s7a.strata.modifier.Modifier
 import dev.s7a.strata.modifier.fillMaxSize
+import dev.s7a.strata.modifier.menuBackground
+import dev.s7a.strata.modifier.padding
 import dev.s7a.strata.modifier.size
-import dev.s7a.strata.runtime.minecraft.MinecraftScreenDefinition
-import dev.s7a.strata.runtime.minecraft.Scroll
-import dev.s7a.strata.runtime.minecraft.Text
-import dev.s7a.strata.runtime.minecraft.createMinecraftScreenDefinition
-import dev.s7a.strata.runtime.minecraft.menuBackground
+import dev.s7a.strata.screen.ScreenDefinition
 
 /**
  * Builds the deterministic Minecraft 26.2 selection-list screen used by the native, Fabric, and headless parity paths.
  *
  * @return one-shot screen definition reproducing the native list viewport, row geometry, separators, scrollbar, and text.
  */
-internal fun createScrollScreenDefinition(): MinecraftScreenDefinition =
-    createMinecraftScreenDefinition("Strata Scroll parity") {
-        Box(modifier = Modifier.Empty.size(320, 180).menuBackground()) {
-            Column(modifier = Modifier.Empty.fillMaxSize()) {
-                Spacer(modifier = Modifier.Empty.size(320, 33))
-                Scroll(modifier = Modifier.Empty.size(320, 94)) {
-                    Column(
-                        modifier = Modifier.Empty.size(270, 216),
-                        horizontalAlignment = HorizontalAlignment.Center,
-                    ) {
-                        listOf(
-                            "Entry 01",
-                            "Entry 02",
-                            "Entry 03",
-                            "Entry 04",
-                            "Entry 05",
-                            "Entry 06",
-                            "Entry 07",
-                            "Entry 08",
-                            "Entry 09",
-                            "Entry 10",
-                            "Entry 11",
-                            "Entry 12",
-                        ).forEach { label ->
-                            Box(
-                                modifier = Modifier.Empty.size(270, 18),
-                                contentAlignment = Alignment.TopCenter,
-                            ) {
-                                Column(horizontalAlignment = HorizontalAlignment.Center) {
-                                    Spacer(modifier = Modifier.Empty.size(0, 5))
-                                    Text(label)
-                                }
-                            }
-                        }
+internal fun createScrollScreenDefinition(): ScreenDefinition =
+    ScreenDefinition("Strata Scroll parity") {
+        Stack(modifier = Modifier.Empty.size(320, 180).menuBackground()) {
+            // Native ObjectSelectionList geometry reserves distinct 33-pixel header and 53-pixel footer bands.
+            Scroll(
+                modifier = Modifier.Empty.padding(top = 33, bottom = 53).fillMaxSize(),
+            ) {
+                Column(
+                    modifier = Modifier.Empty.size(270, 216),
+                    horizontalAlignment = HorizontalAlignment.Center,
+                ) {
+                    listOf(
+                        "Entry 01",
+                        "Entry 02",
+                        "Entry 03",
+                        "Entry 04",
+                        "Entry 05",
+                        "Entry 06",
+                        "Entry 07",
+                        "Entry 08",
+                        "Entry 09",
+                        "Entry 10",
+                        "Entry 11",
+                        "Entry 12",
+                    ).forEach { label ->
+                        Text(label, modifier = Modifier.Empty.padding(top = 5, bottom = 4))
                     }
                 }
-                Spacer(modifier = Modifier.Empty.size(320, 53))
             }
         }
     }
@@ -401,120 +1122,6 @@ The tree shows the featured Minecraft component; platform-neutral layout scaffol
 
 </details>
 
-<a id="slot"></a>
-
-## Slot
-
-Slot reproduces the native 18 by 18 hit region and 24 by 24 back-item-front highlight order; its binding overload polls real ItemStack state and delegates interaction through Minecraft's active container menu.
-
-This image is a 24 by 24 component crop from the exact native/Fabric/headless parity frame recorded in [the verification receipt](components/minecraft-26.2-parity.properties).
-
-![Slot headless showcase](components/slot.png)
-
-### Compiled example
-
-```kotlin
-import dev.s7a.strata.dsl.Box
-import dev.s7a.strata.dsl.Column
-import dev.s7a.strata.dsl.Row
-import dev.s7a.strata.layout.Alignment
-import dev.s7a.strata.modifier.Modifier
-import dev.s7a.strata.modifier.background
-import dev.s7a.strata.modifier.padding
-import dev.s7a.strata.modifier.size
-import dev.s7a.strata.render.ArgbColor
-import dev.s7a.strata.runtime.minecraft.MinecraftScreenDefinition
-import dev.s7a.strata.runtime.minecraft.MinecraftTextStyle
-import dev.s7a.strata.runtime.minecraft.Slot
-import dev.s7a.strata.runtime.minecraft.Text
-import dev.s7a.strata.runtime.minecraft.containerBackground
-import dev.s7a.strata.runtime.minecraft.createMinecraftScreenDefinition
-import dev.s7a.strata.runtime.minecraft.menuBackground
-
-/**
- * Builds the empty three-row Minecraft 26.2 chest screen used by native, Fabric, and headless parity paths.
- *
- * @return one-shot screen definition reproducing the generic container, labels, 63 Slot hit regions, and hovered highlight order.
- */
-internal fun createSlotScreenDefinition(): MinecraftScreenDefinition =
-    createMinecraftScreenDefinition("Chest") {
-        Box(
-            modifier =
-                Modifier.Empty
-                    .size(320, 240)
-                    .background(ArgbColor(0xFF000000.toInt()))
-                    .menuBackground(),
-            contentAlignment = Alignment.Center,
-        ) {
-            Box(
-                modifier = Modifier.Empty.containerBackground(rows = 3),
-                contentAlignment = Alignment.Center,
-            ) {
-                Column(
-                    modifier = Modifier.Empty.size(162, 156),
-                    spacing = 3,
-                ) {
-                    Column(spacing = 2) {
-                        Text(
-                            "Chest",
-                            style = MinecraftTextStyle.ContainerLabel,
-                            modifier = Modifier.Empty.padding(left = 1),
-                        )
-                        Column {
-                            repeat(3) {
-                                Row {
-                                    repeat(9) {
-                                        Slot()
-                                    }
-                                }
-                            }
-                        }
-                    }
-                    Column {
-                        Text(
-                            "Inventory",
-                            style = MinecraftTextStyle.ContainerLabel,
-                            modifier = Modifier.Empty.padding(left = 1),
-                        )
-                        Column(modifier = Modifier.Empty.padding(top = 1)) {
-                            repeat(3) {
-                                Row {
-                                    repeat(9) {
-                                        Slot()
-                                    }
-                                }
-                            }
-                        }
-                        Row(modifier = Modifier.Empty.padding(top = 4)) {
-                            repeat(9) {
-                                Slot()
-                            }
-                        }
-                    }
-                }
-            }
-        }
-    }
-```
-
-### Modifiers
-
-Sizing is native-fixed at 18 by 18. `MinecraftSlots.playerInventory(index)` binds player storage, `MinecraftSlots.container(index)` addresses logical storage exposed by chests, ender chests, furnaces, and custom server menus, and `MinecraftSlots.activeMenu(index)` remains the raw-menu escape hatch; the optional-content overload remains portable for custom item visuals.
-
-### Parent scope
-
-`Slot` is a member extension on the active `UiScope`. Its optional callback emits at most one 16 by 16 content root, while its bound overload obtains the version platform implicitly and retains no public Minecraft type.
-
-<details><summary>Component tree</summary>
-
-The tree shows the featured Minecraft component; platform-neutral layout scaffolding remains visible in the compiled source.
-
-```text
-`- Slot [SlotHighlightable(value=true), Size(width=18, height=18)]
-```
-
-</details>
-
 <a id="image"></a>
 
 ## Image
@@ -528,70 +1135,124 @@ This image is a 32 by 32 component crop from the exact Fabric/headless Mod-scree
 ### Compiled example
 
 ```kotlin
-import dev.s7a.strata.dsl.Box
-import dev.s7a.strata.dsl.Column
-import dev.s7a.strata.dsl.Row
-import dev.s7a.strata.dsl.Spacer
-import dev.s7a.strata.dsl.UiScope
-import dev.s7a.strata.geometry.IntSize
+import dev.s7a.strata.component.Column
+import dev.s7a.strata.component.Grid
+import dev.s7a.strata.component.ImageScale
+import dev.s7a.strata.component.ImageSource
+import dev.s7a.strata.component.Row
+import dev.s7a.strata.component.RowScope
+import dev.s7a.strata.component.Slot
+import dev.s7a.strata.component.SlotBinding
+import dev.s7a.strata.component.Slots
+import dev.s7a.strata.component.Spacer
+import dev.s7a.strata.component.Stack
+import dev.s7a.strata.component.Text
 import dev.s7a.strata.layout.Alignment
+import dev.s7a.strata.layout.Arrangement
 import dev.s7a.strata.layout.HorizontalAlignment
+import dev.s7a.strata.layout.VerticalAlignment
 import dev.s7a.strata.modifier.Modifier
 import dev.s7a.strata.modifier.background
-import dev.s7a.strata.modifier.onPress
+import dev.s7a.strata.modifier.imageBackground
+import dev.s7a.strata.modifier.menuBackground
+import dev.s7a.strata.modifier.padding
 import dev.s7a.strata.modifier.size
 import dev.s7a.strata.render.ArgbColor
-import dev.s7a.strata.render.DrawImage
-import dev.s7a.strata.runtime.minecraft.Button
-import dev.s7a.strata.runtime.minecraft.Image
-import dev.s7a.strata.runtime.minecraft.MinecraftScreenDefinition
-import dev.s7a.strata.runtime.minecraft.Slot
-import dev.s7a.strata.runtime.minecraft.Text
-import dev.s7a.strata.runtime.minecraft.createMinecraftScreenDefinition
-import dev.s7a.strata.runtime.minecraft.imageBackground
+import dev.s7a.strata.resource.ResourceId
+import dev.s7a.strata.screen.ScreenDefinition
 
 /**
- * Builds a reusable industrial Mod screen from general-purpose Strata primitives and one replaceable resource-pack asset.
+ * Builds a resource-pack-aware coal generator screen from general-purpose components.
  *
- * @param panel immutable panel pixels loaded by the version adapter from the active resource manager.
- * @return one-shot definition containing image, text, slot, layout, gauge composition, and button primitives.
+ * The default fuel and charge slots address the active server-owned container while the lower grid addresses the player's inventory through the active menu.
+ * Tests that exercise the same pixels without a live menu may supply null bindings without changing the component structure.
+ *
+ * @param panel active Mod-resource panel source.
+ * @param fuelBinding server-owned combustible-input slot.
+ * @param chargeBinding server-owned chargeable-item slot.
+ * @param playerInventory resolves each logical player-inventory index used by the lower grid.
+ * @return one-shot definition containing only reusable layout, image-background, text, gauge, and slot primitives.
  */
-internal fun createIndustrialScreenDefinition(panel: DrawImage): MinecraftScreenDefinition =
-    createMinecraftScreenDefinition("Industrial controller") {
-        Box(
-            modifier = Modifier.Empty.size(320, 180).imageBackground(panel),
+internal fun createIndustrialScreenDefinition(
+    panel: ImageSource = coalGeneratorPanel,
+    fuelBinding: SlotBinding? = Slots.container(0),
+    chargeBinding: SlotBinding? = Slots.container(1),
+    playerInventory: (Int) -> SlotBinding? = Slots::playerInventory,
+): ScreenDefinition =
+    ScreenDefinition("Coal Generator") {
+        Stack(
+            modifier =
+                Modifier.Empty
+                    .size(320, 180)
+                    .background(ArgbColor(0xFF000000.toInt()))
+                    .menuBackground(),
             contentAlignment = Alignment.Center,
         ) {
-            Column(
-                spacing = 8,
-                horizontalAlignment = HorizontalAlignment.Center,
+            Stack(
+                modifier =
+                    Modifier.Empty
+                        .size(176, 166)
+                        .imageBackground(panel, ImageScale.Stretch),
             ) {
-                Image(panel, IntSize(32, 32))
-                Text("ENERGY CONTROL")
-                Box(
-                    modifier = Modifier.Empty.size(150, 8).background(ArgbColor(0xFF101820.toInt())),
+                Column(
+                    modifier = Modifier.Empty.padding(left = 7, top = 5, right = 7, bottom = 7),
+                    spacing = 5,
                 ) {
-                    Spacer(modifier = Modifier.Empty.size(112, 8).background(ArgbColor(0xFF22D3EE.toInt())))
+                    Text("Coal Generator")
+                    Row(
+                        modifier = Modifier.Empty.size(162, 36),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = VerticalAlignment.Center,
+                    ) {
+                        machineSlot("Fuel", fuelBinding)
+                        Column(
+                            spacing = 3,
+                            horizontalAlignment = HorizontalAlignment.Center,
+                        ) {
+                            Text("32 E/t")
+                            Stack(
+                                modifier = Modifier.Empty.size(54, 8).background(bufferTrackColor),
+                                contentAlignment = Alignment.CenterStart,
+                            ) {
+                                Spacer(modifier = Modifier.Empty.size(41, 6).background(bufferFillColor))
+                            }
+                        }
+                        machineSlot("Charge", chargeBinding)
+                    }
+                    Column(spacing = 1) {
+                        Text("Inventory")
+                        Grid(columns = 9) {
+                            repeat(27) { index ->
+                                Slot(bind = playerInventory(9 + index))
+                            }
+                        }
+                        Grid(columns = 9, modifier = Modifier.Empty.padding(top = 4)) {
+                            repeat(9) { index ->
+                                Slot(bind = playerInventory(index))
+                            }
+                        }
+                    }
                 }
-                Row(spacing = 4) {
-                    machineSlot(ArgbColor(0xFFFBBF24.toInt()))
-                    machineSlot(ArgbColor(0xFF22D3EE.toInt()))
-                    machineSlot(ArgbColor(0xFFA78BFA.toInt()))
-                }
-                Button(
-                    "Toggle power",
-                    width = 100,
-                    modifier = Modifier.Empty.onPress {},
-                )
             }
         }
     }
 
-private fun UiScope.machineSlot(color: ArgbColor) {
-    Slot {
-        Spacer(modifier = Modifier.Empty.size(16, 16).background(color))
+private fun RowScope.machineSlot(
+    label: String,
+    binding: SlotBinding?,
+) {
+    Column(
+        spacing = 1,
+        horizontalAlignment = HorizontalAlignment.Center,
+    ) {
+        Text(label)
+        Slot(bind = binding)
     }
 }
+
+private val coalGeneratorPanel = ImageSource.Resource(ResourceId("strata_test", "textures/gui/coal_generator.png"))
+private val bufferTrackColor = ArgbColor(0xFF1A2226.toInt())
+private val bufferFillColor = ArgbColor(0xFF20C7DF.toInt())
 ```
 
 ### Modifiers
@@ -612,6 +1273,111 @@ The tree shows the featured Minecraft component; platform-neutral layout scaffol
 
 </details>
 
+<a id="slot"></a>
+
+## Slot
+
+Slot reproduces the native 18 by 18 hit region and 24 by 24 back-item-front highlight order; its binding overload polls real ItemStack state and delegates interaction through Minecraft's active container menu.
+
+This image is a 24 by 24 component crop from the exact native/Fabric/headless parity frame recorded in [the verification receipt](components/minecraft-26.2-parity.properties).
+
+![Slot headless showcase](components/slot.png)
+
+### Compiled example
+
+```kotlin
+import dev.s7a.strata.component.Column
+import dev.s7a.strata.component.Grid
+import dev.s7a.strata.component.Slot
+import dev.s7a.strata.component.Stack
+import dev.s7a.strata.component.Text
+import dev.s7a.strata.component.TextStyle
+import dev.s7a.strata.layout.Alignment
+import dev.s7a.strata.modifier.Modifier
+import dev.s7a.strata.modifier.background
+import dev.s7a.strata.modifier.containerBackground
+import dev.s7a.strata.modifier.menuBackground
+import dev.s7a.strata.modifier.padding
+import dev.s7a.strata.modifier.size
+import dev.s7a.strata.render.ArgbColor
+import dev.s7a.strata.screen.ScreenDefinition
+
+/**
+ * Builds the empty three-row Minecraft 26.2 chest screen used by native, Fabric, and headless parity paths.
+ *
+ * @return one-shot screen definition reproducing the generic container, labels, 63 Slot hit regions, and hovered highlight order.
+ */
+internal fun createSlotScreenDefinition(): ScreenDefinition =
+    ScreenDefinition("Chest") {
+        Stack(
+            modifier =
+                Modifier.Empty
+                    .size(320, 240)
+                    .background(ArgbColor(0xFF000000.toInt()))
+                    .menuBackground(),
+            contentAlignment = Alignment.Center,
+        ) {
+            Stack(
+                modifier = Modifier.Empty.containerBackground(rows = 3),
+                contentAlignment = Alignment.Center,
+            ) {
+                Column(
+                    modifier = Modifier.Empty.size(162, 156),
+                    spacing = 3,
+                ) {
+                    Column(spacing = 2) {
+                        Text(
+                            "Chest",
+                            style = TextStyle.ContainerLabel,
+                            modifier = Modifier.Empty.padding(left = 1),
+                        )
+                        Grid(columns = 9) {
+                            repeat(27) {
+                                Slot()
+                            }
+                        }
+                    }
+                    Column {
+                        Text(
+                            "Inventory",
+                            style = TextStyle.ContainerLabel,
+                            modifier = Modifier.Empty.padding(left = 1),
+                        )
+                        Grid(columns = 9, modifier = Modifier.Empty.padding(top = 1)) {
+                            repeat(27) {
+                                Slot()
+                            }
+                        }
+                        Grid(columns = 9, modifier = Modifier.Empty.padding(top = 4)) {
+                            repeat(9) {
+                                Slot()
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+```
+
+### Modifiers
+
+Sizing is native-fixed at 18 by 18. `Slots.playerInventory(index)` binds player storage, `Slots.container(index)` addresses logical storage exposed by chests, ender chests, furnaces, and custom server menus, and `Slots.activeMenu(index)` remains the raw-menu escape hatch; the optional-content overload remains portable for custom item visuals.
+
+### Parent scope
+
+`Slot` is a member extension on the active `UiScope`. Its optional callback emits at most one 16 by 16 content root, while its bound overload obtains the version platform implicitly and retains no public Minecraft type.
+
+<details><summary>Component tree</summary>
+
+The tree shows the featured Minecraft component; platform-neutral layout scaffolding remains visible in the compiled source.
+
+```text
+`- Slot [SlotHighlightable(value=true), Size(width=18, height=18)]
+```
+
+</details>
+
 <a id="player-head"></a>
 
 ## PlayerHead
@@ -625,30 +1391,31 @@ This image is a 24 by 24 component crop from the exact native/Fabric/headless pa
 ### Compiled example
 
 ```kotlin
-import dev.s7a.strata.dsl.Box
+import dev.s7a.strata.component.PlayerHead
+import dev.s7a.strata.component.PlayerSkinSource
+import dev.s7a.strata.component.Stack
 import dev.s7a.strata.layout.Alignment
 import dev.s7a.strata.modifier.Modifier
 import dev.s7a.strata.modifier.background
 import dev.s7a.strata.modifier.size
 import dev.s7a.strata.render.ArgbColor
-import dev.s7a.strata.render.DrawImage
-import dev.s7a.strata.runtime.minecraft.MinecraftScreenDefinition
-import dev.s7a.strata.runtime.minecraft.PlayerHead
-import dev.s7a.strata.runtime.minecraft.createMinecraftScreenDefinition
+import dev.s7a.strata.screen.ScreenDefinition
 
 /**
- * Builds a reusable player-head screen from a detached skin selected by the version adapter.
+ * Builds a reusable player-head screen from a profile lookup or detached skin selected by the version adapter.
  *
- * @param skin immutable 64 by 64 player skin from Minecraft's resource or downloaded-texture path.
+ * @param skin player identity lookup or immutable 64 by 64 skin source.
  * @return one-shot definition reproducing the Social Interactions 24 by 24 face and hat layers.
  */
-internal fun createPlayerHeadScreenDefinition(skin: DrawImage): MinecraftScreenDefinition =
-    createMinecraftScreenDefinition("Player head") {
-        Box(
+internal fun createPlayerHeadScreenDefinition(
+    skin: PlayerSkinSource = PlayerSkinSource.Name("Player0"),
+): ScreenDefinition =
+    ScreenDefinition("Player head") {
+        Stack(
             modifier = Modifier.Empty.size(64, 64).background(ArgbColor(0xFF000000.toInt())),
             contentAlignment = Alignment.Center,
         ) {
-            PlayerHead(skin)
+            PlayerHead(source = skin)
         }
     }
 ```
@@ -694,9 +1461,20 @@ A loaded Fabric GameTest requires exact ARGB equality between the native Minecra
 ### Compiled screen
 
 ```kotlin
-import dev.s7a.strata.dsl.Box
-import dev.s7a.strata.dsl.Column
-import dev.s7a.strata.dsl.Row
+import dev.s7a.strata.component.Button
+import dev.s7a.strata.component.Column
+import dev.s7a.strata.component.Image
+import dev.s7a.strata.component.ImageSource
+import dev.s7a.strata.component.NineSliceCenterMode
+import dev.s7a.strata.component.PlayerHead
+import dev.s7a.strata.component.PlayerSkinSource
+import dev.s7a.strata.component.Row
+import dev.s7a.strata.component.Stack
+import dev.s7a.strata.component.Tab
+import dev.s7a.strata.component.Text
+import dev.s7a.strata.component.TextField
+import dev.s7a.strata.component.TextFieldState
+import dev.s7a.strata.component.TextStyle
 import dev.s7a.strata.geometry.Insets
 import dev.s7a.strata.geometry.IntSize
 import dev.s7a.strata.layout.Alignment
@@ -705,55 +1483,45 @@ import dev.s7a.strata.layout.HorizontalAlignment
 import dev.s7a.strata.layout.VerticalAlignment
 import dev.s7a.strata.modifier.Modifier
 import dev.s7a.strata.modifier.background
+import dev.s7a.strata.modifier.imageBackground
 import dev.s7a.strata.modifier.initialFocus
+import dev.s7a.strata.modifier.menuBackground
 import dev.s7a.strata.modifier.onPress
 import dev.s7a.strata.modifier.padding
 import dev.s7a.strata.modifier.size
 import dev.s7a.strata.render.ArgbColor
-import dev.s7a.strata.render.DrawImage
-import dev.s7a.strata.runtime.minecraft.Button
-import dev.s7a.strata.runtime.minecraft.Image
-import dev.s7a.strata.runtime.minecraft.MinecraftNineSliceCenterMode
-import dev.s7a.strata.runtime.minecraft.MinecraftScreenDefinition
-import dev.s7a.strata.runtime.minecraft.MinecraftTextFieldState
-import dev.s7a.strata.runtime.minecraft.MinecraftTextStyle
-import dev.s7a.strata.runtime.minecraft.PlayerHead
-import dev.s7a.strata.runtime.minecraft.Text
-import dev.s7a.strata.runtime.minecraft.TextField
-import dev.s7a.strata.runtime.minecraft.createMinecraftScreenDefinition
-import dev.s7a.strata.runtime.minecraft.createMinecraftTextFieldState
-import dev.s7a.strata.runtime.minecraft.imageBackground
-import dev.s7a.strata.runtime.minecraft.menuBackground
+import dev.s7a.strata.resource.ResourceId
+import dev.s7a.strata.screen.ScreenDefinition
 
 /**
  * Builds the deterministic one-player Minecraft 26.2 Social Interactions screen from general-purpose primitives.
  *
  * Social-entry composition remains application code: the public runtime supplies PlayerHead, text, actions, images, fields, layout, and active backgrounds without exposing a purpose-specific SocialEntry component.
  *
- * @param panel exact active-resource `social_interactions/background` pixels.
- * @param searchIcon exact active-resource `icon/search` pixels.
- * @param playerSkin detached selected-player skin pixels.
+ * @param panel active-resource `social_interactions/background` source.
+ * @param searchIcon active-resource `icon/search` source.
+ * @param playerSkin selected player lookup or detached skin source.
  * @return one-shot screen definition reproducing the native screen geometry and draw order.
  */
 internal fun createSocialScreenDefinition(
-    panel: DrawImage,
-    searchIcon: DrawImage,
-    playerSkin: DrawImage,
-): MinecraftScreenDefinition {
-    val search = createMinecraftTextFieldState("", maxLength = 16)
-    return createMinecraftScreenDefinition("Social Interactions") {
-        Box(
+    panel: ImageSource = socialPanel,
+    searchIcon: ImageSource = socialSearchIcon,
+    playerSkin: PlayerSkinSource = PlayerSkinSource.Name("Player0"),
+): ScreenDefinition {
+    val search = TextFieldState("", maxLength = 16)
+    return ScreenDefinition("Social Interactions") {
+        Stack(
             modifier =
                 Modifier.Empty
                     .size(320, 240)
                     .background(ArgbColor(0xFF000000.toInt()))
                     .menuBackground(),
         ) {
-            Box(
+            Stack(
                 modifier = Modifier.Empty.size(320, 176),
                 contentAlignment = Alignment.BottomCenter,
             ) {
-                Box(
+                Stack(
                     modifier =
                         Modifier.Empty
                             .padding(left = 4)
@@ -761,7 +1529,7 @@ internal fun createSocialScreenDefinition(
                             .imageBackground(
                                 panel,
                                 Insets.all(8),
-                                MinecraftNineSliceCenterMode.Tiled,
+                                NineSliceCenterMode.Tiled,
                             ),
                 ) {}
             }
@@ -781,33 +1549,9 @@ internal fun createSocialScreenDefinition(
                         Text("Player0 - New World - 1 player")
                     }
                     Row(modifier = Modifier.Empty.padding(left = 1, top = 1), spacing = 1) {
-                        Box(modifier = Modifier.Empty.size(73, 20)) {
-                            Button("All", width = 73, modifier = Modifier.Empty.onPress {})
-                            Box(
-                                modifier = Modifier.Empty.size(73, 16),
-                                contentAlignment = Alignment.BottomCenter,
-                            ) {
-                                Box(
-                                    modifier =
-                                        Modifier.Empty
-                                            .size(13, 1)
-                                            .background(ArgbColor(0xFF3F3F3F.toInt())),
-                                ) {}
-                            }
-                            Box(
-                                modifier = Modifier.Empty.size(72, 15),
-                                contentAlignment = Alignment.BottomCenter,
-                            ) {
-                                Box(
-                                    modifier =
-                                        Modifier.Empty
-                                            .size(13, 1)
-                                            .background(ArgbColor(0xFFFFFFFF.toInt())),
-                                ) {}
-                            }
-                        }
-                        Button("Hidden", width = 73, modifier = Modifier.Empty.onPress {})
-                        Button("Blocked", width = 73, modifier = Modifier.Empty.onPress {})
+                        Tab("All", selected = true, width = 73, modifier = Modifier.Empty.onPress {})
+                        Tab("Hidden", selected = false, width = 73, modifier = Modifier.Empty.onPress {})
+                        Tab("Blocked", selected = false, width = 73, modifier = Modifier.Empty.onPress {})
                     }
                     Row(
                         modifier = Modifier.Empty.padding(left = 5, top = 9),
@@ -816,13 +1560,13 @@ internal fun createSocialScreenDefinition(
                     ) {
                         Image(
                             searchIcon,
-                            IntSize(12, 12),
+                            size = IntSize(12, 12),
                             modifier = Modifier.Empty.padding(top = 2),
                         )
                         TextField(
                             search,
                             size = IntSize(200, 15),
-                            textStyle = MinecraftTextStyle.Normal,
+                            textStyle = TextStyle.Normal,
                             modifier = Modifier.Empty.initialFocus(),
                         )
                     }
@@ -835,7 +1579,7 @@ internal fun createSocialScreenDefinition(
                         spacing = 4,
                         verticalAlignment = VerticalAlignment.Center,
                     ) {
-                        PlayerHead(playerSkin, modifier = Modifier.Empty.padding(left = 4))
+                        PlayerHead(source = playerSkin, modifier = Modifier.Empty.padding(left = 4))
                         Text("Player0")
                     }
                 }
@@ -848,6 +1592,9 @@ internal fun createSocialScreenDefinition(
         }
     }
 }
+
+private val socialPanel = ImageSource.Resource(ResourceId("minecraft", "textures/gui/sprites/social_interactions/background.png"))
+private val socialSearchIcon = ImageSource.Resource(ResourceId("minecraft", "textures/gui/sprites/icon/search.png"))
 ```
 
 ### Primitive boundary
@@ -867,24 +1614,23 @@ A loaded Fabric client/server GameTest performs authoritative inventory interact
 ### Compiled screen
 
 ```kotlin
-import dev.s7a.strata.dsl.Box
-import dev.s7a.strata.dsl.Column
-import dev.s7a.strata.dsl.Row
+import dev.s7a.strata.component.Column
+import dev.s7a.strata.component.Grid
+import dev.s7a.strata.component.Slot
+import dev.s7a.strata.component.SlotBinding
+import dev.s7a.strata.component.Slots
+import dev.s7a.strata.component.Stack
+import dev.s7a.strata.component.Text
+import dev.s7a.strata.component.TextStyle
 import dev.s7a.strata.layout.Alignment
 import dev.s7a.strata.modifier.Modifier
 import dev.s7a.strata.modifier.background
+import dev.s7a.strata.modifier.containerBackground
+import dev.s7a.strata.modifier.menuBackground
 import dev.s7a.strata.modifier.padding
 import dev.s7a.strata.modifier.size
 import dev.s7a.strata.render.ArgbColor
-import dev.s7a.strata.runtime.minecraft.MinecraftScreenDefinition
-import dev.s7a.strata.runtime.minecraft.MinecraftSlotBinding
-import dev.s7a.strata.runtime.minecraft.MinecraftSlots
-import dev.s7a.strata.runtime.minecraft.MinecraftTextStyle
-import dev.s7a.strata.runtime.minecraft.Slot
-import dev.s7a.strata.runtime.minecraft.Text
-import dev.s7a.strata.runtime.minecraft.containerBackground
-import dev.s7a.strata.runtime.minecraft.createMinecraftScreenDefinition
-import dev.s7a.strata.runtime.minecraft.menuBackground
+import dev.s7a.strata.screen.ScreenDefinition
 
 /**
  * Builds a generic chest-shaped screen whose lower 36 Slots are bound to the active player's inventory.
@@ -897,11 +1643,11 @@ import dev.s7a.strata.runtime.minecraft.menuBackground
  * @return one-shot screen definition used to verify live item rendering and authoritative container input in a loaded client.
  */
 internal fun createInventorySlotScreenDefinition(
-    primaryPlayerBinding: MinecraftSlotBinding = MinecraftSlots.playerInventory(0),
-    primaryContainerBinding: MinecraftSlotBinding? = null,
-): MinecraftScreenDefinition =
-    createMinecraftScreenDefinition("Synchronized inventory") {
-        Box(
+    primaryPlayerBinding: SlotBinding = Slots.playerInventory(0),
+    primaryContainerBinding: SlotBinding? = null,
+): ScreenDefinition =
+    ScreenDefinition("Synchronized inventory") {
+        Stack(
             modifier =
                 Modifier.Empty
                     .size(320, 240)
@@ -909,7 +1655,7 @@ internal fun createInventorySlotScreenDefinition(
                     .menuBackground(),
             contentAlignment = Alignment.Center,
         ) {
-            Box(
+            Stack(
                 modifier = Modifier.Empty.containerBackground(rows = 3),
                 contentAlignment = Alignment.Center,
             ) {
@@ -920,19 +1666,15 @@ internal fun createInventorySlotScreenDefinition(
                     Column(spacing = 2) {
                         Text(
                             "Chest",
-                            style = MinecraftTextStyle.ContainerLabel,
+                            style = TextStyle.ContainerLabel,
                             modifier = Modifier.Empty.padding(left = 1),
                         )
-                        Column {
-                            repeat(3) { row ->
-                                Row {
-                                    repeat(9) { column ->
-                                        if (row == 0 && column == 0 && primaryContainerBinding != null) {
-                                            Slot(bind = primaryContainerBinding)
-                                        } else {
-                                            Slot()
-                                        }
-                                    }
+                        Grid(columns = 9) {
+                            repeat(27) { index ->
+                                if (index == 0 && primaryContainerBinding != null) {
+                                    Slot(bind = primaryContainerBinding)
+                                } else {
+                                    Slot()
                                 }
                             }
                         }
@@ -940,26 +1682,22 @@ internal fun createInventorySlotScreenDefinition(
                     Column {
                         Text(
                             "Inventory",
-                            style = MinecraftTextStyle.ContainerLabel,
+                            style = TextStyle.ContainerLabel,
                             modifier = Modifier.Empty.padding(left = 1),
                         )
-                        Column(modifier = Modifier.Empty.padding(top = 1)) {
-                            repeat(3) { row ->
-                                Row {
-                                    repeat(9) { column ->
-                                        Slot(bind = MinecraftSlots.playerInventory(9 + row * 9 + column))
-                                    }
-                                }
+                        Grid(columns = 9, modifier = Modifier.Empty.padding(top = 1)) {
+                            repeat(27) { index ->
+                                Slot(bind = Slots.playerInventory(9 + index))
                             }
                         }
-                        Row(modifier = Modifier.Empty.padding(top = 4)) {
-                            repeat(9) { column ->
+                        Grid(columns = 9, modifier = Modifier.Empty.padding(top = 4)) {
+                            repeat(9) { index ->
                                 Slot(
                                     bind =
-                                        if (column == 0) {
+                                        if (index == 0) {
                                             primaryPlayerBinding
                                         } else {
-                                            MinecraftSlots.playerInventory(column)
+                                            Slots.playerInventory(index)
                                         },
                                 )
                             }
@@ -973,7 +1711,7 @@ internal fun createInventorySlotScreenDefinition(
 
 ### Primitive boundary
 
-`Slot` and `MinecraftSlotBinding` are reusable primitives. The chest-shaped grouping and server menu decide which player, container, ender-chest, furnace, or custom inventory indices each slot binds.
+`Slot` and `SlotBinding` are reusable primitives. The chest-shaped grouping and server menu decide which player, container, ender-chest, furnace, or custom inventory indices each slot binds.
 
 <a id="screen-industrial"></a>
 
@@ -988,70 +1726,124 @@ A loaded Fabric GameTest requires exact ARGB equality between the Strata Fabric 
 ### Compiled screen
 
 ```kotlin
-import dev.s7a.strata.dsl.Box
-import dev.s7a.strata.dsl.Column
-import dev.s7a.strata.dsl.Row
-import dev.s7a.strata.dsl.Spacer
-import dev.s7a.strata.dsl.UiScope
-import dev.s7a.strata.geometry.IntSize
+import dev.s7a.strata.component.Column
+import dev.s7a.strata.component.Grid
+import dev.s7a.strata.component.ImageScale
+import dev.s7a.strata.component.ImageSource
+import dev.s7a.strata.component.Row
+import dev.s7a.strata.component.RowScope
+import dev.s7a.strata.component.Slot
+import dev.s7a.strata.component.SlotBinding
+import dev.s7a.strata.component.Slots
+import dev.s7a.strata.component.Spacer
+import dev.s7a.strata.component.Stack
+import dev.s7a.strata.component.Text
 import dev.s7a.strata.layout.Alignment
+import dev.s7a.strata.layout.Arrangement
 import dev.s7a.strata.layout.HorizontalAlignment
+import dev.s7a.strata.layout.VerticalAlignment
 import dev.s7a.strata.modifier.Modifier
 import dev.s7a.strata.modifier.background
-import dev.s7a.strata.modifier.onPress
+import dev.s7a.strata.modifier.imageBackground
+import dev.s7a.strata.modifier.menuBackground
+import dev.s7a.strata.modifier.padding
 import dev.s7a.strata.modifier.size
 import dev.s7a.strata.render.ArgbColor
-import dev.s7a.strata.render.DrawImage
-import dev.s7a.strata.runtime.minecraft.Button
-import dev.s7a.strata.runtime.minecraft.Image
-import dev.s7a.strata.runtime.minecraft.MinecraftScreenDefinition
-import dev.s7a.strata.runtime.minecraft.Slot
-import dev.s7a.strata.runtime.minecraft.Text
-import dev.s7a.strata.runtime.minecraft.createMinecraftScreenDefinition
-import dev.s7a.strata.runtime.minecraft.imageBackground
+import dev.s7a.strata.resource.ResourceId
+import dev.s7a.strata.screen.ScreenDefinition
 
 /**
- * Builds a reusable industrial Mod screen from general-purpose Strata primitives and one replaceable resource-pack asset.
+ * Builds a resource-pack-aware coal generator screen from general-purpose components.
  *
- * @param panel immutable panel pixels loaded by the version adapter from the active resource manager.
- * @return one-shot definition containing image, text, slot, layout, gauge composition, and button primitives.
+ * The default fuel and charge slots address the active server-owned container while the lower grid addresses the player's inventory through the active menu.
+ * Tests that exercise the same pixels without a live menu may supply null bindings without changing the component structure.
+ *
+ * @param panel active Mod-resource panel source.
+ * @param fuelBinding server-owned combustible-input slot.
+ * @param chargeBinding server-owned chargeable-item slot.
+ * @param playerInventory resolves each logical player-inventory index used by the lower grid.
+ * @return one-shot definition containing only reusable layout, image-background, text, gauge, and slot primitives.
  */
-internal fun createIndustrialScreenDefinition(panel: DrawImage): MinecraftScreenDefinition =
-    createMinecraftScreenDefinition("Industrial controller") {
-        Box(
-            modifier = Modifier.Empty.size(320, 180).imageBackground(panel),
+internal fun createIndustrialScreenDefinition(
+    panel: ImageSource = coalGeneratorPanel,
+    fuelBinding: SlotBinding? = Slots.container(0),
+    chargeBinding: SlotBinding? = Slots.container(1),
+    playerInventory: (Int) -> SlotBinding? = Slots::playerInventory,
+): ScreenDefinition =
+    ScreenDefinition("Coal Generator") {
+        Stack(
+            modifier =
+                Modifier.Empty
+                    .size(320, 180)
+                    .background(ArgbColor(0xFF000000.toInt()))
+                    .menuBackground(),
             contentAlignment = Alignment.Center,
         ) {
-            Column(
-                spacing = 8,
-                horizontalAlignment = HorizontalAlignment.Center,
+            Stack(
+                modifier =
+                    Modifier.Empty
+                        .size(176, 166)
+                        .imageBackground(panel, ImageScale.Stretch),
             ) {
-                Image(panel, IntSize(32, 32))
-                Text("ENERGY CONTROL")
-                Box(
-                    modifier = Modifier.Empty.size(150, 8).background(ArgbColor(0xFF101820.toInt())),
+                Column(
+                    modifier = Modifier.Empty.padding(left = 7, top = 5, right = 7, bottom = 7),
+                    spacing = 5,
                 ) {
-                    Spacer(modifier = Modifier.Empty.size(112, 8).background(ArgbColor(0xFF22D3EE.toInt())))
+                    Text("Coal Generator")
+                    Row(
+                        modifier = Modifier.Empty.size(162, 36),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = VerticalAlignment.Center,
+                    ) {
+                        machineSlot("Fuel", fuelBinding)
+                        Column(
+                            spacing = 3,
+                            horizontalAlignment = HorizontalAlignment.Center,
+                        ) {
+                            Text("32 E/t")
+                            Stack(
+                                modifier = Modifier.Empty.size(54, 8).background(bufferTrackColor),
+                                contentAlignment = Alignment.CenterStart,
+                            ) {
+                                Spacer(modifier = Modifier.Empty.size(41, 6).background(bufferFillColor))
+                            }
+                        }
+                        machineSlot("Charge", chargeBinding)
+                    }
+                    Column(spacing = 1) {
+                        Text("Inventory")
+                        Grid(columns = 9) {
+                            repeat(27) { index ->
+                                Slot(bind = playerInventory(9 + index))
+                            }
+                        }
+                        Grid(columns = 9, modifier = Modifier.Empty.padding(top = 4)) {
+                            repeat(9) { index ->
+                                Slot(bind = playerInventory(index))
+                            }
+                        }
+                    }
                 }
-                Row(spacing = 4) {
-                    machineSlot(ArgbColor(0xFFFBBF24.toInt()))
-                    machineSlot(ArgbColor(0xFF22D3EE.toInt()))
-                    machineSlot(ArgbColor(0xFFA78BFA.toInt()))
-                }
-                Button(
-                    "Toggle power",
-                    width = 100,
-                    modifier = Modifier.Empty.onPress {},
-                )
             }
         }
     }
 
-private fun UiScope.machineSlot(color: ArgbColor) {
-    Slot {
-        Spacer(modifier = Modifier.Empty.size(16, 16).background(color))
+private fun RowScope.machineSlot(
+    label: String,
+    binding: SlotBinding?,
+) {
+    Column(
+        spacing = 1,
+        horizontalAlignment = HorizontalAlignment.Center,
+    ) {
+        Text(label)
+        Slot(bind = binding)
     }
 }
+
+private val coalGeneratorPanel = ImageSource.Resource(ResourceId("strata_test", "textures/gui/coal_generator.png"))
+private val bufferTrackColor = ArgbColor(0xFF1A2226.toInt())
+private val bufferFillColor = ArgbColor(0xFF20C7DF.toInt())
 ```
 
 ### Primitive boundary
@@ -1071,79 +1863,80 @@ A loaded Fabric GameTest requires exact ARGB equality between the Strata Fabric 
 ### Compiled screen
 
 ```kotlin
-import dev.s7a.strata.dsl.Box
-import dev.s7a.strata.dsl.BoxScope
-import dev.s7a.strata.dsl.Column
-import dev.s7a.strata.dsl.UiScope
+import dev.s7a.strata.component.Button
+import dev.s7a.strata.component.Column
+import dev.s7a.strata.component.Image
+import dev.s7a.strata.component.ImageScale
+import dev.s7a.strata.component.ImageSource
+import dev.s7a.strata.component.Row
+import dev.s7a.strata.component.Spacer
+import dev.s7a.strata.component.Stack
+import dev.s7a.strata.component.Text
+import dev.s7a.strata.component.TextStyle
+import dev.s7a.strata.component.UiScope
 import dev.s7a.strata.element.ElementKey
 import dev.s7a.strata.geometry.IntRect
 import dev.s7a.strata.layout.Alignment
+import dev.s7a.strata.layout.Arrangement
+import dev.s7a.strata.layout.HorizontalAlignment
+import dev.s7a.strata.layout.VerticalAlignment
 import dev.s7a.strata.modifier.Modifier
 import dev.s7a.strata.modifier.background
+import dev.s7a.strata.modifier.imageBackground
+import dev.s7a.strata.modifier.menuBackground
 import dev.s7a.strata.modifier.onPress
 import dev.s7a.strata.modifier.padding
 import dev.s7a.strata.modifier.size
 import dev.s7a.strata.render.ArgbColor
-import dev.s7a.strata.render.DrawImage
-import dev.s7a.strata.runtime.minecraft.Button
-import dev.s7a.strata.runtime.minecraft.Image
-import dev.s7a.strata.runtime.minecraft.MinecraftImageScale
-import dev.s7a.strata.runtime.minecraft.MinecraftScreenDefinition
-import dev.s7a.strata.runtime.minecraft.MinecraftTextStyle
-import dev.s7a.strata.runtime.minecraft.Text
-import dev.s7a.strata.runtime.minecraft.createMinecraftScreenDefinition
-import dev.s7a.strata.runtime.minecraft.imageBackground
-import dev.s7a.strata.runtime.minecraft.menuBackground
+import dev.s7a.strata.resource.ResourceId
+import dev.s7a.strata.screen.ScreenDefinition
 
 /**
- * Builds one advancement-inspired Mod screen from active Minecraft assets and a downstream component.
+ * Builds one advancement-inspired Mod screen from resource-pack sources and an application-owned component.
  *
- * The standard runtime remains limited to reusable primitives; [ExampleProgressGraph] is application-owned composition that may encode this Mod's progression domain.
+ * The standard runtime remains limited to reusable primitives; [ExampleProgressGraph] may encode this Mod's progression domain because it remains downstream application code.
  *
- * @param window active `textures/gui/advancements/window.png` pixels.
- * @param background active stone advancement-background tile.
- * @param obtained active obtained task-frame sprite.
- * @param unobtained active unobtained task-frame sprite.
+ * @param window active advancement-window source.
+ * @param background active advancement-background tile source.
+ * @param obtained active obtained task-frame source.
+ * @param unobtained active unobtained task-frame source.
  * @return one-shot definition for the verified Fabric and headless screen.
  */
 internal fun createProgressScreenDefinition(
-    window: DrawImage,
-    background: DrawImage,
-    obtained: DrawImage,
-    unobtained: DrawImage,
-): MinecraftScreenDefinition =
-    createMinecraftScreenDefinition("Power milestones") {
-        Box(
+    window: ImageSource = advancementWindow,
+    background: ImageSource = advancementBackground,
+    obtained: ImageSource = obtainedTaskFrame,
+    unobtained: ImageSource = unobtainedTaskFrame,
+): ScreenDefinition =
+    ScreenDefinition("Power milestones") {
+        Stack(
             modifier =
                 Modifier.Empty
                     .size(320, 180)
                     .background(ArgbColor(0xFF000000.toInt()))
                     .menuBackground(),
+            contentAlignment = Alignment.Center,
         ) {
-            Box(
-                modifier = Modifier.Empty.size(320, 151),
-                contentAlignment = Alignment.BottomCenter,
-            ) {
-                ExampleProgressGraph(background, obtained, unobtained)
+            Stack(modifier = Modifier.Empty.size(252, 140)) {
+                Image(window, sourceRegion = IntRect(0, 0, 252, 140))
+                Column(
+                    modifier = Modifier.Empty.padding(left = 9, top = 6, right = 9, bottom = 9),
+                    spacing = 4,
+                    horizontalAlignment = HorizontalAlignment.Center,
+                ) {
+                    Text("Power milestones", style = TextStyle.ContainerLabel)
+                    ExampleProgressGraph(background, obtained, unobtained)
+                }
             }
-            Box(
-                modifier = Modifier.Empty.size(320, 160),
-                contentAlignment = Alignment.BottomCenter,
-            ) {
-                Image(window, source = IntRect(0, 0, 252, 140))
-            }
-            Box(
-                modifier = Modifier.Empty.size(236, 35).align(Alignment.TopCenter),
-                contentAlignment = Alignment.BottomStart,
-            ) {
-                Text("Power milestones", style = MinecraftTextStyle.ContainerLabel)
-            }
-            Box(
-                modifier = Modifier.Empty.size(320, 174),
-                contentAlignment = Alignment.BottomCenter,
-            ) {
-                Button("Done", width = 200, modifier = Modifier.Empty.onPress {})
-            }
+            Button(
+                "Done",
+                width = 200,
+                modifier =
+                    Modifier.Empty
+                        .padding(bottom = 6)
+                        .align(Alignment.BottomCenter)
+                        .onPress {},
+            )
         }
     }
 
@@ -1154,69 +1947,63 @@ internal fun createProgressScreenDefinition(
  * It retains no callback or scope after synchronous emission.
  *
  * @receiver active owner-thread UI scope.
- * @param background immutable background tile.
- * @param obtained immutable obtained frame sprite.
- * @param unobtained immutable unobtained frame sprite.
- * @param modifier active behavior surrounding the fixed 234 by 113 graph.
+ * @param background immutable or resource-backed background tile.
+ * @param obtained immutable or resource-backed obtained frame.
+ * @param unobtained immutable or resource-backed unobtained frame.
+ * @param modifier active behavior surrounding the fixed graph.
  * @param key optional stable sibling identity.
  * @throws IllegalStateException when used from another thread or outside its callback lifetime.
  */
 internal fun UiScope.ExampleProgressGraph(
-    background: DrawImage,
-    obtained: DrawImage,
-    unobtained: DrawImage,
+    background: ImageSource,
+    obtained: ImageSource,
+    unobtained: ImageSource,
     modifier: Modifier = Modifier.Empty,
     key: ElementKey<*>? = null,
 ) {
-    Box(
-        modifier = modifier.size(234, 113).imageBackground(background, MinecraftImageScale.Tile),
+    Row(
+        modifier = modifier.size(234, 113).imageBackground(background, ImageScale.Tile),
         key = key,
+        horizontalArrangement = Arrangement.Center,
+        verticalAlignment = VerticalAlignment.Center,
     ) {
-        Box(
-            modifier = Modifier.Empty.size(134, 44),
-            contentAlignment = Alignment.BottomEnd,
+        progressNode(obtained, ArgbColor(0xFF22D3EE.toInt()), "Generator")
+        Spacer(modifier = Modifier.Empty.size(32, 2).background(connectionColor))
+        Column(
+            spacing = 4,
+            horizontalAlignment = HorizontalAlignment.Center,
         ) {
-            Box(modifier = Modifier.Empty.size(96, 2).background(connectionColor)) {}
+            progressNode(obtained, ArgbColor(0xFFFBBF24.toInt()), "Storage")
+            Spacer(modifier = Modifier.Empty.size(2, 12).background(connectionColor))
+            progressNode(unobtained, ArgbColor(0xFFA78BFA.toInt()), "Automation")
         }
-        Box(
-            modifier = Modifier.Empty.size(135, 80),
-            contentAlignment = Alignment.BottomEnd,
-        ) {
-            Box(modifier = Modifier.Empty.size(2, 38).background(connectionColor)) {}
-        }
-        progressNode(obtained, ArgbColor(0xFF22D3EE.toInt()), 25, 30, "Generator")
-        progressNode(obtained, ArgbColor(0xFFFBBF24.toInt()), 121, 30, "Storage")
-        progressNode(unobtained, ArgbColor(0xFFA78BFA.toInt()), 121, 68, "Automation")
     }
 }
 
-private fun BoxScope.progressNode(
-    frame: DrawImage,
+private fun UiScope.progressNode(
+    frame: ImageSource,
     color: ArgbColor,
-    x: Int,
-    y: Int,
     label: String,
 ) {
-    Box(
-        modifier = Modifier.Empty.size(x + 60, y + 36),
-        contentAlignment = Alignment.BottomEnd,
+    Column(
+        horizontalAlignment = HorizontalAlignment.Center,
+        spacing = 1,
     ) {
-        Column(
-            modifier = Modifier.Empty.size(64, 36),
-            spacing = 1,
+        Stack(
+            modifier = Modifier.Empty.size(26, 26),
+            contentAlignment = Alignment.Center,
         ) {
-            Box(
-                modifier = Modifier.Empty.padding(left = 4).size(26, 26),
-                contentAlignment = Alignment.Center,
-            ) {
-                Image(frame)
-                Box(modifier = Modifier.Empty.size(16, 16).background(color)) {}
-            }
-            Text(label)
+            Image(frame)
+            Spacer(modifier = Modifier.Empty.size(16, 16).background(color))
         }
+        Text(label)
     }
 }
 
+private val advancementWindow = ImageSource.Resource(ResourceId("minecraft", "textures/gui/advancements/window.png"))
+private val advancementBackground = ImageSource.Resource(ResourceId("minecraft", "textures/gui/advancements/backgrounds/stone.png"))
+private val obtainedTaskFrame = ImageSource.Resource(ResourceId("minecraft", "textures/gui/sprites/advancements/task_frame_obtained.png"))
+private val unobtainedTaskFrame = ImageSource.Resource(ResourceId("minecraft", "textures/gui/sprites/advancements/task_frame_unobtained.png"))
 private val connectionColor = ArgbColor(0xFF7A7A7A.toInt())
 ```
 

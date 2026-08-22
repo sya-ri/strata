@@ -1,14 +1,16 @@
 package dev.s7a.strata
 
-import dev.s7a.strata.dsl.Box
-import dev.s7a.strata.dsl.BoxScope
-import dev.s7a.strata.dsl.Column
-import dev.s7a.strata.dsl.ColumnScope
-import dev.s7a.strata.dsl.Row
-import dev.s7a.strata.dsl.RowScope
-import dev.s7a.strata.dsl.Spacer
-import dev.s7a.strata.dsl.UiScope
-import dev.s7a.strata.dsl.buildUi
+import dev.s7a.strata.component.Column
+import dev.s7a.strata.component.ColumnScope
+import dev.s7a.strata.component.Grid
+import dev.s7a.strata.component.GridScope
+import dev.s7a.strata.component.Row
+import dev.s7a.strata.component.RowScope
+import dev.s7a.strata.component.Spacer
+import dev.s7a.strata.component.Stack
+import dev.s7a.strata.component.StackScope
+import dev.s7a.strata.component.UiScope
+import dev.s7a.strata.component.buildComponentTree
 import dev.s7a.strata.element.Element
 import dev.s7a.strata.element.ElementIdentity
 import dev.s7a.strata.element.ElementType
@@ -39,14 +41,14 @@ internal class LayoutDslLifetimeValidationTest {
         val fourth = TraceElement()
 
         val root =
-            buildUi {
+            buildComponentTree {
                 Row {
                     element(first)
                     Column {
                         element(second)
-                        Box {
+                        Stack {
                             element(third)
-                            Spacer()
+                            Grid(columns = 1) { Spacer() }
                         }
                     }
                     element(fourth)
@@ -59,23 +61,31 @@ internal class LayoutDslLifetimeValidationTest {
         val column = root.children[1]
         assertEquals(2, column.children.size)
         assertSame(second, column.children[0])
-        val box = column.children[1]
-        assertEquals(2, box.children.size)
-        assertSame(third, box.children[0])
-        assertEquals(0, box.children[1].children.size)
-        assertSame(root, buildUi { element(root) })
+        val stack = column.children[1]
+        assertEquals(2, stack.children.size)
+        assertSame(third, stack.children[0])
+        assertEquals(
+            0,
+            stack.children[1]
+                .children
+                .single()
+                .children.size,
+        )
+        assertSame(root, buildComponentTree { element(root) })
     }
 
     @Test
     fun emptyCallbacksEmitValidComponentsWithoutChildren() {
-        val row = buildUi { Row { } }
-        val column = buildUi { Column { } }
-        val box = buildUi { Box { } }
-        val spacer = buildUi { Spacer() }
+        val row = buildComponentTree { Row { } }
+        val column = buildComponentTree { Column { } }
+        val stack = buildComponentTree { Stack { } }
+        val grid = buildComponentTree { Grid(columns = 1) { } }
+        val spacer = buildComponentTree { Spacer() }
 
         assertTrue(row.children.isEmpty())
         assertTrue(column.children.isEmpty())
-        assertTrue(box.children.isEmpty())
+        assertTrue(stack.children.isEmpty())
+        assertTrue(grid.children.isEmpty())
         assertTrue(spacer.children.isEmpty())
     }
 
@@ -83,31 +93,38 @@ internal class LayoutDslLifetimeValidationTest {
     fun negativeSpacingFailsBeforeTheContentCallbackRuns() {
         var rowContentRan = false
         var columnContentRan = false
+        var gridContentRan = false
 
         assertThrows(IllegalArgumentException::class.java) {
-            buildUi {
+            buildComponentTree {
                 Row(spacing = -1) { rowContentRan = true }
             }
         }
         assertThrows(IllegalArgumentException::class.java) {
-            buildUi {
+            buildComponentTree {
                 Column(spacing = -1) { columnContentRan = true }
+            }
+        }
+        assertThrows(IllegalArgumentException::class.java) {
+            buildComponentTree {
+                Grid(columns = 0) { gridContentRan = true }
             }
         }
 
         assertFalse(rowContentRan)
         assertFalse(columnContentRan)
+        assertFalse(gridContentRan)
     }
 
     @Test
     fun caughtChildCallbackFailuresPreserveIdentityAndEmitNoPartialComponent() {
         val rowFailure = IllegalStateException("row failure")
         val columnFailure = IllegalArgumentException("column failure")
-        val boxFailure = UnsupportedOperationException("box failure")
+        val stackFailure = UnsupportedOperationException("stack failure")
         val survivor = TraceElement()
 
         val root =
-            buildUi {
+            buildComponentTree {
                 Row {
                     try {
                         emitFailingRow(rowFailure)
@@ -120,9 +137,9 @@ internal class LayoutDslLifetimeValidationTest {
                         assertSame(columnFailure, error)
                     }
                     try {
-                        emitFailingBox(boxFailure)
+                        emitFailingStack(stackFailure)
                     } catch (error: Throwable) {
-                        assertSame(boxFailure, error)
+                        assertSame(stackFailure, error)
                     }
                     element(survivor)
                 }
@@ -134,7 +151,7 @@ internal class LayoutDslLifetimeValidationTest {
     @Test
     fun escapedOuterScopeRejectsEveryBuilderBeforeItsCallback() {
         var capturedScope: UiScope? = null
-        buildUi {
+        buildComponentTree {
             capturedScope = this
             Row { }
         }
@@ -144,7 +161,8 @@ internal class LayoutDslLifetimeValidationTest {
             listOf<(UiScope, () -> Unit) -> Unit>(
                 { current, callback -> current.Row { callback() } },
                 { current, callback -> current.Column { callback() } },
-                { current, callback -> current.Box { callback() } },
+                { current, callback -> current.Stack { callback() } },
+                { current, callback -> current.Grid(columns = 1) { callback() } },
                 { current, _ -> current.Spacer() },
             )
 
@@ -156,17 +174,19 @@ internal class LayoutDslLifetimeValidationTest {
             ran += callbackRan
         }
 
-        assertEquals(listOf(false, false, false, false), ran)
+        assertEquals(listOf(false, false, false, false, false), ran)
     }
 
     @Test
     fun receiverModifiersRejectPostCallbackUseForEveryScope() {
         var rowScope: RowScope? = null
         var columnScope: ColumnScope? = null
-        var boxScope: BoxScope? = null
-        buildUi { Row { rowScope = this } }
-        buildUi { Column { columnScope = this } }
-        buildUi { Box { boxScope = this } }
+        var stackScope: StackScope? = null
+        var gridScope: GridScope? = null
+        buildComponentTree { Row { rowScope = this } }
+        buildComponentTree { Column { columnScope = this } }
+        buildComponentTree { Stack { stackScope = this } }
+        buildComponentTree { Grid(columns = 1) { gridScope = this } }
 
         val operations =
             listOf<() -> Unit>(
@@ -174,7 +194,8 @@ internal class LayoutDslLifetimeValidationTest {
                 { with(requireNotNull(rowScope)) { Modifier.Empty.align(VerticalAlignment.Bottom) } },
                 { with(requireNotNull(columnScope)) { Modifier.Empty.weight(1f) } },
                 { with(requireNotNull(columnScope)) { Modifier.Empty.align(HorizontalAlignment.End) } },
-                { with(requireNotNull(boxScope)) { Modifier.Empty.align(Alignment.Center) } },
+                { with(requireNotNull(stackScope)) { Modifier.Empty.align(Alignment.Center) } },
+                { with(requireNotNull(gridScope)) { Modifier.Empty.align(Alignment.Center) } },
             )
 
         operations.forEach { operation ->
@@ -186,7 +207,8 @@ internal class LayoutDslLifetimeValidationTest {
     fun receiverModifiersRejectWrongThreadUseWhileEveryScopeIsActive() {
         assertWrongThreadRowModifiers()
         assertWrongThreadColumnModifiers()
-        assertWrongThreadBoxModifiers()
+        assertWrongThreadStackModifiers()
+        assertWrongThreadGridModifiers()
     }
 
     @Test
@@ -200,7 +222,7 @@ internal class LayoutDslLifetimeValidationTest {
                 Float.NEGATIVE_INFINITY,
             )
 
-        buildUi {
+        buildComponentTree {
             Row {
                 invalidWeights.forEach { weight ->
                     assertThrows(IllegalArgumentException::class.java) {
@@ -210,7 +232,7 @@ internal class LayoutDslLifetimeValidationTest {
                 element(TraceElement())
             }
         }
-        buildUi {
+        buildComponentTree {
             Column {
                 invalidWeights.forEach { weight ->
                     assertThrows(IllegalArgumentException::class.java) {
@@ -227,7 +249,7 @@ internal class LayoutDslLifetimeValidationTest {
         val finished = CountDownLatch(1)
         val failures = ArrayList<Throwable>()
         lateinit var worker: Thread
-        buildUi {
+        buildComponentTree {
             Row {
                 val scope = this
                 worker =
@@ -264,7 +286,7 @@ internal class LayoutDslLifetimeValidationTest {
         val finished = CountDownLatch(1)
         val failures = ArrayList<Throwable>()
         lateinit var worker: Thread
-        buildUi {
+        buildComponentTree {
             Column {
                 val scope = this
                 worker =
@@ -296,13 +318,45 @@ internal class LayoutDslLifetimeValidationTest {
         assertWrongThreadFailures(failures, 2)
     }
 
-    private fun assertWrongThreadBoxModifiers() {
+    private fun assertWrongThreadStackModifiers() {
         val entered = CountDownLatch(1)
         val finished = CountDownLatch(1)
         val failures = ArrayList<Throwable>()
         lateinit var worker: Thread
-        buildUi {
-            Box {
+        buildComponentTree {
+            Stack {
+                val scope = this
+                worker =
+                    Thread {
+                        try {
+                            entered.await()
+                            try {
+                                with(scope) { Modifier.Empty.align(Alignment.Center) }
+                            } catch (error: Throwable) {
+                                failures += error
+                            }
+                        } finally {
+                            finished.countDown()
+                        }
+                    }
+                worker.start()
+                entered.countDown()
+                assertTrue(finished.await(5, TimeUnit.SECONDS))
+                element(TraceElement())
+            }
+        }
+        worker.join(5_000)
+        assertFalse(worker.isAlive)
+        assertWrongThreadFailures(failures, 1)
+    }
+
+    private fun assertWrongThreadGridModifiers() {
+        val entered = CountDownLatch(1)
+        val finished = CountDownLatch(1)
+        val failures = ArrayList<Throwable>()
+        lateinit var worker: Thread
+        buildComponentTree {
+            Grid(columns = 1) {
                 val scope = this
                 worker =
                     Thread {
@@ -353,8 +407,8 @@ internal class LayoutDslLifetimeValidationTest {
         }
     }
 
-    private fun UiScope.emitFailingBox(failure: Throwable) {
-        Box {
+    private fun UiScope.emitFailingStack(failure: Throwable) {
+        Stack {
             element(TraceElement())
             throw failure
         }

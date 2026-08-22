@@ -1,9 +1,9 @@
 package dev.s7a.strata.runtime.minecraft.fabric
 
 import dev.s7a.strata.render.DrawImage
-import dev.s7a.strata.runtime.minecraft.MinecraftAssetId
-import dev.s7a.strata.runtime.minecraft.MinecraftScreenDefinition
+import dev.s7a.strata.resource.ResourceId
 import dev.s7a.strata.runtime.minecraft.MinecraftUiProfile
+import dev.s7a.strata.screen.ScreenDefinition
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
 import net.minecraft.client.gui.GuiGraphicsExtractor
 import net.minecraft.client.gui.screens.Screen
@@ -54,7 +54,7 @@ internal class FabricMinecraftJvmSurfaceTest {
         assertTrue(Modifier.isStatic(profileFactory.modifiers))
         assertEquals(MinecraftUiProfile::class.java, profileFactory.returnType)
 
-        val imageFactory = Class.forName(assetFacade).getDeclaredMethod("loadMinecraftUiImage", MinecraftAssetId::class.java)
+        val imageFactory = Class.forName(assetFacade).getDeclaredMethod("loadMinecraftUiImage", ResourceId::class.java)
         assertTrue(Modifier.isStatic(imageFactory.modifiers))
         assertEquals(DrawImage::class.java, imageFactory.returnType)
         val skinFactory = Class.forName(assetFacade).getDeclaredMethod("loadCurrentMinecraftPlayerSkin")
@@ -64,7 +64,7 @@ internal class FabricMinecraftJvmSurfaceTest {
         val screenFactory =
             Class.forName(screenFacade).getDeclaredMethod(
                 "createMinecraftScreen",
-                MinecraftScreenDefinition::class.java,
+                ScreenDefinition::class.java,
                 MinecraftUiProfile::class.java,
                 Screen::class.java,
             )

@@ -1,6 +1,14 @@
 package dev.s7a.strata.integration.external
 
-import dev.s7a.strata.dsl.Box
+import dev.s7a.strata.component.Button
+import dev.s7a.strata.component.NineSliceCenterMode
+import dev.s7a.strata.component.Slot
+import dev.s7a.strata.component.Slots
+import dev.s7a.strata.component.Stack
+import dev.s7a.strata.component.Text
+import dev.s7a.strata.component.TextField
+import dev.s7a.strata.component.TextFieldState
+import dev.s7a.strata.component.TextStyle
 import dev.s7a.strata.geometry.Constraints
 import dev.s7a.strata.geometry.IntOffset
 import dev.s7a.strata.geometry.IntSize
@@ -8,23 +16,15 @@ import dev.s7a.strata.input.InputResult
 import dev.s7a.strata.input.PointerButton
 import dev.s7a.strata.input.PointerEvent
 import dev.s7a.strata.modifier.Modifier
+import dev.s7a.strata.modifier.containerBackground
+import dev.s7a.strata.modifier.menuBackground
 import dev.s7a.strata.modifier.onPress
 import dev.s7a.strata.node.DirtyPhase
 import dev.s7a.strata.render.createDrawImage
-import dev.s7a.strata.runtime.minecraft.Button
-import dev.s7a.strata.runtime.minecraft.MinecraftNineSliceCenterMode
-import dev.s7a.strata.runtime.minecraft.MinecraftSlots
-import dev.s7a.strata.runtime.minecraft.MinecraftTextStyle
-import dev.s7a.strata.runtime.minecraft.Slot
-import dev.s7a.strata.runtime.minecraft.Text
-import dev.s7a.strata.runtime.minecraft.TextField
-import dev.s7a.strata.runtime.minecraft.containerBackground
-import dev.s7a.strata.runtime.minecraft.createMinecraftScreenDefinition
-import dev.s7a.strata.runtime.minecraft.createMinecraftTextFieldState
 import dev.s7a.strata.runtime.minecraft.createMinecraftUiHost
 import dev.s7a.strata.runtime.minecraft.createMinecraftUiProfile
-import dev.s7a.strata.runtime.minecraft.menuBackground
 import dev.s7a.strata.runtime.render.DrawCommand
+import dev.s7a.strata.screen.ScreenDefinition
 import dev.s7a.strata.semantics.SemanticsRole
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
 import dev.s7a.strata.text.UiText
@@ -47,8 +47,8 @@ internal class ExternalMinecraftUiHostIntegrationTest {
 
     private fun assertExternalMenuAndText() {
         val menuHost =
-            createMinecraftScreenDefinition("external menu") {
-                Box(modifier = Modifier.Empty.menuBackground()) {}
+            ScreenDefinition("external menu") {
+                Stack(modifier = Modifier.Empty.menuBackground()) {}
             }.let { definition -> createMinecraftUiHost(definition, profile()) }
         menuHost.attach()
         val menuFrame = menuHost.frame(IntSize(32, 32))
@@ -56,7 +56,7 @@ internal class ExternalMinecraftUiHostIntegrationTest {
         menuHost.close()
 
         val textHost =
-            createMinecraftScreenDefinition(UiText.Literal("external text")) {
+            ScreenDefinition(UiText.Literal("external text")) {
                 Text("A B")
             }.let { definition -> createMinecraftUiHost(definition, profile()) }
         textHost.attach()
@@ -68,9 +68,9 @@ internal class ExternalMinecraftUiHostIntegrationTest {
     }
 
     private fun assertExternalTextFieldAndStyle() {
-        val state = createMinecraftTextFieldState("A", maxLength = 8)
+        val state = TextFieldState("A", maxLength = 8)
         val fieldHost =
-            createMinecraftScreenDefinition(UiText.Literal("external field")) {
+            ScreenDefinition(UiText.Literal("external field")) {
                 TextField(state)
             }.let { definition -> createMinecraftUiHost(definition, profile()) }
         fieldHost.attach()
@@ -90,8 +90,8 @@ internal class ExternalMinecraftUiHostIntegrationTest {
         fieldHost.close()
 
         val inactiveHost =
-            createMinecraftScreenDefinition(UiText.Literal("external styled text")) {
-                Text("A", style = MinecraftTextStyle.Inactive)
+            ScreenDefinition(UiText.Literal("external styled text")) {
+                Text("A", style = TextStyle.Inactive)
             }.let { definition -> createMinecraftUiHost(definition, profile()) }
         inactiveHost.attach()
         assertEquals(IntSize(1, 9), inactiveHost.frame(IntSize(1, 9)).size)
@@ -100,8 +100,8 @@ internal class ExternalMinecraftUiHostIntegrationTest {
 
     private fun assertExternalContainerAndSlot() {
         val containerHost =
-            createMinecraftScreenDefinition("external container") {
-                Box(modifier = Modifier.Empty.containerBackground()) {}
+            ScreenDefinition("external container") {
+                Stack(modifier = Modifier.Empty.containerBackground()) {}
             }.let { definition -> createMinecraftUiHost(definition, profile()) }
         containerHost.attach()
         assertEquals(
@@ -114,7 +114,7 @@ internal class ExternalMinecraftUiHostIntegrationTest {
         containerHost.close()
 
         val slotHost =
-            createMinecraftScreenDefinition("external slot") {
+            ScreenDefinition("external slot") {
                 Slot()
             }.let { definition -> createMinecraftUiHost(definition, profile()) }
         slotHost.attach()
@@ -130,8 +130,8 @@ internal class ExternalMinecraftUiHostIntegrationTest {
         slotHost.close()
 
         val synchronizedSlotHost =
-            createMinecraftScreenDefinition("external synchronized slot") {
-                Slot(bind = MinecraftSlots.playerInventory(0))
+            ScreenDefinition("external synchronized slot") {
+                Slot(bind = Slots.playerInventory(0))
             }.let { definition -> createMinecraftUiHost(definition, profile()) }
         val failure = assertThrows(IllegalStateException::class.java) { synchronizedSlotHost.attach() }
         assertEquals(
@@ -146,7 +146,7 @@ internal class ExternalMinecraftUiHostIntegrationTest {
         val probe = ExternalProbe()
         var contentCalls = 0
         val definition =
-            createMinecraftScreenDefinition(
+            ScreenDefinition(
                 title = UiText.Literal("external"),
                 pausesGame = false,
             ) {
@@ -188,7 +188,7 @@ internal class ExternalMinecraftUiHostIntegrationTest {
     fun externalPurposeSpecificCompositionRunsWithoutBecomingAStandardBuiltIn() {
         val host =
             createMinecraftUiHost(
-                createMinecraftScreenDefinition("external energy") {
+                ScreenDefinition("external energy") {
                     EnergyGauge(energy = 3, capacity = 4)
                 },
                 profile(),
@@ -207,7 +207,7 @@ internal class ExternalMinecraftUiHostIntegrationTest {
         var presses = 0
         val host =
             createMinecraftUiHost(
-                createMinecraftScreenDefinition(UiText.Literal("external button")) {
+                ScreenDefinition(UiText.Literal("external button")) {
                     Button("A", modifier = Modifier.Empty.onPress { presses += 1 })
                 },
                 profile(),
@@ -249,9 +249,9 @@ internal class ExternalMinecraftUiHostIntegrationTest {
                 printableAsciiGlyph(codePoint, image(IntSize(8, 8)))
             }
             val button = image(IntSize(200, 20))
-            buttonNormal(button, 1, MinecraftNineSliceCenterMode.Tiled)
-            buttonHighlighted(button, 1, MinecraftNineSliceCenterMode.Tiled)
-            buttonDisabled(button, 1, MinecraftNineSliceCenterMode.Tiled)
+            buttonNormal(button, 1, NineSliceCenterMode.Tiled)
+            buttonHighlighted(button, 1, NineSliceCenterMode.Tiled)
+            buttonDisabled(button, 1, NineSliceCenterMode.Tiled)
         }
 
     private fun image(size: IntSize) = createDrawImage(size, IntArray(Math.multiplyExact(size.width, size.height)) { 0x00FFFFFF })

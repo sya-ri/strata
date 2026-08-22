@@ -1,8 +1,10 @@
+@file:OptIn(InternalStrataRuntimeApi::class)
+
 package dev.s7a.strata.integration.external
 
-import dev.s7a.strata.dsl.Box
-import dev.s7a.strata.dsl.Row
-import dev.s7a.strata.dsl.buildUi
+import dev.s7a.strata.component.Row
+import dev.s7a.strata.component.Stack
+import dev.s7a.strata.component.evaluateComponentTree
 import dev.s7a.strata.element.Element
 import dev.s7a.strata.element.ElementKey
 import dev.s7a.strata.geometry.Constraints
@@ -10,6 +12,7 @@ import dev.s7a.strata.geometry.IntRect
 import dev.s7a.strata.runtime.TreeState
 import dev.s7a.strata.runtime.UiTree
 import dev.s7a.strata.runtime.render.DrawCommand
+import dev.s7a.strata.spi.InternalStrataRuntimeApi
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertSame
 import org.junit.jupiter.api.Assertions.assertTrue
@@ -90,10 +93,10 @@ internal class KeyedLayoutIntegrationTest {
     }
 
     private fun buildRoot(children: List<BoxSpec>): Element =
-        buildUi {
+        evaluateComponentTree {
             Row {
                 children.forEach { child ->
-                    Box(key = child.key) {
+                    Stack(key = child.key) {
                         element(
                             ExternalElement(
                                 probe = child.probe,

@@ -1,11 +1,15 @@
 package dev.s7a.strata.runtime.minecraft
 
+import dev.s7a.strata.component.Image
+import dev.s7a.strata.component.PlayerHead
+import dev.s7a.strata.component.PlayerSkinSource
 import dev.s7a.strata.geometry.IntRect
 import dev.s7a.strata.geometry.IntSize
 import dev.s7a.strata.render.DrawImage
 import dev.s7a.strata.render.createDrawImage
 import dev.s7a.strata.runtime.headless.rasterizeHeadless
 import dev.s7a.strata.runtime.render.DrawCommand
+import dev.s7a.strata.screen.ScreenDefinition
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertSame
@@ -84,7 +88,7 @@ internal class MinecraftPlayerHeadTest {
         size: Int = 24,
     ): MinecraftUiHost =
         createMinecraftUiHost(
-            createMinecraftScreenDefinition("Player head") { PlayerHead(skin, size, showHat) },
+            ScreenDefinition("Player head") { PlayerHead(PlayerSkinSource.Pixels(skin), size, showHat) },
             MinecraftProfileFixture.create(),
         )
 

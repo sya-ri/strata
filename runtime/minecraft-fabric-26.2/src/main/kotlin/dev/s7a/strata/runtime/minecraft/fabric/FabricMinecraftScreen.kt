@@ -14,11 +14,11 @@ import dev.s7a.strata.input.PointerEvent
 import dev.s7a.strata.input.TextInputEvent
 import dev.s7a.strata.runtime.headless.HeadlessImage
 import dev.s7a.strata.runtime.headless.rasterizeHeadless
-import dev.s7a.strata.runtime.minecraft.MinecraftScreenDefinition
 import dev.s7a.strata.runtime.minecraft.MinecraftUiHost
 import dev.s7a.strata.runtime.minecraft.MinecraftUiProfile
 import dev.s7a.strata.runtime.minecraft.createMinecraftUiHost
 import dev.s7a.strata.runtime.render.DrawCommand
+import dev.s7a.strata.screen.ScreenDefinition
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
 import net.minecraft.client.Minecraft
 import net.minecraft.client.gui.GuiGraphicsExtractor
@@ -34,7 +34,7 @@ import net.minecraft.client.input.PreeditEvent as MinecraftPreeditEvent
 /**
  * Fabric 26.2 client screen backed by one common Minecraft UI host.
  *
- * The host is created by transferring the one-shot [MinecraftScreenDefinition] and is confined to the Minecraft client thread.
+ * The host is created by transferring the one-shot [ScreenDefinition] and is confined to the Minecraft client thread.
  * Added and removed screen callbacks attach and detach the retained tree; removal is transient and never closes the screen.
  * Terminal close releases the host and every transient dynamic texture layer. A caller that permanently abandons a removed or never-presented instance must close it on the client thread.
  * The optional parent is retained for navigation but is never owned or closed.
@@ -727,7 +727,7 @@ public class FabricMinecraftScreen private constructor(
 @OptIn(InternalStrataRuntimeApi::class)
 @Suppress("TooGenericExceptionCaught")
 public fun createMinecraftScreen(
-    definition: MinecraftScreenDefinition,
+    definition: ScreenDefinition,
     profile: MinecraftUiProfile,
     parent: Screen? = currentMinecraftScreen(),
 ): FabricMinecraftScreen {

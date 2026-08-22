@@ -1,31 +1,30 @@
 package dev.s7a.strata.integration.minecraft.fabric
 
 // showcase-source-begin:slot
-import dev.s7a.strata.dsl.Box
-import dev.s7a.strata.dsl.Column
-import dev.s7a.strata.dsl.Row
+import dev.s7a.strata.component.Column
+import dev.s7a.strata.component.Grid
+import dev.s7a.strata.component.Slot
+import dev.s7a.strata.component.Stack
+import dev.s7a.strata.component.Text
+import dev.s7a.strata.component.TextStyle
 import dev.s7a.strata.layout.Alignment
 import dev.s7a.strata.modifier.Modifier
 import dev.s7a.strata.modifier.background
+import dev.s7a.strata.modifier.containerBackground
+import dev.s7a.strata.modifier.menuBackground
 import dev.s7a.strata.modifier.padding
 import dev.s7a.strata.modifier.size
 import dev.s7a.strata.render.ArgbColor
-import dev.s7a.strata.runtime.minecraft.MinecraftScreenDefinition
-import dev.s7a.strata.runtime.minecraft.MinecraftTextStyle
-import dev.s7a.strata.runtime.minecraft.Slot
-import dev.s7a.strata.runtime.minecraft.Text
-import dev.s7a.strata.runtime.minecraft.containerBackground
-import dev.s7a.strata.runtime.minecraft.createMinecraftScreenDefinition
-import dev.s7a.strata.runtime.minecraft.menuBackground
+import dev.s7a.strata.screen.ScreenDefinition
 
 /**
  * Builds the empty three-row Minecraft 26.2 chest screen used by native, Fabric, and headless parity paths.
  *
  * @return one-shot screen definition reproducing the generic container, labels, 63 Slot hit regions, and hovered highlight order.
  */
-internal fun createSlotScreenDefinition(): MinecraftScreenDefinition =
-    createMinecraftScreenDefinition("Chest") {
-        Box(
+internal fun createSlotScreenDefinition(): ScreenDefinition =
+    ScreenDefinition("Chest") {
+        Stack(
             modifier =
                 Modifier.Empty
                     .size(320, 240)
@@ -33,7 +32,7 @@ internal fun createSlotScreenDefinition(): MinecraftScreenDefinition =
                     .menuBackground(),
             contentAlignment = Alignment.Center,
         ) {
-            Box(
+            Stack(
                 modifier = Modifier.Empty.containerBackground(rows = 3),
                 contentAlignment = Alignment.Center,
             ) {
@@ -44,35 +43,27 @@ internal fun createSlotScreenDefinition(): MinecraftScreenDefinition =
                     Column(spacing = 2) {
                         Text(
                             "Chest",
-                            style = MinecraftTextStyle.ContainerLabel,
+                            style = TextStyle.ContainerLabel,
                             modifier = Modifier.Empty.padding(left = 1),
                         )
-                        Column {
-                            repeat(3) {
-                                Row {
-                                    repeat(9) {
-                                        Slot()
-                                    }
-                                }
+                        Grid(columns = 9) {
+                            repeat(27) {
+                                Slot()
                             }
                         }
                     }
                     Column {
                         Text(
                             "Inventory",
-                            style = MinecraftTextStyle.ContainerLabel,
+                            style = TextStyle.ContainerLabel,
                             modifier = Modifier.Empty.padding(left = 1),
                         )
-                        Column(modifier = Modifier.Empty.padding(top = 1)) {
-                            repeat(3) {
-                                Row {
-                                    repeat(9) {
-                                        Slot()
-                                    }
-                                }
+                        Grid(columns = 9, modifier = Modifier.Empty.padding(top = 1)) {
+                            repeat(27) {
+                                Slot()
                             }
                         }
-                        Row(modifier = Modifier.Empty.padding(top = 4)) {
+                        Grid(columns = 9, modifier = Modifier.Empty.padding(top = 4)) {
                             repeat(9) {
                                 Slot()
                             }

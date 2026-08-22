@@ -27,9 +27,15 @@ internal class ShowcaseParityEvidenceTest {
         first[0] = 0
 
         assertArrayEquals(png, evidence.overviewPng())
+        assertArrayEquals(png(320, 180), evidence.componentPng(DocumentedComponent.Row))
+        assertArrayEquals(png(320, 180), evidence.componentPng(DocumentedComponent.Column))
+        assertArrayEquals(png(320, 180), evidence.componentPng(DocumentedComponent.Stack))
+        assertArrayEquals(png(320, 240), evidence.componentPng(DocumentedComponent.Grid))
+        assertArrayEquals(png(320, 180), evidence.componentPng(DocumentedComponent.Spacer))
         assertArrayEquals(png(150, 20), evidence.componentPng(DocumentedComponent.Text))
         assertArrayEquals(png(200, 20), evidence.componentPng(DocumentedComponent.TextField))
         assertArrayEquals(png(150, 20), evidence.componentPng(DocumentedComponent.Button))
+        assertArrayEquals(png(320, 240), evidence.componentPng(DocumentedComponent.Tab))
         assertArrayEquals(png(320, 94), evidence.componentPng(DocumentedComponent.Scroll))
         assertArrayEquals(png(24, 24), evidence.componentPng(DocumentedComponent.Slot))
         assertArrayEquals(png(32, 32), evidence.componentPng(DocumentedComponent.Image))
@@ -81,9 +87,15 @@ internal class ShowcaseParityEvidenceTest {
         val images =
             linkedMapOf(
                 "overview" to png(320, 180),
+                DocumentedComponent.Row.slug to png(320, 180),
+                DocumentedComponent.Column.slug to png(320, 180),
+                DocumentedComponent.Stack.slug to png(320, 180),
+                DocumentedComponent.Grid.slug to png(320, 240),
+                DocumentedComponent.Spacer.slug to png(320, 180),
                 DocumentedComponent.Text.slug to png(150, 20),
                 DocumentedComponent.TextField.slug to png(200, 20),
                 DocumentedComponent.Button.slug to png(150, 20),
+                DocumentedComponent.Tab.slug to png(320, 240),
                 DocumentedComponent.Scroll.slug to png(320, 94),
                 DocumentedComponent.Slot.slug to png(24, 24),
                 DocumentedComponent.Image.slug to png(32, 32),

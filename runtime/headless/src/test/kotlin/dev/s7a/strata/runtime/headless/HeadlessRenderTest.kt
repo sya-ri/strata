@@ -1,12 +1,15 @@
+@file:OptIn(InternalStrataRuntimeApi::class)
+
 package dev.s7a.strata.runtime.headless
 
-import dev.s7a.strata.dsl.Row
-import dev.s7a.strata.dsl.buildUi
+import dev.s7a.strata.component.Row
+import dev.s7a.strata.component.evaluateComponentTree
 import dev.s7a.strata.geometry.IntRect
 import dev.s7a.strata.geometry.IntSize
 import dev.s7a.strata.render.ArgbColor
 import dev.s7a.strata.runtime.semantics.SemanticsEntry
 import dev.s7a.strata.semantics.Semantics
+import dev.s7a.strata.spi.InternalStrataRuntimeApi
 import dev.s7a.strata.text.UiText
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertSame
@@ -23,7 +26,7 @@ internal class HeadlessRenderTest {
         val probe = HeadlessProbe()
         val owner = Thread.currentThread()
         val description =
-            buildUi {
+            evaluateComponentTree {
                 Row {
                     element(HeadlessPrimitive(probe, width = 2, height = 3, color = ArgbColor(0xFFFF0000.toInt()), label = "first"))
                     element(HeadlessPrimitive(probe, width = 2, height = 4, color = ArgbColor(0xFF00FF00.toInt()), label = "second"))

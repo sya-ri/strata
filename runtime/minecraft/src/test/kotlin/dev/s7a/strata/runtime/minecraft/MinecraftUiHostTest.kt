@@ -1,8 +1,11 @@
+@file:OptIn(InternalStrataRuntimeApi::class)
+
 package dev.s7a.strata.runtime.minecraft
 
-import dev.s7a.strata.dsl.Box
-import dev.s7a.strata.dsl.Spacer
-import dev.s7a.strata.dsl.buildUi
+import dev.s7a.strata.component.Spacer
+import dev.s7a.strata.component.Stack
+import dev.s7a.strata.component.Text
+import dev.s7a.strata.component.evaluateComponentTree
 import dev.s7a.strata.element.Element
 import dev.s7a.strata.geometry.Constraints
 import dev.s7a.strata.geometry.IntOffset
@@ -15,10 +18,12 @@ import dev.s7a.strata.input.PointerEvent
 import dev.s7a.strata.input.TextInputEvent
 import dev.s7a.strata.modifier.Modifier
 import dev.s7a.strata.modifier.initialFocus
+import dev.s7a.strata.modifier.menuBackground
 import dev.s7a.strata.modifier.onCharacterInput
 import dev.s7a.strata.modifier.onFocusChanged
 import dev.s7a.strata.modifier.onKeyPress
 import dev.s7a.strata.modifier.size
+import dev.s7a.strata.screen.ScreenDefinition
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
 import dev.s7a.strata.text.UiText
 import org.junit.jupiter.api.Assertions.assertEquals
@@ -42,7 +47,7 @@ internal class MinecraftUiHostTest {
         val characters = ArrayList<TextInputEvent.Character>()
         val host =
             host {
-                buildUi {
+                evaluateComponentTree {
                     Spacer(
                         modifier =
                             Modifier.Empty
@@ -218,7 +223,7 @@ internal class MinecraftUiHostTest {
                         runCatching { host.dispatchPointer(PointerEvent.Move(IntOffset.Zero)) }.exceptionOrNull(),
                         runCatching { host.close() }.exceptionOrNull(),
                     )
-                buildUi { Box(modifier = Modifier.Empty.menuBackground()) {} }
+                evaluateComponentTree { Stack(modifier = Modifier.Empty.menuBackground()) {} }
             }
         host.attach()
         assertEquals(7, reentryFailures.size)
@@ -327,7 +332,7 @@ internal class MinecraftUiHostTest {
 
     private fun host(content: () -> Element): MinecraftUiHost =
         createMinecraftUiHost(
-            createMinecraftScreenDefinition(
+            ScreenDefinition(
                 title = UiText.Literal("test"),
                 pausesGame = false,
             ) { element(content()) },

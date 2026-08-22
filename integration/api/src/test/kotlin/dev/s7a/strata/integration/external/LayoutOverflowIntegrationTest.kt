@@ -1,8 +1,10 @@
+@file:OptIn(InternalStrataRuntimeApi::class)
+
 package dev.s7a.strata.integration.external
 
-import dev.s7a.strata.dsl.Column
-import dev.s7a.strata.dsl.Row
-import dev.s7a.strata.dsl.buildUi
+import dev.s7a.strata.component.Column
+import dev.s7a.strata.component.Row
+import dev.s7a.strata.component.evaluateComponentTree
 import dev.s7a.strata.geometry.Constraints
 import dev.s7a.strata.geometry.IntOffset
 import dev.s7a.strata.geometry.IntRect
@@ -13,6 +15,7 @@ import dev.s7a.strata.input.PointerEvent
 import dev.s7a.strata.layout.Arrangement
 import dev.s7a.strata.runtime.UiTree
 import dev.s7a.strata.runtime.render.DrawCommand
+import dev.s7a.strata.spi.InternalStrataRuntimeApi
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
 
@@ -38,7 +41,7 @@ internal class LayoutOverflowIntegrationTest {
         val probe = ExternalProbe()
         val tree = UiTree()
         tree.update(
-            buildUi {
+            evaluateComponentTree {
                 Row(
                     spacing = 2,
                     horizontalArrangement = arrangement,
@@ -69,7 +72,7 @@ internal class LayoutOverflowIntegrationTest {
         val probe = ExternalProbe()
         val tree = UiTree()
         tree.update(
-            buildUi {
+            evaluateComponentTree {
                 Column(
                     spacing = 2,
                     verticalArrangement = arrangement,

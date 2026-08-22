@@ -2,9 +2,9 @@
 
 package dev.s7a.strata.integration.external
 
-import dev.s7a.strata.dsl.Box
-import dev.s7a.strata.dsl.Spacer
-import dev.s7a.strata.dsl.UiScope
+import dev.s7a.strata.component.Spacer
+import dev.s7a.strata.component.Stack
+import dev.s7a.strata.component.UiScope
 import dev.s7a.strata.element.ElementKey
 import dev.s7a.strata.modifier.Modifier
 import dev.s7a.strata.modifier.background
@@ -35,7 +35,7 @@ public fun UiScope.EnergyGauge(
     require(0 < capacity) { "Energy capacity must be positive." }
     require(0 <= energy && energy <= capacity) { "Energy must be inside zero through capacity." }
     val fillWidth = Math.multiplyExact(energy, 20) / capacity
-    Box(
+    Stack(
         modifier = modifier.size(20, 4).background(ArgbColor(0xFF202020.toInt())),
         key = key,
     ) {

@@ -1,9 +1,20 @@
 package dev.s7a.strata.integration.minecraft.fabric
 
 // showcase-source-begin:social-screen
-import dev.s7a.strata.dsl.Box
-import dev.s7a.strata.dsl.Column
-import dev.s7a.strata.dsl.Row
+import dev.s7a.strata.component.Button
+import dev.s7a.strata.component.Column
+import dev.s7a.strata.component.Image
+import dev.s7a.strata.component.ImageSource
+import dev.s7a.strata.component.NineSliceCenterMode
+import dev.s7a.strata.component.PlayerHead
+import dev.s7a.strata.component.PlayerSkinSource
+import dev.s7a.strata.component.Row
+import dev.s7a.strata.component.Stack
+import dev.s7a.strata.component.Tab
+import dev.s7a.strata.component.Text
+import dev.s7a.strata.component.TextField
+import dev.s7a.strata.component.TextFieldState
+import dev.s7a.strata.component.TextStyle
 import dev.s7a.strata.geometry.Insets
 import dev.s7a.strata.geometry.IntSize
 import dev.s7a.strata.layout.Alignment
@@ -12,55 +23,45 @@ import dev.s7a.strata.layout.HorizontalAlignment
 import dev.s7a.strata.layout.VerticalAlignment
 import dev.s7a.strata.modifier.Modifier
 import dev.s7a.strata.modifier.background
+import dev.s7a.strata.modifier.imageBackground
 import dev.s7a.strata.modifier.initialFocus
+import dev.s7a.strata.modifier.menuBackground
 import dev.s7a.strata.modifier.onPress
 import dev.s7a.strata.modifier.padding
 import dev.s7a.strata.modifier.size
 import dev.s7a.strata.render.ArgbColor
-import dev.s7a.strata.render.DrawImage
-import dev.s7a.strata.runtime.minecraft.Button
-import dev.s7a.strata.runtime.minecraft.Image
-import dev.s7a.strata.runtime.minecraft.MinecraftNineSliceCenterMode
-import dev.s7a.strata.runtime.minecraft.MinecraftScreenDefinition
-import dev.s7a.strata.runtime.minecraft.MinecraftTextFieldState
-import dev.s7a.strata.runtime.minecraft.MinecraftTextStyle
-import dev.s7a.strata.runtime.minecraft.PlayerHead
-import dev.s7a.strata.runtime.minecraft.Text
-import dev.s7a.strata.runtime.minecraft.TextField
-import dev.s7a.strata.runtime.minecraft.createMinecraftScreenDefinition
-import dev.s7a.strata.runtime.minecraft.createMinecraftTextFieldState
-import dev.s7a.strata.runtime.minecraft.imageBackground
-import dev.s7a.strata.runtime.minecraft.menuBackground
+import dev.s7a.strata.resource.ResourceId
+import dev.s7a.strata.screen.ScreenDefinition
 
 /**
  * Builds the deterministic one-player Minecraft 26.2 Social Interactions screen from general-purpose primitives.
  *
  * Social-entry composition remains application code: the public runtime supplies PlayerHead, text, actions, images, fields, layout, and active backgrounds without exposing a purpose-specific SocialEntry component.
  *
- * @param panel exact active-resource `social_interactions/background` pixels.
- * @param searchIcon exact active-resource `icon/search` pixels.
- * @param playerSkin detached selected-player skin pixels.
+ * @param panel active-resource `social_interactions/background` source.
+ * @param searchIcon active-resource `icon/search` source.
+ * @param playerSkin selected player lookup or detached skin source.
  * @return one-shot screen definition reproducing the native screen geometry and draw order.
  */
 internal fun createSocialScreenDefinition(
-    panel: DrawImage,
-    searchIcon: DrawImage,
-    playerSkin: DrawImage,
-): MinecraftScreenDefinition {
-    val search = createMinecraftTextFieldState("", maxLength = 16)
-    return createMinecraftScreenDefinition("Social Interactions") {
-        Box(
+    panel: ImageSource = socialPanel,
+    searchIcon: ImageSource = socialSearchIcon,
+    playerSkin: PlayerSkinSource = PlayerSkinSource.Name("Player0"),
+): ScreenDefinition {
+    val search = TextFieldState("", maxLength = 16)
+    return ScreenDefinition("Social Interactions") {
+        Stack(
             modifier =
                 Modifier.Empty
                     .size(320, 240)
                     .background(ArgbColor(0xFF000000.toInt()))
                     .menuBackground(),
         ) {
-            Box(
+            Stack(
                 modifier = Modifier.Empty.size(320, 176),
                 contentAlignment = Alignment.BottomCenter,
             ) {
-                Box(
+                Stack(
                     modifier =
                         Modifier.Empty
                             .padding(left = 4)
@@ -68,7 +69,7 @@ internal fun createSocialScreenDefinition(
                             .imageBackground(
                                 panel,
                                 Insets.all(8),
-                                MinecraftNineSliceCenterMode.Tiled,
+                                NineSliceCenterMode.Tiled,
                             ),
                 ) {}
             }
@@ -88,33 +89,9 @@ internal fun createSocialScreenDefinition(
                         Text("Player0 - New World - 1 player")
                     }
                     Row(modifier = Modifier.Empty.padding(left = 1, top = 1), spacing = 1) {
-                        Box(modifier = Modifier.Empty.size(73, 20)) {
-                            Button("All", width = 73, modifier = Modifier.Empty.onPress {})
-                            Box(
-                                modifier = Modifier.Empty.size(73, 16),
-                                contentAlignment = Alignment.BottomCenter,
-                            ) {
-                                Box(
-                                    modifier =
-                                        Modifier.Empty
-                                            .size(13, 1)
-                                            .background(ArgbColor(0xFF3F3F3F.toInt())),
-                                ) {}
-                            }
-                            Box(
-                                modifier = Modifier.Empty.size(72, 15),
-                                contentAlignment = Alignment.BottomCenter,
-                            ) {
-                                Box(
-                                    modifier =
-                                        Modifier.Empty
-                                            .size(13, 1)
-                                            .background(ArgbColor(0xFFFFFFFF.toInt())),
-                                ) {}
-                            }
-                        }
-                        Button("Hidden", width = 73, modifier = Modifier.Empty.onPress {})
-                        Button("Blocked", width = 73, modifier = Modifier.Empty.onPress {})
+                        Tab("All", selected = true, width = 73, modifier = Modifier.Empty.onPress {})
+                        Tab("Hidden", selected = false, width = 73, modifier = Modifier.Empty.onPress {})
+                        Tab("Blocked", selected = false, width = 73, modifier = Modifier.Empty.onPress {})
                     }
                     Row(
                         modifier = Modifier.Empty.padding(left = 5, top = 9),
@@ -123,13 +100,13 @@ internal fun createSocialScreenDefinition(
                     ) {
                         Image(
                             searchIcon,
-                            IntSize(12, 12),
+                            size = IntSize(12, 12),
                             modifier = Modifier.Empty.padding(top = 2),
                         )
                         TextField(
                             search,
                             size = IntSize(200, 15),
-                            textStyle = MinecraftTextStyle.Normal,
+                            textStyle = TextStyle.Normal,
                             modifier = Modifier.Empty.initialFocus(),
                         )
                     }
@@ -142,7 +119,7 @@ internal fun createSocialScreenDefinition(
                         spacing = 4,
                         verticalAlignment = VerticalAlignment.Center,
                     ) {
-                        PlayerHead(playerSkin, modifier = Modifier.Empty.padding(left = 4))
+                        PlayerHead(source = playerSkin, modifier = Modifier.Empty.padding(left = 4))
                         Text("Player0")
                     }
                 }
@@ -155,4 +132,7 @@ internal fun createSocialScreenDefinition(
         }
     }
 }
+
+private val socialPanel = ImageSource.Resource(ResourceId("minecraft", "textures/gui/sprites/social_interactions/background.png"))
+private val socialSearchIcon = ImageSource.Resource(ResourceId("minecraft", "textures/gui/sprites/icon/search.png"))
 // showcase-source-end:social-screen

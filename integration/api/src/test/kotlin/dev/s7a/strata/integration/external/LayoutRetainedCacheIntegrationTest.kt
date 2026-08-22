@@ -1,8 +1,10 @@
+@file:OptIn(InternalStrataRuntimeApi::class)
+
 package dev.s7a.strata.integration.external
 
-import dev.s7a.strata.dsl.Box
-import dev.s7a.strata.dsl.Row
-import dev.s7a.strata.dsl.buildUi
+import dev.s7a.strata.component.Row
+import dev.s7a.strata.component.Stack
+import dev.s7a.strata.component.evaluateComponentTree
 import dev.s7a.strata.element.Element
 import dev.s7a.strata.element.ElementKey
 import dev.s7a.strata.geometry.Constraints
@@ -13,6 +15,7 @@ import dev.s7a.strata.layout.VerticalAlignment
 import dev.s7a.strata.modifier.Modifier
 import dev.s7a.strata.runtime.UiTree
 import dev.s7a.strata.runtime.render.DrawCommand
+import dev.s7a.strata.spi.InternalStrataRuntimeApi
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertSame
 import org.junit.jupiter.api.Test
@@ -171,7 +174,7 @@ internal class LayoutRetainedCacheIntegrationTest {
         secondWeight: Float? = null,
         childAlignment: VerticalAlignment? = null,
     ): Element =
-        buildUi {
+        evaluateComponentTree {
             Row(
                 key = ElementKey("row"),
                 spacing = spacing,
@@ -228,8 +231,8 @@ internal class LayoutRetainedCacheIntegrationTest {
         probe: ExternalProbe,
         alignment: Alignment,
     ): Element =
-        buildUi {
-            Box(key = ElementKey("box"), contentAlignment = alignment) {
+        evaluateComponentTree {
+            Stack(key = ElementKey("box"), contentAlignment = alignment) {
                 element(
                     ExternalElement(
                         probe = probe,

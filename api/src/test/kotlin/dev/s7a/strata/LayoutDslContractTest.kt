@@ -1,14 +1,16 @@
 package dev.s7a.strata
 
-import dev.s7a.strata.dsl.Box
-import dev.s7a.strata.dsl.BoxScope
-import dev.s7a.strata.dsl.Column
-import dev.s7a.strata.dsl.ColumnScope
-import dev.s7a.strata.dsl.Row
-import dev.s7a.strata.dsl.RowScope
-import dev.s7a.strata.dsl.Spacer
-import dev.s7a.strata.dsl.UiScope
-import dev.s7a.strata.dsl.buildUi
+import dev.s7a.strata.component.Column
+import dev.s7a.strata.component.ColumnScope
+import dev.s7a.strata.component.Grid
+import dev.s7a.strata.component.GridScope
+import dev.s7a.strata.component.Row
+import dev.s7a.strata.component.RowScope
+import dev.s7a.strata.component.Spacer
+import dev.s7a.strata.component.Stack
+import dev.s7a.strata.component.StackScope
+import dev.s7a.strata.component.UiScope
+import dev.s7a.strata.component.buildComponentTree
 import dev.s7a.strata.element.Element
 import dev.s7a.strata.layout.Alignment
 import dev.s7a.strata.modifier.Modifier
@@ -32,7 +34,7 @@ internal class LayoutDslContractTest {
 
         val propagated =
             assertThrows(IllegalStateException::class.java) {
-                buildUi {
+                buildComponentTree {
                     Row {
                         capturedScope = this
                         throw callbackFailure
@@ -52,7 +54,7 @@ internal class LayoutDslContractTest {
     @Test
     fun escapedOuterComponentRejectsWrongThreadBeforeRunningContent() {
         var capturedScope: UiScope? = null
-        buildUi {
+        buildComponentTree {
             capturedScope = this
             Row { }
         }
@@ -79,7 +81,7 @@ internal class LayoutDslContractTest {
 
     @Test
     fun publicScopesHaveNoPublicJavaConstructor() {
-        listOf(RowScope::class.java, ColumnScope::class.java, BoxScope::class.java).forEach { scopeClass ->
+        listOf(RowScope::class.java, ColumnScope::class.java, StackScope::class.java, GridScope::class.java).forEach { scopeClass ->
             assertTrue(JavaModifier.isAbstract(scopeClass.modifiers))
             assertTrue(scopeClass.isSealed)
             assertTrue(
@@ -91,7 +93,7 @@ internal class LayoutDslContractTest {
                     .all { constructor -> JavaModifier.isPrivate(constructor.modifiers) },
             )
         }
-        listOf(UiScope::class.java, RowScope::class.java, ColumnScope::class.java, BoxScope::class.java)
+        listOf(UiScope::class.java, RowScope::class.java, ColumnScope::class.java, StackScope::class.java, GridScope::class.java)
             .forEach(::assertNoJavaFactory)
         val intendedElementMethod = UiScope::class.java.getDeclaredMethod("element", Element::class.java)
         assertEquals(
@@ -123,12 +125,13 @@ internal class LayoutDslContractTest {
             listOf<(UiScope) -> Unit>(
                 { scope -> scope.Row { } },
                 { scope -> scope.Column { } },
-                { scope -> scope.Box { } },
+                { scope -> scope.Stack { } },
+                { scope -> scope.Grid(columns = 1) { } },
                 { scope -> scope.Spacer() },
             )
         builders.forEach { builder ->
             var capturedScope: UiScope? = null
-            buildUi {
+            buildComponentTree {
                 capturedScope = this
                 Row { }
             }
@@ -154,10 +157,12 @@ internal class LayoutDslContractTest {
     fun everyScopeRejectsLateModifierBehavior() {
         var rowScope: RowScope? = null
         var columnScope: ColumnScope? = null
-        var boxScope: BoxScope? = null
-        buildUi { Row { rowScope = this } }
-        buildUi { Column { columnScope = this } }
-        buildUi { Box { boxScope = this } }
+        var stackScope: StackScope? = null
+        var gridScope: GridScope? = null
+        buildComponentTree { Row { rowScope = this } }
+        buildComponentTree { Column { columnScope = this } }
+        buildComponentTree { Stack { stackScope = this } }
+        buildComponentTree { Grid(columns = 1) { gridScope = this } }
 
         assertThrows(IllegalStateException::class.java) {
             with(requireNotNull(rowScope)) { Modifier.Empty.weight(1f) }
@@ -166,7 +171,10 @@ internal class LayoutDslContractTest {
             with(requireNotNull(columnScope)) { Modifier.Empty.weight(1f) }
         }
         assertThrows(IllegalStateException::class.java) {
-            with(requireNotNull(boxScope)) { Modifier.Empty.align(Alignment.Center) }
+            with(requireNotNull(stackScope)) { Modifier.Empty.align(Alignment.Center) }
+        }
+        assertThrows(IllegalStateException::class.java) {
+            with(requireNotNull(gridScope)) { Modifier.Empty.align(Alignment.Center) }
         }
     }
 }

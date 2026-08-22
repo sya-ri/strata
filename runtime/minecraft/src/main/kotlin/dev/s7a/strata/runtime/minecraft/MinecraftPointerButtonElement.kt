@@ -1,5 +1,6 @@
 package dev.s7a.strata.runtime.minecraft
 
+import dev.s7a.strata.component.NineSliceCenterMode
 import dev.s7a.strata.element.Element
 import dev.s7a.strata.element.ElementIdentity
 import dev.s7a.strata.element.ElementKey
@@ -211,8 +212,8 @@ private class MinecraftPointerButtonElement private constructor(
             )
             val centerSource =
                 when (sprite.centerMode) {
-                    MinecraftNineSliceCenterMode.Tiled -> IntRect(border, 0, width - border, sourceHeight)
-                    MinecraftNineSliceCenterMode.Stretched -> IntRect(border, 0, 200 - border, sourceHeight)
+                    NineSliceCenterMode.Tiled -> IntRect(border, 0, width - border, sourceHeight)
+                    NineSliceCenterMode.Stretched -> IntRect(border, 0, 200 - border, sourceHeight)
                 }
             scope.blitImage(
                 sprite.image,

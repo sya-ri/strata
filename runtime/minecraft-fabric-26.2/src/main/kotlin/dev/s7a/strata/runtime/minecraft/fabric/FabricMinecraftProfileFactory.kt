@@ -3,11 +3,11 @@
 package dev.s7a.strata.runtime.minecraft.fabric
 
 import com.mojang.blaze3d.platform.NativeImage
+import dev.s7a.strata.component.NineSliceCenterMode
 import dev.s7a.strata.geometry.IntSize
 import dev.s7a.strata.render.ArgbColor
 import dev.s7a.strata.render.DrawImage
 import dev.s7a.strata.render.createDrawImage
-import dev.s7a.strata.runtime.minecraft.MinecraftNineSliceCenterMode
 import dev.s7a.strata.runtime.minecraft.MinecraftUiProfile
 import dev.s7a.strata.runtime.minecraft.createMinecraftUiProfile
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
@@ -75,9 +75,9 @@ public fun extractMinecraftUiProfile(): MinecraftUiProfile {
         scrollbarThumb(scrollbarThumb)
         textFieldNormal(normalTextField)
         textFieldHighlighted(highlightedTextField)
-        buttonNormal(normal, 3, MinecraftNineSliceCenterMode.Tiled)
-        buttonHighlighted(highlighted, 3, MinecraftNineSliceCenterMode.Tiled)
-        buttonDisabled(disabled, 1, MinecraftNineSliceCenterMode.Tiled)
+        buttonNormal(normal, 3, NineSliceCenterMode.Tiled)
+        buttonHighlighted(highlighted, 3, NineSliceCenterMode.Tiled)
+        buttonDisabled(disabled, 1, NineSliceCenterMode.Tiled)
         for (codePoint in printableAsciiRange) {
             printableAsciiGlyph(codePoint, extractMinecraftAsciiGlyph(ascii, codePoint))
         }

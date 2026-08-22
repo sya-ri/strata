@@ -1,8 +1,10 @@
+@file:OptIn(InternalStrataRuntimeApi::class)
+
 package dev.s7a.strata.integration.external
 
-import dev.s7a.strata.dsl.Column
-import dev.s7a.strata.dsl.Row
-import dev.s7a.strata.dsl.buildUi
+import dev.s7a.strata.component.Column
+import dev.s7a.strata.component.Row
+import dev.s7a.strata.component.evaluateComponentTree
 import dev.s7a.strata.element.Element
 import dev.s7a.strata.geometry.Constraints
 import dev.s7a.strata.geometry.IntOffset
@@ -12,6 +14,7 @@ import dev.s7a.strata.input.PointerEvent
 import dev.s7a.strata.node.DirtyPhase
 import dev.s7a.strata.runtime.TreeState
 import dev.s7a.strata.runtime.UiTree
+import dev.s7a.strata.spi.InternalStrataRuntimeApi
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
@@ -78,7 +81,7 @@ internal class LayoutArithmeticFailureIntegrationTest {
     ): Element =
         when (axis) {
             ArithmeticAxis.Horizontal -> {
-                buildUi {
+                evaluateComponentTree {
                     Row {
                         hugeChildren(probe).forEach(::element)
                     }
@@ -86,7 +89,7 @@ internal class LayoutArithmeticFailureIntegrationTest {
             }
 
             ArithmeticAxis.Vertical -> {
-                buildUi {
+                evaluateComponentTree {
                     Column {
                         hugeChildren(probe).forEach(::element)
                     }

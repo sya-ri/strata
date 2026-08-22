@@ -1,7 +1,12 @@
+@file:OptIn(InternalStrataRuntimeApi::class)
+
 package dev.s7a.strata.runtime.minecraft
 
-import dev.s7a.strata.dsl.Spacer
-import dev.s7a.strata.dsl.buildUi
+import dev.s7a.strata.component.Image
+import dev.s7a.strata.component.Scroll
+import dev.s7a.strata.component.Spacer
+import dev.s7a.strata.component.Text
+import dev.s7a.strata.component.evaluateComponentTree
 import dev.s7a.strata.element.Element
 import dev.s7a.strata.geometry.Constraints
 import dev.s7a.strata.geometry.IntOffset
@@ -19,6 +24,7 @@ import dev.s7a.strata.render.createDrawImage
 import dev.s7a.strata.runtime.UiTree
 import dev.s7a.strata.runtime.headless.rasterizeHeadless
 import dev.s7a.strata.runtime.render.DrawCommand
+import dev.s7a.strata.screen.ScreenDefinition
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
 import dev.s7a.strata.text.UiText
 import org.junit.jupiter.api.Assertions.assertEquals
@@ -140,7 +146,7 @@ internal class MinecraftScrollTest {
     @Test
     fun scrollRejectsUnboundedAxesInvalidRatesAndInvalidContentCardinality() {
         var description: Element? = null
-        val host = host(MinecraftProfileFixture.create()) { buildUi { Scroll { Spacer(modifier = Modifier.Empty.size(10, 60)) } }.also { description = it } }
+        val host = host(MinecraftProfileFixture.create()) { evaluateComponentTree { Scroll { Spacer(modifier = Modifier.Empty.size(10, 60)) } }.also { description = it } }
         host.attach()
         host.frame(IntSize(20, 40))
         host.close()
@@ -158,17 +164,17 @@ internal class MinecraftScrollTest {
             }
         }
 
-        val invalidRate = host(MinecraftProfileFixture.create()) { buildUi { Scroll(scrollRate = 0) { Spacer() } } }
+        val invalidRate = host(MinecraftProfileFixture.create()) { evaluateComponentTree { Scroll(scrollRate = 0) { Spacer() } } }
         assertThrows(IllegalArgumentException::class.java) { invalidRate.attach() }
         invalidRate.close()
 
-        val empty = host(MinecraftProfileFixture.create()) { buildUi { Scroll {} } }
+        val empty = host(MinecraftProfileFixture.create()) { evaluateComponentTree { Scroll {} } }
         assertThrows(IllegalArgumentException::class.java) { empty.attach() }
         empty.close()
 
         val multiple =
             host(MinecraftProfileFixture.create()) {
-                buildUi {
+                evaluateComponentTree {
                     Scroll {
                         Spacer()
                         Spacer()
@@ -184,7 +190,7 @@ internal class MinecraftScrollTest {
         val assets = ScrollAssets()
         val host =
             host(assets.profile()) {
-                buildUi {
+                evaluateComponentTree {
                     Scroll {
                         Spacer(modifier = Modifier.Empty.size(80, 20).background(contentColor))
                     }
@@ -219,10 +225,10 @@ internal class MinecraftScrollTest {
     private fun host(
         profile: MinecraftUiProfile,
         content: () -> Element,
-    ): MinecraftUiHost = createMinecraftUiHost(createMinecraftScreenDefinition(UiText.Literal("scroll")) { element(content()) }, profile)
+    ): MinecraftUiHost = createMinecraftUiHost(ScreenDefinition(UiText.Literal("scroll")) { element(content()) }, profile)
 
     private fun scrollContent(): Element =
-        buildUi {
+        evaluateComponentTree {
             Scroll {
                 Spacer(modifier = Modifier.Empty.size(270, 180).background(contentColor))
             }

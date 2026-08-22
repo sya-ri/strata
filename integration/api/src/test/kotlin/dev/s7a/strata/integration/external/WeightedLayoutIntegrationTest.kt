@@ -1,16 +1,19 @@
+@file:OptIn(InternalStrataRuntimeApi::class)
+
 package dev.s7a.strata.integration.external
 
-import dev.s7a.strata.dsl.Column
-import dev.s7a.strata.dsl.ColumnScope
-import dev.s7a.strata.dsl.Row
-import dev.s7a.strata.dsl.RowScope
-import dev.s7a.strata.dsl.buildUi
+import dev.s7a.strata.component.Column
+import dev.s7a.strata.component.ColumnScope
+import dev.s7a.strata.component.Row
+import dev.s7a.strata.component.RowScope
+import dev.s7a.strata.component.evaluateComponentTree
 import dev.s7a.strata.geometry.Constraints
 import dev.s7a.strata.geometry.IntRect
 import dev.s7a.strata.geometry.IntSize
 import dev.s7a.strata.modifier.Modifier
 import dev.s7a.strata.runtime.UiTree
 import dev.s7a.strata.runtime.render.DrawCommand
+import dev.s7a.strata.spi.InternalStrataRuntimeApi
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
 
@@ -233,7 +236,7 @@ internal class WeightedLayoutIntegrationTest {
     ): Fixture =
         Fixture(ExternalProbe()).also { fixture ->
             fixture.tree.update(
-                buildUi {
+                evaluateComponentTree {
                     Row(spacing = spacing) { content(fixture.probe) }
                 },
             )
@@ -245,7 +248,7 @@ internal class WeightedLayoutIntegrationTest {
     ): Fixture =
         Fixture(ExternalProbe()).also { fixture ->
             fixture.tree.update(
-                buildUi {
+                evaluateComponentTree {
                     Column(spacing = spacing) { content(fixture.probe) }
                 },
             )

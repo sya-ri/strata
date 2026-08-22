@@ -8,7 +8,8 @@ A module joins the build only with working behavior and tests.
 
 ## Module boundaries
 
-- `api` contains the public, platform-neutral contracts and value types.
+- `api` contains the complete platform-neutral authoring surface: one-shot `ScreenDefinition`, flat `dev.s7a.strata.component` entry points and configuration types, layouts, resource identifiers, slot and skin locators, active modifiers, and the custom `Element`/`Node` SPI.
+  Application source needs no runtime module on its compile classpath.
 - `runtime:core` is configured as a publishable, Minecraft-independent retained engine built on `api`.
   It includes reconciliation, layout, input dispatch, painting, unresolved semantics flattening, and internal screen-session orchestration.
   Its opt-in runtime adapter bridge is a narrow integration contract, not an application screen API.
@@ -17,19 +18,19 @@ A module joins the build only with working behavior and tests.
 - `runtime:headless` is a publishable headless adapter built on `runtime:core`.
   It synchronously renders a fixed positive viewport, rasterizes core draw commands into deterministic ARGB pixels, and encodes metadata-free RGBA8 PNG output without a desktop graphics dependency.
 - `runtime:minecraft` is a publishable Minecraft-independent adapter boundary built on `runtime:core`.
-  Its opt-in host consumes a one-shot screen definition and a complete immutable profile, then converts every non-negative logical viewport into exact fixed root constraints.
-  Its screen-definition callback is itself an ordinary `UiScope`; the runtime installs the selected profile and optional version-platform services for that dynamic callback so top-level menu, generic-container, and arbitrary-image background modifiers plus highlighted Slot, printable Text, an owner-thread TextField, fixed-height profile-backed Button, clipped retained selection-list Scroll, immutable whole-image or source-region Image, and layered PlayerHead work without an additional `buildUi` wrapper or a public context object.
+  Its opt-in host consumes the API-owned one-shot screen definition and a complete immutable profile, installs the component-runtime bridge only for the dynamic callback, then converts every non-negative logical viewport into exact fixed root constraints.
+  Top-level menu, generic-container, and arbitrary-image background modifiers plus highlighted Slot, printable Text, an owner-thread TextField, fixed-height profile-backed Button and Tab, clipped retained selection-list Scroll, immutable whole-image or source-region Image, and synchronous or asynchronous PlayerHead therefore work without an extra root wrapper or public Minecraft context receiver.
   A version-backed bound Slot uses an opaque ordered platform draw command for the native `ItemStack` phase and delegates mutation to the active server menu; declarative locators cover player-inventory, logical non-player Container, and raw active-menu indices, core preserves ordering and clipping without depending on a Minecraft type, and portable-only rasterization rejects the unsupported payload before producing output.
   Button owns profile-backed appearance and enabled semantics, while platform-neutral active modifiers own raw pointer, keyboard, committed-character, preedit, focus, press, release, move, drag, scroll, and hover actions reusable by future Minecraft components.
   Hosts retain the core tree across transient detach and reattach, gate input until a successful frame, and expose no mapped game, Fabric, resource-manager, renderer, version, coroutine, state, or source-binding type.
-  Common code may carry a structural `MinecraftAssetId` across client/server configuration or protocol boundaries, while the versioned client loader resolves that identifier through the active resource-manager stack and returns detached immutable pixels.
+  Common code may carry a structural `ResourceId` across client/server configuration or protocol boundaries, while the versioned client loader resolves that identifier through the active resource-manager stack and returns detached immutable pixels.
   Button does not install focus or keyboard activation implicitly; callers compose those policies from shared modifiers, and hover changes only in response to delivered pointer movement.
-- `integration:api` verifies an external primitive against the public `api`, `runtime:core`, and `runtime:minecraft` boundaries.
+- `integration:api` compiles its application main source with only `api`, checks that compile classpath mechanically, and uses test-only runtime dependencies to verify both standard and external primitives.
 - `runtime:minecraft-fabric-26.2` is the client-only boundary for the current latest Java release.
   It extracts the 26.2 vanilla profile and arbitrary Mod images from the active resource manager, maps the common host to a native Screen, rasterizes through the tested headless path, and forwards typed mouse, keyboard, committed-character, and preedit input.
   Its loaded client GameTest compares native screens using the actual menu background, generic container, Slot highlights, font, EditBox, Button, `ObjectSelectionList`, and `PlayerFaceExtractor` assets and widgets against both the Fabric adapter and the common headless compositor with exact ARGB equality, then compares the custom industrial and progression Mod screens through the same Fabric/headless pixels.
 - `integration:minecraft-fabric-26.2` owns the loaded client vanilla parity scenes, integrated-server player/custom/ender-chest Slot scenarios, resource-pack-aware industrial and advancement-inspired progression screens, compiled Minecraft-component examples, and build-only verification evidence; it is not published.
-- `integration:docs` discovers public top-level Minecraft component extensions mechanically from compiled runtime classes, extracts compiled component and complete-screen sources, verifies the Minecraft parity receipt and PNG hashes, and owns the combined generated component document; it is not published.
+- `integration:docs` discovers public top-level component extensions mechanically from compiled API classes, extracts compiled component and complete-screen sources, verifies the Minecraft parity receipt and PNG hashes, and owns the combined generated component document; it is not published.
 Platform-independent code must not depend on a Minecraft runtime.
 Minecraft and Fabric dependencies remain confined to the versioned runtime boundary that requires them.
 
@@ -47,9 +48,10 @@ The complete external implementation contract is documented in [Element SPI](ele
 
 The process and compatibility requirements for a new version adapter are defined in [Supporting a new Minecraft version](minecraft-versions.md).
 
-The public API currently defines declarative tree building, Row, Column, Box, and Spacer components, element and modifier descriptions, typed layout parent data, retained node capabilities, lifecycle ownership, geometry, pointer and focused input, drawing, semantics, unresolved text, and revisioned external state sources.
-`buildUi` invokes its callback synchronously and returns the exact caller-owned `Element` emitted as its single root.
-Its scope is confined to the invoking thread and callback lifetime, and callback failures take precedence over root-cardinality validation.
+The public API currently defines `ScreenDefinition`; Row, Column, Stack, Grid, Spacer, Text, TextField, Button, Tab, Scroll, Image, Slot, and PlayerHead; element and modifier descriptions; typed layout parent data; retained node capabilities; lifecycle ownership; geometry; pointer and focused input; drawing; semantics; unresolved text; resources and bindings; and revisioned external state sources.
+`ScreenDefinition` retains its callback without evaluating it, then transfers that callback exactly once to a runtime that implicitly builds its single component root under the installed profile.
+Each `UiScope` is confined to the invoking thread and callback lifetime, and callback failures take precedence over root-cardinality validation.
+The privileged `evaluateComponentTree` bridge exists only for runtime adapters and structural SPI tests that already own raw elements; application screens do not need or expose a standalone root builder.
 The state-source contract is specified and exercised by concurrency tests described in [External state sources](state-sources.md).
 It remains coroutine-free and does not include a platform lifecycle adapter.
 The retained core's tested internal session contract is described in [UI sessions](ui-sessions.md).
