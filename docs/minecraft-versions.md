@@ -55,5 +55,6 @@ The artifacts expose the same Strata-owned package entry points and class names 
 | 26.1 | 25 | Unobfuscated, no remap | `Minecraft.screen` and `Minecraft.setScreen` | The complete loaded suite passes; the used UI assets are byte-identical and every fixed-scene ARGB receipt hash matches 26.2 |
 | 1.21.11 | 21 | Official Mojang mappings, remapped distribution | Legacy `GuiGraphics` rendering, input callbacks, and menu clicks | Independent loaded-client verification covers the version-specific adapter without claiming cross-version pixel identity |
 
-The neutral `runtime/minecraft-fabric-unobfuscated` and `integration/minecraft-fabric-unobfuscated` trees are source ownership boundaries, not Gradle modules or fallback profiles.
-A version links only the enumerated neutral files that its compiler and loaded tests prove compatible; unexplained divergence remains in a versioned project until resolved.
+The neutral `runtime/minecraft-fabric-shared`, `runtime/minecraft-fabric-unobfuscated`, and `integration/minecraft-fabric-unobfuscated` trees are source ownership boundaries, not Gradle modules or fallback profiles.
+A runtime version links the complete shared root only after its compiler and loaded tests prove every file compatible, links an additional release-family root only when applicable, and keeps unexplained divergence in its versioned project until resolved.
+Do not use file-tree include filters to select individual version-compatible sources because IDE and static-analysis Gradle models operate at source-root granularity.

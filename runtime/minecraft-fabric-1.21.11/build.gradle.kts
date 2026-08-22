@@ -10,34 +10,17 @@ plugins {
     alias(libs.plugins.fabricLoomRemap)
 }
 
-val sharedRuntime = rootProject.file("runtime/minecraft-fabric-unobfuscated/src/main")
-val fabricPackagePath = "dev/s7a/strata/runtime/minecraft/fabric"
+val sharedRuntime = rootProject.file("runtime/minecraft-fabric-shared/src/main")
 
 extensions.configure<SourceSetContainer> {
     named("main") {
         java.srcDir(sharedRuntime.resolve("java"))
-        java.include(
-            "$fabricPackagePath/FabricMinecraftFailures.java",
-            "$fabricPackagePath/FabricScreenLifecycleTransaction.java",
-            "$fabricPackagePath/FabricMinecraftInventoryBridge12111.java",
-            "$fabricPackagePath/FabricMinecraftScreenAccess.java",
-        )
     }
 }
 
 extensions.configure<KotlinJvmProjectExtension> {
     sourceSets.named("main") {
         kotlin.srcDir(sharedRuntime.resolve("kotlin"))
-        kotlin.include(
-            "$fabricPackagePath/FabricMinecraftAssetLoader.kt",
-            "$fabricPackagePath/FabricMinecraftFontContract.kt",
-            "$fabricPackagePath/FabricMinecraftInputMapping.kt",
-            "$fabricPackagePath/FabricMinecraftProfileFactory.kt",
-            "$fabricPackagePath/FabricMinecraftTextMapping.kt",
-            "$fabricPackagePath/FabricMinecraftFocusedInputMapping12111.kt",
-            "$fabricPackagePath/FabricMinecraftFramePresenter.kt",
-            "$fabricPackagePath/FabricMinecraftScreen12111.kt",
-        )
     }
 }
 

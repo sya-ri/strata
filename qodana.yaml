@@ -20,6 +20,7 @@ exclude:
   - name: UnstableApiUsage
     paths:
       - settings.gradle.kts
+      - integration/minecraft-fabric-1.21.11/build.gradle.kts
       - integration/minecraft-fabric-26.1/build.gradle.kts
       - integration/minecraft-fabric-26.2/build.gradle.kts
       - integration/minecraft-fabric-unobfuscated/src/gametest/kotlin/dev/s7a/strata/integration/minecraft/fabric/InventorySlotSynchronizationGameTest.kt
@@ -53,17 +54,18 @@ exclude:
   # Java has no Boolean.not() equivalent, so these exact lifecycle files use equality instead of the prohibited prefix-negation form.
   - name: PointlessBooleanExpression
     paths:
-      - runtime/minecraft-fabric-unobfuscated/src/main/java/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftFailures.java
+      - runtime/minecraft-fabric-1.21.11/src/main/java/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftInventoryBridge12111.java
+      - runtime/minecraft-fabric-shared/src/main/java/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftFailures.java
       - runtime/minecraft-fabric-unobfuscated/src/main/java/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftInventoryBridge.java
-      - runtime/minecraft-fabric-unobfuscated/src/main/java/dev/s7a/strata/runtime/minecraft/fabric/FabricScreenLifecycleTransaction.java
+      - runtime/minecraft-fabric-shared/src/main/java/dev/s7a/strata/runtime/minecraft/fabric/FabricScreenLifecycleTransaction.java
   # The unobfuscated adapters keep explicit mapped Java getter calls so its authoritative external API mapping remains visible and searchable.
   - name: UsePropertyAccessSyntax
     paths:
       - integration/minecraft-fabric-unobfuscated/src/gametest/kotlin/dev/s7a/strata/integration/minecraft/fabric/MinecraftSocialParity.kt
       - integration/minecraft-fabric-unobfuscated/src/gametest/kotlin/dev/s7a/strata/integration/minecraft/fabric/StrataMinecraftClientGameTest.kt
-      - runtime/minecraft-fabric-unobfuscated/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftAssetLoader.kt
-      - runtime/minecraft-fabric-unobfuscated/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftFontContract.kt
-      - runtime/minecraft-fabric-unobfuscated/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftProfileFactory.kt
+      - runtime/minecraft-fabric-shared/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftAssetLoader.kt
+      - runtime/minecraft-fabric-shared/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftFontContract.kt
+      - runtime/minecraft-fabric-shared/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftProfileFactory.kt
       - runtime/minecraft-fabric-unobfuscated/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreen.kt
   # Explicit Minecraft Java SAM and qualifier syntax pins the loaded GameTest boundary instead of relying on Kotlin inference.
   - name: RedundantSamConstructor

@@ -6,8 +6,9 @@ The `runtime:minecraft-fabric-26.2` and `runtime:minecraft-fabric-26.1` modules 
 Their Fabric metadata declares fixed Loader, Minecraft, and Fabric Language Kotlin runtime requirements; neither runtime uses Fabric API.
 The `runtime:minecraft-fabric-1.21.11` module targets Java 21, compiles against official Mojang mappings, remaps its distribution jar through the version-catalog Fabric Loom remap plugin, and packages the same common jars exactly once.
 All three Fabric runtime modules declare fixed Loader, Minecraft, Fabric Language Kotlin, and Java runtime requirements; none uses Fabric API at runtime.
-The 26.x projects compile the complete neutral `runtime/minecraft-fabric-unobfuscated` source tree and add only their version-specific current-screen bridge and metadata.
-The 1.21.11 project links only an enumerated set of neutral files proven compatible and owns its older screen, focused-input, and inventory bridges locally.
+The 26.x projects compile the complete neutral `runtime/minecraft-fabric-shared` and `runtime/minecraft-fabric-unobfuscated` source trees and add only their version-specific current-screen bridge and metadata.
+The 1.21.11 project compiles the complete cross-version shared tree and owns its older screen, focused-input, inventory, and current-screen bridges locally.
+Every source directory is linked as a whole root because Gradle file-tree include filters are not a reliable IDE or static-analysis ownership boundary.
 Consumers select exactly one versioned runtime artifact because the adapters deliberately expose the same packages and public class names.
 
 Every Kotlin compilation uses explicit API mode and treats warnings as errors.

@@ -108,10 +108,10 @@ subprojects {
             ":integration:minecraft-fabric-26.2",
         )
     val javaVersion =
-        when {
-            path in setOf(":runtime:minecraft-fabric-1.21.11", ":integration:minecraft-fabric-1.21.11") ->
+        when (path) {
+            in setOf(":runtime:minecraft-fabric-1.21.11", ":integration:minecraft-fabric-1.21.11") ->
                 minecraft12111JavaVersion
-            path in versionSpecificMinecraftModules -> minecraftJavaVersion
+            in versionSpecificMinecraftModules -> minecraftJavaVersion
             else -> baselineJavaVersion
         }
 
@@ -210,10 +210,13 @@ subprojects {
                     ":runtime:minecraft-fabric-1.21.11" ->
                         listOf(
                             "runtime/minecraft-fabric-1.21.11",
-                            "runtime/minecraft-fabric-unobfuscated",
+                            "runtime/minecraft-fabric-shared",
                         )
                     ":runtime:minecraft-fabric-26.1", ":runtime:minecraft-fabric-26.2" ->
-                        listOf("runtime/minecraft-fabric-unobfuscated")
+                        listOf(
+                            "runtime/minecraft-fabric-shared",
+                            "runtime/minecraft-fabric-unobfuscated",
+                        )
                     else -> listOf(path.removePrefix(":").replace(":", "/"))
                 }
             dokkaSourceSets.named("main") {

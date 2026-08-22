@@ -48,4 +48,4 @@ vanniktechMavenPublish = { id = "com.vanniktech.maven.publish", version.ref = "v
 dokka = { id = "org.jetbrains.dokka", version.ref = "dokka" }
 dokkaJavadocPlugin = { id = "org.jetbrains.dokka-javadoc", version.ref = "dokka" }
 fabricLoom = { id = "net.fabricmc.fabric-loom", version.ref = "fabric-loom" }
-fabricLoomRemap = { id = "net.fabricmc.fabric-loom-remap", version.ref = "fabric-loom" }
+fabricLoomRemap = { id = "fabric-loom", version.ref = "fabric-loom" }

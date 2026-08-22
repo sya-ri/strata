@@ -34,6 +34,7 @@ jobs:
         uses: JetBrains/qodana-action@v2026.2
         with:
           args: --fail-threshold 0
+          use-caches: false
       - name: Upload Qodana report
         if: always()
         uses: actions/upload-artifact@v7

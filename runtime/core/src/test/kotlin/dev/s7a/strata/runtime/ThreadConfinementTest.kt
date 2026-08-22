@@ -8,7 +8,7 @@ import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 
 /**
- * Verifies every public tree operation rejects calls from a non-owner thread.
+ * Verifies every tree operation rejects calls from a non-owner thread.
  */
 internal class ThreadConfinementTest {
     @Test
@@ -28,10 +28,11 @@ internal class ThreadConfinementTest {
                 onOtherThread { tree.dispatchPointer(PointerEvent.Move(IntOffset.Zero)) },
                 onOtherThread { tree.semantics() },
                 onOtherThread { tree.state },
+                onOtherThread { tree.currentRevision() },
                 onOtherThread { tree.close() },
             )
 
-        assertEquals(8, failures.size)
+        assertEquals(9, failures.size)
         failures.forEach { failure -> assertTrue(failure is IllegalStateException) }
         assertEquals(TreeState.Active, tree.state)
         tree.close()

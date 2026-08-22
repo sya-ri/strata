@@ -30,11 +30,13 @@ A module joins the build only with working behavior and tests.
   It extracts the 26.2 vanilla profile and arbitrary Mod images from the active resource manager, maps the common host to a native Screen, rasterizes through the tested headless path, and forwards typed mouse, keyboard, committed-character, and preedit input.
   Its loaded client GameTest compares native screens using the actual menu background, generic container, Slot highlights, font, EditBox, Button, `ObjectSelectionList`, and `PlayerFaceExtractor` assets and widgets against both the Fabric adapter and the common headless compositor with exact ARGB equality, then compares the custom industrial and progression Mod screens through the same Fabric/headless pixels.
 - `runtime:minecraft-fabric-26.1` is the client-only boundary for Minecraft 26.1.
-  Both unobfuscated releases compile the same neutral adapter sources and tests; only current-screen access is implemented per release, and the loaded 26.1 suite records the same fixed-scene ARGB hashes as 26.2.
+  Both unobfuscated releases compile the complete cross-version shared and unobfuscated-release adapter source roots and the same neutral tests; only current-screen access is implemented per release, and the loaded 26.1 suite records the same fixed-scene ARGB hashes as 26.2.
 - `runtime:minecraft-fabric-1.21.11` is the client-only Java 21 boundary for the older remapped distribution.
-  It compiles against official Mojang mappings, reuses only explicitly enumerated compatible resource, profile, font, text, lifecycle, and input files, and owns its `GuiGraphics` screen, focused-input, inventory, and current-screen bridges locally.
-- `runtime/minecraft-fabric-unobfuscated` is a neutral source root rather than a Gradle project or published artifact.
-  A versioned source set links an individual neutral file only after its target compiler and loaded client prove that behavior compatible; each versioned project owns its metadata, dependency graph, version-specific bridges, ABI, publication, and verification task.
+  It compiles against official Mojang mappings, compiles the complete cross-version shared source root, and owns its `GuiGraphics` screen, focused-input, inventory, and current-screen bridges locally.
+- `runtime/minecraft-fabric-shared` is the neutral source root for complete files proven compatible across every supported version; it is not a Gradle project or published artifact.
+  Its source directories are linked as whole roots so Gradle, IDEs, and static analyzers agree on file ownership without relying on file-tree filters.
+- `runtime/minecraft-fabric-unobfuscated` is the neutral source root for files shared only by the unobfuscated releases; it is not a Gradle project or published artifact.
+  Each versioned project owns its metadata, dependency graph, version-specific bridges, ABI, publication, and verification task.
 - `integration:minecraft-fabric-1.21.11` owns the loaded-client verification for the independently remapped Java 21 boundary; it is not published.
 - `integration:minecraft-fabric-26.1` compiles and runs the neutral loaded-client scenarios against the 26.1 runtime and integrated server; it is not published.
 - `integration:minecraft-fabric-26.2` owns the loaded client vanilla parity scenes, integrated-server player/custom/ender-chest Slot scenarios, resource-pack-aware industrial and advancement-inspired progression screens, compiled Minecraft-component examples, and build-only verification evidence; it is not published.

@@ -60,11 +60,11 @@ public class UiTree : AutoCloseable {
      * @return the current whole-tree change token.
      * @throws IllegalStateException when read from another thread.
      */
-    internal val revision: Long
-        get() {
-            threadGuard.check()
-            return dirtyTracker.revision
-        }
+    @JvmSynthetic
+    internal fun currentRevision(): Long {
+        threadGuard.check()
+        return dirtyTracker.revision
+    }
 
     /**
      * Reconciles a complete immutable element description.

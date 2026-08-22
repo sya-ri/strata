@@ -265,7 +265,7 @@ internal class UiSession private constructor(
                     contentRebuilt = true
                 }
                 val retainedTree = checkNotNull(tree) { "An attached session has no retained tree." }
-                val revision = retainedTree.revision
+                val revision = retainedTree.currentRevision()
                 if (contentRebuilt.not()) {
                     val retainedFrame = cachedFrame
                     if (
@@ -285,7 +285,7 @@ internal class UiSession private constructor(
                 val semantics = retainedTree.semantics()
                 val frame = UiFrame(size, draw, semantics)
                 frameAvailable = true
-                if (retainedTree.revision == revision) {
+                if (retainedTree.currentRevision() == revision) {
                     cachedFrameConstraints = constraints
                     cachedTreeRevision = revision
                     cachedFrame = frame
