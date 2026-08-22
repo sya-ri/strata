@@ -2,6 +2,9 @@ package dev.s7a.strata.integration.docs
 
 import dev.s7a.strata.geometry.IntSize
 import dev.s7a.strata.layout.Alignment
+import dev.s7a.strata.layout.Arrangement
+import dev.s7a.strata.layout.HorizontalAlignment
+import dev.s7a.strata.layout.VerticalAlignment
 import dev.s7a.strata.render.ArgbColor
 
 /**
@@ -15,152 +18,199 @@ internal object ShowcaseScenarioCatalog {
         listOf(
             ComponentScenario(
                 component = DocumentedComponent.Row,
-                source = overviewSource(),
-                viewportMetadata = ShowcaseViewport(IntSize(320, 180), 1),
+                source = componentSource("MinecraftRowExample.kt", "row"),
+                viewportMetadata = ShowcaseViewport(IntSize(136, 64), 1),
                 tree =
                     tree(
                         DocumentedComponent.Row,
-                        listOf(ShowcaseTreeDetail.Spacing(4)),
-                        tree(DocumentedComponent.Button, emptyList()),
-                        tree(DocumentedComponent.Button, emptyList()),
+                        listOf(
+                            ShowcaseTreeDetail.Size(136, 64),
+                            ShowcaseTreeDetail.Background(ArgbColor(0xFF000000.toInt())),
+                            ShowcaseTreeDetail.Spacing(4),
+                            ShowcaseTreeDetail.Arrangement(Arrangement.Center),
+                            ShowcaseTreeDetail.RowDefaultAlignment(VerticalAlignment.Center),
+                        ),
+                        tree(DocumentedComponent.Button, listOf(ShowcaseTreeDetail.Size(60, 20))),
+                        tree(DocumentedComponent.Button, listOf(ShowcaseTreeDetail.Size(60, 20))),
                     ),
             ),
             ComponentScenario(
                 component = DocumentedComponent.Column,
-                source = overviewSource(),
-                viewportMetadata = ShowcaseViewport(IntSize(320, 180), 1),
+                source = componentSource("MinecraftColumnExample.kt", "column"),
+                viewportMetadata = ShowcaseViewport(IntSize(120, 64), 1),
                 tree =
                     tree(
                         DocumentedComponent.Column,
-                        listOf(ShowcaseTreeDetail.Spacing(24)),
-                        tree(
-                            DocumentedComponent.Column,
-                            listOf(ShowcaseTreeDetail.Spacing(8)),
-                            tree(DocumentedComponent.Text, emptyList()),
-                            tree(DocumentedComponent.Text, emptyList()),
+                        listOf(
+                            ShowcaseTreeDetail.Size(120, 64),
+                            ShowcaseTreeDetail.Background(ArgbColor(0xFF000000.toInt())),
+                            ShowcaseTreeDetail.Spacing(4),
+                            ShowcaseTreeDetail.Arrangement(Arrangement.Center),
+                            ShowcaseTreeDetail.ColumnDefaultAlignment(HorizontalAlignment.Center),
                         ),
-                        tree(
-                            DocumentedComponent.Row,
-                            listOf(ShowcaseTreeDetail.Spacing(4)),
-                            tree(DocumentedComponent.Button, emptyList()),
-                            tree(DocumentedComponent.Button, emptyList()),
-                        ),
+                        tree(DocumentedComponent.Button, listOf(ShowcaseTreeDetail.Size(96, 20))),
+                        tree(DocumentedComponent.Button, listOf(ShowcaseTreeDetail.Size(96, 20))),
                     ),
             ),
             ComponentScenario(
                 component = DocumentedComponent.Stack,
-                source = overviewSource(),
-                viewportMetadata = ShowcaseViewport(IntSize(320, 180), 1),
+                source = componentSource("MinecraftStackExample.kt", "stack"),
+                viewportMetadata = ShowcaseViewport(IntSize(64, 64), 1),
                 tree =
                     tree(
                         DocumentedComponent.Stack,
                         listOf(
-                            ShowcaseTreeDetail.Size(320, 180),
+                            ShowcaseTreeDetail.Size(64, 64),
+                            ShowcaseTreeDetail.Background(ArgbColor(0xFF000000.toInt())),
                             ShowcaseTreeDetail.StackContentAlignment(Alignment.Center),
                         ),
-                        tree(DocumentedComponent.Column, listOf(ShowcaseTreeDetail.Spacing(24))),
+                        tree(DocumentedComponent.Button, listOf(ShowcaseTreeDetail.Size(56, 20))),
+                        tree(
+                            DocumentedComponent.Spacer,
+                            listOf(
+                                ShowcaseTreeDetail.Size(10, 10),
+                                ShowcaseTreeDetail.Background(ArgbColor(0xFFE53935.toInt())),
+                                ShowcaseTreeDetail.StackAlign(Alignment.CenterEnd),
+                            ),
+                        ),
                     ),
             ),
             ComponentScenario(
                 component = DocumentedComponent.Grid,
-                source = slotSource(),
-                viewportMetadata = ShowcaseViewport(IntSize(320, 240), 1),
+                source = componentSource("MinecraftGridExample.kt", "grid"),
+                viewportMetadata = ShowcaseViewport(IntSize(64, 64), 1),
                 tree =
                     tree(
                         DocumentedComponent.Grid,
-                        listOf(ShowcaseTreeDetail.GridColumns(9)),
-                        *Array(27) { tree(DocumentedComponent.Slot, emptyList()) },
+                        listOf(
+                            ShowcaseTreeDetail.Size(64, 64),
+                            ShowcaseTreeDetail.Background(ArgbColor(0xFF000000.toInt())),
+                            ShowcaseTreeDetail.GridColumns(3),
+                            ShowcaseTreeDetail.GridSpacing(horizontal = 2, vertical = 2),
+                        ),
+                        *Array(9) { tree(DocumentedComponent.Button, listOf(ShowcaseTreeDetail.Size(20, 20))) },
                     ),
             ),
             ComponentScenario(
                 component = DocumentedComponent.Spacer,
-                source = progressSource(),
-                viewportMetadata = ShowcaseViewport(IntSize(320, 180), 1),
+                source = componentSource("MinecraftSpacerExample.kt", "spacer"),
+                viewportMetadata = ShowcaseViewport(IntSize(160, 64), 1),
                 tree =
                     tree(
-                        DocumentedComponent.Spacer,
+                        DocumentedComponent.Row,
                         listOf(
-                            ShowcaseTreeDetail.Size(32, 2),
-                            ShowcaseTreeDetail.Background(ArgbColor(0xFF7A7A7A.toInt())),
+                            ShowcaseTreeDetail.Size(160, 64),
+                            ShowcaseTreeDetail.Background(ArgbColor(0xFF000000.toInt())),
+                            ShowcaseTreeDetail.Arrangement(Arrangement.Center),
+                            ShowcaseTreeDetail.RowDefaultAlignment(VerticalAlignment.Center),
                         ),
+                        tree(DocumentedComponent.Button, listOf(ShowcaseTreeDetail.Size(60, 20))),
+                        tree(DocumentedComponent.Spacer, listOf(ShowcaseTreeDetail.Size(16, 20))),
+                        tree(DocumentedComponent.Button, listOf(ShowcaseTreeDetail.Size(60, 20))),
                     ),
             ),
             ComponentScenario(
                 component = DocumentedComponent.Text,
-                source =
-                    SourceReference(
-                        "integration/minecraft-fabric-unobfuscated/src/gametest/kotlin/dev/s7a/strata/integration/minecraft/fabric/MinecraftTextExample.kt",
-                        "text",
+                source = componentSource("MinecraftTextExample.kt", "text"),
+                viewportMetadata = ShowcaseViewport(IntSize(120, 64), 1),
+                tree =
+                    centeredCanvas(
+                        IntSize(120, 64),
+                        tree(DocumentedComponent.Text, emptyList()),
                     ),
-                viewportMetadata = ShowcaseViewport(IntSize(150, 20), 1),
-                tree = tree(DocumentedComponent.Text, listOf(ShowcaseTreeDetail.Size(150, 20))),
             ),
             ComponentScenario(
                 component = DocumentedComponent.TextField,
-                source =
-                    SourceReference(
-                        "integration/minecraft-fabric-unobfuscated/src/gametest/kotlin/dev/s7a/strata/integration/minecraft/fabric/MinecraftTextFieldExample.kt",
-                        "text-field",
+                source = componentSource("MinecraftTextFieldShowcaseExample.kt", "text-field"),
+                viewportMetadata = ShowcaseViewport(IntSize(216, 64), 1),
+                tree =
+                    centeredCanvas(
+                        IntSize(216, 64),
+                        tree(DocumentedComponent.TextField, listOf(ShowcaseTreeDetail.Size(200, 20))),
                     ),
-                viewportMetadata = ShowcaseViewport(IntSize(200, 20), 1),
-                tree = tree(DocumentedComponent.TextField, listOf(ShowcaseTreeDetail.Size(200, 20))),
             ),
             ComponentScenario(
                 component = DocumentedComponent.Button,
-                source =
-                    SourceReference(
-                        "integration/minecraft-fabric-unobfuscated/src/gametest/kotlin/dev/s7a/strata/integration/minecraft/fabric/MinecraftButtonExample.kt",
-                        "button",
+                source = componentSource("MinecraftButtonExample.kt", "button"),
+                viewportMetadata = ShowcaseViewport(IntSize(166, 64), 1),
+                tree =
+                    centeredCanvas(
+                        IntSize(166, 64),
+                        tree(DocumentedComponent.Button, listOf(ShowcaseTreeDetail.Size(150, 20))),
                     ),
-                viewportMetadata = ShowcaseViewport(IntSize(150, 20), 1),
-                tree = tree(DocumentedComponent.Button, emptyList()),
             ),
             ComponentScenario(
                 component = DocumentedComponent.Tab,
-                source = socialSource(),
-                viewportMetadata = ShowcaseViewport(IntSize(320, 240), 1),
-                tree = tree(DocumentedComponent.Tab, listOf(ShowcaseTreeDetail.Size(73, 20))),
+                source = componentSource("MinecraftTabExample.kt", "tab"),
+                viewportMetadata = ShowcaseViewport(IntSize(160, 64), 1),
+                tree =
+                    tree(
+                        DocumentedComponent.Row,
+                        listOf(
+                            ShowcaseTreeDetail.Size(160, 64),
+                            ShowcaseTreeDetail.Background(ArgbColor(0xFF000000.toInt())),
+                            ShowcaseTreeDetail.Spacing(1),
+                            ShowcaseTreeDetail.Arrangement(Arrangement.Center),
+                            ShowcaseTreeDetail.RowDefaultAlignment(VerticalAlignment.Center),
+                        ),
+                        tree(DocumentedComponent.Tab, listOf(ShowcaseTreeDetail.Size(73, 20))),
+                        tree(DocumentedComponent.Tab, listOf(ShowcaseTreeDetail.Size(73, 20))),
+                    ),
             ),
             ComponentScenario(
                 component = DocumentedComponent.Scroll,
-                source =
-                    SourceReference(
-                        "integration/minecraft-fabric-unobfuscated/src/gametest/kotlin/dev/s7a/strata/integration/minecraft/fabric/MinecraftScrollExample.kt",
-                        "scroll",
-                    ),
-                viewportMetadata = ShowcaseViewport(IntSize(320, 94), 1),
+                source = componentSource("MinecraftScrollShowcaseExample.kt", "scroll"),
+                viewportMetadata = ShowcaseViewport(IntSize(160, 64), 1),
                 tree =
                     tree(
                         DocumentedComponent.Scroll,
-                        listOf(ShowcaseTreeDetail.Size(320, 94), ShowcaseTreeDetail.ScrollRate(9)),
-                        *Array(12) { tree(DocumentedComponent.Text, emptyList()) },
+                        listOf(
+                            ShowcaseTreeDetail.Size(160, 64),
+                            ShowcaseTreeDetail.Background(ArgbColor(0xFF000000.toInt())),
+                            ShowcaseTreeDetail.ScrollRate(9),
+                        ),
+                        tree(
+                            DocumentedComponent.Column,
+                            listOf(
+                                ShowcaseTreeDetail.Size(132, 108),
+                                ShowcaseTreeDetail.ColumnDefaultAlignment(HorizontalAlignment.Center),
+                            ),
+                            *Array(6) { tree(DocumentedComponent.Text, emptyList()) },
+                        ),
                     ),
             ),
             ComponentScenario(
                 component = DocumentedComponent.Image,
-                source = industrialSource(),
-                viewportMetadata = ShowcaseViewport(IntSize(32, 32), 1),
-                tree = tree(DocumentedComponent.Image, listOf(ShowcaseTreeDetail.Size(32, 32))),
+                source = componentSource("MinecraftImageExample.kt", "image"),
+                viewportMetadata = ShowcaseViewport(IntSize(64, 64), 1),
+                tree =
+                    centeredCanvas(
+                        IntSize(64, 64),
+                        tree(DocumentedComponent.Image, listOf(ShowcaseTreeDetail.Size(32, 32))),
+                    ),
             ),
             ComponentScenario(
                 component = DocumentedComponent.Slot,
-                source = slotSource(),
-                viewportMetadata = ShowcaseViewport(IntSize(24, 24), 1),
+                source = componentSource("MinecraftSlotShowcaseExample.kt", "slot"),
+                viewportMetadata = ShowcaseViewport(IntSize(64, 64), 1),
                 tree =
-                    tree(
-                        DocumentedComponent.Slot,
-                        listOf(ShowcaseTreeDetail.SlotHighlightable(true), ShowcaseTreeDetail.Size(18, 18)),
+                    centeredCanvas(
+                        IntSize(64, 64),
+                        tree(
+                            DocumentedComponent.Slot,
+                            listOf(ShowcaseTreeDetail.SlotHighlightable(true), ShowcaseTreeDetail.Size(18, 18)),
+                        ),
                     ),
             ),
             ComponentScenario(
                 component = DocumentedComponent.PlayerHead,
-                source =
-                    SourceReference(
-                        "integration/minecraft-fabric-unobfuscated/src/gametest/kotlin/dev/s7a/strata/integration/minecraft/fabric/MinecraftPlayerHeadExample.kt",
-                        "player-head",
+                source = componentSource("MinecraftPlayerHeadExample.kt", "player-head"),
+                viewportMetadata = ShowcaseViewport(IntSize(64, 64), 1),
+                tree =
+                    centeredCanvas(
+                        IntSize(64, 64),
+                        tree(DocumentedComponent.PlayerHead, listOf(ShowcaseTreeDetail.Size(24, 24))),
                     ),
-                viewportMetadata = ShowcaseViewport(IntSize(24, 24), 1),
-                tree = tree(DocumentedComponent.PlayerHead, listOf(ShowcaseTreeDetail.Size(24, 24))),
             ),
         )
 
@@ -243,6 +293,17 @@ internal object ShowcaseScenarioCatalog {
         val actual = components.map { scenario -> scenario.component }
         require(actual == expected) { "Showcase catalog does not cover components in typed order." }
         require(actual.toSet().size == actual.size) { "Showcase catalog contains duplicate components." }
+        val componentSourcePaths = components.map { scenario -> scenario.source.relativePath }
+        require(componentSourcePaths.toSet().size == componentSourcePaths.size) {
+            "Each component must own one dedicated showcase source file."
+        }
+        val completeScreenSourcePaths =
+            (listOf(overview.source) + screens.map { scenario -> scenario.source })
+                .map { source -> source.relativePath }
+                .toSet()
+        require(componentSourcePaths.none(completeScreenSourcePaths::contains)) {
+            "A dedicated component showcase must not reuse a complete-screen source."
+        }
         val sources = listOf(overview.source) + components.map { scenario -> scenario.source } + screens.map { scenario -> scenario.source }
         sources.groupBy { source -> source.slug }.forEach { (slug, references) ->
             require(references.distinctBy { reference -> reference.relativePath to reference.slug }.size == 1) {
@@ -272,7 +333,12 @@ internal object ShowcaseScenarioCatalog {
             }
         }
         overview.trees.forEach(::validateDetails)
-        components.forEach { scenario -> validateDetails(scenario.tree) }
+        components.forEach { scenario ->
+            require(containsComponent(scenario.tree, scenario.component)) {
+                "Showcase tree does not contain its documented component ${scenario.component.apiMethodName}."
+            }
+            validateDetails(scenario.tree)
+        }
     }
 
     private fun tree(
@@ -281,28 +347,33 @@ internal object ShowcaseScenarioCatalog {
         vararg children: ShowcaseTree,
     ): ShowcaseTree = ShowcaseTree(component, details, children.toList())
 
+    private fun centeredCanvas(
+        viewport: IntSize,
+        child: ShowcaseTree,
+    ): ShowcaseTree =
+        tree(
+            DocumentedComponent.Stack,
+            listOf(
+                ShowcaseTreeDetail.Size(viewport.width, viewport.height),
+                ShowcaseTreeDetail.Background(ArgbColor(0xFF000000.toInt())),
+                ShowcaseTreeDetail.StackContentAlignment(Alignment.Center),
+            ),
+            child,
+        )
+
+    private fun componentSource(
+        fileName: String,
+        slug: String,
+    ): SourceReference =
+        SourceReference(
+            "integration/minecraft-fabric-unobfuscated/src/gametest/kotlin/dev/s7a/strata/integration/minecraft/fabric/$fileName",
+            slug,
+        )
+
     private fun overviewSource(): SourceReference =
         SourceReference(
             "integration/minecraft-fabric-unobfuscated/src/gametest/kotlin/dev/s7a/strata/integration/minecraft/fabric/MinecraftOverviewExample.kt",
             "overview",
-        )
-
-    private fun slotSource(): SourceReference =
-        SourceReference(
-            "integration/minecraft-fabric-unobfuscated/src/gametest/kotlin/dev/s7a/strata/integration/minecraft/fabric/MinecraftSlotExample.kt",
-            "slot",
-        )
-
-    private fun socialSource(): SourceReference =
-        SourceReference(
-            "integration/minecraft-fabric-unobfuscated/src/gametest/kotlin/dev/s7a/strata/integration/minecraft/fabric/MinecraftSocialExample.kt",
-            "social-screen",
-        )
-
-    private fun progressSource(): SourceReference =
-        SourceReference(
-            "integration/minecraft-fabric-unobfuscated/src/gametest/kotlin/dev/s7a/strata/integration/minecraft/fabric/MinecraftProgressExample.kt",
-            "progress-screen",
         )
 
     private fun industrialSource(): SourceReference =
@@ -315,6 +386,11 @@ internal object ShowcaseScenarioCatalog {
         tree.details.forEach(::validateDetail)
         tree.children.forEach { child -> validateDetails(child) }
     }
+
+    private fun containsComponent(
+        tree: ShowcaseTree,
+        component: DocumentedComponent,
+    ): Boolean = tree.component == component || tree.children.any { child -> containsComponent(child, component) }
 
     private fun validateDetail(detail: ShowcaseTreeDetail) {
         when (detail) {
@@ -340,6 +416,8 @@ internal object ShowcaseScenarioCatalog {
             is ShowcaseTreeDetail.Spacing -> require(0 <= detail.value) { "Showcase spacing must be nonnegative." }
 
             is ShowcaseTreeDetail.GridColumns -> require(0 < detail.value) { "Showcase Grid columns must be positive." }
+
+            is ShowcaseTreeDetail.GridSpacing -> require(0 <= detail.horizontal && 0 <= detail.vertical) { "Showcase Grid spacing must be nonnegative." }
 
             is ShowcaseTreeDetail.ScrollRate -> require(0 < detail.value) { "Showcase Scroll rates must be positive." }
 

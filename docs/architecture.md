@@ -46,7 +46,7 @@ A module joins the build only with working behavior and tests.
   Each runs the same loaded-client behavior from development outputs and from the remapped production integration and runtime jars, while version-local test aliases follow the target's mapped resource name.
 - `integration:minecraft-fabric-26.1` compiles and runs the neutral loaded-client scenarios against the 26.1 runtime and integrated server; it is not published.
 - `integration:minecraft-fabric-26.2` owns the loaded client vanilla parity scenes, integrated-server player/custom/ender-chest Slot scenarios, resource-pack-aware industrial and advancement-inspired progression screens, compiled Minecraft-component examples, and build-only verification evidence; it is not published.
-- `integration:docs` discovers public top-level component extensions mechanically from compiled API classes, extracts compiled component and complete-screen sources, verifies the Minecraft parity receipt and PNG hashes, and owns the combined generated component document; it is not published.
+- `integration:docs` discovers public top-level component extensions mechanically from compiled API classes, extracts dedicated minimal component `ScreenDefinition` and complete-screen sources, verifies the Minecraft parity receipt, full-frame viewports, and PNG hashes, and owns the combined generated component document; it is not published.
 Platform-independent code must not depend on a Minecraft runtime.
 Minecraft and Fabric dependencies remain confined to the versioned runtime boundary that requires them.
 
@@ -89,11 +89,12 @@ PNG output contains exactly one IHDR, one IDAT, and one IEND in that order, uses
 Frames retain no description, tree, or draw-command list; semantics are defensive, logical, unscaled, unclipped, and in core emission order.
 The exact built-in layout measurement, weight, arrangement, alignment, and overflow contracts are defined in [Built-in layout components](layout.md).
 The headless adapter's fixed-viewport, clipping, source-over, scaling, PNG, and immutable semantics contracts are exercised by its module tests.
-The loaded 26.2 client GameTest requires exact ARGB equality among deterministic native screens, their Fabric-adapter reconstructions, and common headless frames at 320 by 180.
-It covers `ConfirmScreen`, `DirectJoinServerScreen`, `ContainerScreen`, an actual `ObjectSelectionList`, `SocialInteractionsScreen`, native `PlayerFaceExtractor`, an integrated-server synchronized inventory, and custom industrial and progression Mod screens, then writes the verified full frames and typed Slot, Text, TextField, Button, Scroll, Image, and PlayerHead crops with their hashes below its build directory.
+The loaded 26.2 client GameTest requires exact ARGB equality among deterministic native screens, their Fabric-adapter reconstructions, and common headless frames at each locked 320 by 180, 320 by 240, or 64 by 64 acceptance viewport.
+It covers `ConfirmScreen`, `DirectJoinServerScreen`, `ContainerScreen`, an actual `ObjectSelectionList`, `SocialInteractionsScreen`, native `PlayerFaceExtractor`, an integrated-server synchronized inventory, and custom industrial and progression Mod screens, then keeps those full-screen acceptance frames separate from the component showcase evidence.
+For every standard component, the loaded GameTest also evaluates a dedicated minimal `ScreenDefinition` independently through the Fabric and headless runtimes, requires exact full-frame ARGB equality, and writes that entire frame with its viewport and hashes below the build directory.
 The Social comparison composes the public primitives with the active social panel and search assets, a compact profile-colored TextField, and PlayerHead, then requires the complete 320 by 240 native, Fabric, and headless images to match exactly.
 The progression example keeps its purpose-specific graph downstream while composing active advancement textures through the general source-region Image API; the industrial screen similarly uses a replaceable Mod resource rather than a domain-specific standard component.
-The showcase generator accepts only those receipt-matched component crops, complete screens, and compiled GameTest scenario sources before staging Markdown and PNG output.
+The showcase generator accepts only receipt-matched dedicated component frames whose recorded viewports equal their catalog metadata, complete screens, and the corresponding compiled GameTest scenario sources before staging Markdown and PNG output.
 The checker reruns the parity prerequisite and compares that staging output with the combined `docs/components.md` document, the `docs/components` asset tree, and the anchored root README region without writing source files.
 
 ## Retained operation contract

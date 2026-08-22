@@ -12,13 +12,13 @@ import dev.s7a.strata.render.ArgbColor
 import dev.s7a.strata.screen.ScreenDefinition
 
 /**
- * Builds a reusable player-head screen from a profile lookup or detached skin selected by the version adapter.
+ * Builds a self-contained PlayerHead showcase from a caller-selected skin source.
  *
- * @param skin player identity lookup or immutable 64 by 64 skin source.
- * @return one-shot definition reproducing the Social Interactions 24 by 24 face and hat layers.
+ * @param skin player identity lookup or immutable 64 by 64 skin source rendered by PlayerHead itself.
+ * @return one-shot definition containing the complete 24 by 24 face and hat layers inside a minimal canvas.
  */
-internal fun createPlayerHeadScreenDefinition(
-    skin: PlayerSkinSource = PlayerSkinSource.Name("Player0"),
+internal fun createPlayerHeadShowcaseScreenDefinition(
+    skin: PlayerSkinSource,
 ): ScreenDefinition =
     ScreenDefinition("Player head") {
         Stack(
@@ -29,3 +29,13 @@ internal fun createPlayerHeadScreenDefinition(
         }
     }
 // showcase-source-end:player-head
+
+/**
+ * Builds the player-head parity screen used by existing loaded-client checks.
+ *
+ * @param skin player identity lookup or immutable 64 by 64 skin source.
+ * @return one-shot definition with the same geometry as [createPlayerHeadShowcaseScreenDefinition].
+ */
+internal fun createPlayerHeadScreenDefinition(
+    skin: PlayerSkinSource = PlayerSkinSource.Name("Player0"),
+): ScreenDefinition = createPlayerHeadShowcaseScreenDefinition(skin)

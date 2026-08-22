@@ -12,7 +12,7 @@ import java.security.MessageDigest
 import java.util.HexFormat
 
 /**
- * Immutable snapshots of the Minecraft GameTest receipt and its exact headless component crops.
+ * Immutable snapshots of the Minecraft GameTest receipt and its exact full-frame component renders.
  *
  * Loading verifies the fixed 26.2 environment, PNG dimensions, and every receipt hash before any generated documentation is written.
  */
@@ -20,28 +20,38 @@ internal class ShowcaseParityEvidence private constructor(
     receipt: ByteArray,
     overview: ByteArray,
     components: Map<DocumentedComponent, ByteArray>,
+    componentViewports: Map<DocumentedComponent, IntSize>,
     screens: Map<DocumentedScreen, ByteArray>,
 ) {
     private val receiptSnapshot: ByteArray = receipt.copyOf()
     private val overviewSnapshot: ByteArray = overview.copyOf()
     private val componentSnapshots: Map<DocumentedComponent, ByteArray> =
         components.mapValues { (_, bytes) -> bytes.copyOf() }
+    private val componentViewportSnapshots: Map<DocumentedComponent, IntSize> = componentViewports.toMap()
     private val screenSnapshots: Map<DocumentedScreen, ByteArray> = screens.mapValues { (_, bytes) -> bytes.copyOf() }
 
     /**
-     * Returns the verified overview crop as a fresh byte array.
+     * Returns the verified overview frame as a fresh byte array.
      *
      * @return independent deterministic PNG bytes.
      */
     internal fun overviewPng(): ByteArray = overviewSnapshot.copyOf()
 
     /**
-     * Returns one verified component crop as a fresh byte array.
+     * Returns one verified dedicated component frame as a fresh byte array.
      *
-     * @param component documented Minecraft component selecting the crop.
+     * @param component documented Minecraft component selecting the frame.
      * @return independent deterministic PNG bytes.
      */
     internal fun componentPng(component: DocumentedComponent): ByteArray = componentSnapshots.getValue(component).copyOf()
+
+    /**
+     * Returns the logical viewport recorded for one dedicated component frame.
+     *
+     * @param component documented Minecraft component selecting the receipt fields.
+     * @return positive full-frame dimensions verified against the PNG header.
+     */
+    internal fun componentViewport(component: DocumentedComponent): IntSize = componentViewportSnapshots.getValue(component)
 
     /**
      * Returns one verified complete-screen image as a fresh byte array.
@@ -89,14 +99,19 @@ internal class ShowcaseParityEvidence private constructor(
             requireHash(values.getValue("native.fabric.headless.direct-join.argb.sha256"), "Direct Join full-frame pixel hash")
             requireHash(values.getValue("native.fabric.headless.container-background.argb.sha256"), "ContainerBackground full-frame pixel hash")
             requireHash(values.getValue("native.fabric.headless.slot.argb.sha256"), "Slot full-frame pixel hash")
+            requireHash(values.getValue("fabric.headless.industrial.argb.sha256"), "industrial full-frame pixel hash")
             requireHash(values.getValue("native.fabric.headless.player-head.argb.sha256"), "PlayerHead full-frame pixel hash")
             requireHash(values.getValue("native.fabric.headless.social.argb.sha256"), "Social Interactions full-frame pixel hash")
             requireHash(values.getValue("fabric.headless.progress.argb.sha256"), "progress full-frame pixel hash")
 
             val overview = readVerifiedPng(root, "overview", values, IntSize(320, 180))
+            val componentViewports =
+                DocumentedComponent.entries.associateWith { component ->
+                    readComponentViewport(values, component.slug)
+                }
             val components =
                 DocumentedComponent.entries.associateWith { component ->
-                    readVerifiedPng(root, component.slug, values, expectedPngSize(component))
+                    readVerifiedPng(root, component.slug, values, componentViewports.getValue(component))
                 }
             val screens =
                 DocumentedScreen.entries.associateWith { screen ->
@@ -117,7 +132,7 @@ internal class ShowcaseParityEvidence private constructor(
                     require(sha256(bytes) == expectedHash) { "Minecraft parity screen image hash differs for ${screen.slug}." }
                     bytes
                 }
-            return ShowcaseParityEvidence(receiptBytes, overview, components, screens)
+            return ShowcaseParityEvidence(receiptBytes, overview, components, componentViewports, screens)
         }
 
         private fun requireMinecraftVersion(value: String) {
@@ -158,6 +173,23 @@ internal class ShowcaseParityEvidence private constructor(
             requireHash(expectedHash, "$slug PNG hash")
             require(sha256(bytes) == expectedHash) { "Minecraft parity image hash differs for $slug." }
             return bytes
+        }
+
+        private fun readComponentViewport(
+            values: Map<String, String>,
+            slug: String,
+        ): IntSize {
+            val fieldPrefix = "component.$slug"
+            val width = values.getValue("$fieldPrefix.viewport.width").toIntOrNull()
+            val height = values.getValue("$fieldPrefix.viewport.height").toIntOrNull()
+            require(width != null && 0 < width && height != null && 0 < height) {
+                "Minecraft parity receipt has an invalid full-frame viewport for $slug."
+            }
+            requireHash(
+                values.getValue("$fieldPrefix.fabric.headless.argb.sha256"),
+                "$slug Fabric/headless full-frame pixel hash",
+            )
+            return IntSize(width, height)
         }
 
         private fun readRegular(
@@ -209,33 +241,6 @@ internal class ShowcaseParityEvidence private constructor(
             }
         }
 
-        private fun expectedPngSize(component: DocumentedComponent): IntSize =
-            when (component) {
-                DocumentedComponent.Row,
-                DocumentedComponent.Column,
-                DocumentedComponent.Stack,
-                DocumentedComponent.Spacer,
-                -> IntSize(320, 180)
-
-                DocumentedComponent.Grid,
-                DocumentedComponent.Tab,
-                -> IntSize(320, 240)
-
-                DocumentedComponent.Text -> IntSize(150, 20)
-
-                DocumentedComponent.TextField -> IntSize(200, 20)
-
-                DocumentedComponent.Button -> IntSize(150, 20)
-
-                DocumentedComponent.Scroll -> IntSize(320, 94)
-
-                DocumentedComponent.Slot -> IntSize(24, 24)
-
-                DocumentedComponent.Image -> IntSize(32, 32)
-
-                DocumentedComponent.PlayerHead -> IntSize(24, 24)
-            }
-
         private fun requireHash(
             value: String,
             label: String,
@@ -264,7 +269,13 @@ internal class ShowcaseParityEvidence private constructor(
                 add("native.fabric.headless.social.argb.sha256")
                 add("fabric.headless.progress.argb.sha256")
                 add("component.overview.png.sha256")
-                DocumentedComponent.entries.forEach { component -> add("component.${component.slug}.png.sha256") }
+                DocumentedComponent.entries.forEach { component ->
+                    val prefix = "component.${component.slug}"
+                    add("$prefix.viewport.width")
+                    add("$prefix.viewport.height")
+                    add("$prefix.fabric.headless.argb.sha256")
+                    add("$prefix.png.sha256")
+                }
                 DocumentedScreen.entries.forEach { screen -> add("screen.${screen.slug}.png.sha256") }
             }
     }

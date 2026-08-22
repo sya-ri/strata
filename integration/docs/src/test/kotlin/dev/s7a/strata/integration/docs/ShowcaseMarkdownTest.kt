@@ -34,7 +34,10 @@ internal class ShowcaseMarkdownTest {
             }
         val document = ShowcaseMarkdown.components(overview, sections, screens)
         assertTrue(document.startsWith("<!-- Generated file. Do not edit. -->\n\n# Minecraft component showcase\n"))
-        assertTrue(document.contains("real Minecraft 26.2 `ConfirmScreen`"))
+        assertTrue(document.contains("complete frame of the dedicated minimal `ScreenDefinition`"))
+        assertTrue(document.contains("publishes the entire resulting frame without cropping a larger showcase screen"))
+        assertTrue(document.contains("Separate native full-screen parity scenes"))
+        assertTrue(document.contains("`ConfirmScreen`"))
         val componentLinks = DocumentedComponent.entries.joinToString("\n") { component -> "- [${component.apiMethodName}](#${component.slug})" }
         assertTrue(document.contains(componentLinks))
         assertTrue(document.contains("The tree shows Minecraft components in logical draw order"))
@@ -77,6 +80,11 @@ internal class ShowcaseMarkdownTest {
         sections.values.forEach { value ->
             assertTrue(value.startsWith("<a id=\""))
             assertTrue(value.contains("\n\n## "))
+            assertTrue(value.contains("complete frame of the compiled dedicated `ScreenDefinition`"))
+            assertTrue(value.contains("exact Fabric/headless ARGB comparison"))
+            assertTrue(value.contains("not cropped from a larger screen"))
+            assertTrue(value.contains("component crop").not())
+            assertTrue(value.contains("The tree mirrors the complete dedicated definition"))
             assertTrue(value.contains("\n\n<details><summary>Component tree</summary>\n"))
             assertTrue(value.endsWith("\n"))
             assertTrue(value.endsWith("\n\n").not())
@@ -122,6 +130,7 @@ internal class ShowcaseMarkdownTest {
                     ShowcaseTreeDetail.StackAlign(Alignment.BottomEnd),
                     ShowcaseTreeDetail.GridAlign(Alignment.CenterStart),
                     ShowcaseTreeDetail.GridColumns(9),
+                    ShowcaseTreeDetail.GridSpacing(horizontal = 7, vertical = 8),
                     ShowcaseTreeDetail.Spacing(3),
                     ShowcaseTreeDetail.Arrangement(Arrangement.SpaceBetween),
                     ShowcaseTreeDetail.RowDefaultAlignment(VerticalAlignment.Center),
@@ -145,6 +154,7 @@ internal class ShowcaseMarkdownTest {
             "StackAlign(alignment=BottomEnd)",
             "GridAlign(alignment=CenterStart)",
             "GridColumns(value=9)",
+            "GridSpacing(horizontal=7, vertical=8)",
             "Spacing(value=3)",
             "Arrangement(value=SpaceBetween)",
             "RowDefaultAlignment(alignment=Center)",

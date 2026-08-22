@@ -1,6 +1,6 @@
 package dev.s7a.strata.integration.minecraft.fabric
 
-// showcase-source-begin:scroll
+// showcase-source-begin:scroll-screen
 import dev.s7a.strata.component.Column
 import dev.s7a.strata.component.Scroll
 import dev.s7a.strata.component.Stack
@@ -49,4 +49,4 @@ internal fun createScrollScreenDefinition(): ScreenDefinition =
             }
         }
     }
-// showcase-source-end:scroll
+// showcase-source-end:scroll-screen

@@ -71,7 +71,7 @@ internal object ShowcasePipeline {
         evidence: ShowcaseParityEvidence,
     ): ShowcaseOutput.Overview {
         require(scenario.viewport.width == 320 && scenario.viewport.height == 180 && scenario.scale == 1) {
-            "Overview crop metadata differs from the parity contract."
+            "Overview frame metadata differs from the parity contract."
         }
         return ShowcaseOutput.Overview(region.source, ShowcaseMarkdown.forest(scenario.trees), evidence.overviewPng())
     }
@@ -81,14 +81,29 @@ internal object ShowcasePipeline {
         region: SourceRegion,
         evidence: ShowcaseParityEvidence,
     ): ShowcaseOutput.Section {
-        require(scenario.scale == 1) {
-            "${scenario.component.apiMethodName} crop metadata differs from the parity contract."
-        }
+        verifyComponentViewport(scenario, evidence)
         return ShowcaseOutput.Section(
             scenario.component,
             ShowcaseMarkdown.section(scenario, region.source),
             evidence.componentPng(scenario.component),
         )
+    }
+
+    /**
+     * Verifies that catalog metadata describes the complete dedicated frame recorded by the loaded GameTest.
+     *
+     * @param scenario component catalog entry whose viewport drives generated documentation.
+     * @param evidence receipt-backed component evidence loaded before staging.
+     * @throws IllegalArgumentException when the logical viewport or pixel scale differs from the receipt contract.
+     */
+    internal fun verifyComponentViewport(
+        scenario: ComponentScenario,
+        evidence: ShowcaseParityEvidence,
+    ) {
+        val recordedViewport = evidence.componentViewport(scenario.component)
+        require(scenario.viewport == recordedViewport && scenario.scale == 1) {
+            "${scenario.component.apiMethodName} full-frame metadata differs from the parity receipt: catalog=${scenario.viewport}, receipt=$recordedViewport, scale=${scenario.scale}."
+        }
     }
 
     private fun renderScreen(

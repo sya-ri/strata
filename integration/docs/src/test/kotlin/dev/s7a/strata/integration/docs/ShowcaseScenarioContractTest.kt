@@ -1,6 +1,11 @@
 package dev.s7a.strata.integration.docs
 
 import dev.s7a.strata.geometry.IntSize
+import dev.s7a.strata.layout.Alignment
+import dev.s7a.strata.layout.Arrangement
+import dev.s7a.strata.layout.HorizontalAlignment
+import dev.s7a.strata.layout.VerticalAlignment
+import dev.s7a.strata.render.ArgbColor
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
@@ -19,37 +24,37 @@ internal class ShowcaseScenarioContractTest {
         )
         assertEquals(
             listOf(
-                "MinecraftOverviewExample.kt" to "overview",
-                "MinecraftOverviewExample.kt" to "overview",
-                "MinecraftOverviewExample.kt" to "overview",
-                "MinecraftSlotExample.kt" to "slot",
-                "MinecraftProgressExample.kt" to "progress-screen",
+                "MinecraftRowExample.kt" to "row",
+                "MinecraftColumnExample.kt" to "column",
+                "MinecraftStackExample.kt" to "stack",
+                "MinecraftGridExample.kt" to "grid",
+                "MinecraftSpacerExample.kt" to "spacer",
                 "MinecraftTextExample.kt" to "text",
-                "MinecraftTextFieldExample.kt" to "text-field",
+                "MinecraftTextFieldShowcaseExample.kt" to "text-field",
                 "MinecraftButtonExample.kt" to "button",
-                "MinecraftSocialExample.kt" to "social-screen",
-                "MinecraftScrollExample.kt" to "scroll",
-                "MinecraftIndustrialExample.kt" to "industrial-screen",
-                "MinecraftSlotExample.kt" to "slot",
+                "MinecraftTabExample.kt" to "tab",
+                "MinecraftScrollShowcaseExample.kt" to "scroll",
+                "MinecraftImageExample.kt" to "image",
+                "MinecraftSlotShowcaseExample.kt" to "slot",
                 "MinecraftPlayerHeadExample.kt" to "player-head",
             ),
             scenarios.map { scenario -> scenario.source.relativePath.substringAfterLast('/') to scenario.source.slug },
         )
         assertEquals(
             listOf(
-                IntSize(320, 180),
-                IntSize(320, 180),
-                IntSize(320, 180),
-                IntSize(320, 240),
-                IntSize(320, 180),
-                IntSize(150, 20),
-                IntSize(200, 20),
-                IntSize(150, 20),
-                IntSize(320, 240),
-                IntSize(320, 94),
-                IntSize(32, 32),
-                IntSize(24, 24),
-                IntSize(24, 24),
+                IntSize(136, 64),
+                IntSize(120, 64),
+                IntSize(64, 64),
+                IntSize(64, 64),
+                IntSize(160, 64),
+                IntSize(120, 64),
+                IntSize(216, 64),
+                IntSize(166, 64),
+                IntSize(160, 64),
+                IntSize(160, 64),
+                IntSize(64, 64),
+                IntSize(64, 64),
+                IntSize(64, 64),
             ),
             scenarios.map { scenario -> scenario.viewport },
         )
@@ -57,28 +62,152 @@ internal class ShowcaseScenarioContractTest {
     }
 
     @Test
+    @Suppress("LongMethod")
     fun componentTreesHaveExactTypedDetailsAndNoInventedChildren() {
-        val scenarios = ShowcaseScenarioCatalog.components.associateBy { scenario -> scenario.component }
-        assertEquals(listOf(ShowcaseTreeDetail.Size(150, 20)), scenarios.getValue(DocumentedComponent.Text).tree.details)
-        assertEquals(listOf(ShowcaseTreeDetail.Size(200, 20)), scenarios.getValue(DocumentedComponent.TextField).tree.details)
-        assertTrue(
-            scenarios
-                .getValue(DocumentedComponent.Button)
-                .tree.details
-                .isEmpty(),
-        )
-        val scroll = scenarios.getValue(DocumentedComponent.Scroll).tree
-        assertEquals(listOf(ShowcaseTreeDetail.Size(320, 94), ShowcaseTreeDetail.ScrollRate(9)), scroll.details)
-        assertEquals(List(12) { DocumentedComponent.Text }, scroll.children.map { child -> child.component })
-        assertTrue(scroll.children.all { child -> child.details.isEmpty() && child.children.isEmpty() })
-        val grid = scenarios.getValue(DocumentedComponent.Grid).tree
-        assertEquals(listOf(ShowcaseTreeDetail.GridColumns(9)), grid.details)
-        assertEquals(List(27) { DocumentedComponent.Slot }, grid.children.map { child -> child.component })
-        assertEquals(
-            listOf(ShowcaseTreeDetail.SlotHighlightable(true), ShowcaseTreeDetail.Size(18, 18)),
-            scenarios.getValue(DocumentedComponent.Slot).tree.details,
-        )
-        scenarios.values.forEach { scenario -> assertEquals(scenario.component, scenario.tree.component) }
+        val black = ShowcaseTreeDetail.Background(ArgbColor(0xFF000000.toInt()))
+        val expected =
+            listOf(
+                expectedTree(
+                    DocumentedComponent.Row,
+                    listOf(
+                        ShowcaseTreeDetail.Size(136, 64),
+                        black,
+                        ShowcaseTreeDetail.Spacing(4),
+                        ShowcaseTreeDetail.Arrangement(Arrangement.Center),
+                        ShowcaseTreeDetail.RowDefaultAlignment(VerticalAlignment.Center),
+                    ),
+                    expectedTree(DocumentedComponent.Button, listOf(ShowcaseTreeDetail.Size(60, 20))),
+                    expectedTree(DocumentedComponent.Button, listOf(ShowcaseTreeDetail.Size(60, 20))),
+                ),
+                expectedTree(
+                    DocumentedComponent.Column,
+                    listOf(
+                        ShowcaseTreeDetail.Size(120, 64),
+                        black,
+                        ShowcaseTreeDetail.Spacing(4),
+                        ShowcaseTreeDetail.Arrangement(Arrangement.Center),
+                        ShowcaseTreeDetail.ColumnDefaultAlignment(HorizontalAlignment.Center),
+                    ),
+                    expectedTree(DocumentedComponent.Button, listOf(ShowcaseTreeDetail.Size(96, 20))),
+                    expectedTree(DocumentedComponent.Button, listOf(ShowcaseTreeDetail.Size(96, 20))),
+                ),
+                expectedTree(
+                    DocumentedComponent.Stack,
+                    listOf(
+                        ShowcaseTreeDetail.Size(64, 64),
+                        black,
+                        ShowcaseTreeDetail.StackContentAlignment(Alignment.Center),
+                    ),
+                    expectedTree(DocumentedComponent.Button, listOf(ShowcaseTreeDetail.Size(56, 20))),
+                    expectedTree(
+                        DocumentedComponent.Spacer,
+                        listOf(
+                            ShowcaseTreeDetail.Size(10, 10),
+                            ShowcaseTreeDetail.Background(ArgbColor(0xFFE53935.toInt())),
+                            ShowcaseTreeDetail.StackAlign(Alignment.CenterEnd),
+                        ),
+                    ),
+                ),
+                expectedTree(
+                    DocumentedComponent.Grid,
+                    listOf(
+                        ShowcaseTreeDetail.Size(64, 64),
+                        black,
+                        ShowcaseTreeDetail.GridColumns(3),
+                        ShowcaseTreeDetail.GridSpacing(horizontal = 2, vertical = 2),
+                    ),
+                    *Array(9) {
+                        expectedTree(DocumentedComponent.Button, listOf(ShowcaseTreeDetail.Size(20, 20)))
+                    },
+                ),
+                expectedTree(
+                    DocumentedComponent.Row,
+                    listOf(
+                        ShowcaseTreeDetail.Size(160, 64),
+                        black,
+                        ShowcaseTreeDetail.Arrangement(Arrangement.Center),
+                        ShowcaseTreeDetail.RowDefaultAlignment(VerticalAlignment.Center),
+                    ),
+                    expectedTree(DocumentedComponent.Button, listOf(ShowcaseTreeDetail.Size(60, 20))),
+                    expectedTree(DocumentedComponent.Spacer, listOf(ShowcaseTreeDetail.Size(16, 20))),
+                    expectedTree(DocumentedComponent.Button, listOf(ShowcaseTreeDetail.Size(60, 20))),
+                ),
+                centeredTree(IntSize(120, 64), expectedTree(DocumentedComponent.Text)),
+                centeredTree(
+                    IntSize(216, 64),
+                    expectedTree(DocumentedComponent.TextField, listOf(ShowcaseTreeDetail.Size(200, 20))),
+                ),
+                centeredTree(
+                    IntSize(166, 64),
+                    expectedTree(DocumentedComponent.Button, listOf(ShowcaseTreeDetail.Size(150, 20))),
+                ),
+                expectedTree(
+                    DocumentedComponent.Row,
+                    listOf(
+                        ShowcaseTreeDetail.Size(160, 64),
+                        black,
+                        ShowcaseTreeDetail.Spacing(1),
+                        ShowcaseTreeDetail.Arrangement(Arrangement.Center),
+                        ShowcaseTreeDetail.RowDefaultAlignment(VerticalAlignment.Center),
+                    ),
+                    expectedTree(DocumentedComponent.Tab, listOf(ShowcaseTreeDetail.Size(73, 20))),
+                    expectedTree(DocumentedComponent.Tab, listOf(ShowcaseTreeDetail.Size(73, 20))),
+                ),
+                expectedTree(
+                    DocumentedComponent.Scroll,
+                    listOf(
+                        ShowcaseTreeDetail.Size(160, 64),
+                        black,
+                        ShowcaseTreeDetail.ScrollRate(9),
+                    ),
+                    expectedTree(
+                        DocumentedComponent.Column,
+                        listOf(
+                            ShowcaseTreeDetail.Size(132, 108),
+                            ShowcaseTreeDetail.ColumnDefaultAlignment(HorizontalAlignment.Center),
+                        ),
+                        *Array(6) { expectedTree(DocumentedComponent.Text) },
+                    ),
+                ),
+                centeredTree(
+                    IntSize(64, 64),
+                    expectedTree(DocumentedComponent.Image, listOf(ShowcaseTreeDetail.Size(32, 32))),
+                ),
+                centeredTree(
+                    IntSize(64, 64),
+                    expectedTree(
+                        DocumentedComponent.Slot,
+                        listOf(ShowcaseTreeDetail.SlotHighlightable(true), ShowcaseTreeDetail.Size(18, 18)),
+                    ),
+                ),
+                centeredTree(
+                    IntSize(64, 64),
+                    expectedTree(DocumentedComponent.PlayerHead, listOf(ShowcaseTreeDetail.Size(24, 24))),
+                ),
+            )
+
+        assertEquals(DocumentedComponent.entries, ShowcaseScenarioCatalog.components.map { scenario -> scenario.component })
+        expected.zip(ShowcaseScenarioCatalog.components).forEach { (expectedTree, scenario) ->
+            assertTreeEquals(expectedTree, scenario.tree)
+        }
+    }
+
+    @Test
+    fun everyComponentTreeRecursivelyContainsItsFeaturedComponent() {
+        ShowcaseScenarioCatalog.components.forEach { scenario ->
+            assertTrue(contains(scenario.tree, scenario.component), scenario.component.apiMethodName)
+        }
+    }
+
+    @Test
+    fun componentSourcesAreDedicatedUniqueAndSeparateFromCompleteScreens() {
+        val componentSources = ShowcaseScenarioCatalog.components.map { scenario -> scenario.source.relativePath }
+        val completeScreenSources =
+            (listOf(ShowcaseScenarioCatalog.overview.source) + ShowcaseScenarioCatalog.screens.map { scenario -> scenario.source })
+                .map { source -> source.relativePath }
+                .toSet()
+        assertEquals(componentSources.size, componentSources.toSet().size)
+        assertTrue(componentSources.none { source -> source in completeScreenSources })
     }
 
     @Test
@@ -137,4 +266,41 @@ internal class ShowcaseScenarioContractTest {
         assertEquals(listOf(320, 320, 320, 320), screens.map { scenario -> scenario.viewportWidth })
         assertEquals(listOf(240, 240, 180, 180), screens.map { scenario -> scenario.viewportHeight })
     }
+
+    private fun expectedTree(
+        component: DocumentedComponent,
+        details: List<ShowcaseTreeDetail> = emptyList(),
+        vararg children: ShowcaseTree,
+    ): ShowcaseTree = ShowcaseTree(component, details, children.toList())
+
+    private fun centeredTree(
+        viewport: IntSize,
+        child: ShowcaseTree,
+    ): ShowcaseTree =
+        expectedTree(
+            DocumentedComponent.Stack,
+            listOf(
+                ShowcaseTreeDetail.Size(viewport.width, viewport.height),
+                ShowcaseTreeDetail.Background(ArgbColor(0xFF000000.toInt())),
+                ShowcaseTreeDetail.StackContentAlignment(Alignment.Center),
+            ),
+            child,
+        )
+
+    private fun assertTreeEquals(
+        expected: ShowcaseTree,
+        actual: ShowcaseTree,
+    ) {
+        assertEquals(expected.component, actual.component)
+        assertEquals(expected.details, actual.details)
+        assertEquals(expected.children.size, actual.children.size)
+        expected.children.zip(actual.children).forEach { (expectedChild, actualChild) ->
+            assertTreeEquals(expectedChild, actualChild)
+        }
+    }
+
+    private fun contains(
+        tree: ShowcaseTree,
+        component: DocumentedComponent,
+    ): Boolean = tree.component == component || tree.children.any { child -> contains(child, component) }
 }

@@ -3,7 +3,7 @@ package dev.s7a.strata.integration.docs
 import dev.s7a.strata.geometry.IntSize
 
 /**
- * Immutable metadata connecting one documented component to its compiled GameTest source, verified crop dimensions, and layout-only tree.
+ * Immutable metadata connecting one documented component to its dedicated minimal ScreenDefinition, verified full-frame dimensions, and complete component tree.
  *
  * Constructor inputs are snapshotted by their owning value types and are read synchronously by the documentation pipeline.
  */

@@ -41,7 +41,7 @@ Fabric API is confined to these integration modules; the published runtimes do n
 `./gradlew :integration:minecraft-fabric-1.21.11:runProductionClientGameTest :integration:minecraft-fabric-1.21.10:runProductionClientGameTest` packages and remaps each integration test Mod and runtime Mod, then repeats the loaded suite from those production jars with their nested common runtime jars.
 
 The nonpublished `integration:docs` module owns two source-safe showcase tasks.
-`./gradlew :integration:docs:checkComponentShowcase` depends on that loaded GameTest, verifies its receipt and image hashes, stages the compiled Minecraft-component scenario sources and verified crops, and checks freshness without modifying repository files.
+`./gradlew :integration:docs:checkComponentShowcase` depends on that loaded GameTest, verifies its receipt and image hashes, stages each compiled dedicated minimal component `ScreenDefinition` with its complete Fabric/headless-equal frame, and checks freshness without modifying repository files.
 `./gradlew :integration:docs:generateComponentShowcase` performs the same parity preflight and synchronizes the combined `docs/components.md` showcase, parity receipt, PNG files, and anchored root README region.
 Generated output is owned by the showcase generator; manual edits are reported as stale by the checker.
 

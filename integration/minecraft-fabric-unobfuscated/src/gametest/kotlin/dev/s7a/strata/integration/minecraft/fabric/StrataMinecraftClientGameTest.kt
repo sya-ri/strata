@@ -9,7 +9,6 @@ import dev.s7a.strata.geometry.IntSize
 import dev.s7a.strata.input.PointerEvent
 import dev.s7a.strata.render.ArgbColor
 import dev.s7a.strata.render.DrawImage
-import dev.s7a.strata.render.createDrawImage
 import dev.s7a.strata.resource.ResourceId
 import dev.s7a.strata.runtime.headless.HeadlessImage
 import dev.s7a.strata.runtime.headless.rasterizeHeadless
@@ -63,7 +62,7 @@ import kotlin.io.path.inputStream
 @Suppress("TooManyFunctions")
 public class StrataMinecraftClientGameTest : FabricClientGameTest {
     /**
-     * Executes the exact three-path comparison and writes the verified headless frame.
+     * Executes the native/Fabric/headless acceptance comparisons and the dedicated component Fabric/headless comparisons, then writes their verified evidence.
      *
      * @param context Fabric client GameTest context owning window, client-thread, and screenshot operations.
      * @throws AssertionError when version, geometry, or any native/Fabric/headless pixel differs.
@@ -530,6 +529,102 @@ public class StrataMinecraftClientGameTest : FabricClientGameTest {
         }
     }
 
+    @OptIn(InternalStrataRuntimeApi::class)
+    @Suppress("LongMethod")
+    private fun runComponentShowcaseParity(
+        context: ClientGameTestContext,
+        profile: MinecraftUiProfile,
+        output: Path,
+    ): Map<ComponentShowcase, ComponentShowcaseFrame> {
+        val assets =
+            context.computeOnClient(
+                FailableFunction<Minecraft, ComponentShowcaseAssets, RuntimeException> {
+                    ComponentShowcaseAssets(
+                        image =
+                            ImageSource.Pixels(
+                                loadMinecraftUiImage(
+                                    ResourceId(
+                                        "strata_test",
+                                        "textures/gui/coal_generator.png",
+                                    ),
+                                ),
+                            ),
+                        playerSkin = PlayerSkinSource.Pixels(loadCurrentMinecraftPlayerSkin()),
+                    )
+                },
+            )
+        val imageDirectory = output.resolve("components")
+        Files.createDirectories(imageDirectory)
+        val frames = LinkedHashMap<ComponentShowcase, ComponentShowcaseFrame>()
+        for (showcase in ComponentShowcase.entries) {
+            closeFabricScreen(context)
+            context.input.resizeWindow(showcase.viewport.width, showcase.viewport.height)
+            context.runOnClient(
+                FailableConsumer<Minecraft, RuntimeException> { minecraft -> minecraft.resizeGui() },
+            )
+            context.input.setCursorPos(showcase.pointer.x.toDouble(), showcase.pointer.y.toDouble())
+            val headless =
+                context.computeOnClient(
+                    FailableFunction<Minecraft, HeadlessImage, RuntimeException> {
+                        renderHeadless(
+                            profile,
+                            createComponentShowcaseScreenDefinition(showcase, assets),
+                            showcase.viewport,
+                            showcase.pointer,
+                        )
+                    },
+                )
+            val png = headless.encodePng()
+            val imagePath = imageDirectory.resolve("${showcase.slug}.png")
+            Files.write(imagePath, png)
+
+            context.setScreen {
+                createMinecraftScreen(
+                    createComponentShowcaseScreenDefinition(showcase, assets),
+                    profile,
+                    parent = null,
+                )
+            }
+            context.waitForScreen(FabricMinecraftScreen::class.java)
+            context.input.setCursorPos(showcase.pointer.x.toDouble(), showcase.pointer.y.toDouble())
+            context.waitTicks(2)
+            NativeImage.read(imagePath.inputStream()).use { expected ->
+                context.assertScreenshotEquals(
+                    TestScreenshotComparisonOptions
+                        .of(expected)
+                        .withAlgorithm(TestScreenshotComparisonAlgorithm.exact())
+                        .saveWithFileName("strata-component-${showcase.slug}-fabric")
+                        .disableCounterPrefix()
+                        .withSize(showcase.viewport.width, showcase.viewport.height)
+                        .withDestinationDir(output),
+                )
+            }
+            frames[showcase] = ComponentShowcaseFrame(headless, png)
+        }
+        closeFabricScreen(context)
+        return frames
+    }
+
+    private fun createComponentShowcaseScreenDefinition(
+        showcase: ComponentShowcase,
+        assets: ComponentShowcaseAssets,
+    ): ScreenDefinition =
+        when (showcase) {
+            ComponentShowcase.Row -> createRowShowcaseScreenDefinition()
+            ComponentShowcase.Column -> createColumnShowcaseScreenDefinition()
+            ComponentShowcase.Stack -> createStackShowcaseScreenDefinition()
+            ComponentShowcase.Grid -> createGridShowcaseScreenDefinition()
+            ComponentShowcase.Spacer -> createSpacerShowcaseScreenDefinition()
+            ComponentShowcase.Text -> createTextShowcaseScreenDefinition()
+            ComponentShowcase.TextField -> createTextFieldShowcaseScreenDefinition()
+            ComponentShowcase.Button -> createButtonShowcaseScreenDefinition()
+            ComponentShowcase.Tab -> createTabShowcaseScreenDefinition()
+            ComponentShowcase.Scroll -> createScrollShowcaseScreenDefinition()
+            ComponentShowcase.Image -> createImageShowcaseScreenDefinition(assets.image)
+            ComponentShowcase.Slot -> createSlotShowcaseScreenDefinition()
+            ComponentShowcase.PlayerHead -> createPlayerHeadShowcaseScreenDefinition(assets.playerSkin)
+        }
+
     @Suppress("LongMethod", "LongParameterList")
     private fun writeParityEvidence(
         output: Path,
@@ -542,45 +637,14 @@ public class StrataMinecraftClientGameTest : FabricClientGameTest {
         playerHead: HeadlessImage,
         social: HeadlessImage,
         progress: HeadlessImage,
+        componentShowcases: Map<ComponentShowcase, ComponentShowcaseFrame>,
     ) {
         val imageDirectory = output.resolve("components")
         Files.createDirectories(imageDirectory)
         val screenDirectory = output.resolve("screens")
         Files.createDirectories(screenDirectory)
-        val sources =
-            mapOf(
-                ParityScene.Confirm to createDrawImage(confirm.size, confirm.copyArgb()),
-                ParityScene.Scroll to createDrawImage(scroll.size, scroll.copyArgb()),
-                ParityScene.DirectJoin to createDrawImage(directJoin.size, directJoin.copyArgb()),
-                ParityScene.Slot to createDrawImage(slot.size, slot.copyArgb()),
-                ParityScene.Industrial to createDrawImage(industrial.size, industrial.copyArgb()),
-                ParityScene.PlayerHead to createDrawImage(playerHead.size, playerHead.copyArgb()),
-                ParityScene.Social to createDrawImage(social.size, social.copyArgb()),
-                ParityScene.Progress to createDrawImage(progress.size, progress.copyArgb()),
-            )
-        val pngHashes = LinkedHashMap<ParityCrop, String>()
-        for (crop in ParityCrop.entries) {
-            val source = sources.getValue(crop.scene)
-            val image =
-                rasterizeHeadless(
-                    listOf(
-                        DrawCommand.BlitImage(
-                            source,
-                            IntRect(
-                                crop.origin.x,
-                                crop.origin.y,
-                                crop.origin.x + crop.size.width,
-                                crop.origin.y + crop.size.height,
-                            ),
-                            IntRect(0, 0, crop.size.width, crop.size.height),
-                        ),
-                    ),
-                    crop.size,
-                )
-            val png = image.encodePng()
-            Files.write(imageDirectory.resolve("${crop.slug}.png"), png)
-            pngHashes[crop] = sha256(png)
-        }
+        val overviewPng = confirm.encodePng()
+        Files.write(imageDirectory.resolve("overview.png"), overviewPng)
         val screenPngHashes =
             mapOf(
                 ParityScreen.Social to social.encodePng(),
@@ -627,11 +691,30 @@ public class StrataMinecraftClientGameTest : FabricClientGameTest {
                 append("fabric.headless.progress.argb.sha256=")
                 append(sha256Argb(progress))
                 append('\n')
-                ParityCrop.entries.forEach { crop ->
+                append("component.overview.png.sha256=")
+                append(sha256(overviewPng))
+                append('\n')
+                ComponentShowcase.entries.forEach { showcase ->
+                    val frame = componentShowcases.getValue(showcase)
                     append("component.")
-                    append(crop.slug)
+                    append(showcase.slug)
+                    append(".viewport.width=")
+                    append(showcase.viewport.width)
+                    append('\n')
+                    append("component.")
+                    append(showcase.slug)
+                    append(".viewport.height=")
+                    append(showcase.viewport.height)
+                    append('\n')
+                    append("component.")
+                    append(showcase.slug)
+                    append(".fabric.headless.argb.sha256=")
+                    append(sha256Argb(frame.image))
+                    append('\n')
+                    append("component.")
+                    append(showcase.slug)
                     append(".png.sha256=")
-                    append(pngHashes.getValue(crop))
+                    append(sha256(frame.png))
                     append('\n')
                 }
                 ParityScreen.entries.forEach { screen ->
@@ -810,7 +893,20 @@ public class StrataMinecraftClientGameTest : FabricClientGameTest {
                     val playerHead = runPlayerHeadParity(context, profile, output)
                     val social = MinecraftSocialParity.run(context, profile, output)
                     val progress = MinecraftProgressParity.run(context, profile, output)
-                    writeParityEvidence(output, confirm, scroll, directJoin, containerBackground, slot, industrial, playerHead, social, progress)
+                    val componentShowcases = runComponentShowcaseParity(context, profile, output)
+                    writeParityEvidence(
+                        output,
+                        confirm,
+                        scroll,
+                        directJoin,
+                        containerBackground,
+                        slot,
+                        industrial,
+                        playerHead,
+                        social,
+                        progress,
+                        componentShowcases,
+                    )
                 }
             }
             closeFabricScreen(context)
@@ -1056,37 +1152,34 @@ public class StrataMinecraftClientGameTest : FabricClientGameTest {
         private val playerHeadViewport = IntSize(64, 64)
     }
 
-    private enum class ParityCrop(
-        val slug: String,
-        val scene: ParityScene,
-        val origin: IntOffset,
-        val size: IntSize,
-    ) {
-        Overview("overview", ParityScene.Confirm, IntOffset.Zero, IntSize(320, 180)),
-        Row("row", ParityScene.Confirm, IntOffset.Zero, IntSize(320, 180)),
-        Column("column", ParityScene.Confirm, IntOffset.Zero, IntSize(320, 180)),
-        Stack("stack", ParityScene.Confirm, IntOffset.Zero, IntSize(320, 180)),
-        Grid("grid", ParityScene.Slot, IntOffset.Zero, IntSize(320, 240)),
-        Spacer("spacer", ParityScene.Progress, IntOffset.Zero, IntSize(320, 180)),
-        Text("text", ParityScene.Confirm, IntOffset(85, 50), IntSize(150, 20)),
-        TextField("text-field", ParityScene.DirectJoin, IntOffset(60, 116), IntSize(200, 20)),
-        Button("button", ParityScene.Confirm, IntOffset(8, 105), IntSize(150, 20)),
-        Tab("tab", ParityScene.Social, IntOffset.Zero, IntSize(320, 240)),
-        Scroll("scroll", ParityScene.Scroll, IntOffset(0, 33), IntSize(320, 94)),
-        Image("image", ParityScene.Industrial, IntOffset(144, 30), IntSize(32, 32)),
-        Slot("slot", ParityScene.Slot, IntOffset(76, 50), IntSize(24, 24)),
-        PlayerHead("player-head", ParityScene.PlayerHead, IntOffset(20, 20), IntSize(24, 24)),
-    }
+    private data class ComponentShowcaseAssets(
+        val image: ImageSource,
+        val playerSkin: PlayerSkinSource,
+    )
 
-    private enum class ParityScene {
-        Confirm,
-        Scroll,
-        DirectJoin,
-        Slot,
-        Industrial,
-        PlayerHead,
-        Social,
-        Progress,
+    private class ComponentShowcaseFrame(
+        val image: HeadlessImage,
+        val png: ByteArray,
+    )
+
+    private enum class ComponentShowcase(
+        val slug: String,
+        val viewport: IntSize,
+        val pointer: IntOffset = IntOffset.Zero,
+    ) {
+        Row("row", IntSize(136, 64)),
+        Column("column", IntSize(120, 64)),
+        Stack("stack", IntSize(64, 64)),
+        Grid("grid", IntSize(64, 64)),
+        Spacer("spacer", IntSize(160, 64)),
+        Text("text", IntSize(120, 64)),
+        TextField("text-field", IntSize(216, 64)),
+        Button("button", IntSize(166, 64)),
+        Tab("tab", IntSize(160, 64)),
+        Scroll("scroll", IntSize(160, 64)),
+        Image("image", IntSize(64, 64)),
+        Slot("slot", IntSize(64, 64), IntOffset(32, 32)),
+        PlayerHead("player-head", IntSize(64, 64)),
     }
 
     private enum class ParityScreen(

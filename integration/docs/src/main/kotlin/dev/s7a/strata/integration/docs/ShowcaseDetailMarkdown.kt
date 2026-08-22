@@ -26,6 +26,7 @@ internal object ShowcaseDetailMarkdown {
             is ShowcaseTreeDetail.StackAlign -> "StackAlign(alignment=${detail.alignment})"
             is ShowcaseTreeDetail.GridAlign -> "GridAlign(alignment=${detail.alignment})"
             is ShowcaseTreeDetail.GridColumns -> "GridColumns(value=${detail.value})"
+            is ShowcaseTreeDetail.GridSpacing -> "GridSpacing(horizontal=${detail.horizontal}, vertical=${detail.vertical})"
             is ShowcaseTreeDetail.Spacing -> "Spacing(value=${detail.value})"
             is ShowcaseTreeDetail.ScrollRate -> "ScrollRate(value=${detail.value})"
             is ShowcaseTreeDetail.SlotHighlightable -> "SlotHighlightable(value=${detail.value})"

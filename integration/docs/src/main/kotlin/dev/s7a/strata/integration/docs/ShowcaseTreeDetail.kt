@@ -88,6 +88,14 @@ internal sealed interface ShowcaseTreeDetail {
     ) : ShowcaseTreeDetail
 
     /**
+     * Independent fixed spacing between Grid columns and rows.
+     */
+    data class GridSpacing(
+        internal val horizontal: Int,
+        internal val vertical: Int,
+    ) : ShowcaseTreeDetail
+
+    /**
      * Fixed spacing between linear children.
      */
     data class Spacing(

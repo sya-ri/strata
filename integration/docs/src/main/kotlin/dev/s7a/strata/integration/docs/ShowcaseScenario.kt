@@ -3,7 +3,7 @@ package dev.s7a.strata.integration.docs
 import dev.s7a.strata.geometry.IntSize
 
 /**
- * Typed immutable metadata for one loaded-game-verified showcase crop.
+ * Typed immutable metadata for one loaded-game-verified showcase frame.
  */
 internal sealed interface ShowcaseScenario {
     /**
@@ -12,12 +12,12 @@ internal sealed interface ShowcaseScenario {
     val source: SourceReference
 
     /**
-     * Logical dimensions of the verified GameTest crop.
+     * Logical dimensions of the verified complete GameTest frame.
      */
     val viewport: IntSize
 
     /**
-     * Logical-to-physical pixel scale recorded by the verified GameTest crop.
+     * Logical-to-physical pixel scale recorded by the verified complete GameTest frame.
      */
     val scale: Int
 }

@@ -1,6 +1,8 @@
 package dev.s7a.strata.integration.docs
 
+import dev.s7a.strata.geometry.IntSize
 import org.junit.jupiter.api.Assertions.assertArrayEquals
+import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertThrows
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.io.TempDir
@@ -27,19 +29,13 @@ internal class ShowcaseParityEvidenceTest {
         first[0] = 0
 
         assertArrayEquals(png, evidence.overviewPng())
-        assertArrayEquals(png(320, 180), evidence.componentPng(DocumentedComponent.Row))
-        assertArrayEquals(png(320, 180), evidence.componentPng(DocumentedComponent.Column))
-        assertArrayEquals(png(320, 180), evidence.componentPng(DocumentedComponent.Stack))
-        assertArrayEquals(png(320, 240), evidence.componentPng(DocumentedComponent.Grid))
-        assertArrayEquals(png(320, 180), evidence.componentPng(DocumentedComponent.Spacer))
-        assertArrayEquals(png(150, 20), evidence.componentPng(DocumentedComponent.Text))
-        assertArrayEquals(png(200, 20), evidence.componentPng(DocumentedComponent.TextField))
-        assertArrayEquals(png(150, 20), evidence.componentPng(DocumentedComponent.Button))
-        assertArrayEquals(png(320, 240), evidence.componentPng(DocumentedComponent.Tab))
-        assertArrayEquals(png(320, 94), evidence.componentPng(DocumentedComponent.Scroll))
-        assertArrayEquals(png(24, 24), evidence.componentPng(DocumentedComponent.Slot))
-        assertArrayEquals(png(32, 32), evidence.componentPng(DocumentedComponent.Image))
-        assertArrayEquals(png(24, 24), evidence.componentPng(DocumentedComponent.PlayerHead))
+        ShowcaseScenarioCatalog.components.forEach { scenario ->
+            assertEquals(scenario.viewport, evidence.componentViewport(scenario.component))
+            assertArrayEquals(
+                png(scenario.viewport.width, scenario.viewport.height),
+                evidence.componentPng(scenario.component),
+            )
+        }
         assertArrayEquals(png(320, 240), evidence.screenPng(DocumentedScreen.SocialInteractions))
         assertArrayEquals(png(320, 240), evidence.screenPng(DocumentedScreen.SynchronizedInventory))
         assertArrayEquals(png(320, 180), evidence.screenPng(DocumentedScreen.IndustrialController))
@@ -51,18 +47,58 @@ internal class ShowcaseParityEvidenceTest {
 
     @Test
     fun staleHashAndWrongDimensionsAreRejected() {
+        val buttonScenario = componentScenario(DocumentedComponent.Button)
         writeEvidence()
-        Files.write(temporaryRoot.resolve("components/button.png"), png(149, 20))
+        Files.write(
+            temporaryRoot.resolve("components/button.png"),
+            png(buttonScenario.viewport.width - 1, buttonScenario.viewport.height),
+        )
         assertThrows(IllegalArgumentException::class.java) { ShowcaseParityEvidence.load(temporaryRoot) }
 
         writeEvidence()
         val receipt = Files.readString(temporaryRoot.resolve("receipt.properties"))
-        val buttonPng = png(150, 20)
+        val buttonPng = png(buttonScenario.viewport.width, buttonScenario.viewport.height)
         Files.writeString(
             temporaryRoot.resolve("receipt.properties"),
             receipt.replace("component.button.png.sha256=${sha256(buttonPng)}", "component.button.png.sha256=${"0".repeat(64)}"),
         )
         assertThrows(IllegalArgumentException::class.java) { ShowcaseParityEvidence.load(temporaryRoot) }
+    }
+
+    @Test
+    fun invalidComponentViewportAndFabricHeadlessHashAreRejected() {
+        writeEvidence()
+        val receiptPath = temporaryRoot.resolve("receipt.properties")
+        val receipt = Files.readString(receiptPath)
+        Files.writeString(
+            receiptPath,
+            receipt.replace("component.button.viewport.width=${componentScenario(DocumentedComponent.Button).viewport.width}", "component.button.viewport.width=0"),
+        )
+        assertThrows(IllegalArgumentException::class.java) { ShowcaseParityEvidence.load(temporaryRoot) }
+
+        writeEvidence()
+        Files.writeString(
+            receiptPath,
+            Files.readString(receiptPath).replace(
+                "component.button.fabric.headless.argb.sha256=${componentArgbHash(DocumentedComponent.Button)}",
+                "component.button.fabric.headless.argb.sha256=invalid",
+            ),
+        )
+        assertThrows(IllegalArgumentException::class.java) { ShowcaseParityEvidence.load(temporaryRoot) }
+    }
+
+    @Test
+    fun pipelineRejectsCatalogViewportThatDiffersFromReceipt() {
+        val scenario = componentScenario(DocumentedComponent.Button)
+        val recordedViewport = IntSize(scenario.viewport.width - 1, scenario.viewport.height)
+        writeEvidence(mapOf(scenario.component to recordedViewport))
+
+        val evidence = ShowcaseParityEvidence.load(temporaryRoot)
+
+        assertEquals(recordedViewport, evidence.componentViewport(scenario.component))
+        assertThrows(IllegalArgumentException::class.java) {
+            ShowcasePipeline.verifyComponentViewport(scenario, evidence)
+        }
     }
 
     @Test
@@ -79,29 +115,22 @@ internal class ShowcaseParityEvidenceTest {
         assertThrows(IllegalArgumentException::class.java) { ShowcaseParityEvidence.load(temporaryRoot) }
     }
 
-    private fun writeEvidence() {
+    private fun writeEvidence(viewportOverrides: Map<DocumentedComponent, IntSize> = emptyMap()) {
         val components = temporaryRoot.resolve("components")
         Files.createDirectories(components)
         val screens = temporaryRoot.resolve("screens")
         Files.createDirectories(screens)
-        val images =
-            linkedMapOf(
-                "overview" to png(320, 180),
-                DocumentedComponent.Row.slug to png(320, 180),
-                DocumentedComponent.Column.slug to png(320, 180),
-                DocumentedComponent.Stack.slug to png(320, 180),
-                DocumentedComponent.Grid.slug to png(320, 240),
-                DocumentedComponent.Spacer.slug to png(320, 180),
-                DocumentedComponent.Text.slug to png(150, 20),
-                DocumentedComponent.TextField.slug to png(200, 20),
-                DocumentedComponent.Button.slug to png(150, 20),
-                DocumentedComponent.Tab.slug to png(320, 240),
-                DocumentedComponent.Scroll.slug to png(320, 94),
-                DocumentedComponent.Slot.slug to png(24, 24),
-                DocumentedComponent.Image.slug to png(32, 32),
-                DocumentedComponent.PlayerHead.slug to png(24, 24),
-            )
-        images.forEach { (slug, bytes) -> Files.write(components.resolve("$slug.png"), bytes) }
+        val overview = png(320, 180)
+        Files.write(components.resolve("overview.png"), overview)
+        val componentViewports =
+            ShowcaseScenarioCatalog.components.associate { scenario ->
+                scenario.component to (viewportOverrides[scenario.component] ?: scenario.viewport)
+            }
+        val componentImages =
+            componentViewports.mapValues { (_, viewport) ->
+                png(viewport.width, viewport.height)
+            }
+        componentImages.forEach { (component, bytes) -> Files.write(components.resolve("${component.slug}.png"), bytes) }
         val screenImages =
             linkedMapOf(
                 DocumentedScreen.SocialInteractions.slug to png(320, 240),
@@ -126,7 +155,14 @@ internal class ShowcaseParityEvidenceTest {
                 appendLine("native.fabric.headless.player-head.argb.sha256=${"7".repeat(64)}")
                 appendLine("native.fabric.headless.social.argb.sha256=${"8".repeat(64)}")
                 appendLine("fabric.headless.progress.argb.sha256=${"9".repeat(64)}")
-                images.forEach { (slug, bytes) -> appendLine("component.$slug.png.sha256=${sha256(bytes)}") }
+                appendLine("component.overview.png.sha256=${sha256(overview)}")
+                componentImages.forEach { (component, bytes) ->
+                    val viewport = componentViewports.getValue(component)
+                    appendLine("component.${component.slug}.viewport.width=${viewport.width}")
+                    appendLine("component.${component.slug}.viewport.height=${viewport.height}")
+                    appendLine("component.${component.slug}.fabric.headless.argb.sha256=${componentArgbHash(component)}")
+                    appendLine("component.${component.slug}.png.sha256=${sha256(bytes)}")
+                }
                 screenImages.forEach { (slug, bytes) -> appendLine("screen.$slug.png.sha256=${sha256(bytes)}") }
             }
         Files.writeString(temporaryRoot.resolve("receipt.properties"), receipt)
@@ -146,4 +182,11 @@ internal class ShowcaseParityEvidenceTest {
             }.array()
 
     private fun sha256(bytes: ByteArray): String = HexFormat.of().formatHex(MessageDigest.getInstance("SHA-256").digest(bytes))
+
+    private fun componentScenario(component: DocumentedComponent): ComponentScenario = ShowcaseScenarioCatalog.components.single { scenario -> scenario.component == component }
+
+    private fun componentArgbHash(component: DocumentedComponent): String {
+        val digit = (component.ordinal + 10).toString(16).last().toString()
+        return digit.repeat(64)
+    }
 }

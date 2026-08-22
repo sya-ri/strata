@@ -1,6 +1,6 @@
 package dev.s7a.strata.integration.minecraft.fabric
 
-// showcase-source-begin:text-field
+// showcase-source-begin:direct-join-screen
 import dev.s7a.strata.component.Button
 import dev.s7a.strata.component.Column
 import dev.s7a.strata.component.Stack
@@ -67,4 +67,4 @@ internal fun createDirectJoinScreenDefinition(): ScreenDefinition {
         }
     }
 }
-// showcase-source-end:text-field
+// showcase-source-end:direct-join-screen

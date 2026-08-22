@@ -1,6 +1,6 @@
 package dev.s7a.strata.integration.minecraft.fabric
 
-// showcase-source-begin:slot
+// showcase-source-begin:slot-screen
 import dev.s7a.strata.component.Column
 import dev.s7a.strata.component.Grid
 import dev.s7a.strata.component.Slot
@@ -73,4 +73,4 @@ internal fun createSlotScreenDefinition(): ScreenDefinition =
             }
         }
     }
-// showcase-source-end:slot
+// showcase-source-end:slot-screen

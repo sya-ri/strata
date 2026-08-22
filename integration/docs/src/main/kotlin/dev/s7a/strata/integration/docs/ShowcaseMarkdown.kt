@@ -22,9 +22,10 @@ internal object ShowcaseMarkdown {
 
 # Minecraft component showcase
 
-These deterministic crops come from real Minecraft 26.2 `ConfirmScreen`, `DirectJoinServerScreen`, `ContainerScreen`, Social Interactions, and native `ObjectSelectionList` screens reconstructed with Strata's complete standard component set, plus test Mod screens built from the same primitives and resource-pack assets.
+Each component image is the complete frame of the dedicated minimal `ScreenDefinition` shown in its compiled example, containing the featured primitive and only the parent layout needed to demonstrate its responsibility.
+One loaded Minecraft 26.2 Fabric GameTest renders that definition independently through the Fabric adapter and headless runtime, requires exact ARGB equality, and publishes the entire resulting frame without cropping a larger showcase screen.
+Separate native full-screen parity scenes for `ConfirmScreen`, `DirectJoinServerScreen`, `ContainerScreen`, Social Interactions, and `ObjectSelectionList`, plus complete test Mod screens, remain acceptance evidence for real assets, fonts, textures, placement, and draw order.
 The menu and generic-container images are active background modifiers on layout components rather than logical component entries.
-One loaded Fabric GameTest requires exact ARGB equality among each native screen, the Fabric adapter, and the headless frame before it emits these component images.
 
 [Open the machine-readable parity receipt](components/minecraft-26.2-parity.properties)
 
@@ -101,24 +102,7 @@ ${overview.source}
         source: String,
     ): String {
         val paritySentence =
-            when (spec.component) {
-                DocumentedComponent.Image,
-                DocumentedComponent.Spacer,
-                -> "This image is a ${spec.viewport.width} by ${spec.viewport.height} component crop from the exact Fabric/headless Mod-screen comparison recorded in [the verification receipt](components/minecraft-26.2-parity.properties)."
-
-                DocumentedComponent.Row,
-                DocumentedComponent.Column,
-                DocumentedComponent.Stack,
-                DocumentedComponent.Grid,
-                DocumentedComponent.Text,
-                DocumentedComponent.TextField,
-                DocumentedComponent.Button,
-                DocumentedComponent.Tab,
-                DocumentedComponent.Scroll,
-                DocumentedComponent.Slot,
-                DocumentedComponent.PlayerHead,
-                -> "This image is a ${spec.viewport.width} by ${spec.viewport.height} component crop from the exact native/Fabric/headless parity frame recorded in [the verification receipt](components/minecraft-26.2-parity.properties)."
-            }
+            "This ${spec.viewport.width} by ${spec.viewport.height} image is the complete frame of the compiled dedicated `ScreenDefinition`, after exact Fabric/headless ARGB comparison recorded in [the verification receipt](components/minecraft-26.2-parity.properties); it is not cropped from a larger screen."
         return markdown(
             """<a id="${spec.component.slug}"></a>
 
@@ -146,7 +130,7 @@ ${parentScopeGuidance(spec.component)}
 
 <details><summary>Component tree</summary>
 
-The tree shows the featured Minecraft component; platform-neutral layout scaffolding remains visible in the compiled source.
+The tree mirrors the complete dedicated definition, including the featured component, its minimum parent layout, and the children used to demonstrate its responsibility.
 
 ```text
 ${tree(spec.tree)}
