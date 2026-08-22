@@ -63,12 +63,10 @@ This deterministic image is the actual 320 by 180 `ConfirmScreen` reconstruction
 import dev.s7a.strata.dsl.Box
 import dev.s7a.strata.dsl.Column
 import dev.s7a.strata.dsl.Row
-import dev.s7a.strata.geometry.Insets
 import dev.s7a.strata.layout.Alignment
 import dev.s7a.strata.layout.HorizontalAlignment
 import dev.s7a.strata.modifier.Modifier
 import dev.s7a.strata.modifier.onPress
-import dev.s7a.strata.modifier.padding
 import dev.s7a.strata.modifier.size
 import dev.s7a.strata.runtime.minecraft.Button
 import dev.s7a.strata.runtime.minecraft.MinecraftScreenDefinition
@@ -88,15 +86,17 @@ internal fun createConfirmScreenDefinition(): MinecraftScreenDefinition =
             contentAlignment = Alignment.Center,
         ) {
             Column(
-                spacing = 8,
+                spacing = 24,
                 horizontalAlignment = HorizontalAlignment.Center,
             ) {
-                Text("Confirm action")
-                Text("Continue with this action?")
-                Row(
-                    modifier = Modifier.Empty.padding(Insets(top = 16)),
-                    spacing = 4,
+                Column(
+                    spacing = 8,
+                    horizontalAlignment = HorizontalAlignment.Center,
                 ) {
+                    Text("Confirm action")
+                    Text("Continue with this action?")
+                }
+                Row(spacing = 4) {
                     Button(
                         "Yes",
                         modifier = Modifier.Empty.onPress {},

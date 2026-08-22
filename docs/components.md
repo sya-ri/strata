@@ -16,12 +16,10 @@ One loaded Fabric GameTest requires exact ARGB equality among each native screen
 import dev.s7a.strata.dsl.Box
 import dev.s7a.strata.dsl.Column
 import dev.s7a.strata.dsl.Row
-import dev.s7a.strata.geometry.Insets
 import dev.s7a.strata.layout.Alignment
 import dev.s7a.strata.layout.HorizontalAlignment
 import dev.s7a.strata.modifier.Modifier
 import dev.s7a.strata.modifier.onPress
-import dev.s7a.strata.modifier.padding
 import dev.s7a.strata.modifier.size
 import dev.s7a.strata.runtime.minecraft.Button
 import dev.s7a.strata.runtime.minecraft.MinecraftScreenDefinition
@@ -41,15 +39,17 @@ internal fun createConfirmScreenDefinition(): MinecraftScreenDefinition =
             contentAlignment = Alignment.Center,
         ) {
             Column(
-                spacing = 8,
+                spacing = 24,
                 horizontalAlignment = HorizontalAlignment.Center,
             ) {
-                Text("Confirm action")
-                Text("Continue with this action?")
-                Row(
-                    modifier = Modifier.Empty.padding(Insets(top = 16)),
-                    spacing = 4,
+                Column(
+                    spacing = 8,
+                    horizontalAlignment = HorizontalAlignment.Center,
                 ) {
+                    Text("Confirm action")
+                    Text("Continue with this action?")
+                }
+                Row(spacing = 4) {
                     Button(
                         "Yes",
                         modifier = Modifier.Empty.onPress {},
@@ -156,10 +156,11 @@ This image is a 200 by 20 component crop from the exact native/Fabric/headless p
 
 ```kotlin
 import dev.s7a.strata.dsl.Box
-import dev.s7a.strata.geometry.Insets
+import dev.s7a.strata.dsl.Column
 import dev.s7a.strata.layout.Alignment
+import dev.s7a.strata.layout.Arrangement
+import dev.s7a.strata.layout.HorizontalAlignment
 import dev.s7a.strata.modifier.Modifier
-import dev.s7a.strata.modifier.fillMaxSize
 import dev.s7a.strata.modifier.onPress
 import dev.s7a.strata.modifier.padding
 import dev.s7a.strata.modifier.size
@@ -181,31 +182,43 @@ internal fun createDirectJoinScreenDefinition(): MinecraftScreenDefinition {
     val address = createMinecraftTextFieldState("play.example.net", maxLength = 128)
     return createMinecraftScreenDefinition("Direct Connection") {
         Box(modifier = Modifier.Empty.size(320, 240).menuBackground()) {
-            Button(
-                "Join Server",
-                width = 200,
-                modifier = Modifier.Empty.padding(Insets(left = 60, top = 168)).onPress {},
-            )
-            Button(
-                "Cancel",
-                width = 200,
-                modifier = Modifier.Empty.padding(Insets(left = 60, top = 192)).onPress {},
-            )
-            Box(
-                modifier = Modifier.Empty.fillMaxSize(),
-                contentAlignment = Alignment.TopCenter,
+            Column(
+                modifier = Modifier.Empty.size(320, 212),
+                verticalArrangement = Arrangement.SpaceBetween,
+                horizontalAlignment = HorizontalAlignment.Center,
             ) {
-                Text("Direct Connection", modifier = Modifier.Empty.padding(Insets(top = 20)))
+                Box(
+                    modifier = Modifier.Empty.size(320, 29),
+                    contentAlignment = Alignment.BottomCenter,
+                ) {
+                    Text("Direct Connection")
+                }
+                Column(
+                    modifier = Modifier.Empty.size(200, 112),
+                    verticalArrangement = Arrangement.SpaceBetween,
+                ) {
+                    Column(spacing = 7) {
+                        Text(
+                            "Server Address",
+                            style = MinecraftTextStyle.Inactive,
+                            modifier = Modifier.Empty.padding(left = 1),
+                        )
+                        TextField(address)
+                    }
+                    Column(spacing = 4) {
+                        Button(
+                            "Join Server",
+                            width = 200,
+                            modifier = Modifier.Empty.onPress {},
+                        )
+                        Button(
+                            "Cancel",
+                            width = 200,
+                            modifier = Modifier.Empty.onPress {},
+                        )
+                    }
+                }
             }
-            Text(
-                "Server Address",
-                style = MinecraftTextStyle.Inactive,
-                modifier = Modifier.Empty.padding(Insets(left = 61, top = 100)),
-            )
-            TextField(
-                address,
-                modifier = Modifier.Empty.padding(Insets(left = 60, top = 116)),
-            )
         }
     }
 }
@@ -402,7 +415,9 @@ This image is a 24 by 24 component crop from the exact native/Fabric/headless pa
 
 ```kotlin
 import dev.s7a.strata.dsl.Box
-import dev.s7a.strata.geometry.Insets
+import dev.s7a.strata.dsl.Column
+import dev.s7a.strata.dsl.Row
+import dev.s7a.strata.layout.Alignment
 import dev.s7a.strata.modifier.Modifier
 import dev.s7a.strata.modifier.background
 import dev.s7a.strata.modifier.padding
@@ -429,53 +444,53 @@ internal fun createSlotScreenDefinition(): MinecraftScreenDefinition =
                     .size(320, 240)
                     .background(ArgbColor(0xFF000000.toInt()))
                     .menuBackground(),
+            contentAlignment = Alignment.Center,
         ) {
             Box(
-                modifier =
-                    Modifier.Empty
-                        .padding(left = 72, top = 36)
-                        .containerBackground(rows = 3),
+                modifier = Modifier.Empty.containerBackground(rows = 3),
+                contentAlignment = Alignment.Center,
             ) {
-                Text(
-                    "Chest",
-                    style = MinecraftTextStyle.ContainerLabel,
-                    modifier = Modifier.Empty.padding(Insets(left = 8, top = 6)),
-                )
-                Text(
-                    "Inventory",
-                    style = MinecraftTextStyle.ContainerLabel,
-                    modifier = Modifier.Empty.padding(Insets(left = 8, top = 74)),
-                )
-                repeat(3) { row ->
-                    repeat(9) { column ->
-                        Slot(
-                            modifier =
-                                Modifier.Empty.padding(
-                                    Insets(
-                                        left = 7 + column * 18,
-                                        top = 17 + row * 18,
-                                    ),
-                                ),
+                Column(
+                    modifier = Modifier.Empty.size(162, 156),
+                    spacing = 3,
+                ) {
+                    Column(spacing = 2) {
+                        Text(
+                            "Chest",
+                            style = MinecraftTextStyle.ContainerLabel,
+                            modifier = Modifier.Empty.padding(left = 1),
                         )
+                        Column {
+                            repeat(3) {
+                                Row {
+                                    repeat(9) {
+                                        Slot()
+                                    }
+                                }
+                            }
+                        }
                     }
-                }
-                repeat(3) { row ->
-                    repeat(9) { column ->
-                        Slot(
-                            modifier =
-                                Modifier.Empty.padding(
-                                    Insets(
-                                        left = 7 + column * 18,
-                                        top = 84 + row * 18,
-                                    ),
-                                ),
+                    Column {
+                        Text(
+                            "Inventory",
+                            style = MinecraftTextStyle.ContainerLabel,
+                            modifier = Modifier.Empty.padding(left = 1),
                         )
+                        Column(modifier = Modifier.Empty.padding(top = 1)) {
+                            repeat(3) {
+                                Row {
+                                    repeat(9) {
+                                        Slot()
+                                    }
+                                }
+                            }
+                        }
+                        Row(modifier = Modifier.Empty.padding(top = 4)) {
+                            repeat(9) {
+                                Slot()
+                            }
+                        }
                     }
-                }
-                repeat(9) { column ->
-                    Slot(
-                        modifier = Modifier.Empty.padding(Insets(left = 7 + column * 18, top = 142)),
-                    )
                 }
             }
         }
@@ -680,12 +695,14 @@ A loaded Fabric GameTest requires exact ARGB equality between the native Minecra
 
 ```kotlin
 import dev.s7a.strata.dsl.Box
-import dev.s7a.strata.dsl.BoxScope
+import dev.s7a.strata.dsl.Column
 import dev.s7a.strata.dsl.Row
-import dev.s7a.strata.dsl.Spacer
 import dev.s7a.strata.geometry.Insets
 import dev.s7a.strata.geometry.IntSize
 import dev.s7a.strata.layout.Alignment
+import dev.s7a.strata.layout.Arrangement
+import dev.s7a.strata.layout.HorizontalAlignment
+import dev.s7a.strata.layout.VerticalAlignment
 import dev.s7a.strata.modifier.Modifier
 import dev.s7a.strata.modifier.background
 import dev.s7a.strata.modifier.initialFocus
@@ -732,86 +749,104 @@ internal fun createSocialScreenDefinition(
                     .background(ArgbColor(0xFF000000.toInt()))
                     .menuBackground(),
         ) {
-            socialBackground(panel, searchIcon)
-            socialHeader()
-            socialTabs()
-            socialSearch(search)
-            socialPlayer(playerSkin)
-            socialDone()
+            Box(
+                modifier = Modifier.Empty.size(320, 176),
+                contentAlignment = Alignment.BottomCenter,
+            ) {
+                Box(
+                    modifier =
+                        Modifier.Empty
+                            .padding(left = 4)
+                            .size(236, 112)
+                            .imageBackground(
+                                panel,
+                                Insets.all(8),
+                                MinecraftNineSliceCenterMode.Tiled,
+                            ),
+                ) {}
+            }
+            Column(
+                modifier = Modifier.Empty.size(222, 234).align(Alignment.TopCenter),
+                verticalArrangement = Arrangement.SpaceBetween,
+            ) {
+                Column(modifier = Modifier.Empty.padding(top = 12)) {
+                    Column(
+                        modifier = Modifier.Empty.size(222, 32),
+                        spacing = 14,
+                    ) {
+                        Text(
+                            "Social Interactions",
+                            modifier = Modifier.Empty.align(HorizontalAlignment.Center),
+                        )
+                        Text("Player0 - New World - 1 player")
+                    }
+                    Row(modifier = Modifier.Empty.padding(left = 1, top = 1), spacing = 1) {
+                        Box(modifier = Modifier.Empty.size(73, 20)) {
+                            Button("All", width = 73, modifier = Modifier.Empty.onPress {})
+                            Box(
+                                modifier = Modifier.Empty.size(73, 16),
+                                contentAlignment = Alignment.BottomCenter,
+                            ) {
+                                Box(
+                                    modifier =
+                                        Modifier.Empty
+                                            .size(13, 1)
+                                            .background(ArgbColor(0xFF3F3F3F.toInt())),
+                                ) {}
+                            }
+                            Box(
+                                modifier = Modifier.Empty.size(72, 15),
+                                contentAlignment = Alignment.BottomCenter,
+                            ) {
+                                Box(
+                                    modifier =
+                                        Modifier.Empty
+                                            .size(13, 1)
+                                            .background(ArgbColor(0xFFFFFFFF.toInt())),
+                                ) {}
+                            }
+                        }
+                        Button("Hidden", width = 73, modifier = Modifier.Empty.onPress {})
+                        Button("Blocked", width = 73, modifier = Modifier.Empty.onPress {})
+                    }
+                    Row(
+                        modifier = Modifier.Empty.padding(left = 5, top = 9),
+                        spacing = 3,
+                        verticalAlignment = VerticalAlignment.Center,
+                    ) {
+                        Image(
+                            searchIcon,
+                            IntSize(12, 12),
+                            modifier = Modifier.Empty.padding(top = 2),
+                        )
+                        TextField(
+                            search,
+                            size = IntSize(200, 15),
+                            textStyle = MinecraftTextStyle.Normal,
+                            modifier = Modifier.Empty.initialFocus(),
+                        )
+                    }
+                    Row(
+                        modifier =
+                            Modifier.Empty
+                                .padding(left = 3, top = 3)
+                                .size(216, 32)
+                                .background(ArgbColor(0xFF4A4A4A.toInt())),
+                        spacing = 4,
+                        verticalAlignment = VerticalAlignment.Center,
+                    ) {
+                        PlayerHead(playerSkin, modifier = Modifier.Empty.padding(left = 4))
+                        Text("Player0")
+                    }
+                }
+                Button(
+                    "Done",
+                    width = 200,
+                    modifier = Modifier.Empty.align(HorizontalAlignment.Center).onPress {},
+                )
+            }
         }
     }
-}
-
-private fun BoxScope.socialBackground(
-    panel: DrawImage,
-    searchIcon: DrawImage,
-) {
-    Box(
-        modifier =
-            Modifier.Empty.padding(left = 44, top = 64).size(236, 112).imageBackground(
-                panel,
-                Insets.all(8),
-                MinecraftNineSliceCenterMode.Tiled,
-            ),
-    ) {}
-    Image(searchIcon, IntSize(12, 12), Modifier.Empty.padding(left = 54, top = 76))
-}
-
-private fun BoxScope.socialHeader() {
-    Box(modifier = Modifier.Empty.size(320, 21), contentAlignment = Alignment.BottomCenter) {
-        Text("Social Interactions")
-    }
-    Text("Player0 - New World - 1 player", modifier = Modifier.Empty.padding(left = 49, top = 35))
-}
-
-private fun BoxScope.socialTabs() {
-    Row(modifier = Modifier.Empty.padding(left = 50, top = 45), spacing = 1) {
-        Box {
-            Button("All", width = 73, modifier = Modifier.Empty.onPress {})
-            Spacer(
-                modifier =
-                    Modifier.Empty
-                        .padding(left = 30, top = 15)
-                        .size(13, 1)
-                        .background(ArgbColor(0xFF3F3F3F.toInt())),
-            )
-            Spacer(
-                modifier =
-                    Modifier.Empty
-                        .padding(left = 29, top = 14)
-                        .size(13, 1)
-                        .background(ArgbColor(0xFFFFFFFF.toInt())),
-            )
-        }
-        Button("Hidden", width = 73, modifier = Modifier.Empty.onPress {})
-        Button("Blocked", width = 73, modifier = Modifier.Empty.onPress {})
-    }
-}
-
-private fun BoxScope.socialSearch(search: MinecraftTextFieldState) {
-    TextField(
-        search,
-        size = IntSize(200, 15),
-        textStyle = MinecraftTextStyle.Normal,
-        modifier = Modifier.Empty.padding(left = 69, top = 74).initialFocus(),
-    )
-}
-
-private fun BoxScope.socialPlayer(playerSkin: DrawImage) {
-    Box(
-        modifier =
-            Modifier.Empty
-                .padding(left = 52, top = 92)
-                .size(216, 32)
-                .background(ArgbColor(0xFF4A4A4A.toInt())),
-    ) {
-        PlayerHead(playerSkin, modifier = Modifier.Empty.padding(left = 4, top = 4))
-        Text("Player0", modifier = Modifier.Empty.padding(left = 32, top = 11))
-    }
-}
-
-private fun BoxScope.socialDone() {
-    Button("Done", width = 200, modifier = Modifier.Empty.padding(left = 60, top = 214).onPress {})
 }
 ```
 
@@ -833,6 +868,9 @@ A loaded Fabric client/server GameTest performs authoritative inventory interact
 
 ```kotlin
 import dev.s7a.strata.dsl.Box
+import dev.s7a.strata.dsl.Column
+import dev.s7a.strata.dsl.Row
+import dev.s7a.strata.layout.Alignment
 import dev.s7a.strata.modifier.Modifier
 import dev.s7a.strata.modifier.background
 import dev.s7a.strata.modifier.padding
@@ -869,46 +907,64 @@ internal fun createInventorySlotScreenDefinition(
                     .size(320, 240)
                     .background(ArgbColor(0xFF000000.toInt()))
                     .menuBackground(),
+            contentAlignment = Alignment.Center,
         ) {
             Box(
-                modifier =
-                    Modifier.Empty
-                        .padding(left = 72, top = 36)
-                        .containerBackground(rows = 3),
+                modifier = Modifier.Empty.containerBackground(rows = 3),
+                contentAlignment = Alignment.Center,
             ) {
-                Text(
-                    "Chest",
-                    style = MinecraftTextStyle.ContainerLabel,
-                    modifier = Modifier.Empty.padding(left = 8, top = 6),
-                )
-                Text(
-                    "Inventory",
-                    style = MinecraftTextStyle.ContainerLabel,
-                    modifier = Modifier.Empty.padding(left = 8, top = 74),
-                )
-                repeat(3) { row ->
-                    repeat(9) { column ->
-                        val cellModifier = Modifier.Empty.padding(left = 7 + column * 18, top = 17 + row * 18)
-                        if (row == 0 && column == 0 && primaryContainerBinding != null) {
-                            Slot(bind = primaryContainerBinding, modifier = cellModifier)
-                        } else {
-                            Slot(modifier = cellModifier)
+                Column(
+                    modifier = Modifier.Empty.size(162, 156),
+                    spacing = 3,
+                ) {
+                    Column(spacing = 2) {
+                        Text(
+                            "Chest",
+                            style = MinecraftTextStyle.ContainerLabel,
+                            modifier = Modifier.Empty.padding(left = 1),
+                        )
+                        Column {
+                            repeat(3) { row ->
+                                Row {
+                                    repeat(9) { column ->
+                                        if (row == 0 && column == 0 && primaryContainerBinding != null) {
+                                            Slot(bind = primaryContainerBinding)
+                                        } else {
+                                            Slot()
+                                        }
+                                    }
+                                }
+                            }
                         }
                     }
-                }
-                repeat(3) { row ->
-                    repeat(9) { column ->
-                        Slot(
-                            bind = MinecraftSlots.playerInventory(9 + row * 9 + column),
-                            modifier = Modifier.Empty.padding(left = 7 + column * 18, top = 84 + row * 18),
+                    Column {
+                        Text(
+                            "Inventory",
+                            style = MinecraftTextStyle.ContainerLabel,
+                            modifier = Modifier.Empty.padding(left = 1),
                         )
+                        Column(modifier = Modifier.Empty.padding(top = 1)) {
+                            repeat(3) { row ->
+                                Row {
+                                    repeat(9) { column ->
+                                        Slot(bind = MinecraftSlots.playerInventory(9 + row * 9 + column))
+                                    }
+                                }
+                            }
+                        }
+                        Row(modifier = Modifier.Empty.padding(top = 4)) {
+                            repeat(9) { column ->
+                                Slot(
+                                    bind =
+                                        if (column == 0) {
+                                            primaryPlayerBinding
+                                        } else {
+                                            MinecraftSlots.playerInventory(column)
+                                        },
+                                )
+                            }
+                        }
                     }
-                }
-                repeat(9) { column ->
-                    Slot(
-                        bind = if (column == 0) primaryPlayerBinding else MinecraftSlots.playerInventory(column),
-                        modifier = Modifier.Empty.padding(left = 7 + column * 18, top = 142),
-                    )
                 }
             }
         }
@@ -1017,10 +1073,11 @@ A loaded Fabric GameTest requires exact ARGB equality between the Strata Fabric 
 ```kotlin
 import dev.s7a.strata.dsl.Box
 import dev.s7a.strata.dsl.BoxScope
-import dev.s7a.strata.dsl.Spacer
+import dev.s7a.strata.dsl.Column
 import dev.s7a.strata.dsl.UiScope
 import dev.s7a.strata.element.ElementKey
 import dev.s7a.strata.geometry.IntRect
+import dev.s7a.strata.layout.Alignment
 import dev.s7a.strata.modifier.Modifier
 import dev.s7a.strata.modifier.background
 import dev.s7a.strata.modifier.onPress
@@ -1063,23 +1120,30 @@ internal fun createProgressScreenDefinition(
                     .background(ArgbColor(0xFF000000.toInt()))
                     .menuBackground(),
         ) {
-            ExampleProgressGraph(
-                background,
-                obtained,
-                unobtained,
-                modifier = Modifier.Empty.padding(left = 43, top = 38),
-            )
-            Image(
-                window,
-                source = IntRect(0, 0, 252, 140),
-                modifier = Modifier.Empty.padding(left = 34, top = 20),
-            )
-            Text(
-                "Power milestones",
-                style = MinecraftTextStyle.ContainerLabel,
-                modifier = Modifier.Empty.padding(left = 42, top = 26),
-            )
-            Button("Done", width = 200, modifier = Modifier.Empty.padding(left = 60, top = 154).onPress {})
+            Box(
+                modifier = Modifier.Empty.size(320, 151),
+                contentAlignment = Alignment.BottomCenter,
+            ) {
+                ExampleProgressGraph(background, obtained, unobtained)
+            }
+            Box(
+                modifier = Modifier.Empty.size(320, 160),
+                contentAlignment = Alignment.BottomCenter,
+            ) {
+                Image(window, source = IntRect(0, 0, 252, 140))
+            }
+            Box(
+                modifier = Modifier.Empty.size(236, 35).align(Alignment.TopCenter),
+                contentAlignment = Alignment.BottomStart,
+            ) {
+                Text("Power milestones", style = MinecraftTextStyle.ContainerLabel)
+            }
+            Box(
+                modifier = Modifier.Empty.size(320, 174),
+                contentAlignment = Alignment.BottomCenter,
+            ) {
+                Button("Done", width = 200, modifier = Modifier.Empty.onPress {})
+            }
         }
     }
 
@@ -1108,20 +1172,18 @@ internal fun UiScope.ExampleProgressGraph(
         modifier = modifier.size(234, 113).imageBackground(background, MinecraftImageScale.Tile),
         key = key,
     ) {
-        Spacer(
-            modifier =
-                Modifier.Empty
-                    .padding(left = 38, top = 42)
-                    .size(96, 2)
-                    .background(connectionColor),
-        )
-        Spacer(
-            modifier =
-                Modifier.Empty
-                    .padding(left = 133, top = 42)
-                    .size(2, 38)
-                    .background(connectionColor),
-        )
+        Box(
+            modifier = Modifier.Empty.size(134, 44),
+            contentAlignment = Alignment.BottomEnd,
+        ) {
+            Box(modifier = Modifier.Empty.size(96, 2).background(connectionColor)) {}
+        }
+        Box(
+            modifier = Modifier.Empty.size(135, 80),
+            contentAlignment = Alignment.BottomEnd,
+        ) {
+            Box(modifier = Modifier.Empty.size(2, 38).background(connectionColor)) {}
+        }
         progressNode(obtained, ArgbColor(0xFF22D3EE.toInt()), 25, 30, "Generator")
         progressNode(obtained, ArgbColor(0xFFFBBF24.toInt()), 121, 30, "Storage")
         progressNode(unobtained, ArgbColor(0xFFA78BFA.toInt()), 121, 68, "Automation")
@@ -1135,17 +1197,24 @@ private fun BoxScope.progressNode(
     y: Int,
     label: String,
 ) {
-    Box(modifier = Modifier.Empty.padding(left = x, top = y).size(26, 26)) {
-        Image(frame)
-        Spacer(
-            modifier =
-                Modifier.Empty
-                    .padding(left = 5, top = 5)
-                    .size(16, 16)
-                    .background(color),
-        )
+    Box(
+        modifier = Modifier.Empty.size(x + 60, y + 36),
+        contentAlignment = Alignment.BottomEnd,
+    ) {
+        Column(
+            modifier = Modifier.Empty.size(64, 36),
+            spacing = 1,
+        ) {
+            Box(
+                modifier = Modifier.Empty.padding(left = 4).size(26, 26),
+                contentAlignment = Alignment.Center,
+            ) {
+                Image(frame)
+                Box(modifier = Modifier.Empty.size(16, 16).background(color)) {}
+            }
+            Text(label)
+        }
     }
-    Text(label, modifier = Modifier.Empty.padding(left = x - 4, top = y + 27))
 }
 
 private val connectionColor = ArgbColor(0xFF7A7A7A.toInt())

@@ -2,7 +2,9 @@ package dev.s7a.strata.integration.minecraft.fabric
 
 // showcase-source-begin:container-background
 import dev.s7a.strata.dsl.Box
-import dev.s7a.strata.geometry.Insets
+import dev.s7a.strata.dsl.Column
+import dev.s7a.strata.layout.Alignment
+import dev.s7a.strata.layout.Arrangement
 import dev.s7a.strata.modifier.Modifier
 import dev.s7a.strata.modifier.background
 import dev.s7a.strata.modifier.padding
@@ -30,23 +32,29 @@ internal fun createContainerBackgroundScreenDefinition(): MinecraftScreenDefinit
                     .size(320, 240)
                     .background(ArgbColor(0xFF000000.toInt()))
                     .menuBackground(),
+            contentAlignment = Alignment.Center,
         ) {
             Box(
-                modifier =
-                    Modifier.Empty
-                        .padding(left = 72, top = 36)
-                        .containerBackground(rows = 3),
+                modifier = Modifier.Empty.containerBackground(rows = 3),
+                contentAlignment = Alignment.Center,
             ) {
-                Text(
-                    "Chest",
-                    style = MinecraftTextStyle.ContainerLabel,
-                    modifier = Modifier.Empty.padding(Insets(left = 8, top = 6)),
-                )
-                Text(
-                    "Inventory",
-                    style = MinecraftTextStyle.ContainerLabel,
-                    modifier = Modifier.Empty.padding(Insets(left = 8, top = 74)),
-                )
+                Box(modifier = Modifier.Empty.size(162, 156)) {
+                    Column(
+                        modifier = Modifier.Empty.size(162, 77),
+                        verticalArrangement = Arrangement.SpaceBetween,
+                    ) {
+                        Text(
+                            "Chest",
+                            style = MinecraftTextStyle.ContainerLabel,
+                            modifier = Modifier.Empty.padding(left = 1),
+                        )
+                        Text(
+                            "Inventory",
+                            style = MinecraftTextStyle.ContainerLabel,
+                            modifier = Modifier.Empty.padding(left = 1),
+                        )
+                    }
+                }
             }
         }
     }

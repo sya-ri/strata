@@ -2,6 +2,9 @@ package dev.s7a.strata.integration.minecraft.fabric
 
 // showcase-source-begin:inventory-screen
 import dev.s7a.strata.dsl.Box
+import dev.s7a.strata.dsl.Column
+import dev.s7a.strata.dsl.Row
+import dev.s7a.strata.layout.Alignment
 import dev.s7a.strata.modifier.Modifier
 import dev.s7a.strata.modifier.background
 import dev.s7a.strata.modifier.padding
@@ -38,46 +41,64 @@ internal fun createInventorySlotScreenDefinition(
                     .size(320, 240)
                     .background(ArgbColor(0xFF000000.toInt()))
                     .menuBackground(),
+            contentAlignment = Alignment.Center,
         ) {
             Box(
-                modifier =
-                    Modifier.Empty
-                        .padding(left = 72, top = 36)
-                        .containerBackground(rows = 3),
+                modifier = Modifier.Empty.containerBackground(rows = 3),
+                contentAlignment = Alignment.Center,
             ) {
-                Text(
-                    "Chest",
-                    style = MinecraftTextStyle.ContainerLabel,
-                    modifier = Modifier.Empty.padding(left = 8, top = 6),
-                )
-                Text(
-                    "Inventory",
-                    style = MinecraftTextStyle.ContainerLabel,
-                    modifier = Modifier.Empty.padding(left = 8, top = 74),
-                )
-                repeat(3) { row ->
-                    repeat(9) { column ->
-                        val cellModifier = Modifier.Empty.padding(left = 7 + column * 18, top = 17 + row * 18)
-                        if (row == 0 && column == 0 && primaryContainerBinding != null) {
-                            Slot(bind = primaryContainerBinding, modifier = cellModifier)
-                        } else {
-                            Slot(modifier = cellModifier)
+                Column(
+                    modifier = Modifier.Empty.size(162, 156),
+                    spacing = 3,
+                ) {
+                    Column(spacing = 2) {
+                        Text(
+                            "Chest",
+                            style = MinecraftTextStyle.ContainerLabel,
+                            modifier = Modifier.Empty.padding(left = 1),
+                        )
+                        Column {
+                            repeat(3) { row ->
+                                Row {
+                                    repeat(9) { column ->
+                                        if (row == 0 && column == 0 && primaryContainerBinding != null) {
+                                            Slot(bind = primaryContainerBinding)
+                                        } else {
+                                            Slot()
+                                        }
+                                    }
+                                }
+                            }
                         }
                     }
-                }
-                repeat(3) { row ->
-                    repeat(9) { column ->
-                        Slot(
-                            bind = MinecraftSlots.playerInventory(9 + row * 9 + column),
-                            modifier = Modifier.Empty.padding(left = 7 + column * 18, top = 84 + row * 18),
+                    Column {
+                        Text(
+                            "Inventory",
+                            style = MinecraftTextStyle.ContainerLabel,
+                            modifier = Modifier.Empty.padding(left = 1),
                         )
+                        Column(modifier = Modifier.Empty.padding(top = 1)) {
+                            repeat(3) { row ->
+                                Row {
+                                    repeat(9) { column ->
+                                        Slot(bind = MinecraftSlots.playerInventory(9 + row * 9 + column))
+                                    }
+                                }
+                            }
+                        }
+                        Row(modifier = Modifier.Empty.padding(top = 4)) {
+                            repeat(9) { column ->
+                                Slot(
+                                    bind =
+                                        if (column == 0) {
+                                            primaryPlayerBinding
+                                        } else {
+                                            MinecraftSlots.playerInventory(column)
+                                        },
+                                )
+                            }
+                        }
                     }
-                }
-                repeat(9) { column ->
-                    Slot(
-                        bind = if (column == 0) primaryPlayerBinding else MinecraftSlots.playerInventory(column),
-                        modifier = Modifier.Empty.padding(left = 7 + column * 18, top = 142),
-                    )
                 }
             }
         }
