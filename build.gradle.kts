@@ -3,6 +3,7 @@ import com.vanniktech.maven.publish.KotlinJvm
 import com.vanniktech.maven.publish.MavenPublishBaseExtension
 import com.vanniktech.maven.publish.SourcesJar
 import dev.detekt.gradle.extensions.DetektExtension
+import org.gradle.api.JavaVersion
 import org.gradle.api.plugins.JavaPluginExtension
 import org.gradle.api.publish.tasks.GenerateModuleMetadata
 import org.gradle.api.tasks.compile.JavaCompile
@@ -116,6 +117,9 @@ subprojects {
         }
 
     extensions.configure<JavaPluginExtension> {
+        val compatibility = JavaVersion.toVersion(javaVersion)
+        sourceCompatibility = compatibility
+        targetCompatibility = compatibility
         toolchain {
             languageVersion.set(JavaLanguageVersion.of(javaVersion))
         }

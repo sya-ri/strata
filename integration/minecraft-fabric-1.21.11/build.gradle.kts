@@ -1,15 +1,20 @@
 import net.fabricmc.loom.task.prod.ClientProductionRunTask
+import org.gradle.api.JavaVersion
 import org.gradle.api.tasks.Delete
 import org.gradle.api.tasks.SourceSetContainer
 import org.gradle.api.tasks.bundling.Jar
 import org.gradle.language.jvm.tasks.ProcessResources
+import org.gradle.plugins.ide.idea.model.IdeaLanguageLevel
+import org.jetbrains.kotlin.gradle.dsl.KotlinJvmProjectExtension
 
 plugins {
     `java-library`
+    idea
     alias(libs.plugins.fabricLoomRemap)
 }
 
 val runtimeFabricProject = project(":runtime:minecraft-fabric-1.21.11")
+val minecraftJavaVersion = libs.versions.java.minecraft12111.get()
 val runtimeFabricMain =
     runtimeFabricProject
         .extensions
@@ -27,6 +32,25 @@ fabricApi {
         enableGameTests = false
         enableClientGameTests = true
         eula = true
+    }
+}
+
+val gametestSourceSet = extensions.getByType<SourceSetContainer>().named("gametest")
+val kotlinGametestSourceSet =
+    extensions
+        .getByType<KotlinJvmProjectExtension>()
+        .sourceSets
+        .named("gametest")
+
+idea {
+    module {
+        languageLevel = IdeaLanguageLevel(minecraftJavaVersion)
+        targetBytecodeVersion = JavaVersion.toVersion(minecraftJavaVersion)
+        testSources.from(gametestSourceSet.map { sourceSet -> sourceSet.java.srcDirs })
+        testSources.from(kotlinGametestSourceSet.map { sourceSet -> sourceSet.kotlin.srcDirs })
+        testResources.from(gametestSourceSet.map { sourceSet -> sourceSet.resources.srcDirs })
+        scopes.getValue("TEST").getValue("plus").add(configurations.getByName("gametestCompileClasspath"))
+        scopes.getValue("TEST").getValue("plus").add(configurations.getByName("gametestRuntimeClasspath"))
     }
 }
 
@@ -58,7 +82,6 @@ dependencies {
     add("productionRuntimeMods", libs.fabric.language.kotlin)
 }
 
-val gametestSourceSet = extensions.getByType<SourceSetContainer>().named("gametest")
 tasks.named<Jar>("jar") {
     dependsOn("gametestClasses")
     from(gametestSourceSet.map { sourceSet -> sourceSet.output })
