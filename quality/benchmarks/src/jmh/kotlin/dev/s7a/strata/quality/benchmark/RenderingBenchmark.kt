@@ -181,16 +181,13 @@ public open class RenderingBenchmark {
         @Setup(Level.Trial)
         public fun setUp() {
             val scene = Scene.create()
-            val temporarySession = createRuntimeUiSession { scene.root }
-            temporarySession.attach()
-            try {
-                commands =
+            commands =
+                createRuntimeUiSession { scene.root }.use { temporarySession ->
+                    temporarySession.attach()
                     temporarySession
                         .frame(Constraints.fixed(viewport.size.width, viewport.size.height))
                         .drawCommands
-            } finally {
-                temporarySession.close()
-            }
+                }
         }
 
         /**

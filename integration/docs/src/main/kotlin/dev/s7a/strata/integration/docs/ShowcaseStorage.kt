@@ -156,7 +156,7 @@ internal object ShowcaseStorage {
                         "Staging path contains a non-regular entry: $path"
                     }
                 }
-                paths.sortedWith(Comparator.reverseOrder<Path>()).forEach { path ->
+                paths.sortedWith(Comparator.reverseOrder()).forEach { path ->
                     if (path != directory) {
                         Files.deleteIfExists(path)
                     }

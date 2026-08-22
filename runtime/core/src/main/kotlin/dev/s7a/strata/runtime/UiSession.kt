@@ -707,18 +707,15 @@ internal class UiSession private constructor(
             val dispatchThread = Thread.currentThread()
             val returned = AtomicBoolean(false)
             val violation = AtomicReference<Throwable?>(null)
-            ownerDispatcher.dispatch(
-                context,
-                Runnable {
-                    if (returned.get().not() && Thread.currentThread() === dispatchThread) {
-                        val failure = IllegalStateException("The owner dispatcher must queue before execution.")
-                        violation.set(failure)
-                        throw failure
-                    }
-                    threadGuard.check()
-                    block.run()
-                },
-            )
+            ownerDispatcher.dispatch(context) {
+                if (returned.get().not() && Thread.currentThread() === dispatchThread) {
+                    val failure = IllegalStateException("The owner dispatcher must queue before execution.")
+                    violation.set(failure)
+                    throw failure
+                }
+                threadGuard.check()
+                block.run()
+            }
             returned.set(true)
             violation.get()?.let { failure -> throw failure }
         }
@@ -745,18 +742,15 @@ internal class UiSession private constructor(
         val dispatchThread = Thread.currentThread()
         val returned = AtomicBoolean(false)
         val violation = AtomicReference<Throwable?>(null)
-        ownerDispatcher.dispatch(
-            context,
-            Runnable {
-                if (returned.get().not() && Thread.currentThread() === dispatchThread) {
-                    val failure = IllegalStateException("The owner dispatcher must queue before execution.")
-                    violation.set(failure)
-                    throw failure
-                }
-                threadGuard.check()
-                block()
-            },
-        )
+        ownerDispatcher.dispatch(context) {
+            if (returned.get().not() && Thread.currentThread() === dispatchThread) {
+                val failure = IllegalStateException("The owner dispatcher must queue before execution.")
+                violation.set(failure)
+                throw failure
+            }
+            threadGuard.check()
+            block()
+        }
         returned.set(true)
         violation.get()?.let { failure -> throw failure }
     }

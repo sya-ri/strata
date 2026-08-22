@@ -23,6 +23,7 @@ exclude:
       - integration/minecraft-fabric-1.21.11/build.gradle.kts
       - integration/minecraft-fabric-26.1/build.gradle.kts
       - integration/minecraft-fabric-26.2/build.gradle.kts
+      - integration/minecraft-fabric-1.21.11/src/gametest/kotlin/dev/s7a/strata/integration/minecraft/fabric/StrataMinecraft12111ClientGameTest.kt
       - integration/minecraft-fabric-unobfuscated/src/gametest/kotlin/dev/s7a/strata/integration/minecraft/fabric/InventorySlotSynchronizationGameTest.kt
       - integration/minecraft-fabric-unobfuscated/src/gametest/kotlin/dev/s7a/strata/integration/minecraft/fabric/MinecraftProgressParity.kt
       - integration/minecraft-fabric-unobfuscated/src/gametest/kotlin/dev/s7a/strata/integration/minecraft/fabric/MinecraftSocialParity.kt
@@ -34,6 +35,7 @@ exclude:
       - api/src/main/kotlin/dev/s7a/strata/geometry/IntRect.kt
       - api/src/main/kotlin/dev/s7a/strata/input/TextInputEvent.kt
       - runtime/minecraft/src/main/kotlin/dev/s7a/strata/runtime/minecraft/MinecraftProfileImplementation.kt
+      - runtime/minecraft/src/main/kotlin/dev/s7a/strata/runtime/minecraft/MinecraftScrollElement.kt
   # Named domain records keep source and destination axes explicit; positional destructuring would obscure the scroll and glyph arithmetic.
   - name: DestructuringDeclaration
     paths:
@@ -42,6 +44,7 @@ exclude:
   # Explicit resource lifetime blocks make the GameTest cleanup order and primary-failure ownership auditable.
   - name: ConvertTryFinallyToUseCall
     paths:
+      - integration/minecraft-fabric-1.21.11/src/gametest/kotlin/dev/s7a/strata/integration/minecraft/fabric/StrataMinecraft12111ClientGameTest.kt
       - integration/minecraft-fabric-unobfuscated/src/gametest/kotlin/dev/s7a/strata/integration/minecraft/fabric/MinecraftProgressParity.kt
       - integration/minecraft-fabric-unobfuscated/src/gametest/kotlin/dev/s7a/strata/integration/minecraft/fabric/MinecraftSocialParity.kt
       - integration/minecraft-fabric-unobfuscated/src/gametest/kotlin/dev/s7a/strata/integration/minecraft/fabric/StrataMinecraftClientGameTest.kt
@@ -49,6 +52,7 @@ exclude:
   - name: MayBeConstant
     paths:
       - api/src/main/kotlin/dev/s7a/strata/input/KeyCode.kt
+      - integration/minecraft-fabric-1.21.11/src/gametest/kotlin/dev/s7a/strata/integration/minecraft/fabric/StrataMinecraft12111ClientGameTest.kt
       - integration/minecraft-fabric-unobfuscated/src/gametest/kotlin/dev/s7a/strata/integration/minecraft/fabric/MinecraftSocialParity.kt
       - integration/minecraft-fabric-unobfuscated/src/gametest/kotlin/dev/s7a/strata/integration/minecraft/fabric/StrataMinecraftClientGameTest.kt
   # Java has no Boolean.not() equivalent, so these exact lifecycle files use equality instead of the prohibited prefix-negation form.
@@ -61,6 +65,7 @@ exclude:
   # The unobfuscated adapters keep explicit mapped Java getter calls so its authoritative external API mapping remains visible and searchable.
   - name: UsePropertyAccessSyntax
     paths:
+      - integration/minecraft-fabric-1.21.11/src/gametest/kotlin/dev/s7a/strata/integration/minecraft/fabric/StrataMinecraft12111ClientGameTest.kt
       - integration/minecraft-fabric-unobfuscated/src/gametest/kotlin/dev/s7a/strata/integration/minecraft/fabric/MinecraftSocialParity.kt
       - integration/minecraft-fabric-unobfuscated/src/gametest/kotlin/dev/s7a/strata/integration/minecraft/fabric/StrataMinecraftClientGameTest.kt
       - runtime/minecraft-fabric-shared/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftAssetLoader.kt
@@ -70,6 +75,7 @@ exclude:
   # Explicit Minecraft Java SAM and qualifier syntax pins the loaded GameTest boundary instead of relying on Kotlin inference.
   - name: RedundantSamConstructor
     paths:
+      - integration/minecraft-fabric-1.21.11/src/gametest/kotlin/dev/s7a/strata/integration/minecraft/fabric/StrataMinecraft12111ClientGameTest.kt
       - integration/minecraft-fabric-unobfuscated/src/gametest/kotlin/dev/s7a/strata/integration/minecraft/fabric/InventorySlotSynchronizationGameTest.kt
       - integration/minecraft-fabric-unobfuscated/src/gametest/kotlin/dev/s7a/strata/integration/minecraft/fabric/MinecraftProgressParity.kt
       - integration/minecraft-fabric-unobfuscated/src/gametest/kotlin/dev/s7a/strata/integration/minecraft/fabric/MinecraftSocialParity.kt
@@ -78,10 +84,15 @@ exclude:
     paths:
       - integration/minecraft-fabric-unobfuscated/src/gametest/kotlin/dev/s7a/strata/integration/minecraft/fabric/MinecraftSocialParity.kt
       - integration/minecraft-fabric-unobfuscated/src/gametest/kotlin/dev/s7a/strata/integration/minecraft/fabric/StrataMinecraftClientGameTest.kt
-  # The GameTest assertion keeps a deliberate non-null boundary even when the current mapped field annotation is stronger.
+  # These Java interoperability boundaries deliberately validate values that Kotlin's source types consider non-null.
   - name: RedundantRequireNotNullCall
     paths:
       - integration/minecraft-fabric-unobfuscated/src/gametest/kotlin/dev/s7a/strata/integration/minecraft/fabric/StrataMinecraftClientGameTest.kt
+      - runtime/headless/src/main/kotlin/dev/s7a/strata/runtime/headless/HeadlessRendering.kt
+  # The named concrete scope facade keeps its replaceable CoroutineContext implementation distinct from the exposed CoroutineScope contract.
+  - name: ConvertToExplicitBackingFields
+    paths:
+      - runtime/core/src/main/kotlin/dev/s7a/strata/runtime/UiSession.kt
   # Reflection-driven inventory control flow is covered by the showcase integration tests.
   - name: KotlinUnreachableCode
     paths:

@@ -115,7 +115,7 @@ internal object NioShowcaseFileSystem : ShowcaseFileSystem {
             val entries = stream.toList()
             entries.forEach { entry -> requireSafe(entry, "tree deletion entry") }
             entries
-                .sortedWith(Comparator.reverseOrder<Path>())
+                .sortedWith(Comparator.reverseOrder())
                 .filter { entry -> entry != path }
                 .forEach { entry ->
                     require(Files.isDirectory(entry, LinkOption.NOFOLLOW_LINKS) || Files.isRegularFile(entry, LinkOption.NOFOLLOW_LINKS)) {
