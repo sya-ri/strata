@@ -72,10 +72,6 @@ tasks.named<Jar>("jar") {
     from(gametestSourceSet.map { sourceSet -> sourceSet.output })
 }
 
-tasks.named("remapJar") {
-    mustRunAfter(":runtime:minecraft-fabric-1.21.10:remapJar")
-}
-
 val productionRunDirectory = layout.buildDirectory.dir("run/productionClientGameTest")
 val deleteProductionGameTestRunDir = tasks.register<Delete>("deleteProductionGameTestRunDir") {
     delete(productionRunDirectory)

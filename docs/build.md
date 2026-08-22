@@ -13,6 +13,7 @@ Code enters the legacy source root only after every consuming target compiles it
 Every source directory is linked as a whole root because Gradle file-tree include filters are not a reliable IDE or static-analysis ownership boundary.
 Consumers select exactly one versioned runtime artifact because the adapters deliberately expose the same packages and public class names.
 Minecraft client verification serializes every shared Loom asset preparation task and client launch selected in the task graph so parallel Gradle execution cannot race on Loom's global asset cache or the native client environment.
+The official-mapping `remapJar` tasks are also serialized across the 1.21 targets because each concurrent remapper retains a complete mapped game graph and can exhaust a hosted CI runner's heap.
 
 Every Kotlin compilation uses explicit API mode and treats warnings as errors.
 Detekt and Kotlinter are applied to all project modules.

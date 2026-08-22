@@ -70,6 +70,13 @@ val minecraftClientVerificationTasks =
         ":integration:minecraft-fabric-1.21.10:runClientGameTest",
         ":integration:minecraft-fabric-1.21.10:runProductionClientGameTest",
     )
+val minecraftRemapTasks =
+    listOf(
+        ":runtime:minecraft-fabric-1.21.11:remapJar",
+        ":integration:minecraft-fabric-1.21.11:remapJar",
+        ":runtime:minecraft-fabric-1.21.10:remapJar",
+        ":integration:minecraft-fabric-1.21.10:remapJar",
+    )
 
 allprojects {
     group = rootProject.group
@@ -101,6 +108,13 @@ subprojects {
             mustRunAfter(
                 minecraftAssetPreparationTasks.take(minecraftGameTestProjectIndex),
             )
+        }
+    }
+
+    tasks.matching { task -> task.name == "remapJar" }.configureEach {
+        val remapTaskIndex = minecraftRemapTasks.indexOf(path)
+        if (remapTaskIndex != -1) {
+            mustRunAfter(minecraftRemapTasks.take(remapTaskIndex))
         }
     }
 
