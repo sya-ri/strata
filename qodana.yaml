@@ -99,6 +99,7 @@ exclude:
   - name: AutoCloseableResource
     paths:
       - runtime/minecraft-fabric-unobfuscated/src/main/java/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftInventoryBridge.java
+      - runtime/minecraft-fabric-1.21.11/src/main/java/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftInventoryBridge12111.java
   # Public SPI declarations, including PaintScope drawing operations, are consumed by external clients even when this repository has no call site.
   # Public component configuration and modifier entry points are likewise consumed by downstream Mods rather than every repository fixture.
   # Component evaluation and screen-transfer bridges are cross-module runtime boundaries that the local Kotlin call graph does not resolve reliably.

@@ -449,7 +449,7 @@ internal class FabricMinecraftFramePresenter(
     }
 
     private fun requireClientThread() {
-        check(minecraftClient.isSameThread()) { "Fabric Minecraft frame presentation is confined to the client thread." }
+        check(minecraftClient.isSameThread) { "Fabric Minecraft frame presentation is confined to the client thread." }
     }
 
     private sealed interface FrameLayer

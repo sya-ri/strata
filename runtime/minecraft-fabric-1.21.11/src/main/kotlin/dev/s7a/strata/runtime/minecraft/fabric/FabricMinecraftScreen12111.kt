@@ -441,7 +441,7 @@ public class FabricMinecraftScreen private constructor(
     private fun buttonOrNull(button: Int): PointerButton? = mapMinecraftButton(button)
 
     private fun requireClientThread() {
-        check(minecraftClient.isSameThread()) { "Fabric Minecraft screens are confined to the client thread." }
+        check(minecraftClient.isSameThread) { "Fabric Minecraft screens are confined to the client thread." }
     }
 
     /**
@@ -501,7 +501,7 @@ public fun createMinecraftScreen(
     parent: Screen? = currentMinecraftScreen(),
 ): FabricMinecraftScreen {
     val minecraft = Minecraft.getInstance()
-    check(minecraft.isSameThread()) { "Fabric Minecraft screens must be created on the client thread." }
+    check(minecraft.isSameThread) { "Fabric Minecraft screens must be created on the client thread." }
     val inventory = FabricMinecraftInventoryBridge.create(minecraft)
     val host =
         try {
@@ -528,6 +528,6 @@ public fun createMinecraftScreen(
 
 private fun currentMinecraftScreen(): Screen? {
     val minecraft = Minecraft.getInstance()
-    check(minecraft.isSameThread()) { "Fabric Minecraft screens must be created on the client thread." }
+    check(minecraft.isSameThread) { "Fabric Minecraft screens must be created on the client thread." }
     return FabricMinecraftScreenAccess.currentScreen(minecraft)
 }
