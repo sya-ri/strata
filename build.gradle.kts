@@ -23,6 +23,7 @@ plugins {
     alias(libs.plugins.dokka)
     alias(libs.plugins.dokkaJavadocPlugin) apply false
     alias(libs.plugins.fabricLoom) apply false
+    alias(libs.plugins.fabricLoomRemap) apply false
 }
 
 group = "dev.s7a.strata"
@@ -33,6 +34,7 @@ dependencies {
     dokka(project(":runtime:core"))
     dokka(project(":runtime:headless"))
     dokka(project(":runtime:minecraft"))
+    dokka(project(":runtime:minecraft-fabric-1.21.11"))
     dokka(project(":runtime:minecraft-fabric-26.1"))
     dokka(project(":runtime:minecraft-fabric-26.2"))
 }
@@ -48,6 +50,7 @@ extensions.configure<DokkaExtension> {
 val detektRulesProject = project(":quality:detekt-rules")
 val baselineJavaVersion = libs.versions.java.baseline.get().toInt()
 val minecraftJavaVersion = libs.versions.java.minecraft.get().toInt()
+val minecraft12111JavaVersion = libs.versions.java.minecraft12111.get().toInt()
 
 allprojects {
     group = rootProject.group
@@ -85,6 +88,7 @@ subprojects {
         ":runtime:core",
         ":runtime:headless",
         ":runtime:minecraft",
+        ":runtime:minecraft-fabric-1.21.11",
         ":runtime:minecraft-fabric-26.1",
         ":runtime:minecraft-fabric-26.2",
     )
@@ -96,16 +100,19 @@ subprojects {
 
     val versionSpecificMinecraftModules =
         setOf(
+            ":runtime:minecraft-fabric-1.21.11",
+            ":integration:minecraft-fabric-1.21.11",
             ":runtime:minecraft-fabric-26.1",
             ":integration:minecraft-fabric-26.1",
             ":runtime:minecraft-fabric-26.2",
             ":integration:minecraft-fabric-26.2",
         )
     val javaVersion =
-        if (path in versionSpecificMinecraftModules) {
-            minecraftJavaVersion
-        } else {
-            baselineJavaVersion
+        when {
+            path in setOf(":runtime:minecraft-fabric-1.21.11", ":integration:minecraft-fabric-1.21.11") ->
+                minecraft12111JavaVersion
+            path in versionSpecificMinecraftModules -> minecraftJavaVersion
+            else -> baselineJavaVersion
         }
 
     extensions.configure<JavaPluginExtension> {
@@ -149,6 +156,7 @@ subprojects {
                 ":runtime:core" to "strata-runtime-core",
                 ":runtime:headless" to "strata-runtime-headless",
                 ":runtime:minecraft" to "strata-runtime-minecraft",
+                ":runtime:minecraft-fabric-1.21.11" to "strata-runtime-minecraft-fabric-1.21.11",
                 ":runtime:minecraft-fabric-26.1" to "strata-runtime-minecraft-fabric-26.1",
                 ":runtime:minecraft-fabric-26.2" to "strata-runtime-minecraft-fabric-26.2",
             ).getValue(path)
@@ -197,17 +205,24 @@ subprojects {
         }
 
         extensions.configure<DokkaExtension> {
-            val sourcePath =
-                if (path in setOf(":runtime:minecraft-fabric-26.1", ":runtime:minecraft-fabric-26.2")) {
-                    "runtime/minecraft-fabric-unobfuscated"
-                } else {
-                    path.removePrefix(":").replace(":", "/")
+            val sourcePaths =
+                when (path) {
+                    ":runtime:minecraft-fabric-1.21.11" ->
+                        listOf(
+                            "runtime/minecraft-fabric-1.21.11",
+                            "runtime/minecraft-fabric-unobfuscated",
+                        )
+                    ":runtime:minecraft-fabric-26.1", ":runtime:minecraft-fabric-26.2" ->
+                        listOf("runtime/minecraft-fabric-unobfuscated")
+                    else -> listOf(path.removePrefix(":").replace(":", "/"))
                 }
             dokkaSourceSets.named("main") {
-                sourceLink {
-                    localDirectory.set(rootProject.file("$sourcePath/src/main/kotlin"))
-                    remoteUrl("https://github.com/sya-ri/strata/tree/master/$sourcePath/src/main/kotlin")
-                    remoteLineSuffix.set("#L")
+                for (sourcePath in sourcePaths) {
+                    sourceLink {
+                        localDirectory.set(rootProject.file("$sourcePath/src/main/kotlin"))
+                        remoteUrl("https://github.com/sya-ri/strata/tree/master/$sourcePath/src/main/kotlin")
+                        remoteLineSuffix.set("#L")
+                    }
                 }
             }
         }

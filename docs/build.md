@@ -4,7 +4,10 @@ The checked-in wrapper and version catalog are the source of truth for build-too
 Common modules target the baseline Java toolchain; version-specific Minecraft modules target the toolchain required by their game version.
 The `runtime:minecraft-fabric-26.2` and `runtime:minecraft-fabric-26.1` modules target Java 25, use the version-catalog Fabric Loom plugin in no-remap mode for their unobfuscated clients, and package the `api`, `runtime:core`, `runtime:headless`, and `runtime:minecraft` jars under `META-INF/jars` exactly once.
 Their Fabric metadata declares fixed Loader, Minecraft, and Fabric Language Kotlin runtime requirements; neither runtime uses Fabric API.
-Both projects compile the neutral `runtime/minecraft-fabric-unobfuscated` source tree and add only their version-specific current-screen bridge and metadata.
+The `runtime:minecraft-fabric-1.21.11` module targets Java 21, compiles against official Mojang mappings, remaps its distribution jar through the version-catalog Fabric Loom remap plugin, and packages the same common jars exactly once.
+All three Fabric runtime modules declare fixed Loader, Minecraft, Fabric Language Kotlin, and Java runtime requirements; none uses Fabric API at runtime.
+The 26.x projects compile the complete neutral `runtime/minecraft-fabric-unobfuscated` source tree and add only their version-specific current-screen bridge and metadata.
+The 1.21.11 project links only an enumerated set of neutral files proven compatible and owns its older screen, focused-input, and inventory bridges locally.
 Consumers select exactly one versioned runtime artifact because the adapters deliberately expose the same packages and public class names.
 
 Every Kotlin compilation uses explicit API mode and treats warnings as errors.
@@ -26,6 +29,9 @@ Static-analysis rules are enabled when they produce actionable improvements; rul
 The nonpublished `integration:minecraft-fabric-26.2` and `integration:minecraft-fabric-26.1` modules compile the same neutral loaded-client suite against their exact game and Fabric API dependencies.
 `./gradlew :integration:minecraft-fabric-26.2:runClientGameTest` fixes the viewport, GUI scale, locale, resource profile, and pointer state, then requires exact native-Screen, Fabric-adapter, and headless ARGB equality before writing build-only evidence.
 `./gradlew :integration:minecraft-fabric-26.1:runClientGameTest` applies the same acceptance conditions to 26.1 and writes a version-qualified build receipt.
+The nonpublished `integration:minecraft-fabric-1.21.11` module compiles an independent Java 21 loaded-client suite against the remapped adapter and its exact Fabric API dependency.
+`./gradlew :integration:minecraft-fabric-1.21.11:runClientGameTest` writes version-qualified build evidence after exercising the older adapter inside the actual client.
+`./gradlew :integration:minecraft-fabric-1.21.11:runProductionClientGameTest` packages and remaps both the integration test Mod and runtime Mod, then repeats the loaded suite from those production jars with their nested common runtime jars.
 
 The nonpublished `integration:docs` module owns two source-safe showcase tasks.
 `./gradlew :integration:docs:checkComponentShowcase` depends on that loaded GameTest, verifies its receipt and image hashes, stages the compiled Minecraft-component scenario sources and verified crops, and checks freshness without modifying repository files.

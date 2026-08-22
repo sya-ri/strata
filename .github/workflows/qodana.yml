@@ -26,6 +26,7 @@ jobs:
           distribution: temurin
           java-version: |
             17
+            21
             25
       - name: Assemble analysis dependencies
         run: bash ./gradlew assemble

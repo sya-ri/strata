@@ -47,12 +47,13 @@ A version adapter reproduces the behavior and presentation of its own Vanilla ve
 ## Current compatibility
 
 Exactly one versioned Fabric runtime belongs on a consumer runtime classpath.
-The artifacts expose the same package and public API intentionally, so combining them is unsupported and produces duplicate classes.
+The artifacts expose the same Strata-owned package entry points and class names intentionally, while inherited native `Screen` methods remain version-specific, so combining them is unsupported and produces duplicate classes.
 
 | Minecraft | Java | Distribution mapping | Version boundary | Verified compatibility |
 | --- | --- | --- | --- | --- |
 | 26.2 | 25 | Unobfuscated, no remap | `Minecraft.gui.screen()` and `Minecraft.gui.setScreen` | Latest profile and documentation source; exact native/Fabric/headless pixels for the fixed vanilla scenes, exact Fabric/headless Mod scenes, and synchronized inventory behavior |
 | 26.1 | 25 | Unobfuscated, no remap | `Minecraft.screen` and `Minecraft.setScreen` | The complete loaded suite passes; the used UI assets are byte-identical and every fixed-scene ARGB receipt hash matches 26.2 |
+| 1.21.11 | 21 | Official Mojang mappings, remapped distribution | Legacy `GuiGraphics` rendering, input callbacks, and menu clicks | Independent loaded-client verification covers the version-specific adapter without claiming cross-version pixel identity |
 
 The neutral `runtime/minecraft-fabric-unobfuscated` and `integration/minecraft-fabric-unobfuscated` trees are source ownership boundaries, not Gradle modules or fallback profiles.
-Code enters those trees only after both supported releases prove the behavior independently; unexplained divergence remains in a versioned project until resolved.
+A version links only the enumerated neutral files that its compiler and loaded tests prove compatible; unexplained divergence remains in a versioned project until resolved.

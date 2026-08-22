@@ -27,6 +27,7 @@ jobs:
           distribution: temurin
           java-version: |
             17
+            21
             25
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v6

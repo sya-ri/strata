@@ -19,10 +19,12 @@ jobs:
           distribution: temurin
           java-version: |
             17
+            21
             25
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v6
       - name: Run JVM checks
+        # Loom's client run tasks select xvfb-run automatically on Linux when CI is true.
         run: bash ./gradlew check koverJvmTests koverHtmlReport koverXmlReport -Pkover
       - name: Upload coverage reports
         uses: actions/upload-artifact@v7
