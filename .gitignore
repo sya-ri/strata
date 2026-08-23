@@ -29,6 +29,7 @@ saves/
 **/saves/
 crash-reports/
 **/crash-reports/
+**/.lwjgl/
 *.log
 *.log.gz
 *.mca

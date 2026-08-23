@@ -23,6 +23,7 @@ import dev.s7a.strata.modifier.actionDispatcher
 import dev.s7a.strata.render.ArgbColor
 import dev.s7a.strata.render.DrawImage
 import dev.s7a.strata.render.createDrawImage
+import dev.s7a.strata.spi.ComponentEvaluator
 import dev.s7a.strata.spi.ComponentRuntime
 import dev.s7a.strata.spi.ComponentRuntimeBridge
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
@@ -98,8 +99,12 @@ internal object MinecraftProfileImplementation {
         private val buttonSize = IntSize(200, 20)
         private val listSeparatorSize = IntSize(32, 2)
         private val scrollbarSize = IntSize(6, 32)
-        private val checkboxSize = IntSize(17, 17)
+        private val checkboxSize = IntSize(20, 20)
         private val sliderHandleSize = IntSize(8, 20)
+        private val loadingIndicatorSize = IntSize(5, 6)
+        private val progressBarBorderSize = IntSize(12, 12)
+        private val progressBarFillSize = IntSize(6, 6)
+        private val tooltipSpriteSize = IntSize(100, 100)
         private val glyphRange = 0x21..0x7E
         private val transparentWhite = ArgbColor(0x00FFFFFF)
         private val opaqueWhite = ArgbColor(-1)
@@ -130,6 +135,12 @@ internal object MinecraftProfileImplementation {
         private var sliderHighlighted: DrawImage? = null
         private var sliderHandle: DrawImage? = null
         private var sliderHandleHighlighted: DrawImage? = null
+        private var loadingIndicator: DrawImage? = null
+        private var progressBarBorder: DrawImage? = null
+        private var progressBarFill: DrawImage? = null
+        private var progressBarFull: DrawImage? = null
+        private var tooltipBackground: DrawImage? = null
+        private var tooltipFrame: DrawImage? = null
         private var normalTextField: DrawImage? = null
         private var highlightedTextField: DrawImage? = null
         private var normalButton: MinecraftButtonSpriteSnapshot? = null
@@ -143,6 +154,48 @@ internal object MinecraftProfileImplementation {
                 "Menu background must be 16 by 16 pixels."
             }
             menu = image
+        }
+
+        override fun loadingIndicator(image: DrawImage) {
+            checkUsable()
+            require(loadingIndicator == null) { "LoadingIndicator sprite was already declared." }
+            require(image.size == loadingIndicatorSize) { "LoadingIndicator sprite must be 5 by 6 pixels." }
+            loadingIndicator = image
+        }
+
+        override fun progressBarBorder(image: DrawImage) {
+            checkUsable()
+            require(progressBarBorder == null) { "ProgressBar border sprite was already declared." }
+            require(image.size == progressBarBorderSize) { "ProgressBar border sprite must be 12 by 12 pixels." }
+            progressBarBorder = image
+        }
+
+        override fun progressBarFill(image: DrawImage) {
+            checkUsable()
+            require(progressBarFill == null) { "ProgressBar fill sprite was already declared." }
+            require(image.size == progressBarFillSize) { "ProgressBar fill sprite must be 6 by 6 pixels." }
+            progressBarFill = image
+        }
+
+        override fun progressBarFull(image: DrawImage) {
+            checkUsable()
+            require(progressBarFull == null) { "Completed ProgressBar fill sprite was already declared." }
+            require(image.size == progressBarFillSize) { "Completed ProgressBar fill sprite must be 6 by 6 pixels." }
+            progressBarFull = image
+        }
+
+        override fun tooltipBackground(image: DrawImage) {
+            checkUsable()
+            require(tooltipBackground == null) { "Tooltip background sprite was already declared." }
+            require(image.size == tooltipSpriteSize) { "Tooltip background sprite must be 100 by 100 pixels." }
+            tooltipBackground = image
+        }
+
+        override fun tooltipFrame(image: DrawImage) {
+            checkUsable()
+            require(tooltipFrame == null) { "Tooltip frame sprite was already declared." }
+            require(image.size == tooltipSpriteSize) { "Tooltip frame sprite must be 100 by 100 pixels." }
+            tooltipFrame = image
         }
 
         override fun containerBackground(image: DrawImage) {
@@ -204,28 +257,28 @@ internal object MinecraftProfileImplementation {
         override fun checkbox(image: DrawImage) {
             checkUsable()
             require(checkbox == null) { "Checkbox sprite was already declared." }
-            require(image.size == checkboxSize) { "Checkbox sprites must be 17 by 17 pixels." }
+            require(image.size == checkboxSize) { "Checkbox sprites must be 20 by 20 pixels." }
             checkbox = image
         }
 
         override fun checkboxHighlighted(image: DrawImage) {
             checkUsable()
             require(checkboxHighlighted == null) { "Highlighted Checkbox sprite was already declared." }
-            require(image.size == checkboxSize) { "Checkbox sprites must be 17 by 17 pixels." }
+            require(image.size == checkboxSize) { "Checkbox sprites must be 20 by 20 pixels." }
             checkboxHighlighted = image
         }
 
         override fun checkboxSelected(image: DrawImage) {
             checkUsable()
             require(checkboxSelected == null) { "Selected Checkbox sprite was already declared." }
-            require(image.size == checkboxSize) { "Checkbox sprites must be 17 by 17 pixels." }
+            require(image.size == checkboxSize) { "Checkbox sprites must be 20 by 20 pixels." }
             checkboxSelected = image
         }
 
         override fun checkboxSelectedHighlighted(image: DrawImage) {
             checkUsable()
             require(checkboxSelectedHighlighted == null) { "Selected highlighted Checkbox sprite was already declared." }
-            require(image.size == checkboxSize) { "Checkbox sprites must be 17 by 17 pixels." }
+            require(image.size == checkboxSize) { "Checkbox sprites must be 20 by 20 pixels." }
             checkboxSelectedHighlighted = image
         }
 
@@ -342,6 +395,12 @@ internal object MinecraftProfileImplementation {
                 sliderHighlighted = requireNotNull(sliderHighlighted) { "Highlighted Slider sprite must be declared." },
                 sliderHandle = requireNotNull(sliderHandle) { "Slider handle sprite must be declared." },
                 sliderHandleHighlighted = requireNotNull(sliderHandleHighlighted) { "Highlighted Slider handle sprite must be declared." },
+                loadingIndicator = requireNotNull(loadingIndicator) { "LoadingIndicator sprite must be declared." },
+                progressBarBorder = requireNotNull(progressBarBorder) { "ProgressBar border sprite must be declared." },
+                progressBarFill = requireNotNull(progressBarFill) { "ProgressBar fill sprite must be declared." },
+                progressBarFull = requireNotNull(progressBarFull) { "Completed ProgressBar fill sprite must be declared." },
+                tooltipBackground = requireNotNull(tooltipBackground) { "Tooltip background sprite must be declared." },
+                tooltipFrame = requireNotNull(tooltipFrame) { "Tooltip frame sprite must be declared." },
                 normalTextField = requireNotNull(normalTextField) { "Normal TextField sprite must be declared." },
                 highlightedTextField = requireNotNull(highlightedTextField) { "Highlighted TextField sprite must be declared." },
                 glyphs = glyphs,
@@ -371,6 +430,12 @@ internal object MinecraftProfileImplementation {
             sliderHighlighted = null
             sliderHandle = null
             sliderHandleHighlighted = null
+            loadingIndicator = null
+            progressBarBorder = null
+            progressBarFill = null
+            progressBarFull = null
+            tooltipBackground = null
+            tooltipFrame = null
             normalTextField = null
             highlightedTextField = null
             normalButton = null
@@ -476,6 +541,12 @@ internal object MinecraftProfileImplementation {
         val sliderHighlighted: DrawImage,
         val sliderHandle: DrawImage,
         val sliderHandleHighlighted: DrawImage,
+        val loadingIndicator: DrawImage,
+        val progressBarBorder: DrawImage,
+        val progressBarFill: DrawImage,
+        val progressBarFull: DrawImage,
+        val tooltipBackground: DrawImage,
+        val tooltipFrame: DrawImage,
         val normalTextField: DrawImage,
         val highlightedTextField: DrawImage,
         glyphs: Map<Int, MinecraftGlyphSnapshot>,
@@ -529,6 +600,12 @@ internal object MinecraftProfileImplementation {
                 sliderHighlighted: DrawImage,
                 sliderHandle: DrawImage,
                 sliderHandleHighlighted: DrawImage,
+                loadingIndicator: DrawImage,
+                progressBarBorder: DrawImage,
+                progressBarFill: DrawImage,
+                progressBarFull: DrawImage,
+                tooltipBackground: DrawImage,
+                tooltipFrame: DrawImage,
                 normalTextField: DrawImage,
                 highlightedTextField: DrawImage,
                 glyphs: Map<Int, MinecraftGlyphSnapshot>,
@@ -554,6 +631,12 @@ internal object MinecraftProfileImplementation {
                     sliderHighlighted,
                     sliderHandle,
                     sliderHandleHighlighted,
+                    loadingIndicator,
+                    progressBarBorder,
+                    progressBarFill,
+                    progressBarFull,
+                    tooltipBackground,
+                    tooltipFrame,
                     normalTextField,
                     highlightedTextField,
                     glyphs,
@@ -572,6 +655,64 @@ internal object MinecraftProfileImplementation {
         private var profile: ProfileSnapshot? = initialProfile
         private var platform: MinecraftUiPlatform? = initialPlatform
 
+        override fun retainEvaluator(): ComponentEvaluator {
+            val retainedProfile = requireProfile()
+            val retainedPlatform = platform
+            val evaluatorOwner = ownerThread
+            return ComponentEvaluator { deferredContent ->
+                check(Thread.currentThread() === evaluatorOwner) {
+                    "Deferred Minecraft component evaluation must run on its owner thread."
+                }
+                val context = create(retainedProfile, retainedPlatform)
+                try {
+                    ComponentRuntimeBridge.evaluate(context, deferredContent)
+                } finally {
+                    context.close()
+                }
+            }
+        }
+
+        override fun loadingIndicator(
+            size: IntSize,
+            modifier: Modifier,
+            key: ElementKey<*>?,
+        ): Element = MinecraftLoadingIndicatorElement.create(requireProfile().loadingIndicator, size, modifier, key)
+
+        override fun progressBar(
+            progress: Double,
+            size: IntSize,
+            modifier: Modifier,
+            key: ElementKey<*>?,
+        ): Element {
+            val currentProfile = requireProfile()
+            return MinecraftProgressBarElement.create(
+                currentProfile.progressBarBorder,
+                currentProfile.progressBarFill,
+                currentProfile.progressBarFull,
+                progress,
+                size,
+                modifier,
+                key,
+            )
+        }
+
+        override fun tooltip(
+            modifier: Modifier,
+            text: UiText,
+            delayMillis: Long,
+        ): Modifier {
+            val currentProfile = requireProfile()
+            val delayNanos = Math.multiplyExact(delayMillis, 1_000_000L)
+            return modifier.then(
+                createMinecraftTooltipModifier(
+                    MinecraftTextRun.createNormal(text, currentProfile::glyph),
+                    currentProfile.tooltipBackground,
+                    currentProfile.tooltipFrame,
+                    delayNanos,
+                ),
+            )
+        }
+
         override fun checkbox(
             label: UiText,
             state: CheckboxState,
@@ -581,7 +722,7 @@ internal object MinecraftProfileImplementation {
             key: ElementKey<*>?,
         ): Element {
             val currentProfile = requireProfile()
-            require(21 < width) { "Minecraft Checkbox width must leave room for its box and label." }
+            require(24 < width) { "Minecraft Checkbox width must leave room for its box and label." }
             val normalText = MinecraftTextRun.createNormal(label, currentProfile::glyph)
             val inactiveText = MinecraftTextRun.createInactive(label, currentProfile::glyph)
             return createMinecraftCheckboxElement(

@@ -1,5 +1,6 @@
 package dev.s7a.strata.runtime.minecraft.fabric
 
+import dev.s7a.strata.geometry.IntSize
 import net.minecraft.client.resources.metadata.gui.GuiSpriteScaling
 import org.junit.jupiter.api.Assertions.assertDoesNotThrow
 import org.junit.jupiter.api.Assertions.assertThrows
@@ -11,8 +12,8 @@ import org.junit.jupiter.api.Test
 internal class FabricMinecraftProfileMetadataTest {
     @Test
     fun acceptsThe26Point2NineSliceValues() {
-        assertDoesNotThrow { validateMinecraftNineSliceScaling(nineSlice(3), 3) }
-        assertDoesNotThrow { validateMinecraftNineSliceScaling(nineSlice(1), 1) }
+        assertDoesNotThrow { validateMinecraftNineSliceScaling(nineSlice(3), IntSize(200, 20), 3, false) }
+        assertDoesNotThrow { validateMinecraftNineSliceScaling(nineSlice(1), IntSize(200, 20), 1, false) }
     }
 
     @Test
@@ -28,7 +29,7 @@ internal class FabricMinecraftProfileMetadataTest {
             )
         variants.forEach { scaling ->
             assertThrows(IllegalArgumentException::class.java) {
-                validateMinecraftNineSliceScaling(scaling, 3)
+                validateMinecraftNineSliceScaling(scaling, IntSize(200, 20), 3, false)
             }
         }
     }

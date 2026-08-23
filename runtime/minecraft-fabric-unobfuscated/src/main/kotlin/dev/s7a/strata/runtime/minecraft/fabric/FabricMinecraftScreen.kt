@@ -12,6 +12,7 @@ import dev.s7a.strata.input.KeyboardEvent
 import dev.s7a.strata.input.PointerButton
 import dev.s7a.strata.input.PointerEvent
 import dev.s7a.strata.input.TextInputEvent
+import dev.s7a.strata.runtime.FrameTime
 import dev.s7a.strata.runtime.headless.HeadlessImage
 import dev.s7a.strata.runtime.headless.rasterizeHeadless
 import dev.s7a.strata.runtime.minecraft.MinecraftUiHost
@@ -169,8 +170,9 @@ public class FabricMinecraftScreen private constructor(
             inventory.withRefreshBatch {
                 lifecycle.run {
                     val viewport = IntSize(width, height)
+                    val frameTime = FrameTime(System.nanoTime())
                     hostFrameCount += 1L
-                    var frame = host.frame(viewport)
+                    var frame = host.frame(viewport, frameTime)
                     if (lifecycle.hasPendingExit()) return@run
                     if (width == 0 || height == 0) {
                         releaseTextures()
@@ -185,7 +187,7 @@ public class FabricMinecraftScreen private constructor(
                         pointerFrameCommands = frame.drawCommands
                         if (lifecycle.hasPendingExit()) return@run
                         hostFrameCount += 1L
-                        frame = host.frame(viewport)
+                        frame = host.frame(viewport, frameTime)
                         if (lifecycle.hasPendingExit()) return@run
                     }
                     extractFrame(graphics, frame.drawCommands, frame.size)

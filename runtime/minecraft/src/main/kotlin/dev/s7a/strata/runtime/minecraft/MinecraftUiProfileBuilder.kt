@@ -16,6 +16,48 @@ import dev.s7a.strata.spi.InternalStrataRuntimeApi
 @Suppress("TooManyFunctions")
 public sealed interface MinecraftUiProfileBuilder {
     /**
+     * Supplies the exact 100 by 100 tooltip background sprite.
+     *
+     * @param image immutable nine-slice background pixels.
+     */
+    public fun tooltipBackground(image: DrawImage)
+
+    /**
+     * Supplies the exact 100 by 100 tooltip frame sprite.
+     *
+     * @param image immutable stretched-center nine-slice frame pixels.
+     */
+    public fun tooltipFrame(image: DrawImage)
+
+    /**
+     * Supplies the exact 12 by 12 bundle progress-bar border sprite.
+     *
+     * @param image immutable nine-slice border pixels.
+     */
+    public fun progressBarBorder(image: DrawImage)
+
+    /**
+     * Supplies the exact 6 by 6 bundle progress-bar fill sprite.
+     *
+     * @param image immutable nine-slice fill pixels.
+     */
+    public fun progressBarFill(image: DrawImage)
+
+    /**
+     * Supplies the exact 6 by 6 completed bundle progress-bar fill sprite.
+     *
+     * @param image immutable nine-slice completed-fill pixels.
+     */
+    public fun progressBarFull(image: DrawImage)
+
+    /**
+     * Supplies the exact 5 by 6 three-frame friends loading sprite sheet.
+     *
+     * @param image immutable vertically stacked animation pixels.
+     */
+    public fun loadingIndicator(image: DrawImage)
+
+    /**
      * Supplies the profile's exact 16 by 16 Minecraft menu texture.
      *
      * @param image immutable menu-background pixels.
@@ -101,22 +143,22 @@ public sealed interface MinecraftUiProfileBuilder {
     public fun scrollbarThumb(image: DrawImage)
 
     /**
-     * Supplies the exact 17 by 17 unselected Checkbox sprite.
+     * Supplies the exact 20 by 20 unselected Checkbox sprite.
      */
     public fun checkbox(image: DrawImage)
 
     /**
-     * Supplies the exact 17 by 17 hovered unselected Checkbox sprite.
+     * Supplies the exact 20 by 20 hovered unselected Checkbox sprite.
      */
     public fun checkboxHighlighted(image: DrawImage)
 
     /**
-     * Supplies the exact 17 by 17 selected Checkbox sprite.
+     * Supplies the exact 20 by 20 selected Checkbox sprite.
      */
     public fun checkboxSelected(image: DrawImage)
 
     /**
-     * Supplies the exact 17 by 17 hovered selected Checkbox sprite.
+     * Supplies the exact 20 by 20 hovered selected Checkbox sprite.
      */
     public fun checkboxSelectedHighlighted(image: DrawImage)
 

@@ -180,8 +180,12 @@ public final class dev/s7a/strata/component/ProfileComponents {
 	public static final fun Image (Ldev/s7a/strata/component/UiScope;Ldev/s7a/strata/component/ImageSource;Ldev/s7a/strata/geometry/IntSize;Ldev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/element/ElementKey;)V
 	public static synthetic fun Image$default (Ldev/s7a/strata/component/UiScope;Ldev/s7a/strata/component/ImageSource;Ldev/s7a/strata/geometry/IntRect;Ldev/s7a/strata/geometry/IntSize;Ldev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/element/ElementKey;ILjava/lang/Object;)V
 	public static synthetic fun Image$default (Ldev/s7a/strata/component/UiScope;Ldev/s7a/strata/component/ImageSource;Ldev/s7a/strata/geometry/IntSize;Ldev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/element/ElementKey;ILjava/lang/Object;)V
+	public static final fun LoadingIndicator (Ldev/s7a/strata/component/UiScope;Ldev/s7a/strata/geometry/IntSize;Ldev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/element/ElementKey;)V
+	public static synthetic fun LoadingIndicator$default (Ldev/s7a/strata/component/UiScope;Ldev/s7a/strata/geometry/IntSize;Ldev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/element/ElementKey;ILjava/lang/Object;)V
 	public static final fun PlayerHead (Ldev/s7a/strata/component/UiScope;Ldev/s7a/strata/component/PlayerSkinSource;IZLdev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/element/ElementKey;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function1;)V
 	public static synthetic fun PlayerHead$default (Ldev/s7a/strata/component/UiScope;Ldev/s7a/strata/component/PlayerSkinSource;IZLdev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/element/ElementKey;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function1;ILjava/lang/Object;)V
+	public static final fun ProgressBar (Ldev/s7a/strata/component/UiScope;DLdev/s7a/strata/geometry/IntSize;Ldev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/element/ElementKey;)V
+	public static synthetic fun ProgressBar$default (Ldev/s7a/strata/component/UiScope;DLdev/s7a/strata/geometry/IntSize;Ldev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/element/ElementKey;ILjava/lang/Object;)V
 	public static final fun ScrollArea (Ldev/s7a/strata/component/UiScope;Ldev/s7a/strata/component/ScrollState;Ldev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/element/ElementKey;ILkotlin/jvm/functions/Function1;)V
 	public static synthetic fun ScrollArea$default (Ldev/s7a/strata/component/UiScope;Ldev/s7a/strata/component/ScrollState;Ldev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/element/ElementKey;ILkotlin/jvm/functions/Function1;ILjava/lang/Object;)V
 	public static final fun Scrollbar (Ldev/s7a/strata/component/UiScope;Ldev/s7a/strata/component/ScrollState;Ldev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/element/ElementKey;)V
@@ -962,6 +966,13 @@ public final class dev/s7a/strata/modifier/SizeExtensionsKt {
 	public static synthetic fun widthIn$default (Ldev/s7a/strata/modifier/Modifier;IIILjava/lang/Object;)Ldev/s7a/strata/modifier/Modifier;
 }
 
+public final class dev/s7a/strata/modifier/TooltipModifiers {
+	public static final fun tooltip (Ldev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/text/UiText;J)Ldev/s7a/strata/modifier/Modifier;
+	public static final fun tooltip (Ldev/s7a/strata/modifier/Modifier;Ljava/lang/String;J)Ldev/s7a/strata/modifier/Modifier;
+	public static synthetic fun tooltip$default (Ldev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/text/UiText;JILjava/lang/Object;)Ldev/s7a/strata/modifier/Modifier;
+	public static synthetic fun tooltip$default (Ldev/s7a/strata/modifier/Modifier;Ljava/lang/String;JILjava/lang/Object;)Ldev/s7a/strata/modifier/Modifier;
+}
+
 public abstract interface class dev/s7a/strata/node/ClipChildrenNode {
 }
 
@@ -1009,6 +1020,10 @@ public abstract interface class dev/s7a/strata/node/FocusTargetNode {
 
 public final class dev/s7a/strata/node/FocusTargetNode$DefaultImpls {
 	public static fun getRequestsInitialFocus (Ldev/s7a/strata/node/FocusTargetNode;)Z
+}
+
+public abstract interface class dev/s7a/strata/node/FrameTimeNode {
+	public abstract fun onFrame (Ldev/s7a/strata/runtime/FrameTime;)V
 }
 
 public abstract interface class dev/s7a/strata/node/KeyboardInputNode {
@@ -1062,6 +1077,10 @@ public abstract interface class dev/s7a/strata/node/PointerInputNode {
 	public abstract fun onPointerEvent (Ldev/s7a/strata/input/PointerEvent;Ldev/s7a/strata/geometry/IntOffset;)Ldev/s7a/strata/input/InputResult;
 }
 
+public abstract interface class dev/s7a/strata/node/RootOverlayPaintNode {
+	public abstract fun paintRootOverlay (Ldev/s7a/strata/render/RootOverlayPaintScope;)V
+}
+
 public abstract interface class dev/s7a/strata/node/SemanticsNode {
 	public abstract fun semantics (Ldev/s7a/strata/semantics/SemanticsScope;)V
 }
@@ -1104,6 +1123,10 @@ public abstract interface class dev/s7a/strata/render/PaintScope {
 public abstract interface class dev/s7a/strata/render/PlatformDrawCommand {
 }
 
+public abstract interface class dev/s7a/strata/render/RootOverlayPaintScope : dev/s7a/strata/render/PaintScope {
+	public abstract fun getAnchorBounds ()Ldev/s7a/strata/geometry/IntRect;
+}
+
 public final class dev/s7a/strata/resource/ResourceId {
 	public fun <init> (Ljava/lang/String;Ljava/lang/String;)V
 	public final fun component1 ()Ljava/lang/String;
@@ -1113,6 +1136,17 @@ public final class dev/s7a/strata/resource/ResourceId {
 	public fun equals (Ljava/lang/Object;)Z
 	public final fun getNamespace ()Ljava/lang/String;
 	public final fun getPath ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class dev/s7a/strata/runtime/FrameTime {
+	public fun <init> (J)V
+	public final fun component1 ()J
+	public final fun copy (J)Ldev/s7a/strata/runtime/FrameTime;
+	public static synthetic fun copy$default (Ldev/s7a/strata/runtime/FrameTime;JILjava/lang/Object;)Ldev/s7a/strata/runtime/FrameTime;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getNanoseconds ()J
 	public fun hashCode ()I
 	public fun toString ()Ljava/lang/String;
 }
@@ -1225,6 +1259,10 @@ public abstract interface class dev/s7a/strata/semantics/SemanticsScope {
 	public abstract fun emit (Ldev/s7a/strata/semantics/Semantics;)V
 }
 
+public abstract interface class dev/s7a/strata/spi/ComponentEvaluator {
+	public abstract fun evaluate (Lkotlin/jvm/functions/Function1;)Ldev/s7a/strata/element/Element;
+}
+
 public abstract interface class dev/s7a/strata/spi/ComponentRuntime {
 	public abstract fun button (Ldev/s7a/strata/text/UiText;IZLdev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/element/ElementKey;)Ldev/s7a/strata/element/Element;
 	public abstract fun checkbox (Ldev/s7a/strata/text/UiText;Ldev/s7a/strata/component/CheckboxState;IZLdev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/element/ElementKey;)Ldev/s7a/strata/element/Element;
@@ -1233,8 +1271,11 @@ public abstract interface class dev/s7a/strata/spi/ComponentRuntime {
 	public abstract fun image (Ldev/s7a/strata/component/ImageSource;Ldev/s7a/strata/geometry/IntRect;Ldev/s7a/strata/geometry/IntSize;Ldev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/element/ElementKey;)Ldev/s7a/strata/element/Element;
 	public abstract fun imageBackground (Ldev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/component/ImageSource;Ldev/s7a/strata/component/ImageScale;)Ldev/s7a/strata/modifier/Modifier;
 	public abstract fun imageBackground (Ldev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/component/ImageSource;Ldev/s7a/strata/geometry/Insets;Ldev/s7a/strata/component/NineSliceCenterMode;)Ldev/s7a/strata/modifier/Modifier;
+	public abstract fun loadingIndicator (Ldev/s7a/strata/geometry/IntSize;Ldev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/element/ElementKey;)Ldev/s7a/strata/element/Element;
 	public abstract fun menuBackground (Ldev/s7a/strata/modifier/Modifier;)Ldev/s7a/strata/modifier/Modifier;
 	public abstract fun playerHead (Ldev/s7a/strata/component/PlayerSkinSource;IZLdev/s7a/strata/element/Element;Ldev/s7a/strata/element/Element;Ldev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/element/ElementKey;)Ldev/s7a/strata/element/Element;
+	public abstract fun progressBar (DLdev/s7a/strata/geometry/IntSize;Ldev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/element/ElementKey;)Ldev/s7a/strata/element/Element;
+	public abstract fun retainEvaluator ()Ldev/s7a/strata/spi/ComponentEvaluator;
 	public abstract fun scrollArea (Ldev/s7a/strata/component/ScrollState;Ldev/s7a/strata/element/Element;ILdev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/element/ElementKey;)Ldev/s7a/strata/element/Element;
 	public abstract fun scrollbar (Ldev/s7a/strata/component/ScrollState;Ldev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/element/ElementKey;)Ldev/s7a/strata/element/Element;
 	public abstract fun slider (Ldev/s7a/strata/text/UiText;Ldev/s7a/strata/component/SliderState;IZLdev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/element/ElementKey;)Ldev/s7a/strata/element/Element;
@@ -1242,6 +1283,7 @@ public abstract interface class dev/s7a/strata/spi/ComponentRuntime {
 	public abstract fun tab (Ldev/s7a/strata/text/UiText;ZIZLdev/s7a/strata/component/TabSelectionIndicator;Ldev/s7a/strata/element/Element;Ldev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/element/ElementKey;)Ldev/s7a/strata/element/Element;
 	public abstract fun text (Ldev/s7a/strata/text/UiText;Ldev/s7a/strata/component/TextStyle;Ldev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/element/ElementKey;)Ldev/s7a/strata/element/Element;
 	public abstract fun textField (Ldev/s7a/strata/component/TextFieldState;Ldev/s7a/strata/geometry/IntSize;ZLdev/s7a/strata/component/TextStyle;Ldev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/element/ElementKey;)Ldev/s7a/strata/element/Element;
+	public abstract fun tooltip (Ldev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/text/UiText;J)Ldev/s7a/strata/modifier/Modifier;
 }
 
 public final class dev/s7a/strata/spi/ComponentRuntimeBridge {

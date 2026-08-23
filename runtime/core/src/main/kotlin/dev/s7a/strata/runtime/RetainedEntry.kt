@@ -91,6 +91,21 @@ internal sealed class RetainedEntry(
     var localOverlayCommands: List<LocalDrawCommand>? = null
 
     /**
+     * Cached root-coordinate overlay commands, or null before the first paint.
+     */
+    var rootOverlayCommands: List<LocalDrawCommand>? = null
+
+    /**
+     * Anchor bounds used to produce [rootOverlayCommands].
+     */
+    var rootOverlayAnchor: IntRect? = null
+
+    /**
+     * Root viewport used to produce [rootOverlayCommands].
+     */
+    var rootOverlayViewport: IntSize? = null
+
+    /**
      * Cached immutable local semantics payloads, or null before the first pass.
      */
     var localSemantics: List<Semantics>? = null

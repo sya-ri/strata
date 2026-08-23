@@ -13,6 +13,7 @@ import dev.s7a.strata.layout.MeasureScope
 import dev.s7a.strata.layout.ParentDataKey
 import dev.s7a.strata.node.DirtyMask
 import dev.s7a.strata.node.DirtyPhase
+import dev.s7a.strata.node.FrameTimeNode
 import dev.s7a.strata.node.LayoutNode
 import dev.s7a.strata.node.MeasureNode
 import dev.s7a.strata.node.ParentDataModifierNode
@@ -124,6 +125,19 @@ internal class Pipeline(
      * @return entries in effective parent-before-child order.
      */
     fun semantics(root: RetainedNode): List<SemanticsEntry> = semanticsPipeline.semantics(root.effectiveRoot)
+
+    /**
+     * Notifies every time-aware effective entry before frame-cache evaluation.
+     *
+     * @param root installed logical root.
+     * @param time current host timestamp.
+     */
+    fun advanceFrame(
+        root: RetainedNode,
+        time: FrameTime,
+    ) {
+        advanceFrameEntry(root.effectiveRoot, time)
+    }
 
     /**
      * Returns whether a measured subtree still has pending measurement work.
@@ -336,5 +350,15 @@ internal class Pipeline(
             }
         }
         return false
+    }
+
+    private fun advanceFrameEntry(
+        retained: RetainedEntry,
+        time: FrameTime,
+    ) {
+        (retained.node as? FrameTimeNode)?.onFrame(time)
+        for (index in 0 until retained.effectiveChildCount) {
+            advanceFrameEntry(retained.effectiveChildAt(index), time)
+        }
     }
 }

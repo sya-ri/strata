@@ -618,11 +618,19 @@ public class StrataMinecraftClientGameTest : FabricClientGameTest {
             ComponentShowcase.Text -> createTextShowcaseScreenDefinition()
             ComponentShowcase.TextField -> createTextFieldShowcaseScreenDefinition()
             ComponentShowcase.Button -> createButtonShowcaseScreenDefinition()
+            ComponentShowcase.Checkbox -> createCheckboxShowcaseScreenDefinition()
+            ComponentShowcase.CycleButton -> createCycleButtonShowcaseScreenDefinition()
+            ComponentShowcase.Slider -> createSliderShowcaseScreenDefinition()
             ComponentShowcase.Tab -> createTabShowcaseScreenDefinition()
-            ComponentShowcase.Scroll -> createScrollShowcaseScreenDefinition()
+            ComponentShowcase.ScrollArea -> createScrollAreaShowcaseScreenDefinition()
+            ComponentShowcase.Scrollbar -> createScrollbarShowcaseScreenDefinition()
+            ComponentShowcase.VirtualList -> createVirtualListShowcaseScreenDefinition()
+            ComponentShowcase.SelectionList -> createSelectionListShowcaseScreenDefinition()
             ComponentShowcase.Image -> createImageShowcaseScreenDefinition(assets.image)
             ComponentShowcase.Slot -> createSlotShowcaseScreenDefinition()
             ComponentShowcase.PlayerHead -> createPlayerHeadShowcaseScreenDefinition(assets.playerSkin)
+            ComponentShowcase.LoadingIndicator -> createLoadingIndicatorShowcaseScreenDefinition()
+            ComponentShowcase.ProgressBar -> createProgressBarShowcaseScreenDefinition()
         }
 
     @Suppress("LongMethod", "LongParameterList")
@@ -1175,11 +1183,19 @@ public class StrataMinecraftClientGameTest : FabricClientGameTest {
         Text("text", IntSize(120, 64)),
         TextField("text-field", IntSize(216, 64)),
         Button("button", IntSize(166, 64)),
+        Checkbox("checkbox", IntSize(166, 36)),
+        CycleButton("cycle-button", IntSize(166, 36)),
+        Slider("slider", IntSize(166, 36)),
         Tab("tab", IntSize(160, 64)),
-        Scroll("scroll", IntSize(160, 64)),
+        ScrollArea("scroll-area", IntSize(120, 48)),
+        Scrollbar("scrollbar", IntSize(94, 48)),
+        VirtualList("virtual-list", IntSize(120, 48)),
+        SelectionList("selection-list", IntSize(120, 48)),
         Image("image", IntSize(64, 64)),
         Slot("slot", IntSize(64, 64), IntOffset(32, 32)),
         PlayerHead("player-head", IntSize(64, 64)),
+        LoadingIndicator("loading-indicator", IntSize(32, 24)),
+        ProgressBar("progress-bar", IntSize(116, 28)),
     }
 
     private enum class ParityScreen(

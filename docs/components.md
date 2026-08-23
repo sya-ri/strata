@@ -91,11 +91,19 @@ The tree shows Minecraft components in logical draw order; platform-neutral layo
 - [Text](#text)
 - [TextField](#text-field)
 - [Button](#button)
+- [Checkbox](#checkbox)
+- [CycleButton](#cycle-button)
+- [Slider](#slider)
 - [Tab](#tab)
-- [Scroll](#scroll)
+- [ScrollArea](#scroll-area)
+- [Scrollbar](#scrollbar)
+- [VirtualList](#virtual-list)
+- [SelectionList](#selection-list)
 - [Image](#image)
 - [Slot](#slot)
 - [PlayerHead](#player-head)
+- [LoadingIndicator](#loading-indicator)
+- [ProgressBar](#progress-bar)
 
 <a id="row"></a>
 
@@ -629,6 +637,175 @@ The tree mirrors the complete dedicated definition, including the featured compo
 
 </details>
 
+<a id="checkbox"></a>
+
+## Checkbox
+
+Checkbox reproduces the verified 20-pixel Minecraft checkbox surface, label spacing, focused input, checked semantics, and caller-owned boolean state.
+
+This 166 by 36 image is the complete frame of the compiled dedicated `ScreenDefinition`, after exact Fabric/headless ARGB comparison recorded in [the verification receipt](components/minecraft-26.2-parity.properties); it is not cropped from a larger screen.
+
+![Checkbox headless showcase](components/checkbox.png)
+
+### Compiled example
+
+```kotlin
+import dev.s7a.strata.component.Checkbox
+import dev.s7a.strata.component.CheckboxState
+import dev.s7a.strata.component.Stack
+import dev.s7a.strata.layout.Alignment
+import dev.s7a.strata.modifier.Modifier
+import dev.s7a.strata.modifier.background
+import dev.s7a.strata.modifier.size
+import dev.s7a.strata.render.ArgbColor
+import dev.s7a.strata.screen.ScreenDefinition
+
+/** Builds the complete minimal Checkbox showcase frame. */
+internal fun createCheckboxShowcaseScreenDefinition(): ScreenDefinition {
+    val state = CheckboxState(initialChecked = true)
+    return ScreenDefinition("Checkbox showcase") {
+        Stack(
+            modifier = Modifier.Empty.size(166, 36).background(ArgbColor(0xFF000000.toInt())),
+            contentAlignment = Alignment.Center,
+        ) {
+            Checkbox("Allow invites", state)
+        }
+    }
+}
+```
+
+### Modifiers
+
+Sizing and placement modifiers compose around `Checkbox`; caller-owned state and typed checked-change actions keep the reusable boolean control independent of a settings domain.
+
+### Parent scope
+
+`Checkbox` is a leaf extension on the active `UiScope`; `CheckboxState` is caller-owned, owner-thread confined, and may be shared with application state adapters.
+
+<details><summary>Component tree</summary>
+
+The tree mirrors the complete dedicated definition, including the featured component, its minimum parent layout, and the children used to demonstrate its responsibility.
+
+```text
+`- Stack [Size(width=166, height=36), Background(color=0xFF000000), StackContentAlignment(alignment=Center)]
+  `- Checkbox [Size(width=150, height=20)]
+```
+
+</details>
+
+<a id="cycle-button"></a>
+
+## CycleButton
+
+CycleButton reuses the verified button surface for a finite generic option sequence with forward, backward, wheel, and keyboard navigation.
+
+This 166 by 36 image is the complete frame of the compiled dedicated `ScreenDefinition`, after exact Fabric/headless ARGB comparison recorded in [the verification receipt](components/minecraft-26.2-parity.properties); it is not cropped from a larger screen.
+
+![CycleButton headless showcase](components/cycle-button.png)
+
+### Compiled example
+
+```kotlin
+import dev.s7a.strata.component.CycleButton
+import dev.s7a.strata.component.CycleButtonState
+import dev.s7a.strata.component.Stack
+import dev.s7a.strata.layout.Alignment
+import dev.s7a.strata.modifier.Modifier
+import dev.s7a.strata.modifier.background
+import dev.s7a.strata.modifier.size
+import dev.s7a.strata.render.ArgbColor
+import dev.s7a.strata.screen.ScreenDefinition
+import dev.s7a.strata.text.UiText
+
+/** Builds the complete minimal CycleButton showcase frame. */
+internal fun createCycleButtonShowcaseScreenDefinition(): ScreenDefinition {
+    val state = CycleButtonState(listOf("Peaceful", "Easy", "Normal", "Hard"), "Normal")
+    return ScreenDefinition("CycleButton showcase") {
+        Stack(
+            modifier = Modifier.Empty.size(166, 36).background(ArgbColor(0xFF000000.toInt())),
+            contentAlignment = Alignment.Center,
+        ) {
+            CycleButton(state = state) { value -> UiText.Literal("Difficulty: $value") }
+        }
+    }
+}
+```
+
+### Modifiers
+
+Sizing and placement modifiers compose around `CycleButton`; its immutable option set and typed change action remain generic rather than encoding one game's option model.
+
+### Parent scope
+
+`CycleButton` is a leaf extension on the active `UiScope`; it snapshots labels for the validated finite option set and retains no child scope.
+
+<details><summary>Component tree</summary>
+
+The tree mirrors the complete dedicated definition, including the featured component, its minimum parent layout, and the children used to demonstrate its responsibility.
+
+```text
+`- Stack [Size(width=166, height=36), Background(color=0xFF000000), StackContentAlignment(alignment=Center)]
+  `- CycleButton [Size(width=150, height=20)]
+```
+
+</details>
+
+<a id="slider"></a>
+
+## Slider
+
+Slider reproduces Minecraft's profile-backed track and handle while normalizing finite numeric ranges and optional discrete steps in caller-owned state.
+
+This 166 by 36 image is the complete frame of the compiled dedicated `ScreenDefinition`, after exact Fabric/headless ARGB comparison recorded in [the verification receipt](components/minecraft-26.2-parity.properties); it is not cropped from a larger screen.
+
+![Slider headless showcase](components/slider.png)
+
+### Compiled example
+
+```kotlin
+import dev.s7a.strata.component.Slider
+import dev.s7a.strata.component.SliderState
+import dev.s7a.strata.component.Stack
+import dev.s7a.strata.layout.Alignment
+import dev.s7a.strata.modifier.Modifier
+import dev.s7a.strata.modifier.background
+import dev.s7a.strata.modifier.size
+import dev.s7a.strata.render.ArgbColor
+import dev.s7a.strata.screen.ScreenDefinition
+
+/** Builds the complete minimal Slider showcase frame. */
+internal fun createSliderShowcaseScreenDefinition(): ScreenDefinition {
+    val state = SliderState(initialValue = 0.65)
+    return ScreenDefinition("Slider showcase") {
+        Stack(
+            modifier = Modifier.Empty.size(166, 36).background(ArgbColor(0xFF000000.toInt())),
+            contentAlignment = Alignment.Center,
+        ) {
+            Slider("Volume", state)
+        }
+    }
+}
+```
+
+### Modifiers
+
+Sizing and placement modifiers compose around `Slider`; caller-owned range state and typed value-change actions remain reusable across volume, brightness, machine power, and other numeric domains.
+
+### Parent scope
+
+`Slider` is a leaf extension on the active `UiScope`; `SliderState` owns normalization and quantization while the active profile owns rendering.
+
+<details><summary>Component tree</summary>
+
+The tree mirrors the complete dedicated definition, including the featured component, its minimum parent layout, and the children used to demonstrate its responsibility.
+
+```text
+`- Stack [Size(width=166, height=36), Background(color=0xFF000000), StackContentAlignment(alignment=Center)]
+  `- Slider [Size(width=150, height=20)]
+```
+
+</details>
+
 <a id="tab"></a>
 
 ## Tab
@@ -707,21 +884,22 @@ The tree mirrors the complete dedicated definition, including the featured compo
 
 </details>
 
-<a id="scroll"></a>
+<a id="scroll-area"></a>
 
-## Scroll
+## ScrollArea
 
-Scroll reproduces the verified Minecraft 26.2 menu-list background, clipped centered content, separators, tiled scrollbar sprites, wheel rate, and proportional thumb movement in native draw order.
+ScrollArea reproduces the verified Minecraft menu-list background, clipping, separators, and wheel behavior without owning or positioning a scrollbar.
 
-This 160 by 64 image is the complete frame of the compiled dedicated `ScreenDefinition`, after exact Fabric/headless ARGB comparison recorded in [the verification receipt](components/minecraft-26.2-parity.properties); it is not cropped from a larger screen.
+This 120 by 48 image is the complete frame of the compiled dedicated `ScreenDefinition`, after exact Fabric/headless ARGB comparison recorded in [the verification receipt](components/minecraft-26.2-parity.properties); it is not cropped from a larger screen.
 
-![Scroll headless showcase](components/scroll.png)
+![ScrollArea headless showcase](components/scroll-area.png)
 
 ### Compiled example
 
 ```kotlin
 import dev.s7a.strata.component.Column
-import dev.s7a.strata.component.Scroll
+import dev.s7a.strata.component.ScrollArea
+import dev.s7a.strata.component.ScrollState
 import dev.s7a.strata.component.Text
 import dev.s7a.strata.layout.HorizontalAlignment
 import dev.s7a.strata.modifier.Modifier
@@ -730,52 +908,233 @@ import dev.s7a.strata.modifier.size
 import dev.s7a.strata.render.ArgbColor
 import dev.s7a.strata.screen.ScreenDefinition
 
-/**
- * Builds a self-contained Scroll showcase whose content is taller than its complete captured viewport.
- *
- * @return one-shot definition demonstrating clipping, separators, and a visible Minecraft-profile scrollbar.
- */
-internal fun createScrollShowcaseScreenDefinition(): ScreenDefinition =
-    ScreenDefinition("Scroll showcase") {
-        Scroll(
-            modifier =
-                Modifier.Empty
-                    .size(160, 64)
-                    .background(ArgbColor(0xFF000000.toInt())),
+/** Builds a ScrollArea showcase without a scrollbar. */
+internal fun createScrollAreaShowcaseScreenDefinition(): ScreenDefinition {
+    val state = ScrollState()
+    return ScreenDefinition("ScrollArea showcase") {
+        ScrollArea(
+            state = state,
+            modifier = Modifier.Empty.size(120, 48).background(ArgbColor(0xFF000000.toInt())),
         ) {
-            Column(
-                modifier = Modifier.Empty.size(132, 108),
-                horizontalAlignment = HorizontalAlignment.Center,
-            ) {
-                repeat(6) { index ->
-                    Text("Entry " + (index + 1))
-                }
+            Column(modifier = Modifier.Empty.size(120, 72), horizontalAlignment = HorizontalAlignment.Center) {
+                repeat(4) { index -> Text("Entry ${index + 1}") }
             }
         }
     }
+}
 ```
 
 ### Modifiers
 
-Ordinary sizing and placement modifiers define the viewport. Pointer action modifiers compose outside the component while native wheel and scrollbar motion remain retained Scroll behavior.
+Ordinary sizing and placement modifiers define only the clipped viewport. The shared `ScrollState` links optional external controls without forcing a scrollbar into the component tree.
 
 ### Parent scope
 
-`Scroll` is a member extension on the active `UiScope`. Its callback emits exactly one content root, remains callback-lifetime and owner-thread confined, and may use the same implicit Minecraft component DSL.
+`ScrollArea` evaluates a callback-lifetime `UiScope` that emits exactly one content root; the caller owns the linked state and may omit a scrollbar.
 
 <details><summary>Component tree</summary>
 
 The tree mirrors the complete dedicated definition, including the featured component, its minimum parent layout, and the children used to demonstrate its responsibility.
 
 ```text
-`- Scroll [Size(width=160, height=64), Background(color=0xFF000000), ScrollRate(value=9)]
-  `- Column [Size(width=132, height=108), ColumnDefaultAlignment(alignment=Center)]
-    |- Text
-    |- Text
+`- ScrollArea [Size(width=120, height=48), Background(color=0xFF000000), ScrollRate(value=9)]
+  `- Column [Size(width=120, height=72), ColumnDefaultAlignment(alignment=Center)]
     |- Text
     |- Text
     |- Text
     `- Text
+```
+
+</details>
+
+<a id="scrollbar"></a>
+
+## Scrollbar
+
+Scrollbar reproduces the verified tiled track and proportional thumb while remaining an independently placed observer of shared scroll metrics.
+
+This 94 by 48 image is the complete frame of the compiled dedicated `ScreenDefinition`, after exact Fabric/headless ARGB comparison recorded in [the verification receipt](components/minecraft-26.2-parity.properties); it is not cropped from a larger screen.
+
+![Scrollbar headless showcase](components/scrollbar.png)
+
+### Compiled example
+
+```kotlin
+import dev.s7a.strata.component.Column
+import dev.s7a.strata.component.Row
+import dev.s7a.strata.component.ScrollArea
+import dev.s7a.strata.component.ScrollState
+import dev.s7a.strata.component.Scrollbar
+import dev.s7a.strata.component.Text
+import dev.s7a.strata.modifier.Modifier
+import dev.s7a.strata.modifier.background
+import dev.s7a.strata.modifier.size
+import dev.s7a.strata.render.ArgbColor
+import dev.s7a.strata.screen.ScreenDefinition
+
+/** Builds a Scrollbar with the smallest linked viewport needed to establish its metrics. */
+internal fun createScrollbarShowcaseScreenDefinition(): ScreenDefinition {
+    val state = ScrollState(initialOffset = 18.0)
+    return ScreenDefinition("Scrollbar showcase") {
+        Row(
+            spacing = 8,
+            modifier = Modifier.Empty.size(94, 48).background(ArgbColor(0xFF000000.toInt())),
+        ) {
+            ScrollArea(state = state, modifier = Modifier.Empty.size(80, 48)) {
+                Column(modifier = Modifier.Empty.size(80, 96)) {
+                    repeat(6) { index -> Text("Row ${index + 1}") }
+                }
+            }
+            Scrollbar(state = state, modifier = Modifier.Empty.size(6, 48))
+        }
+    }
+}
+```
+
+### Modifiers
+
+Sizing and parent placement modifiers position `Scrollbar` independently from its viewport; sharing `ScrollState` is the only link required.
+
+### Parent scope
+
+`Scrollbar` is an independent leaf in any surrounding layout. It observes caller-owned `ScrollState` and releases that observation when its retained node is disposed.
+
+<details><summary>Component tree</summary>
+
+The tree mirrors the complete dedicated definition, including the featured component, its minimum parent layout, and the children used to demonstrate its responsibility.
+
+```text
+`- Row [Size(width=94, height=48), Background(color=0xFF000000), Spacing(value=8)]
+  |- ScrollArea [Size(width=80, height=48), ScrollRate(value=9)]
+  | `- Column [Size(width=80, height=96)]
+  |   |- Text
+  |   |- Text
+  |   |- Text
+  |   |- Text
+  |   |- Text
+  |   `- Text
+  `- Scrollbar [Size(width=6, height=48)]
+```
+
+</details>
+
+<a id="virtual-list"></a>
+
+## VirtualList
+
+VirtualList retains only visible fixed-height rows plus bounded overscan, supports prepended and appended loading, and can jump by index or stable key.
+
+This 120 by 48 image is the complete frame of the compiled dedicated `ScreenDefinition`, after exact Fabric/headless ARGB comparison recorded in [the verification receipt](components/minecraft-26.2-parity.properties); it is not cropped from a larger screen.
+
+![VirtualList headless showcase](components/virtual-list.png)
+
+### Compiled example
+
+```kotlin
+import dev.s7a.strata.component.Stack
+import dev.s7a.strata.component.Text
+import dev.s7a.strata.component.VirtualList
+import dev.s7a.strata.component.VirtualListState
+import dev.s7a.strata.geometry.IntSize
+import dev.s7a.strata.layout.Alignment
+import dev.s7a.strata.modifier.Modifier
+import dev.s7a.strata.modifier.background
+import dev.s7a.strata.modifier.size
+import dev.s7a.strata.render.ArgbColor
+import dev.s7a.strata.screen.ScreenDefinition
+
+/** Builds a finite VirtualList while materializing only visible rows. */
+internal fun createVirtualListShowcaseScreenDefinition(): ScreenDefinition {
+    val items = (1..100).map { index -> "Log entry $index" }
+    val state = VirtualListState<String>()
+    return ScreenDefinition("VirtualList showcase") {
+        VirtualList(items, { item -> item }, state, IntSize(120, 48), rowHeight = 16) { item ->
+            Stack(
+                modifier = Modifier.Empty.size(120, 16).background(ArgbColor(0xFF202020.toInt())),
+                contentAlignment = Alignment.CenterStart,
+            ) {
+                Text(item)
+            }
+        }
+    }
+}
+```
+
+### Modifiers
+
+Sizing is expressed by `viewportSize`; modifier actions receive leading and trailing load requests while caller-owned state supports index, key, and boundary navigation.
+
+### Parent scope
+
+`VirtualList` evaluates row callbacks only for visible rows plus bounded overscan; stable keys preserve retained identity while the caller owns source and navigation state.
+
+<details><summary>Component tree</summary>
+
+The tree mirrors the complete dedicated definition, including the featured component, its minimum parent layout, and the children used to demonstrate its responsibility.
+
+```text
+`- VirtualList [Size(width=120, height=48)]
+```
+
+</details>
+
+<a id="selection-list"></a>
+
+## SelectionList
+
+SelectionList adds generic caller-owned selection and typed selection-change actions to VirtualList without encoding Social, inventory, advancement, or Mod-specific rows.
+
+This 120 by 48 image is the complete frame of the compiled dedicated `ScreenDefinition`, after exact Fabric/headless ARGB comparison recorded in [the verification receipt](components/minecraft-26.2-parity.properties); it is not cropped from a larger screen.
+
+![SelectionList headless showcase](components/selection-list.png)
+
+### Compiled example
+
+```kotlin
+import dev.s7a.strata.component.SelectionList
+import dev.s7a.strata.component.SelectionListState
+import dev.s7a.strata.component.Stack
+import dev.s7a.strata.component.Text
+import dev.s7a.strata.geometry.IntSize
+import dev.s7a.strata.layout.Alignment
+import dev.s7a.strata.modifier.Modifier
+import dev.s7a.strata.modifier.background
+import dev.s7a.strata.modifier.size
+import dev.s7a.strata.render.ArgbColor
+import dev.s7a.strata.screen.ScreenDefinition
+
+/** Builds a selected-row SelectionList showcase. */
+internal fun createSelectionListShowcaseScreenDefinition(): ScreenDefinition {
+    val items = listOf("Friends", "Blocked", "Invites", "Recent")
+    val state = SelectionListState<String>(initialSelection = "Blocked")
+    return ScreenDefinition("SelectionList showcase") {
+        SelectionList(items, { item -> item }, state, IntSize(120, 48), rowHeight = 16) { item ->
+            val color = if (state.selectedKey == item) ArgbColor(0xFF4A4A4A.toInt()) else ArgbColor(0xFF202020.toInt())
+            Stack(
+                modifier = Modifier.Empty.size(120, 16).background(color),
+                contentAlignment = Alignment.CenterStart,
+            ) {
+                Text(item)
+            }
+        }
+    }
+}
+```
+
+### Modifiers
+
+Viewport behavior composes with typed selection actions and caller-owned selection state; row visuals remain application composition rather than a screen-specific built-in.
+
+### Parent scope
+
+`SelectionList` wraps visible virtual rows with generic selection semantics and press handling while leaving each row's single content root to the caller.
+
+<details><summary>Component tree</summary>
+
+The tree mirrors the complete dedicated definition, including the featured component, its minimum parent layout, and the children used to demonstrate its responsibility.
+
+```text
+`- SelectionList [Size(width=120, height=48)]
 ```
 
 </details>
@@ -966,6 +1325,116 @@ The tree mirrors the complete dedicated definition, including the featured compo
 
 </details>
 
+<a id="loading-indicator"></a>
+
+## LoadingIndicator
+
+LoadingIndicator reproduces the Minecraft 26.2 friends-loading sprite as three vertical 5 by 2 cells with the native six-tick frame duration; older runtimes use the same pack-overridable path before their compatibility fallback.
+
+This 32 by 24 image is the complete frame of the compiled dedicated `ScreenDefinition`, after exact Fabric/headless ARGB comparison recorded in [the verification receipt](components/minecraft-26.2-parity.properties); it is not cropped from a larger screen.
+
+![LoadingIndicator headless showcase](components/loading-indicator.png)
+
+### Compiled example
+
+```kotlin
+import dev.s7a.strata.component.LoadingIndicator
+import dev.s7a.strata.component.Stack
+import dev.s7a.strata.layout.Alignment
+import dev.s7a.strata.modifier.Modifier
+import dev.s7a.strata.modifier.background
+import dev.s7a.strata.modifier.size
+import dev.s7a.strata.render.ArgbColor
+import dev.s7a.strata.screen.ScreenDefinition
+
+/**
+ * Builds the complete minimal LoadingIndicator showcase frame.
+ */
+internal fun createLoadingIndicatorShowcaseScreenDefinition(): ScreenDefinition =
+    ScreenDefinition("Loading indicator") {
+        Stack(
+            modifier = Modifier.Empty.size(32, 24).background(ArgbColor(0xFF000000.toInt())),
+            contentAlignment = Alignment.Center,
+        ) {
+            LoadingIndicator()
+        }
+    }
+```
+
+### Modifiers
+
+Sizing and placement modifiers compose around `LoadingIndicator`; explicit host frame time advances its discrete profile animation without application-owned timer state.
+
+### Parent scope
+
+`LoadingIndicator` is a top-level extension on the active `UiScope`. The Fabric host supplies one timestamp per native render pass and the retained node invalidates only when its discrete animation cell changes.
+
+<details><summary>Component tree</summary>
+
+The tree mirrors the complete dedicated definition, including the featured component, its minimum parent layout, and the children used to demonstrate its responsibility.
+
+```text
+`- Stack [Size(width=32, height=24), Background(color=0xFF000000), StackContentAlignment(alignment=Center)]
+  `- LoadingIndicator [Size(width=10, height=4)]
+```
+
+</details>
+
+<a id="progress-bar"></a>
+
+## ProgressBar
+
+ProgressBar uses the reusable bundle progress border, partial fill, and completed fill with their native two-pixel nine-slice borders and exposes read-only progress semantics.
+
+This 116 by 28 image is the complete frame of the compiled dedicated `ScreenDefinition`, after exact Fabric/headless ARGB comparison recorded in [the verification receipt](components/minecraft-26.2-parity.properties); it is not cropped from a larger screen.
+
+![ProgressBar headless showcase](components/progress-bar.png)
+
+### Compiled example
+
+```kotlin
+import dev.s7a.strata.component.ProgressBar
+import dev.s7a.strata.component.Stack
+import dev.s7a.strata.layout.Alignment
+import dev.s7a.strata.modifier.Modifier
+import dev.s7a.strata.modifier.background
+import dev.s7a.strata.modifier.size
+import dev.s7a.strata.render.ArgbColor
+import dev.s7a.strata.screen.ScreenDefinition
+
+/**
+ * Builds the complete minimal ProgressBar showcase frame.
+ */
+internal fun createProgressBarShowcaseScreenDefinition(): ScreenDefinition =
+    ScreenDefinition("Progress bar") {
+        Stack(
+            modifier = Modifier.Empty.size(116, 28).background(ArgbColor(0xFF000000.toInt())),
+            contentAlignment = Alignment.Center,
+        ) {
+            ProgressBar(progress = 0.62)
+        }
+    }
+```
+
+### Modifiers
+
+Sizing and placement modifiers compose around `ProgressBar`; its normalized value is immutable component data while the active profile supplies resource-pack-aware fill, completed-fill, and border sprites.
+
+### Parent scope
+
+`ProgressBar` is a top-level extension on the active `UiScope`. The implicit profile resolves the active resource pack before retaining immutable sprite pixels.
+
+<details><summary>Component tree</summary>
+
+The tree mirrors the complete dedicated definition, including the featured component, its minimum parent layout, and the children used to demonstrate its responsibility.
+
+```text
+`- Stack [Size(width=116, height=28), Background(color=0xFF000000), StackContentAlignment(alignment=Center)]
+  `- ProgressBar [Size(width=100, height=12)]
+```
+
+</details>
+
 ## Complete screens
 
 These screens exercise the primitives in real vanilla-shaped and Mod-shaped use cases.
@@ -980,7 +1449,7 @@ Purpose-specific compositions stay in the compiled examples instead of becoming 
 
 ## Social Interactions
 
-A Social Interactions reconstruction composes `Text`, `TextField`, `Scroll`, `PlayerHead`, and ordinary layout primitives without introducing a purpose-specific SocialEntry component.
+A Social Interactions reconstruction composes `Text`, `TextField`, `ScrollArea`, `Scrollbar`, `PlayerHead`, and ordinary layout primitives without introducing a purpose-specific SocialEntry component.
 
 A loaded Fabric GameTest requires exact ARGB equality between the native Minecraft screen, the Strata Fabric screen, and the headless frame before this image is accepted.
 

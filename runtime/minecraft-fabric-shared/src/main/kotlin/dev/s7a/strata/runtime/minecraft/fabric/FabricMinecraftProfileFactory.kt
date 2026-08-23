@@ -60,11 +60,18 @@ public fun extractMinecraftUiProfile(): MinecraftUiProfile {
     val sliderHighlighted = manager.readImage("textures/gui/sprites/widget/slider_highlighted.png", buttonImageSize)
     val sliderHandle = manager.readImage("textures/gui/sprites/widget/slider_handle.png", sliderHandleImageSize)
     val sliderHandleHighlighted = manager.readImage("textures/gui/sprites/widget/slider_handle_highlighted.png", sliderHandleImageSize)
+    val loadingIndicator = manager.readLoadingIndicator()
+    val progressBarBorder =
+        manager.readNineSliceImage("textures/gui/sprites/container/bundle/bundle_progressbar_border.png", IntSize(12, 12), 2)
+    val progressBarFill = manager.readNineSliceImage("textures/gui/sprites/container/bundle/bundle_progressbar_fill.png", IntSize(6, 6), 2)
+    val progressBarFull = manager.readNineSliceImage("textures/gui/sprites/container/bundle/bundle_progressbar_full.png", IntSize(6, 6), 2)
+    val tooltipBackground = manager.readNineSliceImage("textures/gui/sprites/tooltip/background.png", IntSize(100, 100), 9)
+    val tooltipFrame = manager.readNineSliceImage("textures/gui/sprites/tooltip/frame.png", IntSize(100, 100), 10, expectedStretchInner = true)
     val normalTextField = manager.readImage("textures/gui/sprites/widget/text_field.png", IntSize(200, 20))
     val highlightedTextField = manager.readImage("textures/gui/sprites/widget/text_field_highlighted.png", IntSize(200, 20))
-    val normal = manager.readNineSliceImage("textures/gui/sprites/widget/button.png", 3)
-    val highlighted = manager.readNineSliceImage("textures/gui/sprites/widget/button_highlighted.png", 3)
-    val disabled = manager.readNineSliceImage("textures/gui/sprites/widget/button_disabled.png", 1)
+    val normal = manager.readNineSliceImage("textures/gui/sprites/widget/button.png", buttonImageSize, 3)
+    val highlighted = manager.readNineSliceImage("textures/gui/sprites/widget/button_highlighted.png", buttonImageSize, 3)
+    val disabled = manager.readNineSliceImage("textures/gui/sprites/widget/button_disabled.png", buttonImageSize, 1)
     val ascii = manager.readImage("textures/font/ascii.png", IntSize(128, 128))
     validateMinecraftRegularFontContract(ascii) { identifier ->
         manager.readSingleFontDocument(identifier)
@@ -88,6 +95,12 @@ public fun extractMinecraftUiProfile(): MinecraftUiProfile {
         sliderHighlighted(sliderHighlighted)
         sliderHandle(sliderHandle)
         sliderHandleHighlighted(sliderHandleHighlighted)
+        loadingIndicator(loadingIndicator)
+        progressBarBorder(progressBarBorder)
+        progressBarFill(progressBarFill)
+        progressBarFull(progressBarFull)
+        tooltipBackground(tooltipBackground)
+        tooltipFrame(tooltipFrame)
         textFieldNormal(normalTextField)
         textFieldHighlighted(highlightedTextField)
         buttonNormal(normal, 3, NineSliceCenterMode.Tiled)
@@ -103,6 +116,23 @@ private fun ResourceManager.readImage(
     path: String,
     expectedSize: IntSize,
 ): DrawImage = readImage(requiredResource(path), path, expectedSize)
+
+private fun ResourceManager.readLoadingIndicator(): DrawImage {
+    val path = "textures/gui/sprites/friends/loading.png"
+    val resource = getResource(MinecraftResourceLocation.fromNamespaceAndPath("minecraft", path)).orElse(null)
+    return if (resource == null) legacyLoadingIndicator() else readImage(resource, path, loadingIndicatorImageSize)
+}
+
+private fun legacyLoadingIndicator(): DrawImage {
+    val pixels = IntArray(loadingIndicatorImageSize.width * loadingIndicatorImageSize.height)
+    for (frame in 0 until 3) {
+        val row = frame * 2
+        for (dot in 0..frame) {
+            pixels[row * loadingIndicatorImageSize.width + dot * 2] = -1
+        }
+    }
+    return createDrawImage(loadingIndicatorImageSize, pixels)
+}
 
 private fun readImage(
     resource: Resource,
@@ -123,15 +153,17 @@ private fun readImage(
 
 private fun ResourceManager.readNineSliceImage(
     path: String,
+    expectedSize: IntSize,
     expectedBorder: Int,
+    expectedStretchInner: Boolean = false,
 ): DrawImage {
     val resource = requiredResource(path)
-    val image = readImage(resource, path, buttonImageSize)
+    val image = readImage(resource, path, expectedSize)
     val metadata =
         resource.metadata().getSection(GuiMetadataSection.TYPE).orElseThrow {
             IllegalArgumentException("Minecraft button resource $path has no GUI metadata.")
         }
-    validateMinecraftNineSliceScaling(metadata.scaling(), expectedBorder)
+    validateMinecraftNineSliceScaling(metadata.scaling(), expectedSize, expectedBorder, expectedStretchInner)
     return image
 }
 
@@ -196,32 +228,36 @@ private fun ResourceManager.readSingleFontDocument(identifier: MinecraftResource
 }
 
 /**
- * Validates one decoded button scaling value without retaining its resource.
+ * Validates one decoded nine-slice scaling value without retaining its resource.
  *
- * @param scaling typed GUI scaling selected with the button image resource.
- * @param expectedBorder border required by the corresponding vanilla button variant.
- * @throws IllegalArgumentException when the scaling differs from the fixed supported-release button contract.
+ * @param scaling typed GUI scaling selected with the image resource.
+ * @param expectedSize required logical source size.
+ * @param expectedBorder required uniform border.
+ * @param expectedStretchInner whether the metadata must stretch rather than tile its center.
+ * @throws IllegalArgumentException when the scaling differs from the fixed supported-release resource contract.
  */
 @JvmSynthetic
 internal fun validateMinecraftNineSliceScaling(
     scaling: GuiSpriteScaling,
+    expectedSize: IntSize,
     expectedBorder: Int,
+    expectedStretchInner: Boolean,
 ) {
     require(scaling is GuiSpriteScaling.NineSlice) {
-        "Minecraft button metadata must use nine-slice scaling."
+        "Minecraft GUI metadata must use nine-slice scaling."
     }
-    require(scaling.width() == buttonImageSize.width) {
-        "Minecraft button metadata must use a 200 pixel source width."
+    require(scaling.width() == expectedSize.width) {
+        "Minecraft GUI metadata has an unexpected source width."
     }
-    require(scaling.height() == buttonImageSize.height) {
-        "Minecraft button metadata must use a 20 pixel source height."
+    require(scaling.height() == expectedSize.height) {
+        "Minecraft GUI metadata has an unexpected source height."
     }
     val border = scaling.border()
     require(border.left() == expectedBorder && border.top() == expectedBorder && border.right() == expectedBorder && border.bottom() == expectedBorder) {
-        "Minecraft button metadata has an unexpected border."
+        "Minecraft GUI metadata has an unexpected border."
     }
-    require(scaling.stretchInner().not()) {
-        "Minecraft button metadata must keep the center tiled."
+    require(scaling.stretchInner() == expectedStretchInner) {
+        "Minecraft GUI metadata has an unexpected center mode."
     }
 }
 
@@ -253,8 +289,9 @@ internal fun validateMinecraftScrollbarScaling(scaling: GuiSpriteScaling) {
 
 private val buttonImageSize: IntSize = IntSize(200, 20)
 private val scrollbarImageSize: IntSize = IntSize(6, 32)
-private val checkboxImageSize: IntSize = IntSize(17, 17)
+private val checkboxImageSize: IntSize = IntSize(20, 20)
 private val sliderHandleImageSize: IntSize = IntSize(8, 20)
+private val loadingIndicatorImageSize: IntSize = IntSize(5, 6)
 private val printableAsciiRange: IntRange = 0x21..0x7E
 private val transparentMaskPixel: ArgbColor = ArgbColor(0x00FFFFFF)
 private val opaqueMaskPixel: ArgbColor = ArgbColor(-1)

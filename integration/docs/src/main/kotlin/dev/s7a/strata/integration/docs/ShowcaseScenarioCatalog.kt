@@ -140,6 +140,24 @@ internal object ShowcaseScenarioCatalog {
                     ),
             ),
             ComponentScenario(
+                component = DocumentedComponent.Checkbox,
+                source = componentSource("MinecraftCheckboxExample.kt", "checkbox"),
+                viewportMetadata = ShowcaseViewport(IntSize(166, 36), 1),
+                tree = centeredCanvas(IntSize(166, 36), tree(DocumentedComponent.Checkbox, listOf(ShowcaseTreeDetail.Size(150, 20)))),
+            ),
+            ComponentScenario(
+                component = DocumentedComponent.CycleButton,
+                source = componentSource("MinecraftCycleButtonExample.kt", "cycle-button"),
+                viewportMetadata = ShowcaseViewport(IntSize(166, 36), 1),
+                tree = centeredCanvas(IntSize(166, 36), tree(DocumentedComponent.CycleButton, listOf(ShowcaseTreeDetail.Size(150, 20)))),
+            ),
+            ComponentScenario(
+                component = DocumentedComponent.Slider,
+                source = componentSource("MinecraftSliderExample.kt", "slider"),
+                viewportMetadata = ShowcaseViewport(IntSize(166, 36), 1),
+                tree = centeredCanvas(IntSize(166, 36), tree(DocumentedComponent.Slider, listOf(ShowcaseTreeDetail.Size(150, 20)))),
+            ),
+            ComponentScenario(
                 component = DocumentedComponent.Tab,
                 source = componentSource("MinecraftTabExample.kt", "tab"),
                 viewportMetadata = ShowcaseViewport(IntSize(160, 64), 1),
@@ -158,26 +176,62 @@ internal object ShowcaseScenarioCatalog {
                     ),
             ),
             ComponentScenario(
-                component = DocumentedComponent.Scroll,
-                source = componentSource("MinecraftScrollShowcaseExample.kt", "scroll"),
-                viewportMetadata = ShowcaseViewport(IntSize(160, 64), 1),
+                component = DocumentedComponent.ScrollArea,
+                source = componentSource("MinecraftScrollAreaExample.kt", "scroll-area"),
+                viewportMetadata = ShowcaseViewport(IntSize(120, 48), 1),
                 tree =
                     tree(
-                        DocumentedComponent.Scroll,
+                        DocumentedComponent.ScrollArea,
                         listOf(
-                            ShowcaseTreeDetail.Size(160, 64),
+                            ShowcaseTreeDetail.Size(120, 48),
                             ShowcaseTreeDetail.Background(ArgbColor(0xFF000000.toInt())),
                             ShowcaseTreeDetail.ScrollRate(9),
                         ),
                         tree(
                             DocumentedComponent.Column,
                             listOf(
-                                ShowcaseTreeDetail.Size(132, 108),
+                                ShowcaseTreeDetail.Size(120, 72),
                                 ShowcaseTreeDetail.ColumnDefaultAlignment(HorizontalAlignment.Center),
                             ),
-                            *Array(6) { tree(DocumentedComponent.Text, emptyList()) },
+                            *Array(4) { tree(DocumentedComponent.Text, emptyList()) },
                         ),
                     ),
+            ),
+            ComponentScenario(
+                component = DocumentedComponent.Scrollbar,
+                source = componentSource("MinecraftScrollbarExample.kt", "scrollbar"),
+                viewportMetadata = ShowcaseViewport(IntSize(94, 48), 1),
+                tree =
+                    tree(
+                        DocumentedComponent.Row,
+                        listOf(
+                            ShowcaseTreeDetail.Size(94, 48),
+                            ShowcaseTreeDetail.Background(ArgbColor(0xFF000000.toInt())),
+                            ShowcaseTreeDetail.Spacing(8),
+                        ),
+                        tree(
+                            DocumentedComponent.ScrollArea,
+                            listOf(ShowcaseTreeDetail.Size(80, 48), ShowcaseTreeDetail.ScrollRate(9)),
+                            tree(
+                                DocumentedComponent.Column,
+                                listOf(ShowcaseTreeDetail.Size(80, 96)),
+                                *Array(6) { tree(DocumentedComponent.Text, emptyList()) },
+                            ),
+                        ),
+                        tree(DocumentedComponent.Scrollbar, listOf(ShowcaseTreeDetail.Size(6, 48))),
+                    ),
+            ),
+            ComponentScenario(
+                component = DocumentedComponent.VirtualList,
+                source = componentSource("MinecraftVirtualListExample.kt", "virtual-list"),
+                viewportMetadata = ShowcaseViewport(IntSize(120, 48), 1),
+                tree = tree(DocumentedComponent.VirtualList, listOf(ShowcaseTreeDetail.Size(120, 48))),
+            ),
+            ComponentScenario(
+                component = DocumentedComponent.SelectionList,
+                source = componentSource("MinecraftSelectionListExample.kt", "selection-list"),
+                viewportMetadata = ShowcaseViewport(IntSize(120, 48), 1),
+                tree = tree(DocumentedComponent.SelectionList, listOf(ShowcaseTreeDetail.Size(120, 48))),
             ),
             ComponentScenario(
                 component = DocumentedComponent.Image,
@@ -210,6 +264,26 @@ internal object ShowcaseScenarioCatalog {
                     centeredCanvas(
                         IntSize(64, 64),
                         tree(DocumentedComponent.PlayerHead, listOf(ShowcaseTreeDetail.Size(24, 24))),
+                    ),
+            ),
+            ComponentScenario(
+                component = DocumentedComponent.LoadingIndicator,
+                source = componentSource("MinecraftLoadingIndicatorExample.kt", "loading-indicator"),
+                viewportMetadata = ShowcaseViewport(IntSize(32, 24), 1),
+                tree =
+                    centeredCanvas(
+                        IntSize(32, 24),
+                        tree(DocumentedComponent.LoadingIndicator, listOf(ShowcaseTreeDetail.Size(10, 4))),
+                    ),
+            ),
+            ComponentScenario(
+                component = DocumentedComponent.ProgressBar,
+                source = componentSource("MinecraftProgressBarExample.kt", "progress-bar"),
+                viewportMetadata = ShowcaseViewport(IntSize(116, 28), 1),
+                tree =
+                    centeredCanvas(
+                        IntSize(116, 28),
+                        tree(DocumentedComponent.ProgressBar, listOf(ShowcaseTreeDetail.Size(100, 12))),
                     ),
             ),
         )

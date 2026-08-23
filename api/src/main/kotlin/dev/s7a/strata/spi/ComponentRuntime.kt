@@ -32,6 +32,41 @@ import dev.s7a.strata.text.UiText
 @InternalStrataRuntimeApi
 public interface ComponentRuntime {
     /**
+     * Captures an owner-thread evaluator for content constructed after this callback-lifetime runtime closes.
+     *
+     * @return retained evaluator owning the immutable profile snapshot required by deferred content.
+     */
+    public fun retainEvaluator(): ComponentEvaluator
+
+    /**
+     * Adds one profile-backed delayed tooltip behavior.
+     */
+    public fun tooltip(
+        modifier: Modifier,
+        text: UiText,
+        delayMillis: Long,
+    ): Modifier
+
+    /**
+     * Creates one profile-backed determinate progress bar.
+     */
+    public fun progressBar(
+        progress: Double,
+        size: IntSize,
+        modifier: Modifier,
+        key: ElementKey<*>?,
+    ): Element
+
+    /**
+     * Creates one profile-backed discrete loading animation.
+     */
+    public fun loadingIndicator(
+        size: IntSize,
+        modifier: Modifier,
+        key: ElementKey<*>?,
+    ): Element
+
+    /**
      * Creates one profile-backed Checkbox with caller-owned selected state.
      *
      * @param label unresolved visible and semantic label.

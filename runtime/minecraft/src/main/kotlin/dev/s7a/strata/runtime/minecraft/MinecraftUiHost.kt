@@ -5,6 +5,7 @@ import dev.s7a.strata.input.InputResult
 import dev.s7a.strata.input.KeyboardEvent
 import dev.s7a.strata.input.PointerEvent
 import dev.s7a.strata.input.TextInputEvent
+import dev.s7a.strata.runtime.FrameTime
 import dev.s7a.strata.runtime.spi.RuntimeUiFrame
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
 import dev.s7a.strata.text.UiText
@@ -62,6 +63,18 @@ public sealed interface MinecraftUiHost : AutoCloseable {
      * @throws Throwable when the frame pipeline or cleanup fails; the exact first failure remains primary with later distinct failures suppressed.
      */
     public fun frame(viewport: IntSize): RuntimeUiFrame
+
+    /**
+     * Produces one immutable frame with an explicit host-clock timestamp for animated nodes.
+     *
+     * @param viewport non-negative logical viewport.
+     * @param time timestamp from the owning platform clock.
+     * @return immutable core frame snapshot.
+     */
+    public fun frame(
+        viewport: IntSize,
+        time: FrameTime,
+    ): RuntimeUiFrame
 
     /**
      * Dispatches one pointer event through the most recently committed frame.

@@ -46,6 +46,11 @@ internal object MinecraftProfileFixture {
         scrollbarThumb: DrawImage = image(IntSize(6, 32), 0xFF151515.toInt()),
         normalTextField: DrawImage = image(IntSize(200, 20), 0xFF505050.toInt()),
         highlightedTextField: DrawImage = image(IntSize(200, 20), 0xFF606060.toInt()),
+        progressBarBorder: DrawImage = image(IntSize(12, 12), 0xFF515151.toInt()),
+        progressBarFill: DrawImage = image(IntSize(6, 6), 0xFF616161.toInt()),
+        progressBarFull: DrawImage = image(IntSize(6, 6), 0xFF717171.toInt()),
+        tooltipBackground: DrawImage = image(IntSize(100, 100), 0xF0100010.toInt()),
+        tooltipFrame: DrawImage = image(IntSize(100, 100), 0xFF5000FF.toInt()),
         normalBorder: Int = 3,
         normalCenterMode: NineSliceCenterMode = NineSliceCenterMode.Tiled,
         highlightedBorder: Int = 3,
@@ -63,14 +68,20 @@ internal object MinecraftProfileFixture {
             listFooterSeparator(listFooterSeparator)
             scrollbarBackground(scrollbarBackground)
             scrollbarThumb(scrollbarThumb)
-            checkbox(image(IntSize(17, 17), 0xFF191919.toInt()))
-            checkboxHighlighted(image(IntSize(17, 17), 0xFF292929.toInt()))
-            checkboxSelected(image(IntSize(17, 17), 0xFF393939.toInt()))
-            checkboxSelectedHighlighted(image(IntSize(17, 17), 0xFF494949.toInt()))
+            checkbox(image(IntSize(20, 20), 0xFF191919.toInt()))
+            checkboxHighlighted(image(IntSize(20, 20), 0xFF292929.toInt()))
+            checkboxSelected(image(IntSize(20, 20), 0xFF393939.toInt()))
+            checkboxSelectedHighlighted(image(IntSize(20, 20), 0xFF494949.toInt()))
             slider(image(IntSize(200, 20), 0xFF1A1A1A.toInt()))
             sliderHighlighted(image(IntSize(200, 20), 0xFF2A2A2A.toInt()))
             sliderHandle(image(IntSize(8, 20), 0xFF3A3A3A.toInt()))
             sliderHandleHighlighted(image(IntSize(8, 20), 0xFF4A4A4A.toInt()))
+            loadingIndicator(image(IntSize(5, 6), 0xFFFFFFFF.toInt()))
+            progressBarBorder(progressBarBorder)
+            progressBarFill(progressBarFill)
+            progressBarFull(progressBarFull)
+            tooltipBackground(tooltipBackground)
+            tooltipFrame(tooltipFrame)
             textFieldNormal(normalTextField)
             textFieldHighlighted(highlightedTextField)
             for (codePoint in 0x21..0x7E) {

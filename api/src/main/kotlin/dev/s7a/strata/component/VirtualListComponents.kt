@@ -52,14 +52,14 @@ public fun <T : Any, K : Any> UiScope.VirtualList(
     content: UiScope.(T) -> Unit,
 ) {
     checkUsable()
-    val runtime = ComponentRuntimeBridge.currentOrNull()
+    val evaluator = ComponentRuntimeBridge.currentOrNull()?.retainEvaluator()
     val factory: (Any) -> Element = { raw ->
         @Suppress("UNCHECKED_CAST")
         val item = raw as T
-        if (runtime == null) {
+        if (evaluator == null) {
             buildComponentTree { content(item) }
         } else {
-            ComponentRuntimeBridge.evaluate(runtime) { content(item) }
+            evaluator.evaluate { content(item) }
         }
     }
     @Suppress("UNCHECKED_CAST")

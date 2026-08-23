@@ -48,6 +48,21 @@ internal enum class DocumentedComponent(
     Button("Button", "button"),
 
     /**
+     * The caller-owned boolean control identity.
+     */
+    Checkbox("Checkbox", "checkbox"),
+
+    /**
+     * The finite-option cycling control identity.
+     */
+    CycleButton("CycleButton", "cycle-button"),
+
+    /**
+     * The caller-owned numeric range control identity.
+     */
+    Slider("Slider", "slider"),
+
+    /**
      * The externally selected tab component identity.
      */
     Tab("Tab", "tab"),
@@ -55,7 +70,22 @@ internal enum class DocumentedComponent(
     /**
      * The menu-list scroll viewport component identity.
      */
-    Scroll("Scroll", "scroll"),
+    ScrollArea("ScrollArea", "scroll-area"),
+
+    /**
+     * The independently placed linked scrollbar identity.
+     */
+    Scrollbar("Scrollbar", "scrollbar"),
+
+    /**
+     * The visible-row-only finite or incrementally loaded list identity.
+     */
+    VirtualList("VirtualList", "virtual-list"),
+
+    /**
+     * The caller-selected virtual list identity.
+     */
+    SelectionList("SelectionList", "selection-list"),
 
     /**
      * The immutable nearest-sampled image component identity.
@@ -71,6 +101,17 @@ internal enum class DocumentedComponent(
      * The reusable layered player-head component identity.
      */
     PlayerHead("PlayerHead", "player-head"),
+
+    /**
+     * The discrete profile-backed loading indicator identity.
+     */
+    LoadingIndicator("LoadingIndicator", "loading-indicator"),
+
+    /**
+     * The determinate profile-backed progress bar identity.
+     */
+    ProgressBar("ProgressBar", "progress-bar"),
+
     ;
 
     /**

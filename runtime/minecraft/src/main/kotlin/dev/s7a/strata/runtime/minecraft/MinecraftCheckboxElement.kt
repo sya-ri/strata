@@ -97,7 +97,7 @@ private class MinecraftCheckboxElement private constructor(
         ): IntSize {
             check(scope.childCount == 0) { "Minecraft Checkbox cannot have children." }
             val size = IntSize(width, BOX_SIZE)
-            require(constraints.isSatisfiedBy(size)) { "Minecraft Checkbox constraints must contain its requested width by 17." }
+            require(constraints.isSatisfiedBy(size)) { "Minecraft Checkbox constraints must contain its requested width by 20." }
             return size
         }
 
@@ -227,17 +227,17 @@ private class MinecraftCheckboxElement private constructor(
     }
 
     companion object {
-        private const val BOX_SIZE = 17
+        private const val BOX_SIZE = 20
         private const val SPACING = 4
         private val TYPE: ElementType<MinecraftCheckboxElement, Node> =
             ElementType(
                 elementClass = MinecraftCheckboxElement::class,
                 nodeClass = Node::class,
                 validateLocal = { element ->
-                    require(element.normal.size == IntSize(BOX_SIZE, BOX_SIZE)) { "Minecraft Checkbox sprites must be 17 by 17 pixels." }
-                    require(element.highlighted.size == IntSize(BOX_SIZE, BOX_SIZE)) { "Minecraft Checkbox sprites must be 17 by 17 pixels." }
-                    require(element.selected.size == IntSize(BOX_SIZE, BOX_SIZE)) { "Minecraft Checkbox sprites must be 17 by 17 pixels." }
-                    require(element.selectedHighlighted.size == IntSize(BOX_SIZE, BOX_SIZE)) { "Minecraft Checkbox sprites must be 17 by 17 pixels." }
+                    require(element.normal.size == IntSize(BOX_SIZE, BOX_SIZE)) { "Minecraft Checkbox sprites must be 20 by 20 pixels." }
+                    require(element.highlighted.size == IntSize(BOX_SIZE, BOX_SIZE)) { "Minecraft Checkbox sprites must be 20 by 20 pixels." }
+                    require(element.selected.size == IntSize(BOX_SIZE, BOX_SIZE)) { "Minecraft Checkbox sprites must be 20 by 20 pixels." }
+                    require(element.selectedHighlighted.size == IntSize(BOX_SIZE, BOX_SIZE)) { "Minecraft Checkbox sprites must be 20 by 20 pixels." }
                     require(BOX_SIZE + SPACING + element.normalText.size.width <= element.width) { "Minecraft Checkbox label must fit its width." }
                     require(element.children.isEmpty()) { "Minecraft Checkbox cannot have children." }
                 },

@@ -38,7 +38,7 @@ ${primitiveBoundary(spec.screen)}
 
     private fun summary(screen: DocumentedScreen): String =
         when (screen) {
-            DocumentedScreen.SocialInteractions -> "A Social Interactions reconstruction composes `Text`, `TextField`, `Scroll`, `PlayerHead`, and ordinary layout primitives without introducing a purpose-specific SocialEntry component."
+            DocumentedScreen.SocialInteractions -> "A Social Interactions reconstruction composes `Text`, `TextField`, `ScrollArea`, `Scrollbar`, `PlayerHead`, and ordinary layout primitives without introducing a purpose-specific SocialEntry component."
             DocumentedScreen.SynchronizedInventory -> "A loaded multiplayer container screen binds its lower grid to the real player inventory and can bind the upper grid to chest, ender-chest, furnace, or custom server-menu storage."
             DocumentedScreen.IndustrialController -> "A resource-pack-aware Mod controller composes a public custom image, Minecraft text, buttons, and layout primitives into an energy-machine interface."
             DocumentedScreen.PowerMilestones -> "An advancement-inspired Mod progression screen composes active vanilla advancement assets with an application-owned downstream graph component."

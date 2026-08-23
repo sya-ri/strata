@@ -53,6 +53,7 @@ public abstract interface class dev/s7a/strata/runtime/minecraft/MinecraftUiHost
 	public abstract fun dispatchPointer (Ldev/s7a/strata/input/PointerEvent;)Ldev/s7a/strata/input/InputResult;
 	public abstract fun dispatchTextInput (Ldev/s7a/strata/input/TextInputEvent;)Ldev/s7a/strata/input/InputResult;
 	public abstract fun frame (Ldev/s7a/strata/geometry/IntSize;)Ldev/s7a/strata/runtime/spi/RuntimeUiFrame;
+	public abstract fun frame (Ldev/s7a/strata/geometry/IntSize;Ldev/s7a/strata/runtime/FrameTime;)Ldev/s7a/strata/runtime/spi/RuntimeUiFrame;
 	public abstract fun getPausesGame ()Z
 	public abstract fun getTitle ()Ldev/s7a/strata/text/UiText;
 }
@@ -80,8 +81,12 @@ public abstract interface class dev/s7a/strata/runtime/minecraft/MinecraftUiProf
 	public abstract fun listBackground (Ldev/s7a/strata/render/DrawImage;)V
 	public abstract fun listFooterSeparator (Ldev/s7a/strata/render/DrawImage;)V
 	public abstract fun listHeaderSeparator (Ldev/s7a/strata/render/DrawImage;)V
+	public abstract fun loadingIndicator (Ldev/s7a/strata/render/DrawImage;)V
 	public abstract fun menuBackground (Ldev/s7a/strata/render/DrawImage;)V
 	public abstract fun printableAsciiGlyph (ILdev/s7a/strata/render/DrawImage;)V
+	public abstract fun progressBarBorder (Ldev/s7a/strata/render/DrawImage;)V
+	public abstract fun progressBarFill (Ldev/s7a/strata/render/DrawImage;)V
+	public abstract fun progressBarFull (Ldev/s7a/strata/render/DrawImage;)V
 	public abstract fun scrollbarBackground (Ldev/s7a/strata/render/DrawImage;)V
 	public abstract fun scrollbarThumb (Ldev/s7a/strata/render/DrawImage;)V
 	public abstract fun slider (Ldev/s7a/strata/render/DrawImage;)V
@@ -92,5 +97,7 @@ public abstract interface class dev/s7a/strata/runtime/minecraft/MinecraftUiProf
 	public abstract fun slotHighlightFront (Ldev/s7a/strata/render/DrawImage;)V
 	public abstract fun textFieldHighlighted (Ldev/s7a/strata/render/DrawImage;)V
 	public abstract fun textFieldNormal (Ldev/s7a/strata/render/DrawImage;)V
+	public abstract fun tooltipBackground (Ldev/s7a/strata/render/DrawImage;)V
+	public abstract fun tooltipFrame (Ldev/s7a/strata/render/DrawImage;)V
 }
 

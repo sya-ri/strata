@@ -9,6 +9,7 @@ import dev.s7a.strata.input.InputResult
 import dev.s7a.strata.input.KeyboardEvent
 import dev.s7a.strata.input.PointerEvent
 import dev.s7a.strata.input.TextInputEvent
+import dev.s7a.strata.runtime.FrameTime
 import dev.s7a.strata.runtime.UiFrame
 import dev.s7a.strata.runtime.UiSession
 import dev.s7a.strata.runtime.render.DrawCommand
@@ -41,6 +42,7 @@ public fun createRuntimeUiSession(
 private object RuntimeUiSessionImplementation {
     fun create(content: () -> Element): RuntimeUiSession = RuntimeUiSessionBridge.create(content)
 
+    @Suppress("TooManyFunctions") // This narrow bridge implements the complete lifecycle, timed frame, input, cache, and cleanup protocol.
     private class RuntimeUiSessionBridge private constructor(
         content: () -> Element,
     ) : RuntimeUiSession {
@@ -59,6 +61,18 @@ private object RuntimeUiSessionImplementation {
 
         override fun frame(constraints: Constraints): RuntimeUiFrame {
             val frame = cachedOperation { session.frame(constraints) }
+            return snapshot(frame)
+        }
+
+        override fun frame(
+            constraints: Constraints,
+            time: FrameTime,
+        ): RuntimeUiFrame {
+            val frame = cachedOperation { session.frame(constraints, time) }
+            return snapshot(frame)
+        }
+
+        private fun snapshot(frame: UiFrame): RuntimeUiFrame {
             val retainedSnapshot = cachedSnapshot
             if (cachedSourceFrame === frame && retainedSnapshot != null) {
                 return retainedSnapshot

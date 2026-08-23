@@ -27,11 +27,11 @@ internal class RuntimeUiSessionBridgeApiContractTest {
     fun frameAndSessionExposeOnlyTheirReadOnlyContracts() {
         assertInterfaceSurface(
             RuntimeUiFrame::class.java,
-            setOf("getSize", "getDrawCommands", "getSemantics"),
+            listOf("getSize", "getDrawCommands", "getSemantics"),
         )
         assertInterfaceSurface(
             RuntimeUiSession::class.java,
-            setOf("attach", "detach", "frame", "dispatchPointer", "dispatchKeyboard", "dispatchTextInput", "close"),
+            listOf("attach", "detach", "frame", "frame", "dispatchPointer", "dispatchKeyboard", "dispatchTextInput", "close"),
         )
     }
 
@@ -90,7 +90,7 @@ internal class RuntimeUiSessionBridgeApiContractTest {
 
     private fun assertInterfaceSurface(
         type: Class<*>,
-        expectedMethods: Set<String>,
+        expectedMethods: List<String>,
     ) {
         assertTrue(type.isSealed)
         assertTrue(type.isInterface)
@@ -99,7 +99,7 @@ internal class RuntimeUiSessionBridgeApiContractTest {
         assertTrue(type.declaredClasses.isEmpty())
         val methods = type.declaredMethods
         assertEquals(expectedMethods.size, methods.size)
-        assertEquals(expectedMethods, methods.map { method -> method.name }.toSet())
+        assertEquals(expectedMethods.sorted(), methods.map { method -> method.name }.sorted())
         methods.forEach { method ->
             assertTrue(Modifier.isPublic(method.modifiers))
             assertTrue(Modifier.isAbstract(method.modifiers))
@@ -121,13 +121,19 @@ internal class RuntimeUiSessionBridgeApiContractTest {
             val attach = byName.getValue("attach")
             val close = byName.getValue("close")
             val detach = byName.getValue("detach")
-            val frame = byName.getValue("frame")
+            val frames = methods.groupBy { method -> method.name }.getValue("frame")
             assertEquals(Void.TYPE, attach.returnType)
             assertEquals(0, attach.parameterCount)
             assertEquals(Void.TYPE, detach.returnType)
             assertEquals(0, detach.parameterCount)
-            assertEquals(RuntimeUiFrame::class.java, frame.returnType)
-            assertEquals(listOf(Constraints::class.java), frame.parameterTypes.toList())
+            assertTrue(frames.all { method -> method.returnType == RuntimeUiFrame::class.java })
+            assertEquals(
+                setOf(
+                    listOf(Constraints::class.java),
+                    listOf(Constraints::class.java, FrameTime::class.java),
+                ),
+                frames.map { method -> method.parameterTypes.toList() }.toSet(),
+            )
             mapOf(
                 "dispatchKeyboard" to KeyboardEvent::class.java,
                 "dispatchPointer" to PointerEvent::class.java,

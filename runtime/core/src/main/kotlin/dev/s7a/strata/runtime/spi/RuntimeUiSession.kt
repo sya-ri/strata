@@ -5,6 +5,7 @@ import dev.s7a.strata.input.InputResult
 import dev.s7a.strata.input.KeyboardEvent
 import dev.s7a.strata.input.PointerEvent
 import dev.s7a.strata.input.TextInputEvent
+import dev.s7a.strata.runtime.FrameTime
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
 
 /**
@@ -59,6 +60,20 @@ public sealed interface RuntimeUiSession : AutoCloseable {
      * @throws Throwable when content, reconciliation, measurement, layout, paint, semantics, or cleanup fails; the first failure remains primary with later distinct failures suppressed.
      */
     public fun frame(constraints: Constraints): RuntimeUiFrame
+
+    /**
+     * Produces one immutable frame after delivering an explicit monotonic timestamp to time-aware nodes.
+     *
+     * Equal timestamps are legal, and nodes invalidate output only when their discrete presentation changes.
+     *
+     * @param constraints root measurement constraints.
+     * @param time timestamp from the owning platform clock.
+     * @return immutable frame snapshot, potentially the previous instance when no output changed.
+     */
+    public fun frame(
+        constraints: Constraints,
+        time: FrameTime,
+    ): RuntimeUiFrame
 
     /**
      * Dispatches one pointer event synchronously through the most recently committed attached tree on the owner thread.

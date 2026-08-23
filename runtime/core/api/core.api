@@ -125,6 +125,7 @@ public abstract interface class dev/s7a/strata/runtime/spi/RuntimeUiSession : ja
 	public abstract fun dispatchPointer (Ldev/s7a/strata/input/PointerEvent;)Ldev/s7a/strata/input/InputResult;
 	public abstract fun dispatchTextInput (Ldev/s7a/strata/input/TextInputEvent;)Ldev/s7a/strata/input/InputResult;
 	public abstract fun frame (Ldev/s7a/strata/geometry/Constraints;)Ldev/s7a/strata/runtime/spi/RuntimeUiFrame;
+	public abstract fun frame (Ldev/s7a/strata/geometry/Constraints;Ldev/s7a/strata/runtime/FrameTime;)Ldev/s7a/strata/runtime/spi/RuntimeUiFrame;
 }
 
 public final class dev/s7a/strata/runtime/spi/RuntimeUiSessionFactory {

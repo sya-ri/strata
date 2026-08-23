@@ -22,8 +22,10 @@ import dev.s7a.strata.node.OverlayPaintNode
 import dev.s7a.strata.node.PaintNode
 import dev.s7a.strata.node.PointerHoverNode
 import dev.s7a.strata.node.PointerInputNode
+import dev.s7a.strata.node.RootOverlayPaintNode
 import dev.s7a.strata.render.ArgbColor
 import dev.s7a.strata.render.PaintScope
+import dev.s7a.strata.render.RootOverlayPaintScope
 import dev.s7a.strata.runtime.render.DrawCommand
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
@@ -47,11 +49,13 @@ internal class PaintOrderPipelineTest {
                 fill(IntRect(-1, -1, 5, 5), CONTENT),
                 DrawCommand.PopClip,
                 fill(IntRect(0, 0, 1, 1), OVERLAY),
+                fill(IntRect(2, 2, 4, 4), ROOT_OVERLAY),
             ),
             tree.paint(),
         )
         assertEquals(1, element.node.paintCalls)
         assertEquals(1, element.node.overlayCalls)
+        assertEquals(1, element.node.rootOverlayCalls)
         assertEquals(
             InputResult.Ignored,
             tree.dispatchPointer(PointerEvent.Press(IntOffset(4, 4), PointerButton.Primary)),
@@ -69,11 +73,13 @@ internal class PaintOrderPipelineTest {
         tree.paint()
         assertEquals(1, element.node.paintCalls)
         assertEquals(1, element.node.overlayCalls)
+        assertEquals(1, element.node.rootOverlayCalls)
 
         element.node.invalidatePaint()
         tree.paint()
         assertEquals(2, element.node.paintCalls)
         assertEquals(2, element.node.overlayCalls)
+        assertEquals(2, element.node.rootOverlayCalls)
         tree.close()
     }
 
@@ -112,9 +118,11 @@ internal class PaintOrderPipelineTest {
         LayoutNode,
         PaintNode,
         ClipChildrenNode,
-        OverlayPaintNode {
+        OverlayPaintNode,
+        RootOverlayPaintNode {
         var paintCalls: Int = 0
         var overlayCalls: Int = 0
+        var rootOverlayCalls: Int = 0
 
         override fun measure(
             scope: MeasureScope,
@@ -136,6 +144,13 @@ internal class PaintOrderPipelineTest {
         override fun paintOverlay(scope: PaintScope) {
             overlayCalls += 1
             scope.fillRectangle(IntRect(0, 0, 1, 1), OVERLAY)
+        }
+
+        override fun paintRootOverlay(scope: RootOverlayPaintScope) {
+            rootOverlayCalls += 1
+            assertEquals(IntRect(0, 0, 4, 4), scope.anchorBounds)
+            assertEquals(IntSize(4, 4), scope.size)
+            scope.fillRectangle(IntRect(2, 2, 4, 4), ROOT_OVERLAY)
         }
 
         fun invalidatePaint() {
@@ -203,5 +218,6 @@ internal class PaintOrderPipelineTest {
         val BACKGROUND: ArgbColor = ArgbColor(0xFF0000FF.toInt())
         val CONTENT: ArgbColor = ArgbColor(0xFFFF0000.toInt())
         val OVERLAY: ArgbColor = ArgbColor(0xFF00FF00.toInt())
+        val ROOT_OVERLAY: ArgbColor = ArgbColor(0xFFFFFF00.toInt())
     }
 }

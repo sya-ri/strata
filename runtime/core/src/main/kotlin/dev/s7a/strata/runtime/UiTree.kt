@@ -67,6 +67,17 @@ public class UiTree : AutoCloseable {
     }
 
     /**
+     * Delivers one explicit host timestamp to retained time-aware nodes.
+     *
+     * @param time timestamp from the owning host clock.
+     */
+    internal fun advanceFrame(time: FrameTime) {
+        pipelineOperation {
+            root?.let { retainedRoot -> pipeline.advanceFrame(retainedRoot, time) }
+        }
+    }
+
+    /**
      * Reconciles a complete immutable element description.
      *
      * Validation visits the complete description and runs each element's local validation hook.

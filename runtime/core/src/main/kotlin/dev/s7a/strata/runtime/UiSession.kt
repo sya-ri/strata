@@ -251,7 +251,19 @@ internal class UiSession private constructor(
      * @throws Throwable when content, retained reconciliation, or any tree pipeline fails.
      * @throws IllegalStateException when called from a wrong lifecycle state, wrong thread, or reentrant operation.
      */
-    internal fun frame(constraints: Constraints): UiFrame {
+    internal fun frame(constraints: Constraints): UiFrame = frame(constraints, null)
+
+    /**
+     * Produces one immutable frame after notifying time-aware retained nodes with [time].
+     *
+     * @param constraints root measurement constraints.
+     * @param time optional explicit host timestamp; null preserves untimed cache behavior.
+     * @return immutable frame snapshot.
+     */
+    internal fun frame(
+        constraints: Constraints,
+        time: FrameTime?,
+    ): UiFrame {
         beginOperation(SessionOperation.Frame)
         try {
             check(currentState === UiSessionState.Attached) {
@@ -265,6 +277,7 @@ internal class UiSession private constructor(
                     contentRebuilt = true
                 }
                 val retainedTree = checkNotNull(tree) { "An attached session has no retained tree." }
+                if (time != null) retainedTree.advanceFrame(time)
                 val revision = retainedTree.currentRevision()
                 if (contentRebuilt.not()) {
                     val retainedFrame = cachedFrame

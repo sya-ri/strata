@@ -15,6 +15,7 @@ import org.junit.jupiter.api.Test
  */
 internal class ShowcaseScenarioContractTest {
     @Test
+    @Suppress("LongMethod")
     fun catalogHasMinecraftComponentOrderSourcesAndViewports() {
         ShowcaseScenarioCatalog.validate()
         val scenarios = ShowcaseScenarioCatalog.components
@@ -32,11 +33,19 @@ internal class ShowcaseScenarioContractTest {
                 "MinecraftTextExample.kt" to "text",
                 "MinecraftTextFieldShowcaseExample.kt" to "text-field",
                 "MinecraftButtonExample.kt" to "button",
+                "MinecraftCheckboxExample.kt" to "checkbox",
+                "MinecraftCycleButtonExample.kt" to "cycle-button",
+                "MinecraftSliderExample.kt" to "slider",
                 "MinecraftTabExample.kt" to "tab",
-                "MinecraftScrollShowcaseExample.kt" to "scroll",
+                "MinecraftScrollAreaExample.kt" to "scroll-area",
+                "MinecraftScrollbarExample.kt" to "scrollbar",
+                "MinecraftVirtualListExample.kt" to "virtual-list",
+                "MinecraftSelectionListExample.kt" to "selection-list",
                 "MinecraftImageExample.kt" to "image",
                 "MinecraftSlotShowcaseExample.kt" to "slot",
                 "MinecraftPlayerHeadExample.kt" to "player-head",
+                "MinecraftLoadingIndicatorExample.kt" to "loading-indicator",
+                "MinecraftProgressBarExample.kt" to "progress-bar",
             ),
             scenarios.map { scenario -> scenario.source.relativePath.substringAfterLast('/') to scenario.source.slug },
         )
@@ -50,11 +59,19 @@ internal class ShowcaseScenarioContractTest {
                 IntSize(120, 64),
                 IntSize(216, 64),
                 IntSize(166, 64),
+                IntSize(166, 36),
+                IntSize(166, 36),
+                IntSize(166, 36),
                 IntSize(160, 64),
-                IntSize(160, 64),
+                IntSize(120, 48),
+                IntSize(94, 48),
+                IntSize(120, 48),
+                IntSize(120, 48),
                 IntSize(64, 64),
                 IntSize(64, 64),
                 IntSize(64, 64),
+                IntSize(32, 24),
+                IntSize(116, 28),
             ),
             scenarios.map { scenario -> scenario.viewport },
         )
@@ -141,6 +158,18 @@ internal class ShowcaseScenarioContractTest {
                     IntSize(166, 64),
                     expectedTree(DocumentedComponent.Button, listOf(ShowcaseTreeDetail.Size(150, 20))),
                 ),
+                centeredTree(
+                    IntSize(166, 36),
+                    expectedTree(DocumentedComponent.Checkbox, listOf(ShowcaseTreeDetail.Size(150, 20))),
+                ),
+                centeredTree(
+                    IntSize(166, 36),
+                    expectedTree(DocumentedComponent.CycleButton, listOf(ShowcaseTreeDetail.Size(150, 20))),
+                ),
+                centeredTree(
+                    IntSize(166, 36),
+                    expectedTree(DocumentedComponent.Slider, listOf(ShowcaseTreeDetail.Size(150, 20))),
+                ),
                 expectedTree(
                     DocumentedComponent.Row,
                     listOf(
@@ -154,21 +183,37 @@ internal class ShowcaseScenarioContractTest {
                     expectedTree(DocumentedComponent.Tab, listOf(ShowcaseTreeDetail.Size(73, 20))),
                 ),
                 expectedTree(
-                    DocumentedComponent.Scroll,
+                    DocumentedComponent.ScrollArea,
                     listOf(
-                        ShowcaseTreeDetail.Size(160, 64),
+                        ShowcaseTreeDetail.Size(120, 48),
                         black,
                         ShowcaseTreeDetail.ScrollRate(9),
                     ),
                     expectedTree(
                         DocumentedComponent.Column,
                         listOf(
-                            ShowcaseTreeDetail.Size(132, 108),
+                            ShowcaseTreeDetail.Size(120, 72),
                             ShowcaseTreeDetail.ColumnDefaultAlignment(HorizontalAlignment.Center),
                         ),
-                        *Array(6) { expectedTree(DocumentedComponent.Text) },
+                        *Array(4) { expectedTree(DocumentedComponent.Text) },
                     ),
                 ),
+                expectedTree(
+                    DocumentedComponent.Row,
+                    listOf(ShowcaseTreeDetail.Size(94, 48), black, ShowcaseTreeDetail.Spacing(8)),
+                    expectedTree(
+                        DocumentedComponent.ScrollArea,
+                        listOf(ShowcaseTreeDetail.Size(80, 48), ShowcaseTreeDetail.ScrollRate(9)),
+                        expectedTree(
+                            DocumentedComponent.Column,
+                            listOf(ShowcaseTreeDetail.Size(80, 96)),
+                            *Array(6) { expectedTree(DocumentedComponent.Text) },
+                        ),
+                    ),
+                    expectedTree(DocumentedComponent.Scrollbar, listOf(ShowcaseTreeDetail.Size(6, 48))),
+                ),
+                expectedTree(DocumentedComponent.VirtualList, listOf(ShowcaseTreeDetail.Size(120, 48))),
+                expectedTree(DocumentedComponent.SelectionList, listOf(ShowcaseTreeDetail.Size(120, 48))),
                 centeredTree(
                     IntSize(64, 64),
                     expectedTree(DocumentedComponent.Image, listOf(ShowcaseTreeDetail.Size(32, 32))),
@@ -183,6 +228,14 @@ internal class ShowcaseScenarioContractTest {
                 centeredTree(
                     IntSize(64, 64),
                     expectedTree(DocumentedComponent.PlayerHead, listOf(ShowcaseTreeDetail.Size(24, 24))),
+                ),
+                centeredTree(
+                    IntSize(32, 24),
+                    expectedTree(DocumentedComponent.LoadingIndicator, listOf(ShowcaseTreeDetail.Size(10, 4))),
+                ),
+                centeredTree(
+                    IntSize(116, 28),
+                    expectedTree(DocumentedComponent.ProgressBar, listOf(ShowcaseTreeDetail.Size(100, 12))),
                 ),
             )
 

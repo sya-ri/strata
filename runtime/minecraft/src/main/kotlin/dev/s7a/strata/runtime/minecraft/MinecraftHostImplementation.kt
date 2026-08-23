@@ -7,6 +7,7 @@ import dev.s7a.strata.input.InputResult
 import dev.s7a.strata.input.KeyboardEvent
 import dev.s7a.strata.input.PointerEvent
 import dev.s7a.strata.input.TextInputEvent
+import dev.s7a.strata.runtime.FrameTime
 import dev.s7a.strata.runtime.spi.RuntimeUiFrame
 import dev.s7a.strata.runtime.spi.RuntimeUiSession
 import dev.s7a.strata.runtime.spi.createRuntimeUiSession
@@ -122,7 +123,17 @@ internal object MinecraftHostImplementation {
             }
         }
 
-        override fun frame(viewport: IntSize): RuntimeUiFrame {
+        override fun frame(viewport: IntSize): RuntimeUiFrame = runFrame(viewport, null)
+
+        override fun frame(
+            viewport: IntSize,
+            time: FrameTime,
+        ): RuntimeUiFrame = runFrame(viewport, time)
+
+        private fun runFrame(
+            viewport: IntSize,
+            time: FrameTime?,
+        ): RuntimeUiFrame {
             checkOwner()
             check(operation == null) { "Minecraft UI host operations are non-reentrant." }
             check(state == State.Attached) { "Minecraft UI host must be attached before frame." }
@@ -130,7 +141,8 @@ internal object MinecraftHostImplementation {
             return try {
                 runCatching {
                     platform?.refresh()
-                    session.frame(Constraints.fixed(viewport.width, viewport.height))
+                    val constraints = Constraints.fixed(viewport.width, viewport.height)
+                    if (time == null) session.frame(constraints) else session.frame(constraints, time)
                 }.getOrElse { failure -> fail(failure) }
             } finally {
                 operation = null

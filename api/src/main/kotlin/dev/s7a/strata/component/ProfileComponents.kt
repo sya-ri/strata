@@ -13,6 +13,49 @@ import dev.s7a.strata.spi.InternalStrataRuntimeApi
 import dev.s7a.strata.text.UiText
 
 /**
+ * Emits one determinate Minecraft-profile progress bar.
+ *
+ * The value is clamped to the closed zero-to-one range and the active resource pack supplies both the fill and border.
+ *
+ * @receiver active owner-thread screen scope.
+ * @param progress completed fraction; non-finite values are rejected.
+ * @param size positive logical destination size.
+ * @param modifier active behavior applied to the bar.
+ * @param key optional stable sibling identity.
+ */
+@OptIn(InternalStrataRuntimeApi::class)
+public fun UiScope.ProgressBar(
+    progress: Double,
+    size: IntSize = IntSize(100, 12),
+    modifier: Modifier = Modifier.Empty,
+    key: ElementKey<*>? = null,
+) {
+    checkUsable()
+    require(progress.isFinite()) { "Progress must be finite." }
+    element(ComponentRuntimeBridge.current().progressBar(progress.coerceIn(0.0, 1.0), size, modifier, key))
+}
+
+/**
+ * Emits the active Minecraft profile's discrete loading animation.
+ *
+ * The animation observes explicit host frame time and repaints only when its native animation cell changes.
+ *
+ * @receiver active owner-thread screen scope.
+ * @param size positive logical destination size.
+ * @param modifier active behavior applied to the indicator.
+ * @param key optional stable sibling identity.
+ */
+@OptIn(InternalStrataRuntimeApi::class)
+public fun UiScope.LoadingIndicator(
+    size: IntSize = IntSize(10, 4),
+    modifier: Modifier = Modifier.Empty,
+    key: ElementKey<*>? = null,
+) {
+    checkUsable()
+    element(ComponentRuntimeBridge.current().loadingIndicator(size, modifier, key))
+}
+
+/**
  * Emits one Minecraft-profile Checkbox backed by caller-owned [state].
  *
  * Native pointer and focused keyboard input update the state before emitting [dev.s7a.strata.action.ComponentActions.CheckedChange] through the Modifier chain.
@@ -20,7 +63,7 @@ import dev.s7a.strata.text.UiText
  * @receiver active owner-thread screen scope.
  * @param label unresolved visible and semantic label.
  * @param state caller-owned selected state.
- * @param width maximum fixed logical width including the 17-pixel box and four-pixel gap.
+ * @param width maximum fixed logical width including the 20-pixel box and four-pixel gap.
  * @param enabled whether input and enabled semantics are active.
  * @param modifier active layout, input, and typed action behavior.
  * @param key optional stable sibling identity.

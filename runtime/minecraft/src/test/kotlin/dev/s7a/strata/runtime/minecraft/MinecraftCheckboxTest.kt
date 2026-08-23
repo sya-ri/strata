@@ -40,7 +40,7 @@ internal class MinecraftCheckboxTest {
                 profile,
             )
         host.attach()
-        val initial = host.frame(IntSize(80, 17))
+        val initial = host.frame(IntSize(80, 20))
         val initialSprite =
             initial.drawCommands
                 .filterIsInstance<DrawCommand.BlitImage>()
@@ -50,7 +50,7 @@ internal class MinecraftCheckboxTest {
         assertEquals(InputResult.Consumed, host.dispatchPointer(PointerEvent.Press(IntOffset(2, 2), PointerButton.Primary)))
         assertEquals(true, state.checked)
         assertEquals(listOf(true), observed)
-        val selected = host.frame(IntSize(80, 17))
+        val selected = host.frame(IntSize(80, 20))
         val selectedSprite =
             selected.drawCommands
                 .filterIsInstance<DrawCommand.BlitImage>()
