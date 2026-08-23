@@ -9,6 +9,7 @@ import dev.s7a.strata.render.DrawImage;
 import dev.s7a.strata.render.DrawImages;
 import dev.s7a.strata.resource.ResourceId;
 import java.util.Optional;
+import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.texture.DynamicTexture;
@@ -39,9 +40,9 @@ final class FabricMinecraftSkinBridge {
         if (source == PlayerSkinSource.CurrentPlayer.INSTANCE) {
             profile = CompletableFuture.completedFuture(minecraft.getGameProfile());
         } else if (source instanceof PlayerSkinSource.Name name) {
-            profile = unresolved(Optional.of(name.getValue()), Optional.empty());
+            profile = unresolvedName(name.getValue());
         } else if (source instanceof PlayerSkinSource.Uuid uuid) {
-            profile = unresolved(Optional.empty(), Optional.of(uuid.getValue()));
+            profile = unresolvedUuid(uuid.getValue());
         } else {
             throw new IllegalArgumentException("Unsupported player skin source: " + source.getClass().getName());
         }
@@ -65,8 +66,16 @@ final class FabricMinecraftSkinBridge {
         return new ResolvedSkin(player.getSkin()).snapshot(minecraft);
     }
 
-    private static CompletableFuture<GameProfile> unresolved(Optional<String> name, Optional<java.util.UUID> uuid) {
-        return new ResolvableProfile(name, uuid, new PropertyMap()).resolve().thenApply(ResolvableProfile::gameProfile);
+    private static CompletableFuture<GameProfile> unresolvedName(String name) {
+        return resolve(new ResolvableProfile(Optional.of(name), Optional.empty(), new PropertyMap()));
+    }
+
+    private static CompletableFuture<GameProfile> unresolvedUuid(UUID uuid) {
+        return resolve(new ResolvableProfile(Optional.empty(), Optional.of(uuid), new PropertyMap()));
+    }
+
+    private static CompletableFuture<GameProfile> resolve(ResolvableProfile profile) {
+        return profile.resolve().thenApply(ResolvableProfile::gameProfile);
     }
 
     private record ResolvedSkin(PlayerSkin skin) implements FabricMinecraftSkinReference {
