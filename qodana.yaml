@@ -100,6 +100,7 @@ exclude:
       - runtime/minecraft-fabric-shared/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftProfileFactory.kt
       - runtime/minecraft-fabric-unobfuscated/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreen.kt
       - runtime/minecraft-fabric-unobfuscated/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftCurrentPlayerSkin.kt
+      - runtime/minecraft-fabric-unobfuscated/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftNativeImageBridge.kt
   # Explicit Minecraft Java SAM and qualifier syntax pins the loaded GameTest boundary instead of relying on Kotlin inference.
   - name: RedundantSamConstructor
     paths:
@@ -299,6 +300,8 @@ exclude:
       - runtime/minecraft-fabric-1.21.4/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/MinecraftResourceLocation.kt
       - runtime/minecraft-fabric-1.21.4/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/MinecraftResourceLocationException.kt
       - runtime/minecraft-fabric-1.21.5-legacy/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftTextureBlitter.kt
+      - runtime/minecraft-fabric-1.21.6-legacy/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftDynamicTextureFactory.kt
+      - runtime/minecraft-fabric-1.21.6-legacy/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftTextureBlitter.kt
       - runtime/minecraft-fabric-1.21.5/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftDynamicTextureFactory.kt
       - runtime/minecraft-fabric-1.21.5/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/MinecraftResourceLocation.kt
       - runtime/minecraft-fabric-1.21.5/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/MinecraftResourceLocationException.kt
