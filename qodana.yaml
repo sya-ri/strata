@@ -22,6 +22,7 @@ exclude:
   - name: UnstableApiUsage
     paths:
       - settings.gradle.kts
+      - integration/minecraft-fabric-1.21.3/build.gradle.kts
       - integration/minecraft-fabric-1.21.4/build.gradle.kts
       - integration/minecraft-fabric-1.21.5/build.gradle.kts
       - integration/minecraft-fabric-1.21.6/build.gradle.kts
@@ -32,7 +33,7 @@ exclude:
       - integration/minecraft-fabric-1.21.11/build.gradle.kts
       - integration/minecraft-fabric-26.1/build.gradle.kts
       - integration/minecraft-fabric-26.2/build.gradle.kts
-      - integration/minecraft-fabric-1.21-legacy/src/gametest/kotlin/dev/s7a/strata/integration/minecraft/fabric/StrataMinecraftLegacyClientGameTest.kt
+      - integration/minecraft-fabric-client-gametest/src/gametest/kotlin/dev/s7a/strata/integration/minecraft/fabric/StrataMinecraftLegacyClientGameTest.kt
       - integration/minecraft-fabric-unobfuscated/src/gametest/kotlin/dev/s7a/strata/integration/minecraft/fabric/InventorySlotSynchronizationGameTest.kt
       - integration/minecraft-fabric-unobfuscated/src/gametest/kotlin/dev/s7a/strata/integration/minecraft/fabric/MinecraftProgressParity.kt
       - integration/minecraft-fabric-unobfuscated/src/gametest/kotlin/dev/s7a/strata/integration/minecraft/fabric/MinecraftSocialParity.kt
@@ -53,7 +54,10 @@ exclude:
   # Explicit resource lifetime blocks make the GameTest cleanup order and primary-failure ownership auditable.
   - name: ConvertTryFinallyToUseCall
     paths:
-      - integration/minecraft-fabric-1.21-legacy/src/gametest/kotlin/dev/s7a/strata/integration/minecraft/fabric/StrataMinecraftLegacyClientGameTest.kt
+      - integration/minecraft-fabric-1.21-legacy/src/gametest/kotlin/dev/s7a/strata/integration/minecraft/fabric/StrataMinecraftLegacyLoadedSuite.kt
+      - integration/minecraft-fabric-1.21.3-legacy/src/gametest/kotlin/dev/s7a/strata/integration/minecraft/fabric/StrataMinecraftLegacyClientTest.kt
+      - integration/minecraft-fabric-client-gametest/src/gametest/kotlin/dev/s7a/strata/integration/minecraft/fabric/StrataMinecraftLegacyClientGameTest.kt
+      - integration/minecraft-fabric-1.21.3/src/gametest/kotlin/dev/s7a/strata/integration/minecraft/fabric/MinecraftTestResourceLocation.kt
       - integration/minecraft-fabric-unobfuscated/src/gametest/kotlin/dev/s7a/strata/integration/minecraft/fabric/MinecraftProgressParity.kt
       - integration/minecraft-fabric-unobfuscated/src/gametest/kotlin/dev/s7a/strata/integration/minecraft/fabric/MinecraftSocialParity.kt
       - integration/minecraft-fabric-unobfuscated/src/gametest/kotlin/dev/s7a/strata/integration/minecraft/fabric/StrataMinecraftClientGameTest.kt
@@ -61,7 +65,7 @@ exclude:
   - name: MayBeConstant
     paths:
       - api/src/main/kotlin/dev/s7a/strata/input/KeyCode.kt
-      - integration/minecraft-fabric-1.21-legacy/src/gametest/kotlin/dev/s7a/strata/integration/minecraft/fabric/StrataMinecraftLegacyClientGameTest.kt
+      - integration/minecraft-fabric-1.21-legacy/src/gametest/kotlin/dev/s7a/strata/integration/minecraft/fabric/StrataMinecraftLegacyLoadedSuite.kt
       - integration/minecraft-fabric-unobfuscated/src/gametest/kotlin/dev/s7a/strata/integration/minecraft/fabric/MinecraftSocialParity.kt
       - integration/minecraft-fabric-unobfuscated/src/gametest/kotlin/dev/s7a/strata/integration/minecraft/fabric/StrataMinecraftClientGameTest.kt
   # Java has no Boolean.not() equivalent, so these exact Java boundaries use equality instead of the prohibited prefix-negation form.
@@ -76,11 +80,14 @@ exclude:
   # The Minecraft adapters keep explicit mapped Java getter calls so their authoritative external API mappings remain visible and searchable.
   - name: UsePropertyAccessSyntax
     paths:
-      - integration/minecraft-fabric-1.21-legacy/src/gametest/kotlin/dev/s7a/strata/integration/minecraft/fabric/StrataMinecraftLegacyClientGameTest.kt
+      - integration/minecraft-fabric-1.21-legacy/src/gametest/kotlin/dev/s7a/strata/integration/minecraft/fabric/StrataMinecraftLegacyLoadedSuite.kt
+      - integration/minecraft-fabric-1.21.3-legacy/src/gametest/kotlin/dev/s7a/strata/integration/minecraft/fabric/StandaloneMinecraftLoadedTestContext.kt
       - integration/minecraft-fabric-unobfuscated/src/gametest/kotlin/dev/s7a/strata/integration/minecraft/fabric/MinecraftSocialParity.kt
       - integration/minecraft-fabric-unobfuscated/src/gametest/kotlin/dev/s7a/strata/integration/minecraft/fabric/StrataMinecraftClientGameTest.kt
       - runtime/minecraft-fabric-1.21-legacy/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftCurrentPlayerSkin.kt
       - runtime/minecraft-fabric-shared/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftAssetLoader.kt
+      - runtime/minecraft-fabric-1.21.3/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/MinecraftResourceLocation.kt
+      - runtime/minecraft-fabric-1.21.3/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/MinecraftResourceLocationException.kt
       - runtime/minecraft-fabric-shared/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftFontContract.kt
       - runtime/minecraft-fabric-shared/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftProfileFactory.kt
       - runtime/minecraft-fabric-unobfuscated/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreen.kt
@@ -88,7 +95,8 @@ exclude:
   # Explicit Minecraft Java SAM and qualifier syntax pins the loaded GameTest boundary instead of relying on Kotlin inference.
   - name: RedundantSamConstructor
     paths:
-      - integration/minecraft-fabric-1.21-legacy/src/gametest/kotlin/dev/s7a/strata/integration/minecraft/fabric/StrataMinecraftLegacyClientGameTest.kt
+      - integration/minecraft-fabric-1.21-legacy/src/gametest/kotlin/dev/s7a/strata/integration/minecraft/fabric/StrataMinecraftLegacyLoadedSuite.kt
+      - integration/minecraft-fabric-client-gametest/src/gametest/kotlin/dev/s7a/strata/integration/minecraft/fabric/StrataMinecraftLegacyClientGameTest.kt
       - integration/minecraft-fabric-unobfuscated/src/gametest/kotlin/dev/s7a/strata/integration/minecraft/fabric/InventorySlotSynchronizationGameTest.kt
       - integration/minecraft-fabric-unobfuscated/src/gametest/kotlin/dev/s7a/strata/integration/minecraft/fabric/MinecraftProgressParity.kt
       - integration/minecraft-fabric-unobfuscated/src/gametest/kotlin/dev/s7a/strata/integration/minecraft/fabric/MinecraftSocialParity.kt
@@ -167,7 +175,8 @@ exclude:
       - integration/minecraft-fabric-unobfuscated/src/gametest/kotlin/dev/s7a/strata/integration/minecraft/fabric/MinecraftProgressExample.kt
       - integration/minecraft-fabric-unobfuscated/src/gametest/kotlin/dev/s7a/strata/integration/minecraft/fabric/MinecraftScrollShowcaseExample.kt
       - integration/minecraft-fabric-unobfuscated/src/gametest/kotlin/dev/s7a/strata/integration/minecraft/fabric/MinecraftTextExample.kt
-      - integration/minecraft-fabric-1.21-legacy/src/gametest/kotlin/dev/s7a/strata/integration/minecraft/fabric/StrataMinecraftLegacyClientGameTest.kt
+      - integration/minecraft-fabric-client-gametest/src/gametest/kotlin/dev/s7a/strata/integration/minecraft/fabric/StrataMinecraftLegacyClientGameTest.kt
+      - integration/minecraft-fabric-1.21.3-legacy/src/gametest/kotlin/dev/s7a/strata/integration/minecraft/fabric/StrataMinecraftLegacyClientTest.kt
       - integration/minecraft-fabric-1.21.4/src/gametest/kotlin/dev/s7a/strata/integration/minecraft/fabric/MinecraftTestResourceLocation.kt
       - integration/minecraft-fabric-1.21.5/src/gametest/kotlin/dev/s7a/strata/integration/minecraft/fabric/MinecraftTestResourceLocation.kt
       - integration/minecraft-fabric-1.21.6/src/gametest/kotlin/dev/s7a/strata/integration/minecraft/fabric/MinecraftTestResourceLocation.kt

@@ -35,6 +35,7 @@ dependencies {
     dokka(project(":runtime:core"))
     dokka(project(":runtime:headless"))
     dokka(project(":runtime:minecraft"))
+    dokka(project(":runtime:minecraft-fabric-1.21.3"))
     dokka(project(":runtime:minecraft-fabric-1.21.4"))
     dokka(project(":runtime:minecraft-fabric-1.21.5"))
     dokka(project(":runtime:minecraft-fabric-1.21.6"))
@@ -63,6 +64,7 @@ val minecraftGameTestProjects =
     listOf(
         ":integration:minecraft-fabric-26.2",
         ":integration:minecraft-fabric-26.1",
+        ":integration:minecraft-fabric-1.21.3",
         ":integration:minecraft-fabric-1.21.4",
         ":integration:minecraft-fabric-1.21.5",
         ":integration:minecraft-fabric-1.21.6",
@@ -77,6 +79,8 @@ val minecraftClientVerificationTasks =
     listOf(
         ":integration:minecraft-fabric-26.2:runClientGameTest",
         ":integration:minecraft-fabric-26.1:runClientGameTest",
+        ":integration:minecraft-fabric-1.21.3:runClientGameTest",
+        ":integration:minecraft-fabric-1.21.3:runProductionClientGameTest",
         ":integration:minecraft-fabric-1.21.4:runClientGameTest",
         ":integration:minecraft-fabric-1.21.4:runProductionClientGameTest",
         ":integration:minecraft-fabric-1.21.5:runClientGameTest",
@@ -96,6 +100,8 @@ val minecraftClientVerificationTasks =
     )
 val minecraftRemapTasks =
     listOf(
+        ":runtime:minecraft-fabric-1.21.3:remapJar",
+        ":integration:minecraft-fabric-1.21.3:remapJar",
         ":runtime:minecraft-fabric-1.21.4:remapJar",
         ":integration:minecraft-fabric-1.21.4:remapJar",
         ":runtime:minecraft-fabric-1.21.5:remapJar",
@@ -175,6 +181,7 @@ subprojects {
         ":runtime:core",
         ":runtime:headless",
         ":runtime:minecraft",
+        ":runtime:minecraft-fabric-1.21.3",
         ":runtime:minecraft-fabric-1.21.4",
         ":runtime:minecraft-fabric-1.21.5",
         ":runtime:minecraft-fabric-1.21.6",
@@ -194,6 +201,8 @@ subprojects {
 
     val versionSpecificMinecraftModules =
         setOf(
+            ":runtime:minecraft-fabric-1.21.3",
+            ":integration:minecraft-fabric-1.21.3",
             ":runtime:minecraft-fabric-1.21.4",
             ":integration:minecraft-fabric-1.21.4",
             ":runtime:minecraft-fabric-1.21.5",
@@ -218,6 +227,8 @@ subprojects {
     val javaVersion =
         when (path) {
             in setOf(
+                ":runtime:minecraft-fabric-1.21.3",
+                ":integration:minecraft-fabric-1.21.3",
                 ":runtime:minecraft-fabric-1.21.4",
                 ":integration:minecraft-fabric-1.21.4",
                 ":runtime:minecraft-fabric-1.21.5",
@@ -283,6 +294,7 @@ subprojects {
                 ":runtime:core" to "strata-runtime-core",
                 ":runtime:headless" to "strata-runtime-headless",
                 ":runtime:minecraft" to "strata-runtime-minecraft",
+                ":runtime:minecraft-fabric-1.21.3" to "strata-runtime-minecraft-fabric-1.21.3",
                 ":runtime:minecraft-fabric-1.21.4" to "strata-runtime-minecraft-fabric-1.21.4",
                 ":runtime:minecraft-fabric-1.21.5" to "strata-runtime-minecraft-fabric-1.21.5",
                 ":runtime:minecraft-fabric-1.21.6" to "strata-runtime-minecraft-fabric-1.21.6",
@@ -341,6 +353,15 @@ subprojects {
         extensions.configure<DokkaExtension> {
             val sourcePaths =
                 when (path) {
+                    ":runtime:minecraft-fabric-1.21.3" ->
+                        listOf(
+                            "runtime/minecraft-fabric-1.21.3",
+                            "runtime/minecraft-fabric-1.21.3-legacy",
+                            "runtime/minecraft-fabric-1.21.5-legacy",
+                            "runtime/minecraft-fabric-1.21.8-legacy",
+                            "runtime/minecraft-fabric-1.21-legacy",
+                            "runtime/minecraft-fabric-shared",
+                        )
                     ":runtime:minecraft-fabric-1.21.4" ->
                         listOf(
                             "runtime/minecraft-fabric-1.21.4",

@@ -29,140 +29,109 @@ import dev.s7a.strata.runtime.minecraft.fabric.extractMinecraftUiProfile
 import dev.s7a.strata.runtime.minecraft.fabric.loadMinecraftUiImage
 import dev.s7a.strata.screen.ScreenDefinition
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
-import net.fabricmc.fabric.api.client.gametest.v1.FabricClientGameTest
-import net.fabricmc.fabric.api.client.gametest.v1.context.ClientGameTestContext
-import net.fabricmc.fabric.api.client.gametest.v1.screenshot.TestScreenshotOptions
 import net.minecraft.client.Minecraft
 import net.minecraft.client.gui.screens.Screen
+import net.minecraft.client.renderer.texture.AbstractTexture
 import net.minecraft.client.renderer.texture.DynamicTexture
 import net.minecraft.server.MinecraftServer
 import net.minecraft.server.level.ServerPlayer
 import net.minecraft.world.item.ItemStack
 import net.minecraft.world.item.Items
-import org.apache.commons.lang3.function.FailableConsumer
-import org.apache.commons.lang3.function.FailableFunction
 import java.nio.file.Files
 import java.nio.file.Path
 import java.util.UUID
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicReference
-import java.util.function.Predicate
 import kotlin.io.path.inputStream
 
 /**
  * Proves the public Strata screen, asset, input, and inventory contracts in a loaded legacy Minecraft client.
  *
- * The test owns every screen and integrated-world resource that it creates, performs client work through [ClientGameTestContext], and rejects retained presentation data after each screen is detached.
+ * The test owns every screen and integrated-world resource that it creates, performs runner-independent client work through [MinecraftLoadedTestContext], and rejects retained presentation data after each screen is detached.
  */
 @OptIn(InternalStrataRuntimeApi::class)
 @Suppress("TooManyFunctions")
-public class StrataMinecraftLegacyClientGameTest : FabricClientGameTest {
+internal class StrataMinecraftLegacyLoadedSuite {
     /**
      * Opens and renders portable and inventory-bound public API scenes against the configured legacy client.
      *
-     * @param context Fabric client GameTest context owning the client thread, window, screenshots, and integrated world.
+     * @param context loaded-client coordinator owning client-thread, tick, and integrated-world handoffs.
      * @throws AssertionError when the loaded version, asset profile, rendering, input, inventory synchronization, frame reuse, or cleanup contract fails.
      * @throws Throwable when Minecraft or Fabric cannot create, render, or close a required test resource.
      */
-    override fun runTest(context: ClientGameTestContext) {
-        context.restoreDefaultGameOptions()
+    fun run(context: MinecraftLoadedTestContext) {
         configureViewport(context)
         require(minecraftVersion() == loadedMinecraftVersion()) {
             "The loaded Minecraft release does not match the configured integration target."
         }
 
-        val profile =
-            context.computeOnClient(
-                FailableFunction<Minecraft, MinecraftUiProfile, RuntimeException> { extractMinecraftUiProfile() },
-            )
+        val profile = context.computeOnClient { extractMinecraftUiProfile() }
         verifyVersionAsset(context)
         val output = outputDirectory()
         Files.createDirectories(output)
         verifyPortableScene(context, profile, output)
         verifyPlayerInventoryBinding(context, profile, output)
-        context.restoreDefaultGameOptions()
     }
 
-    private fun configureViewport(context: ClientGameTestContext) {
-        context.input.resizeWindow(viewport.width, viewport.height)
-        context.runOnClient(
-            FailableConsumer<Minecraft, RuntimeException> { minecraft ->
-                minecraft.options.guiScale().set(1)
-                minecraft.options.forceUnicodeFont().set(false)
-                minecraft.resizeDisplay()
-            },
-        )
+    private fun configureViewport(context: MinecraftLoadedTestContext) {
+        context.computeOnClient { minecraft ->
+            minecraft.window.setWindowed(viewport.width, viewport.height)
+            minecraft.options.guiScale().set(1)
+            minecraft.options.forceUnicodeFont().set(false)
+            minecraft.resizeDisplay()
+        }
     }
 
-    private fun verifyVersionAsset(context: ClientGameTestContext) {
+    private fun verifyVersionAsset(context: MinecraftLoadedTestContext) {
         val button =
-            context.computeOnClient(
-                FailableFunction<Minecraft, DrawImage, RuntimeException> {
-                    loadMinecraftUiImage(ResourceId("minecraft", "textures/gui/sprites/widget/button.png"))
-                },
-            )
+            context.computeOnClient {
+                loadMinecraftUiImage(ResourceId("minecraft", "textures/gui/sprites/widget/button.png"))
+            }
         require(button.size == buttonTextureSize) {
             "Minecraft ${minecraftVersion()}'s normal Button sprite must be the verified 200 by 20 pixel asset."
         }
     }
 
     private fun verifyPortableScene(
-        context: ClientGameTestContext,
+        context: MinecraftLoadedTestContext,
         profile: MinecraftUiProfile,
         output: Path,
     ) {
         val pressed = AtomicBoolean()
-        context.input.setCursorPos(portableButtonCenter.x.toDouble(), portableButtonCenter.y.toDouble())
-        context.setScreen { createMinecraftScreen(portableDefinition(pressed), profile, parent = null) }
-        context.waitForScreen(FabricMinecraftScreen::class.java)
+        movePointer(context, portableButtonCenter)
+        context.computeOnClient { minecraft ->
+            minecraft.setScreen(createMinecraftScreen(portableDefinition(pressed), profile, parent = null))
+        }
+        context.waitFor { minecraft -> minecraft.screen is FabricMinecraftScreen }
         context.waitTicks(2)
 
-        val screenshot =
-            context.takeScreenshot(
-                TestScreenshotOptions
-                    .of("strata-public-api-${minecraftVersion()}")
-                    .disableCounterPrefix()
-                    .withSize(viewport.width, viewport.height)
-                    .withDestinationDir(output),
-            )
+        val screenshot = takeScreenshot(context, "strata-public-api-${minecraftVersion()}", output)
         assertRenderedPixels(screenshot)
         assertCleanFrameReuse(context)
         clickCurrentScreen(context, portableButtonCenter)
-        context.waitFor(Predicate { pressed.get() })
+        context.waitFor { pressed.get() }
         closeAndAssertReleased(context)
     }
 
     private fun verifyPlayerInventoryBinding(
-        context: ClientGameTestContext,
+        context: MinecraftLoadedTestContext,
         profile: MinecraftUiProfile,
         output: Path,
     ) {
-        val world = context.worldBuilder().setUseConsistentSettings(true).create()
+        val world = context.createSingleplayerWorld()
         try {
-            world.clientWorld.waitForChunksRender()
-            val server =
-                context.computeOnClient(
-                    FailableFunction<Minecraft, MinecraftServer, RuntimeException> { minecraft ->
-                        checkNotNull(minecraft.singleplayerServer)
-                    },
-                )
-            val playerId =
-                context.computeOnClient(
-                    FailableFunction<Minecraft, UUID, RuntimeException> { minecraft ->
-                        checkNotNull(minecraft.player).uuid
-                    },
-                )
-            world.server.runOnServer<RuntimeException> { server ->
+            world.awaitReady()
+            val server = world.server
+            val playerId = context.computeOnClient { minecraft -> checkNotNull(minecraft.player).uuid }
+            world.computeOnServer { server ->
                 val player = server.playerList.players.single()
                 player.inventory.setItem(playerInventoryIndex, ItemStack(Items.DIRT, itemCount))
                 player.inventoryMenu.broadcastChanges()
             }
-            context.waitFor(
-                Predicate { minecraft ->
-                    val stack = minecraft.player?.inventory?.getItem(playerInventoryIndex)
-                    stack != null && stack.`is`(Items.DIRT) && stack.count == itemCount
-                },
-            )
+            context.waitFor { minecraft ->
+                val stack = minecraft.player?.inventory?.getItem(playerInventoryIndex)
+                stack != null && stack.`is`(Items.DIRT) && stack.count == itemCount
+            }
 
             openPlayerInventoryScreen(context, profile, output)
             verifyPlayerInventoryRoundTrip(context, server, playerId)
@@ -173,38 +142,32 @@ public class StrataMinecraftLegacyClientGameTest : FabricClientGameTest {
     }
 
     private fun openPlayerInventoryScreen(
-        context: ClientGameTestContext,
+        context: MinecraftLoadedTestContext,
         profile: MinecraftUiProfile,
         output: Path,
     ) {
-        context.input.setCursorPos(slotCenter.x.toDouble(), slotCenter.y.toDouble())
-        context.setScreen { createMinecraftScreen(inventoryDefinition(), profile, parent = null) }
-        context.waitForScreen(FabricMinecraftScreen::class.java)
+        movePointer(context, slotCenter)
+        context.computeOnClient { minecraft ->
+            minecraft.setScreen(createMinecraftScreen(inventoryDefinition(), profile, parent = null))
+        }
+        context.waitFor { minecraft -> minecraft.screen is FabricMinecraftScreen }
         context.waitTicks(2)
-        context.takeScreenshot(
-            TestScreenshotOptions
-                .of("strata-player-inventory-binding-${minecraftVersion()}")
-                .disableCounterPrefix()
-                .withSize(viewport.width, viewport.height)
-                .withDestinationDir(output),
-        )
+        takeScreenshot(context, "strata-player-inventory-binding-${minecraftVersion()}", output)
         assertPortableTextureBounds(context)
     }
 
     private fun verifyPlayerInventoryRoundTrip(
-        context: ClientGameTestContext,
+        context: MinecraftLoadedTestContext,
         server: MinecraftServer,
         playerId: UUID,
     ) {
         clickCurrentScreen(context, slotCenter)
-        context.waitFor(
-            Predicate { minecraft ->
-                val player = minecraft.player ?: return@Predicate false
-                player.inventory.getItem(playerInventoryIndex).isEmpty &&
-                    player.containerMenu.carried.`is`(Items.DIRT) &&
-                    player.containerMenu.carried.count == itemCount
-            },
-        )
+        context.waitFor { minecraft ->
+            val player = minecraft.player ?: return@waitFor false
+            player.inventory.getItem(playerInventoryIndex).isEmpty &&
+                player.containerMenu.carried.`is`(Items.DIRT) &&
+                player.containerMenu.carried.count == itemCount
+        }
         waitForServer(context, server, playerId) { player ->
             player.inventory.getItem(playerInventoryIndex).isEmpty &&
                 player.containerMenu.carried.`is`(Items.DIRT) &&
@@ -212,14 +175,12 @@ public class StrataMinecraftLegacyClientGameTest : FabricClientGameTest {
         }
         context.waitTicks(6)
         clickCurrentScreen(context, slotCenter)
-        context.waitFor(
-            Predicate { minecraft ->
-                val player = minecraft.player ?: return@Predicate false
-                player.inventory.getItem(playerInventoryIndex).`is`(Items.DIRT) &&
-                    player.inventory.getItem(playerInventoryIndex).count == itemCount &&
-                    player.containerMenu.carried.isEmpty
-            },
-        )
+        context.waitFor { minecraft ->
+            val player = minecraft.player ?: return@waitFor false
+            player.inventory.getItem(playerInventoryIndex).`is`(Items.DIRT) &&
+                player.inventory.getItem(playerInventoryIndex).count == itemCount &&
+                player.containerMenu.carried.isEmpty
+        }
         waitForServer(context, server, playerId) { player ->
             player.inventory.getItem(playerInventoryIndex).`is`(Items.DIRT) &&
                 player.inventory.getItem(playerInventoryIndex).count == itemCount &&
@@ -228,19 +189,30 @@ public class StrataMinecraftLegacyClientGameTest : FabricClientGameTest {
     }
 
     private fun clickCurrentScreen(
-        context: ClientGameTestContext,
+        context: MinecraftLoadedTestContext,
         position: IntOffset,
     ) {
-        context.runOnClient(
-            FailableConsumer<Minecraft, RuntimeException> { minecraft ->
-                val screen: Screen = activeFabricScreen(minecraft)
-                clickMinecraftScreen(screen, position)
-            },
-        )
+        context.computeOnClient { minecraft ->
+            val screen: Screen = activeFabricScreen(minecraft)
+            clickMinecraftScreen(screen, position)
+        }
     }
 
+    private fun movePointer(
+        context: MinecraftLoadedTestContext,
+        position: IntOffset,
+    ) {
+        context.movePointer(position)
+    }
+
+    private fun takeScreenshot(
+        context: MinecraftLoadedTestContext,
+        name: String,
+        output: Path,
+    ): Path = context.takeScreenshot(name, output, viewport)
+
     private fun waitForServer(
-        context: ClientGameTestContext,
+        context: MinecraftLoadedTestContext,
         server: MinecraftServer,
         playerId: UUID,
         condition: (ServerPlayer) -> Boolean,
@@ -248,32 +220,34 @@ public class StrataMinecraftLegacyClientGameTest : FabricClientGameTest {
         val matched = AtomicBoolean()
         val pending = AtomicBoolean()
         val failure = AtomicReference<Throwable?>()
-        context.waitFor(
-            Predicate {
-                failure.get()?.let { throwable -> throw throwable }
-                if (matched.get()) {
-                    true
-                } else {
-                    if (pending.compareAndSet(false, true)) {
-                        server.execute(
-                            Runnable {
-                                runCatching { matched.set(condition(checkNotNull(server.playerList.getPlayer(playerId)))) }
-                                    .exceptionOrNull()
-                                    ?.let(failure::set)
-                                pending.set(false)
-                            },
-                        )
-                    }
-                    false
+        context.waitFor {
+            failure.get()?.let { throwable -> throw throwable }
+            if (matched.get()) {
+                true
+            } else {
+                if (pending.compareAndSet(false, true)) {
+                    server.execute(
+                        Runnable {
+                            runCatching { matched.set(condition(checkNotNull(server.playerList.getPlayer(playerId)))) }
+                                .exceptionOrNull()
+                                ?.let(failure::set)
+                            pending.set(false)
+                        },
+                    )
                 }
-            },
-        )
+                false
+            }
+        }
         failure.get()?.let { throwable -> throw throwable }
     }
 
-    private fun assertCleanFrameReuse(context: ClientGameTestContext) {
+    private fun assertCleanFrameReuse(context: MinecraftLoadedTestContext) {
+        context.waitFor { minecraft ->
+            val initialized = readRenderWork(minecraft)
+            0 < initialized.renderExtractions && 0 < initialized.framePreparations
+        }
         val before = renderWork(context)
-        context.waitFor(Predicate { minecraft -> before.renderExtractions < readRenderWork(minecraft).renderExtractions })
+        context.waitFor { minecraft -> before.renderExtractions < readRenderWork(minecraft).renderExtractions }
         val after = renderWork(context)
         require(after.hostFrames - before.hostFrames == after.renderExtractions - before.renderExtractions) {
             "Each clean native render must request exactly one common host frame: before=$before, after=$after"
@@ -289,37 +263,33 @@ public class StrataMinecraftLegacyClientGameTest : FabricClientGameTest {
         }
     }
 
-    private fun assertPortableTextureBounds(context: ClientGameTestContext) {
-        context.runOnClient(
-            FailableConsumer<Minecraft, RuntimeException> { minecraft ->
-                val presentation = nativePresentation(activeFabricScreen(minecraft))
-                val sizes =
-                    presentation.textures.map { texture ->
-                        val pixels = checkNotNull(texture.pixels) { "A displayed Fabric texture was already released." }
-                        IntSize(pixels.width, pixels.height)
-                    }
-                require(sizes == listOf(viewport, slotHighlightTextureSize)) {
-                    "Portable runs must retain only their visible bounds instead of one full-viewport texture each: $sizes"
+    private fun assertPortableTextureBounds(context: MinecraftLoadedTestContext) {
+        context.computeOnClient { minecraft ->
+            val presentation = nativePresentation(activeFabricScreen(minecraft))
+            val sizes =
+                presentation.textures.map { texture ->
+                    val pixels = checkNotNull(texture.pixels) { "A displayed Fabric texture was already released." }
+                    IntSize(pixels.width, pixels.height)
                 }
-            },
-        )
+            require(sizes == listOf(viewport, slotHighlightTextureSize)) {
+                "Portable runs must retain only their visible bounds instead of one full-viewport texture each: $sizes"
+            }
+        }
     }
 
-    private fun closeAndAssertReleased(context: ClientGameTestContext) {
-        context.runOnClient(
-            FailableConsumer<Minecraft, RuntimeException> { minecraft ->
-                val screen = activeFabricScreen(minecraft)
-                val vanillaScreen: Screen = screen
-                val presentation = nativePresentation(screen)
-                require(presentation.textures.isNotEmpty()) { "The rendered Fabric screen must own a native texture before detach." }
-                minecraft.setScreen(null)
-                assertPresentationReleased(screen)
-                assertNativePresentationReleased(minecraft, presentation)
-                vanillaScreen.onClose()
-                assertTerminalReleased(screen)
-            },
-        )
-        context.waitFor(Predicate { minecraft -> (minecraft.screen is FabricMinecraftScreen).not() })
+    private fun closeAndAssertReleased(context: MinecraftLoadedTestContext) {
+        context.computeOnClient { minecraft ->
+            val screen = activeFabricScreen(minecraft)
+            val vanillaScreen: Screen = screen
+            val presentation = nativePresentation(screen)
+            require(presentation.textures.isNotEmpty()) { "The rendered Fabric screen must own a native texture before detach." }
+            minecraft.setScreen(null)
+            assertPresentationReleased(screen)
+            assertNativePresentationReleased(minecraft, presentation)
+            vanillaScreen.onClose()
+            assertTerminalReleased(screen)
+        }
+        context.waitFor { minecraft -> (minecraft.screen is FabricMinecraftScreen).not() }
     }
 
     private fun assertPresentationReleased(screen: FabricMinecraftScreen) {
@@ -361,12 +331,16 @@ public class StrataMinecraftLegacyClientGameTest : FabricClientGameTest {
             require(texture.pixels == null) { "A detached Fabric screen left a native texture open." }
         }
         val textureManager = minecraft.textureManager
-        val registryField =
-            textureManager.javaClass.declaredFields.single { field ->
-                Map::class.java.isAssignableFrom(field.type)
-            }
-        check(registryField.trySetAccessible()) { "Minecraft's texture registry is inaccessible." }
-        val registry = registryField.get(textureManager) as? Map<*, *> ?: error("Minecraft's texture registry is not a map.")
+        val registry =
+            textureManager.javaClass.declaredFields
+                .filter { field -> Map::class.java.isAssignableFrom(field.type) }
+                .map { field ->
+                    check(field.trySetAccessible()) { "A Minecraft texture-manager map is inaccessible." }
+                    field.get(textureManager) as? Map<*, *> ?: error("A Minecraft texture-manager map has an invalid value.")
+                }.single { candidate ->
+                    candidate.isNotEmpty() &&
+                        candidate.all { (key, value) -> key is MinecraftTestResourceLocation && value is AbstractTexture }
+                }
         require(presentation.locations.none { location -> registry.containsKey(location) }) {
             "A detached Fabric screen left a texture registered in Minecraft's TextureManager."
         }
@@ -454,10 +428,7 @@ public class StrataMinecraftLegacyClientGameTest : FabricClientGameTest {
         return count
     }
 
-    private fun renderWork(context: ClientGameTestContext): RenderWork =
-        context.computeOnClient(
-            FailableFunction<Minecraft, RenderWork, RuntimeException> { minecraft -> readRenderWork(minecraft) },
-        )
+    private fun renderWork(context: MinecraftLoadedTestContext): RenderWork = context.computeOnClient { minecraft -> readRenderWork(minecraft) }
 
     private fun readRenderWork(minecraft: Minecraft): RenderWork {
         val screen = activeFabricScreen(minecraft)
