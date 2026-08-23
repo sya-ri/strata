@@ -32,7 +32,7 @@ jobs:
         run: bash ./gradlew assemble
       - name: Release assembled outputs
         run: |
-          bash ./gradlew clean
+          bash ./gradlew :clean
           bash ./gradlew --stop
           df -h /
       - name: Run Qodana

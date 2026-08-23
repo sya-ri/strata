@@ -10,6 +10,7 @@ import dev.s7a.strata.input.PointerEvent
 import dev.s7a.strata.render.ArgbColor
 import dev.s7a.strata.render.DrawImage
 import dev.s7a.strata.resource.ResourceId
+import dev.s7a.strata.runtime.FrameTime
 import dev.s7a.strata.runtime.headless.HeadlessImage
 import dev.s7a.strata.runtime.headless.rasterizeHeadless
 import dev.s7a.strata.runtime.minecraft.MinecraftUiProfile
@@ -473,13 +474,14 @@ public class StrataMinecraftClientGameTest : FabricClientGameTest {
         definition: ScreenDefinition,
         viewport: IntSize,
         pointerPosition: IntOffset = pointer,
+        frameTime: FrameTime? = null,
     ): HeadlessImage {
         val host = createMinecraftUiHost(definition, profile)
         host.attach()
         return try {
-            host.frame(viewport)
+            if (frameTime == null) host.frame(viewport) else host.frame(viewport, FrameTime(0L))
             host.dispatchPointer(PointerEvent.Move(pointerPosition))
-            val frame = host.frame(viewport)
+            val frame = if (frameTime == null) host.frame(viewport) else host.frame(viewport, frameTime)
             val framebufferClear =
                 DrawCommand.FillRectangle(
                     IntRect(0, 0, frame.size.width, frame.size.height),
@@ -489,6 +491,20 @@ public class StrataMinecraftClientGameTest : FabricClientGameTest {
         } finally {
             host.close()
         }
+    }
+
+    private fun hasExactPixels(
+        native: NativeImage,
+        headless: HeadlessImage,
+    ): Boolean {
+        val expected = IntSize(native.getWidth(), native.getHeight())
+        if (headless.size != expected) return false
+        for (y in 0 until expected.height) {
+            for (x in 0 until expected.width) {
+                if (headless.argbAt(x, y) != native.getPixel(x, y)) return false
+            }
+        }
+        return true
     }
 
     private fun requireImageSize(
@@ -588,16 +604,41 @@ public class StrataMinecraftClientGameTest : FabricClientGameTest {
             context.waitForScreen(FabricMinecraftScreen::class.java)
             context.input.setCursorPos(showcase.pointer.x.toDouble(), showcase.pointer.y.toDouble())
             context.waitTicks(2)
-            NativeImage.read(imagePath.inputStream()).use { expected ->
-                context.assertScreenshotEquals(
-                    TestScreenshotComparisonOptions
-                        .of(expected)
-                        .withAlgorithm(TestScreenshotComparisonAlgorithm.exact())
-                        .saveWithFileName("strata-component-${showcase.slug}-fabric")
+            val fabricPath =
+                context.takeScreenshot(
+                    TestScreenshotOptions
+                        .of("strata-component-${showcase.slug}-fabric")
                         .disableCounterPrefix()
                         .withSize(showcase.viewport.width, showcase.viewport.height)
                         .withDestinationDir(output),
                 )
+            NativeImage.read(fabricPath.inputStream()).use { fabric ->
+                requireImageSize(fabric, showcase.viewport)
+                if (showcase.animationFrameTimes.isEmpty()) {
+                    requireExactPixels(fabric, headless)
+                } else {
+                    val matched =
+                        showcase.animationFrameTimes.any { frameTime ->
+                            val candidate =
+                                context.computeOnClient(
+                                    FailableFunction<Minecraft, HeadlessImage, RuntimeException> {
+                                        renderHeadless(
+                                            profile,
+                                            createComponentShowcaseScreenDefinition(showcase, assets),
+                                            showcase.viewport,
+                                            showcase.pointer,
+                                            frameTime,
+                                        )
+                                    },
+                                )
+                            hasExactPixels(fabric, candidate)
+                        }
+                    if (matched.not()) {
+                        throw AssertionError(
+                            "Fabric ${showcase.slug} pixels did not match any complete headless animation frame.",
+                        )
+                    }
+                }
             }
             frames[showcase] = ComponentShowcaseFrame(headless, png)
         }
@@ -1174,6 +1215,7 @@ public class StrataMinecraftClientGameTest : FabricClientGameTest {
         val slug: String,
         val viewport: IntSize,
         val pointer: IntOffset = IntOffset.Zero,
+        val animationFrameTimes: List<FrameTime> = emptyList(),
     ) {
         Row("row", IntSize(136, 64)),
         Column("column", IntSize(120, 64)),
@@ -1194,7 +1236,16 @@ public class StrataMinecraftClientGameTest : FabricClientGameTest {
         Image("image", IntSize(64, 64)),
         Slot("slot", IntSize(64, 64), IntOffset(32, 32)),
         PlayerHead("player-head", IntSize(64, 64)),
-        LoadingIndicator("loading-indicator", IntSize(32, 24)),
+        LoadingIndicator(
+            "loading-indicator",
+            IntSize(32, 24),
+            animationFrameTimes =
+                listOf(
+                    FrameTime(0L),
+                    FrameTime(300_000_000L),
+                    FrameTime(600_000_000L),
+                ),
+        ),
         ProgressBar("progress-bar", IntSize(116, 28)),
     }
 
