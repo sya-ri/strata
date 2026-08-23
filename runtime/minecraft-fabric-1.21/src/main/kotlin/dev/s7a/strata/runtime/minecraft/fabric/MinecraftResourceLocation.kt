@@ -14,3 +14,8 @@ internal fun minecraftResourceLocation(
     namespace: String,
     path: String,
 ): MinecraftResourceLocation = ResourceLocation.fromNamespaceAndPath(namespace, path)
+
+/**
+ * Parses a mapped Minecraft resource identifier or throws for invalid input.
+ */
+internal fun parseMinecraftResourceLocation(value: String): MinecraftResourceLocation = ResourceLocation.parse(value)

@@ -73,7 +73,7 @@ private class MinecraftFontContractValidator(
 
     private fun visitReference(provider: JsonObject) {
         val id = JsonBoundary.parseIdentifier(JsonBoundary.requiredString(provider, "id"), "font reference")
-        visit(MinecraftResourceLocation.fromNamespaceAndPath(id.getNamespace(), "font/${id.getPath()}.json"))
+        visit(minecraftResourceLocation(id.getNamespace(), "font/${id.getPath()}.json"))
     }
 
     private fun visitSpace(provider: JsonObject) {
@@ -173,7 +173,7 @@ private class MinecraftFontContractValidator(
             label: String,
         ): MinecraftResourceLocation =
             try {
-                MinecraftResourceLocation.parse(value)
+                parseMinecraftResourceLocation(value)
             } catch (failure: MinecraftResourceLocationException) {
                 throw IllegalArgumentException("Minecraft $label identifier is invalid.", failure)
             }
@@ -256,8 +256,8 @@ private class MinecraftFontContractValidator(
             )
         private val printableAsciiRange: IntRange = 0x21..0x7E
         private val asciiIdentifier: MinecraftResourceLocation =
-            MinecraftResourceLocation.fromNamespaceAndPath("minecraft", "font/ascii.png")
+            minecraftResourceLocation("minecraft", "font/ascii.png")
         private val defaultFontIdentifier: MinecraftResourceLocation =
-            MinecraftResourceLocation.fromNamespaceAndPath("minecraft", "font/default.json")
+            minecraftResourceLocation("minecraft", "font/default.json")
     }
 }

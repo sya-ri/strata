@@ -7,6 +7,7 @@ plugins {
     alias(libs.plugins.fabricLoom)
 }
 
+evaluationDependsOn(":runtime:minecraft-fabric-26.1")
 val runtimeFabricMain =
     project(":runtime:minecraft-fabric-26.1")
         .extensions

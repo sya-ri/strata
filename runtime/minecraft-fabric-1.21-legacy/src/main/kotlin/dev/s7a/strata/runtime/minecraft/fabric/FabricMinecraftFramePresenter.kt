@@ -462,7 +462,7 @@ internal class FabricMinecraftFramePresenter(
         private val textureSequence = AtomicLong()
 
         private fun nextTextureLocation(): MinecraftResourceLocation =
-            MinecraftResourceLocation.fromNamespaceAndPath(
+            minecraftResourceLocation(
                 "strata",
                 "runtime/frame/${textureSequence.getAndIncrement().toULong()}",
             )

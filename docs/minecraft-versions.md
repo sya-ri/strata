@@ -90,6 +90,13 @@ The completed family spans the original 1.21 release through 1.21.11 and passed 
 This classification is the baseline for the next older minor family.
 Reopen it after that family is complete instead of assuming that the 1.21 boundaries remain optimal for earlier native APIs.
 
+## Minor-family review gate
+
+Complete and verify each supported patch in one Minecraft minor family before starting the next older minor family.
+At that boundary, review whether the public API, retained runtime boundary, version-specific adapters, linked source roots, and number of Gradle modules still express real working behavior without duplication or placeholder artifacts.
+Repeat the rendering benchmarks and retention tests, inspect loaded-client lifecycle evidence for redundant frames or unreleased temporary data, record the result in the canonical architecture, build, version, and performance documents, and only then select the next older supported patch.
+Treat a newly discovered native incompatibility as evidence for a typed compile-time boundary, not as permission for version-string dispatch, reflection, or speculative modules.
+
 ## Current compatibility
 
 Exactly one versioned Fabric runtime belongs on a consumer runtime classpath.
@@ -111,9 +118,10 @@ The artifacts expose the same Strata-owned package entry points and class names 
 | 1.21.2 | 21 | Official Mojang mappings, remapped distribution | The same direct-skin, unnamed-texture, render-type/pose-stack, primitive-input, and `ResourceLocation` family as 1.21.3 | The complete standalone loaded suite passes from development outputs and remapped production jars against the exact 1.21.2 client and final official Fabric API fixture |
 | 1.21.1 | 21 | Official Mojang mappings, remapped distribution | ABGR `NativeImage` accessors, the pre-render-type `GuiGraphics.blit` signature, fixed tiled nine-slices, code-defined Slot/Tooltip treatments, and no bundle progress sprites | The complete standalone loaded suite passes from development outputs and remapped production jars; profile extraction converts native pixels to ARGB, reproduces the verified legacy Slot and Tooltip drawing constants, and uses the active white boss-bar resource pair for progress |
 | 1.21 | 21 | Official Mojang mappings, remapped distribution | The same ABGR native-image, pre-render-type blit, fixed-nine-slice, direct-skin, code-defined Slot/Tooltip, and horizontal-progress capability family as 1.21.1 | The complete standalone loaded suite passes from development outputs and remapped production jars against the original Tricky Trials client and its final official Fabric API fixture |
+| 1.20.6 | 21 | Official Mojang mappings, remapped distribution | The 1.21 legacy capability family with constructor-based `ResourceLocation` creation and parsing isolated behind compile-time factories | The complete standalone loaded suite passes from development outputs and remapped production jars, including portable rendering, input, integrated-server inventory round trips, player-skin and resource loading, and terminal cleanup |
 
 The neutral `runtime/minecraft-fabric-shared`, `runtime/minecraft-fabric-identifier`, `runtime/minecraft-fabric-1.21-legacy`, `runtime/minecraft-fabric-1.21.9-legacy`, `runtime/minecraft-fabric-1.21.8-legacy`, `runtime/minecraft-fabric-1.21.6-legacy`, `runtime/minecraft-fabric-1.21.5-legacy`, `runtime/minecraft-fabric-1.21.3-legacy`, `runtime/minecraft-fabric-unobfuscated`, `integration/minecraft-fabric-1.21-legacy`, `integration/minecraft-fabric-client-gametest`, `integration/minecraft-fabric-1.21.3-legacy`, and the other release-family integration trees are source ownership boundaries, not Gradle modules or fallback profiles.
-The 1.21.8 Kotlin input root is shared through 1.21, the complete 1.21.8 Java root is shared through 1.21.4, the 1.21.3 Java root isolates the earlier skin future shared by 1.21.3 through 1.21, and the 1.21.5/1.21.6 roots isolate native rendering and version-name accessors.
+The 1.21.8 Kotlin input root is shared through 1.20.6, the complete 1.21.8 Java root is shared through 1.21.4, the 1.21.3 Java root isolates the earlier skin future shared by 1.21.3 through 1.20.6, and the 1.21.5/1.21.6 roots isolate native rendering and version-name accessors.
 A runtime version links the complete shared root only after its compiler and loaded tests prove every file compatible, links an additional release-family root only when applicable, and keeps unexplained divergence in its versioned project until resolved.
-The identifier root is limited to releases whose official mappings expose that native name; releases such as 1.21.10 through 1.21 with `ResourceLocation` own compile-time aliases locally while reusing the compatible implementation roots.
+The identifier root is limited to releases whose official mappings expose that native name; releases such as 1.21.10 through 1.20.6 with `ResourceLocation` own compile-time aliases and factories locally while reusing the compatible implementation roots.
 Do not use file-tree include filters to select individual version-compatible sources because IDE and static-analysis Gradle models operate at source-root granularity.

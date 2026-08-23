@@ -10,6 +10,7 @@ plugins {
     alias(libs.plugins.fabricLoomRemap)
 }
 
+evaluationDependsOn(":runtime:minecraft-fabric-1.21.5")
 val runtimeFabricProject = project(":runtime:minecraft-fabric-1.21.5")
 val runtimeFabricMain =
     runtimeFabricProject

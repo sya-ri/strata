@@ -43,7 +43,7 @@ private data class MinecraftFabricTarget(
 
 val baselineJavaVersion = libs.versions.java.baseline.get().toInt()
 val minecraftJavaVersion = libs.versions.java.minecraft.get().toInt()
-val minecraft121JavaVersion = libs.versions.java.minecraft121.get().toInt()
+val minecraftJava21Version = libs.versions.java.minecraft121.get().toInt()
 val sharedLegacyRuntimeSourceLinks =
     listOf(
         "runtime/minecraft-fabric-1.21-legacy",
@@ -52,8 +52,20 @@ val sharedLegacyRuntimeSourceLinks =
 private val minecraftFabricTargets =
     listOf(
         MinecraftFabricTarget(
+            version = libs.versions.minecraft1206.get(),
+            javaVersion = minecraftJava21Version,
+            remapped = true,
+            sourceLinkPaths =
+                listOf(
+                    "runtime/minecraft-fabric-1.20.6",
+                    "runtime/minecraft-fabric-1.21.3-legacy",
+                    "runtime/minecraft-fabric-1.21.5-legacy",
+                    "runtime/minecraft-fabric-1.21.8-legacy",
+                ) + sharedLegacyRuntimeSourceLinks,
+        ),
+        MinecraftFabricTarget(
             version = libs.versions.minecraft121.get(),
-            javaVersion = minecraft121JavaVersion,
+            javaVersion = minecraftJava21Version,
             remapped = true,
             sourceLinkPaths =
                 listOf(
@@ -65,7 +77,7 @@ private val minecraftFabricTargets =
         ),
         MinecraftFabricTarget(
             version = libs.versions.minecraft1211.get(),
-            javaVersion = minecraft121JavaVersion,
+            javaVersion = minecraftJava21Version,
             remapped = true,
             sourceLinkPaths =
                 listOf(
@@ -77,7 +89,7 @@ private val minecraftFabricTargets =
         ),
         MinecraftFabricTarget(
             version = libs.versions.minecraft1212.get(),
-            javaVersion = minecraft121JavaVersion,
+            javaVersion = minecraftJava21Version,
             remapped = true,
             sourceLinkPaths =
                 listOf(
@@ -89,7 +101,7 @@ private val minecraftFabricTargets =
         ),
         MinecraftFabricTarget(
             version = libs.versions.minecraft1213.get(),
-            javaVersion = minecraft121JavaVersion,
+            javaVersion = minecraftJava21Version,
             remapped = true,
             sourceLinkPaths =
                 listOf(
@@ -101,7 +113,7 @@ private val minecraftFabricTargets =
         ),
         MinecraftFabricTarget(
             version = libs.versions.minecraft1214.get(),
-            javaVersion = minecraft121JavaVersion,
+            javaVersion = minecraftJava21Version,
             remapped = true,
             sourceLinkPaths =
                 listOf(
@@ -112,7 +124,7 @@ private val minecraftFabricTargets =
         ),
         MinecraftFabricTarget(
             version = libs.versions.minecraft1215.get(),
-            javaVersion = minecraft121JavaVersion,
+            javaVersion = minecraftJava21Version,
             remapped = true,
             sourceLinkPaths =
                 listOf(
@@ -123,7 +135,7 @@ private val minecraftFabricTargets =
         ),
         MinecraftFabricTarget(
             version = libs.versions.minecraft1216.get(),
-            javaVersion = minecraft121JavaVersion,
+            javaVersion = minecraftJava21Version,
             remapped = true,
             sourceLinkPaths =
                 listOf(
@@ -134,7 +146,7 @@ private val minecraftFabricTargets =
         ),
         MinecraftFabricTarget(
             version = libs.versions.minecraft1217.get(),
-            javaVersion = minecraft121JavaVersion,
+            javaVersion = minecraftJava21Version,
             remapped = true,
             sourceLinkPaths =
                 listOf(
@@ -145,7 +157,7 @@ private val minecraftFabricTargets =
         ),
         MinecraftFabricTarget(
             version = libs.versions.minecraft1218.get(),
-            javaVersion = minecraft121JavaVersion,
+            javaVersion = minecraftJava21Version,
             remapped = true,
             sourceLinkPaths =
                 listOf(
@@ -156,7 +168,7 @@ private val minecraftFabricTargets =
         ),
         MinecraftFabricTarget(
             version = libs.versions.minecraft1219.get(),
-            javaVersion = minecraft121JavaVersion,
+            javaVersion = minecraftJava21Version,
             remapped = true,
             sourceLinkPaths =
                 listOf(
@@ -167,7 +179,7 @@ private val minecraftFabricTargets =
         ),
         MinecraftFabricTarget(
             version = libs.versions.minecraft12110.get(),
-            javaVersion = minecraft121JavaVersion,
+            javaVersion = minecraftJava21Version,
             remapped = true,
             sourceLinkPaths =
                 listOf(
@@ -178,7 +190,7 @@ private val minecraftFabricTargets =
         ),
         MinecraftFabricTarget(
             version = libs.versions.minecraft12111.get(),
-            javaVersion = minecraft121JavaVersion,
+            javaVersion = minecraftJava21Version,
             remapped = true,
             sourceLinkPaths =
                 listOf(

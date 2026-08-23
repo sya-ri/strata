@@ -127,8 +127,8 @@ private fun ResourceManager.readImage(
 private fun ResourceManager.readSlotHighlightImages(): Pair<DrawImage, DrawImage> {
     val backPath = "textures/gui/sprites/container/slot_highlight_back.png"
     val frontPath = "textures/gui/sprites/container/slot_highlight_front.png"
-    val back = getResource(MinecraftResourceLocation.fromNamespaceAndPath("minecraft", backPath)).orElse(null)
-    val front = getResource(MinecraftResourceLocation.fromNamespaceAndPath("minecraft", frontPath)).orElse(null)
+    val back = getResource(minecraftResourceLocation("minecraft", backPath)).orElse(null)
+    val front = getResource(minecraftResourceLocation("minecraft", frontPath)).orElse(null)
     require((back == null) == (front == null)) {
         "Minecraft Slot highlight resources must provide both the back and front layers."
     }
@@ -161,7 +161,7 @@ private fun ResourceManager.readBundleProgressBarOrNull(): Triple<DrawImage, Dra
     val fullPath = "textures/gui/sprites/container/bundle/bundle_progressbar_full.png"
     val resources =
         listOf(borderPath, fillPath, fullPath).map { path ->
-            getResource(MinecraftResourceLocation.fromNamespaceAndPath("minecraft", path)).orElse(null)
+            getResource(minecraftResourceLocation("minecraft", path)).orElse(null)
         }
     require(resources.all { resource -> resource == null } || resources.all { resource -> resource != null }) {
         "Minecraft bundle ProgressBar resources must provide the border, fill, and completed fill together."
@@ -186,8 +186,8 @@ private fun ResourceManager.readLegacyHorizontalProgressBar(): Pair<DrawImage, D
 private fun ResourceManager.readTooltipSpritesOrNull(): Pair<DrawImage, DrawImage>? {
     val backgroundPath = "textures/gui/sprites/tooltip/background.png"
     val framePath = "textures/gui/sprites/tooltip/frame.png"
-    val background = getResource(MinecraftResourceLocation.fromNamespaceAndPath("minecraft", backgroundPath)).orElse(null)
-    val frame = getResource(MinecraftResourceLocation.fromNamespaceAndPath("minecraft", framePath)).orElse(null)
+    val background = getResource(minecraftResourceLocation("minecraft", backgroundPath)).orElse(null)
+    val frame = getResource(minecraftResourceLocation("minecraft", framePath)).orElse(null)
     require((background == null) == (frame == null)) {
         "Minecraft tooltip resources must provide both the background and frame sprites."
     }
@@ -205,7 +205,7 @@ private fun ResourceManager.readTooltipSpritesOrNull(): Pair<DrawImage, DrawImag
 
 private fun ResourceManager.readLoadingIndicator(): DrawImage {
     val path = "textures/gui/sprites/friends/loading.png"
-    val resource = getResource(MinecraftResourceLocation.fromNamespaceAndPath("minecraft", path)).orElse(null)
+    val resource = getResource(minecraftResourceLocation("minecraft", path)).orElse(null)
     return if (resource == null) legacyLoadingIndicator() else readImage(resource, path, loadingIndicatorImageSize)
 }
 
@@ -298,7 +298,7 @@ internal fun extractMinecraftAsciiGlyph(
     return createDrawImage(IntSize(8, 8), pixels)
 }
 
-private fun ResourceManager.requiredResource(path: String): Resource = requiredResource(MinecraftResourceLocation.fromNamespaceAndPath("minecraft", path))
+private fun ResourceManager.requiredResource(path: String): Resource = requiredResource(minecraftResourceLocation("minecraft", path))
 
 private fun ResourceManager.requiredResource(identifier: MinecraftResourceLocation): Resource =
     getResource(identifier).orElseThrow {

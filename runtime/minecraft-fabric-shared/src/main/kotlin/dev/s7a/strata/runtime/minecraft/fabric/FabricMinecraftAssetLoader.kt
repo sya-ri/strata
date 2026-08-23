@@ -26,7 +26,7 @@ import java.io.IOException
 public fun loadMinecraftUiImage(asset: ResourceId): DrawImage {
     val minecraft = Minecraft.getInstance()
     check(minecraft.isSameThread()) { "Minecraft UI images must be loaded on the client thread." }
-    val identifier = MinecraftResourceLocation.fromNamespaceAndPath(asset.namespace, asset.path)
+    val identifier = minecraftResourceLocation(asset.namespace, asset.path)
     val resource =
         minecraft
             .getResourceManager()
