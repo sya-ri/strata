@@ -98,7 +98,7 @@ final class FabricMinecraftSkinBridge {
     private static DrawImage snapshotNative(NativeImage image) {
         return requireNormalized(DrawImages.createDrawImage(
                 new IntSize(image.getWidth(), image.getHeight()),
-                image.getPixels()));
+                FabricMinecraftDynamicTextureFactoryKt.copyFabricMinecraftArgbPixels(image)));
     }
 
     private static DrawImage requireNormalized(DrawImage image) {

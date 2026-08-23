@@ -45,8 +45,7 @@ public fun extractMinecraftUiProfile(): MinecraftUiProfile {
     val manager = minecraft.getResourceManager()
     val menu = manager.readImage("textures/gui/menu_background.png", IntSize(16, 16))
     val containerBackground = manager.readImage("textures/gui/container/generic_54.png", IntSize(256, 256))
-    val slotHighlightBack = manager.readImage("textures/gui/sprites/container/slot_highlight_back.png", IntSize(24, 24))
-    val slotHighlightFront = manager.readImage("textures/gui/sprites/container/slot_highlight_front.png", IntSize(24, 24))
+    val (slotHighlightBack, slotHighlightFront) = manager.readSlotHighlightImages()
     val listBackground = manager.readImage("textures/gui/menu_list_background.png", IntSize(16, 16))
     val headerSeparator = manager.readImage("textures/gui/header_separator.png", IntSize(32, 2))
     val footerSeparator = manager.readImage("textures/gui/footer_separator.png", IntSize(32, 2))
@@ -61,12 +60,9 @@ public fun extractMinecraftUiProfile(): MinecraftUiProfile {
     val sliderHandle = manager.readImage("textures/gui/sprites/widget/slider_handle.png", sliderHandleImageSize)
     val sliderHandleHighlighted = manager.readImage("textures/gui/sprites/widget/slider_handle_highlighted.png", sliderHandleImageSize)
     val loadingIndicator = manager.readLoadingIndicator()
-    val progressBarBorder =
-        manager.readNineSliceImage("textures/gui/sprites/container/bundle/bundle_progressbar_border.png", IntSize(12, 12), 2)
-    val progressBarFill = manager.readNineSliceImage("textures/gui/sprites/container/bundle/bundle_progressbar_fill.png", IntSize(6, 6), 2)
-    val progressBarFull = manager.readNineSliceImage("textures/gui/sprites/container/bundle/bundle_progressbar_full.png", IntSize(6, 6), 2)
-    val tooltipBackground = manager.readNineSliceImage("textures/gui/sprites/tooltip/background.png", IntSize(100, 100), 9)
-    val tooltipFrame = manager.readNineSliceImage("textures/gui/sprites/tooltip/frame.png", IntSize(100, 100), 10, expectedStretchInner = true)
+    val bundleProgressBar = manager.readBundleProgressBarOrNull()
+    val legacyProgressBar = if (bundleProgressBar == null) manager.readLegacyHorizontalProgressBar() else null
+    val tooltipSprites = manager.readTooltipSpritesOrNull()
     val normalTextField = manager.readImage("textures/gui/sprites/widget/text_field.png", IntSize(200, 20))
     val highlightedTextField = manager.readImage("textures/gui/sprites/widget/text_field_highlighted.png", IntSize(200, 20))
     val normal = manager.readNineSliceImage("textures/gui/sprites/widget/button.png", buttonImageSize, 3)
@@ -96,11 +92,22 @@ public fun extractMinecraftUiProfile(): MinecraftUiProfile {
         sliderHandle(sliderHandle)
         sliderHandleHighlighted(sliderHandleHighlighted)
         loadingIndicator(loadingIndicator)
-        progressBarBorder(progressBarBorder)
-        progressBarFill(progressBarFill)
-        progressBarFull(progressBarFull)
-        tooltipBackground(tooltipBackground)
-        tooltipFrame(tooltipFrame)
+        if (bundleProgressBar == null) {
+            val (background, fill) = requireNotNull(legacyProgressBar)
+            horizontalProgressBar(background, fill)
+        } else {
+            val (border, fill, full) = bundleProgressBar
+            progressBarBorder(border)
+            progressBarFill(fill)
+            progressBarFull(full)
+        }
+        if (tooltipSprites == null) {
+            legacyTooltip(legacyTooltipBackground, legacyTooltipBorderTop, legacyTooltipBorderBottom)
+        } else {
+            val (background, frame) = tooltipSprites
+            tooltipBackground(background)
+            tooltipFrame(frame)
+        }
         textFieldNormal(normalTextField)
         textFieldHighlighted(highlightedTextField)
         buttonNormal(normal, 3, NineSliceCenterMode.Tiled)
@@ -116,6 +123,85 @@ private fun ResourceManager.readImage(
     path: String,
     expectedSize: IntSize,
 ): DrawImage = readImage(requiredResource(path), path, expectedSize)
+
+private fun ResourceManager.readSlotHighlightImages(): Pair<DrawImage, DrawImage> {
+    val backPath = "textures/gui/sprites/container/slot_highlight_back.png"
+    val frontPath = "textures/gui/sprites/container/slot_highlight_front.png"
+    val back = getResource(MinecraftResourceLocation.fromNamespaceAndPath("minecraft", backPath)).orElse(null)
+    val front = getResource(MinecraftResourceLocation.fromNamespaceAndPath("minecraft", frontPath)).orElse(null)
+    require((back == null) == (front == null)) {
+        "Minecraft Slot highlight resources must provide both the back and front layers."
+    }
+    return if (back == null) {
+        legacySlotHighlightImages()
+    } else {
+        Pair(
+            readImage(back, backPath, slotHighlightImageSize),
+            readImage(requireNotNull(front), frontPath, slotHighlightImageSize),
+        )
+    }
+}
+
+private fun legacySlotHighlightImages(): Pair<DrawImage, DrawImage> {
+    val frontPixels = IntArray(slotHighlightImageSize.width * slotHighlightImageSize.height)
+    for (y in 4 until 20) {
+        for (x in 4 until 20) {
+            frontPixels[y * slotHighlightImageSize.width + x] = legacySlotHighlightColor.value
+        }
+    }
+    return Pair(
+        createDrawImage(slotHighlightImageSize, IntArray(frontPixels.size)),
+        createDrawImage(slotHighlightImageSize, frontPixels),
+    )
+}
+
+private fun ResourceManager.readBundleProgressBarOrNull(): Triple<DrawImage, DrawImage, DrawImage>? {
+    val borderPath = "textures/gui/sprites/container/bundle/bundle_progressbar_border.png"
+    val fillPath = "textures/gui/sprites/container/bundle/bundle_progressbar_fill.png"
+    val fullPath = "textures/gui/sprites/container/bundle/bundle_progressbar_full.png"
+    val resources =
+        listOf(borderPath, fillPath, fullPath).map { path ->
+            getResource(MinecraftResourceLocation.fromNamespaceAndPath("minecraft", path)).orElse(null)
+        }
+    require(resources.all { resource -> resource == null } || resources.all { resource -> resource != null }) {
+        "Minecraft bundle ProgressBar resources must provide the border, fill, and completed fill together."
+    }
+    if (resources.first() == null) return null
+    return Triple(
+        readNineSliceImage(borderPath, IntSize(12, 12), 2),
+        readNineSliceImage(fillPath, IntSize(6, 6), 2),
+        readNineSliceImage(fullPath, IntSize(6, 6), 2),
+    )
+}
+
+private fun ResourceManager.readLegacyHorizontalProgressBar(): Pair<DrawImage, DrawImage> {
+    val backgroundPath = "textures/gui/sprites/boss_bar/white_background.png"
+    val fillPath = "textures/gui/sprites/boss_bar/white_progress.png"
+    return Pair(
+        readImage(backgroundPath, legacyProgressBarImageSize),
+        readImage(fillPath, legacyProgressBarImageSize),
+    )
+}
+
+private fun ResourceManager.readTooltipSpritesOrNull(): Pair<DrawImage, DrawImage>? {
+    val backgroundPath = "textures/gui/sprites/tooltip/background.png"
+    val framePath = "textures/gui/sprites/tooltip/frame.png"
+    val background = getResource(MinecraftResourceLocation.fromNamespaceAndPath("minecraft", backgroundPath)).orElse(null)
+    val frame = getResource(MinecraftResourceLocation.fromNamespaceAndPath("minecraft", framePath)).orElse(null)
+    require((background == null) == (frame == null)) {
+        "Minecraft tooltip resources must provide both the background and frame sprites."
+    }
+    if (background == null) return null
+    return Pair(
+        readNineSliceImage(backgroundPath, IntSize(100, 100), 9),
+        readNineSliceImage(
+            framePath,
+            IntSize(100, 100),
+            10,
+            expectedStretchInner = minecraftTooltipFrameStretchesInner,
+        ),
+    )
+}
 
 private fun ResourceManager.readLoadingIndicator(): DrawImage {
     val path = "textures/gui/sprites/friends/loading.png"
@@ -145,7 +231,7 @@ private fun readImage(
                 require(IntSize(image.getWidth(), image.getHeight()) == expectedSize) {
                     "Minecraft resource $path has an unexpected size."
                 }
-                image.getPixels()
+                copyFabricMinecraftArgbPixels(image)
             }
         }
     return createDrawImage(expectedSize, pixels)
@@ -256,7 +342,7 @@ internal fun validateMinecraftNineSliceScaling(
     require(border.left() == expectedBorder && border.top() == expectedBorder && border.right() == expectedBorder && border.bottom() == expectedBorder) {
         "Minecraft GUI metadata has an unexpected border."
     }
-    require(scaling.stretchInner() == expectedStretchInner) {
+    require(minecraftNineSliceStretchesInner(scaling) == expectedStretchInner) {
         "Minecraft GUI metadata has an unexpected center mode."
     }
 }
@@ -282,7 +368,7 @@ internal fun validateMinecraftScrollbarScaling(scaling: GuiSpriteScaling) {
     require(border.left() == 1 && border.top() == 1 && border.right() == 1 && border.bottom() == 1) {
         "Minecraft scrollbar metadata must use one-pixel borders."
     }
-    require(scaling.stretchInner().not()) {
+    require(minecraftNineSliceStretchesInner(scaling).not()) {
         "Minecraft scrollbar metadata must keep the center tiled."
     }
 }
@@ -292,6 +378,12 @@ private val scrollbarImageSize: IntSize = IntSize(6, 32)
 private val checkboxImageSize: IntSize = IntSize(20, 20)
 private val sliderHandleImageSize: IntSize = IntSize(8, 20)
 private val loadingIndicatorImageSize: IntSize = IntSize(5, 6)
+private val slotHighlightImageSize: IntSize = IntSize(24, 24)
+private val legacyProgressBarImageSize: IntSize = IntSize(182, 5)
 private val printableAsciiRange: IntRange = 0x21..0x7E
 private val transparentMaskPixel: ArgbColor = ArgbColor(0x00FFFFFF)
 private val opaqueMaskPixel: ArgbColor = ArgbColor(-1)
+private val legacySlotHighlightColor: ArgbColor = ArgbColor(0x80FFFFFF.toInt())
+private val legacyTooltipBackground: ArgbColor = ArgbColor(0xF0100010.toInt())
+private val legacyTooltipBorderTop: ArgbColor = ArgbColor(0x505000FF)
+private val legacyTooltipBorderBottom: ArgbColor = ArgbColor(0x5028007F)

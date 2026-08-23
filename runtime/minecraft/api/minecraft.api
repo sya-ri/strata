@@ -78,6 +78,8 @@ public abstract interface class dev/s7a/strata/runtime/minecraft/MinecraftUiProf
 	public abstract fun checkboxSelected (Ldev/s7a/strata/render/DrawImage;)V
 	public abstract fun checkboxSelectedHighlighted (Ldev/s7a/strata/render/DrawImage;)V
 	public abstract fun containerBackground (Ldev/s7a/strata/render/DrawImage;)V
+	public abstract fun horizontalProgressBar (Ldev/s7a/strata/render/DrawImage;Ldev/s7a/strata/render/DrawImage;)V
+	public abstract fun legacyTooltip-cySiClg (III)V
 	public abstract fun listBackground (Ldev/s7a/strata/render/DrawImage;)V
 	public abstract fun listFooterSeparator (Ldev/s7a/strata/render/DrawImage;)V
 	public abstract fun listHeaderSeparator (Ldev/s7a/strata/render/DrawImage;)V

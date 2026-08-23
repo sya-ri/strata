@@ -139,8 +139,10 @@ internal object MinecraftProfileImplementation {
         private var progressBarBorder: DrawImage? = null
         private var progressBarFill: DrawImage? = null
         private var progressBarFull: DrawImage? = null
+        private var horizontalProgressBar: MinecraftProgressBarStyle.Horizontal? = null
         private var tooltipBackground: DrawImage? = null
         private var tooltipFrame: DrawImage? = null
+        private var legacyTooltip: MinecraftTooltipStyle.Legacy? = null
         private var normalTextField: DrawImage? = null
         private var highlightedTextField: DrawImage? = null
         private var normalButton: MinecraftButtonSpriteSnapshot? = null
@@ -165,6 +167,7 @@ internal object MinecraftProfileImplementation {
 
         override fun progressBarBorder(image: DrawImage) {
             checkUsable()
+            require(horizontalProgressBar == null) { "Horizontal ProgressBar sprites were already declared." }
             require(progressBarBorder == null) { "ProgressBar border sprite was already declared." }
             require(image.size == progressBarBorderSize) { "ProgressBar border sprite must be 12 by 12 pixels." }
             progressBarBorder = image
@@ -172,6 +175,7 @@ internal object MinecraftProfileImplementation {
 
         override fun progressBarFill(image: DrawImage) {
             checkUsable()
+            require(horizontalProgressBar == null) { "Horizontal ProgressBar sprites were already declared." }
             require(progressBarFill == null) { "ProgressBar fill sprite was already declared." }
             require(image.size == progressBarFillSize) { "ProgressBar fill sprite must be 6 by 6 pixels." }
             progressBarFill = image
@@ -179,13 +183,29 @@ internal object MinecraftProfileImplementation {
 
         override fun progressBarFull(image: DrawImage) {
             checkUsable()
+            require(horizontalProgressBar == null) { "Horizontal ProgressBar sprites were already declared." }
             require(progressBarFull == null) { "Completed ProgressBar fill sprite was already declared." }
             require(image.size == progressBarFillSize) { "Completed ProgressBar fill sprite must be 6 by 6 pixels." }
             progressBarFull = image
         }
 
+        override fun horizontalProgressBar(
+            background: DrawImage,
+            fill: DrawImage,
+        ) {
+            checkUsable()
+            require(progressBarBorder == null && progressBarFill == null && progressBarFull == null) {
+                "Bundle ProgressBar sprites were already declared."
+            }
+            require(horizontalProgressBar == null) { "Horizontal ProgressBar sprites were already declared." }
+            require(0 < background.size.width && 0 < background.size.height) { "Horizontal ProgressBar sprites must be nonempty." }
+            require(background.size == fill.size) { "Horizontal ProgressBar sprites must have equal sizes." }
+            horizontalProgressBar = MinecraftProgressBarStyle.Horizontal(background, fill)
+        }
+
         override fun tooltipBackground(image: DrawImage) {
             checkUsable()
+            require(legacyTooltip == null) { "Legacy tooltip colors were already declared." }
             require(tooltipBackground == null) { "Tooltip background sprite was already declared." }
             require(image.size == tooltipSpriteSize) { "Tooltip background sprite must be 100 by 100 pixels." }
             tooltipBackground = image
@@ -193,9 +213,21 @@ internal object MinecraftProfileImplementation {
 
         override fun tooltipFrame(image: DrawImage) {
             checkUsable()
+            require(legacyTooltip == null) { "Legacy tooltip colors were already declared." }
             require(tooltipFrame == null) { "Tooltip frame sprite was already declared." }
             require(image.size == tooltipSpriteSize) { "Tooltip frame sprite must be 100 by 100 pixels." }
             tooltipFrame = image
+        }
+
+        override fun legacyTooltip(
+            backgroundColor: ArgbColor,
+            borderTop: ArgbColor,
+            borderBottom: ArgbColor,
+        ) {
+            checkUsable()
+            require(tooltipBackground == null && tooltipFrame == null) { "Tooltip sprites were already declared." }
+            require(legacyTooltip == null) { "Legacy tooltip colors were already declared." }
+            legacyTooltip = MinecraftTooltipStyle.Legacy(backgroundColor, borderTop, borderBottom)
         }
 
         override fun containerBackground(image: DrawImage) {
@@ -396,11 +428,8 @@ internal object MinecraftProfileImplementation {
                 sliderHandle = requireNotNull(sliderHandle) { "Slider handle sprite must be declared." },
                 sliderHandleHighlighted = requireNotNull(sliderHandleHighlighted) { "Highlighted Slider handle sprite must be declared." },
                 loadingIndicator = requireNotNull(loadingIndicator) { "LoadingIndicator sprite must be declared." },
-                progressBarBorder = requireNotNull(progressBarBorder) { "ProgressBar border sprite must be declared." },
-                progressBarFill = requireNotNull(progressBarFill) { "ProgressBar fill sprite must be declared." },
-                progressBarFull = requireNotNull(progressBarFull) { "Completed ProgressBar fill sprite must be declared." },
-                tooltipBackground = requireNotNull(tooltipBackground) { "Tooltip background sprite must be declared." },
-                tooltipFrame = requireNotNull(tooltipFrame) { "Tooltip frame sprite must be declared." },
+                progressBarStyle = createProgressBarStyle(),
+                tooltipStyle = createTooltipStyle(),
                 normalTextField = requireNotNull(normalTextField) { "Normal TextField sprite must be declared." },
                 highlightedTextField = requireNotNull(highlightedTextField) { "Highlighted TextField sprite must be declared." },
                 glyphs = glyphs,
@@ -434,8 +463,10 @@ internal object MinecraftProfileImplementation {
             progressBarBorder = null
             progressBarFill = null
             progressBarFull = null
+            horizontalProgressBar = null
             tooltipBackground = null
             tooltipFrame = null
+            legacyTooltip = null
             normalTextField = null
             highlightedTextField = null
             normalButton = null
@@ -507,6 +538,33 @@ internal object MinecraftProfileImplementation {
             )
         }
 
+        private fun createProgressBarStyle(): MinecraftProgressBarStyle {
+            horizontalProgressBar?.let { style ->
+                require(progressBarBorder == null && progressBarFill == null && progressBarFull == null) {
+                    "A profile cannot mix horizontal and bundle ProgressBar sprites."
+                }
+                return style
+            }
+            return MinecraftProgressBarStyle.Bundle(
+                requireNotNull(progressBarBorder) { "ProgressBar border sprite must be declared." },
+                requireNotNull(progressBarFill) { "ProgressBar fill sprite must be declared." },
+                requireNotNull(progressBarFull) { "Completed ProgressBar fill sprite must be declared." },
+            )
+        }
+
+        private fun createTooltipStyle(): MinecraftTooltipStyle {
+            legacyTooltip?.let { style ->
+                require(tooltipBackground == null && tooltipFrame == null) {
+                    "A profile cannot mix legacy tooltip colors and tooltip sprites."
+                }
+                return style
+            }
+            return MinecraftTooltipStyle.Sprites(
+                requireNotNull(tooltipBackground) { "Tooltip background sprite must be declared." },
+                requireNotNull(tooltipFrame) { "Tooltip frame sprite must be declared." },
+            )
+        }
+
         private fun createButton(
             image: DrawImage,
             border: Int,
@@ -542,11 +600,8 @@ internal object MinecraftProfileImplementation {
         val sliderHandle: DrawImage,
         val sliderHandleHighlighted: DrawImage,
         val loadingIndicator: DrawImage,
-        val progressBarBorder: DrawImage,
-        val progressBarFill: DrawImage,
-        val progressBarFull: DrawImage,
-        val tooltipBackground: DrawImage,
-        val tooltipFrame: DrawImage,
+        val progressBarStyle: MinecraftProgressBarStyle,
+        val tooltipStyle: MinecraftTooltipStyle,
         val normalTextField: DrawImage,
         val highlightedTextField: DrawImage,
         glyphs: Map<Int, MinecraftGlyphSnapshot>,
@@ -601,11 +656,8 @@ internal object MinecraftProfileImplementation {
                 sliderHandle: DrawImage,
                 sliderHandleHighlighted: DrawImage,
                 loadingIndicator: DrawImage,
-                progressBarBorder: DrawImage,
-                progressBarFill: DrawImage,
-                progressBarFull: DrawImage,
-                tooltipBackground: DrawImage,
-                tooltipFrame: DrawImage,
+                progressBarStyle: MinecraftProgressBarStyle,
+                tooltipStyle: MinecraftTooltipStyle,
                 normalTextField: DrawImage,
                 highlightedTextField: DrawImage,
                 glyphs: Map<Int, MinecraftGlyphSnapshot>,
@@ -632,11 +684,8 @@ internal object MinecraftProfileImplementation {
                     sliderHandle,
                     sliderHandleHighlighted,
                     loadingIndicator,
-                    progressBarBorder,
-                    progressBarFill,
-                    progressBarFull,
-                    tooltipBackground,
-                    tooltipFrame,
+                    progressBarStyle,
+                    tooltipStyle,
                     normalTextField,
                     highlightedTextField,
                     glyphs,
@@ -686,9 +735,7 @@ internal object MinecraftProfileImplementation {
         ): Element {
             val currentProfile = requireProfile()
             return MinecraftProgressBarElement.create(
-                currentProfile.progressBarBorder,
-                currentProfile.progressBarFill,
-                currentProfile.progressBarFull,
+                currentProfile.progressBarStyle,
                 progress,
                 size,
                 modifier,
@@ -706,8 +753,7 @@ internal object MinecraftProfileImplementation {
             return modifier.then(
                 createMinecraftTooltipModifier(
                     MinecraftTextRun.createNormal(text, currentProfile::glyph),
-                    currentProfile.tooltipBackground,
-                    currentProfile.tooltipFrame,
+                    currentProfile.tooltipStyle,
                     delayNanos,
                 ),
             )

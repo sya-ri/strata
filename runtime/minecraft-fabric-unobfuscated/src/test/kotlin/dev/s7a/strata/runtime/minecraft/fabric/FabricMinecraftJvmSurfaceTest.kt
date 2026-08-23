@@ -140,6 +140,7 @@ internal class FabricMinecraftJvmSurfaceTest {
                 "$packageName.FabricMinecraftFontContractKt" to emptySet(),
                 "$packageName.FabricMinecraftFocusedInputMappingKt" to emptySet(),
                 "$packageName.FabricMinecraftInputMappingKt" to emptySet(),
+                "$packageName.FabricMinecraftNativeImageBridgeKt" to emptySet(),
                 assetFacade to setOf("loadMinecraftUiImage", "loadCurrentMinecraftPlayerSkin"),
                 profileFacade to setOf("extractMinecraftUiProfile"),
                 "$packageName.FabricMinecraftScreen" to

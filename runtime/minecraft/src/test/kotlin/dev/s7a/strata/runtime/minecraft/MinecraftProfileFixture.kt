@@ -5,6 +5,7 @@ import dev.s7a.strata.component.NineSliceCenterMode
 import dev.s7a.strata.geometry.IntSize
 import dev.s7a.strata.modifier.containerBackground
 import dev.s7a.strata.modifier.menuBackground
+import dev.s7a.strata.render.ArgbColor
 import dev.s7a.strata.render.DrawImage
 import dev.s7a.strata.render.createDrawImage
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
@@ -32,6 +33,9 @@ internal object MinecraftProfileFixture {
      * @param highlightedCenterMode highlighted sprite center mode.
      * @param disabledBorder disabled sprite border.
      * @param disabledCenterMode disabled sprite center mode.
+     * @param horizontalProgressBarBackground optional fixed-source progress background used instead of the bundle sprites.
+     * @param horizontalProgressBarFill optional fixed-source progress fill paired with [horizontalProgressBarBackground].
+     * @param legacyTooltipColors optional background, top-border, and bottom-border colors used instead of tooltip sprites.
      * @return a complete profile.
      */
     fun create(
@@ -49,8 +53,11 @@ internal object MinecraftProfileFixture {
         progressBarBorder: DrawImage = image(IntSize(12, 12), 0xFF515151.toInt()),
         progressBarFill: DrawImage = image(IntSize(6, 6), 0xFF616161.toInt()),
         progressBarFull: DrawImage = image(IntSize(6, 6), 0xFF717171.toInt()),
+        horizontalProgressBarBackground: DrawImage? = null,
+        horizontalProgressBarFill: DrawImage? = null,
         tooltipBackground: DrawImage = image(IntSize(100, 100), 0xF0100010.toInt()),
         tooltipFrame: DrawImage = image(IntSize(100, 100), 0xFF5000FF.toInt()),
+        legacyTooltipColors: Triple<ArgbColor, ArgbColor, ArgbColor>? = null,
         normalBorder: Int = 3,
         normalCenterMode: NineSliceCenterMode = NineSliceCenterMode.Tiled,
         highlightedBorder: Int = 3,
@@ -77,11 +84,22 @@ internal object MinecraftProfileFixture {
             sliderHandle(image(IntSize(8, 20), 0xFF3A3A3A.toInt()))
             sliderHandleHighlighted(image(IntSize(8, 20), 0xFF4A4A4A.toInt()))
             loadingIndicator(image(IntSize(5, 6), 0xFFFFFFFF.toInt()))
-            progressBarBorder(progressBarBorder)
-            progressBarFill(progressBarFill)
-            progressBarFull(progressBarFull)
-            tooltipBackground(tooltipBackground)
-            tooltipFrame(tooltipFrame)
+            if (horizontalProgressBarBackground == null && horizontalProgressBarFill == null) {
+                progressBarBorder(progressBarBorder)
+                progressBarFill(progressBarFill)
+                progressBarFull(progressBarFull)
+            } else {
+                horizontalProgressBar(
+                    requireNotNull(horizontalProgressBarBackground),
+                    requireNotNull(horizontalProgressBarFill),
+                )
+            }
+            if (legacyTooltipColors == null) {
+                tooltipBackground(tooltipBackground)
+                tooltipFrame(tooltipFrame)
+            } else {
+                legacyTooltip(legacyTooltipColors.first, legacyTooltipColors.second, legacyTooltipColors.third)
+            }
             textFieldNormal(normalTextField)
             textFieldHighlighted(highlightedTextField)
             for (codePoint in 0x21..0x7E) {

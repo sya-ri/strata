@@ -42,7 +42,7 @@ import java.util.Collections
 import dev.s7a.strata.node.Node as RetainedNode
 
 /**
- * Private retained implementation of the explicitly sized Minecraft 26.2 TextField component.
+ * Private retained implementation of the explicitly sized profile-backed Minecraft TextField component.
  *
  * The description snapshots the two sprites and printable font references but retains no complete profile.
  */

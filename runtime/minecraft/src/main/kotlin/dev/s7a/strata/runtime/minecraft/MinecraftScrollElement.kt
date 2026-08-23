@@ -34,7 +34,7 @@ import kotlin.math.min
 import dev.s7a.strata.node.Node as RetainedNode
 
 /**
- * Internal immutable description for the 26.2 menu-list scroll viewport.
+ * Internal immutable description for a profile-backed Minecraft menu-list scroll viewport.
  *
  * The description owns one immutable content root plus the exact profile asset references required for background, separators, and scrollbar rendering.
  * Checked measure, layout, paint, and pointer failures escape into the retained tree's ordinary poisoning and cleanup contract.
@@ -68,7 +68,7 @@ private class MinecraftScrollElement private constructor(
         modifier = modifier,
     ) {
     /**
-     * Retained one-child viewport implementing the verified 26.2 list geometry, clipping, paint order, and wheel/scrollbar interaction.
+     * Retained one-child viewport implementing the verified Minecraft list geometry, clipping, paint order, and wheel/scrollbar interaction.
      */
     @Suppress("TooManyFunctions")
     private class Node(

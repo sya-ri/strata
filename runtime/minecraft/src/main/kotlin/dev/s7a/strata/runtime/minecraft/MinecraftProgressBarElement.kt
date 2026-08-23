@@ -2,14 +2,11 @@
 
 package dev.s7a.strata.runtime.minecraft
 
-import dev.s7a.strata.component.NineSliceCenterMode
 import dev.s7a.strata.element.Element
 import dev.s7a.strata.element.ElementIdentity
 import dev.s7a.strata.element.ElementKey
 import dev.s7a.strata.element.ElementType
 import dev.s7a.strata.geometry.Constraints
-import dev.s7a.strata.geometry.Insets
-import dev.s7a.strata.geometry.IntRect
 import dev.s7a.strata.geometry.IntSize
 import dev.s7a.strata.layout.MeasureScope
 import dev.s7a.strata.modifier.Modifier
@@ -18,7 +15,6 @@ import dev.s7a.strata.node.DirtyPhase
 import dev.s7a.strata.node.MeasureNode
 import dev.s7a.strata.node.PaintNode
 import dev.s7a.strata.node.SemanticsNode
-import dev.s7a.strata.render.DrawImage
 import dev.s7a.strata.render.PaintScope
 import dev.s7a.strata.semantics.Semantics
 import dev.s7a.strata.semantics.SemanticsRole
@@ -28,12 +24,10 @@ import dev.s7a.strata.text.UiText
 import dev.s7a.strata.node.Node as RetainedNode
 
 /**
- * Retained generic progress bar backed by the active Minecraft bundle sprites.
+ * Retained generic progress bar backed by the active Minecraft version profile.
  */
 internal class MinecraftProgressBarElement private constructor(
-    internal val border: DrawImage,
-    internal val fill: DrawImage,
-    internal val full: DrawImage,
+    internal val style: MinecraftProgressBarStyle,
     internal val progress: Double,
     internal val size: IntSize,
     modifier: Modifier,
@@ -53,9 +47,7 @@ internal class MinecraftProgressBarElement private constructor(
         MeasureNode,
         PaintNode,
         SemanticsNode {
-        private var border = initial.border
-        private var fill = initial.fill
-        private var full = initial.full
+        private var style = initial.style
         private var progress = initial.progress
         private var size = initial.size
 
@@ -69,18 +61,7 @@ internal class MinecraftProgressBarElement private constructor(
         }
 
         override fun paint(scope: PaintScope) {
-            val innerWidth = size.width - BORDER * 2
-            val completedWidth = (innerWidth.toDouble() * progress).toInt()
-            if (0 < completedWidth) {
-                val destination = IntRect(BORDER, BORDER, BORDER + completedWidth, size.height - BORDER)
-                paintMinecraftNineSlice(
-                    MinecraftRectPaintScope(scope, destination),
-                    if (progress == 1.0) full else fill,
-                    Insets.all(FILL_BORDER),
-                    NineSliceCenterMode.Tiled,
-                )
-            }
-            paintMinecraftNineSlice(scope, border, Insets.all(BORDER), NineSliceCenterMode.Tiled)
+            style.paint(scope, progress)
         }
 
         override fun semantics(scope: SemanticsScope) {
@@ -97,11 +78,9 @@ internal class MinecraftProgressBarElement private constructor(
          */
         internal fun update(current: MinecraftProgressBarElement): DirtyMask {
             val measureChanged = size != current.size
-            val paintChanged = border !== current.border || fill !== current.fill || full !== current.full || progress != current.progress
+            val paintChanged = style !== current.style || progress != current.progress
             val semanticsChanged = progress != current.progress
-            border = current.border
-            fill = current.fill
-            full = current.full
+            style = current.style
             progress = current.progress
             size = current.size
             var dirty = DirtyMask.None
@@ -113,21 +92,16 @@ internal class MinecraftProgressBarElement private constructor(
     }
 
     /**
-     * Owns the stable retained type and verified vanilla sprite borders.
+     * Owns the stable retained type and validated profile style.
      */
     companion object {
-        private const val BORDER = 2
-        private const val FILL_BORDER = 2
         private val TYPE: ElementType<MinecraftProgressBarElement, Node> =
             ElementType(
                 elementClass = MinecraftProgressBarElement::class,
                 nodeClass = Node::class,
                 validateLocal = { element ->
-                    require(element.border.size == IntSize(12, 12)) { "ProgressBar border sprite must be 12 by 12 pixels." }
-                    require(element.fill.size == IntSize(6, 6)) { "ProgressBar fill sprite must be 6 by 6 pixels." }
-                    require(element.full.size == IntSize(6, 6)) { "Completed ProgressBar fill sprite must be 6 by 6 pixels." }
                     require(element.progress.isFinite() && element.progress in 0.0..1.0) { "Progress must be finite and normalized." }
-                    require(BORDER * 2 < element.size.width && BORDER * 2 < element.size.height) { "ProgressBar size must leave a nonempty interior." }
+                    require(0 < element.size.width && 0 < element.size.height) { "ProgressBar size must be positive." }
                 },
                 createNode = { element -> Node(element) },
                 updateNode = { _, current, node -> node.update(current) },
@@ -137,13 +111,11 @@ internal class MinecraftProgressBarElement private constructor(
          * Creates one immutable profile-backed progress bar description.
          */
         internal fun create(
-            border: DrawImage,
-            fill: DrawImage,
-            full: DrawImage,
+            style: MinecraftProgressBarStyle,
             progress: Double,
             size: IntSize,
             modifier: Modifier,
             key: ElementKey<*>?,
-        ): Element = MinecraftProgressBarElement(border, fill, full, progress, size, modifier, key)
+        ): Element = MinecraftProgressBarElement(style, progress, size, modifier, key)
     }
 }

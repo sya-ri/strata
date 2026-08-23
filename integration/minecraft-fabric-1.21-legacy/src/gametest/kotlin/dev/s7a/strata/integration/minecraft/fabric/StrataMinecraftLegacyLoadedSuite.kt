@@ -1,6 +1,5 @@
 package dev.s7a.strata.integration.minecraft.fabric
 
-import com.mojang.blaze3d.platform.NativeImage
 import dev.s7a.strata.component.Button
 import dev.s7a.strata.component.Column
 import dev.s7a.strata.component.Slot
@@ -37,12 +36,13 @@ import net.minecraft.server.MinecraftServer
 import net.minecraft.server.level.ServerPlayer
 import net.minecraft.world.item.ItemStack
 import net.minecraft.world.item.Items
+import java.awt.image.BufferedImage
 import java.nio.file.Files
 import java.nio.file.Path
 import java.util.UUID
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicReference
-import kotlin.io.path.inputStream
+import javax.imageio.ImageIO
 
 /**
  * Proves the public Strata screen, asset, input, and inventory contracts in a loaded legacy Minecraft client.
@@ -386,39 +386,38 @@ internal class StrataMinecraftLegacyLoadedSuite {
     }
 
     private fun assertRenderedPixels(path: Path) {
-        NativeImage.read(path.inputStream()).use { image ->
-            require(image.getWidth() == viewport.width && image.getHeight() == viewport.height) {
-                "The loaded public API scene rendered at an unexpected size."
+        val image = requireNotNull(ImageIO.read(path.toFile())) { "The loaded public API screenshot is not a decodable image." }
+        require(image.width == viewport.width && image.height == viewport.height) {
+            "The loaded public API scene rendered at an unexpected size."
+        }
+        val colors = HashSet<Int>()
+        for (y in 0 until image.height) {
+            for (x in 0 until image.width) {
+                colors += image.getRGB(x, y)
             }
-            val colors = HashSet<Int>()
-            for (y in 0 until image.getHeight()) {
-                for (x in 0 until image.getWidth()) {
-                    colors += image.getPixel(x, y)
-                }
-            }
-            require(minimumRenderedColorCount <= colors.size) {
-                "The loaded public API scene did not render enough distinct Minecraft UI colors."
-            }
-            require(minimumTextLightPixelCount <= lightPixelCount(image, textRegion)) {
-                "The loaded public API scene did not render its Text glyphs."
-            }
-            require(minimumButtonLabelLightPixelCount <= lightPixelCount(image, buttonLabelRegion)) {
-                "The loaded public API scene did not render its Button label."
-            }
+        }
+        require(minimumRenderedColorCount <= colors.size) {
+            "The loaded public API scene did not render enough distinct Minecraft UI colors."
+        }
+        require(minimumTextLightPixelCount <= lightPixelCount(image, textRegion)) {
+            "The loaded public API scene did not render its Text glyphs."
+        }
+        require(minimumButtonLabelLightPixelCount <= lightPixelCount(image, buttonLabelRegion)) {
+            "The loaded public API scene did not render its Button label."
         }
     }
 
     private fun lightPixelCount(
-        image: NativeImage,
+        image: BufferedImage,
         region: IntRect,
     ): Int {
-        require(0 <= region.left && region.right <= image.getWidth() && 0 <= region.top && region.bottom <= image.getHeight()) {
+        require(0 <= region.left && region.right <= image.width && 0 <= region.top && region.bottom <= image.height) {
             "The asserted Minecraft UI pixel region is outside the screenshot."
         }
         var count = 0
         for (y in region.top until region.bottom) {
             for (x in region.left until region.right) {
-                val pixel = image.getPixel(x, y)
+                val pixel = image.getRGB(x, y)
                 val red = pixel ushr redShift and channelMask
                 val green = pixel ushr greenShift and channelMask
                 val blue = pixel and channelMask

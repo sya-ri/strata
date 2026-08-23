@@ -1,7 +1,5 @@
 package dev.s7a.strata.runtime.minecraft
 
-import dev.s7a.strata.component.NineSliceCenterMode
-import dev.s7a.strata.geometry.Insets
 import dev.s7a.strata.geometry.IntRect
 import dev.s7a.strata.modifier.ModifierElement
 import dev.s7a.strata.modifier.ModifierNodeType
@@ -11,7 +9,6 @@ import dev.s7a.strata.node.FrameTimeNode
 import dev.s7a.strata.node.ModifierNode
 import dev.s7a.strata.node.PointerHoverNode
 import dev.s7a.strata.node.RootOverlayPaintNode
-import dev.s7a.strata.render.DrawImage
 import dev.s7a.strata.render.RootOverlayPaintScope
 import dev.s7a.strata.runtime.FrameTime
 
@@ -24,8 +21,7 @@ private object MinecraftTooltipModifier {
      */
     data class Element(
         val text: MinecraftTextRun,
-        val background: DrawImage,
-        val frame: DrawImage,
+        val style: MinecraftTooltipStyle,
         val delayNanos: Long,
     ) : ModifierElement {
         override val type: ModifierNodeType<*, *>
@@ -42,8 +38,7 @@ private object MinecraftTooltipModifier {
         FrameTimeNode,
         RootOverlayPaintNode {
         private var text = initial.text
-        private var background = initial.background
-        private var frame = initial.frame
+        private var style = initial.style
         private var delayNanos = initial.delayNanos
         private var hovered = false
         private var hoverStartNanos: Long? = null
@@ -86,18 +81,7 @@ private object MinecraftTooltipModifier {
             val preferredTop = if (below + height <= scope.size.height) below else above
             val top = minOf(maxOf(0, preferredTop), maxOf(0, scope.size.height - height))
             val bounds = IntRect(left, top, left + width, top + height)
-            paintMinecraftNineSlice(
-                MinecraftRectPaintScope(scope, bounds),
-                background,
-                Insets.all(BACKGROUND_BORDER),
-                NineSliceCenterMode.Tiled,
-            )
-            paintMinecraftNineSlice(
-                MinecraftRectPaintScope(scope, bounds),
-                frame,
-                Insets.all(FRAME_BORDER),
-                NineSliceCenterMode.Stretched,
-            )
+            style.paint(scope, bounds)
             text.paint(scope, left + PADDING, top + PADDING)
         }
 
@@ -105,11 +89,10 @@ private object MinecraftTooltipModifier {
          * Applies changed tooltip content and timing.
          */
         fun update(current: Element): DirtyMask {
-            val paintChanged = text.equivalentTo(current.text).not() || background !== current.background || frame !== current.frame
+            val paintChanged = text.equivalentTo(current.text).not() || style !== current.style
             val timingChanged = delayNanos != current.delayNanos
             text = current.text
-            background = current.background
-            frame = current.frame
+            style = current.style
             delayNanos = current.delayNanos
             if (timingChanged && hovered) {
                 hoverStartNanos = null
@@ -124,12 +107,6 @@ private object MinecraftTooltipModifier {
             elementClass = Element::class,
             nodeClass = Node::class,
             validateLocal = { element ->
-                require(element.background.size.width == 100 && element.background.size.height == 100) {
-                    "Tooltip background sprite must be 100 by 100 pixels."
-                }
-                require(element.frame.size.width == 100 && element.frame.size.height == 100) {
-                    "Tooltip frame sprite must be 100 by 100 pixels."
-                }
                 require(0L <= element.delayNanos) { "Tooltip delay must be non-negative." }
             },
             createNode = { element -> Node(element) },
@@ -138,15 +115,12 @@ private object MinecraftTooltipModifier {
 
     fun element(
         text: MinecraftTextRun,
-        background: DrawImage,
-        frame: DrawImage,
+        style: MinecraftTooltipStyle,
         delayNanos: Long,
-    ): ModifierElement = Element(text, background, frame, delayNanos)
+    ): ModifierElement = Element(text, style, delayNanos)
 
     private const val PADDING = 3
     private const val GAP = 4
-    private const val BACKGROUND_BORDER = 9
-    private const val FRAME_BORDER = 10
 }
 
 /**
@@ -154,7 +128,6 @@ private object MinecraftTooltipModifier {
  */
 internal fun createMinecraftTooltipModifier(
     text: MinecraftTextRun,
-    background: DrawImage,
-    frame: DrawImage,
+    style: MinecraftTooltipStyle,
     delayNanos: Long,
-): ModifierElement = MinecraftTooltipModifier.element(text, background, frame, delayNanos)
+): ModifierElement = MinecraftTooltipModifier.element(text, style, delayNanos)

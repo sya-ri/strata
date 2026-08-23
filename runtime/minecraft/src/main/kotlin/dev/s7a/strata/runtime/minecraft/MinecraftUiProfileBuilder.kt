@@ -1,6 +1,7 @@
 package dev.s7a.strata.runtime.minecraft
 
 import dev.s7a.strata.component.NineSliceCenterMode
+import dev.s7a.strata.render.ArgbColor
 import dev.s7a.strata.render.DrawImage
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
 
@@ -30,6 +31,23 @@ public sealed interface MinecraftUiProfileBuilder {
     public fun tooltipFrame(image: DrawImage)
 
     /**
+     * Supplies the code-defined tooltip colors used by Minecraft releases before tooltip sprites existed.
+     *
+     * This declaration is an alternative to [tooltipBackground] and [tooltipFrame].
+     *
+     * @param backgroundColor native tooltip fill and outside-edge color.
+     * @param borderTop native top border color.
+     * @param borderBottom native bottom border color.
+     * @throws IllegalArgumentException when sprite-backed tooltip assets or legacy colors were already declared.
+     * @throws IllegalStateException when called from another thread or after the builder callback ends.
+     */
+    public fun legacyTooltip(
+        backgroundColor: ArgbColor,
+        borderTop: ArgbColor,
+        borderBottom: ArgbColor,
+    )
+
+    /**
      * Supplies the exact 12 by 12 bundle progress-bar border sprite.
      *
      * @param image immutable nine-slice border pixels.
@@ -51,6 +69,22 @@ public sealed interface MinecraftUiProfileBuilder {
     public fun progressBarFull(image: DrawImage)
 
     /**
+     * Supplies one fixed-source horizontal progress-bar background and fill pair.
+     *
+     * This declaration is an alternative to the three bundle progress-bar declarations and preserves older Minecraft releases whose native progress treatment uses equal-sized sprites rather than bundle nine-slices.
+     * The runtime scales the complete background to the requested component size and crops the fill horizontally by the normalized progress value.
+     *
+     * @param background immutable nonempty background sprite.
+     * @param fill immutable fill sprite with the same size as [background].
+     * @throws IllegalArgumentException when either image is empty, their sizes differ, or any bundle progress-bar sprite was already declared.
+     * @throws IllegalStateException when called from another thread or after the builder callback ends.
+     */
+    public fun horizontalProgressBar(
+        background: DrawImage,
+        fill: DrawImage,
+    )
+
+    /**
      * Supplies the exact 5 by 6 three-frame friends loading sprite sheet.
      *
      * @param image immutable vertically stacked animation pixels.
@@ -67,7 +101,7 @@ public sealed interface MinecraftUiProfileBuilder {
     public fun menuBackground(image: DrawImage)
 
     /**
-     * Supplies the exact 256 by 256 generic-container texture used by 26.2 chest screens.
+     * Supplies the exact 256 by 256 generic-container texture used by the active vanilla chest screens.
      *
      * @param image immutable generic-container pixels.
      * @throws IllegalArgumentException when the slot is duplicated or the image size is not 256 by 256.
@@ -123,7 +157,7 @@ public sealed interface MinecraftUiProfileBuilder {
     /**
      * Supplies the exact 6 by 32 tiled nine-slice scrollbar-track sprite.
      *
-     * The runtime uses the verified one-pixel 26.2 border and tiled center policy.
+     * The runtime uses the verified one-pixel border and tiled center policy.
      *
      * @param image immutable scrollbar-track pixels.
      * @throws IllegalArgumentException when the slot is duplicated or the image size is not 6 by 32.
@@ -134,7 +168,7 @@ public sealed interface MinecraftUiProfileBuilder {
     /**
      * Supplies the exact 6 by 32 tiled nine-slice scrollbar-thumb sprite.
      *
-     * The runtime uses the verified one-pixel 26.2 border and tiled center policy.
+     * The runtime uses the verified one-pixel border and tiled center policy.
      *
      * @param image immutable scrollbar-thumb pixels.
      * @throws IllegalArgumentException when the slot is duplicated or the image size is not 6 by 32.

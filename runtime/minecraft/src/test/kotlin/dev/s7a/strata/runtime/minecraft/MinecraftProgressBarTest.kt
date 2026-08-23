@@ -47,6 +47,29 @@ internal class MinecraftProgressBarTest {
         configuredHost.close()
     }
 
+    @Test
+    fun horizontalProfileCropsTheNativeFillAcrossTheRequestedWidth() {
+        val background = image(IntSize(182, 5), 0xFF112233.toInt())
+        val fill = image(IntSize(182, 5), 0xFF445566.toInt())
+        val configuredHost =
+            createMinecraftUiHost(
+                ScreenDefinition("horizontal-progress") { ProgressBar(0.5, IntSize(20, 5)) },
+                MinecraftProfileFixture.create(
+                    horizontalProgressBarBackground = background,
+                    horizontalProgressBarFill = fill,
+                ),
+            )
+        configuredHost.attach()
+
+        val commands = configuredHost.frame(IntSize(20, 5)).drawCommands.filterIsInstance<DrawCommand.BlitImage>()
+        val backgroundCommand = commands.single { command -> command.image === background }
+        val fillCommand = commands.single { command -> command.image === fill }
+        assertEquals(IntSize(20, 5), backgroundCommand.destination.size)
+        assertEquals(IntSize(10, 5), fillCommand.destination.size)
+        assertEquals(IntSize(91, 5), fillCommand.source.size)
+        configuredHost.close()
+    }
+
     private fun image(
         size: IntSize,
         color: Int,

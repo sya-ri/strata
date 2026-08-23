@@ -38,7 +38,7 @@ public fun loadMinecraftUiImage(asset: ResourceId): DrawImage {
         NativeImage.read(stream).use { image ->
             size = IntSize(image.getWidth(), image.getHeight())
             require(0 < size.width && 0 < size.height) { "Minecraft UI image dimensions must be positive." }
-            pixels = image.getPixels()
+            pixels = copyFabricMinecraftArgbPixels(image)
         }
     }
     return createDrawImage(size, pixels)
@@ -55,7 +55,7 @@ public fun loadMinecraftUiImage(asset: ResourceId): DrawImage {
 internal fun createPlayerSkinSnapshot(image: NativeImage): DrawImage {
     val size = IntSize(image.width, image.height)
     require(size == playerSkinSize) { "Minecraft player skins must normalize to exactly 64 by 64 pixels." }
-    return createDrawImage(size, image.pixels)
+    return createDrawImage(size, copyFabricMinecraftArgbPixels(image))
 }
 
 private val playerSkinSize = IntSize(64, 64)

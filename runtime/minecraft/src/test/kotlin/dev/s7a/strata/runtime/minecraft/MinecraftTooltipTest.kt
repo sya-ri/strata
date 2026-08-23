@@ -10,6 +10,7 @@ import dev.s7a.strata.input.PointerEvent
 import dev.s7a.strata.modifier.Modifier
 import dev.s7a.strata.modifier.size
 import dev.s7a.strata.modifier.tooltip
+import dev.s7a.strata.render.ArgbColor
 import dev.s7a.strata.render.createDrawImage
 import dev.s7a.strata.runtime.FrameTime
 import dev.s7a.strata.runtime.render.DrawCommand
@@ -50,6 +51,36 @@ internal class MinecraftTooltipTest {
         assertTrue(0 < firstTooltip)
         assertTrue(images.drop(firstTooltip).any { command -> command.image === frame })
         assertTrue(images.drop(firstTooltip).all { command -> 0 <= command.destination.left && command.destination.right <= 40 })
+        host.close()
+    }
+
+    @Test
+    fun legacyTooltipUsesCodeDefinedBackgroundAndGradientColors() {
+        val background = ArgbColor(0xF0100010.toInt())
+        val borderTop = ArgbColor(0x505000FF)
+        val borderBottom = ArgbColor(0x5028007F)
+        val host =
+            createMinecraftUiHost(
+                ScreenDefinition("legacy-tooltip") {
+                    Stack(modifier = Modifier.Empty.size(40, 30)) {
+                        Text("A", modifier = Modifier.Empty.tooltip("Tip", delayMillis = 0L))
+                    }
+                },
+                MinecraftProfileFixture.create(legacyTooltipColors = Triple(background, borderTop, borderBottom)),
+            )
+        host.attach()
+        host.frame(IntSize(40, 30), FrameTime(0L))
+        host.dispatchPointer(PointerEvent.Move(IntOffset(1, 1)))
+
+        val colors =
+            host
+                .frame(IntSize(40, 30), FrameTime(0L))
+                .drawCommands
+                .filterIsInstance<DrawCommand.FillRectangle>()
+                .map { command -> command.color }
+        assertTrue(background in colors)
+        assertTrue(borderTop in colors)
+        assertTrue(borderBottom in colors)
         host.close()
     }
 

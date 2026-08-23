@@ -14,6 +14,7 @@ dokka = "2.2.0"
 kotlinx-coroutines = "1.11.0"
 minecraft262 = "26.2"
 minecraft261 = "26.1"
+minecraft1211 = "1.21.1"
 minecraft1212 = "1.21.2"
 minecraft1213 = "1.21.3"
 minecraft1214 = "1.21.4"
@@ -29,6 +30,7 @@ fabric-language-kotlin = "1.13.13+kotlin.2.4.10"
 fabric-loom = "1.17.19"
 fabric-api262 = "0.158.0+26.2"
 fabric-api261 = "0.145.1+26.1"
+fabric-api1211 = "0.116.15+1.21.1"
 fabric-api1212 = "0.106.1+1.21.2"
 fabric-api1213 = "0.114.1+1.21.3"
 fabric-api1214 = "0.119.4+1.21.4"
@@ -49,6 +51,7 @@ junit-platform-launcher = { module = "org.junit.platform:junit-platform-launcher
 kotlinx-coroutines-core = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-core", version.ref = "kotlinx-coroutines" }
 minecraft262 = { module = "com.mojang:minecraft", version.ref = "minecraft262" }
 minecraft261 = { module = "com.mojang:minecraft", version.ref = "minecraft261" }
+minecraft1211 = { module = "com.mojang:minecraft", version.ref = "minecraft1211" }
 minecraft1212 = { module = "com.mojang:minecraft", version.ref = "minecraft1212" }
 minecraft1213 = { module = "com.mojang:minecraft", version.ref = "minecraft1213" }
 minecraft1214 = { module = "com.mojang:minecraft", version.ref = "minecraft1214" }
@@ -63,6 +66,7 @@ fabric-loader = { module = "net.fabricmc:fabric-loader", version.ref = "fabric-l
 fabric-language-kotlin = { module = "net.fabricmc:fabric-language-kotlin", version.ref = "fabric-language-kotlin" }
 fabric-api262 = { module = "net.fabricmc.fabric-api:fabric-api", version.ref = "fabric-api262" }
 fabric-api261 = { module = "net.fabricmc.fabric-api:fabric-api", version.ref = "fabric-api261" }
+fabric-api1211 = { module = "net.fabricmc.fabric-api:fabric-api", version.ref = "fabric-api1211" }
 fabric-api1212 = { module = "net.fabricmc.fabric-api:fabric-api", version.ref = "fabric-api1212" }
 fabric-api1213 = { module = "net.fabricmc.fabric-api:fabric-api", version.ref = "fabric-api1213" }
 fabric-api1214 = { module = "net.fabricmc.fabric-api:fabric-api", version.ref = "fabric-api1214" }

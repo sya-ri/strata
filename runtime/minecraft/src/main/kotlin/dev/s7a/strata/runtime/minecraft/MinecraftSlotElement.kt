@@ -29,7 +29,7 @@ import dev.s7a.strata.spi.InternalStrataRuntimeApi
 import dev.s7a.strata.node.Node as RetainedNode
 
 /**
- * Internal immutable description for one 26.2 container Slot visual and hit region.
+ * Internal immutable description for one profile-backed Minecraft container Slot visual and hit region.
  *
  * The 18 by 18 component corresponds to Minecraft's one-pixel-expanded hit region around the 16 by 16 item anchor.
  * Its optional child occupies the 16 by 16 inner item region, while the two 24 by 24 highlight assets overflow by three pixels and preserve native back-child-front paint order.

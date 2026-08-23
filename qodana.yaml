@@ -22,6 +22,7 @@ exclude:
   - name: UnstableApiUsage
     paths:
       - settings.gradle.kts
+      - integration/minecraft-fabric-1.21.1/build.gradle.kts
       - integration/minecraft-fabric-1.21.2/build.gradle.kts
       - integration/minecraft-fabric-1.21.3/build.gradle.kts
       - integration/minecraft-fabric-1.21.4/build.gradle.kts
@@ -58,6 +59,7 @@ exclude:
       - integration/minecraft-fabric-1.21-legacy/src/gametest/kotlin/dev/s7a/strata/integration/minecraft/fabric/StrataMinecraftLegacyLoadedSuite.kt
       - integration/minecraft-fabric-1.21.3-legacy/src/gametest/kotlin/dev/s7a/strata/integration/minecraft/fabric/StrataMinecraftLegacyClientTest.kt
       - integration/minecraft-fabric-client-gametest/src/gametest/kotlin/dev/s7a/strata/integration/minecraft/fabric/StrataMinecraftLegacyClientGameTest.kt
+      - integration/minecraft-fabric-1.21.1/src/gametest/kotlin/dev/s7a/strata/integration/minecraft/fabric/MinecraftTestResourceLocation.kt
       - integration/minecraft-fabric-1.21.2/src/gametest/kotlin/dev/s7a/strata/integration/minecraft/fabric/MinecraftTestResourceLocation.kt
       - integration/minecraft-fabric-1.21.3/src/gametest/kotlin/dev/s7a/strata/integration/minecraft/fabric/MinecraftTestResourceLocation.kt
       - integration/minecraft-fabric-unobfuscated/src/gametest/kotlin/dev/s7a/strata/integration/minecraft/fabric/MinecraftProgressParity.kt
@@ -88,6 +90,8 @@ exclude:
       - integration/minecraft-fabric-unobfuscated/src/gametest/kotlin/dev/s7a/strata/integration/minecraft/fabric/StrataMinecraftClientGameTest.kt
       - runtime/minecraft-fabric-1.21-legacy/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftCurrentPlayerSkin.kt
       - runtime/minecraft-fabric-shared/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftAssetLoader.kt
+      - runtime/minecraft-fabric-1.21.1/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/MinecraftResourceLocation.kt
+      - runtime/minecraft-fabric-1.21.1/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/MinecraftResourceLocationException.kt
       - runtime/minecraft-fabric-1.21.2/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/MinecraftResourceLocation.kt
       - runtime/minecraft-fabric-1.21.2/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/MinecraftResourceLocationException.kt
       - runtime/minecraft-fabric-1.21.3/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/MinecraftResourceLocation.kt
@@ -118,15 +122,74 @@ exclude:
   - name: ConvertToExplicitBackingFields
     paths:
       - runtime/core/src/main/kotlin/dev/s7a/strata/runtime/UiSession.kt
-  # Reflection-driven inventory control flow is covered by the showcase integration tests.
+  # Reflection-driven inventory control flow and linked Minecraft compatibility sources are compiled and exercised by every owning version module.
+  # Qodana 2026.2 also analyzes the linked physical files through dependency-free Gradle parent modules, which makes terminal failure paths appear unreachable.
   - name: KotlinUnreachableCode
     paths:
       - integration/docs/src/main/kotlin/dev/s7a/strata/integration/docs/ShowcaseInventory.kt
-  # Dokka resolves these KDoc-only type imports, while the source analyzer sees no executable use.
+      - runtime/minecraft-fabric-1.21-legacy/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftFramePresenter.kt
+      - runtime/minecraft-fabric-1.21.8-legacy/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreen.kt
+      - runtime/minecraft-fabric-1.21.9-legacy/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreen.kt
+  # The same dependency-free parent-module views cannot infer the linked terminal branches' expression types.
+  - name: UnusedExpression
+    paths:
+      - runtime/minecraft-fabric-1.21-legacy/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftFramePresenter.kt
+      - runtime/minecraft-fabric-1.21.8-legacy/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreen.kt
+      - runtime/minecraft-fabric-1.21.9-legacy/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreen.kt
+  # Qodana's Kotlin data-flow pass loses the retained pre-update state across the state replacement even though the compiler and anchor-retention tests preserve it.
+  - name: KotlinConstantConditions
+    paths:
+      - api/src/main/kotlin/dev/s7a/strata/layout/VirtualListElement.kt
+  # Dokka resolves KDoc-only imports, while linked Minecraft imports are consumed from their owning version modules rather than the dependency-free parent-module views.
   - name: KotlinUnusedImport
     paths:
       - integration/docs/src/main/kotlin/dev/s7a/strata/integration/docs/ShowcaseStorage.kt
       - runtime/minecraft/src/main/kotlin/dev/s7a/strata/runtime/minecraft/MinecraftUiProfile.kt
+      - runtime/minecraft-fabric-1.21-legacy/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftCurrentPlayerSkin.kt
+      - runtime/minecraft-fabric-shared/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftAssetLoader.kt
+      - runtime/minecraft-fabric-shared/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftProfileFactory.kt
+  # These receivers provide the local coordinate or DSL scope consumed inside their bodies; Qodana loses that use while joining linked module views.
+  - name: UnusedReceiverParameter
+    paths:
+      - api/src/main/kotlin/dev/s7a/strata/component/VirtualListComponents.kt
+      - runtime/minecraft/src/main/kotlin/dev/s7a/strata/runtime/minecraft/MinecraftRectPaintScope.kt
+      - runtime/minecraft-fabric-shared/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftProfileFactory.kt
+  # The destructured observer token is used to suppress feedback to the originating scroll controller.
+  - name: UnusedVariable
+    paths:
+      - api/src/main/kotlin/dev/s7a/strata/component/ScrollState.kt
+  # Linked Java compatibility sources are inspected once without their owning version module's JDK and mapped Minecraft classpath.
+  - name: JavadocReference
+    paths:
+      - runtime/minecraft-fabric-1.21-legacy/src/main/java/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftInventoryBridge.java
+      - runtime/minecraft-fabric-1.21-legacy/src/main/java/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftSkinReference.java
+      - runtime/minecraft-fabric-1.21.3-legacy/src/main/java/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftSkinBridge.java
+      - runtime/minecraft-fabric-1.21.8-legacy/src/main/java/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftSkinBridge.java
+      - runtime/minecraft-fabric-1.21.9-legacy/src/main/java/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftSkinBridge.java
+      - runtime/minecraft-fabric-shared/src/main/java/dev/s7a/strata/runtime/minecraft/fabric/FabricScreenLifecycleTransaction.java
+  - name: JavadocDeclaration
+    paths:
+      - runtime/minecraft-fabric-1.21-legacy/src/main/java/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftInventoryBridge.java
+      - runtime/minecraft-fabric-1.21-legacy/src/main/java/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftSkinReference.java
+      - runtime/minecraft-fabric-1.21.3-legacy/src/main/java/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftSkinBridge.java
+      - runtime/minecraft-fabric-1.21.8-legacy/src/main/java/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftSkinBridge.java
+      - runtime/minecraft-fabric-1.21.9-legacy/src/main/java/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftSkinBridge.java
+      - runtime/minecraft-fabric-shared/src/main/java/dev/s7a/strata/runtime/minecraft/fabric/FabricScreenLifecycleTransaction.java
+  # Without the mapped Minecraft classpath, Qodana substitutes incompatible nullable signatures for these version-specific skin lookups.
+  - name: ConstantValue
+    paths:
+      - runtime/minecraft-fabric-1.21.3-legacy/src/main/java/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftSkinBridge.java
+      - runtime/minecraft-fabric-1.21.8-legacy/src/main/java/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftSkinBridge.java
+      - runtime/minecraft-fabric-1.21.9-legacy/src/main/java/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftSkinBridge.java
+  - name: DataFlowIssue
+    paths:
+      - runtime/minecraft-fabric-1.21.3-legacy/src/main/java/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftSkinBridge.java
+      - runtime/minecraft-fabric-1.21.8-legacy/src/main/java/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftSkinBridge.java
+      - runtime/minecraft-fabric-1.21.9-legacy/src/main/java/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftSkinBridge.java
+  # Java definite-assignment rules require the generic result initializer because the primary failure is tracked separately.
+  - name: UnusedAssignment
+    paths:
+      - runtime/minecraft-fabric-shared/src/main/java/dev/s7a/strata/runtime/minecraft/fabric/FabricScreenLifecycleTransaction.java
   # Qodana misresolves ByteArray.plus as array string rendering; byte-exact tests verify the replacement operation.
   - name: KotlinArrayToString
     paths:
@@ -151,20 +214,32 @@ exclude:
       - api/src/main/kotlin/dev/s7a/strata/input/PointerEvent.kt
       - api/src/main/kotlin/dev/s7a/strata/input/KeyCode.kt
       - api/src/main/kotlin/dev/s7a/strata/layout/Alignment.kt
+      - api/src/main/kotlin/dev/s7a/strata/component/CheckboxState.kt
+      - api/src/main/kotlin/dev/s7a/strata/component/CycleButtonState.kt
       - api/src/main/kotlin/dev/s7a/strata/component/ImageScale.kt
       - api/src/main/kotlin/dev/s7a/strata/component/ImageSource.kt
       - api/src/main/kotlin/dev/s7a/strata/component/PlayerSkinSource.kt
       - api/src/main/kotlin/dev/s7a/strata/component/ProfileComponents.kt
+      - api/src/main/kotlin/dev/s7a/strata/component/ScrollMetrics.kt
+      - api/src/main/kotlin/dev/s7a/strata/component/ScrollState.kt
+      - api/src/main/kotlin/dev/s7a/strata/component/SelectionListComponents.kt
+      - api/src/main/kotlin/dev/s7a/strata/component/SelectionListState.kt
+      - api/src/main/kotlin/dev/s7a/strata/component/SliderState.kt
       - api/src/main/kotlin/dev/s7a/strata/component/Slots.kt
       - api/src/main/kotlin/dev/s7a/strata/component/TextFieldState.kt
       - api/src/main/kotlin/dev/s7a/strata/component/TextStyle.kt
       - api/src/main/kotlin/dev/s7a/strata/component/UiScope.kt
       - api/src/main/kotlin/dev/s7a/strata/component/UiComponents.kt
+      - api/src/main/kotlin/dev/s7a/strata/component/VirtualListState.kt
+      - api/src/main/kotlin/dev/s7a/strata/modifier/ComponentActionExtensions.kt
       - api/src/main/kotlin/dev/s7a/strata/modifier/FocusedInputExtensions.kt
       - api/src/main/kotlin/dev/s7a/strata/modifier/ImageBackgroundExtensions.kt
+      - api/src/main/kotlin/dev/s7a/strata/modifier/TooltipExtensions.kt
       - api/src/main/kotlin/dev/s7a/strata/node/ClipChildrenNode.kt
+      - api/src/main/kotlin/dev/s7a/strata/node/FrameTimeNode.kt
       - api/src/main/kotlin/dev/s7a/strata/node/OverlayPaintNode.kt
       - api/src/main/kotlin/dev/s7a/strata/node/PointerInputNode.kt
+      - api/src/main/kotlin/dev/s7a/strata/node/RootOverlayPaintNode.kt
       - api/src/main/kotlin/dev/s7a/strata/render/PaintScope.kt
       - api/src/main/kotlin/dev/s7a/strata/screen/ScreenDefinition.kt
       - api/src/main/kotlin/dev/s7a/strata/semantics/SemanticsRole.kt
@@ -181,6 +256,7 @@ exclude:
       - integration/minecraft-fabric-unobfuscated/src/gametest/kotlin/dev/s7a/strata/integration/minecraft/fabric/MinecraftTextExample.kt
       - integration/minecraft-fabric-client-gametest/src/gametest/kotlin/dev/s7a/strata/integration/minecraft/fabric/StrataMinecraftLegacyClientGameTest.kt
       - integration/minecraft-fabric-1.21.3-legacy/src/gametest/kotlin/dev/s7a/strata/integration/minecraft/fabric/StrataMinecraftLegacyClientTest.kt
+      - integration/minecraft-fabric-1.21.1/src/gametest/kotlin/dev/s7a/strata/integration/minecraft/fabric/MinecraftTestResourceLocation.kt
       - integration/minecraft-fabric-1.21.2/src/gametest/kotlin/dev/s7a/strata/integration/minecraft/fabric/MinecraftTestResourceLocation.kt
       - integration/minecraft-fabric-1.21.4/src/gametest/kotlin/dev/s7a/strata/integration/minecraft/fabric/MinecraftTestResourceLocation.kt
       - integration/minecraft-fabric-1.21.5/src/gametest/kotlin/dev/s7a/strata/integration/minecraft/fabric/MinecraftTestResourceLocation.kt
@@ -193,15 +269,37 @@ exclude:
       - integration/minecraft-fabric-1.21.11/src/gametest/kotlin/dev/s7a/strata/integration/minecraft/fabric/MinecraftTestResourceLocation.kt
       - integration/minecraft-fabric-unobfuscated/src/gametest/kotlin/dev/s7a/strata/integration/minecraft/fabric/StrataMinecraftClientGameTest.kt
       - quality/benchmarks/src/jmh/kotlin/dev/s7a/strata/quality/benchmark/RenderingBenchmark.kt
+      - runtime/core/src/main/kotlin/dev/s7a/strata/runtime/UiTree.kt
+      - runtime/minecraft/src/main/kotlin/dev/s7a/strata/runtime/minecraft/MinecraftCheckboxElement.kt
+      - runtime/minecraft/src/main/kotlin/dev/s7a/strata/runtime/minecraft/MinecraftCycleButtonElement.kt
       - runtime/minecraft/src/main/kotlin/dev/s7a/strata/runtime/minecraft/MinecraftImageBackgroundModifier.kt
       - runtime/minecraft/src/main/kotlin/dev/s7a/strata/runtime/minecraft/MinecraftImageElement.kt
       - runtime/minecraft/src/main/kotlin/dev/s7a/strata/runtime/minecraft/MinecraftNineSliceImageBackgroundModifier.kt
       - runtime/minecraft/src/main/kotlin/dev/s7a/strata/runtime/minecraft/MinecraftAsyncPlayerHeadElement.kt
       - runtime/minecraft/src/main/kotlin/dev/s7a/strata/runtime/minecraft/MinecraftPlayerHeadElement.kt
+      - runtime/minecraft/src/main/kotlin/dev/s7a/strata/runtime/minecraft/MinecraftScrollbarElement.kt
+      - runtime/minecraft/src/main/kotlin/dev/s7a/strata/runtime/minecraft/MinecraftSliderElement.kt
       - runtime/minecraft/src/main/kotlin/dev/s7a/strata/runtime/minecraft/MinecraftTabElement.kt
+      - runtime/minecraft/src/main/kotlin/dev/s7a/strata/runtime/minecraft/MinecraftTooltipModifier.kt
+      - runtime/minecraft/src/main/kotlin/dev/s7a/strata/runtime/minecraft/MinecraftUiProfileBuilder.kt
+      - runtime/minecraft-fabric-1.21-legacy/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftCurrentPlayerSkin.kt
       - runtime/minecraft-fabric-shared/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftAssetLoader.kt
+      - runtime/minecraft-fabric-shared/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftProfileFactory.kt
+      - runtime/minecraft-fabric-1.21.1/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftDynamicTextureFactory.kt
+      - runtime/minecraft-fabric-1.21.1/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftTextureBlitter.kt
+      - runtime/minecraft-fabric-1.21.1/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/MinecraftResourceLocation.kt
+      - runtime/minecraft-fabric-1.21.1/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/MinecraftResourceLocationException.kt
+      - runtime/minecraft-fabric-1.21.2/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftDynamicTextureFactory.kt
+      - runtime/minecraft-fabric-1.21.2/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/MinecraftResourceLocation.kt
+      - runtime/minecraft-fabric-1.21.2/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/MinecraftResourceLocationException.kt
+      - runtime/minecraft-fabric-1.21.3/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftDynamicTextureFactory.kt
+      - runtime/minecraft-fabric-1.21.3/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/MinecraftResourceLocation.kt
+      - runtime/minecraft-fabric-1.21.3/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/MinecraftResourceLocationException.kt
+      - runtime/minecraft-fabric-1.21.4/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftDynamicTextureFactory.kt
       - runtime/minecraft-fabric-1.21.4/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/MinecraftResourceLocation.kt
       - runtime/minecraft-fabric-1.21.4/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/MinecraftResourceLocationException.kt
+      - runtime/minecraft-fabric-1.21.5-legacy/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftTextureBlitter.kt
+      - runtime/minecraft-fabric-1.21.5/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftDynamicTextureFactory.kt
       - runtime/minecraft-fabric-1.21.5/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/MinecraftResourceLocation.kt
       - runtime/minecraft-fabric-1.21.5/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/MinecraftResourceLocationException.kt
       - runtime/minecraft-fabric-1.21.6/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/MinecraftResourceLocation.kt
@@ -216,3 +314,4 @@ exclude:
       - runtime/minecraft-fabric-1.21.10/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/MinecraftResourceLocationException.kt
       - runtime/minecraft-fabric-identifier/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/MinecraftResourceLocation.kt
       - runtime/minecraft-fabric-identifier/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/MinecraftResourceLocationException.kt
+      - runtime/minecraft-fabric-unobfuscated/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftNativeImageBridge.kt

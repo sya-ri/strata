@@ -426,7 +426,7 @@ internal class FabricMinecraftFramePresenter(
     ) {
         for (y in 0 until image.size.height) {
             for (x in 0 until image.size.width) {
-                native.setPixel(x, y, image.argbAt(x, y))
+                setFabricMinecraftArgbPixel(native, x, y, image.argbAt(x, y))
             }
         }
     }
