@@ -5,6 +5,7 @@ import dev.s7a.strata.element.ElementIdentity
 import dev.s7a.strata.element.ElementKey
 import dev.s7a.strata.modifier.ModifierElement
 import dev.s7a.strata.node.DirtyMask
+import dev.s7a.strata.node.DynamicChildrenNode
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
 import java.util.Collections
 import java.util.IdentityHashMap
@@ -71,6 +72,25 @@ internal class Reconciler(
         }
         provisionalRoots.clear()
         return failures.first
+    }
+
+    /**
+     * Reconciles every dynamic-child capability before the next measure pass.
+     *
+     * @param root installed retained root to refresh parent-first.
+     * @param validator validator applied before each dynamic sibling mutation.
+     */
+    fun refreshDynamicChildren(
+        root: RetainedNode,
+        validator: DescriptionValidator,
+    ) {
+        val dynamic = root.node as? DynamicChildrenNode
+        if (dynamic != null) {
+            val descriptions = dynamic.dynamicChildren()
+            validator.validateChildren(descriptions)
+            reconcileChildren(root, descriptions)
+        }
+        root.children.toList().forEach { child -> refreshDynamicChildren(child, validator) }
     }
 
     private fun createDetached(description: Element): RetainedNode {

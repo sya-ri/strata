@@ -22,6 +22,23 @@ internal class DescriptionValidator {
         visit(root, active)
     }
 
+    /**
+     * Validates one dynamically produced direct-sibling set and every descendant before reconciliation.
+     *
+     * @param children complete proposed direct-child descriptions.
+     */
+    fun validateChildren(children: List<Element>) {
+        val active = Collections.newSetFromMap(IdentityHashMap<Element, Boolean>())
+        val keys = HashSet<ElementKey<*>>()
+        children.forEach { child ->
+            val identity = child.identity
+            if (identity is ElementIdentity.Keyed) {
+                require(keys.add(identity.key)) { "Duplicate direct-sibling key: ${identity.key}." }
+            }
+            visit(child, active)
+        }
+    }
+
     private fun visit(
         element: Element,
         active: MutableSet<Element>,

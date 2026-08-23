@@ -116,6 +116,8 @@ public class UiTree : AutoCloseable {
     public fun measure(constraints: Constraints): IntSize =
         pipelineOperation {
             val retainedRoot = root ?: return@pipelineOperation IntSize.Zero
+            reconciler.refreshDynamicChildren(retainedRoot, validator)
+            lifecycle.attachPending(retainedRoot)
             pipeline.measure(retainedRoot, constraints)
         }
 

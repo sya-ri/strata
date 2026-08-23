@@ -51,4 +51,10 @@ public object ComponentRuntimeBridge {
         checkNotNull(active.get()) {
             "Profile-backed components require an active runtime screen callback on this thread."
         }
+
+    /**
+     * Returns the current runtime for deferred component construction, or null during raw structural evaluation.
+     */
+    @JvmSynthetic
+    internal fun currentOrNull(): ComponentRuntime? = active.get()
 }
