@@ -72,6 +72,10 @@ public abstract interface class dev/s7a/strata/runtime/minecraft/MinecraftUiProf
 	public abstract fun buttonDisabled (Ldev/s7a/strata/render/DrawImage;ILdev/s7a/strata/component/NineSliceCenterMode;)V
 	public abstract fun buttonHighlighted (Ldev/s7a/strata/render/DrawImage;ILdev/s7a/strata/component/NineSliceCenterMode;)V
 	public abstract fun buttonNormal (Ldev/s7a/strata/render/DrawImage;ILdev/s7a/strata/component/NineSliceCenterMode;)V
+	public abstract fun checkbox (Ldev/s7a/strata/render/DrawImage;)V
+	public abstract fun checkboxHighlighted (Ldev/s7a/strata/render/DrawImage;)V
+	public abstract fun checkboxSelected (Ldev/s7a/strata/render/DrawImage;)V
+	public abstract fun checkboxSelectedHighlighted (Ldev/s7a/strata/render/DrawImage;)V
 	public abstract fun containerBackground (Ldev/s7a/strata/render/DrawImage;)V
 	public abstract fun listBackground (Ldev/s7a/strata/render/DrawImage;)V
 	public abstract fun listFooterSeparator (Ldev/s7a/strata/render/DrawImage;)V
@@ -80,6 +84,10 @@ public abstract interface class dev/s7a/strata/runtime/minecraft/MinecraftUiProf
 	public abstract fun printableAsciiGlyph (ILdev/s7a/strata/render/DrawImage;)V
 	public abstract fun scrollbarBackground (Ldev/s7a/strata/render/DrawImage;)V
 	public abstract fun scrollbarThumb (Ldev/s7a/strata/render/DrawImage;)V
+	public abstract fun slider (Ldev/s7a/strata/render/DrawImage;)V
+	public abstract fun sliderHandle (Ldev/s7a/strata/render/DrawImage;)V
+	public abstract fun sliderHandleHighlighted (Ldev/s7a/strata/render/DrawImage;)V
+	public abstract fun sliderHighlighted (Ldev/s7a/strata/render/DrawImage;)V
 	public abstract fun slotHighlightBack (Ldev/s7a/strata/render/DrawImage;)V
 	public abstract fun slotHighlightFront (Ldev/s7a/strata/render/DrawImage;)V
 	public abstract fun textFieldHighlighted (Ldev/s7a/strata/render/DrawImage;)V

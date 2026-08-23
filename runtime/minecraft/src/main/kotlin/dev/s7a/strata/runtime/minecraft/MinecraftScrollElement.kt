@@ -1,5 +1,9 @@
+@file:OptIn(InternalStrataRuntimeApi::class)
+
 package dev.s7a.strata.runtime.minecraft
 
+import dev.s7a.strata.component.ScrollState
+import dev.s7a.strata.component.ScrollStateObserver
 import dev.s7a.strata.element.Element
 import dev.s7a.strata.element.ElementIdentity
 import dev.s7a.strata.element.ElementKey
@@ -9,7 +13,6 @@ import dev.s7a.strata.geometry.IntOffset
 import dev.s7a.strata.geometry.IntRect
 import dev.s7a.strata.geometry.IntSize
 import dev.s7a.strata.input.InputResult
-import dev.s7a.strata.input.PointerButton
 import dev.s7a.strata.input.PointerEvent
 import dev.s7a.strata.layout.LayoutScope
 import dev.s7a.strata.layout.MeasureScope
@@ -25,6 +28,7 @@ import dev.s7a.strata.node.PaintNode
 import dev.s7a.strata.node.PointerInputNode
 import dev.s7a.strata.render.DrawImage
 import dev.s7a.strata.render.PaintScope
+import dev.s7a.strata.spi.InternalStrataRuntimeApi
 import kotlin.math.max
 import kotlin.math.min
 import dev.s7a.strata.node.Node as RetainedNode
@@ -53,9 +57,7 @@ private class MinecraftScrollElement private constructor(
     @get:JvmSynthetic
     internal val footerSeparator: DrawImage,
     @get:JvmSynthetic
-    internal val scrollbarBackground: DrawImage,
-    @get:JvmSynthetic
-    internal val scrollbarThumb: DrawImage,
+    internal val state: ScrollState,
     @get:JvmSynthetic
     internal val scrollRate: Int,
     content: Element,
@@ -75,8 +77,7 @@ private class MinecraftScrollElement private constructor(
         initialListBackground: DrawImage,
         initialHeaderSeparator: DrawImage,
         initialFooterSeparator: DrawImage,
-        initialScrollbarBackground: DrawImage,
-        initialScrollbarThumb: DrawImage,
+        initialState: ScrollState,
         initialScrollRate: Int,
     ) : RetainedNode(),
         MeasureNode,
@@ -86,19 +87,13 @@ private class MinecraftScrollElement private constructor(
         ClipChildrenNode,
         PointerInputNode,
         LifecycleNode {
-        private val scrollbarSize = IntSize(6, 32)
         private val separatorSize = IntSize(32, 2)
         private var listBackground: DrawImage? = initialListBackground
         private var headerSeparator: DrawImage? = initialHeaderSeparator
         private var footerSeparator: DrawImage? = initialFooterSeparator
-        private var scrollbarBackground: DrawImage? = initialScrollbarBackground
-        private var scrollbarThumb: DrawImage? = initialScrollbarThumb
+        private var state: ScrollState? = initialState
+        private var stateObserver: ScrollStateObserver? = null
         private var scrollRate = initialScrollRate
-        private var contentSize = IntSize.Zero
-        private var viewportSize = IntSize.Zero
-        private var scrollAmount = 0.0
-        private var maxScrollAmount = 0
-        private var draggingScrollbar = false
         private var disposed = false
 
         override fun measure(
@@ -124,10 +119,12 @@ private class MinecraftScrollElement private constructor(
             if (0 < nextMaximum) {
                 require(40 <= viewport.height) { "Scrollable Minecraft Scroll viewports require at least 40 logical pixels of height." }
             }
-            contentSize = measuredContent
-            viewportSize = viewport
-            maxScrollAmount = nextMaximum
-            scrollAmount = scrollAmount.coerceIn(0.0, nextMaximum.toDouble())
+            val currentState = checkNotNull(state)
+            currentState.updateGeometry(
+                viewportExtent = viewport.height,
+                contentExtent = contentHeight,
+                origin = checkNotNull(stateObserver),
+            )
             return viewport
         }
 
@@ -135,13 +132,13 @@ private class MinecraftScrollElement private constructor(
             check(scope.childCount == 1) { "Minecraft Scroll requires exactly one measured child." }
             val child = scope.measuredChildSize(0)
             val left = Math.subtractExact(scope.size.width, child.width) / 2
-            val top = Math.subtractExact(2, scrollAmount.toInt())
+            val top = Math.subtractExact(2, checkNotNull(state).metrics.offset.toInt())
             scope.placeChild(0, IntOffset(left, top))
         }
 
         override fun paint(scope: PaintScope) {
             if (scope.size.width == 0 || scope.size.height == 0) return
-            val phaseY = Math.addExact(scope.size.height, scrollAmount.toInt())
+            val phaseY = Math.addExact(scope.size.height, checkNotNull(state).metrics.offset.toInt())
             paintScaledTiles(
                 scope,
                 checkNotNull(listBackground),
@@ -154,11 +151,6 @@ private class MinecraftScrollElement private constructor(
         override fun paintOverlay(scope: PaintScope) {
             paintHorizontalRepeat(scope, checkNotNull(headerSeparator), -separatorSize.height)
             paintHorizontalRepeat(scope, checkNotNull(footerSeparator), scope.size.height)
-            if (maxScrollAmount == 0 || scope.size.width == 0 || scope.size.height == 0) return
-            val x = scrollbarX(scope.size.width)
-            paintVerticalNineSlice(scope, checkNotNull(scrollbarBackground), x, 0, scope.size.height)
-            val thumbHeight = scrollerHeight(scope.size.height)
-            paintVerticalNineSlice(scope, checkNotNull(scrollbarThumb), x, scrollbarY(scope.size.height, thumbHeight), thumbHeight)
         }
 
         override fun onPointerEvent(
@@ -167,61 +159,41 @@ private class MinecraftScrollElement private constructor(
         ): InputResult =
             when (event) {
                 is PointerEvent.Scroll -> {
-                    changeScroll(event.deltaY * scrollRate.toDouble())
+                    val delta = event.deltaY * scrollRate.toDouble()
+                    if (delta.isFinite()) {
+                        checkNotNull(state).scrollBy(delta, checkNotNull(stateObserver))
+                        invalidate(DirtyMask.of(DirtyPhase.Layout, DirtyPhase.Paint))
+                    }
                     InputResult.Consumed
                 }
 
-                is PointerEvent.Press -> {
-                    if (
-                        event.button == PointerButton.Primary &&
-                        0 < maxScrollAmount &&
-                        isOverScrollbar(localPosition)
-                    ) {
-                        draggingScrollbar = true
-                        InputResult.Consumed
-                    } else {
-                        InputResult.Ignored
-                    }
-                }
-
-                is PointerEvent.Drag -> {
-                    if (draggingScrollbar && event.button == PointerButton.Primary) {
-                        dragScrollbar(event, localPosition)
-                        InputResult.Consumed
-                    } else {
-                        InputResult.Ignored
-                    }
-                }
-
-                is PointerEvent.Release -> {
-                    if (draggingScrollbar && event.button == PointerButton.Primary) {
-                        draggingScrollbar = false
-                        InputResult.Consumed
-                    } else {
-                        InputResult.Ignored
-                    }
-                }
-
-                is PointerEvent.Move -> {
+                is PointerEvent.Press,
+                is PointerEvent.Drag,
+                is PointerEvent.Release,
+                is PointerEvent.Move,
+                -> {
                     InputResult.Ignored
                 }
             }
 
-        override fun attach() = Unit
-
-        override fun detach() {
-            draggingScrollbar = false
+        override fun attach() {
+            stateObserver =
+                checkNotNull(state).observe {
+                    invalidate(DirtyMask.of(DirtyPhase.Layout, DirtyPhase.Paint))
+                }
         }
+
+        override fun detach() = Unit
 
         override fun dispose() {
             if (disposed) return
             disposed = true
-            draggingScrollbar = false
+            stateObserver?.close()
+            stateObserver = null
+            state = null
             listBackground = null
             headerSeparator = null
             footerSeparator = null
-            scrollbarBackground = null
-            scrollbarThumb = null
         }
 
         /**
@@ -239,77 +211,20 @@ private class MinecraftScrollElement private constructor(
                 listBackground != current.listBackground ||
                     headerSeparator != current.headerSeparator ||
                     footerSeparator != current.footerSeparator ||
-                    scrollbarBackground != current.scrollbarBackground ||
-                    scrollbarThumb != current.scrollbarThumb
+                    state !== current.state
             listBackground = current.listBackground
             headerSeparator = current.headerSeparator
             footerSeparator = current.footerSeparator
-            scrollbarBackground = current.scrollbarBackground
-            scrollbarThumb = current.scrollbarThumb
+            if (state !== current.state) {
+                stateObserver?.close()
+                state = current.state
+                stateObserver =
+                    current.state.observe {
+                        invalidate(DirtyMask.of(DirtyPhase.Layout, DirtyPhase.Paint))
+                    }
+            }
             scrollRate = current.scrollRate
             return if (imagesChanged) DirtyMask.of(DirtyPhase.Paint) else DirtyMask.None
-        }
-
-        private fun dragScrollbar(
-            event: PointerEvent.Drag,
-            localPosition: IntOffset,
-        ) {
-            if (localPosition.y < 0) {
-                setScrollAmount(0.0)
-                return
-            }
-            if (viewportSize.height < localPosition.y) {
-                setScrollAmount(maxScrollAmount.toDouble())
-                return
-            }
-            val trackTravel = Math.subtractExact(viewportSize.height, scrollerHeight(viewportSize.height))
-            val multiplier = max(1.0, maxScrollAmount.toDouble() / trackTravel.toDouble())
-            changeScroll(event.deltaY * multiplier)
-        }
-
-        private fun changeScroll(delta: Double) {
-            val next = scrollAmount + delta
-            if (next.isFinite()) {
-                setScrollAmount(next)
-            } else if (0.0 < delta) {
-                setScrollAmount(maxScrollAmount.toDouble())
-            } else {
-                setScrollAmount(0.0)
-            }
-        }
-
-        private fun setScrollAmount(value: Double) {
-            val next = value.coerceIn(0.0, maxScrollAmount.toDouble())
-            if (scrollAmount == next) return
-            scrollAmount = next
-            invalidate(DirtyMask.of(DirtyPhase.Layout, DirtyPhase.Paint))
-        }
-
-        private fun isOverScrollbar(position: IntOffset): Boolean {
-            val x = scrollbarX(viewportSize.width)
-            val right = Math.addExact(x, scrollbarSize.width)
-            return x <= position.x && position.x <= right && 0 <= position.y && position.y < viewportSize.height
-        }
-
-        private fun scrollbarX(width: Int): Int {
-            val contentLeft = Math.subtractExact(width, contentSize.width) / 2
-            return Math.addExact(Math.addExact(contentLeft, contentSize.width), 8)
-        }
-
-        private fun scrollerHeight(height: Int): Int {
-            val contentHeight = Math.addExact(contentSize.height, 4)
-            val squared = Math.multiplyExact(height.toLong(), height.toLong())
-            val natural = Math.toIntExact(squared / contentHeight.toLong())
-            return natural.coerceIn(32, Math.subtractExact(height, 8))
-        }
-
-        private fun scrollbarY(
-            height: Int,
-            thumbHeight: Int,
-        ): Int {
-            val travel = Math.subtractExact(height, thumbHeight)
-            val numerator = Math.multiplyExact(scrollAmount.toInt().toLong(), travel.toLong())
-            return max(0, Math.toIntExact(numerator / maxScrollAmount.toLong()))
         }
 
         private fun paintHorizontalRepeat(
@@ -326,72 +241,6 @@ private class MinecraftScrollElement private constructor(
                     IntRect(left, top, Math.addExact(left, width), Math.addExact(top, separatorSize.height)),
                 )
                 left = Math.addExact(left, width)
-            }
-        }
-
-        private fun paintVerticalNineSlice(
-            scope: PaintScope,
-            image: DrawImage,
-            left: Int,
-            top: Int,
-            height: Int,
-        ) {
-            if (height == 0) return
-            if (height == scrollbarSize.height) {
-                scope.blitImage(
-                    image,
-                    IntRect(0, 0, scrollbarSize.width, scrollbarSize.height),
-                    IntRect(left, top, Math.addExact(left, scrollbarSize.width), Math.addExact(top, height)),
-                )
-                return
-            }
-            val border = min(1, height / 2)
-            if (0 < border) {
-                scope.blitImage(
-                    image,
-                    IntRect(0, 0, scrollbarSize.width, border),
-                    IntRect(left, top, Math.addExact(left, scrollbarSize.width), Math.addExact(top, border)),
-                )
-            }
-            val centerTop = Math.addExact(top, border)
-            val centerHeight = Math.subtractExact(Math.subtractExact(height, border), border)
-            paintVerticalRepeat(scope, image, left, centerTop, centerHeight, border, scrollbarSize.height - border)
-            if (0 < border) {
-                val bottom = Math.addExact(top, height)
-                scope.blitImage(
-                    image,
-                    IntRect(0, scrollbarSize.height - border, scrollbarSize.width, scrollbarSize.height),
-                    IntRect(left, bottom - border, Math.addExact(left, scrollbarSize.width), bottom),
-                )
-            }
-        }
-
-        private fun paintVerticalRepeat(
-            scope: PaintScope,
-            image: DrawImage,
-            left: Int,
-            top: Int,
-            height: Int,
-            sourceTop: Int,
-            sourceBottom: Int,
-        ) {
-            if (height == 0) return
-            val sourceHeight = Math.subtractExact(sourceBottom, sourceTop)
-            var offset = 0
-            while (offset < height) {
-                val chunk = min(sourceHeight, Math.subtractExact(height, offset))
-                val destinationTop = Math.addExact(top, offset)
-                scope.blitImage(
-                    image,
-                    IntRect(0, sourceTop, scrollbarSize.width, Math.addExact(sourceTop, chunk)),
-                    IntRect(
-                        left,
-                        destinationTop,
-                        Math.addExact(left, scrollbarSize.width),
-                        Math.addExact(destinationTop, chunk),
-                    ),
-                )
-                offset = Math.addExact(offset, chunk)
             }
         }
 
@@ -475,8 +324,6 @@ private class MinecraftScrollElement private constructor(
                     require(element.listBackground.size == IntSize(16, 16)) { "Minecraft Scroll list background must be 16 by 16 pixels." }
                     require(element.headerSeparator.size == IntSize(32, 2)) { "Minecraft Scroll header separator must be 32 by 2 pixels." }
                     require(element.footerSeparator.size == IntSize(32, 2)) { "Minecraft Scroll footer separator must be 32 by 2 pixels." }
-                    require(element.scrollbarBackground.size == IntSize(6, 32)) { "Minecraft Scroll background sprite must be 6 by 32 pixels." }
-                    require(element.scrollbarThumb.size == IntSize(6, 32)) { "Minecraft Scroll thumb sprite must be 6 by 32 pixels." }
                     require(0 < element.scrollRate) { "Minecraft Scroll rate must be positive." }
                     require(element.children.size == 1) { "Minecraft Scroll requires exactly one content root." }
                 },
@@ -485,8 +332,7 @@ private class MinecraftScrollElement private constructor(
                         element.listBackground,
                         element.headerSeparator,
                         element.footerSeparator,
-                        element.scrollbarBackground,
-                        element.scrollbarThumb,
+                        element.state,
                         element.scrollRate,
                     )
                 },
@@ -512,8 +358,7 @@ private class MinecraftScrollElement private constructor(
             listBackground: DrawImage,
             headerSeparator: DrawImage,
             footerSeparator: DrawImage,
-            scrollbarBackground: DrawImage,
-            scrollbarThumb: DrawImage,
+            state: ScrollState,
             scrollRate: Int,
             content: Element,
             modifier: Modifier,
@@ -523,8 +368,7 @@ private class MinecraftScrollElement private constructor(
                 listBackground,
                 headerSeparator,
                 footerSeparator,
-                scrollbarBackground,
-                scrollbarThumb,
+                state,
                 scrollRate,
                 content,
                 modifier,
@@ -552,8 +396,7 @@ internal fun createMinecraftScrollElement(
     listBackground: DrawImage,
     headerSeparator: DrawImage,
     footerSeparator: DrawImage,
-    scrollbarBackground: DrawImage,
-    scrollbarThumb: DrawImage,
+    state: ScrollState,
     scrollRate: Int,
     content: Element,
     modifier: Modifier,
@@ -563,8 +406,7 @@ internal fun createMinecraftScrollElement(
         listBackground,
         headerSeparator,
         footerSeparator,
-        scrollbarBackground,
-        scrollbarThumb,
+        state,
         scrollRate,
         content,
         modifier,

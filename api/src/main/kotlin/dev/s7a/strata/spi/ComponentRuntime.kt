@@ -1,9 +1,13 @@
 package dev.s7a.strata.spi
 
+import dev.s7a.strata.component.CheckboxState
+import dev.s7a.strata.component.CycleButtonState
 import dev.s7a.strata.component.ImageScale
 import dev.s7a.strata.component.ImageSource
 import dev.s7a.strata.component.NineSliceCenterMode
 import dev.s7a.strata.component.PlayerSkinSource
+import dev.s7a.strata.component.ScrollState
+import dev.s7a.strata.component.SliderState
 import dev.s7a.strata.component.SlotBinding
 import dev.s7a.strata.component.TabSelectionIndicator
 import dev.s7a.strata.component.TextFieldState
@@ -27,6 +31,50 @@ import dev.s7a.strata.text.UiText
 @Suppress("TooManyFunctions")
 @InternalStrataRuntimeApi
 public interface ComponentRuntime {
+    /**
+     * Creates one profile-backed Checkbox with caller-owned selected state.
+     *
+     * @param label unresolved visible and semantic label.
+     * @param state caller-owned owner-thread selected state.
+     * @param width maximum fixed logical width.
+     * @param enabled whether input and enabled semantics are active.
+     * @param modifier active behavior including typed component actions.
+     * @param key optional stable sibling identity.
+     * @return immutable retained description referencing but not owning [state].
+     */
+    public fun checkbox(
+        label: UiText,
+        state: CheckboxState,
+        width: Int,
+        enabled: Boolean,
+        modifier: Modifier,
+        key: ElementKey<*>?,
+    ): Element
+
+    /**
+     * Creates one profile-backed finite-option CycleButton.
+     */
+    public fun cycleButton(
+        state: CycleButtonState<*>,
+        labels: List<UiText>,
+        width: Int,
+        enabled: Boolean,
+        modifier: Modifier,
+        key: ElementKey<*>?,
+    ): Element
+
+    /**
+     * Creates one profile-backed horizontal Slider.
+     */
+    public fun slider(
+        label: UiText,
+        state: SliderState,
+        width: Int,
+        enabled: Boolean,
+        modifier: Modifier,
+        key: ElementKey<*>?,
+    ): Element
+
     /**
      * Creates one profile-backed text element.
      *
@@ -132,9 +180,24 @@ public interface ComponentRuntime {
      * @param key optional stable sibling identity.
      * @return an immutable retained-element description owned by the caller.
      */
-    public fun scroll(
+    public fun scrollArea(
+        state: ScrollState,
         content: Element,
         scrollRate: Int,
+        modifier: Modifier,
+        key: ElementKey<*>?,
+    ): Element
+
+    /**
+     * Creates one independently placed profile-backed vertical scrollbar.
+     *
+     * @param state caller-owned position shared with one scroll area.
+     * @param modifier active behavior and layout constraints around the scrollbar.
+     * @param key optional stable sibling identity.
+     * @return an immutable retained-element description referencing but not owning [state].
+     */
+    public fun scrollbar(
+        state: ScrollState,
         modifier: Modifier,
         key: ElementKey<*>?,
     ): Element

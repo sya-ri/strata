@@ -10,7 +10,8 @@ import dev.s7a.strata.component.ImageSource
 import dev.s7a.strata.component.PlayerHead
 import dev.s7a.strata.component.PlayerSkinSource
 import dev.s7a.strata.component.Row
-import dev.s7a.strata.component.Scroll
+import dev.s7a.strata.component.ScrollArea
+import dev.s7a.strata.component.ScrollState
 import dev.s7a.strata.component.Slot
 import dev.s7a.strata.component.Slots
 import dev.s7a.strata.component.Spacer
@@ -44,6 +45,7 @@ import dev.s7a.strata.screen.ScreenDefinition
  */
 public fun createApiOnlyScreenDefinition(onClose: () -> Unit): ScreenDefinition {
     val search = TextFieldState()
+    val scroll = ScrollState()
     return ScreenDefinition("API-only screen") {
         Stack(modifier = Modifier.Empty.size(320, 180)) {
             Column(
@@ -58,7 +60,7 @@ public fun createApiOnlyScreenDefinition(onClose: () -> Unit): ScreenDefinition 
                 Grid(columns = 3, horizontalSpacing = 2, verticalSpacing = 2) {
                     repeat(3) { index -> Slot(bind = Slots.playerInventory(index)) }
                 }
-                Scroll(modifier = Modifier.Empty.size(288, 48)) {
+                ScrollArea(state = scroll, modifier = Modifier.Empty.size(288, 48)) {
                     Row(spacing = 4) {
                         PlayerHead(source = PlayerSkinSource.Name("Player0"))
                         Image(

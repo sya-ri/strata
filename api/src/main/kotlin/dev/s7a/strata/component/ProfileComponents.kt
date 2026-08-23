@@ -13,6 +13,115 @@ import dev.s7a.strata.spi.InternalStrataRuntimeApi
 import dev.s7a.strata.text.UiText
 
 /**
+ * Emits one Minecraft-profile Checkbox backed by caller-owned [state].
+ *
+ * Native pointer and focused keyboard input update the state before emitting [dev.s7a.strata.action.ComponentActions.CheckedChange] through the Modifier chain.
+ *
+ * @receiver active owner-thread screen scope.
+ * @param label unresolved visible and semantic label.
+ * @param state caller-owned selected state.
+ * @param width maximum fixed logical width including the 17-pixel box and four-pixel gap.
+ * @param enabled whether input and enabled semantics are active.
+ * @param modifier active layout, input, and typed action behavior.
+ * @param key optional stable sibling identity.
+ */
+@OptIn(InternalStrataRuntimeApi::class)
+public fun UiScope.Checkbox(
+    label: UiText,
+    state: CheckboxState,
+    width: Int = 150,
+    enabled: Boolean = true,
+    modifier: Modifier = Modifier.Empty,
+    key: ElementKey<*>? = null,
+) {
+    checkUsable()
+    element(ComponentRuntimeBridge.current().checkbox(label, state, width, enabled, modifier, key))
+}
+
+/**
+ * Emits one finite-option Minecraft-profile CycleButton.
+ *
+ * Pointer press, wheel, and focused keyboard input update caller-owned [state] before emitting the typed cycle action through [modifier].
+ * Labels are evaluated once for the immutable option snapshot and must be supported by the active profile.
+ *
+ * @param T immutable option type.
+ * @receiver active owner-thread screen scope.
+ * @param state caller-owned finite option state.
+ * @param width fixed logical button width.
+ * @param enabled whether input and enabled appearance are active.
+ * @param modifier active layout, input, and typed action behavior.
+ * @param key optional stable sibling identity.
+ * @param label maps each option to its visible unresolved label.
+ */
+@OptIn(InternalStrataRuntimeApi::class)
+public fun <T : Any> UiScope.CycleButton(
+    state: CycleButtonState<T>,
+    width: Int = 150,
+    enabled: Boolean = true,
+    modifier: Modifier = Modifier.Empty,
+    key: ElementKey<*>? = null,
+    label: (T) -> UiText = { value -> UiText.Literal(value.toString()) },
+) {
+    checkUsable()
+    val labels = state.values.map(label)
+    element(ComponentRuntimeBridge.current().cycleButton(state, labels, width, enabled, modifier, key))
+}
+
+/**
+ * Emits one horizontal Minecraft-profile Slider backed by caller-owned [state].
+ *
+ * Pointer press and drag plus focused left/right keys normalize through the state's range and steps before emitting a typed Slider change action.
+ *
+ * @receiver active owner-thread screen scope.
+ * @param label unresolved visible and semantic label.
+ * @param state caller-owned numeric state.
+ * @param width fixed logical track width.
+ * @param enabled whether input and enabled appearance are active.
+ * @param modifier active layout, input, and typed action behavior.
+ * @param key optional stable sibling identity.
+ */
+@OptIn(InternalStrataRuntimeApi::class)
+public fun UiScope.Slider(
+    label: UiText,
+    state: SliderState,
+    width: Int = 150,
+    enabled: Boolean = true,
+    modifier: Modifier = Modifier.Empty,
+    key: ElementKey<*>? = null,
+) {
+    checkUsable()
+    element(ComponentRuntimeBridge.current().slider(label, state, width, enabled, modifier, key))
+}
+
+/**
+ * Literal-label overload of [Slider].
+ */
+public fun UiScope.Slider(
+    label: String,
+    state: SliderState,
+    width: Int = 150,
+    enabled: Boolean = true,
+    modifier: Modifier = Modifier.Empty,
+    key: ElementKey<*>? = null,
+) {
+    Slider(UiText.Literal(label), state, width, enabled, modifier, key)
+}
+
+/**
+ * Literal-label overload of [Checkbox].
+ */
+public fun UiScope.Checkbox(
+    label: String,
+    state: CheckboxState,
+    width: Int = 150,
+    enabled: Boolean = true,
+    modifier: Modifier = Modifier.Empty,
+    key: ElementKey<*>? = null,
+) {
+    Checkbox(UiText.Literal(label), state, width, enabled, modifier, key)
+}
+
+/**
  * Emits one immutable nearest-sampled image component.
  *
  * A resource source is resolved from the active runtime resource manager while a pixel source retains its immutable snapshot directly.
@@ -335,7 +444,8 @@ public fun UiScope.Tab(
  * @throws IllegalStateException when no runtime screen evaluation is active.
  */
 @OptIn(InternalStrataRuntimeApi::class)
-public fun UiScope.Scroll(
+public fun UiScope.ScrollArea(
+    state: ScrollState,
     modifier: Modifier = Modifier.Empty,
     key: ElementKey<*>? = null,
     scrollRate: Int = 9,
@@ -344,7 +454,29 @@ public fun UiScope.Scroll(
     checkUsable()
     require(0 < scrollRate) { "Scroll rate must be positive." }
     val child = buildComponentTree(content)
-    element(ComponentRuntimeBridge.current().scroll(child, scrollRate, modifier, key))
+    element(ComponentRuntimeBridge.current().scrollArea(state, child, scrollRate, modifier, key))
+}
+
+/**
+ * Emits one independently placed profile-backed vertical scrollbar linked to [state].
+ *
+ * The scrollbar may be omitted or placed anywhere in the surrounding layout without changing its linked [ScrollArea].
+ * Its height must be bounded by its parent or modifier.
+ *
+ * @receiver active owner-thread screen scope.
+ * @param state caller-owned state shared with one scroll area.
+ * @param modifier active layout and behavior around the scrollbar.
+ * @param key optional stable sibling identity.
+ * @throws IllegalStateException when no runtime screen evaluation is active.
+ */
+@OptIn(InternalStrataRuntimeApi::class)
+public fun UiScope.Scrollbar(
+    state: ScrollState,
+    modifier: Modifier = Modifier.Empty,
+    key: ElementKey<*>? = null,
+) {
+    checkUsable()
+    element(ComponentRuntimeBridge.current().scrollbar(state, modifier, key))
 }
 
 private fun buildOptionalComponentTree(content: UiScope.() -> Unit): Element? {

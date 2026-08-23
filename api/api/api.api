@@ -1,7 +1,71 @@
+public final class dev/s7a/strata/action/ActionDispatcher {
+	public final fun dispatch (Ldev/s7a/strata/action/ActionKey;Ljava/lang/Object;)Ldev/s7a/strata/action/ActionResult;
+}
+
+public final class dev/s7a/strata/action/ActionKey {
+	public fun <init> (Ljava/lang/String;)V
+	public final fun getName ()Ljava/lang/String;
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class dev/s7a/strata/action/ActionResult : java/lang/Enum {
+	public static final field Consumed Ldev/s7a/strata/action/ActionResult;
+	public static final field Ignored Ldev/s7a/strata/action/ActionResult;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public static fun valueOf (Ljava/lang/String;)Ldev/s7a/strata/action/ActionResult;
+	public static fun values ()[Ldev/s7a/strata/action/ActionResult;
+}
+
+public final class dev/s7a/strata/action/ComponentActions {
+	public static final field INSTANCE Ldev/s7a/strata/action/ComponentActions;
+	public final fun getCheckedChange ()Ldev/s7a/strata/action/ActionKey;
+	public final fun getCycle ()Ldev/s7a/strata/action/ActionKey;
+	public final fun getLeadingItemsRequested ()Ldev/s7a/strata/action/ActionKey;
+	public final fun getSelectionChange ()Ldev/s7a/strata/action/ActionKey;
+	public final fun getSliderChange ()Ldev/s7a/strata/action/ActionKey;
+	public final fun getTrailingItemsRequested ()Ldev/s7a/strata/action/ActionKey;
+}
+
+public final class dev/s7a/strata/action/ListLoadRequest {
+	public fun <init> (I)V
+	public final fun component1 ()I
+	public final fun copy (I)Ldev/s7a/strata/action/ListLoadRequest;
+	public static synthetic fun copy$default (Ldev/s7a/strata/action/ListLoadRequest;IILjava/lang/Object;)Ldev/s7a/strata/action/ListLoadRequest;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getSuggestedCount ()I
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class dev/s7a/strata/component/CheckboxState {
+	public fun <init> ()V
+	public fun <init> (Z)V
+	public synthetic fun <init> (ZILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun getChecked ()Z
+	public final fun observe (Lkotlin/jvm/functions/Function1;)Ldev/s7a/strata/component/ComponentStateSubscription;
+	public final fun setChecked (Z)V
+	public final fun toggle ()Z
+}
+
 public abstract class dev/s7a/strata/component/ColumnScope : dev/s7a/strata/component/UiScope {
 	public final fun align (Ldev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/layout/HorizontalAlignment;)Ldev/s7a/strata/modifier/Modifier;
 	public final fun weight (Ldev/s7a/strata/modifier/Modifier;FZ)Ldev/s7a/strata/modifier/Modifier;
 	public static synthetic fun weight$default (Ldev/s7a/strata/component/ColumnScope;Ldev/s7a/strata/modifier/Modifier;FZILjava/lang/Object;)Ldev/s7a/strata/modifier/Modifier;
+}
+
+public final class dev/s7a/strata/component/ComponentStateSubscription : java/lang/AutoCloseable {
+	public fun close ()V
+}
+
+public final class dev/s7a/strata/component/CycleButtonState {
+	public fun <init> (Ljava/util/List;)V
+	public fun <init> (Ljava/util/List;Ljava/lang/Object;)V
+	public final fun getValue ()Ljava/lang/Object;
+	public final fun getValues ()Ljava/util/List;
+	public final fun next ()Ljava/lang/Object;
+	public final fun observe (Lkotlin/jvm/functions/Function1;)Ldev/s7a/strata/component/ComponentStateSubscription;
+	public final fun previous ()Ljava/lang/Object;
+	public final fun setValue (Ljava/lang/Object;)V
 }
 
 public abstract class dev/s7a/strata/component/GridScope : dev/s7a/strata/component/UiScope {
@@ -106,14 +170,26 @@ public final class dev/s7a/strata/component/ProfileComponents {
 	public static final fun Button (Ldev/s7a/strata/component/UiScope;Ljava/lang/String;IZLdev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/element/ElementKey;)V
 	public static synthetic fun Button$default (Ldev/s7a/strata/component/UiScope;Ldev/s7a/strata/text/UiText;IZLdev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/element/ElementKey;ILjava/lang/Object;)V
 	public static synthetic fun Button$default (Ldev/s7a/strata/component/UiScope;Ljava/lang/String;IZLdev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/element/ElementKey;ILjava/lang/Object;)V
+	public static final fun Checkbox (Ldev/s7a/strata/component/UiScope;Ldev/s7a/strata/text/UiText;Ldev/s7a/strata/component/CheckboxState;IZLdev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/element/ElementKey;)V
+	public static final fun Checkbox (Ldev/s7a/strata/component/UiScope;Ljava/lang/String;Ldev/s7a/strata/component/CheckboxState;IZLdev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/element/ElementKey;)V
+	public static synthetic fun Checkbox$default (Ldev/s7a/strata/component/UiScope;Ldev/s7a/strata/text/UiText;Ldev/s7a/strata/component/CheckboxState;IZLdev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/element/ElementKey;ILjava/lang/Object;)V
+	public static synthetic fun Checkbox$default (Ldev/s7a/strata/component/UiScope;Ljava/lang/String;Ldev/s7a/strata/component/CheckboxState;IZLdev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/element/ElementKey;ILjava/lang/Object;)V
+	public static final fun CycleButton (Ldev/s7a/strata/component/UiScope;Ldev/s7a/strata/component/CycleButtonState;IZLdev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/element/ElementKey;Lkotlin/jvm/functions/Function1;)V
+	public static synthetic fun CycleButton$default (Ldev/s7a/strata/component/UiScope;Ldev/s7a/strata/component/CycleButtonState;IZLdev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/element/ElementKey;Lkotlin/jvm/functions/Function1;ILjava/lang/Object;)V
 	public static final fun Image (Ldev/s7a/strata/component/UiScope;Ldev/s7a/strata/component/ImageSource;Ldev/s7a/strata/geometry/IntRect;Ldev/s7a/strata/geometry/IntSize;Ldev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/element/ElementKey;)V
 	public static final fun Image (Ldev/s7a/strata/component/UiScope;Ldev/s7a/strata/component/ImageSource;Ldev/s7a/strata/geometry/IntSize;Ldev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/element/ElementKey;)V
 	public static synthetic fun Image$default (Ldev/s7a/strata/component/UiScope;Ldev/s7a/strata/component/ImageSource;Ldev/s7a/strata/geometry/IntRect;Ldev/s7a/strata/geometry/IntSize;Ldev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/element/ElementKey;ILjava/lang/Object;)V
 	public static synthetic fun Image$default (Ldev/s7a/strata/component/UiScope;Ldev/s7a/strata/component/ImageSource;Ldev/s7a/strata/geometry/IntSize;Ldev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/element/ElementKey;ILjava/lang/Object;)V
 	public static final fun PlayerHead (Ldev/s7a/strata/component/UiScope;Ldev/s7a/strata/component/PlayerSkinSource;IZLdev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/element/ElementKey;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function1;)V
 	public static synthetic fun PlayerHead$default (Ldev/s7a/strata/component/UiScope;Ldev/s7a/strata/component/PlayerSkinSource;IZLdev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/element/ElementKey;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function1;ILjava/lang/Object;)V
-	public static final fun Scroll (Ldev/s7a/strata/component/UiScope;Ldev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/element/ElementKey;ILkotlin/jvm/functions/Function1;)V
-	public static synthetic fun Scroll$default (Ldev/s7a/strata/component/UiScope;Ldev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/element/ElementKey;ILkotlin/jvm/functions/Function1;ILjava/lang/Object;)V
+	public static final fun ScrollArea (Ldev/s7a/strata/component/UiScope;Ldev/s7a/strata/component/ScrollState;Ldev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/element/ElementKey;ILkotlin/jvm/functions/Function1;)V
+	public static synthetic fun ScrollArea$default (Ldev/s7a/strata/component/UiScope;Ldev/s7a/strata/component/ScrollState;Ldev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/element/ElementKey;ILkotlin/jvm/functions/Function1;ILjava/lang/Object;)V
+	public static final fun Scrollbar (Ldev/s7a/strata/component/UiScope;Ldev/s7a/strata/component/ScrollState;Ldev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/element/ElementKey;)V
+	public static synthetic fun Scrollbar$default (Ldev/s7a/strata/component/UiScope;Ldev/s7a/strata/component/ScrollState;Ldev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/element/ElementKey;ILjava/lang/Object;)V
+	public static final fun Slider (Ldev/s7a/strata/component/UiScope;Ldev/s7a/strata/text/UiText;Ldev/s7a/strata/component/SliderState;IZLdev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/element/ElementKey;)V
+	public static final fun Slider (Ldev/s7a/strata/component/UiScope;Ljava/lang/String;Ldev/s7a/strata/component/SliderState;IZLdev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/element/ElementKey;)V
+	public static synthetic fun Slider$default (Ldev/s7a/strata/component/UiScope;Ldev/s7a/strata/text/UiText;Ldev/s7a/strata/component/SliderState;IZLdev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/element/ElementKey;ILjava/lang/Object;)V
+	public static synthetic fun Slider$default (Ldev/s7a/strata/component/UiScope;Ljava/lang/String;Ldev/s7a/strata/component/SliderState;IZLdev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/element/ElementKey;ILjava/lang/Object;)V
 	public static final fun Slot (Ldev/s7a/strata/component/UiScope;Ldev/s7a/strata/component/SlotBinding;ZLdev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/element/ElementKey;Lkotlin/jvm/functions/Function1;)V
 	public static synthetic fun Slot$default (Ldev/s7a/strata/component/UiScope;Ldev/s7a/strata/component/SlotBinding;ZLdev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/element/ElementKey;Lkotlin/jvm/functions/Function1;ILjava/lang/Object;)V
 	public static final fun Tab (Ldev/s7a/strata/component/UiScope;Ldev/s7a/strata/text/UiText;ZIZLdev/s7a/strata/component/TabSelectionIndicator;Ldev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/element/ElementKey;)V
@@ -134,6 +210,53 @@ public abstract class dev/s7a/strata/component/RowScope : dev/s7a/strata/compone
 	public final fun align (Ldev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/layout/VerticalAlignment;)Ldev/s7a/strata/modifier/Modifier;
 	public final fun weight (Ldev/s7a/strata/modifier/Modifier;FZ)Ldev/s7a/strata/modifier/Modifier;
 	public static synthetic fun weight$default (Ldev/s7a/strata/component/RowScope;Ldev/s7a/strata/modifier/Modifier;FZILjava/lang/Object;)Ldev/s7a/strata/modifier/Modifier;
+}
+
+public final class dev/s7a/strata/component/ScrollMetrics {
+	public fun <init> ()V
+	public fun <init> (DII)V
+	public synthetic fun <init> (DIIILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()D
+	public final fun component2 ()I
+	public final fun component3 ()I
+	public final fun copy (DII)Ldev/s7a/strata/component/ScrollMetrics;
+	public static synthetic fun copy$default (Ldev/s7a/strata/component/ScrollMetrics;DIIILjava/lang/Object;)Ldev/s7a/strata/component/ScrollMetrics;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getCanScroll ()Z
+	public final fun getContentExtent ()I
+	public final fun getMaximumOffset ()D
+	public final fun getOffset ()D
+	public final fun getViewportExtent ()I
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class dev/s7a/strata/component/ScrollState {
+	public fun <init> ()V
+	public fun <init> (D)V
+	public synthetic fun <init> (DILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun getMetrics ()Ldev/s7a/strata/component/ScrollMetrics;
+	public final fun observe (Lkotlin/jvm/functions/Function1;)Ldev/s7a/strata/component/ScrollStateObserver;
+	public final fun scrollBy (D)D
+	public final fun scrollBy (DLdev/s7a/strata/component/ScrollStateObserver;)D
+	public final fun scrollTo (D)D
+	public final fun scrollTo (DLdev/s7a/strata/component/ScrollStateObserver;)D
+	public final fun updateGeometry (IILdev/s7a/strata/component/ScrollStateObserver;)V
+}
+
+public final class dev/s7a/strata/component/ScrollStateObserver : java/lang/AutoCloseable {
+	public fun close ()V
+}
+
+public final class dev/s7a/strata/component/SliderState {
+	public fun <init> (DLkotlin/ranges/ClosedFloatingPointRange;I)V
+	public synthetic fun <init> (DLkotlin/ranges/ClosedFloatingPointRange;IILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun getFraction ()D
+	public final fun getRange ()Lkotlin/ranges/ClosedFloatingPointRange;
+	public final fun getSteps ()I
+	public final fun getValue ()D
+	public final fun observe (Lkotlin/jvm/functions/Function1;)Ldev/s7a/strata/component/ComponentStateSubscription;
+	public final fun setValue (D)V
 }
 
 public abstract interface class dev/s7a/strata/component/SlotBinding {
@@ -698,8 +821,22 @@ public final class dev/s7a/strata/layout/VerticalAlignment : java/lang/Enum {
 	public static fun values ()[Ldev/s7a/strata/layout/VerticalAlignment;
 }
 
+public final class dev/s7a/strata/modifier/ActionExtensionsKt {
+	public static final fun actionDispatcher (Ldev/s7a/strata/modifier/Modifier;)Ldev/s7a/strata/action/ActionDispatcher;
+	public static final fun onAction (Ldev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/action/ActionKey;Lkotlin/jvm/functions/Function1;)Ldev/s7a/strata/modifier/Modifier;
+}
+
 public final class dev/s7a/strata/modifier/BackgroundExtensionsKt {
 	public static final fun background-RtejO-o (Ldev/s7a/strata/modifier/Modifier;I)Ldev/s7a/strata/modifier/Modifier;
+}
+
+public final class dev/s7a/strata/modifier/ComponentActionExtensionsKt {
+	public static final fun onCheckedChange (Ldev/s7a/strata/modifier/Modifier;Lkotlin/jvm/functions/Function1;)Ldev/s7a/strata/modifier/Modifier;
+	public static final fun onCycle (Ldev/s7a/strata/modifier/Modifier;Lkotlin/jvm/functions/Function1;)Ldev/s7a/strata/modifier/Modifier;
+	public static final fun onLeadingItemsRequested (Ldev/s7a/strata/modifier/Modifier;Lkotlin/jvm/functions/Function1;)Ldev/s7a/strata/modifier/Modifier;
+	public static final fun onSelectionChange (Ldev/s7a/strata/modifier/Modifier;Lkotlin/jvm/functions/Function1;)Ldev/s7a/strata/modifier/Modifier;
+	public static final fun onSliderChange (Ldev/s7a/strata/modifier/Modifier;Lkotlin/jvm/functions/Function1;)Ldev/s7a/strata/modifier/Modifier;
+	public static final fun onTrailingItemsRequested (Ldev/s7a/strata/modifier/Modifier;Lkotlin/jvm/functions/Function1;)Ldev/s7a/strata/modifier/Modifier;
 }
 
 public final class dev/s7a/strata/modifier/FocusedInputExtensionsKt {
@@ -962,16 +1099,18 @@ public final class dev/s7a/strata/screen/ScreenDefinitionPayload {
 
 public final class dev/s7a/strata/semantics/Semantics {
 	public fun <init> ()V
-	public fun <init> (Ldev/s7a/strata/text/UiText;Ldev/s7a/strata/semantics/SemanticsRole;Ldev/s7a/strata/text/UiText;ZLjava/lang/Boolean;)V
-	public synthetic fun <init> (Ldev/s7a/strata/text/UiText;Ldev/s7a/strata/semantics/SemanticsRole;Ldev/s7a/strata/text/UiText;ZLjava/lang/Boolean;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public fun <init> (Ldev/s7a/strata/text/UiText;Ldev/s7a/strata/semantics/SemanticsRole;Ldev/s7a/strata/text/UiText;ZLjava/lang/Boolean;Ljava/lang/Boolean;)V
+	public synthetic fun <init> (Ldev/s7a/strata/text/UiText;Ldev/s7a/strata/semantics/SemanticsRole;Ldev/s7a/strata/text/UiText;ZLjava/lang/Boolean;Ljava/lang/Boolean;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public final fun component1 ()Ldev/s7a/strata/text/UiText;
 	public final fun component2 ()Ldev/s7a/strata/semantics/SemanticsRole;
 	public final fun component3 ()Ldev/s7a/strata/text/UiText;
 	public final fun component4 ()Z
 	public final fun component5 ()Ljava/lang/Boolean;
-	public final fun copy (Ldev/s7a/strata/text/UiText;Ldev/s7a/strata/semantics/SemanticsRole;Ldev/s7a/strata/text/UiText;ZLjava/lang/Boolean;)Ldev/s7a/strata/semantics/Semantics;
-	public static synthetic fun copy$default (Ldev/s7a/strata/semantics/Semantics;Ldev/s7a/strata/text/UiText;Ldev/s7a/strata/semantics/SemanticsRole;Ldev/s7a/strata/text/UiText;ZLjava/lang/Boolean;ILjava/lang/Object;)Ldev/s7a/strata/semantics/Semantics;
+	public final fun component6 ()Ljava/lang/Boolean;
+	public final fun copy (Ldev/s7a/strata/text/UiText;Ldev/s7a/strata/semantics/SemanticsRole;Ldev/s7a/strata/text/UiText;ZLjava/lang/Boolean;Ljava/lang/Boolean;)Ldev/s7a/strata/semantics/Semantics;
+	public static synthetic fun copy$default (Ldev/s7a/strata/semantics/Semantics;Ldev/s7a/strata/text/UiText;Ldev/s7a/strata/semantics/SemanticsRole;Ldev/s7a/strata/text/UiText;ZLjava/lang/Boolean;Ljava/lang/Boolean;ILjava/lang/Object;)Ldev/s7a/strata/semantics/Semantics;
 	public fun equals (Ljava/lang/Object;)Z
+	public final fun getChecked ()Ljava/lang/Boolean;
 	public final fun getDisabled ()Z
 	public final fun getLabel ()Ldev/s7a/strata/text/UiText;
 	public final fun getRole ()Ldev/s7a/strata/semantics/SemanticsRole;
@@ -986,6 +1125,41 @@ public abstract interface class dev/s7a/strata/semantics/SemanticsRole {
 
 public final class dev/s7a/strata/semantics/SemanticsRole$Button : dev/s7a/strata/semantics/SemanticsRole {
 	public static final field INSTANCE Ldev/s7a/strata/semantics/SemanticsRole$Button;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class dev/s7a/strata/semantics/SemanticsRole$Checkbox : dev/s7a/strata/semantics/SemanticsRole {
+	public static final field INSTANCE Ldev/s7a/strata/semantics/SemanticsRole$Checkbox;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class dev/s7a/strata/semantics/SemanticsRole$CycleButton : dev/s7a/strata/semantics/SemanticsRole {
+	public static final field INSTANCE Ldev/s7a/strata/semantics/SemanticsRole$CycleButton;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class dev/s7a/strata/semantics/SemanticsRole$ProgressBar : dev/s7a/strata/semantics/SemanticsRole {
+	public static final field INSTANCE Ldev/s7a/strata/semantics/SemanticsRole$ProgressBar;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class dev/s7a/strata/semantics/SemanticsRole$SelectionList : dev/s7a/strata/semantics/SemanticsRole {
+	public static final field INSTANCE Ldev/s7a/strata/semantics/SemanticsRole$SelectionList;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class dev/s7a/strata/semantics/SemanticsRole$Slider : dev/s7a/strata/semantics/SemanticsRole {
+	public static final field INSTANCE Ldev/s7a/strata/semantics/SemanticsRole$Slider;
 	public fun equals (Ljava/lang/Object;)Z
 	public fun hashCode ()I
 	public fun toString ()Ljava/lang/String;
@@ -1018,13 +1192,17 @@ public abstract interface class dev/s7a/strata/semantics/SemanticsScope {
 
 public abstract interface class dev/s7a/strata/spi/ComponentRuntime {
 	public abstract fun button (Ldev/s7a/strata/text/UiText;IZLdev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/element/ElementKey;)Ldev/s7a/strata/element/Element;
+	public abstract fun checkbox (Ldev/s7a/strata/text/UiText;Ldev/s7a/strata/component/CheckboxState;IZLdev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/element/ElementKey;)Ldev/s7a/strata/element/Element;
 	public abstract fun containerBackground (Ldev/s7a/strata/modifier/Modifier;I)Ldev/s7a/strata/modifier/Modifier;
+	public abstract fun cycleButton (Ldev/s7a/strata/component/CycleButtonState;Ljava/util/List;IZLdev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/element/ElementKey;)Ldev/s7a/strata/element/Element;
 	public abstract fun image (Ldev/s7a/strata/component/ImageSource;Ldev/s7a/strata/geometry/IntRect;Ldev/s7a/strata/geometry/IntSize;Ldev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/element/ElementKey;)Ldev/s7a/strata/element/Element;
 	public abstract fun imageBackground (Ldev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/component/ImageSource;Ldev/s7a/strata/component/ImageScale;)Ldev/s7a/strata/modifier/Modifier;
 	public abstract fun imageBackground (Ldev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/component/ImageSource;Ldev/s7a/strata/geometry/Insets;Ldev/s7a/strata/component/NineSliceCenterMode;)Ldev/s7a/strata/modifier/Modifier;
 	public abstract fun menuBackground (Ldev/s7a/strata/modifier/Modifier;)Ldev/s7a/strata/modifier/Modifier;
 	public abstract fun playerHead (Ldev/s7a/strata/component/PlayerSkinSource;IZLdev/s7a/strata/element/Element;Ldev/s7a/strata/element/Element;Ldev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/element/ElementKey;)Ldev/s7a/strata/element/Element;
-	public abstract fun scroll (Ldev/s7a/strata/element/Element;ILdev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/element/ElementKey;)Ldev/s7a/strata/element/Element;
+	public abstract fun scrollArea (Ldev/s7a/strata/component/ScrollState;Ldev/s7a/strata/element/Element;ILdev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/element/ElementKey;)Ldev/s7a/strata/element/Element;
+	public abstract fun scrollbar (Ldev/s7a/strata/component/ScrollState;Ldev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/element/ElementKey;)Ldev/s7a/strata/element/Element;
+	public abstract fun slider (Ldev/s7a/strata/text/UiText;Ldev/s7a/strata/component/SliderState;IZLdev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/element/ElementKey;)Ldev/s7a/strata/element/Element;
 	public abstract fun slot (Ldev/s7a/strata/component/SlotBinding;ZLdev/s7a/strata/element/Element;Ldev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/element/ElementKey;)Ldev/s7a/strata/element/Element;
 	public abstract fun tab (Ldev/s7a/strata/text/UiText;ZIZLdev/s7a/strata/component/TabSelectionIndicator;Ldev/s7a/strata/element/Element;Ldev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/element/ElementKey;)Ldev/s7a/strata/element/Element;
 	public abstract fun text (Ldev/s7a/strata/text/UiText;Ldev/s7a/strata/component/TextStyle;Ldev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/element/ElementKey;)Ldev/s7a/strata/element/Element;

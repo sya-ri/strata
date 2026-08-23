@@ -487,6 +487,14 @@ internal class MinecraftUiProfileTest {
 
     private fun MinecraftUiProfileBuilder.completeScrollAssets(omitted: ScrollAsset? = null) {
         ScrollAsset.entries.filter { slot -> slot != omitted }.forEach { slot -> declareScrollAsset(slot) }
+        checkbox(image(IntSize(17, 17)))
+        checkboxHighlighted(image(IntSize(17, 17)))
+        checkboxSelected(image(IntSize(17, 17)))
+        checkboxSelectedHighlighted(image(IntSize(17, 17)))
+        slider(image(IntSize(200, 20)))
+        sliderHighlighted(image(IntSize(200, 20)))
+        sliderHandle(image(IntSize(8, 20)))
+        sliderHandleHighlighted(image(IntSize(8, 20)))
     }
 
     private fun MinecraftUiProfileBuilder.declareScrollAsset(

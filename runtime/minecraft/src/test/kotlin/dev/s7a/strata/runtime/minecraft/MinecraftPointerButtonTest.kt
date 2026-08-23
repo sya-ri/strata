@@ -5,7 +5,6 @@ package dev.s7a.strata.runtime.minecraft
 import dev.s7a.strata.component.Button
 import dev.s7a.strata.component.Image
 import dev.s7a.strata.component.NineSliceCenterMode
-import dev.s7a.strata.component.Scroll
 import dev.s7a.strata.component.Stack
 import dev.s7a.strata.component.Text
 import dev.s7a.strata.component.evaluateComponentTree

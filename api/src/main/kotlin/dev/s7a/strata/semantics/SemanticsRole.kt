@@ -26,4 +26,29 @@ public interface SemanticsRole {
      * One selectable tab in an externally controlled tab group.
      */
     public data object Tab : SemanticsRole
+
+    /**
+     * A binary checkable control.
+     */
+    public data object Checkbox : SemanticsRole
+
+    /**
+     * A bounded numeric adjustment control.
+     */
+    public data object Slider : SemanticsRole
+
+    /**
+     * A button that cycles through a finite option set.
+     */
+    public data object CycleButton : SemanticsRole
+
+    /**
+     * A read-only progress indicator.
+     */
+    public data object ProgressBar : SemanticsRole
+
+    /**
+     * A selectable list container.
+     */
+    public data object SelectionList : SemanticsRole
 }

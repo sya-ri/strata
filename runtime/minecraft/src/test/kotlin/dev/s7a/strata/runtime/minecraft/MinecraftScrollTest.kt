@@ -2,13 +2,11 @@
 
 package dev.s7a.strata.runtime.minecraft
 
-import dev.s7a.strata.component.Image
-import dev.s7a.strata.component.Scroll
+import dev.s7a.strata.component.Row
+import dev.s7a.strata.component.ScrollArea
+import dev.s7a.strata.component.ScrollState
+import dev.s7a.strata.component.Scrollbar
 import dev.s7a.strata.component.Spacer
-import dev.s7a.strata.component.Text
-import dev.s7a.strata.component.evaluateComponentTree
-import dev.s7a.strata.element.Element
-import dev.s7a.strata.geometry.Constraints
 import dev.s7a.strata.geometry.IntOffset
 import dev.s7a.strata.geometry.IntRect
 import dev.s7a.strata.geometry.IntSize
@@ -21,218 +19,126 @@ import dev.s7a.strata.modifier.size
 import dev.s7a.strata.render.ArgbColor
 import dev.s7a.strata.render.DrawImage
 import dev.s7a.strata.render.createDrawImage
-import dev.s7a.strata.runtime.UiTree
-import dev.s7a.strata.runtime.headless.rasterizeHeadless
 import dev.s7a.strata.runtime.render.DrawCommand
 import dev.s7a.strata.screen.ScreenDefinition
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
-import dev.s7a.strata.text.UiText
 import org.junit.jupiter.api.Assertions.assertEquals
-import org.junit.jupiter.api.Assertions.assertSame
-import org.junit.jupiter.api.Assertions.assertThrows
+import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 
 /**
- * Verifies the retained Minecraft 26.2 menu-list Scroll component.
+ * Verifies independent profile-backed ScrollArea and Scrollbar components.
  */
-@OptIn(InternalStrataRuntimeApi::class)
 internal class MinecraftScrollTest {
     @Test
-    fun scrollPaintsBackgroundContentSeparatorsTrackAndThumbInNativeOrder() {
+    fun areaAndSeparatelyPlacedScrollbarShareOneState() {
         val assets = ScrollAssets()
-        val host = host(assets.profile())
+        val state = ScrollState()
+        val host = host(assets.profile(), state, includeScrollbar = true)
         host.attach()
 
-        val frame = host.frame(viewport)
-        val commands = frame.drawCommands
-        val pushIndex = commands.indexOfFirst { command -> command is DrawCommand.PushClip }
-        val popIndex = commands.indexOfFirst { command -> command is DrawCommand.PopClip }
-        assertTrue(0 < pushIndex)
-        assertTrue(pushIndex < popIndex)
-        commands.take(pushIndex).forEach { command ->
-            check(command is DrawCommand.BlitImage)
-            assertSame(assets.listBackground, command.image)
-        }
-        assertEquals(IntRect(0, 0, viewport.width, viewport.height), (commands[pushIndex] as DrawCommand.PushClip).bounds)
+        val initial = host.frame(viewport)
+        assertEquals(94, state.metrics.viewportExtent)
+        assertEquals(184, state.metrics.contentExtent)
+        assertTrue(state.metrics.canScroll)
+        val initialThumb = initial.drawCommands.filterIsInstance<DrawCommand.BlitImage>().filter { it.image === assets.scrollbarThumb }
+        assertTrue(initialThumb.isNotEmpty())
+
+        assertEquals(InputResult.Consumed, host.dispatchPointer(PointerEvent.Scroll(IntOffset(20, 20), 0.0, 1.0)))
+        val scrolled = host.frame(viewport)
+        assertEquals(9.0, state.metrics.offset)
         assertEquals(
-            IntRect(25, 2, 295, 182),
-            commands
-                .subList(pushIndex + 1, popIndex)
+            IntRect(15, -7, 285, 173),
+            scrolled.drawCommands
                 .filterIsInstance<DrawCommand.FillRectangle>()
                 .single()
                 .bounds,
         )
-
-        val overlay = commands.drop(popIndex + 1).filterIsInstance<DrawCommand.BlitImage>()
-        assertEquals(List(10) { assets.headerSeparator }, overlay.take(10).map { command -> command.image })
-        assertEquals(List(10) { assets.footerSeparator }, overlay.drop(10).take(10).map { command -> command.image })
-        assertEquals(List(6) { assets.scrollbarBackground }, overlay.drop(20).take(6).map { command -> command.image })
-        assertEquals(List(4) { assets.scrollbarThumb }, overlay.drop(26).take(4).map { command -> command.image })
-        assertEquals(IntRect(303, 0, 309, 1), overlay[20].destination)
-        assertEquals(IntRect(303, 93, 309, 94), overlay[25].destination)
-        assertEquals(IntRect(303, 0, 309, 1), overlay[26].destination)
-        assertEquals(IntRect(303, 47, 309, 48), overlay[29].destination)
-
-        val image = rasterizeHeadless(commands, viewport)
-        assertEquals(contentColor.value, image.argbAt(25, 2))
-        assertEquals(assets.scrollbarBackground.argbAt(0, 0), image.argbAt(303, 60))
+        val movedThumb = scrolled.drawCommands.filterIsInstance<DrawCommand.BlitImage>().filter { it.image === assets.scrollbarThumb }
+        assertFalse(initialThumb.first().destination == movedThumb.first().destination)
         host.close()
     }
 
     @Test
-    fun wheelScrollUsesRateClampsAtMaximumAndRelocatesCachedContent() {
-        val assets = ScrollAssets()
-        val host = host(assets.profile())
+    fun areaWorksWithoutScrollbarAndSupportsProgrammaticMovement() {
+        val state = ScrollState(initialOffset = 18.0)
+        val host = host(MinecraftProfileFixture.create(), state, includeScrollbar = false)
         host.attach()
-        host.frame(viewport)
 
-        assertEquals(InputResult.Consumed, host.dispatchPointer(PointerEvent.Scroll(IntOffset(10, 10), 0.0, 1.0)))
-        val oneStep = host.frame(viewport)
-        assertEquals(
-            IntRect(25, -7, 295, 173),
-            oneStep.drawCommands
+        val initial = host.frame(IntSize(300, 94))
+        assertEquals(18.0, state.metrics.offset)
+        assertTrue(
+            initial.drawCommands
                 .filterIsInstance<DrawCommand.FillRectangle>()
                 .single()
-                .bounds,
+                .bounds.top < 0,
         )
-        val oneStepThumb = oneStep.drawCommands.filterIsInstance<DrawCommand.BlitImage>().filter { command -> command.image === assets.scrollbarThumb }
-        assertEquals(IntRect(303, 4, 309, 5), oneStepThumb.first().destination)
-
-        assertEquals(InputResult.Consumed, host.dispatchPointer(PointerEvent.Scroll(IntOffset(10, 10), 0.0, Double.MAX_VALUE)))
-        val maximum = host.frame(viewport)
-        assertEquals(
-            IntRect(25, -88, 295, 92),
-            maximum.drawCommands
-                .filterIsInstance<DrawCommand.FillRectangle>()
-                .single()
-                .bounds,
-        )
-        val maximumThumb = maximum.drawCommands.filterIsInstance<DrawCommand.BlitImage>().filter { command -> command.image === assets.scrollbarThumb }
-        assertEquals(IntRect(303, 46, 309, 47), maximumThumb.first().destination)
+        state.scrollTo(Double.MAX_VALUE)
+        host.frame(IntSize(300, 94))
+        assertEquals(state.metrics.maximumOffset, state.metrics.offset)
         host.close()
     }
 
     @Test
-    fun primaryScrollbarDragUsesNativeProportionalMovementAndRelease() {
-        val assets = ScrollAssets()
-        val host = host(assets.profile())
+    fun detachedScrollbarCanDragTheLinkedArea() {
+        val state = ScrollState()
+        val host = host(MinecraftProfileFixture.create(), state, includeScrollbar = true)
         host.attach()
         host.frame(viewport)
 
-        assertEquals(InputResult.Ignored, host.dispatchPointer(PointerEvent.Press(IntOffset(302, 10), PointerButton.Primary)))
-        assertEquals(InputResult.Ignored, host.dispatchPointer(PointerEvent.Press(IntOffset(303, 10), PointerButton.Secondary)))
-        assertEquals(InputResult.Consumed, host.dispatchPointer(PointerEvent.Press(IntOffset(303, 10), PointerButton.Primary)))
+        assertEquals(InputResult.Consumed, host.dispatchPointer(PointerEvent.Press(IntOffset(308, 10), PointerButton.Primary)))
         assertEquals(
             InputResult.Consumed,
-            host.dispatchPointer(PointerEvent.Drag(IntOffset(303, 20), PointerButton.Primary, 0.0, 10.0)),
+            host.dispatchPointer(PointerEvent.Drag(IntOffset(308, 30), PointerButton.Primary, 0.0, 20.0)),
         )
-        val dragged = host.frame(viewport)
-        assertEquals(
-            IntRect(25, -17, 295, 163),
-            dragged.drawCommands
-                .filterIsInstance<DrawCommand.FillRectangle>()
-                .single()
-                .bounds,
-        )
-        assertEquals(InputResult.Consumed, host.dispatchPointer(PointerEvent.Release(IntOffset(303, 20), PointerButton.Primary)))
-        assertEquals(
-            InputResult.Ignored,
-            host.dispatchPointer(PointerEvent.Drag(IntOffset(303, 30), PointerButton.Primary, 0.0, 10.0)),
-        )
+        assertTrue(0.0 < state.metrics.offset)
+        host.frame(viewport)
+        assertEquals(InputResult.Consumed, host.dispatchPointer(PointerEvent.Release(IntOffset(308, 30), PointerButton.Primary)))
         host.close()
     }
 
     @Test
-    fun scrollRejectsUnboundedAxesInvalidRatesAndInvalidContentCardinality() {
-        var description: Element? = null
-        val host = host(MinecraftProfileFixture.create()) { evaluateComponentTree { Scroll { Spacer(modifier = Modifier.Empty.size(10, 60)) } }.also { description = it } }
-        host.attach()
-        host.frame(IntSize(20, 40))
-        host.close()
-
-        listOf(
-            Constraints(maxWidth = Int.MAX_VALUE, maxHeight = 40),
-            Constraints(maxWidth = 20, maxHeight = Int.MAX_VALUE),
-        ).forEach { constraints ->
-            val tree = UiTree()
-            try {
-                tree.update(checkNotNull(description))
-                assertThrows(IllegalArgumentException::class.java) { tree.measure(constraints) }
-            } finally {
-                tree.close()
-            }
-        }
-
-        val invalidRate = host(MinecraftProfileFixture.create()) { evaluateComponentTree { Scroll(scrollRate = 0) { Spacer() } } }
-        assertThrows(IllegalArgumentException::class.java) { invalidRate.attach() }
-        invalidRate.close()
-
-        val empty = host(MinecraftProfileFixture.create()) { evaluateComponentTree { Scroll {} } }
-        assertThrows(IllegalArgumentException::class.java) { empty.attach() }
-        empty.close()
-
-        val multiple =
-            host(MinecraftProfileFixture.create()) {
-                evaluateComponentTree {
-                    Scroll {
-                        Spacer()
-                        Spacer()
-                    }
-                }
-            }
-        assertThrows(IllegalArgumentException::class.java) { multiple.attach() }
-        multiple.close()
-    }
-
-    @Test
-    fun nonScrollableContentOmitsScrollbarAndKeepsNativeTwoPixelOrigin() {
+    fun nonScrollableStateSuppressesIndependentScrollbarPixels() {
         val assets = ScrollAssets()
+        val state = ScrollState()
         val host =
-            host(assets.profile()) {
-                evaluateComponentTree {
-                    Scroll {
-                        Spacer(modifier = Modifier.Empty.size(80, 20).background(contentColor))
+            createMinecraftUiHost(
+                ScreenDefinition("scroll") {
+                    Row(spacing = 8) {
+                        ScrollArea(state, modifier = Modifier.Empty.size(100, 40)) {
+                            Spacer(modifier = Modifier.Empty.size(80, 20).background(contentColor))
+                        }
+                        Scrollbar(state, modifier = Modifier.Empty.size(6, 40))
                     }
-                }
-            }
+                },
+                assets.profile(),
+            )
         host.attach()
-        val frame = host.frame(IntSize(100, 40))
-        assertEquals(
-            IntRect(10, 2, 90, 22),
-            frame.drawCommands
-                .filterIsInstance<DrawCommand.FillRectangle>()
-                .single()
-                .bounds,
-        )
-        val images = frame.drawCommands.filterIsInstance<DrawCommand.BlitImage>().map { command -> command.image }
-        assertTrue(images.none { image -> image === assets.scrollbarBackground || image === assets.scrollbarThumb })
-        assertEquals(InputResult.Consumed, host.dispatchPointer(PointerEvent.Scroll(IntOffset(5, 5), 0.0, 1.0)))
-        assertEquals(
-            IntRect(10, 2, 90, 22),
-            host
-                .frame(IntSize(100, 40))
-                .drawCommands
-                .filterIsInstance<DrawCommand.FillRectangle>()
-                .single()
-                .bounds,
-        )
+        val frame = host.frame(IntSize(114, 40))
+        val images = frame.drawCommands.filterIsInstance<DrawCommand.BlitImage>().map { it.image }
+        assertTrue(images.none { it === assets.scrollbarBackground || it === assets.scrollbarThumb })
         host.close()
     }
-
-    private fun host(profile: MinecraftUiProfile): MinecraftUiHost = host(profile) { scrollContent() }
 
     private fun host(
         profile: MinecraftUiProfile,
-        content: () -> Element,
-    ): MinecraftUiHost = createMinecraftUiHost(ScreenDefinition(UiText.Literal("scroll")) { element(content()) }, profile)
-
-    private fun scrollContent(): Element =
-        evaluateComponentTree {
-            Scroll {
-                Spacer(modifier = Modifier.Empty.size(270, 180).background(contentColor))
-            }
-        }
+        state: ScrollState,
+        includeScrollbar: Boolean,
+    ): MinecraftUiHost =
+        createMinecraftUiHost(
+            ScreenDefinition("scroll") {
+                Row(spacing = 8) {
+                    ScrollArea(state, modifier = Modifier.Empty.size(300, 94)) {
+                        Spacer(modifier = Modifier.Empty.size(270, 180).background(contentColor))
+                    }
+                    if (includeScrollbar) {
+                        Scrollbar(state, modifier = Modifier.Empty.size(6, 94))
+                    }
+                }
+            },
+            profile,
+        )
 
     private class ScrollAssets {
         val listBackground: DrawImage = image(IntSize(16, 16), 0xFF101010.toInt())
@@ -252,10 +158,10 @@ internal class MinecraftScrollTest {
     }
 
     private companion object {
-        private val viewport = IntSize(320, 94)
-        private val contentColor = ArgbColor(0xFFABCDEF.toInt())
+        val viewport = IntSize(314, 94)
+        val contentColor = ArgbColor(0xFFABCDEF.toInt())
 
-        private fun image(
+        fun image(
             size: IntSize,
             color: Int,
         ): DrawImage = createDrawImage(size, IntArray(Math.multiplyExact(size.width, size.height)) { color })

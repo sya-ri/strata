@@ -101,6 +101,46 @@ public sealed interface MinecraftUiProfileBuilder {
     public fun scrollbarThumb(image: DrawImage)
 
     /**
+     * Supplies the exact 17 by 17 unselected Checkbox sprite.
+     */
+    public fun checkbox(image: DrawImage)
+
+    /**
+     * Supplies the exact 17 by 17 hovered unselected Checkbox sprite.
+     */
+    public fun checkboxHighlighted(image: DrawImage)
+
+    /**
+     * Supplies the exact 17 by 17 selected Checkbox sprite.
+     */
+    public fun checkboxSelected(image: DrawImage)
+
+    /**
+     * Supplies the exact 17 by 17 hovered selected Checkbox sprite.
+     */
+    public fun checkboxSelectedHighlighted(image: DrawImage)
+
+    /**
+     * Supplies the exact 200 by 20 normal Slider track sprite.
+     */
+    public fun slider(image: DrawImage)
+
+    /**
+     * Supplies the exact 200 by 20 highlighted Slider track sprite.
+     */
+    public fun sliderHighlighted(image: DrawImage)
+
+    /**
+     * Supplies the exact 8 by 20 normal Slider handle sprite.
+     */
+    public fun sliderHandle(image: DrawImage)
+
+    /**
+     * Supplies the exact 8 by 20 highlighted Slider handle sprite.
+     */
+    public fun sliderHandleHighlighted(image: DrawImage)
+
+    /**
      * Supplies the exact 200 by 20 unfocused TextField sprite.
      *
      * @param image immutable normal text-field pixels.

@@ -1,9 +1,13 @@
 package dev.s7a.strata.runtime.minecraft
 
+import dev.s7a.strata.component.CheckboxState
+import dev.s7a.strata.component.CycleButtonState
 import dev.s7a.strata.component.ImageScale
 import dev.s7a.strata.component.ImageSource
 import dev.s7a.strata.component.NineSliceCenterMode
 import dev.s7a.strata.component.PlayerSkinSource
+import dev.s7a.strata.component.ScrollState
+import dev.s7a.strata.component.SliderState
 import dev.s7a.strata.component.SlotBinding
 import dev.s7a.strata.component.TabSelectionIndicator
 import dev.s7a.strata.component.TextFieldState
@@ -15,6 +19,7 @@ import dev.s7a.strata.geometry.Insets
 import dev.s7a.strata.geometry.IntRect
 import dev.s7a.strata.geometry.IntSize
 import dev.s7a.strata.modifier.Modifier
+import dev.s7a.strata.modifier.actionDispatcher
 import dev.s7a.strata.render.ArgbColor
 import dev.s7a.strata.render.DrawImage
 import dev.s7a.strata.render.createDrawImage
@@ -93,6 +98,8 @@ internal object MinecraftProfileImplementation {
         private val buttonSize = IntSize(200, 20)
         private val listSeparatorSize = IntSize(32, 2)
         private val scrollbarSize = IntSize(6, 32)
+        private val checkboxSize = IntSize(17, 17)
+        private val sliderHandleSize = IntSize(8, 20)
         private val glyphRange = 0x21..0x7E
         private val transparentWhite = ArgbColor(0x00FFFFFF)
         private val opaqueWhite = ArgbColor(-1)
@@ -115,6 +122,14 @@ internal object MinecraftProfileImplementation {
         private var listFooterSeparator: DrawImage? = null
         private var scrollbarBackground: DrawImage? = null
         private var scrollbarThumb: DrawImage? = null
+        private var checkbox: DrawImage? = null
+        private var checkboxHighlighted: DrawImage? = null
+        private var checkboxSelected: DrawImage? = null
+        private var checkboxSelectedHighlighted: DrawImage? = null
+        private var slider: DrawImage? = null
+        private var sliderHighlighted: DrawImage? = null
+        private var sliderHandle: DrawImage? = null
+        private var sliderHandleHighlighted: DrawImage? = null
         private var normalTextField: DrawImage? = null
         private var highlightedTextField: DrawImage? = null
         private var normalButton: MinecraftButtonSpriteSnapshot? = null
@@ -184,6 +199,62 @@ internal object MinecraftProfileImplementation {
             require(scrollbarThumb == null) { "Scrollbar thumb was already declared." }
             require(image.size == scrollbarSize) { "Scrollbar thumb must be 6 by 32 pixels." }
             scrollbarThumb = image
+        }
+
+        override fun checkbox(image: DrawImage) {
+            checkUsable()
+            require(checkbox == null) { "Checkbox sprite was already declared." }
+            require(image.size == checkboxSize) { "Checkbox sprites must be 17 by 17 pixels." }
+            checkbox = image
+        }
+
+        override fun checkboxHighlighted(image: DrawImage) {
+            checkUsable()
+            require(checkboxHighlighted == null) { "Highlighted Checkbox sprite was already declared." }
+            require(image.size == checkboxSize) { "Checkbox sprites must be 17 by 17 pixels." }
+            checkboxHighlighted = image
+        }
+
+        override fun checkboxSelected(image: DrawImage) {
+            checkUsable()
+            require(checkboxSelected == null) { "Selected Checkbox sprite was already declared." }
+            require(image.size == checkboxSize) { "Checkbox sprites must be 17 by 17 pixels." }
+            checkboxSelected = image
+        }
+
+        override fun checkboxSelectedHighlighted(image: DrawImage) {
+            checkUsable()
+            require(checkboxSelectedHighlighted == null) { "Selected highlighted Checkbox sprite was already declared." }
+            require(image.size == checkboxSize) { "Checkbox sprites must be 17 by 17 pixels." }
+            checkboxSelectedHighlighted = image
+        }
+
+        override fun slider(image: DrawImage) {
+            checkUsable()
+            require(slider == null) { "Slider sprite was already declared." }
+            require(image.size == buttonSize) { "Slider sprites must be 200 by 20 pixels." }
+            slider = image
+        }
+
+        override fun sliderHighlighted(image: DrawImage) {
+            checkUsable()
+            require(sliderHighlighted == null) { "Highlighted Slider sprite was already declared." }
+            require(image.size == buttonSize) { "Slider sprites must be 200 by 20 pixels." }
+            sliderHighlighted = image
+        }
+
+        override fun sliderHandle(image: DrawImage) {
+            checkUsable()
+            require(sliderHandle == null) { "Slider handle sprite was already declared." }
+            require(image.size == sliderHandleSize) { "Slider handle sprites must be 8 by 20 pixels." }
+            sliderHandle = image
+        }
+
+        override fun sliderHandleHighlighted(image: DrawImage) {
+            checkUsable()
+            require(sliderHandleHighlighted == null) { "Highlighted Slider handle sprite was already declared." }
+            require(image.size == sliderHandleSize) { "Slider handle sprites must be 8 by 20 pixels." }
+            sliderHandleHighlighted = image
         }
 
         override fun textFieldNormal(image: DrawImage) {
@@ -263,6 +334,14 @@ internal object MinecraftProfileImplementation {
                 listFooterSeparator = requireNotNull(listFooterSeparator) { "List footer separator must be declared." },
                 scrollbarBackground = requireNotNull(scrollbarBackground) { "Scrollbar background must be declared." },
                 scrollbarThumb = requireNotNull(scrollbarThumb) { "Scrollbar thumb must be declared." },
+                checkbox = requireNotNull(checkbox) { "Checkbox sprite must be declared." },
+                checkboxHighlighted = requireNotNull(checkboxHighlighted) { "Highlighted Checkbox sprite must be declared." },
+                checkboxSelected = requireNotNull(checkboxSelected) { "Selected Checkbox sprite must be declared." },
+                checkboxSelectedHighlighted = requireNotNull(checkboxSelectedHighlighted) { "Selected highlighted Checkbox sprite must be declared." },
+                slider = requireNotNull(slider) { "Slider sprite must be declared." },
+                sliderHighlighted = requireNotNull(sliderHighlighted) { "Highlighted Slider sprite must be declared." },
+                sliderHandle = requireNotNull(sliderHandle) { "Slider handle sprite must be declared." },
+                sliderHandleHighlighted = requireNotNull(sliderHandleHighlighted) { "Highlighted Slider handle sprite must be declared." },
                 normalTextField = requireNotNull(normalTextField) { "Normal TextField sprite must be declared." },
                 highlightedTextField = requireNotNull(highlightedTextField) { "Highlighted TextField sprite must be declared." },
                 glyphs = glyphs,
@@ -284,6 +363,14 @@ internal object MinecraftProfileImplementation {
             listFooterSeparator = null
             scrollbarBackground = null
             scrollbarThumb = null
+            checkbox = null
+            checkboxHighlighted = null
+            checkboxSelected = null
+            checkboxSelectedHighlighted = null
+            slider = null
+            sliderHighlighted = null
+            sliderHandle = null
+            sliderHandleHighlighted = null
             normalTextField = null
             highlightedTextField = null
             normalButton = null
@@ -381,6 +468,14 @@ internal object MinecraftProfileImplementation {
         val listFooterSeparator: DrawImage,
         val scrollbarBackground: DrawImage,
         val scrollbarThumb: DrawImage,
+        val checkbox: DrawImage,
+        val checkboxHighlighted: DrawImage,
+        val checkboxSelected: DrawImage,
+        val checkboxSelectedHighlighted: DrawImage,
+        val slider: DrawImage,
+        val sliderHighlighted: DrawImage,
+        val sliderHandle: DrawImage,
+        val sliderHandleHighlighted: DrawImage,
         val normalTextField: DrawImage,
         val highlightedTextField: DrawImage,
         glyphs: Map<Int, MinecraftGlyphSnapshot>,
@@ -426,6 +521,14 @@ internal object MinecraftProfileImplementation {
                 listFooterSeparator: DrawImage,
                 scrollbarBackground: DrawImage,
                 scrollbarThumb: DrawImage,
+                checkbox: DrawImage,
+                checkboxHighlighted: DrawImage,
+                checkboxSelected: DrawImage,
+                checkboxSelectedHighlighted: DrawImage,
+                slider: DrawImage,
+                sliderHighlighted: DrawImage,
+                sliderHandle: DrawImage,
+                sliderHandleHighlighted: DrawImage,
                 normalTextField: DrawImage,
                 highlightedTextField: DrawImage,
                 glyphs: Map<Int, MinecraftGlyphSnapshot>,
@@ -443,6 +546,14 @@ internal object MinecraftProfileImplementation {
                     listFooterSeparator,
                     scrollbarBackground,
                     scrollbarThumb,
+                    checkbox,
+                    checkboxHighlighted,
+                    checkboxSelected,
+                    checkboxSelectedHighlighted,
+                    slider,
+                    sliderHighlighted,
+                    sliderHandle,
+                    sliderHandleHighlighted,
                     normalTextField,
                     highlightedTextField,
                     glyphs,
@@ -460,6 +571,94 @@ internal object MinecraftProfileImplementation {
         private val ownerThread = Thread.currentThread()
         private var profile: ProfileSnapshot? = initialProfile
         private var platform: MinecraftUiPlatform? = initialPlatform
+
+        override fun checkbox(
+            label: UiText,
+            state: CheckboxState,
+            width: Int,
+            enabled: Boolean,
+            modifier: Modifier,
+            key: ElementKey<*>?,
+        ): Element {
+            val currentProfile = requireProfile()
+            require(21 < width) { "Minecraft Checkbox width must leave room for its box and label." }
+            val normalText = MinecraftTextRun.createNormal(label, currentProfile::glyph)
+            val inactiveText = MinecraftTextRun.createInactive(label, currentProfile::glyph)
+            return createMinecraftCheckboxElement(
+                normal = currentProfile.checkbox,
+                highlighted = currentProfile.checkboxHighlighted,
+                selected = currentProfile.checkboxSelected,
+                selectedHighlighted = currentProfile.checkboxSelectedHighlighted,
+                normalText = normalText,
+                inactiveText = inactiveText,
+                label = normalText.text,
+                state = state,
+                width = width,
+                enabled = enabled,
+                actions = modifier.actionDispatcher(),
+                modifier = modifier,
+                key = key,
+            )
+        }
+
+        override fun cycleButton(
+            state: CycleButtonState<*>,
+            labels: List<UiText>,
+            width: Int,
+            enabled: Boolean,
+            modifier: Modifier,
+            key: ElementKey<*>?,
+        ): Element {
+            val currentProfile = requireProfile()
+            require(0 < width && width <= 200) { "Minecraft CycleButton width must be positive and no larger than 200." }
+            require(labels.size == state.values.size) { "CycleButton labels must match its values." }
+            val runs =
+                labels.map { label ->
+                    MinecraftTextRun.createNormal(label, currentProfile::glyph) to
+                        MinecraftTextRun.createInactive(label, currentProfile::glyph)
+                }
+            return createMinecraftCycleButtonElement(
+                currentProfile.normalButton,
+                currentProfile.highlightedButton,
+                currentProfile.disabledButton,
+                state,
+                runs,
+                width,
+                enabled,
+                modifier.actionDispatcher(),
+                modifier,
+                key,
+            )
+        }
+
+        override fun slider(
+            label: UiText,
+            state: SliderState,
+            width: Int,
+            enabled: Boolean,
+            modifier: Modifier,
+            key: ElementKey<*>?,
+        ): Element {
+            val currentProfile = requireProfile()
+            require(8 < width && width <= 200) { "Minecraft Slider width must be greater than 8 and no larger than 200." }
+            val normalText = MinecraftTextRun.createNormal(label, currentProfile::glyph)
+            val inactiveText = MinecraftTextRun.createInactive(label, currentProfile::glyph)
+            return createMinecraftSliderElement(
+                normalTrack = MinecraftButtonSpriteSnapshot.create(currentProfile.slider, 1, NineSliceCenterMode.Tiled),
+                highlightedTrack = MinecraftButtonSpriteSnapshot.create(currentProfile.sliderHighlighted, 1, NineSliceCenterMode.Tiled),
+                normalHandle = currentProfile.sliderHandle,
+                highlightedHandle = currentProfile.sliderHandleHighlighted,
+                normalText = normalText,
+                inactiveText = inactiveText,
+                label = normalText.text,
+                state = state,
+                width = width,
+                enabled = enabled,
+                actions = modifier.actionDispatcher(),
+                modifier = modifier,
+                key = key,
+            )
+        }
 
         override fun menuBackground(modifier: Modifier): Modifier = modifier.then(createMinecraftMenuBackgroundModifier(requireProfile().menuBackground))
 
@@ -592,7 +791,8 @@ internal object MinecraftProfileImplementation {
             )
         }
 
-        override fun scroll(
+        override fun scrollArea(
+            state: ScrollState,
             content: Element,
             scrollRate: Int,
             modifier: Modifier,
@@ -604,10 +804,24 @@ internal object MinecraftProfileImplementation {
                 currentProfile.listBackground,
                 currentProfile.listHeaderSeparator,
                 currentProfile.listFooterSeparator,
-                currentProfile.scrollbarBackground,
-                currentProfile.scrollbarThumb,
+                state,
                 scrollRate,
                 content,
+                modifier,
+                key,
+            )
+        }
+
+        override fun scrollbar(
+            state: ScrollState,
+            modifier: Modifier,
+            key: ElementKey<*>?,
+        ): Element {
+            val currentProfile = requireProfile()
+            return createMinecraftScrollbarElement(
+                currentProfile.scrollbarBackground,
+                currentProfile.scrollbarThumb,
+                state,
                 modifier,
                 key,
             )

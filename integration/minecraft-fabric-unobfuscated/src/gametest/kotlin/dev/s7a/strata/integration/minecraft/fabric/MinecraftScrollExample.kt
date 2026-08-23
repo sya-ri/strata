@@ -2,7 +2,9 @@ package dev.s7a.strata.integration.minecraft.fabric
 
 // showcase-source-begin:scroll-screen
 import dev.s7a.strata.component.Column
-import dev.s7a.strata.component.Scroll
+import dev.s7a.strata.component.ScrollArea
+import dev.s7a.strata.component.ScrollState
+import dev.s7a.strata.component.Scrollbar
 import dev.s7a.strata.component.Stack
 import dev.s7a.strata.component.Text
 import dev.s7a.strata.layout.HorizontalAlignment
@@ -18,11 +20,13 @@ import dev.s7a.strata.screen.ScreenDefinition
  *
  * @return one-shot screen definition reproducing the native list viewport, row geometry, separators, scrollbar, and text.
  */
-internal fun createScrollScreenDefinition(): ScreenDefinition =
-    ScreenDefinition("Strata Scroll parity") {
+internal fun createScrollScreenDefinition(): ScreenDefinition {
+    val state = ScrollState()
+    return ScreenDefinition("Strata Scroll parity") {
         Stack(modifier = Modifier.Empty.size(320, 180).menuBackground()) {
             // Native ObjectSelectionList geometry reserves distinct 33-pixel header and 53-pixel footer bands.
-            Scroll(
+            ScrollArea(
+                state = state,
                 modifier = Modifier.Empty.padding(top = 33, bottom = 53).fillMaxSize(),
             ) {
                 Column(
@@ -47,6 +51,11 @@ internal fun createScrollScreenDefinition(): ScreenDefinition =
                     }
                 }
             }
+            Scrollbar(
+                state = state,
+                modifier = Modifier.Empty.padding(left = 303, top = 33, bottom = 53),
+            )
         }
     }
+}
 // showcase-source-end:scroll-screen
