@@ -14,6 +14,7 @@ val sharedRuntime = rootProject.file("runtime/minecraft-fabric-shared/src/main")
 val identifierRuntime = rootProject.file("runtime/minecraft-fabric-identifier/src/main")
 val legacyRuntime = rootProject.file("runtime/minecraft-fabric-1.21-legacy/src/main")
 val recordInputRuntime = rootProject.file("runtime/minecraft-fabric-1.21.9-legacy/src/main")
+val textureBlitRuntime = rootProject.file("runtime/minecraft-fabric-1.21.6-legacy/src/main")
 
 extensions.configure<SourceSetContainer> {
     named("main") {
@@ -23,6 +24,7 @@ extensions.configure<SourceSetContainer> {
             legacyRuntime.resolve("java"),
             recordInputRuntime.resolve("java"),
         )
+        java.srcDir(textureBlitRuntime.resolve("java"))
     }
 }
 
@@ -34,6 +36,7 @@ extensions.configure<KotlinJvmProjectExtension> {
             legacyRuntime.resolve("kotlin"),
             recordInputRuntime.resolve("kotlin"),
         )
+        kotlin.srcDir(textureBlitRuntime.resolve("kotlin"))
     }
 }
 

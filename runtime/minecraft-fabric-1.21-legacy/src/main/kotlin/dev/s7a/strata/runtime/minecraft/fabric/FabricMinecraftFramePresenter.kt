@@ -10,7 +10,6 @@ import dev.s7a.strata.runtime.render.DrawCommand
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
 import net.minecraft.client.Minecraft
 import net.minecraft.client.gui.GuiGraphics
-import net.minecraft.client.renderer.RenderPipelines
 import net.minecraft.client.renderer.texture.DynamicTexture
 import java.util.concurrent.atomic.AtomicLong
 
@@ -213,15 +212,11 @@ internal class FabricMinecraftFramePresenter(
             checkNotNull(textureLocations.getOrNull(textureIndex)) {
                 "A prepared portable frame layer has no registered texture location."
             }
-        graphics.blit(
-            RenderPipelines.GUI_TEXTURED,
+        FabricMinecraftTextureBlitter.blit(
+            graphics,
             location,
             layer.bounds.left,
             layer.bounds.top,
-            0f,
-            0f,
-            layer.bounds.width,
-            layer.bounds.height,
             layer.bounds.width,
             layer.bounds.height,
         )

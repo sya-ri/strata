@@ -32,7 +32,6 @@ import dev.s7a.strata.spi.InternalStrataRuntimeApi
 import net.fabricmc.fabric.api.client.gametest.v1.FabricClientGameTest
 import net.fabricmc.fabric.api.client.gametest.v1.context.ClientGameTestContext
 import net.fabricmc.fabric.api.client.gametest.v1.screenshot.TestScreenshotOptions
-import net.minecraft.SharedConstants
 import net.minecraft.client.Minecraft
 import net.minecraft.client.gui.screens.Screen
 import net.minecraft.client.renderer.texture.DynamicTexture
@@ -498,8 +497,6 @@ public class StrataMinecraftLegacyClientGameTest : FabricClientGameTest {
     }
 
     private fun activeFabricScreen(minecraft: Minecraft): FabricMinecraftScreen = minecraft.screen as? FabricMinecraftScreen ?: error("The Fabric integration screen is not active.")
-
-    private fun loadedMinecraftVersion(): String = SharedConstants.getCurrentVersion().name()
 
     private fun outputDirectory(): Path {
         val configured = System.getProperty("strata.minecraftLegacyOutput")

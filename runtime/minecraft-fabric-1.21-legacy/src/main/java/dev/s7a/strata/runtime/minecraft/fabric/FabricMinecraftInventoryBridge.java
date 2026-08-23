@@ -697,9 +697,7 @@ final class FabricMinecraftInventoryBridge implements MinecraftUiPlatform {
         ItemStack snapshot = carried.copy();
         int x = Math.subtractExact(mouseX, 8);
         int y = Math.subtractExact(mouseY, 8);
-        graphics.nextStratum();
-        graphics.renderItem(snapshot, x, y);
-        graphics.renderItemDecorations(font, snapshot, x, y);
+        FabricMinecraftCarriedItemRenderer.render(graphics, font, snapshot, x, y);
     }
 
     private boolean withInput(NativeInput current, BooleanSupplier operation) {

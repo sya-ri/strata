@@ -21,6 +21,7 @@ val runtimeRemappedJar =
         "libs/${runtimeFabricProject.name}-${project.version}.jar",
     )
 val sharedLegacyGameTest = rootProject.file("integration/minecraft-fabric-1.21-legacy/src/gametest")
+val versionGameTest = rootProject.file("integration/minecraft-fabric-1.21.6-legacy/src/gametest")
 val primitiveInputGameTest = rootProject.file("integration/minecraft-fabric-1.21.8-legacy/src/gametest")
 
 fabricApi {
@@ -36,6 +37,7 @@ fabricApi {
 extensions.configure<KotlinJvmProjectExtension> {
     sourceSets.named("gametest") {
         kotlin.srcDir(sharedLegacyGameTest.resolve("kotlin"))
+        kotlin.srcDir(versionGameTest.resolve("kotlin"))
         kotlin.srcDir(primitiveInputGameTest.resolve("kotlin"))
     }
 }

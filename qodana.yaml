@@ -22,6 +22,7 @@ exclude:
   - name: UnstableApiUsage
     paths:
       - settings.gradle.kts
+      - integration/minecraft-fabric-1.21.5/build.gradle.kts
       - integration/minecraft-fabric-1.21.6/build.gradle.kts
       - integration/minecraft-fabric-1.21.7/build.gradle.kts
       - integration/minecraft-fabric-1.21.8/build.gradle.kts
@@ -166,6 +167,7 @@ exclude:
       - integration/minecraft-fabric-unobfuscated/src/gametest/kotlin/dev/s7a/strata/integration/minecraft/fabric/MinecraftScrollShowcaseExample.kt
       - integration/minecraft-fabric-unobfuscated/src/gametest/kotlin/dev/s7a/strata/integration/minecraft/fabric/MinecraftTextExample.kt
       - integration/minecraft-fabric-1.21-legacy/src/gametest/kotlin/dev/s7a/strata/integration/minecraft/fabric/StrataMinecraftLegacyClientGameTest.kt
+      - integration/minecraft-fabric-1.21.5/src/gametest/kotlin/dev/s7a/strata/integration/minecraft/fabric/MinecraftTestResourceLocation.kt
       - integration/minecraft-fabric-1.21.6/src/gametest/kotlin/dev/s7a/strata/integration/minecraft/fabric/MinecraftTestResourceLocation.kt
       - integration/minecraft-fabric-1.21.8-legacy/src/gametest/kotlin/dev/s7a/strata/integration/minecraft/fabric/MinecraftScreenInput.kt
       - integration/minecraft-fabric-1.21.7/src/gametest/kotlin/dev/s7a/strata/integration/minecraft/fabric/MinecraftTestResourceLocation.kt
@@ -182,6 +184,8 @@ exclude:
       - runtime/minecraft/src/main/kotlin/dev/s7a/strata/runtime/minecraft/MinecraftPlayerHeadElement.kt
       - runtime/minecraft/src/main/kotlin/dev/s7a/strata/runtime/minecraft/MinecraftTabElement.kt
       - runtime/minecraft-fabric-shared/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftAssetLoader.kt
+      - runtime/minecraft-fabric-1.21.5/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/MinecraftResourceLocation.kt
+      - runtime/minecraft-fabric-1.21.5/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/MinecraftResourceLocationException.kt
       - runtime/minecraft-fabric-1.21.6/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/MinecraftResourceLocation.kt
       - runtime/minecraft-fabric-1.21.6/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/MinecraftResourceLocationException.kt
       - runtime/minecraft-fabric-1.21.7/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/MinecraftResourceLocation.kt
