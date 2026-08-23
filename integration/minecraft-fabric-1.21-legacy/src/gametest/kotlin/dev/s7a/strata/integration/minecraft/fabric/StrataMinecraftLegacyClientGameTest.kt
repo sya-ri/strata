@@ -35,8 +35,6 @@ import net.fabricmc.fabric.api.client.gametest.v1.screenshot.TestScreenshotOptio
 import net.minecraft.SharedConstants
 import net.minecraft.client.Minecraft
 import net.minecraft.client.gui.screens.Screen
-import net.minecraft.client.input.MouseButtonEvent
-import net.minecraft.client.input.MouseButtonInfo
 import net.minecraft.client.renderer.texture.DynamicTexture
 import net.minecraft.server.MinecraftServer
 import net.minecraft.server.level.ServerPlayer
@@ -213,6 +211,7 @@ public class StrataMinecraftLegacyClientGameTest : FabricClientGameTest {
                 player.containerMenu.carried.`is`(Items.DIRT) &&
                 player.containerMenu.carried.count == itemCount
         }
+        context.waitTicks(6)
         clickCurrentScreen(context, slotCenter)
         context.waitFor(
             Predicate { minecraft ->
@@ -236,14 +235,7 @@ public class StrataMinecraftLegacyClientGameTest : FabricClientGameTest {
         context.runOnClient(
             FailableConsumer<Minecraft, RuntimeException> { minecraft ->
                 val screen: Screen = activeFabricScreen(minecraft)
-                val event =
-                    MouseButtonEvent(
-                        position.x.toDouble(),
-                        position.y.toDouble(),
-                        MouseButtonInfo(primaryMouseButton, noModifiers),
-                    )
-                check(screen.mouseClicked(event, false)) { "The Strata element must consume its primary press." }
-                screen.mouseReleased(event)
+                clickMinecraftScreen(screen, position)
             },
         )
     }
@@ -583,12 +575,6 @@ public class StrataMinecraftLegacyClientGameTest : FabricClientGameTest {
 
         @Suppress("MayBeConstant")
         private val itemCount = 7
-
-        @Suppress("MayBeConstant")
-        private val primaryMouseButton = 0
-
-        @Suppress("MayBeConstant")
-        private val noModifiers = 0
 
         @Suppress("MayBeConstant")
         private val minimumRenderedColorCount = 4

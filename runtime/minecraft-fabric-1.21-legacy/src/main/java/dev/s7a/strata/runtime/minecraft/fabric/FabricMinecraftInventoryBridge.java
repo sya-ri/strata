@@ -1,15 +1,11 @@
 package dev.s7a.strata.runtime.minecraft.fabric;
 
-import com.mojang.authlib.GameProfile;
-import com.mojang.blaze3d.platform.NativeImage;
 import dev.s7a.strata.component.PlayerSkinSource;
 import dev.s7a.strata.component.SlotBinding;
-import dev.s7a.strata.geometry.IntSize;
 import dev.s7a.strata.input.InputResult;
 import dev.s7a.strata.input.PointerButton;
 import dev.s7a.strata.input.PointerEvent;
 import dev.s7a.strata.render.DrawImage;
-import dev.s7a.strata.render.DrawImages;
 import dev.s7a.strata.render.PlatformDrawCommand;
 import dev.s7a.strata.resource.ResourceId;
 import dev.s7a.strata.runtime.minecraft.MinecraftInventorySlotBinding;
@@ -17,9 +13,7 @@ import dev.s7a.strata.runtime.minecraft.MinecraftPlayerSkinBinding;
 import dev.s7a.strata.runtime.minecraft.MinecraftUiPlatform;
 import java.util.LinkedHashSet;
 import java.util.Objects;
-import java.util.Optional;
 import java.util.Set;
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BooleanSupplier;
 import kotlin.Unit;
@@ -27,19 +21,14 @@ import kotlin.jvm.functions.Function0;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
-import net.minecraft.client.input.KeyEvent;
-import net.minecraft.client.input.MouseButtonEvent;
 import net.minecraft.client.player.LocalPlayer;
-import net.minecraft.client.renderer.texture.DynamicTexture;
-import net.minecraft.core.ClientAsset;
 import net.minecraft.world.entity.player.Inventory;
-import net.minecraft.world.entity.player.PlayerSkin;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.inventory.ClickType;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.component.ResolvableProfile;
 import org.jetbrains.annotations.NotNull;
+import org.lwjgl.glfw.GLFW;
 
 /**
  * Bridges retained Strata Slots to an active legacy Minecraft menu and native item renderer.
@@ -75,11 +64,11 @@ final class FabricMinecraftInventoryBridge implements MinecraftUiPlatform {
 
     private static final class NativeInput {
         private final InputKind kind;
-        private final MouseButtonEvent mouse;
+        private final FabricMinecraftNativeMouseInput mouse;
         private final boolean doubleClick;
         private Binding delivered;
 
-        private NativeInput(InputKind kind, MouseButtonEvent mouse, boolean doubleClick) {
+        private NativeInput(InputKind kind, FabricMinecraftNativeMouseInput mouse, boolean doubleClick) {
             this.kind = kind;
             this.mouse = mouse;
             this.doubleClick = doubleClick;
@@ -235,9 +224,9 @@ final class FabricMinecraftInventoryBridge implements MinecraftUiPlatform {
      * Successful Minecraft skin lookup retained only until the owner-thread frame boundary.
      */
     private static final class SkinReady implements SkinCompletion {
-        private final PlayerSkin skin;
+        private final FabricMinecraftSkinReference skin;
 
-        private SkinReady(PlayerSkin skin) {
+        private SkinReady(FabricMinecraftSkinReference skin) {
             this.skin = skin;
         }
     }
@@ -370,7 +359,7 @@ final class FabricMinecraftInventoryBridge implements MinecraftUiPlatform {
 
         private SkinBinding(PlayerSkinSource source) {
             SkinBindingLifecycle completionTarget = lifecycle;
-            lookupSkin(source).whenComplete((resolved, failure) -> {
+            FabricMinecraftSkinBridge.lookup(requireMinecraft(), source).whenComplete((resolved, failure) -> {
                 if (failure == null && resolved.isPresent()) {
                     completionTarget.publish(new SkinReady(resolved.get()));
                 } else {
@@ -417,7 +406,7 @@ final class FabricMinecraftInventoryBridge implements MinecraftUiPlatform {
             MinecraftPlayerSkinBinding.Snapshot next;
             if (completion instanceof SkinReady ready) {
                 try {
-                    next = new MinecraftPlayerSkinBinding.Snapshot.Ready(snapshotSkin(ready.skin));
+                    next = new MinecraftPlayerSkinBinding.Snapshot.Ready(ready.skin.snapshot(requireMinecraft()));
                 } catch (RuntimeException failure) {
                     next = MinecraftPlayerSkinBinding.Snapshot.Failed.INSTANCE;
                 }
@@ -592,44 +581,49 @@ final class FabricMinecraftInventoryBridge implements MinecraftUiPlatform {
     /**
      * Runs one native mouse press with modifier and double-click state available to the hit Slot.
      *
-     * @param event native immutable mouse event.
+     * @param button native mouse button value.
+     * @param modifiers native GLFW modifier bit field.
      * @param doubleClick native double-click marker.
      * @param operation host input dispatch.
      * @return the host consumption result.
      */
-    boolean withMousePress(MouseButtonEvent event, boolean doubleClick, BooleanSupplier operation) {
-        return withInput(new NativeInput(InputKind.PRESS, event, doubleClick), operation);
+    boolean withMousePress(int button, int modifiers, boolean doubleClick, BooleanSupplier operation) {
+        return withInput(new NativeInput(InputKind.PRESS, new FabricMinecraftNativeMouseInput(button, modifiers), doubleClick), operation);
     }
 
     /**
      * Runs one native drag and records any eligible synchronized Slot crossed by the pointer.
      *
-     * @param event native immutable mouse event.
+     * @param button native mouse button value.
+     * @param modifiers native GLFW modifier bit field.
      * @param operation host input dispatch.
      * @return the host consumption result.
      */
-    boolean withMouseDrag(MouseButtonEvent event, BooleanSupplier operation) {
-        return withInput(new NativeInput(InputKind.DRAG, event, false), operation);
+    boolean withMouseDrag(int button, int modifiers, BooleanSupplier operation) {
+        return withInput(new NativeInput(InputKind.DRAG, new FabricMinecraftNativeMouseInput(button, modifiers), false), operation);
     }
 
     /**
      * Runs one native release and completes a pending pickup, double-click, or quick-craft transaction.
      *
-     * @param event native immutable mouse event.
+     * @param button native mouse button value.
+     * @param modifiers native GLFW modifier bit field.
      * @param operation host input dispatch.
      * @return the host consumption result.
      */
-    boolean withMouseRelease(MouseButtonEvent event, BooleanSupplier operation) {
-        return withInput(new NativeInput(InputKind.RELEASE, event, false), operation);
+    boolean withMouseRelease(int button, int modifiers, BooleanSupplier operation) {
+        return withInput(new NativeInput(InputKind.RELEASE, new FabricMinecraftNativeMouseInput(button, modifiers), false), operation);
     }
 
     /**
      * Handles native hotbar, offhand, pick, and drop keys for the topmost synchronized Slot under the last delivered pointer move.
      *
-     * @param event native key event.
+     * @param key native GLFW key value.
+     * @param scanCode native platform scan code.
+     * @param modifiers native GLFW modifier bit field.
      * @return true when one authoritative container input was sent.
      */
-    boolean handleKeyPressed(KeyEvent event) {
+    boolean handleKeyPressed(int key, int scanCode, int modifiers) {
         requireUsable();
         Binding target = hovered;
         if (target == null) {
@@ -638,24 +632,26 @@ final class FabricMinecraftInventoryBridge implements MinecraftUiPlatform {
         Minecraft client = requireMinecraft();
         LocalPlayer player = requirePlayer();
         if (activeMenu().getCarried().isEmpty()) {
-            if (client.options.keySwapOffhand.matches(event)) {
+            if (FabricMinecraftKeyBindingBridge.matches(client.options.keySwapOffhand, key, scanCode, modifiers)) {
                 click(target, 40, ClickType.SWAP);
                 return true;
             }
             for (int index = 0; index < client.options.keyHotbarSlots.length; index++) {
-                if (client.options.keyHotbarSlots[index].matches(event)) {
+                if (FabricMinecraftKeyBindingBridge.matches(client.options.keyHotbarSlots[index], key, scanCode, modifiers)) {
                     click(target, index, ClickType.SWAP);
                     return true;
                 }
             }
         }
         Slot slot = target.resolveSlot();
-        if (slot.hasItem() && client.options.keyPickItem.matches(event) && player.hasInfiniteMaterials()) {
+        if (slot.hasItem()
+                && FabricMinecraftKeyBindingBridge.matches(client.options.keyPickItem, key, scanCode, modifiers)
+                && player.hasInfiniteMaterials()) {
             click(target, 0, ClickType.CLONE);
             return true;
         }
-        if (slot.hasItem() && client.options.keyDrop.matches(event)) {
-            click(target, event.hasControlDown() ? 1 : 0, ClickType.THROW);
+        if (slot.hasItem() && FabricMinecraftKeyBindingBridge.matches(client.options.keyDrop, key, scanCode, modifiers)) {
+            click(target, (modifiers & GLFW.GLFW_MOD_CONTROL) != 0 ? 1 : 0, ClickType.THROW);
             return true;
         }
         return false;
@@ -736,7 +732,7 @@ final class FabricMinecraftInventoryBridge implements MinecraftUiPlatform {
 
     private InputResult handlePress(Binding binding, PointerEvent.Press event) {
         NativeInput current = requireInput(InputKind.PRESS);
-        MouseButtonEvent mouse = current.mouse;
+        FabricMinecraftNativeMouseInput mouse = current.mouse;
         int rawButton = mouse.button();
         pendingDoubleClick = current.doubleClick && rawButton == 0;
         if (checkHotbarMouse(binding, mouse)) {
@@ -799,7 +795,7 @@ final class FabricMinecraftInventoryBridge implements MinecraftUiPlatform {
         return InputResult.Consumed;
     }
 
-    private void finishRelease(Binding binding, MouseButtonEvent mouse) {
+    private void finishRelease(Binding binding, FabricMinecraftNativeMouseInput mouse) {
         int rawButton = mouse.button();
         if (pendingDoubleClick && binding != null && rawButton == 0) {
             if (mouse.hasShiftDown() && lastQuickMoved.isEmpty() == false) {
@@ -850,18 +846,18 @@ final class FabricMinecraftInventoryBridge implements MinecraftUiPlatform {
         }
     }
 
-    private boolean checkHotbarMouse(Binding binding, MouseButtonEvent event) {
+    private boolean checkHotbarMouse(Binding binding, FabricMinecraftNativeMouseInput event) {
         Minecraft client = requireMinecraft();
         LocalPlayer player = requirePlayer();
         if (activeMenu().getCarried().isEmpty() == false) {
             return false;
         }
-        if (client.options.keySwapOffhand.matchesMouse(event)) {
+        if (FabricMinecraftKeyBindingBridge.matchesMouse(client.options.keySwapOffhand, event.button(), event.modifiers())) {
             click(binding, 40, ClickType.SWAP);
             return true;
         }
         for (int index = 0; index < client.options.keyHotbarSlots.length; index++) {
-            if (client.options.keyHotbarSlots[index].matchesMouse(event)) {
+            if (FabricMinecraftKeyBindingBridge.matchesMouse(client.options.keyHotbarSlots[index], event.button(), event.modifiers())) {
                 click(binding, index, ClickType.SWAP);
                 return true;
             }
@@ -873,8 +869,11 @@ final class FabricMinecraftInventoryBridge implements MinecraftUiPlatform {
         return false;
     }
 
-    private boolean isPickMouse(MouseButtonEvent event) {
-        return requireMinecraft().options.keyPickItem.matchesMouse(event);
+    private boolean isPickMouse(FabricMinecraftNativeMouseInput event) {
+        return FabricMinecraftKeyBindingBridge.matchesMouse(
+                requireMinecraft().options.keyPickItem,
+                event.button(),
+                event.modifiers());
     }
 
     private void click(Binding binding, int button, ClickType action) {
@@ -923,45 +922,6 @@ final class FabricMinecraftInventoryBridge implements MinecraftUiPlatform {
             throw new IllegalArgumentException("Container slot index is not exposed by the active menu: " + index);
         }
         return resolved;
-    }
-
-    private CompletableFuture<Optional<PlayerSkin>> lookupSkin(PlayerSkinSource source) {
-        Minecraft client = requireMinecraft();
-        CompletableFuture<GameProfile> profile;
-        if (source == PlayerSkinSource.CurrentPlayer.INSTANCE) {
-            profile = CompletableFuture.completedFuture(client.getGameProfile());
-        } else if (source instanceof PlayerSkinSource.Name name) {
-            profile = ResolvableProfile.createUnresolved(name.getValue()).resolveProfile(client.services().profileResolver());
-        } else if (source instanceof PlayerSkinSource.Uuid uuid) {
-            profile = ResolvableProfile.createUnresolved(uuid.getValue()).resolveProfile(client.services().profileResolver());
-        } else {
-            throw new IllegalArgumentException("Unsupported player skin source: " + source.getClass().getName());
-        }
-        return profile.thenCompose(client.getSkinManager()::get);
-    }
-
-    private DrawImage snapshotSkin(PlayerSkin skin) {
-        ClientAsset.Texture body = skin.body();
-        if (body instanceof ClientAsset.ResourceTexture resource) {
-            var identifier = resource.texturePath();
-            return FabricMinecraftAssets.loadMinecraftUiImage(new ResourceId(identifier.getNamespace(), identifier.getPath()));
-        }
-        if (body instanceof ClientAsset.DownloadedTexture downloaded) {
-            var texture = requireMinecraft().getTextureManager().getTexture(downloaded.texturePath());
-            if ((texture instanceof DynamicTexture) == false) {
-                throw new IllegalStateException("The downloaded player skin is not backed by a dynamic texture.");
-            }
-            NativeImage image = ((DynamicTexture) texture).getPixels();
-            if (image == null) {
-                throw new IllegalStateException("The downloaded player skin has already been released.");
-            }
-            IntSize size = new IntSize(image.getWidth(), image.getHeight());
-            if (size.equals(new IntSize(64, 64)) == false) {
-                throw new IllegalArgumentException("Minecraft player skins must normalize to exactly 64 by 64 pixels.");
-            }
-            return DrawImages.createDrawImage(size, image.getPixels());
-        }
-        throw new IllegalArgumentException("Unsupported Minecraft player skin texture kind: " + body.getClass().getName());
     }
 
     private Minecraft requireMinecraft() {

@@ -209,7 +209,7 @@ public class FabricMinecraftScreen private constructor(
         requireClientThread()
         val position = positionOrNull(event.x(), event.y()) ?: return false
         val button = buttonOrNull(event.button()) ?: return false
-        return inventory.withMousePress(event, doubleClick) { dispatch(PointerEvent.Press(position, button)) }
+        return inventory.withMousePress(event.button(), event.modifiers(), doubleClick) { dispatch(PointerEvent.Press(position, button)) }
     }
 
     /**
@@ -224,7 +224,7 @@ public class FabricMinecraftScreen private constructor(
         requireClientThread()
         val position = positionOrNull(event.x(), event.y()) ?: return false
         val button = buttonOrNull(event.button()) ?: return false
-        return inventory.withMouseRelease(event) { dispatch(PointerEvent.Release(position, button)) }
+        return inventory.withMouseRelease(event.button(), event.modifiers()) { dispatch(PointerEvent.Release(position, button)) }
     }
 
     /**
@@ -246,7 +246,9 @@ public class FabricMinecraftScreen private constructor(
         val position = positionOrNull(event.x(), event.y()) ?: return false
         val button = buttonOrNull(event.button()) ?: return false
         val displacement = mapMinecraftDrag(deltaX, deltaY) ?: return false
-        return inventory.withMouseDrag(event) { dispatch(PointerEvent.Drag(position, button, displacement.first, displacement.second)) }
+        return inventory.withMouseDrag(event.button(), event.modifiers()) {
+            dispatch(PointerEvent.Drag(position, button, displacement.first, displacement.second))
+        }
     }
 
     /**
@@ -282,8 +284,8 @@ public class FabricMinecraftScreen private constructor(
      */
     override fun keyPressed(event: MinecraftKeyEvent): Boolean {
         requireClientThread()
-        if (inventory.handleKeyPressed(event)) return true
-        val mapped = mapMinecraftKeyPress(event) ?: return false
+        if (inventory.handleKeyPressed(event.key(), event.scancode(), event.modifiers())) return true
+        val mapped = mapMinecraftKeyPress(event.key(), event.scancode(), event.modifiers()) ?: return false
         if (mapped.key == KeyCode.Escape) {
             return dispatchInherited { super.keyPressed(event) }
         }
@@ -300,7 +302,7 @@ public class FabricMinecraftScreen private constructor(
      */
     override fun keyReleased(event: MinecraftKeyEvent): Boolean {
         requireClientThread()
-        val mapped = mapMinecraftKeyRelease(event) ?: return false
+        val mapped = mapMinecraftKeyRelease(event.key(), event.scancode(), event.modifiers()) ?: return false
         return dispatchFocused(KeyboardInput(mapped)) { super.keyReleased(event) }
     }
 
@@ -314,7 +316,7 @@ public class FabricMinecraftScreen private constructor(
      */
     override fun charTyped(event: MinecraftCharacterEvent): Boolean {
         requireClientThread()
-        val mapped = mapMinecraftCharacter(event) ?: return false
+        val mapped = mapMinecraftCharacter(event.codepoint()) ?: return false
         return dispatchFocused(TextInput(mapped)) { super.charTyped(event) }
     }
 

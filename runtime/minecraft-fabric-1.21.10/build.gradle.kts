@@ -12,16 +12,17 @@ plugins {
 
 val sharedRuntime = rootProject.file("runtime/minecraft-fabric-shared/src/main")
 val legacyRuntime = rootProject.file("runtime/minecraft-fabric-1.21-legacy/src/main")
+val recordInputRuntime = rootProject.file("runtime/minecraft-fabric-1.21.9-legacy/src/main")
 
 extensions.configure<SourceSetContainer> {
     named("main") {
-        java.srcDirs(sharedRuntime.resolve("java"), legacyRuntime.resolve("java"))
+        java.srcDirs(sharedRuntime.resolve("java"), legacyRuntime.resolve("java"), recordInputRuntime.resolve("java"))
     }
 }
 
 extensions.configure<KotlinJvmProjectExtension> {
     sourceSets.named("main") {
-        kotlin.srcDirs(sharedRuntime.resolve("kotlin"), legacyRuntime.resolve("kotlin"))
+        kotlin.srcDirs(sharedRuntime.resolve("kotlin"), legacyRuntime.resolve("kotlin"), recordInputRuntime.resolve("kotlin"))
     }
 }
 
