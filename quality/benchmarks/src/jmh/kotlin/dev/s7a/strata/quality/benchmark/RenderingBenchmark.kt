@@ -23,6 +23,7 @@ import dev.s7a.strata.node.PaintNode
 import dev.s7a.strata.node.SemanticsNode
 import dev.s7a.strata.render.ArgbColor
 import dev.s7a.strata.render.PaintScope
+import dev.s7a.strata.runtime.FrameTime
 import dev.s7a.strata.runtime.headless.HeadlessImage
 import dev.s7a.strata.runtime.headless.rasterizeHeadless
 import dev.s7a.strata.runtime.render.DrawCommand
@@ -58,6 +59,17 @@ public open class RenderingBenchmark {
      */
     @Benchmark
     public fun cleanUiSessionFrame(state: SessionState): RuntimeUiFrame = state.cleanFrame()
+
+    /**
+     * Produces a time-advanced frame whose retained scene has no time-dependent invalidation.
+     *
+     * This is the clean path used by a platform host that supplies a timestamp on every render extraction.
+     *
+     * @param state thread-confined session fixture prepared by JMH.
+     * @return the detached immutable frame so JMH observes the result.
+     */
+    @Benchmark
+    public fun cleanTimedUiSessionFrame(state: SessionState): RuntimeUiFrame = state.cleanTimedFrame()
 
     /**
      * Invalidates every leaf before producing a retained frame.
@@ -119,6 +131,7 @@ public open class RenderingBenchmark {
         private lateinit var constraints: Constraints
         private lateinit var nodes: List<TileNode>
         private lateinit var session: RuntimeUiSession
+        private val frameTime: FrameTime = FrameTime(1_000_000_000L)
 
         /**
          * Creates, attaches, and primes the retained session on its owner thread.
@@ -139,6 +152,13 @@ public open class RenderingBenchmark {
          * @return the detached immutable frame.
          */
         public fun cleanFrame(): RuntimeUiFrame = session.frame(constraints)
+
+        /**
+         * Advances the retained tree with one stable host timestamp without invalidating any node.
+         *
+         * @return the detached immutable frame.
+         */
+        public fun cleanTimedFrame(): RuntimeUiFrame = session.frame(constraints, frameTime)
 
         /**
          * Invalidates every representative leaf and produces the resulting frame.
