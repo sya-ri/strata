@@ -42,8 +42,6 @@ import dev.s7a.strata.node.Node as RetainedNode
  * @param listBackground immutable 16 by 16 list texture.
  * @param headerSeparator immutable 32 by 2 header separator.
  * @param footerSeparator immutable 32 by 2 footer separator.
- * @param scrollbarBackground immutable 6 by 32 track sprite.
- * @param scrollbarThumb immutable 6 by 32 thumb sprite.
  * @param scrollRate positive logical wheel displacement multiplier.
  * @param content sole direct content root.
  * @param modifier active behavior applied to the viewport.
@@ -345,8 +343,6 @@ private class MinecraftScrollElement private constructor(
          * @param listBackground immutable 16 by 16 list texture.
          * @param headerSeparator immutable 32 by 2 header separator.
          * @param footerSeparator immutable 32 by 2 footer separator.
-         * @param scrollbarBackground immutable 6 by 32 track sprite.
-         * @param scrollbarThumb immutable 6 by 32 thumb sprite.
          * @param scrollRate positive logical wheel displacement multiplier.
          * @param content sole content root.
          * @param modifier active component behavior.
@@ -383,8 +379,6 @@ private class MinecraftScrollElement private constructor(
  * @param listBackground immutable 16 by 16 list texture.
  * @param headerSeparator immutable 32 by 2 header separator.
  * @param footerSeparator immutable 32 by 2 footer separator.
- * @param scrollbarBackground immutable 6 by 32 track sprite.
- * @param scrollbarThumb immutable 6 by 32 thumb sprite.
  * @param scrollRate positive logical wheel displacement multiplier.
  * @param content sole content root.
  * @param modifier active component behavior.
