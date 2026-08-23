@@ -30,6 +30,11 @@ jobs:
             25
       - name: Assemble analysis dependencies
         run: bash ./gradlew assemble
+      - name: Release assembled outputs
+        run: |
+          bash ./gradlew clean
+          bash ./gradlew --stop
+          df -h /
       - name: Run Qodana
         uses: JetBrains/qodana-action@v2026.2
         with:
