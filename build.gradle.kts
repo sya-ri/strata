@@ -35,6 +35,7 @@ dependencies {
     dokka(project(":runtime:core"))
     dokka(project(":runtime:headless"))
     dokka(project(":runtime:minecraft"))
+    dokka(project(":runtime:minecraft-fabric-1.21"))
     dokka(project(":runtime:minecraft-fabric-1.21.1"))
     dokka(project(":runtime:minecraft-fabric-1.21.2"))
     dokka(project(":runtime:minecraft-fabric-1.21.3"))
@@ -66,6 +67,7 @@ val minecraftGameTestProjects =
     listOf(
         ":integration:minecraft-fabric-26.2",
         ":integration:minecraft-fabric-26.1",
+        ":integration:minecraft-fabric-1.21",
         ":integration:minecraft-fabric-1.21.1",
         ":integration:minecraft-fabric-1.21.2",
         ":integration:minecraft-fabric-1.21.3",
@@ -83,6 +85,8 @@ val minecraftClientVerificationTasks =
     listOf(
         ":integration:minecraft-fabric-26.2:runClientGameTest",
         ":integration:minecraft-fabric-26.1:runClientGameTest",
+        ":integration:minecraft-fabric-1.21:runClientGameTest",
+        ":integration:minecraft-fabric-1.21:runProductionClientGameTest",
         ":integration:minecraft-fabric-1.21.1:runClientGameTest",
         ":integration:minecraft-fabric-1.21.1:runProductionClientGameTest",
         ":integration:minecraft-fabric-1.21.2:runClientGameTest",
@@ -108,6 +112,8 @@ val minecraftClientVerificationTasks =
     )
 val minecraftRemapTasks =
     listOf(
+        ":runtime:minecraft-fabric-1.21:remapJar",
+        ":integration:minecraft-fabric-1.21:remapJar",
         ":runtime:minecraft-fabric-1.21.1:remapJar",
         ":integration:minecraft-fabric-1.21.1:remapJar",
         ":runtime:minecraft-fabric-1.21.2:remapJar",
@@ -193,6 +199,7 @@ subprojects {
         ":runtime:core",
         ":runtime:headless",
         ":runtime:minecraft",
+        ":runtime:minecraft-fabric-1.21",
         ":runtime:minecraft-fabric-1.21.1",
         ":runtime:minecraft-fabric-1.21.2",
         ":runtime:minecraft-fabric-1.21.3",
@@ -215,6 +222,8 @@ subprojects {
 
     val versionSpecificMinecraftModules =
         setOf(
+            ":runtime:minecraft-fabric-1.21",
+            ":integration:minecraft-fabric-1.21",
             ":runtime:minecraft-fabric-1.21.1",
             ":integration:minecraft-fabric-1.21.1",
             ":runtime:minecraft-fabric-1.21.2",
@@ -245,6 +254,8 @@ subprojects {
     val javaVersion =
         when (path) {
             in setOf(
+                ":runtime:minecraft-fabric-1.21",
+                ":integration:minecraft-fabric-1.21",
                 ":runtime:minecraft-fabric-1.21.1",
                 ":integration:minecraft-fabric-1.21.1",
                 ":runtime:minecraft-fabric-1.21.2",
@@ -316,6 +327,7 @@ subprojects {
                 ":runtime:core" to "strata-runtime-core",
                 ":runtime:headless" to "strata-runtime-headless",
                 ":runtime:minecraft" to "strata-runtime-minecraft",
+                ":runtime:minecraft-fabric-1.21" to "strata-runtime-minecraft-fabric-1.21",
                 ":runtime:minecraft-fabric-1.21.1" to "strata-runtime-minecraft-fabric-1.21.1",
                 ":runtime:minecraft-fabric-1.21.2" to "strata-runtime-minecraft-fabric-1.21.2",
                 ":runtime:minecraft-fabric-1.21.3" to "strata-runtime-minecraft-fabric-1.21.3",
@@ -377,6 +389,15 @@ subprojects {
         extensions.configure<DokkaExtension> {
             val sourcePaths =
                 when (path) {
+                    ":runtime:minecraft-fabric-1.21" ->
+                        listOf(
+                            "runtime/minecraft-fabric-1.21",
+                            "runtime/minecraft-fabric-1.21.3-legacy",
+                            "runtime/minecraft-fabric-1.21.5-legacy",
+                            "runtime/minecraft-fabric-1.21.8-legacy",
+                            "runtime/minecraft-fabric-1.21-legacy",
+                            "runtime/minecraft-fabric-shared",
+                        )
                     ":runtime:minecraft-fabric-1.21.1" ->
                         listOf(
                             "runtime/minecraft-fabric-1.21.1",
