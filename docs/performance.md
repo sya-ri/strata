@@ -105,32 +105,34 @@ These comparisons confirm the intended clean-frame improvement without moving wo
 | Headless rasterization | Windowed | 3,208.000 | 1,643,616 |
 | Headless rasterization | FullHd | 16,631.944 | 8,298,491 |
 
-## Current verification
+## Minecraft 1.21 family closure verification
 
-The current suite was rerun after the timed components, overlays, virtual lists, and Minecraft 1.21.9 support were added.
-This run used the same checked-in JMH configuration and OpenJDK 17.0.18 on the current Windows development host.
-The timing values must not be compared directly with the earlier post-fix table because the host load and power state were not controlled across those runs; allocation and deterministic structural gates remain the comparable evidence.
+The suite was rerun after every release from Minecraft 1.21 through 1.21.11 passed its development and production-jar loaded-client gates.
+This run used the checked-in JMH configuration and OpenJDK 17.0.18 on the current Windows development host.
+The timing values must not be compared directly with the earlier tables because host load and power state were not controlled across runs; allocation and deterministic structural gates remain the comparable evidence.
 
-The ordinary clean path still rounds to zero bytes per operation and returns the retained snapshot in about 0.01 microseconds.
-The new time-aware clean benchmark traverses the 54-leaf retained scene to deliver the host timestamp but does not remeasure, relayout, repaint, rebuild semantics, or replace the complete frame snapshot.
-It measured 1.38 to 1.57 microseconds and at most 0.045 normalized bytes per operation, which is profiler noise rather than one allocation per invocation.
-The dirty path remains independent of viewport size at approximately 59,025 bytes per operation.
-Headless allocation continues to scale with its newly allocated physical pixel storage.
+The ordinary clean path still rounds to zero bytes per operation and returns the retained snapshot in 0.004 microseconds.
+The time-aware clean path traverses the 54-leaf retained scene to deliver the host timestamp but does not remeasure, relayout, repaint, rebuild semantics, or replace the complete frame snapshot.
+It measured 1.207 to 1.210 microseconds and at most 0.035 normalized bytes per operation, which is profiler noise rather than one allocation per invocation.
+The fully dirty path remains independent of viewport size at approximately 59,024 bytes per operation; this is the expected detached command and semantics replacement for all 54 invalidated leaves rather than an accumulating cache.
+Headless allocation remains one fresh viewport-sized pixel image plus bounded command-processing overhead.
 
 | Benchmark | Viewport | Average time (µs/op) | Allocation (B/op) |
 | --- | --- | ---: | ---: |
-| Clean timed session frame | Compact | 1.380 | 0.039 |
-| Clean timed session frame | Windowed | 1.568 | 0.045 |
-| Clean timed session frame | FullHd | 1.427 | 0.041 |
-| Clean session frame | Compact | 0.010 | 0 |
-| Clean session frame | Windowed | 0.010 | 0 |
-| Clean session frame | FullHd | 0.011 | 0 |
-| Dirty session frame | Compact | 30.134 | 59,025 |
-| Dirty session frame | Windowed | 30.143 | 59,025 |
-| Dirty session frame | FullHd | 30.260 | 59,025 |
-| Headless rasterization | Compact | 1,160.761 | 230,800 |
-| Headless rasterization | Windowed | 7,543.314 | 1,643,683 |
-| Headless rasterization | FullHd | 37,138.735 | 8,298,611 |
+| Clean timed session frame | Compact | 1.207 | 0.034 |
+| Clean timed session frame | Windowed | 1.210 | 0.035 |
+| Clean timed session frame | FullHd | 1.209 | 0.035 |
+| Clean session frame | Compact | 0.004 | 0 |
+| Clean session frame | Windowed | 0.004 | 0 |
+| Clean session frame | FullHd | 0.004 | 0 |
+| Dirty session frame | Compact | 17.217 | 59,024 |
+| Dirty session frame | Windowed | 16.666 | 59,024 |
+| Dirty session frame | FullHd | 16.611 | 59,024 |
+| Headless rasterization | Compact | 503.499 | 230,796 |
+| Headless rasterization | Windowed | 3,299.307 | 1,643,617 |
+| Headless rasterization | FullHd | 16,282.742 | 8,298,489 |
 
 No unbounded temporary-data retention or repeated clean-frame rendering was observed by these measurements and structural gates.
+Every 1.21 loaded client additionally proves that detachment empties the Fabric presenter's dynamic-texture and prepared-layer collections and clears its prepared frame references.
+Session tests prove that close releases the content owner before lifecycle cleanup, clears cached immutable frames, clears bindings and retained-tree ownership, and disposes every claimed node exactly once.
 This statement is limited to the retained session, virtual-list current-range cache, Fabric prepared-layer and texture ownership, tooltip and loading-indicator time cells, and asynchronous player-skin lifecycle covered above; it is not a general heap-leak proof for downstream Mods.

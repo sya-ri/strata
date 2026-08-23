@@ -216,6 +216,7 @@ See [Architecture](docs/architecture.md) for dependency boundaries and extension
 - [Modifiers](docs/modifiers.md) explains active modifier nodes, typed parent data, positional reconciliation, lifecycle, and extension failures.
 - [External state sources](docs/state-sources.md) specifies linearizable revisioned state observation across threads.
 - [UI sessions](docs/ui-sessions.md) specifies retained state, frame cutoffs, coroutine generations, and failure handling inside the core runtime.
+- [Rendering performance](docs/performance.md) records the JMH methodology, allocation evidence, cache and retention gates, and the completed Minecraft 1.21 family baseline.
 - [Build and release](docs/build.md) lists local quality checks, the aggregated Dokka GitHub Pages site, and publication requirements.
 - [Supporting a new Minecraft version](docs/minecraft-versions.md) defines the evidence, implementation, and compatibility process for another adapter.
 

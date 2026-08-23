@@ -60,6 +60,36 @@ The review is part of version support, not optional follow-up work.
 5. Classify each runtime, integration module, and shared source boundary as retained, consolidated, replaced, or removed, with evidence for the decision.
    Complete required restructuring and its full acceptance gates before adding the first adapter for the next minor family.
 
+## Minecraft 1.21 family closure
+
+The completed family spans the original 1.21 release through 1.21.11 and passed the family review before 1.20 work began.
+
+- Direction: retained.
+  The family proved that mapped native differences belong in compile-time release or release-family bridges, while portable layout, state, components, rendering commands, inventory locators, and screen-session behavior remain version-neutral.
+  No runtime version-name branch or reflective compatibility dispatch is required.
+- Published runtime projects: retained.
+  Each of the twelve versioned runtime projects compiles against one exact Minecraft ABI, owns exact Fabric metadata, produces one exact remapped distribution, and intentionally exports the same Strata adapter classes for a mutually exclusive consumer runtime classpath.
+  Merging these projects would either compile against the wrong native ABI or place duplicate incompatible native `Screen` methods in one artifact.
+- Integration projects: retained and nonpublished.
+  Each exact Fabric API fixture compiles the shared suite and launches both development outputs and the remapped production runtime and integration jars.
+  Combining them would remove the exact dependency model or reduce loaded-game verification to an inferred compatibility claim.
+- Shared runtime and integration source boundaries: consolidated and retained as source roots, not Gradle projects or publications.
+  Complete files move into a shared root only after every consuming compiler and loaded client proves them compatible; incompatible input, skin, resource-name, pixel-channel, blit, and runner generations remain in their narrowest proven release-family root.
+- Root build metadata: consolidated.
+  One typed target matrix now derives documentation aggregation, loaded-client and remap sequencing, publishable runtime selection, artifact coordinates, Java toolchains, and linked source ownership.
+  A verification task compares the matrix with every included versioned project and source-link directory so adding an adapter cannot silently omit a release gate.
+- Per-target build scripts: retained.
+  They keep the exact Minecraft and Fabric dependencies, Loom distribution model, physical source roots, resource expansion, native run tasks, and artifact verification visible to Gradle, IDEs, and static analysis at the project that owns them.
+  Moving these details into a new build-logic module would add another configuration boundary and make the linked-source model less explicit without removing any required runtime or integration project.
+- Build cost: retained where it proves a real native boundary and reduced for unrelated work.
+  Configuration on demand avoids configuring the 28 Loom runtime and integration projects for a targeted API, core, headless, documentation-helper, or benchmark task; aggregate checks still configure the complete graph intentionally.
+- Rendering and retention: accepted.
+  The family-close JMH run keeps clean retained frames at effectively zero allocation, identifies the fixed detached-output allocation of a fully dirty 54-leaf scene, and confirms that headless allocation scales with the required fresh pixel image.
+  Deterministic session tests and every 1.21 loaded client prove terminal content, tree, binding, immutable-frame, prepared-layer, dynamic-texture, and prepared-frame release; see [Rendering performance](performance.md).
+
+This classification is the baseline for the next older minor family.
+Reopen it after that family is complete instead of assuming that the 1.21 boundaries remain optimal for earlier native APIs.
+
 ## Current compatibility
 
 Exactly one versioned Fabric runtime belongs on a consumer runtime classpath.

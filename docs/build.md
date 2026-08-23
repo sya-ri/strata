@@ -15,6 +15,10 @@ The shared frame presenter calls compile-time dynamic-texture and native-pixel b
 Code enters the legacy source root only after every consuming target compiles it and passes both development and production-jar loaded-client verification.
 Every source directory is linked as a whole root because Gradle file-tree include filters are not a reliable IDE or static-analysis ownership boundary.
 Consumers select exactly one versioned runtime artifact because the adapters deliberately expose the same packages and public class names.
+The root build owns one typed Minecraft target matrix containing each exact version, Java toolchain, distribution kind, runtime and integration project paths, and linked Dokka source ownership.
+That matrix derives aggregate documentation dependencies, loaded-client sequencing, remap sequencing, publishable runtime selection, artifact coordinates, and per-project toolchains; `verifyMinecraftFabricTargetMatrix` rejects an included version project or linked source boundary that is missing from the matrix.
+Configuration on demand is enabled so a targeted API, core, headless, documentation-helper, or benchmark task does not configure all 28 Loom projects.
+Full `check`, publication, Qodana, and loaded-game commands still select and configure every required target through their real project and task dependencies.
 Minecraft client verification serializes every shared Loom asset preparation task and client launch selected in the task graph so parallel Gradle execution cannot race on Loom's global asset cache or the native client environment.
 The official-mapping `remapJar` tasks are also serialized across the 1.21 targets because each concurrent remapper retains a complete mapped game graph and can exhaust a hosted CI runner's heap.
 

@@ -55,6 +55,9 @@ A module joins the build only with working behavior and tests.
 - `integration:minecraft-fabric-26.1` compiles and runs the neutral loaded-client scenarios against the 26.1 runtime and integrated server; it is not published.
 - `integration:minecraft-fabric-26.2` owns the loaded client vanilla parity scenes, integrated-server player/custom/ender-chest Slot scenarios, resource-pack-aware industrial and advancement-inspired progression screens, compiled Minecraft-component examples, and build-only verification evidence; it is not published.
 - `integration:docs` discovers public top-level component extensions mechanically from compiled API classes, extracts dedicated minimal component `ScreenDefinition` and complete-screen sources, verifies the Minecraft parity receipt, full-frame viewports, and PNG hashes, and owns the combined generated component document; it is not published.
+The root build's typed Minecraft target matrix describes these exact compile, verification, publication, toolchain, and source-link boundaries once.
+It is build metadata only: runtime code still selects behavior through compiled capabilities and never reads a version string or dispatches through the matrix.
+Configuration on demand keeps unrelated JVM work from configuring every Loom project, while aggregate quality and publication commands continue to traverse the complete matrix.
 Platform-independent code must not depend on a Minecraft runtime.
 Minecraft and Fabric dependencies remain confined to the versioned runtime boundary that requires them.
 
