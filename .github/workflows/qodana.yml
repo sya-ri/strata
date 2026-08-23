@@ -28,6 +28,16 @@ jobs:
             17
             21
             25
+      - name: Reclaim analysis disk space
+        uses: insightsengineering/disk-space-reclaimer@v1
+        with:
+          tools-cache: false
+          android: true
+          dotnet: true
+          haskell: true
+          large-packages: true
+          docker-images: true
+          swap-storage: false
       - name: Assemble analysis dependencies
         run: bash ./gradlew assemble
       - name: Release assembled outputs
@@ -38,9 +48,15 @@ jobs:
       - name: Run Qodana
         uses: JetBrains/qodana-action@v2026.2
         with:
+          cache-dir: ${{ runner.temp }}/qodana/caches
+          results-dir: ${{ runner.temp }}/qodana/results
+          use-caches: false
           args: >-
             --fail-threshold 0
             --within-docker false
+      - name: Release Qodana cache
+        if: always()
+        run: rm -rf -- "${{ runner.temp }}/qodana/caches"
       - name: Upload Qodana report
         if: always()
         uses: actions/upload-artifact@v7
