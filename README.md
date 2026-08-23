@@ -56,6 +56,7 @@ The selected host adapter is a runtime concern.
 | 1.21.7 | `strata-runtime-minecraft-fabric-1.21.7` | 21 | Development and production-jar loaded-client verification for the shared primitive-input release family |
 | 1.21.6 | `strata-runtime-minecraft-fabric-1.21.6` | 21 | Development and production-jar loaded-client verification for the shared primitive-input release family |
 | 1.21.5 | `strata-runtime-minecraft-fabric-1.21.5` | 21 | Development and production-jar loaded-client verification for the pose-stack and render-type compatibility boundary |
+| 1.21.4 | `strata-runtime-minecraft-fabric-1.21.4` | 21 | Development and production-jar loaded-client verification for the unnamed dynamic-texture compatibility boundary |
 
 Select exactly one versioned Fabric runtime at execution time.
 The version artifacts intentionally expose the same Strata-owned entry points and class names, while their inherited Minecraft `Screen` methods differ with the native release, so depending on more than one creates duplicate classes.
@@ -183,8 +184,10 @@ The dependency boundaries are:
   It compiles the same complete primitive-input release family against the exact 1.21.6 client, remaps the distribution jar, and owns only release metadata and `ResourceLocation` aliases locally.
 - `runtime/minecraft-fabric-1.21.5` is the client-only Java 21 boundary for Minecraft 1.21.5.
   It keeps the complete primitive-input and resource-location-skin behavior while isolating Minecraft's render-type texture submission and pose-stack carried-item depth from the pipeline and stratum APIs used by later releases.
+- `runtime/minecraft-fabric-1.21.4` is the client-only Java 21 boundary for Minecraft 1.21.4.
+  It compiles the same render-type, pose-stack, primitive-input, and resource-location-skin behavior while isolating the unnamed `DynamicTexture` constructor used before Minecraft 1.21.5.
 - `integration/api` proves API-only application compilation, then exercises a third-party primitive and the common Minecraft host from its test classpath.
-- `integration:minecraft-fabric-1.21.11`, `integration:minecraft-fabric-1.21.10`, `integration:minecraft-fabric-1.21.9`, `integration:minecraft-fabric-1.21.8`, `integration:minecraft-fabric-1.21.7`, `integration:minecraft-fabric-1.21.6`, and `integration:minecraft-fabric-1.21.5` compile the shared legacy GameTest against their exact game and Fabric API dependencies, then run it from both development classes and remapped production jars; none of these modules is published.
+- `integration:minecraft-fabric-1.21.11`, `integration:minecraft-fabric-1.21.10`, `integration:minecraft-fabric-1.21.9`, `integration:minecraft-fabric-1.21.8`, `integration:minecraft-fabric-1.21.7`, `integration:minecraft-fabric-1.21.6`, `integration:minecraft-fabric-1.21.5`, and `integration:minecraft-fabric-1.21.4` compile the shared legacy GameTest against their exact game and Fabric API dependencies, then run it from both development classes and remapped production jars; none of these modules is published.
 - `integration/minecraft-fabric-26.1` runs the shared loaded client and integrated-server suite against actual 26.1 dependencies; it is not published.
 - `integration/minecraft-fabric-26.2` runs loaded client parity scenes against actual 26.2 resources, vanilla screens, the selected player skin, server-synchronized player/custom/ender-chest Slots, and resource-pack-aware industrial and progression screens; it is not published.
 - `integration/docs` extracts the compiled component and complete-screen sources and synchronizes only images carrying the matching GameTest receipt into one generated document; it is not published.

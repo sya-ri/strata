@@ -378,7 +378,7 @@ internal class FabricMinecraftFramePresenter(
         }
         val replacement =
             try {
-                DynamicTexture({ "Strata runtime frame layer" }, native)
+                createFabricMinecraftDynamicTexture(native)
             } catch (failure: Throwable) {
                 closeAfterFailure(native, failure)
             }
