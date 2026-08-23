@@ -56,11 +56,7 @@ public fun <T : Any, K : Any> UiScope.VirtualList(
     val factory: (Any) -> Element = { raw ->
         @Suppress("UNCHECKED_CAST")
         val item = raw as T
-        if (evaluator == null) {
-            buildComponentTree { content(item) }
-        } else {
-            evaluator.evaluate { content(item) }
-        }
+        evaluator?.evaluate { content(item) } ?: buildComponentTree { content(item) }
     }
     @Suppress("UNCHECKED_CAST")
     element(

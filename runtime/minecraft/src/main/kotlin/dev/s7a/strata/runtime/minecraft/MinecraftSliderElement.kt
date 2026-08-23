@@ -270,7 +270,7 @@ private class MinecraftSliderElement private constructor(
                 elementClass = MinecraftSliderElement::class,
                 nodeClass = Node::class,
                 validateLocal = { element ->
-                    require(HANDLE_WIDTH < element.width && element.width <= 200) { "Minecraft Slider width must be greater than 8 and no larger than 200." }
+                    require(element.width in (HANDLE_WIDTH + 1)..200) { "Minecraft Slider width must be greater than 8 and no larger than 200." }
                     require(element.normalHandle.size == IntSize(HANDLE_WIDTH, HEIGHT)) { "Minecraft Slider handles must be 8 by 20 pixels." }
                     require(element.highlightedHandle.size == IntSize(HANDLE_WIDTH, HEIGHT)) { "Minecraft Slider handles must be 8 by 20 pixels." }
                     require(element.normalText.size.width <= element.width - 4) { "Minecraft Slider label must fit its width." }

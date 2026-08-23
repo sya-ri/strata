@@ -219,7 +219,7 @@ internal class PaintPipeline(
      */
     private class RootOverlayPaintScopeImplementation(
         threadGuard: ThreadGuard,
-        private val viewport: IntSize,
+        viewport: IntSize,
         private val anchor: IntRect,
     ) : RootOverlayPaintScope {
         private val delegate = LocalPaintScope(threadGuard, viewport)

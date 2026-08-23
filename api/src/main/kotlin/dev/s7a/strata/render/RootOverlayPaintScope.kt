@@ -1,7 +1,6 @@
 package dev.s7a.strata.render
 
 import dev.s7a.strata.geometry.IntRect
-import dev.s7a.strata.node.RootOverlayPaintNode
 
 /**
  * Collects screen-coordinate commands for one root overlay.

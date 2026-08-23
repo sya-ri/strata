@@ -14,12 +14,15 @@ exclude:
   - name: FunctionName
     paths:
       - api/src/main/kotlin/dev/s7a/strata/component/ProfileComponents.kt
+      - api/src/main/kotlin/dev/s7a/strata/component/SelectionListComponents.kt
       - api/src/main/kotlin/dev/s7a/strata/component/UiComponents.kt
+      - api/src/main/kotlin/dev/s7a/strata/component/VirtualListComponents.kt
       - integration/minecraft-fabric-unobfuscated/src/gametest/kotlin/dev/s7a/strata/integration/minecraft/fabric/MinecraftProgressExample.kt
   # Gradle's settings model and the Fabric Client GameTest boundary expose experimental APIs required by their current public integrations.
   - name: UnstableApiUsage
     paths:
       - settings.gradle.kts
+      - integration/minecraft-fabric-1.21.9/build.gradle.kts
       - integration/minecraft-fabric-1.21.10/build.gradle.kts
       - integration/minecraft-fabric-1.21.11/build.gradle.kts
       - integration/minecraft-fabric-26.1/build.gradle.kts
@@ -153,8 +156,10 @@ exclude:
       - integration/minecraft-fabric-unobfuscated/src/gametest/kotlin/dev/s7a/strata/integration/minecraft/fabric/MinecraftButtonExample.kt
       - integration/minecraft-fabric-unobfuscated/src/gametest/kotlin/dev/s7a/strata/integration/minecraft/fabric/MinecraftIndustrialExample.kt
       - integration/minecraft-fabric-unobfuscated/src/gametest/kotlin/dev/s7a/strata/integration/minecraft/fabric/MinecraftProgressExample.kt
+      - integration/minecraft-fabric-unobfuscated/src/gametest/kotlin/dev/s7a/strata/integration/minecraft/fabric/MinecraftScrollShowcaseExample.kt
       - integration/minecraft-fabric-unobfuscated/src/gametest/kotlin/dev/s7a/strata/integration/minecraft/fabric/MinecraftTextExample.kt
       - integration/minecraft-fabric-1.21-legacy/src/gametest/kotlin/dev/s7a/strata/integration/minecraft/fabric/StrataMinecraftLegacyClientGameTest.kt
+      - integration/minecraft-fabric-1.21.9/src/gametest/kotlin/dev/s7a/strata/integration/minecraft/fabric/MinecraftTestResourceLocation.kt
       - integration/minecraft-fabric-1.21.10/src/gametest/kotlin/dev/s7a/strata/integration/minecraft/fabric/MinecraftTestResourceLocation.kt
       - integration/minecraft-fabric-1.21.11/src/gametest/kotlin/dev/s7a/strata/integration/minecraft/fabric/MinecraftTestResourceLocation.kt
       - integration/minecraft-fabric-unobfuscated/src/gametest/kotlin/dev/s7a/strata/integration/minecraft/fabric/StrataMinecraftClientGameTest.kt
