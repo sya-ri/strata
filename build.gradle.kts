@@ -36,6 +36,7 @@ dependencies {
     dokka(project(":runtime:headless"))
     dokka(project(":runtime:minecraft"))
     dokka(project(":runtime:minecraft-fabric-1.21.10"))
+    dokka(project(":runtime:minecraft-fabric-1.21.9"))
     dokka(project(":runtime:minecraft-fabric-1.21.11"))
     dokka(project(":runtime:minecraft-fabric-26.1"))
     dokka(project(":runtime:minecraft-fabric-26.2"))
@@ -59,6 +60,7 @@ val minecraftGameTestProjects =
         ":integration:minecraft-fabric-26.1",
         ":integration:minecraft-fabric-1.21.11",
         ":integration:minecraft-fabric-1.21.10",
+        ":integration:minecraft-fabric-1.21.9",
     )
 val minecraftAssetPreparationTasks = minecraftGameTestProjects.map { projectPath -> "$projectPath:downloadAssets" }
 val minecraftClientVerificationTasks =
@@ -69,6 +71,8 @@ val minecraftClientVerificationTasks =
         ":integration:minecraft-fabric-1.21.11:runProductionClientGameTest",
         ":integration:minecraft-fabric-1.21.10:runClientGameTest",
         ":integration:minecraft-fabric-1.21.10:runProductionClientGameTest",
+        ":integration:minecraft-fabric-1.21.9:runClientGameTest",
+        ":integration:minecraft-fabric-1.21.9:runProductionClientGameTest",
     )
 val minecraftRemapTasks =
     listOf(
@@ -76,6 +80,8 @@ val minecraftRemapTasks =
         ":integration:minecraft-fabric-1.21.11:remapJar",
         ":runtime:minecraft-fabric-1.21.10:remapJar",
         ":integration:minecraft-fabric-1.21.10:remapJar",
+        ":runtime:minecraft-fabric-1.21.9:remapJar",
+        ":integration:minecraft-fabric-1.21.9:remapJar",
     )
 
 allprojects {
@@ -140,6 +146,7 @@ subprojects {
         ":runtime:headless",
         ":runtime:minecraft",
         ":runtime:minecraft-fabric-1.21.10",
+        ":runtime:minecraft-fabric-1.21.9",
         ":runtime:minecraft-fabric-1.21.11",
         ":runtime:minecraft-fabric-26.1",
         ":runtime:minecraft-fabric-26.2",
@@ -154,6 +161,8 @@ subprojects {
         setOf(
             ":runtime:minecraft-fabric-1.21.10",
             ":integration:minecraft-fabric-1.21.10",
+            ":runtime:minecraft-fabric-1.21.9",
+            ":integration:minecraft-fabric-1.21.9",
             ":runtime:minecraft-fabric-1.21.11",
             ":integration:minecraft-fabric-1.21.11",
             ":runtime:minecraft-fabric-26.1",
@@ -166,6 +175,8 @@ subprojects {
             in setOf(
                 ":runtime:minecraft-fabric-1.21.10",
                 ":integration:minecraft-fabric-1.21.10",
+                ":runtime:minecraft-fabric-1.21.9",
+                ":integration:minecraft-fabric-1.21.9",
                 ":runtime:minecraft-fabric-1.21.11",
                 ":integration:minecraft-fabric-1.21.11",
             ) -> minecraft121JavaVersion
@@ -218,6 +229,7 @@ subprojects {
                 ":runtime:headless" to "strata-runtime-headless",
                 ":runtime:minecraft" to "strata-runtime-minecraft",
                 ":runtime:minecraft-fabric-1.21.10" to "strata-runtime-minecraft-fabric-1.21.10",
+                ":runtime:minecraft-fabric-1.21.9" to "strata-runtime-minecraft-fabric-1.21.9",
                 ":runtime:minecraft-fabric-1.21.11" to "strata-runtime-minecraft-fabric-1.21.11",
                 ":runtime:minecraft-fabric-26.1" to "strata-runtime-minecraft-fabric-26.1",
                 ":runtime:minecraft-fabric-26.2" to "strata-runtime-minecraft-fabric-26.2",
@@ -272,6 +284,12 @@ subprojects {
                     ":runtime:minecraft-fabric-1.21.10" ->
                         listOf(
                             "runtime/minecraft-fabric-1.21.10",
+                            "runtime/minecraft-fabric-1.21-legacy",
+                            "runtime/minecraft-fabric-shared",
+                        )
+                    ":runtime:minecraft-fabric-1.21.9" ->
+                        listOf(
+                            "runtime/minecraft-fabric-1.21.9",
                             "runtime/minecraft-fabric-1.21-legacy",
                             "runtime/minecraft-fabric-shared",
                         )

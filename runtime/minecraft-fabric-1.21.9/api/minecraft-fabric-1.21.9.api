@@ -1,0 +1,31 @@
+public final class dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftAssets {
+	public static final fun loadCurrentMinecraftPlayerSkin ()Ldev/s7a/strata/render/DrawImage;
+	public static final fun loadMinecraftUiImage (Ldev/s7a/strata/resource/ResourceId;)Ldev/s7a/strata/render/DrawImage;
+}
+
+public final class dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftProfiles {
+	public static final fun extractMinecraftUiProfile ()Ldev/s7a/strata/runtime/minecraft/MinecraftUiProfile;
+}
+
+public final class dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreen : net/minecraft/class_437, java/lang/AutoCloseable {
+	public fun close ()V
+	public fun method_16014 (DD)V
+	public fun method_16803 (Lnet/minecraft/class_11908;)Z
+	public fun method_25394 (Lnet/minecraft/class_332;IIF)V
+	public fun method_25400 (Lnet/minecraft/class_11905;)Z
+	public fun method_25401 (DDDD)Z
+	public fun method_25402 (Lnet/minecraft/class_11909;Z)Z
+	public fun method_25403 (Lnet/minecraft/class_11909;DD)Z
+	public fun method_25404 (Lnet/minecraft/class_11908;)Z
+	public fun method_25406 (Lnet/minecraft/class_11909;)Z
+	public fun method_25419 ()V
+	public fun method_25421 ()Z
+	public fun method_25432 ()V
+	public fun method_49589 ()V
+}
+
+public final class dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreens {
+	public static final fun createMinecraftScreen (Ldev/s7a/strata/screen/ScreenDefinition;Ldev/s7a/strata/runtime/minecraft/MinecraftUiProfile;Lnet/minecraft/class_437;)Ldev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreen;
+	public static synthetic fun createMinecraftScreen$default (Ldev/s7a/strata/screen/ScreenDefinition;Ldev/s7a/strata/runtime/minecraft/MinecraftUiProfile;Lnet/minecraft/class_437;ILjava/lang/Object;)Ldev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreen;
+}
+

@@ -16,6 +16,7 @@ minecraft262 = "26.2"
 minecraft261 = "26.1"
 minecraft12111 = "1.21.11"
 minecraft12110 = "1.21.10"
+minecraft1219 = "1.21.9"
 fabric-loader = "0.19.3"
 fabric-language-kotlin = "1.13.13+kotlin.2.4.10"
 fabric-loom = "1.17.19"
@@ -23,6 +24,7 @@ fabric-api262 = "0.158.0+26.2"
 fabric-api261 = "0.145.1+26.1"
 fabric-api12111 = "0.141.6+1.21.11"
 fabric-api12110 = "0.138.4+1.21.10"
+fabric-api1219 = "0.134.1+1.21.9"
 
 [libraries]
 detekt-api = { module = "dev.detekt:detekt-api", version.ref = "detekt" }
@@ -35,12 +37,14 @@ minecraft262 = { module = "com.mojang:minecraft", version.ref = "minecraft262" }
 minecraft261 = { module = "com.mojang:minecraft", version.ref = "minecraft261" }
 minecraft12111 = { module = "com.mojang:minecraft", version.ref = "minecraft12111" }
 minecraft12110 = { module = "com.mojang:minecraft", version.ref = "minecraft12110" }
+minecraft1219 = { module = "com.mojang:minecraft", version.ref = "minecraft1219" }
 fabric-loader = { module = "net.fabricmc:fabric-loader", version.ref = "fabric-loader" }
 fabric-language-kotlin = { module = "net.fabricmc:fabric-language-kotlin", version.ref = "fabric-language-kotlin" }
 fabric-api262 = { module = "net.fabricmc.fabric-api:fabric-api", version.ref = "fabric-api262" }
 fabric-api261 = { module = "net.fabricmc.fabric-api:fabric-api", version.ref = "fabric-api261" }
 fabric-api12111 = { module = "net.fabricmc.fabric-api:fabric-api", version.ref = "fabric-api12111" }
 fabric-api12110 = { module = "net.fabricmc.fabric-api:fabric-api", version.ref = "fabric-api12110" }
+fabric-api1219 = { module = "net.fabricmc.fabric-api:fabric-api", version.ref = "fabric-api1219" }
 
 [plugins]
 kotlin-jvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
