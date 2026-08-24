@@ -6,6 +6,8 @@ import dev.detekt.gradle.extensions.DetektExtension
 import org.gradle.api.JavaVersion
 import org.gradle.api.plugins.JavaPluginExtension
 import org.gradle.api.publish.tasks.GenerateModuleMetadata
+import org.gradle.api.services.BuildService
+import org.gradle.api.services.BuildServiceParameters
 import org.gradle.api.tasks.compile.JavaCompile
 import org.gradle.api.tasks.testing.Test
 import org.gradle.jvm.toolchain.JavaLanguageVersion
@@ -26,6 +28,7 @@ plugins {
     alias(libs.plugins.dokkaJavadocPlugin) apply false
     alias(libs.plugins.fabricLoom) apply false
     alias(libs.plugins.fabricLoomRemap) apply false
+    alias(libs.plugins.kover)
 }
 
 group = "dev.s7a.strata"
@@ -37,6 +40,9 @@ private data class MinecraftFabricTarget(
     val remapped: Boolean,
     val sourceLinkPaths: List<String>,
 ) {
+    /** Gradle-owned lock service used to limit unrelated tasks that share mutable external resources. */
+    abstract class ExclusiveTaskService : BuildService<BuildServiceParameters.None>
+
     val runtimeProjectPath: String = ":runtime:minecraft-fabric-$version"
     val integrationProjectPath: String = ":integration:minecraft-fabric-$version"
 }
@@ -235,6 +241,13 @@ private val minecraftFabricTargets =
                 ),
         ),
     )
+private val koverJvmProjectPaths = rootProject.file("gradle/kover-jvm-projects.txt").readLines().filter(String::isNotBlank)
+check(koverJvmProjectPaths.distinct().size == koverJvmProjectPaths.size) {
+    "gradle/kover-jvm-projects.txt must not contain duplicate project paths."
+}
+check(koverJvmProjectPaths.all { projectPath -> findProject(projectPath) != null }) {
+    "gradle/kover-jvm-projects.txt must contain only included Gradle project paths."
+}
 private val minecraftTargetByProjectPath =
     minecraftFabricTargets
         .flatMap { target -> listOf(target.runtimeProjectPath, target.integrationProjectPath).map { path -> path to target } }
@@ -308,10 +321,31 @@ extensions.configure<DokkaExtension> {
 }
 
 val detektRulesProject = project(":quality:detekt-rules")
-val minecraftGameTestProjects = minecraftFabricTargets.map(MinecraftFabricTarget::integrationProjectPath)
-val minecraftAssetPreparationTasks = minecraftGameTestProjects.map { projectPath -> "$projectPath:downloadAssets" }
-val minecraftClientVerificationTasks =
-    minecraftFabricTargets.flatMap { target ->
+private val minecraftClientTaskNames = setOf("runClientGameTest", "runProductionClientGameTest")
+private val ciMinecraftVersions =
+    providers
+        .gradleProperty("strata.minecraftVersions")
+        .map { value -> value.split(',').map(String::trim).filter(String::isNotEmpty) }
+        .getOrElse(emptyList())
+private val ciMinecraftTargets = minecraftFabricTargets.filter { target -> target.version in ciMinecraftVersions }
+private val requestedTaskNames = gradle.startParameter.taskNames
+private val normalizedRequestedTaskNames =
+    requestedTaskNames.map { taskName -> taskName.takeIf { it.startsWith(':') } ?: ":$taskName" }
+private val selectsEveryMinecraftClient =
+    requestedTaskNames.any { taskName -> taskName == "check" || taskName in minecraftClientTaskNames }
+private val selectedMinecraftExecutionTargets =
+    when {
+        ciMinecraftVersions.isNotEmpty() -> ciMinecraftTargets
+        selectsEveryMinecraftClient -> minecraftFabricTargets
+        else ->
+            minecraftFabricTargets.filter { target ->
+                normalizedRequestedTaskNames.any { taskName -> taskName.startsWith("${target.integrationProjectPath}:") }
+            }
+    }
+private val selectedMinecraftAssetTasks =
+    selectedMinecraftExecutionTargets.map { target -> "${target.integrationProjectPath}:downloadAssets" }
+private val selectedMinecraftClientTasks =
+    selectedMinecraftExecutionTargets.flatMap { target ->
         buildList {
             add("${target.integrationProjectPath}:runClientGameTest")
             if (target.remapped) {
@@ -319,15 +353,20 @@ val minecraftClientVerificationTasks =
             }
         }
     }
-val minecraftRemapTasks =
-    minecraftFabricTargets
-        .filter(MinecraftFabricTarget::remapped)
-        .flatMap { target ->
-            listOf(
-                "${target.runtimeProjectPath}:remapJar",
-                "${target.integrationProjectPath}:remapJar",
-            )
-        }
+private val minecraftClientExecutionService =
+    gradle.sharedServices.registerIfAbsent(
+        "minecraftClientExecution",
+        MinecraftFabricTarget.ExclusiveTaskService::class,
+    ) {
+        maxParallelUsages.set(1)
+    }
+private val minecraftRemapExecutionService =
+    gradle.sharedServices.registerIfAbsent(
+        "minecraftRemapExecution",
+        MinecraftFabricTarget.ExclusiveTaskService::class,
+    ) {
+        maxParallelUsages.set(1)
+    }
 
 allprojects {
     group = rootProject.group
@@ -343,30 +382,30 @@ subprojects {
     apply(plugin = "java-library")
     apply(plugin = "dev.detekt")
     apply(plugin = "org.jmailen.kotlinter")
-
-    val minecraftGameTestProjectIndex = minecraftGameTestProjects.indexOf(path)
-    if (minecraftGameTestProjectIndex != -1) {
-        tasks
-            .matching { task -> task.name in setOf("runClientGameTest", "runProductionClientGameTest") }
-            .configureEach {
-                mustRunAfter(minecraftAssetPreparationTasks)
-                val verificationTaskIndex = minecraftClientVerificationTasks.indexOf(path)
-                if (verificationTaskIndex != -1) {
-                    mustRunAfter(minecraftClientVerificationTasks.take(verificationTaskIndex))
-                }
-            }
-        tasks.matching { task -> task.name == "downloadAssets" }.configureEach {
-            mustRunAfter(
-                minecraftAssetPreparationTasks.take(minecraftGameTestProjectIndex),
-            )
-        }
+    if (path in koverJvmProjectPaths) {
+        apply(plugin = "org.jetbrains.kotlinx.kover")
     }
 
-    tasks.matching { task -> task.name == "remapJar" }.configureEach {
-        val remapTaskIndex = minecraftRemapTasks.indexOf(path)
-        if (remapTaskIndex != -1) {
-            mustRunAfter(minecraftRemapTasks.take(remapTaskIndex))
+    tasks.matching { task -> task.name == "downloadAssets" }.configureEach {
+        usesService(minecraftClientExecutionService)
+        val assetTaskIndex = selectedMinecraftAssetTasks.indexOf(path)
+        if (assetTaskIndex != -1) {
+            mustRunAfter(selectedMinecraftAssetTasks.take(assetTaskIndex))
         }
+    }
+    tasks
+        .matching { task -> task.name in minecraftClientTaskNames }
+        .configureEach {
+            usesService(minecraftClientExecutionService)
+            mustRunAfter(selectedMinecraftAssetTasks)
+            val clientTaskIndex = selectedMinecraftClientTasks.indexOf(path)
+            if (clientTaskIndex != -1) {
+                mustRunAfter(selectedMinecraftClientTasks.take(clientTaskIndex))
+            }
+        }
+
+    tasks.matching { task -> task.name == "remapJar" }.configureEach {
+        usesService(minecraftRemapExecutionService)
     }
 
     if (this != detektRulesProject) {
@@ -504,16 +543,48 @@ subprojects {
     }
 }
 
+private val koverTaskNames = setOf("koverJvmTests", "koverHtmlReport", "koverXmlReport")
+if (requestedTaskNames.any { taskName -> taskName.substringAfterLast(':') in koverTaskNames }) {
+    koverJvmProjectPaths.forEach(::evaluationDependsOn)
+    dependencies {
+        koverJvmProjectPaths.forEach { projectPath -> kover(project(projectPath)) }
+    }
+}
+
 val koverJvmTests = tasks.register("koverJvmTests") {
     group = "verification"
     description = "Runs ordinary JVM test tasks selected for Kover aggregation."
-    dependsOn(
-        subprojects.flatMap { project ->
-            project.tasks.withType<Test>().matching { task -> task.name == "test" }
-        },
-    )
+    dependsOn(koverJvmProjectPaths.map { projectPath -> "$projectPath:test" })
 }
 
 tasks.matching { task -> task.name in setOf("koverHtmlReport", "koverXmlReport") }.configureEach {
     dependsOn(koverJvmTests)
+}
+
+ciMinecraftTargets.forEach { target ->
+    evaluationDependsOn(target.runtimeProjectPath)
+    evaluationDependsOn(target.integrationProjectPath)
+}
+val ciMinecraftCheck = tasks.register("ciMinecraftCheck") {
+    group = "verification"
+    description = "Runs runtime and loaded-client checks for the exact Minecraft versions selected by strata.minecraftVersions."
+    inputs.property("minecraftVersions", ciMinecraftVersions)
+    dependsOn(
+        ciMinecraftTargets.flatMap { target ->
+            listOf("${target.runtimeProjectPath}:check", "${target.integrationProjectPath}:check")
+        },
+    )
+    doFirst {
+        check(ciMinecraftVersions.isNotEmpty()) {
+            "strata.minecraftVersions must select at least one exact Minecraft version."
+        }
+        check(ciMinecraftVersions.distinct().size == ciMinecraftVersions.size) {
+            "strata.minecraftVersions must not contain duplicate versions: $ciMinecraftVersions"
+        }
+        val supportedVersions = minecraftFabricTargets.map(MinecraftFabricTarget::version).toSet()
+        val unsupportedVersions = ciMinecraftVersions.filterNot(supportedVersions::contains)
+        check(unsupportedVersions.isEmpty()) {
+            "strata.minecraftVersions contains unsupported versions: $unsupportedVersions"
+        }
+    }
 }

@@ -18,10 +18,12 @@ exclude:
       - api/src/main/kotlin/dev/s7a/strata/component/UiComponents.kt
       - api/src/main/kotlin/dev/s7a/strata/component/VirtualListComponents.kt
       - integration/minecraft-fabric-unobfuscated/src/gametest/kotlin/dev/s7a/strata/integration/minecraft/fabric/MinecraftProgressExample.kt
-  # Gradle's settings model and the Fabric Client GameTest boundary expose experimental APIs required by their current public integrations.
+  # Gradle's settings model and Fabric's client-test and production-run boundaries expose experimental APIs required by their current public integrations.
   - name: UnstableApiUsage
     paths:
       - settings.gradle.kts
+      - integration/minecraft-fabric-1.20.5/build.gradle.kts
+      - integration/minecraft-fabric-1.20.6/build.gradle.kts
       - integration/minecraft-fabric-1.21/build.gradle.kts
       - integration/minecraft-fabric-1.21.1/build.gradle.kts
       - integration/minecraft-fabric-1.21.2/build.gradle.kts

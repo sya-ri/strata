@@ -21,25 +21,33 @@ That matrix derives aggregate documentation dependencies, loaded-client sequenci
 Configuration on demand is enabled so a targeted API, core, headless, documentation-helper, or benchmark task does not configure all 32 Loom projects.
 Each targeted integration project explicitly evaluates its paired runtime project before reading that runtime's compiled source-set output, so an isolated integration task retains the exact Loom-provided Minecraft classpath under configuration on demand.
 Full `check`, publication, Qodana, and loaded-game commands still select and configure every required target through their real project and task dependencies.
-Minecraft client verification serializes every shared Loom asset preparation task and client launch selected in the task graph so parallel Gradle execution cannot race on Loom's global asset cache or the native client environment.
-The official-mapping `remapJar` tasks are also serialized across the remapped targets because each concurrent remapper retains a complete mapped game graph and can exhaust a hosted CI runner's heap.
+Minecraft client verification associates every selected Loom asset preparation task and client launch with one Gradle shared build service whose single usage permit prevents races on Loom's mutable asset cache and the native client environment without coupling a targeted task to every other version project.
+It also orders the selected asset tasks before the selected clients so Gradle can validate their intentionally shared output directory while configuration on demand leaves unselected versions untouched.
+The official-mapping `remapJar` tasks use a second single-permit build service because each concurrent remapper retains a complete mapped game graph and can exhaust a hosted CI runner's heap.
+The JVM workflow runs common checks, coverage, two 1.21 shards, one 1.20 shard, and one 26.x-plus-showcase shard on separate hosted runners with fail-fast disabled, while each Minecraft shard preserves the in-build client and remap limits above.
+Gradle's enhanced user-home cache is writable only from successful `master` runs of common checks, the four Minecraft-family shards, and Documentation because each produces distinct reusable outputs; pull requests, coverage, and Qodana restore it read-only to avoid redundant or branch-scoped entries.
+Each Minecraft shard separately restores its project-local Loom repository with an OS-, shard-, and build-model-derived immutable key, falls back only to an older cache from the same shard, and saves a replacement only after a successful `master` cache miss.
+Superseded JVM and Qodana workflow runs on the same ref are cancelled so rapid pushes do not keep obsolete clients or analysis running.
+Documentation deployments share one Pages concurrency group across refs and cancel the older run because the deployment target itself is global.
 
 Every Kotlin compilation uses explicit API mode and treats warnings as errors.
 Detekt and Kotlinter are applied to all project modules.
 Kover exposes HTML and XML reports without enforcing a coverage threshold.
-Run aggregate coverage with `./gradlew koverHtmlReport koverXmlReport -Pkover`; each report task first runs the ordinary JVM test suite selected by `koverJvmTests`.
+Run aggregate coverage with `./gradlew :koverHtmlReport :koverXmlReport -Pkover`; each fully qualified root report task first runs the ordinary JVM test suite selected by `koverJvmTests` without discovering same-named tasks in unrelated projects.
+`gradle/kover-jvm-projects.txt` is the single source of truth for that aggregation boundary: it includes modules with ordinary JVM tests and excludes testless remapped adapters, loaded-client-only integrations, and benchmarks so coverage does not configure or compile unrelated Loom projects.
 
 Each publishable JVM module has a Maven publication with source and Javadoc artifacts, MIT license metadata, SCM metadata, and an optional in-memory signing setup.
 Provide `mavenCentralUsername`, `mavenCentralPassword`, `signingInMemoryKey`, optional `signingInMemoryKeyId`, and optional `signingInMemoryKeyPassword` Gradle properties when publishing to Maven Central.
 Environment variables use the `ORG_GRADLE_PROJECT_` prefix followed by the same property name.
 
 The root `dokkaGenerate` task aggregates every published module into `build/dokka/html`.
-The Documentation workflow builds that exact directory on pushes to `master` and deploys it through GitHub Pages' artifact and OIDC deployment path.
+The Documentation workflow invokes the fully qualified root `:dokkaGenerate` task on pushes to `master`, avoiding redundant per-subproject generation before deploying that exact directory through GitHub Pages' artifact and OIDC deployment path.
 Repository settings must select GitHub Actions as the Pages source; the workflow requires only read access to contents plus `pages: write` and `id-token: write`.
 
 Qodana runs its recommended JVM inspection profile in CI without a baseline.
 The workflow makes every required Java toolchain available inside the Qodana container so Gradle's IDE importer can resolve the Java 17, Java 21, and Java 25 source-set models and their dependencies.
-It assembles Loom dependencies before inspection, then releases only the root aggregate build outputs while retaining subproject Loom outputs and dependency caches so Qodana can import every linked version module and has enough hosted-runner disk for its own project indexes and downloaded sources.
+It restores the Gradle user home read-only, compiles every `classes` and `gametestClasses` boundary before inspection without assembling remapped distribution jars, then releases only the root aggregate build outputs while retaining subproject Loom outputs and dependencies.
+Qodana runs in native mode so its Gradle importer reuses that restored user home directly, while Qodana's much larger IDE analysis cache remains disabled and is removed after the run to preserve hosted-runner disk space.
 Static-analysis rules are enabled when they produce actionable improvements; rules that systematically make code less clear are disabled with a durable rationale in the checked-in configuration.
 
 The nonpublished `integration:minecraft-fabric-26.2` and `integration:minecraft-fabric-26.1` modules compile the same neutral loaded-client suite against their exact game and Fabric API dependencies.
