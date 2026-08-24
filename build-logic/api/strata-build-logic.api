@@ -1,0 +1,21 @@
+public abstract class dev/s7a/strata/gradle/release/StrataReleaseExtension {
+	public fun <init> (Lorg/gradle/api/model/ObjectFactory;)V
+	public final fun getMavenCoordinatesFile ()Lorg/gradle/api/file/RegularFileProperty;
+	public final fun getMavenLocalRepository ()Lorg/gradle/api/file/DirectoryProperty;
+	public final fun getModrinthApiBaseUrl ()Lorg/gradle/api/provider/Property;
+	public final fun getModrinthProjectBodyFile ()Lorg/gradle/api/file/RegularFileProperty;
+	public final fun getModrinthProjectId ()Lorg/gradle/api/provider/Property;
+	public final fun getModrinthProjectMetadataFile ()Lorg/gradle/api/file/RegularFileProperty;
+	public final fun getOutputDirectory ()Lorg/gradle/api/file/DirectoryProperty;
+	public final fun getProjectAssetFiles ()Lorg/gradle/api/file/ConfigurableFileCollection;
+	public final fun getReleaseNotesFile ()Lorg/gradle/api/file/RegularFileProperty;
+	public final fun getReleaseVersion ()Lorg/gradle/api/provider/Property;
+	public final fun target (Ljava/lang/String;Ljava/lang/String;Lorg/gradle/api/provider/Provider;Ljava/lang/String;)V
+}
+
+public final class dev/s7a/strata/gradle/release/StrataReleasePlugin : org/gradle/api/Plugin {
+	public fun <init> ()V
+	public synthetic fun apply (Ljava/lang/Object;)V
+	public fun apply (Lorg/gradle/api/Project;)V
+}
+

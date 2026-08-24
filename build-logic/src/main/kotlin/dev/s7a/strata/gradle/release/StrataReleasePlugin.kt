@@ -10,6 +10,8 @@ import org.gradle.api.Project
  * Minecraft projects are configured only when target providers or explicit verification dependencies are selected by a release task.
  */
 public class StrataReleasePlugin : Plugin<Project> {
+    // Task registrations remain together so the protected workflow graph can be audited as one unit.
+    @Suppress("LongMethod")
     override fun apply(project: Project) {
         val extension = project.extensions.create("strataRelease", StrataReleaseExtension::class.java)
         extension.releaseVersion.convention(project.provider { project.version.toString() })
@@ -37,6 +39,7 @@ public class StrataReleasePlugin : Plugin<Project> {
                 signatureDirectory.set(project.layout.buildDirectory.dir("release/maven-central/signatures"))
                 outputDirectory.set(project.layout.buildDirectory.dir("release/github"))
             }
+
         fun registerCentralTask(
             name: String,
             description: String,

@@ -161,8 +161,7 @@ internal class MavenCentralReleaseVerifierTest {
         return Fixture(repository, coordinates)
     }
 
-    private fun server(fixture: Fixture): MockCentralRepository =
-        MockCentralRepository(fixture).also { server -> servers += server }
+    private fun server(fixture: Fixture): MockCentralRepository = MockCentralRepository(fixture).also { server -> servers += server }
 
     private data class Fixture(
         val repository: Path,
@@ -188,7 +187,12 @@ internal class MavenCentralReleaseVerifierTest {
                 paths
                     .filter(Files::isRegularFile)
                     .toList()
-                    .associate { path -> fixture.repository.relativize(path).toString().replace('\\', '/') to Files.readAllBytes(path) }
+                    .associate { path ->
+                        fixture.repository
+                            .relativize(path)
+                            .toString()
+                            .replace('\\', '/') to Files.readAllBytes(path)
+                    }
             }
 
         var mode: Mode = Mode.EXACT
@@ -207,8 +211,7 @@ internal class MavenCentralReleaseVerifierTest {
             server.start()
         }
 
-        fun remoteBytes(relativePath: String): ByteArray =
-            remoteFiles[relativePath]?.copyOf() ?: error("No remote fixture exists for $relativePath")
+        fun remoteBytes(relativePath: String): ByteArray = remoteFiles[relativePath]?.copyOf() ?: error("No remote fixture exists for $relativePath")
 
         private fun serve(exchange: HttpExchange) {
             requestCount += 1
@@ -326,7 +329,6 @@ internal class MavenCentralReleaseVerifierTest {
                 "26.2",
             )
 
-        private fun ByteArray.hash(algorithm: String): String =
-            MessageDigest.getInstance(algorithm).digest(this).joinToString("") { byte -> "%02x".format(byte) }
+        private fun ByteArray.hash(algorithm: String): String = MessageDigest.getInstance(algorithm).digest(this).joinToString("") { byte -> "%02x".format(byte) }
     }
 }

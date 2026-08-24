@@ -7,9 +7,6 @@ import dev.s7a.strata.spi.ScreenPresenterRegistration
 import dev.s7a.strata.spi.ScreenPresenters
 import net.fabricmc.api.ClientModInitializer
 import net.minecraft.client.Minecraft
-import java.util.function.BooleanSupplier
-import java.util.function.Consumer
-import java.util.function.Supplier
 
 /**
  * Fabric client entrypoint that installs the process-wide Strata screen presenter.
@@ -17,6 +14,7 @@ import java.util.function.Supplier
  * Fabric owns this entrypoint instance for the client runtime lifetime.
  * Initialization is client-thread confined by Fabric and rejects duplicate invocation without replacing the active presenter.
  */
+@Suppress("unused") // Fabric constructs this entrypoint by the class name declared in each version's fabric.mod.json.
 @OptIn(InternalStrataRuntimeApi::class)
 public class StrataFabricClient : ClientModInitializer {
     private var registration: ScreenPresenterRegistration? = null
@@ -35,13 +33,13 @@ public class StrataFabricClient : ClientModInitializer {
         override fun present(definition: ScreenDefinition) {
             val minecraft = Minecraft.getInstance()
             FabricScreenPresentationTransaction.present(
-                BooleanSupplier(minecraft::isSameThread),
-                Supplier {
+                minecraft::isSameThread,
+                {
                     val parent = FabricMinecraftScreenAccess.currentScreen(minecraft)
                     val profile = extractMinecraftUiProfile()
                     createMinecraftScreen(definition, profile, parent)
                 },
-                Consumer { screen -> FabricMinecraftScreenAccess.setScreen(minecraft, screen) },
+                { screen -> FabricMinecraftScreenAccess.setScreen(minecraft, screen) },
             )
         }
     }

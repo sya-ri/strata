@@ -61,7 +61,7 @@ internal object StrataSkillValidator {
             require(entrypoint.contains(relative.removePrefix("references/"))) { "Strata skill entrypoint does not route to $relative." }
         }
         val metadata = Files.readString(skillRoot.resolve("agents/openai.yaml"), StandardCharsets.UTF_8)
-        require(metadata.contains("default_prompt: \"Use \$strata")) { "Strata skill default prompt must explicitly invoke \$strata." }
+        require(metadata.contains($$"""default_prompt: "Use $strata""")) { $$"Strata skill default prompt must explicitly invoke $strata." }
         require(metadata.contains("allow_implicit_invocation: true")) { "Strata skill must retain implicit invocation." }
         val readme = Files.readString(projectRoot.resolve("README.md"), StandardCharsets.UTF_8)
         require(readme.contains("gh skill preview sya-ri/strata skills/strata")) { "README is missing the gh skill preview command." }

@@ -26,97 +26,115 @@ import javax.inject.Inject
  * Credentials are internal inputs, are passed directly to the short-lived coordinator, and never appear in outputs.
  */
 @DisableCachingByDefault(because = "The task verifies live authenticated Central Publisher Portal state.")
-internal abstract class MavenCentralPortalTask @Inject constructor(
-    private val fileSystemOperations: FileSystemOperations,
-) : DefaultTask() {
-    @get:InputFile
-    @get:PathSensitive(PathSensitivity.NONE)
-    abstract val coordinatesFile: RegularFileProperty
+internal abstract class MavenCentralPortalTask
+    @Inject
+    constructor(
+        private val fileSystemOperations: FileSystemOperations,
+    ) : DefaultTask() {
+        @get:InputFile
+        @get:PathSensitive(PathSensitivity.NONE)
+        abstract val coordinatesFile: RegularFileProperty
 
-    @get:Internal
-    abstract val localRepository: DirectoryProperty
+        @get:Internal
+        abstract val localRepository: DirectoryProperty
 
-    @get:Input
-    abstract val portalBaseUrl: Property<String>
+        @get:Input
+        abstract val portalBaseUrl: Property<String>
 
-    @get:Internal
-    abstract val username: Property<String>
+        @get:Internal
+        abstract val username: Property<String>
 
-    @get:Internal
-    abstract val password: Property<String>
+        @get:Internal
+        abstract val password: Property<String>
 
-    @get:Input
-    abstract val operation: Property<Operation>
+        @get:Input
+        abstract val operation: Property<Operation>
 
-    @get:OutputFile
-    abstract val receiptFile: RegularFileProperty
+        @get:OutputFile
+        abstract val receiptFile: RegularFileProperty
 
-    @get:OutputDirectory
-    abstract val evidenceDirectory: DirectoryProperty
+        @get:OutputDirectory
+        abstract val evidenceDirectory: DirectoryProperty
 
-    /**
-     * Reads live Portal state, stages the exact signed deployment content, and replaces the receipt only on success.
-     *
-     * The action is thread-confined to its Gradle worker, reads credentials only at execution, sends them only to the pinned official Portal origin, and writes only [receiptFile] and [evidenceDirectory].
-     * Missing credentials, response-shape drift, duplicate or incomplete deployments, byte or checksum differences, and non-terminal lifecycle exhaustion fail without a receipt.
-     */
-    @TaskAction
-    fun reconcile() {
-        val receipt = receiptFile.get().asFile
-        Files.deleteIfExists(receipt.toPath())
-        val evidence = evidenceDirectory.get().asFile
-        fileSystemOperations.delete { delete(evidence) }
-        val usernameValue = username.orNull?.takeIf(String::isNotBlank)
-            ?: error("Maven Central Portal username is required; no authenticated request was attempted.")
-        val passwordValue = password.orNull?.takeIf(String::isNotBlank)
-            ?: error("Maven Central Portal password is required; no authenticated request was attempted.")
-        val coordinator =
-            MavenCentralPortalCoordinator(
-                portalBaseUri = URI(validatePortalBaseUrl(portalBaseUrl.get())),
-                username = usernameValue,
-                password = passwordValue,
-                localRepository = localRepository.get().asFile.toPath(),
-            )
-        val result =
-            when (operation.get()) {
-                Operation.PREFLIGHT -> coordinator.preflight(coordinatesFile.get().asFile.readLines(), evidence.toPath())
-                Operation.VERIFY -> coordinator.verifyUntilPublished(coordinatesFile.get().asFile.readLines(), evidence.toPath())
-            }
-        receipt.parentFile.mkdirs()
-        receipt.writeText(
-            JsonOutput.prettyPrint(
-                JsonOutput.toJson(
-                    linkedMapOf(
-                        "operation" to operation.get().wireValue,
-                        "state" to result.state.wireValue,
-                        "deploymentId" to result.deploymentId,
-                        "deploymentState" to result.deploymentState?.wireValue,
-                        "verifiedContentFileCount" to result.verifiedContentFileCount,
-                        "verifiedChecksumCount" to result.verifiedChecksumCount,
+        /**
+         * Reads live Portal state, stages the exact signed deployment content, and replaces the receipt only on success.
+         *
+         * The action is thread-confined to its Gradle worker, reads credentials only at execution, sends them only to the pinned official Portal origin, and writes only [receiptFile] and [evidenceDirectory].
+         * Missing credentials, response-shape drift, duplicate or incomplete deployments, byte or checksum differences, and non-terminal lifecycle exhaustion fail without a receipt.
+         */
+        @TaskAction
+        fun reconcile() {
+            val receipt = receiptFile.get().asFile
+            Files.deleteIfExists(receipt.toPath())
+            val evidence = evidenceDirectory.get().asFile
+            fileSystemOperations.delete { delete(evidence) }
+            val usernameValue =
+                username.orNull?.takeIf(String::isNotBlank)
+                    ?: error("Maven Central Portal username is required; no authenticated request was attempted.")
+            val passwordValue =
+                password.orNull?.takeIf(String::isNotBlank)
+                    ?: error("Maven Central Portal password is required; no authenticated request was attempted.")
+            val coordinator =
+                MavenCentralPortalCoordinator(
+                    portalBaseUri = URI(validatePortalBaseUrl(portalBaseUrl.get())),
+                    username = usernameValue,
+                    password = passwordValue,
+                    localRepository = localRepository.get().asFile.toPath(),
+                )
+            val result =
+                when (operation.get()) {
+                    Operation.PREFLIGHT -> coordinator.preflight(coordinatesFile.get().asFile.readLines(), evidence.toPath())
+                    Operation.VERIFY -> coordinator.verifyUntilPublished(coordinatesFile.get().asFile.readLines(), evidence.toPath())
+                }
+            receipt.parentFile.mkdirs()
+            receipt.writeText(
+                JsonOutput.prettyPrint(
+                    JsonOutput.toJson(
+                        linkedMapOf(
+                            "operation" to operation.get().wireValue,
+                            "state" to result.state.wireValue,
+                            "deploymentId" to result.deploymentId,
+                            "deploymentState" to result.deploymentState?.wireValue,
+                            "verifiedContentFileCount" to result.verifiedContentFileCount,
+                            "verifiedChecksumCount" to result.verifiedChecksumCount,
+                        ),
                     ),
-                ),
-            ) + "\n",
-        )
-    }
+                ) + "\n",
+            )
+        }
 
-    /** Authenticated Portal phases used by the protected release workflow. */
-    internal enum class Operation(
-        val wireValue: String,
-    ) {
-        PREFLIGHT("preflight"),
-        VERIFY("verify"),
-    }
+        /**
+         * Authenticated Portal phases used by the protected release workflow.
+         */
+        internal enum class Operation(
+            val wireValue: String,
+        ) {
+            /**
+             * Verifies that no conflicting deployment exists before publication.
+             */
+            PREFLIGHT("preflight"),
 
-    companion object {
-        private const val OFFICIAL_PORTAL_BASE_URL = "https://central.sonatype.com/"
+            /**
+             * Verifies the exact deployment through its terminal published state.
+             */
+            VERIFY("verify"),
+        }
 
-        /** Validates the fixed official Portal origin used for authenticated release reconciliation. */
-        internal fun validatePortalBaseUrl(value: String): String {
-            val normalized = if (value.endsWith('/')) value else "$value/"
-            check(normalized == OFFICIAL_PORTAL_BASE_URL) {
-                "Maven Central Portal tasks require the exact endpoint $OFFICIAL_PORTAL_BASE_URL"
+        /**
+         * Owns validation for the authenticated Central Publisher Portal origin.
+         */
+        companion object {
+            private const val OFFICIAL_PORTAL_BASE_URL = "https://central.sonatype.com/"
+
+            /**
+             * Validates the fixed official Portal origin used for authenticated release reconciliation.
+             */
+            internal fun validatePortalBaseUrl(value: String): String {
+                val normalized = if (value.endsWith('/')) value else "$value/"
+                check(normalized == OFFICIAL_PORTAL_BASE_URL) {
+                    "Maven Central Portal tasks require the exact endpoint $OFFICIAL_PORTAL_BASE_URL"
+                }
+                return normalized
             }
-            return normalized
         }
     }
-}

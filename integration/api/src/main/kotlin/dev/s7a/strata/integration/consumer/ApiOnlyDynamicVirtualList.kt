@@ -19,6 +19,7 @@ import dev.s7a.strata.screen.ScreenDefinition
  * @param state caller-owned navigation and refresh state.
  * @return one-shot platform-neutral screen definition.
  */
+@Suppress("unused") // This externally callable fixture proves dynamic-list authoring against the API-only classpath.
 public fun createApiOnlyDynamicVirtualListDefinition(
     items: MutableList<Int>,
     state: VirtualListState<Int>,

@@ -49,8 +49,9 @@ internal abstract class ModrinthReleaseTask : DefaultTask() {
     fun reconcile() {
         val output = receiptFile.get().asFile
         Files.deleteIfExists(output.toPath())
-        val secret = token.orNull?.takeIf(String::isNotBlank)
-            ?: error("MODRINTH_TOKEN is required for ${name}; no remote mutation was attempted.")
+        val secret =
+            token.orNull?.takeIf(String::isNotBlank)
+                ?: error("MODRINTH_TOKEN is required for $name; no remote mutation was attempted.")
         val manifestPath = manifestFile.get().asFile
         val manifest = ModrinthManifest.read(manifestPath)
         val authenticatedApiBaseUrl = validateAuthenticatedApiBaseUrl(apiBaseUrl.get())
@@ -84,27 +85,46 @@ internal abstract class ModrinthReleaseTask : DefaultTask() {
         )
     }
 
-    /** Supported monotonic reconciliation phases. */
+    /**
+     * Supported monotonic reconciliation phases.
+     */
     internal enum class Operation {
+        /**
+         * Read-only release preflight.
+         */
         PREFLIGHT,
+
+        /**
+         * Idempotent missing-version staging.
+         */
         STAGE,
+
+        /**
+         * Monotonic project submission.
+         */
         SUBMIT,
+
+        /**
+         * Read-only approved-release verification.
+         */
         VERIFY,
     }
 
+    /**
+     * Owns authenticated endpoint validation shared with functional tests.
+     */
     companion object {
-        /** Validates the only authenticated Modrinth endpoint to which a release PAT may be sent. */
+        private val AUTHENTICATED_API_BASE_URI = URI("https://api.modrinth.com/v2")
+
+        /**
+         * Validates the only authenticated Modrinth endpoint to which a release PAT may be sent.
+         */
         internal fun validateAuthenticatedApiBaseUrl(value: String): String {
             val normalized = value.removeSuffix("/")
             val uri = URI(normalized)
             check(
-                uri.scheme == "https" &&
-                    uri.host == "api.modrinth.com" &&
-                    uri.port == -1 &&
-                    uri.userInfo == null &&
-                    uri.path == "/v2" &&
-                    uri.query == null &&
-                    uri.fragment == null,
+                uri == AUTHENTICATED_API_BASE_URI &&
+                    normalized == AUTHENTICATED_API_BASE_URI.toASCIIString(),
             ) {
                 "Authenticated Modrinth tasks require the exact endpoint https://api.modrinth.com/v2."
             }

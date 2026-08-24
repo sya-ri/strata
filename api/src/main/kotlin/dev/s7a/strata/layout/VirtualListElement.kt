@@ -340,7 +340,7 @@ internal class VirtualListElement(
             resolver: (Any, Int) -> Int? = indexOfKey,
         ): Int? {
             val resolved = resolver(target, sampledCount) ?: return null
-            require(0 <= resolved && resolved < sampledCount) {
+            require(resolved in 0 until sampledCount) {
                 "VirtualList key resolver returned index $resolved outside sampled count $sampledCount."
             }
             return resolved

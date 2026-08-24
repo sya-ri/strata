@@ -43,7 +43,7 @@ internal object StateBindingBinaryInventory {
         return loader.use {
             StateBindingDocumentationCatalog.entries.associate { entry ->
                 val baseName = "${entry.packageName}.${entry.typeName}"
-                val groupNames = classNames.filter { className -> className == baseName || className.startsWith("$baseName\$") }
+                val groupNames = classNames.filter { className -> className == baseName || className.startsWith(baseName + '$') }
                 require(groupNames.contains(baseName)) { "Compiled state or binding type is missing: $baseName" }
                 val fingerprints =
                     groupNames

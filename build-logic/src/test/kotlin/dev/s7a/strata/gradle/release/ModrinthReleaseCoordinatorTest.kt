@@ -3,10 +3,14 @@ package dev.s7a.strata.gradle.release
 import com.sun.net.httpserver.HttpExchange
 import com.sun.net.httpserver.HttpServer
 import dev.s7a.strata.gradle.release.ModrinthApiClient.AiUse
+import dev.s7a.strata.gradle.release.ModrinthApiClient.DisclosureType
 import dev.s7a.strata.gradle.release.ModrinthApiClient.ProjectStatus
+import dev.s7a.strata.gradle.release.ModrinthApiClient.RemoteDisclosure
 import dev.s7a.strata.gradle.release.ModrinthApiClient.SideSupport
+import dev.s7a.strata.gradle.release.ModrinthApiClient.VersionEnvironment
 import dev.s7a.strata.gradle.release.ModrinthApiClient.WriteRejectedException
 import groovy.json.JsonOutput
+import groovy.json.JsonSlurper
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
@@ -14,6 +18,8 @@ import org.junit.jupiter.api.Assertions.assertThrows
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.io.TempDir
+import org.junit.jupiter.params.ParameterizedTest
+import org.junit.jupiter.params.provider.ValueSource
 import java.net.InetSocketAddress
 import java.nio.charset.StandardCharsets
 import java.nio.file.Path
@@ -57,6 +63,238 @@ internal class ModrinthReleaseCoordinatorTest {
         assertEquals(20, coordinator.verify().listed.size)
         assertTrue(server.downloadRequests.containsAll(fixture.manifest.artifacts.map { artifact -> artifact.fileName }))
         assertFalse(server.cdnReceivedAuthorization)
+    }
+
+    @Test
+    fun `typed draft bootstrap sentinels keep preflight read only and stage patches idempotently`() {
+        val fixture = fixture()
+        val server = server(fixture).also(MockModrinthServer::makeBootstrapStateEmpty)
+        val coordinator = fixture.coordinator(server)
+
+        val preflight = coordinator.preflight()
+
+        assertEquals(20, preflight.absent.size)
+        assertEquals(0, server.createRequests)
+        assertEquals(0, server.projectBootstrapRequests)
+        assertEquals(0, server.disclosureBootstrapRequests)
+        assertTrue(server.writeEvents.isEmpty())
+
+        val staged = coordinator.stage()
+
+        assertEquals(20, staged.listed.size)
+        assertEquals(20, server.createRequests)
+        assertEquals(1, server.projectBootstrapRequests)
+        assertEquals(1, server.disclosureBootstrapRequests)
+        assertEquals(
+            List(20) { WriteEvent.CREATE_VERSION } +
+                listOf(WriteEvent.PATCH_PROJECT, WriteEvent.PATCH_DISCLOSURES),
+            server.writeEvents,
+        )
+        assertTrue(server.projectBootstrapIsExact)
+        assertTrue(server.disclosureBootstrapIsExact)
+
+        assertEquals(20, coordinator.stage().listed.size)
+        assertEquals(20, server.createRequests)
+        assertEquals(1, server.projectBootstrapRequests)
+        assertEquals(1, server.disclosureBootstrapRequests)
+    }
+
+    @Test
+    fun `draft bootstrap resumes after every version was created before project patch`() {
+        val fixture = fixture()
+        val server =
+            server(fixture).also { mock ->
+                mock.makeBootstrapStateEmpty()
+                mock.seedVersions(20)
+            }
+
+        val receipt = fixture.coordinator(server).stage()
+
+        assertEquals(20, receipt.listed.size)
+        assertEquals(0, server.createRequests)
+        assertEquals(1, server.projectBootstrapRequests)
+        assertEquals(1, server.disclosureBootstrapRequests)
+        assertEquals(listOf(WriteEvent.PATCH_PROJECT, WriteEvent.PATCH_DISCLOSURES), server.writeEvents)
+        assertTrue(server.projectBootstrapIsExact)
+        assertTrue(server.disclosureBootstrapIsExact)
+    }
+
+    @Test
+    fun `deleted disclosure is restored instead of satisfying the active contract`() {
+        val fixture = fixture()
+        val server =
+            server(fixture).also { mock ->
+                mock.makeDisclosureBootstrapStateDeleted()
+                mock.seedVersions(20)
+            }
+
+        val receipt = fixture.coordinator(server).stage()
+
+        assertEquals(20, receipt.listed.size)
+        assertEquals(0, server.createRequests)
+        assertEquals(0, server.projectBootstrapRequests)
+        assertEquals(1, server.disclosureBootstrapRequests)
+        assertEquals(listOf(WriteEvent.PATCH_DISCLOSURES), server.writeEvents)
+        assertTrue(server.disclosureBootstrapIsExact)
+    }
+
+    @Test
+    fun `draft bootstrap patch omits classification fields that are already exact`() {
+        val fixture = fixture()
+        val server = server(fixture).also(MockModrinthServer::makeProjectBootstrapStatePartial)
+
+        val receipt = fixture.coordinator(server).stage()
+
+        assertEquals(20, receipt.listed.size)
+        assertEquals(setOf("additional_categories", "environment"), server.projectBootstrapPayloadKeys)
+        assertEquals(1, server.projectBootstrapRequests)
+        assertEquals(0, server.disclosureBootstrapRequests)
+        assertTrue(server.projectBootstrapIsExact)
+    }
+
+    @Test
+    fun `draft bootstrap rejects an unexpected remote version before every write`() {
+        val fixture = fixture()
+        val server =
+            server(fixture).also { mock ->
+                mock.makeBootstrapStateEmpty()
+                mock.unexpectedVersionPresent = true
+            }
+
+        assertThrows(IllegalStateException::class.java) {
+            fixture.coordinator(server).stage()
+        }
+
+        assertEquals(0, server.createRequests)
+        assertEquals(0, server.projectBootstrapRequests)
+        assertEquals(0, server.disclosureBootstrapRequests)
+        assertTrue(server.writeEvents.isEmpty())
+    }
+
+    @Test
+    fun `conflicting nonempty bootstrap state blocks every write`() {
+        val fixture = fixture()
+        val conflicts =
+            listOf<(MockModrinthServer) -> Unit>(
+                MockModrinthServer::makeProjectBootstrapStateConflict,
+                MockModrinthServer::makeDisclosureBootstrapStateConflict,
+            )
+
+        conflicts.forEach { configureConflict ->
+            val server = server(fixture).also(configureConflict)
+
+            assertThrows(IllegalStateException::class.java) {
+                fixture.coordinator(server).stage()
+            }
+
+            assertEquals(0, server.createRequests)
+            assertEquals(0, server.projectBootstrapRequests)
+            assertEquals(0, server.disclosureBootstrapRequests)
+            assertTrue(server.writeEvents.isEmpty())
+        }
+    }
+
+    @ParameterizedTest(name = "{0} rejects omitted, null, and wrong-type values")
+    @ValueSource(strings = ["categories", "additional_categories", "environment", "client_side", "server_side"])
+    fun `required project response fields fail closed before every write`(wireName: String) {
+        val fixture = fixture()
+
+        MalformedRequiredShape.entries.forEach { shape ->
+            val server =
+                server(fixture).also { mock ->
+                    mock.projectResponseMutation = { response -> applyMalformedShape(shape, response, wireName) }
+                }
+
+            val failure = assertStageFailsBeforeEveryWrite(fixture, server)
+
+            assertTrue(failure.message.orEmpty().contains(wireName))
+        }
+    }
+
+    @ParameterizedTest(name = "overview ordering rejects {0}")
+    @ValueSource(strings = ["OMITTED", "NULL", "WRONG_TYPE"])
+    fun `required gallery ordering fails closed before every write`(shapeName: String) {
+        val fixture = fixture()
+        val shape = MalformedRequiredShape.valueOf(shapeName)
+        val server =
+            server(fixture).also { mock ->
+                mock.overviewGalleryResponseMutation = { response -> applyMalformedShape(shape, response, "ordering") }
+            }
+
+        val failure = assertStageFailsBeforeEveryWrite(fixture, server)
+
+        assertTrue(failure.message.orEmpty().contains("ordering"))
+    }
+
+    @ParameterizedTest(name = "{0} rejects a non-string value")
+    @ValueSource(strings = ["RAW_ICON_URL", "DEPENDENCY_VERSION_ID", "DEPENDENCY_FILE_NAME", "FILE_SHA256"])
+    fun `optional strings reject schema drift before every write`(locationName: String) {
+        val fixture = fixture()
+        val location = OptionalStringLocation.valueOf(locationName)
+        val server = server(fixture)
+        configureMalformedResponse(location, server)
+
+        val failure = assertStageFailsBeforeEveryWrite(fixture, server)
+
+        assertTrue(failure.message.orEmpty().contains(location.wireName))
+    }
+
+    @ParameterizedTest(name = "{0} rejects a fractional number")
+    @ValueSource(strings = ["GALLERY_ORDERING", "VERSION_FILE_SIZE"])
+    fun `integer fields reject fractional numbers before every write`(locationName: String) {
+        val fixture = fixture()
+        val location = FractionalNumberLocation.valueOf(locationName)
+        val server = server(fixture)
+        configureFractionalResponse(location, server)
+
+        val failure = assertStageFailsBeforeEveryWrite(fixture, server)
+
+        assertTrue(failure.message.orEmpty().contains(location.wireName))
+    }
+
+    @Test
+    fun `rate limited project bootstrap requeries before one bounded retry`() {
+        val fixture = fixture()
+        val server =
+            server(fixture).also { mock ->
+                mock.makeProjectBootstrapStateEmpty()
+                mock.rateLimitFirstProjectBootstrapBeforeCommit = true
+            }
+
+        val receipt = fixture.coordinator(server).stage()
+
+        assertEquals(20, receipt.listed.size)
+        assertEquals(20, server.createRequests)
+        assertEquals(2, server.projectBootstrapRequests)
+        assertEquals(0, server.disclosureBootstrapRequests)
+        assertTrue(0 < server.projectBootstrapRecoveryReads)
+        assertTrue(server.projectBootstrapIsExact)
+    }
+
+    @Test
+    fun `disclosure bootstrap failure resumes without repeating completed writes`() {
+        val fixture = fixture()
+        val server =
+            server(fixture).also { mock ->
+                mock.makeBootstrapStateEmpty()
+                mock.initialDisclosureBootstrapRejectionStatus = 400
+            }
+        val coordinator = fixture.coordinator(server)
+
+        val failure = assertThrows(WriteRejectedException::class.java, coordinator::stage)
+
+        assertEquals(400, failure.statusCode)
+        assertEquals(20, server.createRequests)
+        assertEquals(1, server.projectBootstrapRequests)
+        assertEquals(1, server.disclosureBootstrapRequests)
+        assertTrue(server.projectBootstrapIsExact)
+        assertFalse(server.disclosureBootstrapIsExact)
+
+        assertEquals(20, coordinator.stage().listed.size)
+        assertEquals(20, server.createRequests)
+        assertEquals(1, server.projectBootstrapRequests)
+        assertEquals(2, server.disclosureBootstrapRequests)
+        assertTrue(server.disclosureBootstrapIsExact)
     }
 
     @Test
@@ -177,9 +415,10 @@ internal class ModrinthReleaseCoordinatorTest {
             }
         val client = fixture.client(server, requestTimeoutMillis = 20L, retryBaseMillis = 1L)
 
-        val failure = assertThrows(IllegalStateException::class.java) {
-            fixture.coordinator(server, client).stage()
-        }
+        val failure =
+            assertThrows(IllegalStateException::class.java) {
+                fixture.coordinator(server, client).stage()
+            }
 
         assertTrue(failure.message.orEmpty().contains("differs"))
         assertEquals(1, server.createRequests)
@@ -287,9 +526,10 @@ internal class ModrinthReleaseCoordinatorTest {
         val server = server(fixture).also { mock -> mock.redirectToFailingCdn = true }
         val client = fixture.client(server, retryBaseMillis = 1L)
 
-        val failure = assertThrows(IllegalStateException::class.java) {
-            client.hashRemoteFile("${server.baseUrl}/cdn/redirect")
-        }
+        val failure =
+            assertThrows(IllegalStateException::class.java) {
+                client.hashRemoteFile("${server.baseUrl}/cdn/redirect")
+            }
 
         assertTrue(failure.message.orEmpty().contains("after 4 attempts"))
         assertEquals(4, server.failingDownloadRequests)
@@ -324,11 +564,79 @@ internal class ModrinthReleaseCoordinatorTest {
         val server = server(fixture).also { mock -> mock.escapeCdnRedirect = true }
         val client = fixture.client(server)
 
-        val failure = assertThrows(IllegalStateException::class.java) {
-            client.hashRemoteFile("${server.baseUrl}/cdn/icon")
-        }
+        val failure =
+            assertThrows(IllegalStateException::class.java) {
+                client.hashRemoteFile("${server.baseUrl}/cdn/icon")
+            }
 
         assertTrue(failure.message.orEmpty().contains("non-authoritative host"))
+    }
+
+    private fun assertStageFailsBeforeEveryWrite(
+        fixture: Fixture,
+        server: MockModrinthServer,
+    ): IllegalStateException {
+        val failure =
+            assertThrows(IllegalStateException::class.java) {
+                fixture.coordinator(server).stage()
+            }
+        assertEquals(0, server.createRequests)
+        assertEquals(0, server.projectBootstrapRequests)
+        assertEquals(0, server.disclosureBootstrapRequests)
+        assertEquals(0, server.submitRequests)
+        assertTrue(server.writeEvents.isEmpty())
+        return failure
+    }
+
+    private fun applyMalformedShape(
+        shape: MalformedRequiredShape,
+        response: MutableMap<String, Any?>,
+        wireName: String,
+    ) {
+        when (shape) {
+            MalformedRequiredShape.OMITTED -> response.remove(wireName)
+            MalformedRequiredShape.NULL -> response[wireName] = null
+            MalformedRequiredShape.WRONG_TYPE -> response[wireName] = mapOf("unexpected" to true)
+        }
+    }
+
+    private fun configureMalformedResponse(
+        location: OptionalStringLocation,
+        server: MockModrinthServer,
+    ) {
+        when (location) {
+            OptionalStringLocation.RAW_ICON_URL -> {
+                server.projectResponseMutation = { response -> response[location.wireName] = emptyList<String>() }
+            }
+
+            OptionalStringLocation.DEPENDENCY_VERSION_ID,
+            OptionalStringLocation.DEPENDENCY_FILE_NAME,
+            -> {
+                server.seedVersions(1)
+                server.dependencyResponseMutation = { response -> response[location.wireName] = emptyList<String>() }
+            }
+
+            OptionalStringLocation.FILE_SHA256 -> {
+                server.seedVersions(1)
+                server.fileHashesResponseMutation = { response -> response[location.wireName] = emptyList<String>() }
+            }
+        }
+    }
+
+    private fun configureFractionalResponse(
+        location: FractionalNumberLocation,
+        server: MockModrinthServer,
+    ) {
+        when (location) {
+            FractionalNumberLocation.GALLERY_ORDERING -> {
+                server.overviewGalleryResponseMutation = { response -> response[location.wireName] = 0.5 }
+            }
+
+            FractionalNumberLocation.VERSION_FILE_SIZE -> {
+                server.seedVersions(1)
+                server.fileResponseMutation = { response -> response[location.wireName] = 0.5 }
+            }
+        }
     }
 
     private fun fixture(): Fixture {
@@ -386,7 +694,7 @@ internal class ModrinthReleaseCoordinatorTest {
                         documentationUrl = "https://gh.s7a.dev/strata/",
                         aiDisclosureNote = ModrinthManifest.AI_DISCLOSURE_NOTE,
                         aiDisclosureUses = setOf(AiUse.CODE, AiUse.TEXT),
-                        icon = ModrinthManifest.ProjectAsset("icon.svg", iconBytes.hash("SHA-256")),
+                        icon = ModrinthManifest.ProjectAsset("icon.png", iconBytes.hash("SHA-256")),
                         gallery = gallery,
                     ),
                 releaseVersion = "0.1.0",
@@ -402,8 +710,7 @@ internal class ModrinthReleaseCoordinatorTest {
             server.start()
         }
 
-    private fun ByteArray.hash(algorithm: String): String =
-        MessageDigest.getInstance(algorithm).digest(this).joinToString("") { byte -> "%02x".format(byte) }
+    private fun ByteArray.hash(algorithm: String): String = MessageDigest.getInstance(algorithm).digest(this).joinToString("") { byte -> "%02x".format(byte) }
 
     private data class Fixture(
         val bundle: java.io.File,
@@ -438,10 +745,26 @@ internal class ModrinthReleaseCoordinatorTest {
         private val executor = Executors.newCachedThreadPool()
         private val server = HttpServer.create(InetSocketAddress("localhost", 0), 0)
         private val versions = linkedSetOf<String>()
+        private var remoteCategories: Set<String> = fixture.manifest.project.categories
+        private var remoteAdditionalCategories: Set<String> = fixture.manifest.project.additionalCategories
+        private var remoteEnvironments: Set<VersionEnvironment> = setOf(VersionEnvironment.CLIENT_ONLY)
+        private var remoteClientSide: SideSupport = fixture.manifest.project.clientSide
+        private var remoteServerSide: SideSupport = fixture.manifest.project.serverSide
+        private var remoteDisclosures: List<RemoteDisclosure> =
+            listOf(
+                RemoteDisclosure(
+                    type = DisclosureType.AI_CONTENT,
+                    note = fixture.manifest.project.aiDisclosureNote,
+                    aiUses = fixture.manifest.project.aiDisclosureUses,
+                ),
+            )
 
         var projectStatus: ProjectStatus = ProjectStatus.DRAFT
         var createRequests: Int = 0
         var submitRequests: Int = 0
+        var projectBootstrapRequests: Int = 0
+        var disclosureBootstrapRequests: Int = 0
+        var projectBootstrapRecoveryReads: Int = 0
         var versionReadRequests: Int = 0
         var ambiguousFirstCreate: Boolean = false
         var ambiguousFirstSubmitAfterCommit: Boolean = false
@@ -455,7 +778,10 @@ internal class ModrinthReleaseCoordinatorTest {
         var timeoutFirstCreateAfterCommit: Boolean = false
         var rateLimitFirstCreateBeforeCommit: Boolean = false
         var requestTimeoutFirstCreateBeforeCommit: Boolean = false
+        var rateLimitFirstProjectBootstrapBeforeCommit: Boolean = false
+        var unexpectedVersionPresent: Boolean = false
         var initialCreateRejectionStatus: Int? = null
+        var initialDisclosureBootstrapRejectionStatus: Int? = null
         var initialSubmitRejectionStatus: Int? = null
         var repeatSubmitRejectionStatus: Int = 400
         var projectStatusAfterRepeatSubmitRejection: ProjectStatus? = null
@@ -463,10 +789,34 @@ internal class ModrinthReleaseCoordinatorTest {
         var remainingStaleProjectReadsAfterSubmit: Int = 0
         var projectReadRequests: Int = 0
         var projectResponseDelayMillis: Long = 0L
+        var projectResponseMutation: (MutableMap<String, Any?>) -> Unit = { _ -> }
+        var overviewGalleryResponseMutation: (MutableMap<String, Any?>) -> Unit = { _ -> }
+        var dependencyResponseMutation: (MutableMap<String, Any?>) -> Unit = { _ -> }
+        var fileResponseMutation: (MutableMap<String, Any?>) -> Unit = { _ -> }
+        var fileHashesResponseMutation: (MutableMap<String, Any?>) -> Unit = { _ -> }
         val transientProjectStatuses: ArrayDeque<Int> = ArrayDeque()
         val downloadRequests: MutableSet<String> = linkedSetOf()
+        val writeEvents: MutableList<WriteEvent> = mutableListOf()
+        var projectBootstrapPayloadKeys: Set<String> = emptySet()
         val baseUrl: String
             get() = "http://localhost:${server.address.port}"
+        val projectBootstrapIsExact: Boolean
+            get() =
+                remoteCategories == fixture.manifest.project.categories &&
+                    remoteAdditionalCategories == fixture.manifest.project.additionalCategories &&
+                    remoteEnvironments == setOf(VersionEnvironment.CLIENT_ONLY) &&
+                    remoteClientSide == fixture.manifest.project.clientSide &&
+                    remoteServerSide == fixture.manifest.project.serverSide
+        val disclosureBootstrapIsExact: Boolean
+            get() =
+                remoteDisclosures ==
+                    listOf(
+                        RemoteDisclosure(
+                            type = DisclosureType.AI_CONTENT,
+                            note = fixture.manifest.project.aiDisclosureNote,
+                            aiUses = fixture.manifest.project.aiDisclosureUses,
+                        ),
+                    )
 
         fun start() {
             server.executor = executor
@@ -475,7 +825,54 @@ internal class ModrinthReleaseCoordinatorTest {
         }
 
         fun seedVersions(count: Int) {
-            fixture.manifest.artifacts.take(count).forEach { artifact -> versions += artifact.versionNumber }
+            fixture.manifest.artifacts
+                .take(count)
+                .forEach { artifact -> versions += artifact.versionNumber }
+        }
+
+        fun makeProjectBootstrapStateEmpty() {
+            remoteCategories = emptySet()
+            remoteAdditionalCategories = emptySet()
+            remoteEnvironments = setOf(VersionEnvironment.UNKNOWN)
+            remoteClientSide = SideSupport.UNKNOWN
+            remoteServerSide = SideSupport.UNKNOWN
+        }
+
+        fun makeBootstrapStateEmpty() {
+            makeProjectBootstrapStateEmpty()
+            remoteDisclosures = emptyList()
+        }
+
+        fun makeProjectBootstrapStatePartial() {
+            remoteAdditionalCategories = emptySet()
+            remoteClientSide = SideSupport.UNKNOWN
+        }
+
+        fun makeProjectBootstrapStateConflict() {
+            remoteCategories = setOf("adventure")
+        }
+
+        fun makeDisclosureBootstrapStateConflict() {
+            remoteDisclosures =
+                listOf(
+                    RemoteDisclosure(
+                        type = DisclosureType.AI_CONTENT,
+                        note = fixture.manifest.project.aiDisclosureNote,
+                        aiUses = setOf(AiUse.ASSETS),
+                    ),
+                )
+        }
+
+        fun makeDisclosureBootstrapStateDeleted() {
+            remoteDisclosures =
+                listOf(
+                    RemoteDisclosure(
+                        type = DisclosureType.AI_CONTENT,
+                        note = fixture.manifest.project.aiDisclosureNote,
+                        aiUses = fixture.manifest.project.aiDisclosureUses,
+                        deleted = true,
+                    ),
+                )
         }
 
         override fun close() {
@@ -489,6 +886,7 @@ internal class ModrinthReleaseCoordinatorTest {
                 when {
                     path == "/v2/project/$PROJECT_ID" && exchange.requestMethod == "GET" -> project(exchange)
                     path == "/v2/project/$PROJECT_ID" && exchange.requestMethod == "PATCH" -> submit(exchange)
+                    path == "/v3/project/$PROJECT_ID" && exchange.requestMethod == "PATCH" -> bootstrapProject(exchange)
                     path == "/v3/project/$PROJECT_ID/disclosures" -> disclosures(exchange)
                     path == "/v2/tag/game_version" -> gameVersions(exchange)
                     path == "/v2/project/$PROJECT_ID/version" -> versions(exchange)
@@ -505,6 +903,9 @@ internal class ModrinthReleaseCoordinatorTest {
 
         private fun project(exchange: HttpExchange) {
             projectReadRequests += 1
+            if (rateLimitFirstProjectBootstrapBeforeCommit && projectBootstrapRequests == 1) {
+                projectBootstrapRecoveryReads += 1
+            }
             if (0L < projectResponseDelayMillis) Thread.sleep(projectResponseDelayMillis)
             if (transientProjectStatuses.isNotEmpty()) {
                 respond(exchange, transientProjectStatuses.removeFirst(), "transient")
@@ -523,61 +924,133 @@ internal class ModrinthReleaseCoordinatorTest {
                 } else {
                     projectStatus
                 }
+            val gallery =
+                project.gallery.map { image ->
+                    linkedMapOf<String, Any?>(
+                        "url" to "$baseUrl/cdn/optimized-${image.id}",
+                        "raw_url" to "$baseUrl/cdn/${image.id}",
+                        "featured" to image.featured,
+                        "title" to image.title,
+                        "description" to image.description,
+                        "ordering" to image.ordering,
+                    )
+                }
+            overviewGalleryResponseMutation(gallery.first())
+            val response =
+                linkedMapOf<String, Any?>(
+                    "id" to PROJECT_ID,
+                    "slug" to project.slug,
+                    "title" to project.title,
+                    "description" to project.description,
+                    "body" to project.body,
+                    "project_type" to "mod",
+                    "status" to visibleStatus.wireValue,
+                    "categories" to remoteCategories,
+                    "additional_categories" to remoteAdditionalCategories,
+                    "environment" to remoteEnvironments.map(VersionEnvironment::wireValue),
+                    "license" to mapOf("id" to project.licenseId),
+                    "client_side" to remoteClientSide.wireValue,
+                    "server_side" to remoteServerSide.wireValue,
+                    "source_url" to project.sourceUrl,
+                    "issues_url" to project.issuesUrl,
+                    "wiki_url" to project.documentationUrl,
+                    "raw_icon_url" to "$baseUrl/cdn/icon",
+                    "gallery" to gallery,
+                )
+            projectResponseMutation(response)
             respond(
                 exchange,
                 200,
-                JsonOutput.toJson(
-                    linkedMapOf(
-                        "id" to PROJECT_ID,
-                        "slug" to project.slug,
-                        "title" to project.title,
-                        "description" to project.description,
-                        "body" to project.body,
-                        "project_type" to "mod",
-                        "status" to visibleStatus.wireValue,
-                        "categories" to project.categories,
-                        "additional_categories" to project.additionalCategories,
-                        "environment" to listOf("client_only"),
-                        "license" to mapOf("id" to project.licenseId),
-                        "client_side" to project.clientSide.wireValue,
-                        "server_side" to project.serverSide.wireValue,
-                        "source_url" to project.sourceUrl,
-                        "issues_url" to project.issuesUrl,
-                        "wiki_url" to project.documentationUrl,
-                        "raw_icon_url" to "$baseUrl/cdn/icon",
-                        "gallery" to
-                            project.gallery.map { image ->
-                                linkedMapOf(
-                                    "url" to "$baseUrl/cdn/optimized-${image.id}",
-                                    "raw_url" to "$baseUrl/cdn/${image.id}",
-                                    "featured" to image.featured,
-                                    "title" to image.title,
-                                    "description" to image.description,
-                                    "ordering" to image.ordering,
-                                )
-                            },
-                    ),
-                ),
+                JsonOutput.toJson(response),
             )
         }
 
+        private fun bootstrapProject(exchange: HttpExchange) {
+            projectBootstrapRequests += 1
+            writeEvents += WriteEvent.PATCH_PROJECT
+            val project = fixture.manifest.project
+            val payload = requestObject(exchange)
+            val expectedPayload = linkedMapOf<String, Any>()
+            if (remoteCategories != project.categories) expectedPayload["categories"] = project.categories.toList()
+            if (remoteAdditionalCategories != project.additionalCategories) {
+                expectedPayload["additional_categories"] = project.additionalCategories.toList()
+            }
+            if (
+                remoteEnvironments != setOf(VersionEnvironment.CLIENT_ONLY) ||
+                remoteClientSide != project.clientSide ||
+                remoteServerSide != project.serverSide
+            ) {
+                expectedPayload["environment"] = VersionEnvironment.CLIENT_ONLY.wireValue
+            }
+            check(expectedPayload.isNotEmpty())
+            check(payload == expectedPayload)
+            projectBootstrapPayloadKeys = payload.keys.filterIsInstance<String>().toSet()
+            if (rateLimitFirstProjectBootstrapBeforeCommit && projectBootstrapRequests == 1) {
+                respond(exchange, 429, "rate limited")
+                return
+            }
+            remoteCategories = project.categories
+            remoteAdditionalCategories = project.additionalCategories
+            remoteEnvironments = setOf(VersionEnvironment.CLIENT_ONLY)
+            remoteClientSide = project.clientSide
+            remoteServerSide = project.serverSide
+            respond(exchange, 204, "")
+        }
+
         private fun disclosures(exchange: HttpExchange) {
-            respond(
-                exchange,
-                200,
-                JsonOutput.toJson(
-                    mapOf(
-                        "disclosures" to
-                            listOf(
-                                mapOf(
-                                    "type" to "ai_content",
-                                    "note" to fixture.manifest.project.aiDisclosureNote,
-                                    "uses" to listOf("code", "text"),
-                                ),
-                            ),
+            if (exchange.requestMethod == "PATCH") {
+                bootstrapDisclosures(exchange)
+            } else {
+                respond(
+                    exchange,
+                    200,
+                    JsonOutput.toJson(
+                        mapOf(
+                            "disclosures" to
+                                remoteDisclosures.map { disclosure ->
+                                    linkedMapOf<String, Any?>(
+                                        "type" to disclosure.type.wireValue,
+                                        "note" to disclosure.note,
+                                        "uses" to disclosure.aiUses.map(AiUse::wireValue).sorted(),
+                                    ).apply {
+                                        if (disclosure.deleted) {
+                                            this["deleted_at"] = "2026-08-25T00:00:00Z"
+                                        }
+                                    }
+                                },
+                        ),
                     ),
-                ),
-            )
+                )
+            }
+        }
+
+        private fun bootstrapDisclosures(exchange: HttpExchange) {
+            disclosureBootstrapRequests += 1
+            writeEvents += WriteEvent.PATCH_DISCLOSURES
+            val payload = requestObject(exchange)
+            check(payload.keys == setOf("set", "remove"))
+            check(payload["remove"] == emptyList<Any>())
+            val set = payload["set"] as? List<*> ?: error("Disclosure bootstrap set must be an array.")
+            check(set.size == 1)
+            val disclosure = set.single() as? Map<*, *> ?: error("Disclosure bootstrap entry must be an object.")
+            check(disclosure.keys == setOf("type", "note", "uses"))
+            check(disclosure["type"] == DisclosureType.AI_CONTENT.wireValue)
+            check(disclosure["note"] == fixture.manifest.project.aiDisclosureNote)
+            check((disclosure["uses"] as? List<*>)?.toSet() == setOf(AiUse.CODE.wireValue, AiUse.TEXT.wireValue))
+            val rejection = initialDisclosureBootstrapRejectionStatus
+            if (disclosureBootstrapRequests == 1 && rejection != null) {
+                respond(exchange, rejection, "rejected")
+                return
+            }
+            remoteDisclosures =
+                listOf(
+                    RemoteDisclosure(
+                        type = DisclosureType.AI_CONTENT,
+                        note = fixture.manifest.project.aiDisclosureNote,
+                        aiUses = fixture.manifest.project.aiDisclosureUses,
+                    ),
+                )
+            respond(exchange, 204, "")
         }
 
         private fun gameVersions(exchange: HttpExchange) {
@@ -588,7 +1061,9 @@ internal class ModrinthReleaseCoordinatorTest {
             versionReadRequests += 1
             val visibleVersions =
                 if (
-                    fixture.manifest.artifacts.first().versionNumber in versions &&
+                    fixture.manifest.artifacts
+                        .first()
+                        .versionNumber in versions &&
                     0 < remainingStaleVersionReadsAfterFirstCreate
                 ) {
                     remainingStaleVersionReadsAfterFirstCreate -= 1
@@ -600,10 +1075,13 @@ internal class ModrinthReleaseCoordinatorTest {
                 exchange,
                 200,
                 JsonOutput.toJson(
-                    visibleVersions.map { number ->
-                        val artifact = fixture.manifest.artifacts.single { candidate -> candidate.versionNumber == number }
-                        version(artifact)
-                    },
+                    visibleVersions
+                        .map { number ->
+                            val artifact = fixture.manifest.artifacts.single { candidate -> candidate.versionNumber == number }
+                            version(artifact)
+                        }.let { expected ->
+                            if (unexpectedVersionPresent) expected + unexpectedVersion() else expected
+                        },
                 ),
             )
         }
@@ -615,6 +1093,7 @@ internal class ModrinthReleaseCoordinatorTest {
                     body.contains("\"version_number\":\"${candidate.versionNumber}\"")
                 } ?: error("Create request did not contain one exact known version number.")
             createRequests += 1
+            writeEvents += WriteEvent.CREATE_VERSION
             val initialRejection = initialCreateRejectionStatus
             if (createRequests == 1 && initialRejection != null) {
                 respond(
@@ -700,12 +1179,19 @@ internal class ModrinthReleaseCoordinatorTest {
             }
             val bytes =
                 when (name) {
-                    "icon" -> fixture.iconBytes
-                    "overview", "inventory", "progress" -> "gallery-$name".toByteArray(StandardCharsets.UTF_8)
+                    "icon" -> {
+                        fixture.iconBytes
+                    }
+
+                    "overview", "inventory", "progress" -> {
+                        "gallery-$name".toByteArray(StandardCharsets.UTF_8)
+                    }
+
                     "optimized-overview", "optimized-inventory", "optimized-progress" -> {
                         optimizedGalleryDownloadRequests += 1
                         "optimized-$name".toByteArray(StandardCharsets.UTF_8)
                     }
+
                     else -> {
                         downloadRequests += name
                         fixture.bundle.resolve("artifacts/$name").readBytes()
@@ -715,8 +1201,31 @@ internal class ModrinthReleaseCoordinatorTest {
             exchange.responseBody.write(bytes)
         }
 
-        private fun version(artifact: ModrinthManifest.Artifact): Map<String, Any?> =
-            linkedMapOf(
+        private fun version(artifact: ModrinthManifest.Artifact): Map<String, Any?> {
+            val dependency =
+                linkedMapOf<String, Any?>(
+                    "project_id" to ModrinthManifest.FABRIC_LANGUAGE_KOTLIN_PROJECT_ID,
+                    "version_id" to null,
+                    "file_name" to null,
+                    "dependency_type" to "required",
+                )
+            dependencyResponseMutation(dependency)
+            val hashes =
+                linkedMapOf<String, Any?>(
+                    "sha256" to artifact.sha256,
+                    "sha512" to artifact.sha512,
+                )
+            fileHashesResponseMutation(hashes)
+            val file =
+                linkedMapOf<String, Any?>(
+                    "hashes" to hashes,
+                    "url" to "$baseUrl/cdn/${artifact.fileName}",
+                    "filename" to artifact.fileName,
+                    "primary" to true,
+                    "size" to artifact.size,
+                )
+            fileResponseMutation(file)
+            return linkedMapOf(
                 "id" to "id-${artifact.gameVersion}",
                 "project_id" to PROJECT_ID,
                 "name" to
@@ -727,32 +1236,35 @@ internal class ModrinthReleaseCoordinatorTest {
                     },
                 "version_number" to artifact.versionNumber,
                 "changelog" to fixture.manifest.changelog,
-                "dependencies" to
-                    listOf(
-                        mapOf(
-                            "project_id" to ModrinthManifest.FABRIC_LANGUAGE_KOTLIN_PROJECT_ID,
-                            "version_id" to null,
-                            "file_name" to null,
-                            "dependency_type" to "required",
-                        ),
-                    ),
+                "dependencies" to listOf(dependency),
                 "game_versions" to listOf(artifact.gameVersion),
                 "version_type" to "release",
                 "loaders" to listOf("fabric"),
                 "featured" to true,
                 "status" to "listed",
                 "environment" to "client_only",
-                "files" to
-                    listOf(
-                        mapOf(
-                            "hashes" to mapOf("sha256" to artifact.sha256, "sha512" to artifact.sha512),
-                            "url" to "$baseUrl/cdn/${artifact.fileName}",
-                            "filename" to artifact.fileName,
-                            "primary" to true,
-                            "size" to artifact.size,
-                        ),
-                    ),
+                "files" to listOf(file),
             )
+        }
+
+        private fun unexpectedVersion(): Map<String, Any?> {
+            val artifact = fixture.manifest.artifacts.first()
+            return version(artifact) +
+                mapOf(
+                    "id" to "unexpected-id",
+                    "version_number" to "unexpected-version",
+                    "files" to
+                        listOf(
+                            mapOf(
+                                "hashes" to mapOf("sha256" to "0".repeat(64), "sha512" to "0".repeat(128)),
+                                "url" to "$baseUrl/cdn/unexpected.jar",
+                                "filename" to "unexpected.jar",
+                                "primary" to true,
+                                "size" to 1,
+                            ),
+                        ),
+                )
+        }
 
         private fun respond(
             exchange: HttpExchange,
@@ -763,6 +1275,38 @@ internal class ModrinthReleaseCoordinatorTest {
             exchange.sendResponseHeaders(status, if (status == 204) -1L else bytes.size.toLong())
             if (status != 204) exchange.responseBody.write(bytes)
         }
+
+        private fun requestObject(exchange: HttpExchange): Map<*, *> =
+            JsonSlurper().parse(exchange.requestBody, StandardCharsets.UTF_8.name()) as? Map<*, *>
+                ?: error("Bootstrap request must contain one JSON object.")
+    }
+
+    private enum class MalformedRequiredShape {
+        OMITTED,
+        NULL,
+        WRONG_TYPE,
+    }
+
+    private enum class OptionalStringLocation(
+        val wireName: String,
+    ) {
+        RAW_ICON_URL("raw_icon_url"),
+        DEPENDENCY_VERSION_ID("version_id"),
+        DEPENDENCY_FILE_NAME("file_name"),
+        FILE_SHA256("sha256"),
+    }
+
+    private enum class FractionalNumberLocation(
+        val wireName: String,
+    ) {
+        GALLERY_ORDERING("ordering"),
+        VERSION_FILE_SIZE("size"),
+    }
+
+    private enum class WriteEvent {
+        CREATE_VERSION,
+        PATCH_PROJECT,
+        PATCH_DISCLOSURES,
     }
 
     companion object {

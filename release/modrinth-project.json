@@ -1,5 +1,5 @@
 {
-  "projectId": "",
+  "projectId": "CAdZ3jVr",
   "slug": "strata-ui",
   "title": "Strata",
   "description": "Declarative, reusable Minecraft UI with headless rendering and exact versioned Fabric adapters.",
@@ -21,8 +21,8 @@
     "text"
   ],
   "icon": {
-    "path": "icon.svg",
-    "sha256": "279983694da408503d6a0c44b3801ecfd7dee70b100cfab1e671a57d3cbe4719"
+    "path": "icon.png",
+    "sha256": "9a3a39b754c12feabd9caf4fbce956ee422034dfecefb060d4243f2c7d4dbc15"
   },
   "gallery": [
     {

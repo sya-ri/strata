@@ -168,8 +168,7 @@ internal object PagesPublicUrlInventory {
     private val IMAGE_EXTENSIONS = setOf("gif", "jpeg", "jpg", "png", "svg", "webp")
     private val PAGES_URL =
         Regex(
-            "https://gh\\.s7a\\.dev/strata/(?:[A-Za-z0-9._~%+-]+/)*[A-Za-z0-9._~%+-]*(?:#[A-Za-z0-9._~-]+)?" +
-                "(?=${'$'}|[\\s\\\"'`),;<>\\]}])",
+            $$"""https://gh\.s7a\.dev/strata/(?:[A-Za-z0-9._~%+-]+/)*[A-Za-z0-9._~%+-]*(?:#[A-Za-z0-9._~-]+)?(?=[\s"'`),;<>\]}]|$)""",
         )
     private const val PAGES_HOST = "gh.s7a.dev"
     private const val PAGES_BASE_PATH = "/strata/"

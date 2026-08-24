@@ -214,7 +214,7 @@ internal object PagesStagingChecker {
         var fenced = false
         return text
             .lineSequence()
-            .map { line ->
+            .joinToString("\n") { line ->
                 if (line.trimStart().startsWith("```")) {
                     fenced = fenced.not()
                     ""
@@ -223,7 +223,7 @@ internal object PagesStagingChecker {
                 } else {
                     line
                 }
-            }.joinToString("\n")
+            }
     }
 
     private data class StagedTarget(

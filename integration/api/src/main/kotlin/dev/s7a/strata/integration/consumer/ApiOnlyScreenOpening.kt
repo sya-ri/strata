@@ -12,6 +12,7 @@ import dev.s7a.strata.screen.ScreenRuntimeUnavailableException
  * @throws ScreenRuntimeUnavailableException when no runtime is installed.
  * @throws ScreenOpenThreadException when called away from the platform owner thread.
  */
+@Suppress("unused") // This API-consumer fixture is compiled as an externally callable application entrypoint.
 public fun openApiOnlyScreen(onClose: () -> Unit) {
     createApiOnlyScreenDefinition(onClose).open()
 }

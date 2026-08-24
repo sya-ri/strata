@@ -49,17 +49,24 @@ internal class MavenCentralReleaseVerifier(
         val coordinates = parseCoordinates(coordinateLines)
         val inspection = inspect(coordinates)
         return when (inspection.state) {
-            State.ABSENT -> Receipt(State.ABSENT, coordinates.size, 0, 0)
-            State.EXACT ->
+            State.ABSENT -> {
+                Receipt(State.ABSENT, coordinates.size, 0, 0)
+            }
+
+            State.EXACT -> {
                 Receipt(
                     State.EXACT,
                     coordinates.size,
                     inspection.verifiedFileCount,
                     inspection.verifiedFileCount * ChecksumAlgorithm.entries.size,
                 )
-            State.PARTIAL -> error(
-                "Maven Central contains a partial immutable release (${inspection.presentCoordinateCount}/${coordinates.size} coordinates); refusing publication.",
-            )
+            }
+
+            State.PARTIAL -> {
+                error(
+                    "Maven Central contains a partial immutable release (${inspection.presentCoordinateCount}/${coordinates.size} coordinates); refusing publication.",
+                )
+            }
         }
     }
 
@@ -125,8 +132,9 @@ internal class MavenCentralReleaseVerifier(
                         "Maven Central publication checksums are incomplete: $basePath"
                     }
                     val signaturePath = "$basePath.asc"
-                    val signature = readOptional(signaturePath)
-                        ?: error("Maven Central publication signature is missing: $signaturePath")
+                    val signature =
+                        readOptional(signaturePath)
+                            ?: error("Maven Central publication signature is missing: $signaturePath")
                     check(verifyChecksums(signaturePath, signature)) {
                         "Maven Central publication signature checksums are incomplete: $signaturePath"
                     }
@@ -178,9 +186,11 @@ internal class MavenCentralReleaseVerifier(
         val presentCoordinateCount = pomBytes.values.count { bytes -> bytes != null }
         if (presentCoordinateCount == 0) {
             val orphanedRemoteFile =
-                coordinates.asSequence().flatMap { coordinate ->
-                    REMOTE_PUBLICATION_SUFFIXES.asSequence().map(coordinate::remotePath)
-                }.firstOrNull { remotePath -> readOptional(remotePath) != null }
+                coordinates
+                    .asSequence()
+                    .flatMap { coordinate ->
+                        REMOTE_PUBLICATION_SUFFIXES.asSequence().map(coordinate::remotePath)
+                    }.firstOrNull { remotePath -> readOptional(remotePath) != null }
             return if (orphanedRemoteFile == null) {
                 Inspection(State.ABSENT, 0, 0)
             } else {
@@ -209,8 +219,9 @@ internal class MavenCentralReleaseVerifier(
                     return Inspection(State.PARTIAL, presentCoordinateCount, verifiedFileCount)
                 }
                 val signaturePath = "$remotePath.asc"
-                val signature = readOptional(signaturePath)
-                    ?: return Inspection(State.PARTIAL, presentCoordinateCount, verifiedFileCount)
+                val signature =
+                    readOptional(signaturePath)
+                        ?: return Inspection(State.PARTIAL, presentCoordinateCount, verifiedFileCount)
                 if (verifyChecksums(signaturePath, signature).not()) {
                     return Inspection(State.PARTIAL, presentCoordinateCount, verifiedFileCount)
                 }
@@ -220,8 +231,7 @@ internal class MavenCentralReleaseVerifier(
         return Inspection(State.EXACT, presentCoordinateCount, verifiedFileCount)
     }
 
-    private fun expectedBaseFiles(coordinate: Coordinate): List<ExpectedFile> =
-        BASE_SUFFIXES.map { suffix -> ExpectedFile(suffix, coordinate.localPath(localRepository, suffix)) }
+    private fun expectedBaseFiles(coordinate: Coordinate): List<ExpectedFile> = BASE_SUFFIXES.map { suffix -> ExpectedFile(suffix, coordinate.localPath(localRepository, suffix)) }
 
     private fun verifyChecksums(
         remotePath: String,
@@ -239,6 +249,8 @@ internal class MavenCentralReleaseVerifier(
         return true
     }
 
+    // Transport failures and retryable statuses intentionally consume one shared bounded attempt counter.
+    @Suppress("LoopWithTooManyJumpStatements")
     private fun readOptional(relativePath: String): ByteArray? {
         val target = URI.create(repositoryBase).resolve(relativePath)
         for (attempt in 1..MAXIMUM_READ_ATTEMPTS) {
@@ -259,36 +271,59 @@ internal class MavenCentralReleaseVerifier(
                     }
                     throw IllegalStateException(
                         "Maven Central read failed after $MAXIMUM_READ_ATTEMPTS attempts for $relativePath.",
+                        failure,
                     )
                 } catch (failure: InterruptedException) {
                     Thread.currentThread().interrupt()
                     throw IllegalStateException("Maven Central read was interrupted for $relativePath.")
                 }
             when {
-                response.statusCode() == 200 -> return response.body()
-                response.statusCode() == 404 -> return null
-                response.statusCode() == 429 || 500 <= response.statusCode() && response.statusCode() < 600 -> {
+                response.statusCode() == 200 -> {
+                    return response.body()
+                }
+
+                response.statusCode() == 404 -> {
+                    return null
+                }
+
+                response.statusCode() == 429 ||
+                    (500 <= response.statusCode() && response.statusCode() < 600) -> {
                     if (attempt < MAXIMUM_READ_ATTEMPTS) {
                         sleeper(retryBaseMillis * attempt)
                         continue
                     }
                     error("Maven Central read failed with HTTP ${response.statusCode()} after $MAXIMUM_READ_ATTEMPTS attempts for $relativePath.")
                 }
-                else -> error("Maven Central read failed with HTTP ${response.statusCode()} for $relativePath.")
+
+                else -> {
+                    error("Maven Central read failed with HTTP ${response.statusCode()} for $relativePath.")
+                }
             }
         }
         error("Maven Central read exhausted its bounded retry state for $relativePath.")
     }
 
-    private fun ByteArray.hash(algorithm: String): String =
-        MessageDigest.getInstance(algorithm).digest(this).joinToString("") { byte -> "%02x".format(byte) }
+    private fun ByteArray.hash(algorithm: String): String = MessageDigest.getInstance(algorithm).digest(this).joinToString("") { byte -> "%02x".format(byte) }
 
-    /** Remote release states admitted by the monotonic Central workflow. */
+    /**
+     * Remote release states admitted by the monotonic Central workflow.
+     */
     internal enum class State(
         val wireValue: String,
     ) {
+        /**
+         * No coordinate in the release exists remotely.
+         */
         ABSENT("absent"),
+
+        /**
+         * Only part of the release exists remotely.
+         */
         PARTIAL("partial"),
+
+        /**
+         * Every immutable publication file exactly matches the local release.
+         */
         EXACT("exact"),
     }
 
@@ -336,8 +371,7 @@ internal class MavenCentralReleaseVerifier(
         val artifact: String,
         val version: String,
     ) {
-        fun remotePath(suffix: String): String =
-            "${group.replace('.', '/')}/$artifact/$version/$artifact-$version$suffix"
+        fun remotePath(suffix: String): String = "${group.replace('.', '/')}/$artifact/$version/$artifact-$version$suffix"
 
         fun localPath(
             repository: Path,
@@ -357,9 +391,7 @@ internal class MavenCentralReleaseVerifier(
                 }
                 check(
                     segments[0].matches(GROUP_PATTERN) &&
-                        segments.drop(1).all { segment ->
-                            segment.matches(PATH_SEGMENT_PATTERN) && segment != "." && segment != ".."
-                        },
+                        segments.drop(1).all { segment -> segment.isSafePathSegment() },
                 ) {
                     "Maven release coordinate contains an unsafe path segment: $value"
                 }
@@ -368,6 +400,9 @@ internal class MavenCentralReleaseVerifier(
 
             private val GROUP_PATTERN = Regex("[A-Za-z0-9_+-]+(?:\\.[A-Za-z0-9_+-]+)*")
             private val PATH_SEGMENT_PATTERN = Regex("[A-Za-z0-9_.+-]+")
+            private val SAFE_SEGMENT_ROOT = Path.of("coordinate")
+
+            private fun String.isSafePathSegment(): Boolean = matches(PATH_SEGMENT_PATTERN) && SAFE_SEGMENT_ROOT.resolve(this).normalize().parent == SAFE_SEGMENT_ROOT
         }
     }
 
@@ -381,6 +416,9 @@ internal class MavenCentralReleaseVerifier(
         SHA512("sha512", "SHA-512"),
     }
 
+    /**
+     * Owns the fixed release inventory and bounded public-repository polling contracts.
+     */
     companion object {
         private const val EXPECTED_COORDINATE_COUNT = 24
         private const val EXPECTED_FABRIC_COORDINATE_COUNT = 20

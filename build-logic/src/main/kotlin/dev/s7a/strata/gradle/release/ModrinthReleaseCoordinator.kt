@@ -10,11 +10,14 @@ import dev.s7a.strata.gradle.release.ModrinthApiClient.ProjectType
 import dev.s7a.strata.gradle.release.ModrinthApiClient.ReleaseType
 import dev.s7a.strata.gradle.release.ModrinthApiClient.RemoteProject
 import dev.s7a.strata.gradle.release.ModrinthApiClient.RemoteVersion
+import dev.s7a.strata.gradle.release.ModrinthApiClient.SideSupport
 import dev.s7a.strata.gradle.release.ModrinthApiClient.VersionEnvironment
 import dev.s7a.strata.gradle.release.ModrinthApiClient.VersionStatus
 import dev.s7a.strata.gradle.release.ModrinthApiClient.WriteRejectedException
 import java.io.File
 import java.security.MessageDigest
+
+// Keeping monotonic phase orchestration together makes every mutation share the same exact-state checks and recovery policy.
 
 /**
  * Reconciles one complete release against authoritative Modrinth state.
@@ -23,14 +26,17 @@ import java.security.MessageDigest
  * Existing remote data is never overwritten or deleted, and every ambiguous write is followed by an authoritative read before a bounded retry.
  * The coordinator is thread-confined to its calling Gradle task.
  */
+@Suppress("TooManyFunctions")
 internal class ModrinthReleaseCoordinator(
     private val manifest: ModrinthManifest,
     private val bundleDirectory: File,
     private val api: ModrinthApiClient,
 ) {
-    /** Verifies project metadata, assets, tags, and existing release targets without writing. */
+    /**
+     * Verifies project metadata, assets, tags, and existing release targets without writing.
+     */
     fun preflight(): Receipt {
-        val snapshot = reconcile(requirePresent = false, requireApproved = false)
+        val snapshot = reconcile(requirePresent = false, requireApproved = false, bootstrapPolicy = BootstrapPolicy.ELIGIBLE_DRAFT)
         if (snapshot.projectStatus in READ_ONLY_PROJECT_STATUSES) {
             check(snapshot.absent.isEmpty()) {
                 "A processing or approved Modrinth project is read-only and cannot receive missing release versions."
@@ -39,47 +45,70 @@ internal class ModrinthReleaseCoordinator(
         return snapshot.receipt(Operation.PREFLIGHT)
     }
 
-    /** Creates only missing exact listed versions while the project remains draft or unlisted. */
+    /**
+     * Creates only missing exact listed versions and completes an authorized first-release draft bootstrap.
+     */
     fun stage(): Receipt {
-        val initial = reconcile(requirePresent = false, requireApproved = false)
+        val initial = reconcile(requirePresent = false, requireApproved = false, bootstrapPolicy = BootstrapPolicy.ELIGIBLE_DRAFT)
         when (initial.projectStatus) {
-            in MUTABLE_PROJECT_STATUSES -> initial.absent.forEach(::createWithRequery)
-            in READ_ONLY_PROJECT_STATUSES ->
+            in MUTABLE_PROJECT_STATUSES -> {
+                initial.absent.forEach(::createWithRequery)
+            }
+
+            in READ_ONLY_PROJECT_STATUSES -> {
                 check(initial.absent.isEmpty()) {
                     "A processing or approved Modrinth project is read-only and cannot receive missing release versions."
                 }
-            else -> error("Unsupported Modrinth project lifecycle state.")
+            }
+
+            else -> {
+                error("Unsupported Modrinth project lifecycle state.")
+            }
         }
-        return reconcile(requirePresent = true, requireApproved = false).receipt(Operation.STAGE)
+        if (initial.bootstrapPlan.isEmpty.not()) {
+            check(initial.projectStatus == ProjectStatus.DRAFT) {
+                "Modrinth project bootstrap requires a draft release inventory."
+            }
+            val staged = reconcile(requirePresent = true, requireApproved = false, bootstrapPolicy = BootstrapPolicy.AUTHORIZED)
+            bootstrapProject(staged.bootstrapPlan)
+        }
+        return reconcile(requirePresent = true, requireApproved = false, bootstrapPolicy = BootstrapPolicy.STRICT).receipt(Operation.STAGE)
     }
 
-    /** Submits a completely listed draft or unlisted project for review and otherwise polls only. */
+    /**
+     * Submits a completely listed draft or unlisted project for review and otherwise polls only.
+     */
     fun submit(): Receipt {
-        val initial = reconcile(requirePresent = true, requireApproved = false)
+        val initial = reconcile(requirePresent = true, requireApproved = false, bootstrapPolicy = BootstrapPolicy.STRICT)
         when (initial.projectStatus) {
             in MUTABLE_PROJECT_STATUSES -> submitWithRequery()
             in READ_ONLY_PROJECT_STATUSES -> Unit
             else -> error("Unsupported Modrinth project lifecycle state.")
         }
-        val result = reconcile(requirePresent = true, requireApproved = false)
+        val result = reconcile(requirePresent = true, requireApproved = false, bootstrapPolicy = BootstrapPolicy.STRICT)
         check(result.projectStatus in READ_ONLY_PROJECT_STATUSES) {
             "Modrinth project submission did not reach processing or approved state."
         }
         return result.receipt(Operation.SUBMIT)
     }
 
-    /** Verifies approval, exact listed metadata, and bytes returned by every primary CDN URL. */
+    /**
+     * Verifies approval, exact listed metadata, and bytes returned by every primary CDN URL.
+     */
     fun verify(): Receipt {
-        val snapshot = reconcile(requirePresent = true, requireApproved = true)
+        val snapshot = reconcile(requirePresent = true, requireApproved = true, bootstrapPolicy = BootstrapPolicy.STRICT)
         snapshot.listed.forEach { target ->
             assertHash("CDN artifact ${target.artifact.fileName}", api.hashRemoteFile(target.url), target.artifact)
         }
         return snapshot.receipt(Operation.VERIFY)
     }
 
+    // One authoritative snapshot must validate immutable metadata, inventory, and bootstrap eligibility before any caller may act on it.
+    @Suppress("LongMethod")
     private fun reconcile(
         requirePresent: Boolean,
         requireApproved: Boolean,
+        bootstrapPolicy: BootstrapPolicy,
     ): Snapshot {
         manifest.validate()
         check(manifest.projectId.isNotBlank()) {
@@ -98,8 +127,7 @@ internal class ModrinthReleaseCoordinator(
                 "Modrinth project ${manifest.projectId} must be approved for final verification."
             }
         }
-        assertProjectMetadata(project)
-        assertProjectDisclosures()
+        assertBasicProjectMetadata(project)
         assertProjectAssets(project)
 
         val supportedTags = api.getGameVersions()
@@ -108,6 +136,7 @@ internal class ModrinthReleaseCoordinator(
 
         val remote = api.getProjectVersions(manifest.projectId)
         val expectedNumbers = manifest.artifacts.map(ModrinthManifest.Artifact::versionNumber).toSet()
+        val containsOnlyExpectedVersions = remote.all { version -> version.versionNumber in expectedNumbers }
         val expectedHashes = manifest.artifacts.associateBy(ModrinthManifest.Artifact::sha512)
         remote.forEach { version ->
             version.files.forEach { file ->
@@ -140,25 +169,47 @@ internal class ModrinthReleaseCoordinator(
                 listed += RemoteTarget(artifact, primary.url)
             }
         }
-        return Snapshot(manifest.projectId, project.status, absent, listed)
+        val allowBootstrap =
+            when (bootstrapPolicy) {
+                BootstrapPolicy.ELIGIBLE_DRAFT -> {
+                    project.status == ProjectStatus.DRAFT && containsOnlyExpectedVersions
+                }
+
+                BootstrapPolicy.AUTHORIZED -> {
+                    check(project.status == ProjectStatus.DRAFT && containsOnlyExpectedVersions) {
+                        "Authorized Modrinth bootstrap may continue only for the same draft and expected version inventory."
+                    }
+                    true
+                }
+
+                BootstrapPolicy.STRICT -> {
+                    false
+                }
+            }
+        val bootstrapPlan =
+            BootstrapPlan(
+                projectPatch = inspectProjectClassification(project, allowBootstrap),
+                disclosureMissing = inspectProjectDisclosures(api.getProjectDisclosures(manifest.projectId), allowBootstrap),
+            )
+        return Snapshot(manifest.projectId, project.status, absent, listed, bootstrapPlan)
     }
 
-    private fun assertProjectMetadata(remote: RemoteProject) {
+    private fun assertBasicProjectMetadata(remote: RemoteProject) {
         val expected = manifest.project
         val differences = mutableListOf<String>()
-        fun compare(name: String, actual: Any?, wanted: Any?) {
+
+        fun compare(
+            name: String,
+            actual: Any?,
+            wanted: Any?,
+        ) {
             if (actual != wanted) differences += "$name expected=$wanted actual=$actual"
         }
         compare("slug", remote.slug, expected.slug)
         compare("title", remote.title, expected.title)
         compare("description", remote.description, expected.description)
         compare("body", normalize(remote.body), normalize(expected.body))
-        compare("categories", remote.categories, expected.categories)
-        compare("additional_categories", remote.additionalCategories, expected.additionalCategories)
-        compare("environment", remote.environments, setOf(VersionEnvironment.CLIENT_ONLY))
         compare("license.id", remote.licenseId, expected.licenseId)
-        compare("client_side", remote.clientSide, expected.clientSide)
-        compare("server_side", remote.serverSide, expected.serverSide)
         compare("source_url", remote.sourceUrl, expected.sourceUrl)
         compare("issues_url", remote.issuesUrl, expected.issuesUrl)
         compare("wiki_url", remote.documentationUrl, expected.documentationUrl)
@@ -167,15 +218,73 @@ internal class ModrinthReleaseCoordinator(
         }
     }
 
-    private fun assertProjectDisclosures() {
-        val disclosures = api.getProjectDisclosures(manifest.projectId)
-        check(disclosures.size == 1) { "The Modrinth project must have exactly one content disclosure." }
-        val disclosure = disclosures.single()
-        check(disclosure.type == DisclosureType.AI_CONTENT) { "The only project disclosure must be AI content." }
-        check(disclosure.note == manifest.project.aiDisclosureNote) { "The Modrinth AI disclosure statement differs." }
-        check(disclosure.aiUses == manifest.project.aiDisclosureUses) {
-            "The Modrinth AI disclosure must identify exactly code and text use."
+    private fun inspectProjectClassification(
+        remote: RemoteProject,
+        allowMissing: Boolean,
+    ): ProjectPatchPlan {
+        val expected = manifest.project
+        val categoriesMissing = missingOrExact("categories", remote.categories, expected.categories, remote.categories.isEmpty(), allowMissing)
+        val additionalCategoriesMissing =
+            missingOrExact(
+                "additional_categories",
+                remote.additionalCategories,
+                expected.additionalCategories,
+                remote.additionalCategories.isEmpty(),
+                allowMissing,
+            )
+        val environmentsMissing =
+            missingOrExact(
+                "environment",
+                remote.environments,
+                setOf(VersionEnvironment.CLIENT_ONLY),
+                remote.environments.isEmpty() || remote.environments == setOf(VersionEnvironment.UNKNOWN),
+                allowMissing,
+            )
+        val clientMissing =
+            missingOrExact("client_side", remote.clientSide, expected.clientSide, remote.clientSide == SideSupport.UNKNOWN, allowMissing)
+        val serverMissing =
+            missingOrExact("server_side", remote.serverSide, expected.serverSide, remote.serverSide == SideSupport.UNKNOWN, allowMissing)
+        return ProjectPatchPlan(
+            categoriesMissing = categoriesMissing,
+            additionalCategoriesMissing = additionalCategoriesMissing,
+            environmentMissing = environmentsMissing || clientMissing || serverMissing,
+        )
+    }
+
+    private fun inspectProjectDisclosures(
+        disclosures: List<ModrinthApiClient.RemoteDisclosure>,
+        allowMissing: Boolean,
+    ): Boolean {
+        val activeDisclosures = disclosures.filter { disclosure -> disclosure.deleted.not() }
+        if (activeDisclosures.size == 1) {
+            val disclosure = activeDisclosures.single()
+            if (
+                disclosure.type == DisclosureType.AI_CONTENT &&
+                disclosure.note == manifest.project.aiDisclosureNote &&
+                disclosure.aiUses == manifest.project.aiDisclosureUses
+            ) {
+                return false
+            }
         }
+        check(activeDisclosures.isEmpty() && allowMissing) {
+            "Modrinth project disclosures differ from the tracked release contract; refusing overwrite or removal."
+        }
+        return true
+    }
+
+    private fun missingOrExact(
+        name: String,
+        actual: Any?,
+        expected: Any?,
+        missing: Boolean,
+        allowMissing: Boolean,
+    ): Boolean {
+        if (actual == expected) return false
+        check(missing && allowMissing) {
+            val reason = if (missing) "is not configured" else "differs"
+            "Modrinth project field $name $reason; refusing overwrite."
+        }
+        return true
     }
 
     private fun assertProjectAssets(remote: RemoteProject) {
@@ -213,7 +322,12 @@ internal class ModrinthReleaseCoordinator(
         expected: ModrinthManifest.Artifact,
     ) {
         val differences = mutableListOf<String>()
-        fun compare(name: String, actual: Any?, wanted: Any?) {
+
+        fun compare(
+            name: String,
+            actual: Any?,
+            wanted: Any?,
+        ) {
             if (actual != wanted) differences += "$name expected=$wanted actual=$actual"
         }
         compare("project_id", remote.projectId, manifest.projectId)
@@ -244,6 +358,109 @@ internal class ModrinthReleaseCoordinator(
         check(differences.isEmpty()) {
             "Existing Modrinth version ${expected.versionNumber} differs; refusing overwrite: ${differences.joinToString("; ")}"
         }
+    }
+
+    private fun bootstrapProject(plan: BootstrapPlan) {
+        if (plan.projectPatch.isEmpty.not()) {
+            bootstrapWriteWithRequery(
+                description = "project classification",
+                write = {
+                    api.updateProjectClassification(
+                        projectId = manifest.projectId,
+                        categories = manifest.project.categories.takeIf { plan.projectPatch.categoriesMissing },
+                        additionalCategories = manifest.project.additionalCategories.takeIf { plan.projectPatch.additionalCategoriesMissing },
+                        environment = VersionEnvironment.CLIENT_ONLY.takeIf { plan.projectPatch.environmentMissing },
+                    )
+                },
+                readExact = ::projectClassificationIsExactDuringBootstrap,
+            )
+        }
+        if (plan.disclosureMissing) {
+            bootstrapWriteWithRequery(
+                description = "AI disclosure",
+                write = {
+                    api.setAiDisclosure(
+                        projectId = manifest.projectId,
+                        note = manifest.project.aiDisclosureNote,
+                        uses = manifest.project.aiDisclosureUses,
+                    )
+                },
+                readExact = ::disclosureIsExactDuringBootstrap,
+            )
+        }
+    }
+
+    private fun projectClassificationIsExactDuringBootstrap(): Boolean {
+        val project = readBootstrapProject()
+        return inspectProjectClassification(project, allowMissing = true).isEmpty
+    }
+
+    private fun disclosureIsExactDuringBootstrap(): Boolean {
+        val project = readBootstrapProject()
+        check(inspectProjectClassification(project, allowMissing = false).isEmpty) {
+            "Modrinth project classification must be exact before setting its disclosure."
+        }
+        return inspectProjectDisclosures(api.getProjectDisclosures(manifest.projectId), allowMissing = true).not()
+    }
+
+    private fun readBootstrapProject(): RemoteProject {
+        val project = api.getProject(manifest.projectId)
+        check(project.id == manifest.projectId) { "Modrinth project identity changed during bootstrap." }
+        check(project.projectType == ProjectType.MOD) { "Modrinth project type changed during bootstrap." }
+        check(project.status == ProjectStatus.DRAFT) { "Modrinth project left draft state during bootstrap." }
+        assertBasicProjectMetadata(project)
+        assertBootstrapVersionInventory()
+        return project
+    }
+
+    private fun assertBootstrapVersionInventory() {
+        val remote = api.getProjectVersions(manifest.projectId)
+        val expectedNumbers = manifest.artifacts.map(ModrinthManifest.Artifact::versionNumber).toSet()
+        check(remote.size == manifest.artifacts.size && remote.map(RemoteVersion::versionNumber).toSet() == expectedNumbers) {
+            "Modrinth version inventory changed during project bootstrap."
+        }
+        manifest.artifacts.forEach { artifact ->
+            val version = remote.single { candidate -> candidate.versionNumber == artifact.versionNumber }
+            assertExact(version, artifact)
+            check(version.status == VersionStatus.LISTED) { "Modrinth bootstrap requires every expected version to remain listed." }
+        }
+    }
+
+    // A second write is permitted only after bounded authoritative reads still show the field as absent.
+    @Suppress("ThrowsCount")
+    private fun bootstrapWriteWithRequery(
+        description: String,
+        write: () -> Unit,
+        readExact: () -> Boolean,
+    ) {
+        if (readExact()) return
+        try {
+            write()
+        } catch (failure: AmbiguousWriteException) {
+            pause(failure.retryAfterMillis)
+            if (pollBootstrapWrite(readExact)) return
+            try {
+                write()
+            } catch (retryFailure: AmbiguousWriteException) {
+                pause(retryFailure.retryAfterMillis)
+                if (pollBootstrapWrite(readExact)) return
+                throw retryFailure
+            } catch (retryFailure: WriteRejectedException) {
+                if (pollBootstrapWrite(readExact)) return
+                throw retryFailure
+            }
+        }
+        check(pollBootstrapWrite(readExact)) {
+            "Modrinth $description write was accepted but exact state was not observable after bounded polling."
+        }
+    }
+
+    private fun pollBootstrapWrite(readExact: () -> Boolean): Boolean {
+        repeat(MAX_STATE_POLLS) { poll ->
+            if (readExact()) return true
+            if (poll + 1 < MAX_STATE_POLLS) pause(POLL_DELAY_MILLIS)
+        }
+        return false
     }
 
     private fun createWithRequery(artifact: ModrinthManifest.Artifact) {
@@ -338,9 +555,10 @@ internal class ModrinthReleaseCoordinator(
     }
 
     private fun findRemote(artifact: ModrinthManifest.Artifact): RemoteVersion? {
-        val matching = api.getProjectVersions(manifest.projectId).filter { version ->
-            version.versionNumber == artifact.versionNumber
-        }
+        val matching =
+            api.getProjectVersions(manifest.projectId).filter { version ->
+                version.versionNumber == artifact.versionNumber
+            }
         check(matching.size <= 1) {
             "Modrinth contains duplicate version number ${artifact.versionNumber}."
         }
@@ -381,7 +599,9 @@ internal class ModrinthReleaseCoordinator(
         if (0L < delayMillis) Thread.sleep(delayMillis.coerceAtMost(10_000L))
     }
 
-    /** Credential-free result persisted by a network task for release review. */
+    /**
+     * Credential-free result persisted by a network task for release review.
+     */
     internal data class Receipt(
         val operation: String,
         val projectId: String,
@@ -395,6 +615,7 @@ internal class ModrinthReleaseCoordinator(
         val projectStatus: ProjectStatus,
         val absent: List<ModrinthManifest.Artifact>,
         val listed: List<RemoteTarget>,
+        val bootstrapPlan: BootstrapPlan,
     ) {
         fun receipt(operation: Operation): Receipt =
             Receipt(
@@ -411,6 +632,29 @@ internal class ModrinthReleaseCoordinator(
         val url: String,
     )
 
+    private data class BootstrapPlan(
+        val projectPatch: ProjectPatchPlan,
+        val disclosureMissing: Boolean,
+    ) {
+        val isEmpty: Boolean
+            get() = projectPatch.isEmpty && disclosureMissing.not()
+    }
+
+    private data class ProjectPatchPlan(
+        val categoriesMissing: Boolean,
+        val additionalCategoriesMissing: Boolean,
+        val environmentMissing: Boolean,
+    ) {
+        val isEmpty: Boolean
+            get() = categoriesMissing.not() && additionalCategoriesMissing.not() && environmentMissing.not()
+    }
+
+    private enum class BootstrapPolicy {
+        ELIGIBLE_DRAFT,
+        AUTHORIZED,
+        STRICT,
+    }
+
     private enum class Operation(
         val wireValue: String,
     ) {
@@ -420,6 +664,9 @@ internal class ModrinthReleaseCoordinator(
         VERIFY("verify"),
     }
 
+    /**
+     * Owns the bounded polling policy and accepted monotonic project states.
+     */
     companion object {
         private const val MAX_STATE_POLLS = 5
         private const val POLL_DELAY_MILLIS = 250L

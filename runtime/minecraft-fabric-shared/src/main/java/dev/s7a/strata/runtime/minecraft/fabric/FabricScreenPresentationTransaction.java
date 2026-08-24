@@ -29,6 +29,8 @@ final class FabricScreenPresentationTransaction {
             BooleanSupplier isClientThread,
             Supplier<S> create,
             Consumer<S> install) throws Throwable {
+        // Java has no Boolean.not() equivalent, so explicit equality preserves the shared negation convention.
+        //noinspection PointlessBooleanExpression
         if (isClientThread.getAsBoolean() == false) {
             throw new ScreenOpenThreadException("Strata screens must be opened on the Minecraft client thread.");
         }

@@ -22,7 +22,9 @@ internal data class ModrinthManifest(
     val changelog: String,
     val artifacts: List<Artifact>,
 ) {
-    /** One exact Minecraft distribution and the metadata that must match remotely. */
+    /**
+     * One immutable Minecraft distribution and the metadata that must match remotely.
+     */
     internal data class Artifact(
         val gameVersion: String,
         val versionNumber: String,
@@ -36,7 +38,9 @@ internal data class ModrinthManifest(
         val githubAssetName: String,
     )
 
-    /** Canonical public metadata that must match the Modrinth project before any version mutation. */
+    /**
+     * Canonical immutable metadata that must match the Modrinth project before any version mutation.
+     */
     internal data class ProjectMetadata(
         val slug: String,
         val title: String,
@@ -56,13 +60,17 @@ internal data class ModrinthManifest(
         val gallery: List<GalleryAsset>,
     )
 
-    /** Tracked local project asset and its required remote content hash. */
+    /**
+     * Tracked local project asset and its required remote content hash.
+     */
     internal data class ProjectAsset(
         val path: String,
         val sha256: String,
     )
 
-    /** Tracked local gallery asset and the exact metadata used to identify it remotely. */
+    /**
+     * Tracked local gallery asset and the exact metadata used to identify it remotely.
+     */
     internal data class GalleryAsset(
         val id: String,
         val path: String,
@@ -73,7 +81,9 @@ internal data class ModrinthManifest(
         val ordering: Int,
     )
 
-    /** Converts this manifest into a stable JSON-compatible map without credentials or machine-specific paths. */
+    /**
+     * Converts this manifest into a stable JSON-compatible map without credentials or machine-specific paths.
+     */
     fun toMap(): Map<String, Any> =
         linkedMapOf(
             "schemaVersion" to schemaVersion,
@@ -136,12 +146,17 @@ internal data class ModrinthManifest(
                 },
         )
 
-    /** Writes deterministic pretty-printed JSON to [file], replacing only that generated file. */
+    /**
+     * Writes deterministic pretty-printed JSON to [file], replacing only that generated file.
+     */
     fun write(file: File) {
         file.parentFile.mkdirs()
         file.writeText(JsonOutput.prettyPrint(JsonOutput.toJson(toMap())) + "\n")
     }
 
+    /**
+     * Owns the release schema constants and credential-free manifest parsing entry points.
+     */
     companion object {
         const val CURRENT_SCHEMA_VERSION: Int = 1
         const val EXPECTED_ARTIFACT_COUNT: Int = 20
@@ -154,12 +169,22 @@ internal data class ModrinthManifest(
         const val SOURCE_URL: String = "https://github.com/sya-ri/strata"
         const val ISSUES_URL: String = "https://github.com/sya-ri/strata/issues"
         const val DOCUMENTATION_URL: String = "https://gh.s7a.dev/strata/"
+        private val CANONICAL_PROJECT_IDENTITY =
+            CanonicalProjectIdentity(
+                slug = "strata-ui",
+                title = "Strata",
+                licenseId = "MIT",
+                iconPath = "icon.png",
+            )
 
-        /** Reads and validates the generated manifest from [file]. */
+        /**
+         * Reads and validates the generated manifest from [file].
+         */
         fun read(file: File): ModrinthManifest {
             val root = JsonSlurper().parse(file) as? Map<*, *> ?: error("The Modrinth manifest root must be an object.")
-            val schemaVersion = (root["schemaVersion"] as? Number)?.toInt()
-                ?: error("The Modrinth manifest must declare schemaVersion.")
+            val schemaVersion =
+                (root["schemaVersion"] as? Number)?.toInt()
+                    ?: error("The Modrinth manifest must declare schemaVersion.")
             check(schemaVersion == CURRENT_SCHEMA_VERSION) {
                 "Unsupported Modrinth manifest schema $schemaVersion."
             }
@@ -234,14 +259,11 @@ internal data class ModrinthManifest(
                     },
             )
 
-        private fun Map<*, *>.requiredObject(name: String): Map<*, *> =
-            this[name] as? Map<*, *> ?: error("Project metadata $name must be an object.")
+        private fun Map<*, *>.requiredObject(name: String): Map<*, *> = this[name] as? Map<*, *> ?: error("Project metadata $name must be an object.")
 
-        private fun Map<*, *>.requiredList(name: String): List<*> =
-            this[name] as? List<*> ?: error("Project metadata $name must be an array.")
+        private fun Map<*, *>.requiredList(name: String): List<*> = this[name] as? List<*> ?: error("Project metadata $name must be an array.")
 
-        private fun Any?.asRequiredObject(description: String): Map<*, *> =
-            this as? Map<*, *> ?: error("$description must be an object.")
+        private fun Any?.asRequiredObject(description: String): Map<*, *> = this as? Map<*, *> ?: error("$description must be an object.")
 
         private fun Map<*, *>.toProjectAsset(): ProjectAsset =
             ProjectAsset(
@@ -260,7 +282,9 @@ internal data class ModrinthManifest(
                 ordering = (this["ordering"] as? Number)?.toInt() ?: error("Gallery ordering must be numeric."),
             )
 
-        /** Reads tracked project metadata from [file] and rejects unknown structural omissions. */
+        /**
+         * Reads tracked project metadata from [file] and rejects unknown structural omissions.
+         */
         fun readProjectMetadata(
             file: File,
             body: String,
@@ -269,14 +293,21 @@ internal data class ModrinthManifest(
             return value.toProjectMetadata(body)
         }
 
-        /** Reads the immutable tracked project ID, permitting a blank value only before the project exists. */
+        /**
+         * Reads the immutable tracked project ID, permitting a blank value only before the project exists.
+         */
         fun readTrackedProjectId(file: File): String {
             val value = JsonSlurper().parse(file) as? Map<*, *> ?: error("Tracked Modrinth project metadata must be an object.")
             return value["projectId"] as? String ?: error("Tracked Modrinth project metadata must declare projectId.")
         }
     }
 
-    /** Validates uniqueness, canonical version numbers, and hash syntax before any network operation. */
+    // Keeping cross-field validation atomic prevents a release caller from accidentally invoking only part of the contract.
+
+    /**
+     * Validates uniqueness, canonical version numbers, and hash syntax before any network operation.
+     */
+    @Suppress("LongMethod")
     fun validate() {
         check(artifacts.size == EXPECTED_ARTIFACT_COUNT) {
             "A release must contain exactly $EXPECTED_ARTIFACT_COUNT Minecraft artifacts, found ${artifacts.size}."
@@ -317,14 +348,14 @@ internal data class ModrinthManifest(
                 "Artifact ${artifact.fileName} has an unexpected Maven coordinate."
             }
         }
-        check(project.slug == "strata-ui") { "The canonical Modrinth slug must be strata-ui." }
-        check(project.title == "Strata") { "The canonical Modrinth title must be Strata." }
+        check(project.slug == CANONICAL_PROJECT_IDENTITY.slug) { "The canonical Modrinth slug must be strata-ui." }
+        check(project.title == CANONICAL_PROJECT_IDENTITY.title) { "The canonical Modrinth title must be Strata." }
         check(project.description == PROJECT_DESCRIPTION) {
             "The canonical Modrinth description differs from the reviewed release description."
         }
         check(project.body.isNotBlank()) { "The canonical Modrinth project body must not be blank." }
         check(project.categories == setOf("library")) { "The canonical Modrinth category must be library." }
-        check(project.licenseId == "MIT") { "The canonical Modrinth license must be MIT." }
+        check(project.licenseId == CANONICAL_PROJECT_IDENTITY.licenseId) { "The canonical Modrinth license must be MIT." }
         check(project.clientSide == SideSupport.REQUIRED && project.serverSide == SideSupport.UNSUPPORTED) {
             "The canonical Modrinth side metadata must describe a client-only mod."
         }
@@ -340,7 +371,9 @@ internal data class ModrinthManifest(
         check(project.aiDisclosureNote == AI_DISCLOSURE_NOTE) {
             "The AI disclosure statement must match the reviewed release statement exactly."
         }
-        check(project.icon.path == "icon.svg") { "The canonical project icon must be icon.svg." }
+        check(project.icon.path == CANONICAL_PROJECT_IDENTITY.iconPath) {
+            "The canonical Modrinth project icon must be icon.png."
+        }
         check(project.gallery.map(GalleryAsset::id) == listOf("overview", "inventory", "progress")) {
             "The gallery must contain only overview, inventory, and progress in canonical order."
         }
@@ -357,9 +390,20 @@ internal data class ModrinthManifest(
                 "Project asset ${asset.path} has an invalid SHA-256 hash."
             }
         }
-        check(project.gallery.map(GalleryAsset::ordering).distinct().size == project.gallery.size) {
+        check(
+            project.gallery
+                .map(GalleryAsset::ordering)
+                .distinct()
+                .size == project.gallery.size,
+        ) {
             "Gallery ordering values must be unique."
         }
     }
 
+    private data class CanonicalProjectIdentity(
+        val slug: String,
+        val title: String,
+        val licenseId: String,
+        val iconPath: String,
+    )
 }

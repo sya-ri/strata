@@ -5,6 +5,7 @@ import groovy.json.JsonSlurper
 import java.io.File
 import java.io.IOException
 import java.io.InputStream
+import java.math.BigInteger
 import java.net.URI
 import java.net.URLEncoder
 import java.net.http.HttpClient
@@ -15,6 +16,8 @@ import java.security.MessageDigest
 import java.time.Duration
 import java.util.UUID
 
+// Keeping transport, decoding, and credential redaction together preserves one auditable authentication boundary.
+
 /**
  * Minimal Modrinth client used only by explicit release tasks.
  *
@@ -23,6 +26,7 @@ import java.util.UUID
  * Read operations retry bounded transient failures.
  * Ambiguous writes are returned without raw response causes so the coordinator can re-query authoritative state before retrying.
  */
+@Suppress("TooManyFunctions")
 internal class ModrinthApiClient(
     apiBaseUrl: String,
     private val token: String,
@@ -49,11 +53,14 @@ internal class ModrinthApiClient(
         require(0L < retryBaseMillis) { "The Modrinth retry base delay must be positive." }
     }
 
-    /** Gets project metadata, including typed lifecycle state and project assets. */
-    fun getProject(projectId: String): RemoteProject =
-        decodeProject(parseObject(read("/project/${encode(projectId)}"), "Modrinth project"))
+    /**
+     * Gets project metadata, including typed lifecycle state and project assets.
+     */
+    fun getProject(projectId: String): RemoteProject = decodeProject(parseObject(read("/project/${encode(projectId)}"), "Modrinth project"))
 
-    /** Gets the current content disclosures through the v3 project disclosure endpoint. */
+    /**
+     * Gets the current content disclosures through the v3 project disclosure endpoint.
+     */
     fun getProjectDisclosures(projectId: String): List<RemoteDisclosure> {
         val root = parseObject(readAbsolute("$apiOrigin/v3/project/${encode(projectId)}/disclosures"), "Modrinth disclosures")
         return root.requiredList("disclosures").map { value ->
@@ -61,13 +68,17 @@ internal class ModrinthApiClient(
         }
     }
 
-    /** Gets every canonical game-version tag currently accepted by Modrinth. */
+    /**
+     * Gets every canonical game-version tag currently accepted by Modrinth.
+     */
     fun getGameVersions(): Set<String> =
         parseList(read("/tag/game_version"), "Modrinth game-version tags")
             .map { value -> value.asRequiredObject("Modrinth game-version tag").requiredString("version") }
             .toSet()
 
-    /** Lists every project version, including changelogs required for exact reconciliation. */
+    /**
+     * Lists every project version, including changelogs required for exact reconciliation.
+     */
     fun getProjectVersions(projectId: String): List<RemoteVersion> =
         parseList(
             read("/project/${encode(projectId)}/version?include_changelog=true"),
@@ -117,6 +128,59 @@ internal class ModrinthApiClient(
     }
 
     /**
+     * Sets only absent project classification fields through the authenticated v3 project endpoint.
+     *
+     * Null arguments are omitted so an exact existing value is never rewritten.
+     *
+     * @throws AmbiguousWriteException when the response is unknown after a timeout, transport error, rate limit, or server failure.
+     * @throws WriteRejectedException when Modrinth deterministically rejects the request with a non-retryable client status.
+     */
+    fun updateProjectClassification(
+        projectId: String,
+        categories: Set<String>?,
+        additionalCategories: Set<String>?,
+        environment: VersionEnvironment?,
+    ) {
+        val data = linkedMapOf<String, Any>()
+        categories?.let { values -> data["categories"] = values.sorted() }
+        additionalCategories?.let { values -> data["additional_categories"] = values.sorted() }
+        environment?.let { value -> data["environment"] = value.wireValue }
+        check(data.isNotEmpty()) { "A Modrinth project classification patch must contain at least one absent field." }
+        writeAbsoluteOnce(
+            method = "PATCH",
+            url = "$apiOrigin/v3/project/${encode(projectId)}",
+            contentType = "application/json",
+            publisher = HttpRequest.BodyPublishers.ofString(JsonOutput.toJson(data)),
+        )
+    }
+
+    /**
+     * Sets the exact AI-content disclosure without removing any existing disclosure.
+     *
+     * @throws AmbiguousWriteException when the response is unknown after a timeout, transport error, rate limit, or server failure.
+     * @throws WriteRejectedException when Modrinth deterministically rejects the request with a non-retryable client status.
+     */
+    fun setAiDisclosure(
+        projectId: String,
+        note: String,
+        uses: Set<AiUse>,
+    ) {
+        val disclosure =
+            linkedMapOf<String, Any>(
+                "type" to DisclosureType.AI_CONTENT.wireValue,
+                "uses" to uses.map(AiUse::wireValue).sorted(),
+                "note" to note,
+            )
+        val data = linkedMapOf<String, Any>("set" to listOf(disclosure), "remove" to emptyList<String>())
+        writeAbsoluteOnce(
+            method = "PATCH",
+            url = "$apiOrigin/v3/project/${encode(projectId)}/disclosures",
+            contentType = "application/json",
+            publisher = HttpRequest.BodyPublishers.ofString(JsonOutput.toJson(data)),
+        )
+    }
+
+    /**
      * Submits a completely staged project for public review without changing version metadata.
      *
      * @throws AmbiguousWriteException when the response is unknown after a timeout, transport error, rate limit, or server failure.
@@ -158,20 +222,26 @@ internal class ModrinthApiClient(
                             HttpResponse.BodyHandlers.ofInputStream(),
                         )
                     when {
-                        response.statusCode() in 200..299 -> return hash(response)
+                        response.statusCode() in 200..299 -> {
+                            return hash(response)
+                        }
+
                         response.statusCode() in 300..399 -> {
                             response.body().close()
                             check(redirectCount < MAX_REDIRECTS) { "Modrinth CDN exceeded the redirect limit." }
-                            val location = response.headers().firstValue("Location").orElse(null)
-                                ?: error("Modrinth CDN redirect omitted Location.")
+                            val location =
+                                response.headers().firstValue("Location").orElse(null)
+                                    ?: error("Modrinth CDN redirect omitted Location.")
                             redirectTarget = validatedDownloadUri(uri.resolve(location))
                             break
                         }
+
                         isTransientStatus(response.statusCode()) -> {
                             response.body().close()
                             lastFailureMessage = "Modrinth CDN returned HTTP ${response.statusCode()}."
                             pause(response.headers().firstValue("X-Ratelimit-Reset").orElse(null), attempt)
                         }
+
                         else -> {
                             response.body().close()
                             error("Modrinth CDN returned HTTP ${response.statusCode()}.")
@@ -221,7 +291,7 @@ internal class ModrinthApiClient(
                         featured = gallery.requiredBoolean("featured"),
                         title = gallery.optionalString("title"),
                         description = gallery.optionalString("description"),
-                        ordering = (gallery["ordering"] as? Number)?.toInt() ?: 0,
+                        ordering = gallery.requiredInt("ordering"),
                     )
                 },
         )
@@ -231,9 +301,12 @@ internal class ModrinthApiClient(
             type = DisclosureType.decode(value.requiredString("type")),
             note = value.optionalString("note"),
             aiUses =
-                (value["uses"] as? List<*>)?.map { item ->
-                    AiUse.decode(item as? String ?: error("Modrinth disclosure uses must contain strings."))
-                }?.toSet().orEmpty(),
+                (value["uses"] as? List<*>)
+                    ?.map { item ->
+                        AiUse.decode(item as? String ?: error("Modrinth disclosure uses must contain strings."))
+                    }?.toSet()
+                    .orEmpty(),
+            deleted = value.optionalString("deleted_at") != null,
         )
 
     private fun decodeVersion(value: Map<*, *>): RemoteVersion =
@@ -305,11 +378,20 @@ internal class ModrinthApiClient(
         path: String,
         contentType: String,
         publisher: HttpRequest.BodyPublisher,
+    ) = writeAbsoluteOnce(method, "$baseUrl$path", contentType, publisher)
+
+    // The exception mapping intentionally drops transport causes so credential-bearing request state cannot escape this boundary.
+    @Suppress("SwallowedException", "ThrowsCount")
+    private fun writeAbsoluteOnce(
+        method: String,
+        url: String,
+        contentType: String,
+        publisher: HttpRequest.BodyPublisher,
     ) {
         try {
             val response =
                 httpClient.send(
-                    request("$baseUrl$path").header("Content-Type", contentType).method(method, publisher).build(),
+                    request(url).header("Content-Type", contentType).method(method, publisher).build(),
                     HttpResponse.BodyHandlers.ofString(),
                 )
             if (response.statusCode() in 200..299) return
@@ -378,10 +460,11 @@ internal class ModrinthApiClient(
     }
 
     private fun validatedDownloadUri(uri: URI): URI {
+        val scheme = DownloadScheme.decode(uri.scheme)
         if (allowInsecureDownloads) {
-            check(uri.scheme in setOf("http", "https")) { "Test download URL must use HTTP or HTTPS." }
+            check(scheme in setOf(DownloadScheme.HTTP, DownloadScheme.HTTPS)) { "Test download URL must use HTTP or HTTPS." }
         } else {
-            check(uri.scheme == "https") { "Modrinth CDN URL must use HTTPS." }
+            check(scheme == DownloadScheme.HTTPS) { "Modrinth CDN URL must use HTTPS." }
         }
         check(uri.host?.lowercase() in allowedDownloadHosts.map(String::lowercase)) {
             "Modrinth CDN URL uses a non-authoritative host."
@@ -390,63 +473,86 @@ internal class ModrinthApiClient(
         return uri
     }
 
-    private fun pause(reset: String?, attempt: Int) {
+    private fun pause(
+        reset: String?,
+        attempt: Int,
+    ) {
         val delay = retryDelayMillis(reset, attempt)
         if (0L < delay) Thread.sleep(delay)
     }
 
-    private fun retryDelayMillis(reset: String?, attempt: Int): Long {
+    private fun retryDelayMillis(
+        reset: String?,
+        attempt: Int,
+    ): Long {
         val exponential = retryBaseMillis * (1L shl attempt.coerceAtMost(4))
         return ((reset?.toLongOrNull()?.times(1_000L)) ?: exponential).coerceIn(0L, MAX_RETRY_MILLIS)
     }
 
-    private fun remoteFailureMessage(response: HttpResponse<String>): String =
-        "Modrinth returned HTTP ${response.statusCode()}: ${safe(response.body()).take(MAX_ERROR_BODY_LENGTH)}"
+    private fun remoteFailureMessage(response: HttpResponse<String>): String = "Modrinth returned HTTP ${response.statusCode()}: ${safe(response.body()).take(MAX_ERROR_BODY_LENGTH)}"
 
     private fun safe(value: String?): String = value.orEmpty().replace(token, "<redacted>")
 
-    private fun isTransientStatus(statusCode: Int): Boolean =
-        statusCode == HTTP_REQUEST_TIMEOUT || statusCode == HTTP_TOO_MANY_REQUESTS || statusCode in 500..599
+    private fun isTransientStatus(statusCode: Int): Boolean = statusCode == HTTP_REQUEST_TIMEOUT || statusCode == HTTP_TOO_MANY_REQUESTS || statusCode in 500..599
 
     private fun encode(value: String): String = URLEncoder.encode(value, StandardCharsets.UTF_8).replace("+", "%20")
 
-    private fun parseObject(body: String, description: String): Map<*, *> =
-        parseJson(body, description) as? Map<*, *> ?: error("$description must be a JSON object.")
+    private fun parseObject(
+        body: String,
+        description: String,
+    ): Map<*, *> = parseJson(body, description) as? Map<*, *> ?: error("$description must be a JSON object.")
 
-    private fun parseList(body: String, description: String): List<*> =
-        parseJson(body, description) as? List<*> ?: error("$description must be a JSON array.")
+    private fun parseList(
+        body: String,
+        description: String,
+    ): List<*> = parseJson(body, description) as? List<*> ?: error("$description must be a JSON array.")
 
-    private fun parseJson(body: String, description: String): Any =
+    private fun parseJson(
+        body: String,
+        description: String,
+    ): Any =
         try {
             JsonSlurper().parseText(safe(body))
         } catch (_: RuntimeException) {
             error("$description returned invalid JSON.")
         }
 
-    private fun Any?.asRequiredObject(description: String): Map<*, *> =
-        this as? Map<*, *> ?: error("$description must be an object.")
+    private fun Any?.asRequiredObject(description: String): Map<*, *> = this as? Map<*, *> ?: error("$description must be an object.")
 
-    private fun Map<*, *>.requiredString(name: String): String =
-        (this[name] as? String)?.takeIf(String::isNotBlank) ?: error("Modrinth field $name must be a non-blank string.")
+    private fun Map<*, *>.requiredString(name: String): String = (this[name] as? String)?.takeIf(String::isNotBlank) ?: error("Modrinth field $name must be a non-blank string.")
 
-    private fun Map<*, *>.optionalString(name: String): String? = this[name] as? String
+    private fun Map<*, *>.optionalString(name: String): String? {
+        val value = this[name]
+        if (containsKey(name).not() || value == null) return null
+        return value as? String ?: error("Modrinth field $name must be a string or null.")
+    }
 
-    private fun Map<*, *>.requiredBoolean(name: String): Boolean =
-        this[name] as? Boolean ?: error("Modrinth field $name must be a boolean.")
+    private fun Map<*, *>.requiredBoolean(name: String): Boolean = this[name] as? Boolean ?: error("Modrinth field $name must be a boolean.")
 
     private fun Map<*, *>.requiredLong(name: String): Long =
-        (this[name] as? Number)?.toLong() ?: error("Modrinth field $name must be numeric.")
+        when (val value = this[name]) {
+            is Byte -> value.toLong()
+            is Short -> value.toLong()
+            is Int -> value.toLong()
+            is Long -> value
+            is BigInteger -> value.toLong().takeIf { converted -> BigInteger.valueOf(converted) == value }
+            else -> null
+        } ?: error("Modrinth field $name must be a 64-bit JSON integer.")
 
-    private fun Map<*, *>.requiredList(name: String): List<*> =
-        this[name] as? List<*> ?: error("Modrinth field $name must be an array.")
+    private fun Map<*, *>.requiredInt(name: String): Int =
+        requiredLong(name)
+            .let { value -> value.toInt().takeIf { converted -> converted.toLong() == value } }
+            ?: error("Modrinth field $name must be a 32-bit JSON integer.")
 
-    private fun Map<*, *>.requiredMap(name: String): Map<*, *> =
-        this[name] as? Map<*, *> ?: error("Modrinth field $name must be an object.")
+    private fun Map<*, *>.requiredList(name: String): List<*> = this[name] as? List<*> ?: error("Modrinth field $name must be an array.")
 
-    private fun Map<*, *>.stringSet(name: String): Set<String> =
-        requiredList(name).map { item -> item as? String ?: error("Modrinth field $name must contain strings.") }.toSet()
+    private fun Map<*, *>.requiredMap(name: String): Map<*, *> = this[name] as? Map<*, *> ?: error("Modrinth field $name must be an object.")
 
-    /** Signals that a write may have reached Modrinth and authoritative state must be queried before retrying. */
+    private fun Map<*, *>.stringSet(name: String): Set<String> = requiredList(name).map { item -> item as? String ?: error("Modrinth field $name must contain strings.") }.toSet()
+
+    /**
+     * Signals that a write may have reached Modrinth and authoritative state must be queried before retrying.
+     */
     internal class AmbiguousWriteException(
         message: String,
         val retryAfterMillis: Long,
@@ -464,14 +570,18 @@ internal class ModrinthApiClient(
         val statusCode: Int,
     ) : RuntimeException("Modrinth rejected the write with HTTP $statusCode.")
 
-    /** Streamed size and hashes of a downloaded remote object. */
+    /**
+     * Streamed size and hashes of a downloaded remote object.
+     */
     internal data class DownloadedFile(
         val size: Long,
         val sha256: String,
         val sha512: String,
     )
 
-    /** Typed Modrinth project response required for release reconciliation. */
+    /**
+     * Typed Modrinth project response required for release reconciliation.
+     */
     internal data class RemoteProject(
         val id: String,
         val slug: String,
@@ -493,7 +603,9 @@ internal class ModrinthApiClient(
         val gallery: List<RemoteGalleryImage>,
     )
 
-    /** Typed Modrinth gallery metadata. */
+    /**
+     * Typed Modrinth gallery metadata.
+     */
     internal data class RemoteGalleryImage(
         val rawUrl: String,
         val featured: Boolean,
@@ -502,14 +614,19 @@ internal class ModrinthApiClient(
         val ordering: Int,
     )
 
-    /** Typed project disclosure returned by the v3 disclosure endpoint. */
+    /**
+     * Typed project disclosure returned by the v3 disclosure endpoint, including its soft-deletion state.
+     */
     internal data class RemoteDisclosure(
         val type: DisclosureType,
         val note: String?,
         val aiUses: Set<AiUse>,
+        val deleted: Boolean = false,
     )
 
-    /** Typed Modrinth version response required for exact idempotency. */
+    /**
+     * Typed Modrinth version response required for exact idempotency.
+     */
     internal data class RemoteVersion(
         val id: String,
         val projectId: String,
@@ -526,7 +643,9 @@ internal class ModrinthApiClient(
         val files: List<RemoteFile>,
     )
 
-    /** Typed project dependency attached to a Modrinth version. */
+    /**
+     * Typed project dependency attached to a Modrinth version.
+     */
     internal data class RemoteDependency(
         val projectId: String?,
         val versionId: String?,
@@ -534,7 +653,9 @@ internal class ModrinthApiClient(
         val type: DependencyType,
     )
 
-    /** Typed primary-file metadata attached to a Modrinth version. */
+    /**
+     * Typed primary-file metadata attached to a Modrinth version.
+     */
     internal data class RemoteFile(
         val fileName: String,
         val size: Long,
@@ -544,194 +665,470 @@ internal class ModrinthApiClient(
         val sha512: String,
     )
 
-    /** Lifecycle status of a Modrinth project. */
+    /**
+     * Lifecycle status of a Modrinth project.
+     */
     internal enum class ProjectStatus(
         val wireValue: String,
     ) {
+        /**
+         * Publicly approved project.
+         */
         APPROVED("approved"),
+
+        /**
+         * Archived project.
+         */
         ARCHIVED("archived"),
+
+        /**
+         * Rejected project.
+         */
         REJECTED("rejected"),
+
+        /**
+         * Unsubmitted mutable project draft.
+         */
         DRAFT("draft"),
+
+        /**
+         * Mutable project hidden from listings.
+         */
         UNLISTED("unlisted"),
+
+        /**
+         * Project undergoing review.
+         */
         PROCESSING("processing"),
+
+        /**
+         * Project withheld from publication.
+         */
         WITHHELD("withheld"),
+
+        /**
+         * Project scheduled for publication.
+         */
         SCHEDULED("scheduled"),
+
+        /**
+         * Private project.
+         */
         PRIVATE("private"),
+
+        /**
+         * Legacy unknown project state returned explicitly by Modrinth.
+         */
         UNKNOWN("unknown"),
         ;
 
+        /**
+         * Decodes project lifecycle values at the API boundary.
+         */
         companion object {
-            /** Decodes one API value and rejects future unknown discriminators. */
+            /**
+             * Decodes one API value and rejects future unknown discriminators.
+             */
             fun decode(value: String): ProjectStatus =
                 entries.singleOrNull { status -> status.wireValue == value }
                     ?: error("Unknown Modrinth project status: $value")
         }
     }
 
-    /** Project kind exposed by Modrinth. */
+    /**
+     * Project kind exposed by Modrinth.
+     */
     internal enum class ProjectType(
         val wireValue: String,
     ) {
+        /**
+         * Mod project.
+         */
         MOD("mod"),
+
+        /**
+         * Modpack project.
+         */
         MODPACK("modpack"),
+
+        /**
+         * Resource-pack project.
+         */
         RESOURCE_PACK("resourcepack"),
+
+        /**
+         * Shader project.
+         */
         SHADER("shader"),
         ;
 
+        /**
+         * Decodes project kinds at the API boundary.
+         */
         companion object {
-            /** Decodes one API value and rejects future unknown discriminators. */
+            /**
+             * Decodes one API value and rejects future unknown discriminators.
+             */
             fun decode(value: String): ProjectType =
                 entries.singleOrNull { type -> type.wireValue == value }
                     ?: error("Unknown Modrinth project type: $value")
         }
     }
 
-    /** Deprecated side-support value still verified for project metadata compatibility. */
+    /**
+     * Deprecated side-support value still verified for project metadata compatibility.
+     */
     internal enum class SideSupport(
         val wireValue: String,
     ) {
+        /**
+         * Side is required.
+         */
         REQUIRED("required"),
+
+        /**
+         * Side is optional.
+         */
         OPTIONAL("optional"),
+
+        /**
+         * Side is unsupported.
+         */
         UNSUPPORTED("unsupported"),
+
+        /**
+         * Legacy unknown side support returned explicitly by Modrinth.
+         */
         UNKNOWN("unknown"),
         ;
 
+        /**
+         * Decodes side-support values at the API boundary.
+         */
         companion object {
-            /** Decodes one API value and rejects future unknown discriminators. */
+            /**
+             * Decodes one API value and rejects future unknown discriminators.
+             */
             fun decode(value: String): SideSupport =
                 entries.singleOrNull { support -> support.wireValue == value }
                     ?: error("Unknown Modrinth side support: $value")
         }
     }
 
-    /** Visibility state of a Modrinth version. */
+    /**
+     * Visibility state of a Modrinth version.
+     */
     internal enum class VersionStatus(
         val wireValue: String,
     ) {
+        /**
+         * Publicly listed version.
+         */
         LISTED("listed"),
+
+        /**
+         * Archived version.
+         */
         ARCHIVED("archived"),
+
+        /**
+         * Draft version.
+         */
         DRAFT("draft"),
+
+        /**
+         * Unlisted version.
+         */
         UNLISTED("unlisted"),
+
+        /**
+         * Scheduled version.
+         */
         SCHEDULED("scheduled"),
+
+        /**
+         * Legacy unknown version state returned explicitly by Modrinth.
+         */
         UNKNOWN("unknown"),
         ;
 
+        /**
+         * Decodes version visibility at the API boundary.
+         */
         companion object {
-            /** Decodes one API value and rejects future unknown discriminators. */
+            /**
+             * Decodes one API value and rejects future unknown discriminators.
+             */
             fun decode(value: String): VersionStatus =
                 entries.singleOrNull { status -> status.wireValue == value }
                     ?: error("Unknown Modrinth version status: $value")
         }
     }
 
-    /** Release channel of a Modrinth version. */
+    /**
+     * Release channel of a Modrinth version.
+     */
     internal enum class ReleaseType(
         val wireValue: String,
     ) {
+        /**
+         * Stable release channel.
+         */
         RELEASE("release"),
+
+        /**
+         * Beta release channel.
+         */
         BETA("beta"),
+
+        /**
+         * Alpha release channel.
+         */
         ALPHA("alpha"),
         ;
 
+        /**
+         * Decodes release channels at the API boundary.
+         */
         companion object {
-            /** Decodes one API value and rejects future unknown discriminators. */
+            /**
+             * Decodes one API value and rejects future unknown discriminators.
+             */
             fun decode(value: String): ReleaseType =
                 entries.singleOrNull { type -> type.wireValue == value }
                     ?: error("Unknown Modrinth release type: $value")
         }
     }
 
-    /** Loader identifier attached to a Modrinth version. */
+    /**
+     * Loader identifier attached to a Modrinth version.
+     */
     internal enum class Loader(
         val wireValue: String,
     ) {
+        /**
+         * Fabric loader.
+         */
         FABRIC("fabric"),
         ;
 
+        /**
+         * Decodes loader identifiers at the API boundary.
+         */
         companion object {
-            /** Decodes one API value and rejects unsupported loaders. */
+            /**
+             * Decodes one API value and rejects unsupported loaders.
+             */
             fun decode(value: String): Loader =
                 entries.singleOrNull { loader -> loader.wireValue == value }
                     ?: error("Unsupported Modrinth loader: $value")
         }
     }
 
-    /** Runtime environment attached to a Modrinth project or version. */
+    /**
+     * Runtime environment attached to a Modrinth project or version.
+     */
     internal enum class VersionEnvironment(
         val wireValue: String,
     ) {
+        /**
+         * Client and server are both required.
+         */
         CLIENT_AND_SERVER("client_and_server"),
+
+        /**
+         * Client is required and server is unsupported.
+         */
         CLIENT_ONLY("client_only"),
+
+        /**
+         * Client is required and server is optional.
+         */
         CLIENT_ONLY_SERVER_OPTIONAL("client_only_server_optional"),
+
+        /**
+         * Singleplayer-only environment.
+         */
         SINGLEPLAYER_ONLY("singleplayer_only"),
+
+        /**
+         * Server is required and client is unsupported.
+         */
         SERVER_ONLY("server_only"),
+
+        /**
+         * Server is required and client is optional.
+         */
         SERVER_ONLY_CLIENT_OPTIONAL("server_only_client_optional"),
+
+        /**
+         * Dedicated-server-only environment.
+         */
         DEDICATED_SERVER_ONLY("dedicated_server_only"),
+
+        /**
+         * Either client or server is sufficient.
+         */
         CLIENT_OR_SERVER("client_or_server"),
+
+        /**
+         * Either side works, with both preferred.
+         */
         CLIENT_OR_SERVER_PREFERS_BOTH("client_or_server_prefers_both"),
+
+        /**
+         * Legacy unknown environment returned explicitly by Modrinth.
+         */
         UNKNOWN("unknown"),
         ;
 
+        /**
+         * Decodes runtime environments at the API boundary.
+         */
         companion object {
-            /** Decodes one API value and rejects future unknown discriminators. */
+            /**
+             * Decodes one API value and rejects future unknown discriminators.
+             */
             fun decode(value: String): VersionEnvironment =
                 entries.singleOrNull { environment -> environment.wireValue == value }
                     ?: error("Unknown Modrinth environment: $value")
         }
     }
 
-    /** Dependency relationship attached to a Modrinth version. */
+    /**
+     * Dependency relationship attached to a Modrinth version.
+     */
     internal enum class DependencyType(
         val wireValue: String,
     ) {
+        /**
+         * Required dependency.
+         */
         REQUIRED("required"),
+
+        /**
+         * Optional dependency.
+         */
         OPTIONAL("optional"),
+
+        /**
+         * Incompatible dependency.
+         */
         INCOMPATIBLE("incompatible"),
+
+        /**
+         * Embedded dependency.
+         */
         EMBEDDED("embedded"),
         ;
 
+        /**
+         * Decodes dependency relationships at the API boundary.
+         */
         companion object {
-            /** Decodes one API value and rejects future unknown discriminators. */
+            /**
+             * Decodes one API value and rejects future unknown discriminators.
+             */
             fun decode(value: String): DependencyType =
                 entries.singleOrNull { type -> type.wireValue == value }
                     ?: error("Unknown Modrinth dependency type: $value")
         }
     }
 
-    /** Top-level Modrinth project disclosure kind. */
+    /**
+     * Top-level Modrinth project disclosure kind.
+     */
     internal enum class DisclosureType(
         val wireValue: String,
     ) {
+        /**
+         * AI-content disclosure.
+         */
         AI_CONTENT("ai_content"),
+
+        /**
+         * Advertising disclosure.
+         */
         ADVERTISEMENTS("advertisements"),
+
+        /**
+         * Epilepsy-trigger disclosure.
+         */
         EPILEPSY_TRIGGERS("epilepsy_triggers"),
+
+        /**
+         * System-interaction disclosure.
+         */
         SYSTEM_INTERACTIONS("system_interactions"),
+
+        /**
+         * Telemetry disclosure.
+         */
         TELEMETRY("telemetry"),
+
+        /**
+         * Derivative-work disclosure.
+         */
         DERIVATIVE_WORK("derivative_work"),
+
+        /**
+         * Paid-feature disclosure.
+         */
         PAID_FEATURES("paid_features"),
+
+        /**
+         * Archived disclosure.
+         */
         ARCHIVED("archived"),
         ;
 
+        /**
+         * Decodes disclosure kinds at the API boundary.
+         */
         companion object {
-            /** Decodes one API value and rejects future unknown discriminators. */
+            /**
+             * Decodes one API value and rejects future unknown discriminators.
+             */
             fun decode(value: String): DisclosureType =
                 entries.singleOrNull { type -> type.wireValue == value }
                     ?: error("Unknown Modrinth disclosure type: $value")
         }
     }
 
-    /** AI contribution area nested in the Modrinth AI-content disclosure. */
+    /**
+     * AI contribution area nested in the Modrinth AI-content disclosure.
+     */
     internal enum class AiUse(
         val wireValue: String,
     ) {
+        /**
+         * Source-code assistance.
+         */
         CODE("code"),
+
+        /**
+         * Asset assistance.
+         */
         ASSETS("assets"),
+
+        /**
+         * Text assistance.
+         */
         TEXT("text"),
+
+        /**
+         * Functional-design assistance.
+         */
         FUNCTIONALITY("functionality"),
         ;
 
+        /**
+         * Decodes AI contribution areas at the API boundary.
+         */
         companion object {
-            /** Decodes one API value and rejects future unknown discriminators. */
+            /**
+             * Decodes one API value and rejects future unknown discriminators.
+             */
             fun decode(value: String): AiUse =
                 entries.singleOrNull { use -> use.wireValue == value }
                     ?: error("Unknown Modrinth AI use: $value")
@@ -740,6 +1137,23 @@ internal class ModrinthApiClient(
 
     private fun MessageDigest.hex(): String = digest().joinToString("") { byte -> "%02x".format(byte) }
 
+    private enum class DownloadScheme(
+        val wireValue: String,
+    ) {
+        HTTP("http"),
+        HTTPS("https"),
+        ;
+
+        companion object {
+            fun decode(value: String?): DownloadScheme =
+                entries.singleOrNull { scheme -> scheme.wireValue == value }
+                    ?: error("Unsupported download URL scheme: $value")
+        }
+    }
+
+    /**
+     * Owns bounded retry and transport constants for the client.
+     */
     companion object {
         private const val MAX_ATTEMPTS = 4
         private const val MAX_REDIRECTS = 3

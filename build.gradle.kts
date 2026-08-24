@@ -28,7 +28,7 @@ import java.util.zip.ZipFile
 plugins {
     base
     alias(libs.plugins.kotlin.jvm) apply false
-    alias(libs.plugins.detekt) apply false
+    alias(libs.plugins.detekt)
     alias(libs.plugins.kotlinter) apply false
     alias(libs.plugins.vanniktechMavenPublish) apply false
     alias(libs.plugins.dokka)
@@ -420,6 +420,16 @@ val stagePagesSourceRevision =
     }
 
 val detektRulesProject = project(":quality:detekt-rules")
+dependencies {
+    add("detektPlugins", detektRulesProject)
+}
+
+extensions.configure<DetektExtension> {
+    buildUponDefaultConfig = true
+    config.setFrom(rootProject.file("config/detekt/detekt.yml"))
+    source.setFrom(layout.projectDirectory.dir("build-logic/src/main/kotlin"))
+}
+
 private val minecraftClientTaskNames = setOf("runClientGameTest", "runProductionClientGameTest")
 private val ideaSyncActive = providers.systemProperty("idea.sync.active").map(String::toBoolean).getOrElse(false)
 private val completeIdeaModelActive =
@@ -869,7 +879,7 @@ extensions.configure<StrataReleaseExtension> {
     modrinthProjectMetadataFile.set(layout.projectDirectory.file("release/modrinth-project.json"))
     modrinthProjectBodyFile.set(layout.projectDirectory.file("docs/modrinth-project.md"))
     projectAssetFiles.from(
-        layout.projectDirectory.file("icon.svg"),
+        layout.projectDirectory.file("icon.png"),
         layout.projectDirectory.file("docs/components/overview.png"),
         layout.projectDirectory.file("docs/components/screen-inventory.png"),
         layout.projectDirectory.file("docs/components/screen-progress.png"),

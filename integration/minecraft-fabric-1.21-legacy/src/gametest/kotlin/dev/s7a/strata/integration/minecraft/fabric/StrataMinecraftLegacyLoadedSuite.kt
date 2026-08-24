@@ -154,7 +154,10 @@ internal class StrataMinecraftLegacyLoadedSuite {
             nativePresentation(screen).textures.isNotEmpty()
         }
         movePointer(context, slotCenter)
-        context.waitTicks(2)
+        context.waitFor { minecraft ->
+            val screen = minecraft.screen as? FabricMinecraftScreen ?: return@waitFor false
+            nativeTextureSizes(screen) == listOf(viewport, slotHighlightTextureSize)
+        }
         takeScreenshot(context, "strata-player-inventory-binding-${minecraftVersion()}", output)
         assertPortableTextureBounds(context)
     }
@@ -270,18 +273,19 @@ internal class StrataMinecraftLegacyLoadedSuite {
         context.computeOnClient { minecraft ->
             val screen = activeFabricScreen(minecraft)
             val fabricPresentation = fabricPresentation(screen)
-            val presentation = nativePresentation(screen)
-            val sizes =
-                presentation.textures.map { texture ->
-                    val pixels = checkNotNull(texture.pixels) { "A displayed Fabric texture was already released." }
-                    IntSize(pixels.width, pixels.height)
-                }
+            val sizes = nativeTextureSizes(screen)
             require(sizes == listOf(viewport, slotHighlightTextureSize)) {
                 val pointer = retainedPresentation(fabricPresentation, "pointerPosition")
                 "Portable runs must retain only their visible bounds instead of one full-viewport texture each: sizes=$sizes, pointer=$pointer"
             }
         }
     }
+
+    private fun nativeTextureSizes(screen: FabricMinecraftScreen): List<IntSize> =
+        nativePresentation(screen).textures.map { texture ->
+            val pixels = checkNotNull(texture.pixels) { "A displayed Fabric texture was already released." }
+            IntSize(pixels.width, pixels.height)
+        }
 
     private fun closeAndAssertReleased(context: MinecraftLoadedTestContext) {
         context.computeOnClient { minecraft ->

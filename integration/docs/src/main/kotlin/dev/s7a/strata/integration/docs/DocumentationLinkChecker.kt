@@ -57,7 +57,7 @@ internal object DocumentationLinkChecker {
         var fenced = false
         return text
             .lineSequence()
-            .map { line ->
+            .joinToString("\n") { line ->
                 if (line.trimStart().startsWith("```")) {
                     fenced = fenced.not()
                     ""
@@ -66,7 +66,7 @@ internal object DocumentationLinkChecker {
                 } else {
                     line
                 }
-            }.joinToString("\n")
+            }
     }
 
     private fun checkTarget(

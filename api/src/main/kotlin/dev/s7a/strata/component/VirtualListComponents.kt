@@ -116,17 +116,16 @@ public fun <T : Any, K : Any> UiScope.VirtualList(
 ) {
     checkUsable()
     val initialItemCount = validateVirtualListItemCount(itemCount())
-    val keyResolver = indexOfKey
     emitVirtualList(
         initialItemCount = initialItemCount,
         itemCount = itemCount,
         itemAt = itemAt,
         keyAt = keyAt,
         indexOfKey =
-            if (keyResolver == null) {
+            if (indexOfKey == null) {
                 { target, sampledCount -> (0 until sampledCount).firstOrNull { index -> keyAt(index) == target } }
             } else {
-                { target, _ -> keyResolver(target) }
+                { target, _ -> indexOfKey(target) }
             },
         state = state,
         viewportSize = viewportSize,

@@ -313,8 +313,7 @@ internal class MavenCentralPortalCoordinatorTest {
         return Fixture(repository, listOf(coordinate))
     }
 
-    private fun server(fixture: Fixture): MockCentralPortal =
-        MockCentralPortal(fixture).also { server -> servers += server }
+    private fun server(fixture: Fixture): MockCentralPortal = MockCentralPortal(fixture).also { server -> servers += server }
 
     private data class Fixture(
         val repository: Path,
@@ -373,7 +372,11 @@ internal class MavenCentralPortalCoordinatorTest {
         init {
             Files.walk(fixture.repository).use { paths ->
                 paths.filter(Files::isRegularFile).forEach { path ->
-                    val relativePath = fixture.repository.relativize(path).toString().replace('\\', '/')
+                    val relativePath =
+                        fixture.repository
+                            .relativize(path)
+                            .toString()
+                            .replace('\\', '/')
                     exactFiles[relativePath] = Files.readAllBytes(path)
                     exactFiles["$relativePath.asc"] = "signature:$relativePath".toByteArray(StandardCharsets.UTF_8)
                 }
@@ -553,8 +556,7 @@ internal class MavenCentralPortalCoordinatorTest {
                 Checksum("sha512", "SHA-512"),
             )
 
-        private fun checksumExtension(path: String): String? =
-            CHECKSUMS.map(Checksum::extension).firstOrNull { extension -> path.endsWith(".$extension") }
+        private fun checksumExtension(path: String): String? = CHECKSUMS.map(Checksum::extension).firstOrNull { extension -> path.endsWith(".$extension") }
 
         private fun ByteArray.hash(algorithm: String): String =
             MessageDigest

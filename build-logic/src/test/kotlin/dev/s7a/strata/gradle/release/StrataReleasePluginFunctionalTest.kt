@@ -49,7 +49,12 @@ internal class StrataReleasePluginFunctionalTest {
             assertEquals(artifact["fileName"], artifact["githubAssetName"])
             assertTrue((artifact["mavenCoordinate"] as String).startsWith("dev.s7a.strata:"))
         }
-        val githubAssets = projectDirectory.resolve("build/release/github").toFile().listFiles().orEmpty()
+        val githubAssets =
+            projectDirectory
+                .resolve("build/release/github")
+                .toFile()
+                .listFiles()
+                .orEmpty()
         assertEquals(41, githubAssets.size)
         assertEquals(20, githubAssets.count { file -> file.name.endsWith(".jar") })
         assertEquals(20, githubAssets.count { file -> file.name.endsWith(".jar.asc") })
@@ -148,7 +153,7 @@ internal class StrataReleasePluginFunctionalTest {
             }
             """.trimIndent() + "\n",
         )
-        val icon = write("icon.svg", "icon")
+        val icon = write("icon.png", "icon")
         val gallery =
             listOf("overview", "inventory", "progress").map { id ->
                 id to write("docs/components/$id.png", "gallery-$id")
@@ -203,7 +208,7 @@ internal class StrataReleasePluginFunctionalTest {
             appendLine("  releaseNotesFile.set(layout.projectDirectory.file(\"release-notes.md\"))")
             appendLine("  modrinthProjectMetadataFile.set(layout.projectDirectory.file(\"project.json\"))")
             appendLine("  modrinthProjectBodyFile.set(layout.projectDirectory.file(\"project-body.md\"))")
-            appendLine("  projectAssetFiles.from(\"icon.svg\", \"docs/components/overview.png\", \"docs/components/inventory.png\", \"docs/components/progress.png\")")
+            appendLine("  projectAssetFiles.from(\"icon.png\", \"docs/components/overview.png\", \"docs/components/inventory.png\", \"docs/components/progress.png\")")
             GAME_VERSIONS.forEachIndexed { index, gameVersion ->
                 val artifactGameVersion =
                     when {
@@ -245,7 +250,7 @@ internal class StrataReleasePluginFunctionalTest {
                     "documentationUrl" to ModrinthManifest.DOCUMENTATION_URL,
                     "aiDisclosureNote" to ModrinthManifest.AI_DISCLOSURE_NOTE,
                     "aiDisclosureUses" to listOf("code", "text"),
-                    "icon" to mapOf("path" to "icon.svg", "sha256" to icon.hash()),
+                    "icon" to mapOf("path" to "icon.png", "sha256" to icon.hash()),
                     "gallery" to
                         gallery.mapIndexed { index, entry ->
                             val (id, bytes) = entry
@@ -274,8 +279,7 @@ internal class StrataReleasePluginFunctionalTest {
         return bytes
     }
 
-    private fun ByteArray.hash(): String =
-        MessageDigest.getInstance("SHA-256").digest(this).joinToString("") { byte -> "%02x".format(byte) }
+    private fun ByteArray.hash(): String = MessageDigest.getInstance("SHA-256").digest(this).joinToString("") { byte -> "%02x".format(byte) }
 
     companion object {
         private val GAME_VERSIONS =

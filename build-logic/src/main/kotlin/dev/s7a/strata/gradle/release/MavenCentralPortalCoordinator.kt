@@ -1,5 +1,6 @@
 package dev.s7a.strata.gradle.release
 
+import groovy.json.JsonException
 import groovy.json.JsonOutput
 import groovy.json.JsonSlurper
 import java.io.IOException
@@ -21,7 +22,9 @@ import java.util.Base64
  * The coordinator owns no remote mutation.
  * It lists every deployment containing the release path, rejects duplicates and differing bundles, downloads all signed publication files, validates all four configured checksum sidecars, and stages evidence for an external OpenPGP verifier.
  * Credentials are retained only by this instance, are never written or logged, and are redacted from transport failures.
+ * One coordinator owns the authenticated session so credential handling, retries, and evidence validation cannot drift.
  */
+@Suppress("TooManyFunctions")
 internal class MavenCentralPortalCoordinator(
     portalBaseUri: URI,
     username: String,
@@ -75,8 +78,9 @@ internal class MavenCentralPortalCoordinator(
         statusDelayMillis: Long = DEFAULT_STATUS_DELAY_MILLIS,
     ): Receipt {
         val release = Release.parse(coordinateLines, localRepository, expectedCoordinateCount)
-        val deployment = discover(release, allowAbsent = true, incompleteAttempts, pollDelayMillis)
-            ?: return Receipt(State.ABSENT, null, null, 0, 0)
+        val deployment =
+            discover(release, allowAbsent = true, incompleteAttempts, pollDelayMillis)
+                ?: return Receipt(State.ABSENT, null, null, 0, 0)
         val readyState = waitUntilDownloadable(deployment, statusAttempts, statusDelayMillis)
         val verified = verifyDeployment(release, deployment, evidenceDirectory)
         return Receipt(
@@ -109,8 +113,9 @@ internal class MavenCentralPortalCoordinator(
         statusDelayMillis: Long = DEFAULT_STATUS_DELAY_MILLIS,
     ): Receipt {
         val release = Release.parse(coordinateLines, localRepository, expectedCoordinateCount)
-        val deployment = discover(release, allowAbsent = false, discoveryAttempts, discoveryDelayMillis)
-            ?: error("Central Publisher Portal deployment discovery unexpectedly returned no deployment.")
+        val deployment =
+            discover(release, allowAbsent = false, discoveryAttempts, discoveryDelayMillis)
+                ?: error("Central Publisher Portal deployment discovery unexpectedly returned no deployment.")
         val readyState = waitUntilDownloadable(deployment, statusAttempts, statusDelayMillis)
         val verified = verifyDeployment(release, deployment, evidenceDirectory)
         val publishedState = waitUntilPublished(deployment.id, readyState, statusAttempts, statusDelayMillis)
@@ -236,7 +241,12 @@ internal class MavenCentralPortalCoordinator(
             val checksumPath = "$path.${algorithm.extension}"
             val bytes = download(deployment.id, checksumPath)
             validateListedSize(deployment, checksumPath, bytes)
-            val actual = String(bytes, StandardCharsets.UTF_8).trim().split(Regex("\\s+"), limit = 2).firstOrNull().orEmpty()
+            val actual =
+                String(bytes, StandardCharsets.UTF_8)
+                    .trim()
+                    .split(Regex("\\s+"), limit = 2)
+                    .firstOrNull()
+                    .orEmpty()
             val expected = content.hash(algorithm.messageDigestName)
             check(actual.equals(expected, ignoreCase = true)) {
                 "Central Publisher Portal checksum differs from deployment content: $checksumPath"
@@ -258,8 +268,14 @@ internal class MavenCentralPortalCoordinator(
                 DeploymentState.VALIDATED,
                 DeploymentState.PUBLISHING,
                 DeploymentState.PUBLISHED,
-                -> return state
-                DeploymentState.FAILED -> error("Central Publisher Portal deployment ${deployment.id} failed validation.")
+                -> {
+                    return state
+                }
+
+                DeploymentState.FAILED -> {
+                    error("Central Publisher Portal deployment ${deployment.id} failed validation.")
+                }
+
                 DeploymentState.PENDING,
                 DeploymentState.VALIDATING,
                 -> {
@@ -289,7 +305,9 @@ internal class MavenCentralPortalCoordinator(
             state = readStatus(deploymentId)
             when (state) {
                 DeploymentState.PUBLISHED -> return state
+
                 DeploymentState.FAILED -> error("Central Publisher Portal deployment $deploymentId failed validation.")
+
                 DeploymentState.PENDING,
                 DeploymentState.VALIDATING,
                 DeploymentState.VALIDATED,
@@ -387,9 +405,10 @@ internal class MavenCentralPortalCoordinator(
         relativePath: String,
     ): ByteArray {
         val encodedId = URLEncoder.encode(deploymentId, StandardCharsets.UTF_8).replace("+", "%20")
-        val encodedPath = relativePath.split('/').joinToString("/") { segment ->
-            URLEncoder.encode(segment, StandardCharsets.UTF_8).replace("+", "%20")
-        }
+        val encodedPath =
+            relativePath.split('/').joinToString("/") { segment ->
+                URLEncoder.encode(segment, StandardCharsets.UTF_8).replace("+", "%20")
+            }
         return read("api/v1/publisher/deployment/$encodedId/download/$encodedPath", "Central deployment file $relativePath")
     }
 
@@ -425,6 +444,8 @@ internal class MavenCentralPortalCoordinator(
             description = description,
         )
 
+    // Transport failures and retryable statuses intentionally consume one shared bounded attempt counter.
+    @Suppress("LoopWithTooManyJumpStatements")
     private fun <T> send(
         relativePath: String,
         body: HttpRequest.BodyPublisher,
@@ -460,7 +481,10 @@ internal class MavenCentralPortalCoordinator(
                     throw IllegalStateException("$description failed after $MAXIMUM_READ_ATTEMPTS attempts: $lastFailure")
                 }
             when {
-                response.statusCode() in 200..299 -> return response.body()
+                response.statusCode() in 200..299 -> {
+                    return response.body()
+                }
+
                 response.statusCode() == HTTP_TOO_MANY_REQUESTS || response.statusCode() in 500..599 -> {
                     lastFailure = "HTTP ${response.statusCode()}"
                     if (attempt < MAXIMUM_READ_ATTEMPTS) {
@@ -468,7 +492,10 @@ internal class MavenCentralPortalCoordinator(
                         continue
                     }
                 }
-                else -> error("$description returned HTTP ${response.statusCode()}.")
+
+                else -> {
+                    error("$description returned HTTP ${response.statusCode()}.")
+                }
             }
         }
         error("$description failed after $MAXIMUM_READ_ATTEMPTS attempts: $lastFailure")
@@ -480,7 +507,7 @@ internal class MavenCentralPortalCoordinator(
     ): Map<*, *> =
         try {
             JsonSlurper().parseText(body) as? Map<*, *> ?: error("$description must be a JSON object.")
-        } catch (failure: RuntimeException) {
+        } catch (failure: JsonException) {
             throw IllegalStateException("$description contained invalid JSON.", failure)
         }
 
@@ -508,11 +535,9 @@ internal class MavenCentralPortalCoordinator(
         (this[key] as? String)?.takeIf(String::isNotBlank)
             ?: error("Central Publisher Portal response omitted non-blank string $key.")
 
-    private fun Map<*, *>.requiredLong(key: String): Long =
-        (this[key] as? Number)?.toLong() ?: error("Central Publisher Portal response omitted number $key.")
+    private fun Map<*, *>.requiredLong(key: String): Long = (this[key] as? Number)?.toLong() ?: error("Central Publisher Portal response omitted number $key.")
 
-    private fun Map<*, *>.requiredInt(key: String): Int =
-        (this[key] as? Number)?.toInt() ?: error("Central Publisher Portal response omitted number $key.")
+    private fun Map<*, *>.requiredInt(key: String): Int = (this[key] as? Number)?.toInt() ?: error("Central Publisher Portal response omitted number $key.")
 
     private fun Map<*, *>.optionalList(key: String): List<*> =
         when (val value = this[key]) {
@@ -521,40 +546,76 @@ internal class MavenCentralPortalCoordinator(
             else -> error("Central Publisher Portal response field $key must be an array.")
         }
 
-    private fun Map<*, *>.requiredList(key: String): List<*> =
-        this[key] as? List<*> ?: error("Central Publisher Portal response omitted array $key.")
+    private fun Map<*, *>.requiredList(key: String): List<*> = this[key] as? List<*> ?: error("Central Publisher Portal response omitted array $key.")
 
-    private fun Map<*, *>.optionalStringSet(key: String): Set<String> =
-        optionalList(key).map { value -> value as? String ?: error("Central Publisher Portal $key must contain strings.") }.toSet()
+    private fun Map<*, *>.optionalStringSet(key: String): Set<String> = optionalList(key).map { value -> value as? String ?: error("Central Publisher Portal $key must contain strings.") }.toSet()
 
-    private fun Any?.requiredObject(description: String): Map<*, *> =
-        this as? Map<*, *> ?: error("$description must be a JSON object.")
+    private fun Any?.requiredObject(description: String): Map<*, *> = this as? Map<*, *> ?: error("$description must be a JSON object.")
 
-    /** Central deployment lifecycle states accepted at the external JSON boundary. */
+    /**
+     * Central deployment lifecycle states accepted at the external JSON boundary.
+     */
     internal enum class DeploymentState(
         val wireValue: String,
     ) {
+        /**
+         * The deployment has been accepted but validation has not started.
+         */
         PENDING("PENDING"),
+
+        /**
+         * Central is validating the deployment contents.
+         */
         VALIDATING("VALIDATING"),
+
+        /**
+         * Central has validated the deployment and publication has not started.
+         */
         VALIDATED("VALIDATED"),
+
+        /**
+         * Central is publishing the validated deployment.
+         */
         PUBLISHING("PUBLISHING"),
+
+        /**
+         * Central has published the deployment.
+         */
         PUBLISHED("PUBLISHED"),
+
+        /**
+         * Central rejected the deployment during validation or publication.
+         */
         FAILED("FAILED"),
         ;
 
+        /**
+         * Owns strict decoding of Central deployment lifecycle values.
+         */
         companion object {
-            /** Decodes one exact Portal wire value or fails closed on API drift. */
+            /**
+             * Decodes one exact Portal wire value or fails closed on API drift.
+             */
             internal fun decode(value: String): DeploymentState =
                 entries.firstOrNull { state -> state.wireValue == value }
                     ?: error("Unknown Central Publisher Portal deployment state: $value")
         }
     }
 
-    /** Portal release inventory state used by the protected workflow. */
+    /**
+     * Portal release inventory state used by the protected workflow.
+     */
     internal enum class State(
         val wireValue: String,
     ) {
+        /**
+         * No deployment contains the release inventory.
+         */
         ABSENT("absent"),
+
+        /**
+         * One deployment exactly matches the release inventory.
+         */
         EXACT("exact"),
     }
 
@@ -620,9 +681,7 @@ internal class MavenCentralPortalCoordinator(
                 }
                 check(
                     segments[0].matches(GROUP_PATTERN) &&
-                        segments.drop(1).all { segment ->
-                            segment.matches(PATH_SEGMENT_PATTERN) && segment != "." && segment != ".."
-                        },
+                        segments.drop(1).all { segment -> segment.isSafePathSegment() },
                 ) {
                     "Maven release coordinate contains an unsafe path segment: $value"
                 }
@@ -631,6 +690,9 @@ internal class MavenCentralPortalCoordinator(
 
             private val GROUP_PATTERN = Regex("[A-Za-z0-9_+-]+(?:\\.[A-Za-z0-9_+-]+)*")
             private val PATH_SEGMENT_PATTERN = Regex("[A-Za-z0-9_.+-]+")
+            private val SAFE_SEGMENT_ROOT = Path.of("coordinate")
+
+            private fun String.isSafePathSegment(): Boolean = matches(PATH_SEGMENT_PATTERN) && SAFE_SEGMENT_ROOT.resolve(this).normalize().parent == SAFE_SEGMENT_ROOT
         }
     }
 
@@ -678,9 +740,10 @@ internal class MavenCentralPortalCoordinator(
                     }
                 val contentPaths = baseFiles.flatMap { base -> listOf(base.relativePath, "${base.relativePath}.asc") }
                 val expectedFiles =
-                    contentPaths.flatMap { path ->
-                        listOf(path) + ChecksumAlgorithm.entries.map { algorithm -> "$path.${algorithm.extension}" }
-                    }.toSet()
+                    contentPaths
+                        .flatMap { path ->
+                            listOf(path) + ChecksumAlgorithm.entries.map { algorithm -> "$path.${algorithm.extension}" }
+                        }.toSet()
                 return Release(
                     coordinates = coordinates,
                     version = version,
@@ -719,6 +782,9 @@ internal class MavenCentralPortalCoordinator(
         }
     }
 
+    /**
+     * Owns the fixed release inventory and bounded network retry contracts.
+     */
     companion object {
         private const val EXPECTED_COORDINATE_COUNT = 24
         private const val PAGE_SIZE = 500
