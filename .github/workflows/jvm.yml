@@ -2,7 +2,35 @@ name: JVM checks
 
 on:
   push:
+    paths:
+      - .github/workflows/jvm.yml
+      - api/**
+      - build.gradle.kts
+      - config/**
+      - docs/components/**
+      - docs/components.md
+      - gradle/**
+      - gradle.properties
+      - integration/**
+      - quality/**
+      - README.md
+      - runtime/**
+      - settings.gradle.kts
   pull_request:
+    paths:
+      - .github/workflows/jvm.yml
+      - api/**
+      - build.gradle.kts
+      - config/**
+      - docs/components/**
+      - docs/components.md
+      - gradle/**
+      - gradle.properties
+      - integration/**
+      - quality/**
+      - README.md
+      - runtime/**
+      - settings.gradle.kts
 
 permissions:
   contents: read
@@ -115,6 +143,8 @@ jobs:
         uses: gradle/actions/setup-gradle@v6
         with:
           cache-read-only: ${{ matrix.cache_read_only || github.ref != 'refs/heads/master' }}
+          gradle-home-cache-strict-match: true
+          gradle-home-cache-excludes: ${{ matrix.loom_cache && 'caches/fabric-loom/minecraftMaven' || 'caches/fabric-loom' }}
       - name: Hash Loom cache inputs
         if: matrix.loom_cache
         id: loom_inputs

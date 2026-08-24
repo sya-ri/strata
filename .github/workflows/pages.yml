@@ -4,6 +4,15 @@ on:
   push:
     branches:
       - master
+    paths:
+      - .github/workflows/pages.yml
+      - api/**
+      - build.gradle.kts
+      - gradle/**
+      - gradle.properties
+      - README.md
+      - runtime/**
+      - settings.gradle.kts
   workflow_dispatch:
 
 permissions:
@@ -31,6 +40,9 @@ jobs:
             25
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v6
+        with:
+          gradle-home-cache-strict-match: true
+          gradle-home-cache-excludes: caches/fabric-loom/assets
       - name: Configure Pages
         uses: actions/configure-pages@v6
       - name: Generate Dokka site
