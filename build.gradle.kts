@@ -1,8 +1,10 @@
+import com.vanniktech.maven.publish.Checksum
 import com.vanniktech.maven.publish.JavadocJar
 import com.vanniktech.maven.publish.KotlinJvm
 import com.vanniktech.maven.publish.MavenPublishBaseExtension
 import com.vanniktech.maven.publish.SourcesJar
 import dev.detekt.gradle.extensions.DetektExtension
+import dev.s7a.strata.gradle.release.StrataReleaseExtension
 import org.gradle.api.JavaVersion
 import org.gradle.api.plugins.JavaPluginExtension
 import org.gradle.api.publish.tasks.GenerateModuleMetadata
@@ -34,6 +36,7 @@ plugins {
     alias(libs.plugins.fabricLoom) apply false
     alias(libs.plugins.fabricLoomRemap) apply false
     alias(libs.plugins.kover)
+    id("dev.s7a.strata.release")
 }
 
 group = "dev.s7a.strata"
@@ -646,6 +649,8 @@ subprojects {
                 ),
             )
             publishToMavenCentral()
+            checksums(Checksum.MD5, Checksum.SHA1, Checksum.SHA256, Checksum.SHA512)
+            excludeSignatureChecksums(false)
             signAllPublications()
             pom {
                 name.set("Strata ${project.name}")
@@ -781,6 +786,10 @@ val ciMinecraftCheck = tasks.register("ciMinecraftCheck") {
     }
 }
 
+tasks.named("check") {
+    dependsOn(gradle.includedBuild("build-logic").task(":check"), verifyGeneratedDokkaSourceLinks)
+}
+
 val expectedReleaseCoordinates =
     listOf(
         "dev.s7a.strata:strata-api:$version",
@@ -822,3 +831,64 @@ val verifyPublishedConsumer =
         dir = layout.projectDirectory.dir("release/consumer").asFile
         tasks = listOf("clean", "check")
     }
+
+tasks.named("modrinthReleasePreflight") {
+    dependsOn(verifyPublishedConsumer)
+}
+
+tasks.named("mavenCentralReleasePreflight") {
+    dependsOn(verifyPublishedConsumer)
+}
+
+tasks.named("mavenCentralReleaseVerify") {
+    dependsOn(verifyPublishedConsumer)
+}
+
+tasks.named("mavenCentralPortalPreflight") {
+    dependsOn(verifyPublishedConsumer)
+}
+
+tasks.named("mavenCentralPortalVerify") {
+    dependsOn(verifyPublishedConsumer)
+}
+
+extensions.configure<StrataReleaseExtension> {
+    releaseVersion.set(project.version.toString())
+    modrinthProjectId.set(
+        providers
+            .gradleProperty("strata.modrinthProjectId")
+            .orElse(providers.environmentVariable("MODRINTH_PROJECT_ID"))
+            .orElse(""),
+    )
+    modrinthApiBaseUrl.set(
+        providers
+            .gradleProperty("strata.modrinthApiBaseUrl")
+            .orElse("https://api.modrinth.com/v2"),
+    )
+    releaseNotesFile.set(layout.projectDirectory.file("docs/releases/v${project.version}.md"))
+    modrinthProjectMetadataFile.set(layout.projectDirectory.file("release/modrinth-project.json"))
+    modrinthProjectBodyFile.set(layout.projectDirectory.file("docs/modrinth-project.md"))
+    projectAssetFiles.from(
+        layout.projectDirectory.file("icon.svg"),
+        layout.projectDirectory.file("docs/components/overview.png"),
+        layout.projectDirectory.file("docs/components/screen-inventory.png"),
+        layout.projectDirectory.file("docs/components/screen-progress.png"),
+    )
+    mavenCoordinatesFile.set(layout.projectDirectory.file("release/maven-coordinates.txt"))
+    mavenLocalRepository.set(
+        layout.dir(providers.provider { file("${System.getProperty("user.home")}/.m2/repository") }),
+    )
+    minecraftFabricTargets.forEach { fabricTarget ->
+        target(
+            gameVersion = fabricTarget.version,
+            canonicalFileName = "strata-runtime-minecraft-fabric-${fabricTarget.version}-${project.version}.jar",
+            artifact =
+                providers.provider {
+                    layout.projectDirectory.file(
+                        "runtime/minecraft-fabric-${fabricTarget.version}/build/libs/minecraft-fabric-${fabricTarget.version}-${project.version}.jar",
+                    )
+                },
+            verificationTaskPath = "${fabricTarget.runtimeProjectPath}:verifyFabricModArtifact",
+        )
+    }
+}

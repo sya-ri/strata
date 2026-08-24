@@ -3,6 +3,7 @@ import org.gradle.api.initialization.resolve.RepositoriesMode
 val releaseRepository = providers.gradleProperty("strata.releaseRepository")
 
 pluginManagement {
+    includeBuild("build-logic")
     repositories {
         gradlePluginPortal()
         mavenCentral()

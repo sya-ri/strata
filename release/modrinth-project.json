@@ -1,0 +1,56 @@
+{
+  "projectId": "",
+  "slug": "strata-ui",
+  "title": "Strata",
+  "description": "Declarative, reusable Minecraft UI with headless rendering and exact versioned Fabric adapters.",
+  "categories": [
+    "library"
+  ],
+  "additionalCategories": [
+    "utility"
+  ],
+  "licenseId": "MIT",
+  "clientSide": "required",
+  "serverSide": "unsupported",
+  "sourceUrl": "https://github.com/sya-ri/strata",
+  "issuesUrl": "https://github.com/sya-ri/strata/issues",
+  "documentationUrl": "https://gh.s7a.dev/strata/",
+  "aiDisclosureNote": "Generative AI substantially assisted implementation, review, tests, documentation, and release-page text. The maintainer directed the design and validates release artifacts through the public test suite.",
+  "aiDisclosureUses": [
+    "code",
+    "text"
+  ],
+  "icon": {
+    "path": "icon.svg",
+    "sha256": "279983694da408503d6a0c44b3801ecfd7dee70b100cfab1e671a57d3cbe4719"
+  },
+  "gallery": [
+    {
+      "id": "overview",
+      "path": "docs/components/overview.png",
+      "sha256": "0ed373c354ca1b7945da90f51afaca03bbca1b4c6dc7beeac824f28a5136a33f",
+      "featured": true,
+      "title": "Confirmation screen",
+      "description": "A vanilla-style confirmation screen rendered through Strata's production path.",
+      "ordering": 0
+    },
+    {
+      "id": "inventory",
+      "path": "docs/components/screen-inventory.png",
+      "sha256": "3f10867db0641e0274344596cbdb0e58c172c3fc87ee436d226217fce08a396d",
+      "featured": false,
+      "title": "Inventory screen",
+      "description": "A vanilla-style inventory composed from Strata primitives.",
+      "ordering": 1
+    },
+    {
+      "id": "progress",
+      "path": "docs/components/screen-progress.png",
+      "sha256": "e2bd1d1c7c1326a66634d80c65c3b0d62a0cd41878b6a8cab7887239f3db25a5",
+      "featured": false,
+      "title": "Progress screen",
+      "description": "A reusable progress interface rendered through Strata's production path.",
+      "ordering": 2
+    }
+  ]
+}
