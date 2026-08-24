@@ -1,0 +1,7 @@
+interface:
+  display_name: "Strata"
+  short_description: "Build declarative Minecraft UIs with Strata"
+  default_prompt: "Use $strata to build a reusable Minecraft screen from Strata components."
+
+policy:
+  allow_implicit_invocation: true

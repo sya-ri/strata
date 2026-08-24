@@ -25,7 +25,17 @@ internal object ShowcaseInventory {
      * @throws IllegalArgumentException when directories or component method declarations violate the inventory contract.
      * @throws IllegalStateException when class loading or reflection fails.
      */
-    internal fun discover(classDirectories: List<Path>): Set<DocumentedComponent> {
+    internal fun discover(classDirectories: List<Path>): Set<DocumentedComponent> = discoverOverloads(classDirectories).keys
+
+    /**
+     * Finds every documented component overload and groups the compiled declarations by typed identity.
+     *
+     * @param classDirectories compiled public API directories to scan.
+     * @return component identities in declaration-independent enum order with their positive JVM overload counts.
+     * @throws IllegalArgumentException when directories or component method declarations violate the inventory contract.
+     * @throws IllegalStateException when class loading or reflection fails.
+     */
+    internal fun discoverOverloads(classDirectories: List<Path>): Map<DocumentedComponent, Int> {
         val directories = classDirectories.map { directory -> directory.toAbsolutePath().normalize() }
         require(directories.isNotEmpty()) { "Minecraft component class directories are missing." }
         require(directories.toSet().size == directories.size) { "Minecraft component class directories are duplicated." }
@@ -55,9 +65,9 @@ internal object ShowcaseInventory {
             require(methods.values.all { overloads -> overloads.isNotEmpty() }) {
                 "Minecraft component inventory contains an empty component overload group."
             }
-            methods.keys
-                .mapNotNull { name -> DocumentedComponent.fromApiMethodName(name) }
-                .toSet()
+            DocumentedComponent.entries
+                .filter { component -> methods.containsKey(component.apiMethodName) }
+                .associateWith { component -> methods.getValue(component.apiMethodName).size }
         }
     }
 
@@ -167,23 +177,6 @@ internal object ShowcaseInventory {
         return false
     }
 
-    private fun descriptor(method: Method): String = method.parameterTypes.joinToString(prefix = "(", postfix = ")") { type -> descriptor(type) } + descriptor(method.returnType)
-
-    private fun descriptor(type: Class<*>): String =
-        when {
-            type == Boolean::class.javaPrimitiveType -> "Z"
-            type == Byte::class.javaPrimitiveType -> "B"
-            type == Char::class.javaPrimitiveType -> "C"
-            type == Short::class.javaPrimitiveType -> "S"
-            type == Int::class.javaPrimitiveType -> "I"
-            type == Long::class.javaPrimitiveType -> "J"
-            type == Float::class.javaPrimitiveType -> "F"
-            type == Double::class.javaPrimitiveType -> "D"
-            type == Unit::class.javaPrimitiveType -> "V"
-            type.isArray -> type.name.replace('.', '/')
-            else -> "L${type.name.replace('.', '/')};"
-        }
-
     private const val UI_SCOPE_CLASS_NAME = "dev.s7a.strata.component.UiScope"
 
     private class ApiClassLoader(
@@ -214,3 +207,20 @@ internal object ShowcaseInventory {
             }
     }
 }
+
+private fun descriptor(method: Method): String = method.parameterTypes.joinToString(prefix = "(", postfix = ")") { type -> descriptor(type) } + descriptor(method.returnType)
+
+private fun descriptor(type: Class<*>): String =
+    when {
+        type == Boolean::class.javaPrimitiveType -> "Z"
+        type == Byte::class.javaPrimitiveType -> "B"
+        type == Char::class.javaPrimitiveType -> "C"
+        type == Short::class.javaPrimitiveType -> "S"
+        type == Int::class.javaPrimitiveType -> "I"
+        type == Long::class.javaPrimitiveType -> "J"
+        type == Float::class.javaPrimitiveType -> "F"
+        type == Double::class.javaPrimitiveType -> "D"
+        type == Unit::class.javaPrimitiveType -> "V"
+        type.isArray -> type.name.replace('.', '/')
+        else -> "L${type.name.replace('.', '/')};"
+    }

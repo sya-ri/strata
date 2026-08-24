@@ -73,20 +73,36 @@ Select exactly one versioned Fabric runtime at execution time.
 The version artifacts intentionally expose the same Strata-owned entry points and class names, while their inherited Minecraft `Screen` methods differ with the native release, so depending on more than one creates duplicate classes.
 `ScreenDefinition` evaluates its callback after the Minecraft runtime has installed the active profile, so `Text(...)`, `Button(...)`, resources, slot bindings, and other components require neither a public `MinecraftUiContext` nor an extra root builder.
 
+<a id="api-only-open-example"></a>
+
+<!-- strata-api-open-example:start -->
 ```kotlin
 import dev.s7a.strata.component.Button
 import dev.s7a.strata.component.Column
 import dev.s7a.strata.component.Text
+import dev.s7a.strata.layout.HorizontalAlignment
 import dev.s7a.strata.modifier.Modifier
+import dev.s7a.strata.modifier.menuBackground
 import dev.s7a.strata.modifier.onPress
 import dev.s7a.strata.modifier.padding
+import dev.s7a.strata.modifier.size
 import dev.s7a.strata.screen.ScreenDefinition
 
-fun confirmationScreen(onConfirm: () -> Unit): ScreenDefinition =
+/**
+ * Builds and opens a screen while compiling against `strata-api` alone.
+ *
+ * The separately installed Fabric runtime supplies Minecraft rendering and becomes the current screen.
+ */
+internal fun openConfirmationScreen(onConfirm: () -> Unit) {
     ScreenDefinition("Confirm action") {
         Column(
-            modifier = Modifier.Empty.padding(12),
+            modifier =
+                Modifier.Empty
+                    .size(320, 180)
+                    .menuBackground()
+                    .padding(12),
             spacing = 8,
+            horizontalAlignment = HorizontalAlignment.Center,
         ) {
             Text("Continue with this action?")
             Button(
@@ -94,8 +110,10 @@ fun confirmationScreen(onConfirm: () -> Unit): ScreenDefinition =
                 modifier = Modifier.Empty.onPress(onConfirm),
             )
         }
-    }
+    }.open()
+}
 ```
+<!-- strata-api-open-example:end -->
 
 The `integration/api` main source set compiles a representative screen with only `:api` and checks that no runtime project enters its compile classpath.
 Its tests then supply runtime implementations to exercise rendering, input, synchronized bindings, and lifecycle behavior.
@@ -238,6 +256,23 @@ See [Architecture](docs/architecture.md) for dependency boundaries and extension
 - [Rendering performance](docs/performance.md) records the JMH methodology, allocation evidence, cache and retention gates, and the completed Minecraft 1.20 and 1.21 family baselines.
 - [Build and release](docs/build.md) lists local quality checks, the aggregated Dokka GitHub Pages site, and publication requirements.
 - [Supporting a new Minecraft version](docs/minecraft-versions.md) defines the evidence, implementation, and compatibility process for another adapter.
+
+## Public Codex skill
+
+The checked-in `skills/strata` package teaches an AI consumer the exact component, Modifier, parent-scope, state, and binding signatures, plus Strata-specific layout and custom-component review guidance.
+
+Preview it with GitHub CLI:
+
+```shell
+gh skill preview sya-ri/strata skills/strata
+```
+
+Install it with the Skills CLI:
+
+```shell
+npx skills add sya-ri/strata --skill strata
+```
+
 
 ## Build
 

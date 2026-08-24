@@ -1321,7 +1321,7 @@ Sizing and placement modifiers compose around `PlayerHead`; its immutable skin a
 
 ### Parent scope
 
-`PlayerHead` is a top-level extension on the active `UiScope`. The Fabric skin loader snapshots the current selected resource or downloaded texture first, and the retained component owns only detached pixels.
+`PlayerHead` is a top-level extension on the active `UiScope`. `Pixels` retains a detached immutable skin, while `CurrentPlayer`, `Name`, and `Uuid` remain structural asynchronous lookups deferred to node attachment; the retained node owns and releases that lookup lifetime.
 
 <details><summary>Component tree</summary>
 

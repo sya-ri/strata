@@ -84,4 +84,9 @@ The nonpublished `integration:docs` module owns two source-safe showcase tasks.
 `./gradlew :integration:docs:generateComponentShowcase` performs the same parity preflight and synchronizes the combined `docs/components.md` showcase, parity receipt, PNG files, and anchored root README region.
 Generated output is owned by the showcase generator; manual edits are reported as stale by the checker.
 
+The same module owns the public `skills/strata` package and its API-only compiled examples.
+`./gradlew :integration:docs:checkStrataSkill :integration:docs:checkDocumentationLinks` discovers component and Modifier overloads from compiled API classes, pairs them with exact Kotlin source declarations, checks state and binding declarations against compiled public member fingerprints, verifies generated references byte-for-byte, and checks every repository-local README, docs, and skill link without changing tracked files.
+`./gradlew :integration:docs:generateStrataSkill` deliberately synchronizes the five generated skill references, the anchored README example, and the canonical `docs/modrinth-project.md` body after an API or example change.
+The skill examples use a separate source set whose compile classpath contains only `:api`; ordinary application examples therefore cannot acquire a runtime import transitively.
+
 Run `./gradlew :quality:benchmarks:jmh` for the temporary JSON report and follow the methodology and acceptance gates in [Rendering performance](performance.md).
