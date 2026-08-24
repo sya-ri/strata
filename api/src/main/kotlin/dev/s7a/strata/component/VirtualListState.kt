@@ -4,6 +4,7 @@ package dev.s7a.strata.component
  * Caller-owned owner-thread navigation state shared by one VirtualList and optional independent Scrollbar.
  *
  * Index and key jumps issued before attachment remain pending and are applied when a list model attaches.
+ * A refresh issued before attachment also remains pending and is applied before pending navigation.
  * A key jump returns false when the attached model can prove the key is absent; before attachment it is accepted as pending.
  * Only one retained VirtualList may attach at a time, while any number of Scrollbars may observe [scrollState].
  *
@@ -17,6 +18,7 @@ public class VirtualListState<K : Any>(
 ) {
     private val ownerThread = Thread.currentThread()
     private var controller: VirtualListController<K>? = null
+    private var refreshPending = false
     private var pending: VirtualListJump<K>? =
         initialIndex?.let { index ->
             require(0 <= index) { "VirtualList initial index must be non-negative." }
@@ -47,12 +49,37 @@ public class VirtualListState<K : Any>(
     }
 
     /**
+     * Invalidates materialized rows after a caller-owned source or row-presentation mutation.
+     *
+     * Complete the mutation before calling this method on the state creator thread.
+     * A dynamic VirtualList then samples its count exactly once, validates the new range, reconstructs visible rows even when the count is unchanged, and preserves the last visible stable-key anchor when possible.
+     * A call without an attached list is coalesced and applied before pending navigation when the next list attaches.
+     * Count sampling and key-index validation failures propagate without replacing the attached list's last valid count and geometry, and the caller may correct the source and retry.
+     *
+     * @throws IllegalStateException when called from a thread other than the state creator thread.
+     * @throws IllegalArgumentException when the attached dynamic source reports an invalid count or key index.
+     */
+    public fun refresh() {
+        checkThread()
+        val current = controller
+        if (current == null) {
+            refreshPending = true
+            return
+        }
+        current.refresh()
+    }
+
+    /**
      * Claims this state for one retained list and applies any pending jump.
      */
     internal fun attach(next: VirtualListController<K>) {
         checkThread()
         check(controller == null) { "VirtualListState is already attached to a list." }
         controller = next
+        if (refreshPending) {
+            next.refresh()
+            refreshPending = false
+        }
         pending?.let { target ->
             if (next.jump(target)) pending = null
         }
@@ -64,14 +91,6 @@ public class VirtualListState<K : Any>(
     internal fun detach(current: VirtualListController<K>) {
         checkThread()
         if (controller === current) controller = null
-    }
-
-    /**
-     * Requests deferred row reconstruction from the attached viewport.
-     */
-    internal fun refresh() {
-        checkThread()
-        controller?.refresh()
     }
 
     private fun request(target: VirtualListJump<K>): Boolean {

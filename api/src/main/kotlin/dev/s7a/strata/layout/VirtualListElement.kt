@@ -34,14 +34,15 @@ import dev.s7a.strata.node.Node as RetainedNode
  * Internal fixed-row viewport that materializes only its visible keyed item descriptions.
  *
  * Data access and deferred content construction occur on the retained tree owner thread immediately before measurement.
- * The immutable indexed source may represent a known finite range without allocating an intermediate item list.
+ * The indexed source may represent a known finite range without allocating an intermediate item list and may be explicitly refreshed after caller-owned mutation.
  */
 internal class VirtualListElement(
     internal val state: VirtualListState<Any>,
-    internal val itemCount: Int,
+    internal val initialItemCount: Int,
+    internal val itemCount: () -> Int,
     internal val itemAt: (Int) -> Any,
     internal val keyAt: (Int) -> Any,
-    internal val indexOfKey: (Any) -> Int?,
+    internal val indexOfKey: (Any, Int) -> Int?,
     internal val itemContent: (Any) -> Element,
     internal val viewportSize: IntSize,
     internal val rowHeight: Int,
@@ -72,7 +73,8 @@ internal class VirtualListElement(
         LifecycleNode,
         VirtualListController<Any> {
         private var state = initial.state
-        private var itemCount = initial.itemCount
+        private var itemCount = initial.initialItemCount
+        private var itemCountProvider = initial.itemCount
         private var itemAt = initial.itemAt
         private var keyAt = initial.keyAt
         private var indexOfKey = initial.indexOfKey
@@ -87,6 +89,8 @@ internal class VirtualListElement(
         private var cachedStart = 0
         private var cachedEndExclusive = 0
         private var cachedChildren: List<Element> = emptyList()
+        private var anchorKey: Any? = null
+        private var anchorIntraRowOffset = 0.0
         private var observer: ScrollStateObserver? = null
         private var attached = false
 
@@ -96,10 +100,12 @@ internal class VirtualListElement(
                 cachedStart = 0
                 cachedEndExclusive = 0
                 cachedChildren = emptyList()
+                clearAnchor()
                 return emptyList()
             }
             val offset = state.scrollState.metrics.offset
             val first = (offset / rowHeight.toDouble()).toInt().coerceIn(0, itemCount - 1)
+            rememberAnchor(first, offset)
             val lastVisible = ((offset + viewportSize.height - 1.0) / rowHeight.toDouble()).toInt().coerceIn(first, itemCount - 1)
             visibleStart = maxOf(0, first - OVERSCAN_ROWS)
             val endExclusive = minOf(itemCount, lastVisible + OVERSCAN_ROWS + 1)
@@ -154,7 +160,10 @@ internal class VirtualListElement(
         ): InputResult =
             if (event is PointerEvent.Scroll) {
                 val delta = event.deltaY * scrollRate.toDouble()
-                if (delta.isFinite()) state.scrollState.scrollBy(delta, checkNotNull(observer))
+                if (delta.isFinite()) {
+                    state.scrollState.scrollBy(delta, checkNotNull(observer))
+                    rememberCurrentAnchor()
+                }
                 requestBoundaryItems(delta)
                 invalidate(DirtyMask.of(DirtyPhase.Measure))
                 InputResult.Consumed
@@ -166,26 +175,47 @@ internal class VirtualListElement(
             val index =
                 when (target) {
                     is VirtualListJump.Index -> target.value.takeIf { value -> value < itemCount }
-                    is VirtualListJump.Key -> indexOfKey(target.value)
+                    is VirtualListJump.Key -> resolveIndex(target.value, itemCount)
                 } ?: return false
             state.scrollState.scrollTo(Math.multiplyExact(index, rowHeight).toDouble())
             return true
         }
 
         override fun refresh() {
-            cachedChildren = emptyList()
+            val nextItemCount = validateItemCount(itemCountProvider())
+            val nextContentExtent = Math.multiplyExact(nextItemCount, rowHeight)
+            val retainedAnchor = anchorKey
+            val nextAnchorIndex = retainedAnchor?.let { key -> resolveIndex(key, nextItemCount) }
+            val nextAnchorOffset =
+                nextAnchorIndex?.let { index ->
+                    Math.multiplyExact(index, rowHeight).toDouble() + anchorIntraRowOffset
+                }
+            itemCount = nextItemCount
+            clearCachedChildren()
+            val currentObserver = checkNotNull(observer)
+            state.scrollState.updateGeometry(
+                viewportExtent = viewportSize.height,
+                contentExtent = nextContentExtent,
+                origin = currentObserver,
+            )
+            if (nextAnchorOffset != null) {
+                state.scrollState.scrollTo(nextAnchorOffset, currentObserver)
+            }
+            rememberCurrentAnchor()
             invalidate(DirtyMask.of(DirtyPhase.Measure))
         }
 
         override fun attach() {
-            observer = state.scrollState.observe { invalidate(DirtyMask.of(DirtyPhase.Measure)) }
-            state.attach(this)
+            observer = observeScrollState()
             attached = true
+            state.attach(this)
         }
 
         override fun detach() {
             if (attached) state.detach(this)
             attached = false
+            observer?.close()
+            observer = null
         }
 
         override fun dispose() {
@@ -193,29 +223,36 @@ internal class VirtualListElement(
             attached = false
             observer?.close()
             observer = null
-            cachedChildren = emptyList()
+            clearCachedChildren()
+            clearAnchor()
         }
 
         /**
-         * Replaces the immutable source and viewport policy while retaining navigation state.
+         * Replaces the source snapshot and viewport policy while retaining navigation state.
          */
         internal fun update(current: VirtualListElement): DirtyMask {
             val stateChanged = state !== current.state
-            val previousOffset = state.scrollState.metrics.offset
-            val previousFirst =
-                if (itemCount == 0) {
+            val nextItemCount = validateItemCount(current.initialItemCount)
+            val nextContentExtent = Math.multiplyExact(nextItemCount, current.rowHeight)
+            val retainedAnchor = anchorKey
+            val nextAnchorIndex =
+                if (stateChanged) {
                     null
                 } else {
-                    (previousOffset / rowHeight.toDouble()).toInt().coerceIn(0, itemCount - 1)
+                    retainedAnchor?.let { key -> resolveIndex(key, nextItemCount, current.indexOfKey) }
                 }
-            val anchorKey = previousFirst?.let(keyAt)
-            val intraRowOffset = previousFirst?.let { index -> previousOffset - Math.multiplyExact(index, rowHeight).toDouble() }
+            val nextAnchorOffset =
+                nextAnchorIndex?.let { index ->
+                    Math.multiplyExact(index, current.rowHeight).toDouble() + anchorIntraRowOffset
+                }
             if (stateChanged && attached) {
                 state.detach(this)
                 observer?.close()
+                observer = null
             }
             state = current.state
-            itemCount = current.itemCount
+            itemCount = nextItemCount
+            itemCountProvider = current.itemCount
             itemAt = current.itemAt
             keyAt = current.keyAt
             indexOfKey = current.indexOfKey
@@ -226,25 +263,22 @@ internal class VirtualListElement(
             canLoadLeading = current.canLoadLeading
             canLoadTrailing = current.canLoadTrailing
             actions = current.actions
-            cachedChildren = emptyList()
-            cachedStart = 0
-            cachedEndExclusive = 0
+            clearCachedChildren()
             if (stateChanged && attached) {
-                observer = state.scrollState.observe { invalidate(DirtyMask.of(DirtyPhase.Measure)) }
+                observer = observeScrollState()
                 state.attach(this)
-            } else if (attached && anchorKey != null && intraRowOffset != null) {
-                val nextAnchor = current.indexOfKey(anchorKey)
-                if (nextAnchor != null) {
-                    state.scrollState.updateGeometry(
-                        viewportExtent = viewportSize.height,
-                        contentExtent = Math.multiplyExact(itemCount, rowHeight),
-                        origin = checkNotNull(observer),
-                    )
-                    state.scrollState.scrollTo(
-                        Math.multiplyExact(nextAnchor, rowHeight).toDouble() + intraRowOffset,
-                        checkNotNull(observer),
-                    )
+                rememberCurrentAnchor()
+            } else if (attached) {
+                val currentObserver = checkNotNull(observer)
+                state.scrollState.updateGeometry(
+                    viewportExtent = viewportSize.height,
+                    contentExtent = nextContentExtent,
+                    origin = currentObserver,
+                )
+                if (nextAnchorOffset != null) {
+                    state.scrollState.scrollTo(nextAnchorOffset, currentObserver)
                 }
+                rememberCurrentAnchor()
             }
             return DirtyMask.of(DirtyPhase.Measure)
         }
@@ -254,12 +288,67 @@ internal class VirtualListElement(
             val suggested = maxOf(visibleRows, LOAD_REQUEST_MINIMUM)
             val firstVisible = (state.scrollState.metrics.offset / rowHeight.toDouble()).toInt()
             if (delta < 0.0 && canLoadLeading && firstVisible <= LOAD_THRESHOLD_ROWS) {
+                rememberCurrentAnchor()
                 actions.dispatch(ComponentActions.LeadingItemsRequested, ListLoadRequest(suggested))
             }
             val lastVisible = minOf(itemCount - 1, firstVisible + visibleRows - 1)
             if (0.0 < delta && canLoadTrailing && itemCount - 1 - lastVisible <= LOAD_THRESHOLD_ROWS) {
+                rememberCurrentAnchor()
                 actions.dispatch(ComponentActions.TrailingItemsRequested, ListLoadRequest(suggested))
             }
+        }
+
+        private fun observeScrollState(): ScrollStateObserver =
+            state.scrollState.observe {
+                rememberCurrentAnchor()
+                invalidate(DirtyMask.of(DirtyPhase.Measure))
+            }
+
+        private fun rememberCurrentAnchor() {
+            if (itemCount == 0) {
+                clearAnchor()
+                return
+            }
+            val offset = state.scrollState.metrics.offset
+            val first = (offset / rowHeight.toDouble()).toInt().coerceIn(0, itemCount - 1)
+            rememberAnchor(first, offset)
+        }
+
+        private fun rememberAnchor(
+            index: Int,
+            offset: Double,
+        ) {
+            anchorKey = keyAt(index)
+            anchorIntraRowOffset = offset - Math.multiplyExact(index, rowHeight).toDouble()
+        }
+
+        private fun clearAnchor() {
+            anchorKey = null
+            anchorIntraRowOffset = 0.0
+        }
+
+        private fun clearCachedChildren() {
+            visibleStart = 0
+            cachedStart = 0
+            cachedEndExclusive = 0
+            cachedChildren = emptyList()
+        }
+
+        private fun resolveIndex(
+            target: Any,
+            sampledCount: Int,
+            resolver: (Any, Int) -> Int? = indexOfKey,
+        ): Int? {
+            val resolved = resolver(target, sampledCount) ?: return null
+            require(0 <= resolved && resolved < sampledCount) {
+                "VirtualList key resolver returned index $resolved outside sampled count $sampledCount."
+            }
+            return resolved
+        }
+
+        private fun validateItemCount(value: Int): Int {
+            require(0 <= value) { "VirtualList item count must be non-negative." }
+            return value
         }
     }
 
@@ -275,7 +364,7 @@ internal class VirtualListElement(
                 elementClass = VirtualListElement::class,
                 nodeClass = Node::class,
                 validateLocal = { element ->
-                    require(0 <= element.itemCount) { "VirtualList item count must be non-negative." }
+                    require(0 <= element.initialItemCount) { "VirtualList item count must be non-negative." }
                     require(0 < element.viewportSize.width && 0 < element.viewportSize.height) { "VirtualList viewport size must be positive." }
                     require(0 < element.rowHeight) { "VirtualList row height must be positive." }
                     require(0 < element.scrollRate) { "VirtualList scroll rate must be positive." }

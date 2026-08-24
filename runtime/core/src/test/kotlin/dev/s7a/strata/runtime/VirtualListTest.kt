@@ -15,6 +15,8 @@ import dev.s7a.strata.modifier.onLeadingItemsRequested
 import dev.s7a.strata.modifier.onTrailingItemsRequested
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
 import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertFalse
+import org.junit.jupiter.api.Assertions.assertThrows
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 
@@ -142,6 +144,198 @@ internal class VirtualListTest {
         tree.layout()
         tree.dispatchPointer(PointerEvent.Scroll(IntOffset(1, 1), deltaX = 0.0, deltaY = 1.0))
         assertEquals(8, trailing)
+        tree.close()
+    }
+
+    @Test
+    fun refreshSamplesDynamicCountOnceAndRebuildsSameCountRows() {
+        val state = VirtualListState<Int>()
+        val items = mutableListOf(0 to "first", 1 to "second", 2 to "third")
+        val constructed = ArrayList<String>()
+        var countSamples = 0
+        val root =
+            evaluateComponentTree {
+                VirtualList(
+                    itemCount = {
+                        countSamples += 1
+                        items.size
+                    },
+                    itemAt = items::get,
+                    keyAt = { index -> items[index].first },
+                    state = state,
+                    viewportSize = IntSize(80, 20),
+                    rowHeight = 10,
+                ) { item ->
+                    constructed += item.second
+                    Spacer()
+                }
+            }
+        assertEquals(1, countSamples)
+        val tree = UiTree()
+        tree.update(root)
+        tree.measure(Constraints.fixed(80, 20))
+        tree.layout()
+        assertEquals(1, countSamples)
+        assertEquals(listOf("first", "second", "third"), constructed)
+
+        items[0] = 0 to "replaced"
+        state.refresh()
+        assertEquals(2, countSamples)
+        tree.measure(Constraints.fixed(80, 20))
+        tree.layout()
+
+        assertEquals(2, countSamples)
+        assertEquals(listOf("replaced", "second", "third"), constructed.takeLast(3))
+        tree.close()
+    }
+
+    @Test
+    fun leadingLoadRefreshPreservesStableAnchorAndIntraRowOffset() {
+        val state = VirtualListState<Int>()
+        val items = (0 until 10).toMutableList()
+        var suggestedCount = 0
+        val modifier =
+            Modifier.Empty.onLeadingItemsRequested { request ->
+                suggestedCount = request.suggestedCount
+                items.addAll(0, (-request.suggestedCount until 0).toList())
+                state.refresh()
+            }
+        val root =
+            evaluateComponentTree {
+                VirtualList(
+                    itemCount = { items.size },
+                    itemAt = items::get,
+                    keyAt = items::get,
+                    state = state,
+                    viewportSize = IntSize(80, 30),
+                    rowHeight = 10,
+                    canLoadLeading = true,
+                    modifier = modifier,
+                ) { Spacer() }
+            }
+        val tree = UiTree()
+        tree.update(root)
+        tree.measure(Constraints.fixed(80, 30))
+        tree.layout()
+        state.scrollState.scrollTo(15.0)
+        tree.measure(Constraints.fixed(80, 30))
+        tree.layout()
+
+        tree.dispatchPointer(PointerEvent.Scroll(IntOffset(1, 1), deltaX = 0.0, deltaY = -1.0))
+
+        assertEquals(8, suggestedCount)
+        assertEquals((-8 until 10).toList(), items)
+        assertEquals(85.0, state.scrollState.metrics.offset)
+        tree.measure(Constraints.fixed(80, 30))
+        tree.layout()
+        tree.close()
+    }
+
+    @Test
+    fun trailingLoadRefreshMakesAppendedWindowAvailableToJumps() {
+        val state = VirtualListState<Int>()
+        val items = (0 until 10).toMutableList()
+        var suggestedCount = 0
+        val modifier =
+            Modifier.Empty.onTrailingItemsRequested { request ->
+                suggestedCount = request.suggestedCount
+                val start = items.size
+                items.addAll(start until start + request.suggestedCount)
+                state.refresh()
+            }
+        val root =
+            evaluateComponentTree {
+                VirtualList(
+                    itemCount = { items.size },
+                    itemAt = items::get,
+                    keyAt = items::get,
+                    state = state,
+                    viewportSize = IntSize(80, 30),
+                    rowHeight = 10,
+                    canLoadTrailing = true,
+                    modifier = modifier,
+                ) { Spacer() }
+            }
+        val tree = UiTree()
+        tree.update(root)
+        tree.measure(Constraints.fixed(80, 30))
+        tree.layout()
+        state.scrollState.scrollTo(state.scrollState.metrics.maximumOffset)
+        tree.measure(Constraints.fixed(80, 30))
+        tree.layout()
+
+        tree.dispatchPointer(PointerEvent.Scroll(IntOffset(1, 1), deltaX = 0.0, deltaY = 1.0))
+
+        assertEquals(8, suggestedCount)
+        assertEquals((0 until 18).toList(), items)
+        assertTrue(state.jumpToKey(17))
+        assertTrue(state.jumpToIndex(17))
+        assertFalse(state.jumpToIndex(18))
+        tree.measure(Constraints.fixed(80, 30))
+        tree.layout()
+        tree.close()
+    }
+
+    @Test
+    fun invalidRefreshCountLeavesLastValidGeometryAndRange() {
+        val state = VirtualListState<Int>()
+        val items = (0 until 3).toList()
+        var reportedCount = items.size
+        val root =
+            evaluateComponentTree {
+                VirtualList(
+                    itemCount = { reportedCount },
+                    itemAt = items::get,
+                    keyAt = items::get,
+                    state = state,
+                    viewportSize = IntSize(80, 20),
+                    rowHeight = 10,
+                ) { Spacer() }
+            }
+        val tree = UiTree()
+        tree.update(root)
+        tree.measure(Constraints.fixed(80, 20))
+        tree.layout()
+        val validMetrics = state.scrollState.metrics
+
+        reportedCount = -1
+        assertThrows(IllegalArgumentException::class.java) { state.refresh() }
+
+        assertEquals(validMetrics, state.scrollState.metrics)
+        assertTrue(state.jumpToIndex(2))
+        assertFalse(state.jumpToIndex(3))
+        tree.close()
+    }
+
+    @Test
+    fun refreshRequestedBeforeAttachmentSamplesTheLatestSource() {
+        val state = VirtualListState<Int>()
+        val items = mutableListOf(0, 1)
+        var countSamples = 0
+        val root =
+            evaluateComponentTree {
+                VirtualList(
+                    itemCount = {
+                        countSamples += 1
+                        items.size
+                    },
+                    itemAt = items::get,
+                    keyAt = items::get,
+                    state = state,
+                    viewportSize = IntSize(80, 20),
+                    rowHeight = 10,
+                ) { Spacer() }
+            }
+        items += 2
+        state.refresh()
+        val tree = UiTree()
+
+        tree.update(root)
+        tree.measure(Constraints.fixed(80, 20))
+        tree.layout()
+
+        assertEquals(2, countSamples)
+        assertTrue(state.jumpToIndex(2))
         tree.close()
     }
 }

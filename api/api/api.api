@@ -371,8 +371,10 @@ public final class dev/s7a/strata/component/UiScopeKt {
 public final class dev/s7a/strata/component/VirtualListComponentsKt {
 	public static final fun VirtualList (Ldev/s7a/strata/component/UiScope;ILkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function1;Ldev/s7a/strata/component/VirtualListState;Ldev/s7a/strata/geometry/IntSize;ILkotlin/jvm/functions/Function1;IZZLdev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/element/ElementKey;Lkotlin/jvm/functions/Function2;)V
 	public static final fun VirtualList (Ldev/s7a/strata/component/UiScope;Ljava/util/List;Lkotlin/jvm/functions/Function1;Ldev/s7a/strata/component/VirtualListState;Ldev/s7a/strata/geometry/IntSize;IIZZLdev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/element/ElementKey;Lkotlin/jvm/functions/Function2;)V
+	public static final fun VirtualList (Ldev/s7a/strata/component/UiScope;Lkotlin/jvm/functions/Function0;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function1;Ldev/s7a/strata/component/VirtualListState;Ldev/s7a/strata/geometry/IntSize;ILkotlin/jvm/functions/Function1;IZZLdev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/element/ElementKey;Lkotlin/jvm/functions/Function2;)V
 	public static synthetic fun VirtualList$default (Ldev/s7a/strata/component/UiScope;ILkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function1;Ldev/s7a/strata/component/VirtualListState;Ldev/s7a/strata/geometry/IntSize;ILkotlin/jvm/functions/Function1;IZZLdev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/element/ElementKey;Lkotlin/jvm/functions/Function2;ILjava/lang/Object;)V
 	public static synthetic fun VirtualList$default (Ldev/s7a/strata/component/UiScope;Ljava/util/List;Lkotlin/jvm/functions/Function1;Ldev/s7a/strata/component/VirtualListState;Ldev/s7a/strata/geometry/IntSize;IIZZLdev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/element/ElementKey;Lkotlin/jvm/functions/Function2;ILjava/lang/Object;)V
+	public static synthetic fun VirtualList$default (Ldev/s7a/strata/component/UiScope;Lkotlin/jvm/functions/Function0;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function1;Ldev/s7a/strata/component/VirtualListState;Ldev/s7a/strata/geometry/IntSize;ILkotlin/jvm/functions/Function1;IZZLdev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/element/ElementKey;Lkotlin/jvm/functions/Function2;ILjava/lang/Object;)V
 }
 
 public final class dev/s7a/strata/component/VirtualListState {
@@ -382,6 +384,7 @@ public final class dev/s7a/strata/component/VirtualListState {
 	public final fun getScrollState ()Ldev/s7a/strata/component/ScrollState;
 	public final fun jumpToIndex (I)Z
 	public final fun jumpToKey (Ljava/lang/Object;)Z
+	public final fun refresh ()V
 }
 
 public abstract class dev/s7a/strata/element/Element {

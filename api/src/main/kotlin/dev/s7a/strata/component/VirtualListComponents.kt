@@ -52,6 +52,112 @@ public fun <T : Any, K : Any> UiScope.VirtualList(
     content: UiScope.(T) -> Unit,
 ) {
     checkUsable()
+    emitVirtualList(
+        initialItemCount = validateVirtualListItemCount(itemCount),
+        itemCount = { itemCount },
+        itemAt = itemAt,
+        keyAt = keyAt,
+        indexOfKey = { target, _ -> indexOfKey(target) },
+        state = state,
+        viewportSize = viewportSize,
+        rowHeight = rowHeight,
+        scrollRate = scrollRate,
+        canLoadLeading = canLoadLeading,
+        canLoadTrailing = canLoadTrailing,
+        modifier = modifier,
+        key = key,
+        content = content,
+    )
+}
+
+/**
+ * Emits a fixed-row virtual viewport backed by a caller-owned dynamic indexed source.
+ *
+ * [itemCount] is sampled exactly once while this description is created and once after each explicit [VirtualListState.refresh].
+ * [itemAt], [keyAt], and [indexOfKey] are read only against the most recently sampled non-negative count.
+ * Complete a source mutation before calling [VirtualListState.refresh] on its owner thread.
+ * Refresh reconstructs the materialized rows even when the count is unchanged and preserves the last visible stable key and its intra-row offset when that key remains.
+ * A refresh requested before attachment is retained until a list attaches.
+ * Only visible rows plus one overscan row on each edge are constructed and retained.
+ *
+ * @param T row model type owned by the caller.
+ * @param K stable row key type.
+ * @receiver active owner-thread UI scope.
+ * @param itemCount owner-thread source-size accessor returning a non-negative count at each explicit sampling boundary.
+ * @param itemAt indexed item accessor for the current sampled source revision.
+ * @param keyAt stable key accessor for the current sampled source revision.
+ * @param indexOfKey optional efficient resolver for the current source revision; null scans [keyAt] within the sampled count.
+ * @param state caller-owned navigation, invalidation, and shared scroll state.
+ * @param viewportSize exact positive viewport size.
+ * @param rowHeight positive fixed logical row height.
+ * @param scrollRate positive wheel multiplier.
+ * @param canLoadLeading whether upward boundary input emits a leading load request through [modifier].
+ * @param canLoadTrailing whether downward boundary input emits a trailing load request through [modifier].
+ * @param modifier active viewport behavior.
+ * @param key optional stable sibling identity.
+ * @param content deferred callback that emits exactly one row root.
+ * @throws IllegalArgumentException when a sampled item count is negative or a non-null resolved key index is outside that sample.
+ * @throws IllegalStateException when refresh or data access violates the owner-thread contract.
+ */
+public fun <T : Any, K : Any> UiScope.VirtualList(
+    itemCount: () -> Int,
+    itemAt: (Int) -> T,
+    keyAt: (Int) -> K,
+    state: VirtualListState<K>,
+    viewportSize: IntSize,
+    rowHeight: Int,
+    indexOfKey: ((K) -> Int?)? = null,
+    scrollRate: Int = 10,
+    canLoadLeading: Boolean = false,
+    canLoadTrailing: Boolean = false,
+    modifier: Modifier = Modifier.Empty,
+    key: ElementKey<*>? = null,
+    content: UiScope.(T) -> Unit,
+) {
+    checkUsable()
+    val initialItemCount = validateVirtualListItemCount(itemCount())
+    val keyResolver = indexOfKey
+    emitVirtualList(
+        initialItemCount = initialItemCount,
+        itemCount = itemCount,
+        itemAt = itemAt,
+        keyAt = keyAt,
+        indexOfKey =
+            if (keyResolver == null) {
+                { target, sampledCount -> (0 until sampledCount).firstOrNull { index -> keyAt(index) == target } }
+            } else {
+                { target, _ -> keyResolver(target) }
+            },
+        state = state,
+        viewportSize = viewportSize,
+        rowHeight = rowHeight,
+        scrollRate = scrollRate,
+        canLoadLeading = canLoadLeading,
+        canLoadTrailing = canLoadTrailing,
+        modifier = modifier,
+        key = key,
+        content = content,
+    )
+}
+
+@OptIn(InternalStrataRuntimeApi::class)
+private fun <T : Any, K : Any> UiScope.emitVirtualList(
+    initialItemCount: Int,
+    itemCount: () -> Int,
+    itemAt: (Int) -> T,
+    keyAt: (Int) -> K,
+    indexOfKey: (K, Int) -> Int?,
+    state: VirtualListState<K>,
+    viewportSize: IntSize,
+    rowHeight: Int,
+    scrollRate: Int,
+    canLoadLeading: Boolean,
+    canLoadTrailing: Boolean,
+    modifier: Modifier,
+    key: ElementKey<*>?,
+    content: UiScope.(T) -> Unit,
+) {
+    checkUsable()
     val evaluator = ComponentRuntimeBridge.currentOrNull()?.retainEvaluator()
     val factory: (Any) -> Element = { raw ->
         @Suppress("UNCHECKED_CAST")
@@ -62,10 +168,11 @@ public fun <T : Any, K : Any> UiScope.VirtualList(
     element(
         VirtualListElement(
             state = state as VirtualListState<Any>,
+            initialItemCount = initialItemCount,
             itemCount = itemCount,
             itemAt = { index -> itemAt(index) },
             keyAt = { index -> keyAt(index) },
-            indexOfKey = { raw -> indexOfKey(raw as K) },
+            indexOfKey = { raw, sampledCount -> indexOfKey(raw as K, sampledCount) },
             itemContent = factory,
             viewportSize = viewportSize,
             rowHeight = rowHeight,
@@ -77,6 +184,11 @@ public fun <T : Any, K : Any> UiScope.VirtualList(
             modifier = modifier,
         ),
     )
+}
+
+private fun validateVirtualListItemCount(itemCount: Int): Int {
+    require(0 <= itemCount) { "VirtualList item count must be non-negative." }
+    return itemCount
 }
 
 /**
