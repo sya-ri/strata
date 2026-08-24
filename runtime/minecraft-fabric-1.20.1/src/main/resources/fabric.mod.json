@@ -1,0 +1,14 @@
+{
+  "schemaVersion": 1,
+  "id": "strata-runtime-minecraft-fabric-1-20-1",
+  "version": "${version}",
+  "name": "Strata Minecraft Fabric 1.20.1 Runtime",
+  "description": "Fabric runtime adapter for Strata on Minecraft 1.20.1.",
+  "environment": "client",
+  "depends": {
+    "fabricloader": ">=${fabricLoader}",
+    "minecraft": "${minecraft}",
+    "fabric-language-kotlin": ">=${fabricLanguageKotlin}",
+    "java": ">=${java}"
+  }
+}

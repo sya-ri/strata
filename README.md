@@ -66,6 +66,7 @@ The selected host adapter is a runtime concern.
 | 1.20.4 | `strata-runtime-minecraft-fabric-1.20.4` | 17 | Development and production-jar loaded-client verification for the legacy Java, GUI-asset, player-profile, and standalone-runner boundaries |
 | 1.20.3 | `strata-runtime-minecraft-fabric-1.20.3` | 17 | Development and production-jar loaded-client verification for the same legacy Java, GUI-asset, player-profile, and standalone-runner boundaries |
 | 1.20.2 | `strata-runtime-minecraft-fabric-1.20.2` | 17 | Development and production-jar loaded-client verification for the same legacy Java, GUI-asset, player-profile, and standalone-runner boundaries with the active header separator |
+| 1.20.1 | `strata-runtime-minecraft-fabric-1.20.1` | 17 | Development and production-jar loaded-client verification for the pre-GUI-sprite atlas, legacy player-skin, and release-local standalone-runner boundaries |
 
 Select exactly one versioned Fabric runtime at execution time.
 The version artifacts intentionally expose the same Strata-owned entry points and class names, while their inherited Minecraft `Screen` methods differ with the native release, so depending on more than one creates duplicate classes.
@@ -213,9 +214,11 @@ The dependency boundaries are:
   Its exact compiler and loaded clients prove the complete 1.20.4 capability boundary against the preceding game release and its final official Fabric API fixture.
 - `runtime/minecraft-fabric-1.20.2` is the client-only Java 17 boundary for Minecraft 1.20.2.
   It proves the same runtime family while selecting that release's active resource-pack header separator instead of synthesizing the separator absent from later 1.20.x assets.
+- `runtime/minecraft-fabric-1.20.1` is the client-only Java 17 boundary for Minecraft 1.20.1.
+  It extracts buttons, slider tracks and handles, checkboxes, and progress bars from the active legacy atlases, applies the exact code-defined EditBox and scrollbar treatments, isolates Authlib 4 skin resolution and normalization, and owns the release-local standalone client cleanup bridge.
 - `integration/api` proves API-only application compilation, then exercises a third-party primitive and the common Minecraft host from its test classpath.
-- `integration:minecraft-fabric-1.21.11` through `integration:minecraft-fabric-1.20.2` compile the shared legacy loaded-client suite against their exact game and Fabric API dependencies, then run it from both development classes and remapped production jars; none of these modules is published.
-  Releases from 1.21.4 use Fabric Client GameTest, while 1.21.3 through 1.20.2 run the same assertions from a normal client entrypoint because their official Fabric APIs predate that test module.
+- `integration:minecraft-fabric-1.21.11` through `integration:minecraft-fabric-1.20.1` compile the shared legacy loaded-client suite against their exact game and Fabric API dependencies, then run it from both development classes and remapped production jars; none of these modules is published.
+  Releases from 1.21.4 use Fabric Client GameTest, while 1.21.3 through 1.20.1 run the same assertions from a normal client entrypoint because their official Fabric APIs predate that test module.
 - `integration/minecraft-fabric-26.1` runs the shared loaded client and integrated-server suite against actual 26.1 dependencies; it is not published.
 - `integration/minecraft-fabric-26.2` runs loaded client parity scenes against actual 26.2 resources, vanilla screens, the selected player skin, server-synchronized player/custom/ender-chest Slots, and resource-pack-aware industrial and progression screens; it is not published.
 - `integration/docs` extracts the compiled component and complete-screen sources and synchronizes only images carrying the matching GameTest receipt into one generated document; it is not published.

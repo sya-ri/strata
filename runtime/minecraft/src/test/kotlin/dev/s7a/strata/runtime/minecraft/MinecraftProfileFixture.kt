@@ -27,6 +27,10 @@ internal object MinecraftProfileFixture {
      * @param listFooterSeparator immutable 32 by 2 list footer separator.
      * @param scrollbarBackground immutable 6 by 32 scrollbar track.
      * @param scrollbarThumb immutable 6 by 32 scrollbar thumb.
+     * @param normalSliderBorder normal Slider track border.
+     * @param normalSliderCenterMode normal Slider track center mode.
+     * @param highlightedSliderBorder highlighted Slider track border.
+     * @param highlightedSliderCenterMode highlighted Slider track center mode.
      * @param normalBorder normal sprite border.
      * @param normalCenterMode normal sprite center mode.
      * @param highlightedBorder highlighted sprite border.
@@ -58,6 +62,10 @@ internal object MinecraftProfileFixture {
         tooltipBackground: DrawImage = image(IntSize(100, 100), 0xF0100010.toInt()),
         tooltipFrame: DrawImage = image(IntSize(100, 100), 0xFF5000FF.toInt()),
         legacyTooltipColors: Triple<ArgbColor, ArgbColor, ArgbColor>? = null,
+        normalSliderBorder: Int = 1,
+        normalSliderCenterMode: NineSliceCenterMode = NineSliceCenterMode.Tiled,
+        highlightedSliderBorder: Int = 1,
+        highlightedSliderCenterMode: NineSliceCenterMode = NineSliceCenterMode.Tiled,
         normalBorder: Int = 3,
         normalCenterMode: NineSliceCenterMode = NineSliceCenterMode.Tiled,
         highlightedBorder: Int = 3,
@@ -79,8 +87,12 @@ internal object MinecraftProfileFixture {
             checkboxHighlighted(image(IntSize(20, 20), 0xFF292929.toInt()))
             checkboxSelected(image(IntSize(20, 20), 0xFF393939.toInt()))
             checkboxSelectedHighlighted(image(IntSize(20, 20), 0xFF494949.toInt()))
-            slider(image(IntSize(200, 20), 0xFF1A1A1A.toInt()))
-            sliderHighlighted(image(IntSize(200, 20), 0xFF2A2A2A.toInt()))
+            slider(image(IntSize(200, 20), 0xFF1A1A1A.toInt()), normalSliderBorder, normalSliderCenterMode)
+            sliderHighlighted(
+                image(IntSize(200, 20), 0xFF2A2A2A.toInt()),
+                highlightedSliderBorder,
+                highlightedSliderCenterMode,
+            )
             sliderHandle(image(IntSize(8, 20), 0xFF3A3A3A.toInt()))
             sliderHandleHighlighted(image(IntSize(8, 20), 0xFF4A4A4A.toInt()))
             loadingIndicator(image(IntSize(5, 6), 0xFFFFFFFF.toInt()))

@@ -92,9 +92,11 @@ public abstract interface class dev/s7a/strata/runtime/minecraft/MinecraftUiProf
 	public abstract fun scrollbarBackground (Ldev/s7a/strata/render/DrawImage;)V
 	public abstract fun scrollbarThumb (Ldev/s7a/strata/render/DrawImage;)V
 	public abstract fun slider (Ldev/s7a/strata/render/DrawImage;)V
+	public abstract fun slider (Ldev/s7a/strata/render/DrawImage;ILdev/s7a/strata/component/NineSliceCenterMode;)V
 	public abstract fun sliderHandle (Ldev/s7a/strata/render/DrawImage;)V
 	public abstract fun sliderHandleHighlighted (Ldev/s7a/strata/render/DrawImage;)V
 	public abstract fun sliderHighlighted (Ldev/s7a/strata/render/DrawImage;)V
+	public abstract fun sliderHighlighted (Ldev/s7a/strata/render/DrawImage;ILdev/s7a/strata/component/NineSliceCenterMode;)V
 	public abstract fun slotHighlightBack (Ldev/s7a/strata/render/DrawImage;)V
 	public abstract fun slotHighlightFront (Ldev/s7a/strata/render/DrawImage;)V
 	public abstract fun textFieldHighlighted (Ldev/s7a/strata/render/DrawImage;)V

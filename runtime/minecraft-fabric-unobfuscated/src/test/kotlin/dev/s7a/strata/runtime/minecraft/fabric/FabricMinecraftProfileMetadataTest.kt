@@ -1,7 +1,6 @@
 package dev.s7a.strata.runtime.minecraft.fabric
 
 import dev.s7a.strata.geometry.IntSize
-import net.minecraft.client.resources.metadata.gui.GuiSpriteScaling
 import org.junit.jupiter.api.Assertions.assertDoesNotThrow
 import org.junit.jupiter.api.Assertions.assertThrows
 import org.junit.jupiter.api.Test
@@ -20,11 +19,10 @@ internal class FabricMinecraftProfileMetadataTest {
     fun rejectsMissingOrMismatchedScalingContract() {
         val variants =
             listOf(
-                GuiSpriteScaling.Stretch(),
                 nineSlice(3, width = 199),
                 nineSlice(3, height = 19),
                 nineSlice(1),
-                nineSlice(3, borderValue = GuiSpriteScaling.NineSlice.Border(3, 2, 3, 3)),
+                nineSlice(3, borderTop = 2),
                 nineSlice(3, stretchInner = true),
             )
         variants.forEach { scaling ->
@@ -43,10 +41,9 @@ internal class FabricMinecraftProfileMetadataTest {
     fun rejectsMismatchedScrollbarScalingContract() {
         val variants =
             listOf(
-                GuiSpriteScaling.Stretch(),
                 scrollbarNineSlice(width = 5),
                 scrollbarNineSlice(height = 31),
-                scrollbarNineSlice(borderValue = GuiSpriteScaling.NineSlice.Border(1, 2, 1, 1)),
+                scrollbarNineSlice(borderTop = 2),
                 scrollbarNineSlice(stretchInner = true),
             )
         variants.forEach { scaling ->
@@ -61,13 +58,31 @@ internal class FabricMinecraftProfileMetadataTest {
         width: Int = 200,
         height: Int = 20,
         stretchInner: Boolean = false,
-        borderValue: GuiSpriteScaling.NineSlice.Border = GuiSpriteScaling.NineSlice.Border(border, border, border, border),
-    ): GuiSpriteScaling.NineSlice = GuiSpriteScaling.NineSlice(width, height, borderValue, stretchInner)
+        borderTop: Int = border,
+    ): FabricMinecraftGuiScaling =
+        FabricMinecraftGuiScaling(
+            width,
+            height,
+            border,
+            borderTop,
+            border,
+            border,
+            stretchInner,
+        )
 
     private fun scrollbarNineSlice(
         width: Int = 6,
         height: Int = 32,
         stretchInner: Boolean = false,
-        borderValue: GuiSpriteScaling.NineSlice.Border = GuiSpriteScaling.NineSlice.Border(1, 1, 1, 1),
-    ): GuiSpriteScaling.NineSlice = GuiSpriteScaling.NineSlice(width, height, borderValue, stretchInner)
+        borderTop: Int = 1,
+    ): FabricMinecraftGuiScaling =
+        FabricMinecraftGuiScaling(
+            width,
+            height,
+            1,
+            borderTop,
+            1,
+            1,
+            stretchInner,
+        )
 }

@@ -83,12 +83,12 @@ internal class StrataMinecraftLegacyLoadedSuite {
     }
 
     private fun verifyVersionAsset(context: MinecraftLoadedTestContext) {
-        val button =
+        val ascii =
             context.computeOnClient {
-                loadMinecraftUiImage(ResourceId("minecraft", "textures/gui/sprites/widget/button.png"))
+                loadMinecraftUiImage(ResourceId("minecraft", "textures/font/ascii.png"))
             }
-        require(button.size == buttonTextureSize) {
-            "Minecraft ${minecraftVersion()}'s normal Button sprite must be the verified 200 by 20 pixel asset."
+        require(ascii.size == asciiTextureSize) {
+            "Minecraft ${minecraftVersion()}'s regular ASCII font must be the verified 128 by 128 pixel asset."
         }
     }
 
@@ -529,7 +529,7 @@ internal class StrataMinecraftLegacyLoadedSuite {
 
     private companion object {
         private val viewport = IntSize(320, 180)
-        private val buttonTextureSize = IntSize(200, 20)
+        private val asciiTextureSize = IntSize(128, 128)
         private val slotHighlightTextureSize = IntSize(24, 24)
         private val portableButtonCenter = IntOffset(160, 98)
         private val slotCenter = IntOffset(160, 90)

@@ -197,14 +197,44 @@ public sealed interface MinecraftUiProfileBuilder {
     public fun checkboxSelectedHighlighted(image: DrawImage)
 
     /**
-     * Supplies the exact 200 by 20 normal Slider track sprite.
+     * Supplies the exact 200 by 20 normal Slider track sprite with a one-pixel tiled horizontal border.
      */
     public fun slider(image: DrawImage)
 
     /**
-     * Supplies the exact 200 by 20 highlighted Slider track sprite.
+     * Supplies the exact 200 by 20 normal Slider track sprite and its horizontal sampling policy.
+     *
+     * @param image immutable track pixels.
+     * @param border positive horizontal border width that leaves a nonempty source center.
+     * @param centerMode typed center sampling policy.
+     * @throws IllegalArgumentException when the slot, image size, or border is invalid.
+     * @throws IllegalStateException when called from another thread or after the builder callback ends.
+     */
+    public fun slider(
+        image: DrawImage,
+        border: Int,
+        centerMode: NineSliceCenterMode,
+    )
+
+    /**
+     * Supplies the exact 200 by 20 highlighted Slider track sprite with a one-pixel tiled horizontal border.
      */
     public fun sliderHighlighted(image: DrawImage)
+
+    /**
+     * Supplies the exact 200 by 20 highlighted Slider track sprite and its horizontal sampling policy.
+     *
+     * @param image immutable track pixels.
+     * @param border positive horizontal border width that leaves a nonempty source center.
+     * @param centerMode typed center sampling policy.
+     * @throws IllegalArgumentException when the slot, image size, or border is invalid.
+     * @throws IllegalStateException when called from another thread or after the builder callback ends.
+     */
+    public fun sliderHighlighted(
+        image: DrawImage,
+        border: Int,
+        centerMode: NineSliceCenterMode,
+    )
 
     /**
      * Supplies the exact 8 by 20 normal Slider handle sprite.

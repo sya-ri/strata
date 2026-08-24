@@ -131,8 +131,8 @@ internal object MinecraftProfileImplementation {
         private var checkboxHighlighted: DrawImage? = null
         private var checkboxSelected: DrawImage? = null
         private var checkboxSelectedHighlighted: DrawImage? = null
-        private var slider: DrawImage? = null
-        private var sliderHighlighted: DrawImage? = null
+        private var slider: MinecraftButtonSpriteSnapshot? = null
+        private var sliderHighlighted: MinecraftButtonSpriteSnapshot? = null
         private var sliderHandle: DrawImage? = null
         private var sliderHandleHighlighted: DrawImage? = null
         private var loadingIndicator: DrawImage? = null
@@ -315,17 +315,31 @@ internal object MinecraftProfileImplementation {
         }
 
         override fun slider(image: DrawImage) {
+            slider(image, 1, NineSliceCenterMode.Tiled)
+        }
+
+        override fun slider(
+            image: DrawImage,
+            border: Int,
+            centerMode: NineSliceCenterMode,
+        ) {
             checkUsable()
             require(slider == null) { "Slider sprite was already declared." }
-            require(image.size == buttonSize) { "Slider sprites must be 200 by 20 pixels." }
-            slider = image
+            slider = createHorizontalWidgetSprite(image, border, centerMode, "Slider")
         }
 
         override fun sliderHighlighted(image: DrawImage) {
+            sliderHighlighted(image, 1, NineSliceCenterMode.Tiled)
+        }
+
+        override fun sliderHighlighted(
+            image: DrawImage,
+            border: Int,
+            centerMode: NineSliceCenterMode,
+        ) {
             checkUsable()
             require(sliderHighlighted == null) { "Highlighted Slider sprite was already declared." }
-            require(image.size == buttonSize) { "Slider sprites must be 200 by 20 pixels." }
-            sliderHighlighted = image
+            sliderHighlighted = createHorizontalWidgetSprite(image, border, centerMode, "Highlighted Slider")
         }
 
         override fun sliderHandle(image: DrawImage) {
@@ -378,7 +392,7 @@ internal object MinecraftProfileImplementation {
         ) {
             checkUsable()
             require(normalButton == null) { "Normal Button sprite was already declared." }
-            normalButton = createButton(image, border, centerMode)
+            normalButton = createHorizontalWidgetSprite(image, border, centerMode, "Normal Button")
         }
 
         override fun buttonHighlighted(
@@ -388,7 +402,7 @@ internal object MinecraftProfileImplementation {
         ) {
             checkUsable()
             require(highlightedButton == null) { "Highlighted Button sprite was already declared." }
-            highlightedButton = createButton(image, border, centerMode)
+            highlightedButton = createHorizontalWidgetSprite(image, border, centerMode, "Highlighted Button")
         }
 
         override fun buttonDisabled(
@@ -398,7 +412,7 @@ internal object MinecraftProfileImplementation {
         ) {
             checkUsable()
             require(disabledButton == null) { "Disabled Button sprite was already declared." }
-            disabledButton = createButton(image, border, centerMode)
+            disabledButton = createHorizontalWidgetSprite(image, border, centerMode, "Disabled Button")
         }
 
         fun snapshot(): ProfileSnapshot {
@@ -565,17 +579,18 @@ internal object MinecraftProfileImplementation {
             )
         }
 
-        private fun createButton(
+        private fun createHorizontalWidgetSprite(
             image: DrawImage,
             border: Int,
             centerMode: NineSliceCenterMode,
+            label: String,
         ): MinecraftButtonSpriteSnapshot {
             require(image.size == buttonSize) {
-                "Button sprites must be 200 by 20 pixels."
+                "$label sprites must be 200 by 20 pixels."
             }
-            require(0 < border) { "Button sprite border must be positive." }
+            require(0 < border) { "$label sprite border must be positive." }
             require(border < buttonSize.width / 2) {
-                "Button sprite borders must leave a nonempty source center."
+                "$label sprite borders must leave a nonempty source center."
             }
             return MinecraftButtonSpriteSnapshot.create(image, border, centerMode)
         }
@@ -595,8 +610,8 @@ internal object MinecraftProfileImplementation {
         val checkboxHighlighted: DrawImage,
         val checkboxSelected: DrawImage,
         val checkboxSelectedHighlighted: DrawImage,
-        val slider: DrawImage,
-        val sliderHighlighted: DrawImage,
+        val slider: MinecraftButtonSpriteSnapshot,
+        val sliderHighlighted: MinecraftButtonSpriteSnapshot,
         val sliderHandle: DrawImage,
         val sliderHandleHighlighted: DrawImage,
         val loadingIndicator: DrawImage,
@@ -651,8 +666,8 @@ internal object MinecraftProfileImplementation {
                 checkboxHighlighted: DrawImage,
                 checkboxSelected: DrawImage,
                 checkboxSelectedHighlighted: DrawImage,
-                slider: DrawImage,
-                sliderHighlighted: DrawImage,
+                slider: MinecraftButtonSpriteSnapshot,
+                sliderHighlighted: MinecraftButtonSpriteSnapshot,
                 sliderHandle: DrawImage,
                 sliderHandleHighlighted: DrawImage,
                 loadingIndicator: DrawImage,
@@ -831,8 +846,8 @@ internal object MinecraftProfileImplementation {
             val normalText = MinecraftTextRun.createNormal(label, currentProfile::glyph)
             val inactiveText = MinecraftTextRun.createInactive(label, currentProfile::glyph)
             return createMinecraftSliderElement(
-                normalTrack = MinecraftButtonSpriteSnapshot.create(currentProfile.slider, 1, NineSliceCenterMode.Tiled),
-                highlightedTrack = MinecraftButtonSpriteSnapshot.create(currentProfile.sliderHighlighted, 1, NineSliceCenterMode.Tiled),
+                normalTrack = currentProfile.slider,
+                highlightedTrack = currentProfile.sliderHighlighted,
                 normalHandle = currentProfile.sliderHandle,
                 highlightedHandle = currentProfile.sliderHandleHighlighted,
                 normalText = normalText,
@@ -903,9 +918,6 @@ internal object MinecraftProfileImplementation {
         ): Element {
             val currentProfile = requireProfile()
             require(0 < width && width <= 200) { "Minecraft Button width must be positive and no larger than 200." }
-            require(currentProfile.normalButton.border * 2 < width) { "Minecraft Button width must leave a nonempty normal center." }
-            require(currentProfile.highlightedButton.border * 2 < width) { "Minecraft Button width must leave a nonempty highlighted center." }
-            require(currentProfile.disabledButton.border * 2 < width) { "Minecraft Button width must leave a nonempty disabled center." }
             val normalText = MinecraftTextRun.createNormal(label, currentProfile::glyph)
             val inactiveText = MinecraftTextRun.createInactive(label, currentProfile::glyph)
             return createMinecraftPointerButtonElement(
@@ -956,9 +968,6 @@ internal object MinecraftProfileImplementation {
         ): Element {
             val currentProfile = requireProfile()
             require(0 < width && width <= 200) { "Minecraft Tab width must be positive and no larger than 200." }
-            require(currentProfile.normalButton.border * 2 < width) { "Minecraft Tab width must leave a nonempty normal center." }
-            require(currentProfile.highlightedButton.border * 2 < width) { "Minecraft Tab width must leave a nonempty highlighted center." }
-            require(currentProfile.disabledButton.border * 2 < width) { "Minecraft Tab width must leave a nonempty disabled center." }
             val normalText = MinecraftTextRun.createNormal(label, currentProfile::glyph)
             val inactiveText = MinecraftTextRun.createInactive(label, currentProfile::glyph)
             return createMinecraftTabElement(

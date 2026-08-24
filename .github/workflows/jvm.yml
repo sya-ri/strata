@@ -34,25 +34,69 @@ jobs:
             coverage: true
           - id: minecraft-1-20
             name: Minecraft 1.20.x
-            gradle_arguments: :ciMinecraftCheck -Pstrata.minecraftVersions=1.20.2,1.20.3,1.20.4,1.20.5,1.20.6
+            gradle_arguments: :ciMinecraftCheck -Pstrata.minecraftVersions=1.20.1,1.20.2,1.20.3,1.20.4,1.20.5,1.20.6
+            loom_projects: |-
+              runtime/minecraft-fabric-1.20.1
+              integration/minecraft-fabric-1.20.1
+              runtime/minecraft-fabric-1.20.2
+              integration/minecraft-fabric-1.20.2
+              runtime/minecraft-fabric-1.20.3
+              integration/minecraft-fabric-1.20.3
+              runtime/minecraft-fabric-1.20.4
+              integration/minecraft-fabric-1.20.4
+              runtime/minecraft-fabric-1.20.5
+              integration/minecraft-fabric-1.20.5
+              runtime/minecraft-fabric-1.20.6
+              integration/minecraft-fabric-1.20.6
             cache_read_only: false
             loom_cache: true
             coverage: false
           - id: minecraft-1-21-early
             name: Minecraft 1.21-1.21.4
             gradle_arguments: :ciMinecraftCheck -Pstrata.minecraftVersions=1.21,1.21.1,1.21.2,1.21.3,1.21.4
+            loom_projects: |-
+              runtime/minecraft-fabric-1.21
+              integration/minecraft-fabric-1.21
+              runtime/minecraft-fabric-1.21.1
+              integration/minecraft-fabric-1.21.1
+              runtime/minecraft-fabric-1.21.2
+              integration/minecraft-fabric-1.21.2
+              runtime/minecraft-fabric-1.21.3
+              integration/minecraft-fabric-1.21.3
+              runtime/minecraft-fabric-1.21.4
+              integration/minecraft-fabric-1.21.4
             cache_read_only: false
             loom_cache: true
             coverage: false
           - id: minecraft-1-21-late
             name: Minecraft 1.21.5-1.21.11
             gradle_arguments: :ciMinecraftCheck -Pstrata.minecraftVersions=1.21.5,1.21.6,1.21.7,1.21.8,1.21.9,1.21.10,1.21.11
+            loom_projects: |-
+              runtime/minecraft-fabric-1.21.5
+              integration/minecraft-fabric-1.21.5
+              runtime/minecraft-fabric-1.21.6
+              integration/minecraft-fabric-1.21.6
+              runtime/minecraft-fabric-1.21.7
+              integration/minecraft-fabric-1.21.7
+              runtime/minecraft-fabric-1.21.8
+              integration/minecraft-fabric-1.21.8
+              runtime/minecraft-fabric-1.21.9
+              integration/minecraft-fabric-1.21.9
+              runtime/minecraft-fabric-1.21.10
+              integration/minecraft-fabric-1.21.10
+              runtime/minecraft-fabric-1.21.11
+              integration/minecraft-fabric-1.21.11
             cache_read_only: false
             loom_cache: true
             coverage: false
           - id: minecraft-26
             name: Minecraft 26.x and showcase
             gradle_arguments: :ciMinecraftCheck :integration:docs:check -Pstrata.minecraftVersions=26.1,26.2
+            loom_projects: |-
+              runtime/minecraft-fabric-26.1
+              integration/minecraft-fabric-26.1
+              runtime/minecraft-fabric-26.2
+              integration/minecraft-fabric-26.2
             cache_read_only: false
             loom_cache: true
             coverage: false
@@ -71,13 +115,34 @@ jobs:
         uses: gradle/actions/setup-gradle@v6
         with:
           cache-read-only: ${{ matrix.cache_read_only || github.ref != 'refs/heads/master' }}
+      - name: Hash Loom cache inputs
+        if: matrix.loom_cache
+        id: loom_inputs
+        shell: bash
+        env:
+          LOOM_PROJECTS: ${{ matrix.loom_projects }}
+        run: |
+          set -euo pipefail
+          cache_inputs=(
+            gradle/libs.versions.toml
+            gradle/wrapper/gradle-wrapper.properties
+            gradle.properties
+            settings.gradle.kts
+            build.gradle.kts
+          )
+          while IFS= read -r project; do
+            if [[ -n "$project" ]]; then
+              cache_inputs+=("$project/build.gradle.kts")
+            fi
+          done <<< "$LOOM_PROJECTS"
+          sha256sum "${cache_inputs[@]}" | sha256sum | awk '{ print "hash=" $1 }' >> "$GITHUB_OUTPUT"
       - name: Restore Loom project cache
         if: matrix.loom_cache
         id: loom_cache
         uses: actions/cache/restore@v5
         with:
           path: .gradle/loom-cache
-          key: loom-${{ runner.os }}-${{ matrix.id }}-${{ hashFiles('gradle/libs.versions.toml', 'gradle/wrapper/gradle-wrapper.properties', 'settings.gradle.kts', 'build.gradle.kts', 'runtime/**/build.gradle.kts', 'integration/**/build.gradle.kts') }}
+          key: loom-${{ runner.os }}-${{ matrix.id }}-${{ steps.loom_inputs.outputs.hash }}
           restore-keys: |
             loom-${{ runner.os }}-${{ matrix.id }}-
       - name: Run ${{ matrix.name }}

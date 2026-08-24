@@ -26,6 +26,7 @@ minecraft1218 = "1.21.8"
 minecraft12111 = "1.21.11"
 minecraft12110 = "1.21.10"
 minecraft1219 = "1.21.9"
+minecraft1201 = "1.20.1"
 minecraft1202 = "1.20.2"
 minecraft1203 = "1.20.3"
 minecraft1204 = "1.20.4"
@@ -48,6 +49,7 @@ fabric-api1218 = "0.136.1+1.21.8"
 fabric-api12111 = "0.141.6+1.21.11"
 fabric-api12110 = "0.138.4+1.21.10"
 fabric-api1219 = "0.134.1+1.21.9"
+fabric-api1201 = "0.92.11+1.20.1"
 fabric-api1202 = "0.91.6+1.20.2"
 fabric-api1203 = "0.91.1+1.20.3"
 fabric-api1204 = "0.97.3+1.20.4"
@@ -75,6 +77,7 @@ minecraft1218 = { module = "com.mojang:minecraft", version.ref = "minecraft1218"
 minecraft12111 = { module = "com.mojang:minecraft", version.ref = "minecraft12111" }
 minecraft12110 = { module = "com.mojang:minecraft", version.ref = "minecraft12110" }
 minecraft1219 = { module = "com.mojang:minecraft", version.ref = "minecraft1219" }
+minecraft1201 = { module = "com.mojang:minecraft", version.ref = "minecraft1201" }
 minecraft1202 = { module = "com.mojang:minecraft", version.ref = "minecraft1202" }
 minecraft1203 = { module = "com.mojang:minecraft", version.ref = "minecraft1203" }
 minecraft1204 = { module = "com.mojang:minecraft", version.ref = "minecraft1204" }
@@ -96,6 +99,7 @@ fabric-api1218 = { module = "net.fabricmc.fabric-api:fabric-api", version.ref = 
 fabric-api12111 = { module = "net.fabricmc.fabric-api:fabric-api", version.ref = "fabric-api12111" }
 fabric-api12110 = { module = "net.fabricmc.fabric-api:fabric-api", version.ref = "fabric-api12110" }
 fabric-api1219 = { module = "net.fabricmc.fabric-api:fabric-api", version.ref = "fabric-api1219" }
+fabric-api1201 = { module = "net.fabricmc.fabric-api:fabric-api", version.ref = "fabric-api1201" }
 fabric-api1202 = { module = "net.fabricmc.fabric-api:fabric-api", version.ref = "fabric-api1202" }
 fabric-api1203 = { module = "net.fabricmc.fabric-api:fabric-api", version.ref = "fabric-api1203" }
 fabric-api1204 = { module = "net.fabricmc.fabric-api:fabric-api", version.ref = "fabric-api1204" }

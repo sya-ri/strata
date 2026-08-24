@@ -12,8 +12,6 @@ import dev.s7a.strata.runtime.minecraft.MinecraftUiProfile
 import dev.s7a.strata.runtime.minecraft.createMinecraftUiProfile
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
 import net.minecraft.client.Minecraft
-import net.minecraft.client.resources.metadata.gui.GuiMetadataSection
-import net.minecraft.client.resources.metadata.gui.GuiSpriteScaling
 import net.minecraft.server.packs.resources.Resource
 import net.minecraft.server.packs.resources.ResourceManager
 import java.io.IOException
@@ -48,23 +46,11 @@ public fun extractMinecraftUiProfile(): MinecraftUiProfile {
     val (slotHighlightBack, slotHighlightFront) = manager.readSlotHighlightImages()
     val (listBackground, headerSeparator, footerSeparator) = manager.readListDecorationImages()
     val (scrollbarBackground, scrollbarThumb) = manager.readScrollbarImages()
-    val checkbox = manager.readImage("textures/gui/sprites/widget/checkbox.png", checkboxImageSize)
-    val checkboxHighlighted = manager.readImage("textures/gui/sprites/widget/checkbox_highlighted.png", checkboxImageSize)
-    val checkboxSelected = manager.readImage("textures/gui/sprites/widget/checkbox_selected.png", checkboxImageSize)
-    val checkboxSelectedHighlighted = manager.readImage("textures/gui/sprites/widget/checkbox_selected_highlighted.png", checkboxImageSize)
-    val slider = manager.readImage("textures/gui/sprites/widget/slider.png", buttonImageSize)
-    val sliderHighlighted = manager.readImage("textures/gui/sprites/widget/slider_highlighted.png", buttonImageSize)
-    val sliderHandle = manager.readImage("textures/gui/sprites/widget/slider_handle.png", sliderHandleImageSize)
-    val sliderHandleHighlighted = manager.readImage("textures/gui/sprites/widget/slider_handle_highlighted.png", sliderHandleImageSize)
+    val widgets = manager.readWidgetImages()
     val loadingIndicator = manager.readLoadingIndicator()
     val bundleProgressBar = manager.readBundleProgressBarOrNull()
     val legacyProgressBar = if (bundleProgressBar == null) manager.readLegacyHorizontalProgressBar() else null
     val tooltipSprites = manager.readTooltipSpritesOrNull()
-    val normalTextField = manager.readImage("textures/gui/sprites/widget/text_field.png", IntSize(200, 20))
-    val highlightedTextField = manager.readImage("textures/gui/sprites/widget/text_field_highlighted.png", IntSize(200, 20))
-    val normal = manager.readNineSliceImage("textures/gui/sprites/widget/button.png", buttonImageSize, 3)
-    val highlighted = manager.readNineSliceImage("textures/gui/sprites/widget/button_highlighted.png", buttonImageSize, 3)
-    val disabled = manager.readNineSliceImage("textures/gui/sprites/widget/button_disabled.png", buttonImageSize, 1)
     val ascii = manager.readImage("textures/font/ascii.png", IntSize(128, 128))
     validateMinecraftRegularFontContract(ascii) { identifier ->
         manager.readSingleFontDocument(identifier)
@@ -80,14 +66,14 @@ public fun extractMinecraftUiProfile(): MinecraftUiProfile {
         listFooterSeparator(footerSeparator)
         scrollbarBackground(scrollbarBackground)
         scrollbarThumb(scrollbarThumb)
-        checkbox(checkbox)
-        checkboxHighlighted(checkboxHighlighted)
-        checkboxSelected(checkboxSelected)
-        checkboxSelectedHighlighted(checkboxSelectedHighlighted)
-        slider(slider)
-        sliderHighlighted(sliderHighlighted)
-        sliderHandle(sliderHandle)
-        sliderHandleHighlighted(sliderHandleHighlighted)
+        checkbox(widgets.checkbox)
+        checkboxHighlighted(widgets.checkboxHighlighted)
+        checkboxSelected(widgets.checkboxSelected)
+        checkboxSelectedHighlighted(widgets.checkboxSelectedHighlighted)
+        slider(widgets.slider, widgets.sliderBorder, NineSliceCenterMode.Tiled)
+        sliderHighlighted(widgets.sliderHighlighted, widgets.sliderHighlightedBorder, NineSliceCenterMode.Tiled)
+        sliderHandle(widgets.sliderHandle)
+        sliderHandleHighlighted(widgets.sliderHandleHighlighted)
         loadingIndicator(loadingIndicator)
         if (bundleProgressBar == null) {
             val (background, fill) = requireNotNull(legacyProgressBar)
@@ -105,11 +91,11 @@ public fun extractMinecraftUiProfile(): MinecraftUiProfile {
             tooltipBackground(background)
             tooltipFrame(frame)
         }
-        textFieldNormal(normalTextField)
-        textFieldHighlighted(highlightedTextField)
-        buttonNormal(normal, 3, NineSliceCenterMode.Tiled)
-        buttonHighlighted(highlighted, 3, NineSliceCenterMode.Tiled)
-        buttonDisabled(disabled, 1, NineSliceCenterMode.Tiled)
+        textFieldNormal(widgets.textFieldNormal)
+        textFieldHighlighted(widgets.textFieldHighlighted)
+        buttonNormal(widgets.buttonNormal, widgets.buttonNormalBorder, NineSliceCenterMode.Tiled)
+        buttonHighlighted(widgets.buttonHighlighted, widgets.buttonHighlightedBorder, NineSliceCenterMode.Tiled)
+        buttonDisabled(widgets.buttonDisabled, widgets.buttonDisabledBorder, NineSliceCenterMode.Tiled)
         for (codePoint in printableAsciiRange) {
             printableAsciiGlyph(codePoint, extractMinecraftAsciiGlyph(ascii, codePoint))
         }
@@ -130,6 +116,102 @@ private fun ResourceManager.readMenuBackground(): DrawImage {
     } else {
         readImage(current, currentPath, IntSize(16, 16))
     }
+}
+
+private fun ResourceManager.readWidgetImages(): FabricMinecraftWidgetImages {
+    val buttonPath = "textures/gui/sprites/widget/button.png"
+    return if (fabricMinecraftUsesGuiSprites) {
+        FabricMinecraftWidgetImages(
+            checkbox = readImage("textures/gui/sprites/widget/checkbox.png", checkboxImageSize),
+            checkboxHighlighted = readImage("textures/gui/sprites/widget/checkbox_highlighted.png", checkboxImageSize),
+            checkboxSelected = readImage("textures/gui/sprites/widget/checkbox_selected.png", checkboxImageSize),
+            checkboxSelectedHighlighted = readImage("textures/gui/sprites/widget/checkbox_selected_highlighted.png", checkboxImageSize),
+            slider = readNineSliceImage("textures/gui/sprites/widget/slider.png", buttonImageSize, 1),
+            sliderBorder = 1,
+            sliderHighlighted = readNineSliceImage("textures/gui/sprites/widget/slider_highlighted.png", buttonImageSize, 1),
+            sliderHighlightedBorder = 1,
+            sliderHandle = readImage("textures/gui/sprites/widget/slider_handle.png", sliderHandleImageSize),
+            sliderHandleHighlighted = readImage("textures/gui/sprites/widget/slider_handle_highlighted.png", sliderHandleImageSize),
+            textFieldNormal = readImage("textures/gui/sprites/widget/text_field.png", buttonImageSize),
+            textFieldHighlighted = readImage("textures/gui/sprites/widget/text_field_highlighted.png", buttonImageSize),
+            buttonNormal = readNineSliceImage(buttonPath, buttonImageSize, 3),
+            buttonNormalBorder = 3,
+            buttonHighlighted = readNineSliceImage("textures/gui/sprites/widget/button_highlighted.png", buttonImageSize, 3),
+            buttonHighlightedBorder = 3,
+            buttonDisabled = readNineSliceImage("textures/gui/sprites/widget/button_disabled.png", buttonImageSize, 1),
+            buttonDisabledBorder = 1,
+        )
+    } else {
+        readLegacyWidgetImages()
+    }
+}
+
+private fun ResourceManager.readLegacyWidgetImages(): FabricMinecraftWidgetImages {
+    val widgets = readImage("textures/gui/widgets.png", legacyWidgetAtlasSize)
+    val checkbox = readImage("textures/gui/checkbox.png", legacyCheckboxAtlasSize)
+    val slider = readImage("textures/gui/slider.png", legacyWidgetAtlasSize)
+    return FabricMinecraftWidgetImages(
+        checkbox = checkbox.cropped(0, 0, checkboxImageSize),
+        checkboxHighlighted = checkbox.cropped(20, 0, checkboxImageSize),
+        checkboxSelected = checkbox.cropped(0, 20, checkboxImageSize),
+        checkboxSelectedHighlighted = checkbox.cropped(20, 20, checkboxImageSize),
+        slider = slider.cropped(0, 0, buttonImageSize),
+        sliderBorder = legacyHorizontalBorder,
+        sliderHighlighted = slider.cropped(0, 20, buttonImageSize),
+        sliderHighlightedBorder = legacyHorizontalBorder,
+        sliderHandle = slider.legacySliderHandle(40),
+        sliderHandleHighlighted = slider.legacySliderHandle(60),
+        textFieldNormal = legacyTextField(legacyTextFieldBorder),
+        textFieldHighlighted = legacyTextField(opaqueMaskPixel),
+        buttonNormal = widgets.cropped(0, 66, buttonImageSize),
+        buttonNormalBorder = legacyHorizontalBorder,
+        buttonHighlighted = widgets.cropped(0, 86, buttonImageSize),
+        buttonHighlightedBorder = legacyHorizontalBorder,
+        buttonDisabled = widgets.cropped(0, 46, buttonImageSize),
+        buttonDisabledBorder = legacyHorizontalBorder,
+    )
+}
+
+private fun DrawImage.legacySliderHandle(top: Int): DrawImage {
+    val halfWidth = sliderHandleImageSize.width / 2
+    val pixels = IntArray(sliderHandleImageSize.width * sliderHandleImageSize.height)
+    for (y in 0 until sliderHandleImageSize.height) {
+        for (x in 0 until halfWidth) {
+            pixels[y * sliderHandleImageSize.width + x] = argbAt(x, top + y)
+            pixels[y * sliderHandleImageSize.width + halfWidth + x] = argbAt(buttonImageSize.width - halfWidth + x, top + y)
+        }
+    }
+    return createDrawImage(sliderHandleImageSize, pixels)
+}
+
+private fun DrawImage.cropped(
+    left: Int,
+    top: Int,
+    croppedSize: IntSize,
+): DrawImage {
+    require(0 <= left && 0 <= top && left + croppedSize.width <= size.width && top + croppedSize.height <= size.height) {
+        "Minecraft GUI atlas crop must remain inside the source image."
+    }
+    val pixels = IntArray(croppedSize.width * croppedSize.height)
+    for (y in 0 until croppedSize.height) {
+        for (x in 0 until croppedSize.width) {
+            pixels[y * croppedSize.width + x] = argbAt(left + x, top + y)
+        }
+    }
+    return createDrawImage(croppedSize, pixels)
+}
+
+private fun legacyTextField(border: ArgbColor): DrawImage {
+    val pixels = IntArray(buttonImageSize.width * buttonImageSize.height) { legacyTextFieldBackground.value }
+    for (x in 0 until buttonImageSize.width) {
+        pixels[x] = border.value
+        pixels[(buttonImageSize.height - 1) * buttonImageSize.width + x] = border.value
+    }
+    for (y in 1 until buttonImageSize.height - 1) {
+        pixels[y * buttonImageSize.width] = border.value
+        pixels[y * buttonImageSize.width + buttonImageSize.width - 1] = border.value
+    }
+    return createDrawImage(buttonImageSize, pixels)
 }
 
 private fun ResourceManager.readListDecorationImages(): Triple<DrawImage, DrawImage, DrawImage> {
@@ -219,6 +301,13 @@ private fun ResourceManager.readBundleProgressBarOrNull(): Triple<DrawImage, Dra
 private fun ResourceManager.readLegacyHorizontalProgressBar(): Pair<DrawImage, DrawImage> {
     val backgroundPath = "textures/gui/sprites/boss_bar/white_background.png"
     val fillPath = "textures/gui/sprites/boss_bar/white_progress.png"
+    if (getResource(minecraftResourceLocation("minecraft", backgroundPath)).isEmpty) {
+        val bars = readImage("textures/gui/bars.png", legacyWidgetAtlasSize)
+        return Pair(
+            bars.cropped(0, 60, legacyProgressBarImageSize),
+            bars.cropped(0, 65, legacyProgressBarImageSize),
+        )
+    }
     return Pair(
         readImage(backgroundPath, legacyProgressBarImageSize),
         readImage(fillPath, legacyProgressBarImageSize),
@@ -287,22 +376,15 @@ private fun ResourceManager.readNineSliceImage(
 ): DrawImage {
     val resource = requiredResource(path)
     val image = readImage(resource, path, expectedSize)
-    val metadata =
-        resource.metadata().getSection(GuiMetadataSection.TYPE).orElseThrow {
-            IllegalArgumentException("Minecraft button resource $path has no GUI metadata.")
-        }
-    validateMinecraftNineSliceScaling(metadata.scaling(), expectedSize, expectedBorder, expectedStretchInner)
+    val scaling = readFabricMinecraftGuiScaling(resource, path)
+    validateMinecraftNineSliceScaling(scaling, expectedSize, expectedBorder, expectedStretchInner)
     return image
 }
 
 private fun ResourceManager.readScrollbarImage(path: String): DrawImage {
     val resource = requiredResource(path)
     val image = readImage(resource, path, scrollbarImageSize)
-    val metadata =
-        resource.metadata().getSection(GuiMetadataSection.TYPE).orElseThrow {
-            IllegalArgumentException("Minecraft scrollbar resource $path has no GUI metadata.")
-        }
-    validateMinecraftScrollbarScaling(metadata.scaling())
+    validateMinecraftScrollbarScaling(readFabricMinecraftGuiScaling(resource, path))
     return image
 }
 
@@ -315,7 +397,24 @@ private fun ResourceManager.readScrollbarImages(): Pair<DrawImage, DrawImage> {
         } else {
             readScrollbarImage(backgroundPath)
         }
-    return Pair(background, readScrollbarImage("textures/gui/sprites/widget/scroller.png"))
+    val thumbPath = "textures/gui/sprites/widget/scroller.png"
+    val thumb =
+        if (getResource(minecraftResourceLocation("minecraft", thumbPath)).isEmpty) {
+            legacyScrollbarThumb()
+        } else {
+            readScrollbarImage(thumbPath)
+        }
+    return Pair(background, thumb)
+}
+
+private fun legacyScrollbarThumb(): DrawImage {
+    val pixels = IntArray(scrollbarImageSize.width * scrollbarImageSize.height) { legacyScrollbarBorder.value }
+    for (y in 0 until scrollbarImageSize.height - 1) {
+        for (x in 0 until scrollbarImageSize.width - 1) {
+            pixels[y * scrollbarImageSize.width + x] = legacyScrollbarInner.value
+        }
+    }
+    return createDrawImage(scrollbarImageSize, pixels)
 }
 
 /**
@@ -378,25 +477,26 @@ private fun ResourceManager.readSingleFontDocument(identifier: MinecraftResource
  */
 @JvmSynthetic
 internal fun validateMinecraftNineSliceScaling(
-    scaling: GuiSpriteScaling,
+    scaling: FabricMinecraftGuiScaling,
     expectedSize: IntSize,
     expectedBorder: Int,
     expectedStretchInner: Boolean,
 ) {
-    require(scaling is GuiSpriteScaling.NineSlice) {
-        "Minecraft GUI metadata must use nine-slice scaling."
-    }
-    require(scaling.width() == expectedSize.width) {
+    require(scaling.width == expectedSize.width) {
         "Minecraft GUI metadata has an unexpected source width."
     }
-    require(scaling.height() == expectedSize.height) {
+    require(scaling.height == expectedSize.height) {
         "Minecraft GUI metadata has an unexpected source height."
     }
-    val border = scaling.border()
-    require(border.left() == expectedBorder && border.top() == expectedBorder && border.right() == expectedBorder && border.bottom() == expectedBorder) {
+    require(
+        scaling.borderLeft == expectedBorder &&
+            scaling.borderTop == expectedBorder &&
+            scaling.borderRight == expectedBorder &&
+            scaling.borderBottom == expectedBorder,
+    ) {
         "Minecraft GUI metadata has an unexpected border."
     }
-    require(minecraftNineSliceStretchesInner(scaling) == expectedStretchInner) {
+    require(scaling.stretchesInner == expectedStretchInner) {
         "Minecraft GUI metadata has an unexpected center mode."
     }
 }
@@ -408,21 +508,17 @@ internal fun validateMinecraftNineSliceScaling(
  * @throws IllegalArgumentException when the scaling differs from the fixed supported-release six-by-thirty-two, one-pixel-border, tiled-center contract.
  */
 @JvmSynthetic
-internal fun validateMinecraftScrollbarScaling(scaling: GuiSpriteScaling) {
-    require(scaling is GuiSpriteScaling.NineSlice) {
-        "Minecraft scrollbar metadata must use nine-slice scaling."
-    }
-    require(scaling.width() == scrollbarImageSize.width) {
+internal fun validateMinecraftScrollbarScaling(scaling: FabricMinecraftGuiScaling) {
+    require(scaling.width == scrollbarImageSize.width) {
         "Minecraft scrollbar metadata must use a 6 pixel source width."
     }
-    require(scaling.height() == scrollbarImageSize.height) {
+    require(scaling.height == scrollbarImageSize.height) {
         "Minecraft scrollbar metadata must use a 32 pixel source height."
     }
-    val border = scaling.border()
-    require(border.left() == 1 && border.top() == 1 && border.right() == 1 && border.bottom() == 1) {
+    require(scaling.borderLeft == 1 && scaling.borderTop == 1 && scaling.borderRight == 1 && scaling.borderBottom == 1) {
         "Minecraft scrollbar metadata must use one-pixel borders."
     }
-    require(minecraftNineSliceStretchesInner(scaling).not()) {
+    require(scaling.stretchesInner.not()) {
         "Minecraft scrollbar metadata must keep the center tiled."
     }
 }
@@ -434,6 +530,9 @@ private val sliderHandleImageSize: IntSize = IntSize(8, 20)
 private val loadingIndicatorImageSize: IntSize = IntSize(5, 6)
 private val slotHighlightImageSize: IntSize = IntSize(24, 24)
 private val legacyProgressBarImageSize: IntSize = IntSize(182, 5)
+private val legacyWidgetAtlasSize: IntSize = IntSize(256, 256)
+private val legacyCheckboxAtlasSize: IntSize = IntSize(64, 64)
+private val legacyHorizontalBorder: Int = 20
 private val printableAsciiRange: IntRange = 0x21..0x7E
 private val transparentMaskPixel: ArgbColor = ArgbColor(0x00FFFFFF)
 private val opaqueMaskPixel: ArgbColor = ArgbColor(-1)
@@ -441,3 +540,7 @@ private val legacySlotHighlightColor: ArgbColor = ArgbColor(0x80FFFFFF.toInt())
 private val legacyTooltipBackground: ArgbColor = ArgbColor(0xF0100010.toInt())
 private val legacyTooltipBorderTop: ArgbColor = ArgbColor(0x505000FF)
 private val legacyTooltipBorderBottom: ArgbColor = ArgbColor(0x5028007F)
+private val legacyTextFieldBorder: ArgbColor = ArgbColor(0xFFA0A0A0.toInt())
+private val legacyTextFieldBackground: ArgbColor = ArgbColor(0xFF000000.toInt())
+private val legacyScrollbarBorder: ArgbColor = ArgbColor(0xFF808080.toInt())
+private val legacyScrollbarInner: ArgbColor = ArgbColor(0xFFC0C0C0.toInt())
