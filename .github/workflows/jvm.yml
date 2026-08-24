@@ -132,7 +132,7 @@ jobs:
       - name: Check out source
         uses: actions/checkout@v7
       - name: Set up Java
-        uses: actions/setup-java@v5
+        uses: actions/setup-java@v6
         with:
           distribution: temurin
           java-version: |
@@ -155,7 +155,7 @@ jobs:
       - name: Restore Loom project cache
         if: matrix.loom_cache
         id: loom_cache
-        uses: actions/cache/restore@v5
+        uses: actions/cache/restore@v6
         with:
           path: .gradle/loom-cache
           key: loom-${{ runner.os }}-${{ matrix.id }}-${{ steps.loom_inputs.outputs.hash }}
@@ -166,7 +166,7 @@ jobs:
         run: bash ./gradlew ${{ matrix.gradle_arguments }}
       - name: Save Loom project cache
         if: success() && matrix.loom_cache && github.ref == 'refs/heads/master' && steps.loom_cache.outputs.cache-hit != 'true'
-        uses: actions/cache/save@v5
+        uses: actions/cache/save@v6
         with:
           path: .gradle/loom-cache
           key: ${{ steps.loom_cache.outputs.cache-primary-key }}
