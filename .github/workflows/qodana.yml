@@ -52,11 +52,12 @@ jobs:
         run: |
           bash ./gradlew --stop
           df -h /
+      - name: Prepare complete Gradle IDE model
+        run: |
+          sed -i 's/^org.gradle.configureondemand=true$/org.gradle.configureondemand=false/' gradle.properties
+          grep -Fx 'org.gradle.configureondemand=false' gradle.properties
       - name: Run Qodana
         uses: JetBrains/qodana-action@v2026.2
-        env:
-          # IntelliJ's Gradle import needs every source-set model; configuration-on-demand otherwise leaves most modules as dependency-free directory modules.
-          GRADLE_OPTS: -Dorg.gradle.configureondemand=false
         with:
           cache-dir: ${{ runner.temp }}/qodana/caches
           results-dir: ${{ runner.temp }}/qodana/results
