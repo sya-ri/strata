@@ -61,7 +61,8 @@ Qodana runs its recommended JVM inspection profile in CI without a baseline.
 The workflow makes every required Java toolchain available to the host-side native Qodana process so Gradle's IDE importer can resolve the Java 17, Java 21, and Java 25 source-set models and their dependencies.
 It restores the Gradle user home read-only, compiles every `classes` and `gametestClasses` boundary, and assembles the four plain common jars referenced by Loom's nested-library model before inspection without assembling remapped distribution jars.
 The workflow retains those analysis inputs for the IDE model and stops only the Gradle daemons before analysis to release their memory and file handles.
-Immediately before Qodana, the disposable checkout disables configuration on demand, while Qodana's Gradle importer supplies Loom's official `idea.sync.active` system property to its Tooling API invocation.
+Immediately before Qodana, the disposable checkout disables configuration on demand and enables Loom's official `fabric.loom.ci` system property, while Qodana's Gradle importer supplies Loom's official `idea.sync.active` system property to its Tooling API invocation.
+The CI property keeps mapped binary dependencies in the IDE model while preventing Loom from downloading and remapping optional dependency source artifacts inside Qodana's isolated Gradle cache.
 During that IDE sync, each versioned project augments its official Gradle IDEA module with the real compile classpath and, for integration projects, the real test and GameTest classpaths and source roots.
 This preserves one canonical physical copy of compatible mapped sources while preventing IntelliJ from assigning linked roots to dependency-free directory modules.
 The host-side precompile reuses the restored Gradle user home, while Qodana's isolated importer builds its own model in a bounded temporary cache.
