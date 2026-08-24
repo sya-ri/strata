@@ -10,6 +10,8 @@ plugins {
     alias(libs.plugins.fabricLoomRemap)
 }
 
+apply(from = rootProject.file("integration/minecraft-fabric-published-runtime.gradle.kts"))
+
 evaluationDependsOn(":runtime:minecraft-fabric-1.20.1")
 val runtimeFabricProject = project(":runtime:minecraft-fabric-1.20.1")
 val runtimeFabricMain =
@@ -88,6 +90,25 @@ val runProductionClientGameTest = tasks.register<ClientProductionRunTask>("runPr
     mods.from(runtimeRemappedJar)
     runDir.set(productionRunDirectory)
     val verificationOutput = layout.buildDirectory.dir("minecraft-production-verification")
+    jvmArgs.add(verificationOutput.map { directory -> "-Dstrata.minecraftLegacyOutput=${directory.asFile.absolutePath}" })
+    jvmArgs.add(libs.versions.minecraft1201.map { version -> "-Dstrata.minecraftVersion=$version" })
+}
+
+val publishedCoordinateRunDirectory = layout.buildDirectory.dir("run/publishedCoordinateClientGameTest")
+val deletePublishedCoordinateGameTestRunDir = tasks.register<Delete>("deletePublishedCoordinateGameTestRunDir") {
+    delete(publishedCoordinateRunDirectory)
+}
+val publishedRuntimeJar =
+    layout.buildDirectory.file(
+        "published-runtime/strata-runtime-minecraft-fabric-1.20.1-${project.version}.jar",
+    )
+tasks.register<ClientProductionRunTask>("runPublishedCoordinateClientGameTest") {
+    group = "verification"
+    description = "Runs the loaded client against the externally resolved Minecraft 1.20.1 Strata runtime."
+    dependsOn(deletePublishedCoordinateGameTestRunDir, "verifyPublishedRuntimeCoordinate")
+    mods.from(publishedRuntimeJar)
+    runDir.set(publishedCoordinateRunDirectory)
+    val verificationOutput = layout.buildDirectory.dir("minecraft-published-coordinate-verification")
     jvmArgs.add(verificationOutput.map { directory -> "-Dstrata.minecraftLegacyOutput=${directory.asFile.absolutePath}" })
     jvmArgs.add(libs.versions.minecraft1201.map { version -> "-Dstrata.minecraftVersion=$version" })
 }

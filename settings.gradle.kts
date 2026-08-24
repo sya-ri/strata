@@ -1,5 +1,7 @@
 import org.gradle.api.initialization.resolve.RepositoriesMode
 
+val releaseRepository = providers.gradleProperty("strata.releaseRepository")
+
 pluginManagement {
     repositories {
         gradlePluginPortal()
@@ -11,6 +13,24 @@ pluginManagement {
 dependencyResolutionManagement {
     repositoriesMode.set(RepositoriesMode.PREFER_SETTINGS)
     repositories {
+        releaseRepository.orNull?.let { repositoryUrl ->
+            exclusiveContent {
+                forRepository {
+                    maven {
+                        name = "StrataRelease"
+                        url = uri(repositoryUrl)
+                        metadataSources {
+                            gradleMetadata()
+                            mavenPom()
+                            artifact()
+                        }
+                    }
+                }
+                filter {
+                    includeGroup("dev.s7a.strata")
+                }
+            }
+        }
         mavenCentral()
         maven("https://maven.fabricmc.net/")
         maven("https://libraries.minecraft.net/")

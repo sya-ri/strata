@@ -8,6 +8,7 @@ import org.gradle.api.plugins.JavaPluginExtension
 import org.gradle.api.publish.tasks.GenerateModuleMetadata
 import org.gradle.api.services.BuildService
 import org.gradle.api.services.BuildServiceParameters
+import org.gradle.api.tasks.GradleBuild
 import org.gradle.api.tasks.SourceSetContainer
 import org.gradle.api.tasks.bundling.AbstractArchiveTask
 import org.gradle.api.tasks.compile.JavaCompile
@@ -706,3 +707,45 @@ val ciMinecraftCheck = tasks.register("ciMinecraftCheck") {
         }
     }
 }
+
+val expectedReleaseCoordinates =
+    listOf(
+        "dev.s7a.strata:strata-api:$version",
+        "dev.s7a.strata:strata-runtime-core:$version",
+        "dev.s7a.strata:strata-runtime-headless:$version",
+        "dev.s7a.strata:strata-runtime-minecraft:$version",
+    ) +
+        minecraftFabricTargets.map { target ->
+            "dev.s7a.strata:strata-runtime-minecraft-fabric-${target.version}:$version"
+        }
+val verifyReleasePublicationMatrix =
+    tasks.register("verifyReleasePublicationMatrix") {
+        group = "verification"
+        description = "Verifies the exact 24-coordinate Maven Central release inventory."
+        val coordinatesFile = layout.projectDirectory.file("release/maven-coordinates.txt")
+        inputs.file(coordinatesFile)
+        inputs.property("expectedCoordinates", expectedReleaseCoordinates)
+        doLast {
+            val trackedCoordinates = coordinatesFile.asFile.readLines().filter(String::isNotBlank)
+            check(expectedReleaseCoordinates.size == 24) { "The release must publish exactly 24 Maven coordinates." }
+            check(trackedCoordinates == expectedReleaseCoordinates) {
+                "release/maven-coordinates.txt differs from the typed publication matrix."
+            }
+        }
+    }
+
+val publishToMavenLocal =
+    tasks.register("publishToMavenLocal") {
+        group = "publishing"
+        description = "Publishes the exact 24-artifact Strata release matrix to Maven Local."
+        dependsOn(publishableProjectPaths.sorted().map { projectPath -> "$projectPath:publishToMavenLocal" })
+    }
+
+val verifyPublishedConsumer =
+    tasks.register<GradleBuild>("verifyPublishedConsumer") {
+        group = "verification"
+        description = "Publishes all 24 Maven artifacts locally and checks a standalone coordinate-only consumer."
+        dependsOn(publishToMavenLocal, verifyReleasePublicationMatrix)
+        dir = layout.projectDirectory.dir("release/consumer").asFile
+        tasks = listOf("clean", "check")
+    }
