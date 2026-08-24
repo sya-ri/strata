@@ -1166,6 +1166,7 @@ public final class dev/s7a/strata/screen/ScreenDefinition : java/lang/AutoClosea
 	public fun <init> (Ljava/lang/String;ZLkotlin/jvm/functions/Function1;)V
 	public synthetic fun <init> (Ljava/lang/String;ZLkotlin/jvm/functions/Function1;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public fun close ()V
+	public final fun open ()V
 	public final fun transfer ()Ldev/s7a/strata/screen/ScreenDefinitionPayload;
 }
 
@@ -1173,6 +1174,23 @@ public final class dev/s7a/strata/screen/ScreenDefinitionPayload {
 	public final fun getContent ()Lkotlin/jvm/functions/Function1;
 	public final fun getPausesGame ()Z
 	public final fun getTitle ()Ldev/s7a/strata/text/UiText;
+}
+
+public final class dev/s7a/strata/screen/ScreenDefinitionUnavailableException : java/lang/IllegalStateException {
+	public fun <init> (Ljava/lang/String;)V
+}
+
+public final class dev/s7a/strata/screen/ScreenOpenThreadException : java/lang/IllegalStateException {
+	public fun <init> (Ljava/lang/String;)V
+}
+
+public final class dev/s7a/strata/screen/ScreenRuntimeUnavailableException : java/lang/IllegalStateException {
+	public fun <init> ()V
+}
+
+public final class dev/s7a/strata/screen/Screens {
+	public static final field INSTANCE Ldev/s7a/strata/screen/Screens;
+	public static final fun open (Ldev/s7a/strata/screen/ScreenDefinition;)V
 }
 
 public final class dev/s7a/strata/semantics/Semantics {
@@ -1301,6 +1319,20 @@ public final class dev/s7a/strata/spi/ComponentRuntimeBridge {
 }
 
 public abstract interface annotation class dev/s7a/strata/spi/InternalStrataRuntimeApi : java/lang/annotation/Annotation {
+}
+
+public abstract interface class dev/s7a/strata/spi/ScreenPresenter {
+	public abstract fun present (Ldev/s7a/strata/screen/ScreenDefinition;)V
+}
+
+public abstract interface class dev/s7a/strata/spi/ScreenPresenterRegistration : java/lang/AutoCloseable {
+	public abstract fun close ()V
+}
+
+public final class dev/s7a/strata/spi/ScreenPresenters {
+	public static final field INSTANCE Ldev/s7a/strata/spi/ScreenPresenters;
+	public final fun install (Ldev/s7a/strata/spi/ScreenPresenter;)Ldev/s7a/strata/spi/ScreenPresenterRegistration;
+	public final fun present (Ldev/s7a/strata/screen/ScreenDefinition;)V
 }
 
 public final class dev/s7a/strata/state/StateRevision : java/lang/Comparable {

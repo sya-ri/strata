@@ -48,13 +48,13 @@ tasks.named<ProcessResources>("processGametestResources") {
     inputs.property("version", project.version)
     inputs.property("minecraftVersion", libs.versions.minecraft1204)
     inputs.property("integrationModId", "strata-integration-minecraft-fabric-1-20-4")
-    inputs.property("runtimeModId", "strata-runtime-minecraft-fabric-1-20-4")
+    inputs.property("runtimeModId", "strata")
     filesMatching("fabric.mod.json") {
         expand(
             "version" to project.version,
             "minecraftVersion" to libs.versions.minecraft1204.get(),
             "integrationModId" to "strata-integration-minecraft-fabric-1-20-4",
-            "runtimeModId" to "strata-runtime-minecraft-fabric-1-20-4",
+            "runtimeModId" to "strata",
         )
     }
 }

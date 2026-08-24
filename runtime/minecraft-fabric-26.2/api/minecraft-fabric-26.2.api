@@ -31,3 +31,8 @@ public final class dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreen
 	public static synthetic fun createMinecraftScreen$default (Ldev/s7a/strata/screen/ScreenDefinition;Ldev/s7a/strata/runtime/minecraft/MinecraftUiProfile;Lnet/minecraft/client/gui/screens/Screen;ILjava/lang/Object;)Ldev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreen;
 }
 
+public final class dev/s7a/strata/runtime/minecraft/fabric/StrataFabricClient : net/fabricmc/api/ClientModInitializer {
+	public fun <init> ()V
+	public fun onInitializeClient ()V
+}
+

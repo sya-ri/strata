@@ -3,7 +3,7 @@ import org.gradle.api.artifacts.component.ProjectComponentIdentifier
 group = "dev.s7a.strata.integration"
 
 dependencies {
-    implementation(rootProject.project(":api"))
+    compileOnly(rootProject.project(":api"))
     testImplementation(rootProject.project(":runtime:core"))
     testImplementation(rootProject.project(":runtime:minecraft"))
     testImplementation(libs.junit.jupiter)

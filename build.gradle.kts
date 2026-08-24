@@ -9,6 +9,7 @@ import org.gradle.api.publish.tasks.GenerateModuleMetadata
 import org.gradle.api.services.BuildService
 import org.gradle.api.services.BuildServiceParameters
 import org.gradle.api.tasks.SourceSetContainer
+import org.gradle.api.tasks.bundling.AbstractArchiveTask
 import org.gradle.api.tasks.compile.JavaCompile
 import org.gradle.api.tasks.testing.Test
 import org.gradle.jvm.toolchain.JavaLanguageVersion
@@ -19,6 +20,7 @@ import org.jetbrains.kotlin.gradle.dsl.abi.BinariesSource.MAVEN_PUBLICATIONS
 import org.jetbrains.kotlin.gradle.dsl.abi.ExperimentalAbiValidation
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 import org.jetbrains.kotlin.gradle.tasks.KotlinJvmCompile
+import java.util.zip.ZipFile
 
 plugins {
     base
@@ -461,9 +463,35 @@ subprojects {
             }
         }
 
-    tasks.matching { task -> task.name == "remapJar" }.configureEach {
+    tasks.matching { task -> task.name in setOf("remapJar", "remapSourcesJar") }.configureEach {
         usesService(minecraftRemapExecutionService)
     }
+
+    tasks
+        .withType<AbstractArchiveTask>()
+        .matching { task -> task.name in setOf("jar", "sourcesJar", "dokkaJavadocJar") }
+        .configureEach {
+            from(rootProject.file("LICENSE")) {
+                into("META-INF")
+                rename { "LICENSE-strata" }
+            }
+        }
+
+    tasks
+        .matching { task -> task.name in setOf("jar", "sourcesJar", "dokkaJavadocJar", "remapJar", "remapSourcesJar") }
+        .configureEach {
+            doLast {
+                val archiveTask = this as? AbstractArchiveTask
+                    ?: error("Published archive verification requires an AbstractArchiveTask: $path")
+                val archive = archiveTask.archiveFile.get().asFile
+                ZipFile(archive).use { zip ->
+                    val licenseEntries = zip.entries().asSequence().count { entry -> entry.name == "META-INF/LICENSE-strata" }
+                    check(licenseEntries == 1) {
+                        "Published archive ${archive.name} must contain META-INF/LICENSE-strata exactly once; found $licenseEntries."
+                    }
+                }
+            }
+        }
 
     if (this != detektRulesProject) {
         dependencies {

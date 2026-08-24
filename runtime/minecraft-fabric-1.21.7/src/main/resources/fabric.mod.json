@@ -1,9 +1,24 @@
 {
   "schemaVersion": 1,
-  "id": "strata-runtime-minecraft-fabric-1-21-7",
+  "id": "strata",
   "version": "${version}",
-  "name": "Strata Minecraft Runtime 1.21.7",
+  "name": "Strata",
+  "description": "A declarative Minecraft UI library with a separately installed Fabric client runtime.",
+  "authors": [
+    "sya-ri"
+  ],
+  "contact": {
+    "homepage": "https://gh.s7a.dev/strata/",
+    "sources": "https://github.com/sya-ri/strata",
+    "issues": "https://github.com/sya-ri/strata/issues"
+  },
+  "license": "MIT",
   "environment": "client",
+  "entrypoints": {
+    "client": [
+      "dev.s7a.strata.runtime.minecraft.fabric.StrataFabricClient"
+    ]
+  },
   "depends": {
     "fabricloader": ">=${fabricLoader}",
     "minecraft": "${minecraft}",

@@ -17,7 +17,7 @@ import java.nio.file.Path
 import kotlin.jvm.java
 
 /**
- * Verifies that the Fabric adapter exposes only its intended asset, profile, screen factories and screen type.
+ * Verifies that the Fabric adapter exposes only its intended entrypoint, asset, profile, screen factories and screen type.
  */
 @OptIn(InternalStrataRuntimeApi::class)
 internal class FabricMinecraftJvmSurfaceTest {
@@ -41,7 +41,7 @@ internal class FabricMinecraftJvmSurfaceTest {
         classes.forEach { type ->
             type.declaredMethods.forEach { method -> assertFalse(method.name.startsWith("access$"), "${type.name}#${method.name}") }
         }
-        listOf(lifecycleClass, lifecycleActionClass, failuresClass).forEach { className ->
+        listOf(lifecycleClass, lifecycleActionClass, failuresClass, presentationTransactionClass).forEach { className ->
             val type = classes.single { candidate -> candidate.name == className }
             assertFalse(Modifier.isPublic(type.modifiers), className)
             assertFalse(Modifier.isProtected(type.modifiers), className)
@@ -135,6 +135,7 @@ internal class FabricMinecraftJvmSurfaceTest {
         private val lifecycleClass = "$packageName.FabricScreenLifecycleTransaction"
         private val lifecycleActionClass = "$lifecycleClass\$Action"
         private val failuresClass = "$packageName.FabricMinecraftFailures"
+        private val presentationTransactionClass = "$packageName.FabricScreenPresentationTransaction"
         private val expectedPublicMethods =
             mapOf(
                 "$packageName.FabricMinecraftFontContractKt" to emptySet(),
@@ -167,6 +168,7 @@ internal class FabricMinecraftJvmSurfaceTest {
                     ),
                 "$packageName.FabricMinecraftScreen\$Companion" to emptySet(),
                 screenFacade to setOf("createMinecraftScreen"),
+                "$packageName.StrataFabricClient" to setOf("onInitializeClient"),
                 "$packageName.FabricMinecraftTextMappingKt" to emptySet(),
             )
     }

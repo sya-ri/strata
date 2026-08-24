@@ -10,6 +10,8 @@ plugins {
     alias(libs.plugins.fabricLoomRemap)
 }
 
+apply(from = rootProject.file("runtime/minecraft-fabric-publication.gradle.kts"))
+
 val sharedRuntime = rootProject.file("runtime/minecraft-fabric-shared/src/main")
 val legacyRuntime = rootProject.file("runtime/minecraft-fabric-1.21-legacy/src/main")
 val recordInputRuntime = rootProject.file("runtime/minecraft-fabric-1.21.9-legacy/src/main")
@@ -87,7 +89,7 @@ val verifyFabricModArtifact = tasks.register("verifyFabricModArtifact") {
             check(metadata["schemaVersion"] == 1) {
                 "Fabric metadata must use schema version 1."
             }
-            check(metadata["id"] == "strata-runtime-minecraft-fabric-1-21-10") {
+            check(metadata["id"] == "strata") {
                 "Fabric metadata must use the reserved module id."
             }
             check(metadata["version"] == project.version.toString()) {
@@ -95,6 +97,39 @@ val verifyFabricModArtifact = tasks.register("verifyFabricModArtifact") {
             }
             check(metadata["environment"] == "client") {
                 "Fabric metadata must remain client-only."
+            }
+            check(metadata["name"] == "Strata") {
+                "Fabric metadata must use the stable project name."
+            }
+            check(metadata["description"] == "A declarative Minecraft UI library with a separately installed Fabric client runtime.") {
+                "Fabric metadata must contain the shared project description."
+            }
+            check(metadata["authors"] == listOf("sya-ri")) {
+                "Fabric metadata must contain the project author."
+            }
+            check(
+                metadata["contact"] ==
+                    mapOf(
+                        "homepage" to "https://gh.s7a.dev/strata/",
+                        "sources" to "https://github.com/sya-ri/strata",
+                        "issues" to "https://github.com/sya-ri/strata/issues",
+                    ),
+            ) {
+                "Fabric metadata contact links must match the canonical project links."
+            }
+            check(metadata["license"] == "MIT") {
+                "Fabric metadata must declare the MIT license."
+            }
+            check(
+                metadata["entrypoints"] ==
+                    mapOf(
+                        "client" to listOf("dev.s7a.strata.runtime.minecraft.fabric.StrataFabricClient"),
+                    ),
+            ) {
+                "Fabric metadata must install the shared client entrypoint."
+            }
+            check("META-INF/LICENSE-strata" in entryNames) {
+                "Fabric artifact must contain the project license."
             }
             val nestedMetadata =
                 (metadata["jars"] as? List<*>)
@@ -127,23 +162,26 @@ tasks.named("check") {
 }
 
 dependencies {
-    api(project(":runtime:minecraft"))
-    implementation(project(":runtime:headless"))
+    compileOnly(project(":runtime:minecraft"))
+    compileOnly(project(":runtime:headless"))
     minecraft(libs.minecraft12110)
     mappings(loom.officialMojangMappings())
-    implementation(libs.fabric.loader)
+    compileOnly(libs.fabric.loader)
     runtimeOnly(libs.fabric.language.kotlin)
     include(project(":api"))
     include(project(":runtime:core"))
     include(project(":runtime:headless"))
     include(project(":runtime:minecraft"))
+    testImplementation(project(":runtime:minecraft"))
+    testImplementation(project(":runtime:headless"))
+    testRuntimeOnly(libs.fabric.loader)
     testImplementation(libs.junit.jupiter)
     testRuntimeOnly(libs.junit.platform.launcher)
 }
 
 loom {
     mods {
-        register("strata-runtime-minecraft-fabric-1.21.10") {
+        register("strata") {
             sourceSet(sourceSets.main.get())
         }
     }

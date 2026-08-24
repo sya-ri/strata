@@ -116,7 +116,11 @@ public class StrataMinecraftClientGameTest : FabricClientGameTest {
                 Files.write(output.resolve("strata-headless.png"), headless.encodePng())
                 requireExactPixels(native, headless)
 
-                context.setScreen { createMinecraftScreen(createConfirmScreenDefinition(), profile, parent = null) }
+                context.runOnClient(
+                    FailableConsumer<Minecraft, RuntimeException> {
+                        createConfirmScreenDefinition().open()
+                    },
+                )
                 context.waitForScreen(FabricMinecraftScreen::class.java)
                 context.waitTicks(2)
                 context.assertScreenshotEquals(

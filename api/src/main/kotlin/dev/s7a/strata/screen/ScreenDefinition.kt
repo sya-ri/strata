@@ -42,12 +42,28 @@ public class ScreenDefinition(
     ) : this(UiText.Literal(title), pausesGame, content)
 
     /**
+     * Presents this definition through the runtime installed for the current platform.
+     *
+     * The call is synchronous and does not dispatch to another thread.
+     * A missing runtime or a runtime thread rejection occurs before ownership transfer, so the caller may retry or [close] this definition.
+     * Once a runtime transfers the definition, that runtime owns terminal cleanup even when presentation fails.
+     *
+     * @throws ScreenRuntimeUnavailableException when no platform runtime is installed.
+     * @throws ScreenOpenThreadException when the installed runtime rejects the calling thread before transfer.
+     * @throws ScreenDefinitionUnavailableException when this definition was already transferred or closed.
+     * @throws Throwable when the installed runtime fails during presentation; the runtime preserves ownership and cleanup obligations after transfer.
+     */
+    public fun open() {
+        Screens.open(this)
+    }
+
+    /**
      * Atomically transfers the complete definition payload to one runtime adapter.
      *
      * Application code must not invoke this privileged ownership operation.
      *
      * @return the uniquely transferred payload.
-     * @throws IllegalStateException when this definition was transferred or closed.
+     * @throws ScreenDefinitionUnavailableException when this definition was transferred or closed.
      */
     @InternalStrataRuntimeApi
     public fun transfer(): ScreenDefinitionPayload {
@@ -60,11 +76,11 @@ public class ScreenDefinition(
                 }
 
                 State.Transferred -> {
-                    throw IllegalStateException("Screen definition was already transferred.")
+                    throw ScreenDefinitionUnavailableException("Screen definition was already transferred.")
                 }
 
                 State.Closed -> {
-                    throw IllegalStateException("Screen definition is closed.")
+                    throw ScreenDefinitionUnavailableException("Screen definition is closed.")
                 }
             }
         }
