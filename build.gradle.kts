@@ -58,6 +58,17 @@ val sharedLegacyRuntimeSourceLinks =
 private val minecraftFabricTargets =
     listOf(
         MinecraftFabricTarget(
+            version = libs.versions.minecraft1204.get(),
+            javaVersion = baselineJavaVersion,
+            remapped = true,
+            sourceLinkPaths =
+                listOf(
+                    "runtime/minecraft-fabric-1.20.4",
+                    "runtime/minecraft-fabric-1.21.5-legacy",
+                    "runtime/minecraft-fabric-1.21.8-legacy",
+                ) + sharedLegacyRuntimeSourceLinks,
+        ),
+        MinecraftFabricTarget(
             version = libs.versions.minecraft1205.get(),
             javaVersion = minecraftJava21Version,
             remapped = true,

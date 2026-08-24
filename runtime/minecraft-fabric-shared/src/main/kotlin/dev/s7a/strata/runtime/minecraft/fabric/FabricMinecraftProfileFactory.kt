@@ -43,14 +43,11 @@ public fun extractMinecraftUiProfile(): MinecraftUiProfile {
         "Minecraft UI profiles require the regular bitmap font selection."
     }
     val manager = minecraft.getResourceManager()
-    val menu = manager.readImage("textures/gui/menu_background.png", IntSize(16, 16))
+    val menu = manager.readMenuBackground()
     val containerBackground = manager.readImage("textures/gui/container/generic_54.png", IntSize(256, 256))
     val (slotHighlightBack, slotHighlightFront) = manager.readSlotHighlightImages()
-    val listBackground = manager.readImage("textures/gui/menu_list_background.png", IntSize(16, 16))
-    val headerSeparator = manager.readImage("textures/gui/header_separator.png", IntSize(32, 2))
-    val footerSeparator = manager.readImage("textures/gui/footer_separator.png", IntSize(32, 2))
-    val scrollbarBackground = manager.readScrollbarImage("textures/gui/sprites/widget/scroller_background.png")
-    val scrollbarThumb = manager.readScrollbarImage("textures/gui/sprites/widget/scroller.png")
+    val (listBackground, headerSeparator, footerSeparator) = manager.readListDecorationImages()
+    val (scrollbarBackground, scrollbarThumb) = manager.readScrollbarImages()
     val checkbox = manager.readImage("textures/gui/sprites/widget/checkbox.png", checkboxImageSize)
     val checkboxHighlighted = manager.readImage("textures/gui/sprites/widget/checkbox_highlighted.png", checkboxImageSize)
     val checkboxSelected = manager.readImage("textures/gui/sprites/widget/checkbox_selected.png", checkboxImageSize)
@@ -123,6 +120,43 @@ private fun ResourceManager.readImage(
     path: String,
     expectedSize: IntSize,
 ): DrawImage = readImage(requiredResource(path), path, expectedSize)
+
+private fun ResourceManager.readMenuBackground(): DrawImage {
+    val currentPath = "textures/gui/menu_background.png"
+    val legacyPath = "textures/gui/options_background.png"
+    val current = getResource(minecraftResourceLocation("minecraft", currentPath)).orElse(null)
+    return if (current == null) {
+        readImage(legacyPath, IntSize(16, 16))
+    } else {
+        readImage(current, currentPath, IntSize(16, 16))
+    }
+}
+
+private fun ResourceManager.readListDecorationImages(): Triple<DrawImage, DrawImage, DrawImage> {
+    val currentBackgroundPath = "textures/gui/menu_list_background.png"
+    val currentBackground = getResource(minecraftResourceLocation("minecraft", currentBackgroundPath)).orElse(null)
+    if (currentBackground != null) {
+        return Triple(
+            readImage(currentBackground, currentBackgroundPath, IntSize(16, 16)),
+            readImage("textures/gui/header_separator.png", IntSize(32, 2)),
+            readImage("textures/gui/footer_separator.png", IntSize(32, 2)),
+        )
+    }
+    val legacyBackground = readImage("textures/gui/options_background.png", IntSize(16, 16))
+    val legacyFooter = readImage("textures/gui/footer_separator.png", IntSize(32, 2))
+    return Triple(legacyBackground, legacyFooter.verticallyFlipped(), legacyFooter)
+}
+
+private fun DrawImage.verticallyFlipped(): DrawImage {
+    val pixels = IntArray(size.width * size.height)
+    for (y in 0 until size.height) {
+        val sourceY = size.height - y - 1
+        for (x in 0 until size.width) {
+            pixels[y * size.width + x] = argbAt(x, sourceY)
+        }
+    }
+    return createDrawImage(size, pixels)
+}
 
 private fun ResourceManager.readSlotHighlightImages(): Pair<DrawImage, DrawImage> {
     val backPath = "textures/gui/sprites/container/slot_highlight_back.png"
@@ -262,6 +296,18 @@ private fun ResourceManager.readScrollbarImage(path: String): DrawImage {
         }
     validateMinecraftScrollbarScaling(metadata.scaling())
     return image
+}
+
+private fun ResourceManager.readScrollbarImages(): Pair<DrawImage, DrawImage> {
+    val backgroundPath = "textures/gui/sprites/widget/scroller_background.png"
+    val backgroundResource = getResource(minecraftResourceLocation("minecraft", backgroundPath)).orElse(null)
+    val background =
+        if (backgroundResource == null) {
+            createDrawImage(scrollbarImageSize, IntArray(scrollbarImageSize.width * scrollbarImageSize.height) { -16777216 })
+        } else {
+            readScrollbarImage(backgroundPath)
+        }
+    return Pair(background, readScrollbarImage("textures/gui/sprites/widget/scroller.png"))
 }
 
 /**

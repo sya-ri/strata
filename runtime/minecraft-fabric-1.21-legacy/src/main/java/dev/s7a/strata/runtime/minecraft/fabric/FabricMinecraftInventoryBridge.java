@@ -646,7 +646,7 @@ final class FabricMinecraftInventoryBridge implements MinecraftUiPlatform {
         Slot slot = target.resolveSlot();
         if (slot.hasItem()
                 && FabricMinecraftKeyBindingBridge.matches(client.options.keyPickItem, key, scanCode, modifiers)
-                && player.hasInfiniteMaterials()) {
+                && player.getAbilities().instabuild) {
             click(target, 0, ClickType.CLONE);
             return true;
         }
@@ -758,7 +758,7 @@ final class FabricMinecraftInventoryBridge implements MinecraftUiPlatform {
             quickCraftType = 0;
         } else if (rawButton == 1) {
             quickCraftType = 1;
-        } else if (isPickMouse(mouse) && requirePlayer().hasInfiniteMaterials()) {
+        } else if (isPickMouse(mouse) && requirePlayer().getAbilities().instabuild) {
             quickCraftType = 2;
         } else {
             quickCrafting = false;
@@ -860,7 +860,7 @@ final class FabricMinecraftInventoryBridge implements MinecraftUiPlatform {
                 return true;
             }
         }
-        if (isPickMouse(event) && player.hasInfiniteMaterials()) {
+        if (isPickMouse(event) && player.getAbilities().instabuild) {
             click(binding, event.button(), ClickType.CLONE);
             return true;
         }

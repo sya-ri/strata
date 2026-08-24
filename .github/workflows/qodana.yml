@@ -48,9 +48,8 @@ jobs:
           cache-read-only: true
       - name: Compile analysis inputs
         run: bash ./gradlew classes gametestClasses
-      - name: Release compiled outputs
+      - name: Stop Gradle daemons
         run: |
-          bash ./gradlew :clean
           bash ./gradlew --stop
           df -h /
       - name: Run Qodana
