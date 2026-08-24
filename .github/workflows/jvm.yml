@@ -34,7 +34,7 @@ jobs:
             coverage: true
           - id: minecraft-1-20
             name: Minecraft 1.20.x
-            gradle_arguments: :ciMinecraftCheck -Pstrata.minecraftVersions=1.20.3,1.20.4,1.20.5,1.20.6
+            gradle_arguments: :ciMinecraftCheck -Pstrata.minecraftVersions=1.20.2,1.20.3,1.20.4,1.20.5,1.20.6
             cache_read_only: false
             loom_cache: true
             coverage: false

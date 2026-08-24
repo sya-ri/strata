@@ -144,7 +144,15 @@ private fun ResourceManager.readListDecorationImages(): Triple<DrawImage, DrawIm
     }
     val legacyBackground = readImage("textures/gui/options_background.png", IntSize(16, 16))
     val legacyFooter = readImage("textures/gui/footer_separator.png", IntSize(32, 2))
-    return Triple(legacyBackground, legacyFooter.verticallyFlipped(), legacyFooter)
+    val legacyHeaderPath = "textures/gui/header_separator.png"
+    val legacyHeaderResource = getResource(minecraftResourceLocation("minecraft", legacyHeaderPath)).orElse(null)
+    val legacyHeader =
+        if (legacyHeaderResource == null) {
+            legacyFooter.verticallyFlipped()
+        } else {
+            readImage(legacyHeaderResource, legacyHeaderPath, IntSize(32, 2))
+        }
+    return Triple(legacyBackground, legacyHeader, legacyFooter)
 }
 
 private fun DrawImage.verticallyFlipped(): DrawImage {
