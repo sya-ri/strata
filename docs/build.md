@@ -48,8 +48,10 @@ Repository settings must select GitHub Actions as the Pages source; the workflow
 
 Qodana runs its recommended JVM inspection profile in CI without a baseline.
 The workflow makes every required Java toolchain available inside the Qodana container so Gradle's IDE importer can resolve the Java 17, Java 21, and Java 25 source-set models and their dependencies.
-It restores the Gradle user home read-only, compiles every `classes` and `gametestClasses` boundary before inspection without assembling remapped distribution jars, retains those outputs for the IDE model, and stops the Gradle daemons before analysis to release their memory and file handles.
-Qodana runs in native mode so its Gradle importer reuses that restored user home directly, while Qodana's much larger IDE analysis cache remains disabled and is removed after the run to preserve hosted-runner disk space.
+It restores the Gradle user home read-only, compiles every `classes` and `gametestClasses` boundary, and assembles the four plain common jars referenced by Loom's nested-library model before inspection without assembling remapped distribution jars.
+The workflow retains those analysis inputs for the IDE model and stops only the Gradle daemons before analysis to release their memory and file handles.
+The host-side precompile reuses the restored Gradle user home, while Qodana's isolated importer builds its own model in a bounded temporary cache.
+The much larger Qodana IDE cache is not persisted and is removed after the run to preserve hosted-runner disk space; required analysis inputs remain ordinary reproducible build outputs rather than cache-only state.
 Static-analysis rules are enabled when they produce actionable improvements; rules that systematically make code less clear are disabled with a durable rationale in the checked-in configuration.
 
 The nonpublished `integration:minecraft-fabric-26.2` and `integration:minecraft-fabric-26.1` modules compile the same neutral loaded-client suite against their exact game and Fabric API dependencies.
