@@ -3,6 +3,7 @@ package dev.s7a.strata.integration.minecraft.fabric
 import dev.s7a.strata.geometry.IntOffset
 import dev.s7a.strata.geometry.IntSize
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents
+import net.fabricmc.loader.api.FabricLoader
 import net.minecraft.client.Minecraft
 import net.minecraft.client.Screenshot
 import net.minecraft.client.gui.components.AbstractButton
@@ -64,14 +65,41 @@ internal class StandaloneMinecraftLoadedTestContext : MinecraftLoadedTestContext
     override fun movePointer(position: IntOffset) {
         computeOnClient { minecraft ->
             val scale = minecraft.window.guiScale
+            val rawX = position.x * scale
+            val rawY = position.y * scale
             GLFW.glfwSetCursorPos(
                 minecraft.window.window,
-                position.x * scale,
-                position.y * scale,
+                rawX,
+                rawY,
             )
-            minecraft.screen?.mouseMoved(position.x.toDouble(), position.y.toDouble())
+            dispatchNativePointerMove(minecraft, rawX, rawY)
             Unit
         }
+    }
+
+    private fun dispatchNativePointerMove(
+        minecraft: Minecraft,
+        rawX: Double,
+        rawY: Double,
+    ) {
+        val parameterTypes =
+            arrayOf(
+                checkNotNull(Long::class.javaPrimitiveType),
+                checkNotNull(Double::class.javaPrimitiveType),
+                checkNotNull(Double::class.javaPrimitiveType),
+            )
+        val handler = minecraft.mouseHandler
+        val callbackName =
+            FabricLoader
+                .getInstance()
+                .mappingResolver
+                .mapMethodName("intermediary", "net.minecraft.class_312", "method_1600", "(JDD)V")
+        val callback =
+            handler.javaClass.declaredMethods.single { method ->
+                method.name == callbackName && method.parameterTypes.contentEquals(parameterTypes)
+            }
+        check(callback.trySetAccessible()) { "The native Minecraft pointer callback is inaccessible." }
+        callback.invoke(handler, minecraft.window.window, rawX, rawY)
     }
 
     override fun takeScreenshot(

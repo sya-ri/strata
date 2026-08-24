@@ -18,7 +18,7 @@ public class StrataMinecraftLegacyClientTest : ClientModInitializer {
             {
                 runCatching {
                     context.waitFor(CLIENT_START_TIMEOUT_TICKS) { minecraft ->
-                        minecraft.isGameLoadFinished && minecraft.screen != null
+                        minecraft.isGameLoadFinished && minecraft.overlay == null && minecraft.screen != null
                     }
                     context.runLegacySuite()
                 }.onSuccess {
