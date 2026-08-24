@@ -3,32 +3,46 @@ name: Qodana
 on:
   pull_request:
     paths:
-      - .github/workflows/qodana.yml
+      - .github/workflows/**
       - api/**
+      - build-logic/**
       - build.gradle.kts
+      - CHANGELOG.md
       - config/**
+      - docs/**
       - gradle/**
       - gradle.properties
+      - icon.svg
       - integration/**
       - qodana.yaml
       - quality/**
+      - README.md
+      - release/**
       - runtime/**
       - settings.gradle.kts
+      - skills/**
   push:
     branches:
       - master
     paths:
-      - .github/workflows/qodana.yml
+      - .github/workflows/**
       - api/**
+      - build-logic/**
       - build.gradle.kts
+      - CHANGELOG.md
       - config/**
+      - docs/**
       - gradle/**
       - gradle.properties
+      - icon.svg
       - integration/**
       - qodana.yaml
       - quality/**
+      - README.md
+      - release/**
       - runtime/**
       - settings.gradle.kts
+      - skills/**
 
 permissions:
   actions: read

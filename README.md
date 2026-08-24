@@ -8,7 +8,7 @@ Declarative Minecraft UI with reusable component trees, version-independent layo
 Strata is pronounced “STRAY-tuh” (`/ˈstreɪtə/`) and is the plural of *stratum*, meaning a layer.
 The name reflects its layered design: declarative components, retained UI behavior, portable rendering, and environment-specific adapters.
 
-Strata is under development; public artifacts are not available yet.
+Strata 0.1.0 is distributed through Maven Central for development, as a separate client Fabric Mod through Modrinth, and as a public Codex skill in this repository.
 Features are documented as available only after executable tests verify them.
 
 ## Why Strata exists
@@ -34,12 +34,25 @@ Strata's own standard built-ins are limited to focused components with multiple 
 
 ## Installation and API-only authoring
 
-Public artifacts are not available yet.
-From a source checkout, `./gradlew publishToMavenLocal` installs the current artifacts for local integration; application authoring needs only `strata-api` on its compile classpath.
+Application UI source needs only `strata-api` on its compile classpath.
+Install exactly one version-matched runtime as a separate client Fabric Mod together with Fabric Language Kotlin; do not bundle multiple versioned Strata runtimes.
 
 ```kotlin
 dependencies {
-    implementation("dev.s7a.strata:strata-api:0.1.0")
+    compileOnly("dev.s7a.strata:strata-api:0.1.0")
+    modRuntimeOnly("dev.s7a.strata:strata-runtime-minecraft-fabric-<minecraft-version>:0.1.0")
+    modRuntimeOnly("net.fabricmc:fabric-language-kotlin:<compatible-version>")
+}
+```
+
+The runtime is also available from [Modrinth](https://modrinth.com/mod/strata-ui).
+Declare it as a required dependency in the consuming Mod so `ScreenDefinition.open()` always has a presenter in production:
+
+```json
+{
+  "depends": {
+    "strata": ">=0.1.0"
+  }
 }
 ```
 
@@ -190,8 +203,8 @@ The dependency boundaries are:
 
 - `api` is the only compile-time dependency required for application authoring.
   It contains screen definitions, all standard component entry points and configuration types, layout, resources, bindings, modifiers, and the public custom `Element`/`Node` SPI.
-- `runtime/core` is configured as a publishable retained engine that measures, lays out, paints, dispatches input, and flattens unresolved semantics on the JVM. It has not been published to an external repository.
-- `runtime/headless` is configured as a publishable headless adapter over the retained core.
+- `runtime/core` is the published retained engine that measures, lays out, paints, dispatches input, and flattens unresolved semantics on the JVM.
+- `runtime/headless` is the published headless adapter over the retained core.
   Its verified synchronous entry points render a positive fixed viewport into immutable scaled ARGB pixels, deterministic metadata-free RGBA8 PNG bytes, and logical unscaled semantics.
 - `runtime/minecraft` is the publishable Minecraft-independent implementation of API components, profile/resource resolution, declarative live-slot and player-skin bindings, and the owner-thread host over the retained core.
   It applies every frame to exact fixed logical viewport constraints without exposing Fabric, resource-manager objects, or mapped game types.
@@ -256,6 +269,9 @@ See [Architecture](docs/architecture.md) for dependency boundaries and extension
 - [Rendering performance](docs/performance.md) records the JMH methodology, allocation evidence, cache and retention gates, and the completed Minecraft 1.20 and 1.21 family baselines.
 - [Build and release](docs/build.md) lists local quality checks, the aggregated Dokka GitHub Pages site, and publication requirements.
 - [Supporting a new Minecraft version](docs/minecraft-versions.md) defines the evidence, implementation, and compatibility process for another adapter.
+- [Strata 0.1.0 release notes](docs/releases/v0.1.0.md) records the first public API, runtime, documentation, and distribution contract.
+
+The aggregated Dokka and reader guides are published at [gh.s7a.dev/strata](https://gh.s7a.dev/strata/).
 
 ## Public Codex skill
 
@@ -273,6 +289,11 @@ Install it with the Skills CLI:
 npx skills add sya-ri/strata --skill strata
 ```
 
+## Known limitations
+
+- The verified bitmap font path currently supports printable ASCII with the regular Minecraft glyph sheet.
+- Forced Unicode and multi-resource font stacks are not yet supported.
+- Resource-backed images use fixed declared logical dimensions and deterministic nearest sampling; layout does not infer dimensions from a replacement image.
 
 ## Build
 

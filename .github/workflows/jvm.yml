@@ -3,34 +3,42 @@ name: JVM checks
 on:
   push:
     paths:
-      - .github/workflows/jvm.yml
+      - .github/workflows/**
       - api/**
+      - build-logic/**
       - build.gradle.kts
+      - CHANGELOG.md
       - config/**
-      - docs/components/**
-      - docs/components.md
+      - docs/**
       - gradle/**
       - gradle.properties
+      - icon.svg
       - integration/**
       - quality/**
+      - release/**
       - README.md
       - runtime/**
       - settings.gradle.kts
+      - skills/**
   pull_request:
     paths:
-      - .github/workflows/jvm.yml
+      - .github/workflows/**
       - api/**
+      - build-logic/**
       - build.gradle.kts
+      - CHANGELOG.md
       - config/**
-      - docs/components/**
-      - docs/components.md
+      - docs/**
       - gradle/**
       - gradle.properties
+      - icon.svg
       - integration/**
       - quality/**
+      - release/**
       - README.md
       - runtime/**
       - settings.gradle.kts
+      - skills/**
 
 permissions:
   contents: read
@@ -145,6 +153,13 @@ jobs:
           cache-read-only: ${{ matrix.cache_read_only || github.ref != 'refs/heads/master' }}
           gradle-home-cache-strict-match: true
           gradle-home-cache-excludes: caches/fabric-loom
+      - name: Check release shell syntax
+        if: matrix.id == 'common'
+        shell: bash
+        run: |
+          for script in release/*.sh; do
+            bash -n "$script"
+          done
       - name: Hash Loom cache inputs
         if: matrix.loom_cache
         id: loom_inputs

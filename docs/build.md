@@ -52,6 +52,10 @@ Run aggregate coverage with `./gradlew :koverHtmlReport :koverXmlReport -Pkover`
 Each publishable JVM module has a Maven publication with source and Javadoc artifacts, MIT license metadata, SCM metadata, and an optional in-memory signing setup.
 Provide `mavenCentralUsername`, `mavenCentralPassword`, `signingInMemoryKey`, optional `signingInMemoryKeyId`, and optional `signingInMemoryKeyPassword` Gradle properties when publishing to Maven Central.
 Environment variables use the `ORG_GRADLE_PROJECT_` prefix followed by the same property name.
+The protected release workflow runs the immutable repository preflight and the authenticated Central Portal deployment preflight before any upload.
+An exact Portal deployment must contain the complete expected path set for all twenty-four coordinates, exactly one matching deployment, valid detached signatures, and MD5, SHA-1, SHA-256, and SHA-512 sidecars whose downloaded bytes match the locally verified publication.
+The Vanniktech publisher performs the official automatic upload only when neither public Maven Central nor the Portal already contains the release; the workflow treats its response as potentially ambiguous and accepts the write only after read-only Portal reconciliation reaches the exact `PUBLISHED` state.
+A matching Portal deployment is resumed without uploading again, while duplicates, partial content, metadata or byte mismatches, and failed deployments stop the release without deletion, replacement, or overwrite.
 
 The root `dokkaGenerate` task aggregates every published module into `build/dokka/html`.
 The Documentation workflow invokes `:integration:docs:checkDokkaPagesStaging` on pushes to `master` and release tags; that task depends on the fully qualified root `:dokkaGenerate`, stages and verifies the reader guides, and deploys the resulting `build/dokka/html` directory through GitHub Pages' artifact and OIDC deployment path.
@@ -94,5 +98,6 @@ The staging checker scans checked source text for hard-coded `https://gh.s7a.dev
 It also parses every staged Markdown and HTML document under `/guide`, resolves links against the deployed tree rather than the repository tree, and verifies local anchors and image targets so a repository-relative path that was not copied cannot pass.
 `generateDokkaPagesInventory` writes the sorted public relative paths to `build/dokka/html/pages-public-urls.txt`, including the Dokka root, guide directory, linked guide pages, and every staged guide image; the tagged copy retains the same self-contained inventory below `releases/0.1.0`.
 Final release verification downloads `/releases/0.1.0/pages-public-urls.txt` from the configured Pages origin, requests every listed path relative to that immutable base, and checks its `source-revision.txt` before accepting the deployment.
+The common JVM shard parses every tracked release shell script with `bash -n` before its Gradle gates.
 
 Run `./gradlew :quality:benchmarks:jmh` for the temporary JSON report and follow the methodology and acceptance gates in [Rendering performance](performance.md).
