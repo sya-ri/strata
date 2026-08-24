@@ -4,6 +4,8 @@ on:
   push:
     branches:
       - master
+    tags:
+      - v*
     paths:
       - .github/workflows/pages.yml
       - api/**
@@ -11,8 +13,12 @@ on:
       - gradle/**
       - gradle.properties
       - README.md
+      - docs/**
+      - integration/docs/**
+      - release/**
       - runtime/**
       - settings.gradle.kts
+      - skills/**
   workflow_dispatch:
 
 permissions:
@@ -30,6 +36,9 @@ jobs:
     steps:
       - name: Check out source
         uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+          persist-credentials: false
       - name: Set up Java
         uses: actions/setup-java@v6
         with:
@@ -46,8 +55,55 @@ jobs:
           gradle-home-cache-excludes: caches/fabric-loom
       - name: Configure Pages
         uses: actions/configure-pages@v6
-      - name: Generate Dokka site
-        run: bash ./gradlew :dokkaGenerate
+      - name: Select documentation source revision
+        id: source
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ "$GITHUB_REF_TYPE" == "tag" ]]; then
+            [[ "$GITHUB_REF_NAME" == v* ]] || { echo 'Documentation tags must begin with v.' >&2; exit 1; }
+            echo "revision=$GITHUB_REF_NAME" >> "$GITHUB_OUTPUT"
+          else
+            [[ "$GITHUB_REF" == "refs/heads/master" ]] || { echo 'Documentation branches must be master.' >&2; exit 1; }
+            echo 'revision=master' >> "$GITHUB_OUTPUT"
+          fi
+      - name: Check reader documentation and public skill
+        shell: bash
+        env:
+          SOURCE_REVISION: ${{ steps.source.outputs.revision }}
+        run: |
+          set -euo pipefail
+          gradle_options=(--no-parallel --max-workers=2)
+          if [[ "$GITHUB_REF_TYPE" == "tag" ]]; then
+            gradle_options+=(--no-build-cache)
+          fi
+          bash ./gradlew "${gradle_options[@]}" \
+            :integration:docs:checkStrataSkill \
+            :integration:docs:checkStrataSkillExampleClasspath \
+            :integration:docs:checkDocumentationLinks \
+            -Pstrata.sourceRevision="$SOURCE_REVISION"
+      - name: Generate Dokka site and stage reader guides
+        shell: bash
+        env:
+          SOURCE_REVISION: ${{ steps.source.outputs.revision }}
+        run: |
+          set -euo pipefail
+          gradle_options=(--no-parallel --max-workers=2)
+          if [[ "$GITHUB_REF_TYPE" == "tag" ]]; then
+            gradle_options+=(--no-build-cache)
+          fi
+          bash ./gradlew "${gradle_options[@]}" \
+            :integration:docs:checkDokkaPagesStaging \
+            -Pstrata.sourceRevision="$SOURCE_REVISION"
+      - name: Preserve immutable v0.1.0 documentation
+        shell: bash
+        env:
+          SOURCE_REVISION: ${{ steps.source.outputs.revision }}
+        run: |
+          set -euo pipefail
+          bash -n release/stage-versioned-pages.sh
+          bash release/stage-versioned-pages.sh \
+            v0.1.0 build/dokka/html "$SOURCE_REVISION"
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v5
         with:

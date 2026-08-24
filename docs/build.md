@@ -37,11 +37,11 @@ The model hash includes the catalog, wrapper, Gradle properties, root build and 
 Restoration falls back only to an older cache from the same shard, whose content-addressed Loom repository entries remain safe, and saves a replacement only after a successful `master` cache miss.
 Minecraft assets remain ordinary upstream inputs fetched by the loaded-client tasks instead of being copied into four multi-gigabyte job caches that evict the smaller build-model and dependency entries.
 Qodana restores those four successful shard caches read-only into the same project-local content-addressed repository before compiling and importing the complete model, so analysis does not create a fifth copy or depend on a partial cross-job Gradle-home restore.
-Loaded-client worlds, screenshots, parity receipts, rendered documentation, test reports, coverage, and Qodana results are never part of either persistent cache; every mandatory evidence task recreates and validates them on the current revision.
+Loaded-client worlds, screenshots, parity receipts, release-tag documentation, test reports, coverage, and Qodana results are never accepted from the build cache; protected release and tagged Pages invocations use `--no-build-cache` so mandatory release evidence is recreated and validated on the current revision.
 Gradle configuration-cache diagnostics accept and reuse the targeted common `runtime:minecraft` check, but a versioned Loom `classes` invocation currently rejects its `ProcessResources` action because the per-version metadata expansion captures the Gradle `Project` object.
 It is therefore not enabled globally: every hosted shard currently uses one Gradle invocation, so persisting that project-local cache would add transfer cost without avoiding any loaded client, remap, or analysis work, and the versioned resource boundary must become configuration-cache-compatible before this decision is reopened.
 Superseded JVM and Qodana workflow runs on the same ref are cancelled so rapid pushes do not keep obsolete clients or analysis running.
-Documentation deployments share one Pages concurrency group across refs and cancel the older run because the deployment target itself is global.
+Documentation deployments share one Pages concurrency group across refs and cancel the older run because the deployment target itself is global, while every deployment after `v0.1.0` reconstructs that tag under the immutable `/releases/0.1.0/` subtree so a later `master` deployment cannot replace release evidence.
 
 Every Kotlin compilation uses explicit API mode and treats warnings as errors.
 Detekt and Kotlinter are applied to all project modules.
@@ -54,7 +54,8 @@ Provide `mavenCentralUsername`, `mavenCentralPassword`, `signingInMemoryKey`, op
 Environment variables use the `ORG_GRADLE_PROJECT_` prefix followed by the same property name.
 
 The root `dokkaGenerate` task aggregates every published module into `build/dokka/html`.
-The Documentation workflow invokes the fully qualified root `:dokkaGenerate` task on pushes to `master`, avoiding redundant per-subproject generation before deploying that exact directory through GitHub Pages' artifact and OIDC deployment path.
+The Documentation workflow invokes `:integration:docs:checkDokkaPagesStaging` on pushes to `master` and release tags; that task depends on the fully qualified root `:dokkaGenerate`, stages and verifies the reader guides, and deploys the resulting `build/dokka/html` directory through GitHub Pages' artifact and OIDC deployment path.
+The full-history checkout lets `release/stage-versioned-pages.sh` reproduce tagged `v0.1.0` documentation in a detached worktree on later `master` runs and copy its independently checked site into `build/dokka/html/releases/0.1.0` without changing the current root documentation.
 Repository settings must select GitHub Actions as the Pages source; the workflow requires only read access to contents plus `pages: write` and `id-token: write`.
 
 Qodana runs its recommended JVM inspection profile in CI without a baseline.
@@ -88,5 +89,10 @@ The same module owns the public `skills/strata` package and its API-only compile
 `./gradlew :integration:docs:checkStrataSkill :integration:docs:checkDocumentationLinks` discovers component and Modifier overloads from compiled API classes, pairs them with exact Kotlin source declarations, checks state and binding declarations against compiled public member fingerprints, verifies generated references byte-for-byte, and checks every repository-local README, docs, and skill link without changing tracked files.
 `./gradlew :integration:docs:generateStrataSkill` deliberately synchronizes the five generated skill references, the anchored README example, and the canonical `docs/modrinth-project.md` body after an API or example change.
 The skill examples use a separate source set whose compile classpath contains only `:api`; ordinary application examples therefore cannot acquire a runtime import transitively.
+The Pages workflow includes `docs/dokka-module.md` instead of the root README and stages the complete checked `docs` tree under `build/dokka/html/guide`, including the deterministic `docs/index.html` directory entry and component images without relying on Dokka's include-relative asset behavior.
+The staging checker scans checked source text for hard-coded `https://gh.s7a.dev/strata/` targets and requires a matching non-symbolic staged file, treating a trailing slash as `index.html`, before the Pages artifact is uploaded.
+It also parses every staged Markdown and HTML document under `/guide`, resolves links against the deployed tree rather than the repository tree, and verifies local anchors and image targets so a repository-relative path that was not copied cannot pass.
+`generateDokkaPagesInventory` writes the sorted public relative paths to `build/dokka/html/pages-public-urls.txt`, including the Dokka root, guide directory, linked guide pages, and every staged guide image; the tagged copy retains the same self-contained inventory below `releases/0.1.0`.
+Final release verification downloads `/releases/0.1.0/pages-public-urls.txt` from the configured Pages origin, requests every listed path relative to that immutable base, and checks its `source-revision.txt` before accepting the deployment.
 
 Run `./gradlew :quality:benchmarks:jmh` for the temporary JSON report and follow the methodology and acceptance gates in [Rendering performance](performance.md).

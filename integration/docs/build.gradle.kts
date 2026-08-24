@@ -4,6 +4,7 @@ import org.gradle.api.file.FileCollection
 import org.gradle.api.provider.Provider
 import org.gradle.api.tasks.JavaExec
 import org.gradle.api.tasks.SourceSetContainer
+import org.gradle.api.tasks.Sync
 import org.gradle.process.CommandLineArgumentProvider
 import java.nio.file.Files
 import java.nio.file.LinkOption
@@ -211,6 +212,90 @@ val checkDocumentationLinks =
         inputs.dir(rootProject.layout.projectDirectory.dir("skills"))
         outputs.upToDateWhen { false }
     }
+
+val stageDokkaGuides =
+    tasks.register<Sync>("stageDokkaGuides") {
+        group = "documentation"
+        description = "Copies verified reader guides and images into the generated Dokka site."
+        dependsOn(rootProject.tasks.named("dokkaGenerate"), checkDocumentationLinks)
+        mustRunAfter(rootProject.tasks.named("verifyGeneratedDokkaSourceLinks"))
+        from(rootProject.layout.projectDirectory.dir("docs"))
+        into(rootProject.layout.buildDirectory.dir("dokka/html/guide"))
+    }
+
+val pagesPublicUrlInventory = rootProject.layout.buildDirectory.file("dokka/html/pages-public-urls.txt")
+val pagesRepositoryInputs =
+    providers.provider {
+        rootProject
+            .fileTree(rootProject.layout.projectDirectory) {
+                listOf(
+                    "gradle",
+                    "html",
+                    "java",
+                    "json",
+                    "kt",
+                    "kts",
+                    "md",
+                    "properties",
+                    "toml",
+                    "txt",
+                    "xml",
+                    "yaml",
+                    "yml",
+                ).forEach { extension ->
+                    include("*.$extension", "**/*.$extension")
+                }
+                exclude(
+                    ".git/**",
+                    ".gradle/**",
+                    "build/**",
+                    "out/**",
+                    "**/.git/**",
+                    "**/.gradle/**",
+                    "**/build/**",
+                    "**/out/**",
+                )
+            }.files
+            .filter(File::isFile)
+            .sortedBy(File::getAbsolutePath)
+    }
+val generateDokkaPagesInventory =
+    tasks.register<JavaExec>("generateDokkaPagesInventory") {
+        group = "documentation"
+        description = "Generates deterministic public URLs from staged Pages content."
+        dependsOn(stageDokkaGuides, rootProject.tasks.named("stagePagesSourceRevision"), "classes")
+        mainClass.set("dev.s7a.strata.integration.docs.PagesPublicUrlInventory")
+        classpath = sourceSets.main.get().runtimeClasspath
+        args(
+            repositoryRoot.get().asFile.absolutePath,
+            rootProject.layout.buildDirectory.dir("dokka/html").get().asFile.absolutePath,
+            pagesPublicUrlInventory.get().asFile.absolutePath,
+        )
+        inputs.files(pagesRepositoryInputs)
+        inputs.dir(rootProject.layout.buildDirectory.dir("dokka/html/guide"))
+        outputs.file(pagesPublicUrlInventory)
+    }
+
+tasks.register<JavaExec>("checkDokkaPagesStaging") {
+    group = "verification"
+    description = "Checks that every hard-coded Strata Pages URL has a staged static file."
+    dependsOn(
+        generateDokkaPagesInventory,
+        rootProject.tasks.named("verifyGeneratedDokkaSourceLinks"),
+        "classes",
+    )
+    mainClass.set("dev.s7a.strata.integration.docs.PagesStagingChecker")
+    classpath = sourceSets.main.get().runtimeClasspath
+    args(
+        repositoryRoot.get().asFile.absolutePath,
+        rootProject.layout.buildDirectory.dir("dokka/html").get().asFile.absolutePath,
+        pagesPublicUrlInventory.get().asFile.absolutePath,
+    )
+    inputs.files(pagesRepositoryInputs)
+    inputs.dir(rootProject.layout.buildDirectory.dir("dokka/html"))
+    inputs.file(pagesPublicUrlInventory)
+    outputs.upToDateWhen { false }
+}
 
 tasks.named("check") {
     dependsOn(checkComponentShowcase)

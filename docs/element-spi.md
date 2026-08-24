@@ -149,9 +149,9 @@ Calls re-entering an operation from an element hook, pipeline callback, or lifec
 
 ## Minimal external primitive
 
-The compiling external primitive in [`integration:api`](../integration/api/src/test/kotlin/dev/s7a/strata/integration/external/ExternalElement.kt) implements the current public SPI.
+The compiling external primitive in [`integration:api`](https://github.com/sya-ri/strata/blob/v0.1.0/integration/api/src/test/kotlin/dev/s7a/strata/integration/external/ExternalElement.kt) implements the v0.1.0 public SPI.
 It includes a stable typed `ElementType`, a measured and placed child, painting, pointer consumption, unresolved semantics, and lifecycle events.
-Its behavior is exercised by the [external integration test](../integration/api/src/test/kotlin/dev/s7a/strata/integration/external/ExternalPrimitiveIntegrationTest.kt).
+Its behavior is exercised by the [external integration test](https://github.com/sya-ri/strata/blob/v0.1.0/integration/api/src/test/kotlin/dev/s7a/strata/integration/external/ExternalPrimitiveIntegrationTest.kt).
 
 Use that fixture as the executable example.
 Application code emits the external element directly inside `ScreenDefinition { element(external) }`, alongside any standard component composition.

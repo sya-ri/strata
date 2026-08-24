@@ -38,6 +38,10 @@ plugins {
 
 group = "dev.s7a.strata"
 version = "0.1.0"
+private val sourceRevision = providers.gradleProperty("strata.sourceRevision").getOrElse("master")
+check(sourceRevision.matches(Regex("(?:master|v[0-9]+\\.[0-9]+\\.[0-9]+(?:[-+][0-9A-Za-z.-]+)?|[0-9a-f]{40})"))) {
+    "strata.sourceRevision must be master, a release tag, or a full lowercase Git commit."
+}
 
 private data class MinecraftFabricTarget(
     val version: String,
@@ -366,9 +370,51 @@ extensions.configure<DokkaExtension> {
     moduleName.set("Strata")
     dokkaPublications.named("html") {
         outputDirectory.set(layout.buildDirectory.dir("dokka/html"))
-        includes.from(layout.projectDirectory.file("README.md"))
+        includes.from(layout.projectDirectory.file("docs/dokka-module.md"))
     }
 }
+
+val verifyGeneratedDokkaSourceLinks =
+    tasks.register("verifyGeneratedDokkaSourceLinks") {
+        group = "verification"
+        description = "Verifies that generated Dokka HTML source links use the configured immutable revision."
+        dependsOn("dokkaGenerate")
+        val dokkaHtml = layout.buildDirectory.dir("dokka/html")
+        inputs.files(
+            dokkaHtml.map { directory ->
+                directory.asFileTree.matching { include("**/*.html") }
+            },
+        )
+        inputs.property("sourceRevision", sourceRevision)
+        doLast {
+            val sourceLinkPattern = Regex("https://github\\.com/sya-ri/strata/tree/([^/\"]+)/")
+            val revisions =
+                dokkaHtml
+                    .get()
+                    .asFile
+                    .walkTopDown()
+                    .filter { file -> file.isFile && file.extension == "html" }
+                    .flatMap { file -> sourceLinkPattern.findAll(file.readText()).map { match -> match.groupValues[1] } }
+                    .toSet()
+            check(revisions.isNotEmpty()) { "Generated Dokka HTML contains no GitHub source links." }
+            check(revisions == setOf(sourceRevision)) {
+                "Generated Dokka source-link revisions differ from $sourceRevision: $revisions"
+            }
+        }
+    }
+
+val stagePagesSourceRevision =
+    tasks.register("stagePagesSourceRevision") {
+        group = "documentation"
+        description = "Stages the exact Dokka source revision as public Pages release evidence."
+        dependsOn("dokkaGenerate")
+        val revisionFile = layout.buildDirectory.file("dokka/html/source-revision.txt")
+        inputs.property("sourceRevision", sourceRevision)
+        outputs.file(revisionFile)
+        doLast {
+            revisionFile.get().asFile.writeText("$sourceRevision\n")
+        }
+    }
 
 val detektRulesProject = project(":quality:detekt-rules")
 private val minecraftClientTaskNames = setOf("runClientGameTest", "runProductionClientGameTest")
@@ -643,13 +689,40 @@ subprojects {
                     ?: listOf(path.removePrefix(":").replace(":", "/"))
             dokkaSourceSets.named("main") {
                 for (sourcePath in sourcePaths) {
-                    sourceLink {
-                        localDirectory.set(rootProject.file("$sourcePath/src/main/kotlin"))
-                        remoteUrl("https://github.com/sya-ri/strata/tree/master/$sourcePath/src/main/kotlin")
-                        remoteLineSuffix.set("#L")
+                    for (language in listOf("kotlin", "java")) {
+                        val sourceDirectory = rootProject.file("$sourcePath/src/main/$language")
+                        if (sourceDirectory.isDirectory) {
+                            sourceLink {
+                                localDirectory.set(sourceDirectory)
+                                remoteUrl("https://github.com/sya-ri/strata/tree/$sourceRevision/$sourcePath/src/main/$language")
+                                remoteLineSuffix.set("#L")
+                            }
+                        }
                     }
                 }
             }
+
+            val verifyDokkaSourceLinks =
+                tasks.register("verifyDokkaSourceLinks") {
+                    group = "verification"
+                    description = "Verifies that every existing Kotlin and Java source root uses the configured Dokka revision."
+                    inputs.property("sourceRevision", sourceRevision)
+                    doLast {
+                        sourcePaths.forEach { sourcePath ->
+                            listOf("kotlin", "java").forEach { language ->
+                                val sourceDirectory = rootProject.file("$sourcePath/src/main/$language")
+                                if (sourceDirectory.isDirectory) {
+                                    val expectedUrl =
+                                        "https://github.com/sya-ri/strata/tree/$sourceRevision/$sourcePath/src/main/$language"
+                                    check(expectedUrl.contains("/tree/$sourceRevision/")) {
+                                        "Dokka source link is not pinned to $sourceRevision: $expectedUrl"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            tasks.named("check").configure { dependsOn(verifyDokkaSourceLinks) }
         }
 
         tasks.withType<GenerateModuleMetadata>().configureEach {
