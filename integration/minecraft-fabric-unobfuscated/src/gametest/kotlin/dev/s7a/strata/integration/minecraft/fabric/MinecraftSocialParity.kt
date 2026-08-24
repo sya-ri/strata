@@ -15,6 +15,7 @@ import dev.s7a.strata.runtime.minecraft.fabric.createMinecraftScreen
 import dev.s7a.strata.runtime.minecraft.fabric.loadCurrentMinecraftPlayerSkin
 import dev.s7a.strata.runtime.minecraft.fabric.loadMinecraftUiImage
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
+import dev.s7a.strata.text.UiText
 import net.fabricmc.fabric.api.client.gametest.v1.context.ClientGameTestContext
 import net.fabricmc.fabric.api.client.gametest.v1.screenshot.TestScreenshotComparisonAlgorithm
 import net.fabricmc.fabric.api.client.gametest.v1.screenshot.TestScreenshotComparisonOptions
@@ -103,6 +104,7 @@ internal object MinecraftSocialParity {
                     loadMinecraftUiImage(ResourceId("minecraft", "textures/gui/sprites/social_interactions/background.png")),
                     loadMinecraftUiImage(ResourceId("minecraft", "textures/gui/sprites/icon/search.png")),
                     loadCurrentMinecraftPlayerSkin(),
+                    it.gameProfile.name,
                 )
             },
         )
@@ -116,6 +118,15 @@ internal object MinecraftSocialParity {
         return try {
             host.attach()
             val frame = host.frame(viewport)
+            val expectedPlayerLabels =
+                setOf(
+                    UiText.Literal("${assets.playerName} - New World - 1 player"),
+                    UiText.Literal(assets.playerName),
+                )
+            val actualLabels = frame.semantics.mapNotNull { entry -> entry.semantics.label }.toSet()
+            require(actualLabels.containsAll(expectedPlayerLabels)) {
+                "The headless Social Interactions definition did not retain the active production profile name '${assets.playerName}'."
+            }
             rasterizeHeadless(frame.drawCommands, viewport)
         } finally {
             host.close()
@@ -124,9 +135,10 @@ internal object MinecraftSocialParity {
 
     private fun definition(assets: SocialAssets) =
         createSocialScreenDefinition(
-            ImageSource.Pixels(assets.panel),
-            ImageSource.Pixels(assets.search),
-            PlayerSkinSource.Pixels(assets.skin),
+            panel = ImageSource.Pixels(assets.panel),
+            searchIcon = ImageSource.Pixels(assets.search),
+            playerSkin = PlayerSkinSource.Pixels(assets.skin),
+            playerName = assets.playerName,
         )
 
     private fun requireExactPixels(
@@ -176,6 +188,7 @@ internal object MinecraftSocialParity {
         val panel: DrawImage,
         val search: DrawImage,
         val skin: DrawImage,
+        val playerName: String,
     )
 
     private val viewport = IntSize(320, 240)

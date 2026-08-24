@@ -1507,12 +1507,14 @@ import dev.s7a.strata.screen.ScreenDefinition
  * @param panel active-resource `social_interactions/background` source.
  * @param searchIcon active-resource `icon/search` source.
  * @param playerSkin selected player lookup or detached skin source.
+ * @param playerName active local player name shown by the native screen.
  * @return one-shot screen definition reproducing the native screen geometry and draw order.
  */
 internal fun createSocialScreenDefinition(
     panel: ImageSource = socialPanel,
     searchIcon: ImageSource = socialSearchIcon,
     playerSkin: PlayerSkinSource = PlayerSkinSource.Name("Player0"),
+    playerName: String = "Player0",
 ): ScreenDefinition {
     val search = TextFieldState("", maxLength = 16)
     return ScreenDefinition("Social Interactions") {
@@ -1552,7 +1554,7 @@ internal fun createSocialScreenDefinition(
                             "Social Interactions",
                             modifier = Modifier.Empty.align(HorizontalAlignment.Center),
                         )
-                        Text("Player0 - New World - 1 player")
+                        Text("$playerName - New World - 1 player")
                     }
                     Row(modifier = Modifier.Empty.padding(left = 1, top = 1), spacing = 1) {
                         Tab("All", selected = true, width = 73, modifier = Modifier.Empty.onPress {})
@@ -1586,7 +1588,7 @@ internal fun createSocialScreenDefinition(
                         verticalAlignment = VerticalAlignment.Center,
                     ) {
                         PlayerHead(source = playerSkin, modifier = Modifier.Empty.padding(left = 4))
-                        Text("Player0")
+                        Text(playerName)
                     }
                 }
                 Button(
