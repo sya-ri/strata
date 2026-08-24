@@ -8,6 +8,8 @@ Update the canonical document when its contract changes.
 ## Architecture and API
 
 - Keep the module DAG acyclic: `api` is the platform-neutral public SPI; published `runtime:core` depends on it and owns the retained engine; `runtime:headless` and `runtime:minecraft` may depend on the public contracts and core as their implementation requires; the versioned Fabric runtime may depend on both `api` and `runtime:minecraft`.
+- Keep Minecraft 1.20.1 as the supported release floor.
+  Do not add Minecraft 1.19 or older adapters unless the project scope is explicitly changed again.
 - Include a module only when it contains working, tested behavior.
   Do not publish empty artifacts or add placeholder source sets, tests, adapters, or documentation.
 - Keep platform integration at runtime/integration boundaries.
@@ -20,6 +22,9 @@ Update the canonical document when its contract changes.
   Follow [docs/modifiers.md](docs/modifiers.md) for modifier identity, virtual ancestry, lifecycle, and extension behavior.
 - Keep shared screen-session orchestration in `runtime:core` and follow [docs/ui-sessions.md](docs/ui-sessions.md) for lifecycle, state cutoff, coroutine generation, and failure behavior.
   External source callbacks only enqueue revisions, and declarative frame phases do not mutate session state.
+- Admit a runtime cache only with an explicit key, invalidation rule, size or current-state bound, owner and threading contract, terminal release path, and deterministic parity and retention tests.
+  Cache only derived presentation state; authoritative binding or server state must remain outside the cache.
+  Follow [docs/performance.md](docs/performance.md) for the review contract.
 - Preserve null-safety and do not use `!!` in production or test code.
 
 ## Source and documentation
@@ -56,6 +61,8 @@ Update the canonical document when its contract changes.
 
 - Keep tests Minecraft-independent wherever the behavior does not require a loaded game.
   Use a Fabric GameTest only when the behavior genuinely needs the game environment.
+- Keep build caches separate from acceptance evidence.
+  Loaded worlds, screenshots, parity receipts, generated documentation, and analysis or coverage reports must be recreated and verified on the current revision.
 - Keep Detekt, Kotlinter, Qodana, Kotlin explicit API mode, warnings-as-errors, ABI validation, and Kover HTML/XML reports enabled.
   Kover reports must run after JVM tests and do not enforce a coverage threshold.
 - Before review, run `./gradlew check koverHtmlReport koverXmlReport -Pkover` and inspect publication metadata with `./gradlew publishToMavenLocal` when publication code changes.

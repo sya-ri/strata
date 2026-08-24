@@ -70,7 +70,100 @@ jobs:
         uses: gradle/actions/setup-gradle@v6
         with:
           cache-read-only: true
-          gradle-home-cache-excludes: caches/fabric-loom/assets
+          gradle-home-cache-strict-match: true
+          gradle-home-cache-excludes: caches/fabric-loom
+      - name: Hash Minecraft 1.20 Loom cache inputs
+        id: loom_1_20_inputs
+        shell: bash
+        env:
+          LOOM_PROJECTS: |-
+            runtime/minecraft-fabric-1.20.1
+            integration/minecraft-fabric-1.20.1
+            runtime/minecraft-fabric-1.20.2
+            integration/minecraft-fabric-1.20.2
+            runtime/minecraft-fabric-1.20.3
+            integration/minecraft-fabric-1.20.3
+            runtime/minecraft-fabric-1.20.4
+            integration/minecraft-fabric-1.20.4
+            runtime/minecraft-fabric-1.20.5
+            integration/minecraft-fabric-1.20.5
+            runtime/minecraft-fabric-1.20.6
+            integration/minecraft-fabric-1.20.6
+        run: bash gradle/loom-cache-key.sh >> "$GITHUB_OUTPUT"
+      - name: Restore Minecraft 1.20 Loom project cache
+        uses: actions/cache/restore@v5
+        with:
+          path: .gradle/loom-cache
+          key: loom-${{ runner.os }}-minecraft-1-20-${{ steps.loom_1_20_inputs.outputs.hash }}
+          restore-keys: |
+            loom-${{ runner.os }}-minecraft-1-20-
+      - name: Hash early Minecraft 1.21 Loom cache inputs
+        id: loom_1_21_early_inputs
+        shell: bash
+        env:
+          LOOM_PROJECTS: |-
+            runtime/minecraft-fabric-1.21
+            integration/minecraft-fabric-1.21
+            runtime/minecraft-fabric-1.21.1
+            integration/minecraft-fabric-1.21.1
+            runtime/minecraft-fabric-1.21.2
+            integration/minecraft-fabric-1.21.2
+            runtime/minecraft-fabric-1.21.3
+            integration/minecraft-fabric-1.21.3
+            runtime/minecraft-fabric-1.21.4
+            integration/minecraft-fabric-1.21.4
+        run: bash gradle/loom-cache-key.sh >> "$GITHUB_OUTPUT"
+      - name: Restore early Minecraft 1.21 Loom project cache
+        uses: actions/cache/restore@v5
+        with:
+          path: .gradle/loom-cache
+          key: loom-${{ runner.os }}-minecraft-1-21-early-${{ steps.loom_1_21_early_inputs.outputs.hash }}
+          restore-keys: |
+            loom-${{ runner.os }}-minecraft-1-21-early-
+      - name: Hash late Minecraft 1.21 Loom cache inputs
+        id: loom_1_21_late_inputs
+        shell: bash
+        env:
+          LOOM_PROJECTS: |-
+            runtime/minecraft-fabric-1.21.5
+            integration/minecraft-fabric-1.21.5
+            runtime/minecraft-fabric-1.21.6
+            integration/minecraft-fabric-1.21.6
+            runtime/minecraft-fabric-1.21.7
+            integration/minecraft-fabric-1.21.7
+            runtime/minecraft-fabric-1.21.8
+            integration/minecraft-fabric-1.21.8
+            runtime/minecraft-fabric-1.21.9
+            integration/minecraft-fabric-1.21.9
+            runtime/minecraft-fabric-1.21.10
+            integration/minecraft-fabric-1.21.10
+            runtime/minecraft-fabric-1.21.11
+            integration/minecraft-fabric-1.21.11
+        run: bash gradle/loom-cache-key.sh >> "$GITHUB_OUTPUT"
+      - name: Restore late Minecraft 1.21 Loom project cache
+        uses: actions/cache/restore@v5
+        with:
+          path: .gradle/loom-cache
+          key: loom-${{ runner.os }}-minecraft-1-21-late-${{ steps.loom_1_21_late_inputs.outputs.hash }}
+          restore-keys: |
+            loom-${{ runner.os }}-minecraft-1-21-late-
+      - name: Hash Minecraft 26 Loom cache inputs
+        id: loom_26_inputs
+        shell: bash
+        env:
+          LOOM_PROJECTS: |-
+            runtime/minecraft-fabric-26.1
+            integration/minecraft-fabric-26.1
+            runtime/minecraft-fabric-26.2
+            integration/minecraft-fabric-26.2
+        run: bash gradle/loom-cache-key.sh >> "$GITHUB_OUTPUT"
+      - name: Restore Minecraft 26 Loom project cache
+        uses: actions/cache/restore@v5
+        with:
+          path: .gradle/loom-cache
+          key: loom-${{ runner.os }}-minecraft-26-${{ steps.loom_26_inputs.outputs.hash }}
+          restore-keys: |
+            loom-${{ runner.os }}-minecraft-26-
       - name: Compile analysis inputs
         run: bash ./gradlew :api:jar :runtime:core:jar :runtime:headless:jar :runtime:minecraft:jar classes gametestClasses
       - name: Stop Gradle daemons
@@ -80,9 +173,7 @@ jobs:
       - name: Prepare complete Gradle IDE model
         run: |
           sed -i 's/^org.gradle.configureondemand=true$/org.gradle.configureondemand=false/' gradle.properties
-          sed -i '$a systemProp.idea.sync.active=true' gradle.properties
           grep -Fx 'org.gradle.configureondemand=false' gradle.properties
-          grep -Fx 'systemProp.idea.sync.active=true' gradle.properties
       - name: Run Qodana
         uses: JetBrains/qodana-action@v2026.2
         with:
@@ -92,6 +183,17 @@ jobs:
           args: >-
             --fail-threshold 0
             --within-docker false
+      - name: Verify complete Gradle IDE model
+        if: always()
+        run: bash gradle/verify-qodana-model.sh "${{ runner.temp }}/qodana/results/projectStructure/Modules.json"
+      - name: Measure Qodana cache
+        if: always()
+        run: |
+          if [[ -d "${{ runner.temp }}/qodana/caches" ]]; then
+            du -sh "${{ runner.temp }}/qodana/caches"
+          else
+            echo 'Qodana did not create an IDE cache directory.'
+          fi
       - name: Release Qodana cache
         if: always()
         run: rm -rf -- "${{ runner.temp }}/qodana/caches"

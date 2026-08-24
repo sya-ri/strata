@@ -8,9 +8,11 @@ import org.gradle.api.plugins.JavaPluginExtension
 import org.gradle.api.publish.tasks.GenerateModuleMetadata
 import org.gradle.api.services.BuildService
 import org.gradle.api.services.BuildServiceParameters
+import org.gradle.api.tasks.SourceSetContainer
 import org.gradle.api.tasks.compile.JavaCompile
 import org.gradle.api.tasks.testing.Test
 import org.gradle.jvm.toolchain.JavaLanguageVersion
+import org.gradle.plugins.ide.idea.model.IdeaModel
 import org.jetbrains.dokka.gradle.DokkaExtension
 import org.jetbrains.kotlin.gradle.dsl.KotlinJvmProjectExtension
 import org.jetbrains.kotlin.gradle.dsl.abi.BinariesSource.MAVEN_PUBLICATIONS
@@ -367,6 +369,7 @@ extensions.configure<DokkaExtension> {
 
 val detektRulesProject = project(":quality:detekt-rules")
 private val minecraftClientTaskNames = setOf("runClientGameTest", "runProductionClientGameTest")
+private val ideaSyncActive = providers.systemProperty("idea.sync.active").map(String::toBoolean).getOrElse(false)
 private val ciMinecraftVersions =
     providers
         .gradleProperty("strata.minecraftVersions")
@@ -486,6 +489,40 @@ subprojects {
             languageVersion.set(JavaLanguageVersion.of(javaVersion))
         }
         withSourcesJar()
+    }
+
+    if (ideaSyncActive && path in minecraftTargetByProjectPath) {
+        apply(plugin = "idea")
+        afterEvaluate {
+            val sourceSets = extensions.getByType<SourceSetContainer>()
+            val mainSourceSet = sourceSets.named("main").get()
+            val testSourceSet = sourceSets.named("test").get()
+            val gameTestSourceSet = sourceSets.findByName("gametest")
+            extensions.configure<IdeaModel> {
+                module {
+                    sourceDirs = mainSourceSet.allSource.srcDirs - mainSourceSet.resources.srcDirs
+                    resourceDirs = mainSourceSet.resources.srcDirs
+                    testSources.setFrom(testSourceSet.allSource.srcDirs - testSourceSet.resources.srcDirs)
+                    testResources.setFrom(testSourceSet.resources.srcDirs)
+                    if (gameTestSourceSet != null) {
+                        testSources.from(gameTestSourceSet.allSource.srcDirs - gameTestSourceSet.resources.srcDirs)
+                        testResources.from(gameTestSourceSet.resources.srcDirs)
+                    }
+
+                    val compilePlus = requireNotNull(scopes["COMPILE"]?.get("plus")) {
+                        "The Gradle IDEA model must expose its compile-plus dependency scope."
+                    }
+                    compilePlus.add(configurations.getByName(mainSourceSet.compileClasspathConfigurationName))
+                    val testPlus = requireNotNull(scopes["TEST"]?.get("plus")) {
+                        "The Gradle IDEA model must expose its test-plus dependency scope."
+                    }
+                    testPlus.add(configurations.getByName(testSourceSet.compileClasspathConfigurationName))
+                    if (gameTestSourceSet != null) {
+                        testPlus.add(configurations.getByName(gameTestSourceSet.compileClasspathConfigurationName))
+                    }
+                }
+            }
+        }
     }
 
     tasks.withType<JavaCompile>().configureEach {

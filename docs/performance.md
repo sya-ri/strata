@@ -6,6 +6,17 @@ The rendering benchmarks provide repeatable local evidence about retained-frame 
 Their timing results are diagnostic measurements rather than a release promise or a hard continuous-integration threshold.
 Performance changes are accepted through deterministic cache-identity, bounded-retention, lifecycle-release, and rendering-parity tests, with JMH used to confirm the practical effect.
 
+## Cache review contract
+
+Every runtime cache must declare its exact key, the events that invalidate it, the maximum retained state, its owning lifecycle and thread, and the path that releases it after replacement, detachment, failure, and close.
+Only derived immutable or owner-confined presentation data may be cached.
+Bindings, inventory contents, server state, and other authoritative inputs remain outside the cache and publish an invalidation when their observable snapshot changes.
+A cache whose key cannot represent every rendering input is rejected rather than repaired with periodic refresh, and a cache without a fixed current-state or explicit size bound is rejected rather than relying on expected usage.
+
+Deterministic tests must prove identity reuse on a clean request, replacement after each relevant input changes, bounded retention across unrelated history, terminal release, and unchanged pixels, command order, input behavior, and semantics.
+Benchmarks then measure whether the cache removes meaningful work and whether its transfer, hashing, synchronization, or allocation cost outweighs reuse.
+The same distinction applies to the build: dependency and tool-derived intermediates may use content- or model-addressed caches, while loaded worlds, screenshots, parity receipts, generated documentation, and quality reports are current-revision evidence and are always recreated.
+
 ## Benchmark methodology
 
 Run the complete suite from the repository root with `./gradlew :quality:benchmarks:jmh`.
@@ -136,3 +147,33 @@ No unbounded temporary-data retention or repeated clean-frame rendering was obse
 Every 1.21 loaded client additionally proves that detachment empties the Fabric presenter's dynamic-texture and prepared-layer collections and clears its prepared frame references.
 Session tests prove that close releases the content owner before lifecycle cleanup, clears cached immutable frames, clears bindings and retained-tree ownership, and disposes every claimed node exactly once.
 This statement is limited to the retained session, virtual-list current-range cache, Fabric prepared-layer and texture ownership, tooltip and loading-indicator time cells, and asynchronous player-skin lifecycle covered above; it is not a general heap-leak proof for downstream Mods.
+
+## Minecraft 1.20 family closure verification
+
+The suite was rerun from commit `100607a` after Minecraft 1.20.1 through 1.20.6 passed their development, production-jar, and publication gates.
+It used the same checked-in configuration, current Windows development host, and OpenJDK 17.0.18 as the 1.21 family-close run.
+Host load and power state were still uncontrolled, so timing remains diagnostic while allocation and the deterministic gates are directly comparable.
+
+The ordinary clean path remains an immutable snapshot lookup at 0.004 to 0.005 microseconds and effectively zero normalized allocation.
+The time-aware clean path remains viewport-independent at 1.260 to 1.310 microseconds and at most 0.039 normalized bytes per operation, which is profiler noise rather than one allocation per invocation.
+The dirty path remains approximately 59,024 bytes per operation at every viewport, and headless allocation remains the required fresh pixel image plus bounded command-processing overhead.
+No allocation trend indicates retained historical frames, layers, textures, or visited virtual-list ranges.
+
+| Benchmark | Viewport | Average time (µs/op) | Allocation (B/op) |
+| --- | --- | ---: | ---: |
+| Clean timed session frame | Compact | 1.260 | 0.038 |
+| Clean timed session frame | Windowed | 1.264 | 0.036 |
+| Clean timed session frame | FullHd | 1.310 | 0.039 |
+| Clean session frame | Compact | 0.004 | ≈ 0 |
+| Clean session frame | Windowed | 0.005 | ≈ 0 |
+| Clean session frame | FullHd | 0.004 | ≈ 0 |
+| Dirty session frame | Compact | 18.179 | 59,024 |
+| Dirty session frame | Windowed | 17.156 | 59,024 |
+| Dirty session frame | FullHd | 17.875 | 59,024 |
+| Headless rasterization | Compact | 536.552 | 230,796 |
+| Headless rasterization | Windowed | 3,338.480 | 1,643,617 |
+| Headless rasterization | FullHd | 16,698.713 | 8,298,490 |
+
+Every 1.20 development and production-jar loaded client also requires that an unchanged portable display list performs no extra partition, rasterization, or texture upload and that detachment clears dynamic textures, registered texture identifiers, prepared commands, prepared viewport, prepared layers, pointer caches, inventory bindings, and common host ownership.
+The 1.20.1 Authlib 4 boundary still publishes only a normalized detached skin snapshot into that bounded lifecycle and passes the same late-completion and terminal-release contract.
+Together with the unchanged session, virtual-list, tooltip, loading-indicator, and player-skin unit gates, the completed family shows no repeated clean rendering or unbounded temporary-data retention in the covered ownership domains.

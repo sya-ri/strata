@@ -144,28 +144,14 @@ jobs:
         with:
           cache-read-only: ${{ matrix.cache_read_only || github.ref != 'refs/heads/master' }}
           gradle-home-cache-strict-match: true
-          gradle-home-cache-excludes: ${{ matrix.loom_cache && 'caches/fabric-loom/minecraftMaven' || 'caches/fabric-loom' }}
+          gradle-home-cache-excludes: caches/fabric-loom
       - name: Hash Loom cache inputs
         if: matrix.loom_cache
         id: loom_inputs
         shell: bash
         env:
           LOOM_PROJECTS: ${{ matrix.loom_projects }}
-        run: |
-          set -euo pipefail
-          cache_inputs=(
-            gradle/libs.versions.toml
-            gradle/wrapper/gradle-wrapper.properties
-            gradle.properties
-            settings.gradle.kts
-            build.gradle.kts
-          )
-          while IFS= read -r project; do
-            if [[ -n "$project" ]]; then
-              cache_inputs+=("$project/build.gradle.kts")
-            fi
-          done <<< "$LOOM_PROJECTS"
-          sha256sum "${cache_inputs[@]}" | sha256sum | awk '{ print "hash=" $1 }' >> "$GITHUB_OUTPUT"
+        run: bash gradle/loom-cache-key.sh >> "$GITHUB_OUTPUT"
       - name: Restore Loom project cache
         if: matrix.loom_cache
         id: loom_cache

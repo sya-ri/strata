@@ -44,6 +44,7 @@ dependencies {
 ```
 
 The selected host adapter is a runtime concern.
+The supported Minecraft range begins at 1.20.1; Minecraft 1.19 and older releases are outside the project scope.
 
 | Minecraft | Fabric runtime artifact | Required Java | Loaded verification |
 | --- | --- | --- | --- |

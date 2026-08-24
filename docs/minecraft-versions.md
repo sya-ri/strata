@@ -2,6 +2,7 @@
 
 This document defines the durable process for adding a Minecraft version to Strata.
 A version adapter reproduces the behavior and presentation of its own Vanilla version; it must not normalize observable differences to another version.
+Minecraft 1.20.1 is the supported release floor; do not add Minecraft 1.19 or older adapters unless the project scope is explicitly changed.
 
 ## Establish the target
 
@@ -46,7 +47,7 @@ A version adapter reproduces the behavior and presentation of its own Vanilla ve
 
 ## Close a minor family
 
-Complete an architecture review after the oldest supported patch release in a Minecraft minor family passes every release gate and before work begins on the next older minor family.
+Complete an architecture review after the oldest supported patch release in a Minecraft minor family passes every release gate and before the supported minor-family range changes again.
 The review is part of version support, not optional follow-up work.
 
 1. Revalidate the implementation direction against the differences observed across the completed family.
@@ -56,9 +57,9 @@ The review is part of version support, not optional follow-up work.
 3. Review build-model fidelity in IDEs, Qodana, Detekt, Dokka, and Gradle, especially when physical source roots are linked into multiple versioned projects.
    Prefer structures that preserve accurate dependencies and avoid compensating for a misleading project model with broad inspection exclusions.
 4. Compare compilation, static-analysis, loaded-game, packaging, and publication cost across the family.
-   Record avoidable repeated work, retained temporary data, redundant rendering, and cleanup or performance debt before extending the matrix.
+   Record avoidable repeated work, retained temporary data, redundant rendering, and cleanup or performance debt before changing the matrix.
 5. Classify each runtime, integration module, and shared source boundary as retained, consolidated, replaced, or removed, with evidence for the decision.
-   Complete required restructuring and its full acceptance gates before adding the first adapter for the next minor family.
+   Complete required restructuring and its full acceptance gates before adding another minor family.
 
 ## Minecraft 1.21 family closure
 
@@ -87,14 +88,48 @@ The completed family spans the original 1.21 release through 1.21.11 and passed 
   The family-close JMH run keeps clean retained frames at effectively zero allocation, identifies the fixed detached-output allocation of a fully dirty 54-leaf scene, and confirms that headless allocation scales with the required fresh pixel image.
   Deterministic session tests and every 1.21 loaded client prove terminal content, tree, binding, immutable-frame, prepared-layer, dynamic-texture, and prepared-frame release; see [Rendering performance](performance.md).
 
-This classification is the baseline for the next older minor family.
-Reopen it after that family is complete instead of assuming that the 1.21 boundaries remain optimal for earlier native APIs.
+This classification was the baseline for the completed 1.20 family.
+Reopen it when the supported range changes instead of assuming that the 1.21 boundaries remain optimal for another native API family.
+
+## Minecraft 1.20 family closure
+
+The completed family spans Minecraft 1.20.1 through 1.20.6 and passed every local release and publication gate before the support floor was accepted.
+
+- Direction: retained and refined.
+  The family confirmed compile-time capability boundaries for mapped resource names, native pixel channels, texture submission, player-skin generations, standalone runner APIs, GUI sprites, and pre-sprite atlases.
+  Portable profiles now carry typed scaling and border metadata, while runtime code contains no version-name branch or reflective compatibility dispatch.
+- Public portable boundary: consolidated.
+  Slider imagery now records its border and center-scaling policy just like the existing profile-backed button path, and the common painter clamps borders to the destination geometry exactly as Vanilla does.
+  This is reusable nine-slice behavior rather than a 1.20.1 special case; all atlas coordinates and native resource types remain private to the exact Fabric adapter.
+- Published runtime projects: retained.
+  Each of the six versioned runtime projects owns one exact Minecraft ABI, Java 17 or Java 21 bytecode target, Fabric metadata file, dependency graph, ABI snapshot, remapped distribution, and publication coordinate.
+  Merging them would weaken native binary compatibility or require mutually incompatible mapped APIs in one artifact.
+- Integration projects: retained and nonpublished.
+  Each exact final Fabric API fixture compiles the shared loaded suite and launches both development outputs and remapped production jars.
+  Minecraft 1.20.1 additionally needs its earlier client-readiness and level-cleanup bridge, which is compile-time evidence for keeping the exact integration boundary.
+- Shared runtime and integration sources: consolidated without adding common artifacts.
+  Complete compatible files remain in neutral source roots, Minecraft 1.20.2 through 1.20.4 reuse the complete 1.20.4-owned GUI-sprite and `GameProfile` generation where their compilers prove compatibility, and 1.20.1 keeps its Authlib 4, atlas, and native-screen differences local.
+  No shared source root is a Gradle project or publication, and no empty compatibility module was introduced.
+- Build-model fidelity: retained with an explicit analysis boundary.
+  Configuration on demand remains the correct default for targeted Gradle work, while the Qodana checkout disables it immediately before the Tooling API import and each versioned project supplies its actual compile, test, and GameTest boundaries to the owning IDEA module.
+  Detekt, Dokka, Kotlin explicit API validation, ABI validation, and Gradle continue to consume the same complete physical source roots as their owning version projects.
+- Build and cache cost: reduced without caching evidence.
+  The six exact releases run in one independent 1.20 shard under the existing single-permit client and remap services.
+  Its project-local Loom repository key hashes the global build model plus only those twelve versioned runtime and integration build scripts, falls back only within the same shard, and writes only after a successful `master` run.
+  Loaded worlds, screenshots, parity receipts, test and coverage reports, rendered documentation, and Qodana results are always regenerated on the current revision.
+- Rendering and retention: accepted.
+  The family-close JMH run preserves effectively zero-allocation clean snapshots, viewport-independent dirty-frame allocation, and the expected fresh-pixel allocation for headless rasterization.
+  Every 1.20 development and production loaded client rejects repeated rasterization or texture upload for an unchanged display list and proves terminal release of textures, prepared layers, pointer caches, common session ownership, inventory bindings, and skin lifecycle state; see [Rendering performance](performance.md).
+
+Minecraft 1.20.1 is the accepted support floor, so this classification closes backward version expansion.
+Reopen it only when the supported range changes, especially if another native boundary challenges the current Java 17, Authlib, atlas, or standalone-runner source ownership.
 
 ## Minor-family review gate
 
-Complete and verify each supported patch in one Minecraft minor family before starting the next older minor family.
+Complete and verify each supported patch in one Minecraft minor family before changing the supported minor-family range.
 At that boundary, review whether the public API, retained runtime boundary, version-specific adapters, linked source roots, and number of Gradle modules still express real working behavior without duplication or placeholder artifacts.
-Repeat the rendering benchmarks and retention tests, inspect loaded-client lifecycle evidence for redundant frames or unreleased temporary data, record the result in the canonical architecture, build, version, and performance documents, and only then select the next older supported patch.
+Repeat the rendering benchmarks and retention tests, inspect loaded-client lifecycle evidence for redundant frames or unreleased temporary data, and audit every affected runtime and build cache against its key, invalidation, bound, ownership, threading, release, parity, and measured-cost contract.
+Record the result in the canonical architecture, build, version, and performance documents before changing that range.
 Treat a newly discovered native incompatibility as evidence for a typed compile-time boundary, not as permission for version-string dispatch, reflection, or speculative modules.
 
 ## Current compatibility
