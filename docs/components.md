@@ -715,17 +715,26 @@ import dev.s7a.strata.modifier.background
 import dev.s7a.strata.modifier.size
 import dev.s7a.strata.render.ArgbColor
 import dev.s7a.strata.screen.ScreenDefinition
-import dev.s7a.strata.text.UiText
+
+/** Difficulty options rendered by the typed CycleButton showcase. */
+private enum class Difficulty(
+    val label: String,
+) {
+    Peaceful("Peaceful"),
+    Easy("Easy"),
+    Normal("Normal"),
+    Hard("Hard"),
+}
 
 /** Builds the complete minimal CycleButton showcase frame. */
 internal fun createCycleButtonShowcaseScreenDefinition(): ScreenDefinition {
-    val state = CycleButtonState(listOf("Peaceful", "Easy", "Normal", "Hard"), "Normal")
+    val state = CycleButtonState(Difficulty.Normal) { value -> "Difficulty: ${value.label}" }
     return ScreenDefinition("CycleButton showcase") {
         Stack(
             modifier = Modifier.Empty.size(166, 36).background(ArgbColor(0xFF000000.toInt())),
             contentAlignment = Alignment.Center,
         ) {
-            CycleButton(state = state) { value -> UiText.Literal("Difficulty: $value") }
+            CycleButton(state = state)
         }
     }
 }

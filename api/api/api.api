@@ -58,14 +58,20 @@ public final class dev/s7a/strata/component/ComponentStateSubscription : java/la
 }
 
 public final class dev/s7a/strata/component/CycleButtonState {
+	public static final field Companion Ldev/s7a/strata/component/CycleButtonState$Companion;
+	public fun <init> (Ljava/util/Collection;Ljava/lang/Object;Lkotlin/jvm/functions/Function1;)V
 	public fun <init> (Ljava/util/List;)V
 	public fun <init> (Ljava/util/List;Ljava/lang/Object;)V
+	public final fun format (Ljava/lang/Object;)Ljava/lang/String;
 	public final fun getValue ()Ljava/lang/Object;
 	public final fun getValues ()Ljava/util/List;
 	public final fun next ()Ljava/lang/Object;
 	public final fun observe (Lkotlin/jvm/functions/Function1;)Ldev/s7a/strata/component/ComponentStateSubscription;
 	public final fun previous ()Ljava/lang/Object;
 	public final fun setValue (Ljava/lang/Object;)V
+}
+
+public final class dev/s7a/strata/component/CycleButtonState$Companion {
 }
 
 public abstract class dev/s7a/strata/component/GridScope : dev/s7a/strata/component/UiScope {

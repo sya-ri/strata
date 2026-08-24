@@ -21,7 +21,7 @@ internal class ObservableComponentState<T : Any>(
      * Returns the current value on the owning thread.
      */
     fun get(): T {
-        checkThread()
+        checkOwnerThread()
         return currentValue
     }
 
@@ -29,7 +29,7 @@ internal class ObservableComponentState<T : Any>(
      * Validates and publishes [value], returning whether it differed from the current value.
      */
     fun set(value: T): Boolean {
-        checkThread()
+        checkOwnerThread()
         validate(value)
         if (currentValue == value) return false
         currentValue = value
@@ -42,15 +42,20 @@ internal class ObservableComponentState<T : Any>(
      */
     @OptIn(InternalStrataRuntimeApi::class)
     fun observe(callback: (T) -> Unit): ComponentStateSubscription {
-        checkThread()
+        checkOwnerThread()
         check(observers.add(callback)) { "A component state observer was already registered." }
         return ComponentStateSubscription {
-            checkThread()
+            checkOwnerThread()
             observers.remove(callback)
         }
     }
 
-    private fun checkThread() {
+    /**
+     * Verifies that the caller is the thread that created this state.
+     *
+     * @throws IllegalStateException when called from another thread.
+     */
+    fun checkOwnerThread() {
         check(Thread.currentThread() === ownerThread) { "Component state requires its creator thread." }
     }
 }

@@ -86,6 +86,8 @@ public fun UiScope.Checkbox(
  *
  * Pointer press, wheel, and focused keyboard input update caller-owned [state] before emitting the typed cycle action through [modifier].
  * Labels are evaluated once for the immutable option snapshot and must be supported by the active profile.
+ * The default label uses the display conversion owned by [state]; an explicit [label] may instead provide translated or composed text.
+ * Label or state-conversion exceptions propagate synchronously before element emission.
  *
  * @param T immutable option type.
  * @receiver active owner-thread screen scope.
@@ -94,7 +96,8 @@ public fun UiScope.Checkbox(
  * @param enabled whether input and enabled appearance are active.
  * @param modifier active layout, input, and typed action behavior.
  * @param key optional stable sibling identity.
- * @param label maps each option to its visible unresolved label.
+ * @param label maps each option to its visible unresolved label, defaulting to the state-owned display conversion.
+ * @throws IllegalStateException when the scope is unavailable, no profile runtime is active, or the default conversion is evaluated outside the state-owning thread.
  */
 @OptIn(InternalStrataRuntimeApi::class)
 public fun <T : Any> UiScope.CycleButton(
@@ -103,7 +106,7 @@ public fun <T : Any> UiScope.CycleButton(
     enabled: Boolean = true,
     modifier: Modifier = Modifier.Empty,
     key: ElementKey<*>? = null,
-    label: (T) -> UiText = { value -> UiText.Literal(value.toString()) },
+    label: (T) -> UiText = { value -> UiText.Literal(state.formatKnownMember(value)) },
 ) {
     checkUsable()
     val labels = state.values.map(label)
