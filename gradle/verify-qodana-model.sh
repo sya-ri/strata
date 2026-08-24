@@ -12,8 +12,8 @@ fi
 
 expected_projects=20
 project_modules=(
-  'runtime|^strata\.runtime\.minecraft-fabric-[^.]+$'
-  'integration|^strata\.integration\.minecraft-fabric-[^.]+$'
+  'runtime|^(strata\.runtime\.minecraft-fabric|runtime-minecraft-fabric)-[^.]+$'
+  'integration|^(strata\.integration\.minecraft-fabric|integration-minecraft-fabric)-[^.]+$'
 )
 for project_modules_entry in "${project_modules[@]}"; do
   IFS='|' read -r label pattern <<< "$project_modules_entry"
@@ -26,7 +26,7 @@ for project_modules_entry in "${project_modules[@]}"; do
   fi
 done
 
-project_module_pattern='^strata\.(runtime|integration)\.minecraft-fabric-[^.]+$'
+project_module_pattern='^((strata\.(runtime|integration)\.minecraft-fabric)|((runtime|integration)-minecraft-fabric))-[^.]+$'
 incomplete_modules=$(
   jq -c --arg pattern "$project_module_pattern" '
     [
@@ -51,14 +51,14 @@ missing_sources=$(
   jq -c '
     [
       .modules[]
-      | select(.name | test("^strata\\.runtime\\.minecraft-fabric-[^.]+$"))
+      | select(.name | test("^(strata\\.runtime\\.minecraft-fabric|runtime-minecraft-fabric)-[^.]+$"))
       | select([.contentEntries[].sourceFolders[]? | select(.type == "Source")] | length == 0)
       | .name
     ]
     +
     [
       .modules[]
-      | select(.name | test("^strata\\.integration\\.minecraft-fabric-[^.]+$"))
+      | select(.name | test("^(strata\\.integration\\.minecraft-fabric|integration-minecraft-fabric)-[^.]+$"))
       | select([.contentEntries[].sourceFolders[]? | select(.type == "TestSource")] | length == 0)
       | .name
     ]

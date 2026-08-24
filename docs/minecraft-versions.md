@@ -111,7 +111,8 @@ The completed family spans Minecraft 1.20.1 through 1.20.6 and passed every loca
   Complete compatible files remain in neutral source roots, Minecraft 1.20.2 through 1.20.4 reuse the complete 1.20.4-owned GUI-sprite and `GameProfile` generation where their compilers prove compatibility, and 1.20.1 keeps its Authlib 4, atlas, and native-screen differences local.
   No shared source root is a Gradle project or publication, and no empty compatibility module was introduced.
 - Build-model fidelity: retained with an explicit analysis boundary.
-  Configuration on demand remains the correct default for targeted Gradle work, while the Qodana checkout disables it immediately before the Tooling API import and each versioned project supplies its actual compile, test, and GameTest boundaries to the owning IDEA module.
+  Configuration on demand remains the correct default for targeted Gradle work, while Qodana's bootstrap disables it for complete IDEA metadata generation and each versioned project supplies its actual compile, test, and GameTest boundaries to the owning module.
+  Qodana opens that generated module graph directly rather than reconstructing the linked source roots through a separate Gradle import.
   Detekt, Dokka, Kotlin explicit API validation, ABI validation, and Gradle continue to consume the same complete physical source roots as their owning version projects.
 - Build and cache cost: reduced without caching evidence.
   The six exact releases run in one independent 1.20 shard under the existing single-permit client and remap services.

@@ -58,15 +58,15 @@ The Documentation workflow invokes the fully qualified root `:dokkaGenerate` tas
 Repository settings must select GitHub Actions as the Pages source; the workflow requires only read access to contents plus `pages: write` and `id-token: write`.
 
 Qodana runs its recommended JVM inspection profile in CI without a baseline.
-The workflow makes every required Java toolchain available to the host-side native Qodana process so Gradle's IDE importer can resolve the Java 17, Java 21, and Java 25 source-set models and their dependencies.
+The workflow makes every required Java toolchain available to the host-side native Qodana process so it can resolve the Java 17, Java 21, and Java 25 module models and their dependencies.
 It restores the Gradle user home read-only, compiles every `classes` and `gametestClasses` boundary, and assembles the four plain common jars referenced by Loom's nested-library model before inspection without assembling remapped distribution jars.
 The workflow retains those analysis inputs for the IDE model and stops only the Gradle daemons before analysis to release their memory and file handles.
-Immediately before Qodana, the disposable checkout disables configuration on demand and enables Loom's official `fabric.loom.ci` system property, while Qodana's Gradle importer supplies Loom's official `idea.sync.active` system property to its Tooling API invocation.
-The CI property keeps mapped binary dependencies in the IDE model while preventing Loom from downloading and remapping optional dependency source artifacts inside Qodana's isolated Gradle cache.
-During that IDE sync, each versioned project augments its official Gradle IDEA module with the real compile classpath and, for integration projects, the real test and GameTest classpaths and source roots.
+Qodana's bootstrap invokes Gradle with configuration on demand disabled, the analysis-only `strata.completeIdeaModel` project property, and Loom's official `fabric.loom.ci` system property.
+The CI property keeps mapped binary dependencies in the IDEA modules while preventing Loom from downloading and remapping optional dependency source artifacts.
+The analysis-only property generates the official Gradle IDEA project and augments each versioned module with the real compile classpath and, for integration projects, the real test and GameTest classpaths and source roots.
 This preserves one canonical physical copy of compatible mapped sources while preventing IntelliJ from assigning linked roots to dependency-free directory modules.
-The host-side precompile reuses the restored Gradle user home, while Qodana's isolated importer builds its own model in a bounded temporary cache.
-The workflow then checks the emitted project structure for all twenty runtime and all twenty integration owning modules, including their SDK, dependency, runtime-source, and GameTest-source boundaries, so a partial Tooling API import cannot pass only because inspections were excluded.
+The bootstrap exposes that generated module graph through disposable `.idea/modules.xml`, `*.iml`, and project-SDK metadata that binds inherited analysis to Qodana's registered JBR while retaining each module's Java language level, and `rootJavaProjects` opens it directly instead of asking Qodana to reconstruct a different Gradle model.
+The workflow then checks the emitted project structure for all twenty runtime and all twenty integration owning modules, including their SDK, dependency, runtime-source, and GameTest-source boundaries, so a partial project import cannot pass only because inspections were excluded.
 The much larger Qodana IDE cache is not persisted and is removed after the run to preserve hosted-runner disk space; it may be enabled only after the complete-model import is green and its key covers every IDE-model input, while required analysis inputs remain ordinary reproducible build outputs rather than cache-only state.
 Static-analysis rules are enabled when they produce actionable improvements; rules that systematically make code less clear are disabled with a durable rationale in the checked-in configuration.
 

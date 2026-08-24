@@ -370,6 +370,8 @@ extensions.configure<DokkaExtension> {
 val detektRulesProject = project(":quality:detekt-rules")
 private val minecraftClientTaskNames = setOf("runClientGameTest", "runProductionClientGameTest")
 private val ideaSyncActive = providers.systemProperty("idea.sync.active").map(String::toBoolean).getOrElse(false)
+private val completeIdeaModelActive =
+    ideaSyncActive || providers.gradleProperty("strata.completeIdeaModel").map(String::toBoolean).getOrElse(false)
 private val ciMinecraftVersions =
     providers
         .gradleProperty("strata.minecraftVersions")
@@ -416,6 +418,10 @@ private val minecraftRemapExecutionService =
         maxParallelUsages.set(1)
     }
 
+if (completeIdeaModelActive) {
+    apply(plugin = "idea")
+}
+
 allprojects {
     group = rootProject.group
     version = rootProject.version
@@ -430,6 +436,9 @@ subprojects {
     apply(plugin = "java-library")
     apply(plugin = "dev.detekt")
     apply(plugin = "org.jmailen.kotlinter")
+    if (completeIdeaModelActive) {
+        apply(plugin = "idea")
+    }
     if (path in koverJvmProjectPaths) {
         apply(plugin = "org.jetbrains.kotlinx.kover")
     }
@@ -491,8 +500,7 @@ subprojects {
         withSourcesJar()
     }
 
-    if (ideaSyncActive && path in minecraftTargetByProjectPath) {
-        apply(plugin = "idea")
+    if (completeIdeaModelActive && path in minecraftTargetByProjectPath) {
         afterEvaluate {
             val sourceSets = extensions.getByType<SourceSetContainer>()
             val mainSourceSet = sourceSets.named("main").get()

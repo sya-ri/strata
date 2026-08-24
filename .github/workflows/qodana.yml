@@ -170,12 +170,6 @@ jobs:
         run: |
           bash ./gradlew --stop
           df -h /
-      - name: Prepare complete Gradle IDE model
-        run: |
-          sed -i 's/^org.gradle.configureondemand=true$/org.gradle.configureondemand=false/' gradle.properties
-          printf '\nsystemProp.fabric.loom.ci=true\n' >> gradle.properties
-          grep -Fx 'org.gradle.configureondemand=false' gradle.properties
-          grep -Fx 'systemProp.fabric.loom.ci=true' gradle.properties
       - name: Run Qodana
         uses: JetBrains/qodana-action@v2026.2
         with:
