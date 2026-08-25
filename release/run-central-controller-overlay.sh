@@ -150,7 +150,7 @@ for path in "${expected_paths[@]}"; do
     fail "Controller source does not contain the reviewed Central overlay SHA-256: $path"
 done
 
-runner_parent="${RUNNER_TEMP:-${TMPDIR:-/tmp}}"
+runner_parent="${STRATA_CENTRAL_CONTROLLER_OVERLAY_TEMP_PARENT:-${RUNNER_TEMP:-${TMPDIR:-/tmp}}}"
 [[ -d "$runner_parent" && ! -L "$runner_parent" ]] || \
   fail 'The Central controller overlay temporary parent must be a regular directory.'
 resolved_runner_parent="$(realpath "$runner_parent")"

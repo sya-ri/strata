@@ -46,7 +46,7 @@ run_overlay() {
   local selected_controller="${4:-$controller_commit}"
   (
     cd "$fixture"
-    RUNNER_TEMP="$runner_temporary" \
+    STRATA_CENTRAL_CONTROLLER_OVERLAY_TEMP_PARENT="$runner_temporary" \
       STRATA_CENTRAL_CONTROLLER_OVERLAY_TEST_MODE=1 \
       bash "$runner" "$operation" "$selected_manifest" "$selected_patch" \
         "$base_tag" "$base_commit" "$selected_controller"
@@ -158,7 +158,7 @@ done
 
 if (
   cd "$fixture"
-  RUNNER_TEMP="$runner_temporary" \
+  STRATA_CENTRAL_CONTROLLER_OVERLAY_TEMP_PARENT="$runner_temporary" \
     bash "$runner" build-logic-test "$manifest" "$patch" \
       "$base_tag" "$base_commit" "$controller_commit"
 ) >/dev/null 2>&1; then
