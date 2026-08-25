@@ -1,0 +1,27 @@
+{
+  "schemaVersion": 1,
+  "baseTag": "v0.1.0",
+  "baseCommit": "d0be1ccf74ee8fa0aca1a23e9d50eb5ba45c39a8",
+  "patchFile": "v0.1.0-modrinth-generic-draft.patch",
+  "patchSha256": "35c946756921a8221ac39d6d71524d164c5735224a24e086eaaf995f0cee9ce4",
+  "allowedOperations": [
+    "preflight",
+    "stage"
+  ],
+  "paths": [
+    {
+      "path": "build-logic/src/main/kotlin/dev/s7a/strata/gradle/release/ModrinthApiClient.kt",
+      "baseGitBlob": "8cb0ae1f24bb0d00809cb4bfd2c5534f9d3ae300",
+      "baseSha256": "400355b48628a8de6c15afea50a20590a7b429580e1860a6da1d88c5b7e565d9",
+      "patchedGitBlob": "9f7a5a88f72794ed56447b3fd78bc93b2a67ef1a",
+      "patchedSha256": "b3050b8a0199511a7bc80fe753dd6d539b1cc046f91ff798bae8a4722da0a720"
+    },
+    {
+      "path": "build-logic/src/main/kotlin/dev/s7a/strata/gradle/release/ModrinthReleaseCoordinator.kt",
+      "baseGitBlob": "18f0e3dfb72b0be923b5a5619fb967f771e4ad0f",
+      "baseSha256": "3d4e0df663fdc024cd8743ad0c48dc37303b64a0ad9980ea3d59ec1a3226e463",
+      "patchedGitBlob": "6b3f40841be0213493462853395517498f217a61",
+      "patchedSha256": "95adc8b465d80686e3b3187ee03c4e1888a569ccef6338b488958e137c762161"
+    }
+  ]
+}

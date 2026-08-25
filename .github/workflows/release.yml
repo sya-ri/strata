@@ -214,6 +214,42 @@ jobs:
           cache-read-only: true
           gradle-home-cache-strict-match: true
           gradle-home-cache-excludes: caches/fabric-loom
+      - name: Load the audited Modrinth controller overlay
+        id: controller_overlay
+        shell: bash
+        env:
+          EXPECTED_CONTROLLER_COMMIT: ${{ needs.preflight.outputs.controller_commit }}
+          EXPECTED_TAG_COMMIT: ${{ needs.preflight.outputs.tag_commit }}
+          RELEASE_TAG: ${{ inputs.tag }}
+        run: |
+          set -euo pipefail
+          overlay_directory="$RUNNER_TEMP/strata-controller-overlay-inputs"
+          mkdir -p "$overlay_directory"
+          runner="$overlay_directory/run-controller-overlay.sh"
+          manifest="$overlay_directory/v0.1.0-modrinth-generic-draft.json"
+          patch="$overlay_directory/v0.1.0-modrinth-generic-draft.patch"
+          git show "$EXPECTED_CONTROLLER_COMMIT:release/run-controller-overlay.sh" > "$runner"
+          git show "$EXPECTED_CONTROLLER_COMMIT:release/controller-overlays/v0.1.0-modrinth-generic-draft.json" > "$manifest"
+          git show "$EXPECTED_CONTROLLER_COMMIT:release/controller-overlays/v0.1.0-modrinth-generic-draft.patch" > "$patch"
+          bash -n "$runner"
+          [[ "$(jq -er '.baseTag' "$manifest")" == "$RELEASE_TAG" ]] || { echo 'Controller overlay tag differs.' >&2; exit 1; }
+          [[ "$(jq -er '.baseCommit' "$manifest")" == "$EXPECTED_TAG_COMMIT" ]] || { echo 'Controller overlay base commit differs.' >&2; exit 1; }
+          patch_sha256="$(sha256sum "$patch" | cut -d ' ' -f 1)"
+          [[ "$patch_sha256" == "$(jq -er '.patchSha256' "$manifest")" ]] || { echo 'Controller overlay patch hash differs.' >&2; exit 1; }
+          {
+            echo "runner=$runner"
+            echo "manifest=$manifest"
+            echo "patch=$patch"
+            echo "directory=$overlay_directory"
+          } >> "$GITHUB_OUTPUT"
+          {
+            echo
+            echo '### Audited release-controller overlay'
+            echo
+            echo "- Manifest SHA-256: \`$(sha256sum "$manifest" | cut -d ' ' -f 1)\`"
+            echo "- Patch SHA-256: \`$patch_sha256\`"
+            echo '- Scope: Modrinth preflight and stage only; tagged product artifacts remain immutable.'
+          } >> "$GITHUB_STEP_SUMMARY"
       - name: Resolve immutable Modrinth project ID
         id: modrinth
         shell: bash
@@ -397,16 +433,17 @@ jobs:
       - name: Preflight all Modrinth versions without mutation
         shell: bash
         env:
+          CONTROLLER_OVERLAY_RUNNER: ${{ steps.controller_overlay.outputs.runner }}
+          CONTROLLER_OVERLAY_MANIFEST: ${{ steps.controller_overlay.outputs.manifest }}
+          CONTROLLER_OVERLAY_PATCH: ${{ steps.controller_overlay.outputs.patch }}
           MODRINTH_TOKEN: ${{ secrets.MODRINTH_TOKEN }}
           PROJECT_ID: ${{ steps.modrinth.outputs.project_id }}
           RELEASE_TAG: ${{ inputs.tag }}
         run: |
           set -euo pipefail
-          bash ./gradlew --no-parallel --max-workers=2 --no-build-cache \
-            modrinthReleasePreflight -x verifyPublishedConsumer \
-            -Pstrata.sourceRevision="$RELEASE_TAG" \
-            -Pstrata.sourceCommit="$RELEASE_SOURCE_COMMIT" \
-            -Pstrata.modrinthProjectId="$PROJECT_ID"
+          bash "$CONTROLLER_OVERLAY_RUNNER" \
+            preflight "$CONTROLLER_OVERLAY_MANIFEST" "$CONTROLLER_OVERLAY_PATCH" \
+            "$PROJECT_ID" "$RELEASE_TAG" "$RELEASE_SOURCE_COMMIT" "$GITHUB_SHA"
       - name: Preflight GitHub Release without mutation
         shell: bash
         env:
@@ -454,6 +491,10 @@ jobs:
       - name: Stage listed Modrinth versions
         shell: bash
         env:
+          CONTROLLER_OVERLAY_RUNNER: ${{ steps.controller_overlay.outputs.runner }}
+          CONTROLLER_OVERLAY_MANIFEST: ${{ steps.controller_overlay.outputs.manifest }}
+          CONTROLLER_OVERLAY_PATCH: ${{ steps.controller_overlay.outputs.patch }}
+          CONTROLLER_OVERLAY_DIRECTORY: ${{ steps.controller_overlay.outputs.directory }}
           GH_TOKEN: ${{ github.token }}
           MODRINTH_TOKEN: ${{ secrets.MODRINTH_TOKEN }}
           PROJECT_ID: ${{ steps.modrinth.outputs.project_id }}
@@ -469,11 +510,23 @@ jobs:
           git merge-base --is-ancestor "$EXPECTED_TAG_COMMIT" origin/master || { echo 'Release source is no longer contained in controller master.' >&2; exit 1; }
           git diff --quiet -- . || { echo 'Tracked release source changed before Modrinth staging.' >&2; exit 1; }
           git diff --cached --quiet -- . || { echo 'Staged release source changed before Modrinth staging.' >&2; exit 1; }
-          bash ./gradlew --no-parallel --max-workers=2 --no-build-cache \
-            modrinthReleaseStage -x verifyPublishedConsumer \
-            -Pstrata.sourceRevision="$RELEASE_TAG" \
-            -Pstrata.sourceCommit="$RELEASE_SOURCE_COMMIT" \
-            -Pstrata.modrinthProjectId="$PROJECT_ID"
+          bash "$CONTROLLER_OVERLAY_RUNNER" \
+            stage "$CONTROLLER_OVERLAY_MANIFEST" "$CONTROLLER_OVERLAY_PATCH" \
+            "$PROJECT_ID" "$RELEASE_TAG" "$RELEASE_SOURCE_COMMIT" "$GITHUB_SHA"
+          expected_overlay_directory="$RUNNER_TEMP/strata-controller-overlay-inputs"
+          [[ "$CONTROLLER_OVERLAY_DIRECTORY" == "$expected_overlay_directory" ]] || {
+            echo 'Controller overlay cleanup target differs from its exact temporary directory.' >&2
+            exit 1
+          }
+          [[ -d "$CONTROLLER_OVERLAY_DIRECTORY" && ! -L "$CONTROLLER_OVERLAY_DIRECTORY" ]] || {
+            echo 'Controller overlay cleanup target is not a regular temporary directory.' >&2
+            exit 1
+          }
+          rm -rf -- "$CONTROLLER_OVERLAY_DIRECTORY"
+          [[ ! -e "$CONTROLLER_OVERLAY_DIRECTORY" ]] || {
+            echo 'Controller overlay inputs remained after successful Modrinth staging.' >&2
+            exit 1
+          }
       - name: Recheck Central absence immediately before publication
         if: steps.central.outputs.publish == 'true'
         shell: bash

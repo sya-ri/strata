@@ -501,13 +501,49 @@ if bash "$repository_root/release/wait-for-pages-source-receipt.sh" v0.1.0 "$rep
 fi
 
 workflow="$repository_root/.github/workflows/release.yml"
-grep --fixed-strings 'modrinthReleasePreflight -x verifyPublishedConsumer \' "$workflow" >/dev/null || \
-  fail 'The immutable-tag Modrinth preflight does not exclude the published-consumer dependency.'
-grep --fixed-strings 'modrinthReleaseStage -x verifyPublishedConsumer \' "$workflow" >/dev/null || \
-  fail 'The immutable-tag Modrinth stage does not exclude the published-consumer dependency.'
+grep --fixed-strings 'id: controller_overlay' "$workflow" >/dev/null || \
+  fail 'The audited controller overlay loader does not expose step-scoped outputs.'
+overlay_loader="$temporary_root/controller-overlay-loader.yml"
+sed -n '/name: Load the audited Modrinth controller overlay$/,/name: Resolve immutable Modrinth project ID$/p' \
+  "$workflow" > "$overlay_loader"
+grep --fixed-strings '>> "$GITHUB_OUTPUT"' "$overlay_loader" >/dev/null || \
+  fail 'The audited controller overlay loader does not write step-scoped outputs.'
+if grep --fixed-strings '$GITHUB_ENV' "$overlay_loader" >/dev/null; then
+  fail 'Controller overlay paths must not be exported to later release steps through GITHUB_ENV.'
+fi
+[[ "$(grep -c 'CONTROLLER_OVERLAY_RUNNER: \${{ steps.controller_overlay.outputs.runner }}' "$workflow")" == '2' ]] || \
+  fail 'Only Modrinth preflight and stage may receive the controller overlay runner.'
+[[ "$(grep -c 'CONTROLLER_OVERLAY_MANIFEST: \${{ steps.controller_overlay.outputs.manifest }}' "$workflow")" == '2' ]] || \
+  fail 'Only Modrinth preflight and stage may receive the controller overlay manifest.'
+[[ "$(grep -c 'CONTROLLER_OVERLAY_PATCH: \${{ steps.controller_overlay.outputs.patch }}' "$workflow")" == '2' ]] || \
+  fail 'Only Modrinth preflight and stage may receive the controller overlay patch.'
+[[ "$(grep -c 'CONTROLLER_OVERLAY_DIRECTORY: \${{ steps.controller_overlay.outputs.directory }}' "$workflow")" == '1' ]] || \
+  fail 'Only Modrinth stage may receive the controller overlay input directory.'
+[[ "$(grep -c 'bash "$CONTROLLER_OVERLAY_RUNNER" \\' "$workflow")" == '2' ]] || \
+  fail 'The audited controller overlay must wrap exactly Modrinth preflight and stage.'
+grep --fixed-strings 'preflight "$CONTROLLER_OVERLAY_MANIFEST" "$CONTROLLER_OVERLAY_PATCH" \' "$workflow" >/dev/null || \
+  fail 'The immutable-tag Modrinth preflight does not use the audited controller overlay.'
+grep --fixed-strings 'stage "$CONTROLLER_OVERLAY_MANIFEST" "$CONTROLLER_OVERLAY_PATCH" \' "$workflow" >/dev/null || \
+  fail 'The immutable-tag Modrinth stage does not use the audited controller overlay.'
+grep --fixed-strings 'gradle_task=modrinthReleasePreflight' "$repository_root/release/run-controller-overlay.sh" >/dev/null || \
+  fail 'The controller overlay does not map its read-only operation to Modrinth preflight.'
+grep --fixed-strings 'gradle_task=modrinthReleaseStage' "$repository_root/release/run-controller-overlay.sh" >/dev/null || \
+  fail 'The controller overlay does not map its write operation to Modrinth stage.'
+grep --fixed-strings -- '-x verifyPublishedConsumer' "$repository_root/release/run-controller-overlay.sh" >/dev/null || \
+  fail 'The controller overlay does not exclude the tagged published-consumer dependency.'
+grep --fixed-strings -- '-x modrinthReleaseManifest' "$repository_root/release/run-controller-overlay.sh" >/dev/null || \
+  fail 'The controller overlay does not exclude tagged product artifact generation.'
+grep --fixed-strings 'expected_overlay_directory="$RUNNER_TEMP/strata-controller-overlay-inputs"' "$workflow" >/dev/null || \
+  fail 'The release workflow does not bind cleanup to the exact controller overlay input directory.'
+grep --fixed-strings 'rm -rf -- "$CONTROLLER_OVERLAY_DIRECTORY"' "$workflow" >/dev/null || \
+  fail 'The release workflow does not remove controller overlay inputs after successful staging.'
+grep --fixed-strings '[[ ! -e "$CONTROLLER_OVERLAY_DIRECTORY" ]]' "$workflow" >/dev/null || \
+  fail 'The release workflow does not verify controller overlay input removal.'
 if sed -n '/^tasks.named("modrinthReleasePreflight") {$/,/^}$/p' "$repository_root/build.gradle.kts" |
   grep --fixed-strings 'dependsOn(verifyPublishedConsumer)' >/dev/null; then
   fail 'The read-only Modrinth preflight must not depend on the publishing consumer aggregate.'
 fi
+
+bash "$repository_root/release/tests/verify-controller-overlay.sh" >/dev/null
 
 echo 'Release source guards passed.'
