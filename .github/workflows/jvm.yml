@@ -60,18 +60,21 @@ jobs:
         include:
           - id: common
             name: Common checks
+            fetch_depth: 0
             gradle_arguments: :check :api:check :integration:api:check :quality:benchmarks:check :quality:detekt-rules:check :runtime:core:check :runtime:headless:check :runtime:minecraft:check
             cache_read_only: false
             loom_cache: false
             coverage: false
           - id: coverage
             name: Coverage
+            fetch_depth: 1
             gradle_arguments: :koverJvmTests :koverHtmlReport :koverXmlReport -Pkover
             cache_read_only: true
             loom_cache: false
             coverage: true
           - id: minecraft-1-20
             name: Minecraft 1.20.x
+            fetch_depth: 1
             gradle_arguments: :ciMinecraftCheck -Pstrata.minecraftVersions=1.20.1,1.20.2,1.20.3,1.20.4,1.20.5,1.20.6
             loom_projects: |-
               runtime/minecraft-fabric-1.20.1
@@ -91,6 +94,7 @@ jobs:
             coverage: false
           - id: minecraft-1-21-early
             name: Minecraft 1.21-1.21.4
+            fetch_depth: 1
             gradle_arguments: :ciMinecraftCheck -Pstrata.minecraftVersions=1.21,1.21.1,1.21.2,1.21.3,1.21.4
             loom_projects: |-
               runtime/minecraft-fabric-1.21
@@ -108,6 +112,7 @@ jobs:
             coverage: false
           - id: minecraft-1-21-late
             name: Minecraft 1.21.5-1.21.11
+            fetch_depth: 1
             gradle_arguments: :ciMinecraftCheck -Pstrata.minecraftVersions=1.21.5,1.21.6,1.21.7,1.21.8,1.21.9,1.21.10,1.21.11
             loom_projects: |-
               runtime/minecraft-fabric-1.21.5
@@ -129,6 +134,7 @@ jobs:
             coverage: false
           - id: minecraft-26
             name: Minecraft 26.x and showcase
+            fetch_depth: 1
             gradle_arguments: :ciMinecraftCheck :integration:docs:check -Pstrata.minecraftVersions=26.1,26.2
             loom_projects: |-
               runtime/minecraft-fabric-26.1
@@ -141,6 +147,8 @@ jobs:
     steps:
       - name: Check out source
         uses: actions/checkout@v7
+        with:
+          fetch-depth: ${{ matrix.fetch_depth }}
       - name: Check GitHub Actions workflows
         if: matrix.id == 'common'
         uses: docker://rhysd/actionlint:1.7.12
