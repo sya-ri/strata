@@ -29,7 +29,8 @@ It also orders the selected asset tasks before the selected clients so Gradle ca
 The official-mapping `remapJar` tasks use a second single-permit build service because each concurrent remapper retains a complete mapped game graph and can exhaust a hosted CI runner's heap.
 The JVM workflow runs common checks, coverage, two 1.21 shards, one 1.20 shard, and one 26.x-plus-showcase shard on separate hosted runners with fail-fast disabled, while each Minecraft shard preserves the in-build client and remap limits above.
 It runs only when code, build inputs, its own workflow, the compiled README contract, or generated showcase evidence changes; canonical prose that cannot affect those gates does not launch loaded clients.
-Gradle's enhanced user-home cache uses strict job matching so common work cannot restore and resave a multi-gigabyte Minecraft cache from another matrix entry.
+Gradle's enhanced user-home cache uses strict job matching for common and Minecraft shards so one writer cannot restore and resave state from another matrix entry.
+The read-only coverage shard deliberately accepts the newest compatible Linux job cache and never writes it back, avoiding a cold dependency fan-out and upstream rate limits without sharing Loom state.
 It is writable only from successful `master` runs of common checks and the four Minecraft-family shards because each produces distinct reusable outputs; pull requests, coverage, Qodana, and Documentation restore it read-only to avoid redundant, evidence-only, or branch-scoped entries.
 Every hosted job excludes Loom state from the enhanced Gradle user-home cache.
 Each Minecraft shard separately restores its project-local Loom repository with an OS-, shard-, and build-model-derived immutable key.

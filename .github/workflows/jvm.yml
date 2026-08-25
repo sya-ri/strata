@@ -164,7 +164,7 @@ jobs:
         uses: gradle/actions/setup-gradle@v6
         with:
           cache-read-only: ${{ matrix.cache_read_only || github.ref != 'refs/heads/master' }}
-          gradle-home-cache-strict-match: true
+          gradle-home-cache-strict-match: ${{ matrix.id != 'coverage' }}
           gradle-home-cache-excludes: caches/fabric-loom
       - name: Check release shell syntax
         if: matrix.id == 'common'
