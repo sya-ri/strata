@@ -544,6 +544,72 @@ if sed -n '/^tasks.named("modrinthReleasePreflight") {$/,/^}$/p' "$repository_ro
   fail 'The read-only Modrinth preflight must not depend on the publishing consumer aggregate.'
 fi
 
+[[ "$(grep --fixed-strings -c 'id: central_controller_overlay' "$workflow")" == '2' ]] || \
+  fail 'Release and final verification must each load the audited Central controller overlay.'
+[[ "$(grep --fixed-strings -c 'CENTRAL_OVERLAY_RUNNER: ${{ steps.central_controller_overlay.outputs.runner }}' "$workflow")" == '3' ]] || \
+  fail 'Only the three sealed Central read phases may receive the Central overlay runner.'
+[[ "$(grep --fixed-strings -c 'CENTRAL_OVERLAY_MANIFEST: ${{ steps.central_controller_overlay.outputs.manifest }}' "$workflow")" == '3' ]] || \
+  fail 'Only the three sealed Central read phases may receive the Central overlay manifest.'
+[[ "$(grep --fixed-strings -c 'CENTRAL_OVERLAY_PATCH: ${{ steps.central_controller_overlay.outputs.patch }}' "$workflow")" == '3' ]] || \
+  fail 'Only the three sealed Central read phases may receive the Central overlay patch.'
+[[ "$(grep --fixed-strings -c 'CENTRAL_OVERLAY_DIRECTORY: ${{ steps.central_controller_overlay.outputs.directory }}' "$workflow")" == '2' ]] || \
+  fail 'Only the two exact cleanup phases may receive the Central overlay directory.'
+[[ "$(grep --fixed-strings -c 'bash "$CENTRAL_OVERLAY_RUNNER" \' "$workflow")" == '3' ]] || \
+  fail 'The audited Central overlay must wrap exactly three sealed public reads.'
+[[ "$(grep --fixed-strings -c 'release-preflight "$CENTRAL_OVERLAY_MANIFEST" "$CENTRAL_OVERLAY_PATCH" \' "$workflow")" == '1' ]] || \
+  fail 'The release must have exactly one sealed public Central preflight.'
+[[ "$(grep --fixed-strings -c 'release-verify "$CENTRAL_OVERLAY_MANIFEST" "$CENTRAL_OVERLAY_PATCH" \' "$workflow")" == '2' ]] || \
+  fail 'Release and final verification must each verify the sealed public Central release.'
+grep --fixed-strings 'Require the sealed Maven Central release' "$workflow" >/dev/null || \
+  fail 'The post-publication Central state is not explicitly sealed.'
+grep --fixed-strings 'The sealed Central release differs' "$workflow" >/dev/null || \
+  fail 'The sealed Central preflight does not fail closed on any public mismatch.'
+central_verify_line="$(grep -n -m 1 --fixed-strings '      - name: Verify Central and build the canonical GitHub bundle' "$workflow" | cut -d: -f1)"
+central_signature_line="$(grep -n -m 1 --fixed-strings '      - name: Cryptographically verify canonical Central signatures' "$workflow" | cut -d: -f1)"
+modrinth_stage_line="$(grep -n -m 1 --fixed-strings '      - name: Stage listed Modrinth versions' "$workflow" | cut -d: -f1)"
+[[ -n "$central_verify_line" && -n "$central_signature_line" && -n "$modrinth_stage_line" ]] || \
+  fail 'The sealed Central verification or Modrinth staging boundary is missing.'
+(( central_verify_line < central_signature_line && central_signature_line < modrinth_stage_line )) || \
+  fail 'Canonical Central signatures must be verified before Modrinth staging can mutate remote state.'
+if awk '
+  /^      - name:/ {
+    if (overlay_step && secret) exposed = 1
+    overlay_step = 0
+    secret = 0
+  }
+  /CENTRAL_OVERLAY_RUNNER:/ { overlay_step = 1 }
+  /(SIGNING_KEY|signingInMemoryKey|mavenCentralUsername|mavenCentralPassword)/ { secret = 1 }
+  END {
+    if (overlay_step && secret) exposed = 1
+    exit exposed ? 0 : 1
+  }
+' "$workflow"; then
+  fail 'A read-only Central overlay phase receives a signing key or Central credential.'
+fi
+for read_task in mavenCentralReleasePreflight mavenCentralPortalPreflight mavenCentralPortalVerify 'mavenCentralReleaseVerify githubReleaseBundle'; do
+  if grep --fixed-strings "$read_task" "$workflow" >/dev/null; then
+    fail "A Central read task bypasses the immutable-tag controller overlay: $read_task"
+  fi
+done
+for forbidden_central_write in publishAndReleaseToMavenCentral publishToMavenCentral MAVEN_CENTRAL_USERNAME MAVEN_CENTRAL_PASSWORD mavenCentralUsername mavenCentralPassword; do
+  if grep --fixed-strings "$forbidden_central_write" "$workflow" >/dev/null; then
+    fail "The sealed v0.1.0 workflow still contains a Central write path or credential: $forbidden_central_write"
+  fi
+done
+if grep -Eiq 'portal|central_publish|verify_portal|steps\.central\.outputs\.publish' "$workflow"; then
+  fail 'The sealed v0.1.0 workflow still contains a Portal or conditional Central publication path.'
+fi
+if grep --fixed-strings '"960"' "$workflow" >/dev/null; then
+  fail 'The release workflow still requires nonexistent detached-signature checksum sidecars.'
+fi
+grep --fixed-strings 'expected_overlay_directory="$RUNNER_TEMP/strata-central-controller-overlay-inputs"' "$workflow" >/dev/null || \
+  fail 'Central overlay cleanup is not bound to its exact temporary directory.'
+[[ "$(grep --fixed-strings -c 'rm -rf -- "$CENTRAL_OVERLAY_DIRECTORY"' "$workflow")" == '2' ]] || \
+  fail 'Release and final verification must each remove their Central overlay inputs.'
+[[ "$(grep --fixed-strings -c '[[ ! -e "$CENTRAL_OVERLAY_DIRECTORY" ]]' "$workflow")" == '2' ]] || \
+  fail 'Central overlay input removal is not verified in both jobs.'
+
 bash "$repository_root/release/tests/verify-controller-overlay.sh" >/dev/null
+bash "$repository_root/release/tests/verify-central-controller-overlay.sh" >/dev/null
 
 echo 'Release source guards passed.'

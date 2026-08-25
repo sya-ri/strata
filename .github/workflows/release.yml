@@ -250,6 +250,42 @@ jobs:
             echo "- Patch SHA-256: \`$patch_sha256\`"
             echo '- Scope: Modrinth preflight and stage only; tagged product artifacts remain immutable.'
           } >> "$GITHUB_STEP_SUMMARY"
+      - name: Load the audited Central controller overlay
+        id: central_controller_overlay
+        shell: bash
+        env:
+          EXPECTED_CONTROLLER_COMMIT: ${{ needs.preflight.outputs.controller_commit }}
+          EXPECTED_TAG_COMMIT: ${{ needs.preflight.outputs.tag_commit }}
+          RELEASE_TAG: ${{ inputs.tag }}
+        run: |
+          set -euo pipefail
+          overlay_directory="$RUNNER_TEMP/strata-central-controller-overlay-inputs"
+          mkdir -p "$overlay_directory"
+          runner="$overlay_directory/run-central-controller-overlay.sh"
+          manifest="$overlay_directory/v0.1.0-central-signature-checksums.json"
+          patch="$overlay_directory/v0.1.0-central-signature-checksums.patch"
+          git show "$EXPECTED_CONTROLLER_COMMIT:release/run-central-controller-overlay.sh" > "$runner"
+          git show "$EXPECTED_CONTROLLER_COMMIT:release/controller-overlays/v0.1.0-central-signature-checksums.json" > "$manifest"
+          git show "$EXPECTED_CONTROLLER_COMMIT:release/controller-overlays/v0.1.0-central-signature-checksums.patch" > "$patch"
+          bash -n "$runner"
+          [[ "$(jq -er '.baseTag' "$manifest")" == "$RELEASE_TAG" ]] || { echo 'Central controller overlay tag differs.' >&2; exit 1; }
+          [[ "$(jq -er '.baseCommit' "$manifest")" == "$EXPECTED_TAG_COMMIT" ]] || { echo 'Central controller overlay base commit differs.' >&2; exit 1; }
+          patch_sha256="$(sha256sum "$patch" | cut -d ' ' -f 1)"
+          [[ "$patch_sha256" == "$(jq -er '.patchSha256' "$manifest")" ]] || { echo 'Central controller overlay patch hash differs.' >&2; exit 1; }
+          {
+            echo "runner=$runner"
+            echo "manifest=$manifest"
+            echo "patch=$patch"
+            echo "directory=$overlay_directory"
+          } >> "$GITHUB_OUTPUT"
+          {
+            echo
+            echo '### Audited Central release-controller overlay'
+            echo
+            echo "- Manifest SHA-256: \`$(sha256sum "$manifest" | cut -d ' ' -f 1)\`"
+            echo "- Patch SHA-256: \`$patch_sha256\`"
+            echo '- Scope: read-only Central preflight and verification only; tagged product artifacts and remote state remain immutable.'
+          } >> "$GITHUB_STEP_SUMMARY"
       - name: Resolve immutable Modrinth project ID
         id: modrinth
         shell: bash
@@ -267,17 +303,13 @@ jobs:
           [[ -n "$MODRINTH_TOKEN" ]] || { echo 'MODRINTH_TOKEN is required for the complete release.' >&2; exit 1; }
           [[ -n "$tracked" ]] || { echo 'The immutable Modrinth project ID must be committed to release/modrinth-project.json before staging.' >&2; exit 1; }
           echo "project_id=$project_id" >> "$GITHUB_OUTPUT"
-      - name: Require Maven Central signing credentials
+      - name: Require release signing credentials
         shell: bash
         env:
-          MAVEN_CENTRAL_USERNAME: ${{ secrets.MAVEN_CENTRAL_USERNAME }}
-          MAVEN_CENTRAL_PASSWORD: ${{ secrets.MAVEN_CENTRAL_PASSWORD }}
           SIGNING_KEY: ${{ secrets.SIGNING_KEY }}
           SIGNING_PASSWORD: ${{ secrets.SIGNING_PASSWORD }}
         run: |
           set -euo pipefail
-          [[ -n "$MAVEN_CENTRAL_USERNAME" ]] || { echo 'MAVEN_CENTRAL_USERNAME is missing.' >&2; exit 1; }
-          [[ -n "$MAVEN_CENTRAL_PASSWORD" ]] || { echo 'MAVEN_CENTRAL_PASSWORD is missing.' >&2; exit 1; }
           [[ -n "$SIGNING_KEY" ]] || { echo 'SIGNING_KEY is missing.' >&2; exit 1; }
           [[ -n "$SIGNING_PASSWORD" ]] || { echo 'SIGNING_PASSWORD is missing.' >&2; exit 1; }
       - name: Rerun release quality, documentation, and Skill gates
@@ -342,94 +374,80 @@ jobs:
               -Pstrata.sourceRevision="$RELEASE_TAG" \
               -Pstrata.sourceCommit="$RELEASE_SOURCE_COMMIT"
           done
-      - name: Inspect Maven Central idempotency state
+      - name: Require the sealed Maven Central release
         id: central
         shell: bash
         env:
-          ORG_GRADLE_PROJECT_mavenCentralUsername: ${{ secrets.MAVEN_CENTRAL_USERNAME }}
-          ORG_GRADLE_PROJECT_mavenCentralPassword: ${{ secrets.MAVEN_CENTRAL_PASSWORD }}
-          ORG_GRADLE_PROJECT_signingInMemoryKey: ${{ secrets.SIGNING_KEY }}
-          ORG_GRADLE_PROJECT_signingInMemoryKeyPassword: ${{ secrets.SIGNING_PASSWORD }}
+          CENTRAL_OVERLAY_RUNNER: ${{ steps.central_controller_overlay.outputs.runner }}
+          CENTRAL_OVERLAY_MANIFEST: ${{ steps.central_controller_overlay.outputs.manifest }}
+          CENTRAL_OVERLAY_PATCH: ${{ steps.central_controller_overlay.outputs.patch }}
           RELEASE_TAG: ${{ inputs.tag }}
         run: |
           set -euo pipefail
-          bash ./gradlew --no-parallel --max-workers=2 --no-build-cache \
-            mavenCentralReleasePreflight mavenCentralPortalPreflight \
-            -Pstrata.sourceRevision="$RELEASE_TAG" \
-            -Pstrata.sourceCommit="$RELEASE_SOURCE_COMMIT"
+          bash "$CENTRAL_OVERLAY_RUNNER" \
+            release-preflight "$CENTRAL_OVERLAY_MANIFEST" "$CENTRAL_OVERLAY_PATCH" \
+            "$RELEASE_TAG" "$RELEASE_SOURCE_COMMIT" "$GITHUB_SHA"
           state="$(jq -r '.state' build/release/maven-central/preflight.json)"
           central_coordinate_count="$(jq -r '.coordinateCount' build/release/maven-central/preflight.json)"
           central_file_count="$(jq -r '.verifiedFileCount' build/release/maven-central/preflight.json)"
           central_checksum_count="$(jq -r '.verifiedChecksumCount' build/release/maven-central/preflight.json)"
-          portal_state="$(jq -r '.state' build/release/maven-central/portal-preflight.json)"
-          portal_content_count="$(jq -r '.verifiedContentFileCount' build/release/maven-central/portal-preflight.json)"
-          portal_checksum_count="$(jq -r '.verifiedChecksumCount' build/release/maven-central/portal-preflight.json)"
           [[ "$central_coordinate_count" == "24" ]] || {
             echo "Central repository coordinate evidence differs: $central_coordinate_count" >&2
             exit 1
           }
-          if [[ "$state" == "exact" ]]; then
-            [[ "$central_file_count" == "240" && "$central_checksum_count" == "960" ]] || {
-              echo "Central repository exact evidence counts differ: files=$central_file_count checksums=$central_checksum_count" >&2
-              exit 1
-            }
-          else
-            [[ "$central_file_count" == "0" && "$central_checksum_count" == "0" ]] || {
-              echo "Central repository absent evidence unexpectedly contains files: files=$central_file_count checksums=$central_checksum_count" >&2
-              exit 1
-            }
-          fi
-          if [[ "$portal_state" == "exact" ]]; then
-            [[ "$portal_content_count" == "240" && "$portal_checksum_count" == "960" ]] || {
-              echo "Central Portal exact evidence counts differ: content=$portal_content_count checksums=$portal_checksum_count" >&2
-              exit 1
-            }
-          else
-            [[ "$portal_content_count" == "0" && "$portal_checksum_count" == "0" ]] || {
-              echo "Central Portal absent evidence unexpectedly contains files: content=$portal_content_count checksums=$portal_checksum_count" >&2
-              exit 1
-            }
-          fi
+          [[ "$state" == "exact" && "$central_file_count" == "240" && "$central_checksum_count" == "480" ]] || {
+            echo "The sealed Central release differs: state=$state files=$central_file_count checksums=$central_checksum_count" >&2
+            exit 1
+          }
           echo "state=$state" >> "$GITHUB_OUTPUT"
-          echo "portal_state=$portal_state" >> "$GITHUB_OUTPUT"
-          case "$state:$portal_state" in
-            exact:absent|exact:exact)
-              echo 'publish=false' >> "$GITHUB_OUTPUT"
-              echo 'verify_portal=false' >> "$GITHUB_OUTPUT"
-              ;;
-            absent:absent)
-              echo 'publish=true' >> "$GITHUB_OUTPUT"
-              echo 'verify_portal=true' >> "$GITHUB_OUTPUT"
-              ;;
-            absent:exact)
-              echo 'publish=false' >> "$GITHUB_OUTPUT"
-              echo 'verify_portal=true' >> "$GITHUB_OUTPUT"
-              ;;
-            *)
-              echo "Unexpected Maven Central states: repository=$state portal=$portal_state" >&2
-              exit 1
-              ;;
-          esac
-      - name: Build canonical bundle from an existing exact Central release
-        if: steps.central.outputs.state == 'exact'
+      - name: Verify Central and build the canonical GitHub bundle
         shell: bash
         env:
-          ORG_GRADLE_PROJECT_signingInMemoryKey: ${{ secrets.SIGNING_KEY }}
-          ORG_GRADLE_PROJECT_signingInMemoryKeyPassword: ${{ secrets.SIGNING_PASSWORD }}
+          CENTRAL_OVERLAY_RUNNER: ${{ steps.central_controller_overlay.outputs.runner }}
+          CENTRAL_OVERLAY_MANIFEST: ${{ steps.central_controller_overlay.outputs.manifest }}
+          CENTRAL_OVERLAY_PATCH: ${{ steps.central_controller_overlay.outputs.patch }}
           RELEASE_TAG: ${{ inputs.tag }}
         run: |
           set -euo pipefail
-          bash ./gradlew --no-parallel --max-workers=2 --no-build-cache \
-            mavenCentralReleaseVerify githubReleaseBundle \
-            -Pstrata.sourceRevision="$RELEASE_TAG" \
-            -Pstrata.sourceCommit="$RELEASE_SOURCE_COMMIT"
+          bash "$CENTRAL_OVERLAY_RUNNER" \
+            release-verify "$CENTRAL_OVERLAY_MANIFEST" "$CENTRAL_OVERLAY_PATCH" \
+            "$RELEASE_TAG" "$RELEASE_SOURCE_COMMIT" "$GITHUB_SHA"
           [[ "$(jq -r '.state' build/release/maven-central/verify.json)" == "exact" \
             && "$(jq -r '.coordinateCount' build/release/maven-central/verify.json)" == "24" \
             && "$(jq -r '.verifiedFileCount' build/release/maven-central/verify.json)" == "240" \
-            && "$(jq -r '.verifiedChecksumCount' build/release/maven-central/verify.json)" == "960" ]] || {
+            && "$(jq -r '.verifiedChecksumCount' build/release/maven-central/verify.json)" == "480" ]] || {
             echo 'Existing Central release evidence counts differ.' >&2
             exit 1
           }
+      - name: Cryptographically verify canonical Central signatures
+        shell: bash
+        env:
+          SIGNING_KEY: ${{ secrets.SIGNING_KEY }}
+        run: |
+          set -euo pipefail
+          key_file="$(mktemp)"
+          gnupg_home="$(mktemp -d)"
+          trap 'rm -rf -- "$key_file" "$gnupg_home"' EXIT
+          chmod 600 "$key_file"
+          chmod 700 "$gnupg_home"
+          export GNUPGHOME="$gnupg_home"
+          printf '%s' "$SIGNING_KEY" > "$key_file"
+          if ! gpg --batch --quiet --import "$key_file"; then
+            printf '%s' "$SIGNING_KEY" | base64 --decode > "$key_file"
+            gpg --batch --quiet --import "$key_file"
+          fi
+          verified=0
+          while IFS= read -r -d '' signature; do
+            gpg --batch --verify "$signature" "${signature%.asc}"
+            verified=$((verified + 1))
+          done < <(find build/release/maven-central/evidence -type f -name '*.asc' -print0)
+          [[ "$verified" == "120" ]] || { echo "Expected 120 verified Central signatures, found $verified." >&2; exit 1; }
+          shopt -s nullglob
+          jars=(build/release/github/*.jar)
+          [[ "${#jars[@]}" == "20" ]] || { echo "Expected 20 signed GitHub JARs, found ${#jars[@]}." >&2; exit 1; }
+          for jar in "${jars[@]}"; do
+            gpg --batch --verify "$jar.asc" "$jar"
+          done
       - name: Preflight all Modrinth versions without mutation
         shell: bash
         env:
@@ -527,164 +545,27 @@ jobs:
             echo 'Controller overlay inputs remained after successful Modrinth staging.' >&2
             exit 1
           }
-      - name: Recheck Central absence immediately before publication
-        if: steps.central.outputs.publish == 'true'
+      - name: Remove Central controller overlay inputs
+        if: always() && steps.central_controller_overlay.outcome == 'success'
         shell: bash
         env:
-          GH_TOKEN: ${{ github.token }}
-          ORG_GRADLE_PROJECT_mavenCentralUsername: ${{ secrets.MAVEN_CENTRAL_USERNAME }}
-          ORG_GRADLE_PROJECT_mavenCentralPassword: ${{ secrets.MAVEN_CENTRAL_PASSWORD }}
-          ORG_GRADLE_PROJECT_signingInMemoryKey: ${{ secrets.SIGNING_KEY }}
-          ORG_GRADLE_PROJECT_signingInMemoryKeyPassword: ${{ secrets.SIGNING_PASSWORD }}
-          RELEASE_TAG: ${{ inputs.tag }}
+          CENTRAL_OVERLAY_DIRECTORY: ${{ steps.central_controller_overlay.outputs.directory }}
         run: |
           set -euo pipefail
-          bash ./gradlew --no-parallel --max-workers=2 --no-build-cache \
-            mavenCentralReleasePreflight mavenCentralPortalPreflight \
-            -Pstrata.sourceRevision="$RELEASE_TAG" \
-            -Pstrata.sourceCommit="$RELEASE_SOURCE_COMMIT"
-          fresh_state="$(jq -r '.state' build/release/maven-central/preflight.json)"
-          fresh_portal_state="$(jq -r '.state' build/release/maven-central/portal-preflight.json)"
-          [[ "$fresh_state:$fresh_portal_state" == "absent:absent" ]] || {
-            echo "Maven Central state changed before upload: repository=$fresh_state portal=$fresh_portal_state" >&2
+          expected_overlay_directory="$RUNNER_TEMP/strata-central-controller-overlay-inputs"
+          [[ "$CENTRAL_OVERLAY_DIRECTORY" == "$expected_overlay_directory" ]] || {
+            echo 'Central controller overlay cleanup target differs from its exact temporary directory.' >&2
             exit 1
           }
-          [[ "$(jq -r '.coordinateCount' build/release/maven-central/preflight.json)" == "24" \
-            && "$(jq -r '.verifiedFileCount' build/release/maven-central/preflight.json)" == "0" \
-            && "$(jq -r '.verifiedChecksumCount' build/release/maven-central/preflight.json)" == "0" \
-            && "$(jq -r '.verifiedContentFileCount' build/release/maven-central/portal-preflight.json)" == "0" \
-            && "$(jq -r '.verifiedChecksumCount' build/release/maven-central/portal-preflight.json)" == "0" ]] || {
-            echo 'Fresh Central absence evidence contains unexpected counts.' >&2
+          [[ -d "$CENTRAL_OVERLAY_DIRECTORY" && ! -L "$CENTRAL_OVERLAY_DIRECTORY" ]] || {
+            echo 'Central controller overlay cleanup target is not a regular temporary directory.' >&2
             exit 1
           }
-      - name: Publish and release 24 Maven Central artifacts
-        if: steps.central.outputs.publish == 'true'
-        id: central_publish
-        continue-on-error: true
-        shell: bash
-        env:
-          GH_TOKEN: ${{ github.token }}
-          ORG_GRADLE_PROJECT_mavenCentralUsername: ${{ secrets.MAVEN_CENTRAL_USERNAME }}
-          ORG_GRADLE_PROJECT_mavenCentralPassword: ${{ secrets.MAVEN_CENTRAL_PASSWORD }}
-          ORG_GRADLE_PROJECT_signingInMemoryKey: ${{ secrets.SIGNING_KEY }}
-          ORG_GRADLE_PROJECT_signingInMemoryKeyPassword: ${{ secrets.SIGNING_PASSWORD }}
-          RELEASE_TAG: ${{ inputs.tag }}
-          EXPECTED_TAG_COMMIT: ${{ needs.preflight.outputs.tag_commit }}
-          EXPECTED_TAG_OBJECT: ${{ needs.preflight.outputs.tag_object }}
-        run: |
-          set -euo pipefail
-          bash release/verify-github-tag-ruleset.sh >/dev/null
-          bash release/verify-release-tag.sh "$RELEASE_TAG" "$EXPECTED_TAG_COMMIT" "$EXPECTED_TAG_OBJECT" >/dev/null
-          [[ "$(git rev-parse HEAD)" == "$EXPECTED_TAG_COMMIT" ]] || { echo 'Release workspace changed before Maven Central publication.' >&2; exit 1; }
-          [[ "$(git rev-parse origin/master)" == "$GITHUB_SHA" ]] || { echo 'Controller master changed before Maven Central publication.' >&2; exit 1; }
-          git merge-base --is-ancestor "$EXPECTED_TAG_COMMIT" origin/master || { echo 'Release source is no longer contained in controller master.' >&2; exit 1; }
-          git diff --quiet -- . || { echo 'Tracked release source changed before Maven Central publication.' >&2; exit 1; }
-          git diff --cached --quiet -- . || { echo 'Staged release source changed before Maven Central publication.' >&2; exit 1; }
-          bash ./gradlew --no-parallel --max-workers=2 --no-build-cache publishAndReleaseToMavenCentral \
-            -Pstrata.sourceRevision="$RELEASE_TAG" \
-            -Pstrata.sourceCommit="$RELEASE_SOURCE_COMMIT"
-      - name: Reconcile the exact Central Portal deployment
-        if: steps.central.outputs.verify_portal == 'true'
-        shell: bash
-        env:
-          ORG_GRADLE_PROJECT_mavenCentralUsername: ${{ secrets.MAVEN_CENTRAL_USERNAME }}
-          ORG_GRADLE_PROJECT_mavenCentralPassword: ${{ secrets.MAVEN_CENTRAL_PASSWORD }}
-          ORG_GRADLE_PROJECT_signingInMemoryKey: ${{ secrets.SIGNING_KEY }}
-          ORG_GRADLE_PROJECT_signingInMemoryKeyPassword: ${{ secrets.SIGNING_PASSWORD }}
-          RELEASE_TAG: ${{ inputs.tag }}
-        run: |
-          set -euo pipefail
-          bash ./gradlew --no-parallel --max-workers=2 --no-build-cache mavenCentralPortalVerify \
-            -Pstrata.sourceRevision="$RELEASE_TAG" \
-            -Pstrata.sourceCommit="$RELEASE_SOURCE_COMMIT"
-          [[ "$(jq -r '.state' build/release/maven-central/portal-verify.json)" == "exact" ]] || {
-            echo 'Central Portal reconciliation did not produce exact evidence.' >&2
+          rm -rf -- "$CENTRAL_OVERLAY_DIRECTORY"
+          [[ ! -e "$CENTRAL_OVERLAY_DIRECTORY" ]] || {
+            echo 'Central controller overlay inputs remained after Central verification.' >&2
             exit 1
           }
-          [[ "$(jq -r '.deploymentState' build/release/maven-central/portal-verify.json)" == "PUBLISHED" ]] || {
-            echo 'Central Portal deployment did not reach PUBLISHED.' >&2
-            exit 1
-          }
-          [[ "$(jq -r '.verifiedContentFileCount' build/release/maven-central/portal-verify.json)" == "240" ]] || {
-            echo 'Central Portal signed-content evidence count differs.' >&2
-            exit 1
-          }
-          [[ "$(jq -r '.verifiedChecksumCount' build/release/maven-central/portal-verify.json)" == "960" ]] || {
-            echo 'Central Portal checksum evidence count differs.' >&2
-            exit 1
-          }
-      - name: Cryptographically verify reconciled Portal signatures
-        if: steps.central.outputs.verify_portal == 'true'
-        shell: bash
-        env:
-          SIGNING_KEY: ${{ secrets.SIGNING_KEY }}
-        run: |
-          set -euo pipefail
-          key_file="$(mktemp)"
-          gnupg_home="$(mktemp -d)"
-          trap 'rm -rf -- "$key_file" "$gnupg_home"' EXIT
-          chmod 600 "$key_file"
-          chmod 700 "$gnupg_home"
-          export GNUPGHOME="$gnupg_home"
-          printf '%s' "$SIGNING_KEY" > "$key_file"
-          if ! gpg --batch --quiet --import "$key_file"; then
-            printf '%s' "$SIGNING_KEY" | base64 --decode > "$key_file"
-            gpg --batch --quiet --import "$key_file"
-          fi
-          verified=0
-          while IFS= read -r -d '' signature; do
-            gpg --batch --verify "$signature" "${signature%.asc}"
-            verified=$((verified + 1))
-          done < <(find build/release/maven-central/portal-verify-evidence -type f -name '*.asc' -print0)
-          [[ "$verified" == "120" ]] || { echo "Expected 120 verified Portal signatures, found $verified." >&2; exit 1; }
-      - name: Verify Central and build the canonical GitHub bundle
-        if: steps.central.outputs.state == 'absent'
-        shell: bash
-        env:
-          ORG_GRADLE_PROJECT_signingInMemoryKey: ${{ secrets.SIGNING_KEY }}
-          ORG_GRADLE_PROJECT_signingInMemoryKeyPassword: ${{ secrets.SIGNING_PASSWORD }}
-          RELEASE_TAG: ${{ inputs.tag }}
-        run: |
-          set -euo pipefail
-          bash ./gradlew --no-parallel --max-workers=2 --no-build-cache mavenCentralReleaseVerify githubReleaseBundle \
-            -Pstrata.sourceRevision="$RELEASE_TAG" \
-            -Pstrata.sourceCommit="$RELEASE_SOURCE_COMMIT"
-          [[ "$(jq -r '.state' build/release/maven-central/verify.json)" == "exact" \
-            && "$(jq -r '.coordinateCount' build/release/maven-central/verify.json)" == "24" \
-            && "$(jq -r '.verifiedFileCount' build/release/maven-central/verify.json)" == "240" \
-            && "$(jq -r '.verifiedChecksumCount' build/release/maven-central/verify.json)" == "960" ]] || {
-            echo 'Published Central release evidence counts differ.' >&2
-            exit 1
-          }
-      - name: Cryptographically verify canonical Central signatures
-        shell: bash
-        env:
-          SIGNING_KEY: ${{ secrets.SIGNING_KEY }}
-        run: |
-          set -euo pipefail
-          key_file="$(mktemp)"
-          gnupg_home="$(mktemp -d)"
-          trap 'rm -rf -- "$key_file" "$gnupg_home"' EXIT
-          chmod 600 "$key_file"
-          chmod 700 "$gnupg_home"
-          export GNUPGHOME="$gnupg_home"
-          printf '%s' "$SIGNING_KEY" > "$key_file"
-          if ! gpg --batch --quiet --import "$key_file"; then
-            printf '%s' "$SIGNING_KEY" | base64 --decode > "$key_file"
-            gpg --batch --quiet --import "$key_file"
-          fi
-          verified=0
-          while IFS= read -r -d '' signature; do
-            gpg --batch --verify "$signature" "${signature%.asc}"
-            verified=$((verified + 1))
-          done < <(find build/release/maven-central/evidence -type f -name '*.asc' -print0)
-          [[ "$verified" == "120" ]] || { echo "Expected 120 verified Central signatures, found $verified." >&2; exit 1; }
-          shopt -s nullglob
-          jars=(build/release/github/*.jar)
-          [[ "${#jars[@]}" == "20" ]] || { echo "Expected 20 signed GitHub JARs, found ${#jars[@]}." >&2; exit 1; }
-          for jar in "${jars[@]}"; do
-            gpg --batch --verify "$jar.asc" "$jar"
-          done
       - name: Rerun representative loaded clients from Maven Central
         shell: bash
         env:
@@ -899,6 +780,41 @@ jobs:
           cache-read-only: true
           gradle-home-cache-strict-match: true
           gradle-home-cache-excludes: caches/fabric-loom
+      - name: Load the audited Central controller overlay
+        id: central_controller_overlay
+        shell: bash
+        env:
+          EXPECTED_CONTROLLER_COMMIT: ${{ github.sha }}
+          RELEASE_TAG: ${{ inputs.tag }}
+        run: |
+          set -euo pipefail
+          overlay_directory="$RUNNER_TEMP/strata-central-controller-overlay-inputs"
+          mkdir -p "$overlay_directory"
+          runner="$overlay_directory/run-central-controller-overlay.sh"
+          manifest="$overlay_directory/v0.1.0-central-signature-checksums.json"
+          patch="$overlay_directory/v0.1.0-central-signature-checksums.patch"
+          git show "$EXPECTED_CONTROLLER_COMMIT:release/run-central-controller-overlay.sh" > "$runner"
+          git show "$EXPECTED_CONTROLLER_COMMIT:release/controller-overlays/v0.1.0-central-signature-checksums.json" > "$manifest"
+          git show "$EXPECTED_CONTROLLER_COMMIT:release/controller-overlays/v0.1.0-central-signature-checksums.patch" > "$patch"
+          bash -n "$runner"
+          [[ "$(jq -er '.baseTag' "$manifest")" == "$RELEASE_TAG" ]] || { echo 'Central controller overlay tag differs.' >&2; exit 1; }
+          [[ "$(jq -er '.baseCommit' "$manifest")" == "$RELEASE_SOURCE_COMMIT" ]] || { echo 'Central controller overlay base commit differs.' >&2; exit 1; }
+          patch_sha256="$(sha256sum "$patch" | cut -d ' ' -f 1)"
+          [[ "$patch_sha256" == "$(jq -er '.patchSha256' "$manifest")" ]] || { echo 'Central controller overlay patch hash differs.' >&2; exit 1; }
+          {
+            echo "runner=$runner"
+            echo "manifest=$manifest"
+            echo "patch=$patch"
+            echo "directory=$overlay_directory"
+          } >> "$GITHUB_OUTPUT"
+          {
+            echo
+            echo '### Audited final Central release-controller overlay'
+            echo
+            echo "- Manifest SHA-256: \`$(sha256sum "$manifest" | cut -d ' ' -f 1)\`"
+            echo "- Patch SHA-256: \`$patch_sha256\`"
+            echo '- Scope: read-only public Central verification only; tagged product artifacts and remote state remain immutable.'
+          } >> "$GITHUB_STEP_SUMMARY"
       - name: Resolve required Modrinth credentials
         id: modrinth
         shell: bash
@@ -929,19 +845,33 @@ jobs:
             -Pstrata.sourceRevision="$RELEASE_TAG" \
             -Pstrata.sourceCommit="$RELEASE_SOURCE_COMMIT" \
             -Pstrata.modrinthProjectId="$PROJECT_ID"
-      - name: Verify Maven Central and GitHub assets remain exact
+      - name: Verify the sealed Maven Central release remains exact
+        shell: bash
+        env:
+          CENTRAL_OVERLAY_RUNNER: ${{ steps.central_controller_overlay.outputs.runner }}
+          CENTRAL_OVERLAY_MANIFEST: ${{ steps.central_controller_overlay.outputs.manifest }}
+          CENTRAL_OVERLAY_PATCH: ${{ steps.central_controller_overlay.outputs.patch }}
+          RELEASE_TAG: ${{ inputs.tag }}
+        run: |
+          set -euo pipefail
+          bash "$CENTRAL_OVERLAY_RUNNER" \
+            release-verify "$CENTRAL_OVERLAY_MANIFEST" "$CENTRAL_OVERLAY_PATCH" \
+            "$RELEASE_TAG" "$RELEASE_SOURCE_COMMIT" "$GITHUB_SHA"
+          [[ "$(jq -r '.state' build/release/maven-central/verify.json)" == "exact" \
+            && "$(jq -r '.coordinateCount' build/release/maven-central/verify.json)" == "24" \
+            && "$(jq -r '.verifiedFileCount' build/release/maven-central/verify.json)" == "240" \
+            && "$(jq -r '.verifiedChecksumCount' build/release/maven-central/verify.json)" == "480" ]] || {
+            echo 'Final Central release evidence counts differ.' >&2
+            exit 1
+          }
+      - name: Verify GitHub release assets and signatures remain exact
         shell: bash
         env:
           GH_TOKEN: ${{ github.token }}
           RELEASE_TAG: ${{ inputs.tag }}
           SIGNING_KEY: ${{ secrets.SIGNING_KEY }}
-          ORG_GRADLE_PROJECT_signingInMemoryKey: ${{ secrets.SIGNING_KEY }}
-          ORG_GRADLE_PROJECT_signingInMemoryKeyPassword: ${{ secrets.SIGNING_PASSWORD }}
         run: |
           set -euo pipefail
-          bash ./gradlew --no-parallel --max-workers=2 --no-build-cache mavenCentralReleaseVerify githubReleaseBundle \
-            -Pstrata.sourceRevision="$RELEASE_TAG" \
-            -Pstrata.sourceCommit="$RELEASE_SOURCE_COMMIT"
           temporary="$(mktemp -d)"
           actual_body_file="$(mktemp)"
           key_file="$(mktemp)"
@@ -984,6 +914,27 @@ jobs:
           for jar in "$temporary"/*.jar; do
             gpg --batch --verify "$jar.asc" "$jar"
           done
+      - name: Remove final Central controller overlay inputs
+        if: always() && steps.central_controller_overlay.outcome == 'success'
+        shell: bash
+        env:
+          CENTRAL_OVERLAY_DIRECTORY: ${{ steps.central_controller_overlay.outputs.directory }}
+        run: |
+          set -euo pipefail
+          expected_overlay_directory="$RUNNER_TEMP/strata-central-controller-overlay-inputs"
+          [[ "$CENTRAL_OVERLAY_DIRECTORY" == "$expected_overlay_directory" ]] || {
+            echo 'Final Central controller overlay cleanup target differs from its exact temporary directory.' >&2
+            exit 1
+          }
+          [[ -d "$CENTRAL_OVERLAY_DIRECTORY" && ! -L "$CENTRAL_OVERLAY_DIRECTORY" ]] || {
+            echo 'Final Central controller overlay cleanup target is not a regular temporary directory.' >&2
+            exit 1
+          }
+          rm -rf -- "$CENTRAL_OVERLAY_DIRECTORY"
+          [[ ! -e "$CENTRAL_OVERLAY_DIRECTORY" ]] || {
+            echo 'Final Central controller overlay inputs remained after verification.' >&2
+            exit 1
+          }
       - name: Verify approved Modrinth project and CDN artifacts
         shell: bash
         env:

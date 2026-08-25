@@ -1,0 +1,28 @@
+{
+  "schemaVersion": 1,
+  "overlayId": "v0.1.0-central-signature-checksums",
+  "baseTag": "v0.1.0",
+  "baseCommit": "d0be1ccf74ee8fa0aca1a23e9d50eb5ba45c39a8",
+  "patchFile": "v0.1.0-central-signature-checksums.patch",
+  "patchSha256": "8ef7dadd0aaa19bfa57d6f1e6823bfa37faf1bebebb9d6d80af2089962a2abea",
+  "allowedOperations": [
+    "release-preflight",
+    "release-verify"
+  ],
+  "paths": [
+    {
+      "path": "build-logic/src/main/kotlin/dev/s7a/strata/gradle/release/MavenCentralReleaseVerifier.kt",
+      "baseGitBlob": "a80b072c9276955f5a03ebf2a34b545e0d3300b0",
+      "baseSha256": "1eee16cf9ce37ddbe2d8aee6824ee2056b833e58cab239c7b2fd4abbbdff2359",
+      "patchedGitBlob": "2a5f71bebf6ae3bc1074955a059eacc2a4a5e33e",
+      "patchedSha256": "604e462ba993ef39a54ffe1de655d20e112f6686ac233c252ae5ada85a83e1e5"
+    },
+    {
+      "path": "build-logic/src/test/kotlin/dev/s7a/strata/gradle/release/MavenCentralReleaseVerifierTest.kt",
+      "baseGitBlob": "160720f6fda8b473f442bdd446b891dcbfd01640",
+      "baseSha256": "772d4730073c530aece6322b05873d50c7b8badf4ee819e1fa8511a2c429a0ec",
+      "patchedGitBlob": "5a9660762f6ebb43ff3871ecaeca8aa24632d27e",
+      "patchedSha256": "9a18a4ebda9d9f9dde8d87d1481bbc94f97ef4e040cdb13a8f32231c6afaa7f1"
+    }
+  ]
+}
