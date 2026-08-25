@@ -42,23 +42,41 @@ case "$endpoint" in
   */rulesets/*)
     cat "$FAKE_RULESET_RESPONSE"
     ;;
-  */actions/artifacts/*/zip)
-    cat "$FAKE_PAGES_ARTIFACT_ZIP"
+  */actions/artifacts/${FAKE_RELEASE_PAGES_ARTIFACT_ID:-missing}/zip)
+    cat "$FAKE_RELEASE_PAGES_ARTIFACT_ZIP"
     ;;
-  */actions/runs/*/artifacts\?*)
-    cat "$FAKE_PAGES_ARTIFACTS_RESPONSE"
+  */actions/artifacts/${FAKE_CONTROLLER_PAGES_ARTIFACT_ID:-missing}/zip)
+    cat "$FAKE_CONTROLLER_PAGES_ARTIFACT_ZIP"
     ;;
-  */actions/runs/*/jobs\?*)
-    cat "$FAKE_PAGES_JOBS_RESPONSE"
+  */actions/runs/${FAKE_RELEASE_PAGES_RUN_ID:-missing}/artifacts\?*)
+    cat "$FAKE_RELEASE_PAGES_ARTIFACTS_RESPONSE"
     ;;
-  */actions/runs/*)
-    cat "$FAKE_PAGES_RUN_RESPONSE"
+  */actions/runs/${FAKE_CONTROLLER_PAGES_RUN_ID:-missing}/artifacts\?*)
+    cat "$FAKE_CONTROLLER_PAGES_ARTIFACTS_RESPONSE"
     ;;
-  */deployments/*/statuses\?*)
-    cat "$FAKE_PAGES_STATUSES_RESPONSE"
+  */actions/runs/${FAKE_RELEASE_PAGES_RUN_ID:-missing}/jobs\?*)
+    cat "$FAKE_RELEASE_PAGES_JOBS_RESPONSE"
+    ;;
+  */actions/runs/${FAKE_CONTROLLER_PAGES_RUN_ID:-missing}/jobs\?*)
+    cat "$FAKE_CONTROLLER_PAGES_JOBS_RESPONSE"
+    ;;
+  */actions/runs/${FAKE_RELEASE_PAGES_RUN_ID:-missing})
+    cat "$FAKE_RELEASE_PAGES_RUN_RESPONSE"
+    ;;
+  */actions/runs/${FAKE_CONTROLLER_PAGES_RUN_ID:-missing})
+    cat "$FAKE_CONTROLLER_PAGES_RUN_RESPONSE"
+    ;;
+  */deployments/${FAKE_RELEASE_PAGES_DEPLOYMENT_ID:-missing}/statuses\?*)
+    cat "$FAKE_RELEASE_PAGES_STATUSES_RESPONSE"
+    ;;
+  */deployments/${FAKE_CONTROLLER_PAGES_DEPLOYMENT_ID:-missing}/statuses\?*)
+    cat "$FAKE_CONTROLLER_PAGES_STATUSES_RESPONSE"
+    ;;
+  */deployments\?sha=*)
+    cat "$FAKE_RELEASE_PAGES_DEPLOYMENTS_RESPONSE"
     ;;
   */deployments\?*)
-    cat "$FAKE_PAGES_DEPLOYMENTS_RESPONSE"
+    cat "$FAKE_GLOBAL_PAGES_DEPLOYMENTS_RESPONSE"
     ;;
   *)
     exit 64
@@ -102,10 +120,23 @@ printf '%s\n' "$attempt" > "$FAKE_CURL_STATE"
 if [[ "$FAKE_CURL_MODE" == "always-stale" ]]; then
   /bin/sleep 2
 fi
-if [[ "$FAKE_CURL_MODE" == "stale-then-exact" && "$attempt" == "1" || "$FAKE_CURL_MODE" == "always-stale" ]]; then
-  printf '{"commit":"0000000000000000000000000000000000000000","revision":"%s"}\n' "$FAKE_RECEIPT_TAG" > "$output"
+if [[ "$url" == */releases/* ]]; then
+  expected_revision="$FAKE_RECEIPT_RELEASE_TAG"
+  expected_commit="$FAKE_RECEIPT_RELEASE_COMMIT"
 else
-  printf '{"commit":"%s","revision":"%s"}\n' "$FAKE_RECEIPT_COMMIT" "$FAKE_RECEIPT_TAG" > "$output"
+  expected_revision=master
+  expected_commit="$FAKE_RECEIPT_CONTROLLER_COMMIT"
+fi
+stale=false
+if [[ "$FAKE_CURL_MODE" == "stale-then-exact" && "$attempt" == "1" || \
+  "$FAKE_CURL_MODE" == "release-stale-then-exact" && "$attempt" == "2" || \
+  "$FAKE_CURL_MODE" == "always-stale" ]]; then
+  stale=true
+fi
+if [[ "$stale" == true ]]; then
+  printf '{"commit":"0000000000000000000000000000000000000000","revision":"%s"}\n' "$expected_revision" > "$output"
+else
+  printf '{"commit":"%s","revision":"%s"}\n' "$expected_commit" "$expected_revision" > "$output"
 fi
 if [[ "$FAKE_CURL_MODE" == "redirect-old-final-no-age" ]]; then
   printf 'HTTP/2 302\r\nage: 100\r\nlocation: https://example.invalid/final\r\n\r\nHTTP/2 200\r\ncache-control: max-age=600\r\n\r\n' > "$headers"
@@ -113,6 +144,10 @@ else
   cache_age=0
   if [[ "$FAKE_CURL_MODE" == "cached-exact-then-fresh" && "$attempt" == "1" ]]; then
     cache_age=100
+  elif [[ "$FAKE_CURL_MODE" == "independent-fresh-windows" ]]; then
+    if [[ "$url" == */releases/* && "$attempt" -lt "4" || "$url" != */releases/* && "$attempt" != "1" ]]; then
+      cache_age=100
+    fi
   fi
   printf 'HTTP/2 200\r\ncache-control: max-age=600\r\nage: %s\r\n\r\n' "$cache_age" > "$headers"
 fi
@@ -270,17 +305,29 @@ if (cd "$checkout" && bash "$repository_root/release/verify-release-tag.sh" v0.1
   fail 'A tag ref changed during verification was accepted.'
 fi
 
-pages_run_id=123
-pages_artifact_id=55
-pages_deployment_id=77
-pages_site="$temporary_root/pages-site"
-pages_archive="$temporary_root/pages-artifact.tar"
-pages_zip="$temporary_root/pages-artifact.zip"
-pages_run_response="$temporary_root/pages-run.json"
-pages_jobs_response="$temporary_root/pages-jobs.json"
-pages_artifacts_response="$temporary_root/pages-artifacts.json"
-pages_deployments_response="$temporary_root/pages-deployments.json"
-pages_statuses_response="$temporary_root/pages-statuses.json"
+release_pages_run_id=123
+release_pages_artifact_id=55
+release_pages_deployment_id=77
+controller_pages_run_id=124
+controller_pages_artifact_id=56
+controller_pages_deployment_id=88
+controller_commit=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+release_pages_site="$temporary_root/release-pages-site"
+release_pages_archive="$temporary_root/release-pages-artifact.tar"
+release_pages_zip="$temporary_root/release-pages-artifact.zip"
+release_pages_run_response="$temporary_root/release-pages-run.json"
+release_pages_jobs_response="$temporary_root/release-pages-jobs.json"
+release_pages_artifacts_response="$temporary_root/release-pages-artifacts.json"
+release_pages_deployments_response="$temporary_root/release-pages-deployments.json"
+release_pages_statuses_response="$temporary_root/release-pages-statuses.json"
+controller_pages_site="$temporary_root/controller-pages-site"
+controller_pages_archive="$temporary_root/controller-pages-artifact.tar"
+controller_pages_zip="$temporary_root/controller-pages-artifact.zip"
+controller_pages_run_response="$temporary_root/controller-pages-run.json"
+controller_pages_jobs_response="$temporary_root/controller-pages-jobs.json"
+controller_pages_artifacts_response="$temporary_root/controller-pages-artifacts.json"
+controller_pages_statuses_response="$temporary_root/controller-pages-statuses.json"
+global_pages_deployments_response="$temporary_root/global-pages-deployments.json"
 pages_python=""
 for candidate in python3 python; do
   if "$candidate" -c 'import zipfile' >/dev/null 2>&1; then
@@ -289,14 +336,33 @@ for candidate in python3 python; do
   fi
 done
 [[ -n "$pages_python" ]] || fail 'Python with the standard zipfile module is required for the Pages artifact fixture.'
-export FAKE_PAGES_ARTIFACT_ZIP="$pages_zip"
-export FAKE_PAGES_RUN_RESPONSE="$pages_run_response"
-export FAKE_PAGES_JOBS_RESPONSE="$pages_jobs_response"
-export FAKE_PAGES_ARTIFACTS_RESPONSE="$pages_artifacts_response"
-export FAKE_PAGES_DEPLOYMENTS_RESPONSE="$pages_deployments_response"
-export FAKE_PAGES_STATUSES_RESPONSE="$pages_statuses_response"
+export FAKE_RELEASE_PAGES_RUN_ID="$release_pages_run_id"
+export FAKE_RELEASE_PAGES_ARTIFACT_ID="$release_pages_artifact_id"
+export FAKE_RELEASE_PAGES_DEPLOYMENT_ID="$release_pages_deployment_id"
+export FAKE_RELEASE_PAGES_ARTIFACT_ZIP="$release_pages_zip"
+export FAKE_RELEASE_PAGES_RUN_RESPONSE="$release_pages_run_response"
+export FAKE_RELEASE_PAGES_JOBS_RESPONSE="$release_pages_jobs_response"
+export FAKE_RELEASE_PAGES_ARTIFACTS_RESPONSE="$release_pages_artifacts_response"
+export FAKE_RELEASE_PAGES_DEPLOYMENTS_RESPONSE="$release_pages_deployments_response"
+export FAKE_RELEASE_PAGES_STATUSES_RESPONSE="$release_pages_statuses_response"
+export FAKE_CONTROLLER_PAGES_RUN_ID="$controller_pages_run_id"
+export FAKE_CONTROLLER_PAGES_ARTIFACT_ID="$controller_pages_artifact_id"
+export FAKE_CONTROLLER_PAGES_DEPLOYMENT_ID="$controller_pages_deployment_id"
+export FAKE_CONTROLLER_PAGES_ARTIFACT_ZIP="$controller_pages_zip"
+export FAKE_CONTROLLER_PAGES_RUN_RESPONSE="$controller_pages_run_response"
+export FAKE_CONTROLLER_PAGES_JOBS_RESPONSE="$controller_pages_jobs_response"
+export FAKE_CONTROLLER_PAGES_ARTIFACTS_RESPONSE="$controller_pages_artifacts_response"
+export FAKE_CONTROLLER_PAGES_STATUSES_RESPONSE="$controller_pages_statuses_response"
+export FAKE_GLOBAL_PAGES_DEPLOYMENTS_RESPONSE="$global_pages_deployments_response"
 
 write_pages_artifact_zip_metadata() {
+  local pages_zip="$1"
+  local pages_archive="$2"
+  local pages_artifacts_response="$3"
+  local pages_artifact_id="$4"
+  local pages_run_id="$5"
+  local pages_branch="$6"
+  local pages_commit="$7"
   "$pages_python" - "$pages_zip" "$pages_archive" <<'PY'
 import pathlib
 import sys
@@ -316,7 +382,8 @@ PY
     --argjson artifactSize "$artifact_size" \
     --arg artifactDigest "$artifact_digest" \
     --argjson runId "$pages_run_id" \
-    --arg commit "$replacement_commit" \
+    --arg branch "$pages_branch" \
+    --arg commit "$pages_commit" \
     '{
       total_count: 1,
       artifacts: [
@@ -328,7 +395,7 @@ PY
           expired: false,
           workflow_run: {
             id: $runId,
-            head_branch: "v0.1.0",
+            head_branch: $branch,
             head_sha: $commit
           }
         }
@@ -336,18 +403,105 @@ PY
     }' > "$pages_artifacts_response"
 }
 
-write_pages_artifact() {
+write_release_pages_artifact() {
   local receipt_commit="$1"
-  rm -rf -- "$pages_site"
-  mkdir -p "$pages_site/releases/0.1.0"
-  printf '{"commit":"%s","revision":"v0.1.0"}\n' "$receipt_commit" > "$pages_site/source-receipt.json"
-  cp "$pages_site/source-receipt.json" "$pages_site/releases/0.1.0/source-receipt.json"
-  tar -cf "$pages_archive" -C "$pages_site" .
-  write_pages_artifact_zip_metadata
+  local immutable_content="${2:-immutable release page}"
+  rm -rf -- "$release_pages_site"
+  mkdir -p "$release_pages_site/releases/0.1.0/guide"
+  printf '{"commit":"%s","revision":"v0.1.0"}\n' "$receipt_commit" > "$release_pages_site/source-receipt.json"
+  cp "$release_pages_site/source-receipt.json" "$release_pages_site/releases/0.1.0/source-receipt.json"
+  printf '%s\n' "$immutable_content" > "$release_pages_site/releases/0.1.0/guide/index.html"
+  tar -cf "$release_pages_archive" -C "$release_pages_site" .
+  write_pages_artifact_zip_metadata \
+    "$release_pages_zip" \
+    "$release_pages_archive" \
+    "$release_pages_artifacts_response" \
+    "$release_pages_artifact_id" \
+    "$release_pages_run_id" \
+    v0.1.0 \
+    "$replacement_commit"
+}
+
+write_controller_pages_artifact() {
+  local root_commit="$1"
+  local immutable_content="${2:-immutable release page}"
+  rm -rf -- "$controller_pages_site"
+  mkdir -p "$controller_pages_site/releases/0.1.0/guide"
+  printf '{"commit":"%s","revision":"master"}\n' "$root_commit" > "$controller_pages_site/source-receipt.json"
+  printf '{"commit":"%s","revision":"v0.1.0"}\n' "$replacement_commit" > \
+    "$controller_pages_site/releases/0.1.0/source-receipt.json"
+  printf '%s\n' "$immutable_content" > "$controller_pages_site/releases/0.1.0/guide/index.html"
+  tar -cf "$controller_pages_archive" -C "$controller_pages_site" .
+  write_pages_artifact_zip_metadata \
+    "$controller_pages_zip" \
+    "$controller_pages_archive" \
+    "$controller_pages_artifacts_response" \
+    "$controller_pages_artifact_id" \
+    "$controller_pages_run_id" \
+    master \
+    "$controller_commit"
+}
+
+write_pages_deployment_responses() {
+  jq -n \
+    --argjson controllerDeploymentId "$controller_pages_deployment_id" \
+    --arg controllerCommit "$controller_commit" \
+    --argjson releaseDeploymentId "$release_pages_deployment_id" \
+    --arg releaseCommit "$replacement_commit" \
+    '[
+      {
+        id: $controllerDeploymentId,
+        ref: "master",
+        sha: $controllerCommit,
+        environment: "github-pages",
+        task: "deploy"
+      },
+      {
+        id: $releaseDeploymentId,
+        ref: "v0.1.0",
+        sha: $releaseCommit,
+        environment: "github-pages",
+        task: "deploy"
+      }
+    ]' > "$global_pages_deployments_response"
+  jq -n \
+    --argjson deploymentId "$release_pages_deployment_id" \
+    --arg commit "$replacement_commit" \
+    '[{
+      id: $deploymentId,
+      ref: "v0.1.0",
+      sha: $commit,
+      environment: "github-pages",
+      task: "deploy"
+    }]' > "$release_pages_deployments_response"
+  jq -n \
+    --arg runUrl "https://github.com/$GITHUB_REPOSITORY/actions/runs/$controller_pages_run_id" \
+    '[{
+      state: "success",
+      environment: "github-pages",
+      log_url: ($runUrl + "/job/789"),
+      target_url: "https://gh.s7a.dev/strata/"
+    }]' > "$controller_pages_statuses_response"
+  jq -n \
+    --arg runUrl "https://github.com/$GITHUB_REPOSITORY/actions/runs/$release_pages_run_id" \
+    '[
+      {
+        state: "inactive",
+        environment: "github-pages",
+        log_url: ($runUrl + "/job/456"),
+        target_url: "https://gh.s7a.dev/strata/"
+      },
+      {
+        state: "success",
+        environment: "github-pages",
+        log_url: ($runUrl + "/job/456"),
+        target_url: "https://gh.s7a.dev/strata/"
+      }
+    ]' > "$release_pages_statuses_response"
 }
 
 jq -n \
-  --argjson runId "$pages_run_id" \
+  --argjson runId "$release_pages_run_id" \
   --arg commit "$replacement_commit" \
   '{
     id: $runId,
@@ -357,88 +511,230 @@ jq -n \
     head_sha: $commit,
     status: "completed",
     conclusion: "success"
-  }' > "$pages_run_response"
+  }' > "$release_pages_run_response"
+jq -n \
+  --argjson runId "$controller_pages_run_id" \
+  --arg commit "$controller_commit" \
+  '{
+    id: $runId,
+    path: ".github/workflows/pages.yml",
+    event: "push",
+    head_branch: "master",
+    head_sha: $commit,
+    status: "completed",
+    conclusion: "success"
+  }' > "$controller_pages_run_response"
 jq -n '{
   jobs: [
     {name: "build", status: "completed", conclusion: "success"},
     {name: "deploy", status: "completed", conclusion: "success"}
   ]
-}' > "$pages_jobs_response"
-jq -n \
-  --argjson deploymentId "$pages_deployment_id" \
-  --arg commit "$replacement_commit" \
-  '[{
-    id: $deploymentId,
-    ref: "v0.1.0",
-    sha: $commit,
-    environment: "github-pages",
-    task: "deploy"
-  }]' > "$pages_deployments_response"
-jq -n \
-  --arg runUrl "https://github.com/$GITHUB_REPOSITORY/actions/runs/$pages_run_id" \
-  '[{
-    state: "success",
-    environment: "github-pages",
-    log_url: ($runUrl + "/job/456"),
-    target_url: "https://gh.s7a.dev/strata/"
-  }]' > "$pages_statuses_response"
+}' > "$release_pages_jobs_response"
+cp "$release_pages_jobs_response" "$controller_pages_jobs_response"
 
-write_pages_artifact "$replacement_commit"
+write_release_pages_artifact "$replacement_commit"
+write_controller_pages_artifact "$controller_commit"
+write_pages_deployment_responses
 pages_result="$(
   bash "$repository_root/release/verify-pages-deployment-source.sh" \
-    "$pages_run_id" v0.1.0 "$replacement_commit"
+    "$release_pages_run_id" \
+    v0.1.0 \
+    "$replacement_commit" \
+    "$controller_pages_run_id" \
+    "$controller_commit"
 )"
-[[ "$pages_result" == "$pages_run_id $pages_artifact_id $pages_deployment_id" ]] || \
-  fail 'Exact Pages run, artifact, receipt, and deployment evidence did not pass verification.'
+expected_pages_result="$release_pages_run_id $release_pages_artifact_id $release_pages_deployment_id"
+expected_pages_result+=" $controller_pages_run_id $controller_pages_artifact_id $controller_pages_deployment_id"
+[[ "$pages_result" == "$expected_pages_result" ]] || \
+  fail 'Exact release and controller Pages evidence did not pass verification.'
 
 jq '(.artifacts[0].digest) = "sha256:0000000000000000000000000000000000000000000000000000000000000000"' \
-  "$pages_artifacts_response" > "$pages_artifacts_response.changed"
-mv "$pages_artifacts_response.changed" "$pages_artifacts_response"
+  "$release_pages_artifacts_response" > "$release_pages_artifacts_response.changed"
+mv "$release_pages_artifacts_response.changed" "$release_pages_artifacts_response"
 if bash "$repository_root/release/verify-pages-deployment-source.sh" \
-  "$pages_run_id" v0.1.0 "$replacement_commit" >/dev/null 2>&1; then
+  "$release_pages_run_id" v0.1.0 "$replacement_commit" "$controller_pages_run_id" "$controller_commit" \
+  >/dev/null 2>&1; then
   fail 'A downloaded Pages artifact whose ZIP digest differed from Actions metadata was accepted.'
 fi
 
-write_pages_artifact "$replacement_commit"
-tar -rf "$pages_archive" -C "$pages_site" ./source-receipt.json
-write_pages_artifact_zip_metadata
+write_release_pages_artifact "$replacement_commit"
+tar -rf "$release_pages_archive" -C "$release_pages_site" ./source-receipt.json
+write_pages_artifact_zip_metadata \
+  "$release_pages_zip" \
+  "$release_pages_archive" \
+  "$release_pages_artifacts_response" \
+  "$release_pages_artifact_id" \
+  "$release_pages_run_id" \
+  v0.1.0 \
+  "$replacement_commit"
 if bash "$repository_root/release/verify-pages-deployment-source.sh" \
-  "$pages_run_id" v0.1.0 "$replacement_commit" >/dev/null 2>&1; then
+  "$release_pages_run_id" v0.1.0 "$replacement_commit" "$controller_pages_run_id" "$controller_commit" \
+  >/dev/null 2>&1; then
   fail 'A Pages artifact with a duplicate root source receipt was accepted.'
 fi
 
-write_pages_artifact 0000000000000000000000000000000000000000
+write_release_pages_artifact 0000000000000000000000000000000000000000
 if bash "$repository_root/release/verify-pages-deployment-source.sh" \
-  "$pages_run_id" v0.1.0 "$replacement_commit" >/dev/null 2>&1; then
+  "$release_pages_run_id" v0.1.0 "$replacement_commit" "$controller_pages_run_id" "$controller_commit" \
+  >/dev/null 2>&1; then
   fail 'A Pages artifact carrying another source commit was accepted.'
 fi
 
-write_pages_artifact "$replacement_commit"
+write_release_pages_artifact "$replacement_commit"
+write_controller_pages_artifact 0000000000000000000000000000000000000000
+if bash "$repository_root/release/verify-pages-deployment-source.sh" \
+  "$release_pages_run_id" v0.1.0 "$replacement_commit" "$controller_pages_run_id" "$controller_commit" \
+  >/dev/null 2>&1; then
+  fail 'A controller Pages artifact carrying another root commit was accepted.'
+fi
+
+write_controller_pages_artifact "$controller_commit" 'changed immutable release page'
+if bash "$repository_root/release/verify-pages-deployment-source.sh" \
+  "$release_pages_run_id" v0.1.0 "$replacement_commit" "$controller_pages_run_id" "$controller_commit" \
+  >/dev/null 2>&1; then
+  fail 'A controller Pages artifact that changed immutable release bytes was accepted.'
+fi
+
+write_controller_pages_artifact "$controller_commit"
+tar -rf "$controller_pages_archive" \
+  -C "$controller_pages_site" ./releases/0.1.0/guide/index.html
+write_pages_artifact_zip_metadata \
+  "$controller_pages_zip" \
+  "$controller_pages_archive" \
+  "$controller_pages_artifacts_response" \
+  "$controller_pages_artifact_id" \
+  "$controller_pages_run_id" \
+  master \
+  "$controller_commit"
+if bash "$repository_root/release/verify-pages-deployment-source.sh" \
+  "$release_pages_run_id" v0.1.0 "$replacement_commit" "$controller_pages_run_id" "$controller_commit" \
+  >/dev/null 2>&1; then
+  fail 'A controller Pages artifact with a duplicate immutable path was accepted.'
+fi
+
+write_controller_pages_artifact "$controller_commit"
+"$pages_python" - "$controller_pages_archive" <<'PY'
+import sys
+import tarfile
+
+with tarfile.open(sys.argv[1], mode="a:") as archive:
+    entry = tarfile.TarInfo("./releases/0.1.0/unsafe-link")
+    entry.type = tarfile.SYMTYPE
+    entry.linkname = "../../source-receipt.json"
+    archive.addfile(entry)
+PY
+write_pages_artifact_zip_metadata \
+  "$controller_pages_zip" \
+  "$controller_pages_archive" \
+  "$controller_pages_artifacts_response" \
+  "$controller_pages_artifact_id" \
+  "$controller_pages_run_id" \
+  master \
+  "$controller_commit"
+if bash "$repository_root/release/verify-pages-deployment-source.sh" \
+  "$release_pages_run_id" v0.1.0 "$replacement_commit" "$controller_pages_run_id" "$controller_commit" \
+  >/dev/null 2>&1; then
+  fail 'A controller Pages artifact with a non-regular immutable entry was accepted.'
+fi
+
+write_controller_pages_artifact "$controller_commit"
+"$pages_python" - "$controller_pages_archive" <<'PY'
+import io
+import sys
+import tarfile
+
+with tarfile.open(sys.argv[1], mode="a:") as archive:
+    payload = b"traversal\n"
+    entry = tarfile.TarInfo("./releases/0.1.0/../escape.txt")
+    entry.size = len(payload)
+    archive.addfile(entry, io.BytesIO(payload))
+PY
+write_pages_artifact_zip_metadata \
+  "$controller_pages_zip" \
+  "$controller_pages_archive" \
+  "$controller_pages_artifacts_response" \
+  "$controller_pages_artifact_id" \
+  "$controller_pages_run_id" \
+  master \
+  "$controller_commit"
+if bash "$repository_root/release/verify-pages-deployment-source.sh" \
+  "$release_pages_run_id" v0.1.0 "$replacement_commit" "$controller_pages_run_id" "$controller_commit" \
+  >/dev/null 2>&1; then
+  fail 'A Pages artifact containing an immutable-subtree traversal path was accepted.'
+fi
+
+write_controller_pages_artifact "$controller_commit"
+"$pages_python" - "$controller_pages_archive" <<'PY'
+import io
+import sys
+import tarfile
+
+with tarfile.open(sys.argv[1], mode="a:") as archive:
+    payload = b"ambiguous path\n"
+    entry = tarfile.TarInfo("./releases" + chr(92) + "0.1.0/ambiguous.txt")
+    entry.size = len(payload)
+    archive.addfile(entry, io.BytesIO(payload))
+PY
+write_pages_artifact_zip_metadata \
+  "$controller_pages_zip" \
+  "$controller_pages_archive" \
+  "$controller_pages_artifacts_response" \
+  "$controller_pages_artifact_id" \
+  "$controller_pages_run_id" \
+  master \
+  "$controller_commit"
+if bash "$repository_root/release/verify-pages-deployment-source.sh" \
+  "$release_pages_run_id" v0.1.0 "$replacement_commit" "$controller_pages_run_id" "$controller_commit" \
+  >/dev/null 2>&1; then
+  fail 'A Pages artifact containing a non-canonical backslash path was accepted.'
+fi
+
+write_controller_pages_artifact "$controller_commit"
+"$pages_python" - "$controller_pages_archive" <<'PY'
+import sys
+import tarfile
+
+with tarfile.open(sys.argv[1], mode="a:") as archive:
+    entry = tarfile.TarInfo("./releases/0.1.0/unsafe-device")
+    entry.type = tarfile.CHRTYPE
+    entry.devmajor = 1
+    entry.devminor = 3
+    archive.addfile(entry)
+PY
+write_pages_artifact_zip_metadata \
+  "$controller_pages_zip" \
+  "$controller_pages_archive" \
+  "$controller_pages_artifacts_response" \
+  "$controller_pages_artifact_id" \
+  "$controller_pages_run_id" \
+  master \
+  "$controller_commit"
+if bash "$repository_root/release/verify-pages-deployment-source.sh" \
+  "$release_pages_run_id" v0.1.0 "$replacement_commit" "$controller_pages_run_id" "$controller_commit" \
+  >/dev/null 2>&1; then
+  fail 'A controller Pages artifact with an immutable device entry was accepted.'
+fi
+
+write_controller_pages_artifact "$controller_commit"
 jq -n '[{
   state: "success",
   environment: "github-pages",
   log_url: "https://github.com/test/strata/actions/runs/999/job/456",
   target_url: "https://github.com/test/strata/actions/runs/999"
-}]' > "$pages_statuses_response"
+}]' > "$controller_pages_statuses_response"
 if bash "$repository_root/release/verify-pages-deployment-source.sh" \
-  "$pages_run_id" v0.1.0 "$replacement_commit" >/dev/null 2>&1; then
-  fail 'A successful Pages deployment status linked to another workflow run was accepted.'
+  "$release_pages_run_id" v0.1.0 "$replacement_commit" "$controller_pages_run_id" "$controller_commit" \
+  >/dev/null 2>&1; then
+  fail 'A controller Pages deployment status linked to another workflow run was accepted.'
 fi
-jq -n \
-  --arg runUrl "https://github.com/$GITHUB_REPOSITORY/actions/runs/$pages_run_id" \
-  '[{
-    state: "success",
-    environment: "github-pages",
-    log_url: ($runUrl + "/job/456"),
-    target_url: "https://gh.s7a.dev/strata/"
-  }]' > "$pages_statuses_response"
+write_pages_deployment_responses
 
 jq -n \
-  --arg commit "$replacement_commit" \
-  --argjson deploymentId "$pages_deployment_id" \
+  --arg commit "$controller_commit" \
+  --argjson deploymentId "$controller_pages_deployment_id" \
   '[
     {
-      id: 88,
+      id: 99,
       ref: "master",
       sha: "0000000000000000000000000000000000000000",
       environment: "github-pages",
@@ -446,61 +742,117 @@ jq -n \
     },
     {
       id: $deploymentId,
-      ref: "v0.1.0",
+      ref: "master",
       sha: $commit,
       environment: "github-pages",
       task: "deploy"
     }
-  ]' > "$pages_deployments_response"
+  ]' > "$global_pages_deployments_response"
 if bash "$repository_root/release/verify-pages-deployment-source.sh" \
-  "$pages_run_id" v0.1.0 "$replacement_commit" >/dev/null 2>&1; then
-  fail 'An older exact deployment was accepted while a different global github-pages deployment was newer.'
+  "$release_pages_run_id" v0.1.0 "$replacement_commit" "$controller_pages_run_id" "$controller_commit" \
+  >/dev/null 2>&1; then
+  fail 'An older controller deployment was accepted while a different global github-pages deployment was newer.'
 fi
 
+write_pages_deployment_responses
 jq -n \
-  --argjson deploymentId "$pages_deployment_id" \
-  --arg commit "$replacement_commit" \
+  --arg runUrl "https://github.com/$GITHUB_REPOSITORY/actions/runs/$release_pages_run_id" \
   '[{
-    id: $deploymentId,
-    ref: "v0.1.0",
-    sha: $commit,
+    state: "inactive",
     environment: "github-pages",
-    task: "deploy"
-  }]' > "$pages_deployments_response"
+    log_url: ($runUrl + "/job/456"),
+    target_url: "https://gh.s7a.dev/strata/"
+  }]' > "$release_pages_statuses_response"
+if bash "$repository_root/release/verify-pages-deployment-source.sh" \
+  "$release_pages_run_id" v0.1.0 "$replacement_commit" "$controller_pages_run_id" "$controller_commit" \
+  >/dev/null 2>&1; then
+  fail 'A historical release deployment without a successful status was accepted.'
+fi
 
-export FAKE_RECEIPT_TAG=v0.1.0
-export FAKE_RECEIPT_COMMIT="$replacement_commit"
+write_pages_deployment_responses
+
+export FAKE_RECEIPT_RELEASE_TAG=v0.1.0
+export FAKE_RECEIPT_RELEASE_COMMIT="$replacement_commit"
+export FAKE_RECEIPT_CONTROLLER_COMMIT="$controller_commit"
 export FAKE_CURL_MODE=stale-then-exact
 export FAKE_CURL_STATE="$temporary_root/curl-state"
 export FAKE_CURL_LOG="$temporary_root/curl-log"
-bash "$repository_root/release/wait-for-pages-source-receipt.sh" v0.1.0 "$replacement_commit" 30 0 >/dev/null
-[[ "$(< "$FAKE_CURL_STATE")" == "2" ]] || fail 'Pages receipt polling did not retry a stale HTTP 200 response.'
+bash "$repository_root/release/wait-for-pages-source-receipt.sh" \
+  v0.1.0 "$replacement_commit" "$controller_commit" 30 0 >/dev/null
+[[ "$(< "$FAKE_CURL_STATE")" == "3" ]] || fail 'Pages receipt polling did not retry a stale controller HTTP 200 response.'
+
+export FAKE_CURL_MODE=release-stale-then-exact
+export FAKE_CURL_STATE="$temporary_root/release-curl-state"
+export FAKE_CURL_LOG="$temporary_root/release-curl-log"
+bash "$repository_root/release/wait-for-pages-source-receipt.sh" \
+  v0.1.0 "$replacement_commit" "$controller_commit" 30 0 >/dev/null
+[[ "$(< "$FAKE_CURL_STATE")" == "3" ]] || fail 'Pages receipt polling did not retry a stale immutable release response.'
+
+export FAKE_CURL_MODE=independent-fresh-windows
+export FAKE_CURL_STATE="$temporary_root/independent-fresh-state"
+export FAKE_CURL_LOG="$temporary_root/independent-fresh-log"
+bash "$repository_root/release/wait-for-pages-source-receipt.sh" \
+  v0.1.0 "$replacement_commit" "$controller_commit" 30 0 >/dev/null
+[[ "$(< "$FAKE_CURL_STATE")" == "4" ]] || \
+  fail 'Pages receipt polling required the independently cached receipts to be fresh simultaneously.'
+[[ "$(grep --fixed-strings -c 'https://gh.s7a.dev/strata/source-receipt.json' "$FAKE_CURL_LOG")" == '1' ]] || \
+  fail 'A fresh controller receipt was needlessly polled again while waiting for the immutable release receipt.'
+[[ "$(grep --fixed-strings -c 'https://gh.s7a.dev/strata/releases/0.1.0/source-receipt.json' "$FAKE_CURL_LOG")" == '3' ]] || \
+  fail 'The independently stale immutable release receipt was not retried to freshness.'
 
 export FAKE_CURL_MODE=cached-exact-then-fresh
 export FAKE_CURL_STATE="$temporary_root/cached-state"
 export FAKE_CURL_LOG="$temporary_root/cached-log"
-bash "$repository_root/release/wait-for-pages-source-receipt.sh" v0.1.0 "$replacement_commit" 30 0 >/dev/null
-[[ "$(< "$FAKE_CURL_STATE")" == "2" ]] || fail 'A matching but old CDN response was accepted before its Age returned near zero.'
+bash "$repository_root/release/wait-for-pages-source-receipt.sh" \
+  v0.1.0 "$replacement_commit" "$controller_commit" 30 0 >/dev/null
+[[ "$(< "$FAKE_CURL_STATE")" == "3" ]] || fail 'A matching but old CDN response was accepted before its Age returned near zero.'
 
 export FAKE_CURL_MODE=redirect-old-final-no-age
 export FAKE_CURL_STATE="$temporary_root/redirect-state"
 export FAKE_CURL_LOG="$temporary_root/redirect-log"
-bash "$repository_root/release/wait-for-pages-source-receipt.sh" v0.1.0 "$replacement_commit" 30 0 >/dev/null
-[[ "$(< "$FAKE_CURL_STATE")" == "1" ]] || \
+bash "$repository_root/release/wait-for-pages-source-receipt.sh" \
+  v0.1.0 "$replacement_commit" "$controller_commit" 30 0 >/dev/null
+[[ "$(< "$FAKE_CURL_STATE")" == "2" ]] || \
   fail 'A redirect Age leaked into the final header block and delayed a current public Pages receipt.'
 
-grep --fixed-strings 'timeout_seconds="${3:-900}"' \
+grep --fixed-strings 'timeout_seconds="${4:-900}"' \
   "$repository_root/release/wait-for-pages-source-receipt.sh" >/dev/null || \
   fail 'The public Pages polling default does not outlive the observed 600-second CDN TTL.'
 
 export FAKE_CURL_MODE=always-stale
 export FAKE_CURL_STATE="$temporary_root/stale-state"
 export FAKE_CURL_LOG="$temporary_root/stale-log"
-if bash "$repository_root/release/wait-for-pages-source-receipt.sh" v0.1.0 "$replacement_commit" 1 0 >/dev/null 2>&1; then
+if bash "$repository_root/release/wait-for-pages-source-receipt.sh" \
+  v0.1.0 "$replacement_commit" "$controller_commit" 1 0 >/dev/null 2>&1; then
   fail 'Permanently stale Pages evidence was accepted.'
 fi
 
 workflow="$repository_root/.github/workflows/release.yml"
+[[ "$(grep --fixed-strings -c 'select(length == 1)' "$workflow")" == '4' ]] || \
+  fail 'Release and final verification do not reject ambiguous release or controller Pages runs.'
+[[ "$(grep --fixed-strings -c 'pages_record_after_poll="$(bash' "$workflow")" == '3' ]] || \
+  fail 'Every release provenance gate must repeat the API verification after public receipt polling.'
+[[ "$(grep --fixed-strings -c 'load_controller_script release/wait-for-pages-source-receipt.sh "$pages_waiter"' "$workflow")" == '3' ]] || \
+  fail 'Every protected Pages phase must load the public waiter from the exact controller blob.'
+[[ "$(grep --fixed-strings -c 'load_controller_script release/verify-pages-deployment-source.sh "$pages_verifier"' "$workflow")" == '3' ]] || \
+  fail 'Every protected Pages phase must load the verifier from the exact controller blob.'
+[[ "$(grep --fixed-strings -c 'pages_tool_directory="$(mktemp -d "$RUNNER_TEMP/strata-pages-tools.XXXXXX")"' "$workflow")" == '3' ]] || \
+  fail 'Every controller Pages tool load must use a fresh unpredictable temporary directory.'
+[[ "$(grep --fixed-strings -c '[[ ! -e "$destination" && ! -L "$destination" ]]' "$workflow")" == '3' ]] || \
+  fail 'Controller Pages tool destinations do not reject existing files and dangling symbolic links.'
+if grep --fixed-strings 'pages_waiter="$RUNNER_TEMP/' "$workflow" >/dev/null || \
+  grep --fixed-strings 'pages_verifier="$RUNNER_TEMP/' "$workflow" >/dev/null; then
+  fail 'A later Pages phase reuses a predictable controller tool path from an earlier step.'
+fi
+public_pages_step="$temporary_root/public-pages-step.yml"
+sed -n '/name: Verify public Pages, tagged Skill source, and preview$/,/name: Verify token-free public Skills CLI installation$/p' \
+  "$workflow" > "$public_pages_step"
+grep --fixed-strings 'pages_tool_directory="$(mktemp -d "$RUNNER_TEMP/strata-pages-tools.XXXXXX")"' \
+  "$public_pages_step" >/dev/null || fail 'Final public Pages verification does not create a fresh controller tool directory.'
+grep --fixed-strings 'load_controller_script release/verify-pages-deployment-source.sh "$pages_verifier"' \
+  "$public_pages_step" >/dev/null || fail 'Final public Pages verification does not reload the controller verifier.'
+grep --fixed-strings 'load_controller_script release/wait-for-pages-source-receipt.sh "$pages_waiter"' \
+  "$public_pages_step" >/dev/null || fail 'Final public Pages verification does not reload the controller waiter.'
 grep --fixed-strings 'id: controller_overlay' "$workflow" >/dev/null || \
   fail 'The audited controller overlay loader does not expose step-scoped outputs.'
 overlay_loader="$temporary_root/controller-overlay-loader.yml"

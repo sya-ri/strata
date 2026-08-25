@@ -47,6 +47,9 @@ jobs:
       pages_artifact_id: ${{ steps.pages.outputs.pages_artifact_id }}
       pages_deployment_id: ${{ steps.pages.outputs.pages_deployment_id }}
       pages_run_id: ${{ steps.pages.outputs.pages_run_id }}
+      pages_controller_artifact_id: ${{ steps.pages.outputs.pages_controller_artifact_id }}
+      pages_controller_deployment_id: ${{ steps.pages.outputs.pages_controller_deployment_id }}
+      pages_controller_run_id: ${{ steps.pages.outputs.pages_controller_run_id }}
     steps:
       - name: Check out master
         uses: actions/checkout@v7
@@ -116,6 +119,7 @@ jobs:
                 .[] |
                 select(.conclusion == "success" and .event == "push" and .headBranch == $tag and .headSha == $sha)
               ] |
+              select(length == 1) |
               .[0].databaseId |
               select(type == "number" and . > 0 and . == floor) |
               tostring
@@ -124,16 +128,55 @@ jobs:
             echo "No successful tag-triggered pages.yml run exists for $RELEASE_TAG at $TAG_COMMIT." >&2
             exit 1
           }
+          controller_pages_runs="$(
+            gh run list --workflow pages.yml --commit "$GITHUB_SHA" --event push --status completed --limit 100 \
+              --json conclusion,databaseId,event,headBranch,headSha
+          )"
+          controller_pages_run_id="$(
+            jq -er --arg sha "$GITHUB_SHA" '
+              [
+                .[] |
+                select(.conclusion == "success" and .event == "push" and .headBranch == "master" and .headSha == $sha)
+              ] |
+              select(length == 1) |
+              .[0].databaseId |
+              select(type == "number" and . > 0 and . == floor) |
+              tostring
+            ' <<< "$controller_pages_runs"
+          )" || {
+            echo "No successful master pages.yml run exists for the controller commit $GITHUB_SHA." >&2
+            exit 1
+          }
           bash -n release/verify-pages-deployment-source.sh
-          pages_record="$(bash release/verify-pages-deployment-source.sh "$pages_run_id" "$RELEASE_TAG" "$TAG_COMMIT")"
-          read -r verified_run_id pages_artifact_id pages_deployment_id <<< "$pages_record"
+          pages_record="$(bash release/verify-pages-deployment-source.sh \
+            "$pages_run_id" "$RELEASE_TAG" "$TAG_COMMIT" "$controller_pages_run_id" "$GITHUB_SHA")"
+          read -r \
+            verified_run_id \
+            pages_artifact_id \
+            pages_deployment_id \
+            verified_controller_run_id \
+            pages_controller_artifact_id \
+            pages_controller_deployment_id <<< "$pages_record"
           [[ "$verified_run_id" == "$pages_run_id" ]] || { echo 'Verified Pages run ID differs from the selected run.' >&2; exit 1; }
+          [[ "$verified_controller_run_id" == "$controller_pages_run_id" ]] || {
+            echo 'Verified controller Pages run ID differs from the selected run.' >&2
+            exit 1
+          }
           bash -n release/wait-for-pages-source-receipt.sh
-          bash release/wait-for-pages-source-receipt.sh "$RELEASE_TAG" "$TAG_COMMIT"
+          bash release/wait-for-pages-source-receipt.sh "$RELEASE_TAG" "$TAG_COMMIT" "$GITHUB_SHA"
+          pages_record_after_poll="$(bash release/verify-pages-deployment-source.sh \
+            "$pages_run_id" "$RELEASE_TAG" "$TAG_COMMIT" "$controller_pages_run_id" "$GITHUB_SHA")"
+          [[ "$pages_record_after_poll" == "$pages_record" ]] || {
+            echo 'Pages provenance changed while polling the public receipts.' >&2
+            exit 1
+          }
           {
             echo "pages_artifact_id=$pages_artifact_id"
             echo "pages_deployment_id=$pages_deployment_id"
             echo "pages_run_id=$pages_run_id"
+            echo "pages_controller_artifact_id=$pages_controller_artifact_id"
+            echo "pages_controller_deployment_id=$pages_controller_deployment_id"
+            echo "pages_controller_run_id=$controller_pages_run_id"
           } >> "$GITHUB_OUTPUT"
 
   release:
@@ -166,6 +209,9 @@ jobs:
           EXPECTED_PAGES_ARTIFACT_ID: ${{ needs.preflight.outputs.pages_artifact_id }}
           EXPECTED_PAGES_DEPLOYMENT_ID: ${{ needs.preflight.outputs.pages_deployment_id }}
           EXPECTED_PAGES_RUN_ID: ${{ needs.preflight.outputs.pages_run_id }}
+          EXPECTED_PAGES_CONTROLLER_ARTIFACT_ID: ${{ needs.preflight.outputs.pages_controller_artifact_id }}
+          EXPECTED_PAGES_CONTROLLER_DEPLOYMENT_ID: ${{ needs.preflight.outputs.pages_controller_deployment_id }}
+          EXPECTED_PAGES_CONTROLLER_RUN_ID: ${{ needs.preflight.outputs.pages_controller_run_id }}
         run: |
           set -euo pipefail
           [[ "$GITHUB_REF" == "refs/heads/master" ]] || { echo 'Release must be dispatched from master.' >&2; exit 1; }
@@ -183,13 +229,63 @@ jobs:
           [[ "$(git rev-parse origin/master)" == "$GITHUB_SHA" ]] || { echo 'Controller master changed during protected tag verification.' >&2; exit 1; }
           root_version="$(sed -nE 's/^version = "([^"]+)"$/\1/p' build.gradle.kts)"
           [[ "$root_version" == "${RELEASE_TAG#v}" ]] || { echo "Root version $root_version does not match $RELEASE_TAG." >&2; exit 1; }
-          pages_record="$(bash release/verify-pages-deployment-source.sh \
-            "$EXPECTED_PAGES_RUN_ID" "$RELEASE_TAG" "$EXPECTED_TAG_COMMIT")"
-          [[ "$pages_record" == "$EXPECTED_PAGES_RUN_ID $EXPECTED_PAGES_ARTIFACT_ID $EXPECTED_PAGES_DEPLOYMENT_ID" ]] || {
+          load_controller_script() {
+            local source_path="$1"
+            local destination="$2"
+            local record=""
+            local mode=""
+            local object_type=""
+            local blob=""
+            local verified_path=""
+            record="$(git ls-tree "$EXPECTED_CONTROLLER_COMMIT" -- "$source_path")"
+            read -r mode object_type blob verified_path <<< "$record"
+            [[ "$mode" == "100644" && "$object_type" == "blob" && \
+              "$blob" =~ ^([0-9a-f]{40}|[0-9a-f]{64})$ && "$verified_path" == "$source_path" ]] || {
+              echo "The controller script is not the expected regular Git blob: $source_path" >&2
+              exit 1
+            }
+            [[ ! -e "$destination" && ! -L "$destination" ]] || {
+              echo "Controller script destination already exists: $destination" >&2
+              exit 1
+            }
+            git cat-file blob "$blob" > "$destination"
+            bash -n "$destination"
+          }
+          pages_tool_directory="$(mktemp -d "$RUNNER_TEMP/strata-pages-tools.XXXXXX")"
+          [[ -d "$pages_tool_directory" && ! -L "$pages_tool_directory" ]] || {
+            echo 'Failed to create a regular Pages tool directory.' >&2
+            exit 1
+          }
+          trap 'rm -rf -- "$pages_tool_directory"' EXIT
+          pages_verifier="$pages_tool_directory/verify-pages-deployment-source.sh"
+          pages_waiter="$pages_tool_directory/wait-for-pages-source-receipt.sh"
+          load_controller_script release/verify-pages-deployment-source.sh "$pages_verifier"
+          load_controller_script release/wait-for-pages-source-receipt.sh "$pages_waiter"
+          bash -n "$pages_verifier"
+          pages_record="$(bash "$pages_verifier" \
+            "$EXPECTED_PAGES_RUN_ID" \
+            "$RELEASE_TAG" \
+            "$EXPECTED_TAG_COMMIT" \
+            "$EXPECTED_PAGES_CONTROLLER_RUN_ID" \
+            "$EXPECTED_CONTROLLER_COMMIT")"
+          expected_pages_record="$EXPECTED_PAGES_RUN_ID $EXPECTED_PAGES_ARTIFACT_ID $EXPECTED_PAGES_DEPLOYMENT_ID"
+          expected_pages_record+=" $EXPECTED_PAGES_CONTROLLER_RUN_ID"
+          expected_pages_record+=" $EXPECTED_PAGES_CONTROLLER_ARTIFACT_ID $EXPECTED_PAGES_CONTROLLER_DEPLOYMENT_ID"
+          [[ "$pages_record" == "$expected_pages_record" ]] || {
             echo 'Protected Pages evidence differs from read-only preflight.' >&2
             exit 1
           }
-          bash release/wait-for-pages-source-receipt.sh "$RELEASE_TAG" "$EXPECTED_TAG_COMMIT"
+          bash "$pages_waiter" "$RELEASE_TAG" "$EXPECTED_TAG_COMMIT" "$EXPECTED_CONTROLLER_COMMIT"
+          pages_record_after_poll="$(bash "$pages_verifier" \
+            "$EXPECTED_PAGES_RUN_ID" \
+            "$RELEASE_TAG" \
+            "$EXPECTED_TAG_COMMIT" \
+            "$EXPECTED_PAGES_CONTROLLER_RUN_ID" \
+            "$EXPECTED_CONTROLLER_COMMIT")"
+          [[ "$pages_record_after_poll" == "$expected_pages_record" ]] || {
+            echo 'Protected Pages provenance changed while polling the public receipts.' >&2
+            exit 1
+          }
           echo "RELEASE_SOURCE_COMMIT=$EXPECTED_TAG_COMMIT" >> "$GITHUB_ENV"
           {
             echo '### Release provenance'
@@ -198,7 +294,8 @@ jobs:
             echo "- Release source commit: \`$EXPECTED_TAG_COMMIT\`"
             echo "- Signed release tag: \`$RELEASE_TAG\`"
             echo "- Signed tag object: \`$EXPECTED_TAG_OBJECT\`"
-            echo "- Pages run / artifact / deployment: \`$pages_record\`"
+            echo "- Release Pages run / artifact / deployment: \`$EXPECTED_PAGES_RUN_ID $EXPECTED_PAGES_ARTIFACT_ID $EXPECTED_PAGES_DEPLOYMENT_ID\`"
+            echo "- Controller Pages run / artifact / deployment: \`$EXPECTED_PAGES_CONTROLLER_RUN_ID $EXPECTED_PAGES_CONTROLLER_ARTIFACT_ID $EXPECTED_PAGES_CONTROLLER_DEPLOYMENT_ID\`"
           } >> "$GITHUB_STEP_SUMMARY"
       - name: Set up Java
         uses: actions/setup-java@v6
@@ -746,6 +843,7 @@ jobs:
                 .[] |
                 select(.conclusion == "success" and .event == "push" and .headBranch == $tag and .headSha == $sha)
               ] |
+              select(length == 1) |
               .[0].databaseId |
               select(type == "number" and . > 0 and . == floor) |
               tostring
@@ -754,9 +852,80 @@ jobs:
             echo "No successful tag-triggered pages.yml run exists for $RELEASE_TAG at $checked_sha." >&2
             exit 1
           }
-          pages_record="$(bash release/verify-pages-deployment-source.sh "$pages_run_id" "$RELEASE_TAG" "$checked_sha")"
-          bash release/wait-for-pages-source-receipt.sh "$RELEASE_TAG" "$checked_sha"
+          controller_pages_runs="$(
+            gh run list --workflow pages.yml --commit "$GITHUB_SHA" --event push --status completed --limit 100 \
+              --json conclusion,databaseId,event,headBranch,headSha
+          )"
+          controller_pages_run_id="$(
+            jq -er --arg sha "$GITHUB_SHA" '
+              [
+                .[] |
+                select(.conclusion == "success" and .event == "push" and .headBranch == "master" and .headSha == $sha)
+              ] |
+              select(length == 1) |
+              .[0].databaseId |
+              select(type == "number" and . > 0 and . == floor) |
+              tostring
+            ' <<< "$controller_pages_runs"
+          )" || {
+            echo "No successful master pages.yml run exists for the verification controller commit $GITHUB_SHA." >&2
+            exit 1
+          }
+          load_controller_script() {
+            local source_path="$1"
+            local destination="$2"
+            local record=""
+            local mode=""
+            local object_type=""
+            local blob=""
+            local verified_path=""
+            record="$(git ls-tree "$GITHUB_SHA" -- "$source_path")"
+            read -r mode object_type blob verified_path <<< "$record"
+            [[ "$mode" == "100644" && "$object_type" == "blob" && \
+              "$blob" =~ ^([0-9a-f]{40}|[0-9a-f]{64})$ && "$verified_path" == "$source_path" ]] || {
+              echo "The controller script is not the expected regular Git blob: $source_path" >&2
+              exit 1
+            }
+            [[ ! -e "$destination" && ! -L "$destination" ]] || {
+              echo "Controller script destination already exists: $destination" >&2
+              exit 1
+            }
+            git cat-file blob "$blob" > "$destination"
+            bash -n "$destination"
+          }
+          pages_tool_directory="$(mktemp -d "$RUNNER_TEMP/strata-pages-tools.XXXXXX")"
+          [[ -d "$pages_tool_directory" && ! -L "$pages_tool_directory" ]] || {
+            echo 'Failed to create a regular Pages tool directory.' >&2
+            exit 1
+          }
+          trap 'rm -rf -- "$pages_tool_directory"' EXIT
+          pages_verifier="$pages_tool_directory/verify-pages-deployment-source.sh"
+          pages_waiter="$pages_tool_directory/wait-for-pages-source-receipt.sh"
+          load_controller_script release/verify-pages-deployment-source.sh "$pages_verifier"
+          load_controller_script release/wait-for-pages-source-receipt.sh "$pages_waiter"
+          pages_record="$(bash "$pages_verifier" \
+            "$pages_run_id" "$RELEASE_TAG" "$checked_sha" "$controller_pages_run_id" "$GITHUB_SHA")"
+          read -r \
+            verified_release_run_id \
+            pages_artifact_id \
+            pages_deployment_id \
+            verified_controller_run_id \
+            pages_controller_artifact_id \
+            pages_controller_deployment_id <<< "$pages_record"
+          [[ "$verified_release_run_id" == "$pages_run_id" && \
+            "$verified_controller_run_id" == "$controller_pages_run_id" ]] || {
+            echo 'Final Pages evidence differs from the selected release or controller run.' >&2
+            exit 1
+          }
+          bash "$pages_waiter" "$RELEASE_TAG" "$checked_sha" "$GITHUB_SHA"
+          pages_record_after_poll="$(bash "$pages_verifier" \
+            "$pages_run_id" "$RELEASE_TAG" "$checked_sha" "$controller_pages_run_id" "$GITHUB_SHA")"
+          [[ "$pages_record_after_poll" == "$pages_record" ]] || {
+            echo 'Final Pages provenance changed while polling the public receipts.' >&2
+            exit 1
+          }
           echo "RELEASE_SOURCE_COMMIT=$checked_sha" >> "$GITHUB_ENV"
+          echo "PAGES_PROVENANCE_RECORD=$pages_record" >> "$GITHUB_ENV"
           {
             echo '### Final release verification provenance'
             echo
@@ -764,7 +933,8 @@ jobs:
             echo "- Release source commit: \`$checked_sha\`"
             echo "- Signed release tag: \`$RELEASE_TAG\`"
             echo "- Signed tag object: \`$tag_object\`"
-            echo "- Pages run / artifact / deployment: \`$pages_record\`"
+            echo "- Release Pages run / artifact / deployment: \`$pages_run_id $pages_artifact_id $pages_deployment_id\`"
+            echo "- Controller Pages run / artifact / deployment: \`$controller_pages_run_id $pages_controller_artifact_id $pages_controller_deployment_id\`"
           } >> "$GITHUB_STEP_SUMMARY"
       - name: Set up Java
         uses: actions/setup-java@v6
@@ -1005,7 +1175,52 @@ jobs:
           printf '%s\n' "$RELEASE_TAG" > "$source_revision_expected"
           cmp --silent "$source_revision_expected" "$source_revision" || { echo 'Public Pages source revision differs from the release tag.' >&2; exit 1; }
           checked_commit="$(git rev-parse HEAD)"
-          bash release/wait-for-pages-source-receipt.sh "$RELEASE_TAG" "$checked_commit"
+          load_controller_script() {
+            local source_path="$1"
+            local destination="$2"
+            local record=""
+            local mode=""
+            local object_type=""
+            local blob=""
+            local verified_path=""
+            record="$(git ls-tree "$GITHUB_SHA" -- "$source_path")"
+            read -r mode object_type blob verified_path <<< "$record"
+            [[ "$mode" == "100644" && "$object_type" == "blob" && \
+              "$blob" =~ ^([0-9a-f]{40}|[0-9a-f]{64})$ && "$verified_path" == "$source_path" ]] || {
+              echo "The controller script is not the expected regular Git blob: $source_path" >&2
+              exit 1
+            }
+            [[ ! -e "$destination" && ! -L "$destination" ]] || {
+              echo "Controller script destination already exists: $destination" >&2
+              exit 1
+            }
+            git cat-file blob "$blob" > "$destination"
+            bash -n "$destination"
+          }
+          pages_tool_directory="$(mktemp -d "$RUNNER_TEMP/strata-pages-tools.XXXXXX")"
+          [[ -d "$pages_tool_directory" && ! -L "$pages_tool_directory" ]] || {
+            echo 'Failed to create a regular Pages tool directory.' >&2
+            exit 1
+          }
+          trap 'rm -rf -- "$pages" "$pages_inventory" "$source_revision" "$source_revision_expected" "$skill" "$pages_tool_directory"' EXIT
+          pages_verifier="$pages_tool_directory/verify-pages-deployment-source.sh"
+          pages_waiter="$pages_tool_directory/wait-for-pages-source-receipt.sh"
+          load_controller_script release/verify-pages-deployment-source.sh "$pages_verifier"
+          load_controller_script release/wait-for-pages-source-receipt.sh "$pages_waiter"
+          bash "$pages_waiter" "$RELEASE_TAG" "$checked_commit" "$GITHUB_SHA"
+          read -r \
+            pages_run_id \
+            _ \
+            _ \
+            controller_pages_run_id \
+            _ \
+            _ <<< "$PAGES_PROVENANCE_RECORD"
+          pages_record_after_public_poll="$(bash "$pages_verifier" \
+            "$pages_run_id" "$RELEASE_TAG" "$checked_commit" "$controller_pages_run_id" "$GITHUB_SHA")"
+          [[ "$pages_record_after_public_poll" == "$PAGES_PROVENANCE_RECORD" ]] || {
+            echo 'Pages provenance changed during final public verification.' >&2
+            exit 1
+          }
           curl --fail --silent --show-error --location --proto '=https' \
             "https://raw.githubusercontent.com/sya-ri/strata/$RELEASE_TAG/skills/strata/SKILL.md" --output "$skill"
           cmp --silent skills/strata/SKILL.md "$skill" || { echo 'The publicly installable Skill source differs from the release tag.' >&2; exit 1; }
