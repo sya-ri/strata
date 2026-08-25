@@ -864,10 +864,6 @@ val verifyPublishedConsumer =
         tasks = listOf("clean", "check")
     }
 
-tasks.named("modrinthReleasePreflight") {
-    dependsOn(verifyPublishedConsumer)
-}
-
 tasks.named("mavenCentralReleasePreflight") {
     dependsOn(verifyPublishedConsumer)
 }

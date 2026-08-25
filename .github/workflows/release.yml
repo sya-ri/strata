@@ -402,7 +402,8 @@ jobs:
           RELEASE_TAG: ${{ inputs.tag }}
         run: |
           set -euo pipefail
-          bash ./gradlew --no-parallel --max-workers=2 --no-build-cache modrinthReleasePreflight \
+          bash ./gradlew --no-parallel --max-workers=2 --no-build-cache \
+            modrinthReleasePreflight -x verifyPublishedConsumer \
             -Pstrata.sourceRevision="$RELEASE_TAG" \
             -Pstrata.sourceCommit="$RELEASE_SOURCE_COMMIT" \
             -Pstrata.modrinthProjectId="$PROJECT_ID"
@@ -468,7 +469,8 @@ jobs:
           git merge-base --is-ancestor "$EXPECTED_TAG_COMMIT" origin/master || { echo 'Release source is no longer contained in controller master.' >&2; exit 1; }
           git diff --quiet -- . || { echo 'Tracked release source changed before Modrinth staging.' >&2; exit 1; }
           git diff --cached --quiet -- . || { echo 'Staged release source changed before Modrinth staging.' >&2; exit 1; }
-          bash ./gradlew --no-parallel --max-workers=2 --no-build-cache modrinthReleaseStage \
+          bash ./gradlew --no-parallel --max-workers=2 --no-build-cache \
+            modrinthReleaseStage -x verifyPublishedConsumer \
             -Pstrata.sourceRevision="$RELEASE_TAG" \
             -Pstrata.sourceCommit="$RELEASE_SOURCE_COMMIT" \
             -Pstrata.modrinthProjectId="$PROJECT_ID"

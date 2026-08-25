@@ -500,4 +500,14 @@ if bash "$repository_root/release/wait-for-pages-source-receipt.sh" v0.1.0 "$rep
   fail 'Permanently stale Pages evidence was accepted.'
 fi
 
+workflow="$repository_root/.github/workflows/release.yml"
+grep --fixed-strings 'modrinthReleasePreflight -x verifyPublishedConsumer \' "$workflow" >/dev/null || \
+  fail 'The immutable-tag Modrinth preflight does not exclude the published-consumer dependency.'
+grep --fixed-strings 'modrinthReleaseStage -x verifyPublishedConsumer \' "$workflow" >/dev/null || \
+  fail 'The immutable-tag Modrinth stage does not exclude the published-consumer dependency.'
+if sed -n '/^tasks.named("modrinthReleasePreflight") {$/,/^}$/p' "$repository_root/build.gradle.kts" |
+  grep --fixed-strings 'dependsOn(verifyPublishedConsumer)' >/dev/null; then
+  fail 'The read-only Modrinth preflight must not depend on the publishing consumer aggregate.'
+fi
+
 echo 'Release source guards passed.'
