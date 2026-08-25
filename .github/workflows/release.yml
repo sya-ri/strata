@@ -67,16 +67,42 @@ jobs:
           [[ "$(gh api "repos/$GITHUB_REPOSITORY/git/tags/$tag_object" --jq '.verification.verified')" == "true" ]] || { echo 'GitHub did not verify the release tag signature.' >&2; exit 1; }
           root_version="$(sed -nE 's/^version = "([^"]+)"$/\1/p' build.gradle.kts)"
           [[ "$root_version" == "${RELEASE_TAG#v}" ]] || { echo "Root version $root_version does not match $RELEASE_TAG." >&2; exit 1; }
-      - name: Require successful exact-SHA CI and Pages gates
+      - name: Require successful exact-SHA CI and immutable tagged Pages
         shell: bash
         env:
           GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ inputs.tag }}
         run: |
           set -euo pipefail
-          for workflow in jvm.yml qodana.yml pages.yml; do
+          for workflow in jvm.yml qodana.yml; do
             successes="$(gh run list --workflow "$workflow" --commit "$GITHUB_SHA" --status completed --limit 100 --json conclusion --jq '[.[] | select(.conclusion == "success")] | length')"
             [[ "$successes" != "0" ]] || { echo "No successful $workflow run exists for $GITHUB_SHA." >&2; exit 1; }
           done
+          pages_runs="$(
+            gh run list --workflow pages.yml --commit "$GITHUB_SHA" --event push --status completed --limit 100 \
+              --json conclusion,event,headBranch,headSha
+          )"
+          pages_successes="$(
+            jq --arg tag "$RELEASE_TAG" --arg sha "$GITHUB_SHA" \
+              '[.[] | select(.conclusion == "success" and .event == "push" and .headBranch == $tag and .headSha == $sha)] | length' \
+              <<< "$pages_runs"
+          )"
+          [[ "$pages_successes" != "0" ]] || {
+            echo "No successful tag-triggered pages.yml run exists for $RELEASE_TAG at $GITHUB_SHA." >&2
+            exit 1
+          }
+          public_revision="$(mktemp)"
+          expected_revision="$(mktemp)"
+          trap 'rm -f -- "$public_revision" "$expected_revision"' EXIT
+          curl --fail --silent --show-error --location --retry 5 --retry-all-errors --retry-delay 2 \
+            --proto '=https' --proto-redir '=https' \
+            "https://gh.s7a.dev/strata/releases/${RELEASE_TAG#v}/source-revision.txt" \
+            --output "$public_revision"
+          printf '%s\n' "$RELEASE_TAG" > "$expected_revision"
+          cmp --silent "$expected_revision" "$public_revision" || {
+            echo 'The public immutable Pages source revision differs from the release tag.' >&2
+            exit 1
+          }
       - name: Set up Java
         uses: actions/setup-java@v6
         with:

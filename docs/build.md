@@ -52,7 +52,8 @@ Run aggregate coverage with `./gradlew :koverHtmlReport :koverXmlReport -Pkover`
 Each publishable JVM module has a Maven publication with source and Javadoc artifacts, MIT license metadata, SCM metadata, and an optional in-memory signing setup.
 Provide `mavenCentralUsername`, `mavenCentralPassword`, `signingInMemoryKey`, optional `signingInMemoryKeyId`, and optional `signingInMemoryKeyPassword` Gradle properties when publishing to Maven Central.
 Environment variables use the `ORG_GRADLE_PROJECT_` prefix followed by the same property name.
-The protected release workflow runs the immutable repository preflight and the authenticated Central Portal deployment preflight before any upload.
+The protected release workflow refuses every external write until the exact release tag and commit have a successful tag-triggered Documentation run and the unauthenticated immutable Pages `source-revision.txt` contains that tag exactly.
+It then runs the immutable repository preflight and the authenticated Central Portal deployment preflight before any upload.
 An exact Portal deployment must contain the complete expected path set for all twenty-four coordinates, exactly one matching deployment, valid detached signatures, and MD5, SHA-1, SHA-256, and SHA-512 sidecars whose downloaded bytes match the locally verified publication.
 The Vanniktech publisher performs the official automatic upload only when neither public Maven Central nor the Portal already contains the release; the workflow treats its response as potentially ambiguous and accepts the write only after read-only Portal reconciliation reaches the exact `PUBLISHED` state.
 A matching Portal deployment is resumed without uploading again, while duplicates, partial content, metadata or byte mismatches, and failed deployments stop the release without deletion, replacement, or overwrite.
