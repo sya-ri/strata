@@ -32,7 +32,7 @@ internal class MavenCentralPortalCoordinatorTest {
     }
 
     @Test
-    fun `preflight distinguishes absent and exact deployments with all checksums`() {
+    fun `preflight distinguishes absent and exact deployments with base checksums`() {
         val fixture = fixture()
         val server = server(fixture)
         val coordinator = fixture.coordinator(server)
@@ -57,7 +57,7 @@ internal class MavenCentralPortalCoordinatorTest {
         assertEquals(MavenCentralPortalCoordinator.State.EXACT, exact.state)
         assertEquals(MavenCentralPortalCoordinator.DeploymentState.VALIDATED, exact.deploymentState)
         assertEquals(10, exact.verifiedContentFileCount)
-        assertEquals(40, exact.verifiedChecksumCount)
+        assertEquals(20, exact.verifiedChecksumCount)
         assertEquals(10, Files.walk(evidence).use { paths -> paths.filter(Files::isRegularFile).count() })
         assertTrue(2 < server.listRequestCount)
     }
@@ -381,7 +381,7 @@ internal class MavenCentralPortalCoordinatorTest {
                     exactFiles["$relativePath.asc"] = "signature:$relativePath".toByteArray(StandardCharsets.UTF_8)
                 }
             }
-            exactFiles.keys.filter { path -> checksumExtension(path) == null }.toList().forEach { path ->
+            exactFiles.keys.filter { path -> path.endsWith(".asc").not() }.toList().forEach { path ->
                 val content = exactFiles[path] ?: error("Missing mock content for $path")
                 CHECKSUMS.forEach { algorithm ->
                     exactFiles["$path.${algorithm.extension}"] = (content.hash(algorithm.messageDigestName) + "\n").toByteArray(StandardCharsets.UTF_8)
@@ -555,8 +555,6 @@ internal class MavenCentralPortalCoordinatorTest {
                 Checksum("sha256", "SHA-256"),
                 Checksum("sha512", "SHA-512"),
             )
-
-        private fun checksumExtension(path: String): String? = CHECKSUMS.map(Checksum::extension).firstOrNull { extension -> path.endsWith(".$extension") }
 
         private fun ByteArray.hash(algorithm: String): String =
             MessageDigest

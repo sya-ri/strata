@@ -682,7 +682,7 @@ subprojects {
             )
             publishToMavenCentral()
             checksums(Checksum.MD5, Checksum.SHA1, Checksum.SHA256, Checksum.SHA512)
-            excludeSignatureChecksums(false)
+            excludeSignatureChecksums()
             signAllPublications()
             pom {
                 name.set("Strata ${project.name}")

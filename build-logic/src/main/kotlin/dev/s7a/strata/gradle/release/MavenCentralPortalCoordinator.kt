@@ -20,7 +20,8 @@ import java.util.Base64
  * Reconciles one signed Strata release against authenticated Central Publisher Portal deployments.
  *
  * The coordinator owns no remote mutation.
- * It lists every deployment containing the release path, rejects duplicates and differing bundles, downloads all signed publication files, validates all four configured checksum sidecars, and stages evidence for an external OpenPGP verifier.
+ * It lists every deployment containing the release path, rejects duplicates and differing bundles, downloads all signed publication files, validates all four configured checksum sidecars for each base file, and stages detached signatures for an external OpenPGP verifier.
+ * Detached signatures are required content but do not require their own checksum sidecars under the Central publication contract.
  * Credentials are retained only by this instance, are never written or logged, and are redacted from transport failures.
  * One coordinator owns the authenticated session so credential handling, retries, and evidence validation cannot drift.
  */
@@ -210,12 +211,11 @@ internal class MavenCentralPortalCoordinator(
             validateListedSize(deployment, signaturePath, signature)
             writeEvidence(evidenceDirectory, signaturePath, signature)
             contentCount += 1
-            checksumCount += verifyChecksums(deployment, signaturePath, signature)
         }
         check(contentCount == expectedCoordinateCount * BASE_SUFFIXES.size * 2) {
             "Central Publisher Portal signed-content inventory has an unexpected size."
         }
-        check(checksumCount == contentCount * ChecksumAlgorithm.entries.size) {
+        check(checksumCount == expectedCoordinateCount * BASE_SUFFIXES.size * ChecksumAlgorithm.entries.size) {
             "Central Publisher Portal checksum inventory has an unexpected size."
         }
         return Verification(contentCount, checksumCount)
@@ -626,7 +626,7 @@ internal class MavenCentralPortalCoordinator(
      * @property deploymentId non-secret immutable deployment identifier when exact.
      * @property deploymentState last typed Portal lifecycle state when exact.
      * @property verifiedContentFileCount signed base files and detached signatures downloaded and verified.
-     * @property verifiedChecksumCount checksum sidecars validated against downloaded content.
+     * @property verifiedChecksumCount checksum sidecars validated against downloaded base files; detached signatures are verified separately with OpenPGP.
      */
     internal data class Receipt(
         val state: State,
@@ -738,11 +738,11 @@ internal class MavenCentralPortalCoordinator(
                             BaseFile(relativePath, localPath)
                         }
                     }
-                val contentPaths = baseFiles.flatMap { base -> listOf(base.relativePath, "${base.relativePath}.asc") }
                 val expectedFiles =
-                    contentPaths
-                        .flatMap { path ->
-                            listOf(path) + ChecksumAlgorithm.entries.map { algorithm -> "$path.${algorithm.extension}" }
+                    baseFiles
+                        .flatMap { base ->
+                            listOf(base.relativePath, "${base.relativePath}.asc") +
+                                ChecksumAlgorithm.entries.map { algorithm -> "${base.relativePath}.${algorithm.extension}" }
                         }.toSet()
                 return Release(
                     coordinates = coordinates,

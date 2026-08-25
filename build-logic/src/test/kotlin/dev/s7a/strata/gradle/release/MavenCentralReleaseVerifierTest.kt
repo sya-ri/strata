@@ -44,8 +44,9 @@ internal class MavenCentralReleaseVerifierTest {
         assertEquals(MavenCentralReleaseVerifier.State.EXACT, exact.state)
         assertEquals(24, exact.coordinateCount)
         assertEquals(240, exact.verifiedFileCount)
-        assertEquals(960, exact.verifiedChecksumCount)
+        assertEquals(480, exact.verifiedChecksumCount)
         assertEquals(setOf("md5", "sha1", "sha256", "sha512"), server.requestedChecksumExtensions)
+        assertTrue(server.requestedChecksumContentPaths.none { path -> path.endsWith(".asc") })
     }
 
     @Test
@@ -65,6 +66,18 @@ internal class MavenCentralReleaseVerifierTest {
         server.mode = Mode.ORPHAN_MD5
         val checksumOrphan = assertThrows(IllegalStateException::class.java) { verifier.preflight(fixture.coordinates) }
         assertTrue(checksumOrphan.message.orEmpty().contains("partial immutable release"))
+
+        server.mode = Mode.ORPHAN_SIGNATURE_MD5
+        val signatureChecksumOrphan = assertThrows(IllegalStateException::class.java) { verifier.preflight(fixture.coordinates) }
+        assertTrue(signatureChecksumOrphan.message.orEmpty().contains("partial immutable release"))
+
+        server.mode = Mode.MISSING_BASE_CHECKSUM
+        val missingBaseChecksum = assertThrows(IllegalStateException::class.java) { verifier.preflight(fixture.coordinates) }
+        assertTrue(missingBaseChecksum.message.orEmpty().contains("partial immutable release"))
+
+        server.mode = Mode.MISSING_SIGNATURE
+        val missingSignature = assertThrows(IllegalStateException::class.java) { verifier.preflight(fixture.coordinates) }
+        assertTrue(missingSignature.message.orEmpty().contains("partial immutable release"))
 
         server.mode = Mode.MISMATCH
         val mismatch = assertThrows(IllegalStateException::class.java) { verifier.preflight(fixture.coordinates) }
@@ -200,6 +213,7 @@ internal class MavenCentralReleaseVerifierTest {
         var pomReadCount: Int = 0
         var requestCount: Int = 0
         val requestedChecksumExtensions: MutableSet<String> = linkedSetOf()
+        val requestedChecksumContentPaths: MutableSet<String> = linkedSetOf()
         val transientStatuses: ArrayDeque<Int> = ArrayDeque()
 
         val baseUrl: String
@@ -240,7 +254,19 @@ internal class MavenCentralReleaseVerifierTest {
                 respond(exchange, 404, ByteArray(0))
                 return
             }
+            if (mode == Mode.ORPHAN_SIGNATURE_MD5 && relativePath.endsWith("strata-api-0.1.0.jar.asc.md5").not()) {
+                respond(exchange, 404, ByteArray(0))
+                return
+            }
             if (mode == Mode.PARTIAL && relativePath.startsWith("dev/s7a/strata/strata-api/").not()) {
+                respond(exchange, 404, ByteArray(0))
+                return
+            }
+            if (mode == Mode.MISSING_SIGNATURE && relativePath.endsWith("strata-api-0.1.0.jar.asc")) {
+                respond(exchange, 404, ByteArray(0))
+                return
+            }
+            if (mode == Mode.MISSING_BASE_CHECKSUM && relativePath.endsWith("strata-api-0.1.0.jar.sha512")) {
                 respond(exchange, 404, ByteArray(0))
                 return
             }
@@ -261,6 +287,11 @@ internal class MavenCentralReleaseVerifierTest {
                     "SHA-512" -> relativePath.removeSuffix(".sha512")
                     else -> relativePath
                 }
+            if (checksumAlgorithm != null) requestedChecksumContentPaths += contentPath
+            if (checksumAlgorithm != null && contentPath.endsWith(".asc") && mode != Mode.ORPHAN_SIGNATURE_MD5) {
+                respond(exchange, 404, ByteArray(0))
+                return
+            }
             val storedBytes = remoteFiles[contentPath]
             if (storedBytes == null) {
                 respond(exchange, 404, ByteArray(0))
@@ -298,7 +329,10 @@ internal class MavenCentralReleaseVerifierTest {
         ABSENT,
         ORPHAN,
         ORPHAN_MD5,
+        ORPHAN_SIGNATURE_MD5,
         PARTIAL,
+        MISSING_BASE_CHECKSUM,
+        MISSING_SIGNATURE,
         EXACT,
         MISMATCH,
     }
