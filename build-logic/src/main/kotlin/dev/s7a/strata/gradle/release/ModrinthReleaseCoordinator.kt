@@ -52,7 +52,7 @@ internal class ModrinthReleaseCoordinator(
         val initial = reconcile(requirePresent = false, requireApproved = false, bootstrapPolicy = BootstrapPolicy.ELIGIBLE_DRAFT)
         when (initial.projectStatus) {
             in MUTABLE_PROJECT_STATUSES -> {
-                initial.absent.forEach(::createWithRequery)
+                stageMissingVersions(initial)
             }
 
             in READ_ONLY_PROJECT_STATUSES -> {
@@ -118,7 +118,6 @@ internal class ModrinthReleaseCoordinator(
         check(project.id == manifest.projectId) {
             "Configured Modrinth project ID ${manifest.projectId} does not match immutable remote ID ${project.id}."
         }
-        check(project.projectType == ProjectType.MOD) { "The Modrinth release target must be a mod project." }
         check(project.status in MUTABLE_PROJECT_STATUSES + READ_ONLY_PROJECT_STATUSES) {
             "Modrinth project ${manifest.projectId} cannot participate in this release while status is ${project.status.wireValue}."
         }
@@ -127,6 +126,8 @@ internal class ModrinthReleaseCoordinator(
                 "Modrinth project ${manifest.projectId} must be approved for final verification."
             }
         }
+        val remote = api.getProjectVersions(manifest.projectId)
+        assertReleaseProjectType(project, remote, requirePresent, bootstrapPolicy)
         assertBasicProjectMetadata(project)
         assertProjectAssets(project)
 
@@ -134,7 +135,6 @@ internal class ModrinthReleaseCoordinator(
         val unsupported = manifest.artifacts.map(ModrinthManifest.Artifact::gameVersion).filterNot(supportedTags::contains)
         check(unsupported.isEmpty()) { "Modrinth does not recognize these Minecraft versions: $unsupported" }
 
-        val remote = api.getProjectVersions(manifest.projectId)
         val expectedNumbers = manifest.artifacts.map(ModrinthManifest.Artifact::versionNumber).toSet()
         val containsOnlyExpectedVersions = remote.all { version -> version.versionNumber in expectedNumbers }
         val expectedHashes = manifest.artifacts.associateBy(ModrinthManifest.Artifact::sha512)
@@ -191,7 +191,63 @@ internal class ModrinthReleaseCoordinator(
                 projectPatch = inspectProjectClassification(project, allowBootstrap),
                 disclosureMissing = inspectProjectDisclosures(api.getProjectDisclosures(manifest.projectId), allowBootstrap),
             )
-        return Snapshot(manifest.projectId, project.status, absent, listed, bootstrapPlan)
+        return Snapshot(manifest.projectId, project.projectType, project.status, absent, listed, bootstrapPlan)
+    }
+
+    private fun stageMissingVersions(initial: Snapshot) {
+        if (initial.projectType != ProjectType.UNCLASSIFIED) {
+            initial.absent.forEach(::createWithRequery)
+            return
+        }
+        check(initial.listed.isEmpty() && initial.absent.size == manifest.artifacts.size) {
+            "An unclassified Modrinth draft must start with an empty release inventory."
+        }
+        val first = initial.absent.first()
+        createWithRequery(first)
+        check(pollFirstVersionClassification(first)) {
+            "Modrinth did not classify the project as a mod after its first listed Fabric version."
+        }
+        initial.absent.drop(1).forEach(::createWithRequery)
+    }
+
+    private fun pollFirstVersionClassification(artifact: ModrinthManifest.Artifact): Boolean {
+        repeat(MAX_STATE_POLLS) { poll ->
+            val project = api.getProject(manifest.projectId)
+            check(project.id == manifest.projectId) { "Modrinth project identity changed after its first version was created." }
+            check(project.status == ProjectStatus.DRAFT) {
+                "Modrinth project left draft state after its first version was created."
+            }
+            check(project.projectType == ProjectType.UNCLASSIFIED || project.projectType == ProjectType.MOD) {
+                "Modrinth project became ${project.projectType.wireValue} after its first Fabric version was created."
+            }
+            val remote = api.getProjectVersions(manifest.projectId)
+            check(remote.size <= 1) { "Modrinth version inventory changed while classifying the first Fabric version." }
+            remote.singleOrNull()?.let { version -> assertCreatedVersion(version, artifact, "First create") }
+            if (project.projectType == ProjectType.MOD && remote.size == 1) return true
+            if (poll + 1 < MAX_STATE_POLLS) pause(POLL_DELAY_MILLIS)
+        }
+        return false
+    }
+
+    private fun assertReleaseProjectType(
+        project: RemoteProject,
+        remoteVersions: List<RemoteVersion>,
+        requirePresent: Boolean,
+        bootstrapPolicy: BootstrapPolicy,
+    ) {
+        if (project.projectType == ProjectType.MOD) return
+        if (project.projectType == ProjectType.UNCLASSIFIED) {
+            check(
+                project.status == ProjectStatus.DRAFT &&
+                    bootstrapPolicy == BootstrapPolicy.ELIGIBLE_DRAFT &&
+                    requirePresent.not() &&
+                    remoteVersions.isEmpty(),
+            ) {
+                "An unclassified Modrinth project is allowed only for an empty draft before its first listed Fabric version."
+            }
+            return
+        }
+        error("The Modrinth release target must be a mod project.")
     }
 
     private fun assertBasicProjectMetadata(remote: RemoteProject) {
@@ -406,7 +462,9 @@ internal class ModrinthReleaseCoordinator(
     private fun readBootstrapProject(): RemoteProject {
         val project = api.getProject(manifest.projectId)
         check(project.id == manifest.projectId) { "Modrinth project identity changed during bootstrap." }
-        check(project.projectType == ProjectType.MOD) { "Modrinth project type changed during bootstrap." }
+        check(project.projectType == ProjectType.MOD) {
+            "Modrinth project did not become a mod after its listed Fabric versions were created."
+        }
         check(project.status == ProjectStatus.DRAFT) { "Modrinth project left draft state during bootstrap." }
         assertBasicProjectMetadata(project)
         assertBootstrapVersionInventory()
@@ -612,6 +670,7 @@ internal class ModrinthReleaseCoordinator(
 
     private data class Snapshot(
         val projectId: String,
+        val projectType: ProjectType,
         val projectStatus: ProjectStatus,
         val absent: List<ModrinthManifest.Artifact>,
         val listed: List<RemoteTarget>,

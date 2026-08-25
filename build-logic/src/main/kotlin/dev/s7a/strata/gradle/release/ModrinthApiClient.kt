@@ -742,6 +742,11 @@ internal class ModrinthApiClient(
         val wireValue: String,
     ) {
         /**
+         * Versionless project whose public type has not yet been inferred from a loader.
+         */
+        UNCLASSIFIED("project"),
+
+        /**
          * Mod project.
          */
         MOD("mod"),

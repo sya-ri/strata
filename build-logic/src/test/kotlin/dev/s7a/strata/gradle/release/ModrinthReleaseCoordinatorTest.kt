@@ -5,6 +5,7 @@ import com.sun.net.httpserver.HttpServer
 import dev.s7a.strata.gradle.release.ModrinthApiClient.AiUse
 import dev.s7a.strata.gradle.release.ModrinthApiClient.DisclosureType
 import dev.s7a.strata.gradle.release.ModrinthApiClient.ProjectStatus
+import dev.s7a.strata.gradle.release.ModrinthApiClient.ProjectType
 import dev.s7a.strata.gradle.release.ModrinthApiClient.RemoteDisclosure
 import dev.s7a.strata.gradle.release.ModrinthApiClient.SideSupport
 import dev.s7a.strata.gradle.release.ModrinthApiClient.VersionEnvironment
@@ -66,9 +67,14 @@ internal class ModrinthReleaseCoordinatorTest {
     }
 
     @Test
-    fun `typed draft bootstrap sentinels keep preflight read only and stage patches idempotently`() {
+    fun `unclassified empty draft becomes a mod after its first Fabric version`() {
         val fixture = fixture()
-        val server = server(fixture).also(MockModrinthServer::makeBootstrapStateEmpty)
+        val server =
+            server(fixture).also { mock ->
+                mock.makeBootstrapStateEmpty()
+                mock.projectType = ProjectType.UNCLASSIFIED
+                mock.projectTypeAfterFirstVersion = ProjectType.MOD
+            }
         val coordinator = fixture.coordinator(server)
 
         val preflight = coordinator.preflight()
@@ -97,6 +103,73 @@ internal class ModrinthReleaseCoordinatorTest {
         assertEquals(20, server.createRequests)
         assertEquals(1, server.projectBootstrapRequests)
         assertEquals(1, server.disclosureBootstrapRequests)
+        assertEquals(ProjectType.MOD, server.projectType)
+    }
+
+    @Test
+    fun `unclassified project with an existing version fails before every write`() {
+        val fixture = fixture()
+        val server =
+            server(fixture).also { mock ->
+                mock.projectType = ProjectType.UNCLASSIFIED
+                mock.seedVersions(1)
+            }
+
+        val failure = assertStageFailsBeforeEveryWrite(fixture, server)
+
+        assertTrue(failure.message.orEmpty().contains("unclassified"))
+    }
+
+    @Test
+    fun `unclassified project stops after one version when Modrinth does not infer mod`() {
+        val fixture = fixture()
+        val server =
+            server(fixture).also { mock ->
+                mock.makeBootstrapStateEmpty()
+                mock.projectType = ProjectType.UNCLASSIFIED
+            }
+
+        val failure =
+            assertThrows(IllegalStateException::class.java) {
+                fixture.coordinator(server).stage()
+            }
+
+        assertTrue(failure.message.orEmpty().contains("did not classify"))
+        assertEquals(1, server.createRequests)
+        assertEquals(0, server.projectBootstrapRequests)
+        assertEquals(0, server.disclosureBootstrapRequests)
+        assertEquals(listOf(WriteEvent.CREATE_VERSION), server.writeEvents)
+    }
+
+    @Test
+    fun `unclassified project outside draft state fails before every write`() {
+        val fixture = fixture()
+        val statuses = listOf(ProjectStatus.UNLISTED, ProjectStatus.PROCESSING, ProjectStatus.APPROVED)
+
+        statuses.forEach { status ->
+            val server =
+                server(fixture).also { mock ->
+                    mock.projectType = ProjectType.UNCLASSIFIED
+                    mock.projectStatus = status
+                }
+
+            val failure = assertStageFailsBeforeEveryWrite(fixture, server)
+
+            assertTrue(failure.message.orEmpty().contains("unclassified"))
+        }
+    }
+
+    @Test
+    fun `unknown project type remains rejected before every write`() {
+        val fixture = fixture()
+        val server =
+            server(fixture).also { mock ->
+                mock.projectResponseMutation = { response -> response["project_type"] = "future-project-type" }
+            }
+
+        val failure = assertStageFailsBeforeEveryWrite(fixture, server)
+
+        assertTrue(failure.message.orEmpty().contains("Unknown Modrinth project type"))
     }
 
     @Test
@@ -760,6 +833,8 @@ internal class ModrinthReleaseCoordinatorTest {
             )
 
         var projectStatus: ProjectStatus = ProjectStatus.DRAFT
+        var projectType: ProjectType = ProjectType.MOD
+        var projectTypeAfterFirstVersion: ProjectType? = null
         var createRequests: Int = 0
         var submitRequests: Int = 0
         var projectBootstrapRequests: Int = 0
@@ -943,7 +1018,7 @@ internal class ModrinthReleaseCoordinatorTest {
                     "title" to project.title,
                     "description" to project.description,
                     "body" to project.body,
-                    "project_type" to "mod",
+                    "project_type" to projectType.wireValue,
                     "status" to visibleStatus.wireValue,
                     "categories" to remoteCategories,
                     "additional_categories" to remoteAdditionalCategories,
@@ -1118,6 +1193,9 @@ internal class ModrinthReleaseCoordinatorTest {
                     JsonOutput.toJson(mapOf("error" to "duplicate_version", "description" to "Version already exists.")),
                 )
                 return
+            }
+            if (versions.size == 1) {
+                projectTypeAfterFirstVersion?.let { inferredType -> projectType = inferredType }
             }
             if (timeoutFirstCreateAfterCommit && createRequests == 1) {
                 Thread.sleep(100L)
