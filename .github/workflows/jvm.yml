@@ -141,6 +141,9 @@ jobs:
     steps:
       - name: Check out source
         uses: actions/checkout@v7
+      - name: Check GitHub Actions workflows
+        if: matrix.id == 'common'
+        uses: docker://rhysd/actionlint:1.7.12
       - name: Set up Java
         uses: actions/setup-java@v6
         with:

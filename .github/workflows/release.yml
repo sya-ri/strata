@@ -41,8 +41,11 @@ jobs:
       deployments: read
     runs-on: ubuntu-latest
     outputs:
+      controller_commit: ${{ steps.tag.outputs.controller_commit }}
       tag_commit: ${{ steps.tag.outputs.tag_commit }}
       tag_object: ${{ steps.tag.outputs.tag_object }}
+      pages_artifact_id: ${{ steps.pages.outputs.pages_artifact_id }}
+      pages_deployment_id: ${{ steps.pages.outputs.pages_deployment_id }}
       pages_run_id: ${{ steps.pages.outputs.pages_run_id }}
     steps:
       - name: Check out master
@@ -65,31 +68,50 @@ jobs:
           bash -n release/verify-github-tag-ruleset.sh
           bash -n release/verify-release-tag.sh
           bash release/verify-github-tag-ruleset.sh >/dev/null
-          tag_record="$(bash release/verify-release-tag.sh "$RELEASE_TAG" "$GITHUB_SHA")"
+          [[ "$(git rev-parse HEAD)" == "$GITHUB_SHA" ]] || { echo 'Checked-out controller differs from the workflow commit.' >&2; exit 1; }
+          git fetch --force origin \
+            '+refs/heads/master:refs/remotes/origin/master' \
+            "+refs/tags/$RELEASE_TAG:refs/tags/$RELEASE_TAG"
+          [[ "$(git rev-parse origin/master)" == "$GITHUB_SHA" ]] || { echo 'Controller SHA is not the exact origin/master head.' >&2; exit 1; }
+          tag_commit="$(git rev-parse --verify "refs/tags/$RELEASE_TAG^{commit}")"
+          tag_record="$(bash release/verify-release-tag.sh "$RELEASE_TAG" "$tag_commit")"
           read -r tag_object tag_commit <<< "$tag_record"
-          [[ "$(git rev-parse origin/master)" == "$GITHUB_SHA" ]] || { echo 'Release SHA is not the exact origin/master head.' >&2; exit 1; }
-          root_version="$(sed -nE 's/^version = "([^"]+)"$/\1/p' build.gradle.kts)"
+          [[ "$(git rev-parse origin/master)" == "$GITHUB_SHA" ]] || { echo 'Controller master changed during tag verification.' >&2; exit 1; }
+          git merge-base --is-ancestor "$tag_commit" origin/master || { echo 'The release tag is not contained in the controller master.' >&2; exit 1; }
+          root_version="$(git show "${tag_commit}:build.gradle.kts" | sed -nE 's/^version = "([^"]+)"$/\1/p')"
           [[ "$root_version" == "${RELEASE_TAG#v}" ]] || { echo "Root version $root_version does not match $RELEASE_TAG." >&2; exit 1; }
-          echo "tag_commit=$tag_commit" >> "$GITHUB_OUTPUT"
-          echo "tag_object=$tag_object" >> "$GITHUB_OUTPUT"
+          {
+            echo "controller_commit=$GITHUB_SHA"
+            echo "tag_commit=$tag_commit"
+            echo "tag_object=$tag_object"
+          } >> "$GITHUB_OUTPUT"
       - name: Require successful exact-SHA CI and immutable tagged Pages
         id: pages
         shell: bash
         env:
           GH_TOKEN: ${{ github.token }}
           RELEASE_TAG: ${{ inputs.tag }}
+          TAG_COMMIT: ${{ steps.tag.outputs.tag_commit }}
         run: |
           set -euo pipefail
+          mapfile -t required_commits < <(printf '%s\n' "$GITHUB_SHA" "$TAG_COMMIT" | sort --unique)
           for workflow in jvm.yml qodana.yml; do
-            successes="$(gh run list --workflow "$workflow" --commit "$GITHUB_SHA" --status completed --limit 100 --json conclusion --jq '[.[] | select(.conclusion == "success")] | length')"
-            [[ "$successes" != "0" ]] || { echo "No successful $workflow run exists for $GITHUB_SHA." >&2; exit 1; }
+            for required_commit in "${required_commits[@]}"; do
+              runs="$(gh run list --workflow "$workflow" --commit "$required_commit" --status completed --limit 100 --json conclusion,event,headBranch,headSha)"
+              jq -e --arg commit "$required_commit" \
+                'any(.[]; .conclusion == "success" and .event == "push" and .headBranch == "master" and .headSha == $commit)' \
+                <<< "$runs" >/dev/null || {
+                echo "No successful $workflow run exists for $required_commit." >&2
+                exit 1
+              }
+            done
           done
           pages_runs="$(
-            gh run list --workflow pages.yml --commit "$GITHUB_SHA" --event push --status completed --limit 100 \
+            gh run list --workflow pages.yml --commit "$TAG_COMMIT" --event push --status completed --limit 100 \
               --json conclusion,databaseId,event,headBranch,headSha
           )"
           pages_run_id="$(
-            jq -er --arg tag "$RELEASE_TAG" --arg sha "$GITHUB_SHA" '
+            jq -er --arg tag "$RELEASE_TAG" --arg sha "$TAG_COMMIT" '
               [
                 .[] |
                 select(.conclusion == "success" and .event == "push" and .headBranch == $tag and .headSha == $sha)
@@ -99,14 +121,20 @@ jobs:
               tostring
             ' <<< "$pages_runs"
           )" || {
-            echo "No successful tag-triggered pages.yml run exists for $RELEASE_TAG at $GITHUB_SHA." >&2
+            echo "No successful tag-triggered pages.yml run exists for $RELEASE_TAG at $TAG_COMMIT." >&2
             exit 1
           }
           bash -n release/verify-pages-deployment-source.sh
-          bash release/verify-pages-deployment-source.sh "$pages_run_id" "$RELEASE_TAG" "$GITHUB_SHA" >/dev/null
+          pages_record="$(bash release/verify-pages-deployment-source.sh "$pages_run_id" "$RELEASE_TAG" "$TAG_COMMIT")"
+          read -r verified_run_id pages_artifact_id pages_deployment_id <<< "$pages_record"
+          [[ "$verified_run_id" == "$pages_run_id" ]] || { echo 'Verified Pages run ID differs from the selected run.' >&2; exit 1; }
           bash -n release/wait-for-pages-source-receipt.sh
-          bash release/wait-for-pages-source-receipt.sh "$RELEASE_TAG" "$GITHUB_SHA"
-          echo "pages_run_id=$pages_run_id" >> "$GITHUB_OUTPUT"
+          bash release/wait-for-pages-source-receipt.sh "$RELEASE_TAG" "$TAG_COMMIT"
+          {
+            echo "pages_artifact_id=$pages_artifact_id"
+            echo "pages_deployment_id=$pages_deployment_id"
+            echo "pages_run_id=$pages_run_id"
+          } >> "$GITHUB_OUTPUT"
 
   release:
     if: inputs.operation == 'release'
@@ -120,34 +148,58 @@ jobs:
       url: https://github.com/sya-ri/strata/releases/tag/${{ inputs.tag }}
     runs-on: ubuntu-latest
     steps:
-      - name: Check out master
+      - name: Check out exact release source
         uses: actions/checkout@v7
         with:
           fetch-depth: 0
           persist-credentials: false
+          ref: ${{ needs.preflight.outputs.tag_commit }}
       - name: Revalidate protected release request and public source receipt
         shell: bash
         env:
           GH_TOKEN: ${{ github.token }}
           RELEASE_TAG: ${{ inputs.tag }}
           CONFIRMATION: ${{ inputs.confirmation }}
+          EXPECTED_CONTROLLER_COMMIT: ${{ needs.preflight.outputs.controller_commit }}
           EXPECTED_TAG_COMMIT: ${{ needs.preflight.outputs.tag_commit }}
           EXPECTED_TAG_OBJECT: ${{ needs.preflight.outputs.tag_object }}
+          EXPECTED_PAGES_ARTIFACT_ID: ${{ needs.preflight.outputs.pages_artifact_id }}
+          EXPECTED_PAGES_DEPLOYMENT_ID: ${{ needs.preflight.outputs.pages_deployment_id }}
           EXPECTED_PAGES_RUN_ID: ${{ needs.preflight.outputs.pages_run_id }}
         run: |
           set -euo pipefail
           [[ "$GITHUB_REF" == "refs/heads/master" ]] || { echo 'Release must be dispatched from master.' >&2; exit 1; }
           [[ "$RELEASE_TAG" == "v0.1.0" ]] || { echo 'This workflow is pinned to v0.1.0.' >&2; exit 1; }
           [[ "$CONFIRMATION" == "release $RELEASE_TAG" ]] || { echo 'Release confirmation does not match.' >&2; exit 1; }
+          git fetch --force origin \
+            '+refs/heads/master:refs/remotes/origin/master' \
+            "+refs/tags/$RELEASE_TAG:refs/tags/$RELEASE_TAG"
+          [[ "$GITHUB_SHA" == "$EXPECTED_CONTROLLER_COMMIT" ]] || { echo 'Protected job controller differs from read-only preflight.' >&2; exit 1; }
+          [[ "$(git rev-parse HEAD)" == "$EXPECTED_TAG_COMMIT" ]] || { echo 'Checked-out release source differs from the preflight tag commit.' >&2; exit 1; }
+          [[ "$(git rev-parse origin/master)" == "$GITHUB_SHA" ]] || { echo 'Controller SHA is no longer the exact origin/master head.' >&2; exit 1; }
+          git merge-base --is-ancestor "$EXPECTED_TAG_COMMIT" origin/master || { echo 'The release tag is no longer contained in controller master.' >&2; exit 1; }
           bash release/verify-github-tag-ruleset.sh >/dev/null
           bash release/verify-release-tag.sh "$RELEASE_TAG" "$EXPECTED_TAG_COMMIT" "$EXPECTED_TAG_OBJECT" >/dev/null
-          [[ "$EXPECTED_TAG_COMMIT" == "$GITHUB_SHA" ]] || { echo 'Read-only preflight commit differs from the protected job commit.' >&2; exit 1; }
-          [[ "$(git rev-parse origin/master)" == "$GITHUB_SHA" ]] || { echo 'Release SHA is no longer the exact origin/master head.' >&2; exit 1; }
+          [[ "$(git rev-parse origin/master)" == "$GITHUB_SHA" ]] || { echo 'Controller master changed during protected tag verification.' >&2; exit 1; }
           root_version="$(sed -nE 's/^version = "([^"]+)"$/\1/p' build.gradle.kts)"
           [[ "$root_version" == "${RELEASE_TAG#v}" ]] || { echo "Root version $root_version does not match $RELEASE_TAG." >&2; exit 1; }
-          bash release/verify-pages-deployment-source.sh \
-            "$EXPECTED_PAGES_RUN_ID" "$RELEASE_TAG" "$EXPECTED_TAG_COMMIT" >/dev/null
+          pages_record="$(bash release/verify-pages-deployment-source.sh \
+            "$EXPECTED_PAGES_RUN_ID" "$RELEASE_TAG" "$EXPECTED_TAG_COMMIT")"
+          [[ "$pages_record" == "$EXPECTED_PAGES_RUN_ID $EXPECTED_PAGES_ARTIFACT_ID $EXPECTED_PAGES_DEPLOYMENT_ID" ]] || {
+            echo 'Protected Pages evidence differs from read-only preflight.' >&2
+            exit 1
+          }
           bash release/wait-for-pages-source-receipt.sh "$RELEASE_TAG" "$EXPECTED_TAG_COMMIT"
+          echo "RELEASE_SOURCE_COMMIT=$EXPECTED_TAG_COMMIT" >> "$GITHUB_ENV"
+          {
+            echo '### Release provenance'
+            echo
+            echo "- Controller commit: \`$EXPECTED_CONTROLLER_COMMIT\`"
+            echo "- Release source commit: \`$EXPECTED_TAG_COMMIT\`"
+            echo "- Signed release tag: \`$RELEASE_TAG\`"
+            echo "- Signed tag object: \`$EXPECTED_TAG_OBJECT\`"
+            echo "- Pages run / artifact / deployment: \`$pages_record\`"
+          } >> "$GITHUB_STEP_SUMMARY"
       - name: Set up Java
         uses: actions/setup-java@v6
         with:
@@ -200,10 +252,28 @@ jobs:
           set -euo pipefail
           bash ./gradlew --no-parallel --max-workers=2 --no-build-cache \
             :check :api:check :integration:api:check :integration:docs:check \
+            :integration:docs:checkDokkaPagesStaging \
             :quality:benchmarks:check :quality:detekt-rules:check \
             :runtime:core:check :runtime:headless:check :runtime:minecraft:check \
             :koverJvmTests :koverHtmlReport :koverXmlReport -Pkover \
-            -Pstrata.sourceRevision="$RELEASE_TAG"
+            -Pstrata.sourceRevision="$RELEASE_TAG" \
+            -Pstrata.sourceCommit="$RELEASE_SOURCE_COMMIT"
+      - name: Verify generated release-source receipts
+        shell: bash
+        env:
+          RELEASE_TAG: ${{ inputs.tag }}
+        run: |
+          set -euo pipefail
+          mapfile -d '' source_receipts < <(find build/dokka/html -type f -name source-receipt.json -print0)
+          [[ "${#source_receipts[@]}" != "0" ]] || { echo 'No generated source receipts were found.' >&2; exit 1; }
+          for source_receipt in "${source_receipts[@]}"; do
+            jq -e --arg commit "$RELEASE_SOURCE_COMMIT" --arg revision "$RELEASE_TAG" \
+              'keys == ["commit", "revision"] and .commit == $commit and .revision == $revision' \
+              "$source_receipt" >/dev/null || {
+              echo "Generated source receipt differs from the release source: $source_receipt" >&2
+              exit 1
+            }
+          done
       - name: Build deterministic release manifest and verify published-coordinate consumer
         shell: bash
         env:
@@ -216,6 +286,7 @@ jobs:
           bash ./gradlew --no-parallel --max-workers=2 --no-build-cache \
             verifyReleasePublicationMatrix verifyPublishedConsumer modrinthReleaseManifest \
             -Pstrata.sourceRevision="$RELEASE_TAG" \
+            -Pstrata.sourceCommit="$RELEASE_SOURCE_COMMIT" \
             -Pstrata.modrinthProjectId="$PROJECT_ID"
       - name: Run representative loaded clients from Maven-local coordinates
         shell: bash
@@ -223,12 +294,18 @@ jobs:
           RELEASE_TAG: ${{ inputs.tag }}
         run: |
           set -euo pipefail
-          bash ./gradlew --no-parallel --max-workers=2 --no-build-cache \
-            :integration:minecraft-fabric-1.20.1:runPublishedCoordinateClientGameTest \
-            :integration:minecraft-fabric-1.21.11:runPublishedCoordinateClientGameTest \
-            :integration:minecraft-fabric-26.2:runPublishedCoordinateClientGameTest \
-            -Pstrata.releaseRepository="file://$HOME/.m2/repository" \
-            -Pstrata.sourceRevision="$RELEASE_TAG"
+          representative_tasks=(
+            :integration:minecraft-fabric-1.20.1:runPublishedCoordinateClientGameTest
+            :integration:minecraft-fabric-1.21.11:runPublishedCoordinateClientGameTest
+            :integration:minecraft-fabric-26.2:runPublishedCoordinateClientGameTest
+          )
+          for representative_task in "${representative_tasks[@]}"; do
+            bash ./gradlew --no-parallel --max-workers=2 --no-build-cache \
+              "$representative_task" \
+              -Pstrata.releaseRepository="file://$HOME/.m2/repository" \
+              -Pstrata.sourceRevision="$RELEASE_TAG" \
+              -Pstrata.sourceCommit="$RELEASE_SOURCE_COMMIT"
+          done
       - name: Inspect Maven Central idempotency state
         id: central
         shell: bash
@@ -242,7 +319,8 @@ jobs:
           set -euo pipefail
           bash ./gradlew --no-parallel --max-workers=2 --no-build-cache \
             mavenCentralReleasePreflight mavenCentralPortalPreflight \
-            -Pstrata.sourceRevision="$RELEASE_TAG"
+            -Pstrata.sourceRevision="$RELEASE_TAG" \
+            -Pstrata.sourceCommit="$RELEASE_SOURCE_COMMIT"
           state="$(jq -r '.state' build/release/maven-central/preflight.json)"
           central_coordinate_count="$(jq -r '.coordinateCount' build/release/maven-central/preflight.json)"
           central_file_count="$(jq -r '.verifiedFileCount' build/release/maven-central/preflight.json)"
@@ -307,7 +385,8 @@ jobs:
           set -euo pipefail
           bash ./gradlew --no-parallel --max-workers=2 --no-build-cache \
             mavenCentralReleaseVerify githubReleaseBundle \
-            -Pstrata.sourceRevision="$RELEASE_TAG"
+            -Pstrata.sourceRevision="$RELEASE_TAG" \
+            -Pstrata.sourceCommit="$RELEASE_SOURCE_COMMIT"
           [[ "$(jq -r '.state' build/release/maven-central/verify.json)" == "exact" \
             && "$(jq -r '.coordinateCount' build/release/maven-central/verify.json)" == "24" \
             && "$(jq -r '.verifiedFileCount' build/release/maven-central/verify.json)" == "240" \
@@ -325,6 +404,7 @@ jobs:
           set -euo pipefail
           bash ./gradlew --no-parallel --max-workers=2 --no-build-cache modrinthReleasePreflight \
             -Pstrata.sourceRevision="$RELEASE_TAG" \
+            -Pstrata.sourceCommit="$RELEASE_SOURCE_COMMIT" \
             -Pstrata.modrinthProjectId="$PROJECT_ID"
       - name: Preflight GitHub Release without mutation
         shell: bash
@@ -383,8 +463,14 @@ jobs:
           set -euo pipefail
           bash release/verify-github-tag-ruleset.sh >/dev/null
           bash release/verify-release-tag.sh "$RELEASE_TAG" "$EXPECTED_TAG_COMMIT" "$EXPECTED_TAG_OBJECT" >/dev/null
+          [[ "$(git rev-parse HEAD)" == "$EXPECTED_TAG_COMMIT" ]] || { echo 'Release workspace changed before Modrinth staging.' >&2; exit 1; }
+          [[ "$(git rev-parse origin/master)" == "$GITHUB_SHA" ]] || { echo 'Controller master changed before Modrinth staging.' >&2; exit 1; }
+          git merge-base --is-ancestor "$EXPECTED_TAG_COMMIT" origin/master || { echo 'Release source is no longer contained in controller master.' >&2; exit 1; }
+          git diff --quiet -- . || { echo 'Tracked release source changed before Modrinth staging.' >&2; exit 1; }
+          git diff --cached --quiet -- . || { echo 'Staged release source changed before Modrinth staging.' >&2; exit 1; }
           bash ./gradlew --no-parallel --max-workers=2 --no-build-cache modrinthReleaseStage \
             -Pstrata.sourceRevision="$RELEASE_TAG" \
+            -Pstrata.sourceCommit="$RELEASE_SOURCE_COMMIT" \
             -Pstrata.modrinthProjectId="$PROJECT_ID"
       - name: Recheck Central absence immediately before publication
         if: steps.central.outputs.publish == 'true'
@@ -400,7 +486,8 @@ jobs:
           set -euo pipefail
           bash ./gradlew --no-parallel --max-workers=2 --no-build-cache \
             mavenCentralReleasePreflight mavenCentralPortalPreflight \
-            -Pstrata.sourceRevision="$RELEASE_TAG"
+            -Pstrata.sourceRevision="$RELEASE_TAG" \
+            -Pstrata.sourceCommit="$RELEASE_SOURCE_COMMIT"
           fresh_state="$(jq -r '.state' build/release/maven-central/preflight.json)"
           fresh_portal_state="$(jq -r '.state' build/release/maven-central/portal-preflight.json)"
           [[ "$fresh_state:$fresh_portal_state" == "absent:absent" ]] || {
@@ -433,8 +520,14 @@ jobs:
           set -euo pipefail
           bash release/verify-github-tag-ruleset.sh >/dev/null
           bash release/verify-release-tag.sh "$RELEASE_TAG" "$EXPECTED_TAG_COMMIT" "$EXPECTED_TAG_OBJECT" >/dev/null
+          [[ "$(git rev-parse HEAD)" == "$EXPECTED_TAG_COMMIT" ]] || { echo 'Release workspace changed before Maven Central publication.' >&2; exit 1; }
+          [[ "$(git rev-parse origin/master)" == "$GITHUB_SHA" ]] || { echo 'Controller master changed before Maven Central publication.' >&2; exit 1; }
+          git merge-base --is-ancestor "$EXPECTED_TAG_COMMIT" origin/master || { echo 'Release source is no longer contained in controller master.' >&2; exit 1; }
+          git diff --quiet -- . || { echo 'Tracked release source changed before Maven Central publication.' >&2; exit 1; }
+          git diff --cached --quiet -- . || { echo 'Staged release source changed before Maven Central publication.' >&2; exit 1; }
           bash ./gradlew --no-parallel --max-workers=2 --no-build-cache publishAndReleaseToMavenCentral \
-            -Pstrata.sourceRevision="$RELEASE_TAG"
+            -Pstrata.sourceRevision="$RELEASE_TAG" \
+            -Pstrata.sourceCommit="$RELEASE_SOURCE_COMMIT"
       - name: Reconcile the exact Central Portal deployment
         if: steps.central.outputs.verify_portal == 'true'
         shell: bash
@@ -447,7 +540,8 @@ jobs:
         run: |
           set -euo pipefail
           bash ./gradlew --no-parallel --max-workers=2 --no-build-cache mavenCentralPortalVerify \
-            -Pstrata.sourceRevision="$RELEASE_TAG"
+            -Pstrata.sourceRevision="$RELEASE_TAG" \
+            -Pstrata.sourceCommit="$RELEASE_SOURCE_COMMIT"
           [[ "$(jq -r '.state' build/release/maven-central/portal-verify.json)" == "exact" ]] || {
             echo 'Central Portal reconciliation did not produce exact evidence.' >&2
             exit 1
@@ -498,7 +592,8 @@ jobs:
         run: |
           set -euo pipefail
           bash ./gradlew --no-parallel --max-workers=2 --no-build-cache mavenCentralReleaseVerify githubReleaseBundle \
-            -Pstrata.sourceRevision="$RELEASE_TAG"
+            -Pstrata.sourceRevision="$RELEASE_TAG" \
+            -Pstrata.sourceCommit="$RELEASE_SOURCE_COMMIT"
           [[ "$(jq -r '.state' build/release/maven-central/verify.json)" == "exact" \
             && "$(jq -r '.coordinateCount' build/release/maven-central/verify.json)" == "24" \
             && "$(jq -r '.verifiedFileCount' build/release/maven-central/verify.json)" == "240" \
@@ -541,12 +636,18 @@ jobs:
           RELEASE_TAG: ${{ inputs.tag }}
         run: |
           set -euo pipefail
-          bash ./gradlew --no-parallel --max-workers=2 --no-build-cache \
-            :integration:minecraft-fabric-1.20.1:runPublishedCoordinateClientGameTest \
-            :integration:minecraft-fabric-1.21.11:runPublishedCoordinateClientGameTest \
-            :integration:minecraft-fabric-26.2:runPublishedCoordinateClientGameTest \
-            -Pstrata.releaseRepository=https://repo1.maven.org/maven2 \
-            -Pstrata.sourceRevision="$RELEASE_TAG"
+          representative_tasks=(
+            :integration:minecraft-fabric-1.20.1:runPublishedCoordinateClientGameTest
+            :integration:minecraft-fabric-1.21.11:runPublishedCoordinateClientGameTest
+            :integration:minecraft-fabric-26.2:runPublishedCoordinateClientGameTest
+          )
+          for representative_task in "${representative_tasks[@]}"; do
+            bash ./gradlew --no-parallel --max-workers=2 --no-build-cache \
+              "$representative_task" \
+              -Pstrata.releaseRepository=https://repo1.maven.org/maven2 \
+              -Pstrata.sourceRevision="$RELEASE_TAG" \
+              -Pstrata.sourceCommit="$RELEASE_SOURCE_COMMIT"
+          done
       - name: Create or verify GitHub release assets
         shell: bash
         env:
@@ -558,6 +659,11 @@ jobs:
           set -euo pipefail
           bash release/verify-github-tag-ruleset.sh >/dev/null
           bash release/verify-release-tag.sh "$RELEASE_TAG" "$EXPECTED_TAG_COMMIT" "$EXPECTED_TAG_OBJECT" >/dev/null
+          [[ "$(git rev-parse HEAD)" == "$EXPECTED_TAG_COMMIT" ]] || { echo 'Release workspace changed before GitHub Release mutation.' >&2; exit 1; }
+          [[ "$(git rev-parse origin/master)" == "$GITHUB_SHA" ]] || { echo 'Controller master changed before GitHub Release mutation.' >&2; exit 1; }
+          git merge-base --is-ancestor "$EXPECTED_TAG_COMMIT" origin/master || { echo 'Release source is no longer contained in controller master.' >&2; exit 1; }
+          git diff --quiet -- . || { echo 'Tracked release source changed before GitHub Release mutation.' >&2; exit 1; }
+          git diff --cached --quiet -- . || { echo 'Staged release source changed before GitHub Release mutation.' >&2; exit 1; }
           temporary="$(mktemp -d)"
           verified="$(mktemp -d)"
           actual_body_file="$(mktemp)"
@@ -601,6 +707,13 @@ jobs:
             cmp --silent "$asset" "$verified/$name" || { echo "Uploaded GitHub asset differs: $name" >&2; exit 1; }
           done
           if [[ "$release_draft" == "true" ]]; then
+            bash release/verify-github-tag-ruleset.sh >/dev/null
+            bash release/verify-release-tag.sh "$RELEASE_TAG" "$EXPECTED_TAG_COMMIT" "$EXPECTED_TAG_OBJECT" >/dev/null
+            [[ "$(git rev-parse HEAD)" == "$EXPECTED_TAG_COMMIT" ]] || { echo 'Release workspace changed before publishing the GitHub Release.' >&2; exit 1; }
+            [[ "$(git rev-parse origin/master)" == "$GITHUB_SHA" ]] || { echo 'Controller master changed before publishing the GitHub Release.' >&2; exit 1; }
+            git merge-base --is-ancestor "$EXPECTED_TAG_COMMIT" origin/master || { echo 'Release source is no longer contained in controller master.' >&2; exit 1; }
+            git diff --quiet -- . || { echo 'Tracked release source changed before publishing the GitHub Release.' >&2; exit 1; }
+            git diff --cached --quiet -- . || { echo 'Staged release source changed before publishing the GitHub Release.' >&2; exit 1; }
             gh release edit "$RELEASE_TAG" --draft=false
           fi
           release_json="$(gh release view "$RELEASE_TAG" --json tagName,name,body,isDraft,isPrerelease)"
@@ -623,15 +736,23 @@ jobs:
           set -euo pipefail
           bash release/verify-github-tag-ruleset.sh >/dev/null
           bash release/verify-release-tag.sh "$RELEASE_TAG" "$EXPECTED_TAG_COMMIT" "$EXPECTED_TAG_OBJECT" >/dev/null
+          [[ "$(git rev-parse HEAD)" == "$EXPECTED_TAG_COMMIT" ]] || { echo 'Release workspace changed before Modrinth submission.' >&2; exit 1; }
+          [[ "$(git rev-parse origin/master)" == "$GITHUB_SHA" ]] || { echo 'Controller master changed before Modrinth submission.' >&2; exit 1; }
+          git merge-base --is-ancestor "$EXPECTED_TAG_COMMIT" origin/master || { echo 'Release source is no longer contained in controller master.' >&2; exit 1; }
+          git diff --quiet -- . || { echo 'Tracked release source changed before Modrinth submission.' >&2; exit 1; }
+          git diff --cached --quiet -- . || { echo 'Staged release source changed before Modrinth submission.' >&2; exit 1; }
           bash ./gradlew --no-parallel --max-workers=2 --no-build-cache modrinthReleaseSubmit \
             -Pstrata.sourceRevision="$RELEASE_TAG" \
+            -Pstrata.sourceCommit="$RELEASE_SOURCE_COMMIT" \
             -Pstrata.modrinthProjectId="$PROJECT_ID"
           echo '::notice::Modrinth submission is processing. Dispatch operation=verify after project approval.'
 
   verify:
     if: inputs.operation == 'verify'
     permissions:
+      actions: read
       contents: read
+      deployments: read
     environment:
       name: release
       url: https://modrinth.com/mod/strata-ui
@@ -651,16 +772,64 @@ jobs:
           CONFIRMATION: ${{ inputs.confirmation }}
         run: |
           set -euo pipefail
+          [[ "$GITHUB_REF" == "refs/heads/master" ]] || { echo 'Verification must be dispatched from master.' >&2; exit 1; }
           [[ "$RELEASE_TAG" == "v0.1.0" ]] || { echo 'This workflow is pinned to v0.1.0.' >&2; exit 1; }
           [[ "$CONFIRMATION" == "verify $RELEASE_TAG" ]] || { echo 'Verification confirmation does not match.' >&2; exit 1; }
-          git fetch --force origin master --tags
+          git fetch --force origin \
+            '+refs/heads/master:refs/remotes/origin/master' \
+            "+refs/tags/$RELEASE_TAG:refs/tags/$RELEASE_TAG"
           checked_sha="$(git rev-parse HEAD)"
+          [[ "$(git rev-parse origin/master)" == "$GITHUB_SHA" ]] || { echo 'Verification controller is not the exact origin/master head.' >&2; exit 1; }
           [[ "$(git rev-parse --verify "refs/tags/$RELEASE_TAG^{commit}")" == "$checked_sha" ]] || { echo 'Checked-out tag mismatch.' >&2; exit 1; }
           git merge-base --is-ancestor "$checked_sha" origin/master || { echo 'The release tag is no longer contained in master.' >&2; exit 1; }
           tag_object="$(git rev-parse "refs/tags/$RELEASE_TAG")"
-          [[ "$(gh api "repos/$GITHUB_REPOSITORY/git/tags/$tag_object" --jq '.verification.verified')" == "true" ]] || { echo 'GitHub did not verify the release tag signature.' >&2; exit 1; }
+          bash release/verify-github-tag-ruleset.sh >/dev/null
+          bash release/verify-release-tag.sh "$RELEASE_TAG" "$checked_sha" "$tag_object" >/dev/null
+          [[ "$(git rev-parse origin/master)" == "$GITHUB_SHA" ]] || { echo 'Verification controller changed during tag verification.' >&2; exit 1; }
           root_version="$(sed -nE 's/^version = "([^"]+)"$/\1/p' build.gradle.kts)"
           [[ "$root_version" == "${RELEASE_TAG#v}" ]] || { echo "Root version $root_version does not match $RELEASE_TAG." >&2; exit 1; }
+          mapfile -t required_commits < <(printf '%s\n' "$GITHUB_SHA" "$checked_sha" | sort --unique)
+          for workflow in jvm.yml qodana.yml; do
+            for required_commit in "${required_commits[@]}"; do
+              runs="$(gh run list --workflow "$workflow" --commit "$required_commit" --status completed --limit 100 --json conclusion,event,headBranch,headSha)"
+              jq -e --arg commit "$required_commit" \
+                'any(.[]; .conclusion == "success" and .event == "push" and .headBranch == "master" and .headSha == $commit)' \
+                <<< "$runs" >/dev/null || {
+                echo "No successful $workflow run exists for $required_commit." >&2
+                exit 1
+              }
+            done
+          done
+          pages_runs="$(
+            gh run list --workflow pages.yml --commit "$checked_sha" --event push --status completed --limit 100 \
+              --json conclusion,databaseId,event,headBranch,headSha
+          )"
+          pages_run_id="$(
+            jq -er --arg tag "$RELEASE_TAG" --arg sha "$checked_sha" '
+              [
+                .[] |
+                select(.conclusion == "success" and .event == "push" and .headBranch == $tag and .headSha == $sha)
+              ] |
+              .[0].databaseId |
+              select(type == "number" and . > 0 and . == floor) |
+              tostring
+            ' <<< "$pages_runs"
+          )" || {
+            echo "No successful tag-triggered pages.yml run exists for $RELEASE_TAG at $checked_sha." >&2
+            exit 1
+          }
+          pages_record="$(bash release/verify-pages-deployment-source.sh "$pages_run_id" "$RELEASE_TAG" "$checked_sha")"
+          bash release/wait-for-pages-source-receipt.sh "$RELEASE_TAG" "$checked_sha"
+          echo "RELEASE_SOURCE_COMMIT=$checked_sha" >> "$GITHUB_ENV"
+          {
+            echo '### Final release verification provenance'
+            echo
+            echo "- Controller commit: \`$GITHUB_SHA\`"
+            echo "- Release source commit: \`$checked_sha\`"
+            echo "- Signed release tag: \`$RELEASE_TAG\`"
+            echo "- Signed tag object: \`$tag_object\`"
+            echo "- Pages run / artifact / deployment: \`$pages_record\`"
+          } >> "$GITHUB_STEP_SUMMARY"
       - name: Set up Java
         uses: actions/setup-java@v6
         with:
@@ -703,6 +872,7 @@ jobs:
           set -euo pipefail
           bash ./gradlew --no-parallel --max-workers=2 --no-build-cache verifyPublishedConsumer modrinthReleaseManifest \
             -Pstrata.sourceRevision="$RELEASE_TAG" \
+            -Pstrata.sourceCommit="$RELEASE_SOURCE_COMMIT" \
             -Pstrata.modrinthProjectId="$PROJECT_ID"
       - name: Verify Maven Central and GitHub assets remain exact
         shell: bash
@@ -715,7 +885,8 @@ jobs:
         run: |
           set -euo pipefail
           bash ./gradlew --no-parallel --max-workers=2 --no-build-cache mavenCentralReleaseVerify githubReleaseBundle \
-            -Pstrata.sourceRevision="$RELEASE_TAG"
+            -Pstrata.sourceRevision="$RELEASE_TAG" \
+            -Pstrata.sourceCommit="$RELEASE_SOURCE_COMMIT"
           temporary="$(mktemp -d)"
           actual_body_file="$(mktemp)"
           key_file="$(mktemp)"
@@ -768,6 +939,7 @@ jobs:
           set -euo pipefail
           bash ./gradlew --no-parallel --max-workers=2 --no-build-cache modrinthReleaseVerify \
             -Pstrata.sourceRevision="$RELEASE_TAG" \
+            -Pstrata.sourceCommit="$RELEASE_SOURCE_COMMIT" \
             -Pstrata.modrinthProjectId="$PROJECT_ID"
       - name: Verify unauthenticated Modrinth page and version inventory
         shell: bash
