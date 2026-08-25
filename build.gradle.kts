@@ -451,7 +451,8 @@ extensions.configure<DetektExtension> {
     source.setFrom(layout.projectDirectory.dir("build-logic/src/main/kotlin"))
 }
 
-private val minecraftClientTaskNames = setOf("runClientGameTest", "runProductionClientGameTest")
+private val minecraftClientTaskNames =
+    setOf("runClientGameTest", "runProductionClientGameTest", "runPublishedCoordinateClientGameTest")
 private val ideaSyncActive = providers.systemProperty("idea.sync.active").map(String::toBoolean).getOrElse(false)
 private val completeIdeaModelActive =
     ideaSyncActive || providers.gradleProperty("strata.completeIdeaModel").map(String::toBoolean).getOrElse(false)
