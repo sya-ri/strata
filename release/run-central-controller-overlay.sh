@@ -238,12 +238,12 @@ if [[ "$dry_run" == '1' ]]; then
   gradle_arguments+=(
     --dry-run
     --configure-on-demand
-    -x verifyPublishedConsumer
-    -x modrinthReleaseManifest
   )
 fi
 if [[ "$public_operation" == '1' || "$operation" == 'task-graph-test' ]]; then
   gradle_arguments+=(
+    -x verifyPublishedConsumer
+    -x modrinthReleaseManifest
     "-Pstrata.sourceRevision=$release_tag"
     "-Pstrata.sourceCommit=$source_commit"
   )

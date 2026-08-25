@@ -77,6 +77,10 @@ if printf '%s\n' "${planned_tasks[@]}" |
   grep -Eiq ':(publishAndReleaseToMavenCentral|publishToMavenCentral|publish[^ ]*ToMavenCentralRepository|drop[^ ]*MavenCentral|releaseRepository|enableAutomatic[^ ]*MavenCentral) SKIPPED$'; then
   fail 'The Central overlay task graph contains a remote Central mutation task.'
 fi
+if printf '%s\n' "${planned_tasks[@]}" |
+  grep -Eiq ':(verifyPublishedConsumer|modrinthReleaseManifest|publishToMavenLocal|publish[^ ]*PublicationToMavenLocal|sign[^ ]*Publication) SKIPPED$'; then
+  fail 'The sealed Central read task graph regenerates product, Maven-local publication, or signing inputs.'
+fi
 [[ "$(cat "$fixture/build-logic/.gradle/overlay-marker")" == 'preserved-cache' ]] || \
   fail 'The Central overlay did not restore the pre-existing build-logic cache.'
 [[ ! -e "$fixture/build-logic/build" && ! -e "$fixture/build-logic/.kotlin" ]] || \

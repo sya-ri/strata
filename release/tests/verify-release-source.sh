@@ -916,13 +916,39 @@ grep --fixed-strings 'Require the sealed Maven Central release' "$workflow" >/de
   fail 'The post-publication Central state is not explicitly sealed.'
 grep --fixed-strings 'The sealed Central release differs' "$workflow" >/dev/null || \
   fail 'The sealed Central preflight does not fail closed on any public mismatch.'
+central_overlay_runner="$repository_root/release/run-central-controller-overlay.sh"
+central_sealed_read_branch="$(
+  awk '
+    index($0, "$public_operation") && index($0, "$operation") && index($0, "task-graph-test") { capture = 1 }
+    capture { print }
+    capture && $0 == "fi" { exit }
+  ' "$central_overlay_runner"
+)"
+[[ -n "$central_sealed_read_branch" ]] || \
+  fail 'Sealed Central reads and their task-graph regression do not share one dependency-exclusion branch.'
+[[ "$(printf '%s\n' "$central_sealed_read_branch" | grep --fixed-strings -c -- '-x verifyPublishedConsumer')" == '1' \
+  && "$(grep --fixed-strings -c -- '-x verifyPublishedConsumer' "$central_overlay_runner")" == '1' ]] || \
+  fail 'The Central overlay must exclude Maven-local regeneration through one shared sealed-read path.'
+[[ "$(printf '%s\n' "$central_sealed_read_branch" | grep --fixed-strings -c -- '-x modrinthReleaseManifest')" == '1' \
+  && "$(grep --fixed-strings -c -- '-x modrinthReleaseManifest' "$central_overlay_runner")" == '1' ]] || \
+  fail 'The Central overlay must exclude canonical artifact regeneration through one shared sealed-read path.'
+release_evidence_line="$(grep -n -m 1 --fixed-strings '      - name: Build deterministic release manifest and verify published-coordinate consumer' "$workflow" | cut -d: -f1)"
+central_preflight_line="$(grep -n -m 1 --fixed-strings '      - name: Require the sealed Maven Central release' "$workflow" | cut -d: -f1)"
 central_verify_line="$(grep -n -m 1 --fixed-strings '      - name: Verify Central and build the canonical GitHub bundle' "$workflow" | cut -d: -f1)"
 central_signature_line="$(grep -n -m 1 --fixed-strings '      - name: Cryptographically verify canonical Central signatures' "$workflow" | cut -d: -f1)"
 modrinth_stage_line="$(grep -n -m 1 --fixed-strings '      - name: Stage listed Modrinth versions' "$workflow" | cut -d: -f1)"
-[[ -n "$central_verify_line" && -n "$central_signature_line" && -n "$modrinth_stage_line" ]] || \
+final_evidence_line="$(grep -n -m 1 --fixed-strings '      - name: Rebuild deterministic release evidence' "$workflow" | cut -d: -f1)"
+final_central_verify_line="$(grep -n -m 1 --fixed-strings '      - name: Verify the sealed Maven Central release remains exact' "$workflow" | cut -d: -f1)"
+[[ -n "$release_evidence_line" && -n "$central_preflight_line" && -n "$central_verify_line" \
+  && -n "$central_signature_line" && -n "$modrinth_stage_line" && -n "$final_evidence_line" \
+  && -n "$final_central_verify_line" ]] || \
   fail 'The sealed Central verification or Modrinth staging boundary is missing.'
+(( release_evidence_line < central_preflight_line && central_preflight_line < central_verify_line )) || \
+  fail 'The release must build signed local evidence before excluding its generation from sealed Central reads.'
 (( central_verify_line < central_signature_line && central_signature_line < modrinth_stage_line )) || \
   fail 'Canonical Central signatures must be verified before Modrinth staging can mutate remote state.'
+(( final_evidence_line < final_central_verify_line )) || \
+  fail 'Final verification must rebuild signed local evidence before excluding its generation from the sealed Central read.'
 if awk '
   /^      - name:/ {
     if (overlay_step && secret) exposed = 1
