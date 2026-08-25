@@ -54,7 +54,22 @@ internal object PagesStagingChecker {
             }
             require(Files.isSymbolicLink(staged).not()) { "Inventoried Pages target is staged as a symbolic file: $publicPath" }
         }
+        checkSourceReceipt(site)
         checkGuideTopology(site)
+    }
+
+    private fun checkSourceReceipt(siteRoot: Path) {
+        val revisionFile = siteRoot.resolve(SOURCE_REVISION_FILE)
+        val receiptFile = siteRoot.resolve(SOURCE_RECEIPT_FILE)
+        val revisionText = Files.readString(revisionFile, StandardCharsets.UTF_8)
+        val revisionMatch = SOURCE_REVISION.matchEntire(revisionText)
+        require(revisionMatch != null) { "Pages source revision is not canonical: $revisionFile" }
+        val receiptText = Files.readString(receiptFile, StandardCharsets.UTF_8)
+        val receiptMatch = SOURCE_RECEIPT.matchEntire(receiptText)
+        require(receiptMatch != null) { "Pages source receipt is not canonical: $receiptFile" }
+        require(receiptMatch.groupValues[2] == revisionMatch.groupValues[1]) {
+            "Pages source receipt revision differs from source-revision.txt."
+        }
     }
 
     private fun checkGuideTopology(siteRoot: Path) {
@@ -244,4 +259,9 @@ internal object PagesStagingChecker {
     private const val INDEX_FILE = "index.html"
     private const val PAGES_HOST = "gh.s7a.dev"
     private const val PAGES_BASE_PATH = "/strata/"
+    private const val SOURCE_RECEIPT_FILE = "source-receipt.json"
+    private const val SOURCE_REVISION_FILE = "source-revision.txt"
+    private const val SOURCE_REVISION_PATTERN = "(?:master|v[0-9]+\\.[0-9]+\\.[0-9]+(?:[-+][0-9A-Za-z.-]+)?|[0-9a-f]{40})"
+    private val SOURCE_RECEIPT = Regex("\\{\"commit\":\"([0-9a-f]{40})\",\"revision\":\"($SOURCE_REVISION_PATTERN)\"}\\n")
+    private val SOURCE_REVISION = Regex("($SOURCE_REVISION_PATTERN)\\n")
 }

@@ -71,6 +71,7 @@ internal object PagesPublicUrlInventory {
             add("/index.html")
             add("/guide/")
             add("/guide/index.html")
+            add("/source-receipt.json")
             add("/source-revision.txt")
             addAll(hardCodedPublicPaths(project))
             addAll(stagedGuideImages(site))

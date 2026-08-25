@@ -45,6 +45,23 @@ private val sourceRevision = providers.gradleProperty("strata.sourceRevision").g
 check(sourceRevision.matches(Regex("(?:master|v[0-9]+\\.[0-9]+\\.[0-9]+(?:[-+][0-9A-Za-z.-]+)?|[0-9a-f]{40})"))) {
     "strata.sourceRevision must be master, a release tag, or a full lowercase Git commit."
 }
+private val sourceCommit =
+    providers
+        .gradleProperty("strata.sourceCommit")
+        .orElse(providers.environmentVariable("GITHUB_SHA"))
+        .orElse(
+            providers
+                .exec {
+                    workingDir(rootDir)
+                    commandLine("git", "rev-parse", "HEAD")
+                }.standardOutput.asText
+                .map(String::trim),
+        ).map { commit ->
+            check(commit.matches(Regex("[0-9a-f]{40}"))) {
+                "strata.sourceCommit must be the full lowercase Git commit that produced the documentation."
+            }
+            commit
+        }
 
 private data class MinecraftFabricTarget(
     val version: String,
@@ -409,13 +426,17 @@ val verifyGeneratedDokkaSourceLinks =
 val stagePagesSourceRevision =
     tasks.register("stagePagesSourceRevision") {
         group = "documentation"
-        description = "Stages the exact Dokka source revision as public Pages release evidence."
+        description = "Stages the exact Dokka source revision and commit as public Pages release evidence."
         dependsOn("dokkaGenerate")
         val revisionFile = layout.buildDirectory.file("dokka/html/source-revision.txt")
+        val receiptFile = layout.buildDirectory.file("dokka/html/source-receipt.json")
         inputs.property("sourceRevision", sourceRevision)
-        outputs.file(revisionFile)
+        inputs.property("sourceCommit", sourceCommit)
+        outputs.files(revisionFile, receiptFile)
         doLast {
+            val commit = sourceCommit.get()
             revisionFile.get().asFile.writeText("$sourceRevision\n")
+            receiptFile.get().asFile.writeText("{\"commit\":\"$commit\",\"revision\":\"$sourceRevision\"}\n")
         }
     }
 

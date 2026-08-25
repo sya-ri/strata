@@ -37,7 +37,7 @@ internal class PagesStagingCheckerTest {
             ![Row](components/row.png)
             """.trimIndent(),
         )
-        Files.writeString(site.resolve("source-revision.txt"), "v0.1.0\n")
+        writeSourceEvidence(site)
         Files.createDirectories(site.resolve("guide/components"))
         Files.writeString(site.resolve("guide/components/row.png"), "image")
         val inventory = site.resolve("pages-public-urls.txt")
@@ -50,7 +50,50 @@ internal class PagesStagingCheckerTest {
         assertTrue(paths.contains("/guide/"))
         assertTrue(paths.contains("/guide/components.md"))
         assertTrue(paths.contains("/guide/components/row.png"))
+        assertTrue(paths.contains("/source-receipt.json"))
         assertTrue(paths.contains("/source-revision.txt"))
+    }
+
+    @Test
+    fun rejectsSourceReceiptWithAnotherRevision() {
+        val (project, site) = createBaseTrees("receipt-revision")
+        writeSourceEvidence(site, receiptRevision = "v0.1.1")
+        val inventory = writeInventory(project, site)
+
+        val failure =
+            assertThrows(IllegalArgumentException::class.java) {
+                PagesStagingChecker.check(project, site, inventory)
+            }
+        assertTrue(failure.message.orEmpty().contains("differs from source-revision.txt"))
+    }
+
+    @Test
+    fun rejectsSourceReceiptWithAbbreviatedCommit() {
+        val (project, site) = createBaseTrees("receipt-commit")
+        Files.writeString(
+            site.resolve("source-receipt.json"),
+            "{\"commit\":\"${SOURCE_COMMIT.take(12)}\",\"revision\":\"v0.1.0\"}\n",
+        )
+        val inventory = writeInventory(project, site)
+
+        val failure =
+            assertThrows(IllegalArgumentException::class.java) {
+                PagesStagingChecker.check(project, site, inventory)
+            }
+        assertTrue(failure.message.orEmpty().contains("source receipt is not canonical"))
+    }
+
+    @Test
+    fun rejectsMissingSourceReceipt() {
+        val (project, site) = createBaseTrees("missing-receipt")
+        Files.delete(site.resolve("source-receipt.json"))
+        val inventory = writeInventory(project, site)
+
+        val failure =
+            assertThrows(IllegalArgumentException::class.java) {
+                PagesStagingChecker.check(project, site, inventory)
+            }
+        assertTrue(failure.message.orEmpty().contains("/source-receipt.json"))
     }
 
     @Test
@@ -177,8 +220,20 @@ internal class PagesStagingCheckerTest {
         Files.writeString(site.resolve("index.html"), "<h1 id=\"api\">API</h1>")
         Files.createDirectories(site.resolve("guide"))
         Files.writeString(site.resolve("guide/index.html"), "<h1 id=\"guides\">Guides</h1>")
-        Files.writeString(site.resolve("source-revision.txt"), "v0.1.0\n")
+        writeSourceEvidence(site)
         return project to site
+    }
+
+    private fun writeSourceEvidence(
+        site: Path,
+        revision: String = "v0.1.0",
+        receiptRevision: String = revision,
+    ) {
+        Files.writeString(site.resolve("source-revision.txt"), "$revision\n")
+        Files.writeString(
+            site.resolve("source-receipt.json"),
+            "{\"commit\":\"$SOURCE_COMMIT\",\"revision\":\"$receiptRevision\"}\n",
+        )
     }
 
     private fun writeInventory(
@@ -188,4 +243,8 @@ internal class PagesStagingCheckerTest {
         site.resolve("pages-public-urls.txt").also { inventory ->
             PagesPublicUrlInventory.write(project, site, inventory)
         }
+
+    private companion object {
+        private const val SOURCE_COMMIT = "0123456789abcdef0123456789abcdef01234567"
+    }
 }

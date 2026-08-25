@@ -28,6 +28,7 @@ snapshot="$(mktemp -d)"
 worktree_parent=""
 worktree=""
 expected_revision=""
+expected_receipt=""
 cleanup() {
   if [[ -n "$worktree" && -d "$worktree" ]]; then
     git -C "$repository_root" worktree remove --force "$worktree" >/dev/null 2>&1 || true
@@ -37,6 +38,9 @@ cleanup() {
   fi
   if [[ -n "$expected_revision" ]]; then
     rm -f -- "$expected_revision"
+  fi
+  if [[ -n "$expected_receipt" ]]; then
+    rm -f -- "$expected_receipt"
   fi
   rm -rf -- "$snapshot"
 }
@@ -53,7 +57,8 @@ else
     cd "$worktree"
     bash ./gradlew --no-parallel --max-workers=2 --no-build-cache \
       :integration:docs:checkDokkaPagesStaging \
-      -Pstrata.sourceRevision="$release_tag"
+      -Pstrata.sourceRevision="$release_tag" \
+      -Pstrata.sourceCommit="$tag_commit"
   )
   cp -a "$worktree/build/dokka/html/." "$snapshot/"
 fi
@@ -63,6 +68,11 @@ printf '%s\n' "$release_tag" > "$expected_revision"
 cmp --silent "$expected_revision" "$snapshot/source-revision.txt" || { echo 'Immutable Pages snapshot has the wrong source revision.' >&2; exit 1; }
 rm -f -- "$expected_revision"
 expected_revision=""
+expected_receipt="$(mktemp)"
+printf '{"commit":"%s","revision":"%s"}\n' "$tag_commit" "$release_tag" > "$expected_receipt"
+cmp --silent "$expected_receipt" "$snapshot/source-receipt.json" || { echo 'Immutable Pages snapshot has the wrong source receipt.' >&2; exit 1; }
+rm -f -- "$expected_receipt"
+expected_receipt=""
 
 destination="$site_root/releases/${release_tag#v}"
 case "$destination" in

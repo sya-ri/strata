@@ -33,22 +33,25 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  release:
+  preflight:
     if: inputs.operation == 'release'
     permissions:
       actions: read
-      contents: write
-    environment:
-      name: release
-      url: https://github.com/sya-ri/strata/releases/tag/${{ inputs.tag }}
+      contents: read
+      deployments: read
     runs-on: ubuntu-latest
+    outputs:
+      tag_commit: ${{ steps.tag.outputs.tag_commit }}
+      tag_object: ${{ steps.tag.outputs.tag_object }}
+      pages_run_id: ${{ steps.pages.outputs.pages_run_id }}
     steps:
       - name: Check out master
         uses: actions/checkout@v7
         with:
           fetch-depth: 0
           persist-credentials: false
-      - name: Validate protected release request
+      - name: Validate read-only release request
+        id: tag
         shell: bash
         env:
           GH_TOKEN: ${{ github.token }}
@@ -59,15 +62,18 @@ jobs:
           [[ "$GITHUB_REF" == "refs/heads/master" ]] || { echo 'Release must be dispatched from master.' >&2; exit 1; }
           [[ "$RELEASE_TAG" == "v0.1.0" ]] || { echo 'This workflow is pinned to v0.1.0.' >&2; exit 1; }
           [[ "$CONFIRMATION" == "release $RELEASE_TAG" ]] || { echo 'Release confirmation does not match.' >&2; exit 1; }
-          git fetch --force origin master --tags
+          bash -n release/verify-github-tag-ruleset.sh
+          bash -n release/verify-release-tag.sh
+          bash release/verify-github-tag-ruleset.sh >/dev/null
+          tag_record="$(bash release/verify-release-tag.sh "$RELEASE_TAG" "$GITHUB_SHA")"
+          read -r tag_object tag_commit <<< "$tag_record"
           [[ "$(git rev-parse origin/master)" == "$GITHUB_SHA" ]] || { echo 'Release SHA is not the exact origin/master head.' >&2; exit 1; }
-          [[ "$(git rev-parse --verify "refs/tags/$RELEASE_TAG^{commit}")" == "$GITHUB_SHA" ]] || { echo 'The required pre-existing release tag does not point to this commit.' >&2; exit 1; }
-          [[ "$(git cat-file -t "refs/tags/$RELEASE_TAG")" == "tag" ]] || { echo 'The release tag must be annotated and signed.' >&2; exit 1; }
-          tag_object="$(git rev-parse "refs/tags/$RELEASE_TAG")"
-          [[ "$(gh api "repos/$GITHUB_REPOSITORY/git/tags/$tag_object" --jq '.verification.verified')" == "true" ]] || { echo 'GitHub did not verify the release tag signature.' >&2; exit 1; }
           root_version="$(sed -nE 's/^version = "([^"]+)"$/\1/p' build.gradle.kts)"
           [[ "$root_version" == "${RELEASE_TAG#v}" ]] || { echo "Root version $root_version does not match $RELEASE_TAG." >&2; exit 1; }
+          echo "tag_commit=$tag_commit" >> "$GITHUB_OUTPUT"
+          echo "tag_object=$tag_object" >> "$GITHUB_OUTPUT"
       - name: Require successful exact-SHA CI and immutable tagged Pages
+        id: pages
         shell: bash
         env:
           GH_TOKEN: ${{ github.token }}
@@ -80,29 +86,68 @@ jobs:
           done
           pages_runs="$(
             gh run list --workflow pages.yml --commit "$GITHUB_SHA" --event push --status completed --limit 100 \
-              --json conclusion,event,headBranch,headSha
+              --json conclusion,databaseId,event,headBranch,headSha
           )"
-          pages_successes="$(
-            jq --arg tag "$RELEASE_TAG" --arg sha "$GITHUB_SHA" \
-              '[.[] | select(.conclusion == "success" and .event == "push" and .headBranch == $tag and .headSha == $sha)] | length' \
-              <<< "$pages_runs"
-          )"
-          [[ "$pages_successes" != "0" ]] || {
+          pages_run_id="$(
+            jq -er --arg tag "$RELEASE_TAG" --arg sha "$GITHUB_SHA" '
+              [
+                .[] |
+                select(.conclusion == "success" and .event == "push" and .headBranch == $tag and .headSha == $sha)
+              ] |
+              .[0].databaseId |
+              select(type == "number" and . > 0 and . == floor) |
+              tostring
+            ' <<< "$pages_runs"
+          )" || {
             echo "No successful tag-triggered pages.yml run exists for $RELEASE_TAG at $GITHUB_SHA." >&2
             exit 1
           }
-          public_revision="$(mktemp)"
-          expected_revision="$(mktemp)"
-          trap 'rm -f -- "$public_revision" "$expected_revision"' EXIT
-          curl --fail --silent --show-error --location --retry 5 --retry-all-errors --retry-delay 2 \
-            --proto '=https' --proto-redir '=https' \
-            "https://gh.s7a.dev/strata/releases/${RELEASE_TAG#v}/source-revision.txt" \
-            --output "$public_revision"
-          printf '%s\n' "$RELEASE_TAG" > "$expected_revision"
-          cmp --silent "$expected_revision" "$public_revision" || {
-            echo 'The public immutable Pages source revision differs from the release tag.' >&2
-            exit 1
-          }
+          bash -n release/verify-pages-deployment-source.sh
+          bash release/verify-pages-deployment-source.sh "$pages_run_id" "$RELEASE_TAG" "$GITHUB_SHA" >/dev/null
+          bash -n release/wait-for-pages-source-receipt.sh
+          bash release/wait-for-pages-source-receipt.sh "$RELEASE_TAG" "$GITHUB_SHA"
+          echo "pages_run_id=$pages_run_id" >> "$GITHUB_OUTPUT"
+
+  release:
+    if: inputs.operation == 'release'
+    needs: preflight
+    permissions:
+      actions: read
+      contents: write
+      deployments: read
+    environment:
+      name: release
+      url: https://github.com/sya-ri/strata/releases/tag/${{ inputs.tag }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out master
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Revalidate protected release request and public source receipt
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ inputs.tag }}
+          CONFIRMATION: ${{ inputs.confirmation }}
+          EXPECTED_TAG_COMMIT: ${{ needs.preflight.outputs.tag_commit }}
+          EXPECTED_TAG_OBJECT: ${{ needs.preflight.outputs.tag_object }}
+          EXPECTED_PAGES_RUN_ID: ${{ needs.preflight.outputs.pages_run_id }}
+        run: |
+          set -euo pipefail
+          [[ "$GITHUB_REF" == "refs/heads/master" ]] || { echo 'Release must be dispatched from master.' >&2; exit 1; }
+          [[ "$RELEASE_TAG" == "v0.1.0" ]] || { echo 'This workflow is pinned to v0.1.0.' >&2; exit 1; }
+          [[ "$CONFIRMATION" == "release $RELEASE_TAG" ]] || { echo 'Release confirmation does not match.' >&2; exit 1; }
+          bash release/verify-github-tag-ruleset.sh >/dev/null
+          bash release/verify-release-tag.sh "$RELEASE_TAG" "$EXPECTED_TAG_COMMIT" "$EXPECTED_TAG_OBJECT" >/dev/null
+          [[ "$EXPECTED_TAG_COMMIT" == "$GITHUB_SHA" ]] || { echo 'Read-only preflight commit differs from the protected job commit.' >&2; exit 1; }
+          [[ "$(git rev-parse origin/master)" == "$GITHUB_SHA" ]] || { echo 'Release SHA is no longer the exact origin/master head.' >&2; exit 1; }
+          root_version="$(sed -nE 's/^version = "([^"]+)"$/\1/p' build.gradle.kts)"
+          [[ "$root_version" == "${RELEASE_TAG#v}" ]] || { echo "Root version $root_version does not match $RELEASE_TAG." >&2; exit 1; }
+          bash release/verify-pages-deployment-source.sh \
+            "$EXPECTED_PAGES_RUN_ID" "$RELEASE_TAG" "$EXPECTED_TAG_COMMIT" >/dev/null
+          bash release/wait-for-pages-source-receipt.sh "$RELEASE_TAG" "$EXPECTED_TAG_COMMIT"
       - name: Set up Java
         uses: actions/setup-java@v6
         with:
@@ -328,11 +373,16 @@ jobs:
       - name: Stage listed Modrinth versions
         shell: bash
         env:
+          GH_TOKEN: ${{ github.token }}
           MODRINTH_TOKEN: ${{ secrets.MODRINTH_TOKEN }}
           PROJECT_ID: ${{ steps.modrinth.outputs.project_id }}
           RELEASE_TAG: ${{ inputs.tag }}
+          EXPECTED_TAG_COMMIT: ${{ needs.preflight.outputs.tag_commit }}
+          EXPECTED_TAG_OBJECT: ${{ needs.preflight.outputs.tag_object }}
         run: |
           set -euo pipefail
+          bash release/verify-github-tag-ruleset.sh >/dev/null
+          bash release/verify-release-tag.sh "$RELEASE_TAG" "$EXPECTED_TAG_COMMIT" "$EXPECTED_TAG_OBJECT" >/dev/null
           bash ./gradlew --no-parallel --max-workers=2 --no-build-cache modrinthReleaseStage \
             -Pstrata.sourceRevision="$RELEASE_TAG" \
             -Pstrata.modrinthProjectId="$PROJECT_ID"
@@ -340,6 +390,7 @@ jobs:
         if: steps.central.outputs.publish == 'true'
         shell: bash
         env:
+          GH_TOKEN: ${{ github.token }}
           ORG_GRADLE_PROJECT_mavenCentralUsername: ${{ secrets.MAVEN_CENTRAL_USERNAME }}
           ORG_GRADLE_PROJECT_mavenCentralPassword: ${{ secrets.MAVEN_CENTRAL_PASSWORD }}
           ORG_GRADLE_PROJECT_signingInMemoryKey: ${{ secrets.SIGNING_KEY }}
@@ -370,13 +421,18 @@ jobs:
         continue-on-error: true
         shell: bash
         env:
+          GH_TOKEN: ${{ github.token }}
           ORG_GRADLE_PROJECT_mavenCentralUsername: ${{ secrets.MAVEN_CENTRAL_USERNAME }}
           ORG_GRADLE_PROJECT_mavenCentralPassword: ${{ secrets.MAVEN_CENTRAL_PASSWORD }}
           ORG_GRADLE_PROJECT_signingInMemoryKey: ${{ secrets.SIGNING_KEY }}
           ORG_GRADLE_PROJECT_signingInMemoryKeyPassword: ${{ secrets.SIGNING_PASSWORD }}
           RELEASE_TAG: ${{ inputs.tag }}
+          EXPECTED_TAG_COMMIT: ${{ needs.preflight.outputs.tag_commit }}
+          EXPECTED_TAG_OBJECT: ${{ needs.preflight.outputs.tag_object }}
         run: |
           set -euo pipefail
+          bash release/verify-github-tag-ruleset.sh >/dev/null
+          bash release/verify-release-tag.sh "$RELEASE_TAG" "$EXPECTED_TAG_COMMIT" "$EXPECTED_TAG_OBJECT" >/dev/null
           bash ./gradlew --no-parallel --max-workers=2 --no-build-cache publishAndReleaseToMavenCentral \
             -Pstrata.sourceRevision="$RELEASE_TAG"
       - name: Reconcile the exact Central Portal deployment
@@ -496,8 +552,12 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
           RELEASE_TAG: ${{ inputs.tag }}
+          EXPECTED_TAG_COMMIT: ${{ needs.preflight.outputs.tag_commit }}
+          EXPECTED_TAG_OBJECT: ${{ needs.preflight.outputs.tag_object }}
         run: |
           set -euo pipefail
+          bash release/verify-github-tag-ruleset.sh >/dev/null
+          bash release/verify-release-tag.sh "$RELEASE_TAG" "$EXPECTED_TAG_COMMIT" "$EXPECTED_TAG_OBJECT" >/dev/null
           temporary="$(mktemp -d)"
           verified="$(mktemp -d)"
           actual_body_file="$(mktemp)"
@@ -553,11 +613,16 @@ jobs:
       - name: Submit the completely staged Modrinth project
         shell: bash
         env:
+          GH_TOKEN: ${{ github.token }}
           MODRINTH_TOKEN: ${{ secrets.MODRINTH_TOKEN }}
           PROJECT_ID: ${{ steps.modrinth.outputs.project_id }}
           RELEASE_TAG: ${{ inputs.tag }}
+          EXPECTED_TAG_COMMIT: ${{ needs.preflight.outputs.tag_commit }}
+          EXPECTED_TAG_OBJECT: ${{ needs.preflight.outputs.tag_object }}
         run: |
           set -euo pipefail
+          bash release/verify-github-tag-ruleset.sh >/dev/null
+          bash release/verify-release-tag.sh "$RELEASE_TAG" "$EXPECTED_TAG_COMMIT" "$EXPECTED_TAG_OBJECT" >/dev/null
           bash ./gradlew --no-parallel --max-workers=2 --no-build-cache modrinthReleaseSubmit \
             -Pstrata.sourceRevision="$RELEASE_TAG" \
             -Pstrata.modrinthProjectId="$PROJECT_ID"
@@ -749,6 +814,7 @@ jobs:
           grep --fixed-strings --line-regexp '/guide/' "$pages_inventory" >/dev/null
           grep --fixed-strings --line-regexp '/guide/components.md' "$pages_inventory" >/dev/null
           grep --extended-regexp --line-regexp '/guide/components/[^/]+\.png' "$pages_inventory" >/dev/null
+          grep --fixed-strings --line-regexp '/source-receipt.json' "$pages_inventory" >/dev/null
           grep --fixed-strings --line-regexp '/source-revision.txt' "$pages_inventory" >/dev/null
           while IFS= read -r public_path; do
             [[ "$public_path" == /* ]] || { echo "Invalid public Pages path: $public_path" >&2; exit 1; }
@@ -760,6 +826,8 @@ jobs:
             "$release_pages_base/source-revision.txt" --output "$source_revision"
           printf '%s\n' "$RELEASE_TAG" > "$source_revision_expected"
           cmp --silent "$source_revision_expected" "$source_revision" || { echo 'Public Pages source revision differs from the release tag.' >&2; exit 1; }
+          checked_commit="$(git rev-parse HEAD)"
+          bash release/wait-for-pages-source-receipt.sh "$RELEASE_TAG" "$checked_commit"
           curl --fail --silent --show-error --location --proto '=https' \
             "https://raw.githubusercontent.com/sya-ri/strata/$RELEASE_TAG/skills/strata/SKILL.md" --output "$skill"
           cmp --silent skills/strata/SKILL.md "$skill" || { echo 'The publicly installable Skill source differs from the release tag.' >&2; exit 1; }

@@ -70,6 +70,7 @@ jobs:
       - name: Check reader documentation and public skill
         shell: bash
         env:
+          SOURCE_COMMIT: ${{ github.sha }}
           SOURCE_REVISION: ${{ steps.source.outputs.revision }}
         run: |
           set -euo pipefail
@@ -81,10 +82,12 @@ jobs:
             :integration:docs:checkStrataSkill \
             :integration:docs:checkStrataSkillExampleClasspath \
             :integration:docs:checkDocumentationLinks \
-            -Pstrata.sourceRevision="$SOURCE_REVISION"
+            -Pstrata.sourceRevision="$SOURCE_REVISION" \
+            -Pstrata.sourceCommit="$SOURCE_COMMIT"
       - name: Generate Dokka site and stage reader guides
         shell: bash
         env:
+          SOURCE_COMMIT: ${{ github.sha }}
           SOURCE_REVISION: ${{ steps.source.outputs.revision }}
         run: |
           set -euo pipefail
@@ -94,7 +97,8 @@ jobs:
           fi
           bash ./gradlew "${gradle_options[@]}" \
             :integration:docs:checkDokkaPagesStaging \
-            -Pstrata.sourceRevision="$SOURCE_REVISION"
+            -Pstrata.sourceRevision="$SOURCE_REVISION" \
+            -Pstrata.sourceCommit="$SOURCE_COMMIT"
       - name: Preserve immutable v0.1.0 documentation
         shell: bash
         env:
@@ -108,6 +112,7 @@ jobs:
         uses: actions/upload-pages-artifact@v5
         with:
           path: build/dokka/html
+          retention-days: 30
 
   deploy:
     environment:

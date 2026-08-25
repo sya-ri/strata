@@ -159,9 +159,13 @@ jobs:
         if: matrix.id == 'common'
         shell: bash
         run: |
-          for script in release/*.sh; do
+          for script in release/*.sh release/tests/*.sh; do
             bash -n "$script"
           done
+      - name: Test release source guards
+        if: matrix.id == 'common'
+        shell: bash
+        run: bash release/tests/verify-release-source.sh
       - name: Hash Loom cache inputs
         if: matrix.loom_cache
         id: loom_inputs
