@@ -55,7 +55,8 @@ jq --exit-status 'type == "object"' "$release_json" >/dev/null
 expected_title="Strata ${RELEASE_TAG#v}"
 [[ "$(jq -r '.tag_name' "$release_json")" == "$RELEASE_TAG" ]] || { echo 'Existing GitHub Release tag differs.' >&2; exit 1; }
 [[ "$(jq -r '.name' "$release_json")" == "$expected_title" ]] || { echo 'Existing GitHub Release title differs.' >&2; exit 1; }
-jq --raw-output --join-output '.body // ""' "$release_json" > "$release_body"
+jq --raw-output --join-output '(.body // "") | gsub("\r\n"; "\n") | if contains("\r") then error("release body contains a lone carriage return") else @base64 end' "$release_json" |
+  base64 --decode > "$release_body"
 cmp --silent "docs/releases/$RELEASE_TAG.md" "$release_body" || { echo 'Existing GitHub Release body differs.' >&2; exit 1; }
 [[ "$(jq -r '.prerelease' "$release_json")" == false ]] || { echo 'The stable GitHub Release must not be a prerelease.' >&2; exit 1; }
 

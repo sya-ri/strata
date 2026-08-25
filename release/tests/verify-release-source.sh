@@ -828,6 +828,34 @@ if bash "$repository_root/release/wait-for-pages-source-receipt.sh" \
 fi
 
 workflow="$repository_root/.github/workflows/release.yml"
+release_body_filter='(.body // "") | gsub("\r\n"; "\n") | if contains("\r") then error("release body contains a lone carriage return") else @base64 end'
+[[ "$(grep --fixed-strings -c "$release_body_filter" "$repository_root/release/github-release-preflight.sh")" == '1' ]] || \
+  fail 'The REST GitHub Release preflight does not use the byte-stable CRLF-only body policy.'
+[[ "$(grep --fixed-strings -c "$release_body_filter" "$workflow")" == '3' ]] || \
+  fail 'Every inline GitHub Release body comparison must use the CRLF-only body policy.'
+[[ "$(grep --fixed-strings -c 'base64 --decode > "$actual_body_file"' "$workflow")" == '3' ]] || \
+  fail 'Every inline GitHub Release body comparison must decode byte-stable normalized content.'
+github_release_preflight_step="$temporary_root/github-release-preflight-step.yml"
+sed -n '/name: Preflight GitHub Release without mutation$/,/name: Cryptographically verify all staged Maven Local signatures$/p' \
+  "$workflow" > "$github_release_preflight_step"
+grep --fixed-strings 'github_release_tool_directory="$(mktemp -d "$RUNNER_TEMP/strata-github-release-tools.XXXXXX")"' \
+  "$github_release_preflight_step" >/dev/null || \
+  fail 'The protected GitHub Release preflight does not create a fresh controller tool directory.'
+grep --fixed-strings 'record="$(git ls-tree "$GITHUB_SHA" -- "$source_path")"' \
+  "$github_release_preflight_step" >/dev/null || \
+  fail 'The protected GitHub Release preflight is not bound to the exact controller SHA.'
+grep --fixed-strings 'load_controller_script release/github-release-preflight.sh "$github_release_preflight"' \
+  "$github_release_preflight_step" >/dev/null || \
+  fail 'The protected GitHub Release preflight does not load the controller script.'
+grep --fixed-strings 'bash "$github_release_preflight" build/release/github' \
+  "$github_release_preflight_step" >/dev/null || \
+  fail 'The protected GitHub Release preflight does not execute the loaded controller script.'
+grep --fixed-strings 'trap '\''rm -rf -- "$github_release_tool_directory"'\'' EXIT' \
+  "$github_release_preflight_step" >/dev/null || \
+  fail 'The protected GitHub Release preflight does not clean its exact controller tool directory.'
+if grep --fixed-strings 'bash release/github-release-preflight.sh' "$github_release_preflight_step" >/dev/null; then
+  fail 'The protected GitHub Release preflight still executes the immutable tag copy.'
+fi
 [[ "$(grep --fixed-strings -c 'select(length == 1)' "$workflow")" == '4' ]] || \
   fail 'Release and final verification do not reject ambiguous release or controller Pages runs.'
 [[ "$(grep --fixed-strings -c 'pages_record_after_poll="$(bash' "$workflow")" == '3' ]] || \
@@ -838,8 +866,8 @@ workflow="$repository_root/.github/workflows/release.yml"
   fail 'Every protected Pages phase must load the verifier from the exact controller blob.'
 [[ "$(grep --fixed-strings -c 'pages_tool_directory="$(mktemp -d "$RUNNER_TEMP/strata-pages-tools.XXXXXX")"' "$workflow")" == '3' ]] || \
   fail 'Every controller Pages tool load must use a fresh unpredictable temporary directory.'
-[[ "$(grep --fixed-strings -c '[[ ! -e "$destination" && ! -L "$destination" ]]' "$workflow")" == '3' ]] || \
-  fail 'Controller Pages tool destinations do not reject existing files and dangling symbolic links.'
+[[ "$(grep --fixed-strings -c '[[ ! -e "$destination" && ! -L "$destination" ]]' "$workflow")" == '4' ]] || \
+  fail 'Controller tool destinations do not reject existing files and dangling symbolic links.'
 if grep --fixed-strings 'pages_waiter="$RUNNER_TEMP/' "$workflow" >/dev/null || \
   grep --fixed-strings 'pages_verifier="$RUNNER_TEMP/' "$workflow" >/dev/null; then
   fail 'A later Pages phase reuses a predictable controller tool path from an earlier step.'
@@ -989,5 +1017,6 @@ grep --fixed-strings 'expected_overlay_directory="$RUNNER_TEMP/strata-central-co
 
 bash "$repository_root/release/tests/verify-controller-overlay.sh" >/dev/null
 bash "$repository_root/release/tests/verify-central-controller-overlay.sh" >/dev/null
+bash "$repository_root/release/tests/verify-github-release-preflight.sh" >/dev/null
 
 echo 'Release source guards passed.'

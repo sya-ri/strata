@@ -567,8 +567,37 @@ jobs:
           RELEASE_TAG: ${{ inputs.tag }}
         run: |
           set -euo pipefail
-          bash -n release/github-release-preflight.sh
-          bash release/github-release-preflight.sh build/release/github
+          load_controller_script() {
+            local source_path="$1"
+            local destination="$2"
+            local record=""
+            local mode=""
+            local object_type=""
+            local blob=""
+            local verified_path=""
+            record="$(git ls-tree "$GITHUB_SHA" -- "$source_path")"
+            read -r mode object_type blob verified_path <<< "$record"
+            [[ "$mode" == "100644" && "$object_type" == "blob" && \
+              "$blob" =~ ^([0-9a-f]{40}|[0-9a-f]{64})$ && "$verified_path" == "$source_path" ]] || {
+              echo "The controller script is not the expected regular Git blob: $source_path" >&2
+              exit 1
+            }
+            [[ ! -e "$destination" && ! -L "$destination" ]] || {
+              echo "Controller script destination already exists: $destination" >&2
+              exit 1
+            }
+            git cat-file blob "$blob" > "$destination"
+            bash -n "$destination"
+          }
+          github_release_tool_directory="$(mktemp -d "$RUNNER_TEMP/strata-github-release-tools.XXXXXX")"
+          [[ -d "$github_release_tool_directory" && ! -L "$github_release_tool_directory" ]] || {
+            echo 'Failed to create a regular GitHub Release tool directory.' >&2
+            exit 1
+          }
+          trap 'rm -rf -- "$github_release_tool_directory"' EXIT
+          github_release_preflight="$github_release_tool_directory/github-release-preflight.sh"
+          load_controller_script release/github-release-preflight.sh "$github_release_preflight"
+          bash "$github_release_preflight" build/release/github
       - name: Cryptographically verify all staged Maven Local signatures
         shell: bash
         env:
@@ -706,7 +735,8 @@ jobs:
             release_json="$(gh release view "$RELEASE_TAG" --json tagName,name,body,isDraft,isPrerelease)"
             [[ "$(jq -r '.tagName' <<< "$release_json")" == "$RELEASE_TAG" ]] || { echo 'Existing GitHub release tag differs.' >&2; exit 1; }
             [[ "$(jq -r '.name' <<< "$release_json")" == "$expected_title" ]] || { echo 'Existing GitHub release title differs.' >&2; exit 1; }
-            jq --raw-output --join-output '.body' <<< "$release_json" > "$actual_body_file"
+            jq --raw-output --join-output '(.body // "") | gsub("\r\n"; "\n") | if contains("\r") then error("release body contains a lone carriage return") else @base64 end' <<< "$release_json" |
+              base64 --decode > "$actual_body_file"
             cmp --silent "docs/releases/$RELEASE_TAG.md" "$actual_body_file" || { echo 'Existing GitHub release body differs.' >&2; exit 1; }
             [[ "$(jq -r '.isPrerelease' <<< "$release_json")" == "false" ]] || { echo 'The stable GitHub release must not be a prerelease.' >&2; exit 1; }
             release_draft="$(jq -r '.isDraft' <<< "$release_json")"
@@ -752,7 +782,8 @@ jobs:
           release_json="$(gh release view "$RELEASE_TAG" --json tagName,name,body,isDraft,isPrerelease)"
           [[ "$(jq -r '.tagName' <<< "$release_json")" == "$RELEASE_TAG" ]] || { echo 'Published GitHub release tag differs.' >&2; exit 1; }
           [[ "$(jq -r '.name' <<< "$release_json")" == "$expected_title" ]] || { echo 'Published GitHub release title differs.' >&2; exit 1; }
-          jq --raw-output --join-output '.body' <<< "$release_json" > "$actual_body_file"
+          jq --raw-output --join-output '(.body // "") | gsub("\r\n"; "\n") | if contains("\r") then error("release body contains a lone carriage return") else @base64 end' <<< "$release_json" |
+            base64 --decode > "$actual_body_file"
           cmp --silent "docs/releases/$RELEASE_TAG.md" "$actual_body_file" || { echo 'Published GitHub release body differs.' >&2; exit 1; }
           [[ "$(jq -r '.isDraft' <<< "$release_json")" == "false" ]] || { echo 'GitHub release remains a draft.' >&2; exit 1; }
           [[ "$(jq -r '.isPrerelease' <<< "$release_json")" == "false" ]] || { echo 'GitHub release is unexpectedly a prerelease.' >&2; exit 1; }
@@ -1068,7 +1099,8 @@ jobs:
           release_json="$(gh release view "$RELEASE_TAG" --json tagName,name,body,isDraft,isPrerelease)"
           [[ "$(jq -r '.tagName' <<< "$release_json")" == "$RELEASE_TAG" ]] || { echo 'GitHub release tag differs.' >&2; exit 1; }
           [[ "$(jq -r '.name' <<< "$release_json")" == "$expected_title" ]] || { echo 'GitHub release title differs.' >&2; exit 1; }
-          jq --raw-output --join-output '.body' <<< "$release_json" > "$actual_body_file"
+          jq --raw-output --join-output '(.body // "") | gsub("\r\n"; "\n") | if contains("\r") then error("release body contains a lone carriage return") else @base64 end' <<< "$release_json" |
+            base64 --decode > "$actual_body_file"
           cmp --silent "docs/releases/$RELEASE_TAG.md" "$actual_body_file" || { echo 'GitHub release body differs.' >&2; exit 1; }
           [[ "$(jq -r '.isDraft' <<< "$release_json")" == "false" ]] || { echo 'GitHub release remains a draft.' >&2; exit 1; }
           [[ "$(jq -r '.isPrerelease' <<< "$release_json")" == "false" ]] || { echo 'GitHub release is unexpectedly a prerelease.' >&2; exit 1; }
