@@ -9,6 +9,12 @@ receipt_path="${2:-$repository_root/release/github-tag-ruleset-receipt.json}"
 [[ -n "${GITHUB_REPOSITORY:-}" ]] || { echo 'GITHUB_REPOSITORY is required.' >&2; exit 1; }
 [[ -n "${GH_TOKEN:-}" ]] || { echo 'GH_TOKEN is required.' >&2; exit 1; }
 
+timestamp_instant() {
+  local timestamp="$1"
+  [[ "$timestamp" =~ ^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}(\.[0-9]{1,9})?(Z|[+-][0-9]{2}:[0-9]{2})$ ]] || return 1
+  date -u --date="$timestamp" '+%s.%N'
+}
+
 jq -e '
   keys == ["bypass_actors", "conditions", "enforcement", "name", "rules", "target"] and
   .name == "Protect Strata v0.1.0" and
@@ -46,6 +52,10 @@ updated_at="$(jq -er '.updatedAt | select(type == "string" and length > 0)' "$re
   echo 'The tracked tag ruleset receipt is missing its GitHub-controlled updatedAt value.' >&2
   exit 1
 }
+updated_at_instant="$(timestamp_instant "$updated_at")" || {
+  echo 'The tracked tag ruleset receipt has a non-canonical updatedAt value.' >&2
+  exit 1
+}
 bypass_audited_at="$(jq -er '.bypassActorsAuditedAt | select(type == "string" and length > 0)' "$receipt_path")" || {
   echo 'The tracked tag ruleset receipt is missing its administrator bypass audit timestamp.' >&2
   exit 1
@@ -66,10 +76,22 @@ gh api \
   -H 'X-GitHub-Api-Version: 2026-03-10' \
   "repos/$GITHUB_REPOSITORY/rulesets/$ruleset_id" > "$remote_response"
 
+remote_updated_at="$(jq -er '.updated_at | select(type == "string" and length > 0)' "$remote_response")" || {
+  echo 'The active GitHub tag ruleset has no updated_at revision.' >&2
+  exit 1
+}
+remote_updated_at_instant="$(timestamp_instant "$remote_updated_at")" || {
+  echo 'The active GitHub tag ruleset has a non-canonical updated_at revision.' >&2
+  exit 1
+}
+[[ "$remote_updated_at_instant" == "$updated_at_instant" ]] || {
+  echo 'The active GitHub tag ruleset changed after its administrator bypass audit.' >&2
+  exit 1
+}
+
 jq -e \
   --arg repository "$GITHUB_REPOSITORY" \
   --arg name "$(jq -r '.name' "$contract_path")" \
-  --arg updatedAt "$updated_at" \
   --argjson rulesetId "$ruleset_id" '
     .id == $rulesetId and
     .name == $name and
@@ -77,7 +99,6 @@ jq -e \
     .enforcement == "active" and
     .source_type == "Repository" and
     .source == $repository and
-    .updated_at == $updatedAt and
     .conditions.ref_name == {
       "exclude": [],
       "include": ["refs/tags/v0.1.0"]

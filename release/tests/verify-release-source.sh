@@ -196,6 +196,10 @@ write_ruleset_response 'null' '2026-08-25T00:00:00Z'
 bash "$repository_root/release/verify-github-tag-ruleset.sh" "$ruleset_contract" "$ruleset_receipt" >/dev/null || \
   fail 'A read-only GitHub response with a matching administrator audit did not pass verification.'
 
+write_ruleset_response 'null' '2026-08-25T09:00:00+09:00'
+bash "$repository_root/release/verify-github-tag-ruleset.sh" "$ruleset_contract" "$ruleset_receipt" >/dev/null || \
+  fail 'Equivalent GitHub ruleset timestamps with different UTC offsets did not pass verification.'
+
 jq 'del(.bypass_actors)' "$ruleset_response" > "$ruleset_response.omitted"
 mv "$ruleset_response.omitted" "$ruleset_response"
 bash "$repository_root/release/verify-github-tag-ruleset.sh" "$ruleset_contract" "$ruleset_receipt" >/dev/null || \
