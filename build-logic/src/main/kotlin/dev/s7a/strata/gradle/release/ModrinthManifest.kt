@@ -8,6 +8,7 @@ import dev.s7a.strata.gradle.release.ModrinthApiClient.VersionEnvironment
 import groovy.json.JsonOutput
 import groovy.json.JsonSlurper
 import java.io.File
+import java.security.MessageDigest
 
 /**
  * Complete immutable description of a Modrinth release and its canonical local files.
@@ -40,12 +41,14 @@ internal data class ModrinthManifest(
 
     /**
      * Canonical immutable metadata that must match the Modrinth project before any version mutation.
+     * [previousBodySha256] authorizes at most one exact predecessor-to-current body transition and never permits arbitrary metadata drift.
      */
     internal data class ProjectMetadata(
         val slug: String,
         val title: String,
         val description: String,
         val body: String,
+        val previousBodySha256: String?,
         val categories: Set<String>,
         val additionalCategories: Set<String>,
         val licenseId: String,
@@ -88,40 +91,7 @@ internal data class ModrinthManifest(
         linkedMapOf(
             "schemaVersion" to schemaVersion,
             "projectId" to projectId,
-            "project" to
-                linkedMapOf(
-                    "slug" to project.slug,
-                    "title" to project.title,
-                    "description" to project.description,
-                    "body" to project.body,
-                    "categories" to project.categories.sorted(),
-                    "additionalCategories" to project.additionalCategories.sorted(),
-                    "licenseId" to project.licenseId,
-                    "clientSide" to project.clientSide.wireValue,
-                    "serverSide" to project.serverSide.wireValue,
-                    "sourceUrl" to project.sourceUrl,
-                    "issuesUrl" to project.issuesUrl,
-                    "documentationUrl" to project.documentationUrl,
-                    "aiDisclosureNote" to project.aiDisclosureNote,
-                    "aiDisclosureUses" to project.aiDisclosureUses.map(AiUse::wireValue).sorted(),
-                    "icon" to
-                        linkedMapOf(
-                            "path" to project.icon.path,
-                            "sha256" to project.icon.sha256,
-                        ),
-                    "gallery" to
-                        project.gallery.map { asset ->
-                            linkedMapOf(
-                                "id" to asset.id,
-                                "path" to asset.path,
-                                "sha256" to asset.sha256,
-                                "featured" to asset.featured,
-                                "title" to asset.title,
-                                "description" to asset.description,
-                                "ordering" to asset.ordering,
-                            )
-                        },
-                ),
+            "project" to project.toMap(),
             "releaseVersion" to releaseVersion,
             "changelog" to changelog,
             "loader" to Loader.FABRIC.wireValue,
@@ -129,21 +99,54 @@ internal data class ModrinthManifest(
             "environment" to VersionEnvironment.CLIENT_ONLY.wireValue,
             "featured" to FEATURED,
             "requiredProjectDependencies" to listOf(FABRIC_LANGUAGE_KOTLIN_PROJECT_ID),
-            "artifacts" to
-                artifacts.map { artifact ->
-                    linkedMapOf(
-                        "gameVersion" to artifact.gameVersion,
-                        "versionNumber" to artifact.versionNumber,
-                        "versionName" to artifact.versionName,
-                        "fileName" to artifact.fileName,
-                        "relativePath" to artifact.relativePath,
-                        "size" to artifact.size,
-                        "sha256" to artifact.sha256,
-                        "sha512" to artifact.sha512,
-                        "mavenCoordinate" to artifact.mavenCoordinate,
-                        "githubAssetName" to artifact.githubAssetName,
-                    )
-                },
+            "artifacts" to artifacts.map { artifact -> artifact.toMap() },
+        )
+
+    private fun ProjectMetadata.toMap(): Map<String, Any> =
+        linkedMapOf<String, Any>(
+            "slug" to slug,
+            "title" to title,
+            "description" to description,
+            "body" to body,
+            "categories" to categories.sorted(),
+            "additionalCategories" to additionalCategories.sorted(),
+            "licenseId" to licenseId,
+            "clientSide" to clientSide.wireValue,
+            "serverSide" to serverSide.wireValue,
+            "sourceUrl" to sourceUrl,
+            "issuesUrl" to issuesUrl,
+            "documentationUrl" to documentationUrl,
+            "aiDisclosureNote" to aiDisclosureNote,
+            "aiDisclosureUses" to aiDisclosureUses.map(AiUse::wireValue).sorted(),
+            "icon" to linkedMapOf("path" to icon.path, "sha256" to icon.sha256),
+            "gallery" to gallery.map { asset -> asset.toMap() },
+        ).apply {
+            previousBodySha256?.let { hash -> put("previousBodySha256", hash) }
+        }
+
+    private fun GalleryAsset.toMap(): Map<String, Any> =
+        linkedMapOf(
+            "id" to id,
+            "path" to path,
+            "sha256" to sha256,
+            "featured" to featured,
+            "title" to title,
+            "description" to description,
+            "ordering" to ordering,
+        )
+
+    private fun Artifact.toMap(): Map<String, Any> =
+        linkedMapOf(
+            "gameVersion" to gameVersion,
+            "versionNumber" to versionNumber,
+            "versionName" to versionName,
+            "fileName" to fileName,
+            "relativePath" to relativePath,
+            "size" to size,
+            "sha256" to sha256,
+            "sha512" to sha512,
+            "mavenCoordinate" to mavenCoordinate,
+            "githubAssetName" to githubAssetName,
         )
 
     /**
@@ -159,7 +162,7 @@ internal data class ModrinthManifest(
      */
     companion object {
         const val CURRENT_SCHEMA_VERSION: Int = 1
-        const val EXPECTED_ARTIFACT_COUNT: Int = 20
+        const val EXPECTED_ARTIFACT_COUNT: Int = 21
         const val FABRIC_LANGUAGE_KOTLIN_PROJECT_ID: String = "Ha28R6CL"
         const val FEATURED: Boolean = true
         const val AI_DISCLOSURE_NOTE: String =
@@ -242,6 +245,7 @@ internal data class ModrinthManifest(
                 title = requiredString("title"),
                 description = requiredString("description"),
                 body = bodyOverride ?: requiredString("body"),
+                previousBodySha256 = optionalString("previousBodySha256"),
                 categories = stringSet("categories"),
                 additionalCategories = stringSet("additionalCategories"),
                 licenseId = requiredString("licenseId"),
@@ -354,6 +358,14 @@ internal data class ModrinthManifest(
             "The canonical Modrinth description differs from the reviewed release description."
         }
         check(project.body.isNotBlank()) { "The canonical Modrinth project body must not be blank." }
+        project.previousBodySha256?.let { hash ->
+            check(hash.matches(Regex("[0-9a-f]{64}"))) {
+                "The previous Modrinth project body must use a lowercase SHA-256 hash."
+            }
+            check(hash != project.body.normalizedSha256()) {
+                "The previous Modrinth project body hash must differ from the current body."
+            }
+        }
         check(project.categories == setOf("library")) { "The canonical Modrinth category must be library." }
         check(project.licenseId == CANONICAL_PROJECT_IDENTITY.licenseId) { "The canonical Modrinth license must be MIT." }
         check(project.clientSide == SideSupport.REQUIRED && project.serverSide == SideSupport.UNSUPPORTED) {
@@ -406,4 +418,15 @@ internal data class ModrinthManifest(
         val licenseId: String,
         val iconPath: String,
     )
+
+    private fun String.normalizedSha256(): String =
+        MessageDigest
+            .getInstance("SHA-256")
+            .digest(replace("\r\n", "\n").trimEnd().plus('\n').toByteArray(Charsets.UTF_8))
+            .joinToString("") { byte -> "%02x".format(byte) }
 }
+
+private fun Map<*, *>.optionalString(name: String): String? =
+    this[name]?.let { value ->
+        value as? String ?: error("Project metadata $name must be a string.")
+    }

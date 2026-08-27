@@ -2,7 +2,7 @@
 
 This document defines the durable process for adding a Minecraft version to Strata.
 A version adapter reproduces the behavior and presentation of its own Vanilla version; it must not normalize observable differences to another version.
-Minecraft 1.20.1 is the supported release floor; do not add Minecraft 1.19 or older adapters unless the project scope is explicitly changed.
+Minecraft 1.20 is the supported release floor; do not add Minecraft 1.19 or older adapters unless the project scope is explicitly changed.
 
 ## Establish the target
 
@@ -93,36 +93,36 @@ Reopen it when the supported range changes instead of assuming that the 1.21 bou
 
 ## Minecraft 1.20 family closure
 
-The completed family spans Minecraft 1.20.1 through 1.20.6 and passed every local release and publication gate before the support floor was accepted.
+The completed family spans Minecraft 1.20 through 1.20.6 and passed every local release and publication gate before the support floor was accepted.
 
 - Direction: retained and refined.
   The family confirmed compile-time capability boundaries for mapped resource names, native pixel channels, texture submission, player-skin generations, standalone runner APIs, GUI sprites, and pre-sprite atlases.
   Portable profiles now carry typed scaling and border metadata, while runtime code contains no version-name branch or reflective compatibility dispatch.
 - Public portable boundary: consolidated.
   Slider imagery now records its border and center-scaling policy just like the existing profile-backed button path, and the common painter clamps borders to the destination geometry exactly as Vanilla does.
-  This is reusable nine-slice behavior rather than a 1.20.1 special case; all atlas coordinates and native resource types remain private to the exact Fabric adapter.
+  This is reusable nine-slice behavior rather than a 1.20/1.20.1 special case; all atlas coordinates and native resource types remain private to the exact Fabric adapter.
 - Published runtime projects: retained.
-  Each of the six versioned runtime projects owns one exact Minecraft ABI, Java 17 or Java 21 bytecode target, Fabric metadata file, dependency graph, ABI snapshot, remapped distribution, and publication coordinate.
+  Each of the seven versioned runtime projects owns one exact Minecraft ABI, Java 17 or Java 21 bytecode target, Fabric metadata file, dependency graph, ABI snapshot, remapped distribution, and publication coordinate.
   Merging them would weaken native binary compatibility or require mutually incompatible mapped APIs in one artifact.
 - Integration projects: retained and nonpublished.
   Each exact final Fabric API fixture compiles the shared loaded suite and launches both development outputs and remapped production jars.
-  Minecraft 1.20.1 additionally needs its earlier client-readiness and level-cleanup bridge, which is compile-time evidence for keeping the exact integration boundary.
+  Minecraft 1.20 and 1.20.1 additionally need their earlier client-readiness and level-cleanup bridge, and both exact clients compile and run it independently as evidence for keeping their integration boundaries.
 - Shared runtime and integration sources: consolidated without adding common artifacts.
-  Complete compatible files remain in neutral source roots, Minecraft 1.20.2 through 1.20.4 reuse the complete 1.20.4-owned GUI-sprite and `GameProfile` generation where their compilers prove compatibility, and 1.20.1 keeps its Authlib 4, atlas, and native-screen differences local.
+  Complete compatible files remain in neutral source roots, Minecraft 1.20.2 through 1.20.4 reuse the complete 1.20.4-owned GUI-sprite and `GameProfile` generation where their compilers prove compatibility, and 1.20 plus 1.20.1 keep their compiler-proven Authlib 4, atlas, and native-screen generation in exact owning projects.
   No shared source root is a Gradle project or publication, and no empty compatibility module was introduced.
 - Build-model fidelity: retained with an explicit analysis boundary.
   Configuration on demand remains the correct default for targeted Gradle work, while Qodana's bootstrap disables it for complete IDEA metadata generation and each versioned project supplies its actual compile, test, and GameTest boundaries to the owning module.
   Qodana opens that generated module graph directly rather than reconstructing the linked source roots through a separate Gradle import.
   Detekt, Dokka, Kotlin explicit API validation, ABI validation, and Gradle continue to consume the same complete physical source roots as their owning version projects.
 - Build and cache cost: reduced without caching evidence.
-  The six exact releases run in one independent 1.20 shard under the existing single-permit client and remap services.
-  Its project-local Loom repository key hashes the global build model plus only those twelve versioned runtime and integration build scripts, falls back only within the same shard, and writes only after a successful `master` run.
+  The seven exact releases run in one independent 1.20 shard under the existing single-permit client and remap services.
+  Its project-local Loom repository key hashes the global build model plus only those fourteen versioned runtime and integration build scripts, falls back only within the same shard, and writes only after a successful `master` run.
   Loaded worlds, screenshots, parity receipts, test and coverage reports, rendered documentation, and Qodana results are always regenerated on the current revision.
 - Rendering and retention: accepted.
   The family-close JMH run preserves effectively zero-allocation clean snapshots, viewport-independent dirty-frame allocation, and the expected fresh-pixel allocation for headless rasterization.
   Every 1.20 development and production loaded client rejects repeated rasterization or texture upload for an unchanged display list and proves terminal release of textures, prepared layers, pointer caches, common session ownership, inventory bindings, and skin lifecycle state; see [Rendering performance](performance.md).
 
-Minecraft 1.20.1 is the accepted support floor, so this classification closes backward version expansion.
+Minecraft 1.20 is the accepted support floor, so this classification closes backward version expansion.
 Reopen it only when the supported range changes, especially if another native boundary challenges the current Java 17, Authlib, atlas, or standalone-runner source ownership.
 
 ## Minor-family review gate
@@ -160,9 +160,10 @@ The artifacts expose the same Strata-owned package entry points and class names 
 | 1.20.3 | 17 | Official Mojang mappings, remapped distribution | The same legacy GUI assets, code-defined scrollbar track, `GameProfile` skin resolution, primitive key bindings, constructor-based `ResourceLocation`, and standalone cleanup family as 1.20.4 | The complete standalone loaded suite passes from development outputs and remapped production jars against the exact 1.20.3 client and its final official Fabric API fixture |
 | 1.20.2 | 17 | Official Mojang mappings, remapped distribution | The same legacy capability family as 1.20.3 with a resource-pack-controlled header separator present alongside the footer and code-defined scrollbar track | The complete standalone loaded suite passes from development outputs and remapped production jars against the exact 1.20.2 client and its final official Fabric API fixture |
 | 1.20.1 | 17 | Official Mojang mappings, remapped distribution | Pre-GUI-sprite `widgets.png`, `slider.png`, `checkbox.png`, and boss-bar atlases, exact atlas nine-slice borders, code-defined EditBox and scrollbar treatments, Authlib 4 skin loading, and release-local standalone cleanup | The complete standalone loaded suite passes from development outputs and remapped production jars against the exact 1.20.1 client and its final official Fabric API fixture; the profile reads every applicable atlas through the active resource manager and detaches the extracted pixels |
+| 1.20 | 17 | Official Mojang mappings, remapped distribution | The same pre-GUI-sprite atlases, Authlib 4 skin loading, and standalone cleanup capability family as 1.20.1, compiled as an exact version boundary | The complete standalone loaded suite passes from development outputs and remapped production jars against the exact 1.20 client and final official Fabric API fixture; its tested Strata-facing mapped API and Vanilla asset index match 1.20.1 while the game artifact remains independently owned and verified |
 
 The neutral `runtime/minecraft-fabric-shared`, `runtime/minecraft-fabric-identifier`, `runtime/minecraft-fabric-1.21-legacy`, `runtime/minecraft-fabric-1.21.9-legacy`, `runtime/minecraft-fabric-1.21.8-legacy`, `runtime/minecraft-fabric-1.21.6-legacy`, `runtime/minecraft-fabric-1.21.5-legacy`, `runtime/minecraft-fabric-1.21.3-legacy`, `runtime/minecraft-fabric-unobfuscated`, `integration/minecraft-fabric-1.21-legacy`, `integration/minecraft-fabric-client-gametest`, `integration/minecraft-fabric-1.21.3-legacy`, and the other release-family integration trees are source ownership boundaries, not Gradle modules or fallback profiles.
-The 1.21.8 Kotlin input root is shared through 1.20.1, the complete 1.21.8 Java root is shared through 1.21.4, the 1.21.3 Java root isolates the earlier skin future shared by 1.21.3 through 1.20.5, and the 1.21.5/1.21.6 roots isolate native rendering and version-name accessors.
+The 1.21.8 Kotlin input root is shared through 1.20, the complete 1.21.8 Java root is shared through 1.21.4, the 1.21.3 Java root isolates the earlier skin future shared by 1.21.3 through 1.20.5, and the 1.21.5/1.21.6 roots isolate native rendering and version-name accessors.
 A runtime version links the complete shared root only after its compiler and loaded tests prove every file compatible, links an additional release-family root only when applicable, and keeps unexplained divergence in its versioned project until resolved.
-The identifier root is limited to releases whose official mappings expose that native name; releases such as 1.21.10 through 1.20.1 with `ResourceLocation` own compile-time aliases and factories locally while reusing the compatible implementation roots.
+The identifier root is limited to releases whose official mappings expose that native name; releases such as 1.21.10 through 1.20 with `ResourceLocation` own compile-time aliases and factories locally while reusing the compatible implementation roots.
 Do not use file-tree include filters to select individual version-compatible sources because IDE and static-analysis Gradle models operate at source-root granularity.

@@ -15,7 +15,7 @@ bash ./gradlew \
 
 runtime_count=$(awk '/module fileurl=.*runtime\/minecraft-fabric-[^/]+\/runtime-minecraft-fabric-[^"]+\.iml/ { count++ } END { print count + 0 }' strata.ipr)
 integration_count=$(awk '/module fileurl=.*integration\/minecraft-fabric-[^/]+\/integration-minecraft-fabric-[^"]+\.iml/ { count++ } END { print count + 0 }' strata.ipr)
-expected_projects=20
+expected_projects=21
 if [[ "$runtime_count" -ne "$expected_projects" || "$integration_count" -ne "$expected_projects" ]]; then
   echo "Expected $expected_projects runtime and integration Minecraft modules but generated $runtime_count and $integration_count." >&2
   exit 1

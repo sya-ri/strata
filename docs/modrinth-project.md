@@ -4,6 +4,7 @@
 
 Strata is a declarative Minecraft UI library for Fabric Mods.
 Application code builds platform-neutral `ScreenDefinition` values from reusable components, structural layouts, active modifiers, typed state, and inventory bindings; a separately installed version-matched runtime renders them with Minecraft assets and behavior.
+Strata 0.1.1 adds Minecraft 1.20 support and makes no other functional change from 0.1.0.
 
 ## Highlights
 
@@ -19,8 +20,8 @@ Compile ordinary Mod source against the API only, then install the runtime match
 
 ```kotlin
 dependencies {
-    compileOnly("dev.s7a.strata:strata-api:0.1.0")
-    modRuntimeOnly("dev.s7a.strata:strata-runtime-minecraft-fabric-<minecraft-version>:0.1.0")
+    compileOnly("dev.s7a.strata:strata-api:0.1.1")
+    modRuntimeOnly("dev.s7a.strata:strata-runtime-minecraft-fabric-<minecraft-version>:0.1.1")
     modRuntimeOnly("net.fabricmc:fabric-language-kotlin:<compatible-version>")
 }
 ```
@@ -68,9 +69,9 @@ internal fun openConfirmationScreen(onConfirm: () -> Unit) {
 
 ## Supported Minecraft versions
 
-`1.20.1`, `1.20.2`, `1.20.3`, `1.20.4`, `1.20.5`, `1.20.6`, `1.21`, `1.21.1`, `1.21.2`, `1.21.3`, `1.21.4`, `1.21.5`, `1.21.6`, `1.21.7`, `1.21.8`, `1.21.9`, `1.21.10`, `1.21.11`, `26.1`, `26.2`
+`1.20`, `1.20.1`, `1.20.2`, `1.20.3`, `1.20.4`, `1.20.5`, `1.20.6`, `1.21`, `1.21.1`, `1.21.2`, `1.21.3`, `1.21.4`, `1.21.5`, `1.21.6`, `1.21.7`, `1.21.8`, `1.21.9`, `1.21.10`, `1.21.11`, `26.1`, `26.2`
 
-Minecraft 1.20.1 is the support floor.
+Minecraft 1.20 is the support floor.
 Install exactly one Strata runtime matching the client version.
 
 ## Documentation and source

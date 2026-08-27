@@ -2,6 +2,12 @@
 
 All notable changes to Strata are documented in this file.
 
+## 0.1.1 - 2026-08-27
+
+### Added
+
+- A separate Fabric runtime for Minecraft 1.20, extending the supported release floor from Minecraft 1.20.1 to 1.20 without changing the public API or common runtime behavior.
+
 ## 0.1.0 - 2026-08-25
 
 ### Added

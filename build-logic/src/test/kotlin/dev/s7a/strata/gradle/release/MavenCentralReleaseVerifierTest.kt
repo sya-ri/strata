@@ -42,9 +42,9 @@ internal class MavenCentralReleaseVerifierTest {
         server.requestedChecksumExtensions.clear()
         val exact = verifier.preflight(fixture.coordinates)
         assertEquals(MavenCentralReleaseVerifier.State.EXACT, exact.state)
-        assertEquals(24, exact.coordinateCount)
-        assertEquals(240, exact.verifiedFileCount)
-        assertEquals(480, exact.verifiedChecksumCount)
+        assertEquals(25, exact.coordinateCount)
+        assertEquals(250, exact.verifiedFileCount)
+        assertEquals(500, exact.verifiedChecksumCount)
         assertEquals(setOf("md5", "sha1", "sha256", "sha512"), server.requestedChecksumExtensions)
         assertTrue(server.requestedChecksumContentPaths.none { path -> path.endsWith(".asc") })
     }
@@ -100,7 +100,7 @@ internal class MavenCentralReleaseVerifierTest {
     fun `verification polls boundedly until all coordinates propagate`() {
         val fixture = fixture()
         val server = server(fixture)
-        server.hiddenPomReads = 24
+        server.hiddenPomReads = 25
 
         val receipt =
             fixture.verifier(server).verify(
@@ -110,14 +110,14 @@ internal class MavenCentralReleaseVerifierTest {
             )
 
         assertEquals(MavenCentralReleaseVerifier.State.EXACT, receipt.state)
-        assertTrue(47 < server.pomReadCount)
+        assertTrue(49 < server.pomReadCount)
     }
 
     @Test
     fun `canonical Fabric signatures come from Central across a differently timed local rerun`() {
         val fixture = fixture()
         val server = server(fixture)
-        val coordinate = fixture.coordinates.single { value -> value.contains("minecraft-fabric-1.20.1") }
+        val coordinate = fixture.coordinates.single { value -> value.contains("minecraft-fabric-1.20:") }
         val (group, artifact, version) = coordinate.split(':')
         val localSignature =
             fixture.repository
@@ -131,8 +131,8 @@ internal class MavenCentralReleaseVerifierTest {
         val output = temporaryDirectory.resolve("canonical-signatures")
         val signedFiles = fixture.verifier(server).stageCanonicalPublicationEvidence(fixture.coordinates, output)
 
-        assertEquals(120, signedFiles.size)
-        assertEquals(20, signedFiles.count(MavenCentralReleaseVerifier.SignedPublicationFile::githubDistributionSignature))
+        assertEquals(125, signedFiles.size)
+        assertEquals(21, signedFiles.count(MavenCentralReleaseVerifier.SignedPublicationFile::githubDistributionSignature))
         val fileName = "$artifact-$version.jar.asc"
         val relativePath = "${group.replace('.', '/')}/$artifact/$version/$fileName"
         assertTrue(Files.readAllBytes(output.resolve(relativePath)).contentEquals(server.remoteBytes(relativePath)))
@@ -153,13 +153,13 @@ internal class MavenCentralReleaseVerifierTest {
         val repository = temporaryDirectory.resolve("repository")
         val coordinates =
             listOf(
-                "dev.s7a.strata:strata-api:0.1.0",
-                "dev.s7a.strata:strata-runtime-core:0.1.0",
-                "dev.s7a.strata:strata-runtime-headless:0.1.0",
-                "dev.s7a.strata:strata-runtime-minecraft:0.1.0",
+                "dev.s7a.strata:strata-api:0.1.1",
+                "dev.s7a.strata:strata-runtime-core:0.1.1",
+                "dev.s7a.strata:strata-runtime-headless:0.1.1",
+                "dev.s7a.strata:strata-runtime-minecraft:0.1.1",
             ) +
                 GAME_VERSIONS.map { gameVersion ->
-                    "dev.s7a.strata:strata-runtime-minecraft-fabric-$gameVersion:0.1.0"
+                    "dev.s7a.strata:strata-runtime-minecraft-fabric-$gameVersion:0.1.1"
                 }
         coordinates.forEach { coordinate ->
             val (group, artifact, version) = coordinate.split(':')
@@ -246,15 +246,15 @@ internal class MavenCentralReleaseVerifierTest {
                 respond(exchange, 404, ByteArray(0))
                 return
             }
-            if (mode == Mode.ORPHAN && relativePath.endsWith("strata-api-0.1.0.jar").not()) {
+            if (mode == Mode.ORPHAN && relativePath.endsWith("strata-api-0.1.1.jar").not()) {
                 respond(exchange, 404, ByteArray(0))
                 return
             }
-            if (mode == Mode.ORPHAN_MD5 && relativePath.endsWith("strata-api-0.1.0.jar.md5").not()) {
+            if (mode == Mode.ORPHAN_MD5 && relativePath.endsWith("strata-api-0.1.1.jar.md5").not()) {
                 respond(exchange, 404, ByteArray(0))
                 return
             }
-            if (mode == Mode.ORPHAN_SIGNATURE_MD5 && relativePath.endsWith("strata-api-0.1.0.jar.asc.md5").not()) {
+            if (mode == Mode.ORPHAN_SIGNATURE_MD5 && relativePath.endsWith("strata-api-0.1.1.jar.asc.md5").not()) {
                 respond(exchange, 404, ByteArray(0))
                 return
             }
@@ -262,11 +262,11 @@ internal class MavenCentralReleaseVerifierTest {
                 respond(exchange, 404, ByteArray(0))
                 return
             }
-            if (mode == Mode.MISSING_SIGNATURE && relativePath.endsWith("strata-api-0.1.0.jar.asc")) {
+            if (mode == Mode.MISSING_SIGNATURE && relativePath.endsWith("strata-api-0.1.1.jar.asc")) {
                 respond(exchange, 404, ByteArray(0))
                 return
             }
-            if (mode == Mode.MISSING_BASE_CHECKSUM && relativePath.endsWith("strata-api-0.1.0.jar.sha512")) {
+            if (mode == Mode.MISSING_BASE_CHECKSUM && relativePath.endsWith("strata-api-0.1.1.jar.sha512")) {
                 respond(exchange, 404, ByteArray(0))
                 return
             }
@@ -298,7 +298,7 @@ internal class MavenCentralReleaseVerifierTest {
                 return
             }
             var bytes = storedBytes
-            if (mode == Mode.MISMATCH && contentPath.endsWith("strata-api-0.1.0.jar")) {
+            if (mode == Mode.MISMATCH && contentPath.endsWith("strata-api-0.1.1.jar")) {
                 bytes = "different immutable bytes".toByteArray(StandardCharsets.UTF_8)
             }
             val responseBytes =
@@ -341,6 +341,7 @@ internal class MavenCentralReleaseVerifierTest {
         private val BASE_SUFFIXES = listOf(".pom", ".module", ".jar", "-sources.jar", "-javadoc.jar")
         private val GAME_VERSIONS =
             listOf(
+                "1.20",
                 "1.20.1",
                 "1.20.2",
                 "1.20.3",

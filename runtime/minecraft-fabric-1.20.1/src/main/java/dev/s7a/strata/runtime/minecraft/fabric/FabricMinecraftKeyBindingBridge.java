@@ -3,7 +3,7 @@ package dev.s7a.strata.runtime.minecraft.fabric;
 import net.minecraft.client.KeyMapping;
 
 /**
- * Adapts detached native input values to the primitive key-binding API used by Minecraft 1.20.1.
+ * Adapts detached native input values to the primitive key-binding API used by Minecraft 1.20 and 1.20.1.
  */
 final class FabricMinecraftKeyBindingBridge {
     private FabricMinecraftKeyBindingBridge() {

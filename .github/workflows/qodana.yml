@@ -93,6 +93,8 @@ jobs:
         shell: bash
         env:
           LOOM_PROJECTS: |-
+            runtime/minecraft-fabric-1.20
+            integration/minecraft-fabric-1.20
             runtime/minecraft-fabric-1.20.1
             integration/minecraft-fabric-1.20.1
             runtime/minecraft-fabric-1.20.2

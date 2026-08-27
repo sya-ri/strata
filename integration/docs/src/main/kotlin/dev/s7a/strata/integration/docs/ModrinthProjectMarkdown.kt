@@ -21,6 +21,7 @@ internal object ModrinthProjectMarkdown {
 
 Strata is a declarative Minecraft UI library for Fabric Mods.
 Application code builds platform-neutral `ScreenDefinition` values from reusable components, structural layouts, active modifiers, typed state, and inventory bindings; a separately installed version-matched runtime renders them with Minecraft assets and behavior.
+Strata 0.1.1 adds Minecraft 1.20 support and makes no other functional change from 0.1.0.
 
 ## Highlights
 
@@ -36,8 +37,8 @@ Compile ordinary Mod source against the API only, then install the runtime match
 
 ```kotlin
 dependencies {
-    compileOnly("dev.s7a.strata:strata-api:0.1.0")
-    modRuntimeOnly("dev.s7a.strata:strata-runtime-minecraft-fabric-<minecraft-version>:0.1.0")
+    compileOnly("dev.s7a.strata:strata-api:0.1.1")
+    modRuntimeOnly("dev.s7a.strata:strata-runtime-minecraft-fabric-<minecraft-version>:0.1.1")
     modRuntimeOnly("net.fabricmc:fabric-language-kotlin:<compatible-version>")
 }
 ```
@@ -53,7 +54,7 @@ $openExample
 
 ${versions.joinToString(", ") { version -> "`$version`" }}
 
-Minecraft 1.20.1 is the support floor.
+Minecraft 1.20 is the support floor.
 Install exactly one Strata runtime matching the client version.
 
 ## Documentation and source

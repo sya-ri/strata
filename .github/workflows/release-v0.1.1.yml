@@ -1,0 +1,1280 @@
+name: Release v0.1.1
+
+on:
+  workflow_dispatch:
+    inputs:
+      operation:
+        description: Release once, or run final verification after Modrinth approval
+        required: true
+        type: choice
+        default: release
+        options:
+          - release
+          - verify
+      tag:
+        description: Exact release tag
+        required: true
+        type: string
+        default: v0.1.1
+      modrinth_project_id:
+        description: Optional cross-check of the committed immutable Modrinth project ID
+        required: false
+        type: string
+      confirmation:
+        description: Type "release v0.1.1" or "verify v0.1.1"
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+# The sealed v0.1.0 workflow uses this exact group for legitimate runs. Sharing it
+# prevents either release from observing or changing the shared Modrinth body while
+# the other release is verifying it.
+concurrency:
+  group: release-v0.1.0
+  cancel-in-progress: false
+
+jobs:
+  preflight:
+    if: inputs.operation == 'release'
+    permissions:
+      actions: read
+      contents: read
+      deployments: read
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    outputs:
+      controller_commit: ${{ steps.source.outputs.controller_commit }}
+      tag_commit: ${{ steps.source.outputs.tag_commit }}
+      tag_object: ${{ steps.source.outputs.tag_object }}
+      pages_record: ${{ steps.pages.outputs.pages_record }}
+    steps:
+      - name: Check out master
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Check pinned workflow topology
+        shell: bash
+        run: |
+          set -euo pipefail
+          workflow=.github/workflows/release-v0.1.1.yml
+          sealed_workflow=.github/workflows/release.yml
+          [[ -f "$workflow" && -f "$sealed_workflow" ]] || { echo 'A release workflow is missing.' >&2; exit 1; }
+          grep --fixed-strings 'default: v0.1.1' "$workflow" >/dev/null
+          grep --fixed-strings 'group: release-v0.1.0' "$workflow" >/dev/null
+          grep --fixed-strings 'default: v0.1.0' "$sealed_workflow" >/dev/null
+          expected_sealed_group='group: release-$''{{ inputs.tag }}'
+          grep --fixed-strings "$expected_sealed_group" "$sealed_workflow" >/dev/null
+          grep --fixed-strings "if: steps.central.outputs.public_state == 'absent' && steps.central.outputs.portal_state == 'absent'" "$workflow" >/dev/null
+          central_write='publishAndReleaseToMaven''Central'
+          [[ "$(grep --fixed-strings -c "$central_write" "$workflow")" == "1" ]] || { echo 'Central write topology differs.' >&2; exit 1; }
+          grep --fixed-strings 'release/github-tag-ruleset-v0.1.1.json' "$workflow" >/dev/null
+          predecessor_name='- name: Verify complete v0.1.0 release before Modrinth body finalization'
+          finalize_name='- name: Finalize v0.1.1 Modrinth body and verify approved ''release'
+          predecessor_line="$(grep -n --fixed-strings -- "$predecessor_name" "$workflow" | cut -d: -f1)"
+          finalize_line="$(grep -n --fixed-strings -- "$finalize_name" "$workflow" | cut -d: -f1)"
+          [[ -n "$predecessor_line" && -n "$finalize_line" && "$predecessor_line" -lt "$finalize_line" ]] || { echo 'Modrinth predecessor/finalization ordering differs.' >&2; exit 1; }
+          public_skills_name='  public_''skills:'
+          verify_name='  ver''ify:'
+          public_skills_line="$(grep -n -m 1 --fixed-strings "$public_skills_name" "$workflow" | cut -d: -f1)"
+          verify_line="$(grep -n -m 1 --fixed-strings "$verify_name" "$workflow" | cut -d: -f1)"
+          [[ -n "$public_skills_line" && -n "$verify_line" && "$public_skills_line" -lt "$verify_line" ]] || { echo 'Public Skill job isolation differs.' >&2; exit 1; }
+          grep --fixed-strings 'needs: public_skills' "$workflow" >/dev/null
+          skill_preview='gh skill pre''view'
+          skill_install='npx --yes skills ''add'
+          [[ "$(grep --fixed-strings -c "$skill_preview" "$workflow")" == "1" && \
+            "$(grep --fixed-strings -c "$skill_install" "$workflow")" == "1" ]] || { echo 'Public Skill execution topology differs.' >&2; exit 1; }
+          [[ "$(grep --fixed-strings -c "$central_write" "$sealed_workflow" || true)" == "0" ]] || { echo 'The sealed v0.1.0 workflow gained a Central write.' >&2; exit 1; }
+          [[ "$(grep --fixed-strings -c 'v0.1.1' "$sealed_workflow" || true)" == "0" ]] || { echo 'The sealed v0.1.0 workflow was repurposed.' >&2; exit 1; }
+      - name: Validate immutable release source
+        id: source
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ inputs.tag }}
+          CONFIRMATION: ${{ inputs.confirmation }}
+        run: |
+          set -euo pipefail
+          [[ "$GITHUB_REF" == "refs/heads/master" ]] || { echo 'Release must be dispatched from master.' >&2; exit 1; }
+          [[ "$RELEASE_TAG" == "v0.1.1" ]] || { echo 'This workflow is pinned to v0.1.1.' >&2; exit 1; }
+          [[ "$CONFIRMATION" == "release $RELEASE_TAG" ]] || { echo 'Release confirmation does not match.' >&2; exit 1; }
+          [[ "$(git rev-parse HEAD)" == "$GITHUB_SHA" ]] || { echo 'Checked-out controller differs from the workflow commit.' >&2; exit 1; }
+          git fetch --force origin \
+            '+refs/heads/master:refs/remotes/origin/master' \
+            "+refs/tags/$RELEASE_TAG:refs/tags/$RELEASE_TAG"
+          [[ "$(git rev-parse origin/master)" == "$GITHUB_SHA" ]] || { echo 'Controller SHA is not the exact origin/master head.' >&2; exit 1; }
+          tag_commit="$(git rev-parse --verify "refs/tags/$RELEASE_TAG^{commit}")"
+          [[ "$tag_commit" == "$GITHUB_SHA" ]] || { echo 'The v0.1.1 tag must point to the exact green master head used for release.' >&2; exit 1; }
+          read -r tag_object verified_commit <<< "$(bash release/verify-release-tag.sh "$RELEASE_TAG" "$tag_commit")"
+          [[ "$verified_commit" == "$tag_commit" ]] || { echo 'Signed tag verification returned a different commit.' >&2; exit 1; }
+          bash release/verify-github-tag-ruleset.sh \
+            release/github-tag-ruleset-v0.1.1.json \
+            release/github-tag-ruleset-v0.1.1-receipt.json >/dev/null
+          [[ "$(git rev-parse origin/master)" == "$GITHUB_SHA" ]] || { echo 'Controller master changed during tag verification.' >&2; exit 1; }
+          git merge-base --is-ancestor "$tag_commit" origin/master || { echo 'The release tag is not contained in controller master.' >&2; exit 1; }
+          root_version="$(git show "${tag_commit}:build.gradle.kts" | sed -nE 's/^version = "([^"]+)"$/\1/p')"
+          [[ "$root_version" == "${RELEASE_TAG#v}" ]] || { echo "Root version $root_version does not match $RELEASE_TAG." >&2; exit 1; }
+          {
+            echo "controller_commit=$GITHUB_SHA"
+            echo "tag_commit=$tag_commit"
+            echo "tag_object=$tag_object"
+          } >> "$GITHUB_OUTPUT"
+      - name: Require successful exact-SHA CI and Pages provenance
+        id: pages
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ inputs.tag }}
+          TAG_COMMIT: ${{ steps.source.outputs.tag_commit }}
+        run: |
+          set -euo pipefail
+          mapfile -t required_commits < <(printf '%s\n' "$GITHUB_SHA" "$TAG_COMMIT" | sort --unique)
+          for workflow in jvm.yml qodana.yml; do
+            for required_commit in "${required_commits[@]}"; do
+              runs="$(gh run list --workflow "$workflow" --commit "$required_commit" --status completed --limit 100 --json conclusion,event,headBranch,headSha)"
+              jq -e --arg commit "$required_commit" \
+                'any(.[]; .conclusion == "success" and .event == "push" and .headBranch == "master" and .headSha == $commit)' \
+                <<< "$runs" >/dev/null || {
+                echo "No successful $workflow master push exists for $required_commit." >&2
+                exit 1
+              }
+            done
+          done
+          release_pages="$(gh run list --workflow pages.yml --commit "$TAG_COMMIT" --event push --status completed --limit 100 --json conclusion,databaseId,event,headBranch,headSha)"
+          release_pages_run_id="$(jq -er --arg tag "$RELEASE_TAG" --arg sha "$TAG_COMMIT" '
+            [.[] | select(.conclusion == "success" and .event == "push" and .headBranch == $tag and .headSha == $sha)] |
+            select(length == 1) | .[0].databaseId | select(type == "number" and . > 0 and . == floor) | tostring
+          ' <<< "$release_pages")" || { echo 'Expected one successful tag-triggered Pages run.' >&2; exit 1; }
+          controller_pages="$(gh run list --workflow pages.yml --commit "$GITHUB_SHA" --event push --status completed --limit 100 --json conclusion,databaseId,event,headBranch,headSha)"
+          controller_pages_run_id="$(jq -er --arg sha "$GITHUB_SHA" '
+            [.[] | select(.conclusion == "success" and .event == "push" and .headBranch == "master" and .headSha == $sha)] |
+            select(length == 1) | .[0].databaseId | select(type == "number" and . > 0 and . == floor) | tostring
+          ' <<< "$controller_pages")" || { echo 'Expected one successful controller Pages run.' >&2; exit 1; }
+          bash -n release/verify-pages-deployment-source.sh
+          bash -n release/wait-for-pages-source-receipt.sh
+          pages_record="$(bash release/verify-pages-deployment-source.sh \
+            "$release_pages_run_id" "$RELEASE_TAG" "$TAG_COMMIT" \
+            "$controller_pages_run_id" "$GITHUB_SHA")"
+          bash release/wait-for-pages-source-receipt.sh "$RELEASE_TAG" "$TAG_COMMIT" "$GITHUB_SHA"
+          [[ "$(bash release/verify-pages-deployment-source.sh \
+            "$release_pages_run_id" "$RELEASE_TAG" "$TAG_COMMIT" \
+            "$controller_pages_run_id" "$GITHUB_SHA")" == "$pages_record" ]] || {
+            echo 'Pages provenance changed while polling public receipts.' >&2
+            exit 1
+          }
+          echo "pages_record=$pages_record" >> "$GITHUB_OUTPUT"
+
+  release:
+    if: inputs.operation == 'release'
+    needs: preflight
+    permissions:
+      actions: read
+      contents: write
+      deployments: read
+    environment:
+      name: release
+      url: https://github.com/sya-ri/strata/releases/tag/${{ inputs.tag }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 360
+    steps:
+      - name: Check out exact release source
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+          ref: ${{ needs.preflight.outputs.tag_commit }}
+      - name: Revalidate protected release request
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ inputs.tag }}
+          CONFIRMATION: ${{ inputs.confirmation }}
+          EXPECTED_CONTROLLER_COMMIT: ${{ needs.preflight.outputs.controller_commit }}
+          EXPECTED_TAG_COMMIT: ${{ needs.preflight.outputs.tag_commit }}
+          EXPECTED_TAG_OBJECT: ${{ needs.preflight.outputs.tag_object }}
+          EXPECTED_PAGES_RECORD: ${{ needs.preflight.outputs.pages_record }}
+        run: |
+          set -euo pipefail
+          [[ "$GITHUB_REF" == "refs/heads/master" ]] || { echo 'Release must be dispatched from master.' >&2; exit 1; }
+          [[ "$RELEASE_TAG" == "v0.1.1" && "$CONFIRMATION" == "release $RELEASE_TAG" ]] || { echo 'Protected release request differs.' >&2; exit 1; }
+          [[ "$GITHUB_SHA" == "$EXPECTED_CONTROLLER_COMMIT" ]] || { echo 'Protected controller differs from preflight.' >&2; exit 1; }
+          git fetch --force origin \
+            '+refs/heads/master:refs/remotes/origin/master' \
+            "+refs/tags/$RELEASE_TAG:refs/tags/$RELEASE_TAG"
+          [[ "$(git rev-parse HEAD)" == "$EXPECTED_TAG_COMMIT" ]] || { echo 'Checked-out release source differs from preflight.' >&2; exit 1; }
+          [[ "$(git rev-parse origin/master)" == "$GITHUB_SHA" ]] || { echo 'Controller is no longer the exact master head.' >&2; exit 1; }
+          git merge-base --is-ancestor "$EXPECTED_TAG_COMMIT" origin/master || { echo 'Release source is no longer contained in master.' >&2; exit 1; }
+          bash release/verify-release-tag.sh "$RELEASE_TAG" "$EXPECTED_TAG_COMMIT" "$EXPECTED_TAG_OBJECT" >/dev/null
+          bash release/verify-github-tag-ruleset.sh \
+            release/github-tag-ruleset-v0.1.1.json \
+            release/github-tag-ruleset-v0.1.1-receipt.json >/dev/null
+          root_version="$(sed -nE 's/^version = "([^"]+)"$/\1/p' build.gradle.kts)"
+          [[ "$root_version" == "${RELEASE_TAG#v}" ]] || { echo 'Root version differs from the release tag.' >&2; exit 1; }
+          read -r release_pages_run_id _ _ controller_pages_run_id _ _ <<< "$EXPECTED_PAGES_RECORD"
+          pages_record="$(bash release/verify-pages-deployment-source.sh \
+            "$release_pages_run_id" "$RELEASE_TAG" "$EXPECTED_TAG_COMMIT" \
+            "$controller_pages_run_id" "$GITHUB_SHA")"
+          [[ "$pages_record" == "$EXPECTED_PAGES_RECORD" ]] || { echo 'Protected Pages evidence differs from preflight.' >&2; exit 1; }
+          bash release/wait-for-pages-source-receipt.sh "$RELEASE_TAG" "$EXPECTED_TAG_COMMIT" "$GITHUB_SHA"
+          echo "RELEASE_SOURCE_COMMIT=$EXPECTED_TAG_COMMIT" >> "$GITHUB_ENV"
+      - name: Set up Java
+        uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: |
+            17
+            21
+            25
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v6
+        with:
+          cache-read-only: true
+          gradle-home-cache-strict-match: true
+          gradle-home-cache-excludes: caches/fabric-loom
+      - name: Resolve immutable release credentials
+        id: modrinth
+        shell: bash
+        env:
+          REQUESTED_PROJECT_ID: ${{ inputs.modrinth_project_id }}
+          MODRINTH_TOKEN: ${{ secrets.MODRINTH_TOKEN }}
+          SIGNING_KEY: ${{ secrets.SIGNING_KEY }}
+          SIGNING_PASSWORD: ${{ secrets.SIGNING_PASSWORD }}
+          MAVEN_CENTRAL_USERNAME: ${{ secrets.MAVEN_CENTRAL_USERNAME }}
+          MAVEN_CENTRAL_PASSWORD: ${{ secrets.MAVEN_CENTRAL_PASSWORD }}
+        run: |
+          set -euo pipefail
+          tracked="$(jq -r '.projectId // empty' release/modrinth-project.json)"
+          [[ -n "$tracked" ]] || { echo 'The immutable Modrinth project ID is not tracked.' >&2; exit 1; }
+          [[ -z "$REQUESTED_PROJECT_ID" || "$REQUESTED_PROJECT_ID" == "$tracked" ]] || { echo 'Requested Modrinth project ID differs from tracked ID.' >&2; exit 1; }
+          [[ -n "$MODRINTH_TOKEN" ]] || { echo 'MODRINTH_TOKEN is missing.' >&2; exit 1; }
+          [[ -n "$SIGNING_KEY" && -n "$SIGNING_PASSWORD" ]] || { echo 'Release signing credentials are missing.' >&2; exit 1; }
+          [[ -n "$MAVEN_CENTRAL_USERNAME" && -n "$MAVEN_CENTRAL_PASSWORD" ]] || { echo 'Maven Central credentials are missing.' >&2; exit 1; }
+          echo "project_id=$tracked" >> "$GITHUB_OUTPUT"
+      - name: Rerun release quality, documentation, and Skill gates
+        shell: bash
+        env:
+          RELEASE_TAG: ${{ inputs.tag }}
+        run: |
+          set -euo pipefail
+          bash ./gradlew --no-parallel --max-workers=2 --no-build-cache \
+            :check :api:check :integration:api:check :integration:docs:check \
+            :integration:docs:checkDokkaPagesStaging \
+            :quality:benchmarks:check :quality:detekt-rules:check \
+            :runtime:core:check :runtime:headless:check :runtime:minecraft:check \
+            :koverJvmTests :koverHtmlReport :koverXmlReport -Pkover \
+            -Pstrata.sourceRevision="$RELEASE_TAG" \
+            -Pstrata.sourceCommit="$RELEASE_SOURCE_COMMIT"
+          git diff --quiet -- . || { echo 'Release gates changed tracked source.' >&2; exit 1; }
+          git diff --cached --quiet -- . || { echo 'Release gates changed the index.' >&2; exit 1; }
+      - name: Build the 25-coordinate consumer and 21-artifact manifest
+        shell: bash
+        env:
+          PROJECT_ID: ${{ steps.modrinth.outputs.project_id }}
+          RELEASE_TAG: ${{ inputs.tag }}
+          ORG_GRADLE_PROJECT_signingInMemoryKey: ${{ secrets.SIGNING_KEY }}
+          ORG_GRADLE_PROJECT_signingInMemoryKeyPassword: ${{ secrets.SIGNING_PASSWORD }}
+        run: |
+          set -euo pipefail
+          bash ./gradlew --no-parallel --max-workers=2 --no-build-cache \
+            verifyReleasePublicationMatrix verifyPublishedConsumer modrinthReleaseManifest \
+            -Pstrata.sourceRevision="$RELEASE_TAG" \
+            -Pstrata.sourceCommit="$RELEASE_SOURCE_COMMIT" \
+            -Pstrata.modrinthProjectId="$PROJECT_ID"
+          [[ "$(grep -cve '^[[:space:]]*$' release/maven-coordinates.txt)" == "25" ]] || { echo 'Maven coordinate count differs.' >&2; exit 1; }
+          jq -e '.releaseVersion == "0.1.1" and (.artifacts | length) == 21' build/release/modrinth/manifest.json >/dev/null || { echo 'Modrinth manifest inventory differs.' >&2; exit 1; }
+      - name: Run representative clients from Maven Local
+        shell: bash
+        env:
+          RELEASE_TAG: ${{ inputs.tag }}
+        run: |
+          set -euo pipefail
+          for task in \
+            :integration:minecraft-fabric-1.20:runPublishedCoordinateClientGameTest \
+            :integration:minecraft-fabric-1.21.11:runPublishedCoordinateClientGameTest \
+            :integration:minecraft-fabric-26.2:runPublishedCoordinateClientGameTest; do
+            bash ./gradlew --no-parallel --max-workers=2 --no-build-cache "$task" \
+              -Pstrata.releaseRepository="file://$HOME/.m2/repository" \
+              -Pstrata.sourceRevision="$RELEASE_TAG" \
+              -Pstrata.sourceCommit="$RELEASE_SOURCE_COMMIT"
+          done
+      - name: Preflight Maven Central and Publisher Portal
+        id: central
+        shell: bash
+        env:
+          RELEASE_TAG: ${{ inputs.tag }}
+          ORG_GRADLE_PROJECT_signingInMemoryKey: ${{ secrets.SIGNING_KEY }}
+          ORG_GRADLE_PROJECT_signingInMemoryKeyPassword: ${{ secrets.SIGNING_PASSWORD }}
+          ORG_GRADLE_PROJECT_mavenCentralUsername: ${{ secrets.MAVEN_CENTRAL_USERNAME }}
+          ORG_GRADLE_PROJECT_mavenCentralPassword: ${{ secrets.MAVEN_CENTRAL_PASSWORD }}
+        run: |
+          set -euo pipefail
+          bash ./gradlew --no-parallel --max-workers=2 --no-build-cache \
+            mavenCentralReleasePreflight mavenCentralPortalPreflight \
+            -Pstrata.sourceRevision="$RELEASE_TAG" \
+            -Pstrata.sourceCommit="$RELEASE_SOURCE_COMMIT"
+          public_state="$(jq -r '.state' build/release/maven-central/preflight.json)"
+          portal_state="$(jq -r '.state' build/release/maven-central/portal-preflight.json)"
+          [[ "$(jq -r '.coordinateCount' build/release/maven-central/preflight.json)" == "25" ]] || { echo 'Central coordinate count differs.' >&2; exit 1; }
+          case "$public_state" in
+            absent)
+              jq -e '.verifiedFileCount == 0 and .verifiedChecksumCount == 0' build/release/maven-central/preflight.json >/dev/null
+              ;;
+            exact)
+              jq -e '.verifiedFileCount == 250 and .verifiedChecksumCount == 500' build/release/maven-central/preflight.json >/dev/null
+              ;;
+            *) echo "Unexpected public Central state: $public_state" >&2; exit 1 ;;
+          esac
+          case "$portal_state" in
+            absent)
+              jq -e '.verifiedContentFileCount == 0 and .verifiedChecksumCount == 0' build/release/maven-central/portal-preflight.json >/dev/null
+              ;;
+            exact)
+              jq -e '.verifiedContentFileCount == 250 and .verifiedChecksumCount == 500' build/release/maven-central/portal-preflight.json >/dev/null
+              ;;
+            *) echo "Unexpected Central Portal state: $portal_state" >&2; exit 1 ;;
+          esac
+          [[ "$public_state" != "exact" || "$portal_state" == "exact" ]] || { echo 'Public Central is exact but the authenticated deployment is absent.' >&2; exit 1; }
+          {
+            echo "public_state=$public_state"
+            echo "portal_state=$portal_state"
+          } >> "$GITHUB_OUTPUT"
+      - name: Preflight Modrinth without mutation
+        id: modrinth_preflight
+        shell: bash
+        env:
+          MODRINTH_TOKEN: ${{ secrets.MODRINTH_TOKEN }}
+          PROJECT_ID: ${{ steps.modrinth.outputs.project_id }}
+          RELEASE_TAG: ${{ inputs.tag }}
+        run: |
+          set -euo pipefail
+          bash ./gradlew --no-parallel --max-workers=2 --no-build-cache modrinthReleasePreflight \
+            -Pstrata.sourceRevision="$RELEASE_TAG" \
+            -Pstrata.sourceCommit="$RELEASE_SOURCE_COMMIT" \
+            -Pstrata.modrinthProjectId="$PROJECT_ID"
+          project_json="$(mktemp)"
+          body="$(mktemp)"
+          current_body="$(mktemp)"
+          trap 'rm -f -- "$project_json" "$body" "$current_body"' EXIT
+          curl --fail --silent --show-error --retry 3 --retry-all-errors --retry-delay 1 \
+            --proto '=https' --header "Authorization: $MODRINTH_TOKEN" \
+            "https://api.modrinth.com/v2/project/$PROJECT_ID" --output "$project_json"
+          jq --raw-output --join-output '(.body // "") | gsub("\r\n"; "\n") | sub("[[:space:]]+$"; "") + "\n"' "$project_json" > "$body"
+          jq --null-input --rawfile body docs/modrinth-project.md --raw-output --join-output \
+            '$body | gsub("\r\n"; "\n") | sub("[[:space:]]+$"; "") + "\n"' > "$current_body"
+          body_sha256="$(sha256sum "$body" | cut -d ' ' -f 1)"
+          predecessor_sha256="$(jq -er '.previousBodySha256' release/modrinth-project.json)"
+          current_sha256="$(sha256sum "$current_body" | cut -d ' ' -f 1)"
+          [[ "$body_sha256" == "$predecessor_sha256" || "$body_sha256" == "$current_sha256" ]] || { echo 'Remote Modrinth body is neither the tracked predecessor nor current body.' >&2; exit 1; }
+          echo "body_sha256=$body_sha256" >> "$GITHUB_OUTPUT"
+      - name: Preflight GitHub Release without mutation
+        shell: bash
+        env:
+          CENTRAL_STATE: ${{ steps.central.outputs.public_state }}
+          GH_TOKEN: ${{ github.token }}
+          PROJECT_ID: ${{ steps.modrinth.outputs.project_id }}
+          RELEASE_TAG: ${{ inputs.tag }}
+          ORG_GRADLE_PROJECT_signingInMemoryKey: ${{ secrets.SIGNING_KEY }}
+          ORG_GRADLE_PROJECT_signingInMemoryKeyPassword: ${{ secrets.SIGNING_PASSWORD }}
+        run: |
+          set -euo pipefail
+          if [[ "$CENTRAL_STATE" == "exact" ]]; then
+            bash ./gradlew --no-parallel --max-workers=2 --no-build-cache mavenCentralReleaseVerify githubReleaseBundle \
+              -Pstrata.sourceRevision="$RELEASE_TAG" \
+              -Pstrata.sourceCommit="$RELEASE_SOURCE_COMMIT" \
+              -Pstrata.modrinthProjectId="$PROJECT_ID"
+          fi
+          bash -n release/github-release-preflight.sh
+          bash release/github-release-preflight.sh build/release/github
+      - name: Publish wholly absent Maven Central release
+        if: steps.central.outputs.public_state == 'absent' && steps.central.outputs.portal_state == 'absent'
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ inputs.tag }}
+          EXPECTED_CONTROLLER_COMMIT: ${{ needs.preflight.outputs.controller_commit }}
+          EXPECTED_TAG_COMMIT: ${{ needs.preflight.outputs.tag_commit }}
+          EXPECTED_TAG_OBJECT: ${{ needs.preflight.outputs.tag_object }}
+          ORG_GRADLE_PROJECT_signingInMemoryKey: ${{ secrets.SIGNING_KEY }}
+          ORG_GRADLE_PROJECT_signingInMemoryKeyPassword: ${{ secrets.SIGNING_PASSWORD }}
+          ORG_GRADLE_PROJECT_mavenCentralUsername: ${{ secrets.MAVEN_CENTRAL_USERNAME }}
+          ORG_GRADLE_PROJECT_mavenCentralPassword: ${{ secrets.MAVEN_CENTRAL_PASSWORD }}
+        run: |
+          set -euo pipefail
+          revalidate_release_source() {
+            git fetch --force origin \
+              '+refs/heads/master:refs/remotes/origin/master' \
+              "+refs/tags/$RELEASE_TAG:refs/tags/$RELEASE_TAG"
+            [[ "$GITHUB_SHA" == "$EXPECTED_CONTROLLER_COMMIT" && "$(git rev-parse origin/master)" == "$EXPECTED_CONTROLLER_COMMIT" ]] || { echo 'Controller master changed before Central publication.' >&2; exit 1; }
+            [[ "$(git rev-parse HEAD)" == "$EXPECTED_TAG_COMMIT" && "$(git rev-parse --verify "refs/tags/$RELEASE_TAG^{commit}")" == "$EXPECTED_TAG_COMMIT" ]] || { echo 'Release commit changed before Central publication.' >&2; exit 1; }
+            [[ "$(git rev-parse "refs/tags/$RELEASE_TAG")" == "$EXPECTED_TAG_OBJECT" ]] || { echo 'Release tag object changed before Central publication.' >&2; exit 1; }
+            git merge-base --is-ancestor "$EXPECTED_TAG_COMMIT" origin/master || { echo 'Release source left controller master before Central publication.' >&2; exit 1; }
+            bash release/verify-release-tag.sh "$RELEASE_TAG" "$EXPECTED_TAG_COMMIT" "$EXPECTED_TAG_OBJECT" >/dev/null
+            bash release/verify-github-tag-ruleset.sh release/github-tag-ruleset-v0.1.1.json release/github-tag-ruleset-v0.1.1-receipt.json >/dev/null
+            [[ "$(git rev-parse origin/master)" == "$EXPECTED_CONTROLLER_COMMIT" ]] || { echo 'Controller master changed during Central source verification.' >&2; exit 1; }
+          }
+          revalidate_release_source
+          git diff --quiet -- . || { echo 'Tracked release source changed before Central publication.' >&2; exit 1; }
+          git diff --cached --quiet -- . || { echo 'Tracked release source changed before Central publication.' >&2; exit 1; }
+          bash ./gradlew --no-parallel --max-workers=2 --no-build-cache \
+            mavenCentralReleasePreflight mavenCentralPortalPreflight \
+            -Pstrata.sourceRevision="$RELEASE_TAG" \
+            -Pstrata.sourceCommit="$RELEASE_SOURCE_COMMIT"
+          jq -e '.state == "absent" and .coordinateCount == 25 and .verifiedFileCount == 0 and .verifiedChecksumCount == 0' \
+            build/release/maven-central/preflight.json >/dev/null || { echo 'Fresh public Central preflight is no longer wholly absent.' >&2; exit 1; }
+          jq -e '.state == "absent" and .deploymentId == null and .deploymentState == null and .verifiedContentFileCount == 0 and .verifiedChecksumCount == 0' \
+            build/release/maven-central/portal-preflight.json >/dev/null || { echo 'Fresh Central Portal preflight is no longer wholly absent.' >&2; exit 1; }
+          revalidate_release_source
+          bash ./gradlew --no-parallel --max-workers=2 --no-build-cache publishAndReleaseToMavenCentral \
+            -Pstrata.sourceRevision="$RELEASE_TAG" \
+            -Pstrata.sourceCommit="$RELEASE_SOURCE_COMMIT"
+      - name: Verify Publisher Portal, Central repository, and release bundle
+        shell: bash
+        env:
+          PROJECT_ID: ${{ steps.modrinth.outputs.project_id }}
+          RELEASE_TAG: ${{ inputs.tag }}
+          ORG_GRADLE_PROJECT_signingInMemoryKey: ${{ secrets.SIGNING_KEY }}
+          ORG_GRADLE_PROJECT_signingInMemoryKeyPassword: ${{ secrets.SIGNING_PASSWORD }}
+          ORG_GRADLE_PROJECT_mavenCentralUsername: ${{ secrets.MAVEN_CENTRAL_USERNAME }}
+          ORG_GRADLE_PROJECT_mavenCentralPassword: ${{ secrets.MAVEN_CENTRAL_PASSWORD }}
+        run: |
+          set -euo pipefail
+          bash ./gradlew --no-parallel --max-workers=2 --no-build-cache mavenCentralPortalVerify \
+            -Pstrata.sourceRevision="$RELEASE_TAG" -Pstrata.sourceCommit="$RELEASE_SOURCE_COMMIT"
+          jq -e '.state == "exact" and .deploymentState == "published" and .verifiedContentFileCount == 250 and .verifiedChecksumCount == 500' \
+            build/release/maven-central/portal-verify.json >/dev/null || { echo 'Central Portal verification counts differ.' >&2; exit 1; }
+          bash ./gradlew --no-parallel --max-workers=2 --no-build-cache mavenCentralReleaseVerify githubReleaseBundle \
+            -Pstrata.sourceRevision="$RELEASE_TAG" -Pstrata.sourceCommit="$RELEASE_SOURCE_COMMIT" \
+            -Pstrata.modrinthProjectId="$PROJECT_ID"
+          jq -e '.state == "exact" and .coordinateCount == 25 and .verifiedFileCount == 250 and .verifiedChecksumCount == 500' \
+            build/release/maven-central/verify.json >/dev/null || { echo 'Public Central verification counts differ.' >&2; exit 1; }
+          shopt -s nullglob
+          assets=(build/release/github/*)
+          jars=(build/release/github/*.jar)
+          [[ "${#jars[@]}" == "21" && "${#assets[@]}" == "43" ]] || { echo 'Canonical GitHub bundle inventory differs.' >&2; exit 1; }
+      - name: Verify all 125 Central signatures
+        shell: bash
+        env:
+          SIGNING_KEY: ${{ secrets.SIGNING_KEY }}
+        run: |
+          set -euo pipefail
+          key_file="$(mktemp)"
+          gnupg_home="$(mktemp -d)"
+          trap 'rm -rf -- "$key_file" "$gnupg_home"' EXIT
+          chmod 600 "$key_file"
+          chmod 700 "$gnupg_home"
+          export GNUPGHOME="$gnupg_home"
+          printf '%s' "$SIGNING_KEY" > "$key_file"
+          if ! gpg --batch --quiet --import "$key_file"; then
+            printf '%s' "$SIGNING_KEY" | base64 --decode > "$key_file"
+            gpg --batch --quiet --import "$key_file"
+          fi
+          verified=0
+          while IFS= read -r -d '' signature; do
+            gpg --batch --verify "$signature" "${signature%.asc}"
+            verified=$((verified + 1))
+          done < <(find build/release/maven-central/evidence -type f -name '*.asc' -print0)
+          [[ "$verified" == "125" ]] || { echo "Expected 125 verified Central signatures, found $verified." >&2; exit 1; }
+          for jar in build/release/github/*.jar; do
+            gpg --batch --verify "$jar.asc" "$jar"
+          done
+      - name: Stage only missing Modrinth versions
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          MODRINTH_TOKEN: ${{ secrets.MODRINTH_TOKEN }}
+          PROJECT_ID: ${{ steps.modrinth.outputs.project_id }}
+          RELEASE_TAG: ${{ inputs.tag }}
+          PREFLIGHT_BODY_SHA256: ${{ steps.modrinth_preflight.outputs.body_sha256 }}
+          EXPECTED_CONTROLLER_COMMIT: ${{ needs.preflight.outputs.controller_commit }}
+          EXPECTED_TAG_COMMIT: ${{ needs.preflight.outputs.tag_commit }}
+          EXPECTED_TAG_OBJECT: ${{ needs.preflight.outputs.tag_object }}
+        run: |
+          set -euo pipefail
+          revalidate_release_source() {
+            git fetch --force origin \
+              '+refs/heads/master:refs/remotes/origin/master' \
+              "+refs/tags/$RELEASE_TAG:refs/tags/$RELEASE_TAG"
+            [[ "$GITHUB_SHA" == "$EXPECTED_CONTROLLER_COMMIT" && "$(git rev-parse origin/master)" == "$EXPECTED_CONTROLLER_COMMIT" ]] || { echo 'Controller master changed before Modrinth staging.' >&2; exit 1; }
+            [[ "$(git rev-parse HEAD)" == "$EXPECTED_TAG_COMMIT" && "$(git rev-parse --verify "refs/tags/$RELEASE_TAG^{commit}")" == "$EXPECTED_TAG_COMMIT" ]] || { echo 'Release commit changed before Modrinth staging.' >&2; exit 1; }
+            [[ "$(git rev-parse "refs/tags/$RELEASE_TAG")" == "$EXPECTED_TAG_OBJECT" ]] || { echo 'Release tag object changed before Modrinth staging.' >&2; exit 1; }
+            git merge-base --is-ancestor "$EXPECTED_TAG_COMMIT" origin/master || { echo 'Release source left controller master before Modrinth staging.' >&2; exit 1; }
+            bash release/verify-release-tag.sh "$RELEASE_TAG" "$EXPECTED_TAG_COMMIT" "$EXPECTED_TAG_OBJECT" >/dev/null
+            bash release/verify-github-tag-ruleset.sh release/github-tag-ruleset-v0.1.1.json release/github-tag-ruleset-v0.1.1-receipt.json >/dev/null
+            [[ "$(git rev-parse origin/master)" == "$EXPECTED_CONTROLLER_COMMIT" ]] || { echo 'Controller master changed during Modrinth source verification.' >&2; exit 1; }
+          }
+          revalidate_release_source
+          git diff --quiet -- . || { echo 'Tracked release source changed before Modrinth staging.' >&2; exit 1; }
+          git diff --cached --quiet -- . || { echo 'Tracked release source changed before Modrinth staging.' >&2; exit 1; }
+          bash ./gradlew --no-parallel --max-workers=2 --no-build-cache modrinthReleaseStage \
+            -Pstrata.sourceRevision="$RELEASE_TAG" \
+            -Pstrata.sourceCommit="$RELEASE_SOURCE_COMMIT" \
+            -Pstrata.modrinthProjectId="$PROJECT_ID"
+          jq -e '.operation == "stage" and (.absent | length) == 0 and (.listed | length) == 21' \
+            build/release/modrinth-receipts/stage.json >/dev/null || { echo 'Modrinth staging receipt differs.' >&2; exit 1; }
+          project_json="$(mktemp)"
+          body="$(mktemp)"
+          trap 'rm -f -- "$project_json" "$body"' EXIT
+          curl --fail --silent --show-error --retry 3 --retry-all-errors --retry-delay 1 \
+            --proto '=https' --header "Authorization: $MODRINTH_TOKEN" \
+            "https://api.modrinth.com/v2/project/$PROJECT_ID" --output "$project_json"
+          jq --raw-output --join-output '(.body // "") | gsub("\r\n"; "\n") | sub("[[:space:]]+$"; "") + "\n"' "$project_json" > "$body"
+          [[ "$(sha256sum "$body" | cut -d ' ' -f 1)" == "$PREFLIGHT_BODY_SHA256" ]] || { echo 'Modrinth staging changed the shared project body.' >&2; exit 1; }
+      - name: Run representative clients from Maven Central
+        shell: bash
+        env:
+          RELEASE_TAG: ${{ inputs.tag }}
+        run: |
+          set -euo pipefail
+          for task in \
+            :integration:minecraft-fabric-1.20:runPublishedCoordinateClientGameTest \
+            :integration:minecraft-fabric-1.21.11:runPublishedCoordinateClientGameTest \
+            :integration:minecraft-fabric-26.2:runPublishedCoordinateClientGameTest; do
+            bash ./gradlew --no-parallel --max-workers=2 --no-build-cache "$task" \
+              -Pstrata.releaseRepository=https://repo1.maven.org/maven2 \
+              -Pstrata.sourceRevision="$RELEASE_TAG" \
+              -Pstrata.sourceCommit="$RELEASE_SOURCE_COMMIT"
+          done
+      - name: Create or verify immutable GitHub Release
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ inputs.tag }}
+          EXPECTED_CONTROLLER_COMMIT: ${{ needs.preflight.outputs.controller_commit }}
+          EXPECTED_TAG_COMMIT: ${{ needs.preflight.outputs.tag_commit }}
+          EXPECTED_TAG_OBJECT: ${{ needs.preflight.outputs.tag_object }}
+        run: |
+          set -euo pipefail
+          revalidate_release_source() {
+            git fetch --force origin \
+              '+refs/heads/master:refs/remotes/origin/master' \
+              "+refs/tags/$RELEASE_TAG:refs/tags/$RELEASE_TAG"
+            [[ "$GITHUB_SHA" == "$EXPECTED_CONTROLLER_COMMIT" && "$(git rev-parse origin/master)" == "$EXPECTED_CONTROLLER_COMMIT" ]] || { echo 'Controller master changed before GitHub mutation.' >&2; exit 1; }
+            [[ "$(git rev-parse HEAD)" == "$EXPECTED_TAG_COMMIT" && "$(git rev-parse --verify "refs/tags/$RELEASE_TAG^{commit}")" == "$EXPECTED_TAG_COMMIT" ]] || { echo 'Release commit changed before GitHub mutation.' >&2; exit 1; }
+            [[ "$(git rev-parse "refs/tags/$RELEASE_TAG")" == "$EXPECTED_TAG_OBJECT" ]] || { echo 'Release tag object changed before GitHub mutation.' >&2; exit 1; }
+            git merge-base --is-ancestor "$EXPECTED_TAG_COMMIT" origin/master || { echo 'Release source left controller master before GitHub mutation.' >&2; exit 1; }
+            bash release/verify-release-tag.sh "$RELEASE_TAG" "$EXPECTED_TAG_COMMIT" "$EXPECTED_TAG_OBJECT" >/dev/null
+            bash release/verify-github-tag-ruleset.sh release/github-tag-ruleset-v0.1.1.json release/github-tag-ruleset-v0.1.1-receipt.json >/dev/null
+            [[ "$(git rev-parse origin/master)" == "$EXPECTED_CONTROLLER_COMMIT" ]] || { echo 'Controller master changed during GitHub source verification.' >&2; exit 1; }
+          }
+          git diff --quiet -- . || { echo 'Tracked release source changed before GitHub mutation.' >&2; exit 1; }
+          git diff --cached --quiet -- . || { echo 'Tracked release source changed before GitHub mutation.' >&2; exit 1; }
+          temporary="$(mktemp -d)"
+          actual_body="$(mktemp)"
+          actual_inventory="$(mktemp)"
+          release_probe="$(mktemp)"
+          trap 'rm -rf -- "$temporary" "$actual_body" "$actual_inventory" "$release_probe"' EXIT
+          expected_title="Strata ${RELEASE_TAG#v}"
+          shopt -s nullglob
+          assets=(build/release/github/*)
+          [[ "${#assets[@]}" == "43" ]] || { echo "Expected 43 GitHub assets, found ${#assets[@]}." >&2; exit 1; }
+          (cd build/release/github && sha256sum --check SHA256SUMS)
+          expected="$(printf '%s\n' "${assets[@]##*/}" | sort)"
+          verify_release_contract() {
+            local expected_draft="$1"
+            local require_complete="$2"
+            local release_json
+            local remote_inventory
+            local unexpected
+            local snapshot_directory
+            release_json="$(gh release view "$RELEASE_TAG" --json tagName,name,body,isDraft,isPrerelease,assets)"
+            [[ "$(jq -r '.tagName' <<< "$release_json")" == "$RELEASE_TAG" && "$(jq -r '.name' <<< "$release_json")" == "$expected_title" ]] || { echo 'GitHub Release identity differs.' >&2; exit 1; }
+            jq --raw-output --join-output '(.body // "") | gsub("\r\n"; "\n") | if contains("\r") then error("lone carriage return") else @base64 end' <<< "$release_json" | base64 --decode > "$actual_body"
+            cmp --silent "docs/releases/$RELEASE_TAG.md" "$actual_body" || { echo 'GitHub Release body differs.' >&2; exit 1; }
+            [[ "$(jq -r '.isDraft' <<< "$release_json")" == "$expected_draft" && "$(jq -r '.isPrerelease' <<< "$release_json")" == "false" ]] || { echo 'GitHub Release lifecycle differs.' >&2; exit 1; }
+            remote_inventory="$(jq -r '.assets[].name' <<< "$release_json" | sort)"
+            unexpected="$(comm -13 <(printf '%s\n' "$expected") <(printf '%s\n' "$remote_inventory"))"
+            [[ -z "$unexpected" ]] || { echo "GitHub Release contains unexpected assets: $unexpected" >&2; exit 1; }
+            if [[ "$require_complete" == "true" ]]; then
+              [[ "$remote_inventory" == "$expected" ]] || { echo 'GitHub Release asset inventory is incomplete.' >&2; exit 1; }
+            fi
+            : > "$actual_inventory"
+            if [[ -n "$remote_inventory" ]]; then
+              printf '%s\n' "$remote_inventory" > "$actual_inventory"
+            fi
+            snapshot_directory="$(mktemp -d "$temporary/snapshot.XXXXXX")"
+            for asset in "${assets[@]}"; do
+              local name
+              name="$(basename "$asset")"
+              if grep --fixed-strings --line-regexp "$name" "$actual_inventory" >/dev/null; then
+                gh release download "$RELEASE_TAG" --pattern "$name" --dir "$snapshot_directory"
+                cmp --silent "$asset" "$snapshot_directory/$name" || { echo "GitHub asset differs: $name" >&2; exit 1; }
+              fi
+            done
+          }
+          release_status="$(curl --silent --show-error --retry 3 --retry-all-errors --retry-delay 1 \
+            --proto '=https' \
+            --header 'Accept: application/vnd.github+json' \
+            --header "Authorization: Bearer $GH_TOKEN" \
+            --header 'X-GitHub-Api-Version: 2022-11-28' \
+            --output "$release_probe" --write-out '%{http_code}' \
+            "$GITHUB_API_URL/repos/$GITHUB_REPOSITORY/releases/tags/$RELEASE_TAG")"
+          if [[ "$release_status" == "200" ]]; then
+            draft="$(gh release view "$RELEASE_TAG" --json isDraft --jq '.isDraft')"
+            if [[ "$draft" == "true" ]]; then
+              verify_release_contract true false
+            else
+              verify_release_contract false true
+            fi
+          elif [[ "$release_status" == "404" ]]; then
+            revalidate_release_source
+            gh release create "$RELEASE_TAG" --draft --verify-tag --title "$expected_title" --notes-file "docs/releases/$RELEASE_TAG.md"
+            draft=true
+            verify_release_contract true false
+          else
+            echo "GitHub Release lookup failed with HTTP $release_status." >&2
+            exit 1
+          fi
+          missing_assets=()
+          for asset in "${assets[@]}"; do
+            name="$(basename "$asset")"
+            if grep --fixed-strings --line-regexp "$name" "$actual_inventory" >/dev/null; then
+              :
+            else
+              [[ "$draft" == "true" ]] || { echo "Published GitHub Release is missing $name." >&2; exit 1; }
+              missing_assets+=("$asset")
+            fi
+          done
+          if [[ "${#missing_assets[@]}" != "0" ]]; then
+            revalidate_release_source
+            verify_release_contract true false
+            missing_assets=()
+            for asset in "${assets[@]}"; do
+              name="$(basename "$asset")"
+              if grep --fixed-strings --line-regexp "$name" "$actual_inventory" >/dev/null; then
+                :
+              else
+                missing_assets+=("$asset")
+              fi
+            done
+            for asset in "${missing_assets[@]}"; do
+              gh release upload "$RELEASE_TAG" "$asset"
+            done
+            verify_release_contract true true
+          fi
+          if [[ "$draft" == "true" ]]; then
+            revalidate_release_source
+            verify_release_contract true true
+            gh release edit "$RELEASE_TAG" --draft=false
+          fi
+          verify_release_contract false true
+      - name: Submit or observe Modrinth review
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          MODRINTH_TOKEN: ${{ secrets.MODRINTH_TOKEN }}
+          PROJECT_ID: ${{ steps.modrinth.outputs.project_id }}
+          RELEASE_TAG: ${{ inputs.tag }}
+          EXPECTED_CONTROLLER_COMMIT: ${{ needs.preflight.outputs.controller_commit }}
+          EXPECTED_TAG_COMMIT: ${{ needs.preflight.outputs.tag_commit }}
+          EXPECTED_TAG_OBJECT: ${{ needs.preflight.outputs.tag_object }}
+        run: |
+          set -euo pipefail
+          git fetch --force origin \
+            '+refs/heads/master:refs/remotes/origin/master' \
+            "+refs/tags/$RELEASE_TAG:refs/tags/$RELEASE_TAG"
+          [[ "$GITHUB_SHA" == "$EXPECTED_CONTROLLER_COMMIT" && "$(git rev-parse origin/master)" == "$EXPECTED_CONTROLLER_COMMIT" ]] || { echo 'Controller master changed before Modrinth submission.' >&2; exit 1; }
+          [[ "$(git rev-parse HEAD)" == "$EXPECTED_TAG_COMMIT" && "$(git rev-parse --verify "refs/tags/$RELEASE_TAG^{commit}")" == "$EXPECTED_TAG_COMMIT" ]] || { echo 'Release commit changed before Modrinth submission.' >&2; exit 1; }
+          [[ "$(git rev-parse "refs/tags/$RELEASE_TAG")" == "$EXPECTED_TAG_OBJECT" ]] || { echo 'Release tag object changed before Modrinth submission.' >&2; exit 1; }
+          git merge-base --is-ancestor "$EXPECTED_TAG_COMMIT" origin/master || { echo 'Release source left controller master before Modrinth submission.' >&2; exit 1; }
+          bash release/verify-release-tag.sh "$RELEASE_TAG" "$EXPECTED_TAG_COMMIT" "$EXPECTED_TAG_OBJECT" >/dev/null
+          bash release/verify-github-tag-ruleset.sh release/github-tag-ruleset-v0.1.1.json release/github-tag-ruleset-v0.1.1-receipt.json >/dev/null
+          [[ "$(git rev-parse origin/master)" == "$EXPECTED_CONTROLLER_COMMIT" ]] || { echo 'Controller master changed during Modrinth source verification.' >&2; exit 1; }
+          git diff --quiet -- . || { echo 'Tracked release source changed before Modrinth submission.' >&2; exit 1; }
+          git diff --cached --quiet -- . || { echo 'Tracked release source changed before Modrinth submission.' >&2; exit 1; }
+          bash ./gradlew --no-parallel --max-workers=2 --no-build-cache modrinthReleaseSubmit \
+            -Pstrata.sourceRevision="$RELEASE_TAG" \
+            -Pstrata.sourceCommit="$RELEASE_SOURCE_COMMIT" \
+            -Pstrata.modrinthProjectId="$PROJECT_ID"
+          echo '::notice::Dispatch operation=verify after the project is approved. Processing and approved reruns remain read-only.'
+
+  public_skills:
+    if: inputs.operation == 'verify'
+    permissions: {}
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Fetch immutable public Skill sources without credentials
+        shell: bash
+        env:
+          CONFIRMATION: ${{ inputs.confirmation }}
+          RELEASE_TAG: ${{ inputs.tag }}
+        run: |
+          set -euo pipefail
+          [[ "$GITHUB_REF" == "refs/heads/master" ]] || { echo 'Public Skill verification must be dispatched from master.' >&2; exit 1; }
+          [[ "$RELEASE_TAG" == "v0.1.1" && "$CONFIRMATION" == "verify $RELEASE_TAG" ]] || { echo 'Public Skill verification request differs.' >&2; exit 1; }
+          for forbidden_secret in GH_TOKEN GITHUB_TOKEN MODRINTH_TOKEN SIGNING_KEY SIGNING_PASSWORD ORG_GRADLE_PROJECT_signingInMemoryKey ORG_GRADLE_PROJECT_signingInMemoryKeyPassword GNUPGHOME; do
+            [[ -z "${!forbidden_secret:-}" ]] || { echo "Credential reached the isolated public Skill runner: $forbidden_secret" >&2; exit 1; }
+          done
+          repository="$RUNNER_TEMP/strata-public-skills-repository"
+          previous_source="$RUNNER_TEMP/strata-public-skill-v0.1.0"
+          current_source="$RUNNER_TEMP/strata-public-skill-v0.1.1"
+          [[ ! -e "$repository" && ! -e "$previous_source" && ! -e "$current_source" ]] || { echo 'Public Skill source path already exists.' >&2; exit 1; }
+          git init "$repository"
+          git -C "$repository" remote add origin https://github.com/sya-ri/strata.git
+          git -C "$repository" fetch --force --no-tags origin \
+            '+refs/heads/master:refs/remotes/origin/master' \
+            '+refs/tags/v0.1.0:refs/tags/v0.1.0' \
+            '+refs/tags/v0.1.1:refs/tags/v0.1.1'
+          previous_commit="$(git -C "$repository" rev-parse --verify 'refs/tags/v0.1.0^{commit}')"
+          previous_object="$(git -C "$repository" rev-parse refs/tags/v0.1.0)"
+          current_commit="$(git -C "$repository" rev-parse --verify 'refs/tags/v0.1.1^{commit}')"
+          current_object="$(git -C "$repository" rev-parse refs/tags/v0.1.1)"
+          [[ "$previous_commit" == "d0be1ccf74ee8fa0aca1a23e9d50eb5ba45c39a8" && "$previous_object" == "ccf221fe7f133fe5598fafc4ad01e6bc69ba2230" ]] || { echo 'Public v0.1.0 Skill source identity differs.' >&2; exit 1; }
+          [[ "$(git -C "$repository" cat-file -t refs/tags/v0.1.0)" == "tag" && \
+            "$(git -C "$repository" cat-file -t refs/tags/v0.1.1)" == "tag" ]] || { echo 'A public Skill release tag is not annotated.' >&2; exit 1; }
+          git -C "$repository" merge-base --is-ancestor "$previous_commit" refs/remotes/origin/master || { echo 'Public v0.1.0 Skill source left master.' >&2; exit 1; }
+          git -C "$repository" merge-base --is-ancestor "$current_commit" refs/remotes/origin/master || { echo 'Public v0.1.1 Skill source left master.' >&2; exit 1; }
+          [[ "$(git -C "$repository" show "${current_commit}:build.gradle.kts" | sed -nE 's/^version = "([^"]+)"$/\1/p')" == "0.1.1" ]] || { echo 'Public v0.1.1 Skill root version differs.' >&2; exit 1; }
+          git -C "$repository" worktree add --detach "$previous_source" "$previous_commit"
+          git -C "$repository" worktree add --detach "$current_source" "$current_commit"
+          {
+            echo "PUBLIC_SKILL_REPOSITORY=$repository"
+            echo "PUBLIC_SKILL_PREVIOUS_SOURCE=$previous_source"
+            echo "PUBLIC_SKILL_CURRENT_SOURCE=$current_source"
+            echo "PUBLIC_SKILL_PREVIOUS_OBJECT=$previous_object"
+            echo "PUBLIC_SKILL_CURRENT_OBJECT=$current_object"
+          } >> "$GITHUB_ENV"
+      - name: Set up Node without release credentials
+        uses: actions/setup-node@v7
+        with:
+          node-version: 24
+      - name: Verify v0.1.0 and v0.1.1 public Skills on the isolated runner
+        shell: bash
+        run: |
+          set -euo pipefail
+          for forbidden_secret in GH_TOKEN GITHUB_TOKEN MODRINTH_TOKEN SIGNING_KEY SIGNING_PASSWORD ORG_GRADLE_PROJECT_signingInMemoryKey ORG_GRADLE_PROJECT_signingInMemoryKeyPassword GNUPGHOME; do
+            [[ -z "${!forbidden_secret:-}" ]] || { echo "Credential reached public Skill execution: $forbidden_secret" >&2; exit 1; }
+          done
+          if ! gh skill --help >/dev/null 2>&1; then
+            sudo apt-get update
+            sudo apt-get install --only-upgrade --yes gh
+          fi
+          for tag in v0.1.0 v0.1.1; do
+            case "$tag" in
+              v0.1.0) expected_source="$PUBLIC_SKILL_PREVIOUS_SOURCE"; expected_object="$PUBLIC_SKILL_PREVIOUS_OBJECT" ;;
+              v0.1.1) expected_source="$PUBLIC_SKILL_CURRENT_SOURCE"; expected_object="$PUBLIC_SKILL_CURRENT_OBJECT" ;;
+              *) echo "Unexpected public Skill tag: $tag" >&2; exit 1 ;;
+            esac
+            remote_object="$(git ls-remote --refs https://github.com/sya-ri/strata.git "refs/tags/$tag" | awk '{print $1}')"
+            [[ "$remote_object" == "$expected_object" ]] || { echo "Public Skill tag changed before execution: $tag" >&2; exit 1; }
+            gh skill preview sya-ri/strata "skills/strata@$tag" >/dev/null
+            install_root="$(mktemp -d "$RUNNER_TEMP/strata-public-skill-install.XXXXXX")"
+            (
+              cd "$install_root"
+              npx --yes skills add "sya-ri/strata@$tag" --skill strata --agent codex --yes --copy
+            )
+            mapfile -d '' installed < <(find "$install_root" -type f -name SKILL.md -print0)
+            [[ "${#installed[@]}" == "1" ]] || { echo "Skills CLI did not install exactly one Skill for $tag." >&2; exit 1; }
+            diff --recursive --brief "$expected_source/skills/strata" "$(dirname "${installed[0]}")"
+            rm -rf -- "$install_root"
+            [[ "$(git ls-remote --refs https://github.com/sya-ri/strata.git "refs/tags/$tag" | awk '{print $1}')" == "$expected_object" ]] || { echo "Public Skill tag changed during execution: $tag" >&2; exit 1; }
+          done
+
+  verify:
+    if: inputs.operation == 'verify'
+    needs: public_skills
+    permissions:
+      actions: read
+      contents: read
+      deployments: read
+    environment:
+      name: release
+      url: https://modrinth.com/mod/strata-ui
+    runs-on: ubuntu-latest
+    timeout-minutes: 360
+    steps:
+      - name: Check out exact tag
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+          ref: ${{ inputs.tag }}
+      - name: Validate final verification source and Pages provenance
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ inputs.tag }}
+          CONFIRMATION: ${{ inputs.confirmation }}
+        run: |
+          set -euo pipefail
+          [[ "$GITHUB_REF" == "refs/heads/master" ]] || { echo 'Verification must be dispatched from master.' >&2; exit 1; }
+          [[ "$RELEASE_TAG" == "v0.1.1" && "$CONFIRMATION" == "verify $RELEASE_TAG" ]] || { echo 'Final verification request differs.' >&2; exit 1; }
+          git fetch --force origin \
+            '+refs/heads/master:refs/remotes/origin/master' \
+            "+refs/tags/$RELEASE_TAG:refs/tags/$RELEASE_TAG" \
+            '+refs/tags/v0.1.0:refs/tags/v0.1.0'
+          checked_commit="$(git rev-parse HEAD)"
+          [[ "$(git rev-parse origin/master)" == "$GITHUB_SHA" ]] || { echo 'Verification controller is not the exact master head.' >&2; exit 1; }
+          [[ "$(git rev-parse --verify "refs/tags/$RELEASE_TAG^{commit}")" == "$checked_commit" ]] || { echo 'Checked-out release tag differs.' >&2; exit 1; }
+          git merge-base --is-ancestor "$checked_commit" origin/master || { echo 'Release tag is no longer contained in master.' >&2; exit 1; }
+          tag_object="$(git rev-parse "refs/tags/$RELEASE_TAG")"
+          bash release/verify-release-tag.sh "$RELEASE_TAG" "$checked_commit" "$tag_object" >/dev/null
+          bash release/verify-github-tag-ruleset.sh release/github-tag-ruleset-v0.1.1.json release/github-tag-ruleset-v0.1.1-receipt.json >/dev/null
+          root_version="$(sed -nE 's/^version = "([^"]+)"$/\1/p' build.gradle.kts)"
+          [[ "$root_version" == "${RELEASE_TAG#v}" ]] || { echo 'Root version differs from release tag.' >&2; exit 1; }
+          mapfile -t required_commits < <(printf '%s\n' "$GITHUB_SHA" "$checked_commit" | sort --unique)
+          for workflow in jvm.yml qodana.yml; do
+            for required_commit in "${required_commits[@]}"; do
+              runs="$(gh run list --workflow "$workflow" --commit "$required_commit" --status completed --limit 100 --json conclusion,event,headBranch,headSha)"
+              jq -e --arg commit "$required_commit" 'any(.[]; .conclusion == "success" and .event == "push" and .headBranch == "master" and .headSha == $commit)' <<< "$runs" >/dev/null || { echo "No successful $workflow run exists for $required_commit." >&2; exit 1; }
+            done
+          done
+          release_pages_run_id="$(gh run list --workflow pages.yml --commit "$checked_commit" --event push --status completed --limit 100 --json conclusion,databaseId,event,headBranch,headSha | jq -er --arg tag "$RELEASE_TAG" --arg sha "$checked_commit" '[.[] | select(.conclusion == "success" and .event == "push" and .headBranch == $tag and .headSha == $sha)] | select(length == 1) | .[0].databaseId | tostring')"
+          controller_pages_run_id="$(gh run list --workflow pages.yml --commit "$GITHUB_SHA" --event push --status completed --limit 100 --json conclusion,databaseId,event,headBranch,headSha | jq -er --arg sha "$GITHUB_SHA" '[.[] | select(.conclusion == "success" and .event == "push" and .headBranch == "master" and .headSha == $sha)] | select(length == 1) | .[0].databaseId | tostring')"
+          tool_directory="$(mktemp -d "$RUNNER_TEMP/strata-pages-tools.XXXXXX")"
+          trap 'rm -rf -- "$tool_directory"' EXIT
+          for script in verify-pages-deployment-source.sh wait-for-pages-source-receipt.sh; do
+            git show "$GITHUB_SHA:release/$script" > "$tool_directory/$script"
+            bash -n "$tool_directory/$script"
+          done
+          pages_record="$(bash "$tool_directory/verify-pages-deployment-source.sh" \
+            "$release_pages_run_id" "$RELEASE_TAG" "$checked_commit" \
+            "$controller_pages_run_id" "$GITHUB_SHA")"
+          bash "$tool_directory/wait-for-pages-source-receipt.sh" "$RELEASE_TAG" "$checked_commit" "$GITHUB_SHA"
+          [[ "$(bash "$tool_directory/verify-pages-deployment-source.sh" \
+            "$release_pages_run_id" "$RELEASE_TAG" "$checked_commit" \
+            "$controller_pages_run_id" "$GITHUB_SHA")" == "$pages_record" ]] || { echo 'Pages provenance changed during final verification.' >&2; exit 1; }
+          echo "RELEASE_SOURCE_COMMIT=$checked_commit" >> "$GITHUB_ENV"
+          echo "PAGES_PROVENANCE_RECORD=$pages_record" >> "$GITHUB_ENV"
+      - name: Set up Java
+        uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: |
+            17
+            21
+            25
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v6
+        with:
+          cache-read-only: true
+          gradle-home-cache-strict-match: true
+          gradle-home-cache-excludes: caches/fabric-loom
+      - name: Resolve final verification credentials
+        id: modrinth
+        shell: bash
+        env:
+          REQUESTED_PROJECT_ID: ${{ inputs.modrinth_project_id }}
+          MODRINTH_TOKEN: ${{ secrets.MODRINTH_TOKEN }}
+          SIGNING_KEY: ${{ secrets.SIGNING_KEY }}
+          SIGNING_PASSWORD: ${{ secrets.SIGNING_PASSWORD }}
+          MAVEN_CENTRAL_USERNAME: ${{ secrets.MAVEN_CENTRAL_USERNAME }}
+          MAVEN_CENTRAL_PASSWORD: ${{ secrets.MAVEN_CENTRAL_PASSWORD }}
+        run: |
+          set -euo pipefail
+          tracked="$(jq -r '.projectId // empty' release/modrinth-project.json)"
+          [[ -n "$tracked" && (-z "$REQUESTED_PROJECT_ID" || "$REQUESTED_PROJECT_ID" == "$tracked") ]] || { echo 'Modrinth project ID differs.' >&2; exit 1; }
+          [[ -n "$MODRINTH_TOKEN" && -n "$SIGNING_KEY" && -n "$SIGNING_PASSWORD" ]] || { echo 'Modrinth or signing credentials are missing.' >&2; exit 1; }
+          [[ -n "$MAVEN_CENTRAL_USERNAME" && -n "$MAVEN_CENTRAL_PASSWORD" ]] || { echo 'Maven Central credentials are missing.' >&2; exit 1; }
+          echo "project_id=$tracked" >> "$GITHUB_OUTPUT"
+      - name: Rebuild and verify Central release evidence
+        shell: bash
+        env:
+          PROJECT_ID: ${{ steps.modrinth.outputs.project_id }}
+          RELEASE_TAG: ${{ inputs.tag }}
+          ORG_GRADLE_PROJECT_signingInMemoryKey: ${{ secrets.SIGNING_KEY }}
+          ORG_GRADLE_PROJECT_signingInMemoryKeyPassword: ${{ secrets.SIGNING_PASSWORD }}
+          ORG_GRADLE_PROJECT_mavenCentralUsername: ${{ secrets.MAVEN_CENTRAL_USERNAME }}
+          ORG_GRADLE_PROJECT_mavenCentralPassword: ${{ secrets.MAVEN_CENTRAL_PASSWORD }}
+        run: |
+          set -euo pipefail
+          bash ./gradlew --no-parallel --max-workers=2 --no-build-cache verifyPublishedConsumer modrinthReleaseManifest mavenCentralPortalVerify \
+            -Pstrata.sourceRevision="$RELEASE_TAG" -Pstrata.sourceCommit="$RELEASE_SOURCE_COMMIT" -Pstrata.modrinthProjectId="$PROJECT_ID"
+          jq -e '.state == "exact" and .deploymentState == "published" and .verifiedContentFileCount == 250 and .verifiedChecksumCount == 500' build/release/maven-central/portal-verify.json >/dev/null
+          bash ./gradlew --no-parallel --max-workers=2 --no-build-cache mavenCentralReleaseVerify githubReleaseBundle \
+            -Pstrata.sourceRevision="$RELEASE_TAG" -Pstrata.sourceCommit="$RELEASE_SOURCE_COMMIT" -Pstrata.modrinthProjectId="$PROJECT_ID"
+          jq -e '.state == "exact" and .coordinateCount == 25 and .verifiedFileCount == 250 and .verifiedChecksumCount == 500' build/release/maven-central/verify.json >/dev/null
+          jq -e '.releaseVersion == "0.1.1" and (.artifacts | length) == 21' build/release/modrinth/manifest.json >/dev/null
+      - name: Verify GitHub release assets and all Central signatures
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ inputs.tag }}
+          SIGNING_KEY: ${{ secrets.SIGNING_KEY }}
+        run: |
+          set -euo pipefail
+          downloads="$(mktemp -d)"
+          actual_body="$(mktemp)"
+          key_file="$(mktemp)"
+          gnupg_home="$(mktemp -d)"
+          trap 'rm -rf -- "$downloads" "$actual_body" "$key_file" "$gnupg_home"' EXIT
+          chmod 600 "$key_file"
+          chmod 700 "$gnupg_home"
+          export GNUPGHOME="$gnupg_home"
+          printf '%s' "$SIGNING_KEY" > "$key_file"
+          if ! gpg --batch --quiet --import "$key_file"; then
+            printf '%s' "$SIGNING_KEY" | base64 --decode > "$key_file"
+            gpg --batch --quiet --import "$key_file"
+          fi
+          verified=0
+          while IFS= read -r -d '' signature; do
+            gpg --batch --verify "$signature" "${signature%.asc}"
+            verified=$((verified + 1))
+          done < <(find build/release/maven-central/evidence -type f -name '*.asc' -print0)
+          [[ "$verified" == "125" ]] || { echo "Expected 125 Central signatures, found $verified." >&2; exit 1; }
+          shopt -s nullglob
+          assets=(build/release/github/*)
+          [[ "${#assets[@]}" == "43" ]] || { echo 'Canonical GitHub asset count differs.' >&2; exit 1; }
+          release_json="$(gh release view "$RELEASE_TAG" --json tagName,name,body,isDraft,isPrerelease)"
+          [[ "$(jq -r '.tagName' <<< "$release_json")" == "$RELEASE_TAG" && "$(jq -r '.name' <<< "$release_json")" == "Strata ${RELEASE_TAG#v}" ]] || { echo 'GitHub Release identity differs.' >&2; exit 1; }
+          [[ "$(jq -r '.isDraft' <<< "$release_json")" == "false" && "$(jq -r '.isPrerelease' <<< "$release_json")" == "false" ]] || { echo 'GitHub Release is not published stable.' >&2; exit 1; }
+          jq --raw-output --join-output '(.body // "") | gsub("\r\n"; "\n") | @base64' <<< "$release_json" | base64 --decode > "$actual_body"
+          cmp --silent "docs/releases/$RELEASE_TAG.md" "$actual_body" || { echo 'GitHub Release body differs.' >&2; exit 1; }
+          expected="$(printf '%s\n' "${assets[@]##*/}" | sort)"
+          actual="$(gh release view "$RELEASE_TAG" --json assets --jq '.assets[].name' | sort)"
+          [[ "$actual" == "$expected" ]] || { echo 'GitHub Release asset inventory differs.' >&2; exit 1; }
+          for asset in "${assets[@]}"; do
+            name="$(basename "$asset")"
+            gh release download "$RELEASE_TAG" --pattern "$name" --dir "$downloads"
+            cmp --silent "$asset" "$downloads/$name" || { echo "GitHub asset differs: $name" >&2; exit 1; }
+          done
+          (cd "$downloads" && sha256sum --check SHA256SUMS)
+          for jar in "$downloads"/*.jar; do
+            gpg --batch --verify "$jar.asc" "$jar"
+          done
+      - name: Verify public Pages and tagged Skill source
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ inputs.tag }}
+        run: |
+          set -euo pipefail
+          pages="$(mktemp)"
+          inventory="$(mktemp)"
+          revision="$(mktemp)"
+          skill="$(mktemp)"
+          trap 'rm -f -- "$pages" "$inventory" "$revision" "$skill"' EXIT
+          base="https://gh.s7a.dev/strata/releases/${RELEASE_TAG#v}"
+          curl --fail --silent --show-error --location --proto '=https' "$base/pages-public-urls.txt" --output "$inventory"
+          LC_ALL=C sort --check --unique "$inventory"
+          for required in / /index.html /guide/ /guide/components.md /source-receipt.json /source-revision.txt; do
+            grep --fixed-strings --line-regexp "$required" "$inventory" >/dev/null
+          done
+          grep --extended-regexp --line-regexp '/guide/components/[^/]+\.png' "$inventory" >/dev/null
+          while IFS= read -r public_path; do
+            [[ "$public_path" == /* ]] || { echo "Invalid Pages path: $public_path" >&2; exit 1; }
+            curl --fail --silent --show-error --location --proto '=https' "$base$public_path" --output "$pages"
+            [[ -s "$pages" ]] || { echo "Empty Pages target: $public_path" >&2; exit 1; }
+          done < "$inventory"
+          curl --fail --silent --show-error --location --proto '=https' "$base/source-revision.txt" --output "$revision"
+          [[ "$(cat "$revision")" == "$RELEASE_TAG" ]] || { echo 'Pages source revision differs.' >&2; exit 1; }
+          read -r release_pages_run_id _ _ controller_pages_run_id _ _ <<< "$PAGES_PROVENANCE_RECORD"
+          tool_directory="$(mktemp -d "$RUNNER_TEMP/strata-pages-public-tools.XXXXXX")"
+          trap 'rm -rf -- "$pages" "$inventory" "$revision" "$skill" "$tool_directory"' EXIT
+          for script in verify-pages-deployment-source.sh wait-for-pages-source-receipt.sh; do
+            git show "$GITHUB_SHA:release/$script" > "$tool_directory/$script"
+            bash -n "$tool_directory/$script"
+          done
+          bash "$tool_directory/wait-for-pages-source-receipt.sh" "$RELEASE_TAG" "$RELEASE_SOURCE_COMMIT" "$GITHUB_SHA"
+          [[ "$(bash "$tool_directory/verify-pages-deployment-source.sh" "$release_pages_run_id" "$RELEASE_TAG" "$RELEASE_SOURCE_COMMIT" "$controller_pages_run_id" "$GITHUB_SHA")" == "$PAGES_PROVENANCE_RECORD" ]] || { echo 'Public Pages provenance changed.' >&2; exit 1; }
+          curl --fail --silent --show-error --location --proto '=https' "https://raw.githubusercontent.com/sya-ri/strata/$RELEASE_TAG/skills/strata/SKILL.md" --output "$skill"
+          cmp --silent skills/strata/SKILL.md "$skill" || { echo 'Public Skill source differs.' >&2; exit 1; }
+      - name: Verify complete v0.1.0 release before Modrinth body finalization
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          MODRINTH_TOKEN: ${{ secrets.MODRINTH_TOKEN }}
+          PROJECT_ID: ${{ steps.modrinth.outputs.project_id }}
+          SIGNING_KEY: ${{ secrets.SIGNING_KEY }}
+          ORG_GRADLE_PROJECT_signingInMemoryKey: ${{ secrets.SIGNING_KEY }}
+          ORG_GRADLE_PROJECT_signingInMemoryKeyPassword: ${{ secrets.SIGNING_PASSWORD }}
+        run: |
+          set -euo pipefail
+          previous_tag=v0.1.0
+          expected_previous_commit=d0be1ccf74ee8fa0aca1a23e9d50eb5ba45c39a8
+          expected_previous_object=ccf221fe7f133fe5598fafc4ad01e6bc69ba2230
+          git fetch --force origin \
+            '+refs/heads/master:refs/remotes/origin/master' \
+            "+refs/tags/$previous_tag:refs/tags/$previous_tag"
+          [[ "$(git rev-parse origin/master)" == "$GITHUB_SHA" ]] || { echo 'Verification controller changed before predecessor verification.' >&2; exit 1; }
+          previous_commit="$(git rev-parse --verify "refs/tags/$previous_tag^{commit}")"
+          previous_object="$(git rev-parse "refs/tags/$previous_tag")"
+          [[ "$previous_commit" == "$expected_previous_commit" ]] || { echo 'The predecessor tag does not point to the immutable v0.1.0 release commit.' >&2; exit 1; }
+          [[ "$previous_object" == "$expected_previous_object" ]] || { echo 'The predecessor tag object is not the immutable v0.1.0 tag object.' >&2; exit 1; }
+          git merge-base --is-ancestor "$previous_commit" origin/master || { echo 'The predecessor release left controller master.' >&2; exit 1; }
+          bash release/verify-release-tag.sh "$previous_tag" "$previous_commit" "$previous_object" >/dev/null
+          bash release/verify-github-tag-ruleset.sh release/github-tag-ruleset.json release/github-tag-ruleset-receipt.json >/dev/null
+          for workflow in jvm.yml qodana.yml; do
+            runs="$(gh run list --workflow "$workflow" --commit "$previous_commit" --status completed --limit 100 \
+              --json conclusion,event,headBranch,headSha)"
+            jq -e --arg commit "$previous_commit" \
+              'any(.[]; .conclusion == "success" and .event == "push" and .headBranch == "master" and .headSha == $commit)' \
+              <<< "$runs" >/dev/null || { echo "No successful predecessor $workflow run exists for $previous_commit." >&2; exit 1; }
+          done
+
+          project_json="$(mktemp)"
+          remote_body="$(mktemp)"
+          current_body="$(mktemp)"
+          curl --fail --silent --show-error --retry 3 --retry-all-errors --retry-delay 1 \
+            --proto '=https' --header "Authorization: $MODRINTH_TOKEN" \
+            "https://api.modrinth.com/v2/project/$PROJECT_ID" --output "$project_json"
+          jq -e --arg project_id "$PROJECT_ID" \
+            '.id == $project_id and .slug == "strata-ui" and .project_type == "mod" and .status == "approved"' \
+            "$project_json" >/dev/null || { echo 'Modrinth project identity or approval state differs before predecessor verification.' >&2; exit 1; }
+          jq --raw-output --join-output '(.body // "") | gsub("\r\n"; "\n") | sub("[[:space:]]+$"; "") + "\n"' \
+            "$project_json" > "$remote_body"
+          jq --null-input --rawfile body docs/modrinth-project.md --raw-output --join-output \
+            '$body | gsub("\r\n"; "\n") | sub("[[:space:]]+$"; "") + "\n"' > "$current_body"
+          remote_body_sha256="$(sha256sum "$remote_body" | cut -d ' ' -f 1)"
+          predecessor_body_sha256="$(jq -er '.previousBodySha256' release/modrinth-project.json)"
+          current_body_sha256="$(sha256sum "$current_body" | cut -d ' ' -f 1)"
+          case "$remote_body_sha256" in
+            "$predecessor_body_sha256") modrinth_body_state=predecessor ;;
+            "$current_body_sha256") modrinth_body_state=current ;;
+            *) echo 'Remote Modrinth body is neither the tracked predecessor nor exact current body.' >&2; exit 1 ;;
+          esac
+
+          controller_tools="$(mktemp -d "$RUNNER_TEMP/strata-v0.1.0-controller-tools.XXXXXX")"
+          predecessor_temporary="$(mktemp -d "$RUNNER_TEMP/strata-v0.1.0-public-evidence.XXXXXX")"
+          worktree="$RUNNER_TEMP/strata-v0.1.0-verification"
+          [[ ! -e "$worktree" && ! -L "$worktree" ]] || { echo 'Predecessor worktree path already exists.' >&2; exit 1; }
+          cleanup() {
+            git worktree remove --force "$worktree" >/dev/null 2>&1 || true
+            rm -rf -- "$controller_tools" "$predecessor_temporary"
+            rm -f -- "$project_json" "$remote_body" "$current_body"
+          }
+          trap cleanup EXIT INT TERM
+          central_runner="$controller_tools/run-central-controller-overlay.sh"
+          central_manifest="$controller_tools/v0.1.0-central-signature-checksums.json"
+          central_patch="$controller_tools/v0.1.0-central-signature-checksums.patch"
+          pages_verifier="$controller_tools/verify-pages-deployment-source.sh"
+          pages_waiter="$controller_tools/wait-for-pages-source-receipt.sh"
+          git show "$GITHUB_SHA:release/run-central-controller-overlay.sh" > "$central_runner"
+          git show "$GITHUB_SHA:release/controller-overlays/v0.1.0-central-signature-checksums.json" > "$central_manifest"
+          git show "$GITHUB_SHA:release/controller-overlays/v0.1.0-central-signature-checksums.patch" > "$central_patch"
+          git show "$GITHUB_SHA:release/verify-pages-deployment-source.sh" > "$pages_verifier"
+          git show "$GITHUB_SHA:release/wait-for-pages-source-receipt.sh" > "$pages_waiter"
+          bash -n "$central_runner"
+          bash -n "$pages_verifier"
+          bash -n "$pages_waiter"
+          [[ "$(jq -er '.baseTag' "$central_manifest")" == "$previous_tag" && \
+            "$(jq -er '.baseCommit' "$central_manifest")" == "$previous_commit" ]] || { echo 'Audited predecessor Central overlay identity differs.' >&2; exit 1; }
+          [[ "$(sha256sum "$central_patch" | cut -d ' ' -f 1)" == "$(jq -er '.patchSha256' "$central_manifest")" ]] || { echo 'Audited predecessor Central patch differs.' >&2; exit 1; }
+          git worktree add --detach "$worktree" "$previous_commit"
+          (
+            cd "$worktree"
+            [[ "$(sed -nE 's/^version = "([^"]+)"$/\1/p' build.gradle.kts)" == "0.1.0" ]] || { echo 'Predecessor root version differs.' >&2; exit 1; }
+            bash ./gradlew --no-parallel --max-workers=2 --no-build-cache verifyPublishedConsumer modrinthReleaseManifest \
+              -Pstrata.sourceRevision="$previous_tag" \
+              -Pstrata.sourceCommit="$previous_commit" \
+              -Pstrata.modrinthProjectId="$PROJECT_ID"
+            jq -e '.releaseVersion == "0.1.0" and (.artifacts | length) == 20' \
+              build/release/modrinth/manifest.json >/dev/null || { echo 'Predecessor Modrinth manifest inventory differs.' >&2; exit 1; }
+            generated_body="$predecessor_temporary/generated-body"
+            jq --raw-output --join-output '.project.body | gsub("\r\n"; "\n") | sub("[[:space:]]+$"; "") + "\n"' \
+              build/release/modrinth/manifest.json > "$generated_body"
+            [[ "$(sha256sum "$generated_body" | cut -d ' ' -f 1)" == "$predecessor_body_sha256" ]] || { echo 'The immutable v0.1.0 manifest does not encode the tracked predecessor body.' >&2; exit 1; }
+            if [[ "$modrinth_body_state" == "current" ]]; then
+              patched_manifest="$predecessor_temporary/current-body-manifest.json"
+              manifest_contract_before="$(jq -cS 'del(.project.body)' build/release/modrinth/manifest.json | sha256sum | cut -d ' ' -f 1)"
+              jq --rawfile body "$current_body" '.project.body = $body' \
+                build/release/modrinth/manifest.json > "$patched_manifest"
+              cp "$patched_manifest" build/release/modrinth/manifest.json
+              [[ "$(jq -cS 'del(.project.body)' build/release/modrinth/manifest.json | sha256sum | cut -d ' ' -f 1)" == "$manifest_contract_before" ]] || { echo 'Recovery changed the predecessor manifest outside its project body.' >&2; exit 1; }
+              jq --raw-output --join-output '.project.body | gsub("\r\n"; "\n") | sub("[[:space:]]+$"; "") + "\n"' \
+                build/release/modrinth/manifest.json > "$generated_body"
+              [[ "$(sha256sum "$generated_body" | cut -d ' ' -f 1)" == "$current_body_sha256" ]] || { echo 'The recovery manifest does not encode the exact current body.' >&2; exit 1; }
+            fi
+            bash ./gradlew --no-parallel --max-workers=2 --no-build-cache modrinthReleaseVerify \
+              -x modrinthReleaseManifest -x verifyPublishedConsumer \
+              -Pstrata.sourceRevision="$previous_tag" \
+              -Pstrata.sourceCommit="$previous_commit" \
+              -Pstrata.modrinthProjectId="$PROJECT_ID"
+            jq -e '.operation == "verify" and .projectStatus == "approved" and (.absent | length) == 0 and (.listed | length) == 20' \
+              build/release/modrinth-receipts/verify.json >/dev/null
+
+            env -u SIGNING_KEY -u SIGNING_PASSWORD \
+              -u ORG_GRADLE_PROJECT_signingInMemoryKey -u ORG_GRADLE_PROJECT_signingInMemoryKeyPassword \
+              -u MODRINTH_TOKEN -u GH_TOKEN -u GITHUB_TOKEN \
+              bash "$central_runner" release-verify "$central_manifest" "$central_patch" \
+                "$previous_tag" "$previous_commit" "$GITHUB_SHA"
+            jq -e '.state == "exact" and .coordinateCount == 24 and .verifiedFileCount == 240 and .verifiedChecksumCount == 480' \
+              build/release/maven-central/verify.json >/dev/null || { echo 'Predecessor Central release evidence differs.' >&2; exit 1; }
+
+            downloads="$predecessor_temporary/github-downloads"
+            gnupg_home="$predecessor_temporary/gnupg"
+            key_file="$predecessor_temporary/signing-key"
+            actual_release_body="$predecessor_temporary/github-release-body"
+            mkdir "$downloads" "$gnupg_home"
+            chmod 700 "$gnupg_home"
+            export GNUPGHOME="$gnupg_home"
+            printf '%s' "$SIGNING_KEY" > "$key_file"
+            chmod 600 "$key_file"
+            if ! gpg --batch --quiet --import "$key_file"; then
+              printf '%s' "$SIGNING_KEY" | base64 --decode > "$key_file"
+              gpg --batch --quiet --import "$key_file"
+            fi
+            verified_signatures=0
+            while IFS= read -r -d '' signature; do
+              gpg --batch --verify "$signature" "${signature%.asc}"
+              verified_signatures=$((verified_signatures + 1))
+            done < <(find build/release/maven-central/evidence -type f -name '*.asc' -print0)
+            [[ "$verified_signatures" == "120" ]] || { echo "Expected 120 predecessor Central signatures, found $verified_signatures." >&2; exit 1; }
+            shopt -s nullglob
+            predecessor_assets=(build/release/github/*)
+            [[ "${#predecessor_assets[@]}" == "41" ]] || { echo 'Predecessor GitHub asset count differs.' >&2; exit 1; }
+            release_json="$(gh release view "$previous_tag" --json tagName,name,body,isDraft,isPrerelease)"
+            [[ "$(jq -r '.tagName' <<< "$release_json")" == "$previous_tag" && \
+              "$(jq -r '.name' <<< "$release_json")" == "Strata 0.1.0" ]] || { echo 'Predecessor GitHub Release identity differs.' >&2; exit 1; }
+            [[ "$(jq -r '.isDraft' <<< "$release_json")" == "false" && \
+              "$(jq -r '.isPrerelease' <<< "$release_json")" == "false" ]] || { echo 'Predecessor GitHub Release is not published stable.' >&2; exit 1; }
+            jq --raw-output --join-output '(.body // "") | gsub("\r\n"; "\n") | if contains("\r") then error("release body contains a lone carriage return") else @base64 end' \
+              <<< "$release_json" | base64 --decode > "$actual_release_body"
+            cmp --silent "docs/releases/$previous_tag.md" "$actual_release_body" || { echo 'Predecessor GitHub Release body differs.' >&2; exit 1; }
+            expected_assets="$(printf '%s\n' "${predecessor_assets[@]##*/}" | sort)"
+            actual_assets="$(gh release view "$previous_tag" --json assets --jq '.assets[].name' | sort)"
+            [[ "$actual_assets" == "$expected_assets" ]] || { echo 'Predecessor GitHub Release asset inventory differs.' >&2; exit 1; }
+            for asset in "${predecessor_assets[@]}"; do
+              name="$(basename "$asset")"
+              gh release download "$previous_tag" --pattern "$name" --dir "$downloads"
+              cmp --silent "$asset" "$downloads/$name" || { echo "Predecessor GitHub asset differs: $name" >&2; exit 1; }
+            done
+            (cd "$downloads" && sha256sum --check SHA256SUMS)
+            for jar in "$downloads"/*.jar; do
+              gpg --batch --verify "$jar.asc" "$jar"
+            done
+          )
+          rm -rf -- "$predecessor_temporary/gnupg"
+          rm -f -- "$predecessor_temporary/signing-key"
+          [[ ! -e "$predecessor_temporary/gnupg" && ! -e "$predecessor_temporary/signing-key" ]] || { echo 'Predecessor signing material remained before public verification.' >&2; exit 1; }
+          trap - EXIT INT TERM
+          rm -f -- "$project_json" "$remote_body" "$current_body"
+          {
+            echo "PREVIOUS_RELEASE_COMMIT=$previous_commit"
+            echo "PREVIOUS_RELEASE_OBJECT=$previous_object"
+            echo "MODRINTH_BODY_STATE=$modrinth_body_state"
+            echo "PREVIOUS_WORKTREE=$worktree"
+            echo "PREVIOUS_TEMPORARY=$predecessor_temporary"
+            echo "PREVIOUS_CONTROLLER_TOOLS=$controller_tools"
+          } >> "$GITHUB_ENV"
+      - name: Verify public v0.1.0 services and Pages provenance
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PROJECT_ID: ${{ steps.modrinth.outputs.project_id }}
+        run: |
+          set -euo pipefail
+          previous_tag=v0.1.0
+          [[ "$PREVIOUS_RELEASE_COMMIT" == "d0be1ccf74ee8fa0aca1a23e9d50eb5ba45c39a8" ]] || { echo 'Public predecessor commit differs.' >&2; exit 1; }
+          [[ "$PREVIOUS_WORKTREE" == "$RUNNER_TEMP/strata-v0.1.0-verification" ]] || { echo 'Public predecessor worktree path differs.' >&2; exit 1; }
+          case "$PREVIOUS_TEMPORARY" in
+            "$RUNNER_TEMP"/strata-v0.1.0-public-evidence.*) ;;
+            *) echo 'Public predecessor temporary path differs.' >&2; exit 1 ;;
+          esac
+          case "$PREVIOUS_CONTROLLER_TOOLS" in
+            "$RUNNER_TEMP"/strata-v0.1.0-controller-tools.*) ;;
+            *) echo 'Public predecessor controller-tool path differs.' >&2; exit 1 ;;
+          esac
+          [[ -d "$PREVIOUS_WORKTREE" && ! -L "$PREVIOUS_WORKTREE" && \
+            -d "$PREVIOUS_TEMPORARY" && ! -L "$PREVIOUS_TEMPORARY" && \
+            -d "$PREVIOUS_CONTROLLER_TOOLS" && ! -L "$PREVIOUS_CONTROLLER_TOOLS" ]] || { echo 'Public predecessor verification paths are not regular directories.' >&2; exit 1; }
+          [[ ! -e "$PREVIOUS_TEMPORARY/gnupg" && ! -e "$PREVIOUS_TEMPORARY/signing-key" && -z "${GNUPGHOME:-}" ]] || { echo 'Signing material reached public predecessor verification.' >&2; exit 1; }
+          for forbidden_secret in MODRINTH_TOKEN SIGNING_KEY SIGNING_PASSWORD ORG_GRADLE_PROJECT_signingInMemoryKey ORG_GRADLE_PROJECT_signingInMemoryKeyPassword; do
+            [[ -z "${!forbidden_secret:-}" ]] || { echo "Release secret reached public predecessor verification: $forbidden_secret" >&2; exit 1; }
+          done
+          cleanup() {
+            git worktree remove --force "$PREVIOUS_WORKTREE" >/dev/null 2>&1 || true
+            rm -rf -- "$PREVIOUS_CONTROLLER_TOOLS" "$PREVIOUS_TEMPORARY"
+          }
+          trap cleanup EXIT INT TERM
+          (
+            cd "$PREVIOUS_WORKTREE"
+            env -u GH_TOKEN -u GITHUB_TOKEN \
+              bash release/verify-public-modrinth.sh build/release/modrinth/manifest.json "$PROJECT_ID" strata-ui
+
+            previous_pages_run_id="$(gh run list --workflow pages.yml --commit "$PREVIOUS_RELEASE_COMMIT" --event push --status completed --limit 100 \
+              --json conclusion,databaseId,event,headBranch,headSha | \
+              jq -er --arg tag "$previous_tag" --arg sha "$PREVIOUS_RELEASE_COMMIT" \
+                '[.[] | select(.conclusion == "success" and .event == "push" and .headBranch == $tag and .headSha == $sha)] | select(length == 1) | .[0].databaseId | tostring')"
+            read -r _ _ _ controller_pages_run_id _ _ <<< "$PAGES_PROVENANCE_RECORD"
+            [[ "$controller_pages_run_id" =~ ^[0-9]+$ ]] || { echo 'Controller Pages provenance is malformed.' >&2; exit 1; }
+            pages_verifier="$PREVIOUS_CONTROLLER_TOOLS/verify-pages-deployment-source.sh"
+            pages_waiter="$PREVIOUS_CONTROLLER_TOOLS/wait-for-pages-source-receipt.sh"
+            previous_pages_record="$(bash "$pages_verifier" \
+              "$previous_pages_run_id" "$previous_tag" "$PREVIOUS_RELEASE_COMMIT" \
+              "$controller_pages_run_id" "$GITHUB_SHA")"
+            bash "$pages_waiter" "$previous_tag" "$PREVIOUS_RELEASE_COMMIT" "$GITHUB_SHA"
+            [[ "$(bash "$pages_verifier" \
+              "$previous_pages_run_id" "$previous_tag" "$PREVIOUS_RELEASE_COMMIT" \
+              "$controller_pages_run_id" "$GITHUB_SHA")" == "$previous_pages_record" ]] || { echo 'Predecessor Pages provenance changed during verification.' >&2; exit 1; }
+
+            pages_base="https://gh.s7a.dev/strata/releases/0.1.0"
+            pages_inventory="$PREVIOUS_TEMPORARY/pages-public-urls.txt"
+            pages_target="$PREVIOUS_TEMPORARY/pages-target"
+            source_revision="$PREVIOUS_TEMPORARY/source-revision.txt"
+            public_skill="$PREVIOUS_TEMPORARY/SKILL.md"
+            curl --fail --silent --show-error --location --proto '=https' \
+              "$pages_base/pages-public-urls.txt" --output "$pages_inventory"
+            LC_ALL=C sort --check --unique "$pages_inventory"
+            for required in / /index.html /guide/ /guide/components.md /source-receipt.json /source-revision.txt; do
+              grep --fixed-strings --line-regexp "$required" "$pages_inventory" >/dev/null
+            done
+            grep --extended-regexp --line-regexp '/guide/components/[^/]+\.png' "$pages_inventory" >/dev/null
+            while IFS= read -r public_path; do
+              [[ "$public_path" == /* ]] || { echo "Invalid predecessor Pages path: $public_path" >&2; exit 1; }
+              curl --fail --silent --show-error --location --proto '=https' \
+                "$pages_base$public_path" --output "$pages_target"
+              [[ -s "$pages_target" ]] || { echo "Empty predecessor Pages target: $public_path" >&2; exit 1; }
+            done < "$pages_inventory"
+            curl --fail --silent --show-error --location --proto '=https' \
+              "$pages_base/source-revision.txt" --output "$source_revision"
+            [[ "$(cat "$source_revision")" == "$previous_tag" ]] || { echo 'Predecessor Pages source revision differs.' >&2; exit 1; }
+            curl --fail --silent --show-error --location --proto '=https' \
+              "https://raw.githubusercontent.com/sya-ri/strata/$previous_tag/skills/strata/SKILL.md" --output "$public_skill"
+            cmp --silent skills/strata/SKILL.md "$public_skill" || { echo 'Predecessor public Skill source differs.' >&2; exit 1; }
+          )
+          git worktree remove --force "$PREVIOUS_WORKTREE"
+          rm -rf -- "$PREVIOUS_CONTROLLER_TOOLS" "$PREVIOUS_TEMPORARY"
+          trap - EXIT INT TERM
+          [[ ! -e "$PREVIOUS_WORKTREE" && ! -e "$PREVIOUS_CONTROLLER_TOOLS" && ! -e "$PREVIOUS_TEMPORARY" ]] || { echo 'Public predecessor verification paths remained after cleanup.' >&2; exit 1; }
+      - name: Finalize v0.1.1 Modrinth body and verify approved release
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          MODRINTH_TOKEN: ${{ secrets.MODRINTH_TOKEN }}
+          PROJECT_ID: ${{ steps.modrinth.outputs.project_id }}
+          RELEASE_TAG: ${{ inputs.tag }}
+        run: |
+          set -euo pipefail
+          git fetch --force origin \
+            '+refs/heads/master:refs/remotes/origin/master' \
+            "+refs/tags/$RELEASE_TAG:refs/tags/$RELEASE_TAG" \
+            '+refs/tags/v0.1.0:refs/tags/v0.1.0'
+          [[ "$(git rev-parse origin/master)" == "$GITHUB_SHA" ]] || { echo 'Verification controller changed before Modrinth finalization.' >&2; exit 1; }
+          [[ "$(git rev-parse HEAD)" == "$RELEASE_SOURCE_COMMIT" && "$(git rev-parse --verify "refs/tags/$RELEASE_TAG^{commit}")" == "$RELEASE_SOURCE_COMMIT" ]] || { echo 'Release commit changed before Modrinth finalization.' >&2; exit 1; }
+          tag_object="$(git rev-parse "refs/tags/$RELEASE_TAG")"
+          [[ "$PREVIOUS_RELEASE_COMMIT" == "d0be1ccf74ee8fa0aca1a23e9d50eb5ba45c39a8" && "$PREVIOUS_RELEASE_OBJECT" == "ccf221fe7f133fe5598fafc4ad01e6bc69ba2230" ]] || { echo 'Proved predecessor identity differs before Modrinth finalization.' >&2; exit 1; }
+          [[ "$MODRINTH_BODY_STATE" == "predecessor" || "$MODRINTH_BODY_STATE" == "current" ]] || { echo 'Proved Modrinth body recovery state differs before finalization.' >&2; exit 1; }
+          [[ "$(git rev-parse --verify 'refs/tags/v0.1.0^{commit}')" == "$PREVIOUS_RELEASE_COMMIT" && "$(git rev-parse refs/tags/v0.1.0)" == "$PREVIOUS_RELEASE_OBJECT" ]] || { echo 'Predecessor tag changed before Modrinth finalization.' >&2; exit 1; }
+          git merge-base --is-ancestor "$RELEASE_SOURCE_COMMIT" origin/master || { echo 'Release source left controller master before Modrinth finalization.' >&2; exit 1; }
+          git merge-base --is-ancestor "$PREVIOUS_RELEASE_COMMIT" origin/master || { echo 'Predecessor release left controller master before Modrinth finalization.' >&2; exit 1; }
+          bash release/verify-release-tag.sh "$RELEASE_TAG" "$RELEASE_SOURCE_COMMIT" "$tag_object" >/dev/null
+          bash release/verify-github-tag-ruleset.sh release/github-tag-ruleset-v0.1.1.json release/github-tag-ruleset-v0.1.1-receipt.json >/dev/null
+          bash release/verify-release-tag.sh v0.1.0 "$PREVIOUS_RELEASE_COMMIT" "$PREVIOUS_RELEASE_OBJECT" >/dev/null
+          bash release/verify-github-tag-ruleset.sh release/github-tag-ruleset.json release/github-tag-ruleset-receipt.json >/dev/null
+          [[ "$(git rev-parse origin/master)" == "$GITHUB_SHA" ]] || { echo 'Verification controller changed during Modrinth source verification.' >&2; exit 1; }
+          git diff --quiet -- . || { echo 'Tracked release source changed before Modrinth finalization.' >&2; exit 1; }
+          git diff --cached --quiet -- . || { echo 'Tracked release source changed before Modrinth finalization.' >&2; exit 1; }
+          bash ./gradlew --no-parallel --max-workers=2 --no-build-cache modrinthReleaseFinalizeProject \
+            -Pstrata.sourceRevision="$RELEASE_TAG" \
+            -Pstrata.sourceCommit="$RELEASE_SOURCE_COMMIT" \
+            -Pstrata.modrinthProjectId="$PROJECT_ID"
+          jq -e '.operation == "finalize-project" and .projectStatus == "approved" and (.absent | length) == 0 and (.listed | length) == 21' \
+            build/release/modrinth-receipts/finalize_project.json >/dev/null || { echo 'Modrinth body finalization receipt differs.' >&2; exit 1; }
+          bash ./gradlew --no-parallel --max-workers=2 --no-build-cache modrinthReleaseVerify \
+            -Pstrata.sourceRevision="$RELEASE_TAG" \
+            -Pstrata.sourceCommit="$RELEASE_SOURCE_COMMIT" \
+            -Pstrata.modrinthProjectId="$PROJECT_ID"
+          jq -e '.operation == "verify" and .projectStatus == "approved" and (.absent | length) == 0 and (.listed | length) == 21' \
+            build/release/modrinth-receipts/verify.json >/dev/null || { echo 'Approved Modrinth verification receipt differs.' >&2; exit 1; }
+      - name: Verify public 21-version Modrinth inventory and CDN files
+        shell: bash
+        env:
+          PROJECT_ID: ${{ steps.modrinth.outputs.project_id }}
+        run: |
+          set -euo pipefail
+          bash -n release/verify-public-modrinth.sh
+          env -u MODRINTH_TOKEN -u GH_TOKEN -u GITHUB_TOKEN \
+            bash release/verify-public-modrinth.sh build/release/modrinth/manifest.json "$PROJECT_ID" strata-ui

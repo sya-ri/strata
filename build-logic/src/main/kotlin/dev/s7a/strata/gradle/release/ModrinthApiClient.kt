@@ -128,6 +128,28 @@ internal class ModrinthApiClient(
     }
 
     /**
+     * Replaces the project body after the coordinator has matched its tracked predecessor hash.
+     *
+     * [projectId] and [body] are copied into one authenticated request and are not retained after the calling release task ends.
+     * The request changes no other project metadata, must run on the coordinator's confined release-task thread, and returns normally only when Modrinth deterministically accepts the write.
+     *
+     * @throws AmbiguousWriteException when the response is unknown after a timeout, transport error, rate limit, or server failure.
+     * @throws WriteRejectedException when Modrinth deterministically rejects the request with a non-retryable client status.
+     */
+    fun updateProjectBody(
+        projectId: String,
+        body: String,
+    ) {
+        check(body.isNotBlank()) { "A Modrinth project body must not be blank." }
+        writeOnce(
+            method = "PATCH",
+            path = "/project/${encode(projectId)}",
+            contentType = "application/json",
+            publisher = HttpRequest.BodyPublishers.ofString(JsonOutput.toJson(mapOf("body" to body))),
+        )
+    }
+
+    /**
      * Sets only absent project classification fields through the authenticated v3 project endpoint.
      *
      * Null arguments are omitted so an exact existing value is never rewritten.

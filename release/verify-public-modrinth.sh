@@ -14,7 +14,8 @@ project_slug="${3:-strata-ui}"
 
 temporary="$(mktemp -d)"
 trap 'rm -rf -- "$temporary"' EXIT
-user_agent='sya-ri/strata-release/0.1.0 (https://github.com/sya-ri/strata)'
+release_version="$(jq -er '.releaseVersion | select(type == "string" and length > 0)' "$manifest_file")"
+user_agent="sya-ri/strata-release/$release_version (https://github.com/sya-ri/strata)"
 
 curl_public() {
   local url="$1"
@@ -97,7 +98,10 @@ done < <(jq -c '.project.gallery[]' "$manifest_file")
 
 curl_public "https://api.modrinth.com/v2/project/$project_id/version" "$temporary/versions.json"
 expected_count="$(jq -r '.artifacts | length' "$manifest_file")"
-[[ "$expected_count" == 20 ]] || { echo "Expected 20 manifest artifacts, found $expected_count." >&2; exit 1; }
+[[ "$expected_count" == 20 || "$expected_count" == 21 ]] || {
+  echo "Expected a supported 20- or 21-version manifest, found $expected_count artifacts." >&2
+  exit 1
+}
 jq --exit-status --slurpfile manifest "$manifest_file" '
   ($manifest[0].artifacts | map(.versionNumber) | sort) as $expected
   | ($manifest[0].releaseVersion + "+mc") as $release_prefix
@@ -153,5 +157,8 @@ while IFS= read -r artifact; do
   index=$((index + 1))
 done < <(jq -c '.artifacts[]' "$manifest_file")
 
-[[ "$index" == 20 ]] || { echo "Expected 20 publicly downloaded Modrinth artifacts, found $index." >&2; exit 1; }
-echo 'Unauthenticated Modrinth page, metadata, disclosures, assets, 20-version inventory, and CDN artifacts are exact.'
+[[ "$index" == "$expected_count" ]] || {
+  echo "Expected $expected_count publicly downloaded Modrinth artifacts, found $index." >&2
+  exit 1
+}
+echo "Unauthenticated Modrinth page, metadata, disclosures, assets, $expected_count-version inventory, and CDN artifacts are exact."

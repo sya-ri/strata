@@ -20,7 +20,7 @@ public class StrataReleasePlugin : Plugin<Project> {
         val manifest =
             project.tasks.register("modrinthReleaseManifest", GenerateModrinthManifest::class.java) {
                 group = "release"
-                description = "Builds the canonical 20-artifact Modrinth and GitHub release bundle."
+                description = "Builds the canonical 21-artifact Modrinth and GitHub release bundle."
                 projectId.set(extension.modrinthProjectId)
                 releaseVersion.set(extension.releaseVersion)
                 releaseNotesFile.set(extension.releaseNotesFile)
@@ -32,7 +32,7 @@ public class StrataReleasePlugin : Plugin<Project> {
         val githubBundle =
             project.tasks.register("githubReleaseBundle", GenerateGithubReleaseBundle::class.java) {
                 group = "release"
-                description = "Builds the exact 20 signed JARs and SHA256SUMS uploaded to GitHub Releases."
+                description = "Builds the exact 21 signed JARs and SHA256SUMS uploaded to GitHub Releases."
                 dependsOn(manifest, "mavenCentralReleaseVerify")
                 manifestFile.set(extension.outputDirectory.file("manifest.json"))
                 artifactDirectory.set(extension.outputDirectory.dir("artifacts"))
@@ -62,7 +62,7 @@ public class StrataReleasePlugin : Plugin<Project> {
         )
         registerCentralTask(
             "mavenCentralReleaseVerify",
-            "Polls until all 24 Maven Central coordinates and immutable files match the staged publications.",
+            "Polls until all 25 Maven Central coordinates and immutable files match the staged publications.",
             MavenCentralReleaseTask.Operation.VERIFY,
         ).configure {
             canonicalSignatureDirectory.set(project.layout.buildDirectory.dir("release/maven-central/signatures"))
@@ -123,7 +123,7 @@ public class StrataReleasePlugin : Plugin<Project> {
         val stage =
             registerNetworkTask(
                 "modrinthReleaseStage",
-                "Creates only missing exact listed Modrinth versions while the project is draft or unlisted.",
+                "Appends only missing exact listed Modrinth versions without replacing any existing release.",
                 ModrinthReleaseTask.Operation.STAGE,
             )
         stage.configure { dependsOn(preflight) }
@@ -133,14 +133,21 @@ public class StrataReleasePlugin : Plugin<Project> {
                 "Submits a completely staged Modrinth project for review without changing version metadata.",
                 ModrinthReleaseTask.Operation.SUBMIT,
             )
+        val finalizeProject =
+            registerNetworkTask(
+                "modrinthReleaseFinalizeProject",
+                "Transitions the approved Modrinth project body after predecessor-release verification.",
+                ModrinthReleaseTask.Operation.FINALIZE_PROJECT,
+            )
         val verify =
             registerNetworkTask(
                 "modrinthReleaseVerify",
-                "Reads Modrinth state and proves all 20 exact versions are listed.",
+                "Reads Modrinth state and proves all 21 exact versions are listed.",
                 ModrinthReleaseTask.Operation.VERIFY,
             )
         submit.configure { mustRunAfter(stage) }
-        verify.configure { mustRunAfter(submit) }
+        finalizeProject.configure { mustRunAfter(submit) }
+        verify.configure { mustRunAfter(finalizeProject) }
 
         project.afterEvaluate {
             val targets = extension.targets.toList()

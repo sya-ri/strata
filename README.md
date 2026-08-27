@@ -8,7 +8,8 @@ Declarative Minecraft UI with reusable component trees, version-independent layo
 Strata is pronounced “STRAY-tuh” (`/ˈstreɪtə/`) and is the plural of *stratum*, meaning a layer.
 The name reflects its layered design: declarative components, retained UI behavior, portable rendering, and environment-specific adapters.
 
-Strata 0.1.0 is distributed through Maven Central for development, as a separate client Fabric Mod through Modrinth, and as a public Codex skill in this repository.
+Strata 0.1.1 is distributed through Maven Central for development, as a separate client Fabric Mod through Modrinth, and as a public Codex skill in this repository.
+Its only functional change from 0.1.0 is support for Minecraft 1.20.
 Features are documented as available only after executable tests verify them.
 
 ## Why Strata exists
@@ -104,8 +105,8 @@ Install exactly one version-matched runtime as a separate client Fabric Mod toge
 
 ```kotlin
 dependencies {
-    compileOnly("dev.s7a.strata:strata-api:0.1.0")
-    modRuntimeOnly("dev.s7a.strata:strata-runtime-minecraft-fabric-<minecraft-version>:0.1.0")
+    compileOnly("dev.s7a.strata:strata-api:0.1.1")
+    modRuntimeOnly("dev.s7a.strata:strata-runtime-minecraft-fabric-<minecraft-version>:0.1.1")
     modRuntimeOnly("net.fabricmc:fabric-language-kotlin:<compatible-version>")
 }
 ```
@@ -116,13 +117,13 @@ Declare it as a required dependency in the consuming Mod so `ScreenDefinition.op
 ```json
 {
   "depends": {
-    "strata": ">=0.1.0"
+    "strata": ">=0.1.1"
   }
 }
 ```
 
 The selected host adapter is a runtime concern.
-The supported Minecraft range begins at 1.20.1; Minecraft 1.19 and older releases are outside the project scope.
+The supported Minecraft range begins at 1.20; Minecraft 1.19 and older releases are outside the project scope.
 
 See [Supported Fabric runtimes](docs/architecture.md#supported-fabric-runtimes) for artifact names, Java requirements, and verification details.
 
@@ -202,6 +203,7 @@ npx skills add sya-ri/strata --skill strata
 - [Contributing](CONTRIBUTING.md) covers development setup, verification, and contribution guidelines.
 - [Build and release](docs/build.md) lists local quality checks, the aggregated Dokka GitHub Pages site, and publication requirements.
 - [Supporting a new Minecraft version](docs/minecraft-versions.md) defines the evidence, implementation, and compatibility process for another adapter.
+- [Strata 0.1.1 release notes](docs/releases/v0.1.1.md) records the Minecraft 1.20 compatibility release.
 - [Strata 0.1.0 release notes](docs/releases/v0.1.0.md) records the first public API, runtime, documentation, and distribution contract.
 
 The aggregated Dokka and reader guides are published at [gh.s7a.dev/strata](https://gh.s7a.dev/strata/).

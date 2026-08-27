@@ -67,6 +67,7 @@ internal abstract class ModrinthReleaseTask : DefaultTask() {
                 Operation.PREFLIGHT -> coordinator.preflight()
                 Operation.STAGE -> coordinator.stage()
                 Operation.SUBMIT -> coordinator.submit()
+                Operation.FINALIZE_PROJECT -> coordinator.finalizeProject()
                 Operation.VERIFY -> coordinator.verify()
             }
         output.parentFile.mkdirs()
@@ -103,6 +104,11 @@ internal abstract class ModrinthReleaseTask : DefaultTask() {
          * Monotonic project submission.
          */
         SUBMIT,
+
+        /**
+         * Approved-project body transition after predecessor verification.
+         */
+        FINALIZE_PROJECT,
 
         /**
          * Read-only approved-release verification.

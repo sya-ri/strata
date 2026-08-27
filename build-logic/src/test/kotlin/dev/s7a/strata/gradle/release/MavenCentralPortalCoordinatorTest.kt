@@ -171,7 +171,7 @@ internal class MavenCentralPortalCoordinatorTest {
     }
 
     @Test
-    fun `production contract requires twenty four safe coordinates before network access`() {
+    fun `production contract requires twenty five safe coordinates before network access`() {
         val fixture = fixture()
         val server = server(fixture)
 
@@ -183,13 +183,13 @@ internal class MavenCentralPortalCoordinatorTest {
                     incompleteAttempts = 1,
                 )
             }
-        assertTrue(countFailure.message.orEmpty().contains("exactly 24 coordinates"))
+        assertTrue(countFailure.message.orEmpty().contains("exactly 25 coordinates"))
         assertEquals(0, server.listRequestCount)
 
         val unsafeFailure =
             assertThrows(IllegalStateException::class.java) {
                 fixture.coordinator(server).preflight(
-                    listOf("..:strata-api:0.1.0"),
+                    listOf("..:strata-api:0.1.1"),
                     temporaryDirectory.resolve("unsafe-coordinate"),
                     incompleteAttempts = 1,
                 )
@@ -303,11 +303,11 @@ internal class MavenCentralPortalCoordinatorTest {
 
     private fun fixture(): Fixture {
         val repository = temporaryDirectory.resolve("repository")
-        val coordinate = "dev.s7a.strata:strata-api:0.1.0"
-        val directory = repository.resolve("dev/s7a/strata/strata-api/0.1.0")
+        val coordinate = "dev.s7a.strata:strata-api:0.1.1"
+        val directory = repository.resolve("dev/s7a/strata/strata-api/0.1.1")
         Files.createDirectories(directory)
         BASE_SUFFIXES.forEach { suffix ->
-            val file = directory.resolve("strata-api-0.1.0$suffix")
+            val file = directory.resolve("strata-api-0.1.1$suffix")
             Files.writeString(file, "$coordinate$suffix", StandardCharsets.UTF_8)
         }
         return Fixture(repository, listOf(coordinate))
@@ -432,7 +432,7 @@ internal class MavenCentralPortalCoordinatorTest {
                 JsonOutput.toJson(
                     mapOf(
                         "deploymentId" to "deployment-1",
-                        "deploymentName" to "dev.s7a.strata-0.1.0",
+                        "deploymentName" to "dev.s7a.strata-0.1.1",
                         "deploymentState" to state.wireValue,
                         "purls" to listOf(PURL),
                     ),
@@ -444,7 +444,7 @@ internal class MavenCentralPortalCoordinatorTest {
             val prefix = "/api/v1/publisher/deployment/deployment-1/download/"
             val relativePath = exchange.requestURI.path.removePrefix(prefix)
             var bytes = exactFiles[relativePath]
-            if (mode == Mode.MISMATCH && relativePath.endsWith("strata-api-0.1.0.jar")) {
+            if (mode == Mode.MISMATCH && relativePath.endsWith("strata-api-0.1.1.jar")) {
                 bytes = "different bytes".toByteArray(StandardCharsets.UTF_8)
             }
             if (bytes == null) {
@@ -478,7 +478,7 @@ internal class MavenCentralPortalCoordinatorTest {
             }
             return linkedMapOf(
                 "deploymentId" to id,
-                "deploymentName" to "dev.s7a.strata-0.1.0",
+                "deploymentName" to "dev.s7a.strata-0.1.1",
                 "deploymentState" to state().wireValue,
                 "deploymentType" to deploymentType,
                 "createTimestamp" to 1L,
@@ -546,7 +546,7 @@ internal class MavenCentralPortalCoordinatorTest {
     )
 
     companion object {
-        private const val PURL = "pkg:maven/dev.s7a.strata/strata-api@0.1.0"
+        private const val PURL = "pkg:maven/dev.s7a.strata/strata-api@0.1.1"
         private val BASE_SUFFIXES = listOf(".pom", ".module", ".jar", "-sources.jar", "-javadoc.jar")
         private val CHECKSUMS =
             listOf(

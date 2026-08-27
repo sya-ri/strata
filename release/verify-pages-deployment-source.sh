@@ -9,7 +9,10 @@ controller_run_id="${4:-}"
 expected_controller_commit="${5:-}"
 
 [[ "$release_run_id" =~ ^[1-9][0-9]*$ ]] || { echo 'A positive release Documentation workflow run ID is required.' >&2; exit 1; }
-[[ "$release_tag" == "v0.1.0" ]] || { echo 'Pages deployment verification is pinned to v0.1.0.' >&2; exit 1; }
+[[ "$release_tag" =~ ^v[0-9]+\.[0-9]+\.[0-9]+([+-][0-9A-Za-z.-]+)?$ ]] || {
+  echo 'Pages deployment verification requires an exact semantic release tag.' >&2
+  exit 1
+}
 [[ "$expected_release_commit" =~ ^[0-9a-f]{40}$ ]] || {
   echo 'The expected release Pages commit must be a full lowercase Git SHA.' >&2
   exit 1

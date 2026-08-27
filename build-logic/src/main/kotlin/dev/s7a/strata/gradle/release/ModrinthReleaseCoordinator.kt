@@ -1,19 +1,17 @@
 package dev.s7a.strata.gradle.release
 
 import dev.s7a.strata.gradle.release.ModrinthApiClient.AmbiguousWriteException
-import dev.s7a.strata.gradle.release.ModrinthApiClient.DependencyType
-import dev.s7a.strata.gradle.release.ModrinthApiClient.DisclosureType
 import dev.s7a.strata.gradle.release.ModrinthApiClient.DownloadedFile
-import dev.s7a.strata.gradle.release.ModrinthApiClient.Loader
 import dev.s7a.strata.gradle.release.ModrinthApiClient.ProjectStatus
 import dev.s7a.strata.gradle.release.ModrinthApiClient.ProjectType
-import dev.s7a.strata.gradle.release.ModrinthApiClient.ReleaseType
 import dev.s7a.strata.gradle.release.ModrinthApiClient.RemoteProject
 import dev.s7a.strata.gradle.release.ModrinthApiClient.RemoteVersion
-import dev.s7a.strata.gradle.release.ModrinthApiClient.SideSupport
 import dev.s7a.strata.gradle.release.ModrinthApiClient.VersionEnvironment
 import dev.s7a.strata.gradle.release.ModrinthApiClient.VersionStatus
 import dev.s7a.strata.gradle.release.ModrinthApiClient.WriteRejectedException
+import dev.s7a.strata.gradle.release.ModrinthRemoteContract.BodyPolicy
+import dev.s7a.strata.gradle.release.ModrinthRemoteContract.BootstrapPolicy
+import dev.s7a.strata.gradle.release.ModrinthRemoteContract.ProjectPatchPlan
 import java.io.File
 import java.security.MessageDigest
 
@@ -32,16 +30,19 @@ internal class ModrinthReleaseCoordinator(
     private val bundleDirectory: File,
     private val api: ModrinthApiClient,
 ) {
+    private val remoteContract = ModrinthRemoteContract(manifest, api)
+
     /**
      * Verifies project metadata, assets, tags, and existing release targets without writing.
      */
     fun preflight(): Receipt {
-        val snapshot = reconcile(requirePresent = false, requireApproved = false, bootstrapPolicy = BootstrapPolicy.ELIGIBLE_DRAFT)
-        if (snapshot.projectStatus in READ_ONLY_PROJECT_STATUSES) {
-            check(snapshot.absent.isEmpty()) {
-                "A processing or approved Modrinth project is read-only and cannot receive missing release versions."
-            }
-        }
+        val snapshot =
+            reconcile(
+                requirePresent = false,
+                requireApproved = false,
+                bootstrapPolicy = BootstrapPolicy.ELIGIBLE_DRAFT,
+                bodyPolicy = BodyPolicy.ALLOW_TRACKED_PREDECESSOR,
+            )
         return snapshot.receipt(Operation.PREFLIGHT)
     }
 
@@ -49,43 +50,61 @@ internal class ModrinthReleaseCoordinator(
      * Creates only missing exact listed versions and completes an authorized first-release draft bootstrap.
      */
     fun stage(): Receipt {
-        val initial = reconcile(requirePresent = false, requireApproved = false, bootstrapPolicy = BootstrapPolicy.ELIGIBLE_DRAFT)
-        when (initial.projectStatus) {
-            in MUTABLE_PROJECT_STATUSES -> {
-                stageMissingVersions(initial)
-            }
-
-            in READ_ONLY_PROJECT_STATUSES -> {
-                check(initial.absent.isEmpty()) {
-                    "A processing or approved Modrinth project is read-only and cannot receive missing release versions."
-                }
-            }
-
-            else -> {
-                error("Unsupported Modrinth project lifecycle state.")
-            }
+        val initial =
+            reconcile(
+                requirePresent = false,
+                requireApproved = false,
+                bootstrapPolicy = BootstrapPolicy.ELIGIBLE_DRAFT,
+                bodyPolicy = BodyPolicy.ALLOW_TRACKED_PREDECESSOR,
+            )
+        check(initial.projectStatus in VERSION_APPEND_PROJECT_STATUSES) {
+            "Unsupported Modrinth project lifecycle state."
         }
+        stageMissingVersions(initial)
         if (initial.bootstrapPlan.isEmpty.not()) {
             check(initial.projectStatus == ProjectStatus.DRAFT) {
                 "Modrinth project bootstrap requires a draft release inventory."
             }
-            val staged = reconcile(requirePresent = true, requireApproved = false, bootstrapPolicy = BootstrapPolicy.AUTHORIZED)
+            val staged =
+                reconcile(
+                    requirePresent = true,
+                    requireApproved = false,
+                    bootstrapPolicy = BootstrapPolicy.AUTHORIZED,
+                    bodyPolicy = BodyPolicy.STRICT,
+                )
             bootstrapProject(staged.bootstrapPlan)
         }
-        return reconcile(requirePresent = true, requireApproved = false, bootstrapPolicy = BootstrapPolicy.STRICT).receipt(Operation.STAGE)
+        return reconcile(
+            requirePresent = true,
+            requireApproved = false,
+            bootstrapPolicy = BootstrapPolicy.STRICT,
+            bodyPolicy = BodyPolicy.ALLOW_TRACKED_PREDECESSOR,
+        ).receipt(Operation.STAGE)
     }
 
     /**
      * Submits a completely listed draft or unlisted project for review and otherwise polls only.
      */
     fun submit(): Receipt {
-        val initial = reconcile(requirePresent = true, requireApproved = false, bootstrapPolicy = BootstrapPolicy.STRICT)
+        val initial =
+            reconcile(
+                requirePresent = true,
+                requireApproved = false,
+                bootstrapPolicy = BootstrapPolicy.STRICT,
+                bodyPolicy = BodyPolicy.ALLOW_TRACKED_PREDECESSOR,
+            )
         when (initial.projectStatus) {
             in MUTABLE_PROJECT_STATUSES -> submitWithRequery()
             in READ_ONLY_PROJECT_STATUSES -> Unit
             else -> error("Unsupported Modrinth project lifecycle state.")
         }
-        val result = reconcile(requirePresent = true, requireApproved = false, bootstrapPolicy = BootstrapPolicy.STRICT)
+        val result =
+            reconcile(
+                requirePresent = true,
+                requireApproved = false,
+                bootstrapPolicy = BootstrapPolicy.STRICT,
+                bodyPolicy = BodyPolicy.ALLOW_TRACKED_PREDECESSOR,
+            )
         check(result.projectStatus in READ_ONLY_PROJECT_STATUSES) {
             "Modrinth project submission did not reach processing or approved state."
         }
@@ -93,12 +112,44 @@ internal class ModrinthReleaseCoordinator(
     }
 
     /**
+     * Transitions the project body only after approval and after every version in this release is exact.
+     *
+     * Release orchestration invokes this phase only after the predecessor release has completed its own final verification.
+     * This coordinator retains no project response after the call, runs synchronously on the invoking release-task thread, and returns the exact approved remote inventory.
+     * It fails before a write when project metadata or release files drift, and recovers an ambiguous accepted body update only by re-reading and matching the complete tracked contract.
+     */
+    fun finalizeProject(): Receipt {
+        val initial =
+            reconcile(
+                requirePresent = true,
+                requireApproved = true,
+                bootstrapPolicy = BootstrapPolicy.STRICT,
+                bodyPolicy = BodyPolicy.ALLOW_TRACKED_PREDECESSOR,
+            )
+        if (initial.bodyTransitionRequired) {
+            updateProjectBodyWithRequery()
+        }
+        return reconcile(
+            requirePresent = true,
+            requireApproved = true,
+            bootstrapPolicy = BootstrapPolicy.STRICT,
+            bodyPolicy = BodyPolicy.STRICT,
+        ).receipt(Operation.FINALIZE_PROJECT)
+    }
+
+    /**
      * Verifies approval, exact listed metadata, and bytes returned by every primary CDN URL.
      */
     fun verify(): Receipt {
-        val snapshot = reconcile(requirePresent = true, requireApproved = true, bootstrapPolicy = BootstrapPolicy.STRICT)
+        val snapshot =
+            reconcile(
+                requirePresent = true,
+                requireApproved = true,
+                bootstrapPolicy = BootstrapPolicy.STRICT,
+                bodyPolicy = BodyPolicy.STRICT,
+            )
         snapshot.listed.forEach { target ->
-            assertHash("CDN artifact ${target.artifact.fileName}", api.hashRemoteFile(target.url), target.artifact)
+            remoteContract.assertArtifactHash("CDN artifact ${target.artifact.fileName}", api.hashRemoteFile(target.url), target.artifact)
         }
         return snapshot.receipt(Operation.VERIFY)
     }
@@ -109,6 +160,7 @@ internal class ModrinthReleaseCoordinator(
         requirePresent: Boolean,
         requireApproved: Boolean,
         bootstrapPolicy: BootstrapPolicy,
+        bodyPolicy: BodyPolicy,
     ): Snapshot {
         manifest.validate()
         check(manifest.projectId.isNotBlank()) {
@@ -127,9 +179,9 @@ internal class ModrinthReleaseCoordinator(
             }
         }
         val remote = api.getProjectVersions(manifest.projectId)
-        assertReleaseProjectType(project, remote, requirePresent, bootstrapPolicy)
-        assertBasicProjectMetadata(project)
-        assertProjectAssets(project)
+        remoteContract.assertReleaseProjectType(project, remote, requirePresent, bootstrapPolicy)
+        val bodyTransitionRequired = remoteContract.assertBasicProjectMetadata(project, bodyPolicy)
+        remoteContract.assertProjectAssets(project)
 
         val supportedTags = api.getGameVersions()
         val unsupported = manifest.artifacts.map(ModrinthManifest.Artifact::gameVersion).filterNot(supportedTags::contains)
@@ -161,7 +213,7 @@ internal class ModrinthReleaseCoordinator(
                 absent += artifact
             } else {
                 val version = matching.single()
-                assertExact(version, artifact)
+                remoteContract.assertVersion(version, artifact)
                 check(version.status == VersionStatus.LISTED) {
                     "Modrinth version ${artifact.versionNumber} is not listed; refusing mutation."
                 }
@@ -188,10 +240,18 @@ internal class ModrinthReleaseCoordinator(
             }
         val bootstrapPlan =
             BootstrapPlan(
-                projectPatch = inspectProjectClassification(project, allowBootstrap),
-                disclosureMissing = inspectProjectDisclosures(api.getProjectDisclosures(manifest.projectId), allowBootstrap),
+                projectPatch = remoteContract.inspectProjectClassification(project, allowBootstrap),
+                disclosureMissing = remoteContract.inspectProjectDisclosures(api.getProjectDisclosures(manifest.projectId), allowBootstrap),
             )
-        return Snapshot(manifest.projectId, project.projectType, project.status, absent, listed, bootstrapPlan)
+        return Snapshot(
+            manifest.projectId,
+            project.projectType,
+            project.status,
+            absent,
+            listed,
+            bootstrapPlan,
+            bodyTransitionRequired,
+        )
     }
 
     private fun stageMissingVersions(initial: Snapshot) {
@@ -229,191 +289,53 @@ internal class ModrinthReleaseCoordinator(
         return false
     }
 
-    private fun assertReleaseProjectType(
-        project: RemoteProject,
-        remoteVersions: List<RemoteVersion>,
-        requirePresent: Boolean,
-        bootstrapPolicy: BootstrapPolicy,
-    ) {
-        if (project.projectType == ProjectType.MOD) return
-        if (project.projectType == ProjectType.UNCLASSIFIED) {
-            check(
-                project.status == ProjectStatus.DRAFT &&
-                    bootstrapPolicy == BootstrapPolicy.ELIGIBLE_DRAFT &&
-                    requirePresent.not() &&
-                    remoteVersions.isEmpty(),
-            ) {
-                "An unclassified Modrinth project is allowed only for an empty draft before its first listed Fabric version."
-            }
+    private fun updateProjectBodyWithRequery() {
+        if (projectBodyIsExactDuringTransition()) return
+        try {
+            api.updateProjectBody(manifest.projectId, manifest.project.body)
+        } catch (failure: AmbiguousWriteException) {
+            pause(failure.retryAfterMillis)
+            if (pollProjectBodyTransition()) return
+            retryProjectBodyTransition()
             return
         }
-        error("The Modrinth release target must be a mod project.")
-    }
-
-    private fun assertBasicProjectMetadata(remote: RemoteProject) {
-        val expected = manifest.project
-        val differences = mutableListOf<String>()
-
-        fun compare(
-            name: String,
-            actual: Any?,
-            wanted: Any?,
-        ) {
-            if (actual != wanted) differences += "$name expected=$wanted actual=$actual"
-        }
-        compare("slug", remote.slug, expected.slug)
-        compare("title", remote.title, expected.title)
-        compare("description", remote.description, expected.description)
-        compare("body", normalize(remote.body), normalize(expected.body))
-        compare("license.id", remote.licenseId, expected.licenseId)
-        compare("source_url", remote.sourceUrl, expected.sourceUrl)
-        compare("issues_url", remote.issuesUrl, expected.issuesUrl)
-        compare("wiki_url", remote.documentationUrl, expected.documentationUrl)
-        check(differences.isEmpty()) {
-            "Modrinth project metadata differs from the tracked release contract: ${differences.joinToString("; ")}"
+        check(pollProjectBodyTransition()) {
+            "Modrinth project body update was accepted but exact state was not observable after bounded polling."
         }
     }
 
-    private fun inspectProjectClassification(
-        remote: RemoteProject,
-        allowMissing: Boolean,
-    ): ProjectPatchPlan {
-        val expected = manifest.project
-        val categoriesMissing = missingOrExact("categories", remote.categories, expected.categories, remote.categories.isEmpty(), allowMissing)
-        val additionalCategoriesMissing =
-            missingOrExact(
-                "additional_categories",
-                remote.additionalCategories,
-                expected.additionalCategories,
-                remote.additionalCategories.isEmpty(),
-                allowMissing,
-            )
-        val environmentsMissing =
-            missingOrExact(
-                "environment",
-                remote.environments,
-                setOf(VersionEnvironment.CLIENT_ONLY),
-                remote.environments.isEmpty() || remote.environments == setOf(VersionEnvironment.UNKNOWN),
-                allowMissing,
-            )
-        val clientMissing =
-            missingOrExact("client_side", remote.clientSide, expected.clientSide, remote.clientSide == SideSupport.UNKNOWN, allowMissing)
-        val serverMissing =
-            missingOrExact("server_side", remote.serverSide, expected.serverSide, remote.serverSide == SideSupport.UNKNOWN, allowMissing)
-        return ProjectPatchPlan(
-            categoriesMissing = categoriesMissing,
-            additionalCategoriesMissing = additionalCategoriesMissing,
-            environmentMissing = environmentsMissing || clientMissing || serverMissing,
-        )
-    }
-
-    private fun inspectProjectDisclosures(
-        disclosures: List<ModrinthApiClient.RemoteDisclosure>,
-        allowMissing: Boolean,
-    ): Boolean {
-        val activeDisclosures = disclosures.filter { disclosure -> disclosure.deleted.not() }
-        if (activeDisclosures.size == 1) {
-            val disclosure = activeDisclosures.single()
-            if (
-                disclosure.type == DisclosureType.AI_CONTENT &&
-                disclosure.note == manifest.project.aiDisclosureNote &&
-                disclosure.aiUses == manifest.project.aiDisclosureUses
-            ) {
-                return false
-            }
+    private fun retryProjectBodyTransition() {
+        try {
+            api.updateProjectBody(manifest.projectId, manifest.project.body)
+        } catch (failure: AmbiguousWriteException) {
+            pause(failure.retryAfterMillis)
+            if (pollProjectBodyTransition()) return
+            throw failure
+        } catch (failure: WriteRejectedException) {
+            if (pollProjectBodyTransition()) return
+            throw failure
         }
-        check(activeDisclosures.isEmpty() && allowMissing) {
-            "Modrinth project disclosures differ from the tracked release contract; refusing overwrite or removal."
-        }
-        return true
-    }
-
-    private fun missingOrExact(
-        name: String,
-        actual: Any?,
-        expected: Any?,
-        missing: Boolean,
-        allowMissing: Boolean,
-    ): Boolean {
-        if (actual == expected) return false
-        check(missing && allowMissing) {
-            val reason = if (missing) "is not configured" else "differs"
-            "Modrinth project field $name $reason; refusing overwrite."
-        }
-        return true
-    }
-
-    private fun assertProjectAssets(remote: RemoteProject) {
-        val iconUrl = remote.rawIconUrl ?: error("The Modrinth project has no icon.")
-        assertProjectAsset("project icon", iconUrl, manifest.project.icon)
-        check(remote.gallery.size == manifest.project.gallery.size) {
-            "The Modrinth gallery must contain exactly overview, inventory, and progress."
-        }
-        manifest.project.gallery.forEach { expected ->
-            val matching = remote.gallery.filter { image -> image.title == expected.title }
-            check(matching.size == 1) { "The Modrinth gallery image ${expected.id} is missing or duplicated." }
-            val actual = matching.single()
-            check(actual.featured == expected.featured) { "Gallery featured state differs for ${expected.id}." }
-            check(actual.description == expected.description) { "Gallery description differs for ${expected.id}." }
-            check(actual.ordering == expected.ordering) { "Gallery ordering differs for ${expected.id}." }
-            assertProjectAsset(
-                "gallery image ${expected.id}",
-                actual.rawUrl,
-                ModrinthManifest.ProjectAsset(expected.path, expected.sha256),
-            )
+        check(pollProjectBodyTransition()) {
+            "Modrinth project body update retry was accepted but exact state was not observable after bounded polling."
         }
     }
 
-    private fun assertProjectAsset(
-        description: String,
-        url: String,
-        expected: ModrinthManifest.ProjectAsset,
-    ) {
-        val downloaded = api.hashRemoteFile(url)
-        check(downloaded.sha256 == expected.sha256) { "Remote $description differs from tracked ${expected.path}." }
+    private fun pollProjectBodyTransition(): Boolean {
+        repeat(MAX_STATE_POLLS) { poll ->
+            if (projectBodyIsExactDuringTransition()) return true
+            if (poll + 1 < MAX_STATE_POLLS) pause(POLL_DELAY_MILLIS)
+        }
+        return false
     }
 
-    private fun assertExact(
-        remote: RemoteVersion,
-        expected: ModrinthManifest.Artifact,
-    ) {
-        val differences = mutableListOf<String>()
-
-        fun compare(
-            name: String,
-            actual: Any?,
-            wanted: Any?,
-        ) {
-            if (actual != wanted) differences += "$name expected=$wanted actual=$actual"
+    private fun projectBodyIsExactDuringTransition(): Boolean {
+        val project = api.getProject(manifest.projectId)
+        check(project.id == manifest.projectId) { "Modrinth project identity changed during its body transition." }
+        check(project.projectType == ProjectType.MOD) { "Only an existing Modrinth mod project may transition its release body." }
+        check(project.status == ProjectStatus.APPROVED) {
+            "Modrinth project must remain approved throughout its body transition, but entered ${project.status.wireValue}."
         }
-        compare("project_id", remote.projectId, manifest.projectId)
-        compare("name", remote.name, expected.versionName)
-        compare("version_number", remote.versionNumber, expected.versionNumber)
-        compare("changelog", normalize(remote.changelog), manifest.changelog)
-        compare("game_versions", remote.gameVersions, setOf(expected.gameVersion))
-        compare("version_type", remote.releaseType, ReleaseType.RELEASE)
-        compare("loaders", remote.loaders, setOf(Loader.FABRIC))
-        compare("featured", remote.featured, ModrinthManifest.FEATURED)
-        compare("environment", remote.environment, VersionEnvironment.CLIENT_ONLY)
-        compare(
-            "dependencies",
-            remote.dependencies.map { dependency ->
-                listOf(dependency.projectId, dependency.versionId, dependency.fileName, dependency.type)
-            },
-            listOf(listOf(ModrinthManifest.FABRIC_LANGUAGE_KOTLIN_PROJECT_ID, null, null, DependencyType.REQUIRED)),
-        )
-        compare("file count", remote.files.size, 1)
-        if (remote.files.size == 1) {
-            val file = remote.files.single()
-            compare("filename", file.fileName, expected.fileName)
-            compare("file size", file.size, expected.size)
-            compare("primary", file.primary, true)
-            compare("sha512", file.sha512, expected.sha512)
-            if (file.sha256 != null) compare("sha256", file.sha256, expected.sha256)
-        }
-        check(differences.isEmpty()) {
-            "Existing Modrinth version ${expected.versionNumber} differs; refusing overwrite: ${differences.joinToString("; ")}"
-        }
+        return remoteContract.assertBasicProjectMetadata(project, BodyPolicy.ALLOW_TRACKED_PREDECESSOR).not()
     }
 
     private fun bootstrapProject(plan: BootstrapPlan) {
@@ -448,15 +370,15 @@ internal class ModrinthReleaseCoordinator(
 
     private fun projectClassificationIsExactDuringBootstrap(): Boolean {
         val project = readBootstrapProject()
-        return inspectProjectClassification(project, allowMissing = true).isEmpty
+        return remoteContract.inspectProjectClassification(project, allowMissing = true).isEmpty
     }
 
     private fun disclosureIsExactDuringBootstrap(): Boolean {
         val project = readBootstrapProject()
-        check(inspectProjectClassification(project, allowMissing = false).isEmpty) {
+        check(remoteContract.inspectProjectClassification(project, allowMissing = false).isEmpty) {
             "Modrinth project classification must be exact before setting its disclosure."
         }
-        return inspectProjectDisclosures(api.getProjectDisclosures(manifest.projectId), allowMissing = true).not()
+        return remoteContract.inspectProjectDisclosures(api.getProjectDisclosures(manifest.projectId), allowMissing = true).not()
     }
 
     private fun readBootstrapProject(): RemoteProject {
@@ -466,7 +388,9 @@ internal class ModrinthReleaseCoordinator(
             "Modrinth project did not become a mod after its listed Fabric versions were created."
         }
         check(project.status == ProjectStatus.DRAFT) { "Modrinth project left draft state during bootstrap." }
-        assertBasicProjectMetadata(project)
+        check(remoteContract.assertBasicProjectMetadata(project, BodyPolicy.STRICT).not()) {
+            "Modrinth project body changed during bootstrap."
+        }
         assertBootstrapVersionInventory()
         return project
     }
@@ -479,7 +403,7 @@ internal class ModrinthReleaseCoordinator(
         }
         manifest.artifacts.forEach { artifact ->
             val version = remote.single { candidate -> candidate.versionNumber == artifact.versionNumber }
-            assertExact(version, artifact)
+            remoteContract.assertVersion(version, artifact)
             check(version.status == VersionStatus.LISTED) { "Modrinth bootstrap requires every expected version to remain listed." }
         }
     }
@@ -523,7 +447,7 @@ internal class ModrinthReleaseCoordinator(
 
     private fun createWithRequery(artifact: ModrinthManifest.Artifact) {
         val file = bundleDirectory.resolve(artifact.relativePath)
-        assertHash("local artifact ${artifact.fileName}", file.hashes(), artifact)
+        remoteContract.assertArtifactHash("local artifact ${artifact.fileName}", file.hashes(), artifact)
         try {
             api.createListedVersion(manifest, artifact, file)
             return
@@ -564,7 +488,7 @@ internal class ModrinthReleaseCoordinator(
         artifact: ModrinthManifest.Artifact,
         operation: String,
     ) {
-        assertExact(state, artifact)
+        remoteContract.assertVersion(state, artifact)
         check(state.status == VersionStatus.LISTED) {
             "$operation produced a non-listed version for ${artifact.versionNumber}."
         }
@@ -623,40 +547,6 @@ internal class ModrinthReleaseCoordinator(
         return matching.singleOrNull()
     }
 
-    private fun assertHash(
-        description: String,
-        actual: DownloadedFile,
-        expected: ModrinthManifest.Artifact,
-    ) {
-        check(actual.size == expected.size) { "$description size differs." }
-        check(actual.sha256 == expected.sha256) { "$description SHA-256 differs." }
-        check(actual.sha512 == expected.sha512) { "$description SHA-512 differs." }
-    }
-
-    private fun File.hashes(): DownloadedFile {
-        check(isFile) { "Canonical release file is missing: $this" }
-        val sha256 = MessageDigest.getInstance("SHA-256")
-        val sha512 = MessageDigest.getInstance("SHA-512")
-        inputStream().buffered().use { input ->
-            val buffer = ByteArray(DEFAULT_BUFFER_SIZE)
-            while (true) {
-                val count = input.read(buffer)
-                if (count < 0) break
-                sha256.update(buffer, 0, count)
-                sha512.update(buffer, 0, count)
-            }
-        }
-        return DownloadedFile(length(), sha256.hex(), sha512.hex())
-    }
-
-    private fun MessageDigest.hex(): String = digest().joinToString("") { byte -> "%02x".format(byte) }
-
-    private fun normalize(value: String?): String = value.orEmpty().replace("\r\n", "\n").trimEnd() + "\n"
-
-    private fun pause(delayMillis: Long) {
-        if (0L < delayMillis) Thread.sleep(delayMillis.coerceAtMost(10_000L))
-    }
-
     /**
      * Credential-free result persisted by a network task for release review.
      */
@@ -675,6 +565,7 @@ internal class ModrinthReleaseCoordinator(
         val absent: List<ModrinthManifest.Artifact>,
         val listed: List<RemoteTarget>,
         val bootstrapPlan: BootstrapPlan,
+        val bodyTransitionRequired: Boolean,
     ) {
         fun receipt(operation: Operation): Receipt =
             Receipt(
@@ -699,27 +590,13 @@ internal class ModrinthReleaseCoordinator(
             get() = projectPatch.isEmpty && disclosureMissing.not()
     }
 
-    private data class ProjectPatchPlan(
-        val categoriesMissing: Boolean,
-        val additionalCategoriesMissing: Boolean,
-        val environmentMissing: Boolean,
-    ) {
-        val isEmpty: Boolean
-            get() = categoriesMissing.not() && additionalCategoriesMissing.not() && environmentMissing.not()
-    }
-
-    private enum class BootstrapPolicy {
-        ELIGIBLE_DRAFT,
-        AUTHORIZED,
-        STRICT,
-    }
-
     private enum class Operation(
         val wireValue: String,
     ) {
         PREFLIGHT("preflight"),
         STAGE("stage"),
         SUBMIT("submit"),
+        FINALIZE_PROJECT("finalize-project"),
         VERIFY("verify"),
     }
 
@@ -731,5 +608,28 @@ internal class ModrinthReleaseCoordinator(
         private const val POLL_DELAY_MILLIS = 250L
         private val MUTABLE_PROJECT_STATUSES = setOf(ProjectStatus.DRAFT, ProjectStatus.UNLISTED)
         private val READ_ONLY_PROJECT_STATUSES = setOf(ProjectStatus.PROCESSING, ProjectStatus.APPROVED)
+        private val VERSION_APPEND_PROJECT_STATUSES = MUTABLE_PROJECT_STATUSES + READ_ONLY_PROJECT_STATUSES
     }
+}
+
+private fun File.hashes(): DownloadedFile {
+    check(isFile) { "Canonical release file is missing: $this" }
+    val sha256 = MessageDigest.getInstance("SHA-256")
+    val sha512 = MessageDigest.getInstance("SHA-512")
+    inputStream().buffered().use { input ->
+        val buffer = ByteArray(DEFAULT_BUFFER_SIZE)
+        while (true) {
+            val count = input.read(buffer)
+            if (count < 0) break
+            sha256.update(buffer, 0, count)
+            sha512.update(buffer, 0, count)
+        }
+    }
+    return DownloadedFile(length(), sha256.hex(), sha512.hex())
+}
+
+private fun MessageDigest.hex(): String = digest().joinToString("") { byte -> "%02x".format(byte) }
+
+private fun pause(delayMillis: Long) {
+    if (0L < delayMillis) Thread.sleep(delayMillis.coerceAtMost(10_000L))
 }
