@@ -42,7 +42,7 @@ Minecraft 1.20.1 is the supported release floor; do not add Minecraft 1.19 or ol
 1. Add the adapter to the CI matrix and run formatting, static analysis, ABI checks, JVM tests, Kover reports, target-appropriate packaging, GameTests, and visual comparison.
 2. Publish all artifacts to an isolated Maven repository and build a clean external consumer using only those publications.
 3. Inspect the target distribution jar, nested jars, POM, Gradle metadata, bytecode target, Fabric metadata, dependency bounds, license, and absence of integration classes or local paths.
-4. Update the README support table, compatibility document, screenshots, and release notes.
+4. Update the [supported Fabric runtimes](architecture.md#supported-fabric-runtimes) table, compatibility document, screenshots, and release notes.
    Every compatibility claim must be backed by a passing test or an explicitly documented limitation.
 
 ## Close a minor family

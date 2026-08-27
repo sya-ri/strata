@@ -63,6 +63,37 @@ Configuration on demand keeps unrelated JVM work from configuring every Loom pro
 Platform-independent code must not depend on a Minecraft runtime.
 Minecraft and Fabric dependencies remain confined to the versioned runtime boundary that requires them.
 
+## Supported Fabric runtimes
+
+The supported Minecraft range begins at 1.20.1; Minecraft 1.19 and older releases are outside the project scope.
+Select exactly one versioned Fabric runtime at execution time.
+The version artifacts intentionally expose the same Strata-owned entry points and class names, while their inherited Minecraft `Screen` methods differ with the native release, so depending on more than one creates duplicate classes.
+
+Each versioned Fabric Mod packages the common API, core, headless, and Minecraft runtime jars.
+
+| Minecraft | Fabric runtime artifact | Required Java | Loaded verification |
+| --- | --- | --- | --- |
+| 26.2 | `strata-runtime-minecraft-fabric-26.2` | 25 | Exact native/Fabric/headless parity, Mod-screen parity, and synchronized inventory GameTests |
+| 26.1 | `strata-runtime-minecraft-fabric-26.1` | 25 | The same loaded suite; every recorded ARGB hash matches 26.2 for the fixed verified scenes |
+| 1.21.11 | `strata-runtime-minecraft-fabric-1.21.11` | 21 | Development and production-jar loaded-client verification for the shared remapped legacy boundary |
+| 1.21.10 | `strata-runtime-minecraft-fabric-1.21.10` | 21 | Development and production-jar loaded-client verification for the shared remapped legacy boundary |
+| 1.21.9 | `strata-runtime-minecraft-fabric-1.21.9` | 21 | Development and production-jar loaded-client verification for the shared remapped legacy boundary |
+| 1.21.8 | `strata-runtime-minecraft-fabric-1.21.8` | 21 | Development and production-jar loaded-client verification for primitive screen input and resource-location player skins |
+| 1.21.7 | `strata-runtime-minecraft-fabric-1.21.7` | 21 | Development and production-jar loaded-client verification for the shared primitive-input release family |
+| 1.21.6 | `strata-runtime-minecraft-fabric-1.21.6` | 21 | Development and production-jar loaded-client verification for the shared primitive-input release family |
+| 1.21.5 | `strata-runtime-minecraft-fabric-1.21.5` | 21 | Development and production-jar loaded-client verification for the pose-stack and render-type compatibility boundary |
+| 1.21.4 | `strata-runtime-minecraft-fabric-1.21.4` | 21 | Development and production-jar loaded-client verification for the unnamed dynamic-texture compatibility boundary |
+| 1.21.3 | `strata-runtime-minecraft-fabric-1.21.3` | 21 | Development and production-jar loaded-client verification for the direct player-skin future and pre-Client-GameTest boundary |
+| 1.21.2 | `strata-runtime-minecraft-fabric-1.21.2` | 21 | Development and production-jar loaded-client verification for the shared direct-skin standalone-runner family |
+| 1.21.1 | `strata-runtime-minecraft-fabric-1.21.1` | 21 | Development and production-jar loaded-client verification for legacy pixel, blit, Slot, Tooltip, and progress treatments |
+| 1.21 | `strata-runtime-minecraft-fabric-1.21` | 21 | Development and production-jar loaded-client verification for the same legacy pixel, blit, Slot, Tooltip, and progress treatments |
+| 1.20.6 | `strata-runtime-minecraft-fabric-1.20.6` | 21 | Development and production-jar loaded-client verification for the legacy resource-construction boundary and complete standalone suite |
+| 1.20.5 | `strata-runtime-minecraft-fabric-1.20.5` | 21 | Development and production-jar loaded-client verification for the same legacy resource-construction boundary and complete standalone suite |
+| 1.20.4 | `strata-runtime-minecraft-fabric-1.20.4` | 17 | Development and production-jar loaded-client verification for the legacy Java, GUI-asset, player-profile, and standalone-runner boundaries |
+| 1.20.3 | `strata-runtime-minecraft-fabric-1.20.3` | 17 | Development and production-jar loaded-client verification for the same legacy Java, GUI-asset, player-profile, and standalone-runner boundaries |
+| 1.20.2 | `strata-runtime-minecraft-fabric-1.20.2` | 17 | Development and production-jar loaded-client verification for the same legacy Java, GUI-asset, player-profile, and standalone-runner boundaries with the active header separator |
+| 1.20.1 | `strata-runtime-minecraft-fabric-1.20.1` | 17 | Development and production-jar loaded-client verification for the pre-GUI-sprite atlas, legacy player-skin, and release-local standalone-runner boundaries |
+
 ## Component extension policy
 
 Strata standardizes only focused primitives that serve at least two natural independent uses and do not encode one screen or application-domain model.
