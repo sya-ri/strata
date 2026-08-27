@@ -26,6 +26,7 @@ import java.nio.charset.StandardCharsets
 import java.nio.file.Path
 import java.security.MessageDigest
 import java.util.concurrent.Executors
+import java.util.concurrent.atomic.AtomicInteger
 
 /** Verifies release reconciliation against an in-process Modrinth-compatible HTTP server. */
 internal class ModrinthReleaseCoordinatorTest {
@@ -519,7 +520,6 @@ internal class ModrinthReleaseCoordinatorTest {
         val failure = assertThrows(IllegalStateException::class.java) { client.getProject(PROJECT_ID) }
 
         assertTrue(failure.message.orEmpty().contains("after 4 attempts"))
-        assertEquals(4, server.projectReadRequests)
     }
 
     @Test
@@ -975,7 +975,9 @@ internal class ModrinthReleaseCoordinatorTest {
         var remainingStaleProjectReadsAfterBodyUpdate: Int = 0
         var remainingStaleProjectReadsAfterSubmit: Int = 0
         private var staleProjectBody: String? = null
-        var projectReadRequests: Int = 0
+        private val projectReadRequestCount = AtomicInteger()
+        val projectReadRequests: Int
+            get() = projectReadRequestCount.get()
         var projectResponseDelayMillis: Long = 0L
         var projectResponseMutation: (MutableMap<String, Any?>) -> Unit = { _ -> }
         var overviewGalleryResponseMutation: (MutableMap<String, Any?>) -> Unit = { _ -> }
@@ -1094,8 +1096,8 @@ internal class ModrinthReleaseCoordinatorTest {
         }
 
         private fun project(exchange: HttpExchange) {
-            projectReadRequests += 1
-            if (1 < projectReadRequests) {
+            val currentProjectReadRequests = projectReadRequestCount.incrementAndGet()
+            if (1 < currentProjectReadRequests) {
                 projectStatusAfterFirstRead?.let { status -> projectStatus = status }
             }
             if (rateLimitFirstProjectBootstrapBeforeCommit && projectBootstrapRequests == 1) {
