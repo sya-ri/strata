@@ -28,7 +28,7 @@ import net.minecraft.core.UUIDUtil;
 import net.minecraft.resources.ResourceLocation;
 
 /**
- * Resolves and snapshots player skins through the authlib 4 profile-texture API used by Minecraft 1.20.1.
+ * Resolves and snapshots player skins through the authlib 4 profile-texture API used by Minecraft 1.20 and 1.20.1.
  */
 final class FabricMinecraftSkinBridge {
     private static final IntSize PLAYER_SKIN_SIZE = new IntSize(64, 64);

@@ -9,7 +9,7 @@ import java.util.concurrent.CompletableFuture
 import java.util.concurrent.TimeUnit
 
 /**
- * Owns one disposable Minecraft 1.20.1 singleplayer world created by [StandaloneMinecraftLoadedTestContext].
+ * Owns one disposable Minecraft 1.20 or 1.20.1 singleplayer world created by [StandaloneMinecraftLoadedTestContext].
  *
  * The handle schedules server work on the integrated-server thread and removes its save after a clean disconnect. It must be closed from the standalone test thread.
  *

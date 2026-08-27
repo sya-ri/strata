@@ -2,6 +2,8 @@ name: JVM checks
 
 on:
   push:
+    branches:
+      - master
     paths:
       - .github/workflows/**
       - api/**
@@ -75,8 +77,10 @@ jobs:
           - id: minecraft-1-20
             name: Minecraft 1.20.x
             fetch_depth: 1
-            gradle_arguments: :ciMinecraftCheck -Pstrata.minecraftVersions=1.20.1,1.20.2,1.20.3,1.20.4,1.20.5,1.20.6
+            gradle_arguments: :ciMinecraftCheck -Pstrata.minecraftVersions=1.20,1.20.1,1.20.2,1.20.3,1.20.4,1.20.5,1.20.6
             loom_projects: |-
+              runtime/minecraft-fabric-1.20
+              integration/minecraft-fabric-1.20
               runtime/minecraft-fabric-1.20.1
               integration/minecraft-fabric-1.20.1
               runtime/minecraft-fabric-1.20.2
@@ -176,7 +180,10 @@ jobs:
       - name: Test release source guards
         if: matrix.id == 'common'
         shell: bash
-        run: bash release/tests/verify-release-source.sh
+        run: |
+          bash release/tests/verify-release-source.sh
+          bash release/tests/verify-release-v0.1.1-source.sh
+          bash release/tests/verify-versioned-pages-staging.sh
       - name: Hash Loom cache inputs
         if: matrix.loom_cache
         id: loom_inputs

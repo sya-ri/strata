@@ -53,12 +53,12 @@ internal abstract class GenerateGithubReleaseBundle
             val artifactRoot = artifactDirectory.get().asFile
             val artifactFiles = artifactRoot.listFiles().orEmpty().filter(File::isFile)
             check(artifactFiles.map(File::getName).toSet() == manifest.artifacts.map(ModrinthManifest.Artifact::fileName).toSet()) {
-                "Canonical Modrinth artifact directory must contain exactly the 20 manifest JARs."
+                "Canonical Modrinth artifact directory must contain exactly ${ModrinthManifest.EXPECTED_ARTIFACT_COUNT} manifest JARs."
             }
             val signatureRoot = signatureDirectory.get().asFile
             val signatures = signatureRoot.listFiles().orEmpty().filter(File::isFile)
             check(signatures.size == ModrinthManifest.EXPECTED_ARTIFACT_COUNT) {
-                "GitHub release generation requires exactly 20 detached signatures."
+                "GitHub release generation requires exactly ${ModrinthManifest.EXPECTED_ARTIFACT_COUNT} detached signatures."
             }
             val releaseFiles = mutableListOf<File>()
             manifest.artifacts.forEach { artifact ->
@@ -115,6 +115,6 @@ internal abstract class GenerateGithubReleaseBundle
          * Owns the immutable GitHub Release asset-count contract.
          */
         companion object {
-            private const val EXPECTED_GITHUB_ASSET_COUNT = 41
+            private const val EXPECTED_GITHUB_ASSET_COUNT = 43
         }
     }

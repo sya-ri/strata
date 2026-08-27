@@ -43,7 +43,7 @@ internal class MavenCentralReleaseVerifier(
      * Reads the complete remote matrix without mutation and returns whether a release is wholly absent or byte-exact.
      *
      * @param coordinateLines canonical `group:artifact:version` entries owned by the tracked release matrix.
-     * @return immutable evidence for an absent or exact 24-coordinate release.
+     * @return immutable evidence for an absent or exact 25-coordinate release.
      * @throws IllegalStateException when local inputs are incomplete or Maven Central is partial, inconsistent, or different.
      */
     internal fun preflight(coordinateLines: List<String>): Receipt {
@@ -100,18 +100,18 @@ internal class MavenCentralReleaseVerifier(
             }
             if (attempt < maximumAttempts) sleeper(pollDelayMillis)
         }
-        error("Maven Central did not expose the exact 24-coordinate release after $maximumAttempts inspections.")
+        error("Maven Central did not expose the exact 25-coordinate release after $maximumAttempts inspections.")
     }
 
     /**
-     * Stages all 120 canonical remote publication files and detached signatures after exact Central verification.
+     * Stages all 125 canonical remote publication files and their 125 detached signatures after exact Central verification.
      *
      * Local signatures are deliberately ignored because OpenPGP creation timestamps make them unstable across idempotent reruns.
      * The caller owns and clears [outputDirectory] before invocation.
      *
-     * @param coordinateLines canonical 24-coordinate release inventory.
+     * @param coordinateLines canonical 25-coordinate release inventory.
      * @param outputDirectory task-owned directory that mirrors the canonical Maven repository paths.
-     * @return exact signed-file pairs, including the 20 Fabric main-JAR signatures selected for GitHub.
+     * @return exact signed-file pairs, including the 21 Fabric main-JAR signatures selected for GitHub.
      * @throws IllegalStateException when the publication matrix is incomplete or remote content differs or is missing.
      */
     internal fun stageCanonicalPublicationEvidence(
@@ -344,7 +344,7 @@ internal class MavenCentralReleaseVerifier(
      *
      * @property baseRelativePath Maven repository path of the immutable signed content.
      * @property signatureRelativePath Maven repository path of its detached ASCII-armored signature.
-     * @property githubDistributionSignature whether this signature belongs to one of the 20 public Fabric main JARs.
+     * @property githubDistributionSignature whether this signature belongs to one of the 21 public Fabric main JARs.
      */
     internal data class SignedPublicationFile(
         val baseRelativePath: String,
@@ -418,9 +418,9 @@ internal class MavenCentralReleaseVerifier(
      * Owns the fixed release inventory and bounded public-repository polling contracts.
      */
     companion object {
-        private const val EXPECTED_COORDINATE_COUNT = 24
-        private const val EXPECTED_FABRIC_COORDINATE_COUNT = 20
-        private const val EXPECTED_SIGNED_FILE_COUNT = 120
+        private const val EXPECTED_COORDINATE_COUNT = 25
+        private const val EXPECTED_FABRIC_COORDINATE_COUNT = 21
+        private const val EXPECTED_SIGNED_FILE_COUNT = 125
         private const val MAXIMUM_READ_ATTEMPTS = 4
         private const val DEFAULT_VERIFICATION_ATTEMPTS = 120
         private const val DEFAULT_VERIFICATION_DELAY_MILLIS = 15_000L

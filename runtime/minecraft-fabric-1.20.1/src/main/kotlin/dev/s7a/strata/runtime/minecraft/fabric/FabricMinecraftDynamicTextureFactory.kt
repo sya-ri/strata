@@ -52,7 +52,7 @@ internal val fabricMinecraftUsesGuiSprites: Boolean = false
 internal val minecraftTooltipFrameStretchesInner: Boolean = false
 
 /**
- * Rejects GUI sprite metadata because Minecraft 1.20.1 renders its widgets from fixed atlases and code-defined colors.
+ * Rejects GUI sprite metadata because Minecraft 1.20 and 1.20.1 render their widgets from fixed atlases and code-defined colors.
  *
  * @param resource unused resource borrowed for signature parity with GUI-sprite adapters.
  * @param path logical resource path used in the failure message.
@@ -63,7 +63,7 @@ internal val minecraftTooltipFrameStretchesInner: Boolean = false
 internal fun readFabricMinecraftGuiScaling(
     resource: Resource,
     path: String,
-): FabricMinecraftGuiScaling = throw IllegalArgumentException("Minecraft 1.20.1 resource $path has no GUI sprite metadata.")
+): FabricMinecraftGuiScaling = throw IllegalArgumentException("Minecraft 1.20/1.20.1 resource $path has no GUI sprite metadata.")
 
 private fun swapRedBlue(color: Int): Int =
     (color and 0xFF00FF00.toInt()) or

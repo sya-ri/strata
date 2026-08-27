@@ -40,7 +40,7 @@ plugins {
 }
 
 group = "dev.s7a.strata"
-version = "0.1.0"
+version = "0.1.1"
 private val sourceRevision = providers.gradleProperty("strata.sourceRevision").getOrElse("master")
 check(sourceRevision.matches(Regex("(?:master|v[0-9]+\\.[0-9]+\\.[0-9]+(?:[-+][0-9A-Za-z.-]+)?|[0-9a-f]{40})"))) {
     "strata.sourceRevision must be master, a release tag, or a full lowercase Git commit."
@@ -86,6 +86,17 @@ val sharedLegacyRuntimeSourceLinks =
     )
 private val minecraftFabricTargets =
     listOf(
+        MinecraftFabricTarget(
+            version = libs.versions.minecraft120.get(),
+            javaVersion = baselineJavaVersion,
+            remapped = true,
+            sourceLinkPaths =
+                listOf(
+                    "runtime/minecraft-fabric-1.20",
+                    "runtime/minecraft-fabric-1.20.1",
+                    "runtime/minecraft-fabric-1.21.5-legacy",
+                ) + sharedLegacyRuntimeSourceLinks,
+        ),
         MinecraftFabricTarget(
             version = libs.versions.minecraft1201.get(),
             javaVersion = baselineJavaVersion,
@@ -835,13 +846,13 @@ val expectedReleaseCoordinates =
 val verifyReleasePublicationMatrix =
     tasks.register("verifyReleasePublicationMatrix") {
         group = "verification"
-        description = "Verifies the exact 24-coordinate Maven Central release inventory."
+        description = "Verifies the exact 25-coordinate Maven Central release inventory."
         val coordinatesFile = layout.projectDirectory.file("release/maven-coordinates.txt")
         inputs.file(coordinatesFile)
         inputs.property("expectedCoordinates", expectedReleaseCoordinates)
         doLast {
             val trackedCoordinates = coordinatesFile.asFile.readLines().filter(String::isNotBlank)
-            check(expectedReleaseCoordinates.size == 24) { "The release must publish exactly 24 Maven coordinates." }
+            check(expectedReleaseCoordinates.size == 25) { "The release must publish exactly 25 Maven coordinates." }
             check(trackedCoordinates == expectedReleaseCoordinates) {
                 "release/maven-coordinates.txt differs from the typed publication matrix."
             }
@@ -851,14 +862,14 @@ val verifyReleasePublicationMatrix =
 val publishToMavenLocal =
     tasks.register("publishToMavenLocal") {
         group = "publishing"
-        description = "Publishes the exact 24-artifact Strata release matrix to Maven Local."
+        description = "Publishes the exact 25-artifact Strata release matrix to Maven Local."
         dependsOn(publishableProjectPaths.sorted().map { projectPath -> "$projectPath:publishToMavenLocal" })
     }
 
 val verifyPublishedConsumer =
     tasks.register<GradleBuild>("verifyPublishedConsumer") {
         group = "verification"
-        description = "Publishes all 24 Maven artifacts locally and checks a standalone coordinate-only consumer."
+        description = "Publishes all 25 Maven artifacts locally and checks a standalone coordinate-only consumer."
         dependsOn(publishToMavenLocal, verifyReleasePublicationMatrix)
         dir = layout.projectDirectory.dir("release/consumer").asFile
         tasks = listOf("clean", "check")

@@ -2,11 +2,14 @@
 
 set -euo pipefail
 
-release_tag="${1:-v0.1.0}"
+release_tag="${1:-}"
 site_relative_path="${2:-build/dokka/html}"
 current_revision="${3:-master}"
 
-[[ "$release_tag" == v0.1.0 ]] || { echo 'The immutable Pages staging script is pinned to v0.1.0.' >&2; exit 1; }
+[[ "$release_tag" =~ ^v[0-9]+\.[0-9]+\.[0-9]+([+-][0-9A-Za-z.-]+)?$ ]] || {
+  echo 'An exact semantic release tag is required for immutable Pages staging.' >&2
+  exit 1
+}
 [[ "$current_revision" == master || "$current_revision" =~ ^v[0-9]+\.[0-9]+\.[0-9]+([+-][0-9A-Za-z.-]+)?$ ]] || {
   echo 'Unexpected current Pages source revision.' >&2
   exit 1
@@ -63,6 +66,9 @@ else
   cp -a "$worktree/build/dokka/html/." "$snapshot/"
 fi
 
+# A release snapshot is one self-contained site, never a recursive archive of older release snapshots.
+rm -rf -- "$snapshot/releases"
+
 expected_revision="$(mktemp)"
 printf '%s\n' "$release_tag" > "$expected_revision"
 cmp --silent "$expected_revision" "$snapshot/source-revision.txt" || { echo 'Immutable Pages snapshot has the wrong source revision.' >&2; exit 1; }
@@ -74,9 +80,14 @@ cmp --silent "$expected_receipt" "$snapshot/source-receipt.json" || { echo 'Immu
 rm -f -- "$expected_receipt"
 expected_receipt=""
 
-destination="$site_root/releases/${release_tag#v}"
+release_version="${release_tag#v}"
+destination="$site_root/releases/$release_version"
+[[ "$release_version" =~ ^[0-9]+\.[0-9]+\.[0-9]+([+-][0-9A-Za-z.-]+)?$ ]] || {
+  echo 'Unexpected immutable Pages release version.' >&2
+  exit 1
+}
 case "$destination" in
-  "$site_root"/releases/0.1.0) ;;
+  "$site_root"/releases/"$release_version") ;;
   *) echo 'Unexpected immutable Pages destination.' >&2; exit 1 ;;
 esac
 rm -rf -- "$destination"

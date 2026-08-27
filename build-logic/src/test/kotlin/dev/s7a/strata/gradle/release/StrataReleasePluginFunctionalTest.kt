@@ -20,7 +20,7 @@ internal class StrataReleasePluginFunctionalTest {
     lateinit var projectDirectory: Path
 
     @Test
-    fun `manifest task wires twenty lazy verified targets and canonical output`() {
+    fun `manifest task wires twenty one lazy verified targets and canonical output`() {
         prepareFixture()
         Files.writeString(projectDirectory.resolve("build.gradle.kts"), buildScript())
 
@@ -41,7 +41,7 @@ internal class StrataReleasePluginFunctionalTest {
         assertTrue(manifestFile.isFile)
         val manifest = JsonSlurper().parse(manifestFile) as Map<*, *>
         val artifacts = manifest["artifacts"] as List<*>
-        assertEquals(20, artifacts.size)
+        assertEquals(21, artifacts.size)
         artifacts.forEach { value ->
             val artifact = value as Map<*, *>
             assertTrue((artifact["sha256"] as String).matches(Regex("[0-9a-f]{64}")))
@@ -55,9 +55,9 @@ internal class StrataReleasePluginFunctionalTest {
                 .toFile()
                 .listFiles()
                 .orEmpty()
-        assertEquals(41, githubAssets.size)
-        assertEquals(20, githubAssets.count { file -> file.name.endsWith(".jar") })
-        assertEquals(20, githubAssets.count { file -> file.name.endsWith(".jar.asc") })
+        assertEquals(43, githubAssets.size)
+        assertEquals(21, githubAssets.count { file -> file.name.endsWith(".jar") })
+        assertEquals(21, githubAssets.count { file -> file.name.endsWith(".jar.asc") })
         githubAssets.filter { file -> file.name.endsWith(".jar.asc") }.forEach { file ->
             assertTrue(file.readText().startsWith("central-signature-"))
         }
@@ -117,7 +117,7 @@ internal class StrataReleasePluginFunctionalTest {
 
         val canonicalArtifact =
             projectDirectory.resolve(
-                "build/release/modrinth/artifacts/strata-runtime-minecraft-fabric-${GAME_VERSIONS[0]}-0.1.0.jar",
+                "build/release/modrinth/artifacts/strata-runtime-minecraft-fabric-${GAME_VERSIONS[0]}-0.1.1.jar",
             )
         val mutatedArtifact = Files.readAllBytes(canonicalArtifact)
         mutatedArtifact[0] = (mutatedArtifact[0] + 1).toByte()
@@ -164,7 +164,7 @@ internal class StrataReleasePluginFunctionalTest {
         GAME_VERSIONS.forEachIndexed { index, gameVersion ->
             write("inputs/$gameVersion.jar", "artifact-$index-$gameVersion")
             write(
-                "build/release/maven-central/signatures/strata-runtime-minecraft-fabric-$gameVersion-0.1.0.jar.asc",
+                "build/release/maven-central/signatures/strata-runtime-minecraft-fabric-$gameVersion-0.1.1.jar.asc",
                 "central-signature-$index-$gameVersion",
             )
             write("inputs/local-$gameVersion.jar.asc", "different-local-signature-$index-$gameVersion")
@@ -200,11 +200,11 @@ internal class StrataReleasePluginFunctionalTest {
         buildString {
             appendLine("import dev.s7a.strata.gradle.release.StrataReleaseExtension")
             appendLine("plugins { id(\"dev.s7a.strata.release\") }")
-            appendLine("version = \"0.1.0\"")
+            appendLine("version = \"0.1.1\"")
             GAME_VERSIONS.indices.forEach { index -> appendLine("tasks.register(\"verify$index\")") }
             appendLine("extensions.configure<StrataReleaseExtension> {")
             appendLine("  modrinthProjectId.set(\"project-id\")")
-            appendLine("  releaseVersion.set(\"0.1.0\")")
+            appendLine("  releaseVersion.set(\"0.1.1\")")
             appendLine("  releaseNotesFile.set(layout.projectDirectory.file(\"release-notes.md\"))")
             appendLine("  modrinthProjectMetadataFile.set(layout.projectDirectory.file(\"project.json\"))")
             appendLine("  modrinthProjectBodyFile.set(layout.projectDirectory.file(\"project-body.md\"))")
@@ -218,7 +218,7 @@ internal class StrataReleasePluginFunctionalTest {
                     }
                 appendLine("  target(")
                 appendLine("    gameVersion = \"$gameVersion\",")
-                appendLine("    canonicalFileName = \"strata-runtime-minecraft-fabric-$gameVersion-0.1.0.jar\",")
+                appendLine("    canonicalFileName = \"strata-runtime-minecraft-fabric-$gameVersion-0.1.1.jar\",")
                 appendLine("    artifact = providers.provider {")
                 appendLine("      check(providers.gradleProperty(\"failArtifactResolution\").orNull != \"true\")")
                 appendLine("      layout.projectDirectory.file(\"inputs/$artifactGameVersion.jar\")")
@@ -284,6 +284,7 @@ internal class StrataReleasePluginFunctionalTest {
     companion object {
         private val GAME_VERSIONS =
             listOf(
+                "1.20",
                 "1.20.1",
                 "1.20.2",
                 "1.20.3",

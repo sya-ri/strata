@@ -6,7 +6,7 @@ import org.slf4j.LoggerFactory
 import kotlin.system.exitProcess
 
 /**
- * Starts Strata's loaded-client acceptance suite on Minecraft 1.20.1 before Fabric Client GameTest.
+ * Starts Strata's loaded-client acceptance suite on Minecraft 1.20 and 1.20.1 before Fabric Client GameTest.
  *
  * The entrypoint owns one daemon test thread, stops Minecraft after success, and converts assertion or runner failures into a client crash so Gradle observes a failing process.
  */

@@ -18,7 +18,7 @@ import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicReference
 
 /**
- * Coordinates loaded-client verification on Minecraft 1.20.1 before Fabric Client GameTest.
+ * Coordinates loaded-client verification on Minecraft 1.20 and 1.20.1 before Fabric Client GameTest.
  *
  * The context owns one tick signal registration for the process lifetime and schedules all Minecraft access on the client thread. Calls originate from the standalone test thread and fail when the client stops responding.
  */

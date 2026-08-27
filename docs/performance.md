@@ -150,30 +150,30 @@ This statement is limited to the retained session, virtual-list current-range ca
 
 ## Minecraft 1.20 family closure verification
 
-The suite was rerun from commit `100607a` after Minecraft 1.20.1 through 1.20.6 passed their development, production-jar, and publication gates.
+The suite was rerun from commit `820cc49` after Minecraft 1.20 through 1.20.6 passed their development, production-jar, and publication gates.
 It used the same checked-in configuration, current Windows development host, and OpenJDK 17.0.18 as the 1.21 family-close run.
 Host load and power state were still uncontrolled, so timing remains diagnostic while allocation and the deterministic gates are directly comparable.
 
-The ordinary clean path remains an immutable snapshot lookup at 0.004 to 0.005 microseconds and effectively zero normalized allocation.
-The time-aware clean path remains viewport-independent at 1.260 to 1.310 microseconds and at most 0.039 normalized bytes per operation, which is profiler noise rather than one allocation per invocation.
-The dirty path remains approximately 59,024 bytes per operation at every viewport, and headless allocation remains the required fresh pixel image plus bounded command-processing overhead.
+The ordinary clean path remains an immutable snapshot lookup at 0.005 to 0.006 microseconds and effectively zero normalized allocation.
+The time-aware clean path remains viewport-independent at 1.447 to 1.533 microseconds and at most 0.044 normalized bytes per operation, which is profiler noise rather than one allocation per invocation.
+The dirty path remains approximately 59,025 bytes per operation at every viewport, and headless allocation remains the required fresh pixel image plus bounded command-processing overhead.
 No allocation trend indicates retained historical frames, layers, textures, or visited virtual-list ranges.
 
 | Benchmark | Viewport | Average time (µs/op) | Allocation (B/op) |
 | --- | --- | ---: | ---: |
-| Clean timed session frame | Compact | 1.260 | 0.038 |
-| Clean timed session frame | Windowed | 1.264 | 0.036 |
-| Clean timed session frame | FullHd | 1.310 | 0.039 |
-| Clean session frame | Compact | 0.004 | ≈ 0 |
+| Clean timed session frame | Compact | 1.447 | 0.042 |
+| Clean timed session frame | Windowed | 1.533 | 0.044 |
+| Clean timed session frame | FullHd | 1.486 | 0.044 |
+| Clean session frame | Compact | 0.006 | ≈ 0 |
 | Clean session frame | Windowed | 0.005 | ≈ 0 |
-| Clean session frame | FullHd | 0.004 | ≈ 0 |
-| Dirty session frame | Compact | 18.179 | 59,024 |
-| Dirty session frame | Windowed | 17.156 | 59,024 |
-| Dirty session frame | FullHd | 17.875 | 59,024 |
-| Headless rasterization | Compact | 536.552 | 230,796 |
-| Headless rasterization | Windowed | 3,338.480 | 1,643,617 |
-| Headless rasterization | FullHd | 16,698.713 | 8,298,490 |
+| Clean session frame | FullHd | 0.005 | ≈ 0 |
+| Dirty session frame | Compact | 17.731 | 59,025 |
+| Dirty session frame | Windowed | 17.450 | 59,024 |
+| Dirty session frame | FullHd | 17.893 | 59,025 |
+| Headless rasterization | Compact | 538.687 | 230,796 |
+| Headless rasterization | Windowed | 4,356.504 | 1,643,627 |
+| Headless rasterization | FullHd | 23,156.293 | 8,298,529 |
 
 Every 1.20 development and production-jar loaded client also requires that an unchanged portable display list performs no extra partition, rasterization, or texture upload and that detachment clears dynamic textures, registered texture identifiers, prepared commands, prepared viewport, prepared layers, pointer caches, inventory bindings, and common host ownership.
-The 1.20.1 Authlib 4 boundary still publishes only a normalized detached skin snapshot into that bounded lifecycle and passes the same late-completion and terminal-release contract.
+The Minecraft 1.20 and 1.20.1 Authlib 4 boundaries each publish only a normalized detached skin snapshot into that bounded lifecycle and pass the same late-completion and terminal-release contract.
 Together with the unchanged session, virtual-list, tooltip, loading-indicator, and player-skin unit gates, the completed family shows no repeated clean rendering or unbounded temporary-data retention in the covered ownership domains.

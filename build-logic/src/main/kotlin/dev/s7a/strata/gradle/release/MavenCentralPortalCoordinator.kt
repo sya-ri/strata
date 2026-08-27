@@ -786,7 +786,7 @@ internal class MavenCentralPortalCoordinator(
      * Owns the fixed release inventory and bounded network retry contracts.
      */
     companion object {
-        private const val EXPECTED_COORDINATE_COUNT = 24
+        private const val EXPECTED_COORDINATE_COUNT = 25
         private const val PAGE_SIZE = 500
         private const val MAXIMUM_PAGES = 100
         private const val MAXIMUM_READ_ATTEMPTS = 4

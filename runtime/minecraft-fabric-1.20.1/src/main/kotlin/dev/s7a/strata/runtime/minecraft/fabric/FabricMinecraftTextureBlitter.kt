@@ -3,7 +3,7 @@ package dev.s7a.strata.runtime.minecraft.fabric
 import net.minecraft.client.gui.GuiGraphics
 
 /**
- * Submits retained portable textures through Minecraft 1.20.1's resource-location blit API.
+ * Submits retained portable textures through the resource-location blit API shared by Minecraft 1.20 and 1.20.1.
  */
 internal object FabricMinecraftTextureBlitter {
     /**

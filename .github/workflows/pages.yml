@@ -99,15 +99,17 @@ jobs:
             :integration:docs:checkDokkaPagesStaging \
             -Pstrata.sourceRevision="$SOURCE_REVISION" \
             -Pstrata.sourceCommit="$SOURCE_COMMIT"
-      - name: Preserve immutable v0.1.0 documentation
+      - name: Preserve immutable release documentation
         shell: bash
         env:
           SOURCE_REVISION: ${{ steps.source.outputs.revision }}
         run: |
           set -euo pipefail
           bash -n release/stage-versioned-pages.sh
-          bash release/stage-versioned-pages.sh \
-            v0.1.0 build/dokka/html "$SOURCE_REVISION"
+          for release_tag in v0.1.0 v0.1.1; do
+            bash release/stage-versioned-pages.sh \
+              "$release_tag" build/dokka/html "$SOURCE_REVISION"
+          done
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v5
         with:

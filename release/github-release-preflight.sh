@@ -12,7 +12,10 @@ bundle_directory="${1:-build/release/github}"
 
 [[ "$GITHUB_API_URL" == https://* ]] || { echo 'The GitHub API URL must use HTTPS.' >&2; exit 1; }
 [[ "$GITHUB_REPOSITORY" =~ ^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$ ]] || { echo 'Invalid GitHub repository name.' >&2; exit 1; }
-[[ "$RELEASE_TAG" == v0.1.0 ]] || { echo 'The GitHub Release preflight is pinned to v0.1.0.' >&2; exit 1; }
+[[ "$RELEASE_TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+([+-][0-9A-Za-z.-]+)?$ ]] || {
+  echo 'The GitHub Release preflight requires an exact semantic release tag.' >&2
+  exit 1
+}
 [[ "$CENTRAL_STATE" == absent || "$CENTRAL_STATE" == exact ]] || { echo 'Unexpected Maven Central state.' >&2; exit 1; }
 
 release_json="$(mktemp)"
@@ -63,7 +66,16 @@ cmp --silent "docs/releases/$RELEASE_TAG.md" "$release_body" || { echo 'Existing
 [[ -d "$bundle_directory" ]] || { echo 'The canonical GitHub bundle is missing for an existing release.' >&2; exit 1; }
 shopt -s nullglob
 assets=("$bundle_directory"/*)
-[[ "${#assets[@]}" == 41 ]] || { echo "Expected 41 canonical GitHub assets, found ${#assets[@]}." >&2; exit 1; }
+runtime_jars=("$bundle_directory"/*.jar)
+expected_asset_count=$(( ${#runtime_jars[@]} * 2 + 1 ))
+[[ "${#runtime_jars[@]}" == 20 || "${#runtime_jars[@]}" == 21 ]] || {
+  echo "Expected a supported 20- or 21-runtime GitHub bundle, found ${#runtime_jars[@]} JARs." >&2
+  exit 1
+}
+[[ "${#assets[@]}" == "$expected_asset_count" ]] || {
+  echo "Expected $expected_asset_count canonical GitHub assets, found ${#assets[@]}." >&2
+  exit 1
+}
 (cd "$bundle_directory" && sha256sum --check SHA256SUMS)
 
 printf '%s\n' "${assets[@]##*/}" | LC_ALL=C sort > "$expected_inventory"

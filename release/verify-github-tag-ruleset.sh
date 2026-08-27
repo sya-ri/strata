@@ -15,16 +15,27 @@ timestamp_instant() {
   date -u --date="$timestamp" '+%s.%N'
 }
 
-jq -e '
+expected_ref="$(jq -er '.conditions.ref_name.include | select(length == 1) | .[0]' "$contract_path")" || {
+  echo 'The tracked tag ruleset contract must include exactly one release tag.' >&2
+  exit 1
+}
+[[ "$expected_ref" =~ ^refs/tags/v[0-9]+\.[0-9]+\.[0-9]+([+-][0-9A-Za-z.-]+)?$ ]] || {
+  echo 'The tracked tag ruleset contract has an invalid release ref.' >&2
+  exit 1
+}
+expected_tag="${expected_ref#refs/tags/}"
+expected_name="Protect Strata $expected_tag"
+
+jq -e --arg name "$expected_name" --arg ref "$expected_ref" '
   keys == ["bypass_actors", "conditions", "enforcement", "name", "rules", "target"] and
-  .name == "Protect Strata v0.1.0" and
+  .name == $name and
   .target == "tag" and
   .enforcement == "active" and
   .bypass_actors == [] and
   .conditions == {
     "ref_name": {
       "exclude": [],
-      "include": ["refs/tags/v0.1.0"]
+      "include": [$ref]
     }
   } and
   (.rules | sort_by(.type)) == [
@@ -35,7 +46,7 @@ jq -e '
     }
   ]
 ' "$contract_path" >/dev/null || {
-  echo 'The tracked v0.1.0 tag ruleset contract is not canonical.' >&2
+  echo "The tracked $expected_tag tag ruleset contract is not canonical." >&2
   exit 1
 }
 
@@ -92,6 +103,7 @@ remote_updated_at_instant="$(timestamp_instant "$remote_updated_at")" || {
 jq -e \
   --arg repository "$GITHUB_REPOSITORY" \
   --arg name "$(jq -r '.name' "$contract_path")" \
+  --arg ref "$expected_ref" \
   --argjson rulesetId "$ruleset_id" '
     .id == $rulesetId and
     .name == $name and
@@ -101,7 +113,7 @@ jq -e \
     .source == $repository and
     .conditions.ref_name == {
       "exclude": [],
-      "include": ["refs/tags/v0.1.0"]
+      "include": [$ref]
     } and
     (.rules | length) == 2 and
     ([.rules[].type] | sort) == ["deletion", "update"] and
@@ -123,7 +135,7 @@ jq -e \
       (.bypass_actors == [])
     )
   ' "$remote_response" >/dev/null || {
-  echo 'The active GitHub tag ruleset differs from its tracked v0.1.0 contract or audited revision.' >&2
+  echo "The active GitHub tag ruleset differs from its tracked $expected_tag contract or audited revision." >&2
   exit 1
 }
 

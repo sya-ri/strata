@@ -10,7 +10,7 @@ else
   exit 1
 fi
 
-expected_projects=20
+expected_projects=21
 project_modules=(
   'runtime|^(strata\.runtime\.minecraft-fabric|runtime-minecraft-fabric)-[0-9]+([._][0-9]+)*$'
   'integration|^(strata\.integration\.minecraft-fabric|integration-minecraft-fabric)-[0-9]+([._][0-9]+)*$'

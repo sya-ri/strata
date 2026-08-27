@@ -46,12 +46,14 @@ fi
   fail 'The Central controller overlay identity differs.'
 base_tag="$(jq -er '.baseTag' "$manifest_file")"
 base_commit="$(jq -er '.baseCommit' "$manifest_file")"
+reviewed_controller_commit="$(jq -er '.controllerCommit' "$manifest_file")"
 expected_patch_name="$(jq -er '.patchFile' "$manifest_file")"
 expected_patch_sha256="$(jq -er '.patchSha256' "$manifest_file")"
 [[ "$base_tag" == 'v0.1.0' ]] || fail 'The Central controller overlay is not pinned to v0.1.0.'
 [[ "$base_commit" == 'd0be1ccf74ee8fa0aca1a23e9d50eb5ba45c39a8' ]] || \
   fail 'The Central controller overlay base commit differs.'
-[[ "$base_commit" =~ ^[0-9a-f]{40}$ && "$controller_commit" =~ ^[0-9a-f]{40}$ ]] || \
+[[ "$base_commit" =~ ^[0-9a-f]{40}$ && "$reviewed_controller_commit" =~ ^[0-9a-f]{40}$ && \
+  "$controller_commit" =~ ^[0-9a-f]{40}$ ]] || \
   fail 'Central controller overlay commits must be full lowercase SHA-1 values.'
 [[ "$release_tag" == "$base_tag" && "$source_commit" == "$base_commit" ]] || \
   fail 'The requested release source differs from the Central controller overlay base.'
@@ -115,9 +117,11 @@ fi
 [[ "$(git rev-parse "refs/tags/$base_tag^{commit}")" == "$base_commit" ]] || \
   fail 'The Central controller overlay tag does not resolve to its base commit.'
 [[ "$(git rev-parse origin/master)" == "$controller_commit" ]] || \
-  fail 'The Central controller overlay commit is not the current origin/master.'
-git merge-base --is-ancestor "$base_commit" "$controller_commit" || \
-  fail 'The Central controller overlay does not descend from the product source.'
+  fail 'The active Central controller commit is not the current origin/master.'
+git merge-base --is-ancestor "$base_commit" "$reviewed_controller_commit" || \
+  fail 'The reviewed Central controller overlay does not descend from the product source.'
+git merge-base --is-ancestor "$reviewed_controller_commit" "$controller_commit" || \
+  fail 'The reviewed Central controller commit is not an ancestor of the current origin/master.'
 [[ -z "$(git status --porcelain --untracked-files=all)" ]] || \
   fail 'The product source must be clean before applying a Central controller overlay.'
 git diff --cached --quiet -- . || fail 'The product index changed before applying a Central controller overlay.'
@@ -144,9 +148,9 @@ for path in "${expected_paths[@]}"; do
   [[ "$(git hash-object "$path")" == "$expected_blob" ]] || fail "Central controller overlay base Git blob differs: $path"
   [[ "$(sha256sum "$path" | cut -d ' ' -f 1)" == "$expected_sha256" ]] || \
     fail "Central controller overlay base SHA-256 differs: $path"
-  [[ "$(git rev-parse "$controller_commit:$path")" == "$expected_patched_blob" ]] || \
+  [[ "$(git rev-parse "$reviewed_controller_commit:$path")" == "$expected_patched_blob" ]] || \
     fail "Controller source does not contain the reviewed Central overlay Git blob: $path"
-  [[ "$(git show "$controller_commit:$path" | sha256sum | cut -d ' ' -f 1)" == "$expected_patched_sha256" ]] || \
+  [[ "$(git show "$reviewed_controller_commit:$path" | sha256sum | cut -d ' ' -f 1)" == "$expected_patched_sha256" ]] || \
     fail "Controller source does not contain the reviewed Central overlay SHA-256: $path"
 done
 

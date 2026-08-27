@@ -4,11 +4,12 @@
 
 Application UI source compiles against `strata-api` only.
 Install exactly one matching Strata Fabric runtime as a separate client Mod together with Fabric Language Kotlin.
+Strata 0.1.1 adds Minecraft 1.20 support and makes no other functional change from 0.1.0.
 
 ```kotlin
 dependencies {
-    compileOnly("dev.s7a.strata:strata-api:0.1.0")
-    modRuntimeOnly("dev.s7a.strata:strata-runtime-minecraft-fabric-<minecraft-version>:0.1.0")
+    compileOnly("dev.s7a.strata:strata-api:0.1.1")
+    modRuntimeOnly("dev.s7a.strata:strata-runtime-minecraft-fabric-<minecraft-version>:0.1.1")
     modRuntimeOnly("net.fabricmc:fabric-language-kotlin:<compatible-version>")
 }
 ```
@@ -18,7 +19,7 @@ Declare the runtime as a required Mod dependency so a production instance cannot
 ```json
 {
   "depends": {
-    "strata": ">=0.1.0"
+    "strata": ">=0.1.1"
   }
 }
 ```
@@ -68,6 +69,7 @@ internal fun openConfirmationScreen(onConfirm: () -> Unit) {
 
 ## Supported Minecraft versions
 
+- `1.20`: `strata-runtime-minecraft-fabric-1.20`
 - `1.20.1`: `strata-runtime-minecraft-fabric-1.20.1`
 - `1.20.2`: `strata-runtime-minecraft-fabric-1.20.2`
 - `1.20.3`: `strata-runtime-minecraft-fabric-1.20.3`
@@ -89,5 +91,5 @@ internal fun openConfirmationScreen(onConfirm: () -> Unit) {
 - `26.1`: `strata-runtime-minecraft-fabric-26.1`
 - `26.2`: `strata-runtime-minecraft-fabric-26.2`
 
-Minecraft 1.20.1 is the support floor.
+Minecraft 1.20 is the support floor.
 Select one exact runtime matching the active game version; multiple versioned runtimes contain duplicate Strata classes.
