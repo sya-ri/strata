@@ -2,6 +2,8 @@ name: JVM checks
 
 on:
   push:
+    branches:
+      - master
     paths:
       - .github/workflows/**
       - api/**
