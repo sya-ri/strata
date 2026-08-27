@@ -116,6 +116,7 @@ public_current_step="$(grep -n -m 1 --fixed-strings '      - name: Verify public
 
 predecessor_block="$(sed -n "${predecessor_step},$((finalize_step - 1))p" "$workflow")"
 grep --fixed-strings 'git fetch --force origin' <<< "$predecessor_block" >/dev/null || fail 'Predecessor verification does not freshly fetch its tag.'
+[[ "$(grep --fixed-strings -c 'previous_tag=v0.1.0' <<< "$predecessor_block")" == '2' ]] || fail 'Both predecessor verification phases must pin v0.1.0.'
 grep --fixed-strings 'expected_previous_commit=d0be1ccf74ee8fa0aca1a23e9d50eb5ba45c39a8' <<< "$predecessor_block" >/dev/null || fail 'Predecessor verification does not pin the immutable v0.1.0 commit.'
 grep --fixed-strings 'expected_previous_object=ccf221fe7f133fe5598fafc4ad01e6bc69ba2230' <<< "$predecessor_block" >/dev/null || fail 'Predecessor verification does not pin the immutable v0.1.0 tag object.'
 grep --fixed-strings '[[ "$previous_commit" == "$expected_previous_commit" ]]' <<< "$predecessor_block" >/dev/null || fail 'Predecessor verification does not compare the fetched commit with its immutable pin.'
@@ -158,7 +159,7 @@ grep --fixed-strings 'bash release/verify-public-modrinth.sh build/release/modri
 grep --fixed-strings 'release/verify-pages-deployment-source.sh' <<< "$predecessor_block" >/dev/null || fail 'The generalized Pages source verifier is not loaded from the exact controller.'
 grep --fixed-strings 'release/wait-for-pages-source-receipt.sh' <<< "$predecessor_block" >/dev/null || fail 'The generalized Pages public receipt waiter is not loaded from the exact controller.'
 grep --fixed-strings '"$previous_pages_run_id" "$previous_tag" "$PREVIOUS_RELEASE_COMMIT"' <<< "$predecessor_block" >/dev/null || fail 'The predecessor Pages deployment is not bound to the immutable tag and commit.'
-grep --fixed-strings 'pages_base="https://gh.s7a.dev/strata/releases/0.1.0"' <<< "$predecessor_block" >/dev/null || fail 'The immutable predecessor Pages tree is not publicly verified.'
+grep --fixed-strings 'pages_base="https://gh.s7a.dev/strata/releases/${previous_tag#v}"' <<< "$predecessor_block" >/dev/null || fail 'The immutable predecessor Pages tree is not derived from its pinned tag.'
 grep --fixed-strings 'git worktree remove --force "$worktree"' <<< "$predecessor_block" >/dev/null || fail 'The detached predecessor worktree is not removed.'
 
 public_services_step="$(grep -n -m 1 --fixed-strings '      - name: Verify public v0.1.0 services and Pages provenance' "$workflow" | cut -d: -f1)"
@@ -217,7 +218,7 @@ case_line="$(grep -n -m 1 --fixed-strings 'case "$remote_body_sha256" in' <<< "$
 common_verify_line="$(grep -n -m 1 --fixed-strings 'modrinthReleaseVerify' <<< "$predecessor_block" | cut -d: -f1)"
 central_overlay_line="$(grep -n -m 1 --fixed-strings 'bash "$central_runner" release-verify' <<< "$predecessor_block" | cut -d: -f1)"
 github_exact_line="$(grep -n -m 1 --fixed-strings '[[ "${#predecessor_assets[@]}" == "41" ]]' <<< "$predecessor_block" | cut -d: -f1)"
-pages_exact_line="$(grep -n -m 1 --fixed-strings 'pages_base="https://gh.s7a.dev/strata/releases/0.1.0"' <<< "$predecessor_block" | cut -d: -f1)"
+pages_exact_line="$(grep -n -m 1 --fixed-strings 'pages_base="https://gh.s7a.dev/strata/releases/${previous_tag#v}"' <<< "$predecessor_block" | cut -d: -f1)"
 [[ -n "$case_line" && -n "$common_verify_line" && -n "$central_overlay_line" && -n "$github_exact_line" && -n "$pages_exact_line" ]] || fail 'A common predecessor recovery gate is missing.'
 (( case_line < common_verify_line && common_verify_line < central_overlay_line && central_overlay_line < github_exact_line && github_exact_line < pages_exact_line )) || fail 'Both exact body states must converge before every complete v0.1.0 public gate.'
 

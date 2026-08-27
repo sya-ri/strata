@@ -213,6 +213,19 @@ internal class PagesStagingCheckerTest {
         assertTrue(Files.readAllLines(inventory).none { path -> path.startsWith("/releases/") })
     }
 
+    @Test
+    fun ignoresBashParameterExpansionInPagesUrlPrefix() {
+        val (project, site) = createBaseTrees("bash-parameter-pages-url")
+        Files.writeString(
+            project.resolve("workflow.yml"),
+            "pages_base=\"https://gh.s7a.dev/strata/releases/${'$'}{previous_tag#v}\"",
+        )
+        val inventory = writeInventory(project, site)
+
+        PagesStagingChecker.check(project, site, inventory)
+        assertTrue(Files.readAllLines(inventory).none { path -> path.startsWith("/releases/") })
+    }
+
     private fun createBaseTrees(name: String): Pair<Path, Path> {
         val project = Files.createDirectories(temporaryRoot.resolve("$name-project"))
         Files.writeString(project.resolve("README.md"), "# Project")

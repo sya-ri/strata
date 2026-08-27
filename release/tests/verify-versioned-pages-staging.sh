@@ -3,6 +3,7 @@
 set -euo pipefail
 
 repository_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd -P)"
+pages_workflow="$repository_root/.github/workflows/pages.yml"
 temporary_root="$(mktemp -d)"
 cleanup() {
   rm -rf -- "$temporary_root"
@@ -13,6 +14,10 @@ fail() {
   echo "$1" >&2
   exit 1
 }
+
+if grep --fixed-strings '    paths:' "$pages_workflow" >/dev/null; then
+  fail 'Pages path filters do not cover the repository-wide public URL inventory.'
+fi
 
 fixture="$temporary_root/fixture"
 mkdir -p "$fixture/release" "$fixture/build/dokka/html/releases/0.1.0"

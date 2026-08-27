@@ -6,19 +6,6 @@ on:
       - master
     tags:
       - v*
-    paths:
-      - .github/workflows/pages.yml
-      - api/**
-      - build.gradle.kts
-      - gradle/**
-      - gradle.properties
-      - README.md
-      - docs/**
-      - integration/docs/**
-      - release/**
-      - runtime/**
-      - settings.gradle.kts
-      - skills/**
   workflow_dispatch:
 
 permissions:
