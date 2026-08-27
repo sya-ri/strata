@@ -3,6 +3,7 @@
   "overlayId": "v0.1.0-central-signature-checksums",
   "baseTag": "v0.1.0",
   "baseCommit": "d0be1ccf74ee8fa0aca1a23e9d50eb5ba45c39a8",
+  "controllerCommit": "b85f1b4f470357c5d1ff8410d20b7e316b50e316",
   "patchFile": "v0.1.0-central-signature-checksums.patch",
   "patchSha256": "8ef7dadd0aaa19bfa57d6f1e6823bfa37faf1bebebb9d6d80af2089962a2abea",
   "allowedOperations": [

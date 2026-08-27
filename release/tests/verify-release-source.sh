@@ -828,6 +828,9 @@ if bash "$repository_root/release/wait-for-pages-source-receipt.sh" \
 fi
 
 workflow="$repository_root/.github/workflows/release.yml"
+sealed_workflow_blob='f4cf27e824a9ae9f2de3f03be94ad5df0c168f93'
+[[ "$(git hash-object "$workflow")" == "$sealed_workflow_blob" ]] || \
+  fail 'The sealed v0.1.0 release workflow changed.'
 release_body_filter='(.body // "") | gsub("\r\n"; "\n") | if contains("\r") then error("release body contains a lone carriage return") else @base64 end'
 [[ "$(grep --fixed-strings -c "$release_body_filter" "$repository_root/release/github-release-preflight.sh")" == '1' ]] || \
   fail 'The REST GitHub Release preflight does not use the byte-stable CRLF-only body policy.'
@@ -923,6 +926,24 @@ if sed -n '/^tasks.named("modrinthReleasePreflight") {$/,/^}$/p' "$repository_ro
   grep --fixed-strings 'dependsOn(verifyPublishedConsumer)' >/dev/null; then
   fail 'The read-only Modrinth preflight must not depend on the publishing consumer aggregate.'
 fi
+
+reviewed_overlay_controller='b85f1b4f470357c5d1ff8410d20b7e316b50e316'
+for overlay_manifest in \
+  "$repository_root/release/controller-overlays/v0.1.0-modrinth-generic-draft.json" \
+  "$repository_root/release/controller-overlays/v0.1.0-central-signature-checksums.json"; do
+  [[ "$(jq -er '.controllerCommit' "$overlay_manifest")" == "$reviewed_overlay_controller" ]] || \
+    fail "A v0.1.0 controller overlay does not pin the reviewed controller commit: $overlay_manifest"
+done
+for overlay_runner in \
+  "$repository_root/release/run-controller-overlay.sh" \
+  "$repository_root/release/run-central-controller-overlay.sh"; do
+  grep --fixed-strings '[[ "$(git rev-parse origin/master)" == "$controller_commit" ]]' "$overlay_runner" >/dev/null || \
+    fail "A v0.1.0 controller overlay runner does not require the active current controller: $overlay_runner"
+  grep --fixed-strings 'git merge-base --is-ancestor "$reviewed_controller_commit" "$controller_commit"' "$overlay_runner" >/dev/null || \
+    fail "A v0.1.0 controller overlay runner does not bind the reviewed controller to current master history: $overlay_runner"
+  grep --fixed-strings 'git rev-parse "$reviewed_controller_commit:$path"' "$overlay_runner" >/dev/null || \
+    fail "A v0.1.0 controller overlay runner does not read reviewed blobs from the manifest-pinned controller: $overlay_runner"
+done
 
 [[ "$(grep --fixed-strings -c 'id: central_controller_overlay' "$workflow")" == '2' ]] || \
   fail 'Release and final verification must each load the audited Central controller overlay.'

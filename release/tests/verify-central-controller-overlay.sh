@@ -19,7 +19,11 @@ manifest="$repository_root/release/controller-overlays/v0.1.0-central-signature-
 patch="$repository_root/release/controller-overlays/v0.1.0-central-signature-checksums.patch"
 base_commit="$(jq -er '.baseCommit' "$manifest")"
 base_tag="$(jq -er '.baseTag' "$manifest")"
+expected_controller_commit='b85f1b4f470357c5d1ff8410d20b7e316b50e316'
+reviewed_controller_commit="$(jq -er '.controllerCommit' "$manifest")"
 controller_commit="$(git -C "$repository_root" rev-parse HEAD)"
+[[ "$reviewed_controller_commit" == "$expected_controller_commit" ]] || \
+  fail 'The Central controller overlay reviewed commit differs.'
 fixture="$temporary_root/fixture"
 runner_temporary="$temporary_root/runner"
 mkdir -p "$runner_temporary"
@@ -32,12 +36,13 @@ done
 [[ "$(sha256sum "$patch" | cut -d ' ' -f 1)" == "$(jq -er '.patchSha256' "$manifest")" ]] || \
   fail 'The tracked Central overlay patch differs from its manifest.'
 mapfile -t tracked_paths < <(jq -er '.paths | map(.path) | .[]' "$manifest" | tr -d '\r')
-git -C "$repository_root" diff --binary --full-index "$base_commit" "$controller_commit" -- "${tracked_paths[@]}" |
+git -C "$repository_root" diff --binary --full-index "$base_commit" "$reviewed_controller_commit" -- "${tracked_paths[@]}" |
   cmp --silent - "$patch" || fail 'The Central overlay patch was not generated mechanically from its pinned blobs.'
 
 git -c core.autocrlf=false clone --quiet --no-local "$repository_root" "$fixture"
 git -C "$fixture" checkout --quiet --detach "$base_commit"
-git -C "$fixture" fetch --quiet origin master "$base_tag"
+git -C "$fixture" fetch --quiet origin "$base_tag"
+git -C "$fixture" update-ref refs/remotes/origin/master "$controller_commit"
 
 run_overlay() {
   local operation="$1"
@@ -90,9 +95,12 @@ fi
 [[ -z "$(find "$runner_temporary" -mindepth 1 -print -quit)" ]] || \
   fail 'The Central task-graph test retained its temporary build state.'
 
+if run_overlay build-logic-test "$manifest" "$patch" "$base_commit" >/dev/null 2>&1; then
+  fail 'A Central controller overlay accepted a controller argument other than current master.'
+fi
 git -C "$fixture" update-ref refs/remotes/origin/master "$base_commit"
 if run_overlay build-logic-test "$manifest" "$patch" "$base_commit" >/dev/null 2>&1; then
-  fail 'A Central controller overlay was not bound to the reviewed controller source blobs.'
+  fail 'A Central controller overlay accepted a reviewed controller outside current master history.'
 fi
 git -C "$fixture" update-ref refs/remotes/origin/master "$controller_commit"
 

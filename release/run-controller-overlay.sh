@@ -37,10 +37,12 @@ cache_paths=(
 [[ "$(jq -er '.schemaVersion' "$manifest_file")" == '1' ]] || fail 'Unsupported controller overlay manifest schema.'
 base_tag="$(jq -er '.baseTag' "$manifest_file")"
 base_commit="$(jq -er '.baseCommit' "$manifest_file")"
+reviewed_controller_commit="$(jq -er '.controllerCommit' "$manifest_file")"
 expected_patch_name="$(jq -er '.patchFile' "$manifest_file")"
 expected_patch_sha256="$(jq -er '.patchSha256' "$manifest_file")"
 [[ "$base_tag" == 'v0.1.0' ]] || fail 'The controller overlay is not pinned to v0.1.0.'
-[[ "$base_commit" =~ ^[0-9a-f]{40}$ && "$controller_commit" =~ ^[0-9a-f]{40}$ ]] || \
+[[ "$base_commit" =~ ^[0-9a-f]{40}$ && "$reviewed_controller_commit" =~ ^[0-9a-f]{40}$ && \
+  "$controller_commit" =~ ^[0-9a-f]{40}$ ]] || \
   fail 'Controller overlay commits must be full lowercase SHA-1 values.'
 [[ "$release_tag" == "$base_tag" && "$source_commit" == "$base_commit" ]] || \
   fail 'The requested release source differs from the controller overlay base.'
@@ -87,8 +89,12 @@ esac
 
 [[ "$(git rev-parse HEAD)" == "$base_commit" ]] || fail 'The controller overlay base is not the checked-out product source.'
 [[ "$(git rev-parse "refs/tags/$base_tag^{commit}")" == "$base_commit" ]] || fail 'The controller overlay tag does not resolve to its base commit.'
-[[ "$(git rev-parse origin/master)" == "$controller_commit" ]] || fail 'The controller overlay commit is not the current origin/master.'
-git merge-base --is-ancestor "$base_commit" "$controller_commit" || fail 'The controller overlay does not descend from the product source.'
+[[ "$(git rev-parse origin/master)" == "$controller_commit" ]] || \
+  fail 'The active controller commit is not the current origin/master.'
+git merge-base --is-ancestor "$base_commit" "$reviewed_controller_commit" || \
+  fail 'The reviewed controller overlay does not descend from the product source.'
+git merge-base --is-ancestor "$reviewed_controller_commit" "$controller_commit" || \
+  fail 'The reviewed controller commit is not an ancestor of the current origin/master.'
 [[ -z "$(git status --porcelain --untracked-files=all)" ]] || fail 'The product source must be clean before applying a controller overlay.'
 git diff --cached --quiet -- . || fail 'The product index changed before applying a controller overlay.'
 
@@ -108,9 +114,9 @@ for index in "${!expected_paths[@]}"; do
   expected_patched_sha256="$(jq -er --arg path "$path" '.paths[] | select(.path == $path) | .patchedSha256' "$manifest_file")"
   [[ "$(git hash-object "$path")" == "$expected_blob" ]] || fail "Controller overlay base Git blob differs: $path"
   [[ "$(sha256sum "$path" | cut -d ' ' -f 1)" == "$expected_sha256" ]] || fail "Controller overlay base SHA-256 differs: $path"
-  [[ "$(git rev-parse "$controller_commit:$path")" == "$expected_patched_blob" ]] || \
+  [[ "$(git rev-parse "$reviewed_controller_commit:$path")" == "$expected_patched_blob" ]] || \
     fail "Controller source does not contain the reviewed overlay Git blob: $path"
-  [[ "$(git show "$controller_commit:$path" | sha256sum | cut -d ' ' -f 1)" == "$expected_patched_sha256" ]] || \
+  [[ "$(git show "$reviewed_controller_commit:$path" | sha256sum | cut -d ' ' -f 1)" == "$expected_patched_sha256" ]] || \
     fail "Controller source does not contain the reviewed overlay SHA-256: $path"
 done
 

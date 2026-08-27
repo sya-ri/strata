@@ -1051,6 +1051,9 @@ jobs:
           bash -n "$pages_waiter"
           [[ "$(jq -er '.baseTag' "$central_manifest")" == "$previous_tag" && \
             "$(jq -er '.baseCommit' "$central_manifest")" == "$previous_commit" ]] || { echo 'Audited predecessor Central overlay identity differs.' >&2; exit 1; }
+          previous_controller_commit="$(jq -er '.controllerCommit' "$central_manifest")"
+          [[ "$previous_controller_commit" == "b85f1b4f470357c5d1ff8410d20b7e316b50e316" ]] || { echo 'Audited predecessor controller commit differs.' >&2; exit 1; }
+          git merge-base --is-ancestor "$previous_controller_commit" origin/master || { echo 'Audited predecessor controller left current master history.' >&2; exit 1; }
           [[ "$(sha256sum "$central_patch" | cut -d ' ' -f 1)" == "$(jq -er '.patchSha256' "$central_manifest")" ]] || { echo 'Audited predecessor Central patch differs.' >&2; exit 1; }
           git worktree add --detach "$worktree" "$previous_commit"
           (

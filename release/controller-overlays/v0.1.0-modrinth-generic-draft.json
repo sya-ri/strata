@@ -2,6 +2,7 @@
   "schemaVersion": 1,
   "baseTag": "v0.1.0",
   "baseCommit": "d0be1ccf74ee8fa0aca1a23e9d50eb5ba45c39a8",
+  "controllerCommit": "b85f1b4f470357c5d1ff8410d20b7e316b50e316",
   "patchFile": "v0.1.0-modrinth-generic-draft.patch",
   "patchSha256": "35c946756921a8221ac39d6d71524d164c5735224a24e086eaaf995f0cee9ce4",
   "allowedOperations": [
