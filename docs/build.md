@@ -104,6 +104,7 @@ The separate `release/github-tag-ruleset-v0.1.1.json` contract and receipt prote
 
 The root `dokkaGenerate` task aggregates every published module into `build/dokka/html`.
 The Documentation workflow invokes `:integration:docs:checkDokkaPagesStaging` on pushes to `master` and release tags; that task depends on the fully qualified root `:dokkaGenerate`, stages and verifies the reader guides, and deploys the resulting `build/dokka/html` directory through GitHub Pages' artifact and OIDC deployment path.
+Because the Pages inventory scans checked source extensions across the repository, every `master` and release-tag push triggers the Documentation workflow, and operational release URLs remain parameterized until their pinned tag is resolved at runtime.
 The deployable `github-pages` artifact is retained for thirty days so a delayed protected release approval can still revalidate the exact uploaded archive.
 The full-history checkout lets `release/stage-versioned-pages.sh` reproduce tagged documentation in a detached worktree on later `master` runs and copy each independently checked site into `build/dokka/html/releases/{version}` without changing the current root documentation or recursively nesting older release trees.
 Repository settings must select GitHub Actions as the Pages source; the workflow requires only read access to contents plus `pages: write` and `id-token: write`.

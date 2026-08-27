@@ -1203,7 +1203,7 @@ jobs:
               "$previous_pages_run_id" "$previous_tag" "$PREVIOUS_RELEASE_COMMIT" \
               "$controller_pages_run_id" "$GITHUB_SHA")" == "$previous_pages_record" ]] || { echo 'Predecessor Pages provenance changed during verification.' >&2; exit 1; }
 
-            pages_base="https://gh.s7a.dev/strata/releases/0.1.0"
+            pages_base="https://gh.s7a.dev/strata/releases/${previous_tag#v}"
             pages_inventory="$PREVIOUS_TEMPORARY/pages-public-urls.txt"
             pages_target="$PREVIOUS_TEMPORARY/pages-target"
             source_revision="$PREVIOUS_TEMPORARY/source-revision.txt"
