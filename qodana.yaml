@@ -1,6 +1,6 @@
 version: "1.0"
 linter: jetbrains/qodana-jvm-community:2026.2
-bootstrap: bash gradle/prepare-qodana-idea-model.sh
+bootstrap: STRATA_QODANA_BOOTSTRAP=true bash gradle/prepare-qodana-idea-model.sh
 rootJavaProjects:
   - .idea
 profile:

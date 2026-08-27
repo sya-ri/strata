@@ -2,7 +2,7 @@
 
 set -euo pipefail
 
-if [[ -f .idea/modules.xml && "${GITHUB_ACTIONS:-false}" != "true" ]]; then
+if [[ -f .idea/modules.xml && "${STRATA_QODANA_BOOTSTRAP:-false}" != "true" ]]; then
   echo 'Refusing to replace an existing local .idea/modules.xml; run Qodana from a disposable checkout.' >&2
   exit 1
 fi
