@@ -17,6 +17,7 @@ on:
       - icon.svg
       - icon.png
       - integration/**
+      - qodana.yaml
       - quality/**
       - release/**
       - README.md
@@ -37,6 +38,7 @@ on:
       - icon.svg
       - icon.png
       - integration/**
+      - qodana.yaml
       - quality/**
       - release/**
       - README.md
