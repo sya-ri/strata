@@ -30,9 +30,12 @@ internal class ShowcaseParityEvidenceTest {
 
         assertArrayEquals(png, evidence.overviewPng())
         ShowcaseScenarioCatalog.components.forEach { scenario ->
-            assertEquals(scenario.viewport, evidence.componentViewport(scenario.component))
+            val recordedViewport = evidence.componentViewport(scenario.component)
+            assertEquals(scenario.viewport, recordedViewport.size)
+            assertEquals(scenario.scale, recordedViewport.scale)
+            ShowcasePipeline.verifyComponentViewport(scenario, evidence)
             assertArrayEquals(
-                png(scenario.viewport.width, scenario.viewport.height),
+                png(recordedViewport.physicalSize.width, recordedViewport.physicalSize.height),
                 evidence.componentPng(scenario.component),
             )
         }
@@ -95,9 +98,95 @@ internal class ShowcaseParityEvidenceTest {
 
         val evidence = ShowcaseParityEvidence.load(temporaryRoot)
 
-        assertEquals(recordedViewport, evidence.componentViewport(scenario.component))
+        assertEquals(recordedViewport, evidence.componentViewport(scenario.component).size)
         assertThrows(IllegalArgumentException::class.java) {
             ShowcasePipeline.verifyComponentViewport(scenario, evidence)
+        }
+    }
+
+    @Test
+    fun componentScaleFieldIsRequiredByTheExactReceiptSchema() {
+        writeEvidence()
+        val receiptPath = temporaryRoot.resolve("receipt.properties")
+        val receipt = Files.readString(receiptPath)
+        listOf("", "component.text.scale=2\n").forEach { replacement ->
+            Files.writeString(receiptPath, receipt.replace("component.text.gui.scale=2\n", replacement))
+            assertThrows(IllegalArgumentException::class.java) { ShowcaseParityEvidence.load(temporaryRoot) }
+        }
+    }
+
+    @Test
+    fun nonPositiveAndMalformedComponentScalesAreRejected() {
+        writeEvidence()
+        val receiptPath = temporaryRoot.resolve("receipt.properties")
+        val receipt = Files.readString(receiptPath)
+        listOf("0", "-1", "invalid", "2147483648").forEach { scale ->
+            Files.writeString(receiptPath, receipt.replace("component.text.gui.scale=2", "component.text.gui.scale=$scale"))
+            assertThrows(IllegalArgumentException::class.java) { ShowcaseParityEvidence.load(temporaryRoot) }
+        }
+    }
+
+    @Test
+    fun componentPhysicalDimensionsUseCheckedMultiplicationOnBothAxes() {
+        writeEvidence()
+        val receiptPath = temporaryRoot.resolve("receipt.properties")
+        val receipt = Files.readString(receiptPath)
+        val viewport = componentScenario(DocumentedComponent.Text).viewport
+        mapOf("width" to viewport.width, "height" to viewport.height).forEach { (axis, dimension) ->
+            Files.writeString(
+                receiptPath,
+                receipt.replace("component.text.viewport.$axis=$dimension", "component.text.viewport.$axis=${Int.MAX_VALUE}"),
+            )
+            assertThrows(ArithmeticException::class.java) { ShowcaseParityEvidence.load(temporaryRoot) }
+        }
+    }
+
+    @Test
+    fun scaleTwoReceiptRejectsAnUnscaledPngEvenWhenItsHashMatches() {
+        writeEvidence(scaleOverrides = mapOf(DocumentedComponent.Text to 1))
+        val receiptPath = temporaryRoot.resolve("receipt.properties")
+        Files.writeString(
+            receiptPath,
+            Files.readString(receiptPath).replace("component.text.gui.scale=1", "component.text.gui.scale=2"),
+        )
+
+        assertThrows(IllegalArgumentException::class.java) { ShowcaseParityEvidence.load(temporaryRoot) }
+    }
+
+    @Test
+    fun pipelineRejectsConsistentButStaleScaleOneTextEvidence() {
+        val scenario = componentScenario(DocumentedComponent.Text)
+        writeEvidence(scaleOverrides = mapOf(scenario.component to 1))
+        val evidence = ShowcaseParityEvidence.load(temporaryRoot)
+
+        assertEquals(scenario.viewport, evidence.componentViewport(scenario.component).size)
+        assertEquals(1, evidence.componentViewport(scenario.component).scale)
+        assertThrows(IllegalArgumentException::class.java) {
+            ShowcasePipeline.verifyComponentViewport(scenario, evidence)
+        }
+        val headless = writeHeadlessFrames(evidence)
+        assertThrows(IllegalArgumentException::class.java) { MinecraftShowcaseParityChecker.verifyFrames(headless, evidence) }
+    }
+
+    @Test
+    fun independentNativeCheckerAcceptsTheExactCompleteFrameSet() {
+        writeEvidence()
+        val evidence = ShowcaseParityEvidence.load(temporaryRoot)
+
+        MinecraftShowcaseParityChecker.verifyFrames(writeHeadlessFrames(evidence), evidence)
+    }
+
+    @Test
+    fun independentNativeCheckerRejectsChangedHeadlessFrames() {
+        writeEvidence()
+        val evidence = ShowcaseParityEvidence.load(temporaryRoot)
+        val headless = writeHeadlessFrames(evidence)
+        listOf("overview.png", "text.png", "screen-inventory.png").forEach { name ->
+            val path = headless.resolve(name)
+            val original = Files.readAllBytes(path)
+            Files.write(path, original.copyOf().also { bytes -> bytes[bytes.lastIndex] = (bytes.last() + 1).toByte() })
+            assertThrows(IllegalArgumentException::class.java) { MinecraftShowcaseParityChecker.verifyFrames(headless, evidence) }
+            Files.write(path, original)
         }
     }
 
@@ -115,7 +204,10 @@ internal class ShowcaseParityEvidenceTest {
         assertThrows(IllegalArgumentException::class.java) { ShowcaseParityEvidence.load(temporaryRoot) }
     }
 
-    private fun writeEvidence(viewportOverrides: Map<DocumentedComponent, IntSize> = emptyMap()) {
+    private fun writeEvidence(
+        viewportOverrides: Map<DocumentedComponent, IntSize> = emptyMap(),
+        scaleOverrides: Map<DocumentedComponent, Int> = emptyMap(),
+    ) {
         val components = temporaryRoot.resolve("components")
         Files.createDirectories(components)
         val screens = temporaryRoot.resolve("screens")
@@ -124,11 +216,15 @@ internal class ShowcaseParityEvidenceTest {
         Files.write(components.resolve("overview.png"), overview)
         val componentViewports =
             ShowcaseScenarioCatalog.components.associate { scenario ->
-                scenario.component to (viewportOverrides[scenario.component] ?: scenario.viewport)
+                scenario.component to
+                    ShowcaseViewport(
+                        viewportOverrides[scenario.component] ?: scenario.viewport,
+                        scaleOverrides[scenario.component] ?: scenario.scale,
+                    )
             }
         val componentImages =
             componentViewports.mapValues { (_, viewport) ->
-                png(viewport.width, viewport.height)
+                png(viewport.physicalSize.width, viewport.physicalSize.height)
             }
         componentImages.forEach { (component, bytes) -> Files.write(components.resolve("${component.slug}.png"), bytes) }
         val screenImages =
@@ -139,34 +235,53 @@ internal class ShowcaseParityEvidenceTest {
                 DocumentedScreen.PowerMilestones.slug to png(320, 180),
             )
         screenImages.forEach { (slug, bytes) -> Files.write(screens.resolve("$slug.png"), bytes) }
-        val receipt =
-            buildString {
-                appendLine("minecraft.version=26.2")
-                appendLine("viewport.width=320")
-                appendLine("viewport.height=180")
-                appendLine("gui.scale=1")
-                appendLine("locale=en_us")
-                appendLine("native.fabric.headless.argb.sha256=${"1".repeat(64)}")
-                appendLine("native.fabric.headless.scroll.argb.sha256=${"2".repeat(64)}")
-                appendLine("native.fabric.headless.direct-join.argb.sha256=${"3".repeat(64)}")
-                appendLine("native.fabric.headless.container-background.argb.sha256=${"4".repeat(64)}")
-                appendLine("native.fabric.headless.slot.argb.sha256=${"5".repeat(64)}")
-                appendLine("fabric.headless.industrial.argb.sha256=${"6".repeat(64)}")
-                appendLine("native.fabric.headless.player-head.argb.sha256=${"7".repeat(64)}")
-                appendLine("native.fabric.headless.social.argb.sha256=${"8".repeat(64)}")
-                appendLine("fabric.headless.progress.argb.sha256=${"9".repeat(64)}")
-                appendLine("component.overview.png.sha256=${sha256(overview)}")
-                componentImages.forEach { (component, bytes) ->
-                    val viewport = componentViewports.getValue(component)
-                    appendLine("component.${component.slug}.viewport.width=${viewport.width}")
-                    appendLine("component.${component.slug}.viewport.height=${viewport.height}")
-                    appendLine("component.${component.slug}.fabric.headless.argb.sha256=${componentArgbHash(component)}")
-                    appendLine("component.${component.slug}.png.sha256=${sha256(bytes)}")
-                }
-                screenImages.forEach { (slug, bytes) -> appendLine("screen.$slug.png.sha256=${sha256(bytes)}") }
-            }
-        Files.writeString(temporaryRoot.resolve("receipt.properties"), receipt)
+        Files.writeString(
+            temporaryRoot.resolve("receipt.properties"),
+            evidenceReceipt(overview, componentViewports, componentImages, screenImages),
+        )
     }
+
+    private fun writeHeadlessFrames(evidence: ShowcaseParityEvidence): Path {
+        val components = temporaryRoot.resolve("headless/components")
+        Files.createDirectories(components)
+        Files.write(components.resolve("overview.png"), evidence.overviewPng())
+        DocumentedComponent.entries.forEach { component -> Files.write(components.resolve("${component.slug}.png"), evidence.componentPng(component)) }
+        DocumentedScreen.entries.forEach { screen -> Files.write(components.resolve("screen-${screen.slug}.png"), evidence.screenPng(screen)) }
+        return components
+    }
+
+    private fun evidenceReceipt(
+        overview: ByteArray,
+        componentViewports: Map<DocumentedComponent, ShowcaseViewport>,
+        componentImages: Map<DocumentedComponent, ByteArray>,
+        screenImages: Map<String, ByteArray>,
+    ): String =
+        buildString {
+            appendLine("minecraft.version=26.2")
+            appendLine("viewport.width=320")
+            appendLine("viewport.height=180")
+            appendLine("gui.scale=1")
+            appendLine("locale=en_us")
+            appendLine("native.fabric.headless.argb.sha256=${"1".repeat(64)}")
+            appendLine("native.fabric.headless.scroll.argb.sha256=${"2".repeat(64)}")
+            appendLine("native.fabric.headless.direct-join.argb.sha256=${"3".repeat(64)}")
+            appendLine("native.fabric.headless.container-background.argb.sha256=${"4".repeat(64)}")
+            appendLine("native.fabric.headless.slot.argb.sha256=${"5".repeat(64)}")
+            appendLine("fabric.headless.industrial.argb.sha256=${"6".repeat(64)}")
+            appendLine("native.fabric.headless.player-head.argb.sha256=${"7".repeat(64)}")
+            appendLine("native.fabric.headless.social.argb.sha256=${"8".repeat(64)}")
+            appendLine("fabric.headless.progress.argb.sha256=${"9".repeat(64)}")
+            appendLine("component.overview.png.sha256=${sha256(overview)}")
+            componentImages.forEach { (component, bytes) ->
+                val viewport = componentViewports.getValue(component)
+                appendLine("component.${component.slug}.viewport.width=${viewport.size.width}")
+                appendLine("component.${component.slug}.viewport.height=${viewport.size.height}")
+                appendLine("component.${component.slug}.gui.scale=${viewport.scale}")
+                appendLine("component.${component.slug}.fabric.headless.argb.sha256=${componentArgbHash(component)}")
+                appendLine("component.${component.slug}.png.sha256=${sha256(bytes)}")
+            }
+            screenImages.forEach { (slug, bytes) -> appendLine("screen.$slug.png.sha256=${sha256(bytes)}") }
+        }
 
     private fun png(
         width: Int,

@@ -1,13 +1,19 @@
 package dev.s7a.strata.integration.docs
 
 /**
- * Launches the component showcase render and staging serializer.
+ * Generates the showcase synchronously from explicit read-only assets without launching Minecraft or creating a GPU context.
+ *
+ * Portable examples are rendered afresh; the server-backed inventory image is verified against its explicit native receipt.
+ * Only staging and generator-owned documentation outputs are written, and input ownership remains with the caller.
  */
 internal object ComponentShowcaseGenerator {
     /**
-     * Renders all compiled examples, writes the isolated staging result, and synchronizes the generator-owned source files.
+     * Renders compiled portable examples, verifies the native inventory input, and synchronizes the isolated staging result.
      *
-     * @param args project root, module build root, exact generation staging root, parity root, and compiled Minecraft component class directories.
+     * Input validation and rendering finish before documentation synchronization begins; failures propagate to the caller.
+     * The deterministic receipt records source and asset hashes, logical viewports, GUI scales, and physical image dimensions.
+     *
+     * @param args project root, module build root, exact generation staging root, client archive, asset index, asset objects directory, version manifest, native inventory PNG, native inventory receipt, and one or more compiled API component class directories, in that order.
      */
     @JvmStatic
     public fun main(args: Array<String>) {

@@ -114,7 +114,7 @@ internal object ShowcaseScenarioCatalog {
             ComponentScenario(
                 component = DocumentedComponent.Text,
                 source = componentSource("MinecraftTextExample.kt", "text"),
-                viewportMetadata = ShowcaseViewport(IntSize(192, 88), 1),
+                viewportMetadata = ShowcaseViewport(IntSize(192, 88), 2),
                 tree =
                     tree(
                         DocumentedComponent.Stack,
@@ -133,7 +133,7 @@ internal object ShowcaseScenarioCatalog {
             ComponentScenario(
                 component = DocumentedComponent.TextField,
                 source = componentSource("MinecraftTextFieldShowcaseExample.kt", "text-field"),
-                viewportMetadata = ShowcaseViewport(IntSize(216, 64), 1),
+                viewportMetadata = ShowcaseViewport(IntSize(216, 64), 2),
                 tree =
                     centeredCanvas(
                         IntSize(216, 64),
@@ -143,7 +143,7 @@ internal object ShowcaseScenarioCatalog {
             ComponentScenario(
                 component = DocumentedComponent.TextArea,
                 source = componentSource("MinecraftTextAreaShowcaseExample.kt", "text-area"),
-                viewportMetadata = ShowcaseViewport(IntSize(226, 80), 1),
+                viewportMetadata = ShowcaseViewport(IntSize(226, 80), 2),
                 tree =
                     tree(
                         DocumentedComponent.Row,
@@ -414,7 +414,7 @@ internal object ShowcaseScenarioCatalog {
             }
         }
         val outputPaths =
-            listOf("components.md", "overview.png", "minecraft-26.2-parity.properties") +
+            listOf("components.md", "overview.png", "headless-render.properties") +
                 components
                     .map { scenario -> "${scenario.component.slug}.png" }
                     .plus(screens.map { scenario -> "screen-${scenario.screen.slug}.png" })

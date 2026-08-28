@@ -1,6 +1,7 @@
 package dev.s7a.strata.integration.docs
 
 import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertThrows
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
@@ -10,7 +11,7 @@ import java.nio.file.Files
 import java.nio.file.Path
 
 /**
- * Verifies launcher entry points and the typed five-group argument contract.
+ * Verifies launcher entry points and explicit read-only asset inputs without a loaded-game directory.
  */
 internal class ShowcaseLauncherContractTest {
     @TempDir
@@ -36,42 +37,66 @@ internal class ShowcaseLauncherContractTest {
 
     @Test
     fun parserAcceptsEachTypedStagingKindWithOneExistingOutputRoot() {
-        val moduleBuild = temporaryRoot.resolve("integration/docs/build")
-        val check = moduleBuild.resolve("component-showcase/check")
-        val generate = moduleBuild.resolve("component-showcase/generate")
-        val parity = temporaryRoot.resolve("integration/minecraft-fabric-26.2/build/minecraft-parity")
-        val classes = temporaryRoot.resolve("api/classes")
-        Files.createDirectories(check)
-        Files.createDirectories(generate)
-        Files.createDirectories(parity)
-        Files.createDirectories(classes)
+        val check = ShowcaseLaunchArguments.parse(ShowcaseLaunchFixture.arguments(temporaryRoot, ShowcaseStagingKind.Check), ShowcaseStagingKind.Check)
+        val generate = ShowcaseLaunchArguments.parse(ShowcaseLaunchFixture.arguments(temporaryRoot, ShowcaseStagingKind.Generate), ShowcaseStagingKind.Generate)
 
-        val checkArguments = ShowcaseLaunchArguments.parse(arguments(moduleBuild, check, parity, classes), ShowcaseStagingKind.Check)
-        val generateArguments = ShowcaseLaunchArguments.parse(arguments(moduleBuild, generate, parity, classes), ShowcaseStagingKind.Generate)
-
-        assertEquals(check, checkArguments.stagingRoot)
-        assertEquals(generate, generateArguments.stagingRoot)
-        assertEquals(listOf(classes), checkArguments.componentClassDirectories)
+        assertEquals(temporaryRoot.resolve("integration/docs/build/component-showcase/check"), check.stagingRoot)
+        assertEquals(temporaryRoot.resolve("integration/docs/build/component-showcase/generate"), generate.stagingRoot)
+        assertEquals(listOf(temporaryRoot.resolve("api/classes")), check.componentClassDirectories)
+        assertEquals(temporaryRoot.resolve("inputs/client.jar"), check.inputs.clientJar)
+        assertEquals(temporaryRoot.resolve("inputs/asset-index.json"), check.inputs.assetIndex)
+        assertEquals(temporaryRoot.resolve("inputs/objects"), check.inputs.assetObjects)
+        assertEquals(temporaryRoot.resolve("inputs/version.json"), check.inputs.versionManifest)
+        assertEquals(temporaryRoot.resolve("inputs/inventory.png"), check.inputs.nativeInventoryPng)
+        assertEquals(temporaryRoot.resolve("inputs/inventory.properties"), check.inputs.nativeInventoryReceipt)
+        assertFalse(Files.exists(temporaryRoot.resolve("integration/minecraft-fabric-26.2/build/minecraft-parity")))
     }
 
     @Test
     fun parserRejectsAbsentOptionalOutputRootsAfterFiltering() {
-        val moduleBuild = temporaryRoot.resolve("integration/docs/build")
-        val check = moduleBuild.resolve("component-showcase/check")
-        val parity = temporaryRoot.resolve("integration/minecraft-fabric-26.2/build/minecraft-parity")
-        Files.createDirectories(check)
-        Files.createDirectories(parity)
-        val absent = temporaryRoot.resolve("api/absent")
+        val args = ShowcaseLaunchFixture.arguments(temporaryRoot, ShowcaseStagingKind.Check)
+        args[9] = temporaryRoot.resolve("api/absent").toString()
 
         assertThrows(IllegalArgumentException::class.java) {
-            ShowcaseLaunchArguments.parse(arguments(moduleBuild, check, parity, absent), ShowcaseStagingKind.Check)
+            ShowcaseLaunchArguments.parse(args, ShowcaseStagingKind.Check)
         }
     }
 
-    private fun arguments(
-        moduleBuild: Path,
-        staging: Path,
-        parity: Path,
-        classes: Path,
-    ): Array<String> = arrayOf(temporaryRoot.toString(), moduleBuild.toString(), staging.toString(), parity.toString(), classes.toString())
+    @Test
+    fun parserAcceptsExternalReadInputsAndLeavesTheirContentsUnchanged() {
+        val project = temporaryRoot.resolve("project")
+        val inputs = temporaryRoot.resolve("external-assets")
+        val args = ShowcaseLaunchFixture.arguments(project, ShowcaseStagingKind.Check, inputs)
+        val before = Files.readAllBytes(inputs.resolve("client.jar"))
+
+        val launch = ShowcaseLaunchArguments.parse(args, ShowcaseStagingKind.Check)
+
+        assertEquals(inputs.resolve("client.jar"), launch.inputs.clientJar)
+        assertTrue(before.contentEquals(Files.readAllBytes(inputs.resolve("client.jar"))))
+        assertFalse(Files.exists(project.resolve("integration/minecraft-fabric-26.2")))
+    }
+
+    @Test
+    fun parserRejectsMissingReadInputsLegacyArgumentsAndDuplicateClasses() {
+        val args = ShowcaseLaunchFixture.arguments(temporaryRoot, ShowcaseStagingKind.Check)
+        (3..8).forEach { index ->
+            val missing = args.copyOf().also { values -> values[index] = temporaryRoot.resolve("absent-$index").toString() }
+            assertThrows(IllegalArgumentException::class.java) { ShowcaseLaunchArguments.parse(missing, ShowcaseStagingKind.Check) }
+        }
+        assertThrows(IllegalArgumentException::class.java) { ShowcaseLaunchArguments.parse(args.take(5).toTypedArray(), ShowcaseStagingKind.Check) }
+        assertThrows(IllegalArgumentException::class.java) { ShowcaseLaunchArguments.parse(args + args.last(), ShowcaseStagingKind.Check) }
+    }
+
+    @Test
+    fun parserRejectsWrongInputTypesAndInputsWithinGeneratedDestinations() {
+        val args = ShowcaseLaunchFixture.arguments(temporaryRoot, ShowcaseStagingKind.Check)
+        val wrongType = args.copyOf().also { values -> values[3] = args[5] }
+        assertThrows(IllegalArgumentException::class.java) { ShowcaseLaunchArguments.parse(wrongType, ShowcaseStagingKind.Check) }
+        listOf(Path.of(args[2]).resolve("input.jar"), temporaryRoot.resolve("docs/components/input.jar")).forEach { input ->
+            Files.createDirectories(input.parent)
+            Files.writeString(input, "input")
+            val overlapping = args.copyOf().also { values -> values[3] = input.toString() }
+            assertThrows(IllegalArgumentException::class.java) { ShowcaseLaunchArguments.parse(overlapping, ShowcaseStagingKind.Check) }
+        }
+    }
 }

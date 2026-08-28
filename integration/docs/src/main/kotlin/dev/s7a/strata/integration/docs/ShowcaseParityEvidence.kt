@@ -14,20 +14,21 @@ import java.util.HexFormat
 /**
  * Immutable snapshots of the Minecraft GameTest receipt and its exact full-frame component renders.
  *
- * Loading verifies the fixed 26.2 environment, PNG dimensions, and every receipt hash before any generated documentation is written.
+ * Loading verifies the fixed 26.2 environment, PNG dimensions, and every receipt hash for the independent native acceptance gate.
+ * Documentation generation does not load this evidence or start a game.
  */
 internal class ShowcaseParityEvidence private constructor(
     receipt: ByteArray,
     overview: ByteArray,
     components: Map<DocumentedComponent, ByteArray>,
-    componentViewports: Map<DocumentedComponent, IntSize>,
+    componentViewports: Map<DocumentedComponent, ShowcaseViewport>,
     screens: Map<DocumentedScreen, ByteArray>,
 ) {
     private val receiptSnapshot: ByteArray = receipt.copyOf()
     private val overviewSnapshot: ByteArray = overview.copyOf()
     private val componentSnapshots: Map<DocumentedComponent, ByteArray> =
         components.mapValues { (_, bytes) -> bytes.copyOf() }
-    private val componentViewportSnapshots: Map<DocumentedComponent, IntSize> = componentViewports.toMap()
+    private val componentViewportSnapshots: Map<DocumentedComponent, ShowcaseViewport> = componentViewports.toMap()
     private val screenSnapshots: Map<DocumentedScreen, ByteArray> = screens.mapValues { (_, bytes) -> bytes.copyOf() }
 
     /**
@@ -46,12 +47,12 @@ internal class ShowcaseParityEvidence private constructor(
     internal fun componentPng(component: DocumentedComponent): ByteArray = componentSnapshots.getValue(component).copyOf()
 
     /**
-     * Returns the logical viewport recorded for one dedicated component frame.
+     * Returns the logical viewport and GUI scale recorded for one dedicated component frame.
      *
      * @param component documented Minecraft component selecting the receipt fields.
-     * @return positive full-frame dimensions verified against the PNG header.
+     * @return immutable metadata whose checked physical dimensions match the PNG header.
      */
-    internal fun componentViewport(component: DocumentedComponent): IntSize = componentViewportSnapshots.getValue(component)
+    internal fun componentViewport(component: DocumentedComponent): ShowcaseViewport = componentViewportSnapshots.getValue(component)
 
     /**
      * Returns one verified complete-screen image as a fresh byte array.
@@ -78,6 +79,7 @@ internal class ShowcaseParityEvidence private constructor(
          * @param root validated GameTest parity output directory.
          * @return detached verified evidence snapshots.
          * @throws IllegalArgumentException when a file, receipt field, hash, PNG signature, or dimension differs from the locked contract.
+         * @throws ArithmeticException when a component's logical viewport times its GUI scale exceeds the integer range.
          * @throws java.io.IOException when a filesystem read fails.
          */
         internal fun load(root: Path): ShowcaseParityEvidence {
@@ -111,7 +113,7 @@ internal class ShowcaseParityEvidence private constructor(
                 }
             val components =
                 DocumentedComponent.entries.associateWith { component ->
-                    readVerifiedPng(root, component.slug, values, componentViewports.getValue(component))
+                    readVerifiedPng(root, component.slug, values, componentViewports.getValue(component).physicalSize)
                 }
             val screens =
                 DocumentedScreen.entries.associateWith { screen ->
@@ -178,18 +180,20 @@ internal class ShowcaseParityEvidence private constructor(
         private fun readComponentViewport(
             values: Map<String, String>,
             slug: String,
-        ): IntSize {
+        ): ShowcaseViewport {
             val fieldPrefix = "component.$slug"
             val width = values.getValue("$fieldPrefix.viewport.width").toIntOrNull()
             val height = values.getValue("$fieldPrefix.viewport.height").toIntOrNull()
             require(width != null && 0 < width && height != null && 0 < height) {
                 "Minecraft parity receipt has an invalid full-frame viewport for $slug."
             }
+            val scale = values.getValue("$fieldPrefix.gui.scale").toIntOrNull()
+            require(scale != null && 0 < scale) { "Minecraft parity receipt has an invalid GUI scale for $slug." }
             requireHash(
                 values.getValue("$fieldPrefix.fabric.headless.argb.sha256"),
                 "$slug Fabric/headless full-frame pixel hash",
             )
-            return IntSize(width, height)
+            return ShowcaseViewport(IntSize(width, height), scale)
         }
 
         private fun readRegular(
@@ -273,6 +277,7 @@ internal class ShowcaseParityEvidence private constructor(
                     val prefix = "component.${component.slug}"
                     add("$prefix.viewport.width")
                     add("$prefix.viewport.height")
+                    add("$prefix.gui.scale")
                     add("$prefix.fabric.headless.argb.sha256")
                     add("$prefix.png.sha256")
                 }

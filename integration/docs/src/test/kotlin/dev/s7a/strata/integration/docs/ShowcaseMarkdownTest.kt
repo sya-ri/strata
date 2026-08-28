@@ -45,7 +45,10 @@ internal class ShowcaseMarkdownTest {
         assertTrue(document.contains(componentLinks))
         assertTrue(document.contains("The tree shows Minecraft components in logical draw order"))
         assertTrue(document.contains(overview.source))
-        assertTrue(document.contains("exact ARGB equality"))
+        assertTrue(document.contains("without starting Minecraft or creating a GPU context"))
+        assertTrue(document.contains("(components/headless-render.properties)"))
+        assertTrue(document.contains("(evidence/minecraft-26.2-parity.properties)"))
+        assertTrue(document.contains("synchronized inventory image is the explicit exception"))
         assertEquals(1, "<!-- Generated file. Do not edit. -->".toRegex().findAll(document).count())
         DocumentedComponent.entries.forEach { component -> assertTrue(document.contains("<a id=\"${component.slug}\"></a>")) }
         DocumentedScreen.entries.forEach { screen -> assertTrue(document.contains("<a id=\"screen-${screen.slug}\"></a>")) }
@@ -56,10 +59,11 @@ internal class ShowcaseMarkdownTest {
         val overview = ShowcaseOutput.Overview("import sample\ninternal fun overview() {}", "|- Text\n`- Button", byteArrayOf(1))
         val root = ShowcaseMarkdown.rootReadme(overview)
         assertTrue(root.contains("## Minecraft component showcase"))
-        assertTrue(root.contains("actual 320 by 180 `ConfirmScreen` reconstruction"))
+        assertTrue(root.contains("fresh 320 by 180 headless `ConfirmScreen` reconstruction"))
         assertTrue(root.contains("![Strata component showcase](docs/components/overview.png)"))
         assertTrue(root.contains(overview.source))
-        assertTrue(root.contains("exact native-screen, Fabric-adapter, and headless comparison"))
+        assertTrue(root.contains("Generation does not start Minecraft or create a GPU context"))
+        assertTrue(root.contains("(docs/evidence/minecraft-26.2-parity.properties)"))
     }
 
     @Test
@@ -92,14 +96,33 @@ internal class ShowcaseMarkdownTest {
             assertTrue(value.startsWith("<a id=\""))
             assertTrue(value.contains("\n\n## "))
             assertTrue(value.contains("complete frame of the compiled dedicated `ScreenDefinition`"))
-            assertTrue(value.contains("exact Fabric/headless ARGB comparison"))
-            assertTrue(value.contains("not cropped from a larger screen"))
+            assertTrue(value.contains("source, asset, viewport, and image hashes"))
+            assertTrue(value.contains("(components/headless-render.properties)"))
+            assertTrue(value.contains("or cropped from a larger screen"))
             assertTrue(value.contains("component crop").not())
             assertTrue(value.contains("The tree mirrors the complete dedicated definition"))
             assertTrue(value.contains("\n\n<details><summary>Component tree</summary>\n"))
             assertTrue(value.endsWith("\n"))
             assertTrue(value.endsWith("\n\n").not())
             assertTrue(value.contains('\r').not())
+        }
+    }
+
+    @Test
+    fun textImagesDescribeLogicalViewportsAndActualPhysicalDensity() {
+        val expectedDimensions =
+            mapOf(
+                DocumentedComponent.Text to ("384 by 176 PNG" to "192 by 88 logical viewport at GUI scale 2"),
+                DocumentedComponent.TextField to ("432 by 128 PNG" to "216 by 64 logical viewport at GUI scale 2"),
+                DocumentedComponent.TextArea to ("452 by 160 PNG" to "226 by 80 logical viewport at GUI scale 2"),
+            )
+        expectedDimensions.forEach { (component, dimensions) ->
+            val scenario = ShowcaseScenarioCatalog.components.single { entry -> entry.component == component }
+            val section = ShowcaseMarkdown.section(scenario, "internal fun example() {}")
+            assertTrue(section.contains(dimensions.first))
+            assertTrue(section.contains(dimensions.second))
+            assertTrue(section.contains("Headless rendering samples the assets at this physical density"))
+            assertTrue(section.contains("not upscaled from a lower-resolution raster"))
         }
     }
 
@@ -113,6 +136,9 @@ internal class ShowcaseMarkdownTest {
         assertTrue(sections.getValue(DocumentedScreen.SocialInteractions).contains("exact ARGB equality between the native Minecraft screen"))
         assertTrue(sections.getValue(DocumentedScreen.SocialInteractions).contains("without introducing a purpose-specific SocialEntry component"))
         assertTrue(sections.getValue(DocumentedScreen.SynchronizedInventory).contains("loaded Fabric client/server GameTest"))
+        assertTrue(sections.getValue(DocumentedScreen.SynchronizedInventory).contains("current compiled-source hash"))
+        assertTrue(sections.getValue(DocumentedScreen.SynchronizedInventory).contains("(evidence/minecraft-26.2-inventory.properties)"))
+        assertTrue(sections.getValue(DocumentedScreen.SynchronizedInventory).contains("does not start a server"))
         assertTrue(sections.getValue(DocumentedScreen.SynchronizedInventory).contains("ender-chest, furnace, or custom inventory"))
         assertTrue(sections.getValue(DocumentedScreen.IndustrialController).contains("resource-pack-aware Mod controller"))
         assertTrue(sections.getValue(DocumentedScreen.PowerMilestones).contains("ExampleProgressGraph` deliberately stays in downstream example code"))

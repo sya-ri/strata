@@ -42,7 +42,8 @@ Strata's own standard built-ins are limited to focused components with multiple 
 
 ## Minecraft component showcase
 
-This deterministic image is the actual 320 by 180 `ConfirmScreen` reconstruction from the frame that passed exact native-screen, Fabric-adapter, and headless comparison.
+This deterministic image is a fresh 320 by 180 headless `ConfirmScreen` reconstruction using explicit Minecraft asset files.
+Generation does not start Minecraft or create a GPU context; native-screen, Fabric-adapter, and headless comparisons run in a separate [acceptance gate](docs/evidence/minecraft-26.2-parity.properties).
 
 ![Strata component showcase](docs/components/overview.png)
 

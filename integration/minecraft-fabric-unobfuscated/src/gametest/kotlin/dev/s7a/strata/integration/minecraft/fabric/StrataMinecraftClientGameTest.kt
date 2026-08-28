@@ -55,6 +55,7 @@ import net.minecraft.client.input.MouseButtonInfo
 import net.minecraft.client.input.PreeditEvent
 import net.minecraft.client.multiplayer.ServerData
 import net.minecraft.client.renderer.RenderPipelines
+import net.minecraft.locale.Language
 import net.minecraft.network.chat.Component
 import net.minecraft.resources.Identifier
 import net.minecraft.world.entity.player.Inventory
@@ -95,10 +96,22 @@ public class StrataMinecraftClientGameTest : FabricClientGameTest {
             FailableConsumer<Minecraft, RuntimeException> { minecraft ->
                 minecraft.options.guiScale().set(1)
                 minecraft.options.forceUnicodeFont().set(false)
+                minecraft.options.japaneseGlyphVariants().set(false)
                 minecraft.options.showAutosaveIndicator().set(false)
                 require(ParityLocale.parse(minecraft.options.languageCode) === ParityLocale.EnglishUnitedStates) {
                     "Minecraft parity requires the en_us language profile."
                 }
+                require(
+                    minecraft.options
+                        .forceUnicodeFont()
+                        .get()
+                        .not() &&
+                        minecraft.options
+                            .japaneseGlyphVariants()
+                            .get()
+                            .not() &&
+                        Language.getInstance().isDefaultRightToLeft.not(),
+                ) { "Minecraft parity requires the explicit non-uniform, non-Japanese-variant, left-to-right font options." }
                 minecraft.resizeGui()
             },
         )
@@ -605,6 +618,7 @@ public class StrataMinecraftClientGameTest : FabricClientGameTest {
         viewport: IntSize,
         pointerPosition: IntOffset = pointer,
         frameTime: FrameTime? = null,
+        scale: Int = 1,
     ): HeadlessImage {
         val host = createMinecraftUiHost(definition, profile, LwjglMinecraftFontBackendFactory)
         host.attach()
@@ -617,7 +631,7 @@ public class StrataMinecraftClientGameTest : FabricClientGameTest {
                     IntRect(0, 0, frame.size.width, frame.size.height),
                     ArgbColor(opaqueBlack),
                 )
-            rasterizeHeadless(listOf(framebufferClear) + frame.drawCommands, frame.size)
+            rasterizeHeadless(listOf(framebufferClear) + frame.drawCommands, frame.size, scale)
         } finally {
             host.close()
         }
@@ -695,7 +709,10 @@ public class StrataMinecraftClientGameTest : FabricClientGameTest {
                                     ),
                                 ),
                             ),
-                        playerSkin = PlayerSkinSource.Pixels(loadCurrentMinecraftPlayerSkin()),
+                        playerSkin =
+                            PlayerSkinSource.Pixels(
+                                loadMinecraftUiImage(ResourceId("minecraft", "textures/entity/player/slim/efe.png")),
+                            ),
                     )
                 },
             )
@@ -704,11 +721,18 @@ public class StrataMinecraftClientGameTest : FabricClientGameTest {
         val frames = LinkedHashMap<ComponentShowcase, ComponentShowcaseFrame>()
         for (showcase in ComponentShowcase.entries) {
             closeFabricScreen(context)
-            context.input.resizeWindow(showcase.viewport.width, showcase.viewport.height)
+            val physicalSize = showcase.physicalSize
+            context.input.resizeWindow(physicalSize.width, physicalSize.height)
             context.runOnClient(
-                FailableConsumer<Minecraft, RuntimeException> { minecraft -> minecraft.resizeGui() },
+                FailableConsumer<Minecraft, RuntimeException> { minecraft ->
+                    minecraft.options.guiScale().set(showcase.scale)
+                    minecraft.resizeGui()
+                    // Minimal component viewports are smaller than the options menu's 320 by 240 scale-selection floor.
+                    minecraft.window.setGuiScale(showcase.scale)
+                    check(minecraft.window.guiScaledWidth == showcase.viewport.width && minecraft.window.guiScaledHeight == showcase.viewport.height)
+                },
             )
-            context.input.setCursorPos(showcase.pointer.x.toDouble(), showcase.pointer.y.toDouble())
+            context.input.setCursorPos(showcase.pointer.x.toDouble() * showcase.scale, showcase.pointer.y.toDouble() * showcase.scale)
             val headless =
                 context.computeOnClient(
                     FailableFunction<Minecraft, HeadlessImage, RuntimeException> {
@@ -717,6 +741,8 @@ public class StrataMinecraftClientGameTest : FabricClientGameTest {
                             createComponentShowcaseScreenDefinition(showcase, assets),
                             showcase.viewport,
                             showcase.pointer,
+                            frameTime = FrameTime(0L),
+                            scale = showcase.scale,
                         )
                     },
                 )
@@ -732,18 +758,24 @@ public class StrataMinecraftClientGameTest : FabricClientGameTest {
                 )
             }
             context.waitForScreen(FabricMinecraftScreen::class.java)
-            context.input.setCursorPos(showcase.pointer.x.toDouble(), showcase.pointer.y.toDouble())
+            context.input.setCursorPos(showcase.pointer.x.toDouble() * showcase.scale, showcase.pointer.y.toDouble() * showcase.scale)
             context.waitTicks(2)
+            context.runOnClient(
+                FailableConsumer<Minecraft, RuntimeException> { minecraft ->
+                    check(minecraft.window.guiScale == showcase.scale) { "The component capture lost its actual GUI density." }
+                    check(minecraft.window.guiScaledWidth == showcase.viewport.width && minecraft.window.guiScaledHeight == showcase.viewport.height)
+                },
+            )
             val fabricPath =
                 context.takeScreenshot(
                     TestScreenshotOptions
                         .of("strata-component-${showcase.slug}-fabric")
                         .disableCounterPrefix()
-                        .withSize(showcase.viewport.width, showcase.viewport.height)
+                        .withSize(physicalSize.width, physicalSize.height)
                         .withDestinationDir(output),
                 )
             NativeImage.read(fabricPath.inputStream()).use { fabric ->
-                requireImageSize(fabric, showcase.viewport)
+                requireImageSize(fabric, physicalSize)
                 if (showcase.animationFrameTimes.isEmpty()) {
                     requireExactPixels(fabric, headless)
                 } else {
@@ -758,6 +790,7 @@ public class StrataMinecraftClientGameTest : FabricClientGameTest {
                                             showcase.viewport,
                                             showcase.pointer,
                                             frameTime,
+                                            showcase.scale,
                                         )
                                     },
                                 )
@@ -885,6 +918,11 @@ public class StrataMinecraftClientGameTest : FabricClientGameTest {
                     append(showcase.slug)
                     append(".viewport.height=")
                     append(showcase.viewport.height)
+                    append('\n')
+                    append("component.")
+                    append(showcase.slug)
+                    append(".gui.scale=")
+                    append(showcase.scale)
                     append('\n')
                     append("component.")
                     append(showcase.slug)
@@ -1415,15 +1453,16 @@ public class StrataMinecraftClientGameTest : FabricClientGameTest {
         val viewport: IntSize,
         val pointer: IntOffset = IntOffset.Zero,
         val animationFrameTimes: List<FrameTime> = emptyList(),
+        val scale: Int = 1,
     ) {
         Row("row", IntSize(136, 64)),
         Column("column", IntSize(120, 64)),
         Stack("stack", IntSize(64, 64)),
         Grid("grid", IntSize(64, 64)),
         Spacer("spacer", IntSize(160, 64)),
-        Text("text", IntSize(192, 88)),
-        TextField("text-field", IntSize(216, 64)),
-        TextArea("text-area", IntSize(226, 80)),
+        Text("text", IntSize(192, 88), scale = 2),
+        TextField("text-field", IntSize(216, 64), scale = 2),
+        TextArea("text-area", IntSize(226, 80), scale = 2),
         Button("button", IntSize(166, 64)),
         Checkbox("checkbox", IntSize(166, 36)),
         CycleButton("cycle-button", IntSize(166, 36)),
@@ -1447,6 +1486,9 @@ public class StrataMinecraftClientGameTest : FabricClientGameTest {
                 ),
         ),
         ProgressBar("progress-bar", IntSize(116, 28)),
+        ;
+
+        val physicalSize: IntSize = IntSize(Math.multiplyExact(viewport.width, scale), Math.multiplyExact(viewport.height, scale))
     }
 
     private enum class ParityScreen(

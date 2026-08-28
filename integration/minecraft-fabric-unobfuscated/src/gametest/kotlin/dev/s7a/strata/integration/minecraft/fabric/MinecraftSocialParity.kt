@@ -101,10 +101,16 @@ internal object MinecraftSocialParity {
     private fun loadAssets(context: ClientGameTestContext): SocialAssets =
         context.computeOnClient(
             FailableFunction<Minecraft, SocialAssets, RuntimeException> {
+                val skin = loadCurrentMinecraftPlayerSkin()
+                val fixtureSkin = loadMinecraftUiImage(ResourceId("minecraft", "textures/entity/player/slim/efe.png"))
+                require(it.gameProfile.name == "Player0") { "The Social showcase requires the fixed Player0 test identity." }
+                require(skin.size == fixtureSkin.size && skin.copyArgb().contentEquals(fixtureSkin.copyArgb())) {
+                    "The Social showcase requires the fixed original Efe skin used by independent headless generation."
+                }
                 SocialAssets(
                     loadMinecraftUiImage(ResourceId("minecraft", "textures/gui/sprites/social_interactions/background.png")),
                     loadMinecraftUiImage(ResourceId("minecraft", "textures/gui/sprites/icon/search.png")),
-                    loadCurrentMinecraftPlayerSkin(),
+                    skin,
                     it.gameProfile.name,
                 )
             },

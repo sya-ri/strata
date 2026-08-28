@@ -23,11 +23,15 @@ internal object ShowcaseMarkdown {
 # Minecraft component showcase
 
 Each component image is the complete frame of the dedicated minimal `ScreenDefinition` shown in its compiled example, containing the featured primitive and only the parent layout needed to demonstrate its responsibility.
-One loaded Minecraft 26.2 Fabric GameTest renders that definition independently through the Fabric adapter and headless runtime, requires exact ARGB equality, and publishes the entire resulting frame without cropping a larger showcase screen.
-Separate native full-screen parity scenes for `ConfirmScreen`, `DirectJoinServerScreen`, `ContainerScreen`, Social Interactions, and `ObjectSelectionList`, plus complete test Mod screens, remain acceptance evidence for real assets, fonts, textures, placement, and draw order.
+The documentation task freshly renders these definitions with the headless runtime and explicit Minecraft asset files without starting Minecraft or creating a GPU context, and publishes the entire resulting frame without cropping a larger showcase screen.
+Separate native full-screen parity scenes for `ConfirmScreen`, `DirectJoinServerScreen`, `ContainerScreen`, Social Interactions, and `ObjectSelectionList`, plus complete test Mod screens, remain independent acceptance evidence for real assets, fonts, textures, placement, and draw order.
+Animated examples publish the canonical frame at time zero; their native capture must exactly match a complete supported animation phase, which need not be the stored phase.
+The synchronized inventory image is the explicit exception: generation verifies a previously captured native image against its image and current compiled-source hashes instead of emulating a loaded server.
 The menu and generic-container images are active background modifiers on layout components rather than logical component entries.
 
-[Open the machine-readable parity receipt](components/minecraft-26.2-parity.properties)
+[Open the deterministic headless render receipt](components/headless-render.properties)
+
+[Open the independent native parity receipt](evidence/minecraft-26.2-parity.properties)
 
 ![Overview headless showcase](components/overview.png)
 
@@ -76,7 +80,8 @@ ${screens.joinToString("\n\n") { screen -> screen.section.trimEnd('\n') }}
 
 ## Minecraft component showcase
 
-This deterministic image is the actual 320 by 180 `ConfirmScreen` reconstruction from the frame that passed exact native-screen, Fabric-adapter, and headless comparison.
+This deterministic image is a fresh 320 by 180 headless `ConfirmScreen` reconstruction using explicit Minecraft asset files.
+Generation does not start Minecraft or create a GPU context; native-screen, Fabric-adapter, and headless comparisons run in a separate [acceptance gate](docs/evidence/minecraft-26.2-parity.properties).
 
 ![Strata component showcase](docs/components/overview.png)
 
@@ -101,8 +106,9 @@ ${overview.source}
         spec: ComponentScenario,
         source: String,
     ): String {
-        val paritySentence =
-            "This ${spec.viewport.width} by ${spec.viewport.height} image is the complete frame of the compiled dedicated `ScreenDefinition`, after exact Fabric/headless ARGB comparison recorded in [the verification receipt](components/minecraft-26.2-parity.properties); it is not cropped from a larger screen."
+        val physical = spec.viewportMetadata.physicalSize
+        val renderSentence =
+            "This ${physical.width} by ${physical.height} PNG is the complete frame of the compiled dedicated `ScreenDefinition`, with a ${spec.viewport.width} by ${spec.viewport.height} logical viewport at GUI scale ${spec.scale}. Headless rendering samples the assets at this physical density; the image is not upscaled from a lower-resolution raster or cropped from a larger screen. Its source, asset, viewport, and image hashes are recorded in [the headless render receipt](components/headless-render.properties)."
         return markdown(
             """<a id="${spec.component.slug}"></a>
 
@@ -110,7 +116,7 @@ ${overview.source}
 
 ${ComponentDocumentationCatalog.summary(spec.component)}
 
-$paritySentence
+$renderSentence
 
 ![${spec.component.apiMethodName} headless showcase](components/${spec.component.slug}.png)
 

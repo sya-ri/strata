@@ -1,19 +1,22 @@
 package dev.s7a.strata.integration.docs
 
+import dev.s7a.strata.geometry.IntSize
 import java.nio.file.Path
 
 /**
- * Runs typed showcase catalog validation, source extraction, and loaded-game evidence verification.
+ * Runs typed catalog validation, source extraction, and fresh CPU rendering without starting Minecraft or a GPU.
  *
- * No source synchronization occurs until this pipeline returns output backed by a verified receipt and detached image snapshots.
+ * Only the server-backed inventory frame comes from explicit native evidence, whose image and current source hashes are verified before rendering.
+ * No source synchronization occurs until this pipeline returns detached images and a deterministic input receipt.
  */
 internal object ShowcasePipeline {
     /**
-     * Preflights every overview and component scenario against exact Minecraft parity evidence.
+     * Preflights sources and explicit inputs, then renders each portable scenario from the selected asset snapshot.
      *
-     * @param launch validated repository, build, staging, and Minecraft component class paths.
+     * @param launch validated repository, staging, read-only asset/evidence inputs, and component class paths.
      * @return verified output ready for the synchronizer.
      * @throws IllegalArgumentException when catalog, inventory, source, receipt, image, or metadata validation fails.
+     * @throws ArithmeticException when a physical viewport extent cannot be represented.
      * @throws IllegalStateException when Minecraft component class loading or reflection fails.
      * @throws java.io.IOException when source or evidence reading fails.
      */
@@ -26,21 +29,32 @@ internal object ShowcasePipeline {
         require(discovered == expected) {
             "Minecraft component inventory mismatch. Expected $expected but found $discovered."
         }
-        val evidence = ShowcaseParityEvidence.load(launch.parityRoot)
         val overviewScenario = ShowcaseScenarioCatalog.overview
         val overviewRegion = ShowcaseSources.extract(overviewScenario.source, normalizedProject)
-        val overview = renderOverview(overviewScenario, overviewRegion, evidence)
+        val componentRegions = ShowcaseScenarioCatalog.components.associate { scenario -> scenario.component to ShowcaseSources.extract(scenario.source, normalizedProject) }
+        val screenRegions = ShowcaseScenarioCatalog.screens.associate { scenario -> scenario.screen to ShowcaseSources.extract(scenario.source, normalizedProject) }
+        val inputs = launch.inputs
+        val inventory =
+            ShowcaseInventoryEvidence.load(inputs.nativeInventoryPng, inputs.nativeInventoryReceipt, screenRegions.getValue(DocumentedScreen.SynchronizedInventory).source)
+        val assets =
+            ShowcaseMinecraftAssets(
+                inputs.clientJar,
+                inputs.assetIndex,
+                inputs.assetObjects,
+                inputs.versionManifest,
+                normalizedProject.resolve("integration/minecraft-fabric-unobfuscated/src/gametest/resources"),
+            )
+        val frames = LinkedHashMap<String, ShowcaseFrameReceipt>()
+        val overview = renderOverview(overviewScenario, overviewRegion, assets, frames)
         val sections =
             ShowcaseScenarioCatalog.components.map { scenario ->
-                val region = ShowcaseSources.extract(scenario.source, normalizedProject)
-                renderComponent(scenario, region, evidence)
+                renderComponent(scenario, componentRegions.getValue(scenario.component), assets, frames)
             }
         val screens =
             ShowcaseScenarioCatalog.screens.map { scenario ->
-                val region = ShowcaseSources.extract(scenario.source, normalizedProject)
-                renderScreen(scenario, region, evidence)
+                renderScreen(scenario, screenRegions.getValue(scenario.screen), assets, inventory, frames)
             }
-        return ShowcaseOutput(overview, sections, screens, normalizedStaging, evidence.receipt())
+        return ShowcaseOutput(overview, sections, screens, normalizedStaging, ShowcaseHeadlessReceipt.create(assets.inputHashes(), frames, inventory.proofSha256))
     }
 
     /**
@@ -68,24 +82,29 @@ internal object ShowcasePipeline {
     private fun renderOverview(
         scenario: OverviewScenario,
         region: SourceRegion,
-        evidence: ShowcaseParityEvidence,
+        assets: ShowcaseMinecraftAssets,
+        frames: MutableMap<String, ShowcaseFrameReceipt>,
     ): ShowcaseOutput.Overview {
         require(scenario.viewport.width == 320 && scenario.viewport.height == 180 && scenario.scale == 1) {
-            "Overview frame metadata differs from the parity contract."
+            "Overview frame metadata differs from the headless rendering contract."
         }
-        return ShowcaseOutput.Overview(region.source, ShowcaseMarkdown.forest(scenario.trees), evidence.overviewPng())
+        val png = ShowcaseHeadlessRenderer.overview(assets)
+        frames["overview"] = ShowcaseFrameReceipt(ShowcaseViewport(scenario.viewport, scenario.scale), region.source, png)
+        return ShowcaseOutput.Overview(region.source, ShowcaseMarkdown.forest(scenario.trees), png)
     }
 
     private fun renderComponent(
         scenario: ComponentScenario,
         region: SourceRegion,
-        evidence: ShowcaseParityEvidence,
+        assets: ShowcaseMinecraftAssets,
+        frames: MutableMap<String, ShowcaseFrameReceipt>,
     ): ShowcaseOutput.Section {
-        verifyComponentViewport(scenario, evidence)
+        val png = ShowcaseHeadlessRenderer.component(scenario, assets)
+        frames["component.${scenario.component.slug}"] = ShowcaseFrameReceipt(scenario.viewportMetadata, region.source, png)
         return ShowcaseOutput.Section(
             scenario.component,
             ShowcaseMarkdown.section(scenario, region.source),
-            evidence.componentPng(scenario.component),
+            png,
         )
     }
 
@@ -101,23 +120,38 @@ internal object ShowcasePipeline {
         evidence: ShowcaseParityEvidence,
     ) {
         val recordedViewport = evidence.componentViewport(scenario.component)
-        require(scenario.viewport == recordedViewport && scenario.scale == 1) {
-            "${scenario.component.apiMethodName} full-frame metadata differs from the parity receipt: catalog=${scenario.viewport}, receipt=$recordedViewport, scale=${scenario.scale}."
+        require(scenario.viewport == recordedViewport.size && scenario.scale == recordedViewport.scale) {
+            "${scenario.component.apiMethodName} full-frame metadata differs from the parity receipt: catalog=${scenario.viewport} at scale ${scenario.scale}, receipt=${recordedViewport.size} at scale ${recordedViewport.scale}."
         }
     }
 
     private fun renderScreen(
         scenario: ScreenScenario,
         region: SourceRegion,
-        evidence: ShowcaseParityEvidence,
+        assets: ShowcaseMinecraftAssets,
+        inventory: ShowcaseInventoryEvidence,
+        frames: MutableMap<String, ShowcaseFrameReceipt>,
     ): ShowcaseOutput.Screen {
         require(scenario.scale == 1) {
-            "${scenario.screen.title} frame metadata differs from the parity contract."
+            "${scenario.screen.title} frame metadata differs from the headless rendering contract."
         }
+        val png: ByteArray
+        val frame: ShowcaseFrameReceipt
+        if (scenario.screen == DocumentedScreen.SynchronizedInventory) {
+            png = inventory.png()
+            frame = inventory.frame
+            require(frame.viewport.size == IntSize(scenario.viewportWidth, scenario.viewportHeight) && frame.viewport.scale == scenario.scale) {
+                "Native inventory evidence differs from the screen catalog viewport."
+            }
+        } else {
+            png = ShowcaseHeadlessRenderer.screen(scenario, assets)
+            frame = ShowcaseFrameReceipt(ShowcaseViewport(IntSize(scenario.viewportWidth, scenario.viewportHeight), scenario.scale), region.source, png)
+        }
+        frames["screen.${scenario.screen.slug}"] = frame
         return ShowcaseOutput.Screen(
             scenario.screen,
             ShowcaseScreenMarkdown.section(scenario, region.source),
-            evidence.screenPng(scenario.screen),
+            png,
         )
     }
 }

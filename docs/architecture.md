@@ -152,11 +152,17 @@ The exact built-in layout measurement, weight, arrangement, alignment, and overf
 The headless adapter's fixed-viewport, clipping, source-over, scaling, PNG, and immutable semantics contracts are exercised by its module tests.
 The loaded 26.2 client GameTest requires exact ARGB equality among deterministic native screens, their Fabric-adapter reconstructions, and common headless frames at each locked 320 by 180, 320 by 240, or 64 by 64 acceptance viewport.
 It covers `ConfirmScreen`, `DirectJoinServerScreen`, `ContainerScreen`, an actual `ObjectSelectionList`, `SocialInteractionsScreen`, native `PlayerFaceExtractor`, an integrated-server synchronized inventory, and custom industrial and progression Mod screens, then keeps those full-screen acceptance frames separate from the component showcase evidence.
-For every standard component, the loaded GameTest also evaluates a dedicated minimal `ScreenDefinition` independently through the Fabric and headless runtimes, requires exact full-frame ARGB equality, and writes that entire frame with its viewport and hashes below the build directory.
+For every standard component, the loaded GameTest also evaluates a dedicated minimal `ScreenDefinition` independently through the Fabric and headless runtimes, requires exact full-frame ARGB equality with a matching animation phase when the component animates, and writes the canonical headless frame at time zero with its logical viewport, GUI scale, and hashes below the build directory.
 The Social comparison composes the public primitives with the active social panel and search assets, a compact profile-colored TextField, and PlayerHead, then requires the complete 320 by 240 native, Fabric, and headless images to match exactly.
 The progression example keeps its purpose-specific graph downstream while composing active advancement textures through the general source-region Image API; the industrial screen similarly uses a replaceable Mod resource rather than a domain-specific standard component.
-The showcase generator accepts only receipt-matched dedicated component frames whose recorded viewports equal their catalog metadata, complete screens, and the corresponding compiled GameTest scenario sources before staging Markdown and PNG output.
-The checker reruns the parity prerequisite and compares that staging output with the combined `docs/components.md` document, the `docs/components` asset tree, and the anchored root README region without writing source files.
+The showcase generator separately renders the compiled API-only component and screen examples through the common headless runtime using four explicit read-only asset inputs: the client archive, asset index, indexed objects directory, and version manifest.
+Default Gradle provisioning supplies those raw resources without launching Minecraft; the [showcase build properties](build.md) also allow callers to supply all four paths without an integration-project provisioning dependency.
+Generation needs no game process or GPU context and does not read loaded-game parity output implicitly.
+Its only native image input is the explicitly supplied inventory PNG and receipt under `docs/evidence`, checked against the current compiled example source and image hashes because that screen requires a live server-backed binding.
+The generator records deterministic source and asset hashes, logical viewports, GUI scales, physical PNG dimensions, and image origins in `docs/components/headless-render.properties` before staging Markdown and PNG output.
+`Text`, `TextField`, and `TextArea` render at GUI scale 2 with unchanged logical viewports; the other components, overview, and complete screens remain at scale 1, and no image is enlarged after rendering.
+The headless freshness checker compares that staging output with the combined `docs/components.md` document, the `docs/components` asset tree, and the anchored root README region without writing source files.
+The separate native parity checker compares fresh loaded-game frames and their viewport and density metadata with fresh headless staging; its evidence belongs under `docs/evidence`, outside the generator-owned component assets.
 
 ## Retained operation contract
 
@@ -209,6 +215,7 @@ The full modifier contract and external implementation guidance are defined in [
 The test suite exercises `api`, `runtime:core`, `runtime:headless`, `runtime:minecraft`, `runtime:minecraft-fonts-lwjgl`, and the showcase compiler with ordinary JVM tests.
 Integration tests belong at the narrowest module boundary that needs them.
 Fabric GameTests are reserved for behavior that genuinely requires Minecraft's loaded game environment.
-The 26.2 client GameTest is the release and documentation gate for native assets, widgets, placement, logical draw order, and exact final pixels in the existing fixed showcase scenes.
+The 26.2 client GameTest is the independent release and documentation acceptance gate for native assets, widgets, placement, logical draw order, and exact final pixels in the existing fixed showcase scenes.
+The module check requires this native gate, while the targeted headless showcase generation and freshness tasks run without it.
 Separate resource-font gates compare Minecraft 1.20, 1.20.5, and 26.2 with independent CPU renders at GUI scales 1, 2, and 3.
 Those gates require exact native metrics, glyph texels, and layout; final native image differences require the independent GPU evidence described in [Font acceptance evidence](font-resources.md#acceptance-evidence).

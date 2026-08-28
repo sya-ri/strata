@@ -22,12 +22,15 @@ The supplied Fabric and headless backends handle both cases.
 GUI scale affects readability, especially for characters with many strokes.
 In the Minecraft 26.2 default-font comparison, a 16-by-16 CJK Unihex glyph occupies eight logical pixels in each direction: eight physical pixels at GUI scale 1, sixteen at scale 2, and twenty-four at scale 3.
 Scale 1 therefore loses fine strokes even when the Unicode text and selected Japanese glyph are correct.
-The component showcase preserves its original scale-1 pixels rather than smoothing or replacing the game font.
+The Text, TextField, and TextArea component images are rendered at scale 2 so the source glyph's fine strokes remain visible.
+Their logical viewports are unchanged; the headless renderer samples the original font resources directly into the larger physical image.
+The documentation generator does not start Minecraft or require a graphics context.
 
 Use a larger Minecraft GUI scale or headless output scale when those strokes need to remain readable.
 Both backends sample the source glyph at the final output density; enlarging an already rendered scale-1 image cannot recover the omitted detail.
 The independent default-font gate compares Japanese and Korean text through native Minecraft, Fabric Text, and headless Text at scales 1, 2, and 3 with exact ARGB equality.
 See [font verification](font-resources.md#acceptance-evidence) for the evidence scope and resource-dependent limitations.
+The separate Minecraft showcase check compares those headless frames with the Fabric renderer; generation and native acceptance are independent tasks.
 
 ## Selecting a font
 

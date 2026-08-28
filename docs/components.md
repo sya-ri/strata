@@ -3,11 +3,15 @@
 # Minecraft component showcase
 
 Each component image is the complete frame of the dedicated minimal `ScreenDefinition` shown in its compiled example, containing the featured primitive and only the parent layout needed to demonstrate its responsibility.
-One loaded Minecraft 26.2 Fabric GameTest renders that definition independently through the Fabric adapter and headless runtime, requires exact ARGB equality, and publishes the entire resulting frame without cropping a larger showcase screen.
-Separate native full-screen parity scenes for `ConfirmScreen`, `DirectJoinServerScreen`, `ContainerScreen`, Social Interactions, and `ObjectSelectionList`, plus complete test Mod screens, remain acceptance evidence for real assets, fonts, textures, placement, and draw order.
+The documentation task freshly renders these definitions with the headless runtime and explicit Minecraft asset files without starting Minecraft or creating a GPU context, and publishes the entire resulting frame without cropping a larger showcase screen.
+Separate native full-screen parity scenes for `ConfirmScreen`, `DirectJoinServerScreen`, `ContainerScreen`, Social Interactions, and `ObjectSelectionList`, plus complete test Mod screens, remain independent acceptance evidence for real assets, fonts, textures, placement, and draw order.
+Animated examples publish the canonical frame at time zero; their native capture must exactly match a complete supported animation phase, which need not be the stored phase.
+The synchronized inventory image is the explicit exception: generation verifies a previously captured native image against its image and current compiled-source hashes instead of emulating a loaded server.
 The menu and generic-container images are active background modifiers on layout components rather than logical component entries.
 
-[Open the machine-readable parity receipt](components/minecraft-26.2-parity.properties)
+[Open the deterministic headless render receipt](components/headless-render.properties)
+
+[Open the independent native parity receipt](evidence/minecraft-26.2-parity.properties)
 
 ![Overview headless showcase](components/overview.png)
 
@@ -112,7 +116,7 @@ The tree shows Minecraft components in logical draw order; platform-neutral layo
 
 Row places an ordered sibling sequence on one horizontal main axis, with typed arrangement, spacing, default vertical alignment, and direct-child overrides.
 
-This 136 by 64 image is the complete frame of the compiled dedicated `ScreenDefinition`, after exact Fabric/headless ARGB comparison recorded in [the verification receipt](components/minecraft-26.2-parity.properties); it is not cropped from a larger screen.
+This 136 by 64 PNG is the complete frame of the compiled dedicated `ScreenDefinition`, with a 136 by 64 logical viewport at GUI scale 1. Headless rendering samples the assets at this physical density; the image is not upscaled from a lower-resolution raster or cropped from a larger screen. Its source, asset, viewport, and image hashes are recorded in [the headless render receipt](components/headless-render.properties).
 
 ![Row headless showcase](components/row.png)
 
@@ -177,7 +181,7 @@ The tree mirrors the complete dedicated definition, including the featured compo
 
 Column places an ordered sibling sequence on one vertical main axis, with typed arrangement, spacing, default horizontal alignment, and direct-child overrides.
 
-This 120 by 64 image is the complete frame of the compiled dedicated `ScreenDefinition`, after exact Fabric/headless ARGB comparison recorded in [the verification receipt](components/minecraft-26.2-parity.properties); it is not cropped from a larger screen.
+This 120 by 64 PNG is the complete frame of the compiled dedicated `ScreenDefinition`, with a 120 by 64 logical viewport at GUI scale 1. Headless rendering samples the assets at this physical density; the image is not upscaled from a lower-resolution raster or cropped from a larger screen. Its source, asset, viewport, and image hashes are recorded in [the headless render receipt](components/headless-render.properties).
 
 ![Column headless showcase](components/column.png)
 
@@ -242,7 +246,7 @@ The tree mirrors the complete dedicated definition, including the featured compo
 
 Stack is the explicit overlay primitive: children share one content rectangle, receive two-axis alignment, and paint in declaration order. It is not a generic div-like container.
 
-This 64 by 64 image is the complete frame of the compiled dedicated `ScreenDefinition`, after exact Fabric/headless ARGB comparison recorded in [the verification receipt](components/minecraft-26.2-parity.properties); it is not cropped from a larger screen.
+This 64 by 64 PNG is the complete frame of the compiled dedicated `ScreenDefinition`, with a 64 by 64 logical viewport at GUI scale 1. Headless rendering samples the assets at this physical density; the image is not upscaled from a lower-resolution raster or cropped from a larger screen. Its source, asset, viewport, and image hashes are recorded in [the headless render receipt](components/headless-render.properties).
 
 ![Stack headless showcase](components/stack.png)
 
@@ -311,7 +315,7 @@ The tree mirrors the complete dedicated definition, including the featured compo
 
 Grid assigns children row-major to a fixed column count, measures each column and row from its largest member, and supports an incomplete final row without placeholders.
 
-This 64 by 64 image is the complete frame of the compiled dedicated `ScreenDefinition`, after exact Fabric/headless ARGB comparison recorded in [the verification receipt](components/minecraft-26.2-parity.properties); it is not cropped from a larger screen.
+This 64 by 64 PNG is the complete frame of the compiled dedicated `ScreenDefinition`, with a 64 by 64 logical viewport at GUI scale 1. Headless rendering samples the assets at this physical density; the image is not upscaled from a lower-resolution raster or cropped from a larger screen. Its source, asset, viewport, and image hashes are recorded in [the headless render receipt](components/headless-render.properties).
 
 ![Grid headless showcase](components/grid.png)
 
@@ -382,7 +386,7 @@ The tree mirrors the complete dedicated definition, including the featured compo
 
 Spacer is an empty measurable primitive for genuine visual separators, connectors, and weighted empty regions; it carries no screen-specific meaning.
 
-This 160 by 64 image is the complete frame of the compiled dedicated `ScreenDefinition`, after exact Fabric/headless ARGB comparison recorded in [the verification receipt](components/minecraft-26.2-parity.properties); it is not cropped from a larger screen.
+This 160 by 64 PNG is the complete frame of the compiled dedicated `ScreenDefinition`, with a 160 by 64 logical viewport at GUI scale 1. Headless rendering samples the assets at this physical density; the image is not upscaled from a lower-resolution raster or cropped from a larger screen. Its source, asset, viewport, and image hashes are recorded in [the headless render receipt](components/headless-render.properties).
 
 ![Spacer headless showcase](components/spacer.png)
 
@@ -449,7 +453,7 @@ The tree mirrors the complete dedicated definition, including the featured compo
 
 Text renders Unicode literals and composed text using the active profile's font resources, glyph advances, shadow layer, foreground layer, and baseline. Explicit `TextLayout.Multiline` adds hard line breaks, wrapping, line limits, and clip or ellipsis overflow; the existing overload remains single-line. Glyph availability follows the selected resource pack.
 
-This 192 by 88 image is the complete frame of the compiled dedicated `ScreenDefinition`, after exact Fabric/headless ARGB comparison recorded in [the verification receipt](components/minecraft-26.2-parity.properties); it is not cropped from a larger screen.
+This 384 by 176 PNG is the complete frame of the compiled dedicated `ScreenDefinition`, with a 192 by 88 logical viewport at GUI scale 2. Headless rendering samples the assets at this physical density; the image is not upscaled from a lower-resolution raster or cropped from a larger screen. Its source, asset, viewport, and image hashes are recorded in [the headless render receipt](components/headless-render.properties).
 
 ![Text headless showcase](components/text.png)
 
@@ -521,7 +525,7 @@ The tree mirrors the complete dedicated definition, including the featured compo
 
 TextField reproduces the 200 by 20 Minecraft EditBox sprites, text origin, glyph colors, owner-thread value state, and focus, with Unicode scalar editing and inline IME composition.
 
-This 216 by 64 image is the complete frame of the compiled dedicated `ScreenDefinition`, after exact Fabric/headless ARGB comparison recorded in [the verification receipt](components/minecraft-26.2-parity.properties); it is not cropped from a larger screen.
+This 432 by 128 PNG is the complete frame of the compiled dedicated `ScreenDefinition`, with a 216 by 64 logical viewport at GUI scale 2. Headless rendering samples the assets at this physical density; the image is not upscaled from a lower-resolution raster or cropped from a larger screen. Its source, asset, viewport, and image hashes are recorded in [the headless render receipt](components/headless-render.properties).
 
 ![TextField headless showcase](components/text-field.png)
 
@@ -588,7 +592,7 @@ The tree mirrors the complete dedicated definition, including the featured compo
 
 TextArea edits one multiline value inside an explicit viewport with Unicode scalar navigation, inline IME composition, and independent vertical scrolling. It serves both note editing and message drafts without encoding an application model.
 
-This 226 by 80 image is the complete frame of the compiled dedicated `ScreenDefinition`, after exact Fabric/headless ARGB comparison recorded in [the verification receipt](components/minecraft-26.2-parity.properties); it is not cropped from a larger screen.
+This 452 by 160 PNG is the complete frame of the compiled dedicated `ScreenDefinition`, with a 226 by 80 logical viewport at GUI scale 2. Headless rendering samples the assets at this physical density; the image is not upscaled from a lower-resolution raster or cropped from a larger screen. Its source, asset, viewport, and image hashes are recorded in [the headless render receipt](components/headless-render.properties).
 
 ![TextArea headless showcase](components/text-area.png)
 
@@ -670,7 +674,7 @@ The tree mirrors the complete dedicated definition, including the featured compo
 
 Button renders verified fixed-height Minecraft sprite and label states, including the native 150- and 200-pixel widths, while reusable input actions live in modifiers.
 
-This 166 by 64 image is the complete frame of the compiled dedicated `ScreenDefinition`, after exact Fabric/headless ARGB comparison recorded in [the verification receipt](components/minecraft-26.2-parity.properties); it is not cropped from a larger screen.
+This 166 by 64 PNG is the complete frame of the compiled dedicated `ScreenDefinition`, with a 166 by 64 logical viewport at GUI scale 1. Headless rendering samples the assets at this physical density; the image is not upscaled from a lower-resolution raster or cropped from a larger screen. Its source, asset, viewport, and image hashes are recorded in [the headless render receipt](components/headless-render.properties).
 
 ![Button headless showcase](components/button.png)
 
@@ -738,7 +742,7 @@ The tree mirrors the complete dedicated definition, including the featured compo
 
 Checkbox reproduces the verified 20-pixel Minecraft checkbox surface, label spacing, focused input, checked semantics, and caller-owned boolean state.
 
-This 166 by 36 image is the complete frame of the compiled dedicated `ScreenDefinition`, after exact Fabric/headless ARGB comparison recorded in [the verification receipt](components/minecraft-26.2-parity.properties); it is not cropped from a larger screen.
+This 166 by 36 PNG is the complete frame of the compiled dedicated `ScreenDefinition`, with a 166 by 36 logical viewport at GUI scale 1. Headless rendering samples the assets at this physical density; the image is not upscaled from a lower-resolution raster or cropped from a larger screen. Its source, asset, viewport, and image hashes are recorded in [the headless render receipt](components/headless-render.properties).
 
 ![Checkbox headless showcase](components/checkbox.png)
 
@@ -794,7 +798,7 @@ The tree mirrors the complete dedicated definition, including the featured compo
 
 CycleButton reuses the verified button surface for a finite generic option sequence with forward, backward, wheel, and keyboard navigation.
 
-This 166 by 36 image is the complete frame of the compiled dedicated `ScreenDefinition`, after exact Fabric/headless ARGB comparison recorded in [the verification receipt](components/minecraft-26.2-parity.properties); it is not cropped from a larger screen.
+This 166 by 36 PNG is the complete frame of the compiled dedicated `ScreenDefinition`, with a 166 by 36 logical viewport at GUI scale 1. Headless rendering samples the assets at this physical density; the image is not upscaled from a lower-resolution raster or cropped from a larger screen. Its source, asset, viewport, and image hashes are recorded in [the headless render receipt](components/headless-render.properties).
 
 ![CycleButton headless showcase](components/cycle-button.png)
 
@@ -860,7 +864,7 @@ The tree mirrors the complete dedicated definition, including the featured compo
 
 Slider reproduces Minecraft's profile-backed track and handle while normalizing finite numeric ranges and optional discrete steps in caller-owned state.
 
-This 166 by 36 image is the complete frame of the compiled dedicated `ScreenDefinition`, after exact Fabric/headless ARGB comparison recorded in [the verification receipt](components/minecraft-26.2-parity.properties); it is not cropped from a larger screen.
+This 166 by 36 PNG is the complete frame of the compiled dedicated `ScreenDefinition`, with a 166 by 36 logical viewport at GUI scale 1. Headless rendering samples the assets at this physical density; the image is not upscaled from a lower-resolution raster or cropped from a larger screen. Its source, asset, viewport, and image hashes are recorded in [the headless render receipt](components/headless-render.properties).
 
 ![Slider headless showcase](components/slider.png)
 
@@ -916,7 +920,7 @@ The tree mirrors the complete dedicated definition, including the featured compo
 
 Tab combines the verified button surface with external selection semantics and a reusable underline or caller-defined selected indicator, without encoding a particular screen's tab model.
 
-This 160 by 64 image is the complete frame of the compiled dedicated `ScreenDefinition`, after exact Fabric/headless ARGB comparison recorded in [the verification receipt](components/minecraft-26.2-parity.properties); it is not cropped from a larger screen.
+This 160 by 64 PNG is the complete frame of the compiled dedicated `ScreenDefinition`, with a 160 by 64 logical viewport at GUI scale 1. Headless rendering samples the assets at this physical density; the image is not upscaled from a lower-resolution raster or cropped from a larger screen. Its source, asset, viewport, and image hashes are recorded in [the headless render receipt](components/headless-render.properties).
 
 ![Tab headless showcase](components/tab.png)
 
@@ -994,7 +998,7 @@ The tree mirrors the complete dedicated definition, including the featured compo
 
 ScrollArea reproduces the verified Minecraft menu-list background, clipping, separators, and wheel behavior without owning or positioning a scrollbar.
 
-This 120 by 48 image is the complete frame of the compiled dedicated `ScreenDefinition`, after exact Fabric/headless ARGB comparison recorded in [the verification receipt](components/minecraft-26.2-parity.properties); it is not cropped from a larger screen.
+This 120 by 48 PNG is the complete frame of the compiled dedicated `ScreenDefinition`, with a 120 by 48 logical viewport at GUI scale 1. Headless rendering samples the assets at this physical density; the image is not upscaled from a lower-resolution raster or cropped from a larger screen. Its source, asset, viewport, and image hashes are recorded in [the headless render receipt](components/headless-render.properties).
 
 ![ScrollArea headless showcase](components/scroll-area.png)
 
@@ -1057,7 +1061,7 @@ The tree mirrors the complete dedicated definition, including the featured compo
 
 Scrollbar reproduces the verified tiled track and proportional thumb while remaining an independently placed observer of shared scroll metrics.
 
-This 94 by 48 image is the complete frame of the compiled dedicated `ScreenDefinition`, after exact Fabric/headless ARGB comparison recorded in [the verification receipt](components/minecraft-26.2-parity.properties); it is not cropped from a larger screen.
+This 94 by 48 PNG is the complete frame of the compiled dedicated `ScreenDefinition`, with a 94 by 48 logical viewport at GUI scale 1. Headless rendering samples the assets at this physical density; the image is not upscaled from a lower-resolution raster or cropped from a larger screen. Its source, asset, viewport, and image hashes are recorded in [the headless render receipt](components/headless-render.properties).
 
 ![Scrollbar headless showcase](components/scrollbar.png)
 
@@ -1128,7 +1132,7 @@ The tree mirrors the complete dedicated definition, including the featured compo
 
 VirtualList retains only visible fixed-height rows plus bounded overscan, supports prepended and appended loading, and can jump by index or stable key.
 
-This 120 by 48 image is the complete frame of the compiled dedicated `ScreenDefinition`, after exact Fabric/headless ARGB comparison recorded in [the verification receipt](components/minecraft-26.2-parity.properties); it is not cropped from a larger screen.
+This 120 by 48 PNG is the complete frame of the compiled dedicated `ScreenDefinition`, with a 120 by 48 logical viewport at GUI scale 1. Headless rendering samples the assets at this physical density; the image is not upscaled from a lower-resolution raster or cropped from a larger screen. Its source, asset, viewport, and image hashes are recorded in [the headless render receipt](components/headless-render.properties).
 
 ![VirtualList headless showcase](components/virtual-list.png)
 
@@ -1188,7 +1192,7 @@ The tree mirrors the complete dedicated definition, including the featured compo
 
 SelectionList adds generic caller-owned selection and typed selection-change actions to VirtualList without encoding Social, inventory, advancement, or Mod-specific rows.
 
-This 120 by 48 image is the complete frame of the compiled dedicated `ScreenDefinition`, after exact Fabric/headless ARGB comparison recorded in [the verification receipt](components/minecraft-26.2-parity.properties); it is not cropped from a larger screen.
+This 120 by 48 PNG is the complete frame of the compiled dedicated `ScreenDefinition`, with a 120 by 48 logical viewport at GUI scale 1. Headless rendering samples the assets at this physical density; the image is not upscaled from a lower-resolution raster or cropped from a larger screen. Its source, asset, viewport, and image hashes are recorded in [the headless render receipt](components/headless-render.properties).
 
 ![SelectionList headless showcase](components/selection-list.png)
 
@@ -1249,7 +1253,7 @@ The tree mirrors the complete dedicated definition, including the featured compo
 
 Image maps one immutable resource-pack image to an exact logical size with deterministic nearest sampling; it is reusable for icons, portraits, diagrams, and Mod-owned panels.
 
-This 64 by 64 image is the complete frame of the compiled dedicated `ScreenDefinition`, after exact Fabric/headless ARGB comparison recorded in [the verification receipt](components/minecraft-26.2-parity.properties); it is not cropped from a larger screen.
+This 64 by 64 PNG is the complete frame of the compiled dedicated `ScreenDefinition`, with a 64 by 64 logical viewport at GUI scale 1. Headless rendering samples the assets at this physical density; the image is not upscaled from a lower-resolution raster or cropped from a larger screen. Its source, asset, viewport, and image hashes are recorded in [the headless render receipt](components/headless-render.properties).
 
 ![Image headless showcase](components/image.png)
 
@@ -1312,7 +1316,7 @@ The tree mirrors the complete dedicated definition, including the featured compo
 
 Slot reproduces the native 18 by 18 hit region and 24 by 24 back-item-front highlight order; its binding overload polls real ItemStack state and delegates interaction through Minecraft's active container menu.
 
-This 64 by 64 image is the complete frame of the compiled dedicated `ScreenDefinition`, after exact Fabric/headless ARGB comparison recorded in [the verification receipt](components/minecraft-26.2-parity.properties); it is not cropped from a larger screen.
+This 64 by 64 PNG is the complete frame of the compiled dedicated `ScreenDefinition`, with a 64 by 64 logical viewport at GUI scale 1. Headless rendering samples the assets at this physical density; the image is not upscaled from a lower-resolution raster or cropped from a larger screen. Its source, asset, viewport, and image hashes are recorded in [the headless render receipt](components/headless-render.properties).
 
 ![Slot headless showcase](components/slot.png)
 
@@ -1374,7 +1378,7 @@ The tree mirrors the complete dedicated definition, including the featured compo
 
 PlayerHead reproduces Minecraft 26.2 face-then-hat rendering from a 64 by 64 skin; its default 24 by 24 extent matches Social Interactions while remaining reusable in lists, profiles, scoreboards, and Mod screens.
 
-This 64 by 64 image is the complete frame of the compiled dedicated `ScreenDefinition`, after exact Fabric/headless ARGB comparison recorded in [the verification receipt](components/minecraft-26.2-parity.properties); it is not cropped from a larger screen.
+This 64 by 64 PNG is the complete frame of the compiled dedicated `ScreenDefinition`, with a 64 by 64 logical viewport at GUI scale 1. Headless rendering samples the assets at this physical density; the image is not upscaled from a lower-resolution raster or cropped from a larger screen. Its source, asset, viewport, and image hashes are recorded in [the headless render receipt](components/headless-render.properties).
 
 ![PlayerHead headless showcase](components/player-head.png)
 
@@ -1435,7 +1439,7 @@ The tree mirrors the complete dedicated definition, including the featured compo
 
 LoadingIndicator reproduces the Minecraft 26.2 friends-loading sprite as three vertical 5 by 2 cells with the native six-tick frame duration; older runtimes use the same pack-overridable path before their compatibility fallback.
 
-This 32 by 24 image is the complete frame of the compiled dedicated `ScreenDefinition`, after exact Fabric/headless ARGB comparison recorded in [the verification receipt](components/minecraft-26.2-parity.properties); it is not cropped from a larger screen.
+This 32 by 24 PNG is the complete frame of the compiled dedicated `ScreenDefinition`, with a 32 by 24 logical viewport at GUI scale 1. Headless rendering samples the assets at this physical density; the image is not upscaled from a lower-resolution raster or cropped from a larger screen. Its source, asset, viewport, and image hashes are recorded in [the headless render receipt](components/headless-render.properties).
 
 ![LoadingIndicator headless showcase](components/loading-indicator.png)
 
@@ -1490,7 +1494,7 @@ The tree mirrors the complete dedicated definition, including the featured compo
 
 ProgressBar uses the reusable bundle progress border, partial fill, and completed fill with their native two-pixel nine-slice borders and exposes read-only progress semantics.
 
-This 116 by 28 image is the complete frame of the compiled dedicated `ScreenDefinition`, after exact Fabric/headless ARGB comparison recorded in [the verification receipt](components/minecraft-26.2-parity.properties); it is not cropped from a larger screen.
+This 116 by 28 PNG is the complete frame of the compiled dedicated `ScreenDefinition`, with a 116 by 28 logical viewport at GUI scale 1. Headless rendering samples the assets at this physical density; the image is not upscaled from a lower-resolution raster or cropped from a larger screen. Its source, asset, viewport, and image hashes are recorded in [the headless render receipt](components/headless-render.properties).
 
 ![ProgressBar headless showcase](components/progress-bar.png)
 
@@ -1555,7 +1559,7 @@ Purpose-specific compositions stay in the compiled examples instead of becoming 
 
 A Social Interactions reconstruction composes `Text`, `TextField`, `ScrollArea`, `Scrollbar`, `PlayerHead`, and ordinary layout primitives without introducing a purpose-specific SocialEntry component.
 
-A loaded Fabric GameTest requires exact ARGB equality between the native Minecraft screen, the Strata Fabric screen, and the headless frame before this image is accepted.
+Documentation generation freshly renders this frame on the CPU from explicit Minecraft assets without starting the game or creating a GPU context. An independent loaded Fabric GameTest requires exact ARGB equality between the native Minecraft screen, the Strata Fabric screen, and the headless frame; its [native parity receipt](evidence/minecraft-26.2-parity.properties) is separate from the [headless generation receipt](components/headless-render.properties).
 
 ![Social Interactions screen showcase](components/screen-social.png)
 
@@ -1710,7 +1714,7 @@ The player row remains example-owned because its mute/report relationship is Soc
 
 A loaded multiplayer container screen binds its lower grid to the real player inventory and can bind the upper grid to chest, ender-chest, furnace, or custom server-menu storage.
 
-A loaded Fabric client/server GameTest performs authoritative inventory interaction and records the resulting real Fabric screen; this bound screen intentionally has no portable-only headless substitute.
+This image is explicit native evidence from a loaded Fabric client/server GameTest that performs authoritative inventory interaction. Generation verifies its Minecraft version, PNG hash, and current compiled-source hash against the [native inventory receipt](evidence/minecraft-26.2-inventory.properties); it does not start a server or replace this bound screen with a portable-only substitute.
 
 ![Synchronized inventory screen showcase](components/screen-inventory.png)
 
@@ -1822,7 +1826,7 @@ internal fun createInventorySlotScreenDefinition(
 
 A resource-pack-aware Mod controller composes a public custom image, Minecraft text, buttons, and layout primitives into an energy-machine interface.
 
-A loaded Fabric GameTest requires exact ARGB equality between the Strata Fabric screen and the headless frame while resolving assets from Minecraft's active resource manager.
+Documentation generation freshly renders this frame on the CPU from explicit Minecraft assets without starting the game or creating a GPU context. The independent loaded Fabric gate requires exact ARGB equality between the Strata Fabric screen and the headless frame using active resources; its [native parity receipt](evidence/minecraft-26.2-parity.properties) remains separate from the [headless generation receipt](components/headless-render.properties).
 
 ![Industrial controller screen showcase](components/screen-industrial.png)
 
@@ -1959,7 +1963,7 @@ The runtime supplies general image, background, text, button, slot, and input pr
 
 An advancement-inspired Mod progression screen composes active vanilla advancement assets with an application-owned downstream graph component.
 
-A loaded Fabric GameTest requires exact ARGB equality between the Strata Fabric screen and the headless frame while resolving assets from Minecraft's active resource manager.
+Documentation generation freshly renders this frame on the CPU from explicit Minecraft assets without starting the game or creating a GPU context. The independent loaded Fabric gate requires exact ARGB equality between the Strata Fabric screen and the headless frame using active resources; its [native parity receipt](evidence/minecraft-26.2-parity.properties) remains separate from the [headless generation receipt](components/headless-render.properties).
 
 ![Power milestones screen showcase](components/screen-progress.png)
 

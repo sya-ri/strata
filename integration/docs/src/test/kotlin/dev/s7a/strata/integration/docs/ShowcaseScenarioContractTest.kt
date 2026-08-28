@@ -79,7 +79,11 @@ internal class ShowcaseScenarioContractTest {
             ),
             scenarios.map { scenario -> scenario.viewport },
         )
-        assertEquals(List(DocumentedComponent.entries.size) { 1 }, scenarios.map { scenario -> scenario.scale })
+        val denseTextComponents = setOf(DocumentedComponent.Text, DocumentedComponent.TextField, DocumentedComponent.TextArea)
+        assertEquals(
+            DocumentedComponent.entries.map { component -> if (component in denseTextComponents) 2 else 1 },
+            scenarios.map { scenario -> scenario.scale },
+        )
     }
 
     @Test
@@ -320,9 +324,8 @@ internal class ShowcaseScenarioContractTest {
     }
 
     @Test
-    fun everyScenarioUsesLoadedGameSourcesAndScaleOne() {
+    fun everyScenarioUsesCompiledSourcesAndCompleteScreensKeepScaleOne() {
         (listOf(ShowcaseScenarioCatalog.overview) + ShowcaseScenarioCatalog.components).forEach { scenario ->
-            assertEquals(1, scenario.scale)
             assertTrue(scenario.source.relativePath.startsWith("integration/minecraft-fabric-unobfuscated/src/gametest/kotlin/"))
         }
         ShowcaseScenarioCatalog.screens.forEach { scenario ->

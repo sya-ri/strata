@@ -36,7 +36,7 @@ internal object ShowcaseStorage {
             writeBytes(components.resolve("${screen.slug}.png"), screen.png())
         }
         writeBytes(components.resolve("overview.png"), result.overview.png())
-        writeBytes(components.resolve("minecraft-26.2-parity.properties"), result.receipt())
+        writeBytes(components.resolve("headless-render.properties"), result.receipt())
         writeText(staging.resolve("root-readme-region.md"), result.rootReadmeRegion)
     }
 
@@ -64,7 +64,7 @@ internal object ShowcaseStorage {
         val expected =
             generated.sections.map { section -> "${section.slug}.png" } +
                 generated.screens.map { screen -> "${screen.slug}.png" } +
-                listOf("overview.png", "minecraft-26.2-parity.properties")
+                listOf("overview.png", "headless-render.properties")
         val actual =
             if (Files.exists(components)) {
                 Files.walk(components).use { stream ->

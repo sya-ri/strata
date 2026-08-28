@@ -136,15 +136,20 @@ internal class ShowcaseStorageSynchronizerTest {
         Files.createDirectories(target)
         Files.writeString(target.resolve("stale.md"), "stale")
         Files.write(target.resolve("stale.png"), byteArrayOf(8))
+        Files.writeString(target.resolve("minecraft-26.2-parity.properties"), "old-generated-proof")
+        val evidence = temporaryRoot.resolve("docs/evidence/minecraft-26.2-parity.properties")
+        Files.createDirectories(evidence.parent)
+        Files.writeString(evidence, "independent-native-proof")
         ShowcaseStorage.writeStaging(output)
 
         ShowcaseSynchronizer.synchronize(launch, output)
 
         assertEquals(
-            setOf("overview.png", "text.png", "minecraft-26.2-parity.properties"),
+            setOf("overview.png", "text.png", "headless-render.properties"),
             snapshot(target).keys,
         )
         assertArrayEquals(Files.readAllBytes(launch.stagingRoot.resolve("components.md")), Files.readAllBytes(temporaryRoot.resolve("docs/components.md")))
+        assertEquals("independent-native-proof", Files.readString(evidence))
     }
 
     @Test
@@ -540,19 +545,11 @@ internal class ShowcaseStorageSynchronizerTest {
         assertTrue(thrown.suppressed.none { failure -> failure === thrown })
     }
 
-    private fun launch(root: Path = temporaryRoot): ShowcaseLaunchArguments {
-        val moduleBuild = root.resolve("integration/docs/build")
-        val staging = moduleBuild.resolve("component-showcase/generate")
-        val parity = root.resolve("integration/minecraft-fabric-26.2/build/minecraft-parity")
-        val classes = root.resolve("api/classes")
-        Files.createDirectories(staging)
-        Files.createDirectories(parity)
-        Files.createDirectories(classes)
-        return ShowcaseLaunchArguments.parse(
-            arrayOf(root.toString(), moduleBuild.toString(), staging.toString(), parity.toString(), classes.toString()),
+    private fun launch(root: Path = temporaryRoot): ShowcaseLaunchArguments =
+        ShowcaseLaunchArguments.parse(
+            ShowcaseLaunchFixture.arguments(root, ShowcaseStagingKind.Generate),
             ShowcaseStagingKind.Generate,
         )
-    }
 
     private fun output(staging: Path): ShowcaseOutput =
         ShowcaseOutput(
@@ -560,7 +557,7 @@ internal class ShowcaseStorageSynchronizerTest {
             listOf(ShowcaseOutput.Section(DocumentedComponent.Text, "## Text\n", byteArrayOf(4, 5, 6))),
             emptyList(),
             staging,
-            "verified=true\n".toByteArray(),
+            "generator=headless\n".toByteArray(),
         )
 
     private fun writeReadme(

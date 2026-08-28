@@ -7,7 +7,7 @@ package dev.s7a.strata.integration.docs
  *
  * @property title human-readable section title.
  * @property slug stable generated image and anchor name.
- * @property verification typed evidence class for the complete frame.
+ * @property verification typed independent native acceptance requirement, distinct from documentation generation.
  */
 internal enum class DocumentedScreen(
     val title: String,
@@ -36,7 +36,7 @@ internal enum class DocumentedScreen(
     ;
 
     /**
-     * Typed strength of the executable evidence backing a screen image.
+     * Typed strength of independent native acceptance, not a request to launch a game during generation.
      */
     internal enum class Verification {
         /**

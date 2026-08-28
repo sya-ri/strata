@@ -1,5 +1,8 @@
 import dev.detekt.gradle.extensions.DetektExtension
+import net.fabricmc.loom.LoomGradleExtension
+import net.fabricmc.loom.task.DownloadAssetsTask
 import net.fabricmc.loom.task.prod.ClientProductionRunTask
+import org.gradle.api.provider.Provider
 import org.gradle.api.tasks.Delete
 import org.gradle.api.tasks.SourceSetContainer
 import org.gradle.api.tasks.bundling.Jar
@@ -93,6 +96,53 @@ dependencies {
     add("productionRuntimeMods", libs.fabric.api262)
     add("productionRuntimeMods", libs.fabric.language.kotlin)
 }
+
+// Loom registers client setup tasks only after successful project evaluation.
+val showcaseAssetDownload = providers.provider { tasks.named<DownloadAssetsTask>("downloadAssets").get() }
+val showcaseMinecraftProvider = providers.provider {
+    val extension = LoomGradleExtension.get(project)
+    require(extension.customMinecraftMetadata.isPresent.not()) {
+        "Default showcase assets require official Mojang metadata. Supply all four strata.showcase asset path properties for custom inputs."
+    }
+    extension.minecraftProvider
+}
+// Artifact locations are queried before execution; exposeShowcaseAsset retains the explicit content producer dependency.
+val showcaseAssetsDirectory = showcaseAssetDownload.flatMap { task -> task.assetsDirectory.locationOnly }
+
+/**
+ * Exposes a read-only Loom asset to documentation consumers without exporting game classes or starting a client.
+ * DownloadAssetsTask owns provisioning; these configurations neither copy the asset store nor publish Maven artifacts.
+ */
+fun exposeShowcaseAsset(configurationName: String, asset: Provider<File>) {
+    val configuration = configurations.create(configurationName) {
+        isCanBeConsumed = true
+        isCanBeResolved = false
+    }
+    artifacts.add(configuration.name, asset) {
+        builtBy(showcaseAssetDownload)
+    }
+}
+
+exposeShowcaseAsset("showcaseClientJar", showcaseMinecraftProvider.map { provider -> provider.minecraftClientJar })
+exposeShowcaseAsset(
+    "showcaseAssetIndex",
+    showcaseAssetsDirectory.zip(showcaseMinecraftProvider) { directory, provider ->
+        val indexName = provider.versionInfo.assetIndex().fabricId(provider.minecraftVersion())
+        directory.asFile.resolve("indexes/$indexName.json")
+    },
+)
+exposeShowcaseAsset("showcaseAssetObjects", showcaseAssetsDirectory.map { directory -> directory.asFile.resolve("objects") })
+exposeShowcaseAsset(
+    "showcaseVersionManifest",
+    showcaseMinecraftProvider.map { provider ->
+        // Loom's Mojang metadata provider writes this file below its typed version working directory.
+        provider.file("mojang_minecraft_info.json").also { manifest ->
+            require(manifest.isFile) {
+                "Loom's official Mojang version metadata is unavailable. Set strata.showcase.versionManifest to its verified read-only input."
+            }
+        }
+    },
+)
 
 tasks.named<Jar>("jar") {
     dependsOn("gametestClasses")
