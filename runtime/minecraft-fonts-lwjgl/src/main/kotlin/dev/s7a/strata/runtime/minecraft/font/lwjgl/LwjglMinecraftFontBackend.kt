@@ -159,12 +159,7 @@ internal class LwjglMinecraftFontBackend(
             try {
                 face.close()
             } catch (caught: Throwable) {
-                val primary = failure
-                if (primary == null) {
-                    failure = caught
-                } else if (primary !== caught) {
-                    primary.addSuppressed(caught)
-                }
+                failure = recordCloseFailure(failure, caught)
             }
         }
         faces.clear()
@@ -196,4 +191,23 @@ internal class LwjglMinecraftFontBackend(
             current.close()
         }
     }
+}
+
+/**
+ * Retains the first face-close failure and attaches a distinct later failure without creating self-suppression.
+ *
+ * The caller owns both throwable instances and invokes this helper on its cleanup thread.
+ *
+ * @param primary failure retained from an earlier close, or null before the first failure.
+ * @param caught failure raised by the current close attempt.
+ * @return the failure that must remain primary after this close attempt.
+ */
+@JvmSynthetic
+internal fun recordCloseFailure(
+    primary: Throwable?,
+    caught: Throwable,
+): Throwable {
+    if (primary == null) return caught
+    if (primary !== caught) primary.addSuppressed(caught)
+    return primary
 }

@@ -27,6 +27,7 @@ import dev.s7a.strata.runtime.render.DrawCommand
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertNotNull
 import org.junit.jupiter.api.Assertions.assertNull
+import org.junit.jupiter.api.Assertions.assertSame
 import org.junit.jupiter.api.Assertions.assertThrows
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
@@ -517,6 +518,18 @@ internal class LwjglMinecraftFontBackendTest {
             assertNotNull(retained.image)
             second.openTrueType(fixture(), MinecraftTrueTypeSettings()).use { assertEquals(retained, it.glyph(0x41)) }
         }
+    }
+
+    @Test
+    fun `close failure accumulation preserves the first distinct failure without self suppression`() {
+        val first = IllegalStateException("first")
+        val second = IllegalArgumentException("second")
+
+        assertSame(first, recordCloseFailure(null, first))
+        assertSame(first, recordCloseFailure(first, first))
+        assertTrue(first.suppressed.isEmpty())
+        assertSame(first, recordCloseFailure(first, second))
+        assertSame(second, first.suppressed.single())
     }
 
     @Test
