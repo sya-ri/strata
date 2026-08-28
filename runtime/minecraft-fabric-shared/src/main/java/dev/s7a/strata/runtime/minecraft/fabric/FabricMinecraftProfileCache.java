@@ -22,7 +22,7 @@ final class FabricMinecraftProfileCache<V> {
     /**
      * Reuses the current value or synchronously extracts one replacement on the owning client thread.
      *
-     * <p>The caller validates the Minecraft client thread before entry. The captured state fences both the initial claim and publication against reload or terminal invalidation, including when the cache was empty. An unsuccessful replacement leaves no cached value; failures are never substituted with an older generation.</p>
+     * <p>The caller validates the Minecraft client thread before entry. The captured state fences both the initial claim and publication against reload or terminal invalidation, including when the cache was empty. An unsuccessful replacement leaves no cached value; failures are never substituted with an older generation. Extraction failures propagate exactly after pending ownership is cleared.</p>
      *
      * @param manager active native resource manager, compared by identity only.
      * @param compatibility immutable compiler-selected font capabilities.
@@ -30,7 +30,6 @@ final class FabricMinecraftProfileCache<V> {
      * @param extract callback borrowed for this invocation only.
      * @return the shared immutable current value.
      * @throws IllegalStateException on reentrant extraction, cross-thread reuse, or invalidation during extraction.
-     * @throws Throwable when extraction fails; the exact failure propagates after pending ownership is cleared.
      */
     V get(
             Object manager,
@@ -43,7 +42,7 @@ final class FabricMinecraftProfileCache<V> {
     /**
      * Borrows a deterministic test barrier after state capture and before claiming a cold extraction.
      *
-     * <p>The ordinary overload supplies a no-op barrier. Neither callback is retained, and the barrier is skipped on cache hits. The loading flag remains set through invalidation until this invocation unwinds, so canceled work cannot reenter an apparently empty cache.</p>
+     * <p>The ordinary overload supplies a no-op barrier. Neither callback is retained, and the barrier is skipped on cache hits. The loading flag remains set through invalidation until this invocation unwinds, so canceled work cannot reenter an apparently empty cache. Extraction and barrier failures propagate exactly after pending ownership is cleared.</p>
      *
      * @param manager active resource manager, compared by identity only.
      * @param compatibility immutable compiler-selected font capabilities.

@@ -48,12 +48,10 @@ internal object MinecraftTextLineBreaker {
         val advances = measure(content, renderer)
         val ranges = breakLines(content.value, advances, renderer, maxWidth, policy.wrap)
         val heightLines =
-            if (maxHeight == Int.MAX_VALUE) {
-                Int.MAX_VALUE
-            } else if (maxHeight == 0) {
-                0
-            } else {
-                1 + (maxHeight - 1) / step
+            when (maxHeight) {
+                Int.MAX_VALUE -> Int.MAX_VALUE
+                0 -> 0
+                else -> 1 + (maxHeight - 1) / step
             }
         val count = minOf(ranges.size, policy.maxLines, heightLines)
         var truncated = count < ranges.size

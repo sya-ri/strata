@@ -7,16 +7,17 @@ fixture_root=$(mktemp -d)
 trap 'rm -f "$fixture_root/Modules.json" "$fixture_root/valid.json" "$fixture_root/valid.log" "$fixture_root/invalid.json" "$fixture_root/invalid.log"; rmdir "$fixture_root"' EXIT
 
 jq -n '
-  def projectModule($name; $source): {
+  def projectModule($name; $source; $path): {
     name: $name,
     orderEntries: [{type: "SDK"}, {type: "Library"}, {type: "ModuleSource"}],
-    contentEntries: [{sourceFolders: [{type: $source}]}]
+    contentEntries: [{sourceFolders: [{type: $source, path: $path}]}]
   };
   {modules:
-    ([range(1;22) | projectModule("runtime-minecraft-fabric-1." + tostring; "Source")]
-    + [range(1;22) | projectModule("integration-minecraft-fabric-1." + tostring; "TestSource")]
-    + [projectModule("minecraft-fonts-lwjgl"; "Source") | .contentEntries[0].sourceFolders += [{type: "TestSource"}]])
+    ([range(1;22) | projectModule("runtime-minecraft-fabric-1." + tostring; "Source"; "file://$PROJECT_DIR$/runtime/minecraft-fabric-1." + tostring + "/src/font/kotlin")]
+    + [range(1;22) | projectModule("integration-minecraft-fabric-1." + tostring; "TestSource"; "file://$PROJECT_DIR$/integration/minecraft-fabric-1." + tostring + "/src/gametest/kotlin")]
+    + [projectModule("minecraft-fonts-lwjgl"; "Source"; "file://$PROJECT_DIR$/runtime/minecraft-fonts-lwjgl/src/main/kotlin") | .contentEntries[0].sourceFolders += [{type: "TestSource", path: "file://$PROJECT_DIR$/runtime/minecraft-fonts-lwjgl/src/test/kotlin"}]])
   }
+  | .modules[0].name = "strata.runtime.minecraft-fabric-1_1"
 ' > "$fixture_root/Modules.json"
 
 for backend_name in minecraft-fonts-lwjgl runtime-minecraft-fonts-lwjgl strata.runtime.minecraft-fonts-lwjgl; do
@@ -39,5 +40,6 @@ assert_rejected '.modules[-1].name = "minecraft-fonts-lwjgl-extra"'
 assert_rejected '.modules[-1].orderEntries |= map(select(.type != "SDK"))'
 assert_rejected '.modules[-1].contentEntries[0].sourceFolders |= map(select(.type != "Source"))'
 assert_rejected '.modules[-1].contentEntries[0].sourceFolders |= map(select(.type != "TestSource"))'
+assert_rejected '(.modules[] | select(.name == "runtime-minecraft-fabric-1.2").contentEntries[0].sourceFolders[] | select(.type == "Source")).path = "file://$PROJECT_DIR$/runtime/minecraft-fabric-shared/src/main/kotlin"'
 
-echo 'Verified Qodana font backend names, uniqueness, SDK, and main/test source guards.'
+echo 'Verified Qodana font backend names, uniqueness, SDK, and exact owned source guards.'

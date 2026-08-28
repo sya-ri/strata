@@ -31,7 +31,7 @@ public interface MinecraftBoundedFontAssetSource : MinecraftFontAssetSource {
     public fun paths(
         limits: MinecraftFontLoadLimits,
         onEntryExamined: () -> Unit,
-    ): Set<String> = paths(limits).also { result -> result.forEach { onEntryExamined() } }
+    ): Set<String> = paths(limits).onEach { _ -> onEntryExamined() }
 
     /**
      * Reads one asset under inclusive encoded-byte and path ceilings.

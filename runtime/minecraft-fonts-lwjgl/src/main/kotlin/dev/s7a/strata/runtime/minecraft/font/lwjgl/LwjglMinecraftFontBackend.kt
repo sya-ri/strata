@@ -155,7 +155,7 @@ internal class LwjglMinecraftFontBackend(
         if (closed) return
         closed = true
         var failure: Throwable? = null
-        faces.toList().forEach { face ->
+        for (face in faces.toList()) {
             try {
                 face.close()
             } catch (caught: Throwable) {

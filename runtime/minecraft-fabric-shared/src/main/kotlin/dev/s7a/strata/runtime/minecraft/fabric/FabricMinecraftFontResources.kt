@@ -7,25 +7,9 @@ import dev.s7a.strata.runtime.minecraft.font.MinecraftFontLoadLimits
 import dev.s7a.strata.runtime.minecraft.font.MinecraftFontOptions
 import dev.s7a.strata.runtime.minecraft.font.MinecraftFontSnapshot
 import dev.s7a.strata.runtime.minecraft.font.readMinecraftFontBytes
-import net.minecraft.client.Minecraft
 import net.minecraft.server.packs.resources.Resource
 import net.minecraft.server.packs.resources.ResourceManager
 import java.util.Collections
-
-/**
- * Copies the active resource manager's already filtered and overlaid font stack into an immutable offline snapshot.
- * Streams are opened only for referenced font files and closed synchronously; the returned snapshot retains no Minecraft object.
- * Per-resource stack layers preserve the native low-to-high document order and selected asset precedence without applying pack metadata twice.
- *
- * @param minecraft owner client whose resource and language inputs are captured by this call.
- * @return detached resource font snapshot for the compiled target release.
- * @throws Throwable when enumeration or a fatal resource failure prevents snapshot creation on the client thread.
- */
-@JvmSynthetic
-internal fun extractFabricMinecraftFontSnapshot(minecraft: Minecraft): MinecraftFontSnapshot {
-    check(minecraft.isSameThread) { "Font resources must be extracted on the client thread." }
-    return extractFabricMinecraftFontSnapshot(minecraft.resourceManager, fabricMinecraftFontCompatibility(), fabricMinecraftFontOptions(minecraft))
-}
 
 /**
  * Detaches font document stacks and their individually selected assets from a stable resource manager.

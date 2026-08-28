@@ -28,7 +28,7 @@ internal fun String.checkedFontSourcePath(): String {
  */
 internal fun String.fontResourceIdentifier(): ResourceId? {
     val separator = indexOf('/')
-    if (separator < 1 || lastIndex <= separator) return null
+    if (separator !in 1 until lastIndex) return null
     return runCatching { ResourceId(substring(0, separator), substring(separator + 1)) }.getOrElse { failure ->
         if (failure is IllegalArgumentException) null else throw failure
     }

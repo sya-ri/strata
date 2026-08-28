@@ -29,13 +29,4 @@ internal data class MinecraftTextVerticalBounds(
         viewportTop: Int,
         viewportBottom: Int,
     ): Boolean = viewportTop < viewportBottom && top < viewportBottom.toDouble() && viewportTop.toDouble() < bottom
-
-    /**
-     * Unites two conservative intervals without retaining either input.
-     *
-     * @param other interval in the same paint-scope coordinates.
-     * @return the smallest interval enclosing both inputs.
-     */
-    @JvmSynthetic
-    internal fun union(other: MinecraftTextVerticalBounds): MinecraftTextVerticalBounds = MinecraftTextVerticalBounds(minOf(top, other.top), maxOf(bottom, other.bottom))
 }

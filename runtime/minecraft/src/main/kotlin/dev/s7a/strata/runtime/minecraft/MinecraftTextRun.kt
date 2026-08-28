@@ -13,6 +13,8 @@ import dev.s7a.strata.runtime.minecraft.font.MinecraftFontGlyph
 import dev.s7a.strata.runtime.minecraft.font.MinecraftVisualGlyph
 import dev.s7a.strata.text.UiText
 import java.util.Collections
+import kotlin.math.max
+import kotlin.math.min
 
 /**
  * Validated single-line text with immutable positioned glyph ownership.
@@ -250,10 +252,10 @@ internal class MinecraftTextRun private constructor(
             val rawBottom = if (glyph.orientation.flipY) glyph.top else glyph.bottom
             val shadow = positioned.shadow
             val offset = if (shadow != null && shadow.value != 0) glyph.shadowOffset else 0f
-            left = Math.min(left, x + rawLeft)
-            top = Math.min(top, originY + rawTop)
-            right = Math.max(right, x + rawRight + offset)
-            bottom = Math.max(bottom, originY + rawBottom + offset)
+            left = min(left, x + rawLeft)
+            top = min(top, originY + rawTop)
+            right = max(right, x + rawRight + offset)
+            bottom = max(bottom, originY + rawBottom + offset)
             // Finite extrema can only expand; later NaN values cannot make native rejection comparisons succeed.
             if (left < right && top < bottom) return true
         }

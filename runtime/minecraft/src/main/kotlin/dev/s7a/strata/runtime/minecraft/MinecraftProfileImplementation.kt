@@ -668,8 +668,6 @@ internal object MinecraftProfileImplementation {
     ) : MinecraftUiProfile {
         private val glyphs: Map<Int, MinecraftGlyphSnapshot> = Collections.unmodifiableMap(LinkedHashMap(glyphs))
 
-        fun glyph(codePoint: Int): MinecraftGlyphSnapshot = glyphs.getValue(codePoint)
-
         fun glyphSnapshot(): Map<Int, MinecraftGlyphSnapshot> = glyphs
 
         companion object {

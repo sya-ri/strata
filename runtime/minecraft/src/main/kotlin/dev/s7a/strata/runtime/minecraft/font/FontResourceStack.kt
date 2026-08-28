@@ -194,7 +194,7 @@ internal class FontResourceStack(
             val lower = format(minimum, 0)
             val upper = format(maximum, Int.MAX_VALUE)
             require(lower <= upper) { "Overlay format range is reversed." }
-            return lower <= current && current <= upper
+            return current in lower..upper
         }
         val formats = requireNotNull(entry.get("formats")) { "Overlay formats are missing." }
         val lower: Int

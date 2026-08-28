@@ -241,7 +241,7 @@ internal class MinecraftTextLayout(
         firstLine: Int = 0,
         endLine: Int = lines.size,
     ) {
-        require(0 <= firstLine && firstLine <= endLine && endLine <= lines.size) { "Text paint ranges must name existing lines." }
+        require(firstLine in 0..endLine && endLine <= lines.size) { "Text paint ranges must name existing lines." }
         for (index in firstLine until endLine) {
             lines[index].run.paint(scope, originX, Math.addExact(originY, Math.multiplyExact(index, lineStep)))
         }

@@ -81,7 +81,9 @@ missing_sources=$(
     [
       .modules[]
       | select(.name | test("^(strata\\.runtime\\.minecraft-fabric|runtime-minecraft-fabric)-[0-9]+([._][0-9]+)*$"))
-      | select([.contentEntries[].sourceFolders[]? | select(.type == "Source")] | length == 0)
+      | (.name | sub("^(strata\\.runtime\\.minecraft-fabric|runtime-minecraft-fabric)-"; "") | gsub("_"; ".")) as $version
+      | ("file://$PROJECT_DIR$/runtime/minecraft-fabric-" + $version + "/src/font/kotlin") as $font_source
+      | select([.contentEntries[].sourceFolders[]? | select(.type == "Source" and .path == $font_source)] | length != 1)
       | .name
     ]
     +

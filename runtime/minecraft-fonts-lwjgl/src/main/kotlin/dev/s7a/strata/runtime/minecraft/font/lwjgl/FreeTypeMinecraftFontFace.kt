@@ -15,6 +15,7 @@ import org.lwjgl.util.freetype.FT_Vector
 import org.lwjgl.util.freetype.FreeType
 import java.nio.ByteBuffer
 import kotlin.math.abs
+import kotlin.math.roundToInt
 
 /**
  * Owns a FreeType library, face, and copied font buffer for the later supported Minecraft provider contract.
@@ -51,13 +52,13 @@ internal class FreeTypeMinecraftFontFace(
                 val format = FontFormat.entries.firstOrNull { it.nativeName == nativeFormat }
                 require(format == FontFormat.TrueType) { "The ttf provider requires a TrueType font." }
                 checkError(FreeType.FT_Select_Charmap(opened, FreeType.FT_ENCODING_UNICODE), "Select Unicode charmap")
-                val size = Math.round(settings.size * settings.oversample)
+                val size = (settings.size * settings.oversample).roundToInt()
                 // Native providers deliberately retain the face after a failed pixel-size request.
                 FreeType.FT_Set_Pixel_Sizes(opened, size, size)
                 val shift =
                     FT_Vector.malloc(stack).set(
-                        Math.round(settings.shiftX * settings.oversample * 64f).toLong(),
-                        Math.round(-settings.shiftY * settings.oversample * 64f).toLong(),
+                        (settings.shiftX * settings.oversample * 64f).roundToInt().toLong(),
+                        (-settings.shiftY * settings.oversample * 64f).roundToInt().toLong(),
                     )
                 FreeType.FT_Set_Transform(opened, null, shift)
             }
