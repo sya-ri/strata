@@ -6,6 +6,8 @@ import dev.s7a.strata.input.InputResult
 import dev.s7a.strata.input.KeyboardEvent
 import dev.s7a.strata.input.PointerEvent
 import dev.s7a.strata.input.TextInputEvent
+import dev.s7a.strata.runtime.spi.RuntimeTextInputFocus
+import dev.s7a.strata.spi.InternalStrataRuntimeApi
 import dev.s7a.strata.state.StateSource
 import kotlinx.coroutines.CompletableJob
 import kotlinx.coroutines.CoroutineDispatcher
@@ -35,6 +37,7 @@ import kotlin.properties.ReadWriteProperty
  * @param contentOwner owns and evaluates the content description until terminal failure or close releases it.
  */
 @Suppress("TooManyFunctions")
+@OptIn(InternalStrataRuntimeApi::class)
 internal class UiSession private constructor(
     private val ownerDispatcher: CoroutineDispatcher,
     private val taskFailureHandler: (Throwable) -> UiTaskFailureDecision,
@@ -90,6 +93,19 @@ internal class UiSession private constructor(
     private var cachedFrame: UiFrame? = null
     private var cachedFrameConstraints: Constraints? = null
     private var cachedTreeRevision: Long = 0L
+
+    /**
+     * Detached editable-focus identity from the latest committed attached frame.
+     *
+     * Created and detached sessions return null, as do attached sessions before a successful frame.
+     * Reads are confined to the owner thread outside session operations and reject terminal states without changing the session.
+     */
+    internal val textInputFocus: RuntimeTextInputFocus?
+        get() {
+            checkReadable()
+            check(operationKind == null) { "A session operation is already active." }
+            return if (currentState === UiSessionState.Attached && frameAvailable) tree?.currentTextInputFocus() else null
+        }
 
     /**
      * Provides one stable coroutine scope whose job is replaced for every attachment.

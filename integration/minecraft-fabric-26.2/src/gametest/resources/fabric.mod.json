@@ -1,0 +1,16 @@
+{
+  "schemaVersion": 1,
+  "id": "${integrationModId}",
+  "version": "${version}",
+  "name": "Strata Minecraft ${minecraftVersion} integration verification",
+  "environment": "client",
+  "accessWidener": "strata-font-parity.accesswidener",
+  "entrypoints": {
+    "fabric-client-gametest": [
+      "dev.s7a.strata.integration.minecraft.fabric.StrataMinecraftFontGameTest"
+    ]
+  },
+  "depends": {
+    "${runtimeModId}": "*"
+  }
+}

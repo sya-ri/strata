@@ -15,6 +15,7 @@ import dev.s7a.strata.runtime.FrameTime
 import dev.s7a.strata.runtime.minecraft.MinecraftUiHost
 import dev.s7a.strata.runtime.minecraft.MinecraftUiProfile
 import dev.s7a.strata.runtime.minecraft.createMinecraftUiHost
+import dev.s7a.strata.runtime.minecraft.font.lwjgl.LwjglMinecraftFontBackendFactory
 import dev.s7a.strata.screen.ScreenDefinition
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
 import net.minecraft.Util
@@ -47,6 +48,7 @@ public class FabricMinecraftScreen private constructor(
     private var attached = false
     private var lastClickTime = 0L
     private var lastClickButton = Int.MIN_VALUE
+    private val characterInput = FabricMinecraftCharacterInput()
     private val presentation = FabricMinecraftFramePresenter(minecraftClient)
     private val pausePolicy = host.pausesGame
     private val lifecycle =
@@ -59,6 +61,7 @@ public class FabricMinecraftScreen private constructor(
 
     override fun added() {
         requireClientThread()
+        characterInput.reset()
         check(closed.not()) { "A closed Fabric Minecraft screen cannot be added again." }
         if (lifecycle.isActive()) {
             super.added()
@@ -77,6 +80,7 @@ public class FabricMinecraftScreen private constructor(
 
     override fun removed() {
         requireClientThread()
+        characterInput.reset()
         if (lifecycle.isActive()) {
             super.removed()
             lifecycle.requestDetach()
@@ -99,6 +103,7 @@ public class FabricMinecraftScreen private constructor(
         partialTick: Float,
     ) {
         requireClientThread()
+        characterInput.reset()
         try {
             presentation.recordRenderExtraction()
             inventory.withRefreshBatch {
@@ -214,6 +219,7 @@ public class FabricMinecraftScreen private constructor(
         modifierFlags: Int,
     ): Boolean {
         requireClientThread()
+        characterInput.reset()
         if (inventory.handleKeyPressed(keyValue, scanCode, modifierFlags)) return true
         val mapped = mapMinecraftKeyPress(keyValue, scanCode, modifierFlags) ?: return false
         if (mapped.key == KeyCode.Escape) {
@@ -228,6 +234,7 @@ public class FabricMinecraftScreen private constructor(
         modifierFlags: Int,
     ): Boolean {
         requireClientThread()
+        characterInput.reset()
         val mapped = mapMinecraftKeyRelease(keyValue, scanCode, modifierFlags) ?: return false
         return dispatchFocused(KeyboardInput(mapped)) { super.keyReleased(keyValue, scanCode, modifierFlags) }
     }
@@ -237,12 +244,21 @@ public class FabricMinecraftScreen private constructor(
         modifierFlags: Int,
     ): Boolean {
         requireClientThread()
-        val mapped = mapMinecraftCharacter(character.code) ?: return false
-        return dispatchFocused(TextInput(mapped)) { super.charTyped(character, modifierFlags) }
+        val mapped = characterInput.accept(character) ?: return false
+        return dispatchFocused(TextInput(mapped)) {
+            if (mapped.codePoint <= 0xFFFF) {
+                super.charTyped(character, modifierFlags)
+            } else {
+                val highConsumed = super.charTyped(Character.highSurrogate(mapped.codePoint), modifierFlags)
+                val lowConsumed = super.charTyped(character, modifierFlags)
+                highConsumed || lowConsumed
+            }
+        }
     }
 
     override fun onClose() {
         requireClientThread()
+        characterInput.reset()
         if (lifecycle.isActive()) {
             lifecycle.requestCloseThenNavigate()
             return
@@ -252,6 +268,7 @@ public class FabricMinecraftScreen private constructor(
 
     override fun close() {
         requireClientThread()
+        characterInput.reset()
         if (closed) return
         if (lifecycle.isActive()) {
             lifecycle.requestClose()
@@ -262,6 +279,7 @@ public class FabricMinecraftScreen private constructor(
 
     private fun dispatch(event: PointerEvent): Boolean =
         try {
+            characterInput.reset()
             lifecycle.run {
                 host.dispatchPointer(event) == InputResult.Consumed
             }
@@ -306,12 +324,14 @@ public class FabricMinecraftScreen private constructor(
     }
 
     private fun attachHost() {
+        characterInput.reset()
         host.attach()
         attached = true
         presentation.resetPointer()
     }
 
     private fun detachHost() {
+        characterInput.reset()
         if (attached) {
             host.detach()
             attached = false
@@ -320,6 +340,7 @@ public class FabricMinecraftScreen private constructor(
     }
 
     private fun closeHost() {
+        characterInput.reset()
         if (closed) return
         closed = true
         attached = false
@@ -422,7 +443,7 @@ public fun createMinecraftScreen(
     val inventory = FabricMinecraftInventoryBridge.create(minecraft)
     val host =
         try {
-            createMinecraftUiHost(definition, profile, inventory)
+            createMinecraftUiHost(definition, profile, inventory, LwjglMinecraftFontBackendFactory)
         } catch (failure: Throwable) {
             try {
                 inventory.close()

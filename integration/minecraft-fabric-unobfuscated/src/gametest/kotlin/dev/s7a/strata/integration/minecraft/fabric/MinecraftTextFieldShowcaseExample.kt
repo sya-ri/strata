@@ -14,7 +14,7 @@ import dev.s7a.strata.screen.ScreenDefinition
 /**
  * Builds a self-contained TextField showcase from one caller-selected initial value.
  *
- * @param initialValue printable ASCII value copied into owner-thread field state before the definition is retained.
+ * @param initialValue well-formed single-line Unicode value copied into owner-thread field state before the definition is retained.
  * @return one-shot definition containing the complete Minecraft-profile text-field frame.
  * @throws IllegalArgumentException when [initialValue] is unsupported or exceeds the showcase limit.
  */

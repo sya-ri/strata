@@ -2,6 +2,7 @@
 
 package dev.s7a.strata.runtime.minecraft
 
+import dev.s7a.strata.runtime.minecraft.font.MinecraftFontBackendFactory
 import dev.s7a.strata.screen.ScreenDefinition
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
 
@@ -40,6 +41,44 @@ public fun createMinecraftUiHost(
     profile: MinecraftUiProfile,
     platform: MinecraftUiPlatform,
 ): MinecraftUiHost = MinecraftHostImplementation.create(definition, profile, platform)
+
+/**
+ * Creates an owner-thread host with independent native font ownership from a shareable resource snapshot.
+ * The backend factory is borrowed only during construction; the opened backend is closed after the tree on every terminal path.
+ * No Minecraft classes, display, graphics context, or operating-system fonts are needed by a CPU backend.
+ *
+ * @param definition available one-shot definition transferred on successful host construction.
+ * @param profile immutable profile containing resource fonts or compatibility glyphs.
+ * @param fontBackend factory for the target release's CPU font backend.
+ * @return distinct owner-thread host.
+ * @throws Throwable when transfer or font initialization fails; opened native resources are released.
+ */
+@InternalStrataRuntimeApi
+public fun createMinecraftUiHost(
+    definition: ScreenDefinition,
+    profile: MinecraftUiProfile,
+    fontBackend: MinecraftFontBackendFactory,
+): MinecraftUiHost = MinecraftHostImplementation.create(definition, profile, fontBackend = fontBackend)
+
+/**
+ * Creates a versioned host owning both its native font backend and platform services.
+ * A resource snapshot and its font settings stay pinned for this host's lifetime.
+ * Tree disposal precedes font and platform release; construction failure leaves [platform] caller-owned.
+ *
+ * @param definition available one-shot screen definition.
+ * @param profile immutable UI and font resources.
+ * @param platform version services transferred only when construction succeeds.
+ * @param fontBackend factory opening an independent owner-thread backend.
+ * @return distinct owner-thread host.
+ * @throws Throwable when transfer or font initialization fails; opened font resources are released.
+ */
+@InternalStrataRuntimeApi
+public fun createMinecraftUiHost(
+    definition: ScreenDefinition,
+    profile: MinecraftUiProfile,
+    platform: MinecraftUiPlatform,
+    fontBackend: MinecraftFontBackendFactory,
+): MinecraftUiHost = MinecraftHostImplementation.create(definition, profile, platform, fontBackend)
 
 /**
  * Creates one complete immutable Minecraft UI profile.

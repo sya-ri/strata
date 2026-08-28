@@ -18,6 +18,7 @@ import dev.s7a.strata.geometry.Insets
 import dev.s7a.strata.geometry.IntRect
 import dev.s7a.strata.geometry.IntSize
 import dev.s7a.strata.modifier.Modifier
+import dev.s7a.strata.resource.ResourceId
 import dev.s7a.strata.text.UiText
 
 /**
@@ -163,6 +164,30 @@ public interface ComponentRuntime {
         modifier: Modifier,
         key: ElementKey<*>?,
     ): Element
+
+    /**
+     * Creates one profile-backed text field with an explicitly selected resource-pack font.
+     * The default implementation rejects this capability so existing runtime implementations remain source and binary compatible.
+     *
+     * @param state caller-owned owner-thread text state.
+     * @param size fixed logical field size.
+     * @param enabled whether editing and enabled pixels are active.
+     * @param style profile color and shadow policy.
+     * @param font structural identifier resolved against the runtime's pinned font resources.
+     * @param modifier active behavior around the field.
+     * @param key optional stable sibling identity.
+     * @return an immutable description referencing but not owning [state] or live font resources.
+     * @throws UnsupportedOperationException when the runtime has not implemented explicit font selection.
+     */
+    public fun textField(
+        state: TextFieldState,
+        size: IntSize,
+        enabled: Boolean,
+        style: TextStyle,
+        font: ResourceId,
+        modifier: Modifier,
+        key: ElementKey<*>?,
+    ): Element = throw UnsupportedOperationException("This runtime does not support explicit font selection.")
 
     /**
      * Creates one profile-backed tab element with an optional selected custom indicator root.

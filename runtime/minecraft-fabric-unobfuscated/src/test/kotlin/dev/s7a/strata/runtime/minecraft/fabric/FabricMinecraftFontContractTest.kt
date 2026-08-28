@@ -4,14 +4,41 @@ import com.google.gson.JsonParseException
 import dev.s7a.strata.geometry.IntSize
 import dev.s7a.strata.render.DrawImage
 import dev.s7a.strata.render.createDrawImage
+import dev.s7a.strata.resource.ResourceId
+import dev.s7a.strata.runtime.minecraft.font.MinecraftFontBackend
+import dev.s7a.strata.runtime.minecraft.font.MinecraftFontBackendFactory
+import dev.s7a.strata.runtime.minecraft.font.MinecraftFontCompatibility
+import dev.s7a.strata.runtime.minecraft.font.MinecraftFontEngine
+import dev.s7a.strata.runtime.minecraft.font.MinecraftFontGlyph
+import dev.s7a.strata.runtime.minecraft.font.MinecraftFontOptions
+import dev.s7a.strata.runtime.minecraft.font.MinecraftTrueTypeFace
+import dev.s7a.strata.runtime.minecraft.font.MinecraftTrueTypeRasterizer
+import dev.s7a.strata.runtime.minecraft.font.MinecraftTrueTypeSettings
+import net.minecraft.network.chat.Component
 import net.minecraft.resources.Identifier
+import net.minecraft.server.packs.PackLocationInfo
+import net.minecraft.server.packs.PackType
+import net.minecraft.server.packs.PathPackResources
+import net.minecraft.server.packs.repository.PackSource
+import net.minecraft.server.packs.resources.MultiPackResourceManager
+import net.minecraft.server.packs.resources.Resource
+import net.minecraft.server.packs.resources.ResourceManager
+import org.junit.jupiter.api.Assertions.assertArrayEquals
 import org.junit.jupiter.api.Assertions.assertDoesNotThrow
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertSame
 import org.junit.jupiter.api.Assertions.assertThrows
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.io.TempDir
+import java.io.ByteArrayOutputStream
 import java.io.IOException
+import java.nio.file.Files
+import java.nio.file.Path
+import java.util.Optional
+import java.util.function.Predicate
+import java.util.zip.ZipEntry
+import java.util.zip.ZipOutputStream
 
 /**
  * Verifies strict selection and decoding of the supported bitmap-font provider graph.
@@ -144,6 +171,134 @@ internal class FabricMinecraftFontContractTest {
                 validateMinecraftRegularFontContract(asciiImage()) { throw readFailure }
             }
         assertSame(readFailure, escaped)
+    }
+
+    @Test
+    fun capturesFontStacksAndExactProviderAssetsWithoutRootEnumeration(
+        @TempDir directory: Path,
+    ) {
+        val lower = resourceFontPack(directory.resolve("lower"), resourceFontFiles())
+        val higher =
+            resourceFontPack(
+                directory.resolve("higher"),
+                mapOf(
+                    "assets/minecraft/font/default.json" to """{"providers":[{"type":"space","advances":{"Z":9}}]}""".toByteArray(),
+                    "assets/test/font/shared.json" to """{"providers":[{"type":"space","advances":{"Q":4}}]}""".toByteArray(),
+                    "assets/test/textures/custom/atlas.png" to byteArrayOf(2),
+                    "assets/test/font/nested/custom.ttf" to byteArrayOf(4),
+                ),
+            )
+        val reads = ArrayList<Identifier>()
+        var readingAllowed = true
+        val snapshot =
+            MultiPackResourceManager(PackType.CLIENT_RESOURCES, listOf(lower, higher)).use { manager ->
+                val observed = observedFontResources(manager, reads) { assertTrue(readingAllowed) }
+                extractFabricMinecraftFontSnapshot(observed, MinecraftFontCompatibility(MinecraftTrueTypeRasterizer.FreeType, 84), MinecraftFontOptions())
+            }
+        readingAllowed = false
+        assertEquals(setOf(ResourceId("minecraft", "default"), ResourceId("test", "shared")), snapshot.fontIds)
+        assertEquals(
+            setOf(
+                Identifier.parse("test:textures/custom/atlas.png"),
+                Identifier.parse("test:outside/glyphs.zip"),
+                Identifier.parse("test:font/nested/custom.ttf"),
+            ),
+            reads.toSet(),
+        )
+        MinecraftFontEngine(snapshot, MinecraftFontBackendFactory { ResourceFontBackend() }).use { engine ->
+            val font = ResourceId("minecraft", "default")
+            assertEquals(9.0f, engine.glyph(font, 'A'.code).advance)
+            assertEquals(2.0f, engine.glyph(font, 'L'.code).advance)
+            assertEquals(9.0f, engine.glyph(font, 'Z'.code).advance)
+            assertEquals(4.0f, engine.glyph(font, 'Q'.code).advance)
+            assertEquals(5.0f, engine.glyph(font, '한'.code).advance)
+            assertEquals(7.5f, engine.glyph(font, 'T'.code).advance)
+            assertTrue(engine.diagnostics.isEmpty())
+        }
+    }
+
+    private fun observedFontResources(
+        manager: ResourceManager,
+        reads: MutableList<Identifier>,
+        checkReading: () -> Unit,
+    ): ResourceManager =
+        object : ResourceManager by manager {
+            override fun listResourceStacks(
+                path: String,
+                predicate: Predicate<Identifier>,
+            ): Map<Identifier, List<Resource>> {
+                checkReading()
+                assertEquals("font", path)
+                return manager.listResourceStacks(path, predicate)
+            }
+
+            override fun getResource(location: Identifier): Optional<Resource> {
+                checkReading()
+                reads.add(location)
+                return manager.getResource(location)
+            }
+        }
+
+    private fun resourceFontPack(
+        directory: Path,
+        files: Map<String, ByteArray>,
+    ): PathPackResources {
+        for ((path, bytes) in files) {
+            val target = directory.resolve(path)
+            Files.createDirectories(target.parent)
+            Files.write(target, bytes)
+        }
+        val location = PackLocationInfo(directory.fileName.toString(), Component.literal("Font fixture"), PackSource.DEFAULT, Optional.empty())
+        return PathPackResources(location, directory)
+    }
+
+    private fun resourceFontFiles(): Map<String, ByteArray> =
+        mapOf(
+            "assets/minecraft/font/default.json" to
+                """{"providers":[{"type":"reference","id":"test:shared"},{"type":"space","advances":{"L":2}}]}""".toByteArray(),
+            "assets/test/font/shared.json" to
+                """
+                {"providers":[
+                    {"type":"bitmap","file":"test:custom/atlas.png","ascent":7,"chars":["A"]},
+                    {"type":"unihex","hex_file":"test:outside/glyphs.zip"},
+                    {"type":"ttf","file":"test:nested/custom.ttf"}
+                ]}
+                """.trimIndent().toByteArray(),
+            "assets/test/textures/custom/atlas.png" to byteArrayOf(1),
+            "assets/test/font/nested/custom.ttf" to byteArrayOf(3),
+            "assets/test/outside/glyphs.zip" to unihexArchive(),
+        )
+
+    private fun unihexArchive(): ByteArray {
+        val bytes = ByteArrayOutputStream()
+        ZipOutputStream(bytes).use { zip ->
+            zip.putNextEntry(ZipEntry("custom.hex"))
+            zip.write("D55C:${"FF".repeat(16)}\n".toByteArray())
+            zip.closeEntry()
+        }
+        return bytes.toByteArray()
+    }
+
+    private class ResourceFontBackend : MinecraftFontBackend {
+        override fun decodePng(bytes: ByteArray): DrawImage {
+            assertArrayEquals(byteArrayOf(2), bytes)
+            return createDrawImage(IntSize(1, 1), intArrayOf(0xFFFFFFFF.toInt()))
+        }
+
+        override fun openTrueType(
+            bytes: ByteArray,
+            settings: MinecraftTrueTypeSettings,
+        ): MinecraftTrueTypeFace {
+            assertArrayEquals(byteArrayOf(4), bytes)
+            val glyphs = mapOf('T'.code to MinecraftFontGlyph(7.5f, 0.0f, 0.0f, 0.0f, 0.0f, null))
+            return object : MinecraftTrueTypeFace {
+                override fun glyph(codePoint: Int): MinecraftFontGlyph? = glyphs[codePoint]
+
+                override fun close() = Unit
+            }
+        }
+
+        override fun close() = Unit
     }
 
     private fun validDocuments(): Map<Identifier, String> =

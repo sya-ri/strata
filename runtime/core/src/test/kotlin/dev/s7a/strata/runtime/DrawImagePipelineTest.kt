@@ -4,6 +4,7 @@ import dev.s7a.strata.element.Element
 import dev.s7a.strata.element.ElementIdentity
 import dev.s7a.strata.element.ElementType
 import dev.s7a.strata.geometry.Constraints
+import dev.s7a.strata.geometry.FloatRect
 import dev.s7a.strata.geometry.IntOffset
 import dev.s7a.strata.geometry.IntRect
 import dev.s7a.strata.geometry.IntSize
@@ -18,6 +19,7 @@ import dev.s7a.strata.node.PaintNode
 import dev.s7a.strata.render.ArgbColor
 import dev.s7a.strata.render.DrawImage
 import dev.s7a.strata.render.PaintScope
+import dev.s7a.strata.render.SampledImageOrientation
 import dev.s7a.strata.render.createDrawImage
 import dev.s7a.strata.runtime.render.DrawCommand
 import org.junit.jupiter.api.Assertions.assertEquals
@@ -29,6 +31,93 @@ import org.junit.jupiter.api.assertThrows
  * Verifies image command validation and local paint retention in core.
  */
 internal class DrawImagePipelineTest {
+    @Test
+    fun sampledCommandsRejectInvalidSourcesDestinationsAndCutoffs() {
+        val image = image()
+        val valid = FloatRect(0f, 0f, 2f, 2f)
+        listOf(
+            FloatRect(-0.25f, 0f, 1f, 1f),
+            FloatRect(0f, -0.25f, 1f, 1f),
+            FloatRect(0f, 0f, 2.25f, 1f),
+            FloatRect(0f, 0f, 1f, 2.25f),
+            FloatRect(0f, 0f, 0f, 1f),
+            FloatRect(0f, 0f, 1f, 0f),
+        ).forEach { invalid ->
+            assertThrows<IllegalArgumentException> { DrawCommand.SampledImage(image, invalid, valid) }
+        }
+        listOf(FloatRect(0f, 0f, 0f, 1f), FloatRect(0f, 0f, 1f, 0f)).forEach { invalid ->
+            assertThrows<IllegalArgumentException> { DrawCommand.SampledImage(image, valid, invalid) }
+        }
+        listOf(-0.1f, 1.1f, Float.NaN, Float.POSITIVE_INFINITY, Float.NEGATIVE_INFINITY).forEach { invalid ->
+            assertThrows<IllegalArgumentException> { DrawCommand.SampledImage(image, valid, valid, alphaCutoff = invalid) }
+        }
+        val empty = createDrawImage(IntSize(0, 0), intArrayOf())
+        assertThrows<IllegalArgumentException> { DrawCommand.SampledImage(empty, valid, valid) }
+    }
+
+    @Test
+    fun sampledPaintPreservesFractionalTranslationOrderRetentionAndScopeLifetime() {
+        val image = image()
+        val source = FloatRect(0.25f, 0.5f, 1.75f, 2f)
+        val destination = FloatRect(-0.25f, 1.5f, 2.75f, 4.5f)
+        val tint = ArgbColor(0x80AABBCC.toInt())
+        var retainedScope: PaintScope? = null
+        val child =
+            BlitElement(
+                image,
+                IntRect(0, 0, 2, 2),
+                IntRect(0, 0, 2, 2),
+                before = ArgbColor(0xFF101010.toInt()),
+                after = ArgbColor(0xFF202020.toInt()),
+                customPaint = { scope ->
+                    retainedScope = scope
+                    scope.sampledImage(image, source, destination, SampledImageOrientation.FlipBoth, tint, alphaCutoff = 0.25f)
+                },
+            )
+        val tree = UiTree()
+        tree.update(ParentElement(child))
+        tree.measure(Constraints(maxWidth = 20, maxHeight = 20))
+        tree.layout()
+        val commands = tree.paint()
+        assertEquals(4, commands.size)
+        val sampled = commands[2] as DrawCommand.SampledImage
+        assertSame(image, sampled.image)
+        assertEquals(source, sampled.source)
+        assertEquals(FloatRect(2.75f, 5.5f, 5.75f, 8.5f), sampled.destination)
+        assertEquals(tint, sampled.tint)
+        assertEquals(0.25f, sampled.alphaCutoff)
+        assertEquals(SampledImageOrientation.FlipBoth, sampled.orientation)
+        assertEquals(ArgbColor(0xFF101010.toInt()), (commands[1] as DrawCommand.FillRectangle).color)
+        assertEquals(ArgbColor(0xFF202020.toInt()), (commands[3] as DrawCommand.FillRectangle).color)
+        assertEquals(commands, tree.paint())
+        assertEquals(1, child.node.paintCalls)
+        child.node.invalidatePaint()
+        assertEquals(commands, tree.paint())
+        assertEquals(2, child.node.paintCalls)
+        assertThrows<IllegalStateException> {
+            requireNotNull(retainedScope).sampledImage(image, source, destination, SampledImageOrientation.FlipBoth)
+        }
+        tree.close()
+    }
+
+    @Test
+    fun sampledPaintScopeValidatesBeforeRetainingACommand() {
+        val image = image()
+        val source = FloatRect(0f, -0.5f, 1f, 1f)
+        val destination = FloatRect(0f, 0f, 1f, 1f)
+        val tree = UiTree()
+        tree.update(
+            BlitElement(image, IntRect(0, 0, 1, 1), IntRect(0, 0, 1, 1), customPaint = { scope ->
+                assertThrows<IllegalArgumentException> { scope.sampledImage(image, source, destination) }
+                scope.sampledImage(image, destination, destination)
+            }),
+        )
+        tree.measure(Constraints.fixed(8, 8))
+        tree.layout()
+        assertEquals(listOf(DrawCommand.SampledImage(image, destination, destination)), tree.paint())
+        tree.close()
+    }
+
     @Test
     fun publicCommandChecksEverySourceEdgeAndDestinationExtent() {
         val image = image()
@@ -144,6 +233,7 @@ internal class DrawImagePipelineTest {
         private val destination: IntRect,
         private val before: ArgbColor? = null,
         private val after: ArgbColor? = null,
+        private val customPaint: ((PaintScope) -> Unit)? = null,
     ) : Element(
             identity = ElementIdentity.Positional,
             type = TYPE,
@@ -157,7 +247,7 @@ internal class DrawImagePipelineTest {
                     nodeClass = BlitNode::class,
                     validateLocal = { },
                     createNode = { element ->
-                        BlitNode(element.image, element.source, element.destination, element.before, element.after).also {
+                        BlitNode(element.image, element.source, element.destination, element.before, element.after, element.customPaint).also {
                             element.retainedNode = it
                         }
                     },
@@ -167,6 +257,7 @@ internal class DrawImagePipelineTest {
                         node.destination = element.destination
                         node.before = element.before
                         node.after = element.after
+                        node.customPaint = element.customPaint
                         DirtyMask.of(DirtyPhase.Paint)
                     },
                 )
@@ -182,6 +273,7 @@ internal class DrawImagePipelineTest {
         var destination: IntRect,
         var before: ArgbColor?,
         var after: ArgbColor?,
+        var customPaint: ((PaintScope) -> Unit)?,
     ) : Node(),
         MeasureNode,
         LayoutNode,
@@ -198,7 +290,12 @@ internal class DrawImagePipelineTest {
         override fun paint(scope: PaintScope) {
             paintCalls += 1
             before?.let { color -> scope.fillRectangle(IntRect(0, 0, scope.size.width, scope.size.height), color) }
-            scope.blitImage(image, source, destination)
+            val paint = customPaint
+            if (paint == null) {
+                scope.blitImage(image, source, destination)
+            } else {
+                paint(scope)
+            }
             after?.let { color -> scope.fillRectangle(IntRect(0, 0, scope.size.width, scope.size.height), color) }
         }
 

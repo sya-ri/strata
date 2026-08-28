@@ -50,7 +50,7 @@ private class MinecraftSliderElement private constructor(
     internal val highlightedHandle: DrawImage,
     internal val normalText: MinecraftTextRun,
     internal val inactiveText: MinecraftTextRun,
-    internal val label: UiText.Literal,
+    internal val label: UiText,
     internal val state: SliderState,
     internal val width: Int,
     internal val enabled: Boolean,
@@ -81,7 +81,7 @@ private class MinecraftSliderElement private constructor(
         private var highlightedHandle: DrawImage? = initial.highlightedHandle
         private var normalText: MinecraftTextRun? = initial.normalText
         private var inactiveText: MinecraftTextRun? = initial.inactiveText
-        private var label: UiText.Literal? = initial.label
+        private var label: UiText? = initial.label
         private var state: SliderState? = initial.state
         private var width = initial.width
         private var enabled = initial.enabled
@@ -286,7 +286,7 @@ private class MinecraftSliderElement private constructor(
             highlightedHandle: DrawImage,
             normalText: MinecraftTextRun,
             inactiveText: MinecraftTextRun,
-            label: UiText.Literal,
+            label: UiText,
             state: SliderState,
             width: Int,
             enabled: Boolean,
@@ -322,7 +322,7 @@ internal fun createMinecraftSliderElement(
     highlightedHandle: DrawImage,
     normalText: MinecraftTextRun,
     inactiveText: MinecraftTextRun,
-    label: UiText.Literal,
+    label: UiText,
     state: SliderState,
     width: Int,
     enabled: Boolean,

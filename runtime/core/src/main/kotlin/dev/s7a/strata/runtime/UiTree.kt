@@ -9,6 +9,7 @@ import dev.s7a.strata.input.PointerEvent
 import dev.s7a.strata.input.TextInputEvent
 import dev.s7a.strata.runtime.render.DrawCommand
 import dev.s7a.strata.runtime.semantics.SemanticsEntry
+import dev.s7a.strata.runtime.spi.RuntimeTextInputFocus
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
 
 // Why: this public owner intentionally exposes each retained lifecycle, frame, input, and inspection operation through one guarded boundary.
@@ -51,6 +52,20 @@ public class UiTree : AutoCloseable {
             threadGuard.check()
             return currentState
         }
+
+    /**
+     * Returns the detached identity of the current editable focus interval to its owning session.
+     *
+     * @return the committed editable interval, or null without an accepting editable focus target.
+     * @throws IllegalStateException when read from another thread, during a tree operation, or after terminal cleanup.
+     */
+    @JvmSynthetic
+    internal fun currentTextInputFocus(): RuntimeTextInputFocus? {
+        threadGuard.check()
+        check(operationActive.not()) { "A tree operation is already active." }
+        check(currentState === TreeState.Active) { "The retained tree is not active." }
+        return pipeline.textInputFocus
+    }
 
     /**
      * Returns the whole-tree change token used by an owning session's frame cache.

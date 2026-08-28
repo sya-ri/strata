@@ -43,11 +43,12 @@ internal fun mapMinecraftCharacter(event: CharacterEvent): TextInputEvent.Charac
 /**
  * Maps one Minecraft input-method preedit snapshot into detached platform-neutral values.
  *
- * @param event native immutable preedit record.
+ * @param event native immutable preedit record, or null when composition ends.
  * @return detached common event, or null when native caret or focused-block indices are inconsistent.
  */
 @JvmSynthetic
-internal fun mapMinecraftPreedit(event: PreeditEvent): TextInputEvent.Preedit? {
+internal fun mapMinecraftPreedit(event: PreeditEvent?): TextInputEvent.Preedit? {
+    if (event == null) return TextInputEvent.Preedit("", 0, emptyList(), -1)
     val text = event.fullText()
     val caret = event.caretPosition()
     val blocks = event.blocks().toList()

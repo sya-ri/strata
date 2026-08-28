@@ -207,12 +207,20 @@ public final class dev/s7a/strata/component/ProfileComponents {
 	public static synthetic fun Tab$default (Ldev/s7a/strata/component/UiScope;Ldev/s7a/strata/text/UiText;ZIZLdev/s7a/strata/component/TabSelectionIndicator;Ldev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/element/ElementKey;ILjava/lang/Object;)V
 	public static synthetic fun Tab$default (Ldev/s7a/strata/component/UiScope;Ljava/lang/String;ZIZLdev/s7a/strata/component/TabSelectionIndicator;Ldev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/element/ElementKey;ILjava/lang/Object;)V
 	public static final fun Text (Ldev/s7a/strata/component/UiScope;Ldev/s7a/strata/text/UiText;Ldev/s7a/strata/component/TextStyle;Ldev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/element/ElementKey;)V
+	public static final fun Text (Ldev/s7a/strata/component/UiScope;Ldev/s7a/strata/text/UiText;Ldev/s7a/strata/resource/ResourceId;Ldev/s7a/strata/component/TextStyle;Ldev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/element/ElementKey;)V
 	public static final fun Text (Ldev/s7a/strata/component/UiScope;Ljava/lang/String;Ldev/s7a/strata/component/TextStyle;Ldev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/element/ElementKey;)V
+	public static final fun Text (Ldev/s7a/strata/component/UiScope;Ljava/lang/String;Ldev/s7a/strata/resource/ResourceId;Ldev/s7a/strata/component/TextStyle;Ldev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/element/ElementKey;)V
 	public static synthetic fun Text$default (Ldev/s7a/strata/component/UiScope;Ldev/s7a/strata/text/UiText;Ldev/s7a/strata/component/TextStyle;Ldev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/element/ElementKey;ILjava/lang/Object;)V
+	public static synthetic fun Text$default (Ldev/s7a/strata/component/UiScope;Ldev/s7a/strata/text/UiText;Ldev/s7a/strata/resource/ResourceId;Ldev/s7a/strata/component/TextStyle;Ldev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/element/ElementKey;ILjava/lang/Object;)V
 	public static synthetic fun Text$default (Ldev/s7a/strata/component/UiScope;Ljava/lang/String;Ldev/s7a/strata/component/TextStyle;Ldev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/element/ElementKey;ILjava/lang/Object;)V
+	public static synthetic fun Text$default (Ldev/s7a/strata/component/UiScope;Ljava/lang/String;Ldev/s7a/strata/resource/ResourceId;Ldev/s7a/strata/component/TextStyle;Ldev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/element/ElementKey;ILjava/lang/Object;)V
+	public static final fun TextField (Ldev/s7a/strata/component/UiScope;Ldev/s7a/strata/component/TextFieldState;Ldev/s7a/strata/geometry/IntSize;Ldev/s7a/strata/resource/ResourceId;ZLdev/s7a/strata/component/TextStyle;Ldev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/element/ElementKey;)V
 	public static final fun TextField (Ldev/s7a/strata/component/UiScope;Ldev/s7a/strata/component/TextFieldState;Ldev/s7a/strata/geometry/IntSize;ZLdev/s7a/strata/component/TextStyle;Ldev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/element/ElementKey;)V
+	public static final fun TextField (Ldev/s7a/strata/component/UiScope;Ldev/s7a/strata/component/TextFieldState;Ldev/s7a/strata/resource/ResourceId;ZLdev/s7a/strata/component/TextStyle;Ldev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/element/ElementKey;)V
 	public static final fun TextField (Ldev/s7a/strata/component/UiScope;Ldev/s7a/strata/component/TextFieldState;ZLdev/s7a/strata/component/TextStyle;Ldev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/element/ElementKey;)V
+	public static synthetic fun TextField$default (Ldev/s7a/strata/component/UiScope;Ldev/s7a/strata/component/TextFieldState;Ldev/s7a/strata/geometry/IntSize;Ldev/s7a/strata/resource/ResourceId;ZLdev/s7a/strata/component/TextStyle;Ldev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/element/ElementKey;ILjava/lang/Object;)V
 	public static synthetic fun TextField$default (Ldev/s7a/strata/component/UiScope;Ldev/s7a/strata/component/TextFieldState;Ldev/s7a/strata/geometry/IntSize;ZLdev/s7a/strata/component/TextStyle;Ldev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/element/ElementKey;ILjava/lang/Object;)V
+	public static synthetic fun TextField$default (Ldev/s7a/strata/component/UiScope;Ldev/s7a/strata/component/TextFieldState;Ldev/s7a/strata/resource/ResourceId;ZLdev/s7a/strata/component/TextStyle;Ldev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/element/ElementKey;ILjava/lang/Object;)V
 	public static synthetic fun TextField$default (Ldev/s7a/strata/component/UiScope;Ldev/s7a/strata/component/TextFieldState;ZLdev/s7a/strata/component/TextStyle;Ldev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/element/ElementKey;ILjava/lang/Object;)V
 }
 
@@ -459,6 +467,26 @@ public final class dev/s7a/strata/geometry/Constraints {
 
 public final class dev/s7a/strata/geometry/Constraints$Companion {
 	public final fun fixed (II)Ldev/s7a/strata/geometry/Constraints;
+}
+
+public final class dev/s7a/strata/geometry/FloatRect {
+	public fun <init> (FFFF)V
+	public final fun component1 ()F
+	public final fun component2 ()F
+	public final fun component3 ()F
+	public final fun component4 ()F
+	public final fun copy (FFFF)Ldev/s7a/strata/geometry/FloatRect;
+	public static synthetic fun copy$default (Ldev/s7a/strata/geometry/FloatRect;FFFFILjava/lang/Object;)Ldev/s7a/strata/geometry/FloatRect;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getBottom ()F
+	public final fun getHeight ()F
+	public final fun getLeft ()F
+	public final fun getRight ()F
+	public final fun getTop ()F
+	public final fun getWidth ()F
+	public fun hashCode ()I
+	public final fun plus (Ldev/s7a/strata/geometry/IntOffset;)Ldev/s7a/strata/geometry/FloatRect;
+	public fun toString ()Ljava/lang/String;
 }
 
 public final class dev/s7a/strata/geometry/Insets {
@@ -1024,11 +1052,13 @@ public abstract interface class dev/s7a/strata/node/DynamicChildrenNode {
 public abstract interface class dev/s7a/strata/node/FocusTargetNode {
 	public abstract fun getAcceptsFocus ()Z
 	public fun getRequestsInitialFocus ()Z
+	public fun getRequiresTextInput ()Z
 	public abstract fun onFocusChanged (Z)V
 }
 
 public final class dev/s7a/strata/node/FocusTargetNode$DefaultImpls {
 	public static fun getRequestsInitialFocus (Ldev/s7a/strata/node/FocusTargetNode;)Z
+	public static fun getRequiresTextInput (Ldev/s7a/strata/node/FocusTargetNode;)Z
 }
 
 public abstract interface class dev/s7a/strata/node/FrameTimeNode {
@@ -1127,6 +1157,17 @@ public abstract interface class dev/s7a/strata/render/PaintScope {
 	public abstract fun drawPlatform (Ldev/s7a/strata/render/PlatformDrawCommand;Ldev/s7a/strata/geometry/IntRect;)V
 	public abstract fun fillRectangle-RtejO-o (Ldev/s7a/strata/geometry/IntRect;I)V
 	public abstract fun getSize ()Ldev/s7a/strata/geometry/IntSize;
+	public fun sampledImage-rA9Hmdk (Ldev/s7a/strata/render/DrawImage;Ldev/s7a/strata/geometry/FloatRect;Ldev/s7a/strata/geometry/FloatRect;IF)V
+	public static synthetic fun sampledImage-rA9Hmdk$default (Ldev/s7a/strata/render/PaintScope;Ldev/s7a/strata/render/DrawImage;Ldev/s7a/strata/geometry/FloatRect;Ldev/s7a/strata/geometry/FloatRect;IFILjava/lang/Object;)V
+	public fun sampledImage-wyvhK5Q (Ldev/s7a/strata/render/DrawImage;Ldev/s7a/strata/geometry/FloatRect;Ldev/s7a/strata/geometry/FloatRect;Ldev/s7a/strata/render/SampledImageOrientation;IF)V
+	public static synthetic fun sampledImage-wyvhK5Q$default (Ldev/s7a/strata/render/PaintScope;Ldev/s7a/strata/render/DrawImage;Ldev/s7a/strata/geometry/FloatRect;Ldev/s7a/strata/geometry/FloatRect;Ldev/s7a/strata/render/SampledImageOrientation;IFILjava/lang/Object;)V
+}
+
+public final class dev/s7a/strata/render/PaintScope$DefaultImpls {
+	public static fun sampledImage-rA9Hmdk (Ldev/s7a/strata/render/PaintScope;Ldev/s7a/strata/render/DrawImage;Ldev/s7a/strata/geometry/FloatRect;Ldev/s7a/strata/geometry/FloatRect;IF)V
+	public static synthetic fun sampledImage-rA9Hmdk$default (Ldev/s7a/strata/render/PaintScope;Ldev/s7a/strata/render/DrawImage;Ldev/s7a/strata/geometry/FloatRect;Ldev/s7a/strata/geometry/FloatRect;IFILjava/lang/Object;)V
+	public static fun sampledImage-wyvhK5Q (Ldev/s7a/strata/render/PaintScope;Ldev/s7a/strata/render/DrawImage;Ldev/s7a/strata/geometry/FloatRect;Ldev/s7a/strata/geometry/FloatRect;Ldev/s7a/strata/render/SampledImageOrientation;IF)V
+	public static synthetic fun sampledImage-wyvhK5Q$default (Ldev/s7a/strata/render/PaintScope;Ldev/s7a/strata/render/DrawImage;Ldev/s7a/strata/geometry/FloatRect;Ldev/s7a/strata/geometry/FloatRect;Ldev/s7a/strata/render/SampledImageOrientation;IFILjava/lang/Object;)V
 }
 
 public abstract interface class dev/s7a/strata/render/PlatformDrawCommand {
@@ -1134,6 +1175,23 @@ public abstract interface class dev/s7a/strata/render/PlatformDrawCommand {
 
 public abstract interface class dev/s7a/strata/render/RootOverlayPaintScope : dev/s7a/strata/render/PaintScope {
 	public abstract fun getAnchorBounds ()Ldev/s7a/strata/geometry/IntRect;
+}
+
+public final class dev/s7a/strata/render/RootOverlayPaintScope$DefaultImpls {
+	public static fun sampledImage-rA9Hmdk (Ldev/s7a/strata/render/RootOverlayPaintScope;Ldev/s7a/strata/render/DrawImage;Ldev/s7a/strata/geometry/FloatRect;Ldev/s7a/strata/geometry/FloatRect;IF)V
+	public static fun sampledImage-wyvhK5Q (Ldev/s7a/strata/render/RootOverlayPaintScope;Ldev/s7a/strata/render/DrawImage;Ldev/s7a/strata/geometry/FloatRect;Ldev/s7a/strata/geometry/FloatRect;Ldev/s7a/strata/render/SampledImageOrientation;IF)V
+}
+
+public final class dev/s7a/strata/render/SampledImageOrientation : java/lang/Enum {
+	public static final field FlipBoth Ldev/s7a/strata/render/SampledImageOrientation;
+	public static final field FlipHorizontal Ldev/s7a/strata/render/SampledImageOrientation;
+	public static final field FlipVertical Ldev/s7a/strata/render/SampledImageOrientation;
+	public static final field Normal Ldev/s7a/strata/render/SampledImageOrientation;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public final fun getFlipX ()Z
+	public final fun getFlipY ()Z
+	public static fun valueOf (Ljava/lang/String;)Ldev/s7a/strata/render/SampledImageOrientation;
+	public static fun values ()[Ldev/s7a/strata/render/SampledImageOrientation;
 }
 
 public final class dev/s7a/strata/resource/ResourceId {
@@ -1310,7 +1368,12 @@ public abstract interface class dev/s7a/strata/spi/ComponentRuntime {
 	public abstract fun tab (Ldev/s7a/strata/text/UiText;ZIZLdev/s7a/strata/component/TabSelectionIndicator;Ldev/s7a/strata/element/Element;Ldev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/element/ElementKey;)Ldev/s7a/strata/element/Element;
 	public abstract fun text (Ldev/s7a/strata/text/UiText;Ldev/s7a/strata/component/TextStyle;Ldev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/element/ElementKey;)Ldev/s7a/strata/element/Element;
 	public abstract fun textField (Ldev/s7a/strata/component/TextFieldState;Ldev/s7a/strata/geometry/IntSize;ZLdev/s7a/strata/component/TextStyle;Ldev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/element/ElementKey;)Ldev/s7a/strata/element/Element;
+	public fun textField (Ldev/s7a/strata/component/TextFieldState;Ldev/s7a/strata/geometry/IntSize;ZLdev/s7a/strata/component/TextStyle;Ldev/s7a/strata/resource/ResourceId;Ldev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/element/ElementKey;)Ldev/s7a/strata/element/Element;
 	public abstract fun tooltip (Ldev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/text/UiText;J)Ldev/s7a/strata/modifier/Modifier;
+}
+
+public final class dev/s7a/strata/spi/ComponentRuntime$DefaultImpls {
+	public static fun textField (Ldev/s7a/strata/spi/ComponentRuntime;Ldev/s7a/strata/component/TextFieldState;Ldev/s7a/strata/geometry/IntSize;ZLdev/s7a/strata/component/TextStyle;Ldev/s7a/strata/resource/ResourceId;Ldev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/element/ElementKey;)Ldev/s7a/strata/element/Element;
 }
 
 public final class dev/s7a/strata/spi/ComponentRuntimeBridge {
@@ -1451,6 +1514,19 @@ public final class dev/s7a/strata/text/UiText$Translated : dev/s7a/strata/text/U
 	public fun toString ()Ljava/lang/String;
 }
 
+public final class dev/s7a/strata/text/UiText$WithFont : dev/s7a/strata/text/UiText {
+	public fun <init> (Ldev/s7a/strata/text/UiText;Ldev/s7a/strata/resource/ResourceId;)V
+	public final fun component1 ()Ldev/s7a/strata/text/UiText;
+	public final fun component2 ()Ldev/s7a/strata/resource/ResourceId;
+	public final fun copy (Ldev/s7a/strata/text/UiText;Ldev/s7a/strata/resource/ResourceId;)Ldev/s7a/strata/text/UiText$WithFont;
+	public static synthetic fun copy$default (Ldev/s7a/strata/text/UiText$WithFont;Ldev/s7a/strata/text/UiText;Ldev/s7a/strata/resource/ResourceId;ILjava/lang/Object;)Ldev/s7a/strata/text/UiText$WithFont;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getFont ()Ldev/s7a/strata/resource/ResourceId;
+	public final fun getText ()Ldev/s7a/strata/text/UiText;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
 public abstract interface class dev/s7a/strata/text/UiTextArgument {
 }
 
@@ -1529,5 +1605,9 @@ public final class dev/s7a/strata/text/UiTextArgument$Text : dev/s7a/strata/text
 	public final fun getValue ()Ldev/s7a/strata/text/UiText;
 	public fun hashCode ()I
 	public fun toString ()Ljava/lang/String;
+}
+
+public final class dev/s7a/strata/text/UiTextExtensionsKt {
+	public static final fun withFont (Ldev/s7a/strata/text/UiText;Ldev/s7a/strata/resource/ResourceId;)Ldev/s7a/strata/text/UiText;
 }
 

@@ -1,9 +1,11 @@
 package dev.s7a.strata.runtime
 
+import dev.s7a.strata.geometry.FloatRect
 import dev.s7a.strata.geometry.IntRect
 import dev.s7a.strata.render.ArgbColor
 import dev.s7a.strata.render.DrawImage
 import dev.s7a.strata.render.PlatformDrawCommand
+import dev.s7a.strata.render.SampledImageOrientation
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
 
 /**
@@ -36,6 +38,30 @@ internal sealed interface LocalDrawCommand {
     ) : LocalDrawCommand {
         init {
             validateBlitImage(image, source, destination)
+        }
+    }
+
+    /**
+     * Retains immutable sampled-image inputs until the owner thread translates them into tree coordinates.
+     *
+     * @property image the immutable source image retained by reference.
+     * @property source the nonempty fractional source rectangle contained in the image.
+     * @property destination the nonempty fractional local destination rectangle.
+     * @property tint the multiplicative straight ARGB color.
+     * @property alphaCutoff the inclusive minimum normalized alpha after tint multiplication.
+     * @property orientation source-axis directions retained through translation and cached paint.
+     * @throws IllegalArgumentException when the source, destination, or cutoff is invalid.
+     */
+    data class SampledImage(
+        val image: DrawImage,
+        val source: FloatRect,
+        val destination: FloatRect,
+        val tint: ArgbColor,
+        val alphaCutoff: Float,
+        val orientation: SampledImageOrientation,
+    ) : LocalDrawCommand {
+        init {
+            validateSampledImage(image, source, destination, alphaCutoff)
         }
     }
 

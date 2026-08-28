@@ -18,10 +18,16 @@ import net.minecraft.network.chat.Component
 internal fun mapMinecraftText(text: UiText): Component =
     when (text) {
         is UiText.Literal -> Component.literal(text.value)
+        is UiText.WithFont -> mapFontMinecraftText(text)
         is UiText.Translated -> mapTranslatedMinecraftText(text)
         is UiText.Concatenated -> text.parts.fold(Component.empty()) { result, part -> result.append(mapMinecraftText(part)) }
         is UiText.Platform -> throw IllegalArgumentException("Platform text has no safe Component adapter.")
     }
+
+private fun mapFontMinecraftText(text: UiText.WithFont): Component {
+    val component = mapMinecraftText(text.text).copy()
+    return component.setStyle(component.getStyle().applyTo(mapMinecraftFont(text.font)))
+}
 
 private fun mapTranslatedMinecraftText(text: UiText.Translated): Component {
     val arguments = text.arguments.map(::mapMinecraftTextArgument).toTypedArray()

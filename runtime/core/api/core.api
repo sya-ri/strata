@@ -98,6 +98,30 @@ public final class dev/s7a/strata/runtime/render/DrawCommand$PushClip : dev/s7a/
 	public fun toString ()Ljava/lang/String;
 }
 
+public final class dev/s7a/strata/runtime/render/DrawCommand$SampledImage : dev/s7a/strata/runtime/render/DrawCommand {
+	public synthetic fun <init> (Ldev/s7a/strata/render/DrawImage;Ldev/s7a/strata/geometry/FloatRect;Ldev/s7a/strata/geometry/FloatRect;IFILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public synthetic fun <init> (Ldev/s7a/strata/render/DrawImage;Ldev/s7a/strata/geometry/FloatRect;Ldev/s7a/strata/geometry/FloatRect;IFLdev/s7a/strata/render/SampledImageOrientation;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public synthetic fun <init> (Ldev/s7a/strata/render/DrawImage;Ldev/s7a/strata/geometry/FloatRect;Ldev/s7a/strata/geometry/FloatRect;IFLdev/s7a/strata/render/SampledImageOrientation;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public synthetic fun <init> (Ldev/s7a/strata/render/DrawImage;Ldev/s7a/strata/geometry/FloatRect;Ldev/s7a/strata/geometry/FloatRect;IFLkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Ldev/s7a/strata/render/DrawImage;
+	public final fun component2 ()Ldev/s7a/strata/geometry/FloatRect;
+	public final fun component3 ()Ldev/s7a/strata/geometry/FloatRect;
+	public final fun component4-e0e5deU ()I
+	public final fun component5 ()F
+	public final fun component6 ()Ldev/s7a/strata/render/SampledImageOrientation;
+	public final fun copy-126x1NU (Ldev/s7a/strata/render/DrawImage;Ldev/s7a/strata/geometry/FloatRect;Ldev/s7a/strata/geometry/FloatRect;IFLdev/s7a/strata/render/SampledImageOrientation;)Ldev/s7a/strata/runtime/render/DrawCommand$SampledImage;
+	public static synthetic fun copy-126x1NU$default (Ldev/s7a/strata/runtime/render/DrawCommand$SampledImage;Ldev/s7a/strata/render/DrawImage;Ldev/s7a/strata/geometry/FloatRect;Ldev/s7a/strata/geometry/FloatRect;IFLdev/s7a/strata/render/SampledImageOrientation;ILjava/lang/Object;)Ldev/s7a/strata/runtime/render/DrawCommand$SampledImage;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getAlphaCutoff ()F
+	public final fun getDestination ()Ldev/s7a/strata/geometry/FloatRect;
+	public final fun getImage ()Ldev/s7a/strata/render/DrawImage;
+	public final fun getOrientation ()Ldev/s7a/strata/render/SampledImageOrientation;
+	public final fun getSource ()Ldev/s7a/strata/geometry/FloatRect;
+	public final fun getTint-e0e5deU ()I
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
 public final class dev/s7a/strata/runtime/semantics/SemanticsEntry {
 	public fun <init> (Ldev/s7a/strata/geometry/IntRect;Ldev/s7a/strata/semantics/Semantics;)V
 	public final fun component1 ()Ldev/s7a/strata/geometry/IntRect;
@@ -109,6 +133,9 @@ public final class dev/s7a/strata/runtime/semantics/SemanticsEntry {
 	public final fun getSemantics ()Ldev/s7a/strata/semantics/Semantics;
 	public fun hashCode ()I
 	public fun toString ()Ljava/lang/String;
+}
+
+public final class dev/s7a/strata/runtime/spi/RuntimeTextInputFocus {
 }
 
 public abstract interface class dev/s7a/strata/runtime/spi/RuntimeUiFrame {
@@ -126,6 +153,7 @@ public abstract interface class dev/s7a/strata/runtime/spi/RuntimeUiSession : ja
 	public abstract fun dispatchTextInput (Ldev/s7a/strata/input/TextInputEvent;)Ldev/s7a/strata/input/InputResult;
 	public abstract fun frame (Ldev/s7a/strata/geometry/Constraints;)Ldev/s7a/strata/runtime/spi/RuntimeUiFrame;
 	public abstract fun frame (Ldev/s7a/strata/geometry/Constraints;Ldev/s7a/strata/runtime/FrameTime;)Ldev/s7a/strata/runtime/spi/RuntimeUiFrame;
+	public abstract fun getTextInputFocus ()Ldev/s7a/strata/runtime/spi/RuntimeTextInputFocus;
 }
 
 public final class dev/s7a/strata/runtime/spi/RuntimeUiSessionFactory {

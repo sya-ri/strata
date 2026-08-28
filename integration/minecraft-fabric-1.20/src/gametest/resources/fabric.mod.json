@@ -5,9 +5,10 @@
   "name": "Strata Minecraft Fabric 1.20 Integration",
   "description": "Loaded-client integration verification for Strata on Minecraft 1.20.",
   "environment": "client",
+  "accessWidener": "strata-font-parity.accesswidener",
   "entrypoints": {
     "client": [
-      "dev.s7a.strata.integration.minecraft.fabric.StrataMinecraftLegacyClientTest"
+      "dev.s7a.strata.integration.minecraft.fabric.StrataMinecraftFontClientTest"
     ]
   },
   "depends": {

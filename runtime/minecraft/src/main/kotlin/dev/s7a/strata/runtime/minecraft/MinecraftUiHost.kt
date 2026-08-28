@@ -6,6 +6,7 @@ import dev.s7a.strata.input.KeyboardEvent
 import dev.s7a.strata.input.PointerEvent
 import dev.s7a.strata.input.TextInputEvent
 import dev.s7a.strata.runtime.FrameTime
+import dev.s7a.strata.runtime.spi.RuntimeTextInputFocus
 import dev.s7a.strata.runtime.spi.RuntimeUiFrame
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
 import dev.s7a.strata.text.UiText
@@ -36,6 +37,17 @@ public sealed interface MinecraftUiHost : AutoCloseable {
      * @throws IllegalStateException when read from another thread, reentrantly, or after terminal failure or close.
      */
     public val pausesGame: Boolean
+
+    /**
+     * Detached identity of the current editable focus interval, or null without committed editable focus.
+     *
+     * Created and detached hosts return null, and reattachment requires a successful frame before publishing an interval.
+     * Adapters synchronize native input-method focus only after a host operation returns; native notifications may synchronously deliver preedit.
+     * The token retains no host, node, or native references.
+     *
+     * @throws IllegalStateException when read from another thread, reentrantly, or after terminal failure or close.
+     */
+    public val textInputFocus: RuntimeTextInputFocus?
 
     /**
      * Attaches this host on its owner thread.

@@ -18,6 +18,7 @@ import dev.s7a.strata.runtime.headless.rasterizeHeadless
 import dev.s7a.strata.runtime.minecraft.MinecraftUiHost
 import dev.s7a.strata.runtime.minecraft.MinecraftUiProfile
 import dev.s7a.strata.runtime.minecraft.createMinecraftUiHost
+import dev.s7a.strata.runtime.minecraft.font.lwjgl.LwjglMinecraftFontBackendFactory
 import dev.s7a.strata.runtime.render.DrawCommand
 import dev.s7a.strata.screen.ScreenDefinition
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
@@ -58,6 +59,7 @@ public class FabricMinecraftScreen private constructor(
     private val textures: MutableList<DynamicTexture> = ArrayList()
     private var preparedCommands: List<DrawCommand>? = null
     private var preparedViewport: IntSize? = null
+    private var preparedScale: Int? = null
     private var preparedLayers: List<FrameLayer> = emptyList()
     private var pointerPosition: IntOffset? = null
     private var pointerFrameCommands: List<DrawCommand>? = null
@@ -68,6 +70,7 @@ public class FabricMinecraftScreen private constructor(
     private var portableRasterizationCount: Long = 0L
     private var textureUploadCount: Long = 0L
     private val pausePolicy = host.pausesGame
+    private val textInputFocus = FabricMinecraftTextInputFocus { focused -> minecraftClient.onTextInputFocusChange(this, focused) }
     private val lifecycle =
         FabricScreenLifecycleTransaction.create(
             { attachHost() },
@@ -95,6 +98,7 @@ public class FabricMinecraftScreen private constructor(
                 super.added()
                 lifecycle.requestAttach()
             }
+            synchronizeTextInputFocus()
         } catch (failure: Throwable) {
             terminalFailure(failure)
         }
@@ -110,11 +114,13 @@ public class FabricMinecraftScreen private constructor(
     override fun removed() {
         requireClientThread()
         if (lifecycle.isActive()) {
+            textInputFocus.clear()
             super.removed()
             lifecycle.requestDetach()
             return
         }
         try {
+            textInputFocus.clear()
             lifecycle.run {
                 super.removed()
                 lifecycle.requestDetach()
@@ -194,6 +200,7 @@ public class FabricMinecraftScreen private constructor(
                     inventory.renderCarried(graphics, minecraftClient.font, mouseX, mouseY)
                 }
             }
+            synchronizeTextInputFocus()
         } catch (failure: Throwable) {
             terminalFailure(failure)
         }
@@ -353,16 +360,16 @@ public class FabricMinecraftScreen private constructor(
     /**
      * Delivers one input-method preedit snapshot to the focused retained component before inherited screen behavior.
      *
-     * @param event native immutable preedit record.
+     * @param event native immutable preedit record, or null to clear the active composition.
      * @return true when common focused behavior or inherited screen behavior consumes the event.
      * @throws Throwable when focused behavior or terminal cleanup fails.
      * @throws IllegalStateException when invoked away from the Minecraft client thread.
      */
     override fun preeditUpdated(event: MinecraftPreeditEvent?): Boolean {
         requireClientThread()
-        val current = event ?: return false
-        val mapped = mapMinecraftPreedit(current) ?: return false
-        return dispatchFocused(TextInput(mapped)) { super.preeditUpdated(current) }
+        if (closed || attached.not() || textInputFocus.isActive.not()) return false
+        val mapped = mapMinecraftPreedit(event) ?: return false
+        return dispatchFocused(TextInput(mapped)) { super.preeditUpdated(event) }
     }
 
     /**
@@ -403,9 +410,10 @@ public class FabricMinecraftScreen private constructor(
 
     private fun dispatch(event: PointerEvent): Boolean =
         try {
-            lifecycle.run {
-                host.dispatchPointer(event) == InputResult.Consumed
-            }
+            lifecycle
+                .run {
+                    host.dispatchPointer(event) == InputResult.Consumed
+                }.also { synchronizeTextInputFocus() }
         } catch (failure: Throwable) {
             terminalFailure(failure)
         }
@@ -415,24 +423,25 @@ public class FabricMinecraftScreen private constructor(
         inherited: () -> Boolean,
     ): Boolean =
         try {
-            lifecycle.run {
-                val result =
-                    when (input) {
-                        is KeyboardInput -> host.dispatchKeyboard(input.event)
-                        is TextInput -> host.dispatchTextInput(input.event)
+            lifecycle
+                .run {
+                    val result =
+                        when (input) {
+                            is KeyboardInput -> host.dispatchKeyboard(input.event)
+                            is TextInput -> host.dispatchTextInput(input.event)
+                        }
+                    when (result) {
+                        InputResult.Consumed -> true
+                        InputResult.Ignored -> inherited()
                     }
-                when (result) {
-                    InputResult.Consumed -> true
-                    InputResult.Ignored -> inherited()
-                }
-            }
+                }.also { synchronizeTextInputFocus() }
         } catch (failure: Throwable) {
             terminalFailure(failure)
         }
 
     private fun dispatchInherited(inherited: () -> Boolean): Boolean =
         try {
-            lifecycle.run(inherited)
+            lifecycle.run(inherited).also { synchronizeTextInputFocus() }
         } catch (failure: Throwable) {
             terminalFailure(failure)
         }
@@ -455,6 +464,7 @@ public class FabricMinecraftScreen private constructor(
 
     private fun detachHost() {
         if (attached) {
+            textInputFocus.clear()
             host.detach()
             attached = false
             releaseTextures()
@@ -467,9 +477,18 @@ public class FabricMinecraftScreen private constructor(
         attached = false
         var failure: Throwable? = null
         try {
-            host.close()
+            textInputFocus.clear()
         } catch (caught: Throwable) {
             failure = caught
+        }
+        try {
+            host.close()
+        } catch (caught: Throwable) {
+            if (failure == null) {
+                failure = caught
+            } else {
+                FabricMinecraftFailures.addSuppressed(failure, caught)
+            }
         }
         try {
             releaseTextures()
@@ -483,12 +502,20 @@ public class FabricMinecraftScreen private constructor(
         failure?.let { throw it }
     }
 
+    private fun synchronizeTextInputFocus() {
+        val displayed = FabricMinecraftScreenAccess.currentScreen(minecraftClient) === this
+        val focus = if (closed.not() && attached && displayed) host.textInputFocus else null
+        textInputFocus.synchronize(focus)
+    }
+
     private fun extractFrame(
         graphics: GuiGraphicsExtractor,
         commands: List<DrawCommand>,
         viewport: IntSize,
     ) {
-        val reusePreparedFrame = commands === preparedCommands && viewport == preparedViewport
+        val scale = minecraftClient.getWindow().getGuiScale()
+        require(0 < scale) { "Minecraft GUI scale must be positive." }
+        val reusePreparedFrame = commands === preparedCommands && viewport == preparedViewport && scale == preparedScale
         val layers =
             if (reusePreparedFrame) {
                 preparedLayers
@@ -497,7 +524,7 @@ public class FabricMinecraftScreen private constructor(
                 partitionFrame(commands, viewport)
             }
         val previousPortableLayers =
-            if (reusePreparedFrame || viewport != preparedViewport) {
+            if (reusePreparedFrame || viewport != preparedViewport || scale != preparedScale) {
                 emptyList()
             } else {
                 preparedLayers.filterIsInstance<PortableLayer>()
@@ -510,15 +537,7 @@ public class FabricMinecraftScreen private constructor(
                     val reusePortableLayer =
                         reusePreparedFrame ||
                             (retainedTexture != null && previousPortableLayers.getOrNull(textureIndex)?.commands == layer.commands)
-                    val current =
-                        if (reusePortableLayer) {
-                            checkNotNull(retainedTexture) {
-                                "A cached portable frame layer has no retained texture."
-                            }
-                        } else {
-                            portableRasterizationCount += 1L
-                            upload(textureIndex, rasterizeHeadless(layer.commands, viewport))
-                        }
+                    val current = preparePortableTexture(textureIndex, layer.commands, viewport, scale, reusePortableLayer)
                     textureIndex += 1
                     graphics.blit(
                         current.getTextureView(),
@@ -543,8 +562,25 @@ public class FabricMinecraftScreen private constructor(
             trimTextures(textureIndex)
             preparedCommands = commands
             preparedViewport = viewport
+            preparedScale = scale
             preparedLayers = layers
         }
+    }
+
+    private fun preparePortableTexture(
+        index: Int,
+        commands: List<DrawCommand>,
+        viewport: IntSize,
+        scale: Int,
+        reuse: Boolean,
+    ): DynamicTexture {
+        if (reuse) {
+            return checkNotNull(textures.getOrNull(index)) {
+                "A cached portable frame layer has no retained texture."
+            }
+        }
+        portableRasterizationCount += 1L
+        return upload(index, rasterizeHeadless(commands, viewport, scale))
     }
 
     private fun extractPlatformLayer(
@@ -591,6 +627,7 @@ public class FabricMinecraftScreen private constructor(
             when (command) {
                 is DrawCommand.FillRectangle,
                 is DrawCommand.BlitImage,
+                is DrawCommand.SampledImage,
                 -> {
                     portable.add(command)
                     portableHasOutput = true
@@ -692,6 +729,7 @@ public class FabricMinecraftScreen private constructor(
     private fun releaseTextures() {
         preparedCommands = null
         preparedViewport = null
+        preparedScale = null
         preparedLayers = emptyList()
         pointerPosition = null
         pointerFrameCommands = null
@@ -802,7 +840,7 @@ public fun createMinecraftScreen(
     val inventory = FabricMinecraftInventoryBridge.create(minecraft)
     val host =
         try {
-            createMinecraftUiHost(definition, profile, inventory)
+            createMinecraftUiHost(definition, profile, inventory, LwjglMinecraftFontBackendFactory)
         } catch (failure: Throwable) {
             try {
                 inventory.close()

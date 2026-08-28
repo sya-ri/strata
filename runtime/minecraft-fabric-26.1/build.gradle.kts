@@ -1,5 +1,6 @@
 import groovy.json.JsonSlurper
 import org.gradle.api.tasks.SourceSetContainer
+import org.gradle.api.tasks.testing.Test
 import org.gradle.language.jvm.tasks.ProcessResources
 import org.gradle.jvm.tasks.Jar
 import org.jetbrains.kotlin.gradle.dsl.KotlinJvmProjectExtension
@@ -16,6 +17,10 @@ val sharedRuntime = rootProject.file("runtime/minecraft-fabric-shared/src/main")
 val identifierRuntime = rootProject.file("runtime/minecraft-fabric-identifier/src/main")
 val unobfuscatedRuntime = rootProject.file("runtime/minecraft-fabric-unobfuscated/src/main")
 val sharedTests = rootProject.file("runtime/minecraft-fabric-unobfuscated/src/test")
+
+tasks.withType<Test>().configureEach {
+    jvmArgs("--enable-native-access=ALL-UNNAMED")
+}
 
 extensions.configure<SourceSetContainer> {
     named("main") {
@@ -81,6 +86,7 @@ val verifyFabricModArtifact = tasks.register("verifyFabricModArtifact") {
                     "core-${project.version}.jar",
                     "headless-${project.version}.jar",
                     "minecraft-${project.version}.jar",
+                    "minecraft-fonts-lwjgl-${project.version}.jar",
                 ).sorted()
             check(nestedNames == expectedNestedNames) {
                 "Fabric artifact must contain each common runtime jar exactly once: $nestedNames"
@@ -171,6 +177,7 @@ tasks.named("check") {
 
 dependencies {
     compileOnly(project(":runtime:minecraft"))
+    compileOnly(project(":runtime:minecraft-fonts-lwjgl"))
     compileOnly(project(":runtime:headless"))
     minecraft(libs.minecraft261)
     compileOnly(libs.fabric.loader)
@@ -179,7 +186,9 @@ dependencies {
     include(project(":runtime:core"))
     include(project(":runtime:headless"))
     include(project(":runtime:minecraft"))
+    include(project(":runtime:minecraft-fonts-lwjgl"))
     testImplementation(project(":runtime:minecraft"))
+    testImplementation(project(":runtime:minecraft-fonts-lwjgl"))
     testImplementation(project(":runtime:headless"))
     testRuntimeOnly(libs.fabric.loader)
     testImplementation(libs.junit.jupiter)

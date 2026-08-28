@@ -1,3 +1,4 @@
+import dev.detekt.gradle.extensions.DetektExtension
 import net.fabricmc.loom.task.prod.ClientProductionRunTask
 import org.gradle.api.tasks.Delete
 import org.gradle.api.tasks.SourceSetContainer
@@ -25,6 +26,20 @@ val sharedLegacyGameTest = rootProject.file("integration/minecraft-fabric-1.21-l
 val standaloneLegacyGameTest = rootProject.file("integration/minecraft-fabric-1.21.3-legacy/src/gametest")
 val versionGameTest = rootProject.file("integration/minecraft-fabric-1.21.5-legacy/src/gametest")
 val primitiveInputGameTest = rootProject.file("integration/minecraft-fabric-1.21.8-legacy/src/gametest")
+val fontParityGameTest = rootProject.file("integration/minecraft-font-parity/src/gametest")
+val nativeFontParityGameTest = rootProject.file("integration/minecraft-font-parity-legacy/src/gametest")
+
+extensions.configure<DetektExtension> {
+    source.from(
+        fontParityGameTest.resolve("kotlin"),
+        nativeFontParityGameTest.resolve("kotlin"),
+        layout.projectDirectory.file("src/gametest/kotlin/dev/s7a/strata/integration/minecraft/fabric/MinecraftNativeFontAccess.kt"),
+    )
+}
+
+loom {
+    accessWidenerPath.set(nativeFontParityGameTest.resolve("resources/strata-font-parity.accesswidener"))
+}
 
 fabricApi {
     configureTests {
@@ -36,17 +51,29 @@ fabricApi {
     }
 }
 
+extensions.configure<SourceSetContainer> {
+    named("gametest") {
+        resources.srcDir(fontParityGameTest.resolve("resources"))
+        resources.srcDir(nativeFontParityGameTest.resolve("resources"))
+    }
+}
+
 extensions.configure<KotlinJvmProjectExtension> {
     sourceSets.named("gametest") {
         kotlin.srcDir(sharedLegacyGameTest.resolve("kotlin"))
         kotlin.srcDir(standaloneLegacyGameTest.resolve("kotlin"))
         kotlin.srcDir(versionGameTest.resolve("kotlin"))
         kotlin.srcDir(primitiveInputGameTest.resolve("kotlin"))
+        kotlin.srcDir(fontParityGameTest.resolve("kotlin"))
+        kotlin.srcDir(nativeFontParityGameTest.resolve("kotlin"))
     }
 }
 
 val gametestSourceSet = extensions.getByType<SourceSetContainer>().named("gametest")
 tasks.named<ProcessResources>("processGametestResources") {
+    from(rootProject.file("runtime/minecraft-fonts-lwjgl/src/test/resources/fonts/strata-test.ttf")) {
+        into("assets/strata_font_test/font")
+    }
     inputs.property("version", project.version)
     inputs.property("minecraftVersion", libs.versions.minecraft1205)
     inputs.property("integrationModId", "strata-integration-minecraft-fabric-1-20-5")
@@ -69,6 +96,7 @@ dependencies {
     add("gametestImplementation", files(runtimeFabricMain.map { sourceSet -> sourceSet.output }))
     add("gametestImplementation", project(":runtime:headless"))
     add("gametestImplementation", project(":runtime:minecraft"))
+    add("gametestImplementation", project(":runtime:minecraft-fonts-lwjgl"))
     add("gametestRuntimeOnly", libs.fabric.language.kotlin)
     add("productionRuntimeMods", libs.fabric.api1205)
     add("productionRuntimeMods", libs.fabric.language.kotlin)

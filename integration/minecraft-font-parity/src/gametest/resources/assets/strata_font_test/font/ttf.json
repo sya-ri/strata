@@ -1,0 +1,15 @@
+{
+  "providers": [
+    {
+      "type": "ttf",
+      "file": "strata_font_test:strata-test.ttf",
+      "size": 11.0,
+      "oversample": 1.0,
+      "shift": [
+        0.0,
+        0.0
+      ],
+      "skip": ""
+    }
+  ]
+}

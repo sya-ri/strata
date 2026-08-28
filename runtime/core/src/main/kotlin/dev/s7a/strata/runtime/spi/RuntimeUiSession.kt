@@ -24,6 +24,17 @@ import dev.s7a.strata.spi.InternalStrataRuntimeApi
 @InternalStrataRuntimeApi
 public sealed interface RuntimeUiSession : AutoCloseable {
     /**
+     * Detached identity of the current editable focus interval in the most recently committed attached tree.
+     *
+     * The value is null before a successful frame, while detached, or without an accepting target that requires text input.
+     * Its identity remains stable across unchanged frames and input; changing the editable owner or target identities, losing focus, or detaching ends the interval.
+     * Native adapters synchronize input-method focus after a frame or input operation returns, because native focus notification may synchronously dispatch preedit.
+     *
+     * @throws IllegalStateException when read from another thread, reentrantly, or after terminal failure or close.
+     */
+    public val textInputFocus: RuntimeTextInputFocus?
+
+    /**
      * Attaches this session on its owner thread.
      *
      * A created or detached session becomes attached, and the first attach evaluates and reconciles the content once.

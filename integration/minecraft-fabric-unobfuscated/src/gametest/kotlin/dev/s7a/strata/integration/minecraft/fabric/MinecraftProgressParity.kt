@@ -12,6 +12,7 @@ import dev.s7a.strata.runtime.minecraft.createMinecraftUiHost
 import dev.s7a.strata.runtime.minecraft.fabric.FabricMinecraftScreen
 import dev.s7a.strata.runtime.minecraft.fabric.createMinecraftScreen
 import dev.s7a.strata.runtime.minecraft.fabric.loadMinecraftUiImage
+import dev.s7a.strata.runtime.minecraft.font.lwjgl.LwjglMinecraftFontBackendFactory
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
 import net.fabricmc.fabric.api.client.gametest.v1.context.ClientGameTestContext
 import net.fabricmc.fabric.api.client.gametest.v1.screenshot.TestScreenshotComparisonAlgorithm
@@ -94,7 +95,7 @@ internal object MinecraftProgressParity {
         profile: MinecraftUiProfile,
         assets: ProgressAssets,
     ): HeadlessImage {
-        val host = createMinecraftUiHost(definition(assets), profile)
+        val host = createMinecraftUiHost(definition(assets), profile, LwjglMinecraftFontBackendFactory)
         return try {
             host.attach()
             val frame = host.frame(viewport)

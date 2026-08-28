@@ -263,12 +263,13 @@ jobs:
             :integration:docs:checkDokkaPagesStaging \
             :quality:benchmarks:check :quality:detekt-rules:check \
             :runtime:core:check :runtime:headless:check :runtime:minecraft:check \
+            :runtime:minecraft-fonts-lwjgl:check :runtime:minecraft-fonts-lwjgl:verifyOfflineFontParity \
             :koverJvmTests :koverHtmlReport :koverXmlReport -Pkover \
             -Pstrata.sourceRevision="$RELEASE_TAG" \
             -Pstrata.sourceCommit="$RELEASE_SOURCE_COMMIT"
           git diff --quiet -- . || { echo 'Release gates changed tracked source.' >&2; exit 1; }
           git diff --cached --quiet -- . || { echo 'Release gates changed the index.' >&2; exit 1; }
-      - name: Build the 25-coordinate consumer and 21-artifact manifest
+      - name: Build the 26-coordinate consumer and 21-artifact manifest
         shell: bash
         env:
           PROJECT_ID: ${{ steps.modrinth.outputs.project_id }}
@@ -282,7 +283,7 @@ jobs:
             -Pstrata.sourceRevision="$RELEASE_TAG" \
             -Pstrata.sourceCommit="$RELEASE_SOURCE_COMMIT" \
             -Pstrata.modrinthProjectId="$PROJECT_ID"
-          [[ "$(grep -cve '^[[:space:]]*$' release/maven-coordinates.txt)" == "25" ]] || { echo 'Maven coordinate count differs.' >&2; exit 1; }
+          [[ "$(grep -cve '^[[:space:]]*$' release/maven-coordinates.txt)" == "26" ]] || { echo 'Maven coordinate count differs.' >&2; exit 1; }
           jq -e '.releaseVersion == "0.1.1" and (.artifacts | length) == 21' build/release/modrinth/manifest.json >/dev/null || { echo 'Modrinth manifest inventory differs.' >&2; exit 1; }
       - name: Run representative clients from Maven Local
         shell: bash
@@ -316,13 +317,13 @@ jobs:
             -Pstrata.sourceCommit="$RELEASE_SOURCE_COMMIT"
           public_state="$(jq -r '.state' build/release/maven-central/preflight.json)"
           portal_state="$(jq -r '.state' build/release/maven-central/portal-preflight.json)"
-          [[ "$(jq -r '.coordinateCount' build/release/maven-central/preflight.json)" == "25" ]] || { echo 'Central coordinate count differs.' >&2; exit 1; }
+          [[ "$(jq -r '.coordinateCount' build/release/maven-central/preflight.json)" == "26" ]] || { echo 'Central coordinate count differs.' >&2; exit 1; }
           case "$public_state" in
             absent)
               jq -e '.verifiedFileCount == 0 and .verifiedChecksumCount == 0' build/release/maven-central/preflight.json >/dev/null
               ;;
             exact)
-              jq -e '.verifiedFileCount == 250 and .verifiedChecksumCount == 500' build/release/maven-central/preflight.json >/dev/null
+              jq -e '.verifiedFileCount == 260 and .verifiedChecksumCount == 520' build/release/maven-central/preflight.json >/dev/null
               ;;
             *) echo "Unexpected public Central state: $public_state" >&2; exit 1 ;;
           esac
@@ -331,7 +332,7 @@ jobs:
               jq -e '.verifiedContentFileCount == 0 and .verifiedChecksumCount == 0' build/release/maven-central/portal-preflight.json >/dev/null
               ;;
             exact)
-              jq -e '.verifiedContentFileCount == 250 and .verifiedChecksumCount == 500' build/release/maven-central/portal-preflight.json >/dev/null
+              jq -e '.verifiedContentFileCount == 260 and .verifiedChecksumCount == 520' build/release/maven-central/portal-preflight.json >/dev/null
               ;;
             *) echo "Unexpected Central Portal state: $portal_state" >&2; exit 1 ;;
           esac
@@ -421,7 +422,7 @@ jobs:
             mavenCentralReleasePreflight mavenCentralPortalPreflight \
             -Pstrata.sourceRevision="$RELEASE_TAG" \
             -Pstrata.sourceCommit="$RELEASE_SOURCE_COMMIT"
-          jq -e '.state == "absent" and .coordinateCount == 25 and .verifiedFileCount == 0 and .verifiedChecksumCount == 0' \
+          jq -e '.state == "absent" and .coordinateCount == 26 and .verifiedFileCount == 0 and .verifiedChecksumCount == 0' \
             build/release/maven-central/preflight.json >/dev/null || { echo 'Fresh public Central preflight is no longer wholly absent.' >&2; exit 1; }
           jq -e '.state == "absent" and .deploymentId == null and .deploymentState == null and .verifiedContentFileCount == 0 and .verifiedChecksumCount == 0' \
             build/release/maven-central/portal-preflight.json >/dev/null || { echo 'Fresh Central Portal preflight is no longer wholly absent.' >&2; exit 1; }
@@ -442,18 +443,18 @@ jobs:
           set -euo pipefail
           bash ./gradlew --no-parallel --max-workers=2 --no-build-cache mavenCentralPortalVerify \
             -Pstrata.sourceRevision="$RELEASE_TAG" -Pstrata.sourceCommit="$RELEASE_SOURCE_COMMIT"
-          jq -e '.state == "exact" and .deploymentState == "published" and .verifiedContentFileCount == 250 and .verifiedChecksumCount == 500' \
+          jq -e '.state == "exact" and .deploymentState == "published" and .verifiedContentFileCount == 260 and .verifiedChecksumCount == 520' \
             build/release/maven-central/portal-verify.json >/dev/null || { echo 'Central Portal verification counts differ.' >&2; exit 1; }
           bash ./gradlew --no-parallel --max-workers=2 --no-build-cache mavenCentralReleaseVerify githubReleaseBundle \
             -Pstrata.sourceRevision="$RELEASE_TAG" -Pstrata.sourceCommit="$RELEASE_SOURCE_COMMIT" \
             -Pstrata.modrinthProjectId="$PROJECT_ID"
-          jq -e '.state == "exact" and .coordinateCount == 25 and .verifiedFileCount == 250 and .verifiedChecksumCount == 500' \
+          jq -e '.state == "exact" and .coordinateCount == 26 and .verifiedFileCount == 260 and .verifiedChecksumCount == 520' \
             build/release/maven-central/verify.json >/dev/null || { echo 'Public Central verification counts differ.' >&2; exit 1; }
           shopt -s nullglob
           assets=(build/release/github/*)
           jars=(build/release/github/*.jar)
           [[ "${#jars[@]}" == "21" && "${#assets[@]}" == "43" ]] || { echo 'Canonical GitHub bundle inventory differs.' >&2; exit 1; }
-      - name: Verify all 125 Central signatures
+      - name: Verify all 130 Central signatures
         shell: bash
         env:
           SIGNING_KEY: ${{ secrets.SIGNING_KEY }}
@@ -475,7 +476,7 @@ jobs:
             gpg --batch --verify "$signature" "${signature%.asc}"
             verified=$((verified + 1))
           done < <(find build/release/maven-central/evidence -type f -name '*.asc' -print0)
-          [[ "$verified" == "125" ]] || { echo "Expected 125 verified Central signatures, found $verified." >&2; exit 1; }
+          [[ "$verified" == "130" ]] || { echo "Expected 130 verified Central signatures, found $verified." >&2; exit 1; }
           for jar in build/release/github/*.jar; do
             gpg --batch --verify "$jar.asc" "$jar"
           done
@@ -882,10 +883,10 @@ jobs:
           set -euo pipefail
           bash ./gradlew --no-parallel --max-workers=2 --no-build-cache verifyPublishedConsumer modrinthReleaseManifest mavenCentralPortalVerify \
             -Pstrata.sourceRevision="$RELEASE_TAG" -Pstrata.sourceCommit="$RELEASE_SOURCE_COMMIT" -Pstrata.modrinthProjectId="$PROJECT_ID"
-          jq -e '.state == "exact" and .deploymentState == "published" and .verifiedContentFileCount == 250 and .verifiedChecksumCount == 500' build/release/maven-central/portal-verify.json >/dev/null
+          jq -e '.state == "exact" and .deploymentState == "published" and .verifiedContentFileCount == 260 and .verifiedChecksumCount == 520' build/release/maven-central/portal-verify.json >/dev/null
           bash ./gradlew --no-parallel --max-workers=2 --no-build-cache mavenCentralReleaseVerify githubReleaseBundle \
             -Pstrata.sourceRevision="$RELEASE_TAG" -Pstrata.sourceCommit="$RELEASE_SOURCE_COMMIT" -Pstrata.modrinthProjectId="$PROJECT_ID"
-          jq -e '.state == "exact" and .coordinateCount == 25 and .verifiedFileCount == 250 and .verifiedChecksumCount == 500' build/release/maven-central/verify.json >/dev/null
+          jq -e '.state == "exact" and .coordinateCount == 26 and .verifiedFileCount == 260 and .verifiedChecksumCount == 520' build/release/maven-central/verify.json >/dev/null
           jq -e '.releaseVersion == "0.1.1" and (.artifacts | length) == 21' build/release/modrinth/manifest.json >/dev/null
       - name: Verify GitHub release assets and all Central signatures
         shell: bash
@@ -913,7 +914,7 @@ jobs:
             gpg --batch --verify "$signature" "${signature%.asc}"
             verified=$((verified + 1))
           done < <(find build/release/maven-central/evidence -type f -name '*.asc' -print0)
-          [[ "$verified" == "125" ]] || { echo "Expected 125 Central signatures, found $verified." >&2; exit 1; }
+          [[ "$verified" == "130" ]] || { echo "Expected 130 Central signatures, found $verified." >&2; exit 1; }
           shopt -s nullglob
           assets=(build/release/github/*)
           [[ "${#assets[@]}" == "43" ]] || { echo 'Canonical GitHub asset count differs.' >&2; exit 1; }

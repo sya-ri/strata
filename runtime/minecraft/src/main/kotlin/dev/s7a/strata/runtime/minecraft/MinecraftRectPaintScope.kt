@@ -2,6 +2,7 @@
 
 package dev.s7a.strata.runtime.minecraft
 
+import dev.s7a.strata.geometry.FloatRect
 import dev.s7a.strata.geometry.IntRect
 import dev.s7a.strata.geometry.IntSize
 import dev.s7a.strata.render.ArgbColor
@@ -34,6 +35,23 @@ internal class MinecraftRectPaintScope(
         localDestination: IntRect,
     ) {
         delegate.blitImage(image, source, localDestination.translate())
+    }
+
+    override fun sampledImage(
+        image: DrawImage,
+        source: FloatRect,
+        localDestination: FloatRect,
+        tint: ArgbColor,
+        alphaCutoff: Float,
+    ) {
+        val translated =
+            FloatRect(
+                localDestination.left + destination.left,
+                localDestination.top + destination.top,
+                localDestination.right + destination.left,
+                localDestination.bottom + destination.top,
+            )
+        delegate.sampledImage(image, source, translated, tint, alphaCutoff)
     }
 
     override fun drawPlatform(

@@ -51,6 +51,9 @@ private object RuntimeUiSessionImplementation {
         private var cachedSourceFrame: UiFrame? = null
         private var cachedSnapshot: RuntimeUiFrame? = null
 
+        override val textInputFocus: RuntimeTextInputFocus?
+            get() = session.textInputFocus
+
         override fun attach() {
             lifecycleOperation(session::attach)
         }

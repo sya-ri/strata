@@ -8,9 +8,11 @@ import dev.s7a.strata.element.ElementKey
 import dev.s7a.strata.geometry.IntRect
 import dev.s7a.strata.geometry.IntSize
 import dev.s7a.strata.modifier.Modifier
+import dev.s7a.strata.resource.ResourceId
 import dev.s7a.strata.spi.ComponentRuntimeBridge
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
 import dev.s7a.strata.text.UiText
+import dev.s7a.strata.text.withFont
 
 /**
  * Emits one determinate Minecraft-profile progress bar.
@@ -332,7 +334,58 @@ public fun UiScope.Text(
 }
 
 /**
+ * Emits one single-line text component using an explicitly selected resource-pack font.
+ *
+ * The selected font is retained in [UiText.WithFont]; resource resolution belongs to the active runtime.
+ * An inner [UiText.WithFont] keeps its own selection instead of inheriting [font].
+ *
+ * @receiver active owner-thread screen scope.
+ * @param text unresolved text retained for drawing and semantics.
+ * @param font structural identifier of the font definition.
+ * @param style profile-backed color and shadow policy.
+ * @param modifier active behavior applied to the text.
+ * @param key optional stable sibling identity.
+ * @throws IllegalArgumentException when the profile cannot render [text].
+ * @throws IllegalStateException when no runtime screen evaluation is active.
+ */
+public fun UiScope.Text(
+    text: UiText,
+    font: ResourceId,
+    style: TextStyle = TextStyle.Normal,
+    modifier: Modifier = Modifier.Empty,
+    key: ElementKey<*>? = null,
+) {
+    Text(text.withFont(font), style, modifier, key)
+}
+
+/**
+ * Emits one literal single-line text component using an explicitly selected resource-pack font.
+ *
+ * @receiver active owner-thread screen scope.
+ * @param text literal converted to [UiText.Literal].
+ * @param font structural identifier of the font definition.
+ * @param style profile-backed color and shadow policy.
+ * @param modifier active behavior applied to the text.
+ * @param key optional stable sibling identity.
+ * @throws IllegalArgumentException when the profile cannot render [text].
+ * @throws IllegalStateException when no runtime screen evaluation is active.
+ */
+public fun UiScope.Text(
+    text: String,
+    font: ResourceId,
+    style: TextStyle = TextStyle.Normal,
+    modifier: Modifier = Modifier.Empty,
+    key: ElementKey<*>? = null,
+) {
+    Text(UiText.Literal(text), font, style, modifier, key)
+}
+
+/**
  * Emits one 200 by 20 single-line text field.
+ *
+ * Editing preserves Unicode scalars while [TextFieldState.maxLength] counts UTF-16 code units.
+ * Delivered preedit text remains inline presentation state until committed input arrives.
+ * The component does not install a platform candidate window or add selection and clipboard commands.
  *
  * @receiver active owner-thread screen scope.
  * @param state owner-thread text value observed by the retained field.
@@ -376,6 +429,60 @@ public fun UiScope.TextField(
 ) {
     checkUsable()
     element(ComponentRuntimeBridge.current().textField(state, size, enabled, textStyle, modifier, key))
+}
+
+/**
+ * Emits one 200 by 20 single-line text field using an explicitly selected resource-pack font.
+ *
+ * @receiver active owner-thread screen scope.
+ * @param state caller-owned text value observed by the retained field.
+ * @param font structural identifier of the font definition.
+ * @param enabled whether focus and editing are accepted.
+ * @param textStyle profile-backed color and shadow policy.
+ * @param modifier active behavior applied to the field.
+ * @param key optional stable sibling identity.
+ * @throws IllegalStateException when the scope or state thread is invalid or no runtime evaluation is active.
+ */
+public fun UiScope.TextField(
+    state: TextFieldState,
+    font: ResourceId,
+    enabled: Boolean = true,
+    textStyle: TextStyle = TextStyle.TextField,
+    modifier: Modifier = Modifier.Empty,
+    key: ElementKey<*>? = null,
+) {
+    TextField(state, IntSize(200, 20), font, enabled, textStyle, modifier, key)
+}
+
+/**
+ * Emits one explicitly sized single-line text field using a selected resource-pack font.
+ *
+ * The selected font supplies both drawing and cursor metrics from the runtime's pinned resource state.
+ * Movement and deletion operate on Unicode scalars, not grapheme clusters, and [TextFieldState.maxLength] remains a UTF-16 bound.
+ *
+ * @receiver active owner-thread screen scope.
+ * @param state caller-owned text value observed by the retained field.
+ * @param size exact logical field extent.
+ * @param font structural identifier of the font definition.
+ * @param enabled whether focus and editing are accepted.
+ * @param textStyle profile-backed color and shadow policy.
+ * @param modifier active behavior applied to the field.
+ * @param key optional stable sibling identity.
+ * @throws IllegalArgumentException when [size] cannot contain the field or later constraints exclude it.
+ * @throws IllegalStateException when the scope or state thread is invalid or no runtime evaluation is active.
+ */
+@OptIn(InternalStrataRuntimeApi::class)
+public fun UiScope.TextField(
+    state: TextFieldState,
+    size: IntSize,
+    font: ResourceId,
+    enabled: Boolean = true,
+    textStyle: TextStyle = TextStyle.TextField,
+    modifier: Modifier = Modifier.Empty,
+    key: ElementKey<*>? = null,
+) {
+    checkUsable()
+    element(ComponentRuntimeBridge.current().textField(state, size, enabled, textStyle, font, modifier, key))
 }
 
 /**

@@ -1,12 +1,23 @@
 package dev.s7a.strata.integration.minecraft.fabric
 
 import com.mojang.blaze3d.platform.NativeImage
+import dev.s7a.strata.component.Column
 import dev.s7a.strata.component.ImageSource
 import dev.s7a.strata.component.PlayerSkinSource
+import dev.s7a.strata.component.Spacer
+import dev.s7a.strata.component.TextField
+import dev.s7a.strata.component.TextFieldState
 import dev.s7a.strata.geometry.IntOffset
 import dev.s7a.strata.geometry.IntRect
 import dev.s7a.strata.geometry.IntSize
+import dev.s7a.strata.input.InputResult
 import dev.s7a.strata.input.PointerEvent
+import dev.s7a.strata.modifier.Modifier
+import dev.s7a.strata.modifier.initialFocus
+import dev.s7a.strata.modifier.onCharacterInput
+import dev.s7a.strata.modifier.onPreedit
+import dev.s7a.strata.modifier.onTextInput
+import dev.s7a.strata.modifier.size
 import dev.s7a.strata.render.ArgbColor
 import dev.s7a.strata.render.DrawImage
 import dev.s7a.strata.resource.ResourceId
@@ -20,6 +31,7 @@ import dev.s7a.strata.runtime.minecraft.fabric.createMinecraftScreen
 import dev.s7a.strata.runtime.minecraft.fabric.extractMinecraftUiProfile
 import dev.s7a.strata.runtime.minecraft.fabric.loadCurrentMinecraftPlayerSkin
 import dev.s7a.strata.runtime.minecraft.fabric.loadMinecraftUiImage
+import dev.s7a.strata.runtime.minecraft.font.lwjgl.LwjglMinecraftFontBackendFactory
 import dev.s7a.strata.runtime.render.DrawCommand
 import dev.s7a.strata.screen.ScreenDefinition
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
@@ -37,6 +49,10 @@ import net.minecraft.client.gui.screens.ConfirmScreen
 import net.minecraft.client.gui.screens.DirectJoinServerScreen
 import net.minecraft.client.gui.screens.Screen
 import net.minecraft.client.gui.screens.inventory.ContainerScreen
+import net.minecraft.client.input.CharacterEvent
+import net.minecraft.client.input.MouseButtonEvent
+import net.minecraft.client.input.MouseButtonInfo
+import net.minecraft.client.input.PreeditEvent
 import net.minecraft.client.multiplayer.ServerData
 import net.minecraft.client.renderer.RenderPipelines
 import net.minecraft.network.chat.Component
@@ -93,6 +109,7 @@ public class StrataMinecraftClientGameTest : FabricClientGameTest {
             )
         val output = parityOutput()
         Files.createDirectories(output)
+        assertNativeTextInputFocus(context, profile)
 
         context.setScreen { DeterministicConfirmScreen() }
         context.waitForScreen(DeterministicConfirmScreen::class.java)
@@ -175,6 +192,106 @@ public class StrataMinecraftClientGameTest : FabricClientGameTest {
         }
 
         closeFabricScreen(context)
+    }
+
+    @OptIn(InternalStrataRuntimeApi::class)
+    @Suppress("LongMethod")
+    private fun assertNativeTextInputFocus(
+        context: ClientGameTestContext,
+        profile: MinecraftUiProfile,
+    ) {
+        lateinit var firstState: TextFieldState
+        lateinit var secondState: TextFieldState
+        lateinit var screen: FabricMinecraftScreen
+        lateinit var nativeParent: DeterministicDirectJoinScreen
+        var firstPreeditCalls = 0
+        var secondPreeditCalls = 0
+        context.setScreen {
+            firstState = TextFieldState("A")
+            secondState = TextFieldState("B")
+            nativeParent = DeterministicDirectJoinScreen()
+            val definition =
+                ScreenDefinition("native input focus") {
+                    Column {
+                        TextField(
+                            firstState,
+                            modifier =
+                                Modifier.Empty
+                                    .initialFocus()
+                                    .onPreedit {
+                                        firstPreeditCalls += 1
+                                        InputResult.Ignored
+                                    }.onCharacterInput { event ->
+                                        if (event.codePoint == 'X'.code) {
+                                            MinecraftClientScreenAccess.setScreen(Minecraft.getInstance(), nativeParent)
+                                            InputResult.Consumed
+                                        } else {
+                                            InputResult.Ignored
+                                        }
+                                    },
+                        )
+                        TextField(
+                            secondState,
+                            modifier =
+                                Modifier.Empty.onPreedit {
+                                    secondPreeditCalls += 1
+                                    InputResult.Ignored
+                                },
+                        )
+                        Spacer(modifier = Modifier.Empty.size(200, 20).onTextInput { InputResult.Ignored })
+                    }
+                }
+            screen = createMinecraftScreen(definition, profile, parent = null)
+            screen
+        }
+        context.waitForScreen(FabricMinecraftScreen::class.java)
+        context.waitTicks(2)
+        context.runOnClient(
+            FailableConsumer<Minecraft, RuntimeException> { minecraft ->
+                check(nativeTextInputEnabled(minecraft)) { "Initial editable focus did not enable native text input." }
+                check(firstPreeditCalls == 1) { "Unchanged frames must not resubmit native preedit." }
+                val preedit = PreeditEvent("日🙂", 3, listOf("日", "🙂"), 1)
+                check(screen.preeditUpdated(preedit))
+                check(firstState.value == "A") { "Preedit unexpectedly committed text." }
+                screen.mouseClicked(MouseButtonEvent(4.0, 24.0, MouseButtonInfo(0, 0)), false)
+                check(nativeTextInputEnabled(minecraft))
+                check(secondPreeditCalls == 1) { "Switching editable owners did not resubmit native preedit." }
+                check(screen.charTyped(CharacterEvent('한'.code)))
+                check(firstState.value == "A" && secondState.value == "한B")
+                screen.mouseClicked(MouseButtonEvent(4.0, 44.0, MouseButtonInfo(0, 0)), false)
+                check(nativeTextInputEnabled(minecraft).not()) { "A passive input observer enabled native text input." }
+                check(screen.preeditUpdated(preedit).not())
+                screen.mouseClicked(MouseButtonEvent(4.0, 4.0, MouseButtonInfo(0, 0)), false)
+                check(nativeTextInputEnabled(minecraft))
+                MinecraftClientScreenAccess.setScreen(minecraft, null)
+                check(nativeTextInputEnabled(minecraft).not()) { "Detaching a screen retained native text-input focus." }
+                check(screen.preeditUpdated(preedit).not())
+                MinecraftClientScreenAccess.setScreen(minecraft, screen)
+                check(nativeTextInputEnabled(minecraft).not()) { "Reattachment enabled text input before a committed frame." }
+            },
+        )
+        context.waitTicks(2)
+        context.runOnClient(
+            FailableConsumer<Minecraft, RuntimeException> { minecraft ->
+                check(nativeTextInputEnabled(minecraft))
+                check(firstState.value == "A" && secondState.value == "한B")
+                check(screen.charTyped(CharacterEvent('X'.code)))
+                check(MinecraftClientScreenAccess.currentScreen(minecraft) === nativeParent)
+                check(nativeTextInputEnabled(minecraft)) { "Deferred Strata removal disabled the next native editor." }
+                screen.close()
+                check(nativeTextInputEnabled(minecraft)) { "Closing a detached screen disabled the active native editor." }
+                nativeParent.setFocused(null)
+                MinecraftClientScreenAccess.setScreen(minecraft, null)
+                check(nativeTextInputEnabled(minecraft).not())
+            },
+        )
+    }
+
+    private fun nativeTextInputEnabled(minecraft: Minecraft): Boolean {
+        val manager = minecraft.textInputManager()
+        val enabled = manager.javaClass.getDeclaredField("textInputEnabled")
+        check(enabled.trySetAccessible()) { "Native text-input state is inaccessible to the loaded test." }
+        return enabled.getBoolean(manager)
     }
 
     @OptIn(InternalStrataRuntimeApi::class)
@@ -480,7 +597,7 @@ public class StrataMinecraftClientGameTest : FabricClientGameTest {
         pointerPosition: IntOffset = pointer,
         frameTime: FrameTime? = null,
     ): HeadlessImage {
-        val host = createMinecraftUiHost(definition, profile)
+        val host = createMinecraftUiHost(definition, profile, LwjglMinecraftFontBackendFactory)
         host.attach()
         return try {
             if (frameTime == null) host.frame(viewport) else host.frame(viewport, FrameTime(0L))

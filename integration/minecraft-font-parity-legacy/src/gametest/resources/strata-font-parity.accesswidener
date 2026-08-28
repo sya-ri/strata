@@ -1,0 +1,4 @@
+accessWidener v2 named
+
+# The loaded oracle invokes the actual game's standard font reload, with serial preparation only.
+accessible field net/minecraft/client/Minecraft fontManager Lnet/minecraft/client/gui/font/FontManager;

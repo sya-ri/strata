@@ -5,10 +5,11 @@ import dev.s7a.strata.spi.InternalStrataRuntimeApi
 /**
  * Owner-thread mutable value for one single-line text field.
  *
- * The state accepts printable ASCII U+0020 through U+007E, owns its value, and permits at most one live retained observer.
+ * The state accepts well-formed Unicode text excluding C0 controls, DEL, and the section-sign formatting marker.
+ * It owns its value and permits at most one live retained observer.
  * Reads, writes, observation, and subscription release are confined to the thread that constructs the state.
  *
- * @param initialValue initial printable-ASCII value.
+ * @param initialValue initial well-formed single-line text.
  * @property maxLength positive maximum UTF-16 length accepted by [value].
  * @throws IllegalArgumentException when [maxLength] is not positive or [initialValue] is unsupported or too long.
  */
@@ -26,7 +27,7 @@ public class TextFieldState(
     }
 
     /**
-     * Current printable-ASCII value.
+     * Current well-formed single-line Unicode value.
      *
      * A distinct successful write synchronously notifies the attached retained observer.
      *
@@ -75,8 +76,14 @@ public class TextFieldState(
 
     private fun validate(value: String): String {
         require(value.length <= maxLength) { "TextField value exceeds its maximum length." }
-        require(value.all { character -> character.code in 0x20..0x7E }) {
-            "TextField supports only U+0020 through U+007E."
+        var offset = 0
+        while (offset < value.length) {
+            val codePoint = value.codePointAt(offset)
+            require((codePoint in 0xD800..0xDFFF).not()) { "TextField value contains an isolated surrogate." }
+            require(0x20 <= codePoint && codePoint != 0x7F && codePoint != 0xA7) {
+                "TextField value contains a control character or formatting marker."
+            }
+            offset += Character.charCount(codePoint)
         }
         return value
     }

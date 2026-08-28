@@ -4,6 +4,7 @@ import dev.s7a.strata.element.Element
 import dev.s7a.strata.element.ElementIdentity
 import dev.s7a.strata.element.ElementType
 import dev.s7a.strata.geometry.Constraints
+import dev.s7a.strata.geometry.FloatRect
 import dev.s7a.strata.geometry.IntOffset
 import dev.s7a.strata.geometry.IntRect
 import dev.s7a.strata.geometry.IntSize
@@ -26,6 +27,8 @@ import dev.s7a.strata.node.RootOverlayPaintNode
 import dev.s7a.strata.render.ArgbColor
 import dev.s7a.strata.render.PaintScope
 import dev.s7a.strata.render.RootOverlayPaintScope
+import dev.s7a.strata.render.SampledImageOrientation
+import dev.s7a.strata.render.createDrawImage
 import dev.s7a.strata.runtime.render.DrawCommand
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
@@ -50,6 +53,7 @@ internal class PaintOrderPipelineTest {
                 DrawCommand.PopClip,
                 fill(IntRect(0, 0, 1, 1), OVERLAY),
                 fill(IntRect(2, 2, 4, 4), ROOT_OVERLAY),
+                DrawCommand.SampledImage(ROOT_IMAGE, FloatRect(0f, 0f, 1f, 1f), FloatRect(1f, 1f, 2f, 2f), orientation = SampledImageOrientation.FlipBoth),
             ),
             tree.paint(),
         )
@@ -151,6 +155,7 @@ internal class PaintOrderPipelineTest {
             assertEquals(IntRect(0, 0, 4, 4), scope.anchorBounds)
             assertEquals(IntSize(4, 4), scope.size)
             scope.fillRectangle(IntRect(2, 2, 4, 4), ROOT_OVERLAY)
+            scope.sampledImage(ROOT_IMAGE, FloatRect(0f, 0f, 1f, 1f), FloatRect(1f, 1f, 2f, 2f), SampledImageOrientation.FlipBoth)
         }
 
         fun invalidatePaint() {
@@ -219,5 +224,6 @@ internal class PaintOrderPipelineTest {
         val CONTENT: ArgbColor = ArgbColor(0xFFFF0000.toInt())
         val OVERLAY: ArgbColor = ArgbColor(0xFF00FF00.toInt())
         val ROOT_OVERLAY: ArgbColor = ArgbColor(0xFFFFFF00.toInt())
+        val ROOT_IMAGE = createDrawImage(IntSize(1, 1), intArrayOf(-1))
     }
 }

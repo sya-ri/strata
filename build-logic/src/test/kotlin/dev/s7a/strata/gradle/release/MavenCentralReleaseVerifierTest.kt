@@ -42,9 +42,9 @@ internal class MavenCentralReleaseVerifierTest {
         server.requestedChecksumExtensions.clear()
         val exact = verifier.preflight(fixture.coordinates)
         assertEquals(MavenCentralReleaseVerifier.State.EXACT, exact.state)
-        assertEquals(25, exact.coordinateCount)
-        assertEquals(250, exact.verifiedFileCount)
-        assertEquals(500, exact.verifiedChecksumCount)
+        assertEquals(26, exact.coordinateCount)
+        assertEquals(260, exact.verifiedFileCount)
+        assertEquals(520, exact.verifiedChecksumCount)
         assertEquals(setOf("md5", "sha1", "sha256", "sha512"), server.requestedChecksumExtensions)
         assertTrue(server.requestedChecksumContentPaths.none { path -> path.endsWith(".asc") })
     }
@@ -131,7 +131,7 @@ internal class MavenCentralReleaseVerifierTest {
         val output = temporaryDirectory.resolve("canonical-signatures")
         val signedFiles = fixture.verifier(server).stageCanonicalPublicationEvidence(fixture.coordinates, output)
 
-        assertEquals(125, signedFiles.size)
+        assertEquals(130, signedFiles.size)
         assertEquals(21, signedFiles.count(MavenCentralReleaseVerifier.SignedPublicationFile::githubDistributionSignature))
         val fileName = "$artifact-$version.jar.asc"
         val relativePath = "${group.replace('.', '/')}/$artifact/$version/$fileName"
@@ -157,6 +157,7 @@ internal class MavenCentralReleaseVerifierTest {
                 "dev.s7a.strata:strata-runtime-core:0.1.1",
                 "dev.s7a.strata:strata-runtime-headless:0.1.1",
                 "dev.s7a.strata:strata-runtime-minecraft:0.1.1",
+                "dev.s7a.strata:strata-runtime-minecraft-fonts-lwjgl:0.1.1",
             ) +
                 GAME_VERSIONS.map { gameVersion ->
                     "dev.s7a.strata:strata-runtime-minecraft-fabric-$gameVersion:0.1.1"

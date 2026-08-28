@@ -1,0 +1,19 @@
+{
+  "providers": [
+    {
+      "type": "bitmap",
+      "file": "strata_font_test:font/colored.png",
+      "height": 8,
+      "ascent": 7,
+      "chars": [
+        "A日한🙂"
+      ]
+    },
+    {
+      "type": "space",
+      "advances": {
+        " ": 3.25
+      }
+    }
+  ]
+}

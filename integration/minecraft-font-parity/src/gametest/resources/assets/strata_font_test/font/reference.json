@@ -1,0 +1,18 @@
+{
+  "providers": [
+    {
+      "type": "space",
+      "advances": {
+        " ": 3.25
+      }
+    },
+    {
+      "type": "reference",
+      "id": "strata_font_test:ttf_fractional"
+    },
+    {
+      "type": "reference",
+      "id": "strata_font_test:unihex"
+    }
+  ]
+}

@@ -15,6 +15,7 @@ import dev.s7a.strata.runtime.FrameTime
 import dev.s7a.strata.runtime.minecraft.MinecraftUiHost
 import dev.s7a.strata.runtime.minecraft.MinecraftUiProfile
 import dev.s7a.strata.runtime.minecraft.createMinecraftUiHost
+import dev.s7a.strata.runtime.minecraft.font.lwjgl.LwjglMinecraftFontBackendFactory
 import dev.s7a.strata.screen.ScreenDefinition
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
 import net.minecraft.client.Minecraft
@@ -509,7 +510,7 @@ public fun createMinecraftScreen(
     val inventory = FabricMinecraftInventoryBridge.create(minecraft)
     val host =
         try {
-            createMinecraftUiHost(definition, profile, inventory)
+            createMinecraftUiHost(definition, profile, inventory, LwjglMinecraftFontBackendFactory)
         } catch (failure: Throwable) {
             try {
                 inventory.close()

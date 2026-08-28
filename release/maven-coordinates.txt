@@ -2,6 +2,7 @@ dev.s7a.strata:strata-api:0.1.1
 dev.s7a.strata:strata-runtime-core:0.1.1
 dev.s7a.strata:strata-runtime-headless:0.1.1
 dev.s7a.strata:strata-runtime-minecraft:0.1.1
+dev.s7a.strata:strata-runtime-minecraft-fonts-lwjgl:0.1.1
 dev.s7a.strata:strata-runtime-minecraft-fabric-1.20:0.1.1
 dev.s7a.strata:strata-runtime-minecraft-fabric-1.20.1:0.1.1
 dev.s7a.strata:strata-runtime-minecraft-fabric-1.20.2:0.1.1

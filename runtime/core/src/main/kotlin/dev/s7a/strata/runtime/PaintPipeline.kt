@@ -1,5 +1,6 @@
 package dev.s7a.strata.runtime
 
+import dev.s7a.strata.geometry.FloatRect
 import dev.s7a.strata.geometry.IntOffset
 import dev.s7a.strata.geometry.IntRect
 import dev.s7a.strata.geometry.IntSize
@@ -14,6 +15,7 @@ import dev.s7a.strata.render.DrawImage
 import dev.s7a.strata.render.PaintScope
 import dev.s7a.strata.render.PlatformDrawCommand
 import dev.s7a.strata.render.RootOverlayPaintScope
+import dev.s7a.strata.render.SampledImageOrientation
 import dev.s7a.strata.runtime.render.DrawCommand
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
 import java.util.Collections
@@ -148,6 +150,17 @@ internal class PaintPipeline(
                 DrawCommand.BlitImage(command.image, command.source, command.destination + IntOffset(x, y))
             }
 
+            is LocalDrawCommand.SampledImage -> {
+                DrawCommand.SampledImage(
+                    command.image,
+                    command.source,
+                    command.destination + IntOffset(x, y),
+                    command.tint,
+                    command.alphaCutoff,
+                    command.orientation,
+                )
+            }
+
             is LocalDrawCommand.Platform -> {
                 DrawCommand.Platform(command.command, command.bounds + IntOffset(x, y))
             }
@@ -188,6 +201,28 @@ internal class PaintPipeline(
         ) {
             guard.check()
             commands.add(LocalDrawCommand.BlitImage(image, source, localDestination))
+        }
+
+        override fun sampledImage(
+            image: DrawImage,
+            source: FloatRect,
+            localDestination: FloatRect,
+            tint: ArgbColor,
+            alphaCutoff: Float,
+        ) {
+            sampledImage(image, source, localDestination, SampledImageOrientation.Normal, tint, alphaCutoff)
+        }
+
+        override fun sampledImage(
+            image: DrawImage,
+            source: FloatRect,
+            localDestination: FloatRect,
+            orientation: SampledImageOrientation,
+            tint: ArgbColor,
+            alphaCutoff: Float,
+        ) {
+            guard.check()
+            commands.add(LocalDrawCommand.SampledImage(image, source, localDestination, tint, alphaCutoff, orientation))
         }
 
         override fun drawPlatform(
@@ -243,6 +278,27 @@ internal class PaintPipeline(
             localDestination: IntRect,
         ) {
             delegate.blitImage(image, source, localDestination)
+        }
+
+        override fun sampledImage(
+            image: DrawImage,
+            source: FloatRect,
+            localDestination: FloatRect,
+            tint: ArgbColor,
+            alphaCutoff: Float,
+        ) {
+            delegate.sampledImage(image, source, localDestination, tint, alphaCutoff)
+        }
+
+        override fun sampledImage(
+            image: DrawImage,
+            source: FloatRect,
+            localDestination: FloatRect,
+            orientation: SampledImageOrientation,
+            tint: ArgbColor,
+            alphaCutoff: Float,
+        ) {
+            delegate.sampledImage(image, source, localDestination, orientation, tint, alphaCutoff)
         }
 
         override fun drawPlatform(

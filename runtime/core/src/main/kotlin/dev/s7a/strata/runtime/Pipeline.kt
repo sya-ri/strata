@@ -19,6 +19,7 @@ import dev.s7a.strata.node.MeasureNode
 import dev.s7a.strata.node.ParentDataModifierNode
 import dev.s7a.strata.runtime.render.DrawCommand
 import dev.s7a.strata.runtime.semantics.SemanticsEntry
+import dev.s7a.strata.runtime.spi.RuntimeTextInputFocus
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
 
 /**
@@ -36,6 +37,12 @@ internal class Pipeline(
     private val focusedInputPipeline = FocusedInputPipeline()
     private val inputPipeline = InputPipeline(focusedInputPipeline)
     private val semanticsPipeline = SemanticsPipeline(threadGuard)
+
+    /**
+     * Detached current editable-focus identity, read outside a tree operation on its owner thread.
+     */
+    val textInputFocus: RuntimeTextInputFocus?
+        get() = focusedInputPipeline.textInputFocus
 
     /**
      * Measures [root] under [constraints].

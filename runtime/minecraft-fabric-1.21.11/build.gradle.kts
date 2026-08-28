@@ -84,6 +84,7 @@ val verifyFabricModArtifact = tasks.register("verifyFabricModArtifact") {
                     "core-${project.version}.jar",
                     "headless-${project.version}.jar",
                     "minecraft-${project.version}.jar",
+                    "minecraft-fonts-lwjgl-${project.version}.jar",
                 ).sorted()
             check(nestedNames == expectedNestedNames) {
                 "Fabric artifact must contain each common runtime jar exactly once: $nestedNames"
@@ -174,6 +175,7 @@ tasks.named("check") {
 
 dependencies {
     compileOnly(project(":runtime:minecraft"))
+    compileOnly(project(":runtime:minecraft-fonts-lwjgl"))
     compileOnly(project(":runtime:headless"))
     minecraft(libs.minecraft12111)
     mappings(loom.officialMojangMappings())
@@ -183,7 +185,9 @@ dependencies {
     include(project(":runtime:core"))
     include(project(":runtime:headless"))
     include(project(":runtime:minecraft"))
+    include(project(":runtime:minecraft-fonts-lwjgl"))
     testImplementation(project(":runtime:minecraft"))
+    testImplementation(project(":runtime:minecraft-fonts-lwjgl"))
     testImplementation(project(":runtime:headless"))
     testRuntimeOnly(libs.fabric.loader)
     testImplementation(libs.junit.jupiter)

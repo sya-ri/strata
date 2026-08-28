@@ -1,3 +1,4 @@
+import dev.detekt.gradle.extensions.DetektExtension
 import net.fabricmc.loom.task.prod.ClientProductionRunTask
 import org.gradle.api.tasks.Delete
 import org.gradle.api.tasks.SourceSetContainer
@@ -13,12 +14,24 @@ plugins {
 apply(from = rootProject.file("integration/minecraft-fabric-published-runtime.gradle.kts"))
 
 evaluationDependsOn(":runtime:minecraft-fabric-26.2")
+val runtimeFabricProject = project(":runtime:minecraft-fabric-26.2")
 val runtimeFabricMain =
-    project(":runtime:minecraft-fabric-26.2")
+    runtimeFabricProject
         .extensions
         .getByType<SourceSetContainer>()
         .named("main")
+val runtimeJar = runtimeFabricProject.tasks.named<Jar>("jar").flatMap { task -> task.archiveFile }
 val sharedGameTest = rootProject.file("integration/minecraft-fabric-unobfuscated/src/gametest")
+val fontParityGameTest = rootProject.file("integration/minecraft-font-parity/src/gametest")
+val nativeFontParityGameTest = rootProject.file("integration/minecraft-font-parity-26/src/gametest")
+
+extensions.configure<DetektExtension> {
+    source.from(fontParityGameTest.resolve("kotlin"), nativeFontParityGameTest.resolve("kotlin"))
+}
+
+loom {
+    accessWidenerPath.set(nativeFontParityGameTest.resolve("resources/strata-font-parity.accesswidener"))
+}
 
 fabricApi {
     configureTests {
@@ -33,18 +46,27 @@ fabricApi {
 extensions.configure<SourceSetContainer> {
     named("gametest") {
         java.srcDir("src/gametest26/java")
-        resources.srcDir(sharedGameTest.resolve("resources"))
+        resources.srcDir(fontParityGameTest.resolve("resources"))
+        resources.srcDir(nativeFontParityGameTest.resolve("resources"))
     }
 }
 
 extensions.configure<KotlinJvmProjectExtension> {
     sourceSets.named("gametest") {
         kotlin.srcDir(sharedGameTest.resolve("kotlin"))
+        kotlin.srcDir(fontParityGameTest.resolve("kotlin"))
+        kotlin.srcDir(nativeFontParityGameTest.resolve("kotlin"))
     }
 }
 
 val gametestSourceSet = extensions.getByType<SourceSetContainer>().named("gametest")
 tasks.named<ProcessResources>("processGametestResources") {
+    from(sharedGameTest.resolve("resources")) {
+        exclude("fabric.mod.json")
+    }
+    from(rootProject.file("runtime/minecraft-fonts-lwjgl/src/test/resources/fonts/strata-test.ttf")) {
+        into("assets/strata_font_test/font")
+    }
     inputs.property("version", project.version)
     inputs.property("minecraftVersion", libs.versions.minecraft262)
     inputs.property("integrationModId", "strata-integration-minecraft-fabric-26-2")
@@ -66,6 +88,7 @@ dependencies {
     add("gametestImplementation", files(runtimeFabricMain.map { sourceSet -> sourceSet.output }))
     add("gametestImplementation", project(":runtime:headless"))
     add("gametestImplementation", project(":runtime:minecraft"))
+    add("gametestImplementation", project(":runtime:minecraft-fonts-lwjgl"))
     add("gametestRuntimeOnly", libs.fabric.language.kotlin)
     add("productionRuntimeMods", libs.fabric.api262)
     add("productionRuntimeMods", libs.fabric.language.kotlin)
@@ -74,6 +97,22 @@ dependencies {
 tasks.named<Jar>("jar") {
     dependsOn("gametestClasses")
     from(gametestSourceSet.map { sourceSet -> sourceSet.output })
+}
+
+val productionRunDirectory = layout.buildDirectory.dir("run/productionClientGameTest")
+val deleteProductionGameTestRunDir = tasks.register<Delete>("deleteProductionGameTestRunDir") {
+    delete(productionRunDirectory)
+}
+val runProductionClientGameTest = tasks.register<ClientProductionRunTask>("runProductionClientGameTest") {
+    group = "verification"
+    description = "Runs the client GameTest from the actual integration and runtime mod jars."
+    dependsOn(deleteProductionGameTestRunDir)
+    mods.from(runtimeJar)
+    runDir.set(productionRunDirectory)
+    jvmArgs.add("-Dfabric.client.gametest")
+    val verificationOutput = layout.buildDirectory.dir("minecraft-production-parity")
+    jvmArgs.add(verificationOutput.map { directory -> "-Dstrata.minecraftParityOutput=${directory.asFile.absolutePath}" })
+    jvmArgs.add(libs.versions.minecraft262.map { version -> "-Dstrata.minecraftVersion=$version" })
 }
 
 val publishedCoordinateRunDirectory = layout.buildDirectory.dir("run/publishedCoordinateClientGameTest")
@@ -97,7 +136,7 @@ tasks.register<ClientProductionRunTask>("runPublishedCoordinateClientGameTest") 
 }
 
 tasks.named("check") {
-    dependsOn("runClientGameTest")
+    dependsOn("runClientGameTest", runProductionClientGameTest)
 }
 
 tasks.matching { task -> task.name == "koverGenerateArtifact" }.configureEach {

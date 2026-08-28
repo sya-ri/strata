@@ -20,11 +20,10 @@ import java.io.IOException
  * Extracts the complete Minecraft UI profile from the active resource manager.
  *
  * Every resource is acquired for this call only. Image streams and native images are closed after their pixels are copied, and the resulting common profile retains no Minecraft or native resource object.
- * The active resource manager may replace the vanilla images with conforming pack assets, but multi-resource font JSON stacks are rejected because this bounded extractor does not reproduce Minecraft's provider-stack merge.
+ * Active resource-pack font stacks, custom font files, and language font options are copied into an immutable font snapshot.
  * The call belongs on the active Minecraft client thread; resource-manager and native-image failures escape without substitution.
- * The active client must use the regular bitmap font selection; the forced Unicode font option is outside this profile's verified ASCII contract.
  *
- * @return an immutable profile containing the active conforming menu, container, Slot, button, and ASCII assets.
+ * @return an immutable profile containing the active conforming GUI assets and resource fonts.
  * @throws IllegalArgumentException when a required resource, dimension, metadata contract, or font contract is invalid.
  * @throws IllegalStateException when called away from the Minecraft client thread.
  * @throws IOException when a required resource cannot be read.
@@ -33,13 +32,6 @@ import java.io.IOException
 public fun extractMinecraftUiProfile(): MinecraftUiProfile {
     val minecraft = Minecraft.getInstance()
     check(minecraft.isSameThread()) { "Minecraft UI profiles must be extracted on the client thread." }
-    val forceUnicode =
-        minecraft.options
-            .forceUnicodeFont()
-            .get()
-    require(forceUnicode.not()) {
-        "Minecraft UI profiles require the regular bitmap font selection."
-    }
     val manager = minecraft.getResourceManager()
     val menu = manager.readMenuBackground()
     val containerBackground = manager.readImage("textures/gui/container/generic_54.png", IntSize(256, 256))
@@ -51,10 +43,7 @@ public fun extractMinecraftUiProfile(): MinecraftUiProfile {
     val bundleProgressBar = manager.readBundleProgressBarOrNull()
     val legacyProgressBar = if (bundleProgressBar == null) manager.readLegacyHorizontalProgressBar() else null
     val tooltipSprites = manager.readTooltipSpritesOrNull()
-    val ascii = manager.readImage("textures/font/ascii.png", IntSize(128, 128))
-    validateMinecraftRegularFontContract(ascii) { identifier ->
-        manager.readSingleFontDocument(identifier)
-    }
+    val fontSnapshot = extractFabricMinecraftFontSnapshot(minecraft)
 
     return createMinecraftUiProfile {
         menuBackground(menu)
@@ -96,13 +85,23 @@ public fun extractMinecraftUiProfile(): MinecraftUiProfile {
         buttonNormal(widgets.buttonNormal, widgets.buttonNormalBorder, NineSliceCenterMode.Tiled)
         buttonHighlighted(widgets.buttonHighlighted, widgets.buttonHighlightedBorder, NineSliceCenterMode.Tiled)
         buttonDisabled(widgets.buttonDisabled, widgets.buttonDisabledBorder, NineSliceCenterMode.Tiled)
-        for (codePoint in printableAsciiRange) {
-            printableAsciiGlyph(codePoint, extractMinecraftAsciiGlyph(ascii, codePoint))
-        }
+        fonts(fontSnapshot)
     }
 }
 
-private fun ResourceManager.readImage(
+/**
+ * Reads a required image from this manager and copies its validated dimensions and pixels.
+ *
+ * Call on the owning Minecraft client thread; streams and native images close before return.
+ * Resource acquisition and decoding failures propagate without substitution.
+ *
+ * @param path resource path in the Minecraft namespace.
+ * @param expectedSize required dimensions of the image.
+ * @return detached immutable straight-ARGB pixels.
+ * @throws IllegalArgumentException when the resource is absent or has different dimensions.
+ */
+@JvmSynthetic
+internal fun ResourceManager.readImage(
     path: String,
     expectedSize: IntSize,
 ): DrawImage = readImage(requiredResource(path), path, expectedSize)
@@ -118,240 +117,20 @@ private fun ResourceManager.readMenuBackground(): DrawImage {
     }
 }
 
-private fun ResourceManager.readWidgetImages(): FabricMinecraftWidgetImages {
-    val buttonPath = "textures/gui/sprites/widget/button.png"
-    return if (fabricMinecraftUsesGuiSprites) {
-        FabricMinecraftWidgetImages(
-            checkbox = readImage("textures/gui/sprites/widget/checkbox.png", checkboxImageSize),
-            checkboxHighlighted = readImage("textures/gui/sprites/widget/checkbox_highlighted.png", checkboxImageSize),
-            checkboxSelected = readImage("textures/gui/sprites/widget/checkbox_selected.png", checkboxImageSize),
-            checkboxSelectedHighlighted = readImage("textures/gui/sprites/widget/checkbox_selected_highlighted.png", checkboxImageSize),
-            slider = readNineSliceImage("textures/gui/sprites/widget/slider.png", buttonImageSize, 1),
-            sliderBorder = 1,
-            sliderHighlighted = readNineSliceImage("textures/gui/sprites/widget/slider_highlighted.png", buttonImageSize, 1),
-            sliderHighlightedBorder = 1,
-            sliderHandle = readImage("textures/gui/sprites/widget/slider_handle.png", sliderHandleImageSize),
-            sliderHandleHighlighted = readImage("textures/gui/sprites/widget/slider_handle_highlighted.png", sliderHandleImageSize),
-            textFieldNormal = readImage("textures/gui/sprites/widget/text_field.png", buttonImageSize),
-            textFieldHighlighted = readImage("textures/gui/sprites/widget/text_field_highlighted.png", buttonImageSize),
-            buttonNormal = readNineSliceImage(buttonPath, buttonImageSize, 3),
-            buttonNormalBorder = 3,
-            buttonHighlighted = readNineSliceImage("textures/gui/sprites/widget/button_highlighted.png", buttonImageSize, 3),
-            buttonHighlightedBorder = 3,
-            buttonDisabled = readNineSliceImage("textures/gui/sprites/widget/button_disabled.png", buttonImageSize, 1),
-            buttonDisabledBorder = 1,
-        )
-    } else {
-        readLegacyWidgetImages()
-    }
-}
-
-private fun ResourceManager.readLegacyWidgetImages(): FabricMinecraftWidgetImages {
-    val widgets = readImage("textures/gui/widgets.png", legacyWidgetAtlasSize)
-    val checkbox = readImage("textures/gui/checkbox.png", legacyCheckboxAtlasSize)
-    val slider = readImage("textures/gui/slider.png", legacyWidgetAtlasSize)
-    return FabricMinecraftWidgetImages(
-        checkbox = checkbox.cropped(0, 0, checkboxImageSize),
-        checkboxHighlighted = checkbox.cropped(20, 0, checkboxImageSize),
-        checkboxSelected = checkbox.cropped(0, 20, checkboxImageSize),
-        checkboxSelectedHighlighted = checkbox.cropped(20, 20, checkboxImageSize),
-        slider = slider.cropped(0, 0, buttonImageSize),
-        sliderBorder = legacyHorizontalBorder,
-        sliderHighlighted = slider.cropped(0, 20, buttonImageSize),
-        sliderHighlightedBorder = legacyHorizontalBorder,
-        sliderHandle = slider.legacySliderHandle(40),
-        sliderHandleHighlighted = slider.legacySliderHandle(60),
-        textFieldNormal = legacyTextField(legacyTextFieldBorder),
-        textFieldHighlighted = legacyTextField(opaqueMaskPixel),
-        buttonNormal = widgets.cropped(0, 66, buttonImageSize),
-        buttonNormalBorder = legacyHorizontalBorder,
-        buttonHighlighted = widgets.cropped(0, 86, buttonImageSize),
-        buttonHighlightedBorder = legacyHorizontalBorder,
-        buttonDisabled = widgets.cropped(0, 46, buttonImageSize),
-        buttonDisabledBorder = legacyHorizontalBorder,
-    )
-}
-
-private fun DrawImage.legacySliderHandle(top: Int): DrawImage {
-    val halfWidth = sliderHandleImageSize.width / 2
-    val pixels = IntArray(sliderHandleImageSize.width * sliderHandleImageSize.height)
-    for (y in 0 until sliderHandleImageSize.height) {
-        for (x in 0 until halfWidth) {
-            pixels[y * sliderHandleImageSize.width + x] = argbAt(x, top + y)
-            pixels[y * sliderHandleImageSize.width + halfWidth + x] = argbAt(buttonImageSize.width - halfWidth + x, top + y)
-        }
-    }
-    return createDrawImage(sliderHandleImageSize, pixels)
-}
-
-private fun DrawImage.cropped(
-    left: Int,
-    top: Int,
-    croppedSize: IntSize,
-): DrawImage {
-    require(0 <= left && 0 <= top && left + croppedSize.width <= size.width && top + croppedSize.height <= size.height) {
-        "Minecraft GUI atlas crop must remain inside the source image."
-    }
-    val pixels = IntArray(croppedSize.width * croppedSize.height)
-    for (y in 0 until croppedSize.height) {
-        for (x in 0 until croppedSize.width) {
-            pixels[y * croppedSize.width + x] = argbAt(left + x, top + y)
-        }
-    }
-    return createDrawImage(croppedSize, pixels)
-}
-
-private fun legacyTextField(border: ArgbColor): DrawImage {
-    val pixels = IntArray(buttonImageSize.width * buttonImageSize.height) { legacyTextFieldBackground.value }
-    for (x in 0 until buttonImageSize.width) {
-        pixels[x] = border.value
-        pixels[(buttonImageSize.height - 1) * buttonImageSize.width + x] = border.value
-    }
-    for (y in 1 until buttonImageSize.height - 1) {
-        pixels[y * buttonImageSize.width] = border.value
-        pixels[y * buttonImageSize.width + buttonImageSize.width - 1] = border.value
-    }
-    return createDrawImage(buttonImageSize, pixels)
-}
-
-private fun ResourceManager.readListDecorationImages(): Triple<DrawImage, DrawImage, DrawImage> {
-    val currentBackgroundPath = "textures/gui/menu_list_background.png"
-    val currentBackground = getResource(minecraftResourceLocation("minecraft", currentBackgroundPath)).orElse(null)
-    if (currentBackground != null) {
-        return Triple(
-            readImage(currentBackground, currentBackgroundPath, IntSize(16, 16)),
-            readImage("textures/gui/header_separator.png", IntSize(32, 2)),
-            readImage("textures/gui/footer_separator.png", IntSize(32, 2)),
-        )
-    }
-    val legacyBackground = readImage("textures/gui/options_background.png", IntSize(16, 16))
-    val legacyFooter = readImage("textures/gui/footer_separator.png", IntSize(32, 2))
-    val legacyHeaderPath = "textures/gui/header_separator.png"
-    val legacyHeaderResource = getResource(minecraftResourceLocation("minecraft", legacyHeaderPath)).orElse(null)
-    val legacyHeader =
-        if (legacyHeaderResource == null) {
-            legacyFooter.verticallyFlipped()
-        } else {
-            readImage(legacyHeaderResource, legacyHeaderPath, IntSize(32, 2))
-        }
-    return Triple(legacyBackground, legacyHeader, legacyFooter)
-}
-
-private fun DrawImage.verticallyFlipped(): DrawImage {
-    val pixels = IntArray(size.width * size.height)
-    for (y in 0 until size.height) {
-        val sourceY = size.height - y - 1
-        for (x in 0 until size.width) {
-            pixels[y * size.width + x] = argbAt(x, sourceY)
-        }
-    }
-    return createDrawImage(size, pixels)
-}
-
-private fun ResourceManager.readSlotHighlightImages(): Pair<DrawImage, DrawImage> {
-    val backPath = "textures/gui/sprites/container/slot_highlight_back.png"
-    val frontPath = "textures/gui/sprites/container/slot_highlight_front.png"
-    val back = getResource(minecraftResourceLocation("minecraft", backPath)).orElse(null)
-    val front = getResource(minecraftResourceLocation("minecraft", frontPath)).orElse(null)
-    require((back == null) == (front == null)) {
-        "Minecraft Slot highlight resources must provide both the back and front layers."
-    }
-    return if (back == null) {
-        legacySlotHighlightImages()
-    } else {
-        Pair(
-            readImage(back, backPath, slotHighlightImageSize),
-            readImage(requireNotNull(front), frontPath, slotHighlightImageSize),
-        )
-    }
-}
-
-private fun legacySlotHighlightImages(): Pair<DrawImage, DrawImage> {
-    val frontPixels = IntArray(slotHighlightImageSize.width * slotHighlightImageSize.height)
-    for (y in 4 until 20) {
-        for (x in 4 until 20) {
-            frontPixels[y * slotHighlightImageSize.width + x] = legacySlotHighlightColor.value
-        }
-    }
-    return Pair(
-        createDrawImage(slotHighlightImageSize, IntArray(frontPixels.size)),
-        createDrawImage(slotHighlightImageSize, frontPixels),
-    )
-}
-
-private fun ResourceManager.readBundleProgressBarOrNull(): Triple<DrawImage, DrawImage, DrawImage>? {
-    val borderPath = "textures/gui/sprites/container/bundle/bundle_progressbar_border.png"
-    val fillPath = "textures/gui/sprites/container/bundle/bundle_progressbar_fill.png"
-    val fullPath = "textures/gui/sprites/container/bundle/bundle_progressbar_full.png"
-    val resources =
-        listOf(borderPath, fillPath, fullPath).map { path ->
-            getResource(minecraftResourceLocation("minecraft", path)).orElse(null)
-        }
-    require(resources.all { resource -> resource == null } || resources.all { resource -> resource != null }) {
-        "Minecraft bundle ProgressBar resources must provide the border, fill, and completed fill together."
-    }
-    if (resources.first() == null) return null
-    return Triple(
-        readNineSliceImage(borderPath, IntSize(12, 12), 2),
-        readNineSliceImage(fillPath, IntSize(6, 6), 2),
-        readNineSliceImage(fullPath, IntSize(6, 6), 2),
-    )
-}
-
-private fun ResourceManager.readLegacyHorizontalProgressBar(): Pair<DrawImage, DrawImage> {
-    val backgroundPath = "textures/gui/sprites/boss_bar/white_background.png"
-    val fillPath = "textures/gui/sprites/boss_bar/white_progress.png"
-    if (getResource(minecraftResourceLocation("minecraft", backgroundPath)).isEmpty) {
-        val bars = readImage("textures/gui/bars.png", legacyWidgetAtlasSize)
-        return Pair(
-            bars.cropped(0, 60, legacyProgressBarImageSize),
-            bars.cropped(0, 65, legacyProgressBarImageSize),
-        )
-    }
-    return Pair(
-        readImage(backgroundPath, legacyProgressBarImageSize),
-        readImage(fillPath, legacyProgressBarImageSize),
-    )
-}
-
-private fun ResourceManager.readTooltipSpritesOrNull(): Pair<DrawImage, DrawImage>? {
-    val backgroundPath = "textures/gui/sprites/tooltip/background.png"
-    val framePath = "textures/gui/sprites/tooltip/frame.png"
-    val background = getResource(minecraftResourceLocation("minecraft", backgroundPath)).orElse(null)
-    val frame = getResource(minecraftResourceLocation("minecraft", framePath)).orElse(null)
-    require((background == null) == (frame == null)) {
-        "Minecraft tooltip resources must provide both the background and frame sprites."
-    }
-    if (background == null) return null
-    return Pair(
-        readNineSliceImage(backgroundPath, IntSize(100, 100), 9),
-        readNineSliceImage(
-            framePath,
-            IntSize(100, 100),
-            10,
-            expectedStretchInner = minecraftTooltipFrameStretchesInner,
-        ),
-    )
-}
-
-private fun ResourceManager.readLoadingIndicator(): DrawImage {
-    val path = "textures/gui/sprites/friends/loading.png"
-    val resource = getResource(minecraftResourceLocation("minecraft", path)).orElse(null)
-    return if (resource == null) legacyLoadingIndicator() else readImage(resource, path, loadingIndicatorImageSize)
-}
-
-private fun legacyLoadingIndicator(): DrawImage {
-    val pixels = IntArray(loadingIndicatorImageSize.width * loadingIndicatorImageSize.height)
-    for (frame in 0 until 3) {
-        val row = frame * 2
-        for (dot in 0..frame) {
-            pixels[row * loadingIndicatorImageSize.width + dot * 2] = -1
-        }
-    }
-    return createDrawImage(loadingIndicatorImageSize, pixels)
-}
-
-private fun readImage(
+/**
+ * Decodes one selected resource into detached immutable pixels of the required dimensions.
+ *
+ * Call on the owning Minecraft client thread; the stream and native image close before return or failure.
+ *
+ * @param resource selected resource opened for this call only.
+ * @param path resource path used in validation diagnostics.
+ * @param expectedSize required image dimensions.
+ * @return copied straight-ARGB pixels without native ownership.
+ * @throws IllegalArgumentException when the decoded dimensions differ from the required size.
+ * @throws IOException when the resource cannot be read or decoded.
+ */
+@JvmSynthetic
+internal fun readImage(
     resource: Resource,
     path: String,
     expectedSize: IntSize,
@@ -368,7 +147,21 @@ private fun readImage(
     return createDrawImage(expectedSize, pixels)
 }
 
-private fun ResourceManager.readNineSliceImage(
+/**
+ * Copies a required sprite after validating its dimensions and nine-slice metadata.
+ *
+ * Call on the owning Minecraft client thread; the result retains no resource or native image.
+ * Read and metadata decoding failures propagate without substitution.
+ *
+ * @param path resource path in the Minecraft namespace.
+ * @param expectedSize required sprite dimensions.
+ * @param expectedBorder required width of all four borders.
+ * @param expectedStretchInner required center stretch flag.
+ * @return detached immutable sprite pixels.
+ * @throws IllegalArgumentException when the resource is absent or its image or metadata contract is invalid.
+ */
+@JvmSynthetic
+internal fun ResourceManager.readNineSliceImage(
     path: String,
     expectedSize: IntSize,
     expectedBorder: Int,
@@ -381,40 +174,22 @@ private fun ResourceManager.readNineSliceImage(
     return image
 }
 
-private fun ResourceManager.readScrollbarImage(path: String): DrawImage {
+/**
+ * Copies a required scrollbar sprite after validating its dimensions and scaling metadata.
+ *
+ * Call on the owning Minecraft client thread; the result retains no resource or native image.
+ * Read and metadata decoding failures propagate without substitution.
+ *
+ * @param path resource path in the Minecraft namespace.
+ * @return detached immutable scrollbar pixels.
+ * @throws IllegalArgumentException when the resource is absent or violates the scrollbar contract.
+ */
+@JvmSynthetic
+internal fun ResourceManager.readScrollbarImage(path: String): DrawImage {
     val resource = requiredResource(path)
     val image = readImage(resource, path, scrollbarImageSize)
     validateMinecraftScrollbarScaling(readFabricMinecraftGuiScaling(resource, path))
     return image
-}
-
-private fun ResourceManager.readScrollbarImages(): Pair<DrawImage, DrawImage> {
-    val backgroundPath = "textures/gui/sprites/widget/scroller_background.png"
-    val backgroundResource = getResource(minecraftResourceLocation("minecraft", backgroundPath)).orElse(null)
-    val background =
-        if (backgroundResource == null) {
-            createDrawImage(scrollbarImageSize, IntArray(scrollbarImageSize.width * scrollbarImageSize.height) { -16777216 })
-        } else {
-            readScrollbarImage(backgroundPath)
-        }
-    val thumbPath = "textures/gui/sprites/widget/scroller.png"
-    val thumb =
-        if (getResource(minecraftResourceLocation("minecraft", thumbPath)).isEmpty) {
-            legacyScrollbarThumb()
-        } else {
-            readScrollbarImage(thumbPath)
-        }
-    return Pair(background, thumb)
-}
-
-private fun legacyScrollbarThumb(): DrawImage {
-    val pixels = IntArray(scrollbarImageSize.width * scrollbarImageSize.height) { legacyScrollbarBorder.value }
-    for (y in 0 until scrollbarImageSize.height - 1) {
-        for (x in 0 until scrollbarImageSize.width - 1) {
-            pixels[y * scrollbarImageSize.width + x] = legacyScrollbarInner.value
-        }
-    }
-    return createDrawImage(scrollbarImageSize, pixels)
 }
 
 /**
@@ -457,14 +232,6 @@ private fun ResourceManager.requiredResource(identifier: MinecraftResourceLocati
     getResource(identifier).orElseThrow {
         IllegalArgumentException("Missing Minecraft resource: $identifier")
     }
-
-private fun ResourceManager.readSingleFontDocument(identifier: MinecraftResourceLocation): String {
-    val resources = getResourceStack(identifier)
-    require(resources.size == 1) {
-        "Minecraft font resource $identifier must come from exactly one active resource pack."
-    }
-    return resources.single().openAsReader().use { reader -> reader.readText() }
-}
 
 /**
  * Validates one decoded nine-slice scaling value without retaining its resource.
@@ -523,24 +290,21 @@ internal fun validateMinecraftScrollbarScaling(scaling: FabricMinecraftGuiScalin
     }
 }
 
-private val buttonImageSize: IntSize = IntSize(200, 20)
-private val scrollbarImageSize: IntSize = IntSize(6, 32)
-private val checkboxImageSize: IntSize = IntSize(20, 20)
-private val sliderHandleImageSize: IntSize = IntSize(8, 20)
-private val loadingIndicatorImageSize: IntSize = IntSize(5, 6)
-private val slotHighlightImageSize: IntSize = IntSize(24, 24)
-private val legacyProgressBarImageSize: IntSize = IntSize(182, 5)
-private val legacyWidgetAtlasSize: IntSize = IntSize(256, 256)
-private val legacyCheckboxAtlasSize: IntSize = IntSize(64, 64)
-private val legacyHorizontalBorder: Int = 20
+/**
+ * Immutable scrollbar dimensions shared by resource validation and legacy image construction.
+ */
+@get:JvmSynthetic
+internal val scrollbarImageSize: IntSize = IntSize(6, 32)
+
 private val printableAsciiRange: IntRange = 0x21..0x7E
 private val transparentMaskPixel: ArgbColor = ArgbColor(0x00FFFFFF)
-private val opaqueMaskPixel: ArgbColor = ArgbColor(-1)
-private val legacySlotHighlightColor: ArgbColor = ArgbColor(0x80FFFFFF.toInt())
+
+/**
+ * Immutable opaque-white pixel shared by legacy glyph validation and focused text-field borders.
+ */
+@get:JvmSynthetic
+internal val opaqueMaskPixel: ArgbColor = ArgbColor(-1)
+
 private val legacyTooltipBackground: ArgbColor = ArgbColor(0xF0100010.toInt())
 private val legacyTooltipBorderTop: ArgbColor = ArgbColor(0x505000FF)
 private val legacyTooltipBorderBottom: ArgbColor = ArgbColor(0x5028007F)
-private val legacyTextFieldBorder: ArgbColor = ArgbColor(0xFFA0A0A0.toInt())
-private val legacyTextFieldBackground: ArgbColor = ArgbColor(0xFF000000.toInt())
-private val legacyScrollbarBorder: ArgbColor = ArgbColor(0xFF808080.toInt())
-private val legacyScrollbarInner: ArgbColor = ArgbColor(0xFFC0C0C0.toInt())

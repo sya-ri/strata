@@ -2,7 +2,6 @@
 
 package dev.s7a.strata.runtime.minecraft
 
-import dev.s7a.strata.component.Image
 import dev.s7a.strata.component.Spacer
 import dev.s7a.strata.component.Stack
 import dev.s7a.strata.component.Text
@@ -28,7 +27,6 @@ import dev.s7a.strata.spi.InternalStrataRuntimeApi
 import dev.s7a.strata.text.PlatformText
 import dev.s7a.strata.text.UiText
 import org.junit.jupiter.api.Assertions.assertEquals
-import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Assertions.assertSame
 import org.junit.jupiter.api.Assertions.assertThrows
 import org.junit.jupiter.api.Assertions.assertTrue

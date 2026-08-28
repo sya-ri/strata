@@ -50,7 +50,7 @@ private class MinecraftCheckboxElement private constructor(
     internal val selectedHighlighted: DrawImage,
     internal val normalText: MinecraftTextRun,
     internal val inactiveText: MinecraftTextRun,
-    internal val label: UiText.Literal,
+    internal val label: UiText,
     internal val state: CheckboxState,
     internal val width: Int,
     internal val enabled: Boolean,
@@ -81,7 +81,7 @@ private class MinecraftCheckboxElement private constructor(
         private var selectedHighlighted: DrawImage? = initial.selectedHighlighted
         private var normalText: MinecraftTextRun? = initial.normalText
         private var inactiveText: MinecraftTextRun? = initial.inactiveText
-        private var label: UiText.Literal? = initial.label
+        private var label: UiText? = initial.label
         private var state: CheckboxState? = initial.state
         private var width = initial.width
         private var enabled = initial.enabled
@@ -252,7 +252,7 @@ private class MinecraftCheckboxElement private constructor(
             selectedHighlighted: DrawImage,
             normalText: MinecraftTextRun,
             inactiveText: MinecraftTextRun,
-            label: UiText.Literal,
+            label: UiText,
             state: CheckboxState,
             width: Int,
             enabled: Boolean,
@@ -288,7 +288,7 @@ internal fun createMinecraftCheckboxElement(
     selectedHighlighted: DrawImage,
     normalText: MinecraftTextRun,
     inactiveText: MinecraftTextRun,
-    label: UiText.Literal,
+    label: UiText,
     state: CheckboxState,
     width: Int,
     enabled: Boolean,

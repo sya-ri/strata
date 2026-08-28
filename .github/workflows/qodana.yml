@@ -184,7 +184,7 @@ jobs:
           restore-keys: |
             loom-${{ runner.os }}-minecraft-26-
       - name: Compile analysis inputs
-        run: bash ./gradlew :api:jar :runtime:core:jar :runtime:headless:jar :runtime:minecraft:jar classes gametestClasses
+        run: bash ./gradlew :api:jar :runtime:core:jar :runtime:headless:jar :runtime:minecraft:jar :runtime:minecraft-fonts-lwjgl:jar classes gametestClasses
       - name: Stop Gradle daemons
         run: |
           bash ./gradlew --stop

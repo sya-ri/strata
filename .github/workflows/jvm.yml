@@ -65,7 +65,7 @@ jobs:
           - id: common
             name: Common checks
             fetch_depth: 0
-            gradle_arguments: :check :api:check :integration:api:check :quality:benchmarks:check :quality:detekt-rules:check :runtime:core:check :runtime:headless:check :runtime:minecraft:check
+            gradle_arguments: :check :api:check :integration:api:check :quality:benchmarks:check :quality:detekt-rules:check :runtime:core:check :runtime:headless:check :runtime:minecraft:check :runtime:minecraft-fonts-lwjgl:check
             cache_read_only: false
             loom_cache: false
             coverage: false

@@ -1,5 +1,7 @@
 package dev.s7a.strata
 
+import dev.s7a.strata.component.TextFieldState
+import dev.s7a.strata.component.TextStyle
 import dev.s7a.strata.element.Element
 import dev.s7a.strata.element.ElementIdentity
 import dev.s7a.strata.element.ElementKey
@@ -10,20 +12,29 @@ import dev.s7a.strata.geometry.IntRect
 import dev.s7a.strata.geometry.IntSize
 import dev.s7a.strata.input.PointerButton
 import dev.s7a.strata.input.PointerEvent
+import dev.s7a.strata.modifier.Modifier
 import dev.s7a.strata.node.DirtyMask
 import dev.s7a.strata.node.DirtyPhase
+import dev.s7a.strata.node.FocusTargetNode
 import dev.s7a.strata.node.Node
+import dev.s7a.strata.resource.ResourceId
 import dev.s7a.strata.semantics.SemanticsRole
+import dev.s7a.strata.spi.ComponentRuntime
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
 import dev.s7a.strata.text.PlatformText
 import dev.s7a.strata.text.TranslationFallback
 import dev.s7a.strata.text.UiText
 import dev.s7a.strata.text.UiTextArgument
+import dev.s7a.strata.text.withFont
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
+import org.junit.jupiter.api.Assertions.assertSame
 import org.junit.jupiter.api.Assertions.assertThrows
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
+import java.lang.reflect.InvocationHandler
+import java.lang.reflect.Proxy
+import java.lang.reflect.Modifier as JavaModifier
 
 /**
  * Verifies the public value and bridge contracts without depending on the retained engine.
@@ -141,6 +152,53 @@ internal class ApiContractTest {
         val second = UiText.Platform(TestPlatform("payload"))
         assertEquals(first, second)
         assertEquals(first.hashCode(), second.hashCode())
+    }
+
+    @Test
+    fun fontSelectionRetainsUnresolvedTextAndValueIdentity() {
+        val original = UiText.Translated("strata.greeting", fallback = "日本語 한국어 🙂")
+        val font = ResourceId("example", "ui/body")
+        val selected = original.withFont(font) as UiText.WithFont
+        assertSame(original, selected.text)
+        assertEquals(font, selected.font)
+        assertEquals(UiText.WithFont(original, font), selected)
+        assertEquals(UiText.WithFont(original, font).hashCode(), selected.hashCode())
+        val concatenated = UiText.concat(selected, UiText.Literal("suffix")) as UiText.Concatenated
+        assertSame(selected, concatenated.parts[0])
+    }
+
+    @Test
+    fun olderRuntimeImplementationsInheritAnExplicitUnsupportedFontDefault() {
+        val fontMethod = ComponentRuntime::class.java.methods.single { ResourceId::class.java in it.parameterTypes && JavaModifier.isStatic(it.modifiers).not() }
+        assertTrue(fontMethod.isDefault)
+        val runtime =
+            Proxy.newProxyInstance(
+                ComponentRuntime::class.java.classLoader,
+                arrayOf(ComponentRuntime::class.java),
+            ) { proxy, method, arguments ->
+                assertEquals(fontMethod, method)
+                InvocationHandler.invokeDefault(proxy, method, *arguments.orEmpty())
+            } as ComponentRuntime
+        val failure =
+            assertThrows(UnsupportedOperationException::class.java) {
+                runtime.textField(TextFieldState(""), IntSize(200, 20), true, TextStyle.TextField, ResourceId("example", "body"), Modifier.Empty, null)
+            }
+        assertEquals("This runtime does not support explicit font selection.", failure.message)
+    }
+
+    @Test
+    fun existingFocusTargetsInheritTheJvmDefaultWithoutEnablingNativeTextInput() {
+        val capability = FocusTargetNode::class.java.getMethod("getRequiresTextInput")
+        assertTrue(capability.isDefault)
+        val target =
+            Proxy.newProxyInstance(
+                FocusTargetNode::class.java.classLoader,
+                arrayOf(FocusTargetNode::class.java),
+            ) { proxy, method, arguments ->
+                assertEquals(capability, method)
+                InvocationHandler.invokeDefault(proxy, method, *arguments.orEmpty())
+            } as FocusTargetNode
+        assertFalse(target.requiresTextInput)
     }
 
     @Test

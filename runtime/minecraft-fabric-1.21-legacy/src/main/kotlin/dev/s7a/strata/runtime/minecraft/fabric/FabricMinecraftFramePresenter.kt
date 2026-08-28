@@ -1,6 +1,7 @@
 package dev.s7a.strata.runtime.minecraft.fabric
 
 import com.mojang.blaze3d.platform.NativeImage
+import dev.s7a.strata.geometry.FloatRect
 import dev.s7a.strata.geometry.IntOffset
 import dev.s7a.strata.geometry.IntRect
 import dev.s7a.strata.geometry.IntSize
@@ -12,6 +13,8 @@ import net.minecraft.client.Minecraft
 import net.minecraft.client.gui.GuiGraphics
 import net.minecraft.client.renderer.texture.DynamicTexture
 import java.util.concurrent.atomic.AtomicLong
+import kotlin.math.ceil
+import kotlin.math.floor
 
 /**
  * Owns prepared display layers, native frame textures, and render-work counters for one Fabric screen.
@@ -32,6 +35,7 @@ internal class FabricMinecraftFramePresenter(
     private val textureLocations: MutableList<MinecraftResourceLocation> = ArrayList()
     private var preparedCommands: List<DrawCommand>? = null
     private var preparedViewport: IntSize? = null
+    private var preparedScale: Int? = null
     private var preparedLayers: List<FrameLayer> = emptyList()
     private var pointerPosition: IntOffset? = null
     private var pointerFrameCommands: List<DrawCommand>? = null
@@ -127,7 +131,11 @@ internal class FabricMinecraftFramePresenter(
         platformRenderer: (GuiGraphics, DrawCommand.Platform) -> Unit,
     ) {
         requireClientThread()
-        val reusePreparedFrame = commands === preparedCommands && viewport == preparedViewport
+        // The shared target releases expose GUI scale as either Double or Int.
+        val nativeScale: Number = minecraftClient.window.guiScale
+        val scale = nativeScale.toInt()
+        require(0 < scale) { "GUI scale must be positive." }
+        val reusePreparedFrame = commands === preparedCommands && viewport == preparedViewport && scale == preparedScale
         val layers =
             if (reusePreparedFrame) {
                 preparedLayers
@@ -136,7 +144,7 @@ internal class FabricMinecraftFramePresenter(
                 partitionFrame(commands, viewport)
             }
         val previousPortableLayers =
-            if (reusePreparedFrame || viewport != preparedViewport) {
+            if (reusePreparedFrame || viewport != preparedViewport || scale != preparedScale) {
                 emptyList()
             } else {
                 preparedLayers.filterIsInstance<PortableLayer>()
@@ -150,6 +158,7 @@ internal class FabricMinecraftFramePresenter(
                             graphics,
                             layer,
                             textureIndex,
+                            scale,
                             reusePreparedFrame,
                             previousPortableLayers,
                         )
@@ -164,6 +173,7 @@ internal class FabricMinecraftFramePresenter(
             trimTextures(textureIndex)
             preparedCommands = commands
             preparedViewport = viewport
+            preparedScale = scale
             preparedLayers = layers
         }
     }
@@ -177,6 +187,7 @@ internal class FabricMinecraftFramePresenter(
         requireClientThread()
         preparedCommands = null
         preparedViewport = null
+        preparedScale = null
         preparedLayers = emptyList()
         pointerPosition = null
         pointerFrameCommands = null
@@ -187,6 +198,7 @@ internal class FabricMinecraftFramePresenter(
         graphics: GuiGraphics,
         layer: PortableLayer,
         textureIndex: Int,
+        scale: Int,
         reusePreparedFrame: Boolean,
         previousPortableLayers: List<PortableLayer>,
     ): Int {
@@ -206,7 +218,7 @@ internal class FabricMinecraftFramePresenter(
             }
         } else {
             portableRasterizationCount += 1L
-            upload(textureIndex, rasterizeHeadless(layer.commands, layer.bounds.size))
+            upload(textureIndex, rasterizeHeadless(layer.commands, layer.bounds.size, scale))
         }
         val location =
             checkNotNull(textureLocations.getOrNull(textureIndex)) {
@@ -219,6 +231,8 @@ internal class FabricMinecraftFramePresenter(
             layer.bounds.top,
             layer.bounds.width,
             layer.bounds.height,
+            Math.multiplyExact(layer.bounds.width, scale),
+            Math.multiplyExact(layer.bounds.height, scale),
         )
         return textureIndex + 1
     }
@@ -270,6 +284,13 @@ internal class FabricMinecraftFramePresenter(
                 is DrawCommand.BlitImage -> {
                     portable.add(command)
                     portableBounds = includeVisibleBounds(portableBounds, command.destination, activeClips, viewportBounds)
+                }
+
+                is DrawCommand.SampledImage -> {
+                    portable.add(command)
+                    val destination = command.destination
+                    val bounds = IntRect(floor(destination.left).toInt(), floor(destination.top).toInt(), ceil(destination.right).toInt(), ceil(destination.bottom).toInt())
+                    portableBounds = includeVisibleBounds(portableBounds, bounds, activeClips, viewportBounds)
                 }
 
                 is DrawCommand.PushClip -> {
@@ -327,6 +348,11 @@ internal class FabricMinecraftFramePresenter(
                 is DrawCommand.BlitImage -> {
                     val visible = intersection(command.destination, bounds)
                     if (visible.width <= 0 || visible.height <= 0) null else DrawCommand.BlitImage(command.image, command.source, command.destination + offset)
+                }
+
+                is DrawCommand.SampledImage -> {
+                    val destination = command.destination
+                    command.copy(destination = FloatRect(destination.left + offset.x, destination.top + offset.y, destination.right + offset.x, destination.bottom + offset.y))
                 }
 
                 is DrawCommand.PushClip -> {

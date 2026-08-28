@@ -16,6 +16,8 @@ import dev.s7a.strata.input.PointerButton
 import dev.s7a.strata.input.PointerEvent
 import dev.s7a.strata.input.TextInputEvent
 import dev.s7a.strata.modifier.Modifier
+import dev.s7a.strata.modifier.ModifierElement
+import dev.s7a.strata.modifier.ModifierNodeType
 import dev.s7a.strata.modifier.initialFocus
 import dev.s7a.strata.modifier.onCharacterInput
 import dev.s7a.strata.modifier.onFocusChanged
@@ -26,12 +28,19 @@ import dev.s7a.strata.modifier.onPreedit
 import dev.s7a.strata.modifier.onPress
 import dev.s7a.strata.modifier.onTextInput
 import dev.s7a.strata.modifier.size
+import dev.s7a.strata.node.DirtyMask
+import dev.s7a.strata.node.DirtyPhase
+import dev.s7a.strata.node.FocusTargetNode
+import dev.s7a.strata.node.LifecycleNode
+import dev.s7a.strata.node.ModifierNode
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertNotNull
+import org.junit.jupiter.api.Assertions.assertNotSame
 import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Assertions.assertSame
 import org.junit.jupiter.api.Assertions.assertThrows
+import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 
 /**
@@ -66,6 +75,7 @@ internal class FocusedInputModifierTest {
                 .onFocusChanged { event -> observed += Observation.Focus(event) }
         val tree = tree(modifier)
         assertEquals(listOf(Observation.Focus(FocusEvent.Gained)), observed)
+        assertNull(tree.currentTextInputFocus())
 
         observed.clear()
         val modifiers = KeyboardModifiers(shift = true, control = true)
@@ -146,6 +156,125 @@ internal class FocusedInputModifierTest {
     }
 
     @Test
+    fun retainedTargetAcceptanceChangesDeliverDistinctTransitionsWithoutMovingFocus() {
+        val ownerTransitions = ArrayList<FocusEvent>()
+        val targetTransitions = ArrayList<FocusEvent>()
+        val modifier =
+            Modifier.Empty
+                .size(10, 10)
+                .initialFocus()
+                .onFocusChanged(ownerTransitions::add)
+        val tree = UiTree()
+
+        fun update(accepts: Boolean) {
+            tree.update(evaluateComponentTree { Spacer(modifier = modifier.then(FocusAcceptanceElement(accepts, targetTransitions))) })
+            tree.measure(Constraints.fixed(10, 10))
+            tree.layout()
+        }
+
+        try {
+            update(false)
+            val owner = retainedFocusOwner(tree)
+            assertNotNull(owner)
+            assertEquals(emptyList<FocusEvent>(), targetTransitions)
+            update(true)
+            update(true)
+            assertEquals(listOf(FocusEvent.Gained), targetTransitions)
+            update(false)
+            update(false)
+            assertEquals(listOf(FocusEvent.Gained, FocusEvent.Lost), targetTransitions)
+            update(true)
+            assertSame(owner, retainedFocusOwner(tree))
+            assertEquals(listOf(FocusEvent.Gained), ownerTransitions)
+            tree.clearInputState()
+            tree.clearInputState()
+            assertEquals(listOf(FocusEvent.Gained, FocusEvent.Lost, FocusEvent.Gained, FocusEvent.Lost), targetTransitions)
+            assertEquals(listOf(FocusEvent.Gained, FocusEvent.Lost), ownerTransitions)
+            assertTrue(retainedFocusTargets(tree).isEmpty())
+        } finally {
+            tree.close()
+        }
+    }
+
+    @Test
+    fun editableCapabilityChangesReplaceOnlyTheCurrentDetachedFocusInterval() {
+        val transitions = ArrayList<FocusEvent>()
+        val modifier = Modifier.Empty.size(10, 10).initialFocus()
+        val tree = UiTree()
+
+        fun update(
+            editable: Boolean,
+            accepts: Boolean = true,
+        ) {
+            tree.update(evaluateComponentTree { Spacer(modifier = modifier.then(FocusAcceptanceElement(accepts, transitions, editable))) })
+            tree.measure(Constraints.fixed(10, 10))
+            tree.layout()
+        }
+
+        try {
+            update(false)
+            val owner = checkNotNull(retainedFocusOwner(tree))
+            assertNull(tree.currentTextInputFocus())
+            update(true)
+            val first = checkNotNull(tree.currentTextInputFocus())
+            update(true)
+            tree.layout()
+            assertSame(first, tree.currentTextInputFocus())
+            update(false)
+            assertNull(tree.currentTextInputFocus())
+            update(true)
+            val second = checkNotNull(tree.currentTextInputFocus())
+            assertNotSame(first, second)
+            update(true, accepts = false)
+            assertNull(tree.currentTextInputFocus())
+            update(true)
+            assertNotSame(second, checkNotNull(tree.currentTextInputFocus()))
+            assertSame(owner, retainedFocusOwner(tree))
+            tree.clearInputState()
+            assertNull(tree.currentTextInputFocus())
+            tree.layout()
+            assertNotSame(second, checkNotNull(tree.currentTextInputFocus()))
+        } finally {
+            tree.close()
+        }
+        assertNull(retainedTextInputFocus(tree))
+        assertTrue(retainedTextInputTargets(tree).isEmpty())
+    }
+
+    @Test
+    fun replacedFocusTargetsAreForgottenWithoutCallingDisposedNodes() {
+        val transitions = ArrayList<FocusEvent>()
+        val modifier = Modifier.Empty.size(10, 10).initialFocus()
+        val tree = tree(modifier.then(FocusAcceptanceElement(true, transitions, editable = true)))
+        val owner = checkNotNull(retainedFocusOwner(tree))
+        val previousTarget = retainedFocusTargets(tree).first()
+        val previousInterval = checkNotNull(tree.currentTextInputFocus())
+        try {
+            tree.update(evaluateComponentTree { Spacer(modifier = modifier) })
+            tree.measure(Constraints.fixed(10, 10))
+            tree.layout()
+            assertSame(owner, retainedFocusOwner(tree))
+            assertNull(tree.currentTextInputFocus())
+            assertTrue(retainedFocusTargets(tree).none { it === previousTarget })
+            assertEquals(listOf(FocusEvent.Gained), transitions)
+            tree.update(evaluateComponentTree { Spacer(modifier = modifier.then(FocusAcceptanceElement(true, transitions, editable = true))) })
+            tree.measure(Constraints.fixed(10, 10))
+            tree.layout()
+            assertNotSame(previousInterval, checkNotNull(tree.currentTextInputFocus()))
+            assertEquals(listOf(FocusEvent.Gained, FocusEvent.Gained), transitions)
+            tree.update(evaluateComponentTree { Spacer(modifier = modifier) })
+            tree.clearInputState()
+            assertNull(retainedFocusOwner(tree))
+            assertNull(tree.currentTextInputFocus())
+            assertTrue(retainedTextInputTargets(tree).isEmpty())
+            assertTrue(retainedFocusTargets(tree).isEmpty())
+            assertEquals(listOf(FocusEvent.Gained, FocusEvent.Gained), transitions)
+        } finally {
+            tree.close()
+        }
+    }
+
+    @Test
     fun duplicateInitialTargetsFailLayoutAndCallbackFailurePreservesIdentity() {
         val duplicate = UiTree()
         duplicate.update(
@@ -193,6 +322,7 @@ internal class FocusedInputModifierTest {
         tree.close()
 
         assertNull(retainedFocusOwner(tree))
+        assertTrue(retainedFocusTargets(tree).isEmpty())
         assertEquals(listOf(FocusEvent.Gained), transitions)
     }
 
@@ -215,12 +345,14 @@ internal class FocusedInputModifierTest {
                         .size(10, 10)
                         .initialFocus()
                         .onFocusChanged(transitions::add)
-                        .onKeyPress { throw primary },
+                        .onKeyPress { throw primary }
+                        .then(FocusAcceptanceElement(true, ArrayList(), editable = true)),
             ),
         )
         tree.measure(Constraints.fixed(10, 10))
         tree.layout()
         assertNotNull(retainedFocusOwner(tree))
+        assertNotNull(tree.currentTextInputFocus())
 
         val thrown =
             assertThrows(IllegalArgumentException::class.java) {
@@ -230,6 +362,9 @@ internal class FocusedInputModifierTest {
         assertSame(primary, thrown)
         assertEquals(listOf(cleanup), thrown.suppressed.toList())
         assertNull(retainedFocusOwner(tree))
+        assertTrue(retainedFocusTargets(tree).isEmpty())
+        assertNull(retainedTextInputFocus(tree))
+        assertTrue(retainedTextInputTargets(tree).isEmpty())
         assertEquals(listOf(FocusEvent.Gained), transitions)
         tree.close()
     }
@@ -258,6 +393,22 @@ internal class FocusedInputModifierTest {
         val pipeline = reflectedField(tree, "pipeline")
         val focusedInputPipeline = reflectedField(checkNotNull(pipeline), "focusedInputPipeline")
         return reflectedField(checkNotNull(focusedInputPipeline), "focusedOwner")
+    }
+
+    private fun retainedFocusTargets(tree: UiTree): List<*> {
+        val pipeline = reflectedField(tree, "pipeline")
+        val focusedInputPipeline = reflectedField(checkNotNull(pipeline), "focusedInputPipeline")
+        return reflectedField(checkNotNull(focusedInputPipeline), "focusedTargets") as List<*>
+    }
+
+    private fun retainedTextInputFocus(tree: UiTree): Any? {
+        val pipeline = checkNotNull(reflectedField(tree, "pipeline"))
+        return reflectedField(checkNotNull(reflectedField(pipeline, "focusedInputPipeline")), "textInputFocus")
+    }
+
+    private fun retainedTextInputTargets(tree: UiTree): List<*> {
+        val pipeline = checkNotNull(reflectedField(tree, "pipeline"))
+        return reflectedField(checkNotNull(reflectedField(pipeline, "focusedInputPipeline")), "textInputTargets") as List<*>
     }
 
     private fun reflectedField(
@@ -308,4 +459,51 @@ internal class FocusedInputModifierTest {
         val target: Target,
         val event: FocusEvent,
     )
+
+    private data class FocusAcceptanceElement(
+        val accepts: Boolean,
+        val transitions: MutableList<FocusEvent>,
+        val editable: Boolean = false,
+    ) : ModifierElement {
+        override val type: ModifierNodeType<*, *>
+            get() = TYPE
+
+        private companion object {
+            val TYPE =
+                ModifierNodeType(
+                    elementClass = FocusAcceptanceElement::class,
+                    nodeClass = FocusAcceptanceNode::class,
+                    validateLocal = { _ -> },
+                    createNode = { element -> FocusAcceptanceNode(element.accepts, element.transitions, element.editable) },
+                    updateNode = { _, current, node ->
+                        node.acceptsFocus = current.accepts
+                        node.requiresTextInput = current.editable
+                        DirtyMask.of(DirtyPhase.Paint)
+                    },
+                )
+        }
+    }
+
+    private class FocusAcceptanceNode(
+        override var acceptsFocus: Boolean,
+        private val transitions: MutableList<FocusEvent>,
+        override var requiresTextInput: Boolean,
+    ) : ModifierNode(),
+        FocusTargetNode,
+        LifecycleNode {
+        private var disposed = false
+
+        override fun onFocusChanged(focused: Boolean) {
+            check(disposed.not()) { "Disposed focus targets cannot receive transitions." }
+            transitions += if (focused) FocusEvent.Gained else FocusEvent.Lost
+        }
+
+        override fun attach() = Unit
+
+        override fun detach() = Unit
+
+        override fun dispose() {
+            disposed = true
+        }
+    }
 }

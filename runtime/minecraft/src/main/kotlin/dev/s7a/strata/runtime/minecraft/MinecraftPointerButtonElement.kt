@@ -52,7 +52,7 @@ private class MinecraftPointerButtonElement private constructor(
     @get:JvmSynthetic
     internal val inactiveText: MinecraftTextRun,
     @get:JvmSynthetic
-    internal val label: UiText.Literal,
+    internal val label: UiText,
     @get:JvmSynthetic
     internal val width: Int,
     @get:JvmSynthetic
@@ -73,7 +73,7 @@ private class MinecraftPointerButtonElement private constructor(
         initialDisabledSprite: MinecraftButtonSpriteSnapshot,
         initialNormalText: MinecraftTextRun,
         initialInactiveText: MinecraftTextRun,
-        initialLabel: UiText.Literal,
+        initialLabel: UiText,
         initialWidth: Int,
         initialEnabled: Boolean,
     ) : RetainedNode(),
@@ -89,7 +89,7 @@ private class MinecraftPointerButtonElement private constructor(
         private var disabledSprite: MinecraftButtonSpriteSnapshot? = initialDisabledSprite
         private var normalText: MinecraftTextRun? = initialNormalText
         private var inactiveText: MinecraftTextRun? = initialInactiveText
-        private var label: UiText.Literal? = initialLabel
+        private var label: UiText? = initialLabel
         private var enabled = initialEnabled
         private var hovered = false
         private var disposed = false
@@ -281,7 +281,7 @@ private class MinecraftPointerButtonElement private constructor(
             disabledSprite: MinecraftButtonSpriteSnapshot,
             normalText: MinecraftTextRun,
             inactiveText: MinecraftTextRun,
-            label: UiText.Literal,
+            label: UiText,
             width: Int,
             enabled: Boolean,
             modifier: Modifier,
@@ -324,7 +324,7 @@ internal fun createMinecraftPointerButtonElement(
     disabledSprite: MinecraftButtonSpriteSnapshot,
     normalText: MinecraftTextRun,
     inactiveText: MinecraftTextRun,
-    label: UiText.Literal,
+    label: UiText,
     width: Int,
     enabled: Boolean,
     modifier: Modifier,
