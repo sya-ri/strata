@@ -10,18 +10,28 @@ import dev.s7a.strata.resource.ResourceId
  * @param sources pack sources in increasing priority order.
  * @param compatibility typed overlay capabilities.
  * @param diagnostics callback-owned output receiving detached metadata failures.
+ * @param budget loader-owned aggregate counters, never retained by the snapshot.
  */
 internal class FontResourceStack(
     sources: List<MinecraftFontAssetSource>,
     compatibility: MinecraftFontCompatibility,
     private val diagnostics: MutableList<MinecraftFontDiagnostic>,
+    private val budget: FontLoadBudget,
 ) {
     private val entries = LinkedHashMap<ResourceId, MutableList<Location>>()
     private val assetLayers = ArrayList<AssetLayer>()
-    private val selectedResources = HashMap<ResourceId, FontResource>()
+    private val selectedResources = HashMap<ResourceId, Result<FontResource?>>()
 
     init {
-        sources.forEach { source -> addSource(source, compatibility) }
+        sources.forEach { source ->
+            runCatching { addSource(source, compatibility) }.getOrElse { failure ->
+                if (failure is MinecraftFontLoadLimitException) {
+                    metadataFailure(source, "Source loading limit exceeded; source excluded.", failure)
+                } else {
+                    throw failure
+                }
+            }
+        }
     }
 
     /**
@@ -61,15 +71,18 @@ internal class FontResourceStack(
      * Reads the highest-priority bytes for one resource, including assets omitted from enumeration.
      * Accepted source filters and overlays apply before considering lower sources.
      * A listed resource that disappears or any failed read remains a failure instead of selecting a lower replacement.
+     * Success, absence, and ordinary failures are memoized for this load only; neither sources nor failures enter the resulting snapshot.
      */
-    fun selected(id: ResourceId): FontResource? {
-        selectedResources[id]?.let { return it }
+    fun selected(id: ResourceId): FontResource? =
+        selectedResources
+            .getOrPut(id) {
+                runCatching { readSelected(id) }.onFailure { failure -> if ((failure is Exception).not()) throw failure }
+            }.getOrThrow()
+
+    private fun readSelected(id: ResourceId): FontResource? {
         for (layer in assetLayers.asReversed()) {
             val resource = layer.read(id)
-            if (resource != null) {
-                selectedResources[id] = resource
-                return resource
-            }
+            if (resource != null) return resource
             if (layer.blocks(id)) return null
         }
         return null
@@ -79,9 +92,9 @@ internal class FontResourceStack(
         source: MinecraftFontAssetSource,
         compatibility: MinecraftFontCompatibility,
     ) {
-        val paths = source.paths().map(String::checkedFontSourcePath).sorted()
+        val paths = budget.paths(source).map(String::checkedFontSourcePath).sorted()
         val metadata =
-            runCatching { source.read("pack.mcmeta")?.let(FontJson::document) }.getOrElse { failure ->
+            runCatching { budget.read(source, "pack.mcmeta", document = true)?.let { bytes -> FontJson.document(bytes, budget.limits) } }.getOrElse { failure ->
                 metadataFailure(source, "Cannot read pack metadata; source excluded.", failure)
                 return
             }
@@ -103,7 +116,7 @@ internal class FontResourceStack(
         val selected = LinkedHashMap<ResourceId, Location>()
         addRoot(source, paths, "", selected)
         for (overlay in selectedOverlays) addRoot(source, paths, "$overlay/", selected)
-        val assetLayer = AssetLayer(source, paths.toSet(), listOf("") + selectedOverlays.map { overlay -> "$overlay/" }, blocked)
+        val assetLayer = AssetLayer(source, paths.toSet(), listOf("") + selectedOverlays.map { overlay -> "$overlay/" }, blocked, budget)
         assetLayers.add(assetLayer)
         entries.keys.removeAll(assetLayer::blocks)
         selected.forEach { (id, location) -> entries.getOrPut(id, ::ArrayList).add(location) }
@@ -133,16 +146,13 @@ internal class FontResourceStack(
         val prefix = "${root}assets/"
         for (path in paths) {
             if (path.startsWith(prefix)) {
-                resourceIdentifier(path.removePrefix(prefix))?.let { id -> selected[id] = Location(id, source, path) }
+                path.removePrefix(prefix).fontResourceIdentifier()?.let { id ->
+                    if (id.path.startsWith("font/") && id.path.endsWith(".json")) {
+                        budget.claim(FontLoadBudget.Kind.FontDocuments, 1)
+                        selected[id] = Location(id, source, path, budget)
+                    }
+                }
             }
-        }
-    }
-
-    private fun resourceIdentifier(path: String): ResourceId? {
-        val separator = path.indexOf('/')
-        if (separator < 1 || path.lastIndex <= separator) return null
-        return runCatching { ResourceId(path.substring(0, separator), path.substring(separator + 1)) }.getOrElse { failure ->
-            if (failure is IllegalArgumentException) null else throw failure
         }
     }
 
@@ -233,11 +243,12 @@ internal class FontResourceStack(
         private val listedPaths: Set<String>,
         private val roots: List<String>,
         private val filters: List<Rule>,
+        private val budget: FontLoadBudget,
     ) {
         fun read(id: ResourceId): FontResource? {
             for (root in roots.asReversed()) {
                 val path = "${root}assets/${id.namespace}/${id.path}"
-                val bytes = source.read(path)
+                val bytes = budget.read(source, path)
                 if (bytes != null) return FontResource(id, source.name, bytes)
                 require((path in listedPaths).not()) { "Font resource disappeared while loading: $id." }
             }
@@ -256,11 +267,13 @@ internal class FontResourceStack(
      * @param id resource identifier supplied by the validated resource path.
      * @param source caller-owned stable source.
      * @property path canonical source-relative path used by detached diagnostics.
+     * @param budget loader-owned counters used before detaching the resource.
      */
     internal class Location(
         private val id: ResourceId,
         private val source: MinecraftFontAssetSource,
         val path: String,
+        private val budget: FontLoadBudget,
     ) {
         /**
          * Immutable source label available even when resource reading fails.
@@ -273,6 +286,6 @@ internal class FontResourceStack(
          * @return an owned resource without source references.
          * @throws Throwable when the listed resource disappears or cannot be read.
          */
-        fun read(): FontResource = FontResource(id, sourceName, requireNotNull(source.read(path)) { "Font resource disappeared while loading: $id." })
+        fun read(): FontResource = FontResource(id, sourceName, requireNotNull(budget.read(source, path, document = true)) { "Font resource disappeared while loading: $id." })
     }
 }

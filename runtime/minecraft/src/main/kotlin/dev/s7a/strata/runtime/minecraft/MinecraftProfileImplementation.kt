@@ -10,6 +10,8 @@ import dev.s7a.strata.component.ScrollState
 import dev.s7a.strata.component.SliderState
 import dev.s7a.strata.component.SlotBinding
 import dev.s7a.strata.component.TabSelectionIndicator
+import dev.s7a.strata.component.TextAreaState
+import dev.s7a.strata.component.TextAreaViewport
 import dev.s7a.strata.component.TextFieldState
 import dev.s7a.strata.component.TextStyle
 import dev.s7a.strata.component.UiScope
@@ -31,6 +33,8 @@ import dev.s7a.strata.spi.ComponentEvaluator
 import dev.s7a.strata.spi.ComponentRuntime
 import dev.s7a.strata.spi.ComponentRuntimeBridge
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
+import dev.s7a.strata.text.TextLayout
+import dev.s7a.strata.text.TextWrap
 import dev.s7a.strata.text.UiText
 import java.util.Collections
 
@@ -950,6 +954,18 @@ internal object MinecraftProfileImplementation {
                 key,
             )
 
+        override fun text(
+            text: UiText,
+            layout: TextLayout,
+            style: TextStyle,
+            modifier: Modifier,
+            key: ElementKey<*>?,
+        ): Element =
+            when (layout) {
+                TextLayout.SingleLine -> text(text, style, modifier, key)
+                is TextLayout.Multiline -> createMinecraftMultilineTextElement(text, requireTextRenderer(), layout, style, modifier, key)
+            }
+
         override fun button(
             label: UiText,
             width: Int,
@@ -1003,6 +1019,45 @@ internal object MinecraftProfileImplementation {
                 size,
                 enabled,
                 style,
+                modifier,
+                key,
+            )
+        }
+
+        override fun textArea(
+            state: TextAreaState,
+            viewport: TextAreaViewport,
+            enabled: Boolean,
+            style: TextStyle,
+            wrap: TextWrap,
+            lineSpacing: Int,
+            modifier: Modifier,
+            key: ElementKey<*>?,
+        ): Element = textArea(state, viewport, enabled, style, MinecraftTextRenderer.defaultFont, wrap, lineSpacing, modifier, key)
+
+        override fun textArea(
+            state: TextAreaState,
+            viewport: TextAreaViewport,
+            enabled: Boolean,
+            style: TextStyle,
+            font: ResourceId,
+            wrap: TextWrap,
+            lineSpacing: Int,
+            modifier: Modifier,
+            key: ElementKey<*>?,
+        ): Element {
+            val currentProfile = requireProfile()
+            return createMinecraftTextAreaElement(
+                currentProfile.normalTextField,
+                currentProfile.highlightedTextField,
+                requireTextRenderer(),
+                font,
+                state,
+                viewport,
+                enabled,
+                style,
+                wrap,
+                lineSpacing,
                 modifier,
                 key,
             )

@@ -4,6 +4,7 @@ import dev.s7a.strata.geometry.IntSize
 import dev.s7a.strata.render.DrawImage
 import dev.s7a.strata.render.SampledImageOrientation
 import dev.s7a.strata.runtime.minecraft.font.MinecraftFontGlyph
+import dev.s7a.strata.runtime.minecraft.font.MinecraftFontLoadLimits
 import dev.s7a.strata.runtime.minecraft.font.MinecraftGlyphChannel
 
 /**
@@ -28,14 +29,29 @@ internal class TrueTypeGlyphMetrics(
 ) {
     /**
      * Returns detached glyph data without allocating an oversized raster.
-     * The callback executes once for an atlas-sized raster and never for an oversized one; its failures propagate unchanged.
+     * The callback executes once for an atlas-sized raster within the default loading ceilings and never for an oversized one; its failures propagate unchanged.
      * The engine owns version-specific missing-sprite substitution, so raw provider metrics remain intact here.
      *
      * @param pixels owner-thread callback producing the complete immutable measured raster.
      * @return detached native metrics with finite axes normalized, and either pixels or an explicit oversized-raster marker.
      */
-    fun rasterize(pixels: () -> DrawImage): MinecraftFontGlyph {
+    fun rasterize(pixels: () -> DrawImage): MinecraftFontGlyph = rasterize(MinecraftFontLoadLimits(), pixels)
+
+    /**
+     * Applies snapshot-specific pixel ceilings before invoking any raster-allocation callback.
+     * Native atlas overflow still produces its allocation-free marker, regardless of the selected image ceilings.
+     *
+     * @param limits immutable source-image allocation ceilings for the owning face.
+     * @param pixels owner-thread callback producing the complete measured raster only after its bounds pass.
+     * @return detached native metrics with either bounded pixels or an allocation-free atlas marker.
+     * @throws IllegalArgumentException before calling [pixels] when an atlas-sized raster exceeds an image ceiling.
+     */
+    fun rasterize(
+        limits: MinecraftFontLoadLimits,
+        pixels: () -> DrawImage,
+    ): MinecraftFontGlyph {
         val oversized = rasterSize.takeIf { size -> 256 < size.width || 256 < size.height }
+        if (oversized == null) limits.requireImageSize(rasterSize.width, rasterSize.height)
         val flipX = left.isFinite() && right.isFinite() && right < left
         val flipY = top.isFinite() && bottom.isFinite() && bottom < top
         return MinecraftFontGlyph(

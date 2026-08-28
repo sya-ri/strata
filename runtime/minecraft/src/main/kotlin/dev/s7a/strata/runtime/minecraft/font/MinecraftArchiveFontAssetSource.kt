@@ -17,30 +17,59 @@ import java.util.zip.ZipFile
 public class MinecraftArchiveFontAssetSource(
     archive: Path,
     override val name: String = archive.toString(),
-) : MinecraftFontAssetSource {
+) : MinecraftBoundedFontAssetSource {
     private val archive: Path = archive.toAbsolutePath().normalize()
 
     init {
         require(Files.isRegularFile(this.archive)) { "Font pack archive must be a regular file." }
     }
 
-    override fun paths(): Set<String> =
-        ZipFile(archive.toFile()).use { zip ->
+    override fun paths(): Set<String> = paths(MinecraftFontLoadLimits())
+
+    override fun paths(limits: MinecraftFontLoadLimits): Set<String> = paths(limits) {}
+
+    override fun paths(
+        limits: MinecraftFontLoadLimits,
+        onEntryExamined: () -> Unit,
+    ): Set<String> =
+        open(limits).use { zip ->
             val paths =
                 zip
                     .entries()
                     .asSequence()
-                    .filter { entry -> entry.isDirectory.not() }
+                    .onEach { entry ->
+                        onEntryExamined()
+                        requireFontLimit(entry.name.length.toLong(), limits.maxPathLength.toLong(), "archive path length")
+                    }.filter { entry -> entry.isDirectory.not() }
                     .map { entry -> entry.name.checkedFontSourcePath() }
                     .sorted()
                     .toList()
             Collections.unmodifiableSet(LinkedHashSet(paths))
         }
 
-    override fun read(path: String): ByteArray? =
-        ZipFile(archive.toFile()).use { zip ->
+    override fun read(path: String): ByteArray? = read(path, MinecraftFontLoadLimits())
+
+    override fun read(
+        path: String,
+        limits: MinecraftFontLoadLimits,
+    ): ByteArray? =
+        open(limits).use { zip ->
+            requireFontLimit(path.length.toLong(), limits.maxPathLength.toLong(), "archive path length")
             val entry = zip.getEntry(path.checkedFontSourcePath()) ?: return@use null
             if (entry.isDirectory) return@use null
-            zip.getInputStream(entry).use { input -> input.readBytes() }
+            requireFontLimit(entry.size, limits.maxAssetBytes.toLong(), "archive asset bytes")
+            zip.getInputStream(entry).use { input -> input.readMinecraftFontBytes(limits.maxAssetBytes) }
         }
+
+    private fun open(limits: MinecraftFontLoadLimits): ZipFile {
+        requireFontLimit(Files.size(archive), limits.maxArchiveBytes, "compressed archive bytes")
+        val zip = ZipFile(archive.toFile())
+        return runCatching {
+            requireFontLimit(zip.size().toLong(), limits.maxSourceEntries.toLong(), "archive entries")
+            zip
+        }.getOrElse { failure ->
+            runCatching { zip.close() }.exceptionOrNull()?.let { cleanup -> if (cleanup !== failure) failure.addSuppressed(cleanup) }
+            throw failure
+        }
+    }
 }

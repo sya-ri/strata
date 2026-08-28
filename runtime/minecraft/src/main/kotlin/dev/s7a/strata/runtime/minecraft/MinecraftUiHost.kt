@@ -93,6 +93,8 @@ public sealed interface MinecraftUiHost : AutoCloseable {
      *
      * Hover observers and hover-aware components update only from delivered [PointerEvent.Move] events; a stationary pointer has no implicit hover transition.
      * Active modifiers decide whether raw, press, release, move, and scroll events are consumed or continue through earlier painted candidates.
+     * Consecutive events do not require an intervening [frame]: core synchronizes dirty retained geometry using the last committed viewport.
+     * Source application, content rebuilding, animation, painting, and semantics still wait for the next frame.
      *
      * @param event the pointer event in host coordinates.
      * @return the retained core input result.
@@ -103,6 +105,7 @@ public sealed interface MinecraftUiHost : AutoCloseable {
 
     /**
      * Dispatches one keyboard event to the focused component in the most recently committed frame.
+     * Dirty retained geometry synchronizes as described by [dispatchPointer].
      *
      * @param event immutable typed key event.
      * @return the retained focused-input result, or [InputResult.Ignored] without a committed frame or focus target.
@@ -113,6 +116,7 @@ public sealed interface MinecraftUiHost : AutoCloseable {
 
     /**
      * Dispatches one committed-character or input-method preedit event to the focused component in the most recently committed frame.
+     * Dirty retained geometry synchronizes as described by [dispatchPointer].
      *
      * @param event immutable typed text-input event.
      * @return the retained focused-input result, or [InputResult.Ignored] without a committed frame or focus target.

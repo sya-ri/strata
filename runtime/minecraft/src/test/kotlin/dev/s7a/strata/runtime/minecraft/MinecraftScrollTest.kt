@@ -15,6 +15,7 @@ import dev.s7a.strata.input.PointerButton
 import dev.s7a.strata.input.PointerEvent
 import dev.s7a.strata.modifier.Modifier
 import dev.s7a.strata.modifier.background
+import dev.s7a.strata.modifier.onPointerEvent
 import dev.s7a.strata.modifier.size
 import dev.s7a.strata.render.ArgbColor
 import dev.s7a.strata.render.DrawImage
@@ -31,6 +32,55 @@ import org.junit.jupiter.api.Test
  * Verifies independent profile-backed ScrollArea and Scrollbar components.
  */
 internal class MinecraftScrollTest {
+    @Test
+    fun consecutiveScrollThenMoveOrPressUsesFreshHitGeometryWithoutAFrame() {
+        val position = IntOffset(20, 20)
+        for (next in listOf(PointerEvent.Move(position), PointerEvent.Press(position, PointerButton.Primary))) {
+            val state = ScrollState()
+            val observed = ArrayList<Pair<PointerEvent, IntOffset>>()
+            val host =
+                createMinecraftUiHost(
+                    ScreenDefinition("continuous scroll") {
+                        ScrollArea(state, modifier = Modifier.Empty.size(100, 50)) {
+                            Spacer(
+                                modifier =
+                                    Modifier.Empty.size(80, 180).background(contentColor).onPointerEvent { event, local ->
+                                        if (event is PointerEvent.Scroll) {
+                                            InputResult.Ignored
+                                        } else {
+                                            observed.add(event to local)
+                                            if (event is PointerEvent.Press) state.scrollTo(0.0)
+                                            InputResult.Consumed
+                                        }
+                                    },
+                            )
+                        }
+                    },
+                    MinecraftProfileFixture.create(),
+                )
+            host.attach()
+            host.frame(IntSize(100, 50))
+            assertEquals(InputResult.Consumed, host.dispatchPointer(PointerEvent.Scroll(position, 0.0, 1.0)))
+            assertEquals(9.0, state.metrics.offset)
+            assertEquals(InputResult.Consumed, host.dispatchPointer(next))
+            assertEquals(next to IntOffset(10, 27), observed.last())
+            if (next is PointerEvent.Press) {
+                val release = PointerEvent.Release(position, PointerButton.Primary)
+                assertEquals(InputResult.Consumed, host.dispatchPointer(release))
+                assertEquals(release to IntOffset(10, 18), observed.last())
+            }
+            val committed = host.frame(IntSize(100, 50))
+            assertEquals(
+                2 - state.metrics.offset.toInt(),
+                committed.drawCommands
+                    .filterIsInstance<DrawCommand.FillRectangle>()
+                    .single()
+                    .bounds.top,
+            )
+            host.close()
+        }
+    }
+
     @Test
     fun areaAndSeparatelyPlacedScrollbarShareOneState() {
         val assets = ScrollAssets()

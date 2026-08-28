@@ -158,7 +158,7 @@ internal class MinecraftFontEngineTest {
             assertEquals(uncached.glyph(FontTestResources.defaultFont, '日'.code), reloaded)
             assertEquals(1, cachedBackend.decodeCalls)
             assertEquals(uncached.glyph(FontTestResources.defaultFont, 0x1F600), cached.glyph(FontTestResources.defaultFont, 0x1F600))
-            assertEquals(3, cached.retainedRasterEntries)
+            assertEquals(2, cached.retainedRasterEntries)
             assertEquals(20L, cached.retainedRasterBytes)
             assertEquals(uncached.glyph(FontTestResources.defaultFont, '한'.code), cached.glyph(FontTestResources.defaultFont, '한'.code))
             assertEquals(2, cachedBackend.decodeCalls)
@@ -316,6 +316,153 @@ internal class MinecraftFontEngineTest {
             assertEquals(0, engine.retainedRasterEntries)
             assertThrows(IllegalArgumentException::class.java) { engine.glyph(FontTestResources.defaultFont, 0xD800) }
         }
+    }
+
+    @Test
+    fun bitmapCellsScanOnceAndNeverCopyAtlasRejectedPixels() {
+        for (size in listOf(IntSize(256, 1), IntSize(257, 1), IntSize(1, 257))) {
+            var samples = 0
+            val cell =
+                FontBitmapCell.read(size) { x, _ ->
+                    samples++
+                    if (x == size.width - 1) -1 else 0
+                }
+            assertEquals(size.width * size.height, samples)
+            assertEquals(size.width - 1, cell.rightmost)
+            if (size.width <= 256 && size.height <= 256) {
+                assertEquals(size, requireNotNull(cell.image).size)
+                assertNull(cell.oversizedRasterSize)
+            } else {
+                assertNull(cell.image)
+                assertEquals(size, cell.oversizedRasterSize)
+            }
+        }
+    }
+
+    @Test
+    fun oversizedBitmapCellsKeepNativeAdvanceEpochsAndReuseTheirBoundedSheetAfterGlyphEviction() {
+        for (size in listOf(IntSize(256, 1), IntSize(257, 1), IntSize(1, 257))) {
+            for (bakedMetrics in listOf(false, true)) verifyBitmapAtlasCell(size, bakedMetrics)
+        }
+    }
+
+    @Test
+    fun defaultBitmapSheetCeilingRejectsBeforeDecodingInEveryCacheMode() {
+        val source =
+            FontTestResources.source(
+                FontTestResources.font("default", """{"type":"bitmap","file":"test:large.png","ascent":7,"chars":["AB"]}"""),
+                FontTestResources.font("test:other", """{"type":"space","advances":{"A":3}}"""),
+                "assets/test/textures/large.png" to FontTestResources.png(2048, 1025, ByteArray(5)),
+            )
+        val snapshot = MinecraftFontSnapshot.load(listOf(source), FontTestResources.compatibility)
+        for (cacheEntries in listOf(4096, 0)) {
+            val backend = FontTestBackend()
+            MinecraftFontEngine(snapshot, { backend }, cacheEntries = cacheEntries).use { engine ->
+                repeat(3) {
+                    assertEquals(6f, engine.glyph(FontTestResources.defaultFont, 'A'.code).advance)
+                    assertEquals(6f, engine.glyph(FontTestResources.defaultFont, 'B'.code).advance)
+                    assertEquals(3f, engine.glyph(ResourceId("test", "other"), 'A'.code).advance)
+                }
+                assertEquals(0, backend.decodeCalls)
+                assertEquals(1, engine.diagnostics.size)
+            }
+            assertEquals(1, backend.closeCalls)
+        }
+    }
+
+    @Test
+    fun atLimitBitmapSheetDecodesOnceWhileUncachedPixelsAndTerminalReleaseRemainIdentical() {
+        val size = IntSize(2048, 1024)
+        val sheet = createDrawImage(size, IntArray(size.width * size.height) { index -> 0xFF000000.toInt() or index })
+        val rows = listOf("AB" + "\\u0000".repeat(6)) + List(3) { "\\u0000".repeat(8) }
+        val chars = rows.joinToString(",") { row -> "\"$row\"" }
+        val source =
+            FontTestResources.source(
+                FontTestResources.font("default", """{"type":"bitmap","file":"test:limit.png","ascent":7,"chars":[$chars]}"""),
+                "assets/test/textures/limit.png" to FontTestResources.png(size.width, size.height, ByteArray((size.width * 4 + 1) * size.height)),
+            )
+        val snapshot = MinecraftFontSnapshot.load(listOf(source), FontTestResources.compatibility)
+        val cachedBackend = FontTestBackend(decode = { sheet })
+        val uncachedBackend = FontTestBackend(decode = { sheet })
+        val cached = MinecraftFontEngine(snapshot, { cachedBackend })
+        val uncached = MinecraftFontEngine(snapshot, { uncachedBackend }, cacheEntries = 0, cacheBytes = 0)
+        cached.use { retained ->
+            uncached.use { recomputed ->
+                repeat(3) {
+                    assertEquals(retained.glyph(FontTestResources.defaultFont, 'A'.code), recomputed.glyph(FontTestResources.defaultFont, 'A'.code))
+                    assertEquals(retained.glyph(FontTestResources.defaultFont, 'B'.code), recomputed.glyph(FontTestResources.defaultFont, 'B'.code))
+                }
+                assertEquals(1, cachedBackend.decodeCalls)
+                assertTrue(1 < uncachedBackend.decodeCalls)
+                assertEquals(8L * 1024 * 1024 + 2L * 256 * 256 * 4, retained.retainedRasterBytes)
+                assertTrue(retained.retainedRasterBytes <= 16L * 1024 * 1024)
+                assertEquals(0L, recomputed.retainedRasterBytes)
+            }
+        }
+        assertEquals(0L, cached.retainedRasterBytes)
+        assertEquals(0, cached.retainedRasterEntries)
+        assertEquals(0L, uncached.retainedRasterBytes)
+        assertEquals(1, cachedBackend.closeCalls)
+        assertEquals(1, uncachedBackend.closeCalls)
+    }
+
+    @Test
+    fun oldCustomDecoderResultsAreCheckedBeforeRetentionWithoutBypassingDelegatedCallbacks() {
+        val snapshot =
+            MinecraftFontSnapshot.load(
+                listOf(FontTestResources.source(FontTestResources.font("default", """{"type":"bitmap","file":"test:custom.png","ascent":7,"chars":["AB"]}"""), "assets/test/textures/custom.png" to byteArrayOf(1))),
+                FontTestResources.compatibility,
+                MinecraftFontOptions(),
+                MinecraftFontLoadLimits(maxBitmapSheetBytes = 8),
+            )
+        val backend = FontTestBackend(decode = { createDrawImage(IntSize(2, 2), IntArray(4) { -1 }) })
+        var interceptions = 0
+        val delegated =
+            object : MinecraftFontBackend by backend {
+                override fun decodePng(bytes: ByteArray): DrawImage {
+                    interceptions++
+                    return backend.decodePng(bytes)
+                }
+            }
+        MinecraftFontEngine(snapshot, { delegated }).use { engine ->
+            assertEquals(6f, engine.glyph(FontTestResources.defaultFont, 'A'.code).advance)
+            assertEquals(6f, engine.glyph(FontTestResources.defaultFont, 'B'.code).advance)
+            assertEquals(1, backend.decodeCalls)
+            assertEquals(1, interceptions)
+            assertEquals(0L, engine.retainedRasterBytes)
+            assertEquals(MinecraftFontDiagnostic.Kind.ProviderLoadFailure, engine.diagnostics.single().kind)
+        }
+    }
+
+    private fun verifyBitmapAtlasCell(
+        size: IntSize,
+        bakedMetrics: Boolean,
+    ) {
+        val sheetSize = IntSize(size.width * 2, size.height)
+        val backend = FontTestBackend(decode = { createDrawImage(sheetSize, IntArray(sheetSize.width * sheetSize.height) { -1 }) })
+        val snapshot =
+            FontTestResources.snapshot(
+                FontTestResources.font("default", """{"type":"bitmap","file":"test:atlas.png","height":${size.height},"ascent":${size.height},"chars":["AB"]}"""),
+                "assets/test/textures/atlas.png" to byteArrayOf(1),
+                capabilities = FontTestResources.compatibility.copy(bakedGlyphMetrics = bakedMetrics),
+            )
+        val rejected = 256 < size.width || 256 < size.height
+        val expectedAdvance = if (rejected && bakedMetrics) 6f else size.width.toFloat() + 1
+        val engine = MinecraftFontEngine(snapshot, { backend }, cacheEntries = 2)
+        engine.use {
+            val first = engine.glyph(FontTestResources.defaultFont, 'A'.code)
+            assertEquals(expectedAdvance, first.advance)
+            assertEquals(if (rejected) IntSize(5, 8) else size, requireNotNull(first.image).size)
+            assertSame(first, engine.glyph(FontTestResources.defaultFont, 'A'.code))
+            assertEquals(expectedAdvance, engine.glyph(FontTestResources.defaultFont, 'B'.code).advance)
+            assertEquals(first, engine.glyph(FontTestResources.defaultFont, 'A'.code))
+            assertEquals(1, backend.decodeCalls)
+            assertEquals(2, engine.retainedRasterEntries)
+            val glyphBytes = if (rejected) 160L else size.width.toLong() * size.height * 4
+            assertEquals(sheetSize.width.toLong() * sheetSize.height * 4 + glyphBytes, engine.retainedRasterBytes)
+        }
+        assertEquals(0L, engine.retainedRasterBytes)
+        assertEquals(1, backend.closeCalls)
     }
 
     private fun trueTypeSnapshot(vararg names: String): MinecraftFontSnapshot {

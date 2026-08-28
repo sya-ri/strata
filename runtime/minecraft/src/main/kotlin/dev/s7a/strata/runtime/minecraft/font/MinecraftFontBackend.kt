@@ -6,6 +6,7 @@ import dev.s7a.strata.render.DrawImage
  * Owner-thread CPU image-decoding and TrueType services owned by one font engine.
  * Implementations must not require Minecraft, a display, or a graphics context.
  * Returned images and glyphs are detached, and close is idempotent.
+ * Custom decoders must bound their own allocations; [MinecraftBoundedFontBackend] receives each snapshot's explicit image ceilings.
  */
 public interface MinecraftFontBackend : AutoCloseable {
     /**
@@ -22,13 +23,15 @@ public interface MinecraftFontBackend : AutoCloseable {
     ): String = text
 
     /**
-     * Orders and shapes a complete logical line while preserving native style lookup positions.
+     * Orders and shapes a complete logical line while preserving original UTF-16 scalar positions for font lookup.
+     * Shaping spans the whole line, including font boundaries, and contractions belong to their first contributing scalar.
+     * Original positions deliberately correct the native style lookup drift after Arabic contractions without changing the shaped glyphs.
      * The default supplies identity order and replaces unmatched UTF-16 surrogates with the replacement scalar.
      * Backends providing native bidirectional processing must override this operation alongside [visualOrder].
      *
      * @param text immutable logical text, potentially containing several font spans.
      * @param rightToLeft whether the fallback paragraph direction is right-to-left.
-     * @return detached immutable visual glyphs with UTF-16 offsets into the shaped logical line and original unadjusted style sequence.
+     * @return detached immutable visual glyphs with UTF-16 scalar offsets into the original logical line.
      */
     public fun visualGlyphs(
         text: String,

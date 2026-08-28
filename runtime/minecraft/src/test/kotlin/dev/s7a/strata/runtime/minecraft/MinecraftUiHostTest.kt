@@ -218,17 +218,29 @@ internal class MinecraftUiHostTest {
     }
 
     @Test
-    fun failedFontFactoryLeavesTheDefinitionAndPlatformAvailableForRetry() {
+    fun missingOrFailedFontFactoryLeavesTheDefinitionAndPlatformAvailableForRetry() {
         val profile = resourceFontProfile()
-        val definition = ScreenDefinition("font factory") { Text("日") }
+        var evaluations = 0
+        val definition =
+            ScreenDefinition("font factory") {
+                evaluations++
+                Text("日")
+            }
         val expected = IllegalStateException("font factory")
         var platformCloses = 0
         val platform = fontPlatform { platformCloses++ }
+        val missingBackend = assertThrows(IllegalArgumentException::class.java) { createMinecraftUiHost(definition, profile) }
+        val missingPlatformBackend = assertThrows(IllegalArgumentException::class.java) { createMinecraftUiHost(definition, profile, platform) }
+        assertEquals("Resource fonts require a CPU font backend factory.", missingBackend.message)
+        assertEquals("Resource fonts require a CPU font backend factory.", missingPlatformBackend.message)
+        assertEquals(0, evaluations)
+        assertEquals(0, platformCloses)
         val failure =
             assertThrows(IllegalStateException::class.java) {
                 createMinecraftUiHost(definition, profile, platform, MinecraftFontBackendFactory { throw expected })
             }
         assertSame(expected, failure)
+        assertEquals(0, evaluations)
         assertEquals(0, platformCloses)
 
         val backend = resourceFontBackend()
@@ -243,6 +255,8 @@ internal class MinecraftUiHostTest {
                     .size,
             )
         }
+        assertEquals(1, evaluations)
+        assertEquals(1, backend.decodeCalls)
         assertEquals(1, backend.closeCalls)
         assertEquals(1, platformCloses)
     }

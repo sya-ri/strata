@@ -11,14 +11,20 @@ import java.util.Collections
  * Owner-thread portable glyph engine for one immutable resource state.
  * The engine owns its backend and native faces, while returned glyphs retain only detached pixels and metrics.
  * Its access-ordered raster cache is bounded by both entry count and pixel bytes; large values bypass the cache.
- * Cache keys are snapshot-local provider identities and Unicode scalars; changing resources or options requires a new snapshot and engine.
- * Native faces have an independent entry bound of at most 16 and are closed before eviction.
+ * Sheets share detached resource identity; bitmap scans share resource, grid, and cell identity with one current metric result per cell.
+ * TrueType faces and glyphs share resource and exact settings, with provider skips checked before glyph lookup.
+ * Other glyphs use snapshot-local provider identities and Unicode scalars; changing resources, limits, or options requires a new engine.
+ * Decoded dimensions and detached failure messages are bounded by the current snapshot's resources and settings, even with raster caching disabled.
+ * Native faces have an independent entry bound of at most 16 and a combined encoded-input ceiling equal to the snapshot's maxAssetBytes.
+ * Eviction closes faces before opening replacements; successful descriptor checks survive eviction without retaining native state.
+ * Preallocation-limit failures occupy ordinary bounded glyph-cache entries and retain only a message.
+ * A backend returning an image beyond its allocation contract permanently disables that face descriptor and closes its live face.
  * Closing clears snapshot, cache, and native references and never invalidates returned glyphs.
  * Glyph selection, cache eviction, and terminal cleanup share this owner to preserve resource lifetime boundaries.
  *
  * @param snapshot immutable font definitions and resource bytes, safely reusable by other engines.
  * @param backendFactory creates the independently owned CPU backend.
- * @param cacheEntries maximum combined cached glyph results and decoded bitmap sheets; zero disables raster caching.
+ * @param cacheEntries maximum combined cached glyph or cell results and decoded bitmap sheets; zero disables raster caching.
  * @param cacheBytes maximum retained raster pixel bytes; zero disables pixel caching.
  * @param maxFaces maximum concurrently retained native faces, from 1 through 16.
  * @throws IllegalArgumentException when a raster cache bound is negative or the face bound is outside 1 through 16.
@@ -39,7 +45,12 @@ public class MinecraftFontEngine
         private var backend: MinecraftFontBackend?
         private val rasters = LinkedHashMap<RasterKey, RasterValue>(16, 0.75f, true)
         private var rasterBytes = 0L
-        private val faces = LinkedHashMap<Int, MinecraftTrueTypeFace>(16, 0.75f, true)
+        private val faces = LinkedHashMap<FontFaceKey, MinecraftTrueTypeFace>(16, 0.75f, true)
+        private var faceBytes = 0L
+        private val validatedFaces = HashSet<FontFaceKey>()
+        private val bitmapSizes = HashMap<FontResource, IntSize>()
+        private val bitmapFailures = HashMap<FontResource, String>()
+        private val faceFailures = HashMap<FontFaceKey, FaceFailure>()
         private val providerStatus = HashMap<Int, LoadStatus>()
         private val fontStatus = HashMap<ResourceId, LoadStatus>()
         private val loadDiagnostics = ArrayList(snapshot.diagnostics)
@@ -127,14 +138,7 @@ public class MinecraftFontEngine
             if (prepareFont(selected, providers).not()) return missingGlyph
             for (entry in providers) {
                 if (applies(entry.filter, current.options)) {
-                    val key = RasterKey.Glyph(entry.identity, codePoint)
-                    val cached = rasters[key] as? RasterValue.Glyph
-                    val glyph =
-                        if (cached != null) {
-                            cached.value
-                        } else {
-                            resolveGlyph(entry, codePoint)?.let(::bakedGlyph).also { resolved -> putRaster(key, RasterValue.Glyph(resolved)) }
-                        }
+                    val glyph = cachedGlyph(entry, codePoint)
                     if (glyph != null) return glyph
                 }
             }
@@ -159,13 +163,13 @@ public class MinecraftFontEngine
         }
 
         /**
-         * Shapes and orders a complete logical line while retaining native UTF-16 style positions for font inheritance.
-         * Positions belong to the shaped logical line and index the original unadjusted style sequence.
+         * Shapes and orders a complete logical line while retaining original UTF-16 scalar positions for font inheritance.
+         * Positions precede shaping and bidirectional reordering; contractions belong to their first contributing scalar.
          * No input or derived run is retained by the engine.
          *
          * @param text immutable logical text containing all spans on one line.
          * @param rightToLeft whether the fallback paragraph direction is right-to-left; defaults to the captured language option.
-         * @return a detached immutable visual glyph list.
+         * @return detached immutable visual glyphs whose source offsets belong to the original logical line.
          * @throws IllegalStateException when accessed from another thread or after close.
          */
         @JvmOverloads
@@ -193,8 +197,13 @@ public class MinecraftFontEngine
             rasterBytes = 0
             providerStatus.clear()
             fontStatus.clear()
+            bitmapSizes.clear()
+            bitmapFailures.clear()
+            faceFailures.clear()
+            validatedFaces.clear()
             val retainedFaces = faces.values.toList()
             faces.clear()
+            faceBytes = 0
             val retainedBackend = backend
             backend = null
             val failures = FontCloseFailures()
@@ -236,14 +245,16 @@ public class MinecraftFontEngine
         private fun preflight(entry: FontProviderEntry) {
             when (val provider = entry.provider) {
                 is FontProvider.Bitmap -> {
-                    val image = bitmap(entry)
-                    require(0 < image.size.width / provider.columns && 0 < image.size.height / provider.rows) {
+                    val size = bitmapSizes[provider.resource] ?: bitmap(provider).size
+                    require(0 < size.width / provider.columns && 0 < size.height / provider.rows) {
                         "Bitmap glyph cells must have positive dimensions."
                     }
                 }
 
                 is FontProvider.TrueType -> {
-                    face(entry)
+                    val key = FontFaceKey(provider.resource, provider.settings)
+                    faceFailures[key]?.raise()
+                    if (validatedFaces.contains(key).not()) face(provider)
                 }
 
                 is FontProvider.Space, is FontProvider.Unihex -> {}
@@ -258,15 +269,71 @@ public class MinecraftFontEngine
             }
         }
 
-        private fun resolveGlyph(
+        private fun cachedGlyph(
             entry: FontProviderEntry,
             codePoint: Int,
+        ): MinecraftFontGlyph? {
+            val provider = entry.provider
+            if (provider is FontProvider.Bitmap) return bitmapGlyph(provider, codePoint)
+            if (provider is FontProvider.TrueType) faceFailures[FontFaceKey(provider.resource, provider.settings)]?.raise()
+            if (provider is FontProvider.TrueType && codePoint in provider.skipped) return null
+            val key =
+                if (provider is FontProvider.TrueType) {
+                    RasterKey.TrueTypeGlyph(FontFaceKey(provider.resource, provider.settings), codePoint)
+                } else {
+                    RasterKey.Glyph(entry.identity, codePoint)
+                }
+            val cached = rasters[key]
+            if (cached is RasterValue.Glyph) return cached.value
+            if (cached is RasterValue.GlyphFailure) throw MinecraftFontLoadLimitException(cached.message)
+            val glyph =
+                try {
+                    resolveGlyph(provider, codePoint)?.let { resolved -> checkedGlyph(provider, resolved) }
+                } catch (failure: MinecraftFontLoadLimitException) {
+                    putRaster(key, RasterValue.GlyphFailure(failure.message ?: "Font glyph allocation limit exceeded."))
+                    throw failure
+                }
+            putRaster(key, RasterValue.Glyph(glyph))
+            return glyph
+        }
+
+        private fun checkedGlyph(
+            provider: FontProvider,
+            glyph: MinecraftFontGlyph,
+        ): MinecraftFontGlyph {
+            try {
+                glyph.image?.let { image -> requireSnapshot().limits.requireImageSize(image.size.width, image.size.height) }
+            } catch (failure: MinecraftFontLoadLimitException) {
+                if (provider is FontProvider.TrueType) poisonFace(provider, failure)
+                throw failure
+            }
+            return bakedGlyph(glyph)
+        }
+
+        private fun poisonFace(
+            provider: FontProvider.TrueType,
+            failure: MinecraftFontLoadLimitException,
+        ) {
+            val key = FontFaceKey(provider.resource, provider.settings)
+            faceFailures[key] = FaceFailure(failure.message ?: "Font backend returned an oversized glyph image.", allocationLimit = true)
+            validatedFaces.remove(key)
+            val face = faces.remove(key) ?: return
+            faceBytes -= provider.resource.size
+            val cleanup = FontCloseFailures()
+            cleanup.attempt { throw failure }
+            cleanup.attempt(face::close)
+            cleanup.throwFailure()
+        }
+
+        private fun resolveGlyph(
+            provider: FontProvider,
+            codePoint: Int,
         ): MinecraftFontGlyph? =
-            when (val provider = entry.provider) {
-                is FontProvider.Bitmap -> bitmapGlyph(entry, provider, codePoint)
+            when (provider) {
+                is FontProvider.Bitmap -> error("Bitmap glyph lookup requires its shared cell cache.")
                 is FontProvider.Space -> provider.advances[codePoint]?.let { advance -> spacingGlyph(advance) }
                 is FontProvider.Unihex -> unihexGlyph(provider, codePoint)
-                is FontProvider.TrueType -> if (codePoint in provider.skipped) null else face(entry).glyph(codePoint)
+                is FontProvider.TrueType -> face(provider).glyph(codePoint)
                 is FontProvider.Failed, is FontProvider.Reference -> error("Unresolved provider reached glyph lookup.")
             }
 
@@ -280,38 +347,66 @@ public class MinecraftFontEngine
             }
         }
 
-        private fun bitmap(entry: FontProviderEntry): DrawImage {
-            val key = RasterKey.Bitmap(entry.identity)
+        private fun bitmap(provider: FontProvider.Bitmap): DrawImage {
+            val key = RasterKey.Bitmap(provider.resource)
             (rasters[key] as? RasterValue.Bitmap)?.let { return it.value }
-            val provider = entry.provider as FontProvider.Bitmap
-            val image = checkNotNull(backend).decodePng(provider.resource.copyBytes())
+            bitmapFailures[provider.resource]?.let { message -> throw IllegalArgumentException(message) }
+            val image =
+                runCatching { decodeBitmap(provider.resource) }.getOrElse { failure ->
+                    if (failure is Exception) bitmapFailures[provider.resource] = failure.message ?: "Font bitmap decoding failed."
+                    throw failure
+                }
+            bitmapSizes[provider.resource] = image.size
             putRaster(key, RasterValue.Bitmap(image))
             return image
         }
 
+        private fun decodeBitmap(resource: FontResource): DrawImage {
+            val decoder = checkNotNull(backend)
+            val limits = requireSnapshot().limits
+            val bitmapLimits = limits.copy(maxImageBytes = minOf(limits.maxImageBytes, limits.maxBitmapSheetBytes))
+            val bytes = resource.copyBytes()
+            val image = if (decoder is MinecraftBoundedFontBackend) decoder.decodePng(bytes, bitmapLimits) else decoder.decodePng(bytes)
+            limits.requireBitmapSheetSize(image.size.width, image.size.height)
+            return image
+        }
+
         private fun bitmapGlyph(
-            entry: FontProviderEntry,
             provider: FontProvider.Bitmap,
             codePoint: Int,
         ): MinecraftFontGlyph? {
             val cell = provider.cells[codePoint] ?: return null
-            val sheet = bitmap(entry)
+            val key = RasterKey.BitmapCell(provider.resource, provider.columns, provider.rows, cell)
+            val cached = rasters[key] as? RasterValue.BitmapCell
+            if (cached != null && cached.height == provider.height && cached.ascent == provider.ascent) return cached.glyph
+            val pixels = cached?.pixels ?: readBitmapCell(provider, cell)
+            val glyph = bakedGlyph(bitmapMetrics(provider, pixels))
+            putRaster(key, RasterValue.BitmapCell(pixels, provider.height, provider.ascent, glyph))
+            return glyph
+        }
+
+        private fun readBitmapCell(
+            provider: FontProvider.Bitmap,
+            cell: Int,
+        ): FontBitmapCell {
+            val sheet = bitmap(provider)
             val width = sheet.size.width / provider.columns
             val height = sheet.size.height / provider.rows
+            requireSnapshot().limits.requireImageSize(width, height)
             val originX = (cell % provider.columns) * width
             val originY = (cell / provider.columns) * height
-            var rightmost = -1
-            val pixels = IntArray(Math.multiplyExact(width, height))
-            for (y in 0 until height) {
-                for (x in 0 until width) {
-                    val pixel = sheet.argbAt(originX + x, originY + y)
-                    pixels[y * width + x] = pixel
-                    if (pixel ushr 24 != 0) rightmost = maxOf(rightmost, x)
-                }
-            }
+            return FontBitmapCell.read(IntSize(width, height)) { x, y -> sheet.argbAt(originX + x, originY + y) }
+        }
+
+        private fun bitmapMetrics(
+            provider: FontProvider.Bitmap,
+            cellPixels: FontBitmapCell,
+        ): MinecraftFontGlyph {
+            val width = cellPixels.size.width
+            val height = cellPixels.size.height
             val scale = provider.height.toFloat() / height
             val oversample = 1.0f / scale
-            val advance = (0.5f + (rightmost + 1) * scale).toInt() + 1
+            val advance = (0.5f + (cellPixels.rightmost + 1) * scale).toInt() + 1
             val originAdjustment = if (requireSnapshot().compatibility.rasterizer == MinecraftTrueTypeRasterizer.Stb) 3.0f else 0.0f
             val nativeTop = 7.0f + originAdjustment - provider.ascent
             // Earlier native glyphs subtract their render-origin adjustment only after adding the scaled bitmap height.
@@ -325,8 +420,9 @@ public class MinecraftFontEngine
                 minOf(top, bottom),
                 maxOf(0.0f, right),
                 maxOf(top, bottom),
-                createDrawImage(IntSize(width, height), pixels),
+                cellPixels.image,
                 orientation = if (provider.height < 0) SampledImageOrientation.FlipBoth else SampledImageOrientation.Normal,
+                oversizedRasterSize = cellPixels.oversizedRasterSize,
             )
         }
 
@@ -338,6 +434,7 @@ public class MinecraftFontEngine
             val override = provider.overrides.firstOrNull { bounds -> codePoint in bounds.first..bounds.last }
             val bounds = override?.let { it.left..it.right } ?: glyph.bounds()
             val width = Math.addExact(Math.subtractExact(bounds.last, bounds.first), 1)
+            requireSnapshot().limits.requireImageSize(width, 16)
             val pixels = IntArray(Math.multiplyExact(width, 16))
             for (y in 0 until 16) {
                 for (x in 0 until width) {
@@ -358,17 +455,32 @@ public class MinecraftFontEngine
             )
         }
 
-        private fun face(entry: FontProviderEntry): MinecraftTrueTypeFace {
-            faces[entry.identity]?.let { return it }
-            while (maxFaces <= faces.size) {
+        private fun face(provider: FontProvider.TrueType): MinecraftTrueTypeFace {
+            val key = FontFaceKey(provider.resource, provider.settings)
+            faces[key]?.let { return it }
+            faceFailures[key]?.raise()
+            val weight = provider.resource.size.toLong()
+            val maximumBytes = requireSnapshot().limits.maxAssetBytes.toLong()
+            requireFontLimit(weight, maximumBytes, "retained native face input")
+            while (faces.isNotEmpty() && (maxFaces <= faces.size || maximumBytes - weight < faceBytes)) {
                 val oldest = faces.entries.iterator()
-                val face = oldest.next().value
+                val previous = oldest.next()
                 oldest.remove()
-                face.close()
+                faceBytes -= previous.key.resource.size
+                previous.value.close()
             }
-            val provider = entry.provider as FontProvider.TrueType
-            val face = checkNotNull(backend).openTrueType(provider.resource.copyBytes(), provider.settings)
-            faces[entry.identity] = face
+            val face =
+                runCatching {
+                    val decoder = checkNotNull(backend)
+                    val bytes = provider.resource.copyBytes()
+                    if (decoder is MinecraftBoundedFontBackend) decoder.openTrueType(bytes, provider.settings, requireSnapshot().limits) else decoder.openTrueType(bytes, provider.settings)
+                }.getOrElse { failure ->
+                    if (failure is Exception) faceFailures[key] = FaceFailure(failure.message ?: "Font TrueType opening failed.", allocationLimit = false)
+                    throw failure
+                }
+            faces[key] = face
+            faceBytes += weight
+            validatedFaces.add(key)
             return face
         }
 
@@ -415,6 +527,18 @@ public class MinecraftFontEngine
             Failed,
         }
 
+        private class FaceFailure(
+            private val message: String,
+            private val allocationLimit: Boolean,
+        ) {
+            fun raise(): Nothing =
+                if (allocationLimit) {
+                    throw MinecraftFontLoadLimitException(message)
+                } else {
+                    throw IllegalArgumentException(message)
+                }
+        }
+
         private sealed interface RasterKey {
             data class Glyph(
                 val provider: Int,
@@ -422,7 +546,19 @@ public class MinecraftFontEngine
             ) : RasterKey
 
             data class Bitmap(
-                val provider: Int,
+                val resource: FontResource,
+            ) : RasterKey
+
+            data class BitmapCell(
+                val resource: FontResource,
+                val columns: Int,
+                val rows: Int,
+                val cell: Int,
+            ) : RasterKey
+
+            data class TrueTypeGlyph(
+                val face: FontFaceKey,
+                val codePoint: Int,
             ) : RasterKey
         }
 
@@ -435,10 +571,25 @@ public class MinecraftFontEngine
                 override fun bytes(): Long = value?.image?.let { image -> image.size.width.toLong() * image.size.height * 4L } ?: 0L
             }
 
+            data class GlyphFailure(
+                val message: String,
+            ) : RasterValue {
+                override fun bytes(): Long = 0L
+            }
+
             data class Bitmap(
                 val value: DrawImage,
             ) : RasterValue {
                 override fun bytes(): Long = value.size.width.toLong() * value.size.height * 4L
+            }
+
+            data class BitmapCell(
+                val pixels: FontBitmapCell,
+                val height: Int,
+                val ascent: Int,
+                val glyph: MinecraftFontGlyph,
+            ) : RasterValue {
+                override fun bytes(): Long = glyph.image?.let { image -> image.size.width.toLong() * image.size.height * 4L } ?: 0L
             }
         }
 

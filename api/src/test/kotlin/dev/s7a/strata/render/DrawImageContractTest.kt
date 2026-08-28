@@ -2,6 +2,7 @@ package dev.s7a.strata.render
 
 import dev.s7a.strata.geometry.FloatRect
 import dev.s7a.strata.geometry.IntOffset
+import dev.s7a.strata.geometry.IntRect
 import dev.s7a.strata.geometry.IntSize
 import org.junit.jupiter.api.Assertions.assertArrayEquals
 import org.junit.jupiter.api.Assertions.assertEquals
@@ -20,6 +21,24 @@ import java.util.concurrent.Executors
  * Verifies the immutable public image value and its intentionally narrow JVM surface.
  */
 internal class DrawImageContractTest {
+    @Test
+    fun olderPaintScopesRejectScopedClippingWithoutInvokingItsCallback() {
+        val clipMethod = PaintScope::class.java.getDeclaredMethod("withClip", IntRect::class.java, Function0::class.java)
+        assertTrue(clipMethod.isDefault)
+        val scope =
+            Proxy.newProxyInstance(
+                PaintScope::class.java.classLoader,
+                arrayOf(PaintScope::class.java),
+            ) { proxy, method, arguments ->
+                assertEquals(clipMethod, method)
+                InvocationHandler.invokeDefault(proxy, method, *arguments.orEmpty())
+            } as PaintScope
+        var calls = 0
+        val failure = assertThrows<UnsupportedOperationException> { scope.withClip(IntRect(0, 0, 1, 1)) { calls++ } }
+        assertEquals("This paint scope does not support explicit clipping.", failure.message)
+        assertEquals(0, calls)
+    }
+
     @Test
     fun olderPaintScopesInheritAnExplicitUnsupportedSamplingDefault() {
         val sampledMethod =

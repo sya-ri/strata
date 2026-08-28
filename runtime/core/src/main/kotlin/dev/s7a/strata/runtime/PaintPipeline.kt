@@ -142,6 +142,14 @@ internal class PaintPipeline(
         y: Int,
     ): DrawCommand =
         when (command) {
+            is LocalDrawCommand.PushClip -> {
+                DrawCommand.PushClip(command.bounds + IntOffset(x, y))
+            }
+
+            LocalDrawCommand.PopClip -> {
+                DrawCommand.PopClip
+            }
+
             is LocalDrawCommand.FillRectangle -> {
                 DrawCommand.FillRectangle(command.bounds + IntOffset(x, y), command.color)
             }
@@ -185,6 +193,21 @@ internal class PaintPipeline(
                 guard.check()
                 return nodeSize
             }
+
+        override fun withClip(
+            localBounds: IntRect,
+            content: () -> Unit,
+        ) {
+            guard.check()
+            commands.add(LocalDrawCommand.PushClip(localBounds))
+            val failures = FailureAccumulator()
+            try {
+                failures.capture(content)
+            } finally {
+                failures.capture { commands.add(LocalDrawCommand.PopClip) }
+            }
+            failures.throwIfPresent()
+        }
 
         override fun fillRectangle(
             localBounds: IntRect,
@@ -264,6 +287,13 @@ internal class PaintPipeline(
 
         override val anchorBounds: IntRect
             get() = anchor
+
+        override fun withClip(
+            localBounds: IntRect,
+            content: () -> Unit,
+        ) {
+            delegate.withClip(localBounds, content)
+        }
 
         override fun fillRectangle(
             localBounds: IntRect,

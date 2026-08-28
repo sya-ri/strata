@@ -1,5 +1,7 @@
 package dev.s7a.strata.runtime.minecraft.font
 
+import dev.s7a.strata.resource.ResourceId
+
 /**
  * Validates an external pack-relative path before a source resolves it.
  *
@@ -15,4 +17,19 @@ internal fun String.checkedFontSourcePath(): String {
         "Font asset paths cannot contain empty or parent-traversal segments."
     }
     return this
+}
+
+/**
+ * Converts a namespace-relative asset path into a detached resource identifier without retaining source state.
+ * Only identifier validation failures become absence; unexpected failures propagate on the calling thread.
+ *
+ * @receiver path below the pack's assets directory, beginning with its namespace.
+ * @return the identifier, or null when either path component is missing or unsupported.
+ */
+internal fun String.fontResourceIdentifier(): ResourceId? {
+    val separator = indexOf('/')
+    if (separator < 1 || lastIndex <= separator) return null
+    return runCatching { ResourceId(substring(0, separator), substring(separator + 1)) }.getOrElse { failure ->
+        if (failure is IllegalArgumentException) null else throw failure
+    }
 }

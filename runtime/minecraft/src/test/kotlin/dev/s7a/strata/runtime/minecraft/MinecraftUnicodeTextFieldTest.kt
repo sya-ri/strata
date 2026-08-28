@@ -55,18 +55,23 @@ internal class MinecraftUnicodeTextFieldTest {
     @Test
     fun stateValidatesUnicodeLengthThreadAndDistinctWrites() {
         assertThrows(IllegalArgumentException::class.java) { TextFieldState("", 0) }
-        listOf("\n", "\u0000", "\u007F", "\u00A7", "\uD83D", "\uDE42", "\uD83DA").forEach { unsupported ->
+        listOf("\n", "\r", "\u0000", "\u000B", "\u000C", "\u007F", "\u0085", "\u00A7", "\u2028", "\u2029", "\uD83D", "\uDE42", "\uD83DA").forEach { unsupported ->
             assertThrows(IllegalArgumentException::class.java) { TextFieldState(unsupported) }
         }
         assertThrows(IllegalArgumentException::class.java) { TextFieldState("abc", 2) }
         assertEquals("日本한국🙂", TextFieldState("日本한국🙂", 6).value)
         assertThrows(IllegalArgumentException::class.java) { TextFieldState("日本한국🙂", 5) }
+        val formatted = "A\u200D\u2066🙂\u2069"
+        assertEquals(formatted, TextFieldState(formatted, formatted.length).value)
 
         val state = TextFieldState("abc", 3)
         state.value = "xyz"
         assertEquals("xyz", state.value)
         assertThrows(IllegalArgumentException::class.java) { state.value = "long" }
         assertThrows(IllegalArgumentException::class.java) { state.value = "\uD83D" }
+        listOf('\n', '\r', '\u000B', '\u000C', '\u0085', '\u2028', '\u2029').forEach { separator ->
+            assertThrows(IllegalArgumentException::class.java) { state.value = "x${separator}y" }
+        }
         assertEquals("xyz", state.value)
 
         val wrongThread = FutureTask<Throwable?> { runCatching { state.value }.exceptionOrNull() }
@@ -104,6 +109,10 @@ internal class MinecraftUnicodeTextFieldTest {
             host.dispatchKeyboard(KeyboardEvent.Press(KeyCode.Backspace, 0))
             host.dispatchTextInput(TextInputEvent.Character('本'.code))
             assertEquals("日本", state.value)
+            listOf(0x200D, 0x2066, 0x2069).forEach { codePoint ->
+                assertSame(InputResult.Consumed, host.dispatchTextInput(TextInputEvent.Character(codePoint)))
+            }
+            assertEquals("日本\u200D\u2066\u2069", state.value)
         } finally {
             host.close()
         }
@@ -125,7 +134,7 @@ internal class MinecraftUnicodeTextFieldTest {
             assertEquals("AB", state.value)
             host.dispatchTextInput(TextInputEvent.Character('C'.code))
             assertEquals("ABC", state.value)
-            listOf(0, 10, 31, 127, 167).forEach { codePoint ->
+            listOf(0, 10, 11, 12, 13, 31, 127, 133, 167, 0x2028, 0x2029).forEach { codePoint ->
                 assertSame(InputResult.Ignored, host.dispatchTextInput(TextInputEvent.Character(codePoint)))
             }
             assertEquals("ABC", state.value)
@@ -369,6 +378,36 @@ internal class MinecraftUnicodeTextFieldTest {
             host.dispatchTextInput(TextInputEvent.Preedit("한", 0, listOf("한"), 0))
             host.dispatchPointer(PointerEvent.Press(IntOffset(fieldSize.width, 10), PointerButton.Primary))
             assertTrue(host.frame(fieldSize).drawCommands.none { command -> command is DrawCommand.FillRectangle })
+        } finally {
+            host.close()
+        }
+    }
+
+    @Test
+    fun lineSeparatorsDoNotReplaceActivePreeditOrMoveItsScrolledCaret() {
+        val state = TextFieldState("日한", maxLength = 5)
+        val compactSize = IntSize(16, 20)
+        val host = resourceFontHost(state, BitmapFieldFontBackend(), compactSize)
+        try {
+            host.attach()
+            host.frame(compactSize)
+            assertSame(InputResult.Consumed, host.dispatchTextInput(TextInputEvent.Preedit("🙂한", 2, listOf("🙂", "한"), 1)))
+            val composed = host.frame(compactSize).drawCommands
+            assertTrue(composed.any { command -> command is DrawCommand.FillRectangle })
+            for (separator in listOf('\n', '\r', '\u000B', '\u000C', '\u0085', '\u2028', '\u2029')) {
+                assertThrows(IllegalArgumentException::class.java) { state.value = "日${separator}한" }
+                assertSame(InputResult.Ignored, host.dispatchTextInput(TextInputEvent.Character(separator.code)))
+                assertSame(InputResult.Ignored, host.dispatchTextInput(TextInputEvent.Preedit("🙂${separator}한", 2, emptyList(), -1)))
+                assertSame(InputResult.Ignored, host.dispatchTextInput(TextInputEvent.Preedit("🙂한", 2, listOf("🙂", "${separator}한"), 1)))
+                assertEquals("日한", state.value)
+                assertEquals(composed, host.frame(compactSize).drawCommands)
+            }
+            host.dispatchTextInput(TextInputEvent.Character('A'.code))
+            assertEquals("日한A", state.value)
+            assertTrue(host.frame(compactSize).drawCommands.none { command -> command is DrawCommand.FillRectangle })
+            host.dispatchKeyboard(KeyboardEvent.Press(KeyCode.Left, 0))
+            host.dispatchTextInput(TextInputEvent.Character(0x1F642))
+            assertEquals("日한🙂A", state.value)
         } finally {
             host.close()
         }

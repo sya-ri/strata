@@ -23,6 +23,11 @@ public interface SemanticsRole {
     public data object TextField : SemanticsRole
 
     /**
+     * An editable multiline text area with independently controlled vertical scrolling.
+     */
+    public data object TextArea : SemanticsRole
+
+    /**
      * One selectable tab in an externally controlled tab group.
      */
     public data object Tab : SemanticsRole

@@ -466,7 +466,11 @@ private class MinecraftTextFieldElement private constructor(
             return true
         }
 
-        private fun isAcceptedCodePoint(codePoint: Int): Boolean = 0x20 <= codePoint && codePoint != 0x7F && codePoint != 0xA7
+        private fun isAcceptedCodePoint(codePoint: Int): Boolean =
+            when (codePoint) {
+                0x7F, 0x85, 0xA7, 0x2028, 0x2029 -> false
+                else -> 0x20 <= codePoint
+            }
 
         private fun width(text: String): Int = createRun(text).nativeWidth
 

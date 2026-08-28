@@ -6,8 +6,10 @@ import com.ibm.icu.text.Bidi
 import dev.s7a.strata.geometry.IntSize
 import dev.s7a.strata.render.DrawImage
 import dev.s7a.strata.render.createDrawImage
-import dev.s7a.strata.runtime.minecraft.font.MinecraftFontBackend
+import dev.s7a.strata.runtime.minecraft.font.MinecraftBoundedFontBackend
 import dev.s7a.strata.runtime.minecraft.font.MinecraftFontGlyph
+import dev.s7a.strata.runtime.minecraft.font.MinecraftFontLoadLimitException
+import dev.s7a.strata.runtime.minecraft.font.MinecraftFontLoadLimits
 import dev.s7a.strata.runtime.minecraft.font.MinecraftTrueTypeFace
 import dev.s7a.strata.runtime.minecraft.font.MinecraftTrueTypeRasterizer
 import dev.s7a.strata.runtime.minecraft.font.MinecraftTrueTypeSettings
@@ -25,13 +27,20 @@ import org.lwjgl.system.MemoryUtil
 @Suppress("TooGenericExceptionCaught")
 internal class LwjglMinecraftFontBackend(
     private val rasterizer: MinecraftTrueTypeRasterizer,
-) : MinecraftFontBackend {
+) : MinecraftBoundedFontBackend {
     private val owner = Thread.currentThread()
     private val faces = LinkedHashSet<ManagedFace>()
     private var closed = false
 
-    override fun decodePng(bytes: ByteArray): DrawImage {
+    override fun decodePng(bytes: ByteArray): DrawImage = decodePng(bytes, MinecraftFontLoadLimits())
+
+    override fun decodePng(
+        bytes: ByteArray,
+        limits: MinecraftFontLoadLimits,
+    ): DrawImage {
         requireOpen()
+        require(bytes.size <= limits.maxAssetBytes) { "Font encoded image exceeds its asset byte ceiling." }
+        limits.checkPng(bytes)
         val encoded = MemoryUtil.memAlloc(bytes.size)
         try {
             encoded.put(bytes).flip()
@@ -39,9 +48,12 @@ internal class LwjglMinecraftFontBackend(
                 val width = stack.mallocInt(1)
                 val height = stack.mallocInt(1)
                 val channels = stack.mallocInt(1)
+                require(STBImage.stbi_info_from_memory(encoded, width, height, channels)) { "Cannot inspect font PNG: ${STBImage.stbi_failure_reason()}" }
+                limits.requireImageSize(width[0], height[0])
                 val decoded = STBImage.stbi_load_from_memory(encoded, width, height, channels, 4)
                 requireNotNull(decoded) { "Cannot decode font PNG: ${STBImage.stbi_failure_reason()}" }
                 try {
+                    limits.requireImageSize(width[0], height[0])
                     val size = IntSize(width[0], height[0])
                     val pixels =
                         IntArray(Math.multiplyExact(size.width, size.height)) { index ->
@@ -72,12 +84,7 @@ internal class LwjglMinecraftFontBackend(
         rightToLeft: Boolean,
     ): List<MinecraftVisualGlyph> {
         requireOpen()
-        val shaped =
-            try {
-                ArabicShaping(ArabicShaping.LETTERS_SHAPE).shape(text)
-            } catch (_: Exception) {
-                text
-            }
+        val (shaped, sourceIndices) = shapeWithSourceIndices(text)
         val bidi = Bidi(shaped, if (rightToLeft) Bidi.DIRECTION_DEFAULT_RIGHT_TO_LEFT else Bidi.DIRECTION_DEFAULT_LEFT_TO_RIGHT)
         bidi.reorderingMode = Bidi.REORDER_DEFAULT.toInt()
         val result = ArrayList<MinecraftVisualGlyph>()
@@ -88,13 +95,13 @@ internal class LwjglMinecraftFontBackend(
                 while (run.start < index) {
                     val codePoint = shaped.codePointBefore(index)
                     index -= Character.charCount(codePoint)
-                    result.add(MinecraftVisualGlyph(UCharacter.getMirror(codePoint), index))
+                    result.add(MinecraftVisualGlyph(UCharacter.getMirror(codePoint), sourceIndices[index]))
                 }
             } else {
                 var index = run.start
                 while (index < run.limit) {
                     val codePoint = shaped.codePointAt(index)
-                    result.add(MinecraftVisualGlyph(codePoint, index))
+                    result.add(MinecraftVisualGlyph(codePoint, sourceIndices[index]))
                     index += Character.charCount(codePoint)
                 }
             }
@@ -102,15 +109,43 @@ internal class LwjglMinecraftFontBackend(
         return result
     }
 
+    private fun shapeWithSourceIndices(text: String): Pair<String, IntArray> {
+        val fixed =
+            try {
+                ArabicShaping(ArabicShaping.LETTERS_SHAPE or ArabicShaping.LENGTH_FIXED_SPACES_NEAR).shape(text)
+            } catch (_: Exception) {
+                text
+            }
+        check(fixed.length == text.length) { "Fixed-length Arabic shaping must preserve UTF-16 positions." }
+        val shaped = StringBuilder(fixed.length)
+        val sourceIndices = IntArray(fixed.length)
+        // Fixed-near shaping leaves discarded slots as spaces; removing only those slots reproduces resize mode.
+        // Original spaces survive, and a Lam-Alef ligature retains the original Lam's font position.
+        fixed.forEachIndexed { index, character ->
+            if (character != ' ' || text[index] == ' ') {
+                sourceIndices[shaped.length] = index
+                shaped.append(character)
+            }
+        }
+        return shaped.toString() to sourceIndices
+    }
+
     override fun openTrueType(
         bytes: ByteArray,
         settings: MinecraftTrueTypeSettings,
+    ): MinecraftTrueTypeFace = openTrueType(bytes, settings, MinecraftFontLoadLimits())
+
+    override fun openTrueType(
+        bytes: ByteArray,
+        settings: MinecraftTrueTypeSettings,
+        limits: MinecraftFontLoadLimits,
     ): MinecraftTrueTypeFace {
         requireOpen()
+        if (limits.maxAssetBytes < bytes.size) throw MinecraftFontLoadLimitException("Font TrueType data exceeds its asset byte ceiling.")
         val delegate =
             when (rasterizer) {
-                MinecraftTrueTypeRasterizer.Stb -> StbMinecraftFontFace(bytes, settings)
-                MinecraftTrueTypeRasterizer.FreeType -> FreeTypeMinecraftFontFace(bytes, settings)
+                MinecraftTrueTypeRasterizer.Stb -> StbMinecraftFontFace(bytes, settings, limits)
+                MinecraftTrueTypeRasterizer.FreeType -> FreeTypeMinecraftFontFace(bytes, settings, limits)
             }
         return ManagedFace(delegate).also(faces::add)
     }

@@ -3,6 +3,7 @@ package dev.s7a.strata.runtime.minecraft.font.lwjgl
 import dev.s7a.strata.geometry.IntSize
 import dev.s7a.strata.render.createDrawImage
 import dev.s7a.strata.runtime.minecraft.font.MinecraftFontGlyph
+import dev.s7a.strata.runtime.minecraft.font.MinecraftFontLoadLimits
 import dev.s7a.strata.runtime.minecraft.font.MinecraftTrueTypeFace
 import dev.s7a.strata.runtime.minecraft.font.MinecraftTrueTypeSettings
 import org.lwjgl.stb.STBTTFontinfo
@@ -23,11 +24,13 @@ import kotlin.math.floor
  *
  * @param bytes borrowed TrueType bytes copied before native use.
  * @param settings immutable native provider settings.
+ * @param limits immutable image-allocation ceilings retained until this face is closed.
  */
 @Suppress("TooGenericExceptionCaught")
 internal class StbMinecraftFontFace(
     bytes: ByteArray,
     private val settings: MinecraftTrueTypeSettings,
+    private val limits: MinecraftFontLoadLimits = MinecraftFontLoadLimits(),
 ) : MinecraftTrueTypeFace {
     private var memory: ByteBuffer? = null
     private var font: STBTTFontinfo? = null
@@ -83,7 +86,7 @@ internal class StbMinecraftFontFace(
             val nativeTop = (ascent + y0[0] + shiftY) / settings.oversample
             val nativeBottom = nativeTop + height / settings.oversample
             val metrics = TrueTypeGlyphMetrics(cursorAdvance, left, nativeTop - 3f, left + width / settings.oversample, nativeBottom - 3f, IntSize(width, height))
-            metrics.rasterize {
+            metrics.rasterize(limits) {
                 Math.addExact(x0[0], width)
                 Math.addExact(y0[0], height)
                 val bitmap = MemoryUtil.memAlloc(Math.multiplyExact(width, height))

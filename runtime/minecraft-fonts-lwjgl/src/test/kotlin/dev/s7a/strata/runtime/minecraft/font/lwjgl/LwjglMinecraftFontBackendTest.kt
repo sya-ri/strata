@@ -1,5 +1,7 @@
 package dev.s7a.strata.runtime.minecraft.font.lwjgl
 
+import com.ibm.icu.text.ArabicShaping
+import com.ibm.icu.text.Bidi
 import com.ibm.icu.util.VersionInfo
 import dev.s7a.strata.geometry.IntRect
 import dev.s7a.strata.geometry.IntSize
@@ -8,10 +10,13 @@ import dev.s7a.strata.render.SampledImageOrientation
 import dev.s7a.strata.render.createDrawImage
 import dev.s7a.strata.resource.ResourceId
 import dev.s7a.strata.runtime.headless.rasterizeHeadless
+import dev.s7a.strata.runtime.minecraft.font.MinecraftBoundedFontBackend
 import dev.s7a.strata.runtime.minecraft.font.MinecraftFontBackend
 import dev.s7a.strata.runtime.minecraft.font.MinecraftFontCompatibility
 import dev.s7a.strata.runtime.minecraft.font.MinecraftFontEngine
 import dev.s7a.strata.runtime.minecraft.font.MinecraftFontGlyph
+import dev.s7a.strata.runtime.minecraft.font.MinecraftFontLoadLimitException
+import dev.s7a.strata.runtime.minecraft.font.MinecraftFontLoadLimits
 import dev.s7a.strata.runtime.minecraft.font.MinecraftFontSnapshot
 import dev.s7a.strata.runtime.minecraft.font.MinecraftMemoryFontAssetSource
 import dev.s7a.strata.runtime.minecraft.font.MinecraftTrueTypeFace
@@ -27,6 +32,7 @@ import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.Timeout
 import org.lwjgl.Version
+import java.nio.ByteBuffer
 import kotlin.math.abs
 
 /**
@@ -77,6 +83,23 @@ internal class LwjglMinecraftFontBackendTest {
     }
 
     @Test
+    fun pngDimensionsAndByteBufferOverflowFailBeforeNativePixelAllocation() {
+        val expected = rasterizeHeadless(listOf(DrawCommand.FillRectangle(IntRect(0, 0, 1, 1), ArgbColor(0xFF123456.toInt()))), IntSize(1, 1))
+        val bytes = expected.encodePng()
+        LwjglMinecraftFontBackendFactory.open(compatibility(MinecraftTrueTypeRasterizer.Stb)).use { backend ->
+            val bounded = backend as MinecraftBoundedFontBackend
+            val limits = MinecraftFontLoadLimits(maxImageBytes = 4)
+            assertEquals(expected.argbAt(0, 0), bounded.decodePng(bytes, limits).argbAt(0, 0))
+            assertThrows(MinecraftFontLoadLimitException::class.java) { bounded.decodePng(bytes, limits.copy(maxImageBytes = 3)) }
+            val oversized = bytes.copyOf()
+            ByteBuffer.wrap(oversized).putInt(16, Int.MAX_VALUE).putInt(20, Int.MAX_VALUE)
+            val extreme = limits.copy(maxImageDimension = Int.MAX_VALUE, maxImageBytes = Long.MAX_VALUE, maxDecompressedBytes = Long.MAX_VALUE)
+            val failure = assertThrows(MinecraftFontLoadLimitException::class.java) { bounded.decodePng(oversized, extreme) }
+            assertTrue(failure.message.orEmpty().contains("native byte-buffer capacity"))
+        }
+    }
+
+    @Test
     fun `selected native providers render new supplementary and CJK glyphs from supplied bytes`() {
         rasterizers().forEach { rasterizer ->
             LwjglMinecraftFontBackendFactory.open(compatibility(rasterizer)).use { backend ->
@@ -90,6 +113,84 @@ internal class LwjglMinecraftFontBackendTest {
                     }
                     assertNull(face.glyph(0x2603))
                     assertNull(checkNotNull(face.glyph(0x20)).image)
+                }
+            }
+        }
+    }
+
+    @Test
+    fun trueTypeImageCeilingsApplyBeforeRasterAllocationWithoutLosingFaceOwnership() {
+        val bytes = fixture()
+        val limits = MinecraftFontLoadLimits(maxAssetBytes = bytes.size, maxImageDimension = 1, maxImageBytes = 4)
+        val settings = MinecraftTrueTypeSettings(1f)
+        rasterizers().forEach { rasterizer ->
+            LwjglMinecraftFontBackendFactory.open(compatibility(rasterizer)).use { backend ->
+                val bounded = backend as MinecraftBoundedFontBackend
+                val expected = backend.openTrueType(bytes, settings).use { checkNotNull(it.glyph(0x41)) }
+                assertEquals(IntSize(1, 1), checkNotNull(expected.image).size)
+                bounded.openTrueType(bytes, settings, limits).use { face -> assertEquals(expected, face.glyph(0x41)) }
+                listOf(limits.copy(maxImageBytes = 3), limits.copy(maxImageDimension = 0)).forEach { rejected ->
+                    bounded.openTrueType(bytes, settings, rejected).use { face ->
+                        repeat(2) { assertThrows(MinecraftFontLoadLimitException::class.java) { face.glyph(0x41) } }
+                        assertNull(checkNotNull(face.glyph(0x20)).image)
+                        assertNull(face.glyph(0x2603))
+                    }
+                }
+                bounded.openTrueType(bytes, settings.copy(size = 2f), limits.copy(maxImageBytes = 16)).use { face ->
+                    assertThrows(MinecraftFontLoadLimitException::class.java) { face.glyph(0x41) }
+                }
+                assertThrows(MinecraftFontLoadLimitException::class.java) { bounded.openTrueType(bytes, settings, limits.copy(maxAssetBytes = bytes.size - 1)) }
+                bounded.openTrueType(bytes, settings, limits).use { face -> assertEquals(expected, face.glyph(0x41)) }
+            }
+        }
+    }
+
+    @Test
+    fun nativeAtlasMarkersRemainAllocationFreeUnderTightGlyphImageCeilings() {
+        val limits = MinecraftFontLoadLimits(maxImageDimension = 1, maxImageBytes = 4)
+        rasterizers().forEach { rasterizer ->
+            LwjglMinecraftFontBackendFactory.open(compatibility(rasterizer)).use { backend ->
+                val bounded = backend as MinecraftBoundedFontBackend
+                bounded.openTrueType(fixture(), MinecraftTrueTypeSettings(512f), limits).use { face ->
+                    val glyph = checkNotNull(face.glyph(0x41))
+                    assertNull(glyph.image)
+                    val raster = checkNotNull(glyph.oversizedRasterSize)
+                    assertTrue(256 < raster.width || 256 < raster.height)
+                    assertNull(face.glyph(0x2603))
+                }
+            }
+        }
+    }
+
+    @Test
+    fun embeddedBitmapSelectionIsCheckedBeforeAllocationWithoutSubstitutingOutlinePixels() {
+        val bytes = checkNotNull(javaClass.getResourceAsStream("/fonts/strata-embedded-test.ttf")).use { it.readBytes() }
+        val settings = MinecraftTrueTypeSettings(1f)
+        val limits = MinecraftFontLoadLimits(maxImageDimension = 1, maxImageBytes = 4)
+        rasterizers().filter { it == MinecraftTrueTypeRasterizer.FreeType }.forEach { rasterizer ->
+            LwjglMinecraftFontBackendFactory.open(compatibility(rasterizer)).use { backend ->
+                val bounded = backend as MinecraftBoundedFontBackend
+                bounded.openTrueType(bytes, settings, limits).use { face ->
+                    val embedded = checkNotNull(face.glyph('A'.code))
+                    val pixels = checkNotNull(embedded.image)
+                    assertEquals(IntSize(1, 1), pixels.size)
+                    assertEquals(0x80808080.toInt(), pixels.argbAt(0, 0))
+                    repeat(2) {
+                        val failure = assertThrows(MinecraftFontLoadLimitException::class.java) { face.glyph('B'.code) }
+                        assertTrue(failure.message.orEmpty().contains("image width"))
+                    }
+                    assertEquals(embedded, face.glyph('A'.code))
+                    assertNull(face.glyph(0x2603))
+                }
+                bounded.openTrueType(bytes, settings, limits.copy(maxImageDimension = 2)).use { face ->
+                    val failure = assertThrows(MinecraftFontLoadLimitException::class.java) { face.glyph('B'.code) }
+                    assertTrue(failure.message.orEmpty().contains("image four-byte pixel payload"))
+                }
+                backend.openTrueType(bytes, settings).use { face ->
+                    val failure = assertThrows(IllegalArgumentException::class.java) { face.glyph('B'.code) }
+                    assertEquals(IllegalArgumentException::class.java, failure.javaClass)
+                    assertEquals("FreeType glyph dimensions changed during rasterization.", failure.message)
+                    assertEquals(0x80808080.toInt(), checkNotNull(checkNotNull(face.glyph('A'.code)).image).argbAt(0, 0))
                 }
             }
         }
@@ -310,8 +411,9 @@ internal class LwjglMinecraftFontBackendTest {
 
     @Test
     fun nativeAtlasLimitsPrecedeRasterAllocationAndIncludeTheExactBoundary() {
+        val limits = MinecraftFontLoadLimits(maxImageDimension = 1, maxImageBytes = 4)
         listOf(IntSize(257, 1), IntSize(1, 257), IntSize(Int.MAX_VALUE, Int.MAX_VALUE)).forEach { size ->
-            val glyph = TrueTypeGlyphMetrics(3f, 0f, 0f, 1f, 1f, size).rasterize { error("Oversized pixels must not be allocated.") }
+            val glyph = TrueTypeGlyphMetrics(3f, 0f, 0f, 1f, 1f, size).rasterize(limits) { error("Oversized pixels must not be allocated.") }
             assertEquals(size, glyph.oversizedRasterSize)
             assertEquals(3f, glyph.advance)
             assertNull(glyph.image)
@@ -321,6 +423,14 @@ internal class LwjglMinecraftFontBackendTest {
         val glyph = TrueTypeGlyphMetrics(3f, 0f, 0f, 256f, 256f, boundary).rasterize { image }
         assertEquals(image, glyph.image)
         assertNull(glyph.oversizedRasterSize)
+        val unit = TrueTypeGlyphMetrics(3f, 0f, 0f, 1f, 1f, IntSize(1, 1))
+        assertThrows(MinecraftFontLoadLimitException::class.java) {
+            unit.rasterize(limits.copy(maxImageBytes = 3)) { error("Rejected pixels must not be allocated.") }
+        }
+        val wide = TrueTypeGlyphMetrics(3f, 0f, 0f, 2f, 1f, IntSize(2, 1))
+        assertThrows(MinecraftFontLoadLimitException::class.java) {
+            wide.rasterize(limits.copy(maxImageBytes = 8)) { error("Rejected pixels must not be allocated.") }
+        }
     }
 
     @Test
@@ -433,6 +543,75 @@ internal class LwjglMinecraftFontBackendTest {
             )
             assertEquals("ב🙂א", backend.visualOrder("א🙂ב", true))
         }
+    }
+
+    @Test
+    fun arabicContractionsRetainTheOriginalFontsAcrossSpanBoundaries() {
+        val lamFont = ResourceId("test", "lam")
+        val alefFont = ResourceId("test", "alef")
+        val trailingFont = ResourceId("test", "trailing")
+        val originalFonts = listOf(lamFont, alefFont, trailingFont)
+        LwjglMinecraftFontBackendFactory.open(compatibility(rasterizers().first())).use { backend ->
+            val glyphs = backend.visualGlyphs("لاC", false)
+            assertEquals(listOf(MinecraftVisualGlyph('C'.code, 2), MinecraftVisualGlyph(0xfefb, 0)), glyphs)
+            assertEquals(listOf(trailingFont, lamFont), glyphs.map { glyph -> originalFonts[glyph.sourceIndex] })
+        }
+    }
+
+    @Test
+    fun arabicContractionsKeepMarksSpacesAndSupplementaryOriginalOffsets() {
+        val cases =
+            listOf(
+                "لَاC" to listOf(MinecraftVisualGlyph('C'.code, 3), MinecraftVisualGlyph(0xfe76, 1), MinecraftVisualGlyph(0xfefb, 0)),
+                "ل اC" to listOf(MinecraftVisualGlyph('C'.code, 3), MinecraftVisualGlyph(0xfe8d, 2), MinecraftVisualGlyph(' '.code, 1), MinecraftVisualGlyph(0xfedd, 0)),
+                "لا لا C" to listOf(MinecraftVisualGlyph('C'.code, 6), MinecraftVisualGlyph(' '.code, 5), MinecraftVisualGlyph(0xfefb, 3), MinecraftVisualGlyph(' '.code, 2), MinecraftVisualGlyph(0xfefb, 0)),
+                "لا🙂C" to listOf(MinecraftVisualGlyph('C'.code, 4), MinecraftVisualGlyph(0x1f642, 2), MinecraftVisualGlyph(0xfefb, 0)),
+                "Aلا🙂ב C" to listOf(MinecraftVisualGlyph('A'.code, 0), MinecraftVisualGlyph('ב'.code, 5), MinecraftVisualGlyph(0x1f642, 3), MinecraftVisualGlyph(0xfefb, 1), MinecraftVisualGlyph(' '.code, 6), MinecraftVisualGlyph('C'.code, 7)),
+            )
+        LwjglMinecraftFontBackendFactory.open(compatibility(rasterizers().first())).use { backend ->
+            cases.forEach { (text, expected) -> assertEquals(expected, backend.visualGlyphs(text, false), text) }
+        }
+    }
+
+    @Test
+    fun originalSourceMappingPreservesTheSelectedIcuResizeShapingAndVisualOrder() {
+        val inputs =
+            listOf(
+                "",
+                "لاC",
+                "لأC",
+                "لإC",
+                "لآC",
+                "ﻻC",
+                "ل\uFE8DC",
+                "لَاC",
+                "ل اC",
+                "لا لا C",
+                "لا🙂C",
+                "Aلا🙂ב C",
+                "لا\uFFFFC",
+                "لا\uFFFEC",
+                "ل\u200DاC",
+                "ل\u0610اC",
+                "ل\u064B\u064EاC",
+                "(لا🙂) C",
+            )
+        LwjglMinecraftFontBackendFactory.open(compatibility(rasterizers().first())).use { backend ->
+            inputs.forEach { text ->
+                assertEquals(resizedVisualOrder(text, false), backend.visualOrder(text, false), text)
+                assertEquals(resizedVisualOrder(text, true), backend.visualOrder(text, true), text)
+            }
+        }
+    }
+
+    private fun resizedVisualOrder(
+        text: String,
+        rightToLeft: Boolean,
+    ): String {
+        val shaped = ArabicShaping(ArabicShaping.LETTERS_SHAPE).shape(text)
+        val bidi = Bidi(shaped, if (rightToLeft) Bidi.DIRECTION_DEFAULT_RIGHT_TO_LEFT else Bidi.DIRECTION_DEFAULT_LEFT_TO_RIGHT)
+        bidi.reorderingMode = Bidi.REORDER_DEFAULT.toInt()
+        return bidi.writeReordered(Bidi.DO_MIRRORING.toInt())
     }
 
     private fun classSources(resource: String): List<String> =

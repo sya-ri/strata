@@ -10,14 +10,19 @@ import java.util.Collections
  * @param sources caller-selected resource stack.
  * @param compatibility typed format capabilities.
  * @param options captured provider selection.
+ * @param limits immutable input and image-allocation ceilings.
  */
 internal class FontSnapshotLoader(
     sources: List<MinecraftFontAssetSource>,
     private val compatibility: MinecraftFontCompatibility,
     private val options: MinecraftFontOptions,
+    private val limits: MinecraftFontLoadLimits,
 ) {
     private val diagnostics = ArrayList<MinecraftFontDiagnostic>()
-    private val resources = FontResourceStack(sources, compatibility, diagnostics)
+    private val budget = FontLoadBudget(limits)
+    private val resources = FontResourceStack(sources, compatibility, diagnostics, budget)
+    private val bitmapChecks = HashMap<FontResource, Result<Boolean>>()
+    private val faceChecks = HashMap<FontFaceKey, Result<Unit>>()
     private var nextIdentity = 0
 
     /**
@@ -30,7 +35,9 @@ internal class FontSnapshotLoader(
             for (document in resources.fontDocuments(font).asReversed()) {
                 val parsed =
                     runCatching {
-                        FontJson.array(FontJson.document(document.read().copyBytes()).get("providers")).map { value ->
+                        val records = FontJson.array(FontJson.document(document.read().copyBytes(), limits).get("providers"))
+                        budget.claim(FontLoadBudget.Kind.Providers, records.size().toLong())
+                        records.map { value ->
                             parse(font, document.sourceName, FontJson.objectValue(value))
                         }
                     }.getOrElse { failure ->
@@ -48,8 +55,8 @@ internal class FontSnapshotLoader(
             }
             declarations[font] = providers
         }
-        val resolved = FontGraphResolver(declarations, diagnostics).resolve()
-        return MinecraftFontSnapshot(compatibility, options, resolved, diagnostics)
+        val resolved = FontGraphResolver(declarations, diagnostics, budget).resolve()
+        return MinecraftFontSnapshot(compatibility, options, resolved, diagnostics, limits)
     }
 
     private fun parse(
@@ -81,26 +88,39 @@ internal class FontSnapshotLoader(
         val height = document.get("height")?.let(FontJson::integer) ?: 8
         val ascent = FontJson.integer(document.get("ascent"))
         require(ascent <= height) { "Bitmap ascent cannot exceed its height." }
-        val rows = FontJson.array(document.get("chars")).map { row -> FontJson.string(row).codePoints().toArray() }
-        require(rows.isNotEmpty() && rows.first().isNotEmpty()) { "Bitmap character rows must be nonempty." }
-        val columns = rows.first().size
-        require(rows.all { row -> row.size == columns }) { "Bitmap rows must contain equal scalar counts." }
+        val rows = FontJson.array(document.get("chars"))
+        require(0 < rows.size()) { "Bitmap character rows must be nonempty." }
+        val first = FontJson.string(rows[0])
+        val columns = first.codePointCount(0, first.length)
+        require(0 < columns) { "Bitmap character rows must be nonempty." }
+        budget.claim(FontLoadBudget.Kind.Glyphs, rows.size().toLong() * columns)
         val cells = LinkedHashMap<Int, Int>()
-        rows.forEachIndexed { y, row ->
-            row.forEachIndexed { x, codePoint ->
+        rows.forEachIndexed { y, value ->
+            val row = FontJson.string(value)
+            require(row.codePointCount(0, row.length) == columns) { "Bitmap rows must contain equal scalar counts." }
+            var offset = 0
+            repeat(columns) { x ->
+                val codePoint = row.codePointAt(offset)
+                offset += Character.charCount(codePoint)
                 FontJson.validateScalar(codePoint)
                 if (codePoint != 0) cells[codePoint] = Math.addExact(Math.multiplyExact(y, columns), x)
             }
         }
         val file = FontJson.identifier(FontJson.string(document.get("file")))
         return asset(font, source, ResourceId(file.namespace, "textures/${file.path}")) { resource ->
-            FontProvider.Bitmap(resource, height, ascent, columns, rows.size, Collections.unmodifiableMap(cells))
+            bitmapChecks
+                .getOrPut(resource) {
+                    runCatching { resource.checkBitmap(limits) { amount -> budget.claim(FontLoadBudget.Kind.DecompressedBytes, amount) } }
+                }.getOrThrow()
+            FontProvider.Bitmap(resource, height, ascent, columns, rows.size(), Collections.unmodifiableMap(cells))
         }
     }
 
     private fun space(document: JsonObject): FontProvider.Space {
+        val records = FontJson.objectValue(document.get("advances"))
+        budget.claim(FontLoadBudget.Kind.Glyphs, records.size().toLong())
         val advances = LinkedHashMap<Int, Float>()
-        for ((key, value) in FontJson.objectValue(document.get("advances")).entrySet()) {
+        for ((key, value) in records.entrySet()) {
             advances[FontJson.codePoint(key)] = FontJson.decimal(value)
         }
         return FontProvider.Space(Collections.unmodifiableMap(advances))
@@ -122,11 +142,22 @@ internal class FontSnapshotLoader(
             )
         val skipped = LinkedHashSet<Int>()
         document.get("skip")?.let { skip ->
-            val values = if (skip.isJsonArray) skip.asJsonArray.toList() else listOf(skip)
-            for (value in values) FontJson.string(value).codePoints().forEach { codePoint -> skipped.add(codePoint) }
+            val values = if (skip.isJsonArray) skip.asJsonArray.asIterable() else listOf(skip)
+            for (value in values) {
+                val text = FontJson.string(value)
+                budget.claim(FontLoadBudget.Kind.Glyphs, text.codePointCount(0, text.length).toLong())
+                text.codePoints().forEach { codePoint -> skipped.add(codePoint) }
+            }
         }
         val file = FontJson.identifier(FontJson.string(document.get("file")))
         return asset(font, source, ResourceId(file.namespace, "font/${file.path}")) { resource ->
+            faceChecks
+                .getOrPut(FontFaceKey(resource, settings)) {
+                    runCatching {
+                        budget.claim(FontLoadBudget.Kind.TrueTypeFaces, 1)
+                        budget.claim(FontLoadBudget.Kind.TrueTypeInputBytes, resource.size.toLong())
+                    }
+                }.getOrThrow()
             FontProvider.TrueType(resource, settings, Collections.unmodifiableSet(skipped))
         }
     }
@@ -140,6 +171,7 @@ internal class FontSnapshotLoader(
             document
                 .get("size_overrides")
                 ?.let(FontJson::array)
+                ?.also { values -> budget.claim(FontLoadBudget.Kind.Glyphs, values.size().toLong()) }
                 ?.map { value ->
                     val entry = FontJson.objectValue(value)
                     val first = FontJson.codePoint(FontJson.string(entry.get("from")))
@@ -151,7 +183,7 @@ internal class FontSnapshotLoader(
                 }.orEmpty()
         val file = FontJson.identifier(FontJson.string(document.get("hex_file")))
         return asset(font, source, file) { resource ->
-            FontProvider.Unihex(FontUnihexData.load(resource.copyBytes()), Collections.unmodifiableList(overrides))
+            FontProvider.Unihex(FontUnihexData.load(resource.copyBytes(), budget), Collections.unmodifiableList(overrides))
         }
     }
 

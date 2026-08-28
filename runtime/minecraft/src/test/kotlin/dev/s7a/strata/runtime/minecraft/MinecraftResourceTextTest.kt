@@ -37,6 +37,39 @@ import org.junit.jupiter.api.Test
  */
 internal class MinecraftResourceTextTest {
     @Test
+    fun resourceTextRejectsLineSeparatorsAcrossFontWrappersAndConcatenation() {
+        val font = ResourceId("test", "single_line")
+        val snapshot =
+            FontTestResources.snapshot(
+                FontTestResources.font(
+                    "test:single_line",
+                    """{"type":"space","advances":{"A":1,"\u200D":0,"\u2066":0,"🙂":2,"\u2069":0}}""",
+                ),
+            )
+        MinecraftFontEngine(snapshot, { FontTestBackend() }).use { engine ->
+            for (separator in listOf('\n', '\r', '\u000B', '\u000C', '\u0085', '\u2028', '\u2029')) {
+                val variants =
+                    listOf(
+                        UiText.Literal("A$separator🙂"),
+                        UiText.Literal(separator.toString()).withFont(font),
+                        UiText.concat(UiText.Literal("A"), UiText.Literal(separator.toString()).withFont(font), UiText.Literal("🙂")),
+                    )
+                for (text in variants) {
+                    for (logicalOrder in listOf(false, true)) {
+                        assertThrows(IllegalArgumentException::class.java) {
+                            MinecraftTextRun.createFonts(text, engine, font, ArgbColor(-1), null, logicalOrder)
+                        }
+                    }
+                }
+            }
+            val formatted = UiText.Literal("A\u200D\u2066🙂\u2069")
+            val run = MinecraftTextRun.createFonts(formatted, engine, font, ArgbColor(-1), null)
+            assertEquals(IntSize(3, 9), run.size)
+            assertEquals(formatted, run.text)
+        }
+    }
+
+    @Test
     fun nonFiniteAdvanceKeepsItsDrawablePrefixAndNativeWidthBeforeLayoutProjection() {
         val first = createDrawImage(IntSize(1, 1), intArrayOf(0xFFFF0000.toInt()))
         val second = createDrawImage(IntSize(1, 1), intArrayOf(0xFF0000FF.toInt()))

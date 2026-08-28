@@ -4,6 +4,7 @@ import dev.s7a.strata.geometry.IntSize
 import dev.s7a.strata.render.DrawImage
 import dev.s7a.strata.render.createDrawImage
 import dev.s7a.strata.runtime.minecraft.font.MinecraftFontGlyph
+import dev.s7a.strata.runtime.minecraft.font.MinecraftFontLoadLimits
 import dev.s7a.strata.runtime.minecraft.font.MinecraftTrueTypeFace
 import dev.s7a.strata.runtime.minecraft.font.MinecraftTrueTypeSettings
 import org.lwjgl.system.MemoryStack
@@ -22,11 +23,13 @@ import kotlin.math.abs
  *
  * @param bytes borrowed TrueType bytes copied before native use.
  * @param settings immutable native provider settings.
+ * @param limits immutable image-allocation ceilings retained until this face is closed.
  */
 @Suppress("TooGenericExceptionCaught")
 internal class FreeTypeMinecraftFontFace(
     bytes: ByteArray,
     private val settings: MinecraftTrueTypeSettings,
+    private val limits: MinecraftFontLoadLimits = MinecraftFontLoadLimits(),
 ) : MinecraftTrueTypeFace {
     private var library = 0L
     private var memory: ByteBuffer? = null
@@ -82,10 +85,25 @@ internal class FreeTypeMinecraftFontFace(
         val left = slot.bitmap_left() / settings.oversample
         val top = 7f - slot.bitmap_top() / settings.oversample
         val metrics = TrueTypeGlyphMetrics(advance, left, top, left + width / settings.oversample, top + height / settings.oversample, IntSize(width, height))
-        return metrics.rasterize {
+        return metrics.rasterize(limits) {
+            preflightRaster(opened, index, width, height)
             checkError(FreeType.FT_Load_Glyph(opened, index, FreeType.FT_LOAD_RENDER), "Render glyph")
             pixels(checkNotNull(opened.glyph()).bitmap(), width, height)
         }
+    }
+
+    private fun preflightRaster(
+        opened: FT_Face,
+        index: Int,
+        width: Int,
+        height: Int,
+    ) {
+        // The final native load may select an embedded strike that the outline measurement ignored.
+        // Inspect the same selection without allocating pixels before retaining the original render flags.
+        checkError(FreeType.FT_Load_Glyph(opened, index, FreeType.FT_LOAD_BITMAP_METRICS_ONLY), "Inspect glyph raster")
+        val prospective = checkNotNull(opened.glyph()).bitmap()
+        limits.requireImageSize(prospective.width(), prospective.rows())
+        require(prospective.width() == width && prospective.rows() == height) { "FreeType glyph dimensions changed during rasterization." }
     }
 
     private fun pixels(

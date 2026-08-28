@@ -17,6 +17,7 @@ import dev.s7a.strata.modifier.Modifier
 import dev.s7a.strata.modifier.menuBackground
 import dev.s7a.strata.modifier.size
 import dev.s7a.strata.render.DrawImage
+import dev.s7a.strata.render.PaintScope
 import dev.s7a.strata.render.createDrawImage
 import dev.s7a.strata.runtime.UiTree
 import dev.s7a.strata.runtime.headless.rasterizeHeadless
@@ -31,6 +32,7 @@ import org.junit.jupiter.api.Assertions.assertSame
 import org.junit.jupiter.api.Assertions.assertThrows
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
+import java.lang.reflect.Proxy
 import java.util.concurrent.FutureTask
 import java.util.concurrent.TimeUnit
 
@@ -39,6 +41,27 @@ import java.util.concurrent.TimeUnit
  */
 @OptIn(InternalStrataRuntimeApi::class)
 internal class MinecraftUiElementTest {
+    @Test
+    fun translatedPaintScopeSizePreservesTheDelegateThreadAndCallbackLifetime() {
+        val owner = Thread.currentThread()
+        var active = true
+        val sizeMethod = PaintScope::class.java.getDeclaredMethod("getSize")
+        val delegate =
+            Proxy.newProxyInstance(PaintScope::class.java.classLoader, arrayOf(PaintScope::class.java)) { _, method, _ ->
+                assertEquals(sizeMethod, method)
+                check(Thread.currentThread() === owner && active)
+                IntSize(100, 100)
+            } as PaintScope
+        val scope = MinecraftRectPaintScope(delegate, IntRect(2, 3, 7, 10))
+        assertEquals(IntSize(5, 7), scope.size)
+        val foreign = FutureTask { runCatching { scope.size }.exceptionOrNull() }
+        val thread = Thread(foreign)
+        thread.start()
+        assertTrue(foreign.get(5, TimeUnit.SECONDS) is IllegalStateException)
+        active = false
+        assertThrows(IllegalStateException::class.java) { scope.size }
+    }
+
     @Test
     fun menuBackgroundUsesFullSourceAndRowMajorThirtyTwoPixelTiles() {
         val host = host { evaluateComponentTree { Stack(modifier = Modifier.Empty.menuBackground()) {} } }

@@ -10,6 +10,8 @@ import dev.s7a.strata.component.ScrollState
 import dev.s7a.strata.component.SliderState
 import dev.s7a.strata.component.SlotBinding
 import dev.s7a.strata.component.TabSelectionIndicator
+import dev.s7a.strata.component.TextAreaState
+import dev.s7a.strata.component.TextAreaViewport
 import dev.s7a.strata.component.TextFieldState
 import dev.s7a.strata.component.TextStyle
 import dev.s7a.strata.element.Element
@@ -19,6 +21,8 @@ import dev.s7a.strata.geometry.IntRect
 import dev.s7a.strata.geometry.IntSize
 import dev.s7a.strata.modifier.Modifier
 import dev.s7a.strata.resource.ResourceId
+import dev.s7a.strata.text.TextLayout
+import dev.s7a.strata.text.TextWrap
 import dev.s7a.strata.text.UiText
 
 /**
@@ -128,6 +132,32 @@ public interface ComponentRuntime {
     ): Element
 
     /**
+     * Creates one profile-backed text element with an explicit line layout.
+     *
+     * The default implementation delegates [TextLayout.SingleLine] to the existing text method and rejects multiline capability.
+     * This keeps existing runtime implementations source and binary compatible without silently ignoring a requested layout.
+     *
+     * @param text unresolved text retained for drawing and semantics.
+     * @param layout immutable wrapping, line-count, overflow, and line-spacing policy.
+     * @param style profile color and shadow policy.
+     * @param modifier active behavior around the element.
+     * @param key optional stable sibling identity.
+     * @return an immutable retained-element description owned by the caller.
+     * @throws UnsupportedOperationException when multiline layout is requested from a runtime that has not implemented it.
+     */
+    public fun text(
+        text: UiText,
+        layout: TextLayout,
+        style: TextStyle,
+        modifier: Modifier,
+        key: ElementKey<*>?,
+    ): Element =
+        when (layout) {
+            TextLayout.SingleLine -> text(text, style, modifier, key)
+            is TextLayout.Multiline -> throw UnsupportedOperationException("This runtime does not support multiline text.")
+        }
+
+    /**
      * Creates one profile-backed pointer button element.
      *
      * @param label unresolved label retained for drawing and semantics.
@@ -188,6 +218,64 @@ public interface ComponentRuntime {
         modifier: Modifier,
         key: ElementKey<*>?,
     ): Element = throw UnsupportedOperationException("This runtime does not support explicit font selection.")
+
+    /**
+     * Creates one profile-backed multiline editor observing caller-owned text and scroll state.
+     *
+     * The default implementation rejects this capability so existing runtime implementations remain source and binary compatible.
+     * The retained node owns its sole text subscription and must release it on detach or failure.
+     *
+     * @param state caller-owned owner-thread canonical multiline text and vertical position.
+     * @param viewport exact outer size or font-dependent visible-row request.
+     * @param enabled whether focus, editing, and enabled appearance are active.
+     * @param style profile color and shadow policy.
+     * @param wrap presentation-only wrapping policy.
+     * @param lineSpacing non-negative additional logical pixels between adjacent lines.
+     * @param modifier active behavior around the editor.
+     * @param key optional stable sibling identity.
+     * @return an immutable retained-element description referencing but not owning [state].
+     * @throws UnsupportedOperationException when the runtime has not implemented multiline editing.
+     */
+    public fun textArea(
+        state: TextAreaState,
+        viewport: TextAreaViewport,
+        enabled: Boolean,
+        style: TextStyle,
+        wrap: TextWrap,
+        lineSpacing: Int,
+        modifier: Modifier,
+        key: ElementKey<*>?,
+    ): Element = throw UnsupportedOperationException("This runtime does not support multiline editing.")
+
+    /**
+     * Creates one multiline editor using an explicitly selected resource-pack font.
+     *
+     * The default implementation rejects this capability without opening or retaining font resources.
+     * The retained node owns its sole text subscription and must release it on detach or failure.
+     *
+     * @param state caller-owned owner-thread canonical multiline text and vertical position.
+     * @param viewport exact outer size or font-dependent visible-row request.
+     * @param enabled whether focus, editing, and enabled appearance are active.
+     * @param style profile color and shadow policy.
+     * @param font structural identifier resolved against the runtime's pinned font resources.
+     * @param wrap presentation-only wrapping policy.
+     * @param lineSpacing non-negative additional logical pixels between adjacent lines.
+     * @param modifier active behavior around the editor.
+     * @param key optional stable sibling identity.
+     * @return an immutable description referencing but not owning [state] or live font resources.
+     * @throws UnsupportedOperationException when the runtime has not implemented multiline editing with explicit font selection.
+     */
+    public fun textArea(
+        state: TextAreaState,
+        viewport: TextAreaViewport,
+        enabled: Boolean,
+        style: TextStyle,
+        font: ResourceId,
+        wrap: TextWrap,
+        lineSpacing: Int,
+        modifier: Modifier,
+        key: ElementKey<*>?,
+    ): Element = throw UnsupportedOperationException("This runtime does not support multiline editing with explicit font selection.")
 
     /**
      * Creates one profile-backed tab element with an optional selected custom indicator root.

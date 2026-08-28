@@ -61,6 +61,39 @@ internal class MinecraftTextRenderer private constructor(
         }
     }
 
+    /**
+     * Measures one logical scalar with the same provider and floating-point advance used by glyph rendering.
+     *
+     * @param font original font selection before shaping.
+     * @param codePoint validated Unicode scalar, excluding hard breaks.
+     * @return native signed advance without integer rounding.
+     * @throws IllegalStateException after close or from another thread.
+     * @throws IllegalArgumentException when a compatibility profile cannot represent the font or scalar.
+     */
+    @JvmSynthetic
+    internal fun advance(
+        font: ResourceId,
+        codePoint: Int,
+    ): Float {
+        check(Thread.currentThread() === owner && closed.not()) { "Text renderer is closed or accessed from another thread." }
+        engine?.let { return it.glyph(font, codePoint).advance }
+        require(font == defaultFont && codePoint in 0x20..0x7E) { "Compatibility fonts require default-font printable ASCII." }
+        return if (codePoint == 0x20) 4f else checkNotNull(legacyGlyphs).getValue(codePoint).advance.toFloat()
+    }
+
+    /**
+     * Applies this profile's native integer width conversion to a logical floating-point width.
+     *
+     * @param width accumulated signed native advances, including native exceptional values.
+     * @return native signed integer metric; layout separately projects it to a non-negative extent.
+     * @throws IllegalStateException after close or from another thread.
+     */
+    @JvmSynthetic
+    internal fun roundedWidth(width: Float): Int {
+        check(Thread.currentThread() === owner && closed.not()) { "Text renderer is closed or accessed from another thread." }
+        return engine?.compatibility?.roundedWidth(width) ?: width.toInt()
+    }
+
     override fun close() {
         check(Thread.currentThread() === owner) { "Text renderer is confined to its owner thread." }
         if (closed) return

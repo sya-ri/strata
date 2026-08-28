@@ -202,11 +202,13 @@ internal class MinecraftFontPackStackTest {
                 ),
             )
         val diagnostics = ArrayList<MinecraftFontDiagnostic>()
-        val resources = FontResourceStack(listOf(lower, higher), FontTestResources.compatibility, diagnostics)
+        val budget = FontLoadBudget(MinecraftFontLoadLimits())
+        val resources = FontResourceStack(listOf(lower, higher), FontTestResources.compatibility, diagnostics, budget)
+        assertEquals((lower.paths().size + higher.paths().size).toLong(), budget.limits.maxEntries - budget.remaining(FontLoadBudget.Kind.SourceEntries))
         assertArrayEquals(byteArrayOf(5), resources.selected(asset)?.copyBytes())
         assertSame(resources.selected(asset), resources.selected(asset))
         assertArrayEquals(byteArrayOf(2), resources.selected(fallback)?.copyBytes())
-        val withoutOverlays = FontResourceStack(listOf(lower, higher), FontTestResources.compatibility.copy(packOverlays = false), diagnostics)
+        val withoutOverlays = FontResourceStack(listOf(lower, higher), FontTestResources.compatibility.copy(packOverlays = false), diagnostics, FontLoadBudget(MinecraftFontLoadLimits()))
         assertArrayEquals(byteArrayOf(3), withoutOverlays.selected(asset)?.copyBytes())
         assertTrue(diagnostics.isEmpty())
     }
@@ -220,14 +222,14 @@ internal class MinecraftFontPackStackTest {
         val blocked = unlistedAssets(FontTestResources.source(filter))
         val replacement = unlistedAssets(FontTestResources.source(filter, path to byteArrayOf(2)))
         val diagnostics = ArrayList<MinecraftFontDiagnostic>()
-        assertNull(FontResourceStack(listOf(lower, blocked), FontTestResources.compatibility, diagnostics).selected(asset))
+        assertNull(FontResourceStack(listOf(lower, blocked), FontTestResources.compatibility, diagnostics, FontLoadBudget(MinecraftFontLoadLimits())).selected(asset))
         assertArrayEquals(
             byteArrayOf(2),
-            FontResourceStack(listOf(lower, replacement), FontTestResources.compatibility, diagnostics).selected(asset)?.copyBytes(),
+            FontResourceStack(listOf(lower, replacement), FontTestResources.compatibility, diagnostics, FontLoadBudget(MinecraftFontLoadLimits())).selected(asset)?.copyBytes(),
         )
         for (metadata in listOf("{", """{"overlays":{}}""")) {
             val rejected = unlistedAssets(FontTestResources.source("pack.mcmeta" to metadata.toByteArray(), path to byteArrayOf(3)))
-            val resources = FontResourceStack(listOf(lower, rejected), FontTestResources.compatibility, diagnostics)
+            val resources = FontResourceStack(listOf(lower, rejected), FontTestResources.compatibility, diagnostics, FontLoadBudget(MinecraftFontLoadLimits()))
             assertArrayEquals(byteArrayOf(1), resources.selected(asset)?.copyBytes())
         }
         assertEquals(listOf(MinecraftFontDiagnostic.Kind.PackMetadataFailure, MinecraftFontDiagnostic.Kind.PackMetadataFailure), diagnostics.map { it.kind })
@@ -247,12 +249,12 @@ internal class MinecraftFontPackStackTest {
         val unreadable = FontTestResources.failingRead(unlistedAssets(higher), path, failure)
         val diagnostics = ArrayList<MinecraftFontDiagnostic>()
         assertThrows(IllegalArgumentException::class.java) {
-            FontResourceStack(listOf(lower, disappeared), FontTestResources.compatibility, diagnostics).selected(asset)
+            FontResourceStack(listOf(lower, disappeared), FontTestResources.compatibility, diagnostics, FontLoadBudget(MinecraftFontLoadLimits())).selected(asset)
         }
         assertSame(
             failure,
             assertThrows(IOException::class.java) {
-                FontResourceStack(listOf(lower, unreadable), FontTestResources.compatibility, diagnostics).selected(asset)
+                FontResourceStack(listOf(lower, unreadable), FontTestResources.compatibility, diagnostics, FontLoadBudget(MinecraftFontLoadLimits())).selected(asset)
             },
         )
         assertTrue(diagnostics.isEmpty())

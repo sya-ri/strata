@@ -11,9 +11,22 @@ import dev.s7a.strata.resource.ResourceId
  */
 internal object FontJson {
     /**
-     * Parses UTF-8 JSON bytes, rejecting a non-object root.
+     * Parses UTF-8 JSON bytes after checking byte, token, and nesting ceilings, rejecting a non-object root.
+     *
+     * @param bytes caller-owned encoded document, never retained.
+     * @param limits immutable loading ceilings.
+     * @return a loader-owned mutable tree with an object root.
+     * @throws Throwable when syntax or a loading ceiling is invalid.
      */
-    fun document(bytes: ByteArray): JsonObject = objectValue(JsonParser.parseString(bytes.toString(Charsets.UTF_8)))
+    fun document(
+        bytes: ByteArray,
+        limits: MinecraftFontLoadLimits = MinecraftFontLoadLimits(),
+    ): JsonObject {
+        requireFontLimit(bytes.size.toLong(), limits.maxDocumentBytes.toLong(), "JSON document bytes")
+        val contents = bytes.toString(Charsets.UTF_8)
+        FontJsonBounds.check(contents, limits)
+        return objectValue(JsonParser.parseString(contents))
+    }
 
     /**
      * Requires an object value, reporting malformed external data as an argument failure.

@@ -5,6 +5,8 @@ package dev.s7a.strata.runtime.minecraft.font
  * Paths use forward slashes, including `assets/namespace/path` and optional `pack.mcmeta`.
  * A loader retains neither this source nor any returned mutable collection or array.
  * Implementations own no persistent open stream; callers must obey any source-specific thread contract.
+ * Custom sources must bound allocation inside their callbacks; loaders also validate returned sizes before copying.
+ * Implement [MinecraftBoundedFontAssetSource] to receive the current limits and stop while streaming or enumerating.
  */
 public interface MinecraftFontAssetSource {
     /**

@@ -290,6 +290,78 @@ internal class MinecraftFontSnapshotTest {
         }
     }
 
+    @Test
+    fun referenceDepthIsIndependentOfMemoizationAndDoesNotPoisonStandaloneTargets() {
+        val root = ResourceId("test", "root")
+        val middle = ResourceId("test", "middle")
+        val leaf = ResourceId("test", "leaf")
+        val other = ResourceId("test", "other")
+        val declarations =
+            linkedMapOf(
+                root to listOf(FontProviderEntry(0, FontProvider.Reference(middle), emptyMap(), "test")),
+                middle to listOf(FontProviderEntry(1, FontProvider.Reference(leaf), emptyMap(), "test")),
+                leaf to listOf(FontProviderEntry(2, FontProvider.Space(mapOf('A'.code to 3f)), emptyMap(), "test")),
+                other to listOf(FontProviderEntry(3, FontProvider.Space(mapOf('A'.code to 7f)), emptyMap(), "test")),
+            )
+        for (entries in listOf(declarations.entries.toList(), declarations.entries.reversed())) {
+            val ordered = entries.associateTo(LinkedHashMap()) { entry -> entry.key to entry.value }
+            val diagnostics = ArrayList<MinecraftFontDiagnostic>()
+            val bounded = FontGraphResolver(ordered, diagnostics, FontLoadBudget(MinecraftFontLoadLimits(maxReferenceDepth = 2))).resolve()
+            assertEquals(setOf(middle, leaf, other), bounded.keys)
+            assertEquals(root, diagnostics.single().font)
+            assertEquals(MinecraftFontDiagnostic.Kind.ProviderLoadFailure, diagnostics.single().kind)
+            val accepted = FontGraphResolver(ordered, ArrayList(), FontLoadBudget(MinecraftFontLoadLimits(maxReferenceDepth = 3))).resolve()
+            assertEquals(declarations.keys, accepted.keys)
+            assertEquals(accepted.getValue(leaf), accepted.getValue(root))
+        }
+    }
+
+    @Test
+    fun rejectedProviderAndGlyphArraysCannotResetAggregateCapacityForLaterDocuments() {
+        val source =
+            FontTestResources.source(
+                FontTestResources.font("test:a", """{"type":"space","advances":{"A":3}}"""),
+                FontTestResources.font("test:b", """{"type":"space","advances":{"A":4,"B":5}},{"type":"space","advances":{"C":6}}"""),
+                FontTestResources.font("test:c", """{"type":"space","advances":{"A":7}}"""),
+            )
+        for (limits in listOf(MinecraftFontLoadLimits(maxProviders = 2), MinecraftFontLoadLimits(maxGlyphs = 2))) {
+            val snapshot = MinecraftFontSnapshot.load(listOf(source), FontTestResources.compatibility, MinecraftFontOptions(), limits)
+            assertEquals(listOf(ResourceId("test", "b"), ResourceId("test", "c")), snapshot.diagnostics.map(MinecraftFontDiagnostic::font))
+            withEngine(snapshot) { engine ->
+                assertEquals(3f, engine.glyph(ResourceId("test", "a"), 'A'.code).advance)
+                assertEquals(6f, engine.glyph(ResourceId("test", "b"), 'A'.code).advance)
+                assertEquals(6f, engine.glyph(ResourceId("test", "c"), 'A'.code).advance)
+            }
+        }
+    }
+
+    @Test
+    fun metadataRejectedSourcesStillConsumeTheirEnumeratedEntryCapacity() {
+        val invalid = FontTestResources.source("pack.mcmeta" to "{".toByteArray(), "ignored" to byteArrayOf(), name = "invalid")
+        val valid = FontTestResources.source(FontTestResources.font("default", """{"type":"space","advances":{"A":3}}"""))
+        val limits = MinecraftFontLoadLimits(maxSourceEntries = 2, maxEntries = 3)
+        val exact = MinecraftFontSnapshot.load(listOf(invalid, valid), FontTestResources.compatibility, MinecraftFontOptions(), limits)
+        assertEquals(1, exact.diagnostics.size)
+        withEngine(exact) { engine -> assertEquals(3f, engine.glyph(FontTestResources.defaultFont, 'A'.code).advance) }
+        val over = MinecraftFontSnapshot.load(listOf(invalid, invalid, valid), FontTestResources.compatibility, MinecraftFontOptions(), limits)
+        assertEquals(3, over.diagnostics.size)
+        assertTrue(over.fontIds.isEmpty())
+    }
+
+    @Test
+    fun fontDocumentAndResolvedProviderLimitsPreserveAlreadyAcceptedIndependentBundles() {
+        val sources = listOf("a", "b", "c").map { name -> FontTestResources.source(FontTestResources.font("test:$name", """{"type":"space","advances":{"A":3}}"""), name = name) }
+        val limits = MinecraftFontLoadLimits(maxFontDocuments = 2)
+        val exact = MinecraftFontSnapshot.load(sources.take(2), FontTestResources.compatibility, MinecraftFontOptions(), limits)
+        assertTrue(exact.diagnostics.isEmpty())
+        val over = MinecraftFontSnapshot.load(sources, FontTestResources.compatibility, MinecraftFontOptions(), limits)
+        assertEquals(exact.fontIds, over.fontIds)
+        assertEquals("c", over.diagnostics.single().source)
+        val expanded = MinecraftFontSnapshot.load(sources, FontTestResources.compatibility, MinecraftFontOptions(), limits.copy(maxFontDocuments = 3, maxResolvedProviders = 2))
+        assertEquals(exact.fontIds, expanded.fontIds)
+        assertEquals(ResourceId("test", "c"), expanded.diagnostics.single().font)
+    }
+
     private fun withEngine(
         snapshot: MinecraftFontSnapshot,
         action: (MinecraftFontEngine) -> Unit,

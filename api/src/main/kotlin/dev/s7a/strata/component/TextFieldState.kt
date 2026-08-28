@@ -5,7 +5,7 @@ import dev.s7a.strata.spi.InternalStrataRuntimeApi
 /**
  * Owner-thread mutable value for one single-line text field.
  *
- * The state accepts well-formed Unicode text excluding C0 controls, DEL, and the section-sign formatting marker.
+ * The state accepts well-formed Unicode text excluding C0 controls, DEL, NEL (U+0085), line and paragraph separators (U+2028/U+2029), and the section-sign formatting marker.
  * It owns its value and permits at most one live retained observer.
  * Reads, writes, observation, and subscription release are confined to the thread that constructs the state.
  *
@@ -80,13 +80,19 @@ public class TextFieldState(
         while (offset < value.length) {
             val codePoint = value.codePointAt(offset)
             require((codePoint in 0xD800..0xDFFF).not()) { "TextField value contains an isolated surrogate." }
-            require(0x20 <= codePoint && codePoint != 0x7F && codePoint != 0xA7) {
-                "TextField value contains a control character or formatting marker."
+            require(isAcceptedCodePoint(codePoint)) {
+                "TextField value contains a control character, line separator, or formatting marker."
             }
             offset += Character.charCount(codePoint)
         }
         return value
     }
+
+    private fun isAcceptedCodePoint(codePoint: Int): Boolean =
+        when (codePoint) {
+            0x7F, 0x85, 0xA7, 0x2028, 0x2029 -> false
+            else -> 0x20 <= codePoint
+        }
 
     private fun checkThread() {
         check(Thread.currentThread() === ownerThread) { "TextField state requires its creator thread." }

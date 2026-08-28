@@ -20,7 +20,18 @@ internal class MinecraftRectPaintScope(
     private val delegate: PaintScope,
     private val destination: IntRect,
 ) : PaintScope {
-    override val size: IntSize = IntSize(destination.width, destination.height)
+    override val size: IntSize
+        get() {
+            delegate.size
+            return destination.size
+        }
+
+    override fun withClip(
+        localBounds: IntRect,
+        content: () -> Unit,
+    ) {
+        delegate.withClip(localBounds.translate(), content)
+    }
 
     override fun fillRectangle(
         localBounds: IntRect,

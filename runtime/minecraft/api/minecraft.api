@@ -109,20 +109,53 @@ public abstract interface class dev/s7a/strata/runtime/minecraft/MinecraftUiProf
 	public abstract fun tooltipFrame (Ldev/s7a/strata/render/DrawImage;)V
 }
 
-public final class dev/s7a/strata/runtime/minecraft/font/MinecraftArchiveFontAssetSource : dev/s7a/strata/runtime/minecraft/font/MinecraftFontAssetSource {
-	public fun <init> (Ljava/nio/file/Path;Ljava/lang/String;)V
-	public synthetic fun <init> (Ljava/nio/file/Path;Ljava/lang/String;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
-	public fun getName ()Ljava/lang/String;
-	public fun paths ()Ljava/util/Set;
-	public fun read (Ljava/lang/String;)[B
+public final class dev/s7a/strata/runtime/minecraft/font/FontAssetReadsKt {
+	public static final fun readMinecraftFontBytes (Ljava/io/InputStream;I)[B
 }
 
-public final class dev/s7a/strata/runtime/minecraft/font/MinecraftDirectoryFontAssetSource : dev/s7a/strata/runtime/minecraft/font/MinecraftFontAssetSource {
+public final class dev/s7a/strata/runtime/minecraft/font/MinecraftArchiveFontAssetSource : dev/s7a/strata/runtime/minecraft/font/MinecraftBoundedFontAssetSource {
 	public fun <init> (Ljava/nio/file/Path;Ljava/lang/String;)V
 	public synthetic fun <init> (Ljava/nio/file/Path;Ljava/lang/String;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public fun getName ()Ljava/lang/String;
 	public fun paths ()Ljava/util/Set;
+	public fun paths (Ldev/s7a/strata/runtime/minecraft/font/MinecraftFontLoadLimits;)Ljava/util/Set;
+	public fun paths (Ldev/s7a/strata/runtime/minecraft/font/MinecraftFontLoadLimits;Lkotlin/jvm/functions/Function0;)Ljava/util/Set;
 	public fun read (Ljava/lang/String;)[B
+	public fun read (Ljava/lang/String;Ldev/s7a/strata/runtime/minecraft/font/MinecraftFontLoadLimits;)[B
+}
+
+public abstract interface class dev/s7a/strata/runtime/minecraft/font/MinecraftBoundedFontAssetSource : dev/s7a/strata/runtime/minecraft/font/MinecraftFontAssetSource {
+	public fun paths (Ldev/s7a/strata/runtime/minecraft/font/MinecraftFontLoadLimits;)Ljava/util/Set;
+	public fun paths (Ldev/s7a/strata/runtime/minecraft/font/MinecraftFontLoadLimits;Lkotlin/jvm/functions/Function0;)Ljava/util/Set;
+	public fun read (Ljava/lang/String;Ldev/s7a/strata/runtime/minecraft/font/MinecraftFontLoadLimits;)[B
+}
+
+public final class dev/s7a/strata/runtime/minecraft/font/MinecraftBoundedFontAssetSource$DefaultImpls {
+	public static fun paths (Ldev/s7a/strata/runtime/minecraft/font/MinecraftBoundedFontAssetSource;Ldev/s7a/strata/runtime/minecraft/font/MinecraftFontLoadLimits;)Ljava/util/Set;
+	public static fun paths (Ldev/s7a/strata/runtime/minecraft/font/MinecraftBoundedFontAssetSource;Ldev/s7a/strata/runtime/minecraft/font/MinecraftFontLoadLimits;Lkotlin/jvm/functions/Function0;)Ljava/util/Set;
+	public static fun read (Ldev/s7a/strata/runtime/minecraft/font/MinecraftBoundedFontAssetSource;Ljava/lang/String;Ldev/s7a/strata/runtime/minecraft/font/MinecraftFontLoadLimits;)[B
+}
+
+public abstract interface class dev/s7a/strata/runtime/minecraft/font/MinecraftBoundedFontBackend : dev/s7a/strata/runtime/minecraft/font/MinecraftFontBackend {
+	public abstract fun decodePng ([BLdev/s7a/strata/runtime/minecraft/font/MinecraftFontLoadLimits;)Ldev/s7a/strata/render/DrawImage;
+	public fun openTrueType ([BLdev/s7a/strata/runtime/minecraft/font/MinecraftTrueTypeSettings;Ldev/s7a/strata/runtime/minecraft/font/MinecraftFontLoadLimits;)Ldev/s7a/strata/runtime/minecraft/font/MinecraftTrueTypeFace;
+}
+
+public final class dev/s7a/strata/runtime/minecraft/font/MinecraftBoundedFontBackend$DefaultImpls {
+	public static fun openTrueType (Ldev/s7a/strata/runtime/minecraft/font/MinecraftBoundedFontBackend;[BLdev/s7a/strata/runtime/minecraft/font/MinecraftTrueTypeSettings;Ldev/s7a/strata/runtime/minecraft/font/MinecraftFontLoadLimits;)Ldev/s7a/strata/runtime/minecraft/font/MinecraftTrueTypeFace;
+	public static fun visualGlyphs (Ldev/s7a/strata/runtime/minecraft/font/MinecraftBoundedFontBackend;Ljava/lang/String;Z)Ljava/util/List;
+	public static fun visualOrder (Ldev/s7a/strata/runtime/minecraft/font/MinecraftBoundedFontBackend;Ljava/lang/String;Z)Ljava/lang/String;
+}
+
+public final class dev/s7a/strata/runtime/minecraft/font/MinecraftDirectoryFontAssetSource : dev/s7a/strata/runtime/minecraft/font/MinecraftBoundedFontAssetSource {
+	public fun <init> (Ljava/nio/file/Path;Ljava/lang/String;)V
+	public synthetic fun <init> (Ljava/nio/file/Path;Ljava/lang/String;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public fun getName ()Ljava/lang/String;
+	public fun paths ()Ljava/util/Set;
+	public fun paths (Ldev/s7a/strata/runtime/minecraft/font/MinecraftFontLoadLimits;)Ljava/util/Set;
+	public fun paths (Ldev/s7a/strata/runtime/minecraft/font/MinecraftFontLoadLimits;Lkotlin/jvm/functions/Function0;)Ljava/util/Set;
+	public fun read (Ljava/lang/String;)[B
+	public fun read (Ljava/lang/String;Ldev/s7a/strata/runtime/minecraft/font/MinecraftFontLoadLimits;)[B
 }
 
 public abstract interface class dev/s7a/strata/runtime/minecraft/font/MinecraftFontAssetSource {
@@ -273,6 +306,70 @@ public final class dev/s7a/strata/runtime/minecraft/font/MinecraftFontGlyph {
 	public fun toString ()Ljava/lang/String;
 }
 
+public final class dev/s7a/strata/runtime/minecraft/font/MinecraftFontLoadLimitException : java/lang/IllegalArgumentException {
+	public fun <init> (Ljava/lang/String;)V
+}
+
+public final class dev/s7a/strata/runtime/minecraft/font/MinecraftFontLoadLimits {
+	public fun <init> ()V
+	public fun <init> (IIIIJIIJJJIIIJIIIIIJJIJ)V
+	public synthetic fun <init> (IIIIJIIJJJIIIJIIIIIJJIJILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun checkPng ([B)Z
+	public final fun component1 ()I
+	public final fun component10 ()J
+	public final fun component11 ()I
+	public final fun component12 ()I
+	public final fun component13 ()I
+	public final fun component14 ()J
+	public final fun component15 ()I
+	public final fun component16 ()I
+	public final fun component17 ()I
+	public final fun component18 ()I
+	public final fun component19 ()I
+	public final fun component2 ()I
+	public final fun component20 ()J
+	public final fun component21 ()J
+	public final fun component22 ()I
+	public final fun component23 ()J
+	public final fun component3 ()I
+	public final fun component4 ()I
+	public final fun component5 ()J
+	public final fun component6 ()I
+	public final fun component7 ()I
+	public final fun component8 ()J
+	public final fun component9 ()J
+	public final fun copy (IIIIJIIJJJIIIJIIIIIJJIJ)Ldev/s7a/strata/runtime/minecraft/font/MinecraftFontLoadLimits;
+	public static synthetic fun copy$default (Ldev/s7a/strata/runtime/minecraft/font/MinecraftFontLoadLimits;IIIIJIIJJJIIIJIIIIIJJIJILjava/lang/Object;)Ldev/s7a/strata/runtime/minecraft/font/MinecraftFontLoadLimits;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getMaxArchiveBytes ()J
+	public final fun getMaxAssetBytes ()I
+	public final fun getMaxBitmapSheetBytes ()J
+	public final fun getMaxDecompressedBytes ()J
+	public final fun getMaxDecompressedEntryBytes ()J
+	public final fun getMaxDocumentBytes ()I
+	public final fun getMaxEntries ()I
+	public final fun getMaxFontDocuments ()I
+	public final fun getMaxGlyphRowBytes ()J
+	public final fun getMaxGlyphs ()I
+	public final fun getMaxImageBytes ()J
+	public final fun getMaxImageDimension ()I
+	public final fun getMaxInputBytes ()J
+	public final fun getMaxJsonDepth ()I
+	public final fun getMaxJsonValues ()I
+	public final fun getMaxPathLength ()I
+	public final fun getMaxProviders ()I
+	public final fun getMaxReferenceDepth ()I
+	public final fun getMaxResolvedProviders ()I
+	public final fun getMaxSourceEntries ()I
+	public final fun getMaxSources ()I
+	public final fun getMaxTrueTypeFaces ()I
+	public final fun getMaxTrueTypeInputBytes ()J
+	public fun hashCode ()I
+	public final fun requireBitmapSheetSize (II)V
+	public final fun requireImageSize (II)V
+	public fun toString ()Ljava/lang/String;
+}
+
 public final class dev/s7a/strata/runtime/minecraft/font/MinecraftFontOptions {
 	public fun <init> ()V
 	public fun <init> (ZZZ)V
@@ -298,11 +395,13 @@ public final class dev/s7a/strata/runtime/minecraft/font/MinecraftFontSnapshot {
 	public final fun getOptions ()Ldev/s7a/strata/runtime/minecraft/font/MinecraftFontOptions;
 	public static final fun load (Ljava/util/List;Ldev/s7a/strata/runtime/minecraft/font/MinecraftFontCompatibility;)Ldev/s7a/strata/runtime/minecraft/font/MinecraftFontSnapshot;
 	public static final fun load (Ljava/util/List;Ldev/s7a/strata/runtime/minecraft/font/MinecraftFontCompatibility;Ldev/s7a/strata/runtime/minecraft/font/MinecraftFontOptions;)Ldev/s7a/strata/runtime/minecraft/font/MinecraftFontSnapshot;
+	public static final fun load (Ljava/util/List;Ldev/s7a/strata/runtime/minecraft/font/MinecraftFontCompatibility;Ldev/s7a/strata/runtime/minecraft/font/MinecraftFontOptions;Ldev/s7a/strata/runtime/minecraft/font/MinecraftFontLoadLimits;)Ldev/s7a/strata/runtime/minecraft/font/MinecraftFontSnapshot;
 }
 
 public final class dev/s7a/strata/runtime/minecraft/font/MinecraftFontSnapshot$Companion {
 	public final fun load (Ljava/util/List;Ldev/s7a/strata/runtime/minecraft/font/MinecraftFontCompatibility;)Ldev/s7a/strata/runtime/minecraft/font/MinecraftFontSnapshot;
 	public final fun load (Ljava/util/List;Ldev/s7a/strata/runtime/minecraft/font/MinecraftFontCompatibility;Ldev/s7a/strata/runtime/minecraft/font/MinecraftFontOptions;)Ldev/s7a/strata/runtime/minecraft/font/MinecraftFontSnapshot;
+	public final fun load (Ljava/util/List;Ldev/s7a/strata/runtime/minecraft/font/MinecraftFontCompatibility;Ldev/s7a/strata/runtime/minecraft/font/MinecraftFontOptions;Ldev/s7a/strata/runtime/minecraft/font/MinecraftFontLoadLimits;)Ldev/s7a/strata/runtime/minecraft/font/MinecraftFontSnapshot;
 	public static synthetic fun load$default (Ldev/s7a/strata/runtime/minecraft/font/MinecraftFontSnapshot$Companion;Ljava/util/List;Ldev/s7a/strata/runtime/minecraft/font/MinecraftFontCompatibility;Ldev/s7a/strata/runtime/minecraft/font/MinecraftFontOptions;ILjava/lang/Object;)Ldev/s7a/strata/runtime/minecraft/font/MinecraftFontSnapshot;
 }
 
@@ -314,19 +413,27 @@ public final class dev/s7a/strata/runtime/minecraft/font/MinecraftGlyphChannel :
 	public static fun values ()[Ldev/s7a/strata/runtime/minecraft/font/MinecraftGlyphChannel;
 }
 
-public final class dev/s7a/strata/runtime/minecraft/font/MinecraftIndexedFontAssetSource : dev/s7a/strata/runtime/minecraft/font/MinecraftFontAssetSource {
+public final class dev/s7a/strata/runtime/minecraft/font/MinecraftIndexedFontAssetSource : dev/s7a/strata/runtime/minecraft/font/MinecraftBoundedFontAssetSource {
 	public fun <init> (Ljava/nio/file/Path;Ljava/nio/file/Path;Ljava/lang/String;)V
 	public synthetic fun <init> (Ljava/nio/file/Path;Ljava/nio/file/Path;Ljava/lang/String;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public fun <init> (Ljava/nio/file/Path;Ljava/nio/file/Path;Ljava/lang/String;Ldev/s7a/strata/runtime/minecraft/font/MinecraftFontLoadLimits;)V
 	public fun getName ()Ljava/lang/String;
 	public fun paths ()Ljava/util/Set;
+	public fun paths (Ldev/s7a/strata/runtime/minecraft/font/MinecraftFontLoadLimits;)Ljava/util/Set;
+	public fun paths (Ldev/s7a/strata/runtime/minecraft/font/MinecraftFontLoadLimits;Lkotlin/jvm/functions/Function0;)Ljava/util/Set;
 	public fun read (Ljava/lang/String;)[B
+	public fun read (Ljava/lang/String;Ldev/s7a/strata/runtime/minecraft/font/MinecraftFontLoadLimits;)[B
 }
 
-public final class dev/s7a/strata/runtime/minecraft/font/MinecraftMemoryFontAssetSource : dev/s7a/strata/runtime/minecraft/font/MinecraftFontAssetSource {
+public final class dev/s7a/strata/runtime/minecraft/font/MinecraftMemoryFontAssetSource : dev/s7a/strata/runtime/minecraft/font/MinecraftBoundedFontAssetSource {
 	public fun <init> (Ljava/lang/String;Ljava/util/Map;)V
+	public fun <init> (Ljava/lang/String;Ljava/util/Map;Ldev/s7a/strata/runtime/minecraft/font/MinecraftFontLoadLimits;)V
 	public fun getName ()Ljava/lang/String;
 	public fun paths ()Ljava/util/Set;
+	public fun paths (Ldev/s7a/strata/runtime/minecraft/font/MinecraftFontLoadLimits;)Ljava/util/Set;
+	public fun paths (Ldev/s7a/strata/runtime/minecraft/font/MinecraftFontLoadLimits;Lkotlin/jvm/functions/Function0;)Ljava/util/Set;
 	public fun read (Ljava/lang/String;)[B
+	public fun read (Ljava/lang/String;Ldev/s7a/strata/runtime/minecraft/font/MinecraftFontLoadLimits;)[B
 }
 
 public abstract interface class dev/s7a/strata/runtime/minecraft/font/MinecraftTrueTypeFace : java/lang/AutoCloseable {

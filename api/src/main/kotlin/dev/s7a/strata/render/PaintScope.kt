@@ -26,6 +26,26 @@ public interface PaintScope {
     public val size: IntSize
 
     /**
+     * Clips commands emitted during [content] without changing their local geometry or sampling coordinates.
+     *
+     * Clips intersect with enclosing clips and accept empty half-open rectangles.
+     * The callback runs exactly once, synchronously on the owning paint thread, and is never retained.
+     * The clip ends even when the callback throws; an exception escaping the owning paint callback still poisons the tree.
+     * This operation does not change [size], coordinate origins, child layout, pointer hit testing, or later commands.
+     * The default implementation rejects the capability without invoking [content], preserving existing paint-scope implementations.
+     *
+     * @param localBounds local half-open clip rectangle, which may extend beyond the node's logical bounds.
+     * @param content synchronous drawing work using this same valid scope.
+     * @throws IllegalStateException when called outside the owning callback lifetime or thread.
+     * @throws UnsupportedOperationException when a custom scope has not implemented explicit paint clipping.
+     * @throws Throwable when [content] fails; its original failure propagates after restoring the enclosing clip.
+     */
+    public fun withClip(
+        localBounds: IntRect,
+        content: () -> Unit,
+    ): Unit = throw UnsupportedOperationException("This paint scope does not support explicit clipping.")
+
+    /**
      * Adds a local fill command.
      *
      * @param localBounds the rectangle to fill.

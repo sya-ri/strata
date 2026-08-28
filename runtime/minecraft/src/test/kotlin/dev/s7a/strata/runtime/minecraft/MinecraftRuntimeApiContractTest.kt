@@ -6,6 +6,7 @@ import dev.s7a.strata.component.Text
 import dev.s7a.strata.component.TextFieldState
 import dev.s7a.strata.geometry.IntSize
 import dev.s7a.strata.resource.ResourceId
+import dev.s7a.strata.runtime.minecraft.font.MinecraftFontBackendFactory
 import dev.s7a.strata.runtime.spi.RuntimeUiFrame
 import dev.s7a.strata.screen.ScreenDefinition
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
@@ -97,6 +98,17 @@ internal class MinecraftRuntimeApiContractTest {
             constructor.isAccessible = true
             val probe = constructor.newInstance() as Callable<*>
             assertEquals(10, probe.call())
+        }
+    }
+
+    @Test
+    fun compatibilityProfilesDoNotOpenAnExplicitFontBackend() {
+        val definition = ScreenDefinition("ASCII") { Text("ASCII") }
+        val backend = MinecraftFontBackendFactory { error("Compatibility glyphs must not open a font backend.") }
+
+        createMinecraftUiHost(definition, MinecraftProfileFixture.create(), backend).use { host ->
+            host.attach()
+            assertEquals(10, host.frame(IntSize(14, 9)).drawCommands.size)
         }
     }
 

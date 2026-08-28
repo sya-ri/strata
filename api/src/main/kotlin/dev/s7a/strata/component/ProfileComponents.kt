@@ -11,6 +11,8 @@ import dev.s7a.strata.modifier.Modifier
 import dev.s7a.strata.resource.ResourceId
 import dev.s7a.strata.spi.ComponentRuntimeBridge
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
+import dev.s7a.strata.text.TextLayout
+import dev.s7a.strata.text.TextWrap
 import dev.s7a.strata.text.UiText
 import dev.s7a.strata.text.withFont
 
@@ -309,8 +311,7 @@ public fun UiScope.Text(
     modifier: Modifier = Modifier.Empty,
     key: ElementKey<*>? = null,
 ) {
-    checkUsable()
-    element(ComponentRuntimeBridge.current().text(text, style, modifier, key))
+    Text(text, TextLayout.SingleLine, style, modifier, key)
 }
 
 /**
@@ -378,6 +379,89 @@ public fun UiScope.Text(
     key: ElementKey<*>? = null,
 ) {
     Text(UiText.Literal(text), font, style, modifier, key)
+}
+
+/**
+ * Emits one profile-backed text component with an explicit single-line or multiline layout.
+ *
+ * Multiline layout interprets supported line separators, wraps only at Unicode scalar boundaries, and retains the complete source for semantics.
+ * It changes presentation without editing the supplied text or adding selection and clipboard behavior.
+ *
+ * @receiver active owner-thread screen scope.
+ * @param text unresolved text retained for drawing and semantics.
+ * @param layout explicit wrapping, line-count, overflow, and line-spacing policy.
+ * @param style profile-backed color and shadow policy.
+ * @param modifier active layout and behavior applied to the text.
+ * @param key optional stable sibling identity.
+ * @throws IllegalArgumentException when the active profile cannot render [text] or the requested layout is incompatible with its constraints.
+ * @throws IllegalStateException when no runtime screen evaluation is active.
+ * @throws UnsupportedOperationException when the active runtime does not support the requested layout.
+ */
+@OptIn(InternalStrataRuntimeApi::class)
+public fun UiScope.Text(
+    text: UiText,
+    layout: TextLayout,
+    style: TextStyle = TextStyle.Normal,
+    modifier: Modifier = Modifier.Empty,
+    key: ElementKey<*>? = null,
+) {
+    checkUsable()
+    element(ComponentRuntimeBridge.current().text(text, layout, style, modifier, key))
+}
+
+/**
+ * Literal overload of [Text] with the same explicit layout, ownership, and failure contract.
+ */
+public fun UiScope.Text(
+    text: String,
+    layout: TextLayout,
+    style: TextStyle = TextStyle.Normal,
+    modifier: Modifier = Modifier.Empty,
+    key: ElementKey<*>? = null,
+) {
+    Text(UiText.Literal(text), layout, style, modifier, key)
+}
+
+/**
+ * Emits explicitly laid-out text using a selected resource-pack font.
+ *
+ * The font is retained in [UiText.WithFont]; inner font selections retain precedence.
+ * Resolution and any glyph resources belong to the active runtime, not this API description.
+ *
+ * @receiver active owner-thread screen scope.
+ * @param text unresolved text retained for drawing and semantics.
+ * @param layout explicit wrapping, line-count, overflow, and line-spacing policy.
+ * @param font structural identifier of the font definition.
+ * @param style profile-backed color and shadow policy.
+ * @param modifier active layout and behavior applied to the text.
+ * @param key optional stable sibling identity.
+ * @throws IllegalArgumentException when the active profile cannot render [text] or the requested layout is incompatible with its constraints.
+ * @throws IllegalStateException when no runtime screen evaluation is active.
+ * @throws UnsupportedOperationException when the active runtime does not support the requested layout.
+ */
+public fun UiScope.Text(
+    text: UiText,
+    layout: TextLayout,
+    font: ResourceId,
+    style: TextStyle = TextStyle.Normal,
+    modifier: Modifier = Modifier.Empty,
+    key: ElementKey<*>? = null,
+) {
+    Text(text.withFont(font), layout, style, modifier, key)
+}
+
+/**
+ * Literal overload of [Text] with the same explicit layout and font-selection contract.
+ */
+public fun UiScope.Text(
+    text: String,
+    layout: TextLayout,
+    font: ResourceId,
+    style: TextStyle = TextStyle.Normal,
+    modifier: Modifier = Modifier.Empty,
+    key: ElementKey<*>? = null,
+) {
+    Text(UiText.Literal(text), layout, font, style, modifier, key)
 }
 
 /**
@@ -483,6 +567,80 @@ public fun UiScope.TextField(
 ) {
     checkUsable()
     element(ComponentRuntimeBridge.current().textField(state, size, enabled, textStyle, font, modifier, key))
+}
+
+/**
+ * Emits one multiline editor with independently placeable vertical scrolling.
+ *
+ * Editing and deletion preserve Unicode scalars while [TextAreaState.maxLength] counts UTF-16 code units after newline normalization.
+ * Soft wrapping does not insert line breaks into [state], and delivered IME preedit remains presentation until committed input arrives.
+ * An external [Scrollbar] may share [TextAreaState.scrollState]; the editor does not add its own scrollbar.
+ * This component does not add selection, clipboard commands, or grapheme-cluster editing.
+ *
+ * @receiver active owner-thread screen scope.
+ * @param state caller-owned text and scroll position observed by one retained editor.
+ * @param viewport exact outer size or requested count of visible text rows.
+ * @param enabled whether focus and editing are accepted.
+ * @param textStyle profile-backed color and shadow policy.
+ * @param wrap presentation-only wrapping policy.
+ * @param lineSpacing non-negative additional logical pixels between adjacent lines.
+ * @param modifier active layout, input, and typed action behavior.
+ * @param key optional stable sibling identity.
+ * @throws IllegalArgumentException when [lineSpacing] is negative or the requested viewport cannot contain the editor.
+ * @throws IllegalStateException when the scope or state thread is invalid or no runtime evaluation is active.
+ * @throws UnsupportedOperationException when the active runtime does not support multiline editing.
+ */
+@OptIn(InternalStrataRuntimeApi::class)
+public fun UiScope.TextArea(
+    state: TextAreaState,
+    viewport: TextAreaViewport,
+    enabled: Boolean = true,
+    textStyle: TextStyle = TextStyle.TextField,
+    wrap: TextWrap = TextWrap.Word,
+    lineSpacing: Int = 0,
+    modifier: Modifier = Modifier.Empty,
+    key: ElementKey<*>? = null,
+) {
+    checkUsable()
+    require(0 <= lineSpacing) { "Text area line spacing must be non-negative." }
+    element(ComponentRuntimeBridge.current().textArea(state, viewport, enabled, textStyle, wrap, lineSpacing, modifier, key))
+}
+
+/**
+ * Emits one multiline editor using an explicitly selected resource-pack font.
+ *
+ * The selected font supplies layout, drawing, cursor, and scroll metrics from the runtime's pinned resource state.
+ * Text, IME, scrolling, scalar editing, and ownership follow the default-font [TextArea] contract.
+ *
+ * @receiver active owner-thread screen scope.
+ * @param state caller-owned text and scroll position observed by one retained editor.
+ * @param viewport exact outer size or requested count of visible text rows.
+ * @param font structural identifier of the font definition.
+ * @param enabled whether focus and editing are accepted.
+ * @param textStyle profile-backed color and shadow policy.
+ * @param wrap presentation-only wrapping policy.
+ * @param lineSpacing non-negative additional logical pixels between adjacent lines.
+ * @param modifier active layout, input, and typed action behavior.
+ * @param key optional stable sibling identity.
+ * @throws IllegalArgumentException when [lineSpacing] is negative or the requested viewport cannot contain the editor.
+ * @throws IllegalStateException when the scope or state thread is invalid or no runtime evaluation is active.
+ * @throws UnsupportedOperationException when the active runtime does not support multiline editing with explicit font selection.
+ */
+@OptIn(InternalStrataRuntimeApi::class)
+public fun UiScope.TextArea(
+    state: TextAreaState,
+    viewport: TextAreaViewport,
+    font: ResourceId,
+    enabled: Boolean = true,
+    textStyle: TextStyle = TextStyle.TextField,
+    wrap: TextWrap = TextWrap.Word,
+    lineSpacing: Int = 0,
+    modifier: Modifier = Modifier.Empty,
+    key: ElementKey<*>? = null,
+) {
+    checkUsable()
+    require(0 <= lineSpacing) { "Text area line spacing must be non-negative." }
+    element(ComponentRuntimeBridge.current().textArea(state, viewport, enabled, textStyle, font, wrap, lineSpacing, modifier, key))
 }
 
 /**

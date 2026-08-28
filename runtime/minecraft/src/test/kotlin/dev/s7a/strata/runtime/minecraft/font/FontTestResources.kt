@@ -2,6 +2,9 @@ package dev.s7a.strata.runtime.minecraft.font
 
 import dev.s7a.strata.resource.ResourceId
 import java.io.ByteArrayOutputStream
+import java.io.DataOutputStream
+import java.util.zip.CRC32
+import java.util.zip.DeflaterOutputStream
 import java.util.zip.ZipEntry
 import java.util.zip.ZipOutputStream
 
@@ -82,5 +85,48 @@ internal object FontTestResources {
             }
         }
         return bytes.toByteArray()
+    }
+
+    /**
+     * Encodes caller-selected PNG dimensions and filtered image bytes for allocation-boundary fixtures.
+     * Supplying inconsistent dimensions deliberately creates malformed image data without allocating those dimensions.
+     * Only small compressed output and the supplied bytes are retained; no image decoder is used.
+     */
+    fun png(
+        width: Int,
+        height: Int,
+        filtered: ByteArray,
+    ): ByteArray {
+        val compressed = ByteArrayOutputStream()
+        DeflaterOutputStream(compressed).use { output -> output.write(filtered) }
+        val header = ByteArrayOutputStream()
+        DataOutputStream(header).use { output ->
+            output.writeInt(width)
+            output.writeInt(height)
+            output.write(byteArrayOf(8, 6, 0, 0, 0))
+        }
+        val bytes = ByteArrayOutputStream()
+        DataOutputStream(bytes).use { output ->
+            output.write(byteArrayOf(-119, 80, 78, 71, 13, 10, 26, 10))
+            pngChunk(output, "IHDR", header.toByteArray())
+            pngChunk(output, "IDAT", compressed.toByteArray())
+            pngChunk(output, "IEND", byteArrayOf())
+        }
+        return bytes.toByteArray()
+    }
+
+    private fun pngChunk(
+        output: DataOutputStream,
+        type: String,
+        bytes: ByteArray,
+    ) {
+        val name = type.toByteArray(Charsets.US_ASCII)
+        val crc = CRC32()
+        crc.update(name)
+        crc.update(bytes)
+        output.writeInt(bytes.size)
+        output.write(name)
+        output.write(bytes)
+        output.writeInt(crc.value.toInt())
     }
 }

@@ -14,6 +14,20 @@ import dev.s7a.strata.spi.InternalStrataRuntimeApi
 @OptIn(InternalStrataRuntimeApi::class)
 internal sealed interface LocalDrawCommand {
     /**
+     * Begins a local scoped paint clip without modifying retained drawing geometry.
+     *
+     * @property bounds local half-open clip rectangle, including empty clips.
+     */
+    data class PushClip(
+        val bounds: IntRect,
+    ) : LocalDrawCommand
+
+    /**
+     * Restores the enclosing clip after one synchronous paint block.
+     */
+    data object PopClip : LocalDrawCommand
+
+    /**
      * Fills one local rectangle.
      *
      * @property bounds local rectangle bounds.
