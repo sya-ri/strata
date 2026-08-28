@@ -4,7 +4,8 @@
 
 ## Read the structure first
 
-- Use `Row` for horizontal siblings, `Column` for vertical siblings, and `Grid` for repeated cells.
+- Use `Row` for horizontal siblings, `FlowRow` for horizontal siblings that wrap at the available width, `Column` for vertical siblings, and `Grid` for repeated cells.
+- `FlowRow` preserves direct-child identity when the width changes. Use `horizontalSpacing` and `verticalSpacing` for gaps, `horizontalArrangement` for each row, and `FlowRowScope.align` for a child's vertical alignment within its row; use `fillMaxWidth()` when the container should fill the available width.
 - Use `Stack` only when children intentionally overlap or align against the same rectangle. It is not a generic `div` or box container.
 - Do not wrap one element in a `Row` or `Column`. Put its modifier on that element or use the consuming parent's alignment API.
 - Prefer layout spacing, arrangement, alignment, and weight over coordinate-shaped padding.

@@ -88,6 +88,7 @@ The tree shows Minecraft components in logical draw order; platform-neutral layo
 ## Components
 
 - [Row](#row)
+- [FlowRow](#flow-row)
 - [Column](#column)
 - [Stack](#stack)
 - [Grid](#grid)
@@ -171,6 +172,78 @@ The tree mirrors the complete dedicated definition, including the featured compo
 `- Row [Size(width=136, height=64), Background(color=0xFF000000), Spacing(value=4), Arrangement(value=Center), RowDefaultAlignment(alignment=Center)]
   |- Button [Size(width=60, height=20)]
   `- Button [Size(width=60, height=20)]
+```
+
+</details>
+
+<a id="flow-row"></a>
+
+## FlowRow
+
+FlowRow wraps an ordered sibling sequence at the available width, measures each child against the full parent maximums, and arranges each row independently. It serves action-button groups and option groups without encoding either domain.
+
+This 168 by 60 PNG is the complete frame of the compiled dedicated `ScreenDefinition`, with a 168 by 60 logical viewport at GUI scale 1. Headless rendering samples the assets at this physical density; the image is not upscaled from a lower-resolution raster or cropped from a larger screen. Its source, asset, viewport, and image hashes are recorded in [the headless render receipt](components/headless-render.properties).
+
+![FlowRow headless showcase](components/flow-row.png)
+
+### Compiled example
+
+```kotlin
+import dev.s7a.strata.component.Button
+import dev.s7a.strata.component.FlowRow
+import dev.s7a.strata.layout.Arrangement
+import dev.s7a.strata.layout.VerticalAlignment
+import dev.s7a.strata.modifier.Modifier
+import dev.s7a.strata.modifier.background
+import dev.s7a.strata.modifier.padding
+import dev.s7a.strata.modifier.size
+import dev.s7a.strata.render.ArgbColor
+import dev.s7a.strata.screen.ScreenDefinition
+
+/**
+ * Builds a self-contained FlowRow showcase with four differently sized Minecraft-profile buttons.
+ *
+ * @return one-shot definition whose 168 by 60 root captures two independently centered rows without synthetic row parents.
+ */
+internal fun createFlowRowShowcaseScreenDefinition(): ScreenDefinition =
+    ScreenDefinition("FlowRow showcase") {
+        FlowRow(
+            modifier =
+                Modifier.Empty
+                    .size(168, 60)
+                    .background(ArgbColor(0xFF000000.toInt()))
+                    .padding(8),
+            horizontalSpacing = 4,
+            verticalSpacing = 4,
+            horizontalArrangement = Arrangement.Center,
+            verticalAlignment = VerticalAlignment.Center,
+        ) {
+            Button("Continue", width = 72)
+            Button("Back", width = 56)
+            Button("Options", width = 92)
+            Button("Done", width = 52)
+        }
+    }
+```
+
+### Modifiers
+
+Sizing, padding, paint, semantics, focus, and input modifiers apply to the FlowRow itself. It uses its natural width unless constraints or `fillMaxWidth()` expand it; `horizontalSpacing`, `verticalSpacing`, and `horizontalArrangement` control its rows, while `FlowRowScope.align` overrides one child's vertical alignment within its row.
+
+### Parent scope
+
+`FlowRow` evaluates a callback-lifetime `FlowRowScope` and exposes only vertical alignment parent data. Wrapping preserves its direct children's retained identity and focus without synthetic Row parents. It has no weight, row-count limit, implicit clipping, or truncation; with unbounded width it produces one row.
+
+<details><summary>Component tree</summary>
+
+The tree mirrors the complete dedicated definition, including the featured component, its minimum parent layout, and the children used to demonstrate its responsibility.
+
+```text
+`- FlowRow [Size(width=168, height=60), Background(color=0xFF000000), Padding(all=8), FlowRowSpacing(horizontal=4, vertical=4), Arrangement(value=Center), FlowRowDefaultAlignment(alignment=Center)]
+  |- Button [Size(width=72, height=20)]
+  |- Button [Size(width=56, height=20)]
+  |- Button [Size(width=92, height=20)]
+  `- Button [Size(width=52, height=20)]
 ```
 
 </details>

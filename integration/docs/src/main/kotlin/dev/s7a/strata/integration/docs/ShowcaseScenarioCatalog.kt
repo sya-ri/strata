@@ -37,6 +37,27 @@ internal object ShowcaseScenarioCatalog {
                     ),
             ),
             ComponentScenario(
+                component = DocumentedComponent.FlowRow,
+                source = componentSource("MinecraftFlowRowShowcaseExample.kt", "flow-row"),
+                viewportMetadata = ShowcaseViewport(IntSize(168, 60), 1),
+                tree =
+                    tree(
+                        DocumentedComponent.FlowRow,
+                        listOf(
+                            ShowcaseTreeDetail.Size(168, 60),
+                            ShowcaseTreeDetail.Background(ArgbColor(0xFF000000.toInt())),
+                            ShowcaseTreeDetail.Padding(8),
+                            ShowcaseTreeDetail.FlowRowSpacing(horizontal = 4, vertical = 4),
+                            ShowcaseTreeDetail.Arrangement(Arrangement.Center),
+                            ShowcaseTreeDetail.FlowRowDefaultAlignment(VerticalAlignment.Center),
+                        ),
+                        tree(DocumentedComponent.Button, listOf(ShowcaseTreeDetail.Size(72, 20))),
+                        tree(DocumentedComponent.Button, listOf(ShowcaseTreeDetail.Size(56, 20))),
+                        tree(DocumentedComponent.Button, listOf(ShowcaseTreeDetail.Size(92, 20))),
+                        tree(DocumentedComponent.Button, listOf(ShowcaseTreeDetail.Size(52, 20))),
+                    ),
+            ),
+            ComponentScenario(
                 component = DocumentedComponent.Column,
                 source = componentSource("MinecraftColumnExample.kt", "column"),
                 viewportMetadata = ShowcaseViewport(IntSize(120, 64), 1),
@@ -500,11 +521,13 @@ internal object ShowcaseScenarioCatalog {
             ShowcaseTreeDetail.FillMaxSize,
             is ShowcaseTreeDetail.Background,
             is ShowcaseTreeDetail.RowAlign,
+            is ShowcaseTreeDetail.FlowRowAlign,
             is ShowcaseTreeDetail.ColumnAlign,
             is ShowcaseTreeDetail.StackAlign,
             is ShowcaseTreeDetail.GridAlign,
             is ShowcaseTreeDetail.Arrangement,
             is ShowcaseTreeDetail.RowDefaultAlignment,
+            is ShowcaseTreeDetail.FlowRowDefaultAlignment,
             is ShowcaseTreeDetail.ColumnDefaultAlignment,
             is ShowcaseTreeDetail.StackContentAlignment,
             is ShowcaseTreeDetail.GridContentAlignment,
@@ -521,7 +544,9 @@ internal object ShowcaseScenarioCatalog {
 
             is ShowcaseTreeDetail.GridColumns -> require(0 < detail.value) { "Showcase Grid columns must be positive." }
 
-            is ShowcaseTreeDetail.GridSpacing -> require(0 <= detail.horizontal && 0 <= detail.vertical) { "Showcase Grid spacing must be nonnegative." }
+            is ShowcaseTreeDetail.GridSpacing -> validateSpacing(detail.horizontal, detail.vertical, DocumentedComponent.Grid)
+
+            is ShowcaseTreeDetail.FlowRowSpacing -> validateSpacing(detail.horizontal, detail.vertical, DocumentedComponent.FlowRow)
 
             is ShowcaseTreeDetail.ScrollRate -> require(0 < detail.value) { "Showcase Scroll rates must be positive." }
 
@@ -529,5 +554,13 @@ internal object ShowcaseScenarioCatalog {
 
             is ShowcaseTreeDetail.Weight -> require(detail.weight.isFinite() && 0 < detail.weight) { "Showcase weights must be positive finite values." }
         }
+    }
+
+    private fun validateSpacing(
+        horizontal: Int,
+        vertical: Int,
+        component: DocumentedComponent,
+    ) {
+        require(0 <= horizontal && 0 <= vertical) { "Showcase ${component.apiMethodName} spacing must be nonnegative." }
     }
 }

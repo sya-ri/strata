@@ -16,6 +16,7 @@ internal object ComponentDocumentationCatalog {
     internal fun summary(component: DocumentedComponent): String =
         when (component) {
             DocumentedComponent.Row -> "Row places an ordered sibling sequence on one horizontal main axis, with typed arrangement, spacing, default vertical alignment, and direct-child overrides."
+            DocumentedComponent.FlowRow -> "FlowRow wraps an ordered sibling sequence at the available width, measures each child against the full parent maximums, and arranges each row independently. It serves action-button groups and option groups without encoding either domain."
             DocumentedComponent.Column -> "Column places an ordered sibling sequence on one vertical main axis, with typed arrangement, spacing, default horizontal alignment, and direct-child overrides."
             DocumentedComponent.Stack -> "Stack is the explicit overlay primitive: children share one content rectangle, receive two-axis alignment, and paint in declaration order. It is not a generic div-like container."
             DocumentedComponent.Grid -> "Grid assigns children row-major to a fixed column count, measures each column and row from its largest member, and supports an incomplete final row without placeholders."
@@ -49,6 +50,7 @@ internal object ComponentDocumentationCatalog {
     internal fun modifierGuidance(component: DocumentedComponent): String =
         when (component) {
             DocumentedComponent.Row -> "Sizing, padding, paint, semantics, focus, and input modifiers apply to the Row itself; `spacing` and `horizontalArrangement` express structure, while `RowScope.weight` and `RowScope.align` affect only direct children."
+            DocumentedComponent.FlowRow -> "Sizing, padding, paint, semantics, focus, and input modifiers apply to the FlowRow itself. It uses its natural width unless constraints or `fillMaxWidth()` expand it; `horizontalSpacing`, `verticalSpacing`, and `horizontalArrangement` control its rows, while `FlowRowScope.align` overrides one child's vertical alignment within its row."
             DocumentedComponent.Column -> "Sizing, padding, paint, semantics, focus, and input modifiers apply to the Column itself; `spacing` and `verticalArrangement` express structure, while `ColumnScope.weight` and `ColumnScope.align` affect only direct children."
             DocumentedComponent.Stack -> "Use Stack only when children intentionally overlap. Ordinary sizing and background modifiers belong on the Stack; `StackScope.align` positions an individual overlay child without coordinate padding."
             DocumentedComponent.Grid -> "Sizing, padding, and paint modifiers apply to the Grid. Fixed columns, independent horizontal and vertical spacing, and `GridScope.align` replace repeated Row declarations and per-cell coordinate padding."
@@ -82,6 +84,7 @@ internal object ComponentDocumentationCatalog {
     internal fun parentScopeGuidance(component: DocumentedComponent): String =
         when (component) {
             DocumentedComponent.Row -> "`Row` evaluates a callback-lifetime `RowScope`, emits children in declaration order, and exposes only vertical alignment and weight parent data to its direct children."
+            DocumentedComponent.FlowRow -> "`FlowRow` evaluates a callback-lifetime `FlowRowScope` and exposes only vertical alignment parent data. Wrapping preserves its direct children's retained identity and focus without synthetic Row parents. It has no weight, row-count limit, implicit clipping, or truncation; with unbounded width it produces one row."
             DocumentedComponent.Column -> "`Column` evaluates a callback-lifetime `ColumnScope`, emits children in declaration order, and exposes only horizontal alignment and weight parent data to its direct children."
             DocumentedComponent.Stack -> "`Stack` evaluates a callback-lifetime `StackScope`; it measures and paints overlapping direct children in declaration order and exposes two-axis alignment parent data."
             DocumentedComponent.Grid -> "`Grid` evaluates a callback-lifetime `GridScope`; it assigns direct children row-major and exposes two-axis alignment only inside each measured cell."

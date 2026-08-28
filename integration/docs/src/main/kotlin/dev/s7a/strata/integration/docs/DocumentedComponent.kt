@@ -13,6 +13,11 @@ internal enum class DocumentedComponent(
     Row("Row", "row"),
 
     /**
+     * The width-constrained wrapping horizontal-layout component identity.
+     */
+    FlowRow("FlowRow", "flow-row"),
+
+    /**
      * The vertical linear-layout component identity.
      */
     Column("Column", "column"),

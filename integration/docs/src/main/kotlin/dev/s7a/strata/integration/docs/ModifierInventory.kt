@@ -44,6 +44,11 @@ internal object ModifierInventory {
         RowAlign("RowScope", "align"),
 
         /**
+         * FlowRow child vertical alignment within its row.
+         */
+        FlowRowAlign("FlowRowScope", "align"),
+
+        /**
          * Column child weight.
          */
         ColumnWeight("ColumnScope", "weight"),

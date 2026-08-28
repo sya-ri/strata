@@ -22,10 +22,11 @@ internal object ModrinthProjectMarkdown {
 Strata is a declarative Minecraft UI library for Fabric Mods.
 Application code builds platform-neutral `ScreenDefinition` values from reusable components, structural layouts, active modifiers, typed state, and inventory bindings; a separately installed version-matched runtime renders them with Minecraft assets and behavior.
 Strata 0.1.1 adds Minecraft 1.20 support, Unicode text and resource-pack fonts, multiline `Text`, and Unicode editing with inline IME composition for `TextField` and `TextArea`.
+FlowRow wrapping is an unreleased source addition and requires a source build until a subsequent release includes it.
 
 ## Highlights
 
-- Structure screens with `Row`, `Column`, `Grid`, and intentional-overlap `Stack` instead of absolute coordinates.
+- Structure screens with `Row`, wrapping `FlowRow`, `Column`, `Grid`, and intentional-overlap `Stack` instead of absolute coordinates.
 - Compose ${DocumentedComponent.entries.size} focused standard components, including independent `ScrollArea` and `Scrollbar`, multiline `TextArea`, virtual lists, slots, tabs, images, player heads, and progress controls.
 - Display Japanese, Korean, and supported emoji with the selected Minecraft font resources, and choose custom font definitions through the public API.
 - Keep events on modifiers and mutable values in caller-owned typed state.
