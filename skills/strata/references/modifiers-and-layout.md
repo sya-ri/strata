@@ -310,6 +310,7 @@ Do not move them to a generic global helper or use them outside a direct child d
 | --- | ---: | --- |
 | `RowScope.weight` | 1 | Allocates remaining horizontal space to a direct Row child. |
 | `RowScope.align` | 1 | Overrides vertical alignment for a direct Row child. |
+| `FlowRowScope.align` | 1 | Overrides vertical alignment for a direct FlowRow child within its measured row. |
 | `ColumnScope.weight` | 1 | Allocates remaining vertical space to a direct Column child. |
 | `ColumnScope.align` | 1 | Overrides horizontal alignment for a direct Column child. |
 | `GridScope.align` | 1 | Aligns one direct child within its Grid cell. |
@@ -324,6 +325,12 @@ fun Modifier.weight(weight: Float, fill: Boolean = true): Modifier
 ```
 
 ### `RowScope.align`
+
+```kotlin
+fun Modifier.align(alignment: VerticalAlignment): Modifier
+```
+
+### `FlowRowScope.align`
 
 ```kotlin
 fun Modifier.align(alignment: VerticalAlignment): Modifier

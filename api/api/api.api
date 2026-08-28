@@ -74,6 +74,10 @@ public final class dev/s7a/strata/component/CycleButtonState {
 public final class dev/s7a/strata/component/CycleButtonState$Companion {
 }
 
+public abstract class dev/s7a/strata/component/FlowRowScope : dev/s7a/strata/component/UiScope {
+	public final fun align (Ldev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/layout/VerticalAlignment;)Ldev/s7a/strata/modifier/Modifier;
+}
+
 public abstract class dev/s7a/strata/component/GridScope : dev/s7a/strata/component/UiScope {
 	public final fun align (Ldev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/layout/Alignment;)Ldev/s7a/strata/modifier/Modifier;
 }
@@ -408,6 +412,8 @@ public final class dev/s7a/strata/component/TextStyle : java/lang/Enum {
 public final class dev/s7a/strata/component/UiComponentsKt {
 	public static final fun Column (Ldev/s7a/strata/component/UiScope;Ldev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/element/ElementKey;ILdev/s7a/strata/layout/Arrangement;Ldev/s7a/strata/layout/HorizontalAlignment;Lkotlin/jvm/functions/Function1;)V
 	public static synthetic fun Column$default (Ldev/s7a/strata/component/UiScope;Ldev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/element/ElementKey;ILdev/s7a/strata/layout/Arrangement;Ldev/s7a/strata/layout/HorizontalAlignment;Lkotlin/jvm/functions/Function1;ILjava/lang/Object;)V
+	public static final fun FlowRow (Ldev/s7a/strata/component/UiScope;Ldev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/element/ElementKey;IILdev/s7a/strata/layout/Arrangement;Ldev/s7a/strata/layout/VerticalAlignment;Lkotlin/jvm/functions/Function1;)V
+	public static synthetic fun FlowRow$default (Ldev/s7a/strata/component/UiScope;Ldev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/element/ElementKey;IILdev/s7a/strata/layout/Arrangement;Ldev/s7a/strata/layout/VerticalAlignment;Lkotlin/jvm/functions/Function1;ILjava/lang/Object;)V
 	public static final fun Grid (Ldev/s7a/strata/component/UiScope;ILdev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/element/ElementKey;IILdev/s7a/strata/layout/Alignment;Lkotlin/jvm/functions/Function1;)V
 	public static synthetic fun Grid$default (Ldev/s7a/strata/component/UiScope;ILdev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/element/ElementKey;IILdev/s7a/strata/layout/Alignment;Lkotlin/jvm/functions/Function1;ILjava/lang/Object;)V
 	public static final fun Row (Ldev/s7a/strata/component/UiScope;Ldev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/element/ElementKey;ILdev/s7a/strata/layout/Arrangement;Ldev/s7a/strata/layout/VerticalAlignment;Lkotlin/jvm/functions/Function1;)V

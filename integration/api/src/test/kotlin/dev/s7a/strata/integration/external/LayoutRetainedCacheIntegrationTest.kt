@@ -2,6 +2,7 @@
 
 package dev.s7a.strata.integration.external
 
+import dev.s7a.strata.component.FlowRow
 import dev.s7a.strata.component.Row
 import dev.s7a.strata.component.Stack
 import dev.s7a.strata.component.evaluateComponentTree
@@ -9,6 +10,7 @@ import dev.s7a.strata.element.Element
 import dev.s7a.strata.element.ElementKey
 import dev.s7a.strata.geometry.Constraints
 import dev.s7a.strata.geometry.IntRect
+import dev.s7a.strata.geometry.IntSize
 import dev.s7a.strata.layout.Alignment
 import dev.s7a.strata.layout.Arrangement
 import dev.s7a.strata.layout.VerticalAlignment
@@ -165,6 +167,138 @@ internal class LayoutRetainedCacheIntegrationTest {
         assertEquals(before, counts(probe, ExternalNodeId.Child, ExternalNodeId.Modifier))
         tree.close()
     }
+
+    @Test
+    fun equalFlowRowUpdateKeepsChildrenClean() {
+        val probe = ExternalProbe()
+        val tree = UiTree()
+        val constraints = Constraints(maxWidth = 8, maxHeight = 10)
+        tree.update(flowRowDescription(probe, horizontalSpacing = 2, verticalSpacing = 1))
+        tree.measure(constraints)
+        tree.layout()
+        tree.paint()
+        val before = counts(probe, ExternalNodeId.Child, ExternalNodeId.Modifier)
+
+        tree.update(flowRowDescription(probe, horizontalSpacing = 2, verticalSpacing = 1))
+        assertEquals(IntSize(4, 6), tree.measure(constraints))
+        tree.layout()
+        assertEquals(listOf(IntRect(0, 0, 3, 2), IntRect(0, 3, 4, 6)), paintBounds(tree))
+        assertEquals(before, counts(probe, ExternalNodeId.Child, ExternalNodeId.Modifier))
+        tree.close()
+    }
+
+    @Test
+    fun flowRowArrangementAndAlignmentUpdatesRelocateCachedChildren() {
+        val probe = ExternalProbe()
+        val tree = UiTree()
+        val constraints = Constraints.fixed(width = 10, height = 12)
+        tree.update(flowRowDescription(probe))
+        tree.measure(constraints)
+        tree.layout()
+        tree.paint()
+        val before = counts(probe, ExternalNodeId.Child, ExternalNodeId.Modifier)
+
+        tree.update(flowRowDescription(probe, arrangement = Arrangement.End))
+        tree.measure(constraints)
+        tree.layout()
+        assertEquals(listOf(IntRect(3, 0, 6, 2), IntRect(6, 0, 10, 3)), paintBounds(tree))
+        assertEquals(before, counts(probe, ExternalNodeId.Child, ExternalNodeId.Modifier))
+
+        tree.update(flowRowDescription(probe, arrangement = Arrangement.End, alignment = VerticalAlignment.Bottom))
+        tree.measure(constraints)
+        tree.layout()
+        assertEquals(listOf(IntRect(3, 1, 6, 3), IntRect(6, 0, 10, 3)), paintBounds(tree))
+        assertEquals(before, counts(probe, ExternalNodeId.Child, ExternalNodeId.Modifier))
+        tree.close()
+    }
+
+    @Test
+    fun flowRowGapUpdatesRemeasureLinesWithoutRepeatingCleanChildCallbacks() {
+        val probe = ExternalProbe()
+        val tree = UiTree()
+        val constraints = Constraints(maxWidth = 8, maxHeight = 20)
+        tree.update(flowRowDescription(probe))
+        assertEquals(IntSize(7, 3), tree.measure(constraints))
+        tree.layout()
+        tree.paint()
+        val before = counts(probe, ExternalNodeId.Child, ExternalNodeId.Modifier)
+
+        tree.update(flowRowDescription(probe, horizontalSpacing = 2))
+        assertEquals(IntSize(4, 5), tree.measure(constraints))
+        tree.layout()
+        assertEquals(listOf(IntRect(0, 0, 3, 2), IntRect(0, 2, 4, 5)), paintBounds(tree))
+        assertEquals(before, counts(probe, ExternalNodeId.Child, ExternalNodeId.Modifier))
+
+        tree.update(flowRowDescription(probe, horizontalSpacing = 2, verticalSpacing = 3))
+        assertEquals(IntSize(4, 8), tree.measure(constraints))
+        tree.layout()
+        assertEquals(listOf(IntRect(0, 0, 3, 2), IntRect(0, 5, 4, 8)), paintBounds(tree))
+        assertEquals(before, counts(probe, ExternalNodeId.Child, ExternalNodeId.Modifier))
+        tree.close()
+    }
+
+    @Test
+    fun flowRowChildAlignmentUpdateRelocatesWithoutRepeatingChildCallbacks() {
+        val probe = ExternalProbe()
+        val tree = UiTree()
+        val constraints = Constraints(maxWidth = 8, maxHeight = 10)
+        tree.update(flowRowDescription(probe, childAlignment = VerticalAlignment.Top))
+        tree.measure(constraints)
+        tree.layout()
+        tree.paint()
+        val before = counts(probe, ExternalNodeId.Child, ExternalNodeId.Modifier)
+
+        tree.update(flowRowDescription(probe, childAlignment = VerticalAlignment.Bottom))
+        tree.measure(constraints)
+        tree.layout()
+        assertEquals(listOf(IntRect(0, 1, 3, 3), IntRect(3, 0, 7, 3)), paintBounds(tree))
+        assertEquals(before, counts(probe, ExternalNodeId.Child, ExternalNodeId.Modifier))
+        tree.close()
+    }
+
+    private fun flowRowDescription(
+        probe: ExternalProbe,
+        horizontalSpacing: Int = 0,
+        verticalSpacing: Int = 0,
+        arrangement: Arrangement = Arrangement.Start,
+        alignment: VerticalAlignment = VerticalAlignment.Top,
+        childAlignment: VerticalAlignment? = null,
+    ): Element =
+        evaluateComponentTree {
+            FlowRow(
+                key = ElementKey("flow"),
+                horizontalSpacing = horizontalSpacing,
+                verticalSpacing = verticalSpacing,
+                horizontalArrangement = arrangement,
+                verticalAlignment = alignment,
+            ) {
+                val firstModifier =
+                    if (childAlignment == null) {
+                        Modifier.Empty
+                    } else {
+                        Modifier.Empty.align(childAlignment)
+                    }
+                element(
+                    ExternalElement(
+                        probe = probe,
+                        key = ElementKey("first"),
+                        width = 3,
+                        height = 2,
+                        nodeId = ExternalNodeId.Child,
+                        modifier = firstModifier,
+                    ),
+                )
+                element(
+                    ExternalElement(
+                        probe = probe,
+                        key = ElementKey("second"),
+                        width = 4,
+                        height = 3,
+                        nodeId = ExternalNodeId.Modifier,
+                    ),
+                )
+            }
+        }
 
     private fun rowDescription(
         probe: ExternalProbe,

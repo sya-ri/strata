@@ -125,7 +125,7 @@ The complete external implementation contract is documented in [Element SPI](ele
 
 The process and compatibility requirements for a new version adapter are defined in [Supporting a new Minecraft version](minecraft-versions.md).
 
-The public API currently defines `ScreenDefinition`; Row, Column, Stack, Grid, Spacer, Text, TextField, TextArea, Button, Checkbox, CycleButton, Slider, Tab, ScrollArea, Scrollbar, VirtualList, SelectionList, Image, Slot, PlayerHead, LoadingIndicator, and ProgressBar; element and modifier descriptions; typed actions and external state; typed layout parent data; retained node capabilities; frame time and overlay painting; lifecycle ownership; geometry; pointer and focused input; drawing; semantics; unresolved text; resources and bindings; and revisioned external state sources.
+The public API currently defines `ScreenDefinition`; Row, FlowRow, Column, Stack, Grid, Spacer, Text, TextField, TextArea, Button, Checkbox, CycleButton, Slider, Tab, ScrollArea, Scrollbar, VirtualList, SelectionList, Image, Slot, PlayerHead, LoadingIndicator, and ProgressBar; element and modifier descriptions; typed actions and external state; typed layout parent data; retained node capabilities; frame time and overlay painting; lifecycle ownership; geometry; pointer and focused input; drawing; semantics; unresolved text; resources and bindings; and revisioned external state sources.
 `ScreenDefinition` retains its callback without evaluating it, then transfers that callback exactly once to a runtime that implicitly builds its single component root under the installed profile.
 Each `UiScope` is confined to the invoking thread and callback lifetime, and callback failures take precedence over root-cardinality validation.
 The privileged `evaluateComponentTree` bridge exists only for runtime adapters and structural SPI tests that already own raw elements; application screens do not need or expose a standalone root builder.
@@ -148,7 +148,7 @@ Transparent sources are no-ops, opaque sources replace, and there is no interpol
 Images expose only immutable reads, fresh pixel copies, and deterministic PNG encoding.
 PNG output contains exactly one IHDR, one IDAT, and one IEND in that order, uses noninterlaced RGBA8 filter-zero rows, deterministic stored DEFLATE blocks no larger than 65,535 bytes, and checked CRC32 and Adler32 values.
 Frames retain no description, tree, or draw-command list; semantics are defensive, logical, unscaled, unclipped, and in core emission order.
-The exact built-in layout measurement, weight, arrangement, alignment, and overflow contracts are defined in [Built-in layout components](layout.md).
+The exact built-in layout measurement, wrapping, weight, arrangement, alignment, and overflow contracts are defined in [Built-in layout components](layout.md).
 The headless adapter's fixed-viewport, clipping, source-over, scaling, PNG, and immutable semantics contracts are exercised by its module tests.
 The loaded 26.2 client GameTest requires exact ARGB equality among deterministic native screens, their Fabric-adapter reconstructions, and common headless frames at each locked 320 by 180, 320 by 240, or 64 by 64 acceptance viewport.
 It covers `ConfirmScreen`, `DirectJoinServerScreen`, `ContainerScreen`, an actual `ObjectSelectionList`, `SocialInteractionsScreen`, native `PlayerFaceExtractor`, an integrated-server synchronized inventory, and custom industrial and progression Mod screens, then keeps those full-screen acceptance frames separate from the component showcase evidence.

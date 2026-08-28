@@ -10,6 +10,7 @@ import dev.s7a.strata.integration.minecraft.fabric.createCheckboxShowcaseScreenD
 import dev.s7a.strata.integration.minecraft.fabric.createColumnShowcaseScreenDefinition
 import dev.s7a.strata.integration.minecraft.fabric.createConfirmScreenDefinition
 import dev.s7a.strata.integration.minecraft.fabric.createCycleButtonShowcaseScreenDefinition
+import dev.s7a.strata.integration.minecraft.fabric.createFlowRowShowcaseScreenDefinition
 import dev.s7a.strata.integration.minecraft.fabric.createGridShowcaseScreenDefinition
 import dev.s7a.strata.integration.minecraft.fabric.createImageShowcaseScreenDefinition
 import dev.s7a.strata.integration.minecraft.fabric.createIndustrialScreenDefinition
@@ -74,6 +75,7 @@ internal object ShowcaseHeadlessRenderer {
         val definition =
             when (scenario.component) {
                 DocumentedComponent.Row -> createRowShowcaseScreenDefinition()
+                DocumentedComponent.FlowRow -> createFlowRowShowcaseScreenDefinition()
                 DocumentedComponent.Column -> createColumnShowcaseScreenDefinition()
                 DocumentedComponent.Stack -> createStackShowcaseScreenDefinition()
                 DocumentedComponent.Grid -> createGridShowcaseScreenDefinition()

@@ -2,7 +2,7 @@
 
 # Component catalog
 
-Strata exposes 22 focused standard components from `dev.s7a.strata.component`.
+Strata exposes 23 focused standard components from `dev.s7a.strata.component`.
 Every Kotlin declaration below is paired with the compiled `strata-api` overload inventory; generation fails when source and binary identities diverge or an undocumented component enters the API.
 Use the [rendered component showcase](https://gh.s7a.dev/strata/guide/components.md) for complete compiled examples and Minecraft-verified images.
 
@@ -19,6 +19,21 @@ Row places an ordered sibling sequence on one horizontal main axis, with typed a
 
 ```kotlin
 fun UiScope.Row(modifier: Modifier = Modifier.Empty, key: ElementKey<*>? = null, spacing: Int = 0, horizontalArrangement: Arrangement = Arrangement.Start, verticalAlignment: VerticalAlignment = VerticalAlignment.Top, content: RowScope.() -> Unit)
+```
+
+<a id="flow-row"></a>
+
+## FlowRow
+
+FlowRow wraps an ordered sibling sequence at the available width, measures each child against the full parent maximums, and arranges each row independently. It serves action-button groups and option groups without encoding either domain.
+
+- Compiled overloads: 1
+- Modifiers: Sizing, padding, paint, semantics, focus, and input modifiers apply to the FlowRow itself. It uses its natural width unless constraints or `fillMaxWidth()` expand it; `horizontalSpacing`, `verticalSpacing`, and `horizontalArrangement` control its rows, while `FlowRowScope.align` overrides one child's vertical alignment within its row.
+- Parent scope: `FlowRow` evaluates a callback-lifetime `FlowRowScope` and exposes only vertical alignment parent data. Wrapping preserves its direct children's retained identity and focus without synthetic Row parents. It has no weight, row-count limit, implicit clipping, or truncation; with unbounded width it produces one row.
+- [Showcase image and compiled example](https://gh.s7a.dev/strata/guide/components.md#flow-row)
+
+```kotlin
+fun UiScope.FlowRow(modifier: Modifier = Modifier.Empty, key: ElementKey<*>? = null, horizontalSpacing: Int = 0, verticalSpacing: Int = 0, horizontalArrangement: Arrangement = Arrangement.Start, verticalAlignment: VerticalAlignment = VerticalAlignment.Top, content: FlowRowScope.() -> Unit)
 ```
 
 <a id="column"></a>

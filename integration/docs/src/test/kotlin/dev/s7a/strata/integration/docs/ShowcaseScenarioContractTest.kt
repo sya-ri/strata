@@ -28,6 +28,7 @@ internal class ShowcaseScenarioContractTest {
         assertEquals(
             listOf(
                 "MinecraftRowExample.kt" to "row",
+                "MinecraftFlowRowShowcaseExample.kt" to "flow-row",
                 "MinecraftColumnExample.kt" to "column",
                 "MinecraftStackExample.kt" to "stack",
                 "MinecraftGridExample.kt" to "grid",
@@ -55,6 +56,7 @@ internal class ShowcaseScenarioContractTest {
         assertEquals(
             listOf(
                 IntSize(136, 64),
+                IntSize(168, 60),
                 IntSize(120, 64),
                 IntSize(64, 64),
                 IntSize(64, 64),
@@ -103,6 +105,21 @@ internal class ShowcaseScenarioContractTest {
                     ),
                     expectedTree(DocumentedComponent.Button, listOf(ShowcaseTreeDetail.Size(60, 20))),
                     expectedTree(DocumentedComponent.Button, listOf(ShowcaseTreeDetail.Size(60, 20))),
+                ),
+                expectedTree(
+                    DocumentedComponent.FlowRow,
+                    listOf(
+                        ShowcaseTreeDetail.Size(168, 60),
+                        black,
+                        ShowcaseTreeDetail.Padding(8),
+                        ShowcaseTreeDetail.FlowRowSpacing(horizontal = 4, vertical = 4),
+                        ShowcaseTreeDetail.Arrangement(Arrangement.Center),
+                        ShowcaseTreeDetail.FlowRowDefaultAlignment(VerticalAlignment.Center),
+                    ),
+                    expectedTree(DocumentedComponent.Button, listOf(ShowcaseTreeDetail.Size(72, 20))),
+                    expectedTree(DocumentedComponent.Button, listOf(ShowcaseTreeDetail.Size(56, 20))),
+                    expectedTree(DocumentedComponent.Button, listOf(ShowcaseTreeDetail.Size(92, 20))),
+                    expectedTree(DocumentedComponent.Button, listOf(ShowcaseTreeDetail.Size(52, 20))),
                 ),
                 expectedTree(
                     DocumentedComponent.Column,

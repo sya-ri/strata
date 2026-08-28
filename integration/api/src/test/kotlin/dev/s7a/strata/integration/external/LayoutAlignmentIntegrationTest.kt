@@ -3,6 +3,7 @@
 package dev.s7a.strata.integration.external
 
 import dev.s7a.strata.component.Column
+import dev.s7a.strata.component.FlowRow
 import dev.s7a.strata.component.Row
 import dev.s7a.strata.component.Stack
 import dev.s7a.strata.component.evaluateComponentTree
@@ -62,6 +63,30 @@ internal class LayoutAlignmentIntegrationTest {
         assertEquals(
             IntRect(7, 7, 10, 10),
             boxBounds(Alignment.TopStart, Alignment.BottomEnd),
+        )
+    }
+
+    @Test
+    fun flowRowAlignmentUsesEachLineHeightAndLeavesExtraContainerHeightBelowTheLines() {
+        val expectedFirstBounds =
+            mapOf(
+                VerticalAlignment.Top to IntRect(0, 0, 3, 3),
+                VerticalAlignment.Center to IntRect(0, 3, 3, 6),
+                VerticalAlignment.Bottom to IntRect(0, 7, 3, 10),
+            )
+        VerticalAlignment.entries.forEach { alignment ->
+            assertEquals(
+                listOf(expectedFirstBounds.getValue(alignment), IntRect(4, 0, 8, 10), IntRect(0, 12, 5, 16)),
+                flowRowBounds(alignment),
+            )
+        }
+    }
+
+    @Test
+    fun flowRowInnermostChildAlignmentOverridesTheContainerDefault() {
+        assertEquals(
+            listOf(IntRect(0, 7, 3, 10), IntRect(4, 0, 8, 10), IntRect(0, 12, 5, 16)),
+            flowRowBounds(VerticalAlignment.Center, VerticalAlignment.Bottom),
         )
     }
 
@@ -205,6 +230,33 @@ internal class LayoutAlignmentIntegrationTest {
         tree.measure(Constraints.fixed(width = 10, height = 10))
         tree.layout()
         val bounds = paintBounds(tree).single()
+        tree.close()
+        return bounds
+    }
+
+    private fun flowRowBounds(
+        alignment: VerticalAlignment,
+        childAlignment: VerticalAlignment? = null,
+    ): List<IntRect> {
+        val tree = UiTree()
+        tree.update(
+            evaluateComponentTree {
+                FlowRow(horizontalSpacing = 1, verticalSpacing = 2, verticalAlignment = alignment) {
+                    val modifier =
+                        if (childAlignment == null) {
+                            Modifier.Empty
+                        } else {
+                            Modifier.Empty.align(VerticalAlignment.Top).align(childAlignment)
+                        }
+                    element(ExternalElement(width = 3, height = 3, modifier = modifier))
+                    element(ExternalElement(width = 4, height = 10))
+                    element(ExternalElement(width = 5, height = 4))
+                }
+            },
+        )
+        tree.measure(Constraints.fixed(width = 8, height = 25))
+        tree.layout()
+        val bounds = paintBounds(tree)
         tree.close()
         return bounds
     }

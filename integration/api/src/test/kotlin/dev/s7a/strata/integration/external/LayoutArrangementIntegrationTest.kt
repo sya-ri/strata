@@ -3,6 +3,7 @@
 package dev.s7a.strata.integration.external
 
 import dev.s7a.strata.component.Column
+import dev.s7a.strata.component.FlowRow
 import dev.s7a.strata.component.Row
 import dev.s7a.strata.component.evaluateComponentTree
 import dev.s7a.strata.geometry.Constraints
@@ -60,6 +61,29 @@ internal class LayoutArrangementIntegrationTest {
 
         Arrangement.entries.forEach { arrangement ->
             assertEquals(expected.getValue(arrangement), columnBounds(arrangement, children))
+        }
+    }
+
+    @Test
+    fun flowRowArrangementsDistributeEachLinesSlackIndependently() {
+        val children =
+            listOf(
+                ChildSpec(3, 2, ExternalNodeId.Child),
+                ChildSpec(4, 3, ExternalNodeId.Modifier),
+                ChildSpec(8, 4, ExternalNodeId.Root),
+            )
+        val expected =
+            mapOf(
+                Arrangement.Start to listOf(IntRect(0, 0, 3, 2), IntRect(5, 0, 9, 3), IntRect(0, 5, 8, 9)),
+                Arrangement.Center to listOf(IntRect(3, 0, 6, 2), IntRect(8, 0, 12, 3), IntRect(4, 5, 12, 9)),
+                Arrangement.End to listOf(IntRect(7, 0, 10, 2), IntRect(12, 0, 16, 3), IntRect(8, 5, 16, 9)),
+                Arrangement.SpaceBetween to listOf(IntRect(0, 0, 3, 2), IntRect(12, 0, 16, 3), IntRect(0, 5, 8, 9)),
+                Arrangement.SpaceAround to listOf(IntRect(1, 0, 4, 2), IntRect(10, 0, 14, 3), IntRect(4, 5, 12, 9)),
+                Arrangement.SpaceEvenly to listOf(IntRect(2, 0, 5, 2), IntRect(9, 0, 13, 3), IntRect(4, 5, 12, 9)),
+            )
+
+        Arrangement.entries.forEach { arrangement ->
+            assertEquals(expected.getValue(arrangement), flowRowBounds(arrangement, children))
         }
     }
 
@@ -138,7 +162,30 @@ internal class LayoutArrangementIntegrationTest {
             assertEquals(listOf(expectedRow.getValue(arrangement)), rowBounds(arrangement, oneRowChild))
             assertEquals(emptyList<IntRect>(), columnBounds(arrangement, emptyList()))
             assertEquals(listOf(expectedColumn.getValue(arrangement)), columnBounds(arrangement, oneColumnChild))
+            assertEquals(emptyList<IntRect>(), flowRowBounds(arrangement, emptyList()))
+            assertEquals(listOf(expectedRow.getValue(arrangement)), flowRowBounds(arrangement, oneRowChild))
         }
+    }
+
+    private fun flowRowBounds(
+        arrangement: Arrangement,
+        children: List<ChildSpec>,
+    ): List<IntRect> {
+        val probe = ExternalProbe()
+        val tree = UiTree()
+        tree.update(
+            evaluateComponentTree {
+                FlowRow(horizontalArrangement = arrangement, horizontalSpacing = 2, verticalSpacing = 2) {
+                    children.forEach { child -> element(child.element(probe)) }
+                }
+            },
+        )
+        assertEquals(IntSize(16, 12), tree.measure(Constraints.fixed(width = 16, height = 12)))
+        tree.layout()
+        val bounds = paintBounds(tree)
+        assertMeasuredAndPlaced(probe, children)
+        tree.close()
+        return bounds
     }
 
     private fun rowBounds(

@@ -815,6 +815,7 @@ public class StrataMinecraftClientGameTest : FabricClientGameTest {
     ): ScreenDefinition =
         when (showcase) {
             ComponentShowcase.Row -> createRowShowcaseScreenDefinition()
+            ComponentShowcase.FlowRow -> createFlowRowShowcaseScreenDefinition()
             ComponentShowcase.Column -> createColumnShowcaseScreenDefinition()
             ComponentShowcase.Stack -> createStackShowcaseScreenDefinition()
             ComponentShowcase.Grid -> createGridShowcaseScreenDefinition()
@@ -1456,6 +1457,7 @@ public class StrataMinecraftClientGameTest : FabricClientGameTest {
         val scale: Int = 1,
     ) {
         Row("row", IntSize(136, 64)),
+        FlowRow("flow-row", IntSize(168, 60)),
         Column("column", IntSize(120, 64)),
         Stack("stack", IntSize(64, 64)),
         Grid("grid", IntSize(64, 64)),

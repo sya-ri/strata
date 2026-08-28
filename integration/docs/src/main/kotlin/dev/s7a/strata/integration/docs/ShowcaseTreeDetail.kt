@@ -68,6 +68,13 @@ internal sealed interface ShowcaseTreeDetail {
     ) : ShowcaseTreeDetail
 
     /**
+     * A FlowRow direct-child vertical alignment within its measured row.
+     */
+    data class FlowRowAlign(
+        internal val alignment: VerticalAlignment,
+    ) : ShowcaseTreeDetail
+
+    /**
      * A Column direct-child horizontal alignment.
      */
     data class ColumnAlign(
@@ -104,6 +111,14 @@ internal sealed interface ShowcaseTreeDetail {
     ) : ShowcaseTreeDetail
 
     /**
+     * Independent fixed spacing between FlowRow children and rows.
+     */
+    data class FlowRowSpacing(
+        internal val horizontal: Int,
+        internal val vertical: Int,
+    ) : ShowcaseTreeDetail
+
+    /**
      * Fixed spacing between linear children.
      */
     data class Spacing(
@@ -125,7 +140,7 @@ internal sealed interface ShowcaseTreeDetail {
     ) : ShowcaseTreeDetail
 
     /**
-     * A linear child arrangement.
+     * A linear child arrangement or FlowRow per-row horizontal arrangement.
      */
     data class Arrangement(
         internal val arrangement: LayoutArrangement,
@@ -135,6 +150,13 @@ internal sealed interface ShowcaseTreeDetail {
      * The default Row cross-axis alignment.
      */
     data class RowDefaultAlignment(
+        internal val alignment: VerticalAlignment,
+    ) : ShowcaseTreeDetail
+
+    /**
+     * The default FlowRow vertical alignment within each measured row.
+     */
+    data class FlowRowDefaultAlignment(
         internal val alignment: VerticalAlignment,
     ) : ShowcaseTreeDetail
 

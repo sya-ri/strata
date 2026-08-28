@@ -16,6 +16,9 @@ Version 0.1.1 adds cases to the sealed `UiText` and `DrawCommand` types; applica
 
 See [Text and text input](docs/text.md) and the [font acceptance scope](docs/font-resources.md#acceptance-evidence).
 
+FlowRow wrapping is an unreleased source addition and requires a source build until a subsequent release includes it.
+See [FlowRow wrapping](docs/layout.md#flowrow-wrapping) for its layout contract.
+
 ## Why Strata exists
 
 Minecraft screens often combine layout, input handling, state changes, text resolution, game assets, and version-specific calls in one class.
@@ -28,7 +31,7 @@ The design separates those concerns into layers:
 - retained nodes perform incremental measurement, layout, painting, input, semantics, and lifecycle work;
 - active modifiers provide checked padding, size constraints, background painting, unresolved semantics, typed pointer/keyboard/text/focus actions, and typed layout parent data without changing component implementations;
 - the retained core runtime emits draw commands and unresolved semantics on the JVM;
-- the platform-neutral API owns one-shot screen definitions; Row/Column/Stack/Grid layout; Text, TextField, TextArea, Button, Checkbox, CycleButton, Slider, Tab, ScrollArea, Scrollbar, VirtualList, SelectionList, Image, Slot, PlayerHead, LoadingIndicator, and ProgressBar authoring; resource identifiers; slot locators; skin sources; and active modifiers, so application source compiles without a runtime dependency;
+- the platform-neutral API owns one-shot screen definitions; Row/FlowRow/Column/Stack/Grid layout; Text, TextField, TextArea, Button, Checkbox, CycleButton, Slider, Tab, ScrollArea, Scrollbar, VirtualList, SelectionList, Image, Slot, PlayerHead, LoadingIndicator, and ProgressBar authoring; resource identifiers; slot locators; skin sources; and active modifiers, so application source compiles without a runtime dependency;
 - the common Minecraft runtime installs itself behind that API, resolves the selected profile and resources, synchronizes bound slots with the active server menu, and hosts the retained tree without exposing a context receiver to application code;
 - the latest Java release, Minecraft 26.2, has a Fabric boundary that extracts the supported native profile, resolves Mod images and current-player skin pixels through the active resource and texture paths, and adapts common frames, typed mouse/keyboard/text input, and screen lifecycle on the client thread; loaded client GameTests verify exact native/Fabric/headless ARGB parity for vanilla screens, PlayerHead, and a primitive-composed Social Interactions screen, exact Fabric/headless parity for resource-pack-backed industrial and progression Mod screens, and live server-authoritative inventory interaction.
 
@@ -198,7 +201,7 @@ npx skills add sya-ri/strata --skill strata
 ## Documentation
 
 - [Architecture](docs/architecture.md) explains the public SPI, runtime boundaries, and testing strategy.
-- [Built-in layout components](docs/layout.md) specifies Row, Column, Stack, Grid, and Spacer measurement, arrangement, alignment, and weight behavior.
+- [Built-in layout components](docs/layout.md) specifies Row, FlowRow, Column, Stack, Grid, and Spacer measurement, wrapping, arrangement, alignment, and weight behavior.
 - [Component showcase](docs/components.md) contains the compiled examples and verified Minecraft-backed images in one document.
 - [Text and text input](docs/text.md) explains Unicode values, resource-pack font selection, scalar editing, and delivered IME composition.
 - [Font resources](docs/font-resources.md) covers offline font snapshots, native backend dependencies, and ownership.

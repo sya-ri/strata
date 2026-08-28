@@ -3,6 +3,7 @@
 package dev.s7a.strata.integration.external
 
 import dev.s7a.strata.component.Column
+import dev.s7a.strata.component.FlowRow
 import dev.s7a.strata.component.Row
 import dev.s7a.strata.component.evaluateComponentTree
 import dev.s7a.strata.geometry.Constraints
@@ -35,6 +36,30 @@ internal class LayoutOverflowIntegrationTest {
         Arrangement.entries.forEach { arrangement ->
             assertColumnOverflow(arrangement)
         }
+    }
+
+    @Test
+    fun flowRowHeightOverflowDoesNotClipPaintingOrPointerInput() {
+        val probe = ExternalProbe()
+        val tree = UiTree()
+        tree.update(
+            evaluateComponentTree {
+                FlowRow(horizontalSpacing = 1, verticalSpacing = 2) {
+                    element(ExternalElement(probe = probe, width = 6, height = 3, nodeId = ExternalNodeId.Child))
+                    element(ExternalElement(probe = probe, width = 5, height = 4, nodeId = ExternalNodeId.Modifier))
+                }
+            },
+        )
+
+        assertEquals(IntSize(6, 4), tree.measure(Constraints(maxWidth = 8, maxHeight = 4)))
+        tree.layout()
+        assertEquals(listOf(IntRect(0, 0, 6, 3), IntRect(0, 5, 5, 9)), paintBounds(tree))
+        assertMeasuredAndPlacedAndPainted(probe, ExternalNodeId.Child)
+        assertMeasuredAndPlacedAndPainted(probe, ExternalNodeId.Modifier)
+        assertEquals(InputResult.Consumed, tree.dispatchPointer(PointerEvent.Press(IntOffset(1, 6), PointerButton.Primary)))
+        assertEquals(0, requireNotNull(probe.componentNodes[ExternalNodeId.Child]).presses)
+        assertEquals(1, requireNotNull(probe.componentNodes[ExternalNodeId.Modifier]).presses)
+        tree.close()
     }
 
     private fun assertRowOverflow(arrangement: Arrangement) {

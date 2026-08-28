@@ -18,7 +18,7 @@ internal class ModifierInventoryTest {
         assertEquals(50, inventory.modifiers.values.sum())
         assertEquals(ModifierDocumentationCatalog.entries.keys, inventory.modifiers.keys)
         assertEquals(ModifierInventory.ParentScopeModifier.entries.toSet(), inventory.parentScopeModifiers.keys)
-        assertEquals(6, inventory.parentScopeModifiers.values.sum())
+        assertEquals(7, inventory.parentScopeModifiers.values.sum())
         assertEquals(4, inventory.modifiers.getValue("padding"))
         assertEquals(2, inventory.modifiers.getValue("imageBackground"))
         assertEquals(2, inventory.modifiers.getValue("tooltip"))

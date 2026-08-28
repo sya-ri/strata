@@ -86,6 +86,9 @@ internal class ShowcaseMarkdownTest {
         }
         assertTrue(sections.getValue(DocumentedComponent.PlayerHead).contains("face-then-hat"))
         assertTrue(sections.getValue(DocumentedComponent.Grid).contains("incomplete final row"))
+        assertTrue(sections.getValue(DocumentedComponent.FlowRow).contains("wraps an ordered sibling sequence at the available width"))
+        assertTrue(sections.getValue(DocumentedComponent.FlowRow).contains("`FlowRowScope.align`"))
+        assertTrue(sections.getValue(DocumentedComponent.FlowRow).contains("without synthetic Row parents"))
         assertTrue(sections.getValue(DocumentedComponent.Tab).contains("external selection semantics"))
         assertTrue(sections.getValue(DocumentedComponent.Stack).contains("not a generic div-like container"))
         val button = sections.getValue(DocumentedComponent.Button)
@@ -151,7 +154,7 @@ internal class ShowcaseMarkdownTest {
     }
 
     @Test
-    fun everyTypedTreeDetailRendersWithFixedArgbAndMinecraftFeatureSelection() {
+    fun everyTypedTreeDetailRendersWithFixedArgb() {
         val tree =
             ShowcaseTree(
                 DocumentedComponent.Text,
@@ -164,14 +167,17 @@ internal class ShowcaseMarkdownTest {
                     ShowcaseTreeDetail.Background(ArgbColor(0x80ABCDEF.toInt())),
                     ShowcaseTreeDetail.Weight(1.5f, false),
                     ShowcaseTreeDetail.RowAlign(VerticalAlignment.Bottom),
+                    ShowcaseTreeDetail.FlowRowAlign(VerticalAlignment.Center),
                     ShowcaseTreeDetail.ColumnAlign(HorizontalAlignment.End),
                     ShowcaseTreeDetail.StackAlign(Alignment.BottomEnd),
                     ShowcaseTreeDetail.GridAlign(Alignment.CenterStart),
                     ShowcaseTreeDetail.GridColumns(9),
                     ShowcaseTreeDetail.GridSpacing(horizontal = 7, vertical = 8),
+                    ShowcaseTreeDetail.FlowRowSpacing(horizontal = 4, vertical = 5),
                     ShowcaseTreeDetail.Spacing(3),
                     ShowcaseTreeDetail.Arrangement(Arrangement.SpaceBetween),
                     ShowcaseTreeDetail.RowDefaultAlignment(VerticalAlignment.Center),
+                    ShowcaseTreeDetail.FlowRowDefaultAlignment(VerticalAlignment.Bottom),
                     ShowcaseTreeDetail.ColumnDefaultAlignment(HorizontalAlignment.Center),
                     ShowcaseTreeDetail.StackContentAlignment(Alignment.Center),
                     ShowcaseTreeDetail.GridContentAlignment(Alignment.TopStart),
@@ -189,20 +195,27 @@ internal class ShowcaseMarkdownTest {
             "Background(color=0x80ABCDEF)",
             "Weight(weight=1.5, fill=false)",
             "RowAlign(alignment=Bottom)",
+            "FlowRowAlign(alignment=Center)",
             "ColumnAlign(alignment=End)",
             "StackAlign(alignment=BottomEnd)",
             "GridAlign(alignment=CenterStart)",
             "GridColumns(value=9)",
             "GridSpacing(horizontal=7, vertical=8)",
+            "FlowRowSpacing(horizontal=4, vertical=5)",
             "Spacing(value=3)",
             "Arrangement(value=SpaceBetween)",
             "RowDefaultAlignment(alignment=Center)",
+            "FlowRowDefaultAlignment(alignment=Bottom)",
             "ColumnDefaultAlignment(alignment=Center)",
             "StackContentAlignment(alignment=Center)",
             "GridContentAlignment(alignment=TopStart)",
             "ScrollRate(value=9)",
             "SlotHighlightable(value=true)",
         ).forEach { detail -> assertTrue(rendered.contains(detail)) }
+    }
+
+    @Test
+    fun buttonSectionRetainsProfileAndModifierGuidance() {
         val buttonScenario = ShowcaseScenarioCatalog.components.single { scenario -> scenario.component == DocumentedComponent.Button }
         val buttonPage = ShowcaseMarkdown.section(buttonScenario, "import sample\ninternal fun button() {}")
         assertTrue(buttonPage.contains("## Button"))

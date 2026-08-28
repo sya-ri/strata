@@ -108,6 +108,7 @@ Install exactly one matching Strata Fabric runtime as a separate client Mod toge
 Strata 0.1.1 adds Minecraft 1.20 support, Unicode text and resource-pack fonts, multiline `Text`, and Unicode editing with inline IME composition for `TextField` and `TextArea`.
 This release adds sealed `UiText.WithFont` and `DrawCommand.SampledImage` variants; custom exhaustive visitors need updating, including previously compiled visitors that receive a new case.
 See [Source compatibility](https://gh.s7a.dev/strata/guide/text.md#source-compatibility) before upgrading custom text visitors or rendering backends.
+FlowRow wrapping is an unreleased source addition and requires a source build until a subsequent release includes it.
 
 ```kotlin
 dependencies {
@@ -161,7 +162,8 @@ Select one exact runtime matching the active game version; multiple versioned ru
 
 ## Read the structure first
 
-- Use `Row` for horizontal siblings, `Column` for vertical siblings, and `Grid` for repeated cells.
+- Use `Row` for horizontal siblings, `FlowRow` for horizontal siblings that wrap at the available width, `Column` for vertical siblings, and `Grid` for repeated cells.
+- `FlowRow` preserves direct-child identity when the width changes. Use `horizontalSpacing` and `verticalSpacing` for gaps, `horizontalArrangement` for each row, and `FlowRowScope.align` for a child's vertical alignment within its row; use `fillMaxWidth()` when the container should fill the available width.
 - Use `Stack` only when children intentionally overlap or align against the same rectangle. It is not a generic `div` or box container.
 - Do not wrap one element in a `Row` or `Column`. Put its modifier on that element or use the consuming parent's alignment API.
 - Prefer layout spacing, arrangement, alignment, and weight over coordinate-shaped padding.
@@ -293,6 +295,7 @@ ${compiledFingerprints.joinToString("\n")}
             when (entry) {
                 ModifierInventory.ParentScopeModifier.RowWeight -> "Allocates remaining horizontal space to a direct Row child."
                 ModifierInventory.ParentScopeModifier.RowAlign -> "Overrides vertical alignment for a direct Row child."
+                ModifierInventory.ParentScopeModifier.FlowRowAlign -> "Overrides vertical alignment for a direct FlowRow child within its measured row."
                 ModifierInventory.ParentScopeModifier.ColumnWeight -> "Allocates remaining vertical space to a direct Column child."
                 ModifierInventory.ParentScopeModifier.ColumnAlign -> "Overrides horizontal alignment for a direct Column child."
                 ModifierInventory.ParentScopeModifier.GridAlign -> "Aligns one direct child within its Grid cell."
