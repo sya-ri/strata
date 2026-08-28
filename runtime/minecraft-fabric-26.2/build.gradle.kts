@@ -31,6 +31,7 @@ extensions.configure<DetektExtension> {
         sharedTests.resolve("kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftFontContractTest.kt"),
         sharedTests.resolve("kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftInputMappingTest.kt"),
         sharedTests.resolve("kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftJvmSurfaceTest.kt"),
+        sharedTests.resolve("kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftSampledBoundsTest.kt"),
         sharedTests.resolve("kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftTextMappingTest.kt"),
     )
 }

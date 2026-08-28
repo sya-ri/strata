@@ -24,6 +24,7 @@ extensions.configure<DetektExtension> {
         sharedRuntime.resolve("kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftProfileDecorations.kt"),
         sharedRuntime.resolve("kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftProfileFactory.kt"),
         sharedRuntime.resolve("kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftProfileWidgets.kt"),
+        sharedRuntime.resolve("kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftSampledBounds.kt"),
         sharedRuntime.resolve("kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftTextMapping.kt"),
     )
 }

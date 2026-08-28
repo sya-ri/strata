@@ -151,6 +151,7 @@ internal class FabricMinecraftJvmSurfaceTest {
                 "$packageName.FabricMinecraftProfileWidgetsKt" to emptySet(),
                 "$packageName.FabricMinecraftProfileDecorationsKt" to emptySet(),
                 "$packageName.FabricMinecraftProfileLifecycleKt" to emptySet(),
+                "$packageName.FabricMinecraftSampledBoundsKt" to emptySet(),
                 "$packageName.mixin.FabricMinecraftResourceReloadMixin" to emptySet(),
                 "$packageName.FabricMinecraftWidgetImages" to emptySet(),
                 assetFacade to setOf("loadMinecraftUiImage", "loadCurrentMinecraftPlayerSkin"),

@@ -13,8 +13,6 @@ import net.minecraft.client.Minecraft
 import net.minecraft.client.gui.GuiGraphics
 import net.minecraft.client.renderer.texture.DynamicTexture
 import java.util.concurrent.atomic.AtomicLong
-import kotlin.math.ceil
-import kotlin.math.floor
 
 /**
  * Owns prepared display layers, native frame textures, and render-work counters for one Fabric screen.
@@ -288,9 +286,11 @@ internal class FabricMinecraftFramePresenter(
 
                 is DrawCommand.SampledImage -> {
                     portable.add(command)
-                    val destination = command.destination
-                    val bounds = IntRect(floor(destination.left).toInt(), floor(destination.top).toInt(), ceil(destination.right).toInt(), ceil(destination.bottom).toInt())
-                    portableBounds = includeVisibleBounds(portableBounds, bounds, activeClips, viewportBounds)
+                    val clip = activeClips.fold(viewportBounds, ::intersection)
+                    val bounds = command.destination.enclosingFabricViewportBounds(clip)
+                    if (bounds != null) {
+                        portableBounds = includeVisibleBounds(portableBounds, bounds, activeClips, viewportBounds)
+                    }
                 }
 
                 is DrawCommand.PushClip -> {
