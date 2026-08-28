@@ -76,13 +76,90 @@ Loading indicators and delayed tooltips additionally verify that timestamps insi
 
 ### Bounded raster texture cache
 
-The Fabric presenter reuses the complete partitioned frame when the immutable draw-command list has referential identity and the logical viewport is equal.
-When a mixed portable-and-platform display list changes, a portable layer may also reuse its texture at the same portable-layer index when its immutable command values and viewport are equal; platform layers are still extracted natively every time.
+The Fabric presenter reuses the complete partitioned frame when the immutable draw-command list has referential identity, the logical viewport is equal, and the actual GUI scale is unchanged.
+When a mixed portable-and-platform display list changes, a portable layer may also reuse its texture at the same portable-layer index when its immutable command values, viewport, and GUI scale are equal; platform layers are still extracted natively every time.
+Sampled glyph geometry is rasterized at physical resolution, so a scale change requires a new raster and texture even when the logical display list is identical.
 It retains only the currently prepared frame layers and their corresponding dynamic textures rather than accumulating historical frames.
 Replacing a prepared frame must trim surplus textures, while detachment, a zero-sized viewport, and terminal screen cleanup must release every retained texture and prepared-layer reference.
 Pointer dispatch and inventory or skin refresh coalescing must still invalidate the frame path when observable presentation state changes.
 Loaded-client GameTests read render-work counters from the real Fabric screen and require an unchanged display list to perform no repartition, portable rasterization, or texture upload.
 They also require equivalent replacement portable layers to reuse their raster texture, and inspect the detached presenter to require empty texture and layer collections and null prepared-frame references.
+
+### Resource-font caches
+
+Each common host owns one font engine for its immutable profile snapshot and captured font options.
+Decoded bitmap sheets use detached resource identity; scanned cells use that resource, grid dimensions, and cell index, retaining only the cell's current height/ascent result.
+TrueType faces and glyphs use resource identity and exact size, oversampling, and shift settings, with provider-specific skips checked before lookup.
+Other glyph results use snapshot-local provider identity and Unicode scalar keys.
+The access-ordered raster cache has a combined default limit of 4,096 entries and 16 MiB of retained pixel payload; oversized values bypass retention, and a separate default 8 MiB input ceiling bounds bitmap sheets in every cache mode.
+Native faces use an independent access-ordered cache limited to 16 entries and combined encoded input no larger than the snapshot's `maxAssetBytes`, 32 MiB by default.
+Eviction removes accounting and closes the previous face before opening its replacement.
+Snapshot loading separately bounds distinct TrueType resource-and-settings descriptors and their weighted encoded bytes, defaulting to 256 descriptors and 128 MiB; exact duplicate declarations and different skip lists share that descriptor charge.
+Successful preflight descriptors and detached initialization failures remain bounded by the snapshot independently of raster and face eviction, preventing repeated preflight decoding or opening of duplicate declarations.
+If a custom face returns an image exceeding the captured limits, the engine closes and permanently disables that face key; a detached typed failure remains even with raster caching disabled, after churn, or for another scalar.
+Provider and font initialization status is bounded by the snapshot's provider graph; unknown font identifiers and historical text strings are never retained as cache entries.
+
+Changing resource packs, provider filters, or language direction requires a new snapshot and host; existing host engines never mutate their snapshot and never share native faces.
+All host-cache and native access is confined to the host's owner thread.
+Terminal cleanup clears cache and snapshot references and closes all faces and the backend, including when an initialization, rasterization, or cleanup step fails.
+Detachment preserves common host ownership for reattachment but releases Fabric presentation textures independently.
+
+Tests compare enabled and disabled raster caches, assert entry and payload bounds, churn face keys and weighted input limits, exercise duplicate-provider preflight and permanent poisoned-face rejection, isolate engines sharing one snapshot, and verify terminal counters and backend release after failures.
+The raster byte bound covers cache-owned pixels; the face byte bound covers retained encoded native inputs, not arbitrary native bookkeeping or total heap usage.
+Neither includes glyphs in current caller-owned runs or immutable source-file bytes in a shared snapshot.
+Native font acceptance separately compares standard Minecraft rendering at each tested GUI scale; sharing the portable rasterizer cannot by itself establish native equality.
+
+### Visible glyph submission
+
+A current text run retains its immutable positioned glyphs and at most three additional float extrema for horizontal candidate selection.
+It does not retain past clip rectangles, scroll positions, runs, or lookup callbacks.
+When all advances are positive and finite and cursor positions increase strictly, painting uses binary searches over the existing positions before testing the actual foreground and shadow quads against the local viewport.
+The candidate range includes the run's largest horizontal bearing and shadow overhang; unusually wide overhang can enlarge that range.
+Zero, negative, non-finite, or rounded-to-equal advances, and non-finite horizontal metrics, conservatively fall back to scanning the current run.
+
+Sampled candidates preserve the painter's float addition order: origin, positioned cursor, bearing, then shadow offset.
+They do not pre-add bearings to large cursor values, round the integer clip to float, or crop source and destination rectangles before sampling.
+Legacy bitmap bounds use exact long or double arithmetic, including positions above float's exact integer range.
+Separate raw vertical extrema ignore horizontal collapse and prepared-text rejection at origin zero.
+Current-line aggregates evaluate monotone top and bottom bounds at each candidate's actual origin before per-line vertical intersection, preserving large-coordinate float rounding without fixed padding or historical range storage.
+An overflowing upper envelope stays infinite and conservative; it never excludes a potentially visible line.
+The caller still owns the actual clip, and the selected native shadow order remains unchanged.
+Prepared-text bounds return early only after both accumulated raw axes are strictly ordered; this cannot turn a later native rejection into acceptance and preserves the existing NaN comparison behavior.
+
+Tests require bounded candidate visits and command counts at the beginning, middle, and end of a 32,767-glyph forward run, compare clipped full painting with visible painting pixel-for-pixel at scales one through three, and cover signed advances, overhang, shadows, large coordinates, empty clips, and unchanged retention across many viewport replacements.
+The returned diagnostic count includes prepared-bounds visits and a second candidate visit when a target draws all shadows before the foreground pass; it excludes the logarithmic binary-search comparisons.
+Run construction and exceptional signed-metric fallback remain proportional to the current text; this is a submission bound, not an incremental text-editing or universal constant-time guarantee.
+
+### Fabric profile reuse between screen opens
+
+The installed Fabric presenter retains at most one complete immutable UI profile for ordinary `ScreenDefinition.open()` calls.
+Its key is the active resource-manager identity, the current native resource generation, the complete compiler-selected font compatibility value, and all captured font-selection and language-direction options.
+GUI scale is deliberately absent: profile pixels, resource bytes, and logical font data do not depend on presentation density; the separate prepared-layer cache includes density when rasterizing.
+The public `extractMinecraftUiProfile()` factory still reads and returns a fresh snapshot on every explicit call.
+
+The cache stores only derived immutable GUI pixels and one detached font snapshot.
+Every host still owns its own font engine, raster caches, and native faces.
+Replacing the key drops the previous cache entry before extraction, and a failed extraction publishes nothing.
+One atomic state captures a monotonic generation counter, the optional current entry, and the terminal flag.
+Both the initial claim and completed publication compare that captured state, so invalidation while empty also rejects work which has not claimed its pending entry yet.
+A separate loading flag remains set until the active extraction unwinds, including after invalidation, and rejects reentry into a canceled load.
+The internal extraction factory receives the exact captured manager, capabilities, and options from the key rather than reading mutable global inputs again.
+It never retains the extraction callback, old resource generations, or historical option selections.
+
+Required client Mixins invalidate the matching manager at the start of native `createReload` and `close` on every supported target.
+The exact descriptors are compiled and remapped with that target; unrelated integrated-server resource managers cannot invalidate the client entry.
+Reload listeners cannot provide these guarantees: native reload closes old packs and constructs its next resource view before dispatching listener preparation, so a failure there has no prepare/apply callback; native close does not notify those listeners either.
+Invalidation is thread-safe and drops references only, without accessing native font state or disposing profiles still owned by open hosts.
+Repeated reloads replace one empty generation token and retain no manager, profile, callback, or historical generation collection.
+Closing the actual client manager permanently marks the cache terminal and prevents later normal opens; closing an unrelated manager cannot terminate it.
+Open hosts continue with their immutable old snapshot until they close, after which the adapter does not retain it.
+
+Pure tests require single extraction for equal keys, exact key forwarding to extraction, independent option and capability invalidation, identity-based manager isolation, failure retry, reentrancy rejection even after canceled loading, cross-thread fencing before the pending claim and during extraction, terminal rejection, and one-entry or empty retention during reload storms.
+The loaded-client probe exercises real public screen opens and a normal Minecraft resource reload, checks unchanged old-host pixels, forces an owned native manager to fail before any listener prepares, and verifies that closing an owned manager evicts its cached value without terminating the active client's cache.
+Pure tests cover permanent active-client shutdown, while native lifecycle probes never destroy the game's active resource manager.
+Published-artifact checks require the exact client-only Mixin configuration once across outer and nested jars, and loaded probes independently require one effective classpath configuration, a compatible Mixin runtime, and a matching startup log without Mixin errors.
+Its `profile-cache.properties` receipt records fresh extraction and warm screen-open timings without a wall-clock pass threshold, the unique primitive-array payload of a snapshot, and actual weak-reference collection of retired snapshots while the closed host object remains reachable.
+Primitive-array bytes exclude object headers, temporary decoding allocations, and host-owned native memory; they are not a complete heap-size estimate.
 
 ### Virtual-list retention
 

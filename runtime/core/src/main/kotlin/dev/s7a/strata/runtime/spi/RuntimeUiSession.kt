@@ -24,6 +24,17 @@ import dev.s7a.strata.spi.InternalStrataRuntimeApi
 @InternalStrataRuntimeApi
 public sealed interface RuntimeUiSession : AutoCloseable {
     /**
+     * Detached identity of the current editable focus interval in the most recently committed attached tree.
+     *
+     * The value is null before a successful frame, while detached, or without an accepting target that requires text input.
+     * Its identity remains stable across unchanged frames and input; changing the editable owner or target identities, losing focus, or detaching ends the interval.
+     * Native adapters synchronize input-method focus after a frame or input operation returns, because native focus notification may synchronously dispatch preedit.
+     *
+     * @throws IllegalStateException when read from another thread, reentrantly, or after terminal failure or close.
+     */
+    public val textInputFocus: RuntimeTextInputFocus?
+
+    /**
      * Attaches this session on its owner thread.
      *
      * A created or detached session becomes attached, and the first attach evaluates and reconciles the content once.
@@ -79,6 +90,9 @@ public sealed interface RuntimeUiSession : AutoCloseable {
      * Dispatches one pointer event synchronously through the most recently committed attached tree on the owner thread.
      *
      * Input before the first successful frame, or after a newly reconciled frame has not committed, returns [InputResult.Ignored].
+     * Between events, dirty retained measurement and layout synchronize against the last successful frame's constraints.
+     * Dirty measurement refreshes retained dynamic children, but does not apply queued sources, rebuild session content, notify time, paint, collect semantics, or commit a new frame.
+     * Geometry failures prevent event delivery and use the same terminal failure boundary as dispatch.
      * A pointer pipeline failure poisons the session and performs cleanup before rethrowing the exact primary failure.
      *
      * @param event the pointer event in session coordinates.
@@ -90,6 +104,7 @@ public sealed interface RuntimeUiSession : AutoCloseable {
 
     /**
      * Dispatches one keyboard event synchronously to the focused component in the most recently committed frame.
+     * Pending geometry uses the same pre-input synchronization as [dispatchPointer].
      *
      * @param event immutable keyboard event.
      * @return focused retained result, or [InputResult.Ignored] without a committed frame or focus target.
@@ -100,6 +115,7 @@ public sealed interface RuntimeUiSession : AutoCloseable {
 
     /**
      * Dispatches one committed-character or preedit event synchronously to the focused component in the most recently committed frame.
+     * Pending geometry uses the same pre-input synchronization as [dispatchPointer].
      *
      * @param event immutable text-input event.
      * @return focused retained result, or [InputResult.Ignored] without a committed frame or focus target.

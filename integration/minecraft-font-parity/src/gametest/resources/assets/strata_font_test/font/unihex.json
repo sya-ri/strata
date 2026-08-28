@@ -1,0 +1,22 @@
+{
+  "providers": [
+    {
+      "type": "unihex",
+      "hex_file": "strata_font_test:font/shapes.zip",
+      "size_overrides": [
+        {
+          "from": "한",
+          "to": "핝",
+          "left": 2,
+          "right": 11
+        }
+      ]
+    },
+    {
+      "type": "space",
+      "advances": {
+        " ": 3.25
+      }
+    }
+  ]
+}

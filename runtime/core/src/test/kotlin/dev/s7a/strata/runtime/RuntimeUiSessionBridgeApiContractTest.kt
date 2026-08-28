@@ -6,6 +6,7 @@ import dev.s7a.strata.input.InputResult
 import dev.s7a.strata.input.KeyboardEvent
 import dev.s7a.strata.input.PointerEvent
 import dev.s7a.strata.input.TextInputEvent
+import dev.s7a.strata.runtime.spi.RuntimeTextInputFocus
 import dev.s7a.strata.runtime.spi.RuntimeUiFrame
 import dev.s7a.strata.runtime.spi.RuntimeUiSession
 import dev.s7a.strata.runtime.spi.createRuntimeUiSession
@@ -31,7 +32,7 @@ internal class RuntimeUiSessionBridgeApiContractTest {
         )
         assertInterfaceSurface(
             RuntimeUiSession::class.java,
-            listOf("attach", "detach", "frame", "frame", "dispatchPointer", "dispatchKeyboard", "dispatchTextInput", "close"),
+            listOf("attach", "detach", "frame", "frame", "dispatchPointer", "dispatchKeyboard", "dispatchTextInput", "getTextInputFocus", "close"),
         )
     }
 
@@ -49,6 +50,14 @@ internal class RuntimeUiSessionBridgeApiContractTest {
                 },
             )
         }
+    }
+
+    @Test
+    fun textInputFocusTokensExposeNoApplicationReferencesOrPublicConstruction() {
+        val token = RuntimeTextInputFocus::class.java
+        assertTrue(Modifier.isFinal(token.modifiers))
+        assertTrue(token.declaredFields.all { Modifier.isStatic(it.modifiers) })
+        assertTrue(token.declaredConstructors.none { Modifier.isPublic(it.modifiers) && it.isSynthetic.not() })
     }
 
     @Test
@@ -122,6 +131,9 @@ internal class RuntimeUiSessionBridgeApiContractTest {
             val close = byName.getValue("close")
             val detach = byName.getValue("detach")
             val frames = methods.groupBy { method -> method.name }.getValue("frame")
+            val textInputFocus = byName.getValue("getTextInputFocus")
+            assertEquals(RuntimeTextInputFocus::class.java, textInputFocus.returnType)
+            assertEquals(0, textInputFocus.parameterCount)
             assertEquals(Void.TYPE, attach.returnType)
             assertEquals(0, attach.parameterCount)
             assertEquals(Void.TYPE, detach.returnType)

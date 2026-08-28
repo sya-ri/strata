@@ -1,11 +1,11 @@
 package dev.s7a.strata.integration.docs
 
 /**
- * Produces deterministic Markdown sections for verified complete-screen use cases.
+ * Produces deterministic Markdown that distinguishes fresh CPU renders from explicit native inventory evidence.
  */
 internal object ShowcaseScreenMarkdown {
     /**
-     * Builds one complete-screen section containing its verified image, compiled source, evidence class, and primitive-boundary guidance.
+     * Builds one complete-screen section containing its image, compiled source, generation provenance, independent evidence class, and primitive-boundary guidance.
      *
      * @param spec typed screen catalog metadata.
      * @param source extracted compiled-example source.
@@ -46,9 +46,9 @@ ${primitiveBoundary(spec.screen)}
 
     private fun evidence(screen: DocumentedScreen): String =
         when (screen.verification) {
-            DocumentedScreen.Verification.NativeFabricHeadless -> "A loaded Fabric GameTest requires exact ARGB equality between the native Minecraft screen, the Strata Fabric screen, and the headless frame before this image is accepted."
-            DocumentedScreen.Verification.LoadedServerFabric -> "A loaded Fabric client/server GameTest performs authoritative inventory interaction and records the resulting real Fabric screen; this bound screen intentionally has no portable-only headless substitute."
-            DocumentedScreen.Verification.FabricHeadless -> "A loaded Fabric GameTest requires exact ARGB equality between the Strata Fabric screen and the headless frame while resolving assets from Minecraft's active resource manager."
+            DocumentedScreen.Verification.NativeFabricHeadless -> "Documentation generation freshly renders this frame on the CPU from explicit Minecraft assets without starting the game or creating a GPU context. An independent loaded Fabric GameTest requires exact ARGB equality between the native Minecraft screen, the Strata Fabric screen, and the headless frame; its [native parity receipt](evidence/minecraft-26.2-parity.properties) is separate from the [headless generation receipt](components/headless-render.properties)."
+            DocumentedScreen.Verification.LoadedServerFabric -> "This image is explicit native evidence from a loaded Fabric client/server GameTest that performs authoritative inventory interaction. Generation verifies its Minecraft version, PNG hash, and current compiled-source hash against the [native inventory receipt](evidence/minecraft-26.2-inventory.properties); it does not start a server or replace this bound screen with a portable-only substitute."
+            DocumentedScreen.Verification.FabricHeadless -> "Documentation generation freshly renders this frame on the CPU from explicit Minecraft assets without starting the game or creating a GPU context. The independent loaded Fabric gate requires exact ARGB equality between the Strata Fabric screen and the headless frame using active resources; its [native parity receipt](evidence/minecraft-26.2-parity.properties) remains separate from the [headless generation receipt](components/headless-render.properties)."
         }
 
     private fun primitiveBoundary(screen: DocumentedScreen): String =

@@ -62,7 +62,7 @@ public class StrataReleasePlugin : Plugin<Project> {
         )
         registerCentralTask(
             "mavenCentralReleaseVerify",
-            "Polls until all 25 Maven Central coordinates and immutable files match the staged publications.",
+            "Polls until all 26 Maven Central coordinates and immutable files match the staged publications.",
             MavenCentralReleaseTask.Operation.VERIFY,
         ).configure {
             canonicalSignatureDirectory.set(project.layout.buildDirectory.dir("release/maven-central/signatures"))

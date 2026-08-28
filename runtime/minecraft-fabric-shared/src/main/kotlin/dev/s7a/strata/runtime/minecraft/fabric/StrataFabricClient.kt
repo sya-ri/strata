@@ -36,7 +36,13 @@ public class StrataFabricClient : ClientModInitializer {
                 minecraft::isSameThread,
                 {
                     val parent = FabricMinecraftScreenAccess.currentScreen(minecraft)
-                    val profile = extractMinecraftUiProfile()
+                    val profile =
+                        cachedFabricMinecraftProfile(
+                            minecraft.resourceManager,
+                            fabricMinecraftFontCompatibility(),
+                            fabricMinecraftFontOptions(minecraft),
+                            ::extractMinecraftUiProfile,
+                        )
                     createMinecraftScreen(definition, profile, parent)
                 },
                 { screen -> FabricMinecraftScreenAccess.setScreen(minecraft, screen) },

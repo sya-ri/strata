@@ -8,6 +8,7 @@ import dev.s7a.strata.modifier.menuBackground
 import dev.s7a.strata.render.ArgbColor
 import dev.s7a.strata.render.DrawImage
 import dev.s7a.strata.render.createDrawImage
+import dev.s7a.strata.runtime.minecraft.font.MinecraftFontSnapshot
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
 
 /**
@@ -40,6 +41,7 @@ internal object MinecraftProfileFixture {
      * @param horizontalProgressBarBackground optional fixed-source progress background used instead of the bundle sprites.
      * @param horizontalProgressBarFill optional fixed-source progress fill paired with [horizontalProgressBarBackground].
      * @param legacyTooltipColors optional background, top-border, and bottom-border colors used instead of tooltip sprites.
+     * @param fontSnapshot optional resource fonts replacing the compatibility ASCII glyph declarations.
      * @return a complete profile.
      */
     fun create(
@@ -72,6 +74,7 @@ internal object MinecraftProfileFixture {
         highlightedCenterMode: NineSliceCenterMode = NineSliceCenterMode.Tiled,
         disabledBorder: Int = 1,
         disabledCenterMode: NineSliceCenterMode = NineSliceCenterMode.Tiled,
+        fontSnapshot: MinecraftFontSnapshot? = null,
     ): MinecraftUiProfile =
         createMinecraftUiProfile {
             menuBackground(menu)
@@ -114,11 +117,15 @@ internal object MinecraftProfileFixture {
             }
             textFieldNormal(normalTextField)
             textFieldHighlighted(highlightedTextField)
-            for (codePoint in 0x21..0x7E) {
-                val x = (codePoint - 0x21) % 8
-                val pixels = IntArray(64) { 0x00FFFFFF }
-                pixels[x] = -1
-                printableAsciiGlyph(codePoint, createDrawImage(IntSize(8, 8), pixels))
+            if (fontSnapshot == null) {
+                for (codePoint in 0x21..0x7E) {
+                    val x = (codePoint - 0x21) % 8
+                    val pixels = IntArray(64) { 0x00FFFFFF }
+                    pixels[x] = -1
+                    printableAsciiGlyph(codePoint, createDrawImage(IntSize(8, 8), pixels))
+                }
+            } else {
+                fonts(fontSnapshot)
             }
             buttonNormal(image(IntSize(200, 20), 0xFF202020.toInt()), normalBorder, normalCenterMode)
             buttonHighlighted(image(IntSize(200, 20), 0xFF303030.toInt()), highlightedBorder, highlightedCenterMode)

@@ -28,6 +28,35 @@ internal class ShowcaseSourcesTest {
     }
 
     @Test
+    fun textGuidesIncludeTheirCompleteCompiledExamples() {
+        val current = Path.of(System.getProperty("user.dir")).toAbsolutePath().normalize()
+        val root = if (Files.isDirectory(current.resolve("api"))) current else current.resolve("../..").normalize()
+        val examples =
+            listOf(
+                "docs/text.md" to
+                    SourceReference(
+                        "integration/api/src/main/kotlin/dev/s7a/strata/integration/consumer/ApiOnlyUnicodeTextScreen.kt",
+                        "unicode-text",
+                    ),
+                "docs/text.md" to
+                    SourceReference(
+                        "integration/api/src/main/kotlin/dev/s7a/strata/integration/consumer/ApiOnlyMultilineTextScreen.kt",
+                        "multiline-text",
+                    ),
+                "docs/font-resources.md" to
+                    SourceReference(
+                        "integration/docs/src/main/kotlin/dev/s7a/strata/integration/docs/FontResourceExample.kt",
+                        "font-resources",
+                    ),
+            )
+        examples.forEach { (path, reference) ->
+            val source = ShowcaseSources.extract(reference, root)
+            val guide = Files.readString(root.resolve(path)).replace("\r\n", "\n")
+            assertTrue(guide.contains("```kotlin\n${source.source}\n```"), path)
+        }
+    }
+
+    @Test
     fun rejectsEncodingMarkerAndRegionShapeFailures() {
         val invalid =
             listOf(

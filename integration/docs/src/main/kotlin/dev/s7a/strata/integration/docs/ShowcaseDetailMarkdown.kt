@@ -18,6 +18,7 @@ internal object ShowcaseDetailMarkdown {
             ShowcaseTreeDetail.FillMaxSize -> "FillMaxSize"
             is ShowcaseTreeDetail.Size -> "Size(width=${detail.width}, height=${detail.height})"
             is ShowcaseTreeDetail.Height -> "Height(value=${detail.value})"
+            is ShowcaseTreeDetail.MultilineText -> "TextLayout.Multiline(wrap=${detail.policy.wrap}, maxLines=${detail.policy.maxLines}, overflow=${detail.policy.overflow}, lineSpacing=${detail.policy.lineSpacing})"
             is ShowcaseTreeDetail.Padding -> "Padding(all=${detail.all})"
             is ShowcaseTreeDetail.Background -> "Background(color=0x${detail.color.value.toUInt().toString(16).padStart(8, '0').uppercase()})"
             is ShowcaseTreeDetail.Weight -> "Weight(weight=${detail.weight}, fill=${detail.fill})"

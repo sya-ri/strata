@@ -19,6 +19,17 @@ public interface FocusTargetNode {
         get() = false
 
     /**
+     * Whether this accepting focus target edits text and requires the platform's text-input mode.
+     *
+     * Keyboard shortcuts and passive text observers keep the default false value.
+     * The runtime samples this capability after layout and focus acquisition on the owning tree thread.
+     * Changes must invalidate retained presentation so the next frame can reconcile the capability.
+     * An adapter may use the resulting focus interval to enable native input methods without retaining this node.
+     */
+    public val requiresTextInput: Boolean
+        get() = false
+
+    /**
      * Applies one distinct focus transition.
      *
      * @param focused true after acquisition and false before loss.

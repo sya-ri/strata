@@ -4,7 +4,13 @@ import com.vanniktech.maven.publish.KotlinJvm
 import com.vanniktech.maven.publish.MavenPublishBaseExtension
 import com.vanniktech.maven.publish.SourcesJar
 import dev.detekt.gradle.extensions.DetektExtension
+import dev.s7a.strata.gradle.fabric.FabricClientTestOptions
+import dev.s7a.strata.gradle.fabric.FabricToolchainManifest
 import dev.s7a.strata.gradle.release.StrataReleaseExtension
+import kotlinx.kover.gradle.plugin.dsl.KoverProjectExtension
+import net.fabricmc.loom.api.LoomGradleExtensionAPI
+import net.fabricmc.loom.task.AbstractRunTask
+import net.fabricmc.loom.task.prod.ClientProductionRunTask
 import org.gradle.api.JavaVersion
 import org.gradle.api.plugins.JavaPluginExtension
 import org.gradle.api.publish.tasks.GenerateModuleMetadata
@@ -79,6 +85,9 @@ private data class MinecraftFabricTarget(
 val baselineJavaVersion = libs.versions.java.baseline.get().toInt()
 val minecraftJavaVersion = libs.versions.java.minecraft.get().toInt()
 val minecraftJava21Version = libs.versions.java.minecraft121.get().toInt()
+private val legacyScrollTargets = setOf(libs.versions.minecraft120.get(), libs.versions.minecraft1201.get())
+private val fabricLoaderVersion = libs.versions.fabric.loader.get()
+private val fabricMixinDependency = libs.fabric.mixin
 val sharedLegacyRuntimeSourceLinks =
     listOf(
         "runtime/minecraft-fabric-1.21-legacy",
@@ -343,6 +352,7 @@ val publishableProjectPaths =
         ":runtime:core",
         ":runtime:headless",
         ":runtime:minecraft",
+        ":runtime:minecraft-fonts-lwjgl",
     ) + minecraftFabricTargets.map(MinecraftFabricTarget::runtimeProjectPath)
 val verifyMinecraftFabricTargetMatrix = tasks.register("verifyMinecraftFabricTargetMatrix") {
     group = "verification"
@@ -394,6 +404,7 @@ dependencies {
     dokka(project(":runtime:core"))
     dokka(project(":runtime:headless"))
     dokka(project(":runtime:minecraft"))
+    dokka(project(":runtime:minecraft-fonts-lwjgl"))
     minecraftFabricTargets.forEach { target -> dokka(project(target.runtimeProjectPath)) }
 }
 
@@ -478,13 +489,25 @@ private val normalizedRequestedTaskNames =
     requestedTaskNames.map { taskName -> taskName.takeIf { it.startsWith(':') } ?: ":$taskName" }
 private val selectsEveryMinecraftClient =
     requestedTaskNames.any { taskName -> taskName == "check" || taskName in minecraftClientTaskNames }
+private val selectsFontParityClients = requestedTaskNames.any { taskName -> taskName.substringAfterLast(':') == "verifyOfflineFontParity" }
+private val fontParityComparisonsByVersion =
+    mapOf(
+        libs.versions.minecraft120.get() to ":runtime:minecraft-fonts-lwjgl:compareOfflineFontMinecraft120",
+        libs.versions.minecraft1205.get() to ":runtime:minecraft-fonts-lwjgl:compareOfflineFontMinecraft1205",
+        libs.versions.minecraft262.get() to ":runtime:minecraft-fonts-lwjgl:compareOfflineFontMinecraft262",
+    )
+private val fontParityMinecraftVersions = fontParityComparisonsByVersion.keys
 private val selectedMinecraftExecutionTargets =
     when {
-        ciMinecraftVersions.isNotEmpty() -> ciMinecraftTargets
+        ciMinecraftVersions.isNotEmpty() ->
+            minecraftFabricTargets.filter { target ->
+                target in ciMinecraftTargets || (selectsFontParityClients && target.version in fontParityMinecraftVersions)
+            }
         selectsEveryMinecraftClient -> minecraftFabricTargets
         else ->
             minecraftFabricTargets.filter { target ->
-                normalizedRequestedTaskNames.any { taskName -> taskName.startsWith("${target.integrationProjectPath}:") }
+                normalizedRequestedTaskNames.any { taskName -> taskName.startsWith("${target.integrationProjectPath}:") } ||
+                    (selectsFontParityClients && target.version in fontParityMinecraftVersions)
             }
     }
 private val selectedMinecraftAssetTasks =
@@ -493,9 +516,7 @@ private val selectedMinecraftClientTasks =
     selectedMinecraftExecutionTargets.flatMap { target ->
         buildList {
             add("${target.integrationProjectPath}:runClientGameTest")
-            if (target.remapped) {
-                add("${target.integrationProjectPath}:runProductionClientGameTest")
-            }
+            add("${target.integrationProjectPath}:runProductionClientGameTest")
         }
     }
 private val minecraftClientExecutionService =
@@ -536,6 +557,14 @@ subprojects {
     }
     if (path in koverJvmProjectPaths) {
         apply(plugin = "org.jetbrains.kotlinx.kover")
+        if (path == ":runtime:minecraft-fonts-lwjgl") {
+            // Native receipt comparison belongs to the integration gate, not the CPU coverage dependency graph.
+            extensions.configure<KoverProjectExtension> {
+                currentProject.instrumentation.disabledForTestTasks.addAll(
+                    fontParityComparisonsByVersion.values.map { comparisonPath -> comparisonPath.substringAfterLast(':') },
+                )
+            }
+        }
     }
 
     tasks.matching { task -> task.name == "downloadAssets" }.configureEach {
@@ -546,13 +575,34 @@ subprojects {
         }
     }
     tasks
-        .matching { task -> task.name in minecraftClientTaskNames }
+        .matching { task ->
+            task.name in minecraftClientTaskNames &&
+                minecraftTargetByProjectPath[task.project.path]?.integrationProjectPath == task.project.path
+        }
         .configureEach {
             usesService(minecraftClientExecutionService)
             mustRunAfter(selectedMinecraftAssetTasks)
             val clientTaskIndex = selectedMinecraftClientTasks.indexOf(path)
             if (clientTaskIndex != -1) {
                 mustRunAfter(selectedMinecraftClientTasks.take(clientTaskIndex))
+            }
+            doFirst {
+                val runDirectory =
+                    when (this) {
+                        is ClientProductionRunTask -> runDir.get().asFile
+                        is AbstractRunTask ->
+                            project.extensions
+                                .getByType<LoomGradleExtensionAPI>()
+                                .runConfigs
+                                .named("clientGameTest")
+                                .get()
+                                .runDirectory
+                                .get()
+                                .asFile
+                        else -> error("Unsupported Minecraft client verification task: $path")
+                    }
+                FabricClientTestOptions.prepare(project.layout.buildDirectory.get().asFile, runDirectory)
+                logger.lifecycle("Prepared silent Minecraft client test options without initial narrator setup for $path")
             }
         }
 
@@ -600,6 +650,11 @@ subprojects {
             "config/detekt/detekt.yml"
         }
         config.setFrom(rootProject.file(configFile))
+        minecraftTargetByProjectPath[this@subprojects.path]?.let { target ->
+            if (this@subprojects.path == target.runtimeProjectPath) {
+                source.from(layout.projectDirectory.dir("src/font/kotlin"))
+            }
+        }
     }
 
     val publishableModule = path in publishableProjectPaths
@@ -609,6 +664,36 @@ subprojects {
         apply(plugin = "org.jetbrains.dokka-javadoc")
     }
 
+    minecraftTargetByProjectPath[path]?.let { target ->
+        // Why: Loom otherwise selects native library upgrades using the Gradle daemon's Java instead of this game's toolchain.
+        extensions.extraProperties["fabric.loom.runtimeJavaCompatibilityVersion"] = target.javaVersion
+        if (path == target.integrationProjectPath) {
+            val profileCacheTests = rootProject.file("integration/minecraft-fabric-client-gametest/src/profile-cache/kotlin")
+            val continuousInputTests = rootProject.file("integration/minecraft-fabric-client-gametest/src/continuous-input/kotlin")
+            val continuousScrollTests =
+                rootProject.file(
+                    if (target.version in legacyScrollTargets) {
+                        "integration/minecraft-fabric-client-gametest/src/continuous-input-legacy-scroll/kotlin"
+                    } else {
+                        "integration/minecraft-fabric-client-gametest/src/continuous-input-directional-scroll/kotlin"
+                    },
+                )
+            extensions.configure<KotlinJvmProjectExtension> {
+                sourceSets.matching { sourceSet -> sourceSet.name == "gametest" }.configureEach {
+                    kotlin.srcDir(profileCacheTests)
+                    kotlin.srcDir(continuousInputTests)
+                    kotlin.srcDir(continuousScrollTests)
+                }
+            }
+            extensions.configure<DetektExtension> {
+                source.from(profileCacheTests)
+                source.from(continuousInputTests, continuousScrollTests)
+            }
+            fontParityComparisonsByVersion[target.version]?.let { comparison ->
+                tasks.named("check") { dependsOn(comparison) }
+            }
+        }
+    }
     val javaVersion = minecraftTargetByProjectPath[path]?.javaVersion ?: baselineJavaVersion
 
     extensions.configure<JavaPluginExtension> {
@@ -669,7 +754,44 @@ subprojects {
     }
 
     if (publishableModule) {
+        if (minecraftTargetByProjectPath[project.path]?.runtimeProjectPath == project.path) {
+            dependencies.add("compileOnly", fabricMixinDependency)
+            val target = minecraftTargetByProjectPath.getValue(project.path)
+            val loaderVersion = fabricLoaderVersion
+            val mixin = fabricMixinDependency.get()
+            val mixinVersion = mixin.versionConstraint.requiredVersion
+            val mixinGroup = mixin.module.group
+            val toolchainManifest = FabricToolchainManifest(loaderVersion, mixinVersion, mixinGroup)
+            tasks.matching { task -> task.name == "verifyFabricModArtifact" }.configureEach {
+                val artifact = tasks.named<AbstractArchiveTask>(if (target.remapped) "remapJar" else "jar")
+                inputs.file(artifact.flatMap { task -> task.archiveFile })
+                inputs.property("manifestLoaderVersion", loaderVersion)
+                inputs.property("manifestMixinVersion", mixinVersion)
+                inputs.property("manifestMixinGroup", mixinGroup)
+                doLast {
+                    ZipFile(artifact.get().archiveFile.get().asFile).use(toolchainManifest::verify)
+                }
+            }
+            val sharedFabricRuntime = rootProject.file("runtime/minecraft-fabric-shared/src/main")
+            extensions.configure<SourceSetContainer> {
+                named("main") {
+                    resources.srcDir(sharedFabricRuntime.resolve("resources"))
+                }
+            }
+            extensions.configure<DetektExtension> {
+                source.from(
+                    sharedFabricRuntime.resolve("kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftProfileLifecycle.kt"),
+                    sharedFabricRuntime.resolve("kotlin/dev/s7a/strata/runtime/minecraft/fabric/mixin"),
+                )
+            }
+        }
         extensions.configure<KotlinJvmProjectExtension> {
+            if (minecraftTargetByProjectPath[project.path]?.runtimeProjectPath == project.path) {
+                // Why: exact font capabilities must not leak through another target's shared main source roots.
+                sourceSets.named("main") {
+                    kotlin.srcDir(layout.projectDirectory.dir("src/font/kotlin"))
+                }
+            }
             @OptIn(ExperimentalAbiValidation::class)
             abiValidation {
                 binariesSource.set(MAVEN_PUBLICATIONS)
@@ -679,6 +801,9 @@ subprojects {
 
     tasks.withType<Test>().configureEach {
         useJUnitPlatform()
+        if (project.path == ":runtime:minecraft") {
+            systemProperty("strata.minecraftTargetVersions", minecraftFabricTargets.joinToString(",", transform = MinecraftFabricTarget::version))
+        }
     }
 
     if (publishableModule) {
@@ -783,6 +908,15 @@ subprojects {
     }
 }
 
+private val selectsFontParityComparison =
+    requestedTaskNames.any { taskName ->
+        fontParityComparisonsByVersion.values.any { comparisonPath -> comparisonPath.substringAfterLast(':') == taskName.substringAfterLast(':') }
+    }
+if (selectsFontParityClients || selectsFontParityComparison) {
+    // Cross-project task-path discovery does not configure an empty parent project before its Kotlin-script children.
+    evaluationDependsOn(":integration")
+}
+
 private val koverTaskNames = setOf("koverJvmTests", "koverHtmlReport", "koverXmlReport")
 if (requestedTaskNames.any { taskName -> taskName.substringAfterLast(':') in koverTaskNames }) {
     koverJvmProjectPaths.forEach(::evaluationDependsOn)
@@ -839,6 +973,7 @@ val expectedReleaseCoordinates =
         "dev.s7a.strata:strata-runtime-core:$version",
         "dev.s7a.strata:strata-runtime-headless:$version",
         "dev.s7a.strata:strata-runtime-minecraft:$version",
+        "dev.s7a.strata:strata-runtime-minecraft-fonts-lwjgl:$version",
     ) +
         minecraftFabricTargets.map { target ->
             "dev.s7a.strata:strata-runtime-minecraft-fabric-${target.version}:$version"
@@ -846,13 +981,13 @@ val expectedReleaseCoordinates =
 val verifyReleasePublicationMatrix =
     tasks.register("verifyReleasePublicationMatrix") {
         group = "verification"
-        description = "Verifies the exact 25-coordinate Maven Central release inventory."
+        description = "Verifies the exact 26-coordinate Maven Central release inventory."
         val coordinatesFile = layout.projectDirectory.file("release/maven-coordinates.txt")
         inputs.file(coordinatesFile)
         inputs.property("expectedCoordinates", expectedReleaseCoordinates)
         doLast {
             val trackedCoordinates = coordinatesFile.asFile.readLines().filter(String::isNotBlank)
-            check(expectedReleaseCoordinates.size == 25) { "The release must publish exactly 25 Maven coordinates." }
+            check(expectedReleaseCoordinates.size == 26) { "The release must publish exactly 26 Maven coordinates." }
             check(trackedCoordinates == expectedReleaseCoordinates) {
                 "release/maven-coordinates.txt differs from the typed publication matrix."
             }
@@ -862,14 +997,14 @@ val verifyReleasePublicationMatrix =
 val publishToMavenLocal =
     tasks.register("publishToMavenLocal") {
         group = "publishing"
-        description = "Publishes the exact 25-artifact Strata release matrix to Maven Local."
+        description = "Publishes the exact 26-artifact Strata release matrix to Maven Local."
         dependsOn(publishableProjectPaths.sorted().map { projectPath -> "$projectPath:publishToMavenLocal" })
     }
 
 val verifyPublishedConsumer =
     tasks.register<GradleBuild>("verifyPublishedConsumer") {
         group = "verification"
-        description = "Publishes all 25 Maven artifacts locally and checks a standalone coordinate-only consumer."
+        description = "Publishes all 26 Maven artifacts locally and checks a standalone coordinate-only consumer."
         dependsOn(publishToMavenLocal, verifyReleasePublicationMatrix)
         dir = layout.projectDirectory.dir("release/consumer").asFile
         tasks = listOf("clean", "check")

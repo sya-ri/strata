@@ -52,14 +52,17 @@ internal class StrataSkillPipelineTest {
         assertTrue(readme.contains(fencedExample))
         assertTrue(modrinthProject.contains(fencedExample))
         assertTrue(setup.contains(fencedExample))
+        listOf(modrinthProject, setup).forEach(::assertUnicodeFontSetup)
         val components = first.getValue("skills/strata/references/components.md")
         val modifiers = first.getValue("skills/strata/references/modifiers-and-layout.md")
         val patterns = first.getValue("skills/strata/references/patterns.md")
         val customComponents = first.getValue("skills/strata/references/custom-components.md")
-        assertTrue(components.contains("fun UiScope.Button"))
-        assertTrue(components.contains("https://gh.s7a.dev/strata/guide/components.md#button"))
+        assertComponentReferences(components)
         assertTrue(modifiers.contains("Compiled JVM API fingerprints"))
         assertTrue(modifiers.contains("data class ListLoadRequest(public val suggestedCount: Int)"))
+        assertTrue(modifiers.contains("TextAreaState"))
+        assertTrue(modifiers.contains("TextAreaViewport"))
+        assertTrue(modifiers.contains("TextLayout"))
         assertOwnerAwareStateSignatures(modifiers)
         assertTrue(patterns.contains("itemCount = { items.size }"))
         assertTrue(patterns.contains("request.suggestedCount"))
@@ -70,6 +73,13 @@ internal class StrataSkillPipelineTest {
         assertTrue(first.values.none { document -> document.contains("../../../docs/") })
     }
 
+    private fun assertComponentReferences(components: String) {
+        assertTrue(components.contains("fun UiScope.Button"))
+        assertTrue(components.contains("fun UiScope.TextArea"))
+        assertTrue(components.contains("https://gh.s7a.dev/strata/guide/components.md#text-area"))
+        assertTrue(components.contains("https://gh.s7a.dev/strata/guide/components.md#button"))
+    }
+
     private fun assertOwnerAwareStateSignatures(modifiers: String) {
         assertTrue(
             modifiers.contains(
@@ -78,6 +88,27 @@ internal class StrataSkillPipelineTest {
         )
         assertTrue(modifiers.contains("#### `CycleButtonState.Companion`"))
         assertTrue(modifiers.contains("#### `PlayerSkinSource.Name`"))
+    }
+
+    private fun assertUnicodeFontSetup(document: String) {
+        assertTrue(document.contains("makes no other functional change").not())
+        assertTrue(document.contains("UiText.withFont"))
+        assertTrue(document.contains("Existing overloads without a font argument remain available."))
+        assertTrue(document.contains("Unknown font IDs produce missing glyphs instead of silently selecting `minecraft:default`."))
+        assertTrue(document.contains("Unicode scalar"))
+        assertTrue(document.contains("UTF-16 code units"))
+        assertTrue(document.contains("inline IME composition"))
+        assertTrue(document.contains("TextLayout.Multiline"))
+        assertTrue(document.contains("TextArea"))
+        assertTrue(document.contains("TextField"))
+        assertTrue(document.contains("adapters that expose only committed characters"))
+        assertTrue(document.contains("dev.s7a.strata:strata-runtime-minecraft-fonts-lwjgl:0.1.1"))
+        assertTrue(document.contains("does not bundle LWJGL, ICU, Gson, or native binaries"))
+        assertTrue(document.contains("unsafe STB coordinate conversions remain invalid"))
+        assertTrue(document.contains("https://gh.s7a.dev/strata/guide/text.md"))
+        assertTrue(document.contains("https://gh.s7a.dev/strata/guide/font-resources.md#numeric-provider-settings"))
+        assertTrue(document.contains("https://gh.s7a.dev/strata/guide/font-resources.md#acceptance-evidence"))
+        assertTrue(document.contains("independent GPU evidence"))
     }
 
     private fun repositoryRoot(): Path {

@@ -32,6 +32,18 @@ dependencyResolutionManagement {
                 }
             }
         }
+        // Why: Minecraft's patched Intel macOS FreeType classifier is absent from the upstream Maven Central module.
+        exclusiveContent {
+            forRepository {
+                maven {
+                    name = "MinecraftFreeType"
+                    url = uri("https://libraries.minecraft.net/")
+                }
+            }
+            filter {
+                includeModule("org.lwjgl", "lwjgl-freetype")
+            }
+        }
         mavenCentral()
         maven("https://maven.fabricmc.net/")
         maven("https://libraries.minecraft.net/")
@@ -110,6 +122,7 @@ include(
     ":runtime:core",
     ":runtime:headless",
     ":runtime:minecraft",
+    ":runtime:minecraft-fonts-lwjgl",
     ":runtime:minecraft-fabric-1.20",
     ":runtime:minecraft-fabric-1.20.1",
     ":runtime:minecraft-fabric-1.20.2",

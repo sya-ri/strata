@@ -19,9 +19,9 @@ internal class ShowcaseOutput internal constructor(
     private val receiptSnapshot: ByteArray = receipt.copyOf()
 
     /**
-     * Returns the Minecraft parity receipt as fresh bytes.
+     * Returns fresh deterministic headless input and image metadata, including explicit native inventory provenance.
      *
-     * @return independent verified receipt bytes.
+     * @return independent receipt bytes that do not claim a native parity gate ran during generation.
      */
     internal fun receipt(): ByteArray = receiptSnapshot.copyOf()
 

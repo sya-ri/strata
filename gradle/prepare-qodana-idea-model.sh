@@ -21,6 +21,12 @@ if [[ "$runtime_count" -ne "$expected_projects" || "$integration_count" -ne "$ex
   exit 1
 fi
 
+font_backend_count=$(awk '/module fileurl=.*runtime\/minecraft-fonts-lwjgl\/minecraft-fonts-lwjgl\.iml/ { count++ } END { print count + 0 }' strata.ipr)
+if [[ "$font_backend_count" -ne 1 ]]; then
+  echo "Expected one CPU font backend module but generated $font_backend_count." >&2
+  exit 1
+fi
+
 mkdir -p .idea
 {
   printf '%s\n' '<?xml version="1.0" encoding="UTF-8"?>'
@@ -46,4 +52,4 @@ else
   } > .idea/misc.xml
 fi
 
-echo "Prepared Qodana IDEA metadata for $runtime_count runtime and $integration_count integration Minecraft modules."
+echo "Prepared Qodana IDEA metadata for $runtime_count runtime and $integration_count integration Minecraft modules and the CPU font backend."

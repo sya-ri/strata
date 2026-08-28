@@ -1,0 +1,5 @@
+public final class dev/s7a/strata/runtime/minecraft/font/lwjgl/LwjglMinecraftFontBackendFactory : dev/s7a/strata/runtime/minecraft/font/MinecraftFontBackendFactory {
+	public static final field INSTANCE Ldev/s7a/strata/runtime/minecraft/font/lwjgl/LwjglMinecraftFontBackendFactory;
+	public fun open (Ldev/s7a/strata/runtime/minecraft/font/MinecraftFontCompatibility;)Ldev/s7a/strata/runtime/minecraft/font/MinecraftFontBackend;
+}
+

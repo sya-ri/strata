@@ -41,7 +41,7 @@ internal class FabricMinecraftJvmSurfaceTest {
         classes.forEach { type ->
             type.declaredMethods.forEach { method -> assertFalse(method.name.startsWith("access$"), "${type.name}#${method.name}") }
         }
-        listOf(lifecycleClass, lifecycleActionClass, failuresClass, presentationTransactionClass).forEach { className ->
+        listOf(lifecycleClass, lifecycleActionClass, failuresClass, presentationTransactionClass, textInputFocusClass).forEach { className ->
             val type = classes.single { candidate -> candidate.name == className }
             assertFalse(Modifier.isPublic(type.modifiers), className)
             assertFalse(Modifier.isProtected(type.modifiers), className)
@@ -136,14 +136,23 @@ internal class FabricMinecraftJvmSurfaceTest {
         private val lifecycleActionClass = "$lifecycleClass\$Action"
         private val failuresClass = "$packageName.FabricMinecraftFailures"
         private val presentationTransactionClass = "$packageName.FabricScreenPresentationTransaction"
+        private val textInputFocusClass = "$packageName.FabricMinecraftTextInputFocus"
         private val expectedPublicMethods =
             mapOf(
+                "$packageName.FabricMinecraftFontCapabilitiesKt" to emptySet(),
                 "$packageName.FabricMinecraftFontContractKt" to emptySet(),
+                "$packageName.FabricMinecraftFontMappingKt" to emptySet(),
+                "$packageName.FabricMinecraftFontResourcesKt" to emptySet(),
                 "$packageName.FabricMinecraftFocusedInputMappingKt" to emptySet(),
                 "$packageName.FabricMinecraftGuiMetadataKt" to emptySet(),
                 "$packageName.FabricMinecraftGuiScaling" to emptySet(),
                 "$packageName.FabricMinecraftInputMappingKt" to emptySet(),
                 "$packageName.FabricMinecraftNativeImageBridgeKt" to emptySet(),
+                "$packageName.FabricMinecraftProfileWidgetsKt" to emptySet(),
+                "$packageName.FabricMinecraftProfileDecorationsKt" to emptySet(),
+                "$packageName.FabricMinecraftProfileLifecycleKt" to emptySet(),
+                "$packageName.FabricMinecraftSampledBoundsKt" to emptySet(),
+                "$packageName.mixin.FabricMinecraftResourceReloadMixin" to emptySet(),
                 "$packageName.FabricMinecraftWidgetImages" to emptySet(),
                 assetFacade to setOf("loadMinecraftUiImage", "loadCurrentMinecraftPlayerSkin"),
                 profileFacade to setOf("extractMinecraftUiProfile"),

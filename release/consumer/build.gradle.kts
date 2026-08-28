@@ -21,6 +21,7 @@ dependencies {
 
 val representativeRuntimeCoordinates =
     listOf(
+        "dev.s7a.strata:strata-runtime-minecraft-fonts-lwjgl:0.1.1",
         "dev.s7a.strata:strata-runtime-minecraft-fabric-1.20:0.1.1",
         "dev.s7a.strata:strata-runtime-minecraft-fabric-1.21.11:0.1.1",
         "dev.s7a.strata:strata-runtime-minecraft-fabric-26.2:0.1.1",

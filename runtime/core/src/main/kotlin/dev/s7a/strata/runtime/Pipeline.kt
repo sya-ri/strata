@@ -19,6 +19,7 @@ import dev.s7a.strata.node.MeasureNode
 import dev.s7a.strata.node.ParentDataModifierNode
 import dev.s7a.strata.runtime.render.DrawCommand
 import dev.s7a.strata.runtime.semantics.SemanticsEntry
+import dev.s7a.strata.runtime.spi.RuntimeTextInputFocus
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
 
 /**
@@ -36,6 +37,12 @@ internal class Pipeline(
     private val focusedInputPipeline = FocusedInputPipeline()
     private val inputPipeline = InputPipeline(focusedInputPipeline)
     private val semanticsPipeline = SemanticsPipeline(threadGuard)
+
+    /**
+     * Detached current editable-focus identity, read outside a tree operation on its owner thread.
+     */
+    val textInputFocus: RuntimeTextInputFocus?
+        get() = focusedInputPipeline.textInputFocus
 
     /**
      * Measures [root] under [constraints].
@@ -146,6 +153,26 @@ internal class Pipeline(
      * @return true when reachable effective entries need measurement.
      */
     fun hasPendingMeasure(root: RetainedNode): Boolean = pendingMeasure(root.effectiveRoot)
+
+    /**
+     * Resolves pending geometry of the already committed retained tree before the next input event.
+     *
+     * This performs only dirty measure/layout work; it neither refreshes dynamic child descriptions nor paints or collects semantics.
+     * Clean geometry does not invoke node callbacks, and a self-invalidating measure remains an error before dispatch.
+     *
+     * @param root currently committed logical root.
+     * @param constraints root constraints from the last successful frame, not a future resize.
+     */
+    fun synchronizeInputGeometry(
+        root: RetainedNode,
+        constraints: Constraints,
+    ) {
+        if (pendingMeasure(root.effectiveRoot)) measure(root, constraints)
+        if (pendingLayout(root.effectiveRoot)) {
+            requireMeasuredRoot(root)
+            layout(root)
+        }
+    }
 
     /**
      * Checks that the effective root has completed measurement and has no pending measurement work.

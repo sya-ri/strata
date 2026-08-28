@@ -9,6 +9,8 @@ import dev.s7a.strata.node.FocusTargetNode
 import dev.s7a.strata.node.KeyboardInputNode
 import dev.s7a.strata.node.Node
 import dev.s7a.strata.node.TextInputNode
+import dev.s7a.strata.runtime.spi.RuntimeTextInputFocus
+import dev.s7a.strata.spi.InternalStrataRuntimeApi
 
 // Why: focus acquisition, reconciliation, transitions, and both focused protocols share one owner identity and ordering contract.
 
@@ -16,10 +18,22 @@ import dev.s7a.strata.node.TextInputNode
  * Owns retained logical focus and dispatches keyboard and text events through one focused component.
  *
  * Every operation is synchronous on the tree thread supplied by the enclosing pipeline, and callback failures escape unchanged.
+ * Only the current owner's accepting target identities are retained, so changes to a target's acceptance receive distinct transitions without selecting another owner.
+ * Reconciliation forgets removed targets without invoking disposed nodes; clearing or terminal release drops every target reference.
+ * Its optional native text-input token is stable for the current editable owner and target identities, and retains no target references itself.
  */
+@OptIn(InternalStrataRuntimeApi::class)
 @Suppress("TooManyFunctions")
 internal class FocusedInputPipeline {
     private var focusedOwner: RetainedNode? = null
+    private var focusedTargets: List<FocusTargetNode> = emptyList()
+    private var textInputTargets: List<FocusTargetNode> = emptyList()
+
+    /**
+     * Detached identity of the current editable focus interval, read only on the enclosing tree's owner thread.
+     */
+    var textInputFocus: RuntimeTextInputFocus? = null
+        private set
 
     /**
      * Reconciles retained focus after layout and applies one unambiguous initial-focus request.
@@ -30,12 +44,14 @@ internal class FocusedInputPipeline {
         val owners = logicalOwners(root)
         val current = focusedOwner
         if (current != null && owners.contains(current).not()) {
-            focusedOwner = null
+            releaseRetainedReferences()
         }
         val requested = owners.filter(::requestsInitialFocus)
         check(requested.size <= 1) { "A retained tree may have at most one placed initial focus target." }
         if (focusedOwner == null) {
             requested.singleOrNull()?.let(::setFocusedOwner)
+        } else {
+            reconcileFocusTargets(checkNotNull(focusedOwner))
         }
     }
 
@@ -100,29 +116,44 @@ internal class FocusedInputPipeline {
     /**
      * Releases the retained focus owner without invoking focus callbacks.
      *
-     * Terminal tree cleanup owns lifecycle notification separately, and this method only severs the pipeline's strong retained-node reference.
+     * Terminal tree cleanup owns lifecycle notification separately, and this method severs every owner and target reference.
      */
     fun releaseRetainedReferences() {
         focusedOwner = null
+        focusedTargets = emptyList()
+        textInputTargets = emptyList()
+        textInputFocus = null
     }
 
     private fun setFocusedOwner(owner: RetainedNode?) {
         val previous = focusedOwner
         if (previous === owner) return
-        focusedOwner = null
-        previous?.let { current -> notifyFocus(current, false) }
+        val previousTargets = focusedTargets
+        val retainedTargets = previous?.let(::focusTargets).orEmpty()
+        releaseRetainedReferences()
+        previousTargets.forEach { target ->
+            if (retainedTargets.any { it === target }) target.onFocusChanged(false)
+        }
         focusedOwner = owner
-        owner?.let { current -> notifyFocus(current, true) }
+        owner?.let(::reconcileFocusTargets)
     }
 
-    private fun notifyFocus(
-        owner: RetainedNode,
-        focused: Boolean,
-    ) {
-        focusTargets(owner).forEach { target ->
-            if (target.acceptsFocus || focused.not()) {
-                target.onFocusChanged(focused)
-            }
+    private fun reconcileFocusTargets(owner: RetainedNode) {
+        val retained = focusTargets(owner)
+        val previous = focusedTargets
+        val accepting = retained.filter(FocusTargetNode::acceptsFocus)
+        focusedTargets = accepting
+        previous.forEach { target ->
+            if (retained.any { it === target } && accepting.none { it === target }) target.onFocusChanged(false)
+        }
+        accepting.forEach { target ->
+            if (previous.none { it === target }) target.onFocusChanged(true)
+        }
+        val editable = accepting.filter(FocusTargetNode::requiresTextInput)
+        val unchanged = editable.size == textInputTargets.size && editable.indices.all { editable[it] === textInputTargets[it] }
+        if (unchanged.not()) {
+            textInputTargets = editable
+            textInputFocus = if (editable.isEmpty()) null else RuntimeTextInputFocus.create()
         }
     }
 
@@ -179,5 +210,5 @@ internal class FocusedInputPipeline {
             add(owner.node)
         }
 
-    private fun focusTargets(owner: RetainedNode): List<FocusTargetNode> = focusedNodes(owner).filterIsInstance<FocusTargetNode>()
+    private fun focusTargets(owner: RetainedNode): List<FocusTargetNode> = if (owner.cleanupStarted) emptyList() else focusedNodes(owner).filterIsInstance<FocusTargetNode>()
 }

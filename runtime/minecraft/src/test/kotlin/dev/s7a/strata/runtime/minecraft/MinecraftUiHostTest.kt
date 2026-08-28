@@ -2,6 +2,8 @@
 
 package dev.s7a.strata.runtime.minecraft
 
+import dev.s7a.strata.component.PlayerSkinSource
+import dev.s7a.strata.component.SlotBinding
 import dev.s7a.strata.component.Spacer
 import dev.s7a.strata.component.Stack
 import dev.s7a.strata.component.Text
@@ -23,6 +25,13 @@ import dev.s7a.strata.modifier.onCharacterInput
 import dev.s7a.strata.modifier.onFocusChanged
 import dev.s7a.strata.modifier.onKeyPress
 import dev.s7a.strata.modifier.size
+import dev.s7a.strata.render.DrawImage
+import dev.s7a.strata.render.createDrawImage
+import dev.s7a.strata.resource.ResourceId
+import dev.s7a.strata.runtime.minecraft.font.FontTestBackend
+import dev.s7a.strata.runtime.minecraft.font.FontTestResources
+import dev.s7a.strata.runtime.minecraft.font.MinecraftFontBackendFactory
+import dev.s7a.strata.runtime.render.DrawCommand
 import dev.s7a.strata.screen.ScreenDefinition
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
 import dev.s7a.strata.text.UiText
@@ -176,6 +185,7 @@ internal class MinecraftUiHostTest {
         assertTrue(wrongThread { host.attach() } is IllegalStateException)
         assertTrue(wrongThread { host.title } is IllegalStateException)
         assertTrue(wrongThread { host.pausesGame } is IllegalStateException)
+        assertTrue(wrongThread { host.textInputFocus } is IllegalStateException)
         host.attach()
         assertTrue(wrongThread { host.detach() } is IllegalStateException)
         assertTrue(wrongThread { host.frame(IntSize(2, 1)) } is IllegalStateException)
@@ -208,6 +218,118 @@ internal class MinecraftUiHostTest {
     }
 
     @Test
+    fun missingOrFailedFontFactoryLeavesTheDefinitionAndPlatformAvailableForRetry() {
+        val profile = resourceFontProfile()
+        var evaluations = 0
+        val definition =
+            ScreenDefinition("font factory") {
+                evaluations++
+                Text("日")
+            }
+        val expected = IllegalStateException("font factory")
+        var platformCloses = 0
+        val platform = fontPlatform { platformCloses++ }
+        val missingBackend = assertThrows(IllegalArgumentException::class.java) { createMinecraftUiHost(definition, profile) }
+        val missingPlatformBackend = assertThrows(IllegalArgumentException::class.java) { createMinecraftUiHost(definition, profile, platform) }
+        assertEquals("Resource fonts require a CPU font backend factory.", missingBackend.message)
+        assertEquals("Resource fonts require a CPU font backend factory.", missingPlatformBackend.message)
+        assertEquals(0, evaluations)
+        assertEquals(0, platformCloses)
+        val failure =
+            assertThrows(IllegalStateException::class.java) {
+                createMinecraftUiHost(definition, profile, platform, MinecraftFontBackendFactory { throw expected })
+            }
+        assertSame(expected, failure)
+        assertEquals(0, evaluations)
+        assertEquals(0, platformCloses)
+
+        val backend = resourceFontBackend()
+        createMinecraftUiHost(definition, profile, platform, MinecraftFontBackendFactory { backend }).use { host ->
+            host.attach()
+            assertEquals(
+                2,
+                host
+                    .frame(IntSize(5, 9))
+                    .drawCommands
+                    .filterIsInstance<DrawCommand.SampledImage>()
+                    .size,
+            )
+        }
+        assertEquals(1, evaluations)
+        assertEquals(1, backend.decodeCalls)
+        assertEquals(1, backend.closeCalls)
+        assertEquals(1, platformCloses)
+    }
+
+    @Test
+    fun contentFailureClosesTheFontBackendBeforePlatformAndPreservesCleanupFailures() {
+        val expected = IllegalArgumentException("font content")
+        val fontCleanup = IllegalStateException("font cleanup")
+        val platformCleanup = IllegalStateException("platform cleanup")
+        val backend = resourceFontBackend(closeFailure = fontCleanup)
+        var platformCloses = 0
+        val platform =
+            fontPlatform {
+                platformCloses++
+                throw platformCleanup
+            }
+        val host =
+            createMinecraftUiHost(
+                ScreenDefinition("font content") {
+                    Text("日")
+                    throw expected
+                },
+                resourceFontProfile(),
+                platform,
+                MinecraftFontBackendFactory { backend },
+            )
+        try {
+            val failure = assertThrows(IllegalArgumentException::class.java, host::attach)
+            assertSame(expected, failure)
+            assertEquals(listOf(fontCleanup, platformCleanup), failure.suppressed.toList())
+            assertEquals(1, backend.decodeCalls)
+            assertEquals(1, backend.closeCalls)
+            assertEquals(1, platformCloses)
+            assertNull(readPrivateField(host, "textRenderer"))
+            assertNull(readPrivateField(host, "platform"))
+        } finally {
+            host.close()
+        }
+        assertEquals(1, backend.closeCalls)
+        assertEquals(1, platformCloses)
+    }
+
+    @Test
+    fun sharedFontSnapshotCreatesIndependentHostBackendsAndCaches() {
+        val profile = resourceFontProfile()
+        val backends = ArrayList<FontTestBackend>()
+        val factory = MinecraftFontBackendFactory { resourceFontBackend().also(backends::add) }
+        createMinecraftUiHost(ScreenDefinition("first") { Text("日") }, profile, factory).use { first ->
+            createMinecraftUiHost(ScreenDefinition("second") { Text("한") }, profile, factory).use { second ->
+                assertEquals(2, backends.size)
+                first.attach()
+                first.frame(IntSize(5, 9))
+                assertEquals(listOf(1, 0), backends.map(FontTestBackend::decodeCalls))
+                first.close()
+                assertEquals(listOf(1, 0), backends.map(FontTestBackend::closeCalls))
+
+                second.attach()
+                assertEquals(
+                    2,
+                    second
+                        .frame(IntSize(5, 9))
+                        .drawCommands
+                        .filterIsInstance<DrawCommand.SampledImage>()
+                        .size,
+                )
+                assertEquals(listOf(1, 1), backends.map(FontTestBackend::decodeCalls))
+                assertEquals(listOf(1, 0), backends.map(FontTestBackend::closeCalls))
+            }
+        }
+        assertEquals(listOf(1, 1), backends.map(FontTestBackend::closeCalls))
+    }
+
+    @Test
     fun hostOperationsRejectReentryFromContentEvaluation() {
         lateinit var host: MinecraftUiHost
         var reentryFailures: List<Throwable?> = emptyList()
@@ -217,6 +339,7 @@ internal class MinecraftUiHostTest {
                     listOf(
                         runCatching { host.title }.exceptionOrNull(),
                         runCatching { host.pausesGame }.exceptionOrNull(),
+                        runCatching { host.textInputFocus }.exceptionOrNull(),
                         runCatching { host.attach() }.exceptionOrNull(),
                         runCatching { host.detach() }.exceptionOrNull(),
                         runCatching { host.frame(IntSize(2, 1)) }.exceptionOrNull(),
@@ -226,7 +349,7 @@ internal class MinecraftUiHostTest {
                 evaluateComponentTree { Stack(modifier = Modifier.Empty.menuBackground()) {} }
             }
         host.attach()
-        assertEquals(7, reentryFailures.size)
+        assertEquals(8, reentryFailures.size)
         assertTrue(reentryFailures.all { failure -> failure is IllegalStateException })
         host.close()
     }
@@ -338,6 +461,45 @@ internal class MinecraftUiHostTest {
             ) { element(content()) },
             MinecraftProfileFixture.create(),
         )
+
+    private fun resourceFontProfile(): MinecraftUiProfile =
+        MinecraftProfileFixture.create(
+            fontSnapshot =
+                FontTestResources.snapshot(
+                    FontTestResources.font(
+                        "minecraft:default",
+                        """{"type":"bitmap","file":"test:font/host.png","height":8,"ascent":7,"chars":["日한"]}""",
+                    ),
+                    "assets/test/textures/font/host.png" to byteArrayOf(1),
+                ),
+        )
+
+    private fun resourceFontBackend(closeFailure: Throwable? = null): FontTestBackend =
+        FontTestBackend(
+            decode = { createDrawImage(IntSize(8, 8), IntArray(64) { -1 }) },
+            release = { closeFailure?.let { throw it } },
+        )
+
+    private fun fontPlatform(release: () -> Unit): MinecraftUiPlatform =
+        object : MinecraftUiPlatform {
+            private var closed = false
+
+            override fun inventorySlot(binding: SlotBinding): MinecraftInventorySlotBinding = error("The font host does not resolve inventory slots.")
+
+            override fun image(resource: ResourceId): DrawImage = error("The font host does not resolve platform images.")
+
+            override fun playerSkin(source: PlayerSkinSource): MinecraftPlayerSkinBinding = error("The font host does not resolve player skins.")
+
+            override fun refresh() {
+                check(closed.not())
+            }
+
+            override fun close() {
+                if (closed) return
+                closed = true
+                release()
+            }
+        }
 
     private fun wrongThread(action: () -> Unit): Throwable? {
         val task = FutureTask<Throwable?> { runCatching(action).exceptionOrNull() }

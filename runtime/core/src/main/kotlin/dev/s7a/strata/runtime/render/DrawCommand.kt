@@ -1,10 +1,13 @@
 package dev.s7a.strata.runtime.render
 
+import dev.s7a.strata.geometry.FloatRect
 import dev.s7a.strata.geometry.IntRect
 import dev.s7a.strata.render.ArgbColor
 import dev.s7a.strata.render.DrawImage
 import dev.s7a.strata.render.PlatformDrawCommand
+import dev.s7a.strata.render.SampledImageOrientation
 import dev.s7a.strata.runtime.validateBlitImage
+import dev.s7a.strata.runtime.validateSampledImage
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
 
 /**
@@ -15,6 +18,8 @@ import dev.s7a.strata.spi.InternalStrataRuntimeApi
  * Backends must intersect drawing with every active [PushClip] until the matching [PopClip].
  * The core does not define blending or sampling policy.
  * Portable commands carry platform-neutral values, while the opt-in [Platform] variant preserves an opaque version-adapter payload without teaching core its type.
+ * Version 0.1.1 adds [SampledImage] to this sealed hierarchy; older exhaustive backends must handle or explicitly reject it before producing output.
+ * Existing JVM members remain available, but an older compiled visitor can fail when given the new variant.
  */
 public sealed interface DrawCommand {
     /**
@@ -47,6 +52,47 @@ public sealed interface DrawCommand {
     ) : DrawCommand {
         init {
             validateBlitImage(image, source, destination)
+        }
+    }
+
+    /**
+     * Samples an immutable image through fractional geometry at the backend's final physical pixel density.
+     *
+     * The image is retained by reference without copying pixels and all values are safe to share between threads.
+     * Backends map covered physical pixel centers through the unclipped destination and use nearest source sampling.
+     * Source channels are multiplied by normalized tint channels without intermediate eight-bit rounding.
+     * Samples with multiplied alpha below [alphaCutoff] are discarded before blending in command order.
+     *
+     * @property image the immutable source image.
+     * @property source the nonempty source rectangle contained in the image, in source pixel coordinates.
+     * @property destination the nonempty destination rectangle in accumulated tree coordinates.
+     * @property tint the multiplicative straight ARGB color, defaulting to opaque white.
+     * @property alphaCutoff the finite inclusive minimum normalized alpha from zero to one.
+     * @property orientation source-axis directions applied before nearest sampling, without changing normalized bounds.
+     * @throws IllegalArgumentException when a rectangle is empty, the source is outside [image], or the cutoff is invalid.
+     */
+    public data class SampledImage(
+        public val image: DrawImage,
+        public val source: FloatRect,
+        public val destination: FloatRect,
+        public val tint: ArgbColor = ArgbColor(-1),
+        public val alphaCutoff: Float = 0.1f,
+        public val orientation: SampledImageOrientation,
+    ) : DrawCommand {
+        /**
+         * Creates ordinary sampling with increasing source coordinates on both axes.
+         * Inputs, immutable ownership, and validation follow the primary constructor.
+         */
+        public constructor(
+            image: DrawImage,
+            source: FloatRect,
+            destination: FloatRect,
+            tint: ArgbColor = ArgbColor(-1),
+            alphaCutoff: Float = 0.1f,
+        ) : this(image, source, destination, tint, alphaCutoff, SampledImageOrientation.Normal)
+
+        init {
+            validateSampledImage(image, source, destination, alphaCutoff)
         }
     }
 

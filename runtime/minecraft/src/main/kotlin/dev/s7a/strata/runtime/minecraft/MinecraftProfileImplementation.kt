@@ -10,6 +10,8 @@ import dev.s7a.strata.component.ScrollState
 import dev.s7a.strata.component.SliderState
 import dev.s7a.strata.component.SlotBinding
 import dev.s7a.strata.component.TabSelectionIndicator
+import dev.s7a.strata.component.TextAreaState
+import dev.s7a.strata.component.TextAreaViewport
 import dev.s7a.strata.component.TextFieldState
 import dev.s7a.strata.component.TextStyle
 import dev.s7a.strata.component.UiScope
@@ -23,10 +25,16 @@ import dev.s7a.strata.modifier.actionDispatcher
 import dev.s7a.strata.render.ArgbColor
 import dev.s7a.strata.render.DrawImage
 import dev.s7a.strata.render.createDrawImage
+import dev.s7a.strata.resource.ResourceId
+import dev.s7a.strata.runtime.minecraft.font.MinecraftFontBackendFactory
+import dev.s7a.strata.runtime.minecraft.font.MinecraftFontEngine
+import dev.s7a.strata.runtime.minecraft.font.MinecraftFontSnapshot
 import dev.s7a.strata.spi.ComponentEvaluator
 import dev.s7a.strata.spi.ComponentRuntime
 import dev.s7a.strata.spi.ComponentRuntimeBridge
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
+import dev.s7a.strata.text.TextLayout
+import dev.s7a.strata.text.TextWrap
 import dev.s7a.strata.text.UiText
 import java.util.Collections
 
@@ -70,9 +78,32 @@ internal object MinecraftProfileImplementation {
         profile: MinecraftUiProfile,
         content: UiScope.() -> Unit,
         platform: MinecraftUiPlatform? = null,
+        textRenderer: MinecraftTextRenderer,
     ): () -> Element =
         when (profile) {
-            is ProfileSnapshot -> Evaluator.create(profile, content, platform)
+            is ProfileSnapshot -> Evaluator.create(profile, content, platform, textRenderer)
+        }
+
+    /**
+     * Opens a host-owned text service from immutable profile data on the calling thread.
+     * The returned service must be closed after the host tree and is never stored in the profile.
+     *
+     * @param profile immutable profile produced by this runtime.
+     * @param backend optional backend factory required by resource-font profiles.
+     * @return independently owned text service.
+     * @throws IllegalArgumentException when a resource-font profile has no backend factory.
+     * @throws Throwable when native backend initialization fails.
+     */
+    @JvmSynthetic
+    fun createTextRenderer(
+        profile: MinecraftUiProfile,
+        backend: MinecraftFontBackendFactory?,
+    ): MinecraftTextRenderer =
+        when (profile) {
+            is ProfileSnapshot -> {
+                val fonts = profile.fonts
+                if (fonts == null) MinecraftTextRenderer.legacy(profile.glyphSnapshot()) else MinecraftTextRenderer.fonts(MinecraftFontEngine(fonts, requireNotNull(backend) { "Resource fonts require a CPU font backend factory." }))
+            }
         }
 
     /**
@@ -117,6 +148,7 @@ internal object MinecraftProfileImplementation {
         private val textFieldDisabledShadowColor = ArgbColor(-0xE3E3E4)
         private val containerForegroundColor = ArgbColor(-0xBFBFC0)
         private val glyphs = LinkedHashMap<Int, MinecraftGlyphSnapshot>()
+        private var fonts: MinecraftFontSnapshot? = null
         private var active = true
         private var menu: DrawImage? = null
         private var containerBackground: DrawImage? = null
@@ -148,6 +180,12 @@ internal object MinecraftProfileImplementation {
         private var normalButton: MinecraftButtonSpriteSnapshot? = null
         private var highlightedButton: MinecraftButtonSpriteSnapshot? = null
         private var disabledButton: MinecraftButtonSpriteSnapshot? = null
+
+        override fun fonts(snapshot: MinecraftFontSnapshot) {
+            checkUsable()
+            require(fonts == null && glyphs.isEmpty()) { "Resource fonts and compatibility glyph declarations cannot be mixed or repeated." }
+            fonts = snapshot
+        }
 
         override fun menuBackground(image: DrawImage) {
             checkUsable()
@@ -375,6 +413,7 @@ internal object MinecraftProfileImplementation {
             mask: DrawImage,
         ) {
             checkUsable()
+            require(fonts == null) { "Resource fonts and compatibility glyph declarations cannot be mixed." }
             require(codePoint in glyphRange) {
                 "Glyph code point must be U+0021 through U+007E."
             }
@@ -417,11 +456,11 @@ internal object MinecraftProfileImplementation {
 
         fun snapshot(): ProfileSnapshot {
             checkUsable()
-            require(glyphs.size == glyphRange.count()) {
-                "Every U+0021 through U+007E glyph must be declared."
-            }
-            for (codePoint in glyphRange) {
-                require(codePoint in glyphs) { "Every U+0021 through U+007E glyph must be declared." }
+            if (fonts == null) {
+                require(glyphs.size == glyphRange.count()) { "Every U+0021 through U+007E glyph must be declared." }
+                for (codePoint in glyphRange) {
+                    require(codePoint in glyphs) { "Every U+0021 through U+007E glyph must be declared." }
+                }
             }
             return ProfileSnapshot.create(
                 menuBackground = requireNotNull(menu) { "Menu background must be declared." },
@@ -447,6 +486,7 @@ internal object MinecraftProfileImplementation {
                 normalTextField = requireNotNull(normalTextField) { "Normal TextField sprite must be declared." },
                 highlightedTextField = requireNotNull(highlightedTextField) { "Highlighted TextField sprite must be declared." },
                 glyphs = glyphs,
+                fonts = fonts,
                 normalButton = requireNotNull(normalButton) { "Normal Button sprite must be declared." },
                 highlightedButton = requireNotNull(highlightedButton) { "Highlighted Button sprite must be declared." },
                 disabledButton = requireNotNull(disabledButton) { "Disabled Button sprite must be declared." },
@@ -456,6 +496,7 @@ internal object MinecraftProfileImplementation {
         fun close() {
             active = false
             glyphs.clear()
+            fonts = null
             menu = null
             containerBackground = null
             slotHighlightBack = null
@@ -620,13 +661,12 @@ internal object MinecraftProfileImplementation {
         val normalTextField: DrawImage,
         val highlightedTextField: DrawImage,
         glyphs: Map<Int, MinecraftGlyphSnapshot>,
+        val fonts: MinecraftFontSnapshot?,
         val normalButton: MinecraftButtonSpriteSnapshot,
         val highlightedButton: MinecraftButtonSpriteSnapshot,
         val disabledButton: MinecraftButtonSpriteSnapshot,
     ) : MinecraftUiProfile {
         private val glyphs: Map<Int, MinecraftGlyphSnapshot> = Collections.unmodifiableMap(LinkedHashMap(glyphs))
-
-        fun glyph(codePoint: Int): MinecraftGlyphSnapshot = glyphs.getValue(codePoint)
 
         fun glyphSnapshot(): Map<Int, MinecraftGlyphSnapshot> = glyphs
 
@@ -676,6 +716,7 @@ internal object MinecraftProfileImplementation {
                 normalTextField: DrawImage,
                 highlightedTextField: DrawImage,
                 glyphs: Map<Int, MinecraftGlyphSnapshot>,
+                fonts: MinecraftFontSnapshot?,
                 normalButton: MinecraftButtonSpriteSnapshot,
                 highlightedButton: MinecraftButtonSpriteSnapshot,
                 disabledButton: MinecraftButtonSpriteSnapshot,
@@ -704,6 +745,7 @@ internal object MinecraftProfileImplementation {
                     normalTextField,
                     highlightedTextField,
                     glyphs,
+                    fonts,
                     normalButton,
                     highlightedButton,
                     disabledButton,
@@ -714,20 +756,23 @@ internal object MinecraftProfileImplementation {
     private class Context private constructor(
         initialProfile: ProfileSnapshot,
         initialPlatform: MinecraftUiPlatform?,
+        initialTextRenderer: MinecraftTextRenderer,
     ) : ComponentRuntime {
         private val ownerThread = Thread.currentThread()
         private var profile: ProfileSnapshot? = initialProfile
         private var platform: MinecraftUiPlatform? = initialPlatform
+        private var textRenderer: MinecraftTextRenderer? = initialTextRenderer
 
         override fun retainEvaluator(): ComponentEvaluator {
             val retainedProfile = requireProfile()
             val retainedPlatform = platform
+            val retainedTextRenderer = requireTextRenderer()
             val evaluatorOwner = ownerThread
             return ComponentEvaluator { deferredContent ->
                 check(Thread.currentThread() === evaluatorOwner) {
                     "Deferred Minecraft component evaluation must run on its owner thread."
                 }
-                val context = create(retainedProfile, retainedPlatform)
+                val context = create(retainedProfile, retainedPlatform, retainedTextRenderer)
                 try {
                     ComponentRuntimeBridge.evaluate(context, deferredContent)
                 } finally {
@@ -767,7 +812,7 @@ internal object MinecraftProfileImplementation {
             val delayNanos = Math.multiplyExact(delayMillis, 1_000_000L)
             return modifier.then(
                 createMinecraftTooltipModifier(
-                    MinecraftTextRun.createNormal(text, currentProfile::glyph),
+                    requireTextRenderer().create(text, TextStyle.Normal),
                     currentProfile.tooltipStyle,
                     delayNanos,
                 ),
@@ -784,8 +829,8 @@ internal object MinecraftProfileImplementation {
         ): Element {
             val currentProfile = requireProfile()
             require(24 < width) { "Minecraft Checkbox width must leave room for its box and label." }
-            val normalText = MinecraftTextRun.createNormal(label, currentProfile::glyph)
-            val inactiveText = MinecraftTextRun.createInactive(label, currentProfile::glyph)
+            val normalText = requireTextRenderer().create(label, TextStyle.Normal)
+            val inactiveText = requireTextRenderer().create(label, TextStyle.Inactive)
             return createMinecraftCheckboxElement(
                 normal = currentProfile.checkbox,
                 highlighted = currentProfile.checkboxHighlighted,
@@ -816,8 +861,8 @@ internal object MinecraftProfileImplementation {
             require(labels.size == state.values.size) { "CycleButton labels must match its values." }
             val runs =
                 labels.map { label ->
-                    MinecraftTextRun.createNormal(label, currentProfile::glyph) to
-                        MinecraftTextRun.createInactive(label, currentProfile::glyph)
+                    requireTextRenderer().create(label, TextStyle.Normal) to
+                        requireTextRenderer().create(label, TextStyle.Inactive)
                 }
             return createMinecraftCycleButtonElement(
                 currentProfile.normalButton,
@@ -843,8 +888,8 @@ internal object MinecraftProfileImplementation {
         ): Element {
             val currentProfile = requireProfile()
             require(8 < width && width <= 200) { "Minecraft Slider width must be greater than 8 and no larger than 200." }
-            val normalText = MinecraftTextRun.createNormal(label, currentProfile::glyph)
-            val inactiveText = MinecraftTextRun.createInactive(label, currentProfile::glyph)
+            val normalText = requireTextRenderer().create(label, TextStyle.Normal)
+            val inactiveText = requireTextRenderer().create(label, TextStyle.Inactive)
             return createMinecraftSliderElement(
                 normalTrack = currentProfile.slider,
                 highlightedTrack = currentProfile.sliderHighlighted,
@@ -900,14 +945,24 @@ internal object MinecraftProfileImplementation {
             style: TextStyle,
             modifier: Modifier,
             key: ElementKey<*>?,
-        ): Element {
-            val currentProfile = requireProfile()
-            return createMinecraftTextElement(
-                createTextRun(text, style, true, currentProfile),
+        ): Element =
+            createMinecraftTextElement(
+                requireTextRenderer().create(text, style),
                 modifier,
                 key,
             )
-        }
+
+        override fun text(
+            text: UiText,
+            layout: TextLayout,
+            style: TextStyle,
+            modifier: Modifier,
+            key: ElementKey<*>?,
+        ): Element =
+            when (layout) {
+                TextLayout.SingleLine -> text(text, style, modifier, key)
+                is TextLayout.Multiline -> createMinecraftMultilineTextElement(text, requireTextRenderer(), layout, style, modifier, key)
+            }
 
         override fun button(
             label: UiText,
@@ -918,8 +973,8 @@ internal object MinecraftProfileImplementation {
         ): Element {
             val currentProfile = requireProfile()
             require(0 < width && width <= 200) { "Minecraft Button width must be positive and no larger than 200." }
-            val normalText = MinecraftTextRun.createNormal(label, currentProfile::glyph)
-            val inactiveText = MinecraftTextRun.createInactive(label, currentProfile::glyph)
+            val normalText = requireTextRenderer().create(label, TextStyle.Normal)
+            val inactiveText = requireTextRenderer().create(label, TextStyle.Inactive)
             return createMinecraftPointerButtonElement(
                 currentProfile.normalButton,
                 currentProfile.highlightedButton,
@@ -941,16 +996,66 @@ internal object MinecraftProfileImplementation {
             style: TextStyle,
             modifier: Modifier,
             key: ElementKey<*>?,
+        ): Element = textField(state, size, enabled, style, MinecraftTextRenderer.defaultFont, modifier, key)
+
+        override fun textField(
+            state: TextFieldState,
+            size: IntSize,
+            enabled: Boolean,
+            style: TextStyle,
+            font: ResourceId,
+            modifier: Modifier,
+            key: ElementKey<*>?,
         ): Element {
             val currentProfile = requireProfile()
             return createMinecraftTextFieldElement(
                 currentProfile.normalTextField,
                 currentProfile.highlightedTextField,
-                currentProfile.glyphSnapshot(),
+                requireTextRenderer(),
+                font,
                 state,
                 size,
                 enabled,
                 style,
+                modifier,
+                key,
+            )
+        }
+
+        override fun textArea(
+            state: TextAreaState,
+            viewport: TextAreaViewport,
+            enabled: Boolean,
+            style: TextStyle,
+            wrap: TextWrap,
+            lineSpacing: Int,
+            modifier: Modifier,
+            key: ElementKey<*>?,
+        ): Element = textArea(state, viewport, enabled, style, MinecraftTextRenderer.defaultFont, wrap, lineSpacing, modifier, key)
+
+        override fun textArea(
+            state: TextAreaState,
+            viewport: TextAreaViewport,
+            enabled: Boolean,
+            style: TextStyle,
+            font: ResourceId,
+            wrap: TextWrap,
+            lineSpacing: Int,
+            modifier: Modifier,
+            key: ElementKey<*>?,
+        ): Element {
+            val currentProfile = requireProfile()
+            return createMinecraftTextAreaElement(
+                currentProfile.normalTextField,
+                currentProfile.highlightedTextField,
+                requireTextRenderer(),
+                font,
+                state,
+                viewport,
+                enabled,
+                style,
+                wrap,
+                lineSpacing,
                 modifier,
                 key,
             )
@@ -968,8 +1073,8 @@ internal object MinecraftProfileImplementation {
         ): Element {
             val currentProfile = requireProfile()
             require(0 < width && width <= 200) { "Minecraft Tab width must be positive and no larger than 200." }
-            val normalText = MinecraftTextRun.createNormal(label, currentProfile::glyph)
-            val inactiveText = MinecraftTextRun.createInactive(label, currentProfile::glyph)
+            val normalText = requireTextRenderer().create(label, TextStyle.Normal)
+            val inactiveText = requireTextRenderer().create(label, TextStyle.Inactive)
             return createMinecraftTabElement(
                 normalSprite = currentProfile.normalButton,
                 highlightedSprite = currentProfile.highlightedButton,
@@ -1093,23 +1198,16 @@ internal object MinecraftProfileImplementation {
                 }
             }
 
-        private fun createTextRun(
-            text: UiText,
-            style: TextStyle,
-            enabled: Boolean,
-            profile: ProfileSnapshot,
-        ): MinecraftTextRun =
-            when (style) {
-                TextStyle.Normal -> MinecraftTextRun.createNormal(text, profile::glyph)
-                TextStyle.Inactive -> MinecraftTextRun.createInactive(text, profile::glyph)
-                TextStyle.ContainerLabel -> MinecraftTextRun.createContainerLabel(text, profile::glyph)
-                TextStyle.TextField -> MinecraftTextRun.createTextField(text, enabled, profile::glyph)
-            }
+        private fun requireTextRenderer(): MinecraftTextRenderer {
+            requireProfile()
+            return checkNotNull(textRenderer) { "Minecraft UI context is closed." }
+        }
 
         fun close() {
             check(Thread.currentThread() === ownerThread) { "Minecraft UI context requires its creator thread." }
             profile = null
             platform = null
+            textRenderer = null
         }
 
         private fun requireProfile(): ProfileSnapshot {
@@ -1129,7 +1227,8 @@ internal object MinecraftProfileImplementation {
             internal fun create(
                 profile: ProfileSnapshot,
                 platform: MinecraftUiPlatform?,
-            ): Context = Context(profile, platform)
+                textRenderer: MinecraftTextRenderer,
+            ): Context = Context(profile, platform, textRenderer)
         }
     }
 
@@ -1137,21 +1236,25 @@ internal object MinecraftProfileImplementation {
         initialProfile: ProfileSnapshot,
         initialContent: UiScope.() -> Unit,
         initialPlatform: MinecraftUiPlatform?,
+        initialTextRenderer: MinecraftTextRenderer,
     ) : () -> Element {
         private val ownerThread = Thread.currentThread()
         private var profile: ProfileSnapshot? = initialProfile
         private var content: (UiScope.() -> Unit)? = initialContent
         private var platform: MinecraftUiPlatform? = initialPlatform
+        private var textRenderer: MinecraftTextRenderer? = initialTextRenderer
 
         override fun invoke(): Element {
             check(Thread.currentThread() === ownerThread) { "Minecraft content evaluation requires the host owner thread." }
             val currentProfile = checkNotNull(profile) { "Minecraft screen content was already evaluated." }
             val currentContent = checkNotNull(content) { "Minecraft screen content was already evaluated." }
             val currentPlatform = platform
+            val currentTextRenderer = checkNotNull(textRenderer) { "Minecraft screen content was already evaluated." }
             profile = null
             content = null
             platform = null
-            val context = Context.create(currentProfile, currentPlatform)
+            textRenderer = null
+            val context = Context.create(currentProfile, currentPlatform, currentTextRenderer)
             return try {
                 ComponentRuntimeBridge.evaluate(context, currentContent)
             } finally {
@@ -1165,6 +1268,7 @@ internal object MinecraftProfileImplementation {
             profile = null
             content = null
             platform = null
+            textRenderer = null
         }
 
         companion object {
@@ -1181,7 +1285,8 @@ internal object MinecraftProfileImplementation {
                 profile: ProfileSnapshot,
                 content: UiScope.() -> Unit,
                 platform: MinecraftUiPlatform?,
-            ): Evaluator = Evaluator(profile, content, platform)
+                textRenderer: MinecraftTextRenderer,
+            ): Evaluator = Evaluator(profile, content, platform, textRenderer)
         }
     }
 }

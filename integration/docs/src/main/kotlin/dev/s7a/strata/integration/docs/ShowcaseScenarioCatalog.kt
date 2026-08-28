@@ -6,6 +6,8 @@ import dev.s7a.strata.layout.Arrangement
 import dev.s7a.strata.layout.HorizontalAlignment
 import dev.s7a.strata.layout.VerticalAlignment
 import dev.s7a.strata.render.ArgbColor
+import dev.s7a.strata.text.TextLayout
+import dev.s7a.strata.text.TextOverflow
 
 /**
  * Owns the deterministic Minecraft component catalog used by both generator launchers.
@@ -112,21 +114,48 @@ internal object ShowcaseScenarioCatalog {
             ComponentScenario(
                 component = DocumentedComponent.Text,
                 source = componentSource("MinecraftTextExample.kt", "text"),
-                viewportMetadata = ShowcaseViewport(IntSize(120, 64), 1),
+                viewportMetadata = ShowcaseViewport(IntSize(192, 88), 2),
                 tree =
-                    centeredCanvas(
-                        IntSize(120, 64),
-                        tree(DocumentedComponent.Text, emptyList()),
+                    tree(
+                        DocumentedComponent.Stack,
+                        listOf(
+                            ShowcaseTreeDetail.Size(192, 88),
+                            ShowcaseTreeDetail.Background(ArgbColor(0xFF000000.toInt())),
+                            ShowcaseTreeDetail.Padding(8),
+                            ShowcaseTreeDetail.StackContentAlignment(Alignment.Center),
+                        ),
+                        tree(
+                            DocumentedComponent.Text,
+                            listOf(ShowcaseTreeDetail.MultilineText(TextLayout.Multiline(maxLines = 4, overflow = TextOverflow.Ellipsis, lineSpacing = 2))),
+                        ),
                     ),
             ),
             ComponentScenario(
                 component = DocumentedComponent.TextField,
                 source = componentSource("MinecraftTextFieldShowcaseExample.kt", "text-field"),
-                viewportMetadata = ShowcaseViewport(IntSize(216, 64), 1),
+                viewportMetadata = ShowcaseViewport(IntSize(216, 64), 2),
                 tree =
                     centeredCanvas(
                         IntSize(216, 64),
                         tree(DocumentedComponent.TextField, listOf(ShowcaseTreeDetail.Size(200, 20))),
+                    ),
+            ),
+            ComponentScenario(
+                component = DocumentedComponent.TextArea,
+                source = componentSource("MinecraftTextAreaShowcaseExample.kt", "text-area"),
+                viewportMetadata = ShowcaseViewport(IntSize(226, 80), 2),
+                tree =
+                    tree(
+                        DocumentedComponent.Row,
+                        listOf(
+                            ShowcaseTreeDetail.Size(226, 80),
+                            ShowcaseTreeDetail.Background(ArgbColor(0xFF000000.toInt())),
+                            ShowcaseTreeDetail.Spacing(4),
+                            ShowcaseTreeDetail.Arrangement(Arrangement.Center),
+                            ShowcaseTreeDetail.RowDefaultAlignment(VerticalAlignment.Center),
+                        ),
+                        tree(DocumentedComponent.TextArea, listOf(ShowcaseTreeDetail.Size(200, 64))),
+                        tree(DocumentedComponent.Scrollbar, listOf(ShowcaseTreeDetail.Size(6, 64))),
                     ),
             ),
             ComponentScenario(
@@ -385,7 +414,7 @@ internal object ShowcaseScenarioCatalog {
             }
         }
         val outputPaths =
-            listOf("components.md", "overview.png", "minecraft-26.2-parity.properties") +
+            listOf("components.md", "overview.png", "headless-render.properties") +
                 components
                     .map { scenario -> "${scenario.component.slug}.png" }
                     .plus(screens.map { scenario -> "screen-${scenario.screen.slug}.png" })
@@ -479,6 +508,7 @@ internal object ShowcaseScenarioCatalog {
             is ShowcaseTreeDetail.ColumnDefaultAlignment,
             is ShowcaseTreeDetail.StackContentAlignment,
             is ShowcaseTreeDetail.GridContentAlignment,
+            is ShowcaseTreeDetail.MultilineText,
             -> Unit
 
             is ShowcaseTreeDetail.Size -> require(0 < detail.width && 0 < detail.height) { "Showcase sizes must be positive." }

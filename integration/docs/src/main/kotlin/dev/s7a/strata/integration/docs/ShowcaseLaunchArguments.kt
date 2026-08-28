@@ -1,19 +1,17 @@
 package dev.s7a.strata.integration.docs
 
-import java.nio.file.Files
 import java.nio.file.InvalidPathException
-import java.nio.file.LinkOption
 import java.nio.file.Path
 
 /**
- * Validated launcher paths and Minecraft component class directories.
+ * Validated headless launcher paths, explicit read-only assets, and component class directories.
  *
- * Construction rejects malformed, duplicated, missing, or symlinked paths before rendering starts.
+ * Construction rejects malformed, missing, or symlinked inputs and duplicate component class directories before rendering starts.
  */
 internal class ShowcaseLaunchArguments private constructor(
     internal val projectRoot: Path,
     internal val stagingRoot: Path,
-    internal val parityRoot: Path,
+    internal val inputs: ShowcaseInputFiles,
     internal val componentClassDirectories: List<Path>,
 ) {
     /**
@@ -23,7 +21,7 @@ internal class ShowcaseLaunchArguments private constructor(
         /**
          * Parses and validates one task-specific launcher invocation.
          *
-         * @param args five argument groups: project root, module build root, exact staging root, Minecraft parity root, and one or more Minecraft component class directories.
+         * @param args project root, module build root, exact staging root, client archive, asset index, asset objects directory, version manifest, native inventory PNG, native inventory receipt, and one or more component class directories, in that order.
          * @param kind typed task staging kind expected by this launcher.
          * @return validated immutable launcher arguments.
          * @throws IllegalArgumentException when any path or containment invariant fails.
@@ -32,14 +30,38 @@ internal class ShowcaseLaunchArguments private constructor(
             args: Array<String>,
             kind: ShowcaseStagingKind,
         ): ShowcaseLaunchArguments {
-            require(5 <= args.size) {
-                "Showcase launcher requires a repository root, module build root, staging directory, Minecraft parity root, and Minecraft component class directory."
+            require(10 <= args.size) {
+                "Showcase launcher requires three output roots, four explicit game asset paths, two native inventory evidence files, and a component class directory."
             }
             val projectRoot = parsePath(args[0], "repository root")
-            val moduleBuildRoot = parsePath(args[1], "module build root")
-            val stagingRoot = parsePath(args[2], "staging root")
-            requireDirectory(projectRoot, "repository root")
-            requireNotSymlinkAncestry(projectRoot, "repository root")
+            ShowcasePaths.requireDirectory(projectRoot, "repository root")
+            val stagingRoot = stagingRoot(projectRoot, args[1], args[2], kind)
+            val inputs =
+                ShowcaseInputFiles(
+                    parsePath(args[3], "Minecraft client archive"),
+                    parsePath(args[4], "Minecraft asset index"),
+                    parsePath(args[5], "Minecraft asset objects"),
+                    parsePath(args[6], "Minecraft version manifest"),
+                    parsePath(args[7], "native inventory image"),
+                    parsePath(args[8], "native inventory receipt"),
+                )
+            inputs.requireOutside(
+                listOf(stagingRoot, projectRoot.resolve("docs/components"), projectRoot.resolve("docs/components.md"), projectRoot.resolve("README.md")),
+            )
+            val classDirectories = args.drop(9).map { value -> parsePath(value, "component class directory") }
+            require(classDirectories.toSet().size == classDirectories.size) { "Component class directories must be unique after normalization." }
+            classDirectories.forEach { directory -> ShowcasePaths.requireDirectory(directory, "component class directory") }
+            return ShowcaseLaunchArguments(projectRoot, stagingRoot, inputs, classDirectories)
+        }
+
+        private fun stagingRoot(
+            projectRoot: Path,
+            moduleBuild: String,
+            staging: String,
+            kind: ShowcaseStagingKind,
+        ): Path {
+            val moduleBuildRoot = parsePath(moduleBuild, "module build root")
+            val stagingRoot = parsePath(staging, "staging root")
             val expectedBuild = projectRoot.resolve("integration/docs/build").toAbsolutePath().normalize()
             require(moduleBuildRoot == expectedBuild) {
                 "Module build root must be exactly $expectedBuild but was $moduleBuildRoot."
@@ -47,28 +69,13 @@ internal class ShowcaseLaunchArguments private constructor(
             require(moduleBuildRoot != projectRoot && moduleBuildRoot.startsWith(projectRoot)) {
                 "Module build root must be a distinct repository descendant."
             }
-            requireNotSymlinkAncestry(moduleBuildRoot, "module build root")
+            ShowcasePaths.requireSafeSegments(moduleBuildRoot, "module build root")
             val expectedStaging = moduleBuildRoot.resolve("component-showcase").resolve(kind.directoryName).normalize()
             require(stagingRoot == expectedStaging) {
                 "Staging root must be exactly $expectedStaging but was $stagingRoot."
             }
-            requireNotSymlinkAncestry(stagingRoot, "staging root")
-            val parityRoot = parsePath(args[3], "Minecraft parity root")
-            val expectedParity = projectRoot.resolve("integration/minecraft-fabric-26.2/build/minecraft-parity").normalize()
-            require(parityRoot == expectedParity) {
-                "Minecraft parity root must be exactly $expectedParity but was $parityRoot."
-            }
-            requireDirectory(parityRoot, "Minecraft parity root")
-            requireNotSymlinkAncestry(parityRoot, "Minecraft parity root")
-            val classDirectories = args.drop(4).map { value -> parsePath(value, "Minecraft component class directory") }
-            require(classDirectories.isNotEmpty()) { "At least one Minecraft component class directory is required." }
-            val normalized = classDirectories.map { directory -> directory.toAbsolutePath().normalize() }
-            require(normalized.toSet().size == normalized.size) { "Minecraft component class directories must be unique after normalization." }
-            normalized.forEach { directory ->
-                ShowcasePaths.requireSafeSegments(directory, "Minecraft component class directory")
-                ShowcasePaths.requireDirectory(directory, "Minecraft component class directory")
-            }
-            return ShowcaseLaunchArguments(projectRoot, stagingRoot, parityRoot, normalized)
+            ShowcasePaths.requireSafeSegments(stagingRoot, "staging root")
+            return stagingRoot
         }
 
         private fun parsePath(
@@ -80,17 +87,5 @@ internal class ShowcaseLaunchArguments private constructor(
             } catch (error: InvalidPathException) {
                 throw IllegalArgumentException("Malformed $label path: $value", error)
             }
-
-        private fun requireDirectory(
-            path: Path,
-            label: String,
-        ) {
-            require(Files.isDirectory(path, LinkOption.NOFOLLOW_LINKS)) { "$label is not a directory: $path" }
-        }
-
-        private fun requireNotSymlinkAncestry(
-            path: Path,
-            label: String,
-        ) = ShowcasePaths.requireSafeSegments(path, label)
     }
 }

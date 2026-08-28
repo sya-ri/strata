@@ -69,6 +69,8 @@ internal class StrataMinecraftLegacyLoadedSuite {
         verifyVersionAsset(context)
         val output = outputDirectory()
         Files.createDirectories(output)
+        verifyProfileCache(context, output)
+        verifyContinuousInput(context, profile, output)
         verifyPortableScene(context, output)
         verifyPlayerInventoryBinding(context, profile, output)
     }
@@ -82,6 +84,30 @@ internal class StrataMinecraftLegacyLoadedSuite {
         }
     }
 
+    private fun verifyProfileCache(
+        context: MinecraftLoadedTestContext,
+        output: Path,
+    ) {
+        val probe = MinecraftProfileCacheProbe({ it.screen }, { it.setScreen(null) })
+        val outcome =
+            runCatching {
+                val reload = context.computeOnClient(probe::begin)
+                context.waitFor { reload.isDone }
+                reload.join()
+                // The reload future completes before LoadingOverlay finishes its native fade-out.
+                context.waitFor { it.overlay == null }
+                context.computeOnClient(probe::afterReload)
+                context.waitFor { probe.collected() }
+                probe.writeReceipt(output)
+            }
+        val cleanup = runCatching { context.computeOnClient { probe.close() } }
+        outcome.exceptionOrNull()?.let { failure ->
+            cleanup.exceptionOrNull()?.let(failure::addSuppressed)
+            throw failure
+        }
+        cleanup.getOrThrow()
+    }
+
     private fun verifyVersionAsset(context: MinecraftLoadedTestContext) {
         val ascii =
             context.computeOnClient {
@@ -90,6 +116,40 @@ internal class StrataMinecraftLegacyLoadedSuite {
         require(ascii.size == asciiTextureSize) {
             "Minecraft ${minecraftVersion()}'s regular ASCII font must be the verified 128 by 128 pixel asset."
         }
+    }
+
+    private fun verifyContinuousInput(
+        context: MinecraftLoadedTestContext,
+        profile: MinecraftUiProfile,
+        output: Path,
+    ) {
+        val probe = context.computeOnClient { MinecraftContinuousInputProbe() }
+        val screen = context.computeOnClient { createMinecraftScreen(probe.definition(), profile, parent = null) }
+        // Keep inherited Minecraft callback references on their mapped vanilla owner.
+        val vanillaScreen: Screen = screen
+        val outcome =
+            runCatching {
+                context.computeOnClient { minecraft -> minecraft.setScreen(screen) }
+                context.waitFor { minecraft ->
+                    minecraft.screen === screen && probe.isReady() && 0L < readRenderWork(minecraft).framePreparations
+                }
+                context.computeOnClient { minecraft ->
+                    probe.verify(
+                        frameCount = { readRenderWork(minecraft).hostFrames },
+                        scroll = { scrollMinecraftScreen(screen, probe.position) },
+                        move = { vanillaScreen.mouseMoved(probe.position.x.toDouble(), probe.position.y.toDouble()) },
+                        click = { clickMinecraftScreen(screen, probe.position) },
+                    )
+                }
+            }
+        val cleanup = runCatching { context.computeOnClient { vanillaScreen.onClose() } }
+        val receipt =
+            outcome.getOrElse { failure ->
+                cleanup.exceptionOrNull()?.let { if (it !== failure) failure.addSuppressed(it) }
+                throw failure
+            }
+        cleanup.getOrThrow()
+        Files.writeString(output.resolve("continuous-input.txt"), "minecraftVersion=${minecraftVersion()}\n$receipt")
     }
 
     private fun verifyPortableScene(
@@ -154,12 +214,20 @@ internal class StrataMinecraftLegacyLoadedSuite {
             nativePresentation(screen).textures.isNotEmpty()
         }
         movePointer(context, slotCenter)
+        val textureObservation = AtomicReference<PortableTextureObservation?>()
         context.waitFor { minecraft ->
             val screen = minecraft.screen as? FabricMinecraftScreen ?: return@waitFor false
-            nativeTextureSizes(screen) == listOf(viewport, slotHighlightTextureSize)
+            val observed = portableTextureObservation(screen)
+            if (observed.sizes == listOf(viewport, slotHighlightTextureSize)) {
+                textureObservation.set(observed)
+                true
+            } else {
+                false
+            }
         }
+        assertPortableTextureBounds(checkNotNull(textureObservation.get()))
+        // This PNG is diagnostic; the strict texture-bounds gate uses the immutable observation captured above.
         takeScreenshot(context, "strata-player-inventory-binding-${minecraftVersion()}", output)
-        assertPortableTextureBounds(context)
     }
 
     private fun verifyPlayerInventoryRoundTrip(
@@ -269,16 +337,18 @@ internal class StrataMinecraftLegacyLoadedSuite {
         }
     }
 
-    private fun assertPortableTextureBounds(context: MinecraftLoadedTestContext) {
-        context.computeOnClient { minecraft ->
-            val screen = activeFabricScreen(minecraft)
-            val fabricPresentation = fabricPresentation(screen)
-            val sizes = nativeTextureSizes(screen)
-            require(sizes == listOf(viewport, slotHighlightTextureSize)) {
-                val pointer = retainedPresentation(fabricPresentation, "pointerPosition")
-                "Portable runs must retain only their visible bounds instead of one full-viewport texture each: sizes=$sizes, pointer=$pointer"
-            }
+    private fun assertPortableTextureBounds(observation: PortableTextureObservation) {
+        require(observation.sizes == listOf(viewport, slotHighlightTextureSize)) {
+            "Portable runs must retain only their visible bounds instead of one full-viewport texture each: sizes=${observation.sizes}, pointer=${observation.pointer}"
         }
+    }
+
+    private fun portableTextureObservation(screen: FabricMinecraftScreen): PortableTextureObservation {
+        val presentation = fabricPresentation(screen)
+        return PortableTextureObservation(
+            sizes = nativeTextureSizes(screen),
+            pointer = retainedPresentation(presentation, "pointerPosition") as? IntOffset,
+        )
     }
 
     private fun nativeTextureSizes(screen: FabricMinecraftScreen): List<IntSize> =
@@ -535,6 +605,11 @@ internal class StrataMinecraftLegacyLoadedSuite {
     private data class NativePresentation(
         val textures: List<DynamicTexture>,
         val locations: List<MinecraftTestResourceLocation>,
+    )
+
+    private data class PortableTextureObservation(
+        val sizes: List<IntSize>,
+        val pointer: IntOffset?,
     )
 
     private companion object {

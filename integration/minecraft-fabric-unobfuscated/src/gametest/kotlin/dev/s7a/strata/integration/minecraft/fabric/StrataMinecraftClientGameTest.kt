@@ -1,12 +1,23 @@
 package dev.s7a.strata.integration.minecraft.fabric
 
 import com.mojang.blaze3d.platform.NativeImage
+import dev.s7a.strata.component.Column
 import dev.s7a.strata.component.ImageSource
 import dev.s7a.strata.component.PlayerSkinSource
+import dev.s7a.strata.component.Spacer
+import dev.s7a.strata.component.TextField
+import dev.s7a.strata.component.TextFieldState
 import dev.s7a.strata.geometry.IntOffset
 import dev.s7a.strata.geometry.IntRect
 import dev.s7a.strata.geometry.IntSize
+import dev.s7a.strata.input.InputResult
 import dev.s7a.strata.input.PointerEvent
+import dev.s7a.strata.modifier.Modifier
+import dev.s7a.strata.modifier.initialFocus
+import dev.s7a.strata.modifier.onCharacterInput
+import dev.s7a.strata.modifier.onPreedit
+import dev.s7a.strata.modifier.onTextInput
+import dev.s7a.strata.modifier.size
 import dev.s7a.strata.render.ArgbColor
 import dev.s7a.strata.render.DrawImage
 import dev.s7a.strata.resource.ResourceId
@@ -20,6 +31,7 @@ import dev.s7a.strata.runtime.minecraft.fabric.createMinecraftScreen
 import dev.s7a.strata.runtime.minecraft.fabric.extractMinecraftUiProfile
 import dev.s7a.strata.runtime.minecraft.fabric.loadCurrentMinecraftPlayerSkin
 import dev.s7a.strata.runtime.minecraft.fabric.loadMinecraftUiImage
+import dev.s7a.strata.runtime.minecraft.font.lwjgl.LwjglMinecraftFontBackendFactory
 import dev.s7a.strata.runtime.render.DrawCommand
 import dev.s7a.strata.screen.ScreenDefinition
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
@@ -37,8 +49,13 @@ import net.minecraft.client.gui.screens.ConfirmScreen
 import net.minecraft.client.gui.screens.DirectJoinServerScreen
 import net.minecraft.client.gui.screens.Screen
 import net.minecraft.client.gui.screens.inventory.ContainerScreen
+import net.minecraft.client.input.CharacterEvent
+import net.minecraft.client.input.MouseButtonEvent
+import net.minecraft.client.input.MouseButtonInfo
+import net.minecraft.client.input.PreeditEvent
 import net.minecraft.client.multiplayer.ServerData
 import net.minecraft.client.renderer.RenderPipelines
+import net.minecraft.locale.Language
 import net.minecraft.network.chat.Component
 import net.minecraft.resources.Identifier
 import net.minecraft.world.entity.player.Inventory
@@ -51,6 +68,7 @@ import java.nio.file.Files
 import java.nio.file.Path
 import java.security.MessageDigest
 import java.util.HexFormat
+import java.util.concurrent.CompletableFuture
 import java.util.function.Predicate
 import kotlin.io.path.inputStream
 
@@ -78,10 +96,22 @@ public class StrataMinecraftClientGameTest : FabricClientGameTest {
             FailableConsumer<Minecraft, RuntimeException> { minecraft ->
                 minecraft.options.guiScale().set(1)
                 minecraft.options.forceUnicodeFont().set(false)
+                minecraft.options.japaneseGlyphVariants().set(false)
                 minecraft.options.showAutosaveIndicator().set(false)
                 require(ParityLocale.parse(minecraft.options.languageCode) === ParityLocale.EnglishUnitedStates) {
                     "Minecraft parity requires the en_us language profile."
                 }
+                require(
+                    minecraft.options
+                        .forceUnicodeFont()
+                        .get()
+                        .not() &&
+                        minecraft.options
+                            .japaneseGlyphVariants()
+                            .get()
+                            .not() &&
+                        Language.getInstance().isDefaultRightToLeft.not(),
+                ) { "Minecraft parity requires the explicit non-uniform, non-Japanese-variant, left-to-right font options." }
                 minecraft.resizeGui()
             },
         )
@@ -93,6 +123,9 @@ public class StrataMinecraftClientGameTest : FabricClientGameTest {
             )
         val output = parityOutput()
         Files.createDirectories(output)
+        verifyProfileCache(context, output)
+        assertNativeTextInputFocus(context, profile)
+        verifyContinuousInput(context, profile, output)
 
         context.setScreen { DeterministicConfirmScreen() }
         context.waitForScreen(DeterministicConfirmScreen::class.java)
@@ -175,6 +208,112 @@ public class StrataMinecraftClientGameTest : FabricClientGameTest {
         }
 
         closeFabricScreen(context)
+    }
+
+    @OptIn(InternalStrataRuntimeApi::class)
+    @Suppress("LongMethod")
+    private fun assertNativeTextInputFocus(
+        context: ClientGameTestContext,
+        profile: MinecraftUiProfile,
+    ) {
+        lateinit var firstState: TextFieldState
+        lateinit var secondState: TextFieldState
+        lateinit var screen: FabricMinecraftScreen
+        lateinit var nativeParent: DeterministicDirectJoinScreen
+        var firstPreeditCalls = 0
+        var secondPreeditCalls = 0
+        context.setScreen {
+            firstState = TextFieldState("A")
+            secondState = TextFieldState("B")
+            nativeParent = DeterministicDirectJoinScreen()
+            val definition =
+                ScreenDefinition("native input focus") {
+                    Column {
+                        TextField(
+                            firstState,
+                            modifier =
+                                Modifier.Empty
+                                    .initialFocus()
+                                    .onPreedit {
+                                        firstPreeditCalls += 1
+                                        InputResult.Ignored
+                                    }.onCharacterInput { event ->
+                                        if (event.codePoint == 'X'.code) {
+                                            MinecraftClientScreenAccess.setScreen(Minecraft.getInstance(), nativeParent)
+                                            InputResult.Consumed
+                                        } else {
+                                            InputResult.Ignored
+                                        }
+                                    },
+                        )
+                        TextField(
+                            secondState,
+                            modifier =
+                                Modifier.Empty.onPreedit {
+                                    secondPreeditCalls += 1
+                                    InputResult.Ignored
+                                },
+                        )
+                        Spacer(modifier = Modifier.Empty.size(200, 20).onTextInput { InputResult.Ignored })
+                    }
+                }
+            screen = createMinecraftScreen(definition, profile, parent = null)
+            screen
+        }
+        context.waitForScreen(FabricMinecraftScreen::class.java)
+        context.waitFor(
+            Predicate<Minecraft> { minecraft ->
+                MinecraftClientScreenAccess.currentScreen(minecraft) === screen &&
+                    0L < readRenderWork(minecraft).framePreparations && nativeTextInputEnabled(minecraft)
+            },
+        )
+        context.waitTicks(2)
+        context.runOnClient(
+            FailableConsumer<Minecraft, RuntimeException> { minecraft ->
+                check(nativeTextInputEnabled(minecraft)) { "Initial editable focus did not enable native text input." }
+                check(firstPreeditCalls == 1) { "Unchanged frames must not resubmit native preedit." }
+                val preedit = PreeditEvent("日🙂", 3, listOf("日", "🙂"), 1)
+                check(screen.preeditUpdated(preedit))
+                check(firstState.value == "A") { "Preedit unexpectedly committed text." }
+                screen.mouseClicked(MouseButtonEvent(4.0, 24.0, MouseButtonInfo(0, 0)), false)
+                check(nativeTextInputEnabled(minecraft))
+                check(secondPreeditCalls == 1) { "Switching editable owners did not resubmit native preedit." }
+                check(screen.charTyped(CharacterEvent('한'.code)))
+                check(firstState.value == "A" && secondState.value == "한B")
+                screen.mouseClicked(MouseButtonEvent(4.0, 44.0, MouseButtonInfo(0, 0)), false)
+                check(nativeTextInputEnabled(minecraft).not()) { "A passive input observer enabled native text input." }
+                check(screen.preeditUpdated(preedit).not())
+                screen.mouseClicked(MouseButtonEvent(4.0, 4.0, MouseButtonInfo(0, 0)), false)
+                check(nativeTextInputEnabled(minecraft))
+                MinecraftClientScreenAccess.setScreen(minecraft, null)
+                check(nativeTextInputEnabled(minecraft).not()) { "Detaching a screen retained native text-input focus." }
+                check(screen.preeditUpdated(preedit).not())
+                MinecraftClientScreenAccess.setScreen(minecraft, screen)
+                check(nativeTextInputEnabled(minecraft).not()) { "Reattachment enabled text input before a committed frame." }
+            },
+        )
+        context.waitTicks(2)
+        context.runOnClient(
+            FailableConsumer<Minecraft, RuntimeException> { minecraft ->
+                check(nativeTextInputEnabled(minecraft))
+                check(firstState.value == "A" && secondState.value == "한B")
+                check(screen.charTyped(CharacterEvent('X'.code)))
+                check(MinecraftClientScreenAccess.currentScreen(minecraft) === nativeParent)
+                check(nativeTextInputEnabled(minecraft)) { "Deferred Strata removal disabled the next native editor." }
+                screen.close()
+                check(nativeTextInputEnabled(minecraft)) { "Closing a detached screen disabled the active native editor." }
+                nativeParent.setFocused(null)
+                MinecraftClientScreenAccess.setScreen(minecraft, null)
+                check(nativeTextInputEnabled(minecraft).not())
+            },
+        )
+    }
+
+    private fun nativeTextInputEnabled(minecraft: Minecraft): Boolean {
+        val manager = minecraft.textInputManager()
+        val enabled = manager.javaClass.getDeclaredField("textInputEnabled")
+        check(enabled.trySetAccessible()) { "Native text-input state is inaccessible to the loaded test." }
+        return enabled.getBoolean(manager)
     }
 
     @OptIn(InternalStrataRuntimeApi::class)
@@ -479,8 +618,9 @@ public class StrataMinecraftClientGameTest : FabricClientGameTest {
         viewport: IntSize,
         pointerPosition: IntOffset = pointer,
         frameTime: FrameTime? = null,
+        scale: Int = 1,
     ): HeadlessImage {
-        val host = createMinecraftUiHost(definition, profile)
+        val host = createMinecraftUiHost(definition, profile, LwjglMinecraftFontBackendFactory)
         host.attach()
         return try {
             if (frameTime == null) host.frame(viewport) else host.frame(viewport, FrameTime(0L))
@@ -491,7 +631,7 @@ public class StrataMinecraftClientGameTest : FabricClientGameTest {
                     IntRect(0, 0, frame.size.width, frame.size.height),
                     ArgbColor(opaqueBlack),
                 )
-            rasterizeHeadless(listOf(framebufferClear) + frame.drawCommands, frame.size)
+            rasterizeHeadless(listOf(framebufferClear) + frame.drawCommands, frame.size, scale)
         } finally {
             host.close()
         }
@@ -569,7 +709,10 @@ public class StrataMinecraftClientGameTest : FabricClientGameTest {
                                     ),
                                 ),
                             ),
-                        playerSkin = PlayerSkinSource.Pixels(loadCurrentMinecraftPlayerSkin()),
+                        playerSkin =
+                            PlayerSkinSource.Pixels(
+                                loadMinecraftUiImage(ResourceId("minecraft", "textures/entity/player/slim/efe.png")),
+                            ),
                     )
                 },
             )
@@ -578,11 +721,18 @@ public class StrataMinecraftClientGameTest : FabricClientGameTest {
         val frames = LinkedHashMap<ComponentShowcase, ComponentShowcaseFrame>()
         for (showcase in ComponentShowcase.entries) {
             closeFabricScreen(context)
-            context.input.resizeWindow(showcase.viewport.width, showcase.viewport.height)
+            val physicalSize = showcase.physicalSize
+            context.input.resizeWindow(physicalSize.width, physicalSize.height)
             context.runOnClient(
-                FailableConsumer<Minecraft, RuntimeException> { minecraft -> minecraft.resizeGui() },
+                FailableConsumer<Minecraft, RuntimeException> { minecraft ->
+                    minecraft.options.guiScale().set(showcase.scale)
+                    minecraft.resizeGui()
+                    // Minimal component viewports are smaller than the options menu's 320 by 240 scale-selection floor.
+                    minecraft.window.setGuiScale(showcase.scale)
+                    check(minecraft.window.guiScaledWidth == showcase.viewport.width && minecraft.window.guiScaledHeight == showcase.viewport.height)
+                },
             )
-            context.input.setCursorPos(showcase.pointer.x.toDouble(), showcase.pointer.y.toDouble())
+            context.input.setCursorPos(showcase.pointer.x.toDouble() * showcase.scale, showcase.pointer.y.toDouble() * showcase.scale)
             val headless =
                 context.computeOnClient(
                     FailableFunction<Minecraft, HeadlessImage, RuntimeException> {
@@ -591,6 +741,8 @@ public class StrataMinecraftClientGameTest : FabricClientGameTest {
                             createComponentShowcaseScreenDefinition(showcase, assets),
                             showcase.viewport,
                             showcase.pointer,
+                            frameTime = FrameTime(0L),
+                            scale = showcase.scale,
                         )
                     },
                 )
@@ -606,18 +758,24 @@ public class StrataMinecraftClientGameTest : FabricClientGameTest {
                 )
             }
             context.waitForScreen(FabricMinecraftScreen::class.java)
-            context.input.setCursorPos(showcase.pointer.x.toDouble(), showcase.pointer.y.toDouble())
+            context.input.setCursorPos(showcase.pointer.x.toDouble() * showcase.scale, showcase.pointer.y.toDouble() * showcase.scale)
             context.waitTicks(2)
+            context.runOnClient(
+                FailableConsumer<Minecraft, RuntimeException> { minecraft ->
+                    check(minecraft.window.guiScale == showcase.scale) { "The component capture lost its actual GUI density." }
+                    check(minecraft.window.guiScaledWidth == showcase.viewport.width && minecraft.window.guiScaledHeight == showcase.viewport.height)
+                },
+            )
             val fabricPath =
                 context.takeScreenshot(
                     TestScreenshotOptions
                         .of("strata-component-${showcase.slug}-fabric")
                         .disableCounterPrefix()
-                        .withSize(showcase.viewport.width, showcase.viewport.height)
+                        .withSize(physicalSize.width, physicalSize.height)
                         .withDestinationDir(output),
                 )
             NativeImage.read(fabricPath.inputStream()).use { fabric ->
-                requireImageSize(fabric, showcase.viewport)
+                requireImageSize(fabric, physicalSize)
                 if (showcase.animationFrameTimes.isEmpty()) {
                     requireExactPixels(fabric, headless)
                 } else {
@@ -632,6 +790,7 @@ public class StrataMinecraftClientGameTest : FabricClientGameTest {
                                             showcase.viewport,
                                             showcase.pointer,
                                             frameTime,
+                                            showcase.scale,
                                         )
                                     },
                                 )
@@ -662,6 +821,7 @@ public class StrataMinecraftClientGameTest : FabricClientGameTest {
             ComponentShowcase.Spacer -> createSpacerShowcaseScreenDefinition()
             ComponentShowcase.Text -> createTextShowcaseScreenDefinition()
             ComponentShowcase.TextField -> createTextFieldShowcaseScreenDefinition()
+            ComponentShowcase.TextArea -> createTextAreaShowcaseScreenDefinition()
             ComponentShowcase.Button -> createButtonShowcaseScreenDefinition()
             ComponentShowcase.Checkbox -> createCheckboxShowcaseScreenDefinition()
             ComponentShowcase.CycleButton -> createCycleButtonShowcaseScreenDefinition()
@@ -758,6 +918,11 @@ public class StrataMinecraftClientGameTest : FabricClientGameTest {
                     append(showcase.slug)
                     append(".viewport.height=")
                     append(showcase.viewport.height)
+                    append('\n')
+                    append("component.")
+                    append(showcase.slug)
+                    append(".gui.scale=")
+                    append(showcase.scale)
                     append('\n')
                     append("component.")
                     append(showcase.slug)
@@ -966,6 +1131,74 @@ public class StrataMinecraftClientGameTest : FabricClientGameTest {
         } finally {
             world.close()
         }
+    }
+
+    @OptIn(InternalStrataRuntimeApi::class)
+    private fun verifyContinuousInput(
+        context: ClientGameTestContext,
+        profile: MinecraftUiProfile,
+        output: Path,
+    ) {
+        val probe = context.computeOnClient(FailableFunction<Minecraft, MinecraftContinuousInputProbe, RuntimeException> { MinecraftContinuousInputProbe() })
+        val screen = context.computeOnClient(FailableFunction<Minecraft, FabricMinecraftScreen, RuntimeException> { createMinecraftScreen(probe.definition(), profile, parent = null) })
+        val outcome =
+            runCatching {
+                context.runOnClient(FailableConsumer<Minecraft, RuntimeException> { MinecraftClientScreenAccess.setScreen(it, screen) })
+                context.waitFor(
+                    Predicate<Minecraft> { minecraft ->
+                        MinecraftClientScreenAccess.currentScreen(minecraft) === screen && probe.isReady() && 0L < readRenderWork(minecraft).framePreparations
+                    },
+                )
+                context.computeOnClient(
+                    FailableFunction<Minecraft, String, RuntimeException> { minecraft ->
+                        probe.verify(
+                            frameCount = { readRenderWork(minecraft).hostFrames },
+                            scroll = { scrollMinecraftScreen(screen, probe.position) },
+                            move = { screen.mouseMoved(probe.position.x.toDouble(), probe.position.y.toDouble()) },
+                            click = {
+                                val event = MouseButtonEvent(probe.position.x.toDouble(), probe.position.y.toDouble(), MouseButtonInfo(0, 0))
+                                check(screen.mouseClicked(event, false)) { "The Strata content must consume its native primary press." }
+                                screen.mouseReleased(event)
+                            },
+                        )
+                    },
+                )
+            }
+        val cleanup = runCatching { context.runOnClient(FailableConsumer<Minecraft, RuntimeException> { screen.onClose() }) }
+        val receipt =
+            outcome.getOrElse { failure ->
+                cleanup.exceptionOrNull()?.let { if (it !== failure) failure.addSuppressed(it) }
+                throw failure
+            }
+        cleanup.getOrThrow()
+        Files.writeString(output.resolve("continuous-input.txt"), "minecraftVersion=${minecraftVersion()}\n$receipt")
+    }
+
+    private fun verifyProfileCache(
+        context: ClientGameTestContext,
+        output: Path,
+    ) {
+        val probe = MinecraftProfileCacheProbe(MinecraftClientScreenAccess::currentScreen) { MinecraftClientScreenAccess.setScreen(it, null) }
+        val outcome =
+            runCatching {
+                val reload =
+                    context.computeOnClient(
+                        FailableFunction<Minecraft, CompletableFuture<Void>, RuntimeException> { probe.begin(it) },
+                    )
+                context.waitFor(Predicate<Minecraft> { reload.isDone })
+                reload.join()
+                // The reload future completes before LoadingOverlay finishes its native fade-out.
+                context.waitFor(Predicate<Minecraft> { MinecraftClientScreenAccess.hasOverlay(it).not() })
+                context.runOnClient(FailableConsumer<Minecraft, RuntimeException> { probe.afterReload(it) })
+                context.waitFor(Predicate<Minecraft> { probe.collected() })
+                probe.writeReceipt(output)
+            }
+        val cleanup = runCatching { context.runOnClient(FailableConsumer<Minecraft, RuntimeException> { probe.close() }) }
+        outcome.exceptionOrNull()?.let { failure ->
+            cleanup.exceptionOrNull()?.let(failure::addSuppressed)
+            throw failure
+        }
+        cleanup.getOrThrow()
     }
 
     private fun sha256Argb(image: HeadlessImage): String {
@@ -1220,14 +1453,16 @@ public class StrataMinecraftClientGameTest : FabricClientGameTest {
         val viewport: IntSize,
         val pointer: IntOffset = IntOffset.Zero,
         val animationFrameTimes: List<FrameTime> = emptyList(),
+        val scale: Int = 1,
     ) {
         Row("row", IntSize(136, 64)),
         Column("column", IntSize(120, 64)),
         Stack("stack", IntSize(64, 64)),
         Grid("grid", IntSize(64, 64)),
         Spacer("spacer", IntSize(160, 64)),
-        Text("text", IntSize(120, 64)),
-        TextField("text-field", IntSize(216, 64)),
+        Text("text", IntSize(192, 88), scale = 2),
+        TextField("text-field", IntSize(216, 64), scale = 2),
+        TextArea("text-area", IntSize(226, 80), scale = 2),
         Button("button", IntSize(166, 64)),
         Checkbox("checkbox", IntSize(166, 36)),
         CycleButton("cycle-button", IntSize(166, 36)),
@@ -1251,6 +1486,9 @@ public class StrataMinecraftClientGameTest : FabricClientGameTest {
                 ),
         ),
         ProgressBar("progress-bar", IntSize(116, 28)),
+        ;
+
+        val physicalSize: IntSize = IntSize(Math.multiplyExact(viewport.width, scale), Math.multiplyExact(viewport.height, scale))
     }
 
     private enum class ParityScreen(

@@ -130,6 +130,7 @@ internal fun storageScreen(onDone: () -> Unit): ScreenDefinition {
 
 - Keep mutable values in caller-owned state objects. Rebuild immutable component arguments from that state and receive typed changes through modifiers.
 - Place `ScrollArea` and `Scrollbar` separately and link them with one `ScrollState`. A viewport may omit its scrollbar or place it away from the content.
+- Use `TextAreaState` for multiline editing and link an optional `Scrollbar` to `state.scrollState`. Creating immutable descriptions does not attach the state, and descriptions may be reused after detachment; simultaneous attachment with the same caller-owned state throws `IllegalStateException`.
 - Use the dynamic `VirtualList(itemCount = { ... })` overload for a loadable indexed source. Complete each prepend, append, or same-count row mutation inside its leading or trailing request handler, then call owner-thread `VirtualListState.refresh()` so the list resamples the count, rebuilds visible rows, and preserves its stable-key anchor when possible. The `Int` and `List` overloads are immutable snapshots. Use the same state for index or stable-key jumps.
 - Use `ImageSource.Resource(ResourceId(...))` and image backgrounds for resource-pack-replaceable Mod assets.
 - Use `PlayerSkinSource` for profile-driven heads rather than pre-rendering a skin outside the component.

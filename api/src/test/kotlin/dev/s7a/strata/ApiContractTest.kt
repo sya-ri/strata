@@ -1,5 +1,11 @@
 package dev.s7a.strata
 
+import dev.s7a.strata.component.Text
+import dev.s7a.strata.component.TextArea
+import dev.s7a.strata.component.TextAreaState
+import dev.s7a.strata.component.TextAreaViewport
+import dev.s7a.strata.component.TextFieldState
+import dev.s7a.strata.component.TextStyle
 import dev.s7a.strata.element.Element
 import dev.s7a.strata.element.ElementIdentity
 import dev.s7a.strata.element.ElementKey
@@ -10,20 +16,34 @@ import dev.s7a.strata.geometry.IntRect
 import dev.s7a.strata.geometry.IntSize
 import dev.s7a.strata.input.PointerButton
 import dev.s7a.strata.input.PointerEvent
+import dev.s7a.strata.modifier.Modifier
 import dev.s7a.strata.node.DirtyMask
 import dev.s7a.strata.node.DirtyPhase
+import dev.s7a.strata.node.FocusTargetNode
 import dev.s7a.strata.node.Node
+import dev.s7a.strata.resource.ResourceId
 import dev.s7a.strata.semantics.SemanticsRole
+import dev.s7a.strata.spi.ComponentRuntime
+import dev.s7a.strata.spi.ComponentRuntimeBridge
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
 import dev.s7a.strata.text.PlatformText
+import dev.s7a.strata.text.TextLayout
+import dev.s7a.strata.text.TextOverflow
+import dev.s7a.strata.text.TextWrap
 import dev.s7a.strata.text.TranslationFallback
 import dev.s7a.strata.text.UiText
 import dev.s7a.strata.text.UiTextArgument
+import dev.s7a.strata.text.withFont
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
+import org.junit.jupiter.api.Assertions.assertNotEquals
+import org.junit.jupiter.api.Assertions.assertSame
 import org.junit.jupiter.api.Assertions.assertThrows
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
+import java.lang.reflect.InvocationHandler
+import java.lang.reflect.Proxy
+import java.lang.reflect.Modifier as JavaModifier
 
 /**
  * Verifies the public value and bridge contracts without depending on the retained engine.
@@ -144,6 +164,165 @@ internal class ApiContractTest {
     }
 
     @Test
+    fun fontSelectionRetainsUnresolvedTextAndValueIdentity() {
+        val original = UiText.Translated("strata.greeting", fallback = "日本語 한국어 🙂")
+        val font = ResourceId("example", "ui/body")
+        val selected = original.withFont(font) as UiText.WithFont
+        assertSame(original, selected.text)
+        assertEquals(font, selected.font)
+        assertEquals(UiText.WithFont(original, font), selected)
+        assertEquals(UiText.WithFont(original, font).hashCode(), selected.hashCode())
+        val concatenated = UiText.concat(selected, UiText.Literal("suffix")) as UiText.Concatenated
+        assertSame(selected, concatenated.parts[0])
+    }
+
+    @Test
+    fun olderRuntimeImplementationsInheritAnExplicitUnsupportedFontDefault() {
+        val fontMethod =
+            ComponentRuntime::class.java.getDeclaredMethod(
+                "textField",
+                TextFieldState::class.java,
+                IntSize::class.java,
+                Boolean::class.java,
+                TextStyle::class.java,
+                ResourceId::class.java,
+                Modifier::class.java,
+                ElementKey::class.java,
+            )
+        assertTrue(fontMethod.isDefault)
+        val runtime =
+            Proxy.newProxyInstance(
+                ComponentRuntime::class.java.classLoader,
+                arrayOf(ComponentRuntime::class.java),
+            ) { proxy, method, arguments ->
+                assertEquals(fontMethod, method)
+                InvocationHandler.invokeDefault(proxy, method, *arguments.orEmpty())
+            } as ComponentRuntime
+        val failure =
+            assertThrows(UnsupportedOperationException::class.java) {
+                runtime.textField(TextFieldState(""), IntSize(200, 20), true, TextStyle.TextField, ResourceId("example", "body"), Modifier.Empty, null)
+            }
+        assertEquals("This runtime does not support explicit font selection.", failure.message)
+    }
+
+    @Test
+    fun explicitTextLayoutPreservesTheLegacyJvmDefaultAndRejectsUnsupportedCapabilities() {
+        val element = ContractElement()
+        val legacyMethod = ComponentRuntime::class.java.getDeclaredMethod("text", UiText::class.java, TextStyle::class.java, Modifier::class.java, ElementKey::class.java)
+        var legacyCalls = 0
+        val runtime =
+            Proxy.newProxyInstance(ComponentRuntime::class.java.classLoader, arrayOf(ComponentRuntime::class.java)) { proxy, method, arguments ->
+                if (method.isDefault) {
+                    InvocationHandler.invokeDefault(proxy, method, *arguments.orEmpty())
+                } else {
+                    assertEquals(legacyMethod, method)
+                    legacyCalls += 1
+                    element
+                }
+            } as ComponentRuntime
+        val layoutMethod = ComponentRuntime::class.java.methods.single { TextLayout::class.java in it.parameterTypes && JavaModifier.isStatic(it.modifiers).not() }
+        assertTrue(layoutMethod.isDefault)
+        ComponentRuntime::class.java.methods
+            .filter { it.parameterTypes.firstOrNull() == TextAreaState::class.java && JavaModifier.isStatic(it.modifiers).not() }
+            .forEach { method -> assertTrue(method.isDefault) }
+        val text = UiText.Literal("A")
+        assertSame(element, runtime.text(text, TextLayout.SingleLine, TextStyle.Normal, Modifier.Empty, null))
+        assertThrows(UnsupportedOperationException::class.java) {
+            runtime.text(text, TextLayout.Multiline(), TextStyle.Normal, Modifier.Empty, null)
+        }
+        val state = TextAreaState()
+        val viewport = TextAreaViewport.Lines(120, 3)
+        assertThrows(UnsupportedOperationException::class.java) {
+            runtime.textArea(state, viewport, true, TextStyle.TextField, TextWrap.Word, 0, Modifier.Empty, null)
+        }
+        assertThrows(UnsupportedOperationException::class.java) {
+            runtime.textArea(state, viewport, true, TextStyle.TextField, ResourceId("example", "body"), TextWrap.Word, 0, Modifier.Empty, null)
+        }
+        assertEquals(1, legacyCalls)
+        state.observe { }.close()
+    }
+
+    @Test
+    fun multilineLayoutAndViewportCopiesRetainTheirStructuralValidation() {
+        val layout = TextLayout.Multiline(maxLines = 2, overflow = TextOverflow.Ellipsis, lineSpacing = 1)
+        assertThrows(IllegalArgumentException::class.java) { layout.copy(maxLines = 0) }
+        assertThrows(IllegalArgumentException::class.java) { layout.copy(maxLines = -1) }
+        assertThrows(IllegalArgumentException::class.java) { layout.copy(lineSpacing = -1) }
+        val lines = TextAreaViewport.Lines(120, 3)
+        assertThrows(IllegalArgumentException::class.java) { lines.copy(width = 0) }
+        assertThrows(IllegalArgumentException::class.java) { lines.copy(width = -1) }
+        assertThrows(IllegalArgumentException::class.java) { lines.copy(lines = 0) }
+        assertThrows(IllegalArgumentException::class.java) { lines.copy(lines = -1) }
+        val sized = TextAreaViewport.Size(IntSize(120, 40))
+        assertThrows(IllegalArgumentException::class.java) { sized.copy(size = IntSize(0, 40)) }
+        assertThrows(IllegalArgumentException::class.java) { sized.copy(size = IntSize(120, 0)) }
+    }
+
+    @Test
+    fun publicTextOverloadsForwardTypedLayoutAndPreserveNestedFontSelections() {
+        val element = ContractElement()
+        val calls = mutableListOf<List<Any?>>()
+        val runtime = recordingComponentRuntime(element, calls)
+        val text = UiText.Literal("日本語 한국어 🙂")
+        val font = ResourceId("example", "body")
+        val inner = text.withFont(ResourceId("example", "inner"))
+        val layout = TextLayout.Multiline(maxLines = 2, lineSpacing = 1)
+        assertSame(element, ComponentRuntimeBridge.evaluate(runtime) { Text(text) })
+        assertSame(element, ComponentRuntimeBridge.evaluate(runtime) { Text(text.value, layout) })
+        assertSame(element, ComponentRuntimeBridge.evaluate(runtime) { Text(text.value, layout, font) })
+        assertSame(element, ComponentRuntimeBridge.evaluate(runtime) { Text(inner, layout, font) })
+        assertEquals(
+            listOf(
+                listOf(text, TextLayout.SingleLine, TextStyle.Normal, Modifier.Empty, null),
+                listOf(text, layout, TextStyle.Normal, Modifier.Empty, null),
+                listOf(text.withFont(font), layout, TextStyle.Normal, Modifier.Empty, null),
+                listOf(inner.withFont(font), layout, TextStyle.Normal, Modifier.Empty, null),
+            ),
+            calls,
+        )
+    }
+
+    @Test
+    fun publicTextAreaOverloadsForwardCallerOwnershipWithoutClaimingTheState() {
+        val element = ContractElement()
+        val calls = mutableListOf<List<Any?>>()
+        val runtime = recordingComponentRuntime(element, calls)
+        val state = TextAreaState("日本語\r\n한국어 🙂")
+        val viewport = TextAreaViewport.Lines(120, 3)
+        val font = ResourceId("example", "body")
+        val key = ElementKey("editor")
+        assertSame(element, ComponentRuntimeBridge.evaluate(runtime) { TextArea(state, viewport, enabled = false, wrap = TextWrap.Character, lineSpacing = 2, key = key) })
+        assertSame(element, ComponentRuntimeBridge.evaluate(runtime) { TextArea(state, viewport, font, wrap = TextWrap.None, lineSpacing = 1) })
+        assertEquals(
+            listOf(
+                listOf(state, viewport, false, TextStyle.TextField, TextWrap.Character, 2, Modifier.Empty, key),
+                listOf(state, viewport, true, TextStyle.TextField, font, TextWrap.None, 1, Modifier.Empty, null),
+            ),
+            calls,
+        )
+        assertThrows(IllegalArgumentException::class.java) { ComponentRuntimeBridge.evaluate(runtime) { TextArea(state, viewport, lineSpacing = -1) } }
+        assertThrows(IllegalArgumentException::class.java) { ComponentRuntimeBridge.evaluate(runtime) { TextArea(state, viewport, font, lineSpacing = -1) } }
+        assertEquals(2, calls.size)
+        assertEquals("日本語\n한국어 🙂", state.value)
+        state.observe { }.close()
+    }
+
+    @Test
+    fun existingFocusTargetsInheritTheJvmDefaultWithoutEnablingNativeTextInput() {
+        val capability = FocusTargetNode::class.java.getMethod("getRequiresTextInput")
+        assertTrue(capability.isDefault)
+        val target =
+            Proxy.newProxyInstance(
+                FocusTargetNode::class.java.classLoader,
+                arrayOf(FocusTargetNode::class.java),
+            ) { proxy, method, arguments ->
+                assertEquals(capability, method)
+                InvocationHandler.invokeDefault(proxy, method, *arguments.orEmpty())
+            } as FocusTargetNode
+        assertFalse(target.requiresTextInput)
+    }
+
+    @Test
     fun elementChildrenSnapshotCallerMutation() {
         val children = mutableListOf<Element>(ContractElement(), ContractElement())
         val element = ContractElement(children = children)
@@ -182,6 +361,7 @@ internal class ApiContractTest {
         assertEquals(custom, role)
         assertEquals(SemanticsRole.Button, SemanticsRole.Button)
         assertEquals(SemanticsRole.Text, SemanticsRole.Text)
+        assertNotEquals(SemanticsRole.TextField, SemanticsRole.TextArea)
     }
 
     @Test
@@ -232,6 +412,18 @@ internal class ApiContractTest {
     private data class TestPlatform(
         val value: String,
     ) : PlatformText
+
+    /**
+     * Records synchronous public-DSL forwarding without resolving resources or attaching a retained node.
+     */
+    private fun recordingComponentRuntime(
+        element: Element,
+        calls: MutableList<List<Any?>>,
+    ): ComponentRuntime =
+        Proxy.newProxyInstance(ComponentRuntime::class.java.classLoader, arrayOf(ComponentRuntime::class.java)) { _, _, arguments ->
+            calls.add(arguments.orEmpty().toList())
+            element
+        } as ComponentRuntime
 
     private data object ApplicationRole : SemanticsRole
 

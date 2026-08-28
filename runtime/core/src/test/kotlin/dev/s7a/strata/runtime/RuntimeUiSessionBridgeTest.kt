@@ -17,6 +17,7 @@ import dev.s7a.strata.runtime.spi.createRuntimeUiSession
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertNotSame
+import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Assertions.assertSame
 import org.junit.jupiter.api.Assertions.assertThrows
 import org.junit.jupiter.api.Assertions.assertTrue
@@ -128,6 +129,8 @@ internal class RuntimeUiSessionBridgeTest {
         val probe = TestProbe()
         val session = createRuntimeUiSession { probe.root(emptyList()) }
 
+        assertNull(session.textInputFocus)
+        assertTrue(wrongThread { session.textInputFocus } is IllegalStateException)
         assertThrows(IllegalStateException::class.java) { session.detach() }
         assertThrows(IllegalStateException::class.java) { session.frame(Constraints.fixed(2, 1)) }
         assertThrows(IllegalStateException::class.java) {
@@ -137,8 +140,11 @@ internal class RuntimeUiSessionBridgeTest {
 
         session.attach()
         assertThrows(IllegalStateException::class.java) { session.attach() }
+        assertNull(session.textInputFocus)
         assertTrue(wrongThread { session.detach() } is IllegalStateException)
         val retainedFrame = session.frame(Constraints.fixed(2, 1))
+        assertNull(session.textInputFocus)
+        assertTrue(wrongThread { session.textInputFocus } is IllegalStateException)
         assertTrue(wrongThread { session.frame(Constraints.fixed(2, 1)) } is IllegalStateException)
         assertSame(retainedFrame, session.frame(Constraints.fixed(2, 1)))
         assertTrue(
@@ -147,9 +153,11 @@ internal class RuntimeUiSessionBridgeTest {
         assertTrue(wrongThread { session.close() } is IllegalStateException)
 
         session.detach()
+        assertNull(session.textInputFocus)
         assertThrows(IllegalStateException::class.java) { session.frame(Constraints.fixed(2, 1)) }
         session.close()
         session.close()
+        assertThrows(IllegalStateException::class.java) { session.textInputFocus }
         assertTrue(wrongThread { session.close() } is IllegalStateException)
         assertThrows(IllegalStateException::class.java) { session.attach() }
         assertThrows(IllegalStateException::class.java) { session.detach() }

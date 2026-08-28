@@ -33,25 +33,32 @@ import dev.s7a.strata.node.TextInputNode
 import dev.s7a.strata.render.ArgbColor
 import dev.s7a.strata.render.DrawImage
 import dev.s7a.strata.render.PaintScope
+import dev.s7a.strata.resource.ResourceId
 import dev.s7a.strata.semantics.Semantics
 import dev.s7a.strata.semantics.SemanticsRole
 import dev.s7a.strata.semantics.SemanticsScope
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
 import dev.s7a.strata.text.UiText
-import java.util.Collections
 import dev.s7a.strata.node.Node as RetainedNode
 
 /**
  * Private retained implementation of the explicitly sized profile-backed Minecraft TextField component.
  *
- * The description snapshots the two sprites and printable font references but retains no complete profile.
+ * The description snapshots the two sprites and borrows its host-owned text renderer without retaining a complete profile.
+ * Nodes clear the renderer reference on disposal; only the host closes the shared font resources after disposing its tree.
+ * Composition stays inline and uses the supplied caret and focused block; it does not reproduce Minecraft's native IME popup or platform candidate window.
+ * Editable text paints in logical scalar order, matching native EditBox's forward formatter rather than display-label shaping.
+ * Caret and composition geometry uses signed native widths; portions outside the field are omitted before conversion to portable integer bounds.
  */
 private class MinecraftTextFieldElement private constructor(
     @get:JvmSynthetic
     internal val normalSprite: DrawImage,
     @get:JvmSynthetic
     internal val highlightedSprite: DrawImage,
-    glyphs: Map<Int, MinecraftGlyphSnapshot>,
+    @get:JvmSynthetic
+    internal val textRenderer: MinecraftTextRenderer,
+    @get:JvmSynthetic
+    internal val font: ResourceId,
     @get:JvmSynthetic
     internal val state: TextFieldState,
     @get:JvmSynthetic
@@ -67,9 +74,6 @@ private class MinecraftTextFieldElement private constructor(
         type = TYPE,
         modifier = modifier,
     ) {
-    @get:JvmSynthetic
-    internal val glyphs: Map<Int, MinecraftGlyphSnapshot> = Collections.unmodifiableMap(LinkedHashMap(glyphs))
-
     /**
      * Retained owner-thread EditBox subset with state observation, focus, pointer cursor placement, editing, paint, and semantics.
      */
@@ -77,7 +81,8 @@ private class MinecraftTextFieldElement private constructor(
     private class Node(
         initialNormalSprite: DrawImage,
         initialHighlightedSprite: DrawImage,
-        initialGlyphs: Map<Int, MinecraftGlyphSnapshot>,
+        initialTextRenderer: MinecraftTextRenderer,
+        initialFont: ResourceId,
         initialState: TextFieldState,
         initialFieldSize: IntSize,
         initialEnabled: Boolean,
@@ -99,17 +104,21 @@ private class MinecraftTextFieldElement private constructor(
         private val cursorColor = ArgbColor(0xFFFFFFFF.toInt())
         private var normalSprite: DrawImage? = initialNormalSprite
         private var highlightedSprite: DrawImage? = initialHighlightedSprite
-        private var glyphs: Map<Int, MinecraftGlyphSnapshot>? = initialGlyphs
+        private var textRenderer: MinecraftTextRenderer? = initialTextRenderer
+        private var font = initialFont
         private var state: TextFieldState? = initialState
         private var enabled = initialEnabled
         private var textStyle = initialTextStyle
         private var focused = false
         private var attached = false
         private var cursor = initialState.value.length
-        private var preedit = ""
+        private var preedit: TextInputEvent.Preedit? = null
         private var releaseObserver: AutoCloseable? = null
 
         override val acceptsFocus: Boolean
+            get() = enabled
+
+        override val requiresTextInput: Boolean
             get() = enabled
 
         override fun measure(
@@ -126,14 +135,17 @@ private class MinecraftTextFieldElement private constructor(
             val sprite = if (focused && enabled) checkNotNull(highlightedSprite) else checkNotNull(normalSprite)
             paintMinecraftNineSlice(scope, sprite, Insets.all(1), NineSliceCenterMode.Tiled)
             val currentValue = checkNotNull(state).value
-            val composed = currentValue.substring(0, cursor) + preedit + currentValue.substring(cursor)
-            val visualCursor = Math.addExact(cursor, preedit.length)
+            val composed = composedText(currentValue)
+            val visualCursor = Math.addExact(cursor, preedit?.caretPosition ?: 0)
             val visible = visibleText(composed, visualCursor)
             val run = createRun(visible.text)
             run.paint(scope, textOrigin.x, textOrigin.y)
             if (focused && enabled) {
-                val cursorX = Math.addExact(textOrigin.x, width(visible.text.substring(0, visualCursor - visible.start)))
-                val appendCursor = preedit.isEmpty() && cursor == currentValue.length && currentValue.length < checkNotNull(state).maxLength
+                paintPreeditBlock(scope, visible)
+                val cursorPosition = textOrigin.x.toLong() + width(composed.substring(visible.start, visualCursor))
+                if (cursorPosition < 0L || fieldSize.width.toLong() <= cursorPosition) return
+                val cursorX = cursorPosition.toInt()
+                val appendCursor = preedit == null && cursor == currentValue.length && currentValue.length < checkNotNull(state).maxLength
                 if (appendCursor) {
                     createRun("_").paint(scope, cursorX, textOrigin.y)
                 } else {
@@ -154,9 +166,9 @@ private class MinecraftTextFieldElement private constructor(
                 return InputResult.Ignored
             }
             val next = cursorAt(Math.subtractExact(localPosition.x, textOrigin.x))
-            if (cursor != next || preedit.isNotEmpty()) {
+            if (cursor != next || preedit != null) {
                 cursor = next
-                preedit = ""
+                preedit = null
                 invalidate(DirtyMask.of(DirtyPhase.Paint))
             }
             return InputResult.Ignored
@@ -165,15 +177,15 @@ private class MinecraftTextFieldElement private constructor(
         override fun onFocusChanged(focused: Boolean) {
             if (this.focused == focused) return
             this.focused = focused
-            if (focused.not()) preedit = ""
+            if (focused.not()) preedit = null
             invalidate(DirtyMask.of(DirtyPhase.Paint))
         }
 
         override fun onKeyboardEvent(event: KeyboardEvent): InputResult {
             if (enabled.not() || (event is KeyboardEvent.Press).not()) return InputResult.Ignored
             return when (event.key) {
-                KeyCode.Left -> moveCursor(cursor - 1)
-                KeyCode.Right -> moveCursor(cursor + 1)
+                KeyCode.Left -> moveCursor(previousScalar(checkNotNull(state).value, cursor))
+                KeyCode.Right -> moveCursor(nextScalar(checkNotNull(state).value, cursor))
                 KeyCode.Home -> moveCursor(0)
                 KeyCode.End -> moveCursor(checkNotNull(state).value.length)
                 KeyCode.Backspace -> deleteBeforeCursor()
@@ -201,6 +213,8 @@ private class MinecraftTextFieldElement private constructor(
         }
 
         override fun attach() {
+            cursor = scalarBoundary(checkNotNull(state).value, cursor)
+            preedit = null
             attached = true
             observeState()
         }
@@ -210,7 +224,7 @@ private class MinecraftTextFieldElement private constructor(
             releaseObserver = null
             attached = false
             focused = false
-            preedit = ""
+            preedit = null
         }
 
         override fun dispose() {
@@ -219,9 +233,9 @@ private class MinecraftTextFieldElement private constructor(
             attached = false
             normalSprite = null
             highlightedSprite = null
-            glyphs = null
+            textRenderer = null
             state = null
-            preedit = ""
+            preedit = null
         }
 
         @Suppress("unused")
@@ -236,7 +250,8 @@ private class MinecraftTextFieldElement private constructor(
             val paintChanged =
                 normalSprite !== current.normalSprite ||
                     highlightedSprite !== current.highlightedSprite ||
-                    glyphs != current.glyphs ||
+                    textRenderer !== current.textRenderer ||
+                    font != current.font ||
                     stateChanged ||
                     enabled != current.enabled ||
                     textStyle != current.textStyle
@@ -244,16 +259,18 @@ private class MinecraftTextFieldElement private constructor(
             val sizeChanged = fieldSize != current.fieldSize
             normalSprite = current.normalSprite
             highlightedSprite = current.highlightedSprite
-            glyphs = current.glyphs
+            textRenderer = current.textRenderer
+            font = current.font
             state = current.state
             fieldSize = current.fieldSize
             enabled = current.enabled
             textStyle = current.textStyle
             if (enabled.not()) {
                 focused = false
-                preedit = ""
+                preedit = null
             }
-            cursor = cursor.coerceIn(0, current.state.value.length)
+            cursor = scalarBoundary(current.state.value, cursor)
+            if (stateChanged) preedit = null
             if (stateChanged && attached) observeState()
             return updateMask(sizeChanged, paintChanged, semanticsChanged)
         }
@@ -273,53 +290,64 @@ private class MinecraftTextFieldElement private constructor(
         private fun observeState() {
             releaseObserver =
                 checkNotNull(state).observe { value ->
-                    cursor = cursor.coerceIn(0, value.length)
-                    preedit = ""
+                    cursor = scalarBoundary(value, cursor)
+                    preedit = null
                     invalidate(DirtyMask.of(DirtyPhase.Paint, DirtyPhase.Semantics))
                 }
         }
 
         private fun moveCursor(next: Int): InputResult {
-            val bounded = next.coerceIn(0, checkNotNull(state).value.length)
-            if (cursor != bounded || preedit.isNotEmpty()) {
+            val bounded = scalarBoundary(checkNotNull(state).value, next)
+            if (cursor != bounded || preedit != null) {
                 cursor = bounded
-                preedit = ""
+                preedit = null
                 invalidate(DirtyMask.of(DirtyPhase.Paint))
             }
             return InputResult.Consumed
         }
 
         private fun deleteBeforeCursor(): InputResult {
+            clearPreedit()
             if (cursor == 0) return InputResult.Consumed
             val current = checkNotNull(state)
-            current.value = current.value.removeRange(cursor - 1, cursor)
-            cursor -= 1
+            val previous = previousScalar(current.value, cursor)
+            current.value = current.value.removeRange(previous, cursor)
+            cursor = previous
             return InputResult.Consumed
         }
 
         private fun deleteAtCursor(): InputResult {
+            clearPreedit()
             val current = checkNotNull(state)
             if (cursor < current.value.length) {
-                current.value = current.value.removeRange(cursor, cursor + 1)
+                current.value = current.value.removeRange(cursor, nextScalar(current.value, cursor))
             }
             return InputResult.Consumed
         }
 
         private fun insert(event: TextInputEvent.Character): InputResult {
-            if (event.codePoint !in 0x20..0x7E) return InputResult.Ignored
+            if (isAcceptedCodePoint(event.codePoint).not()) return InputResult.Ignored
             val current = checkNotNull(state)
-            if (current.maxLength <= current.value.length) return InputResult.Consumed
             val inserted = event.asString()
+            clearPreedit()
+            if (current.maxLength - current.value.length < inserted.length) return InputResult.Consumed
+            val next = Math.addExact(cursor, inserted.length)
             current.value = current.value.substring(0, cursor) + inserted + current.value.substring(cursor)
-            cursor = Math.addExact(cursor, inserted.length)
-            preedit = ""
+            cursor = next
             return InputResult.Consumed
         }
 
         private fun updatePreedit(event: TextInputEvent.Preedit): InputResult {
-            if (event.fullText.all { character -> character.code in 0x20..0x7E }.not()) return InputResult.Ignored
-            if (preedit != event.fullText) {
-                preedit = event.fullText
+            if (
+                isAcceptedText(event.fullText).not() ||
+                event.blocks.any { block -> isAcceptedText(block).not() } ||
+                scalarBoundary(event.fullText, event.caretPosition) != event.caretPosition
+            ) {
+                return InputResult.Ignored
+            }
+            val next = event.takeIf { current -> current.fullText.isNotEmpty() }
+            if (preedit != next) {
+                preedit = next
                 invalidate(DirtyMask.of(DirtyPhase.Paint))
             }
             return InputResult.Consumed
@@ -330,41 +358,123 @@ private class MinecraftTextFieldElement private constructor(
             visualCursor: Int,
         ): VisibleText {
             var start = 0
-            while (innerWidth < width(text.substring(start, visualCursor))) start += 1
+            while (start < visualCursor && innerWidth < width(text.substring(start, visualCursor))) {
+                start = nextScalar(text, start)
+            }
             var end = start
             while (end < text.length) {
-                val candidate = text.substring(start, end + 1)
+                val next = nextScalar(text, end)
+                val candidate = text.substring(start, next)
                 if (innerWidth < width(candidate)) break
-                end += 1
+                end = next
             }
             return VisibleText(text.substring(start, end), start)
         }
 
         private fun cursorAt(localX: Int): Int {
             val value = checkNotNull(state).value
-            if (localX <= 0) return 0
-            var position = 0
-            var x = 0
-            while (position < value.length) {
-                val advance = width(value.substring(position, position + 1))
-                if (localX < x + (advance + 1) / 2) return position
-                x = Math.addExact(x, advance)
-                position += 1
+            val composed = composedText(value)
+            val visible = visibleText(composed, Math.addExact(cursor, preedit?.caretPosition ?: 0))
+            val position = positionAt(visible.text, localX.coerceIn(0, innerWidth))
+            val composedPosition = Math.addExact(visible.start, position)
+            val compositionEnd = Math.addExact(cursor, preedit?.fullText?.length ?: 0)
+            return when {
+                composedPosition <= cursor -> composedPosition
+                composedPosition < compositionEnd -> cursor
+                else -> composedPosition - (compositionEnd - cursor)
             }
-            return value.length
         }
 
-        private fun width(text: String): Int = createRun(text).size.width
+        private fun positionAt(
+            text: String,
+            localX: Int,
+        ): Int {
+            if (localX <= 0) return 0
+            var position = 0
+            var x = 0L
+            while (position < text.length) {
+                val next = nextScalar(text, position)
+                val nextX = width(text.substring(0, next)).toLong()
+                if (localX.toLong() < x + Math.floorDiv(nextX - x + 1L, 2L)) return position
+                x = nextX
+                position = next
+            }
+            return text.length
+        }
 
-        private fun createRun(text: String): MinecraftTextRun =
-            when (textStyle) {
-                TextStyle.Normal -> MinecraftTextRun.createNormal(UiText.Literal(text), ::glyphAt)
-                TextStyle.Inactive -> MinecraftTextRun.createInactive(UiText.Literal(text), ::glyphAt)
-                TextStyle.ContainerLabel -> MinecraftTextRun.createContainerLabel(UiText.Literal(text), ::glyphAt)
-                TextStyle.TextField -> MinecraftTextRun.createTextField(UiText.Literal(text), enabled, ::glyphAt)
+        private fun composedText(value: String): String =
+            preedit?.let { composition ->
+                value.substring(0, cursor) + composition.fullText + value.substring(cursor)
+            } ?: value
+
+        private fun paintPreeditBlock(
+            scope: PaintScope,
+            visible: VisibleText,
+        ) {
+            val composition = preedit ?: return
+            if (composition.focusedBlock < 0 || composition.blocks.joinToString("") != composition.fullText) return
+            val blockStart = Math.addExact(cursor, composition.blocks.take(composition.focusedBlock).sumOf(String::length))
+            val blockEnd = Math.addExact(blockStart, composition.blocks[composition.focusedBlock].length)
+            val visibleEnd = Math.addExact(visible.start, visible.text.length)
+            val start = maxOf(visible.start, blockStart)
+            val end = minOf(visibleEnd, blockEnd)
+            if (end <= start) return
+            val first = textOrigin.x.toLong() + width(visible.text.substring(0, start - visible.start))
+            val last = textOrigin.x.toLong() + width(visible.text.substring(0, end - visible.start))
+            val left = minOf(first, last).coerceIn(0L, fieldSize.width.toLong()).toInt()
+            val right = maxOf(first, last).coerceIn(0L, fieldSize.width.toLong()).toInt()
+            val top = Math.addExact(textOrigin.y, 9)
+            if (left < right) scope.fillRectangle(IntRect(left, top, right, Math.addExact(top, 1)), cursorColor)
+        }
+
+        private fun clearPreedit() {
+            if (preedit == null) return
+            preedit = null
+            invalidate(DirtyMask.of(DirtyPhase.Paint))
+        }
+
+        private fun previousScalar(
+            text: String,
+            offset: Int,
+        ): Int = if (offset == 0) 0 else text.offsetByCodePoints(offset, -1)
+
+        private fun nextScalar(
+            text: String,
+            offset: Int,
+        ): Int = if (offset == text.length) offset else text.offsetByCodePoints(offset, 1)
+
+        private fun scalarBoundary(
+            text: String,
+            offset: Int,
+        ): Int {
+            val bounded = offset.coerceIn(0, text.length)
+            if (bounded == 0 || bounded == text.length) return bounded
+            return if (text[bounded - 1].isHighSurrogate() && text[bounded].isLowSurrogate()) {
+                bounded - 1
+            } else {
+                bounded
+            }
+        }
+
+        private fun isAcceptedText(text: String): Boolean {
+            var offset = 0
+            while (offset < text.length) {
+                val codePoint = text.codePointAt(offset)
+                if ((codePoint in 0xD800..0xDFFF) || isAcceptedCodePoint(codePoint).not()) return false
+                offset += Character.charCount(codePoint)
+            }
+            return true
+        }
+
+        private fun isAcceptedCodePoint(codePoint: Int): Boolean =
+            when (codePoint) {
+                0x7F, 0x85, 0xA7, 0x2028, 0x2029 -> false
+                else -> 0x20 <= codePoint
             }
 
-        private fun glyphAt(codePoint: Int): MinecraftGlyphSnapshot = checkNotNull(glyphs).getValue(codePoint)
+        private fun width(text: String): Int = createRun(text).nativeWidth
+
+        private fun createRun(text: String): MinecraftTextRun = checkNotNull(textRenderer).create(UiText.Literal(text), textStyle, enabled, font, logicalOrder = true)
 
         private data class VisibleText(
             val text: String,
@@ -389,7 +499,8 @@ private class MinecraftTextFieldElement private constructor(
                     Node(
                         element.normalSprite,
                         element.highlightedSprite,
-                        element.glyphs,
+                        element.textRenderer,
+                        element.font,
                         element.state,
                         element.fieldSize,
                         element.enabled,
@@ -403,14 +514,15 @@ private class MinecraftTextFieldElement private constructor(
         internal fun create(
             normalSprite: DrawImage,
             highlightedSprite: DrawImage,
-            glyphs: Map<Int, MinecraftGlyphSnapshot>,
+            textRenderer: MinecraftTextRenderer,
+            font: ResourceId,
             state: TextFieldState,
             fieldSize: IntSize,
             enabled: Boolean,
             textStyle: TextStyle,
             modifier: Modifier,
             key: ElementKey<*>?,
-        ): Element = MinecraftTextFieldElement(normalSprite, highlightedSprite, glyphs, state, fieldSize, enabled, textStyle, modifier, key)
+        ): Element = MinecraftTextFieldElement(normalSprite, highlightedSprite, textRenderer, font, state, fieldSize, enabled, textStyle, modifier, key)
     }
 }
 
@@ -419,7 +531,8 @@ private class MinecraftTextFieldElement private constructor(
  *
  * @param normalSprite exact unfocused sprite.
  * @param highlightedSprite exact focused sprite.
- * @param glyphs complete immutable printable-ASCII glyph map.
+ * @param textRenderer borrowed owner-thread text service closed only by the owning host.
+ * @param font font identifier resolved against the host's pinned resources.
  * @param state owner-thread mutable value.
  * @param fieldSize requested logical extent.
  * @param enabled whether editing and focus are accepted.
@@ -432,11 +545,12 @@ private class MinecraftTextFieldElement private constructor(
 internal fun createMinecraftTextFieldElement(
     normalSprite: DrawImage,
     highlightedSprite: DrawImage,
-    glyphs: Map<Int, MinecraftGlyphSnapshot>,
+    textRenderer: MinecraftTextRenderer,
+    font: ResourceId,
     state: TextFieldState,
     fieldSize: IntSize,
     enabled: Boolean,
     textStyle: TextStyle,
     modifier: Modifier,
     key: ElementKey<*>?,
-): Element = MinecraftTextFieldElement.create(normalSprite, highlightedSprite, glyphs, state, fieldSize, enabled, textStyle, modifier, key)
+): Element = MinecraftTextFieldElement.create(normalSprite, highlightedSprite, textRenderer, font, state, fieldSize, enabled, textStyle, modifier, key)

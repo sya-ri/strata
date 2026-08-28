@@ -12,6 +12,20 @@ benchmark-harness = "1.37"
 vanniktech-maven-publish = "0.37.0"
 dokka = "2.2.0"
 kotlinx-coroutines = "1.11.0"
+gson-minecraft = "2.10.1"
+gson-minecraft-early = "2.10"
+gson-minecraft-later = "2.11.0"
+gson-minecraft-261 = "2.13.2"
+gson-minecraft-262 = "2.14.0"
+icu-minecraft-baseline = "73.2"
+icu-minecraft-early = "71.1"
+icu-minecraft-later = "76.1"
+icu-minecraft-261 = "77.1"
+icu-minecraft-262 = "78.3"
+lwjgl-minecraft-stb-early = "3.3.1"
+lwjgl-minecraft-stb = "3.3.2"
+lwjgl-minecraft-freetype = "3.3.3"
+lwjgl-minecraft-modern = "3.4.1"
 minecraft262 = "26.2"
 minecraft261 = "26.1"
 minecraft121 = "1.21"
@@ -34,6 +48,7 @@ minecraft1204 = "1.20.4"
 minecraft1205 = "1.20.5"
 minecraft1206 = "1.20.6"
 fabric-loader = "0.19.3"
+fabric-mixin = "0.17.3+mixin.0.8.7"
 fabric-language-kotlin = "1.13.13+kotlin.2.4.10"
 fabric-loom = "1.17.19"
 fabric-api262 = "0.158.0+26.2"
@@ -65,6 +80,11 @@ detekt-test-utils = { module = "dev.detekt:detekt-test-utils", version.ref = "de
 junit-jupiter = { module = "org.junit.jupiter:junit-jupiter", version.ref = "junit" }
 junit-platform-launcher = { module = "org.junit.platform:junit-platform-launcher", version.ref = "junit" }
 kotlinx-coroutines-core = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-core", version.ref = "kotlinx-coroutines" }
+gson-minecraft = { module = "com.google.code.gson:gson", version.ref = "gson-minecraft" }
+icu-minecraft-baseline = { module = "com.ibm.icu:icu4j", version.ref = "icu-minecraft-baseline" }
+lwjgl-font-core = { module = "org.lwjgl:lwjgl", version.ref = "lwjgl-minecraft-freetype" }
+lwjgl-font-stb = { module = "org.lwjgl:lwjgl-stb", version.ref = "lwjgl-minecraft-freetype" }
+lwjgl-font-freetype = { module = "org.lwjgl:lwjgl-freetype", version.ref = "lwjgl-minecraft-freetype" }
 minecraft262 = { module = "com.mojang:minecraft", version.ref = "minecraft262" }
 minecraft261 = { module = "com.mojang:minecraft", version.ref = "minecraft261" }
 minecraft121 = { module = "com.mojang:minecraft", version.ref = "minecraft121" }
@@ -87,6 +107,7 @@ minecraft1204 = { module = "com.mojang:minecraft", version.ref = "minecraft1204"
 minecraft1205 = { module = "com.mojang:minecraft", version.ref = "minecraft1205" }
 minecraft1206 = { module = "com.mojang:minecraft", version.ref = "minecraft1206" }
 fabric-loader = { module = "net.fabricmc:fabric-loader", version.ref = "fabric-loader" }
+fabric-mixin = { module = "net.fabricmc:sponge-mixin", version.ref = "fabric-mixin" }
 fabric-language-kotlin = { module = "net.fabricmc:fabric-language-kotlin", version.ref = "fabric-language-kotlin" }
 fabric-api262 = { module = "net.fabricmc.fabric-api:fabric-api", version.ref = "fabric-api262" }
 fabric-api261 = { module = "net.fabricmc.fabric-api:fabric-api", version.ref = "fabric-api261" }

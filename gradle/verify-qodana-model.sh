@@ -26,6 +26,35 @@ for project_modules_entry in "${project_modules[@]}"; do
   fi
 done
 
+font_backend_pattern='^(strata\.runtime\.minecraft-fonts-lwjgl|runtime-minecraft-fonts-lwjgl|minecraft-fonts-lwjgl)$'
+font_backend_count=$(jq --arg pattern "$font_backend_pattern" '[.modules[] | select(.name | test($pattern))] | length' "$model")
+if [[ "$font_backend_count" -ne 1 ]]; then
+  echo "Expected one CPU font backend module but found $font_backend_count." >&2
+  exit 1
+fi
+
+incomplete_font_backend=$(
+  jq -c --arg pattern "$font_backend_pattern" '
+    [
+      .modules[]
+      | select(.name | test($pattern))
+      | select(
+          (.orderEntries | length) < 3
+          or (.orderEntries | any(.type == "SDK") | not)
+          or ([.contentEntries[].sourceFolders[]? | select(.type == "Source")] | length == 0)
+          or ([.contentEntries[].sourceFolders[]? | select(.type == "TestSource")] | length == 0)
+        )
+      | .name
+    ]
+  ' "$model"
+)
+if [[ "$incomplete_font_backend" == '[]' ]]; then
+  echo 'Verified the CPU font backend SDK, dependencies, and main/test source folders.'
+else
+  echo "The CPU font backend has an incomplete imported model: $incomplete_font_backend" >&2
+  exit 1
+fi
+
 project_module_pattern='^((strata\.(runtime|integration)\.minecraft-fabric)|((runtime|integration)-minecraft-fabric))-[0-9]+([._][0-9]+)*$'
 incomplete_modules=$(
   jq -c --arg pattern "$project_module_pattern" '
@@ -52,7 +81,9 @@ missing_sources=$(
     [
       .modules[]
       | select(.name | test("^(strata\\.runtime\\.minecraft-fabric|runtime-minecraft-fabric)-[0-9]+([._][0-9]+)*$"))
-      | select([.contentEntries[].sourceFolders[]? | select(.type == "Source")] | length == 0)
+      | (.name | sub("^(strata\\.runtime\\.minecraft-fabric|runtime-minecraft-fabric)-"; "") | gsub("_"; ".")) as $version
+      | ("file://$PROJECT_DIR$/runtime/minecraft-fabric-" + $version + "/src/font/kotlin") as $font_source
+      | select([.contentEntries[].sourceFolders[]? | select(.type == "Source" and .path == $font_source)] | length != 1)
       | .name
     ]
     +

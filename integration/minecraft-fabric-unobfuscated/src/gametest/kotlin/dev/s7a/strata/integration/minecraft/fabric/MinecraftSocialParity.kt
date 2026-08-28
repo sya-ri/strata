@@ -14,6 +14,7 @@ import dev.s7a.strata.runtime.minecraft.fabric.FabricMinecraftScreen
 import dev.s7a.strata.runtime.minecraft.fabric.createMinecraftScreen
 import dev.s7a.strata.runtime.minecraft.fabric.loadCurrentMinecraftPlayerSkin
 import dev.s7a.strata.runtime.minecraft.fabric.loadMinecraftUiImage
+import dev.s7a.strata.runtime.minecraft.font.lwjgl.LwjglMinecraftFontBackendFactory
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
 import dev.s7a.strata.text.UiText
 import net.fabricmc.fabric.api.client.gametest.v1.context.ClientGameTestContext
@@ -100,10 +101,16 @@ internal object MinecraftSocialParity {
     private fun loadAssets(context: ClientGameTestContext): SocialAssets =
         context.computeOnClient(
             FailableFunction<Minecraft, SocialAssets, RuntimeException> {
+                val skin = loadCurrentMinecraftPlayerSkin()
+                val fixtureSkin = loadMinecraftUiImage(ResourceId("minecraft", "textures/entity/player/slim/efe.png"))
+                require(it.gameProfile.name == "Player0") { "The Social showcase requires the fixed Player0 test identity." }
+                require(skin.size == fixtureSkin.size && skin.copyArgb().contentEquals(fixtureSkin.copyArgb())) {
+                    "The Social showcase requires the fixed original Efe skin used by independent headless generation."
+                }
                 SocialAssets(
                     loadMinecraftUiImage(ResourceId("minecraft", "textures/gui/sprites/social_interactions/background.png")),
                     loadMinecraftUiImage(ResourceId("minecraft", "textures/gui/sprites/icon/search.png")),
-                    loadCurrentMinecraftPlayerSkin(),
+                    skin,
                     it.gameProfile.name,
                 )
             },
@@ -114,7 +121,7 @@ internal object MinecraftSocialParity {
         profile: MinecraftUiProfile,
         assets: SocialAssets,
     ): HeadlessImage {
-        val host = createMinecraftUiHost(definition(assets), profile)
+        val host = createMinecraftUiHost(definition(assets), profile, LwjglMinecraftFontBackendFactory)
         return try {
             host.attach()
             val frame = host.frame(viewport)

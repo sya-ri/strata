@@ -4,12 +4,13 @@
 
 Strata is a declarative Minecraft UI library for Fabric Mods.
 Application code builds platform-neutral `ScreenDefinition` values from reusable components, structural layouts, active modifiers, typed state, and inventory bindings; a separately installed version-matched runtime renders them with Minecraft assets and behavior.
-Strata 0.1.1 adds Minecraft 1.20 support and makes no other functional change from 0.1.0.
+Strata 0.1.1 adds Minecraft 1.20 support, Unicode text and resource-pack fonts, multiline `Text`, and Unicode editing with inline IME composition for `TextField` and `TextArea`.
 
 ## Highlights
 
 - Structure screens with `Row`, `Column`, `Grid`, and intentional-overlap `Stack` instead of absolute coordinates.
-- Compose 21 focused standard components, including independent `ScrollArea` and `Scrollbar`, virtual lists, slots, tabs, images, player heads, and progress controls.
+- Compose 22 focused standard components, including independent `ScrollArea` and `Scrollbar`, multiline `TextArea`, virtual lists, slots, tabs, images, player heads, and progress controls.
+- Display Japanese, Korean, and supported emoji with the selected Minecraft font resources, and choose custom font definitions through the public API.
 - Keep events on modifiers and mutable values in caller-owned typed state.
 - Bind player, container, ender-chest, furnace, active-menu, or custom slot sources without coupling UI definitions to runtime packages.
 - Define purpose-specific downstream components as ordinary `UiScope` compositions or use the public `Element` and `Node` SPI when retained behavior is necessary.
@@ -66,6 +67,34 @@ internal fun openConfirmationScreen(onConfirm: () -> Unit) {
     }.open()
 }
 ```
+
+## Unicode, fonts, and text input
+
+Pass `font = ResourceId("example", "body")` to `Text`, `TextField`, or `TextArea`, or use `UiText.withFont` for labels and composed text.
+The ID selects a resource-pack font definition, not an operating-system font family.
+Existing overloads without a font argument remain available.
+Version 0.1.1 intentionally adds sealed `UiText.WithFont` and `DrawCommand.SampledImage` variants; update custom exhaustive visitors before upgrading, as described in [Source compatibility](https://gh.s7a.dev/strata/guide/text.md#source-compatibility).
+Glyph coverage and emoji presentation depend on the selected resources; Strata does not supply an independent color-emoji or ZWJ-sequence renderer.
+Unknown font IDs produce missing glyphs instead of silently selecting `minecraft:default`.
+
+Existing `Text` and `TextField` calls stay single-line.
+Select `TextLayout.Multiline` to wrap display text to its parent's width, or `TextArea` with a typed viewport for multiline editing.
+TextAreaState normalizes hard breaks to LF and owns the ScrollState shared with an optional external Scrollbar.
+Both editors move and delete one Unicode scalar at a time, with `maxLength` measured in UTF-16 code units.
+Delivered preedit events appear as inline IME composition without changing the committed value.
+This does not add grapheme-cluster editing, selection or clipboard commands, a native IME popup, or new platform IME hooks on adapters that expose only committed characters.
+See [Text and text input](https://gh.s7a.dev/strata/guide/text.md) for the compiled font example, input policy, and composition lifecycle.
+
+## Optional CPU font backend
+
+Offline tools can use `dev.s7a.strata:strata-runtime-minecraft-fonts-lwjgl:0.1.1` for resource decoding, TrueType rasterization, and text ordering without launching Minecraft.
+Versioned Fabric runtimes already include this backend; ordinary UI declarations still compile against `strata-api` alone.
+The backend does not bundle LWJGL, ICU, Gson, or native binaries.
+Offline callers must supply the exact target's library dependencies, native classifier, font resources, and compatibility options; do not mix native library generations in one process.
+
+See [Font resources](https://gh.s7a.dev/strata/guide/font-resources.md) for immutable profiles and dependency setup.
+Signed and zero TrueType settings follow the selected native contract; non-finite JSON settings and unsafe STB coordinate conversions remain invalid, as described in [Numeric provider settings](https://gh.s7a.dev/strata/guide/font-resources.md#numeric-provider-settings).
+[Acceptance evidence](https://gh.s7a.dev/strata/guide/font-resources.md#acceptance-evidence) distinguishes exact metrics and glyph texels from final-image differences supported by independent GPU evidence; it is not a promise of identical pixels for every resource pack or device.
 
 ## Supported Minecraft versions
 

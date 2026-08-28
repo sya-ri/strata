@@ -1,5 +1,8 @@
 package dev.s7a.strata.render
 
+import dev.s7a.strata.geometry.FloatRect
+import dev.s7a.strata.geometry.IntOffset
+import dev.s7a.strata.geometry.IntRect
 import dev.s7a.strata.geometry.IntSize
 import org.junit.jupiter.api.Assertions.assertArrayEquals
 import org.junit.jupiter.api.Assertions.assertEquals
@@ -9,13 +12,105 @@ import org.junit.jupiter.api.Assertions.assertNotSame
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
+import java.lang.reflect.InvocationHandler
 import java.lang.reflect.Modifier
+import java.lang.reflect.Proxy
 import java.util.concurrent.Executors
 
 /**
  * Verifies the immutable public image value and its intentionally narrow JVM surface.
  */
 internal class DrawImageContractTest {
+    @Test
+    fun olderPaintScopesRejectScopedClippingWithoutInvokingItsCallback() {
+        val clipMethod = PaintScope::class.java.getDeclaredMethod("withClip", IntRect::class.java, Function0::class.java)
+        assertTrue(clipMethod.isDefault)
+        val scope =
+            Proxy.newProxyInstance(
+                PaintScope::class.java.classLoader,
+                arrayOf(PaintScope::class.java),
+            ) { proxy, method, arguments ->
+                assertEquals(clipMethod, method)
+                InvocationHandler.invokeDefault(proxy, method, *arguments.orEmpty())
+            } as PaintScope
+        var calls = 0
+        val failure = assertThrows<UnsupportedOperationException> { scope.withClip(IntRect(0, 0, 1, 1)) { calls++ } }
+        assertEquals("This paint scope does not support explicit clipping.", failure.message)
+        assertEquals(0, calls)
+    }
+
+    @Test
+    fun olderPaintScopesInheritAnExplicitUnsupportedSamplingDefault() {
+        val sampledMethod =
+            PaintScope::class.java.methods.single {
+                FloatRect::class.java in it.parameterTypes &&
+                    (SampledImageOrientation::class.java in it.parameterTypes).not() && Modifier.isStatic(it.modifiers).not()
+            }
+        assertTrue(sampledMethod.isDefault)
+        val scope =
+            Proxy.newProxyInstance(
+                PaintScope::class.java.classLoader,
+                arrayOf(PaintScope::class.java),
+            ) { proxy, method, arguments ->
+                assertEquals(sampledMethod, method)
+                InvocationHandler.invokeDefault(proxy, method, *arguments.orEmpty())
+            } as PaintScope
+        val image = createDrawImage(IntSize(1, 1), intArrayOf(-1))
+        val bounds = FloatRect(0f, 0f, 1f, 1f)
+        val failure = assertThrows<UnsupportedOperationException> { scope.sampledImage(image, bounds, bounds) }
+        assertEquals("This paint scope does not support sampled images.", failure.message)
+    }
+
+    @Test
+    fun ordinarySamplingImplementationsInheritNormalOrientationDelegation() {
+        val orientedMethod = PaintScope::class.java.methods.single { SampledImageOrientation::class.java in it.parameterTypes && Modifier.isStatic(it.modifiers).not() }
+        assertTrue(orientedMethod.isDefault)
+        var calls = 0
+        val scope =
+            Proxy.newProxyInstance(
+                PaintScope::class.java.classLoader,
+                arrayOf(PaintScope::class.java),
+            ) { proxy, method, arguments ->
+                if (method == orientedMethod) {
+                    InvocationHandler.invokeDefault(proxy, method, *arguments.orEmpty())
+                } else {
+                    assertTrue(FloatRect::class.java in method.parameterTypes)
+                    assertFalse(SampledImageOrientation::class.java in method.parameterTypes)
+                    calls++
+                    null
+                }
+            } as PaintScope
+        val image = createDrawImage(IntSize(1, 1), intArrayOf(-1))
+        val bounds = FloatRect(0f, 0f, 1f, 1f)
+        scope.sampledImage(image, bounds, bounds, SampledImageOrientation.Normal)
+        assertEquals(1, calls)
+        SampledImageOrientation.entries.filter { it != SampledImageOrientation.Normal }.forEach { orientation ->
+            assertThrows<UnsupportedOperationException> { scope.sampledImage(image, bounds, bounds, orientation) }
+        }
+        assertEquals(1, calls)
+    }
+
+    @Test
+    fun fractionalRectanglesPreserveFiniteGeometryAndTranslation() {
+        val rectangle = FloatRect(-0.25f, 1.5f, 2.75f, 3.25f)
+        assertEquals(3f, rectangle.width)
+        assertEquals(1.75f, rectangle.height)
+        assertEquals(FloatRect(2.75f, -0.5f, 5.75f, 1.25f), rectangle + IntOffset(3, -2))
+        assertEquals(FloatRect(-0.25f, 1.5f, 2.75f, 3.25f), rectangle)
+        assertEquals(0f, FloatRect(1f, 2f, 1f, 2f).width)
+
+        listOf(Float.NaN, Float.POSITIVE_INFINITY, Float.NEGATIVE_INFINITY).forEach { invalid ->
+            assertThrows<IllegalArgumentException> { FloatRect(invalid, 0f, 1f, 1f) }
+            assertThrows<IllegalArgumentException> { FloatRect(0f, invalid, 1f, 1f) }
+            assertThrows<IllegalArgumentException> { FloatRect(0f, 0f, invalid, 1f) }
+            assertThrows<IllegalArgumentException> { FloatRect(0f, 0f, 1f, invalid) }
+        }
+        assertThrows<IllegalArgumentException> { FloatRect(1f, 0f, 0f, 1f) }
+        assertThrows<IllegalArgumentException> { FloatRect(0f, 1f, 1f, 0f) }
+        assertThrows<IllegalArgumentException> { FloatRect(-Float.MAX_VALUE, 0f, Float.MAX_VALUE, 1f) }
+        assertThrows<IllegalArgumentException> { FloatRect(0f, -Float.MAX_VALUE, 1f, Float.MAX_VALUE) }
+    }
+
     @Test
     fun zeroAndPositiveImagesValidateAndPreserveValueSemantics() {
         val empty = createDrawImage(IntSize(0, 4), intArrayOf())

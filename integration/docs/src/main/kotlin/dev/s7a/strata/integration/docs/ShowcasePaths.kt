@@ -48,6 +48,21 @@ internal object ShowcasePaths {
     }
 
     /**
+     * Requires a read-only input to be an existing regular file without symbolic ancestry.
+     *
+     * @param path input file to inspect without opening it.
+     * @param label failure label for diagnostics.
+     * @throws IllegalArgumentException when the file is missing, linked, reparse-backed, or not regular.
+     */
+    internal fun requireRegularFile(
+        path: Path,
+        label: String,
+    ) {
+        requireSafeSegments(path, label)
+        require(Files.isRegularFile(path, LinkOption.NOFOLLOW_LINKS)) { "$label is not a regular file: $path" }
+    }
+
+    /**
      * Requires a candidate to be a strict descendant of a safe root.
      *
      * @param root containment root.

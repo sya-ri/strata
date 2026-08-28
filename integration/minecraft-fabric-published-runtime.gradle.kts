@@ -110,9 +110,10 @@ tasks.register<Sync>("verifyPublishedRuntimeCoordinate") {
                     "core-${project.version}.jar",
                     "headless-${project.version}.jar",
                     "minecraft-${project.version}.jar",
+                    "minecraft-fonts-lwjgl-${project.version}.jar",
                 ).sorted()
             check(nestedJars == expectedNestedJars) {
-                "Published runtime must contain exactly the four canonical common jars: $nestedJars"
+                "Published runtime must contain exactly the five canonical common jars: $nestedJars"
             }
             val declaredNestedJars =
                 (metadata["jars"] as? List<*>)
@@ -121,7 +122,7 @@ tasks.register<Sync>("verifyPublishedRuntimeCoordinate") {
                         entry["file"] as? String ?: error("Published nested-jar metadata must contain file paths.")
                     }?.sorted()
             check(declaredNestedJars == expectedNestedJars.map { name -> "META-INF/jars/$name" }.sorted()) {
-                "Published runtime metadata must reference exactly the four canonical common jars: $declaredNestedJars"
+                "Published runtime metadata must reference exactly the five canonical common jars: $declaredNestedJars"
             }
         }
     }

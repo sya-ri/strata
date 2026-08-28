@@ -3,6 +3,7 @@ package dev.s7a.strata.runtime.minecraft
 import dev.s7a.strata.component.NineSliceCenterMode
 import dev.s7a.strata.render.ArgbColor
 import dev.s7a.strata.render.DrawImage
+import dev.s7a.strata.runtime.minecraft.font.MinecraftFontSnapshot
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
 
 /**
@@ -16,6 +17,17 @@ import dev.s7a.strata.spi.InternalStrataRuntimeApi
 // Why: one callback must declare every required asset slot atomically before a complete immutable profile can exist.
 @Suppress("TooManyFunctions")
 public sealed interface MinecraftUiProfileBuilder {
+    /**
+     * Supplies immutable resource-pack font definitions and files instead of the compatibility ASCII mask declarations.
+     * The snapshot can be shared between profiles and hosts and owns no native state.
+     * A host using this profile must supply its independently owned font backend through the font-aware host factory.
+     *
+     * @param snapshot complete immutable font resource state, pinned until a new profile and host are created.
+     * @throws IllegalArgumentException when fonts or any compatibility glyph were already declared.
+     * @throws IllegalStateException after the callback returns or from another thread.
+     */
+    public fun fonts(snapshot: MinecraftFontSnapshot)
+
     /**
      * Supplies the exact 100 by 100 tooltip background sprite.
      *

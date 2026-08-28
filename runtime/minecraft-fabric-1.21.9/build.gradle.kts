@@ -1,3 +1,4 @@
+import dev.detekt.gradle.extensions.DetektExtension
 import groovy.json.JsonSlurper
 import org.gradle.api.tasks.SourceSetContainer
 import org.gradle.api.tasks.bundling.AbstractArchiveTask
@@ -16,6 +17,10 @@ val sharedRuntime = rootProject.file("runtime/minecraft-fabric-shared/src/main")
 val legacyRuntime = rootProject.file("runtime/minecraft-fabric-1.21-legacy/src/main")
 val recordInputRuntime = rootProject.file("runtime/minecraft-fabric-1.21.9-legacy/src/main")
 val textureBlitRuntime = rootProject.file("runtime/minecraft-fabric-1.21.6-legacy/src/main")
+
+extensions.configure<DetektExtension> {
+    source.from(recordInputRuntime.resolve("kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftFontMapping.kt"))
+}
 
 extensions.configure<SourceSetContainer> {
     named("main") {
@@ -73,6 +78,7 @@ val verifyFabricModArtifact = tasks.register("verifyFabricModArtifact") {
                     "core-${project.version}.jar",
                     "headless-${project.version}.jar",
                     "minecraft-${project.version}.jar",
+                    "minecraft-fonts-lwjgl-${project.version}.jar",
                 ).sorted()
             check(nestedNames == expectedNestedNames) {
                 "Fabric artifact must contain each common runtime jar exactly once: $nestedNames"
@@ -163,16 +169,19 @@ tasks.named("check") {
 
 dependencies {
     compileOnly(project(":runtime:minecraft"))
+    compileOnly(project(":runtime:minecraft-fonts-lwjgl"))
     compileOnly(project(":runtime:headless"))
     minecraft(libs.minecraft1219)
     mappings(loom.officialMojangMappings())
-    compileOnly(libs.fabric.loader)
+    modCompileOnly(libs.fabric.loader)
     runtimeOnly(libs.fabric.language.kotlin)
     include(project(":api"))
     include(project(":runtime:core"))
     include(project(":runtime:headless"))
     include(project(":runtime:minecraft"))
+    include(project(":runtime:minecraft-fonts-lwjgl"))
     testImplementation(project(":runtime:minecraft"))
+    testImplementation(project(":runtime:minecraft-fonts-lwjgl"))
     testImplementation(project(":runtime:headless"))
     testRuntimeOnly(libs.fabric.loader)
     testImplementation(libs.junit.jupiter)

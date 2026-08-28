@@ -6,6 +6,7 @@ import dev.s7a.strata.input.KeyboardEvent
 import dev.s7a.strata.input.PointerEvent
 import dev.s7a.strata.input.TextInputEvent
 import dev.s7a.strata.runtime.FrameTime
+import dev.s7a.strata.runtime.spi.RuntimeTextInputFocus
 import dev.s7a.strata.runtime.spi.RuntimeUiFrame
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
 import dev.s7a.strata.text.UiText
@@ -36,6 +37,17 @@ public sealed interface MinecraftUiHost : AutoCloseable {
      * @throws IllegalStateException when read from another thread, reentrantly, or after terminal failure or close.
      */
     public val pausesGame: Boolean
+
+    /**
+     * Detached identity of the current editable focus interval, or null without committed editable focus.
+     *
+     * Created and detached hosts return null, and reattachment requires a successful frame before publishing an interval.
+     * Adapters synchronize native input-method focus only after a host operation returns; native notifications may synchronously deliver preedit.
+     * The token retains no host, node, or native references.
+     *
+     * @throws IllegalStateException when read from another thread, reentrantly, or after terminal failure or close.
+     */
+    public val textInputFocus: RuntimeTextInputFocus?
 
     /**
      * Attaches this host on its owner thread.
@@ -81,6 +93,8 @@ public sealed interface MinecraftUiHost : AutoCloseable {
      *
      * Hover observers and hover-aware components update only from delivered [PointerEvent.Move] events; a stationary pointer has no implicit hover transition.
      * Active modifiers decide whether raw, press, release, move, and scroll events are consumed or continue through earlier painted candidates.
+     * Consecutive events do not require an intervening [frame]: core synchronizes dirty retained geometry using the last committed viewport.
+     * Source application, content rebuilding, animation, painting, and semantics still wait for the next frame.
      *
      * @param event the pointer event in host coordinates.
      * @return the retained core input result.
@@ -91,6 +105,7 @@ public sealed interface MinecraftUiHost : AutoCloseable {
 
     /**
      * Dispatches one keyboard event to the focused component in the most recently committed frame.
+     * Dirty retained geometry synchronizes as described by [dispatchPointer].
      *
      * @param event immutable typed key event.
      * @return the retained focused-input result, or [InputResult.Ignored] without a committed frame or focus target.
@@ -101,6 +116,7 @@ public sealed interface MinecraftUiHost : AutoCloseable {
 
     /**
      * Dispatches one committed-character or input-method preedit event to the focused component in the most recently committed frame.
+     * Dirty retained geometry synchronizes as described by [dispatchPointer].
      *
      * @param event immutable typed text-input event.
      * @return the retained focused-input result, or [InputResult.Ignored] without a committed frame or focus target.

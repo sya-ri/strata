@@ -65,7 +65,7 @@ jobs:
           - id: common
             name: Common checks
             fetch_depth: 0
-            gradle_arguments: :check :api:check :integration:api:check :quality:benchmarks:check :quality:detekt-rules:check :runtime:core:check :runtime:headless:check :runtime:minecraft:check
+            gradle_arguments: :check :api:check :integration:api:check :quality:benchmarks:check :quality:detekt-rules:check :runtime:core:check :runtime:headless:check :runtime:minecraft:check :runtime:minecraft-fonts-lwjgl:check
             cache_read_only: false
             loom_cache: false
             coverage: false
@@ -186,6 +186,11 @@ jobs:
           bash release/tests/verify-release-source.sh
           bash release/tests/verify-release-v0.1.1-source.sh
           bash release/tests/verify-versioned-pages-staging.sh
+      - name: Test Qodana project model guards
+        if: matrix.id == 'common'
+        run: |
+          bash -n gradle/prepare-qodana-idea-model.sh gradle/verify-qodana-model.sh gradle/verify-qodana-model-fixtures.sh
+          bash gradle/verify-qodana-model-fixtures.sh
       - name: Hash Loom cache inputs
         if: matrix.loom_cache
         id: loom_inputs

@@ -171,7 +171,7 @@ internal class MavenCentralPortalCoordinatorTest {
     }
 
     @Test
-    fun `production contract requires twenty five safe coordinates before network access`() {
+    fun `production contract requires twenty six safe coordinates before network access`() {
         val fixture = fixture()
         val server = server(fixture)
 
@@ -183,7 +183,7 @@ internal class MavenCentralPortalCoordinatorTest {
                     incompleteAttempts = 1,
                 )
             }
-        assertTrue(countFailure.message.orEmpty().contains("exactly 25 coordinates"))
+        assertTrue(countFailure.message.orEmpty().contains("exactly 26 coordinates"))
         assertEquals(0, server.listRequestCount)
 
         val unsafeFailure =

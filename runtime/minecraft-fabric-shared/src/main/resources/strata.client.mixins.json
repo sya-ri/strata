@@ -1,0 +1,11 @@
+{
+  "required": true,
+  "minVersion": "0.8.7",
+  "package": "dev.s7a.strata.runtime.minecraft.fabric.mixin",
+  "client": [
+    "FabricMinecraftResourceReloadMixin"
+  ],
+  "injectors": {
+    "defaultRequire": 1
+  }
+}

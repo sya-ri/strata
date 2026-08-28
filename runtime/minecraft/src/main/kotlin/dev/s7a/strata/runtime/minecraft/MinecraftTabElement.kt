@@ -39,7 +39,7 @@ private class MinecraftTabElement private constructor(
     internal val disabledSprite: MinecraftButtonSpriteSnapshot,
     internal val normalText: MinecraftTextRun,
     internal val inactiveText: MinecraftTextRun,
-    internal val label: UiText.Literal,
+    internal val label: UiText,
     internal val width: Int,
     internal val enabled: Boolean,
     internal val selected: Boolean,
@@ -72,7 +72,7 @@ private class MinecraftTabElement private constructor(
         private var disabledSprite: MinecraftButtonSpriteSnapshot? = initial.disabledSprite
         private var normalText: MinecraftTextRun? = initial.normalText
         private var inactiveText: MinecraftTextRun? = initial.inactiveText
-        private var label: UiText.Literal? = initial.label
+        private var label: UiText? = initial.label
         private var width: Int = initial.width
         private var enabled: Boolean = initial.enabled
         private var selected: Boolean = initial.selected
@@ -297,7 +297,7 @@ private class MinecraftTabElement private constructor(
             disabledSprite: MinecraftButtonSpriteSnapshot,
             normalText: MinecraftTextRun,
             inactiveText: MinecraftTextRun,
-            label: UiText.Literal,
+            label: UiText,
             width: Int,
             enabled: Boolean,
             selected: Boolean,
@@ -349,7 +349,7 @@ internal fun createMinecraftTabElement(
     disabledSprite: MinecraftButtonSpriteSnapshot,
     normalText: MinecraftTextRun,
     inactiveText: MinecraftTextRun,
-    label: UiText.Literal,
+    label: UiText,
     width: Int,
     enabled: Boolean,
     selected: Boolean,

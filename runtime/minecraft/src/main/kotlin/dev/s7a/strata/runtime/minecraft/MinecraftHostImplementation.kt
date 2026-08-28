@@ -8,6 +8,8 @@ import dev.s7a.strata.input.KeyboardEvent
 import dev.s7a.strata.input.PointerEvent
 import dev.s7a.strata.input.TextInputEvent
 import dev.s7a.strata.runtime.FrameTime
+import dev.s7a.strata.runtime.minecraft.font.MinecraftFontBackendFactory
+import dev.s7a.strata.runtime.spi.RuntimeTextInputFocus
 import dev.s7a.strata.runtime.spi.RuntimeUiFrame
 import dev.s7a.strata.runtime.spi.RuntimeUiSession
 import dev.s7a.strata.runtime.spi.createRuntimeUiSession
@@ -28,19 +30,30 @@ internal object MinecraftHostImplementation {
      * @param definition available one-shot definition.
      * @param profile complete profile created by this runtime.
      * @param platform optional version services transferred to the host.
+     * @param fontBackend factory borrowed to open a distinct engine for a resource-font profile; omitted for compatibility glyphs.
      * @return an owner-thread host with transferred metadata and content.
      * @throws IllegalStateException when [definition] is unavailable.
+     * @throws Throwable when font initialization fails before definition transfer or later host construction fails; opened fonts are released and [platform] remains caller-owned.
      */
     @JvmSynthetic
     fun create(
         definition: ScreenDefinition,
         profile: MinecraftUiProfile,
         platform: MinecraftUiPlatform? = null,
+        fontBackend: MinecraftFontBackendFactory? = null,
     ): MinecraftUiHost {
-        val transferred = definition.transfer()
-        val evaluator = MinecraftProfileImplementation.createEvaluator(profile, transferred.content, platform)
-        val session = createRuntimeUiSession(evaluator)
-        return Host.create(session, evaluator, platform, transferred.title, transferred.pausesGame)
+        val textRenderer = MinecraftProfileImplementation.createTextRenderer(profile, fontBackend)
+        return runCatching {
+            val transferred = definition.transfer()
+            val evaluator = MinecraftProfileImplementation.createEvaluator(profile, transferred.content, platform, textRenderer)
+            val session = createRuntimeUiSession(evaluator)
+            Host.create(session, evaluator, platform, textRenderer, transferred.title, transferred.pausesGame)
+        }.getOrElse { failure ->
+            runCatching { textRenderer.close() }.exceptionOrNull()?.let { cleanup ->
+                if (cleanup !== failure) failure.addSuppressed(cleanup)
+            }
+            throw failure
+        }
     }
 
     private enum class State {
@@ -72,12 +85,14 @@ internal object MinecraftHostImplementation {
         private val session: RuntimeUiSession,
         initialEvaluator: () -> Element,
         initialPlatform: MinecraftUiPlatform?,
+        initialTextRenderer: MinecraftTextRenderer,
         title: UiText,
         pausesGame: Boolean,
     ) : MinecraftUiHost {
         private val ownerThread = Thread.currentThread()
         private var evaluator: (() -> Element)? = initialEvaluator
         private var platform: MinecraftUiPlatform? = initialPlatform
+        private var textRenderer: MinecraftTextRenderer? = initialTextRenderer
         private var metadata: Metadata? = Metadata(title, pausesGame)
         private var state = State.Created
         private var operation: Operation? = null
@@ -92,6 +107,12 @@ internal object MinecraftHostImplementation {
             get() {
                 checkReadable()
                 return checkNotNull(metadata).pausesGame
+            }
+
+        override val textInputFocus: RuntimeTextInputFocus?
+            get() {
+                checkReadable()
+                return session.textInputFocus
             }
 
         override fun attach() {
@@ -185,10 +206,12 @@ internal object MinecraftHostImplementation {
             state = State.Closed
             metadata = null
             val sessionFailure = runCatching { session.close() }.exceptionOrNull()
+            val fontFailure = runCatching { releaseTextRenderer() }.exceptionOrNull()
             val platformFailure = runCatching { releasePlatform() }.exceptionOrNull()
-            val failure = sessionFailure ?: platformFailure
-            if (sessionFailure != null && platformFailure != null) {
-                addSuppressed(sessionFailure, platformFailure)
+            val failure = sessionFailure ?: fontFailure ?: platformFailure
+            if (failure != null) {
+                fontFailure?.let { addSuppressed(failure, it) }
+                platformFailure?.let { addSuppressed(failure, it) }
             }
             releaseEvaluator()
             operation = null
@@ -211,6 +234,7 @@ internal object MinecraftHostImplementation {
             state = State.Failed
             metadata = null
             runCatching { session.close() }.exceptionOrNull()?.let { cleanup -> addSuppressed(primary, cleanup) }
+            runCatching { releaseTextRenderer() }.exceptionOrNull()?.let { cleanup -> addSuppressed(primary, cleanup) }
             runCatching { releasePlatform() }.exceptionOrNull()?.let { cleanup -> addSuppressed(primary, cleanup) }
             releaseEvaluator()
             operation = null
@@ -226,6 +250,12 @@ internal object MinecraftHostImplementation {
         private fun releasePlatform() {
             val retained = platform ?: return
             platform = null
+            retained.close()
+        }
+
+        private fun releaseTextRenderer() {
+            val retained = textRenderer ?: return
+            textRenderer = null
             retained.close()
         }
 
@@ -263,6 +293,7 @@ internal object MinecraftHostImplementation {
              * @param session independently owned core runtime session.
              * @param evaluator one-shot content evaluator released with the host.
              * @param platform optional version services owned until terminal close.
+             * @param textRenderer independently owned text service closed after the retained session.
              * @param title exact unresolved transferred title.
              * @param pausesGame whether the transferred screen pauses the game.
              * @return a new owner-thread host.
@@ -272,9 +303,10 @@ internal object MinecraftHostImplementation {
                 session: RuntimeUiSession,
                 evaluator: () -> Element,
                 platform: MinecraftUiPlatform?,
+                textRenderer: MinecraftTextRenderer,
                 title: UiText,
                 pausesGame: Boolean,
-            ): Host = Host(session, evaluator, platform, title, pausesGame)
+            ): Host = Host(session, evaluator, platform, textRenderer, title, pausesGame)
         }
     }
 }

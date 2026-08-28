@@ -17,12 +17,16 @@ import dev.s7a.strata.spi.InternalStrataRuntimeApi
  * Commands are snapshotted in their supplied order before pixel allocation or painting.
  * The caller must not mutate the supplied list or command graph concurrently with this call.
  * Each call owns its raster storage and shares no mutable state with another call.
- * Rectangles use the logical origin at the top-left, x increasing rightward, y increasing downward, and half-open edges; the positive [viewport] and every active nested child clip are intersected before each logical pixel is replicated by [scale].
+ * Rectangles use the logical origin at the top-left, x increasing rightward, y increasing downward, and half-open edges; drawing is intersected with the positive [viewport] and every active nested child clip.
  * BlitImage uses nearest pixel-center sampling: for destination-relative coordinate `d`, source extent `S`, and destination extent `D`, the sampled source offset is `floor(((2 * d + 1) * S) / (2 * D))`; viewport clipping preserves this mapping against the original unclipped destination rectangle.
- * Painting starts with transparent black and uses straight ARGB source-over with Long intermediates.
+ * FillRectangle and BlitImage apply the same logical source pixel to every physical pixel in its [scale] block, blending each destination independently.
+ * SampledImage instead maps final physical pixel centers through its original fractional destination into the source and samples the nearest texel.
+ * Its normalized source channels are multiplied by normalized tint channels without intermediate eight-bit rounding, and samples below the command's alpha cutoff are discarded before blending.
+ * Painting starts with transparent black and uses straight ARGB source-over; FillRectangle and BlitImage use Long intermediates.
  * For source alpha `sa`, destination alpha `da`, and channel values `sc` and `dc`, `alphaN = sa * 255 + da * (255 - sa)`, `oa = floor((alphaN + 127) / 255)`, and when `alphaN != 0` each channel is `floor((sc * sa * 255 + dc * da * (255 - sa) + floor(alphaN / 2)) / alphaN)`.
  * When `alphaN == 0`, the result is exactly `0x00000000`.
  * Each channel and alpha is rounded half-up per command, with canonical zero for transparent output.
+ * SampledImage uses floating-point normalized source-over and quantizes only the final blended channels and alpha by the same half-up rule.
  * Transparent sources are no-ops, opaque sources replace, and no gamma conversion, interpolation, or saturation is applied.
  *
  * @param commands the core-emitted draw commands in execution order; opaque platform commands are unsupported.
@@ -127,6 +131,10 @@ private object HeadlessImplementation {
                     snapshot.add(checkedCommand)
                 }
 
+                is DrawCommand.SampledImage -> {
+                    snapshot.add(checkedCommand)
+                }
+
                 is DrawCommand.Platform -> {
                     throw IllegalArgumentException("Headless rendering does not support platform draw commands.")
                 }
@@ -161,6 +169,17 @@ private object HeadlessImplementation {
 
                 is DrawCommand.BlitImage -> {
                     paintBlit(pixels, dimensions, command, clips.lastOrNull())
+                }
+
+                is DrawCommand.SampledImage -> {
+                    val viewport = IntRect(0, 0, dimensions.viewport.width, dimensions.viewport.height)
+                    SampledImageRasterizer.paint(
+                        pixels,
+                        dimensions.physicalSize,
+                        dimensions.scale,
+                        command,
+                        RasterMath.intersection(viewport, clips.lastOrNull() ?: viewport),
+                    )
                 }
 
                 is DrawCommand.Platform -> {
@@ -244,21 +263,19 @@ private object HeadlessImplementation {
     ) {
         val physicalX = Math.multiplyExact(logicalX, dimensions.scale)
         val physicalY = Math.multiplyExact(logicalY, dimensions.scale)
-        val color = RasterMath.blend(source, pixels[index(dimensions, physicalX, physicalY)])
+        val firstIndex = Math.addExact(Math.multiplyExact(physicalY, dimensions.physicalSize.width), physicalX)
+        val firstDestination = pixels[firstIndex]
+        val firstColor = RasterMath.blend(source, firstDestination)
         for (dy in 0 until dimensions.scale) {
             val row = Math.multiplyExact(Math.addExact(physicalY, dy), dimensions.physicalSize.width)
             val first = Math.addExact(row, physicalX)
             for (dx in 0 until dimensions.scale) {
-                pixels[Math.addExact(first, dx)] = color
+                val index = Math.addExact(first, dx)
+                val destination = pixels[index]
+                pixels[index] = if (destination == firstDestination) firstColor else RasterMath.blend(source, destination)
             }
         }
     }
-
-    private fun index(
-        dimensions: PhysicalDimensions,
-        x: Int,
-        y: Int,
-    ): Int = Math.addExact(Math.multiplyExact(y, dimensions.physicalSize.width), x)
 
     private fun checkedDimensions(
         viewport: IntSize,

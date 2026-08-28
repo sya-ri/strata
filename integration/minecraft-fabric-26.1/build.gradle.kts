@@ -1,4 +1,7 @@
+import net.fabricmc.loom.task.prod.ClientProductionRunTask
+import org.gradle.api.tasks.Delete
 import org.gradle.api.tasks.SourceSetContainer
+import org.gradle.api.tasks.bundling.Jar
 import org.gradle.language.jvm.tasks.ProcessResources
 import org.jetbrains.kotlin.gradle.dsl.KotlinJvmProjectExtension
 
@@ -8,11 +11,13 @@ plugins {
 }
 
 evaluationDependsOn(":runtime:minecraft-fabric-26.1")
+val runtimeFabricProject = project(":runtime:minecraft-fabric-26.1")
 val runtimeFabricMain =
-    project(":runtime:minecraft-fabric-26.1")
+    runtimeFabricProject
         .extensions
         .getByType<SourceSetContainer>()
         .named("main")
+val runtimeJar = runtimeFabricProject.tasks.named<Jar>("jar").flatMap { task -> task.archiveFile }
 val sharedGameTest = rootProject.file("integration/minecraft-fabric-unobfuscated/src/gametest")
 
 fabricApi {
@@ -37,6 +42,7 @@ extensions.configure<SourceSetContainer> {
     }
 }
 
+val gametestSourceSet = extensions.getByType<SourceSetContainer>().named("gametest")
 tasks.named<ProcessResources>("processGametestResources") {
     inputs.property("version", project.version)
     inputs.property("minecraftVersion", libs.versions.minecraft261)
@@ -59,11 +65,43 @@ dependencies {
     add("gametestImplementation", files(runtimeFabricMain.map { sourceSet -> sourceSet.output }))
     add("gametestImplementation", project(":runtime:headless"))
     add("gametestImplementation", project(":runtime:minecraft"))
+    add("gametestImplementation", project(":runtime:minecraft-fonts-lwjgl"))
     add("gametestRuntimeOnly", libs.fabric.language.kotlin)
+    add("productionRuntimeMods", libs.fabric.api261)
+    add("productionRuntimeMods", libs.fabric.language.kotlin)
+}
+
+tasks.named<Jar>("jar") {
+    dependsOn("gametestClasses")
+    from(gametestSourceSet.map { sourceSet -> sourceSet.output })
+}
+
+/**
+ * Uses the development GameTest identity and its vanilla offline UUID for production rendering.
+ * Both unobfuscated releases select the original slim Efe skin from this UUID.
+ */
+val showcaseClientIdentityArguments =
+    listOf("--username", "Player0", "--uuid", "2654e3c3-150d-3857-a426-0b141796a4e0")
+
+val productionRunDirectory = layout.buildDirectory.dir("run/productionClientGameTest")
+val deleteProductionGameTestRunDir = tasks.register<Delete>("deleteProductionGameTestRunDir") {
+    delete(productionRunDirectory)
+}
+val runProductionClientGameTest = tasks.register<ClientProductionRunTask>("runProductionClientGameTest") {
+    group = "verification"
+    description = "Runs the client GameTest from the actual integration and runtime mod jars."
+    dependsOn(deleteProductionGameTestRunDir)
+    mods.from(runtimeJar)
+    runDir.set(productionRunDirectory)
+    programArgs.addAll(showcaseClientIdentityArguments)
+    jvmArgs.add("-Dfabric.client.gametest")
+    val verificationOutput = layout.buildDirectory.dir("minecraft-production-parity")
+    jvmArgs.add(verificationOutput.map { directory -> "-Dstrata.minecraftParityOutput=${directory.asFile.absolutePath}" })
+    jvmArgs.add(libs.versions.minecraft261.map { version -> "-Dstrata.minecraftVersion=$version" })
 }
 
 tasks.named("check") {
-    dependsOn("runClientGameTest")
+    dependsOn("runClientGameTest", runProductionClientGameTest)
 }
 
 tasks.matching { task -> task.name == "koverGenerateArtifact" }.configureEach {

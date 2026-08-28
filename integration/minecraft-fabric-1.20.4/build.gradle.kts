@@ -67,6 +67,7 @@ dependencies {
     add("gametestImplementation", files(runtimeFabricMain.map { sourceSet -> sourceSet.output }))
     add("gametestImplementation", project(":runtime:headless"))
     add("gametestImplementation", project(":runtime:minecraft"))
+    add("gametestImplementation", project(":runtime:minecraft-fonts-lwjgl"))
     add("gametestRuntimeOnly", libs.fabric.language.kotlin)
     add("productionRuntimeMods", libs.fabric.api1204)
     add("productionRuntimeMods", libs.fabric.language.kotlin)

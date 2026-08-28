@@ -4,6 +4,7 @@ import dev.s7a.strata.layout.Alignment
 import dev.s7a.strata.layout.HorizontalAlignment
 import dev.s7a.strata.layout.VerticalAlignment
 import dev.s7a.strata.render.ArgbColor
+import dev.s7a.strata.text.TextLayout
 import dev.s7a.strata.layout.Arrangement as LayoutArrangement
 
 /**
@@ -28,6 +29,13 @@ internal sealed interface ShowcaseTreeDetail {
      */
     data class Height(
         internal val value: Int,
+    ) : ShowcaseTreeDetail
+
+    /**
+     * Explicit display-text line breaking, line limit, spacing, and overflow behavior.
+     */
+    data class MultilineText(
+        internal val policy: TextLayout.Multiline,
     ) : ShowcaseTreeDetail
 
     /**

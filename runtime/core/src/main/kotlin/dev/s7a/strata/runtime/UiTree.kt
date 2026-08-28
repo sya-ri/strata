@@ -9,6 +9,7 @@ import dev.s7a.strata.input.PointerEvent
 import dev.s7a.strata.input.TextInputEvent
 import dev.s7a.strata.runtime.render.DrawCommand
 import dev.s7a.strata.runtime.semantics.SemanticsEntry
+import dev.s7a.strata.runtime.spi.RuntimeTextInputFocus
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
 
 // Why: this public owner intentionally exposes each retained lifecycle, frame, input, and inspection operation through one guarded boundary.
@@ -53,6 +54,20 @@ public class UiTree : AutoCloseable {
         }
 
     /**
+     * Returns the detached identity of the current editable focus interval to its owning session.
+     *
+     * @return the committed editable interval, or null without an accepting editable focus target.
+     * @throws IllegalStateException when read from another thread, during a tree operation, or after terminal cleanup.
+     */
+    @JvmSynthetic
+    internal fun currentTextInputFocus(): RuntimeTextInputFocus? {
+        threadGuard.check()
+        check(operationActive.not()) { "A tree operation is already active." }
+        check(currentState === TreeState.Active) { "The retained tree is not active." }
+        return pipeline.textInputFocus
+    }
+
+    /**
      * Returns the whole-tree change token used by an owning session's frame cache.
      *
      * The token changes when retained phase or structural work is recorded and is read only on the tree's owner thread.
@@ -74,6 +89,29 @@ public class UiTree : AutoCloseable {
     internal fun advanceFrame(time: FrameTime) {
         pipelineOperation {
             root?.let { retainedRoot -> pipeline.advanceFrame(retainedRoot, time) }
+        }
+    }
+
+    /**
+     * Synchronizes only pending retained geometry for an owning session with an already successful frame.
+     *
+     * Dirty measurement refreshes retained dynamic children as ordinary measurement does.
+     * Session content, source cutoffs, time, painting, semantics, and frame snapshots remain frame work.
+     * The ordinary public input methods retain their strict laid-out-tree precondition.
+     *
+     * @param constraints last successfully committed root constraints supplied by the owning session.
+     * @throws Throwable when geometry fails; the tree is poisoned and cleaned before the event can be dispatched.
+     * @throws IllegalStateException for an inactive, reentrant, or foreign-thread operation.
+     */
+    @JvmSynthetic
+    internal fun synchronizeInputGeometry(constraints: Constraints) {
+        pipelineOperation {
+            val retainedRoot = root ?: return@pipelineOperation
+            if (pipeline.hasPendingMeasure(retainedRoot)) {
+                reconciler.refreshDynamicChildren(retainedRoot, validator)
+                lifecycle.attachPending(retainedRoot)
+            }
+            pipeline.synchronizeInputGeometry(retainedRoot, constraints)
         }
     }
 

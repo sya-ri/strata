@@ -523,6 +523,186 @@ method dev.s7a.strata.component.TextFieldState.setValue(java.lang.String): void
 
 </details>
 
+### TextAreaState
+
+Caller-owned canonical LF text with a UTF-16 length limit and a stable owned vertical ScrollState. Immutable descriptions can be reused after detachment; simultaneous attachment with the same state throws IllegalStateException.
+
+#### `TextAreaState`
+
+```kotlin
+class TextAreaState(initialValue: String = "", public val maxLength: Int = 32767)
+val maxLength: Int
+val scrollState: ScrollState
+var value: String
+```
+
+<details><summary>Compiled JVM API fingerprints</summary>
+
+```text
+class dev.s7a.strata.component.TextAreaState
+constructor dev.s7a.strata.component.TextAreaState()
+constructor dev.s7a.strata.component.TextAreaState(java.lang.String, int)
+method dev.s7a.strata.component.TextAreaState.getMaxLength(): int
+method dev.s7a.strata.component.TextAreaState.getScrollState(): dev.s7a.strata.component.ScrollState
+method dev.s7a.strata.component.TextAreaState.getValue(): java.lang.String
+method dev.s7a.strata.component.TextAreaState.observe(kotlin.jvm.functions.Function1): java.lang.AutoCloseable
+method dev.s7a.strata.component.TextAreaState.setValue(java.lang.String): void
+```
+
+</details>
+
+### TextAreaViewport
+
+Typed outer editor viewport from a positive width and visible line count, or an explicit positive IntSize.
+
+#### `TextAreaViewport`
+
+```kotlin
+sealed interface TextAreaViewport
+```
+
+#### `TextAreaViewport.Lines`
+
+```kotlin
+data class Lines(public val width: Int, public val lines: Int) : TextAreaViewport
+val lines: Int
+val width: Int
+```
+
+#### `TextAreaViewport.Size`
+
+```kotlin
+data class Size(public val size: IntSize) : TextAreaViewport
+val size: IntSize
+```
+
+<details><summary>Compiled JVM API fingerprints</summary>
+
+```text
+class dev.s7a.strata.component.TextAreaViewport$Lines
+class dev.s7a.strata.component.TextAreaViewport$Size
+constructor dev.s7a.strata.component.TextAreaViewport$Lines(int, int)
+constructor dev.s7a.strata.component.TextAreaViewport$Size(dev.s7a.strata.geometry.IntSize)
+interface dev.s7a.strata.component.TextAreaViewport
+method dev.s7a.strata.component.TextAreaViewport$Lines.component1(): int
+method dev.s7a.strata.component.TextAreaViewport$Lines.component2(): int
+method dev.s7a.strata.component.TextAreaViewport$Lines.copy(int, int): dev.s7a.strata.component.TextAreaViewport$Lines
+method dev.s7a.strata.component.TextAreaViewport$Lines.equals(java.lang.Object): boolean
+method dev.s7a.strata.component.TextAreaViewport$Lines.getLines(): int
+method dev.s7a.strata.component.TextAreaViewport$Lines.getWidth(): int
+method dev.s7a.strata.component.TextAreaViewport$Lines.hashCode(): int
+method dev.s7a.strata.component.TextAreaViewport$Lines.toString(): java.lang.String
+method dev.s7a.strata.component.TextAreaViewport$Size.component1(): dev.s7a.strata.geometry.IntSize
+method dev.s7a.strata.component.TextAreaViewport$Size.copy(dev.s7a.strata.geometry.IntSize): dev.s7a.strata.component.TextAreaViewport$Size
+method dev.s7a.strata.component.TextAreaViewport$Size.equals(java.lang.Object): boolean
+method dev.s7a.strata.component.TextAreaViewport$Size.getSize(): dev.s7a.strata.geometry.IntSize
+method dev.s7a.strata.component.TextAreaViewport$Size.hashCode(): int
+method dev.s7a.strata.component.TextAreaViewport$Size.toString(): java.lang.String
+```
+
+</details>
+
+### TextLayout
+
+Single-line compatibility or structural multiline wrapping, line limits, overflow, and spacing.
+
+#### `TextLayout`
+
+```kotlin
+sealed interface TextLayout
+```
+
+#### `TextLayout.Multiline`
+
+```kotlin
+data class Multiline(public val wrap: TextWrap = TextWrap.Word, public val maxLines: Int = Int.MAX_VALUE, public val overflow: TextOverflow = TextOverflow.Clip, public val lineSpacing: Int = 0) : TextLayout
+val lineSpacing: Int
+val maxLines: Int
+val overflow: TextOverflow
+val wrap: TextWrap
+```
+
+#### `TextLayout.SingleLine`
+
+```kotlin
+data object SingleLine : TextLayout
+```
+
+<details><summary>Compiled JVM API fingerprints</summary>
+
+```text
+class dev.s7a.strata.text.TextLayout$Multiline
+class dev.s7a.strata.text.TextLayout$SingleLine
+constructor dev.s7a.strata.text.TextLayout$Multiline()
+constructor dev.s7a.strata.text.TextLayout$Multiline(dev.s7a.strata.text.TextWrap, int, dev.s7a.strata.text.TextOverflow, int)
+field dev.s7a.strata.text.TextLayout$SingleLine.INSTANCE: dev.s7a.strata.text.TextLayout$SingleLine
+interface dev.s7a.strata.text.TextLayout
+method dev.s7a.strata.text.TextLayout$Multiline.component1(): dev.s7a.strata.text.TextWrap
+method dev.s7a.strata.text.TextLayout$Multiline.component2(): int
+method dev.s7a.strata.text.TextLayout$Multiline.component3(): dev.s7a.strata.text.TextOverflow
+method dev.s7a.strata.text.TextLayout$Multiline.component4(): int
+method dev.s7a.strata.text.TextLayout$Multiline.copy(dev.s7a.strata.text.TextWrap, int, dev.s7a.strata.text.TextOverflow, int): dev.s7a.strata.text.TextLayout$Multiline
+method dev.s7a.strata.text.TextLayout$Multiline.equals(java.lang.Object): boolean
+method dev.s7a.strata.text.TextLayout$Multiline.getLineSpacing(): int
+method dev.s7a.strata.text.TextLayout$Multiline.getMaxLines(): int
+method dev.s7a.strata.text.TextLayout$Multiline.getOverflow(): dev.s7a.strata.text.TextOverflow
+method dev.s7a.strata.text.TextLayout$Multiline.getWrap(): dev.s7a.strata.text.TextWrap
+method dev.s7a.strata.text.TextLayout$Multiline.hashCode(): int
+method dev.s7a.strata.text.TextLayout$Multiline.toString(): java.lang.String
+method dev.s7a.strata.text.TextLayout$SingleLine.equals(java.lang.Object): boolean
+method dev.s7a.strata.text.TextLayout$SingleLine.hashCode(): int
+method dev.s7a.strata.text.TextLayout$SingleLine.toString(): java.lang.String
+```
+
+</details>
+
+### TextWrap
+
+No soft wrapping, breakable-whitespace preference with scalar fallback, or scalar wrapping.
+
+#### `TextWrap`
+
+```kotlin
+enum class TextWrap
+```
+
+<details><summary>Compiled JVM API fingerprints</summary>
+
+```text
+enum dev.s7a.strata.text.TextWrap
+field dev.s7a.strata.text.TextWrap.Character: dev.s7a.strata.text.TextWrap
+field dev.s7a.strata.text.TextWrap.None: dev.s7a.strata.text.TextWrap
+field dev.s7a.strata.text.TextWrap.Word: dev.s7a.strata.text.TextWrap
+method dev.s7a.strata.text.TextWrap.getEntries(): kotlin.enums.EnumEntries
+method dev.s7a.strata.text.TextWrap.valueOf(java.lang.String): dev.s7a.strata.text.TextWrap
+method dev.s7a.strata.text.TextWrap.values(): dev.s7a.strata.text.TextWrap[]
+```
+
+</details>
+
+### TextOverflow
+
+Clip overflowing display text or append a fitting ellipsis without changing full semantics.
+
+#### `TextOverflow`
+
+```kotlin
+enum class TextOverflow
+```
+
+<details><summary>Compiled JVM API fingerprints</summary>
+
+```text
+enum dev.s7a.strata.text.TextOverflow
+field dev.s7a.strata.text.TextOverflow.Clip: dev.s7a.strata.text.TextOverflow
+field dev.s7a.strata.text.TextOverflow.Ellipsis: dev.s7a.strata.text.TextOverflow
+method dev.s7a.strata.text.TextOverflow.getEntries(): kotlin.enums.EnumEntries
+method dev.s7a.strata.text.TextOverflow.valueOf(java.lang.String): dev.s7a.strata.text.TextOverflow
+method dev.s7a.strata.text.TextOverflow.values(): dev.s7a.strata.text.TextOverflow[]
+```
+
+</details>
+
 ### ScrollState
 
 Shared scroll metrics, mutation, observation, and geometry updates linking a viewport to optional controls.

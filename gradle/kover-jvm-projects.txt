@@ -5,5 +5,6 @@
 :runtime:core
 :runtime:headless
 :runtime:minecraft
+:runtime:minecraft-fonts-lwjgl
 :runtime:minecraft-fabric-26.1
 :runtime:minecraft-fabric-26.2

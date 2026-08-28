@@ -3,7 +3,7 @@
 set -euo pipefail
 
 repository_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd -P)"
-workflow="$repository_root/.github/workflows/release-v0.1.1.yml"
+workflow="$repository_root/.github/workflows/publish-release.yml"
 sealed_workflow="$repository_root/.github/workflows/release.yml"
 jvm_workflow="$repository_root/.github/workflows/jvm.yml"
 
@@ -12,16 +12,23 @@ fail() {
   exit 1
 }
 
-[[ -f "$workflow" ]] || fail 'The pinned v0.1.1 release workflow is missing.'
+[[ -f "$workflow" ]] || fail 'The active release workflow is missing.'
 [[ -f "$sealed_workflow" ]] || fail 'The sealed v0.1.0 release workflow is missing.'
 [[ -f "$jvm_workflow" ]] || fail 'The JVM workflow is missing.'
+
+for versioned_workflow in "$repository_root"/.github/workflows/release-v*.yml "$repository_root"/.github/workflows/release-v*.yaml; do
+  if [[ -f "$versioned_workflow" ]]; then
+    fail 'Version-specific release workflows must not duplicate the active publish-release.yml controller.'
+  fi
+done
 
 jvm_push_trigger="$(sed -n '/^  push:$/,/^  pull_request:$/p' "$jvm_workflow")"
 jvm_pull_request_trigger="$(sed -n '/^  pull_request:$/,/^permissions:$/p' "$jvm_workflow")"
 [[ "$(grep --fixed-strings -c '      - qodana.yaml' <<< "$jvm_push_trigger")" == '1' ]] || fail 'Qodana configuration changes must trigger the JVM master check required by release preflight.'
 [[ "$(grep --fixed-strings -c '      - qodana.yaml' <<< "$jvm_pull_request_trigger")" == '1' ]] || fail 'Qodana configuration changes must trigger JVM pull-request checks before merge.'
 
-grep --fixed-strings 'name: Release v0.1.1' "$workflow" >/dev/null || fail 'The v0.1.1 workflow name differs.'
+grep --fixed-strings 'name: Publish release' "$workflow" >/dev/null || fail 'The active release workflow name differs.'
+grep --fixed-strings 'workflow=.github/workflows/publish-release.yml' "$workflow" >/dev/null || fail 'The active release workflow does not check its own source.'
 grep --fixed-strings 'default: v0.1.1' "$workflow" >/dev/null || fail 'The v0.1.1 tag input is not pinned.'
 grep --fixed-strings '[[ "$RELEASE_TAG" == "v0.1.1"' "$workflow" >/dev/null || fail 'The v0.1.1 runtime tag guard is missing.'
 grep --fixed-strings '[[ "$tag_commit" == "$GITHUB_SHA" ]]' "$workflow" >/dev/null || fail 'Release does not require the exact green master SHA.'
@@ -30,13 +37,13 @@ grep --fixed-strings 'root_version="$(git show "${tag_commit}:build.gradle.kts"'
 [[ "$(grep --fixed-strings -c 'release/github-tag-ruleset-v0.1.1.json' "$workflow")" == '9' ]] || fail 'Every v0.1.1 tag mutation boundary must use the dedicated ruleset contract.'
 [[ "$(grep --fixed-strings -c 'release/github-tag-ruleset-v0.1.1-receipt.json' "$workflow")" == '8' ]] || fail 'Every v0.1.1 tag mutation boundary must use the dedicated ruleset receipt.'
 
-grep --fixed-strings '[[ "$(grep -cve '\''^[[:space:]]*$'\'' release/maven-coordinates.txt)" == "25" ]]' "$workflow" >/dev/null || fail 'The local Maven inventory is not fixed at 25 coordinates.'
-[[ "$(grep --fixed-strings -c '.coordinateCount == 25' "$workflow")" == '3' ]] || fail 'Every initial, fresh-write, and final public Central phase must require 25 coordinates.'
+grep --fixed-strings '[[ "$(grep -cve '\''^[[:space:]]*$'\'' release/maven-coordinates.txt)" == "26" ]]' "$workflow" >/dev/null || fail 'The local Maven inventory is not fixed at 26 coordinates.'
+[[ "$(grep --fixed-strings -c '.coordinateCount == 26' "$workflow")" == '3' ]] || fail 'Every initial, fresh-write, and final public Central phase must require 26 coordinates.'
 [[ "$(grep --fixed-strings -c '.releaseVersion == "0.1.1" and (.artifacts | length) == 21' "$workflow")" == '2' ]] || fail 'Release and final verification must both require 21 Modrinth artifacts.'
 [[ "$(grep --fixed-strings -c '"${#assets[@]}" == "43"' "$workflow")" == '3' ]] || fail 'Bundle creation, GitHub mutation, and final verification must each require 43 assets.'
-[[ "$(grep --fixed-strings -c '.verifiedFileCount == 250 and .verifiedChecksumCount == 500' "$workflow")" == '3' ]] || fail 'Public Central evidence must be fixed at 250 files and 500 checksums in every exact phase.'
-[[ "$(grep --fixed-strings -c '.verifiedContentFileCount == 250 and .verifiedChecksumCount == 500' "$workflow")" == '3' ]] || fail 'Portal evidence must be fixed at 250 files and 500 checksums in every exact phase.'
-[[ "$(grep --fixed-strings -c '== "125"' "$workflow")" == '2' ]] || fail 'Release and final verification must both verify 125 Central signatures.'
+[[ "$(grep --fixed-strings -c '.verifiedFileCount == 260 and .verifiedChecksumCount == 520' "$workflow")" == '3' ]] || fail 'Public Central evidence must be fixed at 260 files and 520 checksums in every exact phase.'
+[[ "$(grep --fixed-strings -c '.verifiedContentFileCount == 260 and .verifiedChecksumCount == 520' "$workflow")" == '3' ]] || fail 'Portal evidence must be fixed at 260 files and 520 checksums in every exact phase.'
+[[ "$(grep --fixed-strings -c '== "130"' "$workflow")" == '2' ]] || fail 'Release and final verification must both verify 130 Central signatures.'
 
 central_write='publishAndReleaseToMaven''Central'
 [[ "$(grep --fixed-strings -c "$central_write" "$workflow")" == '1' ]] || fail 'The v0.1.1 workflow must contain exactly one Central write task.'
@@ -55,7 +62,7 @@ central_block="$(sed -n "${central_step},$((central_verify_step - 1))p" "$workfl
 [[ "$(grep --extended-regexp -c '^[[:space:]]+revalidate_release_source$' <<< "$central_block")" == '2' ]] || fail 'Central publication must freshly revalidate source before preflight and again before mutation.'
 grep --fixed-strings 'git fetch --force origin' <<< "$central_block" >/dev/null || fail 'Central publication does not freshly fetch master and tag.'
 grep --fixed-strings 'mavenCentralReleasePreflight mavenCentralPortalPreflight' <<< "$central_block" >/dev/null || fail 'Central publication does not rerun both fresh preflights.'
-grep --fixed-strings '.state == "absent" and .coordinateCount == 25 and .verifiedFileCount == 0 and .verifiedChecksumCount == 0' <<< "$central_block" >/dev/null || fail 'Fresh public Central preflight does not require complete absence.'
+grep --fixed-strings '.state == "absent" and .coordinateCount == 26 and .verifiedFileCount == 0 and .verifiedChecksumCount == 0' <<< "$central_block" >/dev/null || fail 'Fresh public Central preflight does not require complete absence.'
 grep --fixed-strings '.state == "absent" and .deploymentId == null and .deploymentState == null' <<< "$central_block" >/dev/null || fail 'Fresh Portal preflight does not require complete absence.'
 grep --fixed-strings '[[ "$GITHUB_SHA" == "$EXPECTED_CONTROLLER_COMMIT" && "$(git rev-parse origin/master)" == "$EXPECTED_CONTROLLER_COMMIT" ]]' <<< "$central_block" >/dev/null || fail 'Central publication does not pin the exact controller master.'
 grep --fixed-strings '[[ "$(git rev-parse "refs/tags/$RELEASE_TAG")" == "$EXPECTED_TAG_OBJECT" ]]' <<< "$central_block" >/dev/null || fail 'Central publication does not pin the signed tag object.'

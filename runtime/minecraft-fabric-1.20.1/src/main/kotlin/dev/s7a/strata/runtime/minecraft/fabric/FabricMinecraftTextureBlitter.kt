@@ -7,14 +7,16 @@ import net.minecraft.client.gui.GuiGraphics
  */
 internal object FabricMinecraftTextureBlitter {
     /**
-     * Draws one complete retained texture at its destination without scaling or retaining native objects.
+     * Maps a texture rasterized at physical GUI density onto its logical destination without retaining native objects.
      *
      * @param graphics active client-thread graphics context borrowed for this call.
      * @param location registered texture location borrowed for this call.
      * @param x destination left edge in GUI pixels.
      * @param y destination top edge in GUI pixels.
-     * @param width texture and destination width in pixels.
-     * @param height texture and destination height in pixels.
+     * @param width destination width in logical GUI pixels.
+     * @param height destination height in logical GUI pixels.
+     * @param textureWidth complete source width in physical pixels.
+     * @param textureHeight complete source height in physical pixels.
      */
     internal fun blit(
         graphics: GuiGraphics,
@@ -23,7 +25,9 @@ internal object FabricMinecraftTextureBlitter {
         y: Int,
         width: Int,
         height: Int,
+        textureWidth: Int,
+        textureHeight: Int,
     ) {
-        graphics.blit(location, x, y, 0, 0f, 0f, width, height, width, height)
+        graphics.blit(location, x, y, width, height, 0f, 0f, textureWidth, textureHeight, textureWidth, textureHeight)
     }
 }

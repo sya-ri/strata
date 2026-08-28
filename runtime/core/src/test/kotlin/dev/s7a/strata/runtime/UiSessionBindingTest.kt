@@ -1,6 +1,10 @@
 package dev.s7a.strata.runtime
 
 import dev.s7a.strata.geometry.Constraints
+import dev.s7a.strata.geometry.IntOffset
+import dev.s7a.strata.input.PointerEvent
+import dev.s7a.strata.node.DirtyMask
+import dev.s7a.strata.node.DirtyPhase
 import dev.s7a.strata.state.StateRevision
 import dev.s7a.strata.state.StateSnapshot
 import dev.s7a.strata.state.StateSource
@@ -20,6 +24,40 @@ import kotlin.properties.ReadWriteProperty
  * Verifies revisioned binding cutoffs, coalescing, retention, and subscription cleanup.
  */
 internal class UiSessionBindingTest {
+    @Test
+    fun queuedSourceUpdatesRemainInvisibleDuringInputGeometrySynchronization() {
+        val probe = TestProbe()
+        val source = TestSource(StateSnapshot(StateRevision(0), "old"), null)
+        val holder = BindingHolder<String>()
+        val contentValues = ArrayList<String>()
+        val session =
+            UiSession(TestOwnerDispatcher()) {
+                contentValues.add(holder.value)
+                probe.element(TestProbe.ProbeId(holder.value))
+            }
+        holder.delegate = session.bind(source)
+        session.attach()
+        session.frame(Constraints.fixed(2, 1))
+        source.publish(StateSnapshot(StateRevision(1), "new"))
+        probe.nodeForTag(TestProbe.ProbeId("old")).invalidateForTest(DirtyMask.of(DirtyPhase.Measure))
+        session.dispatchPointer(PointerEvent.Move(IntOffset.Zero))
+        session.dispatchPointer(PointerEvent.Move(IntOffset.Zero))
+        assertEquals("old", holder.value)
+        assertEquals(listOf("old"), contentValues)
+        assertEquals(listOf(TestProbe.ProbeId("old"), TestProbe.ProbeId("old")), probe.inputEvents)
+        assertEquals(1, probe.paintCalls)
+        val next = session.frame(Constraints.fixed(4, 2))
+        assertEquals(
+            UiText.Literal("new"),
+            next.semantics
+                .single()
+                .semantics.label,
+        )
+        assertEquals(listOf("old", "new"), contentValues)
+        session.close()
+        assertEquals(1, source.closeCount)
+    }
+
     @Test
     fun callbackBeforeReturnIsUsedByTheFirstBuild() {
         val probe = TestProbe()

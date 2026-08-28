@@ -1,11 +1,14 @@
 package dev.s7a.strata.text
 
+import dev.s7a.strata.resource.ResourceId
 import java.util.Collections
 
 /**
  * Unresolved text retained by the platform-neutral tree.
  *
  * Runtime adapters resolve values only at their platform boundary.
+ * Version 0.1.1 adds [WithFont] to this sealed hierarchy; exhaustive visitors written for earlier variants need an additional branch.
+ * Retaining the older JVM members does not make previously compiled visitors accept the new variant.
  */
 public sealed interface UiText {
     /**
@@ -15,6 +18,21 @@ public sealed interface UiText {
      */
     public data class Literal(
         public val value: String,
+    ) : UiText
+
+    /**
+     * Text carrying a resource-pack font identifier without resolving or owning the font resource.
+     *
+     * The immutable wrapper is safe to retain and share across threads under the wrapped text's ownership contract.
+     * Runtime adapters resolve [font] against their pinned resource state when measuring and drawing [text].
+     * The font is inherited by the wrapped text; a nested [WithFont] takes precedence over this outer selection.
+     *
+     * @property text unresolved text to render with the selected font.
+     * @property font structural resource identifier of the font definition.
+     */
+    public data class WithFont(
+        public val text: UiText,
+        public val font: ResourceId,
     ) : UiText
 
     /**

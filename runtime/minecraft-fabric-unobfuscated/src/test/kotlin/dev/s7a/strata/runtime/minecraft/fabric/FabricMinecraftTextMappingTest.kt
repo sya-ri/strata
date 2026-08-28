@@ -1,10 +1,13 @@
 package dev.s7a.strata.runtime.minecraft.fabric
 
+import dev.s7a.strata.resource.ResourceId
 import dev.s7a.strata.text.PlatformText
 import dev.s7a.strata.text.TranslationFallback
 import dev.s7a.strata.text.UiText
 import dev.s7a.strata.text.UiTextArgument
+import dev.s7a.strata.text.withFont
 import net.minecraft.network.chat.Component
+import net.minecraft.network.chat.FontDescription
 import net.minecraft.network.chat.contents.TranslatableContents
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertNull
@@ -16,6 +19,25 @@ import org.junit.jupiter.api.Test
  * Verifies context-free conversion from every common text variant into the supported component model.
  */
 internal class FabricMinecraftTextMappingTest {
+    @Test
+    fun mapsResourceFontsWithoutResolvingOrLosingUnicodeContent() {
+        val font = ResourceId("example", "ui/body")
+        val nestedFont = ResourceId("example", "ui/icons")
+        val text = UiText.concat(UiText.Literal("日本🙂").withFont(nestedFont), UiText.Literal("한국어")).withFont(font)
+        val mapped = mapMinecraftText(text)
+        assertEquals("日本🙂한국어", mapped.getString())
+        assertEquals(FontDescription.Resource(minecraftResourceLocation(font.namespace, font.path)), mapped.getStyle().getFont())
+        assertEquals(
+            FontDescription.Resource(minecraftResourceLocation(nestedFont.namespace, nestedFont.path)),
+            mapped.getSiblings()[0].getStyle().getFont(),
+        )
+        val nested = mapMinecraftText(UiText.WithFont(UiText.WithFont(UiText.Literal("A"), nestedFont), font))
+        assertEquals(
+            FontDescription.Resource(minecraftResourceLocation(nestedFont.namespace, nestedFont.path)),
+            nested.getStyle().getFont(),
+        )
+    }
+
     @Test
     fun mapsLiteralConcatenatedAndTranslatedFallbackValues() {
         assertEquals("literal", mapMinecraftText(UiText.Literal("literal")).getString())

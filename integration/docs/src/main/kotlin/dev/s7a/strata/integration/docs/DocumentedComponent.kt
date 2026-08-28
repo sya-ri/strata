@@ -43,6 +43,11 @@ internal enum class DocumentedComponent(
     TextField("TextField", "text-field"),
 
     /**
+     * The editable multiline viewport with caller-owned text and vertical scroll state.
+     */
+    TextArea("TextArea", "text-area"),
+
+    /**
      * The pointer-button component identity.
      */
     Button("Button", "button"),

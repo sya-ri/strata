@@ -1,6 +1,5 @@
 package dev.s7a.strata.runtime.minecraft
 
-import dev.s7a.strata.component.Image
 import dev.s7a.strata.component.Text
 import dev.s7a.strata.component.TextField
 import dev.s7a.strata.component.TextFieldState
@@ -17,7 +16,10 @@ import dev.s7a.strata.input.TextInputEvent
 import dev.s7a.strata.modifier.Modifier
 import dev.s7a.strata.modifier.initialFocus
 import dev.s7a.strata.modifier.onCharacterInput
+import dev.s7a.strata.resource.ResourceId
 import dev.s7a.strata.runtime.headless.rasterizeHeadless
+import dev.s7a.strata.runtime.minecraft.MinecraftTextFieldFixture.fieldSize
+import dev.s7a.strata.runtime.minecraft.MinecraftTextFieldFixture.host
 import dev.s7a.strata.runtime.render.DrawCommand
 import dev.s7a.strata.screen.ScreenDefinition
 import dev.s7a.strata.semantics.SemanticsRole
@@ -28,36 +30,12 @@ import org.junit.jupiter.api.Assertions.assertSame
 import org.junit.jupiter.api.Assertions.assertThrows
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
-import java.util.concurrent.FutureTask
-import java.util.concurrent.TimeUnit
 
 /**
- * Verifies the exact fixed TextField rendering, state ownership, focus, and bounded EditBox behavior.
+ * Verifies the ASCII fixture's field geometry, styling, basic editing, and retained invalidation.
  */
 @OptIn(InternalStrataRuntimeApi::class)
 internal class MinecraftTextFieldTest {
-    @Test
-    fun stateValidatesPrintableAsciiLengthThreadAndDistinctWrites() {
-        assertThrows(IllegalArgumentException::class.java) { TextFieldState("", 0) }
-        assertThrows(IllegalArgumentException::class.java) { TextFieldState("\n") }
-        assertThrows(IllegalArgumentException::class.java) { TextFieldState("abc", 2) }
-
-        val state = TextFieldState("abc", 3)
-        state.value = "xyz"
-        assertEquals("xyz", state.value)
-        assertThrows(IllegalArgumentException::class.java) { state.value = "long" }
-        assertEquals("xyz", state.value)
-
-        val wrongThread = FutureTask<Throwable?> { runCatching { state.value }.exceptionOrNull() }
-        val thread = Thread(wrongThread)
-        thread.start()
-        try {
-            assertTrue(wrongThread.get(5, TimeUnit.SECONDS) is IllegalStateException)
-        } finally {
-            thread.join(5_000)
-        }
-    }
-
     @Test
     fun unfocusedFieldUsesExactSpriteEditBoxColorsAndSemantics() {
         val state = TextFieldState("A")
@@ -189,6 +167,62 @@ internal class MinecraftTextFieldTest {
     }
 
     @Test
+    fun backspaceThenInsertionMovesTheCursorOnlyOnce() {
+        val state = TextFieldState("ABC")
+        val host = host(state, Modifier.Empty.initialFocus())
+        try {
+            host.attach()
+            host.frame(fieldSize)
+            host.dispatchKeyboard(KeyboardEvent.Press(KeyCode.Backspace, 0))
+            host.dispatchTextInput(TextInputEvent.Character('D'.code))
+            assertEquals("ABD", state.value)
+        } finally {
+            host.close()
+        }
+    }
+
+    @Test
+    fun pointerCursorPlacementStartsAtTheVisibleScrolledText() {
+        val state = TextFieldState("AAAAAAA")
+        val compactSize = IntSize(12, 20)
+        val host = host(state, Modifier.Empty.initialFocus(), compactSize)
+        try {
+            host.attach()
+            host.frame(compactSize)
+            host.dispatchPointer(PointerEvent.Press(IntOffset(4, 10), PointerButton.Primary))
+            host.dispatchTextInput(TextInputEvent.Character('B'.code))
+            assertEquals("AAAAABAA", state.value)
+        } finally {
+            host.close()
+        }
+    }
+
+    @Test
+    fun explicitDefaultFontOverloadsRetainTextAndFieldPixels() {
+        val font = ResourceId("minecraft", "default")
+        val textSize = IntSize(2, 9)
+        val profile = MinecraftProfileFixture.create()
+        val implicitText = createMinecraftUiHost(ScreenDefinition("implicit text") { Text("A") }, profile)
+        val explicitText = createMinecraftUiHost(ScreenDefinition("explicit text") { Text("A", font = font) }, profile)
+        val unresolvedText = createMinecraftUiHost(ScreenDefinition("unresolved text") { Text(UiText.Literal("A"), font = font) }, profile)
+        val implicitField = host(TextFieldState("A"))
+        val explicitField = createMinecraftUiHost(ScreenDefinition("explicit field") { TextField(TextFieldState("A"), font = font) }, profile)
+        val sizedField = createMinecraftUiHost(ScreenDefinition("sized field") { TextField(TextFieldState("A"), fieldSize, font) }, profile)
+        val hosts = listOf(implicitText, explicitText, unresolvedText, implicitField, explicitField, sizedField)
+        try {
+            hosts.forEach(MinecraftUiHost::attach)
+            val textPixels = rasterizeHeadless(implicitText.frame(textSize).drawCommands, textSize).copyArgb()
+            assertTrue(textPixels.contentEquals(rasterizeHeadless(explicitText.frame(textSize).drawCommands, textSize).copyArgb()))
+            assertTrue(textPixels.contentEquals(rasterizeHeadless(unresolvedText.frame(textSize).drawCommands, textSize).copyArgb()))
+            val fieldPixels = rasterizeHeadless(implicitField.frame(fieldSize).drawCommands, fieldSize).copyArgb()
+            assertTrue(fieldPixels.contentEquals(rasterizeHeadless(explicitField.frame(fieldSize).drawCommands, fieldSize).copyArgb()))
+            assertTrue(fieldPixels.contentEquals(rasterizeHeadless(sizedField.frame(fieldSize).drawCommands, fieldSize).copyArgb()))
+        } finally {
+            hosts.forEach(MinecraftUiHost::close)
+        }
+    }
+
+    @Test
     fun externalStateWritesInvalidatePaintAndSemanticsOnce() {
         val state = TextFieldState("A")
         val host = host(state)
@@ -207,22 +241,5 @@ internal class MinecraftTextFieldTest {
         val equal = host.frame(fieldSize)
         assertEquals(second.drawCommands, equal.drawCommands)
         host.close()
-    }
-
-    private fun host(
-        state: TextFieldState,
-        modifier: Modifier = Modifier.Empty,
-        size: IntSize = fieldSize,
-        textStyle: TextStyle = TextStyle.TextField,
-    ): MinecraftUiHost =
-        createMinecraftUiHost(
-            ScreenDefinition(UiText.Literal("TextField")) {
-                TextField(state, size = size, textStyle = textStyle, modifier = modifier)
-            },
-            MinecraftProfileFixture.create(),
-        )
-
-    private companion object {
-        private val fieldSize = IntSize(200, 20)
     }
 }
