@@ -125,6 +125,8 @@ internal class StrataMinecraftLegacyLoadedSuite {
     ) {
         val probe = context.computeOnClient { MinecraftContinuousInputProbe() }
         val screen = context.computeOnClient { createMinecraftScreen(probe.definition(), profile, parent = null) }
+        // Keep inherited Minecraft callback references on their mapped vanilla owner.
+        val vanillaScreen: Screen = screen
         val outcome =
             runCatching {
                 context.computeOnClient { minecraft -> minecraft.setScreen(screen) }
@@ -135,12 +137,12 @@ internal class StrataMinecraftLegacyLoadedSuite {
                     probe.verify(
                         frameCount = { readRenderWork(minecraft).hostFrames },
                         scroll = { scrollMinecraftScreen(screen, probe.position) },
-                        move = { screen.mouseMoved(probe.position.x.toDouble(), probe.position.y.toDouble()) },
+                        move = { vanillaScreen.mouseMoved(probe.position.x.toDouble(), probe.position.y.toDouble()) },
                         click = { clickMinecraftScreen(screen, probe.position) },
                     )
                 }
             }
-        val cleanup = runCatching { context.computeOnClient { screen.onClose() } }
+        val cleanup = runCatching { context.computeOnClient { vanillaScreen.onClose() } }
         val receipt =
             outcome.getOrElse { failure ->
                 cleanup.exceptionOrNull()?.let { if (it !== failure) failure.addSuppressed(it) }
