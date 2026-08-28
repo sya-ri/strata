@@ -26,7 +26,7 @@ for project_modules_entry in "${project_modules[@]}"; do
   fi
 done
 
-font_backend_pattern='^(strata\.runtime\.minecraft-fonts-lwjgl|runtime-minecraft-fonts-lwjgl)$'
+font_backend_pattern='^(strata\.runtime\.minecraft-fonts-lwjgl|runtime-minecraft-fonts-lwjgl|minecraft-fonts-lwjgl)$'
 font_backend_count=$(jq --arg pattern "$font_backend_pattern" '[.modules[] | select(.name | test($pattern))] | length' "$model")
 if [[ "$font_backend_count" -ne 1 ]]; then
   echo "Expected one CPU font backend module but found $font_backend_count." >&2

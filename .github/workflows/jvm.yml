@@ -186,6 +186,11 @@ jobs:
           bash release/tests/verify-release-source.sh
           bash release/tests/verify-release-v0.1.1-source.sh
           bash release/tests/verify-versioned-pages-staging.sh
+      - name: Test Qodana project model guards
+        if: matrix.id == 'common'
+        run: |
+          bash -n gradle/prepare-qodana-idea-model.sh gradle/verify-qodana-model.sh gradle/verify-qodana-model-fixtures.sh
+          bash gradle/verify-qodana-model-fixtures.sh
       - name: Hash Loom cache inputs
         if: matrix.loom_cache
         id: loom_inputs

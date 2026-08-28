@@ -21,7 +21,7 @@ if [[ "$runtime_count" -ne "$expected_projects" || "$integration_count" -ne "$ex
   exit 1
 fi
 
-font_backend_count=$(awk '/module fileurl=.*runtime\/minecraft-fonts-lwjgl\/runtime-minecraft-fonts-lwjgl\.iml/ { count++ } END { print count + 0 }' strata.ipr)
+font_backend_count=$(awk '/module fileurl=.*runtime\/minecraft-fonts-lwjgl\/minecraft-fonts-lwjgl\.iml/ { count++ } END { print count + 0 }' strata.ipr)
 if [[ "$font_backend_count" -ne 1 ]]; then
   echo "Expected one CPU font backend module but generated $font_backend_count." >&2
   exit 1
