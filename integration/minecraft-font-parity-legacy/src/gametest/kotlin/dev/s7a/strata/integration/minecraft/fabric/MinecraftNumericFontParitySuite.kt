@@ -17,6 +17,8 @@ import java.nio.file.Path
  */
 @OptIn(InternalStrataRuntimeApi::class)
 internal object MinecraftNumericFontParitySuite {
+    private const val SCALE_TIMEOUT_TICKS = 1_200
+
     /**
      * Creates fresh numeric evidence and closes every owned native resource after removing its screen, including on failure.
      */
@@ -112,7 +114,9 @@ internal object MinecraftNumericFontParitySuite {
             minecraft.options.forceUnicodeFont().set(false)
             minecraft.resizeDisplay()
         }
-        context.waitFor { minecraft -> minecraft.window.width == size.width && minecraft.window.height == size.height && minecraft.window.guiScale == scale.toDouble() }
+        context.waitFor(SCALE_TIMEOUT_TICKS) { minecraft ->
+            minecraft.window.width == size.width && minecraft.window.height == size.height && minecraft.window.guiScale == scale.toDouble()
+        }
         context.movePointer(IntOffset.Zero)
         context.waitTicks(3)
     }

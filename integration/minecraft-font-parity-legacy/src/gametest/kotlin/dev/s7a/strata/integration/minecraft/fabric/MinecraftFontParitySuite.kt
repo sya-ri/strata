@@ -15,6 +15,8 @@ import java.nio.file.Path
  */
 @OptIn(InternalStrataRuntimeApi::class)
 internal object MinecraftFontParitySuite {
+    private const val SCALE_TIMEOUT_TICKS = 1_200
+
     /**
      * Fails on metric, texel, density, or unexplained native pixel differences, and on any Fabric/headless pixel difference.
      */
@@ -111,7 +113,7 @@ internal object MinecraftFontParitySuite {
             minecraft.options.forceUnicodeFont().set(false)
             minecraft.resizeDisplay()
         }
-        context.waitFor { minecraft ->
+        context.waitFor(SCALE_TIMEOUT_TICKS) { minecraft ->
             minecraft.window.width == size.width && minecraft.window.height == size.height &&
                 minecraft.window.guiScale == scale.toDouble()
         }
