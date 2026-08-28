@@ -4,6 +4,7 @@ import com.vanniktech.maven.publish.KotlinJvm
 import com.vanniktech.maven.publish.MavenPublishBaseExtension
 import com.vanniktech.maven.publish.SourcesJar
 import dev.detekt.gradle.extensions.DetektExtension
+import dev.s7a.strata.gradle.fabric.FabricToolchainManifest
 import dev.s7a.strata.gradle.release.StrataReleaseExtension
 import kotlinx.kover.gradle.plugin.dsl.KoverProjectExtension
 import org.gradle.api.JavaVersion
@@ -81,6 +82,7 @@ val baselineJavaVersion = libs.versions.java.baseline.get().toInt()
 val minecraftJavaVersion = libs.versions.java.minecraft.get().toInt()
 val minecraftJava21Version = libs.versions.java.minecraft121.get().toInt()
 private val legacyScrollTargets = setOf(libs.versions.minecraft120.get(), libs.versions.minecraft1201.get())
+private val fabricLoaderVersion = libs.versions.fabric.loader.get()
 private val fabricMixinDependency = libs.fabric.mixin
 val sharedLegacyRuntimeSourceLinks =
     listOf(
@@ -729,6 +731,22 @@ subprojects {
     if (publishableModule) {
         if (minecraftTargetByProjectPath[project.path]?.runtimeProjectPath == project.path) {
             dependencies.add("compileOnly", fabricMixinDependency)
+            val target = minecraftTargetByProjectPath.getValue(project.path)
+            val loaderVersion = fabricLoaderVersion
+            val mixin = fabricMixinDependency.get()
+            val mixinVersion = mixin.versionConstraint.requiredVersion
+            val mixinGroup = mixin.module.group
+            val toolchainManifest = FabricToolchainManifest(loaderVersion, mixinVersion, mixinGroup)
+            tasks.matching { task -> task.name == "verifyFabricModArtifact" }.configureEach {
+                val artifact = tasks.named<AbstractArchiveTask>(if (target.remapped) "remapJar" else "jar")
+                inputs.file(artifact.flatMap { task -> task.archiveFile })
+                inputs.property("manifestLoaderVersion", loaderVersion)
+                inputs.property("manifestMixinVersion", mixinVersion)
+                inputs.property("manifestMixinGroup", mixinGroup)
+                doLast {
+                    ZipFile(artifact.get().archiveFile.get().asFile).use(toolchainManifest::verify)
+                }
+            }
             val sharedFabricRuntime = rootProject.file("runtime/minecraft-fabric-shared/src/main")
             extensions.configure<SourceSetContainer> {
                 named("main") {

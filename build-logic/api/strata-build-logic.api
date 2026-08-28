@@ -1,3 +1,8 @@
+public final class dev/s7a/strata/gradle/fabric/FabricToolchainManifest {
+	public fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)V
+	public final fun verify (Ljava/util/zip/ZipFile;)V
+}
+
 public abstract class dev/s7a/strata/gradle/release/StrataReleaseExtension {
 	public fun <init> (Lorg/gradle/api/model/ObjectFactory;)V
 	public final fun getMavenCoordinatesFile ()Lorg/gradle/api/file/RegularFileProperty;

@@ -179,7 +179,7 @@ dependencies {
     compileOnly(project(":runtime:headless"))
     minecraft(libs.minecraft12111)
     mappings(loom.officialMojangMappings())
-    compileOnly(libs.fabric.loader)
+    modCompileOnly(libs.fabric.loader)
     runtimeOnly(libs.fabric.language.kotlin)
     include(project(":api"))
     include(project(":runtime:core"))

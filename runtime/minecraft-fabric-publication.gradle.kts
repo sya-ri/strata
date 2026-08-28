@@ -1,6 +1,7 @@
 import groovy.json.JsonSlurper
 import groovy.xml.XmlParser
 import org.gradle.api.artifacts.VersionCatalogsExtension
+import org.gradle.api.publish.maven.tasks.AbstractPublishToMaven
 import org.gradle.api.publish.maven.tasks.GenerateMavenPom
 import org.gradle.api.publish.tasks.GenerateModuleMetadata
 import org.gradle.api.tasks.bundling.AbstractArchiveTask
@@ -89,6 +90,10 @@ val verifyFabricPublicationMetadata =
 
 tasks.named("check") {
     dependsOn(verifyFabricPublicationMetadata)
+}
+
+tasks.withType<AbstractPublishToMaven>().configureEach {
+    dependsOn("verifyFabricModArtifact", verifyFabricPublicationMetadata)
 }
 
 val fabricJarTaskName = if ("remapJar" in tasks.names) "remapJar" else "jar"
