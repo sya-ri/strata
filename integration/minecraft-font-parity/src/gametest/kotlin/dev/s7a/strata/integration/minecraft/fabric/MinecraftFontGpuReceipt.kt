@@ -14,7 +14,7 @@ import javax.imageio.ImageIO
 internal object MinecraftFontGpuReceipt {
     /**
      * Returns all required proof files after checking scale coverage, classified counts, and every input hash.
-     * The compiled target selects whether format-only pipeline declarations also require exact RGBA8 calibration.
+     * The compiled target selects whether format-only pipeline declarations also require exact visible RGB calibration.
      */
     fun verify(
         output: Path,
@@ -44,8 +44,9 @@ internal object MinecraftFontGpuReceipt {
             }.distinct()
 
     /**
-     * Rechecks the actual calibration PNG against the ordinary native capture at the requested physical scale.
-     * Required metadata cannot replace this exact comparison; missing, resized, or altered captures fail.
+     * Rechecks the calibration's visible RGB against the opaque ordinary native capture at the requested physical scale.
+     * Required metadata cannot replace this exact comparison; missing, resized, nonopaque ordinary captures, or changed RGB fail.
+     * Calibration alpha remains unmodified evidence and is not compared with the Screenshot PNG's opaque alpha.
      * The returned file is included in the receipt's hashes and is independently checked again by the offline JVM.
      */
     fun verifyCalibration(
@@ -55,10 +56,32 @@ internal object MinecraftFontGpuReceipt {
         require(scale in 1..3) { "Unsupported native font calibration scale." }
         val values = read(output.resolve("native-float-state-$scale.properties"))
         check(checkNotNull(values["pipelineFormatOnly"]).toBooleanStrict()) { "Native float capture changed more than the color target format." }
-        val result = Calibration.entries.singleOrNull { it.value == values["rgba8Calibration"] }
-        check(result == Calibration.Exact) { "Native float capture lacks exact RGBA8 calibration." }
+        val result = Calibration.entries.singleOrNull { it.value == values["visibleRgbCalibration"] }
+        check(result == Calibration.Exact) { "Native float capture lacks exact visible RGB calibration." }
         val nativePath = output.resolve("font-native-$scale.png")
         val calibrationPath = output.resolve("font-native-calibration-$scale.png")
+        verifyVisibleCalibration(nativePath, calibrationPath, scale)
+        return calibrationPath
+    }
+
+    /**
+     * Compares exact visible RGB between an ordinary Screenshot PNG and an independent raw calibration capture.
+     * Every ordinary pixel must be opaque, while calibration alpha is preserved and excluded from this comparison.
+     * Reads synchronously without modifying either file, retaining images, or requiring a completed float receipt.
+     *
+     * @param nativePath ordinary native Screenshot PNG for the requested physical scale.
+     * @param calibrationPath raw RGBA8 calibration PNG whose visible RGB must match at every pixel.
+     * @param scale one of the three fixture densities, determining both expected physical dimensions.
+     * @throws IllegalArgumentException when the scale is unsupported.
+     * @throws IllegalStateException when either capture is missing, invalid, resized, or has different visible RGB, or the ordinary image is nonopaque.
+     * @throws java.io.IOException when an input cannot be read.
+     */
+    fun verifyVisibleCalibration(
+        nativePath: Path,
+        calibrationPath: Path,
+        scale: Int,
+    ) {
+        require(scale in 1..3) { "Unsupported native font calibration scale." }
         check(Files.isRegularFile(nativePath, LinkOption.NOFOLLOW_LINKS) && Files.isRegularFile(calibrationPath, LinkOption.NOFOLLOW_LINKS)) { "Required native calibration image is missing." }
         val native = checkNotNull(ImageIO.read(nativePath.toFile())) { "Invalid ordinary native capture." }
         val calibration = checkNotNull(ImageIO.read(calibrationPath.toFile())) { "Invalid native calibration capture." }
@@ -67,8 +90,10 @@ internal object MinecraftFontGpuReceipt {
         check(native.width == calibration.width && native.height == calibration.height) { "Native calibration changed the physical viewport." }
         val expected = native.getRGB(0, 0, native.width, native.height, null, 0, native.width)
         val actual = calibration.getRGB(0, 0, calibration.width, calibration.height, null, 0, calibration.width)
-        check(expected.contentEquals(actual)) { "Format-only native pipeline calibration changed RGBA8 pixels." }
-        return calibrationPath
+        check(expected.all { pixel -> pixel ushr 24 == 0xFF }) { "Ordinary native Screenshot pixels must be opaque." }
+        check(expected.indices.all { index -> (expected[index] and 0xFFFFFF) == (actual[index] and 0xFFFFFF) }) {
+            "Format-only native pipeline calibration changed visible RGB pixels."
+        }
     }
 
     /**

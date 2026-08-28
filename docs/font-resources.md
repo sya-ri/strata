@@ -241,11 +241,15 @@ It does not apply a blanket image tolerance or reuse historical accepted pixels.
 
 The standard native renderer draws the unchanged scene into both its ordinary RGBA8 target and an owned RGBA32F target at the same physical viewport and GUI scale.
 Minecraft 26.2 validates a pipeline's declared color format against the actual target, so that capture copies the native pipeline declaration and changes only its color attachment format.
-Every scale first renders the same declaration into RGBA8 and requires all pixels to equal the ordinary native screenshot; this calibration image is hashed in the receipt and compared again offline.
+Every scale first renders the same declaration into RGBA8, requires every ordinary screenshot pixel to be opaque, and requires exact RGB equality at every pixel; `visibleRgbCalibration=exact` records this observation.
+Minecraft normalizes ordinary screenshot alpha to 255, so that screenshot cannot establish equality of hidden framebuffer alpha.
+The raw calibration image is retained without changing its alpha, hashed in the receipt, and compared again offline.
 Shaders, vertex generation, texture setup, sorting, and blending remain native, and the original ordinary screenshot is never replaced by the calibration capture.
-At every differing pixel, the native float output must match independently evaluated resource-derived shader and blend arithmetic, allowing only measured subpixel-boundary alternatives and bounded floating-point interpolation at the actual atlas extent.
+At every differing pixel, the native float RGB output must match independently evaluated resource-derived shader and blend arithmetic, allowing only measured subpixel-boundary alternatives and bounded floating-point interpolation at the actual atlas extent.
+Float captures preserve and hash all four raw channels, require each channel to be finite and normalized, and do not classify hidden alpha against the opaque screenshot.
+This exclusion applies only to final screenshot alpha; raw glyph alpha, source-alpha blending, alpha discard, and transparent-target rendering retain their existing checks.
 Arithmetic error is propagated separately for each color channel through the actual magnitudes of normalization, multiplication, subtraction, and addition; a fixed unit-magnitude tolerance cannot hide a small tint change.
-The final native byte result must then remain within one RGBA8 unit per effective blend, propagated through source alpha and rounded outward after every discrete blend conversion.
+The final native byte result must then remain within one 8-bit unit per visible color channel and effective blend, propagated through source alpha and rounded outward after every discrete blend conversion.
 Channels that remain exactly zero or one receive no conversion allowance, and a fully opaque fragment discards uncertainty from covered earlier fragments.
 These conservative bounds are checked against current captures; they are not a promise that every GPU falls within them.
 Unclassified float, geometry, sampling, color, or candidate-raster differences fail the gate.

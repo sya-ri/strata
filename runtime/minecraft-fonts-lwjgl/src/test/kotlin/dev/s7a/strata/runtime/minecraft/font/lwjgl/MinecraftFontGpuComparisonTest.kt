@@ -16,11 +16,13 @@ import dev.s7a.strata.render.ArgbColor
 import dev.s7a.strata.render.createDrawImage
 import dev.s7a.strata.runtime.headless.rasterizeHeadless
 import dev.s7a.strata.runtime.render.DrawCommand
+import org.junit.jupiter.api.Assertions.assertArrayEquals
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertThrows
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.io.TempDir
 import java.awt.image.BufferedImage
+import java.io.DataOutputStream
 import java.nio.file.Files
 import java.nio.file.Path
 import javax.imageio.ImageIO
@@ -175,6 +177,37 @@ internal class MinecraftFontGpuComparisonTest {
     }
 
     @Test
+    fun `visible float classification is independent of finite normalized raw alpha`() {
+        val commands = scene(one, intArrayOf(0xFF1D1D1D.toInt()), one, FloatRect(0f, 0f, 1f, 1f), 0xFF161616.toInt())
+        val candidate = rasterizeHeadless(commands, one).argbAt(0, 0)
+        val value = (29f / 255f) * (22f / 255f)
+        val comparison = MinecraftFontGpuComparison(commands, one, 1, precision)
+        for (alpha in listOf(0f, 0.5f, 1f)) {
+            val nativeFloat = MinecraftFontFloatImage.of(one, floatArrayOf(value, value, value, alpha)).sample(0, 0)
+            assertEquals(alpha, nativeFloat.alpha)
+            assertEquals(Difference.GpuColorConversion, comparison.classify(0, 0, Observation(0xFF020202.toInt(), candidate, nativeFloat)))
+            assertEquals(Difference.UnverifiedNativeColor, comparison.classify(0, 0, Observation(0xFF010101.toInt(), candidate, nativeFloat)))
+            assertEquals(Difference.UnverifiedNativeColor, comparison.classify(0, 0, Observation(0xFE020202.toInt(), candidate, nativeFloat)))
+            assertEquals(Difference.UnverifiedNativeFloat, comparison.classify(0, 0, Observation(0xFF020202.toInt(), candidate, nativeFloat.copy(red = 0.05f))))
+        }
+    }
+
+    @Test
+    fun `raw float alpha remains finite normalized evidence at the reader boundary`() {
+        val path = directory.resolve("invalid-alpha.rgba32f")
+        for (alpha in listOf(Float.NaN, Float.POSITIVE_INFINITY, Float.NEGATIVE_INFINITY, -0.01f, 1.01f)) {
+            assertThrows(IllegalArgumentException::class.java) { MinecraftFontFloatImage.of(one, floatArrayOf(0f, 0f, 0f, alpha)) }
+            DataOutputStream(Files.newOutputStream(path)).use { output ->
+                output.writeInt(one.width)
+                output.writeInt(one.height)
+                floatArrayOf(0f, 0f, 0f, alpha).forEach(output::writeFloat)
+            }
+            assertThrows(IllegalArgumentException::class.java) { MinecraftFontFloatImage.read(path, one) }
+            Files.delete(path)
+        }
+    }
+
+    @Test
     fun `precision observations must describe the same scale viewport and float target`() {
         val path = directory.resolve("precision.properties")
         val metadata = "scale=1\nwidth=1\nheight=1\nsubpixelBits=8\nmaxAtlasWidth=256\nmaxAtlasHeight=256\ncolorFormat=RGBA32F\npreparationThreads=1\n"
@@ -200,12 +233,12 @@ internal class MinecraftFontGpuComparisonTest {
     }
 
     @Test
-    fun `format only pipeline calibration requires exact ordinary RGBA8 pixels at every scale`() {
+    fun `format only pipeline calibration requires exact visible RGB at every scale`() {
         for (scale in 1..3) {
             val calibrationPath = writeCalibration(scale)
             assertEquals(calibrationPath, MinecraftFontGpuReceipt.verifyCalibration(directory, scale))
             val changed = ImageIO.read(calibrationPath.toFile())
-            changed.setRGB(changed.width - 1, changed.height - 1, 0xFF010203.toInt())
+            changed.setRGB(changed.width - 1, changed.height - 1, changed.getRGB(changed.width - 1, changed.height - 1) xor 1)
             check(ImageIO.write(changed, "png", calibrationPath.toFile()))
             assertThrows(IllegalStateException::class.java) { MinecraftFontGpuReceipt.verifyCalibration(directory, scale) }
         }
@@ -217,10 +250,51 @@ internal class MinecraftFontGpuComparisonTest {
     }
 
     @Test
+    fun `visible calibration preserves alpha only differences raw bytes and evidence hashes`() {
+        val calibrationPath = writeCalibration(1)
+        val nativePath = directory.resolve("font-native-1.png")
+        val nativeBytes = Files.readAllBytes(nativePath)
+        val nativeHash = MinecraftFontParityFixture.sha256(nativeBytes)
+        for (alpha in listOf(0, 128, 255)) {
+            val image = ImageIO.read(calibrationPath.toFile())
+            image.setRGB(0, 0, (alpha shl 24) or 0x102030)
+            check(ImageIO.write(image, "png", calibrationPath.toFile()))
+            val rawBytes = Files.readAllBytes(calibrationPath)
+            val rawHash = MinecraftFontParityFixture.sha256(rawBytes)
+            MinecraftFontGpuReceipt.verifyVisibleCalibration(nativePath, calibrationPath, 1)
+            assertEquals(calibrationPath, MinecraftFontGpuReceipt.verifyCalibration(directory, 1))
+            assertArrayEquals(rawBytes, Files.readAllBytes(calibrationPath))
+            assertEquals(rawHash, MinecraftFontParityFixture.sha256(Files.readAllBytes(calibrationPath)))
+            assertEquals(alpha, ImageIO.read(calibrationPath.toFile()).getRGB(0, 0) ushr 24)
+        }
+        assertArrayEquals(nativeBytes, Files.readAllBytes(nativePath))
+        assertEquals(nativeHash, MinecraftFontParityFixture.sha256(Files.readAllBytes(nativePath)))
+    }
+
+    @Test
+    fun `ordinary calibration input rejects any nonopaque screenshot pixel`() {
+        val calibrationPath = writeCalibration(1)
+        val nativePath = directory.resolve("font-native-1.png")
+        val native = ImageIO.read(nativePath.toFile())
+        native.setRGB(native.width - 1, native.height - 1, 0xFE000000.toInt())
+        check(ImageIO.write(native, "png", nativePath.toFile()))
+        assertThrows(IllegalStateException::class.java) { MinecraftFontGpuReceipt.verifyVisibleCalibration(nativePath, calibrationPath, 1) }
+        assertThrows(IllegalStateException::class.java) { MinecraftFontGpuReceipt.verifyCalibration(directory, 1) }
+    }
+
+    @Test
     fun `exact calibration images cannot substitute for required format only metadata`() {
         writeCalibration(1)
         val path = directory.resolve("native-float-state-1.properties")
-        for (metadata in listOf("rgba8Calibration=exact\n", "pipelineFormatOnly=false\nrgba8Calibration=exact\n", "pipelineFormatOnly=true\n", "pipelineFormatOnly=true\nrgba8Calibration=approximate\n")) {
+        val invalid =
+            listOf(
+                "visibleRgbCalibration=exact\n",
+                "pipelineFormatOnly=false\nvisibleRgbCalibration=exact\n",
+                "pipelineFormatOnly=true\n",
+                "pipelineFormatOnly=true\nvisibleRgbCalibration=approximate\n",
+                "pipelineFormatOnly=true\nrgba8Calibration=exact\n",
+            )
+        for (metadata in invalid) {
             Files.writeString(path, metadata)
             assertThrows(IllegalStateException::class.java) { MinecraftFontGpuReceipt.verifyCalibration(directory, 1) }
         }
@@ -273,11 +347,12 @@ internal class MinecraftFontGpuComparisonTest {
     private fun writeCalibration(scale: Int): Path {
         val viewport = MinecraftFontParityFixture.viewport
         val image = BufferedImage(viewport.width * scale, viewport.height * scale, BufferedImage.TYPE_INT_ARGB)
-        image.setRGB(0, 0, 0x7F102030)
+        image.setRGB(0, 0, image.width, image.height, IntArray(image.width * image.height) { black }, 0, image.width)
+        image.setRGB(0, 0, 0xFF102030.toInt())
         check(ImageIO.write(image, "png", directory.resolve("font-native-$scale.png").toFile()))
         val calibration = directory.resolve("font-native-calibration-$scale.png")
         check(ImageIO.write(image, "png", calibration.toFile()))
-        Files.writeString(directory.resolve("native-float-state-$scale.properties"), "pipelineFormatOnly=true\nrgba8Calibration=exact\n")
+        Files.writeString(directory.resolve("native-float-state-$scale.properties"), "pipelineFormatOnly=true\nvisibleRgbCalibration=exact\n")
         return calibration
     }
 

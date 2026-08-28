@@ -7,7 +7,7 @@ import kotlin.math.roundToInt
 /**
  * One independently evaluated opaque-background fragment history for the parity fixture.
  * State is detached and immutable; native pixels never participate in its construction.
- * Separate channel error bounds propagate the local ULP of each shader and blend operation; byte error propagates one RGBA8 unit per effective blend and rounds the discrete bound outward after each blend.
+ * Separate channel error bounds propagate the local ULP of each shader and blend operation; byte error propagates one 8-bit unit per visible color channel and effective blend, rounding the discrete bound outward after each blend.
  */
 internal data class MinecraftFontRasterSample(
     val red: Float,
@@ -60,10 +60,11 @@ internal data class MinecraftFontRasterSample(
     }
 
     /**
-     * Requires native float output to agree with the independently evaluated shader/blend arithmetic.
+     * Requires native float RGB to agree with the independently evaluated visible shader/blend arithmetic.
+     * The float-image reader separately validates all four raw channels as finite values in [0, 1]; alpha remains evidence but does not enter visible RGB classification.
      */
     fun contains(sample: MinecraftFontFloatImage.Sample): Boolean =
-        sample.alpha == 1f && abs(sample.red.toDouble() - red) <= redFloatError &&
+        abs(sample.red.toDouble() - red) <= redFloatError &&
             abs(sample.green.toDouble() - green) <= greenFloatError && abs(sample.blue.toDouble() - blue) <= blueFloatError
 
     /**

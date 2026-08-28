@@ -23,7 +23,8 @@ import javax.imageio.ImageIO
  * Draws the unchanged complete native scene through the standard GUI renderer into an owned RGBA32F target.
  * The test-only widened target field is restored in finally, together with the borrowed projection and captured GL state.
  * The render thread owns this capture session, its bounded pipeline declarations, temporary targets, render state, native buffers, and readback resources.
- * Every scale first requires an exact RGBA8 calibration against the ordinary native screenshot before accepting a format-only RGBA32F capture.
+ * Every scale first requires exact visible RGB against the opaque ordinary native screenshot before accepting a format-only RGBA32F capture.
+ * Calibration and float captures preserve their raw alpha; Minecraft's ordinary screenshot normalizes alpha and cannot validate that hidden channel.
  */
 internal class MinecraftNativeFontFloatTarget : AutoCloseable {
     private val pipelines = MinecraftNativeFontCaptureState.Pipelines()
@@ -53,11 +54,11 @@ internal class MinecraftNativeFontFloatTarget : AutoCloseable {
             val size = IntSize(frame.width, frame.height)
             val calibration = output.resolve("font-native-calibration-$scale.png")
             captureTarget(calibration, size, minecraft, GpuFormat.RGBA8_UNORM, draw)
-            verifyCalibration(output.resolve("font-native-$scale.png"), calibration)
+            MinecraftFontGpuReceipt.verifyVisibleCalibration(output.resolve("font-native-$scale.png"), calibration, scale)
             captureTarget(output.resolve("font-native-$scale.rgba32f"), size, minecraft, GpuFormat.RGBA32_FLOAT, draw)
             Files.writeString(
                 output.resolve("native-float-state-$scale.properties"),
-                "scale=$scale\nwidth=${frame.width}\nheight=${frame.height}\nsubpixelBits=${GL11.glGetInteger(GL11.GL_SUBPIXEL_BITS)}\nmaxAtlasWidth=${atlas.width}\nmaxAtlasHeight=${atlas.height}\ncolorFormat=RGBA32F\npreparationThreads=1\npipelineFormatOnly=true\nrgba8Calibration=exact\n",
+                "scale=$scale\nwidth=${frame.width}\nheight=${frame.height}\nsubpixelBits=${GL11.glGetInteger(GL11.GL_SUBPIXEL_BITS)}\nmaxAtlasWidth=${atlas.width}\nmaxAtlasHeight=${atlas.height}\ncolorFormat=RGBA32F\npreparationThreads=1\npipelineFormatOnly=true\nvisibleRgbCalibration=exact\n",
             )
         }
     }
@@ -149,18 +150,6 @@ internal class MinecraftNativeFontFloatTarget : AutoCloseable {
             }
         }
         check(ImageIO.write(image, "png", output.toFile())) { "Could not write the native calibration screenshot." }
-    }
-
-    private fun verifyCalibration(
-        nativePath: Path,
-        calibrationPath: Path,
-    ) {
-        val native = checkNotNull(ImageIO.read(nativePath.toFile())) { "Could not decode the ordinary native screenshot." }
-        val calibration = checkNotNull(ImageIO.read(calibrationPath.toFile())) { "Could not decode the native calibration screenshot." }
-        check(native.width == calibration.width && native.height == calibration.height) { "Native calibration changed the physical viewport." }
-        val expected = native.getRGB(0, 0, native.width, native.height, null, 0, native.width)
-        val actual = calibration.getRGB(0, 0, calibration.width, calibration.height, null, 0, calibration.width)
-        check(expected.contentEquals(actual)) { "Format-only native pipeline calibration changed RGBA8 pixels. See $nativePath and $calibrationPath." }
     }
 
     private fun writeMappedPixels(

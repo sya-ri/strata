@@ -17,7 +17,7 @@ import java.nio.file.Path
 /**
  * Runs current native numeric-provider and final-render evidence separately from the unchanged ordinary scene.
  * Client-thread-owned providers and bounded capture pipelines are released after the screen is removed on every exit.
- * Raw metrics, texels, signed widths, calibration pixels, and Fabric pixels remain exact requirements.
+ * Raw metrics, texels, signed widths, visible calibration RGB, and Fabric pixels remain exact requirements.
  */
 @OptIn(InternalStrataRuntimeApi::class)
 internal object MinecraftNumericFontParitySuite {
