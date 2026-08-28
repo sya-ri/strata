@@ -98,8 +98,10 @@ tasks.matching { task -> task.name == "verifyFabricModArtifact" }.configureEach 
     doLast {
         val artifact = fabricJar.get().archiveFile.get().asFile
         val ownersByClass = sortedMapOf<String, MutableList<String>>()
+        val lifecycleConfigurationOwners = ArrayList<String>()
 
         fun record(owner: String, path: String) {
+            if (path == "strata.client.mixins.json") lifecycleConfigurationOwners += owner
             val isComparableClass =
                 path.endsWith(".class") &&
                     path.substringAfterLast('/') != "module-info.class" &&
@@ -110,6 +112,33 @@ tasks.matching { task -> task.name == "verifyFabricModArtifact" }.configureEach 
         }
 
         ZipFile(artifact).use { archive ->
+            val entries = archive.entries().asSequence().map { entry -> entry.name }.toList()
+            check(entries.count { name -> name == "strata.client.mixins.json" } == 1) {
+                "Fabric artifact must contain exactly one client resource lifecycle configuration."
+            }
+            check(entries.count { name -> name == "fabric.mod.json" } == 1) {
+                "Fabric artifact must contain exactly one top-level mod metadata file."
+            }
+            val metadata = archive.getInputStream(archive.getEntry("fabric.mod.json")).bufferedReader().use { JsonSlurper().parse(it) as Map<*, *> }
+            check(metadata["mixins"] == listOf("strata.client.mixins.json")) {
+                "Fabric metadata must reference the required client resource lifecycle configuration exactly once."
+            }
+            val mixins = archive.getInputStream(archive.getEntry("strata.client.mixins.json")).bufferedReader().use { JsonSlurper().parse(it) as Map<*, *> }
+            check(
+                mixins ==
+                    mapOf(
+                        "required" to true,
+                        "minVersion" to "0.8.7",
+                        "package" to "dev.s7a.strata.runtime.minecraft.fabric.mixin",
+                        "client" to listOf("FabricMinecraftResourceReloadMixin"),
+                        "injectors" to mapOf("defaultRequire" to 1),
+                    ),
+            ) {
+                "Resource lifecycle configuration must require the verified Mixin minimum and contain only its exact client hooks."
+            }
+            check(entries.count { name -> name == "dev/s7a/strata/runtime/minecraft/fabric/mixin/FabricMinecraftResourceReloadMixin.class" } == 1) {
+                "Fabric artifact must package the resource-generation lifecycle mixin exactly once."
+            }
             archive
                 .entries()
                 .asSequence()
@@ -137,6 +166,9 @@ tasks.matching { task -> task.name == "verifyFabricModArtifact" }.configureEach 
                 }
         }
 
+        check(lifecycleConfigurationOwners == listOf("outer")) {
+            "Fabric artifact must contain one lifecycle configuration across its outer and nested jars: $lifecycleConfigurationOwners"
+        }
         val duplicates =
             ownersByClass
                 .filterValues { owners -> 1 < owners.size }

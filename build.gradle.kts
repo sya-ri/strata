@@ -80,6 +80,8 @@ private data class MinecraftFabricTarget(
 val baselineJavaVersion = libs.versions.java.baseline.get().toInt()
 val minecraftJavaVersion = libs.versions.java.minecraft.get().toInt()
 val minecraftJava21Version = libs.versions.java.minecraft121.get().toInt()
+private val legacyScrollTargets = setOf(libs.versions.minecraft120.get(), libs.versions.minecraft1201.get())
+private val fabricMixinDependency = libs.fabric.mixin
 val sharedLegacyRuntimeSourceLinks =
     listOf(
         "runtime/minecraft-fabric-1.21-legacy",
@@ -639,6 +641,27 @@ subprojects {
         // Why: Loom otherwise selects native library upgrades using the Gradle daemon's Java instead of this game's toolchain.
         extensions.extraProperties["fabric.loom.runtimeJavaCompatibilityVersion"] = target.javaVersion
         if (path == target.integrationProjectPath) {
+            val profileCacheTests = rootProject.file("integration/minecraft-fabric-client-gametest/src/profile-cache/kotlin")
+            val continuousInputTests = rootProject.file("integration/minecraft-fabric-client-gametest/src/continuous-input/kotlin")
+            val continuousScrollTests =
+                rootProject.file(
+                    if (target.version in legacyScrollTargets) {
+                        "integration/minecraft-fabric-client-gametest/src/continuous-input-legacy-scroll/kotlin"
+                    } else {
+                        "integration/minecraft-fabric-client-gametest/src/continuous-input-directional-scroll/kotlin"
+                    },
+                )
+            extensions.configure<KotlinJvmProjectExtension> {
+                sourceSets.matching { sourceSet -> sourceSet.name == "gametest" }.configureEach {
+                    kotlin.srcDir(profileCacheTests)
+                    kotlin.srcDir(continuousInputTests)
+                    kotlin.srcDir(continuousScrollTests)
+                }
+            }
+            extensions.configure<DetektExtension> {
+                source.from(profileCacheTests)
+                source.from(continuousInputTests, continuousScrollTests)
+            }
             fontParityComparisonsByVersion[target.version]?.let { comparison ->
                 tasks.named("check") { dependsOn(comparison) }
             }
@@ -704,6 +727,21 @@ subprojects {
     }
 
     if (publishableModule) {
+        if (minecraftTargetByProjectPath[project.path]?.runtimeProjectPath == project.path) {
+            dependencies.add("compileOnly", fabricMixinDependency)
+            val sharedFabricRuntime = rootProject.file("runtime/minecraft-fabric-shared/src/main")
+            extensions.configure<SourceSetContainer> {
+                named("main") {
+                    resources.srcDir(sharedFabricRuntime.resolve("resources"))
+                }
+            }
+            extensions.configure<DetektExtension> {
+                source.from(
+                    sharedFabricRuntime.resolve("kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftProfileLifecycle.kt"),
+                    sharedFabricRuntime.resolve("kotlin/dev/s7a/strata/runtime/minecraft/fabric/mixin"),
+                )
+            }
+        }
         extensions.configure<KotlinJvmProjectExtension> {
             if (minecraftTargetByProjectPath[project.path]?.runtimeProjectPath == project.path) {
                 // Why: exact font capabilities must not leak through another target's shared main source roots.
@@ -720,6 +758,9 @@ subprojects {
 
     tasks.withType<Test>().configureEach {
         useJUnitPlatform()
+        if (project.path == ":runtime:minecraft") {
+            systemProperty("strata.minecraftTargetVersions", minecraftFabricTargets.joinToString(",", transform = MinecraftFabricTarget::version))
+        }
     }
 
     if (publishableModule) {

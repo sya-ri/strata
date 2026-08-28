@@ -10,6 +10,8 @@ import dev.s7a.strata.render.DrawImage
 import dev.s7a.strata.render.createDrawImage
 import dev.s7a.strata.runtime.minecraft.MinecraftUiProfile
 import dev.s7a.strata.runtime.minecraft.createMinecraftUiProfile
+import dev.s7a.strata.runtime.minecraft.font.MinecraftFontCompatibility
+import dev.s7a.strata.runtime.minecraft.font.MinecraftFontOptions
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
 import net.minecraft.client.Minecraft
 import net.minecraft.server.packs.resources.Resource
@@ -32,7 +34,30 @@ import java.io.IOException
 public fun extractMinecraftUiProfile(): MinecraftUiProfile {
     val minecraft = Minecraft.getInstance()
     check(minecraft.isSameThread()) { "Minecraft UI profiles must be extracted on the client thread." }
-    val manager = minecraft.getResourceManager()
+    return extractMinecraftUiProfile(minecraft.resourceManager, fabricMinecraftFontCompatibility(), fabricMinecraftFontOptions(minecraft))
+}
+
+/**
+ * Freshly extracts one complete profile from the exact captured resource manager and font selections.
+ *
+ * The caller validates the client thread; extraction does not lock native resource replacement.
+ * Cached callers must fence publication against a generation change during the copy.
+ * GUI and font reads share [manager]; no global resource manager or option value is read again during extraction.
+ * Streams and native images close synchronously, and failures propagate without publishing a partial profile.
+ *
+ * @param manager captured resource view used for every GUI and font resource lookup.
+ * @param compatibility exact compiler-selected provider capabilities used as part of the cache key.
+ * @param options captured font and language selections used as part of the cache key.
+ * @return newly extracted immutable profile without native or resource-manager ownership.
+ * @throws Throwable when any required resource cannot be copied or validated.
+ */
+@OptIn(InternalStrataRuntimeApi::class)
+@JvmSynthetic
+internal fun extractMinecraftUiProfile(
+    manager: ResourceManager,
+    compatibility: MinecraftFontCompatibility,
+    options: MinecraftFontOptions,
+): MinecraftUiProfile {
     val menu = manager.readMenuBackground()
     val containerBackground = manager.readImage("textures/gui/container/generic_54.png", IntSize(256, 256))
     val (slotHighlightBack, slotHighlightFront) = manager.readSlotHighlightImages()
@@ -43,7 +68,7 @@ public fun extractMinecraftUiProfile(): MinecraftUiProfile {
     val bundleProgressBar = manager.readBundleProgressBarOrNull()
     val legacyProgressBar = if (bundleProgressBar == null) manager.readLegacyHorizontalProgressBar() else null
     val tooltipSprites = manager.readTooltipSpritesOrNull()
-    val fontSnapshot = extractFabricMinecraftFontSnapshot(minecraft)
+    val fontSnapshot = extractFabricMinecraftFontSnapshot(manager, compatibility, options)
 
     return createMinecraftUiProfile {
         menuBackground(menu)
@@ -226,12 +251,12 @@ internal fun extractMinecraftAsciiGlyph(
     return createDrawImage(IntSize(8, 8), pixels)
 }
 
-private fun ResourceManager.requiredResource(path: String): Resource = requiredResource(minecraftResourceLocation("minecraft", path))
-
-private fun ResourceManager.requiredResource(identifier: MinecraftResourceLocation): Resource =
-    getResource(identifier).orElseThrow {
+private fun ResourceManager.requiredResource(path: String): Resource {
+    val identifier = minecraftResourceLocation("minecraft", path)
+    return getResource(identifier).orElseThrow {
         IllegalArgumentException("Missing Minecraft resource: $identifier")
     }
+}
 
 /**
  * Validates one decoded nine-slice scaling value without retaining its resource.

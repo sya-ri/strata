@@ -6,25 +6,37 @@ import dev.s7a.strata.component.Text
 import dev.s7a.strata.layout.Alignment
 import dev.s7a.strata.modifier.Modifier
 import dev.s7a.strata.modifier.background
+import dev.s7a.strata.modifier.padding
 import dev.s7a.strata.modifier.size
 import dev.s7a.strata.render.ArgbColor
 import dev.s7a.strata.screen.ScreenDefinition
+import dev.s7a.strata.text.TextLayout
+import dev.s7a.strata.text.TextOverflow
+import dev.s7a.strata.text.TextWrap
 
 /**
- * Builds a self-contained literal Text showcase.
+ * Builds a complete resource-font Text showcase with explicit line breaks and bounded wrapping.
  *
- * @return one-shot definition whose complete frame centers one Minecraft-profile text component.
+ * The active profile must provide resource fonts for the illustrated Japanese, Korean, and emoji glyphs.
+ * @return one-shot definition whose complete frame shows at most four lines without changing the original semantic label.
  */
 internal fun createTextShowcaseScreenDefinition(): ScreenDefinition =
     ScreenDefinition("Text showcase") {
         Stack(
             modifier =
                 Modifier.Empty
-                    .size(120, 64)
-                    .background(ArgbColor(0xFF000000.toInt())),
+                    .size(192, 88)
+                    .background(ArgbColor(0xFF000000.toInt()))
+                    .padding(8),
             contentAlignment = Alignment.Center,
         ) {
-            Text("Hello, Strata!")
+            Text(
+                "日本語 / 한글 / 🙂\n" +
+                    "This paragraph wraps to the available width.\n" +
+                    "Explicit newlines stay separate.\n" +
+                    "Only four lines are visible; extra text receives an ellipsis.",
+                layout = TextLayout.Multiline(wrap = TextWrap.Word, maxLines = 4, overflow = TextOverflow.Ellipsis, lineSpacing = 2),
+            )
         }
     }
 // showcase-source-end:text

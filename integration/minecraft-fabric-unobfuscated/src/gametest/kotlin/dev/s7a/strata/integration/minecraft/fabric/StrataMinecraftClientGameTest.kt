@@ -67,6 +67,7 @@ import java.nio.file.Files
 import java.nio.file.Path
 import java.security.MessageDigest
 import java.util.HexFormat
+import java.util.concurrent.CompletableFuture
 import java.util.function.Predicate
 import kotlin.io.path.inputStream
 
@@ -109,7 +110,9 @@ public class StrataMinecraftClientGameTest : FabricClientGameTest {
             )
         val output = parityOutput()
         Files.createDirectories(output)
+        verifyProfileCache(context, output)
         assertNativeTextInputFocus(context, profile)
+        verifyContinuousInput(context, profile, output)
 
         context.setScreen { DeterministicConfirmScreen() }
         context.waitForScreen(DeterministicConfirmScreen::class.java)
@@ -245,6 +248,12 @@ public class StrataMinecraftClientGameTest : FabricClientGameTest {
             screen
         }
         context.waitForScreen(FabricMinecraftScreen::class.java)
+        context.waitFor(
+            Predicate<Minecraft> { minecraft ->
+                MinecraftClientScreenAccess.currentScreen(minecraft) === screen &&
+                    0L < readRenderWork(minecraft).framePreparations && nativeTextInputEnabled(minecraft)
+            },
+        )
         context.waitTicks(2)
         context.runOnClient(
             FailableConsumer<Minecraft, RuntimeException> { minecraft ->
@@ -779,6 +788,7 @@ public class StrataMinecraftClientGameTest : FabricClientGameTest {
             ComponentShowcase.Spacer -> createSpacerShowcaseScreenDefinition()
             ComponentShowcase.Text -> createTextShowcaseScreenDefinition()
             ComponentShowcase.TextField -> createTextFieldShowcaseScreenDefinition()
+            ComponentShowcase.TextArea -> createTextAreaShowcaseScreenDefinition()
             ComponentShowcase.Button -> createButtonShowcaseScreenDefinition()
             ComponentShowcase.Checkbox -> createCheckboxShowcaseScreenDefinition()
             ComponentShowcase.CycleButton -> createCycleButtonShowcaseScreenDefinition()
@@ -1085,6 +1095,74 @@ public class StrataMinecraftClientGameTest : FabricClientGameTest {
         }
     }
 
+    @OptIn(InternalStrataRuntimeApi::class)
+    private fun verifyContinuousInput(
+        context: ClientGameTestContext,
+        profile: MinecraftUiProfile,
+        output: Path,
+    ) {
+        val probe = context.computeOnClient(FailableFunction<Minecraft, MinecraftContinuousInputProbe, RuntimeException> { MinecraftContinuousInputProbe() })
+        val screen = context.computeOnClient(FailableFunction<Minecraft, FabricMinecraftScreen, RuntimeException> { createMinecraftScreen(probe.definition(), profile, parent = null) })
+        val outcome =
+            runCatching {
+                context.runOnClient(FailableConsumer<Minecraft, RuntimeException> { MinecraftClientScreenAccess.setScreen(it, screen) })
+                context.waitFor(
+                    Predicate<Minecraft> { minecraft ->
+                        MinecraftClientScreenAccess.currentScreen(minecraft) === screen && probe.isReady() && 0L < readRenderWork(minecraft).framePreparations
+                    },
+                )
+                context.computeOnClient(
+                    FailableFunction<Minecraft, String, RuntimeException> { minecraft ->
+                        probe.verify(
+                            frameCount = { readRenderWork(minecraft).hostFrames },
+                            scroll = { scrollMinecraftScreen(screen, probe.position) },
+                            move = { screen.mouseMoved(probe.position.x.toDouble(), probe.position.y.toDouble()) },
+                            click = {
+                                val event = MouseButtonEvent(probe.position.x.toDouble(), probe.position.y.toDouble(), MouseButtonInfo(0, 0))
+                                check(screen.mouseClicked(event, false)) { "The Strata content must consume its native primary press." }
+                                screen.mouseReleased(event)
+                            },
+                        )
+                    },
+                )
+            }
+        val cleanup = runCatching { context.runOnClient(FailableConsumer<Minecraft, RuntimeException> { screen.onClose() }) }
+        val receipt =
+            outcome.getOrElse { failure ->
+                cleanup.exceptionOrNull()?.let { if (it !== failure) failure.addSuppressed(it) }
+                throw failure
+            }
+        cleanup.getOrThrow()
+        Files.writeString(output.resolve("continuous-input.txt"), "minecraftVersion=${minecraftVersion()}\n$receipt")
+    }
+
+    private fun verifyProfileCache(
+        context: ClientGameTestContext,
+        output: Path,
+    ) {
+        val probe = MinecraftProfileCacheProbe(MinecraftClientScreenAccess::currentScreen) { MinecraftClientScreenAccess.setScreen(it, null) }
+        val outcome =
+            runCatching {
+                val reload =
+                    context.computeOnClient(
+                        FailableFunction<Minecraft, CompletableFuture<Void>, RuntimeException> { probe.begin(it) },
+                    )
+                context.waitFor(Predicate<Minecraft> { reload.isDone })
+                reload.join()
+                // The reload future completes before LoadingOverlay finishes its native fade-out.
+                context.waitFor(Predicate<Minecraft> { MinecraftClientScreenAccess.hasOverlay(it).not() })
+                context.runOnClient(FailableConsumer<Minecraft, RuntimeException> { probe.afterReload(it) })
+                context.waitFor(Predicate<Minecraft> { probe.collected() })
+                probe.writeReceipt(output)
+            }
+        val cleanup = runCatching { context.runOnClient(FailableConsumer<Minecraft, RuntimeException> { probe.close() }) }
+        outcome.exceptionOrNull()?.let { failure ->
+            cleanup.exceptionOrNull()?.let(failure::addSuppressed)
+            throw failure
+        }
+        cleanup.getOrThrow()
+    }
+
     private fun sha256Argb(image: HeadlessImage): String {
         val digest = MessageDigest.getInstance("SHA-256")
         val bytes = ByteArray(4)
@@ -1343,8 +1421,9 @@ public class StrataMinecraftClientGameTest : FabricClientGameTest {
         Stack("stack", IntSize(64, 64)),
         Grid("grid", IntSize(64, 64)),
         Spacer("spacer", IntSize(160, 64)),
-        Text("text", IntSize(120, 64)),
+        Text("text", IntSize(192, 88)),
         TextField("text-field", IntSize(216, 64)),
+        TextArea("text-area", IntSize(226, 80)),
         Button("button", IntSize(166, 64)),
         Checkbox("checkbox", IntSize(166, 36)),
         CycleButton("cycle-button", IntSize(166, 36)),

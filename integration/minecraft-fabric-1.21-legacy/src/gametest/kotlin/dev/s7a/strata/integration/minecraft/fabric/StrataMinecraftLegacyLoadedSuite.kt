@@ -69,6 +69,8 @@ internal class StrataMinecraftLegacyLoadedSuite {
         verifyVersionAsset(context)
         val output = outputDirectory()
         Files.createDirectories(output)
+        verifyProfileCache(context, output)
+        verifyContinuousInput(context, profile, output)
         verifyPortableScene(context, output)
         verifyPlayerInventoryBinding(context, profile, output)
     }
@@ -82,6 +84,30 @@ internal class StrataMinecraftLegacyLoadedSuite {
         }
     }
 
+    private fun verifyProfileCache(
+        context: MinecraftLoadedTestContext,
+        output: Path,
+    ) {
+        val probe = MinecraftProfileCacheProbe({ it.screen }, { it.setScreen(null) })
+        val outcome =
+            runCatching {
+                val reload = context.computeOnClient(probe::begin)
+                context.waitFor { reload.isDone }
+                reload.join()
+                // The reload future completes before LoadingOverlay finishes its native fade-out.
+                context.waitFor { it.overlay == null }
+                context.computeOnClient(probe::afterReload)
+                context.waitFor { probe.collected() }
+                probe.writeReceipt(output)
+            }
+        val cleanup = runCatching { context.computeOnClient { probe.close() } }
+        outcome.exceptionOrNull()?.let { failure ->
+            cleanup.exceptionOrNull()?.let(failure::addSuppressed)
+            throw failure
+        }
+        cleanup.getOrThrow()
+    }
+
     private fun verifyVersionAsset(context: MinecraftLoadedTestContext) {
         val ascii =
             context.computeOnClient {
@@ -90,6 +116,38 @@ internal class StrataMinecraftLegacyLoadedSuite {
         require(ascii.size == asciiTextureSize) {
             "Minecraft ${minecraftVersion()}'s regular ASCII font must be the verified 128 by 128 pixel asset."
         }
+    }
+
+    private fun verifyContinuousInput(
+        context: MinecraftLoadedTestContext,
+        profile: MinecraftUiProfile,
+        output: Path,
+    ) {
+        val probe = context.computeOnClient { MinecraftContinuousInputProbe() }
+        val screen = context.computeOnClient { createMinecraftScreen(probe.definition(), profile, parent = null) }
+        val outcome =
+            runCatching {
+                context.computeOnClient { minecraft -> minecraft.setScreen(screen) }
+                context.waitFor { minecraft ->
+                    minecraft.screen === screen && probe.isReady() && 0L < readRenderWork(minecraft).framePreparations
+                }
+                context.computeOnClient { minecraft ->
+                    probe.verify(
+                        frameCount = { readRenderWork(minecraft).hostFrames },
+                        scroll = { scrollMinecraftScreen(screen, probe.position) },
+                        move = { screen.mouseMoved(probe.position.x.toDouble(), probe.position.y.toDouble()) },
+                        click = { clickMinecraftScreen(screen, probe.position) },
+                    )
+                }
+            }
+        val cleanup = runCatching { context.computeOnClient { screen.onClose() } }
+        val receipt =
+            outcome.getOrElse { failure ->
+                cleanup.exceptionOrNull()?.let { if (it !== failure) failure.addSuppressed(it) }
+                throw failure
+            }
+        cleanup.getOrThrow()
+        Files.writeString(output.resolve("continuous-input.txt"), "minecraftVersion=${minecraftVersion()}\n$receipt")
     }
 
     private fun verifyPortableScene(

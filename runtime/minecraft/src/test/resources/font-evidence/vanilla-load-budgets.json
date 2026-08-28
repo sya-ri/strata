@@ -1,0 +1,2243 @@
+{
+  "schemaVersion": 1,
+  "source": "Caller-supplied official client archives and indexed objects; client/index SHA-1 and every selected indexed asset size/SHA-1 are verified before measuring.",
+  "inputLocatorRoot": "All locators are relative to the caller-supplied Fabric Loom cache.",
+  "measurementSafetyBounds": {
+    "json_bytes": 8388608,
+    "asset_bytes": 67108864,
+    "expanded_bytes": 134217728,
+    "line_bytes": 4096,
+    "records": 1000000
+  },
+  "limitations": [
+    "Counts describe the default font resource stack, not arbitrary custom packs or total JVM/native heap usage.",
+    "Each unique Unihex glyph stores sixteen Long row values (128 payload bytes); object and map overhead is excluded.",
+    "Glyph records, including duplicates, and archive expansion include all examined entries; unique counts sum per archive.",
+    "Vanilla supplies no TrueType providers; TTF ceilings are security policy verified by synthetic and redistributable-font adversarial tests, not vanilla measurements.",
+    "Font document instances include both the client archive empty Unihex stub and its indexed replacement.",
+    "The measurement parser removes trailing commas outside strings from ignored vanilla metadata; it does not modify input resources.",
+    "PNG measurements report IHDR dimensions and four-byte pixel payloads; generic decompression and JSON-depth ceilings are tested independently.",
+    "IndexedObjectMaxPathLength excludes assets/; IndexedAssetMaxPathLength includes that resource-key prefix."
+  ],
+  "results": [
+    {
+      "version": "1.20",
+      "metadata": {
+        "locator": "1.20/mojang_minecraft_info.json",
+        "bytes": 34972,
+        "sha1": "9a4f980f373183d7d0befcc16a85d329c68835e4",
+        "sha256": "f039b080aeac05e1003d298c53381af22be3f875c1a3c509b50f6299ddf2502e"
+      },
+      "client": {
+        "locator": "1.20/minecraft-client.jar",
+        "bytes": 23028278,
+        "sha1": "e575a48efda46cf88111ba05b624ef90c520eef1",
+        "sha256": "5ac9ead135746f5f27048f2e01d8d5bdc2dabc4d91422f73ef2435f4c3d24aff"
+      },
+      "assetIndex": {
+        "locator": "assets/indexes/1.20-5.json",
+        "bytes": 413067,
+        "sha1": "7c4533d4bec68552b39668ce65cdd5cabfe68351",
+        "sha256": "6897b3cc2efd4b3a750b309bacd6ba588b93bd7967bfc5309141035f10069ffe"
+      },
+      "sources": {
+        "clientJarEntries": 20953,
+        "clientJarFiles": 20953,
+        "clientJarAssetFiles": 7623,
+        "clientJarMaxEntryPathLength": 135,
+        "clientJarMaxPathLength": 135,
+        "clientJarMaxAssetPathLength": 81,
+        "clientJarUncompressedBytes": 41204793,
+        "indexedAssetEntries": 3598,
+        "indexedObjectMaxPathLength": 65,
+        "indexedAssetMaxPathLength": 72,
+        "indexedJsonBytes": 413067
+      },
+      "summary": {
+        "fontDocumentInstances": 8,
+        "uniqueFontIds": 7,
+        "fontJsonBytes": 24766,
+        "maxFontJsonBytes": 19118,
+        "providers": 14,
+        "providerTypes": {
+          "reference": 7,
+          "bitmap": 5,
+          "space": 1,
+          "unihex": 1
+        },
+        "maxProvidersPerDocument": 3,
+        "maxExpandedProvidersPerFont": 5,
+        "maxBitmapRows": 75,
+        "maxBitmapCells": 1200,
+        "maxBitmapRowScalars": 16,
+        "referencedAssetFiles": 6,
+        "referencedAssetBytes": 1570711,
+        "maxReferencedAssetBytes": 1546906,
+        "trueTypeFiles": 0,
+        "maxPngWidth": 144,
+        "maxPngHeight": 900,
+        "maxPngPixels": 129600,
+        "allPngArgbBytes": 944384,
+        "unihexFiles": 1,
+        "unihexZipBytes": 1546906,
+        "unihexExpandedBytes": 7680578,
+        "maxUnihexExpandedEntryBytes": 7656436,
+        "maxUnihexExpandedArchiveBytes": 7680578,
+        "unihexRecords": 112990,
+        "uniqueGlyphsSummedPerArchive": 112990,
+        "maxUniqueGlyphsPerArchive": 112990,
+        "maxUnihexRecordBytesIncludingLF": 72,
+        "unihexPackedNaturalRowBytes": 3433344,
+        "unihexStrataLongRowBytes": 14462720,
+        "uniqueGlyphsAcrossArchives": 112990,
+        "maxUnihexArchiveEntries": 2,
+        "maxUnihexEntryPathLength": 30,
+        "documentsContainingTrailingCommas": 0
+      }
+    },
+    {
+      "version": "1.20.1",
+      "metadata": {
+        "locator": "1.20.1/mojang_minecraft_info.json",
+        "bytes": 34974,
+        "sha1": "c0de5c449687b39537226061fe3f2600ae77bf87",
+        "sha256": "53fcbdfef0f2cb016346b9ef9256631bb3f465d5ebc755e89964b85b8f54e912"
+      },
+      "client": {
+        "locator": "1.20.1/minecraft-client.jar",
+        "bytes": 23028853,
+        "sha1": "0c3ec587af28e5a785c0b4a7b8a30f9a8f78f838",
+        "sha256": "56b71336d2b4fdffd197f56595b0da93e32a946f78f382a299b8f4b92758bb0f"
+      },
+      "assetIndex": {
+        "locator": "assets/indexes/1.20.1-5.json",
+        "bytes": 413067,
+        "sha1": "7c4533d4bec68552b39668ce65cdd5cabfe68351",
+        "sha256": "6897b3cc2efd4b3a750b309bacd6ba588b93bd7967bfc5309141035f10069ffe"
+      },
+      "sources": {
+        "clientJarEntries": 20953,
+        "clientJarFiles": 20953,
+        "clientJarAssetFiles": 7623,
+        "clientJarMaxEntryPathLength": 135,
+        "clientJarMaxPathLength": 135,
+        "clientJarMaxAssetPathLength": 81,
+        "clientJarUncompressedBytes": 41206169,
+        "indexedAssetEntries": 3598,
+        "indexedObjectMaxPathLength": 65,
+        "indexedAssetMaxPathLength": 72,
+        "indexedJsonBytes": 413067
+      },
+      "summary": {
+        "fontDocumentInstances": 8,
+        "uniqueFontIds": 7,
+        "fontJsonBytes": 24766,
+        "maxFontJsonBytes": 19118,
+        "providers": 14,
+        "providerTypes": {
+          "reference": 7,
+          "bitmap": 5,
+          "space": 1,
+          "unihex": 1
+        },
+        "maxProvidersPerDocument": 3,
+        "maxExpandedProvidersPerFont": 5,
+        "maxBitmapRows": 75,
+        "maxBitmapCells": 1200,
+        "maxBitmapRowScalars": 16,
+        "referencedAssetFiles": 6,
+        "referencedAssetBytes": 1570711,
+        "maxReferencedAssetBytes": 1546906,
+        "trueTypeFiles": 0,
+        "maxPngWidth": 144,
+        "maxPngHeight": 900,
+        "maxPngPixels": 129600,
+        "allPngArgbBytes": 944384,
+        "unihexFiles": 1,
+        "unihexZipBytes": 1546906,
+        "unihexExpandedBytes": 7680578,
+        "maxUnihexExpandedEntryBytes": 7656436,
+        "maxUnihexExpandedArchiveBytes": 7680578,
+        "unihexRecords": 112990,
+        "uniqueGlyphsSummedPerArchive": 112990,
+        "maxUniqueGlyphsPerArchive": 112990,
+        "maxUnihexRecordBytesIncludingLF": 72,
+        "unihexPackedNaturalRowBytes": 3433344,
+        "unihexStrataLongRowBytes": 14462720,
+        "uniqueGlyphsAcrossArchives": 112990,
+        "maxUnihexArchiveEntries": 2,
+        "maxUnihexEntryPathLength": 30,
+        "documentsContainingTrailingCommas": 0
+      }
+    },
+    {
+      "version": "1.20.2",
+      "metadata": {
+        "locator": "1.20.2/mojang_minecraft_info.json",
+        "bytes": 35011,
+        "sha1": "3470345d9de229d1caf5be8b89d76a272f983a65",
+        "sha256": "0b5b20e6979e84b5f8e2084847158acd2dce774e3f95b98a21ab5f7f4c1a5a61"
+      },
+      "client": {
+        "locator": "1.20.2/minecraft-client.jar",
+        "bytes": 23186213,
+        "sha1": "82d1974e75fc984c5ed4b038e764e50958ac61a0",
+        "sha256": "fa1a19be56a506426308abbc1cad85f299a7fc6dae4335559351ba0246713fda"
+      },
+      "assetIndex": {
+        "locator": "assets/indexes/1.20.2-8.json",
+        "bytes": 416952,
+        "sha1": "fff39c9c2e356781a905f8003949524bb5469ddb",
+        "sha256": "5a8dccc4542434bd0706393391a7b41e27f458f3e079e3f57550177a20f67894"
+      },
+      "sources": {
+        "clientJarEntries": 21450,
+        "clientJarFiles": 21450,
+        "clientJarAssetFiles": 8000,
+        "clientJarMaxEntryPathLength": 135,
+        "clientJarMaxPathLength": 135,
+        "clientJarMaxAssetPathLength": 97,
+        "clientJarUncompressedBytes": 41789360,
+        "indexedAssetEntries": 3631,
+        "indexedObjectMaxPathLength": 65,
+        "indexedAssetMaxPathLength": 72,
+        "indexedJsonBytes": 416952
+      },
+      "summary": {
+        "fontDocumentInstances": 8,
+        "uniqueFontIds": 7,
+        "fontJsonBytes": 24766,
+        "maxFontJsonBytes": 19118,
+        "providers": 14,
+        "providerTypes": {
+          "reference": 7,
+          "bitmap": 5,
+          "space": 1,
+          "unihex": 1
+        },
+        "maxProvidersPerDocument": 3,
+        "maxExpandedProvidersPerFont": 5,
+        "maxBitmapRows": 75,
+        "maxBitmapCells": 1200,
+        "maxBitmapRowScalars": 16,
+        "referencedAssetFiles": 6,
+        "referencedAssetBytes": 1560889,
+        "maxReferencedAssetBytes": 1546906,
+        "trueTypeFiles": 0,
+        "maxPngWidth": 144,
+        "maxPngHeight": 900,
+        "maxPngPixels": 129600,
+        "allPngArgbBytes": 944384,
+        "unihexFiles": 1,
+        "unihexZipBytes": 1546906,
+        "unihexExpandedBytes": 7680578,
+        "maxUnihexExpandedEntryBytes": 7656436,
+        "maxUnihexExpandedArchiveBytes": 7680578,
+        "unihexRecords": 112990,
+        "uniqueGlyphsSummedPerArchive": 112990,
+        "maxUniqueGlyphsPerArchive": 112990,
+        "maxUnihexRecordBytesIncludingLF": 72,
+        "unihexPackedNaturalRowBytes": 3433344,
+        "unihexStrataLongRowBytes": 14462720,
+        "uniqueGlyphsAcrossArchives": 112990,
+        "maxUnihexArchiveEntries": 2,
+        "maxUnihexEntryPathLength": 30,
+        "documentsContainingTrailingCommas": 0
+      }
+    },
+    {
+      "version": "1.20.3",
+      "metadata": {
+        "locator": "1.20.3/mojang_minecraft_info.json",
+        "bytes": 35014,
+        "sha1": "2685d8e9444f1208be064bf42fb3293e7e65d644",
+        "sha256": "8ca087aaf4ccb4f9b32b2b38c598f2298c82f443e3f6bf7899d569c65720ecd2"
+      },
+      "client": {
+        "locator": "1.20.3/minecraft-client.jar",
+        "bytes": 24445920,
+        "sha1": "b178a327a96f2cf1c9f98a45e5588d654a3e4369",
+        "sha256": "bef21938224902dd925e2d89dcfe1d2540656d4cf7a5abd2b93e0402d135c655"
+      },
+      "assetIndex": {
+        "locator": "assets/indexes/1.20.3-12.json",
+        "bytes": 437886,
+        "sha1": "1c7bb2981d812eadd27bb590d74d561f3f88d11b",
+        "sha256": "927251ba339aacb7d4fdc408a931062d4ee5995f8bb99e05eb2772e2dbf3e698"
+      },
+      "sources": {
+        "clientJarEntries": 22597,
+        "clientJarFiles": 22597,
+        "clientJarAssetFiles": 8317,
+        "clientJarMaxEntryPathLength": 170,
+        "clientJarMaxPathLength": 170,
+        "clientJarMaxAssetPathLength": 97,
+        "clientJarUncompressedBytes": 44203702,
+        "indexedAssetEntries": 3811,
+        "indexedObjectMaxPathLength": 65,
+        "indexedAssetMaxPathLength": 72,
+        "indexedJsonBytes": 437886
+      },
+      "summary": {
+        "fontDocumentInstances": 8,
+        "uniqueFontIds": 7,
+        "fontJsonBytes": 24766,
+        "maxFontJsonBytes": 19118,
+        "providers": 14,
+        "providerTypes": {
+          "reference": 7,
+          "bitmap": 5,
+          "space": 1,
+          "unihex": 1
+        },
+        "maxProvidersPerDocument": 3,
+        "maxExpandedProvidersPerFont": 5,
+        "maxBitmapRows": 75,
+        "maxBitmapCells": 1200,
+        "maxBitmapRowScalars": 16,
+        "referencedAssetFiles": 6,
+        "referencedAssetBytes": 1629978,
+        "maxReferencedAssetBytes": 1615995,
+        "trueTypeFiles": 0,
+        "maxPngWidth": 144,
+        "maxPngHeight": 900,
+        "maxPngPixels": 129600,
+        "allPngArgbBytes": 944384,
+        "unihexFiles": 1,
+        "unihexZipBytes": 1615995,
+        "unihexExpandedBytes": 7753890,
+        "maxUnihexExpandedEntryBytes": 7729748,
+        "maxUnihexExpandedArchiveBytes": 7753890,
+        "unihexRecords": 114010,
+        "uniqueGlyphsSummedPerArchive": 114010,
+        "maxUniqueGlyphsPerArchive": 114010,
+        "maxUnihexRecordBytesIncludingLF": 72,
+        "unihexPackedNaturalRowBytes": 3465920,
+        "unihexStrataLongRowBytes": 14593280,
+        "uniqueGlyphsAcrossArchives": 114010,
+        "maxUnihexArchiveEntries": 2,
+        "maxUnihexEntryPathLength": 30,
+        "documentsContainingTrailingCommas": 0
+      }
+    },
+    {
+      "version": "1.20.4",
+      "metadata": {
+        "locator": "1.20.4/mojang_minecraft_info.json",
+        "bytes": 35014,
+        "sha1": "8eb69c0ea5472f57c5596185059e061579a41b53",
+        "sha256": "28895158c9b95f2e46cb0a1066898c0c39943076712951f711cfdca3a52e36df"
+      },
+      "client": {
+        "locator": "1.20.4/minecraft-client.jar",
+        "bytes": 24445539,
+        "sha1": "fd19469fed4a4b4c15b2d5133985f0e3e7816a8a",
+        "sha256": "9221ab461a491bf9661cd8e773a5e662aaa43d600fa7970b8c12bbfb0431b838"
+      },
+      "assetIndex": {
+        "locator": "assets/indexes/1.20.4-12.json",
+        "bytes": 437886,
+        "sha1": "1c7bb2981d812eadd27bb590d74d561f3f88d11b",
+        "sha256": "927251ba339aacb7d4fdc408a931062d4ee5995f8bb99e05eb2772e2dbf3e698"
+      },
+      "sources": {
+        "clientJarEntries": 22597,
+        "clientJarFiles": 22597,
+        "clientJarAssetFiles": 8317,
+        "clientJarMaxEntryPathLength": 170,
+        "clientJarMaxPathLength": 170,
+        "clientJarMaxAssetPathLength": 97,
+        "clientJarUncompressedBytes": 44203566,
+        "indexedAssetEntries": 3811,
+        "indexedObjectMaxPathLength": 65,
+        "indexedAssetMaxPathLength": 72,
+        "indexedJsonBytes": 437886
+      },
+      "summary": {
+        "fontDocumentInstances": 8,
+        "uniqueFontIds": 7,
+        "fontJsonBytes": 24766,
+        "maxFontJsonBytes": 19118,
+        "providers": 14,
+        "providerTypes": {
+          "reference": 7,
+          "bitmap": 5,
+          "space": 1,
+          "unihex": 1
+        },
+        "maxProvidersPerDocument": 3,
+        "maxExpandedProvidersPerFont": 5,
+        "maxBitmapRows": 75,
+        "maxBitmapCells": 1200,
+        "maxBitmapRowScalars": 16,
+        "referencedAssetFiles": 6,
+        "referencedAssetBytes": 1629978,
+        "maxReferencedAssetBytes": 1615995,
+        "trueTypeFiles": 0,
+        "maxPngWidth": 144,
+        "maxPngHeight": 900,
+        "maxPngPixels": 129600,
+        "allPngArgbBytes": 944384,
+        "unihexFiles": 1,
+        "unihexZipBytes": 1615995,
+        "unihexExpandedBytes": 7753890,
+        "maxUnihexExpandedEntryBytes": 7729748,
+        "maxUnihexExpandedArchiveBytes": 7753890,
+        "unihexRecords": 114010,
+        "uniqueGlyphsSummedPerArchive": 114010,
+        "maxUniqueGlyphsPerArchive": 114010,
+        "maxUnihexRecordBytesIncludingLF": 72,
+        "unihexPackedNaturalRowBytes": 3465920,
+        "unihexStrataLongRowBytes": 14593280,
+        "uniqueGlyphsAcrossArchives": 114010,
+        "maxUnihexArchiveEntries": 2,
+        "maxUnihexEntryPathLength": 30,
+        "documentsContainingTrailingCommas": 0
+      }
+    },
+    {
+      "version": "1.20.5",
+      "metadata": {
+        "locator": "1.20.5/mojang_minecraft_info.json",
+        "bytes": 38403,
+        "sha1": "f8aff8d0d5c0d98e1ebd7b9baec83c78ee82aba6",
+        "sha256": "59460977762d31d569cdc969d0acd873b0bb23b3fd242cb2893111f085296a12"
+      },
+      "client": {
+        "locator": "1.20.5/minecraft-client.jar",
+        "bytes": 26565623,
+        "sha1": "c6b92b2374a629f20802bb284f98a4ee790e950a",
+        "sha256": "49d5949adbb1021a7eb00c1b949f9e39934b10249cbf86d25004774d1b3ff510"
+      },
+      "assetIndex": {
+        "locator": "assets/indexes/1.20.5-16.json",
+        "bytes": 446564,
+        "sha1": "0f490f0618b9426f51f7f0d21b9d6818a6c9647d",
+        "sha256": "001b3453419cd4d24e03f3125811254dd3b684d7a24dc22e39eb4f14d677e710"
+      },
+      "sources": {
+        "clientJarEntries": 23402,
+        "clientJarFiles": 23402,
+        "clientJarAssetFiles": 8432,
+        "clientJarMaxEntryPathLength": 170,
+        "clientJarMaxPathLength": 170,
+        "clientJarMaxAssetPathLength": 97,
+        "clientJarUncompressedBytes": 47638141,
+        "indexedAssetEntries": 3885,
+        "indexedObjectMaxPathLength": 65,
+        "indexedAssetMaxPathLength": 72,
+        "indexedJsonBytes": 446564
+      },
+      "summary": {
+        "fontDocumentInstances": 8,
+        "uniqueFontIds": 7,
+        "fontJsonBytes": 26197,
+        "maxFontJsonBytes": 19118,
+        "providers": 15,
+        "providerTypes": {
+          "reference": 7,
+          "bitmap": 5,
+          "space": 1,
+          "unihex": 2
+        },
+        "maxProvidersPerDocument": 3,
+        "maxExpandedProvidersPerFont": 6,
+        "maxBitmapRows": 75,
+        "maxBitmapCells": 1200,
+        "maxBitmapRowScalars": 16,
+        "referencedAssetFiles": 7,
+        "referencedAssetBytes": 1866891,
+        "maxReferencedAssetBytes": 1615995,
+        "trueTypeFiles": 0,
+        "maxPngWidth": 144,
+        "maxPngHeight": 900,
+        "maxPngPixels": 129600,
+        "allPngArgbBytes": 944384,
+        "unihexFiles": 2,
+        "unihexZipBytes": 1852908,
+        "unihexExpandedBytes": 8476298,
+        "maxUnihexExpandedEntryBytes": 7729748,
+        "maxUnihexExpandedArchiveBytes": 7753890,
+        "unihexRecords": 123985,
+        "uniqueGlyphsSummedPerArchive": 123985,
+        "maxUniqueGlyphsPerArchive": 114010,
+        "maxUnihexRecordBytesIncludingLF": 72,
+        "unihexPackedNaturalRowBytes": 3785120,
+        "unihexStrataLongRowBytes": 15870080,
+        "uniqueGlyphsAcrossArchives": 114010,
+        "maxUnihexArchiveEntries": 2,
+        "maxUnihexEntryPathLength": 30,
+        "documentsContainingTrailingCommas": 0
+      }
+    },
+    {
+      "version": "1.20.6",
+      "metadata": {
+        "locator": "1.20.6/mojang_minecraft_info.json",
+        "bytes": 38403,
+        "sha1": "05d2fcbc2babf01114142c5b576a3962d00c45d6",
+        "sha256": "a2321ac270a3b0bb98dc698604e25a3b83c46e5c5ea1495bd38f4657d082ec7b"
+      },
+      "client": {
+        "locator": "1.20.6/minecraft-client.jar",
+        "bytes": 26565641,
+        "sha1": "05b6f1c6b46a29d6ea82b4e0d42190e42402030f",
+        "sha256": "02dfd345ac1ad55692d5dbc8486ac7e4fea72cd54ac494a79cd48963048e56b2"
+      },
+      "assetIndex": {
+        "locator": "assets/indexes/1.20.6-16.json",
+        "bytes": 446564,
+        "sha1": "0f490f0618b9426f51f7f0d21b9d6818a6c9647d",
+        "sha256": "001b3453419cd4d24e03f3125811254dd3b684d7a24dc22e39eb4f14d677e710"
+      },
+      "sources": {
+        "clientJarEntries": 23403,
+        "clientJarFiles": 23403,
+        "clientJarAssetFiles": 8432,
+        "clientJarMaxEntryPathLength": 170,
+        "clientJarMaxPathLength": 170,
+        "clientJarMaxAssetPathLength": 97,
+        "clientJarUncompressedBytes": 47641285,
+        "indexedAssetEntries": 3885,
+        "indexedObjectMaxPathLength": 65,
+        "indexedAssetMaxPathLength": 72,
+        "indexedJsonBytes": 446564
+      },
+      "summary": {
+        "fontDocumentInstances": 8,
+        "uniqueFontIds": 7,
+        "fontJsonBytes": 26197,
+        "maxFontJsonBytes": 19118,
+        "providers": 15,
+        "providerTypes": {
+          "reference": 7,
+          "bitmap": 5,
+          "space": 1,
+          "unihex": 2
+        },
+        "maxProvidersPerDocument": 3,
+        "maxExpandedProvidersPerFont": 6,
+        "maxBitmapRows": 75,
+        "maxBitmapCells": 1200,
+        "maxBitmapRowScalars": 16,
+        "referencedAssetFiles": 7,
+        "referencedAssetBytes": 1866891,
+        "maxReferencedAssetBytes": 1615995,
+        "trueTypeFiles": 0,
+        "maxPngWidth": 144,
+        "maxPngHeight": 900,
+        "maxPngPixels": 129600,
+        "allPngArgbBytes": 944384,
+        "unihexFiles": 2,
+        "unihexZipBytes": 1852908,
+        "unihexExpandedBytes": 8476298,
+        "maxUnihexExpandedEntryBytes": 7729748,
+        "maxUnihexExpandedArchiveBytes": 7753890,
+        "unihexRecords": 123985,
+        "uniqueGlyphsSummedPerArchive": 123985,
+        "maxUniqueGlyphsPerArchive": 114010,
+        "maxUnihexRecordBytesIncludingLF": 72,
+        "unihexPackedNaturalRowBytes": 3785120,
+        "unihexStrataLongRowBytes": 15870080,
+        "uniqueGlyphsAcrossArchives": 114010,
+        "maxUnihexArchiveEntries": 2,
+        "maxUnihexEntryPathLength": 30,
+        "documentsContainingTrailingCommas": 0
+      }
+    },
+    {
+      "version": "1.21",
+      "metadata": {
+        "locator": "1.21/mojang_minecraft_info.json",
+        "bytes": 38401,
+        "sha1": "388cfd72f3cf041a7988ea9dece98c03a45d9232",
+        "sha256": "6bfecac825f5787dbea9bde3f3305f53262f7cf74492fa21b158485af996d8c1"
+      },
+      "client": {
+        "locator": "1.21/minecraft-client.jar",
+        "bytes": 26836080,
+        "sha1": "0e9a07b9bb3390602f977073aa12884a4ce12431",
+        "sha256": "4b56bc9b44de7e88f9fbb52e716c18240da34469fcbafa5ed2e75b04d60617e8"
+      },
+      "assetIndex": {
+        "locator": "assets/indexes/1.21-17.json",
+        "bytes": 449557,
+        "sha1": "1f22f8f4b4575831ce8d1d74b5656eb1bc04732c",
+        "sha256": "8779cb0b10b5edbe494b69a3c5aaf823e1489b22497f40a985f5c35688eba635"
+      },
+      "sources": {
+        "clientJarEntries": 23519,
+        "clientJarFiles": 23519,
+        "clientJarAssetFiles": 8448,
+        "clientJarMaxEntryPathLength": 134,
+        "clientJarMaxPathLength": 134,
+        "clientJarMaxAssetPathLength": 97,
+        "clientJarUncompressedBytes": 48186701,
+        "indexedAssetEntries": 3911,
+        "indexedObjectMaxPathLength": 65,
+        "indexedAssetMaxPathLength": 72,
+        "indexedJsonBytes": 449557
+      },
+      "summary": {
+        "fontDocumentInstances": 8,
+        "uniqueFontIds": 7,
+        "fontJsonBytes": 26953,
+        "maxFontJsonBytes": 19118,
+        "providers": 15,
+        "providerTypes": {
+          "reference": 7,
+          "bitmap": 5,
+          "space": 1,
+          "unihex": 2
+        },
+        "maxProvidersPerDocument": 3,
+        "maxExpandedProvidersPerFont": 6,
+        "maxBitmapRows": 75,
+        "maxBitmapCells": 1200,
+        "maxBitmapRowScalars": 16,
+        "referencedAssetFiles": 7,
+        "referencedAssetBytes": 1745154,
+        "maxReferencedAssetBytes": 1496916,
+        "trueTypeFiles": 0,
+        "maxPngWidth": 144,
+        "maxPngHeight": 900,
+        "maxPngPixels": 129600,
+        "allPngArgbBytes": 944384,
+        "unihexFiles": 2,
+        "unihexZipBytes": 1731171,
+        "unihexExpandedBytes": 8504782,
+        "maxUnihexExpandedEntryBytes": 7771248,
+        "maxUnihexExpandedArchiveBytes": 7795390,
+        "unihexRecords": 124370,
+        "uniqueGlyphsSummedPerArchive": 124370,
+        "maxUniqueGlyphsPerArchive": 114581,
+        "maxUnihexRecordBytesIncludingLF": 72,
+        "unihexPackedNaturalRowBytes": 3797632,
+        "unihexStrataLongRowBytes": 15919360,
+        "uniqueGlyphsAcrossArchives": 114581,
+        "maxUnihexArchiveEntries": 2,
+        "maxUnihexEntryPathLength": 30,
+        "documentsContainingTrailingCommas": 1
+      }
+    },
+    {
+      "version": "1.21.1",
+      "metadata": {
+        "locator": "1.21.1/mojang_minecraft_info.json",
+        "bytes": 38408,
+        "sha1": "7d538f57bd7f3d0638755fa605a432494e736db3",
+        "sha256": "06ba60da1f8c6fe469bed1b348a064648bfdda57fc2fb56920e3f177f844fdfd"
+      },
+      "client": {
+        "locator": "1.21.1/minecraft-client.jar",
+        "bytes": 26836906,
+        "sha1": "30c73b1c5da787909b2f73340419fdf13b9def88",
+        "sha256": "499f6897d1837516680f3114072d8106e11c9adcd933fe5cf051b551089b0c99"
+      },
+      "assetIndex": {
+        "locator": "assets/indexes/1.21.1-17.json",
+        "bytes": 449557,
+        "sha1": "1f22f8f4b4575831ce8d1d74b5656eb1bc04732c",
+        "sha256": "8779cb0b10b5edbe494b69a3c5aaf823e1489b22497f40a985f5c35688eba635"
+      },
+      "sources": {
+        "clientJarEntries": 23519,
+        "clientJarFiles": 23519,
+        "clientJarAssetFiles": 8448,
+        "clientJarMaxEntryPathLength": 134,
+        "clientJarMaxPathLength": 134,
+        "clientJarMaxAssetPathLength": 97,
+        "clientJarUncompressedBytes": 48188969,
+        "indexedAssetEntries": 3911,
+        "indexedObjectMaxPathLength": 65,
+        "indexedAssetMaxPathLength": 72,
+        "indexedJsonBytes": 449557
+      },
+      "summary": {
+        "fontDocumentInstances": 8,
+        "uniqueFontIds": 7,
+        "fontJsonBytes": 26953,
+        "maxFontJsonBytes": 19118,
+        "providers": 15,
+        "providerTypes": {
+          "reference": 7,
+          "bitmap": 5,
+          "space": 1,
+          "unihex": 2
+        },
+        "maxProvidersPerDocument": 3,
+        "maxExpandedProvidersPerFont": 6,
+        "maxBitmapRows": 75,
+        "maxBitmapCells": 1200,
+        "maxBitmapRowScalars": 16,
+        "referencedAssetFiles": 7,
+        "referencedAssetBytes": 1745154,
+        "maxReferencedAssetBytes": 1496916,
+        "trueTypeFiles": 0,
+        "maxPngWidth": 144,
+        "maxPngHeight": 900,
+        "maxPngPixels": 129600,
+        "allPngArgbBytes": 944384,
+        "unihexFiles": 2,
+        "unihexZipBytes": 1731171,
+        "unihexExpandedBytes": 8504782,
+        "maxUnihexExpandedEntryBytes": 7771248,
+        "maxUnihexExpandedArchiveBytes": 7795390,
+        "unihexRecords": 124370,
+        "uniqueGlyphsSummedPerArchive": 124370,
+        "maxUniqueGlyphsPerArchive": 114581,
+        "maxUnihexRecordBytesIncludingLF": 72,
+        "unihexPackedNaturalRowBytes": 3797632,
+        "unihexStrataLongRowBytes": 15919360,
+        "uniqueGlyphsAcrossArchives": 114581,
+        "maxUnihexArchiveEntries": 2,
+        "maxUnihexEntryPathLength": 30,
+        "documentsContainingTrailingCommas": 1
+      }
+    },
+    {
+      "version": "1.21.2",
+      "metadata": {
+        "locator": "1.21.2/mojang_minecraft_info.json",
+        "bytes": 43664,
+        "sha1": "d0cdd0e0767dfc2495d3b12d24700f4c4dacce69",
+        "sha256": "3233c655b60075b0933f30850d14bcbbdff19c6dc755244a46647c2046e676b2"
+      },
+      "client": {
+        "locator": "1.21.2/minecraft-client.jar",
+        "bytes": 27842947,
+        "sha1": "c7ac2d0d86f4ca416cab9064ff8a281852ad0c7b",
+        "sha256": "613091da0f62426ae8dcf9afb30eb639485f493b81cda3a2b96b1fb8a6b9976c"
+      },
+      "assetIndex": {
+        "locator": "assets/indexes/1.21.2-18.json",
+        "bytes": 457929,
+        "sha1": "e4200d9c6695f0b17be0c7737deb8198840a929b",
+        "sha256": "48c628f3cccf66ac7808016b437cddff62543b11c61e1b96308c314ac135d517"
+      },
+      "sources": {
+        "clientJarEntries": 24563,
+        "clientJarFiles": 24563,
+        "clientJarAssetFiles": 8690,
+        "clientJarMaxEntryPathLength": 134,
+        "clientJarMaxPathLength": 134,
+        "clientJarMaxAssetPathLength": 97,
+        "clientJarUncompressedBytes": 50005975,
+        "indexedAssetEntries": 3985,
+        "indexedObjectMaxPathLength": 74,
+        "indexedAssetMaxPathLength": 81,
+        "indexedJsonBytes": 457929
+      },
+      "summary": {
+        "fontDocumentInstances": 8,
+        "uniqueFontIds": 7,
+        "fontJsonBytes": 26953,
+        "maxFontJsonBytes": 19118,
+        "providers": 15,
+        "providerTypes": {
+          "reference": 7,
+          "bitmap": 5,
+          "space": 1,
+          "unihex": 2
+        },
+        "maxProvidersPerDocument": 3,
+        "maxExpandedProvidersPerFont": 6,
+        "maxBitmapRows": 75,
+        "maxBitmapCells": 1200,
+        "maxBitmapRowScalars": 16,
+        "referencedAssetFiles": 7,
+        "referencedAssetBytes": 1745154,
+        "maxReferencedAssetBytes": 1496916,
+        "trueTypeFiles": 0,
+        "maxPngWidth": 144,
+        "maxPngHeight": 900,
+        "maxPngPixels": 129600,
+        "allPngArgbBytes": 944384,
+        "unihexFiles": 2,
+        "unihexZipBytes": 1731171,
+        "unihexExpandedBytes": 8504782,
+        "maxUnihexExpandedEntryBytes": 7771248,
+        "maxUnihexExpandedArchiveBytes": 7795390,
+        "unihexRecords": 124370,
+        "uniqueGlyphsSummedPerArchive": 124370,
+        "maxUniqueGlyphsPerArchive": 114581,
+        "maxUnihexRecordBytesIncludingLF": 72,
+        "unihexPackedNaturalRowBytes": 3797632,
+        "unihexStrataLongRowBytes": 15919360,
+        "uniqueGlyphsAcrossArchives": 114581,
+        "maxUnihexArchiveEntries": 2,
+        "maxUnihexEntryPathLength": 30,
+        "documentsContainingTrailingCommas": 1
+      }
+    },
+    {
+      "version": "1.21.3",
+      "metadata": {
+        "locator": "1.21.3/mojang_minecraft_info.json",
+        "bytes": 43664,
+        "sha1": "b2529968f1003847905935d41cd8be67c47b26a0",
+        "sha256": "cbeb8269fd9fecf5d48a571b3f42bd08436f6cd5ea3c51852736ac3d29414456"
+      },
+      "client": {
+        "locator": "1.21.3/minecraft-client.jar",
+        "bytes": 27844259,
+        "sha1": "6f67d19b4467240639cb2c368ffd4b94ba889705",
+        "sha256": "25190c556bc56d11070638ccab3b3c6efd76bb9684c92a2680a4de01c3c7138b"
+      },
+      "assetIndex": {
+        "locator": "assets/indexes/1.21.3-18.json",
+        "bytes": 457929,
+        "sha1": "e4200d9c6695f0b17be0c7737deb8198840a929b",
+        "sha256": "48c628f3cccf66ac7808016b437cddff62543b11c61e1b96308c314ac135d517"
+      },
+      "sources": {
+        "clientJarEntries": 24564,
+        "clientJarFiles": 24564,
+        "clientJarAssetFiles": 8690,
+        "clientJarMaxEntryPathLength": 134,
+        "clientJarMaxPathLength": 134,
+        "clientJarMaxAssetPathLength": 97,
+        "clientJarUncompressedBytes": 50008824,
+        "indexedAssetEntries": 3985,
+        "indexedObjectMaxPathLength": 74,
+        "indexedAssetMaxPathLength": 81,
+        "indexedJsonBytes": 457929
+      },
+      "summary": {
+        "fontDocumentInstances": 8,
+        "uniqueFontIds": 7,
+        "fontJsonBytes": 26953,
+        "maxFontJsonBytes": 19118,
+        "providers": 15,
+        "providerTypes": {
+          "reference": 7,
+          "bitmap": 5,
+          "space": 1,
+          "unihex": 2
+        },
+        "maxProvidersPerDocument": 3,
+        "maxExpandedProvidersPerFont": 6,
+        "maxBitmapRows": 75,
+        "maxBitmapCells": 1200,
+        "maxBitmapRowScalars": 16,
+        "referencedAssetFiles": 7,
+        "referencedAssetBytes": 1745154,
+        "maxReferencedAssetBytes": 1496916,
+        "trueTypeFiles": 0,
+        "maxPngWidth": 144,
+        "maxPngHeight": 900,
+        "maxPngPixels": 129600,
+        "allPngArgbBytes": 944384,
+        "unihexFiles": 2,
+        "unihexZipBytes": 1731171,
+        "unihexExpandedBytes": 8504782,
+        "maxUnihexExpandedEntryBytes": 7771248,
+        "maxUnihexExpandedArchiveBytes": 7795390,
+        "unihexRecords": 124370,
+        "uniqueGlyphsSummedPerArchive": 124370,
+        "maxUniqueGlyphsPerArchive": 114581,
+        "maxUnihexRecordBytesIncludingLF": 72,
+        "unihexPackedNaturalRowBytes": 3797632,
+        "unihexStrataLongRowBytes": 15919360,
+        "uniqueGlyphsAcrossArchives": 114581,
+        "maxUnihexArchiveEntries": 2,
+        "maxUnihexEntryPathLength": 30,
+        "documentsContainingTrailingCommas": 1
+      }
+    },
+    {
+      "version": "1.21.4",
+      "metadata": {
+        "locator": "1.21.4/mojang_minecraft_info.json",
+        "bytes": 43714,
+        "sha1": "0f2a7d07999df088ad2988859b06c6aa6611aefe",
+        "sha256": "5c565493055c4fa3ec610752ff93f6a4b8bc35b5d954ad87877d248876d30c88"
+      },
+      "client": {
+        "locator": "1.21.4/minecraft-client.jar",
+        "bytes": 28335587,
+        "sha1": "a7e5a6024bfd3cd614625aa05629adf760020304",
+        "sha256": "c17c450c6e72cc51297daa57ce38f800aa01cf022b743daa21a0512d326d894e"
+      },
+      "assetIndex": {
+        "locator": "assets/indexes/1.21.4-19.json",
+        "bytes": 464718,
+        "sha1": "f95b2d091d1c4d7f353a1bbcb25d89bb61363142",
+        "sha256": "d0609ee2a193173b945b26e1a581fdcd6a7894dffc66271206d4db92ff02b7fb"
+      },
+      "sources": {
+        "clientJarEntries": 25367,
+        "clientJarFiles": 25367,
+        "clientJarAssetFiles": 9380,
+        "clientJarMaxEntryPathLength": 134,
+        "clientJarMaxPathLength": 134,
+        "clientJarMaxAssetPathLength": 97,
+        "clientJarUncompressedBytes": 50841393,
+        "indexedAssetEntries": 4039,
+        "indexedObjectMaxPathLength": 74,
+        "indexedAssetMaxPathLength": 81,
+        "indexedJsonBytes": 464718
+      },
+      "summary": {
+        "fontDocumentInstances": 8,
+        "uniqueFontIds": 7,
+        "fontJsonBytes": 26953,
+        "maxFontJsonBytes": 19118,
+        "providers": 15,
+        "providerTypes": {
+          "reference": 7,
+          "bitmap": 5,
+          "space": 1,
+          "unihex": 2
+        },
+        "maxProvidersPerDocument": 3,
+        "maxExpandedProvidersPerFont": 6,
+        "maxBitmapRows": 75,
+        "maxBitmapCells": 1200,
+        "maxBitmapRowScalars": 16,
+        "referencedAssetFiles": 7,
+        "referencedAssetBytes": 1782666,
+        "maxReferencedAssetBytes": 1533844,
+        "trueTypeFiles": 0,
+        "maxPngWidth": 144,
+        "maxPngHeight": 900,
+        "maxPngPixels": 129600,
+        "allPngArgbBytes": 944384,
+        "unihexFiles": 2,
+        "unihexZipBytes": 1768683,
+        "unihexExpandedBytes": 8395722,
+        "maxUnihexExpandedEntryBytes": 7660604,
+        "maxUnihexExpandedArchiveBytes": 7684746,
+        "unihexRecords": 123258,
+        "uniqueGlyphsSummedPerArchive": 123258,
+        "maxUniqueGlyphsPerArchive": 113447,
+        "maxUnihexRecordBytesIncludingLF": 72,
+        "unihexPackedNaturalRowBytes": 3747552,
+        "unihexStrataLongRowBytes": 15777024,
+        "uniqueGlyphsAcrossArchives": 113448,
+        "maxUnihexArchiveEntries": 2,
+        "maxUnihexEntryPathLength": 30,
+        "documentsContainingTrailingCommas": 1
+      }
+    },
+    {
+      "version": "1.21.5",
+      "metadata": {
+        "locator": "1.21.5/mojang_minecraft_info.json",
+        "bytes": 43719,
+        "sha1": "8af01c6793fcfffd12d7666b9ce53072596a5be8",
+        "sha256": "6bf86ddc99dc564424a4a816732b5dd21a152335dc11c52ab57e5d7543728767"
+      },
+      "client": {
+        "locator": "1.21.5/minecraft-client.jar",
+        "bytes": 28984409,
+        "sha1": "b88808bbb3da8d9f453694b5d8f74a3396f1a533",
+        "sha256": "522672ad20b460c02c2e39b6c5035ef6a849af28eb11ab2ac7eb293d395a8c11"
+      },
+      "assetIndex": {
+        "locator": "assets/indexes/1.21.5-24.json",
+        "bytes": 483183,
+        "sha1": "202e99c74867f9b5d9055d811371d4165cf7e754",
+        "sha256": "075714c5cc0f4bc75ba4f456c00b0f43cdd2642906a36a2a6defd2b8a71465ac"
+      },
+      "sources": {
+        "clientJarEntries": 25955,
+        "clientJarFiles": 25955,
+        "clientJarAssetFiles": 9581,
+        "clientJarMaxEntryPathLength": 134,
+        "clientJarMaxPathLength": 134,
+        "clientJarMaxAssetPathLength": 97,
+        "clientJarUncompressedBytes": 51835807,
+        "indexedAssetEntries": 4198,
+        "indexedObjectMaxPathLength": 74,
+        "indexedAssetMaxPathLength": 81,
+        "indexedJsonBytes": 483183
+      },
+      "summary": {
+        "fontDocumentInstances": 8,
+        "uniqueFontIds": 7,
+        "fontJsonBytes": 26953,
+        "maxFontJsonBytes": 19118,
+        "providers": 15,
+        "providerTypes": {
+          "reference": 7,
+          "bitmap": 5,
+          "space": 1,
+          "unihex": 2
+        },
+        "maxProvidersPerDocument": 3,
+        "maxExpandedProvidersPerFont": 6,
+        "maxBitmapRows": 75,
+        "maxBitmapCells": 1200,
+        "maxBitmapRowScalars": 16,
+        "referencedAssetFiles": 7,
+        "referencedAssetBytes": 1782666,
+        "maxReferencedAssetBytes": 1533844,
+        "trueTypeFiles": 0,
+        "maxPngWidth": 144,
+        "maxPngHeight": 900,
+        "maxPngPixels": 129600,
+        "allPngArgbBytes": 944384,
+        "unihexFiles": 2,
+        "unihexZipBytes": 1768683,
+        "unihexExpandedBytes": 8395722,
+        "maxUnihexExpandedEntryBytes": 7660604,
+        "maxUnihexExpandedArchiveBytes": 7684746,
+        "unihexRecords": 123258,
+        "uniqueGlyphsSummedPerArchive": 123258,
+        "maxUniqueGlyphsPerArchive": 113447,
+        "maxUnihexRecordBytesIncludingLF": 72,
+        "unihexPackedNaturalRowBytes": 3747552,
+        "unihexStrataLongRowBytes": 15777024,
+        "uniqueGlyphsAcrossArchives": 113448,
+        "maxUnihexArchiveEntries": 2,
+        "maxUnihexEntryPathLength": 30,
+        "documentsContainingTrailingCommas": 1
+      }
+    },
+    {
+      "version": "1.21.6",
+      "metadata": {
+        "locator": "1.21.6/mojang_minecraft_info.json",
+        "bytes": 43719,
+        "sha1": "be22490390461dc2ddc0049f57e931217df7b49b",
+        "sha256": "3026f54c431e860c6e575befea0ddcb083f72c98e742c67b999c27db9eae7225"
+      },
+      "client": {
+        "locator": "1.21.6/minecraft-client.jar",
+        "bytes": 29516555,
+        "sha1": "740a125b83dd3447feaa3c5e891ead7fbb21ae28",
+        "sha256": "9592df8587d6d3ec0334c873ad432dc76006d6129afdce9a7eac52638339a24a"
+      },
+      "assetIndex": {
+        "locator": "assets/indexes/1.21.6-26.json",
+        "bytes": 491670,
+        "sha1": "a19fb461bd02ecc1604384dc72838a228df57b68",
+        "sha256": "5fdf7e00f680dffdcf412eca7ae81027cdf2bf2c13718e28004ce509bab540dc"
+      },
+      "sources": {
+        "clientJarEntries": 26523,
+        "clientJarFiles": 26523,
+        "clientJarAssetFiles": 9728,
+        "clientJarMaxEntryPathLength": 134,
+        "clientJarMaxPathLength": 134,
+        "clientJarMaxAssetPathLength": 97,
+        "clientJarUncompressedBytes": 52917000,
+        "indexedAssetEntries": 4271,
+        "indexedObjectMaxPathLength": 74,
+        "indexedAssetMaxPathLength": 81,
+        "indexedJsonBytes": 491670
+      },
+      "summary": {
+        "fontDocumentInstances": 9,
+        "uniqueFontIds": 8,
+        "fontJsonBytes": 27088,
+        "maxFontJsonBytes": 19118,
+        "providers": 16,
+        "providerTypes": {
+          "reference": 7,
+          "bitmap": 5,
+          "space": 1,
+          "unihex": 3
+        },
+        "maxProvidersPerDocument": 3,
+        "maxExpandedProvidersPerFont": 6,
+        "maxBitmapRows": 75,
+        "maxBitmapCells": 1200,
+        "maxBitmapRowScalars": 16,
+        "referencedAssetFiles": 8,
+        "referencedAssetBytes": 1902019,
+        "maxReferencedAssetBytes": 1553648,
+        "trueTypeFiles": 0,
+        "maxPngWidth": 144,
+        "maxPngHeight": 900,
+        "maxPngPixels": 129600,
+        "allPngArgbBytes": 944384,
+        "unihexFiles": 3,
+        "unihexZipBytes": 1888048,
+        "unihexExpandedBytes": 9052728,
+        "maxUnihexExpandedEntryBytes": 7728404,
+        "maxUnihexExpandedArchiveBytes": 7752546,
+        "unihexRecords": 135796,
+        "uniqueGlyphsSummedPerArchive": 135796,
+        "maxUniqueGlyphsPerArchive": 114398,
+        "maxUnihexRecordBytesIncludingLF": 72,
+        "unihexPackedNaturalRowBytes": 4017264,
+        "unihexStrataLongRowBytes": 17381888,
+        "uniqueGlyphsAcrossArchives": 125984,
+        "maxUnihexArchiveEntries": 2,
+        "maxUnihexEntryPathLength": 30,
+        "documentsContainingTrailingCommas": 0
+      }
+    },
+    {
+      "version": "1.21.7",
+      "metadata": {
+        "locator": "1.21.7/mojang_minecraft_info.json",
+        "bytes": 43719,
+        "sha1": "80ac9bce7435dc281ad55a91d2efc1c7af25c071",
+        "sha256": "eb8445a5f416d2b70814f84257334657ca96c2681a1725d2b458ed17f8af434c"
+      },
+      "client": {
+        "locator": "1.21.7/minecraft-client.jar",
+        "bytes": 29522178,
+        "sha1": "a2db1ea98c37b2d00c83f6867fb8bb581a593e07",
+        "sha256": "6d0aa64c6a0aee3270253317f51e9e816f94cd3b16b44f5d605615c39fc62fb9"
+      },
+      "assetIndex": {
+        "locator": "assets/indexes/1.21.7-26.json",
+        "bytes": 491670,
+        "sha1": "a19fb461bd02ecc1604384dc72838a228df57b68",
+        "sha256": "5fdf7e00f680dffdcf412eca7ae81027cdf2bf2c13718e28004ce509bab540dc"
+      },
+      "sources": {
+        "clientJarEntries": 26530,
+        "clientJarFiles": 26530,
+        "clientJarAssetFiles": 9732,
+        "clientJarMaxEntryPathLength": 134,
+        "clientJarMaxPathLength": 134,
+        "clientJarMaxAssetPathLength": 97,
+        "clientJarUncompressedBytes": 52925636,
+        "indexedAssetEntries": 4271,
+        "indexedObjectMaxPathLength": 74,
+        "indexedAssetMaxPathLength": 81,
+        "indexedJsonBytes": 491670
+      },
+      "summary": {
+        "fontDocumentInstances": 9,
+        "uniqueFontIds": 8,
+        "fontJsonBytes": 27088,
+        "maxFontJsonBytes": 19118,
+        "providers": 16,
+        "providerTypes": {
+          "reference": 7,
+          "bitmap": 5,
+          "space": 1,
+          "unihex": 3
+        },
+        "maxProvidersPerDocument": 3,
+        "maxExpandedProvidersPerFont": 6,
+        "maxBitmapRows": 75,
+        "maxBitmapCells": 1200,
+        "maxBitmapRowScalars": 16,
+        "referencedAssetFiles": 8,
+        "referencedAssetBytes": 1902019,
+        "maxReferencedAssetBytes": 1553648,
+        "trueTypeFiles": 0,
+        "maxPngWidth": 144,
+        "maxPngHeight": 900,
+        "maxPngPixels": 129600,
+        "allPngArgbBytes": 944384,
+        "unihexFiles": 3,
+        "unihexZipBytes": 1888048,
+        "unihexExpandedBytes": 9052728,
+        "maxUnihexExpandedEntryBytes": 7728404,
+        "maxUnihexExpandedArchiveBytes": 7752546,
+        "unihexRecords": 135796,
+        "uniqueGlyphsSummedPerArchive": 135796,
+        "maxUniqueGlyphsPerArchive": 114398,
+        "maxUnihexRecordBytesIncludingLF": 72,
+        "unihexPackedNaturalRowBytes": 4017264,
+        "unihexStrataLongRowBytes": 17381888,
+        "uniqueGlyphsAcrossArchives": 125984,
+        "maxUnihexArchiveEntries": 2,
+        "maxUnihexEntryPathLength": 30,
+        "documentsContainingTrailingCommas": 0
+      }
+    },
+    {
+      "version": "1.21.8",
+      "metadata": {
+        "locator": "1.21.8/mojang_minecraft_info.json",
+        "bytes": 43719,
+        "sha1": "1873c42e50571bfca4553f980f5ff0f334e78068",
+        "sha256": "1777758ba950fc03e7942314a821ff5c94070b895f522b810962eab7f1af925a"
+      },
+      "client": {
+        "locator": "1.21.8/minecraft-client.jar",
+        "bytes": 29525242,
+        "sha1": "a19d9badbea944a4369fd0059e53bf7286597576",
+        "sha256": "ea74e9c5e92d01f95f3d39196ddb734e19a077a58b4c433c34109487d600276f"
+      },
+      "assetIndex": {
+        "locator": "assets/indexes/1.21.8-26.json",
+        "bytes": 491670,
+        "sha1": "a19fb461bd02ecc1604384dc72838a228df57b68",
+        "sha256": "5fdf7e00f680dffdcf412eca7ae81027cdf2bf2c13718e28004ce509bab540dc"
+      },
+      "sources": {
+        "clientJarEntries": 26531,
+        "clientJarFiles": 26531,
+        "clientJarAssetFiles": 9732,
+        "clientJarMaxEntryPathLength": 134,
+        "clientJarMaxPathLength": 134,
+        "clientJarMaxAssetPathLength": 97,
+        "clientJarUncompressedBytes": 52931370,
+        "indexedAssetEntries": 4271,
+        "indexedObjectMaxPathLength": 74,
+        "indexedAssetMaxPathLength": 81,
+        "indexedJsonBytes": 491670
+      },
+      "summary": {
+        "fontDocumentInstances": 9,
+        "uniqueFontIds": 8,
+        "fontJsonBytes": 27088,
+        "maxFontJsonBytes": 19118,
+        "providers": 16,
+        "providerTypes": {
+          "reference": 7,
+          "bitmap": 5,
+          "space": 1,
+          "unihex": 3
+        },
+        "maxProvidersPerDocument": 3,
+        "maxExpandedProvidersPerFont": 6,
+        "maxBitmapRows": 75,
+        "maxBitmapCells": 1200,
+        "maxBitmapRowScalars": 16,
+        "referencedAssetFiles": 8,
+        "referencedAssetBytes": 1902019,
+        "maxReferencedAssetBytes": 1553648,
+        "trueTypeFiles": 0,
+        "maxPngWidth": 144,
+        "maxPngHeight": 900,
+        "maxPngPixels": 129600,
+        "allPngArgbBytes": 944384,
+        "unihexFiles": 3,
+        "unihexZipBytes": 1888048,
+        "unihexExpandedBytes": 9052728,
+        "maxUnihexExpandedEntryBytes": 7728404,
+        "maxUnihexExpandedArchiveBytes": 7752546,
+        "unihexRecords": 135796,
+        "uniqueGlyphsSummedPerArchive": 135796,
+        "maxUniqueGlyphsPerArchive": 114398,
+        "maxUnihexRecordBytesIncludingLF": 72,
+        "unihexPackedNaturalRowBytes": 4017264,
+        "unihexStrataLongRowBytes": 17381888,
+        "uniqueGlyphsAcrossArchives": 125984,
+        "maxUnihexArchiveEntries": 2,
+        "maxUnihexEntryPathLength": 30,
+        "documentsContainingTrailingCommas": 0
+      }
+    },
+    {
+      "version": "1.21.9",
+      "metadata": {
+        "locator": "1.21.9/mojang_minecraft_info.json",
+        "bytes": 44431,
+        "sha1": "54ff950651cc0c9d1616da77adefc329ae90d4a5",
+        "sha256": "9502756bf84aa487c15ada9a72522b031e4619db894251ae9c9aa3714b3e362f"
+      },
+      "client": {
+        "locator": "1.21.9/minecraft-client.jar",
+        "bytes": 30591861,
+        "sha1": "ce92fd8d1b2460c41ceda07ae7b3fe863a80d045",
+        "sha256": "40c0a32c46601f71f6a61dae9f126202ded5cc453cfb8da6e42ae73f2a3f5c1b"
+      },
+      "assetIndex": {
+        "locator": "assets/indexes/1.21.9-27.json",
+        "bytes": 507956,
+        "sha1": "9e6dc548fd783e5f6e276792a03d2000fc4c47aa",
+        "sha256": "8effa8a289c4371da1f1507ad59afc822b1e0e433151ea54eefb4966ffa4de58"
+      },
+      "sources": {
+        "clientJarEntries": 27645,
+        "clientJarFiles": 27645,
+        "clientJarAssetFiles": 10157,
+        "clientJarMaxEntryPathLength": 134,
+        "clientJarMaxPathLength": 134,
+        "clientJarMaxAssetPathLength": 97,
+        "clientJarUncompressedBytes": 54903619,
+        "indexedAssetEntries": 4403,
+        "indexedObjectMaxPathLength": 74,
+        "indexedAssetMaxPathLength": 81,
+        "indexedJsonBytes": 507956
+      },
+      "summary": {
+        "fontDocumentInstances": 9,
+        "uniqueFontIds": 8,
+        "fontJsonBytes": 27088,
+        "maxFontJsonBytes": 19118,
+        "providers": 16,
+        "providerTypes": {
+          "reference": 7,
+          "bitmap": 5,
+          "space": 1,
+          "unihex": 3
+        },
+        "maxProvidersPerDocument": 3,
+        "maxExpandedProvidersPerFont": 6,
+        "maxBitmapRows": 75,
+        "maxBitmapCells": 1200,
+        "maxBitmapRowScalars": 16,
+        "referencedAssetFiles": 8,
+        "referencedAssetBytes": 1902019,
+        "maxReferencedAssetBytes": 1553648,
+        "trueTypeFiles": 0,
+        "maxPngWidth": 144,
+        "maxPngHeight": 900,
+        "maxPngPixels": 129600,
+        "allPngArgbBytes": 944384,
+        "unihexFiles": 3,
+        "unihexZipBytes": 1888048,
+        "unihexExpandedBytes": 9052728,
+        "maxUnihexExpandedEntryBytes": 7728404,
+        "maxUnihexExpandedArchiveBytes": 7752546,
+        "unihexRecords": 135796,
+        "uniqueGlyphsSummedPerArchive": 135796,
+        "maxUniqueGlyphsPerArchive": 114398,
+        "maxUnihexRecordBytesIncludingLF": 72,
+        "unihexPackedNaturalRowBytes": 4017264,
+        "unihexStrataLongRowBytes": 17381888,
+        "uniqueGlyphsAcrossArchives": 125984,
+        "maxUnihexArchiveEntries": 2,
+        "maxUnihexEntryPathLength": 30,
+        "documentsContainingTrailingCommas": 0
+      }
+    },
+    {
+      "version": "1.21.10",
+      "metadata": {
+        "locator": "1.21.10/mojang_minecraft_info.json",
+        "bytes": 44432,
+        "sha1": "08ea13c87b517255ae5940393db4535d66741f45",
+        "sha256": "e5fea7e0afc0d5c5f04bbacf4431f608dd2e5352c696ddf62256c5258b565bd8"
+      },
+      "client": {
+        "locator": "1.21.10/minecraft-client.jar",
+        "bytes": 30592168,
+        "sha1": "d3bdf582a7fa723ce199f3665588dcfe6bf9aca8",
+        "sha256": "e65ca028bc58da12bf8413066c90ecd4d48c94fb351d9bbd22ecdff5c87f9482"
+      },
+      "assetIndex": {
+        "locator": "assets/indexes/1.21.10-27.json",
+        "bytes": 507956,
+        "sha1": "9e6dc548fd783e5f6e276792a03d2000fc4c47aa",
+        "sha256": "8effa8a289c4371da1f1507ad59afc822b1e0e433151ea54eefb4966ffa4de58"
+      },
+      "sources": {
+        "clientJarEntries": 27645,
+        "clientJarFiles": 27645,
+        "clientJarAssetFiles": 10157,
+        "clientJarMaxEntryPathLength": 134,
+        "clientJarMaxPathLength": 134,
+        "clientJarMaxAssetPathLength": 97,
+        "clientJarUncompressedBytes": 54904592,
+        "indexedAssetEntries": 4403,
+        "indexedObjectMaxPathLength": 74,
+        "indexedAssetMaxPathLength": 81,
+        "indexedJsonBytes": 507956
+      },
+      "summary": {
+        "fontDocumentInstances": 9,
+        "uniqueFontIds": 8,
+        "fontJsonBytes": 27088,
+        "maxFontJsonBytes": 19118,
+        "providers": 16,
+        "providerTypes": {
+          "reference": 7,
+          "bitmap": 5,
+          "space": 1,
+          "unihex": 3
+        },
+        "maxProvidersPerDocument": 3,
+        "maxExpandedProvidersPerFont": 6,
+        "maxBitmapRows": 75,
+        "maxBitmapCells": 1200,
+        "maxBitmapRowScalars": 16,
+        "referencedAssetFiles": 8,
+        "referencedAssetBytes": 1902019,
+        "maxReferencedAssetBytes": 1553648,
+        "trueTypeFiles": 0,
+        "maxPngWidth": 144,
+        "maxPngHeight": 900,
+        "maxPngPixels": 129600,
+        "allPngArgbBytes": 944384,
+        "unihexFiles": 3,
+        "unihexZipBytes": 1888048,
+        "unihexExpandedBytes": 9052728,
+        "maxUnihexExpandedEntryBytes": 7728404,
+        "maxUnihexExpandedArchiveBytes": 7752546,
+        "unihexRecords": 135796,
+        "uniqueGlyphsSummedPerArchive": 135796,
+        "maxUniqueGlyphsPerArchive": 114398,
+        "maxUnihexRecordBytesIncludingLF": 72,
+        "unihexPackedNaturalRowBytes": 4017264,
+        "unihexStrataLongRowBytes": 17381888,
+        "uniqueGlyphsAcrossArchives": 125984,
+        "maxUnihexArchiveEntries": 2,
+        "maxUnihexEntryPathLength": 30,
+        "documentsContainingTrailingCommas": 0
+      }
+    },
+    {
+      "version": "1.21.11",
+      "metadata": {
+        "locator": "1.21.11/mojang_minecraft_info.json",
+        "bytes": 42184,
+        "sha1": "0d87fe006fbd25ef3f0e022d133f6efaed8a9a85",
+        "sha256": "9471dcb0b88c812d5af64259b4f62afc84c3c3ec2f3af64e972f48f7d45e9493"
+      },
+      "client": {
+        "locator": "1.21.11/minecraft-client.jar",
+        "bytes": 31152600,
+        "sha1": "ba2df812c2d12e0219c489c4cd9a5e1f0760f5bd",
+        "sha256": "1473c9489ac50fda3c435049a76a70d61a10b8610db27f5ba9d8756b686cd3bd"
+      },
+      "assetIndex": {
+        "locator": "assets/indexes/1.21.11-29.json",
+        "bytes": 529966,
+        "sha1": "e9eeaade32639d73d4f7a30a007ace472c61cbd6",
+        "sha256": "8e7c94ce232ccd328096bcf08fdf5edaa9c1a802372a7bde9fc29df2cf6db3af"
+      },
+      "sources": {
+        "clientJarEntries": 28163,
+        "clientJarFiles": 28163,
+        "clientJarAssetFiles": 10308,
+        "clientJarMaxEntryPathLength": 134,
+        "clientJarMaxPathLength": 134,
+        "clientJarMaxAssetPathLength": 97,
+        "clientJarUncompressedBytes": 55913055,
+        "indexedAssetEntries": 4591,
+        "indexedObjectMaxPathLength": 74,
+        "indexedAssetMaxPathLength": 81,
+        "indexedJsonBytes": 529966
+      },
+      "summary": {
+        "fontDocumentInstances": 9,
+        "uniqueFontIds": 8,
+        "fontJsonBytes": 27088,
+        "maxFontJsonBytes": 19118,
+        "providers": 16,
+        "providerTypes": {
+          "reference": 7,
+          "bitmap": 5,
+          "space": 1,
+          "unihex": 3
+        },
+        "maxProvidersPerDocument": 3,
+        "maxExpandedProvidersPerFont": 6,
+        "maxBitmapRows": 75,
+        "maxBitmapCells": 1200,
+        "maxBitmapRowScalars": 16,
+        "referencedAssetFiles": 8,
+        "referencedAssetBytes": 1908885,
+        "maxReferencedAssetBytes": 1559654,
+        "trueTypeFiles": 0,
+        "maxPngWidth": 144,
+        "maxPngHeight": 900,
+        "maxPngPixels": 129600,
+        "allPngArgbBytes": 944384,
+        "unihexFiles": 3,
+        "unihexZipBytes": 1894914,
+        "unihexExpandedBytes": 9051200,
+        "maxUnihexExpandedEntryBytes": 7722308,
+        "maxUnihexExpandedArchiveBytes": 7746450,
+        "unihexRecords": 135933,
+        "uniqueGlyphsSummedPerArchive": 135933,
+        "maxUniqueGlyphsPerArchive": 114432,
+        "maxUnihexRecordBytesIncludingLF": 72,
+        "unihexPackedNaturalRowBytes": 4015952,
+        "unihexStrataLongRowBytes": 17399424,
+        "uniqueGlyphsAcrossArchives": 126121,
+        "maxUnihexArchiveEntries": 2,
+        "maxUnihexEntryPathLength": 30,
+        "documentsContainingTrailingCommas": 0
+      }
+    },
+    {
+      "version": "26.1",
+      "metadata": {
+        "locator": "26.1/mojang_minecraft_info.json",
+        "bytes": 42489,
+        "sha1": "169f1ee4714af41b77897b683537fde2b4b9fce9",
+        "sha256": "11b0a2e28e15e91b338198875198b135b2797950b74ef6179da876c29f37e2d8"
+      },
+      "client": {
+        "locator": "26.1/minecraft-client.jar",
+        "bytes": 38113398,
+        "sha1": "191771837687b766537a8c4607cb6fad79c533a1",
+        "sha256": "bc6194c61566b587f196090d730698f2191170f7580adb143e4ff839939d3840"
+      },
+      "assetIndex": {
+        "locator": "assets/indexes/26.1-30.json",
+        "bytes": 548391,
+        "sha1": "f79274e7d9523e8ba9554a61877751a426e98c24",
+        "sha256": "6067dd3a13eb942efaa9587b34c200e95a01b93a8817e5b3f1b2b98e14436b43"
+      },
+      "sources": {
+        "clientJarEntries": 30675,
+        "clientJarFiles": 29435,
+        "clientJarAssetFiles": 10463,
+        "clientJarMaxEntryPathLength": 139,
+        "clientJarMaxPathLength": 139,
+        "clientJarMaxAssetPathLength": 97,
+        "clientJarUncompressedBytes": 79918292,
+        "indexedAssetEntries": 4750,
+        "indexedObjectMaxPathLength": 74,
+        "indexedAssetMaxPathLength": 81,
+        "indexedJsonBytes": 548391
+      },
+      "summary": {
+        "fontDocumentInstances": 9,
+        "uniqueFontIds": 8,
+        "fontJsonBytes": 27088,
+        "maxFontJsonBytes": 19118,
+        "providers": 16,
+        "providerTypes": {
+          "reference": 7,
+          "bitmap": 5,
+          "space": 1,
+          "unihex": 3
+        },
+        "maxProvidersPerDocument": 3,
+        "maxExpandedProvidersPerFont": 6,
+        "maxBitmapRows": 75,
+        "maxBitmapCells": 1200,
+        "maxBitmapRowScalars": 16,
+        "referencedAssetFiles": 8,
+        "referencedAssetBytes": 1908885,
+        "maxReferencedAssetBytes": 1559654,
+        "trueTypeFiles": 0,
+        "maxPngWidth": 144,
+        "maxPngHeight": 900,
+        "maxPngPixels": 129600,
+        "allPngArgbBytes": 944384,
+        "unihexFiles": 3,
+        "unihexZipBytes": 1894914,
+        "unihexExpandedBytes": 9051200,
+        "maxUnihexExpandedEntryBytes": 7722308,
+        "maxUnihexExpandedArchiveBytes": 7746450,
+        "unihexRecords": 135933,
+        "uniqueGlyphsSummedPerArchive": 135933,
+        "maxUniqueGlyphsPerArchive": 114432,
+        "maxUnihexRecordBytesIncludingLF": 72,
+        "unihexPackedNaturalRowBytes": 4015952,
+        "unihexStrataLongRowBytes": 17399424,
+        "uniqueGlyphsAcrossArchives": 126121,
+        "maxUnihexArchiveEntries": 2,
+        "maxUnihexEntryPathLength": 30,
+        "documentsContainingTrailingCommas": 0
+      }
+    },
+    {
+      "version": "26.2",
+      "metadata": {
+        "locator": "26.2/mojang_minecraft_info.json",
+        "bytes": 51781,
+        "sha1": "f9e9e12c8b96ea9e04b7f87e36583a6ba0e2e9e6",
+        "sha256": "c734852dc266210b4f12f3938afc619f3d5da249b4817532680bd69ac577424c"
+      },
+      "client": {
+        "locator": "26.2/minecraft-client.jar",
+        "bytes": 39193383,
+        "sha1": "2dc72797acbc1b63fc16a11c4ac393605f453754",
+        "sha256": "40896ee9f1e2bec3c934daac7e93d41e9e3d9c2f8ae0ca366d52ffbfd1afa290"
+      },
+      "assetIndex": {
+        "locator": "assets/indexes/26.2-32.json",
+        "bytes": 586366,
+        "sha1": "0a7b601915914596801099f0522ad169a995b010",
+        "sha256": "7bfe796463dbe4dcad6c858a5e16a838e1a5754e7dc20798ba9d622c0d0ddc94"
+      },
+      "sources": {
+        "clientJarEntries": 31709,
+        "clientJarFiles": 30453,
+        "clientJarAssetFiles": 10968,
+        "clientJarMaxEntryPathLength": 139,
+        "clientJarMaxPathLength": 139,
+        "clientJarMaxAssetPathLength": 97,
+        "clientJarUncompressedBytes": 82127535,
+        "indexedAssetEntries": 5057,
+        "indexedObjectMaxPathLength": 75,
+        "indexedAssetMaxPathLength": 82,
+        "indexedJsonBytes": 586366
+      },
+      "summary": {
+        "fontDocumentInstances": 9,
+        "uniqueFontIds": 8,
+        "fontJsonBytes": 27088,
+        "maxFontJsonBytes": 19118,
+        "providers": 16,
+        "providerTypes": {
+          "reference": 7,
+          "bitmap": 5,
+          "space": 1,
+          "unihex": 3
+        },
+        "maxProvidersPerDocument": 3,
+        "maxExpandedProvidersPerFont": 6,
+        "maxBitmapRows": 75,
+        "maxBitmapCells": 1200,
+        "maxBitmapRowScalars": 16,
+        "referencedAssetFiles": 8,
+        "referencedAssetBytes": 1908885,
+        "maxReferencedAssetBytes": 1559654,
+        "trueTypeFiles": 0,
+        "maxPngWidth": 144,
+        "maxPngHeight": 900,
+        "maxPngPixels": 129600,
+        "allPngArgbBytes": 944384,
+        "unihexFiles": 3,
+        "unihexZipBytes": 1894914,
+        "unihexExpandedBytes": 9051200,
+        "maxUnihexExpandedEntryBytes": 7722308,
+        "maxUnihexExpandedArchiveBytes": 7746450,
+        "unihexRecords": 135933,
+        "uniqueGlyphsSummedPerArchive": 135933,
+        "maxUniqueGlyphsPerArchive": 114432,
+        "maxUnihexRecordBytesIncludingLF": 72,
+        "unihexPackedNaturalRowBytes": 4015952,
+        "unihexStrataLongRowBytes": 17399424,
+        "uniqueGlyphsAcrossArchives": 126121,
+        "maxUnihexArchiveEntries": 2,
+        "maxUnihexEntryPathLength": 30,
+        "documentsContainingTrailingCommas": 0
+      }
+    }
+  ],
+  "maxima": {
+    "summary.allPngArgbBytes": {
+      "value": 944384,
+      "versions": [
+        "1.20",
+        "1.20.1",
+        "1.20.2",
+        "1.20.3",
+        "1.20.4",
+        "1.20.5",
+        "1.20.6",
+        "1.21",
+        "1.21.1",
+        "1.21.2",
+        "1.21.3",
+        "1.21.4",
+        "1.21.5",
+        "1.21.6",
+        "1.21.7",
+        "1.21.8",
+        "1.21.9",
+        "1.21.10",
+        "1.21.11",
+        "26.1",
+        "26.2"
+      ]
+    },
+    "summary.documentsContainingTrailingCommas": {
+      "value": 1,
+      "versions": [
+        "1.21",
+        "1.21.1",
+        "1.21.2",
+        "1.21.3",
+        "1.21.4",
+        "1.21.5"
+      ]
+    },
+    "summary.fontDocumentInstances": {
+      "value": 9,
+      "versions": [
+        "1.21.6",
+        "1.21.7",
+        "1.21.8",
+        "1.21.9",
+        "1.21.10",
+        "1.21.11",
+        "26.1",
+        "26.2"
+      ]
+    },
+    "summary.fontJsonBytes": {
+      "value": 27088,
+      "versions": [
+        "1.21.6",
+        "1.21.7",
+        "1.21.8",
+        "1.21.9",
+        "1.21.10",
+        "1.21.11",
+        "26.1",
+        "26.2"
+      ]
+    },
+    "summary.maxBitmapCells": {
+      "value": 1200,
+      "versions": [
+        "1.20",
+        "1.20.1",
+        "1.20.2",
+        "1.20.3",
+        "1.20.4",
+        "1.20.5",
+        "1.20.6",
+        "1.21",
+        "1.21.1",
+        "1.21.2",
+        "1.21.3",
+        "1.21.4",
+        "1.21.5",
+        "1.21.6",
+        "1.21.7",
+        "1.21.8",
+        "1.21.9",
+        "1.21.10",
+        "1.21.11",
+        "26.1",
+        "26.2"
+      ]
+    },
+    "summary.maxBitmapRowScalars": {
+      "value": 16,
+      "versions": [
+        "1.20",
+        "1.20.1",
+        "1.20.2",
+        "1.20.3",
+        "1.20.4",
+        "1.20.5",
+        "1.20.6",
+        "1.21",
+        "1.21.1",
+        "1.21.2",
+        "1.21.3",
+        "1.21.4",
+        "1.21.5",
+        "1.21.6",
+        "1.21.7",
+        "1.21.8",
+        "1.21.9",
+        "1.21.10",
+        "1.21.11",
+        "26.1",
+        "26.2"
+      ]
+    },
+    "summary.maxBitmapRows": {
+      "value": 75,
+      "versions": [
+        "1.20",
+        "1.20.1",
+        "1.20.2",
+        "1.20.3",
+        "1.20.4",
+        "1.20.5",
+        "1.20.6",
+        "1.21",
+        "1.21.1",
+        "1.21.2",
+        "1.21.3",
+        "1.21.4",
+        "1.21.5",
+        "1.21.6",
+        "1.21.7",
+        "1.21.8",
+        "1.21.9",
+        "1.21.10",
+        "1.21.11",
+        "26.1",
+        "26.2"
+      ]
+    },
+    "summary.maxExpandedProvidersPerFont": {
+      "value": 6,
+      "versions": [
+        "1.20.5",
+        "1.20.6",
+        "1.21",
+        "1.21.1",
+        "1.21.2",
+        "1.21.3",
+        "1.21.4",
+        "1.21.5",
+        "1.21.6",
+        "1.21.7",
+        "1.21.8",
+        "1.21.9",
+        "1.21.10",
+        "1.21.11",
+        "26.1",
+        "26.2"
+      ]
+    },
+    "summary.maxFontJsonBytes": {
+      "value": 19118,
+      "versions": [
+        "1.20",
+        "1.20.1",
+        "1.20.2",
+        "1.20.3",
+        "1.20.4",
+        "1.20.5",
+        "1.20.6",
+        "1.21",
+        "1.21.1",
+        "1.21.2",
+        "1.21.3",
+        "1.21.4",
+        "1.21.5",
+        "1.21.6",
+        "1.21.7",
+        "1.21.8",
+        "1.21.9",
+        "1.21.10",
+        "1.21.11",
+        "26.1",
+        "26.2"
+      ]
+    },
+    "summary.maxPngHeight": {
+      "value": 900,
+      "versions": [
+        "1.20",
+        "1.20.1",
+        "1.20.2",
+        "1.20.3",
+        "1.20.4",
+        "1.20.5",
+        "1.20.6",
+        "1.21",
+        "1.21.1",
+        "1.21.2",
+        "1.21.3",
+        "1.21.4",
+        "1.21.5",
+        "1.21.6",
+        "1.21.7",
+        "1.21.8",
+        "1.21.9",
+        "1.21.10",
+        "1.21.11",
+        "26.1",
+        "26.2"
+      ]
+    },
+    "summary.maxPngPixels": {
+      "value": 129600,
+      "versions": [
+        "1.20",
+        "1.20.1",
+        "1.20.2",
+        "1.20.3",
+        "1.20.4",
+        "1.20.5",
+        "1.20.6",
+        "1.21",
+        "1.21.1",
+        "1.21.2",
+        "1.21.3",
+        "1.21.4",
+        "1.21.5",
+        "1.21.6",
+        "1.21.7",
+        "1.21.8",
+        "1.21.9",
+        "1.21.10",
+        "1.21.11",
+        "26.1",
+        "26.2"
+      ]
+    },
+    "summary.maxPngWidth": {
+      "value": 144,
+      "versions": [
+        "1.20",
+        "1.20.1",
+        "1.20.2",
+        "1.20.3",
+        "1.20.4",
+        "1.20.5",
+        "1.20.6",
+        "1.21",
+        "1.21.1",
+        "1.21.2",
+        "1.21.3",
+        "1.21.4",
+        "1.21.5",
+        "1.21.6",
+        "1.21.7",
+        "1.21.8",
+        "1.21.9",
+        "1.21.10",
+        "1.21.11",
+        "26.1",
+        "26.2"
+      ]
+    },
+    "summary.maxProvidersPerDocument": {
+      "value": 3,
+      "versions": [
+        "1.20",
+        "1.20.1",
+        "1.20.2",
+        "1.20.3",
+        "1.20.4",
+        "1.20.5",
+        "1.20.6",
+        "1.21",
+        "1.21.1",
+        "1.21.2",
+        "1.21.3",
+        "1.21.4",
+        "1.21.5",
+        "1.21.6",
+        "1.21.7",
+        "1.21.8",
+        "1.21.9",
+        "1.21.10",
+        "1.21.11",
+        "26.1",
+        "26.2"
+      ]
+    },
+    "summary.maxReferencedAssetBytes": {
+      "value": 1615995,
+      "versions": [
+        "1.20.3",
+        "1.20.4",
+        "1.20.5",
+        "1.20.6"
+      ]
+    },
+    "summary.maxUnihexArchiveEntries": {
+      "value": 2,
+      "versions": [
+        "1.20",
+        "1.20.1",
+        "1.20.2",
+        "1.20.3",
+        "1.20.4",
+        "1.20.5",
+        "1.20.6",
+        "1.21",
+        "1.21.1",
+        "1.21.2",
+        "1.21.3",
+        "1.21.4",
+        "1.21.5",
+        "1.21.6",
+        "1.21.7",
+        "1.21.8",
+        "1.21.9",
+        "1.21.10",
+        "1.21.11",
+        "26.1",
+        "26.2"
+      ]
+    },
+    "summary.maxUnihexEntryPathLength": {
+      "value": 30,
+      "versions": [
+        "1.20",
+        "1.20.1",
+        "1.20.2",
+        "1.20.3",
+        "1.20.4",
+        "1.20.5",
+        "1.20.6",
+        "1.21",
+        "1.21.1",
+        "1.21.2",
+        "1.21.3",
+        "1.21.4",
+        "1.21.5",
+        "1.21.6",
+        "1.21.7",
+        "1.21.8",
+        "1.21.9",
+        "1.21.10",
+        "1.21.11",
+        "26.1",
+        "26.2"
+      ]
+    },
+    "summary.maxUnihexExpandedArchiveBytes": {
+      "value": 7795390,
+      "versions": [
+        "1.21",
+        "1.21.1",
+        "1.21.2",
+        "1.21.3"
+      ]
+    },
+    "summary.maxUnihexExpandedEntryBytes": {
+      "value": 7771248,
+      "versions": [
+        "1.21",
+        "1.21.1",
+        "1.21.2",
+        "1.21.3"
+      ]
+    },
+    "summary.maxUnihexRecordBytesIncludingLF": {
+      "value": 72,
+      "versions": [
+        "1.20",
+        "1.20.1",
+        "1.20.2",
+        "1.20.3",
+        "1.20.4",
+        "1.20.5",
+        "1.20.6",
+        "1.21",
+        "1.21.1",
+        "1.21.2",
+        "1.21.3",
+        "1.21.4",
+        "1.21.5",
+        "1.21.6",
+        "1.21.7",
+        "1.21.8",
+        "1.21.9",
+        "1.21.10",
+        "1.21.11",
+        "26.1",
+        "26.2"
+      ]
+    },
+    "summary.maxUniqueGlyphsPerArchive": {
+      "value": 114581,
+      "versions": [
+        "1.21",
+        "1.21.1",
+        "1.21.2",
+        "1.21.3"
+      ]
+    },
+    "summary.providers": {
+      "value": 16,
+      "versions": [
+        "1.21.6",
+        "1.21.7",
+        "1.21.8",
+        "1.21.9",
+        "1.21.10",
+        "1.21.11",
+        "26.1",
+        "26.2"
+      ]
+    },
+    "summary.referencedAssetBytes": {
+      "value": 1908885,
+      "versions": [
+        "1.21.11",
+        "26.1",
+        "26.2"
+      ]
+    },
+    "summary.referencedAssetFiles": {
+      "value": 8,
+      "versions": [
+        "1.21.6",
+        "1.21.7",
+        "1.21.8",
+        "1.21.9",
+        "1.21.10",
+        "1.21.11",
+        "26.1",
+        "26.2"
+      ]
+    },
+    "summary.trueTypeFiles": {
+      "value": 0,
+      "versions": [
+        "1.20",
+        "1.20.1",
+        "1.20.2",
+        "1.20.3",
+        "1.20.4",
+        "1.20.5",
+        "1.20.6",
+        "1.21",
+        "1.21.1",
+        "1.21.2",
+        "1.21.3",
+        "1.21.4",
+        "1.21.5",
+        "1.21.6",
+        "1.21.7",
+        "1.21.8",
+        "1.21.9",
+        "1.21.10",
+        "1.21.11",
+        "26.1",
+        "26.2"
+      ]
+    },
+    "summary.unihexExpandedBytes": {
+      "value": 9052728,
+      "versions": [
+        "1.21.6",
+        "1.21.7",
+        "1.21.8",
+        "1.21.9",
+        "1.21.10"
+      ]
+    },
+    "summary.unihexFiles": {
+      "value": 3,
+      "versions": [
+        "1.21.6",
+        "1.21.7",
+        "1.21.8",
+        "1.21.9",
+        "1.21.10",
+        "1.21.11",
+        "26.1",
+        "26.2"
+      ]
+    },
+    "summary.unihexPackedNaturalRowBytes": {
+      "value": 4017264,
+      "versions": [
+        "1.21.6",
+        "1.21.7",
+        "1.21.8",
+        "1.21.9",
+        "1.21.10"
+      ]
+    },
+    "summary.unihexRecords": {
+      "value": 135933,
+      "versions": [
+        "1.21.11",
+        "26.1",
+        "26.2"
+      ]
+    },
+    "summary.unihexStrataLongRowBytes": {
+      "value": 17399424,
+      "versions": [
+        "1.21.11",
+        "26.1",
+        "26.2"
+      ]
+    },
+    "summary.unihexZipBytes": {
+      "value": 1894914,
+      "versions": [
+        "1.21.11",
+        "26.1",
+        "26.2"
+      ]
+    },
+    "summary.uniqueFontIds": {
+      "value": 8,
+      "versions": [
+        "1.21.6",
+        "1.21.7",
+        "1.21.8",
+        "1.21.9",
+        "1.21.10",
+        "1.21.11",
+        "26.1",
+        "26.2"
+      ]
+    },
+    "summary.uniqueGlyphsAcrossArchives": {
+      "value": 126121,
+      "versions": [
+        "1.21.11",
+        "26.1",
+        "26.2"
+      ]
+    },
+    "summary.uniqueGlyphsSummedPerArchive": {
+      "value": 135933,
+      "versions": [
+        "1.21.11",
+        "26.1",
+        "26.2"
+      ]
+    },
+    "sources.clientJarAssetFiles": {
+      "value": 10968,
+      "versions": [
+        "26.2"
+      ]
+    },
+    "sources.clientJarEntries": {
+      "value": 31709,
+      "versions": [
+        "26.2"
+      ]
+    },
+    "sources.clientJarFiles": {
+      "value": 30453,
+      "versions": [
+        "26.2"
+      ]
+    },
+    "sources.clientJarMaxAssetPathLength": {
+      "value": 97,
+      "versions": [
+        "1.20.2",
+        "1.20.3",
+        "1.20.4",
+        "1.20.5",
+        "1.20.6",
+        "1.21",
+        "1.21.1",
+        "1.21.2",
+        "1.21.3",
+        "1.21.4",
+        "1.21.5",
+        "1.21.6",
+        "1.21.7",
+        "1.21.8",
+        "1.21.9",
+        "1.21.10",
+        "1.21.11",
+        "26.1",
+        "26.2"
+      ]
+    },
+    "sources.clientJarMaxEntryPathLength": {
+      "value": 170,
+      "versions": [
+        "1.20.3",
+        "1.20.4",
+        "1.20.5",
+        "1.20.6"
+      ]
+    },
+    "sources.clientJarMaxPathLength": {
+      "value": 170,
+      "versions": [
+        "1.20.3",
+        "1.20.4",
+        "1.20.5",
+        "1.20.6"
+      ]
+    },
+    "sources.clientJarUncompressedBytes": {
+      "value": 82127535,
+      "versions": [
+        "26.2"
+      ]
+    },
+    "sources.indexedAssetEntries": {
+      "value": 5057,
+      "versions": [
+        "26.2"
+      ]
+    },
+    "sources.indexedAssetMaxPathLength": {
+      "value": 82,
+      "versions": [
+        "26.2"
+      ]
+    },
+    "sources.indexedJsonBytes": {
+      "value": 586366,
+      "versions": [
+        "26.2"
+      ]
+    },
+    "sources.indexedObjectMaxPathLength": {
+      "value": 75,
+      "versions": [
+        "26.2"
+      ]
+    }
+  }
+}
