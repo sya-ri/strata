@@ -90,6 +90,9 @@ public sealed interface RuntimeUiSession : AutoCloseable {
      * Dispatches one pointer event synchronously through the most recently committed attached tree on the owner thread.
      *
      * Input before the first successful frame, or after a newly reconciled frame has not committed, returns [InputResult.Ignored].
+     * Between events, dirty retained measurement and layout synchronize against the last successful frame's constraints.
+     * Dirty measurement refreshes retained dynamic children, but does not apply queued sources, rebuild session content, notify time, paint, collect semantics, or commit a new frame.
+     * Geometry failures prevent event delivery and use the same terminal failure boundary as dispatch.
      * A pointer pipeline failure poisons the session and performs cleanup before rethrowing the exact primary failure.
      *
      * @param event the pointer event in session coordinates.
@@ -101,6 +104,7 @@ public sealed interface RuntimeUiSession : AutoCloseable {
 
     /**
      * Dispatches one keyboard event synchronously to the focused component in the most recently committed frame.
+     * Pending geometry uses the same pre-input synchronization as [dispatchPointer].
      *
      * @param event immutable keyboard event.
      * @return focused retained result, or [InputResult.Ignored] without a committed frame or focus target.
@@ -111,6 +115,7 @@ public sealed interface RuntimeUiSession : AutoCloseable {
 
     /**
      * Dispatches one committed-character or preedit event synchronously to the focused component in the most recently committed frame.
+     * Pending geometry uses the same pre-input synchronization as [dispatchPointer].
      *
      * @param event immutable text-input event.
      * @return focused retained result, or [InputResult.Ignored] without a committed frame or focus target.

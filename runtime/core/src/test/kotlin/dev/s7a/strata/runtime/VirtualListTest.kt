@@ -9,10 +9,13 @@ import dev.s7a.strata.component.evaluateComponentTree
 import dev.s7a.strata.geometry.Constraints
 import dev.s7a.strata.geometry.IntOffset
 import dev.s7a.strata.geometry.IntSize
+import dev.s7a.strata.input.InputResult
 import dev.s7a.strata.input.PointerEvent
 import dev.s7a.strata.modifier.Modifier
 import dev.s7a.strata.modifier.onLeadingItemsRequested
+import dev.s7a.strata.modifier.onPointerEvent
 import dev.s7a.strata.modifier.onTrailingItemsRequested
+import dev.s7a.strata.modifier.size
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
@@ -24,6 +27,59 @@ import org.junit.jupiter.api.Test
  * Verifies visible-only materialization, cached clean ranges, and absolute navigation.
  */
 internal class VirtualListTest {
+    @Test
+    fun sessionInputBurstsMaterializeNewRowsBeforeHitTestingWithoutEvaluatingContent() {
+        val state = VirtualListState<Int>()
+        val constructed = ArrayList<Int>()
+        val hits = ArrayList<Pair<Int, IntOffset>>()
+        var contentCalls = 0
+        val session =
+            UiSession(TestOwnerDispatcher()) {
+                contentCalls++
+                evaluateComponentTree {
+                    VirtualList(
+                        itemCount = 1_000,
+                        itemAt = { it },
+                        keyAt = { it },
+                        state = state,
+                        viewportSize = IntSize(80, 30),
+                        rowHeight = 10,
+                    ) { item ->
+                        constructed.add(item)
+                        Spacer(
+                            modifier =
+                                Modifier.Empty.size(80, 10).onPointerEvent { event, position ->
+                                    if (event is PointerEvent.Move) {
+                                        hits.add(item to position)
+                                        InputResult.Consumed
+                                    } else {
+                                        InputResult.Ignored
+                                    }
+                                },
+                        )
+                    }
+                }
+            }
+        session.attach()
+        session.frame(Constraints.fixed(80, 30))
+        session.dispatchPointer(PointerEvent.Move(IntOffset(1, 1)))
+        assertEquals(0 to IntOffset(1, 1), hits.last())
+        val before = constructed.size
+        assertEquals(InputResult.Consumed, session.dispatchPointer(PointerEvent.Scroll(IntOffset(1, 1), 0.0, 10.0)))
+        assertEquals(before, constructed.size)
+        assertEquals(InputResult.Consumed, session.dispatchPointer(PointerEvent.Move(IntOffset(1, 1))))
+        val offset =
+            state.scrollState.metrics.offset
+                .toInt()
+        assertTrue(0 < offset)
+        assertEquals(offset / 10 to IntOffset(1, offset % 10 + 1), hits.last())
+        assertTrue(before < constructed.size)
+        assertEquals(1, contentCalls)
+        val committed = session.frame(Constraints.fixed(80, 30))
+        assertEquals(committed, session.frame(Constraints.fixed(80, 30)))
+        session.close()
+    }
+
     @Test
     fun materializesOnlyViewportRowsAndReusesAnUnchangedRange() {
         val state = VirtualListState<Int>()

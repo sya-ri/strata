@@ -15,6 +15,7 @@ import dev.s7a.strata.layout.MeasureScope
 import dev.s7a.strata.modifier.Modifier
 import dev.s7a.strata.node.DirtyMask
 import dev.s7a.strata.node.DirtyPhase
+import dev.s7a.strata.node.FrameTimeNode
 import dev.s7a.strata.node.LayoutNode
 import dev.s7a.strata.node.LifecycleNode
 import dev.s7a.strata.node.MeasureNode
@@ -84,6 +85,16 @@ internal class TestProbe(
      * Measurement callback counter.
      */
     var measureCalls: Int = 0
+
+    /**
+     * Exact constraints delivered to measurement callbacks in this test-owned tree.
+     */
+    val measureConstraints: MutableList<Constraints> = ArrayList()
+
+    /**
+     * Explicit host-frame timestamps delivered to this test-owned tree.
+     */
+    val frameTimes: MutableList<FrameTime> = ArrayList()
 
     /**
      * Layout callback counter.
@@ -379,6 +390,7 @@ internal class TestProbe(
         PaintNode,
         PointerInputNode,
         SemanticsNode,
+        FrameTimeNode,
         LifecycleNode {
         /**
          * Callback invoked before a detach failure decision.
@@ -390,6 +402,7 @@ internal class TestProbe(
             constraints: Constraints,
         ): IntSize {
             probe.measureCalls += 1
+            probe.measureConstraints.add(constraints)
             onMeasure?.invoke()
             probe.failIfConfigured(FailureStage.Measure, tag)
             var height = 1
@@ -431,6 +444,10 @@ internal class TestProbe(
             onSemantics?.invoke()
             probe.failIfConfigured(FailureStage.Semantics, tag)
             scope.emit(Semantics(label = UiText.Literal(tag.value)))
+        }
+
+        override fun onFrame(time: FrameTime) {
+            probe.frameTimes.add(time)
         }
 
         override fun attach() = probe.attach(this)

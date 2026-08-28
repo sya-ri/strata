@@ -10,10 +10,17 @@ import dev.s7a.strata.geometry.IntRect
 import dev.s7a.strata.geometry.IntSize
 import dev.s7a.strata.input.FocusEvent
 import dev.s7a.strata.input.InputResult
+import dev.s7a.strata.input.KeyCode
+import dev.s7a.strata.input.KeyboardEvent
+import dev.s7a.strata.input.PointerButton
 import dev.s7a.strata.input.PointerEvent
+import dev.s7a.strata.input.TextInputEvent
 import dev.s7a.strata.modifier.Modifier
 import dev.s7a.strata.modifier.initialFocus
 import dev.s7a.strata.modifier.onFocusChanged
+import dev.s7a.strata.modifier.onHover
+import dev.s7a.strata.modifier.onKeyEvent
+import dev.s7a.strata.modifier.onTextInput
 import dev.s7a.strata.modifier.size
 import dev.s7a.strata.node.DirtyMask
 import dev.s7a.strata.node.DirtyPhase
@@ -35,6 +42,214 @@ import kotlin.properties.ReadWriteProperty
  * Verifies immutable frame snapshots, retained caches, keyed identity, and input delegation.
  */
 internal class UiSessionFrameInputTest {
+    @Test
+    fun pointerBurstsSynchronizeOnlyDirtyGeometryBeforeTheNextEvent() {
+        val position = IntOffset.Zero
+        val scroll = PointerEvent.Scroll(position, 0.0, 1.0)
+        val following = listOf(PointerEvent.Move(position), PointerEvent.Press(position, PointerButton.Primary))
+        for (phase in listOf(DirtyPhase.Measure, DirtyPhase.Layout)) {
+            for (next in following) {
+                val probe = TestProbe()
+                val tag = TestProbe.ProbeId("scroll")
+                var invalidateNext = true
+                val session =
+                    UiSession(TestOwnerDispatcher()) {
+                        probe.element(tag, onInput = {
+                            if (invalidateNext) {
+                                invalidateNext = false
+                                probe.nodeForTag(tag).invalidateForTest(DirtyMask.of(phase))
+                            }
+                        })
+                    }
+                session.attach()
+                session.frame(Constraints.fixed(2, 1))
+                assertEquals(InputResult.Consumed, session.dispatchPointer(scroll))
+                assertEquals(1, probe.measureCalls)
+                assertEquals(1, probe.layoutCalls)
+                assertEquals(InputResult.Consumed, session.dispatchPointer(next))
+                assertEquals(if (phase == DirtyPhase.Measure) 2 else 1, probe.measureCalls)
+                assertEquals(2, probe.layoutCalls)
+                assertEquals(1, probe.paintCalls)
+                assertEquals(1, probe.semanticsCalls)
+                assertEquals(listOf(scroll, next), probe.inputObservations.map { it.event })
+                session.close()
+            }
+        }
+    }
+
+    @Test
+    fun keyboardTextAndHoverGeometryChangesAreSafeBeforePointerInput() {
+        val probe = TestProbe()
+        val tag = TestProbe.ProbeId("editable")
+        val invalidate = { probe.nodeForTag(tag).invalidateForTest(DirtyMask.of(DirtyPhase.Measure)) }
+        val modifier =
+            Modifier.Empty
+                .initialFocus()
+                .onKeyEvent {
+                    invalidate()
+                    InputResult.Consumed
+                }.onTextInput {
+                    invalidate()
+                    InputResult.Consumed
+                }.onHover { invalidate() }
+        val session = UiSession(TestOwnerDispatcher()) { probe.element(tag, modifier = modifier) }
+        session.attach()
+        session.frame(Constraints.fixed(2, 1))
+        assertEquals(InputResult.Consumed, session.dispatchKeyboard(KeyboardEvent.Press(KeyCode.Enter, 0)))
+        assertEquals(InputResult.Consumed, session.dispatchPointer(PointerEvent.Move(IntOffset.Zero)))
+        assertEquals(InputResult.Consumed, session.dispatchPointer(PointerEvent.Move(IntOffset.Zero)))
+        assertEquals(3, probe.measureCalls)
+        assertEquals(InputResult.Consumed, session.dispatchTextInput(TextInputEvent.Character('A'.code)))
+        assertEquals(InputResult.Consumed, session.dispatchPointer(PointerEvent.Press(IntOffset.Zero, PointerButton.Primary)))
+        assertEquals(4, probe.measureCalls)
+        assertEquals(1, probe.paintCalls)
+        session.close()
+    }
+
+    @Test
+    fun cleanAndPaintOnlyInputDoNotInvokeGeometryOrFrameCallbacks() {
+        val probe = TestProbe()
+        val tag = TestProbe.ProbeId("clean")
+        val session = UiSession(TestOwnerDispatcher()) { probe.element(tag) }
+        session.attach()
+        session.frame(Constraints.fixed(2, 1), FrameTime(10L))
+        repeat(3) { session.dispatchPointer(PointerEvent.Move(IntOffset.Zero)) }
+        probe.nodeForTag(tag).invalidateForTest(DirtyMask.of(DirtyPhase.Paint, DirtyPhase.Semantics))
+        repeat(3) { session.dispatchPointer(PointerEvent.Move(IntOffset.Zero)) }
+        assertEquals(1, probe.measureCalls)
+        assertEquals(1, probe.layoutCalls)
+        assertEquals(1, probe.paintCalls)
+        assertEquals(1, probe.semanticsCalls)
+        assertEquals(listOf(FrameTime(10L)), probe.frameTimes)
+        session.close()
+    }
+
+    @Test
+    fun inputUsesTheLastCommittedConstraintsEvenWhenTheFrameWasNotCacheable() {
+        val probe = TestProbe()
+        val tag = TestProbe.ProbeId("viewport")
+        var contentCalls = 0
+        var invalidatePaint = true
+        val session =
+            UiSession(TestOwnerDispatcher()) {
+                contentCalls++
+                probe.element(tag, onPaint = {
+                    if (invalidatePaint) {
+                        invalidatePaint = false
+                        probe.nodeForTag(tag).invalidateForTest(DirtyMask.of(DirtyPhase.Paint))
+                    }
+                })
+            }
+        session.attach()
+        val original = Constraints.fixed(2, 1)
+        session.frame(original, FrameTime(10L))
+        probe.nodeForTag(tag).invalidateForTest(DirtyMask.of(DirtyPhase.Measure))
+        session.dispatchPointer(PointerEvent.Move(IntOffset.Zero))
+        assertEquals(listOf(original, original), probe.measureConstraints)
+        assertEquals(listOf(FrameTime(10L)), probe.frameTimes)
+        assertEquals(1, contentCalls)
+        assertEquals(1, probe.paintCalls)
+        val resized = Constraints.fixed(4, 3)
+        assertEquals(IntSize(4, 3), session.frame(resized, FrameTime(20L)).size)
+        assertEquals(listOf(original, original, resized), probe.measureConstraints)
+        assertEquals(2, probe.paintCalls)
+        session.close()
+    }
+
+    @Test
+    fun inputGeometryRejectsReentryAndDeclarativeStateMutation() {
+        val probe = TestProbe()
+        val tag = TestProbe.ProbeId("guarded")
+        val holder = LocalHolder<Int>()
+        val session = UiSession(TestOwnerDispatcher()) { probe.element(tag) }
+        holder.delegate = session.state(0)
+        session.attach()
+        session.frame(Constraints.fixed(2, 1))
+        val node = probe.nodeForTag(tag)
+        node.onMeasure = {
+            assertThrows(IllegalStateException::class.java) { holder.value = 1 }
+            assertThrows(IllegalStateException::class.java) { session.dispatchPointer(PointerEvent.Move(IntOffset.Zero)) }
+            assertThrows(IllegalStateException::class.java) { session.close() }
+        }
+        node.invalidateForTest(DirtyMask.of(DirtyPhase.Measure))
+        assertEquals(InputResult.Consumed, session.dispatchPointer(PointerEvent.Move(IntOffset.Zero)))
+        assertEquals(0, holder.value)
+        assertEquals(1, probe.inputEvents.size)
+        session.close()
+        assertThrows(IllegalStateException::class.java) { session.dispatchPointer(PointerEvent.Move(IntOffset.Zero)) }
+    }
+
+    @Test
+    fun inputGeometryFailurePreventsDispatchAndPreservesCleanupFailureIdentity() {
+        val primary = IllegalArgumentException("input geometry")
+        val cleanup = IllegalStateException("input cleanup")
+        val probe = TestProbe()
+        val tag = TestProbe.ProbeId("failing geometry")
+        val session = UiSession(TestOwnerDispatcher()) { probe.element(tag) }
+        session.attach()
+        session.frame(Constraints.fixed(2, 1))
+        val node = probe.nodeForTag(tag)
+        node.onMeasure = { throw primary }
+        node.onDetach = { throw cleanup }
+        node.invalidateForTest(DirtyMask.of(DirtyPhase.Measure))
+        assertSame(primary, assertThrows(IllegalArgumentException::class.java) { session.dispatchPointer(PointerEvent.Move(IntOffset.Zero)) })
+        assertEquals(listOf(cleanup), primary.suppressed.toList())
+        assertTrue(session.lifecycleState is UiSessionState.Failed)
+        assertEquals(emptyList<TestProbe.ProbeId>(), probe.inputEvents)
+        val events = probe.events.toList()
+        assertEquals(listOf(TestProbe.Event.Attach(tag), TestProbe.Event.Detach(tag), TestProbe.Event.Dispose(tag)), events)
+        session.close()
+        session.close()
+        assertEquals(events, probe.events)
+    }
+
+    @Test
+    fun selfInvalidatingInputGeometryPoisonsBeforeTheEventIsDelivered() {
+        for (phase in listOf(DirtyPhase.Measure, DirtyPhase.Layout)) {
+            val probe = TestProbe()
+            val tag = TestProbe.ProbeId("unsettled")
+            val session = UiSession(TestOwnerDispatcher()) { probe.element(tag) }
+            session.attach()
+            session.frame(Constraints.fixed(2, 1))
+            val node = probe.nodeForTag(tag)
+            val invalidate = { node.invalidateForTest(DirtyMask.of(phase)) }
+            if (phase == DirtyPhase.Measure) node.onMeasure = invalidate else node.onLayout = invalidate
+            invalidate()
+
+            assertThrows(IllegalStateException::class.java) { session.dispatchPointer(PointerEvent.Move(IntOffset.Zero)) }
+            assertTrue(session.lifecycleState is UiSessionState.Failed)
+            assertTrue(probe.inputEvents.isEmpty())
+            assertEquals(listOf(TestProbe.Event.Attach(tag), TestProbe.Event.Detach(tag), TestProbe.Event.Dispose(tag)), probe.events)
+            session.close()
+            assertEquals(3, probe.events.size)
+        }
+    }
+
+    @Test
+    fun theFrameAfterInputGeometryCommitsPaintAndSemanticsThenCachesNormally() {
+        val probe = TestProbe()
+        val tag = TestProbe.ProbeId("commit")
+        val session = UiSession(TestOwnerDispatcher()) { probe.element(tag) }
+        session.attach()
+        val constraints = Constraints.fixed(2, 1)
+        val first = session.frame(constraints)
+        probe.nodeForTag(tag).invalidateForTest(DirtyMask.of(DirtyPhase.Measure))
+        session.dispatchPointer(PointerEvent.Move(IntOffset.Zero))
+        assertEquals(2, probe.measureCalls)
+        assertEquals(2, probe.layoutCalls)
+        assertEquals(1, probe.paintCalls)
+        assertEquals(1, probe.semanticsCalls)
+
+        val committed = session.frame(constraints)
+        assertNotSame(first, committed)
+        assertEquals(2, probe.measureCalls)
+        assertEquals(2, probe.layoutCalls)
+        assertEquals(2, probe.paintCalls)
+        assertEquals(2, probe.semanticsCalls)
+        assertSame(committed, session.frame(constraints))
+        session.close()
+    }
+
     @Test
     fun frameOutputsAreDefensiveAndInputWaitsForTheFirstCommit() {
         val probe = TestProbe()

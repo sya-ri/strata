@@ -90,6 +90,7 @@ internal class UiSession private constructor(
     private var dirty: Boolean = true
     private var tree: UiTree? = null
     private var frameAvailable: Boolean = false
+    private var committedFrameConstraints: Constraints? = null
     private var cachedFrame: UiFrame? = null
     private var cachedFrameConstraints: Constraints? = null
     private var cachedTreeRevision: Long = 0L
@@ -245,6 +246,7 @@ internal class UiSession private constructor(
                 clearCachedFrame()
                 currentState = UiSessionState.Detached
                 frameAvailable = false
+                committedFrameConstraints = null
                 retireGeneration()
             }.getOrElse { failure -> fail(failure) }
         } finally {
@@ -302,6 +304,7 @@ internal class UiSession private constructor(
                         cachedFrameConstraints == constraints &&
                         cachedTreeRevision == revision
                     ) {
+                        committedFrameConstraints = constraints
                         frameAvailable = true
                         return@runCatching retainedFrame
                     }
@@ -313,6 +316,7 @@ internal class UiSession private constructor(
                 val draw = retainedTree.paint()
                 val semantics = retainedTree.semantics()
                 val frame = UiFrame(size, draw, semantics)
+                committedFrameConstraints = constraints
                 frameAvailable = true
                 if (retainedTree.currentRevision() == revision) {
                     cachedFrameConstraints = constraints
@@ -331,6 +335,7 @@ internal class UiSession private constructor(
      *
      * Before the first successful frame, and while a newly reconciled tree has not completed a frame, input is consistently ignored.
      * Pending source values therefore never affect input before their frame is committed.
+     * Dirty retained geometry is synchronized using the last committed constraints before dispatch, without producing a frame or rebuilding session content.
      * A pointer pipeline failure poisons the session.
      *
      * @param event the event in session coordinates.
@@ -347,7 +352,7 @@ internal class UiSession private constructor(
                 return InputResult.Ignored
             }
             return runCatching {
-                checkNotNull(tree) { "An attached session has no retained tree." }.dispatchPointer(event)
+                inputTree().dispatchPointer(event)
             }.getOrElse { failure -> fail(failure) }
         } finally {
             endOperation()
@@ -382,10 +387,22 @@ internal class UiSession private constructor(
                 return InputResult.Ignored
             }
             return runCatching {
-                dispatch(checkNotNull(tree) { "An attached session has no retained tree." })
+                dispatch(inputTree())
             }.getOrElse { failure -> fail(failure) }
         } finally {
             endOperation()
+        }
+    }
+
+    private fun inputTree(): UiTree {
+        check(operationKind === SessionOperation.Input)
+        operationKind = SessionOperation.InputGeometry
+        return try {
+            val retainedTree = checkNotNull(tree) { "An attached session has no retained tree." }
+            retainedTree.synchronizeInputGeometry(checkNotNull(committedFrameConstraints) { "Input requires a committed frame." })
+            retainedTree
+        } finally {
+            operationKind = SessionOperation.Input
         }
     }
 
@@ -525,6 +542,7 @@ internal class UiSession private constructor(
 
     private fun cleanupResources(): Throwable? {
         val failures = FailureAccumulator()
+        committedFrameConstraints = null
         clearCachedFrame()
         val ownedBindings = bindings.toList()
         bindings.clear()
@@ -702,6 +720,7 @@ internal class UiSession private constructor(
         Detach,
         Frame,
         Input,
+        InputGeometry,
         Close,
         Bind,
         TaskFailure,

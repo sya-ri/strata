@@ -155,6 +155,26 @@ internal class Pipeline(
     fun hasPendingMeasure(root: RetainedNode): Boolean = pendingMeasure(root.effectiveRoot)
 
     /**
+     * Resolves pending geometry of the already committed retained tree before the next input event.
+     *
+     * This performs only dirty measure/layout work; it neither refreshes dynamic child descriptions nor paints or collects semantics.
+     * Clean geometry does not invoke node callbacks, and a self-invalidating measure remains an error before dispatch.
+     *
+     * @param root currently committed logical root.
+     * @param constraints root constraints from the last successful frame, not a future resize.
+     */
+    fun synchronizeInputGeometry(
+        root: RetainedNode,
+        constraints: Constraints,
+    ) {
+        if (pendingMeasure(root.effectiveRoot)) measure(root, constraints)
+        if (pendingLayout(root.effectiveRoot)) {
+            requireMeasuredRoot(root)
+            layout(root)
+        }
+    }
+
+    /**
      * Checks that the effective root has completed measurement and has no pending measurement work.
      *
      * @param root the installed logical root.

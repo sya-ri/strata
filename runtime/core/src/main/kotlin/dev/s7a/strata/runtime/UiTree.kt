@@ -93,6 +93,29 @@ public class UiTree : AutoCloseable {
     }
 
     /**
+     * Synchronizes only pending retained geometry for an owning session with an already successful frame.
+     *
+     * Dirty measurement refreshes retained dynamic children as ordinary measurement does.
+     * Session content, source cutoffs, time, painting, semantics, and frame snapshots remain frame work.
+     * The ordinary public input methods retain their strict laid-out-tree precondition.
+     *
+     * @param constraints last successfully committed root constraints supplied by the owning session.
+     * @throws Throwable when geometry fails; the tree is poisoned and cleaned before the event can be dispatched.
+     * @throws IllegalStateException for an inactive, reentrant, or foreign-thread operation.
+     */
+    @JvmSynthetic
+    internal fun synchronizeInputGeometry(constraints: Constraints) {
+        pipelineOperation {
+            val retainedRoot = root ?: return@pipelineOperation
+            if (pipeline.hasPendingMeasure(retainedRoot)) {
+                reconciler.refreshDynamicChildren(retainedRoot, validator)
+                lifecycle.attachPending(retainedRoot)
+            }
+            pipeline.synchronizeInputGeometry(retainedRoot, constraints)
+        }
+    }
+
+    /**
      * Reconciles a complete immutable element description.
      *
      * Validation visits the complete description and runs each element's local validation hook.
