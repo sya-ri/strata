@@ -45,9 +45,33 @@ internal class MinecraftFontGpuComparisonTest {
         val actualFloat = gray((29f / 255f) * (22f / 255f))
         val comparison = MinecraftFontGpuComparison(commands, one, 1, precision)
         assertEquals(Difference.GpuColorConversion, comparison.classify(0, 0, Observation(0xFF020202.toInt(), candidate, actualFloat)))
+        assertEquals(Difference.UnverifiedNativeColor, comparison.classify(0, 0, Observation(0xFF010101.toInt(), candidate, actualFloat)))
         assertEquals(Difference.UnverifiedNativeColor, comparison.classify(0, 0, Observation(black, candidate, actualFloat)))
         assertEquals(Difference.UnverifiedNativeFloat, comparison.classify(0, 0, Observation(0xFF020202.toInt(), candidate, gray(0.05f))))
         assertEquals(Difference.UnverifiedPortableRaster, comparison.classify(0, 0, Observation(0xFF020202.toInt(), 0xFF040404.toInt(), actualFloat)))
+    }
+
+    @Test
+    fun `format conversion rounds the propagated byte bound outward after every blend`() {
+        val background = 0xFF285FAA.toInt()
+        val shadow = scene(one, intArrayOf(0x5D5D5D5D), one, FloatRect(0f, 0f, 1f, 1f), 0xFF282828.toInt(), background)
+        val foreground = scene(one, intArrayOf(0x1F1F1F1F), one, FloatRect(0f, 0f, 1f, 1f), 0xFFA0A0A0.toInt(), background)
+        val commands = shadow + foreground.drop(1)
+        val candidate = rasterizeHeadless(commands, one).argbAt(0, 0)
+        assertEquals(0xFF1E3C66.toInt(), candidate)
+        val history =
+            MinecraftFontRasterSample
+                .background(background)
+                .blend(0x5D5D5D5D, 0xFF282828.toInt(), 0.1f, false)
+                .blend(0x1F1F1F1F, 0xFFA0A0A0.toInt(), 0.1f, false)
+        assertEquals(
+            Difference.GpuColorConversion,
+            MinecraftFontGpuComparison(commands, one, 1, precision).classify(
+                0,
+                0,
+                Observation(0xFF1C3B65.toInt(), candidate, MinecraftFontFloatImage.Sample(history.red, history.green, history.blue, 1f)),
+            ),
+        )
     }
 
     @Test
@@ -263,9 +287,10 @@ internal class MinecraftFontGpuComparisonTest {
         imageSize: IntSize,
         destination: FloatRect,
         tint: Int = -1,
+        background: Int = black,
     ): List<DrawCommand> =
         listOf(
-            DrawCommand.FillRectangle(IntRect(0, 0, viewport.width, viewport.height), ArgbColor(black)),
+            DrawCommand.FillRectangle(IntRect(0, 0, viewport.width, viewport.height), ArgbColor(background)),
             DrawCommand.SampledImage(
                 createDrawImage(imageSize, colors),
                 FloatRect(0f, 0f, imageSize.width.toFloat(), imageSize.height.toFloat()),

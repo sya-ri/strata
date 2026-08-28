@@ -1,12 +1,13 @@
 package dev.s7a.strata.integration.minecraft.fabric
 
 import kotlin.math.abs
+import kotlin.math.ceil
 import kotlin.math.roundToInt
 
 /**
  * One independently evaluated opaque-background fragment history for the parity fixture.
  * State is detached and immutable; native pixels never participate in its construction.
- * Separate channel error bounds propagate the local ULP of each shader and blend operation; byte error propagates one RGBA8 unit per effective blend.
+ * Separate channel error bounds propagate the local ULP of each shader and blend operation; byte error propagates one RGBA8 unit per effective blend and rounds the discrete bound outward after each blend.
  */
 internal data class MinecraftFontRasterSample(
     val red: Float,
@@ -83,7 +84,7 @@ internal data class MinecraftFontRasterSample(
         val endpoint = source == 0f || source == 1f
         val preserved = source == destination && previous == 0.0
         if (endpoint && (alpha == 1f || preserved)) return 0.0
-        return previous * (1f - alpha) + 1.0
+        return ceil(previous * (1f - alpha)) + 1.0
     }
 
     private fun difference(

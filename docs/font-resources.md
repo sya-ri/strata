@@ -245,7 +245,7 @@ Every scale first renders the same declaration into RGBA8 and requires all pixel
 Shaders, vertex generation, texture setup, sorting, and blending remain native, and the original ordinary screenshot is never replaced by the calibration capture.
 At every differing pixel, the native float output must match independently evaluated resource-derived shader and blend arithmetic, allowing only measured subpixel-boundary alternatives and bounded floating-point interpolation at the actual atlas extent.
 Arithmetic error is propagated separately for each color channel through the actual magnitudes of normalization, multiplication, subtraction, and addition; a fixed unit-magnitude tolerance cannot hide a small tint change.
-The final native byte result must then remain within one RGBA8 unit per effective blend, propagated through source alpha.
+The final native byte result must then remain within one RGBA8 unit per effective blend, propagated through source alpha and rounded outward after every discrete blend conversion.
 Channels that remain exactly zero or one receive no conversion allowance, and a fully opaque fragment discards uncertainty from covered earlier fragments.
 These conservative bounds are checked against current captures; they are not a promise that every GPU falls within them.
 Unclassified float, geometry, sampling, color, or candidate-raster differences fail the gate.
