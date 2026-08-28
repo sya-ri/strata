@@ -1,4 +1,4 @@
-name: Release v0.1.1
+name: Publish release
 
 on:
   workflow_dispatch:
@@ -59,7 +59,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          workflow=.github/workflows/release-v0.1.1.yml
+          workflow=.github/workflows/publish-release.yml
           sealed_workflow=.github/workflows/release.yml
           [[ -f "$workflow" && -f "$sealed_workflow" ]] || { echo 'A release workflow is missing.' >&2; exit 1; }
           grep --fixed-strings 'default: v0.1.1' "$workflow" >/dev/null

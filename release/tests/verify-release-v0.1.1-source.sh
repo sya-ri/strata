@@ -3,7 +3,7 @@
 set -euo pipefail
 
 repository_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd -P)"
-workflow="$repository_root/.github/workflows/release-v0.1.1.yml"
+workflow="$repository_root/.github/workflows/publish-release.yml"
 sealed_workflow="$repository_root/.github/workflows/release.yml"
 jvm_workflow="$repository_root/.github/workflows/jvm.yml"
 
@@ -12,16 +12,23 @@ fail() {
   exit 1
 }
 
-[[ -f "$workflow" ]] || fail 'The pinned v0.1.1 release workflow is missing.'
+[[ -f "$workflow" ]] || fail 'The active release workflow is missing.'
 [[ -f "$sealed_workflow" ]] || fail 'The sealed v0.1.0 release workflow is missing.'
 [[ -f "$jvm_workflow" ]] || fail 'The JVM workflow is missing.'
+
+for versioned_workflow in "$repository_root"/.github/workflows/release-v*.yml "$repository_root"/.github/workflows/release-v*.yaml; do
+  if [[ -f "$versioned_workflow" ]]; then
+    fail 'Version-specific release workflows must not duplicate the active publish-release.yml controller.'
+  fi
+done
 
 jvm_push_trigger="$(sed -n '/^  push:$/,/^  pull_request:$/p' "$jvm_workflow")"
 jvm_pull_request_trigger="$(sed -n '/^  pull_request:$/,/^permissions:$/p' "$jvm_workflow")"
 [[ "$(grep --fixed-strings -c '      - qodana.yaml' <<< "$jvm_push_trigger")" == '1' ]] || fail 'Qodana configuration changes must trigger the JVM master check required by release preflight.'
 [[ "$(grep --fixed-strings -c '      - qodana.yaml' <<< "$jvm_pull_request_trigger")" == '1' ]] || fail 'Qodana configuration changes must trigger JVM pull-request checks before merge.'
 
-grep --fixed-strings 'name: Release v0.1.1' "$workflow" >/dev/null || fail 'The v0.1.1 workflow name differs.'
+grep --fixed-strings 'name: Publish release' "$workflow" >/dev/null || fail 'The active release workflow name differs.'
+grep --fixed-strings 'workflow=.github/workflows/publish-release.yml' "$workflow" >/dev/null || fail 'The active release workflow does not check its own source.'
 grep --fixed-strings 'default: v0.1.1' "$workflow" >/dev/null || fail 'The v0.1.1 tag input is not pinned.'
 grep --fixed-strings '[[ "$RELEASE_TAG" == "v0.1.1"' "$workflow" >/dev/null || fail 'The v0.1.1 runtime tag guard is missing.'
 grep --fixed-strings '[[ "$tag_commit" == "$GITHUB_SHA" ]]' "$workflow" >/dev/null || fail 'Release does not require the exact green master SHA.'

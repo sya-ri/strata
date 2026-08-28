@@ -89,7 +89,10 @@ An exact release contains 120 base files, 120 valid detached signatures, and MD5
 Detached `.asc` signatures are verified with OpenPGP and do not require checksum sidecars, matching the Central publication contract.
 The sealed workflow contains no Central credential mapping, Portal branch, or publication task; missing, partial, or byte-mismatched expected public content stops without deletion, replacement, or overwrite.
 
-The separate `release-v0.1.1.yml` workflow publishes one aligned Strata 0.1.1 release for every supported Minecraft version.
+The historical `release.yml` remains the byte-for-byte sealed v0.1.0 recovery controller.
+The active `publish-release.yml` workflow, displayed as `Publish release`, publishes one aligned Strata 0.1.1 release for every supported Minecraft version.
+Its explicit audited tag, ruleset, inventory, and predecessor contract currently permits only v0.1.1; the stable filename does not permit arbitrary release tags.
+Future releases update that reviewed contract in the same active controller instead of adding another version-specific workflow.
 It reuses the same signed-tag, exact-controller, required-CI, Pages provenance, protected-environment, clean-source, and remote-drift gates while keeping the immutable v0.1.0 workflow unchanged.
 Its canonical inventory contains the five common modules, including the optional CPU font backend, and twenty-one versioned runtimes as twenty-six Maven Central coordinates, twenty-one Modrinth versions, and forty-three GitHub Release assets consisting of twenty-one JARs, their detached signatures, and `SHA256SUMS`.
 Central preflight distinguishes wholly absent content from a complete exact publication in both the public repository and authenticated Publisher Portal.
