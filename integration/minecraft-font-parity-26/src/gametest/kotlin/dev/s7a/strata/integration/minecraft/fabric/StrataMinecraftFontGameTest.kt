@@ -58,6 +58,7 @@ public class StrataMinecraftFontGameTest : FabricClientGameTest {
         MinecraftFontParityChecks.writeReceipt(output, nativeLayout)
         context.runOnClient(FailableConsumer<Minecraft, RuntimeException> { minecraft -> MinecraftClientScreenAccess.setScreen(minecraft, null) })
         MinecraftNumericFontParitySuite.run(context, output.resolve("numeric"))
+        MinecraftTextReadabilitySuite.run(context, output.resolve("readability"))
         StrataMinecraftClientGameTest().runTest(context)
     }
 
