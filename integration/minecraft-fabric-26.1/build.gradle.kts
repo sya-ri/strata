@@ -76,6 +76,13 @@ tasks.named<Jar>("jar") {
     from(gametestSourceSet.map { sourceSet -> sourceSet.output })
 }
 
+/**
+ * Uses the development GameTest identity and its vanilla offline UUID for production rendering.
+ * Both unobfuscated releases select the original slim Efe skin from this UUID.
+ */
+val showcaseClientIdentityArguments =
+    listOf("--username", "Player0", "--uuid", "2654e3c3-150d-3857-a426-0b141796a4e0")
+
 val productionRunDirectory = layout.buildDirectory.dir("run/productionClientGameTest")
 val deleteProductionGameTestRunDir = tasks.register<Delete>("deleteProductionGameTestRunDir") {
     delete(productionRunDirectory)
@@ -86,6 +93,7 @@ val runProductionClientGameTest = tasks.register<ClientProductionRunTask>("runPr
     dependsOn(deleteProductionGameTestRunDir)
     mods.from(runtimeJar)
     runDir.set(productionRunDirectory)
+    programArgs.addAll(showcaseClientIdentityArguments)
     jvmArgs.add("-Dfabric.client.gametest")
     val verificationOutput = layout.buildDirectory.dir("minecraft-production-parity")
     jvmArgs.add(verificationOutput.map { directory -> "-Dstrata.minecraftParityOutput=${directory.asFile.absolutePath}" })
