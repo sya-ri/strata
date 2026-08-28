@@ -1,6 +1,5 @@
 package dev.s7a.strata.integration.minecraft.fabric
 
-import dev.s7a.strata.geometry.IntOffset
 import dev.s7a.strata.geometry.IntSize
 import dev.s7a.strata.runtime.headless.HeadlessImage
 import dev.s7a.strata.runtime.minecraft.fabric.FabricMinecraftScreen
@@ -15,8 +14,6 @@ import java.nio.file.Path
  */
 @OptIn(InternalStrataRuntimeApi::class)
 internal object MinecraftFontParitySuite {
-    private const val SCALE_TIMEOUT_TICKS = 1_200
-
     /**
      * Fails on metric, texel, density, or unexplained native pixel differences, and on any Fabric/headless pixel difference.
      */
@@ -106,18 +103,5 @@ internal object MinecraftFontParitySuite {
         context: MinecraftLoadedTestContext,
         scale: Int,
         size: IntSize,
-    ) {
-        context.computeOnClient { minecraft ->
-            minecraft.window.setWindowed(size.width, size.height)
-            minecraft.options.guiScale().set(scale)
-            minecraft.options.forceUnicodeFont().set(false)
-            minecraft.resizeDisplay()
-        }
-        context.waitFor(SCALE_TIMEOUT_TICKS) { minecraft ->
-            minecraft.window.width == size.width && minecraft.window.height == size.height &&
-                minecraft.window.guiScale == scale.toDouble()
-        }
-        context.movePointer(IntOffset.Zero)
-        context.waitTicks(3)
-    }
+    ) = MinecraftFontDisplay.configure(context, scale, size)
 }
