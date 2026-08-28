@@ -1,5 +1,6 @@
 package dev.s7a.strata.runtime.minecraft.canvas
 
+import dev.s7a.strata.component.Canvas
 import dev.s7a.strata.geometry.IntRect
 import dev.s7a.strata.geometry.IntSize
 import dev.s7a.strata.render.ArgbColor
@@ -7,7 +8,11 @@ import dev.s7a.strata.render.PlatformDrawCommand
 import dev.s7a.strata.render.createDrawImage
 import dev.s7a.strata.runtime.FrameTime
 import dev.s7a.strata.runtime.headless.rasterizeHeadless
+import dev.s7a.strata.runtime.minecraft.MinecraftProfileFixture
+import dev.s7a.strata.runtime.minecraft.createMinecraftUiHost
 import dev.s7a.strata.runtime.render.DrawCommand
+import dev.s7a.strata.runtime.spi.RuntimeUiFrame
+import dev.s7a.strata.screen.ScreenDefinition
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
 import org.junit.jupiter.api.Assertions.assertArrayEquals
 import org.junit.jupiter.api.Assertions.assertEquals
@@ -122,50 +127,56 @@ internal class NativeCanvasPresentationTest {
     @Test
     fun retainedOldFramesAndPresentationsDoNotOwnAnyLiveTargetAfterCleanup() {
         NativeCanvasFixture().use { fixture ->
-            val tree = fixture.tree()
-            val original = fixture.frame(tree)
-            val mutableCommands = original.toMutableList()
-            val presentation = fixture.device.prepare(mutableCommands, FrameTime(1L), 1)
-            mutableCommands.clear()
-            val nativeToken = token(presentation)
-            val image =
-                presentation
-                    .capture()
-                    .filterIsInstance<DrawCommand.BlitImagePixels>()
-                    .single()
-                    .image
-            fixture.submit(presentation)
-            tree.close()
-            fixture.driver.signalAll()
-            fixture.device.poll()
-            assertEquals(0, fixture.device.retainedTargetCount())
-            assertEquals(
-                1,
-                fixture.driver.targets
-                    .single()
-                    .closeCalls,
-            )
-            assertEquals(1, fixture.producers.single().closeCalls)
-            assertEquals(1, original.size)
-            assertEquals(1, presentation.drawCommands.size)
-            assertSame(
-                image,
-                presentation
-                    .capture()
-                    .filterIsInstance<DrawCommand.BlitImagePixels>()
-                    .single()
-                    .image,
-            )
-            assertEquals(0xFF336699.toInt(), image.argbAt(0, 0))
-            val request = (original.single() as DrawCommand.Platform).command
-            listOf(nativeToken, request).forEach { payload ->
-                val fields = payload.javaClass.declaredFields.filter { Modifier.isStatic(it.modifiers).not() }
-                assertTrue(fields.all { Modifier.isFinal(it.modifiers) })
-                assertTrue(fields.all { it.type == Long::class.javaPrimitiveType || it.type == IntSize::class.java })
+            val source = fixture.source()
+            createMinecraftUiHost(
+                ScreenDefinition("Retained native Canvas frame") { Canvas(source, IntSize(2, 2)) },
+                MinecraftProfileFixture.create(),
+            ).use { host ->
+                host.attach()
+                val original: RuntimeUiFrame = host.frame(IntSize(2, 2))
+                val request = (original.drawCommands.single() as DrawCommand.Platform).command
+                val semantics = original.semantics
+                val mutableCommands = original.drawCommands.toMutableList()
+                val presentation = fixture.device.prepare(mutableCommands, FrameTime(1L), 1)
+                mutableCommands.clear()
+                val nativeToken = token(presentation)
+                val image = (presentation.capture().single() as DrawCommand.BlitImagePixels).image
+                fixture.submit(presentation)
+                host.close()
+                assertEquals(1, fixture.device.retainedTargetCount())
+                assertEquals(
+                    0,
+                    fixture.driver.targets
+                        .single()
+                        .closeCalls,
+                )
+                assertEquals(0, fixture.producers.single().closeCalls)
+                fixture.driver.signalAll()
+                fixture.device.poll()
+                assertEquals(0, fixture.device.retainedTargetCount())
+                assertEquals(
+                    1,
+                    fixture.driver.targets
+                        .single()
+                        .closeCalls,
+                )
+                assertEquals(1, fixture.producers.single().closeCalls)
+                assertEquals(IntSize(2, 2), original.size)
+                assertSame(semantics, original.semantics)
+                assertSame(request, (original.drawCommands.single() as DrawCommand.Platform).command)
+                assertEquals(1, presentation.drawCommands.size)
+                assertSame(image, (presentation.capture().single() as DrawCommand.BlitImagePixels).image)
+                assertEquals(0xFF336699.toInt(), image.argbAt(0, 0))
+                listOf(nativeToken, request).forEach { payload ->
+                    val fields = payload.javaClass.declaredFields.filter { Modifier.isStatic(it.modifiers).not() }
+                    assertTrue(fields.all { Modifier.isFinal(it.modifiers) })
+                    assertTrue(fields.all { it.type == Long::class.javaPrimitiveType || it.type == IntSize::class.java })
+                }
+                assertThrows(UnsupportedOperationException::class.java) { (original.drawCommands as MutableList).clear() }
+                assertThrows(UnsupportedOperationException::class.java) { (presentation.drawCommands as MutableList).clear() }
+                assertThrows(UnsupportedOperationException::class.java) { (presentation.capture() as MutableList).clear() }
+                assertThrows(IllegalStateException::class.java) { fixture.device.target(presentation, nativeToken) }
             }
-            assertThrows(UnsupportedOperationException::class.java) { (presentation.drawCommands as MutableList).clear() }
-            assertThrows(UnsupportedOperationException::class.java) { (presentation.capture() as MutableList).clear() }
-            assertThrows(IllegalStateException::class.java) { fixture.device.target(presentation, nativeToken) }
         }
     }
 
