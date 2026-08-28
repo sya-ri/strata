@@ -125,6 +125,16 @@ internal class CanvasSessionTest {
     }
 
     @Test
+    fun captureFailureReleasesCapturedAndPendingImagesAcrossEveryBinding() {
+        assertCutoffFailure(CutoffPhase.Capture)
+    }
+
+    @Test
+    fun commitFailureReleasesCommittedAndUncommittedImagesAcrossEveryBinding() {
+        assertCutoffFailure(CutoffPhase.Commit)
+    }
+
+    @Test
     fun sessionBindingEqualityCannotPublishIntoAnAlreadyCapturedCanvasFrame() {
         val frames = Frames(image(1))
         val source = canvasSource(frames)
@@ -189,6 +199,47 @@ internal class CanvasSessionTest {
         assertEquals(listOf(initial), images(session.frame(Constraints.fixed(1, 1))))
         assertEquals(listOf(later), images(session.frame(Constraints.fixed(1, 1))))
         session.close()
+    }
+
+    @Test
+    fun sourceReplacementCleanupFailureDoesNotOpenTheReplacementOrRepeatPeerCleanup() {
+        val expected = IllegalStateException("replaced subscription")
+        val peerFailure = IllegalStateException("peer subscription")
+        val firstFrames = Frames(image(1), expected)
+        val peerFrames = Frames(image(2), peerFailure)
+        val first = TrackingSource(canvasSource(firstFrames))
+        val peer = TrackingSource(canvasSource(peerFrames))
+        val replacementFrames = Frames(image(3))
+        val replacement = TrackingSource(canvasSource(replacementFrames))
+        val holder = LocalHolder<CanvasSource>()
+        val session =
+            UiSession(TestOwnerDispatcher()) {
+                evaluateComponentTree {
+                    Row {
+                        Canvas(holder.value, IntSize(1, 1))
+                        Canvas(peer, IntSize(1, 1))
+                    }
+                }
+            }
+        holder.delegate = session.state(first)
+        session.attach()
+        val previous = session.frame(Constraints.fixed(2, 1))
+        firstFrames.publish(image(4))
+        peerFrames.publish(image(5))
+        holder.value = replacement
+
+        val failure = assertThrows(IllegalStateException::class.java) { session.frame(Constraints.fixed(2, 1)) }
+
+        assertSame(expected, failure)
+        assertEquals(listOf(peerFailure), failure.suppressed.toList())
+        assertTrue(replacement.identities.isEmpty())
+        assertEquals(0, replacementFrames.subscriptions)
+        assertEquals(0, replacementFrames.closes)
+        assertBindingsClosed(listOf(firstFrames, peerFrames), listOf(first, peer))
+        assertEquals(listOf(image(1), image(2)), images(previous))
+        session.close()
+        session.close()
+        assertBindingsClosed(listOf(firstFrames, peerFrames), listOf(first, peer))
     }
 
     @Test
@@ -295,6 +346,64 @@ internal class CanvasSessionTest {
         session.close()
     }
 
+    private fun assertCutoffFailure(phase: CutoffPhase) {
+        val expected = IllegalStateException("cutoff $phase")
+        val cleanupFailures = List(3) { index -> IllegalStateException("subscription $index") }
+        val frames = cleanupFailures.mapIndexed { index, failure -> Frames(image(index + 1), failure) }
+        val sources = frames.map { TrackingSource(canvasSource(it)) }
+        val session =
+            UiSession(TestOwnerDispatcher()) {
+                evaluateComponentTree {
+                    Row { sources.forEach { source -> Canvas(source, IntSize(1, 1)) } }
+                }
+            }
+        session.attach()
+        val previous = session.frame(Constraints.fixed(3, 1))
+        frames.forEachIndexed { index, source -> source.publish(image(index + 4)) }
+        val lateObservers = frames.flatMap { it.observers }
+        when (phase) {
+            CutoffPhase.Capture -> sources[1].captureFailure = expected
+            CutoffPhase.Commit -> sources[1].commitFailure = expected
+        }
+
+        val failure = assertThrows(IllegalStateException::class.java) { session.frame(Constraints.fixed(3, 1)) }
+
+        assertSame(expected, failure)
+        assertEquals(cleanupFailures.asReversed(), failure.suppressed.toList())
+        val expectedCaptures = if (phase === CutoffPhase.Capture) listOf(2, 2, 1) else listOf(2, 2, 2)
+        val expectedCommits = if (phase === CutoffPhase.Capture) listOf(1, 1, 1) else listOf(2, 2, 1)
+        assertEquals(expectedCaptures, sources.map { it.captures })
+        assertEquals(expectedCommits, sources.map { it.commits })
+        assertBindingsClosed(frames, sources)
+        lateObservers.forEach { observer -> observer(StateSnapshot(StateRevision(2), image(9))) }
+        assertBindingsClosed(frames, sources)
+        assertEquals(listOf(image(1), image(2), image(3)), images(previous))
+        session.close()
+        session.close()
+        assertBindingsClosed(frames, sources)
+    }
+
+    private fun assertBindingsClosed(
+        frames: List<Frames>,
+        sources: List<TrackingSource>,
+    ) {
+        frames.forEach { source ->
+            assertEquals(1, source.closes)
+            assertTrue(source.observers.isEmpty())
+        }
+        sources.forEach { source ->
+            assertEquals(1, source.closes)
+            source.bindings.forEach { binding ->
+                val snapshots =
+                    binding.javaClass.declaredFields.mapNotNull { field ->
+                        field.isAccessible = true
+                        field.get(binding) as? StateSnapshot<*>
+                    }
+                assertTrue(snapshots.isEmpty())
+            }
+        }
+    }
+
     private fun session(source: CanvasSource): UiSession =
         UiSession(TestOwnerDispatcher()) {
             evaluateComponentTree { Canvas(source, IntSize(1, 1)) }
@@ -339,18 +448,41 @@ internal class CanvasSessionTest {
         private val source: CanvasSource,
     ) : CanvasSource {
         val identities: MutableList<CanvasId> = ArrayList()
+        val bindings: MutableList<CanvasBinding> = ArrayList()
         var closes: Int = 0
+        var captures: Int = 0
+        var commits: Int = 0
+        var captureFailure: Throwable? = null
+        var commitFailure: Throwable? = null
 
         override fun open(canvasId: CanvasId): CanvasBinding {
             identities += canvasId
             val binding = source.open(canvasId)
+            bindings += binding
             return object : CanvasBinding by binding {
+                override fun captureFrame() {
+                    captures += 1
+                    binding.captureFrame()
+                    captureFailure?.let { throw it }
+                }
+
+                override fun commitFrame(): Boolean {
+                    commits += 1
+                    commitFailure?.let { throw it }
+                    return binding.commitFrame()
+                }
+
                 override fun close() {
                     closes += 1
                     binding.close()
                 }
             }
         }
+    }
+
+    private enum class CutoffPhase {
+        Capture,
+        Commit,
     }
 
     private class ComparisonValue(
