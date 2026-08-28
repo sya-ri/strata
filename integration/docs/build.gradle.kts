@@ -218,7 +218,8 @@ fun JavaExec.configureShowcaseLauncher(
     inputs.dir(showcaseFixtureResources).withPropertyName("showcaseFixtureResources").withPathSensitivity(PathSensitivity.RELATIVE)
     inputs.files(showcaseClientJar).withPropertyName("minecraftClientJar").withPathSensitivity(PathSensitivity.NONE)
     inputs.files(showcaseAssetIndex).withPropertyName("minecraftAssetIndex").withPathSensitivity(PathSensitivity.NONE)
-    inputs.dir(providers.provider { showcaseAssetObjects.singleFile }).withPropertyName("minecraftAssetObjects").withPathSensitivity(PathSensitivity.RELATIVE)
+    // The shared object store includes other versions; the launcher hashes every object it actually consumes.
+    inputs.property("minecraftAssetObjectsLocation", providers.provider { showcaseAssetObjects.singleFile.absolutePath })
     inputs.files(showcaseVersionManifest).withPropertyName("minecraftVersionManifest").withPathSensitivity(PathSensitivity.NONE)
     inputs.file(nativeInventoryPng).withPropertyName("nativeInventoryPng").withPathSensitivity(PathSensitivity.NONE)
     inputs.file(nativeInventoryReceipt).withPropertyName("nativeInventoryReceipt").withPathSensitivity(PathSensitivity.NONE)

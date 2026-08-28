@@ -68,6 +68,20 @@ internal class ShowcaseMinecraftAssetsTest {
     }
 
     @Test
+    fun unrelatedObjectStoreFilesDoNotChangeDetachedHashesAcrossFreshLoads() {
+        val fixture = ShowcaseMinecraftAssetFixture(directory)
+        val original = fixture.assets(ProbeFactory())
+        val hashes = original.inputHashes()
+        val unrelatedObject = fixture.assetObjects.resolve("00").resolve("0".repeat(40))
+        Files.createDirectories(unrelatedObject.parent)
+        Files.write(unrelatedObject, byteArrayOf(1, 2, 3))
+
+        val reloaded = fixture.assets(ProbeFactory())
+        assertEquals(hashes, reloaded.inputHashes())
+        assertEquals(hashes, original.inputHashes())
+    }
+
+    @Test
     fun clientAndIndexHashMismatchesFailBeforeOpeningTheDecoder() {
         val client = ShowcaseMinecraftAssetFixture(directory.resolve("client"))
         val clientFactory = ProbeFactory()
@@ -98,10 +112,10 @@ internal class ShowcaseMinecraftAssetsTest {
     }
 
     @Test
-    fun anIndexedObjectMustMatchItsOwnDeclaredHash() {
+    fun anIndexedObjectMustMatchItsOwnDeclaredHashEvenWhenItsSizeIsUnchanged() {
         val fixture = ShowcaseMinecraftAssetFixture(directory)
         val factory = ProbeFactory()
-        Files.write(fixture.objectFile("minecraft/textures/font/showcase-japanese.png"), byteArrayOf(1, 2, 3))
+        corruptWithoutChangingSize(fixture.objectFile("minecraft/textures/font/showcase-japanese.png"))
         assertThrows(IllegalArgumentException::class.java) { fixture.assets(factory) }
         assertEquals(0, factory.opened)
     }
@@ -146,6 +160,24 @@ internal class ShowcaseMinecraftAssetsTest {
         val factory = ProbeFactory(onFirstDecode = { Files.write(fixture.clientJar, byteArrayOf(2), StandardOpenOption.APPEND) })
         assertThrows(IllegalArgumentException::class.java) { fixture.assets(factory) }
         assertEquals(1, factory.closed)
+    }
+
+    @Test
+    fun consumedIndexedObjectMutationDuringDecodeRejectsPublicationAndClosesTheBackend() {
+        val fixture = ShowcaseMinecraftAssetFixture(directory)
+        val objectFile = fixture.objectFile("minecraft/textures/font/showcase-japanese.png")
+        val factory = ProbeFactory(onFirstDecode = { corruptWithoutChangingSize(objectFile) })
+
+        assertThrows(IllegalArgumentException::class.java) { fixture.assets(factory) }
+        assertEquals(1, factory.opened)
+        assertEquals(ShowcaseGuiAsset.entries.size, factory.decoded)
+        assertEquals(1, factory.closed)
+    }
+
+    private fun corruptWithoutChangingSize(path: Path) {
+        val bytes = Files.readAllBytes(path)
+        bytes[bytes.lastIndex] = (bytes.last().toInt() xor 1).toByte()
+        Files.write(path, bytes)
     }
 
     private class ProbeFactory(

@@ -152,6 +152,7 @@ The nonpublished `integration:docs` module owns two showcase tasks that render t
 Generated output is owned by the showcase generator; manual edits are reported as stale by the checker.
 
 Both tasks read an explicit Minecraft client archive, asset index, indexed objects directory, and version manifest.
+They always execute without build-cache reuse; Gradle records the objects directory's location rather than recursively fingerprinting its shared contents, and the launcher verifies every consumed input before publishing its receipt.
 By default, Gradle provisions these raw resources through dedicated asset publications from `integration:minecraft-fabric-26.2`; provisioning may download missing official assets but does not start a game process or add Minecraft, Fabric, OpenGL, or GLFW classes to the documentation runtime classpath.
 To supply existing resources instead, set all four properties; relative paths resolve from the repository root, and supplying all four avoids the integration project's asset-provisioning tasks:
 
