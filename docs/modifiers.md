@@ -55,6 +55,10 @@ A primary press focuses the deepest and latest-painted accepting target in its l
 `onTextInput`, `onCharacterInput`, and `onPreedit` receive committed Unicode scalar values and immutable input-method composition snapshots through that same owner.
 `onFocusChanged` observes distinct gain and loss transitions.
 Focused delivery visits modifier nodes from innermost to outermost and then the component node until one returns `Consumed`, allowing active modifiers to override a component's built-in editor behavior.
+Custom editors opt into native text-input mode by implementing `FocusTargetNode.requiresTextInput`; its default is false, so keyboard shortcuts and passive input observers do not enable an IME.
+Enabled `TextField` and `TextArea` components supply this capability automatically.
+The runtime publishes a detached identity for the current editable focus interval, and adapters synchronize native focus after retained transactions finish; loss and screen removal release it before another native screen acquires focus.
+Changing a custom target's text-input capability requires presentation invalidation so the next committed frame can reconcile it.
 Changing size or padding invalidates measurement, changing a background invalidates paint, and changing semantics invalidates only semantics.
 Changing a pointer, keyboard, text-input, preedit, or focus callback updates live input behavior without invalidating a frame phase.
 An equal value does not invalidate a phase.

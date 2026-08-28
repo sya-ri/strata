@@ -5,6 +5,9 @@ import dev.s7a.strata.layout.Arrangement
 import dev.s7a.strata.layout.HorizontalAlignment
 import dev.s7a.strata.layout.VerticalAlignment
 import dev.s7a.strata.render.ArgbColor
+import dev.s7a.strata.text.TextLayout
+import dev.s7a.strata.text.TextOverflow
+import dev.s7a.strata.text.TextWrap
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
@@ -67,8 +70,16 @@ internal class ShowcaseMarkdownTest {
                 scenario.component to ShowcaseMarkdown.section(scenario, source)
             }
         assertTrue(sections.getValue(DocumentedComponent.Slot).contains("back-item-front highlight order"))
-        assertTrue(sections.getValue(DocumentedComponent.Text).contains("extracted Minecraft glyph advances, shadow layer, foreground layer, and native baseline"))
+        assertTrue(sections.getValue(DocumentedComponent.Text).contains("Unicode literals and composed text"))
+        assertTrue(sections.getValue(DocumentedComponent.Text).contains("`UiText.withFont`"))
+        assertTrue(sections.getValue(DocumentedComponent.Text).contains("`TextLayout.Multiline`"))
         assertTrue(sections.getValue(DocumentedComponent.TextField).contains("200 by 20 Minecraft EditBox sprites"))
+        assertTrue(sections.getValue(DocumentedComponent.TextField).contains("positive UTF-16 maximum length"))
+        assertTrue(sections.getValue(DocumentedComponent.TextField).contains("does not reproduce Minecraft's native IME popup"))
+        val textArea = sections.getValue(DocumentedComponent.TextArea)
+        listOf("note editing and message drafts", "fixed 9-pixel logical line box", "Scrollbar(state.scrollState)", "SemanticsRole.TextArea", "Semantics.value").forEach { contract ->
+            assertTrue(textArea.contains(contract))
+        }
         assertTrue(sections.getValue(DocumentedComponent.PlayerHead).contains("face-then-hat"))
         assertTrue(sections.getValue(DocumentedComponent.Grid).contains("incomplete final row"))
         assertTrue(sections.getValue(DocumentedComponent.Tab).contains("external selection semantics"))
@@ -122,6 +133,7 @@ internal class ShowcaseMarkdownTest {
                     ShowcaseTreeDetail.FillMaxSize,
                     ShowcaseTreeDetail.Size(7, 9),
                     ShowcaseTreeDetail.Height(11),
+                    ShowcaseTreeDetail.MultilineText(TextLayout.Multiline(wrap = TextWrap.Character, maxLines = 3, overflow = TextOverflow.Clip, lineSpacing = 1)),
                     ShowcaseTreeDetail.Padding(2),
                     ShowcaseTreeDetail.Background(ArgbColor(0x80ABCDEF.toInt())),
                     ShowcaseTreeDetail.Weight(1.5f, false),
@@ -146,6 +158,7 @@ internal class ShowcaseMarkdownTest {
             "FillMaxSize",
             "Size(width=7, height=9)",
             "Height(value=11)",
+            "TextLayout.Multiline(wrap=Character, maxLines=3, overflow=Clip, lineSpacing=1)",
             "Padding(all=2)",
             "Background(color=0x80ABCDEF)",
             "Weight(weight=1.5, fill=false)",

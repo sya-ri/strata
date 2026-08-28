@@ -12,6 +12,12 @@ It is not an application screen-definition API and does not expose coroutines, s
 The synchronous bridge exposes no task-launching or dispatcher facility.
 Its content lambda is evaluated during the first attach, after which the retained tree handles frames and input until terminal failure or close.
 Each successful frame owns immutable defensive snapshots of size, drawing commands, and semantics, and all input is ignored until the first successful frame commits.
+After that first frame, consecutive pointer, keyboard, and text events may arrive without another frame between them.
+Before each event, the session resolves only pending retained measurement and layout using the last committed constraints; clean geometry invokes no measure or layout callbacks.
+Dirty measurement also refreshes the retained dynamic children needed by virtual viewports.
+Queued source revisions, session content evaluation, animation timestamps, paint, semantics, and frame snapshots still advance only through `frame`.
+A future resize is not visible until its frame commits, and a pre-input geometry failure prevents event dispatch and follows the existing poison and cleanup contract.
+This shared behavior applies to Minecraft hosts in both headless tests and Fabric event bursts; low-level `UiTree` users still explicitly measure and lay out dirty geometry before dispatch.
 The bridge delegates exact primary-failure identity, suppression order, lifecycle transitions, and cleanup-once behavior to the retained session.
 It retains the content lambda while created, attached, or detached and releases it before cleanup callbacks after terminal failure or close.
 Session detach retains the active `UiTree` and its node ownership; it clears active hover and focused ownership before clearing the committed-frame marker, without rerunning node attach or detach lifecycle callbacks until terminal close.
@@ -19,12 +25,21 @@ Session detach retains the active `UiTree` and its node ownership; it clears act
 The common `runtime:minecraft` adapter consumes a one-shot screen definition and a complete immutable profile.
 Definition close and host transfer race atomically, and a transferred host exposes only owner-thread metadata, lifecycle, fixed-viewport frames, and typed pointer, keyboard, committed-character, and preedit input.
 Its screen-content callback is an ordinary `UiScope`, while the host installs its selected Minecraft profile behind that callback for top-level Minecraft components and modifiers.
-Callers therefore declare `Text`, `TextField`, `Button`, `Checkbox`, `CycleButton`, `Slider`, `Tab`, `ScrollArea`, `Scrollbar`, `VirtualList`, `SelectionList`, `Image`, `Slot`, `PlayerHead`, `LoadingIndicator`, and `ProgressBar` directly without an additional root builder or an explicit Minecraft context receiver.
+Callers therefore declare `Text`, `TextField`, `TextArea`, `Button`, `Checkbox`, `CycleButton`, `Slider`, `Tab`, `ScrollArea`, `Scrollbar`, `VirtualList`, `SelectionList`, `Image`, `Slot`, `PlayerHead`, `LoadingIndicator`, and `ProgressBar` directly without an additional root builder or an explicit Minecraft context receiver.
 Application code emits those components directly and composes profile-backed `menuBackground()`, `containerBackground(rows)`, or immutable `imageBackground(image, scale)` behavior into ordinary modifier chains; screen definitions, `Text`, and `Button` accept `String` literals without requiring `UiText.Literal`, while typed overloads retain unresolved `UiText` values when needed.
 The fixed-height profile-backed Button owns appearance, hover visuals, and enabled semantics, while reusable pointer, keyboard, text-input, preedit, focus, press, release, move, drag, scroll, and hover actions are active modifiers shared with other component kinds.
-TextField owns the verified EditBox sprites, typed profile-backed text colors, native insert or append cursor, bounded printable-ASCII editing policy, and semantics while caller-owned owner-thread `TextFieldState` owns the value and maximum length.
+TextField owns the verified EditBox sprites, typed profile-backed text colors, insert or append cursor, Unicode scalar editing, and semantics while caller-owned owner-thread `TextFieldState` owns the value and positive UTF-16 maximum length.
 The ordinary field is 200 by 20, while the explicit-size overload applies the native one-pixel nine-slice border and integer-centered glyph row to any extent of at least 9 by 9.
-Focused input modifiers run before TextField's built-in editor, so consuming a typed event overrides its default action and ignoring the event permits the editor to handle it.
+TextArea shares the typed frame assets and font layout, with canonical LF values, visual-line cursor affinity, a constrained inner viewport, and owner-thread `TextAreaState`.
+Its state owns one stable vertical `ScrollState` that an independent `Scrollbar` may observe; one state may attach to only one editor at a time.
+Mutable editor, focus, preedit, current-layout, and invalidation ownership live only in retained nodes, never in reusable immutable element descriptions.
+Focused input modifiers run before either built-in editor, so consuming a typed event overrides its default action and ignoring the event permits the editor to handle it.
+Text, TextField, and TextArea accept resource-pack font IDs, and `UiText.withFont` carries the same selection through composed labels.
+Existing Text overloads remain single-line; typed `TextLayout.Multiline` uses parent width constraints and shares line breaking with TextArea.
+Font metrics drive measurement, drawing, cursor placement, and scrolling together; Unicode glyph availability follows the selected resource pack.
+Inline preedit text has its own caret and focused block and does not change the caller's value until committed input arrives.
+It does not reproduce the native IME popup or platform candidate window.
+See [Text and text input](text.md) for font selection, Unicode boundaries, and the compatibility limits.
 ScrollArea owns the active Minecraft profile's menu-list background, child clipping, separators, wheel behavior, and retained offset through caller-owned `ScrollState`.
 An independently placed Scrollbar observes the same state and owns the track sprites, proportional thumb, and thumb dragging; a caller may omit it or place it away from the viewport while preserving the native background-to-content-to-overlay paint order.
 The container-background modifier owns the verified row-dependent generic chest geometry and two native texture regions, while Slot owns the exact 18 by 18 pointer region, optional 16 by 16 content root, and back-content-front hover layers.

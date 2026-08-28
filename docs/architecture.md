@@ -19,16 +19,24 @@ A module joins the build only with working behavior and tests.
   It synchronously renders a fixed positive viewport, rasterizes core draw commands into deterministic ARGB pixels, and encodes metadata-free RGBA8 PNG output without a desktop graphics dependency.
 - `runtime:minecraft` is a publishable Minecraft-independent adapter boundary built on `runtime:core`.
   Its opt-in host consumes the API-owned one-shot screen definition and a complete immutable profile, installs the component-runtime bridge only for the dynamic callback, then converts every non-negative logical viewport into exact fixed root constraints.
-  Top-level menu, generic-container, and arbitrary-image background modifiers plus highlighted Slot; printable Text; an owner-thread TextField; profile-backed Button, Checkbox, CycleButton, Slider, and Tab controls; independently composed ScrollArea and Scrollbar components; visible-only VirtualList and SelectionList components; immutable whole-image or source-region Image; synchronous or asynchronous PlayerHead; LoadingIndicator; and ProgressBar therefore work without an extra root wrapper or public Minecraft context receiver.
+  Top-level menu, generic-container, and arbitrary-image background modifiers plus highlighted Slot; single-line or structurally wrapped resource-font Text; owner-thread Unicode TextField and TextArea editors; profile-backed Button, Checkbox, CycleButton, Slider, and Tab controls; independently composed ScrollArea and Scrollbar components; visible-only VirtualList and SelectionList components; immutable whole-image or source-region Image; synchronous or asynchronous PlayerHead; LoadingIndicator; and ProgressBar therefore work without an extra root wrapper or public Minecraft context receiver.
   A version-backed bound Slot uses an opaque ordered platform draw command for the native `ItemStack` phase and delegates mutation to the active server menu; declarative locators cover player-inventory, logical non-player Container, and raw active-menu indices, core preserves ordering and clipping without depending on a Minecraft type, and portable-only rasterization rejects the unsupported payload before producing output.
   Button owns profile-backed appearance and enabled semantics, while platform-neutral active modifiers own raw pointer, keyboard, committed-character, preedit, focus, press, release, move, drag, scroll, and hover actions reusable by future Minecraft components.
   Hosts retain the core tree across transient detach and reattach, gate input until a successful frame, and expose no mapped game, Fabric, resource-manager, renderer, version, coroutine, state, or source-binding type.
   Common code may carry a structural `ResourceId` across client/server configuration or protocol boundaries, while the versioned client loader resolves that identifier through the active resource-manager stack and returns detached immutable pixels.
   Button does not install focus or keyboard activation implicitly; callers compose those policies from shared modifiers, and hover changes only in response to delivered pointer movement.
+- `runtime:minecraft-fonts-lwjgl` is the optional CPU font backend built on the common Minecraft font contracts.
+  Immutable snapshots retain only detached definitions and resources, while each host owns its own backend, bounded native faces, and raster cache.
+  The backend uses the target release's supplied STB or FreeType and ICU libraries without Minecraft classes, Java2D, operating-system fonts, or a graphics context.
+  Text and common labels share font selection and metrics with TextField and TextArea; multiline Text and TextArea also share line breaking and visible-glyph selection.
+  Portable floating-point sampled-image commands are rasterized at the final GUI scale by headless and Fabric presenters.
+  The existing finite ASCII profile format remains available, but a profile cannot mix it with a resource-font snapshot.
+  See [Font resources](font-resources.md) for source precedence, capabilities, failure behavior, dependency isolation, and terminal ownership.
 - `integration:api` compiles its application main source with only `api`, checks that compile classpath mechanically, and uses test-only runtime dependencies to verify both standard and external primitives.
 - `runtime:minecraft-fabric-26.2` is the client-only boundary for the current latest Java release.
   It extracts the 26.2 vanilla profile and arbitrary Mod images from the active resource manager, maps the common host to a native Screen, rasterizes through the tested headless path, and forwards typed mouse, keyboard, committed-character, and preedit input.
-  Its loaded client GameTest compares native screens using the actual menu background, generic container, Slot highlights, font, EditBox, Button, `ObjectSelectionList`, and `PlayerFaceExtractor` assets and widgets against both the Fabric adapter and the common headless compositor with exact ARGB equality, then compares the custom industrial and progression Mod screens through the same Fabric/headless pixels.
+  Its loaded client GameTest compares the existing fixed native screen scenes using the actual menu background, generic container, Slot highlights, font, EditBox, Button, `ObjectSelectionList`, and `PlayerFaceExtractor` assets and widgets against both the Fabric adapter and the common headless compositor with exact ARGB equality, then compares the custom industrial and progression Mod screens through the same Fabric/headless pixels.
+  Separate resource-font scenes require exact native glyph metrics, texels, and layout and independently verified GPU evidence for any final native pixel differences; their Fabric and headless images remain exact.
 - `runtime:minecraft-fabric-26.1` is the client-only boundary for Minecraft 26.1.
   Both unobfuscated releases compile the complete cross-version shared and unobfuscated-release adapter source roots and the same neutral tests; only current-screen access is implemented per release, and the loaded 26.1 suite records the same fixed-scene ARGB hashes as 26.2.
 - `runtime:minecraft-fabric-1.21.11` through `runtime:minecraft-fabric-1.20.5` are client-only Java 21 boundaries for the older remapped distributions, and `runtime:minecraft-fabric-1.20.4` through `runtime:minecraft-fabric-1.20` are the corresponding Java 17 boundaries.
@@ -69,11 +77,11 @@ The supported Minecraft range begins at 1.20; Minecraft 1.19 and older releases 
 Select exactly one versioned Fabric runtime at execution time.
 The version artifacts intentionally expose the same Strata-owned entry points and class names, while their inherited Minecraft `Screen` methods differ with the native release, so depending on more than one creates duplicate classes.
 
-Each versioned Fabric Mod packages the common API, core, headless, and Minecraft runtime jars.
+Each versioned Fabric Mod packages the common API, core, headless, Minecraft runtime, and CPU font backend jars; native libraries come from the game.
 
 | Minecraft | Fabric runtime artifact | Required Java | Loaded verification |
 | --- | --- | --- | --- |
-| 26.2 | `strata-runtime-minecraft-fabric-26.2` | 25 | Exact native/Fabric/headless parity, Mod-screen parity, and synchronized inventory GameTests |
+| 26.2 | `strata-runtime-minecraft-fabric-26.2` | 25 | Exact fixed-screen native/Fabric/headless parity, independent resource-font GPU proofs, Mod-screen parity, and synchronized inventory GameTests |
 | 26.1 | `strata-runtime-minecraft-fabric-26.1` | 25 | The same loaded suite; every recorded ARGB hash matches 26.2 for the fixed verified scenes |
 | 1.21.11 | `strata-runtime-minecraft-fabric-1.21.11` | 21 | Development and production-jar loaded-client verification for the shared remapped legacy boundary |
 | 1.21.10 | `strata-runtime-minecraft-fabric-1.21.10` | 21 | Development and production-jar loaded-client verification for the shared remapped legacy boundary |
@@ -101,6 +109,14 @@ Strata standardizes only focused primitives that serve at least two natural inde
 Every proposal for a standard built-in is reviewed for excessive specialization and for whether an ordinary composition of existing primitives is sufficient.
 Minecraft-specific primitives remain eligible when their responsibility is broadly reusable across Minecraft UI; a player-head renderer can serve social lists, player lists, profiles, teams, and ownership displays, while a social-entry row or an advancement graph remains application composition.
 
+`TextArea` passes this gate as one multiline text-editing primitive: note editing and message drafting are independent natural uses.
+It owns no note, chat, book, file, or server-domain model.
+A column of `TextField` instances cannot preserve one logical value and cursor across hard breaks, soft wrapping, and inline IME composition; those coupled editing rules justify the primitive.
+Toolbars, submit buttons, validation messages, and the optional external `Scrollbar` remain ordinary composition.
+The caller owns `TextAreaState` and its `scrollState`; a fixed 9-pixel logical line box and typed `TextAreaViewport` define geometry, while `SemanticsRole.TextArea` exposes committed `Semantics.value` without promising accessibility edit actions.
+Display-only wrapping and truncation remain a policy of the existing `Text` component through `TextLayout.Multiline`, not another standard component.
+See [Text layout and editing](text.md) for newline, scalar, IME, and non-goal contracts.
+
 This standard-library gate does not constrain downstream code.
 An application or Mod may define a purpose-specific component such as an energy gauge or social entry as an ordinary `UiScope` composition function, or implement new retained behavior with a custom immutable `Element`, stable singleton `ElementType`, and capability-bearing `Node`.
 `UiScope.element` inserts that description without registration, and the retained core never dispatches on the concrete component class.
@@ -109,7 +125,7 @@ The complete external implementation contract is documented in [Element SPI](ele
 
 The process and compatibility requirements for a new version adapter are defined in [Supporting a new Minecraft version](minecraft-versions.md).
 
-The public API currently defines `ScreenDefinition`; Row, Column, Stack, Grid, Spacer, Text, TextField, Button, Checkbox, CycleButton, Slider, Tab, ScrollArea, Scrollbar, VirtualList, SelectionList, Image, Slot, PlayerHead, LoadingIndicator, and ProgressBar; element and modifier descriptions; typed actions and external state; typed layout parent data; retained node capabilities; frame time and overlay painting; lifecycle ownership; geometry; pointer and focused input; drawing; semantics; unresolved text; resources and bindings; and revisioned external state sources.
+The public API currently defines `ScreenDefinition`; Row, Column, Stack, Grid, Spacer, Text, TextField, TextArea, Button, Checkbox, CycleButton, Slider, Tab, ScrollArea, Scrollbar, VirtualList, SelectionList, Image, Slot, PlayerHead, LoadingIndicator, and ProgressBar; element and modifier descriptions; typed actions and external state; typed layout parent data; retained node capabilities; frame time and overlay painting; lifecycle ownership; geometry; pointer and focused input; drawing; semantics; unresolved text; resources and bindings; and revisioned external state sources.
 `ScreenDefinition` retains its callback without evaluating it, then transfers that callback exactly once to a runtime that implicitly builds its single component root under the installed profile.
 Each `UiScope` is confined to the invoking thread and callback lifetime, and callback failures take precedence over root-cardinality validation.
 The privileged `evaluateComponentTree` bridge exists only for runtime adapters and structural SPI tests that already own raw elements; application screens do not need or expose a standalone root builder.
@@ -190,7 +206,9 @@ The full modifier contract and external implementation guidance are defined in [
 
 ## Testing strategy
 
-The test suite exercises `api`, `runtime:core`, `runtime:headless`, `runtime:minecraft`, and the showcase compiler with ordinary JVM tests.
+The test suite exercises `api`, `runtime:core`, `runtime:headless`, `runtime:minecraft`, `runtime:minecraft-fonts-lwjgl`, and the showcase compiler with ordinary JVM tests.
 Integration tests belong at the narrowest module boundary that needs them.
 Fabric GameTests are reserved for behavior that genuinely requires Minecraft's loaded game environment.
-The 26.2 client GameTest is the release and documentation gate for native asset, font, widget, placement, logical draw-order, and final-pixel parity.
+The 26.2 client GameTest is the release and documentation gate for native assets, widgets, placement, logical draw order, and exact final pixels in the existing fixed showcase scenes.
+Separate resource-font gates compare Minecraft 1.20, 1.20.5, and 26.2 with independent CPU renders at GUI scales 1, 2, and 3.
+Those gates require exact native metrics, glyph texels, and layout; final native image differences require the independent GPU evidence described in [Font acceptance evidence](font-resources.md#acceptance-evidence).

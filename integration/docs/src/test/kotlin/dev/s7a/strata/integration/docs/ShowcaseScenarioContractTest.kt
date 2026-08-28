@@ -6,6 +6,8 @@ import dev.s7a.strata.layout.Arrangement
 import dev.s7a.strata.layout.HorizontalAlignment
 import dev.s7a.strata.layout.VerticalAlignment
 import dev.s7a.strata.render.ArgbColor
+import dev.s7a.strata.text.TextLayout
+import dev.s7a.strata.text.TextOverflow
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
@@ -32,6 +34,7 @@ internal class ShowcaseScenarioContractTest {
                 "MinecraftSpacerExample.kt" to "spacer",
                 "MinecraftTextExample.kt" to "text",
                 "MinecraftTextFieldShowcaseExample.kt" to "text-field",
+                "MinecraftTextAreaShowcaseExample.kt" to "text-area",
                 "MinecraftButtonExample.kt" to "button",
                 "MinecraftCheckboxExample.kt" to "checkbox",
                 "MinecraftCycleButtonExample.kt" to "cycle-button",
@@ -56,8 +59,9 @@ internal class ShowcaseScenarioContractTest {
                 IntSize(64, 64),
                 IntSize(64, 64),
                 IntSize(160, 64),
-                IntSize(120, 64),
+                IntSize(192, 88),
                 IntSize(216, 64),
+                IntSize(226, 80),
                 IntSize(166, 64),
                 IntSize(166, 36),
                 IntSize(166, 36),
@@ -149,10 +153,34 @@ internal class ShowcaseScenarioContractTest {
                     expectedTree(DocumentedComponent.Spacer, listOf(ShowcaseTreeDetail.Size(16, 20))),
                     expectedTree(DocumentedComponent.Button, listOf(ShowcaseTreeDetail.Size(60, 20))),
                 ),
-                centeredTree(IntSize(120, 64), expectedTree(DocumentedComponent.Text)),
+                expectedTree(
+                    DocumentedComponent.Stack,
+                    listOf(
+                        ShowcaseTreeDetail.Size(192, 88),
+                        black,
+                        ShowcaseTreeDetail.Padding(8),
+                        ShowcaseTreeDetail.StackContentAlignment(Alignment.Center),
+                    ),
+                    expectedTree(
+                        DocumentedComponent.Text,
+                        listOf(ShowcaseTreeDetail.MultilineText(TextLayout.Multiline(maxLines = 4, overflow = TextOverflow.Ellipsis, lineSpacing = 2))),
+                    ),
+                ),
                 centeredTree(
                     IntSize(216, 64),
                     expectedTree(DocumentedComponent.TextField, listOf(ShowcaseTreeDetail.Size(200, 20))),
+                ),
+                expectedTree(
+                    DocumentedComponent.Row,
+                    listOf(
+                        ShowcaseTreeDetail.Size(226, 80),
+                        black,
+                        ShowcaseTreeDetail.Spacing(4),
+                        ShowcaseTreeDetail.Arrangement(Arrangement.Center),
+                        ShowcaseTreeDetail.RowDefaultAlignment(VerticalAlignment.Center),
+                    ),
+                    expectedTree(DocumentedComponent.TextArea, listOf(ShowcaseTreeDetail.Size(200, 64))),
+                    expectedTree(DocumentedComponent.Scrollbar, listOf(ShowcaseTreeDetail.Size(6, 64))),
                 ),
                 centeredTree(
                     IntSize(166, 64),

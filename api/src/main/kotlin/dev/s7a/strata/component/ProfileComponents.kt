@@ -576,6 +576,8 @@ public fun UiScope.TextField(
  * Soft wrapping does not insert line breaks into [state], and delivered IME preedit remains presentation until committed input arrives.
  * An external [Scrollbar] may share [TextAreaState.scrollState]; the editor does not add its own scrollbar.
  * This component does not add selection, clipboard commands, or grapheme-cluster editing.
+ * Description creation does not claim [state]; the retained editor claims its sole text subscription on attachment.
+ * The immutable description can be reused after detachment, but simultaneous attachment with the same state is rejected.
  *
  * @receiver active owner-thread screen scope.
  * @param state caller-owned text and scroll position observed by one retained editor.
@@ -587,7 +589,7 @@ public fun UiScope.TextField(
  * @param modifier active layout, input, and typed action behavior.
  * @param key optional stable sibling identity.
  * @throws IllegalArgumentException when [lineSpacing] is negative or the requested viewport cannot contain the editor.
- * @throws IllegalStateException when the scope or state thread is invalid or no runtime evaluation is active.
+ * @throws IllegalStateException when the scope or state thread is invalid or no runtime evaluation is active; retained attachment also throws when [state] is already attached to another retained editor.
  * @throws UnsupportedOperationException when the active runtime does not support multiline editing.
  */
 @OptIn(InternalStrataRuntimeApi::class)
@@ -611,6 +613,8 @@ public fun UiScope.TextArea(
  *
  * The selected font supplies layout, drawing, cursor, and scroll metrics from the runtime's pinned resource state.
  * Text, IME, scrolling, scalar editing, and ownership follow the default-font [TextArea] contract.
+ * Description creation does not claim [state]; the retained editor claims its sole text subscription on attachment.
+ * The immutable description can be reused after detachment, but simultaneous attachment with the same state is rejected.
  *
  * @receiver active owner-thread screen scope.
  * @param state caller-owned text and scroll position observed by one retained editor.
@@ -623,7 +627,7 @@ public fun UiScope.TextArea(
  * @param modifier active layout, input, and typed action behavior.
  * @param key optional stable sibling identity.
  * @throws IllegalArgumentException when [lineSpacing] is negative or the requested viewport cannot contain the editor.
- * @throws IllegalStateException when the scope or state thread is invalid or no runtime evaluation is active.
+ * @throws IllegalStateException when the scope or state thread is invalid or no runtime evaluation is active; retained attachment also throws when [state] is already attached to another retained editor.
  * @throws UnsupportedOperationException when the active runtime does not support multiline editing with explicit font selection.
  */
 @OptIn(InternalStrataRuntimeApi::class)

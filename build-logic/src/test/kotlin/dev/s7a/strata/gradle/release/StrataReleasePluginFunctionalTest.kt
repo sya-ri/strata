@@ -39,7 +39,8 @@ internal class StrataReleasePluginFunctionalTest {
         assertEquals(TaskOutcome.SUCCESS, result.task(":githubReleaseBundle")?.outcome)
         val manifestFile = projectDirectory.resolve("build/release/modrinth/manifest.json").toFile()
         assertTrue(manifestFile.isFile)
-        val manifest = JsonSlurper().parse(manifestFile) as Map<*, *>
+        val manifest = readManifest()
+        assertManifestText(manifest, RELEASE_NOTES, PROJECT_BODY)
         val artifacts = manifest["artifacts"] as List<*>
         assertEquals(21, artifacts.size)
         artifacts.forEach { value ->
@@ -108,6 +109,7 @@ internal class StrataReleasePluginFunctionalTest {
         projectDirectory.resolve("build/release/modrinth").toFile().deleteRecursively()
         val repeated = runManifestWithBuildCache()
         assertEquals(TaskOutcome.FROM_CACHE, repeated.task(":modrinthReleaseManifest")?.outcome)
+        assertManifestTextInputsInvalidateCache(swappedHashes)
 
         val githubFirst = runGithubWithBuildCache()
         assertEquals(TaskOutcome.SUCCESS, githubFirst.task(":githubReleaseBundle")?.outcome)
@@ -158,8 +160,8 @@ internal class StrataReleasePluginFunctionalTest {
             listOf("overview", "inventory", "progress").map { id ->
                 id to write("docs/components/$id.png", "gallery-$id")
             }
-        write("release-notes.md", "# Fixture release\n")
-        write("project-body.md", "# Strata\n\nCompiled fixture example.\n")
+        write("release-notes.md", RELEASE_NOTES.replace("\n", "\r\n") + " \t\r\n")
+        write("project-body.md", PROJECT_BODY.replace("\n", "\r\n") + " \t\r\n")
         write("project.json", projectMetadata(icon, gallery))
         GAME_VERSIONS.forEachIndexed { index, gameVersion ->
             write("inputs/$gameVersion.jar", "artifact-$index-$gameVersion")
@@ -187,8 +189,35 @@ internal class StrataReleasePluginFunctionalTest {
             .withArguments("githubReleaseBundle", "-x", "mavenCentralReleaseVerify", "--build-cache", "--stacktrace")
             .build()
 
+    private fun assertManifestTextInputsInvalidateCache(artifactHashes: Map<String, String>) {
+        val updatedNotes = RELEASE_NOTES + "\nTextField IME preview: にほん 한국 🙂.\n"
+        write("release-notes.md", updatedNotes.replace("\n", "\r\n") + " \t\r\n")
+        val changedNotes = runManifestWithBuildCache()
+        assertEquals(TaskOutcome.SUCCESS, changedNotes.task(":modrinthReleaseManifest")?.outcome)
+        assertManifestText(readManifest(), updatedNotes, PROJECT_BODY)
+
+        val updatedBody = PROJECT_BODY + "\nCustom font example: 日本語 한국어 🚀.\n"
+        write("project-body.md", updatedBody.replace("\n", "\r\n") + " \t\r\n")
+        val changedBody = runManifestWithBuildCache()
+        assertEquals(TaskOutcome.SUCCESS, changedBody.task(":modrinthReleaseManifest")?.outcome)
+        assertManifestText(readManifest(), updatedNotes, updatedBody)
+        assertEquals(artifactHashes, manifestArtifactHashes())
+    }
+
+    private fun assertManifestText(
+        manifest: Map<*, *>,
+        changelog: String,
+        body: String,
+    ) {
+        assertEquals(changelog, manifest["changelog"])
+        val project = manifest["project"] as Map<*, *>
+        assertEquals(body, project["body"])
+    }
+
+    private fun readManifest(): Map<*, *> = JsonSlurper().parse(projectDirectory.resolve("build/release/modrinth/manifest.json").toFile()) as Map<*, *>
+
     private fun manifestArtifactHashes(): Map<String, String> {
-        val manifest = JsonSlurper().parse(projectDirectory.resolve("build/release/modrinth/manifest.json").toFile()) as Map<*, *>
+        val manifest = readManifest()
         val artifacts = manifest["artifacts"] as List<*>
         return artifacts.associate { value ->
             val artifact = value as Map<*, *>
@@ -282,6 +311,16 @@ internal class StrataReleasePluginFunctionalTest {
     private fun ByteArray.hash(): String = MessageDigest.getInstance("SHA-256").digest(this).joinToString("") { byte -> "%02x".format(byte) }
 
     companion object {
+        private const val RELEASE_NOTES =
+            "# Strata 0.1.1\n\nUnicode text and resource-pack fonts: 日本語 한국어 🙂.\n" +
+                "TextField supports scalar editing and delivered IME composition.\n" +
+                "Multiline Text and TextArea preserve line breaks and resource-font selection.\n" +
+                "The optional CPU font backend renders detached font resources.\n"
+        private const val PROJECT_BODY =
+            "# Strata\n\nUnicode Text and TextField: 日本語 한국어 🙂.\n" +
+                "Resource-pack fonts use the optional CPU font backend without launching Minecraft.\n" +
+                "TextArea adds canonical LF editing with a shared vertical ScrollState.\n" +
+                "TextField IME composition follows input events supplied by the game.\n"
         private val GAME_VERSIONS =
             listOf(
                 "1.20",

@@ -90,6 +90,7 @@ The tree shows Minecraft components in logical draw order; platform-neutral layo
 - [Spacer](#spacer)
 - [Text](#text)
 - [TextField](#text-field)
+- [TextArea](#text-area)
 - [Button](#button)
 - [Checkbox](#checkbox)
 - [CycleButton](#cycle-button)
@@ -446,9 +447,9 @@ The tree mirrors the complete dedicated definition, including the featured compo
 
 ## Text
 
-Text renders a printable-ASCII literal with the extracted Minecraft glyph advances, shadow layer, foreground layer, and native baseline.
+Text renders Unicode literals and composed text using the active profile's font resources, glyph advances, shadow layer, foreground layer, and baseline. Explicit `TextLayout.Multiline` adds hard line breaks, wrapping, line limits, and clip or ellipsis overflow; the existing overload remains single-line. Glyph availability follows the selected resource pack.
 
-This 120 by 64 image is the complete frame of the compiled dedicated `ScreenDefinition`, after exact Fabric/headless ARGB comparison recorded in [the verification receipt](components/minecraft-26.2-parity.properties); it is not cropped from a larger screen.
+This 192 by 88 image is the complete frame of the compiled dedicated `ScreenDefinition`, after exact Fabric/headless ARGB comparison recorded in [the verification receipt](components/minecraft-26.2-parity.properties); it is not cropped from a larger screen.
 
 ![Text headless showcase](components/text.png)
 
@@ -460,44 +461,56 @@ import dev.s7a.strata.component.Text
 import dev.s7a.strata.layout.Alignment
 import dev.s7a.strata.modifier.Modifier
 import dev.s7a.strata.modifier.background
+import dev.s7a.strata.modifier.padding
 import dev.s7a.strata.modifier.size
 import dev.s7a.strata.render.ArgbColor
 import dev.s7a.strata.screen.ScreenDefinition
+import dev.s7a.strata.text.TextLayout
+import dev.s7a.strata.text.TextOverflow
+import dev.s7a.strata.text.TextWrap
 
 /**
- * Builds a self-contained literal Text showcase.
+ * Builds a complete resource-font Text showcase with explicit line breaks and bounded wrapping.
  *
- * @return one-shot definition whose complete frame centers one Minecraft-profile text component.
+ * The active profile must provide resource fonts for the illustrated Japanese, Korean, and emoji glyphs.
+ * @return one-shot definition whose complete frame shows at most four lines without changing the original semantic label.
  */
 internal fun createTextShowcaseScreenDefinition(): ScreenDefinition =
     ScreenDefinition("Text showcase") {
         Stack(
             modifier =
                 Modifier.Empty
-                    .size(120, 64)
-                    .background(ArgbColor(0xFF000000.toInt())),
+                    .size(192, 88)
+                    .background(ArgbColor(0xFF000000.toInt()))
+                    .padding(8),
             contentAlignment = Alignment.Center,
         ) {
-            Text("Hello, Strata!")
+            Text(
+                "日本語 / 한글 / 🙂\n" +
+                    "This paragraph wraps to the available width.\n" +
+                    "Explicit newlines stay separate.\n" +
+                    "Only four lines are visible; extra text receives an ellipsis.",
+                layout = TextLayout.Multiline(wrap = TextWrap.Word, maxLines = 4, overflow = TextOverflow.Ellipsis, lineSpacing = 2),
+            )
         }
     }
 ```
 
 ### Modifiers
 
-Ordinary sizing, padding, placement, and paint modifiers compose around `Text`; text content remains a typed component argument.
+Ordinary sizing, padding, placement, and paint modifiers compose around `Text`; multiline layout uses the available width and height. `TextWrap.None`, `Word`, or `Character`, `maxLines`, `TextOverflow.Clip` or `Ellipsis`, and `lineSpacing` control presentation without changing the original semantic label. Text content and the optional `font: ResourceId` remain typed component arguments. `UiText.withFont` also selects a font for labels and composed text; an inner selection takes precedence over an outer one.
 
 ### Parent scope
 
-`Text` is a top-level extension on the active `UiScope`. The screen runtime installs its selected Minecraft profile only for the definition callback, and the component has no content callback or parent-data API.
+`Text` is a top-level extension on the active `UiScope`. The screen runtime installs its selected Minecraft profile only for the definition callback, and the component has no content callback or parent-data API. Unicode and custom fonts require a font-resource profile; the older printable-ASCII glyph builder remains a compatibility path.
 
 <details><summary>Component tree</summary>
 
 The tree mirrors the complete dedicated definition, including the featured component, its minimum parent layout, and the children used to demonstrate its responsibility.
 
 ```text
-`- Stack [Size(width=120, height=64), Background(color=0xFF000000), StackContentAlignment(alignment=Center)]
-  `- Text
+`- Stack [Size(width=192, height=88), Background(color=0xFF000000), Padding(all=8), StackContentAlignment(alignment=Center)]
+  `- Text [TextLayout.Multiline(wrap=Word, maxLines=4, overflow=Ellipsis, lineSpacing=2)]
 ```
 
 </details>
@@ -506,7 +519,7 @@ The tree mirrors the complete dedicated definition, including the featured compo
 
 ## TextField
 
-TextField reproduces the 200 by 20 Minecraft EditBox sprites, text origin, glyph colors, owner-thread value state, focus, and bounded editing behavior.
+TextField reproduces the 200 by 20 Minecraft EditBox sprites, text origin, glyph colors, owner-thread value state, and focus, with Unicode scalar editing and inline IME composition.
 
 This 216 by 64 image is the complete frame of the compiled dedicated `ScreenDefinition`, after exact Fabric/headless ARGB comparison recorded in [the verification receipt](components/minecraft-26.2-parity.properties); it is not cropped from a larger screen.
 
@@ -528,7 +541,7 @@ import dev.s7a.strata.screen.ScreenDefinition
 /**
  * Builds a self-contained TextField showcase from one caller-selected initial value.
  *
- * @param initialValue printable ASCII value copied into owner-thread field state before the definition is retained.
+ * @param initialValue well-formed single-line Unicode value copied into owner-thread field state before the definition is retained.
  * @return one-shot definition containing the complete Minecraft-profile text-field frame.
  * @throws IllegalArgumentException when [initialValue] is unsupported or exceeds the showcase limit.
  */
@@ -552,11 +565,11 @@ internal fun createTextFieldShowcaseScreenDefinition(
 
 ### Modifiers
 
-Pointer, keyboard, committed-character, preedit, and focus modifiers run as active retained behavior around `TextField`; a consuming focused modifier overrides built-in editing.
+Pointer, keyboard, committed-character, preedit, and focus modifiers run as active retained behavior around `TextField`; a consuming focused modifier overrides built-in editing. The `font: ResourceId` overload changes metrics and drawing together, including cursor placement and horizontal scrolling.
 
 ### Parent scope
 
-`TextField` is a member extension on the active `UiScope`. The implicit runtime context supplies assets, while caller-owned `TextFieldState` owns the editable value.
+`TextField` is a top-level extension on the active `UiScope`. Caller-owned `TextFieldState` owns the value and its positive UTF-16 maximum length. Movement and deletion operate on Unicode scalars, not whole grapheme clusters; preedit text remains separate until committed input arrives. The inline composition display does not reproduce Minecraft's native IME popup or platform candidate window.
 
 <details><summary>Component tree</summary>
 
@@ -565,6 +578,88 @@ The tree mirrors the complete dedicated definition, including the featured compo
 ```text
 `- Stack [Size(width=216, height=64), Background(color=0xFF000000), StackContentAlignment(alignment=Center)]
   `- TextField [Size(width=200, height=20)]
+```
+
+</details>
+
+<a id="text-area"></a>
+
+## TextArea
+
+TextArea edits one multiline value inside an explicit viewport with Unicode scalar navigation, inline IME composition, and independent vertical scrolling. It serves both note editing and message drafts without encoding an application model.
+
+This 226 by 80 image is the complete frame of the compiled dedicated `ScreenDefinition`, after exact Fabric/headless ARGB comparison recorded in [the verification receipt](components/minecraft-26.2-parity.properties); it is not cropped from a larger screen.
+
+![TextArea headless showcase](components/text-area.png)
+
+### Compiled example
+
+```kotlin
+import dev.s7a.strata.component.Row
+import dev.s7a.strata.component.Scrollbar
+import dev.s7a.strata.component.TextArea
+import dev.s7a.strata.component.TextAreaState
+import dev.s7a.strata.component.TextAreaViewport
+import dev.s7a.strata.geometry.IntSize
+import dev.s7a.strata.layout.Arrangement
+import dev.s7a.strata.layout.VerticalAlignment
+import dev.s7a.strata.modifier.Modifier
+import dev.s7a.strata.modifier.background
+import dev.s7a.strata.modifier.size
+import dev.s7a.strata.render.ArgbColor
+import dev.s7a.strata.screen.ScreenDefinition
+
+/**
+ * Builds one complete multiline editor frame with an independently placed scrollbar.
+ *
+ * The caller creates this definition on the editor's owner thread; the captured state owns committed text and vertical scrolling.
+ * The resource-font profile supplies the illustrated Unicode glyphs, while soft wrapping leaves the stored value unchanged.
+ * @return one-shot definition containing a 200 by 64 editor and its separately composed scrollbar.
+ */
+internal fun createTextAreaShowcaseScreenDefinition(): ScreenDefinition {
+    val size = IntSize(200, 64)
+    val state =
+        TextAreaState(
+            initialValue =
+                "Write multiple lines.\n" +
+                    "日本語と 한글\n" +
+                    "Emoji: 🙂\n" +
+                    "Long sentences wrap within this viewport.\n" +
+                    "More text keeps scrolling.\n" +
+                    "The scrollbar is optional.\n" +
+                    "The original value keeps its newlines.",
+            maxLength = 2048,
+        )
+    return ScreenDefinition("TextArea showcase") {
+        Row(
+            modifier = Modifier.Empty.size(226, 80).background(ArgbColor(0xFF000000.toInt())),
+            spacing = 4,
+            horizontalArrangement = Arrangement.Center,
+            verticalAlignment = VerticalAlignment.Center,
+        ) {
+            TextArea(state, viewport = TextAreaViewport.Size(size))
+            Scrollbar(state.scrollState, modifier = Modifier.Empty.size(6, size.height))
+        }
+    }
+}
+```
+
+### Modifiers
+
+Place `TextArea` with ordinary layout modifiers and select its outer extent through `TextAreaViewport.Size` or `Lines`. Minecraft uses a fixed 9-pixel logical line box, optional extra line spacing, and four-pixel padding on each side. An external `Scrollbar(state.scrollState)` observes the editor's caller-owned scroll state; the editor does not insert a scrollbar or toolbar. The `font: ResourceId` overload changes layout, cursor placement, and drawing together.
+
+### Parent scope
+
+`TextArea` is a leaf extension on the active `UiScope`; one retained editor observes its owner-thread `TextAreaState`. Creating an immutable description does not attach the state, and descriptions can be reused after detachment. Simultaneous attachment with the same caller-owned state throws `IllegalStateException`. The state stores canonical LF newlines and enforces a positive UTF-16 maximum length. Soft wrapping never edits the stored value, and IME preedit remains separate until committed. `SemanticsRole.TextArea` exposes the committed text through `Semantics.value`, without typed accessibility edit actions. Selection, clipboard commands, grapheme-cluster editing, and the platform IME candidate window are outside this component's contract.
+
+<details><summary>Component tree</summary>
+
+The tree mirrors the complete dedicated definition, including the featured component, its minimum parent layout, and the children used to demonstrate its responsibility.
+
+```text
+`- Row [Size(width=226, height=80), Background(color=0xFF000000), Spacing(value=4), Arrangement(value=Center), RowDefaultAlignment(alignment=Center)]
+  |- TextArea [Size(width=200, height=64)]
+  `- Scrollbar [Size(width=6, height=64)]
 ```
 
 </details>

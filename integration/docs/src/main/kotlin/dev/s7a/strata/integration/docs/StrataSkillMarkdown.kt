@@ -105,7 +105,7 @@ ${StateBindingDocumentationCatalog.entries.joinToString("\n\n") { entry -> state
 
 Application UI source compiles against `strata-api` only.
 Install exactly one matching Strata Fabric runtime as a separate client Mod together with Fabric Language Kotlin.
-Strata 0.1.1 adds Minecraft 1.20 support and makes no other functional change from 0.1.0.
+Strata 0.1.1 adds Minecraft 1.20 support, Unicode text and resource-pack fonts, multiline `Text`, and Unicode editing with inline IME composition for `TextField` and `TextArea`.
 
 ```kotlin
 dependencies {
@@ -133,6 +133,8 @@ The definition remains owned by the caller when no runtime is installed or the c
 ```kotlin
 $openExample
 ```
+
+$FONT_SETUP
 
 ## Supported Minecraft versions
 
@@ -174,6 +176,7 @@ $layoutExample
 
 - Keep mutable values in caller-owned state objects. Rebuild immutable component arguments from that state and receive typed changes through modifiers.
 - Place `ScrollArea` and `Scrollbar` separately and link them with one `ScrollState`. A viewport may omit its scrollbar or place it away from the content.
+- Use `TextAreaState` for multiline editing and link an optional `Scrollbar` to `state.scrollState`. Creating immutable descriptions does not attach the state, and descriptions may be reused after detachment; simultaneous attachment with the same caller-owned state throws `IllegalStateException`.
 - Use the dynamic `VirtualList(itemCount = { ... })` overload for a loadable indexed source. Complete each prepend, append, or same-count row mutation inside its leading or trailing request handler, then call owner-thread `VirtualListState.refresh()` so the list resamples the count, rebuilds visible rows, and preserves its stable-key anchor when possible. The `Int` and `List` overloads are immutable snapshots. Use the same state for index or stable-key jumps.
 - Use `ImageSource.Resource(ResourceId(...))` and image backgrounds for resource-pack-replaceable Mod assets.
 - Use `PlayerSkinSource` for profile-driven heads rather than pre-rendering a skin outside the component.
@@ -300,4 +303,43 @@ ${compiledFingerprints.joinToString("\n")}
 
     private const val COMPONENT_GUIDE_URL = "https://gh.s7a.dev/strata/guide/components.md"
     private const val ELEMENT_SPI_GUIDE_URL = "https://gh.s7a.dev/strata/guide/element-spi.md"
+    private const val TEXT_GUIDE_URL = "https://gh.s7a.dev/strata/guide/text.md"
+    private const val FONT_GUIDE_URL = "https://gh.s7a.dev/strata/guide/font-resources.md"
+
+    private const val FONT_SETUP: String =
+        """## Unicode and resource-pack fonts
+
+Use `font = ResourceId("example", "body")` on `Text`, `TextField`, or `TextArea` to select `assets/example/font/body.json`, or use `UiText.withFont` for reusable labels and parts of composed text.
+The ID is a font definition, not an operating-system font family or a direct TTF path.
+An inner font wrapper takes precedence over an outer wrapper or component font argument.
+Existing overloads without a font argument remain available.
+
+Japanese, Korean, supplementary characters, and emoji require glyph coverage in the selected resources.
+Unknown font IDs produce missing glyphs instead of silently selecting `minecraft:default`.
+Strata does not provide an independent color-emoji or ZWJ-sequence renderer, and the compatibility ASCII profile builder alone cannot render arbitrary Unicode.
+See [Text and text input]($TEXT_GUIDE_URL) for a compiled API-only example.
+
+Existing `Text` overloads remain single-line; a required `TextLayout.Multiline` argument enables parent-width wrapping, hard breaks, line limits, clipping or ellipsis, and non-negative line spacing.
+`TextField` is single-line, while `TextArea` edits canonical LF text using `TextAreaState` and `TextAreaViewport.Lines` or `TextAreaViewport.Size`.
+An external `Scrollbar(state.scrollState)` shares the editor's stable owned vertical position.
+Immutable descriptions can be created without attaching state and reused after detachment; simultaneous attachment with the same `TextAreaState` throws `IllegalStateException`.
+Both editors navigate Unicode scalars rather than grapheme clusters, and positive `maxLength` counts UTF-16 code units.
+Delivered preedit events are shown as inline IME composition, with the supplied caret and focused block, separately from the committed value.
+TextArea also bounds the complete normalized composed value by its state's maxLength.
+TextArea semantics expose the typed TextArea role and editing value; the current semantics API does not expose typed accessibility edit or focus actions.
+Focus loss and terminal lifecycle paths clear composition.
+This does not add selection or clipboard commands, reproduce the native IME popup, or install new platform IME hooks on adapters that expose only committed characters.
+
+## Optional CPU backend for offline tools
+
+`dev.s7a.strata:strata-runtime-minecraft-fonts-lwjgl:0.1.1` supplies PNG decoding, the selected TrueType rasterizer, and ICU text ordering for resource-backed offline rendering without launching Minecraft.
+Versioned Fabric runtimes already include the backend and use the game's libraries; do not add runtime imports or native font objects to ordinary UI definitions.
+The backend does not bundle LWJGL, ICU, Gson, or native binaries.
+An offline host must supply the exact target's library dependencies and native classifier, caller-owned font resources, and `MinecraftFontCompatibility`; native library generations must not be mixed in one process.
+Use the pinned dependency declarations linked from [Font resources]($FONT_GUIDE_URL) rather than copying another release's versions.
+
+The resource loader creates an immutable snapshot, and each host owns and closes its own backend and bounded caches.
+Signed and zero TrueType settings follow the target contract, but non-finite JSON settings and unsafe STB coordinate conversions remain invalid.
+Read [Numeric provider settings]($FONT_GUIDE_URL#numeric-provider-settings) for atlas limits, non-finite glyph metrics, and compatibility options.
+[Acceptance evidence]($FONT_GUIDE_URL#acceptance-evidence) requires exact native metrics and glyph texels; only final-image differences with independent GPU evidence are permitted, not a general pixel tolerance."""
 }

@@ -9,8 +9,11 @@ Strata is pronounced “STRAY-tuh” (`/ˈstreɪtə/`) and is the plural of *str
 The name reflects its layered design: declarative components, retained UI behavior, portable rendering, and environment-specific adapters.
 
 Strata 0.1.1 is distributed through Maven Central for development, as a separate client Fabric Mod through Modrinth, and as a public Codex skill in this repository.
-Its only functional change from 0.1.0 is support for Minecraft 1.20.
-Features are documented as available only after executable tests verify them.
+It adds Minecraft 1.20 support, Unicode text and resource-pack font selection, structurally wrapped multiline `Text`, and `TextField` / `TextArea` editing with IME composition events supplied by Minecraft.
+Font resources can also render without launching Minecraft through the optional `runtime:minecraft-fonts-lwjgl` backend.
+Existing text overloads remain available.
+
+See [Text and text input](docs/text.md) and the [font acceptance scope](docs/font-resources.md#acceptance-evidence).
 
 ## Why Strata exists
 
@@ -24,7 +27,7 @@ The design separates those concerns into layers:
 - retained nodes perform incremental measurement, layout, painting, input, semantics, and lifecycle work;
 - active modifiers provide checked padding, size constraints, background painting, unresolved semantics, typed pointer/keyboard/text/focus actions, and typed layout parent data without changing component implementations;
 - the retained core runtime emits draw commands and unresolved semantics on the JVM;
-- the platform-neutral API owns one-shot screen definitions; Row/Column/Stack/Grid layout; Text, TextField, Button, Checkbox, CycleButton, Slider, Tab, ScrollArea, Scrollbar, VirtualList, SelectionList, Image, Slot, PlayerHead, LoadingIndicator, and ProgressBar authoring; resource identifiers; slot locators; skin sources; and active modifiers, so application source compiles without a runtime dependency;
+- the platform-neutral API owns one-shot screen definitions; Row/Column/Stack/Grid layout; Text, TextField, TextArea, Button, Checkbox, CycleButton, Slider, Tab, ScrollArea, Scrollbar, VirtualList, SelectionList, Image, Slot, PlayerHead, LoadingIndicator, and ProgressBar authoring; resource identifiers; slot locators; skin sources; and active modifiers, so application source compiles without a runtime dependency;
 - the common Minecraft runtime installs itself behind that API, resolves the selected profile and resources, synchronizes bound slots with the active server menu, and hosts the retained tree without exposing a context receiver to application code;
 - the latest Java release, Minecraft 26.2, has a Fabric boundary that extracts the supported native profile, resolves Mod images and current-player skin pixels through the active resource and texture paths, and adapts common frames, typed mouse/keyboard/text input, and screen lifecycle on the client thread; loaded client GameTests verify exact native/Fabric/headless ARGB parity for vanilla screens, PlayerHead, and a primitive-composed Social Interactions screen, exact Fabric/headless parity for resource-pack-backed industrial and progression Mod screens, and live server-authoritative inventory interaction.
 
@@ -111,7 +114,7 @@ dependencies {
 }
 ```
 
-The runtime is also available from [Modrinth](https://modrinth.com/mod/strata-ui).
+The version-matched runtimes are also available from [Modrinth](https://modrinth.com/mod/strata-ui).
 Declare it as a required dependency in the consuming Mod so `ScreenDefinition.open()` always has a presenter in production:
 
 ```json
@@ -194,7 +197,9 @@ npx skills add sya-ri/strata --skill strata
 
 - [Architecture](docs/architecture.md) explains the public SPI, runtime boundaries, and testing strategy.
 - [Built-in layout components](docs/layout.md) specifies Row, Column, Stack, Grid, and Spacer measurement, arrangement, alignment, and weight behavior.
-- [Component showcase](docs/components.md) contains every generated example and Minecraft-backed image from the exact native/Fabric/headless parity frame in one document.
+- [Component showcase](docs/components.md) contains the compiled examples and verified Minecraft-backed images in one document.
+- [Text and text input](docs/text.md) explains Unicode values, resource-pack font selection, scalar editing, and delivered IME composition.
+- [Font resources](docs/font-resources.md) covers offline font snapshots, native backend dependencies, and ownership.
 - [Element SPI](docs/element-spi.md) explains node ownership, lifecycle, retained phases, and extension points.
 - [Modifiers](docs/modifiers.md) explains active modifier nodes, typed parent data, positional reconciliation, lifecycle, and extension failures.
 - [External state sources](docs/state-sources.md) specifies linearizable revisioned state observation across threads.
@@ -203,7 +208,7 @@ npx skills add sya-ri/strata --skill strata
 - [Contributing](CONTRIBUTING.md) covers development setup, verification, and contribution guidelines.
 - [Build and release](docs/build.md) lists local quality checks, the aggregated Dokka GitHub Pages site, and publication requirements.
 - [Supporting a new Minecraft version](docs/minecraft-versions.md) defines the evidence, implementation, and compatibility process for another adapter.
-- [Strata 0.1.1 release notes](docs/releases/v0.1.1.md) records the Minecraft 1.20 compatibility release.
+- [Strata 0.1.1 release notes](docs/releases/v0.1.1.md) describe Minecraft 1.20 support, resource fonts, multiline text, and TextArea editing.
 - [Strata 0.1.0 release notes](docs/releases/v0.1.0.md) records the first public API, runtime, documentation, and distribution contract.
 
 The aggregated Dokka and reader guides are published at [gh.s7a.dev/strata](https://gh.s7a.dev/strata/).
@@ -216,6 +221,7 @@ The aggregated Dokka and reader guides are published at [gh.s7a.dev/strata](http
 | `runtime/core` | Shared retained engine for layout, rendering, input, and screen sessions. |
 | `runtime/headless` | Deterministic rendering and UI tests without launching Minecraft. |
 | `runtime/minecraft` | Common component implementations, resources, bindings, and screen hosting. |
+| `runtime/minecraft-fonts-lwjgl` | Optional CPU font backend for resource fonts; uses target-matched native libraries. |
 | `runtime/minecraft-fabric-<version>` | Client Fabric adapter; install exactly one matching your Minecraft version. |
 | `integration/*` | API, loaded-client, and documentation verification; not published. |
 
@@ -223,8 +229,10 @@ See [Architecture](docs/architecture.md#module-boundaries) for dependency bounda
 
 ## Known limitations
 
-- The verified bitmap font path currently supports printable ASCII with the regular Minecraft glyph sheet.
-- Forced Unicode and multi-resource font stacks are not yet supported.
+- Resource-font native acceptance covers the tested fixtures and device observations; [font acceptance scope](docs/font-resources.md#acceptance-evidence) describes exact comparisons, verified GPU differences, and remaining numeric limits.
+- Unicode and custom-font coverage depend on the selected resource pack; the older finite ASCII profile format remains a separate compatibility mode.
+- Font rendering targets standard Minecraft providers and shaders, without OS fonts, an additional color-emoji engine, or new translation-key resolution.
+- `TextField` edits one line and `TextArea` edits canonical LF multiline values; both use Unicode scalar boundaries, not grapheme clusters, and IME support is limited to input events supplied by the game.
 - Resource-backed images use fixed declared logical dimensions and deterministic nearest sampling; layout does not infer dimensions from a replacement image.
 
 ## License

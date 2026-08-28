@@ -224,9 +224,10 @@ public interface ComponentRuntime {
      *
      * The default implementation rejects this capability so existing runtime implementations remain source and binary compatible.
      * The retained node owns its sole text subscription and must release it on detach or failure.
+     * Creating the immutable description does not subscribe to [state]; the description can be reused after detachment.
      *
      * @param state caller-owned owner-thread canonical multiline text and vertical position.
-     * @param viewport exact outer size or font-dependent visible-row request.
+     * @param viewport exact outer size or visible-row request using the fixed nine-pixel logical line box.
      * @param enabled whether focus, editing, and enabled appearance are active.
      * @param style profile color and shadow policy.
      * @param wrap presentation-only wrapping policy.
@@ -234,6 +235,7 @@ public interface ComponentRuntime {
      * @param modifier active behavior around the editor.
      * @param key optional stable sibling identity.
      * @return an immutable retained-element description referencing but not owning [state].
+     * @throws IllegalStateException during retained attachment when [state] is already attached to another retained editor.
      * @throws UnsupportedOperationException when the runtime has not implemented multiline editing.
      */
     public fun textArea(
@@ -252,9 +254,10 @@ public interface ComponentRuntime {
      *
      * The default implementation rejects this capability without opening or retaining font resources.
      * The retained node owns its sole text subscription and must release it on detach or failure.
+     * Creating the immutable description does not subscribe to [state]; the description can be reused after detachment.
      *
      * @param state caller-owned owner-thread canonical multiline text and vertical position.
-     * @param viewport exact outer size or font-dependent visible-row request.
+     * @param viewport exact outer size or visible-row request using the fixed nine-pixel logical line box.
      * @param enabled whether focus, editing, and enabled appearance are active.
      * @param style profile color and shadow policy.
      * @param font structural identifier resolved against the runtime's pinned font resources.
@@ -263,6 +266,7 @@ public interface ComponentRuntime {
      * @param modifier active behavior around the editor.
      * @param key optional stable sibling identity.
      * @return an immutable description referencing but not owning [state] or live font resources.
+     * @throws IllegalStateException during retained attachment when [state] is already attached to another retained editor.
      * @throws UnsupportedOperationException when the runtime has not implemented multiline editing with explicit font selection.
      */
     public fun textArea(

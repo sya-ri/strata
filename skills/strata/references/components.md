@@ -2,7 +2,7 @@
 
 # Component catalog
 
-Strata exposes 21 focused standard components from `dev.s7a.strata.component`.
+Strata exposes 22 focused standard components from `dev.s7a.strata.component`.
 Every Kotlin declaration below is paired with the compiled `strata-api` overload inventory; generation fails when source and binary identities diverge or an undocumented component enters the API.
 Use the [rendered component showcase](https://gh.s7a.dev/strata/guide/components.md) for complete compiled examples and Minecraft-verified images.
 
@@ -85,15 +85,21 @@ fun UiScope.Spacer(modifier: Modifier = Modifier.Empty, key: ElementKey<*>? = nu
 
 ## Text
 
-Text renders a printable-ASCII literal with the extracted Minecraft glyph advances, shadow layer, foreground layer, and native baseline.
+Text renders Unicode literals and composed text using the active profile's font resources, glyph advances, shadow layer, foreground layer, and baseline. Explicit `TextLayout.Multiline` adds hard line breaks, wrapping, line limits, and clip or ellipsis overflow; the existing overload remains single-line. Glyph availability follows the selected resource pack.
 
-- Compiled overloads: 2
-- Modifiers: Ordinary sizing, padding, placement, and paint modifiers compose around `Text`; text content remains a typed component argument.
-- Parent scope: `Text` is a top-level extension on the active `UiScope`. The screen runtime installs its selected Minecraft profile only for the definition callback, and the component has no content callback or parent-data API.
+- Compiled overloads: 8
+- Modifiers: Ordinary sizing, padding, placement, and paint modifiers compose around `Text`; multiline layout uses the available width and height. `TextWrap.None`, `Word`, or `Character`, `maxLines`, `TextOverflow.Clip` or `Ellipsis`, and `lineSpacing` control presentation without changing the original semantic label. Text content and the optional `font: ResourceId` remain typed component arguments. `UiText.withFont` also selects a font for labels and composed text; an inner selection takes precedence over an outer one.
+- Parent scope: `Text` is a top-level extension on the active `UiScope`. The screen runtime installs its selected Minecraft profile only for the definition callback, and the component has no content callback or parent-data API. Unicode and custom fonts require a font-resource profile; the older printable-ASCII glyph builder remains a compatibility path.
 - [Showcase image and compiled example](https://gh.s7a.dev/strata/guide/components.md#text)
 
 ```kotlin
+fun UiScope.Text(text: String, font: ResourceId, style: TextStyle = TextStyle.Normal, modifier: Modifier = Modifier.Empty, key: ElementKey<*>? = null)
+fun UiScope.Text(text: String, layout: TextLayout, font: ResourceId, style: TextStyle = TextStyle.Normal, modifier: Modifier = Modifier.Empty, key: ElementKey<*>? = null)
+fun UiScope.Text(text: String, layout: TextLayout, style: TextStyle = TextStyle.Normal, modifier: Modifier = Modifier.Empty, key: ElementKey<*>? = null)
 fun UiScope.Text(text: String, style: TextStyle = TextStyle.Normal, modifier: Modifier = Modifier.Empty, key: ElementKey<*>? = null)
+fun UiScope.Text(text: UiText, font: ResourceId, style: TextStyle = TextStyle.Normal, modifier: Modifier = Modifier.Empty, key: ElementKey<*>? = null)
+fun UiScope.Text(text: UiText, layout: TextLayout, font: ResourceId, style: TextStyle = TextStyle.Normal, modifier: Modifier = Modifier.Empty, key: ElementKey<*>? = null)
+fun UiScope.Text(text: UiText, layout: TextLayout, style: TextStyle = TextStyle.Normal, modifier: Modifier = Modifier.Empty, key: ElementKey<*>? = null)
 fun UiScope.Text(text: UiText, style: TextStyle = TextStyle.Normal, modifier: Modifier = Modifier.Empty, key: ElementKey<*>? = null)
 ```
 
@@ -101,16 +107,34 @@ fun UiScope.Text(text: UiText, style: TextStyle = TextStyle.Normal, modifier: Mo
 
 ## TextField
 
-TextField reproduces the 200 by 20 Minecraft EditBox sprites, text origin, glyph colors, owner-thread value state, focus, and bounded editing behavior.
+TextField reproduces the 200 by 20 Minecraft EditBox sprites, text origin, glyph colors, owner-thread value state, and focus, with Unicode scalar editing and inline IME composition.
 
-- Compiled overloads: 2
-- Modifiers: Pointer, keyboard, committed-character, preedit, and focus modifiers run as active retained behavior around `TextField`; a consuming focused modifier overrides built-in editing.
-- Parent scope: `TextField` is a member extension on the active `UiScope`. The implicit runtime context supplies assets, while caller-owned `TextFieldState` owns the editable value.
+- Compiled overloads: 4
+- Modifiers: Pointer, keyboard, committed-character, preedit, and focus modifiers run as active retained behavior around `TextField`; a consuming focused modifier overrides built-in editing. The `font: ResourceId` overload changes metrics and drawing together, including cursor placement and horizontal scrolling.
+- Parent scope: `TextField` is a top-level extension on the active `UiScope`. Caller-owned `TextFieldState` owns the value and its positive UTF-16 maximum length. Movement and deletion operate on Unicode scalars, not whole grapheme clusters; preedit text remains separate until committed input arrives. The inline composition display does not reproduce Minecraft's native IME popup or platform candidate window.
 - [Showcase image and compiled example](https://gh.s7a.dev/strata/guide/components.md#text-field)
 
 ```kotlin
 fun UiScope.TextField(state: TextFieldState, enabled: Boolean = true, textStyle: TextStyle = TextStyle.TextField, modifier: Modifier = Modifier.Empty, key: ElementKey<*>? = null)
+fun UiScope.TextField(state: TextFieldState, font: ResourceId, enabled: Boolean = true, textStyle: TextStyle = TextStyle.TextField, modifier: Modifier = Modifier.Empty, key: ElementKey<*>? = null)
 fun UiScope.TextField(state: TextFieldState, size: IntSize, enabled: Boolean = true, textStyle: TextStyle = TextStyle.TextField, modifier: Modifier = Modifier.Empty, key: ElementKey<*>? = null)
+fun UiScope.TextField(state: TextFieldState, size: IntSize, font: ResourceId, enabled: Boolean = true, textStyle: TextStyle = TextStyle.TextField, modifier: Modifier = Modifier.Empty, key: ElementKey<*>? = null)
+```
+
+<a id="text-area"></a>
+
+## TextArea
+
+TextArea edits one multiline value inside an explicit viewport with Unicode scalar navigation, inline IME composition, and independent vertical scrolling. It serves both note editing and message drafts without encoding an application model.
+
+- Compiled overloads: 2
+- Modifiers: Place `TextArea` with ordinary layout modifiers and select its outer extent through `TextAreaViewport.Size` or `Lines`. Minecraft uses a fixed 9-pixel logical line box, optional extra line spacing, and four-pixel padding on each side. An external `Scrollbar(state.scrollState)` observes the editor's caller-owned scroll state; the editor does not insert a scrollbar or toolbar. The `font: ResourceId` overload changes layout, cursor placement, and drawing together.
+- Parent scope: `TextArea` is a leaf extension on the active `UiScope`; one retained editor observes its owner-thread `TextAreaState`. Creating an immutable description does not attach the state, and descriptions can be reused after detachment. Simultaneous attachment with the same caller-owned state throws `IllegalStateException`. The state stores canonical LF newlines and enforces a positive UTF-16 maximum length. Soft wrapping never edits the stored value, and IME preedit remains separate until committed. `SemanticsRole.TextArea` exposes the committed text through `Semantics.value`, without typed accessibility edit actions. Selection, clipboard commands, grapheme-cluster editing, and the platform IME candidate window are outside this component's contract.
+- [Showcase image and compiled example](https://gh.s7a.dev/strata/guide/components.md#text-area)
+
+```kotlin
+fun UiScope.TextArea(state: TextAreaState, viewport: TextAreaViewport, enabled: Boolean = true, textStyle: TextStyle = TextStyle.TextField, wrap: TextWrap = TextWrap.Word, lineSpacing: Int = 0, modifier: Modifier = Modifier.Empty, key: ElementKey<*>? = null)
+fun UiScope.TextArea(state: TextAreaState, viewport: TextAreaViewport, font: ResourceId, enabled: Boolean = true, textStyle: TextStyle = TextStyle.TextField, wrap: TextWrap = TextWrap.Word, lineSpacing: Int = 0, modifier: Modifier = Modifier.Empty, key: ElementKey<*>? = null)
 ```
 
 <a id="button"></a>
