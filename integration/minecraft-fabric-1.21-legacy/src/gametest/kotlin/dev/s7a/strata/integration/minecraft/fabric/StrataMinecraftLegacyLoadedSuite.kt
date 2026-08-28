@@ -214,12 +214,20 @@ internal class StrataMinecraftLegacyLoadedSuite {
             nativePresentation(screen).textures.isNotEmpty()
         }
         movePointer(context, slotCenter)
+        val textureObservation = AtomicReference<PortableTextureObservation?>()
         context.waitFor { minecraft ->
             val screen = minecraft.screen as? FabricMinecraftScreen ?: return@waitFor false
-            nativeTextureSizes(screen) == listOf(viewport, slotHighlightTextureSize)
+            val observed = portableTextureObservation(screen)
+            if (observed.sizes == listOf(viewport, slotHighlightTextureSize)) {
+                textureObservation.set(observed)
+                true
+            } else {
+                false
+            }
         }
+        assertPortableTextureBounds(checkNotNull(textureObservation.get()))
+        // This PNG is diagnostic; the strict texture-bounds gate uses the immutable observation captured above.
         takeScreenshot(context, "strata-player-inventory-binding-${minecraftVersion()}", output)
-        assertPortableTextureBounds(context)
     }
 
     private fun verifyPlayerInventoryRoundTrip(
@@ -329,16 +337,18 @@ internal class StrataMinecraftLegacyLoadedSuite {
         }
     }
 
-    private fun assertPortableTextureBounds(context: MinecraftLoadedTestContext) {
-        context.computeOnClient { minecraft ->
-            val screen = activeFabricScreen(minecraft)
-            val fabricPresentation = fabricPresentation(screen)
-            val sizes = nativeTextureSizes(screen)
-            require(sizes == listOf(viewport, slotHighlightTextureSize)) {
-                val pointer = retainedPresentation(fabricPresentation, "pointerPosition")
-                "Portable runs must retain only their visible bounds instead of one full-viewport texture each: sizes=$sizes, pointer=$pointer"
-            }
+    private fun assertPortableTextureBounds(observation: PortableTextureObservation) {
+        require(observation.sizes == listOf(viewport, slotHighlightTextureSize)) {
+            "Portable runs must retain only their visible bounds instead of one full-viewport texture each: sizes=${observation.sizes}, pointer=${observation.pointer}"
         }
+    }
+
+    private fun portableTextureObservation(screen: FabricMinecraftScreen): PortableTextureObservation {
+        val presentation = fabricPresentation(screen)
+        return PortableTextureObservation(
+            sizes = nativeTextureSizes(screen),
+            pointer = retainedPresentation(presentation, "pointerPosition") as? IntOffset,
+        )
     }
 
     private fun nativeTextureSizes(screen: FabricMinecraftScreen): List<IntSize> =
@@ -595,6 +605,11 @@ internal class StrataMinecraftLegacyLoadedSuite {
     private data class NativePresentation(
         val textures: List<DynamicTexture>,
         val locations: List<MinecraftTestResourceLocation>,
+    )
+
+    private data class PortableTextureObservation(
+        val sizes: List<IntSize>,
+        val pointer: IntOffset?,
     )
 
     private companion object {
