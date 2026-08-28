@@ -18,6 +18,8 @@ import dev.s7a.strata.spi.InternalStrataRuntimeApi
  * Backends must intersect drawing with every active [PushClip] until the matching [PopClip].
  * The core does not define blending or sampling policy.
  * Portable commands carry platform-neutral values, while the opt-in [Platform] variant preserves an opaque version-adapter payload without teaching core its type.
+ * Version 0.1.1 adds [SampledImage] to this sealed hierarchy; older exhaustive backends must handle or explicitly reject it before producing output.
+ * Existing JVM members remain available, but an older compiled visitor can fail when given the new variant.
  */
 public sealed interface DrawCommand {
     /**

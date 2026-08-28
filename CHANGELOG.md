@@ -24,6 +24,11 @@ All notable changes to Strata are documented in this file.
 - Repeated Fabric screen opens reuse one immutable profile generation; reload and terminal close invalidate it without changing snapshots still used by open hosts.
 - Font resource enumeration, decoding, reference expansion, and decompression enforce explicit per-input and aggregate work limits, including rejected input.
 
+### Compatibility
+
+- `UiText.WithFont` and `DrawCommand.SampledImage` intentionally expand existing sealed hierarchies. Exhaustive visitors must handle the new cases before recompilation; previously compiled visitors can fail when they receive those cases.
+- Existing component overloads, TextStyle, and JVM signatures remain available. This member compatibility does not imply source or behavioral compatibility for old text visitors or custom rendering backends.
+
 ## 0.1.0 - 2026-08-25
 
 ### Added

@@ -73,6 +73,7 @@ internal fun openConfirmationScreen(onConfirm: () -> Unit) {
 Pass `font = ResourceId("example", "body")` to `Text`, `TextField`, or `TextArea`, or use `UiText.withFont` for labels and composed text.
 The ID selects a resource-pack font definition, not an operating-system font family.
 Existing overloads without a font argument remain available.
+Version 0.1.1 intentionally adds sealed `UiText.WithFont` and `DrawCommand.SampledImage` variants; update custom exhaustive visitors before upgrading, as described in [Source compatibility](https://gh.s7a.dev/strata/guide/text.md#source-compatibility).
 Glyph coverage and emoji presentation depend on the selected resources; Strata does not supply an independent color-emoji or ZWJ-sequence renderer.
 Unknown font IDs produce missing glyphs instead of silently selecting `minecraft:default`.
 

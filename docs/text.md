@@ -5,6 +5,18 @@ The active profile supplies both glyph metrics and pixels, so the same font sele
 Available glyphs and emoji presentation depend on the selected Minecraft resources.
 Strata does not provide an independent color-emoji or ZWJ-sequence renderer.
 
+## Source compatibility
+
+Version 0.1.1 intentionally adds `UiText.WithFont` and `DrawCommand.SampledImage` to existing sealed hierarchies while the API is still in initial development.
+An exhaustive Kotlin `when` written for the previous four text variants or five drawing variants needs a branch for the new case before recompilation.
+Previously compiled visitors can throw when they receive a new case, even though the old constructors, methods, and component overloads remain available.
+
+Text visitors should traverse `WithFont.text` and preserve its inherited font selection, with inner selections taking precedence.
+Custom rendering backends must implement the fractional `SampledImage` contract or reject unsupported commands before producing output; treating it as the integer `BlitImage` command or silently skipping it changes the image.
+The default Fabric resource-font profile can emit sampled images for ordinary existing `Text(...)` calls, so this requirement is not limited to explicitly selected fonts.
+Update custom visitors and keep all Strata artifacts on the same version.
+The supplied Fabric and headless backends handle both cases.
+
 ## Rendering density
 
 GUI scale affects readability, especially for characters with many strokes.

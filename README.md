@@ -12,6 +12,7 @@ Strata 0.1.1 is distributed through Maven Central for development, as a separate
 It adds Minecraft 1.20 support, Unicode text and resource-pack font selection, structurally wrapped multiline `Text`, and `TextField` / `TextArea` editing with IME composition events supplied by Minecraft.
 Font resources can also render without launching Minecraft through the optional `runtime:minecraft-fonts-lwjgl` backend.
 Existing text overloads remain available.
+Version 0.1.1 adds cases to the sealed `UiText` and `DrawCommand` types; applications with exhaustive visitors must update them as described in [Source compatibility](docs/text.md#source-compatibility).
 
 See [Text and text input](docs/text.md) and the [font acceptance scope](docs/font-resources.md#acceptance-evidence).
 
