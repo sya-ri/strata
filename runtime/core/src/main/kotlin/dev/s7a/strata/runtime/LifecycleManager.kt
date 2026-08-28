@@ -5,12 +5,18 @@ import dev.s7a.strata.spi.InternalStrataRuntimeApi
 
 /**
  * Owns node binding, parent-first attachment, and descendant-first cleanup.
+ *
+ * The owning tree invokes this manager only on its construction thread.
+ * Cleanup runs the input-release hook before each entry's detach and dispose, and aggregates failures while attempting every resource.
+ *
+ * @param beforeEntryCleanup callback that clears entry-owned input before lifecycle resources are released.
  */
 @OptIn(InternalStrataRuntimeApi::class)
 internal class LifecycleManager(
     private val registry: NodeOwnershipRegistry,
     private val threadGuard: ThreadGuard,
     private val dirtyTracker: DirtyTracker,
+    private val beforeEntryCleanup: (RetainedEntry) -> Unit,
 ) {
     /**
      * Binds [retained] immediately after its creation and claims its node identity.
@@ -84,7 +90,7 @@ internal class LifecycleManager(
      * @return the first cleanup failure, with later distinct failures suppressed on it.
      */
     fun cleanup(retained: RetainedNode): Throwable? {
-        markCleanupStarted(retained)
+        prepareCleanup(retained)
         val failures = FailureAccumulator()
         cleanupNode(retained, failures)
         return failures.first
@@ -103,10 +109,17 @@ internal class LifecycleManager(
         return failures.first
     }
 
-    private fun markCleanupStarted(retained: RetainedNode) {
+    /**
+     * Rejects invalidation from every subtree entry before terminal input cancellation or lifecycle cleanup begins.
+     *
+     * This owner-thread operation invokes no callbacks, releases no resources, and is safe to repeat before [cleanup].
+     *
+     * @param retained subtree whose node ownership is entering cleanup.
+     */
+    fun prepareCleanup(retained: RetainedNode) {
         retained.cleanupStarted = true
         retained.modifiers.forEach(::markCleanupStarted)
-        retained.children.forEach(::markCleanupStarted)
+        retained.children.forEach(::prepareCleanup)
     }
 
     private fun markCleanupStarted(retained: RetainedModifier) {
@@ -133,6 +146,7 @@ internal class LifecycleManager(
         retained: RetainedEntry,
         failures: FailureAccumulator,
     ) {
+        failures.capture { beforeEntryCleanup(retained) }
         val lifecycle = retained.node as? LifecycleNode
         if (lifecycle != null && retained.attachAttempted && retained.detachAttempted.not()) {
             retained.detachAttempted = true

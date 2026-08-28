@@ -32,7 +32,18 @@ internal class RuntimeUiSessionBridgeApiContractTest {
         )
         assertInterfaceSurface(
             RuntimeUiSession::class.java,
-            listOf("attach", "detach", "frame", "frame", "dispatchPointer", "dispatchKeyboard", "dispatchTextInput", "getTextInputFocus", "close"),
+            listOf(
+                "attach",
+                "detach",
+                "frame",
+                "frame",
+                "dispatchPointer",
+                "dispatchKeyboard",
+                "dispatchTextInput",
+                "getTextInputFocus",
+                "resetInputState",
+                "close",
+            ),
         )
     }
 
@@ -130,6 +141,7 @@ internal class RuntimeUiSessionBridgeApiContractTest {
             val attach = byName.getValue("attach")
             val close = byName.getValue("close")
             val detach = byName.getValue("detach")
+            val resetInputState = byName.getValue("resetInputState")
             val frames = methods.groupBy { method -> method.name }.getValue("frame")
             val textInputFocus = byName.getValue("getTextInputFocus")
             assertEquals(RuntimeTextInputFocus::class.java, textInputFocus.returnType)
@@ -138,6 +150,8 @@ internal class RuntimeUiSessionBridgeApiContractTest {
             assertEquals(0, attach.parameterCount)
             assertEquals(Void.TYPE, detach.returnType)
             assertEquals(0, detach.parameterCount)
+            assertEquals(Void.TYPE, resetInputState.returnType)
+            assertEquals(0, resetInputState.parameterCount)
             assertTrue(frames.all { method -> method.returnType == RuntimeUiFrame::class.java })
             assertEquals(
                 setOf(

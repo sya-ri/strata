@@ -746,6 +746,7 @@ public class StrataMinecraftClientGameTest : FabricClientGameTest {
                         )
                     },
                 )
+            if (showcase === ComponentShowcase.Canvas) requireCanvasKnownPixels(headless)
             val png = headless.encodePng()
             val imagePath = imageDirectory.resolve("${showcase.slug}.png")
             Files.write(imagePath, png)
@@ -809,6 +810,28 @@ public class StrataMinecraftClientGameTest : FabricClientGameTest {
         return frames
     }
 
+    private fun requireCanvasKnownPixels(image: HeadlessImage) {
+        val expected =
+            intArrayOf(
+                0xFF4CC9F0.toInt(),
+                0xFF4361EE.toInt(),
+                0xFF7209B7.toInt(),
+                0xFFF72585.toInt(),
+                0xFF90BE6D.toInt(),
+                0xFFF9C74F.toInt(),
+                0xFFF8961E.toInt(),
+                0xFF7D2122.toInt(),
+            )
+        require(image.argbAt(0, 0) == 0xFF000000.toInt()) { "The Canvas showcase background differs from opaque black." }
+        expected.indices.forEach { index ->
+            val x = 24 + (index % 4) * 16
+            val y = 24 + (index / 4) * 16
+            if (image.argbAt(x, y) != expected[index]) {
+                throw AssertionError("Canvas source texel $index differs from its independent expected straight-alpha color.")
+            }
+        }
+    }
+
     private fun createComponentShowcaseScreenDefinition(
         showcase: ComponentShowcase,
         assets: ComponentShowcaseAssets,
@@ -833,6 +856,7 @@ public class StrataMinecraftClientGameTest : FabricClientGameTest {
             ComponentShowcase.VirtualList -> createVirtualListShowcaseScreenDefinition()
             ComponentShowcase.SelectionList -> createSelectionListShowcaseScreenDefinition()
             ComponentShowcase.Image -> createImageShowcaseScreenDefinition(assets.image)
+            ComponentShowcase.Canvas -> createCanvasShowcaseScreenDefinition()
             ComponentShowcase.Slot -> createSlotShowcaseScreenDefinition()
             ComponentShowcase.PlayerHead -> createPlayerHeadShowcaseScreenDefinition(assets.playerSkin)
             ComponentShowcase.LoadingIndicator -> createLoadingIndicatorShowcaseScreenDefinition()
@@ -1475,6 +1499,7 @@ public class StrataMinecraftClientGameTest : FabricClientGameTest {
         VirtualList("virtual-list", IntSize(120, 48)),
         SelectionList("selection-list", IntSize(120, 48)),
         Image("image", IntSize(64, 64)),
+        Canvas("canvas", IntSize(96, 64)),
         Slot("slot", IntSize(64, 64), IntOffset(32, 32)),
         PlayerHead("player-head", IntSize(64, 64)),
         LoadingIndicator(

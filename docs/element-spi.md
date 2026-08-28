@@ -34,6 +34,15 @@ Attachment is parent-first.
 Cleanup is descendant-first, visits later siblings before earlier siblings, attempts detach at most once after an attach attempt, and disposes every claimed node even when attachment was never reached.
 Cleanup continues after failures and preserves the first failure while suppressing later distinct failures.
 
+A session's transient detach retains its tree and does not call `LifecycleNode.detach`.
+Implement `SessionAttachmentNode` when a retained node must suspend observations or native bindings while that session is detached.
+New nodes acquire initial resources in `LifecycleNode.attach`, including entries inserted by ordinary reconciliation.
+The session invokes `sessionAttached` on initial session attachment or reattachment, not after every reconciliation.
+This callback resumes suspended resources and leaves an already active binding unchanged.
+`sessionDetached` clears owned binding references before cleanup, and reattachment creates a new binding without replacing the node.
+Externally supplied sources remain application-owned.
+See [UI sessions](ui-sessions.md) for ordering, failure, and retained-tree behavior.
+
 ## Stable element tokens
 
 Create one `ElementType` instance per logical primitive kind and retain that instance as a singleton.
@@ -59,6 +68,13 @@ New nodes begin dirty in every phase.
 A clean measurement with equal constraints reuses its size.
 A clean paint reuses node-local commands and combines them with the node's current accumulated bounds.
 The parent paints before children in declared order.
+
+`FrameCutoffNode` supports external observations without performing retained work from source callbacks.
+Any-thread callbacks enqueue only their newest pending revision.
+The session captures all participating nodes and declared bindings before committing any captured observation or rebuilding content, so a callback arriving during commit belongs to the next frame.
+Both timed and untimed frames perform this cutoff; it is independent of `FrameTimeNode` animation callbacks.
+Commit may invalidate only the derived phases affected by the accepted immutable observation.
+Canvas uses this capability for CPU frames and keeps its explicit destination size when the source image's dimensions change.
 
 ## Measure and layout
 
@@ -112,7 +128,14 @@ The marker skips the clipped effective descendant subtree for pointer hit testin
 An ignored result continues dispatch and a consumed result stops it.
 Positive scroll `deltaX` requests motion toward increasing logical x, and positive `deltaY` requests motion toward increasing logical y.
 Adapters normalize native signs and units into this finite logical displacement.
-The initial protocol has no pointer capture or focus reservation.
+`PointerCaptureNode` optionally extends ordinary pointer input without changing PointerEvent or InputResult.
+Consuming a Press acquires the tree's single owner and starting button only when capture has no owner; another handler or button cannot take an existing capture.
+Subsequent Move and matching Drag/Release events go exclusively to that owner, including outside its bounds and ancestor clips.
+Coordinates use the latest committed local logical layout without clamping, and an ignored captured callback does not fall through to another control.
+Hover, other buttons, and scroll still follow actual hit testing.
+Matching Release clears capture before the callback; removal, replacement, unplacement, session detach, input reset, close, or failure clears it before one cancellation callback and before disposal.
+Cleanup continues if cancellation throws, preserving the primary failure and suppressing independent cleanup failures.
+Applications and third-party primitives can use the same capability directly or compose `onCapturedPointerEvent`; see [Modifiers](modifiers.md#built-in-modifiers).
 
 ## Keys and reconciliation
 

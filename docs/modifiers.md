@@ -44,6 +44,12 @@ An extent addition that cannot be represented as an `Int` fails instead of wrapp
 `background` emits one fill over its complete local bounds before content is painted.
 `semantics` emits one separate unresolved entry before content semantics and does not merge descendant values.
 `onPointerEvent` handles the complete typed pointer protocol and returns an explicit propagation result.
+`onCapturedPointerEvent(onCancel, callback)` additionally captures the button whose press that handler consumes, provided no other entry already owns capture.
+The tree retains one owner and starting button; moves and matching-button drags or releases go exclusively to that owner even outside its bounds or ancestor clips, use the latest committed local logical coordinates without clamping, and stop propagation even when its callback returns `Ignored`.
+Other buttons and scrolling retain ordinary dispatch, and hover remains a real hit-test observation independent of capture.
+A matching release clears capture before its callback and never calls cancellation.
+Removal, replacement, unplacement, session detach, close, failure, and explicit input reset clear capture before calling `onCancel` once, before that entry's callbacks and resources are disposed.
+Updating callback lambdas at the same modifier position preserves capture.
 `onPress`, `onRelease`, `onMove`, `onDrag`, and `onScroll` provide typed event-specific handlers; their simple action overloads consume press, release, and scroll while move and drag remain non-consuming.
 The simple press overload handles only the primary button, while the typed overload can inspect and decide every button.
 `onHover` observes distinct typed enter and exit transitions without consuming movement.
@@ -112,5 +118,8 @@ Hover observation independently visits every placed capable node deepest and lat
 Keyboard and text input visit only the focused logical component and its effective modifier ancestry.
 Semantics are emitted in effective parent-before-child order and remain unresolved until an adapter consumes them.
 Future modifier-specific capabilities can add typed contracts without changing the component child scope.
+Third-party component and modifier nodes opt into the same captured pointer protocol by implementing `PointerCaptureNode : PointerInputNode` and its `onPointerCaptureCancelled(button)` callback; the runtime does not recognize component kinds or require registration.
+Captured input is owned by the retained input pipeline, so session detachment and platform input reset cancel it even though detachment retains the nodes and does not call their lifecycle detach hooks.
+Cancellation clears the pipeline reference before user callbacks, and throwing cancellation cannot prevent remaining hover, focus, or lifecycle cleanup; the existing primary-failure and suppression order applies.
 
 The active modifier SPI and built-in modifiers are exercised through a third-party integration TCK.

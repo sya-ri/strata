@@ -42,6 +42,7 @@ internal class KotlinSourceSignatureInventoryTest {
         val loadRequest = source.stateAndBindings.getValue("ListLoadRequest")
         val scroll = source.stateAndBindings.getValue("ScrollState")
         val binding = source.stateAndBindings.getValue("SlotBinding")
+        val canvas = source.stateAndBindings.getValue("CanvasSource")
 
         assertTrue(cycle.any { declaration -> declaration.signature.contains("inline operator fun <reified E : Enum<E>> invoke") })
         assertTrue(cycle.any { declaration -> declaration.signature.startsWith("constructor(values: Collection<T>") })
@@ -50,6 +51,7 @@ internal class KotlinSourceSignatureInventoryTest {
         assertTrue(scroll.map(OwnedDeclaration::signature).contains("fun scrollTo(offset: Double): Double"))
         assertTrue(scroll.none { declaration -> declaration.signature.contains("updateGeometry") })
         assertTrue(binding.none { declaration -> declaration.signature.contains("val source") || declaration.signature.contains("val index") })
+        assertEquals(listOf("fun interface CanvasSource"), canvas.map(OwnedDeclaration::signature))
     }
 
     @Test

@@ -2,7 +2,7 @@
 
 # Component catalog
 
-Strata exposes 23 focused standard components from `dev.s7a.strata.component`.
+Strata exposes 24 focused standard components from `dev.s7a.strata.component`.
 Every Kotlin declaration below is paired with the compiled `strata-api` overload inventory; generation fails when source and binary identities diverge or an undocumented component enters the API.
 Use the [component showcase on GitHub](https://github.com/sya-ri/strata/blob/master/docs/components.md) for complete compiled examples and Minecraft-verified images.
 
@@ -307,6 +307,21 @@ Image maps one immutable resource-pack image to an exact logical size with deter
 ```kotlin
 fun UiScope.Image(source: ImageSource, size: IntSize? = null, modifier: Modifier = Modifier.Empty, key: ElementKey<*>? = null)
 fun UiScope.Image(source: ImageSource, sourceRegion: IntRect, size: IntSize = IntSize(sourceRegion.width, sourceRegion.height), modifier: Modifier = Modifier.Empty, key: ElementKey<*>? = null)
+```
+
+<a id="canvas"></a>
+
+## Canvas
+
+Canvas displays externally produced CPU frames or version-runtime native output in one input-passive rectangle. Decoded video and camera, filter, or custom-renderer output are independent uses; composing Image and Stack cannot provide source cutoffs, attachment lifetimes, leased GPU capture, or owned offscreen targets. The component does not implement a decoder, camera, world renderer, filter, or browser engine.
+
+- Compiled overloads: 1
+- Modifiers: Use an explicit positive logical `size`; the whole source stretches with nearest sampling, and changes to source pixel extent only repaint that destination. Canvas is input-passive. Compose `onCapturedPointerEvent` to forward unclamped local logical pointer coordinates, and use ordinary focus and keyboard modifiers only when the application needs them.
+- Parent scope: `Canvas` is a leaf extension with no content scope or parent-data API. `canvasSource(image)` retains immutable CPU pixels, while `canvasSource(frames)` observes `StateSource<DrawImage>` through owner-thread frame cutoffs. Each attachment owns its binding; replacement, detachment, and close stop that binding without closing the externally owned source. Native sources require the matching versioned runtime and do not read back pixels during normal presentation. Native headless capture requires an immutable snapshot of the same committed generation, physical extent, and top-left orientation; a missing or mismatched snapshot fails before any output.
+- [Showcase image and compiled example](https://gh.s7a.dev/strata/guide/components.md#canvas)
+
+```kotlin
+fun UiScope.Canvas(source: CanvasSource, size: IntSize, modifier: Modifier = Modifier.Empty, key: ElementKey<*>? = null)
 ```
 
 <a id="slot"></a>

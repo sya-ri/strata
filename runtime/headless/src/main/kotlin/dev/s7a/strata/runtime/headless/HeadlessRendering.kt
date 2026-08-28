@@ -6,9 +6,9 @@ import dev.s7a.strata.element.Element
 import dev.s7a.strata.geometry.Constraints
 import dev.s7a.strata.geometry.IntRect
 import dev.s7a.strata.geometry.IntSize
-import dev.s7a.strata.runtime.UiTree
 import dev.s7a.strata.runtime.render.DrawCommand
 import dev.s7a.strata.runtime.semantics.SemanticsEntry
+import dev.s7a.strata.runtime.spi.createRuntimeUiSession
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
 
 /**
@@ -89,21 +89,18 @@ private object HeadlessImplementation {
         scale: Int,
     ): HeadlessFrame {
         val dimensions = checkedDimensions(viewport, scale)
-        val tree = UiTree()
+        val session = createRuntimeUiSession { description }
         return completeWithClose(
             work = {
-                tree.update(description)
-                val measured = tree.measure(Constraints.fixed(viewport.width, viewport.height))
-                check(measured == viewport) {
+                session.attach()
+                val frame = session.frame(Constraints.fixed(viewport.width, viewport.height))
+                check(frame.size == viewport) {
                     "The retained root did not report the fixed headless viewport."
                 }
-                tree.layout()
-                val commands = tree.paint()
-                val semantics = tree.semantics()
-                val image = rasterizeSnapshot(commands, dimensions)
-                FrameImpl.create(viewport, scale, image, semantics)
+                val image = rasterizeSnapshot(frame.drawCommands, dimensions)
+                FrameImpl.create(viewport, scale, image, frame.semantics)
             },
-            close = tree::close,
+            close = session::close,
         )
     }
 

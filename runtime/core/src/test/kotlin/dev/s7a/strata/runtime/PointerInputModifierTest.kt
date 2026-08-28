@@ -11,6 +11,7 @@ import dev.s7a.strata.input.PointerButton
 import dev.s7a.strata.input.PointerEvent
 import dev.s7a.strata.input.PointerHoverEvent
 import dev.s7a.strata.modifier.Modifier
+import dev.s7a.strata.modifier.onCapturedPointerEvent
 import dev.s7a.strata.modifier.onDrag
 import dev.s7a.strata.modifier.onHover
 import dev.s7a.strata.modifier.onMove
@@ -19,6 +20,8 @@ import dev.s7a.strata.modifier.onPress
 import dev.s7a.strata.modifier.onRelease
 import dev.s7a.strata.modifier.onScroll
 import dev.s7a.strata.modifier.size
+import dev.s7a.strata.node.DirtyMask
+import dev.s7a.strata.node.DirtyPhase
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertSame
@@ -175,6 +178,230 @@ internal class PointerInputModifierTest {
         assertSame(primary, failure)
         assertEquals(TreeState.Poisoned, tree.state)
         tree.close()
+    }
+
+    @Test
+    fun capturedEventsRemainExclusiveOutsideBoundsAndIgnoredResultsDoNotBubble() {
+        val observed = ArrayList<Observation.Raw>()
+        val cancellations = ArrayList<PointerButton>()
+        val hover = ArrayList<PointerHoverEvent>()
+        val fallback = ArrayList<PointerEvent>()
+        val tree =
+            tree(
+                Modifier.Empty
+                    .size(10, 10)
+                    .onPointerEvent { event, _ ->
+                        fallback += event
+                        InputResult.Consumed
+                    }.onCapturedPointerEvent(cancellations::add) { event, local ->
+                        observed += Observation.Raw(event, local)
+                        if (event is PointerEvent.Press) InputResult.Consumed else InputResult.Ignored
+                    }.onHover(hover::add),
+            )
+        tree.dispatchPointer(PointerEvent.Move(IntOffset(1, 1)))
+        observed.clear()
+        fallback.clear()
+        val press = PointerEvent.Press(IntOffset(1, 1), PointerButton.Primary)
+        val inside = PointerEvent.Move(IntOffset(2, 3))
+        val outside = PointerEvent.Move(IntOffset(-3, 15))
+        val drag = PointerEvent.Drag(IntOffset(20, -4), PointerButton.Primary, 23.0, -19.0)
+        val release = PointerEvent.Release(IntOffset(4, 5), PointerButton.Primary)
+        val events = listOf(press, inside, outside, drag, release)
+
+        events.forEach { event -> assertEquals(InputResult.Consumed, tree.dispatchPointer(event)) }
+
+        assertEquals(events.map { event -> Observation.Raw(event, event.position) }, observed)
+        assertEquals(emptyList<PointerEvent>(), fallback)
+        assertEquals(listOf(PointerHoverEvent.Enter, PointerHoverEvent.Exit), hover)
+        tree.clearInputState()
+        assertEquals(emptyList<PointerButton>(), cancellations)
+        assertEquals(InputResult.Ignored, tree.dispatchPointer(PointerEvent.Move(IntOffset(20, 20))))
+        tree.close()
+    }
+
+    @Test
+    fun onlyConsumedPressesAcquireCapture() {
+        val cancellations = ArrayList<PointerButton>()
+        val events = ArrayList<PointerEvent>()
+        val tree =
+            tree(
+                Modifier.Empty.size(10, 10).onCapturedPointerEvent(cancellations::add) { event, _ ->
+                    events += event
+                    if (event is PointerEvent.Press) InputResult.Ignored else InputResult.Consumed
+                },
+            )
+        val press = PointerEvent.Press(IntOffset(1, 1), PointerButton.Primary)
+        val drag = PointerEvent.Drag(IntOffset(1, 1), PointerButton.Primary, 0.0, 0.0)
+        assertEquals(InputResult.Ignored, tree.dispatchPointer(press))
+        assertEquals(InputResult.Consumed, tree.dispatchPointer(drag))
+        assertEquals(InputResult.Ignored, tree.dispatchPointer(PointerEvent.Move(IntOffset(20, 20))))
+        tree.close()
+        assertEquals(listOf(press, drag), events)
+        assertEquals(emptyList<PointerButton>(), cancellations)
+    }
+
+    @Test
+    fun otherButtonsAndScrollingKeepHitTestingWithoutStealingCapture() {
+        val first = ArrayList<PointerEvent>()
+        val second = ArrayList<PointerEvent>()
+        val cancellations = ArrayList<PointerButton>()
+        val probe = TestProbe(inputResult = InputResult.Ignored)
+        val tree = UiTree()
+        tree.update(
+            probe.root(
+                listOf(
+                    probe.element(
+                        TestProbe.ProbeId("first"),
+                        modifier =
+                            Modifier.Empty.onCapturedPointerEvent(cancellations::add) { event, _ ->
+                                first += event
+                                InputResult.Consumed
+                            },
+                    ),
+                    probe.element(
+                        TestProbe.ProbeId("second"),
+                        modifier =
+                            Modifier.Empty.onCapturedPointerEvent(cancellations::add) { event, _ ->
+                                second += event
+                                InputResult.Consumed
+                            },
+                    ),
+                ),
+            ),
+        )
+        tree.measure(Constraints(maxWidth = 10, maxHeight = 10))
+        tree.layout()
+        val press = PointerEvent.Press(IntOffset(1, 0), PointerButton.Primary)
+        val other = IntOffset(3, 0)
+        val ordinary =
+            listOf(
+                PointerEvent.Press(other, PointerButton.Secondary),
+                PointerEvent.Drag(other, PointerButton.Secondary, 1.0, 0.0),
+                PointerEvent.Release(other, PointerButton.Secondary),
+                PointerEvent.Scroll(other, 0.0, 1.0),
+            )
+        val captured =
+            listOf(
+                PointerEvent.Move(other),
+                PointerEvent.Drag(other, PointerButton.Primary, 2.0, 0.0),
+                PointerEvent.Release(other, PointerButton.Primary),
+            )
+
+        tree.dispatchPointer(press)
+        ordinary.forEach(tree::dispatchPointer)
+        captured.forEach(tree::dispatchPointer)
+        tree.close()
+
+        assertEquals(listOf(press) + captured, first)
+        assertEquals(ordinary, second)
+        assertEquals(emptyList<PointerButton>(), cancellations)
+    }
+
+    @Test
+    fun callbackUpdatesKeepCaptureAndReadOnlyLatestCallbacks() {
+        val oldEvents = ArrayList<PointerEvent>()
+        val newEvents = ArrayList<PointerEvent>()
+        val oldCancellations = ArrayList<PointerButton>()
+        val newCancellations = ArrayList<PointerButton>()
+        val tree =
+            tree(
+                Modifier.Empty.size(10, 10).onCapturedPointerEvent(oldCancellations::add) { event, _ ->
+                    oldEvents += event
+                    InputResult.Consumed
+                },
+            )
+        val press = PointerEvent.Press(IntOffset(1, 1), PointerButton.Auxiliary(4))
+        tree.dispatchPointer(press)
+        val revision = tree.currentRevision()
+        tree.update(
+            evaluateComponentTree {
+                Spacer(
+                    modifier =
+                        Modifier.Empty.size(10, 10).onCapturedPointerEvent(newCancellations::add) { event, _ ->
+                            newEvents += event
+                            InputResult.Ignored
+                        },
+                )
+            },
+        )
+        assertEquals(revision, tree.currentRevision())
+        val outside = PointerEvent.Drag(IntOffset(-1, -2), PointerButton.Auxiliary(4), -2.0, -3.0)
+        assertEquals(InputResult.Consumed, tree.dispatchPointer(outside))
+        tree.clearInputState()
+        tree.close()
+
+        assertEquals(listOf(press), oldEvents)
+        assertEquals(listOf(outside), newEvents)
+        assertEquals(emptyList<PointerButton>(), oldCancellations)
+        assertEquals(listOf(PointerButton.Auxiliary(4)), newCancellations)
+    }
+
+    @Test
+    fun removingOrReplacingCapturedModifierCancelsBeforeItsCallbackIsDisposed() {
+        for (replacement in listOf(Modifier.Empty, Modifier.Empty.onPointerEvent { _, _ -> InputResult.Ignored })) {
+            val cancellations = ArrayList<PointerButton>()
+            val tree =
+                tree(
+                    Modifier.Empty.size(10, 10).onCapturedPointerEvent(cancellations::add) { _, _ -> InputResult.Consumed },
+                )
+            tree.dispatchPointer(PointerEvent.Press(IntOffset(1, 1), PointerButton.Primary))
+            tree.update(evaluateComponentTree { Spacer(modifier = Modifier.Empty.size(10, 10).then(replacement)) })
+            assertEquals(listOf(PointerButton.Primary), cancellations)
+            tree.measure(Constraints.fixed(10, 10))
+            tree.layout()
+            tree.close()
+            assertEquals(listOf(PointerButton.Primary), cancellations)
+        }
+    }
+
+    @Test
+    fun releaseFailureDoesNotCancelAnAlreadyCompletedGesture() {
+        val primary = IllegalArgumentException("release")
+        val cancellations = ArrayList<PointerButton>()
+        val tree =
+            tree(
+                Modifier.Empty.size(10, 10).onCapturedPointerEvent(cancellations::add) { event, _ ->
+                    if (event is PointerEvent.Release) throw primary
+                    InputResult.Consumed
+                },
+            )
+        tree.dispatchPointer(PointerEvent.Press(IntOffset(1, 1), PointerButton.Primary))
+        val failure =
+            assertThrows(IllegalArgumentException::class.java) {
+                tree.dispatchPointer(PointerEvent.Release(IntOffset(-1, -1), PointerButton.Primary))
+            }
+        assertSame(primary, failure)
+        assertEquals(TreeState.Poisoned, tree.state)
+        tree.close()
+        assertEquals(emptyList<PointerButton>(), cancellations)
+    }
+
+    @Test
+    fun terminalCancellationRunsAfterEveryNodeRejectsInvalidation() {
+        val probe = TestProbe(inputResult = InputResult.Ignored)
+        val child = TestProbe.ProbeId("child")
+        val tree = UiTree()
+        var cancellations = 0
+        tree.update(
+            probe.root(
+                listOf(probe.element(child)),
+                modifier =
+                    Modifier.Empty.onCapturedPointerEvent(
+                        onCancel = { _ ->
+                            cancellations += 1
+                            assertEquals(TreeState.Closed, tree.state)
+                            assertThrows(IllegalStateException::class.java) {
+                                probe.nodeForTag(child).invalidateForTest(DirtyMask.of(DirtyPhase.Paint))
+                            }
+                        },
+                    ) { _, _ -> InputResult.Consumed },
+            ),
+        )
+        tree.measure(Constraints.fixed(10, 10))
+        tree.layout()
+        tree.dispatchPointer(PointerEvent.Press(IntOffset(1, 0), PointerButton.Primary))
+        tree.close()
+        assertEquals(1, cancellations)
     }
 
     private fun tree(modifier: Modifier): UiTree =

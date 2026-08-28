@@ -218,6 +218,7 @@ internal class UiSession private constructor(
                 if (dirty) {
                     rebuildContent()
                 }
+                checkNotNull(tree) { "An attached session has no retained tree." }.sessionAttached()
             }.getOrElse { failure -> fail(failure) }
         } finally {
             endOperation()
@@ -225,13 +226,14 @@ internal class UiSession private constructor(
     }
 
     /**
-     * Detaches the session while retaining its tree, state values, and source subscriptions.
+     * Detaches the session while retaining its tree, state values, and session source subscriptions.
      *
      * Detachment is owner-thread confined and legal only from the attached state.
-     * A previously committed frame clears every active pointer-hover transition before the tree is retained.
+     * A previously committed frame cancels pointer capture and clears every active hover and focus transition before the tree is retained.
      * The immutable frame cache is released so reattachment always commits layout-dependent input state again.
      * Pending source values remain queued and are applied at the next frame after reattachment.
-     * A hover callback failure poisons the session and closes retained ownership while preserving the exact failure as primary.
+     * Nodes with session-attachment resources suspend their observations and reacquire them on reattachment.
+     * An input or resource callback failure poisons the session and closes retained ownership while preserving the exact failure as primary.
      */
     internal fun detach() {
         beginOperation(SessionOperation.Detach)
@@ -240,9 +242,13 @@ internal class UiSession private constructor(
                 "A session can detach only from Attached."
             }
             runCatching {
+                val retainedTree = checkNotNull(tree) { "An attached session has no retained tree." }
+                val failures = FailureAccumulator()
                 if (frameAvailable) {
-                    checkNotNull(tree) { "An attached session has no retained tree." }.clearInputState()
+                    failures.capture(retainedTree::clearInputState)
                 }
+                if (retainedTree.state === TreeState.Active) failures.capture(retainedTree::sessionDetached)
+                failures.throwIfPresent()
                 clearCachedFrame()
                 currentState = UiSessionState.Detached
                 frameAvailable = false
@@ -377,6 +383,30 @@ internal class UiSession private constructor(
      */
     internal fun dispatchTextInput(event: TextInputEvent): InputResult = dispatchFocusedInput { retainedTree -> retainedTree.dispatchTextInput(event) }
 
+    /**
+     * Cancels captured pointer input and clears hover and focus without detaching this session.
+     *
+     * The owner thread may invoke this for window blur or an explicit native input reset while attached.
+     * It is a no-op before a successful frame, preserves the committed frame and retained node ownership, and does not permit session-state mutation from cleanup callbacks.
+     *
+     * @throws IllegalStateException when called from another thread, reentrantly, or while the session is not attached.
+     * @throws Throwable when input cleanup fails; the exact primary failure is preserved while remaining cleanup is attempted and the session fails.
+     */
+    internal fun resetInputState() {
+        beginOperation(SessionOperation.InputReset)
+        try {
+            check(currentState === UiSessionState.Attached) {
+                "A session can reset input only while Attached."
+            }
+            if (frameAvailable.not()) return
+            runCatching {
+                checkNotNull(tree) { "An attached session has no retained tree." }.clearInputState()
+            }.getOrElse { failure -> fail(failure) }
+        } finally {
+            endOperation()
+        }
+    }
+
     private fun dispatchFocusedInput(dispatch: (UiTree) -> InputResult): InputResult {
         beginOperation(SessionOperation.Input)
         try {
@@ -461,11 +491,14 @@ internal class UiSession private constructor(
     }
 
     private fun applyBindingCutoff() {
+        bindings.forEach(UiSessionBinding<*>::capturePending)
+        tree?.captureFrameState()
         bindings.forEach { binding ->
             if (binding.applyPending()) {
                 dirty = true
             }
         }
+        tree?.commitFrameState()
     }
 
     private fun checkDeclaration() {
@@ -721,6 +754,7 @@ internal class UiSession private constructor(
         Frame,
         Input,
         InputGeometry,
+        InputReset,
         Close,
         Bind,
         TaskFailure,

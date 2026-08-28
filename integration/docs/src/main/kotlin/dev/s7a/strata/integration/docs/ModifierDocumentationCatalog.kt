@@ -35,6 +35,7 @@ internal object ModifierDocumentationCatalog {
             "initialFocus" to Entry("Focus and text", "Requests initial focus when the retained node first attaches."),
             "menuBackground" to Entry("Paint", "Paints the active resource-pack menu background without creating a separate background component."),
             "onAction" to Entry("Advanced actions", "Handles an extensible typed action key; prefer a focused built-in action extension when one exists."),
+            "onCapturedPointerEvent" to Entry("Pointer", "Captures a consumed press for one button, forwards movement and matching drag/release outside bounds or ancestor clips, and reports cancellation when ownership ends early."),
             "onCharacterInput" to Entry("Focus and text", "Handles committed character input while the element is focused."),
             "onCheckedChange" to Entry("Component actions", "Receives the next boolean value emitted by `Checkbox`."),
             "onCycle" to Entry("Component actions", "Receives the next typed value emitted by `CycleButton`."),

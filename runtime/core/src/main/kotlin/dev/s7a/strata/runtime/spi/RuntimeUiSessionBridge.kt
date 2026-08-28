@@ -92,6 +92,10 @@ private object RuntimeUiSessionImplementation {
 
         override fun dispatchTextInput(event: TextInputEvent): InputResult = cachedOperation { session.dispatchTextInput(event) }
 
+        override fun resetInputState() {
+            cachedOperation(session::resetInputState)
+        }
+
         override fun close() {
             val result = runCatching(session::close)
             clearCachedFrameOnOwnerThread()

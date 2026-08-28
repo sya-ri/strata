@@ -11,10 +11,12 @@ import dev.s7a.strata.component.TextFieldState
 import dev.s7a.strata.component.TextStyle
 import dev.s7a.strata.geometry.Constraints
 import dev.s7a.strata.geometry.IntOffset
+import dev.s7a.strata.geometry.IntRect
 import dev.s7a.strata.geometry.IntSize
 import dev.s7a.strata.input.InputResult
 import dev.s7a.strata.input.PointerButton
 import dev.s7a.strata.input.PointerEvent
+import dev.s7a.strata.integration.consumer.createApiOnlyCanvasDefinition
 import dev.s7a.strata.modifier.Modifier
 import dev.s7a.strata.modifier.containerBackground
 import dev.s7a.strata.modifier.menuBackground
@@ -27,6 +29,10 @@ import dev.s7a.strata.runtime.render.DrawCommand
 import dev.s7a.strata.screen.ScreenDefinition
 import dev.s7a.strata.semantics.SemanticsRole
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
+import dev.s7a.strata.state.StateRevision
+import dev.s7a.strata.state.StateSnapshot
+import dev.s7a.strata.state.StateSource
+import dev.s7a.strata.state.StateSubscription
 import dev.s7a.strata.text.UiText
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertSame
@@ -38,6 +44,30 @@ import org.junit.jupiter.api.Test
  */
 @OptIn(InternalStrataRuntimeApi::class)
 internal class ExternalMinecraftUiHostIntegrationTest {
+    @Test
+    fun apiOnlyCanvasCompilesWithGenericPointerCaptureAndRendersItsCpuImage() {
+        val image = createDrawImage(IntSize(2, 1), intArrayOf(0xFFFF0000.toInt(), 0xFF00FF00.toInt()))
+        val definition =
+            createApiOnlyCanvasDefinition(
+                frames = StateSource { StateSubscription(StateSnapshot(StateRevision(1), image)) {} },
+                size = IntSize(4, 2),
+                onCancel = {},
+                onPointerEvent = { _, _ -> InputResult.Ignored },
+            )
+        val host = createMinecraftUiHost(definition, profile())
+        try {
+            host.attach()
+            val frame = host.frame(IntSize(4, 2))
+            val output = frame.drawCommands.single() as DrawCommand.BlitImage
+            assertSame(image, output.image)
+            assertEquals(IntRect(0, 0, 2, 1), output.source)
+            assertEquals(IntRect(0, 0, 4, 2), output.destination)
+            assertEquals(InputResult.Ignored, host.dispatchPointer(PointerEvent.Press(IntOffset.Zero, PointerButton.Primary)))
+        } finally {
+            host.close()
+        }
+    }
+
     @Test
     fun externalContentBuildsMenuAndTextWithoutPublicContextOrRegistration() {
         assertExternalMenuAndText()
