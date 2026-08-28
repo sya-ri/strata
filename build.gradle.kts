@@ -4,9 +4,13 @@ import com.vanniktech.maven.publish.KotlinJvm
 import com.vanniktech.maven.publish.MavenPublishBaseExtension
 import com.vanniktech.maven.publish.SourcesJar
 import dev.detekt.gradle.extensions.DetektExtension
+import dev.s7a.strata.gradle.fabric.FabricClientTestOptions
 import dev.s7a.strata.gradle.fabric.FabricToolchainManifest
 import dev.s7a.strata.gradle.release.StrataReleaseExtension
 import kotlinx.kover.gradle.plugin.dsl.KoverProjectExtension
+import net.fabricmc.loom.api.LoomGradleExtensionAPI
+import net.fabricmc.loom.task.AbstractRunTask
+import net.fabricmc.loom.task.prod.ClientProductionRunTask
 import org.gradle.api.JavaVersion
 import org.gradle.api.plugins.JavaPluginExtension
 import org.gradle.api.publish.tasks.GenerateModuleMetadata
@@ -571,13 +575,34 @@ subprojects {
         }
     }
     tasks
-        .matching { task -> task.name in minecraftClientTaskNames }
+        .matching { task ->
+            task.name in minecraftClientTaskNames &&
+                minecraftTargetByProjectPath[task.project.path]?.integrationProjectPath == task.project.path
+        }
         .configureEach {
             usesService(minecraftClientExecutionService)
             mustRunAfter(selectedMinecraftAssetTasks)
             val clientTaskIndex = selectedMinecraftClientTasks.indexOf(path)
             if (clientTaskIndex != -1) {
                 mustRunAfter(selectedMinecraftClientTasks.take(clientTaskIndex))
+            }
+            doFirst {
+                val runDirectory =
+                    when (this) {
+                        is ClientProductionRunTask -> runDir.get().asFile
+                        is AbstractRunTask ->
+                            project.extensions
+                                .getByType<LoomGradleExtensionAPI>()
+                                .runConfigs
+                                .named("clientGameTest")
+                                .get()
+                                .runDirectory
+                                .get()
+                                .asFile
+                        else -> error("Unsupported Minecraft client verification task: $path")
+                    }
+                FabricClientTestOptions.prepare(project.layout.buildDirectory.get().asFile, runDirectory)
+                logger.lifecycle("Prepared silent Minecraft client test options without initial narrator setup for $path")
             }
         }
 

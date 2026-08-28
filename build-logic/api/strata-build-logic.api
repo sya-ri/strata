@@ -1,3 +1,8 @@
+public final class dev/s7a/strata/gradle/fabric/FabricClientTestOptions {
+	public static final field INSTANCE Ldev/s7a/strata/gradle/fabric/FabricClientTestOptions;
+	public final fun prepare (Ljava/io/File;Ljava/io/File;)V
+}
+
 public final class dev/s7a/strata/gradle/fabric/FabricToolchainManifest {
 	public fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)V
 	public final fun verify (Ljava/util/zip/ZipFile;)V
