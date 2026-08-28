@@ -16,7 +16,7 @@ import dev.s7a.strata.spi.InternalStrataRuntimeApi
  * Commands are returned in retained paint order, including explicit nested child clips and post-child overlays.
  * A backend must execute the list in that order.
  * Backends must intersect drawing with every active [PushClip] until the matching [PopClip].
- * The core does not define blending or sampling policy.
+ * The core records these contracts without clipping, blending, or sampling pixels.
  * Portable commands carry platform-neutral values, while the opt-in [Platform] variant preserves an opaque version-adapter payload without teaching core its type.
  * Version 0.1.1 adds [SampledImage] to this sealed hierarchy; older exhaustive backends must handle or explicitly reject it before producing output.
  * Existing JVM members remain available, but an older compiled visitor can fail when given the new variant.
@@ -46,6 +46,29 @@ public sealed interface DrawCommand {
      * @throws IllegalArgumentException when the source is empty, outside [image], or the destination is empty.
      */
     public data class BlitImage(
+        public val image: DrawImage,
+        public val source: IntRect,
+        public val destination: IntRect,
+    ) : DrawCommand {
+        init {
+            validateBlitImage(image, source, destination)
+        }
+    }
+
+    /**
+     * Samples an immutable image independently at every output pixel in a logical destination rectangle.
+     *
+     * Unlike logical-pixel image drawing, increasing the backend output scale preserves source detail within one logical pixel.
+     * Nearest sampling uses output pixel centers against the original unclipped destination; active clips remain logical rectangles.
+     * Source-over blending applies independently to every output pixel, including pixels later covered by ordinary logical commands.
+     * This detached command is safe to retain or read on any thread and owns no native handle or rendering callback.
+     *
+     * @property image immutable source pixels retained without copying.
+     * @property source nonempty contained source rectangle in image pixel coordinates.
+     * @property destination nonempty half-open destination in accumulated logical tree coordinates.
+     * @throws IllegalArgumentException when the source is empty, outside [image], or the destination is empty.
+     */
+    public data class BlitImagePixels(
         public val image: DrawImage,
         public val source: IntRect,
         public val destination: IntRect,

@@ -5,6 +5,17 @@ public abstract interface class dev/s7a/strata/runtime/minecraft/MinecraftInvent
 	public abstract fun observe (Lkotlin/jvm/functions/Function0;)Ljava/lang/AutoCloseable;
 }
 
+public abstract interface class dev/s7a/strata/runtime/minecraft/MinecraftPlatformCommandRenderer {
+	public abstract fun accepts (Ldev/s7a/strata/render/PlatformDrawCommand;)Z
+	public abstract fun render (Ljava/lang/Object;Ldev/s7a/strata/runtime/render/DrawCommand$Platform;)V
+}
+
+public final class dev/s7a/strata/runtime/minecraft/MinecraftPlatformCommands {
+	public fun <init> (Ljava/util/List;)V
+	public final fun render (Ljava/lang/Object;Ldev/s7a/strata/runtime/render/DrawCommand$Platform;)V
+	public final fun validate (Ljava/util/List;)V
+}
+
 public abstract interface class dev/s7a/strata/runtime/minecraft/MinecraftPlayerSkinBinding : java/lang/AutoCloseable {
 	public abstract fun close ()V
 	public abstract fun observe (Lkotlin/jvm/functions/Function0;)Ljava/lang/AutoCloseable;
@@ -59,6 +70,7 @@ public abstract interface class dev/s7a/strata/runtime/minecraft/MinecraftUiHost
 	public abstract fun getPausesGame ()Z
 	public abstract fun getTextInputFocus ()Ldev/s7a/strata/runtime/spi/RuntimeTextInputFocus;
 	public abstract fun getTitle ()Ldev/s7a/strata/text/UiText;
+	public abstract fun resetInputState ()V
 }
 
 public abstract interface class dev/s7a/strata/runtime/minecraft/MinecraftUiPlatform : java/lang/AutoCloseable {
@@ -107,6 +119,126 @@ public abstract interface class dev/s7a/strata/runtime/minecraft/MinecraftUiProf
 	public abstract fun textFieldNormal (Ldev/s7a/strata/render/DrawImage;)V
 	public abstract fun tooltipBackground (Ldev/s7a/strata/render/DrawImage;)V
 	public abstract fun tooltipFrame (Ldev/s7a/strata/render/DrawImage;)V
+}
+
+public final class dev/s7a/strata/runtime/minecraft/canvas/NativeCanvasAllocationFailure : java/lang/RuntimeException {
+	public fun <init> (Ldev/s7a/strata/runtime/minecraft/canvas/NativeCanvasTarget;Ljava/lang/Throwable;Z)V
+	public synthetic fun <init> (Ldev/s7a/strata/runtime/minecraft/canvas/NativeCanvasTarget;Ljava/lang/Throwable;ZILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun getFailure ()Ljava/lang/Throwable;
+	public final fun getReleaseRequested ()Z
+	public final fun getTarget ()Ldev/s7a/strata/runtime/minecraft/canvas/NativeCanvasTarget;
+}
+
+public abstract interface class dev/s7a/strata/runtime/minecraft/canvas/NativeCanvasCapture : java/lang/AutoCloseable {
+	public abstract fun close ()V
+	public abstract fun render (Ldev/s7a/strata/runtime/minecraft/canvas/NativeCanvasTarget;Ldev/s7a/strata/geometry/IntSize;Ldev/s7a/strata/runtime/FrameTime;)Ldev/s7a/strata/render/DrawImage;
+}
+
+public final class dev/s7a/strata/runtime/minecraft/canvas/NativeCanvasDevice {
+	public fun <init> (Ldev/s7a/strata/runtime/minecraft/canvas/NativeCanvasDriver;)V
+	public final fun cancel (Ldev/s7a/strata/runtime/minecraft/canvas/NativeCanvasPresentation;)V
+	public final fun closeAfterGuiDiscarded ()V
+	public final fun consumed ()V
+	public final fun failedGui ()V
+	public final fun getGuiResources ()Ldev/s7a/strata/runtime/minecraft/canvas/NativeGuiResources;
+	public final fun poll ()V
+	public final fun prepare (Ljava/util/List;Ldev/s7a/strata/runtime/FrameTime;I)Ldev/s7a/strata/runtime/minecraft/canvas/NativeCanvasPresentation;
+	public final fun queue (Ldev/s7a/strata/runtime/minecraft/canvas/NativeCanvasPresentation;)V
+	public final fun reload ()V
+	public final fun retainedTargetCount ()I
+	public final fun source (Lkotlin/jvm/functions/Function0;Z)Ldev/s7a/strata/component/CanvasSource;
+	public static synthetic fun source$default (Ldev/s7a/strata/runtime/minecraft/canvas/NativeCanvasDevice;Lkotlin/jvm/functions/Function0;ZILjava/lang/Object;)Ldev/s7a/strata/component/CanvasSource;
+	public final fun target (Ldev/s7a/strata/runtime/minecraft/canvas/NativeCanvasPresentation;Ldev/s7a/strata/runtime/minecraft/canvas/NativeCanvasToken;)Ldev/s7a/strata/runtime/minecraft/canvas/NativeCanvasTarget;
+}
+
+public final class dev/s7a/strata/runtime/minecraft/canvas/NativeCanvasDevices {
+	public static final field INSTANCE Ldev/s7a/strata/runtime/minecraft/canvas/NativeCanvasDevices;
+	public final fun closeAfterGuiDiscarded ()V
+	public final fun consumed ()V
+	public final fun device (Ldev/s7a/strata/runtime/minecraft/canvas/NativeCanvasDriver;)Ldev/s7a/strata/runtime/minecraft/canvas/NativeCanvasDevice;
+	public final fun failedGui ()V
+	public final fun poll ()V
+	public final fun reload ()V
+	public final fun retainedGuiResourceSetCount ()I
+	public final fun retainedTargetCount ()I
+}
+
+public abstract interface class dev/s7a/strata/runtime/minecraft/canvas/NativeCanvasDriver {
+	public abstract fun createTarget (Ldev/s7a/strata/geometry/IntSize;Z)Ldev/s7a/strata/runtime/minecraft/canvas/NativeCanvasTarget;
+	public fun drainRetirements ()V
+	public abstract fun fence ()Ldev/s7a/strata/runtime/minecraft/canvas/NativeCanvasFence;
+	public abstract fun finish ()V
+}
+
+public final class dev/s7a/strata/runtime/minecraft/canvas/NativeCanvasDriver$DefaultImpls {
+	public static fun drainRetirements (Ldev/s7a/strata/runtime/minecraft/canvas/NativeCanvasDriver;)V
+}
+
+public abstract interface class dev/s7a/strata/runtime/minecraft/canvas/NativeCanvasFence : java/lang/AutoCloseable {
+	public abstract fun close ()V
+	public abstract fun isSignalled ()Z
+}
+
+public final class dev/s7a/strata/runtime/minecraft/canvas/NativeCanvasPresentation {
+	public final fun capture ()Ljava/util/List;
+	public final fun getDrawCommands ()Ljava/util/List;
+}
+
+public abstract interface class dev/s7a/strata/runtime/minecraft/canvas/NativeCanvasProducer : java/lang/AutoCloseable {
+	public abstract fun capture ()Ldev/s7a/strata/runtime/minecraft/canvas/NativeCanvasCapture;
+	public abstract fun close ()V
+}
+
+public final class dev/s7a/strata/runtime/minecraft/canvas/NativeCanvasRequest : dev/s7a/strata/render/PlatformDrawCommand {
+}
+
+public final class dev/s7a/strata/runtime/minecraft/canvas/NativeCanvasSnapshot {
+}
+
+public final class dev/s7a/strata/runtime/minecraft/canvas/NativeCanvasSources {
+	public static final fun nativeCanvasSource (Ldev/s7a/strata/runtime/minecraft/canvas/NativeCanvasDriver;Lkotlin/jvm/functions/Function0;Z)Ldev/s7a/strata/component/CanvasSource;
+	public static synthetic fun nativeCanvasSource$default (Ldev/s7a/strata/runtime/minecraft/canvas/NativeCanvasDriver;Lkotlin/jvm/functions/Function0;ZILjava/lang/Object;)Ldev/s7a/strata/component/CanvasSource;
+}
+
+public abstract interface class dev/s7a/strata/runtime/minecraft/canvas/NativeCanvasTarget : java/lang/AutoCloseable {
+	public abstract fun close ()V
+	public abstract fun getSize ()Ldev/s7a/strata/geometry/IntSize;
+	public fun isDestroyed ()Z
+}
+
+public final class dev/s7a/strata/runtime/minecraft/canvas/NativeCanvasTarget$DefaultImpls {
+	public static fun isDestroyed (Ldev/s7a/strata/runtime/minecraft/canvas/NativeCanvasTarget;)Z
+}
+
+public final class dev/s7a/strata/runtime/minecraft/canvas/NativeCanvasToken : dev/s7a/strata/render/PlatformDrawCommand {
+	public final fun getPhysicalSize ()Ldev/s7a/strata/geometry/IntSize;
+}
+
+public abstract interface class dev/s7a/strata/runtime/minecraft/canvas/NativeGuiResource : java/lang/AutoCloseable {
+	public abstract fun close ()V
+	public fun isDestroyed ()Z
+}
+
+public final class dev/s7a/strata/runtime/minecraft/canvas/NativeGuiResource$DefaultImpls {
+	public static fun isDestroyed (Ldev/s7a/strata/runtime/minecraft/canvas/NativeGuiResource;)Z
+}
+
+public final class dev/s7a/strata/runtime/minecraft/canvas/NativeGuiResourceOwnerId {
+}
+
+public final class dev/s7a/strata/runtime/minecraft/canvas/NativeGuiResourceSet {
+}
+
+public final class dev/s7a/strata/runtime/minecraft/canvas/NativeGuiResources {
+	public final fun add (Ldev/s7a/strata/runtime/minecraft/canvas/NativeGuiResourceSet;Ldev/s7a/strata/runtime/minecraft/canvas/NativeGuiResource;)V
+	public final fun beginUse (Ldev/s7a/strata/runtime/minecraft/canvas/NativeGuiResourceSet;)V
+	public final fun createOwnerId ()Ldev/s7a/strata/runtime/minecraft/canvas/NativeGuiResourceOwnerId;
+	public final fun endUse (Ldev/s7a/strata/runtime/minecraft/canvas/NativeGuiResourceSet;)V
+	public final fun queued (Ldev/s7a/strata/runtime/minecraft/canvas/NativeGuiResourceSet;)V
+	public final fun release (Ldev/s7a/strata/runtime/minecraft/canvas/NativeGuiResourceSet;)V
+	public final fun reserve (Ldev/s7a/strata/runtime/minecraft/canvas/NativeGuiResourceOwnerId;Ljava/util/List;)Ldev/s7a/strata/runtime/minecraft/canvas/NativeGuiResourceSet;
+	public final fun retainedSetCount ()I
+	public final fun seal (Ldev/s7a/strata/runtime/minecraft/canvas/NativeGuiResourceSet;)V
 }
 
 public final class dev/s7a/strata/runtime/minecraft/font/FontAssetReadsKt {
@@ -480,4 +612,3 @@ public final class dev/s7a/strata/runtime/minecraft/font/MinecraftVisualGlyph {
 	public fun hashCode ()I
 	public fun toString ()Ljava/lang/String;
 }
-

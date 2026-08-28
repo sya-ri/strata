@@ -222,6 +222,63 @@ internal class HeadlessBlitTest {
     }
 
     @Test
+    fun outputPixelImagesPreserveFourTexelsInsideOneScaledLogicalPixel() {
+        val colors = intArrayOf(0xFFFF0000.toInt(), 0xFF00FF00.toInt(), 0xFF0000FF.toInt(), 0xFFFFFF00.toInt())
+        val source = image(IntSize(2, 2), colors)
+        val region = IntRect(0, 0, 2, 2)
+        val destination = IntRect(0, 0, 1, 1)
+        val pixels = rasterizeHeadless(listOf(DrawCommand.BlitImagePixels(source, region, destination)), IntSize(1, 1), scale = 2)
+        assertArrayEquals(colors, pixels.copyArgb())
+
+        val logical = rasterizeHeadless(listOf(DrawCommand.BlitImage(source, region, destination)), IntSize(1, 1), scale = 2)
+        assertArrayEquals(IntArray(4) { 0xFFFFFF00.toInt() }, logical.copyArgb())
+    }
+
+    @Test
+    fun ordinaryTranslucentCommandsBlendOverEveryDistinctOutputPixel() {
+        val source = image(IntSize(2, 2), intArrayOf(0xFFFF0000.toInt(), 0xFF00FF00.toInt(), 0xFF0000FF.toInt(), 0xFFFFFF00.toInt()))
+        val overlay = image(IntSize(1, 1), intArrayOf(0x80000000.toInt()))
+        val bounds = IntRect(0, 0, 1, 1)
+        val result =
+            rasterizeHeadless(
+                listOf(
+                    DrawCommand.BlitImagePixels(source, IntRect(0, 0, 2, 2), bounds),
+                    DrawCommand.FillRectangle(bounds, ArgbColor(0x80FFFFFF.toInt())),
+                    DrawCommand.BlitImage(overlay, bounds, bounds),
+                ),
+                IntSize(1, 1),
+                scale = 2,
+            )
+        assertArrayEquals(intArrayOf(0xFF7F4040.toInt(), 0xFF407F40.toInt(), 0xFF40407F.toInt(), 0xFF7F7F40.toInt()), result.copyArgb())
+    }
+
+    @Test
+    fun outputPixelSamplingKeepsSourceOffsetsAndClippedDestinationMapping() {
+        val source = image(IntSize(6, 2), IntArray(12) { index -> 0xFF000000.toInt() or index })
+        val result =
+            rasterizeHeadless(
+                listOf(
+                    DrawCommand.PushClip(IntRect(1, 0, 2, 1)),
+                    DrawCommand.BlitImagePixels(source, IntRect(1, 0, 5, 2), IntRect(0, 0, 2, 1)),
+                    DrawCommand.PopClip,
+                ),
+                IntSize(2, 1),
+                scale = 2,
+            )
+        assertArrayEquals(
+            intArrayOf(0, 0, 0xFF000003.toInt(), 0xFF000004.toInt(), 0, 0, 0xFF000009.toInt(), 0xFF00000A.toInt()),
+            result.copyArgb(),
+        )
+        val largeDestination =
+            rasterizeHeadless(
+                listOf(DrawCommand.BlitImagePixels(source, IntRect(1, 0, 5, 2), IntRect(Int.MIN_VALUE + 2, 0, 1, 1))),
+                IntSize(1, 1),
+                scale = 2,
+            )
+        assertArrayEquals(intArrayOf(0xFF000004.toInt(), 0xFF000004.toInt(), 0xFF00000A.toInt(), 0xFF00000A.toInt()), largeDestination.copyArgb())
+    }
+
+    @Test
     fun upscalingDownscalingAndNonIntegerRatiosUsePixelCenters() {
         val source2x2 =
             image(

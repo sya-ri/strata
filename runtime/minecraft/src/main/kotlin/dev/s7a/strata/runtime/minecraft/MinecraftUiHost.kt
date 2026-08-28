@@ -126,6 +126,17 @@ public sealed interface MinecraftUiHost : AutoCloseable {
     public fun dispatchTextInput(event: TextInputEvent): InputResult
 
     /**
+     * Cancels captured pointer input and clears hover and focus when the native window loses input ownership.
+     *
+     * The owner-thread adapter invokes this for window blur or an explicit input reset while the host remains attached.
+     * The retained tree and immutable frame remain available, and repeated resets have no further transition to deliver.
+     *
+     * @throws IllegalStateException when called from another thread, reentrantly, or while the host is not attached.
+     * @throws Throwable when input cleanup fails; the exact primary failure is preserved while remaining host cleanup is attempted.
+     */
+    public fun resetInputState()
+
+    /**
      * Closes this host on its owner thread.
      *
      * Close is idempotent after completion and preserves the core session's exact cleanup failure behavior.
