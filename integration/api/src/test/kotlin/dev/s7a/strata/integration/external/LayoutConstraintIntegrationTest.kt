@@ -3,19 +3,29 @@
 package dev.s7a.strata.integration.external
 
 import dev.s7a.strata.component.Column
+import dev.s7a.strata.component.FlowRow
 import dev.s7a.strata.component.Row
 import dev.s7a.strata.component.Spacer
 import dev.s7a.strata.component.Stack
 import dev.s7a.strata.component.UiScope
 import dev.s7a.strata.component.evaluateComponentTree
+import dev.s7a.strata.element.Element
+import dev.s7a.strata.element.ElementIdentity
+import dev.s7a.strata.element.ElementType
 import dev.s7a.strata.geometry.Constraints
 import dev.s7a.strata.geometry.IntRect
 import dev.s7a.strata.geometry.IntSize
+import dev.s7a.strata.layout.MeasureScope
+import dev.s7a.strata.node.DirtyMask
+import dev.s7a.strata.node.MeasureNode
+import dev.s7a.strata.node.Node
+import dev.s7a.strata.runtime.TreeState
 import dev.s7a.strata.runtime.UiTree
 import dev.s7a.strata.runtime.render.DrawCommand
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.assertThrows
 
 /**
  * Verifies empty-container minima and box child constraint and placement contracts.
@@ -27,6 +37,7 @@ internal class LayoutConstraintIntegrationTest {
 
         assertEquals(IntSize(7, 9), measureRoot(constraints) { Row { } })
         assertEquals(IntSize(7, 9), measureRoot(constraints) { Column { } })
+        assertEquals(IntSize(7, 9), measureRoot(constraints) { FlowRow { } })
         assertEquals(IntSize(7, 9), measureRoot(constraints) { Stack { } })
         assertEquals(IntSize(7, 9), measureRoot(constraints) { Spacer() })
     }
@@ -155,6 +166,53 @@ internal class LayoutConstraintIntegrationTest {
         columnTree.close()
     }
 
+    @Test
+    fun flowRowMeasuresEachChildOnceWithTheFullParentMaximaBeforeWrapping() {
+        val probe = ExternalProbe()
+        val tree = UiTree()
+        tree.update(
+            evaluateComponentTree {
+                FlowRow(horizontalSpacing = 1, verticalSpacing = 1) {
+                    element(ExternalElement(probe = probe, width = 6, height = 2, nodeId = ExternalNodeId.Child))
+                    element(ExternalElement(probe = probe, width = 4, height = 3, nodeId = ExternalNodeId.Modifier))
+                }
+            },
+        )
+
+        assertEquals(IntSize(8, 12), tree.measure(Constraints.fixed(width = 8, height = 12)))
+        assertEquals(
+            List(2) { Constraints(maxWidth = 8, maxHeight = 12) },
+            probe.componentMeasureConstraints,
+        )
+        assertEquals(listOf(ExternalNodeId.Child, ExternalNodeId.Modifier), probe.componentMeasureOrder)
+        tree.layout()
+        assertEquals(
+            listOf(IntRect(0, 0, 6, 2), IntRect(0, 3, 4, 6)),
+            tree.paint().map { command -> (command as DrawCommand.FillRectangle).bounds },
+        )
+        assertMeasuredAndPlaced(probe, ExternalNodeId.Child)
+        assertMeasuredAndPlaced(probe, ExternalNodeId.Modifier)
+        tree.close()
+    }
+
+    @Test
+    fun flowRowPropagatesFixedChildConstraintViolationsInsteadOfShrinkingTheChild() {
+        listOf(IntSize(9, 2), IntSize(2, 9)).forEach { size ->
+            val tree = UiTree()
+            tree.update(
+                evaluateComponentTree {
+                    FlowRow {
+                        element(FixedSizeElement(size))
+                    }
+                },
+            )
+
+            assertThrows<IllegalStateException> { tree.measure(Constraints(maxWidth = 8, maxHeight = 8)) }
+            assertEquals(TreeState.Poisoned, tree.state)
+            tree.close()
+        }
+    }
+
     private fun measureRoot(
         constraints: Constraints,
         content: UiScope.() -> Unit,
@@ -187,5 +245,30 @@ internal class LayoutConstraintIntegrationTest {
         val node = requireNotNull(probe.componentNodes[nodeId])
         assertEquals(1, node.measures)
         assertEquals(1, node.layouts)
+    }
+
+    private class FixedSizeElement(
+        val size: IntSize,
+    ) : Element(identity = ElementIdentity.Positional, type = TYPE) {
+        companion object {
+            val TYPE: ElementType<FixedSizeElement, FixedSizeNode> =
+                ElementType(
+                    elementClass = FixedSizeElement::class,
+                    nodeClass = FixedSizeNode::class,
+                    validateLocal = {},
+                    createNode = { element -> FixedSizeNode(element.size) },
+                    updateNode = { _, _, _ -> DirtyMask.None },
+                )
+        }
+    }
+
+    private class FixedSizeNode(
+        private val size: IntSize,
+    ) : Node(),
+        MeasureNode {
+        override fun measure(
+            scope: MeasureScope,
+            constraints: Constraints,
+        ): IntSize = size
     }
 }

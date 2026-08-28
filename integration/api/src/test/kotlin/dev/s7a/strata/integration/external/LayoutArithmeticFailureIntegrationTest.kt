@@ -3,6 +3,7 @@
 package dev.s7a.strata.integration.external
 
 import dev.s7a.strata.component.Column
+import dev.s7a.strata.component.FlowRow
 import dev.s7a.strata.component.Row
 import dev.s7a.strata.component.evaluateComponentTree
 import dev.s7a.strata.element.Element
@@ -30,14 +31,25 @@ internal class LayoutArithmeticFailureIntegrationTest {
         }
     }
 
-    private fun assertArithmeticFailure(axis: ArithmeticAxis) {
+    @Test
+    fun flowRowNaturalWidthHeightAndSpacingOverflowPoisonsAndCleansTheTree() {
+        assertArithmeticFailure(ArithmeticAxis.FlowWidth)
+        assertArithmeticFailure(ArithmeticAxis.FlowHeight, Constraints(maxWidth = 1))
+        assertArithmeticFailure(ArithmeticAxis.FlowHorizontalSpacing)
+        assertArithmeticFailure(ArithmeticAxis.FlowVerticalSpacing, Constraints(maxWidth = 1))
+    }
+
+    private fun assertArithmeticFailure(
+        axis: ArithmeticAxis,
+        constraints: Constraints = Constraints(),
+    ) {
         val probe = ExternalProbe()
         val tree = UiTree()
         tree.update(buildArithmeticRoot(axis, probe))
         val firstNode = requireNotNull(probe.componentNodes[ExternalNodeId.Child])
         val secondNode = requireNotNull(probe.componentNodes[ExternalNodeId.Modifier])
 
-        assertThrows<ArithmeticException> { tree.measure(Constraints()) }
+        assertThrows<ArithmeticException> { tree.measure(constraints) }
         assertEquals(
             listOf(ExternalNodeId.Child, ExternalNodeId.Modifier),
             probe.componentMeasureOrder,
@@ -95,6 +107,23 @@ internal class LayoutArithmeticFailureIntegrationTest {
                     }
                 }
             }
+
+            ArithmeticAxis.FlowWidth, ArithmeticAxis.FlowHeight -> {
+                evaluateComponentTree {
+                    FlowRow {
+                        hugeChildren(probe).forEach(::element)
+                    }
+                }
+            }
+
+            ArithmeticAxis.FlowHorizontalSpacing, ArithmeticAxis.FlowVerticalSpacing -> {
+                evaluateComponentTree {
+                    FlowRow(horizontalSpacing = Int.MAX_VALUE, verticalSpacing = Int.MAX_VALUE) {
+                        element(ExternalElement(probe = probe, width = 1, height = 1, nodeId = ExternalNodeId.Child))
+                        element(ExternalElement(probe = probe, width = 1, height = 1, nodeId = ExternalNodeId.Modifier))
+                    }
+                }
+            }
         }
 
     private fun hugeChildren(probe: ExternalProbe): List<ExternalElement> =
@@ -117,5 +146,13 @@ internal class LayoutArithmeticFailureIntegrationTest {
         data object Horizontal : ArithmeticAxis
 
         data object Vertical : ArithmeticAxis
+
+        data object FlowWidth : ArithmeticAxis
+
+        data object FlowHeight : ArithmeticAxis
+
+        data object FlowHorizontalSpacing : ArithmeticAxis
+
+        data object FlowVerticalSpacing : ArithmeticAxis
     }
 }

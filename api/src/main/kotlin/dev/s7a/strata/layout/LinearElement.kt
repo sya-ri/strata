@@ -95,7 +95,7 @@ internal class LinearElement(
             var prefix = 0L
             for (index in 0 until childCount) {
                 val size = requireNotNull(childSizes[index]) { "A linear child was not measured." }
-                val arrangementOffset = arrangementOffset(slack, index, childCount)
+                val arrangementOffset = arrangement.offset(slack, index, childCount)
                 val spacingOffset = Math.multiplyExact(spacing.toLong(), index.toLong())
                 val mainPosition =
                     Math.addExact(
@@ -381,47 +381,6 @@ internal class LinearElement(
         private fun mainExtent(size: IntSize): Int = if (orientation.axis == LinearAxis.Horizontal) size.width else size.height
 
         private fun crossExtent(size: IntSize): Int = if (orientation.axis == LinearAxis.Horizontal) size.height else size.width
-
-        private fun arrangementOffset(
-            slack: Long,
-            index: Int,
-            childCount: Int,
-        ): Long =
-            when (arrangement) {
-                Arrangement.Start -> {
-                    0L
-                }
-
-                Arrangement.Center -> {
-                    slack / 2L
-                }
-
-                Arrangement.End -> {
-                    slack
-                }
-
-                Arrangement.SpaceBetween -> {
-                    if (1 < childCount) {
-                        Math.multiplyExact(slack, index.toLong()) / (childCount - 1).toLong()
-                    } else {
-                        0L
-                    }
-                }
-
-                Arrangement.SpaceAround -> {
-                    val numerator =
-                        Math.multiplyExact(
-                            slack,
-                            Math.addExact(Math.multiplyExact(2L, index.toLong()), 1L),
-                        )
-                    numerator / Math.multiplyExact(2L, childCount.toLong())
-                }
-
-                Arrangement.SpaceEvenly -> {
-                    Math.multiplyExact(slack, Math.addExact(index.toLong(), 1L)) /
-                        Math.addExact(childCount.toLong(), 1L)
-                }
-            }
 
         private fun crossPosition(
             scope: LayoutScope,

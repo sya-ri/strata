@@ -3,6 +3,8 @@ package dev.s7a.strata
 import dev.s7a.strata.layout.Alignment
 import dev.s7a.strata.layout.Arrangement
 import dev.s7a.strata.layout.ColumnAlignmentParentData
+import dev.s7a.strata.layout.FlowRowAlignmentParentData
+import dev.s7a.strata.layout.FlowRowElement
 import dev.s7a.strata.layout.GridAlignmentParentData
 import dev.s7a.strata.layout.GridElement
 import dev.s7a.strata.layout.HorizontalAlignment
@@ -35,11 +37,13 @@ internal class LayoutTokenContractTest {
         val column = linearColumn()
         val stack = StackElement(Alignment.TopStart, null, emptyList(), Modifier.Empty)
         val grid = grid()
+        val flowRow = flowRow()
         val spacer = SpacerElement(null, Modifier.Empty)
 
         assertSame(row.type, column.type)
         assertSame(stack.type, StackElement(Alignment.Center, null, emptyList(), Modifier.Empty).type)
         assertSame(grid.type, grid(alignment = Alignment.Center).type)
+        assertSame(flowRow.type, flowRow(alignment = VerticalAlignment.Center).type)
         assertSame(spacer.type, SpacerElement(null, Modifier.Empty).type)
         assertNotSame(row.type, stack.type)
         assertNotSame(row.type, spacer.type)
@@ -47,6 +51,10 @@ internal class LayoutTokenContractTest {
         assertNotSame(grid.type, row.type)
         assertNotSame(grid.type, stack.type)
         assertNotSame(grid.type, spacer.type)
+        assertNotSame(flowRow.type, row.type)
+        assertNotSame(flowRow.type, stack.type)
+        assertNotSame(flowRow.type, grid.type)
+        assertNotSame(flowRow.type, spacer.type)
     }
 
     @Test
@@ -131,11 +139,34 @@ internal class LayoutTokenContractTest {
         assertColumnAlignmentContract()
         assertStackAlignmentContract()
         assertGridAlignmentContract()
+        assertFlowRowAlignmentContract()
+    }
+
+    @Test
+    fun flowRowUpdatesInvalidateOnlyTheAffectedLayoutPhase() {
+        val first = flowRow()
+        val updates =
+            listOf(
+                flowRow() to DirtyMask.None,
+                flowRow(horizontalSpacing = 1) to DirtyMask.of(DirtyPhase.Measure),
+                flowRow(verticalSpacing = 1) to DirtyMask.of(DirtyPhase.Measure),
+                flowRow(arrangement = Arrangement.SpaceEvenly) to DirtyMask.of(DirtyPhase.Layout),
+                flowRow(alignment = VerticalAlignment.Bottom) to DirtyMask.of(DirtyPhase.Layout),
+            )
+
+        updates.forEach { (current, expected) ->
+            assertEquals(
+                expected,
+                FlowRowElement.TYPE.updateErased(first, current, FlowRowElement.TYPE.createErased(first)),
+            )
+        }
     }
 
     @Test
     fun internalDescriptionsEnforceTheirConstructionAndTokenBoundaries() {
         assertThrows<IllegalArgumentException> { linearRow(spacing = -1) }
+        assertThrows<IllegalArgumentException> { flowRow(horizontalSpacing = -1) }
+        assertThrows<IllegalArgumentException> { flowRow(verticalSpacing = -1) }
         listOf(
             0f,
             -1f,
@@ -230,6 +261,21 @@ internal class LayoutTokenContractTest {
         )
     }
 
+    private fun assertFlowRowAlignmentContract() {
+        val first = FlowRowAlignmentParentData.Element(FlowRowAlignmentParentData.Data(VerticalAlignment.Top))
+        val equal = FlowRowAlignmentParentData.Element(FlowRowAlignmentParentData.Data(VerticalAlignment.Top))
+        val changed = FlowRowAlignmentParentData.Element(FlowRowAlignmentParentData.Data(VerticalAlignment.Bottom))
+        assertSame(first.type, equal.type)
+        assertSame(FlowRowAlignmentParentData.TYPE, first.type)
+        val node = first.type.createErased(first) as FlowRowAlignmentParentData.Node
+        assertSame(FlowRowAlignmentParentData.KEY, node.parentDataKey)
+        assertNotSame(RowAlignmentParentData.KEY, node.parentDataKey)
+        assertEquals(first.data, node.parentData())
+        assertEquals(DirtyMask.None, first.type.updateErased(first, equal, node))
+        assertEquals(DirtyMask.of(DirtyPhase.Measure), first.type.updateErased(equal, changed, node))
+        assertEquals(changed.data, node.parentData())
+    }
+
     private fun linearRow(
         spacing: Int = 0,
         arrangement: Arrangement = Arrangement.Start,
@@ -263,6 +309,22 @@ internal class LayoutTokenContractTest {
             horizontalSpacing = 0,
             verticalSpacing = 0,
             contentAlignment = alignment,
+            key = null,
+            children = emptyList(),
+            modifier = Modifier.Empty,
+        )
+
+    private fun flowRow(
+        horizontalSpacing: Int = 0,
+        verticalSpacing: Int = 0,
+        arrangement: Arrangement = Arrangement.Start,
+        alignment: VerticalAlignment = VerticalAlignment.Top,
+    ): FlowRowElement =
+        FlowRowElement(
+            horizontalSpacing = horizontalSpacing,
+            verticalSpacing = verticalSpacing,
+            horizontalArrangement = arrangement,
+            verticalAlignment = alignment,
             key = null,
             children = emptyList(),
             modifier = Modifier.Empty,
