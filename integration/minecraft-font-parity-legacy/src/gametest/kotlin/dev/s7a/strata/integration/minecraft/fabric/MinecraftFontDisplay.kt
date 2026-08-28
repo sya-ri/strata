@@ -17,11 +17,12 @@ internal object MinecraftFontDisplay {
      *
      * Minecraft's legacy window transition uses the monitor-switching GLFW operation even when the window is already windowed.
      * The explicit GLFW window-size operation follows that transition so the window manager receives a dedicated windowed resize request while the original call keeps Minecraft's stored dimensions coherent.
+     * The framebuffer must converge before applying [scale] because legacy Minecraft clamps that value against its currently cached framebuffer dimensions.
      *
      * @param context loaded-client coordinator owning client-thread and tick handoffs.
      * @param scale exact integral GUI scale required by the comparison.
      * @param size exact physical framebuffer dimensions required by the comparison.
-     * @throws IllegalStateException when the native and cached framebuffer state does not converge before the bounded timeout.
+     * @throws IllegalStateException when the framebuffer, window mode, or requested and effective GUI scale does not converge before the bounded timeout.
      * Client-thread, tick, and pointer coordination failures from [context] propagate unchanged.
      */
     fun configure(
@@ -32,12 +33,23 @@ internal object MinecraftFontDisplay {
         context.computeOnClient { minecraft ->
             minecraft.window.setWindowed(size.width, size.height)
             GLFW.glfwSetWindowSize(minecraft.window.window, size.width, size.height)
-            minecraft.options.guiScale().set(scale)
-            minecraft.options.forceUnicodeFont().set(false)
-            minecraft.resizeDisplay()
         }
         var state = context.computeOnClient(::snapshot)
         var elapsedTicks = 0
+        while (state.matchesFramebuffer(size).not() && elapsedTicks < SCALE_TIMEOUT_TICKS) {
+            context.waitTicks(1)
+            state = context.computeOnClient(::snapshot)
+            elapsedTicks += 1
+        }
+        check(state.matchesFramebuffer(size)) {
+            "Loaded framebuffer did not converge: expectedFramebuffer=${size.width}x${size.height}, $state"
+        }
+        context.computeOnClient { minecraft ->
+            minecraft.options.forceUnicodeFont().set(false)
+            minecraft.options.guiScale().set(scale)
+            minecraft.resizeDisplay()
+        }
+        state = context.computeOnClient(::snapshot)
         while (state.matches(size, scale).not() && elapsedTicks < SCALE_TIMEOUT_TICKS) {
             context.waitTicks(1)
             state = context.computeOnClient(::snapshot)
@@ -62,6 +74,7 @@ internal object MinecraftFontDisplay {
             cachedFramebuffer = IntSize(minecraft.window.width, minecraft.window.height),
             nativeFramebuffer = IntSize(nativeFramebufferWidth.single(), nativeFramebufferHeight.single()),
             nativeWindow = IntSize(nativeWindowWidth.single(), nativeWindowHeight.single()),
+            requestedGuiScale = minecraft.options.guiScale().get(),
             guiScale = minecraft.window.guiScale,
             cachedFullscreen = minecraft.window.isFullscreen,
             nativeWindowed = GLFW.glfwGetWindowMonitor(handle) == 0L,
@@ -72,6 +85,7 @@ internal object MinecraftFontDisplay {
         val cachedFramebuffer: IntSize,
         val nativeFramebuffer: IntSize,
         val nativeWindow: IntSize,
+        val requestedGuiScale: Int,
         val guiScale: Double,
         val cachedFullscreen: Boolean,
         val nativeWindowed: Boolean,
@@ -80,13 +94,18 @@ internal object MinecraftFontDisplay {
             expectedFramebuffer: IntSize,
             expectedGuiScale: Int,
         ): Boolean =
+            matchesFramebuffer(expectedFramebuffer) && requestedGuiScale == expectedGuiScale &&
+                guiScale == expectedGuiScale.toDouble()
+
+        fun matchesFramebuffer(expectedFramebuffer: IntSize): Boolean =
             cachedFramebuffer == expectedFramebuffer && nativeFramebuffer == expectedFramebuffer &&
-                guiScale == expectedGuiScale.toDouble() && cachedFullscreen.not() && nativeWindowed
+                cachedFullscreen.not() && nativeWindowed
 
         override fun toString(): String =
             "cachedFramebuffer=${cachedFramebuffer.width}x${cachedFramebuffer.height}, " +
                 "nativeFramebuffer=${nativeFramebuffer.width}x${nativeFramebuffer.height}, " +
-                "nativeWindow=${nativeWindow.width}x${nativeWindow.height}, guiScale=$guiScale, " +
+                "nativeWindow=${nativeWindow.width}x${nativeWindow.height}, requestedGuiScale=$requestedGuiScale, " +
+                "guiScale=$guiScale, " +
                 "cachedFullscreen=$cachedFullscreen, nativeWindowed=$nativeWindowed"
     }
 }
