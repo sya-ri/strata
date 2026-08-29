@@ -27,8 +27,9 @@ public interface NativeCanvasProducer : AutoCloseable {
      * Releases attachment-owned renderer resources after their last GPU use has completed.
      *
      * The external source is not closed.
-     * This method is called exactly once, including failed establishment and terminal cleanup paths.
-     * It may enqueue native destruction but must not issue new GPU work, because terminal cleanup has already completed the submitted queue.
+     * This method is called at most once after the device establishes completion of the producer's final GPU use, including ordinary retirement and successful terminal cleanup.
+     * If terminal completion cannot be established, the producer remains quarantined and this method is not called.
+     * It may enqueue native destruction but must not issue new GPU work; ordinary retirement follows completed fences and terminal retirement follows successful device completion.
      *
      * @throws Throwable when renderer cleanup fails; other device cleanup still proceeds.
      */

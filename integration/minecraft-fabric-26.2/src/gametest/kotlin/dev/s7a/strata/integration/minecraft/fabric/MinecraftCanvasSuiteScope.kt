@@ -4,7 +4,7 @@ package dev.s7a.strata.integration.minecraft.fabric
  * Identifies exactly which loaded suite completed before the actual client-shutdown proof is armed.
  *
  * Values contain immutable receipt metadata only and can be read on either the runner or client thread.
- * The default always selects the unchanged complete shared suite; the bounded scope is explicit opt-in.
+ * The default always selects the unchanged complete shared suite; bounded and terminal diagnostic scopes are explicit opt-in.
  *
  * @property argument exact external Gradle and JVM property spelling.
  * @property verifiedChecks comma-separated checks recorded only after the selected suite and native shutdown succeed.
@@ -30,6 +30,16 @@ internal enum class MinecraftCanvasSuiteScope(
             "pointer-window-reset,partial-producer-failure,server-seeded-slot-order,actual-device-shutdown",
         "unrelated-native-reference-screens,non-canvas-component-showcase,inventory-click-synchronization",
     ),
+
+    /**
+     * Executes only the actual device-shutdown proof so backend lifecycle failures can be reproduced independently.
+     */
+    TerminalOnly(
+        "terminal-only",
+        "actual-device-shutdown",
+        "shared-full-suite,canvas-suite,unrelated-native-reference-screens,non-canvas-component-showcase," +
+            "inventory-click-synchronization",
+    ),
     ;
 
     /**
@@ -44,7 +54,7 @@ internal enum class MinecraftCanvasSuiteScope(
         internal fun current(): MinecraftCanvasSuiteScope {
             val argument = System.getProperty("strata.canvas.scope") ?: return Full
             return requireNotNull(entries.singleOrNull { scope -> scope.argument == argument }) {
-                "strata.canvas.scope must be full or canvas-only."
+                "strata.canvas.scope must be full, canvas-only, or terminal-only."
             }
         }
     }

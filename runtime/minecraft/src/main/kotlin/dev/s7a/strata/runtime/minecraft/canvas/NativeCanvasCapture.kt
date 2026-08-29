@@ -32,7 +32,7 @@ public interface NativeCanvasCapture : AutoCloseable {
      * Releases the external capture lease after GPU capture has completed, independently of later GUI consumption.
      *
      * This owner-thread callback may enqueue native destruction but must not issue new GPU work.
-     * Terminal cleanup completes the submitted queue before releasing remaining leases.
+     * Terminal cleanup submits as required and completes recorded GPU work before releasing remaining leases.
      *
      * @throws Throwable when source-lease cleanup fails; remaining cleanup still proceeds.
      */

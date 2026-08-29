@@ -53,7 +53,7 @@ internal class MinecraftCanvasTerminalFixture {
      * Installs a mixed portable/native Canvas scene directly into the actual renderer-owned GUI queue.
      *
      * The source and screen are transferred to ordinary production lifecycle ownership before capture begins.
-     * No GUI consumer or artificial completion callback is invoked; production close must discard this queue and finish submitted capture work.
+     * No GUI consumer or artificial completion callback is invoked; production close must discard this queue and finish recorded capture work.
      * The caller always invokes original Minecraft close after this operation, including on failure.
      *
      * @param client live native owner at the outer close boundary.

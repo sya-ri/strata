@@ -1,3 +1,4 @@
+import dev.detekt.gradle.extensions.DetektExtension
 import groovy.json.JsonOutput
 import net.fabricmc.loom.task.prod.ClientProductionRunTask
 import org.gradle.api.tasks.Delete
@@ -35,6 +36,10 @@ extensions.configure<KotlinJvmProjectExtension> {
     sourceSets.named("gametest") {
         kotlin.srcDir(sharedGameTest.resolve("kotlin"))
     }
+}
+
+extensions.configure<DetektExtension> {
+    source.from(layout.projectDirectory.dir("src/gametest/kotlin"))
 }
 
 extensions.configure<SourceSetContainer> {

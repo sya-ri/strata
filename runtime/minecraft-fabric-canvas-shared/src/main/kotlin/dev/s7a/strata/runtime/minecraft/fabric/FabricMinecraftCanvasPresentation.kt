@@ -22,7 +22,7 @@ import dev.s7a.strata.spi.InternalStrataRuntimeApi
  * Extra host frames for hover convergence finish before this boundary runs.
  */
 @OptIn(InternalStrataRuntimeApi::class)
-// Native submission failures must remain primary while independent unqueued cleanup is attempted.
+// Native presentation failures must remain primary while independent unqueued cleanup is attempted.
 @Suppress("TooGenericExceptionCaught")
 internal class FabricMinecraftCanvasPresentation {
     private var receipt: NativeCanvasPresentation? = null
@@ -88,7 +88,7 @@ internal class FabricMinecraftCanvasPresentation {
     }
 
     /**
-     * Captures the last successfully submitted frame without resolving live GPU state or reading pixels back.
+     * Captures the last successfully presented frame without resolving live GPU state or reading pixels back.
      *
      * @return immutable portable commands based only on exact same-generation snapshots.
      * @throws IllegalStateException before any output when no frame exists or a native command has no matching snapshot.

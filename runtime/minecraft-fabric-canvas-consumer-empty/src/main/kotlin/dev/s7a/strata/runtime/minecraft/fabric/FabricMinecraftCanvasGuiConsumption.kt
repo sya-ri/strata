@@ -12,10 +12,10 @@ import net.minecraft.client.gui.GuiGraphicsExtractor
 /**
  * Ends GUI extraction while leaving queued Canvas targets owned by the later native consumer.
  *
- * Screen success, removal, or failure cannot signal a GUI fence before GuiRenderer has submitted its work.
- * The actual consumer wrapper independently finishes or quarantines the queued batch.
+ * Screen success, removal, or failure cannot signal a GUI fence before GuiRenderer has consumed and encoded its queued work.
+ * The actual consumer wrapper independently records a completion fence or quarantines the queued batch.
  *
- * @param graphics borrowed extraction context, never retained or submitted here.
+ * @param graphics borrowed extraction context, never retained or consumed here.
  * @param failure original screen failure, left primary for the screen transaction.
  * @throws IllegalStateException when called off the render thread.
  */

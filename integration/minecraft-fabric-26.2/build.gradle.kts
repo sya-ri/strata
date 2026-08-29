@@ -31,8 +31,20 @@ private object CanvasVerification {
     enum class Scope(val argument: String) {
         Full("full"),
         CanvasOnly("canvas-only"),
+        TerminalOnly("terminal-only"),
     }
 }
+
+private val canvasBackend = providers.gradleProperty("strata.canvas.backend").map { value ->
+    requireNotNull(CanvasVerification.Backend.entries.singleOrNull { backend -> backend.argument == value }) {
+        "strata.canvas.backend must be opengl or vulkan."
+    }
+}
+private val canvasScope = providers.gradleProperty("strata.canvas.scope").map { value ->
+    requireNotNull(CanvasVerification.Scope.entries.singleOrNull { scope -> scope.argument == value }) {
+        "strata.canvas.scope must be full, canvas-only, or terminal-only."
+    }
+}.orElse(CanvasVerification.Scope.Full)
 
 /**
  * Requires a fresh receipt from actual client shutdown after unconsumed native Canvas extraction.
@@ -256,10 +268,27 @@ val runProductionClientGameTest = tasks.register<ClientProductionRunTask>("runPr
     mods.from(runtimeJar)
     runDir.set(productionRunDirectory)
     programArgs.addAll(showcaseClientIdentityArguments)
+    programArgs.addAll(canvasBackend.map { backend -> listOf("--graphicsBackend", backend.argument) }.orElse(emptyList<String>()))
     jvmArgs.add("-Dfabric.client.gametest")
-    val verificationOutput = layout.buildDirectory.dir("minecraft-production-parity")
+    jvmArgs.addAll(canvasBackend.map { backend -> listOf("-Dstrata.canvas.expectedBackend=${backend.argument}") }.orElse(emptyList<String>()))
+    val verificationOutput = layout.buildDirectory.dir(
+        canvasScope.map { scope ->
+            when (scope) {
+                CanvasVerification.Scope.Full -> canvasBackend.orNull?.let { backend -> "minecraft-production-parity-${backend.argument}" } ?: "minecraft-production-parity"
+                CanvasVerification.Scope.CanvasOnly -> "minecraft-production-canvas-parity-${canvasBackend.orNull?.argument ?: "default"}"
+                CanvasVerification.Scope.TerminalOnly -> "minecraft-production-canvas-terminal-${canvasBackend.orNull?.argument ?: "default"}"
+            }
+        },
+    )
+    inputs.property("strataMinecraftParityOutput", verificationOutput.map { it.asFile.absolutePath })
+    inputs.property("strataCanvasBackend", canvasBackend.map(CanvasVerification.Backend::argument).orElse("default"))
+    inputs.property("strataCanvasSuiteScope", canvasScope.map(CanvasVerification.Scope::argument))
     jvmArgs.add(verificationOutput.map { directory -> "-Dstrata.minecraftParityOutput=${directory.asFile.absolutePath}" })
     jvmArgs.add(libs.versions.minecraft262.map { version -> "-Dstrata.minecraftVersion=$version" })
+    val receipt = verificationOutput.map { directory -> directory.file("strata-canvas-terminal.properties") }
+    requireCanvasTerminalReceipt(receipt, libs.versions.minecraft262.get(), canvasScope.get()) { key, value ->
+        jvmArgs.add("-D$key=$value")
+    }
 }
 
 val publishedCoordinateRunDirectory = layout.buildDirectory.dir("run/publishedCoordinateClientGameTest")
@@ -281,11 +310,8 @@ tasks.register<ClientProductionRunTask>("runPublishedCoordinateClientGameTest") 
     val verificationOutput = layout.buildDirectory.dir("minecraft-published-coordinate-parity")
     jvmArgs.add(verificationOutput.map { directory -> "-Dstrata.minecraftParityOutput=${directory.asFile.absolutePath}" })
     jvmArgs.add(libs.versions.minecraft262.map { version -> "-Dstrata.minecraftVersion=$version" })
-}
-
-tasks.withType<ClientProductionRunTask>().configureEach {
     val receipt = layout.buildDirectory.file("canvas-shutdown/$name.properties")
-    requireCanvasTerminalReceipt(receipt, libs.versions.minecraft262.get()) { key, value ->
+    requireCanvasTerminalReceipt(receipt, libs.versions.minecraft262.get(), CanvasVerification.Scope.Full) { key, value ->
         jvmArgs.add("-D$key=$value")
     }
 }
@@ -299,21 +325,12 @@ tasks.matching { task -> task.name == "koverGenerateArtifact" }.configureEach {
 }
 
 tasks.named<JavaExec>("runClientGameTest") {
-    val canvasBackend = providers.gradleProperty("strata.canvas.backend").map { value ->
-        requireNotNull(CanvasVerification.Backend.entries.singleOrNull { backend -> backend.argument == value }) {
-            "strata.canvas.backend must be opengl or vulkan."
-        }
-    }
-    val canvasScope = providers.gradleProperty("strata.canvas.scope").map { value ->
-        requireNotNull(CanvasVerification.Scope.entries.singleOrNull { scope -> scope.argument == value }) {
-            "strata.canvas.scope must be full or canvas-only."
-        }
-    }.orElse(CanvasVerification.Scope.Full)
     val parityOutput = layout.buildDirectory.dir(
         canvasScope.map { scope ->
             when (scope) {
                 CanvasVerification.Scope.Full -> canvasBackend.orNull?.let { backend -> "minecraft-parity-${backend.argument}" } ?: "minecraft-parity"
                 CanvasVerification.Scope.CanvasOnly -> "minecraft-canvas-parity-${canvasBackend.orNull?.argument ?: "default"}"
+                CanvasVerification.Scope.TerminalOnly -> "minecraft-canvas-terminal-${canvasBackend.orNull?.argument ?: "default"}"
             }
         },
     )

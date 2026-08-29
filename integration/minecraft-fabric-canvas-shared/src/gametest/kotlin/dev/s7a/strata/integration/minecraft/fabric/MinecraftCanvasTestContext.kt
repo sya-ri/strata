@@ -81,7 +81,9 @@ internal interface MinecraftCanvasTestContext {
     fun setWindowFocused(focused: Boolean)
 
     /**
-     * Applies a positive physical window size and explicit GUI scale on the client thread.
+     * Applies a positive viewport size and explicit GUI scale through the version-owned loaded-test boundary.
+     *
+     * The adapter may keep the native surface stable when its backend cannot safely resize that surface during one client-test process.
      */
     fun configureViewport(
         size: IntSize,

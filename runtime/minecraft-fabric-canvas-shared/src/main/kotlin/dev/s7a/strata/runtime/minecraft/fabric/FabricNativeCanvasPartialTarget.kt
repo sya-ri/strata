@@ -49,7 +49,7 @@ internal class FabricNativeCanvasPartialTarget private constructor(
         /**
          * Transfers partial allocation ownership without closing native attachments before an initialization fence exists.
          *
-         * The render-thread device keeps the lifetime permit, submits the initialization fence, and waits only at terminal device cleanup.
+         * The render-thread device keeps the lifetime permit, records the initialization fence through its driver, and waits only at terminal device cleanup.
          * The exact original allocation failure remains the carrier's cause and primary failure.
          *
          * @param renderTarget partially initialized target whose existing attachments transfer to the device.

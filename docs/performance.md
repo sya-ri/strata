@@ -87,7 +87,7 @@ The complete prepared texture list is pinned across ordered submission, includin
 The separate portable pool reserves at most three generation sets per stable presenter and 64 per device before allocation, with each set bounded by the exact layer extents of one prepared portable list.
 These permits are independent of Canvas's native target-set budget and remain held through physical destruction, including partial allocation and Vulkan's deferred destruction queue.
 Portable pool exhaustion fails before GUI output; it never attaches stale pixels to new portable commands or needs another permit to close an existing generation.
-Terminal cleanup completes submitted work, closes both native Canvas and portable resources, drains native destruction, and checks physical acknowledgements in that order.
+Terminal cleanup submits as required and completes recorded work, closes both native Canvas and portable resources, drains native destruction, and checks physical acknowledgements in that order.
 Pointer dispatch and inventory or skin refresh coalescing must still invalidate the frame path when observable presentation state changes.
 Loaded-client GameTests read render-work counters from the real Fabric screen and require an unchanged display list to perform no repartition, portable rasterization, or texture upload.
 They also require equivalent replacement portable layers to reuse their raster textures, inspect detached presenters for absent current texture generations and prepared-frame references, and wait for actual retirement before checking native destruction.
@@ -119,7 +119,8 @@ Source leases and temporary sampling resources release after capture completion,
 Every target allocation is fenced separately, including presentations whose provider returns no capture, so backend initialization commands cannot outlive their resources.
 The frame, screen, and capture receipt do not own these native lifetimes.
 Custom renderer factories are evaluated only inside a reserved target's capture callback, so even their initialization uploads are protected by the capture fence; attachment creation alone performs no owned GPU work.
-GPU-fence creation or GUI-consumption failure quarantines affected targets, and device shutdown first discards GUI queues and completes submitted GPU work before releasing resources.
+GPU-fence creation or GUI-consumption failure quarantines affected targets, and device shutdown first discards GUI queues and submits as required before completing recorded GPU work and releasing resources.
+On a backend with one host-owned command encoder, ordinary Canvas uploads and fences are recorded in the current host submission; only terminal completion may submit explicitly after every GUI queue has been consumed or discarded.
 Failed target destruction retains ownership and its permit; terminal cleanup may retry only unreleased per-resource work, preserving the earlier failure if retry also fails.
 Successfully requested asynchronous destruction is polled without repeating `close()`; the 26.2 Vulkan adapter observes physical texture and view destruction rather than relying on a fixed number of delayed frames.
 After submitted work completes, terminal cleanup requests all retirements, drains the backend destruction queue, and requires every target's physical acknowledgment before returning its permit.
@@ -131,6 +132,7 @@ The fixed orientation-specific sampling programs are device-owned, keyed only by
 Deterministic protocol tests independently control capture and GUI fences and cover long unsignalled histories, resize, source replacement, reattachment, shared sources, cancellation, partial producer/GUI/cleanup failures, partial allocation rollback, the three/64 limits, rapid key churn, and retained old frames.
 Loaded native tests must separately inspect known GPU texels and a custom offscreen renderer before comparing the same-generation Headless capture; agreement between two snapshots alone is not native parity evidence.
 Backend-specific loaded results, especially OpenGL versus Vulkan, are recorded separately and must not be inferred from JVM protocol tests.
+The 26.2 Vulkan Canvas-only resize gate keeps the native surface fixed while varying the logical viewport, framebuffer, and owned Canvas targets; it is target-retention evidence, not swapchain-resize or full-suite evidence.
 
 ### Resource-font caches
 

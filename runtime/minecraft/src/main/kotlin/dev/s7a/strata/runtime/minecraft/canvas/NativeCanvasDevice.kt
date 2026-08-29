@@ -190,7 +190,7 @@ public class NativeCanvasDevice(
         }
 
     /**
-     * Settles the queued batch after the native GUI consumer has flushed or submitted its draw work.
+     * Settles the queued batch after the native GUI consumer has consumed its draw queue at the version-owned boundary.
      *
      * This must run from the version-owned consumption boundary, including its failure finally path, never from extraction.
      * The new fence covers all earlier uses on the same queue, so obsolete GUI fences can be released without waiting.
@@ -236,7 +236,7 @@ public class NativeCanvasDevice(
     public fun poll(): Unit = operation { pollInternal() }
 
     /**
-     * Quarantines queued targets after a GUI consumer failure when complete submission cannot be established.
+     * Quarantines queued targets after a GUI consumer failure when complete consumption cannot be established.
      *
      * No target or renderer is released until terminal device completion and queue discard.
      * This owner-thread failure path neither waits nor reserves another lifetime permit.
@@ -277,13 +277,13 @@ public class NativeCanvasDevice(
     /**
      * Destroys device-owned resources after the caller has discarded every unconsumed native GUI queue.
      *
-     * Shutdown immediately stops acquisition, completes already submitted GPU work, and attempts all target, fence, lease, renderer, and portable GUI resource releases.
-     * Deferred destruction is then drained once before physical target and portable resource acknowledgements release their separate permits.
-     * It is the only operation that may wait for submitted GPU work.
-     * A failed finish, failed release, or missing physical acknowledgement retains its permit and quarantined resource instead of claiming successful release.
-     * Every failure remains sticky on repeated shutdown calls; independent cleanup continues after individual release or drain failures.
+     * Shutdown immediately stops acquisition and first asks the driver to submit as required and complete every recorded GPU command.
+     * If completion cannot be established, no resource release is attempted; targets, fences, leases, renderers, and portable GUI resources remain quarantined because their last GPU use is unproven.
+     * After completion is established, all independent releases are attempted and deferred destruction is drained once before physical target and portable resource acknowledgements release their separate permits.
+     * A failed release or missing physical acknowledgement retains its permit and quarantined resource instead of claiming successful release.
+     * Every failure remains sticky on repeated shutdown calls; independent cleanup continues after individual release or drain failures once completion has been established.
      *
-     * @throws Throwable when completion or cleanup fails, preserving the original failure and attempting independent cleanup.
+     * @throws Throwable when terminal completion fails before release, or when later cleanup fails after the remaining independent cleanup has been attempted.
      */
     public fun closeAfterGuiDiscarded(): Unit =
         operation {

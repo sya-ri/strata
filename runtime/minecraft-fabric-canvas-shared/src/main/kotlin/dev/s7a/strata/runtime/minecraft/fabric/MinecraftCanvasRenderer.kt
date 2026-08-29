@@ -18,14 +18,15 @@ public interface MinecraftCanvasRenderer : AutoCloseable {
      *
      * @param context borrowed native target, final sizes, and presentation timestamp.
      * @return an optional immutable snapshot of exactly these pixels in physical size and top-left orientation.
-     * @throws Throwable when drawing fails; target and renderer resources remain protected until submitted work completes.
+     * @throws Throwable when drawing fails; target and renderer resources remain protected until the adapter establishes completion of every recorded command.
      */
     public fun render(context: MinecraftCanvasContext): DrawImage?
 
     /**
      * Releases renderer-owned resources after its final GPU work has completed.
      *
-     * This render-thread call occurs once per renderer instance, including failed attachments and retired reload generations.
+     * This render-thread call occurs at most once per renderer instance after the adapter establishes completion of its final GPU use, including failed attachments and retired reload generations.
+     * If terminal completion cannot be established, the renderer remains quarantined and this method is not called.
      * The external factory/source is never closed.
      * Cleanup may enqueue native destruction but must not issue new GPU work or wait for an unconsumed GUI frame.
      * Cleanup failures propagate after the remaining device cleanup has been attempted.

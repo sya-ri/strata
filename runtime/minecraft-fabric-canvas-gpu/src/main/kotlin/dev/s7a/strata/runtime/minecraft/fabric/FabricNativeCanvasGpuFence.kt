@@ -11,7 +11,7 @@ import dev.s7a.strata.spi.InternalStrataRuntimeApi
  * The device releases this wrapper exactly once after it no longer protects allocation initialization, capture, or GUI consumption.
  * Native polling and close failures propagate to the device's quarantine and cleanup handling.
  *
- * @param fence native fence transferred to this wrapper after its owner submits the work it protects.
+ * @param fence native fence transferred after its owner records it behind the protected work; the backend host owns any required submission.
  */
 @OptIn(InternalStrataRuntimeApi::class)
 internal class FabricNativeCanvasGpuFence(

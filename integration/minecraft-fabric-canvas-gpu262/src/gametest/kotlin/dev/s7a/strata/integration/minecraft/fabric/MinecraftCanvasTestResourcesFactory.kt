@@ -37,9 +37,7 @@ internal fun createMinecraftCanvasTestResources(): MinecraftCanvasTestResources 
             throw failure
         }
     try {
-        val encoder = device.createCommandEncoder()
-        encoder.writeToTexture(texture, image)
-        encoder.submit()
+        device.createCommandEncoder().writeToTexture(texture, image)
     } catch (failure: Throwable) {
         texture.close()
         image.close()

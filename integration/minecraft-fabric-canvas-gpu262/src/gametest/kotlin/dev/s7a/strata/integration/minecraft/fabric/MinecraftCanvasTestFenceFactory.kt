@@ -7,7 +7,7 @@ import dev.s7a.strata.spi.InternalStrataRuntimeApi
 /**
  * Creates an independent native GPU completion probe after renderer initialization or callback work.
  *
- * The client-thread caller owns the fence; the manager's immediately following capture fence controls submission.
+ * The client-thread caller owns the fence; the manager's immediately following capture fence remains in the same host-owned submission.
  * Queries use a zero timeout, perform no readback, and propagate native query failures to the loaded runner.
  */
 @OptIn(InternalStrataRuntimeApi::class)

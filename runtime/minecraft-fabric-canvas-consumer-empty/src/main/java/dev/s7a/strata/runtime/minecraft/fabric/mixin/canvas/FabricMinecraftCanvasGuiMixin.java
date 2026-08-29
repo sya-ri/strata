@@ -14,7 +14,7 @@ import org.spongepowered.asm.mixin.Shadow;
 import java.util.List;
 
 /**
- * Records Canvas target consumption after the current GUI-renderer command submission on either GPU backend.
+ * Runs the Canvas target-consumption boundary after the current GUI renderer has attempted to consume and encode its queue on either GPU backend.
  *
  * <p>This render-thread wrapper always reaches the shared lifetime hook after the actual consumer, including failures.
  * It never runs a producer or resolves a retained frame token, and it never retains the borrowed operation.

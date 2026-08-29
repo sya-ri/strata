@@ -28,12 +28,12 @@ import org.lwjgl.system.MemoryStack
 import java.util.Optional
 
 /**
- * Implements Canvas capture through explicitly submitted Blaze3D commands on OpenGL or Vulkan.
+ * Implements Canvas capture through Blaze3D commands recorded in Minecraft's current OpenGL or Vulkan submission.
  *
  * Calls run on the owning render thread and never use a backend-specific handle or CPU readback.
  * The device owns compiled pipelines, captures own temporary source views and extent uniforms, and the Canvas manager owns color/depth targets.
- * Successful and failing callbacks leave recorded work for the manager's immediately following capture fence to submit once.
- * Ordinary paths perform no explicit wait; backend submission may apply backpressure to already-submitted GPU work.
+ * Successful and failing callbacks leave recorded work followed by a completion fence in the same host-owned submission.
+ * Ordinary paths perform no explicit submit or wait, so Canvas never splits Minecraft's GUI work from later frame passes.
  * No operation waits for unsubmitted or unconsumed GUI commands.
  */
 @OptIn(InternalStrataRuntimeApi::class)
@@ -61,7 +61,8 @@ internal object FabricNativeCanvasDriver : NativeCanvasDriver {
     @JvmSynthetic
     override fun fence(): NativeCanvasFence {
         RenderSystem.assertOnRenderThread()
-        return FabricNativeCanvasGpuFence(submittedFence())
+        val encoder = RenderSystem.getDevice().createCommandEncoder()
+        return FabricNativeCanvasGpuFence(encoder.createFence())
     }
 
     @JvmSynthetic
@@ -84,7 +85,7 @@ internal object FabricNativeCanvasDriver : NativeCanvasDriver {
      * Captures a leased ordinary RGBA8 image through a nearest offscreen sample pass, including sample-only inputs.
      *
      * Temporary source views and immutable extent uniforms transfer to the capture before GPU use and remain open until its completion fence.
-     * Unsupported input shape, format, or usage throws before sampling; submission failures leave the manager responsible for quarantine.
+     * Unsupported input shape, format, or usage throws before sampling; fence failures leave the manager responsible for quarantine.
      */
     @JvmSynthetic
     internal fun copy(
@@ -124,8 +125,8 @@ internal object FabricNativeCanvasDriver : NativeCanvasDriver {
     /**
      * Clears and lends a target and encoder for exactly one custom-renderer invocation.
      *
-     * The context expires before the manager's capture-fence submission, even on failure.
-     * The manager preserves callback exceptions as primary when subsequent fence submission also fails.
+     * The context expires before the manager records the capture fence, even on failure.
+     * The manager preserves callback exceptions as primary when subsequent fence creation also fails.
      * Returned immutable pixels describe this same physical target generation and are never manufactured by a readback.
      */
     @JvmSynthetic

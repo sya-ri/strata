@@ -8,7 +8,7 @@ import dev.s7a.strata.spi.InternalStrataRuntimeApi
  *
  * Construction, callback recording, and close belong to the client render thread.
  * The resource is a real uploaded native texture; its upload is protected by the factory's first capture fence.
- * Later probes follow the renderer's target work without submitting or waiting, so manager-controlled capture submission remains responsible for progress.
+ * Later probes follow the renderer's target work without submitting or waiting, so the version-owned host submission remains responsible for progress.
  * Close fails before destroying resources if their real native fence has not signalled.
  */
 @OptIn(InternalStrataRuntimeApi::class)
@@ -65,7 +65,7 @@ internal class MinecraftCanvasRendererProbe private constructor(
         /**
          * Transfers one real native resource and its initialization completion probe on success.
          *
-         * The caller already holds a Canvas target permit and will submit the capture even if later rendering fails.
+         * The caller already holds a Canvas target permit and will record the capture fence even if later rendering fails.
          * Native allocation failures propagate, preserving the primary failure if untransferred resource cleanup also fails.
          */
         @Suppress("TooGenericExceptionCaught")

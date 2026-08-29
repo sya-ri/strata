@@ -74,7 +74,7 @@ public object NativeCanvasDevices {
     /**
      * Records native GUI consumption and then polls all device lifetimes on the render thread.
      *
-     * The version adapter calls this after flushing or submitting GUI work, including consumer failure paths.
+     * The version adapter calls this at the actual GUI-consumption boundary, after any family-required flush or submit and including consumer failure paths.
      * It must never be called between extraction and consumption.
      *
      * @throws Throwable after every independent device cleanup has been attempted.
@@ -119,7 +119,7 @@ public object NativeCanvasDevices {
      *
      * Acquisition becomes permanently unavailable before any close callback runs, including reentrant callbacks.
      * Successful entries are removed; failed entries remain quarantined rather than falsely returning lifetime permits.
-     * This is the sole registry operation that may wait for already submitted GPU work.
+     * This is the sole registry operation that may wait for GPU completion; it may also explicitly submit recorded work as the backend host requires.
      *
      * @throws Throwable after attempting every device, preserving the first failure and suppressing later failures.
      */

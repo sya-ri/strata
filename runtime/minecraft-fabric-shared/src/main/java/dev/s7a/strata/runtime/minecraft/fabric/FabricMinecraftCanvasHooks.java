@@ -44,7 +44,7 @@ public final class FabricMinecraftCanvasHooks {
     }
 
     /**
-     * Records consumption only after native GUI work has actually been submitted.
+     * Records consumption only at the version-owned native GUI-consumption boundary.
      *
      * @param primary original GUI failure, or null after successful consumption.
      * @throws Throwable when cleanup fails without an earlier primary failure.

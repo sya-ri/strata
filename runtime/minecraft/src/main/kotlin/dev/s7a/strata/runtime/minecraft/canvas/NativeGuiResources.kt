@@ -101,14 +101,14 @@ public class NativeGuiResources internal constructor(
         }
 
     /**
-     * Seals initialization and submits its completion fence after all attempted allocations and uploads.
+     * Seals initialization and records its completion fence after all attempted allocations and uploads.
      *
      * Call exactly once in a finally block even when no resource was added or only part of the reserved list was initialized.
      * A partial list may retire safely but cannot begin GUI use.
-     * Failed fence submission quarantines the entire set until terminal device completion; it never frees the permit or hides the failure.
+     * Failed fence creation or backend-required submission quarantines the entire set until terminal device completion; it never frees the permit or hides the failure.
      *
      * @param set owned unsealed generation.
-     * @throws Throwable when submission or independently eligible cleanup fails.
+     * @throws Throwable when fencing or independently eligible cleanup fails.
      * @throws IllegalStateException for a foreign, expired, already sealed, terminal, or off-thread set.
      */
     public fun seal(set: NativeGuiResourceSet): Unit =
@@ -132,7 +132,7 @@ public class NativeGuiResources internal constructor(
      * Multiple read-only uses may share unchanged pixels; initialization or in-place uploads after sealing are forbidden.
      * Each successful call must be paired with [endUse] in a finally block.
      *
-     * @param set complete live generation whose immutable layer handles were captured before submission.
+     * @param set complete live generation whose immutable layer handles were captured before GUI presentation.
      * @throws IllegalStateException for incomplete, retired, quarantined, foreign, expired, terminal, or off-thread access.
      */
     public fun beginUse(set: NativeGuiResourceSet): Unit =
@@ -226,11 +226,11 @@ public class NativeGuiResources internal constructor(
         get() = operating
 
     /**
-     * Settles pending portable uses only after the version-owned actual GUI consumer has submitted them.
+     * Settles pending portable uses only after the version-owned actual GUI consumer has consumed them.
      *
      * The containing device calls this on its render thread inside its operation guard.
-     * One fence covers every pending set; superseded fences release without waiting because the replacement covers their earlier work.
-     * Submission failure quarantines every affected set and propagates after independent old-fence releases are attempted.
+     * One fence issued at that boundary covers every pending set; superseded fences release without waiting because the replacement covers their earlier work.
+     * Fence creation or backend-required submission failure quarantines every affected set and propagates after independent old-fence releases are attempted.
      */
     internal fun consumed(): Unit =
         operation(fromDevice = true) {
@@ -280,7 +280,7 @@ public class NativeGuiResources internal constructor(
     /**
      * Stops acquisition before terminal callbacks after the caller has discarded every native GUI queue.
      *
-     * The device calls this on the owner thread before waiting for already submitted work.
+     * The device calls this on the owner thread before terminal completion submits as required and waits for recorded work.
      * Pins and queued references are dropped without closing resources, allowing old extraction finally blocks to unwind harmlessly.
      */
     internal fun beginShutdown(): Unit =

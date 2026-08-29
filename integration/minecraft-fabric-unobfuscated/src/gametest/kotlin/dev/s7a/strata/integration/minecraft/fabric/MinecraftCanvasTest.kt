@@ -17,7 +17,7 @@ import java.nio.file.Path
 import java.util.function.Predicate
 
 /**
- * Runs the native Canvas fixture through Fabric Client GameTest and restores the previous physical viewport and GUI scale.
+ * Runs the native Canvas fixture through Fabric Client GameTest and restores the previous viewport and GUI scale.
  *
  * The runner owns screenshot files; every native resource operation is scheduled on the client render thread.
  * Assertion and infrastructure failures remain primary when viewport restoration also fails.
@@ -33,7 +33,7 @@ internal fun runMinecraftCanvasTest(
 /**
  * Runs the real native Canvas/Slot order check while the caller's server-seeded inventory remains active.
  *
- * The runner owns screenshots and restores its previous physical viewport and GUI scale after independent scene cleanup.
+ * The runner owns screenshots and restores its previous viewport and GUI scale after independent scene cleanup.
  * The populated inventory slot and integrated world stay owned by the existing synchronization test.
  *
  * @param context Fabric Client GameTest coordinator, borrowed for scheduling and native screenshots.
@@ -99,7 +99,7 @@ private fun withMinecraftCanvasContext(
                 size: IntSize,
                 guiScale: Int,
             ) {
-                context.input.resizeWindow(size.width, size.height)
+                resizeMinecraftCanvasTestWindow(context, size)
                 onClient {
                     val minecraft = Minecraft.getInstance()
                     minecraft.options.guiScale().set(guiScale)

@@ -11,7 +11,7 @@ import dev.s7a.strata.spi.InternalStrataRuntimeApi;
 @InternalStrataRuntimeApi
 public interface FabricMinecraftCanvasGuiDiscard {
     /**
-     * Clears queued draw and extraction state while preserving already submitted GPU work for its native owner.
+     * Clears queued draw and extraction state while preserving recorded or submitted GPU work for terminal device completion.
      *
      * @throws Throwable when independent cleanup fails; callers must not assume discard completed or destroy Canvas targets.
      */

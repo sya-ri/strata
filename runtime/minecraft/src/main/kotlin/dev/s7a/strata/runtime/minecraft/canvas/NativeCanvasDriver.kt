@@ -29,24 +29,24 @@ public interface NativeCanvasDriver {
     ): NativeCanvasTarget
 
     /**
-     * Submits a fence after all GPU work issued so far on the device queue.
+     * Records a completion fence after all GPU work issued so far on the device queue.
      *
      * An initialization fence protects work issued by target allocation, a capture fence protects a source lease, and a distinct fence issued after GUI consumption protects target reuse.
-     * Implementations issue no explicit completion wait and never depend on unconsumed GUI commands becoming submitted.
-     * The native backend may apply its own queue backpressure to already submitted work during submission.
+     * Implementations issue no explicit completion wait and must preserve the host's required submission boundaries.
+     * A backend may submit when its host contract requires it, but a shared host encoder must remain in the current frame submission.
      *
      * @return an exclusively owned nonblocking completion probe.
-     * @throws Throwable when submission fails; the caller quarantines potentially used resources until device shutdown.
+     * @throws Throwable when fence creation or a required submission fails; the caller quarantines potentially used resources until device shutdown.
      */
     public fun fence(): NativeCanvasFence
 
     /**
-     * Completes already submitted GPU work during terminal device shutdown only.
+     * Submits as required and completes all recorded GPU work during terminal device shutdown only.
      *
      * The caller must first discard or consume every outstanding GUI queue.
      * Ordinary frames, detachment, and resource reload never call this blocking operation.
      *
-     * @throws Throwable when GPU completion cannot be established; resources must then remain quarantined.
+     * @throws Throwable when submission or GPU completion cannot be established; resources must then remain quarantined.
      */
     public fun finish()
 

@@ -174,15 +174,17 @@ Target allocation has its own completion fence because a backend may enqueue ini
 The external image lease survives its capture-completion fence, while the owned target survives a distinct fence issued after actual GUI consumption.
 Older GUI families flush queued draws before fencing; queued GUI-renderer families fence at the version-owned render-consumption boundary, not during extraction.
 The newest GPU family uses the backend-neutral GPU abstraction for OpenGL and Vulkan instead of exposing raw OpenGL through common contracts.
+When that abstraction exposes one host-owned command encoder, allocation, capture, upload, and GUI-completion fences remain in Minecraft's current submission instead of submitting ordinary Canvas work independently.
+For that shared-encoder family, only terminal device teardown may explicitly submit the encoder before waiting for completion.
 Screen removal stops bindings and input immediately, but a screen-independent render-thread registry polls retired GPU work without waiting.
 Source replacement, resize, reattachment, reload, failed capture, failed GUI work, unsubmitted cancellation, and device shutdown follow the same ownership protocol.
-Only device teardown after GUI queues have been discarded may wait for submitted GPU work.
+Only device teardown after GUI queues have been discarded may wait for GPU completion; it may also submit recorded work as required.
 Allocation, capture, or GUI-fence uncertainty quarantines affected resources until that teardown; cleanup failures preserve the primary exception and never return a permit before successful physical destruction.
 Deferred native destruction is acknowledged separately from `close()`: Vulkan texture and view retirement is counted until the backend actually destroys every owned attachment.
 Terminal cleanup drains that native destruction queue only after GPU completion and GUI discard; it cannot release a target permit merely because retirement was requested.
 Device shutdown rejects new screen attachments and source owners before invoking application cleanup callbacks, including reentrant attempts to install another screen.
 
-`FabricMinecraftScreen.captureCanvasFrame()` converts the last successfully submitted presentation to portable commands using its immutable CPU receipts only.
+`FabricMinecraftScreen.captureCanvasFrame()` converts the last successfully presented frame to portable commands using its immutable CPU receipts only.
 Every native token must have an exact same-generation, same-extent, normalized snapshot; missing, mismatched, or unsupported native commands fail before partial output.
 An initially unavailable Canvas remains transparent on screen, but its presentation cannot be captured until every requested Canvas has a committed generation and matching snapshot.
 Native images become BlitImagePixels commands with unchanged logical destinations; rasterize the capture at the presentation's GUI scale to reproduce every physical texel.

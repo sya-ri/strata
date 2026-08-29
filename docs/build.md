@@ -149,14 +149,20 @@ Native Canvas scenes independently verify fixed texture texels, a custom offscre
 The 26.2 task defaults to `strata.canvas.scope=full`, which runs the unchanged complete shared suite.
 An explicit `'-Pstrata.canvas.scope=canvas-only'` selects bounded backend acceptance and writes separate `minecraft-canvas-parity-<backend>` evidence.
 For example, `./gradlew :integration:minecraft-fabric-26.2:runClientGameTest '-Pstrata.canvas.backend=vulkan' '-Pstrata.canvas.scope=canvas-only'` runs every existing Canvas texture, custom-renderer, lifecycle, capacity, queued-consumption, same-generation capture, native input-reset, and partial-producer-failure case, plus actual Canvas/Slot ordering with a server-seeded inventory slot.
+The same properties apply to `runProductionClientGameTest`, which writes `minecraft-production-canvas-parity-<backend>` evidence while loading the packaged integration and runtime JARs.
+On Vulkan, this Canvas-specific scope keeps the native GLFW surface and swapchain extent stable while changing Minecraft's logical viewport, framebuffer dimensions, GUI scale, and main render target; OpenGL retains Fabric's native resize path.
+This verifies Canvas target resize and scale behavior without claiming physical operating-system window resize coverage.
 This scope excludes unrelated native reference-screen parity, the non-Canvas component showcase, and inventory click-synchronization scenarios; it cannot establish a full-suite Vulkan pass or generate the component showcase.
+The full scope continues to exercise Fabric's physical window-resize path in those unrelated scenes, so its backend result remains separate from Canvas-specific acceptance.
 Use it to record Canvas evidence separately from complete-suite failures, retaining the failing run's logs and any comparison logs with their exact runtime and graphics configuration.
 A comparison that does not display Canvas but still loads its runtime and mixins is not a baseline with that runtime removed and does not establish a driver root cause.
-Neither scope changes a pixel oracle or substitutes a CPU-only renderer for native GPU acceptance.
-Both 26.2 scopes arm the same test-only observer around actual client shutdown only after their selected cases succeed.
+No scope changes a pixel oracle or substitutes a CPU-only renderer for native GPU acceptance.
+The full and Canvas-only scopes arm the same test-only observer around actual client shutdown only after their selected cases succeed.
+The diagnostic `'-Pstrata.canvas.scope=terminal-only'` skips feature scenes and proves only the identical mixed portable/native terminal queue and device shutdown; it is not Canvas feature acceptance.
+It writes `minecraft-canvas-terminal-<backend>` development evidence or `minecraft-production-canvas-terminal-<backend>` production evidence.
 It queues a native Canvas between portable background and foreground layers without consuming their GUI work and requires a fresh invocation-bound receipt proving that original shutdown returned, the queue was discarded, and native target, portable texture, and renderer ownership reached zero.
-Development runs write `strata-canvas-terminal.properties` beside their parity evidence; production launch tasks write `canvas-shutdown/<taskName>.properties` under the integration build directory.
-The terminal receipt records `suiteScope`, `verifiedChecks`, `excludedChecks`, and the actual `menuBackgroundBlurriness` option, which must remain unchanged between arming and entry into native shutdown after the harness restores the window size.
+Development and primary production runs write `strata-canvas-terminal.properties` beside their scope-specific parity evidence; the published-coordinate production task writes `canvas-shutdown/<taskName>.properties` under the integration build directory.
+The terminal receipt records `suiteScope`, `verifiedChecks`, `excludedChecks`, and the actual `menuBackgroundBlurriness` option, which must remain unchanged between arming and entry into native shutdown after the harness restores the test viewport through its backend-owned path.
 Gradle rejects a receipt from a different scope or invocation and validates the recorded blur option against Minecraft's supported range.
 These receipts prove the actual shutdown boundary, while the Minecraft-independent tests separately cover fences that remain unsignalled for arbitrarily many frames.
 Minecraft-dependent facts unavailable from the Minecraft evidence catalog are verified against official local client jars; a documentation-provider quota failure does not authorize guessing versioned APIs.

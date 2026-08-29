@@ -11,7 +11,7 @@ import dev.s7a.strata.runtime.FrameTime
  *
  * The target is exclusively owned by Strata and has been cleared to transparent.
  * Renderers encode all target work through [encoder], close every render pass before returning, and never submit or retain this encoder themselves.
- * The adapter completes the family's immediate-issue or explicit-submit boundary even when the callback fails, then protects resources with a capture fence.
+ * The adapter records the family-specific completion fence even when the callback fails; submission remains with the version-owned adapter or host boundary.
  * Output is ordinary RGBA8 straight alpha with texture row zero representing the top logical image row.
  * Do not retain this context or its native objects, resize or destroy the target, or draw to the current GUI target.
  * Physical target axes never exceed the adapter's 32,768-pixel arithmetic bound; the active device may impose a lower limit.
@@ -45,10 +45,10 @@ public class MinecraftCanvasContext private constructor(
         }
 
     /**
-     * The callback encoder whose command completion boundary and fence are managed by the adapter.
+     * The callback encoder whose completion fence is managed by the adapter and whose submission follows the version-owned host contract.
      *
      * Use it only on the render thread, close every opened render pass before returning, and do not retain or submit the encoder.
-     * Whether commands are issued immediately or need explicit submission remains a version-adapter responsibility.
+     * Whether commands issue immediately or remain recorded for a later host submission remains a version-adapter responsibility.
      *
      * @throws IllegalStateException off the render thread or after the callback returns or fails.
      */
@@ -83,7 +83,7 @@ public class MinecraftCanvasContext private constructor(
          * Borrows a device-owned target and encoder for one render-thread callback without transferring ownership.
          *
          * @param target exclusively borrowed target, retained by the device through its completion fence.
-         * @param encoder callback encoder whose submission remains owned by the adapter.
+         * @param encoder callback encoder whose submission follows the version-owned adapter or host contract.
          * @param logicalSize final positive destination extent.
          * @param physicalSize allocated native target extent.
          * @param frameTime timestamp for this native presentation.
