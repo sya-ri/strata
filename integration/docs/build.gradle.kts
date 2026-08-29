@@ -7,7 +7,6 @@ import org.gradle.api.tasks.ClasspathNormalizer
 import org.gradle.api.tasks.JavaExec
 import org.gradle.api.tasks.PathSensitivity
 import org.gradle.api.tasks.SourceSetContainer
-import org.gradle.api.tasks.Sync
 import org.gradle.api.tasks.testing.Test
 import org.gradle.jvm.toolchain.JavaLanguageVersion
 import org.gradle.jvm.toolchain.JavaToolchainService
@@ -379,16 +378,13 @@ val checkDocumentationLinks =
         outputs.upToDateWhen { false }
     }
 
-val stageDokkaGuides =
-    tasks.register<Sync>("stageDokkaGuides") {
-        group = "documentation"
-        description = "Copies verified reader guides and images into the generated Dokka site."
-        dependsOn(rootProject.tasks.named("dokkaGenerate"), checkDocumentationLinks)
-        mustRunAfter(rootProject.tasks.named("verifyGeneratedDokkaSourceLinks"))
-        from(rootProject.layout.projectDirectory.dir("docs"))
-        into(rootProject.layout.buildDirectory.dir("dokka/html/guide"))
+val dokkaPagesRoot = rootProject.layout.buildDirectory.dir("dokka/html")
+val dokkaPagesInputs =
+    dokkaPagesRoot.map { directory ->
+        directory.asFileTree.matching {
+            exclude("pages-public-urls.txt", "releases/**")
+        }
     }
-
 val pagesPublicUrlInventory = rootProject.layout.buildDirectory.file("dokka/html/pages-public-urls.txt")
 val pagesRepositoryInputs =
     providers.provider {
@@ -428,23 +424,25 @@ val pagesRepositoryInputs =
 val generateDokkaPagesInventory =
     tasks.register<JavaExec>("generateDokkaPagesInventory") {
         group = "documentation"
-        description = "Generates deterministic public URLs from staged Pages content."
-        dependsOn(stageDokkaGuides, rootProject.tasks.named("stagePagesSourceRevision"), "classes")
+        description = "Generates deterministic public URLs for the staged Dokka API site."
+        dependsOn(rootProject.tasks.named("dokkaGenerate"), rootProject.tasks.named("stagePagesSourceRevision"), checkDocumentationLinks, "classes")
+        mustRunAfter(rootProject.tasks.named("verifyGeneratedDokkaSourceLinks"))
         mainClass.set("dev.s7a.strata.integration.docs.PagesPublicUrlInventory")
         classpath = sourceSets.main.get().runtimeClasspath
         args(
             repositoryRoot.get().asFile.absolutePath,
-            rootProject.layout.buildDirectory.dir("dokka/html").get().asFile.absolutePath,
+            dokkaPagesRoot.get().asFile.absolutePath,
             pagesPublicUrlInventory.get().asFile.absolutePath,
         )
         inputs.files(pagesRepositoryInputs)
-        inputs.dir(rootProject.layout.buildDirectory.dir("dokka/html/guide"))
+        inputs.files(dokkaPagesInputs).withPropertyName("dokkaSite").withPathSensitivity(PathSensitivity.RELATIVE)
         outputs.file(pagesPublicUrlInventory)
+        outputs.upToDateWhen { false }
     }
 
 tasks.register<JavaExec>("checkDokkaPagesStaging") {
     group = "verification"
-    description = "Checks that every hard-coded Strata Pages URL has a staged static file."
+    description = "Checks the generated Dokka API site, source receipt, and advertised Pages URLs."
     dependsOn(
         generateDokkaPagesInventory,
         rootProject.tasks.named("verifyGeneratedDokkaSourceLinks"),
@@ -454,11 +452,11 @@ tasks.register<JavaExec>("checkDokkaPagesStaging") {
     classpath = sourceSets.main.get().runtimeClasspath
     args(
         repositoryRoot.get().asFile.absolutePath,
-        rootProject.layout.buildDirectory.dir("dokka/html").get().asFile.absolutePath,
+        dokkaPagesRoot.get().asFile.absolutePath,
         pagesPublicUrlInventory.get().asFile.absolutePath,
     )
     inputs.files(pagesRepositoryInputs)
-    inputs.dir(rootProject.layout.buildDirectory.dir("dokka/html"))
+    inputs.files(dokkaPagesInputs).withPropertyName("dokkaSite").withPathSensitivity(PathSensitivity.RELATIVE)
     inputs.file(pagesPublicUrlInventory)
     outputs.upToDateWhen { false }
 }

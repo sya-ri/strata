@@ -57,4 +57,4 @@ internal fun UiScope.EnergyGauge(
 ```
 
 Use public `Element` and `Node` SPI only when composition cannot provide the required retained measurement, drawing, input, semantics, or lifecycle behavior.
-Read the [Element SPI contract](https://gh.s7a.dev/strata/guide/element-spi.md) before implementing a retained primitive; no central component registration is required.
+Read the [Element SPI contract](https://github.com/sya-ri/strata/blob/master/docs/element-spi.md) before implementing a retained primitive; no central component registration is required.
