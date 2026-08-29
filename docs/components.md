@@ -1390,7 +1390,7 @@ The tree mirrors the complete dedicated definition, including the featured compo
 
 Canvas displays externally produced CPU frames or version-runtime native output in one input-passive rectangle. Decoded video and camera, filter, or custom-renderer output are independent uses; composing Image and Stack cannot provide source cutoffs, attachment lifetimes, leased GPU capture, or owned offscreen targets. The component does not implement a decoder, camera, world renderer, filter, or browser engine.
 
-This 96 by 64 image is the complete frame of the compiled dedicated `ScreenDefinition`, after exact Fabric/headless ARGB comparison recorded in [the verification receipt](components/minecraft-26.2-parity.properties); it is not cropped from a larger screen.
+This 96 by 64 PNG is the complete frame of the compiled dedicated `ScreenDefinition`, with a 96 by 64 logical viewport at GUI scale 1. Headless rendering samples the assets at this physical density; the image is not upscaled from a lower-resolution raster or cropped from a larger screen. Its source, asset, viewport, and image hashes are recorded in [the headless render receipt](components/headless-render.properties).
 
 ![Canvas headless showcase](components/canvas.png)
 
