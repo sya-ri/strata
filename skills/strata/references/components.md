@@ -318,7 +318,7 @@ Canvas displays externally produced CPU frames or version-runtime native output 
 - Compiled overloads: 1
 - Modifiers: Use an explicit positive logical `size`; the whole source stretches with nearest sampling, and changes to source pixel extent only repaint that destination. Canvas is input-passive. Compose `onCapturedPointerEvent` to forward unclamped local logical pointer coordinates, and use ordinary focus and keyboard modifiers only when the application needs them.
 - Parent scope: `Canvas` is a leaf extension with no content scope or parent-data API. `canvasSource(image)` retains immutable CPU pixels, while `canvasSource(frames)` observes `StateSource<DrawImage>` through owner-thread frame cutoffs. Each attachment owns its binding; replacement, detachment, and close stop that binding without closing the externally owned source. Native sources require the matching versioned runtime and do not read back pixels during normal presentation. Native headless capture requires an immutable snapshot of the same committed generation, physical extent, and top-left orientation; a missing or mismatched snapshot fails before any output.
-- [Showcase image and compiled example](https://gh.s7a.dev/strata/guide/components.md#canvas)
+- [Showcase image and compiled example](https://github.com/sya-ri/strata/blob/master/docs/components.md#canvas)
 
 ```kotlin
 fun UiScope.Canvas(source: CanvasSource, size: IntSize, modifier: Modifier = Modifier.Empty, key: ElementKey<*>? = null)
