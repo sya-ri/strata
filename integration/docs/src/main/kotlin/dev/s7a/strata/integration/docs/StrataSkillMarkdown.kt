@@ -183,6 +183,7 @@ $layoutExample
 - Use `TextAreaState` for multiline editing and link an optional `Scrollbar` to `state.scrollState`. Creating immutable descriptions does not attach the state, and descriptions may be reused after detachment; simultaneous attachment with the same caller-owned state throws `IllegalStateException`.
 - Use the dynamic `VirtualList(itemCount = { ... })` overload for a loadable indexed source. Complete each prepend, append, or same-count row mutation inside its leading or trailing request handler, then call owner-thread `VirtualListState.refresh()` so the list resamples the count, rebuilds visible rows, and preserves its stable-key anchor when possible. The `Int` and `List` overloads are immutable snapshots. Use the same state for index or stable-key jumps.
 - Use `ImageSource.Resource(ResourceId(...))` and image backgrounds for resource-pack-replaceable Mod assets.
+- Use `TiledImageSource` for a large logical raster whose tiles load or change independently, keep navigation in `PanZoomState`, compose `panZoom(state)` for direct input, and place fixed-size markers through `TiledImageScope.atContentPosition`; pass a `StateSource<DoubleOffset>` when marker positions change independently.
 - Use `PlayerSkinSource` for profile-driven heads rather than pre-rendering a skin outside the component.
 - Bind `Slot` with `Slots.playerInventory`, `Slots.container`, or `Slots.activeMenu`; authoritative inventory mutation belongs to the active server menu.
 """,
@@ -300,6 +301,7 @@ ${compiledFingerprints.joinToString("\n")}
                 ModifierInventory.ParentScopeModifier.ColumnAlign -> "Overrides horizontal alignment for a direct Column child."
                 ModifierInventory.ParentScopeModifier.GridAlign -> "Aligns one direct child within its Grid cell."
                 ModifierInventory.ParentScopeModifier.StackAlign -> "Aligns one overlapping direct child within the Stack rectangle."
+                ModifierInventory.ParentScopeModifier.TiledImageAtContentPosition -> "Anchors one fixed-size overlay child at a TiledImage content coordinate."
             }
         return "| `${entry.scopeName}.${entry.methodName}` | $overloadCount | $meaning |"
     }

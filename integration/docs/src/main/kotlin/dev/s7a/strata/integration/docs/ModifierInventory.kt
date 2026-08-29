@@ -67,6 +67,11 @@ internal object ModifierInventory {
          * Stack overlay alignment.
          */
         StackAlign("StackScope", "align"),
+
+        /**
+         * TiledImage content-coordinate overlay placement.
+         */
+        TiledImageAtContentPosition("TiledImageScope", "atContentPosition"),
         ;
 
         internal val className: String

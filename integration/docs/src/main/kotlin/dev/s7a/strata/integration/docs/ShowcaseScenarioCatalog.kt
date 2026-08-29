@@ -1,5 +1,6 @@
 package dev.s7a.strata.integration.docs
 
+import dev.s7a.strata.geometry.DoubleOffset
 import dev.s7a.strata.geometry.IntSize
 import dev.s7a.strata.layout.Alignment
 import dev.s7a.strata.layout.Arrangement
@@ -304,6 +305,27 @@ internal object ShowcaseScenarioCatalog {
                     ),
             ),
             ComponentScenario(
+                component = DocumentedComponent.TiledImage,
+                source = componentSource("MinecraftTiledImageExample.kt", "tiled-image"),
+                viewportMetadata = ShowcaseViewport(IntSize(112, 88), 1),
+                tree =
+                    centeredCanvas(
+                        IntSize(112, 88),
+                        tree(
+                            DocumentedComponent.TiledImage,
+                            listOf(ShowcaseTreeDetail.Size(96, 72)),
+                            tree(
+                                DocumentedComponent.Spacer,
+                                listOf(
+                                    ShowcaseTreeDetail.Size(7, 7),
+                                    ShowcaseTreeDetail.Background(ArgbColor(0xFFFFFFFF.toInt())),
+                                    ShowcaseTreeDetail.TiledImageContentPosition(DoubleOffset(32.0, 24.0), Alignment.Center),
+                                ),
+                            ),
+                        ),
+                    ),
+            ),
+            ComponentScenario(
                 component = DocumentedComponent.Slot,
                 source = componentSource("MinecraftSlotShowcaseExample.kt", "slot"),
                 viewportMetadata = ShowcaseViewport(IntSize(64, 64), 1),
@@ -534,6 +556,7 @@ internal object ShowcaseScenarioCatalog {
             is ShowcaseTreeDetail.FlowRowAlign,
             is ShowcaseTreeDetail.ColumnAlign,
             is ShowcaseTreeDetail.StackAlign,
+            is ShowcaseTreeDetail.TiledImageContentPosition,
             is ShowcaseTreeDetail.GridAlign,
             is ShowcaseTreeDetail.Arrangement,
             is ShowcaseTreeDetail.RowDefaultAlignment,

@@ -132,8 +132,8 @@ internal object StrataSkillPipeline {
                 "Component Kotlin signatures differ from compiled overloads for ${component.apiMethodName}."
             }
         }
-        require(compiledModifiers.modifiers.size == 41) { "Expected 41 top-level modifier groups, found ${compiledModifiers.modifiers.size}." }
-        require(compiledModifiers.modifiers.values.sum() == 51) { "Expected 51 top-level modifier overloads, found ${compiledModifiers.modifiers.values.sum()}." }
+        require(compiledModifiers.modifiers.size == 42) { "Expected 42 top-level modifier groups, found ${compiledModifiers.modifiers.size}." }
+        require(compiledModifiers.modifiers.values.sum() == 52) { "Expected 52 top-level modifier overloads, found ${compiledModifiers.modifiers.values.sum()}." }
         require(compiledModifiers.modifiers.keys == ModifierDocumentationCatalog.entries.keys) {
             "Modifier guidance differs from the compiled modifier surface."
         }

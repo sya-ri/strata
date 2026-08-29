@@ -7,6 +7,7 @@ This site contains the generated API reference.
 Reader guides and verified component images are rendered on GitHub in this repository.
 
 - [Component showcase](https://github.com/sya-ri/strata/blob/master/docs/components.md)
+- [Tiled images and pan/zoom](https://github.com/sya-ri/strata/blob/master/docs/tiled-images.md)
 - [Architecture](https://github.com/sya-ri/strata/blob/master/docs/architecture.md)
 - [Layout contract](https://github.com/sya-ri/strata/blob/master/docs/layout.md)
 - [Modifier contract](https://github.com/sya-ri/strata/blob/master/docs/modifiers.md)

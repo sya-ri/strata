@@ -9,7 +9,9 @@ import dev.s7a.strata.component.Text
 import dev.s7a.strata.component.TextField
 import dev.s7a.strata.component.TextFieldState
 import dev.s7a.strata.component.TextStyle
+import dev.s7a.strata.component.TiledImageTile
 import dev.s7a.strata.geometry.Constraints
+import dev.s7a.strata.geometry.FloatRect
 import dev.s7a.strata.geometry.IntOffset
 import dev.s7a.strata.geometry.IntRect
 import dev.s7a.strata.geometry.IntSize
@@ -17,6 +19,7 @@ import dev.s7a.strata.input.InputResult
 import dev.s7a.strata.input.PointerButton
 import dev.s7a.strata.input.PointerEvent
 import dev.s7a.strata.integration.consumer.createApiOnlyCanvasDefinition
+import dev.s7a.strata.integration.consumer.createApiOnlyTiledImageDefinition
 import dev.s7a.strata.modifier.Modifier
 import dev.s7a.strata.modifier.containerBackground
 import dev.s7a.strata.modifier.menuBackground
@@ -63,6 +66,30 @@ internal class ExternalMinecraftUiHostIntegrationTest {
             assertEquals(IntRect(0, 0, 2, 1), output.source)
             assertEquals(IntRect(0, 0, 4, 2), output.destination)
             assertEquals(InputResult.Ignored, host.dispatchPointer(PointerEvent.Press(IntOffset.Zero, PointerButton.Primary)))
+        } finally {
+            host.close()
+        }
+    }
+
+    @Test
+    fun apiOnlyTiledImageCompilesWithNavigationAndRendersItsTile() {
+        val size = IntSize(2, 1)
+        val image = createDrawImage(size, intArrayOf(0xFFFF0000.toInt(), 0xFF00FF00.toInt()))
+        val definition =
+            createApiOnlyTiledImageDefinition(
+                frames = StateSource { StateSubscription(StateSnapshot(StateRevision(1), TiledImageTile.Ready(image))) {} },
+                size = size,
+            )
+        val host = createMinecraftUiHost(definition, profile())
+        try {
+            host.attach()
+            val frame = host.frame(size)
+            val output = frame.drawCommands.filterIsInstance<DrawCommand.SampledImage>().single()
+            assertSame(image, output.image)
+            assertEquals(FloatRect(0.0f, 0.0f, 2.0f, 1.0f), output.source)
+            assertEquals(FloatRect(0.0f, 0.0f, 2.0f, 1.0f), output.destination)
+            assertEquals(InputResult.Consumed, host.dispatchPointer(PointerEvent.Press(IntOffset.Zero, PointerButton.Primary)))
+            assertEquals(InputResult.Consumed, host.dispatchPointer(PointerEvent.Release(IntOffset.Zero, PointerButton.Primary)))
         } finally {
             host.close()
         }

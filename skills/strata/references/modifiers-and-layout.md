@@ -4,7 +4,7 @@
 
 Modifiers are active retained behavior, not a passive settings bag.
 Order matters: layout and input elements wrap the behavior that follows them in the chain.
-The 51 compiled overloads below form 41 top-level extension groups.
+The 52 compiled overloads below form 42 top-level extension groups.
 
 | Extension | Overloads | Category | Use |
 | --- | ---: | --- | --- |
@@ -43,6 +43,7 @@ The 51 compiled overloads below form 41 top-level extension groups.
 | `onTextInput` | 1 | Focus and text | Handles every focused text-input event when committed-character and preedit handlers are too narrow. |
 | `onTrailingItemsRequested` | 1 | Component actions | Requests items after the current virtual-list boundary for append-style infinite loading. |
 | `padding` | 4 | Layout | Adds checked local insets around an element; use parent spacing and alignment for sibling structure. |
+| `panZoom` | 1 | Pointer | Pans a caller-owned `PanZoomState` with a captured button drag and zooms around the pointer with the vertical wheel delta. |
 | `semantics` | 1 | Semantics | Adds unresolved accessible semantics without coupling them to rendering. |
 | `size` | 1 | Size | Requires one exact logical width and height. |
 | `sizeIn` | 1 | Size | Constrains logical width and height to optional minimums and maximums. |
@@ -271,6 +272,12 @@ fun Modifier.padding(insets: Insets): Modifier
 fun Modifier.padding(left: Int = 0, top: Int = 0, right: Int = 0, bottom: Int = 0): Modifier
 ```
 
+### `panZoom`
+
+```kotlin
+fun Modifier.panZoom(state: PanZoomState, panButton: PointerButton = PointerButton.Primary, zoomStep: Double = 1.12): Modifier
+```
+
 ### `semantics`
 
 ```kotlin
@@ -322,6 +329,7 @@ Do not move them to a generic global helper or use them outside a direct child d
 | `ColumnScope.align` | 1 | Overrides horizontal alignment for a direct Column child. |
 | `GridScope.align` | 1 | Aligns one direct child within its Grid cell. |
 | `StackScope.align` | 1 | Aligns one overlapping direct child within the Stack rectangle. |
+| `TiledImageScope.atContentPosition` | 2 | Anchors one fixed-size overlay child at a TiledImage content coordinate. |
 
 ### Parent-layout signatures
 
@@ -365,6 +373,13 @@ fun Modifier.align(alignment: Alignment): Modifier
 
 ```kotlin
 fun Modifier.align(alignment: Alignment): Modifier
+```
+
+### `TiledImageScope.atContentPosition`
+
+```kotlin
+fun Modifier.atContentPosition(position: DoubleOffset, alignment: Alignment = Alignment.Center): Modifier
+fun Modifier.atContentPosition(position: StateSource<DoubleOffset>, alignment: Alignment = Alignment.Center): Modifier
 ```
 
 ## Selection guide
@@ -907,6 +922,289 @@ fun interface CanvasSource
 ```text
 interface dev.s7a.strata.component.CanvasSource
 method dev.s7a.strata.component.CanvasSource.open-F1gC8AI(long): dev.s7a.strata.component.CanvasBinding
+```
+
+</details>
+
+### PanZoomFit
+
+Contain or cover policy defining the base scale represented by zoom one.
+
+#### `PanZoomFit`
+
+```kotlin
+enum class PanZoomFit
+```
+
+<details><summary>Compiled JVM API fingerprints</summary>
+
+```text
+enum dev.s7a.strata.component.PanZoomFit
+field dev.s7a.strata.component.PanZoomFit.Contain: dev.s7a.strata.component.PanZoomFit
+field dev.s7a.strata.component.PanZoomFit.Cover: dev.s7a.strata.component.PanZoomFit
+method dev.s7a.strata.component.PanZoomFit.getEntries(): kotlin.enums.EnumEntries
+method dev.s7a.strata.component.PanZoomFit.valueOf(java.lang.String): dev.s7a.strata.component.PanZoomFit
+method dev.s7a.strata.component.PanZoomFit.values(): dev.s7a.strata.component.PanZoomFit[]
+```
+
+</details>
+
+### PanZoomMetrics
+
+Immutable current center, zoom, resolved scale, viewport, content bounds, and fit snapshot.
+
+#### `PanZoomMetrics`
+
+```kotlin
+data class PanZoomMetrics(public val center: DoubleOffset = DoubleOffset.Zero, public val zoom: Double = 1.0, public val scale: Double = 1.0, public val viewportSize: IntSize = IntSize.Zero, public val contentBounds: LongRect = LongRect.Zero, public val fit: PanZoomFit = PanZoomFit.Contain, public val geometryKnown: Boolean = false)
+val center: DoubleOffset
+val contentBounds: LongRect
+val fit: PanZoomFit
+val geometryKnown: Boolean
+val scale: Double
+val viewportSize: IntSize
+val zoom: Double
+```
+
+<details><summary>Compiled JVM API fingerprints</summary>
+
+```text
+class dev.s7a.strata.component.PanZoomMetrics
+constructor dev.s7a.strata.component.PanZoomMetrics()
+constructor dev.s7a.strata.component.PanZoomMetrics(dev.s7a.strata.geometry.DoubleOffset, double, double, dev.s7a.strata.geometry.IntSize, dev.s7a.strata.geometry.LongRect, dev.s7a.strata.component.PanZoomFit, boolean)
+method dev.s7a.strata.component.PanZoomMetrics.component1(): dev.s7a.strata.geometry.DoubleOffset
+method dev.s7a.strata.component.PanZoomMetrics.component2(): double
+method dev.s7a.strata.component.PanZoomMetrics.component3(): double
+method dev.s7a.strata.component.PanZoomMetrics.component4(): dev.s7a.strata.geometry.IntSize
+method dev.s7a.strata.component.PanZoomMetrics.component5(): dev.s7a.strata.geometry.LongRect
+method dev.s7a.strata.component.PanZoomMetrics.component6(): dev.s7a.strata.component.PanZoomFit
+method dev.s7a.strata.component.PanZoomMetrics.component7(): boolean
+method dev.s7a.strata.component.PanZoomMetrics.copy(dev.s7a.strata.geometry.DoubleOffset, double, double, dev.s7a.strata.geometry.IntSize, dev.s7a.strata.geometry.LongRect, dev.s7a.strata.component.PanZoomFit, boolean): dev.s7a.strata.component.PanZoomMetrics
+method dev.s7a.strata.component.PanZoomMetrics.equals(java.lang.Object): boolean
+method dev.s7a.strata.component.PanZoomMetrics.getCenter(): dev.s7a.strata.geometry.DoubleOffset
+method dev.s7a.strata.component.PanZoomMetrics.getContentBounds(): dev.s7a.strata.geometry.LongRect
+method dev.s7a.strata.component.PanZoomMetrics.getFit(): dev.s7a.strata.component.PanZoomFit
+method dev.s7a.strata.component.PanZoomMetrics.getGeometryKnown(): boolean
+method dev.s7a.strata.component.PanZoomMetrics.getScale(): double
+method dev.s7a.strata.component.PanZoomMetrics.getViewportSize(): dev.s7a.strata.geometry.IntSize
+method dev.s7a.strata.component.PanZoomMetrics.getZoom(): double
+method dev.s7a.strata.component.PanZoomMetrics.hashCode(): int
+method dev.s7a.strata.component.PanZoomMetrics.toString(): java.lang.String
+```
+
+</details>
+
+### PanZoomState
+
+Caller-owned owner-thread transform with bounded pan, anchored zoom, coordinate conversion, and one live viewport geometry owner.
+
+#### `PanZoomState`
+
+```kotlin
+class PanZoomState(initialCenter: DoubleOffset? = null, initialZoom: Double = 1.0, public val minimumZoom: Double = 1.0, public val maximumZoom: Double = 64.0)
+fun centerOn(position: DoubleOffset): DoubleOffset
+fun contentToLocal(position: DoubleOffset): DoubleOffset
+fun localToContent(position: DoubleOffset): DoubleOffset
+fun panBy(delta: DoubleOffset): DoubleOffset
+fun reset(): PanZoomMetrics
+fun zoomBy(factor: Double, anchor: DoubleOffset? = null): Double
+fun zoomTo(zoom: Double, anchor: DoubleOffset? = null): Double
+val maximumZoom: Double
+val metrics: PanZoomMetrics
+val minimumZoom: Double
+```
+
+<details><summary>Compiled JVM API fingerprints</summary>
+
+```text
+class dev.s7a.strata.component.PanZoomState
+class dev.s7a.strata.component.PanZoomState$Companion$WhenMappings
+constructor dev.s7a.strata.component.PanZoomState()
+constructor dev.s7a.strata.component.PanZoomState(dev.s7a.strata.geometry.DoubleOffset, double, double, double)
+method dev.s7a.strata.component.PanZoomState.centerOn(dev.s7a.strata.geometry.DoubleOffset): dev.s7a.strata.geometry.DoubleOffset
+method dev.s7a.strata.component.PanZoomState.contentToLocal(dev.s7a.strata.geometry.DoubleOffset): dev.s7a.strata.geometry.DoubleOffset
+method dev.s7a.strata.component.PanZoomState.getMaximumZoom(): double
+method dev.s7a.strata.component.PanZoomState.getMetrics(): dev.s7a.strata.component.PanZoomMetrics
+method dev.s7a.strata.component.PanZoomState.getMinimumZoom(): double
+method dev.s7a.strata.component.PanZoomState.localToContent(dev.s7a.strata.geometry.DoubleOffset): dev.s7a.strata.geometry.DoubleOffset
+method dev.s7a.strata.component.PanZoomState.observe(kotlin.jvm.functions.Function1): dev.s7a.strata.component.PanZoomStateObserver
+method dev.s7a.strata.component.PanZoomState.panBy(dev.s7a.strata.geometry.DoubleOffset): dev.s7a.strata.geometry.DoubleOffset
+method dev.s7a.strata.component.PanZoomState.reset(): dev.s7a.strata.component.PanZoomMetrics
+method dev.s7a.strata.component.PanZoomState.updateGeometry(dev.s7a.strata.geometry.LongRect, dev.s7a.strata.geometry.IntSize, dev.s7a.strata.component.PanZoomFit, dev.s7a.strata.component.PanZoomStateObserver): void
+method dev.s7a.strata.component.PanZoomState.zoomBy(double, dev.s7a.strata.geometry.DoubleOffset): double
+method dev.s7a.strata.component.PanZoomState.zoomTo(double, dev.s7a.strata.geometry.DoubleOffset): double
+```
+
+</details>
+
+### TiledImageCachePolicy
+
+Positive per-attachment tile-entry and byte limits plus bounded overscan.
+
+#### `TiledImageCachePolicy`
+
+```kotlin
+data class TiledImageCachePolicy(public val maxEntries: Int = 512, public val maxBytes: Long = 67_108_864L, public val overscanTiles: Int = 1)
+val maxBytes: Long
+val maxEntries: Int
+val overscanTiles: Int
+```
+
+#### `TiledImageCachePolicy.Companion`
+
+```kotlin
+companion object
+val Default: TiledImageCachePolicy
+```
+
+<details><summary>Compiled JVM API fingerprints</summary>
+
+```text
+class dev.s7a.strata.component.TiledImageCachePolicy
+class dev.s7a.strata.component.TiledImageCachePolicy$Companion
+constructor dev.s7a.strata.component.TiledImageCachePolicy()
+constructor dev.s7a.strata.component.TiledImageCachePolicy(int, long, int)
+field dev.s7a.strata.component.TiledImageCachePolicy.Companion: dev.s7a.strata.component.TiledImageCachePolicy$Companion
+method dev.s7a.strata.component.TiledImageCachePolicy$Companion.getDefault(): dev.s7a.strata.component.TiledImageCachePolicy
+method dev.s7a.strata.component.TiledImageCachePolicy.component1(): int
+method dev.s7a.strata.component.TiledImageCachePolicy.component2(): long
+method dev.s7a.strata.component.TiledImageCachePolicy.component3(): int
+method dev.s7a.strata.component.TiledImageCachePolicy.copy(int, long, int): dev.s7a.strata.component.TiledImageCachePolicy
+method dev.s7a.strata.component.TiledImageCachePolicy.equals(java.lang.Object): boolean
+method dev.s7a.strata.component.TiledImageCachePolicy.getMaxBytes(): long
+method dev.s7a.strata.component.TiledImageCachePolicy.getMaxEntries(): int
+method dev.s7a.strata.component.TiledImageCachePolicy.getOverscanTiles(): int
+method dev.s7a.strata.component.TiledImageCachePolicy.hashCode(): int
+method dev.s7a.strata.component.TiledImageCachePolicy.toString(): java.lang.String
+```
+
+</details>
+
+### TiledImageLevel
+
+Immutable tile pixel extent and content-unit scale for one source resolution level.
+
+#### `TiledImageLevel`
+
+```kotlin
+data class TiledImageLevel(public val tilePixelSize: IntSize, public val contentUnitsPerPixel: Long)
+val contentUnitsPerPixel: Long
+val tilePixelSize: IntSize
+```
+
+<details><summary>Compiled JVM API fingerprints</summary>
+
+```text
+class dev.s7a.strata.component.TiledImageLevel
+constructor dev.s7a.strata.component.TiledImageLevel(dev.s7a.strata.geometry.IntSize, long)
+method dev.s7a.strata.component.TiledImageLevel.component1(): dev.s7a.strata.geometry.IntSize
+method dev.s7a.strata.component.TiledImageLevel.component2(): long
+method dev.s7a.strata.component.TiledImageLevel.copy(dev.s7a.strata.geometry.IntSize, long): dev.s7a.strata.component.TiledImageLevel
+method dev.s7a.strata.component.TiledImageLevel.equals(java.lang.Object): boolean
+method dev.s7a.strata.component.TiledImageLevel.getContentUnitsPerPixel(): long
+method dev.s7a.strata.component.TiledImageLevel.getTilePixelSize(): dev.s7a.strata.geometry.IntSize
+method dev.s7a.strata.component.TiledImageLevel.hashCode(): int
+method dev.s7a.strata.component.TiledImageLevel.toString(): java.lang.String
+```
+
+</details>
+
+### TiledImageSource
+
+Externally owned source generation with immutable bounds, levels, and independently revisioned tile histories.
+
+#### `TiledImageSource`
+
+```kotlin
+fun tile(id: TiledImageTileId): StateSource<TiledImageTile>
+interface TiledImageSource
+val bounds: LongRect
+val levels: List<TiledImageLevel>
+```
+
+<details><summary>Compiled JVM API fingerprints</summary>
+
+```text
+interface dev.s7a.strata.component.TiledImageSource
+method dev.s7a.strata.component.TiledImageSource.getBounds(): dev.s7a.strata.geometry.LongRect
+method dev.s7a.strata.component.TiledImageSource.getLevels(): java.util.List
+method dev.s7a.strata.component.TiledImageSource.tile(dev.s7a.strata.component.TiledImageTileId): dev.s7a.strata.state.StateSource
+```
+
+</details>
+
+### TiledImageTile
+
+Empty or immutable ready presentation state for one tile revision.
+
+#### `TiledImageTile`
+
+```kotlin
+sealed interface TiledImageTile
+```
+
+#### `TiledImageTile.Empty`
+
+```kotlin
+data object Empty : TiledImageTile
+```
+
+#### `TiledImageTile.Ready`
+
+```kotlin
+data class Ready(public val image: DrawImage) : TiledImageTile
+val image: DrawImage
+```
+
+<details><summary>Compiled JVM API fingerprints</summary>
+
+```text
+class dev.s7a.strata.component.TiledImageTile$Empty
+class dev.s7a.strata.component.TiledImageTile$Ready
+constructor dev.s7a.strata.component.TiledImageTile$Ready(dev.s7a.strata.render.DrawImage)
+field dev.s7a.strata.component.TiledImageTile$Empty.INSTANCE: dev.s7a.strata.component.TiledImageTile$Empty
+interface dev.s7a.strata.component.TiledImageTile
+method dev.s7a.strata.component.TiledImageTile$Empty.equals(java.lang.Object): boolean
+method dev.s7a.strata.component.TiledImageTile$Empty.hashCode(): int
+method dev.s7a.strata.component.TiledImageTile$Empty.toString(): java.lang.String
+method dev.s7a.strata.component.TiledImageTile$Ready.component1(): dev.s7a.strata.render.DrawImage
+method dev.s7a.strata.component.TiledImageTile$Ready.copy(dev.s7a.strata.render.DrawImage): dev.s7a.strata.component.TiledImageTile$Ready
+method dev.s7a.strata.component.TiledImageTile$Ready.equals(java.lang.Object): boolean
+method dev.s7a.strata.component.TiledImageTile$Ready.getImage(): dev.s7a.strata.render.DrawImage
+method dev.s7a.strata.component.TiledImageTile$Ready.hashCode(): int
+method dev.s7a.strata.component.TiledImageTile$Ready.toString(): java.lang.String
+```
+
+</details>
+
+### TiledImageTileId
+
+Signed row and column identity within one source-owned resolution level.
+
+#### `TiledImageTileId`
+
+```kotlin
+data class TiledImageTileId(public val level: Int, public val column: Long, public val row: Long)
+val column: Long
+val level: Int
+val row: Long
+```
+
+<details><summary>Compiled JVM API fingerprints</summary>
+
+```text
+class dev.s7a.strata.component.TiledImageTileId
+constructor dev.s7a.strata.component.TiledImageTileId(int, long, long)
+method dev.s7a.strata.component.TiledImageTileId.component1(): int
+method dev.s7a.strata.component.TiledImageTileId.component2(): long
+method dev.s7a.strata.component.TiledImageTileId.component3(): long
+method dev.s7a.strata.component.TiledImageTileId.copy(int, long, long): dev.s7a.strata.component.TiledImageTileId
+method dev.s7a.strata.component.TiledImageTileId.equals(java.lang.Object): boolean
+method dev.s7a.strata.component.TiledImageTileId.getColumn(): long
+method dev.s7a.strata.component.TiledImageTileId.getLevel(): int
+method dev.s7a.strata.component.TiledImageTileId.getRow(): long
+method dev.s7a.strata.component.TiledImageTileId.hashCode(): int
+method dev.s7a.strata.component.TiledImageTileId.toString(): java.lang.String
 ```
 
 </details>

@@ -171,6 +171,63 @@ public final class dev/s7a/strata/component/NineSliceCenterMode$Tiled : dev/s7a/
 	public fun toString ()Ljava/lang/String;
 }
 
+public final class dev/s7a/strata/component/PanZoomFit : java/lang/Enum {
+	public static final field Contain Ldev/s7a/strata/component/PanZoomFit;
+	public static final field Cover Ldev/s7a/strata/component/PanZoomFit;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public static fun valueOf (Ljava/lang/String;)Ldev/s7a/strata/component/PanZoomFit;
+	public static fun values ()[Ldev/s7a/strata/component/PanZoomFit;
+}
+
+public final class dev/s7a/strata/component/PanZoomMetrics {
+	public fun <init> ()V
+	public fun <init> (Ldev/s7a/strata/geometry/DoubleOffset;DDLdev/s7a/strata/geometry/IntSize;Ldev/s7a/strata/geometry/LongRect;Ldev/s7a/strata/component/PanZoomFit;Z)V
+	public synthetic fun <init> (Ldev/s7a/strata/geometry/DoubleOffset;DDLdev/s7a/strata/geometry/IntSize;Ldev/s7a/strata/geometry/LongRect;Ldev/s7a/strata/component/PanZoomFit;ZILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Ldev/s7a/strata/geometry/DoubleOffset;
+	public final fun component2 ()D
+	public final fun component3 ()D
+	public final fun component4 ()Ldev/s7a/strata/geometry/IntSize;
+	public final fun component5 ()Ldev/s7a/strata/geometry/LongRect;
+	public final fun component6 ()Ldev/s7a/strata/component/PanZoomFit;
+	public final fun component7 ()Z
+	public final fun copy (Ldev/s7a/strata/geometry/DoubleOffset;DDLdev/s7a/strata/geometry/IntSize;Ldev/s7a/strata/geometry/LongRect;Ldev/s7a/strata/component/PanZoomFit;Z)Ldev/s7a/strata/component/PanZoomMetrics;
+	public static synthetic fun copy$default (Ldev/s7a/strata/component/PanZoomMetrics;Ldev/s7a/strata/geometry/DoubleOffset;DDLdev/s7a/strata/geometry/IntSize;Ldev/s7a/strata/geometry/LongRect;Ldev/s7a/strata/component/PanZoomFit;ZILjava/lang/Object;)Ldev/s7a/strata/component/PanZoomMetrics;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getCenter ()Ldev/s7a/strata/geometry/DoubleOffset;
+	public final fun getContentBounds ()Ldev/s7a/strata/geometry/LongRect;
+	public final fun getFit ()Ldev/s7a/strata/component/PanZoomFit;
+	public final fun getGeometryKnown ()Z
+	public final fun getScale ()D
+	public final fun getViewportSize ()Ldev/s7a/strata/geometry/IntSize;
+	public final fun getZoom ()D
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class dev/s7a/strata/component/PanZoomState {
+	public fun <init> ()V
+	public fun <init> (Ldev/s7a/strata/geometry/DoubleOffset;DDD)V
+	public synthetic fun <init> (Ldev/s7a/strata/geometry/DoubleOffset;DDDILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun centerOn (Ldev/s7a/strata/geometry/DoubleOffset;)Ldev/s7a/strata/geometry/DoubleOffset;
+	public final fun contentToLocal (Ldev/s7a/strata/geometry/DoubleOffset;)Ldev/s7a/strata/geometry/DoubleOffset;
+	public final fun getMaximumZoom ()D
+	public final fun getMetrics ()Ldev/s7a/strata/component/PanZoomMetrics;
+	public final fun getMinimumZoom ()D
+	public final fun localToContent (Ldev/s7a/strata/geometry/DoubleOffset;)Ldev/s7a/strata/geometry/DoubleOffset;
+	public final fun observe (Lkotlin/jvm/functions/Function1;)Ldev/s7a/strata/component/PanZoomStateObserver;
+	public final fun panBy (Ldev/s7a/strata/geometry/DoubleOffset;)Ldev/s7a/strata/geometry/DoubleOffset;
+	public final fun reset ()Ldev/s7a/strata/component/PanZoomMetrics;
+	public final fun updateGeometry (Ldev/s7a/strata/geometry/LongRect;Ldev/s7a/strata/geometry/IntSize;Ldev/s7a/strata/component/PanZoomFit;Ldev/s7a/strata/component/PanZoomStateObserver;)V
+	public final fun zoomBy (DLdev/s7a/strata/geometry/DoubleOffset;)D
+	public static synthetic fun zoomBy$default (Ldev/s7a/strata/component/PanZoomState;DLdev/s7a/strata/geometry/DoubleOffset;ILjava/lang/Object;)D
+	public final fun zoomTo (DLdev/s7a/strata/geometry/DoubleOffset;)D
+	public static synthetic fun zoomTo$default (Ldev/s7a/strata/component/PanZoomState;DLdev/s7a/strata/geometry/DoubleOffset;ILjava/lang/Object;)D
+}
+
+public final class dev/s7a/strata/component/PanZoomStateObserver : java/lang/AutoCloseable {
+	public fun close ()V
+}
+
 public abstract interface class dev/s7a/strata/component/PlayerSkinSource {
 }
 
@@ -448,6 +505,95 @@ public final class dev/s7a/strata/component/TextStyle : java/lang/Enum {
 	public static fun values ()[Ldev/s7a/strata/component/TextStyle;
 }
 
+public final class dev/s7a/strata/component/TiledImageCachePolicy {
+	public static final field Companion Ldev/s7a/strata/component/TiledImageCachePolicy$Companion;
+	public fun <init> ()V
+	public fun <init> (IJI)V
+	public synthetic fun <init> (IJIILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()I
+	public final fun component2 ()J
+	public final fun component3 ()I
+	public final fun copy (IJI)Ldev/s7a/strata/component/TiledImageCachePolicy;
+	public static synthetic fun copy$default (Ldev/s7a/strata/component/TiledImageCachePolicy;IJIILjava/lang/Object;)Ldev/s7a/strata/component/TiledImageCachePolicy;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getMaxBytes ()J
+	public final fun getMaxEntries ()I
+	public final fun getOverscanTiles ()I
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class dev/s7a/strata/component/TiledImageCachePolicy$Companion {
+	public final fun getDefault ()Ldev/s7a/strata/component/TiledImageCachePolicy;
+}
+
+public final class dev/s7a/strata/component/TiledImageComponentsKt {
+	public static final fun TiledImage (Ldev/s7a/strata/component/UiScope;Ldev/s7a/strata/component/TiledImageSource;Ldev/s7a/strata/component/PanZoomState;Ldev/s7a/strata/geometry/IntSize;Ldev/s7a/strata/component/PanZoomFit;Ldev/s7a/strata/component/TiledImageCachePolicy;Ldev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/element/ElementKey;Lkotlin/jvm/functions/Function1;)V
+	public static synthetic fun TiledImage$default (Ldev/s7a/strata/component/UiScope;Ldev/s7a/strata/component/TiledImageSource;Ldev/s7a/strata/component/PanZoomState;Ldev/s7a/strata/geometry/IntSize;Ldev/s7a/strata/component/PanZoomFit;Ldev/s7a/strata/component/TiledImageCachePolicy;Ldev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/element/ElementKey;Lkotlin/jvm/functions/Function1;ILjava/lang/Object;)V
+}
+
+public final class dev/s7a/strata/component/TiledImageLevel {
+	public fun <init> (Ldev/s7a/strata/geometry/IntSize;J)V
+	public final fun component1 ()Ldev/s7a/strata/geometry/IntSize;
+	public final fun component2 ()J
+	public final fun copy (Ldev/s7a/strata/geometry/IntSize;J)Ldev/s7a/strata/component/TiledImageLevel;
+	public static synthetic fun copy$default (Ldev/s7a/strata/component/TiledImageLevel;Ldev/s7a/strata/geometry/IntSize;JILjava/lang/Object;)Ldev/s7a/strata/component/TiledImageLevel;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getContentUnitsPerPixel ()J
+	public final fun getTilePixelSize ()Ldev/s7a/strata/geometry/IntSize;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public abstract class dev/s7a/strata/component/TiledImageScope : dev/s7a/strata/component/UiScope {
+	public final fun atContentPosition (Ldev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/geometry/DoubleOffset;Ldev/s7a/strata/layout/Alignment;)Ldev/s7a/strata/modifier/Modifier;
+	public final fun atContentPosition (Ldev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/state/StateSource;Ldev/s7a/strata/layout/Alignment;)Ldev/s7a/strata/modifier/Modifier;
+	public static synthetic fun atContentPosition$default (Ldev/s7a/strata/component/TiledImageScope;Ldev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/geometry/DoubleOffset;Ldev/s7a/strata/layout/Alignment;ILjava/lang/Object;)Ldev/s7a/strata/modifier/Modifier;
+	public static synthetic fun atContentPosition$default (Ldev/s7a/strata/component/TiledImageScope;Ldev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/state/StateSource;Ldev/s7a/strata/layout/Alignment;ILjava/lang/Object;)Ldev/s7a/strata/modifier/Modifier;
+}
+
+public abstract interface class dev/s7a/strata/component/TiledImageSource {
+	public abstract fun getBounds ()Ldev/s7a/strata/geometry/LongRect;
+	public abstract fun getLevels ()Ljava/util/List;
+	public abstract fun tile (Ldev/s7a/strata/component/TiledImageTileId;)Ldev/s7a/strata/state/StateSource;
+}
+
+public abstract interface class dev/s7a/strata/component/TiledImageTile {
+}
+
+public final class dev/s7a/strata/component/TiledImageTile$Empty : dev/s7a/strata/component/TiledImageTile {
+	public static final field INSTANCE Ldev/s7a/strata/component/TiledImageTile$Empty;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class dev/s7a/strata/component/TiledImageTile$Ready : dev/s7a/strata/component/TiledImageTile {
+	public fun <init> (Ldev/s7a/strata/render/DrawImage;)V
+	public final fun component1 ()Ldev/s7a/strata/render/DrawImage;
+	public final fun copy (Ldev/s7a/strata/render/DrawImage;)Ldev/s7a/strata/component/TiledImageTile$Ready;
+	public static synthetic fun copy$default (Ldev/s7a/strata/component/TiledImageTile$Ready;Ldev/s7a/strata/render/DrawImage;ILjava/lang/Object;)Ldev/s7a/strata/component/TiledImageTile$Ready;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getImage ()Ldev/s7a/strata/render/DrawImage;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class dev/s7a/strata/component/TiledImageTileId {
+	public fun <init> (IJJ)V
+	public final fun component1 ()I
+	public final fun component2 ()J
+	public final fun component3 ()J
+	public final fun copy (IJJ)Ldev/s7a/strata/component/TiledImageTileId;
+	public static synthetic fun copy$default (Ldev/s7a/strata/component/TiledImageTileId;IJJILjava/lang/Object;)Ldev/s7a/strata/component/TiledImageTileId;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getColumn ()J
+	public final fun getLevel ()I
+	public final fun getRow ()J
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
 public final class dev/s7a/strata/component/UiComponentsKt {
 	public static final fun Column (Ldev/s7a/strata/component/UiScope;Ldev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/element/ElementKey;ILdev/s7a/strata/layout/Arrangement;Ldev/s7a/strata/layout/HorizontalAlignment;Lkotlin/jvm/functions/Function1;)V
 	public static synthetic fun Column$default (Ldev/s7a/strata/component/UiScope;Ldev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/element/ElementKey;ILdev/s7a/strata/layout/Arrangement;Ldev/s7a/strata/layout/HorizontalAlignment;Lkotlin/jvm/functions/Function1;ILjava/lang/Object;)V
@@ -564,6 +710,26 @@ public final class dev/s7a/strata/geometry/Constraints$Companion {
 	public final fun fixed (II)Ldev/s7a/strata/geometry/Constraints;
 }
 
+public final class dev/s7a/strata/geometry/DoubleOffset {
+	public static final field Companion Ldev/s7a/strata/geometry/DoubleOffset$Companion;
+	public fun <init> (DD)V
+	public final fun component1 ()D
+	public final fun component2 ()D
+	public final fun copy (DD)Ldev/s7a/strata/geometry/DoubleOffset;
+	public static synthetic fun copy$default (Ldev/s7a/strata/geometry/DoubleOffset;DDILjava/lang/Object;)Ldev/s7a/strata/geometry/DoubleOffset;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getX ()D
+	public final fun getY ()D
+	public fun hashCode ()I
+	public final fun minus (Ldev/s7a/strata/geometry/DoubleOffset;)Ldev/s7a/strata/geometry/DoubleOffset;
+	public final fun plus (Ldev/s7a/strata/geometry/DoubleOffset;)Ldev/s7a/strata/geometry/DoubleOffset;
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class dev/s7a/strata/geometry/DoubleOffset$Companion {
+	public final fun getZero ()Ldev/s7a/strata/geometry/DoubleOffset;
+}
+
 public final class dev/s7a/strata/geometry/FloatRect {
 	public fun <init> (FFFF)V
 	public final fun component1 ()F
@@ -668,6 +834,31 @@ public final class dev/s7a/strata/geometry/IntSize {
 
 public final class dev/s7a/strata/geometry/IntSize$Companion {
 	public final fun getZero ()Ldev/s7a/strata/geometry/IntSize;
+}
+
+public final class dev/s7a/strata/geometry/LongRect {
+	public static final field Companion Ldev/s7a/strata/geometry/LongRect$Companion;
+	public fun <init> (JJJJ)V
+	public final fun component1 ()J
+	public final fun component2 ()J
+	public final fun component3 ()J
+	public final fun component4 ()J
+	public final fun contains (Ldev/s7a/strata/geometry/DoubleOffset;)Z
+	public final fun copy (JJJJ)Ldev/s7a/strata/geometry/LongRect;
+	public static synthetic fun copy$default (Ldev/s7a/strata/geometry/LongRect;JJJJILjava/lang/Object;)Ldev/s7a/strata/geometry/LongRect;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getBottom ()J
+	public final fun getHeight ()J
+	public final fun getLeft ()J
+	public final fun getRight ()J
+	public final fun getTop ()J
+	public final fun getWidth ()J
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class dev/s7a/strata/geometry/LongRect$Companion {
+	public final fun getZero ()Ldev/s7a/strata/geometry/LongRect;
 }
 
 public final class dev/s7a/strata/input/FocusEvent : java/lang/Enum {
@@ -1061,6 +1252,11 @@ public final class dev/s7a/strata/modifier/PaddingExtensionsKt {
 	public static synthetic fun padding$default (Ldev/s7a/strata/modifier/Modifier;IIIIILjava/lang/Object;)Ldev/s7a/strata/modifier/Modifier;
 }
 
+public final class dev/s7a/strata/modifier/PanZoomExtensionsKt {
+	public static final fun panZoom (Ldev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/component/PanZoomState;Ldev/s7a/strata/input/PointerButton;D)Ldev/s7a/strata/modifier/Modifier;
+	public static synthetic fun panZoom$default (Ldev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/component/PanZoomState;Ldev/s7a/strata/input/PointerButton;DILjava/lang/Object;)Ldev/s7a/strata/modifier/Modifier;
+}
+
 public final class dev/s7a/strata/modifier/PointerDragExtensionsKt {
 	public static final fun onDrag (Ldev/s7a/strata/modifier/Modifier;Lkotlin/jvm/functions/Function0;)Ldev/s7a/strata/modifier/Modifier;
 	public static final fun onDrag (Ldev/s7a/strata/modifier/Modifier;Lkotlin/jvm/functions/Function2;)Ldev/s7a/strata/modifier/Modifier;
@@ -1210,7 +1406,12 @@ public abstract interface class dev/s7a/strata/node/ParentDataModifierNode {
 }
 
 public abstract interface class dev/s7a/strata/node/PointerCaptureNode : dev/s7a/strata/node/PointerInputNode {
+	public fun onPointerCaptureAcquired (Ldev/s7a/strata/input/PointerButton;)V
 	public abstract fun onPointerCaptureCancelled (Ldev/s7a/strata/input/PointerButton;)V
+}
+
+public final class dev/s7a/strata/node/PointerCaptureNode$DefaultImpls {
+	public static fun onPointerCaptureAcquired (Ldev/s7a/strata/node/PointerCaptureNode;Ldev/s7a/strata/input/PointerButton;)V
 }
 
 public abstract interface class dev/s7a/strata/node/PointerHoverNode {

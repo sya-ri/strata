@@ -31,7 +31,7 @@ The design separates those concerns into layers:
 - retained nodes perform incremental measurement, layout, painting, input, semantics, and lifecycle work;
 - active modifiers provide checked padding, size constraints, background painting, unresolved semantics, typed pointer/keyboard/text/focus actions, and typed layout parent data without changing component implementations;
 - the retained core runtime emits draw commands and unresolved semantics on the JVM;
-- the platform-neutral API owns one-shot screen definitions; Row/FlowRow/Column/Stack/Grid layout; Text, TextField, TextArea, Button, Checkbox, CycleButton, Slider, Tab, ScrollArea, Scrollbar, VirtualList, SelectionList, Image, Canvas, Slot, PlayerHead, LoadingIndicator, and ProgressBar authoring; resource identifiers; slot locators; skin sources; and active modifiers, so application source compiles without a runtime dependency;
+- the platform-neutral API owns one-shot screen definitions; Row/FlowRow/Column/Stack/Grid layout; Text, TextField, TextArea, Button, Checkbox, CycleButton, Slider, Tab, ScrollArea, Scrollbar, VirtualList, SelectionList, Image, Canvas, TiledImage, Slot, PlayerHead, LoadingIndicator, and ProgressBar authoring; resource identifiers; slot locators; skin sources; and active modifiers, so application source compiles without a runtime dependency;
 - the common Minecraft runtime installs itself behind that API, resolves the selected profile and resources, synchronizes bound slots with the active server menu, and hosts the retained tree without exposing a context receiver to application code;
 - the latest Java release, Minecraft 26.2, has a Fabric boundary that extracts the supported native profile, resolves Mod images and current-player skin pixels through the active resource and texture paths, and adapts common frames, typed mouse/keyboard/text input, and screen lifecycle on the client thread; loaded client GameTests verify exact native/Fabric/headless ARGB parity for vanilla screens, PlayerHead, and a primitive-composed Social Interactions screen, exact Fabric/headless parity for resource-pack-backed industrial and progression Mod screens, and live server-authoritative inventory interaction.
 
@@ -43,6 +43,10 @@ Strata's own standard built-ins are limited to focused components with multiple 
 Its sources own no input hierarchy: compose `onCapturedPointerEvent`, `onKeyEvent`, and focus modifiers when interaction is needed.
 CPU sources render directly in Headless; native capture requires an immutable snapshot from that exact presentation and never performs an implicit GPU readback.
 See [Canvas ownership and rendering](docs/architecture.md#canvas-ownership-and-rendering) for source, capture, and lifetime contracts.
+
+`TiledImage` presents maps, scans, and schematics from independently revisioned immutable tiles without rebuilding one viewport-sized image when the player moves.
+Caller-owned `PanZoomState` and `panZoom` handle bounded navigation, while fixed-size overlay children follow content coordinates through `TiledImageScope.atContentPosition`.
+See [Tiled images and pan/zoom](docs/tiled-images.md) for source generations, LOD fallback, cache invalidation, and overlay ownership.
 
 <!-- strata-component-showcase:start -->
 <!-- Generated file. Do not edit. -->
@@ -206,6 +210,7 @@ npx skills add sya-ri/strata --skill strata
 
 - [Architecture](docs/architecture.md) explains the public SPI, runtime boundaries, and testing strategy.
 - [Built-in layout components](docs/layout.md) specifies Row, FlowRow, Column, Stack, Grid, and Spacer measurement, wrapping, arrangement, alignment, and weight behavior.
+- [Tiled images and pan/zoom](docs/tiled-images.md) specifies bounded tile subscriptions, source generations, LOD fallback, navigation, and content-coordinate overlays.
 - [Component showcase](docs/components.md) contains the compiled examples and verified Minecraft-backed images in one document.
 - [Text and text input](docs/text.md) explains Unicode values, resource-pack font selection, scalar editing, and delivered IME composition.
 - [Font resources](docs/font-resources.md) covers offline font snapshots, native backend dependencies, and ownership.

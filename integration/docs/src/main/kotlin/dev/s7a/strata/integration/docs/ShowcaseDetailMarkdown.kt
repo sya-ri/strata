@@ -26,6 +26,7 @@ internal object ShowcaseDetailMarkdown {
             is ShowcaseTreeDetail.FlowRowAlign -> "FlowRowAlign(alignment=${detail.alignment})"
             is ShowcaseTreeDetail.ColumnAlign -> "ColumnAlign(alignment=${detail.alignment})"
             is ShowcaseTreeDetail.StackAlign -> "StackAlign(alignment=${detail.alignment})"
+            is ShowcaseTreeDetail.TiledImageContentPosition -> "TiledImageContentPosition(x=${detail.position.x}, y=${detail.position.y}, alignment=${detail.alignment})"
             is ShowcaseTreeDetail.GridAlign -> "GridAlign(alignment=${detail.alignment})"
             is ShowcaseTreeDetail.GridColumns -> "GridColumns(value=${detail.value})"
             is ShowcaseTreeDetail.GridSpacing -> "GridSpacing(horizontal=${detail.horizontal}, vertical=${detail.vertical})"

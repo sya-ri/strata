@@ -129,11 +129,12 @@ An ignored result continues dispatch and a consumed result stops it.
 Positive scroll `deltaX` requests motion toward increasing logical x, and positive `deltaY` requests motion toward increasing logical y.
 Adapters normalize native signs and units into this finite logical displacement.
 `PointerCaptureNode` optionally extends ordinary pointer input without changing PointerEvent or InputResult.
-Consuming a Press acquires the tree's single owner and starting button only when capture has no owner; another handler or button cannot take an existing capture.
+Consuming a Press acquires the tree's single owner and starting button only when capture has no owner, then calls `onPointerCaptureAcquired(button)`; another handler or button cannot take an existing capture, so gesture state begins only in that confirmation callback.
 Subsequent Move and matching Drag/Release events go exclusively to that owner, including outside its bounds and ancestor clips.
 Coordinates use the latest committed local logical layout without clamping, and an ignored captured callback does not fall through to another control.
 Hover, other buttons, and scroll still follow actual hit testing.
 Matching Release clears capture before the callback; removal, replacement, unplacement, session detach, input reset, close, or failure clears it before one cancellation callback and before disposal.
+If acquisition confirmation fails, terminal tree cleanup follows the same cancellation-before-disposal order exactly once.
 Cleanup continues if cancellation throws, preserving the primary failure and suppressing independent cleanup failures.
 Applications and third-party primitives can use the same capability directly or compose `onCapturedPointerEvent`; see [Modifiers](modifiers.md#built-in-modifiers).
 

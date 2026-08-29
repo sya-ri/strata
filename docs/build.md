@@ -184,6 +184,7 @@ Run these isolated cross-project tasks with configuration-on-demand disabled so 
 `./gradlew :integration:docs:checkComponentShowcase --no-configure-on-demand` renders fresh headless frames into staging and checks documentation freshness without modifying repository files.
 `./gradlew :integration:docs:generateComponentShowcase --no-configure-on-demand` performs the same rendering and synchronizes the combined `docs/components.md` showcase, PNG files, `docs/components/headless-render.properties`, and anchored root README region.
 The generated Canvas component page uses its portable CPU source; native texture and custom-renderer acceptance remain separate loaded-game checks.
+The generated TiledImage page uses twelve independent immutable CPU tiles and a content-position overlay; the loaded component parity gate renders the same compiled definition through Fabric.
 Generated output is owned by the showcase generator; manual edits are reported as stale by the checker.
 
 Both tasks read an explicit Minecraft client archive, asset index, indexed objects directory, and version manifest.

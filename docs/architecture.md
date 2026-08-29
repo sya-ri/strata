@@ -125,13 +125,38 @@ The complete external implementation contract is documented in [Element SPI](ele
 
 The process and compatibility requirements for a new version adapter are defined in [Supporting a new Minecraft version](minecraft-versions.md).
 
-The public API currently defines `ScreenDefinition`; Row, FlowRow, Column, Stack, Grid, Spacer, Text, TextField, TextArea, Button, Checkbox, CycleButton, Slider, Tab, ScrollArea, Scrollbar, VirtualList, SelectionList, Image, Canvas, Slot, PlayerHead, LoadingIndicator, and ProgressBar; element and modifier descriptions; typed actions and external state; typed layout parent data; retained node capabilities; frame time and overlay painting; lifecycle ownership; geometry; pointer and focused input; drawing; semantics; unresolved text; resources and bindings; and revisioned external state sources.
+The public API currently defines `ScreenDefinition`; Row, FlowRow, Column, Stack, Grid, Spacer, Text, TextField, TextArea, Button, Checkbox, CycleButton, Slider, Tab, ScrollArea, Scrollbar, VirtualList, SelectionList, Image, TiledImage, Canvas, Slot, PlayerHead, LoadingIndicator, and ProgressBar; element and modifier descriptions; typed actions and external state, including PanZoomState; typed layout parent data; retained node capabilities; frame time and overlay painting; lifecycle ownership; geometry; pointer and focused input; drawing; semantics; unresolved text; resources and bindings; and revisioned external state sources.
 `ScreenDefinition` retains its callback without evaluating it, then transfers that callback exactly once to a runtime that implicitly builds its single component root under the installed profile.
 Each `UiScope` is confined to the invoking thread and callback lifetime, and callback failures take precedence over root-cardinality validation.
 The privileged `evaluateComponentTree` bridge exists only for runtime adapters and structural SPI tests that already own raw elements; application screens do not need or expose a standalone root builder.
 The state-source contract is specified and exercised by concurrency tests described in [External state sources](state-sources.md).
 It remains coroutine-free and does not include a platform lifecycle adapter.
 The retained core's tested internal session contract is described in [UI sessions](ui-sessions.md).
+
+## Tiled image navigation and ownership
+
+TiledImage has one responsibility: present a bounded logical raster from independently revisioned immutable image tiles.
+Maps, large scans, and schematics are independent uses, while composition from ordinary Image children cannot provide visible-tile demand, level selection, one cutoff transaction, or a bounded observation working set.
+File and network loading, decoding, retry, map generation, player models, routes, labels, and editing remain application concerns.
+
+One TiledImageSource identity defines immutable half-open content bounds, a finest-to-coarsest level list, and one coherent tile-generation namespace.
+Each level declares its exact tile pixel extent and positive content units per source pixel; negative tile coordinates use mathematical floor division from content origin zero.
+The retained tile layer observes only the selected visible range, configured overscan, and visible coarser fallbacks.
+It reserves entry and RGBA8 byte cost before changing that working set, moves to a coarser level when the preferred range cannot fit, and fails before partial subscription when the coarsest range exceeds the policy.
+Callbacks enqueue only newer StateRevision values from any thread, and the owner-thread cutoff validates every captured tile before applying any of them.
+Source replacement closes every old observation without closing the external source; the same source identity cannot change geometry.
+
+PanZoomState is caller-owned, creator-thread-confined navigation shared by one live geometry-owning viewport and independent observers.
+Zoom is a multiplier over a contain or cover fit scale, finite bounds clamp the center without exposing space, and pointer-anchored zoom preserves the content coordinate beneath the pointer unless clamping takes precedence.
+Modifier.panZoom consumes a configured press and uses the generic PointerCaptureNode lifecycle for drags and matching release outside bounds and clips.
+The TiledImage itself remains input-passive.
+
+The component installs tile painting as a private retained first child and application overlays as later children.
+Ready tiles paint as complete images from coarsest to selected level and row-major within each level, so finer data overlays fallback pixels without slicing or joining source images.
+Modifier.atContentPosition is parent data consumed only by TiledImageScope; it positions fixed-size children through the current content transform and clips them to the viewport.
+Overlay reconciliation and player movement therefore cannot invalidate tile observations or immutable tile images.
+Pan, zoom, and resize change the current destination plan while source revisions change only their matching tile binding.
+The complete source, state, cache, precision, and exclusion contracts are specified in [Tiled images and pan-and-zoom navigation](tiled-images.md).
 
 ## Canvas ownership and rendering
 

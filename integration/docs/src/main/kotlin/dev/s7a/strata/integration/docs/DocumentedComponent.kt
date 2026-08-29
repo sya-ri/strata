@@ -108,6 +108,11 @@ internal enum class DocumentedComponent(
     Canvas("Canvas", "canvas"),
 
     /**
+     * The bounded, independently revisioned tiled-raster viewport identity.
+     */
+    TiledImage("TiledImage", "tiled-image"),
+
+    /**
      * The container slot component identity.
      */
     Slot("Slot", "slot"),
