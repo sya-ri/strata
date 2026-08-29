@@ -127,6 +127,7 @@ public class StrataMinecraftClientGameTest : FabricClientGameTest {
         assertNativeTextInputFocus(context, profile)
         verifyContinuousInput(context, profile, output)
         runMinecraftCanvasTest(context, profile, output)
+        runSampledImagePixelParity(context, profile, output)
 
         context.setScreen { DeterministicConfirmScreen() }
         context.waitForScreen(DeterministicConfirmScreen::class.java)
@@ -209,6 +210,60 @@ public class StrataMinecraftClientGameTest : FabricClientGameTest {
         }
 
         closeFabricScreen(context)
+    }
+
+    @OptIn(InternalStrataRuntimeApi::class)
+    private fun runSampledImagePixelParity(
+        context: ClientGameTestContext,
+        profile: MinecraftUiProfile,
+        output: Path,
+    ) {
+        closeFabricScreen(context)
+        val headless =
+            context.computeOnClient(
+                FailableFunction<Minecraft, HeadlessImage, RuntimeException> {
+                    renderHeadless(profile, createSampledImageParityScreenDefinition(viewport), viewport)
+                },
+            )
+        Files.write(output.resolve("strata-sampled-image-headless.png"), headless.encodePng())
+
+        val presentation =
+            runCatching {
+                context.setScreen {
+                    createMinecraftScreen(
+                        createSampledImageParityScreenDefinition(viewport),
+                        profile,
+                        parent = null,
+                    )
+                }
+                context.waitForScreen(FabricMinecraftScreen::class.java)
+                context.waitFor(
+                    Predicate<Minecraft> { minecraft ->
+                        0L < readRenderWork(minecraft).sampledImageDraws
+                    },
+                )
+                val observed = renderWork(context)
+                requireSampledImageParityWork(observed)
+                val fabricPath =
+                    context.takeScreenshot(
+                        TestScreenshotOptions
+                            .of("strata-sampled-image-fabric")
+                            .disableCounterPrefix()
+                            .withSize(viewport.width, viewport.height)
+                            .withDestinationDir(output),
+                    )
+                NativeImage.read(fabricPath.inputStream()).use { fabric ->
+                    requireImageSize(fabric, viewport)
+                    requireExactPixels(fabric, headless)
+                }
+            }
+        val cleanup = runCatching { closeFabricScreen(context) }.exceptionOrNull()
+        val primary = presentation.exceptionOrNull()
+        if (primary != null) {
+            if (cleanup != null && primary !== cleanup) primary.addSuppressed(cleanup)
+            throw primary
+        }
+        if (cleanup != null) throw cleanup
     }
 
     @OptIn(InternalStrataRuntimeApi::class)
@@ -578,6 +633,20 @@ public class StrataMinecraftClientGameTest : FabricClientGameTest {
         }
     }
 
+    private fun requireSampledImageParityWork(observed: RenderWork) {
+        require(0L < observed.rasterizations) { "Sampled-image parity must rasterize portable layers: $observed" }
+        require(0L < observed.textureUploads) { "Sampled-image parity must upload portable layers: $observed" }
+        require(0L < observed.sampledImageDirectHits) { "Sampled-image parity must reuse a direct texture: $observed" }
+        require(0L < observed.sampledImageDirectMisses) { "Sampled-image parity must create a direct texture: $observed" }
+        require(0L < observed.sampledImageUploads) { "Sampled-image parity must upload a direct texture: $observed" }
+        require(0L < observed.sampledImageDraws) { "Sampled-image parity must execute the native direct path: $observed" }
+        require(observed.sampledImageEvictions == 0L) { "Sampled-image parity must not evict its direct texture: $observed" }
+        require(observed.sampledImageIneligibleFallbacks == 0L) { "Sampled-image parity must remain eligible for direct drawing: $observed" }
+        require(observed.sampledImageCapacityFallbacks == 0L) { "Sampled-image parity must fit the direct cache: $observed" }
+        require(0L < observed.sampledImageRetainedEntries) { "Sampled-image parity must retain its direct texture: $observed" }
+        require(0L < observed.sampledImageRetainedBytes) { "Sampled-image parity must retain native texture storage: $observed" }
+    }
+
     private fun renderWork(context: ClientGameTestContext): RenderWork =
         context.computeOnClient(
             FailableFunction<Minecraft, RenderWork, RuntimeException> { minecraft -> readRenderWork(minecraft) },
@@ -607,6 +676,15 @@ public class StrataMinecraftClientGameTest : FabricClientGameTest {
             framePreparations = counter("framePreparationCount"),
             rasterizations = counter("portableRasterizationCount"),
             textureUploads = counter("textureUploadCount"),
+            sampledImageDirectHits = counter("sampledImageDirectHitCount"),
+            sampledImageDirectMisses = counter("sampledImageDirectMissCount"),
+            sampledImageUploads = counter("sampledImageUploadCount"),
+            sampledImageDraws = counter("sampledImageDrawCount"),
+            sampledImageEvictions = counter("sampledImageEvictionCount"),
+            sampledImageIneligibleFallbacks = counter("sampledImageIneligibleFallbackCount"),
+            sampledImageCapacityFallbacks = counter("sampledImageCapacityFallbackCount"),
+            sampledImageRetainedEntries = counter("sampledImageRetainedEntryCount"),
+            sampledImageRetainedBytes = counter("sampledImageRetainedByteCount"),
         )
     }
 
@@ -671,6 +749,15 @@ public class StrataMinecraftClientGameTest : FabricClientGameTest {
         val framePreparations: Long,
         val rasterizations: Long,
         val textureUploads: Long,
+        val sampledImageDirectHits: Long,
+        val sampledImageDirectMisses: Long,
+        val sampledImageUploads: Long,
+        val sampledImageDraws: Long,
+        val sampledImageEvictions: Long,
+        val sampledImageIneligibleFallbacks: Long,
+        val sampledImageCapacityFallbacks: Long,
+        val sampledImageRetainedEntries: Long,
+        val sampledImageRetainedBytes: Long,
     )
 
     private fun requireExactPixels(

@@ -72,6 +72,39 @@ internal class FabricMinecraftSampledImageDeviceTest {
     }
 
     @Test
+    fun nestedBorrowKeepsTheOuterPinnedIdentityCachedAtOwnerCapacity() {
+        SampledFixture().use { fixture ->
+            val owner = fixture.manager.openOwner()
+            val pinned = image(0)
+            val otherImages = List(256) { value -> image(value + 1) }
+
+            fixture.manager
+                .borrow(
+                    owner,
+                    listOf(pinned),
+                    { fixture.hits += 1 },
+                    { fixture.misses += 1 },
+                    { fixture.uploads += 1 },
+                    { fixture.evictions += 1 },
+                ).use {
+                    fixture.borrow(owner, otherImages)
+                    fixture.borrow(owner, listOf(pinned))
+                }
+
+            assertEquals(1, fixture.hits)
+            assertEquals(257, fixture.misses)
+            assertEquals(256, fixture.uploads)
+            assertEquals(0, fixture.evictions)
+            assertEquals(256, fixture.manager.retainedResourceCount())
+
+            fixture.manager.release(owner)
+            fixture.driver.signalAll()
+            fixture.manager.poll()
+            assertEquals(0, fixture.manager.retainedResourceCount())
+        }
+    }
+
+    @Test
     fun deviceEntryCapacityFallsBackWithoutUsingCanvasOrAllocatingAReplacement() {
         SampledFixture().use { fixture ->
             val firstOwner = fixture.manager.openOwner()

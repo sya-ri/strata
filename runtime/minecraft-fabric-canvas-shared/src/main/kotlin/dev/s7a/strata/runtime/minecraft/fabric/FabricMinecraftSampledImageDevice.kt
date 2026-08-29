@@ -298,7 +298,7 @@ internal class FabricMinecraftSampledImageDevice(
                     entry.resource = resource
                 }
             entry.uploadPixelsPending = entry.texture != null
-            check(entry.resource != null) { "A sampled-image texture factory did not transfer native ownership." }
+            checkNotNull(entry.resource) { "A sampled-image texture factory did not transfer native ownership." }
         } catch (caught: Throwable) {
             failure = caught
         }
@@ -335,7 +335,7 @@ internal class FabricMinecraftSampledImageDevice(
             val candidate =
                 owner.images.entries
                     .asSequence()
-                    .filter { (image, _) -> (image in protected).not() }
+                    .filter { (image, owned) -> (image in protected).not() && owned.entry.pins == 0 }
                     .minWithOrNull(compareBy<Map.Entry<DrawImage, Owned>>({ it.value.lastUse }, { it.value.entry.sequence }))
                     ?: return false
             removeOwnerImage(owner, candidate.key)
