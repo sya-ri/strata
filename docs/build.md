@@ -174,8 +174,9 @@ Integration jar remapping includes the GameTest compile classpath because those 
 The production loaded suite calls an inherited screen method through the concrete public runtime type to verify that boundary after remapping.
 
 The nonpublished `integration:docs` module owns two showcase tasks that render the compiled API-only examples on the CPU without launching Minecraft or creating a GPU context.
-`./gradlew :integration:docs:checkComponentShowcase` renders fresh headless frames into staging and checks documentation freshness without modifying repository files.
-`./gradlew :integration:docs:generateComponentShowcase` performs the same rendering and synchronizes the combined `docs/components.md` showcase, PNG files, `docs/components/headless-render.properties`, and anchored root README region.
+Run these isolated cross-project tasks with configuration-on-demand disabled so every project contributing compiled examples and renderers is configured before Gradle resolves its classpath.
+`./gradlew :integration:docs:checkComponentShowcase --no-configure-on-demand` renders fresh headless frames into staging and checks documentation freshness without modifying repository files.
+`./gradlew :integration:docs:generateComponentShowcase --no-configure-on-demand` performs the same rendering and synchronizes the combined `docs/components.md` showcase, PNG files, `docs/components/headless-render.properties`, and anchored root README region.
 The generated Canvas component page uses its portable CPU source; native texture and custom-renderer acceptance remain separate loaded-game checks.
 Generated output is owned by the showcase generator; manual edits are reported as stale by the checker.
 
