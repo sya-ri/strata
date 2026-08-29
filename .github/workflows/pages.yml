@@ -71,7 +71,7 @@ jobs:
             :integration:docs:checkDocumentationLinks \
             -Pstrata.sourceRevision="$SOURCE_REVISION" \
             -Pstrata.sourceCommit="$SOURCE_COMMIT"
-      - name: Generate Dokka site and stage reader guides
+      - name: Generate and validate Dokka API site
         shell: bash
         env:
           SOURCE_COMMIT: ${{ github.sha }}

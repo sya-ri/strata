@@ -20,7 +20,7 @@ internal object StrataSkillMarkdown {
 
 Strata exposes ${signatures.size} focused standard components from `dev.s7a.strata.component`.
 Every Kotlin declaration below is paired with the compiled `strata-api` overload inventory; generation fails when source and binary identities diverge or an undocumented component enters the API.
-Use the [rendered component showcase]($COMPONENT_GUIDE_URL) for complete compiled examples and Minecraft-verified images.
+Use the [component showcase on GitHub]($COMPONENT_GUIDE_URL) for complete compiled examples and Minecraft-verified images.
 
 ${signatures.entries.joinToString("\n\n") { (component, overloads) -> component(component, overloads) }}
 """,
@@ -107,7 +107,7 @@ Application UI source compiles against `strata-api` only.
 Install exactly one matching Strata Fabric runtime as a separate client Mod together with Fabric Language Kotlin.
 Strata 0.1.1 adds Minecraft 1.20 support, Unicode text and resource-pack fonts, multiline `Text`, and Unicode editing with inline IME composition for `TextField` and `TextArea`.
 This release adds sealed `UiText.WithFont` and `DrawCommand.SampledImage` variants; custom exhaustive visitors need updating, including previously compiled visitors that receive a new case.
-See [Source compatibility](https://gh.s7a.dev/strata/guide/text.md#source-compatibility) before upgrading custom text visitors or rendering backends.
+See [Source compatibility]($TEXT_GUIDE_URL#source-compatibility) before upgrading custom text visitors or rendering backends.
 FlowRow wrapping is an unreleased source addition and requires a source build until a subsequent release includes it.
 
 ```kotlin
@@ -306,10 +306,10 @@ ${compiledFingerprints.joinToString("\n")}
 
     private fun markdown(value: String): String = value.replace("\r\n", "\n").replace('\r', '\n').trimEnd('\n') + "\n"
 
-    private const val COMPONENT_GUIDE_URL = "https://gh.s7a.dev/strata/guide/components.md"
-    private const val ELEMENT_SPI_GUIDE_URL = "https://gh.s7a.dev/strata/guide/element-spi.md"
-    private const val TEXT_GUIDE_URL = "https://gh.s7a.dev/strata/guide/text.md"
-    private const val FONT_GUIDE_URL = "https://gh.s7a.dev/strata/guide/font-resources.md"
+    private const val COMPONENT_GUIDE_URL = "https://github.com/sya-ri/strata/blob/master/docs/components.md"
+    private const val ELEMENT_SPI_GUIDE_URL = "https://github.com/sya-ri/strata/blob/master/docs/element-spi.md"
+    private const val TEXT_GUIDE_URL = "https://github.com/sya-ri/strata/blob/master/docs/text.md"
+    private const val FONT_GUIDE_URL = "https://github.com/sya-ri/strata/blob/master/docs/font-resources.md"
 
     private const val FONT_SETUP: String =
         """## Unicode and resource-pack fonts

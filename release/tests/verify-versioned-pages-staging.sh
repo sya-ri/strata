@@ -20,10 +20,14 @@ if grep --fixed-strings '    paths:' "$pages_workflow" >/dev/null; then
 fi
 
 fixture="$temporary_root/fixture"
-mkdir -p "$fixture/release" "$fixture/build/dokka/html/releases/0.1.0"
+mkdir -p "$fixture/release" "$fixture/build/dokka/html/api" "$fixture/build/dokka/html/releases/0.1.0/guide"
 cp "$repository_root/release/stage-versioned-pages.sh" "$fixture/release/stage-versioned-pages.sh"
 printf 'old release\n' > "$fixture/build/dokka/html/releases/0.1.0/index.html"
+printf 'old guide\n' > "$fixture/build/dokka/html/releases/0.1.0/guide/index.html"
 printf 'current release\n' > "$fixture/build/dokka/html/index.html"
+printf 'current API\n' > "$fixture/build/dokka/html/api/index.html"
+printf '%s\n' / /api/index.html /index.html /source-receipt.json /source-revision.txt > \
+  "$fixture/build/dokka/html/pages-public-urls.txt"
 
 git -C "$fixture" init --quiet
 git -C "$fixture" config user.email test@example.invalid
@@ -41,10 +45,15 @@ printf '{"commit":"%s","revision":"v0.1.1"}\n' "$tag_commit" > "$fixture/build/d
 )
 
 [[ -f "$fixture/build/dokka/html/releases/0.1.0/index.html" ]] || fail 'Staging replaced an older immutable release.'
+[[ -f "$fixture/build/dokka/html/releases/0.1.0/guide/index.html" ]] || fail 'Staging removed an immutable legacy guide.'
 [[ -f "$fixture/build/dokka/html/releases/0.1.1/index.html" ]] || fail 'Staging omitted the current release root.'
+[[ -f "$fixture/build/dokka/html/releases/0.1.1/api/index.html" ]] || fail 'Staging omitted the current Dokka API.'
+[[ ! -e "$fixture/build/dokka/html/releases/0.1.1/guide" ]] || fail 'Staging injected a reader guide into the Dokka-only release.'
 [[ ! -e "$fixture/build/dokka/html/releases/0.1.1/releases" ]] || fail 'A release snapshot recursively nested older releases.'
 cmp --silent "$fixture/build/dokka/html/index.html" "$fixture/build/dokka/html/releases/0.1.1/index.html" || \
   fail 'The staged current release differs from its source root.'
+cmp --silent "$fixture/build/dokka/html/pages-public-urls.txt" "$fixture/build/dokka/html/releases/0.1.1/pages-public-urls.txt" || \
+  fail 'The staged current release changed its public inventory.'
 
 if (
   cd "$fixture"
@@ -53,4 +62,4 @@ if (
   fail 'Versioned Pages staging accepted a non-semantic release tag.'
 fi
 
-echo 'Versioned Pages staging keeps immutable releases flat and independent.'
+echo 'Versioned Pages staging preserves Dokka sites and immutable legacy guides.'

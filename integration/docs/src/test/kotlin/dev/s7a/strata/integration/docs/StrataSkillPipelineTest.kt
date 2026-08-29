@@ -69,15 +69,23 @@ internal class StrataSkillPipelineTest {
         assertTrue(patterns.contains("listState.refresh()"))
         assertTrue(patterns.contains("listState.jumpToKey"))
         assertTrue(patterns.contains("The `Int` and `List` overloads are immutable snapshots."))
-        assertTrue(customComponents.contains("https://gh.s7a.dev/strata/guide/element-spi.md"))
-        assertTrue(first.values.none { document -> document.contains("../../../docs/") })
+        assertTrue(customComponents.contains("https://github.com/sya-ri/strata/blob/master/docs/element-spi.md"))
+        assertDocumentationLinks(first)
     }
 
     private fun assertComponentReferences(components: String) {
         assertTrue(components.contains("fun UiScope.Button"))
         assertTrue(components.contains("fun UiScope.TextArea"))
-        assertTrue(components.contains("https://gh.s7a.dev/strata/guide/components.md#text-area"))
-        assertTrue(components.contains("https://gh.s7a.dev/strata/guide/components.md#button"))
+        assertTrue(components.contains("https://github.com/sya-ri/strata/blob/master/docs/components.md#text-area"))
+        assertTrue(components.contains("https://github.com/sya-ri/strata/blob/master/docs/components.md#button"))
+    }
+
+    private fun assertDocumentationLinks(documents: Map<String, String>) {
+        assertTrue(documents.values.none { document -> document.contains("../../../docs/") })
+        assertTrue(documents.values.none { document -> document.contains("strata/guide/") })
+        val modrinthProject = documents.getValue("docs/modrinth-project.md")
+        assertTrue(modrinthProject.contains("[Dokka API reference](https://gh.s7a.dev/strata/)"))
+        assertTrue(modrinthProject.contains("[Reader guides on GitHub](https://github.com/sya-ri/strata/blob/master/README.md#documentation)"))
     }
 
     private fun assertOwnerAwareStateSignatures(modifiers: String) {
@@ -105,9 +113,9 @@ internal class StrataSkillPipelineTest {
         assertTrue(document.contains("dev.s7a.strata:strata-runtime-minecraft-fonts-lwjgl:0.1.1"))
         assertTrue(document.contains("does not bundle LWJGL, ICU, Gson, or native binaries"))
         assertTrue(document.contains("unsafe STB coordinate conversions remain invalid"))
-        assertTrue(document.contains("https://gh.s7a.dev/strata/guide/text.md"))
-        assertTrue(document.contains("https://gh.s7a.dev/strata/guide/font-resources.md#numeric-provider-settings"))
-        assertTrue(document.contains("https://gh.s7a.dev/strata/guide/font-resources.md#acceptance-evidence"))
+        assertTrue(document.contains("https://github.com/sya-ri/strata/blob/master/docs/text.md"))
+        assertTrue(document.contains("https://github.com/sya-ri/strata/blob/master/docs/font-resources.md#numeric-provider-settings"))
+        assertTrue(document.contains("https://github.com/sya-ri/strata/blob/master/docs/font-resources.md#acceptance-evidence"))
         assertTrue(document.contains("independent GPU evidence"))
     }
 

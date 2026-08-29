@@ -216,7 +216,8 @@ npx skills add sya-ri/strata --skill strata
 - [Strata 0.1.1 release notes](docs/releases/v0.1.1.md) describe Minecraft 1.20 support, resource fonts, multiline text, and TextArea editing.
 - [Strata 0.1.0 release notes](docs/releases/v0.1.0.md) records the first public API, runtime, documentation, and distribution contract.
 
-The aggregated Dokka and reader guides are published at [gh.s7a.dev/strata](https://gh.s7a.dev/strata/).
+The [Dokka API reference](https://gh.s7a.dev/strata/) is published through GitHub Pages.
+The reader guides linked above are Markdown documents rendered by GitHub in this repository.
 
 ### Module layout
 

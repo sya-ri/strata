@@ -4,7 +4,7 @@
 
 Strata exposes 23 focused standard components from `dev.s7a.strata.component`.
 Every Kotlin declaration below is paired with the compiled `strata-api` overload inventory; generation fails when source and binary identities diverge or an undocumented component enters the API.
-Use the [rendered component showcase](https://gh.s7a.dev/strata/guide/components.md) for complete compiled examples and Minecraft-verified images.
+Use the [component showcase on GitHub](https://github.com/sya-ri/strata/blob/master/docs/components.md) for complete compiled examples and Minecraft-verified images.
 
 <a id="row"></a>
 
@@ -15,7 +15,7 @@ Row places an ordered sibling sequence on one horizontal main axis, with typed a
 - Compiled overloads: 1
 - Modifiers: Sizing, padding, paint, semantics, focus, and input modifiers apply to the Row itself; `spacing` and `horizontalArrangement` express structure, while `RowScope.weight` and `RowScope.align` affect only direct children.
 - Parent scope: `Row` evaluates a callback-lifetime `RowScope`, emits children in declaration order, and exposes only vertical alignment and weight parent data to its direct children.
-- [Showcase image and compiled example](https://gh.s7a.dev/strata/guide/components.md#row)
+- [Showcase image and compiled example](https://github.com/sya-ri/strata/blob/master/docs/components.md#row)
 
 ```kotlin
 fun UiScope.Row(modifier: Modifier = Modifier.Empty, key: ElementKey<*>? = null, spacing: Int = 0, horizontalArrangement: Arrangement = Arrangement.Start, verticalAlignment: VerticalAlignment = VerticalAlignment.Top, content: RowScope.() -> Unit)
@@ -30,7 +30,7 @@ FlowRow wraps an ordered sibling sequence at the available width, measures each 
 - Compiled overloads: 1
 - Modifiers: Sizing, padding, paint, semantics, focus, and input modifiers apply to the FlowRow itself. It uses its natural width unless constraints or `fillMaxWidth()` expand it; `horizontalSpacing`, `verticalSpacing`, and `horizontalArrangement` control its rows, while `FlowRowScope.align` overrides one child's vertical alignment within its row.
 - Parent scope: `FlowRow` evaluates a callback-lifetime `FlowRowScope` and exposes only vertical alignment parent data. Wrapping preserves its direct children's retained identity and focus without synthetic Row parents. It has no weight, row-count limit, implicit clipping, or truncation; with unbounded width it produces one row.
-- [Showcase image and compiled example](https://gh.s7a.dev/strata/guide/components.md#flow-row)
+- [Showcase image and compiled example](https://github.com/sya-ri/strata/blob/master/docs/components.md#flow-row)
 
 ```kotlin
 fun UiScope.FlowRow(modifier: Modifier = Modifier.Empty, key: ElementKey<*>? = null, horizontalSpacing: Int = 0, verticalSpacing: Int = 0, horizontalArrangement: Arrangement = Arrangement.Start, verticalAlignment: VerticalAlignment = VerticalAlignment.Top, content: FlowRowScope.() -> Unit)
@@ -45,7 +45,7 @@ Column places an ordered sibling sequence on one vertical main axis, with typed 
 - Compiled overloads: 1
 - Modifiers: Sizing, padding, paint, semantics, focus, and input modifiers apply to the Column itself; `spacing` and `verticalArrangement` express structure, while `ColumnScope.weight` and `ColumnScope.align` affect only direct children.
 - Parent scope: `Column` evaluates a callback-lifetime `ColumnScope`, emits children in declaration order, and exposes only horizontal alignment and weight parent data to its direct children.
-- [Showcase image and compiled example](https://gh.s7a.dev/strata/guide/components.md#column)
+- [Showcase image and compiled example](https://github.com/sya-ri/strata/blob/master/docs/components.md#column)
 
 ```kotlin
 fun UiScope.Column(modifier: Modifier = Modifier.Empty, key: ElementKey<*>? = null, spacing: Int = 0, verticalArrangement: Arrangement = Arrangement.Start, horizontalAlignment: HorizontalAlignment = HorizontalAlignment.Start, content: ColumnScope.() -> Unit)
@@ -60,7 +60,7 @@ Stack is the explicit overlay primitive: children share one content rectangle, r
 - Compiled overloads: 1
 - Modifiers: Use Stack only when children intentionally overlap. Ordinary sizing and background modifiers belong on the Stack; `StackScope.align` positions an individual overlay child without coordinate padding.
 - Parent scope: `Stack` evaluates a callback-lifetime `StackScope`; it measures and paints overlapping direct children in declaration order and exposes two-axis alignment parent data.
-- [Showcase image and compiled example](https://gh.s7a.dev/strata/guide/components.md#stack)
+- [Showcase image and compiled example](https://github.com/sya-ri/strata/blob/master/docs/components.md#stack)
 
 ```kotlin
 fun UiScope.Stack(modifier: Modifier = Modifier.Empty, key: ElementKey<*>? = null, contentAlignment: Alignment = Alignment.TopStart, content: StackScope.() -> Unit)
@@ -75,7 +75,7 @@ Grid assigns children row-major to a fixed column count, measures each column an
 - Compiled overloads: 1
 - Modifiers: Sizing, padding, and paint modifiers apply to the Grid. Fixed columns, independent horizontal and vertical spacing, and `GridScope.align` replace repeated Row declarations and per-cell coordinate padding.
 - Parent scope: `Grid` evaluates a callback-lifetime `GridScope`; it assigns direct children row-major and exposes two-axis alignment only inside each measured cell.
-- [Showcase image and compiled example](https://gh.s7a.dev/strata/guide/components.md#grid)
+- [Showcase image and compiled example](https://github.com/sya-ri/strata/blob/master/docs/components.md#grid)
 
 ```kotlin
 fun UiScope.Grid(columns: Int, modifier: Modifier = Modifier.Empty, key: ElementKey<*>? = null, horizontalSpacing: Int = 0, verticalSpacing: Int = 0, contentAlignment: Alignment = Alignment.TopStart, content: GridScope.() -> Unit)
@@ -90,7 +90,7 @@ Spacer is an empty measurable primitive for genuine visual separators, connector
 - Compiled overloads: 1
 - Modifiers: Sizing, weight, and paint modifiers give Spacer a deliberate empty footprint, such as a separator or progress connector; ordinary parent spacing and alignment should remain layout arguments rather than placeholder children.
 - Parent scope: `Spacer` has no content scope or children. Its size and modifier chain alone define its retained layout and paint behavior.
-- [Showcase image and compiled example](https://gh.s7a.dev/strata/guide/components.md#spacer)
+- [Showcase image and compiled example](https://github.com/sya-ri/strata/blob/master/docs/components.md#spacer)
 
 ```kotlin
 fun UiScope.Spacer(modifier: Modifier = Modifier.Empty, key: ElementKey<*>? = null)
@@ -105,7 +105,7 @@ Text renders Unicode literals and composed text using the active profile's font 
 - Compiled overloads: 8
 - Modifiers: Ordinary sizing, padding, placement, and paint modifiers compose around `Text`; multiline layout uses the available width and height. `TextWrap.None`, `Word`, or `Character`, `maxLines`, `TextOverflow.Clip` or `Ellipsis`, and `lineSpacing` control presentation without changing the original semantic label. Text content and the optional `font: ResourceId` remain typed component arguments. `UiText.withFont` also selects a font for labels and composed text; an inner selection takes precedence over an outer one.
 - Parent scope: `Text` is a top-level extension on the active `UiScope`. The screen runtime installs its selected Minecraft profile only for the definition callback, and the component has no content callback or parent-data API. Unicode and custom fonts require a font-resource profile; the older printable-ASCII glyph builder remains a compatibility path.
-- [Showcase image and compiled example](https://gh.s7a.dev/strata/guide/components.md#text)
+- [Showcase image and compiled example](https://github.com/sya-ri/strata/blob/master/docs/components.md#text)
 
 ```kotlin
 fun UiScope.Text(text: String, font: ResourceId, style: TextStyle = TextStyle.Normal, modifier: Modifier = Modifier.Empty, key: ElementKey<*>? = null)
@@ -127,7 +127,7 @@ TextField reproduces the 200 by 20 Minecraft EditBox sprites, text origin, glyph
 - Compiled overloads: 4
 - Modifiers: Pointer, keyboard, committed-character, preedit, and focus modifiers run as active retained behavior around `TextField`; a consuming focused modifier overrides built-in editing. The `font: ResourceId` overload changes metrics and drawing together, including cursor placement and horizontal scrolling.
 - Parent scope: `TextField` is a top-level extension on the active `UiScope`. Caller-owned `TextFieldState` owns the value and its positive UTF-16 maximum length. Movement and deletion operate on Unicode scalars, not whole grapheme clusters; preedit text remains separate until committed input arrives. The inline composition display does not reproduce Minecraft's native IME popup or platform candidate window.
-- [Showcase image and compiled example](https://gh.s7a.dev/strata/guide/components.md#text-field)
+- [Showcase image and compiled example](https://github.com/sya-ri/strata/blob/master/docs/components.md#text-field)
 
 ```kotlin
 fun UiScope.TextField(state: TextFieldState, enabled: Boolean = true, textStyle: TextStyle = TextStyle.TextField, modifier: Modifier = Modifier.Empty, key: ElementKey<*>? = null)
@@ -145,7 +145,7 @@ TextArea edits one multiline value inside an explicit viewport with Unicode scal
 - Compiled overloads: 2
 - Modifiers: Place `TextArea` with ordinary layout modifiers and select its outer extent through `TextAreaViewport.Size` or `Lines`. Minecraft uses a fixed 9-pixel logical line box, optional extra line spacing, and four-pixel padding on each side. An external `Scrollbar(state.scrollState)` observes the editor's caller-owned scroll state; the editor does not insert a scrollbar or toolbar. The `font: ResourceId` overload changes layout, cursor placement, and drawing together.
 - Parent scope: `TextArea` is a leaf extension on the active `UiScope`; one retained editor observes its owner-thread `TextAreaState`. Creating an immutable description does not attach the state, and descriptions can be reused after detachment. Simultaneous attachment with the same caller-owned state throws `IllegalStateException`. The state stores canonical LF newlines and enforces a positive UTF-16 maximum length. Soft wrapping never edits the stored value, and IME preedit remains separate until committed. `SemanticsRole.TextArea` exposes the committed text through `Semantics.value`, without typed accessibility edit actions. Selection, clipboard commands, grapheme-cluster editing, and the platform IME candidate window are outside this component's contract.
-- [Showcase image and compiled example](https://gh.s7a.dev/strata/guide/components.md#text-area)
+- [Showcase image and compiled example](https://github.com/sya-ri/strata/blob/master/docs/components.md#text-area)
 
 ```kotlin
 fun UiScope.TextArea(state: TextAreaState, viewport: TextAreaViewport, enabled: Boolean = true, textStyle: TextStyle = TextStyle.TextField, wrap: TextWrap = TextWrap.Word, lineSpacing: Int = 0, modifier: Modifier = Modifier.Empty, key: ElementKey<*>? = null)
@@ -161,7 +161,7 @@ Button renders verified fixed-height Minecraft sprite and label states, includin
 - Compiled overloads: 2
 - Modifiers: Pointer behavior is active modifier behavior. `onPointerEvent`, `onPress`, `onRelease`, `onMove`, `onDrag`, `onScroll`, and `onHover` can be composed without adding component-specific callback parameters.
 - Parent scope: `Button` is a top-level extension on the active `UiScope`. The screen runtime installs its selected Minecraft profile only for the definition callback, and pointer event modifiers remain valid only through their retained modifier-node lifetime.
-- [Showcase image and compiled example](https://gh.s7a.dev/strata/guide/components.md#button)
+- [Showcase image and compiled example](https://github.com/sya-ri/strata/blob/master/docs/components.md#button)
 
 ```kotlin
 fun UiScope.Button(label: String, width: Int = 150, enabled: Boolean = true, modifier: Modifier = Modifier.Empty, key: ElementKey<*>? = null)
@@ -177,7 +177,7 @@ Checkbox reproduces the verified 20-pixel Minecraft checkbox surface, label spac
 - Compiled overloads: 2
 - Modifiers: Sizing and placement modifiers compose around `Checkbox`; caller-owned state and typed checked-change actions keep the reusable boolean control independent of a settings domain.
 - Parent scope: `Checkbox` is a leaf extension on the active `UiScope`; `CheckboxState` is caller-owned, owner-thread confined, and may be shared with application state adapters.
-- [Showcase image and compiled example](https://gh.s7a.dev/strata/guide/components.md#checkbox)
+- [Showcase image and compiled example](https://github.com/sya-ri/strata/blob/master/docs/components.md#checkbox)
 
 ```kotlin
 fun UiScope.Checkbox(label: String, state: CheckboxState, width: Int = 150, enabled: Boolean = true, modifier: Modifier = Modifier.Empty, key: ElementKey<*>? = null)
@@ -193,7 +193,7 @@ CycleButton reuses the verified button surface for a finite generic option seque
 - Compiled overloads: 1
 - Modifiers: Sizing and placement modifiers compose around `CycleButton`; its immutable option set and typed change action remain generic rather than encoding one game's option model.
 - Parent scope: `CycleButton` is a leaf extension on the active `UiScope`; it snapshots labels for the validated finite option set and retains no child scope.
-- [Showcase image and compiled example](https://gh.s7a.dev/strata/guide/components.md#cycle-button)
+- [Showcase image and compiled example](https://github.com/sya-ri/strata/blob/master/docs/components.md#cycle-button)
 
 ```kotlin
 fun <T : Any> UiScope.CycleButton(state: CycleButtonState<T>, width: Int = 150, enabled: Boolean = true, modifier: Modifier = Modifier.Empty, key: ElementKey<*>? = null, label: (T) -> UiText = { value -> UiText.Literal(state.formatKnownMember(value)) })
@@ -208,7 +208,7 @@ Slider reproduces Minecraft's profile-backed track and handle while normalizing 
 - Compiled overloads: 2
 - Modifiers: Sizing and placement modifiers compose around `Slider`; caller-owned range state and typed value-change actions remain reusable across volume, brightness, machine power, and other numeric domains.
 - Parent scope: `Slider` is a leaf extension on the active `UiScope`; `SliderState` owns normalization and quantization while the active profile owns rendering.
-- [Showcase image and compiled example](https://gh.s7a.dev/strata/guide/components.md#slider)
+- [Showcase image and compiled example](https://github.com/sya-ri/strata/blob/master/docs/components.md#slider)
 
 ```kotlin
 fun UiScope.Slider(label: String, state: SliderState, width: Int = 150, enabled: Boolean = true, modifier: Modifier = Modifier.Empty, key: ElementKey<*>? = null)
@@ -224,7 +224,7 @@ Tab combines the verified button surface with external selection semantics and a
 - Compiled overloads: 2
 - Modifiers: Selection is caller-owned data, while `Underline` or `Custom` controls its reusable selected-state presentation. All pointer actions remain ordinary event modifiers, exactly as for Button and other interactive components.
 - Parent scope: `Tab` is a top-level extension on the active `UiScope`. A custom selected indicator emits exactly one nested root; the selected value and event actions remain application-owned.
-- [Showcase image and compiled example](https://gh.s7a.dev/strata/guide/components.md#tab)
+- [Showcase image and compiled example](https://github.com/sya-ri/strata/blob/master/docs/components.md#tab)
 
 ```kotlin
 fun UiScope.Tab(label: String, selected: Boolean, width: Int = 150, enabled: Boolean = true, indicator: TabSelectionIndicator = TabSelectionIndicator.Underline, modifier: Modifier = Modifier.Empty, key: ElementKey<*>? = null)
@@ -240,7 +240,7 @@ ScrollArea reproduces the verified Minecraft menu-list background, clipping, sep
 - Compiled overloads: 1
 - Modifiers: Ordinary sizing and placement modifiers define only the clipped viewport. The shared `ScrollState` links optional external controls without forcing a scrollbar into the component tree.
 - Parent scope: `ScrollArea` evaluates a callback-lifetime `UiScope` that emits exactly one content root; the caller owns the linked state and may omit a scrollbar.
-- [Showcase image and compiled example](https://gh.s7a.dev/strata/guide/components.md#scroll-area)
+- [Showcase image and compiled example](https://github.com/sya-ri/strata/blob/master/docs/components.md#scroll-area)
 
 ```kotlin
 fun UiScope.ScrollArea(state: ScrollState, modifier: Modifier = Modifier.Empty, key: ElementKey<*>? = null, scrollRate: Int = 9, content: UiScope.() -> Unit)
@@ -255,7 +255,7 @@ Scrollbar reproduces the verified tiled track and proportional thumb while remai
 - Compiled overloads: 1
 - Modifiers: Sizing and parent placement modifiers position `Scrollbar` independently from its viewport; sharing `ScrollState` is the only link required.
 - Parent scope: `Scrollbar` is an independent leaf in any surrounding layout. It observes caller-owned `ScrollState` and releases that observation when its retained node is disposed.
-- [Showcase image and compiled example](https://gh.s7a.dev/strata/guide/components.md#scrollbar)
+- [Showcase image and compiled example](https://github.com/sya-ri/strata/blob/master/docs/components.md#scrollbar)
 
 ```kotlin
 fun UiScope.Scrollbar(state: ScrollState, modifier: Modifier = Modifier.Empty, key: ElementKey<*>? = null)
@@ -270,7 +270,7 @@ VirtualList retains only visible fixed-height rows plus bounded overscan, suppor
 - Compiled overloads: 3
 - Modifiers: Sizing is expressed by `viewportSize`; modifier actions receive leading and trailing load requests while caller-owned state supports index, key, and boundary navigation.
 - Parent scope: `VirtualList` evaluates row callbacks only for visible rows plus bounded overscan; stable keys preserve retained identity while the caller owns source and navigation state.
-- [Showcase image and compiled example](https://gh.s7a.dev/strata/guide/components.md#virtual-list)
+- [Showcase image and compiled example](https://github.com/sya-ri/strata/blob/master/docs/components.md#virtual-list)
 
 ```kotlin
 fun <T : Any, K : Any> UiScope.VirtualList(itemCount: () -> Int, itemAt: (Int) -> T, keyAt: (Int) -> K, state: VirtualListState<K>, viewportSize: IntSize, rowHeight: Int, indexOfKey: ((K) -> Int?)? = null, scrollRate: Int = 10, canLoadLeading: Boolean = false, canLoadTrailing: Boolean = false, modifier: Modifier = Modifier.Empty, key: ElementKey<*>? = null, content: UiScope.(T) -> Unit)
@@ -287,7 +287,7 @@ SelectionList adds generic caller-owned selection and typed selection-change act
 - Compiled overloads: 1
 - Modifiers: Viewport behavior composes with typed selection actions and caller-owned selection state; row visuals remain application composition rather than a screen-specific built-in.
 - Parent scope: `SelectionList` wraps visible virtual rows with generic selection semantics and press handling while leaving each row's single content root to the caller.
-- [Showcase image and compiled example](https://gh.s7a.dev/strata/guide/components.md#selection-list)
+- [Showcase image and compiled example](https://github.com/sya-ri/strata/blob/master/docs/components.md#selection-list)
 
 ```kotlin
 fun <T : Any, K : Any> UiScope.SelectionList(items: List<T>, keyOf: (T) -> K, state: SelectionListState<K>, viewportSize: IntSize, rowHeight: Int, canLoadLeading: Boolean = false, canLoadTrailing: Boolean = false, scrollRate: Int = 10, modifier: Modifier = Modifier.Empty, key: ElementKey<*>? = null, content: UiScope.(T) -> Unit)
@@ -302,7 +302,7 @@ Image maps one immutable resource-pack image to an exact logical size with deter
 - Compiled overloads: 2
 - Modifiers: Sizing and placement modifiers compose around `Image`; `imageBackground` paints the same immutable resource behind any layout component with typed stretch or tile mapping.
 - Parent scope: `Image` is a top-level extension on the active `UiScope`. It retains detached pixels rather than a Minecraft resource object, so the Fabric loader may resolve a resource-pack replacement before the description is built.
-- [Showcase image and compiled example](https://gh.s7a.dev/strata/guide/components.md#image)
+- [Showcase image and compiled example](https://github.com/sya-ri/strata/blob/master/docs/components.md#image)
 
 ```kotlin
 fun UiScope.Image(source: ImageSource, size: IntSize? = null, modifier: Modifier = Modifier.Empty, key: ElementKey<*>? = null)
@@ -318,7 +318,7 @@ Slot reproduces the native 18 by 18 hit region and 24 by 24 back-item-front high
 - Compiled overloads: 1
 - Modifiers: Sizing is native-fixed at 18 by 18. `Slots.playerInventory(index)` binds player storage, `Slots.container(index)` addresses logical storage exposed by chests, ender chests, furnaces, and custom server menus, and `Slots.activeMenu(index)` remains the raw-menu escape hatch; the optional-content overload remains portable for custom item visuals.
 - Parent scope: `Slot` is a member extension on the active `UiScope`. Its optional callback emits at most one 16 by 16 content root, while its bound overload obtains the version platform implicitly and retains no public Minecraft type.
-- [Showcase image and compiled example](https://gh.s7a.dev/strata/guide/components.md#slot)
+- [Showcase image and compiled example](https://github.com/sya-ri/strata/blob/master/docs/components.md#slot)
 
 ```kotlin
 fun UiScope.Slot(bind: SlotBinding? = null, highlightable: Boolean = true, modifier: Modifier = Modifier.Empty, key: ElementKey<*>? = null, content: (UiScope.() -> Unit)? = null)
@@ -333,7 +333,7 @@ PlayerHead reproduces Minecraft 26.2 face-then-hat rendering from a 64 by 64 ski
 - Compiled overloads: 1
 - Modifiers: Sizing and placement modifiers compose around `PlayerHead`; its immutable skin argument stays separate from Social, player-list, scoreboard, profile, and Mod-specific row state.
 - Parent scope: `PlayerHead` is a top-level extension on the active `UiScope`. `Pixels` retains a detached immutable skin, while `CurrentPlayer`, `Name`, and `Uuid` remain structural asynchronous lookups deferred to node attachment; the retained node owns and releases that lookup lifetime.
-- [Showcase image and compiled example](https://gh.s7a.dev/strata/guide/components.md#player-head)
+- [Showcase image and compiled example](https://github.com/sya-ri/strata/blob/master/docs/components.md#player-head)
 
 ```kotlin
 fun UiScope.PlayerHead(source: PlayerSkinSource = PlayerSkinSource.CurrentPlayer, size: Int = 24, showHat: Boolean = true, modifier: Modifier = Modifier.Empty, key: ElementKey<*>? = null, loadingContent: (UiScope.() -> Unit)? = null, failureContent: (UiScope.() -> Unit)? = null)
@@ -348,7 +348,7 @@ LoadingIndicator reproduces the Minecraft 26.2 friends-loading sprite as three v
 - Compiled overloads: 1
 - Modifiers: Sizing and placement modifiers compose around `LoadingIndicator`; explicit host frame time advances its discrete profile animation without application-owned timer state.
 - Parent scope: `LoadingIndicator` is a top-level extension on the active `UiScope`. The Fabric host supplies one timestamp per native render pass and the retained node invalidates only when its discrete animation cell changes.
-- [Showcase image and compiled example](https://gh.s7a.dev/strata/guide/components.md#loading-indicator)
+- [Showcase image and compiled example](https://github.com/sya-ri/strata/blob/master/docs/components.md#loading-indicator)
 
 ```kotlin
 fun UiScope.LoadingIndicator(size: IntSize = IntSize(10, 4), modifier: Modifier = Modifier.Empty, key: ElementKey<*>? = null)
@@ -363,7 +363,7 @@ ProgressBar uses the reusable bundle progress border, partial fill, and complete
 - Compiled overloads: 1
 - Modifiers: Sizing and placement modifiers compose around `ProgressBar`; its normalized value is immutable component data while the active profile supplies resource-pack-aware fill, completed-fill, and border sprites.
 - Parent scope: `ProgressBar` is a top-level extension on the active `UiScope`. The implicit profile resolves the active resource pack before retaining immutable sprite pixels.
-- [Showcase image and compiled example](https://gh.s7a.dev/strata/guide/components.md#progress-bar)
+- [Showcase image and compiled example](https://github.com/sya-ri/strata/blob/master/docs/components.md#progress-bar)
 
 ```kotlin
 fun UiScope.ProgressBar(progress: Double, size: IntSize = IntSize(100, 12), modifier: Modifier = Modifier.Empty, key: ElementKey<*>? = null)

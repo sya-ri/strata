@@ -15,7 +15,7 @@ import java.nio.file.attribute.BasicFileAttributes
  */
 internal object PagesPublicUrlInventory {
     /**
-     * Writes one relative-URL-per-line inventory from repository links and staged guide images.
+     * Writes one relative-URL-per-line inventory from repository links and staged Dokka entrypoints.
      *
      * @param args repository root, staged Pages root, and output file.
      */
@@ -40,6 +40,7 @@ internal object PagesPublicUrlInventory {
         val site = siteRoot.toAbsolutePath().normalize()
         val output = outputFile.toAbsolutePath().normalize()
         require(output.startsWith(site)) { "Pages URL inventory must remain inside the staged site." }
+        ShowcasePaths.requireSafeSegments(output, "Pages URL inventory")
         val content = expected(projectRoot, site).joinToString(separator = "\n", postfix = "\n")
         Files.writeString(
             output,
@@ -52,7 +53,10 @@ internal object PagesPublicUrlInventory {
     }
 
     /**
-     * Computes required public relative URLs from checked source literals and staged guide images.
+     * Computes required public relative URLs from checked source literals and the Dokka root's HTML links.
+     *
+     * Reads current output synchronously and includes directly advertised snapshot files without traversing their contents.
+     * Rejects leftover reader-guide output and links that advertise Markdown as Pages documents.
      *
      * @param projectRoot trusted repository root.
      * @param siteRoot complete staged Pages root.
@@ -66,15 +70,16 @@ internal object PagesPublicUrlInventory {
         val site = siteRoot.toAbsolutePath().normalize()
         ShowcasePaths.requireDirectory(project, "Pages source repository")
         ShowcasePaths.requireDirectory(site, "staged Pages root")
+        require(Files.exists(site.resolve(GUIDE_DIRECTORY), LinkOption.NOFOLLOW_LINKS).not()) {
+            "Legacy Pages guide output remains; clean generated output and regenerate the Dokka API site."
+        }
         return buildSet {
             add("/")
             add("/index.html")
-            add("/guide/")
-            add("/guide/index.html")
             add("/source-receipt.json")
             add("/source-revision.txt")
             addAll(hardCodedPublicPaths(project))
-            addAll(stagedGuideImages(site))
+            addAll(PagesStagingChecker.rootEntrypointPaths(site))
         }.sorted()
     }
 
@@ -90,6 +95,11 @@ internal object PagesPublicUrlInventory {
             "Pages public path must not contain a query or fragment: $publicPath"
         }
         val relative = publicPath.removePrefix("/")
+        val normalized = Path.of(relative).normalize()
+        val snapshotTarget = normalized.startsWith(RELEASES_DIRECTORY) && 2 < normalized.nameCount
+        require(snapshotTarget || publicPath.endsWith(MARKDOWN_SUFFIX, ignoreCase = true).not()) {
+            "Reader Markdown must link to GitHub, not a Pages document: $publicPath"
+        }
         return if (relative.isEmpty() || relative.endsWith('/')) "$relative$INDEX_FILE" else relative
     }
 
@@ -100,25 +110,6 @@ internal object PagesPublicUrlInventory {
                     .findAll(Files.readString(path, StandardCharsets.UTF_8))
                     .map { match -> publicPath(match.value) }
             }.toSet()
-
-    private fun stagedGuideImages(siteRoot: Path): Set<String> {
-        val guide = siteRoot.resolve("guide")
-        ShowcasePaths.requireDirectory(guide, "staged Pages guide root")
-        return Files.walk(guide).use { stream ->
-            stream
-                .filter { path ->
-                    Files.isRegularFile(path, LinkOption.NOFOLLOW_LINKS) &&
-                        Files.isSymbolicLink(path).not() &&
-                        path.fileName
-                            .toString()
-                            .substringAfterLast('.', missingDelimiterValue = "")
-                            .lowercase() in IMAGE_EXTENSIONS
-                }.map { path ->
-                    "/guide/${guide.relativize(path).toString().replace('\\', '/')}"
-                }.toList()
-                .toSet()
-        }
-    }
 
     private fun sourceFiles(projectRoot: Path): List<Path> {
         val files = ArrayList<Path>()
@@ -160,18 +151,22 @@ internal object PagesPublicUrlInventory {
         }
         val relative = uri.path.removePrefix(PAGES_BASE_PATH)
         require(relative != uri.path) { "Pages target lies outside the Strata site: $target" }
-        return "/$relative"
+        val publicPath = "/$relative"
+        stagedRelativePath(publicPath)
+        return publicPath
     }
 
     private val CHECKED_EXTENSIONS =
         setOf("gradle", "html", "java", "json", "kt", "kts", "md", "properties", "toml", "txt", "xml", "yaml", "yml")
     private val EXCLUDED_DIRECTORIES = setOf(".git", ".gradle", "build", "out")
-    private val IMAGE_EXTENSIONS = setOf("gif", "jpeg", "jpg", "png", "svg", "webp")
     private val PAGES_URL =
         Regex(
             """https://gh\.s7a\.dev/strata/(?:[A-Za-z0-9._~%+-]+/)*[A-Za-z0-9._~%+-]*(?:#[A-Za-z0-9._~-]+)?(?=[\s"'`),;<>\]}]|$)""",
         )
     private const val PAGES_HOST = "gh.s7a.dev"
     private const val PAGES_BASE_PATH = "/strata/"
+    private const val GUIDE_DIRECTORY = "guide"
+    private const val RELEASES_DIRECTORY = "releases"
+    private const val MARKDOWN_SUFFIX = ".md"
     private const val INDEX_FILE = "index.html"
 }

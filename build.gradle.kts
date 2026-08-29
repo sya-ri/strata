@@ -408,11 +408,32 @@ dependencies {
     minecraftFabricTargets.forEach { target -> dokka(project(target.runtimeProjectPath)) }
 }
 
+val generateDokkaModuleMarkdown =
+    tasks.register("generateDokkaModuleMarkdown") {
+        group = "documentation"
+        description = "Prepares the Dokka introduction with GitHub reader links for the selected source revision."
+        val template = layout.projectDirectory.file("docs/dokka-module.md")
+        val output = layout.buildDirectory.file("generated/dokka/module.md")
+        inputs.file(template)
+        inputs.property("sourceRevision", sourceRevision)
+        outputs.file(output)
+        doLast {
+            val content =
+                template.asFile.readText().replace(
+                    "https://github.com/sya-ri/strata/blob/master/",
+                    "https://github.com/sya-ri/strata/blob/$sourceRevision/",
+                )
+            val file = output.get().asFile
+            file.parentFile.mkdirs()
+            file.writeText(content)
+        }
+    }
+
 extensions.configure<DokkaExtension> {
     moduleName.set("Strata")
     dokkaPublications.named("html") {
         outputDirectory.set(layout.buildDirectory.dir("dokka/html"))
-        includes.from(layout.projectDirectory.file("docs/dokka-module.md"))
+        includes.from(generateDokkaModuleMarkdown)
     }
 }
 

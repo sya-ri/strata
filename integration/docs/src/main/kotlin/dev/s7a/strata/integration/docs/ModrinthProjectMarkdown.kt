@@ -63,8 +63,9 @@ Install exactly one Strata runtime matching the client version.
 
 ## Documentation and source
 
-- [Documentation and API reference](https://gh.s7a.dev/strata/)
-- [Component catalog and verified images](https://gh.s7a.dev/strata/guide/components.md)
+- [Dokka API reference](https://gh.s7a.dev/strata/)
+- [Reader guides on GitHub](https://github.com/sya-ri/strata/blob/master/README.md#documentation)
+- [Component catalog and verified images](https://github.com/sya-ri/strata/blob/master/docs/components.md)
 - [Source repository](https://github.com/sya-ri/strata)
 - [Issue tracker](https://github.com/sya-ri/strata/issues)
 - [Public AI authoring skill](https://github.com/sya-ri/strata/tree/master/skills/strata)
@@ -79,7 +80,7 @@ The maintainer directed the design and validates release artifacts through the p
 Pass `font = ResourceId("example", "body")` to `Text`, `TextField`, or `TextArea`, or use `UiText.withFont` for labels and composed text.
 The ID selects a resource-pack font definition, not an operating-system font family.
 Existing overloads without a font argument remain available.
-Version 0.1.1 intentionally adds sealed `UiText.WithFont` and `DrawCommand.SampledImage` variants; update custom exhaustive visitors before upgrading, as described in [Source compatibility](https://gh.s7a.dev/strata/guide/text.md#source-compatibility).
+Version 0.1.1 intentionally adds sealed `UiText.WithFont` and `DrawCommand.SampledImage` variants; update custom exhaustive visitors before upgrading, as described in [Source compatibility](https://github.com/sya-ri/strata/blob/master/docs/text.md#source-compatibility).
 Glyph coverage and emoji presentation depend on the selected resources; Strata does not supply an independent color-emoji or ZWJ-sequence renderer.
 Unknown font IDs produce missing glyphs instead of silently selecting `minecraft:default`.
 
@@ -89,7 +90,7 @@ TextAreaState normalizes hard breaks to LF and owns the ScrollState shared with 
 Both editors move and delete one Unicode scalar at a time, with `maxLength` measured in UTF-16 code units.
 Delivered preedit events appear as inline IME composition without changing the committed value.
 This does not add grapheme-cluster editing, selection or clipboard commands, a native IME popup, or new platform IME hooks on adapters that expose only committed characters.
-See [Text and text input](https://gh.s7a.dev/strata/guide/text.md) for the compiled font example, input policy, and composition lifecycle.
+See [Text and text input](https://github.com/sya-ri/strata/blob/master/docs/text.md) for the compiled font example, input policy, and composition lifecycle.
 
 ## Optional CPU font backend
 
@@ -98,7 +99,7 @@ Versioned Fabric runtimes already include this backend; ordinary UI declarations
 The backend does not bundle LWJGL, ICU, Gson, or native binaries.
 Offline callers must supply the exact target's library dependencies, native classifier, font resources, and compatibility options; do not mix native library generations in one process.
 
-See [Font resources](https://gh.s7a.dev/strata/guide/font-resources.md) for immutable profiles and dependency setup.
-Signed and zero TrueType settings follow the selected native contract; non-finite JSON settings and unsafe STB coordinate conversions remain invalid, as described in [Numeric provider settings](https://gh.s7a.dev/strata/guide/font-resources.md#numeric-provider-settings).
-[Acceptance evidence](https://gh.s7a.dev/strata/guide/font-resources.md#acceptance-evidence) distinguishes exact metrics and glyph texels from final-image differences supported by independent GPU evidence; it is not a promise of identical pixels for every resource pack or device."""
+See [Font resources](https://github.com/sya-ri/strata/blob/master/docs/font-resources.md) for immutable profiles and dependency setup.
+Signed and zero TrueType settings follow the selected native contract; non-finite JSON settings and unsafe STB coordinate conversions remain invalid, as described in [Numeric provider settings](https://github.com/sya-ri/strata/blob/master/docs/font-resources.md#numeric-provider-settings).
+[Acceptance evidence](https://github.com/sya-ri/strata/blob/master/docs/font-resources.md#acceptance-evidence) distinguishes exact metrics and glyph texels from final-image differences supported by independent GPU evidence; it is not a promise of identical pixels for every resource pack or device."""
 }

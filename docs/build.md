@@ -115,7 +115,8 @@ Any unrelated body, metadata, status, tag, controller, artifact, or public-servi
 The separate `release/github-tag-ruleset-v0.1.1.json` contract and receipt protect only `refs/tags/v0.1.1`; as with v0.1.0, an unpopulated receipt fails closed until an administrator creates and audits the no-bypass ruleset.
 
 The root `dokkaGenerate` task aggregates every published module into `build/dokka/html`.
-The Documentation workflow invokes `:integration:docs:checkDokkaPagesStaging` on pushes to `master` and release tags; that task depends on the fully qualified root `:dokkaGenerate`, stages and verifies the reader guides, and deploys the resulting `build/dokka/html` directory through GitHub Pages' artifact and OIDC deployment path.
+The Documentation workflow invokes `:integration:docs:checkDokkaPagesStaging` on pushes to `master` and release tags; that task depends on the fully qualified root `:dokkaGenerate` and verifies the generated API site.
+The workflow deploys the resulting `build/dokka/html` directory through GitHub Pages' artifact and OIDC deployment path.
 Because the Pages inventory scans checked source extensions across the repository, every `master` and release-tag push triggers the Documentation workflow, and operational release URLs remain parameterized until their pinned tag is resolved at runtime.
 The deployable `github-pages` artifact is retained for thirty days so a delayed protected release approval can still revalidate the exact uploaded archive.
 The full-history checkout lets `release/stage-versioned-pages.sh` reproduce tagged documentation in a detached worktree on later `master` runs and copy each independently checked site into `build/dokka/html/releases/{version}` without changing the current root documentation or recursively nesting older release trees.
@@ -179,11 +180,21 @@ The same module owns the public `skills/strata` package and its API-only compile
 `./gradlew :integration:docs:checkStrataSkill :integration:docs:checkDocumentationLinks` discovers component and Modifier overloads from compiled API classes, pairs them with exact Kotlin source declarations, checks state and binding declarations against compiled public member fingerprints, verifies generated references byte-for-byte, and checks every repository-local README, docs, and skill link without changing tracked files.
 `./gradlew :integration:docs:generateStrataSkill` deliberately synchronizes the five generated skill references, the anchored README example, and the canonical `docs/modrinth-project.md` body after an API or example change.
 The skill examples use a separate source set whose compile classpath contains only `:api`; ordinary application examples therefore cannot acquire a runtime import transitively.
-The Pages workflow includes `docs/dokka-module.md` instead of the root README and stages the complete checked `docs` tree under `build/dokka/html/guide`, including the deterministic `docs/index.html` directory entry and component images without relying on Dokka's include-relative asset behavior.
+The Pages workflow uses `docs/dokka-module.md` as the API landing-page introduction instead of the root README.
+`generateDokkaModuleMarkdown` prepares an ignored build-only include whose GitHub reader links use the selected `strata.sourceRevision`, so tagged API sites link to their matching repository guides.
+Reader guides and verified component images stay in the repository and are rendered on GitHub; they are not copied into the current Dokka site.
 The staging checker scans checked source text for hard-coded `https://gh.s7a.dev/strata/` targets and requires a matching non-symbolic staged file, treating a trailing slash as `index.html`, before the Pages artifact is uploaded.
-It also parses every staged Markdown and HTML document under `/guide`, resolves links against the deployed tree rather than the repository tree, and verifies local anchors and image targets so a repository-relative path that was not copied cannot pass.
-`generateDokkaPagesInventory` writes the sorted public relative paths to `build/dokka/html/pages-public-urls.txt`, including the Dokka root, guide directory, linked guide pages, `source-revision.txt`, the canonical tag-and-commit `source-receipt.json`, and every staged guide image; each tagged copy retains the same self-contained inventory below its own `releases/{version}` root.
+It verifies local links, anchors, and asset targets in inventoried HTML pages against the staged site.
+`generateDokkaPagesInventory` writes the sorted public relative paths to `build/dokka/html/pages-public-urls.txt`, including the Dokka root, explicitly linked API files, `source-revision.txt`, and the canonical tag-and-commit `source-receipt.json`; each tagged copy retains its own self-contained inventory below its `releases/{version}` root.
+Historical tagged sites keep the publication contract from their immutable source revision, including any older guide copies.
 Final release verification downloads the selected `/releases/{version}/pages-public-urls.txt` from the configured Pages origin, requests every listed path relative to that immutable base, checks its `source-revision.txt`, and polls its receipt until both the release tag and exact commit are visible in a current final HTTP response.
 The common JVM shard runs the pinned official actionlint container, parses every tracked release shell script with `bash -n`, and runs isolated regressions for tag replacement, ruleset drift and response normalization, release and controller Pages run/artifact/deployment binding, safe immutable-subtree comparison, archive receipt drift, global deployment ordering, CDN age handling, and bounded public polling before its Gradle gates.
 
 Run `./gradlew :quality:benchmarks:jmh` for the temporary JSON report and follow the methodology and acceptance gates in [Rendering performance](performance.md).
+
+## Documentation ownership
+
+Keep canonical API and runtime contracts, reader guides, release notes, compiled examples, and deterministic generated images and receipts in Git.
+Update generator sources and regenerate checked outputs instead of editing generated documents by hand.
+Keep task plans, working notes, status reports, and unfinished drafts under the ignored `build/` directory; promote durable decisions into the relevant canonical guide when the work is complete.
+Loaded worlds, transient screenshots, raw benchmark output, and test or coverage reports remain untracked build outputs.
