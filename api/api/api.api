@@ -228,6 +228,18 @@ public final class dev/s7a/strata/component/PanZoomStateObserver : java/lang/Aut
 	public fun close ()V
 }
 
+public final class dev/s7a/strata/component/PlayerHeadScale {
+	public fun <init> (I)V
+	public final fun component1 ()I
+	public final fun copy (I)Ldev/s7a/strata/component/PlayerHeadScale;
+	public static synthetic fun copy$default (Ldev/s7a/strata/component/PlayerHeadScale;IILjava/lang/Object;)Ldev/s7a/strata/component/PlayerHeadScale;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getFactor ()I
+	public final fun getLogicalSize ()I
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
 public abstract interface class dev/s7a/strata/component/PlayerSkinSource {
 }
 
@@ -289,7 +301,9 @@ public final class dev/s7a/strata/component/ProfileComponents {
 	public static final fun LoadingIndicator (Ldev/s7a/strata/component/UiScope;Ldev/s7a/strata/geometry/IntSize;Ldev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/element/ElementKey;)V
 	public static synthetic fun LoadingIndicator$default (Ldev/s7a/strata/component/UiScope;Ldev/s7a/strata/geometry/IntSize;Ldev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/element/ElementKey;ILjava/lang/Object;)V
 	public static final fun PlayerHead (Ldev/s7a/strata/component/UiScope;Ldev/s7a/strata/component/PlayerSkinSource;IZLdev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/element/ElementKey;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function1;)V
+	public static final fun PlayerHead (Ldev/s7a/strata/component/UiScope;Ldev/s7a/strata/component/PlayerSkinSource;Ldev/s7a/strata/component/PlayerHeadScale;ZLdev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/element/ElementKey;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function1;)V
 	public static synthetic fun PlayerHead$default (Ldev/s7a/strata/component/UiScope;Ldev/s7a/strata/component/PlayerSkinSource;IZLdev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/element/ElementKey;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function1;ILjava/lang/Object;)V
+	public static synthetic fun PlayerHead$default (Ldev/s7a/strata/component/UiScope;Ldev/s7a/strata/component/PlayerSkinSource;Ldev/s7a/strata/component/PlayerHeadScale;ZLdev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/element/ElementKey;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function1;ILjava/lang/Object;)V
 	public static final fun ProgressBar (Ldev/s7a/strata/component/UiScope;DLdev/s7a/strata/geometry/IntSize;Ldev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/element/ElementKey;)V
 	public static synthetic fun ProgressBar$default (Ldev/s7a/strata/component/UiScope;DLdev/s7a/strata/geometry/IntSize;Ldev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/element/ElementKey;ILjava/lang/Object;)V
 	public static final fun ScrollArea (Ldev/s7a/strata/component/UiScope;Ldev/s7a/strata/component/ScrollState;Ldev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/element/ElementKey;ILkotlin/jvm/functions/Function1;)V

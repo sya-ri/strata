@@ -1669,7 +1669,7 @@ The tree mirrors the complete dedicated definition, including the featured compo
 
 ## PlayerHead
 
-PlayerHead reproduces Minecraft 26.2 face-then-hat rendering from a 64 by 64 skin; its default 24 by 24 extent matches Social Interactions while remaining reusable in lists, profiles, scoreboards, and Mod screens.
+PlayerHead reproduces Minecraft 26.2 face-then-hat rendering from a 64 by 64 skin. PlayerHeadScale gives every source texel an equal integer-sized square for crisp lists, profiles, scoreboards, and Mod screens; the deprecated arbitrary-size overload uses region-clamped bilinear interpolation when an exact integer scale is impossible.
 
 This 64 by 64 PNG is the complete frame of the compiled dedicated `ScreenDefinition`, with a 64 by 64 logical viewport at GUI scale 1. Headless rendering samples the assets at this physical density; the image is not upscaled from a lower-resolution raster or cropped from a larger screen. Its source, asset, viewport, and image hashes are recorded in [the headless render receipt](components/headless-render.properties).
 
@@ -1679,6 +1679,7 @@ This 64 by 64 PNG is the complete frame of the compiled dedicated `ScreenDefinit
 
 ```kotlin
 import dev.s7a.strata.component.PlayerHead
+import dev.s7a.strata.component.PlayerHeadScale
 import dev.s7a.strata.component.PlayerSkinSource
 import dev.s7a.strata.component.Stack
 import dev.s7a.strata.layout.Alignment
@@ -1702,14 +1703,14 @@ internal fun createPlayerHeadShowcaseScreenDefinition(
             modifier = Modifier.Empty.size(64, 64).background(ArgbColor(0xFF000000.toInt())),
             contentAlignment = Alignment.Center,
         ) {
-            PlayerHead(source = skin)
+            PlayerHead(source = skin, scale = PlayerHeadScale(3))
         }
     }
 ```
 
 ### Modifiers
 
-Sizing and placement modifiers compose around `PlayerHead`; its immutable skin argument stays separate from Social, player-list, scoreboard, profile, and Mod-specific row state.
+Pass `PlayerHeadScale(1)` for an 8 by 8 head, or another positive factor when every source texel should remain the same size. Sizing and placement modifiers compose around `PlayerHead`; its immutable skin argument stays separate from Social, player-list, scoreboard, profile, and Mod-specific row state.
 
 ### Parent scope
 
@@ -1865,6 +1866,7 @@ import dev.s7a.strata.component.Image
 import dev.s7a.strata.component.ImageSource
 import dev.s7a.strata.component.NineSliceCenterMode
 import dev.s7a.strata.component.PlayerHead
+import dev.s7a.strata.component.PlayerHeadScale
 import dev.s7a.strata.component.PlayerSkinSource
 import dev.s7a.strata.component.Row
 import dev.s7a.strata.component.Stack
@@ -1979,7 +1981,7 @@ internal fun createSocialScreenDefinition(
                         spacing = 4,
                         verticalAlignment = VerticalAlignment.Center,
                     ) {
-                        PlayerHead(source = playerSkin, modifier = Modifier.Empty.padding(left = 4))
+                        PlayerHead(source = playerSkin, scale = PlayerHeadScale(3), modifier = Modifier.Empty.padding(left = 4))
                         Text(playerName)
                     }
                 }

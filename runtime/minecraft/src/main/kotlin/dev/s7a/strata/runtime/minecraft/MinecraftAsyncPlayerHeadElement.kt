@@ -79,6 +79,7 @@ private class MinecraftAsyncPlayerHeadElement private constructor(
         private var failureIndex: Int? = initialFailureIndex
         private var subscription: AutoCloseable? = null
         private var attached: Boolean = false
+        private val painter = MinecraftPlayerHeadPainter()
 
         override fun measure(
             scope: MeasureScope,
@@ -117,11 +118,7 @@ private class MinecraftAsyncPlayerHeadElement private constructor(
 
         override fun paint(scope: PaintScope) {
             val ready = snapshot as? MinecraftPlayerSkinBinding.Snapshot.Ready ?: return
-            val destination = IntRect(0, 0, size, size)
-            scope.blitImage(ready.skin, faceSource, destination)
-            if (showHat) {
-                scope.blitImage(ready.skin, hatSource, destination)
-            }
+            painter.paint(scope, ready.skin, size, showHat)
         }
 
         override fun attach() {
@@ -132,11 +129,13 @@ private class MinecraftAsyncPlayerHeadElement private constructor(
         override fun detach() {
             releaseBinding()
             snapshot = MinecraftPlayerSkinBinding.Snapshot.Pending
+            painter.clear()
             attached = false
         }
 
         override fun dispose() {
             releaseBinding()
+            painter.clear()
             platform = null
             source = null
             attached = false
@@ -162,6 +161,9 @@ private class MinecraftAsyncPlayerHeadElement private constructor(
                 if (attached) {
                     acquireBinding()
                 }
+            }
+            if (sourceChanged || sizeChanged) {
+                painter.clear()
             }
             size = current.size
             showHat = current.showHat
@@ -190,6 +192,7 @@ private class MinecraftAsyncPlayerHeadElement private constructor(
                         validateSnapshot(next)
                         if (snapshot != next) {
                             snapshot = next
+                            painter.clear()
                             invalidate(DirtyMask.of(DirtyPhase.Measure))
                         }
                     }
@@ -219,11 +222,6 @@ private class MinecraftAsyncPlayerHeadElement private constructor(
                 is MinecraftPlayerSkinBinding.Snapshot.Ready -> null
                 MinecraftPlayerSkinBinding.Snapshot.Failed -> failureIndex
             }
-
-        private companion object {
-            private val faceSource = IntRect(8, 8, 16, 16)
-            private val hatSource = IntRect(40, 8, 48, 16)
-        }
     }
 
     companion object {
@@ -233,7 +231,7 @@ private class MinecraftAsyncPlayerHeadElement private constructor(
                 elementClass = MinecraftAsyncPlayerHeadElement::class,
                 nodeClass = Node::class,
                 validateLocal = { element ->
-                    require(0 < element.size) { "PlayerHead size must be positive." }
+                    MinecraftPlayerHeadPainter.validateSize(element.size)
                 },
                 createNode = { element ->
                     Node(

@@ -177,6 +177,14 @@ Loaded native tests must separately inspect known GPU texels and a custom offscr
 Backend-specific loaded results, especially OpenGL versus Vulkan, are recorded separately and must not be inferred from JVM protocol tests.
 The 26.2 Vulkan Canvas-only resize gate keeps the native surface fixed while varying the logical viewport, framebuffer, and owned Canvas targets; it is target-retention evidence, not swapchain-resize or full-suite evidence.
 
+### Player-head filtered-image cache
+
+Each retained `PlayerHead` node keeps at most the current bilinearly resampled face and hat pair, keyed by source `DrawImage` identity and requested logical size.
+Sizes divisible by eight bypass this cache and paint the original 8 by 8 skin regions with nearest sampling, while other accepted sizes clamp every bilinear sample to its face or hat region.
+A filtered layer is limited to 1,024 by 1,024 pixels, bounding the two derived straight-ARGB snapshots below 8 MiB; larger integer-scale heads still reuse the original skin without derived storage.
+Skin or size replacement, asynchronous snapshot replacement, detachment, and disposal release the cached pair.
+Deterministic runtime tests cover the nearest path, region-clamped bilinear pixels, premultiplied alpha behavior, stable derived-image reuse, invalid-size rejection, and synchronous and asynchronous ownership.
+
 ### Resource-font caches
 
 Each common host owns one font engine for its immutable profile snapshot and captured font options.

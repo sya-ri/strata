@@ -1,5 +1,6 @@
 package dev.s7a.strata
 
+import dev.s7a.strata.component.PlayerHeadScale
 import dev.s7a.strata.component.Text
 import dev.s7a.strata.component.TextArea
 import dev.s7a.strata.component.TextAreaState
@@ -50,6 +51,17 @@ import java.lang.reflect.Modifier as JavaModifier
  */
 @OptIn(InternalStrataRuntimeApi::class)
 internal class ApiContractTest {
+    @Test
+    fun playerHeadScaleMapsWholeSkinTexelsAndRejectsInvalidFactors() {
+        assertEquals(1, PlayerHeadScale(1).factor)
+        assertEquals(8, PlayerHeadScale(1).logicalSize)
+        assertEquals(24, PlayerHeadScale(3).logicalSize)
+        assertEquals(Int.MAX_VALUE / 8 * 8, PlayerHeadScale(Int.MAX_VALUE / 8).logicalSize)
+        assertThrows(IllegalArgumentException::class.java) { PlayerHeadScale(0) }
+        assertThrows(IllegalArgumentException::class.java) { PlayerHeadScale(-1) }
+        assertThrows(IllegalArgumentException::class.java) { PlayerHeadScale(Int.MAX_VALUE / 8 + 1) }
+    }
+
     @Test
     fun geometryAndConstraintsRejectInvalidValuesAndUseHalfOpenBounds() {
         assertEquals(Constraints(2, 8, 3, 9), Constraints(minWidth = 2, maxWidth = 8, minHeight = 3, maxHeight = 9))
