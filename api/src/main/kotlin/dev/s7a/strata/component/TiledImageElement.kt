@@ -12,6 +12,7 @@ import dev.s7a.strata.geometry.DoubleOffset
 import dev.s7a.strata.geometry.IntOffset
 import dev.s7a.strata.geometry.IntSize
 import dev.s7a.strata.geometry.LongRect
+import dev.s7a.strata.geometry.exactDoubleCenterOrNull
 import dev.s7a.strata.geometry.hasExactlyRepresentableDoubleEdges
 import dev.s7a.strata.layout.Alignment
 import dev.s7a.strata.layout.HorizontalAlignment
@@ -279,8 +280,8 @@ internal class TiledImageElement private constructor(
         ) {
             require(0 < destinationSize.width && 0 < destinationSize.height) { "Tiled image viewport dimensions must be positive." }
             require(0L < bounds.width && 0L < bounds.height) { "Tiled image content bounds must be positive." }
-            require(bounds.hasExactlyRepresentableDoubleEdges()) {
-                "Tiled image bound edges must be exactly representable in the double coordinate space."
+            require(bounds.hasExactlyRepresentableDoubleEdges() && bounds.exactDoubleCenterOrNull() != null) {
+                "Tiled image bound edges and midpoint must be exactly representable in the double coordinate space."
             }
             require(levels.isEmpty().not()) { "Tiled image sources require at least one level." }
             var previous: TiledImageLevel? = null

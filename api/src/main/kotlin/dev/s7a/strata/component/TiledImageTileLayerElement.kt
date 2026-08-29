@@ -76,6 +76,7 @@ internal class TiledImageTileLayerElement(
         PaintNode,
         FrameCutoffNode,
         SessionAttachmentNode {
+        private val frameGate: Any = Any()
         private val entries: MutableMap<TiledImageTileId, TileEntry> = LinkedHashMap()
         private var plan: TilePlan = TilePlan.Empty
         private var observer: PanZoomStateObserver? = null
@@ -112,14 +113,18 @@ internal class TiledImageTileLayerElement(
         }
 
         override fun captureFrameState() {
-            entries.values.forEach(TileEntry::captureFrame)
+            synchronized(frameGate) {
+                entries.values.forEach(TileEntry::captureFrameLocked)
+            }
         }
 
         override fun commitFrameState() {
             entries.values.forEach(TileEntry::validateCaptured)
             var changed = false
-            entries.values.forEach { entry ->
-                if (entry.applyCaptured()) changed = true
+            synchronized(frameGate) {
+                entries.values.forEach { entry ->
+                    if (entry.applyCapturedLocked()) changed = true
+                }
             }
             if (changed) invalidate(DirtyMask.of(DirtyPhase.Paint))
         }
@@ -386,7 +391,7 @@ internal class TiledImageTileLayerElement(
 
         private fun openEntry(id: TiledImageTileId): TileEntry {
             val expectedSize = levels[id.level].tilePixelSize
-            val entry = TileEntry(expectedSize)
+            val entry = TileEntry(frameGate, expectedSize)
             return runCatching {
                 val stateSource = checkNotNull(source).tile(id)
                 entry.install(stateSource.subscribe(entry::enqueue))
@@ -478,9 +483,9 @@ internal class TiledImageTileLayerElement(
         }
 
         private class TileEntry(
+            private val frameGate: Any,
             private val expectedSize: IntSize,
         ) : AutoCloseable {
-            private val monitor = Any()
             private var committed: StateSnapshot<TiledImageTile>? = null
             private var pending: StateSnapshot<TiledImageTile>? = null
             private var captured: StateSnapshot<TiledImageTile>? = null
@@ -491,19 +496,19 @@ internal class TiledImageTileLayerElement(
             fun install(subscription: StateSubscription<TiledImageTile>) {
                 val initial = subscription.initialSnapshot
                 val action = subscription.retainCloseAction()
-                synchronized(monitor) {
+                synchronized(frameGate) {
                     check(closed.not()) { "A closed tiled image observation cannot install a subscription." }
                     closeAction = action
                 }
                 requireTile(initial.value)
-                synchronized(monitor) {
+                synchronized(frameGate) {
                     committed = initial
                     if (pending?.revision?.let { revision -> revision <= initial.revision } == true) pending = null
                 }
             }
 
             fun enqueue(snapshot: StateSnapshot<TiledImageTile>) {
-                synchronized(monitor) {
+                synchronized(frameGate) {
                     if (closed) return
                     val committedRevision = committed?.revision
                     val capturedRevision = captured?.revision
@@ -515,42 +520,40 @@ internal class TiledImageTileLayerElement(
                 }
             }
 
-            fun captureFrame() {
-                synchronized(monitor) {
-                    check(closed.not()) { "A closed tiled image observation cannot capture a frame." }
-                    check(frameCaptured.not()) { "A tiled image frame cutoff is already captured." }
-                    captured = pending
-                    pending = null
-                    frameCaptured = true
-                }
+            fun captureFrameLocked() {
+                check(Thread.holdsLock(frameGate)) { "A tiled image frame cutoff requires its shared gate." }
+                check(closed.not()) { "A closed tiled image observation cannot capture a frame." }
+                check(frameCaptured.not()) { "A tiled image frame cutoff is already captured." }
+                captured = pending
+                pending = null
+                frameCaptured = true
             }
 
             fun validateCaptured() {
                 val next =
-                    synchronized(monitor) {
+                    synchronized(frameGate) {
                         check(frameCaptured) { "A tiled image frame must be captured before commit." }
                         captured
                     }
                 if (next != null) requireTile(next.value)
             }
 
-            fun applyCaptured(): Boolean {
-                return synchronized(monitor) {
-                    check(frameCaptured) { "A tiled image frame must be captured before commit." }
-                    frameCaptured = false
-                    val next = captured
-                    captured = null
-                    if (closed || next == null) return@synchronized false
-                    committed = next
-                    true
-                }
+            fun applyCapturedLocked(): Boolean {
+                check(Thread.holdsLock(frameGate)) { "A tiled image frame commit requires its shared gate." }
+                check(frameCaptured) { "A tiled image frame must be captured before commit." }
+                frameCaptured = false
+                val next = captured
+                captured = null
+                if (closed || next == null) return false
+                committed = next
+                return true
             }
 
-            fun committedTile(): TiledImageTile? = synchronized(monitor) { committed?.value }
+            fun committedTile(): TiledImageTile? = synchronized(frameGate) { committed?.value }
 
             override fun close() {
                 val action =
-                    synchronized(monitor) {
+                    synchronized(frameGate) {
                         if (closed) return
                         closed = true
                         committed = null

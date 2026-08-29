@@ -16,7 +16,7 @@ One observer failure does not prevent the remaining live observers from invalida
 A `TiledImageSource` instance is one complete source generation.
 Its nonempty half-open `LongRect` bounds and finest-to-coarsest `TiledImageLevel` list cannot change while that source identity remains attached.
 Replace the source object to publish another generation.
-Every bound edge must convert to `Double` and back without rounding, because navigation exposes its center and coordinate conversions as `DoubleOffset`; inexact edges beyond that precision are rejected during declaration instead of silently dropping edge tiles.
+Every bound edge must convert to `Double` and back without rounding, and each mathematical axis midpoint must be exactly representable as `Double`, because navigation exposes its center and coordinate conversions as `DoubleOffset`; inexact geometry beyond that precision is rejected during declaration instead of failing during measurement or silently dropping edge tiles.
 
 Each level declares an exact tile pixel size and a positive number of content units represented by one source pixel.
 The tile content extent is the checked product of those values.

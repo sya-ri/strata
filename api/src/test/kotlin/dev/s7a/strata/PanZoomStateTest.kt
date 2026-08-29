@@ -111,6 +111,24 @@ internal class PanZoomStateTest {
     }
 
     @Test
+    fun resetThenAnchoredZoomRetainsItsCenterAcrossSameGeometryRemeasure() {
+        val state = PanZoomState(maximumZoom = 4.0)
+        val observer = state.observe { _ -> }
+        state.updateGeometry(BOUNDS, VIEWPORT, PanZoomFit.Cover, observer)
+        state.zoomTo(4.0)
+        state.reset()
+
+        state.zoomTo(2.0, DoubleOffset(150.0, 100.0))
+        val anchoredCenter = state.metrics.center
+        assertOffset(DoubleOffset(562.5, 250.0), anchoredCenter)
+
+        state.updateGeometry(BOUNDS, VIEWPORT, PanZoomFit.Cover, observer)
+
+        assertOffset(anchoredCenter, state.metrics.center)
+        observer.close()
+    }
+
+    @Test
     fun geometryOwnerSuppressesFeedbackAndMustReleaseBeforeAnotherViewportPublishes() {
         val state = PanZoomState()
         val firstChanges = ArrayList<PanZoomMetrics>()
@@ -210,6 +228,28 @@ internal class PanZoomStateTest {
             )
         }
         assertEquals(initial, state.metrics)
+        observer.close()
+    }
+
+    @Test
+    fun geometryRejectsRoundedMidpointsAndPreservesAnExactHalfIntegerCenter() {
+        val state = PanZoomState()
+        val observer = state.observe { _ -> }
+
+        assertThrows(IllegalArgumentException::class.java) {
+            state.updateGeometry(
+                LongRect(Long.MIN_VALUE, 0L, Long.MIN_VALUE + 1_024L, 1L),
+                VIEWPORT,
+                PanZoomFit.Contain,
+                observer,
+            )
+        }
+
+        val exactDoubleInteger = 9_007_199_254_740_992L
+        val bounds = LongRect(-1L, 0L, exactDoubleInteger, 1L)
+        state.updateGeometry(bounds, IntSize(2, 1), PanZoomFit.Contain, observer)
+
+        assertEquals(DoubleOffset(4_503_599_627_370_495.5, 0.5), state.metrics.center)
         observer.close()
     }
 

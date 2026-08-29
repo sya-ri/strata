@@ -76,7 +76,19 @@ internal class TiledImageContractTest {
                     )
                 }
             }
-        assertEquals("Tiled image bound edges must be exactly representable in the double coordinate space.", precisionFailure.message)
+        val precisionMessage = "Tiled image bound edges and midpoint must be exactly representable in the double coordinate space."
+        assertEquals(precisionMessage, precisionFailure.message)
+        val midpointFailure =
+            assertThrows(IllegalArgumentException::class.java) {
+                evaluateComponentTree {
+                    TiledImage(
+                        source(LongRect(Long.MIN_VALUE, 0L, Long.MIN_VALUE + 1_024L, 1L), listOf(TiledImageLevel(IntSize(1, 1), 1L))),
+                        PanZoomState(),
+                        IntSize(4, 1),
+                    )
+                }
+            }
+        assertEquals(precisionMessage, midpointFailure.message)
     }
 
     @Test

@@ -14,7 +14,7 @@ import dev.s7a.strata.state.StateSource
  */
 public interface TiledImageSource {
     /**
-     * Nonempty half-open content-coordinate bounds presented by this generation, with every edge exactly representable as a [Double].
+     * Nonempty half-open content-coordinate bounds presented by this generation, with every edge and mathematical axis midpoint exactly representable as a [Double].
      */
     public val bounds: LongRect
 

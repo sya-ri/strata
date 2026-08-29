@@ -3,6 +3,8 @@ package dev.s7a.strata.component
 import dev.s7a.strata.geometry.DoubleOffset
 import dev.s7a.strata.geometry.IntSize
 import dev.s7a.strata.geometry.LongRect
+import dev.s7a.strata.geometry.exactDoubleCenterOrNull
+import dev.s7a.strata.geometry.exactDoubleMidpointOrNull
 import dev.s7a.strata.geometry.hasExactlyRepresentableDoubleEdges
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
 
@@ -175,7 +177,7 @@ public class PanZoomState(
             } else {
                 currentMetrics.copy(center = DoubleOffset.Zero, zoom = minimumZoom)
             }
-        centerRequested = false
+        centerRequested = currentMetrics.geometryKnown
         publish(next, origin = null)
         return next
     }
@@ -246,11 +248,11 @@ public class PanZoomState(
      * A source or size replacement may update geometry through the same observer.
      * This runtime extension contract is opt-in and may evolve between minor releases.
      *
-     * @param contentBounds positive half-open content rectangle whose four edges are exactly representable in the double coordinate space.
+     * @param contentBounds positive half-open content rectangle whose four edges and midpoint are exactly representable in the double coordinate space.
      * @param viewportSize positive logical viewport size.
      * @param fit base scale policy.
      * @param origin live observer that owns this geometry.
-     * @throws IllegalArgumentException when geometry is empty or cannot produce a finite positive transform.
+     * @throws IllegalArgumentException when geometry is empty, its bound edges or axis midpoints are not exactly representable, or it cannot produce a finite positive transform.
      * @throws IllegalStateException when the observer is released, another viewport owns geometry, the caller uses another thread, or an observer callback synchronously writes state.
      * @throws Throwable when a different state observer fails after the new geometry is committed.
      */
@@ -375,16 +377,22 @@ public class PanZoomState(
     private companion object {
         fun buildAxisCenter(
             requested: Double,
-            minimum: Double,
-            maximum: Double,
+            minimum: Long,
+            maximum: Long,
             viewportExtent: Int,
             scale: Double,
         ): Double {
-            val contentExtent = maximum - minimum
+            val minimumDouble = minimum.toDouble()
+            val maximumDouble = maximum.toDouble()
+            val contentExtent = maximumDouble - minimumDouble
             val visibleExtent = viewportExtent.toDouble() / scale
-            if (contentExtent <= visibleExtent) return minimum + contentExtent / 2.0
+            if (contentExtent <= visibleExtent) {
+                return checkNotNull(exactDoubleMidpointOrNull(minimum, maximum)) {
+                    "Validated pan-and-zoom bounds must retain an exact axis midpoint."
+                }
+            }
             val halfVisible = visibleExtent / 2.0
-            return requested.coerceIn(minimum + halfVisible, maximum - halfVisible)
+            return requested.coerceIn(minimumDouble + halfVisible, maximumDouble - halfVisible)
         }
 
         fun clampCenter(
@@ -394,15 +402,11 @@ public class PanZoomState(
             scale: Double,
         ): DoubleOffset =
             DoubleOffset(
-                buildAxisCenter(requested.x, bounds.left.toDouble(), bounds.right.toDouble(), viewportSize.width, scale),
-                buildAxisCenter(requested.y, bounds.top.toDouble(), bounds.bottom.toDouble(), viewportSize.height, scale),
+                buildAxisCenter(requested.x, bounds.left, bounds.right, viewportSize.width, scale),
+                buildAxisCenter(requested.y, bounds.top, bounds.bottom, viewportSize.height, scale),
             )
 
-        fun contentCenter(bounds: LongRect): DoubleOffset =
-            DoubleOffset(
-                bounds.left.toDouble() + bounds.width.toDouble() / 2.0,
-                bounds.top.toDouble() + bounds.height.toDouble() / 2.0,
-            )
+        fun contentCenter(bounds: LongRect): DoubleOffset = checkNotNull(bounds.exactDoubleCenterOrNull()) { "Validated pan-and-zoom bounds must retain an exact double-coordinate midpoint." }
 
         fun localToContent(
             position: DoubleOffset,
@@ -434,8 +438,8 @@ public class PanZoomState(
         }
 
         fun validateDoubleBounds(bounds: LongRect) {
-            require(bounds.hasExactlyRepresentableDoubleEdges()) {
-                "Pan-and-zoom content-bound edges must be exactly representable in the double coordinate space."
+            require(bounds.hasExactlyRepresentableDoubleEdges() && bounds.exactDoubleCenterOrNull() != null) {
+                "Pan-and-zoom content-bound edges and midpoint must be exactly representable in the double coordinate space."
             }
         }
 
