@@ -201,7 +201,9 @@ public class FabricMinecraftScreen private constructor(
                         }
                         frame
                     }
-                } ?: return
+                }
+            synchronizeTextInputFocus()
+            if (frame == null) return
             if (attached.not()) return
             canvasPresentation.present(
                 frame.drawCommands,
@@ -214,7 +216,6 @@ public class FabricMinecraftScreen private constructor(
             }
             if (attached.not()) return
             inventory.renderCarried(graphics, minecraftClient.font, mouseX, mouseY)
-            synchronizeTextInputFocus()
         } catch (failure: Throwable) {
             guiFailure = failure
             terminalFailure(failure)

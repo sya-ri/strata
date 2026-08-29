@@ -612,3 +612,4 @@ public final class dev/s7a/strata/runtime/minecraft/font/MinecraftVisualGlyph {
 	public fun hashCode ()I
 	public fun toString ()Ljava/lang/String;
 }
+

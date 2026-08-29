@@ -194,11 +194,26 @@ internal class FabricMinecraftJvmSurfaceTest {
     private enum class GuiConsumerFamily(
         val parameterTypes: List<Class<*>>,
     ) {
-        /** The GUI consumer borrows an explicit projection buffer during submission. */
+        /**
+         * The GUI consumer borrows an explicit projection buffer during submission.
+         */
         ProjectedBuffer(listOf(GpuBufferSlice::class.java)),
 
-        /** The GUI consumer submits its already prepared native state without parameters. */
+        /**
+         * The GUI consumer submits its already prepared native state without parameters.
+         */
         DirectSubmission(emptyList()),
+    }
+
+    private enum class GuiMethod(
+        private val externalName: String,
+    ) {
+        Render("render"),
+        ;
+
+        companion object {
+            fun decode(externalName: String): GuiMethod? = entries.firstOrNull { method -> method.externalName == externalName }
+        }
     }
 
     private companion object {
@@ -267,7 +282,7 @@ internal class FabricMinecraftJvmSurfaceTest {
         private fun canvasFamilyMethods(): Map<String, Set<String>> {
             val renderDescriptors =
                 GuiRenderer::class.java.declaredMethods
-                    .filter { method -> method.name == "render" }
+                    .filter { method -> GuiMethod.decode(method.name) == GuiMethod.Render }
                     .map { method -> method.parameterTypes.toList() }
             val family = GuiConsumerFamily.entries.single { candidate -> candidate.parameterTypes in renderDescriptors }
             return when (family) {

@@ -113,9 +113,15 @@ internal class FocusedInputPipeline {
      */
     fun clear() {
         val previous = focusedOwner ?: return
-        focusedOwner = null
+        val previousTargets = focusedTargets
+        val retainedTargets = focusTargets(previous)
+        releaseRetainedReferences()
         val failures = FailureAccumulator()
-        focusTargets(previous).forEach { target -> failures.capture { target.onFocusChanged(false) } }
+        previousTargets.forEach { target ->
+            if (retainedTargets.any { it === target }) {
+                failures.capture { target.onFocusChanged(false) }
+            }
+        }
         failures.throwIfPresent()
     }
 

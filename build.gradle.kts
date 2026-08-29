@@ -652,7 +652,6 @@ subprojects {
             named("main") {
                 java.srcDirs(nativeRoots.map { sourceRoot -> sourceRoot.resolve("java") })
                 resources.srcDirs(nativeRoots.map { sourceRoot -> sourceRoot.resolve("resources") })
-                resources.srcDir(rootProject.file("runtime/minecraft-fabric-shared/src/main/resources"))
             }
         }
         extensions.configure<KotlinJvmProjectExtension> {

@@ -175,3 +175,4 @@ public abstract interface class dev/s7a/strata/runtime/spi/RuntimeUiSession : ja
 public final class dev/s7a/strata/runtime/spi/RuntimeUiSessionFactory {
 	public static final fun createRuntimeUiSession (Lkotlin/jvm/functions/Function0;)Ldev/s7a/strata/runtime/spi/RuntimeUiSession;
 }
+

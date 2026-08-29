@@ -17,6 +17,7 @@ import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import java.lang.annotation.ElementType
 import java.lang.annotation.Target
+import java.lang.reflect.Method
 import java.lang.reflect.Modifier
 
 /**
@@ -125,52 +126,60 @@ internal class RuntimeUiSessionBridgeApiContractTest {
             assertTrue(Modifier.isAbstract(method.modifiers))
             assertFalse(method.isSynthetic)
         }
-        val orderedMethods = methods.sortedBy { method -> method.name }
         if (type == RuntimeUiFrame::class.java) {
-            val drawCommands = orderedMethods[0]
-            val semantics = orderedMethods[1]
-            val size = orderedMethods[2]
-            assertEquals(IntSize::class.java, size.returnType)
-            assertEquals(0, size.parameterCount)
-            assertEquals(List::class.java, drawCommands.returnType)
-            assertEquals(0, drawCommands.parameterCount)
-            assertEquals(List::class.java, semantics.returnType)
-            assertEquals(0, semantics.parameterCount)
+            assertFrameSurface(methods)
         } else {
-            val byName = methods.associateBy { method -> method.name }
-            val attach = byName.getValue("attach")
-            val close = byName.getValue("close")
-            val detach = byName.getValue("detach")
-            val resetInputState = byName.getValue("resetInputState")
-            val frames = methods.groupBy { method -> method.name }.getValue("frame")
-            val textInputFocus = byName.getValue("getTextInputFocus")
-            assertEquals(RuntimeTextInputFocus::class.java, textInputFocus.returnType)
-            assertEquals(0, textInputFocus.parameterCount)
-            assertEquals(Void.TYPE, attach.returnType)
-            assertEquals(0, attach.parameterCount)
-            assertEquals(Void.TYPE, detach.returnType)
-            assertEquals(0, detach.parameterCount)
-            assertEquals(Void.TYPE, resetInputState.returnType)
-            assertEquals(0, resetInputState.parameterCount)
-            assertTrue(frames.all { method -> method.returnType == RuntimeUiFrame::class.java })
-            assertEquals(
-                setOf(
-                    listOf(Constraints::class.java),
-                    listOf(Constraints::class.java, FrameTime::class.java),
-                ),
-                frames.map { method -> method.parameterTypes.toList() }.toSet(),
-            )
-            mapOf(
-                "dispatchKeyboard" to KeyboardEvent::class.java,
-                "dispatchPointer" to PointerEvent::class.java,
-                "dispatchTextInput" to TextInputEvent::class.java,
-            ).forEach { (name, parameter) ->
-                val input = byName.getValue(name)
-                assertEquals(InputResult::class.java, input.returnType)
-                assertEquals(listOf(parameter), input.parameterTypes.toList())
-            }
-            assertEquals(Void.TYPE, close.returnType)
-            assertEquals(0, close.parameterCount)
+            assertSessionSurface(methods)
         }
+    }
+
+    private fun assertFrameSurface(methods: Array<Method>) {
+        val orderedMethods = methods.sortedBy { method -> method.name }
+        val drawCommands = orderedMethods[0]
+        val semantics = orderedMethods[1]
+        val size = orderedMethods[2]
+        assertEquals(IntSize::class.java, size.returnType)
+        assertEquals(0, size.parameterCount)
+        assertEquals(List::class.java, drawCommands.returnType)
+        assertEquals(0, drawCommands.parameterCount)
+        assertEquals(List::class.java, semantics.returnType)
+        assertEquals(0, semantics.parameterCount)
+    }
+
+    private fun assertSessionSurface(methods: Array<Method>) {
+        val byName = methods.associateBy { method -> method.name }
+        val attach = byName.getValue("attach")
+        val close = byName.getValue("close")
+        val detach = byName.getValue("detach")
+        val resetInputState = byName.getValue("resetInputState")
+        val frames = methods.groupBy { method -> method.name }.getValue("frame")
+        val textInputFocus = byName.getValue("getTextInputFocus")
+        assertEquals(RuntimeTextInputFocus::class.java, textInputFocus.returnType)
+        assertEquals(0, textInputFocus.parameterCount)
+        assertEquals(Void.TYPE, attach.returnType)
+        assertEquals(0, attach.parameterCount)
+        assertEquals(Void.TYPE, detach.returnType)
+        assertEquals(0, detach.parameterCount)
+        assertEquals(Void.TYPE, resetInputState.returnType)
+        assertEquals(0, resetInputState.parameterCount)
+        assertTrue(frames.all { method -> method.returnType == RuntimeUiFrame::class.java })
+        assertEquals(
+            setOf(
+                listOf(Constraints::class.java),
+                listOf(Constraints::class.java, FrameTime::class.java),
+            ),
+            frames.map { method -> method.parameterTypes.toList() }.toSet(),
+        )
+        mapOf(
+            "dispatchKeyboard" to KeyboardEvent::class.java,
+            "dispatchPointer" to PointerEvent::class.java,
+            "dispatchTextInput" to TextInputEvent::class.java,
+        ).forEach { (name, parameter) ->
+            val input = byName.getValue(name)
+            assertEquals(InputResult::class.java, input.returnType)
+            assertEquals(listOf(parameter), input.parameterTypes.toList())
+        }
+        assertEquals(Void.TYPE, close.returnType)
+        assertEquals(0, close.parameterCount)
     }
 }
