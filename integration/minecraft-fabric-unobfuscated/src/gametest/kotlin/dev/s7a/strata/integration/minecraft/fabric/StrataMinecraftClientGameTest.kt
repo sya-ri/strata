@@ -239,7 +239,7 @@ public class StrataMinecraftClientGameTest : FabricClientGameTest {
                 context.waitForScreen(FabricMinecraftScreen::class.java)
                 context.waitFor(
                     Predicate<Minecraft> { minecraft ->
-                        0L < readRenderWork(minecraft).sampledImageDraws
+                        0L < readRenderWork(minecraft).sampledImageDirectHits
                     },
                 )
                 val observed = renderWork(context)

@@ -24,6 +24,7 @@ import net.minecraft.client.Minecraft
 import net.minecraft.client.gui.GuiGraphicsExtractor
 import net.minecraft.client.gui.screens.Screen
 import net.minecraft.client.input.MouseButtonEvent
+import java.util.IdentityHashMap
 import net.minecraft.client.input.CharacterEvent as MinecraftCharacterEvent
 import net.minecraft.client.input.KeyEvent as MinecraftKeyEvent
 import net.minecraft.client.input.PreeditEvent as MinecraftPreeditEvent
@@ -601,15 +602,22 @@ public class FabricMinecraftScreen private constructor(
                 { sampledImageUploadCount += 1L },
                 { sampledImageEvictionCount += 1L },
             ) { textureFor, sampledQueued ->
+                val resolvedTextures = IdentityHashMap<FabricMinecraftFrameLayer.Sampled, FabricMinecraftPortableTexture>()
                 val resolved =
                     layers.map { layer ->
-                        if (layer is FabricMinecraftFrameLayer.Sampled && textureFor(layer.command.image) == null) {
-                            if (sampledImages.supports(layer.command.image)) {
-                                sampledImageCapacityFallbackCount += 1L
+                        if (layer is FabricMinecraftFrameLayer.Sampled) {
+                            val texture = textureFor(layer.command.image)
+                            if (texture == null) {
+                                if (sampledImages.supports(layer.command.image)) {
+                                    sampledImageCapacityFallbackCount += 1L
+                                } else {
+                                    sampledImageIneligibleFallbackCount += 1L
+                                }
+                                portableFabricSampledFallback(layer)
                             } else {
-                                sampledImageIneligibleFallbackCount += 1L
+                                resolvedTextures[layer] = texture
+                                layer
                             }
-                            portableFabricSampledFallback(layer)
                         } else {
                             layer
                         }
@@ -646,7 +654,7 @@ public class FabricMinecraftScreen private constructor(
                             }
 
                             is FabricMinecraftFrameLayer.Sampled -> {
-                                val texture = checkNotNull(textureFor(layer.command.image))
+                                val texture = resolvedTextures.getValue(layer)
                                 sampledQueued(layer.command.image)
                                 sampledImageDrawCount += 1L
                                 extractSampledLayer(graphics, layer, texture)

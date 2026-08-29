@@ -22,6 +22,26 @@ import org.junit.jupiter.api.Test
 @OptIn(InternalStrataRuntimeApi::class)
 internal class FabricMinecraftSampledImageDeviceTest {
     @Test
+    fun duplicateIdentityMissesOnceBeforeTheNextBorrowHits() {
+        SampledFixture().use { fixture ->
+            val owner = fixture.manager.openOwner()
+            val image = image(0)
+
+            fixture.borrow(owner, listOf(image, image))
+
+            assertEquals(0, fixture.hits)
+            assertEquals(1, fixture.misses)
+            assertEquals(1, fixture.uploads)
+
+            fixture.borrow(owner, listOf(image, image))
+
+            assertEquals(1, fixture.hits)
+            assertEquals(1, fixture.misses)
+            assertEquals(1, fixture.uploads)
+        }
+    }
+
+    @Test
     fun repeatedIdentityHitsWithoutUploadWhileEqualPixelsInAnotherImageMiss() {
         SampledFixture().use { fixture ->
             val owner = fixture.manager.openOwner()

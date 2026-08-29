@@ -7,6 +7,7 @@ import dev.s7a.strata.runtime.render.DrawCommand
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
 import net.minecraft.client.Minecraft
 import net.minecraft.client.gui.GuiGraphics
+import java.util.IdentityHashMap
 
 /**
  * Owns prepared display layers, native frame textures, and render-work counters for one Fabric screen.
@@ -154,15 +155,22 @@ internal class FabricMinecraftFramePresenter(
                 { sampledImageUploadCount += 1L },
                 { sampledImageEvictionCount += 1L },
             ) { textureFor, sampledQueued ->
+                val resolvedTextures = IdentityHashMap<FabricMinecraftFrameLayer.Sampled, FabricMinecraftPortableTexture>()
                 val resolved =
                     layers.map { layer ->
-                        if (layer is FabricMinecraftFrameLayer.Sampled && textureFor(layer.command.image) == null) {
-                            if (sampledImages.supports(layer.command.image)) {
-                                sampledImageCapacityFallbackCount += 1L
+                        if (layer is FabricMinecraftFrameLayer.Sampled) {
+                            val texture = textureFor(layer.command.image)
+                            if (texture == null) {
+                                if (sampledImages.supports(layer.command.image)) {
+                                    sampledImageCapacityFallbackCount += 1L
+                                } else {
+                                    sampledImageIneligibleFallbackCount += 1L
+                                }
+                                portableFabricSampledFallback(layer)
                             } else {
-                                sampledImageIneligibleFallbackCount += 1L
+                                resolvedTextures[layer] = texture
+                                layer
                             }
-                            portableFabricSampledFallback(layer)
                         } else {
                             layer
                         }
@@ -195,7 +203,7 @@ internal class FabricMinecraftFramePresenter(
                             }
 
                             is FabricMinecraftFrameLayer.Sampled -> {
-                                val texture = checkNotNull(textureFor(layer.command.image))
+                                val texture = resolvedTextures.getValue(layer)
                                 sampledQueued(layer.command.image)
                                 sampledImageDrawCount += 1L
                                 presentSampledLayer(graphics, layer, texture)
