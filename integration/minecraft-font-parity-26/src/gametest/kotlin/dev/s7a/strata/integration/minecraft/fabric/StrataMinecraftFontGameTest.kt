@@ -100,12 +100,15 @@ public class StrataMinecraftFontGameTest : FabricClientGameTest {
         scale: Int,
         size: IntSize,
     ) {
-        val previousDither = context.computeOnClient(FailableFunction<Minecraft, Boolean, RuntimeException> { MinecraftNativeFontOracle.setDither(false) })
+        val previousDither =
+            context.computeOnClient(
+                FailableFunction<Minecraft, MinecraftNativeFontOracle.DitherState, RuntimeException> { MinecraftNativeFontOracle.disableDither() },
+            )
         try {
             context.waitTicks(3)
             screenshot(context, output, "font-native-no-dither-$scale", size)
         } finally {
-            context.runOnClient(FailableConsumer<Minecraft, RuntimeException> { MinecraftNativeFontOracle.setDither(previousDither) })
+            context.runOnClient(FailableConsumer<Minecraft, RuntimeException> { MinecraftNativeFontOracle.restoreDither(previousDither) })
         }
     }
 

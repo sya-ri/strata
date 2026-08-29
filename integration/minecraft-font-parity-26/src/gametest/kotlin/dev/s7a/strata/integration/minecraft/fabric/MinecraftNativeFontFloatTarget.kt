@@ -1,3 +1,5 @@
+@file:OptIn(InternalStrataRuntimeApi::class)
+
 package dev.s7a.strata.integration.minecraft.fabric
 
 import com.mojang.blaze3d.GpuFormat
@@ -5,12 +7,18 @@ import com.mojang.blaze3d.buffers.GpuBuffer
 import com.mojang.blaze3d.pipeline.RenderTarget
 import com.mojang.blaze3d.pipeline.TextureTarget
 import com.mojang.blaze3d.systems.RenderSystem
+import com.mojang.blaze3d.vulkan.VulkanDevice
 import dev.s7a.strata.geometry.IntSize
+import dev.s7a.strata.runtime.minecraft.fabric.mixin.vulkan.FabricVulkanCanvasDeviceAccessor
+import dev.s7a.strata.spi.InternalStrataRuntimeApi
 import net.minecraft.client.Minecraft
 import net.minecraft.client.gui.GuiGraphicsExtractor
 import net.minecraft.client.gui.render.GuiRenderer
 import org.joml.Vector4f
 import org.lwjgl.opengl.GL11
+import org.lwjgl.system.MemoryStack
+import org.lwjgl.vulkan.VK10
+import org.lwjgl.vulkan.VkPhysicalDeviceProperties
 import java.awt.image.BufferedImage
 import java.io.DataOutputStream
 import java.nio.ByteBuffer
@@ -49,7 +57,8 @@ internal class MinecraftNativeFontFloatTarget : AutoCloseable {
         check(window.guiScale == scale && frame.guiScale == scale) { "Native float GUI density differs from the requested scene." }
         check(frame.width == window.width && frame.height == window.height) { "Native float capture frame has a stale physical viewport." }
         check(frame.width == MinecraftFontParityFixture.viewport.width * scale && frame.height == MinecraftFontParityFixture.viewport.height * scale) { "Native float capture viewport differs from the fixture." }
-        MinecraftNativeFontGlState.capture().use {
+        val backend = MinecraftCanvasTestBackend.parse(RenderSystem.getDevice().deviceInfo.backendName())
+        val capture = {
             val atlas = atlasSize()
             val size = IntSize(frame.width, frame.height)
             val calibration = output.resolve("font-native-calibration-$scale.png")
@@ -58,8 +67,12 @@ internal class MinecraftNativeFontFloatTarget : AutoCloseable {
             captureTarget(output.resolve("font-native-$scale.rgba32f"), size, minecraft, GpuFormat.RGBA32_FLOAT, draw)
             Files.writeString(
                 output.resolve("native-float-state-$scale.properties"),
-                "scale=$scale\nwidth=${frame.width}\nheight=${frame.height}\nsubpixelBits=${GL11.glGetInteger(GL11.GL_SUBPIXEL_BITS)}\nmaxAtlasWidth=${atlas.width}\nmaxAtlasHeight=${atlas.height}\ncolorFormat=RGBA32F\npreparationThreads=1\npipelineFormatOnly=true\nvisibleRgbCalibration=exact\n",
+                "scale=$scale\nwidth=${frame.width}\nheight=${frame.height}\nsubpixelBits=${subpixelBits(backend)}\nmaxAtlasWidth=${atlas.width}\nmaxAtlasHeight=${atlas.height}\ncolorFormat=RGBA32F\npreparationThreads=1\npipelineFormatOnly=true\nvisibleRgbCalibration=exact\n",
             )
+        }
+        when (backend) {
+            MinecraftCanvasTestBackend.OpenGl -> MinecraftNativeFontGlState.capture().use { capture() }
+            MinecraftCanvasTestBackend.Vulkan -> capture()
         }
     }
 
@@ -107,6 +120,23 @@ internal class MinecraftNativeFontFloatTarget : AutoCloseable {
         if (depth == null) encoder.clearColorTexture(color, Vector4f()) else encoder.clearColorAndDepthTextures(color, Vector4f(), depth, 0.0)
         encoder.submit()
     }
+
+    private fun subpixelBits(backend: MinecraftCanvasTestBackend): Int =
+        when (backend) {
+            MinecraftCanvasTestBackend.OpenGl -> {
+                GL11.glGetInteger(GL11.GL_SUBPIXEL_BITS)
+            }
+
+            MinecraftCanvasTestBackend.Vulkan -> {
+                val device = (RenderSystem.getDevice() as FabricVulkanCanvasDeviceAccessor).strataCanvasBackend()
+                check(device is VulkanDevice) { "The selected Vulkan backend does not expose the active Vulkan device." }
+                MemoryStack.stackPush().use { stack ->
+                    val properties = VkPhysicalDeviceProperties.malloc(stack)
+                    VK10.vkGetPhysicalDeviceProperties(device.vkDevice().physicalDevice, properties)
+                    properties.limits().subPixelPrecisionBits()
+                }
+            }
+        }
 
     private fun writePixels(
         output: Path,
