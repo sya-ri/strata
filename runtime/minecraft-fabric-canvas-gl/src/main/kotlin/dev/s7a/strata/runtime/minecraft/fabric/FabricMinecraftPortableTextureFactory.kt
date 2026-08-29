@@ -51,7 +51,7 @@ private class FabricPortableNativeStorage : NativeGuiResource {
     internal fun initialize(pixels: NativeImage) {
         RenderSystem.assertOnRenderThread()
         val maximum = GL11.glGetInteger(GL11.GL_MAX_TEXTURE_SIZE)
-        require(0 < pixels.width && pixels.width <= maximum && 0 < pixels.height && pixels.height <= maximum) {
+        require(pixels.width in 1..maximum && pixels.height in 1..maximum) {
             "A portable GUI image exceeds the active OpenGL texture extent limit."
         }
         FabricNativeCanvasGlState().use {

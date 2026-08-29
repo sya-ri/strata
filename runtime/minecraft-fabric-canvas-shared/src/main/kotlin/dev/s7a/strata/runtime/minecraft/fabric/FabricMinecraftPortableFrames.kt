@@ -122,14 +122,14 @@ internal class FabricMinecraftPortableFrames {
         }
         val prepared = Prepared(images.toList(), textures.toList(), resources, set)
         current = prepared
-        if (previous != null) previous.resources.release(previous.set)
+        previous?.let { it.resources.release(it.set) }
         return prepared
     }
 
     private fun retireCurrent() {
         val previous = current
         current = null
-        if (previous != null) previous.resources.release(previous.set)
+        previous?.let { it.resources.release(it.set) }
     }
 
     private fun equivalent(

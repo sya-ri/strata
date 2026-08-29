@@ -19,9 +19,7 @@ import dev.s7a.strata.state.StateSubscription
  */
 public fun canvasSource(image: DrawImage): CanvasSource {
     require(0 < image.size.width && 0 < image.size.height) { "Canvas source dimensions must be positive." }
-    return CpuCanvasSource(
-        StateSource { StateSubscription(StateSnapshot(StateRevision(0), image)) {} },
-    )
+    return CpuCanvasSource { StateSubscription(StateSnapshot(StateRevision(0), image)) {} }
 }
 
 /**

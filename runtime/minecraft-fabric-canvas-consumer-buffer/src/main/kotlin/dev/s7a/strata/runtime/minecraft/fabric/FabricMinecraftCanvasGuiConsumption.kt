@@ -7,7 +7,6 @@ import com.mojang.blaze3d.systems.RenderSystem
 import dev.s7a.strata.runtime.minecraft.fabric.mixin.canvas.FabricMinecraftCanvasGameRendererAccess
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
 import net.minecraft.client.Minecraft
-import net.minecraft.client.renderer.GameRenderer
 
 /**
  * Ends screen extraction without treating its deferred GUI commands as consumed.
@@ -32,8 +31,7 @@ internal fun finishCanvasGui(
 /**
  * Discards extracted and prepared GUI references without submitting draws or releasing GPU buffers.
  *
- * The client and renderer are borrowed on the render thread only while this call runs.
- * A missing renderer during partial client startup has no GUI queue to discard.
+ * The fully constructed client and renderer are borrowed on the render thread only while this call runs.
  * A failure prevents terminal Canvas target release because a safe queue boundary has not been established.
  *
  * @param client native owner of the GUI consumer; no source or input callback is invoked here.
@@ -41,8 +39,7 @@ internal fun finishCanvasGui(
  */
 internal fun discardCanvasGui(client: Minecraft) {
     RenderSystem.assertOnRenderThread()
-    val renderer: GameRenderer? = client.gameRenderer
-    if (renderer == null) return
+    val renderer = client.gameRenderer
     val gui = (renderer as FabricMinecraftCanvasGameRendererAccess).strataCanvasGuiRenderer()
     (gui as FabricMinecraftCanvasGuiDiscard).strataDiscardCanvasGui()
 }

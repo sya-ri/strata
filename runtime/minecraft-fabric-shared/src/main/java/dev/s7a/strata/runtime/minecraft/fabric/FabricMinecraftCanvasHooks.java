@@ -85,7 +85,7 @@ public final class FabricMinecraftCanvasHooks {
      * Stops the current Strata screen before native device or window teardown without retaining it.
      *
      * @param client native client whose active screen is borrowed for terminal cleanup.
-     * @throws Throwable when retained input or source cleanup fails, after the host has attempted independent release.
+     * @throws RuntimeException when retained input or source cleanup fails, after the host has attempted independent release.
      */
     public static void closeActiveScreen(Minecraft client) {
         Screen screen = FabricMinecraftScreenAccess.currentScreen(client);
@@ -96,7 +96,7 @@ public final class FabricMinecraftCanvasHooks {
      * Cancels retained input after the native window has committed loss of focus.
      *
      * @param client native client whose active screen is borrowed only for the owner-thread reset.
-     * @throws Throwable when input cancellation fails after independent retained cleanup has been attempted.
+     * @throws RuntimeException when input cancellation fails after independent retained cleanup has been attempted.
      */
     public static void resetActiveInput(Minecraft client) {
         if (shutdownStarted) return;

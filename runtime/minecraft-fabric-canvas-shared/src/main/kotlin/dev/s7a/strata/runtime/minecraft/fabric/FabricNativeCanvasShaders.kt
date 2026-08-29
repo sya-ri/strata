@@ -23,7 +23,7 @@ internal object FabricNativeCanvasShaders {
      */
     @JvmSynthetic
     internal fun requireSupportedExtent(size: IntSize) {
-        require(0 < size.width && size.width <= MAXIMUM_AXIS && 0 < size.height && size.height <= MAXIMUM_AXIS) {
+        require(size.width in 1..MAXIMUM_AXIS && size.height in 1..MAXIMUM_AXIS) {
             "Native Canvas image axes must be between 1 and $MAXIMUM_AXIS pixels; the device may impose a lower limit."
         }
     }
