@@ -93,6 +93,28 @@ Loaded-client GameTests read render-work counters from the real Fabric screen an
 They also require equivalent replacement portable layers to reuse their raster textures, inspect detached presenters for absent current texture generations and prepared-frame references, and wait for actual retirement before checking native destruction.
 The common portable-lifetime tests exercise incomplete initialization, pinned close, repeated queue consumption, arbitrarily delayed fences, both capacity bounds, and physical destruction acknowledgement.
 
+### Direct sampled-image texture cache
+
+Fabric presenters accelerate eligible portable SampledImage commands without changing the core or Headless command representation.
+The cache key is physical device generation plus DrawImage referential identity; source and destination rectangles, clip, GUI scale, overlay state, and RuntimeUiFrame identity are not keys.
+Changing destinations may therefore move every draw without image-pixel rasterization or upload, and changes to independently positioned overlays cannot invalidate cached image textures.
+A different immutable DrawImage uploads only that identity even when it replaces one region inside a larger logical image.
+
+Each screen owner retains at most 256 identities and 64 MiB of RGBA8 payload.
+Active, initializing, retired, quarantined, and physically destroying entries share a device-wide bound of 512 identities and 128 MiB.
+Both bounds are reserved before native allocation.
+The owner evicts only unpinned least-recently-used identities that are not requested by the current display list; device-capacity exhaustion uses the ordinary tight portable fallback without stale reuse or unbounded allocation.
+
+Every selected entry is pinned before ordered GUI submission and marked pending immediately before its draw command is queued.
+Screen release removes the source-image reference from its owner cache, while the device retains native storage through initialization and actual GUI-consumption fences.
+Resource reload invalidates every derived entry.
+Terminal shutdown stops acquisition, completes submitted work once, closes Canvas, portable-layer, and direct sampled-image resources, drains deferred native destruction, and requires physical acknowledgement before releasing entry and byte accounting.
+
+The required direct subset is normal orientation, white tint, zero alpha cutoff, an integer contained source rectangle, nearest sampling, and ordinary straight-alpha source-over pixels within the native texture limit.
+Other command shapes retain exact output through a portable layer bounded to their visible command run rather than the complete viewport.
+Presentation counters distinguish direct hit, miss, upload, draw, eviction, ineligible and capacity fallback, retained entries and bytes, and ordinary portable rasterization and upload.
+After warm-up, stable image identities under destination or clip changes must report zero image uploads and zero sampled-image portable rasterizations.
+
 ### Canvas source and target retention
 
 The CPU Canvas binding is keyed by source identity and its attachment, accepts only monotonically newer StateRevision values, and retains one committed immutable image plus the newest pending image.

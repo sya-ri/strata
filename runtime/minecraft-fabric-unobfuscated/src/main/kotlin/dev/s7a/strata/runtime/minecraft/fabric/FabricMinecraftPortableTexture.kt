@@ -2,6 +2,7 @@ package dev.s7a.strata.runtime.minecraft.fabric
 
 import com.mojang.blaze3d.platform.NativeImage
 import com.mojang.blaze3d.systems.RenderSystem
+import dev.s7a.strata.render.DrawImage
 import dev.s7a.strata.runtime.headless.HeadlessImage
 import dev.s7a.strata.runtime.minecraft.canvas.NativeGuiResource
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
@@ -59,6 +60,25 @@ internal class FabricMinecraftPortableTexture private constructor() : NativeGuiR
     }
 
     /**
+     * Initializes an already-retained owner from one immutable source image without a viewport-sized intermediate raster.
+     *
+     * The source is borrowed only for the synchronous CPU-to-native copy and is not retained by the texture.
+     */
+    @JvmSynthetic
+    internal fun initialize(image: DrawImage) {
+        RenderSystem.assertOnRenderThread()
+        check(pixels == null && storage == null && closed.not()) { "A portable texture can initialize only once." }
+        val native = NativeImage(image.size.width, image.size.height, false)
+        pixels = native
+        for (y in 0 until image.size.height) {
+            for (x in 0 until image.size.width) {
+                native.setPixel(x, y, image.argbAt(x, y))
+            }
+        }
+        initializeFabricMinecraftPortableTexture(native, ::retainStorage)
+    }
+
+    /**
      * Takes one empty staged native owner before it allocates or uploads storage.
      *
      * The version helper invokes this only on the render thread and then retains no independent ownership.
@@ -72,6 +92,19 @@ internal class FabricMinecraftPortableTexture private constructor() : NativeGuiR
         check(storage == null) { "A portable texture already owns native storage." }
         borrowed = view
         storage = resource
+    }
+
+    /**
+     * Releases the CPU upload buffer after the device initialization fence completes while retaining immutable GPU storage.
+     *
+     * A failed close leaves the buffer owned for a later terminal retry.
+     */
+    @JvmSynthetic
+    internal fun releaseUploadPixels() {
+        RenderSystem.assertOnRenderThread()
+        val retained = pixels ?: return
+        retained.close()
+        pixels = null
     }
 
     @JvmSynthetic
@@ -121,6 +154,25 @@ internal class FabricMinecraftPortableTexture private constructor() : NativeGuiR
         @JvmSynthetic
         internal fun create(
             image: HeadlessImage,
+            retain: (NativeGuiResource) -> Unit,
+        ): FabricMinecraftPortableTexture {
+            RenderSystem.assertOnRenderThread()
+            val owner = FabricMinecraftPortableTexture()
+            retain(owner)
+            owner.initialize(image)
+            return owner
+        }
+
+        /**
+         * Transfers an empty owner before directly copying and uploading one immutable source image.
+         *
+         * @param image immutable image borrowed only during synchronous initialization.
+         * @param retain device cache receiver that takes exclusive resource ownership before allocation.
+         * @return initialized texture whose cache key may remain the referential identity of [image].
+         */
+        @JvmSynthetic
+        internal fun create(
+            image: DrawImage,
             retain: (NativeGuiResource) -> Unit,
         ): FabricMinecraftPortableTexture {
             RenderSystem.assertOnRenderThread()

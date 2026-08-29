@@ -3,9 +3,23 @@ package dev.s7a.strata.runtime.minecraft.fabric
 import com.mojang.blaze3d.platform.NativeImage
 import com.mojang.blaze3d.systems.RenderSystem
 import com.mojang.blaze3d.textures.TextureFormat
+import dev.s7a.strata.render.DrawImage
 import dev.s7a.strata.runtime.minecraft.canvas.NativeGuiResource
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
 import net.minecraft.client.renderer.texture.AbstractTexture
+
+/**
+ * Checks whether one immutable image fits the active device's two-dimensional texture limit before direct-cache reservation.
+ *
+ * @param image candidate source borrowed on the render thread.
+ * @return true when both source dimensions can be allocated as one RGBA texture.
+ */
+@JvmSynthetic
+internal fun supportsFabricMinecraftSampledImage(image: DrawImage): Boolean {
+    RenderSystem.assertOnRenderThread()
+    val maximum = RenderSystem.getDevice().maxTextureSize
+    return image.size.width <= maximum && image.size.height <= maximum
+}
 
 /**
  * Transfers an empty GPU storage owner before allocating and uploading one immutable portable image.

@@ -60,6 +60,34 @@ public object NativeCanvasDevices {
     }
 
     /**
+     * Reports native entry reservations held by registered independently budgeted GUI cache managers.
+     *
+     * The diagnostic does not include Canvas targets or portable generation sets and returns zero after successful terminal device removal.
+     *
+     * @return active and retired managed entries across registered devices, without polling or allocating.
+     * @throws IllegalStateException off the registry owner thread.
+     * @throws ArithmeticException when the sum cannot be represented as an Int.
+     */
+    public fun retainedManagedGuiResourceCount(): Int {
+        requireOwner()
+        return devices.values.fold(0) { count, device -> Math.addExact(count, device.retainedManagedGuiResourceCount()) }
+    }
+
+    /**
+     * Reports native payload bytes held by registered independently budgeted GUI cache managers.
+     *
+     * The diagnostic does not include Canvas targets or portable generation sets and returns zero after successful terminal device removal.
+     *
+     * @return active and retired managed bytes across registered devices, without polling or allocating.
+     * @throws IllegalStateException off the registry owner thread.
+     * @throws ArithmeticException when the sum cannot be represented as a Long.
+     */
+    public fun retainedManagedGuiResourceBytes(): Long {
+        requireOwner()
+        return devices.values.fold(0L) { bytes, device -> Math.addExact(bytes, device.retainedManagedGuiResourceBytes()) }
+    }
+
+    /**
      * Polls all device fences without waiting, including frames without a visible Strata screen.
      *
      * @throws Throwable after every device has been attempted, preserving the first cleanup failure.

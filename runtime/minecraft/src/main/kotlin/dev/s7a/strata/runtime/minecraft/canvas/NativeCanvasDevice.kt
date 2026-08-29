@@ -35,6 +35,7 @@ public class NativeCanvasDevice(
     private val attachments = LinkedHashMap<Long, Attachment>()
     private val owners = LinkedHashSet<ProducerOwner>()
     private val targets = LinkedHashSet<TargetRecord>()
+    private val guiResourceManagers = LinkedHashSet<NativeGuiResourceManager>()
     private var nextAttachment = 0L
     private var nextGeneration = 0L
     private var nextBatch = 0L
@@ -51,6 +52,23 @@ public class NativeCanvasDevice(
      * Access and all resource operations belong to the device render thread, and terminal cleanup is shared with native targets.
      */
     public val guiResources: NativeGuiResources = NativeGuiResources(driver, deviceId) { operating.not() }
+
+    /**
+     * Registers one independently budgeted GUI cache with this device's fence and terminal destruction lifecycle.
+     *
+     * Registration transfers terminal callback ownership but not the manager's application-level cache identities.
+     * A manager may be registered once, at most eight managers may belong to one device, and registration performs no native work.
+     *
+     * @param manager stable device-scoped manager that will not call back into this device.
+     * @throws IllegalStateException off the owner thread, during another device operation, after shutdown, for duplicate registration, or when the registration bound is exhausted.
+     */
+    public fun registerGuiResourceManager(manager: NativeGuiResourceManager): Unit =
+        operation {
+            check(closed.not()) { "A closed native canvas device cannot register GUI resource managers." }
+            check((manager in guiResourceManagers).not()) { "A GUI resource manager is already registered with this device." }
+            check(guiResourceManagers.size < MAX_GUI_RESOURCE_MANAGERS) { "Native GUI resource-manager capacity is exhausted." }
+            guiResourceManagers.add(manager)
+        }
 
     /**
      * Creates an externally reusable description without opening a renderer or allocating a target.
@@ -221,6 +239,7 @@ public class NativeCanvasDevice(
                 }
             }
             failures.attempt { guiResources.consumed() }
+            guiResourceManagers.forEach { manager -> failures.attempt { manager.consumed() } }
             failures.attempt { pollInternal() }
             failures.throwIfPresent()
         }
@@ -252,8 +271,11 @@ public class NativeCanvasDevice(
                     it.quarantined = true
                 }
             }
-            guiResources.failedGui()
-            pollInternal()
+            val failures = CanvasFailures()
+            failures.attempt { guiResources.failedGui() }
+            guiResourceManagers.forEach { manager -> failures.attempt { manager.failedGui() } }
+            failures.attempt { pollInternal() }
+            failures.throwIfPresent()
         }
 
     /**
@@ -271,7 +293,10 @@ public class NativeCanvasDevice(
                 attachment.owner = null
                 attachment.committed = null
             }
-            pollInternal()
+            val failures = CanvasFailures()
+            guiResourceManagers.forEach { manager -> failures.attempt { manager.reload() } }
+            failures.attempt { pollInternal() }
+            failures.throwIfPresent()
         }
 
     /**
@@ -291,13 +316,19 @@ public class NativeCanvasDevice(
             if (closed) return@operation
             closed = true
             guiResources.beginShutdown()
+            val failures = CanvasFailures()
+            guiResourceManagers.forEach { manager -> failures.attempt { manager.beginShutdown() } }
             attachments.values.forEach { it.owner?.retired = true }
             attachments.clear()
             batch?.targets?.forEach { it.pendingGui = false }
             batch = null
             try {
-                driver.finish()
-                val failures = CanvasFailures()
+                try {
+                    driver.finish()
+                } catch (failure: Throwable) {
+                    failures.add(failure)
+                    failures.throwIfPresent()
+                }
                 targets.toList().forEach { record ->
                     record.quarantined = false
                     failures.attempt { finishInitialization(record, force = true) }
@@ -307,9 +338,11 @@ public class NativeCanvasDevice(
                 }
                 owners.toList().forEach { owner -> failures.attempt { closeProducer(owner) } }
                 failures.attempt { guiResources.closeAfterFinish() }
+                guiResourceManagers.forEach { manager -> failures.attempt { manager.closeAfterFinish() } }
                 failures.attempt { driver.drainRetirements() }
                 targets.toList().forEach { record -> failures.attempt { acknowledgeDestruction(record, terminal = true) } }
                 failures.attempt { guiResources.acknowledgeAfterDrain() }
+                guiResourceManagers.forEach { manager -> failures.attempt { manager.acknowledgeAfterDrain() } }
                 failures.throwIfPresent()
             } catch (failure: Throwable) {
                 shutdownFailure = failure
@@ -325,6 +358,30 @@ public class NativeCanvasDevice(
     public fun retainedTargetCount(): Int {
         requireOwner()
         return permits
+    }
+
+    /**
+     * Reports entry reservations across independently budgeted registered GUI managers.
+     *
+     * @return active and retired entries retained until physical acknowledgement, without polling or allocating.
+     * @throws IllegalStateException off the device owner thread.
+     * @throws ArithmeticException when the sum cannot be represented as an Int.
+     */
+    public fun retainedManagedGuiResourceCount(): Int {
+        requireOwner()
+        return guiResourceManagers.fold(0) { count, manager -> Math.addExact(count, manager.retainedResourceCount()) }
+    }
+
+    /**
+     * Reports native payload bytes across independently budgeted registered GUI managers.
+     *
+     * @return active and retired bytes retained until physical acknowledgement, without polling or allocating.
+     * @throws IllegalStateException off the device owner thread.
+     * @throws ArithmeticException when the sum cannot be represented as a Long.
+     */
+    public fun retainedManagedGuiResourceBytes(): Long {
+        requireOwner()
+        return guiResourceManagers.fold(0L) { bytes, manager -> Math.addExact(bytes, manager.retainedResourceBytes()) }
     }
 
     private fun open(
@@ -509,6 +566,7 @@ public class NativeCanvasDevice(
             failures.attempt { closeProducer(owner) }
         }
         failures.attempt { guiResources.poll() }
+        guiResourceManagers.forEach { manager -> failures.attempt { manager.poll() } }
         failures.throwIfPresent()
     }
 
@@ -709,6 +767,7 @@ public class NativeCanvasDevice(
     }
 
     private companion object {
+        private const val MAX_GUI_RESOURCE_MANAGERS = 8
         val identities = AtomicLong()
     }
 }

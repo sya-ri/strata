@@ -1,6 +1,5 @@
 package dev.s7a.strata.runtime.minecraft.fabric
 
-import dev.s7a.strata.geometry.FloatRect
 import dev.s7a.strata.geometry.IntOffset
 import dev.s7a.strata.geometry.IntRect
 import dev.s7a.strata.geometry.IntSize
@@ -25,10 +24,11 @@ internal class FabricMinecraftFramePresenter(
     private val minecraftClient: Minecraft,
 ) {
     private val portableFrames = FabricMinecraftPortableFrames()
+    private val sampledImages = FabricMinecraftSampledImageCache()
     private var preparedCommands: List<DrawCommand>? = null
     private var preparedViewport: IntSize? = null
     private var preparedScale: Int? = null
-    private var preparedLayers: List<FrameLayer> = emptyList()
+    private var preparedLayers: List<FabricMinecraftFrameLayer> = emptyList()
     private var pointerPosition: IntOffset? = null
     private var pointerFrameCommands: List<DrawCommand>? = null
     private var renderExtractionCount: Long = 0L
@@ -37,6 +37,15 @@ internal class FabricMinecraftFramePresenter(
     private var framePreparationCount: Long = 0L
     private var portableRasterizationCount: Long = 0L
     private var textureUploadCount: Long = 0L
+    private var sampledImageDirectHitCount: Long = 0L
+    private var sampledImageDirectMissCount: Long = 0L
+    private var sampledImageUploadCount: Long = 0L
+    private var sampledImageDrawCount: Long = 0L
+    private var sampledImageEvictionCount: Long = 0L
+    private var sampledImageIneligibleFallbackCount: Long = 0L
+    private var sampledImageCapacityFallbackCount: Long = 0L
+    private var sampledImageRetainedEntryCount: Long = 0L
+    private var sampledImageRetainedByteCount: Long = 0L
 
     /**
      * Records one native render extraction before common frame work begins.
@@ -134,37 +143,74 @@ internal class FabricMinecraftFramePresenter(
                 preparedLayers
             } else {
                 framePreparationCount += 1L
-                partitionFrame(commands, viewport)
+                partitionFabricMinecraftFrame(commands, viewport)
             }
-        val images = layers.filterIsInstance<PortableLayer>().map { FabricMinecraftPortableImage(it.commands, it.bounds.size, scale) }
-        portableFrames.present(
-            images,
-            { portableRasterizationCount += 1L },
-            { textureUploadCount += 1L },
-        ) { textures, queued ->
-            var textureIndex = 0
-            layers.forEach { layer ->
-                when (layer) {
-                    is PortableLayer -> {
-                        val texture = textures[textureIndex++]
-                        queued()
-                        FabricMinecraftTextureBlitter.blit(
-                            graphics,
-                            texture.location,
-                            layer.bounds.left,
-                            layer.bounds.top,
-                            layer.bounds.width,
-                            layer.bounds.height,
-                            Math.multiplyExact(layer.bounds.width, scale),
-                            Math.multiplyExact(layer.bounds.height, scale),
-                        )
+        val sampled = layers.filterIsInstance<FabricMinecraftFrameLayer.Sampled>().map { it.command.image }
+        try {
+            sampledImages.present(
+                sampled,
+                { sampledImageDirectHitCount += 1L },
+                { sampledImageDirectMissCount += 1L },
+                { sampledImageUploadCount += 1L },
+                { sampledImageEvictionCount += 1L },
+            ) { textureFor, sampledQueued ->
+                val resolved =
+                    layers.map { layer ->
+                        if (layer is FabricMinecraftFrameLayer.Sampled && textureFor(layer.command.image) == null) {
+                            if (sampledImages.supports(layer.command.image)) {
+                                sampledImageCapacityFallbackCount += 1L
+                            } else {
+                                sampledImageIneligibleFallbackCount += 1L
+                            }
+                            portableFabricSampledFallback(layer)
+                        } else {
+                            layer
+                        }
                     }
+                resolved.filterIsInstance<FabricMinecraftFrameLayer.Portable>().forEach { layer ->
+                    sampledImageIneligibleFallbackCount = Math.addExact(sampledImageIneligibleFallbackCount, layer.ineligibleSampledImages.toLong())
+                }
+                val images = resolved.filterIsInstance<FabricMinecraftFrameLayer.Portable>().map { FabricMinecraftPortableImage(it.commands, it.bounds.size, scale) }
+                portableFrames.present(
+                    images,
+                    { portableRasterizationCount += 1L },
+                    { textureUploadCount += 1L },
+                ) { textures, portableQueued ->
+                    var textureIndex = 0
+                    resolved.forEach { layer ->
+                        when (layer) {
+                            is FabricMinecraftFrameLayer.Portable -> {
+                                val texture = textures[textureIndex++]
+                                portableQueued()
+                                FabricMinecraftTextureBlitter.blit(
+                                    graphics,
+                                    texture.location,
+                                    layer.bounds.left,
+                                    layer.bounds.top,
+                                    layer.bounds.width,
+                                    layer.bounds.height,
+                                    Math.multiplyExact(layer.bounds.width, scale),
+                                    Math.multiplyExact(layer.bounds.height, scale),
+                                )
+                            }
 
-                    is PlatformLayer -> {
-                        presentPlatformLayer(graphics, layer, viewport, platformRenderer)
+                            is FabricMinecraftFrameLayer.Sampled -> {
+                                val texture = checkNotNull(textureFor(layer.command.image))
+                                sampledQueued(layer.command.image)
+                                sampledImageDrawCount += 1L
+                                presentSampledLayer(graphics, layer, texture)
+                            }
+
+                            is FabricMinecraftFrameLayer.Platform -> {
+                                presentPlatformLayer(graphics, layer, viewport, platformRenderer)
+                            }
+                        }
                     }
                 }
             }
+        } finally {
+            sampledImageRetainedEntryCount = sampledImages.retainedEntryCount().toLong()
+            sampledImageRetainedByteCount = sampledImages.retainedByteCount()
         }
         if (reusePreparedFrame.not() && portableFrames.releaseGeneration == generation) {
             preparedCommands = commands
@@ -188,12 +234,25 @@ internal class FabricMinecraftFramePresenter(
         preparedLayers = emptyList()
         pointerPosition = null
         pointerFrameCommands = null
-        portableFrames.release()
+        FabricMinecraftFailures.runWithCleanup(portableFrames::release, sampledImages::release)
+    }
+
+    private fun presentSampledLayer(
+        graphics: GuiGraphics,
+        layer: FabricMinecraftFrameLayer.Sampled,
+        texture: FabricMinecraftPortableTexture,
+    ) {
+        val clip = layer.clip
+        if (clip != null) graphics.enableScissor(clip.left, clip.top, clip.right, clip.bottom)
+        FabricMinecraftFailures.runWithCleanup(
+            { drawFabricMinecraftSampledImage(graphics, texture, layer.command) },
+            { if (clip != null) graphics.disableScissor() },
+        )
     }
 
     private fun presentPlatformLayer(
         graphics: GuiGraphics,
-        layer: PlatformLayer,
+        layer: FabricMinecraftFrameLayer.Platform,
         viewport: IntSize,
         platformRenderer: (GuiGraphics, DrawCommand.Platform) -> Unit,
     ) {
@@ -205,134 +264,6 @@ internal class FabricMinecraftFramePresenter(
             { platformRenderer(graphics, layer.command) },
             { if (clip != null) graphics.disableScissor() },
         )
-    }
-
-    private fun partitionFrame(
-        commands: List<DrawCommand>,
-        viewport: IntSize,
-    ): List<FrameLayer> {
-        val layers = ArrayList<FrameLayer>()
-        val activeClips = ArrayList<IntRect>()
-        val viewportBounds = IntRect(0, 0, viewport.width, viewport.height)
-        val portable = ArrayList<DrawCommand>()
-        var portableBounds: IntRect? = null
-
-        fun flushPortable() {
-            val bounds = portableBounds
-            if (bounds != null) {
-                repeat(activeClips.size) { portable.add(DrawCommand.PopClip) }
-                layers.add(PortableLayer(localizePortable(portable, bounds), bounds))
-            }
-            portable.clear()
-            activeClips.forEach { clip -> portable.add(DrawCommand.PushClip(clip)) }
-            portableBounds = null
-        }
-        commands.forEach { command ->
-            when (command) {
-                is DrawCommand.FillRectangle -> {
-                    portable.add(command)
-                    portableBounds = includeVisibleBounds(portableBounds, command.bounds, activeClips, viewportBounds)
-                }
-
-                is DrawCommand.BlitImage -> {
-                    portable.add(command)
-                    portableBounds = includeVisibleBounds(portableBounds, command.destination, activeClips, viewportBounds)
-                }
-
-                is DrawCommand.SampledImage -> {
-                    portable.add(command)
-                    val clip = activeClips.fold(viewportBounds, ::intersection)
-                    val bounds = command.destination.enclosingFabricViewportBounds(clip)
-                    if (bounds != null) {
-                        portableBounds = includeVisibleBounds(portableBounds, bounds, activeClips, viewportBounds)
-                    }
-                }
-
-                is DrawCommand.BlitImagePixels -> {
-                    portable.add(command)
-                    portableBounds = includeVisibleBounds(portableBounds, command.destination, activeClips, viewportBounds)
-                }
-
-                is DrawCommand.PushClip -> {
-                    activeClips.add(command.bounds)
-                    portable.add(command)
-                }
-
-                DrawCommand.PopClip -> {
-                    require(activeClips.isNotEmpty()) { "Clip pop has no matching push." }
-                    activeClips.removeAt(activeClips.lastIndex)
-                    portable.add(command)
-                }
-
-                is DrawCommand.Platform -> {
-                    flushPortable()
-                    val clip = activeClips.fold(viewportBounds, ::intersection)
-                    layers.add(PlatformLayer(command, clip.takeIf { activeClips.isNotEmpty() }))
-                }
-            }
-        }
-        require(activeClips.isEmpty()) { "Clip push has no matching pop." }
-        flushPortable()
-        return layers
-    }
-
-    private fun includeVisibleBounds(
-        accumulated: IntRect?,
-        commandBounds: IntRect,
-        activeClips: List<IntRect>,
-        viewportBounds: IntRect,
-    ): IntRect? {
-        val visible = activeClips.fold(intersection(viewportBounds, commandBounds), ::intersection)
-        if (visible.width <= 0 || visible.height <= 0) return accumulated
-        val previous = accumulated ?: return visible
-        return IntRect(
-            minOf(previous.left, visible.left),
-            minOf(previous.top, visible.top),
-            maxOf(previous.right, visible.right),
-            maxOf(previous.bottom, visible.bottom),
-        )
-    }
-
-    private fun localizePortable(
-        commands: List<DrawCommand>,
-        bounds: IntRect,
-    ): List<DrawCommand> {
-        val offset = IntOffset(-bounds.left, -bounds.top)
-        return commands.mapNotNull { command ->
-            when (command) {
-                is DrawCommand.FillRectangle -> {
-                    val visible = intersection(command.bounds, bounds)
-                    if (visible.width <= 0 || visible.height <= 0) null else DrawCommand.FillRectangle(visible + offset, command.color)
-                }
-
-                is DrawCommand.BlitImage -> {
-                    val visible = intersection(command.destination, bounds)
-                    if (visible.width <= 0 || visible.height <= 0) null else DrawCommand.BlitImage(command.image, command.source, command.destination + offset)
-                }
-
-                is DrawCommand.SampledImage -> {
-                    val destination = command.destination
-                    command.copy(destination = FloatRect(destination.left + offset.x, destination.top + offset.y, destination.right + offset.x, destination.bottom + offset.y))
-                }
-
-                is DrawCommand.BlitImagePixels -> {
-                    val visible = intersection(command.destination, bounds)
-                    if (visible.width <= 0 || visible.height <= 0) null else command.copy(destination = command.destination + offset)
-                }
-
-                is DrawCommand.PushClip -> {
-                    DrawCommand.PushClip(intersection(command.bounds, bounds) + offset)
-                }
-
-                DrawCommand.PopClip -> {
-                    DrawCommand.PopClip
-                }
-
-                is DrawCommand.Platform -> {
-                    error("Portable layers cannot contain platform commands.")
-                }
-            }
-        }
     }
 
     private fun intersection(
@@ -349,16 +280,4 @@ internal class FabricMinecraftFramePresenter(
     private fun requireClientThread() {
         check(minecraftClient.isSameThread) { "Fabric Minecraft frame presentation is confined to the client thread." }
     }
-
-    private sealed interface FrameLayer
-
-    private data class PortableLayer(
-        val commands: List<DrawCommand>,
-        val bounds: IntRect,
-    ) : FrameLayer
-
-    private data class PlatformLayer(
-        val command: DrawCommand.Platform,
-        val clip: IntRect?,
-    ) : FrameLayer
 }

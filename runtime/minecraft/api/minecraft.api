@@ -144,7 +144,10 @@ public final class dev/s7a/strata/runtime/minecraft/canvas/NativeCanvasDevice {
 	public final fun poll ()V
 	public final fun prepare (Ljava/util/List;Ldev/s7a/strata/runtime/FrameTime;I)Ldev/s7a/strata/runtime/minecraft/canvas/NativeCanvasPresentation;
 	public final fun queue (Ldev/s7a/strata/runtime/minecraft/canvas/NativeCanvasPresentation;)V
+	public final fun registerGuiResourceManager (Ldev/s7a/strata/runtime/minecraft/canvas/NativeGuiResourceManager;)V
 	public final fun reload ()V
+	public final fun retainedManagedGuiResourceBytes ()J
+	public final fun retainedManagedGuiResourceCount ()I
 	public final fun retainedTargetCount ()I
 	public final fun source (Lkotlin/jvm/functions/Function0;Z)Ldev/s7a/strata/component/CanvasSource;
 	public static synthetic fun source$default (Ldev/s7a/strata/runtime/minecraft/canvas/NativeCanvasDevice;Lkotlin/jvm/functions/Function0;ZILjava/lang/Object;)Ldev/s7a/strata/component/CanvasSource;
@@ -160,6 +163,8 @@ public final class dev/s7a/strata/runtime/minecraft/canvas/NativeCanvasDevices {
 	public final fun poll ()V
 	public final fun reload ()V
 	public final fun retainedGuiResourceSetCount ()I
+	public final fun retainedManagedGuiResourceBytes ()J
+	public final fun retainedManagedGuiResourceCount ()I
 	public final fun retainedTargetCount ()I
 }
 
@@ -221,6 +226,18 @@ public abstract interface class dev/s7a/strata/runtime/minecraft/canvas/NativeGu
 
 public final class dev/s7a/strata/runtime/minecraft/canvas/NativeGuiResource$DefaultImpls {
 	public static fun isDestroyed (Ldev/s7a/strata/runtime/minecraft/canvas/NativeGuiResource;)Z
+}
+
+public abstract interface class dev/s7a/strata/runtime/minecraft/canvas/NativeGuiResourceManager {
+	public abstract fun acknowledgeAfterDrain ()V
+	public abstract fun beginShutdown ()V
+	public abstract fun closeAfterFinish ()V
+	public abstract fun consumed ()V
+	public abstract fun failedGui ()V
+	public abstract fun poll ()V
+	public abstract fun reload ()V
+	public abstract fun retainedResourceBytes ()J
+	public abstract fun retainedResourceCount ()I
 }
 
 public final class dev/s7a/strata/runtime/minecraft/canvas/NativeGuiResourceOwnerId {

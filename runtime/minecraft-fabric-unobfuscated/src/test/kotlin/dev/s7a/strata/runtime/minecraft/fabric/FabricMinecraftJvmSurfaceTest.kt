@@ -247,6 +247,20 @@ internal class FabricMinecraftJvmSurfaceTest {
                 "$packageName.FabricMinecraftPortableTexture",
                 "$packageName.FabricMinecraftPortableTexture\$Companion",
                 "$packageName.FabricMinecraftPortableTextureFactoryKt",
+                "$packageName.FabricMinecraftFrameLayer",
+                "$packageName.FabricMinecraftFrameLayer\$Portable",
+                "$packageName.FabricMinecraftFrameLayer\$Sampled",
+                "$packageName.FabricMinecraftFrameLayer\$Platform",
+                "$packageName.FabricMinecraftFrameLayerKt",
+                "$packageName.FabricMinecraftSampledImageCache",
+                "$packageName.FabricMinecraftSampledImageDevice",
+                "$packageName.FabricMinecraftSampledImageDevice\$Owner",
+                "$packageName.FabricMinecraftSampledImageDevice\$Borrow",
+                "$packageName.FabricMinecraftSampledImageDevice\$Owned",
+                "$packageName.FabricMinecraftSampledImageDevice\$Entry",
+                "$packageName.FabricMinecraftSampledImageDevice\$Completion",
+                "$packageName.FabricMinecraftSampledImageDevices",
+                "$packageName.FabricMinecraftSampledImageDrawingKt",
                 "$packageName.FabricNativeCanvasTarget",
                 "$packageName.FabricNativeCanvasTarget\$Companion",
                 "$packageName.FabricNativeCanvasPartialTarget",
@@ -262,7 +276,8 @@ internal class FabricMinecraftJvmSurfaceTest {
                 "$packageName.FabricNativeCanvasTextureFactoryKt",
                 "$packageName.FabricNativeCanvasDestructionFactoryKt",
                 "$packageName.FabricNativeCanvasTargetDestructionKt",
-            ).associateWith { emptySet<String>() }
+            ).associateWith { emptySet<String>() } +
+                mapOf("$packageName.FabricMinecraftSampledImageDevice\$Release" to setOf("values", "valueOf", "getEntries"))
 
         // Mixin code executes inside Minecraft packages, so these opt-in bridges must remain Java-accessible.
         private val canvasBridgeMethods =
