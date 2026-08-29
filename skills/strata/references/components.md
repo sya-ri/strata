@@ -13,6 +13,7 @@ Use the [component showcase on GitHub](https://github.com/sya-ri/strata/blob/mas
 Row places an ordered sibling sequence on one horizontal main axis, with typed arrangement, spacing, default vertical alignment, and direct-child overrides.
 
 - Compiled overloads: 1
+- Built-in admission: Action bars and paired status metadata both need horizontal sibling layout. Row remains built in because main-axis measurement, slack arrangement, weight, and direct-child alignment require one shared parent contract rather than unrelated offsets or nested overlays.
 - Modifiers: Sizing, padding, paint, semantics, focus, and input modifiers apply to the Row itself; `spacing` and `horizontalArrangement` express structure, while `RowScope.weight` and `RowScope.align` affect only direct children.
 - Parent scope: `Row` evaluates a callback-lifetime `RowScope`, emits children in declaration order, and exposes only vertical alignment and weight parent data to its direct children.
 - [Showcase image and compiled example](https://github.com/sya-ri/strata/blob/master/docs/components.md#row)
@@ -28,6 +29,7 @@ fun UiScope.Row(modifier: Modifier = Modifier.Empty, key: ElementKey<*>? = null,
 FlowRow wraps an ordered sibling sequence at the available width, measures each child against the full parent maximums, and arranges each row independently. It serves action-button groups and option groups without encoding either domain.
 
 - Compiled overloads: 1
+- Built-in admission: Action groups and filter or option groups both need ordered horizontal content that wraps. FlowRow remains built in because width-dependent line breaking must preserve direct-child identity; prebuilding Rows would require caller-side measurement and would reparent children during reflow.
 - Modifiers: Sizing, padding, paint, semantics, focus, and input modifiers apply to the FlowRow itself. It uses its natural width unless constraints or `fillMaxWidth()` expand it; `horizontalSpacing`, `verticalSpacing`, and `horizontalArrangement` control its rows, while `FlowRowScope.align` overrides one child's vertical alignment within its row.
 - Parent scope: `FlowRow` evaluates a callback-lifetime `FlowRowScope` and exposes only vertical alignment parent data. Wrapping preserves its direct children's retained identity and focus without synthetic Row parents. It has no weight, row-count limit, implicit clipping, or truncation; with unbounded width it produces one row.
 - [Showcase image and compiled example](https://github.com/sya-ri/strata/blob/master/docs/components.md#flow-row)
@@ -43,6 +45,7 @@ fun UiScope.FlowRow(modifier: Modifier = Modifier.Empty, key: ElementKey<*>? = n
 Column places an ordered sibling sequence on one vertical main axis, with typed arrangement, spacing, default horizontal alignment, and direct-child overrides.
 
 - Compiled overloads: 1
+- Built-in admission: Settings forms and vertically stacked navigation actions both need vertical sibling layout. Column remains built in because main-axis measurement, slack arrangement, weight, and direct-child alignment require one shared parent contract rather than repeated coordinate padding.
 - Modifiers: Sizing, padding, paint, semantics, focus, and input modifiers apply to the Column itself; `spacing` and `verticalArrangement` express structure, while `ColumnScope.weight` and `ColumnScope.align` affect only direct children.
 - Parent scope: `Column` evaluates a callback-lifetime `ColumnScope`, emits children in declaration order, and exposes only horizontal alignment and weight parent data to its direct children.
 - [Showcase image and compiled example](https://github.com/sya-ri/strata/blob/master/docs/components.md#column)
@@ -58,6 +61,7 @@ fun UiScope.Column(modifier: Modifier = Modifier.Empty, key: ElementKey<*>? = nu
 Stack is the explicit overlay primitive: children share one content rectangle, receive two-axis alignment, and paint in declaration order. It is not a generic div-like container.
 
 - Compiled overloads: 1
+- Built-in admission: Badges over icons and focus or selection overlays both need intentional overlap. Stack remains built in because shared constraints, two-axis alignment, paint order, and input ancestry cannot be expressed by independent siblings without a retained overlay parent.
 - Modifiers: Use Stack only when children intentionally overlap. Ordinary sizing and background modifiers belong on the Stack; `StackScope.align` positions an individual overlay child without coordinate padding.
 - Parent scope: `Stack` evaluates a callback-lifetime `StackScope`; it measures and paints overlapping direct children in declaration order and exposes two-axis alignment parent data.
 - [Showcase image and compiled example](https://github.com/sya-ri/strata/blob/master/docs/components.md#stack)
@@ -73,6 +77,7 @@ fun UiScope.Stack(modifier: Modifier = Modifier.Empty, key: ElementKey<*>? = nul
 Grid assigns children row-major to a fixed column count, measures each column and row from its largest member, and supports an incomplete final row without placeholders.
 
 - Compiled overloads: 1
+- Built-in admission: Inventory-like palettes and keypad or settings matrices both need repeated two-axis cells. Grid remains built in because row-major assignment and maximum sizing per row and column would otherwise require duplicated nested Rows and caller-managed incomplete final rows.
 - Modifiers: Sizing, padding, and paint modifiers apply to the Grid. Fixed columns, independent horizontal and vertical spacing, and `GridScope.align` replace repeated Row declarations and per-cell coordinate padding.
 - Parent scope: `Grid` evaluates a callback-lifetime `GridScope`; it assigns direct children row-major and exposes two-axis alignment only inside each measured cell.
 - [Showcase image and compiled example](https://github.com/sya-ri/strata/blob/master/docs/components.md#grid)
@@ -88,6 +93,7 @@ fun UiScope.Grid(columns: Int, modifier: Modifier = Modifier.Empty, key: Element
 Spacer is an empty measurable primitive for genuine visual separators, connectors, and weighted empty regions; it carries no screen-specific meaning.
 
 - Compiled overloads: 1
+- Built-in admission: Flexible gaps and painted separators or progress connectors both need a deliberate empty footprint. Spacer remains built in because parent spacing cannot itself carry size, weight, paint, semantics, or retained identity.
 - Modifiers: Sizing, weight, and paint modifiers give Spacer a deliberate empty footprint, such as a separator or progress connector; ordinary parent spacing and alignment should remain layout arguments rather than placeholder children.
 - Parent scope: `Spacer` has no content scope or children. Its size and modifier chain alone define its retained layout and paint behavior.
 - [Showcase image and compiled example](https://github.com/sya-ri/strata/blob/master/docs/components.md#spacer)
@@ -103,6 +109,7 @@ fun UiScope.Spacer(modifier: Modifier = Modifier.Empty, key: ElementKey<*>? = nu
 Text renders Unicode literals and composed text using the active profile's font resources, glyph advances, shadow layer, foreground layer, and baseline. Explicit `TextLayout.Multiline` adds hard line breaks, wrapping, line limits, and clip or ellipsis overflow; the existing overload remains single-line. Glyph availability follows the selected resource pack.
 
 - Compiled overloads: 8
+- Built-in admission: Short labels and wrapped explanatory or status text both need resolved glyph layout. Text remains built in because font selection, measurement, overflow, drawing, and text semantics must agree inside one retained leaf rather than a raw paint callback.
 - Modifiers: Ordinary sizing, padding, placement, and paint modifiers compose around `Text`; multiline layout uses the available width and height. `TextWrap.None`, `Word`, or `Character`, `maxLines`, `TextOverflow.Clip` or `Ellipsis`, and `lineSpacing` control presentation without changing the original semantic label. Text content and the optional `font: ResourceId` remain typed component arguments. `UiText.withFont` also selects a font for labels and composed text; an inner selection takes precedence over an outer one.
 - Parent scope: `Text` is a top-level extension on the active `UiScope`. The screen runtime installs its selected Minecraft profile only for the definition callback, and the component has no content callback or parent-data API. Unicode and custom fonts require a font-resource profile; the older printable-ASCII glyph builder remains a compatibility path.
 - [Showcase image and compiled example](https://github.com/sya-ri/strata/blob/master/docs/components.md#text)
@@ -125,6 +132,7 @@ fun UiScope.Text(text: UiText, style: TextStyle = TextStyle.Normal, modifier: Mo
 TextField reproduces the 200 by 20 Minecraft EditBox sprites, text origin, glyph colors, owner-thread value state, and focus, with Unicode scalar editing and inline IME composition.
 
 - Compiled overloads: 4
+- Built-in admission: Server-address entry and search or filtering input both need single-line editing. TextField remains built in because focus, cursor placement, Unicode and IME editing, horizontal scrolling, semantics, and the profile surface form one stateful retained contract.
 - Modifiers: Pointer, keyboard, committed-character, preedit, and focus modifiers run as active retained behavior around `TextField`; a consuming focused modifier overrides built-in editing. The `font: ResourceId` overload changes metrics and drawing together, including cursor placement and horizontal scrolling.
 - Parent scope: `TextField` is a top-level extension on the active `UiScope`. Caller-owned `TextFieldState` owns the value and its positive UTF-16 maximum length. Movement and deletion operate on Unicode scalars, not whole grapheme clusters; preedit text remains separate until committed input arrives. The inline composition display does not reproduce Minecraft's native IME popup or platform candidate window.
 - [Showcase image and compiled example](https://github.com/sya-ri/strata/blob/master/docs/components.md#text-field)
@@ -143,6 +151,7 @@ fun UiScope.TextField(state: TextFieldState, size: IntSize, font: ResourceId, en
 TextArea edits one multiline value inside an explicit viewport with Unicode scalar navigation, inline IME composition, and independent vertical scrolling. It serves both note editing and message drafts without encoding an application model.
 
 - Compiled overloads: 2
+- Built-in admission: Notes and message or configuration drafts both need multiline editing. TextArea remains built in because soft wrapping, vertical scrolling, cursor navigation, IME composition, and caller-owned editing state cannot be assembled correctly from TextField and ScrollArea.
 - Modifiers: Place `TextArea` with ordinary layout modifiers and select its outer extent through `TextAreaViewport.Size` or `Lines`. Minecraft uses a fixed 9-pixel logical line box, optional extra line spacing, and four-pixel padding on each side. An external `Scrollbar(state.scrollState)` observes the editor's caller-owned scroll state; the editor does not insert a scrollbar or toolbar. The `font: ResourceId` overload changes layout, cursor placement, and drawing together.
 - Parent scope: `TextArea` is a leaf extension on the active `UiScope`; one retained editor observes its owner-thread `TextAreaState`. Creating an immutable description does not attach the state, and descriptions can be reused after detachment. Simultaneous attachment with the same caller-owned state throws `IllegalStateException`. The state stores canonical LF newlines and enforces a positive UTF-16 maximum length. Soft wrapping never edits the stored value, and IME preedit remains separate until committed. `SemanticsRole.TextArea` exposes the committed text through `Semantics.value`, without typed accessibility edit actions. Selection, clipboard commands, grapheme-cluster editing, and the platform IME candidate window are outside this component's contract.
 - [Showcase image and compiled example](https://github.com/sya-ri/strata/blob/master/docs/components.md#text-area)
@@ -159,6 +168,7 @@ fun UiScope.TextArea(state: TextAreaState, viewport: TextAreaViewport, font: Res
 Button renders verified fixed-height Minecraft sprite and label states, including the native 150- and 200-pixel widths, while reusable input actions live in modifiers.
 
 - Compiled overloads: 2
+- Built-in admission: Confirmation actions and screen or workflow navigation both need an activatable labeled control. Button remains built in because enabled and focused states, semantic role, native hit geometry, label layout, and the active profile surface must change together.
 - Modifiers: Pointer behavior is active modifier behavior. `onPointerEvent`, `onPress`, `onRelease`, `onMove`, `onDrag`, `onScroll`, and `onHover` can be composed without adding component-specific callback parameters.
 - Parent scope: `Button` is a top-level extension on the active `UiScope`. The screen runtime installs its selected Minecraft profile only for the definition callback, and pointer event modifiers remain valid only through their retained modifier-node lifetime.
 - [Showcase image and compiled example](https://github.com/sya-ri/strata/blob/master/docs/components.md#button)
@@ -175,6 +185,7 @@ fun UiScope.Button(label: UiText, width: Int = 150, enabled: Boolean = true, mod
 Checkbox reproduces the verified 20-pixel Minecraft checkbox surface, label spacing, focused input, checked semantics, and caller-owned boolean state.
 
 - Compiled overloads: 2
+- Built-in admission: Boolean settings and bulk-selection rows both need explicit checked state. Checkbox remains built in because checked semantics, owner-thread state, focus input, typed change actions, and the profile surface are not equivalent to composing a Button with an icon.
 - Modifiers: Sizing and placement modifiers compose around `Checkbox`; caller-owned state and typed checked-change actions keep the reusable boolean control independent of a settings domain.
 - Parent scope: `Checkbox` is a leaf extension on the active `UiScope`; `CheckboxState` is caller-owned, owner-thread confined, and may be shared with application state adapters.
 - [Showcase image and compiled example](https://github.com/sya-ri/strata/blob/master/docs/components.md#checkbox)
@@ -191,6 +202,7 @@ fun UiScope.Checkbox(label: UiText, state: CheckboxState, width: Int = 150, enab
 CycleButton reuses the verified button surface for a finite generic option sequence with forward, backward, wheel, and keyboard navigation.
 
 - Compiled overloads: 1
+- Built-in admission: Difficulty or mode settings and compact enum selectors both need finite option cycling. CycleButton remains built in because forward, backward, wheel, and keyboard navigation must share validation, display conversion, state ownership, and typed change actions.
 - Modifiers: Sizing and placement modifiers compose around `CycleButton`; its immutable option set and typed change action remain generic rather than encoding one game's option model.
 - Parent scope: `CycleButton` is a leaf extension on the active `UiScope`; it snapshots labels for the validated finite option set and retains no child scope.
 - [Showcase image and compiled example](https://github.com/sya-ri/strata/blob/master/docs/components.md#cycle-button)
@@ -206,6 +218,7 @@ fun <T : Any> UiScope.CycleButton(state: CycleButtonState<T>, width: Int = 150, 
 Slider reproduces Minecraft's profile-backed track and handle while normalizing finite numeric ranges and optional discrete steps in caller-owned state.
 
 - Compiled overloads: 2
+- Built-in admission: Volume or brightness settings and machine power or rate controls both need bounded numeric input. Slider remains built in because normalization, optional quantization, focused keys, pointer dragging, semantics, and profile-backed track geometry form one interaction contract.
 - Modifiers: Sizing and placement modifiers compose around `Slider`; caller-owned range state and typed value-change actions remain reusable across volume, brightness, machine power, and other numeric domains.
 - Parent scope: `Slider` is a leaf extension on the active `UiScope`; `SliderState` owns normalization and quantization while the active profile owns rendering.
 - [Showcase image and compiled example](https://github.com/sya-ri/strata/blob/master/docs/components.md#slider)
@@ -222,6 +235,7 @@ fun UiScope.Slider(label: UiText, state: SliderState, width: Int = 150, enabled:
 Tab combines the verified button surface with external selection semantics and a reusable underline or caller-defined selected indicator, without encoding a particular screen's tab model.
 
 - Compiled overloads: 2
+- Built-in admission: Screen-section navigation and list filtering both need caller-owned selection. Tab remains built in because selected semantics and a replaceable selected indicator must remain synchronized with the verified button surface without introducing a screen-specific tab model.
 - Modifiers: Selection is caller-owned data, while `Underline` or `Custom` controls its reusable selected-state presentation. All pointer actions remain ordinary event modifiers, exactly as for Button and other interactive components.
 - Parent scope: `Tab` is a top-level extension on the active `UiScope`. A custom selected indicator emits exactly one nested root; the selected value and event actions remain application-owned.
 - [Showcase image and compiled example](https://github.com/sya-ri/strata/blob/master/docs/components.md#tab)
@@ -238,6 +252,7 @@ fun UiScope.Tab(label: UiText, selected: Boolean, width: Int = 150, enabled: Boo
 ScrollArea reproduces the verified Minecraft menu-list background, clipping, separators, and wheel behavior without owning or positioning a scrollbar.
 
 - Compiled overloads: 1
+- Built-in admission: Long descriptions and menu or list viewports both need clipped scrolling. ScrollArea remains built in because background, clipping, wheel input, content offset, and published scroll metrics require one retained viewport rather than a painted Stack.
 - Modifiers: Ordinary sizing and placement modifiers define only the clipped viewport. The shared `ScrollState` links optional external controls without forcing a scrollbar into the component tree.
 - Parent scope: `ScrollArea` evaluates a callback-lifetime `UiScope` that emits exactly one content root; the caller owns the linked state and may omit a scrollbar.
 - [Showcase image and compiled example](https://github.com/sya-ri/strata/blob/master/docs/components.md#scroll-area)
@@ -253,6 +268,7 @@ fun UiScope.ScrollArea(state: ScrollState, modifier: Modifier = Modifier.Empty, 
 Scrollbar reproduces the verified tiled track and proportional thumb while remaining an independently placed observer of shared scroll metrics.
 
 - Compiled overloads: 1
+- Built-in admission: List viewports and multiline editors both need an independently placed scroll control. Scrollbar remains built in because proportional thumb geometry and bidirectional dragging must observe the same ScrollState metrics as the viewport.
 - Modifiers: Sizing and parent placement modifiers position `Scrollbar` independently from its viewport; sharing `ScrollState` is the only link required.
 - Parent scope: `Scrollbar` is an independent leaf in any surrounding layout. It observes caller-owned `ScrollState` and releases that observation when its retained node is disposed.
 - [Showcase image and compiled example](https://github.com/sya-ri/strata/blob/master/docs/components.md#scrollbar)
@@ -268,6 +284,7 @@ fun UiScope.Scrollbar(state: ScrollState, modifier: Modifier = Modifier.Empty, k
 VirtualList retains only visible fixed-height rows plus bounded overscan, supports prepended and appended loading, and can jump by index or stable key.
 
 - Compiled overloads: 3
+- Built-in admission: Player or server directories and logs or data feeds both need bounded retained rows. VirtualList remains built in because visibility, overscan, stable-key identity, boundary loading, and navigation cannot be obtained from a ScrollArea containing every row.
 - Modifiers: Sizing is expressed by `viewportSize`; modifier actions receive leading and trailing load requests while caller-owned state supports index, key, and boundary navigation.
 - Parent scope: `VirtualList` evaluates row callbacks only for visible rows plus bounded overscan; stable keys preserve retained identity while the caller owns source and navigation state.
 - [Showcase image and compiled example](https://github.com/sya-ri/strata/blob/master/docs/components.md#virtual-list)
@@ -285,6 +302,7 @@ fun <T : Any, K : Any> UiScope.VirtualList(items: List<T>, keyOf: (T) -> K, stat
 SelectionList adds generic caller-owned selection and typed selection-change actions to VirtualList without encoding Social, inventory, advancement, or Mod-specific rows.
 
 - Compiled overloads: 1
+- Built-in admission: Server or option choice and player moderation lists both need virtualized caller-owned selection. SelectionList remains built in because typed selection semantics and actions must stay synchronized with VirtualList keys while application code continues to own row visuals.
 - Modifiers: Viewport behavior composes with typed selection actions and caller-owned selection state; row visuals remain application composition rather than a screen-specific built-in.
 - Parent scope: `SelectionList` wraps visible virtual rows with generic selection semantics and press handling while leaving each row's single content root to the caller.
 - [Showcase image and compiled example](https://github.com/sya-ri/strata/blob/master/docs/components.md#selection-list)
@@ -300,6 +318,7 @@ fun <T : Any, K : Any> UiScope.SelectionList(items: List<T>, keyOf: (T) -> K, st
 Image maps one immutable resource-pack image to an exact logical size with deterministic nearest sampling; it is reusable for icons, portraits, diagrams, and Mod-owned panels.
 
 - Compiled overloads: 2
+- Built-in admission: Icons or portraits and diagrams or Mod panels both need immutable raster display. Image remains built in because resource resolution, detached pixels, intrinsic size, source regions, and deterministic nearest sampling require a retained image leaf rather than incidental background paint.
 - Modifiers: Sizing and placement modifiers compose around `Image`; `imageBackground` paints the same immutable resource behind any layout component with typed stretch or tile mapping.
 - Parent scope: `Image` is a top-level extension on the active `UiScope`. It retains detached pixels rather than a Minecraft resource object, so the Fabric loader may resolve a resource-pack replacement before the description is built.
 - [Showcase image and compiled example](https://github.com/sya-ri/strata/blob/master/docs/components.md#image)
@@ -316,6 +335,7 @@ fun UiScope.Image(source: ImageSource, sourceRegion: IntRect, size: IntSize = In
 Slot reproduces the native 18 by 18 hit region and 24 by 24 back-item-front highlight order; its binding overload polls real ItemStack state and delegates interaction through Minecraft's active container menu.
 
 - Compiled overloads: 1
+- Built-in admission: Player storage and chest, furnace, or custom-container storage both need native slot interaction. Slot remains built in because server-backed menu delegation and the back-item-front highlight order cannot be reproduced safely by composing Image and Button.
 - Modifiers: Sizing is native-fixed at 18 by 18. `Slots.playerInventory(index)` binds player storage, `Slots.container(index)` addresses logical storage exposed by chests, ender chests, furnaces, and custom server menus, and `Slots.activeMenu(index)` remains the raw-menu escape hatch; the optional-content overload remains portable for custom item visuals.
 - Parent scope: `Slot` is a member extension on the active `UiScope`. Its optional callback emits at most one 16 by 16 content root, while its bound overload obtains the version platform implicitly and retains no public Minecraft type.
 - [Showcase image and compiled example](https://github.com/sya-ri/strata/blob/master/docs/components.md#slot)
@@ -331,6 +351,7 @@ fun UiScope.Slot(bind: SlotBinding? = null, highlightable: Boolean = true, modif
 PlayerHead reproduces Minecraft 26.2 face-then-hat rendering from a 64 by 64 skin; its default 24 by 24 extent matches Social Interactions while remaining reusable in lists, profiles, scoreboards, and Mod screens.
 
 - Compiled overloads: 1
+- Built-in admission: Player directories and scoreboards or profile cards both need layered skin faces. PlayerHead remains built in because skin-region extraction, hat layering, asynchronous lookup, stale-result rejection, and lookup release should not be reimplemented by each row composition.
 - Modifiers: Sizing and placement modifiers compose around `PlayerHead`; its immutable skin argument stays separate from Social, player-list, scoreboard, profile, and Mod-specific row state.
 - Parent scope: `PlayerHead` is a top-level extension on the active `UiScope`. `Pixels` retains a detached immutable skin, while `CurrentPlayer`, `Name`, and `Uuid` remain structural asynchronous lookups deferred to node attachment; the retained node owns and releases that lookup lifetime.
 - [Showcase image and compiled example](https://github.com/sya-ri/strata/blob/master/docs/components.md#player-head)
@@ -346,6 +367,7 @@ fun UiScope.PlayerHead(source: PlayerSkinSource = PlayerSkinSource.CurrentPlayer
 LoadingIndicator reproduces the Minecraft 26.2 friends-loading sprite as three vertical 5 by 2 cells with the native six-tick frame duration; older runtimes use the same pack-overridable path before their compatibility fallback.
 
 - Compiled overloads: 1
+- Built-in admission: Network discovery and resource or data loading both need a passive busy state. LoadingIndicator remains built in because profile-selected animation cells and frame-time invalidation would otherwise require application timers and repeated resource-path logic.
 - Modifiers: Sizing and placement modifiers compose around `LoadingIndicator`; explicit host frame time advances its discrete profile animation without application-owned timer state.
 - Parent scope: `LoadingIndicator` is a top-level extension on the active `UiScope`. The Fabric host supplies one timestamp per native render pass and the retained node invalidates only when its discrete animation cell changes.
 - [Showcase image and compiled example](https://github.com/sya-ri/strata/blob/master/docs/components.md#loading-indicator)
@@ -361,6 +383,7 @@ fun UiScope.LoadingIndicator(size: IntSize = IntSize(10, 4), modifier: Modifier 
 ProgressBar uses the reusable bundle progress border, partial fill, and completed fill with their native two-pixel nine-slice borders and exposes read-only progress semantics.
 
 - Compiled overloads: 1
+- Built-in admission: Downloads or task completion and machine energy or crafting progress both need determinate status. ProgressBar remains built in because normalization, progress semantics, partial fill, completed fill, and resource-pack-aware border slicing must remain synchronized.
 - Modifiers: Sizing and placement modifiers compose around `ProgressBar`; its normalized value is immutable component data while the active profile supplies resource-pack-aware fill, completed-fill, and border sprites.
 - Parent scope: `ProgressBar` is a top-level extension on the active `UiScope`. The implicit profile resolves the active resource pack before retaining immutable sprite pixels.
 - [Showcase image and compiled example](https://github.com/sya-ri/strata/blob/master/docs/components.md#progress-bar)

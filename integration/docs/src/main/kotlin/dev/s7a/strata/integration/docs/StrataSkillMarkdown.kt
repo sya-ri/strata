@@ -232,6 +232,7 @@ Read the [Element SPI contract]($ELEMENT_SPI_GUIDE_URL) before implementing a re
 ${ComponentDocumentationCatalog.summary(component)}
 
 - Compiled overloads: ${overloads.size}
+- Built-in admission: ${ComponentDocumentationCatalog.admissionGuidance(component)}
 - Modifiers: ${ComponentDocumentationCatalog.modifierGuidance(component)}
 - Parent scope: ${ComponentDocumentationCatalog.parentScopeGuidance(component)}
 - [Showcase image and compiled example]($COMPONENT_GUIDE_URL#${component.slug})

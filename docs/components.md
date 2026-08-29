@@ -117,6 +117,10 @@ The tree shows Minecraft components in logical draw order; platform-neutral layo
 
 Row places an ordered sibling sequence on one horizontal main axis, with typed arrangement, spacing, default vertical alignment, and direct-child overrides.
 
+### Built-in admission
+
+Action bars and paired status metadata both need horizontal sibling layout. Row remains built in because main-axis measurement, slack arrangement, weight, and direct-child alignment require one shared parent contract rather than unrelated offsets or nested overlays.
+
 This 136 by 64 PNG is the complete frame of the compiled dedicated `ScreenDefinition`, with a 136 by 64 logical viewport at GUI scale 1. Headless rendering samples the assets at this physical density; the image is not upscaled from a lower-resolution raster or cropped from a larger screen. Its source, asset, viewport, and image hashes are recorded in [the headless render receipt](components/headless-render.properties).
 
 ![Row headless showcase](components/row.png)
@@ -181,6 +185,10 @@ The tree mirrors the complete dedicated definition, including the featured compo
 ## FlowRow
 
 FlowRow wraps an ordered sibling sequence at the available width, measures each child against the full parent maximums, and arranges each row independently. It serves action-button groups and option groups without encoding either domain.
+
+### Built-in admission
+
+Action groups and filter or option groups both need ordered horizontal content that wraps. FlowRow remains built in because width-dependent line breaking must preserve direct-child identity; prebuilding Rows would require caller-side measurement and would reparent children during reflow.
 
 This 168 by 60 PNG is the complete frame of the compiled dedicated `ScreenDefinition`, with a 168 by 60 logical viewport at GUI scale 1. Headless rendering samples the assets at this physical density; the image is not upscaled from a lower-resolution raster or cropped from a larger screen. Its source, asset, viewport, and image hashes are recorded in [the headless render receipt](components/headless-render.properties).
 
@@ -254,6 +262,10 @@ The tree mirrors the complete dedicated definition, including the featured compo
 
 Column places an ordered sibling sequence on one vertical main axis, with typed arrangement, spacing, default horizontal alignment, and direct-child overrides.
 
+### Built-in admission
+
+Settings forms and vertically stacked navigation actions both need vertical sibling layout. Column remains built in because main-axis measurement, slack arrangement, weight, and direct-child alignment require one shared parent contract rather than repeated coordinate padding.
+
 This 120 by 64 PNG is the complete frame of the compiled dedicated `ScreenDefinition`, with a 120 by 64 logical viewport at GUI scale 1. Headless rendering samples the assets at this physical density; the image is not upscaled from a lower-resolution raster or cropped from a larger screen. Its source, asset, viewport, and image hashes are recorded in [the headless render receipt](components/headless-render.properties).
 
 ![Column headless showcase](components/column.png)
@@ -318,6 +330,10 @@ The tree mirrors the complete dedicated definition, including the featured compo
 ## Stack
 
 Stack is the explicit overlay primitive: children share one content rectangle, receive two-axis alignment, and paint in declaration order. It is not a generic div-like container.
+
+### Built-in admission
+
+Badges over icons and focus or selection overlays both need intentional overlap. Stack remains built in because shared constraints, two-axis alignment, paint order, and input ancestry cannot be expressed by independent siblings without a retained overlay parent.
 
 This 64 by 64 PNG is the complete frame of the compiled dedicated `ScreenDefinition`, with a 64 by 64 logical viewport at GUI scale 1. Headless rendering samples the assets at this physical density; the image is not upscaled from a lower-resolution raster or cropped from a larger screen. Its source, asset, viewport, and image hashes are recorded in [the headless render receipt](components/headless-render.properties).
 
@@ -387,6 +403,10 @@ The tree mirrors the complete dedicated definition, including the featured compo
 ## Grid
 
 Grid assigns children row-major to a fixed column count, measures each column and row from its largest member, and supports an incomplete final row without placeholders.
+
+### Built-in admission
+
+Inventory-like palettes and keypad or settings matrices both need repeated two-axis cells. Grid remains built in because row-major assignment and maximum sizing per row and column would otherwise require duplicated nested Rows and caller-managed incomplete final rows.
 
 This 64 by 64 PNG is the complete frame of the compiled dedicated `ScreenDefinition`, with a 64 by 64 logical viewport at GUI scale 1. Headless rendering samples the assets at this physical density; the image is not upscaled from a lower-resolution raster or cropped from a larger screen. Its source, asset, viewport, and image hashes are recorded in [the headless render receipt](components/headless-render.properties).
 
@@ -459,6 +479,10 @@ The tree mirrors the complete dedicated definition, including the featured compo
 
 Spacer is an empty measurable primitive for genuine visual separators, connectors, and weighted empty regions; it carries no screen-specific meaning.
 
+### Built-in admission
+
+Flexible gaps and painted separators or progress connectors both need a deliberate empty footprint. Spacer remains built in because parent spacing cannot itself carry size, weight, paint, semantics, or retained identity.
+
 This 160 by 64 PNG is the complete frame of the compiled dedicated `ScreenDefinition`, with a 160 by 64 logical viewport at GUI scale 1. Headless rendering samples the assets at this physical density; the image is not upscaled from a lower-resolution raster or cropped from a larger screen. Its source, asset, viewport, and image hashes are recorded in [the headless render receipt](components/headless-render.properties).
 
 ![Spacer headless showcase](components/spacer.png)
@@ -525,6 +549,10 @@ The tree mirrors the complete dedicated definition, including the featured compo
 ## Text
 
 Text renders Unicode literals and composed text using the active profile's font resources, glyph advances, shadow layer, foreground layer, and baseline. Explicit `TextLayout.Multiline` adds hard line breaks, wrapping, line limits, and clip or ellipsis overflow; the existing overload remains single-line. Glyph availability follows the selected resource pack.
+
+### Built-in admission
+
+Short labels and wrapped explanatory or status text both need resolved glyph layout. Text remains built in because font selection, measurement, overflow, drawing, and text semantics must agree inside one retained leaf rather than a raw paint callback.
 
 This 384 by 176 PNG is the complete frame of the compiled dedicated `ScreenDefinition`, with a 192 by 88 logical viewport at GUI scale 2. Headless rendering samples the assets at this physical density; the image is not upscaled from a lower-resolution raster or cropped from a larger screen. Its source, asset, viewport, and image hashes are recorded in [the headless render receipt](components/headless-render.properties).
 
@@ -598,6 +626,10 @@ The tree mirrors the complete dedicated definition, including the featured compo
 
 TextField reproduces the 200 by 20 Minecraft EditBox sprites, text origin, glyph colors, owner-thread value state, and focus, with Unicode scalar editing and inline IME composition.
 
+### Built-in admission
+
+Server-address entry and search or filtering input both need single-line editing. TextField remains built in because focus, cursor placement, Unicode and IME editing, horizontal scrolling, semantics, and the profile surface form one stateful retained contract.
+
 This 432 by 128 PNG is the complete frame of the compiled dedicated `ScreenDefinition`, with a 216 by 64 logical viewport at GUI scale 2. Headless rendering samples the assets at this physical density; the image is not upscaled from a lower-resolution raster or cropped from a larger screen. Its source, asset, viewport, and image hashes are recorded in [the headless render receipt](components/headless-render.properties).
 
 ![TextField headless showcase](components/text-field.png)
@@ -664,6 +696,10 @@ The tree mirrors the complete dedicated definition, including the featured compo
 ## TextArea
 
 TextArea edits one multiline value inside an explicit viewport with Unicode scalar navigation, inline IME composition, and independent vertical scrolling. It serves both note editing and message drafts without encoding an application model.
+
+### Built-in admission
+
+Notes and message or configuration drafts both need multiline editing. TextArea remains built in because soft wrapping, vertical scrolling, cursor navigation, IME composition, and caller-owned editing state cannot be assembled correctly from TextField and ScrollArea.
 
 This 452 by 160 PNG is the complete frame of the compiled dedicated `ScreenDefinition`, with a 226 by 80 logical viewport at GUI scale 2. Headless rendering samples the assets at this physical density; the image is not upscaled from a lower-resolution raster or cropped from a larger screen. Its source, asset, viewport, and image hashes are recorded in [the headless render receipt](components/headless-render.properties).
 
@@ -747,6 +783,10 @@ The tree mirrors the complete dedicated definition, including the featured compo
 
 Button renders verified fixed-height Minecraft sprite and label states, including the native 150- and 200-pixel widths, while reusable input actions live in modifiers.
 
+### Built-in admission
+
+Confirmation actions and screen or workflow navigation both need an activatable labeled control. Button remains built in because enabled and focused states, semantic role, native hit geometry, label layout, and the active profile surface must change together.
+
 This 166 by 64 PNG is the complete frame of the compiled dedicated `ScreenDefinition`, with a 166 by 64 logical viewport at GUI scale 1. Headless rendering samples the assets at this physical density; the image is not upscaled from a lower-resolution raster or cropped from a larger screen. Its source, asset, viewport, and image hashes are recorded in [the headless render receipt](components/headless-render.properties).
 
 ![Button headless showcase](components/button.png)
@@ -815,6 +855,10 @@ The tree mirrors the complete dedicated definition, including the featured compo
 
 Checkbox reproduces the verified 20-pixel Minecraft checkbox surface, label spacing, focused input, checked semantics, and caller-owned boolean state.
 
+### Built-in admission
+
+Boolean settings and bulk-selection rows both need explicit checked state. Checkbox remains built in because checked semantics, owner-thread state, focus input, typed change actions, and the profile surface are not equivalent to composing a Button with an icon.
+
 This 166 by 36 PNG is the complete frame of the compiled dedicated `ScreenDefinition`, with a 166 by 36 logical viewport at GUI scale 1. Headless rendering samples the assets at this physical density; the image is not upscaled from a lower-resolution raster or cropped from a larger screen. Its source, asset, viewport, and image hashes are recorded in [the headless render receipt](components/headless-render.properties).
 
 ![Checkbox headless showcase](components/checkbox.png)
@@ -870,6 +914,10 @@ The tree mirrors the complete dedicated definition, including the featured compo
 ## CycleButton
 
 CycleButton reuses the verified button surface for a finite generic option sequence with forward, backward, wheel, and keyboard navigation.
+
+### Built-in admission
+
+Difficulty or mode settings and compact enum selectors both need finite option cycling. CycleButton remains built in because forward, backward, wheel, and keyboard navigation must share validation, display conversion, state ownership, and typed change actions.
 
 This 166 by 36 PNG is the complete frame of the compiled dedicated `ScreenDefinition`, with a 166 by 36 logical viewport at GUI scale 1. Headless rendering samples the assets at this physical density; the image is not upscaled from a lower-resolution raster or cropped from a larger screen. Its source, asset, viewport, and image hashes are recorded in [the headless render receipt](components/headless-render.properties).
 
@@ -937,6 +985,10 @@ The tree mirrors the complete dedicated definition, including the featured compo
 
 Slider reproduces Minecraft's profile-backed track and handle while normalizing finite numeric ranges and optional discrete steps in caller-owned state.
 
+### Built-in admission
+
+Volume or brightness settings and machine power or rate controls both need bounded numeric input. Slider remains built in because normalization, optional quantization, focused keys, pointer dragging, semantics, and profile-backed track geometry form one interaction contract.
+
 This 166 by 36 PNG is the complete frame of the compiled dedicated `ScreenDefinition`, with a 166 by 36 logical viewport at GUI scale 1. Headless rendering samples the assets at this physical density; the image is not upscaled from a lower-resolution raster or cropped from a larger screen. Its source, asset, viewport, and image hashes are recorded in [the headless render receipt](components/headless-render.properties).
 
 ![Slider headless showcase](components/slider.png)
@@ -992,6 +1044,10 @@ The tree mirrors the complete dedicated definition, including the featured compo
 ## Tab
 
 Tab combines the verified button surface with external selection semantics and a reusable underline or caller-defined selected indicator, without encoding a particular screen's tab model.
+
+### Built-in admission
+
+Screen-section navigation and list filtering both need caller-owned selection. Tab remains built in because selected semantics and a replaceable selected indicator must remain synchronized with the verified button surface without introducing a screen-specific tab model.
 
 This 160 by 64 PNG is the complete frame of the compiled dedicated `ScreenDefinition`, with a 160 by 64 logical viewport at GUI scale 1. Headless rendering samples the assets at this physical density; the image is not upscaled from a lower-resolution raster or cropped from a larger screen. Its source, asset, viewport, and image hashes are recorded in [the headless render receipt](components/headless-render.properties).
 
@@ -1071,6 +1127,10 @@ The tree mirrors the complete dedicated definition, including the featured compo
 
 ScrollArea reproduces the verified Minecraft menu-list background, clipping, separators, and wheel behavior without owning or positioning a scrollbar.
 
+### Built-in admission
+
+Long descriptions and menu or list viewports both need clipped scrolling. ScrollArea remains built in because background, clipping, wheel input, content offset, and published scroll metrics require one retained viewport rather than a painted Stack.
+
 This 120 by 48 PNG is the complete frame of the compiled dedicated `ScreenDefinition`, with a 120 by 48 logical viewport at GUI scale 1. Headless rendering samples the assets at this physical density; the image is not upscaled from a lower-resolution raster or cropped from a larger screen. Its source, asset, viewport, and image hashes are recorded in [the headless render receipt](components/headless-render.properties).
 
 ![ScrollArea headless showcase](components/scroll-area.png)
@@ -1133,6 +1193,10 @@ The tree mirrors the complete dedicated definition, including the featured compo
 ## Scrollbar
 
 Scrollbar reproduces the verified tiled track and proportional thumb while remaining an independently placed observer of shared scroll metrics.
+
+### Built-in admission
+
+List viewports and multiline editors both need an independently placed scroll control. Scrollbar remains built in because proportional thumb geometry and bidirectional dragging must observe the same ScrollState metrics as the viewport.
 
 This 94 by 48 PNG is the complete frame of the compiled dedicated `ScreenDefinition`, with a 94 by 48 logical viewport at GUI scale 1. Headless rendering samples the assets at this physical density; the image is not upscaled from a lower-resolution raster or cropped from a larger screen. Its source, asset, viewport, and image hashes are recorded in [the headless render receipt](components/headless-render.properties).
 
@@ -1205,6 +1269,10 @@ The tree mirrors the complete dedicated definition, including the featured compo
 
 VirtualList retains only visible fixed-height rows plus bounded overscan, supports prepended and appended loading, and can jump by index or stable key.
 
+### Built-in admission
+
+Player or server directories and logs or data feeds both need bounded retained rows. VirtualList remains built in because visibility, overscan, stable-key identity, boundary loading, and navigation cannot be obtained from a ScrollArea containing every row.
+
 This 120 by 48 PNG is the complete frame of the compiled dedicated `ScreenDefinition`, with a 120 by 48 logical viewport at GUI scale 1. Headless rendering samples the assets at this physical density; the image is not upscaled from a lower-resolution raster or cropped from a larger screen. Its source, asset, viewport, and image hashes are recorded in [the headless render receipt](components/headless-render.properties).
 
 ![VirtualList headless showcase](components/virtual-list.png)
@@ -1264,6 +1332,10 @@ The tree mirrors the complete dedicated definition, including the featured compo
 ## SelectionList
 
 SelectionList adds generic caller-owned selection and typed selection-change actions to VirtualList without encoding Social, inventory, advancement, or Mod-specific rows.
+
+### Built-in admission
+
+Server or option choice and player moderation lists both need virtualized caller-owned selection. SelectionList remains built in because typed selection semantics and actions must stay synchronized with VirtualList keys while application code continues to own row visuals.
 
 This 120 by 48 PNG is the complete frame of the compiled dedicated `ScreenDefinition`, with a 120 by 48 logical viewport at GUI scale 1. Headless rendering samples the assets at this physical density; the image is not upscaled from a lower-resolution raster or cropped from a larger screen. Its source, asset, viewport, and image hashes are recorded in [the headless render receipt](components/headless-render.properties).
 
@@ -1325,6 +1397,10 @@ The tree mirrors the complete dedicated definition, including the featured compo
 ## Image
 
 Image maps one immutable resource-pack image to an exact logical size with deterministic nearest sampling; it is reusable for icons, portraits, diagrams, and Mod-owned panels.
+
+### Built-in admission
+
+Icons or portraits and diagrams or Mod panels both need immutable raster display. Image remains built in because resource resolution, detached pixels, intrinsic size, source regions, and deterministic nearest sampling require a retained image leaf rather than incidental background paint.
 
 This 64 by 64 PNG is the complete frame of the compiled dedicated `ScreenDefinition`, with a 64 by 64 logical viewport at GUI scale 1. Headless rendering samples the assets at this physical density; the image is not upscaled from a lower-resolution raster or cropped from a larger screen. Its source, asset, viewport, and image hashes are recorded in [the headless render receipt](components/headless-render.properties).
 
@@ -1389,6 +1465,10 @@ The tree mirrors the complete dedicated definition, including the featured compo
 
 Slot reproduces the native 18 by 18 hit region and 24 by 24 back-item-front highlight order; its binding overload polls real ItemStack state and delegates interaction through Minecraft's active container menu.
 
+### Built-in admission
+
+Player storage and chest, furnace, or custom-container storage both need native slot interaction. Slot remains built in because server-backed menu delegation and the back-item-front highlight order cannot be reproduced safely by composing Image and Button.
+
 This 64 by 64 PNG is the complete frame of the compiled dedicated `ScreenDefinition`, with a 64 by 64 logical viewport at GUI scale 1. Headless rendering samples the assets at this physical density; the image is not upscaled from a lower-resolution raster or cropped from a larger screen. Its source, asset, viewport, and image hashes are recorded in [the headless render receipt](components/headless-render.properties).
 
 ![Slot headless showcase](components/slot.png)
@@ -1451,6 +1531,10 @@ The tree mirrors the complete dedicated definition, including the featured compo
 
 PlayerHead reproduces Minecraft 26.2 face-then-hat rendering from a 64 by 64 skin; its default 24 by 24 extent matches Social Interactions while remaining reusable in lists, profiles, scoreboards, and Mod screens.
 
+### Built-in admission
+
+Player directories and scoreboards or profile cards both need layered skin faces. PlayerHead remains built in because skin-region extraction, hat layering, asynchronous lookup, stale-result rejection, and lookup release should not be reimplemented by each row composition.
+
 This 64 by 64 PNG is the complete frame of the compiled dedicated `ScreenDefinition`, with a 64 by 64 logical viewport at GUI scale 1. Headless rendering samples the assets at this physical density; the image is not upscaled from a lower-resolution raster or cropped from a larger screen. Its source, asset, viewport, and image hashes are recorded in [the headless render receipt](components/headless-render.properties).
 
 ![PlayerHead headless showcase](components/player-head.png)
@@ -1512,6 +1596,10 @@ The tree mirrors the complete dedicated definition, including the featured compo
 
 LoadingIndicator reproduces the Minecraft 26.2 friends-loading sprite as three vertical 5 by 2 cells with the native six-tick frame duration; older runtimes use the same pack-overridable path before their compatibility fallback.
 
+### Built-in admission
+
+Network discovery and resource or data loading both need a passive busy state. LoadingIndicator remains built in because profile-selected animation cells and frame-time invalidation would otherwise require application timers and repeated resource-path logic.
+
 This 32 by 24 PNG is the complete frame of the compiled dedicated `ScreenDefinition`, with a 32 by 24 logical viewport at GUI scale 1. Headless rendering samples the assets at this physical density; the image is not upscaled from a lower-resolution raster or cropped from a larger screen. Its source, asset, viewport, and image hashes are recorded in [the headless render receipt](components/headless-render.properties).
 
 ![LoadingIndicator headless showcase](components/loading-indicator.png)
@@ -1566,6 +1654,10 @@ The tree mirrors the complete dedicated definition, including the featured compo
 ## ProgressBar
 
 ProgressBar uses the reusable bundle progress border, partial fill, and completed fill with their native two-pixel nine-slice borders and exposes read-only progress semantics.
+
+### Built-in admission
+
+Downloads or task completion and machine energy or crafting progress both need determinate status. ProgressBar remains built in because normalization, progress semantics, partial fill, completed fill, and resource-pack-aware border slicing must remain synchronized.
 
 This 116 by 28 PNG is the complete frame of the compiled dedicated `ScreenDefinition`, with a 116 by 28 logical viewport at GUI scale 1. Headless rendering samples the assets at this physical density; the image is not upscaled from a lower-resolution raster or cropped from a larger screen. Its source, asset, viewport, and image hashes are recorded in [the headless render receipt](components/headless-render.properties).
 

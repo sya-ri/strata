@@ -98,6 +98,7 @@ internal class ShowcaseMarkdownTest {
         sections.values.forEach { value ->
             assertTrue(value.startsWith("<a id=\""))
             assertTrue(value.contains("\n\n## "))
+            assertTrue(value.contains("\n\n### Built-in admission\n\n"))
             assertTrue(value.contains("complete frame of the compiled dedicated `ScreenDefinition`"))
             assertTrue(value.contains("source, asset, viewport, and image hashes"))
             assertTrue(value.contains("(components/headless-render.properties)"))

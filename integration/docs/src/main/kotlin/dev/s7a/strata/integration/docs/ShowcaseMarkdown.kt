@@ -96,7 +96,7 @@ ${overview.source}
         )
 
     /**
-     * Builds one component section containing its image, source, modifier guidance, parent-scope guidance, and tree.
+     * Builds one component section containing its admission rationale, image, source, modifier guidance, parent-scope guidance, and tree.
      *
      * @param spec typed catalog metadata.
      * @param source extracted compiled-example source.
@@ -115,6 +115,10 @@ ${overview.source}
 ## ${spec.component.apiMethodName}
 
 ${ComponentDocumentationCatalog.summary(spec.component)}
+
+### Built-in admission
+
+${ComponentDocumentationCatalog.admissionGuidance(spec.component)}
 
 $renderSentence
 

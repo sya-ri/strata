@@ -78,6 +78,10 @@ internal class StrataSkillPipelineTest {
         assertTrue(components.contains("fun UiScope.TextArea"))
         assertTrue(components.contains("https://github.com/sya-ri/strata/blob/master/docs/components.md#text-area"))
         assertTrue(components.contains("https://github.com/sya-ri/strata/blob/master/docs/components.md#button"))
+        assertEquals(
+            DocumentedComponent.entries.size,
+            components.lineSequence().count { line -> line.startsWith("- Built-in admission:") },
+        )
     }
 
     private fun assertDocumentationLinks(documents: Map<String, String>) {

@@ -41,6 +41,40 @@ internal object ComponentDocumentationCatalog {
         }
 
     /**
+     * Records the independent uses and composition boundary that justify one standard built-in.
+     *
+     * @param component typed standard component identity.
+     * @return explicit admission rationale covering reuse and why existing primitives are insufficient.
+     */
+    @Suppress("CyclomaticComplexMethod")
+    internal fun admissionGuidance(component: DocumentedComponent): String =
+        when (component) {
+            DocumentedComponent.Row -> "Action bars and paired status metadata both need horizontal sibling layout. Row remains built in because main-axis measurement, slack arrangement, weight, and direct-child alignment require one shared parent contract rather than unrelated offsets or nested overlays."
+            DocumentedComponent.FlowRow -> "Action groups and filter or option groups both need ordered horizontal content that wraps. FlowRow remains built in because width-dependent line breaking must preserve direct-child identity; prebuilding Rows would require caller-side measurement and would reparent children during reflow."
+            DocumentedComponent.Column -> "Settings forms and vertically stacked navigation actions both need vertical sibling layout. Column remains built in because main-axis measurement, slack arrangement, weight, and direct-child alignment require one shared parent contract rather than repeated coordinate padding."
+            DocumentedComponent.Stack -> "Badges over icons and focus or selection overlays both need intentional overlap. Stack remains built in because shared constraints, two-axis alignment, paint order, and input ancestry cannot be expressed by independent siblings without a retained overlay parent."
+            DocumentedComponent.Grid -> "Inventory-like palettes and keypad or settings matrices both need repeated two-axis cells. Grid remains built in because row-major assignment and maximum sizing per row and column would otherwise require duplicated nested Rows and caller-managed incomplete final rows."
+            DocumentedComponent.Spacer -> "Flexible gaps and painted separators or progress connectors both need a deliberate empty footprint. Spacer remains built in because parent spacing cannot itself carry size, weight, paint, semantics, or retained identity."
+            DocumentedComponent.Text -> "Short labels and wrapped explanatory or status text both need resolved glyph layout. Text remains built in because font selection, measurement, overflow, drawing, and text semantics must agree inside one retained leaf rather than a raw paint callback."
+            DocumentedComponent.TextField -> "Server-address entry and search or filtering input both need single-line editing. TextField remains built in because focus, cursor placement, Unicode and IME editing, horizontal scrolling, semantics, and the profile surface form one stateful retained contract."
+            DocumentedComponent.TextArea -> "Notes and message or configuration drafts both need multiline editing. TextArea remains built in because soft wrapping, vertical scrolling, cursor navigation, IME composition, and caller-owned editing state cannot be assembled correctly from TextField and ScrollArea."
+            DocumentedComponent.Button -> "Confirmation actions and screen or workflow navigation both need an activatable labeled control. Button remains built in because enabled and focused states, semantic role, native hit geometry, label layout, and the active profile surface must change together."
+            DocumentedComponent.Checkbox -> "Boolean settings and bulk-selection rows both need explicit checked state. Checkbox remains built in because checked semantics, owner-thread state, focus input, typed change actions, and the profile surface are not equivalent to composing a Button with an icon."
+            DocumentedComponent.CycleButton -> "Difficulty or mode settings and compact enum selectors both need finite option cycling. CycleButton remains built in because forward, backward, wheel, and keyboard navigation must share validation, display conversion, state ownership, and typed change actions."
+            DocumentedComponent.Slider -> "Volume or brightness settings and machine power or rate controls both need bounded numeric input. Slider remains built in because normalization, optional quantization, focused keys, pointer dragging, semantics, and profile-backed track geometry form one interaction contract."
+            DocumentedComponent.Tab -> "Screen-section navigation and list filtering both need caller-owned selection. Tab remains built in because selected semantics and a replaceable selected indicator must remain synchronized with the verified button surface without introducing a screen-specific tab model."
+            DocumentedComponent.ScrollArea -> "Long descriptions and menu or list viewports both need clipped scrolling. ScrollArea remains built in because background, clipping, wheel input, content offset, and published scroll metrics require one retained viewport rather than a painted Stack."
+            DocumentedComponent.Scrollbar -> "List viewports and multiline editors both need an independently placed scroll control. Scrollbar remains built in because proportional thumb geometry and bidirectional dragging must observe the same ScrollState metrics as the viewport."
+            DocumentedComponent.VirtualList -> "Player or server directories and logs or data feeds both need bounded retained rows. VirtualList remains built in because visibility, overscan, stable-key identity, boundary loading, and navigation cannot be obtained from a ScrollArea containing every row."
+            DocumentedComponent.SelectionList -> "Server or option choice and player moderation lists both need virtualized caller-owned selection. SelectionList remains built in because typed selection semantics and actions must stay synchronized with VirtualList keys while application code continues to own row visuals."
+            DocumentedComponent.Image -> "Icons or portraits and diagrams or Mod panels both need immutable raster display. Image remains built in because resource resolution, detached pixels, intrinsic size, source regions, and deterministic nearest sampling require a retained image leaf rather than incidental background paint."
+            DocumentedComponent.Slot -> "Player storage and chest, furnace, or custom-container storage both need native slot interaction. Slot remains built in because server-backed menu delegation and the back-item-front highlight order cannot be reproduced safely by composing Image and Button."
+            DocumentedComponent.PlayerHead -> "Player directories and scoreboards or profile cards both need layered skin faces. PlayerHead remains built in because skin-region extraction, hat layering, asynchronous lookup, stale-result rejection, and lookup release should not be reimplemented by each row composition."
+            DocumentedComponent.LoadingIndicator -> "Network discovery and resource or data loading both need a passive busy state. LoadingIndicator remains built in because profile-selected animation cells and frame-time invalidation would otherwise require application timers and repeated resource-path logic."
+            DocumentedComponent.ProgressBar -> "Downloads or task completion and machine energy or crafting progress both need determinate status. ProgressBar remains built in because normalization, progress semantics, partial fill, completed fill, and resource-pack-aware border slicing must remain synchronized."
+        }
+
+    /**
      * Describes how modifiers compose with one standard component.
      *
      * @param component typed standard component identity.
