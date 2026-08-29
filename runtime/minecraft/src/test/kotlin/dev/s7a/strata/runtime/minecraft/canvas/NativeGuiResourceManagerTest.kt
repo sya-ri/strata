@@ -59,6 +59,29 @@ internal class NativeGuiResourceManagerTest {
     }
 
     @Test
+    fun finishFailureRetainsManagerResourcesWithoutReleaseOrAcknowledgement() {
+        val fixture = NativeCanvasFixture()
+        val manager = GuiManager(fixture.driver)
+        val failure = IllegalStateException("terminal completion")
+        fixture.device.registerGuiResourceManager(manager)
+        fixture.driver.finishFailure = failure
+
+        assertSame(failure, assertThrows(IllegalStateException::class.java) { fixture.device.closeAfterGuiDiscarded() })
+        assertEquals(listOf("beginShutdown"), manager.events)
+        assertEquals(1, fixture.driver.finishCalls)
+        assertEquals(0, fixture.driver.drainCalls)
+        assertEquals(1, fixture.device.retainedManagedGuiResourceCount())
+        assertEquals(4L, fixture.device.retainedManagedGuiResourceBytes())
+
+        assertSame(failure, assertThrows(IllegalStateException::class.java) { fixture.device.closeAfterGuiDiscarded() })
+        assertEquals(listOf("beginShutdown"), manager.events)
+        assertEquals(1, fixture.driver.finishCalls)
+        assertEquals(0, fixture.driver.drainCalls)
+        assertEquals(1, manager.retainedResources)
+        assertEquals(4L, manager.retainedBytes)
+    }
+
+    @Test
     fun terminalFailuresRemainPrimaryWhileIndependentManagersAndDrainContinue() {
         val fixture = NativeCanvasFixture()
         val primary = IllegalArgumentException("manager close")

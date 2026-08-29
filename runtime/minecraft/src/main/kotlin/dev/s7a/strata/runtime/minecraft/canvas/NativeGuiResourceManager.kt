@@ -34,7 +34,7 @@ public interface NativeGuiResourceManager {
     public fun poll()
 
     /**
-     * Quarantines resources whose queued GUI work failed before complete submission could be established.
+     * Quarantines resources whose queued GUI work failed before complete submission through complete GUI consumption could be established.
      */
     public fun failedGui()
 
@@ -44,12 +44,14 @@ public interface NativeGuiResourceManager {
     public fun reload()
 
     /**
-     * Stops acquisition and drops unconsumed GUI pins before the device performs its sole terminal completion wait.
+     * Stops acquisition and drops unconsumed GUI pins before the device submits as required and completes recorded work during terminal shutdown.
      */
     public fun beginShutdown()
 
     /**
-     * Closes every owned resource after submitted work completes and before deferred destruction is drained.
+     * Closes every owned resource after recorded work has been submitted as required and completed, before deferred destruction is drained.
+     *
+     * The device never calls this callback when terminal completion fails.
      */
     public fun closeAfterFinish()
 

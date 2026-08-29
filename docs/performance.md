@@ -108,7 +108,7 @@ The owner evicts only unpinned least-recently-used identities that are not reque
 Every selected entry is pinned before ordered GUI submission and marked pending immediately before its draw command is queued.
 Screen release removes the source-image reference from its owner cache, while the device retains native storage through initialization and actual GUI-consumption fences.
 Resource reload invalidates every derived entry.
-Terminal shutdown stops acquisition, completes submitted work once, closes Canvas, portable-layer, and direct sampled-image resources, drains deferred native destruction, and requires physical acknowledgement before releasing entry and byte accounting.
+After GUI queues are consumed or discarded, terminal shutdown stops acquisition, submits recorded work as required, completes it once, closes Canvas, portable-layer, and direct sampled-image resources, drains deferred native destruction, and requires physical acknowledgement before releasing entry and byte accounting.
 
 The required direct subset is normal orientation, white tint, zero alpha cutoff, an integer contained source rectangle, nearest sampling, and ordinary straight-alpha source-over pixels within the native texture limit.
 Other command shapes retain exact output through a portable layer bounded to their visible command run rather than the complete viewport.
