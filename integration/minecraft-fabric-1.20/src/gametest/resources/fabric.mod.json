@@ -6,6 +6,7 @@
   "description": "Loaded-client integration verification for Strata on Minecraft 1.20.",
   "environment": "client",
   "accessWidener": "strata-font-parity.accesswidener",
+  "mixins": ["strata.canvas.tests.mixins.json"],
   "entrypoints": {
     "client": [
       "dev.s7a.strata.integration.minecraft.fabric.StrataMinecraftFontClientTest"

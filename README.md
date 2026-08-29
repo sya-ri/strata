@@ -31,7 +31,7 @@ The design separates those concerns into layers:
 - retained nodes perform incremental measurement, layout, painting, input, semantics, and lifecycle work;
 - active modifiers provide checked padding, size constraints, background painting, unresolved semantics, typed pointer/keyboard/text/focus actions, and typed layout parent data without changing component implementations;
 - the retained core runtime emits draw commands and unresolved semantics on the JVM;
-- the platform-neutral API owns one-shot screen definitions; Row/FlowRow/Column/Stack/Grid layout; Text, TextField, TextArea, Button, Checkbox, CycleButton, Slider, Tab, ScrollArea, Scrollbar, VirtualList, SelectionList, Image, Slot, PlayerHead, LoadingIndicator, and ProgressBar authoring; resource identifiers; slot locators; skin sources; and active modifiers, so application source compiles without a runtime dependency;
+- the platform-neutral API owns one-shot screen definitions; Row/FlowRow/Column/Stack/Grid layout; Text, TextField, TextArea, Button, Checkbox, CycleButton, Slider, Tab, ScrollArea, Scrollbar, VirtualList, SelectionList, Image, Canvas, Slot, PlayerHead, LoadingIndicator, and ProgressBar authoring; resource identifiers; slot locators; skin sources; and active modifiers, so application source compiles without a runtime dependency;
 - the common Minecraft runtime installs itself behind that API, resolves the selected profile and resources, synchronizes bound slots with the active server menu, and hosts the retained tree without exposing a context receiver to application code;
 - the latest Java release, Minecraft 26.2, has a Fabric boundary that extracts the supported native profile, resolves Mod images and current-player skin pixels through the active resource and texture paths, and adapts common frames, typed mouse/keyboard/text input, and screen lifecycle on the client thread; loaded client GameTests verify exact native/Fabric/headless ARGB parity for vanilla screens, PlayerHead, and a primitive-composed Social Interactions screen, exact Fabric/headless parity for resource-pack-backed industrial and progression Mod screens, and live server-authoritative inventory interaction.
 
@@ -39,6 +39,10 @@ The public element, node, and drawing contracts are designed for extension.
 A custom primitive must work through those contracts without registering its concrete class in a central component dispatcher.
 Applications may also define purpose-specific components as ordinary compositions of public primitives.
 Strata's own standard built-ins are limited to focused components with multiple natural uses, but that generality review does not restrict application or Mod components such as an energy gauge or social-entry row.
+`Canvas` embeds CPU image frames, leased native textures, or a custom offscreen renderer in an explicitly sized, input-passive rectangle.
+Its sources own no input hierarchy: compose `onCapturedPointerEvent`, `onKeyEvent`, and focus modifiers when interaction is needed.
+CPU sources render directly in Headless; native capture requires an immutable snapshot from that exact presentation and never performs an implicit GPU readback.
+See [Canvas ownership and rendering](docs/architecture.md#canvas-ownership-and-rendering) for source, capture, and lifetime contracts.
 
 <!-- strata-component-showcase:start -->
 <!-- Generated file. Do not edit. -->
@@ -240,6 +244,7 @@ See [Architecture](docs/architecture.md#module-boundaries) for dependency bounda
 - Font rendering targets standard Minecraft providers and shaders, without OS fonts, an additional color-emoji engine, or new translation-key resolution.
 - `TextField` edits one line and `TextArea` edits canonical LF multiline values; both use Unicode scalar boundaries, not grapheme clusters, and IME support is limited to input events supplied by the game.
 - Resource-backed images use fixed declared logical dimensions and deterministic nearest sampling; layout does not infer dimensions from a replacement image.
+- Canvas displays ordinary RGBA8 straight-alpha color with nearest sampling; HDR, multisample and depth images, decoders, audio, browser engines, and direct rendering into the current GUI framebuffer are outside its scope.
 
 ## License
 

@@ -16,6 +16,7 @@ import dev.s7a.strata.runtime.minecraft.MinecraftUiHost
 import dev.s7a.strata.runtime.minecraft.MinecraftUiProfile
 import dev.s7a.strata.runtime.minecraft.createMinecraftUiHost
 import dev.s7a.strata.runtime.minecraft.font.lwjgl.LwjglMinecraftFontBackendFactory
+import dev.s7a.strata.runtime.render.DrawCommand
 import dev.s7a.strata.screen.ScreenDefinition
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
 import net.minecraft.client.Minecraft
@@ -47,10 +48,12 @@ public class FabricMinecraftScreen private constructor(
     private val parent: Screen?,
     private val minecraftClient: Minecraft,
 ) : Screen(mapMinecraftText(host.title)),
-    AutoCloseable {
+    AutoCloseable,
+    FabricMinecraftInputReset {
     private var closed = false
     private var attached = false
     private val presentation = FabricMinecraftFramePresenter(minecraftClient)
+    private val canvasPresentation = FabricMinecraftCanvasPresentation()
     private val pausePolicy = host.pausesGame
     private val lifecycle =
         FabricScreenLifecycleTransaction.create(
@@ -68,6 +71,7 @@ public class FabricMinecraftScreen private constructor(
      */
     override fun added() {
         requireClientThread()
+        FabricMinecraftCanvasHooks.requireRunning()
         check(closed.not()) { "A closed Fabric Minecraft screen cannot be added again." }
         if (lifecycle.isActive()) {
             super.added()
@@ -129,43 +133,56 @@ public class FabricMinecraftScreen private constructor(
         partialTick: Float,
     ) {
         requireClientThread()
+        var guiFailure: Throwable? = null
         try {
             presentation.recordRenderExtraction()
-            inventory.withRefreshBatch {
-                lifecycle.run {
-                    val viewport = IntSize(width, height)
-                    val frameTime = FrameTime(System.nanoTime())
-                    presentation.recordHostFrame()
-                    var frame = host.frame(viewport, frameTime)
-                    if (lifecycle.hasPendingExit()) return@run
-                    if (width == 0 || height == 0) {
-                        presentation.release()
-                        return@run
-                    }
-                    val currentPointer = IntOffset(mouseX, mouseY)
-                    val pointerNeedsDispatch = presentation.needsPointerDispatch(currentPointer, frame.drawCommands)
-                    if (pointerNeedsDispatch) {
-                        presentation.recordExtractedPointerDispatch(currentPointer, frame.drawCommands)
-                        inventory.withPointerMove { host.dispatchPointer(PointerEvent.Move(currentPointer)) == InputResult.Consumed }
-                        if (lifecycle.hasPendingExit()) return@run
+            val frameTime = FrameTime(System.nanoTime())
+            val frame =
+                inventory.withRefreshBatch {
+                    lifecycle.run {
+                        val viewport = IntSize(width, height)
                         presentation.recordHostFrame()
-                        frame = host.frame(viewport, frameTime)
-                        if (lifecycle.hasPendingExit()) return@run
+                        var frame = host.frame(viewport, frameTime)
+                        if (lifecycle.hasPendingExit()) return@run null
+                        if (width == 0 || height == 0) {
+                            presentation.release()
+                            canvasPresentation.release()
+                            return@run null
+                        }
+                        val currentPointer = IntOffset(mouseX, mouseY)
+                        val pointerNeedsDispatch = presentation.needsPointerDispatch(currentPointer, frame.drawCommands)
+                        if (pointerNeedsDispatch) {
+                            presentation.recordExtractedPointerDispatch(currentPointer, frame.drawCommands)
+                            inventory.withPointerMove { host.dispatchPointer(PointerEvent.Move(currentPointer)) == InputResult.Consumed }
+                            if (lifecycle.hasPendingExit()) return@run null
+                            presentation.recordHostFrame()
+                            frame = host.frame(viewport, frameTime)
+                            if (lifecycle.hasPendingExit()) return@run null
+                        }
+                        frame
                     }
-                    presentation.present(graphics, frame.drawCommands, frame.size) { target, command ->
-                        inventory.renderItem(
-                            target,
-                            minecraftClient.font,
-                            command.command,
-                            command.bounds.left,
-                            command.bounds.top,
-                        )
-                    }
-                    inventory.renderCarried(graphics, minecraftClient.font, mouseX, mouseY)
-                }
+                } ?: return
+            if (attached.not()) return
+            canvasPresentation.present(
+                frame.drawCommands,
+                frameTime,
+                minecraftClient.window.guiScale,
+                inventory,
+                FabricNativeCanvasDriver::draw,
+            ) { commands, dispatch ->
+                presentation.present(graphics, commands, frame.size, dispatch::render)
             }
+            if (attached.not()) return
+            inventory.renderCarried(graphics, minecraftClient.font, mouseX, mouseY)
         } catch (failure: Throwable) {
+            guiFailure = failure
             terminalFailure(failure)
+        } finally {
+            try {
+                finishCanvasGui(graphics, guiFailure)
+            } catch (failure: Throwable) {
+                terminalFailure(failure)
+            }
         }
     }
 
@@ -402,13 +419,47 @@ public class FabricMinecraftScreen private constructor(
         throw failure
     }
 
+    /**
+     * Captures the last complete presentation from immutable CPU images and exact native-generation snapshots only.
+     *
+     * No GPU readback is performed and no live native token is resolved by Headless.
+     *
+     * @return detached portable commands retaining the original logical destinations, clips, and order.
+     * @throws IllegalStateException when called off the client thread, before a frame, after removal, or without a matching native snapshot.
+     */
+    public fun captureCanvasFrame(): List<DrawCommand> {
+        requireClientThread()
+        return canvasPresentation.capture()
+    }
+
+    /**
+     * Cancels captured pointer, hover, and focus state after a native window/input reset.
+     *
+     * The native bridge invokes this synchronously on the client thread; callbacks may fail and trigger terminal cleanup.
+     *
+     * @throws Throwable when input cancellation or cleanup fails, preserving the primary failure.
+     */
+    @InternalStrataRuntimeApi
+    @JvmSynthetic
+    override fun resetInputFromNative() {
+        requireClientThread()
+        if (closed || attached.not()) return
+        try {
+            lifecycle.run { host.resetInputState() }
+        } catch (failure: Throwable) {
+            terminalFailure(failure)
+        }
+    }
+
     private fun attachHost() {
+        FabricMinecraftCanvasHooks.requireRunning()
         host.attach()
         attached = true
         presentation.resetPointer()
     }
 
     private fun detachHost() {
+        canvasPresentation.release()
         if (attached) {
             host.detach()
             attached = false
@@ -417,6 +468,7 @@ public class FabricMinecraftScreen private constructor(
     }
 
     private fun closeHost() {
+        canvasPresentation.release()
         if (closed) return
         closed = true
         attached = false

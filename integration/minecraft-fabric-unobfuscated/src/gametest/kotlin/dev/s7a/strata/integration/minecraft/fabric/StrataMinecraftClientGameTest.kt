@@ -126,6 +126,7 @@ public class StrataMinecraftClientGameTest : FabricClientGameTest {
         verifyProfileCache(context, output)
         assertNativeTextInputFocus(context, profile)
         verifyContinuousInput(context, profile, output)
+        runMinecraftCanvasTest(context, profile, output)
 
         context.setScreen { DeterministicConfirmScreen() }
         context.waitForScreen(DeterministicConfirmScreen::class.java)
@@ -475,7 +476,10 @@ public class StrataMinecraftClientGameTest : FabricClientGameTest {
             return field.get(screen)
         }
 
-        require((retained("textures") as List<*>).isEmpty()) { "A detached Fabric screen retained dynamic textures." }
+        val portableFrames = checkNotNull(retained("portableFrames"))
+        val portableCurrent = portableFrames.javaClass.getDeclaredField("current")
+        check(portableCurrent.trySetAccessible()) { "The portable presentation cache is inaccessible." }
+        require(portableCurrent.get(portableFrames) == null) { "A detached Fabric screen retained portable drawing or texture ownership." }
         require(retained("preparedCommands") == null) { "A detached Fabric screen retained its display list." }
         require(retained("preparedViewport") == null) { "A detached Fabric screen retained its prepared viewport." }
         require((retained("preparedLayers") as List<*>).isEmpty()) { "A detached Fabric screen retained prepared layers." }

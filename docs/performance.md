@@ -77,13 +77,60 @@ Loading indicators and delayed tooltips additionally verify that timestamps insi
 ### Bounded raster texture cache
 
 The Fabric presenter reuses the complete partitioned frame when the immutable draw-command list has referential identity, the logical viewport is equal, and the actual GUI scale is unchanged.
-When a mixed portable-and-platform display list changes, a portable layer may also reuse its texture at the same portable-layer index when its immutable command values, viewport, and GUI scale are equal; platform layers are still extracted natively every time.
+When a mixed portable-and-platform display list changes, portable textures may be reused only when the complete ordered list of localized immutable commands, image extents, viewport, and GUI scale is equal; platform layers are still extracted natively every time.
 Sampled glyph geometry is rasterized at physical resolution, so a scale change requires a new raster and texture even when the logical display list is identical.
-It retains only the currently prepared frame layers and their corresponding dynamic textures rather than accumulating historical frames.
-Replacing a prepared frame must trim surplus textures, while detachment, a zero-sized viewport, and terminal screen cleanup must release every retained texture and prepared-layer reference.
+Changed portable inputs allocate a complete replacement generation before any GUI output, rather than modifying a texture that unconsumed GUI work may still reference.
+The screen retains only its current portable generation, and equivalent replacement commands replace old CPU input references without uploading identical pixels again.
+Detachment, a zero-sized viewport, and terminal screen cleanup immediately clear every screen-owned texture, prepared-layer, and capture-receipt reference.
+Already queued native resources move to the screen-independent device owner and release only after their initialization and actual GUI-consumption fences complete.
+The complete prepared texture list is pinned across ordered submission, including intermediate legacy GUI flushes; reentrant screen close cannot free a later overlay or repopulate a closed screen's cache afterward.
+The separate portable pool reserves at most three generation sets per stable presenter and 64 per device before allocation, with each set bounded by the exact layer extents of one prepared portable list.
+These permits are independent of Canvas's native target-set budget and remain held through physical destruction, including partial allocation and Vulkan's deferred destruction queue.
+Portable pool exhaustion fails before GUI output; it never attaches stale pixels to new portable commands or needs another permit to close an existing generation.
+Terminal cleanup completes submitted work, closes both native Canvas and portable resources, drains native destruction, and checks physical acknowledgements in that order.
 Pointer dispatch and inventory or skin refresh coalescing must still invalidate the frame path when observable presentation state changes.
 Loaded-client GameTests read render-work counters from the real Fabric screen and require an unchanged display list to perform no repartition, portable rasterization, or texture upload.
-They also require equivalent replacement portable layers to reuse their raster texture, and inspect the detached presenter to require empty texture and layer collections and null prepared-frame references.
+They also require equivalent replacement portable layers to reuse their raster textures, inspect detached presenters for absent current texture generations and prepared-frame references, and wait for actual retirement before checking native destruction.
+The common portable-lifetime tests exercise incomplete initialization, pinned close, repeated queue consumption, arbitrarily delayed fences, both capacity bounds, and physical destruction acknowledgement.
+
+### Canvas source and target retention
+
+The CPU Canvas binding is keyed by source identity and its attachment, accepts only monotonically newer StateRevision values, and retains one committed immutable image plus the newest pending image.
+The global frame transaction temporarily holds one captured observation between capture and commit; callbacks after that capture remain pending until the next frame.
+Equal source-image identity reuses a clean frame even when the revision advances; a different immutable image object replaces the cached paint input even when its pixels compare equal, so obsolete storage is not retained.
+Source replacement, session detachment, disposal, and failure first sever binding references and then close observation handles; the external StateSource remains application-owned.
+Tests cover caller-array independence, subscribe/initial races, stale revisions, cross-binding cutoff, untimed updates, image-size replacement, bounded pending state, clean frame identity, and exact Headless pixels.
+
+NativeCanvasDevice is owned by one physical device's render thread, independently of every screen.
+Its attachment index is keyed by immutable device and attachment identities, while reusable targets require the stable CanvasId, producer generation, exact physical extent, and completed allocation, capture, and GUI use.
+Native Canvas requests in core commands and retained RuntimeUiFrame instances contain only scalar device and attachment identifiers; separate prepared tokens also identify the committed generation.
+Portable commands and explicit capture snapshots may retain immutable CPU images, but no command retains a target, renderer, source callback, or host.
+The current batch is bounded to one outstanding native presentation; the next presentation cannot overtake an unconsumed or uncancelled batch.
+Resource reload discards committed generations and retires old producers; new instances open lazily when a target permit is available.
+
+At most three target sets may exist for one stable CanvasId across source replacement and detach/reattach, and at most 64 active, retired, partially allocated, or quarantined sets may exist on one device.
+A permit is reserved before allocation and is held until physical destruction succeeds; incomplete allocation rollback transfers its partial target with NativeCanvasAllocationFailure instead of returning the permit.
+Asynchronous native retirement is still incomplete rollback even when its `close()` request returns successfully.
+No close path allocates a replacement target or requires a free slot.
+When capacity is unavailable, preparation skips the producer and reuses the exact last committed token and snapshot without assigning a newer generation to older pixels; a never-committed canvas remains transparent.
+Retired targets remain counted for arbitrarily many frames while their fences are unsignalled or their physical destruction is unacknowledged, and render-thread polling never waits for queued but unsubmitted GUI work.
+
+Source leases and temporary sampling resources release after capture completion, while targets and producer-owned resources survive their last GUI completion.
+Every target allocation is fenced separately, including presentations whose provider returns no capture, so backend initialization commands cannot outlive their resources.
+The frame, screen, and capture receipt do not own these native lifetimes.
+Custom renderer factories are evaluated only inside a reserved target's capture callback, so even their initialization uploads are protected by the capture fence; attachment creation alone performs no owned GPU work.
+GPU-fence creation or GUI-consumption failure quarantines affected targets, and device shutdown first discards GUI queues and completes submitted GPU work before releasing resources.
+Failed target destruction retains ownership and its permit; terminal cleanup may retry only unreleased per-resource work, preserving the earlier failure if retry also fails.
+Successfully requested asynchronous destruction is polled without repeating `close()`; the 26.2 Vulkan adapter observes physical texture and view destruction rather than relying on a fixed number of delayed frames.
+After submitted work completes, terminal cleanup requests all retirements, drains the backend destruction queue, and requires every target's physical acknowledgment before returning its permit.
+Repeated failed shutdown cannot report success.
+Once terminal shutdown starts, ordinary polling performs no further native work, including when device completion failed and old fences later signal.
+Those failed terminal resources remain quarantined until external device teardown rather than being released by a late frame callback.
+The fixed orientation-specific sampling programs are device-owned, keyed only by native API family and row orientation, bounded to two variants, and released only after terminal GPU completion.
+
+Deterministic protocol tests independently control capture and GUI fences and cover long unsignalled histories, resize, source replacement, reattachment, shared sources, cancellation, partial producer/GUI/cleanup failures, partial allocation rollback, the three/64 limits, rapid key churn, and retained old frames.
+Loaded native tests must separately inspect known GPU texels and a custom offscreen renderer before comparing the same-generation Headless capture; agreement between two snapshots alone is not native parity evidence.
+Backend-specific loaded results, especially OpenGL versus Vulkan, are recorded separately and must not be inferred from JVM protocol tests.
 
 ### Resource-font caches
 
@@ -251,6 +298,7 @@ No allocation trend indicates retained historical frames, layers, textures, or v
 | Headless rasterization | Windowed | 4,356.504 | 1,643,627 |
 | Headless rasterization | FullHd | 23,156.293 | 8,298,529 |
 
-Every 1.20 development and production-jar loaded client also requires that an unchanged portable display list performs no extra partition, rasterization, or texture upload and that detachment clears dynamic textures, registered texture identifiers, prepared commands, prepared viewport, prepared layers, pointer caches, inventory bindings, and common host ownership.
+Every 1.20 development and production-jar loaded client also requires that an unchanged portable display list performs no extra partition, rasterization, or texture upload and that detachment clears screen-owned texture generations, prepared commands, prepared viewport, prepared layers, pointer caches, inventory bindings, and common host ownership.
+Native texture storage and registered identifiers are checked after their actual completion fences allow device-owned retirement.
 The Minecraft 1.20 and 1.20.1 Authlib 4 boundaries each publish only a normalized detached skin snapshot into that bounded lifecycle and pass the same late-completion and terminal-release contract.
 Together with the unchanged session, virtual-list, tooltip, loading-indicator, and player-skin unit gates, the completed family shows no repeated clean rendering or unbounded temporary-data retention in the covered ownership domains.

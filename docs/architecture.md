@@ -125,7 +125,7 @@ The complete external implementation contract is documented in [Element SPI](ele
 
 The process and compatibility requirements for a new version adapter are defined in [Supporting a new Minecraft version](minecraft-versions.md).
 
-The public API currently defines `ScreenDefinition`; Row, FlowRow, Column, Stack, Grid, Spacer, Text, TextField, TextArea, Button, Checkbox, CycleButton, Slider, Tab, ScrollArea, Scrollbar, VirtualList, SelectionList, Image, Slot, PlayerHead, LoadingIndicator, and ProgressBar; element and modifier descriptions; typed actions and external state; typed layout parent data; retained node capabilities; frame time and overlay painting; lifecycle ownership; geometry; pointer and focused input; drawing; semantics; unresolved text; resources and bindings; and revisioned external state sources.
+The public API currently defines `ScreenDefinition`; Row, FlowRow, Column, Stack, Grid, Spacer, Text, TextField, TextArea, Button, Checkbox, CycleButton, Slider, Tab, ScrollArea, Scrollbar, VirtualList, SelectionList, Image, Canvas, Slot, PlayerHead, LoadingIndicator, and ProgressBar; element and modifier descriptions; typed actions and external state; typed layout parent data; retained node capabilities; frame time and overlay painting; lifecycle ownership; geometry; pointer and focused input; drawing; semantics; unresolved text; resources and bindings; and revisioned external state sources.
 `ScreenDefinition` retains its callback without evaluating it, then transfers that callback exactly once to a runtime that implicitly builds its single component root under the installed profile.
 Each `UiScope` is confined to the invoking thread and callback lifetime, and callback failures take precedence over root-cardinality validation.
 The privileged `evaluateComponentTree` bridge exists only for runtime adapters and structural SPI tests that already own raw elements; application screens do not need or expose a standalone root builder.
@@ -133,11 +133,71 @@ The state-source contract is specified and exercised by concurrency tests descri
 It remains coroutine-free and does not include a platform lifecycle adapter.
 The retained core's tested internal session contract is described in [UI sessions](ui-sessions.md).
 
+## Canvas ownership and rendering
+
+Canvas has one responsibility: embed external drawing output in a positive, explicitly sized logical rectangle.
+Decoded video output and independently produced camera, filter, or custom-renderer output are separate natural uses.
+The built-in is not an application player or camera model.
+Image already displays immutable CPU frames, but composition with it does not provide native texture leases, isolated offscreen rendering, or GPU completion tracking.
+Canvas shares the existing portable image path and state cutoff while adding one attachment lifetime contract for CPU and native producers.
+Video decoding, audio, world or camera rendering, filter algorithms, browser engines, and drawing into the current GUI or framebuffer remain application concerns.
+
+`UiScope.Canvas(source, size, modifier, key)` stretches the complete source image with nearest sampling.
+`canvasSource(DrawImage)` and `canvasSource(StateSource<DrawImage>)` need only the platform-neutral API.
+DrawImage owns immutable straight-ARGB pixels independent of the caller's array; replacing its pixel extent updates paint without changing the declared destination.
+The Canvas element implements ordinary measure, paint, frame-cutoff, and session-attachment capabilities and does not add concrete-component dispatch to core or ComponentRuntime.
+The source remains externally owned, while each attached node owns a fresh binding identified by a scalar CanvasId that survives source replacement and session reattachment.
+Bindings close before replacement or suspension, and all acquired resources must be released if opening a binding fails.
+CPU observers only enqueue the newest revision on any thread; timed and untimed frames commit it through the global two-phase cutoff described in [UI sessions](ui-sessions.md).
+
+Each versioned Fabric runtime adds typed `canvasSource` factories for a MinecraftCanvasTextureProvider and a MinecraftCanvasRenderer factory.
+No Minecraft type enters the API or core modules.
+Native input is an ordinary two-dimensional RGBA8 straight-alpha color image; the adapter validates its extent and capabilities and normalizes texel rows to a top-left origin.
+Native source and physical target axes are limited to 32768 pixels so integer pixel-center sampling cannot overflow; the actual device may impose a lower limit.
+Sampling uses the explicit target extent and exact integer pixel-center ratios, including odd-sized destinations and source-row reversal, so supplied snapshots describe the same nearest-sampled texels.
+Sampling into a Strata-owned target also accepts sampleable inputs that do not provide copy-source usage; unsupported formats and inputs fail explicitly.
+A custom renderer borrows only its offscreen target, logical and physical sizes, and frame time for one callback, with optional depth selected at source construction.
+Instances belong to attachments and are not shared merely because two canvases share a source description.
+The native binding initially owns only a description; a custom renderer factory runs lazily inside its first reserved target capture so initialization work is covered by that capture fence.
+The callback context expires before returning to the presenter, and application sources are never closed by Strata.
+The [compiled native scene](https://github.com/sya-ri/strata/blob/master/integration/minecraft-fabric-canvas-shared/src/gametest/kotlin/dev/s7a/strata/integration/minecraft/fabric/MinecraftCanvasNativeExample.kt) composes independently produced textures and custom-renderer output with clipping and portable overlays.
+Its [source fixture](https://github.com/sya-ri/strata/blob/master/integration/minecraft-fabric-canvas-shared/src/gametest/kotlin/dev/s7a/strata/integration/minecraft/fabric/MinecraftCanvasTestFixture.kt) demonstrates both typed factories, shared external ownership, per-attachment renderers, and optional matching snapshots; the loaded suite first checks actual native pixels without any snapshots.
+
+The Fabric presenter prepares each attachment at most once after final layout and hover convergence for the actual native presentation.
+Declaration evaluation, measurement, cached painting, and extra host frames never execute a native producer.
+Native Canvas payloads in core draw commands and RuntimeUiFrame contain only immutable device and attachment identifiers; the separate prepared presentation adds generation tokens.
+Portable commands may retain immutable image pixels, but neither kind of command retains native handles, renderers, nodes, or hosts.
+NativeCanvasDevice resolves them into a separate immutable presentation and rejects foreign or expired identities before any partial GUI output.
+The extensible MinecraftPlatformCommandRenderer boundary validates the complete mixed command list before rendering and preserves portable/native order, clipping, GUI scale, and Stack overlays, including Slot's native item phase.
+
+Target allocation has its own completion fence because a backend may enqueue initialization work before any producer returns a capture.
+The external image lease survives its capture-completion fence, while the owned target survives a distinct fence issued after actual GUI consumption.
+Older GUI families flush queued draws before fencing; queued GUI-renderer families fence at the version-owned render-consumption boundary, not during extraction.
+The newest GPU family uses the backend-neutral GPU abstraction for OpenGL and Vulkan instead of exposing raw OpenGL through common contracts.
+Screen removal stops bindings and input immediately, but a screen-independent render-thread registry polls retired GPU work without waiting.
+Source replacement, resize, reattachment, reload, failed capture, failed GUI work, unsubmitted cancellation, and device shutdown follow the same ownership protocol.
+Only device teardown after GUI queues have been discarded may wait for submitted GPU work.
+Allocation, capture, or GUI-fence uncertainty quarantines affected resources until that teardown; cleanup failures preserve the primary exception and never return a permit before successful physical destruction.
+Deferred native destruction is acknowledged separately from `close()`: Vulkan texture and view retirement is counted until the backend actually destroys every owned attachment.
+Terminal cleanup drains that native destruction queue only after GPU completion and GUI discard; it cannot release a target permit merely because retirement was requested.
+Device shutdown rejects new screen attachments and source owners before invoking application cleanup callbacks, including reentrant attempts to install another screen.
+
+`FabricMinecraftScreen.captureCanvasFrame()` converts the last successfully submitted presentation to portable commands using its immutable CPU receipts only.
+Every native token must have an exact same-generation, same-extent, normalized snapshot; missing, mismatched, or unsupported native commands fail before partial output.
+An initially unavailable Canvas remains transparent on screen, but its presentation cannot be captured until every requested Canvas has a committed generation and matching snapshot.
+Native images become BlitImagePixels commands with unchanged logical destinations; rasterize the capture at the presentation's GUI scale to reproduce every physical texel.
+This call never resolves a live GPU token, reads pixels back implicitly, or substitutes placeholder pixels for native evidence.
+Canvas itself has no focus, pointer, or keyboard handlers: applications compose the ordinary modifiers, including the generic PointerCaptureNode capability, without a source-specific input-event hierarchy.
+The resource bounds, cache keys, invalidation, terminal release, and independent pixel/retention tests are specified in [Rendering performance](performance.md#canvas-source-and-target-retention).
+
 ## Headless rendering
 
 The headless facade validates positive logical width, height, and scale before description validation, node creation, or lifecycle hooks.
 It checks physical width, height, and row-major area with checked integer arithmetic and reports arithmetic failure instead of wrapping or allocating an invalid image.
-Low-level commands are snapshotted in list order, validated for balanced nested child clips, intersected with those clips and the positive logical viewport before exact scale replication, and painted onto transparent black.
+Low-level commands are snapshotted in list order, validated for balanced nested child clips, intersected with those clips and the positive logical viewport, and painted onto transparent black.
+BlitImage preserves its original rule: select a nearest source texel at each logical pixel center and replicate it at the requested integer scale.
+BlitImagePixels instead samples each physical output pixel center, preserving the full resolution of a native Canvas capture.
+Subsequent logical fills and image overlays blend separately against each physical destination pixel, without erasing existing subpixel detail.
 Coordinates are top-left origin, x-right, y-down, and half-open.
 
 Painting uses straight ARGB Porter-Duff source-over with Long intermediates.

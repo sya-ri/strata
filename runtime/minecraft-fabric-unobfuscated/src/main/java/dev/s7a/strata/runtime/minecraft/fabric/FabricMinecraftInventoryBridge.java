@@ -14,7 +14,9 @@ import dev.s7a.strata.render.PlatformDrawCommand;
 import dev.s7a.strata.resource.ResourceId;
 import dev.s7a.strata.runtime.minecraft.MinecraftInventorySlotBinding;
 import dev.s7a.strata.runtime.minecraft.MinecraftPlayerSkinBinding;
+import dev.s7a.strata.runtime.minecraft.MinecraftPlatformCommandRenderer;
 import dev.s7a.strata.runtime.minecraft.MinecraftUiPlatform;
+import dev.s7a.strata.runtime.render.DrawCommand;
 import java.util.LinkedHashSet;
 import java.util.Objects;
 import java.util.Optional;
@@ -46,7 +48,7 @@ import org.jetbrains.annotations.NotNull;
  *
  * <p>The bridge is package-private, owner-thread confined, and owned by one common host. It polls copied ItemStack snapshots before frames and delegates every mutation through {@code MultiPlayerGameMode.handleContainerInput}; it never writes Inventory storage directly.</p>
  */
-final class FabricMinecraftInventoryBridge implements MinecraftUiPlatform {
+final class FabricMinecraftInventoryBridge implements MinecraftUiPlatform, MinecraftPlatformCommandRenderer<GuiGraphicsExtractor> {
     private final Thread ownerThread = Thread.currentThread();
     private final Set<Binding> bindings = new LinkedHashSet<>();
     private final Set<SkinBinding> skinBindings = new LinkedHashSet<>();
@@ -662,13 +664,34 @@ final class FabricMinecraftInventoryBridge implements MinecraftUiPlatform {
     }
 
     /**
-     * Validates and renders one retained platform command at its tree-coordinate item origin.
+     * Recognizes a synchronized Slot payload without rendering or mutating native state.
      *
-     * @param graphics native extraction target.
-     * @param font active Minecraft font for count and durability decorations.
-     * @param command opaque payload from a synchronized Slot.
-     * @param x item x coordinate.
-     * @param y item y coordinate.
+     * @param command opaque platform payload being selected before or during ordered presentation.
+     * @return whether this client-thread bridge owns the payload's native rendering family; unrelated payloads remain unclaimed after close.
+     * @throws IllegalStateException when an owned Slot payload reaches a closed bridge, or the call is on another thread.
+     */
+    @Override
+    public boolean accepts(@NotNull PlatformDrawCommand command) {
+        requireOwnerThread();
+        if ((command instanceof ItemCommand) == false) return false;
+        requireUsable();
+        return true;
+    }
+
+    @Override
+    public void render(GuiGraphicsExtractor graphics, @NotNull DrawCommand.Platform command) {
+        renderItem(graphics, requireMinecraft().font, command.getCommand(), command.getBounds().getLeft(), command.getBounds().getTop());
+    }
+
+    /**
+     * Renders a validated Slot item at its logical tree-coordinate origin on the client thread.
+     *
+     * @param graphics borrowed native GUI target.
+     * @param font active font for native item decorations.
+     * @param command immutable synchronized Slot payload.
+     * @param x logical item x coordinate.
+     * @param y logical item y coordinate.
+     * @throws IllegalArgumentException for a foreign payload, before drawing the item.
      */
     void renderItem(GuiGraphicsExtractor graphics, Font font, PlatformDrawCommand command, int x, int y) {
         requireUsable();

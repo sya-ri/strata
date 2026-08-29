@@ -5,9 +5,10 @@
   "name": "Strata Minecraft ${minecraftVersion} integration verification",
   "environment": "client",
   "accessWidener": "strata-font-parity.accesswidener",
+  "mixins": ${gameTestMixins},
   "entrypoints": {
     "fabric-client-gametest": [
-      "dev.s7a.strata.integration.minecraft.fabric.StrataMinecraftFontGameTest"
+      "${gameTestEntrypoint}"
     ]
   },
   "depends": {

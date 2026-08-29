@@ -4,6 +4,7 @@
   "version": "${version}",
   "name": "Strata Minecraft ${minecraftVersion} integration verification",
   "environment": "client",
+  "mixins": ["strata.canvas.tests.mixins.json"],
   "entrypoints": {
     "fabric-client-gametest": [
       "dev.s7a.strata.integration.minecraft.fabric.StrataMinecraftLegacyClientGameTest"
@@ -13,5 +14,4 @@
     "${runtimeModId}": "*"
   }
 }
-
 

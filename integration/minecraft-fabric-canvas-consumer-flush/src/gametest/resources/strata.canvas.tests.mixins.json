@@ -1,0 +1,15 @@
+{
+  "minVersion": "0.8",
+  "required": true,
+  "package": "dev.s7a.strata.integration.minecraft.fabric.mixin.canvas",
+  "plugin": "dev.s7a.strata.integration.minecraft.fabric.MinecraftCanvasWindowTestPlugin",
+  "compatibilityLevel": "JAVA_17",
+  "client": [
+    "MinecraftCanvasConsumerTestMixin",
+    "MinecraftCanvasScreenCaptureTestMixin",
+    "MinecraftCanvasWindowTestAccess"
+  ],
+  "injectors": {
+    "defaultRequire": 1
+  }
+}

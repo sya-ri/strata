@@ -1,5 +1,6 @@
 package dev.s7a.strata.integration.minecraft.fabric
 
+import com.mojang.blaze3d.platform.NativeImage
 import dev.s7a.strata.component.Button
 import dev.s7a.strata.component.Column
 import dev.s7a.strata.component.Slot
@@ -22,6 +23,8 @@ import dev.s7a.strata.resource.ResourceId
 import dev.s7a.strata.runtime.minecraft.MinecraftUiHost
 import dev.s7a.strata.runtime.minecraft.MinecraftUiPlatform
 import dev.s7a.strata.runtime.minecraft.MinecraftUiProfile
+import dev.s7a.strata.runtime.minecraft.canvas.NativeCanvasDevices
+import dev.s7a.strata.runtime.minecraft.canvas.NativeGuiResource
 import dev.s7a.strata.runtime.minecraft.fabric.FabricMinecraftScreen
 import dev.s7a.strata.runtime.minecraft.fabric.createMinecraftScreen
 import dev.s7a.strata.runtime.minecraft.fabric.extractMinecraftUiProfile
@@ -31,7 +34,6 @@ import dev.s7a.strata.spi.InternalStrataRuntimeApi
 import net.minecraft.client.Minecraft
 import net.minecraft.client.gui.screens.Screen
 import net.minecraft.client.renderer.texture.AbstractTexture
-import net.minecraft.client.renderer.texture.DynamicTexture
 import net.minecraft.server.MinecraftServer
 import net.minecraft.server.level.ServerPlayer
 import net.minecraft.world.item.ItemStack
@@ -48,6 +50,7 @@ import javax.imageio.ImageIO
  * Proves the public Strata screen, asset, input, and inventory contracts in a loaded legacy Minecraft client.
  *
  * The test owns every screen and integrated-world resource that it creates, performs runner-independent client work through [MinecraftLoadedTestContext], and rejects retained presentation data after each screen is detached.
+ * Native texture owners are observed separately until actual GUI-use fences and physical destruction complete, without blocking the client thread.
  */
 @OptIn(InternalStrataRuntimeApi::class)
 @Suppress("TooManyFunctions")
@@ -71,6 +74,7 @@ internal class StrataMinecraftLegacyLoadedSuite {
         Files.createDirectories(output)
         verifyProfileCache(context, output)
         verifyContinuousInput(context, profile, output)
+        runMinecraftCanvasTest(context, profile, output)
         verifyPortableScene(context, output)
         verifyPlayerInventoryBinding(context, profile, output)
     }
@@ -193,6 +197,7 @@ internal class StrataMinecraftLegacyLoadedSuite {
                 stack != null && stack.`is`(Items.DIRT) && stack.count == itemCount
             }
 
+            runMinecraftCanvasSlotTest(context, profile, output, playerInventoryIndex)
             openPlayerInventoryScreen(context, profile, output)
             verifyPlayerInventoryRoundTrip(context, server, playerId)
             closeAndAssertReleased(context)
@@ -353,23 +358,27 @@ internal class StrataMinecraftLegacyLoadedSuite {
 
     private fun nativeTextureSizes(screen: FabricMinecraftScreen): List<IntSize> =
         nativePresentation(screen).textures.map { texture ->
-            val pixels = checkNotNull(texture.pixels) { "A displayed Fabric texture was already released." }
+            val pixels = retainedPresentation(texture, "pixels") as? NativeImage ?: error("A displayed Fabric texture has no owned native pixels.")
             IntSize(pixels.width, pixels.height)
         }
 
     private fun closeAndAssertReleased(context: MinecraftLoadedTestContext) {
-        context.computeOnClient { minecraft ->
-            val screen = activeFabricScreen(minecraft)
-            val vanillaScreen: Screen = screen
-            val presentation = nativePresentation(screen)
-            require(presentation.textures.isNotEmpty()) { "The rendered Fabric screen must own a native texture before detach." }
-            minecraft.setScreen(null)
-            assertPresentationReleased(screen)
-            assertNativePresentationReleased(minecraft, presentation)
-            vanillaScreen.onClose()
-            assertTerminalReleased(screen)
+        val presentation =
+            context.computeOnClient { minecraft ->
+                val screen = activeFabricScreen(minecraft)
+                val vanillaScreen: Screen = screen
+                val retained = nativePresentation(screen)
+                require(retained.textures.isNotEmpty()) { "The rendered Fabric screen must own a native texture before detach." }
+                minecraft.setScreen(null)
+                assertPresentationReleased(screen)
+                vanillaScreen.onClose()
+                assertTerminalReleased(screen)
+                retained
+            }
+        context.waitFor { minecraft ->
+            (minecraft.screen is FabricMinecraftScreen).not() && NativeCanvasDevices.retainedGuiResourceSetCount() == 0
         }
-        context.waitFor { minecraft -> (minecraft.screen is FabricMinecraftScreen).not() }
+        context.computeOnClient { minecraft -> assertNativePresentationReleased(minecraft, presentation) }
     }
 
     private fun assertPresentationReleased(screen: FabricMinecraftScreen) {
@@ -377,8 +386,8 @@ internal class StrataMinecraftLegacyLoadedSuite {
 
         fun retained(name: String): Any? = retainedPresentation(presentation, name)
 
-        require((retained("textures") as List<*>).isEmpty()) { "A detached Fabric screen retained dynamic textures." }
-        require((retained("textureLocations") as List<*>).isEmpty()) { "A detached Fabric screen retained registered texture identifiers." }
+        val portableFrames = checkNotNull(retained("portableFrames")) { "The Fabric presenter has no portable cache owner." }
+        require(retainedPresentation(portableFrames, "current") == null) { "A detached Fabric screen retained its portable texture generation." }
         require(retained("preparedCommands") == null) { "A detached Fabric screen retained its display list." }
         require(retained("preparedViewport") == null) { "A detached Fabric screen retained its prepared viewport." }
         require((retained("preparedLayers") as List<*>).isEmpty()) { "A detached Fabric screen retained prepared layers." }
@@ -388,18 +397,18 @@ internal class StrataMinecraftLegacyLoadedSuite {
 
     private fun nativePresentation(screen: FabricMinecraftScreen): NativePresentation {
         val presentation = fabricPresentation(screen)
-
-        fun retained(name: String): Any? = retainedPresentation(presentation, name)
-
+        val portableFrames = checkNotNull(retainedPresentation(presentation, "portableFrames")) { "The Fabric presenter has no portable cache owner." }
+        // Readiness predicates may run before the newly installed screen's first native presentation.
+        val prepared = retainedPresentation(portableFrames, "current") ?: return NativePresentation(emptyList(), emptyList())
         val textures =
-            (retained("textures") as? List<*>)
-                ?.map { texture -> texture as? DynamicTexture ?: error("Fabric presentation retained a non-dynamic texture.") }
+            (retainedPresentation(prepared, "textures") as? List<*>)
+                ?.map { texture -> texture as? NativeGuiResource ?: error("Fabric presentation retained an invalid native texture owner.") }
                 ?: error("Fabric presentation textures are not a list.")
         val locations =
-            (retained("textureLocations") as? List<*>)
-                ?.map { location -> location as? MinecraftTestResourceLocation ?: error("Fabric presentation retained an invalid texture identifier.") }
-                ?: error("Fabric presentation texture identifiers are not a list.")
-        require(textures.size == locations.size) { "Fabric presentation texture ownership is inconsistent." }
+            textures.map { texture ->
+                retainedPresentation(texture, "location") as? MinecraftTestResourceLocation ?: error("Fabric presentation retained an invalid texture identifier.")
+            }
+        require(textures.size == locations.distinct().size) { "Fabric portable textures must retain distinct native registrations." }
         return NativePresentation(textures.toList(), locations.toList())
     }
 
@@ -408,7 +417,8 @@ internal class StrataMinecraftLegacyLoadedSuite {
         presentation: NativePresentation,
     ) {
         presentation.textures.forEach { texture ->
-            require(texture.pixels == null) { "A detached Fabric screen left a native texture open." }
+            require(texture.isDestroyed()) { "A detached Fabric screen retained native texture storage after physical retirement." }
+            require(retainedPresentation(texture, "pixels") == null) { "A physically retired Fabric texture retained native upload pixels." }
         }
         val textureManager = minecraft.textureManager
         val registry =
@@ -603,7 +613,7 @@ internal class StrataMinecraftLegacyLoadedSuite {
     )
 
     private data class NativePresentation(
-        val textures: List<DynamicTexture>,
+        val textures: List<NativeGuiResource>,
         val locations: List<MinecraftTestResourceLocation>,
     )
 

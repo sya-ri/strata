@@ -5,6 +5,7 @@
   "name": "Strata Minecraft ${minecraftVersion} integration verification",
   "environment": "client",
   "accessWidener": "strata-font-parity.accesswidener",
+  "mixins": ["strata.canvas.tests.mixins.json"],
   "entrypoints": {
     "client": [
       "dev.s7a.strata.integration.minecraft.fabric.StrataMinecraftFontClientTest"

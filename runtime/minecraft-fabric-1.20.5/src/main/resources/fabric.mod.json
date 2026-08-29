@@ -22,6 +22,9 @@
       "dev.s7a.strata.runtime.minecraft.fabric.StrataFabricClient"
     ]
   },
+  "mixins": [
+    "strata.canvas.mixins.json"
+  ],
   "depends": {
     "fabricloader": ">=${fabricLoader}",
     "minecraft": "${minecraft}",

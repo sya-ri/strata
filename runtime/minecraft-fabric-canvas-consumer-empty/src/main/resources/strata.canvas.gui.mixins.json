@@ -1,0 +1,15 @@
+{
+  "minVersion": "0.8",
+  "required": true,
+  "package": "dev.s7a.strata.runtime.minecraft.fabric.mixin.canvas",
+  "compatibilityLevel": "JAVA_21",
+  "client": [
+    "FabricMinecraftCanvasGameRendererAccess",
+    "FabricMinecraftCanvasRenderStateAccess",
+    "FabricMinecraftCanvasVertexBufferMixin",
+    "FabricMinecraftCanvasGuiMixin"
+  ],
+  "injectors": {
+    "defaultRequire": 1
+  }
+}

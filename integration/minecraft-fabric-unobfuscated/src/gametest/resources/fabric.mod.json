@@ -4,9 +4,10 @@
   "version": "${version}",
   "name": "Strata Minecraft ${minecraftVersion} integration verification",
   "environment": "client",
+  "mixins": ${gameTestMixins},
   "entrypoints": {
     "fabric-client-gametest": [
-      "dev.s7a.strata.integration.minecraft.fabric.StrataMinecraftClientGameTest"
+      "${gameTestEntrypoint}"
     ]
   },
   "depends": {
