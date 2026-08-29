@@ -174,10 +174,9 @@ internal object TiledImageContentParentData {
             previous: Position,
             next: Position,
         ): Boolean =
-            when {
-                previous is Position.Fixed && next is Position.Fixed -> previous.value == next.value
-                previous is Position.Revisioned && next is Position.Revisioned -> previous.source === next.source
-                else -> false
+            when (previous) {
+                is Position.Fixed -> next is Position.Fixed && previous.value == next.value
+                is Position.Revisioned -> next is Position.Revisioned && previous.source === next.source
             }
     }
 
