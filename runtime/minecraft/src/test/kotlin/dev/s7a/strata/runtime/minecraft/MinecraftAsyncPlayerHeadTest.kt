@@ -8,6 +8,7 @@ import dev.s7a.strata.component.PlayerSkinSource
 import dev.s7a.strata.component.SlotBinding
 import dev.s7a.strata.component.Spacer
 import dev.s7a.strata.geometry.Constraints
+import dev.s7a.strata.geometry.FloatRect
 import dev.s7a.strata.geometry.IntRect
 import dev.s7a.strata.geometry.IntSize
 import dev.s7a.strata.modifier.Modifier
@@ -70,7 +71,7 @@ internal class MinecraftAsyncPlayerHeadTest {
         platform.binding.enqueue(MinecraftPlayerSkinBinding.Snapshot.Ready(skin))
         assertSame(MinecraftPlayerSkinBinding.Snapshot.Pending, platform.binding.snapshot())
         val ready = host.frame(IntSize(8, 8))
-        assertEquals(2, ready.drawCommands.filterIsInstance<DrawCommand.BlitImage>().size)
+        assertEquals(2, ready.drawCommands.filterIsInstance<DrawCommand.SampledImage>().size)
         assertTrue(ready.drawCommands.filterIsInstance<DrawCommand.FillRectangle>().isEmpty())
         host.close()
         assertTrue(platform.binding.closed)
@@ -144,17 +145,18 @@ internal class MinecraftAsyncPlayerHeadTest {
             host.attach()
             val firstSkin = skin(0xFFFF0000.toInt())
             platform.binding.enqueue(MinecraftPlayerSkinBinding.Snapshot.Ready(firstSkin))
-            val first = host.frame(IntSize(10, 10)).drawCommands.filterIsInstance<DrawCommand.BlitImage>()
+            val first = host.frame(IntSize(10, 10)).drawCommands.filterIsInstance<DrawCommand.SampledImage>()
             assertEquals(2, first.size)
             first.forEach { command ->
                 assertNotSame(firstSkin, command.image)
                 assertEquals(IntSize(10, 10), command.image.size)
-                assertEquals(IntRect(0, 0, 10, 10), command.source)
+                assertEquals(FloatRect(0f, 0f, 10f, 10f), command.source)
+                assertEquals(0f, command.alphaCutoff)
             }
 
             val secondSkin = skin(0xFF0000FF.toInt())
             platform.binding.enqueue(MinecraftPlayerSkinBinding.Snapshot.Ready(secondSkin))
-            val second = host.frame(IntSize(10, 10)).drawCommands.filterIsInstance<DrawCommand.BlitImage>()
+            val second = host.frame(IntSize(10, 10)).drawCommands.filterIsInstance<DrawCommand.SampledImage>()
             assertNotSame(first.first().image, second.first().image)
             assertEquals(0xFF0000FF.toInt(), second.first().image.argbAt(5, 5))
         } finally {

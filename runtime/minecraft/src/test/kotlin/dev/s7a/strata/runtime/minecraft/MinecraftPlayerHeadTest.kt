@@ -4,6 +4,7 @@ import dev.s7a.strata.component.PlayerHead
 import dev.s7a.strata.component.PlayerHeadScale
 import dev.s7a.strata.component.PlayerSkinSource
 import dev.s7a.strata.geometry.Constraints
+import dev.s7a.strata.geometry.FloatRect
 import dev.s7a.strata.geometry.IntRect
 import dev.s7a.strata.geometry.IntSize
 import dev.s7a.strata.modifier.Modifier
@@ -31,11 +32,12 @@ internal class MinecraftPlayerHeadTest {
         val host = scaledHost(skin, showHat = true, scale = PlayerHeadScale(3))
         try {
             host.attach()
-            val commands = host.frame(IntSize(24, 24)).drawCommands.map { command -> command as DrawCommand.BlitImage }
+            val commands = host.frame(IntSize(24, 24)).drawCommands.map { command -> command as DrawCommand.SampledImage }
             assertEquals(2, commands.size)
             commands.forEach { command -> assertSame(skin, command.image) }
-            assertEquals(listOf(IntRect(8, 8, 16, 16), IntRect(40, 8, 48, 16)), commands.map { command -> command.source })
-            assertEquals(List(2) { IntRect(0, 0, 24, 24) }, commands.map { command -> command.destination })
+            assertEquals(listOf(FloatRect(8f, 8f, 16f, 16f), FloatRect(40f, 8f, 48f, 16f)), commands.map { command -> command.source })
+            assertEquals(List(2) { FloatRect(0f, 0f, 24f, 24f) }, commands.map { command -> command.destination })
+            assertEquals(List(2) { 0f }, commands.map { command -> command.alphaCutoff })
 
             val rendered = rasterizeHeadless(commands, IntSize(24, 24))
             assertEquals(0xFF7F0080.toInt(), rendered.argbAt(0, 0))
@@ -51,11 +53,12 @@ internal class MinecraftPlayerHeadTest {
         val host = legacyHost(skin, showHat = false, size = 12)
         try {
             host.attach()
-            val command = host.frame(IntSize(12, 12)).drawCommands.single() as DrawCommand.BlitImage
+            val command = host.frame(IntSize(12, 12)).drawCommands.single() as DrawCommand.SampledImage
             assertNotSame(skin, command.image)
             assertEquals(IntSize(12, 12), command.image.size)
-            assertEquals(IntRect(0, 0, 12, 12), command.source)
-            assertEquals(IntRect(0, 0, 12, 12), command.destination)
+            assertEquals(FloatRect(0f, 0f, 12f, 12f), command.source)
+            assertEquals(FloatRect(0f, 0f, 12f, 12f), command.destination)
+            assertEquals(0f, command.alphaCutoff)
             assertEquals(0xFFFF0000.toInt(), rasterizeHeadless(listOf(command), IntSize(12, 12)).argbAt(6, 6))
         } finally {
             host.close()
@@ -68,8 +71,8 @@ internal class MinecraftPlayerHeadTest {
         val host = legacyHost(skin, showHat = false, size = 10)
         try {
             host.attach()
-            val command = host.frame(IntSize(10, 10)).drawCommands.single() as DrawCommand.BlitImage
-            val reused = host.frame(IntSize(10, 10)).drawCommands.single() as DrawCommand.BlitImage
+            val command = host.frame(IntSize(10, 10)).drawCommands.single() as DrawCommand.SampledImage
+            val reused = host.frame(IntSize(10, 10)).drawCommands.single() as DrawCommand.SampledImage
             assertSame(command.image, reused.image)
             val rendered = rasterizeHeadless(listOf(command), IntSize(10, 10))
             assertEquals(0xFFFF0000.toInt(), rendered.argbAt(0, 0))
@@ -87,7 +90,7 @@ internal class MinecraftPlayerHeadTest {
         val host = legacyHost(skin, showHat = false, size = 10)
         try {
             host.attach()
-            val command = host.frame(IntSize(10, 10)).drawCommands.single() as DrawCommand.BlitImage
+            val command = host.frame(IntSize(10, 10)).drawCommands.single() as DrawCommand.SampledImage
             assertEquals(0x00000000, command.image.argbAt(0, 0))
             assertEquals(0x1AFF0000, command.image.argbAt(4, 0))
             assertEquals(0xE6FF0000.toInt(), command.image.argbAt(5, 0))
@@ -107,16 +110,16 @@ internal class MinecraftPlayerHeadTest {
             tree.update(createMinecraftPlayerHeadElement(firstSkin, 10, false, Modifier.Empty, null))
             tree.measure(Constraints.fixed(10, 10))
             tree.layout()
-            val first = tree.paint().single() as DrawCommand.BlitImage
+            val first = tree.paint().single() as DrawCommand.SampledImage
 
             tree.update(createMinecraftPlayerHeadElement(equalSkin, 10, false, Modifier.Empty, null))
-            val replacedSkin = tree.paint().single() as DrawCommand.BlitImage
+            val replacedSkin = tree.paint().single() as DrawCommand.SampledImage
             assertNotSame(first.image, replacedSkin.image)
 
             tree.update(createMinecraftPlayerHeadElement(equalSkin, 11, false, Modifier.Empty, null))
             tree.measure(Constraints.fixed(11, 11))
             tree.layout()
-            val replacedSize = tree.paint().single() as DrawCommand.BlitImage
+            val replacedSize = tree.paint().single() as DrawCommand.SampledImage
             assertNotSame(replacedSkin.image, replacedSize.image)
             assertEquals(IntSize(11, 11), replacedSize.image.size)
         }
