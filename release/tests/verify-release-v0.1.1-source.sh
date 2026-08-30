@@ -27,6 +27,25 @@ jvm_pull_request_trigger="$(sed -n '/^  pull_request:$/,/^permissions:$/p' "$jvm
 [[ "$(grep --fixed-strings -c '      - qodana.yaml' <<< "$jvm_push_trigger")" == '1' ]] || fail 'Qodana configuration changes must trigger the JVM master check required by release preflight.'
 [[ "$(grep --fixed-strings -c '      - qodana.yaml' <<< "$jvm_pull_request_trigger")" == '1' ]] || fail 'Qodana configuration changes must trigger JVM pull-request checks before merge.'
 
+topology_script="$(
+  awk '
+    /^      - name: Check pinned workflow topology$/ { found_step = 1; next }
+    found_step && /^        run: \|$/ { in_run = 1; next }
+    found_step && /^      - name:/ { exit }
+    in_run {
+      sub(/^          /, "")
+      print
+    }
+  ' "$workflow"
+)"
+[[ -n "$topology_script" ]] || fail 'The pinned workflow topology guard script is missing.'
+if ! (
+  cd "$repository_root"
+  bash -c "$topology_script"
+); then
+  fail 'The pinned workflow topology guard does not execute successfully.'
+fi
+
 grep --fixed-strings 'name: Publish release' "$workflow" >/dev/null || fail 'The active release workflow name differs.'
 grep --fixed-strings 'workflow=.github/workflows/publish-release.yml' "$workflow" >/dev/null || fail 'The active release workflow does not check its own source.'
 grep --fixed-strings 'default: v0.1.1' "$workflow" >/dev/null || fail 'The v0.1.1 tag input is not pinned.'
