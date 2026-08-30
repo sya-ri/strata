@@ -191,13 +191,17 @@ JSON
 write_ruleset_response() {
   local bypass_actors="$1"
   local updated_at="$2"
+  local ruleset_name="${3:-Protect Strata v0.1.0}"
+  local ruleset_ref="${4:-refs/tags/v0.1.0}"
   jq -n \
     --arg repository "$GITHUB_REPOSITORY" \
     --arg updatedAt "$updated_at" \
+    --arg rulesetName "$ruleset_name" \
+    --arg rulesetRef "$ruleset_ref" \
     --argjson bypassActors "$bypass_actors" \
     '{
       id: 42,
-      name: "Protect Strata v0.1.0",
+      name: $rulesetName,
       target: "tag",
       source_type: "Repository",
       source: $repository,
@@ -205,7 +209,7 @@ write_ruleset_response() {
       bypass_actors: $bypassActors,
       conditions: {
         ref_name: {
-          include: ["refs/tags/v0.1.0"],
+          include: [$rulesetRef],
           exclude: []
         }
       },
@@ -239,6 +243,25 @@ jq 'del(.bypass_actors)' "$ruleset_response" > "$ruleset_response.omitted"
 mv "$ruleset_response.omitted" "$ruleset_response"
 bash "$repository_root/release/verify-github-tag-ruleset.sh" "$ruleset_contract" "$ruleset_receipt" >/dev/null || \
   fail 'A read-only GitHub response omitting bypass actors did not honor the matching administrator audit.'
+
+wildcard_contract="$temporary_root/github-release-tag-ruleset.json"
+wildcard_receipt="$temporary_root/github-release-tag-ruleset-receipt.json"
+cp "$repository_root/release/github-release-tag-ruleset.json" "$wildcard_contract"
+jq '.rulesetId = 42 | .updatedAt = "2026-08-25T00:00:00Z" | .bypassActorsAuditedAt = "2026-08-25T00:00:00Z"' \
+  "$repository_root/release/github-release-tag-ruleset-receipt.json" > "$wildcard_receipt"
+write_ruleset_response '[]' '2026-08-25T00:00:00Z' 'Protect Strata release tags' 'refs/tags/v*'
+wildcard_result="$(bash "$repository_root/release/verify-github-tag-ruleset.sh" "$wildcard_contract" "$wildcard_receipt")"
+[[ "$wildcard_result" == '42 2026-08-25T00:00:00Z' ]] || fail 'The canonical wildcard release-tag ruleset did not pass verification.'
+
+write_ruleset_response '[]' '2026-08-25T00:00:00Z' 'Protect Strata v0.1.2' 'refs/tags/v*'
+if bash "$repository_root/release/verify-github-tag-ruleset.sh" "$wildcard_contract" "$wildcard_receipt" >/dev/null 2>&1; then
+  fail 'A wildcard release-tag ruleset with an exact-tag name was accepted.'
+fi
+
+jq '.conditions.ref_name.include = ["refs/tags/*"]' "$wildcard_contract" > "$wildcard_contract.invalid"
+if bash "$repository_root/release/verify-github-tag-ruleset.sh" "$wildcard_contract.invalid" "$wildcard_receipt" >/dev/null 2>&1; then
+  fail 'A wildcard ruleset broader than release tags was accepted.'
+fi
 
 write_ruleset_response 'null' '2026-08-25T00:00:00Z'
 jq '(.rules[] | select(.type == "update")) |= del(.parameters)' "$ruleset_response" > "$ruleset_response.omitted"
