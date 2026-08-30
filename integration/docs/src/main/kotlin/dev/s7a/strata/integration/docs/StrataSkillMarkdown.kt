@@ -105,10 +105,9 @@ ${StateBindingDocumentationCatalog.entries.joinToString("\n\n") { entry -> state
 
 Application UI source compiles against `strata-api` only.
 Install exactly one matching Strata Fabric runtime as a separate client Mod together with Fabric Language Kotlin.
-Strata 0.1.1 adds Minecraft 1.20 support, Unicode text and resource-pack fonts, multiline `Text`, and Unicode editing with inline IME composition for `TextField` and `TextArea`.
+Strata 0.1.1 adds Minecraft 1.20 support, Unicode and resource-pack fonts, multiline text editing, wrapping `FlowRow` layout, extensible canvases, retained sampled-image acceleration, tiled pan-and-zoom images, and typed player-head scaling.
 This release adds sealed `UiText.WithFont` and `DrawCommand.SampledImage` variants; custom exhaustive visitors need updating, including previously compiled visitors that receive a new case.
 See [Source compatibility]($TEXT_GUIDE_URL#source-compatibility) before upgrading custom text visitors or rendering backends.
-FlowRow wrapping is an unreleased source addition and requires a source build until a subsequent release includes it.
 
 ```kotlin
 dependencies {

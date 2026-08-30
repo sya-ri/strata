@@ -4,8 +4,7 @@
 
 Strata is a declarative Minecraft UI library for Fabric Mods.
 Application code builds platform-neutral `ScreenDefinition` values from reusable components, structural layouts, active modifiers, typed state, and inventory bindings; a separately installed version-matched runtime renders them with Minecraft assets and behavior.
-Strata 0.1.1 adds Minecraft 1.20 support, Unicode text and resource-pack fonts, multiline `Text`, and Unicode editing with inline IME composition for `TextField` and `TextArea`.
-FlowRow wrapping is an unreleased source addition and requires a source build until a subsequent release includes it.
+Strata 0.1.1 adds Minecraft 1.20 support, Unicode and resource-pack fonts, multiline text editing, wrapping `FlowRow` layout, extensible canvases, retained sampled-image acceleration, tiled pan-and-zoom images, and typed player-head scaling.
 
 ## Highlights
 
