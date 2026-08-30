@@ -25,7 +25,9 @@ import java.net.InetSocketAddress
 import java.nio.charset.StandardCharsets
 import java.nio.file.Path
 import java.security.MessageDigest
+import java.util.concurrent.CountDownLatch
 import java.util.concurrent.Executors
+import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicInteger
 
 /** Verifies release reconciliation against an in-process Modrinth-compatible HTTP server. */
@@ -923,6 +925,7 @@ internal class ModrinthReleaseCoordinatorTest {
         private val executor = Executors.newCachedThreadPool()
         private val server = HttpServer.create(InetSocketAddress("localhost", 0), 0)
         private val versions = linkedSetOf<String>()
+        private val delayedCreateResponseRelease = CountDownLatch(1)
         private var historicalVersionCount: Int = 0
         private var remoteCategories: Set<String> = fixture.manifest.project.categories
         private var remoteAdditionalCategories: Set<String> = fixture.manifest.project.additionalCategories
@@ -1293,6 +1296,9 @@ internal class ModrinthReleaseCoordinatorTest {
 
         private fun versions(exchange: HttpExchange) {
             versionReadRequests += 1
+            if (timeoutFirstCreateAfterCommit && fixture.manifest.artifacts.first().versionNumber in versions) {
+                delayedCreateResponseRelease.countDown()
+            }
             val visibleVersions =
                 if (
                     fixture.manifest.artifacts
@@ -1362,7 +1368,9 @@ internal class ModrinthReleaseCoordinatorTest {
                 projectTypeAfterFirstVersion?.let { inferredType -> projectType = inferredType }
             }
             if (timeoutFirstCreateAfterCommit && createRequests == 1) {
-                Thread.sleep(100L)
+                check(delayedCreateResponseRelease.await(10L, TimeUnit.SECONDS)) {
+                    "Timed out waiting for the create-timeout recovery read."
+                }
                 respond(exchange, 200, JsonOutput.toJson(version(artifact)))
             } else if (ambiguousFirstCreate && createRequests == 1) {
                 respond(exchange, 503, "temporarily unavailable")
