@@ -44,6 +44,7 @@ internal object StateBindingDocumentationCatalog {
             Entry("SelectionListState", "SelectionListState.kt", "Caller-owned stable-key selection layered over virtual-list navigation."),
             Entry("TabSelectionIndicator", "TabSelectionIndicator.kt", "Reusable selected-state presentation, including underline and one-root custom content."),
             Entry("ImageSource", "ImageSource.kt", "Detached pixels or a resource-pack-resolved image identifier."),
+            Entry("CanvasSource", "CanvasSource.kt", "Externally owned image or native-output source. Create CPU inputs with `canvasSource(image)` or `canvasSource(frames)`; each canvas attachment owns only its binding and never closes the source."),
             Entry("PlayerSkinSource", "PlayerSkinSource.kt", "Detached pixels, current player, player name, or UUID resolved by the installed runtime."),
             Entry("SlotBinding", "SlotBinding.kt", "Immutable logical inventory locator retained without a Minecraft type."),
             Entry("Slots", "Slots.kt", "Validated factories for player inventory, logical container storage, and raw active-menu indices."),

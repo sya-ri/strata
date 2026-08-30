@@ -106,6 +106,7 @@ The tree shows Minecraft components in logical draw order; platform-neutral layo
 - [VirtualList](#virtual-list)
 - [SelectionList](#selection-list)
 - [Image](#image)
+- [Canvas](#canvas)
 - [Slot](#slot)
 - [PlayerHead](#player-head)
 - [LoadingIndicator](#loading-indicator)
@@ -1379,6 +1380,88 @@ The tree mirrors the complete dedicated definition, including the featured compo
 ```text
 `- Stack [Size(width=64, height=64), Background(color=0xFF000000), StackContentAlignment(alignment=Center)]
   `- Image [Size(width=32, height=32)]
+```
+
+</details>
+
+<a id="canvas"></a>
+
+## Canvas
+
+Canvas displays externally produced CPU frames or version-runtime native output in one input-passive rectangle. Decoded video and camera, filter, or custom-renderer output are independent uses; composing Image and Stack cannot provide source cutoffs, attachment lifetimes, leased GPU capture, or owned offscreen targets. The component does not implement a decoder, camera, world renderer, filter, or browser engine.
+
+This 96 by 64 PNG is the complete frame of the compiled dedicated `ScreenDefinition`, with a 96 by 64 logical viewport at GUI scale 1. Headless rendering samples the assets at this physical density; the image is not upscaled from a lower-resolution raster or cropped from a larger screen. Its source, asset, viewport, and image hashes are recorded in [the headless render receipt](components/headless-render.properties).
+
+![Canvas headless showcase](components/canvas.png)
+
+### Compiled example
+
+```kotlin
+import dev.s7a.strata.component.Canvas
+import dev.s7a.strata.component.Stack
+import dev.s7a.strata.component.canvasSource
+import dev.s7a.strata.geometry.IntSize
+import dev.s7a.strata.layout.Alignment
+import dev.s7a.strata.modifier.Modifier
+import dev.s7a.strata.modifier.background
+import dev.s7a.strata.modifier.size
+import dev.s7a.strata.render.ArgbColor
+import dev.s7a.strata.render.createDrawImage
+import dev.s7a.strata.screen.ScreenDefinition
+
+/**
+ * Builds a self-contained CPU Canvas showcase with immutable, independently known source texels.
+ *
+ * Construction runs on the screen owner thread and creates no source subscription or native resource.
+ * The one-shot definition owns its source description, while its retained canvas later owns the attachment binding.
+ *
+ * @return an unevaluated definition stretching a four-by-two CPU image into a 64 by 32 logical rectangle.
+ */
+internal fun createCanvasShowcaseScreenDefinition(): ScreenDefinition {
+    val image =
+        createDrawImage(
+            IntSize(4, 2),
+            intArrayOf(
+                0xFF4CC9F0.toInt(),
+                0xFF4361EE.toInt(),
+                0xFF7209B7.toInt(),
+                0xFFF72585.toInt(),
+                0xFF90BE6D.toInt(),
+                0xFFF9C74F.toInt(),
+                0xFFF8961E.toInt(),
+                0x80F94144.toInt(),
+            ),
+        )
+    val source = canvasSource(image)
+    return ScreenDefinition("Canvas showcase") {
+        Stack(
+            modifier =
+                Modifier.Empty
+                    .size(96, 64)
+                    .background(ArgbColor(0xFF000000.toInt())),
+            contentAlignment = Alignment.Center,
+        ) {
+            Canvas(source, size = IntSize(64, 32))
+        }
+    }
+}
+```
+
+### Modifiers
+
+Use an explicit positive logical `size`; the whole source stretches with nearest sampling, and changes to source pixel extent only repaint that destination. Canvas is input-passive. Compose `onCapturedPointerEvent` to forward unclamped local logical pointer coordinates, and use ordinary focus and keyboard modifiers only when the application needs them.
+
+### Parent scope
+
+`Canvas` is a leaf extension with no content scope or parent-data API. `canvasSource(image)` retains immutable CPU pixels, while `canvasSource(frames)` observes `StateSource<DrawImage>` through owner-thread frame cutoffs. Each attachment owns its binding; replacement, detachment, and close stop that binding without closing the externally owned source. Native sources require the matching versioned runtime and do not read back pixels during normal presentation. Native headless capture requires an immutable snapshot of the same committed generation, physical extent, and top-left orientation; a missing or mismatched snapshot fails before any output.
+
+<details><summary>Component tree</summary>
+
+The tree mirrors the complete dedicated definition, including the featured component, its minimum parent layout, and the children used to demonstrate its responsibility.
+
+```text
+`- Stack [Size(width=96, height=64), Background(color=0xFF000000), StackContentAlignment(alignment=Center)]
+  `- Canvas [Size(width=64, height=32)]
 ```
 
 </details>

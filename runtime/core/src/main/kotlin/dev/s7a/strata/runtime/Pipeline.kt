@@ -13,10 +13,12 @@ import dev.s7a.strata.layout.MeasureScope
 import dev.s7a.strata.layout.ParentDataKey
 import dev.s7a.strata.node.DirtyMask
 import dev.s7a.strata.node.DirtyPhase
+import dev.s7a.strata.node.FrameCutoffNode
 import dev.s7a.strata.node.FrameTimeNode
 import dev.s7a.strata.node.LayoutNode
 import dev.s7a.strata.node.MeasureNode
 import dev.s7a.strata.node.ParentDataModifierNode
+import dev.s7a.strata.node.SessionAttachmentNode
 import dev.s7a.strata.runtime.render.DrawCommand
 import dev.s7a.strata.runtime.semantics.SemanticsEntry
 import dev.s7a.strata.runtime.spi.RuntimeTextInputFocus
@@ -66,6 +68,7 @@ internal class Pipeline(
         effective.bounds = IntRect(0, 0, effective.measuredSize.width, effective.measuredSize.height)
         effective.placed = true
         layoutEntry(effective)
+        inputPipeline.layoutCommitted(root)
         focusedInputPipeline.layoutCommitted(root)
     }
 
@@ -106,23 +109,42 @@ internal class Pipeline(
     fun dispatchTextInput(event: TextInputEvent): InputResult = focusedInputPipeline.dispatchTextInput(event)
 
     /**
-     * Clears hover and focused ownership from the placed tree rooted at [root].
+     * Clears capture, hover, and focus from the retained tree rooted at [root], including unplaced hover observers.
+     *
+     * Each independent cleanup is attempted on the tree owner thread even when an earlier callback fails.
      *
      * @param root the installed logical root retained across session detachment.
-     * @throws Throwable when a hover or focus callback rejects the exit transition.
+     * @throws Throwable when a callback rejects cancellation or an exit transition; the first failure remains primary and later distinct failures are suppressed.
      */
     fun clearInputState(root: RetainedNode) {
-        inputPipeline.clearHover(root)
-        focusedInputPipeline.clear()
+        val failures = FailureAccumulator()
+        failures.capture { inputPipeline.cancelCapture() }
+        failures.capture { inputPipeline.clearHover(root) }
+        failures.capture { focusedInputPipeline.clear() }
+        failures.throwIfPresent()
     }
 
     /**
-     * Releases retained input-pipeline references without invoking behavior callbacks.
+     * Cancels a captured entry before its callbacks and lifecycle resources are disposed.
      *
-     * The owning tree calls this only after entering a terminal state and performs lifecycle cleanup independently.
+     * @param entry retained component or modifier being cleaned on the tree owner thread.
+     * @throws Throwable when cancellation fails; the lifecycle owner still attempts remaining cleanup.
+     */
+    fun entryWillCleanup(entry: RetainedEntry) {
+        inputPipeline.entryWillCleanup(entry)
+    }
+
+    /**
+     * Releases retained input-pipeline references and cancels an unfinished captured gesture.
+     *
+     * The owning tree calls this on its owner thread after entering a terminal state, and still performs lifecycle cleanup if cancellation fails.
+     * Focus references and then capture references are cleared before cancellation is invoked.
+     *
+     * @throws Throwable when the previous capture owner rejects cancellation.
      */
     fun releaseRetainedReferences() {
         focusedInputPipeline.releaseRetainedReferences()
+        inputPipeline.cancelCapture()
     }
 
     /**
@@ -132,6 +154,48 @@ internal class Pipeline(
      * @return entries in effective parent-before-child order.
      */
     fun semantics(root: RetainedNode): List<SemanticsEntry> = semanticsPipeline.semantics(root.effectiveRoot)
+
+    /**
+     * Captures pending external observations for every effective entry without committing any observation.
+     *
+     * @param root installed logical root, borrowed on its owner thread.
+     * @throws Throwable when capture fails; the tree performs terminal cleanup.
+     */
+    fun captureFrameState(root: RetainedNode) {
+        visitEntries(root.effectiveRoot) { entry -> (entry.node as? FrameCutoffNode)?.captureFrameState() }
+    }
+
+    /**
+     * Commits previously captured external observations before frame-cache evaluation.
+     *
+     * @param root installed logical root whose entries have all captured their cutoff.
+     * @throws Throwable when a commit fails; the tree performs terminal cleanup.
+     */
+    fun commitFrameState(root: RetainedNode) {
+        visitEntries(root.effectiveRoot) { entry -> (entry.node as? FrameCutoffNode)?.commitFrameState() }
+    }
+
+    /**
+     * Resumes attachment-scoped node resources in effective parent-first order on the tree owner thread.
+     *
+     * @param root installed logical root retained by an attached session.
+     * @throws Throwable when attachment fails; ordinary tree cleanup releases every claimed node.
+     */
+    fun sessionAttached(root: RetainedNode) {
+        visitEntries(root.effectiveRoot) { entry -> (entry.node as? SessionAttachmentNode)?.sessionAttached() }
+    }
+
+    /**
+     * Suspends all attachment-scoped resources in reverse-sibling descendant-first order.
+     *
+     * @param root installed logical root that remains owned by the detached session.
+     * @throws Throwable after every suspension is attempted; the first failure remains primary and later failures are suppressed.
+     */
+    fun sessionDetached(root: RetainedNode) {
+        val failures = FailureAccumulator()
+        detachSessionEntry(root.effectiveRoot, failures)
+        failures.throwIfPresent()
+    }
 
     /**
      * Notifies every time-aware effective entry before frame-cache evaluation.
@@ -387,5 +451,26 @@ internal class Pipeline(
         for (index in 0 until retained.effectiveChildCount) {
             advanceFrameEntry(retained.effectiveChildAt(index), time)
         }
+    }
+
+    private fun visitEntries(
+        retained: RetainedEntry,
+        callback: (RetainedEntry) -> Unit,
+    ) {
+        callback(retained)
+        for (index in 0 until retained.effectiveChildCount) {
+            visitEntries(retained.effectiveChildAt(index), callback)
+        }
+    }
+
+    private fun detachSessionEntry(
+        retained: RetainedEntry,
+        failures: FailureAccumulator,
+    ) {
+        for (index in retained.effectiveChildCount - 1 downTo 0) {
+            detachSessionEntry(retained.effectiveChildAt(index), failures)
+        }
+        val capability = retained.node as? SessionAttachmentNode ?: return
+        failures.capture(capability::sessionDetached)
     }
 }

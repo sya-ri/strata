@@ -7,9 +7,11 @@ import dev.s7a.strata.component.evaluateComponentTree
 import dev.s7a.strata.geometry.Constraints
 import dev.s7a.strata.geometry.IntOffset
 import dev.s7a.strata.input.InputResult
+import dev.s7a.strata.input.PointerButton
 import dev.s7a.strata.input.PointerEvent
 import dev.s7a.strata.input.PointerHoverEvent
 import dev.s7a.strata.modifier.Modifier
+import dev.s7a.strata.modifier.onCapturedPointerEvent
 import dev.s7a.strata.modifier.onHover
 import dev.s7a.strata.modifier.size
 import dev.s7a.strata.runtime.spi.RuntimeUiSession
@@ -125,6 +127,34 @@ internal class RuntimeUiSessionBridgeTest {
     }
 
     @Test
+    fun inputResetCancelsCaptureOnceAndPreservesTheCommittedFrame() {
+        val cancellations = ArrayList<PointerButton>()
+        val session =
+            createRuntimeUiSession {
+                evaluateComponentTree {
+                    Spacer(
+                        modifier = Modifier.Empty.size(2, 1).onCapturedPointerEvent(cancellations::add) { _, _ -> InputResult.Consumed },
+                    )
+                }
+            }
+        session.attach()
+        session.resetInputState()
+        val constraints = Constraints.fixed(2, 1)
+        val first = session.frame(constraints)
+        session.dispatchPointer(PointerEvent.Press(IntOffset.Zero, PointerButton.Primary))
+        assertEquals(InputResult.Consumed, session.dispatchPointer(PointerEvent.Move(IntOffset(20, 20))))
+
+        session.resetInputState()
+        session.resetInputState()
+        assertEquals(listOf(PointerButton.Primary), cancellations)
+        assertEquals(InputResult.Ignored, session.dispatchPointer(PointerEvent.Move(IntOffset(20, 20))))
+        assertSame(first, session.frame(constraints))
+        session.dispatchPointer(PointerEvent.Press(IntOffset.Zero, PointerButton.Secondary))
+        session.close()
+        assertEquals(listOf(PointerButton.Primary, PointerButton.Secondary), cancellations)
+    }
+
+    @Test
     fun invalidTransitionsAndEveryOperationRejectWrongThread() {
         val probe = TestProbe()
         val session = createRuntimeUiSession { probe.root(emptyList()) }
@@ -132,6 +162,7 @@ internal class RuntimeUiSessionBridgeTest {
         assertNull(session.textInputFocus)
         assertTrue(wrongThread { session.textInputFocus } is IllegalStateException)
         assertThrows(IllegalStateException::class.java) { session.detach() }
+        assertThrows(IllegalStateException::class.java) { session.resetInputState() }
         assertThrows(IllegalStateException::class.java) { session.frame(Constraints.fixed(2, 1)) }
         assertThrows(IllegalStateException::class.java) {
             session.dispatchPointer(PointerEvent.Move(IntOffset.Zero))
@@ -142,6 +173,7 @@ internal class RuntimeUiSessionBridgeTest {
         assertThrows(IllegalStateException::class.java) { session.attach() }
         assertNull(session.textInputFocus)
         assertTrue(wrongThread { session.detach() } is IllegalStateException)
+        assertTrue(wrongThread { session.resetInputState() } is IllegalStateException)
         val retainedFrame = session.frame(Constraints.fixed(2, 1))
         assertNull(session.textInputFocus)
         assertTrue(wrongThread { session.textInputFocus } is IllegalStateException)
@@ -154,6 +186,7 @@ internal class RuntimeUiSessionBridgeTest {
 
         session.detach()
         assertNull(session.textInputFocus)
+        assertThrows(IllegalStateException::class.java) { session.resetInputState() }
         assertThrows(IllegalStateException::class.java) { session.frame(Constraints.fixed(2, 1)) }
         session.close()
         session.close()

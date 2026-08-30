@@ -27,6 +27,32 @@ final class FabricMinecraftFailures {
         primary.addSuppressed(secondary);
     }
 
+    /**
+     * Runs one native operation and always restores its borrowed state without replacing its failure.
+     *
+     * <p>Both callbacks execute synchronously on the caller's owner thread and are never retained or retried.
+     * Cleanup also runs after a partially completed operation; its failure escapes only when the operation succeeded.</p>
+     *
+     * @param action borrowed native operation whose failure remains primary.
+     * @param cleanup independent state restoration attempted exactly once.
+     * @throws Throwable when either callback fails, suppressing a distinct cleanup failure onto the operation failure.
+     */
+    static void runWithCleanup(Runnable action, Runnable cleanup) throws Throwable {
+        Throwable primary = null;
+        try {
+            action.run();
+        } catch (Throwable failure) {
+            primary = failure;
+        }
+        try {
+            cleanup.run();
+        } catch (Throwable failure) {
+            if (primary == null) primary = failure;
+            else addSuppressed(primary, failure);
+        }
+        if (primary != null) throw primary;
+    }
+
     private static boolean reaches(Throwable root, Throwable target) {
         Set<Throwable> seen = Collections.newSetFromMap(new IdentityHashMap<>());
         ArrayDeque<Throwable> pending = new ArrayDeque<>();

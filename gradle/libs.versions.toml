@@ -49,6 +49,7 @@ minecraft1205 = "1.20.5"
 minecraft1206 = "1.20.6"
 fabric-loader = "0.19.3"
 fabric-mixin = "0.17.3+mixin.0.8.7"
+mixin-extras = "0.5.4"
 fabric-language-kotlin = "1.13.13+kotlin.2.4.10"
 fabric-loom = "1.17.19"
 fabric-api262 = "0.158.0+26.2"
@@ -108,6 +109,7 @@ minecraft1205 = { module = "com.mojang:minecraft", version.ref = "minecraft1205"
 minecraft1206 = { module = "com.mojang:minecraft", version.ref = "minecraft1206" }
 fabric-loader = { module = "net.fabricmc:fabric-loader", version.ref = "fabric-loader" }
 fabric-mixin = { module = "net.fabricmc:sponge-mixin", version.ref = "fabric-mixin" }
+mixin-extras = { module = "io.github.llamalad7:mixinextras-fabric", version.ref = "mixin-extras" }
 fabric-language-kotlin = { module = "net.fabricmc:fabric-language-kotlin", version.ref = "fabric-language-kotlin" }
 fabric-api262 = { module = "net.fabricmc.fabric-api:fabric-api", version.ref = "fabric-api262" }
 fabric-api261 = { module = "net.fabricmc.fabric-api:fabric-api", version.ref = "fabric-api261" }

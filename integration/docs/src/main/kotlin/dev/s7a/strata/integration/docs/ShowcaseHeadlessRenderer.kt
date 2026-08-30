@@ -6,6 +6,7 @@ import dev.s7a.strata.geometry.IntRect
 import dev.s7a.strata.geometry.IntSize
 import dev.s7a.strata.input.PointerEvent
 import dev.s7a.strata.integration.minecraft.fabric.createButtonShowcaseScreenDefinition
+import dev.s7a.strata.integration.minecraft.fabric.createCanvasShowcaseScreenDefinition
 import dev.s7a.strata.integration.minecraft.fabric.createCheckboxShowcaseScreenDefinition
 import dev.s7a.strata.integration.minecraft.fabric.createColumnShowcaseScreenDefinition
 import dev.s7a.strata.integration.minecraft.fabric.createConfirmScreenDefinition
@@ -93,6 +94,7 @@ internal object ShowcaseHeadlessRenderer {
                 DocumentedComponent.VirtualList -> createVirtualListShowcaseScreenDefinition()
                 DocumentedComponent.SelectionList -> createSelectionListShowcaseScreenDefinition()
                 DocumentedComponent.Image -> createImageShowcaseScreenDefinition(image(assets, coalGenerator))
+                DocumentedComponent.Canvas -> createCanvasShowcaseScreenDefinition()
                 DocumentedComponent.Slot -> createSlotShowcaseScreenDefinition()
                 DocumentedComponent.PlayerHead -> createPlayerHeadShowcaseScreenDefinition(assets.playerSkin)
                 DocumentedComponent.LoadingIndicator -> createLoadingIndicatorShowcaseScreenDefinition()

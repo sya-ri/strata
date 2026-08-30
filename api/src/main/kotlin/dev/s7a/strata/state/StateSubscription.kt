@@ -16,12 +16,9 @@ import java.util.concurrent.locks.ReentrantLock
  */
 public class StateSubscription<out T> public constructor(
     public val initialSnapshot: StateSnapshot<T>,
-    private val closeAction: () -> Unit,
+    closeAction: () -> Unit,
 ) : AutoCloseable {
-    private val monitor = ReentrantLock()
-    private val completed = monitor.newCondition()
-    private var state: CloseState = CloseState.Open
-    private var reentrantFailure: Throwable? = null
+    private val closeController = CloseController(closeAction)
 
     /**
      * Closes this observation exactly once.
@@ -36,81 +33,103 @@ public class StateSubscription<out T> public constructor(
      * @throws Throwable when source cleanup fails.
      */
     override fun close() {
-        val runAction = claimClose(Thread.currentThread())
-        if (runAction.not()) {
-            return
-        }
-        val failure = runCatching(closeAction).exceptionOrNull()
-        val terminalFailure = finishClose(failure)
-        terminalFailure?.let { thrown -> throw thrown }
+        closeController.close()
     }
 
-    private fun claimClose(currentThread: Thread): Boolean {
-        var runAction: Boolean? = null
-        var observedFailure: Throwable? = null
-        monitor.lock()
-        try {
-            while (runAction == null && observedFailure == null) {
-                when (val current = state) {
-                    CloseState.Open -> {
-                        state = CloseState.Closing(currentThread)
-                        runAction = true
-                    }
+    /**
+     * Retains the shared close operation without retaining this subscription's initial value.
+     *
+     * Image bindings use this after transferring the initial observation so obsolete pixels do not remain reachable through a cleanup handle.
+     * The returned operation is thread-safe, shares this subscription's exactly-once result, and retains only the source-owned cleanup action and close state.
+     *
+     * @return a cleanup operation with the same failure and concurrency behavior as [close].
+     */
+    @JvmSynthetic
+    internal fun retainCloseAction(): () -> Unit = closeController::close
 
-                    is CloseState.Closing -> {
-                        if (current.owner === currentThread) {
-                            val failure =
-                                reentrantFailure
-                                    ?: IllegalStateException("State subscription close re-entered its cleanup action.")
-                            reentrantFailure = failure
-                            throw failure
+    private class CloseController(
+        private val closeAction: () -> Unit,
+    ) : AutoCloseable {
+        private val monitor = ReentrantLock()
+        private val completed = monitor.newCondition()
+        private var state: CloseState = CloseState.Open
+        private var reentrantFailure: Throwable? = null
+
+        override fun close() {
+            val runAction = claimClose(Thread.currentThread())
+            if (runAction.not()) return
+            val failure = runCatching(closeAction).exceptionOrNull()
+            val terminalFailure = finishClose(failure)
+            terminalFailure?.let { thrown -> throw thrown }
+        }
+
+        private fun claimClose(currentThread: Thread): Boolean {
+            var runAction: Boolean? = null
+            var observedFailure: Throwable? = null
+            monitor.lock()
+            try {
+                while (runAction == null && observedFailure == null) {
+                    when (val current = state) {
+                        CloseState.Open -> {
+                            state = CloseState.Closing(currentThread)
+                            runAction = true
                         }
-                        completed.awaitUninterruptibly()
-                    }
 
-                    CloseState.Closed -> {
-                        runAction = false
-                    }
+                        is CloseState.Closing -> {
+                            if (current.owner === currentThread) {
+                                val failure =
+                                    reentrantFailure
+                                        ?: IllegalStateException("State subscription close re-entered its cleanup action.")
+                                reentrantFailure = failure
+                                throw failure
+                            }
+                            completed.awaitUninterruptibly()
+                        }
 
-                    is CloseState.Failed -> {
-                        observedFailure = current.failure
+                        CloseState.Closed -> {
+                            runAction = false
+                        }
+
+                        is CloseState.Failed -> {
+                            observedFailure = current.failure
+                        }
                     }
                 }
+            } finally {
+                monitor.unlock()
             }
-        } finally {
-            monitor.unlock()
+            observedFailure?.let { failure -> throw failure }
+            return runAction == true
         }
-        observedFailure?.let { failure -> throw failure }
-        return runAction == true
-    }
 
-    private fun finishClose(failure: Throwable?): Throwable? {
-        monitor.lock()
-        try {
-            val reentrant = reentrantFailure
-            if (reentrant != null && failure != null && reentrant !== failure) {
-                reentrant.addSuppressed(failure)
+        private fun finishClose(failure: Throwable?): Throwable? {
+            monitor.lock()
+            try {
+                val reentrant = reentrantFailure
+                if (reentrant != null && failure != null && reentrant !== failure) {
+                    reentrant.addSuppressed(failure)
+                }
+                val terminalFailure = reentrant ?: failure
+                state = if (terminalFailure == null) CloseState.Closed else CloseState.Failed(terminalFailure)
+                completed.signalAll()
+                return terminalFailure
+            } finally {
+                monitor.unlock()
             }
-            val terminalFailure = reentrant ?: failure
-            state = if (terminalFailure == null) CloseState.Closed else CloseState.Failed(terminalFailure)
-            completed.signalAll()
-            return terminalFailure
-        } finally {
-            monitor.unlock()
         }
-    }
 
-    private sealed interface CloseState {
-        data object Open : CloseState
+        private sealed interface CloseState {
+            data object Open : CloseState
 
-        data class Closing(
-            val owner: Thread,
-        ) : CloseState
+            data class Closing(
+                val owner: Thread,
+            ) : CloseState
 
-        data object Closed : CloseState
+            data object Closed : CloseState
 
-        data class Failed(
-            val failure: Throwable,
-        ) : CloseState
+            data class Failed(
+                val failure: Throwable,
+            ) : CloseState
+        }
     }
 }

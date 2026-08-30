@@ -119,6 +119,16 @@ internal class DrawImagePipelineTest {
     }
 
     @Test
+    fun outputPixelCommandRetainsImmutableImageAndValidatesCopies() {
+        val image = image()
+        val command = DrawCommand.BlitImagePixels(image, IntRect(0, 0, 2, 2), IntRect(0, 0, 1, 1))
+        assertSame(image, command.image)
+        assertThrows<IllegalArgumentException> { command.copy(source = IntRect(-1, 0, 1, 1)) }
+        assertThrows<IllegalArgumentException> { command.copy(source = IntRect(1, 0, 3, 1)) }
+        assertThrows<IllegalArgumentException> { command.copy(destination = IntRect(0, 0, 0, 1)) }
+    }
+
+    @Test
     fun publicCommandChecksEverySourceEdgeAndDestinationExtent() {
         val image = image()
         assertThrows<IllegalArgumentException> {

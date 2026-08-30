@@ -242,6 +242,52 @@ internal class FocusedInputModifierTest {
     }
 
     @Test
+    fun failedFocusResetClearsEveryRetainedReferenceBeforeRemainingCallbacks() {
+        val first = IllegalArgumentException("first focus loss")
+        val second = IllegalStateException("second focus loss")
+        val observed = ArrayList<Throwable>()
+        lateinit var retainedTree: UiTree
+        retainedTree =
+            tree(
+                Modifier.Empty
+                    .size(10, 10)
+                    .initialFocus()
+                    .onFocusChanged { event ->
+                        if (event === FocusEvent.Lost) {
+                            assertNull(retainedFocusOwner(retainedTree))
+                            assertTrue(retainedFocusTargets(retainedTree).isEmpty())
+                            assertNull(retainedTextInputFocus(retainedTree))
+                            assertTrue(retainedTextInputTargets(retainedTree).isEmpty())
+                            observed += second
+                            throw second
+                        }
+                    }.onFocusChanged { event ->
+                        if (event === FocusEvent.Lost) {
+                            assertNull(retainedFocusOwner(retainedTree))
+                            assertTrue(retainedFocusTargets(retainedTree).isEmpty())
+                            assertNull(retainedTextInputFocus(retainedTree))
+                            assertTrue(retainedTextInputTargets(retainedTree).isEmpty())
+                            observed += first
+                            throw first
+                        }
+                    }.then(FocusAcceptanceElement(true, ArrayList(), editable = true)),
+            )
+        assertNotNull(retainedTree.currentTextInputFocus())
+
+        val failure = assertThrows(IllegalArgumentException::class.java) { retainedTree.clearInputState() }
+
+        assertSame(first, failure)
+        assertEquals(listOf(second), failure.suppressed.toList())
+        assertEquals(listOf(first, second), observed)
+        assertNull(retainedFocusOwner(retainedTree))
+        assertTrue(retainedFocusTargets(retainedTree).isEmpty())
+        assertNull(retainedTextInputFocus(retainedTree))
+        assertTrue(retainedTextInputTargets(retainedTree).isEmpty())
+        assertEquals(TreeState.Poisoned, retainedTree.state)
+        retainedTree.close()
+    }
+
+    @Test
     fun replacedFocusTargetsAreForgottenWithoutCallingDisposedNodes() {
         val transitions = ArrayList<FocusEvent>()
         val modifier = Modifier.Empty.size(10, 10).initialFocus()

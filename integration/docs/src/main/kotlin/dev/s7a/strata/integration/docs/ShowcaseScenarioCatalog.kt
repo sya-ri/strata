@@ -294,6 +294,16 @@ internal object ShowcaseScenarioCatalog {
                     ),
             ),
             ComponentScenario(
+                component = DocumentedComponent.Canvas,
+                source = componentSource("MinecraftCanvasExample.kt", "canvas"),
+                viewportMetadata = ShowcaseViewport(IntSize(96, 64), 1),
+                tree =
+                    centeredCanvas(
+                        IntSize(96, 64),
+                        tree(DocumentedComponent.Canvas, listOf(ShowcaseTreeDetail.Size(64, 32))),
+                    ),
+            ),
+            ComponentScenario(
                 component = DocumentedComponent.Slot,
                 source = componentSource("MinecraftSlotShowcaseExample.kt", "slot"),
                 viewportMetadata = ShowcaseViewport(IntSize(64, 64), 1),

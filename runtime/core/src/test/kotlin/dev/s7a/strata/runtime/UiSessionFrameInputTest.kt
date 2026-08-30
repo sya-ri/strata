@@ -14,9 +14,11 @@ import dev.s7a.strata.input.KeyCode
 import dev.s7a.strata.input.KeyboardEvent
 import dev.s7a.strata.input.PointerButton
 import dev.s7a.strata.input.PointerEvent
+import dev.s7a.strata.input.PointerHoverEvent
 import dev.s7a.strata.input.TextInputEvent
 import dev.s7a.strata.modifier.Modifier
 import dev.s7a.strata.modifier.initialFocus
+import dev.s7a.strata.modifier.onCapturedPointerEvent
 import dev.s7a.strata.modifier.onFocusChanged
 import dev.s7a.strata.modifier.onHover
 import dev.s7a.strata.modifier.onKeyEvent
@@ -532,6 +534,102 @@ internal class UiSessionFrameInputTest {
         assertEquals(frame.hashCode(), equalFrame.hashCode())
         assertNotEquals(frame, differentFrame)
         assertNotEquals(frame, "frame")
+    }
+
+    @Test
+    fun detachCancelsCaptureWithoutDisposingRetainedNodesAndReattachStartsUncaptured() {
+        val probe = TestProbe(inputResult = InputResult.Ignored)
+        val cancellations = ArrayList<PointerButton>()
+        val session =
+            UiSession(TestOwnerDispatcher()) {
+                probe.root(
+                    emptyList(),
+                    modifier = Modifier.Empty.onCapturedPointerEvent(cancellations::add) { _, _ -> InputResult.Consumed },
+                )
+            }
+        val constraints = Constraints.fixed(2, 1)
+        session.attach()
+        session.frame(constraints)
+        val retained = probe.created.single()
+        session.dispatchPointer(PointerEvent.Press(IntOffset.Zero, PointerButton.Primary))
+        session.detach()
+        assertEquals(listOf(PointerButton.Primary), cancellations)
+        assertEquals(0, probe.events.count { event -> event is TestProbe.Event.Detach || event is TestProbe.Event.Dispose })
+
+        session.attach()
+        assertEquals(InputResult.Ignored, session.dispatchPointer(PointerEvent.Move(IntOffset(10, 10))))
+        session.frame(constraints)
+        assertSame(retained, probe.created.single())
+        assertEquals(InputResult.Ignored, session.dispatchPointer(PointerEvent.Move(IntOffset(10, 10))))
+        session.dispatchPointer(PointerEvent.Press(IntOffset.Zero, PointerButton.Secondary))
+        session.close()
+        assertEquals(listOf(PointerButton.Primary, PointerButton.Secondary), cancellations)
+        assertEquals(1, probe.events.count { event -> event is TestProbe.Event.Dispose })
+    }
+
+    @Test
+    fun inputResetCancellationFailureStillClearsEveryHoverAndFocusObserver() {
+        val cancellation = IllegalArgumentException("cancel")
+        val firstHover = IllegalStateException("inner hover")
+        val secondHover = IllegalStateException("outer hover")
+        val firstFocus = IllegalStateException("inner focus")
+        val secondFocus = IllegalStateException("outer focus")
+        var cancellations = 0
+        val observed = ArrayList<Throwable>()
+        val session =
+            UiSession(TestOwnerDispatcher()) {
+                evaluateComponentTree {
+                    Spacer(
+                        modifier =
+                            Modifier.Empty
+                                .size(2, 1)
+                                .initialFocus()
+                                .onFocusChanged { event ->
+                                    if (event === FocusEvent.Lost) {
+                                        recordFailure(observed, secondFocus)
+                                    }
+                                }.onFocusChanged { event ->
+                                    if (event === FocusEvent.Lost) {
+                                        recordFailure(observed, firstFocus)
+                                    }
+                                }.onHover { event ->
+                                    if (event === PointerHoverEvent.Exit) {
+                                        recordFailure(observed, secondHover)
+                                    }
+                                }.onHover { event ->
+                                    if (event === PointerHoverEvent.Exit) {
+                                        recordFailure(observed, firstHover)
+                                    }
+                                }.onCapturedPointerEvent(
+                                    onCancel = { _ ->
+                                        cancellations += 1
+                                        throw cancellation
+                                    },
+                                ) { _, _ -> InputResult.Consumed },
+                    )
+                }
+            }
+        session.attach()
+        session.frame(Constraints.fixed(2, 1))
+        session.dispatchPointer(PointerEvent.Move(IntOffset.Zero))
+        session.dispatchPointer(PointerEvent.Press(IntOffset.Zero, PointerButton.Primary))
+
+        val failure = assertThrows(IllegalArgumentException::class.java) { session.resetInputState() }
+        assertSame(cancellation, failure)
+        val cleanup = listOf(firstHover, secondHover, firstFocus, secondFocus)
+        assertEquals(cleanup, observed)
+        assertEquals(cleanup, failure.suppressed.toList())
+        assertEquals(UiSessionState.Failed(cancellation), session.lifecycleState)
+        session.close()
+        assertEquals(1, cancellations)
+    }
+
+    private fun recordFailure(
+        observed: MutableList<Throwable>,
+        failure: Throwable,
+    ): Nothing {
+        observed += failure
+        throw failure
     }
 
     private class LocalHolder<T> {

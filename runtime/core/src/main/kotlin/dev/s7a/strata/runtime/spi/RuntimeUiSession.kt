@@ -125,6 +125,17 @@ public sealed interface RuntimeUiSession : AutoCloseable {
     public fun dispatchTextInput(event: TextInputEvent): InputResult
 
     /**
+     * Cancels pointer capture and clears hover and focused input after window blur or an explicit platform input reset.
+     *
+     * This synchronous owner-thread operation preserves the attached session and its committed immutable frame.
+     * It is a no-op before the first successful frame, and cancellation clears ownership before callbacks run.
+     *
+     * @throws IllegalStateException when called from another thread, reentrantly, or while the session is not attached.
+     * @throws Throwable when input cleanup fails; the exact first failure remains primary while remaining cleanup is attempted.
+     */
+    public fun resetInputState()
+
+    /**
      * Closes this session synchronously on its owner thread.
      *
      * Close is idempotent after completion and transitions to closed before finalizer work begins.

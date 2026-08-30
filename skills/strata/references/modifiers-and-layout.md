@@ -4,7 +4,7 @@
 
 Modifiers are active retained behavior, not a passive settings bag.
 Order matters: layout and input elements wrap the behavior that follows them in the chain.
-The 50 compiled overloads below form 40 top-level extension groups.
+The 51 compiled overloads below form 41 top-level extension groups.
 
 | Extension | Overloads | Category | Use |
 | --- | ---: | --- | --- |
@@ -21,6 +21,7 @@ The 50 compiled overloads below form 40 top-level extension groups.
 | `initialFocus` | 1 | Focus and text | Requests initial focus when the retained node first attaches. |
 | `menuBackground` | 1 | Paint | Paints the active resource-pack menu background without creating a separate background component. |
 | `onAction` | 1 | Advanced actions | Handles an extensible typed action key; prefer a focused built-in action extension when one exists. |
+| `onCapturedPointerEvent` | 1 | Pointer | Captures a consumed press for one button, forwards movement and matching drag/release outside bounds or ancestor clips, and reports cancellation when ownership ends early. |
 | `onCharacterInput` | 1 | Focus and text | Handles committed character input while the element is focused. |
 | `onCheckedChange` | 1 | Component actions | Receives the next boolean value emitted by `Checkbox`. |
 | `onCycle` | 1 | Component actions | Receives the next typed value emitted by `CycleButton`. |
@@ -128,6 +129,12 @@ fun Modifier.menuBackground(): Modifier
 
 ```kotlin
 fun <T : Any> Modifier.onAction(key: ActionKey<T>, callback: (T) -> ActionResult): Modifier
+```
+
+### `onCapturedPointerEvent`
+
+```kotlin
+fun Modifier.onCapturedPointerEvent(onCancel: (PointerButton) -> Unit, callback: (PointerEvent, IntOffset) -> InputResult): Modifier
 ```
 
 ### `onCharacterInput`
@@ -881,6 +888,25 @@ method dev.s7a.strata.component.ImageSource$Resource.equals(java.lang.Object): b
 method dev.s7a.strata.component.ImageSource$Resource.getId(): dev.s7a.strata.resource.ResourceId
 method dev.s7a.strata.component.ImageSource$Resource.hashCode(): int
 method dev.s7a.strata.component.ImageSource$Resource.toString(): java.lang.String
+```
+
+</details>
+
+### CanvasSource
+
+Externally owned image or native-output source. Create CPU inputs with `canvasSource(image)` or `canvasSource(frames)`; each canvas attachment owns only its binding and never closes the source.
+
+#### `CanvasSource`
+
+```kotlin
+fun interface CanvasSource
+```
+
+<details><summary>Compiled JVM API fingerprints</summary>
+
+```text
+interface dev.s7a.strata.component.CanvasSource
+method dev.s7a.strata.component.CanvasSource.open-F1gC8AI(long): dev.s7a.strata.component.CanvasBinding
 ```
 
 </details>

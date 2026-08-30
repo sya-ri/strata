@@ -34,10 +34,10 @@ public class UiTree : AutoCloseable {
     private val threadGuard: ThreadGuard = ThreadGuard.currentThread()
     private val dirtyTracker = DirtyTracker()
     private val registry = NodeOwnershipRegistry()
-    private val lifecycle = LifecycleManager(registry, threadGuard, dirtyTracker)
+    private val pipeline = Pipeline(threadGuard)
+    private val lifecycle = LifecycleManager(registry, threadGuard, dirtyTracker, pipeline::entryWillCleanup)
     private val reconciler = Reconciler(lifecycle, dirtyTracker)
     private val validator = DescriptionValidator()
-    private val pipeline = Pipeline(threadGuard)
     private var currentState: TreeState = TreeState.Active
     private var root: RetainedNode? = null
     private var operationActive: Boolean = false
@@ -112,6 +112,46 @@ public class UiTree : AutoCloseable {
                 lifecycle.attachPending(retainedRoot)
             }
             pipeline.synchronizeInputGeometry(retainedRoot, constraints)
+        }
+    }
+
+    /**
+     * Captures every retained external observation on the owner thread before any source value is committed.
+     * A callback failure poisons this tree and releases captured state through ordinary node cleanup.
+     */
+    internal fun captureFrameState() {
+        pipelineOperation {
+            root?.let(pipeline::captureFrameState)
+        }
+    }
+
+    /**
+     * Commits the previously captured observations on the owner thread before declarative frame work.
+     * A callback failure poisons this tree and preserves that failure through cleanup.
+     */
+    internal fun commitFrameState() {
+        pipelineOperation {
+            root?.let(pipeline::commitFrameState)
+        }
+    }
+
+    /**
+     * Resumes session-scoped resources of the retained tree without changing ordinary lifecycle ownership.
+     * Calls run parent-first on the owner thread and a failure poisons this tree after best-effort cleanup.
+     */
+    internal fun sessionAttached() {
+        pipelineOperation {
+            root?.let(pipeline::sessionAttached)
+        }
+    }
+
+    /**
+     * Suspends session-scoped resources while retaining node identity and layout on the owner thread.
+     * Every callback is attempted; a failure poisons this tree and preserves the primary exception through cleanup.
+     */
+    internal fun sessionDetached() {
+        pipelineOperation {
+            root?.let(pipeline::sessionDetached)
         }
     }
 
@@ -229,6 +269,8 @@ public class UiTree : AutoCloseable {
      * The deepest and latest-painted hit node runs first.
      * [InputResult.Ignored] bubbles to earlier candidates.
      * [InputResult.Consumed] stops dispatch.
+     * A captured move or matching-button drag or release bypasses bounds and ancestor clips and stops propagation even when the owner returns ignored.
+     * Capture is acquired only by a capable node's consumed press and is cleared before the matching release callback.
      * A callback failure poisons the tree only when it escapes the callback.
      *
      * @param event the event in tree coordinates.
@@ -284,13 +326,14 @@ public class UiTree : AutoCloseable {
         }
 
     /**
-     * Clears hover and focused ownership before an internal retained session detaches without disposing this tree.
+     * Cancels capture and clears hover and focus when a retained session detaches or resets input without disposing this tree.
      *
      * The operation is owner-thread confined and uses the most recently committed placement bounds even when later geometry became dirty.
-     * It invokes capable placed nodes in deepest/latest-painted-first order and retains the tree for reattachment.
+     * It clears capture before cancellation, then invokes retained hover nodes, including unplaced entries, in deepest/latest-painted-first order and clears focus.
+     * Every independent cleanup is attempted even when cancellation fails; the tree is otherwise retained for continued input or reattachment.
      *
      * @throws IllegalStateException when the call is from another thread, another operation is active, or this tree is not active.
-     * @throws Throwable when a hover or focus callback fails; the exact failure remains primary while the tree is poisoned and cleaned.
+     * @throws Throwable when a cancellation, hover, or focus callback fails; the exact failure remains primary while the tree is poisoned and cleaned.
      */
     @JvmSynthetic
     internal fun clearInputState() {
@@ -352,9 +395,10 @@ public class UiTree : AutoCloseable {
             currentState = TreeState.Closed
             val capturedRoot = root
             root = null
-            pipeline.releaseRetainedReferences()
             registry.clear()
             val failures = FailureAccumulator()
+            capturedRoot?.let(lifecycle::prepareCleanup)
+            failures.capture { pipeline.releaseRetainedReferences() }
             if (capturedRoot != null) {
                 failures.addOptional(lifecycle.cleanup(capturedRoot))
             }
@@ -385,9 +429,10 @@ public class UiTree : AutoCloseable {
         currentState = TreeState.Poisoned
         val capturedRoot = root
         root = null
-        pipeline.releaseRetainedReferences()
         registry.clear()
         val failures = FailureAccumulator(failure)
+        capturedRoot?.let(lifecycle::prepareCleanup)
+        failures.capture { pipeline.releaseRetainedReferences() }
         if (capturedRoot != null) {
             failures.addOptional(lifecycle.cleanup(capturedRoot))
         }

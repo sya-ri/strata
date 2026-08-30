@@ -14,14 +14,18 @@
   },
   "license": "MIT",
   "environment": "client",
-  "mixins": [
-    "strata.client.mixins.json"
-  ],
   "entrypoints": {
     "client": [
       "dev.s7a.strata.runtime.minecraft.fabric.StrataFabricClient"
     ]
   },
+  "mixins": [
+    "strata.client.mixins.json",
+    "strata.canvas.mixins.json",
+    "strata.canvas.gui.mixins.json",
+    "strata.canvas.frame.mixins.json",
+    "strata.canvas.vulkan.mixins.json"
+  ],
   "depends": {
     "fabricloader": ">=${fabricLoader}",
     "minecraft": "${minecraft}",

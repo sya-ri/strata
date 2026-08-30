@@ -1,36 +1,30 @@
 package dev.s7a.strata.runtime.minecraft.fabric
 
-import com.mojang.blaze3d.platform.NativeImage
 import dev.s7a.strata.geometry.FloatRect
 import dev.s7a.strata.geometry.IntOffset
 import dev.s7a.strata.geometry.IntRect
 import dev.s7a.strata.geometry.IntSize
-import dev.s7a.strata.runtime.headless.HeadlessImage
-import dev.s7a.strata.runtime.headless.rasterizeHeadless
 import dev.s7a.strata.runtime.render.DrawCommand
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
 import net.minecraft.client.Minecraft
 import net.minecraft.client.gui.GuiGraphics
-import net.minecraft.client.renderer.texture.DynamicTexture
-import java.util.concurrent.atomic.AtomicLong
 
 /**
  * Owns prepared display layers, native frame textures, and render-work counters for one Fabric screen.
  *
  * Every operation is confined to the owning Minecraft client thread.
  * Portable command runs are rasterized into bounded native textures, while platform commands are submitted through a borrowed callback that is never retained.
- * Releasing presentation state clears display-list and pointer references and unregisters every owned texture; cleanup failures are aggregated with the first failure kept primary.
+ * Releasing presentation state clears screen-owned drawing, pointer, and texture references before device-owned retirement; queued textures survive their actual GUI-consumption fences.
  * The presenter is reusable after release so a transiently removed screen can later attach again.
  *
  * @param minecraftClient client whose render thread and texture manager own this presentation.
  */
 @OptIn(InternalStrataRuntimeApi::class)
-@Suppress("TooGenericExceptionCaught", "TooManyFunctions")
+@Suppress("TooManyFunctions")
 internal class FabricMinecraftFramePresenter(
     private val minecraftClient: Minecraft,
 ) {
-    private val textures: MutableList<DynamicTexture> = ArrayList()
-    private val textureLocations: MutableList<MinecraftResourceLocation> = ArrayList()
+    private val portableFrames = FabricMinecraftPortableFrames()
     private var preparedCommands: List<DrawCommand>? = null
     private var preparedViewport: IntSize? = null
     private var preparedScale: Int? = null
@@ -133,6 +127,7 @@ internal class FabricMinecraftFramePresenter(
         val nativeScale: Number = minecraftClient.window.guiScale
         val scale = nativeScale.toInt()
         require(0 < scale) { "GUI scale must be positive." }
+        val generation = portableFrames.releaseGeneration
         val reusePreparedFrame = commands === preparedCommands && viewport == preparedViewport && scale == preparedScale
         val layers =
             if (reusePreparedFrame) {
@@ -141,34 +136,37 @@ internal class FabricMinecraftFramePresenter(
                 framePreparationCount += 1L
                 partitionFrame(commands, viewport)
             }
-        val previousPortableLayers =
-            if (reusePreparedFrame || viewport != preparedViewport || scale != preparedScale) {
-                emptyList()
-            } else {
-                preparedLayers.filterIsInstance<PortableLayer>()
-            }
-        var textureIndex = 0
-        layers.forEach { layer ->
-            when (layer) {
-                is PortableLayer -> {
-                    textureIndex =
-                        presentPortableLayer(
+        val images = layers.filterIsInstance<PortableLayer>().map { FabricMinecraftPortableImage(it.commands, it.bounds.size, scale) }
+        portableFrames.present(
+            images,
+            { portableRasterizationCount += 1L },
+            { textureUploadCount += 1L },
+        ) { textures, queued ->
+            var textureIndex = 0
+            layers.forEach { layer ->
+                when (layer) {
+                    is PortableLayer -> {
+                        val texture = textures[textureIndex++]
+                        queued()
+                        FabricMinecraftTextureBlitter.blit(
                             graphics,
-                            layer,
-                            textureIndex,
-                            scale,
-                            reusePreparedFrame,
-                            previousPortableLayers,
+                            texture.location,
+                            layer.bounds.left,
+                            layer.bounds.top,
+                            layer.bounds.width,
+                            layer.bounds.height,
+                            Math.multiplyExact(layer.bounds.width, scale),
+                            Math.multiplyExact(layer.bounds.height, scale),
                         )
-                }
+                    }
 
-                is PlatformLayer -> {
-                    presentPlatformLayer(graphics, layer, viewport, platformRenderer)
+                    is PlatformLayer -> {
+                        presentPlatformLayer(graphics, layer, viewport, platformRenderer)
+                    }
                 }
             }
         }
-        if (reusePreparedFrame.not()) {
-            trimTextures(textureIndex)
+        if (reusePreparedFrame.not() && portableFrames.releaseGeneration == generation) {
             preparedCommands = commands
             preparedViewport = viewport
             preparedScale = scale
@@ -177,9 +175,10 @@ internal class FabricMinecraftFramePresenter(
     }
 
     /**
-     * Releases every transient display-list, pointer, and native texture resource owned by this presenter.
+     * Drops every transient display-list, pointer, and texture reference owned by this presenter.
      *
-     * @throws Throwable when Minecraft rejects one or more texture releases; later failures are suppressed onto the first.
+     * Pending native textures retire independently after their final GUI-consumption fence.
+     * @throws Throwable when eligible device-owned retirement fails after all presenter references have been cleared.
      */
     internal fun release() {
         requireClientThread()
@@ -189,50 +188,7 @@ internal class FabricMinecraftFramePresenter(
         preparedLayers = emptyList()
         pointerPosition = null
         pointerFrameCommands = null
-        trimTextures(0)
-    }
-
-    private fun presentPortableLayer(
-        graphics: GuiGraphics,
-        layer: PortableLayer,
-        textureIndex: Int,
-        scale: Int,
-        reusePreparedFrame: Boolean,
-        previousPortableLayers: List<PortableLayer>,
-    ): Int {
-        val retainedTexture = textures.getOrNull(textureIndex)
-        val previousPortableLayer = previousPortableLayers.getOrNull(textureIndex)
-        val reusePortableLayer =
-            reusePreparedFrame ||
-                (
-                    retainedTexture != null &&
-                        previousPortableLayer != null &&
-                        previousPortableLayer.commands == layer.commands &&
-                        previousPortableLayer.bounds.size == layer.bounds.size
-                )
-        if (reusePortableLayer) {
-            checkNotNull(retainedTexture) {
-                "A cached portable frame layer has no retained texture."
-            }
-        } else {
-            portableRasterizationCount += 1L
-            upload(textureIndex, rasterizeHeadless(layer.commands, layer.bounds.size, scale))
-        }
-        val location =
-            checkNotNull(textureLocations.getOrNull(textureIndex)) {
-                "A prepared portable frame layer has no registered texture location."
-            }
-        FabricMinecraftTextureBlitter.blit(
-            graphics,
-            location,
-            layer.bounds.left,
-            layer.bounds.top,
-            layer.bounds.width,
-            layer.bounds.height,
-            Math.multiplyExact(layer.bounds.width, scale),
-            Math.multiplyExact(layer.bounds.height, scale),
-        )
-        return textureIndex + 1
+        portableFrames.release()
     }
 
     private fun presentPlatformLayer(
@@ -245,11 +201,10 @@ internal class FabricMinecraftFramePresenter(
         if (visible.width <= 0 || visible.height <= 0) return
         val clip = layer.clip
         if (clip != null) graphics.enableScissor(clip.left, clip.top, clip.right, clip.bottom)
-        try {
-            platformRenderer(graphics, layer.command)
-        } finally {
-            if (clip != null) graphics.disableScissor()
-        }
+        FabricMinecraftFailures.runWithCleanup(
+            { platformRenderer(graphics, layer.command) },
+            { if (clip != null) graphics.disableScissor() },
+        )
     }
 
     private fun partitionFrame(
@@ -291,6 +246,11 @@ internal class FabricMinecraftFramePresenter(
                     if (bounds != null) {
                         portableBounds = includeVisibleBounds(portableBounds, bounds, activeClips, viewportBounds)
                     }
+                }
+
+                is DrawCommand.BlitImagePixels -> {
+                    portable.add(command)
+                    portableBounds = includeVisibleBounds(portableBounds, command.destination, activeClips, viewportBounds)
                 }
 
                 is DrawCommand.PushClip -> {
@@ -355,6 +315,11 @@ internal class FabricMinecraftFramePresenter(
                     command.copy(destination = FloatRect(destination.left + offset.x, destination.top + offset.y, destination.right + offset.x, destination.bottom + offset.y))
                 }
 
+                is DrawCommand.BlitImagePixels -> {
+                    val visible = intersection(command.destination, bounds)
+                    if (visible.width <= 0 || visible.height <= 0) null else command.copy(destination = command.destination + offset)
+                }
+
                 is DrawCommand.PushClip -> {
                     DrawCommand.PushClip(intersection(command.bounds, bounds) + offset)
                 }
@@ -366,93 +331,6 @@ internal class FabricMinecraftFramePresenter(
                 is DrawCommand.Platform -> {
                     error("Portable layers cannot contain platform commands.")
                 }
-            }
-        }
-    }
-
-    private fun trimTextures(retainedCount: Int) {
-        var failure: Throwable? = null
-        while (retainedCount < textures.size) {
-            textures.removeAt(textures.lastIndex)
-            val location = textureLocations.removeAt(textureLocations.lastIndex)
-            try {
-                minecraftClient.textureManager.release(location)
-            } catch (caught: Throwable) {
-                val primary = failure
-                if (primary == null) failure = caught else FabricMinecraftFailures.addSuppressed(primary, caught)
-            }
-        }
-        failure?.let { throw it }
-    }
-
-    private fun upload(
-        index: Int,
-        image: HeadlessImage,
-    ): DynamicTexture {
-        val current = textures.getOrNull(index)
-        val currentPixels = current?.pixels
-        val needsResize = currentPixels == null || currentPixels.width != image.size.width || currentPixels.height != image.size.height
-        if (needsResize.not()) {
-            fillTexture(current, image)
-            return current
-        }
-        val native = NativeImage(image.size.width, image.size.height, false)
-        try {
-            fillPixels(native, image)
-        } catch (failure: Throwable) {
-            closeAfterFailure(native, failure)
-        }
-        val replacement =
-            try {
-                createFabricMinecraftDynamicTexture(native)
-            } catch (failure: Throwable) {
-                closeAfterFailure(native, failure)
-            }
-        textureUploadCount += 1L
-        val location = textureLocations.getOrNull(index) ?: nextTextureLocation()
-        try {
-            minecraftClient.textureManager.register(location, replacement)
-        } catch (failure: Throwable) {
-            closeAfterFailure(replacement, failure)
-        }
-        if (current == null) {
-            textures.add(replacement)
-            textureLocations.add(location)
-        } else {
-            textures[index] = replacement
-        }
-        return replacement
-    }
-
-    private fun closeAfterFailure(
-        resource: AutoCloseable,
-        failure: Throwable,
-    ): Nothing {
-        try {
-            resource.close()
-        } catch (cleanup: Throwable) {
-            FabricMinecraftFailures.addSuppressed(failure, cleanup)
-        }
-        throw failure
-    }
-
-    private fun fillTexture(
-        target: DynamicTexture,
-        image: HeadlessImage,
-    ) {
-        val native = checkNotNull(target.pixels) { "A retained frame texture was already released." }
-        fillPixels(native, image)
-        target.upload()
-        textureUploadCount += 1L
-    }
-
-    private fun fillPixels(
-        native: NativeImage,
-        image: HeadlessImage,
-    ) {
-        for (y in 0 until image.size.height) {
-            for (x in 0 until image.size.width) {
-                setFabricMinecraftArgbPixel(native, x, y, image.argbAt(x, y))
             }
         }
     }
@@ -483,14 +361,4 @@ internal class FabricMinecraftFramePresenter(
         val command: DrawCommand.Platform,
         val clip: IntRect?,
     ) : FrameLayer
-
-    private companion object {
-        private val textureSequence = AtomicLong()
-
-        private fun nextTextureLocation(): MinecraftResourceLocation =
-            minecraftResourceLocation(
-                "strata",
-                "runtime/frame/${textureSequence.getAndIncrement().toULong()}",
-            )
-    }
 }

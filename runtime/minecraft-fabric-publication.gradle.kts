@@ -125,8 +125,19 @@ tasks.matching { task -> task.name == "verifyFabricModArtifact" }.configureEach 
                 "Fabric artifact must contain exactly one top-level mod metadata file."
             }
             val metadata = archive.getInputStream(archive.getEntry("fabric.mod.json")).bufferedReader().use { JsonSlurper().parse(it) as Map<*, *> }
-            check(metadata["mixins"] == listOf("strata.client.mixins.json")) {
+            val declaredMixins =
+                (metadata["mixins"] as? List<*>)
+                    ?.map { entry -> entry as? String ?: error("Fabric mixin metadata entries must be strings: $entry") }
+                    ?: error("Fabric metadata must declare its Mixin configurations.")
+            check(declaredMixins.count { name -> name == "strata.client.mixins.json" } == 1) {
                 "Fabric metadata must reference the required client resource lifecycle configuration exactly once."
+            }
+            check(declaredMixins.size == declaredMixins.toSet().size) {
+                "Fabric metadata must not reference duplicate Mixin configurations: $declaredMixins"
+            }
+            val packagedMixins = entries.filter { name -> name.startsWith("strata.") && name.endsWith(".mixins.json") }.sorted()
+            check(declaredMixins.sorted() == packagedMixins) {
+                "Fabric metadata must reference every packaged Mixin configuration exactly once: declared=$declaredMixins packaged=$packagedMixins"
             }
             val mixins = archive.getInputStream(archive.getEntry("strata.client.mixins.json")).bufferedReader().use { JsonSlurper().parse(it) as Map<*, *> }
             check(

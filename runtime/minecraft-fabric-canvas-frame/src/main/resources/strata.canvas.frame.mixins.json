@@ -1,0 +1,12 @@
+{
+  "minVersion": "0.8",
+  "required": true,
+  "package": "dev.s7a.strata.runtime.minecraft.fabric.mixin.frame",
+  "compatibilityLevel": "JAVA_21",
+  "client": [
+    "FabricMinecraftCanvasRenderFrameMixin"
+  ],
+  "injectors": {
+    "defaultRequire": 1
+  }
+}

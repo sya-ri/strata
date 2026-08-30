@@ -1,6 +1,10 @@
+@file:OptIn(InternalStrataRuntimeApi::class)
+
 package dev.s7a.strata.integration.minecraft.fabric
 
 import dev.s7a.strata.geometry.IntOffset
+import dev.s7a.strata.spi.InternalStrataRuntimeApi
+import net.minecraft.client.Minecraft
 import net.minecraft.client.gui.screens.Screen
 
 /**
@@ -14,10 +18,52 @@ internal fun clickMinecraftScreen(
     screen: Screen,
     position: IntOffset,
 ) {
-    check(screen.mouseClicked(position.x.toDouble(), position.y.toDouble(), PRIMARY_MOUSE_BUTTON)) {
+    check(pressMinecraftScreen(screen, position)) {
         "The Strata element must consume its primary press."
     }
-    screen.mouseReleased(position.x.toDouble(), position.y.toDouble(), PRIMARY_MOUSE_BUTTON)
+    releaseMinecraftScreen(screen, position)
+}
+
+/**
+ * Delivers a primary press at an unclamped logical [position] through the native primitive callback.
+ *
+ * The client thread borrows [screen] for this invocation and receives its consumption result or unchanged callback failure.
+ */
+internal fun pressMinecraftScreen(
+    screen: Screen,
+    position: IntOffset,
+): Boolean = screen.mouseClicked(position.x.toDouble(), position.y.toDouble(), PRIMARY_MOUSE_BUTTON)
+
+/**
+ * Delivers a primary drag with logical [position] and [delta] through the native primitive callback.
+ *
+ * The client thread borrows [screen] without changing coordinates and receives its consumption result or unchanged callback failure.
+ */
+internal fun dragMinecraftScreen(
+    screen: Screen,
+    position: IntOffset,
+    delta: IntOffset,
+): Boolean = screen.mouseDragged(position.x.toDouble(), position.y.toDouble(), PRIMARY_MOUSE_BUTTON, delta.x.toDouble(), delta.y.toDouble())
+
+/**
+ * Delivers a primary release at an unclamped logical [position] through the native primitive callback.
+ *
+ * The client thread borrows [screen] for this invocation and receives its consumption result or unchanged callback failure.
+ */
+internal fun releaseMinecraftScreen(
+    screen: Screen,
+    position: IntOffset,
+): Boolean = screen.mouseReleased(position.x.toDouble(), position.y.toDouble(), PRIMARY_MOUSE_BUTTON)
+
+/**
+ * Updates native window focus through the real callback using the pre-record-input window-handle API.
+ *
+ * The loaded test calls this on the client thread and restores the previous focus state; input-reset failures propagate unchanged.
+ * Fabric's harness cancellation is bypassed only for this explicit invocation and remains enabled for ordinary callbacks.
+ */
+internal fun focusMinecraftWindow(focused: Boolean) {
+    val window = Minecraft.getInstance().window
+    MinecraftCanvasWindowTestScope.invoke(window, window.window, focused)
 }
 
 private const val PRIMARY_MOUSE_BUTTON = 0

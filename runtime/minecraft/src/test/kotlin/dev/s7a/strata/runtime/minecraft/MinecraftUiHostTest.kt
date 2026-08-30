@@ -16,11 +16,13 @@ import dev.s7a.strata.input.FocusEvent
 import dev.s7a.strata.input.InputResult
 import dev.s7a.strata.input.KeyCode
 import dev.s7a.strata.input.KeyboardEvent
+import dev.s7a.strata.input.PointerButton
 import dev.s7a.strata.input.PointerEvent
 import dev.s7a.strata.input.TextInputEvent
 import dev.s7a.strata.modifier.Modifier
 import dev.s7a.strata.modifier.initialFocus
 import dev.s7a.strata.modifier.menuBackground
+import dev.s7a.strata.modifier.onCapturedPointerEvent
 import dev.s7a.strata.modifier.onCharacterInput
 import dev.s7a.strata.modifier.onFocusChanged
 import dev.s7a.strata.modifier.onKeyPress
@@ -92,6 +94,48 @@ internal class MinecraftUiHostTest {
         host.frame(IntSize(4, 3))
         assertEquals(listOf(FocusEvent.Gained, FocusEvent.Lost, FocusEvent.Gained), focus)
         host.close()
+    }
+
+    @Test
+    fun nativeInputResetCancelsCaptureAndFocusWithoutDetachingTheHost() {
+        val cancellations = ArrayList<PointerButton>()
+        val focus = ArrayList<FocusEvent>()
+        val host =
+            host {
+                evaluateComponentTree {
+                    Spacer(
+                        modifier =
+                            Modifier.Empty
+                                .size(4, 3)
+                                .initialFocus()
+                                .onFocusChanged(focus::add)
+                                .onKeyPress { _ -> InputResult.Consumed }
+                                .onCapturedPointerEvent(cancellations::add) { _, _ -> InputResult.Consumed },
+                    )
+                }
+            }
+        assertThrows(IllegalStateException::class.java) { host.resetInputState() }
+        host.attach()
+        host.resetInputState()
+        val first = host.frame(IntSize(4, 3))
+        val key = KeyboardEvent.Press(KeyCode.Enter, 12)
+        host.dispatchPointer(PointerEvent.Press(IntOffset(1, 1), PointerButton.Primary))
+        assertEquals(InputResult.Consumed, host.dispatchPointer(PointerEvent.Move(IntOffset(10, 10))))
+
+        host.resetInputState()
+        host.resetInputState()
+        assertEquals(listOf(PointerButton.Primary), cancellations)
+        assertEquals(listOf(FocusEvent.Gained, FocusEvent.Lost), focus)
+        assertEquals(InputResult.Ignored, host.dispatchKeyboard(key))
+        assertEquals(InputResult.Ignored, host.dispatchPointer(PointerEvent.Move(IntOffset(10, 10))))
+        assertSame(first, host.frame(IntSize(4, 3)))
+
+        host.dispatchPointer(PointerEvent.Press(IntOffset(1, 1), PointerButton.Primary))
+        assertEquals(InputResult.Consumed, host.dispatchKeyboard(key))
+        host.detach()
+        assertThrows(IllegalStateException::class.java) { host.resetInputState() }
+        host.close()
+        assertEquals(listOf(PointerButton.Primary, PointerButton.Primary), cancellations)
     }
 
     @Test
@@ -192,6 +236,7 @@ internal class MinecraftUiHostTest {
         assertTrue(wrongThread { host.dispatchPointer(PointerEvent.Move(IntOffset.Zero)) } is IllegalStateException)
         assertTrue(wrongThread { host.dispatchKeyboard(KeyboardEvent.Press(KeyCode.Enter, 0)) } is IllegalStateException)
         assertTrue(wrongThread { host.dispatchTextInput(TextInputEvent.Character('a'.code)) } is IllegalStateException)
+        assertTrue(wrongThread { host.resetInputState() } is IllegalStateException)
         assertTrue(wrongThread { host.close() } is IllegalStateException)
         host.close()
         assertTrue(wrongThread { host.close() } is IllegalStateException)

@@ -26,6 +26,7 @@ internal class UiSessionBinding<T>(
     private val lock = ReentrantLock()
     private var committed: StateSnapshot<T>? = null
     private var pending: StateSnapshot<T>? = null
+    private var captured: StateSnapshot<T>? = null
     private var subscription: StateSubscription<T>? = null
     private var closeRequested: Boolean = false
     private var disabled: Boolean = false
@@ -58,6 +59,10 @@ internal class UiSessionBinding<T>(
             }
             val pendingRevision = pending?.revision
             if (pendingRevision != null && snapshot.revision <= pendingRevision) {
+                return
+            }
+            val capturedRevision = captured?.revision
+            if (capturedRevision != null && snapshot.revision <= capturedRevision) {
                 return
             }
             pending = snapshot
@@ -107,7 +112,23 @@ internal class UiSessionBinding<T>(
     }
 
     /**
-     * Takes the current frame cutoff and commits it on the owner thread.
+     * Takes the newest pending observation without committing or comparing caller-owned values.
+     *
+     * The session captures every binding and retained cutoff node before applying any captured observation.
+     * Only one transaction-local snapshot is retained until [applyPending] or terminal cleanup.
+     */
+    fun capturePending() {
+        lock.lock()
+        try {
+            captured = pending
+            pending = null
+        } finally {
+            lock.unlock()
+        }
+    }
+
+    /**
+     * Commits only the snapshot captured before this frame began owner-thread value comparisons.
      *
      * @return true when the committed value changed by equality.
      */
@@ -116,8 +137,8 @@ internal class UiSessionBinding<T>(
         var nextValue: T
         lock.lock()
         try {
-            val next = pending ?: return false
-            pending = null
+            val next = captured ?: return false
+            captured = null
             oldValue = committed?.value
             nextValue = next.value
             committed = next
@@ -140,6 +161,7 @@ internal class UiSessionBinding<T>(
         try {
             disabled = true
             pending = null
+            captured = null
         } finally {
             lock.unlock()
         }

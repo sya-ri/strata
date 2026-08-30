@@ -37,6 +37,45 @@ public final class dev/s7a/strata/action/ListLoadRequest {
 	public fun toString ()Ljava/lang/String;
 }
 
+public abstract interface class dev/s7a/strata/component/CanvasBinding : java/lang/AutoCloseable {
+	public fun captureFrame ()V
+	public abstract fun close ()V
+	public fun commitFrame ()Z
+	public abstract fun paint (Ldev/s7a/strata/render/PaintScope;)V
+}
+
+public final class dev/s7a/strata/component/CanvasBinding$DefaultImpls {
+	public static fun captureFrame (Ldev/s7a/strata/component/CanvasBinding;)V
+	public static fun commitFrame (Ldev/s7a/strata/component/CanvasBinding;)Z
+}
+
+public final class dev/s7a/strata/component/CanvasComponentsKt {
+	public static final fun Canvas (Ldev/s7a/strata/component/UiScope;Ldev/s7a/strata/component/CanvasSource;Ldev/s7a/strata/geometry/IntSize;Ldev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/element/ElementKey;)V
+	public static synthetic fun Canvas$default (Ldev/s7a/strata/component/UiScope;Ldev/s7a/strata/component/CanvasSource;Ldev/s7a/strata/geometry/IntSize;Ldev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/element/ElementKey;ILjava/lang/Object;)V
+}
+
+public final class dev/s7a/strata/component/CanvasId {
+	public static final synthetic fun box-impl (J)Ldev/s7a/strata/component/CanvasId;
+	public fun equals (Ljava/lang/Object;)Z
+	public static fun equals-impl (JLjava/lang/Object;)Z
+	public static final fun equals-impl0 (JJ)Z
+	public final fun getValue ()J
+	public fun hashCode ()I
+	public static fun hashCode-impl (J)I
+	public fun toString ()Ljava/lang/String;
+	public static fun toString-impl (J)Ljava/lang/String;
+	public final synthetic fun unbox-impl ()J
+}
+
+public abstract interface class dev/s7a/strata/component/CanvasSource {
+	public abstract fun open-F1gC8AI (J)Ldev/s7a/strata/component/CanvasBinding;
+}
+
+public final class dev/s7a/strata/component/CanvasSourcesKt {
+	public static final fun canvasSource (Ldev/s7a/strata/render/DrawImage;)Ldev/s7a/strata/component/CanvasSource;
+	public static final fun canvasSource (Ldev/s7a/strata/state/StateSource;)Ldev/s7a/strata/component/CanvasSource;
+}
+
 public final class dev/s7a/strata/component/CheckboxState {
 	public fun <init> ()V
 	public fun <init> (Z)V
@@ -1028,6 +1067,7 @@ public final class dev/s7a/strata/modifier/PointerDragExtensionsKt {
 }
 
 public final class dev/s7a/strata/modifier/PointerInputExtensionsKt {
+	public static final fun onCapturedPointerEvent (Ldev/s7a/strata/modifier/Modifier;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function2;)Ldev/s7a/strata/modifier/Modifier;
 	public static final fun onHover (Ldev/s7a/strata/modifier/Modifier;Lkotlin/jvm/functions/Function1;)Ldev/s7a/strata/modifier/Modifier;
 	public static final fun onMove (Ldev/s7a/strata/modifier/Modifier;Lkotlin/jvm/functions/Function0;)Ldev/s7a/strata/modifier/Modifier;
 	public static final fun onMove (Ldev/s7a/strata/modifier/Modifier;Lkotlin/jvm/functions/Function2;)Ldev/s7a/strata/modifier/Modifier;
@@ -1117,6 +1157,11 @@ public final class dev/s7a/strata/node/FocusTargetNode$DefaultImpls {
 	public static fun getRequiresTextInput (Ldev/s7a/strata/node/FocusTargetNode;)Z
 }
 
+public abstract interface class dev/s7a/strata/node/FrameCutoffNode {
+	public abstract fun captureFrameState ()V
+	public abstract fun commitFrameState ()V
+}
+
 public abstract interface class dev/s7a/strata/node/FrameTimeNode {
 	public abstract fun onFrame (Ldev/s7a/strata/runtime/FrameTime;)V
 }
@@ -1164,6 +1209,10 @@ public abstract interface class dev/s7a/strata/node/ParentDataModifierNode {
 	public abstract fun parentData ()Ljava/lang/Object;
 }
 
+public abstract interface class dev/s7a/strata/node/PointerCaptureNode : dev/s7a/strata/node/PointerInputNode {
+	public abstract fun onPointerCaptureCancelled (Ldev/s7a/strata/input/PointerButton;)V
+}
+
 public abstract interface class dev/s7a/strata/node/PointerHoverNode {
 	public abstract fun onPointerHover (Z)V
 }
@@ -1178,6 +1227,11 @@ public abstract interface class dev/s7a/strata/node/RootOverlayPaintNode {
 
 public abstract interface class dev/s7a/strata/node/SemanticsNode {
 	public abstract fun semantics (Ldev/s7a/strata/semantics/SemanticsScope;)V
+}
+
+public abstract interface class dev/s7a/strata/node/SessionAttachmentNode : dev/s7a/strata/node/LifecycleNode {
+	public abstract fun sessionAttached ()V
+	public abstract fun sessionDetached ()V
 }
 
 public abstract interface class dev/s7a/strata/node/TextInputNode {

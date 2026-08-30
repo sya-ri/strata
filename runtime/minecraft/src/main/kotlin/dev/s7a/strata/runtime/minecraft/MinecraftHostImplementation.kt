@@ -186,10 +186,14 @@ internal object MinecraftHostImplementation {
 
         override fun dispatchTextInput(event: TextInputEvent): InputResult = runInput { session.dispatchTextInput(event) }
 
-        private fun runInput(operation: () -> InputResult): InputResult {
+        override fun resetInputState() {
+            runInput(session::resetInputState)
+        }
+
+        private fun <T> runInput(operation: () -> T): T {
             checkOwner()
             check(this.operation == null) { "Minecraft UI host operations are non-reentrant." }
-            check(state == State.Attached) { "Minecraft UI host must be attached before focused input." }
+            check(state == State.Attached) { "Minecraft UI host must be attached before input." }
             this.operation = Operation.Input
             try {
                 return runCatching(operation).getOrElse { failure -> fail(failure) }

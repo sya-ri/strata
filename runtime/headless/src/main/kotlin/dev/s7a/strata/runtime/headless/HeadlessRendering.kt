@@ -6,10 +6,11 @@ import dev.s7a.strata.element.Element
 import dev.s7a.strata.geometry.Constraints
 import dev.s7a.strata.geometry.IntRect
 import dev.s7a.strata.geometry.IntSize
-import dev.s7a.strata.runtime.UiTree
 import dev.s7a.strata.runtime.render.DrawCommand
 import dev.s7a.strata.runtime.semantics.SemanticsEntry
+import dev.s7a.strata.runtime.spi.createRuntimeUiSession
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
+import java.math.BigInteger
 
 /**
  * Rasterizes portable draw commands into a deterministic physical image.
@@ -17,12 +18,13 @@ import dev.s7a.strata.spi.InternalStrataRuntimeApi
  * Commands are snapshotted in their supplied order before pixel allocation or painting.
  * The caller must not mutate the supplied list or command graph concurrently with this call.
  * Each call owns its raster storage and shares no mutable state with another call.
- * Rectangles use the logical origin at the top-left, x increasing rightward, y increasing downward, and half-open edges; drawing is intersected with the positive [viewport] and every active nested child clip.
+ * Rectangles use the logical origin at the top-left, x increasing rightward, y increasing downward, and half-open edges; the positive [viewport] and every active nested child clip are intersected before sampling.
  * BlitImage uses nearest pixel-center sampling: for destination-relative coordinate `d`, source extent `S`, and destination extent `D`, the sampled source offset is `floor(((2 * d + 1) * S) / (2 * D))`; viewport clipping preserves this mapping against the original unclipped destination rectangle.
- * FillRectangle and BlitImage apply the same logical source pixel to every physical pixel in its [scale] block, blending each destination independently.
+ * FillRectangle and BlitImage apply the same logical source pixel to every physical pixel in its [scale] block, while BlitImagePixels applies the same mapping separately to each physical output pixel and the scaled destination extent.
  * SampledImage instead maps final physical pixel centers through its original fractional destination into the source and samples the nearest texel.
  * Its normalized source channels are multiplied by normalized tint channels without intermediate eight-bit rounding, and samples below the command's alpha cutoff are discarded before blending.
- * Painting starts with transparent black and uses straight ARGB source-over; FillRectangle and BlitImage use Long intermediates.
+ * Every command blends against each existing physical destination pixel independently, preserving image detail beneath later logical overlays.
+ * Painting starts with transparent black and uses straight ARGB source-over; integral blending uses Long intermediates.
  * For source alpha `sa`, destination alpha `da`, and channel values `sc` and `dc`, `alphaN = sa * 255 + da * (255 - sa)`, `oa = floor((alphaN + 127) / 255)`, and when `alphaN != 0` each channel is `floor((sc * sa * 255 + dc * da * (255 - sa) + floor(alphaN / 2)) / alphaN)`.
  * When `alphaN == 0`, the result is exactly `0x00000000`.
  * Each channel and alpha is rounded half-up per command, with canonical zero for transparent output.
@@ -89,21 +91,18 @@ private object HeadlessImplementation {
         scale: Int,
     ): HeadlessFrame {
         val dimensions = checkedDimensions(viewport, scale)
-        val tree = UiTree()
+        val session = createRuntimeUiSession { description }
         return completeWithClose(
             work = {
-                tree.update(description)
-                val measured = tree.measure(Constraints.fixed(viewport.width, viewport.height))
-                check(measured == viewport) {
+                session.attach()
+                val frame = session.frame(Constraints.fixed(viewport.width, viewport.height))
+                check(frame.size == viewport) {
                     "The retained root did not report the fixed headless viewport."
                 }
-                tree.layout()
-                val commands = tree.paint()
-                val semantics = tree.semantics()
-                val image = rasterizeSnapshot(commands, dimensions)
-                FrameImpl.create(viewport, scale, image, semantics)
+                val image = rasterizeSnapshot(frame.drawCommands, dimensions)
+                FrameImpl.create(viewport, scale, image, frame.semantics)
             },
-            close = tree::close,
+            close = session::close,
         )
     }
 
@@ -132,6 +131,10 @@ private object HeadlessImplementation {
                 }
 
                 is DrawCommand.SampledImage -> {
+                    snapshot.add(checkedCommand)
+                }
+
+                is DrawCommand.BlitImagePixels -> {
                     snapshot.add(checkedCommand)
                 }
 
@@ -180,6 +183,10 @@ private object HeadlessImplementation {
                         command,
                         RasterMath.intersection(viewport, clips.lastOrNull() ?: viewport),
                     )
+                }
+
+                is DrawCommand.BlitImagePixels -> {
+                    paintBlitPixels(pixels, dimensions, command, clips.lastOrNull())
                 }
 
                 is DrawCommand.Platform -> {
@@ -274,6 +281,62 @@ private object HeadlessImplementation {
                 val destination = pixels[index]
                 pixels[index] = if (destination == firstDestination) firstColor else RasterMath.blend(source, destination)
             }
+        }
+    }
+
+    private fun paintBlitPixels(
+        pixels: IntArray,
+        dimensions: PhysicalDimensions,
+        command: DrawCommand.BlitImagePixels,
+        clip: IntRect?,
+    ) {
+        val bounds = command.destination
+        val viewport = IntRect(0, 0, dimensions.viewport.width, dimensions.viewport.height)
+        val visible = RasterMath.intersection(viewport, clip ?: bounds, bounds)
+        if (visible.width == 0 || visible.height == 0) return
+        val scale = dimensions.scale
+        val horizontal = PixelAxis(command.source.left, command.source.width, bounds.left, bounds.width, scale)
+        val vertical = PixelAxis(command.source.top, command.source.height, bounds.top, bounds.height, scale)
+        val left = Math.multiplyExact(visible.left, scale)
+        val right = Math.multiplyExact(visible.right, scale)
+        val top = Math.multiplyExact(visible.top, scale)
+        val bottom = Math.multiplyExact(visible.bottom, scale)
+        for (y in top until bottom) {
+            val sourceY = vertical.sourceAt(y)
+            val row = Math.multiplyExact(y, dimensions.physicalSize.width)
+            for (x in left until right) {
+                val sourceColor = command.image.argbAt(horizontal.sourceAt(x), sourceY)
+                val index = Math.addExact(row, x)
+                pixels[index] = RasterMath.blend(sourceColor, pixels[index])
+            }
+        }
+    }
+
+    private class PixelAxis(
+        private val sourceStart: Int,
+        sourceExtent: Int,
+        destinationStart: Int,
+        destinationExtent: Int,
+        scale: Int,
+    ) {
+        private val sourceExtent: Long = sourceExtent.toLong()
+        private val destinationOrigin: Long = destinationStart.toLong() * scale
+        private val denominator: Long = destinationExtent.toLong() * scale * 2L
+
+        fun sourceAt(position: Int): Int {
+            val center = (position.toLong() - destinationOrigin) * 2L + 1L
+            val offset =
+                if (center <= Long.MAX_VALUE / sourceExtent) {
+                    center * sourceExtent / denominator
+                } else {
+                    // A mostly offscreen logical destination may have a scaled extent larger than Int.MAX_VALUE.
+                    BigInteger
+                        .valueOf(center)
+                        .multiply(BigInteger.valueOf(sourceExtent))
+                        .divide(BigInteger.valueOf(denominator))
+                        .longValueExact()
+                }
+            return Math.toIntExact(sourceStart.toLong() + offset)
         }
     }
 

@@ -46,6 +46,7 @@ internal class ShowcaseScenarioContractTest {
                 "MinecraftVirtualListExample.kt" to "virtual-list",
                 "MinecraftSelectionListExample.kt" to "selection-list",
                 "MinecraftImageExample.kt" to "image",
+                "MinecraftCanvasExample.kt" to "canvas",
                 "MinecraftSlotShowcaseExample.kt" to "slot",
                 "MinecraftPlayerHeadExample.kt" to "player-head",
                 "MinecraftLoadingIndicatorExample.kt" to "loading-indicator",
@@ -74,6 +75,7 @@ internal class ShowcaseScenarioContractTest {
                 IntSize(120, 48),
                 IntSize(120, 48),
                 IntSize(64, 64),
+                IntSize(96, 64),
                 IntSize(64, 64),
                 IntSize(64, 64),
                 IntSize(32, 24),
@@ -266,6 +268,10 @@ internal class ShowcaseScenarioContractTest {
                 centeredTree(
                     IntSize(64, 64),
                     expectedTree(DocumentedComponent.Image, listOf(ShowcaseTreeDetail.Size(32, 32))),
+                ),
+                centeredTree(
+                    IntSize(96, 64),
+                    expectedTree(DocumentedComponent.Canvas, listOf(ShowcaseTreeDetail.Size(64, 32))),
                 ),
                 centeredTree(
                     IntSize(64, 64),

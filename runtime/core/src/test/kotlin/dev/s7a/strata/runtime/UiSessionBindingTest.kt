@@ -149,9 +149,11 @@ internal class UiSessionBindingTest {
         val binding = UiSessionBinding<Int>({}, {}, {})
         binding.commitInitial(StateSnapshot(StateRevision(1), 1))
         binding.enqueue(StateSnapshot(StateRevision(2), 2))
+        binding.capturePending()
         assertTrue(binding.applyPending())
         binding.enqueue(StateSnapshot(StateRevision(3), 3))
         assertEquals(2, bindingValue(binding))
+        binding.capturePending()
         assertTrue(binding.applyPending())
         assertEquals(3, bindingValue(binding))
     }

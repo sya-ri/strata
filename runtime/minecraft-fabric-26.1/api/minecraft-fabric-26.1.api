@@ -1,14 +1,41 @@
+public final class dev/s7a/strata/runtime/minecraft/fabric/FabricCanvasGuiCleanup {
+	public static fun closeMeshes (Ljava/util/List;)V
+	public static fun run ([Ldev/s7a/strata/runtime/minecraft/fabric/FabricCanvasGuiCleanup$Cleanup;)V
+}
+
+public abstract interface class dev/s7a/strata/runtime/minecraft/fabric/FabricCanvasGuiCleanup$Cleanup {
+	public abstract fun run ()V
+}
+
+public final class dev/s7a/strata/runtime/minecraft/fabric/FabricCanvasShutdownTransaction {
+	public static fun run (Ljava/lang/Runnable;Ljava/lang/Runnable;Ljava/lang/Runnable;Ljava/lang/Runnable;)V
+}
+
 public final class dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftAssets {
 	public static final fun loadCurrentMinecraftPlayerSkin ()Ldev/s7a/strata/render/DrawImage;
 	public static final fun loadMinecraftUiImage (Ldev/s7a/strata/resource/ResourceId;)Ldev/s7a/strata/render/DrawImage;
+}
+
+public abstract interface class dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftCanvasGuiDiscard {
+	public abstract fun strataDiscardCanvasGui ()V
+}
+
+public final class dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftCanvasHooks {
+	public static fun afterFrame (Ljava/lang/Throwable;)V
+	public static fun afterGui (Ljava/lang/Throwable;)V
+	public static fun beginShutdown ()V
+	public static fun closeActiveScreen (Lnet/minecraft/client/Minecraft;)V
+	public static fun requireRunning ()V
+	public static fun resetActiveInput (Lnet/minecraft/client/Minecraft;)V
 }
 
 public final class dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftProfiles {
 	public static final fun extractMinecraftUiProfile ()Ldev/s7a/strata/runtime/minecraft/MinecraftUiProfile;
 }
 
-public final class dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreen : net/minecraft/client/gui/screens/Screen, java/lang/AutoCloseable {
+public final class dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreen : net/minecraft/client/gui/screens/Screen, dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftInputReset, java/lang/AutoCloseable {
 	public fun added ()V
+	public final fun captureCanvasFrame ()Ljava/util/List;
 	public fun charTyped (Lnet/minecraft/client/input/CharacterEvent;)Z
 	public fun close ()V
 	public fun extractBackground (Lnet/minecraft/client/gui/GuiGraphicsExtractor;IIF)V
@@ -24,6 +51,7 @@ public final class dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreen
 	public fun onClose ()V
 	public fun preeditUpdated (Lnet/minecraft/client/input/PreeditEvent;)Z
 	public fun removed ()V
+	public synthetic fun resetInputFromNative ()V
 }
 
 public final class dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreens {
@@ -31,8 +59,55 @@ public final class dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreen
 	public static synthetic fun createMinecraftScreen$default (Ldev/s7a/strata/screen/ScreenDefinition;Ldev/s7a/strata/runtime/minecraft/MinecraftUiProfile;Lnet/minecraft/client/gui/screens/Screen;ILjava/lang/Object;)Ldev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreen;
 }
 
+public final class dev/s7a/strata/runtime/minecraft/fabric/MinecraftCanvasContext {
+	public final fun getEncoder ()Lcom/mojang/blaze3d/systems/CommandEncoder;
+	public final fun getFrameTime ()Ldev/s7a/strata/runtime/FrameTime;
+	public final fun getLogicalSize ()Ldev/s7a/strata/geometry/IntSize;
+	public final fun getPhysicalSize ()Ldev/s7a/strata/geometry/IntSize;
+	public final fun getTarget ()Lcom/mojang/blaze3d/pipeline/RenderTarget;
+}
+
+public abstract interface class dev/s7a/strata/runtime/minecraft/fabric/MinecraftCanvasRenderer : java/lang/AutoCloseable {
+	public abstract fun close ()V
+	public abstract fun render (Ldev/s7a/strata/runtime/minecraft/fabric/MinecraftCanvasContext;)Ldev/s7a/strata/render/DrawImage;
+}
+
+public final class dev/s7a/strata/runtime/minecraft/fabric/MinecraftCanvasSources {
+	public static final fun canvasSource (Ldev/s7a/strata/runtime/minecraft/fabric/MinecraftCanvasTextureProvider;)Ldev/s7a/strata/component/CanvasSource;
+	public static final fun canvasSource (ZLkotlin/jvm/functions/Function0;)Ldev/s7a/strata/component/CanvasSource;
+	public static synthetic fun canvasSource$default (ZLkotlin/jvm/functions/Function0;ILjava/lang/Object;)Ldev/s7a/strata/component/CanvasSource;
+}
+
+public abstract interface class dev/s7a/strata/runtime/minecraft/fabric/MinecraftCanvasTextureLease : java/lang/AutoCloseable {
+	public abstract fun close ()V
+	public abstract fun getOrigin ()Ldev/s7a/strata/runtime/minecraft/fabric/MinecraftCanvasTextureOrigin;
+	public abstract fun getSize ()Ldev/s7a/strata/geometry/IntSize;
+	public abstract fun getSnapshot ()Ldev/s7a/strata/render/DrawImage;
+	public abstract fun getTexture ()Lcom/mojang/blaze3d/textures/GpuTexture;
+}
+
+public final class dev/s7a/strata/runtime/minecraft/fabric/MinecraftCanvasTextureOrigin : java/lang/Enum {
+	public static final field BottomLeft Ldev/s7a/strata/runtime/minecraft/fabric/MinecraftCanvasTextureOrigin;
+	public static final field TopLeft Ldev/s7a/strata/runtime/minecraft/fabric/MinecraftCanvasTextureOrigin;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public static fun valueOf (Ljava/lang/String;)Ldev/s7a/strata/runtime/minecraft/fabric/MinecraftCanvasTextureOrigin;
+	public static fun values ()[Ldev/s7a/strata/runtime/minecraft/fabric/MinecraftCanvasTextureOrigin;
+}
+
+public abstract interface class dev/s7a/strata/runtime/minecraft/fabric/MinecraftCanvasTextureProvider {
+	public abstract fun acquire ()Ldev/s7a/strata/runtime/minecraft/fabric/MinecraftCanvasTextureLease;
+}
+
 public final class dev/s7a/strata/runtime/minecraft/fabric/StrataFabricClient : net/fabricmc/api/ClientModInitializer {
 	public fun <init> ()V
 	public fun onInitializeClient ()V
+}
+
+public abstract interface class dev/s7a/strata/runtime/minecraft/fabric/mixin/canvas/FabricMinecraftCanvasGameRendererAccess {
+	public abstract fun strataCanvasGuiRenderer ()Lnet/minecraft/client/gui/render/GuiRenderer;
+}
+
+public abstract interface class dev/s7a/strata/runtime/minecraft/fabric/mixin/canvas/FabricMinecraftCanvasRenderStateAccess {
+	public abstract fun strataCanvasRenderState ()Lnet/minecraft/client/renderer/state/gui/GuiRenderState;
 }
 

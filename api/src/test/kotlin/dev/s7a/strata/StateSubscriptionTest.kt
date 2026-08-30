@@ -20,6 +20,27 @@ import java.lang.Thread.State as ThreadState
  */
 internal class StateSubscriptionTest {
     @Test
+    fun retainedCloseActionSharesExactlyOnceOutcomeWithoutHoldingTheInitialSnapshot() {
+        val expected = IllegalStateException("close")
+        var closes = 0
+        val initial = StateSnapshot(StateRevision(1), Any())
+        val subscription =
+            StateSubscription(initial) {
+                closes += 1
+                throw expected
+            }
+        val close = subscription.retainCloseAction()
+        assertSame(expected, assertThrows(IllegalStateException::class.java) { close() })
+        assertSame(expected, assertThrows(IllegalStateException::class.java) { subscription.close() })
+        assertEquals(1, closes)
+        val controllerField = subscription.javaClass.getDeclaredField("closeController")
+        controllerField.isAccessible = true
+        val controller = controllerField.get(subscription)
+        assertTrue(controller.javaClass.declaredFields.none { field -> field.type == StateSnapshot::class.java })
+        assertTrue(controller.javaClass.declaredFields.none { field -> field.type == StateSubscription::class.java })
+    }
+
+    @Test
     fun successfulCloseRunsActionOnceAndConcurrentCallersWait() {
         val actionStarted = CountDownLatch(1)
         val releaseAction = CountDownLatch(1)

@@ -103,6 +103,11 @@ internal enum class DocumentedComponent(
     Image("Image", "image"),
 
     /**
+     * The externally produced CPU-image or native-output rectangle identity.
+     */
+    Canvas("Canvas", "canvas"),
+
+    /**
      * The container slot component identity.
      */
     Slot("Slot", "slot"),

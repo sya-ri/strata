@@ -1,8 +1,12 @@
 package dev.s7a.strata.runtime.minecraft.fabric.external
 
+import dev.s7a.strata.component.CanvasSource
 import dev.s7a.strata.render.DrawImage
 import dev.s7a.strata.runtime.minecraft.MinecraftUiProfile
 import dev.s7a.strata.runtime.minecraft.fabric.FabricMinecraftScreen
+import dev.s7a.strata.runtime.minecraft.fabric.MinecraftCanvasRenderer
+import dev.s7a.strata.runtime.minecraft.fabric.MinecraftCanvasTextureProvider
+import dev.s7a.strata.runtime.minecraft.fabric.canvasSource
 import dev.s7a.strata.runtime.minecraft.fabric.createMinecraftScreen
 import dev.s7a.strata.runtime.minecraft.fabric.extractMinecraftUiProfile
 import dev.s7a.strata.runtime.minecraft.fabric.loadCurrentMinecraftPlayerSkin
@@ -35,5 +39,13 @@ internal class FabricMinecraftExternalUseTest {
         assertNotNull(skinFactory)
         assertNotNull(explicitScreenFactory)
         assertNotNull(defaultParentFactory)
+    }
+
+    @Test
+    fun nativeCanvasFactoriesCompileWithoutInternalOptIn() {
+        val textureFactory: (MinecraftCanvasTextureProvider) -> CanvasSource = ::canvasSource
+        val rendererFactory: (Boolean, () -> MinecraftCanvasRenderer) -> CanvasSource = ::canvasSource
+        assertNotNull(textureFactory)
+        assertNotNull(rendererFactory)
     }
 }

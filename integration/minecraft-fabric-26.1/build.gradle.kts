@@ -1,3 +1,5 @@
+import dev.detekt.gradle.extensions.DetektExtension
+import groovy.json.JsonOutput
 import net.fabricmc.loom.task.prod.ClientProductionRunTask
 import org.gradle.api.tasks.Delete
 import org.gradle.api.tasks.SourceSetContainer
@@ -36,6 +38,10 @@ extensions.configure<KotlinJvmProjectExtension> {
     }
 }
 
+extensions.configure<DetektExtension> {
+    source.from(layout.projectDirectory.dir("src/gametest/kotlin"))
+}
+
 extensions.configure<SourceSetContainer> {
     named("gametest") {
         resources.srcDir(sharedGameTest.resolve("resources"))
@@ -44,16 +50,22 @@ extensions.configure<SourceSetContainer> {
 
 val gametestSourceSet = extensions.getByType<SourceSetContainer>().named("gametest")
 tasks.named<ProcessResources>("processGametestResources") {
+    val gameTestEntrypoint = "dev.s7a.strata.integration.minecraft.fabric.StrataMinecraftClientGameTest"
+    val gameTestMixins = listOf("strata.canvas.tests.mixins.json")
     inputs.property("version", project.version)
     inputs.property("minecraftVersion", libs.versions.minecraft261)
     inputs.property("integrationModId", "strata-integration-minecraft-fabric-26-1")
     inputs.property("runtimeModId", "strata")
+    inputs.property("gameTestEntrypoint", gameTestEntrypoint)
+    inputs.property("gameTestMixins", gameTestMixins)
     filesMatching("fabric.mod.json") {
         expand(
             "version" to project.version,
             "minecraftVersion" to libs.versions.minecraft261.get(),
             "integrationModId" to "strata-integration-minecraft-fabric-26-1",
             "runtimeModId" to "strata",
+            "gameTestEntrypoint" to gameTestEntrypoint,
+            "gameTestMixins" to JsonOutput.toJson(gameTestMixins),
         )
     }
 }

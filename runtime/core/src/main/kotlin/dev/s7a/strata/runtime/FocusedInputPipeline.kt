@@ -107,10 +107,22 @@ internal class FocusedInputPipeline {
     /**
      * Clears one retained focus owner and delivers its distinct loss transition.
      *
+     * Ownership is cleared first, and every focus observer is attempted even when another observer fails.
+     *
      * @throws Throwable when focused behavior rejects the loss transition.
      */
     fun clear() {
-        setFocusedOwner(null)
+        val previous = focusedOwner ?: return
+        val previousTargets = focusedTargets
+        val retainedTargets = focusTargets(previous)
+        releaseRetainedReferences()
+        val failures = FailureAccumulator()
+        previousTargets.forEach { target ->
+            if (retainedTargets.any { it === target }) {
+                failures.capture { target.onFocusChanged(false) }
+            }
+        }
+        failures.throwIfPresent()
     }
 
     /**

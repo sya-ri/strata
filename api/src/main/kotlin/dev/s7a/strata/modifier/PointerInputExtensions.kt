@@ -19,6 +19,27 @@ import dev.s7a.strata.input.PointerHoverEvent
 public fun Modifier.onPointerEvent(callback: (PointerEvent, IntOffset) -> InputResult): Modifier = then(PointerInputModifier.Element(PointerInputModifier.Action.Every(callback)))
 
 /**
+ * Handles pointer events and captures the button whose press this handler consumes.
+ *
+ * Only one handler may own capture in a tree; a press cannot replace another active capture.
+ * Moves and matching-button drags or releases then reach only this entry, including outside its bounds or ancestor clips, and stop propagation regardless of the returned result.
+ * Coordinates remain relative to the latest committed layout without clamping, while other buttons, scrolling, and hover use ordinary hit testing.
+ * A matching release clears capture before [callback] and never calls [onCancel].
+ * Removal, replacement, unplacement, input reset, detachment, close, and failure clear capture before calling [onCancel] once, before this entry is disposed.
+ * Updating callbacks in the same retained modifier position preserves capture and does not invalidate frame phases.
+ * Both callbacks run on the owning tree thread; descriptions retain them until replacement or disposal.
+ *
+ * @param onCancel callback receiving the starting button of an interrupted gesture.
+ * @param callback callback receiving the immutable tree event and current modifier-local position.
+ * @return this chain with one appended active capture-capable pointer node.
+ * @throws Throwable when either callback fails; the owning tree preserves the primary failure and still attempts remaining cleanup.
+ */
+public fun Modifier.onCapturedPointerEvent(
+    onCancel: (PointerButton) -> Unit,
+    callback: (PointerEvent, IntOffset) -> InputResult,
+): Modifier = then(CapturedPointerInputModifier.Element(onCancel, callback))
+
+/**
  * Handles every pointer press that hits this modifier's laid-out bounds.
  *
  * @param callback callback receiving the typed event and modifier-local position and deciding propagation.

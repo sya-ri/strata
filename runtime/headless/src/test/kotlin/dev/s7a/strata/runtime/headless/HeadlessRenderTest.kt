@@ -2,14 +2,27 @@
 
 package dev.s7a.strata.runtime.headless
 
+import dev.s7a.strata.component.Canvas
 import dev.s7a.strata.component.Row
+import dev.s7a.strata.component.Spacer
+import dev.s7a.strata.component.Stack
+import dev.s7a.strata.component.canvasSource
 import dev.s7a.strata.component.evaluateComponentTree
 import dev.s7a.strata.geometry.IntRect
 import dev.s7a.strata.geometry.IntSize
+import dev.s7a.strata.modifier.Modifier
+import dev.s7a.strata.modifier.background
+import dev.s7a.strata.modifier.size
 import dev.s7a.strata.render.ArgbColor
+import dev.s7a.strata.render.DrawImage
+import dev.s7a.strata.render.createDrawImage
 import dev.s7a.strata.runtime.semantics.SemanticsEntry
 import dev.s7a.strata.semantics.Semantics
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
+import dev.s7a.strata.state.StateRevision
+import dev.s7a.strata.state.StateSnapshot
+import dev.s7a.strata.state.StateSource
+import dev.s7a.strata.state.StateSubscription
 import dev.s7a.strata.text.UiText
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertSame
@@ -21,6 +34,48 @@ import org.junit.jupiter.api.assertThrows
  * Verifies synchronous core rendering, logical semantics, and cleanup ownership.
  */
 internal class HeadlessRenderTest {
+    @Test
+    fun cpuCanvasStretchesKnownTexelsAndPreservesAlphaScaleAndOverlayOrder() {
+        val source =
+            canvasSource(
+                createDrawImage(IntSize(2, 1), intArrayOf(0x80FF0000.toInt(), 0xFF00FF00.toInt())),
+            )
+        val description =
+            evaluateComponentTree {
+                Stack(modifier = Modifier.Empty.background(ArgbColor(0xFF0000FF.toInt()))) {
+                    Canvas(source, IntSize(4, 2))
+                    Spacer(modifier = Modifier.Empty.size(1, 1).background(ArgbColor(0xFFFFFFFF.toInt())))
+                }
+            }
+
+        val frame = renderHeadless(description, IntSize(4, 2), scale = 2)
+
+        assertEquals(IntSize(8, 4), frame.image.size)
+        assertEquals(0xFFFFFFFF.toInt(), frame.image.argbAt(0, 0))
+        assertEquals(0xFF80007F.toInt(), frame.image.argbAt(3, 0))
+        assertEquals(0xFF00FF00.toInt(), frame.image.argbAt(4, 0))
+        assertEquals(0xFF80007F.toInt(), frame.image.argbAt(0, 2))
+        assertTrue(frame.semantics.isEmpty())
+    }
+
+    @Test
+    fun oneShotHeadlessCanvasDrainsTheSubscribeReturnRaceAndClosesItsObservation() {
+        val initial = createDrawImage(IntSize(1, 1), intArrayOf(0xFFFF0000.toInt()))
+        val latest = createDrawImage(IntSize(1, 1), intArrayOf(0xFF00FF00.toInt()))
+        var closes = 0
+        val source =
+            canvasSource(
+                StateSource<DrawImage> { observer ->
+                    observer(StateSnapshot(StateRevision(2), latest))
+                    StateSubscription(StateSnapshot(StateRevision(1), initial)) { closes += 1 }
+                },
+            )
+        val description = evaluateComponentTree { Canvas(source, IntSize(1, 1)) }
+
+        assertEquals(0xFF00FF00.toInt(), renderHeadless(description, IntSize(1, 1)).image.argbAt(0, 0))
+        assertEquals(1, closes)
+    }
+
     @Test
     fun renderUsesFixedViewportScalesPaintAndReturnsLogicalSemantics() {
         val probe = HeadlessProbe()

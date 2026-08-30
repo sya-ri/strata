@@ -8,7 +8,7 @@ Keeping this orchestration in the Minecraft-independent runtime gives headless a
 
 `dev.s7a.strata.runtime.spi` provides a public but opt-in runtime adapter bridge for platform runtimes that need to drive this session.
 It is not an application screen-definition API and does not expose coroutines, state declarations, source bindings, `UiSession`, `UiFrame`, session state, or task-failure decision types.
-`attach`, `detach`, `frame`, pointer input, focused keyboard and text input, and `close` are synchronous calls that must already run on the construction and owner thread.
+`attach`, `detach`, `frame`, pointer input, focused keyboard and text input, input reset, and `close` are synchronous calls that must already run on the construction and owner thread.
 The synchronous bridge exposes no task-launching or dispatcher facility.
 Its content lambda is evaluated during the first attach, after which the retained tree handles frames and input until terminal failure or close.
 Each successful frame owns immutable defensive snapshots of size, drawing commands, and semantics, and all input is ignored until the first successful frame commits.
@@ -20,12 +20,17 @@ A future resize is not visible until its frame commits, and a pre-input geometry
 This shared behavior applies to Minecraft hosts in both headless tests and Fabric event bursts; low-level `UiTree` users still explicitly measure and lay out dirty geometry before dispatch.
 The bridge delegates exact primary-failure identity, suppression order, lifecycle transitions, and cleanup-once behavior to the retained session.
 It retains the content lambda while created, attached, or detached and releases it before cleanup callbacks after terminal failure or close.
-Session detach retains the active `UiTree` and its node ownership; it clears active hover and focused ownership before clearing the committed-frame marker, without rerunning node attach or detach lifecycle callbacks until terminal close.
+Session detach retains the active `UiTree` and its node ownership; it cancels pointer capture and clears active hover and focused ownership before clearing the committed-frame marker, without rerunning node attach or detach lifecycle callbacks until terminal close.
+`SessionAttachmentNode` adds a separate resource lifetime for retained nodes whose observations cannot remain active while detached.
+After reconciliation, attachment resumes these nodes in effective parent-first order; the callback tolerates resources already acquired by ordinary `LifecycleNode.attach`.
+Session detach suspends every such node in reverse-sibling descendant-first order even before the first successful frame, while retaining node identity and externally owned sources.
+Suspension clears active references before fallible cleanup, and terminal lifecycle cleanup remains safe after an earlier suspension.
+The opt-in `resetInputState` bridge gives native window-blur and input-reset handlers the same capture, hover, and focus cleanup without detaching the session or invalidating its committed frame.
 
 The common `runtime:minecraft` adapter consumes a one-shot screen definition and a complete immutable profile.
 Definition close and host transfer race atomically, and a transferred host exposes only owner-thread metadata, lifecycle, fixed-viewport frames, and typed pointer, keyboard, committed-character, and preedit input.
 Its screen-content callback is an ordinary `UiScope`, while the host installs its selected Minecraft profile behind that callback for top-level Minecraft components and modifiers.
-Callers therefore declare `Text`, `TextField`, `TextArea`, `Button`, `Checkbox`, `CycleButton`, `Slider`, `Tab`, `ScrollArea`, `Scrollbar`, `VirtualList`, `SelectionList`, `Image`, `Slot`, `PlayerHead`, `LoadingIndicator`, and `ProgressBar` directly without an additional root builder or an explicit Minecraft context receiver.
+Callers therefore declare `Text`, `TextField`, `TextArea`, `Button`, `Checkbox`, `CycleButton`, `Slider`, `Tab`, `ScrollArea`, `Scrollbar`, `VirtualList`, `SelectionList`, `Image`, `Canvas`, `Slot`, `PlayerHead`, `LoadingIndicator`, and `ProgressBar` directly without an additional root builder or an explicit Minecraft context receiver.
 Application code emits those components directly and composes profile-backed `menuBackground()`, `containerBackground(rows)`, or immutable `imageBackground(image, scale)` behavior into ordinary modifier chains; screen definitions, `Text`, and `Button` accept `String` literals without requiring `UiText.Literal`, while typed overloads retain unresolved `UiText` values when needed.
 The fixed-height profile-backed Button owns appearance, hover visuals, and enabled semantics, while reusable pointer, keyboard, text-input, preedit, focus, press, release, move, drag, scroll, and hover actions are active modifiers shared with other component kinds.
 TextField owns the verified EditBox sprites, typed profile-backed text colors, insert or append cursor, Unicode scalar editing, and semantics while caller-owned owner-thread `TextFieldState` owns the value and positive UTF-16 maximum length.
@@ -68,6 +73,7 @@ The lifecycle is:
 | `Failed(cause)` | cleanup already attempted | no | close |
 | `Closed` | none | no | none |
 
+The subscriptions retained in `Detached` are session-declared bindings; attachment-scoped node bindings suspend independently through `SessionAttachmentNode`.
 Invalid transitions fail before changing the lifecycle.
 An unrecoverable content, retained-tree, pipeline, or task failure records the exact primary `Throwable` in `Failed` and attempts cleanup.
 Closing a failed session changes only the lifecycle to `Closed`, because failure cleanup has already run.
@@ -91,19 +97,31 @@ A source may still publish a later revision from equality; that callback only en
 
 Each source subscription returns an initial snapshot from the same linearization point that installs its observer.
 Callbacks that race or precede the return from `subscribe` are merged with that snapshot by revision.
-The owner thread commits the newest pending snapshot at a frame cutoff and evaluates value equality after releasing the binding lock.
+The owner thread first captures every session binding and every retained `FrameCutoffNode`, then commits the captured observations before content reconciliation.
+Capture cannot invoke caller value equality or publish observations; commit evaluates session-bound value equality after releasing the binding lock.
 A callback arriving after the cutoff remains pending for the following frame.
+Each participating binding retains at most one transaction-local captured observation between these two phases, in addition to its committed and latest pending state.
+Sources newly attached or replaced during reconciliation may paint their subscription's initial snapshot, but later callbacks wait for the next frame cutoff.
+
+`canvasSource(frames)` uses this protocol for immutable `DrawImage` revisions without introducing a streaming or timestamp protocol.
+Its any-thread observer only enqueues the newest revision; both timed and untimed frames drain it before paint-cache reuse.
+An image's pixel extent may change while the Canvas destination remains its explicit positive logical size.
+The node owns only its attachment binding and stops observing on source replacement, session detach, or terminal cleanup; it never closes the caller-owned source.
 
 ## Frames and input
 
-Attach creates a retained tree when necessary, activates one task generation, applies pending source values, and rebuilds dirty content once.
+Attach creates a retained tree when necessary, activates one task generation, applies pending source values, rebuilds dirty content once, and resumes attachment-scoped resources.
 A frame applies another source cutoff, rebuilds dirty content at most once, then measures, lays out, paints, and collects semantics in order.
 Its size, drawing commands, and semantics entries are immutable defensive snapshots.
 
 Pointer, keyboard, committed-character, and preedit input are ignored until one complete frame has committed.
 Afterward it targets the most recently committed tree.
 State changed by an input callback becomes visible to retained UI behavior after the next successful frame.
-Detach emits exit for active pointer-hover observers, clears focused ownership, invalidates the committed-frame marker, and retains the tree and state.
+Detach cancels active pointer capture, emits exit for active pointer-hover observers, clears focused ownership, invalidates the committed-frame marker, and retains the tree and state.
+The input pipeline retains at most one captured entry and its starting button, releases that reference before matching-release or cancellation callbacks, and cancels before entry disposal as well as on session input reset.
+Captured move and matching-button drag or release delivery uses the latest committed layout even outside ancestor clips, while other buttons, scrolling, and hover preserve ordinary hit testing.
+Input reset is owner-thread confined, preserves committed pixels and retained ownership, and prohibits session-state mutation from its cleanup callbacks.
+Capture, hover, and focus cleanup are all attempted when an earlier callback throws; the original failure remains primary and distinct later failures are suppressed in observation order.
 
 ## Coroutine generations
 
