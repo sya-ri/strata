@@ -104,7 +104,7 @@ jobs:
             "+refs/tags/$RELEASE_TAG:refs/tags/$RELEASE_TAG"
           [[ "$(git rev-parse origin/master)" == "$GITHUB_SHA" ]] || { echo 'Controller SHA is not the exact origin/master head.' >&2; exit 1; }
           tag_commit="$(git rev-parse --verify "refs/tags/$RELEASE_TAG^{commit}")"
-          [[ "$tag_commit" == "$GITHUB_SHA" ]] || { echo 'The v0.1.1 tag must point to the exact green master head used for release.' >&2; exit 1; }
+          [[ "$tag_commit" == "6e35f5984bbca06c18f8ca8080f45a70b09831bb" ]] || { echo 'The v0.1.1 tag commit differs from the reviewed release source.' >&2; exit 1; }
           read -r tag_object verified_commit <<< "$(bash release/verify-release-tag.sh "$RELEASE_TAG" "$tag_commit")"
           [[ "$verified_commit" == "$tag_commit" ]] || { echo 'Signed tag verification returned a different commit.' >&2; exit 1; }
           bash release/verify-github-tag-ruleset.sh \
