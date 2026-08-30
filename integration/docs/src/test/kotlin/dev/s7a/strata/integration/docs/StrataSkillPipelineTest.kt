@@ -63,6 +63,7 @@ internal class StrataSkillPipelineTest {
         assertTrue(modifiers.contains("TextAreaState"))
         assertTrue(modifiers.contains("TextAreaViewport"))
         assertTrue(modifiers.contains("TextLayout"))
+        assertTiledImageReferences(modifiers)
         assertOwnerAwareStateSignatures(modifiers)
         assertTrue(patterns.contains("itemCount = { items.size }"))
         assertTrue(patterns.contains("request.suggestedCount"))
@@ -76,7 +77,9 @@ internal class StrataSkillPipelineTest {
     private fun assertComponentReferences(components: String) {
         assertTrue(components.contains("fun UiScope.Button"))
         assertTrue(components.contains("fun UiScope.TextArea"))
+        assertTrue(components.contains("fun UiScope.TiledImage"))
         assertTrue(components.contains("https://github.com/sya-ri/strata/blob/master/docs/components.md#text-area"))
+        assertTrue(components.contains("https://github.com/sya-ri/strata/blob/master/docs/components.md#tiled-image"))
         assertTrue(components.contains("https://github.com/sya-ri/strata/blob/master/docs/components.md#button"))
     }
 
@@ -86,6 +89,12 @@ internal class StrataSkillPipelineTest {
         val modrinthProject = documents.getValue("docs/modrinth-project.md")
         assertTrue(modrinthProject.contains("[Dokka API reference](https://gh.s7a.dev/strata/)"))
         assertTrue(modrinthProject.contains("[Reader guides on GitHub](https://github.com/sya-ri/strata/blob/master/README.md#documentation)"))
+    }
+
+    private fun assertTiledImageReferences(modifiers: String) {
+        assertTrue(modifiers.contains("PanZoomState"))
+        assertTrue(modifiers.contains("TiledImageSource"))
+        assertTrue(modifiers.contains("TiledImageScope.atContentPosition"))
     }
 
     private fun assertOwnerAwareStateSignatures(modifiers: String) {

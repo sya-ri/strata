@@ -8,7 +8,7 @@ import dev.s7a.strata.input.PointerEvent
  * Opts a pointer handler into exclusive delivery after it consumes a press.
  *
  * The owner-thread runtime retains at most one captured node and its starting button per tree.
- * A [PointerEvent.Press] returning [InputResult.Consumed] acquires capture only while no other handler owns it.
+ * A [PointerEvent.Press] returning [InputResult.Consumed] acquires capture only while no other handler owns it, then invokes [onPointerCaptureAcquired].
  * Captured moves and drags or releases for that same button bypass bounds and ancestor clips, use the latest committed local coordinates without clamping, and stop propagation even when the handler returns [InputResult.Ignored].
  * Other buttons, scrolling, and hit-tested hover observation retain their ordinary dispatch behavior.
  * A matching release clears ownership before delivery and does not invoke [onPointerCaptureCancelled].
@@ -18,6 +18,19 @@ import dev.s7a.strata.input.PointerEvent
  * Callback failures escape unchanged through the active tree operation, which still attempts remaining cleanup.
  */
 public interface PointerCaptureNode : PointerInputNode {
+    /**
+     * Confirms that this node acquired one captured gesture on the owning tree thread.
+     *
+     * The consumed press callback has returned, the runtime has installed its capture reference, and no captured drag, move, release, or cancellation has run yet.
+     * A consumed press does not imply acquisition when another node already owns capture, so implementations that retain gesture state should begin it here.
+     * The default implementation retains no state.
+     * If this callback fails, terminal tree cleanup clears ownership before invoking [onPointerCaptureCancelled].
+     *
+     * @param button the button whose consumed press acquired capture.
+     * @throws Throwable when gesture initialization fails; the tree preserves that failure while cancelling the installed capture during cleanup.
+     */
+    public fun onPointerCaptureAcquired(button: PointerButton): Unit = Unit
+
     /**
      * Cancels one unfinished captured gesture on the owning tree thread.
      *

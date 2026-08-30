@@ -115,6 +115,27 @@ Other command shapes retain exact output through a portable layer bounded to the
 Presentation counters distinguish direct hit, miss, upload, draw, eviction, ineligible and capacity fallback, retained entries and bytes, and ordinary portable rasterization and upload.
 After warm-up, stable image identities under destination or clip changes must report zero image uploads and zero sampled-image portable rasterizations.
 
+### Tiled-image working-set cache
+
+Each retained TiledImage attachment keys its derived presentation state by source identity and TiledImageTileId.
+The source identity fixes bounds, level geometry, and revision meaning; replacing it invalidates the complete working set before any replacement subscription opens.
+Pan, zoom, viewport, fit, and cache-policy changes replace only tile placement and the required identifier set, while a stable identifier retains its observation and committed immutable DrawImage.
+Independently positioned overlays do not participate in this key and cannot invalidate tile observations or images.
+
+The attachment reserves both one entry and the level's full straight-RGBA8 byte cost before subscribing.
+Its current set contains the selected level's visible tiles plus its configured overscan margin and only visible tiles from every coarser fallback level.
+The configured entry and byte maxima include empty, initializing, committed, pending, and frame-captured tile states.
+If the preferred set does not fit, planning tries coarser selected levels without mutating the current subscriptions; failure of the coarsest set occurs before partial installation.
+Panning replaces tiles beyond the current margin instead of retaining visited map regions.
+
+Planning, subscription establishment, reconciliation, and release run on the retained tree's owner thread.
+StateSource callbacks may enqueue from any thread, retain only the newest pending revision for that tile, and commit through the session's shared frame cutoff.
+Leaving the working set, source replacement, detachment, close, and failed subscription establishment clear attachment references and close every observation without closing the externally owned source or state history.
+Cleanup attempts all removed observations and preserves later failures as suppressed exceptions.
+
+Deterministic tests cover clean identity reuse, movement within and across the overscan boundary, marker-only updates, preferred and fallback LOD budgeting, source replacement, callback and subscribe races, invalid tile rejection, detach and terminal release, and exact range planning above the double integer precision boundary for positive, negative, and non-power-of-two grids.
+Headless and loaded Fabric parity require the same pixels and row-major coarse-to-fine command order, while native sampled-image counters require stable tile images to avoid rerasterization and upload during pan, zoom, and marker movement.
+
 ### Canvas source and target retention
 
 The CPU Canvas binding is keyed by source identity and its attachment, accepts only monotonically newer StateRevision values, and retains one committed immutable image plus the newest pending image.

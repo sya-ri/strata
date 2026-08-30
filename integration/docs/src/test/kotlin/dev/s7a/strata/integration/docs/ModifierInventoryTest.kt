@@ -14,11 +14,11 @@ internal class ModifierInventoryTest {
     fun compiledInventoryContainsEveryTopLevelAndParentScopeOverload() {
         val inventory = ModifierInventory.discover(listOf(apiClasses()))
 
-        assertEquals(41, inventory.modifiers.size)
-        assertEquals(51, inventory.modifiers.values.sum())
+        assertEquals(42, inventory.modifiers.size)
+        assertEquals(52, inventory.modifiers.values.sum())
         assertEquals(ModifierDocumentationCatalog.entries.keys, inventory.modifiers.keys)
         assertEquals(ModifierInventory.ParentScopeModifier.entries.toSet(), inventory.parentScopeModifiers.keys)
-        assertEquals(7, inventory.parentScopeModifiers.values.sum())
+        assertEquals(9, inventory.parentScopeModifiers.values.sum())
         assertEquals(4, inventory.modifiers.getValue("padding"))
         assertEquals(2, inventory.modifiers.getValue("imageBackground"))
         assertEquals(2, inventory.modifiers.getValue("tooltip"))

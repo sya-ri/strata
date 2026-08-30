@@ -3,10 +3,12 @@ package dev.s7a.strata.integration.minecraft.fabric
 import com.mojang.blaze3d.platform.NativeImage
 import dev.s7a.strata.component.Column
 import dev.s7a.strata.component.ImageSource
+import dev.s7a.strata.component.PanZoomState
 import dev.s7a.strata.component.PlayerSkinSource
 import dev.s7a.strata.component.Spacer
 import dev.s7a.strata.component.TextField
 import dev.s7a.strata.component.TextFieldState
+import dev.s7a.strata.geometry.DoubleOffset
 import dev.s7a.strata.geometry.IntOffset
 import dev.s7a.strata.geometry.IntRect
 import dev.s7a.strata.geometry.IntSize
@@ -35,6 +37,10 @@ import dev.s7a.strata.runtime.minecraft.font.lwjgl.LwjglMinecraftFontBackendFact
 import dev.s7a.strata.runtime.render.DrawCommand
 import dev.s7a.strata.screen.ScreenDefinition
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
+import dev.s7a.strata.state.StateRevision
+import dev.s7a.strata.state.StateSnapshot
+import dev.s7a.strata.state.StateSource
+import dev.s7a.strata.state.StateSubscription
 import it.unimi.dsi.fastutil.booleans.BooleanConsumer
 import net.fabricmc.fabric.api.client.gametest.v1.FabricClientGameTest
 import net.fabricmc.fabric.api.client.gametest.v1.context.ClientGameTestContext
@@ -69,6 +75,7 @@ import java.nio.file.Path
 import java.security.MessageDigest
 import java.util.HexFormat
 import java.util.concurrent.CompletableFuture
+import java.util.concurrent.atomic.AtomicReference
 import java.util.function.Predicate
 import kotlin.io.path.inputStream
 
@@ -842,9 +849,21 @@ public class StrataMinecraftClientGameTest : FabricClientGameTest {
             val imagePath = imageDirectory.resolve("${showcase.slug}.png")
             Files.write(imagePath, png)
 
+            val tiledNavigation = AtomicReference<PanZoomState?>()
+            val tiledMarker = AtomicReference<TiledImageMarkerSource?>()
             context.setScreen {
+                val definition =
+                    if (showcase === ComponentShowcase.TiledImage) {
+                        val navigation = PanZoomState()
+                        val marker = TiledImageMarkerSource(DoubleOffset(32.0, 24.0))
+                        tiledNavigation.set(navigation)
+                        tiledMarker.set(marker)
+                        createTiledImageShowcaseScreenDefinition(navigation, marker)
+                    } else {
+                        createComponentShowcaseScreenDefinition(showcase, assets)
+                    }
                 createMinecraftScreen(
-                    createComponentShowcaseScreenDefinition(showcase, assets),
+                    definition,
                     profile,
                     parent = null,
                 )
@@ -895,10 +914,115 @@ public class StrataMinecraftClientGameTest : FabricClientGameTest {
                     }
                 }
             }
+            if (showcase === ComponentShowcase.TiledImage) {
+                verifyTiledImageTextureReuse(context, checkNotNull(tiledNavigation.get()), checkNotNull(tiledMarker.get()))
+            }
             frames[showcase] = ComponentShowcaseFrame(headless, png)
         }
         closeFabricScreen(context)
         return frames
+    }
+
+    @Suppress("LongMethod") // One loaded sequence distinguishes stable tile uploads from navigation and independent marker-overlay updates.
+    private fun verifyTiledImageTextureReuse(
+        context: ClientGameTestContext,
+        navigation: PanZoomState,
+        marker: TiledImageMarkerSource,
+    ) {
+        val beforeZoom = renderWork(context)
+        context.runOnClient(
+            FailableConsumer<Minecraft, RuntimeException> {
+                navigation.zoomTo(2.0)
+            },
+        )
+        context.waitFor(
+            Predicate<Minecraft> { minecraft ->
+                beforeZoom.framePreparations < readRenderWork(minecraft).framePreparations
+            },
+        )
+        val afterZoom = renderWork(context)
+        require(afterZoom.sampledImageUploads == beforeZoom.sampledImageUploads) {
+            "Changing only tiled-image destinations must reuse uploaded tile identities: before=$beforeZoom, after=$afterZoom"
+        }
+        require(afterZoom.rasterizations == beforeZoom.rasterizations) {
+            "Changing only tiled-image destinations must not rasterize a portable tile layer: before=$beforeZoom, after=$afterZoom"
+        }
+        require(beforeZoom.sampledImageDirectHits < afterZoom.sampledImageDirectHits && beforeZoom.sampledImageDraws < afterZoom.sampledImageDraws) {
+            "The zoomed frame must hit and draw the direct sampled-image cache: before=$beforeZoom, after=$afterZoom"
+        }
+        require(afterZoom.sampledImageIneligibleFallbacks == beforeZoom.sampledImageIneligibleFallbacks) {
+            "Eligible tiled images must not enter the ineligible fallback after zoom: before=$beforeZoom, after=$afterZoom"
+        }
+        require(afterZoom.sampledImageCapacityFallbacks == beforeZoom.sampledImageCapacityFallbacks) {
+            "Warm tiled images must not enter the capacity fallback after zoom: before=$beforeZoom, after=$afterZoom"
+        }
+        require(afterZoom.sampledImageDirectMisses == beforeZoom.sampledImageDirectMisses && afterZoom.sampledImageEvictions == beforeZoom.sampledImageEvictions) {
+            "Changing tiled-image destinations must not churn warm cache identities: before=$beforeZoom, after=$afterZoom"
+        }
+
+        val beforePan = afterZoom
+        context.runOnClient(
+            FailableConsumer<Minecraft, RuntimeException> {
+                val previous = navigation.metrics.center
+                val current = navigation.panBy(DoubleOffset(4.0, 0.0))
+                check(previous != current) { "The loaded tiled-image pan must change its clamped center." }
+            },
+        )
+        context.waitFor(
+            Predicate<Minecraft> { minecraft ->
+                beforePan.framePreparations < readRenderWork(minecraft).framePreparations
+            },
+        )
+        val afterPan = renderWork(context)
+        require(afterPan.sampledImageUploads == beforePan.sampledImageUploads) {
+            "Panning a warm tiled image must reuse uploaded tile identities: before=$beforePan, after=$afterPan"
+        }
+        require(beforePan.sampledImageDirectHits < afterPan.sampledImageDirectHits && beforePan.sampledImageDraws < afterPan.sampledImageDraws) {
+            "The panned frame must hit and draw the direct sampled-image cache: before=$beforePan, after=$afterPan"
+        }
+        require(afterPan.sampledImageIneligibleFallbacks == beforePan.sampledImageIneligibleFallbacks) {
+            "Eligible tiled images must not enter the ineligible fallback after pan: before=$beforePan, after=$afterPan"
+        }
+        require(afterPan.sampledImageCapacityFallbacks == beforePan.sampledImageCapacityFallbacks) {
+            "Warm tiled images must not enter the capacity fallback after pan: before=$beforePan, after=$afterPan"
+        }
+        require(afterPan.sampledImageDirectMisses == beforePan.sampledImageDirectMisses && afterPan.sampledImageEvictions == beforePan.sampledImageEvictions) {
+            "Panning warm tiles must not churn cache identities: before=$beforePan, after=$afterPan"
+        }
+        require(afterPan.rasterizations == beforePan.rasterizations) {
+            "Moving the content-position marker during pan must reuse its localized portable pixels: before=$beforePan, after=$afterPan"
+        }
+
+        val beforeMarker = afterPan
+        context.runOnClient(
+            FailableConsumer<Minecraft, RuntimeException> {
+                marker.publish(DoubleOffset(40.0, 24.0))
+            },
+        )
+        context.waitFor(
+            Predicate<Minecraft> { minecraft ->
+                beforeMarker.framePreparations < readRenderWork(minecraft).framePreparations
+            },
+        )
+        val afterMarker = renderWork(context)
+        require(afterMarker.sampledImageUploads == beforeMarker.sampledImageUploads) {
+            "Moving only a player marker must not upload tile identities: before=$beforeMarker, after=$afterMarker"
+        }
+        require(beforeMarker.sampledImageDirectHits < afterMarker.sampledImageDirectHits && beforeMarker.sampledImageDraws < afterMarker.sampledImageDraws) {
+            "A marker-only frame must reuse and draw the direct tile cache: before=$beforeMarker, after=$afterMarker"
+        }
+        require(afterMarker.sampledImageDirectMisses == beforeMarker.sampledImageDirectMisses && afterMarker.sampledImageEvictions == beforeMarker.sampledImageEvictions) {
+            "Moving only a player marker must not churn tile cache identities: before=$beforeMarker, after=$afterMarker"
+        }
+        require(
+            afterMarker.sampledImageIneligibleFallbacks == beforeMarker.sampledImageIneligibleFallbacks &&
+                afterMarker.sampledImageCapacityFallbacks == beforeMarker.sampledImageCapacityFallbacks,
+        ) {
+            "Moving only a player marker must keep eligible tiles on the direct path: before=$beforeMarker, after=$afterMarker"
+        }
+        require(afterMarker.rasterizations == beforeMarker.rasterizations) {
+            "Moving only a player marker must reuse its localized portable pixels: before=$beforeMarker, after=$afterMarker"
+        }
     }
 
     private fun requireCanvasKnownPixels(image: HeadlessImage) {
@@ -948,6 +1072,7 @@ public class StrataMinecraftClientGameTest : FabricClientGameTest {
             ComponentShowcase.SelectionList -> createSelectionListShowcaseScreenDefinition()
             ComponentShowcase.Image -> createImageShowcaseScreenDefinition(assets.image)
             ComponentShowcase.Canvas -> createCanvasShowcaseScreenDefinition()
+            ComponentShowcase.TiledImage -> createTiledImageShowcaseScreenDefinition()
             ComponentShowcase.Slot -> createSlotShowcaseScreenDefinition()
             ComponentShowcase.PlayerHead -> createPlayerHeadShowcaseScreenDefinition(assets.playerSkin)
             ComponentShowcase.LoadingIndicator -> createLoadingIndicatorShowcaseScreenDefinition()
@@ -1564,6 +1689,34 @@ public class StrataMinecraftClientGameTest : FabricClientGameTest {
         val png: ByteArray,
     )
 
+    private class TiledImageMarkerSource(
+        initial: DoubleOffset,
+    ) : StateSource<DoubleOffset> {
+        private val monitor = Any()
+        private var snapshot = StateSnapshot(StateRevision(0L), initial)
+        private val observers: MutableSet<(StateSnapshot<DoubleOffset>) -> Unit> = LinkedHashSet()
+
+        override fun subscribe(observer: (StateSnapshot<DoubleOffset>) -> Unit): StateSubscription<DoubleOffset> {
+            val initialSnapshot =
+                synchronized(monitor) {
+                    observers.add(observer)
+                    snapshot
+                }
+            return StateSubscription(initialSnapshot) {
+                synchronized(monitor) { observers.remove(observer) }
+            }
+        }
+
+        fun publish(position: DoubleOffset) {
+            val notification =
+                synchronized(monitor) {
+                    snapshot = StateSnapshot(StateRevision(Math.incrementExact(snapshot.revision.value)), position)
+                    snapshot to observers.toList()
+                }
+            notification.second.forEach { observer -> observer(notification.first) }
+        }
+    }
+
     private enum class ComponentShowcase(
         val slug: String,
         val viewport: IntSize,
@@ -1591,6 +1744,7 @@ public class StrataMinecraftClientGameTest : FabricClientGameTest {
         SelectionList("selection-list", IntSize(120, 48)),
         Image("image", IntSize(64, 64)),
         Canvas("canvas", IntSize(96, 64)),
+        TiledImage("tiled-image", IntSize(112, 88)),
         Slot("slot", IntSize(64, 64), IntOffset(32, 32)),
         PlayerHead("player-head", IntSize(64, 64)),
         LoadingIndicator(

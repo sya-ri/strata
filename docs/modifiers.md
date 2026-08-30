@@ -45,6 +45,7 @@ An extent addition that cannot be represented as an `Int` fails instead of wrapp
 `semantics` emits one separate unresolved entry before content semantics and does not merge descendant values.
 `onPointerEvent` handles the complete typed pointer protocol and returns an explicit propagation result.
 `onCapturedPointerEvent(onCancel, callback)` additionally captures the button whose press that handler consumes, provided no other entry already owns capture.
+Custom `PointerCaptureNode` implementations begin gesture state only from `onPointerCaptureAcquired(button)`, which runs after the runtime installs ownership; a consumed press receives no confirmation while another node owns capture.
 The tree retains one owner and starting button; moves and matching-button drags or releases go exclusively to that owner even outside its bounds or ancestor clips, use the latest committed local logical coordinates without clamping, and stop propagation even when its callback returns `Ignored`.
 Other buttons and scrolling retain ordinary dispatch, and hover remains a real hit-test observation independent of capture.
 A matching release clears capture before its callback and never calls cancellation.
@@ -118,7 +119,7 @@ Hover observation independently visits every placed capable node deepest and lat
 Keyboard and text input visit only the focused logical component and its effective modifier ancestry.
 Semantics are emitted in effective parent-before-child order and remain unresolved until an adapter consumes them.
 Future modifier-specific capabilities can add typed contracts without changing the component child scope.
-Third-party component and modifier nodes opt into the same captured pointer protocol by implementing `PointerCaptureNode : PointerInputNode` and its `onPointerCaptureCancelled(button)` callback; the runtime does not recognize component kinds or require registration.
+Third-party component and modifier nodes opt into the same captured pointer protocol by implementing `PointerCaptureNode : PointerInputNode`, starting retained gesture state from `onPointerCaptureAcquired(button)`, and clearing it from `onPointerCaptureCancelled(button)`; the runtime does not recognize component kinds or require registration.
 Captured input is owned by the retained input pipeline, so session detachment and platform input reset cancel it even though detachment retains the nodes and does not call their lifecycle detach hooks.
 Cancellation clears the pipeline reference before user callbacks, and throwing cancellation cannot prevent remaining hover, focus, or lifecycle cleanup; the existing primary-failure and suppression order applies.
 

@@ -2,7 +2,7 @@
 
 # Component catalog
 
-Strata exposes 24 focused standard components from `dev.s7a.strata.component`.
+Strata exposes 25 focused standard components from `dev.s7a.strata.component`.
 Every Kotlin declaration below is paired with the compiled `strata-api` overload inventory; generation fails when source and binary identities diverge or an undocumented component enters the API.
 Use the [component showcase on GitHub](https://github.com/sya-ri/strata/blob/master/docs/components.md) for complete compiled examples and Minecraft-verified images.
 
@@ -322,6 +322,21 @@ Canvas displays externally produced CPU frames or version-runtime native output 
 
 ```kotlin
 fun UiScope.Canvas(source: CanvasSource, size: IntSize, modifier: Modifier = Modifier.Empty, key: ElementKey<*>? = null)
+```
+
+<a id="tiled-image"></a>
+
+## TiledImage
+
+TiledImage presents one bounded logical raster from independently revisioned immutable tiles, selecting only the visible level and coarser fallback working set instead of joining or copying the complete image. Maps, scans, and schematics are independent uses that cannot preserve bounded subscriptions and reusable tile images through ordinary Image composition alone.
+
+- Compiled overloads: 1
+- Modifiers: Use the explicit positive `size` as the clipped viewport, keep navigation in caller-owned `PanZoomState`, and compose `panZoom(state)` when direct drag and wheel navigation is wanted. `PanZoomFit.Contain` or `Cover` defines zoom one; ordinary paint and semantics modifiers apply to the viewport without changing tile identities.
+- Parent scope: `TiledImage` evaluates a callback-lifetime `TiledImageScope`; each fixed-size direct child uses `atContentPosition` with either a fixed coordinate or a `StateSource<DoubleOffset>` committed at frame cutoff. Revisioned marker movement changes only overlay placement while tiles retain their identities. The source instance identifies immutable exactly representable bounds and level geometry and owns every tile history. One retained attachment owns its bounded subscriptions and derived presentation cache, closes them on replacement or detach, and never closes the source or mutates returned images.
+- [Showcase image and compiled example](https://github.com/sya-ri/strata/blob/master/docs/components.md#tiled-image)
+
+```kotlin
+fun UiScope.TiledImage(source: TiledImageSource, state: PanZoomState, size: IntSize, fit: PanZoomFit = PanZoomFit.Contain, cachePolicy: TiledImageCachePolicy = TiledImageCachePolicy.Default, modifier: Modifier = Modifier.Empty, key: ElementKey<*>? = null, content: TiledImageScope.() -> Unit = {})
 ```
 
 <a id="slot"></a>

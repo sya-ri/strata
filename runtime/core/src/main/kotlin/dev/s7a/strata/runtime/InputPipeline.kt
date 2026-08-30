@@ -160,7 +160,10 @@ internal class InputPipeline(
         if (input != null && ancestorAllowsHit && event.position in retained.bounds) {
             val result = input.onPointerEvent(event, localPosition(retained, event))
             if (result === InputResult.Consumed && event is PointerEvent.Press) {
-                if (capture == null && input is PointerCaptureNode) capture = Capture(retained, event.button)
+                if (capture == null && input is PointerCaptureNode) {
+                    capture = Capture(retained, event.button)
+                    input.onPointerCaptureAcquired(event.button)
+                }
             }
             return result
         }

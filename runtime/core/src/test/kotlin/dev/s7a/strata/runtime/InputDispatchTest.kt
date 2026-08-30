@@ -188,6 +188,26 @@ internal class InputDispatchTest {
     }
 
     @Test
+    fun acquisitionFailureCancelsInstalledCaptureOnceBeforeLifecycleCleanup() {
+        val primary = IllegalArgumentException("acquire")
+        val probe = CaptureProbe(acquireFailure = primary)
+        val tree = UiTree()
+        tree.update(CaptureElement(probe))
+        layout(tree)
+
+        val failure =
+            assertThrows(IllegalArgumentException::class.java) {
+                tree.dispatchPointer(PointerEvent.Press(IntOffset(1, 1), PointerButton.Primary))
+            }
+
+        assertSame(primary, failure)
+        assertEquals(listOf(CaptureStage.Cancel, CaptureStage.Detach, CaptureStage.Dispose), probe.cleanup)
+        assertEquals(TreeState.Poisoned, tree.state)
+        tree.close()
+        assertEquals(1, probe.cleanup.count { stage -> stage === CaptureStage.Cancel })
+    }
+
+    @Test
     fun cancellationFailureOnCloseStillDisposesEveryNodeAndDoesNotRepeat() {
         val cancellation = IllegalArgumentException("cancel")
         val detach = IllegalStateException("detach")
@@ -242,6 +262,7 @@ internal class InputDispatchTest {
     }
 
     private class CaptureProbe(
+        val acquireFailure: Throwable? = null,
         val inputFailure: Throwable? = null,
         val cancelFailure: Throwable? = null,
         val detachFailure: Throwable? = null,
@@ -285,6 +306,11 @@ internal class InputDispatchTest {
             probe.events += event to localPosition
             if (event is PointerEvent.Move) probe.inputFailure?.let { throw it }
             return if (event is PointerEvent.Press) InputResult.Consumed else InputResult.Ignored
+        }
+
+        override fun onPointerCaptureAcquired(button: PointerButton) {
+            assertEquals(PointerButton.Primary, button)
+            probe.acquireFailure?.let { throw it }
         }
 
         override fun onPointerCaptureCancelled(button: PointerButton) {

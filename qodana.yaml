@@ -19,6 +19,7 @@ exclude:
       - api/src/main/kotlin/dev/s7a/strata/component/CanvasComponents.kt
       - api/src/main/kotlin/dev/s7a/strata/component/ProfileComponents.kt
       - api/src/main/kotlin/dev/s7a/strata/component/SelectionListComponents.kt
+      - api/src/main/kotlin/dev/s7a/strata/component/TiledImageComponents.kt
       - api/src/main/kotlin/dev/s7a/strata/component/UiComponents.kt
       - api/src/main/kotlin/dev/s7a/strata/component/VirtualListComponents.kt
       - integration/minecraft-fabric-unobfuscated/src/gametest/kotlin/dev/s7a/strata/integration/minecraft/fabric/MinecraftProgressExample.kt

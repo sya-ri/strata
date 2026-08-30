@@ -107,6 +107,7 @@ The tree shows Minecraft components in logical draw order; platform-neutral layo
 - [SelectionList](#selection-list)
 - [Image](#image)
 - [Canvas](#canvas)
+- [TiledImage](#tiled-image)
 - [Slot](#slot)
 - [PlayerHead](#player-head)
 - [LoadingIndicator](#loading-indicator)
@@ -1462,6 +1463,142 @@ The tree mirrors the complete dedicated definition, including the featured compo
 ```text
 `- Stack [Size(width=96, height=64), Background(color=0xFF000000), StackContentAlignment(alignment=Center)]
   `- Canvas [Size(width=64, height=32)]
+```
+
+</details>
+
+<a id="tiled-image"></a>
+
+## TiledImage
+
+TiledImage presents one bounded logical raster from independently revisioned immutable tiles, selecting only the visible level and coarser fallback working set instead of joining or copying the complete image. Maps, scans, and schematics are independent uses that cannot preserve bounded subscriptions and reusable tile images through ordinary Image composition alone.
+
+This 112 by 88 PNG is the complete frame of the compiled dedicated `ScreenDefinition`, with a 112 by 88 logical viewport at GUI scale 1. Headless rendering samples the assets at this physical density; the image is not upscaled from a lower-resolution raster or cropped from a larger screen. Its source, asset, viewport, and image hashes are recorded in [the headless render receipt](components/headless-render.properties).
+
+![TiledImage headless showcase](components/tiled-image.png)
+
+### Compiled example
+
+```kotlin
+import dev.s7a.strata.component.PanZoomState
+import dev.s7a.strata.component.Spacer
+import dev.s7a.strata.component.Stack
+import dev.s7a.strata.component.TiledImage
+import dev.s7a.strata.component.TiledImageLevel
+import dev.s7a.strata.component.TiledImageSource
+import dev.s7a.strata.component.TiledImageTile
+import dev.s7a.strata.component.TiledImageTileId
+import dev.s7a.strata.geometry.DoubleOffset
+import dev.s7a.strata.geometry.IntSize
+import dev.s7a.strata.geometry.LongRect
+import dev.s7a.strata.layout.Alignment
+import dev.s7a.strata.modifier.Modifier
+import dev.s7a.strata.modifier.background
+import dev.s7a.strata.modifier.panZoom
+import dev.s7a.strata.modifier.size
+import dev.s7a.strata.render.ArgbColor
+import dev.s7a.strata.render.createDrawImage
+import dev.s7a.strata.screen.ScreenDefinition
+import dev.s7a.strata.state.StateRevision
+import dev.s7a.strata.state.StateSnapshot
+import dev.s7a.strata.state.StateSource
+import dev.s7a.strata.state.StateSubscription
+
+/**
+ * Builds a deterministic tiled raster from twelve independently reusable immutable images.
+ *
+ * The source remains authoritative for tile state, the pan-and-zoom state owns only the viewport transform, and the marker remains a fixed logical size while following one content coordinate.
+ *
+ * @param navigation caller-owned transform used by the showcase and loaded cache verification.
+ * @param markerPositions externally owned marker coordinates committed independently from tile revisions.
+ * @return one-shot definition containing a 4 by 3 tile map and one content-position overlay.
+ */
+internal fun createTiledImageShowcaseScreenDefinition(
+    navigation: PanZoomState = PanZoomState(),
+    markerPositions: StateSource<DoubleOffset> = fixedTiledImageShowcaseMarker(),
+): ScreenDefinition {
+    val source = createTiledImageShowcaseSource()
+    return ScreenDefinition("Tiled image showcase") {
+        Stack(
+            modifier = Modifier.Empty.size(112, 88).background(ArgbColor(0xFF000000.toInt())),
+            contentAlignment = Alignment.Center,
+        ) {
+            TiledImage(
+                source = source,
+                state = navigation,
+                size = IntSize(96, 72),
+                modifier = Modifier.Empty.panZoom(navigation),
+            ) {
+                Spacer(
+                    Modifier.Empty
+                        .size(7, 7)
+                        .background(ArgbColor(0xFFFFFFFF.toInt()))
+                        .atContentPosition(markerPositions),
+                )
+            }
+        }
+    }
+}
+
+private fun fixedTiledImageShowcaseMarker(): StateSource<DoubleOffset> =
+    StateSource {
+        StateSubscription(StateSnapshot(StateRevision(0L), DoubleOffset(32.0, 24.0))) {}
+    }
+
+private fun createTiledImageShowcaseSource(): TiledImageSource {
+    val tileSize = IntSize(16, 16)
+    val colors =
+        listOf(
+            0xFF1B4965.toInt(),
+            0xFF2C7DA0.toInt(),
+            0xFF468FAF.toInt(),
+            0xFF61A5C2.toInt(),
+            0xFF2D6A4F.toInt(),
+            0xFF40916C.toInt(),
+            0xFF52B788.toInt(),
+            0xFF74C69D.toInt(),
+            0xFF7F5539.toInt(),
+            0xFF9C6644.toInt(),
+            0xFFB08968.toInt(),
+            0xFFDDB892.toInt(),
+        )
+    val tiles =
+        colors
+            .mapIndexed { index, color ->
+                val id = TiledImageTileId(level = 0, column = (index % 4).toLong(), row = (index / 4).toLong())
+                val image = createDrawImage(tileSize, IntArray(tileSize.width * tileSize.height) { color })
+                id to
+                    StateSource<TiledImageTile> {
+                        StateSubscription(
+                            StateSnapshot(StateRevision(0L), TiledImageTile.Ready(image)),
+                        ) {}
+                    }
+            }.toMap()
+    return object : TiledImageSource {
+        override val bounds: LongRect = LongRect(0L, 0L, 64L, 48L)
+        override val levels: List<TiledImageLevel> = listOf(TiledImageLevel(tileSize, contentUnitsPerPixel = 1L))
+
+        override fun tile(id: TiledImageTileId): StateSource<TiledImageTile> = requireNotNull(tiles[id]) { "The showcase source does not contain tile $id." }
+    }
+}
+```
+
+### Modifiers
+
+Use the explicit positive `size` as the clipped viewport, keep navigation in caller-owned `PanZoomState`, and compose `panZoom(state)` when direct drag and wheel navigation is wanted. `PanZoomFit.Contain` or `Cover` defines zoom one; ordinary paint and semantics modifiers apply to the viewport without changing tile identities.
+
+### Parent scope
+
+`TiledImage` evaluates a callback-lifetime `TiledImageScope`; each fixed-size direct child uses `atContentPosition` with either a fixed coordinate or a `StateSource<DoubleOffset>` committed at frame cutoff. Revisioned marker movement changes only overlay placement while tiles retain their identities. The source instance identifies immutable exactly representable bounds and level geometry and owns every tile history. One retained attachment owns its bounded subscriptions and derived presentation cache, closes them on replacement or detach, and never closes the source or mutates returned images.
+
+<details><summary>Component tree</summary>
+
+The tree mirrors the complete dedicated definition, including the featured component, its minimum parent layout, and the children used to demonstrate its responsibility.
+
+```text
+`- Stack [Size(width=112, height=88), Background(color=0xFF000000), StackContentAlignment(alignment=Center)]
+  `- TiledImage [Size(width=96, height=72)]
+    `- Spacer [Size(width=7, height=7), Background(color=0xFFFFFFFF), TiledImageContentPosition(x=32.0, y=24.0, alignment=Center)]
 ```
 
 </details>

@@ -1,5 +1,6 @@
 package dev.s7a.strata.integration.docs
 
+import dev.s7a.strata.geometry.DoubleOffset
 import dev.s7a.strata.layout.Alignment
 import dev.s7a.strata.layout.Arrangement
 import dev.s7a.strata.layout.HorizontalAlignment
@@ -91,6 +92,10 @@ internal class ShowcaseMarkdownTest {
         assertTrue(sections.getValue(DocumentedComponent.FlowRow).contains("without synthetic Row parents"))
         assertTrue(sections.getValue(DocumentedComponent.Tab).contains("external selection semantics"))
         assertTrue(sections.getValue(DocumentedComponent.Stack).contains("not a generic div-like container"))
+        val tiledImage = sections.getValue(DocumentedComponent.TiledImage)
+        listOf("independently revisioned immutable tiles", "`PanZoomState`", "`panZoom(state)`", "`atContentPosition`").forEach { contract ->
+            assertTrue(tiledImage.contains(contract))
+        }
         val button = sections.getValue(DocumentedComponent.Button)
         listOf("onPointerEvent", "onPress", "onRelease", "onMove", "onDrag", "onScroll", "onHover").forEach { action ->
             assertTrue(button.contains("`$action`"))
@@ -212,6 +217,16 @@ internal class ShowcaseMarkdownTest {
             "ScrollRate(value=9)",
             "SlotHighlightable(value=true)",
         ).forEach { detail -> assertTrue(rendered.contains(detail)) }
+    }
+
+    @Test
+    fun tiledImageContentPositionRendersWithStableCoordinates() {
+        val tree =
+            ShowcaseTree(
+                DocumentedComponent.TiledImage,
+                listOf(ShowcaseTreeDetail.TiledImageContentPosition(DoubleOffset(12.5, -4.0), Alignment.Center)),
+            )
+        assertTrue(ShowcaseMarkdown.tree(tree).contains("TiledImageContentPosition(x=12.5, y=-4.0, alignment=Center)"))
     }
 
     @Test

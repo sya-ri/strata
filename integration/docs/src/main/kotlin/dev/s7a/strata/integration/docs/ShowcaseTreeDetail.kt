@@ -1,5 +1,6 @@
 package dev.s7a.strata.integration.docs
 
+import dev.s7a.strata.geometry.DoubleOffset
 import dev.s7a.strata.layout.Alignment
 import dev.s7a.strata.layout.HorizontalAlignment
 import dev.s7a.strata.layout.VerticalAlignment
@@ -85,6 +86,14 @@ internal sealed interface ShowcaseTreeDetail {
      * A Stack direct-child alignment.
      */
     data class StackAlign(
+        internal val alignment: Alignment,
+    ) : ShowcaseTreeDetail
+
+    /**
+     * A TiledImage direct-child content-coordinate anchor.
+     */
+    data class TiledImageContentPosition(
+        internal val position: DoubleOffset,
         internal val alignment: Alignment,
     ) : ShowcaseTreeDetail
 

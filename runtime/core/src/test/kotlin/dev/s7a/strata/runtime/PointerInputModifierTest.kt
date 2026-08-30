@@ -2,9 +2,11 @@
 
 package dev.s7a.strata.runtime
 
+import dev.s7a.strata.component.PanZoomState
 import dev.s7a.strata.component.Spacer
 import dev.s7a.strata.component.evaluateComponentTree
 import dev.s7a.strata.geometry.Constraints
+import dev.s7a.strata.geometry.DoubleOffset
 import dev.s7a.strata.geometry.IntOffset
 import dev.s7a.strata.input.InputResult
 import dev.s7a.strata.input.PointerButton
@@ -19,6 +21,7 @@ import dev.s7a.strata.modifier.onPointerEvent
 import dev.s7a.strata.modifier.onPress
 import dev.s7a.strata.modifier.onRelease
 import dev.s7a.strata.modifier.onScroll
+import dev.s7a.strata.modifier.panZoom
 import dev.s7a.strata.modifier.size
 import dev.s7a.strata.node.DirtyMask
 import dev.s7a.strata.node.DirtyPhase
@@ -238,6 +241,63 @@ internal class PointerInputModifierTest {
         tree.close()
         assertEquals(listOf(press, drag), events)
         assertEquals(emptyList<PointerButton>(), cancellations)
+    }
+
+    @Test
+    fun panZoomBeginsOnlyAfterItsConsumedPressActuallyAcquiresCapture() {
+        val firstEvents = ArrayList<PointerEvent>()
+        val state = PanZoomState(initialCenter = DoubleOffset.Zero)
+        val probe = TestProbe(inputResult = InputResult.Ignored)
+        val tree = UiTree()
+        tree.update(
+            probe.root(
+                listOf(
+                    probe.element(
+                        TestProbe.ProbeId("capture-owner"),
+                        modifier =
+                            Modifier.Empty.onCapturedPointerEvent({ _ -> }) { event, _ ->
+                                firstEvents += event
+                                InputResult.Consumed
+                            },
+                    ),
+                    probe.element(
+                        TestProbe.ProbeId("pan-zoom"),
+                        modifier = Modifier.Empty.panZoom(state),
+                    ),
+                ),
+            ),
+        )
+        tree.measure(Constraints(maxWidth = 10, maxHeight = 10))
+        tree.layout()
+
+        val firstPosition = IntOffset(1, 0)
+        val panPosition = IntOffset(3, 0)
+        val button = PointerButton.Primary
+        assertEquals(InputResult.Consumed, tree.dispatchPointer(PointerEvent.Press(firstPosition, button)))
+        assertEquals(InputResult.Consumed, tree.dispatchPointer(PointerEvent.Press(panPosition, button)))
+        assertEquals(InputResult.Consumed, tree.dispatchPointer(PointerEvent.Release(panPosition, button)))
+        assertEquals(
+            InputResult.Ignored,
+            tree.dispatchPointer(PointerEvent.Drag(panPosition, button, deltaX = 1.0, deltaY = 0.0)),
+        )
+        assertEquals(DoubleOffset.Zero, state.metrics.center)
+
+        assertEquals(InputResult.Consumed, tree.dispatchPointer(PointerEvent.Press(panPosition, button)))
+        assertEquals(
+            InputResult.Consumed,
+            tree.dispatchPointer(PointerEvent.Drag(IntOffset(20, 0), button, deltaX = 2.0, deltaY = 0.0)),
+        )
+        assertEquals(DoubleOffset(-2.0, 0.0), state.metrics.center)
+        tree.dispatchPointer(PointerEvent.Release(IntOffset(20, 0), button))
+        tree.close()
+
+        assertEquals(
+            listOf(
+                PointerEvent.Press(firstPosition, button),
+                PointerEvent.Release(panPosition, button),
+            ),
+            firstEvents,
+        )
     }
 
     @Test

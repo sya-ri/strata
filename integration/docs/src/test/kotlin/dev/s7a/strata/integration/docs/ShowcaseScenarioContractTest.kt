@@ -1,5 +1,6 @@
 package dev.s7a.strata.integration.docs
 
+import dev.s7a.strata.geometry.DoubleOffset
 import dev.s7a.strata.geometry.IntSize
 import dev.s7a.strata.layout.Alignment
 import dev.s7a.strata.layout.Arrangement
@@ -47,6 +48,7 @@ internal class ShowcaseScenarioContractTest {
                 "MinecraftSelectionListExample.kt" to "selection-list",
                 "MinecraftImageExample.kt" to "image",
                 "MinecraftCanvasExample.kt" to "canvas",
+                "MinecraftTiledImageExample.kt" to "tiled-image",
                 "MinecraftSlotShowcaseExample.kt" to "slot",
                 "MinecraftPlayerHeadExample.kt" to "player-head",
                 "MinecraftLoadingIndicatorExample.kt" to "loading-indicator",
@@ -76,6 +78,7 @@ internal class ShowcaseScenarioContractTest {
                 IntSize(120, 48),
                 IntSize(64, 64),
                 IntSize(96, 64),
+                IntSize(112, 88),
                 IntSize(64, 64),
                 IntSize(64, 64),
                 IntSize(32, 24),
@@ -272,6 +275,21 @@ internal class ShowcaseScenarioContractTest {
                 centeredTree(
                     IntSize(96, 64),
                     expectedTree(DocumentedComponent.Canvas, listOf(ShowcaseTreeDetail.Size(64, 32))),
+                ),
+                centeredTree(
+                    IntSize(112, 88),
+                    expectedTree(
+                        DocumentedComponent.TiledImage,
+                        listOf(ShowcaseTreeDetail.Size(96, 72)),
+                        expectedTree(
+                            DocumentedComponent.Spacer,
+                            listOf(
+                                ShowcaseTreeDetail.Size(7, 7),
+                                ShowcaseTreeDetail.Background(ArgbColor(0xFFFFFFFF.toInt())),
+                                ShowcaseTreeDetail.TiledImageContentPosition(DoubleOffset(32.0, 24.0), Alignment.Center),
+                            ),
+                        ),
+                    ),
                 ),
                 centeredTree(
                     IntSize(64, 64),

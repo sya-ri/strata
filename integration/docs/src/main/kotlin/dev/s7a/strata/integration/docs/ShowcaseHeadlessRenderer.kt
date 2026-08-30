@@ -32,6 +32,7 @@ import dev.s7a.strata.integration.minecraft.fabric.createTabShowcaseScreenDefini
 import dev.s7a.strata.integration.minecraft.fabric.createTextAreaShowcaseScreenDefinition
 import dev.s7a.strata.integration.minecraft.fabric.createTextFieldShowcaseScreenDefinition
 import dev.s7a.strata.integration.minecraft.fabric.createTextShowcaseScreenDefinition
+import dev.s7a.strata.integration.minecraft.fabric.createTiledImageShowcaseScreenDefinition
 import dev.s7a.strata.integration.minecraft.fabric.createVirtualListShowcaseScreenDefinition
 import dev.s7a.strata.render.ArgbColor
 import dev.s7a.strata.resource.ResourceId
@@ -95,6 +96,7 @@ internal object ShowcaseHeadlessRenderer {
                 DocumentedComponent.SelectionList -> createSelectionListShowcaseScreenDefinition()
                 DocumentedComponent.Image -> createImageShowcaseScreenDefinition(image(assets, coalGenerator))
                 DocumentedComponent.Canvas -> createCanvasShowcaseScreenDefinition()
+                DocumentedComponent.TiledImage -> createTiledImageShowcaseScreenDefinition()
                 DocumentedComponent.Slot -> createSlotShowcaseScreenDefinition()
                 DocumentedComponent.PlayerHead -> createPlayerHeadShowcaseScreenDefinition(assets.playerSkin)
                 DocumentedComponent.LoadingIndicator -> createLoadingIndicatorShowcaseScreenDefinition()
