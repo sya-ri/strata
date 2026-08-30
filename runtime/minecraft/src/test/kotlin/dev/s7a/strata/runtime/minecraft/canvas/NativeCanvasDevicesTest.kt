@@ -26,9 +26,37 @@ internal class NativeCanvasDevicesTest {
         val replacement = NativeCanvasFixture.Driver()
         val device = NativeCanvasDevices.device(driver)
         NativeCanvasDevices.device(peer)
+        var managedEntries = 1
+        var managedBytes = 4L
+        device.registerGuiResourceManager(
+            object : NativeGuiResourceManager {
+                override fun retainedResourceCount(): Int = managedEntries
+
+                override fun retainedResourceBytes(): Long = managedBytes
+
+                override fun consumed() = Unit
+
+                override fun poll() = Unit
+
+                override fun failedGui() = Unit
+
+                override fun reload() = Unit
+
+                override fun beginShutdown() = Unit
+
+                override fun closeAfterFinish() = Unit
+
+                override fun acknowledgeAfterDrain() {
+                    managedEntries = 0
+                    managedBytes = 0L
+                }
+            },
+        )
         assertSame(device, NativeCanvasDevices.device(driver))
         assertEquals(0, NativeCanvasDevices.retainedTargetCount())
         assertEquals(0, NativeCanvasDevices.retainedGuiResourceSetCount())
+        assertEquals(1, NativeCanvasDevices.retainedManagedGuiResourceCount())
+        assertEquals(4L, NativeCanvasDevices.retainedManagedGuiResourceBytes())
         val portableSet = device.guiResources.reserve(device.guiResources.createOwnerId(), listOf(IntSize(2, 2)))
         val portable = NativeGuiResourceFixture.Resource()
         device.guiResources.add(portableSet, portable)
@@ -65,6 +93,8 @@ internal class NativeCanvasDevicesTest {
             assertEquals(0, replacement.finishCalls)
             assertEquals(0, NativeCanvasDevices.retainedTargetCount())
             assertEquals(0, NativeCanvasDevices.retainedGuiResourceSetCount())
+            assertEquals(0, NativeCanvasDevices.retainedManagedGuiResourceCount())
+            assertEquals(0L, NativeCanvasDevices.retainedManagedGuiResourceBytes())
             assertEquals(1, portable.closeCalls)
             assertThrows(IllegalStateException::class.java) { NativeCanvasDevices.device(driver) }
             assertThrows(IllegalStateException::class.java) { NativeCanvasDevices.device(replacement) }

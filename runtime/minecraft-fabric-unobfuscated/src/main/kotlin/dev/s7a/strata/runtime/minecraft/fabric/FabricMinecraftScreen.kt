@@ -24,6 +24,7 @@ import net.minecraft.client.Minecraft
 import net.minecraft.client.gui.GuiGraphicsExtractor
 import net.minecraft.client.gui.screens.Screen
 import net.minecraft.client.input.MouseButtonEvent
+import java.util.IdentityHashMap
 import net.minecraft.client.input.CharacterEvent as MinecraftCharacterEvent
 import net.minecraft.client.input.KeyEvent as MinecraftKeyEvent
 import net.minecraft.client.input.PreeditEvent as MinecraftPreeditEvent
@@ -56,10 +57,11 @@ public class FabricMinecraftScreen private constructor(
     private val canvasPresentation = FabricMinecraftCanvasPresentation()
     private var attached = false
     private val portableFrames = FabricMinecraftPortableFrames()
+    private val sampledImages = FabricMinecraftSampledImageCache()
     private var preparedCommands: List<DrawCommand>? = null
     private var preparedViewport: IntSize? = null
     private var preparedScale: Int? = null
-    private var preparedLayers: List<FrameLayer> = emptyList()
+    private var preparedLayers: List<FabricMinecraftFrameLayer> = emptyList()
     private var pointerPosition: IntOffset? = null
     private var pointerFrameCommands: List<DrawCommand>? = null
     private var renderExtractionCount: Long = 0L
@@ -68,6 +70,15 @@ public class FabricMinecraftScreen private constructor(
     private var framePreparationCount: Long = 0L
     private var portableRasterizationCount: Long = 0L
     private var textureUploadCount: Long = 0L
+    private var sampledImageDirectHitCount: Long = 0L
+    private var sampledImageDirectMissCount: Long = 0L
+    private var sampledImageUploadCount: Long = 0L
+    private var sampledImageDrawCount: Long = 0L
+    private var sampledImageEvictionCount: Long = 0L
+    private var sampledImageIneligibleFallbackCount: Long = 0L
+    private var sampledImageCapacityFallbackCount: Long = 0L
+    private var sampledImageRetainedEntryCount: Long = 0L
+    private var sampledImageRetainedByteCount: Long = 0L
     private val pausePolicy = host.pausesGame
     private val textInputFocus = FabricMinecraftTextInputFocus { focused -> minecraftClient.onTextInputFocusChange(this, focused) }
     private val lifecycle =
@@ -564,6 +575,7 @@ public class FabricMinecraftScreen private constructor(
         textInputFocus.synchronize(focus)
     }
 
+    @Suppress("LongMethod") // The nested direct-image and portable borrows must remain visibly pinned through one ordered native submission.
     private fun extractFrame(
         graphics: GuiGraphicsExtractor,
         commands: List<DrawCommand>,
@@ -579,39 +591,85 @@ public class FabricMinecraftScreen private constructor(
                 preparedLayers
             } else {
                 framePreparationCount += 1L
-                partitionFrame(commands, viewport)
+                partitionFabricMinecraftFrame(commands, viewport)
             }
-        val images = layers.filterIsInstance<PortableLayer>().map { FabricMinecraftPortableImage(it.commands, viewport, scale) }
-        portableFrames.present(
-            images,
-            { portableRasterizationCount += 1L },
-            { textureUploadCount += 1L },
-        ) { textures, queued ->
-            var textureIndex = 0
-            layers.forEach { layer ->
-                when (layer) {
-                    is PortableLayer -> {
-                        val texture = textures[textureIndex++].texture
-                        queued()
-                        graphics.blit(
-                            texture.getTextureView(),
-                            texture.getSampler(),
-                            0,
-                            0,
-                            viewport.width,
-                            viewport.height,
-                            0f,
-                            1f,
-                            0f,
-                            1f,
-                        )
+        val sampled = layers.filterIsInstance<FabricMinecraftFrameLayer.Sampled>().map { it.command.image }
+        try {
+            sampledImages.present(
+                sampled,
+                { sampledImageDirectHitCount += 1L },
+                { sampledImageDirectMissCount += 1L },
+                { sampledImageUploadCount += 1L },
+                { sampledImageEvictionCount += 1L },
+            ) { textureFor, sampledQueued ->
+                val resolvedTextures = IdentityHashMap<FabricMinecraftFrameLayer.Sampled, FabricMinecraftPortableTexture>()
+                val resolved =
+                    layers.map { layer ->
+                        if (layer is FabricMinecraftFrameLayer.Sampled) {
+                            val texture = textureFor(layer.command.image)
+                            if (texture == null) {
+                                if (sampledImages.supports(layer.command.image)) {
+                                    sampledImageCapacityFallbackCount += 1L
+                                } else {
+                                    sampledImageIneligibleFallbackCount += 1L
+                                }
+                                portableFabricSampledFallback(layer)
+                            } else {
+                                resolvedTextures[layer] = texture
+                                layer
+                            }
+                        } else {
+                            layer
+                        }
                     }
+                resolved.filterIsInstance<FabricMinecraftFrameLayer.Portable>().forEach { layer ->
+                    sampledImageIneligibleFallbackCount = Math.addExact(sampledImageIneligibleFallbackCount, layer.ineligibleSampledImages.toLong())
+                }
+                val images = resolved.filterIsInstance<FabricMinecraftFrameLayer.Portable>().map { FabricMinecraftPortableImage(it.commands, it.bounds.size, scale) }
+                portableFrames.present(
+                    images,
+                    { portableRasterizationCount += 1L },
+                    { textureUploadCount += 1L },
+                ) { textures, portableQueued ->
+                    var textureIndex = 0
+                    resolved.forEach { layer ->
+                        when (layer) {
+                            is FabricMinecraftFrameLayer.Portable -> {
+                                val texture = textures[textureIndex++].texture
+                                portableQueued()
+                                submitFabricMinecraftGuiCorners(layer.bounds) { x0, y0, x1, y1 ->
+                                    graphics.blit(
+                                        texture.getTextureView(),
+                                        texture.getSampler(),
+                                        x0,
+                                        y0,
+                                        x1,
+                                        y1,
+                                        0f,
+                                        1f,
+                                        0f,
+                                        1f,
+                                    )
+                                }
+                            }
 
-                    is PlatformLayer -> {
-                        extractPlatformLayer(graphics, layer, viewport, platformCommands)
+                            is FabricMinecraftFrameLayer.Sampled -> {
+                                val texture = resolvedTextures.getValue(layer)
+                                sampledQueued(layer.command.image)
+                                sampledImageDrawCount += 1L
+                                extractSampledLayer(graphics, layer, texture)
+                            }
+
+                            is FabricMinecraftFrameLayer.Platform -> {
+                                extractPlatformLayer(graphics, layer, viewport, platformCommands)
+                            }
+                        }
                     }
                 }
             }
+        } finally {
+            sampledImageRetainedEntryCount = sampledImages.retainedEntryCount().toLong()
+            sampledImageRetainedByteCount = sampledImages.retainedByteCount()
         }
         if (reusePreparedFrame.not() && portableFrames.releaseGeneration == generation) {
             preparedCommands = commands
@@ -621,9 +679,22 @@ public class FabricMinecraftScreen private constructor(
         }
     }
 
+    private fun extractSampledLayer(
+        graphics: GuiGraphicsExtractor,
+        layer: FabricMinecraftFrameLayer.Sampled,
+        texture: FabricMinecraftPortableTexture,
+    ) {
+        val clip = layer.clip
+        if (clip != null) graphics.enableScissor(clip.left, clip.top, clip.right, clip.bottom)
+        FabricMinecraftFailures.runWithCleanup(
+            { drawFabricMinecraftSampledImage(graphics, texture, layer.command) },
+            { if (clip != null) graphics.disableScissor() },
+        )
+    }
+
     private fun extractPlatformLayer(
         graphics: GuiGraphicsExtractor,
-        layer: PlatformLayer,
+        layer: FabricMinecraftFrameLayer.Platform,
         viewport: IntSize,
         platformCommands: MinecraftPlatformCommands<GuiGraphicsExtractor>,
     ) {
@@ -637,59 +708,6 @@ public class FabricMinecraftScreen private constructor(
         )
     }
 
-    private fun partitionFrame(
-        commands: List<DrawCommand>,
-        viewport: IntSize,
-    ): List<FrameLayer> {
-        val layers = ArrayList<FrameLayer>()
-        val activeClips = ArrayList<IntRect>()
-        var portable = ArrayList<DrawCommand>()
-        var portableHasOutput = false
-
-        fun flushPortable() {
-            if (portableHasOutput) {
-                repeat(activeClips.size) { portable.add(DrawCommand.PopClip) }
-                layers.add(PortableLayer(portable.toList()))
-            }
-            portable = ArrayList()
-            activeClips.forEach { clip -> portable.add(DrawCommand.PushClip(clip)) }
-            portableHasOutput = false
-        }
-        commands.forEach { command ->
-            when (command) {
-                is DrawCommand.FillRectangle,
-                is DrawCommand.BlitImage,
-                is DrawCommand.SampledImage,
-                is DrawCommand.BlitImagePixels,
-                -> {
-                    portable.add(command)
-                    portableHasOutput = true
-                }
-
-                is DrawCommand.PushClip -> {
-                    activeClips.add(command.bounds)
-                    portable.add(command)
-                }
-
-                DrawCommand.PopClip -> {
-                    require(activeClips.isNotEmpty()) { "Clip pop has no matching push." }
-                    activeClips.removeAt(activeClips.lastIndex)
-                    portable.add(command)
-                }
-
-                is DrawCommand.Platform -> {
-                    flushPortable()
-                    val viewportBounds = IntRect(0, 0, viewport.width, viewport.height)
-                    val clip = activeClips.fold(viewportBounds, ::intersection)
-                    layers.add(PlatformLayer(command, clip.takeIf { activeClips.isNotEmpty() }))
-                }
-            }
-        }
-        require(activeClips.isEmpty()) { "Clip push has no matching pop." }
-        flushPortable()
-        return layers
-    }
-
     private fun releaseTextures() {
         canvasPresentation.release()
         preparedCommands = null
@@ -698,7 +716,7 @@ public class FabricMinecraftScreen private constructor(
         preparedLayers = emptyList()
         pointerPosition = null
         pointerFrameCommands = null
-        portableFrames.release()
+        FabricMinecraftFailures.runWithCleanup(portableFrames::release, sampledImages::release)
     }
 
     private fun positionOrNull(
@@ -756,17 +774,6 @@ public class FabricMinecraftScreen private constructor(
     private data class TextInput(
         val event: TextInputEvent,
     ) : FocusedInput
-
-    private sealed interface FrameLayer
-
-    private data class PortableLayer(
-        val commands: List<DrawCommand>,
-    ) : FrameLayer
-
-    private data class PlatformLayer(
-        val command: DrawCommand.Platform,
-        val clip: IntRect?,
-    ) : FrameLayer
 }
 
 /**
