@@ -50,7 +50,7 @@ grep --fixed-strings 'name: Publish release' "$workflow" >/dev/null || fail 'The
 grep --fixed-strings 'workflow=.github/workflows/publish-release.yml' "$workflow" >/dev/null || fail 'The active release workflow does not check its own source.'
 grep --fixed-strings 'default: v0.1.1' "$workflow" >/dev/null || fail 'The v0.1.1 tag input is not pinned.'
 grep --fixed-strings '[[ "$RELEASE_TAG" == "v0.1.1"' "$workflow" >/dev/null || fail 'The v0.1.1 runtime tag guard is missing.'
-grep --fixed-strings '[[ "$tag_commit" == "$GITHUB_SHA" ]]' "$workflow" >/dev/null || fail 'Release does not require the exact green master SHA.'
+grep --fixed-strings '[[ "$tag_commit" == "6e35f5984bbca06c18f8ca8080f45a70b09831bb" ]]' "$workflow" >/dev/null || fail 'Release does not pin the reviewed v0.1.1 source commit.'
 grep --fixed-strings 'git merge-base --is-ancestor "$tag_commit" origin/master' "$workflow" >/dev/null || fail 'Release does not prove master ancestry.'
 grep --fixed-strings 'root_version="$(git show "${tag_commit}:build.gradle.kts"' "$workflow" >/dev/null || fail 'Release does not read the root version from the signed tag.'
 [[ "$(grep --fixed-strings -c 'release/github-tag-ruleset-v0.1.1.json' "$workflow")" == '9' ]] || fail 'Every v0.1.1 tag mutation boundary must use the dedicated ruleset contract.'
