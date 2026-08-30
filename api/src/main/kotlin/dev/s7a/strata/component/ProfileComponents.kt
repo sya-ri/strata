@@ -221,11 +221,41 @@ public fun UiScope.Image(
 }
 
 /**
- * Emits one square layered player head.
+ * Emits one square layered player head at a pixel-perfect integer scale.
  *
  * Pixel sources render immediately.
  * Lookup sources are resolved asynchronously by the active runtime, publish only at a frame boundary, and ignore completions from superseded sources.
  * [loadingContent] and [failureContent] each emit zero or one root and are displayed only for their matching state.
+ *
+ * @receiver active owner-thread screen scope.
+ * @param source immutable pixels or a platform-neutral profile lookup.
+ * @param scale positive integer scale mapping every source texel to an equal square of logical pixels.
+ * @param showHat whether the outer hat layer is painted after the face.
+ * @param modifier active behavior applied to the head.
+ * @param key optional stable sibling identity.
+ * @param loadingContent optional zero-or-one-root loading presentation.
+ * @param failureContent optional zero-or-one-root failure presentation.
+ * @throws IllegalArgumentException when pixels or state callback cardinality is invalid.
+ * @throws IllegalStateException when no runtime screen evaluation is active.
+ */
+public fun UiScope.PlayerHead(
+    source: PlayerSkinSource = PlayerSkinSource.CurrentPlayer,
+    scale: PlayerHeadScale,
+    showHat: Boolean = true,
+    modifier: Modifier = Modifier.Empty,
+    key: ElementKey<*>? = null,
+    loadingContent: (UiScope.() -> Unit)? = null,
+    failureContent: (UiScope.() -> Unit)? = null,
+) {
+    emitPlayerHead(source, scale.logicalSize, showHat, modifier, key, loadingContent, failureContent)
+}
+
+/**
+ * Emits one square layered player head at an arbitrary logical size.
+ *
+ * Sizes divisible by eight retain nearest-neighbor texel scaling.
+ * Other sizes use bilinear interpolation within each face or hat region so atlas pixels outside that region cannot bleed into the result.
+ * Pixel sources render immediately, while lookup sources and fallback content follow the same lifecycle as the typed-scale overload.
  *
  * @receiver active owner-thread screen scope.
  * @param source immutable pixels or a platform-neutral profile lookup.
@@ -235,10 +265,12 @@ public fun UiScope.Image(
  * @param key optional stable sibling identity.
  * @param loadingContent optional zero-or-one-root loading presentation.
  * @param failureContent optional zero-or-one-root failure presentation.
- * @throws IllegalArgumentException when pixels, [size], or state callback cardinality is invalid.
+ * @throws IllegalArgumentException when pixels, [size], state callback cardinality, or a non-divisible size above 1,024 is invalid.
  * @throws IllegalStateException when no runtime screen evaluation is active.
  */
-@OptIn(InternalStrataRuntimeApi::class)
+@Deprecated(
+    message = "Use the PlayerHeadScale overload for pixel-perfect integer scaling. Arbitrary sizes remain supported here and use bilinear interpolation when size is not divisible by eight.",
+)
 public fun UiScope.PlayerHead(
     source: PlayerSkinSource = PlayerSkinSource.CurrentPlayer,
     size: Int = 24,
@@ -248,20 +280,26 @@ public fun UiScope.PlayerHead(
     loadingContent: (UiScope.() -> Unit)? = null,
     failureContent: (UiScope.() -> Unit)? = null,
 ) {
+    emitPlayerHead(source, size, showHat, modifier, key, loadingContent, failureContent)
+}
+
+/**
+ * Emits the shared retained implementation after either public sizing contract has selected its logical extent.
+ */
+@OptIn(InternalStrataRuntimeApi::class)
+private fun UiScope.emitPlayerHead(
+    source: PlayerSkinSource,
+    size: Int,
+    showHat: Boolean,
+    modifier: Modifier,
+    key: ElementKey<*>?,
+    loadingContent: (UiScope.() -> Unit)?,
+    failureContent: (UiScope.() -> Unit)?,
+) {
     checkUsable()
     val loading = loadingContent?.let(::buildOptionalComponentTree)
     val failure = failureContent?.let(::buildOptionalComponentTree)
-    element(
-        ComponentRuntimeBridge.current().playerHead(
-            source,
-            size,
-            showHat,
-            loading,
-            failure,
-            modifier,
-            key,
-        ),
-    )
+    element(ComponentRuntimeBridge.current().playerHead(source, size, showHat, loading, failure, modifier, key))
 }
 
 /**

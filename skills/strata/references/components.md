@@ -358,14 +358,15 @@ fun UiScope.Slot(bind: SlotBinding? = null, highlightable: Boolean = true, modif
 
 ## PlayerHead
 
-PlayerHead reproduces Minecraft 26.2 face-then-hat rendering from a 64 by 64 skin; its default 24 by 24 extent matches Social Interactions while remaining reusable in lists, profiles, scoreboards, and Mod screens.
+PlayerHead reproduces Minecraft 26.2 face-then-hat rendering from a 64 by 64 skin. PlayerHeadScale gives every source texel an equal integer-sized square for crisp lists, profiles, scoreboards, and Mod screens; the deprecated arbitrary-size overload uses region-clamped bilinear interpolation when an exact integer scale is impossible.
 
-- Compiled overloads: 1
-- Modifiers: Sizing and placement modifiers compose around `PlayerHead`; its immutable skin argument stays separate from Social, player-list, scoreboard, profile, and Mod-specific row state.
+- Compiled overloads: 2
+- Modifiers: Pass `PlayerHeadScale(1)` for an 8 by 8 head, or another positive factor when every source texel should remain the same size. Sizing and placement modifiers compose around `PlayerHead`; its immutable skin argument stays separate from Social, player-list, scoreboard, profile, and Mod-specific row state.
 - Parent scope: `PlayerHead` is a top-level extension on the active `UiScope`. `Pixels` retains a detached immutable skin, while `CurrentPlayer`, `Name`, and `Uuid` remain structural asynchronous lookups deferred to node attachment; the retained node owns and releases that lookup lifetime.
 - [Showcase image and compiled example](https://github.com/sya-ri/strata/blob/master/docs/components.md#player-head)
 
 ```kotlin
+fun UiScope.PlayerHead(source: PlayerSkinSource = PlayerSkinSource.CurrentPlayer, scale: PlayerHeadScale, showHat: Boolean = true, modifier: Modifier = Modifier.Empty, key: ElementKey<*>? = null, loadingContent: (UiScope.() -> Unit)? = null, failureContent: (UiScope.() -> Unit)? = null)
 fun UiScope.PlayerHead(source: PlayerSkinSource = PlayerSkinSource.CurrentPlayer, size: Int = 24, showHat: Boolean = true, modifier: Modifier = Modifier.Empty, key: ElementKey<*>? = null, loadingContent: (UiScope.() -> Unit)? = null, failureContent: (UiScope.() -> Unit)? = null)
 ```
 

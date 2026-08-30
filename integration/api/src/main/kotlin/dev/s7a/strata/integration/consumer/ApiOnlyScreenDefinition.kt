@@ -8,6 +8,7 @@ import dev.s7a.strata.component.Grid
 import dev.s7a.strata.component.Image
 import dev.s7a.strata.component.ImageSource
 import dev.s7a.strata.component.PlayerHead
+import dev.s7a.strata.component.PlayerHeadScale
 import dev.s7a.strata.component.PlayerSkinSource
 import dev.s7a.strata.component.Row
 import dev.s7a.strata.component.ScrollArea
@@ -62,7 +63,7 @@ public fun createApiOnlyScreenDefinition(onClose: () -> Unit): ScreenDefinition 
                 }
                 ScrollArea(state = scroll, modifier = Modifier.Empty.size(288, 48)) {
                     Row(spacing = 4) {
-                        PlayerHead(source = PlayerSkinSource.Name("Player0"))
+                        PlayerHead(source = PlayerSkinSource.Name("Player0"), scale = PlayerHeadScale(3))
                         Image(
                             source = ImageSource.Resource(ResourceId("example", "textures/gui/status.png")),
                             modifier = Modifier.Empty.size(24, 24),

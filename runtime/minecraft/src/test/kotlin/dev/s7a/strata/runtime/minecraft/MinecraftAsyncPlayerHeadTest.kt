@@ -3,6 +3,7 @@
 package dev.s7a.strata.runtime.minecraft
 
 import dev.s7a.strata.component.PlayerHead
+import dev.s7a.strata.component.PlayerHeadScale
 import dev.s7a.strata.component.PlayerSkinSource
 import dev.s7a.strata.component.SlotBinding
 import dev.s7a.strata.component.Spacer
@@ -21,6 +22,7 @@ import dev.s7a.strata.runtime.render.DrawCommand
 import dev.s7a.strata.screen.ScreenDefinition
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
 import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertNotSame
 import org.junit.jupiter.api.Assertions.assertSame
 import org.junit.jupiter.api.Assertions.assertThrows
 import org.junit.jupiter.api.Assertions.assertTrue
@@ -133,13 +135,40 @@ internal class MinecraftAsyncPlayerHeadTest {
         tree.close()
     }
 
+    @Test
+    fun arbitraryLegacySizeFiltersEachAsynchronouslyPublishedSkin() {
+        val source = PlayerSkinSource.Name("FilteredPlayer")
+        val platform = FakeSkinPlatform(source)
+        val host = createMinecraftUiHost(legacyDefinition(source, 10), MinecraftProfileFixture.create(), platform)
+        try {
+            host.attach()
+            val firstSkin = skin(0xFFFF0000.toInt())
+            platform.binding.enqueue(MinecraftPlayerSkinBinding.Snapshot.Ready(firstSkin))
+            val first = host.frame(IntSize(10, 10)).drawCommands.filterIsInstance<DrawCommand.BlitImage>()
+            assertEquals(2, first.size)
+            first.forEach { command ->
+                assertNotSame(firstSkin, command.image)
+                assertEquals(IntSize(10, 10), command.image.size)
+                assertEquals(IntRect(0, 0, 10, 10), command.source)
+            }
+
+            val secondSkin = skin(0xFF0000FF.toInt())
+            platform.binding.enqueue(MinecraftPlayerSkinBinding.Snapshot.Ready(secondSkin))
+            val second = host.frame(IntSize(10, 10)).drawCommands.filterIsInstance<DrawCommand.BlitImage>()
+            assertNotSame(first.first().image, second.first().image)
+            assertEquals(0xFF0000FF.toInt(), second.first().image.argbAt(5, 5))
+        } finally {
+            host.close()
+        }
+    }
+
     private fun definition(
         source: PlayerSkinSource = PlayerSkinSource.Name("Player0"),
     ): ScreenDefinition =
         ScreenDefinition("Player") {
             PlayerHead(
                 source = source,
-                size = 8,
+                scale = PlayerHeadScale(1),
                 loadingContent = {
                     Spacer(modifier = Modifier.Empty.size(4, 4).background(loadingColor))
                 },
@@ -147,6 +176,15 @@ internal class MinecraftAsyncPlayerHeadTest {
                     Spacer(modifier = Modifier.Empty.size(6, 6).background(failureColor))
                 },
             )
+        }
+
+    @Suppress("DEPRECATION")
+    private fun legacyDefinition(
+        source: PlayerSkinSource,
+        size: Int,
+    ): ScreenDefinition =
+        ScreenDefinition("Player") {
+            PlayerHead(source = source, size = size)
         }
 
     private fun asyncElement(
@@ -163,7 +201,7 @@ internal class MinecraftAsyncPlayerHeadTest {
         key = null,
     )
 
-    private fun skin(): DrawImage = createDrawImage(IntSize(64, 64), IntArray(64 * 64) { 0xFFFFFFFF.toInt() })
+    private fun skin(color: Int = 0xFFFFFFFF.toInt()): DrawImage = createDrawImage(IntSize(64, 64), IntArray(64 * 64) { color })
 
     private class FakeSkinPlatform(
         private val expectedSource: PlayerSkinSource,

@@ -5,12 +5,12 @@ import dev.s7a.strata.element.ElementIdentity
 import dev.s7a.strata.element.ElementKey
 import dev.s7a.strata.element.ElementType
 import dev.s7a.strata.geometry.Constraints
-import dev.s7a.strata.geometry.IntRect
 import dev.s7a.strata.geometry.IntSize
 import dev.s7a.strata.layout.MeasureScope
 import dev.s7a.strata.modifier.Modifier
 import dev.s7a.strata.node.DirtyMask
 import dev.s7a.strata.node.DirtyPhase
+import dev.s7a.strata.node.LifecycleNode
 import dev.s7a.strata.node.MeasureNode
 import dev.s7a.strata.node.PaintNode
 import dev.s7a.strata.render.DrawImage
@@ -50,7 +50,10 @@ private class MinecraftPlayerHeadElement private constructor(
         private var showHat: Boolean,
     ) : RetainedNode(),
         MeasureNode,
-        PaintNode {
+        PaintNode,
+        LifecycleNode {
+        private val painter = MinecraftPlayerHeadPainter()
+
         override fun measure(
             scope: MeasureScope,
             constraints: Constraints,
@@ -61,11 +64,19 @@ private class MinecraftPlayerHeadElement private constructor(
         }
 
         override fun paint(scope: PaintScope) {
-            val destination = IntRect(0, 0, size, size)
-            scope.blitImage(skin, faceSource, destination)
-            if (showHat) {
-                scope.blitImage(skin, hatSource, destination)
-            }
+            painter.paint(scope, skin, size, showHat)
+        }
+
+        override fun attach() {
+            painter.clear()
+        }
+
+        override fun detach() {
+            painter.clear()
+        }
+
+        override fun dispose() {
+            painter.clear()
         }
 
         /**
@@ -76,7 +87,11 @@ private class MinecraftPlayerHeadElement private constructor(
          */
         fun update(element: MinecraftPlayerHeadElement): DirtyMask {
             val sizeChanged = size != element.size
-            val paintChanged = skin != element.skin || showHat != element.showHat
+            val skinChanged = skin !== element.skin
+            val paintChanged = skinChanged || showHat != element.showHat
+            if (skinChanged || sizeChanged) {
+                painter.clear()
+            }
             skin = element.skin
             size = element.size
             showHat = element.showHat
@@ -85,14 +100,6 @@ private class MinecraftPlayerHeadElement private constructor(
                 paintChanged -> DirtyMask.of(DirtyPhase.Paint)
                 else -> DirtyMask.None
             }
-        }
-
-        /**
-         * Owns the two source regions consumed exclusively by retained painting.
-         */
-        companion object {
-            private val faceSource = IntRect(8, 8, 16, 16)
-            private val hatSource = IntRect(40, 8, 48, 16)
         }
     }
 
@@ -107,7 +114,7 @@ private class MinecraftPlayerHeadElement private constructor(
                 nodeClass = Node::class,
                 validateLocal = { element ->
                     require(element.skin.size == skinSize) { "Minecraft PlayerHead requires an exact 64 by 64 skin." }
-                    require(0 < element.size) { "Minecraft PlayerHead size must be positive." }
+                    MinecraftPlayerHeadPainter.validateSize(element.size)
                 },
                 createNode = { element -> Node(element.skin, element.size, element.showHat) },
                 updateNode = { _, current, node -> node.update(current) },

@@ -509,6 +509,36 @@ public class StrataMinecraftClientGameTest : FabricClientGameTest {
                         .withSize(playerHeadViewport.width, playerHeadViewport.height)
                         .withDestinationDir(output),
                 )
+                closeFabricScreen(context)
+
+                val filteredDefinition = createFilteredPlayerHeadScreenDefinition(PlayerSkinSource.Pixels(skin))
+                val filtered =
+                    context.computeOnClient(
+                        FailableFunction<Minecraft, HeadlessImage, RuntimeException> {
+                            renderHeadless(profile, filteredDefinition, playerHeadViewport)
+                        },
+                    )
+                Files.write(output.resolve("strata-player-head-filtered-headless.png"), filtered.encodePng())
+                context.setScreen {
+                    createMinecraftScreen(
+                        createFilteredPlayerHeadScreenDefinition(PlayerSkinSource.Pixels(skin)),
+                        profile,
+                        parent = null,
+                    )
+                }
+                context.waitForScreen(FabricMinecraftScreen::class.java)
+                context.waitTicks(2)
+                NativeImage.read(output.resolve("strata-player-head-filtered-headless.png").inputStream()).use { expected ->
+                    context.assertScreenshotEquals(
+                        TestScreenshotComparisonOptions
+                            .of(expected)
+                            .withAlgorithm(TestScreenshotComparisonAlgorithm.exact())
+                            .saveWithFileName("strata-player-head-filtered-fabric")
+                            .disableCounterPrefix()
+                            .withSize(playerHeadViewport.width, playerHeadViewport.height)
+                            .withDestinationDir(output),
+                    )
+                }
                 rendered
             }
         closeFabricScreen(context)

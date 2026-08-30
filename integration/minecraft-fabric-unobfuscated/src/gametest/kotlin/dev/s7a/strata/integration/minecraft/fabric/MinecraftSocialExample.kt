@@ -7,6 +7,7 @@ import dev.s7a.strata.component.Image
 import dev.s7a.strata.component.ImageSource
 import dev.s7a.strata.component.NineSliceCenterMode
 import dev.s7a.strata.component.PlayerHead
+import dev.s7a.strata.component.PlayerHeadScale
 import dev.s7a.strata.component.PlayerSkinSource
 import dev.s7a.strata.component.Row
 import dev.s7a.strata.component.Stack
@@ -121,7 +122,7 @@ internal fun createSocialScreenDefinition(
                         spacing = 4,
                         verticalAlignment = VerticalAlignment.Center,
                     ) {
-                        PlayerHead(source = playerSkin, modifier = Modifier.Empty.padding(left = 4))
+                        PlayerHead(source = playerSkin, scale = PlayerHeadScale(3), modifier = Modifier.Empty.padding(left = 4))
                         Text(playerName)
                     }
                 }
