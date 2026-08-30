@@ -93,7 +93,7 @@ jobs:
         run: |
           set -euo pipefail
           bash -n release/stage-versioned-pages.sh
-          for release_tag in v0.1.0 v0.1.1; do
+          for release_tag in v0.1.0 v0.1.1 v0.1.2; do
             bash release/stage-versioned-pages.sh \
               "$release_tag" build/dokka/html "$SOURCE_REVISION"
           done

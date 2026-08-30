@@ -119,7 +119,7 @@ internal class StrataSkillPipelineTest {
         assertTrue(document.contains("TextArea"))
         assertTrue(document.contains("TextField"))
         assertTrue(document.contains("adapters that expose only committed characters"))
-        assertTrue(document.contains("dev.s7a.strata:strata-runtime-minecraft-fonts-lwjgl:0.1.1"))
+        assertTrue(document.contains("dev.s7a.strata:strata-runtime-minecraft-fonts-lwjgl:0.1.2"))
         assertTrue(document.contains("does not bundle LWJGL, ICU, Gson, or native binaries"))
         assertTrue(document.contains("unsafe STB coordinate conversions remain invalid"))
         assertTrue(document.contains("https://github.com/sya-ri/strata/blob/master/docs/text.md"))

@@ -21,7 +21,8 @@ internal object ModrinthProjectMarkdown {
 
 Strata is a declarative Minecraft UI library for Fabric Mods.
 Application code builds platform-neutral `ScreenDefinition` values from reusable components, structural layouts, active modifiers, typed state, and inventory bindings; a separately installed version-matched runtime renders them with Minecraft assets and behavior.
-Strata 0.1.1 adds Minecraft 1.20 support, Unicode and resource-pack fonts, multiline text editing, wrapping `FlowRow` layout, extensible canvases, retained sampled-image acceleration, tiled pan-and-zoom images, and typed player-head scaling.
+Strata supports Minecraft 1.20 and later adapters, Unicode and resource-pack fonts, multiline text editing, wrapping `FlowRow` layout, extensible canvases, retained sampled-image acceleration, tiled pan-and-zoom images, and typed player-head scaling.
+Standard Image and PlayerHead textures can be retained directly while preserving the Minecraft source and sampling contracts.
 
 ## Highlights
 
@@ -38,8 +39,8 @@ Compile ordinary Mod source against the API only, then install the runtime match
 
 ```kotlin
 dependencies {
-    compileOnly("dev.s7a.strata:strata-api:0.1.1")
-    modRuntimeOnly("dev.s7a.strata:strata-runtime-minecraft-fabric-<minecraft-version>:0.1.1")
+    compileOnly("dev.s7a.strata:strata-api:0.1.2")
+    modRuntimeOnly("dev.s7a.strata:strata-runtime-minecraft-fabric-<minecraft-version>:0.1.2")
     modRuntimeOnly("net.fabricmc:fabric-language-kotlin:<compatible-version>")
 }
 ```
@@ -79,7 +80,7 @@ The maintainer directed the design and validates release artifacts through the p
 Pass `font = ResourceId("example", "body")` to `Text`, `TextField`, or `TextArea`, or use `UiText.withFont` for labels and composed text.
 The ID selects a resource-pack font definition, not an operating-system font family.
 Existing overloads without a font argument remain available.
-Version 0.1.1 intentionally adds sealed `UiText.WithFont` and `DrawCommand.SampledImage` variants; update custom exhaustive visitors before upgrading, as described in [Source compatibility](https://github.com/sya-ri/strata/blob/master/docs/text.md#source-compatibility).
+The sealed `UiText` and `DrawCommand` hierarchies include `WithFont` and `SampledImage`; custom exhaustive visitors must handle those cases as described in [Source compatibility](https://github.com/sya-ri/strata/blob/master/docs/text.md#source-compatibility).
 Glyph coverage and emoji presentation depend on the selected resources; Strata does not supply an independent color-emoji or ZWJ-sequence renderer.
 Unknown font IDs produce missing glyphs instead of silently selecting `minecraft:default`.
 
@@ -93,7 +94,7 @@ See [Text and text input](https://github.com/sya-ri/strata/blob/master/docs/text
 
 ## Optional CPU font backend
 
-Offline tools can use `dev.s7a.strata:strata-runtime-minecraft-fonts-lwjgl:0.1.1` for resource decoding, TrueType rasterization, and text ordering without launching Minecraft.
+Offline tools can use `dev.s7a.strata:strata-runtime-minecraft-fonts-lwjgl:0.1.2` for resource decoding, TrueType rasterization, and text ordering without launching Minecraft.
 Versioned Fabric runtimes already include this backend; ordinary UI declarations still compile against `strata-api` alone.
 The backend does not bundle LWJGL, ICU, Gson, or native binaries.
 Offline callers must supply the exact target's library dependencies, native classifier, font resources, and compatibility options; do not mix native library generations in one process.

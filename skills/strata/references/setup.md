@@ -4,14 +4,15 @@
 
 Application UI source compiles against `strata-api` only.
 Install exactly one matching Strata Fabric runtime as a separate client Mod together with Fabric Language Kotlin.
-Strata 0.1.1 adds Minecraft 1.20 support, Unicode and resource-pack fonts, multiline text editing, wrapping `FlowRow` layout, extensible canvases, retained sampled-image acceleration, tiled pan-and-zoom images, and typed player-head scaling.
-This release adds sealed `UiText.WithFont` and `DrawCommand.SampledImage` variants; custom exhaustive visitors need updating, including previously compiled visitors that receive a new case.
+Strata supports Minecraft 1.20 and later adapters, Unicode and resource-pack fonts, multiline text editing, wrapping `FlowRow` layout, extensible canvases, retained sampled-image acceleration, tiled pan-and-zoom images, and typed player-head scaling.
+Standard Image and PlayerHead textures can be retained directly while preserving the Minecraft source and sampling contracts.
+The sealed `UiText` and `DrawCommand` hierarchies include `WithFont` and `SampledImage`; custom exhaustive visitors must handle those cases, including previously compiled visitors that receive a new case.
 See [Source compatibility](https://github.com/sya-ri/strata/blob/master/docs/text.md#source-compatibility) before upgrading custom text visitors or rendering backends.
 
 ```kotlin
 dependencies {
-    compileOnly("dev.s7a.strata:strata-api:0.1.1")
-    modRuntimeOnly("dev.s7a.strata:strata-runtime-minecraft-fabric-<minecraft-version>:0.1.1")
+    compileOnly("dev.s7a.strata:strata-api:0.1.2")
+    modRuntimeOnly("dev.s7a.strata:strata-runtime-minecraft-fabric-<minecraft-version>:0.1.2")
     modRuntimeOnly("net.fabricmc:fabric-language-kotlin:<compatible-version>")
 }
 ```
@@ -21,7 +22,7 @@ Declare the runtime as a required Mod dependency so a production instance cannot
 ```json
 {
   "depends": {
-    "strata": ">=0.1.1"
+    "strata": ">=0.1.2"
   }
 }
 ```
@@ -94,7 +95,7 @@ This does not add selection or clipboard commands, reproduce the native IME popu
 
 ## Optional CPU backend for offline tools
 
-`dev.s7a.strata:strata-runtime-minecraft-fonts-lwjgl:0.1.1` supplies PNG decoding, the selected TrueType rasterizer, and ICU text ordering for resource-backed offline rendering without launching Minecraft.
+`dev.s7a.strata:strata-runtime-minecraft-fonts-lwjgl:0.1.2` supplies PNG decoding, the selected TrueType rasterizer, and ICU text ordering for resource-backed offline rendering without launching Minecraft.
 Versioned Fabric runtimes already include the backend and use the game's libraries; do not add runtime imports or native font objects to ordinary UI definitions.
 The backend does not bundle LWJGL, ICU, Gson, or native binaries.
 An offline host must supply the exact target's library dependencies and native classifier, caller-owned font resources, and `MinecraftFontCompatibility`; native library generations must not be mixed in one process.

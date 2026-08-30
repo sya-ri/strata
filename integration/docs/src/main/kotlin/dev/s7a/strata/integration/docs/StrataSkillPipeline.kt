@@ -272,10 +272,10 @@ $end"""
                             path.fileName.toString().removePrefix(prefix)
                         }.toList()
                 }.sortedBy(VersionNumber::parse)
-        require(versions.size == 21) { "Strata v0.1.1 skill expects 21 working Minecraft runtimes, found ${versions.size}." }
+        require(versions.size == 21) { "Strata v0.1.2 skill expects 21 working Minecraft runtimes, found ${versions.size}." }
         val decodedVersions = versions.map(VersionNumber::parse)
         require(decodedVersions.first() == VersionNumber(listOf(1, 20)) && decodedVersions.last() == VersionNumber(listOf(26, 2))) {
-            "Strata v0.1.1 support boundaries changed: ${versions.firstOrNull()}..${versions.lastOrNull()}"
+            "Strata v0.1.2 support boundaries changed: ${versions.firstOrNull()}..${versions.lastOrNull()}"
         }
         return versions
     }
