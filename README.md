@@ -8,11 +8,12 @@ Declarative Minecraft UI with reusable component trees, version-independent layo
 Strata is pronounced “STRAY-tuh” (`/ˈstreɪtə/`) and is the plural of *stratum*, meaning a layer.
 The name reflects its layered design: declarative components, retained UI behavior, portable rendering, and environment-specific adapters.
 
-Strata 0.1.1 is distributed through Maven Central for development, as a separate client Fabric Mod through Modrinth, and as a public Codex skill in this repository.
-It adds Minecraft 1.20 support, Unicode and resource-pack fonts, multiline text editing, wrapping `FlowRow` layout, extensible canvases, retained sampled-image acceleration, tiled pan-and-zoom images, and typed player-head scaling.
+Strata is distributed through Maven Central for development, as a separate client Fabric Mod through Modrinth, and as a public Codex skill in this repository.
+It supports Minecraft 1.20 and later adapters, Unicode and resource-pack fonts, multiline text editing, wrapping `FlowRow` layout, extensible canvases, retained sampled-image acceleration, tiled pan-and-zoom images, and typed player-head scaling.
+Standard `Image` and `PlayerHead` rendering can retain sampled-image textures while preserving Minecraft source regions, face-and-hat layer order, and both integer and arbitrary-size player-head sampling contracts.
 Font resources can also render without launching Minecraft through the optional `runtime:minecraft-fonts-lwjgl` backend.
 Existing text overloads remain available.
-Version 0.1.1 adds cases to the sealed `UiText` and `DrawCommand` types; applications with exhaustive visitors must update them as described in [Source compatibility](docs/text.md#source-compatibility).
+Applications with exhaustive visitors over the sealed `UiText` and `DrawCommand` types must handle the cases described in [Source compatibility](docs/text.md#source-compatibility).
 
 See [Text and text input](docs/text.md) and the [font acceptance scope](docs/font-resources.md#acceptance-evidence).
 
@@ -120,8 +121,8 @@ Install exactly one version-matched runtime as a separate client Fabric Mod toge
 
 ```kotlin
 dependencies {
-    compileOnly("dev.s7a.strata:strata-api:0.1.1")
-    modRuntimeOnly("dev.s7a.strata:strata-runtime-minecraft-fabric-<minecraft-version>:0.1.1")
+    compileOnly("dev.s7a.strata:strata-api:0.1.2")
+    modRuntimeOnly("dev.s7a.strata:strata-runtime-minecraft-fabric-<minecraft-version>:0.1.2")
     modRuntimeOnly("net.fabricmc:fabric-language-kotlin:<compatible-version>")
 }
 ```
@@ -132,7 +133,7 @@ Declare it as a required dependency in the consuming Mod so `ScreenDefinition.op
 ```json
 {
   "depends": {
-    "strata": ">=0.1.1"
+    "strata": ">=0.1.2"
   }
 }
 ```
@@ -221,8 +222,7 @@ npx skills add sya-ri/strata --skill strata
 - [Contributing](CONTRIBUTING.md) covers development setup, verification, and contribution guidelines.
 - [Build and release](docs/build.md) lists local quality checks, the aggregated Dokka GitHub Pages site, and publication requirements.
 - [Supporting a new Minecraft version](docs/minecraft-versions.md) defines the evidence, implementation, and compatibility process for another adapter.
-- [Strata 0.1.1 release notes](docs/releases/v0.1.1.md) describe Minecraft 1.20 support, resource fonts, multiline editing, FlowRow, Canvas, TiledImage navigation, and typed player-head scaling.
-- [Strata 0.1.0 release notes](docs/releases/v0.1.0.md) records the first public API, runtime, documentation, and distribution contract.
+- [Changelog](CHANGELOG.md) records versioned changes and compatibility notes; detailed release notes are kept under `docs/releases`.
 
 The [Dokka API reference](https://gh.s7a.dev/strata/) is published through GitHub Pages.
 The reader guides linked above are Markdown documents rendered by GitHub in this repository.

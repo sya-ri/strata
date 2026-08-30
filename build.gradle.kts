@@ -47,7 +47,7 @@ plugins {
 }
 
 group = "dev.s7a.strata"
-version = "0.1.1"
+version = "0.1.2"
 private val sourceRevision = providers.gradleProperty("strata.sourceRevision").getOrElse("master")
 check(sourceRevision.matches(Regex("(?:master|v[0-9]+\\.[0-9]+\\.[0-9]+(?:[-+][0-9A-Za-z.-]+)?|[0-9a-f]{40})"))) {
     "strata.sourceRevision must be master, a release tag, or a full lowercase Git commit."

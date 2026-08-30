@@ -2,6 +2,19 @@
 
 All notable changes to Strata are documented in this file.
 
+## 0.1.2 - 2026-08-30
+
+### Fixed
+
+- Standard Minecraft `Image` components now emit `DrawCommand.SampledImage`, allowing supported Fabric runtimes to retain their immutable source textures when only placement changes.
+- `PlayerHead` now presents its face and optional hat through the same sampled-image path, preserving source regions, layer order, transparent pixels, and exact integer skin-texel scaling across headless and Fabric rendering.
+- Arbitrary legacy `PlayerHead(size = ...)` values retain the existing bounded premultiplied bilinear result while making that derived image eligible for direct texture reuse.
+
+### Compatibility
+
+- This patch does not add or remove public API members relative to 0.1.1.
+- Custom backends still need the `DrawCommand.SampledImage` support introduced in 0.1.1; all Strata artifacts must use the same 0.1.2 version.
+
 ## 0.1.1 - 2026-08-30
 
 ### Added

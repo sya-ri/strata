@@ -5,7 +5,7 @@ plugins {
 }
 
 group = "dev.s7a.strata.release.consumer"
-version = "0.1.1"
+version = "0.1.2"
 
 kotlin {
     jvmToolchain(17)
@@ -16,15 +16,15 @@ sourceSets.main {
 }
 
 dependencies {
-    compileOnly("dev.s7a.strata:strata-api:0.1.1")
+    compileOnly("dev.s7a.strata:strata-api:0.1.2")
 }
 
 val representativeRuntimeCoordinates =
     listOf(
-        "dev.s7a.strata:strata-runtime-minecraft-fonts-lwjgl:0.1.1",
-        "dev.s7a.strata:strata-runtime-minecraft-fabric-1.20:0.1.1",
-        "dev.s7a.strata:strata-runtime-minecraft-fabric-1.21.11:0.1.1",
-        "dev.s7a.strata:strata-runtime-minecraft-fabric-26.2:0.1.1",
+        "dev.s7a.strata:strata-runtime-minecraft-fonts-lwjgl:0.1.2",
+        "dev.s7a.strata:strata-runtime-minecraft-fabric-1.20:0.1.2",
+        "dev.s7a.strata:strata-runtime-minecraft-fabric-1.21.11:0.1.2",
+        "dev.s7a.strata:strata-runtime-minecraft-fabric-26.2:0.1.2",
     )
 
 val representativeRuntimes =
