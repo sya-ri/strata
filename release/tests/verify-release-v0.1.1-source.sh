@@ -3,7 +3,8 @@
 set -euo pipefail
 
 repository_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd -P)"
-workflow="$repository_root/.github/workflows/publish-release.yml"
+workflow="$repository_root/.github/workflows/release-v0.1.1.yml"
+active_workflow="$repository_root/.github/workflows/publish-release.yml"
 sealed_workflow="$repository_root/.github/workflows/release.yml"
 jvm_workflow="$repository_root/.github/workflows/jvm.yml"
 
@@ -12,15 +13,17 @@ fail() {
   exit 1
 }
 
-[[ -f "$workflow" ]] || fail 'The active release workflow is missing.'
+[[ -f "$workflow" ]] || fail 'The sealed v0.1.1 release workflow is missing.'
+[[ -f "$active_workflow" ]] || fail 'The active release workflow is missing.'
 [[ -f "$sealed_workflow" ]] || fail 'The sealed v0.1.0 release workflow is missing.'
 [[ -f "$jvm_workflow" ]] || fail 'The JVM workflow is missing.'
+sealed_workflow_blob='c0adab3b8564b8510884dcf0830b16527f55e6fe'
+[[ "$(git hash-object "$workflow")" == "$sealed_workflow_blob" ]] || \
+  fail 'The sealed v0.1.1 release workflow changed.'
 
-for versioned_workflow in "$repository_root"/.github/workflows/release-v*.yml "$repository_root"/.github/workflows/release-v*.yaml; do
-  if [[ -f "$versioned_workflow" ]]; then
-    fail 'Version-specific release workflows must not duplicate the active publish-release.yml controller.'
-  fi
-done
+[[ "$(find "$repository_root/.github/workflows" -maxdepth 1 -type f \
+  \( -name 'release-v*.yml' -o -name 'release-v*.yaml' \) -print | wc -l | tr -d '[:space:]')" == '1' ]] || \
+  fail 'Only the sealed v0.1.1 version-specific release workflow may exist.'
 
 jvm_push_trigger="$(sed -n '/^  push:$/,/^  pull_request:$/p' "$jvm_workflow")"
 jvm_pull_request_trigger="$(sed -n '/^  pull_request:$/,/^permissions:$/p' "$jvm_workflow")"
@@ -39,12 +42,8 @@ topology_script="$(
   ' "$workflow"
 )"
 [[ -n "$topology_script" ]] || fail 'The pinned workflow topology guard script is missing.'
-if ! (
-  cd "$repository_root"
-  bash -c "$topology_script"
-); then
-  fail 'The pinned workflow topology guard does not execute successfully.'
-fi
+# The sealed workflow retains its historical topology guard byte-for-byte.
+# It intentionally names the active controller and is inspected rather than executed.
 
 grep --fixed-strings 'name: Publish release' "$workflow" >/dev/null || fail 'The active release workflow name differs.'
 grep --fixed-strings 'workflow=.github/workflows/publish-release.yml' "$workflow" >/dev/null || fail 'The active release workflow does not check its own source.'

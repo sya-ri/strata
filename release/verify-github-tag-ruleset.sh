@@ -19,12 +19,16 @@ expected_ref="$(jq -er '.conditions.ref_name.include | select(length == 1) | .[0
   echo 'The tracked tag ruleset contract must include exactly one release tag.' >&2
   exit 1
 }
-[[ "$expected_ref" =~ ^refs/tags/v[0-9]+\.[0-9]+\.[0-9]+([+-][0-9A-Za-z.-]+)?$ ]] || {
+if [[ "$expected_ref" == 'refs/tags/v*' ]]; then
+  expected_label='release tags'
+  expected_name='Protect Strata release tags'
+elif [[ "$expected_ref" =~ ^refs/tags/v[0-9]+\.[0-9]+\.[0-9]+([+-][0-9A-Za-z.-]+)?$ ]]; then
+  expected_label="${expected_ref#refs/tags/}"
+  expected_name="Protect Strata $expected_label"
+else
   echo 'The tracked tag ruleset contract has an invalid release ref.' >&2
   exit 1
-}
-expected_tag="${expected_ref#refs/tags/}"
-expected_name="Protect Strata $expected_tag"
+fi
 
 jq -e --arg name "$expected_name" --arg ref "$expected_ref" '
   keys == ["bypass_actors", "conditions", "enforcement", "name", "rules", "target"] and
@@ -46,7 +50,7 @@ jq -e --arg name "$expected_name" --arg ref "$expected_ref" '
     }
   ]
 ' "$contract_path" >/dev/null || {
-  echo "The tracked $expected_tag tag ruleset contract is not canonical." >&2
+  echo "The tracked $expected_label tag ruleset contract is not canonical." >&2
   exit 1
 }
 
@@ -135,7 +139,7 @@ jq -e \
       (.bypass_actors == [])
     )
   ' "$remote_response" >/dev/null || {
-  echo "The active GitHub tag ruleset differs from its tracked $expected_tag contract or audited revision." >&2
+  echo "The active GitHub tag ruleset differs from its tracked $expected_label contract or audited revision." >&2
   exit 1
 }
 
