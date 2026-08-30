@@ -71,10 +71,8 @@ jobs:
           central_write='publishAndReleaseToMaven''Central'
           [[ "$(grep --fixed-strings -c "$central_write" "$workflow")" == "1" ]] || { echo 'Central write topology differs.' >&2; exit 1; }
           grep --fixed-strings 'release/github-tag-ruleset-v0.1.1.json' "$workflow" >/dev/null
-          predecessor_name='- name: Verify complete v0.1.0 release before Modrinth body finalization'
-          finalize_name='- name: Finalize v0.1.1 Modrinth body and verify approved ''release'
-          predecessor_line="$(grep -n --fixed-strings -- "$predecessor_name" "$workflow" | cut -d: -f1)"
-          finalize_line="$(grep -n --fixed-strings -- "$finalize_name" "$workflow" | cut -d: -f1)"
+          predecessor_line="$(grep -n -m 1 --extended-regexp '^      - name: Verify complete v0\.1\.0 release before Modrinth body finalization$' "$workflow" | cut -d: -f1)"
+          finalize_line="$(grep -n -m 1 --extended-regexp '^      - name: Finalize v0\.1\.1 Modrinth body and verify approved release$' "$workflow" | cut -d: -f1)"
           [[ -n "$predecessor_line" && -n "$finalize_line" && "$predecessor_line" -lt "$finalize_line" ]] || { echo 'Modrinth predecessor/finalization ordering differs.' >&2; exit 1; }
           public_skills_name='  public_''skills:'
           verify_name='  ver''ify:'
