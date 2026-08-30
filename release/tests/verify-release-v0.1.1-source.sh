@@ -62,6 +62,7 @@ grep --fixed-strings '[[ "$(grep -cve '\''^[[:space:]]*$'\'' release/maven-coord
 [[ "$(grep --fixed-strings -c '"${#assets[@]}" == "43"' "$workflow")" == '3' ]] || fail 'Bundle creation, GitHub mutation, and final verification must each require 43 assets.'
 [[ "$(grep --fixed-strings -c '.verifiedFileCount == 260 and .verifiedChecksumCount == 520' "$workflow")" == '3' ]] || fail 'Public Central evidence must be fixed at 260 files and 520 checksums in every exact phase.'
 [[ "$(grep --fixed-strings -c '.verifiedContentFileCount == 260 and .verifiedChecksumCount == 520' "$workflow")" == '3' ]] || fail 'Portal evidence must be fixed at 260 files and 520 checksums in every exact phase.'
+[[ "$(grep --fixed-strings -c '.deploymentState == "PUBLISHED"' "$workflow")" == '2' ]] || fail 'Every exact Portal phase must use the typed uppercase published wire state.'
 [[ "$(grep --fixed-strings -c '== "130"' "$workflow")" == '2' ]] || fail 'Release and final verification must both verify 130 Central signatures.'
 
 central_write='publishAndReleaseToMaven''Central'

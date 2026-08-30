@@ -441,7 +441,7 @@ jobs:
           set -euo pipefail
           bash ./gradlew --no-parallel --max-workers=2 --no-build-cache mavenCentralPortalVerify \
             -Pstrata.sourceRevision="$RELEASE_TAG" -Pstrata.sourceCommit="$RELEASE_SOURCE_COMMIT"
-          jq -e '.state == "exact" and .deploymentState == "published" and .verifiedContentFileCount == 260 and .verifiedChecksumCount == 520' \
+          jq -e '.state == "exact" and .deploymentState == "PUBLISHED" and .verifiedContentFileCount == 260 and .verifiedChecksumCount == 520' \
             build/release/maven-central/portal-verify.json >/dev/null || { echo 'Central Portal verification counts differ.' >&2; exit 1; }
           bash ./gradlew --no-parallel --max-workers=2 --no-build-cache mavenCentralReleaseVerify githubReleaseBundle \
             -Pstrata.sourceRevision="$RELEASE_TAG" -Pstrata.sourceCommit="$RELEASE_SOURCE_COMMIT" \
@@ -881,7 +881,7 @@ jobs:
           set -euo pipefail
           bash ./gradlew --no-parallel --max-workers=2 --no-build-cache verifyPublishedConsumer modrinthReleaseManifest mavenCentralPortalVerify \
             -Pstrata.sourceRevision="$RELEASE_TAG" -Pstrata.sourceCommit="$RELEASE_SOURCE_COMMIT" -Pstrata.modrinthProjectId="$PROJECT_ID"
-          jq -e '.state == "exact" and .deploymentState == "published" and .verifiedContentFileCount == 260 and .verifiedChecksumCount == 520' build/release/maven-central/portal-verify.json >/dev/null
+          jq -e '.state == "exact" and .deploymentState == "PUBLISHED" and .verifiedContentFileCount == 260 and .verifiedChecksumCount == 520' build/release/maven-central/portal-verify.json >/dev/null
           bash ./gradlew --no-parallel --max-workers=2 --no-build-cache mavenCentralReleaseVerify githubReleaseBundle \
             -Pstrata.sourceRevision="$RELEASE_TAG" -Pstrata.sourceCommit="$RELEASE_SOURCE_COMMIT" -Pstrata.modrinthProjectId="$PROJECT_ID"
           jq -e '.state == "exact" and .coordinateCount == 26 and .verifiedFileCount == 260 and .verifiedChecksumCount == 520' build/release/maven-central/verify.json >/dev/null
