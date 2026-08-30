@@ -1296,14 +1296,16 @@ internal class ModrinthReleaseCoordinatorTest {
 
         private fun versions(exchange: HttpExchange) {
             versionReadRequests += 1
-            if (timeoutFirstCreateAfterCommit && fixture.manifest.artifacts.first().versionNumber in versions) {
+            val firstVersionNumber =
+                fixture.manifest.artifacts
+                    .first()
+                    .versionNumber
+            if (timeoutFirstCreateAfterCommit && firstVersionNumber in versions) {
                 delayedCreateResponseRelease.countDown()
             }
             val visibleVersions =
                 if (
-                    fixture.manifest.artifacts
-                        .first()
-                        .versionNumber in versions &&
+                    firstVersionNumber in versions &&
                     0 < remainingStaleVersionReadsAfterFirstCreate
                 ) {
                     remainingStaleVersionReadsAfterFirstCreate -= 1
