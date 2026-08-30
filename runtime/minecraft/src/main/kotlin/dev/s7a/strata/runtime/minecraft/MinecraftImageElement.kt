@@ -5,6 +5,7 @@ import dev.s7a.strata.element.ElementIdentity
 import dev.s7a.strata.element.ElementKey
 import dev.s7a.strata.element.ElementType
 import dev.s7a.strata.geometry.Constraints
+import dev.s7a.strata.geometry.FloatRect
 import dev.s7a.strata.geometry.IntRect
 import dev.s7a.strata.geometry.IntSize
 import dev.s7a.strata.layout.MeasureScope
@@ -63,10 +64,23 @@ private class MinecraftImageElement private constructor(
 
         override fun paint(scope: PaintScope) {
             if (destinationSize.width == 0 || destinationSize.height == 0) return
-            scope.blitImage(
-                image,
-                sourceRegion,
-                IntRect(0, 0, destinationSize.width, destinationSize.height),
+            scope.sampledImage(
+                image = image,
+                source =
+                    FloatRect(
+                        sourceRegion.left.toFloat(),
+                        sourceRegion.top.toFloat(),
+                        sourceRegion.right.toFloat(),
+                        sourceRegion.bottom.toFloat(),
+                    ),
+                localDestination =
+                    FloatRect(
+                        0f,
+                        0f,
+                        destinationSize.width.toFloat(),
+                        destinationSize.height.toFloat(),
+                    ),
+                alphaCutoff = 0f,
             )
         }
 

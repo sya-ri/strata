@@ -1,5 +1,6 @@
 package dev.s7a.strata.runtime.minecraft
 
+import dev.s7a.strata.geometry.FloatRect
 import dev.s7a.strata.geometry.IntRect
 import dev.s7a.strata.geometry.IntSize
 import dev.s7a.strata.render.DrawImage
@@ -33,20 +34,20 @@ internal class MinecraftPlayerHeadPainter {
         size: Int,
         showHat: Boolean,
     ) {
-        val destination = IntRect(0, 0, size, size)
+        val destination = FloatRect(0f, 0f, size.toFloat(), size.toFloat())
         if (size % SOURCE_EXTENT == 0) {
-            scope.blitImage(skin, faceSource, destination)
+            scope.sampledImage(skin, sampledFaceSource, destination, alphaCutoff = 0f)
             if (showHat) {
-                scope.blitImage(skin, hatSource, destination)
+                scope.sampledImage(skin, sampledHatSource, destination, alphaCutoff = 0f)
             }
             return
         }
 
         prepare(skin, size)
-        val source = IntRect(0, 0, size, size)
-        scope.blitImage(checkNotNull(cachedFace), source, destination)
+        val source = FloatRect(0f, 0f, size.toFloat(), size.toFloat())
+        scope.sampledImage(checkNotNull(cachedFace), source, destination, alphaCutoff = 0f)
         if (showHat) {
-            scope.blitImage(checkNotNull(cachedHat), source, destination)
+            scope.sampledImage(checkNotNull(cachedHat), source, destination, alphaCutoff = 0f)
         }
     }
 
@@ -200,5 +201,7 @@ internal class MinecraftPlayerHeadPainter {
         private const val BLUE_SHIFT: Int = 0
         private val faceSource = IntRect(8, 8, 16, 16)
         private val hatSource = IntRect(40, 8, 48, 16)
+        private val sampledFaceSource = FloatRect(8f, 8f, 16f, 16f)
+        private val sampledHatSource = FloatRect(40f, 8f, 48f, 16f)
     }
 }

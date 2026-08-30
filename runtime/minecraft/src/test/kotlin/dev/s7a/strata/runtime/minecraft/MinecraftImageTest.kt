@@ -5,6 +5,7 @@ import dev.s7a.strata.component.ImageScale
 import dev.s7a.strata.component.ImageSource
 import dev.s7a.strata.component.NineSliceCenterMode
 import dev.s7a.strata.component.Stack
+import dev.s7a.strata.geometry.FloatRect
 import dev.s7a.strata.geometry.Insets
 import dev.s7a.strata.geometry.IntRect
 import dev.s7a.strata.geometry.IntSize
@@ -66,10 +67,11 @@ internal class MinecraftImageTest {
         try {
             host.attach()
             val frame = host.frame(IntSize(4, 4))
-            val command = frame.drawCommands.single() as DrawCommand.BlitImage
+            val command = frame.drawCommands.single() as DrawCommand.SampledImage
             assertSame(source, command.image)
-            assertEquals(IntRect(0, 0, 2, 2), command.source)
-            assertEquals(IntRect(0, 0, 4, 4), command.destination)
+            assertEquals(FloatRect(0f, 0f, 2f, 2f), command.source)
+            assertEquals(FloatRect(0f, 0f, 4f, 4f), command.destination)
+            assertEquals(0f, command.alphaCutoff)
             val rendered = rasterizeHeadless(frame.drawCommands, IntSize(4, 4))
             assertEquals(0xFFFF0000.toInt(), rendered.argbAt(0, 0))
             assertEquals(0xFF00FF00.toInt(), rendered.argbAt(3, 0))
@@ -93,10 +95,11 @@ internal class MinecraftImageTest {
         try {
             host.attach()
             val frame = host.frame(IntSize(4, 2))
-            val command = frame.drawCommands.single() as DrawCommand.BlitImage
+            val command = frame.drawCommands.single() as DrawCommand.SampledImage
             assertSame(source, command.image)
-            assertEquals(IntRect(1, 0, 3, 2), command.source)
-            assertEquals(IntRect(0, 0, 4, 2), command.destination)
+            assertEquals(FloatRect(1f, 0f, 3f, 2f), command.source)
+            assertEquals(FloatRect(0f, 0f, 4f, 2f), command.destination)
+            assertEquals(0f, command.alphaCutoff)
             val rendered = rasterizeHeadless(frame.drawCommands, IntSize(4, 2))
             assertEquals(source.argbAt(1, 0), rendered.argbAt(0, 0))
             assertEquals(source.argbAt(2, 1), rendered.argbAt(3, 1))
