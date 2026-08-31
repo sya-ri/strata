@@ -91,6 +91,7 @@ internal object MinecraftHostImplementation {
     ) : MinecraftUiHost {
         private val ownerThread = Thread.currentThread()
         private var evaluator: (() -> Element)? = initialEvaluator
+        private var resourceEvaluator: (() -> Element)? = initialEvaluator
         private var platform: MinecraftUiPlatform? = initialPlatform
         private var textRenderer: MinecraftTextRenderer? = initialTextRenderer
         private var metadata: Metadata? = Metadata(title, pausesGame)
@@ -210,14 +211,17 @@ internal object MinecraftHostImplementation {
             state = State.Closed
             metadata = null
             val sessionFailure = runCatching { session.close() }.exceptionOrNull()
+            val evaluatorFailure = runCatching { releaseEvaluator() }.exceptionOrNull()
+            val resourceFailure = runCatching { releaseEvaluatorResources() }.exceptionOrNull()
             val fontFailure = runCatching { releaseTextRenderer() }.exceptionOrNull()
             val platformFailure = runCatching { releasePlatform() }.exceptionOrNull()
-            val failure = sessionFailure ?: fontFailure ?: platformFailure
+            val failure = sessionFailure ?: evaluatorFailure ?: resourceFailure ?: fontFailure ?: platformFailure
             if (failure != null) {
+                evaluatorFailure?.let { addSuppressed(failure, it) }
+                resourceFailure?.let { addSuppressed(failure, it) }
                 fontFailure?.let { addSuppressed(failure, it) }
                 platformFailure?.let { addSuppressed(failure, it) }
             }
-            releaseEvaluator()
             operation = null
             failure?.let { throw it }
         }
@@ -238,9 +242,10 @@ internal object MinecraftHostImplementation {
             state = State.Failed
             metadata = null
             runCatching { session.close() }.exceptionOrNull()?.let { cleanup -> addSuppressed(primary, cleanup) }
+            runCatching { releaseEvaluator() }.exceptionOrNull()?.let { cleanup -> addSuppressed(primary, cleanup) }
+            runCatching { releaseEvaluatorResources() }.exceptionOrNull()?.let { cleanup -> addSuppressed(primary, cleanup) }
             runCatching { releaseTextRenderer() }.exceptionOrNull()?.let { cleanup -> addSuppressed(primary, cleanup) }
             runCatching { releasePlatform() }.exceptionOrNull()?.let { cleanup -> addSuppressed(primary, cleanup) }
-            releaseEvaluator()
             operation = null
             throw primary
         }
@@ -249,6 +254,12 @@ internal object MinecraftHostImplementation {
             val retained = evaluator ?: return
             evaluator = null
             MinecraftProfileImplementation.releaseEvaluator(retained)
+        }
+
+        private fun releaseEvaluatorResources() {
+            val retained = resourceEvaluator ?: return
+            resourceEvaluator = null
+            MinecraftProfileImplementation.releaseEvaluatorResources(retained)
         }
 
         private fun releasePlatform() {

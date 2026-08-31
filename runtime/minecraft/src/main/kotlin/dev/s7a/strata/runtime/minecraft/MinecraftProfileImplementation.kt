@@ -39,7 +39,7 @@ import dev.s7a.strata.text.UiText
 import java.util.Collections
 
 /**
- * Owns callback-lifetime profile construction, validation, retained evaluation, and dynamically scoped component dispatch.
+ * Owns profile construction, host-lifetime resource-image resolution, retained evaluation, and dynamically scoped component dispatch.
  */
 @OptIn(InternalStrataRuntimeApi::class)
 @Suppress("TooManyFunctions") // These operations share one profile/context ownership boundary.
@@ -67,6 +67,7 @@ internal object MinecraftProfileImplementation {
      * Creates one core-session evaluator from a complete profile and transferred content callback.
      *
      * The evaluator retains its complete profile and content callback until one evaluation or explicit release and then clears them.
+     * Its resource-image resolver remains available to deferred evaluators until [releaseEvaluatorResources] performs terminal host release.
      *
      * @param profile complete profile produced by this runtime.
      * @param content transferred application callback.
@@ -118,6 +119,21 @@ internal object MinecraftProfileImplementation {
     fun releaseEvaluator(evaluator: () -> Element) {
         check(evaluator is Evaluator) { "Minecraft content evaluator was not created by this runtime." }
         evaluator.release()
+    }
+
+    /**
+     * Releases the host-lifetime resource-image resolver owned by an evaluator created by [createEvaluator].
+     *
+     * The operation is owner-thread confined and idempotent after an earlier resource release.
+     * It invalidates every retained evaluator sharing the resolver and clears all memoized image identities.
+     *
+     * @param evaluator evaluator whose host-lifetime resource resolver is released.
+     * @throws IllegalStateException when the evaluator is foreign or release runs from another thread.
+     */
+    @JvmSynthetic
+    fun releaseEvaluatorResources(evaluator: () -> Element) {
+        check(evaluator is Evaluator) { "Minecraft content evaluator was not created by this runtime." }
+        evaluator.releaseResources()
     }
 
     @Suppress("TooManyFunctions")
@@ -757,22 +773,25 @@ internal object MinecraftProfileImplementation {
         initialProfile: ProfileSnapshot,
         initialPlatform: MinecraftUiPlatform?,
         initialTextRenderer: MinecraftTextRenderer,
+        initialResourceImages: ResourceImages,
     ) : ComponentRuntime {
         private val ownerThread = Thread.currentThread()
         private var profile: ProfileSnapshot? = initialProfile
         private var platform: MinecraftUiPlatform? = initialPlatform
         private var textRenderer: MinecraftTextRenderer? = initialTextRenderer
+        private var resourceImages: ResourceImages? = initialResourceImages
 
         override fun retainEvaluator(): ComponentEvaluator {
             val retainedProfile = requireProfile()
             val retainedPlatform = platform
             val retainedTextRenderer = requireTextRenderer()
+            val retainedResourceImages = requireResourceImages()
             val evaluatorOwner = ownerThread
             return ComponentEvaluator { deferredContent ->
                 check(Thread.currentThread() === evaluatorOwner) {
                     "Deferred Minecraft component evaluation must run on its owner thread."
                 }
-                val context = create(retainedProfile, retainedPlatform, retainedTextRenderer)
+                val context = create(retainedProfile, retainedPlatform, retainedTextRenderer, retainedResourceImages)
                 try {
                     ComponentRuntimeBridge.evaluate(context, deferredContent)
                 } finally {
@@ -1193,10 +1212,16 @@ internal object MinecraftProfileImplementation {
                 }
 
                 is ImageSource.Resource -> {
+                    requireProfile()
                     val currentPlatform = checkNotNull(platform) { "Resource images require a versioned Minecraft platform host." }
-                    currentPlatform.image(source.id)
+                    requireResourceImages().resolve(source.id, currentPlatform)
                 }
             }
+
+        private fun requireResourceImages(): ResourceImages {
+            requireProfile()
+            return checkNotNull(resourceImages) { "Minecraft UI context is closed." }
+        }
 
         private fun requireTextRenderer(): MinecraftTextRenderer {
             requireProfile()
@@ -1208,6 +1233,7 @@ internal object MinecraftProfileImplementation {
             profile = null
             platform = null
             textRenderer = null
+            resourceImages = null
         }
 
         private fun requireProfile(): ProfileSnapshot {
@@ -1221,6 +1247,8 @@ internal object MinecraftProfileImplementation {
              *
              * @param profile complete immutable profile available during evaluation.
              * @param platform optional version services available only during evaluation.
+             * @param textRenderer host text service available during evaluation.
+             * @param resourceImages host-lifetime resource-image resolver shared by deferred evaluations.
              * @return an active context bound to the current thread.
              */
             @JvmSynthetic
@@ -1228,7 +1256,34 @@ internal object MinecraftProfileImplementation {
                 profile: ProfileSnapshot,
                 platform: MinecraftUiPlatform?,
                 textRenderer: MinecraftTextRenderer,
-            ): Context = Context(profile, platform, textRenderer)
+                resourceImages: ResourceImages,
+            ): Context = Context(profile, platform, textRenderer, resourceImages)
+        }
+    }
+
+    private class ResourceImages {
+        private val ownerThread = Thread.currentThread()
+        private val images = HashMap<ResourceId, DrawImage>()
+        private var closed = false
+
+        fun resolve(
+            id: ResourceId,
+            platform: MinecraftUiPlatform,
+        ): DrawImage {
+            checkOwner()
+            check(closed.not()) { "Minecraft resource image resolution is closed." }
+            return images[id] ?: platform.image(id).also { resolved -> images[id] = resolved }
+        }
+
+        fun close() {
+            checkOwner()
+            if (closed) return
+            closed = true
+            images.clear()
+        }
+
+        private fun checkOwner() {
+            check(Thread.currentThread() === ownerThread) { "Minecraft resource image resolution requires its owner thread." }
         }
     }
 
@@ -1239,6 +1294,7 @@ internal object MinecraftProfileImplementation {
         initialTextRenderer: MinecraftTextRenderer,
     ) : () -> Element {
         private val ownerThread = Thread.currentThread()
+        private val resourceImages = ResourceImages()
         private var profile: ProfileSnapshot? = initialProfile
         private var content: (UiScope.() -> Unit)? = initialContent
         private var platform: MinecraftUiPlatform? = initialPlatform
@@ -1254,7 +1310,7 @@ internal object MinecraftProfileImplementation {
             content = null
             platform = null
             textRenderer = null
-            val context = Context.create(currentProfile, currentPlatform, currentTextRenderer)
+            val context = Context.create(currentProfile, currentPlatform, currentTextRenderer, resourceImages)
             return try {
                 ComponentRuntimeBridge.evaluate(context, currentContent)
             } finally {
@@ -1269,6 +1325,11 @@ internal object MinecraftProfileImplementation {
             content = null
             platform = null
             textRenderer = null
+        }
+
+        fun releaseResources() {
+            check(Thread.currentThread() === ownerThread) { "Minecraft content resource release requires the host owner thread." }
+            resourceImages.close()
         }
 
         companion object {
