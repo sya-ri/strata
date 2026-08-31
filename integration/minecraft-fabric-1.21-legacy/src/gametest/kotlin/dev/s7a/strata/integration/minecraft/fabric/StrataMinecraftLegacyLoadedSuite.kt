@@ -14,7 +14,9 @@ import dev.s7a.strata.layout.Alignment
 import dev.s7a.strata.layout.HorizontalAlignment
 import dev.s7a.strata.modifier.Modifier
 import dev.s7a.strata.modifier.background
+import dev.s7a.strata.modifier.initialFocus
 import dev.s7a.strata.modifier.menuBackground
+import dev.s7a.strata.modifier.onActivate
 import dev.s7a.strata.modifier.onPress
 import dev.s7a.strata.modifier.size
 import dev.s7a.strata.render.ArgbColor
@@ -43,6 +45,7 @@ import java.nio.file.Files
 import java.nio.file.Path
 import java.util.UUID
 import java.util.concurrent.atomic.AtomicBoolean
+import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.atomic.AtomicReference
 import javax.imageio.ImageIO
 
@@ -73,6 +76,7 @@ internal class StrataMinecraftLegacyLoadedSuite {
         val output = outputDirectory()
         Files.createDirectories(output)
         verifyProfileCache(context, output)
+        verifyKeyboardActivationAndScreenTransition(context, profile)
         verifyContinuousInput(context, profile, output)
         runMinecraftCanvasTest(context, profile, output)
         verifyPortableScene(context, output)
@@ -154,6 +158,104 @@ internal class StrataMinecraftLegacyLoadedSuite {
             }
         cleanup.getOrThrow()
         Files.writeString(output.resolve("continuous-input.txt"), "minecraftVersion=${minecraftVersion()}\n$receipt")
+    }
+
+    private fun verifyKeyboardActivationAndScreenTransition(
+        context: MinecraftLoadedTestContext,
+        profile: MinecraftUiProfile,
+    ) {
+        val firstActivations = AtomicInteger()
+        val secondActivations = AtomicInteger()
+        val replacementActivations = AtomicInteger()
+        val screens =
+            context.computeOnClient {
+                val replacement =
+                    createMinecraftScreen(
+                        ScreenDefinition("Keyboard replacement") {
+                            Column {
+                                Button(
+                                    "Replacement",
+                                    modifier = Modifier.Empty.initialFocus().onActivate { replacementActivations.incrementAndGet() },
+                                )
+                            }
+                        },
+                        profile,
+                        parent = null,
+                    )
+                val initial =
+                    try {
+                        createMinecraftScreen(
+                            ScreenDefinition("Keyboard activation") {
+                                Column {
+                                    Button(
+                                        "First",
+                                        modifier =
+                                            Modifier.Empty.onActivate {
+                                                if (firstActivations.incrementAndGet() == 2) {
+                                                    Minecraft.getInstance().setScreen(replacement)
+                                                }
+                                            },
+                                    )
+                                    Button(
+                                        "Second",
+                                        modifier = Modifier.Empty.onActivate { secondActivations.incrementAndGet() },
+                                    )
+                                }
+                            },
+                            profile,
+                            parent = null,
+                        )
+                    } catch (failure: Throwable) {
+                        replacement.close()
+                        throw failure
+                    }
+                initial to replacement
+            }
+        val initial = screens.first
+        val replacement = screens.second
+        val outcome =
+            runCatching {
+                context.computeOnClient { minecraft -> minecraft.setScreen(initial) }
+                context.waitFor { minecraft ->
+                    minecraft.screen === initial && 0L < readRenderWork(minecraft).framePreparations
+                }
+                context.computeOnClient { minecraft ->
+                    check(pressMinecraftTab(initial)) { "Native Tab must be consumed by Strata focus traversal." }
+                    check(pressMinecraftEnter(initial)) { "Native Enter must be consumed by the first Strata activation target." }
+                    check(firstActivations.get() == 1 && secondActivations.get() == 0)
+                    check(pressMinecraftTab(initial)) { "Native Tab must advance to the second Strata activation target." }
+                    check(pressMinecraftSpace(initial)) { "Native Space must be consumed by the second Strata activation target." }
+                    check(firstActivations.get() == 1 && secondActivations.get() == 1)
+                    check(pressMinecraftTab(initial, reverse = true)) { "Native Shift+Tab must reverse Strata focus traversal." }
+                    check(pressMinecraftEnter(initial)) { "Native Enter must remain consumed while its callback replaces the screen." }
+                    check(minecraft.screen === replacement) { "The Strata activation callback did not install its replacement screen." }
+                    check(firstActivations.get() == 2 && secondActivations.get() == 1)
+                }
+                context.waitFor { minecraft ->
+                    minecraft.screen === replacement && 0L < readRenderWork(minecraft).framePreparations
+                }
+                context.computeOnClient { minecraft ->
+                    check(pressMinecraftSpace(replacement)) { "The replacement screen's initial focus did not consume native Space." }
+                    check(minecraft.screen === replacement)
+                    check(replacementActivations.get() == 1) { "The replacement screen did not acquire initial focus." }
+                    check(firstActivations.get() == 2 && secondActivations.get() == 1) {
+                        "The detached screen retained focus or activation callbacks after replacement."
+                    }
+                }
+            }
+        val cleanup =
+            runCatching {
+                context.computeOnClient { minecraft ->
+                    if (minecraft.screen === initial || minecraft.screen === replacement) minecraft.setScreen(null)
+                    initial.close()
+                    replacement.close()
+                }
+            }
+        outcome.exceptionOrNull()?.let { failure ->
+            cleanup.exceptionOrNull()?.let { cleanupFailure -> if (cleanupFailure !== failure) failure.addSuppressed(cleanupFailure) }
+            throw failure
+        }
+        cleanup.getOrThrow()
     }
 
     private fun verifyPortableScene(

@@ -93,12 +93,16 @@ internal class Pipeline(
     ): InputResult = inputPipeline.dispatch(root, event)
 
     /**
-     * Dispatches [event] through the focused logical component.
+     * Dispatches [event] through the focused logical component and applies ignored Tab traversal.
      *
+     * @param root the installed logical root.
      * @param event immutable keyboard event.
-     * @return consumed when focused behavior handles it, otherwise ignored.
+     * @return consumed when focused behavior handles it or traversal selects an eligible owner, otherwise ignored.
      */
-    fun dispatchKeyboard(event: KeyboardEvent): InputResult = focusedInputPipeline.dispatchKeyboard(event)
+    fun dispatchKeyboard(
+        root: RetainedNode,
+        event: KeyboardEvent,
+    ): InputResult = focusedInputPipeline.dispatchKeyboard(root, event)
 
     /**
      * Dispatches [event] through the focused logical component.

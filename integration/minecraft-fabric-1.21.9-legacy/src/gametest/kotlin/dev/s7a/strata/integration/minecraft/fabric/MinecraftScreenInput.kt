@@ -6,8 +6,10 @@ import dev.s7a.strata.geometry.IntOffset
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
 import net.minecraft.client.Minecraft
 import net.minecraft.client.gui.screens.Screen
+import net.minecraft.client.input.KeyEvent
 import net.minecraft.client.input.MouseButtonEvent
 import net.minecraft.client.input.MouseButtonInfo
+import org.lwjgl.glfw.GLFW
 
 /**
  * Clicks and releases one screen position through the record-based input API introduced in Minecraft 1.21.9.
@@ -56,6 +58,37 @@ internal fun releaseMinecraftScreen(
 ): Boolean = screen.mouseReleased(position.mouseEvent())
 
 /**
+ * Delivers one native Tab press through the record-based screen callback.
+ *
+ * @param screen borrowed active test screen on the client thread.
+ * @param reverse whether Shift is held for reverse traversal.
+ * @return the exact native screen consumption result.
+ * @throws Throwable when native or Strata input dispatch fails.
+ */
+internal fun pressMinecraftTab(
+    screen: Screen,
+    reverse: Boolean = false,
+): Boolean = screen.keyPressed(KeyEvent(GLFW.GLFW_KEY_TAB, NO_SCAN_CODE, if (reverse) GLFW.GLFW_MOD_SHIFT else NO_MODIFIERS))
+
+/**
+ * Delivers one native Enter press through the record-based screen callback.
+ *
+ * @param screen borrowed active test screen on the client thread.
+ * @return the exact native screen consumption result.
+ * @throws Throwable when native or Strata input dispatch fails.
+ */
+internal fun pressMinecraftEnter(screen: Screen): Boolean = screen.keyPressed(KeyEvent(GLFW.GLFW_KEY_ENTER, NO_SCAN_CODE, NO_MODIFIERS))
+
+/**
+ * Delivers one native Space press through the record-based screen callback.
+ *
+ * @param screen borrowed active test screen on the client thread.
+ * @return the exact native screen consumption result.
+ * @throws Throwable when native or Strata input dispatch fails.
+ */
+internal fun pressMinecraftSpace(screen: Screen): Boolean = screen.keyPressed(KeyEvent(GLFW.GLFW_KEY_SPACE, NO_SCAN_CODE, NO_MODIFIERS))
+
+/**
  * Updates native window focus through the real callback using the record-input family's window-handle API.
  *
  * The loaded test calls this on the client thread and restores the previous focus state; input-reset failures propagate unchanged.
@@ -70,3 +103,4 @@ private fun IntOffset.mouseEvent(): MouseButtonEvent = MouseButtonEvent(x.toDoub
 
 private const val PRIMARY_MOUSE_BUTTON = 0
 private const val NO_MODIFIERS = 0
+private const val NO_SCAN_CODE = 0

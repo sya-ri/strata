@@ -9,6 +9,7 @@ import dev.s7a.strata.modifier.fillMaxSize
 import dev.s7a.strata.modifier.fillMaxWidth
 import dev.s7a.strata.modifier.height
 import dev.s7a.strata.modifier.heightIn
+import dev.s7a.strata.modifier.onActivate
 import dev.s7a.strata.modifier.onDrag
 import dev.s7a.strata.modifier.onHover
 import dev.s7a.strata.modifier.onMove
@@ -220,6 +221,25 @@ internal class BuiltinModifierContractTest {
 
         modifiers.drop(1).forEach { modifier ->
             assertSame(token, modifier.elements().single().type)
+        }
+    }
+
+    @Test
+    fun activationComposesStablePointerAndFocusedInputNodesOnlyWhenEnabled() {
+        val empty = Modifier.Empty
+        val first = empty.onActivate {}
+        val second = empty.onActivate {}
+        val disabled = empty.onActivate(enabled = false) {}
+
+        assertEquals(2, first.elements().size)
+        assertNotSame(empty, first)
+        assertSame(empty, disabled)
+        first.elements().indices.forEach { index ->
+            val previous = first.elements()[index]
+            val current = second.elements()[index]
+            assertSame(previous.type, current.type)
+            val node = previous.type.createErased(previous)
+            assertEquals(DirtyMask.None, previous.type.updateErased(previous, current, node))
         }
     }
 

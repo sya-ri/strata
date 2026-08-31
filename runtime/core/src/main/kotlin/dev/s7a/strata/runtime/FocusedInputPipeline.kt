@@ -1,7 +1,9 @@
 package dev.s7a.strata.runtime
 
 import dev.s7a.strata.geometry.IntOffset
+import dev.s7a.strata.geometry.IntRect
 import dev.s7a.strata.input.InputResult
+import dev.s7a.strata.input.KeyCode
 import dev.s7a.strata.input.KeyboardEvent
 import dev.s7a.strata.input.TextInputEvent
 import dev.s7a.strata.node.ClipChildrenNode
@@ -15,7 +17,7 @@ import dev.s7a.strata.spi.InternalStrataRuntimeApi
 // Why: focus acquisition, reconciliation, transitions, and both focused protocols share one owner identity and ordering contract.
 
 /**
- * Owns retained logical focus and dispatches keyboard and text events through one focused component.
+ * Owns retained logical focus, keyboard traversal, and focused keyboard and text dispatch.
  *
  * Every operation is synchronous on the tree thread supplied by the enclosing pipeline, and callback failures escape unchanged.
  * Only the current owner's accepting target identities are retained, so changes to a target's acceptance receive distinct transitions without selecting another owner.
@@ -70,18 +72,27 @@ internal class FocusedInputPipeline {
 
     /**
      * Dispatches one keyboard event through the focused component from its innermost modifier toward its node.
+     * An ignored Tab press then moves focus through visible accepting logical owners in paint order, with Shift reversing that order.
      *
+     * @param root current logical root after placement.
      * @param event immutable key event.
-     * @return consumed when focused behavior handles the event, otherwise ignored.
+     * @return consumed when focused behavior handles the event or Tab moves or retains an eligible focus target, otherwise ignored.
      */
-    fun dispatchKeyboard(event: KeyboardEvent): InputResult {
-        val owner = focusedOwner ?: return InputResult.Ignored
-        focusedNodes(owner).forEach { node ->
-            val input = node as? KeyboardInputNode
-            if (input != null) {
-                val result = input.onKeyboardEvent(event)
-                if (result === InputResult.Consumed) return result
+    fun dispatchKeyboard(
+        root: RetainedNode,
+        event: KeyboardEvent,
+    ): InputResult {
+        focusedOwner?.let { owner ->
+            focusedNodes(owner).forEach { node ->
+                val input = node as? KeyboardInputNode
+                if (input != null) {
+                    val result = input.onKeyboardEvent(event)
+                    if (result === InputResult.Consumed) return result
+                }
             }
+        }
+        if (event is KeyboardEvent.Press && event.key == KeyCode.Tab) {
+            return moveFocus(root, reverse = event.modifiers.shift)
         }
         return InputResult.Ignored
     }
@@ -170,6 +181,55 @@ internal class FocusedInputPipeline {
     }
 
     private fun requestsInitialFocus(owner: RetainedNode): Boolean = owner.effectiveRoot.placed && focusTargets(owner).any { target -> target.acceptsFocus && target.requestsInitialFocus }
+
+    private fun moveFocus(
+        root: RetainedNode,
+        reverse: Boolean,
+    ): InputResult {
+        val owners = logicalOwners(root)
+        val currentIndex = owners.indexOfFirst { owner -> owner === focusedOwner }
+        val traversal =
+            when {
+                currentIndex < 0 && reverse -> owners.asReversed()
+                currentIndex < 0 -> owners
+                reverse -> owners.subList(0, currentIndex).asReversed() + owners.subList(currentIndex, owners.size).asReversed()
+                else -> owners.subList(currentIndex + 1, owners.size) + owners.subList(0, currentIndex + 1)
+            }
+        val next = traversal.firstOrNull { owner -> isTraversalCandidate(root, owner) } ?: return InputResult.Ignored
+        setFocusedOwner(next)
+        return InputResult.Consumed
+    }
+
+    private fun isTraversalCandidate(
+        root: RetainedNode,
+        owner: RetainedNode,
+    ): Boolean = focusTargets(owner).any(FocusTargetNode::acceptsFocus) && isVisible(root, owner)
+
+    private fun isVisible(
+        root: RetainedNode,
+        owner: RetainedNode,
+    ): Boolean {
+        var visible = intersection(root.effectiveRoot.bounds, owner.effectiveRoot.bounds) ?: return false
+        var ancestor = owner.effectiveRoot.parent
+        while (ancestor != null) {
+            if (ancestor.node is ClipChildrenNode) {
+                visible = intersection(visible, ancestor.bounds) ?: return false
+            }
+            ancestor = ancestor.parent
+        }
+        return true
+    }
+
+    private fun intersection(
+        first: IntRect,
+        second: IntRect,
+    ): IntRect? {
+        val left = maxOf(first.left, second.left)
+        val top = maxOf(first.top, second.top)
+        val right = minOf(first.right, second.right)
+        val bottom = minOf(first.bottom, second.bottom)
+        return if (left < right && top < bottom) IntRect(left, top, right, bottom) else null
+    }
 
     private fun logicalOwners(root: RetainedNode): List<RetainedNode> {
         val output = ArrayList<RetainedNode>()

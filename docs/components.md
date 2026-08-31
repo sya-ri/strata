@@ -27,7 +27,7 @@ import dev.s7a.strata.layout.Alignment
 import dev.s7a.strata.layout.HorizontalAlignment
 import dev.s7a.strata.modifier.Modifier
 import dev.s7a.strata.modifier.menuBackground
-import dev.s7a.strata.modifier.onPress
+import dev.s7a.strata.modifier.onActivate
 import dev.s7a.strata.modifier.size
 import dev.s7a.strata.screen.ScreenDefinition
 
@@ -56,11 +56,11 @@ internal fun createConfirmScreenDefinition(): ScreenDefinition =
                 Row(spacing = 4) {
                     Button(
                         "Yes",
-                        modifier = Modifier.Empty.onPress {},
+                        modifier = Modifier.Empty.onActivate {},
                     )
                     Button(
                         "No",
-                        modifier = Modifier.Empty.onPress {},
+                        modifier = Modifier.Empty.onActivate {},
                     )
                 }
             }
@@ -747,7 +747,7 @@ The tree mirrors the complete dedicated definition, including the featured compo
 
 ## Button
 
-Button renders verified fixed-height Minecraft sprite and label states, including the native 150- and 200-pixel widths, while reusable input actions live in modifiers.
+Button renders verified fixed-height Minecraft sprite, label, and enabled semantic states, including the native 150- and 200-pixel widths. It owns no implicit focus or activation, while reusable input actions live in modifiers.
 
 This 166 by 64 PNG is the complete frame of the compiled dedicated `ScreenDefinition`, with a 166 by 64 logical viewport at GUI scale 1. Headless rendering samples the assets at this physical density; the image is not upscaled from a lower-resolution raster or cropped from a larger screen. Its source, asset, viewport, and image hashes are recorded in [the headless render receipt](components/headless-render.properties).
 
@@ -761,19 +761,20 @@ import dev.s7a.strata.component.Stack
 import dev.s7a.strata.layout.Alignment
 import dev.s7a.strata.modifier.Modifier
 import dev.s7a.strata.modifier.background
+import dev.s7a.strata.modifier.onActivate
 import dev.s7a.strata.modifier.onHover
-import dev.s7a.strata.modifier.onPress
 import dev.s7a.strata.modifier.size
 import dev.s7a.strata.render.ArgbColor
 import dev.s7a.strata.screen.ScreenDefinition
 
 /**
- * Builds a self-contained Button showcase with ordinary pointer actions attached through its modifier.
+ * Builds a self-contained Button showcase with shared pointer and keyboard activation attached through its modifier.
  *
  * @return one-shot definition containing the complete normal Button frame and no surrounding application screen.
  */
 internal fun createButtonShowcaseScreenDefinition(): ScreenDefinition =
     ScreenDefinition("Button showcase") {
+        val enabled = true
         Stack(
             modifier =
                 Modifier.Empty
@@ -783,9 +784,10 @@ internal fun createButtonShowcaseScreenDefinition(): ScreenDefinition =
         ) {
             Button(
                 "Continue",
+                enabled = enabled,
                 modifier =
                     Modifier.Empty
-                        .onPress {}
+                        .onActivate(enabled) {}
                         .onHover {},
             )
         }
@@ -794,11 +796,11 @@ internal fun createButtonShowcaseScreenDefinition(): ScreenDefinition =
 
 ### Modifiers
 
-Pointer behavior is active modifier behavior. `onPointerEvent`, `onPress`, `onRelease`, `onMove`, `onDrag`, `onScroll`, and `onHover` can be composed without adding component-specific callback parameters.
+Compose `onActivate` with the component's enabled state when a primary pointer press and each focused Enter or Space press represent the same action; false adds no input or focus node. `onPointerEvent`, `onPress`, `onRelease`, `onMove`, `onDrag`, `onScroll`, and `onHover` remain available for pointer-specific behavior without component callback parameters.
 
 ### Parent scope
 
-`Button` is a top-level extension on the active `UiScope`. The screen runtime installs its selected Minecraft profile only for the definition callback, and pointer event modifiers remain valid only through their retained modifier-node lifetime.
+`Button` is a top-level extension on the active `UiScope`. The screen runtime installs its selected Minecraft profile only for the definition callback, while caller-owned activation and pointer modifiers remain valid only through their retained modifier-node lifetime.
 
 <details><summary>Component tree</summary>
 
@@ -993,7 +995,7 @@ The tree mirrors the complete dedicated definition, including the featured compo
 
 ## Tab
 
-Tab combines the verified button surface with external selection semantics and a reusable underline or caller-defined selected indicator, without encoding a particular screen's tab model.
+Tab combines the verified button surface with external selection semantics and a reusable underline or caller-defined selected indicator, without encoding a particular screen's tab model or owning implicit focus and activation.
 
 This 160 by 64 PNG is the complete frame of the compiled dedicated `ScreenDefinition`, with a 160 by 64 logical viewport at GUI scale 1. Headless rendering samples the assets at this physical density; the image is not upscaled from a lower-resolution raster or cropped from a larger screen. Its source, asset, viewport, and image hashes are recorded in [the headless render receipt](components/headless-render.properties).
 
@@ -1009,7 +1011,7 @@ import dev.s7a.strata.layout.Arrangement
 import dev.s7a.strata.layout.VerticalAlignment
 import dev.s7a.strata.modifier.Modifier
 import dev.s7a.strata.modifier.background
-import dev.s7a.strata.modifier.onPress
+import dev.s7a.strata.modifier.onActivate
 import dev.s7a.strata.modifier.size
 import dev.s7a.strata.render.ArgbColor
 import dev.s7a.strata.screen.ScreenDefinition
@@ -1035,13 +1037,13 @@ internal fun createTabShowcaseScreenDefinition(): ScreenDefinition =
                 selected = true,
                 width = 73,
                 indicator = TabSelectionIndicator.Underline,
-                modifier = Modifier.Empty.onPress {},
+                modifier = Modifier.Empty.onActivate {},
             )
             Tab(
                 "Hidden",
                 selected = false,
                 width = 73,
-                modifier = Modifier.Empty.onPress {},
+                modifier = Modifier.Empty.onActivate {},
             )
         }
     }
@@ -1049,7 +1051,7 @@ internal fun createTabShowcaseScreenDefinition(): ScreenDefinition =
 
 ### Modifiers
 
-Selection is caller-owned data, while `Underline` or `Custom` controls its reusable selected-state presentation. All pointer actions remain ordinary event modifiers, exactly as for Button and other interactive components.
+Selection is caller-owned data, while `Underline` or `Custom` controls its reusable selected-state presentation. Compose `onActivate(enabled)` for shared primary-pointer and focused Enter-or-Space activation; raw pointer actions remain ordinary event modifiers.
 
 ### Parent scope
 
@@ -1886,7 +1888,7 @@ import dev.s7a.strata.modifier.background
 import dev.s7a.strata.modifier.imageBackground
 import dev.s7a.strata.modifier.initialFocus
 import dev.s7a.strata.modifier.menuBackground
-import dev.s7a.strata.modifier.onPress
+import dev.s7a.strata.modifier.onActivate
 import dev.s7a.strata.modifier.padding
 import dev.s7a.strata.modifier.size
 import dev.s7a.strata.render.ArgbColor
@@ -1951,9 +1953,9 @@ internal fun createSocialScreenDefinition(
                         Text("$playerName - New World - 1 player")
                     }
                     Row(modifier = Modifier.Empty.padding(left = 1, top = 1), spacing = 1) {
-                        Tab("All", selected = true, width = 73, modifier = Modifier.Empty.onPress {})
-                        Tab("Hidden", selected = false, width = 73, modifier = Modifier.Empty.onPress {})
-                        Tab("Blocked", selected = false, width = 73, modifier = Modifier.Empty.onPress {})
+                        Tab("All", selected = true, width = 73, modifier = Modifier.Empty.onActivate {})
+                        Tab("Hidden", selected = false, width = 73, modifier = Modifier.Empty.onActivate {})
+                        Tab("Blocked", selected = false, width = 73, modifier = Modifier.Empty.onActivate {})
                     }
                     Row(
                         modifier = Modifier.Empty.padding(left = 5, top = 9),
@@ -1988,7 +1990,7 @@ internal fun createSocialScreenDefinition(
                 Button(
                     "Done",
                     width = 200,
-                    modifier = Modifier.Empty.align(HorizontalAlignment.Center).onPress {},
+                    modifier = Modifier.Empty.align(HorizontalAlignment.Center).onActivate {},
                 )
             }
         }
@@ -2286,7 +2288,7 @@ import dev.s7a.strata.modifier.Modifier
 import dev.s7a.strata.modifier.background
 import dev.s7a.strata.modifier.imageBackground
 import dev.s7a.strata.modifier.menuBackground
-import dev.s7a.strata.modifier.onPress
+import dev.s7a.strata.modifier.onActivate
 import dev.s7a.strata.modifier.padding
 import dev.s7a.strata.modifier.size
 import dev.s7a.strata.render.ArgbColor
@@ -2337,7 +2339,7 @@ internal fun createProgressScreenDefinition(
                     Modifier.Empty
                         .padding(bottom = 6)
                         .align(Alignment.BottomCenter)
-                        .onPress {},
+                        .onActivate {},
             )
         }
     }

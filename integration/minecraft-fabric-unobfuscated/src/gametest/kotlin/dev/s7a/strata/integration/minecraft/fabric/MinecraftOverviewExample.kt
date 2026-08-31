@@ -10,7 +10,7 @@ import dev.s7a.strata.layout.Alignment
 import dev.s7a.strata.layout.HorizontalAlignment
 import dev.s7a.strata.modifier.Modifier
 import dev.s7a.strata.modifier.menuBackground
-import dev.s7a.strata.modifier.onPress
+import dev.s7a.strata.modifier.onActivate
 import dev.s7a.strata.modifier.size
 import dev.s7a.strata.screen.ScreenDefinition
 
@@ -39,11 +39,11 @@ internal fun createConfirmScreenDefinition(): ScreenDefinition =
                 Row(spacing = 4) {
                     Button(
                         "Yes",
-                        modifier = Modifier.Empty.onPress {},
+                        modifier = Modifier.Empty.onActivate {},
                     )
                     Button(
                         "No",
-                        modifier = Modifier.Empty.onPress {},
+                        modifier = Modifier.Empty.onActivate {},
                     )
                 }
             }

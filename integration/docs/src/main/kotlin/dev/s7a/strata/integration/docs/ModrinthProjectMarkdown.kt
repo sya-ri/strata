@@ -29,7 +29,7 @@ Standard Image and PlayerHead textures can be retained directly while preserving
 - Structure screens with `Row`, wrapping `FlowRow`, `Column`, `Grid`, and intentional-overlap `Stack` instead of absolute coordinates.
 - Compose ${DocumentedComponent.entries.size} focused standard components, including independent `ScrollArea` and `Scrollbar`, multiline `TextArea`, virtual and tiled images, slots, tabs, player heads, and progress controls.
 - Display Japanese, Korean, and supported emoji with the selected Minecraft font resources, and choose custom font definitions through the public API.
-- Keep events on modifiers and mutable values in caller-owned typed state.
+- Keep events on modifiers and mutable values in caller-owned typed state; `onActivate(enabled)` unifies primary pointer and focused Enter or Space actions without making Button or Tab implicitly interactive.
 - Bind player, container, ender-chest, furnace, active-menu, or custom slot sources without coupling UI definitions to runtime packages.
 - Define purpose-specific downstream components as ordinary `UiScope` compositions or use the public `Element` and `Node` SPI when retained behavior is necessary.
 

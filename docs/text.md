@@ -195,6 +195,8 @@ At a shared soft-wrap offset the cursor keeps upstream or downstream affinity so
 Edits and external value changes reset affinity; reflow preserves it when the corresponding soft boundary remains.
 An exact-fit line-end caret paints at the final inner pixel without changing glyph metrics or wrapping.
 Tab remains focus navigation rather than inserting a tab character.
+Focused modifier and editor handlers receive the event first; only an ignored Tab press traverses visible accepting owners, with Shift selecting the reverse direction and other keyboard modifiers leaving the direction unchanged.
+Traversal wraps in parent-before-child and declared sibling paint order, while a removed or unmaterialized focused editor loses focus and the next Tab starts from the current first or last eligible owner.
 
 Vertical wheel movement and external ScrollState writes change the current viewport.
 Input-driven caret or IME-caret movement follows the caret; `TextWrap.None` additionally pans horizontally, with horizontal position clamped to current content and reset when editor state ownership changes.

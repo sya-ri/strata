@@ -24,7 +24,7 @@ import dev.s7a.strata.modifier.Modifier
 import dev.s7a.strata.modifier.background
 import dev.s7a.strata.modifier.imageBackground
 import dev.s7a.strata.modifier.menuBackground
-import dev.s7a.strata.modifier.onPress
+import dev.s7a.strata.modifier.onActivate
 import dev.s7a.strata.modifier.padding
 import dev.s7a.strata.modifier.size
 import dev.s7a.strata.render.ArgbColor
@@ -75,7 +75,7 @@ internal fun createProgressScreenDefinition(
                     Modifier.Empty
                         .padding(bottom = 6)
                         .align(Alignment.BottomCenter)
-                        .onPress {},
+                        .onActivate {},
             )
         }
     }

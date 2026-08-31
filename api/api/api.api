@@ -1198,6 +1198,11 @@ public final class dev/s7a/strata/modifier/ActionExtensionsKt {
 	public static final fun onAction (Ldev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/action/ActionKey;Lkotlin/jvm/functions/Function1;)Ldev/s7a/strata/modifier/Modifier;
 }
 
+public final class dev/s7a/strata/modifier/ActivationExtensionsKt {
+	public static final fun onActivate (Ldev/s7a/strata/modifier/Modifier;Lkotlin/jvm/functions/Function0;)Ldev/s7a/strata/modifier/Modifier;
+	public static final fun onActivate (Ldev/s7a/strata/modifier/Modifier;ZLkotlin/jvm/functions/Function0;)Ldev/s7a/strata/modifier/Modifier;
+}
+
 public final class dev/s7a/strata/modifier/BackgroundExtensionsKt {
 	public static final fun background-RtejO-o (Ldev/s7a/strata/modifier/Modifier;I)Ldev/s7a/strata/modifier/Modifier;
 }

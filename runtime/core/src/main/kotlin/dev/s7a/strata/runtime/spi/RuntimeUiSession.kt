@@ -104,10 +104,11 @@ public sealed interface RuntimeUiSession : AutoCloseable {
 
     /**
      * Dispatches one keyboard event synchronously to the focused component in the most recently committed frame.
+     * When focused handlers ignore a Tab press, the retained tree traverses visible accepting owners in cyclic paint order, with Shift reversing direction.
      * Pending geometry uses the same pre-input synchronization as [dispatchPointer].
      *
      * @param event immutable keyboard event.
-     * @return focused retained result, or [InputResult.Ignored] without a committed frame or focus target.
+     * @return focused or traversal result, or [InputResult.Ignored] without a committed frame or eligible behavior.
      * @throws IllegalStateException when called from the wrong thread, reentrantly, or while detached.
      * @throws Throwable when focused behavior or cleanup fails; the first failure remains primary.
      */

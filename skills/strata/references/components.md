@@ -156,11 +156,11 @@ fun UiScope.TextArea(state: TextAreaState, viewport: TextAreaViewport, font: Res
 
 ## Button
 
-Button renders verified fixed-height Minecraft sprite and label states, including the native 150- and 200-pixel widths, while reusable input actions live in modifiers.
+Button renders verified fixed-height Minecraft sprite, label, and enabled semantic states, including the native 150- and 200-pixel widths. It owns no implicit focus or activation, while reusable input actions live in modifiers.
 
 - Compiled overloads: 2
-- Modifiers: Pointer behavior is active modifier behavior. `onPointerEvent`, `onPress`, `onRelease`, `onMove`, `onDrag`, `onScroll`, and `onHover` can be composed without adding component-specific callback parameters.
-- Parent scope: `Button` is a top-level extension on the active `UiScope`. The screen runtime installs its selected Minecraft profile only for the definition callback, and pointer event modifiers remain valid only through their retained modifier-node lifetime.
+- Modifiers: Compose `onActivate` with the component's enabled state when a primary pointer press and each focused Enter or Space press represent the same action; false adds no input or focus node. `onPointerEvent`, `onPress`, `onRelease`, `onMove`, `onDrag`, `onScroll`, and `onHover` remain available for pointer-specific behavior without component callback parameters.
+- Parent scope: `Button` is a top-level extension on the active `UiScope`. The screen runtime installs its selected Minecraft profile only for the definition callback, while caller-owned activation and pointer modifiers remain valid only through their retained modifier-node lifetime.
 - [Showcase image and compiled example](https://github.com/sya-ri/strata/blob/master/docs/components.md#button)
 
 ```kotlin
@@ -219,10 +219,10 @@ fun UiScope.Slider(label: UiText, state: SliderState, width: Int = 150, enabled:
 
 ## Tab
 
-Tab combines the verified button surface with external selection semantics and a reusable underline or caller-defined selected indicator, without encoding a particular screen's tab model.
+Tab combines the verified button surface with external selection semantics and a reusable underline or caller-defined selected indicator, without encoding a particular screen's tab model or owning implicit focus and activation.
 
 - Compiled overloads: 2
-- Modifiers: Selection is caller-owned data, while `Underline` or `Custom` controls its reusable selected-state presentation. All pointer actions remain ordinary event modifiers, exactly as for Button and other interactive components.
+- Modifiers: Selection is caller-owned data, while `Underline` or `Custom` controls its reusable selected-state presentation. Compose `onActivate(enabled)` for shared primary-pointer and focused Enter-or-Space activation; raw pointer actions remain ordinary event modifiers.
 - Parent scope: `Tab` is a top-level extension on the active `UiScope`. A custom selected indicator emits exactly one nested root; the selected value and event actions remain application-owned.
 - [Showcase image and compiled example](https://github.com/sya-ri/strata/blob/master/docs/components.md#tab)
 
