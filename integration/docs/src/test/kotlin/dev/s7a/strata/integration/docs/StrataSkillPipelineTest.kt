@@ -149,10 +149,25 @@ internal class StrataSkillPipelineTest {
         releaseVersion: String,
     ) {
         listOf(readme, modrinthProject, setup).forEach { document -> assertTrue(document.contains(fencedExample)) }
-        assertTrue(readme.contains("dev.s7a.strata:strata-api:<strata-version>"))
-        assertTrue(readme.contains(releaseVersion).not())
+        assertReadmeInstallationVersion(readme, releaseVersion)
         listOf(modrinthProject, setup).forEach { document -> assertExactReleaseVersion(document, releaseVersion) }
         assertTrue(setup.contains("\"strata\": \">=$releaseVersion\""))
+    }
+
+    private fun assertReadmeInstallationVersion(
+        readme: String,
+        releaseVersion: String,
+    ) {
+        val begin = "<!-- strata-installation:start -->"
+        val end = "<!-- strata-installation:end -->"
+        val beginIndex = readme.indexOf(begin)
+        val endIndex = readme.indexOf(end)
+        assertTrue(beginIndex < endIndex)
+        val installation = readme.substring(beginIndex + begin.length, endIndex)
+        assertExactReleaseVersion(installation, releaseVersion)
+        assertTrue(installation.contains("\"strata\": \">=$releaseVersion\""))
+        val outsideInstallation = readme.substring(0, beginIndex) + readme.substring(endIndex + end.length)
+        assertTrue(outsideInstallation.contains(releaseVersion).not())
     }
 
     private fun assertUnicodeFontSetup(

@@ -107,14 +107,14 @@ internal fun createConfirmScreenDefinition(): ScreenDefinition =
 
 ## Installation and API-only authoring
 
+<!-- strata-installation:start -->
 Application UI source needs only `strata-api` on its compile classpath.
 Install exactly one version-matched runtime as a separate client Fabric Mod together with Fabric Language Kotlin; do not bundle multiple versioned Strata runtimes.
-Replace `<strata-version>` with one released Strata version and keep every Strata coordinate and dependency requirement aligned to it.
 
 ```kotlin
 dependencies {
-    compileOnly("dev.s7a.strata:strata-api:<strata-version>")
-    modRuntimeOnly("dev.s7a.strata:strata-runtime-minecraft-fabric-<minecraft-version>:<strata-version>")
+    compileOnly("dev.s7a.strata:strata-api:0.1.2")
+    modRuntimeOnly("dev.s7a.strata:strata-runtime-minecraft-fabric-<minecraft-version>:0.1.2")
     modRuntimeOnly("net.fabricmc:fabric-language-kotlin:<compatible-version>")
 }
 ```
@@ -125,10 +125,11 @@ Declare it as a required dependency in the consuming Mod so `ScreenDefinition.op
 ```json
 {
   "depends": {
-    "strata": ">=<strata-version>"
+    "strata": ">=0.1.2"
   }
 }
 ```
+<!-- strata-installation:end -->
 
 The selected host adapter is a runtime concern.
 The supported Minecraft range begins at 1.20; Minecraft 1.19 and older releases are outside the project scope.
