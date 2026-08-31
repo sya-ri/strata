@@ -8,6 +8,7 @@ import dev.s7a.strata.element.ElementKey
 import dev.s7a.strata.geometry.IntRect
 import dev.s7a.strata.geometry.IntSize
 import dev.s7a.strata.modifier.Modifier
+import dev.s7a.strata.modifier.onActivate
 import dev.s7a.strata.resource.ResourceId
 import dev.s7a.strata.spi.ComponentRuntimeBridge
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
@@ -686,15 +687,16 @@ public fun UiScope.TextArea(
 }
 
 /**
- * Emits one fixed-height profile-backed pointer button.
+ * Emits one fixed-height profile-backed button appearance and semantic surface.
  *
- * Reusable actions are supplied through pointer modifiers, so the component owns only appearance, sizing, and semantics.
+ * The component does not install focus or activation implicitly.
+ * Compose [onActivate] with the same enabled state when primary pointer and focused Enter or Space presses represent one action, or use pointer modifiers for pointer-specific behavior.
  *
  * @receiver active owner-thread screen scope.
  * @param label unresolved button label.
  * @param width requested logical width.
  * @param enabled whether enabled appearance and semantics are used.
- * @param modifier active behavior including pointer actions.
+ * @param modifier active behavior including caller-owned focus, activation, and pointer actions.
  * @param key optional stable sibling identity.
  * @throws IllegalArgumentException when the label does not fit or [width] is incompatible with the profile.
  * @throws IllegalStateException when no runtime screen evaluation is active.
@@ -712,13 +714,15 @@ public fun UiScope.Button(
 }
 
 /**
- * Emits one literal fixed-height profile-backed pointer button.
+ * Emits one literal fixed-height profile-backed button appearance and semantic surface.
+ *
+ * Like the typed-label overload, this component installs neither focus nor activation.
  *
  * @receiver active owner-thread screen scope.
  * @param label literal converted to [UiText.Literal].
  * @param width requested logical width.
  * @param enabled whether enabled appearance and semantics are used.
- * @param modifier active behavior including pointer actions.
+ * @param modifier active behavior including caller-owned focus, activation, and pointer actions.
  * @param key optional stable sibling identity.
  * @throws IllegalArgumentException when the label does not fit or [width] is incompatible with the profile.
  * @throws IllegalStateException when no runtime screen evaluation is active.
@@ -737,7 +741,7 @@ public fun UiScope.Button(
  * Emits one externally controlled tab.
  *
  * The component renders [indicator] only while [selected] is true and emits matching tab semantics.
- * Pointer actions remain ordinary modifier behavior.
+ * It installs neither focus nor activation; compose [onActivate] with the same enabled state for a shared primary-pointer and focused Enter-or-Space action, while pointer-specific actions remain ordinary modifier behavior.
  *
  * @receiver active owner-thread screen scope.
  * @param label unresolved tab label.
@@ -745,7 +749,7 @@ public fun UiScope.Button(
  * @param width requested logical width.
  * @param enabled whether enabled appearance, hover, and semantics are used.
  * @param indicator selected-state presentation.
- * @param modifier active behavior including pointer actions.
+ * @param modifier active behavior including caller-owned focus, activation, and pointer actions.
  * @param key optional stable sibling identity.
  * @throws IllegalArgumentException when a custom indicator does not emit exactly one root.
  * @throws IllegalStateException when no runtime screen evaluation is active.
@@ -771,7 +775,7 @@ public fun UiScope.Tab(
 }
 
 /**
- * Literal overload of [Tab] with the same ownership and failure contract.
+ * Literal overload of [Tab] with the same ownership, failure, and no-implicit-focus-or-activation contract.
  */
 public fun UiScope.Tab(
     label: String,

@@ -19,8 +19,8 @@ import dev.s7a.strata.geometry.IntSize
 import dev.s7a.strata.modifier.Modifier
 import dev.s7a.strata.modifier.height
 import dev.s7a.strata.modifier.menuBackground
+import dev.s7a.strata.modifier.onActivate
 import dev.s7a.strata.modifier.onLeadingItemsRequested
-import dev.s7a.strata.modifier.onPress
 import dev.s7a.strata.modifier.onTrailingItemsRequested
 import dev.s7a.strata.modifier.padding
 import dev.s7a.strata.modifier.size
@@ -93,12 +93,12 @@ internal fun storageScreen(onDone: () -> Unit): ScreenDefinition {
                 Button(
                     "Jump first",
                     width = 72,
-                    modifier = Modifier.Empty.onPress { listState.jumpToIndex(0) },
+                    modifier = Modifier.Empty.onActivate { listState.jumpToIndex(0) },
                 )
                 Button(
                     "Jump oak",
                     width = 72,
-                    modifier = Modifier.Empty.onPress { listState.jumpToKey("Oak chest") },
+                    modifier = Modifier.Empty.onActivate { listState.jumpToKey("Oak chest") },
                 )
             }
             Grid(columns = 9, horizontalSpacing = 0, verticalSpacing = 0) {
@@ -106,7 +106,7 @@ internal fun storageScreen(onDone: () -> Unit): ScreenDefinition {
             }
             Button(
                 "Done",
-                modifier = Modifier.Empty.onPress(onDone),
+                modifier = Modifier.Empty.onActivate(onDone),
             )
         }
     }

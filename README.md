@@ -29,7 +29,7 @@ The design separates those concerns into layers:
 - application code declares components and owns application state;
 - layout components measure and place their children from constraints instead of visual-tuning coordinates;
 - retained nodes perform incremental measurement, layout, painting, input, semantics, and lifecycle work;
-- active modifiers provide checked padding, size constraints, background painting, unresolved semantics, typed pointer/keyboard/text/focus actions, and typed layout parent data without changing component implementations;
+- active modifiers provide checked padding, size constraints, background painting, unresolved semantics, typed pointer/keyboard/text/focus actions, shared pointer-and-keyboard activation, and typed layout parent data without changing component implementations;
 - the retained core runtime emits draw commands and unresolved semantics on the JVM;
 - the platform-neutral API owns one-shot screen definitions; Row/FlowRow/Column/Stack/Grid layout; Text, TextField, TextArea, Button, Checkbox, CycleButton, Slider, Tab, ScrollArea, Scrollbar, VirtualList, SelectionList, Image, Canvas, TiledImage, Slot, PlayerHead, LoadingIndicator, and ProgressBar authoring; resource identifiers; slot locators; skin sources; and active modifiers, so application source compiles without a runtime dependency;
 - the common Minecraft runtime installs itself behind that API, resolves the selected profile and resources, synchronizes bound slots with the active server menu, and hosts the retained tree without exposing a context receiver to application code;
@@ -70,7 +70,7 @@ import dev.s7a.strata.layout.Alignment
 import dev.s7a.strata.layout.HorizontalAlignment
 import dev.s7a.strata.modifier.Modifier
 import dev.s7a.strata.modifier.menuBackground
-import dev.s7a.strata.modifier.onPress
+import dev.s7a.strata.modifier.onActivate
 import dev.s7a.strata.modifier.size
 import dev.s7a.strata.screen.ScreenDefinition
 
@@ -99,11 +99,11 @@ internal fun createConfirmScreenDefinition(): ScreenDefinition =
                 Row(spacing = 4) {
                     Button(
                         "Yes",
-                        modifier = Modifier.Empty.onPress {},
+                        modifier = Modifier.Empty.onActivate {},
                     )
                     Button(
                         "No",
-                        modifier = Modifier.Empty.onPress {},
+                        modifier = Modifier.Empty.onActivate {},
                     )
                 }
             }
@@ -144,6 +144,7 @@ The supported Minecraft range begins at 1.20; Minecraft 1.19 and older releases 
 See [Supported Fabric runtimes](docs/architecture.md#supported-fabric-runtimes) for artifact names, Java requirements, and verification details.
 
 `ScreenDefinition` evaluates its callback after the Minecraft runtime has installed the active profile, so `Text(...)`, `Button(...)`, resources, slot bindings, and other components require neither a public `MinecraftUiContext` nor an extra root builder.
+`Button` and `Tab` own appearance and semantics without implicit focus or activation; compose `onActivate(enabled) { ... }` when primary pointer presses and focused Enter or Space presses mean the same action, and keep `onPress` for pointer-specific behavior.
 
 <a id="api-only-open-example"></a>
 
@@ -155,7 +156,7 @@ import dev.s7a.strata.component.Text
 import dev.s7a.strata.layout.HorizontalAlignment
 import dev.s7a.strata.modifier.Modifier
 import dev.s7a.strata.modifier.menuBackground
-import dev.s7a.strata.modifier.onPress
+import dev.s7a.strata.modifier.onActivate
 import dev.s7a.strata.modifier.padding
 import dev.s7a.strata.modifier.size
 import dev.s7a.strata.screen.ScreenDefinition
@@ -179,7 +180,7 @@ internal fun openConfirmationScreen(onConfirm: () -> Unit) {
             Text("Continue with this action?")
             Button(
                 "Yes",
-                modifier = Modifier.Empty.onPress(onConfirm),
+                modifier = Modifier.Empty.onActivate(onConfirm),
             )
         }
     }.open()

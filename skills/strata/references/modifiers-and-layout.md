@@ -4,7 +4,7 @@
 
 Modifiers are active retained behavior, not a passive settings bag.
 Order matters: layout and input elements wrap the behavior that follows them in the chain.
-The 52 compiled overloads below form 42 top-level extension groups.
+The 54 compiled overloads below form 43 top-level extension groups.
 
 | Extension | Overloads | Category | Use |
 | --- | ---: | --- | --- |
@@ -21,6 +21,7 @@ The 52 compiled overloads below form 42 top-level extension groups.
 | `initialFocus` | 1 | Focus and text | Requests initial focus when the retained node first attaches. |
 | `menuBackground` | 1 | Paint | Paints the active resource-pack menu background without creating a separate background component. |
 | `onAction` | 1 | Advanced actions | Handles an extensible typed action key; prefer a focused built-in action extension when one exists. |
+| `onActivate` | 2 | Activation | Runs one shared action for a primary pointer press or each focused Enter or Space press, makes the owner focusable, and adds no node or action reference when its enabled overload is false. |
 | `onCapturedPointerEvent` | 1 | Pointer | Captures a consumed press for one button, forwards movement and matching drag/release outside bounds or ancestor clips, and reports cancellation when ownership ends early. |
 | `onCharacterInput` | 1 | Focus and text | Handles committed character input while the element is focused. |
 | `onCheckedChange` | 1 | Component actions | Receives the next boolean value emitted by `Checkbox`. |
@@ -35,7 +36,7 @@ The 52 compiled overloads below form 42 top-level extension groups.
 | `onMove` | 2 | Pointer | Handles pointer movement or invokes a simple action overload. |
 | `onPointerEvent` | 1 | Pointer | Handles every pointer event when a specialized pointer extension is insufficient. |
 | `onPreedit` | 1 | Focus and text | Handles input-method preedit updates while focused. |
-| `onPress` | 2 | Pointer | Handles a pointer press or invokes a simple action overload; buttons do not own an `onPress` parameter. |
+| `onPress` | 2 | Pointer | Handles a pointer press or invokes a simple action overload; use `onActivate` instead when primary pointer and focused keyboard input represent the same action. |
 | `onRelease` | 2 | Pointer | Handles a pointer release or invokes a simple action overload. |
 | `onScroll` | 2 | Pointer | Handles pointer-wheel input or invokes a simple action overload. |
 | `onSelectionChange` | 1 | Component actions | Receives the stable key selected by `SelectionList`. |
@@ -130,6 +131,13 @@ fun Modifier.menuBackground(): Modifier
 
 ```kotlin
 fun <T : Any> Modifier.onAction(key: ActionKey<T>, callback: (T) -> ActionResult): Modifier
+```
+
+### `onActivate`
+
+```kotlin
+fun Modifier.onActivate(action: () -> Unit): Modifier
+fun Modifier.onActivate(enabled: Boolean, action: () -> Unit): Modifier
 ```
 
 ### `onCapturedPointerEvent`
@@ -389,6 +397,7 @@ fun Modifier.atContentPosition(position: StateSource<DoubleOffset>, alignment: A
 - Use small `padding` for local insets. A value of 20 or more needs a concrete native-frame or fixed-geometry reason.
 - Put images on `imageBackground` when they paint a container; use `Image` when the image is itself a logical child.
 - Put reusable actions on modifiers. `Button`, `Tab`, `Checkbox`, `CycleButton`, `Slider`, and list components keep application callbacks out of their component signatures.
+- Use `onActivate(enabled)` for an action shared by primary pointer and focused Enter or Space input; use `onPress` only when the action is pointer-specific.
 
 ## State and binding signatures
 

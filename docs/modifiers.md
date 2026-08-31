@@ -53,6 +53,11 @@ Removal, replacement, unplacement, session detach, close, failure, and explicit 
 Updating callback lambdas at the same modifier position preserves capture.
 `onPress`, `onRelease`, `onMove`, `onDrag`, and `onScroll` provide typed event-specific handlers; their simple action overloads consume press, release, and scroll while move and drag remain non-consuming.
 The simple press overload handles only the primary button, while the typed overload can inspect and decide every button.
+`onActivate(action)` composes that primary-pointer press with a focused key-press handler for exactly `KeyCode.Enter` and `KeyCode.Space`, invokes the same typed logical action for either path, and consumes the triggering event without synthesizing a pointer event.
+Its keyboard handler makes the logical component a focus candidate, and every delivered `KeyboardEvent.Press` invokes the action, including repeated press deliveries; releases and other keys remain ignored.
+Do not add a second simple `onPress` for the same action because consuming handlers stop dispatch, so one registration shadows the other and the result becomes modifier-order-dependent; retain `onPress` when the behavior is intentionally pointer-specific.
+`onActivate(enabled, action)` installs the same behavior only when enabled.
+A false value returns the exact incoming modifier, retains no action, and adds no pointer, keyboard, or focus-target node, so callers pass the same enabled state to an appearance-only component such as `Button` or `Tab`.
 `onHover` observes distinct typed enter and exit transitions without consuming movement.
 Hover uses half-open accumulated bounds, is recomputed before every pointer move or drag dispatch, and exits during retained session detachment.
 Layout movement below a stationary pointer does not create a transition until another move event arrives.
@@ -62,6 +67,12 @@ A primary press focuses the deepest and latest-painted accepting target in its l
 `onTextInput`, `onCharacterInput`, and `onPreedit` receive committed Unicode scalar values and immutable input-method composition snapshots through that same owner.
 `onFocusChanged` observes distinct gain and loss transitions.
 Focused delivery visits modifier nodes from innermost to outermost and then the component node until one returns `Consumed`, allowing active modifiers to override a component's built-in editor behavior.
+Only an ignored `KeyboardEvent.Press` for `KeyCode.Tab` starts automatic traversal; Tab release never traverses, Shift reverses direction, and Control, Alt, Super, Caps Lock, and Num Lock do not change direction.
+Traversal scans placed logical component owners in parent-before-child and declared sibling paint order, wraps at both ends, and uses the current owner's position as its anchor even when that owner no longer has an accepting target.
+With no current focus, forward traversal selects the first eligible owner and reverse traversal selects the last.
+An eligible owner has an accepting focus target and a nonempty intersection with the root viewport and every ancestor `ClipChildrenNode` bound; placed VirtualList overscan rows outside the clip are therefore not candidates.
+A currently focused owner remains focused while merely hidden by a clip, continues to receive ordinary focused keys such as Enter, and moves to a visible candidate only on explicit traversal.
+If reconciliation removes or unplaces the owner, including VirtualList row rematerialization, layout clears focus without remembering a stable key; the next Tab starts from the first or last currently eligible owner.
 Custom editors opt into native text-input mode by implementing `FocusTargetNode.requiresTextInput`; its default is false, so keyboard shortcuts and passive input observers do not enable an IME.
 Enabled `TextField` and `TextArea` components supply this capability automatically.
 The runtime publishes a detached identity for the current editable focus interval, and adapters synchronize native focus after retained transactions finish; loss and screen removal release it before another native screen acquires focus.

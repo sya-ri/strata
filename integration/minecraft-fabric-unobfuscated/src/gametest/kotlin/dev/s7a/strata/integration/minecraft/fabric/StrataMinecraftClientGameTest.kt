@@ -22,6 +22,7 @@ import dev.s7a.strata.input.PointerEvent
 import dev.s7a.strata.modifier.Modifier
 import dev.s7a.strata.modifier.imageBackground
 import dev.s7a.strata.modifier.initialFocus
+import dev.s7a.strata.modifier.onActivate
 import dev.s7a.strata.modifier.onCharacterInput
 import dev.s7a.strata.modifier.onPreedit
 import dev.s7a.strata.modifier.onTextInput
@@ -81,9 +82,11 @@ import java.nio.file.Path
 import java.security.MessageDigest
 import java.util.HexFormat
 import java.util.concurrent.CompletableFuture
+import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.atomic.AtomicReference
 import java.util.function.Predicate
 import kotlin.io.path.inputStream
+import dev.s7a.strata.component.Button as StrataButton
 
 /**
  * Proves exact native, Fabric-adapter, and headless pixels for the supported Minecraft release.
@@ -137,6 +140,7 @@ public class StrataMinecraftClientGameTest : FabricClientGameTest {
         val output = parityOutput()
         Files.createDirectories(output)
         verifyProfileCache(context, output)
+        verifyKeyboardActivationAndScreenTransition(context, profile)
         assertNativeTextInputFocus(context, profile)
         verifyContinuousInput(context, profile, output)
         runMinecraftCanvasTest(context, profile, output)
@@ -393,6 +397,122 @@ public class StrataMinecraftClientGameTest : FabricClientGameTest {
                 "textures/gui/coal_generator.png",
             ),
         )
+
+    @OptIn(InternalStrataRuntimeApi::class)
+    private fun verifyKeyboardActivationAndScreenTransition(
+        context: ClientGameTestContext,
+        profile: MinecraftUiProfile,
+    ) {
+        val firstActivations = AtomicInteger()
+        val secondActivations = AtomicInteger()
+        val replacementActivations = AtomicInteger()
+        val screens =
+            context.computeOnClient(
+                FailableFunction<Minecraft, Pair<FabricMinecraftScreen, FabricMinecraftScreen>, RuntimeException> {
+                    val replacement =
+                        createMinecraftScreen(
+                            ScreenDefinition("Keyboard replacement") {
+                                Column {
+                                    StrataButton(
+                                        "Replacement",
+                                        modifier = Modifier.Empty.initialFocus().onActivate { replacementActivations.incrementAndGet() },
+                                    )
+                                }
+                            },
+                            profile,
+                            parent = null,
+                        )
+                    val initial =
+                        try {
+                            createMinecraftScreen(
+                                ScreenDefinition("Keyboard activation") {
+                                    Column {
+                                        StrataButton(
+                                            "First",
+                                            modifier =
+                                                Modifier.Empty.onActivate {
+                                                    if (firstActivations.incrementAndGet() == 2) {
+                                                        MinecraftClientScreenAccess.setScreen(Minecraft.getInstance(), replacement)
+                                                    }
+                                                },
+                                        )
+                                        StrataButton(
+                                            "Second",
+                                            modifier = Modifier.Empty.onActivate { secondActivations.incrementAndGet() },
+                                        )
+                                    }
+                                },
+                                profile,
+                                parent = null,
+                            )
+                        } catch (failure: Throwable) {
+                            replacement.close()
+                            throw failure
+                        }
+                    initial to replacement
+                },
+            )
+        val initial = screens.first
+        val replacement = screens.second
+        val outcome =
+            runCatching {
+                context.runOnClient(
+                    FailableConsumer<Minecraft, RuntimeException> { minecraft -> MinecraftClientScreenAccess.setScreen(minecraft, initial) },
+                )
+                context.waitFor(
+                    Predicate<Minecraft> { minecraft ->
+                        MinecraftClientScreenAccess.currentScreen(minecraft) === initial && 0L < readRenderWork(minecraft).framePreparations
+                    },
+                )
+                context.runOnClient(
+                    FailableConsumer<Minecraft, RuntimeException> { minecraft ->
+                        check(pressMinecraftTab(initial)) { "Native Tab must be consumed by Strata focus traversal." }
+                        check(pressMinecraftEnter(initial)) { "Native Enter must be consumed by the first Strata activation target." }
+                        check(firstActivations.get() == 1 && secondActivations.get() == 0)
+                        check(pressMinecraftTab(initial)) { "Native Tab must advance to the second Strata activation target." }
+                        check(pressMinecraftSpace(initial)) { "Native Space must be consumed by the second Strata activation target." }
+                        check(firstActivations.get() == 1 && secondActivations.get() == 1)
+                        check(pressMinecraftTab(initial, reverse = true)) { "Native Shift+Tab must reverse Strata focus traversal." }
+                        check(pressMinecraftEnter(initial)) { "Native Enter must remain consumed while its callback replaces the screen." }
+                        check(MinecraftClientScreenAccess.currentScreen(minecraft) === replacement) {
+                            "The Strata activation callback did not install its replacement screen."
+                        }
+                        check(firstActivations.get() == 2 && secondActivations.get() == 1)
+                    },
+                )
+                context.waitFor(
+                    Predicate<Minecraft> { minecraft ->
+                        MinecraftClientScreenAccess.currentScreen(minecraft) === replacement && 0L < readRenderWork(minecraft).framePreparations
+                    },
+                )
+                context.runOnClient(
+                    FailableConsumer<Minecraft, RuntimeException> { minecraft ->
+                        check(pressMinecraftSpace(replacement)) { "The replacement screen's initial focus did not consume native Space." }
+                        check(MinecraftClientScreenAccess.currentScreen(minecraft) === replacement)
+                        check(replacementActivations.get() == 1) { "The replacement screen did not acquire initial focus." }
+                        check(firstActivations.get() == 2 && secondActivations.get() == 1) {
+                            "The detached screen retained focus or activation callbacks after replacement."
+                        }
+                    },
+                )
+            }
+        val cleanup =
+            runCatching {
+                context.runOnClient(
+                    FailableConsumer<Minecraft, RuntimeException> { minecraft ->
+                        val current = MinecraftClientScreenAccess.currentScreen(minecraft)
+                        if (current === initial || current === replacement) MinecraftClientScreenAccess.setScreen(minecraft, null)
+                        initial.close()
+                        replacement.close()
+                    },
+                )
+            }
+        outcome.exceptionOrNull()?.let { failure ->
+            cleanup.exceptionOrNull()?.let { cleanupFailure -> if (cleanupFailure !== failure) failure.addSuppressed(cleanupFailure) }
+            throw failure
+        }
+        cleanup.getOrThrow()
+    }
 
     @OptIn(InternalStrataRuntimeApi::class)
     @Suppress("LongMethod")

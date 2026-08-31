@@ -105,10 +105,11 @@ public sealed interface MinecraftUiHost : AutoCloseable {
 
     /**
      * Dispatches one keyboard event to the focused component in the most recently committed frame.
+     * When focused handlers ignore a Tab press, the retained tree traverses visible accepting owners in cyclic paint order, with Shift reversing direction.
      * Dirty retained geometry synchronizes as described by [dispatchPointer].
      *
      * @param event immutable typed key event.
-     * @return the retained focused-input result, or [InputResult.Ignored] without a committed frame or focus target.
+     * @return the retained focused-input or traversal result, or [InputResult.Ignored] without a committed frame or eligible behavior.
      * @throws IllegalStateException when called from the wrong thread, reentrantly, or while detached.
      * @throws Throwable when focused behavior or cleanup fails; the exact first failure remains primary.
      */

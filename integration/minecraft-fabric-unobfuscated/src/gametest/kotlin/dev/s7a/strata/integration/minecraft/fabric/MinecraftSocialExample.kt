@@ -27,7 +27,7 @@ import dev.s7a.strata.modifier.background
 import dev.s7a.strata.modifier.imageBackground
 import dev.s7a.strata.modifier.initialFocus
 import dev.s7a.strata.modifier.menuBackground
-import dev.s7a.strata.modifier.onPress
+import dev.s7a.strata.modifier.onActivate
 import dev.s7a.strata.modifier.padding
 import dev.s7a.strata.modifier.size
 import dev.s7a.strata.render.ArgbColor
@@ -92,9 +92,9 @@ internal fun createSocialScreenDefinition(
                         Text("$playerName - New World - 1 player")
                     }
                     Row(modifier = Modifier.Empty.padding(left = 1, top = 1), spacing = 1) {
-                        Tab("All", selected = true, width = 73, modifier = Modifier.Empty.onPress {})
-                        Tab("Hidden", selected = false, width = 73, modifier = Modifier.Empty.onPress {})
-                        Tab("Blocked", selected = false, width = 73, modifier = Modifier.Empty.onPress {})
+                        Tab("All", selected = true, width = 73, modifier = Modifier.Empty.onActivate {})
+                        Tab("Hidden", selected = false, width = 73, modifier = Modifier.Empty.onActivate {})
+                        Tab("Blocked", selected = false, width = 73, modifier = Modifier.Empty.onActivate {})
                     }
                     Row(
                         modifier = Modifier.Empty.padding(left = 5, top = 9),
@@ -129,7 +129,7 @@ internal fun createSocialScreenDefinition(
                 Button(
                     "Done",
                     width = 200,
-                    modifier = Modifier.Empty.align(HorizontalAlignment.Center).onPress {},
+                    modifier = Modifier.Empty.align(HorizontalAlignment.Center).onActivate {},
                 )
             }
         }

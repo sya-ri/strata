@@ -49,6 +49,7 @@ internal class StrataSkillPipelineTest {
                     launch.exampleSourceRoot,
                 ).source
         val fencedExample = "```kotlin\n$openExample\n```"
+        assertTrue(openExample.contains("onActivate"))
         assertTrue(readme.contains(fencedExample))
         assertTrue(modrinthProject.contains(fencedExample))
         assertTrue(setup.contains(fencedExample))
@@ -58,11 +59,7 @@ internal class StrataSkillPipelineTest {
         val patterns = first.getValue("skills/strata/references/patterns.md")
         val customComponents = first.getValue("skills/strata/references/custom-components.md")
         assertComponentReferences(components)
-        assertTrue(modifiers.contains("Compiled JVM API fingerprints"))
-        assertTrue(modifiers.contains("data class ListLoadRequest(public val suggestedCount: Int)"))
-        assertTrue(modifiers.contains("TextAreaState"))
-        assertTrue(modifiers.contains("TextAreaViewport"))
-        assertTrue(modifiers.contains("TextLayout"))
+        assertModifierReferences(modifiers)
         assertTiledImageReferences(modifiers)
         assertOwnerAwareStateSignatures(modifiers)
         assertTrue(patterns.contains("itemCount = { items.size }"))
@@ -72,6 +69,16 @@ internal class StrataSkillPipelineTest {
         assertTrue(patterns.contains("The `Int` and `List` overloads are immutable snapshots."))
         assertTrue(customComponents.contains("https://github.com/sya-ri/strata/blob/master/docs/element-spi.md"))
         assertDocumentationLinks(first)
+    }
+
+    private fun assertModifierReferences(modifiers: String) {
+        assertTrue(modifiers.contains("Compiled JVM API fingerprints"))
+        assertTrue(modifiers.contains("data class ListLoadRequest(public val suggestedCount: Int)"))
+        assertTrue(modifiers.contains("TextAreaState"))
+        assertTrue(modifiers.contains("TextAreaViewport"))
+        assertTrue(modifiers.contains("TextLayout"))
+        assertTrue(modifiers.contains("onActivate"))
+        assertTrue(modifiers.contains("focused Enter or Space press"))
     }
 
     private fun assertComponentReferences(components: String) {

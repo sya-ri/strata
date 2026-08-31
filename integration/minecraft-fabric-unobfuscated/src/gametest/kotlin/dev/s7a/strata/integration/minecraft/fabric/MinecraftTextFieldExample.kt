@@ -13,7 +13,7 @@ import dev.s7a.strata.layout.Arrangement
 import dev.s7a.strata.layout.HorizontalAlignment
 import dev.s7a.strata.modifier.Modifier
 import dev.s7a.strata.modifier.menuBackground
-import dev.s7a.strata.modifier.onPress
+import dev.s7a.strata.modifier.onActivate
 import dev.s7a.strata.modifier.padding
 import dev.s7a.strata.modifier.size
 import dev.s7a.strata.screen.ScreenDefinition
@@ -54,12 +54,12 @@ internal fun createDirectJoinScreenDefinition(): ScreenDefinition {
                         Button(
                             "Join Server",
                             width = 200,
-                            modifier = Modifier.Empty.onPress {},
+                            modifier = Modifier.Empty.onActivate {},
                         )
                         Button(
                             "Cancel",
                             width = 200,
-                            modifier = Modifier.Empty.onPress {},
+                            modifier = Modifier.Empty.onActivate {},
                         )
                     }
                 }

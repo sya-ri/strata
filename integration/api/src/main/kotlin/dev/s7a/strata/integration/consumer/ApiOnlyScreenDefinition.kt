@@ -27,7 +27,7 @@ import dev.s7a.strata.modifier.Modifier
 import dev.s7a.strata.modifier.background
 import dev.s7a.strata.modifier.fillMaxWidth
 import dev.s7a.strata.modifier.height
-import dev.s7a.strata.modifier.onPress
+import dev.s7a.strata.modifier.onActivate
 import dev.s7a.strata.modifier.padding
 import dev.s7a.strata.modifier.size
 import dev.s7a.strata.render.ArgbColor
@@ -80,7 +80,7 @@ public fun createApiOnlyScreenDefinition(onClose: () -> Unit): ScreenDefinition 
                 )
                 Button(
                     label = "Close",
-                    modifier = Modifier.Empty.onPress(onClose).align(HorizontalAlignment.Center),
+                    modifier = Modifier.Empty.onActivate(onClose).align(HorizontalAlignment.Center),
                 )
             }
         }

@@ -39,7 +39,7 @@ import dev.s7a.strata.component.Text
 import dev.s7a.strata.layout.HorizontalAlignment
 import dev.s7a.strata.modifier.Modifier
 import dev.s7a.strata.modifier.menuBackground
-import dev.s7a.strata.modifier.onPress
+import dev.s7a.strata.modifier.onActivate
 import dev.s7a.strata.modifier.padding
 import dev.s7a.strata.modifier.size
 import dev.s7a.strata.screen.ScreenDefinition
@@ -63,7 +63,7 @@ internal fun openConfirmationScreen(onConfirm: () -> Unit) {
             Text("Continue with this action?")
             Button(
                 "Yes",
-                modifier = Modifier.Empty.onPress(onConfirm),
+                modifier = Modifier.Empty.onActivate(onConfirm),
             )
         }
     }.open()

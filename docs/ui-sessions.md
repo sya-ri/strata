@@ -32,7 +32,7 @@ Definition close and host transfer race atomically, and a transferred host expos
 Its screen-content callback is an ordinary `UiScope`, while the host installs its selected Minecraft profile behind that callback for top-level Minecraft components and modifiers.
 Callers therefore declare `Text`, `TextField`, `TextArea`, `Button`, `Checkbox`, `CycleButton`, `Slider`, `Tab`, `ScrollArea`, `Scrollbar`, `VirtualList`, `SelectionList`, `Image`, `Canvas`, `Slot`, `PlayerHead`, `LoadingIndicator`, and `ProgressBar` directly without an additional root builder or an explicit Minecraft context receiver.
 Application code emits those components directly and composes profile-backed `menuBackground()`, `containerBackground(rows)`, or immutable `imageBackground(image, scale)` behavior into ordinary modifier chains; screen definitions, `Text`, and `Button` accept `String` literals without requiring `UiText.Literal`, while typed overloads retain unresolved `UiText` values when needed.
-The fixed-height profile-backed Button owns appearance, hover visuals, and enabled semantics, while reusable pointer, keyboard, text-input, preedit, focus, press, release, move, drag, scroll, and hover actions are active modifiers shared with other component kinds.
+The fixed-height profile-backed Button and Tab own appearance, hover visuals, and enabled semantics, while reusable pointer, keyboard, text-input, preedit, focus, activation, press, release, move, drag, scroll, and hover actions are active modifiers shared with other component kinds.
 TextField owns the verified EditBox sprites, typed profile-backed text colors, insert or append cursor, Unicode scalar editing, and semantics while caller-owned owner-thread `TextFieldState` owns the value and positive UTF-16 maximum length.
 The ordinary field is 200 by 20, while the explicit-size overload applies the native one-pixel nine-slice border and integer-centered glyph row to any extent of at least 9 by 9.
 TextArea shares the typed frame assets and font layout, with canonical LF values, visual-line cursor affinity, a constrained inner viewport, and owner-thread `TextAreaState`.
@@ -51,7 +51,7 @@ The container-background modifier owns the verified row-dependent generic chest 
 The Fabric-backed `Slot(bind = ...)` form accepts `Slots.playerInventory(index)`, a logical `Slots.container(index)`, or the raw-menu escape hatch `Slots.activeMenu(index)`; it polls the current authoritative menu before each frame, inserts native item rendering at the Slot's ordered item phase, and sends pointer transactions through Minecraft's container-input operation instead of mutating inventory storage.
 The loaded integration opens storage on the integrated server and proves player inventory, a custom `SimpleContainer`, and ender-chest pickup and restoration through the same binding protocol.
 That live overload is intentionally unavailable to portable-only hosts because arbitrary `ItemStack` models are native version assets; the optional-content overload remains the headless-compatible Slot contract.
-Button does not install keyboard focus or activation implicitly; callers compose those policies from the shared modifiers when required.
+Button and Tab do not install keyboard focus or activation implicitly; callers compose `onActivate(enabled)` when primary pointer and focused Enter or Space presses mean the same action, while pointer-specific behavior remains on `onPress`.
 The common component boundary exposes only structural resource-pack identifiers and detached immutable pixels, not resource-manager objects, native Minecraft values, renderers, input mappers, or task facilities.
 Client and server code may share a `ResourceId`; only the versioned client resolves its pixels through the active resource-pack stack before building an `Image` or image-background modifier.
 One common host memoizes each admitted resource-image resolution by structural `ResourceId` across immediate and deferred component evaluation, while direct pixel sources bypass platform resolution.
@@ -121,6 +121,12 @@ Its size, drawing commands, and semantics entries are immutable defensive snapsh
 Pointer, keyboard, committed-character, and preedit input are ignored until one complete frame has committed.
 Afterward it targets the most recently committed tree.
 State changed by an input callback becomes visible to retained UI behavior after the next successful frame.
+Focused keyboard handlers receive each event before traversal, so only an ignored Tab `Press` moves focus; Shift reverses the cyclic parent-before-child and declared sibling paint order, while other modifier bits leave its direction unchanged.
+Candidates must accept focus and intersect the root viewport plus every ancestor child clip, excluding clipped VirtualList overscan rows.
+A placed current owner remains focused while clip-hidden and continues receiving ordinary focused input, but explicit Tab moves to a visible candidate.
+Removing or unmaterializing that owner clears focus without stable-key reacquisition; the next forward or reverse Tab starts at the first or last currently eligible owner.
+An unambiguous placed `initialFocus` request applies after layout whenever the tree has no owner, including a newly opened screen or reattachment after focus-clearing detach; focus never transfers from a replaced screen into its successor.
+Every Enter or Space `Press` that reaches a focused `onActivate` node, including repeats, invokes its action, while its false enabled overload contributes no pointer, keyboard, focus, or action reference.
 Detach cancels active pointer capture, emits exit for active pointer-hover observers, clears focused ownership, invalidates the committed-frame marker, and retains the tree and state.
 The input pipeline retains at most one captured entry and its starting button, releases that reference before matching-release or cancellation callbacks, and cancels before entry disposal as well as on session input reset.
 Captured move and matching-button drag or release delivery uses the latest committed layout even outside ancestor clips, while other buttons, scrolling, and hover preserve ordinary hit testing.

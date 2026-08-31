@@ -1,6 +1,7 @@
 package dev.s7a.strata.integration.external
 
 import dev.s7a.strata.component.Button
+import dev.s7a.strata.component.Column
 import dev.s7a.strata.component.NineSliceCenterMode
 import dev.s7a.strata.component.Slot
 import dev.s7a.strata.component.Slots
@@ -16,6 +17,9 @@ import dev.s7a.strata.geometry.IntOffset
 import dev.s7a.strata.geometry.IntRect
 import dev.s7a.strata.geometry.IntSize
 import dev.s7a.strata.input.InputResult
+import dev.s7a.strata.input.KeyCode
+import dev.s7a.strata.input.KeyboardEvent
+import dev.s7a.strata.input.KeyboardModifiers
 import dev.s7a.strata.input.PointerButton
 import dev.s7a.strata.input.PointerEvent
 import dev.s7a.strata.integration.consumer.createApiOnlyCanvasDefinition
@@ -23,6 +27,7 @@ import dev.s7a.strata.integration.consumer.createApiOnlyTiledImageDefinition
 import dev.s7a.strata.modifier.Modifier
 import dev.s7a.strata.modifier.containerBackground
 import dev.s7a.strata.modifier.menuBackground
+import dev.s7a.strata.modifier.onActivate
 import dev.s7a.strata.modifier.onPress
 import dev.s7a.strata.node.DirtyPhase
 import dev.s7a.strata.render.createDrawImage
@@ -287,6 +292,56 @@ internal class ExternalMinecraftUiHostIntegrationTest {
         host.attach()
         assertEquals(InputResult.Ignored, host.dispatchPointer(PointerEvent.Move(IntOffset(1, 1))))
         host.close()
+    }
+
+    @Test
+    fun publicMinecraftButtonActivationSupportsPointerAndCyclicKeyboardFocus() {
+        var firstActivations = 0
+        var disabledActivations = 0
+        var secondActivations = 0
+        val host =
+            createMinecraftUiHost(
+                ScreenDefinition("external button activation") {
+                    Column {
+                        Button("First", modifier = Modifier.Empty.onActivate { firstActivations += 1 })
+                        Button(
+                            "Disabled",
+                            enabled = false,
+                            modifier = Modifier.Empty.onActivate(enabled = false) { disabledActivations += 1 },
+                        )
+                        Button("Second", modifier = Modifier.Empty.onActivate { secondActivations += 1 })
+                    }
+                },
+                profile(),
+            )
+        try {
+            host.attach()
+            host.frame(IntSize(200, 60))
+
+            assertEquals(
+                InputResult.Consumed,
+                host.dispatchPointer(PointerEvent.Press(IntOffset(1, 1), PointerButton.Primary)),
+            )
+            assertEquals(
+                InputResult.Ignored,
+                host.dispatchPointer(PointerEvent.Press(IntOffset(1, 21), PointerButton.Primary)),
+            )
+            assertEquals(InputResult.Consumed, host.dispatchKeyboard(KeyboardEvent.Press(KeyCode.Tab, 0)))
+            assertEquals(InputResult.Consumed, host.dispatchKeyboard(KeyboardEvent.Press(KeyCode.Enter, 0)))
+            assertEquals(InputResult.Consumed, host.dispatchKeyboard(KeyboardEvent.Press(KeyCode.Tab, 0)))
+            assertEquals(InputResult.Consumed, host.dispatchKeyboard(KeyboardEvent.Press(KeyCode.Space, 0)))
+            assertEquals(
+                InputResult.Consumed,
+                host.dispatchKeyboard(KeyboardEvent.Press(KeyCode.Tab, 0, KeyboardModifiers(shift = true))),
+            )
+            assertEquals(InputResult.Consumed, host.dispatchKeyboard(KeyboardEvent.Press(KeyCode.Enter, 0)))
+
+            assertEquals(3, firstActivations)
+            assertEquals(0, disabledActivations)
+            assertEquals(1, secondActivations)
+        } finally {
+            host.close()
+        }
     }
 
     private fun profile() =

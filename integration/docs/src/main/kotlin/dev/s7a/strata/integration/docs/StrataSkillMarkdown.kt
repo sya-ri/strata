@@ -76,6 +76,7 @@ ${inventory.parentScopeModifiers.keys.joinToString("\n\n") { entry -> signatureG
 - Use small `padding` for local insets. A value of 20 or more needs a concrete native-frame or fixed-geometry reason.
 - Put images on `imageBackground` when they paint a container; use `Image` when the image is itself a logical child.
 - Put reusable actions on modifiers. `Button`, `Tab`, `Checkbox`, `CycleButton`, `Slider`, and list components keep application callbacks out of their component signatures.
+- Use `onActivate(enabled)` for an action shared by primary pointer and focused Enter or Space input; use `onPress` only when the action is pointer-specific.
 
 ## State and binding signatures
 

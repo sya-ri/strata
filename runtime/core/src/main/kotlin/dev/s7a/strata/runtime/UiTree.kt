@@ -290,12 +290,14 @@ public class UiTree : AutoCloseable {
     /**
      * Dispatches [event] to the currently focused logical component.
      *
-     * An empty tree or a tree without focus returns [InputResult.Ignored].
+     * An empty tree returns [InputResult.Ignored].
      * A non-empty tree must have completed layout with no pending geometry work.
-     * Focused component and modifier nodes run from the component node toward outer modifiers until one consumes the event.
+     * Focused modifier nodes run from innermost to outermost and then the component node until one consumes the event.
+     * If they all ignore a Tab press, focus moves cyclically through visible accepting logical owners in parent-before-child and declared sibling paint order.
+     * Shift reverses traversal; other modifier bits do not change its direction.
      *
      * @param event immutable keyboard event.
-     * @return consumed when focused behavior handles the event, otherwise ignored.
+     * @return consumed when focused behavior handles the event or Tab selects an eligible owner, otherwise ignored.
      * @throws IllegalStateException when layout is incomplete, the call is from another thread, another operation is active, or the tree is not active.
      * @throws Throwable when focused behavior fails; the original throwable escapes unchanged after cleanup attempts.
      */
@@ -303,7 +305,7 @@ public class UiTree : AutoCloseable {
         pipelineOperation {
             val retainedRoot = root ?: return@pipelineOperation InputResult.Ignored
             pipeline.requirePlacedRoot(retainedRoot)
-            pipeline.dispatchKeyboard(event)
+            pipeline.dispatchKeyboard(retainedRoot, event)
         }
 
     /**

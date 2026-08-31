@@ -6,19 +6,20 @@ import dev.s7a.strata.component.Stack
 import dev.s7a.strata.layout.Alignment
 import dev.s7a.strata.modifier.Modifier
 import dev.s7a.strata.modifier.background
+import dev.s7a.strata.modifier.onActivate
 import dev.s7a.strata.modifier.onHover
-import dev.s7a.strata.modifier.onPress
 import dev.s7a.strata.modifier.size
 import dev.s7a.strata.render.ArgbColor
 import dev.s7a.strata.screen.ScreenDefinition
 
 /**
- * Builds a self-contained Button showcase with ordinary pointer actions attached through its modifier.
+ * Builds a self-contained Button showcase with shared pointer and keyboard activation attached through its modifier.
  *
  * @return one-shot definition containing the complete normal Button frame and no surrounding application screen.
  */
 internal fun createButtonShowcaseScreenDefinition(): ScreenDefinition =
     ScreenDefinition("Button showcase") {
+        val enabled = true
         Stack(
             modifier =
                 Modifier.Empty
@@ -28,9 +29,10 @@ internal fun createButtonShowcaseScreenDefinition(): ScreenDefinition =
         ) {
             Button(
                 "Continue",
+                enabled = enabled,
                 modifier =
                     Modifier.Empty
-                        .onPress {}
+                        .onActivate(enabled) {}
                         .onHover {},
             )
         }

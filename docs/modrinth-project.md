@@ -12,7 +12,7 @@ Standard Image and PlayerHead textures can be retained directly while preserving
 - Structure screens with `Row`, wrapping `FlowRow`, `Column`, `Grid`, and intentional-overlap `Stack` instead of absolute coordinates.
 - Compose 25 focused standard components, including independent `ScrollArea` and `Scrollbar`, multiline `TextArea`, virtual and tiled images, slots, tabs, player heads, and progress controls.
 - Display Japanese, Korean, and supported emoji with the selected Minecraft font resources, and choose custom font definitions through the public API.
-- Keep events on modifiers and mutable values in caller-owned typed state.
+- Keep events on modifiers and mutable values in caller-owned typed state; `onActivate(enabled)` unifies primary pointer and focused Enter or Space actions without making Button or Tab implicitly interactive.
 - Bind player, container, ender-chest, furnace, active-menu, or custom slot sources without coupling UI definitions to runtime packages.
 - Define purpose-specific downstream components as ordinary `UiScope` compositions or use the public `Element` and `Node` SPI when retained behavior is necessary.
 
@@ -38,7 +38,7 @@ import dev.s7a.strata.component.Text
 import dev.s7a.strata.layout.HorizontalAlignment
 import dev.s7a.strata.modifier.Modifier
 import dev.s7a.strata.modifier.menuBackground
-import dev.s7a.strata.modifier.onPress
+import dev.s7a.strata.modifier.onActivate
 import dev.s7a.strata.modifier.padding
 import dev.s7a.strata.modifier.size
 import dev.s7a.strata.screen.ScreenDefinition
@@ -62,7 +62,7 @@ internal fun openConfirmationScreen(onConfirm: () -> Unit) {
             Text("Continue with this action?")
             Button(
                 "Yes",
-                modifier = Modifier.Empty.onPress(onConfirm),
+                modifier = Modifier.Empty.onActivate(onConfirm),
             )
         }
     }.open()

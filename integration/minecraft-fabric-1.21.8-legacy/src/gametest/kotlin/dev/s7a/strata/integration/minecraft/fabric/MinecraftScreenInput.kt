@@ -6,6 +6,7 @@ import dev.s7a.strata.geometry.IntOffset
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
 import net.minecraft.client.Minecraft
 import net.minecraft.client.gui.screens.Screen
+import org.lwjgl.glfw.GLFW
 
 /**
  * Clicks and releases one screen position through the primitive input API used through Minecraft 1.21.8.
@@ -56,6 +57,37 @@ internal fun releaseMinecraftScreen(
 ): Boolean = screen.mouseReleased(position.x.toDouble(), position.y.toDouble(), PRIMARY_MOUSE_BUTTON)
 
 /**
+ * Delivers one native Tab press through the primitive screen callback.
+ *
+ * @param screen borrowed active test screen on the client thread.
+ * @param reverse whether Shift is held for reverse traversal.
+ * @return the exact native screen consumption result.
+ * @throws Throwable when native or Strata input dispatch fails.
+ */
+internal fun pressMinecraftTab(
+    screen: Screen,
+    reverse: Boolean = false,
+): Boolean = screen.keyPressed(GLFW.GLFW_KEY_TAB, NO_SCAN_CODE, if (reverse) GLFW.GLFW_MOD_SHIFT else NO_MODIFIERS)
+
+/**
+ * Delivers one native Enter press through the primitive screen callback.
+ *
+ * @param screen borrowed active test screen on the client thread.
+ * @return the exact native screen consumption result.
+ * @throws Throwable when native or Strata input dispatch fails.
+ */
+internal fun pressMinecraftEnter(screen: Screen): Boolean = screen.keyPressed(GLFW.GLFW_KEY_ENTER, NO_SCAN_CODE, NO_MODIFIERS)
+
+/**
+ * Delivers one native Space press through the primitive screen callback.
+ *
+ * @param screen borrowed active test screen on the client thread.
+ * @return the exact native screen consumption result.
+ * @throws Throwable when native or Strata input dispatch fails.
+ */
+internal fun pressMinecraftSpace(screen: Screen): Boolean = screen.keyPressed(GLFW.GLFW_KEY_SPACE, NO_SCAN_CODE, NO_MODIFIERS)
+
+/**
  * Updates native window focus through the real callback using the pre-record-input window-handle API.
  *
  * The loaded test calls this on the client thread and restores the previous focus state; input-reset failures propagate unchanged.
@@ -67,3 +99,5 @@ internal fun focusMinecraftWindow(focused: Boolean) {
 }
 
 private const val PRIMARY_MOUSE_BUTTON = 0
+private const val NO_SCAN_CODE = 0
+private const val NO_MODIFIERS = 0

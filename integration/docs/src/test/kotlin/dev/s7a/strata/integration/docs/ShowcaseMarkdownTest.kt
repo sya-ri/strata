@@ -97,9 +97,10 @@ internal class ShowcaseMarkdownTest {
             assertTrue(tiledImage.contains(contract))
         }
         val button = sections.getValue(DocumentedComponent.Button)
-        listOf("onPointerEvent", "onPress", "onRelease", "onMove", "onDrag", "onScroll", "onHover").forEach { action ->
+        listOf("onActivate", "onPointerEvent", "onPress", "onRelease", "onMove", "onDrag", "onScroll", "onHover").forEach { action ->
             assertTrue(button.contains("`$action`"))
         }
+        assertTrue(button.contains("owns no implicit focus or activation"))
         sections.values.forEach { value ->
             assertTrue(value.startsWith("<a id=\""))
             assertTrue(value.contains("\n\n## "))

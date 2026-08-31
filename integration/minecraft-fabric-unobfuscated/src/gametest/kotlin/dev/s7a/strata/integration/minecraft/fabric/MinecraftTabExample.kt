@@ -8,7 +8,7 @@ import dev.s7a.strata.layout.Arrangement
 import dev.s7a.strata.layout.VerticalAlignment
 import dev.s7a.strata.modifier.Modifier
 import dev.s7a.strata.modifier.background
-import dev.s7a.strata.modifier.onPress
+import dev.s7a.strata.modifier.onActivate
 import dev.s7a.strata.modifier.size
 import dev.s7a.strata.render.ArgbColor
 import dev.s7a.strata.screen.ScreenDefinition
@@ -34,13 +34,13 @@ internal fun createTabShowcaseScreenDefinition(): ScreenDefinition =
                 selected = true,
                 width = 73,
                 indicator = TabSelectionIndicator.Underline,
-                modifier = Modifier.Empty.onPress {},
+                modifier = Modifier.Empty.onActivate {},
             )
             Tab(
                 "Hidden",
                 selected = false,
                 width = 73,
-                modifier = Modifier.Empty.onPress {},
+                modifier = Modifier.Empty.onActivate {},
             )
         }
     }
