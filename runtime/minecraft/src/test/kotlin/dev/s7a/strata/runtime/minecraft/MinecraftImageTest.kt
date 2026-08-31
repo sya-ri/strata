@@ -4,7 +4,11 @@ import dev.s7a.strata.component.Image
 import dev.s7a.strata.component.ImageScale
 import dev.s7a.strata.component.ImageSource
 import dev.s7a.strata.component.NineSliceCenterMode
+import dev.s7a.strata.component.PlayerSkinSource
+import dev.s7a.strata.component.SlotBinding
 import dev.s7a.strata.component.Stack
+import dev.s7a.strata.component.VirtualList
+import dev.s7a.strata.component.VirtualListState
 import dev.s7a.strata.geometry.FloatRect
 import dev.s7a.strata.geometry.Insets
 import dev.s7a.strata.geometry.IntRect
@@ -17,12 +21,18 @@ import dev.s7a.strata.resource.ResourceId
 import dev.s7a.strata.runtime.headless.rasterizeHeadless
 import dev.s7a.strata.runtime.render.DrawCommand
 import dev.s7a.strata.screen.ScreenDefinition
+import dev.s7a.strata.spi.ComponentEvaluator
+import dev.s7a.strata.spi.ComponentRuntime
+import dev.s7a.strata.spi.ComponentRuntimeBridge
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertNotSame
 import org.junit.jupiter.api.Assertions.assertSame
 import org.junit.jupiter.api.Assertions.assertThrows
+import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
+import java.util.concurrent.FutureTask
+import java.util.concurrent.TimeUnit
 
 /**
  * Verifies arbitrary resource-pack image components and backgrounds through the public common boundary.
@@ -80,6 +90,293 @@ internal class MinecraftImageTest {
         } finally {
             host.close()
         }
+    }
+
+    @Test
+    fun equalResourceImagesShareOneResolutionAcrossComponentsAndBackgrounds() {
+        val firstId = ResourceId("example", "textures/gui/shared.png")
+        val equalId = ResourceId("example", "textures/gui/shared.png")
+        val firstSource = ImageSource.Resource(firstId)
+        val equalSource = ImageSource.Resource(equalId)
+        val platform =
+            FakeImagePlatform { _, call ->
+                solidImage(0xFF123400.toInt() + call)
+            }
+        val host =
+            createMinecraftUiHost(
+                ScreenDefinition("Shared resource image") {
+                    Stack(modifier = Modifier.Empty.imageBackground(firstSource, ImageScale.Stretch)) {
+                        Image(equalSource, IntSize(2, 2))
+                        Image(firstSource, IntSize(2, 2))
+                    }
+                },
+                MinecraftProfileFixture.create(),
+                platform,
+            )
+        try {
+            host.attach()
+            val commands = host.frame(IntSize(2, 2)).drawCommands
+            assertEquals(listOf(firstId), platform.imageCalls)
+            assertEquals(3, commands.size)
+            val background = commands[0] as DrawCommand.BlitImage
+            val firstImage = commands[1] as DrawCommand.SampledImage
+            val secondImage = commands[2] as DrawCommand.SampledImage
+            assertSame(background.image, firstImage.image)
+            assertSame(background.image, secondImage.image)
+        } finally {
+            host.close()
+        }
+        assertEquals(1, platform.closeCalls)
+    }
+
+    @Test
+    fun retainedEvaluationsShareTheHostResourceResolverUntilTerminalClose() {
+        val firstId = ResourceId("example", "textures/gui/deferred.png")
+        val equalId = ResourceId("example", "textures/gui/deferred.png")
+        val platform = FakeImagePlatform { _, call -> solidImage(0xFF102000.toInt() + call) }
+        val state = VirtualListState<Int>()
+        lateinit var evaluator: ComponentEvaluator
+        var resourceImages: Any? = null
+        val host =
+            createMinecraftUiHost(
+                ScreenDefinition("Deferred resource images") {
+                    val runtime = activeComponentRuntime()
+                    evaluator = runtime.retainEvaluator()
+                    resourceImages = captureResourceImages(runtime)
+                    Stack(modifier = Modifier.Empty.imageBackground(ImageSource.Resource(firstId))) {
+                        VirtualList(listOf(0, 1), { item -> item }, state, IntSize(2, 4), rowHeight = 2) {
+                            Image(ImageSource.Resource(equalId), IntSize(2, 2))
+                        }
+                    }
+                },
+                MinecraftProfileFixture.create(),
+                platform,
+            )
+        try {
+            host.attach()
+            assertEquals(listOf(firstId), platform.imageCalls)
+            val commands = host.frame(IntSize(2, 4)).drawCommands
+            assertEquals(listOf(firstId), platform.imageCalls)
+            val background = commands.filterIsInstance<DrawCommand.BlitImage>().single()
+            val images = commands.filterIsInstance<DrawCommand.SampledImage>()
+            assertEquals(2, images.size)
+            assertTrue(images.all { command -> command.image === background.image })
+        } finally {
+            host.close()
+        }
+
+        assertResourceImagesReleased(checkNotNull(resourceImages))
+        val released =
+            assertThrows(IllegalStateException::class.java) {
+                evaluator.evaluate { Image(ImageSource.Resource(firstId), IntSize(2, 2)) }
+            }
+        assertEquals("Minecraft resource image resolution is closed.", released.message)
+        assertEquals(listOf(firstId), platform.imageCalls)
+        assertEquals(1, platform.closeCalls)
+    }
+
+    @Test
+    fun differentResourceIdentifiersResolveIndependentImages() {
+        val firstId = ResourceId("example", "textures/gui/first.png")
+        val secondId = ResourceId("example", "textures/gui/second.png")
+        val firstImage = solidImage(0xFF102030.toInt())
+        val secondImage = solidImage(0xFF405060.toInt())
+        val platform =
+            FakeImagePlatform { resource, _ ->
+                when (resource) {
+                    firstId -> firstImage
+                    secondId -> secondImage
+                    else -> error("Unexpected image resource: $resource")
+                }
+            }
+        val host =
+            createMinecraftUiHost(
+                ScreenDefinition("Different resource images") {
+                    Stack {
+                        Image(ImageSource.Resource(firstId), IntSize(2, 2))
+                        Image(ImageSource.Resource(secondId), IntSize(2, 2))
+                    }
+                },
+                MinecraftProfileFixture.create(),
+                platform,
+            )
+        try {
+            host.attach()
+            val commands = host.frame(IntSize(2, 2)).drawCommands.map { command -> command as DrawCommand.SampledImage }
+            assertEquals(listOf(firstId, secondId), platform.imageCalls)
+            assertEquals(2, commands.size)
+            assertSame(firstImage, commands[0].image)
+            assertSame(secondImage, commands[1].image)
+            assertNotSame(commands[0].image, commands[1].image)
+        } finally {
+            host.close()
+        }
+    }
+
+    @Test
+    fun pixelImagesBypassPlatformResourceResolution() {
+        val source = solidImage(0xFF778899.toInt())
+        val platform = FakeImagePlatform { resource, _ -> error("Pixel images must not resolve a resource: $resource") }
+        val host =
+            createMinecraftUiHost(
+                ScreenDefinition("Pixel images") {
+                    Stack(modifier = Modifier.Empty.imageBackground(ImageSource.Pixels(source))) {
+                        Image(ImageSource.Pixels(source), IntSize(2, 2))
+                    }
+                },
+                MinecraftProfileFixture.create(),
+                platform,
+            )
+        try {
+            host.attach()
+            val commands = host.frame(IntSize(2, 2)).drawCommands
+            assertEquals(emptyList<ResourceId>(), platform.imageCalls)
+            assertSame(source, (commands[0] as DrawCommand.BlitImage).image)
+            assertSame(source, (commands[1] as DrawCommand.SampledImage).image)
+        } finally {
+            host.close()
+        }
+    }
+
+    @Test
+    fun failedResourceResolutionIsRetriedWithinTheSameEvaluation() {
+        val id = ResourceId("example", "textures/gui/retry.png")
+        val source = ImageSource.Resource(id)
+        val expected = IllegalArgumentException("Injected image decoding failure.")
+        val resolved = solidImage(0xFFABCDEF.toInt())
+        val platform =
+            FakeImagePlatform { _, call ->
+                if (call == 1) throw expected
+                resolved
+            }
+        var observed: Throwable? = null
+        val host =
+            createMinecraftUiHost(
+                ScreenDefinition("Retry resource image") {
+                    observed = runCatching { Modifier.Empty.imageBackground(source) }.exceptionOrNull()
+                    Image(source, IntSize(2, 2))
+                },
+                MinecraftProfileFixture.create(),
+                platform,
+            )
+        try {
+            host.attach()
+            assertSame(expected, observed)
+            assertEquals(listOf(id, id), platform.imageCalls)
+            val command = host.frame(IntSize(2, 2)).drawCommands.single() as DrawCommand.SampledImage
+            assertSame(resolved, command.image)
+        } finally {
+            host.close()
+        }
+    }
+
+    @Test
+    fun resourceResolutionRejectsForeignThreadUseWithoutPublishingAnotherEntry() {
+        val id = ResourceId("example", "textures/gui/owner.png")
+        val source = ImageSource.Resource(id)
+        val platform = FakeImagePlatform { _, _ -> solidImage(0xFF334455.toInt()) }
+        var wrongThreadFailure: Throwable? = null
+        var wrongThreadRunner: Thread? = null
+        val host =
+            createMinecraftUiHost(
+                ScreenDefinition("Owner-thread resource image") {
+                    val background = Modifier.Empty.imageBackground(source)
+                    val runtime = activeComponentRuntime()
+                    val task =
+                        FutureTask<Throwable?> {
+                            runCatching {
+                                runtime.image(source, null, null, Modifier.Empty, null)
+                            }.exceptionOrNull()
+                        }
+                    val runner = Thread(task)
+                    wrongThreadRunner = runner
+                    runner.start()
+                    wrongThreadFailure = task.get(5, TimeUnit.SECONDS)
+                    Stack(modifier = background) {
+                        Image(source, IntSize(2, 2))
+                    }
+                },
+                MinecraftProfileFixture.create(),
+                platform,
+            )
+        try {
+            host.attach()
+            assertTrue(wrongThreadFailure is IllegalStateException)
+            assertEquals(listOf(id), platform.imageCalls)
+            val commands = host.frame(IntSize(2, 2)).drawCommands
+            assertSame((commands[0] as DrawCommand.BlitImage).image, (commands[1] as DrawCommand.SampledImage).image)
+        } finally {
+            host.close()
+            wrongThreadRunner?.join(5_000)
+        }
+    }
+
+    @Test
+    fun contentFailureClosesAndInvalidatesTheHostResourceResolver() {
+        val id = ResourceId("example", "textures/gui/failure.png")
+        val source = ImageSource.Resource(id)
+        val expected = IllegalStateException("Injected content failure.")
+        val platform = FakeImagePlatform { _, _ -> solidImage(0xFF667788.toInt()) }
+        lateinit var evaluator: ComponentEvaluator
+        var resourceImages: Any? = null
+        val host =
+            createMinecraftUiHost(
+                ScreenDefinition("Failed resource image content") {
+                    val runtime = activeComponentRuntime()
+                    evaluator = runtime.retainEvaluator()
+                    resourceImages = captureResourceImages(runtime)
+                    Image(source, IntSize(2, 2))
+                    throw expected
+                },
+                MinecraftProfileFixture.create(),
+                platform,
+            )
+
+        assertSame(expected, assertThrows(IllegalStateException::class.java, host::attach))
+        assertResourceImagesReleased(checkNotNull(resourceImages))
+        val released =
+            assertThrows(IllegalStateException::class.java) {
+                evaluator.evaluate { Image(source, IntSize(2, 2)) }
+            }
+        assertEquals("Minecraft resource image resolution is closed.", released.message)
+        assertEquals(listOf(id), platform.imageCalls)
+        assertEquals(1, platform.closeCalls)
+        host.close()
+        assertEquals(1, platform.closeCalls)
+    }
+
+    @Test
+    fun aNewHostResolvesTheSameResourceAgainEvenWhenThePlatformReturnsTheSameIdentity() {
+        val id = ResourceId("example", "textures/gui/host.png")
+        val source = ImageSource.Resource(id)
+        val profile = MinecraftProfileFixture.create()
+        val resolved = solidImage(0xFF112233.toInt())
+        val firstPlatform = FakeImagePlatform { _, _ -> resolved }
+        val firstHost = createMinecraftUiHost(ScreenDefinition("First image host") { Image(source) }, profile, firstPlatform)
+        val firstCommand =
+            try {
+                firstHost.attach()
+                firstHost.frame(IntSize(2, 2)).drawCommands.single() as DrawCommand.SampledImage
+            } finally {
+                firstHost.close()
+            }
+
+        val secondPlatform = FakeImagePlatform { _, _ -> resolved }
+        val secondHost = createMinecraftUiHost(ScreenDefinition("Second image host") { Image(source) }, profile, secondPlatform)
+        val secondCommand =
+            try {
+                secondHost.attach()
+                secondHost.frame(IntSize(2, 2)).drawCommands.single() as DrawCommand.SampledImage
+            } finally {
+                secondHost.close()
+            }
+
+        assertEquals(listOf(id), firstPlatform.imageCalls)
+        assertEquals(listOf(id), secondPlatform.imageCalls)
+        assertEquals(1, firstPlatform.closeCalls)
+        assertEquals(1, secondPlatform.closeCalls)
+        assertSame(resolved, firstCommand.image)
+        assertSame(resolved, secondCommand.image)
     }
 
     @Test
@@ -260,4 +557,68 @@ internal class MinecraftImageTest {
             },
             MinecraftProfileFixture.create(),
         )
+
+    private fun solidImage(color: Int): DrawImage = createDrawImage(IntSize(2, 2), IntArray(4) { color })
+
+    private fun activeComponentRuntime(): ComponentRuntime {
+        val activeField = ComponentRuntimeBridge::class.java.getDeclaredField("active")
+        check(activeField.trySetAccessible()) { "The active component runtime is inaccessible." }
+        val active = checkNotNull(activeField.get(ComponentRuntimeBridge) as? ThreadLocal<*>)
+        return checkNotNull(active.get() as? ComponentRuntime)
+    }
+
+    private fun captureResourceImages(runtime: ComponentRuntime): Any {
+        val field = runtime.javaClass.getDeclaredField("resourceImages")
+        check(field.trySetAccessible()) { "The Minecraft resource image resolver is inaccessible." }
+        return checkNotNull(field.get(runtime))
+    }
+
+    private fun assertResourceImagesReleased(resourceImages: Any) {
+        val imagesField = resourceImages.javaClass.getDeclaredField("images")
+        check(imagesField.trySetAccessible()) { "The Minecraft resource image cache is inaccessible." }
+        assertTrue(checkNotNull(imagesField.get(resourceImages) as? Map<*, *>).isEmpty())
+        val closedField = resourceImages.javaClass.getDeclaredField("closed")
+        check(closedField.trySetAccessible()) { "The Minecraft resource image lifecycle is inaccessible." }
+        assertEquals(true, closedField.get(resourceImages))
+    }
+
+    private class FakeImagePlatform(
+        private val resolver: (ResourceId, Int) -> DrawImage,
+    ) : MinecraftUiPlatform {
+        private val ownerThread = Thread.currentThread()
+        private var closed = false
+        val imageCalls: MutableList<ResourceId> = ArrayList()
+        var closeCalls: Int = 0
+            private set
+
+        override fun inventorySlot(binding: SlotBinding): MinecraftInventorySlotBinding = error("This Image fixture has no inventory Slots: $binding")
+
+        override fun image(resource: ResourceId): DrawImage {
+            requireUsable()
+            imageCalls += resource
+            return resolver(resource, imageCalls.size)
+        }
+
+        override fun playerSkin(source: PlayerSkinSource): MinecraftPlayerSkinBinding = error("This Image fixture has no player skins: $source")
+
+        override fun refresh() {
+            requireUsable()
+        }
+
+        override fun close() {
+            checkOwner()
+            if (closed) return
+            closed = true
+            closeCalls += 1
+        }
+
+        private fun requireUsable() {
+            checkOwner()
+            check(closed.not()) { "Image platform is closed." }
+        }
+
+        private fun checkOwner() {
+            check(Thread.currentThread() === ownerThread) { "Image platform requires its creator thread." }
+        }
+    }
 }

@@ -115,6 +115,24 @@ Other command shapes retain exact output through a portable layer bounded to the
 Presentation counters distinguish direct hit, miss, upload, draw, eviction, ineligible and capacity fallback, retained entries and bytes, and ordinary portable rasterization and upload.
 After warm-up, stable image identities under destination or clip changes must report zero image uploads and zero sampled-image portable rasterizations.
 
+### Minecraft resource-image resolution identity
+
+Each Minecraft UI host owns one resource-image resolver shared by its initial component context and every retained evaluator used for deferred content such as `VirtualList` rows.
+The first `ImageSource.Resource` request for a structural `ResourceId` calls the host platform, while every equal identifier used by `Image`, stretched or tiled image backgrounds, and nine-slice image backgrounds in that host receives the exact same immutable `DrawImage` identity.
+`ImageSource.Pixels` bypasses this lookup, different identifiers remain independent, and a failed platform resolution publishes no entry so a later request retries normally.
+
+The cache contains only derived immutable presentation snapshots and is keyed solely by `ResourceId`.
+Its fixed current-state bound is the finite set of decodable image resources exposed by the host's active resource-pack snapshot; arbitrary missing identifiers fail without adding entries.
+Resolved entries remain until terminal release because eviction would break the host-wide identity guarantee during deferred row churn.
+Resolution, cache access, and release are confined to the host owner thread.
+Each callback-lifetime context drops its resolver reference when evaluation completes or fails, while retained evaluators share the host resolver without owning an independent cache.
+Terminal close or failure first releases the retained tree, then invalidates the resolver and clears every entry before closing version services.
+A new host always performs its own platform resolution against its resource-pack snapshot, although a platform is allowed to return the same immutable image identity from that new resolution.
+
+Common JVM tests require identity reuse across initial and retained evaluation, mixed image components and backgrounds, independent identifiers, pixel bypass, failure retry without failed-entry retention, owner-thread rejection, terminal invalidation after close and construction failure, and a new platform resolution per host even when the platform returns the same identity.
+The loaded Fabric gate additionally materializes repeated identifiers through deferred `VirtualList` rows, inspects the real display list and native direct sampled-image counters, and requires one miss and upload per host.
+The concrete Fabric bridge decodes a detached snapshot on every platform resolution, so its second-host check also requires a fresh image identity without changing rendered pixels.
+
 ### Tiled-image working-set cache
 
 Each retained TiledImage attachment keys its derived presentation state by source identity and TiledImageTileId.
