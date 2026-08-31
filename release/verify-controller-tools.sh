@@ -59,6 +59,9 @@ verify_controller_tool release/github-release-tag-ruleset.json github-release-ta
 verify_controller_tool release/github-release-tag-ruleset-receipt.json github-release-tag-ruleset-receipt.json json
 verify_controller_tool release/verify-pages-deployment-source.sh verify-pages-deployment-source.sh bash
 verify_controller_tool release/wait-for-pages-source-receipt.sh wait-for-pages-source-receipt.sh bash
+verify_controller_tool release/run-modrinth-v0.1.2-backlog-recovery.sh run-modrinth-v0.1.2-backlog-recovery.sh bash
+verify_controller_tool release/modrinth-v0.1.2-backlog-recovery.json modrinth-v0.1.2-backlog-recovery.json json
+verify_controller_tool release/modrinth-v0.1.0-artifacts.json modrinth-v0.1.0-artifacts.json json
 
 if [[ "$operation" == "materialize" ]]; then
   chmod a-w "$tool_directory" \
@@ -66,5 +69,8 @@ if [[ "$operation" == "materialize" ]]; then
     "$tool_directory/github-release-tag-ruleset.json" \
     "$tool_directory/github-release-tag-ruleset-receipt.json" \
     "$tool_directory/verify-pages-deployment-source.sh" \
-    "$tool_directory/wait-for-pages-source-receipt.sh"
+    "$tool_directory/wait-for-pages-source-receipt.sh" \
+    "$tool_directory/run-modrinth-v0.1.2-backlog-recovery.sh" \
+    "$tool_directory/modrinth-v0.1.2-backlog-recovery.json" \
+    "$tool_directory/modrinth-v0.1.0-artifacts.json"
 fi

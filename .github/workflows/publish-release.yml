@@ -63,7 +63,10 @@ jobs:
           sealed_previous_workflow=.github/workflows/release-v0.1.1.yml
           sealed_initial_workflow=.github/workflows/release.yml
           [[ -f "$workflow" && -f "$sealed_previous_workflow" && -f "$sealed_initial_workflow" && \
-            -f release/verify-controller-tools.sh ]] || { echo 'A release workflow or controller tool guard is missing.' >&2; exit 1; }
+            -f release/verify-controller-tools.sh && \
+            -f release/run-modrinth-v0.1.2-backlog-recovery.sh && \
+            -f release/modrinth-v0.1.2-backlog-recovery.json && \
+            -f release/modrinth-v0.1.0-artifacts.json ]] || { echo 'A release workflow or controller tool guard is missing.' >&2; exit 1; }
           grep --fixed-strings 'default: v0.1.2' "$workflow" >/dev/null
           grep --fixed-strings 'group: release-v0.1.0' "$workflow" >/dev/null
           grep --fixed-strings 'default: v0.1.1' "$sealed_previous_workflow" >/dev/null
@@ -90,8 +93,8 @@ jobs:
           raw_controller_show="git show \"\$GITHUB_SHA:release/"
           [[ "$(grep --fixed-strings -c "$controller_loader" "$workflow")" == "2" && \
             "$(grep --fixed-strings -c "$controller_materializer" "$workflow")" == "2" && \
-            "$(grep --fixed-strings -c "$controller_revalidator" "$workflow")" == "7" && \
-            "$(grep --fixed-strings -c "$controller_ruleset_call" "$workflow")" == "5" && \
+            "$(grep --fixed-strings -c "$controller_revalidator" "$workflow")" == "8" && \
+            "$(grep --fixed-strings -c "$controller_ruleset_call" "$workflow")" == "6" && \
             "$(grep --fixed-strings -c "$legacy_controller_path" "$workflow" || true)" == "0" && \
             "$(grep --fixed-strings -c "$raw_controller_show" "$workflow" || true)" == "0" ]] || { echo 'Controller tool loading topology differs.' >&2; exit 1; }
           [[ "$(grep --fixed-strings -c "$controller_cleanup_output" "$workflow")" == "4" ]] || { echo 'Controller tool cleanup is not bound to the initialization step output.' >&2; exit 1; }
@@ -129,6 +132,7 @@ jobs:
           [[ "$tag_commit" == "b541fc5492b798b6805c0c4d24e09f43ceff938a" ]] || { echo 'The v0.1.2 tag commit differs from the reviewed release source.' >&2; exit 1; }
           read -r tag_object verified_commit <<< "$(bash release/verify-release-tag.sh "$RELEASE_TAG" "$tag_commit")"
           [[ "$verified_commit" == "$tag_commit" ]] || { echo 'Signed tag verification returned a different commit.' >&2; exit 1; }
+          [[ "$tag_object" == "49195293b3e163abd0beefc9fc8e61a428b8eb24" ]] || { echo 'The v0.1.2 tag object differs from the reviewed signed tag.' >&2; exit 1; }
           bash release/verify-github-tag-ruleset.sh \
             release/github-release-tag-ruleset.json \
             release/github-release-tag-ruleset-receipt.json >/dev/null
@@ -409,30 +413,85 @@ jobs:
         id: modrinth_preflight
         shell: bash
         env:
+          GH_TOKEN: ${{ github.token }}
           MODRINTH_TOKEN: ${{ secrets.MODRINTH_TOKEN }}
           PROJECT_ID: ${{ steps.modrinth.outputs.project_id }}
           RELEASE_TAG: ${{ inputs.tag }}
+          EXPECTED_CONTROLLER_COMMIT: ${{ needs.preflight.outputs.controller_commit }}
+          EXPECTED_TAG_COMMIT: ${{ needs.preflight.outputs.tag_commit }}
+          EXPECTED_TAG_OBJECT: ${{ needs.preflight.outputs.tag_object }}
+          EXPECTED_PAGES_RECORD: ${{ needs.preflight.outputs.pages_record }}
         run: |
           set -euo pipefail
-          bash ./gradlew --no-parallel --max-workers=2 --no-build-cache modrinthReleasePreflight \
-            -Pstrata.sourceRevision="$RELEASE_TAG" \
-            -Pstrata.sourceCommit="$RELEASE_SOURCE_COMMIT" \
-            -Pstrata.modrinthProjectId="$PROJECT_ID"
+          verify_controller_tools() {
+            git --no-replace-objects cat-file blob "$EXPECTED_CONTROLLER_COMMIT:release/verify-controller-tools.sh" | \
+              bash -s -- verify "$EXPECTED_CONTROLLER_COMMIT" "$CONTROLLER_TOOL_DIRECTORY"
+          }
+          git fetch --force origin \
+            '+refs/heads/master:refs/remotes/origin/master' \
+            "+refs/tags/$RELEASE_TAG:refs/tags/$RELEASE_TAG"
+          [[ "$GITHUB_SHA" == "$EXPECTED_CONTROLLER_COMMIT" && "$(git rev-parse origin/master)" == "$EXPECTED_CONTROLLER_COMMIT" ]] || { echo 'Controller master changed before Modrinth preflight.' >&2; exit 1; }
+          [[ "$(git rev-parse HEAD)" == "$EXPECTED_TAG_COMMIT" && "$(git rev-parse --verify "refs/tags/$RELEASE_TAG^{commit}")" == "$EXPECTED_TAG_COMMIT" ]] || { echo 'Release commit changed before Modrinth preflight.' >&2; exit 1; }
+          [[ "$(git rev-parse "refs/tags/$RELEASE_TAG")" == "$EXPECTED_TAG_OBJECT" ]] || { echo 'Release tag object changed before Modrinth preflight.' >&2; exit 1; }
+          git merge-base --is-ancestor "$EXPECTED_TAG_COMMIT" origin/master || { echo 'Release source left controller master before Modrinth preflight.' >&2; exit 1; }
+          bash release/verify-release-tag.sh "$RELEASE_TAG" "$EXPECTED_TAG_COMMIT" "$EXPECTED_TAG_OBJECT" >/dev/null
+          verify_controller_tools
+          bash "$CONTROLLER_TOOL_DIRECTORY/verify-github-tag-ruleset.sh" \
+            "$CONTROLLER_TOOL_DIRECTORY/github-release-tag-ruleset.json" \
+            "$CONTROLLER_TOOL_DIRECTORY/github-release-tag-ruleset-receipt.json" >/dev/null
+          read -r release_pages_run_id _ _ controller_pages_run_id _ _ <<< "$EXPECTED_PAGES_RECORD"
+          verify_controller_tools
+          [[ "$(bash "$CONTROLLER_TOOL_DIRECTORY/verify-pages-deployment-source.sh" \
+            "$release_pages_run_id" "$RELEASE_TAG" "$EXPECTED_TAG_COMMIT" \
+            "$controller_pages_run_id" "$EXPECTED_CONTROLLER_COMMIT")" == "$EXPECTED_PAGES_RECORD" ]] || { echo 'Protected Pages evidence changed before Modrinth preflight.' >&2; exit 1; }
+          [[ "$(git rev-parse origin/master)" == "$EXPECTED_CONTROLLER_COMMIT" ]] || { echo 'Controller master changed during Modrinth preflight source verification.' >&2; exit 1; }
           project_json="$(mktemp)"
           body="$(mktemp)"
-          current_body="$(mktemp)"
-          trap 'rm -f -- "$project_json" "$body" "$current_body"' EXIT
+          body_after="$(mktemp)"
+          trap 'rm -f -- "$project_json" "$body" "$body_after"' EXIT
           curl --fail --silent --show-error --retry 3 --retry-all-errors --retry-delay 1 \
             --proto '=https' --header "Authorization: $MODRINTH_TOKEN" \
             "https://api.modrinth.com/v2/project/$PROJECT_ID" --output "$project_json"
           jq --raw-output --join-output '(.body // "") | gsub("\r\n"; "\n") | sub("[[:space:]]+$"; "") + "\n"' "$project_json" > "$body"
-          jq --null-input --rawfile body docs/modrinth-project.md --raw-output --join-output \
-            '$body | gsub("\r\n"; "\n") | sub("[[:space:]]+$"; "") + "\n"' > "$current_body"
           body_sha256="$(sha256sum "$body" | cut -d ' ' -f 1)"
-          predecessor_sha256="$(jq -er '.previousBodySha256' release/modrinth-project.json)"
-          current_sha256="$(sha256sum "$current_body" | cut -d ' ' -f 1)"
-          [[ "$body_sha256" == "$predecessor_sha256" || "$body_sha256" == "$current_sha256" ]] || { echo 'Remote Modrinth body is neither the tracked predecessor nor current body.' >&2; exit 1; }
-          echo "body_sha256=$body_sha256" >> "$GITHUB_OUTPUT"
+          verify_controller_tools
+          backlog_contract="$CONTROLLER_TOOL_DIRECTORY/modrinth-v0.1.2-backlog-recovery.json"
+          backlog_sha256="$(jq -er '.bodyLineage.backlogSha256' "$backlog_contract")"
+          predecessor_sha256="$(jq -er '.bodyLineage.predecessorSha256' "$backlog_contract")"
+          current_sha256="$(jq -er '.bodyLineage.currentSha256' "$backlog_contract")"
+          case "$body_sha256" in
+            "$backlog_sha256")
+              body_state=backlog
+              verify_controller_tools
+              bash "$CONTROLLER_TOOL_DIRECTORY/run-modrinth-v0.1.2-backlog-recovery.sh" \
+                preflight "$backlog_contract" "$PROJECT_ID" "$RELEASE_TAG" \
+                "$EXPECTED_TAG_COMMIT" "$EXPECTED_CONTROLLER_COMMIT" "$EXPECTED_PAGES_RECORD"
+              ;;
+            "$predecessor_sha256")
+              body_state=predecessor
+              bash ./gradlew --no-parallel --max-workers=2 --no-build-cache modrinthReleasePreflight \
+                -Pstrata.sourceRevision="$RELEASE_TAG" \
+                -Pstrata.sourceCommit="$RELEASE_SOURCE_COMMIT" \
+                -Pstrata.modrinthProjectId="$PROJECT_ID"
+              ;;
+            "$current_sha256")
+              body_state=current
+              bash ./gradlew --no-parallel --max-workers=2 --no-build-cache modrinthReleasePreflight \
+                -Pstrata.sourceRevision="$RELEASE_TAG" \
+                -Pstrata.sourceCommit="$RELEASE_SOURCE_COMMIT" \
+                -Pstrata.modrinthProjectId="$PROJECT_ID"
+              ;;
+            *) echo 'Remote Modrinth body is outside the exact three-release lineage.' >&2; exit 1 ;;
+          esac
+          curl --fail --silent --show-error --retry 3 --retry-all-errors --retry-delay 1 \
+            --proto '=https' --header "Authorization: $MODRINTH_TOKEN" \
+            "https://api.modrinth.com/v2/project/$PROJECT_ID" --output "$project_json"
+          jq --raw-output --join-output '(.body // "") | gsub("\r\n"; "\n") | sub("[[:space:]]+$"; "") + "\n"' "$project_json" > "$body_after"
+          [[ "$(sha256sum "$body_after" | cut -d ' ' -f 1)" == "$body_sha256" ]] || { echo 'Modrinth body changed during read-only preflight.' >&2; exit 1; }
+          {
+            echo "body_sha256=$body_sha256"
+            echo "body_state=$body_state"
+          } >> "$GITHUB_OUTPUT"
       - name: Preflight GitHub Release without mutation
         shell: bash
         env:
@@ -558,10 +617,12 @@ jobs:
           MODRINTH_TOKEN: ${{ secrets.MODRINTH_TOKEN }}
           PROJECT_ID: ${{ steps.modrinth.outputs.project_id }}
           RELEASE_TAG: ${{ inputs.tag }}
+          PREFLIGHT_BODY_STATE: ${{ steps.modrinth_preflight.outputs.body_state }}
           PREFLIGHT_BODY_SHA256: ${{ steps.modrinth_preflight.outputs.body_sha256 }}
           EXPECTED_CONTROLLER_COMMIT: ${{ needs.preflight.outputs.controller_commit }}
           EXPECTED_TAG_COMMIT: ${{ needs.preflight.outputs.tag_commit }}
           EXPECTED_TAG_OBJECT: ${{ needs.preflight.outputs.tag_object }}
+          EXPECTED_PAGES_RECORD: ${{ needs.preflight.outputs.pages_record }}
         run: |
           set -euo pipefail
           verify_controller_tools() {
@@ -581,15 +642,29 @@ jobs:
             bash "$CONTROLLER_TOOL_DIRECTORY/verify-github-tag-ruleset.sh" \
               "$CONTROLLER_TOOL_DIRECTORY/github-release-tag-ruleset.json" \
               "$CONTROLLER_TOOL_DIRECTORY/github-release-tag-ruleset-receipt.json" >/dev/null
+            read -r release_pages_run_id _ _ controller_pages_run_id _ _ <<< "$EXPECTED_PAGES_RECORD"
+            verify_controller_tools
+            [[ "$(bash "$CONTROLLER_TOOL_DIRECTORY/verify-pages-deployment-source.sh" \
+              "$release_pages_run_id" "$RELEASE_TAG" "$EXPECTED_TAG_COMMIT" \
+              "$controller_pages_run_id" "$EXPECTED_CONTROLLER_COMMIT")" == "$EXPECTED_PAGES_RECORD" ]] || { echo 'Protected Pages evidence changed before Modrinth staging.' >&2; exit 1; }
             [[ "$(git rev-parse origin/master)" == "$EXPECTED_CONTROLLER_COMMIT" ]] || { echo 'Controller master changed during Modrinth source verification.' >&2; exit 1; }
           }
           revalidate_release_source
           git diff --quiet -- . || { echo 'Tracked release source changed before Modrinth staging.' >&2; exit 1; }
           git diff --cached --quiet -- . || { echo 'Tracked release source changed before Modrinth staging.' >&2; exit 1; }
-          bash ./gradlew --no-parallel --max-workers=2 --no-build-cache modrinthReleaseStage \
-            -Pstrata.sourceRevision="$RELEASE_TAG" \
-            -Pstrata.sourceCommit="$RELEASE_SOURCE_COMMIT" \
-            -Pstrata.modrinthProjectId="$PROJECT_ID"
+          if [[ "$PREFLIGHT_BODY_STATE" == 'backlog' ]]; then
+            verify_controller_tools
+            bash "$CONTROLLER_TOOL_DIRECTORY/run-modrinth-v0.1.2-backlog-recovery.sh" \
+              stage "$CONTROLLER_TOOL_DIRECTORY/modrinth-v0.1.2-backlog-recovery.json" \
+              "$PROJECT_ID" "$RELEASE_TAG" "$EXPECTED_TAG_COMMIT" "$EXPECTED_CONTROLLER_COMMIT" \
+              "$EXPECTED_PAGES_RECORD"
+          else
+            [[ "$PREFLIGHT_BODY_STATE" == 'predecessor' || "$PREFLIGHT_BODY_STATE" == 'current' ]] || { echo 'Unknown Modrinth preflight body state.' >&2; exit 1; }
+            bash ./gradlew --no-parallel --max-workers=2 --no-build-cache modrinthReleaseStage \
+              -Pstrata.sourceRevision="$RELEASE_TAG" \
+              -Pstrata.sourceCommit="$RELEASE_SOURCE_COMMIT" \
+              -Pstrata.modrinthProjectId="$PROJECT_ID"
+          fi
           jq -e '.operation == "stage" and (.absent | length) == 0 and (.listed | length) == 21' \
             build/release/modrinth-receipts/stage.json >/dev/null || { echo 'Modrinth staging receipt differs.' >&2; exit 1; }
           project_json="$(mktemp)"
@@ -752,9 +827,11 @@ jobs:
           MODRINTH_TOKEN: ${{ secrets.MODRINTH_TOKEN }}
           PROJECT_ID: ${{ steps.modrinth.outputs.project_id }}
           RELEASE_TAG: ${{ inputs.tag }}
+          PREFLIGHT_BODY_STATE: ${{ steps.modrinth_preflight.outputs.body_state }}
           EXPECTED_CONTROLLER_COMMIT: ${{ needs.preflight.outputs.controller_commit }}
           EXPECTED_TAG_COMMIT: ${{ needs.preflight.outputs.tag_commit }}
           EXPECTED_TAG_OBJECT: ${{ needs.preflight.outputs.tag_object }}
+          EXPECTED_PAGES_RECORD: ${{ needs.preflight.outputs.pages_record }}
         run: |
           set -euo pipefail
           verify_controller_tools() {
@@ -773,13 +850,29 @@ jobs:
           bash "$CONTROLLER_TOOL_DIRECTORY/verify-github-tag-ruleset.sh" \
             "$CONTROLLER_TOOL_DIRECTORY/github-release-tag-ruleset.json" \
             "$CONTROLLER_TOOL_DIRECTORY/github-release-tag-ruleset-receipt.json" >/dev/null
+          read -r release_pages_run_id _ _ controller_pages_run_id _ _ <<< "$EXPECTED_PAGES_RECORD"
+          verify_controller_tools
+          [[ "$(bash "$CONTROLLER_TOOL_DIRECTORY/verify-pages-deployment-source.sh" \
+            "$release_pages_run_id" "$RELEASE_TAG" "$EXPECTED_TAG_COMMIT" \
+            "$controller_pages_run_id" "$EXPECTED_CONTROLLER_COMMIT")" == "$EXPECTED_PAGES_RECORD" ]] || { echo 'Protected Pages evidence changed before Modrinth observation.' >&2; exit 1; }
           [[ "$(git rev-parse origin/master)" == "$EXPECTED_CONTROLLER_COMMIT" ]] || { echo 'Controller master changed during Modrinth source verification.' >&2; exit 1; }
           git diff --quiet -- . || { echo 'Tracked release source changed before Modrinth submission.' >&2; exit 1; }
           git diff --cached --quiet -- . || { echo 'Tracked release source changed before Modrinth submission.' >&2; exit 1; }
-          bash ./gradlew --no-parallel --max-workers=2 --no-build-cache modrinthReleaseSubmit \
-            -Pstrata.sourceRevision="$RELEASE_TAG" \
-            -Pstrata.sourceCommit="$RELEASE_SOURCE_COMMIT" \
-            -Pstrata.modrinthProjectId="$PROJECT_ID"
+          if [[ "$PREFLIGHT_BODY_STATE" == 'backlog' ]]; then
+            verify_controller_tools
+            bash "$CONTROLLER_TOOL_DIRECTORY/run-modrinth-v0.1.2-backlog-recovery.sh" \
+              observe "$CONTROLLER_TOOL_DIRECTORY/modrinth-v0.1.2-backlog-recovery.json" \
+              "$PROJECT_ID" "$RELEASE_TAG" "$EXPECTED_TAG_COMMIT" "$EXPECTED_CONTROLLER_COMMIT" \
+              "$EXPECTED_PAGES_RECORD"
+            jq -e '.operation == "observe" and .bodyState == "v0.1.0-backlog" and .versionCountAfter == 62' \
+              build/release/modrinth-controller-receipts/observe.json >/dev/null || { echo 'Modrinth backlog observation receipt differs.' >&2; exit 1; }
+          else
+            [[ "$PREFLIGHT_BODY_STATE" == 'predecessor' || "$PREFLIGHT_BODY_STATE" == 'current' ]] || { echo 'Unknown Modrinth preflight body state.' >&2; exit 1; }
+            bash ./gradlew --no-parallel --max-workers=2 --no-build-cache modrinthReleaseSubmit \
+              -Pstrata.sourceRevision="$RELEASE_TAG" \
+              -Pstrata.sourceCommit="$RELEASE_SOURCE_COMMIT" \
+              -Pstrata.modrinthProjectId="$PROJECT_ID"
+          fi
           echo '::notice::Dispatch operation=verify after the project is approved. Processing and approved reruns remain read-only.'
       - name: Clean up release controller tools
         if: always() && steps.controller_tools.outputs.directory != ''
@@ -924,8 +1017,10 @@ jobs:
           checked_commit="$(git rev-parse HEAD)"
           [[ "$(git rev-parse origin/master)" == "$GITHUB_SHA" ]] || { echo 'Verification controller is not the exact master head.' >&2; exit 1; }
           [[ "$(git rev-parse --verify "refs/tags/$RELEASE_TAG^{commit}")" == "$checked_commit" ]] || { echo 'Checked-out release tag differs.' >&2; exit 1; }
+          [[ "$checked_commit" == "b541fc5492b798b6805c0c4d24e09f43ceff938a" ]] || { echo 'The v0.1.2 verification source differs from the reviewed release commit.' >&2; exit 1; }
           git merge-base --is-ancestor "$checked_commit" origin/master || { echo 'Release tag is no longer contained in master.' >&2; exit 1; }
           tag_object="$(git rev-parse "refs/tags/$RELEASE_TAG")"
+          [[ "$tag_object" == "49195293b3e163abd0beefc9fc8e61a428b8eb24" ]] || { echo 'The v0.1.2 verification tag object differs from the reviewed signed tag.' >&2; exit 1; }
           run_controller_tool_guard() {
             local operation="$1"
             local controller_commit="$2"
