@@ -64,7 +64,7 @@ internal class ShowcaseMarkdownTest {
         assertTrue(root.contains("![Strata component showcase](docs/components/overview.png)"))
         assertTrue(root.contains(overview.source))
         assertTrue(root.contains("Generation does not start Minecraft or create a GPU context"))
-        assertTrue(root.contains("(docs/evidence/minecraft-26.2-parity.properties)"))
+        assertTrue(root.contains("(docs/components.md)"))
     }
 
     @Test

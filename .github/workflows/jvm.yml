@@ -5,6 +5,7 @@ on:
     branches:
       - master
     paths:
+      - .github/actions/**
       - .github/workflows/**
       - api/**
       - build-logic/**
@@ -26,6 +27,7 @@ on:
       - skills/**
   pull_request:
     paths:
+      - .github/actions/**
       - .github/workflows/**
       - api/**
       - build-logic/**
@@ -59,7 +61,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
-      max-parallel: 6
+      max-parallel: 2
       matrix:
         include:
           - id: common
@@ -67,89 +69,13 @@ jobs:
             fetch_depth: 0
             gradle_arguments: :check :api:check :integration:api:check :quality:benchmarks:check :quality:detekt-rules:check :runtime:core:check :runtime:headless:check :runtime:minecraft:check :runtime:minecraft-fonts-lwjgl:check
             cache_read_only: false
-            loom_cache: false
             coverage: false
           - id: coverage
             name: Coverage
             fetch_depth: 1
             gradle_arguments: :koverJvmTests :koverHtmlReport :koverXmlReport -Pkover
             cache_read_only: true
-            loom_cache: false
             coverage: true
-          - id: minecraft-1-20
-            name: Minecraft 1.20.x
-            fetch_depth: 1
-            gradle_arguments: :ciMinecraftCheck -Pstrata.minecraftVersions=1.20,1.20.1,1.20.2,1.20.3,1.20.4,1.20.5,1.20.6
-            loom_projects: |-
-              runtime/minecraft-fabric-1.20
-              integration/minecraft-fabric-1.20
-              runtime/minecraft-fabric-1.20.1
-              integration/minecraft-fabric-1.20.1
-              runtime/minecraft-fabric-1.20.2
-              integration/minecraft-fabric-1.20.2
-              runtime/minecraft-fabric-1.20.3
-              integration/minecraft-fabric-1.20.3
-              runtime/minecraft-fabric-1.20.4
-              integration/minecraft-fabric-1.20.4
-              runtime/minecraft-fabric-1.20.5
-              integration/minecraft-fabric-1.20.5
-              runtime/minecraft-fabric-1.20.6
-              integration/minecraft-fabric-1.20.6
-            cache_read_only: false
-            loom_cache: true
-            coverage: false
-          - id: minecraft-1-21-early
-            name: Minecraft 1.21-1.21.4
-            fetch_depth: 1
-            gradle_arguments: :ciMinecraftCheck -Pstrata.minecraftVersions=1.21,1.21.1,1.21.2,1.21.3,1.21.4
-            loom_projects: |-
-              runtime/minecraft-fabric-1.21
-              integration/minecraft-fabric-1.21
-              runtime/minecraft-fabric-1.21.1
-              integration/minecraft-fabric-1.21.1
-              runtime/minecraft-fabric-1.21.2
-              integration/minecraft-fabric-1.21.2
-              runtime/minecraft-fabric-1.21.3
-              integration/minecraft-fabric-1.21.3
-              runtime/minecraft-fabric-1.21.4
-              integration/minecraft-fabric-1.21.4
-            cache_read_only: false
-            loom_cache: true
-            coverage: false
-          - id: minecraft-1-21-late
-            name: Minecraft 1.21.5-1.21.11
-            fetch_depth: 1
-            gradle_arguments: :ciMinecraftCheck -Pstrata.minecraftVersions=1.21.5,1.21.6,1.21.7,1.21.8,1.21.9,1.21.10,1.21.11
-            loom_projects: |-
-              runtime/minecraft-fabric-1.21.5
-              integration/minecraft-fabric-1.21.5
-              runtime/minecraft-fabric-1.21.6
-              integration/minecraft-fabric-1.21.6
-              runtime/minecraft-fabric-1.21.7
-              integration/minecraft-fabric-1.21.7
-              runtime/minecraft-fabric-1.21.8
-              integration/minecraft-fabric-1.21.8
-              runtime/minecraft-fabric-1.21.9
-              integration/minecraft-fabric-1.21.9
-              runtime/minecraft-fabric-1.21.10
-              integration/minecraft-fabric-1.21.10
-              runtime/minecraft-fabric-1.21.11
-              integration/minecraft-fabric-1.21.11
-            cache_read_only: false
-            loom_cache: true
-            coverage: false
-          - id: minecraft-26
-            name: Minecraft 26.x and showcase
-            fetch_depth: 1
-            gradle_arguments: :ciMinecraftCheck :integration:docs:check -Pstrata.minecraftVersions=26.1,26.2
-            loom_projects: |-
-              runtime/minecraft-fabric-26.1
-              integration/minecraft-fabric-26.1
-              runtime/minecraft-fabric-26.2
-              integration/minecraft-fabric-26.2
-            cache_read_only: false
-            loom_cache: true
-            coverage: false
     steps:
       - name: Check out source
         uses: actions/checkout@v7
@@ -159,13 +85,7 @@ jobs:
         if: matrix.id == 'common'
         uses: docker://rhysd/actionlint:1.7.12
       - name: Set up Java
-        uses: actions/setup-java@v6
-        with:
-          distribution: temurin
-          java-version: |
-            17
-            21
-            25
+        uses: ./.github/actions/setup-strata-java
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v6
         with:
@@ -183,24 +103,78 @@ jobs:
         if: matrix.id == 'common'
         shell: bash
         run: |
-          bash release/tests/verify-release-source.sh
-          bash release/tests/verify-release-v0.1.1-source.sh
-          bash release/tests/verify-release-v0.1.2-source.sh
+          for source_guard in release/tests/verify-release*-source.sh; do
+            bash "$source_guard"
+          done
           bash release/tests/verify-versioned-pages-staging.sh
-      - name: Test Qodana project model guards
+      - name: Test Java toolchain inventory
+        if: matrix.id == 'common'
+        shell: bash
+        run: bash release/tests/verify-java-toolchain-inventory.sh
+      - name: Test CI project model guards
         if: matrix.id == 'common'
         run: |
-          bash -n gradle/prepare-qodana-idea-model.sh gradle/verify-qodana-model.sh gradle/verify-qodana-model-fixtures.sh
+          bash -n gradle/plan-minecraft-ci.sh gradle/verify-minecraft-ci-plan-fixtures.sh gradle/prepare-qodana-idea-model.sh gradle/verify-qodana-model.sh gradle/verify-qodana-model-fixtures.sh
+          bash gradle/verify-minecraft-ci-plan-fixtures.sh
           bash gradle/verify-qodana-model-fixtures.sh
+      - name: Run ${{ matrix.name }}
+        run: bash ./gradlew ${{ matrix.gradle_arguments }}
+      - name: Upload coverage reports
+        if: matrix.coverage
+        uses: actions/upload-artifact@v7
+        with:
+          name: kover-reports
+          path: build/reports/kover
+          if-no-files-found: error
+
+  minecraft-matrix:
+    name: Plan Minecraft checks
+    runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.matrix.outputs.matrix }}
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 1
+      - name: Generate Minecraft matrix
+        id: matrix
+        shell: bash
+        run: |
+          set -euo pipefail
+          bash gradle/plan-minecraft-ci.sh
+          matrix="$(< build/github-actions/minecraft-matrix.json)"
+          [[ -n "$matrix" ]] || { echo 'The generated Minecraft matrix is empty.' >&2; exit 1; }
+          printf 'matrix=%s\n' "$matrix" >> "$GITHUB_OUTPUT"
+
+  minecraft:
+    name: ${{ matrix.name }}
+    needs: minecraft-matrix
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      max-parallel: 4
+      matrix: ${{ fromJSON(needs.minecraft-matrix.outputs.matrix) }}
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 1
+      - name: Set up Java
+        uses: ./.github/actions/setup-strata-java
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v6
+        with:
+          cache-read-only: ${{ github.ref != 'refs/heads/master' }}
+          gradle-home-cache-strict-match: true
+          gradle-home-cache-excludes: caches/fabric-loom
       - name: Hash Loom cache inputs
-        if: matrix.loom_cache
         id: loom_inputs
         shell: bash
         env:
           LOOM_PROJECTS: ${{ matrix.loom_projects }}
         run: bash gradle/loom-cache-key.sh >> "$GITHUB_OUTPUT"
       - name: Restore Loom project cache
-        if: matrix.loom_cache
         id: loom_cache
         uses: actions/cache/restore@v6
         with:
@@ -212,15 +186,8 @@ jobs:
         # Loom's client run tasks select xvfb-run automatically on Linux when CI is true.
         run: bash ./gradlew ${{ matrix.gradle_arguments }}
       - name: Save Loom project cache
-        if: success() && matrix.loom_cache && github.ref == 'refs/heads/master' && steps.loom_cache.outputs.cache-hit != 'true'
+        if: success() && github.ref == 'refs/heads/master' && steps.loom_cache.outputs.cache-hit != 'true'
         uses: actions/cache/save@v6
         with:
           path: .gradle/loom-cache
           key: ${{ steps.loom_cache.outputs.cache-primary-key }}
-      - name: Upload coverage reports
-        if: matrix.coverage
-        uses: actions/upload-artifact@v7
-        with:
-          name: kover-reports
-          path: build/reports/kover
-          if-no-files-found: error

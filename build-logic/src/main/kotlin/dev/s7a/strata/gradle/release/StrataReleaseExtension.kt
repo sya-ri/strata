@@ -57,7 +57,7 @@ public abstract class StrataReleaseExtension
         public val outputDirectory: DirectoryProperty = objects.directoryProperty()
 
         /**
-         * Tracked exact Maven coordinates reconciled with Central.
+         * Tracked `group:artifact` inventory resolved against [releaseVersion] and reconciled with Central.
          */
         public val mavenCoordinatesFile: RegularFileProperty = objects.fileProperty()
 

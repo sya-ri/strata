@@ -165,10 +165,13 @@ grep --fixed-strings 'mv -f -- "$receipt_temporary" "$receipt"' "$runner" >/dev/
 
 release_job="$(sed -n '/^  release:$/,/^  public_skills:$/p' "$workflow")"
 verify_job="$(sed -n '/^  verify:$/,$p' "$workflow")"
-[[ "$(grep --fixed-strings -c 'bash "$CONTROLLER_TOOL_DIRECTORY/run-modrinth-v0.1.2-backlog-recovery.sh"' <<< "$release_job")" == '3' ]] || \
-  fail 'Recovery must have exactly preflight, stage, and observe calls in the release job.'
-if grep --fixed-strings 'run-modrinth-v0.1.2-backlog-recovery.sh' <<< "$verify_job" >/dev/null; then
+[[ "$(grep --fixed-strings -c 'bash "$CONTROLLER_TOOL_DIRECTORY/run-publish-controller-recovery.sh"' <<< "$release_job")" == '3' ]] || \
+  fail 'Identity-bound recovery must have exactly generic preflight, stage, and observe calls in the release job.'
+if grep --fixed-strings 'run-publish-controller-recovery.sh' <<< "$verify_job" >/dev/null; then
   fail 'Recovery must be absent from final verification.'
+fi
+if grep --fixed-strings 'run-modrinth-v0.1.2-backlog-recovery.sh' "$workflow" >/dev/null; then
+  fail 'The forward workflow exposes the incident-specific runner name.'
 fi
 
 test_root="$(mktemp -d)"

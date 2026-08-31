@@ -4,7 +4,33 @@ bootstrap: STRATA_QODANA_BOOTSTRAP=true bash gradle/prepare-qodana-idea-model.sh
 rootJavaProjects:
   - .idea
 profile:
-  name: qodana.recommended
+  base:
+    name: qodana.recommended
+  inspections:
+    # Every numeric Fabric integration build uses the same experimental Gradle client-test boundary.
+    - inspection: UnstableApiUsage
+      ignore:
+        - "integration/minecraft-fabric-[0-9]*/build.gradle.kts"
+    # These mapped compatibility files require explicit getter syntax in every version owner in which they exist.
+    - inspection: UsePropertyAccessSyntax
+      ignore:
+        - "runtime/minecraft-fabric-[0-9]*/src/font/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftFontCapabilities.kt"
+        - "runtime/minecraft-fabric-[0-9]*/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftDynamicTextureFactory.kt"
+    # These compatibility files are linked or selected by every version owner in which they exist, so one IDEA index cannot retain each owner-specific call graph.
+    - inspection: UnusedSymbol
+      ignore:
+        - "runtime/minecraft-fabric-[0-9]*/src/font/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftFontCapabilities.kt"
+        - "runtime/minecraft-fabric-[0-9]*/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftDynamicTextureFactory.kt"
+        - "runtime/minecraft-fabric-[0-9]*/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftGuiMetadata.kt"
+        - "runtime/minecraft-fabric-[0-9]*/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftSampledImageDrawing.kt"
+        - "runtime/minecraft-fabric-[0-9]*/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftTextureBlitter.kt"
+        - "runtime/minecraft-fabric-[0-9]*/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricNativeCanvasPipeline.kt"
+        - "runtime/minecraft-fabric-[0-9]*/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/MinecraftResourceLocation.kt"
+        - "runtime/minecraft-fabric-[0-9]*/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/MinecraftResourceLocationException.kt"
+    # Every version-specific Java skin bridge uses equality to express the repository's no-prefix-negation rule.
+    - inspection: PointlessBooleanExpression
+      ignore:
+        - "runtime/minecraft-fabric-[0-9]*/src/main/java/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftSkinBridge.java"
 failThreshold: 0
 exclude:
   # Kotlin explicit API mode requires visibility modifiers on declarations that Qodana marks as redundant.
@@ -23,31 +49,10 @@ exclude:
       - api/src/main/kotlin/dev/s7a/strata/component/UiComponents.kt
       - api/src/main/kotlin/dev/s7a/strata/component/VirtualListComponents.kt
       - integration/minecraft-fabric-unobfuscated/src/gametest/kotlin/dev/s7a/strata/integration/minecraft/fabric/MinecraftProgressExample.kt
-  # Gradle's settings model and Fabric's client-test and production-run boundaries expose experimental APIs required by their current public integrations.
+  # Gradle's settings model and Fabric's non-versioned client-test and production-run boundaries expose experimental APIs required by their current public integrations.
   - name: UnstableApiUsage
     paths:
       - settings.gradle.kts
-      - integration/minecraft-fabric-1.20/build.gradle.kts
-      - integration/minecraft-fabric-1.20.1/build.gradle.kts
-      - integration/minecraft-fabric-1.20.2/build.gradle.kts
-      - integration/minecraft-fabric-1.20.3/build.gradle.kts
-      - integration/minecraft-fabric-1.20.4/build.gradle.kts
-      - integration/minecraft-fabric-1.20.5/build.gradle.kts
-      - integration/minecraft-fabric-1.20.6/build.gradle.kts
-      - integration/minecraft-fabric-1.21/build.gradle.kts
-      - integration/minecraft-fabric-1.21.1/build.gradle.kts
-      - integration/minecraft-fabric-1.21.2/build.gradle.kts
-      - integration/minecraft-fabric-1.21.3/build.gradle.kts
-      - integration/minecraft-fabric-1.21.4/build.gradle.kts
-      - integration/minecraft-fabric-1.21.5/build.gradle.kts
-      - integration/minecraft-fabric-1.21.6/build.gradle.kts
-      - integration/minecraft-fabric-1.21.7/build.gradle.kts
-      - integration/minecraft-fabric-1.21.8/build.gradle.kts
-      - integration/minecraft-fabric-1.21.9/build.gradle.kts
-      - integration/minecraft-fabric-1.21.10/build.gradle.kts
-      - integration/minecraft-fabric-1.21.11/build.gradle.kts
-      - integration/minecraft-fabric-26.1/build.gradle.kts
-      - integration/minecraft-fabric-26.2/build.gradle.kts
       - integration/minecraft-fabric-client-gametest/src/gametest/kotlin/dev/s7a/strata/integration/minecraft/fabric/StrataMinecraftLegacyClientGameTest.kt
       - integration/minecraft-fabric-unobfuscated/src/gametest/kotlin/dev/s7a/strata/integration/minecraft/fabric/InventorySlotSynchronizationGameTest.kt
       - integration/minecraft-fabric-unobfuscated/src/gametest/kotlin/dev/s7a/strata/integration/minecraft/fabric/MinecraftProgressParity.kt
@@ -90,12 +95,7 @@ exclude:
   # Java has no Boolean.not() equivalent, so these exact Java boundaries use equality instead of the prohibited prefix-negation form.
   - name: PointlessBooleanExpression
     paths:
-      - runtime/minecraft-fabric-1.20.1/src/main/java/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftSkinBridge.java
-      - runtime/minecraft-fabric-1.20.4/src/main/java/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftSkinBridge.java
       - runtime/minecraft-fabric-1.21-legacy/src/main/java/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftInventoryBridge.java
-      - runtime/minecraft-fabric-1.21.3-legacy/src/main/java/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftSkinBridge.java
-      - runtime/minecraft-fabric-1.21.8-legacy/src/main/java/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftSkinBridge.java
-      - runtime/minecraft-fabric-1.21.9-legacy/src/main/java/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftSkinBridge.java
       - runtime/minecraft-fabric-shared/src/main/java/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftFailures.java
       - runtime/minecraft-fabric-shared/src/main/java/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftProfileCache.java
       - runtime/minecraft-fabric-unobfuscated/src/main/java/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftInventoryBridge.java
@@ -107,39 +107,7 @@ exclude:
       - integration/minecraft-fabric-1.21.3-legacy/src/gametest/kotlin/dev/s7a/strata/integration/minecraft/fabric/StandaloneMinecraftLoadedTestContext.kt
       - integration/minecraft-fabric-unobfuscated/src/gametest/kotlin/dev/s7a/strata/integration/minecraft/fabric/MinecraftSocialParity.kt
       - integration/minecraft-fabric-unobfuscated/src/gametest/kotlin/dev/s7a/strata/integration/minecraft/fabric/StrataMinecraftClientGameTest.kt
-      - runtime/minecraft-fabric-1.20.1/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftDynamicTextureFactory.kt
-      - runtime/minecraft-fabric-1.20.4/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftDynamicTextureFactory.kt
-      - runtime/minecraft-fabric-1.20.5/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftDynamicTextureFactory.kt
-      - runtime/minecraft-fabric-1.20.6/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftDynamicTextureFactory.kt
-      - runtime/minecraft-fabric-1.20/src/font/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftFontCapabilities.kt
-      - runtime/minecraft-fabric-1.20.1/src/font/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftFontCapabilities.kt
-      - runtime/minecraft-fabric-1.20.2/src/font/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftFontCapabilities.kt
-      - runtime/minecraft-fabric-1.20.3/src/font/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftFontCapabilities.kt
-      - runtime/minecraft-fabric-1.20.4/src/font/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftFontCapabilities.kt
-      - runtime/minecraft-fabric-1.20.5/src/font/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftFontCapabilities.kt
-      - runtime/minecraft-fabric-1.20.6/src/font/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftFontCapabilities.kt
       - runtime/minecraft-fabric-1.21-legacy/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftCurrentPlayerSkin.kt
-      - runtime/minecraft-fabric-1.21/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftDynamicTextureFactory.kt
-      - runtime/minecraft-fabric-1.21.1/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftDynamicTextureFactory.kt
-      - runtime/minecraft-fabric-1.21.2/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftDynamicTextureFactory.kt
-      - runtime/minecraft-fabric-1.21.3/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftDynamicTextureFactory.kt
-      - runtime/minecraft-fabric-1.21.4/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftDynamicTextureFactory.kt
-      - runtime/minecraft-fabric-1.21.5/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftDynamicTextureFactory.kt
-      - runtime/minecraft-fabric-1.21/src/font/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftFontCapabilities.kt
-      - runtime/minecraft-fabric-1.21.1/src/font/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftFontCapabilities.kt
-      - runtime/minecraft-fabric-1.21.2/src/font/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftFontCapabilities.kt
-      - runtime/minecraft-fabric-1.21.3/src/font/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftFontCapabilities.kt
-      - runtime/minecraft-fabric-1.21.4/src/font/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftFontCapabilities.kt
-      - runtime/minecraft-fabric-1.21.5/src/font/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftFontCapabilities.kt
-      - runtime/minecraft-fabric-1.21.6/src/font/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftFontCapabilities.kt
-      - runtime/minecraft-fabric-1.21.7/src/font/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftFontCapabilities.kt
-      - runtime/minecraft-fabric-1.21.8/src/font/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftFontCapabilities.kt
-      - runtime/minecraft-fabric-1.21.9/src/font/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftFontCapabilities.kt
-      - runtime/minecraft-fabric-1.21.10/src/font/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftFontCapabilities.kt
-      - runtime/minecraft-fabric-1.21.11/src/font/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftFontCapabilities.kt
-      - runtime/minecraft-fabric-26.1/src/font/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftFontCapabilities.kt
-      - runtime/minecraft-fabric-26.2/src/font/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftFontCapabilities.kt
-      - runtime/minecraft-fabric-1.21.6-legacy/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftDynamicTextureFactory.kt
       - runtime/minecraft-fabric-shared/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftAssetLoader.kt
       - runtime/minecraft-fabric-1.21/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/MinecraftResourceLocation.kt
       - runtime/minecraft-fabric-1.21/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/MinecraftResourceLocationException.kt
@@ -330,46 +298,11 @@ exclude:
       - runtime/minecraft/src/main/kotlin/dev/s7a/strata/runtime/minecraft/MinecraftTabElement.kt
       - runtime/minecraft/src/main/kotlin/dev/s7a/strata/runtime/minecraft/MinecraftTooltipModifier.kt
       - runtime/minecraft/src/main/kotlin/dev/s7a/strata/runtime/minecraft/MinecraftUiProfileBuilder.kt
-      - runtime/minecraft-fabric-1.20/src/font/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftFontCapabilities.kt
-      - runtime/minecraft-fabric-1.20.1/src/font/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftFontCapabilities.kt
-      - runtime/minecraft-fabric-1.20.1/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftDynamicTextureFactory.kt
       - runtime/minecraft-fabric-1.20.1/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftFontMapping.kt
       - runtime/minecraft-fabric-1.20.1/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreen.kt
-      - runtime/minecraft-fabric-1.20.1/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftTextureBlitter.kt
-      - runtime/minecraft-fabric-1.20.1/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/MinecraftResourceLocation.kt
-      - runtime/minecraft-fabric-1.20.1/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/MinecraftResourceLocationException.kt
-      - runtime/minecraft-fabric-1.20.2/src/font/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftFontCapabilities.kt
-      - runtime/minecraft-fabric-1.20.3/src/font/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftFontCapabilities.kt
-      - runtime/minecraft-fabric-1.20.4/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftDynamicTextureFactory.kt
-      - runtime/minecraft-fabric-1.20.4/src/font/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftFontCapabilities.kt
-      - runtime/minecraft-fabric-1.20.4/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftGuiMetadata.kt
-      - runtime/minecraft-fabric-1.20.4/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftTextureBlitter.kt
-      - runtime/minecraft-fabric-1.20.4/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/MinecraftResourceLocation.kt
-      - runtime/minecraft-fabric-1.20.4/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/MinecraftResourceLocationException.kt
-      - runtime/minecraft-fabric-1.20.5/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftDynamicTextureFactory.kt
-      - runtime/minecraft-fabric-1.20.5/src/font/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftFontCapabilities.kt
-      - runtime/minecraft-fabric-1.20.5/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftGuiMetadata.kt
-      - runtime/minecraft-fabric-1.20.5/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftTextureBlitter.kt
-      - runtime/minecraft-fabric-1.20.5/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/MinecraftResourceLocation.kt
-      - runtime/minecraft-fabric-1.20.5/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/MinecraftResourceLocationException.kt
-      - runtime/minecraft-fabric-1.20.6/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftDynamicTextureFactory.kt
-      - runtime/minecraft-fabric-1.20.6/src/font/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftFontCapabilities.kt
-      - runtime/minecraft-fabric-1.20.6/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftGuiMetadata.kt
-      - runtime/minecraft-fabric-1.20.6/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftTextureBlitter.kt
-      - runtime/minecraft-fabric-1.20.6/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/MinecraftResourceLocation.kt
-      - runtime/minecraft-fabric-1.20.6/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/MinecraftResourceLocationException.kt
       - runtime/minecraft-fabric-1.21-legacy/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftCurrentPlayerSkin.kt
       - runtime/minecraft-fabric-1.21-legacy/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftFocusedInputMapping.kt
       - runtime/minecraft-fabric-1.21-legacy/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftFramePresenter.kt
-      - runtime/minecraft-fabric-1.21/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftGuiMetadata.kt
-      - runtime/minecraft-fabric-1.21/src/font/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftFontCapabilities.kt
-      - runtime/minecraft-fabric-1.21.1/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftGuiMetadata.kt
-      - runtime/minecraft-fabric-1.21.1/src/font/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftFontCapabilities.kt
-      - runtime/minecraft-fabric-1.21.2/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftGuiMetadata.kt
-      - runtime/minecraft-fabric-1.21.3/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftGuiMetadata.kt
-      - runtime/minecraft-fabric-1.21.4/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftGuiMetadata.kt
-      - runtime/minecraft-fabric-1.21.5/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftGuiMetadata.kt
-      - runtime/minecraft-fabric-1.21.6-legacy/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftGuiMetadata.kt
       - runtime/minecraft-fabric-1.21.8-legacy/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreen.kt
       - runtime/minecraft-fabric-1.21.9-legacy/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreen.kt
       - runtime/minecraft-fabric-shared/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftFontContract.kt
@@ -382,53 +315,8 @@ exclude:
       - runtime/minecraft-fabric-unobfuscated/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreen.kt
       - runtime/minecraft-fabric-shared/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftAssetLoader.kt
       - runtime/minecraft-fabric-shared/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftProfileFactory.kt
-      - runtime/minecraft-fabric-1.21/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftDynamicTextureFactory.kt
-      - runtime/minecraft-fabric-1.21/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftTextureBlitter.kt
-      - runtime/minecraft-fabric-1.21/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/MinecraftResourceLocation.kt
-      - runtime/minecraft-fabric-1.21/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/MinecraftResourceLocationException.kt
-      - runtime/minecraft-fabric-1.21.1/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftDynamicTextureFactory.kt
-      - runtime/minecraft-fabric-1.21.1/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftTextureBlitter.kt
-      - runtime/minecraft-fabric-1.21.1/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/MinecraftResourceLocation.kt
-      - runtime/minecraft-fabric-1.21.1/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/MinecraftResourceLocationException.kt
-      - runtime/minecraft-fabric-1.21.2/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftDynamicTextureFactory.kt
-      - runtime/minecraft-fabric-1.21.2/src/font/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftFontCapabilities.kt
-      - runtime/minecraft-fabric-1.21.2/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/MinecraftResourceLocation.kt
-      - runtime/minecraft-fabric-1.21.2/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/MinecraftResourceLocationException.kt
-      - runtime/minecraft-fabric-1.21.3/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftDynamicTextureFactory.kt
-      - runtime/minecraft-fabric-1.21.3/src/font/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftFontCapabilities.kt
-      - runtime/minecraft-fabric-1.21.3/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/MinecraftResourceLocation.kt
-      - runtime/minecraft-fabric-1.21.3/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/MinecraftResourceLocationException.kt
-      - runtime/minecraft-fabric-1.21.4/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftDynamicTextureFactory.kt
-      - runtime/minecraft-fabric-1.21.4/src/font/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftFontCapabilities.kt
-      - runtime/minecraft-fabric-1.21.4/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/MinecraftResourceLocation.kt
-      - runtime/minecraft-fabric-1.21.4/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/MinecraftResourceLocationException.kt
-      - runtime/minecraft-fabric-1.21.5-legacy/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftTextureBlitter.kt
-      - runtime/minecraft-fabric-1.21.6-legacy/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftDynamicTextureFactory.kt
-      - runtime/minecraft-fabric-1.21.6-legacy/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftTextureBlitter.kt
-      - runtime/minecraft-fabric-1.21.5/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftDynamicTextureFactory.kt
-      - runtime/minecraft-fabric-1.21.5/src/font/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftFontCapabilities.kt
-      - runtime/minecraft-fabric-1.21.5/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/MinecraftResourceLocation.kt
-      - runtime/minecraft-fabric-1.21.5/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/MinecraftResourceLocationException.kt
-      - runtime/minecraft-fabric-1.21.6/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/MinecraftResourceLocation.kt
-      - runtime/minecraft-fabric-1.21.6/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/MinecraftResourceLocationException.kt
-      - runtime/minecraft-fabric-1.21.6/src/font/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftFontCapabilities.kt
-      - runtime/minecraft-fabric-1.21.7/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/MinecraftResourceLocation.kt
-      - runtime/minecraft-fabric-1.21.7/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/MinecraftResourceLocationException.kt
-      - runtime/minecraft-fabric-1.21.7/src/font/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftFontCapabilities.kt
       - runtime/minecraft-fabric-1.21.8-legacy/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftFontMapping.kt
-      - runtime/minecraft-fabric-1.21.8/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/MinecraftResourceLocation.kt
-      - runtime/minecraft-fabric-1.21.8/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/MinecraftResourceLocationException.kt
-      - runtime/minecraft-fabric-1.21.8/src/font/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftFontCapabilities.kt
       - runtime/minecraft-fabric-1.21.9-legacy/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftFontMapping.kt
-      - runtime/minecraft-fabric-1.21.9/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/MinecraftResourceLocation.kt
-      - runtime/minecraft-fabric-1.21.9/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/MinecraftResourceLocationException.kt
-      - runtime/minecraft-fabric-1.21.9/src/font/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftFontCapabilities.kt
-      - runtime/minecraft-fabric-1.21.10/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/MinecraftResourceLocation.kt
-      - runtime/minecraft-fabric-1.21.10/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/MinecraftResourceLocationException.kt
-      - runtime/minecraft-fabric-1.21.10/src/font/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftFontCapabilities.kt
-      - runtime/minecraft-fabric-1.21.11/src/font/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftFontCapabilities.kt
-      - runtime/minecraft-fabric-26.1/src/font/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftFontCapabilities.kt
-      - runtime/minecraft-fabric-26.2/src/font/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftFontCapabilities.kt
       - runtime/minecraft-fabric-identifier/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/MinecraftResourceLocation.kt
       - runtime/minecraft-fabric-identifier/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/MinecraftResourceLocationException.kt
       - runtime/minecraft-fabric-shared/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftFontResources.kt
@@ -440,8 +328,6 @@ exclude:
       - runtime/minecraft-fabric-unobfuscated/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftNativeImageBridge.kt
       - runtime/minecraft-fabric-unobfuscated/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftFontMapping.kt
       - runtime/minecraft-fabric-1.21-legacy/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftPortableTexture.kt
-      - runtime/minecraft-fabric-1.21.11/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricNativeCanvasPipeline.kt
-      - runtime/minecraft-fabric-26.1/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricNativeCanvasPipeline.kt
       - runtime/minecraft-fabric-canvas-consumer-buffer/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftCanvasGuiConsumption.kt
       - runtime/minecraft-fabric-canvas-consumer-empty/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftCanvasGuiConsumption.kt
       - runtime/minecraft-fabric-canvas-consumer-flush/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftCanvasGuiConsumption.kt
@@ -485,14 +371,6 @@ exclude:
       - runtime/minecraft-fabric-canvas-shared/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricNativeCanvasTextureProducer.kt
       - runtime/minecraft-fabric-canvas-shared/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/MinecraftCanvasSourceFactory.kt
       - runtime/minecraft-fabric-canvas-shared/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/MinecraftCanvasTextureOrigin.kt
-      - runtime/minecraft-fabric-1.20.1/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftSampledImageDrawing.kt
-      - runtime/minecraft-fabric-1.20.4/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftSampledImageDrawing.kt
-      - runtime/minecraft-fabric-1.20.5/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftSampledImageDrawing.kt
-      - runtime/minecraft-fabric-1.20.6/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftSampledImageDrawing.kt
-      - runtime/minecraft-fabric-1.21/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftSampledImageDrawing.kt
-      - runtime/minecraft-fabric-1.21.1/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftSampledImageDrawing.kt
-      - runtime/minecraft-fabric-1.21.5-legacy/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftSampledImageDrawing.kt
-      - runtime/minecraft-fabric-1.21.6-legacy/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftSampledImageDrawing.kt
       - runtime/minecraft-fabric-canvas-extractor/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftSampledImageDrawing.kt
       - runtime/minecraft-fabric-canvas-shared/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftFrameLayer.kt
       - runtime/minecraft-fabric-canvas-shared/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftSampledImageCache.kt

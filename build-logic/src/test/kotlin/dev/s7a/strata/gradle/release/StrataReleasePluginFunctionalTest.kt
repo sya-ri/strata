@@ -20,7 +20,7 @@ internal class StrataReleasePluginFunctionalTest {
     lateinit var projectDirectory: Path
 
     @Test
-    fun `manifest task wires twenty one lazy verified targets and canonical output`() {
+    fun `manifest task wires every lazy verified target and canonical output`() {
         prepareFixture()
         Files.writeString(projectDirectory.resolve("build.gradle.kts"), buildScript())
 
@@ -42,7 +42,7 @@ internal class StrataReleasePluginFunctionalTest {
         val manifest = readManifest()
         assertManifestText(manifest, RELEASE_NOTES, PROJECT_BODY)
         val artifacts = manifest["artifacts"] as List<*>
-        assertEquals(21, artifacts.size)
+        assertEquals(GAME_VERSIONS.size, artifacts.size)
         artifacts.forEach { value ->
             val artifact = value as Map<*, *>
             assertTrue((artifact["sha256"] as String).matches(Regex("[0-9a-f]{64}")))
@@ -56,9 +56,9 @@ internal class StrataReleasePluginFunctionalTest {
                 .toFile()
                 .listFiles()
                 .orEmpty()
-        assertEquals(43, githubAssets.size)
-        assertEquals(21, githubAssets.count { file -> file.name.endsWith(".jar") })
-        assertEquals(21, githubAssets.count { file -> file.name.endsWith(".jar.asc") })
+        assertEquals(GAME_VERSIONS.size * ASSETS_PER_TARGET + CHECKSUM_ASSET_COUNT, githubAssets.size)
+        assertEquals(GAME_VERSIONS.size, githubAssets.count { file -> file.name.endsWith(".jar") })
+        assertEquals(GAME_VERSIONS.size, githubAssets.count { file -> file.name.endsWith(".jar.asc") })
         githubAssets.filter { file -> file.name.endsWith(".jar.asc") }.forEach { file ->
             assertTrue(file.readText().startsWith("central-signature-"))
         }
@@ -321,28 +321,11 @@ internal class StrataReleasePluginFunctionalTest {
                 "Resource-pack fonts use the optional CPU font backend without launching Minecraft.\n" +
                 "TextArea adds canonical LF editing with a shared vertical ScrollState.\n" +
                 "TextField IME composition follows input events supplied by the game.\n"
+        private const val ASSETS_PER_TARGET = 2
+        private const val CHECKSUM_ASSET_COUNT = 1
         private val GAME_VERSIONS =
             listOf(
                 "1.20",
-                "1.20.1",
-                "1.20.2",
-                "1.20.3",
-                "1.20.4",
-                "1.20.5",
-                "1.20.6",
-                "1.21",
-                "1.21.1",
-                "1.21.2",
-                "1.21.3",
-                "1.21.4",
-                "1.21.5",
-                "1.21.6",
-                "1.21.7",
-                "1.21.8",
-                "1.21.9",
-                "1.21.10",
-                "1.21.11",
-                "26.1",
                 "26.2",
             )
     }

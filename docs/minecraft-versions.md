@@ -39,7 +39,8 @@ Minecraft 1.20 is the supported release floor; do not add Minecraft 1.19 or olde
 
 ## Release the version
 
-1. Add the adapter to the CI matrix and run formatting, static analysis, ABI checks, JVM tests, Kover reports, target-appropriate packaging, GameTests, and visual comparison.
+1. Confirm that the paired runtime and integration project directories are discovered by the generated CI matrix, then run formatting, static analysis, ABI checks, JVM tests, Kover reports, target-appropriate packaging, GameTests, and visual comparison.
+   Do not add a version-specific workflow entry; the planner must derive its bounded shards from the project inventory.
 2. Publish all artifacts to an isolated Maven repository and build a clean external consumer using only those publications.
 3. Inspect the target distribution jar, nested jars, POM, Gradle metadata, bytecode target, Fabric metadata, dependency bounds, license, and absence of integration classes or local paths.
 4. Update the [supported Fabric runtimes](architecture.md#supported-fabric-runtimes) table, compatibility document, screenshots, and release notes.
@@ -83,7 +84,7 @@ The completed family spans the original 1.21 release through 1.21.11 and passed 
   They keep the exact Minecraft and Fabric dependencies, Loom distribution model, physical source roots, resource expansion, native run tasks, and artifact verification visible to Gradle, IDEs, and static analysis at the project that owns them.
   Moving these details into a new build-logic module would add another configuration boundary and make the linked-source model less explicit without removing any required runtime or integration project.
 - Build cost: retained where it proves a real native boundary and reduced for unrelated work.
-  Configuration on demand avoids configuring the 28 Loom runtime and integration projects for a targeted API, core, headless, documentation-helper, or benchmark task; aggregate checks still configure the complete graph intentionally.
+  Configuration on demand avoids configuring the complete Loom runtime and integration project inventory for a targeted API, core, headless, documentation-helper, or benchmark task; aggregate checks still configure the complete graph intentionally.
 - Rendering and retention: accepted.
   The family-close JMH run keeps clean retained frames at effectively zero allocation, identifies the fixed detached-output allocation of a fully dirty 54-leaf scene, and confirms that headless allocation scales with the required fresh pixel image.
   Deterministic session tests and every 1.21 loaded client prove terminal content, tree, binding, immutable-frame, prepared-layer, dynamic-texture, and prepared-frame release; see [Rendering performance](performance.md).
@@ -115,8 +116,8 @@ The completed family spans Minecraft 1.20 through 1.20.6 and passed every local 
   Qodana opens that generated module graph directly rather than reconstructing the linked source roots through a separate Gradle import.
   Detekt, Dokka, Kotlin explicit API validation, ABI validation, and Gradle continue to consume the same complete physical source roots as their owning version projects.
 - Build and cache cost: reduced without caching evidence.
-  The seven exact releases run in one independent 1.20 shard under the existing single-permit client and remap services.
-  Its project-local Loom repository key hashes the global build model plus only those fourteen versioned runtime and integration build scripts, falls back only within the same shard, and writes only after a successful `master` run.
+  The generated CI planner groups every discovered runtime and integration pair into bounded independent shards under the existing single-permit client and remap services.
+  Each project-local Loom repository key hashes the global build model plus only the versioned runtime and integration build scripts in that shard, falls back only within the same shard, and writes only after a successful `master` run.
   Loaded worlds, screenshots, parity receipts, test and coverage reports, rendered documentation, and Qodana results are always regenerated on the current revision.
 - Rendering and retention: accepted.
   The family-close JMH run preserves effectively zero-allocation clean snapshots, viewport-independent dirty-frame allocation, and the expected fresh-pixel allocation for headless rasterization.

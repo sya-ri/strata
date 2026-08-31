@@ -36,8 +36,8 @@ internal object StrataSkillPipeline {
         val readme = generatedReadme(launch.projectRoot, openExample)
         return linkedMapOf(
             "README.md" to readme,
-            "docs/modrinth-project.md" to ModrinthProjectMarkdown.render(versions, openExample),
-            "skills/strata/references/setup.md" to StrataSkillMarkdown.setup(versions, openExample),
+            "docs/modrinth-project.md" to ModrinthProjectMarkdown.render(versions, openExample, launch.releaseVersion),
+            "skills/strata/references/setup.md" to StrataSkillMarkdown.setup(versions, openExample, launch.releaseVersion),
             "skills/strata/references/components.md" to StrataSkillMarkdown.components(signatures.components),
             "skills/strata/references/modifiers-and-layout.md" to StrataSkillMarkdown.modifiers(compiledModifiers, compiledStateAndBindings, signatures),
             "skills/strata/references/patterns.md" to StrataSkillMarkdown.patterns(layoutExample),
@@ -272,10 +272,13 @@ $end"""
                             path.fileName.toString().removePrefix(prefix)
                         }.toList()
                 }.sortedBy(VersionNumber::parse)
-        require(versions.size == 21) { "Strata v0.1.2 skill expects 21 working Minecraft runtimes, found ${versions.size}." }
+        require(versions.isNotEmpty()) { "Strata skill requires at least one working Minecraft runtime." }
         val decodedVersions = versions.map(VersionNumber::parse)
-        require(decodedVersions.first() == VersionNumber(listOf(1, 20)) && decodedVersions.last() == VersionNumber(listOf(26, 2))) {
-            "Strata v0.1.2 support boundaries changed: ${versions.firstOrNull()}..${versions.lastOrNull()}"
+        require(decodedVersions.zipWithNext().all { (previous, current) -> previous < current }) {
+            "Strata skill Minecraft runtime versions must be unique and sorted: $versions"
+        }
+        require(decodedVersions.first() == VersionNumber(listOf(1, 20))) {
+            "Strata skill Minecraft support must begin at 1.20, found ${versions.first()}."
         }
         return versions
     }

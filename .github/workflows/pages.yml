@@ -27,13 +27,7 @@ jobs:
           fetch-depth: 0
           persist-credentials: false
       - name: Set up Java
-        uses: actions/setup-java@v6
-        with:
-          distribution: temurin
-          java-version: |
-            17
-            21
-            25
+        uses: ./.github/actions/setup-strata-java
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v6
         with:
@@ -92,11 +86,14 @@ jobs:
           SOURCE_REVISION: ${{ steps.source.outputs.revision }}
         run: |
           set -euo pipefail
-          bash -n release/stage-versioned-pages.sh
-          for release_tag in v0.1.0 v0.1.1 v0.1.2; do
-            bash release/stage-versioned-pages.sh \
-              "$release_tag" build/dokka/html "$SOURCE_REVISION"
-          done
+          bash -n release/list-release-tags.sh release/stage-versioned-pages.sh
+          release_tags="$(bash release/list-release-tags.sh)"
+          if [[ -n "$release_tags" ]]; then
+            while IFS= read -r release_tag; do
+              bash release/stage-versioned-pages.sh \
+                "$release_tag" build/dokka/html "$SOURCE_REVISION"
+            done <<< "$release_tags"
+          fi
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v5
         with:

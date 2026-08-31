@@ -172,7 +172,7 @@ Non-PNG STB-decodable payloads also remain outside exact format-rejection parity
 
 ## Measured vanilla inputs
 
-The checked-in [vanilla load-budget receipt](https://github.com/sya-ri/strata/blob/master/runtime/minecraft/src/test/resources/font-evidence/vanilla-load-budgets.json) records all 21 supported releases, official client and asset-index hashes, source-entry counts, and observed font document, provider, glyph, archive, and image payload maxima.
+The checked-in [vanilla load-budget receipt](https://github.com/sya-ri/strata/blob/master/runtime/minecraft/src/test/resources/font-evidence/vanilla-load-budgets.json) records every measured supported release, official client and asset-index hashes, source-entry counts, and observed font document, provider, glyph, archive, and image payload maxima.
 It contains no game assets, local user paths, machine identifiers, or timestamps.
 The [measurement script](https://github.com/sya-ri/strata/blob/master/tools/measure-vanilla-font-budgets.py) verifies the caller's cached official inputs and derives the receipt deterministically from the version catalog; it never downloads resources or modifies those inputs.
 

@@ -1,6 +1,7 @@
 package dev.s7a.strata.integration.docs
 
 import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertThrows
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import java.nio.file.Files
@@ -13,12 +14,14 @@ internal class StrataSkillPipelineTest {
     @Test
     fun realInputsProduceAllReferencesAndOneSharedOpeningExample() {
         val root = repositoryRoot()
+        val releaseVersion = "9.8.7"
         val launch =
             StrataSkillLaunchArguments.parse(
                 arrayOf(
                     root.toString(),
                     root.resolve("integration/docs/build/strata-skill/test").toString(),
                     root.resolve("integration/docs/src/skillExamples/kotlin").toString(),
+                    releaseVersion,
                     root.resolve("api/build/classes/kotlin/main").toString(),
                 ),
             )
@@ -50,10 +53,8 @@ internal class StrataSkillPipelineTest {
                 ).source
         val fencedExample = "```kotlin\n$openExample\n```"
         assertTrue(openExample.contains("onActivate"))
-        assertTrue(readme.contains(fencedExample))
-        assertTrue(modrinthProject.contains(fencedExample))
-        assertTrue(setup.contains(fencedExample))
-        listOf(modrinthProject, setup).forEach(::assertUnicodeFontSetup)
+        assertGeneratedDocumentContracts(readme, modrinthProject, setup, fencedExample, releaseVersion)
+        listOf(modrinthProject, setup).forEach { document -> assertUnicodeFontSetup(document, releaseVersion) }
         val components = first.getValue("skills/strata/references/components.md")
         val modifiers = first.getValue("skills/strata/references/modifiers-and-layout.md")
         val patterns = first.getValue("skills/strata/references/patterns.md")
@@ -69,6 +70,23 @@ internal class StrataSkillPipelineTest {
         assertTrue(patterns.contains("The `Int` and `List` overloads are immutable snapshots."))
         assertTrue(customComponents.contains("https://github.com/sya-ri/strata/blob/master/docs/element-spi.md"))
         assertDocumentationLinks(first)
+    }
+
+    @Test
+    fun launcherRejectsNonSemanticReleaseVersion() {
+        val root = repositoryRoot()
+
+        assertThrows(IllegalArgumentException::class.java) {
+            StrataSkillLaunchArguments.parse(
+                arrayOf(
+                    root.toString(),
+                    root.resolve("integration/docs/build/strata-skill/test").toString(),
+                    root.resolve("integration/docs/src/skillExamples/kotlin").toString(),
+                    "latest",
+                    root.resolve("api/build/classes/kotlin/main").toString(),
+                ),
+            )
+        }
     }
 
     private fun assertModifierReferences(modifiers: String) {
@@ -114,7 +132,33 @@ internal class StrataSkillPipelineTest {
         assertTrue(modifiers.contains("#### `PlayerSkinSource.Name`"))
     }
 
-    private fun assertUnicodeFontSetup(document: String) {
+    private fun assertExactReleaseVersion(
+        document: String,
+        releaseVersion: String,
+    ) {
+        assertTrue(document.contains("dev.s7a.strata:strata-api:$releaseVersion"))
+        assertTrue(document.contains("dev.s7a.strata:strata-runtime-minecraft-fabric-<minecraft-version>:$releaseVersion"))
+        assertTrue(document.contains("<strata-version>").not())
+    }
+
+    private fun assertGeneratedDocumentContracts(
+        readme: String,
+        modrinthProject: String,
+        setup: String,
+        fencedExample: String,
+        releaseVersion: String,
+    ) {
+        listOf(readme, modrinthProject, setup).forEach { document -> assertTrue(document.contains(fencedExample)) }
+        assertTrue(readme.contains("dev.s7a.strata:strata-api:<strata-version>"))
+        assertTrue(readme.contains(releaseVersion).not())
+        listOf(modrinthProject, setup).forEach { document -> assertExactReleaseVersion(document, releaseVersion) }
+        assertTrue(setup.contains("\"strata\": \">=$releaseVersion\""))
+    }
+
+    private fun assertUnicodeFontSetup(
+        document: String,
+        releaseVersion: String,
+    ) {
         assertTrue(document.contains("makes no other functional change").not())
         assertTrue(document.contains("UiText.withFont"))
         assertTrue(document.contains("Existing overloads without a font argument remain available."))
@@ -126,7 +170,7 @@ internal class StrataSkillPipelineTest {
         assertTrue(document.contains("TextArea"))
         assertTrue(document.contains("TextField"))
         assertTrue(document.contains("adapters that expose only committed characters"))
-        assertTrue(document.contains("dev.s7a.strata:strata-runtime-minecraft-fonts-lwjgl:0.1.2"))
+        assertTrue(document.contains("dev.s7a.strata:strata-runtime-minecraft-fonts-lwjgl:$releaseVersion"))
         assertTrue(document.contains("does not bundle LWJGL, ICU, Gson, or native binaries"))
         assertTrue(document.contains("unsafe STB coordinate conversions remain invalid"))
         assertTrue(document.contains("https://github.com/sya-ri/strata/blob/master/docs/text.md"))

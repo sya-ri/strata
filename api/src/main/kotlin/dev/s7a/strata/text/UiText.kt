@@ -7,8 +7,8 @@ import java.util.Collections
  * Unresolved text retained by the platform-neutral tree.
  *
  * Runtime adapters resolve values only at their platform boundary.
- * Version 0.1.1 adds [WithFont] to this sealed hierarchy; exhaustive visitors written for earlier variants need an additional branch.
- * Retaining the older JVM members does not make previously compiled visitors accept the new variant.
+ * Exhaustive visitors must handle every variant, including [WithFont].
+ * A visitor compiled against a smaller variant set can fail when it receives an unknown variant even when the older JVM members remain available.
  */
 public sealed interface UiText {
     /**

@@ -22,7 +22,7 @@ import javax.inject.Inject
 /**
  * Produces authenticated, read-only Central Publisher Portal deployment evidence.
  *
- * The task owns and replaces only its receipt and evidence directory.
+ * The task resolves the tracked artifact inventory against [releaseVersion] and owns and replaces only its receipt and evidence directory.
  * Credentials are internal inputs, are passed directly to the short-lived coordinator, and never appear in outputs.
  */
 @DisableCachingByDefault(because = "The task verifies live authenticated Central Publisher Portal state.")
@@ -34,6 +34,9 @@ internal abstract class MavenCentralPortalTask
         @get:InputFile
         @get:PathSensitive(PathSensitivity.NONE)
         abstract val coordinatesFile: RegularFileProperty
+
+        @get:Input
+        abstract val releaseVersion: Property<String>
 
         @get:Internal
         abstract val localRepository: DirectoryProperty
@@ -81,10 +84,15 @@ internal abstract class MavenCentralPortalTask
                     password = passwordValue,
                     localRepository = localRepository.get().asFile.toPath(),
                 )
+            val coordinates =
+                MavenReleaseCoordinates.resolve(
+                    coordinatesFile.get().asFile.readLines(),
+                    releaseVersion.get(),
+                )
             val result =
                 when (operation.get()) {
-                    Operation.PREFLIGHT -> coordinator.preflight(coordinatesFile.get().asFile.readLines(), evidence.toPath())
-                    Operation.VERIFY -> coordinator.verifyUntilPublished(coordinatesFile.get().asFile.readLines(), evidence.toPath())
+                    Operation.PREFLIGHT -> coordinator.preflight(coordinates, evidence.toPath())
+                    Operation.VERIFY -> coordinator.verifyUntilPublished(coordinates, evidence.toPath())
                 }
             receipt.parentFile.mkdirs()
             receipt.writeText(

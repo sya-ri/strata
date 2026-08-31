@@ -24,7 +24,7 @@ import javax.inject.Inject
 /**
  * Produces live Maven Central absence or exact-match evidence without remote mutation.
  *
- * The task reads only the tracked coordinate matrix, local Maven repository, and public Central endpoints.
+ * The task resolves the tracked artifact inventory against [releaseVersion], then reads only the local Maven repository and public Central endpoints.
  * It deletes its exact prior receipt before every attempt so a failed rerun cannot preserve stale success evidence.
  */
 @DisableCachingByDefault(because = "The task verifies live immutable Maven Central state.")
@@ -36,6 +36,9 @@ internal abstract class MavenCentralReleaseTask
         @get:InputFile
         @get:PathSensitive(PathSensitivity.NONE)
         abstract val coordinatesFile: RegularFileProperty
+
+        @get:Input
+        abstract val releaseVersion: Property<String>
 
         @get:Internal
         abstract val localRepository: DirectoryProperty
@@ -69,7 +72,11 @@ internal abstract class MavenCentralReleaseTask
             val evidenceDirectory = canonicalEvidenceDirectory.orNull?.asFile
             if (evidenceDirectory != null) fileSystemOperations.delete { delete(evidenceDirectory) }
             val repositoryUrl = validateRepositoryBaseUrl(repositoryBaseUrl.get())
-            val coordinates = coordinatesFile.get().asFile.readLines()
+            val coordinates =
+                MavenReleaseCoordinates.resolve(
+                    coordinatesFile.get().asFile.readLines(),
+                    releaseVersion.get(),
+                )
             val verifier =
                 MavenCentralReleaseVerifier(
                     localRepository = localRepository.get().asFile.toPath(),

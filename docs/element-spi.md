@@ -108,10 +108,10 @@ A clean paint pass reuses that immutable list and translates it to current accum
 `OverlayPaintNode.paintOverlay` emits a separately cached local display list after all effective descendants.
 `ClipChildrenNode` inserts balanced tree-coordinate clip commands around effective descendant drawing without clipping the node's own regular or overlay commands.
 The runtime returns `DrawCommand` values in regular-paint, clipped-descendant, and overlay-paint order.
-Version 0.1.1 adds `DrawCommand.SampledImage` to that sealed hierarchy, so custom backends with exhaustive visitors need an explicit sampling implementation or an unsupported-command preflight.
+Custom backends with exhaustive `DrawCommand` visitors need an explicit `SampledImage` sampling implementation or an unsupported-command preflight.
 Its fractional geometry, final-density sampling, tint multiplication, and alpha cutoff are distinct from the unchanged integer `BlitImage` contract.
-An old compiled visitor can fail on this new case; ordinary Text calls can emit it through the resource-font profile.
-See [Source compatibility](text.md#source-compatibility) for the corresponding `UiText.WithFont` migration.
+A backend compiled against a smaller variant set can fail on this command; ordinary Text calls can emit it through the resource-font profile.
+See [Source compatibility](text.md#source-compatibility) for the corresponding `UiText.WithFont` visitor contract.
 Portable primitive nodes emit only platform-neutral fill and image commands.
 An opt-in version adapter may instead pass an immutable opaque `PlatformDrawCommand` through `PaintScope.drawPlatform`; core translates its declared bounds and preserves clip and draw order without interpreting the payload, the matching adapter executes it, and unsupported backends reject it before producing partial output.
 Nodes without `ClipChildrenNode` preserve valid local and descendant paint overflow.

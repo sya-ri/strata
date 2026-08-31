@@ -96,52 +96,25 @@ include(
     ":api",
     ":integration:api",
     ":integration:docs",
-    ":integration:minecraft-fabric-1.20",
-    ":integration:minecraft-fabric-1.20.1",
-    ":integration:minecraft-fabric-1.20.2",
-    ":integration:minecraft-fabric-1.20.3",
-    ":integration:minecraft-fabric-1.20.4",
-    ":integration:minecraft-fabric-1.20.5",
-    ":integration:minecraft-fabric-1.20.6",
-    ":integration:minecraft-fabric-1.21",
-    ":integration:minecraft-fabric-1.21.1",
-    ":integration:minecraft-fabric-1.21.2",
-    ":integration:minecraft-fabric-1.21.3",
-    ":integration:minecraft-fabric-1.21.4",
-    ":integration:minecraft-fabric-1.21.5",
-    ":integration:minecraft-fabric-1.21.6",
-    ":integration:minecraft-fabric-1.21.7",
-    ":integration:minecraft-fabric-1.21.8",
-    ":integration:minecraft-fabric-1.21.10",
-    ":integration:minecraft-fabric-1.21.9",
-    ":integration:minecraft-fabric-1.21.11",
-    ":integration:minecraft-fabric-26.1",
-    ":integration:minecraft-fabric-26.2",
     ":quality:benchmarks",
     ":quality:detekt-rules",
     ":runtime:core",
     ":runtime:headless",
     ":runtime:minecraft",
     ":runtime:minecraft-fonts-lwjgl",
-    ":runtime:minecraft-fabric-1.20",
-    ":runtime:minecraft-fabric-1.20.1",
-    ":runtime:minecraft-fabric-1.20.2",
-    ":runtime:minecraft-fabric-1.20.3",
-    ":runtime:minecraft-fabric-1.20.4",
-    ":runtime:minecraft-fabric-1.20.5",
-    ":runtime:minecraft-fabric-1.20.6",
-    ":runtime:minecraft-fabric-1.21",
-    ":runtime:minecraft-fabric-1.21.1",
-    ":runtime:minecraft-fabric-1.21.2",
-    ":runtime:minecraft-fabric-1.21.3",
-    ":runtime:minecraft-fabric-1.21.4",
-    ":runtime:minecraft-fabric-1.21.5",
-    ":runtime:minecraft-fabric-1.21.6",
-    ":runtime:minecraft-fabric-1.21.7",
-    ":runtime:minecraft-fabric-1.21.8",
-    ":runtime:minecraft-fabric-1.21.10",
-    ":runtime:minecraft-fabric-1.21.9",
-    ":runtime:minecraft-fabric-1.21.11",
-    ":runtime:minecraft-fabric-26.1",
-    ":runtime:minecraft-fabric-26.2",
 )
+
+val versionedMinecraftProjectName = Regex("minecraft-fabric-[0-9]+(?:\\.[0-9]+)*")
+val versionedMinecraftProjectPaths =
+    listOf("integration", "runtime")
+        .flatMap { parentName ->
+            file(parentName)
+                .listFiles()
+                .orEmpty()
+                .filter { candidate ->
+                    candidate.isDirectory &&
+                        candidate.name.matches(versionedMinecraftProjectName) &&
+                        candidate.resolve("build.gradle.kts").isFile
+                }.map { candidate -> ":$parentName:${candidate.name}" }
+        }.sorted()
+include(*versionedMinecraftProjectPaths.toTypedArray())

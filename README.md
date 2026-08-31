@@ -9,15 +9,6 @@ Strata is pronounced “STRAY-tuh” (`/ˈstreɪtə/`) and is the plural of *str
 The name reflects its layered design: declarative components, retained UI behavior, portable rendering, and environment-specific adapters.
 
 Strata is distributed through Maven Central for development, as a separate client Fabric Mod through Modrinth, and as a public Codex skill in this repository.
-It supports Minecraft 1.20 and later adapters, Unicode and resource-pack fonts, multiline text editing, wrapping `FlowRow` layout, extensible canvases, retained sampled-image acceleration, tiled pan-and-zoom images, and typed player-head scaling.
-Standard `Image` and `PlayerHead` rendering can retain sampled-image textures while preserving Minecraft source regions, face-and-hat layer order, and both integer and arbitrary-size player-head sampling contracts.
-Font resources can also render without launching Minecraft through the optional `runtime:minecraft-fonts-lwjgl` backend.
-Existing text overloads remain available.
-Applications with exhaustive visitors over the sealed `UiText` and `DrawCommand` types must handle the cases described in [Source compatibility](docs/text.md#source-compatibility).
-
-See [Text and text input](docs/text.md) and the [font acceptance scope](docs/font-resources.md#acceptance-evidence).
-
-See [FlowRow wrapping](docs/layout.md#flowrow-wrapping) for its layout contract.
 
 ## Why Strata exists
 
@@ -33,7 +24,7 @@ The design separates those concerns into layers:
 - the retained core runtime emits draw commands and unresolved semantics on the JVM;
 - the platform-neutral API owns one-shot screen definitions; Row/FlowRow/Column/Stack/Grid layout; Text, TextField, TextArea, Button, Checkbox, CycleButton, Slider, Tab, ScrollArea, Scrollbar, VirtualList, SelectionList, Image, Canvas, TiledImage, Slot, PlayerHead, LoadingIndicator, and ProgressBar authoring; resource identifiers; slot locators; skin sources; and active modifiers, so application source compiles without a runtime dependency;
 - the common Minecraft runtime installs itself behind that API, resolves the selected profile and resources, synchronizes bound slots with the active server menu, and hosts the retained tree without exposing a context receiver to application code;
-- the latest Java release, Minecraft 26.2, has a Fabric boundary that extracts the supported native profile, resolves Mod images and current-player skin pixels through the active resource and texture paths, and adapts common frames, typed mouse/keyboard/text input, and screen lifecycle on the client thread; loaded client GameTests verify exact native/Fabric/headless ARGB parity for vanilla screens, PlayerHead, and a primitive-composed Social Interactions screen, exact Fabric/headless parity for resource-pack-backed industrial and progression Mod screens, and live server-authoritative inventory interaction.
+- versioned Fabric boundaries extract the supported native profile, resolve Mod images and current-player skin pixels through active resource and texture paths, and adapt common frames, typed mouse/keyboard/text input, and screen lifecycle on the client thread; loaded client GameTests provide native/Fabric/headless parity and server-authoritative interaction evidence at the applicable version boundaries.
 
 The public element, node, and drawing contracts are designed for extension.
 A custom primitive must work through those contracts without registering its concrete class in a central component dispatcher.
@@ -54,7 +45,7 @@ See [Tiled images and pan/zoom](docs/tiled-images.md) for source generations, LO
 ## Minecraft component showcase
 
 This deterministic image is a fresh 320 by 180 headless `ConfirmScreen` reconstruction using explicit Minecraft asset files.
-Generation does not start Minecraft or create a GPU context; native-screen, Fabric-adapter, and headless comparisons run in a separate [acceptance gate](docs/evidence/minecraft-26.2-parity.properties).
+Generation does not start Minecraft or create a GPU context; native-screen, Fabric-adapter, and headless comparisons run in a separate [acceptance gate](docs/components.md).
 
 ![Strata component showcase](docs/components/overview.png)
 
@@ -118,11 +109,12 @@ internal fun createConfirmScreenDefinition(): ScreenDefinition =
 
 Application UI source needs only `strata-api` on its compile classpath.
 Install exactly one version-matched runtime as a separate client Fabric Mod together with Fabric Language Kotlin; do not bundle multiple versioned Strata runtimes.
+Replace `<strata-version>` with one released Strata version and keep every Strata coordinate and dependency requirement aligned to it.
 
 ```kotlin
 dependencies {
-    compileOnly("dev.s7a.strata:strata-api:0.1.2")
-    modRuntimeOnly("dev.s7a.strata:strata-runtime-minecraft-fabric-<minecraft-version>:0.1.2")
+    compileOnly("dev.s7a.strata:strata-api:<strata-version>")
+    modRuntimeOnly("dev.s7a.strata:strata-runtime-minecraft-fabric-<minecraft-version>:<strata-version>")
     modRuntimeOnly("net.fabricmc:fabric-language-kotlin:<compatible-version>")
 }
 ```
@@ -133,7 +125,7 @@ Declare it as a required dependency in the consuming Mod so `ScreenDefinition.op
 ```json
 {
   "depends": {
-    "strata": ">=0.1.2"
+    "strata": ">=<strata-version>"
   }
 }
 ```
@@ -219,7 +211,7 @@ npx skills add sya-ri/strata --skill strata
 - [Modifiers](docs/modifiers.md) explains active modifier nodes, typed parent data, positional reconciliation, lifecycle, and extension failures.
 - [External state sources](docs/state-sources.md) specifies linearizable revisioned state observation across threads.
 - [UI sessions](docs/ui-sessions.md) specifies retained state, frame cutoffs, coroutine generations, and failure handling inside the core runtime.
-- [Rendering performance](docs/performance.md) records the JMH methodology, allocation evidence, cache and retention gates, and the completed Minecraft 1.20 and 1.21 family baselines.
+- [Rendering performance](docs/performance.md) records the JMH methodology, allocation evidence, and cache, parity, lifecycle, and retention gates.
 - [Contributing](CONTRIBUTING.md) covers development setup, verification, and contribution guidelines.
 - [Build and release](docs/build.md) lists local quality checks, the aggregated Dokka GitHub Pages site, and publication requirements.
 - [Supporting a new Minecraft version](docs/minecraft-versions.md) defines the evidence, implementation, and compatibility process for another adapter.

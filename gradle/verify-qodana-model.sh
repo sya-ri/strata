@@ -3,6 +3,9 @@
 set -euo pipefail
 
 model=${1:?Pass the Qodana projectStructure/Modules.json path}
+script_root=$(cd "$(dirname "$0")" && pwd)
+repository_root=$(cd "$script_root/.." && pwd)
+project_root=${2:-$repository_root}
 if [[ -f "$model" ]]; then
   :
 else
@@ -10,18 +13,40 @@ else
   exit 1
 fi
 
-expected_projects=21
+if [[ -d "$project_root" ]]; then
+  project_root=$(cd "$project_root" && pwd)
+else
+  echo "Qodana project inventory root does not exist: $project_root" >&2
+  exit 1
+fi
+
+inventory_directory=$(mktemp -d)
+trap 'rm -rf -- "$inventory_directory"' EXIT
+bash "$script_root/plan-minecraft-ci.sh" "$project_root" "$inventory_directory" >/dev/null
+mapfile -t expected_versions < <(sed -n 's#^runtime/minecraft-fabric-##p' "$inventory_directory/minecraft-loom-projects.txt")
+
 project_modules=(
-  'runtime|^(strata\.runtime\.minecraft-fabric|runtime-minecraft-fabric)-[0-9]+([._][0-9]+)*$'
-  'integration|^(strata\.integration\.minecraft-fabric|integration-minecraft-fabric)-[0-9]+([._][0-9]+)*$'
+  'runtime;^(strata\.runtime\.minecraft-fabric|runtime-minecraft-fabric)-[0-9]+([._][0-9]+)*$;^(strata\.runtime\.minecraft-fabric|runtime-minecraft-fabric)-'
+  'integration;^(strata\.integration\.minecraft-fabric|integration-minecraft-fabric)-[0-9]+([._][0-9]+)*$;^(strata\.integration\.minecraft-fabric|integration-minecraft-fabric)-'
 )
 for project_modules_entry in "${project_modules[@]}"; do
-  IFS='|' read -r label pattern <<< "$project_modules_entry"
-  count=$(jq --arg pattern "$pattern" '[.modules[] | select(.name | test($pattern))] | length' "$model")
-  if [[ "$count" -eq "$expected_projects" ]]; then
-    echo "Verified $count Minecraft $label project modules."
+  IFS=';' read -r label pattern prefix_pattern <<< "$project_modules_entry"
+  mapfile -t actual_versions < <(
+    jq -r --arg pattern "$pattern" --arg prefixPattern "$prefix_pattern" '
+      .modules[]
+      | .name
+      | select(test($pattern))
+      | sub($prefixPattern; "")
+      | gsub("_"; ".")
+    ' "$model" |
+      LC_ALL=C sort -V
+  )
+  expected_display=$(IFS=,; printf '%s' "${expected_versions[*]}")
+  actual_display=$(IFS=,; printf '%s' "${actual_versions[*]}")
+  if [[ "$actual_display" == "$expected_display" ]]; then
+    echo "Verified ${#actual_versions[@]} Minecraft $label project modules for [$actual_display]."
   else
-    echo "Expected $expected_projects Minecraft $label project modules but found $count." >&2
+    echo "Expected Minecraft $label project modules for [$expected_display] but found [$actual_display]." >&2
     exit 1
   fi
 done

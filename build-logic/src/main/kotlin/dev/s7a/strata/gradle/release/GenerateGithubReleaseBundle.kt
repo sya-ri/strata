@@ -52,13 +52,15 @@ internal abstract class GenerateGithubReleaseBundle
             root.mkdirs()
             val artifactRoot = artifactDirectory.get().asFile
             val artifactFiles = artifactRoot.listFiles().orEmpty().filter(File::isFile)
-            check(artifactFiles.map(File::getName).toSet() == manifest.artifacts.map(ModrinthManifest.Artifact::fileName).toSet()) {
-                "Canonical Modrinth artifact directory must contain exactly ${ModrinthManifest.EXPECTED_ARTIFACT_COUNT} manifest JARs."
+            val expectedArtifactNames = manifest.artifacts.map(ModrinthManifest.Artifact::fileName).toSet()
+            check(artifactFiles.map(File::getName).toSet() == expectedArtifactNames) {
+                "Canonical Modrinth artifact directory must contain exactly the manifest JARs."
             }
             val signatureRoot = signatureDirectory.get().asFile
             val signatures = signatureRoot.listFiles().orEmpty().filter(File::isFile)
-            check(signatures.size == ModrinthManifest.EXPECTED_ARTIFACT_COUNT) {
-                "GitHub release generation requires exactly ${ModrinthManifest.EXPECTED_ARTIFACT_COUNT} detached signatures."
+            val expectedSignatureNames = expectedArtifactNames.map { fileName -> "$fileName.asc" }.toSet()
+            check(signatures.map(File::getName).toSet() == expectedSignatureNames) {
+                "GitHub release generation requires exactly one detached signature for every manifest JAR."
             }
             val releaseFiles = mutableListOf<File>()
             manifest.artifacts.forEach { artifact ->
@@ -89,8 +91,9 @@ internal abstract class GenerateGithubReleaseBundle
                     .sortedBy(File::getName)
                     .joinToString(separator = "\n", postfix = "\n") { file -> "${file.sha256()}  ${file.name}" },
             )
-            check(root.listFiles().orEmpty().size == EXPECTED_GITHUB_ASSET_COUNT) {
-                "GitHub release bundle must contain exactly $EXPECTED_GITHUB_ASSET_COUNT assets."
+            val expectedAssetCount = manifest.artifacts.size * ASSETS_PER_ARTIFACT + CHECKSUM_ASSET_COUNT
+            check(root.listFiles().orEmpty().size == expectedAssetCount) {
+                "GitHub release bundle must contain exactly $expectedAssetCount assets for the manifest."
             }
         }
 
@@ -112,9 +115,12 @@ internal abstract class GenerateGithubReleaseBundle
         }
 
         /**
-         * Owns the immutable GitHub Release asset-count contract.
+         * Defines the asset cardinality contributed by each manifest artifact and by the shared checksum inventory.
+         *
+         * These constants describe the bundle format and do not encode the number of artifacts in any release.
          */
         companion object {
-            private const val EXPECTED_GITHUB_ASSET_COUNT = 43
+            private const val ASSETS_PER_ARTIFACT = 2
+            private const val CHECKSUM_ASSET_COUNT = 1
         }
     }

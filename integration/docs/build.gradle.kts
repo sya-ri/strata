@@ -287,6 +287,7 @@ class StrataSkillArgumentProvider(
     private val repositoryRoot: Provider<Directory>,
     private val stagingRoot: Provider<Directory>,
     private val exampleSourceRoot: Directory,
+    private val releaseVersion: Provider<String>,
     private val componentClasses: Provider<FileCollection>,
 ) : CommandLineArgumentProvider {
     override fun asArguments(): Iterable<String> {
@@ -301,6 +302,7 @@ class StrataSkillArgumentProvider(
             add(repositoryRoot.get().asFile.absolutePath)
             add(stagingRoot.get().asFile.absolutePath)
             add(exampleSourceRoot.asFile.absolutePath)
+            add(releaseVersion.get())
             addAll(classDirectories.map(File::getAbsolutePath))
         }
     }
@@ -314,10 +316,19 @@ fun JavaExec.configureStrataSkillLauncher(
     dependsOn(":api:classes", "compileSkillExamplesKotlin", "classes")
     mainClass.set(mainClassName)
     classpath = sourceSets.main.get().runtimeClasspath
-    argumentProviders.add(StrataSkillArgumentProvider(repositoryRoot, staging, skillExampleSources, apiMainClasses))
+    argumentProviders.add(
+        StrataSkillArgumentProvider(
+            repositoryRoot,
+            staging,
+            skillExampleSources,
+            providers.provider { rootProject.version.toString() },
+            apiMainClasses,
+        ),
+    )
     inputs.dir(skillExampleSources)
     inputs.dir(rootProject.layout.projectDirectory.dir("api/src/main/kotlin"))
     inputs.files(runtimeVersionBuildInputs)
+    inputs.property("releaseVersion", rootProject.version.toString())
     inputs.file(rootProject.layout.projectDirectory.file("README.md"))
     inputs.files(apiMainClasses)
     outputs.dir(staging)

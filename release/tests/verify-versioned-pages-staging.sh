@@ -18,10 +18,16 @@ fail() {
 if grep --fixed-strings '    paths:' "$pages_workflow" >/dev/null; then
   fail 'Pages path filters do not cover the repository-wide public URL inventory.'
 fi
+grep --fixed-strings 'release_tags="$(bash release/list-release-tags.sh)"' "$pages_workflow" >/dev/null || \
+  fail 'Pages does not discover the canonical release tag inventory.'
+if grep --extended-regexp 'for release_tag in v[0-9]' "$pages_workflow" >/dev/null; then
+  fail 'Pages retains a hand-maintained release tag list.'
+fi
 
 fixture="$temporary_root/fixture"
 mkdir -p "$fixture/release" "$fixture/build/dokka/html/api" "$fixture/build/dokka/html/releases/0.1.0/guide"
 cp "$repository_root/release/stage-versioned-pages.sh" "$fixture/release/stage-versioned-pages.sh"
+cp "$repository_root/release/list-release-tags.sh" "$fixture/release/list-release-tags.sh"
 printf 'old release\n' > "$fixture/build/dokka/html/releases/0.1.0/index.html"
 printf 'old guide\n' > "$fixture/build/dokka/html/releases/0.1.0/guide/index.html"
 printf 'current release\n' > "$fixture/build/dokka/html/index.html"
@@ -32,9 +38,29 @@ printf '%s\n' / /api/index.html /index.html /source-receipt.json /source-revisio
 git -C "$fixture" init --quiet
 git -C "$fixture" config user.email test@example.invalid
 git -C "$fixture" config user.name 'Strata Test'
-git -C "$fixture" add release/stage-versioned-pages.sh
+git -C "$fixture" add release/list-release-tags.sh release/stage-versioned-pages.sh
 git -C "$fixture" commit --quiet -m fixture
-git -C "$fixture" tag v0.1.1
+git -C "$fixture" tag --annotate --message fixture v0.1.10
+git -C "$fixture" tag --annotate --message fixture v0.1.2
+git -C "$fixture" tag --annotate --message fixture v0.1.1
+
+expected_tags=$'v0.1.1\nv0.1.2\nv0.1.10'
+actual_tags="$(bash "$fixture/release/list-release-tags.sh" "$fixture")"
+[[ "$actual_tags" == "$expected_tags" ]] || \
+  fail "Release tags are not listed in version order: $actual_tags"
+
+git -C "$fixture" tag --annotate --message fixture v0.1
+if bash "$fixture/release/list-release-tags.sh" "$fixture" >/dev/null 2>&1; then
+  fail 'Release tag listing accepted a malformed v-prefixed tag.'
+fi
+git -C "$fixture" tag --delete v0.1 >/dev/null
+
+git -C "$fixture" tag v0.1.3
+if bash "$fixture/release/list-release-tags.sh" "$fixture" >/dev/null 2>&1; then
+  fail 'Release tag listing accepted a lightweight semantic tag.'
+fi
+git -C "$fixture" tag --delete v0.1.3 >/dev/null
+
 tag_commit="$(git -C "$fixture" rev-parse 'refs/tags/v0.1.1^{commit}')"
 printf '%s\n' v0.1.1 > "$fixture/build/dokka/html/source-revision.txt"
 printf '{"commit":"%s","revision":"v0.1.1"}\n' "$tag_commit" > "$fixture/build/dokka/html/source-receipt.json"
@@ -62,4 +88,4 @@ if (
   fail 'Versioned Pages staging accepted a non-semantic release tag.'
 fi
 
-echo 'Versioned Pages staging preserves Dokka sites and immutable legacy guides.'
+echo 'Versioned Pages staging discovers annotated releases and preserves immutable Dokka sites and legacy guides.'

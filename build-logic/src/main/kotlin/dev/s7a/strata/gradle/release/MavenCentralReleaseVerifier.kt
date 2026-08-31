@@ -43,7 +43,7 @@ internal class MavenCentralReleaseVerifier(
      * Reads the complete remote matrix without mutation and returns whether a release is wholly absent or byte-exact.
      *
      * @param coordinateLines canonical `group:artifact:version` entries owned by the tracked release matrix.
-     * @return immutable evidence for an absent or exact 26-coordinate release.
+     * @return immutable evidence for an absent or exact release inventory.
      * @throws IllegalStateException when local inputs are incomplete or Maven Central is partial, inconsistent, or different.
      */
     internal fun preflight(coordinateLines: List<String>): Receipt {
@@ -100,18 +100,18 @@ internal class MavenCentralReleaseVerifier(
             }
             if (attempt < maximumAttempts) sleeper(pollDelayMillis)
         }
-        error("Maven Central did not expose the exact 26-coordinate release after $maximumAttempts inspections.")
+        error("Maven Central did not expose the exact ${coordinates.size}-coordinate release after $maximumAttempts inspections.")
     }
 
     /**
-     * Stages all 130 canonical remote publication files and their 130 detached signatures after exact Central verification.
+     * Stages every canonical remote publication file and detached signature after exact Central verification.
      *
      * Local signatures are deliberately ignored because OpenPGP creation timestamps make them unstable across idempotent reruns.
      * The caller owns and clears [outputDirectory] before invocation.
      *
-     * @param coordinateLines canonical 26-coordinate release inventory.
+     * @param coordinateLines canonical release inventory.
      * @param outputDirectory task-owned directory that mirrors the canonical Maven repository paths.
-     * @return exact signed-file pairs, including the 21 Fabric main-JAR signatures selected for GitHub.
+     * @return exact signed-file pairs, including every Fabric main-JAR signature selected for GitHub.
      * @throws IllegalStateException when the publication matrix is incomplete or remote content differs or is missing.
      */
     internal fun stageCanonicalPublicationEvidence(
@@ -148,20 +148,20 @@ internal class MavenCentralReleaseVerifier(
                     )
                 }
             }
-        check(staged.size == EXPECTED_SIGNED_FILE_COUNT) {
-            "Canonical Central evidence must contain exactly $EXPECTED_SIGNED_FILE_COUNT signed publication files."
+        val expectedSignedFileCount = coordinates.size * BASE_SUFFIXES.size
+        check(staged.size == expectedSignedFileCount) {
+            "Canonical Central evidence must contain exactly $expectedSignedFileCount signed publication files."
         }
-        check(staged.count(SignedPublicationFile::githubDistributionSignature) == EXPECTED_FABRIC_COORDINATE_COUNT) {
-            "Canonical GitHub signatures require exactly $EXPECTED_FABRIC_COORDINATE_COUNT Fabric runtime main JARs."
+        val expectedFabricCoordinateCount = coordinates.count { coordinate -> coordinate.artifact.startsWith(FABRIC_ARTIFACT_PREFIX) }
+        check(staged.count(SignedPublicationFile::githubDistributionSignature) == expectedFabricCoordinateCount) {
+            "Canonical GitHub signatures require one Fabric runtime main JAR for every Fabric coordinate."
         }
         return staged
     }
 
     private fun parseCoordinates(lines: List<String>): List<Coordinate> {
         val coordinates = lines.filter(String::isNotBlank).map(Coordinate::parse)
-        check(coordinates.size == EXPECTED_COORDINATE_COUNT) {
-            "Maven Central release verification requires exactly $EXPECTED_COORDINATE_COUNT coordinates."
-        }
+        check(coordinates.isNotEmpty()) { "Maven Central release verification requires at least one coordinate." }
         check(coordinates.distinct().size == coordinates.size) { "Maven Central release coordinates must be unique." }
         check(coordinates.map(Coordinate::version).distinct().size == 1) {
             "Maven Central release coordinates must use one exact release version."
@@ -344,7 +344,7 @@ internal class MavenCentralReleaseVerifier(
      *
      * @property baseRelativePath Maven repository path of the immutable signed content.
      * @property signatureRelativePath Maven repository path of its detached ASCII-armored signature.
-     * @property githubDistributionSignature whether this signature belongs to one of the 21 public Fabric main JARs.
+     * @property githubDistributionSignature whether this signature belongs to a public Fabric main JAR.
      */
     internal data class SignedPublicationFile(
         val baseRelativePath: String,
@@ -415,12 +415,9 @@ internal class MavenCentralReleaseVerifier(
     }
 
     /**
-     * Owns the fixed release inventory and bounded public-repository polling contracts.
+     * Owns the bounded public-repository polling contracts.
      */
     companion object {
-        private const val EXPECTED_COORDINATE_COUNT = 26
-        private const val EXPECTED_FABRIC_COORDINATE_COUNT = 21
-        private const val EXPECTED_SIGNED_FILE_COUNT = 130
         private const val MAXIMUM_READ_ATTEMPTS = 4
         private const val DEFAULT_VERIFICATION_ATTEMPTS = 120
         private const val DEFAULT_VERIFICATION_DELAY_MILLIS = 15_000L

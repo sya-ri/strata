@@ -31,7 +31,6 @@ internal class MavenCentralPortalCoordinator(
     username: String,
     password: String,
     private val localRepository: Path,
-    private val expectedCoordinateCount: Int = EXPECTED_COORDINATE_COUNT,
     private val httpClient: HttpClient =
         HttpClient
             .newBuilder()
@@ -51,7 +50,6 @@ internal class MavenCentralPortalCoordinator(
         require(portalBaseUri.isAbsolute) { "The Central Publisher Portal base URI must be absolute." }
         require(username.isNotBlank()) { "A non-blank Maven Central username is required." }
         require(password.isNotBlank()) { "A non-blank Maven Central password is required." }
-        require(0 < expectedCoordinateCount) { "The expected Maven coordinate count must be positive." }
         require(requestTimeout.isZero.not() && requestTimeout.isNegative.not()) {
             "The Central Publisher Portal request timeout must be positive."
         }
@@ -78,7 +76,7 @@ internal class MavenCentralPortalCoordinator(
         statusAttempts: Int = DEFAULT_STATUS_ATTEMPTS,
         statusDelayMillis: Long = DEFAULT_STATUS_DELAY_MILLIS,
     ): Receipt {
-        val release = Release.parse(coordinateLines, localRepository, expectedCoordinateCount)
+        val release = Release.parse(coordinateLines, localRepository)
         val deployment =
             discover(release, allowAbsent = true, incompleteAttempts, pollDelayMillis)
                 ?: return Receipt(State.ABSENT, null, null, 0, 0)
@@ -113,7 +111,7 @@ internal class MavenCentralPortalCoordinator(
         statusAttempts: Int = DEFAULT_STATUS_ATTEMPTS,
         statusDelayMillis: Long = DEFAULT_STATUS_DELAY_MILLIS,
     ): Receipt {
-        val release = Release.parse(coordinateLines, localRepository, expectedCoordinateCount)
+        val release = Release.parse(coordinateLines, localRepository)
         val deployment =
             discover(release, allowAbsent = false, discoveryAttempts, discoveryDelayMillis)
                 ?: error("Central Publisher Portal deployment discovery unexpectedly returned no deployment.")
@@ -212,10 +210,10 @@ internal class MavenCentralPortalCoordinator(
             writeEvidence(evidenceDirectory, signaturePath, signature)
             contentCount += 1
         }
-        check(contentCount == expectedCoordinateCount * BASE_SUFFIXES.size * 2) {
+        check(contentCount == release.coordinates.size * BASE_SUFFIXES.size * 2) {
             "Central Publisher Portal signed-content inventory has an unexpected size."
         }
-        check(checksumCount == expectedCoordinateCount * BASE_SUFFIXES.size * ChecksumAlgorithm.entries.size) {
+        check(checksumCount == release.coordinates.size * BASE_SUFFIXES.size * ChecksumAlgorithm.entries.size) {
             "Central Publisher Portal checksum inventory has an unexpected size."
         }
         return Verification(contentCount, checksumCount)
@@ -710,12 +708,9 @@ internal class MavenCentralPortalCoordinator(
             fun parse(
                 lines: List<String>,
                 localRepository: Path,
-                expectedCoordinateCount: Int,
             ): Release {
                 val coordinates = lines.filter(String::isNotBlank).map(Coordinate::parse)
-                check(coordinates.size == expectedCoordinateCount) {
-                    "Central Publisher Portal verification requires exactly $expectedCoordinateCount coordinates."
-                }
+                check(coordinates.isNotEmpty()) { "Central Publisher Portal verification requires at least one coordinate." }
                 check(coordinates.distinct().size == coordinates.size) { "Maven release coordinates must be unique." }
                 val groups = coordinates.map(Coordinate::group).distinct()
                 val versions = coordinates.map(Coordinate::version).distinct()
@@ -783,10 +778,9 @@ internal class MavenCentralPortalCoordinator(
     }
 
     /**
-     * Owns the fixed release inventory and bounded network retry contracts.
+     * Owns the bounded network retry contracts.
      */
     companion object {
-        private const val EXPECTED_COORDINATE_COUNT = 26
         private const val PAGE_SIZE = 500
         private const val MAXIMUM_PAGES = 100
         private const val MAXIMUM_READ_ATTEMPTS = 4

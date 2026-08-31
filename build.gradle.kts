@@ -406,6 +406,12 @@ private val minecraftFabricTargets =
                 ),
         ),
     )
+private val representativeReleaseMinecraftVersions =
+    minecraftFabricTargets
+        .groupBy(MinecraftFabricTarget::javaVersion)
+        .toSortedMap()
+        .values
+        .map { targets -> targets.last().version }
 private val koverJvmProjectPaths = rootProject.file("gradle/kover-jvm-projects.txt").readLines().filter(String::isNotBlank)
 check(koverJvmProjectPaths.distinct().size == koverJvmProjectPaths.size) {
     "gradle/kover-jvm-projects.txt must not contain duplicate project paths."
@@ -1107,28 +1113,31 @@ tasks.named("check") {
     dependsOn(gradle.includedBuild("build-logic").task(":check"), verifyGeneratedDokkaSourceLinks)
 }
 
-val expectedReleaseCoordinates =
+val expectedReleaseArtifacts =
     listOf(
-        "dev.s7a.strata:strata-api:$version",
-        "dev.s7a.strata:strata-runtime-core:$version",
-        "dev.s7a.strata:strata-runtime-headless:$version",
-        "dev.s7a.strata:strata-runtime-minecraft:$version",
-        "dev.s7a.strata:strata-runtime-minecraft-fonts-lwjgl:$version",
+        "dev.s7a.strata:strata-api",
+        "dev.s7a.strata:strata-runtime-core",
+        "dev.s7a.strata:strata-runtime-headless",
+        "dev.s7a.strata:strata-runtime-minecraft",
+        "dev.s7a.strata:strata-runtime-minecraft-fonts-lwjgl",
     ) +
         minecraftFabricTargets.map { target ->
-            "dev.s7a.strata:strata-runtime-minecraft-fabric-${target.version}:$version"
+            "dev.s7a.strata:strata-runtime-minecraft-fabric-${target.version}"
         }
 val verifyReleasePublicationMatrix =
     tasks.register("verifyReleasePublicationMatrix") {
         group = "verification"
-        description = "Verifies the exact 26-coordinate Maven Central release inventory."
+        description = "Verifies the Maven Central release inventory against every configured publication target."
         val coordinatesFile = layout.projectDirectory.file("release/maven-coordinates.txt")
         inputs.file(coordinatesFile)
-        inputs.property("expectedCoordinates", expectedReleaseCoordinates)
+        inputs.property("expectedArtifacts", expectedReleaseArtifacts)
         doLast {
-            val trackedCoordinates = coordinatesFile.asFile.readLines().filter(String::isNotBlank)
-            check(expectedReleaseCoordinates.size == 26) { "The release must publish exactly 26 Maven coordinates." }
-            check(trackedCoordinates == expectedReleaseCoordinates) {
+            val trackedArtifacts = coordinatesFile.asFile.readLines().filter(String::isNotBlank)
+            check(expectedReleaseArtifacts.isNotEmpty()) { "The release must publish at least one Maven artifact." }
+            check(expectedReleaseArtifacts.distinct().size == expectedReleaseArtifacts.size) {
+                "The typed publication matrix contains duplicate Maven artifacts."
+            }
+            check(trackedArtifacts == expectedReleaseArtifacts) {
                 "release/maven-coordinates.txt differs from the typed publication matrix."
             }
         }
@@ -1137,17 +1146,23 @@ val verifyReleasePublicationMatrix =
 val publishToMavenLocal =
     tasks.register("publishToMavenLocal") {
         group = "publishing"
-        description = "Publishes the exact 26-artifact Strata release matrix to Maven Local."
+        description = "Publishes every configured Strata release artifact to Maven Local."
         dependsOn(publishableProjectPaths.sorted().map { projectPath -> "$projectPath:publishToMavenLocal" })
     }
 
 val verifyPublishedConsumer =
     tasks.register<GradleBuild>("verifyPublishedConsumer") {
         group = "verification"
-        description = "Publishes all 26 Maven artifacts locally and checks a standalone coordinate-only consumer."
+        description = "Publishes every Maven artifact locally and checks a standalone coordinate-only consumer."
         dependsOn(publishToMavenLocal, verifyReleasePublicationMatrix)
         dir = layout.projectDirectory.dir("release/consumer").asFile
         tasks = listOf("clean", "check")
+        startParameter.projectProperties =
+            startParameter.projectProperties +
+                mapOf(
+                    "strataVersion" to project.version.toString(),
+                    "strataRepresentativeMinecraftVersions" to representativeReleaseMinecraftVersions.joinToString(","),
+                )
     }
 
 tasks.named("mavenCentralReleasePreflight") {
