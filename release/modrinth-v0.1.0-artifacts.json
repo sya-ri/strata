@@ -1,0 +1,168 @@
+{
+  "schemaVersion": 1,
+  "releaseTag": "v0.1.0",
+  "releaseCommit": "d0be1ccf74ee8fa0aca1a23e9d50eb5ba45c39a8",
+  "githubReleaseUrl": "https://github.com/sya-ri/strata/releases/tag/v0.1.0",
+  "artifacts": [
+    {
+      "gameVersion": "1.20.1",
+      "versionNumber": "0.1.0+mc1.20.1",
+      "fileName": "strata-runtime-minecraft-fabric-1.20.1-0.1.0.jar",
+      "size": 1040330,
+      "sha256": "cdc49eca756c241e4e4f7024083b1a80d7bb3958d2b679d228a24a43514ccad8",
+      "sha512": "db8b58f424ac4493f291e9791bfb63e6d7d1290914029891de089a5c90479d3dbe40964a5c4fa244302c3cc7793e0c67a5a2924db9aeca2e0eed31be5eaafaa3"
+    },
+    {
+      "gameVersion": "1.20.2",
+      "versionNumber": "0.1.0+mc1.20.2",
+      "fileName": "strata-runtime-minecraft-fabric-1.20.2-0.1.0.jar",
+      "size": 1039050,
+      "sha256": "56246eeb7058a23caedd1b357e88d502ab43b5495dab031d2b976c403a18cd86",
+      "sha512": "85ab05d898a6ee2982ae8347a507fb5c473ac4c32c534eb1d4868477e758e54c287b386a0ca2dde53daeae24ee067a63ec989db966841697912f38a68929c543"
+    },
+    {
+      "gameVersion": "1.20.3",
+      "versionNumber": "0.1.0+mc1.20.3",
+      "fileName": "strata-runtime-minecraft-fabric-1.20.3-0.1.0.jar",
+      "size": 1039055,
+      "sha256": "3d9a4042941680b648219fcfcc37b9265f5ac9e60936aa16d677d30def214faf",
+      "sha512": "19262e9dcf2f5cf8d38d54c3b4a571dfd6bfccd83ff581ba86a9b1511f4ebe49552e2fb2f45e3ce98194315533c1025ea9a323ccb7f16298ae42dd559489b030"
+    },
+    {
+      "gameVersion": "1.20.4",
+      "versionNumber": "0.1.0+mc1.20.4",
+      "fileName": "strata-runtime-minecraft-fabric-1.20.4-0.1.0.jar",
+      "size": 1039060,
+      "sha256": "79afdbe29f6419b349fa41599938c34a2c70653dc478dd220754c350056085fc",
+      "sha512": "cf0da921e8675be0d631dd539f4ad60e273703e672f7b20291e12e73fcb1ad8f020f6452c582b7f1b1c58d9b8801205df49a8a9e293cd05b8ea836f5e98d967c"
+    },
+    {
+      "gameVersion": "1.20.5",
+      "versionNumber": "0.1.0+mc1.20.5",
+      "fileName": "strata-runtime-minecraft-fabric-1.20.5-0.1.0.jar",
+      "size": 1036632,
+      "sha256": "34c70a7b1db09d15282ea201c010a455fcd75e88b65c21e4cba2768e76a72438",
+      "sha512": "603cf2d816c78b4881ec14a4bd201d36888d107635d96158a4ae7ee11b321f7a4e95e4fddef28f6f59147c3f7aec79b970e0b4fc92cca23b3e1608601c452503"
+    },
+    {
+      "gameVersion": "1.20.6",
+      "versionNumber": "0.1.0+mc1.20.6",
+      "fileName": "strata-runtime-minecraft-fabric-1.20.6-0.1.0.jar",
+      "size": 1036635,
+      "sha256": "447c29ce96a461ddefaac6d64edca2ed4dbb45a9dacd6ac745c54e2d77b97885",
+      "sha512": "3dbeba2753bbaf6821b019e962c11beba94a5e412ccad9029f6574e68ac4f694025fdc18a7fe5b9523731c83f609db8c8e913378fd3cf0f53a75a2b247243c8d"
+    },
+    {
+      "gameVersion": "1.21",
+      "versionNumber": "0.1.0+mc1.21",
+      "fileName": "strata-runtime-minecraft-fabric-1.21-0.1.0.jar",
+      "size": 1036571,
+      "sha256": "bc2609a5ea8686c3a005dbac66d6c2fb5f356565a618aa05add9616561e5e058",
+      "sha512": "940def3a850f3425765c511e5b52fd80ec2ef8eb79c280a6d19f396f60f42633c7df3d1e619fa63b53f41c308592de33e8c2440107502889b80adc96dbd2408b"
+    },
+    {
+      "gameVersion": "1.21.1",
+      "versionNumber": "0.1.0+mc1.21.1",
+      "fileName": "strata-runtime-minecraft-fabric-1.21.1-0.1.0.jar",
+      "size": 1036679,
+      "sha256": "07c1625d25892311d792088bf4e48844fae326ba58ed3004386cfa4d3aee2d88",
+      "sha512": "d6cd7840c979b1c8a1fe063dbaacaa14abfe056a718a2c476d197b653e666e48eeaee935d95954a747d17a088a27267b8c3ea649277189b834ece01c977d7f29"
+    },
+    {
+      "gameVersion": "1.21.2",
+      "versionNumber": "0.1.0+mc1.21.2",
+      "fileName": "strata-runtime-minecraft-fabric-1.21.2-0.1.0.jar",
+      "size": 1036634,
+      "sha256": "ab2b366af6428afbfc017f709aa6d28a7ffee7f93532fd843e25436dab001c9a",
+      "sha512": "e64fa272003c533678f3e14a9ab1da9c332b7a2420221442857f987c0d73e71bbd2a05d4e6cec2401b4c331dcde83da8f34aad0c1c43e40591f659b9cc76b18d"
+    },
+    {
+      "gameVersion": "1.21.3",
+      "versionNumber": "0.1.0+mc1.21.3",
+      "fileName": "strata-runtime-minecraft-fabric-1.21.3-0.1.0.jar",
+      "size": 1036692,
+      "sha256": "58bbe9c8af8dd6cc449f94c094203714161222c6a0bd470d968ec9f785a1bac7",
+      "sha512": "0e0eee2667352b781a235c5682157a503dcb560f33f0fe92201aa2f934f6e108a1e7792253e15028e7c7a07601e7e45d8e00ab6bd408cd5ba1e790c193693e35"
+    },
+    {
+      "gameVersion": "1.21.4",
+      "versionNumber": "0.1.0+mc1.21.4",
+      "fileName": "strata-runtime-minecraft-fabric-1.21.4-0.1.0.jar",
+      "size": 1036748,
+      "sha256": "effc5032e44590c81384671ffeaff0439adfcb0bf41c1b5959d0f74543796523",
+      "sha512": "a16ac5782ea573d894fe2d88bf8f0ff50fdd9375ad9b8ed8e407b9fe0d609d01b47a7100c4cde007c05b7cc5b76d9c1b46b4e88717ab433a6e245280f8a8b37b"
+    },
+    {
+      "gameVersion": "1.21.5",
+      "versionNumber": "0.1.0+mc1.21.5",
+      "fileName": "strata-runtime-minecraft-fabric-1.21.5-0.1.0.jar",
+      "size": 1036970,
+      "sha256": "a80bd58e4a1242a35bd4a4a93e4e867b139fc29ac9779f28f7f1e1cc0b0938e8",
+      "sha512": "70b3d7ec96a4e82234ff11bca79a4a580ff78949ced8fa724a2e3db1118a7ac80b7cda9f1ca3680407b4a47b29b8020852b31f22d7f24c2463d0b3f5ec94b1f9"
+    },
+    {
+      "gameVersion": "1.21.6",
+      "versionNumber": "0.1.0+mc1.21.6",
+      "fileName": "strata-runtime-minecraft-fabric-1.21.6-0.1.0.jar",
+      "size": 1036604,
+      "sha256": "28a228f07e381156d45fb571fa4be500311b1a02204a1942a981c3913a468aba",
+      "sha512": "134d6d3db49022cd023fc9254d359ffb11b9bd69beee750762eee7cc84f4d6f846e0560e64c06190c898a16afc7c66f9ae8b037bfbb8a93c7ad3e6c81153c108"
+    },
+    {
+      "gameVersion": "1.21.7",
+      "versionNumber": "0.1.0+mc1.21.7",
+      "fileName": "strata-runtime-minecraft-fabric-1.21.7-0.1.0.jar",
+      "size": 1036597,
+      "sha256": "3e34ea0b1c476a4ec7ee77a84c2273a0d434dce10ddbe2d8aaae5be64f803577",
+      "sha512": "04d96ee6ec66141f564db93ecf63c97309bf5c6cb241093e628577800bcf6e1e3bb2655dd4be15868a6a750486d9c4113a9b2af65004bdf1c4d5a5de1f6d7d5d"
+    },
+    {
+      "gameVersion": "1.21.8",
+      "versionNumber": "0.1.0+mc1.21.8",
+      "fileName": "strata-runtime-minecraft-fabric-1.21.8-0.1.0.jar",
+      "size": 1036607,
+      "sha256": "9808fe5796a2b4ed7fa9040e62c6300840607a58f765d7872781489fa9c77aab",
+      "sha512": "f0b69ec4c705bb88ff28ce71a383de5cf8d68d1bae396250f9f60d152b9da9257dc92218b7555bbfd5ad9b676e1cf12167787d9e34ee3683eb4221f5a461df6f"
+    },
+    {
+      "gameVersion": "1.21.9",
+      "versionNumber": "0.1.0+mc1.21.9",
+      "fileName": "strata-runtime-minecraft-fabric-1.21.9-0.1.0.jar",
+      "size": 1036485,
+      "sha256": "72541e07e38929c4bdd3c3cd3b805222116d56b28c28840b83c1d2819cf924a5",
+      "sha512": "2fac415c305800ee875f0ab54a8be0039c98adaf0b87ed9759f81f6a2c1b3e7738af7918937c14e386b2741efb551e2a115562a6905f9895e9a17dd74b0b4c6f"
+    },
+    {
+      "gameVersion": "1.21.10",
+      "versionNumber": "0.1.0+mc1.21.10",
+      "fileName": "strata-runtime-minecraft-fabric-1.21.10-0.1.0.jar",
+      "size": 1036508,
+      "sha256": "bd81d51c45704cb33e2e8ba12ce78daf40f93be7820bedb47f2287bec825f55b",
+      "sha512": "bc29350e1b86fca644d423544cefaf46d88ebf9f2b1694691aa01c6afeeb777c5d22a0ab86405ed450b9aca2378e98678cb5d0b09be9c206ff08b00aa79f12a2"
+    },
+    {
+      "gameVersion": "1.21.11",
+      "versionNumber": "0.1.0+mc1.21.11",
+      "fileName": "strata-runtime-minecraft-fabric-1.21.11-0.1.0.jar",
+      "size": 1036777,
+      "sha256": "668acef03974edb688bbdb349c194c87dfcc2f0d2bd18aba714c8da8559943aa",
+      "sha512": "f62c94d4fc255dbf3ba1192b65ad2702b2f12d4a266b50af9de2f6778b743adfb719b755fc63480739c906a62fa3b4ad92f2bba869ea7e35f1e2b6c55ec91b70"
+    },
+    {
+      "gameVersion": "26.1",
+      "versionNumber": "0.1.0+mc26.1",
+      "fileName": "strata-runtime-minecraft-fabric-26.1-0.1.0.jar",
+      "size": 1022277,
+      "sha256": "b7fc16f5da09fdd9d672f25ac33c61b90b9eba10a44386c3c649afaba84e2dab",
+      "sha512": "b749835b70ef6737872bba6690ce12fe592364a38d83e6b52e339df5ae08d0aa584d100762f1c17bdf50f9889ac5c58f0a34ec7608a5cf8b34f961d1e87e4b29"
+    },
+    {
+      "gameVersion": "26.2",
+      "versionNumber": "0.1.0+mc26.2",
+      "fileName": "strata-runtime-minecraft-fabric-26.2-0.1.0.jar",
+      "size": 1022318,
+      "sha256": "c182f40340f36a11749d3d0f464e83da386bf5db3dc744d99ee295c5d95c8dab",
+      "sha512": "0bf05f686db9290865b59c95d3db49085a2c48eb722189f347d61fcdda1d8754bf8fbe5f4ba04a24ffff32dce3c74815591ef0ff86cb278ee3d5d28b76c4b8fb"
+    }
+  ]
+}

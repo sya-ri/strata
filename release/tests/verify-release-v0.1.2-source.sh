@@ -8,6 +8,10 @@ sealed_previous="$repository_root/.github/workflows/release-v0.1.1.yml"
 sealed_initial="$repository_root/.github/workflows/release.yml"
 jvm_workflow="$repository_root/.github/workflows/jvm.yml"
 controller_guard="$repository_root/release/verify-controller-tools.sh"
+backlog_runner="$repository_root/release/run-modrinth-v0.1.2-backlog-recovery.sh"
+backlog_contract="$repository_root/release/modrinth-v0.1.2-backlog-recovery.json"
+backlog_v010_artifact_evidence="$repository_root/release/modrinth-v0.1.0-artifacts.json"
+backlog_test="$repository_root/release/tests/verify-modrinth-v0.1.2-backlog-recovery.sh"
 
 fail() {
   echo "$1" >&2
@@ -18,7 +22,7 @@ step_block() {
   local name="$1"
   awk -v header="      - name: $name" '
     $0 == header { inside = 1 }
-    inside && $0 != header && /^      - name:/ { exit }
+    inside && $0 != header && (/^      - name:/ || /^  [a-z_]+:/) { exit }
     inside { print }
   ' "$workflow"
 }
@@ -73,9 +77,11 @@ require_immediate_guard() {
   done <<< "$call_lines"
 }
 
-for required in "$workflow" "$sealed_previous" "$sealed_initial" "$jvm_workflow" "$controller_guard"; do
+for required in "$workflow" "$sealed_previous" "$sealed_initial" "$jvm_workflow" "$controller_guard" \
+  "$backlog_runner" "$backlog_contract" "$backlog_v010_artifact_evidence" "$backlog_test"; do
   [[ -f "$required" ]] || fail "Required release source is missing: $required"
 done
+bash "$backlog_test"
 
 [[ "$(find "$repository_root/.github/workflows" -maxdepth 1 -type f \
   \( -name 'release-v*.yml' -o -name 'release-v*.yaml' \) -print | wc -l | tr -d '[:space:]')" == '1' ]] || \
@@ -96,17 +102,23 @@ grep --fixed-strings 'name: Publish release' "$workflow" >/dev/null || fail 'The
 grep --fixed-strings 'default: v0.1.2' "$workflow" >/dev/null || fail 'The v0.1.2 tag input is not pinned.'
 grep --fixed-strings '[[ "$RELEASE_TAG" == "v0.1.2"' "$workflow" >/dev/null || fail 'The v0.1.2 runtime tag guard is missing.'
 grep --fixed-strings '[[ "$tag_commit" == "b541fc5492b798b6805c0c4d24e09f43ceff938a" ]]' "$workflow" >/dev/null || fail 'Release does not pin the reviewed v0.1.2 source commit.'
+release_source_block="$(step_block 'Validate immutable release source')"
+grep --fixed-strings '[[ "$tag_object" == "49195293b3e163abd0beefc9fc8e61a428b8eb24" ]]' <<< "$release_source_block" >/dev/null || \
+  fail 'Release preflight does not pin the reviewed v0.1.2 signed tag object.'
+require_immediate_guard "$release_source_block" \
+  '[[ "$tag_object" == "49195293b3e163abd0beefc9fc8e61a428b8eb24" ]]' \
+  '[[ "$verified_commit" == "$tag_commit" ]] || { echo '\''Signed tag verification returned a different commit.'\'' >&2; exit 1; }'
 [[ "$(grep --fixed-strings -c 'release/github-release-tag-ruleset.json' "$workflow")" == '2' ]] || fail 'The wildcard ruleset contract must be referenced directly only by controller preflight.'
 [[ "$(grep --fixed-strings -c 'release/github-release-tag-ruleset-receipt.json' "$workflow")" == '2' ]] || fail 'The wildcard ruleset receipt must be referenced directly only by controller preflight.'
 [[ "$(grep --fixed-strings -c 'run_controller_tool_guard() {' "$workflow")" == '2' ]] || fail 'Release and final verification must each bootstrap the exact controller guard.'
 [[ "$(grep --fixed-strings -c 'git --no-replace-objects cat-file blob "$blob"' "$workflow")" == '2' ]] || fail 'Each bootstrap must execute the exact guard blob with replacement objects disabled.'
 [[ "$(grep --fixed-strings -c 'run_controller_tool_guard materialize' "$workflow")" == '2' ]] || fail 'Each tagged job must materialize one bounded controller bundle.'
-[[ "$(grep --fixed-strings -c 'verify_controller_tools() {' "$workflow")" == '7' ]] || fail 'Every later controller-tool step must define exact-commit revalidation.'
-[[ "$(grep --fixed-strings -c 'bash "$CONTROLLER_TOOL_DIRECTORY/verify-github-tag-ruleset.sh"' "$workflow")" == '5' ]] || fail 'Every current-release ruleset boundary must use the verified controller directory.'
+[[ "$(grep --fixed-strings -c 'verify_controller_tools() {' "$workflow")" == '8' ]] || fail 'Every later controller-tool step must define exact-commit revalidation.'
+[[ "$(grep --fixed-strings -c 'bash "$CONTROLLER_TOOL_DIRECTORY/verify-github-tag-ruleset.sh"' "$workflow")" == '6' ]] || fail 'Every current-release ruleset boundary must use the verified controller directory.'
 [[ "$(grep --fixed-strings -c 'bash "$controller_pages_waiter"' "$workflow")" == '2' && \
   "$(grep --fixed-strings -c 'bash "$CONTROLLER_TOOL_DIRECTORY/wait-for-pages-source-receipt.sh"' "$workflow")" == '2' ]] || fail 'Every current or predecessor Pages poll must use the verified controller directory.'
 [[ "$(grep --fixed-strings -c 'bash "$controller_pages_verifier"' "$workflow")" == '4' && \
-  "$(grep --fixed-strings -c 'bash "$CONTROLLER_TOOL_DIRECTORY/verify-pages-deployment-source.sh"' "$workflow")" == '3' ]] || fail 'Every current or predecessor Pages proof must use the verified controller directory.'
+  "$(grep --fixed-strings -c 'bash "$CONTROLLER_TOOL_DIRECTORY/verify-pages-deployment-source.sh"' "$workflow")" == '6' ]] || fail 'Every current or predecessor Pages proof must use the verified controller directory.'
 [[ "$(grep --fixed-strings -c 'steps.controller_tools.outputs.directory' "$workflow")" == '4' ]] || fail 'Cleanup must be bound to each initialization step output.'
 for forbidden_path_variable in CONTROLLER_TAG_RULESET_VERIFIER CONTROLLER_TAG_RULESET_CONTRACT CONTROLLER_TAG_RULESET_RECEIPT CONTROLLER_PAGES_VERIFIER CONTROLLER_PAGES_WAITER; do
   if grep --fixed-strings "$forbidden_path_variable" "$workflow" >/dev/null; then
@@ -117,7 +129,7 @@ if grep --fixed-strings 'git show "$GITHUB_SHA:release/' "$workflow" >/dev/null;
   fail 'Tagged jobs must not materialize controller tools with an unvalidated git show redirection.'
 fi
 
-[[ "$(grep --extended-regexp -c '^verify_controller_tool release/' "$controller_guard")" == '5' ]] || fail 'The controller guard must retain exactly five fixed tool mappings.'
+[[ "$(grep --extended-regexp -c '^verify_controller_tool release/' "$controller_guard")" == '8' ]] || fail 'The controller guard must retain exactly eight fixed tool mappings.'
 grep --fixed-strings 'git --no-replace-objects cat-file -t "$controller_commit"' "$controller_guard" >/dev/null || fail 'The controller guard must ignore commit replacement objects.'
 grep --fixed-strings 'git --no-replace-objects ls-tree --full-tree "$controller_commit"' "$controller_guard" >/dev/null || fail 'The controller guard must ignore tree replacement objects.'
 grep --fixed-strings 'git --no-replace-objects cat-file blob "$blob"' "$controller_guard" >/dev/null || fail 'The controller guard must ignore blob replacement objects.'
@@ -134,6 +146,17 @@ for init_block in "$release_init_block" "$verify_init_block"; do
   require_before "$init_block" 'run_controller_tool_guard verify' 'bash "$controller_ruleset_verifier"'
 done
 
+grep --fixed-strings '[[ "$checked_commit" == "b541fc5492b798b6805c0c4d24e09f43ceff938a" ]]' <<< "$verify_init_block" >/dev/null || \
+  fail 'Final verification does not pin the exact reviewed v0.1.2 source commit.'
+grep --fixed-strings '[[ "$tag_object" == "49195293b3e163abd0beefc9fc8e61a428b8eb24" ]]' <<< "$verify_init_block" >/dev/null || \
+  fail 'Final verification does not pin the exact reviewed v0.1.2 signed tag object.'
+require_before "$verify_init_block" \
+  '[[ "$checked_commit" == "b541fc5492b798b6805c0c4d24e09f43ceff938a" ]]' \
+  'run_controller_tool_guard materialize'
+require_before "$verify_init_block" \
+  '[[ "$tag_object" == "49195293b3e163abd0beefc9fc8e61a428b8eb24" ]]' \
+  'bash release/verify-release-tag.sh "$RELEASE_TAG" "$checked_commit" "$tag_object"'
+
 require_immediate_guard "$release_init_block" 'bash "$controller_ruleset_verifier"' 'run_controller_tool_guard verify "$EXPECTED_CONTROLLER_COMMIT" "$controller_tool_directory"'
 require_immediate_guard "$release_init_block" 'bash "$controller_pages_verifier"' 'run_controller_tool_guard verify "$EXPECTED_CONTROLLER_COMMIT" "$controller_tool_directory"'
 require_immediate_guard "$release_init_block" 'bash "$controller_pages_waiter"' 'run_controller_tool_guard verify "$EXPECTED_CONTROLLER_COMMIT" "$controller_tool_directory"'
@@ -143,9 +166,7 @@ require_immediate_guard "$verify_init_block" 'bash "$controller_pages_waiter"' '
 
 for mutation_spec in \
   'Publish wholly absent Maven Central release|publishAndReleaseToMavenCentral' \
-  'Stage only missing Modrinth versions|modrinthReleaseStage' \
-  'Create or verify immutable GitHub Release|gh release create' \
-  'Submit or observe Modrinth review|modrinthReleaseSubmit'; do
+  'Create or verify immutable GitHub Release|gh release create'; do
   mutation_name="${mutation_spec%%|*}"
   mutation_write="${mutation_spec#*|}"
   mutation_block="$(step_block "$mutation_name")"
@@ -156,6 +177,47 @@ for mutation_spec in \
   require_immediate_guard "$mutation_block" 'bash "$CONTROLLER_TOOL_DIRECTORY/verify-github-tag-ruleset.sh"' 'verify_controller_tools'
   require_before "$mutation_block" 'bash "$CONTROLLER_TOOL_DIRECTORY/verify-github-tag-ruleset.sh"' "$mutation_write"
 done
+
+for backlog_step_spec in \
+  'Preflight Modrinth without mutation|4|preflight' \
+  'Stage only missing Modrinth versions|3|stage' \
+  'Submit or observe Modrinth review|3|observe'; do
+  backlog_step_name="${backlog_step_spec%%|*}"
+  backlog_step_remainder="${backlog_step_spec#*|}"
+  backlog_step_guard_count="${backlog_step_remainder%%|*}"
+  backlog_operation="${backlog_step_remainder#*|}"
+  backlog_block="$(step_block "$backlog_step_name")"
+  [[ "$(grep --extended-regexp -c '^[[:space:]]+verify_controller_tools$' <<< "$backlog_block")" == "$backlog_step_guard_count" ]] || \
+    fail "Controller bundle guard count differs in $backlog_step_name."
+  require_immediate_guard "$backlog_block" 'bash "$CONTROLLER_TOOL_DIRECTORY/verify-github-tag-ruleset.sh"' 'verify_controller_tools'
+  require_immediate_guard "$backlog_block" 'bash "$CONTROLLER_TOOL_DIRECTORY/verify-pages-deployment-source.sh"' 'verify_controller_tools'
+  require_immediate_guard "$backlog_block" 'bash "$CONTROLLER_TOOL_DIRECTORY/run-modrinth-v0.1.2-backlog-recovery.sh"' 'verify_controller_tools'
+  require_before "$backlog_block" 'bash "$CONTROLLER_TOOL_DIRECTORY/verify-github-tag-ruleset.sh"' 'bash "$CONTROLLER_TOOL_DIRECTORY/run-modrinth-v0.1.2-backlog-recovery.sh"'
+  require_before "$backlog_block" 'bash "$CONTROLLER_TOOL_DIRECTORY/verify-pages-deployment-source.sh"' 'bash "$CONTROLLER_TOOL_DIRECTORY/run-modrinth-v0.1.2-backlog-recovery.sh"'
+  backlog_operation_call="$backlog_operation \"\$CONTROLLER_TOOL_DIRECTORY/modrinth-v0.1.2-backlog-recovery.json\""
+  if [[ "$backlog_operation" == 'preflight' ]]; then
+    backlog_operation_call='preflight "$backlog_contract"'
+  fi
+  grep --fixed-strings "$backlog_operation_call" <<< "$backlog_block" >/dev/null || \
+    fail "The exact backlog operation differs in $backlog_step_name."
+  grep --fixed-strings '"$EXPECTED_PAGES_RECORD"' <<< "$backlog_block" >/dev/null || \
+    fail "Protected Pages evidence is not passed into $backlog_step_name."
+done
+
+stage_block="$(step_block 'Stage only missing Modrinth versions')"
+submit_block="$(step_block 'Submit or observe Modrinth review')"
+grep --fixed-strings 'modrinthReleaseStage' <<< "$stage_block" >/dev/null || fail 'The direct Modrinth staging task is missing.'
+grep --fixed-strings 'modrinthReleaseSubmit' <<< "$submit_block" >/dev/null || fail 'The direct Modrinth submission task is missing.'
+require_before "$stage_block" 'bash "$CONTROLLER_TOOL_DIRECTORY/verify-github-tag-ruleset.sh"' 'modrinthReleaseStage'
+require_before "$submit_block" 'bash "$CONTROLLER_TOOL_DIRECTORY/verify-github-tag-ruleset.sh"' 'modrinthReleaseSubmit'
+
+release_job="$(sed -n '/^  release:$/,/^  public_skills:$/p' "$workflow")"
+verify_job="$(sed -n '/^  verify:$/,$p' "$workflow")"
+[[ "$(grep --fixed-strings -c 'bash "$CONTROLLER_TOOL_DIRECTORY/run-modrinth-v0.1.2-backlog-recovery.sh"' <<< "$release_job")" == '3' ]] || \
+  fail 'The release job must contain exactly three backlog recovery calls.'
+if grep --fixed-strings 'run-modrinth-v0.1.2-backlog-recovery.sh' <<< "$verify_job" >/dev/null; then
+  fail 'Final verification must not invoke the backlog recovery runner.'
+fi
 
 [[ "$(grep --extended-regexp -c '^[[:space:]]+revalidate_release_source$' <<< "$(step_block 'Publish wholly absent Maven Central release')")" == '2' ]] || fail 'Central publication must revalidate before both absence confirmation and write.'
 [[ "$(grep --extended-regexp -c '^[[:space:]]+revalidate_release_source$' <<< "$(step_block 'Create or verify immutable GitHub Release')")" == '3' ]] || fail 'Every GitHub Release mutation phase must revalidate controller tools and source.'
@@ -199,11 +261,14 @@ mkdir -p "$controller_test_repository/release"
 git -C "$controller_test_repository" init --quiet
 git -C "$controller_test_repository" config user.name 'Strata Release Test'
 git -C "$controller_test_repository" config user.email 'release-test@example.invalid'
-for script_name in verify-github-tag-ruleset.sh verify-pages-deployment-source.sh wait-for-pages-source-receipt.sh; do
+for script_name in verify-github-tag-ruleset.sh verify-pages-deployment-source.sh wait-for-pages-source-receipt.sh \
+  run-modrinth-v0.1.2-backlog-recovery.sh; do
   printf '#!/usr/bin/env bash\nset -euo pipefail\n' > "$controller_test_repository/release/$script_name"
 done
 printf '{}\n' > "$controller_test_repository/release/github-release-tag-ruleset.json"
 printf '{}\n' > "$controller_test_repository/release/github-release-tag-ruleset-receipt.json"
+printf '{}\n' > "$controller_test_repository/release/modrinth-v0.1.2-backlog-recovery.json"
+printf '{}\n' > "$controller_test_repository/release/modrinth-v0.1.0-artifacts.json"
 git -C "$controller_test_repository" add release
 git -C "$controller_test_repository" commit --quiet -m 'Create valid controller fixtures'
 valid_controller_commit="$(git -C "$controller_test_repository" rev-parse HEAD)"
