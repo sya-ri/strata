@@ -346,12 +346,13 @@ internal class MinecraftImageTest {
     }
 
     @Test
-    fun aNewHostResolvesTheSameResourceAgainEvenWhenThePlatformReturnsTheSameIdentity() {
+    fun aNewHostResolvesTheSameResourceAgainAndMayObserveDifferentPixels() {
         val id = ResourceId("example", "textures/gui/host.png")
         val source = ImageSource.Resource(id)
         val profile = MinecraftProfileFixture.create()
-        val resolved = solidImage(0xFF112233.toInt())
-        val firstPlatform = FakeImagePlatform { _, _ -> resolved }
+        val firstResolved = solidImage(0xFF112233.toInt())
+        val secondResolved = solidImage(0xFF445566.toInt())
+        val firstPlatform = FakeImagePlatform { _, _ -> firstResolved }
         val firstHost = createMinecraftUiHost(ScreenDefinition("First image host") { Image(source) }, profile, firstPlatform)
         val firstCommand =
             try {
@@ -361,7 +362,7 @@ internal class MinecraftImageTest {
                 firstHost.close()
             }
 
-        val secondPlatform = FakeImagePlatform { _, _ -> resolved }
+        val secondPlatform = FakeImagePlatform { _, _ -> secondResolved }
         val secondHost = createMinecraftUiHost(ScreenDefinition("Second image host") { Image(source) }, profile, secondPlatform)
         val secondCommand =
             try {
@@ -375,8 +376,9 @@ internal class MinecraftImageTest {
         assertEquals(listOf(id), secondPlatform.imageCalls)
         assertEquals(1, firstPlatform.closeCalls)
         assertEquals(1, secondPlatform.closeCalls)
-        assertSame(resolved, firstCommand.image)
-        assertSame(resolved, secondCommand.image)
+        assertSame(firstResolved, firstCommand.image)
+        assertSame(secondResolved, secondCommand.image)
+        assertNotSame(firstCommand.image, secondCommand.image)
     }
 
     @Test

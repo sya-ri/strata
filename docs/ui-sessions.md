@@ -54,6 +54,10 @@ That live overload is intentionally unavailable to portable-only hosts because a
 Button does not install keyboard focus or activation implicitly; callers compose those policies from the shared modifiers when required.
 The common component boundary exposes only structural resource-pack identifiers and detached immutable pixels, not resource-manager objects, native Minecraft values, renderers, input mappers, or task facilities.
 Client and server code may share a `ResourceId`; only the versioned client resolves its pixels through the active resource-pack stack before building an `Image` or image-background modifier.
+One common host memoizes each admitted resource-image resolution by structural `ResourceId` across immediate and deferred component evaluation, while direct pixel sources bypass platform resolution.
+The fixed host cache admits at most 512 identifiers and 128 MiB of straight-RGBA8 pixels without eviction; results beyond either admission limit and all failed resolutions bypass retention.
+All access is owner-thread confined, detachment preserves the cache with the host, and terminal host cleanup clears it before closing the platform.
+Resolution remains lazy, so the first use observes the then-active pack stack, but an admitted image stays fixed until host close; a new host is required to resolve replacement pixels reliably.
 Image may retain either the complete immutable asset or one nonempty contained source rectangle, allowing sprite-atlas regions to map to an independent destination size without copying pixels or introducing a purpose-specific component.
 The Fabric adapter snapshots the current selected player skin from either its resource-backed default path or registered downloaded texture; `PlayerHead` then renders the native face layer followed by the optional hat layer without retaining a player or platform texture.
 

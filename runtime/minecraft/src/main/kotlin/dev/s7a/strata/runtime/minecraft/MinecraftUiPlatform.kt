@@ -10,6 +10,7 @@ import dev.s7a.strata.spi.InternalStrataRuntimeApi
  * Owner-thread platform services used by Minecraft-backed components without exposing version-specific game types.
  *
  * One host owns the platform from successful construction through terminal close.
+ * The host may memoize an admitted successful [image] result for each identifier; a new platform and host are required to expose resource-pack replacements reliably.
  * The platform may lend stable bindings to retained nodes, but [close] releases every observer, item snapshot, callback, and native reference.
  */
 @InternalStrataRuntimeApi
@@ -26,6 +27,9 @@ public interface MinecraftUiPlatform : AutoCloseable {
 
     /**
      * Resolves one resource-pack image through the active resource manager.
+     *
+     * The host may reuse an admitted successful result for structurally equal identifiers, so adapters must not depend on a call for every declarative use.
+     * Resolution failures and results beyond the host's admission limits are not retained and may be retried during the same host lifetime.
      *
      * @param resource platform-neutral resource identifier.
      * @return detached immutable pixels reflecting the currently active pack stack.
