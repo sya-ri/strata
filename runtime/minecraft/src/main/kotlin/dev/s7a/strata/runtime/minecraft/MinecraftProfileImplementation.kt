@@ -1264,6 +1264,7 @@ internal object MinecraftProfileImplementation {
     private class ResourceImages {
         private val ownerThread = Thread.currentThread()
         private val images = HashMap<ResourceId, DrawImage>()
+        private var retainedImageBytes = 0L
         private var closed = false
 
         fun resolve(
@@ -1272,7 +1273,15 @@ internal object MinecraftProfileImplementation {
         ): DrawImage {
             checkOwner()
             check(closed.not()) { "Minecraft resource image resolution is closed." }
-            return images[id] ?: platform.image(id).also { resolved -> images[id] = resolved }
+            images[id]?.let { return it }
+            val resolved = platform.image(id)
+            if (images.size < MAX_RESOURCE_IMAGE_IDS) {
+                admittedByteCount(resolved)?.let { byteCount ->
+                    images[id] = resolved
+                    retainedImageBytes += byteCount
+                }
+            }
+            return resolved
         }
 
         fun close() {
@@ -1280,10 +1289,27 @@ internal object MinecraftProfileImplementation {
             if (closed) return
             closed = true
             images.clear()
+            retainedImageBytes = 0L
+        }
+
+        private fun admittedByteCount(image: DrawImage): Long? {
+            val width = image.size.width.toLong()
+            val height = image.size.height.toLong()
+            if (width == 0L || height == 0L) return 0L
+            val remainingBytes = MAX_RESOURCE_IMAGE_BYTES - retainedImageBytes
+            val remainingPixels = remainingBytes / RGBA8_BYTES_PER_PIXEL
+            if (remainingPixels / width < height) return null
+            return width * height * RGBA8_BYTES_PER_PIXEL
         }
 
         private fun checkOwner() {
             check(Thread.currentThread() === ownerThread) { "Minecraft resource image resolution requires its owner thread." }
+        }
+
+        private companion object {
+            private const val MAX_RESOURCE_IMAGE_IDS = 512
+            private const val MAX_RESOURCE_IMAGE_BYTES = 128L * 1024L * 1024L
+            private const val RGBA8_BYTES_PER_PIXEL = 4L
         }
     }
 
