@@ -319,10 +319,25 @@ printf '{"commit":"%s","revision":"master"}\n' "$controller_commit" > "$controll
 mkdir -p "$evidence/releases/0.0.9" "$controller_site/releases/0.0.9"
 printf 'older release\n' > "$evidence/releases/0.0.9/index.html"
 printf 'older release\n' > "$controller_site/releases/0.0.9/index.html"
+controller_only_empty_directory="$controller_site/releases/0.1.1/api/controller-only-empty-directory"
+[[ ! -e "$evidence/releases/0.1.1/api/controller-only-empty-directory" ]] || \
+  fail 'The controller-only empty-directory fixture already exists in release evidence.'
+mkdir -p "$controller_only_empty_directory"
 tar -cf "$controller_artifact" -C "$controller_site" .
+tar -tf "$controller_artifact" | sed 's#^\./##; s#/$##' | \
+  grep --fixed-strings --line-regexp 'releases/0.1.1/api/controller-only-empty-directory' >/dev/null || \
+  fail 'The controller artifact fixture did not preserve its controller-only empty directory.'
 bash "$pages_artifact_verifier" \
   "$controller_artifact" "$evidence" v0.1.1 "$tag_commit" "$controller_commit" >/dev/null || \
-  fail 'Pages rejected independently generated equivalent release and controller artifacts.'
+  fail 'Pages rejected equivalent release and controller artifacts whose transport preserved an extra empty directory.'
+printf 'unexpected transported file\n' > "$controller_only_empty_directory/unexpected.txt"
+tar -cf "$controller_artifact" -C "$controller_site" .
+if bash "$pages_artifact_verifier" \
+  "$controller_artifact" "$evidence" v0.1.1 "$tag_commit" "$controller_commit" >/dev/null 2>&1; then
+  fail 'Pages ignored a regular file inside a controller-only directory.'
+fi
+rm "$controller_only_empty_directory/unexpected.txt"
+tar -cf "$controller_artifact" -C "$controller_site" .
 bash "$pages_artifact_verifier" \
   "$controller_artifact" "$evidence" v0.1.0 "$release_commit" "$controller_commit" \
   v0.1.1 "$tag_commit" >/dev/null || \
