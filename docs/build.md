@@ -223,6 +223,7 @@ To supply existing resources instead, set all four properties; relative paths re
 
 The same properties apply to `checkComponentShowcase`.
 Inputs remain read-only, must be regular files or the objects directory without symbolic links, and are checked against the version manifest and indexed object hashes.
+The full manifest and asset index fence each generation but are not portable receipt identities; the receipt instead records the immutable client, selection contract, logical path sets, and hashes of resources actually consumed by rendering.
 Only the inventory screen uses native image evidence: the launcher explicitly supplies `docs/evidence/minecraft-26.2-inventory.png` and its `.properties` receipt because that example requires a live server-backed binding.
 Generation verifies the inventory image dimensions, Minecraft version, image hash, and current compiled example's LF-normalized source hash before copying it; it never launches a game or server to refresh that input.
 The deterministic headless receipt records logical source and asset hashes, viewport dimensions, GUI scale, physical PNG dimensions, and each image's origin and hash without absolute paths or timestamps.

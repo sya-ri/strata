@@ -66,7 +66,7 @@ internal class ShowcaseMinecraftAssetFixture(
             }
         }
         addFontObjects()
-        Files.writeString(assetIndex, JsonObject().apply { add("objects", objects) }.toString())
+        writeAssetIndex()
         writeClient()
     }
 
@@ -105,6 +105,22 @@ internal class ShowcaseMinecraftAssetFixture(
     fun objectFile(path: String): Path {
         val hash = objects.getAsJsonObject(path).get("hash").asString
         return assetObjects.resolve(hash.take(2)).resolve(hash)
+    }
+
+    /**
+     * Replaces one indexed object at the same logical path and refreshes the index and manifest declarations.
+     */
+    fun replaceIndexedObject(
+        path: String,
+        bytes: ByteArray,
+    ) {
+        addObject(path, bytes)
+        writeAssetIndex()
+        writeClient()
+    }
+
+    private fun writeAssetIndex() {
+        Files.writeString(assetIndex, JsonObject().apply { add("objects", objects) }.toString())
     }
 
     private fun writeClient() {
@@ -148,6 +164,7 @@ internal class ShowcaseMinecraftAssetFixture(
                 if (x % 16 in 1..14 && y in 1..14 && (x + y) % 3 != 0) -1 else 0x00FFFFFF
             },
         )
+        addObject("minecraft/lang/unconsumed.json", "{\"fixture\":1}".toByteArray())
         val providers =
             JsonArray().apply {
                 add(
