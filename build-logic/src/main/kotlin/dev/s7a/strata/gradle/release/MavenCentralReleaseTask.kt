@@ -24,7 +24,7 @@ import javax.inject.Inject
 /**
  * Produces live Maven Central absence or exact-match evidence without remote mutation.
  *
- * The task resolves the tracked artifact inventory against [releaseVersion], then reads only the local Maven repository and public Central endpoints.
+ * The task resolves the canonical artifact inventory against [releaseVersion], then reads only the local Maven repository and public Central endpoints.
  * It deletes its exact prior receipt before every attempt so a failed rerun cannot preserve stale success evidence.
  */
 @DisableCachingByDefault(because = "The task verifies live immutable Maven Central state.")

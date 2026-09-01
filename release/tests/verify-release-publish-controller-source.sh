@@ -3,6 +3,47 @@
 set -euo pipefail
 
 repository_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd -P)"
+strata_jq_path="$(type -P jq || true)"
+strata_od_path="$(type -P od || true)"
+strata_tr_path="$(type -P tr || true)"
+if [[ "$strata_jq_path" == /* && -x "$strata_jq_path" && \
+  "$strata_od_path" == /* && -x "$strata_od_path" && \
+  "$strata_tr_path" == /* && -x "$strata_tr_path" ]]; then
+  :
+else
+  echo 'Portable jq initialization requires absolute executable jq, od, and tr paths.' >&2
+  exit 1
+fi
+readonly strata_jq_path strata_od_path strata_tr_path
+
+strata_jq_binary_options=()
+if "$strata_jq_path" --binary -n 'null' >/dev/null 2>&1; then
+  strata_jq_binary_options=(--binary)
+fi
+readonly -a strata_jq_binary_options
+
+strata_jq_probe_hex=''
+if strata_jq_probe_hex="$(
+  "$strata_jq_path" "${strata_jq_binary_options[@]}" -nr --arg x x "\$x" |
+    "$strata_od_path" -An -tx1 |
+    "$strata_tr_path" -d '[:space:]'
+)"; then
+  :
+else
+  echo 'jq output-mode byte probing failed.' >&2
+  exit 1
+fi
+if [[ "$strata_jq_probe_hex" == '780a' ]]; then
+  unset strata_jq_probe_hex
+else
+  echo 'jq output mode does not produce exact LF-delimited bytes.' >&2
+  exit 1
+fi
+
+portable_jq() {
+  "$strata_jq_path" "${strata_jq_binary_options[@]}" "$@"
+}
+readonly -f portable_jq
 workflow="$repository_root/.github/workflows/publish-release.yml"
 jvm_workflow="$repository_root/.github/workflows/jvm.yml"
 sealed_previous="$repository_root/.github/workflows/release-v0.1.1.yml"
@@ -49,6 +90,18 @@ require_before() {
     fail "Required controller ordering is missing: $first before $second"
 }
 
+require_source_before() {
+  local first_pattern="$1"
+  local second_pattern="$2"
+  local label="$3"
+  local first_line=""
+  local second_line=""
+  first_line="$(grep -n -m 1 -E "$first_pattern" "${BASH_SOURCE[0]}" | cut -d: -f1 || true)"
+  second_line="$(grep -n -m 1 -E "$second_pattern" "${BASH_SOURCE[0]}" | cut -d: -f1 || true)"
+  [[ -n "$first_line" && -n "$second_line" && "$first_line" -lt "$second_line" ]] || \
+    fail "Fixture signing isolation is not established before its first operation: $label"
+}
+
 require_immediate_guard() {
   local block="$1"
   local call="$2"
@@ -75,6 +128,24 @@ bash "$backlog_guard"
 grep --fixed-strings 'for source_guard in release/tests/verify-release*-source.sh; do' "$jvm_workflow" >/dev/null || \
   fail 'JVM CI no longer discovers stable release source guards.'
 grep --fixed-strings 'bash "$source_guard"' "$jvm_workflow" >/dev/null || fail 'JVM CI no longer executes discovered release source guards.'
+[[ "$(grep -E -c '^git -C "\$fixture_repository" config commit\.gpgsign false$' "${BASH_SOURCE[0]}")" == '1' ]] || \
+  fail 'The controller materialization fixture does not disable inherited commit signing exactly once.'
+[[ "$(grep -E -c '^git -C "\$order_repository" config commit\.gpgsign false$' "${BASH_SOURCE[0]}")" == '1' ]] || \
+  fail 'The release-order fixture does not disable inherited commit signing exactly once.'
+[[ "$(grep -E -c '^git -C "\$order_repository" config tag\.gpgsign false$' "${BASH_SOURCE[0]}")" == '1' ]] || \
+  fail 'The release-order fixture does not disable inherited tag signing exactly once.'
+require_source_before \
+  '^git -C "\$fixture_repository" config commit\.gpgsign false$' \
+  '^git -C "\$fixture_repository" commit ' \
+  'controller materialization commits'
+require_source_before \
+  '^git -C "\$order_repository" config commit\.gpgsign false$' \
+  '^git -C "\$order_repository" commit ' \
+  'release-order commits'
+require_source_before \
+  '^git -C "\$order_repository" config tag\.gpgsign false$' \
+  '^git -C "\$order_repository" tag ' \
+  'release-order tags'
 source_guard_discovered=false
 for source_guard in "$repository_root"/release/tests/verify-release*-source.sh; do
   if [[ "$(realpath "$source_guard")" == "$(realpath "${BASH_SOURCE[0]}")" ]]; then
@@ -107,18 +178,24 @@ jq -e '
   .current.tagObject != .predecessor.tagObject
 ' "$controller_metadata" >/dev/null || fail 'Current-controller metadata does not use the fixed identity-pair schema.'
 
-current_tag="$(jq -er '.current.tag' "$controller_metadata")"
-predecessor_tag="$(jq -er '.predecessor.tag' "$controller_metadata")"
-representative_minecraft_versions="$(jq -cer '.current.representativeMinecraftVersions' "$controller_metadata")"
+current_tag="$(portable_jq -er '.current.tag' "$controller_metadata")"
+predecessor_tag="$(portable_jq -er '.predecessor.tag' "$controller_metadata")"
 [[ "$(printf '%s\n' "${predecessor_tag#v}" "${current_tag#v}" | sort -V | head -n 1)" == "${predecessor_tag#v}" && \
   "$predecessor_tag" != "$current_tag" ]] || fail 'Tracked predecessor semantic version is not earlier than current.'
-current_commit="$(jq -er '.current.commit' "$controller_metadata")"
-current_inventory="$(git -C "$repository_root" show "${current_commit}:release/maven-coordinates.txt")"
+current_commit="$(portable_jq -er '.current.commit' "$controller_metadata")"
 while IFS= read -r minecraft_version; do
-  artifact="strata-runtime-minecraft-fabric-$minecraft_version"
-  matches="$(awk -F: -v artifact="$artifact" '$2 == artifact { count++ } END { print count + 0 }' <<< "$current_inventory")"
-  [[ "$matches" == '1' ]] || fail "Representative Minecraft fixture does not map to one current Fabric artifact: $minecraft_version"
-done < <(jq -er '.[]' <<< "$representative_minecraft_versions")
+  for project_kind in runtime integration; do
+    project_path="$project_kind/minecraft-fabric-$minecraft_version/build.gradle.kts"
+    record="$(git -C "$repository_root" --no-replace-objects ls-tree --full-tree "$current_commit" -- "$project_path")"
+    [[ -n "$record" && "$record" != *$'\n'* ]] || fail "Representative Minecraft fixture project is missing or ambiguous: $project_path"
+    read -r mode object_type project_blob verified_path <<< "$record"
+    [[ "$mode" == '100644' && "$object_type" == 'blob' && "$project_blob" =~ ^([0-9a-f]{40}|[0-9a-f]{64})$ && "$verified_path" == "$project_path" ]] || \
+      fail "Representative Minecraft fixture project is not a regular blob: $project_path"
+  done
+done < <(portable_jq -er '.current.representativeMinecraftVersions[]' "$controller_metadata")
+
+[[ ! -e "$repository_root/release/maven-coordinates.txt" && ! -L "$repository_root/release/maven-coordinates.txt" ]] || \
+  fail 'The forward source retains a handwritten Maven artifact inventory.'
 
 mapfile -t versioned_release_workflows < <(
   find "$repository_root/.github/workflows" -maxdepth 1 -type f \
@@ -164,12 +241,38 @@ for required_contract in \
   'refs/tags/v*' \
   'verify-current-controller-release-order.sh' \
   'list-java-toolchains.sh' \
+  'for candidate in build/release/maven-coordinates.txt release/maven-coordinates.txt; do' \
+  'RELEASE_MAVEN_INVENTORY_SHA256=' \
+  'verify_release_inventory() {' \
+  'project_path="$project_kind/minecraft-fabric-$minecraft_version/build.gradle.kts"' \
   'task=":integration:minecraft-fabric-$minecraft_version:runPublishedCoordinateClientGameTest"' \
   'run-publish-controller-recovery.sh' \
   'backlog-recovery.json' \
   'Verify complete predecessor release before Modrinth body finalization' \
   'Finalize current Modrinth body and verify approved release'; do
   grep --fixed-strings "$required_contract" "$workflow" >/dev/null || fail "Forward-controller contract is missing: $required_contract"
+done
+
+[[ "$(grep --fixed-strings -c 'representative_minecraft_versions="$(portable_jq -cer '\''.current.representativeMinecraftVersions'\'' "$metadata")"' "$workflow")" == '2' ]] || \
+  fail 'Controller metadata does not preserve representative versions as portable JSON in both source checks.'
+[[ "$(grep --fixed-strings -c 'portable_jq -er '\''.current.representativeMinecraftVersions[]'\'' "$metadata"' "$workflow")" == '2' ]] || \
+  fail 'Controller metadata representative-version loops do not use portable jq output.'
+[[ "$(grep --fixed-strings -c 'portable_jq -er '\''.[]'\'' <<< "$RELEASE_REPRESENTATIVE_MINECRAFT_VERSIONS"' "$workflow")" == '4' ]] || \
+  fail 'Release representative-version loops are not all normalized by portable jq output.'
+[[ "$(grep --fixed-strings -c 'portable_jq -er '\''.[]'\'' <<< "$EXPECTED_REPRESENTATIVE_MINECRAFT_VERSIONS"' "$workflow")" == '1' ]] || \
+  fail 'Final representative-version verification is not normalized by portable jq output.'
+if grep --extended-regexp 'git([^|]*)(show|cat-file)[^|]*release/maven-coordinates\.txt' "$workflow" >/dev/null; then
+  fail 'Forward workflow reads a handwritten Maven artifact inventory directly from tag source.'
+fi
+for publication_contract in \
+  'val releasePublicationProjectPaths =' \
+  'val releaseArtifactByProjectPath =' \
+  'val releaseArtifacts = releasePublicationProjectPaths.map' \
+  'dependsOn("mavenArtifactInventory")' \
+  'dependsOn(verifyReleasePublicationMatrix)' \
+  'mavenArtifacts.set(releaseArtifacts)'; do
+  grep --fixed-strings "$publication_contract" "$repository_root/build.gradle.kts" >/dev/null || \
+    fail "Generated Maven publication inventory contract is missing: $publication_contract"
 done
 
 [[ "$(grep --fixed-strings -c 'run_controller_tool_guard() {' "$workflow")" == '3' ]] || fail 'Every controller-loading job must bootstrap the exact guard.'
@@ -183,6 +286,24 @@ for hardening_contract in \
   'git hash-object --no-filters -- "$destination"'; do
   grep --fixed-strings "$hardening_contract" "$controller_guard" >/dev/null || fail "Controller guard hardening is missing: $hardening_contract"
 done
+for controller_mode_contract in \
+  'verify_controller_tool release/current-controller.json current-controller.json controller 100644' \
+  'verify_controller_tool release/verify-release-tag.sh verify-release-tag.sh bash 100644' \
+  'verify_controller_tool release/list-release-tags.sh list-release-tags.sh bash 100755' \
+  'verify_controller_tool release/verify-current-controller-release-order.sh verify-current-controller-release-order.sh bash 100755' \
+  'verify_controller_tool release/verify-github-tag-ruleset.sh verify-github-tag-ruleset.sh bash 100644' \
+  'verify_controller_tool release/github-release-tag-ruleset.json github-release-tag-ruleset.json json 100644' \
+  'verify_controller_tool release/github-release-tag-ruleset-receipt.json github-release-tag-ruleset-receipt.json json 100644' \
+  'verify_controller_tool release/verify-pages-deployment-source.sh verify-pages-deployment-source.sh bash 100644' \
+  'verify_controller_tool release/verify-pages-artifact-equivalence.sh verify-pages-artifact-equivalence.sh bash 100644' \
+  'verify_controller_tool release/wait-for-pages-source-receipt.sh wait-for-pages-source-receipt.sh bash 100644' \
+  'verify_controller_tool release/run-publish-controller-recovery.sh run-publish-controller-recovery.sh bash 100755' \
+  'verify_controller_tool gradle/list-java-toolchains.sh list-java-toolchains.sh bash 100755'; do
+  grep --fixed-strings "$controller_mode_contract" "$controller_guard" >/dev/null || \
+    fail "Controller source does not declare its exact reviewed Git mode: $controller_mode_contract"
+done
+grep --fixed-strings '  verify-pages-artifact-equivalence.sh' "$recovery_wrapper" >/dev/null || \
+  fail 'Recovery wrapper does not preserve the adjacent Pages artifact comparator.'
 
 release_init_block="$(step_block 'Revalidate protected release request')"
 verify_init_block="$(step_block 'Validate final verification source and Pages provenance')"
@@ -281,9 +402,12 @@ cleanup_controller_test() {
 trap cleanup_controller_test EXIT INT TERM
 fixture_repository="$controller_test_root/repository"
 mkdir -p "$fixture_repository/release" "$fixture_repository/gradle"
-git -C "$fixture_repository" init --quiet
+git init --quiet "$fixture_repository"
+[[ -d "$fixture_repository/.git" && ! -L "$fixture_repository/.git" ]] || \
+  fail 'Controller fixture initialization escaped into the enclosing repository.'
 git -C "$fixture_repository" config user.name 'Strata Controller Test'
 git -C "$fixture_repository" config user.email 'controller-test@example.invalid'
+git -C "$fixture_repository" config commit.gpgsign false
 
 write_script() {
   printf '#!/usr/bin/env bash\nset -euo pipefail\n' > "$fixture_repository/$1"
@@ -320,6 +444,7 @@ for source in \
   release/verify-current-controller-release-order.sh \
   release/verify-github-tag-ruleset.sh \
   release/verify-pages-deployment-source.sh \
+  release/verify-pages-artifact-equivalence.sh \
   release/wait-for-pages-source-receipt.sh \
   release/run-publish-controller-recovery.sh \
   gradle/list-java-toolchains.sh; do
@@ -333,8 +458,35 @@ fixture_predecessor_commit="$(printf 'c%.0s' {1..40})"
 fixture_predecessor_object="$(printf 'd%.0s' {1..40})"
 write_metadata v8.4.2 "$fixture_current_commit" "$fixture_current_object" v7.9.6 "$fixture_predecessor_commit" "$fixture_predecessor_object"
 git -C "$fixture_repository" add release gradle
+git -C "$fixture_repository" update-index --chmod=-x \
+  release/verify-release-tag.sh \
+  release/verify-github-tag-ruleset.sh \
+  release/verify-pages-deployment-source.sh \
+  release/verify-pages-artifact-equivalence.sh \
+  release/wait-for-pages-source-receipt.sh
+git -C "$fixture_repository" update-index --chmod=+x \
+  release/list-release-tags.sh \
+  release/verify-current-controller-release-order.sh \
+  release/run-publish-controller-recovery.sh \
+  gradle/list-java-toolchains.sh
 git -C "$fixture_repository" commit --quiet -m 'Create arbitrary controller fixture'
 valid_commit="$(git -C "$fixture_repository" rev-parse HEAD)"
+
+for fixture_mode_spec in \
+  '100644|release/current-controller.json' \
+  '100644|release/verify-release-tag.sh' \
+  '100755|release/list-release-tags.sh' \
+  '100755|release/verify-current-controller-release-order.sh' \
+  '100755|release/run-publish-controller-recovery.sh' \
+  '100755|gradle/list-java-toolchains.sh'; do
+  expected_fixture_mode="${fixture_mode_spec%%|*}"
+  fixture_mode_path="${fixture_mode_spec#*|}"
+  fixture_mode_record="$(git -C "$fixture_repository" ls-tree --full-tree "$valid_commit" -- "$fixture_mode_path")"
+  read -r fixture_mode object_type fixture_blob verified_fixture_path <<< "$fixture_mode_record"
+  [[ "$fixture_mode" == "$expected_fixture_mode" && "$object_type" == "blob" && \
+    "$fixture_blob" =~ ^([0-9a-f]{40}|[0-9a-f]{64})$ && "$verified_fixture_path" == "$fixture_mode_path" ]] || \
+    fail "Controller fixture did not preserve $expected_fixture_mode for $fixture_mode_path."
+done
 
 expect_guard_failure() {
   local label="$1"
@@ -350,9 +502,18 @@ valid_directory="$controller_test_root/valid"
 mkdir "$valid_directory"
 (cd "$fixture_repository" && bash "$controller_guard" materialize "$valid_commit" "$valid_directory")
 (cd "$fixture_repository" && bash "$controller_guard" verify "$valid_commit" "$valid_directory")
+for materialized_mode_spec in \
+  'release/current-controller.json|current-controller.json' \
+  'release/list-release-tags.sh|list-release-tags.sh'; do
+  materialized_source="${materialized_mode_spec%%|*}"
+  materialized_destination="${materialized_mode_spec#*|}"
+  materialized_blob="$(git -C "$fixture_repository" rev-parse "$valid_commit:$materialized_source")"
+  [[ "$(git -C "$fixture_repository" hash-object --no-filters -- "$valid_directory/$materialized_destination")" == "$materialized_blob" ]] || \
+    fail "Materialized 100644/100755 fixture bytes differ from $materialized_source."
+done
 for generic in current-controller.json verify-release-tag.sh list-release-tags.sh verify-current-controller-release-order.sh \
   verify-github-tag-ruleset.sh github-release-tag-ruleset.json \
-  github-release-tag-ruleset-receipt.json verify-pages-deployment-source.sh wait-for-pages-source-receipt.sh \
+  github-release-tag-ruleset-receipt.json verify-pages-deployment-source.sh verify-pages-artifact-equivalence.sh wait-for-pages-source-receipt.sh \
   run-publish-controller-recovery.sh list-java-toolchains.sh; do
   [[ -f "$valid_directory/$generic" && ! -L "$valid_directory/$generic" ]] || fail "Generic controller mapping is missing: $generic"
 done
@@ -370,12 +531,19 @@ order_repository="$controller_test_root/order-repository"
 git init --quiet "$order_repository"
 git -C "$order_repository" config user.name 'Strata Release Order Test'
 git -C "$order_repository" config user.email 'release-order-test@example.invalid'
+git -C "$order_repository" config commit.gpgsign false
+git -C "$order_repository" config tag.gpgsign false
 printf 'fixture\n' > "$order_repository/fixture.txt"
 git -C "$order_repository" add fixture.txt
 git -C "$order_repository" commit --quiet -m 'Create release-order fixture'
 git -C "$order_repository" tag --annotate v7.9.6 --message predecessor
 git -C "$order_repository" tag --annotate v8.4.2 --message current
 bash "$order_directory/verify-current-controller-release-order.sh" "$order_directory/current-controller.json" "$order_repository" >/dev/null
+git -C "$order_repository" tag v9.0.0
+if bash "$order_directory/verify-current-controller-release-order.sh" "$order_directory/current-controller.json" "$order_repository" >/dev/null 2>&1; then
+  fail 'Release-order verifier accepted a newer lightweight stable tag.'
+fi
+git -C "$order_repository" tag --delete v9.0.0 >/dev/null
 git -C "$order_repository" tag --annotate v8.1.0 --message intervening
 if bash "$order_directory/verify-current-controller-release-order.sh" "$order_directory/current-controller.json" "$order_repository" >/dev/null 2>&1; then
   fail 'Release-order verifier accepted metadata that skipped an intervening stable tag.'
@@ -450,6 +618,13 @@ mkdir "$controller_test_root/mode"
 expect_guard_failure 'metadata source mode' materialize "$mode_commit" "$controller_test_root/mode"
 
 git -C "$fixture_repository" reset --hard "$valid_commit" >/dev/null
+git -C "$fixture_repository" update-index --chmod=-x release/list-release-tags.sh
+git -C "$fixture_repository" commit --quiet -m 'Make executable controller source non-executable'
+reverse_mode_commit="$(git -C "$fixture_repository" rev-parse HEAD)"
+mkdir "$controller_test_root/reverse-mode"
+expect_guard_failure 'executable source mode' materialize "$reverse_mode_commit" "$controller_test_root/reverse-mode"
+
+git -C "$fixture_repository" reset --hard "$valid_commit" >/dev/null
 git -C "$fixture_repository" rm --quiet release/wait-for-pages-source-receipt.sh
 git -C "$fixture_repository" commit --quiet -m 'Remove controller tool fixture'
 missing_commit="$(git -C "$fixture_repository" rev-parse HEAD)"
@@ -463,6 +638,13 @@ git -C "$fixture_repository" commit --quiet -m 'Make controller tool fixture a s
 symlink_source_commit="$(git -C "$fixture_repository" rev-parse HEAD)"
 mkdir "$controller_test_root/symlink-source"
 expect_guard_failure 'symlink source mode' materialize "$symlink_source_commit" "$controller_test_root/symlink-source"
+
+git -C "$fixture_repository" reset --hard "$valid_commit" >/dev/null
+git -C "$fixture_repository" update-index --add --cacheinfo "160000,$valid_commit,release/wait-for-pages-source-receipt.sh"
+git -C "$fixture_repository" commit --quiet -m 'Make controller tool fixture a gitlink'
+gitlink_source_commit="$(git -C "$fixture_repository" rev-parse HEAD)"
+mkdir "$controller_test_root/gitlink-source"
+expect_guard_failure 'gitlink source mode' materialize "$gitlink_source_commit" "$controller_test_root/gitlink-source"
 
 git -C "$fixture_repository" reset --hard "$valid_commit" >/dev/null
 printf '[]\n' > "$fixture_repository/release/github-release-tag-ruleset.json"
@@ -550,16 +732,30 @@ mkdir "$wrapper_directory"
 cp "$recovery_wrapper" "$wrapper_directory/run-publish-controller-recovery.sh"
 jq -n '{releaseSource: {tag: "v9.8.7"}, baselineReleases: [{tag: "v1.2.3"}]}' > "$wrapper_directory/backlog-recovery.json"
 printf '{}\n' > "$wrapper_directory/backlog-artifact-evidence.json"
+cp "$recovery_directory/verify-pages-deployment-source.sh" "$wrapper_directory/verify-pages-deployment-source.sh"
+cp "$recovery_directory/verify-pages-artifact-equivalence.sh" "$wrapper_directory/verify-pages-artifact-equivalence.sh"
+wrapper_pages_verifier_sha256="$(sha256sum "$wrapper_directory/verify-pages-deployment-source.sh" | cut -d ' ' -f 1)"
+wrapper_pages_comparator_sha256="$(sha256sum "$wrapper_directory/verify-pages-artifact-equivalence.sh" | cut -d ' ' -f 1)"
 cat > "$wrapper_directory/backlog-recovery-runner" <<'WRAPPER_FIXTURE'
 #!/usr/bin/env bash
 set -euo pipefail
 [[ "$(basename "$0")" == 'run-modrinth-v9.8.7-backlog-recovery.sh' ]]
 [[ "$(basename "$2")" == 'modrinth-v9.8.7-backlog-recovery.json' ]]
 [[ -f "$(dirname "$0")/modrinth-v1.2.3-artifacts.json" ]]
+[[ -f "$(dirname "$0")/verify-pages-deployment-source.sh" && \
+  ! -L "$(dirname "$0")/verify-pages-deployment-source.sh" ]]
+[[ -f "$(dirname "$0")/verify-pages-artifact-equivalence.sh" && \
+  ! -L "$(dirname "$0")/verify-pages-artifact-equivalence.sh" ]]
+[[ "$(sha256sum "$(dirname "$0")/verify-pages-deployment-source.sh" | cut -d ' ' -f 1)" == \
+  "$WRAPPER_PAGES_VERIFIER_SHA256" ]]
+[[ "$(sha256sum "$(dirname "$0")/verify-pages-artifact-equivalence.sh" | cut -d ' ' -f 1)" == \
+  "$WRAPPER_PAGES_COMPARATOR_SHA256" ]]
 printf 'passed\n' > "$WRAPPER_MARKER"
 WRAPPER_FIXTURE
 wrapper_marker="$controller_test_root/wrapper-passed"
 RUNNER_TEMP="$controller_test_root" WRAPPER_MARKER="$wrapper_marker" \
+  WRAPPER_PAGES_VERIFIER_SHA256="$wrapper_pages_verifier_sha256" \
+  WRAPPER_PAGES_COMPARATOR_SHA256="$wrapper_pages_comparator_sha256" \
   bash "$wrapper_directory/run-publish-controller-recovery.sh" preflight \
     "$wrapper_directory/backlog-recovery.json" project v9.8.7 \
     "$fixture_current_commit" "$valid_commit" 'pages record'

@@ -3,24 +3,17 @@ package dev.s7a.strata.gradle.release
 import java.nio.file.Path
 
 /**
- * Resolves the tracked Maven artifact inventory for one release version.
- *
- * The tracked file deliberately omits the release version so publishing a new Strata version does not require rewriting every artifact entry.
+ * Resolves a canonical versionless Maven artifact inventory for one release version.
  */
 internal object MavenReleaseCoordinates {
     /**
-     * Appends [releaseVersion] to each canonical `group:artifact` entry.
+     * Validates and normalizes declaration-order `group:artifact` entries.
      *
-     * @param artifactLines tracked artifact inventory in declaration order.
-     * @param releaseVersion exact version shared by every resolved coordinate.
-     * @return unique `group:artifact:version` coordinates in declaration order.
-     * @throws IllegalStateException when the version or inventory is empty, malformed, or duplicated.
+     * @param artifactLines versionless artifact inventory in declaration order.
+     * @return unique non-blank canonical artifacts in declaration order.
+     * @throws IllegalStateException when the inventory is empty, malformed, or duplicated.
      */
-    internal fun resolve(
-        artifactLines: List<String>,
-        releaseVersion: String,
-    ): List<String> {
-        check(releaseVersion.matches(RELEASE_VERSION)) { "Invalid Maven release version: $releaseVersion" }
+    internal fun canonicalArtifacts(artifactLines: List<String>): List<String> {
         val artifacts = artifactLines.filter(String::isNotBlank)
         check(artifacts.isNotEmpty()) { "The Maven artifact inventory must contain at least one entry." }
         artifacts.forEach { artifact ->
@@ -34,7 +27,23 @@ internal object MavenReleaseCoordinates {
             }
         }
         check(artifacts.distinct().size == artifacts.size) { "Maven artifact inventory entries must be unique." }
-        return artifacts.map { artifact -> "$artifact:$releaseVersion" }
+        return artifacts
+    }
+
+    /**
+     * Appends [releaseVersion] to each canonical `group:artifact` entry.
+     *
+     * @param artifactLines versionless artifact inventory in declaration order.
+     * @param releaseVersion exact version shared by every resolved coordinate.
+     * @return unique `group:artifact:version` coordinates in declaration order.
+     * @throws IllegalStateException when the version or inventory is empty, malformed, or duplicated.
+     */
+    internal fun resolve(
+        artifactLines: List<String>,
+        releaseVersion: String,
+    ): List<String> {
+        check(releaseVersion.matches(RELEASE_VERSION)) { "Invalid Maven release version: $releaseVersion" }
+        return canonicalArtifacts(artifactLines).map { artifact -> "$artifact:$releaseVersion" }
     }
 
     private const val ARTIFACT_SEGMENT_COUNT = 2

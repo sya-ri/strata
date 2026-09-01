@@ -116,7 +116,7 @@ jobs:
           args: --within-docker false
       - name: Verify complete Gradle IDE model
         if: always()
-        run: bash gradle/verify-qodana-model.sh "${{ runner.temp }}/qodana/results/projectStructure/Modules.json"
+        run: bash gradle/verify-qodana-model.sh "${{ runner.temp }}/qodana/results/projectStructure/Modules.json" "$GITHUB_WORKSPACE" /data/project
       - name: Measure Qodana cache
         if: always()
         run: |

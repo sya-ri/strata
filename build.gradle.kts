@@ -406,12 +406,34 @@ private val minecraftFabricTargets =
                 ),
         ),
     )
-private val representativeReleaseMinecraftVersions =
+private val releaseMinecraftTargetsByJavaVersion =
     minecraftFabricTargets
         .groupBy(MinecraftFabricTarget::javaVersion)
         .toSortedMap()
         .values
-        .map { targets -> targets.last().version }
+        .toList()
+private val representativeReleaseMinecraftVersions =
+    releaseMinecraftTargetsByJavaVersion
+        .mapIndexed { index, targets -> if (index == 0) targets.first().version else targets.last().version }
+private val numericMinecraftVersionPattern = Regex("(?:0|[1-9][0-9]*)(?:\\.(?:0|[1-9][0-9]*))*")
+
+private fun compareNumericMinecraftVersions(
+    left: String,
+    right: String,
+): Int {
+    val leftParts = left.split('.')
+    val rightParts = right.split('.')
+    repeat(maxOf(leftParts.size, rightParts.size)) { index ->
+        val leftPart = leftParts.getOrElse(index) { "0" }
+        val rightPart = rightParts.getOrElse(index) { "0" }
+        val lengthComparison = leftPart.length.compareTo(rightPart.length)
+        if (lengthComparison != 0) return lengthComparison
+        val lexicalComparison = leftPart.compareTo(rightPart)
+        if (lexicalComparison != 0) return lexicalComparison
+    }
+    return leftParts.size.compareTo(rightParts.size)
+}
+
 private val koverJvmProjectPaths = rootProject.file("gradle/kover-jvm-projects.txt").readLines().filter(String::isNotBlank)
 check(koverJvmProjectPaths.distinct().size == koverJvmProjectPaths.size) {
     "gradle/kover-jvm-projects.txt must not contain duplicate project paths."
@@ -423,18 +445,25 @@ private val minecraftTargetByProjectPath =
     minecraftFabricTargets
         .flatMap { target -> listOf(target.runtimeProjectPath, target.integrationProjectPath).map { path -> path to target } }
         .toMap()
-val publishableProjectPaths =
-    setOf(
+val releasePublicationProjectPaths =
+    listOf(
         ":api",
         ":runtime:core",
         ":runtime:headless",
         ":runtime:minecraft",
         ":runtime:minecraft-fonts-lwjgl",
     ) + minecraftFabricTargets.map(MinecraftFabricTarget::runtimeProjectPath)
+val releaseArtifactByProjectPath =
+    releasePublicationProjectPaths.associateWith { projectPath ->
+        "$group:strata-${projectPath.removePrefix(":").replace(':', '-')}"
+    }
+val publishableProjectPaths = releasePublicationProjectPaths.toSet()
 val verifyMinecraftFabricTargetMatrix = tasks.register("verifyMinecraftFabricTargetMatrix") {
     group = "verification"
     description = "Verifies that the typed Minecraft target matrix covers every versioned runtime and integration project."
     inputs.property("targets", minecraftFabricTargets.map(MinecraftFabricTarget::version))
+    inputs.property("targetJavaVersions", minecraftFabricTargets.map(MinecraftFabricTarget::javaVersion))
+    inputs.property("representativeReleaseMinecraftVersions", representativeReleaseMinecraftVersions)
     inputs.property("sourceLinkPaths", minecraftFabricTargets.flatMap(MinecraftFabricTarget::allSourceLinkPaths))
     doLast {
         val expectedRuntimePaths = minecraftFabricTargets.map(MinecraftFabricTarget::runtimeProjectPath).toSet()
@@ -457,8 +486,44 @@ val verifyMinecraftFabricTargetMatrix = tasks.register("verifyMinecraftFabricTar
         check(actualIntegrationPaths == expectedIntegrationPaths) {
             "Minecraft integration projects must match the target matrix: expected=$expectedIntegrationPaths actual=$actualIntegrationPaths"
         }
-        check(minecraftFabricTargets.map(MinecraftFabricTarget::version).distinct().size == minecraftFabricTargets.size) {
+        val targetVersions = minecraftFabricTargets.map(MinecraftFabricTarget::version)
+        check(targetVersions.all { version -> version.matches(numericMinecraftVersionPattern) }) {
+            "Minecraft target versions must use dot-separated numeric syntax: $targetVersions"
+        }
+        check(targetVersions.distinct().size == minecraftFabricTargets.size) {
             "Minecraft target versions must be unique."
+        }
+        check(targetVersions.zipWithNext().all { (earlier, later) -> compareNumericMinecraftVersions(earlier, later) < 0 }) {
+            "Minecraft target versions must remain in strictly ascending numeric order: $targetVersions"
+        }
+        check(releaseMinecraftTargetsByJavaVersion.flatten() == minecraftFabricTargets) {
+            "Minecraft targets must keep Java toolchain groups contiguous and in ascending toolchain order."
+        }
+        val supportedFloor = minecraftFabricTargets.firstOrNull()?.version
+        val declaredSupportedFloor = libs.versions.minecraft120.get()
+        check(supportedFloor == declaredSupportedFloor) {
+            "The Minecraft target matrix must begin with the declared supported floor: " +
+                "expected=$declaredSupportedFloor actual=$supportedFloor"
+        }
+        check(representativeReleaseMinecraftVersions.firstOrNull() == supportedFloor) {
+            "The first representative release Minecraft version must be the supported floor: " +
+                "expected=$supportedFloor actual=${representativeReleaseMinecraftVersions.firstOrNull()}"
+        }
+        val expectedLaterRepresentatives = releaseMinecraftTargetsByJavaVersion.drop(1).map { targets -> targets.last().version }
+        check(representativeReleaseMinecraftVersions.drop(1) == expectedLaterRepresentatives) {
+            "Each later Java toolchain must use its latest Minecraft target as the representative release version."
+        }
+        val targetByVersion = minecraftFabricTargets.associateBy(MinecraftFabricTarget::version)
+        val unknownRepresentativeVersions = representativeReleaseMinecraftVersions.filterNot(targetByVersion::containsKey)
+        check(unknownRepresentativeVersions.isEmpty()) {
+            "Representative release Minecraft versions must belong to the target matrix: $unknownRepresentativeVersions"
+        }
+        val expectedRepresentativeJavaVersions = minecraftFabricTargets.map(MinecraftFabricTarget::javaVersion).distinct()
+        val actualRepresentativeJavaVersions =
+            representativeReleaseMinecraftVersions.map { version -> targetByVersion.getValue(version).javaVersion }
+        check(actualRepresentativeJavaVersions == expectedRepresentativeJavaVersions) {
+            "Representative release Minecraft versions must cover each Java toolchain exactly once and in order: " +
+                "expected=$expectedRepresentativeJavaVersions actual=$actualRepresentativeJavaVersions"
         }
         minecraftFabricTargets.forEach { target ->
             check(target.allSourceLinkPaths.distinct().size == target.allSourceLinkPaths.size) {
@@ -953,7 +1018,7 @@ subprojects {
     }
 
     if (publishableModule) {
-        val artifactId = "strata-${path.removePrefix(":").replace(':', '-')}"
+        val artifactId = releaseArtifactByProjectPath.getValue(path).substringAfter(':')
         extensions.configure<MavenPublishBaseExtension> {
             coordinates(group.toString(), artifactId, version.toString())
             configure(
@@ -1113,48 +1178,50 @@ tasks.named("check") {
     dependsOn(gradle.includedBuild("build-logic").task(":check"), verifyGeneratedDokkaSourceLinks)
 }
 
-val expectedReleaseArtifacts =
-    listOf(
-        "dev.s7a.strata:strata-api",
-        "dev.s7a.strata:strata-runtime-core",
-        "dev.s7a.strata:strata-runtime-headless",
-        "dev.s7a.strata:strata-runtime-minecraft",
-        "dev.s7a.strata:strata-runtime-minecraft-fonts-lwjgl",
-    ) +
-        minecraftFabricTargets.map { target ->
-            "dev.s7a.strata:strata-runtime-minecraft-fabric-${target.version}"
-        }
+val releaseArtifacts = releasePublicationProjectPaths.map { projectPath -> releaseArtifactByProjectPath.getValue(projectPath) }
 val verifyReleasePublicationMatrix =
     tasks.register("verifyReleasePublicationMatrix") {
         group = "verification"
         description = "Verifies the Maven Central release inventory against every configured publication target."
-        val coordinatesFile = layout.projectDirectory.file("release/maven-coordinates.txt")
+        val coordinatesFile = layout.buildDirectory.file("release/maven-coordinates.txt")
+        dependsOn("mavenArtifactInventory")
         inputs.file(coordinatesFile)
-        inputs.property("expectedArtifacts", expectedReleaseArtifacts)
+        inputs.property("publicationProjectPaths", releasePublicationProjectPaths)
+        inputs.property("releaseArtifacts", releaseArtifacts)
         doLast {
-            val trackedArtifacts = coordinatesFile.asFile.readLines().filter(String::isNotBlank)
-            check(expectedReleaseArtifacts.isNotEmpty()) { "The release must publish at least one Maven artifact." }
-            check(expectedReleaseArtifacts.distinct().size == expectedReleaseArtifacts.size) {
+            val generatedArtifacts = coordinatesFile.get().asFile.readLines().filter(String::isNotBlank)
+            check(releasePublicationProjectPaths.isNotEmpty()) { "The release must publish at least one Maven artifact." }
+            check(releasePublicationProjectPaths.distinct().size == releasePublicationProjectPaths.size) {
+                "The typed publication matrix contains duplicate project paths."
+            }
+            check(releasePublicationProjectPaths.all { projectPath -> findProject(projectPath) != null }) {
+                "The typed publication matrix contains an unknown Gradle project."
+            }
+            check(releaseArtifacts.distinct().size == releaseArtifacts.size) {
                 "The typed publication matrix contains duplicate Maven artifacts."
             }
-            check(trackedArtifacts == expectedReleaseArtifacts) {
-                "release/maven-coordinates.txt differs from the typed publication matrix."
+            check(generatedArtifacts == releaseArtifacts) {
+                "The generated Maven artifact inventory differs from the typed publication matrix."
             }
         }
     }
+
+tasks.named("check") {
+    dependsOn(verifyReleasePublicationMatrix)
+}
 
 val publishToMavenLocal =
     tasks.register("publishToMavenLocal") {
         group = "publishing"
         description = "Publishes every configured Strata release artifact to Maven Local."
-        dependsOn(publishableProjectPaths.sorted().map { projectPath -> "$projectPath:publishToMavenLocal" })
+        dependsOn(releasePublicationProjectPaths.map { projectPath -> "$projectPath:publishToMavenLocal" })
     }
 
 val verifyPublishedConsumer =
     tasks.register<GradleBuild>("verifyPublishedConsumer") {
         group = "verification"
         description = "Publishes every Maven artifact locally and checks a standalone coordinate-only consumer."
-        dependsOn(publishToMavenLocal, verifyReleasePublicationMatrix)
+        dependsOn(publishToMavenLocal, verifyMinecraftFabricTargetMatrix, verifyReleasePublicationMatrix)
         dir = layout.projectDirectory.dir("release/consumer").asFile
         tasks = listOf("clean", "check")
         startParameter.projectProperties =
@@ -1203,7 +1270,7 @@ extensions.configure<StrataReleaseExtension> {
         layout.projectDirectory.file("docs/components/screen-inventory.png"),
         layout.projectDirectory.file("docs/components/screen-progress.png"),
     )
-    mavenCoordinatesFile.set(layout.projectDirectory.file("release/maven-coordinates.txt"))
+    mavenArtifacts.set(releaseArtifacts)
     mavenLocalRepository.set(
         layout.dir(providers.provider { file("${System.getProperty("user.home")}/.m2/repository") }),
     )

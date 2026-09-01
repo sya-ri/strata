@@ -7,6 +7,23 @@ import org.junit.jupiter.api.Test
 /** Verifies that the stable Maven artifact inventory resolves exactly one requested release version. */
 internal class MavenReleaseCoordinatesTest {
     @Test
+    fun `canonicalizes versionless artifacts in declaration order`() {
+        assertEquals(
+            listOf(
+                "dev.s7a.strata:strata-api",
+                "dev.s7a.strata:strata-runtime-core",
+            ),
+            MavenReleaseCoordinates.canonicalArtifacts(
+                listOf(
+                    "dev.s7a.strata:strata-api",
+                    "",
+                    "dev.s7a.strata:strata-runtime-core",
+                ),
+            ),
+        )
+    }
+
+    @Test
     fun `resolves every artifact against the requested version`() {
         assertEquals(
             listOf(
@@ -37,7 +54,7 @@ internal class MavenReleaseCoordinatesTest {
             listOf("dev.s7a.strata:strata-api", "dev.s7a.strata:strata-api"),
         ).forEach { inventory ->
             assertThrows(IllegalStateException::class.java) {
-                MavenReleaseCoordinates.resolve(inventory, "1.2.3")
+                MavenReleaseCoordinates.canonicalArtifacts(inventory)
             }
         }
     }

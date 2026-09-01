@@ -22,7 +22,7 @@ import javax.inject.Inject
 /**
  * Produces authenticated, read-only Central Publisher Portal deployment evidence.
  *
- * The task resolves the tracked artifact inventory against [releaseVersion] and owns and replaces only its receipt and evidence directory.
+ * The task resolves the canonical artifact inventory against [releaseVersion] and owns and replaces only its receipt and evidence directory.
  * Credentials are internal inputs, are passed directly to the short-lived coordinator, and never appear in outputs.
  */
 @DisableCachingByDefault(because = "The task verifies live authenticated Central Publisher Portal state.")

@@ -67,6 +67,44 @@ jobs:
           CONFIRMATION: ${{ inputs.confirmation }}
         run: |
           set -euo pipefail
+          strata_jq_path="$(type -P jq || true)"
+          strata_od_path="$(type -P od || true)"
+          strata_tr_path="$(type -P tr || true)"
+          if [[ "$strata_jq_path" == /* && -x "$strata_jq_path" && \
+            "$strata_od_path" == /* && -x "$strata_od_path" && \
+            "$strata_tr_path" == /* && -x "$strata_tr_path" ]]; then
+            :
+          else
+            echo 'Portable jq initialization requires absolute executable jq, od, and tr paths.' >&2
+            exit 1
+          fi
+          readonly strata_jq_path strata_od_path strata_tr_path
+          strata_jq_binary_options=()
+          if "$strata_jq_path" --binary -n 'null' >/dev/null 2>&1; then
+            strata_jq_binary_options=(--binary)
+          fi
+          readonly -a strata_jq_binary_options
+          strata_jq_probe_hex=''
+          if strata_jq_probe_hex="$(
+            "$strata_jq_path" "${strata_jq_binary_options[@]}" -nr --arg x x "\$x" |
+              "$strata_od_path" -An -tx1 |
+              "$strata_tr_path" -d '[:space:]'
+          )"; then
+            :
+          else
+            echo 'jq output-mode byte probing failed.' >&2
+            exit 1
+          fi
+          if [[ "$strata_jq_probe_hex" == '780a' ]]; then
+            unset strata_jq_probe_hex
+          else
+            echo 'jq output mode does not produce exact LF-delimited bytes.' >&2
+            exit 1
+          fi
+          portable_jq() {
+            "$strata_jq_path" "${strata_jq_binary_options[@]}" "$@"
+          }
+          readonly -f portable_jq
           [[ "$GITHUB_REF" == "refs/heads/master" ]] || { echo 'Release must be dispatched from master.' >&2; exit 1; }
           [[ "$CONFIRMATION" == "release $RELEASE_TAG" ]] || { echo 'Release confirmation does not match.' >&2; exit 1; }
           [[ "$RELEASE_TAG" =~ ^v(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)$ ]] || { echo 'A canonical stable semantic release tag is required.' >&2; exit 1; }
@@ -96,13 +134,13 @@ jobs:
           trap cleanup EXIT INT TERM
           run_controller_tool_guard materialize "$GITHUB_SHA" "$controller_directory"
           metadata="$controller_directory/current-controller.json"
-          current_tag="$(jq -er '.current.tag' "$metadata")"
-          current_commit="$(jq -er '.current.commit' "$metadata")"
-          current_object="$(jq -er '.current.tagObject' "$metadata")"
-          representative_minecraft_versions="$(jq -cer '.current.representativeMinecraftVersions' "$metadata")"
-          predecessor_tag="$(jq -er '.predecessor.tag' "$metadata")"
-          predecessor_commit="$(jq -er '.predecessor.commit' "$metadata")"
-          predecessor_object="$(jq -er '.predecessor.tagObject' "$metadata")"
+          current_tag="$(portable_jq -er '.current.tag' "$metadata")"
+          current_commit="$(portable_jq -er '.current.commit' "$metadata")"
+          current_object="$(portable_jq -er '.current.tagObject' "$metadata")"
+          representative_minecraft_versions="$(portable_jq -cer '.current.representativeMinecraftVersions' "$metadata")"
+          predecessor_tag="$(portable_jq -er '.predecessor.tag' "$metadata")"
+          predecessor_commit="$(portable_jq -er '.predecessor.commit' "$metadata")"
+          predecessor_object="$(portable_jq -er '.predecessor.tagObject' "$metadata")"
           [[ "$RELEASE_TAG" == "$current_tag" ]] || { echo 'Requested tag does not match current-controller metadata.' >&2; exit 1; }
           [[ "$predecessor_tag" =~ ^v(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)$ ]] || { echo 'Predecessor tag is not canonical stable semantic syntax.' >&2; exit 1; }
           [[ "$(printf '%s\n' "${predecessor_tag#v}" "${current_tag#v}" | sort -V | head -n 1)" == "${predecessor_tag#v}" && \
@@ -136,12 +174,15 @@ jobs:
             root_version="$(git show "${commit}:build.gradle.kts" | sed -nE 's/^version = "([^"]+)"$/\1/p')"
             [[ "$root_version" == "${tag#v}" ]] || { echo "Root version does not match $tag." >&2; exit 1; }
           done
-          current_inventory="$(git show "${current_commit}:release/maven-coordinates.txt")"
           while IFS= read -r minecraft_version; do
-            artifact="strata-runtime-minecraft-fabric-$minecraft_version"
-            matches="$(awk -F: -v artifact="$artifact" '$2 == artifact { count++ } END { print count + 0 }' <<< "$current_inventory")"
-            [[ "$matches" == '1' ]] || { echo "Representative Minecraft version $minecraft_version does not map to one current Fabric artifact." >&2; exit 1; }
-          done < <(jq -er '.[]' <<< "$representative_minecraft_versions")
+            for project_kind in runtime integration; do
+              project_path="$project_kind/minecraft-fabric-$minecraft_version/build.gradle.kts"
+              record="$(git --no-replace-objects ls-tree --full-tree "$current_commit" -- "$project_path")"
+              [[ -n "$record" && "$record" != *$'\n'* ]] || { echo "Representative Minecraft project is missing or ambiguous: $project_path" >&2; exit 1; }
+              read -r mode object_type blob verified_path <<< "$record"
+              [[ "$mode" == '100644' && "$object_type" == 'blob' && "$blob" =~ ^([0-9a-f]{40}|[0-9a-f]{64})$ && "$verified_path" == "$project_path" ]] || { echo "Representative Minecraft project is not a regular blob: $project_path" >&2; exit 1; }
+            done
+          done < <(portable_jq -er '.current.representativeMinecraftVersions[]' "$metadata")
           {
             echo "controller_commit=$GITHUB_SHA"
             echo "current_tag=$current_tag"
@@ -173,16 +214,12 @@ jobs:
               }
             done
           done
-          release_pages="$(gh run list --workflow pages.yml --commit "$TAG_COMMIT" --event push --status completed --limit 100 --json conclusion,databaseId,event,headBranch,headSha)"
-          release_pages_run_id="$(jq -er --arg tag "$RELEASE_TAG" --arg sha "$TAG_COMMIT" '
-            [.[] | select(.conclusion == "success" and .event == "push" and .headBranch == $tag and .headSha == $sha)] |
-            select(length == 1) | .[0].databaseId | select(type == "number" and . > 0 and . == floor) | tostring
-          ' <<< "$release_pages")" || { echo 'Expected one successful tag-triggered Pages run.' >&2; exit 1; }
           controller_pages="$(gh run list --workflow pages.yml --commit "$GITHUB_SHA" --event push --status completed --limit 100 --json conclusion,databaseId,event,headBranch,headSha)"
           controller_pages_run_id="$(jq -er --arg sha "$GITHUB_SHA" '
             [.[] | select(.conclusion == "success" and .event == "push" and .headBranch == "master" and .headSha == $sha)] |
             select(length == 1) | .[0].databaseId | select(type == "number" and . > 0 and . == floor) | tostring
           ' <<< "$controller_pages")" || { echo 'Expected one successful controller Pages run.' >&2; exit 1; }
+          release_pages_run_id="$controller_pages_run_id"
           bash -n release/verify-pages-deployment-source.sh
           bash -n release/wait-for-pages-source-receipt.sh
           pages_record="$(bash release/verify-pages-deployment-source.sh \
@@ -390,22 +427,68 @@ jobs:
           ORG_GRADLE_PROJECT_signingInMemoryKeyPassword: ${{ secrets.SIGNING_PASSWORD }}
         run: |
           set -euo pipefail
+          strata_jq_path="$(type -P jq || true)"
+          strata_od_path="$(type -P od || true)"
+          strata_tr_path="$(type -P tr || true)"
+          if [[ "$strata_jq_path" == /* && -x "$strata_jq_path" && \
+            "$strata_od_path" == /* && -x "$strata_od_path" && \
+            "$strata_tr_path" == /* && -x "$strata_tr_path" ]]; then
+            :
+          else
+            echo 'Portable jq initialization requires absolute executable jq, od, and tr paths.' >&2
+            exit 1
+          fi
+          readonly strata_jq_path strata_od_path strata_tr_path
+          strata_jq_binary_options=()
+          if "$strata_jq_path" --binary -n 'null' >/dev/null 2>&1; then
+            strata_jq_binary_options=(--binary)
+          fi
+          readonly -a strata_jq_binary_options
+          strata_jq_probe_hex=''
+          if strata_jq_probe_hex="$(
+            "$strata_jq_path" "${strata_jq_binary_options[@]}" -nr --arg x x "\$x" |
+              "$strata_od_path" -An -tx1 |
+              "$strata_tr_path" -d '[:space:]'
+          )"; then
+            :
+          else
+            echo 'jq output-mode byte probing failed.' >&2
+            exit 1
+          fi
+          if [[ "$strata_jq_probe_hex" == '780a' ]]; then
+            unset strata_jq_probe_hex
+          else
+            echo 'jq output mode does not produce exact LF-delimited bytes.' >&2
+            exit 1
+          fi
+          portable_jq() {
+            "$strata_jq_path" "${strata_jq_binary_options[@]}" "$@"
+          }
+          readonly -f portable_jq
           bash ./gradlew --no-parallel --max-workers=2 --no-build-cache \
             verifyReleasePublicationMatrix verifyPublishedConsumer modrinthReleaseManifest \
             -Pstrata.sourceRevision="$RELEASE_TAG" \
             -Pstrata.sourceCommit="$RELEASE_SOURCE_COMMIT" \
             -Pstrata.modrinthProjectId="$PROJECT_ID"
-          coordinate_count="$(grep -cve '^[[:space:]]*$' release/maven-coordinates.txt)"
+          maven_inventory=''
+          for candidate in build/release/maven-coordinates.txt release/maven-coordinates.txt; do
+            if [[ -f "$candidate" && ! -L "$candidate" ]]; then
+              [[ -z "$maven_inventory" ]] || { echo 'Multiple Maven artifact inventories are present.' >&2; exit 1; }
+              maven_inventory="$candidate"
+            fi
+          done
+          [[ -n "$maven_inventory" ]] || { echo 'No Maven artifact inventory was generated or supplied by the immutable release.' >&2; exit 1; }
+          coordinate_count="$(grep -cve '^[[:space:]]*$' "$maven_inventory")"
           artifact_count="$(jq -er '.artifacts | length | select(. > 0)' build/release/modrinth/manifest.json)"
           [[ "$coordinate_count" =~ ^[1-9][0-9]*$ ]] || { echo 'Maven coordinate inventory is empty.' >&2; exit 1; }
-          [[ "$(sort release/maven-coordinates.txt | uniq -d | wc -l | tr -d '[:space:]')" == "0" ]] || { echo 'Maven coordinate inventory contains duplicates.' >&2; exit 1; }
+          [[ "$(sort "$maven_inventory" | uniq -d | wc -l | tr -d '[:space:]')" == "0" ]] || { echo 'Maven coordinate inventory contains duplicates.' >&2; exit 1; }
           jq -e --arg release_version "${RELEASE_TAG#v}" --argjson artifact_count "$artifact_count" '
             .releaseVersion == $release_version and (.artifacts | length) == $artifact_count
           ' build/release/modrinth/manifest.json >/dev/null || { echo 'Modrinth manifest inventory differs.' >&2; exit 1; }
-          mapfile -t representative_minecraft_versions < <(jq -er '.[]' <<< "$RELEASE_REPRESENTATIVE_MINECRAFT_VERSIONS")
+          mapfile -t representative_minecraft_versions < <(portable_jq -er '.[]' <<< "$RELEASE_REPRESENTATIVE_MINECRAFT_VERSIONS")
           for minecraft_version in "${representative_minecraft_versions[@]}"; do
             artifact="strata-runtime-minecraft-fabric-$minecraft_version"
-            inventory_matches="$(awk -F: -v artifact="$artifact" '$2 == artifact { count++ } END { print count + 0 }' release/maven-coordinates.txt)"
+            inventory_matches="$(awk -F: -v artifact="$artifact" '$2 == artifact { count++ } END { print count + 0 }' "$maven_inventory")"
             [[ "$inventory_matches" == '1' ]] || { echo "Representative Minecraft version $minecraft_version does not map to one Maven artifact." >&2; exit 1; }
             jq -e --arg minecraft_version "$minecraft_version" \
               '[.artifacts[] | select(.gameVersion == $minecraft_version)] | length == 1' \
@@ -418,6 +501,8 @@ jobs:
           github_inventory_assets=(SHA256SUMS)
           {
             echo "RELEASE_COORDINATE_COUNT=$coordinate_count"
+            echo "RELEASE_MAVEN_INVENTORY=$maven_inventory"
+            echo "RELEASE_MAVEN_INVENTORY_SHA256=$(sha256sum "$maven_inventory" | cut -d ' ' -f 1)"
             echo "RELEASE_ARTIFACT_COUNT=$artifact_count"
             echo "EXPECTED_CENTRAL_CONTENT_COUNT=$((coordinate_count * ${#publication_suffixes[@]} * ${#signed_content_variants[@]}))"
             echo "EXPECTED_CENTRAL_CHECKSUM_COUNT=$((coordinate_count * ${#publication_suffixes[@]} * ${#checksum_suffixes[@]}))"
@@ -430,7 +515,45 @@ jobs:
           RELEASE_TAG: ${{ inputs.tag }}
         run: |
           set -euo pipefail
-          mapfile -t representative_minecraft_versions < <(jq -er '.[]' <<< "$RELEASE_REPRESENTATIVE_MINECRAFT_VERSIONS")
+          strata_jq_path="$(type -P jq || true)"
+          strata_od_path="$(type -P od || true)"
+          strata_tr_path="$(type -P tr || true)"
+          if [[ "$strata_jq_path" == /* && -x "$strata_jq_path" && \
+            "$strata_od_path" == /* && -x "$strata_od_path" && \
+            "$strata_tr_path" == /* && -x "$strata_tr_path" ]]; then
+            :
+          else
+            echo 'Portable jq initialization requires absolute executable jq, od, and tr paths.' >&2
+            exit 1
+          fi
+          readonly strata_jq_path strata_od_path strata_tr_path
+          strata_jq_binary_options=()
+          if "$strata_jq_path" --binary -n 'null' >/dev/null 2>&1; then
+            strata_jq_binary_options=(--binary)
+          fi
+          readonly -a strata_jq_binary_options
+          strata_jq_probe_hex=''
+          if strata_jq_probe_hex="$(
+            "$strata_jq_path" "${strata_jq_binary_options[@]}" -nr --arg x x "\$x" |
+              "$strata_od_path" -An -tx1 |
+              "$strata_tr_path" -d '[:space:]'
+          )"; then
+            :
+          else
+            echo 'jq output-mode byte probing failed.' >&2
+            exit 1
+          fi
+          if [[ "$strata_jq_probe_hex" == '780a' ]]; then
+            unset strata_jq_probe_hex
+          else
+            echo 'jq output mode does not produce exact LF-delimited bytes.' >&2
+            exit 1
+          fi
+          portable_jq() {
+            "$strata_jq_path" "${strata_jq_binary_options[@]}" "$@"
+          }
+          readonly -f portable_jq
+          mapfile -t representative_minecraft_versions < <(portable_jq -er '.[]' <<< "$RELEASE_REPRESENTATIVE_MINECRAFT_VERSIONS")
           for minecraft_version in "${representative_minecraft_versions[@]}"; do
             task=":integration:minecraft-fabric-$minecraft_version:runPublishedCoordinateClientGameTest"
             bash ./gradlew --no-parallel --max-workers=2 --no-build-cache "$task" \
@@ -645,7 +768,13 @@ jobs:
               "$CONTROLLER_TOOL_DIRECTORY/github-release-tag-ruleset-receipt.json" >/dev/null
             [[ "$(git rev-parse origin/master)" == "$EXPECTED_CONTROLLER_COMMIT" ]] || { echo 'Controller master changed during Central source verification.' >&2; exit 1; }
           }
+          verify_release_inventory() {
+            [[ "$RELEASE_MAVEN_INVENTORY" == 'build/release/maven-coordinates.txt' || "$RELEASE_MAVEN_INVENTORY" == 'release/maven-coordinates.txt' ]] || { echo 'Maven artifact inventory path escaped the allowed release locations.' >&2; exit 1; }
+            [[ -f "$RELEASE_MAVEN_INVENTORY" && ! -L "$RELEASE_MAVEN_INVENTORY" ]] || { echo 'Maven artifact inventory is missing or unsafe before Central publication.' >&2; exit 1; }
+            [[ "$(sha256sum "$RELEASE_MAVEN_INVENTORY" | cut -d ' ' -f 1)" == "$RELEASE_MAVEN_INVENTORY_SHA256" ]] || { echo 'Maven artifact inventory changed before Central publication.' >&2; exit 1; }
+          }
           revalidate_release_source
+          verify_release_inventory
           git diff --quiet -- . || { echo 'Tracked release source changed before Central publication.' >&2; exit 1; }
           git diff --cached --quiet -- . || { echo 'Tracked release source changed before Central publication.' >&2; exit 1; }
           bash ./gradlew --no-parallel --max-workers=2 --no-build-cache \
@@ -658,6 +787,7 @@ jobs:
           jq -e '.state == "absent" and .deploymentId == null and .deploymentState == null and .verifiedContentFileCount == 0 and .verifiedChecksumCount == 0' \
             build/release/maven-central/portal-preflight.json >/dev/null || { echo 'Fresh Central Portal preflight is no longer wholly absent.' >&2; exit 1; }
           revalidate_release_source
+          verify_release_inventory
           bash ./gradlew --no-parallel --max-workers=2 --no-build-cache publishAndReleaseToMavenCentral \
             -Pstrata.sourceRevision="$RELEASE_TAG" \
             -Pstrata.sourceCommit="$RELEASE_SOURCE_COMMIT"
@@ -793,7 +923,45 @@ jobs:
           RELEASE_TAG: ${{ inputs.tag }}
         run: |
           set -euo pipefail
-          mapfile -t representative_minecraft_versions < <(jq -er '.[]' <<< "$RELEASE_REPRESENTATIVE_MINECRAFT_VERSIONS")
+          strata_jq_path="$(type -P jq || true)"
+          strata_od_path="$(type -P od || true)"
+          strata_tr_path="$(type -P tr || true)"
+          if [[ "$strata_jq_path" == /* && -x "$strata_jq_path" && \
+            "$strata_od_path" == /* && -x "$strata_od_path" && \
+            "$strata_tr_path" == /* && -x "$strata_tr_path" ]]; then
+            :
+          else
+            echo 'Portable jq initialization requires absolute executable jq, od, and tr paths.' >&2
+            exit 1
+          fi
+          readonly strata_jq_path strata_od_path strata_tr_path
+          strata_jq_binary_options=()
+          if "$strata_jq_path" --binary -n 'null' >/dev/null 2>&1; then
+            strata_jq_binary_options=(--binary)
+          fi
+          readonly -a strata_jq_binary_options
+          strata_jq_probe_hex=''
+          if strata_jq_probe_hex="$(
+            "$strata_jq_path" "${strata_jq_binary_options[@]}" -nr --arg x x "\$x" |
+              "$strata_od_path" -An -tx1 |
+              "$strata_tr_path" -d '[:space:]'
+          )"; then
+            :
+          else
+            echo 'jq output-mode byte probing failed.' >&2
+            exit 1
+          fi
+          if [[ "$strata_jq_probe_hex" == '780a' ]]; then
+            unset strata_jq_probe_hex
+          else
+            echo 'jq output mode does not produce exact LF-delimited bytes.' >&2
+            exit 1
+          fi
+          portable_jq() {
+            "$strata_jq_path" "${strata_jq_binary_options[@]}" "$@"
+          }
+          readonly -f portable_jq
+          mapfile -t representative_minecraft_versions < <(portable_jq -er '.[]' <<< "$RELEASE_REPRESENTATIVE_MINECRAFT_VERSIONS")
           for minecraft_version in "${representative_minecraft_versions[@]}"; do
             task=":integration:minecraft-fabric-$minecraft_version:runPublishedCoordinateClientGameTest"
             bash ./gradlew --no-parallel --max-workers=2 --no-build-cache "$task" \
@@ -1051,6 +1219,44 @@ jobs:
           RELEASE_TAG: ${{ inputs.tag }}
         run: |
           set -euo pipefail
+          strata_jq_path="$(type -P jq || true)"
+          strata_od_path="$(type -P od || true)"
+          strata_tr_path="$(type -P tr || true)"
+          if [[ "$strata_jq_path" == /* && -x "$strata_jq_path" && \
+            "$strata_od_path" == /* && -x "$strata_od_path" && \
+            "$strata_tr_path" == /* && -x "$strata_tr_path" ]]; then
+            :
+          else
+            echo 'Portable jq initialization requires absolute executable jq, od, and tr paths.' >&2
+            exit 1
+          fi
+          readonly strata_jq_path strata_od_path strata_tr_path
+          strata_jq_binary_options=()
+          if "$strata_jq_path" --binary -n 'null' >/dev/null 2>&1; then
+            strata_jq_binary_options=(--binary)
+          fi
+          readonly -a strata_jq_binary_options
+          strata_jq_probe_hex=''
+          if strata_jq_probe_hex="$(
+            "$strata_jq_path" "${strata_jq_binary_options[@]}" -nr --arg x x "\$x" |
+              "$strata_od_path" -An -tx1 |
+              "$strata_tr_path" -d '[:space:]'
+          )"; then
+            :
+          else
+            echo 'jq output-mode byte probing failed.' >&2
+            exit 1
+          fi
+          if [[ "$strata_jq_probe_hex" == '780a' ]]; then
+            unset strata_jq_probe_hex
+          else
+            echo 'jq output mode does not produce exact LF-delimited bytes.' >&2
+            exit 1
+          fi
+          portable_jq() {
+            "$strata_jq_path" "${strata_jq_binary_options[@]}" "$@"
+          }
+          readonly -f portable_jq
           [[ "$GITHUB_REF" == "refs/heads/master" ]] || { echo 'Public Skill verification must be dispatched from master.' >&2; exit 1; }
           [[ "$CONFIRMATION" == "verify $RELEASE_TAG" ]] || { echo 'Public Skill verification request differs.' >&2; exit 1; }
           for forbidden_secret in GH_TOKEN GITHUB_TOKEN MODRINTH_TOKEN SIGNING_KEY SIGNING_PASSWORD ORG_GRADLE_PROJECT_signingInMemoryKey ORG_GRADLE_PROJECT_signingInMemoryKeyPassword GNUPGHOME; do
@@ -1073,13 +1279,13 @@ jobs:
           git -C "$repository" --no-replace-objects cat-file blob "$blob" | \
             (cd "$repository" && bash -s -- materialize "$GITHUB_SHA" "$controller_directory")
           metadata="$controller_directory/current-controller.json"
-          current_tag="$(jq -er '.current.tag' "$metadata")"
-          current_commit="$(jq -er '.current.commit' "$metadata")"
-          current_object="$(jq -er '.current.tagObject' "$metadata")"
-          representative_minecraft_versions="$(jq -cer '.current.representativeMinecraftVersions' "$metadata")"
-          predecessor_tag="$(jq -er '.predecessor.tag' "$metadata")"
-          predecessor_commit="$(jq -er '.predecessor.commit' "$metadata")"
-          predecessor_object="$(jq -er '.predecessor.tagObject' "$metadata")"
+          current_tag="$(portable_jq -er '.current.tag' "$metadata")"
+          current_commit="$(portable_jq -er '.current.commit' "$metadata")"
+          current_object="$(portable_jq -er '.current.tagObject' "$metadata")"
+          representative_minecraft_versions="$(portable_jq -cer '.current.representativeMinecraftVersions' "$metadata")"
+          predecessor_tag="$(portable_jq -er '.predecessor.tag' "$metadata")"
+          predecessor_commit="$(portable_jq -er '.predecessor.commit' "$metadata")"
+          predecessor_object="$(portable_jq -er '.predecessor.tagObject' "$metadata")"
           [[ "$RELEASE_TAG" == "$current_tag" ]] || { echo 'Requested public Skill tag differs from current-controller metadata.' >&2; exit 1; }
           [[ "$(printf '%s\n' "${predecessor_tag#v}" "${current_tag#v}" | sort -V | head -n 1)" == "${predecessor_tag#v}" && \
             "$predecessor_tag" != "$current_tag" ]] || { echo 'Public Skill predecessor semantic ordering differs.' >&2; exit 1; }
@@ -1100,12 +1306,15 @@ jobs:
             commit="${identity#*|}"
             [[ "$(git -C "$repository" show "${commit}:build.gradle.kts" | sed -nE 's/^version = "([^"]+)"$/\1/p')" == "${tag#v}" ]] || { echo "Public Skill root version differs for $tag." >&2; exit 1; }
           done
-          current_inventory="$(git -C "$repository" show "${current_commit}:release/maven-coordinates.txt")"
           while IFS= read -r minecraft_version; do
-            artifact="strata-runtime-minecraft-fabric-$minecraft_version"
-            matches="$(awk -F: -v artifact="$artifact" '$2 == artifact { count++ } END { print count + 0 }' <<< "$current_inventory")"
-            [[ "$matches" == '1' ]] || { echo "Public representative Minecraft version $minecraft_version does not map to one current Fabric artifact." >&2; exit 1; }
-          done < <(jq -er '.[]' <<< "$representative_minecraft_versions")
+            for project_kind in runtime integration; do
+              project_path="$project_kind/minecraft-fabric-$minecraft_version/build.gradle.kts"
+              record="$(git -C "$repository" --no-replace-objects ls-tree --full-tree "$current_commit" -- "$project_path")"
+              [[ -n "$record" && "$record" != *$'\n'* ]] || { echo "Public representative Minecraft project is missing or ambiguous: $project_path" >&2; exit 1; }
+              read -r mode object_type project_blob verified_path <<< "$record"
+              [[ "$mode" == '100644' && "$object_type" == 'blob' && "$project_blob" =~ ^([0-9a-f]{40}|[0-9a-f]{64})$ && "$verified_path" == "$project_path" ]] || { echo "Public representative Minecraft project is not a regular blob: $project_path" >&2; exit 1; }
+            done
+          done < <(portable_jq -er '.current.representativeMinecraftVersions[]' "$metadata")
           git -C "$repository" worktree add --detach "$predecessor_source" "$predecessor_commit"
           git -C "$repository" worktree add --detach "$current_source" "$current_commit"
           chmod -R u+w -- "$controller_directory"
@@ -1201,6 +1410,44 @@ jobs:
           EXPECTED_PREDECESSOR_OBJECT: ${{ needs.public_skills.outputs.predecessor_object }}
         run: |
           set -euo pipefail
+          strata_jq_path="$(type -P jq || true)"
+          strata_od_path="$(type -P od || true)"
+          strata_tr_path="$(type -P tr || true)"
+          if [[ "$strata_jq_path" == /* && -x "$strata_jq_path" && \
+            "$strata_od_path" == /* && -x "$strata_od_path" && \
+            "$strata_tr_path" == /* && -x "$strata_tr_path" ]]; then
+            :
+          else
+            echo 'Portable jq initialization requires absolute executable jq, od, and tr paths.' >&2
+            exit 1
+          fi
+          readonly strata_jq_path strata_od_path strata_tr_path
+          strata_jq_binary_options=()
+          if "$strata_jq_path" --binary -n 'null' >/dev/null 2>&1; then
+            strata_jq_binary_options=(--binary)
+          fi
+          readonly -a strata_jq_binary_options
+          strata_jq_probe_hex=''
+          if strata_jq_probe_hex="$(
+            "$strata_jq_path" "${strata_jq_binary_options[@]}" -nr --arg x x "\$x" |
+              "$strata_od_path" -An -tx1 |
+              "$strata_tr_path" -d '[:space:]'
+          )"; then
+            :
+          else
+            echo 'jq output-mode byte probing failed.' >&2
+            exit 1
+          fi
+          if [[ "$strata_jq_probe_hex" == '780a' ]]; then
+            unset strata_jq_probe_hex
+          else
+            echo 'jq output mode does not produce exact LF-delimited bytes.' >&2
+            exit 1
+          fi
+          portable_jq() {
+            "$strata_jq_path" "${strata_jq_binary_options[@]}" "$@"
+          }
+          readonly -f portable_jq
           [[ "$GITHUB_REF" == "refs/heads/master" ]] || { echo 'Verification must be dispatched from master.' >&2; exit 1; }
           [[ "$RELEASE_TAG" == "$EXPECTED_CURRENT_TAG" && "$CONFIRMATION" == "verify $RELEASE_TAG" ]] || { echo 'Final verification request differs.' >&2; exit 1; }
           git fetch --force origin \
@@ -1272,12 +1519,15 @@ jobs:
             commit="${identity#*|}"
             [[ "$(git show "${commit}:build.gradle.kts" | sed -nE 's/^version = "([^"]+)"$/\1/p')" == "${tag#v}" ]] || { echo "Root version differs for $tag." >&2; exit 1; }
           done
-          current_inventory="$(git show "${checked_commit}:release/maven-coordinates.txt")"
           while IFS= read -r minecraft_version; do
-            artifact="strata-runtime-minecraft-fabric-$minecraft_version"
-            matches="$(awk -F: -v artifact="$artifact" '$2 == artifact { count++ } END { print count + 0 }' <<< "$current_inventory")"
-            [[ "$matches" == '1' ]] || { echo "Final representative Minecraft version $minecraft_version does not map to one current Fabric artifact." >&2; exit 1; }
-          done < <(jq -er '.[]' <<< "$EXPECTED_REPRESENTATIVE_MINECRAFT_VERSIONS")
+            for project_kind in runtime integration; do
+              project_path="$project_kind/minecraft-fabric-$minecraft_version/build.gradle.kts"
+              record="$(git --no-replace-objects ls-tree --full-tree "$checked_commit" -- "$project_path")"
+              [[ -n "$record" && "$record" != *$'\n'* ]] || { echo "Final representative Minecraft project is missing or ambiguous: $project_path" >&2; exit 1; }
+              read -r mode object_type project_blob verified_path <<< "$record"
+              [[ "$mode" == '100644' && "$object_type" == 'blob' && "$project_blob" =~ ^([0-9a-f]{40}|[0-9a-f]{64})$ && "$verified_path" == "$project_path" ]] || { echo "Final representative Minecraft project is not a regular blob: $project_path" >&2; exit 1; }
+            done
+          done < <(portable_jq -er '.[]' <<< "$EXPECTED_REPRESENTATIVE_MINECRAFT_VERSIONS")
           mapfile -t required_commits < <(printf '%s\n' "$GITHUB_SHA" "$checked_commit" "$EXPECTED_PREDECESSOR_COMMIT" | sort --unique)
           for workflow in jvm.yml qodana.yml; do
             for required_commit in "${required_commits[@]}"; do
@@ -1285,8 +1535,8 @@ jobs:
               jq -e --arg commit "$required_commit" 'any(.[]; .conclusion == "success" and .event == "push" and .headBranch == "master" and .headSha == $commit)' <<< "$runs" >/dev/null || { echo "No successful $workflow run exists for $required_commit." >&2; exit 1; }
             done
           done
-          release_pages_run_id="$(gh run list --workflow pages.yml --commit "$checked_commit" --event push --status completed --limit 100 --json conclusion,databaseId,event,headBranch,headSha | jq -er --arg tag "$RELEASE_TAG" --arg sha "$checked_commit" '[.[] | select(.conclusion == "success" and .event == "push" and .headBranch == $tag and .headSha == $sha)] | select(length == 1) | .[0].databaseId | tostring')"
           controller_pages_run_id="$(gh run list --workflow pages.yml --commit "$GITHUB_SHA" --event push --status completed --limit 100 --json conclusion,databaseId,event,headBranch,headSha | jq -er --arg sha "$GITHUB_SHA" '[.[] | select(.conclusion == "success" and .event == "push" and .headBranch == "master" and .headSha == $sha)] | select(length == 1) | .[0].databaseId | tostring')"
+          release_pages_run_id="$controller_pages_run_id"
           run_controller_tool_guard verify "$GITHUB_SHA" "$controller_tool_directory"
           pages_record="$(bash "$controller_pages_verifier" \
             "$release_pages_run_id" "$RELEASE_TAG" "$checked_commit" \
@@ -1357,9 +1607,55 @@ jobs:
           ORG_GRADLE_PROJECT_mavenCentralPassword: ${{ secrets.MAVEN_CENTRAL_PASSWORD }}
         run: |
           set -euo pipefail
+          strata_jq_path="$(type -P jq || true)"
+          strata_od_path="$(type -P od || true)"
+          strata_tr_path="$(type -P tr || true)"
+          if [[ "$strata_jq_path" == /* && -x "$strata_jq_path" && \
+            "$strata_od_path" == /* && -x "$strata_od_path" && \
+            "$strata_tr_path" == /* && -x "$strata_tr_path" ]]; then
+            :
+          else
+            echo 'Portable jq initialization requires absolute executable jq, od, and tr paths.' >&2
+            exit 1
+          fi
+          readonly strata_jq_path strata_od_path strata_tr_path
+          strata_jq_binary_options=()
+          if "$strata_jq_path" --binary -n 'null' >/dev/null 2>&1; then
+            strata_jq_binary_options=(--binary)
+          fi
+          readonly -a strata_jq_binary_options
+          strata_jq_probe_hex=''
+          if strata_jq_probe_hex="$(
+            "$strata_jq_path" "${strata_jq_binary_options[@]}" -nr --arg x x "\$x" |
+              "$strata_od_path" -An -tx1 |
+              "$strata_tr_path" -d '[:space:]'
+          )"; then
+            :
+          else
+            echo 'jq output-mode byte probing failed.' >&2
+            exit 1
+          fi
+          if [[ "$strata_jq_probe_hex" == '780a' ]]; then
+            unset strata_jq_probe_hex
+          else
+            echo 'jq output mode does not produce exact LF-delimited bytes.' >&2
+            exit 1
+          fi
+          portable_jq() {
+            "$strata_jq_path" "${strata_jq_binary_options[@]}" "$@"
+          }
+          readonly -f portable_jq
           bash ./gradlew --no-parallel --max-workers=2 --no-build-cache verifyPublishedConsumer modrinthReleaseManifest mavenCentralPortalVerify \
             -Pstrata.sourceRevision="$RELEASE_TAG" -Pstrata.sourceCommit="$RELEASE_SOURCE_COMMIT" -Pstrata.modrinthProjectId="$PROJECT_ID"
-          coordinate_count="$(grep -cve '^[[:space:]]*$' release/maven-coordinates.txt)"
+          maven_inventory=''
+          for candidate in build/release/maven-coordinates.txt release/maven-coordinates.txt; do
+            if [[ -f "$candidate" && ! -L "$candidate" ]]; then
+              [[ -z "$maven_inventory" ]] || { echo 'Multiple final Maven artifact inventories are present.' >&2; exit 1; }
+              maven_inventory="$candidate"
+            fi
+          done
+          [[ -n "$maven_inventory" ]] || { echo 'No final Maven artifact inventory was generated or supplied by the immutable release.' >&2; exit 1; }
+          coordinate_count="$(grep -cve '^[[:space:]]*$' "$maven_inventory")"
           artifact_count="$(jq -er '.artifacts | length | select(. > 0)' build/release/modrinth/manifest.json)"
           publication_suffixes=(.pom .module .jar -sources.jar -javadoc.jar)
           signed_content_variants=(base signature)
@@ -1383,10 +1679,10 @@ jobs:
           jq -e --arg version "${RELEASE_TAG#v}" --argjson artifacts "$artifact_count" '
             .releaseVersion == $version and (.artifacts | length) == $artifacts
           ' build/release/modrinth/manifest.json >/dev/null
-          mapfile -t representative_minecraft_versions < <(jq -er '.[]' <<< "$RELEASE_REPRESENTATIVE_MINECRAFT_VERSIONS")
+          mapfile -t representative_minecraft_versions < <(portable_jq -er '.[]' <<< "$RELEASE_REPRESENTATIVE_MINECRAFT_VERSIONS")
           for minecraft_version in "${representative_minecraft_versions[@]}"; do
             artifact="strata-runtime-minecraft-fabric-$minecraft_version"
-            inventory_matches="$(awk -F: -v artifact="$artifact" '$2 == artifact { count++ } END { print count + 0 }' release/maven-coordinates.txt)"
+            inventory_matches="$(awk -F: -v artifact="$artifact" '$2 == artifact { count++ } END { print count + 0 }' "$maven_inventory")"
             [[ "$inventory_matches" == '1' ]] || { echo "Final representative Minecraft version $minecraft_version does not map to one Maven artifact." >&2; exit 1; }
             jq -e --arg minecraft_version "$minecraft_version" \
               '[.artifacts[] | select(.gameVersion == $minecraft_version)] | length == 1' \
@@ -1602,7 +1898,15 @@ jobs:
               -Pstrata.sourceRevision="$previous_tag" \
               -Pstrata.sourceCommit="$previous_commit" \
               -Pstrata.modrinthProjectId="$PROJECT_ID"
-            predecessor_coordinate_count="$(grep -cve '^[[:space:]]*$' release/maven-coordinates.txt)"
+            predecessor_maven_inventory=''
+            for candidate in build/release/maven-coordinates.txt release/maven-coordinates.txt; do
+              if [[ -f "$candidate" && ! -L "$candidate" ]]; then
+                [[ -z "$predecessor_maven_inventory" ]] || { echo 'Multiple predecessor Maven artifact inventories are present.' >&2; exit 1; }
+                predecessor_maven_inventory="$candidate"
+              fi
+            done
+            [[ -n "$predecessor_maven_inventory" ]] || { echo 'No predecessor Maven artifact inventory was generated or supplied by the immutable release.' >&2; exit 1; }
+            predecessor_coordinate_count="$(grep -cve '^[[:space:]]*$' "$predecessor_maven_inventory")"
             publication_suffixes=(.pom .module .jar -sources.jar -javadoc.jar)
             signed_content_variants=(base signature)
             checksum_suffixes=(md5 sha1 sha256 sha512)
@@ -1709,23 +2013,23 @@ jobs:
             env -u GH_TOKEN -u GITHUB_TOKEN \
               bash release/verify-public-modrinth.sh build/release/modrinth/manifest.json "$PROJECT_ID" strata-ui
 
-            previous_pages_run_id="$(gh run list --workflow pages.yml --commit "$PROVED_PREDECESSOR_COMMIT" --event push --status completed --limit 100 \
-              --json conclusion,databaseId,event,headBranch,headSha | \
-              jq -er --arg tag "$previous_tag" --arg sha "$PROVED_PREDECESSOR_COMMIT" \
-                '[.[] | select(.conclusion == "success" and .event == "push" and .headBranch == $tag and .headSha == $sha)] | select(length == 1) | .[0].databaseId | tostring')"
-            read -r _ _ _ controller_pages_run_id _ _ <<< "$PAGES_PROVENANCE_RECORD"
-            [[ "$controller_pages_run_id" =~ ^[0-9]+$ ]] || { echo 'Controller Pages provenance is malformed.' >&2; exit 1; }
+            read -r release_pages_run_id _ _ controller_pages_run_id _ _ <<< "$PAGES_PROVENANCE_RECORD"
+            [[ "$controller_pages_run_id" =~ ^[0-9]+$ && "$release_pages_run_id" == "$controller_pages_run_id" ]] || {
+              echo 'Controller Pages provenance is malformed.' >&2
+              exit 1
+            }
+            previous_pages_run_id="$controller_pages_run_id"
             verify_controller_tools
             previous_pages_record="$(bash "$CONTROLLER_TOOL_DIRECTORY/verify-pages-deployment-source.sh" \
               "$previous_pages_run_id" "$previous_tag" "$PROVED_PREDECESSOR_COMMIT" \
-              "$controller_pages_run_id" "$GITHUB_SHA")"
+              "$controller_pages_run_id" "$GITHUB_SHA" "$RELEASE_TAG" "$RELEASE_SOURCE_COMMIT")"
             verify_controller_tools
             bash "$CONTROLLER_TOOL_DIRECTORY/wait-for-pages-source-receipt.sh" \
               "$previous_tag" "$PROVED_PREDECESSOR_COMMIT" "$GITHUB_SHA"
             verify_controller_tools
             [[ "$(bash "$CONTROLLER_TOOL_DIRECTORY/verify-pages-deployment-source.sh" \
               "$previous_pages_run_id" "$previous_tag" "$PROVED_PREDECESSOR_COMMIT" \
-              "$controller_pages_run_id" "$GITHUB_SHA")" == "$previous_pages_record" ]] || { echo 'Predecessor Pages provenance changed during verification.' >&2; exit 1; }
+              "$controller_pages_run_id" "$GITHUB_SHA" "$RELEASE_TAG" "$RELEASE_SOURCE_COMMIT")" == "$previous_pages_record" ]] || { echo 'Predecessor Pages provenance changed during verification.' >&2; exit 1; }
 
             pages_base="https://gh.s7a.dev/strata/releases/${previous_tag#v}"
             pages_inventory="$PREDECESSOR_TEMPORARY/pages-public-urls.txt"

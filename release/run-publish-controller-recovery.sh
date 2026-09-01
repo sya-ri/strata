@@ -2,6 +2,48 @@
 
 set -euo pipefail
 
+strata_jq_path="$(type -P jq || true)"
+strata_od_path="$(type -P od || true)"
+strata_tr_path="$(type -P tr || true)"
+if [[ "$strata_jq_path" == /* && -x "$strata_jq_path" && \
+  "$strata_od_path" == /* && -x "$strata_od_path" && \
+  "$strata_tr_path" == /* && -x "$strata_tr_path" ]]; then
+  :
+else
+  echo 'Portable jq initialization requires absolute executable jq, od, and tr paths.' >&2
+  exit 1
+fi
+readonly strata_jq_path strata_od_path strata_tr_path
+
+strata_jq_binary_options=()
+if "$strata_jq_path" --binary -n 'null' >/dev/null 2>&1; then
+  strata_jq_binary_options=(--binary)
+fi
+readonly -a strata_jq_binary_options
+
+strata_jq_probe_hex=''
+if strata_jq_probe_hex="$(
+  "$strata_jq_path" "${strata_jq_binary_options[@]}" -nr --arg x x "\$x" |
+    "$strata_od_path" -An -tx1 |
+    "$strata_tr_path" -d '[:space:]'
+)"; then
+  :
+else
+  echo 'jq output-mode byte probing failed.' >&2
+  exit 1
+fi
+if [[ "$strata_jq_probe_hex" == '780a' ]]; then
+  unset strata_jq_probe_hex
+else
+  echo 'jq output mode does not produce exact LF-delimited bytes.' >&2
+  exit 1
+fi
+
+portable_jq() {
+  "$strata_jq_path" "${strata_jq_binary_options[@]}" "$@"
+}
+readonly -f portable_jq
+
 operation="${1:-}"
 contract="${2:-}"
 project_id="${3:-}"
@@ -27,8 +69,8 @@ contract_path="$(realpath "$contract")"
   ! -L "$controller_directory/backlog-artifact-evidence.json" ]] || \
   fail 'No identity-bound recovery is available in this controller bundle.'
 
-current_tag="$(jq -er '.releaseSource.tag' "$contract_path")"
-baseline_tag="$(jq -er '.baselineReleases[0].tag' "$contract_path")"
+current_tag="$(portable_jq -er '.releaseSource.tag' "$contract_path")"
+baseline_tag="$(portable_jq -er '.baselineReleases[0].tag' "$contract_path")"
 [[ "$current_tag" == "$release_tag" ]] || fail 'Recovery contract does not bind the requested release tag.'
 [[ "$current_tag" =~ ^v(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)$ && \
   "$baseline_tag" =~ ^v(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)$ ]] || \
@@ -61,6 +103,7 @@ optional_bundle_files=(
   github-release-tag-ruleset.json
   github-release-tag-ruleset-receipt.json
   verify-pages-deployment-source.sh
+  verify-pages-artifact-equivalence.sh
   wait-for-pages-source-receipt.sh
   list-java-toolchains.sh
 )
