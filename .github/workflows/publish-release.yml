@@ -1762,11 +1762,10 @@ jobs:
           base="https://gh.s7a.dev/strata/releases/${RELEASE_TAG#v}"
           curl --fail --silent --show-error --location --proto '=https' "$base/pages-public-urls.txt" --output "$inventory"
           LC_ALL=C sort --check --unique "$inventory"
-          for required in / /index.html /guide/ /guide/components.md /source-receipt.json /source-revision.txt; do
+          for required in / /index.html /source-receipt.json /source-revision.txt; do
             grep --fixed-strings --line-regexp "$required" "$inventory" >/dev/null
           done
-          grep --extended-regexp --line-regexp '/guide/components/[^/]+\.png' "$inventory" >/dev/null
-          while IFS= read -r public_path; do
+          while IFS= read -r public_path || [[ -n "$public_path" ]]; do
             [[ "$public_path" == /* ]] || { echo "Invalid Pages path: $public_path" >&2; exit 1; }
             curl --fail --silent --show-error --location --proto '=https' "$base$public_path" --output "$pages"
             [[ -s "$pages" ]] || { echo "Empty Pages target: $public_path" >&2; exit 1; }
@@ -2039,11 +2038,10 @@ jobs:
             curl --fail --silent --show-error --location --proto '=https' \
               "$pages_base/pages-public-urls.txt" --output "$pages_inventory"
             LC_ALL=C sort --check --unique "$pages_inventory"
-            for required in / /index.html /guide/ /guide/components.md /source-receipt.json /source-revision.txt; do
+            for required in / /index.html /source-receipt.json /source-revision.txt; do
               grep --fixed-strings --line-regexp "$required" "$pages_inventory" >/dev/null
             done
-            grep --extended-regexp --line-regexp '/guide/components/[^/]+\.png' "$pages_inventory" >/dev/null
-            while IFS= read -r public_path; do
+            while IFS= read -r public_path || [[ -n "$public_path" ]]; do
               [[ "$public_path" == /* ]] || { echo "Invalid predecessor Pages path: $public_path" >&2; exit 1; }
               curl --fail --silent --show-error --location --proto '=https' \
                 "$pages_base$public_path" --output "$pages_target"

@@ -352,6 +352,34 @@ for controller_call_spec in \
   require_immediate_guard "$(step_block "$controller_step")" "$controller_call" 'verify_controller_tools'
 done
 
+verify_dokka_inventory_step() {
+  local label="$1"
+  local step_name="$2"
+  local inventory_variable="$3"
+  local run=""
+  local required_loop='for required in / /index.html /source-receipt.json /source-revision.txt; do'
+  local required_check="grep --fixed-strings --line-regexp \"\$required\" \"\$$inventory_variable\" >/dev/null"
+  local sorted_inventory="LC_ALL=C sort --check --unique \"\$$inventory_variable\""
+  run="$(step_run "$step_name")"
+  [[ -n "$run" ]] || fail "$label public Pages verification step is missing."
+  [[ "$(grep --fixed-strings -c "$required_loop" <<< "$run" || true)" == '1' ]] || \
+    fail "$label public Pages verification does not require exactly one Dokka root and source-evidence inventory."
+  [[ "$(grep --fixed-strings -c "$required_check" <<< "$run" || true)" == '1' ]] || \
+    fail "$label public Pages verification does not check every required Dokka path."
+  [[ "$(grep --fixed-strings -c "$sorted_inventory" <<< "$run" || true)" == '1' ]] || \
+    fail "$label public Pages verification does not require one sorted unique inventory."
+  [[ "$(grep --fixed-strings -c 'while IFS= read -r public_path || [[ -n "$public_path" ]]; do' <<< "$run" || true)" == '1' ]] || \
+    fail "$label public Pages verification does not contain exactly one final-line-safe complete-inventory loop."
+  grep --fixed-strings "done < \"\$$inventory_variable\"" <<< "$run" >/dev/null || \
+    fail "$label public Pages verification no longer reads every generated inventory entry."
+  if grep --fixed-strings '/guide' <<< "$run" >/dev/null; then
+    fail "$label public Pages verification still assumes a separately published reader guide."
+  fi
+}
+
+verify_dokka_inventory_step current 'Verify public Pages and tagged Skill source' inventory
+verify_dokka_inventory_step predecessor 'Verify public predecessor services and Pages provenance' pages_inventory
+
 release_job="$(sed -n '/^  release:$/,/^  public_skills:$/p' "$workflow")"
 public_job="$(sed -n '/^  public_skills:$/,/^  verify:$/p' "$workflow")"
 verify_job="$(sed -n '/^  verify:$/,$p' "$workflow")"

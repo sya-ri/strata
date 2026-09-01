@@ -91,26 +91,11 @@ The guard disables Git replacement objects, requires each controller tool's decl
 The bundle is removed by an always-running terminal step whose target is bound to the initialization step output and restricted to the job-specific runner-temporary prefix.
 Those controller-owned tools repeat the controller-master, signed tag-object, ruleset, environment policy, both Actions artifacts, single active deployment, immutable-subtree comparison, and public receipt checks after environment approval.
 Every protected Gradle invocation receives both `strata.sourceRevision` and `strata.sourceCommit`, so the controller commit in Actions' `GITHUB_SHA` cannot enter product documentation, manifests, or source receipts; the Actions summary records the controller commit, product-source commit, tag object, and Pages evidence separately.
-The immutable `v0.1.0` product tag predates two verified external-service contracts, so narrowly scoped tag-pinned release-tool overlays cover those integration boundaries.
-Each overlay manifest fixes its reviewed historical controller commit, the base tag and commit, patch SHA-256, two allowed source paths, and their before-and-after Git blob and SHA-256 values.
-The runners require that reviewed controller to remain an ancestor of the exact current `origin/master`, while the protected workflow extracts the runner, manifest, and patch from the current controller, exposes their paths only to the permitted read or staging steps, and removes temporary inputs after use; the first Fabric version must make the remote project an ordinary `mod` before the remaining versions may be created.
-The runner verifies the release manifest and twenty canonical runtime JARs before invoking Gradle, excludes their generation and published-consumer task graphs, isolates the included build's outputs and project cache, rechecks the same bytes afterward, restores the tagged sources and prior caches through an exit trap, and requires a clean tree before later Central, GitHub Release, submission, or verification work.
-Modrinth submission and final public verification deliberately use the original tagged build logic, independently proving that the temporary draft state ended during staging.
-The separate Maven Central overlay fixes the public verifier and its focused test to the reviewed Central contract, permits only public repository preflight and verification, and cannot receive signing or Central credentials or invoke a publication or Portal task.
-The protected job builds and signs Maven-local consumer and canonical artifact evidence before the overlay; every sealed Central read excludes those completed generation graphs and only compares the retained local evidence with immutable public bytes.
-Because all twenty-four `v0.1.0` coordinates are already immutable and public, the workflow is post-publication sealed: anything other than the exact public bytes stops the release instead of attempting another upload.
-The Maven-local and Maven Central checks launch the 1.20.1, 1.21.11, and 26.2 published-coordinate clients in separate Gradle invocations, keeping each immutable tagged build isolated from Loom's shared assets directory.
-Immediately before Modrinth staging, GitHub Release mutation, and Modrinth submission, the job re-fetches and compares the same immutable tag object and controller master, checks their ancestry and clean product-source workspace, and stops on drift.
-The required repository tag ruleset is tracked exactly in `release/github-tag-ruleset.json`: it is active, targets only `refs/tags/v0.1.0`, has no bypass actors, forbids update including fetch-and-merge, and forbids deletion.
-An administrator must create that ruleset outside the release workflow, inspect the full response with ruleset-write access, and commit its numeric ID and GitHub-controlled `updated_at` instant in canonical UTC to `release/github-tag-ruleset-receipt.json`; `bypassActorsAuditedAt` records the same revision after the administrator has confirmed that the bypass list is empty.
-GitHub can serialize the same revision with the caller's UTC offset for an administrator and with `Z` for a read-only caller, so the verifier compares parsed instants while preserving millisecond precision.
-The read-only workflow token cannot see repository-ruleset bypass actors and GitHub may omit that field or return it as null, so every release preflight requires either a visibly empty list or the unchanged administrator-audited `updated_at` revision.
-An unpopulated null receipt deliberately fails closed until that external creation and audit are complete, and any subsequent ruleset edit changes `updated_at` and requires a new administrator audit on a new green commit before tagging.
-The repeated remote ruleset, tag-object, and commit comparisons bound accidental and concurrent changes but cannot make separate network operations atomic.
-The protected job requires the complete expected public path set for all twenty-four Central coordinates before any remaining external write.
-An exact release contains 120 base files, 120 valid detached signatures, and MD5, SHA-1, SHA-256, and SHA-512 sidecars for every base file whose downloaded bytes match the locally verified publication.
-Detached `.asc` signatures are verified with OpenPGP and do not require checksum sidecars, matching the Central publication contract.
-The sealed workflow contains no Central credential mapping, Portal branch, or publication task; missing, partial, or byte-mismatched expected public content stops without deletion, replacement, or overwrite.
+Some signed historical releases predate current external-service contracts.
+The forward controller may bridge those boundaries only through narrowly scoped compatibility inputs whose controller revision, allowed source paths, Git modes, byte identities, and permitted operations are fixed by checked contracts and tests.
+Compatibility tools operate on isolated evidence, restore temporary state on every exit, and cannot turn partial or conflicting public content into a writable retry.
+Historical public artifacts remain immutable: service verification compares remote metadata and bytes with locally rebuilt tag evidence and fails closed instead of deleting, replacing, or overwriting content.
+Repeated remote ruleset, tag, controller, and source comparisons bound accidental and concurrent drift but do not make separate network operations atomic.
 
 The historical `release.yml` and `release-v0.1.1.yml` workflows are sealed evidence for the v0.1.0 and v0.1.1 releases; their own source guards preserve those controllers, and the forward controller does not inspect or reinterpret their contents.
 The active `publish-release.yml` workflow, displayed as `Publish release`, is the only forward release controller.
@@ -135,11 +120,9 @@ Before protected final verification starts, an unprotected fresh-runner job with
 The secret-bearing verification job then re-proves the complete predecessor release from a detached worktree with that source's own Portal, Central, GitHub bundle, Modrinth, Pages, and tagged Skill contracts before allowing the current project-body finalizer.
 The current and predecessor body states are monotonic across every controller sharing the legacy release concurrency group, and unrelated body, metadata, status, tag, controller, artifact, or public-service drift fails closed.
 
-The files `release/modrinth-v0.1.2-backlog-recovery.json`, `release/run-modrinth-v0.1.2-backlog-recovery.sh`, and `release/modrinth-v0.1.0-artifacts.json` are immutable historical evidence for one interrupted v0.1.2 rollout, not a template for future controllers.
-The generic controller-tool guard exposes that one-off runner, contract, and evidence only under generic materialized names and only while the recovery contract's release and last baseline identities equal the frozen current and predecessor metadata.
-When no recovery contract binds the pair, those materialized inputs do not exist and the normal path has no release-number branch.
-For the historical incident only, the runner re-proves the signed v0.1.0 and v0.1.1 tags and hash-pinned manifests, preserves tagged source and artifact bytes, limits staging to the absent v0.1.2 entries, keeps the shared project body unchanged, and restores the canonical manifest on every exit path.
-The one-off allowance is absent from finalization: complete predecessor verification and the ordinary predecessor-to-current body transition remain mandatory.
+Release-specific recovery contracts under `release/` are executable controller inputs, not reader guidance or templates for later releases.
+The controller materializes them only while frozen metadata explicitly binds the relevant release pair; otherwise the normal path cannot access them.
+Their detailed invariants live with their scripts and tests, and they must be retired atomically with every controller reference after the bound recovery is complete.
 
 The root `dokkaGenerate` task aggregates every published module into `build/dokka/html`.
 The Documentation workflow invokes `:integration:docs:checkDokkaPagesStaging` only from the exact `master` head; that task depends on the fully qualified root `:dokkaGenerate` and verifies the generated API site.
@@ -241,7 +224,7 @@ The same module owns the public `skills/strata` package and its API-only compile
 The skill examples use a separate source set whose compile classpath contains only `:api`; ordinary application examples therefore cannot acquire a runtime import transitively.
 The Pages workflow uses `docs/dokka-module.md` as the API landing-page introduction instead of the root README.
 `generateDokkaModuleMarkdown` prepares an ignored build-only include whose GitHub reader links use the selected `strata.sourceRevision`, so tagged API sites link to their matching repository guides.
-Reader guides and verified component images stay in the repository and are rendered on GitHub; they are not copied into the current Dokka site.
+Reader guides and verified component images stay in the repository and are rendered on GitHub; they are neither copied into nor required by the current Dokka Pages artifact.
 The staging checker scans checked source text for hard-coded `https://gh.s7a.dev/strata/` targets and requires a matching non-symbolic staged file, treating a trailing slash as `index.html`, before the Pages artifact is uploaded.
 It verifies local links, anchors, and asset targets in inventoried HTML pages against the staged site.
 `generateDokkaPagesInventory` writes the sorted public relative paths to `build/dokka/html/pages-public-urls.txt`, including the Dokka root, explicitly linked API files, `source-revision.txt`, and the canonical tag-and-commit `source-receipt.json`; each tagged copy retains its own self-contained inventory below its `releases/{version}` root.
@@ -253,7 +236,8 @@ Run `./gradlew :quality:benchmarks:jmh` for the temporary JSON report and follow
 
 ## Documentation ownership
 
-Keep canonical API and runtime contracts, reader guides, release notes, compiled examples, and deterministic generated images and receipts in Git.
+Keep canonical API and runtime contracts, reader guides, release notes and publication bodies, compiled examples, and deterministic generated images and receipts in Git.
 Update generator sources and regenerate checked outputs instead of editing generated documents by hand.
 Keep task plans, working notes, status reports, and unfinished drafts under the ignored `build/` directory; promote durable decisions into the relevant canonical guide when the work is complete.
+Do not retain release-incident timelines or external-service status snapshots in reader guides; encode any required recovery boundary in executable contracts and tests.
 Loaded worlds, transient screenshots, raw benchmark output, and test or coverage reports remain untracked build outputs.
