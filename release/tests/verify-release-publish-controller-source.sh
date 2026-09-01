@@ -368,8 +368,8 @@ verify_dokka_inventory_step() {
     fail "$label public Pages verification does not check every required Dokka path."
   [[ "$(grep --fixed-strings -c "$sorted_inventory" <<< "$run" || true)" == '1' ]] || \
     fail "$label public Pages verification does not require one sorted unique inventory."
-  [[ "$(grep --fixed-strings -c 'while IFS= read -r public_path; do' <<< "$run" || true)" == '1' ]] || \
-    fail "$label public Pages verification does not contain exactly one complete-inventory loop."
+  [[ "$(grep --fixed-strings -c 'while IFS= read -r public_path || [[ -n "$public_path" ]]; do' <<< "$run" || true)" == '1' ]] || \
+    fail "$label public Pages verification does not contain exactly one final-line-safe complete-inventory loop."
   grep --fixed-strings "done < \"\$$inventory_variable\"" <<< "$run" >/dev/null || \
     fail "$label public Pages verification no longer reads every generated inventory entry."
   if grep --fixed-strings '/guide' <<< "$run" >/dev/null; then

@@ -1765,7 +1765,7 @@ jobs:
           for required in / /index.html /source-receipt.json /source-revision.txt; do
             grep --fixed-strings --line-regexp "$required" "$inventory" >/dev/null
           done
-          while IFS= read -r public_path; do
+          while IFS= read -r public_path || [[ -n "$public_path" ]]; do
             [[ "$public_path" == /* ]] || { echo "Invalid Pages path: $public_path" >&2; exit 1; }
             curl --fail --silent --show-error --location --proto '=https' "$base$public_path" --output "$pages"
             [[ -s "$pages" ]] || { echo "Empty Pages target: $public_path" >&2; exit 1; }
@@ -2041,7 +2041,7 @@ jobs:
             for required in / /index.html /source-receipt.json /source-revision.txt; do
               grep --fixed-strings --line-regexp "$required" "$pages_inventory" >/dev/null
             done
-            while IFS= read -r public_path; do
+            while IFS= read -r public_path || [[ -n "$public_path" ]]; do
               [[ "$public_path" == /* ]] || { echo "Invalid predecessor Pages path: $public_path" >&2; exit 1; }
               curl --fail --silent --show-error --location --proto '=https' \
                 "$pages_base$public_path" --output "$pages_target"
