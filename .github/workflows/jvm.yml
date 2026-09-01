@@ -179,9 +179,8 @@ jobs:
         uses: actions/cache/restore@v6
         with:
           path: .gradle/loom-cache
+          # Never fall back by prefix: Loom's generated Minecraft artifacts are valid only for this complete input hash.
           key: loom-${{ runner.os }}-${{ matrix.id }}-${{ steps.loom_inputs.outputs.hash }}
-          restore-keys: |
-            loom-${{ runner.os }}-${{ matrix.id }}-
       - name: Run ${{ matrix.name }}
         # Loom's client run tasks select xvfb-run automatically on Linux when CI is true.
         run: bash ./gradlew ${{ matrix.gradle_arguments }}
