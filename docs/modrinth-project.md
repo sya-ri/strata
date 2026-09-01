@@ -22,8 +22,8 @@ Compile ordinary Mod source against the API only, then install the runtime match
 
 ```kotlin
 dependencies {
-    compileOnly("dev.s7a.strata:strata-api:0.1.2")
-    modRuntimeOnly("dev.s7a.strata:strata-runtime-minecraft-fabric-<minecraft-version>:0.1.2")
+    compileOnly("dev.s7a.strata:strata-api:0.1.3")
+    modRuntimeOnly("dev.s7a.strata:strata-runtime-minecraft-fabric-<minecraft-version>:0.1.3")
     modRuntimeOnly("net.fabricmc:fabric-language-kotlin:<compatible-version>")
 }
 ```
@@ -88,7 +88,7 @@ See [Text and text input](https://github.com/sya-ri/strata/blob/master/docs/text
 
 ## Optional CPU font backend
 
-Offline tools can use `dev.s7a.strata:strata-runtime-minecraft-fonts-lwjgl:0.1.2` for resource decoding, TrueType rasterization, and text ordering without launching Minecraft.
+Offline tools can use `dev.s7a.strata:strata-runtime-minecraft-fonts-lwjgl:0.1.3` for resource decoding, TrueType rasterization, and text ordering without launching Minecraft.
 Versioned Fabric runtimes already include this backend; ordinary UI declarations still compile against `strata-api` alone.
 The backend does not bundle LWJGL, ICU, Gson, or native binaries.
 Offline callers must supply the exact target's library dependencies, native classifier, font resources, and compatibility options; do not mix native library generations in one process.
