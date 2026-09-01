@@ -17,6 +17,7 @@ import java.util.Collections
 /**
  * Validates the explicitly declared official 26.2 client, asset index, object directory, and repository fixtures.
  * The caller keeps these files stable for one load; construction verifies the manifest hashes before any image decoding.
+ * Aggregate manifest and index hashes fence that load but are not receipt identities because Mojang may revise bytes mapped by unrelated existing entries at the same logical version.
  * This temporary owner holds no native objects or open streams and is not retained by the completed assets.
  */
 internal class ShowcaseMinecraftInputs(
@@ -100,8 +101,10 @@ internal class ShowcaseMinecraftInputs(
     }
 
     /**
-     * Fences a completed load against changed input files and returns only immutable logical SHA-256 identities.
-     * The returned values never contain local absolute paths and can be serialized into a portable generation receipt.
+     * Fences a completed load against changed input files and returns only immutable logical SHA-256 identities that affect the generated showcase.
+     * The returned values include the client, selection contract, enumerated logical path sets, and consumed resources, but exclude aggregate manifest and index hashes.
+     * The aggregate files are still validated against each other and rehashed here so a concurrent mutation cannot be published.
+     * Returned identities never contain local absolute paths and can be serialized into a portable generation receipt.
      */
     fun inputHashes(playerName: String): Map<String, String> {
         require(ShowcaseAssetIntegrity.sha256(ShowcaseAssetIntegrity.read(versionManifest, limits.maxDocumentBytes)) == ShowcaseAssetIntegrity.sha256(manifestBytes)) {
@@ -113,8 +116,6 @@ internal class ShowcaseMinecraftInputs(
         val hashes =
             linkedMapOf(
                 "client-jar" to clientHash,
-                "asset-index" to indexHash,
-                "version-manifest" to ShowcaseAssetIntegrity.sha256(manifestBytes),
                 "selection" to ShowcaseAssetIntegrity.sha256((compatibility.toString() + "\n" + options + "\n" + ShowcaseGuiAsset.PlayerSkin.id + "\n" + playerName + "\n").toByteArray()),
             )
         sources.forEach { source -> hashes.putAll(source.hashes()) }

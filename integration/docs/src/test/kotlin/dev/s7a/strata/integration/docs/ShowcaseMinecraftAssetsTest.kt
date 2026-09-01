@@ -47,7 +47,9 @@ internal class ShowcaseMinecraftAssetsTest {
             assertEquals(0xFF243444.toInt(), image.argbAt(0, 0))
         }
         val hashes = assets.inputHashes()
-        assertTrue(hashes.keys.containsAll(listOf("client-jar", "asset-index", "version-manifest", "selection")))
+        assertTrue(hashes.keys.containsAll(listOf("client-jar", "selection", "paths.minecraft-assets", "paths.minecraft-client")))
+        assertFalse(hashes.keys.contains("asset-index"))
+        assertFalse(hashes.keys.contains("version-manifest"))
         assertTrue(hashes.keys.any { key -> key.endsWith("assets/minecraft/textures/font/showcase-japanese.png") })
         assertTrue(hashes.keys.any { key -> key.endsWith("assets/minecraft/textures/gui/sprites/tooltip/frame.png.mcmeta") })
         assertTrue(hashes.values.all { hash -> Regex("[0-9a-f]{64}").matches(hash) })
@@ -79,6 +81,32 @@ internal class ShowcaseMinecraftAssetsTest {
         val reloaded = fixture.assets(ProbeFactory())
         assertEquals(hashes, reloaded.inputHashes())
         assertEquals(hashes, original.inputHashes())
+    }
+
+    @Test
+    fun changingAnUnconsumedIndexedMappingDoesNotChangeReceiptIdentities() {
+        val fixture = ShowcaseMinecraftAssetFixture(directory)
+        val before = fixture.assets(ProbeFactory()).inputHashes()
+
+        fixture.replaceIndexedObject("minecraft/lang/unconsumed.json", "{\"fixture\":2}".toByteArray())
+
+        assertEquals(before, fixture.assets(ProbeFactory()).inputHashes())
+    }
+
+    @Test
+    fun changingAConsumedIndexedMappingChangesReceiptIdentities() {
+        val fixture = ShowcaseMinecraftAssetFixture(directory)
+        val before = fixture.assets(ProbeFactory()).inputHashes()
+        val replacement =
+            ShowcaseFixturePng.create(IntSize(128, 48)) { x, y ->
+                if (x % 8 < 4 && y % 8 < 6) -1 else 0x00FFFFFF
+            }
+
+        fixture.replaceIndexedObject("minecraft/textures/font/showcase-ascii.png", replacement)
+
+        val after = fixture.assets(ProbeFactory()).inputHashes()
+        assertFalse(before == after)
+        assertFalse(before["resource.minecraft-assets.assets/minecraft/textures/font/showcase-ascii.png"] == after["resource.minecraft-assets.assets/minecraft/textures/font/showcase-ascii.png"])
     }
 
     @Test
@@ -160,6 +188,19 @@ internal class ShowcaseMinecraftAssetsTest {
         val factory = ProbeFactory(onFirstDecode = { Files.write(fixture.clientJar, byteArrayOf(2), StandardOpenOption.APPEND) })
         assertThrows(IllegalArgumentException::class.java) { fixture.assets(factory) }
         assertEquals(1, factory.closed)
+    }
+
+    @Test
+    fun manifestAndIndexMutationDuringDecodeCannotPublishAProfileWithStaleValidationInputs() {
+        val manifest = ShowcaseMinecraftAssetFixture(directory.resolve("manifest"))
+        val manifestFactory = ProbeFactory(onFirstDecode = { Files.writeString(manifest.versionManifest, " ", StandardOpenOption.APPEND) })
+        assertThrows(IllegalArgumentException::class.java) { manifest.assets(manifestFactory) }
+        assertEquals(1, manifestFactory.closed)
+
+        val index = ShowcaseMinecraftAssetFixture(directory.resolve("index"))
+        val indexFactory = ProbeFactory(onFirstDecode = { Files.writeString(index.assetIndex, " ", StandardOpenOption.APPEND) })
+        assertThrows(IllegalArgumentException::class.java) { index.assets(indexFactory) }
+        assertEquals(1, indexFactory.closed)
     }
 
     @Test
