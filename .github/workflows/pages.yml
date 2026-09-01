@@ -229,6 +229,7 @@ jobs:
           gradle-home-cache-strict-match: true
           gradle-home-cache-excludes: caches/fabric-loom
       - name: Generate independent release Pages evidence
+        id: evidence
         shell: bash
         env:
           CONTROLLER_COMMIT: ${{ steps.source.outputs.controller_commit }}
@@ -238,12 +239,25 @@ jobs:
           RELEASE_TAG: ${{ steps.source.outputs.release_tag }}
         run: |
           set -euo pipefail
-          git checkout --detach "$RELEASE_COMMIT"
-          [[ "$(git rev-parse HEAD)" == "$RELEASE_COMMIT" ]] || { echo 'Release Pages evidence checked out another commit.' >&2; exit 1; }
-          bash ./gradlew --no-parallel --max-workers=2 --no-build-cache \
-            :integration:docs:checkDokkaPagesStaging \
-            -Pstrata.sourceRevision="$RELEASE_TAG" \
-            -Pstrata.sourceCommit="$RELEASE_COMMIT"
+          release_worktree="$RUNNER_TEMP/strata-release-pages-source"
+          [[ ! -e "$release_worktree" && ! -L "$release_worktree" ]] || {
+            echo 'Release Pages evidence worktree already exists.' >&2
+            exit 1
+          }
+          git worktree add --detach "$release_worktree" "$RELEASE_COMMIT"
+          [[ -d "$release_worktree" && ! -L "$release_worktree" &&
+            "$(git -C "$release_worktree" rev-parse HEAD)" == "$RELEASE_COMMIT" &&
+            -z "$(git -C "$release_worktree" status --porcelain --untracked-files=no)" ]] || {
+            echo 'Release Pages evidence worktree does not contain the exact clean release commit.' >&2
+            exit 1
+          }
+          (
+            cd "$release_worktree"
+            bash ./gradlew --no-parallel --max-workers=2 --no-build-cache \
+              :integration:docs:checkDokkaPagesStaging \
+              -Pstrata.sourceRevision="$RELEASE_TAG" \
+              -Pstrata.sourceCommit="$RELEASE_COMMIT"
+          )
           controller_tools="$RUNNER_TEMP/strata-release-pages-controller"
           mkdir "$controller_tools"
           materialize_controller_tool() {
@@ -287,27 +301,38 @@ jobs:
               exit 1
             }
           }
-          verify_controller_tool "$list_tags_tool" "$EXPECTED_LIST_TAGS_BLOB"
-          release_tags="$(bash "$list_tags_tool")"
-          verify_controller_tool "$list_tags_tool" "$EXPECTED_LIST_TAGS_BLOB"
-          [[ -n "$release_tags" ]] || { echo 'Release Pages evidence found no canonical release tags.' >&2; exit 1; }
-          while IFS= read -r release_tag; do
-            verify_controller_tool "$stage_pages_tool" "$EXPECTED_STAGE_PAGES_BLOB"
-            bash "$stage_pages_tool" \
-              "$release_tag" build/dokka/html "$RELEASE_TAG"
-            verify_controller_tool "$stage_pages_tool" "$EXPECTED_STAGE_PAGES_BLOB"
+          (
+            cd "$release_worktree"
             verify_controller_tool "$list_tags_tool" "$EXPECTED_LIST_TAGS_BLOB"
-          done <<< "$release_tags"
-          expected_receipt="$RUNNER_TEMP/expected-release-pages-receipt.json"
-          printf '{"commit":"%s","revision":"%s"}\n' "$RELEASE_COMMIT" "$RELEASE_TAG" > "$expected_receipt"
-          cmp --silent "$expected_receipt" build/dokka/html/source-receipt.json || {
-            echo 'The release Pages evidence root receipt differs from the current tag.' >&2
+            release_tags="$(bash "$list_tags_tool")"
+            verify_controller_tool "$list_tags_tool" "$EXPECTED_LIST_TAGS_BLOB"
+            [[ -n "$release_tags" ]] || { echo 'Release Pages evidence found no canonical release tags.' >&2; exit 1; }
+            while IFS= read -r release_tag; do
+              verify_controller_tool "$stage_pages_tool" "$EXPECTED_STAGE_PAGES_BLOB"
+              bash "$stage_pages_tool" \
+                "$release_tag" build/dokka/html "$RELEASE_TAG"
+              verify_controller_tool "$stage_pages_tool" "$EXPECTED_STAGE_PAGES_BLOB"
+              verify_controller_tool "$list_tags_tool" "$EXPECTED_LIST_TAGS_BLOB"
+            done <<< "$release_tags"
+            expected_receipt="$RUNNER_TEMP/expected-release-pages-receipt.json"
+            printf '{"commit":"%s","revision":"%s"}\n' "$RELEASE_COMMIT" "$RELEASE_TAG" > "$expected_receipt"
+            cmp --silent "$expected_receipt" build/dokka/html/source-receipt.json || {
+              echo 'The release Pages evidence root receipt differs from the current tag.' >&2
+              exit 1
+            }
+            cmp --silent "$expected_receipt" "build/dokka/html/releases/${RELEASE_TAG#v}/source-receipt.json" || {
+              echo 'The current immutable release Pages evidence receipt differs.' >&2
+              exit 1
+            }
+          )
+          [[ "$(git rev-parse HEAD)" == "$CONTROLLER_COMMIT" &&
+            -z "$(git status --porcelain --untracked-files=no)" &&
+            "$(git -C "$release_worktree" rev-parse HEAD)" == "$RELEASE_COMMIT" &&
+            -z "$(git -C "$release_worktree" status --porcelain --untracked-files=no)" ]] || {
+            echo 'Release Pages evidence changed a trusted source checkout.' >&2
             exit 1
           }
-          cmp --silent "$expected_receipt" "build/dokka/html/releases/${RELEASE_TAG#v}/source-receipt.json" || {
-            echo 'The current immutable release Pages evidence receipt differs.' >&2
-            exit 1
-          }
+          printf 'path=%s\n' "$release_worktree/build/dokka/html" >> "$GITHUB_OUTPUT"
       - name: Bind release Pages evidence to its producer attempt
         id: artifact_identity
         shell: bash
@@ -319,7 +344,7 @@ jobs:
         uses: actions/upload-artifact@v7
         with:
           name: ${{ steps.artifact_identity.outputs.name }}
-          path: build/dokka/html
+          path: ${{ steps.evidence.outputs.path }}
           if-no-files-found: error
           include-hidden-files: true
           retention-days: 30
