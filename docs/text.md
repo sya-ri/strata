@@ -7,9 +7,8 @@ Strata does not provide an independent color-emoji or ZWJ-sequence renderer.
 
 ## Source compatibility
 
-Version 0.1.1 intentionally adds `UiText.WithFont` and `DrawCommand.SampledImage` to existing sealed hierarchies while the API is still in initial development.
-An exhaustive Kotlin `when` written for the previous four text variants or five drawing variants needs a branch for the new case before recompilation.
-Previously compiled visitors can throw when they receive a new case, even though the old constructors, methods, and component overloads remain available.
+`UiText` and `DrawCommand` are sealed hierarchies whose exhaustive visitors must handle every current variant, including `UiText.WithFont` and `DrawCommand.SampledImage`.
+Adding a variant requires a corresponding branch before recompilation, and a previously compiled visitor can throw when it receives an unknown case even when older constructors, methods, and component overloads remain available.
 
 Text visitors should traverse `WithFont.text` and preserve its inherited font selection, with inner selections taking precedence.
 Custom rendering backends must implement the fractional `SampledImage` contract or reject unsupported commands before producing output; treating it as the integer `BlitImage` command or silently skipping it changes the image.

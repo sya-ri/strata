@@ -162,7 +162,6 @@ internal data class ModrinthManifest(
      */
     companion object {
         const val CURRENT_SCHEMA_VERSION: Int = 1
-        const val EXPECTED_ARTIFACT_COUNT: Int = 21
         const val FABRIC_LANGUAGE_KOTLIN_PROJECT_ID: String = "Ha28R6CL"
         const val FEATURED: Boolean = true
         const val AI_DISCLOSURE_NOTE: String =
@@ -313,9 +312,7 @@ internal data class ModrinthManifest(
      */
     @Suppress("LongMethod")
     fun validate() {
-        check(artifacts.size == EXPECTED_ARTIFACT_COUNT) {
-            "A release must contain exactly $EXPECTED_ARTIFACT_COUNT Minecraft artifacts, found ${artifacts.size}."
-        }
+        check(artifacts.isNotEmpty()) { "A release must contain at least one Minecraft artifact." }
         check(artifacts.map(Artifact::gameVersion).distinct().size == artifacts.size) {
             "Minecraft game versions must be unique."
         }

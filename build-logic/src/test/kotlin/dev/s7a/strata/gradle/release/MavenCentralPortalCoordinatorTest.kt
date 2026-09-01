@@ -63,6 +63,30 @@ internal class MavenCentralPortalCoordinatorTest {
     }
 
     @Test
+    fun `exact deployment counts derive from every supplied coordinate`() {
+        val fixture = fixture(listOf("strata-api", "strata-runtime-core"))
+        val server = server(fixture)
+        server.statuses.add(MavenCentralPortalCoordinator.DeploymentState.VALIDATED)
+        val evidence = temporaryDirectory.resolve("multiple-coordinates")
+
+        val exact =
+            fixture.coordinator(server).preflight(
+                fixture.coordinates,
+                evidence,
+                incompleteAttempts = 1,
+                statusAttempts = 1,
+                statusDelayMillis = 0L,
+            )
+
+        val expectedContentFileCount = fixture.coordinates.size * BASE_SUFFIXES.size * 2
+        val expectedChecksumCount = fixture.coordinates.size * BASE_SUFFIXES.size * CHECKSUMS.size
+        assertEquals(MavenCentralPortalCoordinator.State.EXACT, exact.state)
+        assertEquals(expectedContentFileCount, exact.verifiedContentFileCount)
+        assertEquals(expectedChecksumCount, exact.verifiedChecksumCount)
+        assertEquals(expectedContentFileCount.toLong(), Files.walk(evidence).use { paths -> paths.filter(Files::isRegularFile).count() })
+    }
+
+    @Test
     fun `preflight polls consecutive absence before accepting an existing exact deployment`() {
         val fixture = fixture()
         val server = server(fixture)
@@ -171,19 +195,19 @@ internal class MavenCentralPortalCoordinatorTest {
     }
 
     @Test
-    fun `production contract requires twenty six safe coordinates before network access`() {
+    fun `release contract requires nonempty safe coordinates before network access`() {
         val fixture = fixture()
         val server = server(fixture)
 
         val countFailure =
             assertThrows(IllegalStateException::class.java) {
-                fixture.productionCoordinator(server).preflight(
-                    fixture.coordinates,
+                fixture.coordinator(server).preflight(
+                    emptyList(),
                     temporaryDirectory.resolve("coordinate-count"),
                     incompleteAttempts = 1,
                 )
             }
-        assertTrue(countFailure.message.orEmpty().contains("exactly 26 coordinates"))
+        assertTrue(countFailure.message.orEmpty().contains("at least one coordinate"))
         assertEquals(0, server.listRequestCount)
 
         val unsafeFailure =
@@ -301,16 +325,20 @@ internal class MavenCentralPortalCoordinatorTest {
         assertFalse(failure.message.orEmpty().contains(server.listRejectionBody))
     }
 
-    private fun fixture(): Fixture {
+    private fun fixture(artifacts: List<String> = listOf("strata-api")): Fixture {
         val repository = temporaryDirectory.resolve("repository")
-        val coordinate = "dev.s7a.strata:strata-api:0.1.1"
-        val directory = repository.resolve("dev/s7a/strata/strata-api/0.1.1")
-        Files.createDirectories(directory)
-        BASE_SUFFIXES.forEach { suffix ->
-            val file = directory.resolve("strata-api-0.1.1$suffix")
-            Files.writeString(file, "$coordinate$suffix", StandardCharsets.UTF_8)
-        }
-        return Fixture(repository, listOf(coordinate))
+        val coordinates =
+            artifacts.map { artifact ->
+                val coordinate = "dev.s7a.strata:$artifact:0.1.1"
+                val directory = repository.resolve("dev/s7a/strata/$artifact/0.1.1")
+                Files.createDirectories(directory)
+                BASE_SUFFIXES.forEach { suffix ->
+                    val file = directory.resolve("$artifact-0.1.1$suffix")
+                    Files.writeString(file, "$coordinate$suffix", StandardCharsets.UTF_8)
+                }
+                coordinate
+            }
+        return Fixture(repository, coordinates)
     }
 
     private fun server(fixture: Fixture): MockCentralPortal = MockCentralPortal(fixture).also { server -> servers += server }
@@ -329,18 +357,6 @@ internal class MavenCentralPortalCoordinatorTest {
                 username = username,
                 password = password,
                 localRepository = repository,
-                expectedCoordinateCount = 1,
-                requestTimeout = Duration.ofSeconds(2),
-                retryBaseMillis = 0L,
-                sleeper = {},
-            )
-
-        fun productionCoordinator(server: MockCentralPortal): MavenCentralPortalCoordinator =
-            MavenCentralPortalCoordinator(
-                portalBaseUri = URI("${server.baseUrl}/"),
-                username = "user",
-                password = "password",
-                localRepository = repository,
                 requestTimeout = Duration.ofSeconds(2),
                 retryBaseMillis = 0L,
                 sleeper = {},
@@ -353,6 +369,11 @@ internal class MavenCentralPortalCoordinatorTest {
         private val executor = Executors.newCachedThreadPool()
         private val server = HttpServer.create(InetSocketAddress("127.0.0.1", 0), 0)
         private val exactFiles = linkedMapOf<String, ByteArray>()
+        private val purls =
+            fixture.coordinates.map { coordinate ->
+                val (group, artifact, version) = coordinate.split(':')
+                "pkg:maven/$group/$artifact@$version"
+            }
 
         var mode: Mode = Mode.EXACT
         var hiddenListReads: Int = 0
@@ -434,7 +455,7 @@ internal class MavenCentralPortalCoordinatorTest {
                         "deploymentId" to "deployment-1",
                         "deploymentName" to "dev.s7a.strata-0.1.1",
                         "deploymentState" to state.wireValue,
-                        "purls" to listOf(PURL),
+                        "purls" to purls,
                     ),
                 ),
             )
@@ -482,7 +503,7 @@ internal class MavenCentralPortalCoordinatorTest {
                 "deploymentState" to state().wireValue,
                 "deploymentType" to deploymentType,
                 "createTimestamp" to 1L,
-                "purls" to listOf(PURL),
+                "purls" to purls,
                 "deploymentFiles" to files,
             )
         }
@@ -546,7 +567,6 @@ internal class MavenCentralPortalCoordinatorTest {
     )
 
     companion object {
-        private const val PURL = "pkg:maven/dev.s7a.strata/strata-api@0.1.1"
         private val BASE_SUFFIXES = listOf(".pom", ".module", ".jar", "-sources.jar", "-javadoc.jar")
         private val CHECKSUMS =
             listOf(

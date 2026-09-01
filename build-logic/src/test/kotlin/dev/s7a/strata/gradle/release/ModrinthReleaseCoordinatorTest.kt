@@ -52,11 +52,11 @@ internal class ModrinthReleaseCoordinatorTest {
             }
         val coordinator = fixture.coordinator(server)
 
-        assertEquals(21, coordinator.preflight().absent.size)
-        assertEquals(21, coordinator.stage().listed.size)
-        assertEquals(21, server.createRequests)
-        assertEquals(21, coordinator.stage().listed.size)
-        assertEquals(21, server.createRequests)
+        assertEquals(fixture.manifest.artifacts.size, coordinator.preflight().absent.size)
+        assertEquals(fixture.manifest.artifacts.size, coordinator.stage().listed.size)
+        assertEquals(fixture.manifest.artifacts.size, server.createRequests)
+        assertEquals(fixture.manifest.artifacts.size, coordinator.stage().listed.size)
+        assertEquals(fixture.manifest.artifacts.size, server.createRequests)
 
         assertEquals(ProjectStatus.PROCESSING.wireValue, coordinator.submit().projectStatus)
         assertEquals(1, server.submitRequests)
@@ -64,9 +64,21 @@ internal class ModrinthReleaseCoordinatorTest {
         assertEquals(1, server.submitRequests)
 
         server.projectStatus = ProjectStatus.APPROVED
-        assertEquals(21, coordinator.verify().listed.size)
+        assertEquals(fixture.manifest.artifacts.size, coordinator.verify().listed.size)
         assertTrue(server.downloadRequests.containsAll(fixture.manifest.artifacts.map { artifact -> artifact.fileName }))
         assertFalse(server.cdnReceivedAuthorization)
+    }
+
+    @Test
+    fun `manifest and reconciliation derive the configured target count`() {
+        val fixture = fixture(listOf("1.20", "26.2"))
+        val server = server(fixture)
+        val coordinator = fixture.coordinator(server)
+
+        fixture.manifest.validate()
+        assertEquals(2, coordinator.preflight().absent.size)
+        assertEquals(2, coordinator.stage().listed.size)
+        assertEquals(2, server.createRequests)
     }
 
     @Test
@@ -82,7 +94,7 @@ internal class ModrinthReleaseCoordinatorTest {
 
         val preflight = coordinator.preflight()
 
-        assertEquals(21, preflight.absent.size)
+        assertEquals(fixture.manifest.artifacts.size, preflight.absent.size)
         assertEquals(0, server.createRequests)
         assertEquals(0, server.projectBodyUpdateRequests)
         assertEquals(0, server.projectBootstrapRequests)
@@ -91,20 +103,20 @@ internal class ModrinthReleaseCoordinatorTest {
 
         val staged = coordinator.stage()
 
-        assertEquals(21, staged.listed.size)
-        assertEquals(21, server.createRequests)
+        assertEquals(fixture.manifest.artifacts.size, staged.listed.size)
+        assertEquals(fixture.manifest.artifacts.size, server.createRequests)
         assertEquals(1, server.projectBootstrapRequests)
         assertEquals(1, server.disclosureBootstrapRequests)
         assertEquals(
-            List(21) { WriteEvent.CREATE_VERSION } +
+            List(fixture.manifest.artifacts.size) { WriteEvent.CREATE_VERSION } +
                 listOf(WriteEvent.PATCH_PROJECT, WriteEvent.PATCH_DISCLOSURES),
             server.writeEvents,
         )
         assertTrue(server.projectBootstrapIsExact)
         assertTrue(server.disclosureBootstrapIsExact)
 
-        assertEquals(21, coordinator.stage().listed.size)
-        assertEquals(21, server.createRequests)
+        assertEquals(fixture.manifest.artifacts.size, coordinator.stage().listed.size)
+        assertEquals(fixture.manifest.artifacts.size, server.createRequests)
         assertEquals(1, server.projectBootstrapRequests)
         assertEquals(1, server.disclosureBootstrapRequests)
         assertEquals(ProjectType.MOD, server.projectType)
@@ -182,12 +194,12 @@ internal class ModrinthReleaseCoordinatorTest {
         val server =
             server(fixture).also { mock ->
                 mock.makeBootstrapStateEmpty()
-                mock.seedVersions(21)
+                mock.seedVersions(fixture.manifest.artifacts.size)
             }
 
         val receipt = fixture.coordinator(server).stage()
 
-        assertEquals(21, receipt.listed.size)
+        assertEquals(fixture.manifest.artifacts.size, receipt.listed.size)
         assertEquals(0, server.createRequests)
         assertEquals(1, server.projectBootstrapRequests)
         assertEquals(1, server.disclosureBootstrapRequests)
@@ -202,12 +214,12 @@ internal class ModrinthReleaseCoordinatorTest {
         val server =
             server(fixture).also { mock ->
                 mock.makeDisclosureBootstrapStateDeleted()
-                mock.seedVersions(21)
+                mock.seedVersions(fixture.manifest.artifacts.size)
             }
 
         val receipt = fixture.coordinator(server).stage()
 
-        assertEquals(21, receipt.listed.size)
+        assertEquals(fixture.manifest.artifacts.size, receipt.listed.size)
         assertEquals(0, server.createRequests)
         assertEquals(0, server.projectBootstrapRequests)
         assertEquals(1, server.disclosureBootstrapRequests)
@@ -222,7 +234,7 @@ internal class ModrinthReleaseCoordinatorTest {
 
         val receipt = fixture.coordinator(server).stage()
 
-        assertEquals(21, receipt.listed.size)
+        assertEquals(fixture.manifest.artifacts.size, receipt.listed.size)
         assertEquals(setOf("additional_categories", "environment"), server.projectBootstrapPayloadKeys)
         assertEquals(1, server.projectBootstrapRequests)
         assertEquals(0, server.disclosureBootstrapRequests)
@@ -340,8 +352,8 @@ internal class ModrinthReleaseCoordinatorTest {
 
         val receipt = fixture.coordinator(server).stage()
 
-        assertEquals(21, receipt.listed.size)
-        assertEquals(21, server.createRequests)
+        assertEquals(fixture.manifest.artifacts.size, receipt.listed.size)
+        assertEquals(fixture.manifest.artifacts.size, server.createRequests)
         assertEquals(2, server.projectBootstrapRequests)
         assertEquals(0, server.disclosureBootstrapRequests)
         assertTrue(0 < server.projectBootstrapRecoveryReads)
@@ -361,14 +373,14 @@ internal class ModrinthReleaseCoordinatorTest {
         val failure = assertThrows(WriteRejectedException::class.java, coordinator::stage)
 
         assertEquals(400, failure.statusCode)
-        assertEquals(21, server.createRequests)
+        assertEquals(fixture.manifest.artifacts.size, server.createRequests)
         assertEquals(1, server.projectBootstrapRequests)
         assertEquals(1, server.disclosureBootstrapRequests)
         assertTrue(server.projectBootstrapIsExact)
         assertFalse(server.disclosureBootstrapIsExact)
 
-        assertEquals(21, coordinator.stage().listed.size)
-        assertEquals(21, server.createRequests)
+        assertEquals(fixture.manifest.artifacts.size, coordinator.stage().listed.size)
+        assertEquals(fixture.manifest.artifacts.size, server.createRequests)
         assertEquals(1, server.projectBootstrapRequests)
         assertEquals(2, server.disclosureBootstrapRequests)
         assertTrue(server.disclosureBootstrapIsExact)
@@ -402,12 +414,13 @@ internal class ModrinthReleaseCoordinatorTest {
     @Test
     fun `partial stage creates only missing targets`() {
         val fixture = fixture()
-        val server = server(fixture).also { mock -> mock.seedVersions(5) }
+        val existingTargetCount = 1
+        val server = server(fixture).also { mock -> mock.seedVersions(existingTargetCount) }
 
         val receipt = fixture.coordinator(server).stage()
 
-        assertEquals(16, server.createRequests)
-        assertEquals(21, receipt.listed.size)
+        assertEquals(fixture.manifest.artifacts.size - existingTargetCount, server.createRequests)
+        assertEquals(fixture.manifest.artifacts.size, receipt.listed.size)
     }
 
     @Test
@@ -418,23 +431,23 @@ internal class ModrinthReleaseCoordinatorTest {
                 server(fixture).also { mock ->
                     mock.projectStatus = status
                     mock.remoteProjectBody = PREVIOUS_PROJECT_BODY
-                    mock.seedHistoricalVersions(20)
+                    mock.seedHistoricalVersions(fixture.manifest.artifacts.lastIndex)
                 }
             val coordinator = fixture.coordinator(server)
 
-            assertEquals(21, coordinator.preflight().absent.size)
+            assertEquals(fixture.manifest.artifacts.size, coordinator.preflight().absent.size)
             val receipt = coordinator.stage()
 
-            assertEquals(21, receipt.listed.size)
-            assertEquals(21, server.createRequests)
+            assertEquals(fixture.manifest.artifacts.size, receipt.listed.size)
+            assertEquals(fixture.manifest.artifacts.size, server.createRequests)
             assertEquals(0, server.projectBodyUpdateRequests)
-            assertEquals(21, coordinator.stage().listed.size)
-            assertEquals(21, server.createRequests)
+            assertEquals(fixture.manifest.artifacts.size, coordinator.stage().listed.size)
+            assertEquals(fixture.manifest.artifacts.size, server.createRequests)
             assertEquals(0, server.projectBodyUpdateRequests)
             if (status == ProjectStatus.APPROVED) {
-                assertEquals(21, coordinator.finalizeProject().listed.size)
+                assertEquals(fixture.manifest.artifacts.size, coordinator.finalizeProject().listed.size)
                 assertEquals(1, server.projectBodyUpdateRequests)
-                assertEquals(21, coordinator.finalizeProject().listed.size)
+                assertEquals(fixture.manifest.artifacts.size, coordinator.finalizeProject().listed.size)
                 assertEquals(1, server.projectBodyUpdateRequests)
             } else {
                 assertThrows(IllegalStateException::class.java, coordinator::finalizeProject)
@@ -452,14 +465,14 @@ internal class ModrinthReleaseCoordinatorTest {
                 mock.remoteProjectBody = PREVIOUS_PROJECT_BODY
                 mock.ambiguousFirstBodyUpdateAfterCommit = true
                 mock.remainingStaleProjectReadsAfterBodyUpdate = 1
-                mock.seedHistoricalVersions(20)
+                mock.seedHistoricalVersions(fixture.manifest.artifacts.lastIndex)
             }
 
         val coordinator = fixture.coordinator(server)
-        assertEquals(21, coordinator.stage().listed.size)
+        assertEquals(fixture.manifest.artifacts.size, coordinator.stage().listed.size)
         val receipt = coordinator.finalizeProject()
 
-        assertEquals(21, receipt.listed.size)
+        assertEquals(fixture.manifest.artifacts.size, receipt.listed.size)
         assertEquals(1, server.projectBodyUpdateRequests)
         assertEquals(WriteEvent.PATCH_PROJECT_BODY, server.writeEvents.last())
     }
@@ -472,8 +485,8 @@ internal class ModrinthReleaseCoordinatorTest {
                 mock.projectStatus = ProjectStatus.APPROVED
                 mock.projectStatusAfterFirstRead = ProjectStatus.PROCESSING
                 mock.remoteProjectBody = PREVIOUS_PROJECT_BODY
-                mock.seedHistoricalVersions(20)
-                mock.seedVersions(21)
+                mock.seedHistoricalVersions(fixture.manifest.artifacts.lastIndex)
+                mock.seedVersions(fixture.manifest.artifacts.size)
             }
 
         val failure = assertThrows(IllegalStateException::class.java, fixture.coordinator(server)::finalizeProject)
@@ -489,7 +502,7 @@ internal class ModrinthReleaseCoordinatorTest {
             server(fixture).also { mock ->
                 mock.projectStatus = ProjectStatus.APPROVED
                 mock.remoteProjectBody = "# Unreviewed manual body\n"
-                mock.seedHistoricalVersions(20)
+                mock.seedHistoricalVersions(fixture.manifest.artifacts.lastIndex)
             }
 
         val failure = assertStageFailsBeforeEveryWrite(fixture, server)
@@ -532,8 +545,8 @@ internal class ModrinthReleaseCoordinatorTest {
 
         val receipt = fixture.coordinator(server, client).stage()
 
-        assertEquals(21, receipt.listed.size)
-        assertEquals(21, server.createRequests)
+        assertEquals(fixture.manifest.artifacts.size, receipt.listed.size)
+        assertEquals(fixture.manifest.artifacts.size, server.createRequests)
     }
 
     @Test
@@ -548,8 +561,8 @@ internal class ModrinthReleaseCoordinatorTest {
 
         val receipt = fixture.coordinator(server, client).stage()
 
-        assertEquals(21, receipt.listed.size)
-        assertEquals(21, server.createRequests)
+        assertEquals(fixture.manifest.artifacts.size, receipt.listed.size)
+        assertEquals(fixture.manifest.artifacts.size, server.createRequests)
     }
 
     @Test
@@ -564,8 +577,8 @@ internal class ModrinthReleaseCoordinatorTest {
 
         val receipt = fixture.coordinator(server, client).stage()
 
-        assertEquals(21, receipt.listed.size)
-        assertEquals(22, server.createRequests)
+        assertEquals(fixture.manifest.artifacts.size, receipt.listed.size)
+        assertEquals(fixture.manifest.artifacts.size + 1, server.createRequests)
     }
 
     @Test
@@ -611,8 +624,8 @@ internal class ModrinthReleaseCoordinatorTest {
 
         val receipt = fixture.coordinator(server).stage()
 
-        assertEquals(21, receipt.listed.size)
-        assertEquals(22, server.createRequests)
+        assertEquals(fixture.manifest.artifacts.size, receipt.listed.size)
+        assertEquals(fixture.manifest.artifacts.size + 1, server.createRequests)
     }
 
     @Test
@@ -622,8 +635,8 @@ internal class ModrinthReleaseCoordinatorTest {
 
         val receipt = fixture.coordinator(server).stage()
 
-        assertEquals(21, receipt.listed.size)
-        assertEquals(22, server.createRequests)
+        assertEquals(fixture.manifest.artifacts.size, receipt.listed.size)
+        assertEquals(fixture.manifest.artifacts.size + 1, server.createRequests)
     }
 
     @Test
@@ -818,11 +831,11 @@ internal class ModrinthReleaseCoordinatorTest {
         }
     }
 
-    private fun fixture(): Fixture {
+    private fun fixture(gameVersions: List<String> = GAME_VERSIONS): Fixture {
         val bundle = temporaryDirectory.resolve("bundle").toFile()
         val artifactsDirectory = bundle.resolve("artifacts").also(java.io.File::mkdirs)
         val artifacts =
-            GAME_VERSIONS.mapIndexed { index, gameVersion ->
+            gameVersions.mapIndexed { index, gameVersion ->
                 val fileName = "strata-runtime-minecraft-fabric-$gameVersion-0.1.1.jar"
                 val bytes = "artifact-$index-$gameVersion".toByteArray(StandardCharsets.UTF_8)
                 artifactsDirectory.resolve(fileName).writeBytes(bytes)
@@ -1587,25 +1600,7 @@ internal class ModrinthReleaseCoordinatorTest {
         private val GAME_VERSIONS =
             listOf(
                 "1.20",
-                "1.20.1",
-                "1.20.2",
-                "1.20.3",
-                "1.20.4",
-                "1.20.5",
-                "1.20.6",
                 "1.21",
-                "1.21.1",
-                "1.21.2",
-                "1.21.3",
-                "1.21.4",
-                "1.21.5",
-                "1.21.6",
-                "1.21.7",
-                "1.21.8",
-                "1.21.9",
-                "1.21.10",
-                "1.21.11",
-                "26.1",
                 "26.2",
             )
     }

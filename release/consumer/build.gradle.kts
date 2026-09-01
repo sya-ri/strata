@@ -5,7 +5,11 @@ plugins {
 }
 
 group = "dev.s7a.strata.release.consumer"
-version = "0.1.2"
+val strataVersion = providers.gradleProperty("strataVersion").get()
+require(strataVersion.matches(Regex("[0-9]+\\.[0-9]+\\.[0-9]+(?:[-+][0-9A-Za-z.-]+)?"))) {
+    "strataVersion must be an exact semantic release version."
+}
+version = strataVersion
 
 kotlin {
     jvmToolchain(17)
@@ -16,16 +20,26 @@ sourceSets.main {
 }
 
 dependencies {
-    compileOnly("dev.s7a.strata:strata-api:0.1.2")
+    compileOnly("dev.s7a.strata:strata-api:$strataVersion")
 }
 
 val representativeRuntimeCoordinates =
-    listOf(
-        "dev.s7a.strata:strata-runtime-minecraft-fonts-lwjgl:0.1.2",
-        "dev.s7a.strata:strata-runtime-minecraft-fabric-1.20:0.1.2",
-        "dev.s7a.strata:strata-runtime-minecraft-fabric-1.21.11:0.1.2",
-        "dev.s7a.strata:strata-runtime-minecraft-fabric-26.2:0.1.2",
-    )
+    listOf("dev.s7a.strata:strata-runtime-minecraft-fonts-lwjgl:$strataVersion") +
+        providers
+            .gradleProperty("strataRepresentativeMinecraftVersions")
+            .get()
+            .split(',')
+            .map(String::trim)
+            .also { versions ->
+                require(versions.isNotEmpty() && versions.all { version -> version.matches(Regex("[0-9]+(?:\\.[0-9]+)*")) }) {
+                    "strataRepresentativeMinecraftVersions must contain exact numeric Minecraft versions."
+                }
+                require(versions.distinct().size == versions.size) {
+                    "strataRepresentativeMinecraftVersions must not contain duplicates."
+                }
+            }.map { minecraftVersion ->
+                "dev.s7a.strata:strata-runtime-minecraft-fabric-$minecraftVersion:$strataVersion"
+            }
 
 val representativeRuntimes =
     configurations.create("representativeRuntimes") {

@@ -23,7 +23,10 @@ release_body="$(mktemp)"
 downloads="$(mktemp -d)"
 expected_inventory="$(mktemp)"
 actual_inventory="$(mktemp)"
-trap 'rm -rf -- "$release_json" "$release_body" "$downloads" "$expected_inventory" "$actual_inventory"' EXIT
+expected_checksum_inventory="$(mktemp)"
+actual_checksum_inventory="$(mktemp)"
+local_inventory="$(mktemp)"
+trap 'rm -rf -- "$release_json" "$release_body" "$downloads" "$expected_inventory" "$actual_inventory" "$expected_checksum_inventory" "$actual_checksum_inventory" "$local_inventory"' EXIT
 
 status="$(
   curl --silent --show-error --retry 3 --retry-all-errors --retry-delay 1 \
@@ -68,17 +71,48 @@ shopt -s nullglob
 assets=("$bundle_directory"/*)
 runtime_jars=("$bundle_directory"/*.jar)
 expected_asset_count=$(( ${#runtime_jars[@]} * 2 + 1 ))
-[[ "${#runtime_jars[@]}" == 20 || "${#runtime_jars[@]}" == 21 ]] || {
-  echo "Expected a supported 20- or 21-runtime GitHub bundle, found ${#runtime_jars[@]} JARs." >&2
+(( 0 < ${#runtime_jars[@]} )) || {
+  echo 'Expected at least one runtime JAR in the GitHub bundle.' >&2
   exit 1
 }
+for runtime_jar in "${runtime_jars[@]}"; do
+  signature="$runtime_jar.asc"
+  [[ -f "$signature" ]] || {
+    echo "The canonical GitHub bundle is missing the detached signature for ${runtime_jar##*/}." >&2
+    exit 1
+  }
+  printf '%s\n%s\n' "${runtime_jar##*/}" "${signature##*/}"
+done | LC_ALL=C sort > "$expected_checksum_inventory"
+{
+  cat "$expected_checksum_inventory"
+  printf '%s\n' SHA256SUMS
+} | LC_ALL=C sort > "$expected_inventory"
+for asset in "${assets[@]}"; do
+  [[ -f "$asset" ]] || {
+    echo "The canonical GitHub bundle contains a non-file entry: ${asset##*/}." >&2
+    exit 1
+  }
+done
+printf '%s\n' "${assets[@]##*/}" | LC_ALL=C sort > "$local_inventory"
 [[ "${#assets[@]}" == "$expected_asset_count" ]] || {
   echo "Expected $expected_asset_count canonical GitHub assets, found ${#assets[@]}." >&2
   exit 1
 }
-(cd "$bundle_directory" && sha256sum --check SHA256SUMS)
+cmp --silent "$expected_inventory" "$local_inventory" || {
+  echo 'The canonical GitHub bundle contains an unexpected or incomplete asset inventory.' >&2
+  exit 1
+}
+sed -nE 's/^[0-9a-f]{64} [ *](.+)$/\1/p' "$bundle_directory/SHA256SUMS" | LC_ALL=C sort > "$actual_checksum_inventory"
+[[ "$(wc -l < "$actual_checksum_inventory")" == "$(wc -l < "$bundle_directory/SHA256SUMS")" ]] || {
+  echo 'SHA256SUMS contains a malformed checksum record.' >&2
+  exit 1
+}
+cmp --silent "$expected_checksum_inventory" "$actual_checksum_inventory" || {
+  echo 'SHA256SUMS does not cover the exact JAR and detached-signature inventory.' >&2
+  exit 1
+}
+(cd "$bundle_directory" && sha256sum --check --strict SHA256SUMS)
 
-printf '%s\n' "${assets[@]##*/}" | LC_ALL=C sort > "$expected_inventory"
 jq -r '.assets[].name' "$release_json" | LC_ALL=C sort > "$actual_inventory"
 unexpected="$(comm -13 "$expected_inventory" "$actual_inventory")"
 [[ -z "$unexpected" ]] || { echo "GitHub Release contains unexpected assets: $unexpected" >&2; exit 1; }

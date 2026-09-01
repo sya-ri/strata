@@ -98,8 +98,8 @@ done < <(jq -c '.project.gallery[]' "$manifest_file")
 
 curl_public "https://api.modrinth.com/v2/project/$project_id/version" "$temporary/versions.json"
 expected_count="$(jq -r '.artifacts | length' "$manifest_file")"
-[[ "$expected_count" == 20 || "$expected_count" == 21 ]] || {
-  echo "Expected a supported 20- or 21-version manifest, found $expected_count artifacts." >&2
+[[ "$expected_count" =~ ^[0-9]+$ ]] && (( 0 < expected_count )) || {
+  echo "Expected a nonempty release manifest, found $expected_count artifacts." >&2
   exit 1
 }
 jq --exit-status --slurpfile manifest "$manifest_file" '

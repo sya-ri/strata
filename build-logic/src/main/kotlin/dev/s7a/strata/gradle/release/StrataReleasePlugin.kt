@@ -16,11 +16,19 @@ public class StrataReleasePlugin : Plugin<Project> {
         val extension = project.extensions.create("strataRelease", StrataReleaseExtension::class.java)
         extension.releaseVersion.convention(project.provider { project.version.toString() })
         extension.outputDirectory.convention(project.layout.buildDirectory.dir("release/modrinth"))
+        val mavenArtifactInventory =
+            project.tasks.register("mavenArtifactInventory", GenerateMavenArtifactInventory::class.java) {
+                group = "release"
+                description = "Generates the canonical versionless Maven artifact inventory from publication projects."
+                artifacts.set(extension.mavenArtifacts)
+                outputFile.set(project.layout.buildDirectory.file("release/maven-coordinates.txt"))
+            }
+        val generatedMavenCoordinatesFile = mavenArtifactInventory.flatMap(GenerateMavenArtifactInventory::outputFile)
 
         val manifest =
             project.tasks.register("modrinthReleaseManifest", GenerateModrinthManifest::class.java) {
                 group = "release"
-                description = "Builds the canonical 21-artifact Modrinth and GitHub release bundle."
+                description = "Builds the canonical Modrinth and GitHub release bundle for every configured target."
                 projectId.set(extension.modrinthProjectId)
                 releaseVersion.set(extension.releaseVersion)
                 releaseNotesFile.set(extension.releaseNotesFile)
@@ -32,7 +40,7 @@ public class StrataReleasePlugin : Plugin<Project> {
         val githubBundle =
             project.tasks.register("githubReleaseBundle", GenerateGithubReleaseBundle::class.java) {
                 group = "release"
-                description = "Builds the exact 21 signed JARs and SHA256SUMS uploaded to GitHub Releases."
+                description = "Builds every configured signed JAR and SHA256SUMS uploaded to GitHub Releases."
                 dependsOn(manifest, "mavenCentralReleaseVerify")
                 manifestFile.set(extension.outputDirectory.file("manifest.json"))
                 artifactDirectory.set(extension.outputDirectory.dir("artifacts"))
@@ -47,7 +55,13 @@ public class StrataReleasePlugin : Plugin<Project> {
         ) = project.tasks.register(name, MavenCentralReleaseTask::class.java) {
             group = "release"
             this.description = description
-            coordinatesFile.set(extension.mavenCoordinatesFile)
+            dependsOn(
+                project.provider {
+                    if (extension.mavenCoordinatesFile.isPresent) emptyList() else listOf(mavenArtifactInventory)
+                },
+            )
+            coordinatesFile.set(extension.mavenCoordinatesFile.orElse(generatedMavenCoordinatesFile))
+            releaseVersion.set(extension.releaseVersion)
             localRepository.set(extension.mavenLocalRepository)
             repositoryBaseUrl.set("https://repo1.maven.org/maven2/")
             this.operation.set(operation)
@@ -62,7 +76,7 @@ public class StrataReleasePlugin : Plugin<Project> {
         )
         registerCentralTask(
             "mavenCentralReleaseVerify",
-            "Polls until all 26 Maven Central coordinates and immutable files match the staged publications.",
+            "Polls until every Maven Central coordinate and immutable file matches the staged publications.",
             MavenCentralReleaseTask.Operation.VERIFY,
         ).configure {
             canonicalSignatureDirectory.set(project.layout.buildDirectory.dir("release/maven-central/signatures"))
@@ -76,7 +90,13 @@ public class StrataReleasePlugin : Plugin<Project> {
         ) = project.tasks.register(name, MavenCentralPortalTask::class.java) {
             group = "release"
             this.description = description
-            coordinatesFile.set(extension.mavenCoordinatesFile)
+            dependsOn(
+                project.provider {
+                    if (extension.mavenCoordinatesFile.isPresent) emptyList() else listOf(mavenArtifactInventory)
+                },
+            )
+            coordinatesFile.set(extension.mavenCoordinatesFile.orElse(generatedMavenCoordinatesFile))
+            releaseVersion.set(extension.releaseVersion)
             localRepository.set(extension.mavenLocalRepository)
             portalBaseUrl.set("https://central.sonatype.com/")
             username.set(project.providers.gradleProperty("mavenCentralUsername"))
@@ -142,7 +162,7 @@ public class StrataReleasePlugin : Plugin<Project> {
         val verify =
             registerNetworkTask(
                 "modrinthReleaseVerify",
-                "Reads Modrinth state and proves all 21 exact versions are listed.",
+                "Reads Modrinth state and proves every configured exact version is listed.",
                 ModrinthReleaseTask.Operation.VERIFY,
             )
         submit.configure { mustRunAfter(stage) }

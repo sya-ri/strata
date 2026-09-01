@@ -9,7 +9,7 @@ internal enum class StrataGeneratedDocument(
     internal val relativePath: String,
 ) {
     /**
-     * Root reader entrypoint with the generated API-only opening example.
+     * Root reader entrypoint with generated installation and API-only example regions.
      */
     Readme("README.md"),
 

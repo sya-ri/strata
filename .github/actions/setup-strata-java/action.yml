@@ -1,0 +1,20 @@
+name: Set up Strata Java toolchains
+description: Installs every Java toolchain declared by the Gradle version catalog.
+runs:
+  using: composite
+  steps:
+    - name: Read Java toolchains
+      id: toolchains
+      shell: bash
+      run: |
+        set -euo pipefail
+        {
+          echo 'versions<<STRATA_JAVA_VERSIONS'
+          bash gradle/list-java-toolchains.sh
+          echo 'STRATA_JAVA_VERSIONS'
+        } >> "$GITHUB_OUTPUT"
+    - name: Install Java toolchains
+      uses: actions/setup-java@v6
+      with:
+        distribution: temurin
+        java-version: ${{ steps.toolchains.outputs.versions }}

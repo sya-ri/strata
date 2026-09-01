@@ -10,6 +10,7 @@ public final class dev/s7a/strata/gradle/fabric/FabricToolchainManifest {
 
 public abstract class dev/s7a/strata/gradle/release/StrataReleaseExtension {
 	public fun <init> (Lorg/gradle/api/model/ObjectFactory;)V
+	public final fun getMavenArtifacts ()Lorg/gradle/api/provider/ListProperty;
 	public final fun getMavenCoordinatesFile ()Lorg/gradle/api/file/RegularFileProperty;
 	public final fun getMavenLocalRepository ()Lorg/gradle/api/file/DirectoryProperty;
 	public final fun getModrinthApiBaseUrl ()Lorg/gradle/api/provider/Property;

@@ -20,7 +20,74 @@ internal class StrataReleasePluginFunctionalTest {
     lateinit var projectDirectory: Path
 
     @Test
-    fun `manifest task wires twenty one lazy verified targets and canonical output`() {
+    fun `generates and caches the configured versionless Maven artifact inventory`() {
+        prepareFixture()
+        Files.writeString(projectDirectory.resolve("build.gradle.kts"), buildScript())
+
+        val first =
+            GradleRunner
+                .create()
+                .withProjectDir(projectDirectory.toFile())
+                .withPluginClasspath()
+                .withArguments("mavenArtifactInventory", "--build-cache", "--stacktrace")
+                .build()
+        assertTrue(first.task(":mavenArtifactInventory")?.outcome in setOf(TaskOutcome.SUCCESS, TaskOutcome.FROM_CACHE))
+        val inventory = projectDirectory.resolve("build/release/maven-coordinates.txt")
+        assertEquals(MAVEN_ARTIFACTS.joinToString(separator = "\n", postfix = "\n"), Files.readString(inventory))
+
+        Files.delete(inventory)
+        val cached =
+            GradleRunner
+                .create()
+                .withProjectDir(projectDirectory.toFile())
+                .withPluginClasspath()
+                .withArguments("mavenArtifactInventory", "--build-cache", "--stacktrace")
+                .build()
+        assertEquals(TaskOutcome.FROM_CACHE, cached.task(":mavenArtifactInventory")?.outcome)
+        assertEquals(MAVEN_ARTIFACTS.joinToString(separator = "\n", postfix = "\n"), Files.readString(inventory))
+
+        val centralTaskGraph =
+            GradleRunner
+                .create()
+                .withProjectDir(projectDirectory.toFile())
+                .withPluginClasspath()
+                .withArguments("mavenCentralReleasePreflight", "mavenCentralPortalPreflight", "--dry-run", "--stacktrace")
+                .build()
+        assertTrue(centralTaskGraph.output.contains(":mavenArtifactInventory SKIPPED"))
+        assertTrue(
+            centralTaskGraph.output.indexOf(":mavenArtifactInventory SKIPPED") <
+                centralTaskGraph.output.indexOf(":mavenCentralReleasePreflight SKIPPED"),
+        )
+        assertTrue(
+            centralTaskGraph.output.indexOf(":mavenArtifactInventory SKIPPED") <
+                centralTaskGraph.output.indexOf(":mavenCentralPortalPreflight SKIPPED"),
+        )
+    }
+
+    @Test
+    fun `explicit Maven artifact inventory bypasses generation`() {
+        prepareFixture()
+        Files.writeString(projectDirectory.resolve("build.gradle.kts"), buildScript(explicitMavenInventory = true))
+        Files.writeString(
+            projectDirectory.resolve("maven-coordinates.txt"),
+            MAVEN_ARTIFACTS.joinToString(separator = "\n", postfix = "\n"),
+        )
+
+        val result =
+            GradleRunner
+                .create()
+                .withProjectDir(projectDirectory.toFile())
+                .withPluginClasspath()
+                .withArguments("mavenCentralReleasePreflight", "mavenCentralPortalPreflight", "--dry-run", "--stacktrace")
+                .build()
+
+        assertFalse(result.output.contains(":mavenArtifactInventory"))
+        assertTrue(result.output.contains(":mavenCentralReleasePreflight SKIPPED"))
+        assertTrue(result.output.contains(":mavenCentralPortalPreflight SKIPPED"))
+    }
+
+    @Test
+    fun `manifest task wires every lazy verified target and canonical output`() {
         prepareFixture()
         Files.writeString(projectDirectory.resolve("build.gradle.kts"), buildScript())
 
@@ -42,7 +109,7 @@ internal class StrataReleasePluginFunctionalTest {
         val manifest = readManifest()
         assertManifestText(manifest, RELEASE_NOTES, PROJECT_BODY)
         val artifacts = manifest["artifacts"] as List<*>
-        assertEquals(21, artifacts.size)
+        assertEquals(GAME_VERSIONS.size, artifacts.size)
         artifacts.forEach { value ->
             val artifact = value as Map<*, *>
             assertTrue((artifact["sha256"] as String).matches(Regex("[0-9a-f]{64}")))
@@ -56,9 +123,9 @@ internal class StrataReleasePluginFunctionalTest {
                 .toFile()
                 .listFiles()
                 .orEmpty()
-        assertEquals(43, githubAssets.size)
-        assertEquals(21, githubAssets.count { file -> file.name.endsWith(".jar") })
-        assertEquals(21, githubAssets.count { file -> file.name.endsWith(".jar.asc") })
+        assertEquals(GAME_VERSIONS.size * ASSETS_PER_TARGET + CHECKSUM_ASSET_COUNT, githubAssets.size)
+        assertEquals(GAME_VERSIONS.size, githubAssets.count { file -> file.name.endsWith(".jar") })
+        assertEquals(GAME_VERSIONS.size, githubAssets.count { file -> file.name.endsWith(".jar.asc") })
         githubAssets.filter { file -> file.name.endsWith(".jar.asc") }.forEach { file ->
             assertTrue(file.readText().startsWith("central-signature-"))
         }
@@ -225,7 +292,10 @@ internal class StrataReleasePluginFunctionalTest {
         }
     }
 
-    private fun buildScript(swapFirstArtifacts: Boolean = false): String =
+    private fun buildScript(
+        swapFirstArtifacts: Boolean = false,
+        explicitMavenInventory: Boolean = false,
+    ): String =
         buildString {
             appendLine("import dev.s7a.strata.gradle.release.StrataReleaseExtension")
             appendLine("plugins { id(\"dev.s7a.strata.release\") }")
@@ -238,6 +308,13 @@ internal class StrataReleasePluginFunctionalTest {
             appendLine("  modrinthProjectMetadataFile.set(layout.projectDirectory.file(\"project.json\"))")
             appendLine("  modrinthProjectBodyFile.set(layout.projectDirectory.file(\"project-body.md\"))")
             appendLine("  projectAssetFiles.from(\"icon.png\", \"docs/components/overview.png\", \"docs/components/inventory.png\", \"docs/components/progress.png\")")
+            if (explicitMavenInventory) {
+                appendLine("  mavenCoordinatesFile.set(layout.projectDirectory.file(\"maven-coordinates.txt\"))")
+            } else {
+                appendLine("  mavenArtifacts.set(listOf(")
+                MAVEN_ARTIFACTS.forEach { artifact -> appendLine("    \"$artifact\",") }
+                appendLine("  ))")
+            }
             GAME_VERSIONS.forEachIndexed { index, gameVersion ->
                 val artifactGameVersion =
                     when {
@@ -321,29 +398,15 @@ internal class StrataReleasePluginFunctionalTest {
                 "Resource-pack fonts use the optional CPU font backend without launching Minecraft.\n" +
                 "TextArea adds canonical LF editing with a shared vertical ScrollState.\n" +
                 "TextField IME composition follows input events supplied by the game.\n"
+        private const val ASSETS_PER_TARGET = 2
+        private const val CHECKSUM_ASSET_COUNT = 1
         private val GAME_VERSIONS =
             listOf(
                 "1.20",
-                "1.20.1",
-                "1.20.2",
-                "1.20.3",
-                "1.20.4",
-                "1.20.5",
-                "1.20.6",
-                "1.21",
-                "1.21.1",
-                "1.21.2",
-                "1.21.3",
-                "1.21.4",
-                "1.21.5",
-                "1.21.6",
-                "1.21.7",
-                "1.21.8",
-                "1.21.9",
-                "1.21.10",
-                "1.21.11",
-                "26.1",
                 "26.2",
             )
+        private val MAVEN_ARTIFACTS =
+            listOf("dev.s7a.strata:strata-api") +
+                GAME_VERSIONS.map { gameVersion -> "dev.s7a.strata:strata-runtime-minecraft-fabric-$gameVersion" }
     }
 }

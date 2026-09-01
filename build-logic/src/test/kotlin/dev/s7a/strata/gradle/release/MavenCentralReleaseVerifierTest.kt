@@ -42,11 +42,26 @@ internal class MavenCentralReleaseVerifierTest {
         server.requestedChecksumExtensions.clear()
         val exact = verifier.preflight(fixture.coordinates)
         assertEquals(MavenCentralReleaseVerifier.State.EXACT, exact.state)
-        assertEquals(26, exact.coordinateCount)
-        assertEquals(260, exact.verifiedFileCount)
-        assertEquals(520, exact.verifiedChecksumCount)
+        assertEquals(fixture.coordinates.size, exact.coordinateCount)
+        assertEquals(fixture.coordinates.size * BASE_SUFFIXES.size * 2, exact.verifiedFileCount)
+        assertEquals(fixture.coordinates.size * BASE_SUFFIXES.size * CHECKSUM_COUNT_PER_BASE, exact.verifiedChecksumCount)
         assertEquals(setOf("md5", "sha1", "sha256", "sha512"), server.requestedChecksumExtensions)
         assertTrue(server.requestedChecksumContentPaths.none { path -> path.endsWith(".asc") })
+    }
+
+    @Test
+    fun `release inventory size is derived from the supplied coordinates`() {
+        val fixture = fixture(listOf("1.20", "26.2"))
+        val server = server(fixture)
+        val verifier = fixture.verifier(server)
+
+        val receipt = verifier.preflight(fixture.coordinates)
+        val expectedCoordinateCount = fixture.coordinates.size
+
+        assertEquals(MavenCentralReleaseVerifier.State.EXACT, receipt.state)
+        assertEquals(expectedCoordinateCount, receipt.coordinateCount)
+        assertEquals(expectedCoordinateCount * BASE_SUFFIXES.size * 2, receipt.verifiedFileCount)
+        assertEquals(expectedCoordinateCount * BASE_SUFFIXES.size * CHECKSUM_COUNT_PER_BASE, receipt.verifiedChecksumCount)
     }
 
     @Test
@@ -100,7 +115,7 @@ internal class MavenCentralReleaseVerifierTest {
     fun `verification polls boundedly until all coordinates propagate`() {
         val fixture = fixture()
         val server = server(fixture)
-        server.hiddenPomReads = 25
+        server.hiddenPomReads = fixture.coordinates.size
 
         val receipt =
             fixture.verifier(server).verify(
@@ -110,7 +125,7 @@ internal class MavenCentralReleaseVerifierTest {
             )
 
         assertEquals(MavenCentralReleaseVerifier.State.EXACT, receipt.state)
-        assertTrue(49 < server.pomReadCount)
+        assertTrue(fixture.coordinates.size < server.pomReadCount)
     }
 
     @Test
@@ -131,8 +146,11 @@ internal class MavenCentralReleaseVerifierTest {
         val output = temporaryDirectory.resolve("canonical-signatures")
         val signedFiles = fixture.verifier(server).stageCanonicalPublicationEvidence(fixture.coordinates, output)
 
-        assertEquals(130, signedFiles.size)
-        assertEquals(21, signedFiles.count(MavenCentralReleaseVerifier.SignedPublicationFile::githubDistributionSignature))
+        assertEquals(fixture.coordinates.size * BASE_SUFFIXES.size, signedFiles.size)
+        assertEquals(
+            fixture.coordinates.count { value -> value.contains(":strata-runtime-minecraft-fabric-") },
+            signedFiles.count(MavenCentralReleaseVerifier.SignedPublicationFile::githubDistributionSignature),
+        )
         val fileName = "$artifact-$version.jar.asc"
         val relativePath = "${group.replace('.', '/')}/$artifact/$version/$fileName"
         assertTrue(Files.readAllBytes(output.resolve(relativePath)).contentEquals(server.remoteBytes(relativePath)))
@@ -149,7 +167,7 @@ internal class MavenCentralReleaseVerifierTest {
         }
     }
 
-    private fun fixture(): Fixture {
+    private fun fixture(gameVersions: List<String> = GAME_VERSIONS): Fixture {
         val repository = temporaryDirectory.resolve("repository")
         val coordinates =
             listOf(
@@ -159,7 +177,7 @@ internal class MavenCentralReleaseVerifierTest {
                 "dev.s7a.strata:strata-runtime-minecraft:0.1.1",
                 "dev.s7a.strata:strata-runtime-minecraft-fonts-lwjgl:0.1.1",
             ) +
-                GAME_VERSIONS.map { gameVersion ->
+                gameVersions.map { gameVersion ->
                     "dev.s7a.strata:strata-runtime-minecraft-fabric-$gameVersion:0.1.1"
                 }
         coordinates.forEach { coordinate ->
@@ -339,29 +357,12 @@ internal class MavenCentralReleaseVerifierTest {
     }
 
     companion object {
+        private const val CHECKSUM_COUNT_PER_BASE = 4
         private val BASE_SUFFIXES = listOf(".pom", ".module", ".jar", "-sources.jar", "-javadoc.jar")
         private val GAME_VERSIONS =
             listOf(
                 "1.20",
-                "1.20.1",
-                "1.20.2",
-                "1.20.3",
-                "1.20.4",
-                "1.20.5",
-                "1.20.6",
                 "1.21",
-                "1.21.1",
-                "1.21.2",
-                "1.21.3",
-                "1.21.4",
-                "1.21.5",
-                "1.21.6",
-                "1.21.7",
-                "1.21.8",
-                "1.21.9",
-                "1.21.10",
-                "1.21.11",
-                "26.1",
                 "26.2",
             )
 

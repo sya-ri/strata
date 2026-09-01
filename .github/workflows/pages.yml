@@ -4,56 +4,66 @@ on:
   push:
     branches:
       - master
-    tags:
-      - v*
-  workflow_dispatch:
 
-permissions:
-  contents: read
-  pages: write
-  id-token: write
+permissions: {}
 
 concurrency:
-  group: pages
-  cancel-in-progress: true
+  group: ${{ github.run_attempt == 1 && 'pages-controller' || format('pages-controller-rerun-{0}', github.run_id) }}
+  cancel-in-progress: ${{ github.run_attempt == 1 }}
 
 jobs:
   build:
+    if: github.ref == 'refs/heads/master'
+    permissions:
+      actions: read
+      contents: read
     runs-on: ubuntu-latest
+    outputs:
+      controller_commit: ${{ steps.source.outputs.controller_commit }}
+      controller_pages_artifact_digest: ${{ steps.artifact_metadata.outputs.digest }}
+      controller_pages_artifact_id: ${{ steps.pages_artifact.outputs.artifact_id }}
+      controller_pages_artifact_name: ${{ steps.artifact_identity.outputs.name }}
+      release_commit: ${{ steps.source.outputs.release_commit }}
+      release_tag: ${{ steps.source.outputs.release_tag }}
     steps:
       - name: Check out source
         uses: actions/checkout@v7
         with:
+          ref: master
           fetch-depth: 0
           persist-credentials: false
+      - name: Verify exact master controller
+        id: source
+        shell: bash
+        run: |
+          set -euo pipefail
+          [[ "$GITHUB_REF" == 'refs/heads/master' ]] || { echo 'Documentation runs must use master.' >&2; exit 1; }
+          git fetch --force --prune --prune-tags origin \
+            '+refs/heads/master:refs/remotes/origin/master' \
+            '+refs/tags/*:refs/tags/*'
+          controller_commit="$(git rev-parse --verify refs/remotes/origin/master)"
+          [[ "$GITHUB_SHA" == "$controller_commit" && "$(git rev-parse HEAD)" == "$controller_commit" ]] || {
+            echo 'Documentation source is not the exact origin/master head.' >&2
+            exit 1
+          }
+          release_tag="$(jq -er '.current.tag' release/current-controller.json)"
+          release_commit="$(jq -er '.current.commit' release/current-controller.json)"
+          bash release/verify-pages-release-source.sh \
+            "$controller_commit" "$release_tag" "$release_commit" >/dev/null
+          {
+            echo 'revision=master'
+            echo "controller_commit=$controller_commit"
+            echo "release_tag=$release_tag"
+            echo "release_commit=$release_commit"
+          } >> "$GITHUB_OUTPUT"
       - name: Set up Java
-        uses: actions/setup-java@v6
-        with:
-          distribution: temurin
-          java-version: |
-            17
-            21
-            25
+        uses: ./.github/actions/setup-strata-java
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v6
         with:
           cache-read-only: true
           gradle-home-cache-strict-match: true
           gradle-home-cache-excludes: caches/fabric-loom
-      - name: Configure Pages
-        uses: actions/configure-pages@v6
-      - name: Select documentation source revision
-        id: source
-        shell: bash
-        run: |
-          set -euo pipefail
-          if [[ "$GITHUB_REF_TYPE" == "tag" ]]; then
-            [[ "$GITHUB_REF_NAME" == v* ]] || { echo 'Documentation tags must begin with v.' >&2; exit 1; }
-            echo "revision=$GITHUB_REF_NAME" >> "$GITHUB_OUTPUT"
-          else
-            [[ "$GITHUB_REF" == "refs/heads/master" ]] || { echo 'Documentation branches must be master.' >&2; exit 1; }
-            echo 'revision=master' >> "$GITHUB_OUTPUT"
-          fi
       - name: Check reader documentation and public skill
         shell: bash
         env:
@@ -61,11 +71,7 @@ jobs:
           SOURCE_REVISION: ${{ steps.source.outputs.revision }}
         run: |
           set -euo pipefail
-          gradle_options=(--no-parallel --max-workers=2)
-          if [[ "$GITHUB_REF_TYPE" == "tag" ]]; then
-            gradle_options+=(--no-build-cache)
-          fi
-          bash ./gradlew "${gradle_options[@]}" \
+          bash ./gradlew --no-parallel --max-workers=2 \
             :integration:docs:checkStrataSkill \
             :integration:docs:checkStrataSkillExampleClasspath \
             :integration:docs:checkDocumentationLinks \
@@ -78,11 +84,7 @@ jobs:
           SOURCE_REVISION: ${{ steps.source.outputs.revision }}
         run: |
           set -euo pipefail
-          gradle_options=(--no-parallel --max-workers=2)
-          if [[ "$GITHUB_REF_TYPE" == "tag" ]]; then
-            gradle_options+=(--no-build-cache)
-          fi
-          bash ./gradlew "${gradle_options[@]}" \
+          bash ./gradlew --no-parallel --max-workers=2 \
             :integration:docs:checkDokkaPagesStaging \
             -Pstrata.sourceRevision="$SOURCE_REVISION" \
             -Pstrata.sourceCommit="$SOURCE_COMMIT"
@@ -92,24 +94,407 @@ jobs:
           SOURCE_REVISION: ${{ steps.source.outputs.revision }}
         run: |
           set -euo pipefail
-          bash -n release/stage-versioned-pages.sh
-          for release_tag in v0.1.0 v0.1.1 v0.1.2; do
-            bash release/stage-versioned-pages.sh \
-              "$release_tag" build/dokka/html "$SOURCE_REVISION"
-          done
+          bash -n release/list-release-tags.sh release/stage-versioned-pages.sh
+          release_tags="$(bash release/list-release-tags.sh)"
+          if [[ -n "$release_tags" ]]; then
+            while IFS= read -r release_tag; do
+              bash release/stage-versioned-pages.sh \
+                "$release_tag" build/dokka/html "$SOURCE_REVISION"
+            done <<< "$release_tags"
+          fi
+      - name: Bind controller Pages artifact to its producer attempt
+        id: artifact_identity
+        shell: bash
+        run: |
+          set -euo pipefail
+          echo "name=github-pages-${GITHUB_RUN_ID}-build-${GITHUB_RUN_ATTEMPT}" >> "$GITHUB_OUTPUT"
       - name: Upload Pages artifact
+        id: pages_artifact
         uses: actions/upload-pages-artifact@v5
         with:
+          name: ${{ steps.artifact_identity.outputs.name }}
           path: build/dokka/html
+          include-hidden-files: true
+          retention-days: 30
+      - name: Freeze controller Pages artifact metadata
+        id: artifact_metadata
+        shell: bash
+        env:
+          ARTIFACT_ID: ${{ steps.pages_artifact.outputs.artifact_id }}
+          ARTIFACT_NAME: ${{ steps.artifact_identity.outputs.name }}
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          [[ "$ARTIFACT_ID" =~ ^[1-9][0-9]*$ ]] || { echo 'Pages upload did not return an artifact ID.' >&2; exit 1; }
+          response="$RUNNER_TEMP/controller-pages-artifact-metadata.json"
+          gh api -H 'Accept: application/vnd.github+json' -H 'X-GitHub-Api-Version: 2026-03-10' \
+            "repos/$GITHUB_REPOSITORY/actions/artifacts/$ARTIFACT_ID" > "$response"
+          digest="$(
+            jq -er \
+              --argjson artifactId "$ARTIFACT_ID" \
+              --arg artifactName "$ARTIFACT_NAME" \
+              --argjson runId "$GITHUB_RUN_ID" \
+              --arg commit "$GITHUB_SHA" '
+                select(
+                  .id == $artifactId and
+                  .name == $artifactName and
+                  .expired == false and
+                  (.size_in_bytes | type == "number" and . > 0 and . == floor) and
+                  (.digest | type == "string" and test("^sha256:[0-9a-f]{64}$")) and
+                  .workflow_run.id == $runId and
+                  .workflow_run.head_branch == "master" and
+                  .workflow_run.head_sha == $commit
+                ) |
+                .digest | sub("^sha256:"; "")
+              ' "$response"
+          )" || { echo 'Pages upload metadata is not bound to the exact producer run.' >&2; exit 1; }
+          echo "digest=$digest" >> "$GITHUB_OUTPUT"
+
+  release-evidence:
+    if: github.ref == 'refs/heads/master'
+    permissions:
+      contents: read
+    runs-on: ubuntu-latest
+    needs: build
+    outputs:
+      release_pages_artifact_digest: ${{ steps.pages_artifact.outputs.artifact-digest }}
+      release_pages_artifact_id: ${{ steps.pages_artifact.outputs.artifact-id }}
+      release_pages_artifact_name: ${{ steps.artifact_identity.outputs.name }}
+    steps:
+      - name: Check out trusted release evidence controller
+        uses: actions/checkout@v7
+        with:
+          ref: master
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Verify exact release evidence controller
+        id: source
+        shell: bash
+        env:
+          EXPECTED_CONTROLLER_COMMIT: ${{ needs.build.outputs.controller_commit }}
+          EXPECTED_RELEASE_COMMIT: ${{ needs.build.outputs.release_commit }}
+          EXPECTED_RELEASE_TAG: ${{ needs.build.outputs.release_tag }}
+        run: |
+          set -euo pipefail
+          [[ "$GITHUB_REF" == 'refs/heads/master' ]] || { echo 'Release Pages evidence must use master.' >&2; exit 1; }
+          git fetch --force --prune --prune-tags origin \
+            '+refs/heads/master:refs/remotes/origin/master' \
+            '+refs/tags/*:refs/tags/*'
+          [[ "$GITHUB_SHA" == "$EXPECTED_CONTROLLER_COMMIT" && \
+            "$(git rev-parse HEAD)" == "$EXPECTED_CONTROLLER_COMMIT" && \
+            "$(git rev-parse refs/remotes/origin/master)" == "$EXPECTED_CONTROLLER_COMMIT" ]] || {
+            echo 'Release Pages evidence does not use the exact controller master.' >&2
+            exit 1
+          }
+          [[ "$(jq -er '.current.tag' release/current-controller.json)" == "$EXPECTED_RELEASE_TAG" && \
+            "$(jq -er '.current.commit' release/current-controller.json)" == "$EXPECTED_RELEASE_COMMIT" ]] || {
+            echo 'Release Pages evidence differs from the build controller identity.' >&2
+            exit 1
+          }
+          bash release/verify-pages-release-source.sh \
+            "$EXPECTED_CONTROLLER_COMMIT" "$EXPECTED_RELEASE_TAG" "$EXPECTED_RELEASE_COMMIT" >/dev/null
+          controller_blob() {
+            local source_path="$1"
+            local expected_mode="$2"
+            local record=''
+            local mode=''
+            local object_type=''
+            local blob=''
+            local verified_path=''
+            record="$(git --no-replace-objects ls-tree --full-tree "$EXPECTED_CONTROLLER_COMMIT" -- "$source_path")"
+            [[ -n "$record" && "$record" != *$'\n'* ]] || { echo "Release Pages controller tool is missing or ambiguous: $source_path" >&2; exit 1; }
+            read -r mode object_type blob verified_path <<< "$record"
+            [[ "$mode" == "$expected_mode" && "$object_type" == 'blob' && \
+              "$blob" =~ ^([0-9a-f]{40}|[0-9a-f]{64})$ && "$verified_path" == "$source_path" ]] || {
+              echo "Release Pages controller tool is not an exact regular blob: $source_path" >&2
+              exit 1
+            }
+            printf '%s\n' "$blob"
+          }
+          list_tags_blob="$(controller_blob release/list-release-tags.sh 100755)"
+          stage_pages_blob="$(controller_blob release/stage-versioned-pages.sh 100644)"
+          {
+            echo "controller_commit=$EXPECTED_CONTROLLER_COMMIT"
+            echo "list_tags_blob=$list_tags_blob"
+            echo "release_commit=$EXPECTED_RELEASE_COMMIT"
+            echo "release_tag=$EXPECTED_RELEASE_TAG"
+            echo "stage_pages_blob=$stage_pages_blob"
+          } >> "$GITHUB_OUTPUT"
+      - name: Set up Java
+        uses: ./.github/actions/setup-strata-java
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v6
+        with:
+          cache-read-only: true
+          gradle-home-cache-strict-match: true
+          gradle-home-cache-excludes: caches/fabric-loom
+      - name: Generate independent release Pages evidence
+        shell: bash
+        env:
+          CONTROLLER_COMMIT: ${{ steps.source.outputs.controller_commit }}
+          EXPECTED_LIST_TAGS_BLOB: ${{ steps.source.outputs.list_tags_blob }}
+          EXPECTED_STAGE_PAGES_BLOB: ${{ steps.source.outputs.stage_pages_blob }}
+          RELEASE_COMMIT: ${{ steps.source.outputs.release_commit }}
+          RELEASE_TAG: ${{ steps.source.outputs.release_tag }}
+        run: |
+          set -euo pipefail
+          git checkout --detach "$RELEASE_COMMIT"
+          [[ "$(git rev-parse HEAD)" == "$RELEASE_COMMIT" ]] || { echo 'Release Pages evidence checked out another commit.' >&2; exit 1; }
+          bash ./gradlew --no-parallel --max-workers=2 --no-build-cache \
+            :integration:docs:checkDokkaPagesStaging \
+            -Pstrata.sourceRevision="$RELEASE_TAG" \
+            -Pstrata.sourceCommit="$RELEASE_COMMIT"
+          controller_tools="$RUNNER_TEMP/strata-release-pages-controller"
+          mkdir "$controller_tools"
+          materialize_controller_tool() {
+            local source_path="$1"
+            local destination="$2"
+            local expected_blob="$3"
+            local expected_mode="$4"
+            local record=''
+            local mode=''
+            local object_type=''
+            local blob=''
+            local verified_path=''
+            record="$(git --no-replace-objects ls-tree --full-tree "$CONTROLLER_COMMIT" -- "$source_path")"
+            [[ -n "$record" && "$record" != *$'\n'* ]] || { echo "Release Pages controller tool is missing or ambiguous: $source_path" >&2; exit 1; }
+            read -r mode object_type blob verified_path <<< "$record"
+            [[ "$mode" == "$expected_mode" && "$object_type" == 'blob' && "$blob" == "$expected_blob" && \
+              "$verified_path" == "$source_path" ]] || { echo "Release Pages controller tool identity changed: $source_path" >&2; exit 1; }
+            git --no-replace-objects cat-file blob "$blob" > "$destination"
+            [[ -f "$destination" && ! -L "$destination" && \
+              "$(git hash-object --no-filters -- "$destination")" == "$blob" ]] || {
+              echo "Release Pages controller tool materialization differs: $source_path" >&2
+              exit 1
+            }
+          }
+          list_tags_tool="$controller_tools/list-release-tags.sh"
+          stage_pages_tool="$controller_tools/stage-versioned-pages.sh"
+          materialize_controller_tool \
+            release/list-release-tags.sh "$list_tags_tool" "$EXPECTED_LIST_TAGS_BLOB" 100755
+          materialize_controller_tool \
+            release/stage-versioned-pages.sh "$stage_pages_tool" "$EXPECTED_STAGE_PAGES_BLOB" 100644
+          bash -n "$list_tags_tool" "$stage_pages_tool"
+          chmod a-w -- "$list_tags_tool" "$stage_pages_tool" "$controller_tools"
+          verify_controller_tool() {
+            local tool="$1"
+            local expected_blob="$2"
+            [[ -d "$controller_tools" && ! -L "$controller_tools" && \
+              "$(stat -c '%A' -- "$controller_tools")" != *w* && \
+              -f "$tool" && ! -L "$tool" && "$(stat -c '%A' -- "$tool")" != *w* && \
+              "$(git hash-object --no-filters -- "$tool")" == "$expected_blob" ]] || {
+              echo "Release Pages controller tool changed before or during use: $tool" >&2
+              exit 1
+            }
+          }
+          verify_controller_tool "$list_tags_tool" "$EXPECTED_LIST_TAGS_BLOB"
+          release_tags="$(bash "$list_tags_tool")"
+          verify_controller_tool "$list_tags_tool" "$EXPECTED_LIST_TAGS_BLOB"
+          [[ -n "$release_tags" ]] || { echo 'Release Pages evidence found no canonical release tags.' >&2; exit 1; }
+          while IFS= read -r release_tag; do
+            verify_controller_tool "$stage_pages_tool" "$EXPECTED_STAGE_PAGES_BLOB"
+            bash "$stage_pages_tool" \
+              "$release_tag" build/dokka/html "$RELEASE_TAG"
+            verify_controller_tool "$stage_pages_tool" "$EXPECTED_STAGE_PAGES_BLOB"
+            verify_controller_tool "$list_tags_tool" "$EXPECTED_LIST_TAGS_BLOB"
+          done <<< "$release_tags"
+          expected_receipt="$RUNNER_TEMP/expected-release-pages-receipt.json"
+          printf '{"commit":"%s","revision":"%s"}\n' "$RELEASE_COMMIT" "$RELEASE_TAG" > "$expected_receipt"
+          cmp --silent "$expected_receipt" build/dokka/html/source-receipt.json || {
+            echo 'The release Pages evidence root receipt differs from the current tag.' >&2
+            exit 1
+          }
+          cmp --silent "$expected_receipt" "build/dokka/html/releases/${RELEASE_TAG#v}/source-receipt.json" || {
+            echo 'The current immutable release Pages evidence receipt differs.' >&2
+            exit 1
+          }
+      - name: Bind release Pages evidence to its producer attempt
+        id: artifact_identity
+        shell: bash
+        run: |
+          set -euo pipefail
+          echo "name=release-pages-evidence-${GITHUB_RUN_ID}-release-evidence-${GITHUB_RUN_ATTEMPT}" >> "$GITHUB_OUTPUT"
+      - name: Upload release Pages evidence
+        id: pages_artifact
+        uses: actions/upload-artifact@v7
+        with:
+          name: ${{ steps.artifact_identity.outputs.name }}
+          path: build/dokka/html
+          if-no-files-found: error
+          include-hidden-files: true
           retention-days: 30
 
   deploy:
+    if: github.ref == 'refs/heads/master'
+    permissions:
+      actions: read
+      contents: read
+      deployments: read
+      pages: write
+      id-token: write
     environment:
-      name: github-pages
+      name: github-pages-controller
       url: ${{ steps.deployment.outputs.page_url }}
     runs-on: ubuntu-latest
-    needs: build
+    needs:
+      - build
+      - release-evidence
     steps:
+      - name: Check out current controller
+        uses: actions/checkout@v7
+        with:
+          ref: master
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Revalidate documentation deployment source
+        shell: bash
+        env:
+          EXPECTED_CONTROLLER_COMMIT: ${{ needs.build.outputs.controller_commit }}
+          EXPECTED_CONTROLLER_ARTIFACT_DIGEST: ${{ needs.build.outputs.controller_pages_artifact_digest }}
+          EXPECTED_CONTROLLER_ARTIFACT_ID: ${{ needs.build.outputs.controller_pages_artifact_id }}
+          EXPECTED_CONTROLLER_ARTIFACT_NAME: ${{ needs.build.outputs.controller_pages_artifact_name }}
+          EXPECTED_EVIDENCE_ARTIFACT_DIGEST: ${{ needs.release-evidence.outputs.release_pages_artifact_digest }}
+          EXPECTED_EVIDENCE_ARTIFACT_ID: ${{ needs.release-evidence.outputs.release_pages_artifact_id }}
+          EXPECTED_EVIDENCE_ARTIFACT_NAME: ${{ needs.release-evidence.outputs.release_pages_artifact_name }}
+          EXPECTED_RELEASE_COMMIT: ${{ needs.build.outputs.release_commit }}
+          EXPECTED_RELEASE_TAG: ${{ needs.build.outputs.release_tag }}
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          git fetch --force --prune --prune-tags origin \
+            '+refs/heads/master:refs/remotes/origin/master' \
+            '+refs/tags/*:refs/tags/*'
+          [[ "$(git rev-parse HEAD)" == "$EXPECTED_CONTROLLER_COMMIT" && \
+            "$(git rev-parse refs/remotes/origin/master)" == "$EXPECTED_CONTROLLER_COMMIT" ]] || {
+            echo 'Pages controller changed before deployment.' >&2
+            exit 1
+          }
+          bash release/verify-pages-release-source.sh \
+            "$EXPECTED_CONTROLLER_COMMIT" "$EXPECTED_RELEASE_TAG" "$EXPECTED_RELEASE_COMMIT" >/dev/null
+          [[ "$EXPECTED_CONTROLLER_ARTIFACT_ID" =~ ^[1-9][0-9]*$ && \
+            "$EXPECTED_EVIDENCE_ARTIFACT_ID" =~ ^[1-9][0-9]*$ && \
+            "$EXPECTED_CONTROLLER_ARTIFACT_ID" != "$EXPECTED_EVIDENCE_ARTIFACT_ID" ]] || {
+            echo 'Pages producer outputs do not contain two distinct artifact IDs.' >&2
+            exit 1
+          }
+          [[ "$EXPECTED_CONTROLLER_ARTIFACT_NAME" =~ ^github-pages-${GITHUB_RUN_ID}-build-[1-9][0-9]*$ && \
+            "$EXPECTED_EVIDENCE_ARTIFACT_NAME" =~ ^release-pages-evidence-${GITHUB_RUN_ID}-release-evidence-[1-9][0-9]*$ && \
+            "$EXPECTED_CONTROLLER_ARTIFACT_DIGEST" =~ ^[0-9a-f]{64}$ && \
+            "$EXPECTED_EVIDENCE_ARTIFACT_DIGEST" =~ ^[0-9a-f]{64}$ ]] || {
+            echo 'Pages producer outputs do not contain canonical attempt-bound names and digest.' >&2
+            exit 1
+          }
+          verify_producer_artifact() {
+            local artifact_id="$1"
+            local artifact_name="$2"
+            local expected_digest="$3"
+            local response="$RUNNER_TEMP/pages-artifact-$artifact_id.json"
+            gh api -H 'Accept: application/vnd.github+json' -H 'X-GitHub-Api-Version: 2026-03-10' \
+              "repos/$GITHUB_REPOSITORY/actions/artifacts/$artifact_id" > "$response"
+            jq -e \
+              --argjson artifactId "$artifact_id" \
+              --arg artifactName "$artifact_name" \
+              --arg expectedDigest "$expected_digest" \
+              --argjson runId "$GITHUB_RUN_ID" \
+              --arg commit "$EXPECTED_CONTROLLER_COMMIT" '
+                .id == $artifactId and
+                .name == $artifactName and
+                .expired == false and
+                (.size_in_bytes | type == "number" and . > 0 and . == floor) and
+                (.digest | type == "string" and test("^sha256:[0-9a-f]{64}$")) and
+                ($expectedDigest == "" or .digest == ("sha256:" + $expectedDigest)) and
+                .workflow_run.id == $runId and
+                .workflow_run.head_branch == "master" and
+                .workflow_run.head_sha == $commit
+              ' "$response" >/dev/null || {
+              echo "Pages producer artifact output is not exact: $artifact_name" >&2
+              exit 1
+            }
+          }
+          verify_producer_artifact \
+            "$EXPECTED_CONTROLLER_ARTIFACT_ID" "$EXPECTED_CONTROLLER_ARTIFACT_NAME" \
+            "$EXPECTED_CONTROLLER_ARTIFACT_DIGEST"
+          verify_producer_artifact \
+            "$EXPECTED_EVIDENCE_ARTIFACT_ID" "$EXPECTED_EVIDENCE_ARTIFACT_NAME" \
+            "$EXPECTED_EVIDENCE_ARTIFACT_DIGEST"
+          environment_response="$RUNNER_TEMP/github-pages-controller-environment.json"
+          policies_response="$RUNNER_TEMP/github-pages-controller-deployment-policies.json"
+          retired_environment_response="$RUNNER_TEMP/github-pages-retired-environment.json"
+          retired_policies_response="$RUNNER_TEMP/github-pages-retired-deployment-policies.json"
+          gh api -H 'Accept: application/vnd.github+json' -H 'X-GitHub-Api-Version: 2026-03-10' \
+            "repos/$GITHUB_REPOSITORY/environments/github-pages-controller" > "$environment_response"
+          jq -e '
+            .can_admins_bypass == false and
+            .deployment_branch_policy.protected_branches == false and
+            .deployment_branch_policy.custom_branch_policies == true
+          ' "$environment_response" >/dev/null || { echo 'github-pages-controller must disable bypass and use custom deployment branch policies.' >&2; exit 1; }
+          gh api -H 'Accept: application/vnd.github+json' -H 'X-GitHub-Api-Version: 2026-03-10' \
+            "repos/$GITHUB_REPOSITORY/environments/github-pages-controller/deployment-branch-policies?per_page=100" > "$policies_response"
+          jq -e '
+            .total_count == 1 and
+            (.branch_policies | length) == 1 and
+            .branch_policies[0].name == "master" and
+            .branch_policies[0].type == "branch"
+          ' "$policies_response" >/dev/null || { echo 'github-pages-controller must permit only the master branch.' >&2; exit 1; }
+          gh api -H 'Accept: application/vnd.github+json' -H 'X-GitHub-Api-Version: 2026-03-10' \
+            "repos/$GITHUB_REPOSITORY/environments/github-pages" > "$retired_environment_response"
+          jq -e '
+            .can_admins_bypass == false and
+            .deployment_branch_policy.protected_branches == false and
+            .deployment_branch_policy.custom_branch_policies == true
+          ' "$retired_environment_response" >/dev/null || { echo 'The retired github-pages environment must disable bypass and use custom deployment policies.' >&2; exit 1; }
+          gh api -H 'Accept: application/vnd.github+json' -H 'X-GitHub-Api-Version: 2026-03-10' \
+            "repos/$GITHUB_REPOSITORY/environments/github-pages/deployment-branch-policies?per_page=100" > "$retired_policies_response"
+          jq -e '
+            .total_count == 0 and
+            (.branch_policies | length) == 0
+          ' "$retired_policies_response" >/dev/null || { echo 'The retired github-pages environment must permit no branch or tag.' >&2; exit 1; }
+      - name: Download controller Pages artifact for comparison
+        uses: actions/download-artifact@v7
+        with:
+          artifact-ids: ${{ needs.build.outputs.controller_pages_artifact_id }}
+          path: ${{ runner.temp }}/strata-controller-pages-artifact
+      - name: Download release Pages evidence for comparison
+        uses: actions/download-artifact@v7
+        with:
+          artifact-ids: ${{ needs.release-evidence.outputs.release_pages_artifact_id }}
+          path: ${{ runner.temp }}/strata-release-pages-evidence
+      - name: Compare independent release and controller artifacts
+        shell: bash
+        env:
+          EXPECTED_CONTROLLER_COMMIT: ${{ needs.build.outputs.controller_commit }}
+          EXPECTED_RELEASE_COMMIT: ${{ needs.build.outputs.release_commit }}
+          EXPECTED_RELEASE_TAG: ${{ needs.build.outputs.release_tag }}
+        run: |
+          set -euo pipefail
+          mapfile -t controller_entries < <(
+            find "$RUNNER_TEMP/strata-controller-pages-artifact" -mindepth 1 -maxdepth 1 -printf '%f\n'
+          )
+          [[ "${#controller_entries[@]}" == '1' && "${controller_entries[0]}" == 'artifact.tar' ]] || {
+            echo 'The downloaded controller Pages artifact must contain only artifact.tar.' >&2
+            exit 1
+          }
+          bash release/verify-pages-artifact-equivalence.sh \
+            "$RUNNER_TEMP/strata-controller-pages-artifact/artifact.tar" \
+            "$RUNNER_TEMP/strata-release-pages-evidence" \
+            "$EXPECTED_RELEASE_TAG" \
+            "$EXPECTED_RELEASE_COMMIT" \
+            "$EXPECTED_CONTROLLER_COMMIT" >/dev/null
+      - name: Revalidate exact controller immediately before deployment
+        shell: bash
+        env:
+          EXPECTED_CONTROLLER_COMMIT: ${{ needs.build.outputs.controller_commit }}
+        run: |
+          set -euo pipefail
+          git fetch --force origin '+refs/heads/master:refs/remotes/origin/master'
+          [[ "$GITHUB_SHA" == "$EXPECTED_CONTROLLER_COMMIT" && \
+            "$(git rev-parse HEAD)" == "$EXPECTED_CONTROLLER_COMMIT" && \
+            "$(git rev-parse refs/remotes/origin/master)" == "$EXPECTED_CONTROLLER_COMMIT" ]] || {
+            echo 'Pages controller changed after artifact verification.' >&2
+            exit 1
+          }
       - name: Deploy Pages
         id: deployment
         uses: actions/deploy-pages@v5
+        with:
+          artifact_name: ${{ needs.build.outputs.controller_pages_artifact_name }}

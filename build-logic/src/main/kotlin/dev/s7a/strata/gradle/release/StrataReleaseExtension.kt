@@ -5,6 +5,7 @@ import org.gradle.api.file.DirectoryProperty
 import org.gradle.api.file.RegularFile
 import org.gradle.api.file.RegularFileProperty
 import org.gradle.api.model.ObjectFactory
+import org.gradle.api.provider.ListProperty
 import org.gradle.api.provider.Property
 import org.gradle.api.provider.Provider
 import javax.inject.Inject
@@ -57,7 +58,15 @@ public abstract class StrataReleaseExtension
         public val outputDirectory: DirectoryProperty = objects.directoryProperty()
 
         /**
-         * Tracked exact Maven coordinates reconciled with Central.
+         * Ordered `group:artifact` identities generated from the publication project matrix.
+         */
+        public val mavenArtifacts: ListProperty<String> = objects.listProperty(String::class.java)
+
+        /**
+         * Canonical versionless inventory resolved against [releaseVersion] and reconciled with Central.
+         *
+         * The release plugin generates this file from [mavenArtifacts] by default.
+         * Isolated verification fixtures may supply an explicit compatible file and bypass generation.
          */
         public val mavenCoordinatesFile: RegularFileProperty = objects.fileProperty()
 
