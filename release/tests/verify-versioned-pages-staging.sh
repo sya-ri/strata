@@ -77,8 +77,9 @@ if sed -n '/^  release-evidence:$/,/^  deploy:$/p' "$pages_workflow" | \
   grep --fixed-strings 'Download controller Pages artifact' >/dev/null; then
   fail 'Release Pages evidence is derived from the controller artifact instead of generated independently.'
 fi
-grep --fixed-strings 'git checkout --detach "$RELEASE_COMMIT"' "$pages_workflow" >/dev/null || \
-  fail 'Release Pages evidence does not check out the exact controller-selected tag commit.'
+if grep --fixed-strings 'git checkout --detach "$RELEASE_COMMIT"' "$pages_workflow" >/dev/null; then
+  fail 'Release Pages evidence replaces the trusted controller checkout.'
+fi
 grep --fixed-strings 'bash release/verify-pages-artifact-equivalence.sh' "$pages_workflow" >/dev/null || \
   fail 'Pages does not compare the independent artifacts before deployment.'
 grep --fixed-strings 'name: github-pages-controller' "$pages_workflow" >/dev/null || \
@@ -97,12 +98,37 @@ done
 build_job="$(sed -n '/^  build:$/,/^  release-evidence:$/p' "$pages_workflow")"
 [[ "$(grep --fixed-strings -c 'actions: read' <<< "$build_job")" == '1' ]] || \
   fail 'Pages build cannot read back and freeze its exact upload metadata.'
+[[ "$(grep --fixed-strings -c 'uses: ./.github/actions/setup-strata-java' <<< "$build_job")" == '1' ]] || \
+  fail 'Pages build no longer uses the checked-out catalog-backed Java setup action.'
+if grep --fixed-strings 'uses: $/.github/actions/setup-strata-java' <<< "$build_job" >/dev/null; then
+  fail 'Pages build unexpectedly uses the workflow-owned Java setup action.'
+fi
 grep --fixed-strings \
   "group: \${{ github.run_attempt == 1 && 'pages-controller' || format('pages-controller-rerun-{0}', github.run_id) }}" \
   "$pages_workflow" >/dev/null || fail 'Pages does not isolate reruns from the trusted controller queue.'
 grep --fixed-strings 'cancel-in-progress: ${{ github.run_attempt == 1 }}' "$pages_workflow" >/dev/null || \
   fail 'A rerun can cancel an in-progress trusted Pages controller.'
 release_evidence_job="$(sed -n '/^  release-evidence:$/,/^  deploy:$/p' "$pages_workflow")"
+[[ "$(grep --fixed-strings -c 'uses: ./.github/actions/setup-strata-java' <<< "$release_evidence_job")" == '1' ]] || \
+  fail 'Release Pages evidence no longer uses the checked-out catalog-backed Java setup action.'
+if grep --fixed-strings 'uses: $/.github/actions/setup-strata-java' <<< "$release_evidence_job" >/dev/null; then
+  fail 'Release Pages evidence unexpectedly uses an action reference unsupported by the pinned workflow linter.'
+fi
+for release_worktree_guard in \
+  'release_worktree="$RUNNER_TEMP/strata-release-pages-source"' \
+  'git worktree add --detach "$release_worktree" "$RELEASE_COMMIT"' \
+  '"$(git -C "$release_worktree" rev-parse HEAD)" == "$RELEASE_COMMIT"' \
+  '-z "$(git -C "$release_worktree" status --porcelain --untracked-files=no)"' \
+  'cd "$release_worktree"' \
+  '"$(git rev-parse HEAD)" == "$CONTROLLER_COMMIT"' \
+  '"$(git -C "$release_worktree" rev-parse HEAD)" == "$RELEASE_COMMIT"' \
+  'path: ${{ steps.evidence.outputs.path }}'; do
+  grep --fixed-strings -- "$release_worktree_guard" <<< "$release_evidence_job" >/dev/null || \
+    fail "Release Pages evidence worktree guard is missing: $release_worktree_guard"
+done
+[[ "$(grep --fixed-strings -c '"$(git -C "$release_worktree" rev-parse HEAD)" == "$RELEASE_COMMIT"' <<< "$release_evidence_job")" == '2' && \
+  "$(grep --fixed-strings -c -- '-z "$(git -C "$release_worktree" status --porcelain --untracked-files=no)"' <<< "$release_evidence_job")" == '2' ]] || \
+  fail 'Release Pages evidence does not revalidate its exact clean release worktree after generation.'
 release_gradle_line="$(grep -n --fixed-strings 'bash ./gradlew --no-parallel --max-workers=2 --no-build-cache' <<< "$release_evidence_job" | cut -d: -f1)"
 controller_tools_line="$(grep -n --fixed-strings 'controller_tools="$RUNNER_TEMP/strata-release-pages-controller"' <<< "$release_evidence_job" | cut -d: -f1)"
 [[ "$release_gradle_line" =~ ^[1-9][0-9]*$ && "$controller_tools_line" =~ ^[1-9][0-9]*$ && \
