@@ -3,7 +3,7 @@
   "slug": "strata-ui",
   "title": "Strata",
   "description": "Declarative, reusable Minecraft UI with headless rendering and exact versioned Fabric adapters.",
-  "previousBodySha256": "3e79db82a612df73b387d1bc5a4b8b1f495ff0ae9042d1a9bae7a01da14bda1b",
+  "previousBodySha256": "f214e060534509ae59024a4bd9295d39a07c29e7f1665d2a9e943a90fe7f34f9",
   "categories": [
     "library"
   ],

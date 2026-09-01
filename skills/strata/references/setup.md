@@ -11,8 +11,8 @@ See [Source compatibility](https://github.com/sya-ri/strata/blob/master/docs/tex
 
 ```kotlin
 dependencies {
-    compileOnly("dev.s7a.strata:strata-api:0.1.2")
-    modRuntimeOnly("dev.s7a.strata:strata-runtime-minecraft-fabric-<minecraft-version>:0.1.2")
+    compileOnly("dev.s7a.strata:strata-api:0.1.3")
+    modRuntimeOnly("dev.s7a.strata:strata-runtime-minecraft-fabric-<minecraft-version>:0.1.3")
     modRuntimeOnly("net.fabricmc:fabric-language-kotlin:<compatible-version>")
 }
 ```
@@ -22,7 +22,7 @@ Declare the runtime as a required Mod dependency so a production instance cannot
 ```json
 {
   "depends": {
-    "strata": ">=0.1.2"
+    "strata": ">=0.1.3"
   }
 }
 ```
@@ -95,7 +95,7 @@ This does not add selection or clipboard commands, reproduce the native IME popu
 
 ## Optional CPU backend for offline tools
 
-`dev.s7a.strata:strata-runtime-minecraft-fonts-lwjgl:0.1.2` supplies PNG decoding, the selected TrueType rasterizer, and ICU text ordering for resource-backed offline rendering without launching Minecraft.
+`dev.s7a.strata:strata-runtime-minecraft-fonts-lwjgl:0.1.3` supplies PNG decoding, the selected TrueType rasterizer, and ICU text ordering for resource-backed offline rendering without launching Minecraft.
 Versioned Fabric runtimes already include the backend and use the game's libraries; do not add runtime imports or native font objects to ordinary UI definitions.
 The backend does not bundle LWJGL, ICU, Gson, or native binaries.
 An offline host must supply the exact target's library dependencies and native classifier, caller-owned font resources, and `MinecraftFontCompatibility`; native library generations must not be mixed in one process.

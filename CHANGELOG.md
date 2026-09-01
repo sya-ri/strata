@@ -2,6 +2,28 @@
 
 All notable changes to Strata are documented in this file.
 
+## 0.1.3 - 2026-09-01
+
+### Added
+
+- Focus moves cyclically through eligible components with Tab and Shift+Tab after the focused handler ignores the key, following declared layout and paint order while excluding fully clipped targets.
+- `Modifier.onActivate` provides one shared primary-pointer, Enter, and Space action, including a disabled overload that retains no callback and installs no input or focus target.
+
+### Fixed
+
+- Minecraft resource-backed images now keep one stable immutable identity within a UI host, including deferred evaluation, so retained presentation can reuse native textures instead of recreating equivalent image objects.
+- Host-owned resource-image retention is bounded to 512 identifiers and 128 MiB of straight RGBA8 pixels; overflow and failed resolutions remain retryable, and terminal host cleanup releases retained identities before platform shutdown.
+
+### Changed
+
+- Forward release, Pages, Qodana, Minecraft CI, Maven inventory, and installation-example generation now derive from canonical project and current/predecessor metadata instead of requiring version-specific workflow copies, conditionals, or duplicated inventories.
+
+### Compatibility
+
+- The public API change is additive: existing focus and pointer modifiers remain available, focused handlers that consume Tab retain first refusal, and `Button` and `Tab` still require callers to opt into activation behavior.
+- Implementations opting into the internal `MinecraftUiPlatform` SPI must not rely on `image(ResourceId)` being called for every declarative use because admitted successful resolutions may be reused for the host lifetime.
+- The supported Minecraft matrix remains 1.20 through 1.20.6, 1.21 through 1.21.11, 26.1, and 26.2; all Strata artifacts must use the same 0.1.3 version.
+
 ## 0.1.2 - 2026-08-30
 
 ### Fixed
