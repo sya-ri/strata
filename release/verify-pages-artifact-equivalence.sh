@@ -101,6 +101,7 @@ def file_record(path):
 
 def filesystem_tree(root, exclude_releases=False):
     records = {}
+    seen = set()
 
     def visit(directory, prefix):
         for child in sorted(directory.iterdir(), key=lambda item: item.name):
@@ -113,10 +114,10 @@ def filesystem_tree(root, exclude_releases=False):
                     raise SystemExit("The release Pages evidence releases entry is not a directory.")
                 continue
             key = relative.as_posix()
-            if key in records:
+            if key in seen:
                 raise SystemExit("The release Pages evidence contains a duplicate path.")
+            seen.add(key)
             if stat.S_ISDIR(status.st_mode):
-                records[key] = ("directory",)
                 visit(child, relative)
             elif stat.S_ISREG(status.st_mode):
                 records[key] = file_record(child)
@@ -196,21 +197,13 @@ def legacy_release_trees(archive_path):
                 target_root_seen = True
                 continue
 
-            if normalized != "releases" and not normalized.startswith("releases/"):
-                root_records[normalized] = (
-                    ("directory",)
-                    if member.isdir()
-                    else archive_file_record(archive, member, "legacy release")
-                )
-            if normalized.startswith(target_prefix):
+            if member.isfile() and normalized != "releases" and not normalized.startswith("releases/"):
+                root_records[normalized] = archive_file_record(archive, member, "legacy release")
+            if member.isfile() and normalized.startswith(target_prefix):
                 relative = normalized[len(target_prefix):]
                 if relative in target_records:
                     raise SystemExit("The legacy immutable release Pages subtree contains a duplicate path.")
-                target_records[relative] = (
-                    ("directory",)
-                    if member.isdir()
-                    else archive_file_record(archive, member, "legacy release")
-                )
+                target_records[relative] = archive_file_record(archive, member, "legacy release")
 
     if root_receipts != [target_release_receipt]:
         raise SystemExit("The legacy release Pages root receipt differs from the exact target identity.")
@@ -259,7 +252,6 @@ with tarfile.open(controller_archive, mode="r:") as archive:
         if relative in controller_releases:
             raise SystemExit("The controller Pages release inventory contains a duplicate path.")
         if member.isdir():
-            controller_releases[relative] = ("directory",)
             continue
         controller_releases[relative] = archive_file_record(archive, member, "controller")
 
