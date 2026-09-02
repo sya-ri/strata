@@ -1,9 +1,9 @@
 {
   "schemaVersion": 1,
   "current": {
-    "tag": "v0.1.2",
-    "commit": "b541fc5492b798b6805c0c4d24e09f43ceff938a",
-    "tagObject": "49195293b3e163abd0beefc9fc8e61a428b8eb24",
+    "tag": "v0.1.3",
+    "commit": "86bfe6a0d7a229b107538101b7ef4abee10e7fae",
+    "tagObject": "7bb84df1a4ae40be6699a866411e4c66b3bfe0bd",
     "representativeMinecraftVersions": [
       "1.20",
       "1.21.11",
@@ -11,8 +11,8 @@
     ]
   },
   "predecessor": {
-    "tag": "v0.1.1",
-    "commit": "6e35f5984bbca06c18f8ca8080f45a70b09831bb",
-    "tagObject": "013bb6b0c4835229402f5843b967151f5dfdc5b2"
+    "tag": "v0.1.2",
+    "commit": "b541fc5492b798b6805c0c4d24e09f43ceff938a",
+    "tagObject": "49195293b3e163abd0beefc9fc8e61a428b8eb24"
   }
 }
