@@ -90,7 +90,7 @@ script_scope_specs=(
   'release/verify-current-controller-release-order.sh|2'
   'release/verify-controller-tools.sh|12'
   'release/verify-pages-deployment-source.sh|3'
-  'release/tests/verify-release-publish-controller-source.sh|4'
+  'release/tests/verify-release-publish-controller-source.sh|14'
 )
 for scope_spec in "${script_scope_specs[@]}"; do
   scope_path="${scope_spec%|*}"
@@ -100,7 +100,7 @@ for scope_spec in "${script_scope_specs[@]}"; do
   total_calls=$((total_calls + expected_calls))
 done
 
-[[ "$total_calls" == '72' ]] || fail 'Portable jq inventory does not cover all 72 platform-sensitive calls.'
+[[ "$total_calls" == '82' ]] || fail 'Portable jq inventory does not cover all 82 platform-sensitive calls.'
 
 fixture_root="$(mktemp -d "${RUNNER_TEMP:-/tmp}/strata-portable-jq.XXXXXX")"
 cleanup() {

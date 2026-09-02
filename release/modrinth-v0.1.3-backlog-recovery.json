@@ -1,0 +1,131 @@
+{
+  "schemaVersion": 2,
+  "projectId": "CAdZ3jVr",
+  "slug": "strata-ui",
+  "releaseSource": {
+    "tag": "v0.1.3",
+    "commit": "86bfe6a0d7a229b107538101b7ef4abee10e7fae",
+    "tagObject": "7bb84df1a4ae40be6699a866411e4c66b3bfe0bd",
+    "bodyBlob": "a64da014ecc6befe6924d1210cb1039a51ea90ee",
+    "releaseVersion": "0.1.3",
+    "artifactCount": 21,
+    "manifestCanonicalSha256": "6087d67cf83f316e125ef8f2af538bb1fd30e709b33325271db2e6cbb4d82fdc"
+  },
+  "bodyLineage": {
+    "backlogSha256": "d036e6399abd278d3fb0dfb2740749f2458302df3c84f503f0b3bf9051350a33",
+    "predecessorSha256": "f214e060534509ae59024a4bd9295d39a07c29e7f1665d2a9e943a90fe7f34f9",
+    "currentSha256": "372543c21994b6a92637355817688ac32551405bcb07924edfa7e5dbb1434d9b"
+  },
+  "allowedOperations": [
+    "preflight",
+    "stage",
+    "observe"
+  ],
+  "allowedProjectStatuses": [
+    "processing",
+    "approved"
+  ],
+  "allowedCompletionStatuses": [
+    "processing",
+    "approved"
+  ],
+  "processingRequestedStatus": "approved",
+  "baselineReleases": [
+    {
+      "tag": "v0.1.0",
+      "commit": "d0be1ccf74ee8fa0aca1a23e9d50eb5ba45c39a8",
+      "tagObject": "ccf221fe7f133fe5598fafc4ad01e6bc69ba2230",
+      "bodyBlob": "6b68a2e42278c0e3c389137df25c2ac9d6637d0a",
+      "releaseVersion": "0.1.0",
+      "bodySha256": "d036e6399abd278d3fb0dfb2740749f2458302df3c84f503f0b3bf9051350a33",
+      "artifactEvidenceCanonicalSha256": "29cda6910f37d01c98f2fc47412868b493cddbe5a3ff70869222757045d83b3a",
+      "manifestCanonicalSha256": "0392b28deb9e7838dbe9b6a25e9fd49cac510e4045bb1ebcff7682a4f7e83e08",
+      "gameVersions": [
+        "1.20.1",
+        "1.20.2",
+        "1.20.3",
+        "1.20.4",
+        "1.20.5",
+        "1.20.6",
+        "1.21",
+        "1.21.1",
+        "1.21.2",
+        "1.21.3",
+        "1.21.4",
+        "1.21.5",
+        "1.21.6",
+        "1.21.7",
+        "1.21.8",
+        "1.21.9",
+        "1.21.10",
+        "1.21.11",
+        "26.1",
+        "26.2"
+      ]
+    },
+    {
+      "tag": "v0.1.1",
+      "commit": "6e35f5984bbca06c18f8ca8080f45a70b09831bb",
+      "tagObject": "013bb6b0c4835229402f5843b967151f5dfdc5b2",
+      "bodyBlob": "b6b2229e2b2bc679d12b6b43137fa73e80147293",
+      "releaseVersion": "0.1.1",
+      "bodySha256": "3e79db82a612df73b387d1bc5a4b8b1f495ff0ae9042d1a9bae7a01da14bda1b",
+      "manifestCanonicalSha256": "ba15a712879d2fd1191a34015262d236a7f28169bf9946af4b52534d98cd413c",
+      "gameVersions": [
+        "1.20",
+        "1.20.1",
+        "1.20.2",
+        "1.20.3",
+        "1.20.4",
+        "1.20.5",
+        "1.20.6",
+        "1.21",
+        "1.21.1",
+        "1.21.2",
+        "1.21.3",
+        "1.21.4",
+        "1.21.5",
+        "1.21.6",
+        "1.21.7",
+        "1.21.8",
+        "1.21.9",
+        "1.21.10",
+        "1.21.11",
+        "26.1",
+        "26.2"
+      ]
+    },
+    {
+      "tag": "v0.1.2",
+      "commit": "b541fc5492b798b6805c0c4d24e09f43ceff938a",
+      "tagObject": "49195293b3e163abd0beefc9fc8e61a428b8eb24",
+      "bodyBlob": "075d941895ed9b70bcb42d9814948fb1bdc4a05d",
+      "releaseVersion": "0.1.2",
+      "bodySha256": "f214e060534509ae59024a4bd9295d39a07c29e7f1665d2a9e943a90fe7f34f9",
+      "manifestCanonicalSha256": "5a26f471445f2e53d5c24e6431bf902d5d659e449a9d295d3c199fa132a757c6",
+      "gameVersions": [
+        "1.20",
+        "1.20.1",
+        "1.20.2",
+        "1.20.3",
+        "1.20.4",
+        "1.20.5",
+        "1.20.6",
+        "1.21",
+        "1.21.1",
+        "1.21.2",
+        "1.21.3",
+        "1.21.4",
+        "1.21.5",
+        "1.21.6",
+        "1.21.7",
+        "1.21.8",
+        "1.21.9",
+        "1.21.10",
+        "1.21.11",
+        "26.1",
+        "26.2"
+      ]
+    }
+  ]
+}
