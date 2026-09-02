@@ -53,6 +53,7 @@ controller_metadata="$repository_root/release/current-controller.json"
 recovery_wrapper="$repository_root/release/run-publish-controller-recovery.sh"
 release_order_verifier="$repository_root/release/verify-current-controller-release-order.sh"
 backlog_guard="$repository_root/release/tests/verify-modrinth-v0.1.2-backlog-recovery.sh"
+current_backlog_guard="$repository_root/release/tests/verify-modrinth-v0.1.3-backlog-recovery.sh"
 
 fail() {
   echo "$1" >&2
@@ -117,13 +118,14 @@ require_immediate_guard() {
   done <<< "$call_lines"
 }
 
-for required in "$workflow" "$jvm_workflow" "$sealed_previous" "$sealed_initial" "$controller_guard" "$controller_metadata" "$recovery_wrapper" "$release_order_verifier" "$backlog_guard"; do
+for required in "$workflow" "$jvm_workflow" "$sealed_previous" "$sealed_initial" "$controller_guard" "$controller_metadata" "$recovery_wrapper" "$release_order_verifier" "$backlog_guard" "$current_backlog_guard"; do
   [[ -f "$required" && ! -L "$required" ]] || fail "Required forward-controller source is missing or not regular: $required"
 done
 bash -n "$controller_guard"
 bash -n "$recovery_wrapper"
 bash -n "$release_order_verifier"
 bash "$backlog_guard"
+bash "$current_backlog_guard"
 
 grep --fixed-strings 'for source_guard in release/tests/verify-release*-source.sh; do' "$jvm_workflow" >/dev/null || \
   fail 'JVM CI no longer discovers stable release source guards.'
@@ -754,6 +756,138 @@ mkdir "$unbound_directory"
 for absent in backlog-recovery-runner backlog-recovery.json backlog-artifact-evidence.json; do
   [[ ! -e "$unbound_directory/$absent" && ! -L "$unbound_directory/$absent" ]] || fail "Unbound recovery destination was enabled: $absent"
 done
+
+write_recovery_metadata() {
+  local contract="$1"
+  write_metadata \
+    "$(portable_jq -er '.releaseSource.tag' "$contract")" \
+    "$(portable_jq -er '.releaseSource.commit' "$contract")" \
+    "$(portable_jq -er '.releaseSource.tagObject' "$contract")" \
+    "$(portable_jq -er '.baselineReleases[-1].tag' "$contract")" \
+    "$(portable_jq -er '.baselineReleases[-1].commit' "$contract")" \
+    "$(portable_jq -er '.baselineReleases[-1].tagObject' "$contract")"
+}
+
+require_absent_recovery() {
+  local directory="$1"
+  local label="$2"
+  local absent=""
+  for absent in backlog-recovery-runner backlog-recovery.json backlog-artifact-evidence.json; do
+    [[ ! -e "$directory/$absent" && ! -L "$directory/$absent" ]] || \
+      fail "$label enabled an unbound recovery destination: $absent"
+  done
+}
+
+git -C "$fixture_repository" reset --hard "$valid_commit" >/dev/null
+release_recovery_sources=(
+  release/modrinth-v0.1.0-artifacts.json
+  release/modrinth-v0.1.2-backlog-recovery.json
+  release/run-modrinth-v0.1.2-backlog-recovery.sh
+  release/modrinth-v0.1.3-backlog-recovery.json
+  release/run-modrinth-v0.1.3-backlog-recovery.sh
+)
+for source in "${release_recovery_sources[@]}"; do
+  [[ -f "$repository_root/$source" && ! -L "$repository_root/$source" ]] || \
+    fail "Release recovery fixture source is missing or unsafe: $source"
+  cp "$repository_root/$source" "$fixture_repository/$source"
+done
+git -C "$fixture_repository" add release
+git -C "$fixture_repository" update-index --chmod=-x "${release_recovery_sources[@]}"
+git -C "$fixture_repository" commit --quiet -m 'Retain both release recovery fixture bundles'
+release_recovery_fixture_commit="$(git -C "$fixture_repository" rev-parse HEAD)"
+current_recovery_fixture_commit=''
+current_recovery_directory=''
+for recovery_tag in v0.1.2 v0.1.3; do
+  git -C "$fixture_repository" reset --hard "$release_recovery_fixture_commit" >/dev/null
+  recovery_contract_path="release/modrinth-$recovery_tag-backlog-recovery.json"
+  write_recovery_metadata "$fixture_repository/$recovery_contract_path"
+  git -C "$fixture_repository" add release/current-controller.json
+  git -C "$fixture_repository" commit --quiet -m "Select $recovery_tag recovery fixture"
+  selected_recovery_commit="$(git -C "$fixture_repository" rev-parse HEAD)"
+  selected_recovery_directory="$controller_test_root/release-recovery-$recovery_tag"
+  mkdir "$selected_recovery_directory"
+  (cd "$fixture_repository" && bash "$controller_guard" materialize "$selected_recovery_commit" "$selected_recovery_directory")
+  (cd "$fixture_repository" && bash "$controller_guard" verify "$selected_recovery_commit" "$selected_recovery_directory")
+  for mapping in \
+    "$recovery_contract_path|backlog-recovery.json" \
+    "release/run-modrinth-$recovery_tag-backlog-recovery.sh|backlog-recovery-runner" \
+    'release/modrinth-v0.1.0-artifacts.json|backlog-artifact-evidence.json'; do
+    source="${mapping%%|*}"
+    destination="${mapping#*|}"
+    expected_blob="$(git -C "$fixture_repository" rev-parse "$selected_recovery_commit:$source")"
+    [[ -f "$selected_recovery_directory/$destination" && ! -L "$selected_recovery_directory/$destination" && \
+      "$(git -C "$fixture_repository" hash-object --no-filters -- "$selected_recovery_directory/$destination")" == "$expected_blob" ]] || \
+      fail "$recovery_tag selected the wrong recovery source for $destination."
+  done
+  case "$recovery_tag" in
+    v0.1.2)
+      jq -e '.schemaVersion == 1 and (.baselineReleases | length) == 2' \
+        "$selected_recovery_directory/backlog-recovery.json" >/dev/null || fail 'The historical recovery fixture schema or baseline inventory changed.'
+      ;;
+    v0.1.3)
+      jq -e '.schemaVersion == 2 and (.baselineReleases | length) == 3 and has("stagingProvenance") == false' \
+        "$selected_recovery_directory/backlog-recovery.json" >/dev/null || fail 'The current recovery fixture schema or baseline inventory differs.'
+      current_recovery_fixture_commit="$selected_recovery_commit"
+      current_recovery_directory="$selected_recovery_directory"
+      ;;
+  esac
+done
+[[ -n "$current_recovery_fixture_commit" && -n "$current_recovery_directory" ]] || \
+  fail 'The current release recovery fixture was not selected.'
+
+git -C "$fixture_repository" reset --hard "$current_recovery_fixture_commit" >/dev/null
+current_recovery_contract="$fixture_repository/release/modrinth-v0.1.3-backlog-recovery.json"
+write_metadata v0.1.4 "$fixture_current_commit" "$fixture_current_object" \
+  "$(portable_jq -er '.releaseSource.tag' "$current_recovery_contract")" \
+  "$(portable_jq -er '.releaseSource.commit' "$current_recovery_contract")" \
+  "$(portable_jq -er '.releaseSource.tagObject' "$current_recovery_contract")"
+git -C "$fixture_repository" add release/current-controller.json
+git -C "$fixture_repository" commit --quiet -m 'Advance beyond both recovery fixture pairs'
+future_recovery_commit="$(git -C "$fixture_repository" rev-parse HEAD)"
+future_recovery_directory="$controller_test_root/future-release-recovery"
+mkdir "$future_recovery_directory"
+(cd "$fixture_repository" && bash "$controller_guard" materialize "$future_recovery_commit" "$future_recovery_directory")
+(cd "$fixture_repository" && bash "$controller_guard" verify "$future_recovery_commit" "$future_recovery_directory")
+require_absent_recovery "$future_recovery_directory" 'A future release pair'
+
+for mismatch_spec in \
+  'release-tag|.releaseSource.tag = "v9.9.9"' \
+  'release-commit|.releaseSource.commit = "0000000000000000000000000000000000000000"' \
+  'release-object|.releaseSource.tagObject = "0000000000000000000000000000000000000000"' \
+  'predecessor-tag|.baselineReleases[-1].tag = "v9.9.9"' \
+  'predecessor-commit|.baselineReleases[-1].commit = "0000000000000000000000000000000000000000"' \
+  'predecessor-object|.baselineReleases[-1].tagObject = "0000000000000000000000000000000000000000"' \
+  'last-baseline-position|.baselineReleases += [.baselineReleases[0]]'; do
+  mismatch_label="${mismatch_spec%%|*}"
+  mismatch_filter="${mismatch_spec#*|}"
+  git -C "$fixture_repository" reset --hard "$current_recovery_fixture_commit" >/dev/null
+  portable_jq "$mismatch_filter" "$current_recovery_contract" > "$controller_test_root/mismatched-recovery.json"
+  cp "$controller_test_root/mismatched-recovery.json" "$current_recovery_contract"
+  git -C "$fixture_repository" add release/modrinth-v0.1.3-backlog-recovery.json
+  git -C "$fixture_repository" commit --quiet -m "Mismatch recovery fixture $mismatch_label"
+  mismatched_recovery_commit="$(git -C "$fixture_repository" rev-parse HEAD)"
+  mismatched_recovery_directory="$controller_test_root/mismatched-recovery-$mismatch_label"
+  mkdir "$mismatched_recovery_directory"
+  (cd "$fixture_repository" && bash "$controller_guard" materialize "$mismatched_recovery_commit" "$mismatched_recovery_directory")
+  (cd "$fixture_repository" && bash "$controller_guard" verify "$mismatched_recovery_commit" "$mismatched_recovery_directory")
+  require_absent_recovery "$mismatched_recovery_directory" "Recovery mismatch $mismatch_label"
+  expect_guard_failure "stale recovery after $mismatch_label mismatch" verify \
+    "$mismatched_recovery_commit" "$current_recovery_directory"
+done
+
+git -C "$fixture_repository" reset --hard "$current_recovery_fixture_commit" >/dev/null
+cp "$current_recovery_contract" "$fixture_repository/release/duplicate-backlog-recovery.json"
+cp "$fixture_repository/release/run-modrinth-v0.1.3-backlog-recovery.sh" \
+  "$fixture_repository/release/run-duplicate-backlog-recovery.sh"
+git -C "$fixture_repository" add release/duplicate-backlog-recovery.json release/run-duplicate-backlog-recovery.sh
+git -C "$fixture_repository" update-index --chmod=-x \
+  release/duplicate-backlog-recovery.json release/run-duplicate-backlog-recovery.sh
+git -C "$fixture_repository" commit --quiet -m 'Duplicate a matching recovery fixture'
+duplicate_recovery_commit="$(git -C "$fixture_repository" rev-parse HEAD)"
+duplicate_recovery_directory="$controller_test_root/duplicate-release-recovery"
+mkdir "$duplicate_recovery_directory"
+expect_guard_failure 'duplicate identity-bound recovery contracts' materialize \
+  "$duplicate_recovery_commit" "$duplicate_recovery_directory"
 
 wrapper_directory="$controller_test_root/wrapper"
 mkdir "$wrapper_directory"

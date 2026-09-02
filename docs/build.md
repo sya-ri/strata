@@ -122,6 +122,8 @@ The current and predecessor body states are monotonic across every controller sh
 
 Release-specific recovery contracts under `release/` are executable controller inputs, not reader guidance or templates for later releases.
 The controller materializes them only while frozen metadata explicitly binds the relevant release pair; otherwise the normal path cannot access them.
+Pending-review recovery first proves each original canonical manifest against its signed release source and any separately pinned legacy artifact-evidence overlay before adapting only `project.previousBodySha256` in temporary generated evidence to the exact historical body allowed by the contract.
+During that body-lineage adaptation, every other manifest field remains unchanged; original manifest bytes are restored on every exit, and project bodies, artifacts, and release tags remain immutable.
 Their detailed invariants live with their scripts and tests, and they must be retired atomically with every controller reference after the bound recovery is complete.
 
 The root `dokkaGenerate` task aggregates every published module into `build/dokka/html`.
