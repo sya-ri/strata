@@ -475,12 +475,12 @@ jobs:
             (.branch_policies | length) == 0
           ' "$retired_policies_response" >/dev/null || { echo 'The retired github-pages environment must permit no branch or tag.' >&2; exit 1; }
       - name: Download controller Pages artifact for comparison
-        uses: actions/download-artifact@v7
+        uses: actions/download-artifact@v8
         with:
           artifact-ids: ${{ needs.build.outputs.controller_pages_artifact_id }}
           path: ${{ runner.temp }}/strata-controller-pages-artifact
       - name: Download release Pages evidence for comparison
-        uses: actions/download-artifact@v7
+        uses: actions/download-artifact@v8
         with:
           artifact-ids: ${{ needs.release-evidence.outputs.release_pages_artifact_id }}
           path: ${{ runner.temp }}/strata-release-pages-evidence
