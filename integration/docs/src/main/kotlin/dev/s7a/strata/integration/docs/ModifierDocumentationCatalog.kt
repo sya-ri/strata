@@ -59,6 +59,7 @@ internal object ModifierDocumentationCatalog {
             "onTrailingItemsRequested" to Entry("Component actions", "Requests items after the current virtual-list boundary for append-style infinite loading."),
             "padding" to Entry("Layout", "Adds checked local insets around an element; use parent spacing and alignment for sibling structure."),
             "panZoom" to Entry("Pointer", "Pans a caller-owned `PanZoomState` with a captured button drag and zooms around the pointer with the vertical wheel delta."),
+            "scaleToFit" to Entry("Layout", "Fits one fixed logical design surface into its available size with a uniform child transform."),
             "semantics" to Entry("Semantics", "Adds unresolved accessible semantics without coupling them to rendering."),
             "size" to Entry("Size", "Requires one exact logical width and height."),
             "sizeIn" to Entry("Size", "Constrains logical width and height to optional minimums and maximums."),

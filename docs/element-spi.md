@@ -93,6 +93,13 @@ Each measured child may be placed once using `placeChild`.
 Children that were not measured or were not placed are excluded from layout, paint, input, and semantics for that pass.
 Placement offsets and accumulated bounds use checked integer arithmetic.
 
+`ChildTransformNode.childTransform(index)` may supply a finite positive uniform `ChildTransform` for each placed direct child.
+The runtime scales child-local coordinates, then adds the transform offset and child's ordinary integer placement, so the mapping is `placement + offset + childLocal * scale`.
+`ChildTransform.Identity` retains ordinary placement behavior, and nested child transforms compose through the effective descendant subtree without transforming the providing node's own local paint.
+When continuous transformed geometry crosses an `IntRect` boundary, each nonempty rectangle is projected outward by flooring its left and top edges and ceiling its right and bottom edges.
+Accumulated node bounds, child clips, semantics and focus geometry, and root-overlay anchors use that enclosing projection rather than independently rounding an origin and extent.
+Portable paint destinations retain fractional geometry where their draw-command contract supports it.
+
 Both scopes expose typed parent data from a direct child's active modifier chain.
 Define a stable `ParentDataKey<D>` and implement `ParentDataModifierNode<D>` on the providing modifier node.
 `childParentData(index, key)` scans only the requested direct child's consecutive modifiers, selects the innermost provider with the same key instance, and stops before the component node.
@@ -104,16 +111,19 @@ See [Modifiers](modifiers.md#parent-data) for ordering and failure behavior.
 ## Paint, input, and semantics
 
 `PaintNode.paint` emits a complete local display list through `PaintScope`.
-A clean paint pass reuses that immutable list and translates it to current accumulated tree coordinates.
+A clean paint pass reuses that immutable list and maps it through the current accumulated tree transform.
 `OverlayPaintNode.paintOverlay` emits a separately cached local display list after all effective descendants.
-`ClipChildrenNode` inserts balanced tree-coordinate clip commands around effective descendant drawing without clipping the node's own regular or overlay commands.
+`ClipChildrenNode` inserts balanced outward-projected tree-coordinate clip commands around effective descendant drawing without clipping the node's own regular or overlay commands.
 The runtime returns `DrawCommand` values in regular-paint, clipped-descendant, and overlay-paint order.
 Custom backends with exhaustive `DrawCommand` visitors need an explicit `SampledImage` sampling implementation or an unsupported-command preflight.
 Its fractional geometry, final-density sampling, tint multiplication, and alpha cutoff are distinct from the unchanged integer `BlitImage` contract.
 A backend compiled against a smaller variant set can fail on this command; ordinary Text calls can emit it through the resource-font profile.
 See [Source compatibility](text.md#source-compatibility) for the corresponding `UiText.WithFont` visitor contract.
 Portable primitive nodes emit only platform-neutral fill and image commands.
-An opt-in version adapter may instead pass an immutable opaque `PlatformDrawCommand` through `PaintScope.drawPlatform`; core translates its declared bounds and preserves clip and draw order without interpreting the payload, the matching adapter executes it, and unsupported backends reject it before producing partial output.
+An opt-in version adapter may instead pass an immutable opaque `PlatformDrawCommand` through `PaintScope.drawPlatform`; core maps its declared bounds and preserves its opaque payload, clip, and draw order for execution by the matching adapter.
+Current frame painting accepts that command only when its accumulated transform is an exact integer translation.
+A non-unit scale or fractional translation throws `UnsupportedOperationException` during frame paint before any adapter output, because core cannot generically transform the opaque payload or safely produce a partial frame.
+`RootOverlayPaintNode` receives the node's outward-projected root-coordinate `anchorBounds`, but every command it emits is already in root coordinates and is not scaled or translated again by the node's accumulated child transform.
 Nodes without `ClipChildrenNode` preserve valid local and descendant paint overflow.
 Use `UiText` in semantics without resolving it.
 `SemanticsNode` emits a complete unresolved payload through `SemanticsScope`.
@@ -122,7 +132,9 @@ A clean semantics pass reuses each retained node's immutable local payload snaps
 A dirty bit is cleared before each callback, so node-local invalidation during the callback remains pending for the next pass.
 
 Pointer dispatch happens after layout.
-The tree tests half-open node bounds and visits reverse paint order, so the deepest and latest-painted node receives the event first.
+The tree tests exact transformed half-open node bounds and visits reverse paint order, so the deepest and latest-painted node receives the event first.
+A delivered pointer position is inverse-mapped through the node's latest accumulated transform and floored on each axis to produce its local logical `IntOffset`.
+A delivered drag keeps its tree-coordinate position but inverse-scales its displacement into the receiving node's local logical units; scroll displacement remains in adapter-normalized wheel units.
 A child can receive an event outside its parent's bounds unless that parent implements `ClipChildrenNode`.
 The marker skips the clipped effective descendant subtree for pointer hit testing and hover while retaining ordinary hit testing for the clipping node itself.
 An ignored result continues dispatch and a consumed result stops it.

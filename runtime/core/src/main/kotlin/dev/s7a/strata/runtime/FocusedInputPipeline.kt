@@ -162,9 +162,13 @@ internal class FocusedInputPipeline {
     }
 
     private fun reconcileFocusTargets(owner: RetainedNode) {
-        val retained = focusTargets(owner)
+        val retainedEntries = focusTargetEntries(owner)
+        val retained = retainedEntries.map(FocusTargetEntry::target)
         val previous = focusedTargets
-        val accepting = retained.filter(FocusTargetNode::acceptsFocus)
+        val accepting =
+            retainedEntries
+                .filter { entry -> entry.retained.placed && entry.target.acceptsFocus }
+                .map(FocusTargetEntry::target)
         focusedTargets = accepting
         previous.forEach { target ->
             if (retained.any { it === target } && accepting.none { it === target }) target.onFocusChanged(false)
@@ -180,7 +184,10 @@ internal class FocusedInputPipeline {
         }
     }
 
-    private fun requestsInitialFocus(owner: RetainedNode): Boolean = owner.effectiveRoot.placed && focusTargets(owner).any { target -> target.acceptsFocus && target.requestsInitialFocus }
+    private fun requestsInitialFocus(owner: RetainedNode): Boolean =
+        focusTargetEntries(owner).any { entry ->
+            entry.retained.placed && entry.target.acceptsFocus && entry.target.requestsInitialFocus
+        }
 
     private fun moveFocus(
         root: RetainedNode,
@@ -203,14 +210,17 @@ internal class FocusedInputPipeline {
     private fun isTraversalCandidate(
         root: RetainedNode,
         owner: RetainedNode,
-    ): Boolean = focusTargets(owner).any(FocusTargetNode::acceptsFocus) && isVisible(root, owner)
+    ): Boolean =
+        focusTargetEntries(owner).any { entry ->
+            entry.retained.placed && entry.target.acceptsFocus && isVisible(root, entry.retained)
+        }
 
     private fun isVisible(
         root: RetainedNode,
-        owner: RetainedNode,
+        target: RetainedEntry,
     ): Boolean {
-        var visible = intersection(root.effectiveRoot.bounds, owner.effectiveRoot.bounds) ?: return false
-        var ancestor = owner.effectiveRoot.parent
+        var visible = intersection(root.effectiveRoot.bounds, target.bounds) ?: return false
+        var ancestor = target.parent
         while (ancestor != null) {
             if (ancestor.node is ClipChildrenNode) {
                 visible = intersection(visible, ancestor.bounds) ?: return false
@@ -259,7 +269,7 @@ internal class FocusedInputPipeline {
     ): RetainedNode? {
         val descendantsAllowHit =
             ancestorAllowsHit &&
-                ((retained.node is ClipChildrenNode).not() || position in retained.bounds)
+                ((retained.node is ClipChildrenNode).not() || retained.contains(position))
         if (descendantsAllowHit) {
             for (index in (0 until retained.effectiveChildCount).reversed()) {
                 val child = retained.effectiveChildAt(index)
@@ -269,18 +279,37 @@ internal class FocusedInputPipeline {
                 }
             }
         }
-        if (ancestorAllowsHit && retained.placed && position in retained.bounds) {
-            val owner = logicalOwner(retained)
-            if (focusTargets(owner).any { target -> target.acceptsFocus }) return owner
+        if (ancestorAllowsHit && retained.acceptsFocusAt(position)) {
+            return logicalOwner(retained)
         }
         return null
     }
 
-    private fun focusedNodes(owner: RetainedNode): List<Node> =
+    private fun focusedNodes(owner: RetainedNode): List<Node> = focusedEntries(owner).map(RetainedEntry::node)
+
+    private fun focusedEntries(owner: RetainedNode): List<RetainedEntry> =
         buildList {
-            owner.modifiers.asReversed().forEach { modifier -> add(modifier.node) }
-            add(owner.node)
+            owner.modifiers.asReversed().forEach(::add)
+            add(owner)
         }
 
-    private fun focusTargets(owner: RetainedNode): List<FocusTargetNode> = if (owner.cleanupStarted) emptyList() else focusedNodes(owner).filterIsInstance<FocusTargetNode>()
+    private fun focusTargets(owner: RetainedNode): List<FocusTargetNode> = focusTargetEntries(owner).map(FocusTargetEntry::target)
+
+    private fun focusTargetEntries(owner: RetainedNode): List<FocusTargetEntry> =
+        if (owner.cleanupStarted) {
+            emptyList()
+        } else {
+            focusedEntries(owner).mapNotNull { retained ->
+                (retained.node as? FocusTargetNode)?.let { target -> FocusTargetEntry(retained, target) }
+            }
+        }
+
+    private fun RetainedEntry.contains(position: IntOffset): Boolean = localToTree.contains(measuredSize, position)
+
+    private fun RetainedEntry.acceptsFocusAt(position: IntOffset): Boolean = placed && contains(position) && (node as? FocusTargetNode)?.acceptsFocus == true
+
+    private data class FocusTargetEntry(
+        val retained: RetainedEntry,
+        val target: FocusTargetNode,
+    )
 }

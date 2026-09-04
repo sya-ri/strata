@@ -49,7 +49,7 @@ internal class InputPipeline(
         if (captured != null && captured.accepts(event)) {
             if (event is PointerEvent.Release) capture = null
             val input = captured.owner.node as PointerCaptureNode
-            input.onPointerEvent(event, localPosition(captured.owner, event))
+            input.onPointerEvent(eventFor(captured.owner, event), localPosition(captured.owner, event))
             return InputResult.Consumed
         }
         return dispatchNode(root.effectiveRoot, event, ancestorAllowsHit = true)
@@ -107,7 +107,7 @@ internal class InputPipeline(
         root: RetainedEntry,
         position: IntOffset,
     ) {
-        visitHover(root, ancestorAllowsHit = true) { retained -> position in retained.bounds }
+        visitHover(root, ancestorAllowsHit = true) { retained -> retained.contains(position) }
     }
 
     private fun visitHover(
@@ -144,7 +144,7 @@ internal class InputPipeline(
     ): InputResult {
         val descendantsAllowHit =
             ancestorAllowsHit &&
-                ((retained.node is ClipChildrenNode).not() || event.position in retained.bounds)
+                ((retained.node is ClipChildrenNode).not() || retained.contains(event.position))
         if (descendantsAllowHit) {
             for (index in (0 until retained.effectiveChildCount).reversed()) {
                 val child = retained.effectiveChildAt(index)
@@ -157,8 +157,8 @@ internal class InputPipeline(
             }
         }
         val input = retained.node as? PointerInputNode
-        if (input != null && ancestorAllowsHit && event.position in retained.bounds) {
-            val result = input.onPointerEvent(event, localPosition(retained, event))
+        if (input != null && ancestorAllowsHit && retained.contains(event.position)) {
+            val result = input.onPointerEvent(eventFor(retained, event), localPosition(retained, event))
             if (result === InputResult.Consumed && event is PointerEvent.Press) {
                 if (capture == null && input is PointerCaptureNode) {
                     capture = Capture(retained, event.button)
@@ -173,11 +173,7 @@ internal class InputPipeline(
     private fun localPosition(
         retained: RetainedEntry,
         event: PointerEvent,
-    ): IntOffset =
-        IntOffset(
-            Math.subtractExact(event.position.x, retained.bounds.left),
-            Math.subtractExact(event.position.y, retained.bounds.top),
-        )
+    ): IntOffset = retained.localToTree.localPosition(event.position)
 
     private fun containsPlaced(
         retained: RetainedEntry,
@@ -204,3 +200,18 @@ internal class InputPipeline(
             }
     }
 }
+
+private fun eventFor(
+    retained: RetainedEntry,
+    event: PointerEvent,
+): PointerEvent {
+    if (event !is PointerEvent.Drag || retained.localToTree.scale == 1.0) return event
+    return PointerEvent.Drag(
+        position = event.position,
+        button = event.button,
+        deltaX = event.deltaX / retained.localToTree.scale,
+        deltaY = event.deltaY / retained.localToTree.scale,
+    )
+}
+
+private fun RetainedEntry.contains(position: IntOffset): Boolean = localToTree.contains(measuredSize, position)

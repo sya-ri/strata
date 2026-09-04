@@ -4,6 +4,7 @@ import dev.s7a.strata.geometry.Constraints
 import dev.s7a.strata.geometry.IntOffset
 import dev.s7a.strata.geometry.IntRect
 import dev.s7a.strata.geometry.IntSize
+import dev.s7a.strata.node.ChildTransform
 import dev.s7a.strata.node.DirtyMask
 import dev.s7a.strata.node.Node
 import dev.s7a.strata.semantics.Semantics
@@ -59,6 +60,16 @@ internal sealed class RetainedEntry(
      * Size returned by the most recent measure pass.
      */
     var measuredSize: IntSize = IntSize.Zero
+
+    /**
+     * Additional transform supplied by the effective parent during its most recent layout pass.
+     */
+    var transformFromParent: ChildTransform = ChildTransform.Identity
+
+    /**
+     * Accumulated continuous transform from this entry's local coordinates into root coordinates.
+     */
+    var localToTree: TreeTransform = TreeTransform.Identity
 
     /**
      * Accumulated tree-coordinate bounds.
