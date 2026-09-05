@@ -18,7 +18,10 @@ public interface PointerInputNode {
      * A child may receive an event outside its parent's bounds when the child itself is placed there.
      * The runtime does not add implicit parent clipping.
      *
-     * @param event the tree-coordinate event.
+     * The event position remains in tree coordinates.
+     * A drag displacement is inverse-scaled into this node's local logical units, while scroll displacement retains its adapter-normalized wheel units.
+     *
+     * @param event the tree-positioned event with receiver-local drag displacement.
      * @param localPosition the event position relative to this node's top-left corner.
      * @return whether dispatch should stop.
      */
