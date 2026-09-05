@@ -98,5 +98,39 @@ internal class FabricMinecraftFrameLayerTest {
         assertEquals(listOf(144, 4, 176, 36), coordinates)
     }
 
+    @Test
+    fun orderedSubmissionSeparatesEveryAdjacentLayerWithoutOuterBoundaries() {
+        val image = createDrawImage(IntSize(2, 2), IntArray(4) { -1 })
+        val sampled = DrawCommand.SampledImage(image, FloatRect(0f, 0f, 2f, 2f), FloatRect(1f, 1f, 3f, 3f), alphaCutoff = 0f)
+        val layers =
+            partitionFabricMinecraftFrame(
+                listOf(
+                    DrawCommand.FillRectangle(IntRect(0, 0, 4, 4), ArgbColor(-1)),
+                    sampled,
+                    sampled.copy(destination = FloatRect(2f, 2f, 4f, 4f)),
+                    DrawCommand.FillRectangle(IntRect(3, 0, 4, 1), ArgbColor(0xFF00FF00.toInt())),
+                    DrawCommand.Platform(TestPlatform, IntRect(0, 0, 1, 1)),
+                ),
+                IntSize(4, 4),
+            )
+        assertEquals(5, layers.size)
+
+        val emptyEvents = ArrayList<String>()
+        submitFabricMinecraftFrameLayers(emptyList(), { emptyEvents.add("boundary") }) { emptyEvents.add("layer") }
+        assertEquals(emptyList<String>(), emptyEvents)
+
+        val singleEvents = ArrayList<String>()
+        submitFabricMinecraftFrameLayers(layers.take(1), { singleEvents.add("boundary") }) { singleEvents.add("layer") }
+        assertEquals(listOf("layer"), singleEvents)
+
+        val boundary = Any()
+        val events = ArrayList<Any>()
+        submitFabricMinecraftFrameLayers(layers, { events.add(boundary) }) { layer -> events.add(layer) }
+        assertEquals(
+            listOf(layers[0], boundary, layers[1], boundary, layers[2], boundary, layers[3], boundary, layers[4]),
+            events,
+        )
+    }
+
     private data object TestPlatform : PlatformDrawCommand
 }

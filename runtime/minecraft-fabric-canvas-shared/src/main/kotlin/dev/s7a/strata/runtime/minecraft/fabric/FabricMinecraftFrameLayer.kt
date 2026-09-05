@@ -54,6 +54,28 @@ internal sealed interface FabricMinecraftFrameLayer {
 }
 
 /**
+ * Submits resolved frame layers in display-list order with one native ordering boundary between every adjacent pair.
+ *
+ * Empty and singleton lists create no boundary. The callbacks are borrowed synchronously, invoked on the caller's thread, and never retained.
+ * An exception from either callback is propagated unchanged, and no later callback is invoked.
+ *
+ * @param layers resolved layers in exact display-list order.
+ * @param advance advances the native renderer to the next ordering boundary.
+ * @param submit submits one layer without advancing before the first or after the last layer.
+ */
+@JvmSynthetic
+internal inline fun submitFabricMinecraftFrameLayers(
+    layers: List<FabricMinecraftFrameLayer>,
+    advance: () -> Unit,
+    submit: (FabricMinecraftFrameLayer) -> Unit,
+) {
+    layers.forEachIndexed { index, layer ->
+        if (0 < index) advance()
+        submit(layer)
+    }
+}
+
+/**
  * Partitions one committed frame into tight portable runs, independently cacheable sampled images, and platform barriers.
  *
  * Direct eligibility is deliberately limited to ordinary orientation, opaque-white tint, zero alpha cutoff, and integer source texel edges.
