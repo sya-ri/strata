@@ -16,12 +16,13 @@ import dev.s7a.strata.render.PaintScope
 import dev.s7a.strata.render.PlatformDrawCommand
 import dev.s7a.strata.render.RootOverlayPaintScope
 import dev.s7a.strata.render.SampledImageOrientation
+import dev.s7a.strata.render.createDrawImage
 import dev.s7a.strata.runtime.render.DrawCommand
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
 import java.util.Collections
 
 /**
- * Executes retained local paint and translates commands into tree coordinates.
+ * Executes retained local paint and transforms commands into tree coordinates.
  */
 @OptIn(InternalStrataRuntimeApi::class)
 internal class PaintPipeline(
@@ -48,7 +49,7 @@ internal class PaintPipeline(
         rootOverlays: MutableList<DrawCommand>,
     ) {
         updateLocalCommands(retained, viewport)
-        appendTranslated(retained.localCommands.orEmpty(), retained, output)
+        appendTransformed(retained.localCommands.orEmpty(), retained, output)
         val clipsChildren = retained.node is ClipChildrenNode
         if (clipsChildren) {
             output.add(DrawCommand.PushClip(retained.bounds))
@@ -62,7 +63,7 @@ internal class PaintPipeline(
         if (clipsChildren) {
             output.add(DrawCommand.PopClip)
         }
-        appendTranslated(retained.localOverlayCommands.orEmpty(), retained, output)
+        appendTransformed(retained.localOverlayCommands.orEmpty(), retained, output)
         appendUntranslated(retained.rootOverlayCommands.orEmpty(), rootOverlays)
     }
 
@@ -119,13 +120,13 @@ internal class PaintPipeline(
         }
     }
 
-    private fun appendTranslated(
+    private fun appendTransformed(
         commands: List<LocalDrawCommand>,
         retained: RetainedEntry,
         output: MutableList<DrawCommand>,
     ) {
         commands.forEach { command ->
-            output.add(translate(command, retained.bounds.left, retained.bounds.top))
+            transform(command, retained.localToTree)?.let(output::add)
         }
     }
 
@@ -134,6 +135,68 @@ internal class PaintPipeline(
         output: MutableList<DrawCommand>,
     ) {
         commands.forEach { command -> output.add(translate(command, 0, 0)) }
+    }
+
+    private fun transform(
+        command: LocalDrawCommand,
+        transform: TreeTransform,
+    ): DrawCommand? {
+        val translation = transform.integerTranslationOrNull()
+        if (translation != null) {
+            return translate(command, translation.x, translation.y)
+        }
+        return when (command) {
+            is LocalDrawCommand.PushClip -> {
+                DrawCommand.PushClip(transform.enclosing(command.bounds))
+            }
+
+            LocalDrawCommand.PopClip -> {
+                DrawCommand.PopClip
+            }
+
+            is LocalDrawCommand.FillRectangle -> {
+                transform.mapFractional(command.bounds).drawCommandOrNull { destination ->
+                    DrawCommand.SampledImage(
+                        SOLID_IMAGE,
+                        SOLID_SOURCE,
+                        destination,
+                        command.color,
+                        0f,
+                    )
+                }
+            }
+
+            is LocalDrawCommand.BlitImage -> {
+                transform.mapFractional(command.destination).drawCommandOrNull { destination ->
+                    DrawCommand.SampledImage(
+                        command.image,
+                        command.source.toFloatRect(),
+                        destination,
+                        ArgbColor(-1),
+                        0f,
+                    )
+                }
+            }
+
+            is LocalDrawCommand.SampledImage -> {
+                transform.mapFractional(command.destination).drawCommandOrNull { destination ->
+                    DrawCommand.SampledImage(
+                        command.image,
+                        command.source,
+                        destination,
+                        command.tint,
+                        command.alphaCutoff,
+                        command.orientation,
+                    )
+                }
+            }
+
+            is LocalDrawCommand.Platform -> {
+                throw UnsupportedOperationException(
+                    "Platform draw commands require an exact integer-translation child transform.",
+                )
+            }
+        }
     }
 
     private fun translate(
@@ -173,6 +236,8 @@ internal class PaintPipeline(
                 DrawCommand.Platform(command.command, command.bounds + IntOffset(x, y))
             }
         }
+
+    private fun IntRect.toFloatRect(): FloatRect = FloatRect(left.toFloat(), top.toFloat(), right.toFloat(), bottom.toFloat())
 
     /**
      * Collects local commands for one retained node.
@@ -344,4 +409,11 @@ internal class PaintPipeline(
             delegate.close()
         }
     }
+
+    private companion object {
+        val SOLID_IMAGE: DrawImage = createDrawImage(IntSize(1, 1), intArrayOf(-1))
+        val SOLID_SOURCE: FloatRect = FloatRect(0f, 0f, 1f, 1f)
+    }
 }
+
+private inline fun FloatRect.drawCommandOrNull(create: (FloatRect) -> DrawCommand): DrawCommand? = if (width <= 0f || height <= 0f) null else create(this)

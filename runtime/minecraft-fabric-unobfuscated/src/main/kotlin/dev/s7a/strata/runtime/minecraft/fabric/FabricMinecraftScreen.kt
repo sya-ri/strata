@@ -632,7 +632,7 @@ public class FabricMinecraftScreen private constructor(
                     { textureUploadCount += 1L },
                 ) { textures, portableQueued ->
                     var textureIndex = 0
-                    resolved.forEach { layer ->
+                    submitFabricMinecraftFrameLayers(resolved, graphics::nextStratum) { layer ->
                         when (layer) {
                             is FabricMinecraftFrameLayer.Portable -> {
                                 val texture = textures[textureIndex++].texture

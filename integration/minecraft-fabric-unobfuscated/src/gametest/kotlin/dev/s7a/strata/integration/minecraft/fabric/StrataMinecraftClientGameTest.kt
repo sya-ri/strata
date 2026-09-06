@@ -919,7 +919,9 @@ public class StrataMinecraftClientGameTest : FabricClientGameTest {
         require(0L < observed.sampledImageUploads) { "Sampled-image parity must upload a direct texture: $observed" }
         require(0L < observed.sampledImageDraws) { "Sampled-image parity must execute the native direct path: $observed" }
         require(observed.sampledImageEvictions == 0L) { "Sampled-image parity must not evict its direct texture: $observed" }
-        require(observed.sampledImageIneligibleFallbacks == 0L) { "Sampled-image parity must remain eligible for direct drawing: $observed" }
+        require(0L < observed.sampledImageIneligibleFallbacks) {
+            "Fractional scale-to-fit parity must mix direct images with portable transformed fallbacks: $observed"
+        }
         require(observed.sampledImageCapacityFallbacks == 0L) { "Sampled-image parity must fit the direct cache: $observed" }
         require(0L < observed.sampledImageRetainedEntries) { "Sampled-image parity must retain its direct texture: $observed" }
         require(0L < observed.sampledImageRetainedBytes) { "Sampled-image parity must retain native texture storage: $observed" }

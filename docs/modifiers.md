@@ -41,6 +41,25 @@ A requested range that does not overlap its parent range is pinned to the neares
 It places the measured child at the left and top inset and reports the child extent plus both inset totals, constrained by the parent.
 An extent addition that cannot be represented as an `Int` fails instead of wrapping or saturating.
 
+`scaleToFit(contentSize, contentAlignment, allowUpscaling)` measures its one virtual child exactly once at the strictly positive `contentSize`, reports `constraints.constrain(contentSize)`, and applies one uniform transform to the child's complete effective subtree during layout.
+It therefore does not implicitly fill a loose bounded parent.
+Put an earlier, outer `fillMaxSize()` before `scaleToFit` when the design surface should use the complete available viewport:
+
+```kotlin
+val modifier = Modifier.Empty
+    .fillMaxSize()
+    .scaleToFit(contentSize = IntSize(320, 180))
+```
+
+The first modifier remains outermost, so reversing these calls only fills the child inside the fixed design surface instead of giving `scaleToFit` the complete viewport.
+The fit is the smaller width and height ratio, and `contentAlignment` positions the uniformly scaled content in any remaining space without first rounding its offset to an integer.
+If either constrained outer axis is zero, the modifier leaves its virtual child unplaced for that pass, so the collapsed subtree contributes no paint, input, or semantics.
+The default `allowUpscaling = false` caps the fit at one while still shrinking content that is too large.
+This default preserves GUI-scale accessibility: one design unit remains one logical unit whenever the design fits, so the platform GUI density still controls physical size instead of a larger logical viewport silently enlarging the design surface.
+Set `allowUpscaling = true` only when the design surface should also grow to consume available space.
+Together with outer `fillMaxSize()`, that option makes the fit track viewport growth and shrinkage; on a fixed physical window it compensates for host GUI-density changes and keeps approximately the same physical proportions, subject to the viewport aspect ratio and integer rasterization.
+Descriptions after `scaleToFit` are inside its design coordinate space, while earlier descriptions remain in the outer viewport coordinate space.
+
 `background` emits one fill over its complete local bounds before content is painted.
 `semantics` emits one separate unresolved entry before content semantics and does not merge descendant values.
 `onPointerEvent` handles the complete typed pointer protocol and returns an explicit propagation result.
@@ -77,7 +96,8 @@ Custom editors opt into native text-input mode by implementing `FocusTargetNode.
 Enabled `TextField` and `TextArea` components supply this capability automatically.
 The runtime publishes a detached identity for the current editable focus interval, and adapters synchronize native focus after retained transactions finish; loss and screen removal release it before another native screen acquires focus.
 Changing a custom target's text-input capability requires presentation invalidation so the next committed frame can reconcile it.
-Changing size or padding invalidates measurement, changing a background invalidates paint, and changing semantics invalidates only semantics.
+Changing size, padding, or scale-to-fit `contentSize` invalidates measurement, while changing scale-to-fit alignment or upscaling policy invalidates layout.
+Changing a background invalidates paint, and changing semantics invalidates only semantics.
 Changing a pointer, keyboard, text-input, preedit, or focus callback updates live input behavior without invalidating a frame phase.
 An equal value does not invalidate a phase.
 
@@ -117,6 +137,10 @@ Each creation hook must return a fresh node that has never belonged to a runtime
 The node may implement the phase capability interfaces it owns.
 The inherited measure and layout behavior exposes exactly one virtual child, measures it with unchanged constraints, and places it at the origin.
 An override may intentionally omit measurement or placement, excluding the component subtree while retaining the modifier's own output.
+A node that implements `ChildTransformNode` may additionally return one `ChildTransform` for each placed direct child.
+The runtime scales child-local coordinates, then adds the transform offset and child's ordinary integer placement, mapping them as `placement + offset + local * scale`.
+Its scale must be finite and positive and its `DoubleOffset` must be finite, while `ChildTransform.Identity` preserves ordinary placement behavior.
+Nested child transforms compose through the effective subtree without transforming the providing node's own paint.
 
 Modifier validation runs through the complete incoming `Element` tree before component or modifier mutation.
 An invalid description is recoverable and leaves the previous tree available for a valid retry.

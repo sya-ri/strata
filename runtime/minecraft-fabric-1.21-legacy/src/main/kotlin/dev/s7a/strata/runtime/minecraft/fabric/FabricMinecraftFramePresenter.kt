@@ -185,7 +185,10 @@ internal class FabricMinecraftFramePresenter(
                     { textureUploadCount += 1L },
                 ) { textures, portableQueued ->
                     var textureIndex = 0
-                    resolved.forEach { layer ->
+                    submitFabricMinecraftFrameLayers(
+                        resolved,
+                        { FabricMinecraftFrameLayerBoundary.advance(graphics) },
+                    ) { layer ->
                         when (layer) {
                             is FabricMinecraftFrameLayer.Portable -> {
                                 val texture = textures[textureIndex++]

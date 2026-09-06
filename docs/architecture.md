@@ -11,7 +11,7 @@ A module joins the build only with working behavior and tests.
 - `api` contains the complete platform-neutral authoring surface: one-shot `ScreenDefinition`, flat `dev.s7a.strata.component` entry points and configuration types, layouts, resource identifiers, slot and skin locators, active modifiers, and the custom `Element`/`Node` SPI.
   Application source needs no runtime module on its compile classpath.
 - `runtime:core` is configured as a publishable, Minecraft-independent retained engine built on `api`.
-  It includes reconciliation, layout, input dispatch, painting, unresolved semantics flattening, and internal screen-session orchestration.
+  It includes reconciliation, layout and uniform child-transform accumulation, input dispatch, painting, unresolved semantics flattening, and internal screen-session orchestration.
   Its opt-in runtime adapter bridge is a narrow integration contract, not an application screen API.
   The bridge exposes synchronous owner-thread lifecycle, frame, and input operations and does not expose coroutines, internal session state, or internal retained-engine implementation types.
   It returns immutable defensive frame snapshots and delegates first-frame input gating, exact primary-failure propagation, and cleanup semantics to the retained session.
@@ -265,7 +265,8 @@ Close cleanup failures do not poison the tree because the tree is already `Close
 Measure, layout, paint, input, and semantics enforce their phase preconditions.
 A clean equal-constraint measurement can reuse its cached size.
 Clean layout can reuse placements.
-Clean paint and semantics reuse complete local payloads and combine them with current accumulated bounds.
+Clean paint reuses complete local display lists through the current accumulated transform.
+Clean semantics reuses complete local payloads and combines them with current outward-projected bounds.
 Invalidation inside a callback remains pending because the current dirty bit is cleared before the callback runs.
 Capability and scope failures after pipeline work begins poison the tree only when their exceptions escape the active callback.
 

@@ -2,7 +2,6 @@ package dev.s7a.strata.runtime
 
 import dev.s7a.strata.geometry.Constraints
 import dev.s7a.strata.geometry.IntOffset
-import dev.s7a.strata.geometry.IntRect
 import dev.s7a.strata.geometry.IntSize
 import dev.s7a.strata.input.InputResult
 import dev.s7a.strata.input.KeyboardEvent
@@ -11,6 +10,8 @@ import dev.s7a.strata.input.TextInputEvent
 import dev.s7a.strata.layout.LayoutScope
 import dev.s7a.strata.layout.MeasureScope
 import dev.s7a.strata.layout.ParentDataKey
+import dev.s7a.strata.node.ChildTransform
+import dev.s7a.strata.node.ChildTransformNode
 import dev.s7a.strata.node.DirtyMask
 import dev.s7a.strata.node.DirtyPhase
 import dev.s7a.strata.node.FrameCutoffNode
@@ -65,7 +66,9 @@ internal class Pipeline(
      */
     fun layout(root: RetainedNode) {
         val effective = root.effectiveRoot
-        effective.bounds = IntRect(0, 0, effective.measuredSize.width, effective.measuredSize.height)
+        effective.transformFromParent = ChildTransform.Identity
+        effective.localToTree = TreeTransform.Identity
+        effective.bounds = effective.localToTree.enclosing(effective.measuredSize)
         effective.placed = true
         layoutEntry(effective)
         inputPipeline.layoutCommitted(root)
@@ -390,15 +393,19 @@ internal class Pipeline(
                 child.placed = false
                 child.laidOut = false
             } else {
-                val left = Math.addExact(retained.bounds.left, offset.x)
-                val top = Math.addExact(retained.bounds.top, offset.y)
-                child.bounds =
-                    IntRect(
-                        left,
-                        top,
-                        Math.addExact(left, child.measuredSize.width),
-                        Math.addExact(top, child.measuredSize.height),
-                    )
+                val childTransform =
+                    if (mustLayout) {
+                        (
+                            (retained.node as? ChildTransformNode)?.childTransform(index)
+                                ?: ChildTransform.Identity
+                        ).also { transform ->
+                            child.transformFromParent = transform
+                        }
+                    } else {
+                        child.transformFromParent
+                    }
+                child.localToTree = retained.localToTree.descend(offset, childTransform)
+                child.bounds = child.localToTree.enclosing(child.measuredSize)
                 child.placed = true
                 layoutEntry(child)
             }

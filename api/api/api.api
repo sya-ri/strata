@@ -1295,6 +1295,11 @@ public final class dev/s7a/strata/modifier/PointerInputExtensionsKt {
 	public static final fun onScroll (Ldev/s7a/strata/modifier/Modifier;Lkotlin/jvm/functions/Function2;)Ldev/s7a/strata/modifier/Modifier;
 }
 
+public final class dev/s7a/strata/modifier/ScaleToFitExtensionsKt {
+	public static final fun scaleToFit (Ldev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/geometry/IntSize;Ldev/s7a/strata/layout/Alignment;Z)Ldev/s7a/strata/modifier/Modifier;
+	public static synthetic fun scaleToFit$default (Ldev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/geometry/IntSize;Ldev/s7a/strata/layout/Alignment;ZILjava/lang/Object;)Ldev/s7a/strata/modifier/Modifier;
+}
+
 public final class dev/s7a/strata/modifier/SemanticsExtensionsKt {
 	public static final fun semantics (Ldev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/semantics/Semantics;)Ldev/s7a/strata/modifier/Modifier;
 }
@@ -1319,6 +1324,29 @@ public final class dev/s7a/strata/modifier/TooltipModifiers {
 	public static final fun tooltip (Ldev/s7a/strata/modifier/Modifier;Ljava/lang/String;J)Ldev/s7a/strata/modifier/Modifier;
 	public static synthetic fun tooltip$default (Ldev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/text/UiText;JILjava/lang/Object;)Ldev/s7a/strata/modifier/Modifier;
 	public static synthetic fun tooltip$default (Ldev/s7a/strata/modifier/Modifier;Ljava/lang/String;JILjava/lang/Object;)Ldev/s7a/strata/modifier/Modifier;
+}
+
+public final class dev/s7a/strata/node/ChildTransform {
+	public static final field Companion Ldev/s7a/strata/node/ChildTransform$Companion;
+	public fun <init> (DLdev/s7a/strata/geometry/DoubleOffset;)V
+	public synthetic fun <init> (DLdev/s7a/strata/geometry/DoubleOffset;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()D
+	public final fun component2 ()Ldev/s7a/strata/geometry/DoubleOffset;
+	public final fun copy (DLdev/s7a/strata/geometry/DoubleOffset;)Ldev/s7a/strata/node/ChildTransform;
+	public static synthetic fun copy$default (Ldev/s7a/strata/node/ChildTransform;DLdev/s7a/strata/geometry/DoubleOffset;ILjava/lang/Object;)Ldev/s7a/strata/node/ChildTransform;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getOffset ()Ldev/s7a/strata/geometry/DoubleOffset;
+	public final fun getScale ()D
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class dev/s7a/strata/node/ChildTransform$Companion {
+	public final fun getIdentity ()Ldev/s7a/strata/node/ChildTransform;
+}
+
+public abstract interface class dev/s7a/strata/node/ChildTransformNode {
+	public abstract fun childTransform (I)Ldev/s7a/strata/node/ChildTransform;
 }
 
 public abstract interface class dev/s7a/strata/node/ClipChildrenNode {

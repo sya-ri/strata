@@ -4,7 +4,7 @@
 
 Modifiers are active retained behavior, not a passive settings bag.
 Order matters: layout and input elements wrap the behavior that follows them in the chain.
-The 54 compiled overloads below form 43 top-level extension groups.
+The 55 compiled overloads below form 44 top-level extension groups.
 
 | Extension | Overloads | Category | Use |
 | --- | ---: | --- | --- |
@@ -45,6 +45,7 @@ The 54 compiled overloads below form 43 top-level extension groups.
 | `onTrailingItemsRequested` | 1 | Component actions | Requests items after the current virtual-list boundary for append-style infinite loading. |
 | `padding` | 4 | Layout | Adds checked local insets around an element; use parent spacing and alignment for sibling structure. |
 | `panZoom` | 1 | Pointer | Pans a caller-owned `PanZoomState` with a captured button drag and zooms around the pointer with the vertical wheel delta. |
+| `scaleToFit` | 1 | Layout | Fits one fixed logical design surface into its available size with a uniform child transform. |
 | `semantics` | 1 | Semantics | Adds unresolved accessible semantics without coupling them to rendering. |
 | `size` | 1 | Size | Requires one exact logical width and height. |
 | `sizeIn` | 1 | Size | Constrains logical width and height to optional minimums and maximums. |
@@ -286,6 +287,12 @@ fun Modifier.padding(left: Int = 0, top: Int = 0, right: Int = 0, bottom: Int = 
 fun Modifier.panZoom(state: PanZoomState, panButton: PointerButton = PointerButton.Primary, zoomStep: Double = 1.12): Modifier
 ```
 
+### `scaleToFit`
+
+```kotlin
+fun Modifier.scaleToFit(contentSize: IntSize, contentAlignment: Alignment = Alignment.Center, allowUpscaling: Boolean = false): Modifier
+```
+
 ### `semantics`
 
 ```kotlin
@@ -390,11 +397,38 @@ fun Modifier.atContentPosition(position: DoubleOffset, alignment: Alignment = Al
 fun Modifier.atContentPosition(position: StateSource<DoubleOffset>, alignment: Alignment = Alignment.Center): Modifier
 ```
 
+## Scale-to-fit design surfaces
+
+`scaleToFit` requires a strictly positive `contentSize`, measures its virtual child once with that exact size, and reports `constraints.constrain(contentSize)` rather than implicitly filling a loose parent.
+Use an earlier, outer `fillMaxSize()` when the design surface should fit the complete viewport because modifier descriptions remain outermost-first:
+
+```kotlin
+val modifier = Modifier.Empty
+    .fillMaxSize()
+    .scaleToFit(contentSize = IntSize(320, 180))
+```
+
+The modifier takes the smaller width and height ratio and uses `contentAlignment` to position remaining slack with a fractional offset.
+The default `allowUpscaling = false` keeps one design unit equal to one logical unit whenever the content fits and only shrinks when necessary, so the platform GUI density continues to control its accessible physical size.
+Set `allowUpscaling = true` when the same design should also grow into a larger logical viewport.
+Together with outer `fillMaxSize()`, that option makes the fit track viewport growth and shrinkage; on a fixed physical window it compensates for host GUI-density changes and keeps approximately the same physical proportions, subject to aspect ratio and integer rasterization.
+Modifiers after `scaleToFit` and the component itself use the fixed design coordinates, while modifiers before it remain in viewport coordinates.
+If a constrained outer axis is zero, the child remains unplaced for that pass and contributes no paint, input, or semantics.
+
+A custom design-surface primitive implements `ChildTransformNode` and returns a finite positive `ChildTransform` for each placed direct child.
+The runtime maps a child as `ordinaryPlacement + transform.offset + childLocal * transform.scale` and composes nested transforms.
+When transformed geometry must become an `IntRect`, Strata floors its left and top edges and ceils its right and bottom edges so clips, semantics, focus geometry, and overlay anchors enclose the continuous result.
+Pointer hit testing uses exact transformed half-open bounds, and delivered local pointer coordinates apply the inverse accumulated transform before flooring each axis.
+A delivered drag keeps its tree-coordinate position but inverse-scales its displacement into the receiving node's local logical units; scroll displacement remains in adapter-normalized wheel units.
+`RootOverlayPaintNode` commands remain root-coordinate and unscaled; only the scope's `anchorBounds` reflects the outward-projected transform.
+During current frame painting, a `PlatformDrawCommand` is supported only through an exact integer translation; a non-unit scale or fractional translation throws `UnsupportedOperationException` before any adapter output.
+
 ## Selection guide
 
 - Use `spacing`, `horizontalArrangement`, `verticalArrangement`, and parent alignment to describe sibling structure.
 - Use `weight` only for remaining main-axis space and `align` only for a direct-child override.
 - Use small `padding` for local insets. A value of 20 or more needs a concrete native-frame or fixed-geometry reason.
+- Use `fillMaxSize().scaleToFit(contentSize)` for a fixed design surface that should shrink uniformly with the viewport while retaining the user's GUI-scale accessibility setting.
 - Put images on `imageBackground` when they paint a container; use `Image` when the image is itself a logical child.
 - Put reusable actions on modifiers. `Button`, `Tab`, `Checkbox`, `CycleButton`, `Slider`, and list components keep application callbacks out of their component signatures.
 - Use `onActivate(enabled)` for an action shared by primary pointer and focused Enter or Space input; use `onPress` only when the action is pointer-specific.
