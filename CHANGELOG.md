@@ -2,6 +2,23 @@
 
 All notable changes to Strata are documented in this file.
 
+## 0.1.4 - 2026-09-06
+
+### Added
+
+- `Modifier.scaleToFit` measures a component subtree in one fixed design coordinate space and uniformly contains it in its resulting outer bounds, with configurable alignment and opt-in upscaling; pair it with an outer sizing modifier such as `fillMaxSize` to consume a loose viewport.
+- Generic child transforms now carry accumulated scale and translation through descendant layout bounds, portable painting, clipping, pointer input, focus visibility, semantics, and root-overlay anchors.
+
+### Fixed
+
+- Deferred Fabric GUI renderers now preserve committed Strata frame-layer order across portable, sampled-image, fallback, and platform layers, including fractional scale-to-fit edges whose visible overlap is not represented by transformed integer bounds.
+
+### Compatibility
+
+- The public API change is additive: existing modifiers remain available, while custom retained nodes may opt into the new child-transform SPI.
+- Opaque platform draw commands still require unit scale and exact integer translation; painting rejects unsupported transformed commands instead of rendering them incorrectly.
+- The supported Minecraft matrix remains 1.20 through 1.20.6, 1.21 through 1.21.11, 26.1, and 26.2; all Strata artifacts must use the same 0.1.4 version.
+
 ## 0.1.3 - 2026-09-01
 
 ### Added
