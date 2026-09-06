@@ -106,7 +106,7 @@ internal abstract class ModrinthReleaseTask : DefaultTask() {
         SUBMIT,
 
         /**
-         * Approved-project body transition after predecessor verification.
+         * Approved-project body transition after release publication or predecessor verification.
          */
         FINALIZE_PROJECT,
 
