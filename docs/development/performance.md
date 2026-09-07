@@ -20,7 +20,7 @@ The same distinction applies to the build: dependency and tool-derived intermedi
 ## Benchmark methodology
 
 Run the complete suite from the repository root with `./gradlew :quality:benchmarks:jmh`.
-The benchmark module uses JMH 1.37 in average-time mode with one worker thread, three one-second warmup iterations, five one-second measurement iterations, and one fork.
+The benchmark module uses the catalog-selected JMH dependency in average-time mode with one worker thread, three one-second warmup iterations, five one-second measurement iterations, and one fork.
 The built-in `gc` profiler records normalized allocation in bytes per operation alongside elapsed time in microseconds per operation.
 The three logical viewports are `Compact` at 320 by 180, `Windowed` at 854 by 480, and `FullHd` at 1920 by 1080.
 Every case uses the same public API-built scene containing a full-viewport background and 54 keyed paint-and-semantics leaves in a centered nine-column grid.
@@ -32,26 +32,6 @@ Every case uses the same public API-built scene containing a full-viewport backg
 
 JMH writes structured output to `quality/benchmarks/build/reports/jmh/results.json`.
 The report and every other file under `quality/benchmarks/build/` are temporary, untracked build outputs and must not be committed.
-
-## Baseline before fixes
-
-The baseline below was measured from commit `729da15` before the frame-reuse, bounded raster-texture cache, and player-skin lifecycle fixes.
-Values are the JMH average-time score and `gc.alloc.rate.norm`, rounded to three decimal places and the nearest byte respectively.
-
-| Benchmark | Viewport | Average time (µs/op) | Allocation (B/op) |
-| --- | --- | ---: | ---: |
-| Clean session frame | Compact | 7.795 | 20,056 |
-| Clean session frame | Windowed | 6.762 | 20,056 |
-| Clean session frame | FullHd | 7.487 | 20,056 |
-| Dirty session frame | Compact | 14.288 | 58,648 |
-| Dirty session frame | Windowed | 13.965 | 58,648 |
-| Dirty session frame | FullHd | 14.086 | 58,648 |
-| Headless rasterization | Compact | 514.090 | 230,796 |
-| Headless rasterization | Windowed | 3,244.911 | 1,643,615 |
-| Headless rasterization | FullHd | 17,392.278 | 8,298,495 |
-
-The equal clean-frame allocation across viewport sizes showed that retained node phase caches were working while complete frame and bridge snapshots were still recreated.
-The raster allocation scales primarily with the fresh physical pixel array required by the headless facade and is therefore expected to grow with viewport area.
 
 ## Why wall-clock time is not a hard CI gate
 
@@ -293,85 +273,9 @@ The asynchronous skin completion path must retain only its detached lifecycle ta
 Close must atomically reject late publication, drop a queued completion, clear a committed ready-image snapshot, clear its observer, and remain idempotent.
 Owner-thread draining must transfer an accepted completion at most once, and a closed lifecycle must never accept another snapshot commit.
 
-## Post-fix results
+## Interpreting measurements
 
-The first verified post-fix run was measured from commit `01d0705` after all three fixes and their deterministic tests landed together.
-The clean retained-frame path now rounds to zero bytes per operation at every viewport and takes 0.004 microseconds per operation, removing the former 20,056-byte snapshot allocation and reducing measured time by more than 99.9% on this host.
-Dirty-frame allocation is unchanged, and its measured time ranges from 1.3% faster to 0.1% slower than the baseline.
-Headless rasterization retains the expected viewport-sized pixel allocation and measured between 1.7% and 4.4% faster than the baseline.
-These comparisons confirm the intended clean-frame improvement without moving work into the dirty or raster paths; they remain diagnostic measurements subject to the environmental limits described above.
-
-| Benchmark | Viewport | Average time (µs/op) | Allocation (B/op) |
-| --- | --- | ---: | ---: |
-| Clean session frame | Compact | 0.004 | 0 |
-| Clean session frame | Windowed | 0.004 | 0 |
-| Clean session frame | FullHd | 0.004 | 0 |
-| Dirty session frame | Compact | 14.309 | 58,648 |
-| Dirty session frame | Windowed | 13.669 | 58,648 |
-| Dirty session frame | FullHd | 13.905 | 58,648 |
-| Headless rasterization | Compact | 505.134 | 230,796 |
-| Headless rasterization | Windowed | 3,208.000 | 1,643,616 |
-| Headless rasterization | FullHd | 16,631.944 | 8,298,491 |
-
-## Minecraft 1.21 family closure verification
-
-The suite was rerun after every release from Minecraft 1.21 through 1.21.11 passed its development and production-jar loaded-client gates.
-This run used the checked-in JMH configuration and OpenJDK 17.0.18 on the current Windows development host.
-The timing values must not be compared directly with the earlier tables because host load and power state were not controlled across runs; allocation and deterministic structural gates remain the comparable evidence.
-
-The ordinary clean path still rounds to zero bytes per operation and returns the retained snapshot in 0.004 microseconds.
-The time-aware clean path traverses the 54-leaf retained scene to deliver the host timestamp but does not remeasure, relayout, repaint, rebuild semantics, or replace the complete frame snapshot.
-It measured 1.207 to 1.210 microseconds and at most 0.035 normalized bytes per operation, which is profiler noise rather than one allocation per invocation.
-The fully dirty path remains independent of viewport size at approximately 59,024 bytes per operation; this is the expected detached command and semantics replacement for all 54 invalidated leaves rather than an accumulating cache.
-Headless allocation remains one fresh viewport-sized pixel image plus bounded command-processing overhead.
-
-| Benchmark | Viewport | Average time (µs/op) | Allocation (B/op) |
-| --- | --- | ---: | ---: |
-| Clean timed session frame | Compact | 1.207 | 0.034 |
-| Clean timed session frame | Windowed | 1.210 | 0.035 |
-| Clean timed session frame | FullHd | 1.209 | 0.035 |
-| Clean session frame | Compact | 0.004 | 0 |
-| Clean session frame | Windowed | 0.004 | 0 |
-| Clean session frame | FullHd | 0.004 | 0 |
-| Dirty session frame | Compact | 17.217 | 59,024 |
-| Dirty session frame | Windowed | 16.666 | 59,024 |
-| Dirty session frame | FullHd | 16.611 | 59,024 |
-| Headless rasterization | Compact | 503.499 | 230,796 |
-| Headless rasterization | Windowed | 3,299.307 | 1,643,617 |
-| Headless rasterization | FullHd | 16,282.742 | 8,298,489 |
-
-No unbounded temporary-data retention or repeated clean-frame rendering was observed by these measurements and structural gates.
-Every 1.21 loaded client additionally proves that detachment empties the Fabric presenter's dynamic-texture and prepared-layer collections and clears its prepared frame references.
-Session tests prove that close releases the content owner before lifecycle cleanup, clears cached immutable frames, clears bindings and retained-tree ownership, and disposes every claimed node exactly once.
-This statement is limited to the retained session, virtual-list current-range cache, Fabric prepared-layer and texture ownership, tooltip and loading-indicator time cells, and asynchronous player-skin lifecycle covered above; it is not a general heap-leak proof for downstream Mods.
-
-## Minecraft 1.20 family closure verification
-
-The suite was rerun from commit `820cc49` after Minecraft 1.20 through 1.20.6 passed their development, production-jar, and publication gates.
-It used the same checked-in configuration, current Windows development host, and OpenJDK 17.0.18 as the 1.21 family-close run.
-Host load and power state were still uncontrolled, so timing remains diagnostic while allocation and the deterministic gates are directly comparable.
-
-The ordinary clean path remains an immutable snapshot lookup at 0.005 to 0.006 microseconds and effectively zero normalized allocation.
-The time-aware clean path remains viewport-independent at 1.447 to 1.533 microseconds and at most 0.044 normalized bytes per operation, which is profiler noise rather than one allocation per invocation.
-The dirty path remains approximately 59,025 bytes per operation at every viewport, and headless allocation remains the required fresh pixel image plus bounded command-processing overhead.
-No allocation trend indicates retained historical frames, layers, textures, or visited virtual-list ranges.
-
-| Benchmark | Viewport | Average time (µs/op) | Allocation (B/op) |
-| --- | --- | ---: | ---: |
-| Clean timed session frame | Compact | 1.447 | 0.042 |
-| Clean timed session frame | Windowed | 1.533 | 0.044 |
-| Clean timed session frame | FullHd | 1.486 | 0.044 |
-| Clean session frame | Compact | 0.006 | ≈ 0 |
-| Clean session frame | Windowed | 0.005 | ≈ 0 |
-| Clean session frame | FullHd | 0.005 | ≈ 0 |
-| Dirty session frame | Compact | 17.731 | 59,025 |
-| Dirty session frame | Windowed | 17.450 | 59,024 |
-| Dirty session frame | FullHd | 17.893 | 59,025 |
-| Headless rasterization | Compact | 538.687 | 230,796 |
-| Headless rasterization | Windowed | 4,356.504 | 1,643,627 |
-| Headless rasterization | FullHd | 23,156.293 | 8,298,529 |
-
-Every 1.20 development and production-jar loaded client also requires that an unchanged portable display list performs no extra partition, rasterization, or texture upload and that detachment clears screen-owned texture generations, prepared commands, prepared viewport, prepared layers, pointer caches, inventory bindings, and common host ownership.
-Native texture storage and registered identifiers are checked after their actual completion fences allow device-owned retirement.
-The Minecraft 1.20 and 1.20.1 Authlib 4 boundaries each publish only a normalized detached skin snapshot into that bounded lifecycle and pass the same late-completion and terminal-release contract.
-Together with the unchanged session, virtual-list, tooltip, loading-indicator, and player-skin unit gates, the completed family shows no repeated clean rendering or unbounded temporary-data retention in the covered ownership domains.
+Record the measured revision, configuration, and environment with each temporary report.
+Compare wall-clock results only when host load and power conditions are controlled; normalized allocation and deterministic retention checks provide different evidence.
+Historical measurements in Git history do not establish performance on the current revision.
+Promote a verified architectural conclusion into this contract instead of accumulating host-specific result tables in it.

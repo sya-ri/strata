@@ -29,13 +29,13 @@ internal class ShowcaseStorageSynchronizerTest {
 
         ShowcaseSynchronizer.synchronize(launch, output)
         val afterSyncReadme = Files.readAllBytes(temporaryRoot.resolve("README.md"))
-        val afterSyncMarkdown = Files.readAllBytes(temporaryRoot.resolve("docs/components.md"))
+        val afterSyncMarkdown = Files.readAllBytes(temporaryRoot.resolve("docs/reference/components.md"))
         val afterSyncComponents = snapshot(temporaryRoot.resolve("docs/components"))
         ShowcaseStorage.checkSource(temporaryRoot, output)
 
         assertTrue(afterSyncReadme.contentEquals(beforeReadme).not())
         assertArrayEquals(afterSyncReadme, Files.readAllBytes(temporaryRoot.resolve("README.md")))
-        assertArrayEquals(afterSyncMarkdown, Files.readAllBytes(temporaryRoot.resolve("docs/components.md")))
+        assertArrayEquals(afterSyncMarkdown, Files.readAllBytes(temporaryRoot.resolve("docs/reference/components.md")))
         assertEqualsSnapshot(afterSyncComponents, snapshot(temporaryRoot.resolve("docs/components")))
     }
 
@@ -46,7 +46,7 @@ internal class ShowcaseStorageSynchronizerTest {
         writeReadme()
         ShowcaseStorage.writeStaging(output)
         ShowcaseSynchronizer.synchronize(launch, output)
-        Files.delete(temporaryRoot.resolve("docs/components.md"))
+        Files.delete(temporaryRoot.resolve("docs/reference/components.md"))
         Files.write(temporaryRoot.resolve("docs/components/overview.png"), byteArrayOf(9))
         Files.writeString(temporaryRoot.resolve("docs/components/unexpected.md"), "unexpected")
         Files.writeString(temporaryRoot.resolve("README.md"), "changed")
@@ -69,7 +69,7 @@ internal class ShowcaseStorageSynchronizerTest {
         writeReadme()
         ShowcaseStorage.writeStaging(output)
         ShowcaseSynchronizer.synchronize(launch, output)
-        val markdown = temporaryRoot.resolve("docs/components.md")
+        val markdown = temporaryRoot.resolve("docs/reference/components.md")
         Files.writeString(markdown, "stale")
         val before = Files.readAllBytes(markdown)
 
@@ -80,6 +80,57 @@ internal class ShowcaseStorageSynchronizerTest {
 
         assertTrue(failure.message.orEmpty().contains("components.md: different"))
         assertArrayEquals(before, Files.readAllBytes(markdown))
+    }
+
+    @Test
+    fun checkerReportsMissingAndChangedScreenExamplesWithoutWritingSource() {
+        val launch = launch()
+        val output = output(launch.stagingRoot)
+        writeReadme()
+        ShowcaseStorage.writeStaging(output)
+        ShowcaseSynchronizer.synchronize(launch, output)
+        val screens = temporaryRoot.resolve("docs/examples/screens.md")
+        assertArrayEquals(Files.readAllBytes(launch.stagingRoot.resolve("examples/screens.md")), Files.readAllBytes(screens))
+        Files.writeString(screens, "changed screen examples")
+        val changed = assertThrows(IllegalArgumentException::class.java) { ShowcaseStorage.checkSource(temporaryRoot, output) }
+        assertTrue(changed.message.orEmpty().contains("examples/screens.md: different"))
+        assertEquals("changed screen examples", Files.readString(screens))
+        Files.delete(screens)
+        val missing = assertThrows(IllegalArgumentException::class.java) { ShowcaseStorage.checkSource(temporaryRoot, output) }
+        assertTrue(missing.message.orEmpty().contains("examples/screens.md: missing or not regular"))
+        assertFalse(Files.exists(screens))
+    }
+
+    @Test
+    fun everyMoveRestoresBothExistingDocumentsBeforeAndAfterDelegateFailure() {
+        listOf(false, true).forEach { after ->
+            (1..8).forEach { occurrence ->
+                val root = temporaryRoot.resolve("both-documents-$after-$occurrence")
+                val launch = launch(root)
+                val output = output(launch.stagingRoot)
+                writeReadme(root = root)
+                Files.createDirectories(root.resolve("docs/components"))
+                Files.writeString(root.resolve("docs/components/old.png"), "old image")
+                Files.writeString(root.resolve("docs/reference/components.md"), "old catalog")
+                Files.writeString(root.resolve("docs/examples/screens.md"), "old screens")
+                ShowcaseStorage.writeStaging(output)
+                val beforeDocs = snapshot(root.resolve("docs"))
+                val beforeReadme = Files.readAllBytes(root.resolve("README.md"))
+                val primary = IllegalStateException("document-replacement")
+                val failure =
+                    assertThrows(Throwable::class.java) {
+                        ShowcaseSynchronizer.synchronize(
+                            launch,
+                            output,
+                            ScriptedFileSystem(FailurePoint(Operation.Move, occurrence, after) to primary),
+                        )
+                    }
+                assertSame(primary, failure)
+                assertEqualsSnapshot(beforeDocs, snapshot(root.resolve("docs")))
+                assertArrayEquals(beforeReadme, Files.readAllBytes(root.resolve("README.md")))
+                assertTransactionPathsAbsent(root)
+            }
+        }
     }
 
     @Test
@@ -123,7 +174,7 @@ internal class ShowcaseStorageSynchronizerTest {
         assertArrayEquals(malformed, Files.readAllBytes(temporaryRoot.resolve("README.md")))
         assertEqualsSnapshot(beforeStaging, snapshot(launch.stagingRoot))
         assertFalse(Files.exists(temporaryRoot.resolve("docs/components"), LinkOption.NOFOLLOW_LINKS))
-        assertFalse(Files.exists(temporaryRoot.resolve("docs/components.md"), LinkOption.NOFOLLOW_LINKS))
+        assertFalse(Files.exists(temporaryRoot.resolve("docs/reference/components.md"), LinkOption.NOFOLLOW_LINKS))
         assertTransactionPathsAbsent(temporaryRoot)
     }
 
@@ -148,7 +199,7 @@ internal class ShowcaseStorageSynchronizerTest {
             setOf("overview.png", "text.png", "headless-render.properties"),
             snapshot(target).keys,
         )
-        assertArrayEquals(Files.readAllBytes(launch.stagingRoot.resolve("components.md")), Files.readAllBytes(temporaryRoot.resolve("docs/components.md")))
+        assertArrayEquals(Files.readAllBytes(launch.stagingRoot.resolve("reference/components.md")), Files.readAllBytes(temporaryRoot.resolve("docs/reference/components.md")))
         assertEquals("independent-native-proof", Files.readString(evidence))
     }
 
@@ -163,11 +214,11 @@ internal class ShowcaseStorageSynchronizerTest {
 
         ShowcaseSynchronizer.synchronize(launch, output)
         val firstReadme = Files.readAllBytes(temporaryRoot.resolve("README.md"))
-        val firstMarkdown = Files.readAllBytes(temporaryRoot.resolve("docs/components.md"))
+        val firstMarkdown = Files.readAllBytes(temporaryRoot.resolve("docs/reference/components.md"))
         val firstComponents = snapshot(temporaryRoot.resolve("docs/components"))
         ShowcaseSynchronizer.synchronize(launch, output)
         val secondReadme = Files.readAllBytes(temporaryRoot.resolve("README.md"))
-        val secondMarkdown = Files.readAllBytes(temporaryRoot.resolve("docs/components.md"))
+        val secondMarkdown = Files.readAllBytes(temporaryRoot.resolve("docs/reference/components.md"))
         val secondComponents = snapshot(temporaryRoot.resolve("docs/components"))
 
         assertArrayEquals(firstReadme, secondReadme)
@@ -187,7 +238,7 @@ internal class ShowcaseStorageSynchronizerTest {
             val target = caseRoot.resolve("docs/components")
             Files.createDirectories(target)
             Files.writeString(target.resolve("old.md"), "old")
-            val markdown = caseRoot.resolve("docs/components.md")
+            val markdown = caseRoot.resolve("docs/reference/components.md")
             Files.writeString(markdown, "old markdown")
             ShowcaseStorage.writeStaging(output)
             val beforeReadme = Files.readAllBytes(caseRoot.resolve("README.md"))
@@ -222,7 +273,7 @@ internal class ShowcaseStorageSynchronizerTest {
             val target = caseRoot.resolve("docs/components")
             Files.createDirectories(target)
             Files.writeString(target.resolve("old.md"), "old")
-            val markdown = caseRoot.resolve("docs/components.md")
+            val markdown = caseRoot.resolve("docs/reference/components.md")
             Files.writeString(markdown, "old markdown")
             ShowcaseStorage.writeStaging(output)
             val beforeReadme = Files.readAllBytes(caseRoot.resolve("README.md"))
@@ -268,7 +319,7 @@ internal class ShowcaseStorageSynchronizerTest {
         assertSame(copyPrimary, copyThrown)
         assertTransactionPathsAbsent(copyRoot)
 
-        (1..2).forEach { writeIndex ->
+        (1..3).forEach { writeIndex ->
             val writeRoot = temporaryRoot.resolve("write-failure-$writeIndex")
             val writeLaunch = launch(writeRoot)
             val writeOutput = output(writeLaunch.stagingRoot)
@@ -296,7 +347,7 @@ internal class ShowcaseStorageSynchronizerTest {
         val target = temporaryRoot.resolve("docs/components")
         Files.createDirectories(target)
         Files.writeString(target.resolve("old.md"), "old")
-        Files.writeString(temporaryRoot.resolve("docs/components.md"), "old markdown")
+        Files.writeString(temporaryRoot.resolve("docs/reference/components.md"), "old markdown")
         ShowcaseStorage.writeStaging(output)
         val primary = IllegalStateException("replacement")
         val deleteFailure = IllegalArgumentException("target-delete")
@@ -329,7 +380,7 @@ internal class ShowcaseStorageSynchronizerTest {
         val target = temporaryRoot.resolve("docs/components")
         Files.createDirectories(target)
         Files.writeString(target.resolve("old.md"), "old")
-        Files.writeString(temporaryRoot.resolve("docs/components.md"), "old markdown")
+        Files.writeString(temporaryRoot.resolve("docs/reference/components.md"), "old markdown")
         ShowcaseStorage.writeStaging(output)
         val primary = IllegalStateException("replacement")
         val restoreFailure = IllegalArgumentException("readme-restore")
@@ -360,7 +411,7 @@ internal class ShowcaseStorageSynchronizerTest {
         val target = temporaryRoot.resolve("docs/components")
         Files.createDirectories(target)
         Files.writeString(target.resolve("old.md"), "old")
-        Files.writeString(temporaryRoot.resolve("docs/components.md"), "old markdown")
+        Files.writeString(temporaryRoot.resolve("docs/reference/components.md"), "old markdown")
         ShowcaseStorage.writeStaging(output)
         val primary = IllegalStateException("replacement")
         val deleteFailure = IllegalArgumentException("readme-delete")
@@ -394,7 +445,7 @@ internal class ShowcaseStorageSynchronizerTest {
         val target = temporaryRoot.resolve("docs/components")
         Files.createDirectories(target)
         Files.writeString(target.resolve("old.md"), "old")
-        Files.writeString(temporaryRoot.resolve("docs/components.md"), "old markdown")
+        Files.writeString(temporaryRoot.resolve("docs/reference/components.md"), "old markdown")
         ShowcaseStorage.writeStaging(output)
         val primary = IllegalStateException("replacement")
         val cleanupTreeFailure = IllegalArgumentException("next-tree-cleanup")
@@ -427,7 +478,7 @@ internal class ShowcaseStorageSynchronizerTest {
         val target = temporaryRoot.resolve("docs/components")
         Files.createDirectories(target)
         Files.writeString(target.resolve("old.md"), "old")
-        Files.writeString(temporaryRoot.resolve("docs/components.md"), "old markdown")
+        Files.writeString(temporaryRoot.resolve("docs/reference/components.md"), "old markdown")
         ShowcaseStorage.writeStaging(output)
         val cleanupTreeFailure = IllegalStateException("backup-tree-cleanup")
         val cleanupReadmeFailure = IllegalArgumentException("backup-readme-cleanup")
@@ -447,7 +498,7 @@ internal class ShowcaseStorageSynchronizerTest {
         assertSame(cleanupTreeFailure, thrown)
         assertEquals(listOf(cleanupReadmeFailure), thrown.suppressed.toList())
         assertTrue(Files.exists(target.resolve("text.png"), LinkOption.NOFOLLOW_LINKS))
-        assertTrue(Files.exists(temporaryRoot.resolve("docs/components.md"), LinkOption.NOFOLLOW_LINKS))
+        assertTrue(Files.exists(temporaryRoot.resolve("docs/reference/components.md"), LinkOption.NOFOLLOW_LINKS))
         assertTrue(Files.exists(temporaryRoot.resolve("docs/.strata-components-backup"), LinkOption.NOFOLLOW_LINKS))
         assertTrue(Files.exists(temporaryRoot.resolve(".strata-readme-backup"), LinkOption.NOFOLLOW_LINKS))
     }
@@ -501,7 +552,7 @@ internal class ShowcaseStorageSynchronizerTest {
         val target = root.resolve("docs/components")
         Files.createDirectories(target)
         Files.writeString(target.resolve("old.md"), "old")
-        Files.writeString(root.resolve("docs/components.md"), "old markdown")
+        Files.writeString(root.resolve("docs/reference/components.md"), "old markdown")
         ShowcaseStorage.writeStaging(output)
         return assertThrows(Throwable::class.java) {
             ShowcaseSynchronizer.synchronize(
@@ -522,7 +573,7 @@ internal class ShowcaseStorageSynchronizerTest {
         val output = output(launch.stagingRoot)
         writeReadme()
         Files.createDirectories(temporaryRoot.resolve("docs/components"))
-        Files.writeString(temporaryRoot.resolve("docs/components.md"), "old markdown")
+        Files.writeString(temporaryRoot.resolve("docs/reference/components.md"), "old markdown")
         ShowcaseStorage.writeStaging(output)
         val primary = IllegalStateException("replacement")
         val rollbackFailure = IllegalArgumentException("rollback")
@@ -565,6 +616,8 @@ internal class ShowcaseStorageSynchronizerTest {
         root: Path = temporaryRoot,
     ) {
         Files.createDirectories(root.resolve("docs"))
+        Files.createDirectories(root.resolve("docs/reference"))
+        Files.createDirectories(root.resolve("docs/examples"))
         Files.writeString(root.resolve("README.md"), value)
     }
 
@@ -590,8 +643,10 @@ internal class ShowcaseStorageSynchronizerTest {
         listOf(
             root.resolve("docs/.strata-components-next"),
             root.resolve("docs/.strata-components-backup"),
-            root.resolve("docs/.strata-components-markdown-next"),
-            root.resolve("docs/.strata-components-markdown-backup"),
+            root.resolve("docs/reference/.strata-components-markdown-next"),
+            root.resolve("docs/reference/.strata-components-markdown-backup"),
+            root.resolve("docs/examples/.strata-screens-markdown-next"),
+            root.resolve("docs/examples/.strata-screens-markdown-backup"),
             root.resolve(".strata-readme-next"),
             root.resolve(".strata-readme-backup"),
         ).forEach { path -> assertFalse(Files.exists(path, LinkOption.NOFOLLOW_LINKS)) }

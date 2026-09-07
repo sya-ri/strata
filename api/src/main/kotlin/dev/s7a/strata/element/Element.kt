@@ -8,7 +8,7 @@ import java.util.Collections
  *
  * The engine owns the description snapshot after construction.
  *
- * Element implementations keep local properties and provide their typed hooks through the stable [type] token.
+ * Element implementations keep local properties and provide their typed hooks through the stable [Element.type] token.
  *
  * @property identity positional or keyed identity under the parent.
  * @property type stable element-kind token.

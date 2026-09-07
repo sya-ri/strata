@@ -1,127 +1,92 @@
 <!-- Generated file. Do not edit. -->
 
-# Minecraft component showcase
+# Component catalog
 
-Each component image is the complete frame of the dedicated minimal `ScreenDefinition` shown in its compiled example, containing the featured primitive and only the parent layout needed to demonstrate its responsibility.
-The documentation task freshly renders these definitions with the headless runtime and explicit Minecraft asset files without starting Minecraft or creating a GPU context, and publishes the entire resulting frame without cropping a larger showcase screen.
-Separate native full-screen parity scenes for `ConfirmScreen`, `DirectJoinServerScreen`, `ContainerScreen`, Social Interactions, and `ObjectSelectionList`, plus complete test Mod screens, remain independent acceptance evidence for real assets, fonts, textures, placement, and draw order.
-Animated examples publish the canonical frame at time zero; their native capture must exactly match a complete supported animation phase, which need not be the stored phase.
-The synchronized inventory image is the explicit exception: generation verifies a previously captured native image against its image and current compiled-source hashes instead of emulating a loaded server.
-The menu and generic-container images are active background modifiers on layout components rather than logical component entries.
+Choose components by the responsibility they serve in your screen.
+Each entry shows a rendered example, practical composition guidance, and a link to the API reference for signatures and overloads.
+Use the [complete screen examples](../examples/screens.md) to see how these primitives work together.
 
-[Open the deterministic headless render receipt](components/headless-render.properties)
+## Choose a component
 
-[Open the independent native parity receipt](evidence/minecraft-26.2-parity.properties)
+### Layout
 
-![Overview headless showcase](components/overview.png)
+| Component | Choose it for | API |
+| --- | --- | --- |
+| [Row](#row) | Arrange siblings horizontally on one line. | [Reference](https://gh.s7a.dev/strata/api/dev.s7a.strata.component/-row.html) |
+| [FlowRow](#flow-row) | Wrap horizontal siblings when the available width changes. | [Reference](https://gh.s7a.dev/strata/api/dev.s7a.strata.component/-flow-row.html) |
+| [Column](#column) | Arrange siblings vertically. | [Reference](https://gh.s7a.dev/strata/api/dev.s7a.strata.component/-column.html) |
+| [Stack](#stack) | Overlap children intentionally within one rectangle. | [Reference](https://gh.s7a.dev/strata/api/dev.s7a.strata.component/-stack.html) |
+| [Grid](#grid) | Align repeated content in a fixed number of columns. | [Reference](https://gh.s7a.dev/strata/api/dev.s7a.strata.component/-grid.html) |
+| [Spacer](#spacer) | Reserve an intentional gap or flexible space in a layout. | [Reference](https://gh.s7a.dev/strata/api/dev.s7a.strata.component/-spacer.html) |
 
-## Overview source
+### Text and editing
 
-```kotlin
-import dev.s7a.strata.component.Button
-import dev.s7a.strata.component.Column
-import dev.s7a.strata.component.Row
-import dev.s7a.strata.component.Stack
-import dev.s7a.strata.component.Text
-import dev.s7a.strata.layout.Alignment
-import dev.s7a.strata.layout.HorizontalAlignment
-import dev.s7a.strata.modifier.Modifier
-import dev.s7a.strata.modifier.menuBackground
-import dev.s7a.strata.modifier.onActivate
-import dev.s7a.strata.modifier.size
-import dev.s7a.strata.screen.ScreenDefinition
+| Component | Choose it for | API |
+| --- | --- | --- |
+| [Text](#text) | Display labels, messages, or wrapped read-only text. | [Reference](https://gh.s7a.dev/strata/api/dev.s7a.strata.component/-text.html) |
+| [TextField](#text-field) | Edit a single line of caller-owned text. | [Reference](https://gh.s7a.dev/strata/api/dev.s7a.strata.component/-text-field.html) |
+| [TextArea](#text-area) | Edit multiline text inside a scrollable viewport. | [Reference](https://gh.s7a.dev/strata/api/dev.s7a.strata.component/-text-area.html) |
 
-/**
- * Builds the deterministic Minecraft ConfirmScreen content used by the Fabric and headless parity paths.
- *
- * @return one-shot screen definition reproducing the native title, message, and button-row geometry.
- */
-internal fun createConfirmScreenDefinition(): ScreenDefinition =
-    ScreenDefinition("Strata parity") {
-        Stack(
-            modifier = Modifier.Empty.size(320, 180).menuBackground(),
-            contentAlignment = Alignment.Center,
-        ) {
-            Column(
-                spacing = 24,
-                horizontalAlignment = HorizontalAlignment.Center,
-            ) {
-                Column(
-                    spacing = 8,
-                    horizontalAlignment = HorizontalAlignment.Center,
-                ) {
-                    Text("Confirm action")
-                    Text("Continue with this action?")
-                }
-                Row(spacing = 4) {
-                    Button(
-                        "Yes",
-                        modifier = Modifier.Empty.onActivate {},
-                    )
-                    Button(
-                        "No",
-                        modifier = Modifier.Empty.onActivate {},
-                    )
-                }
-            }
-        }
-    }
-```
+### Actions and choices
 
-<details><summary>Overview component tree</summary>
+| Component | Choose it for | API |
+| --- | --- | --- |
+| [Button](#button) | Present an action with activation supplied by modifiers. | [Reference](https://gh.s7a.dev/strata/api/dev.s7a.strata.component/-button.html) |
+| [Checkbox](#checkbox) | Let the user toggle a boolean value. | [Reference](https://gh.s7a.dev/strata/api/dev.s7a.strata.component/-checkbox.html) |
+| [CycleButton](#cycle-button) | Cycle through a finite set of choices. | [Reference](https://gh.s7a.dev/strata/api/dev.s7a.strata.component/-cycle-button.html) |
+| [Slider](#slider) | Adjust a value within a bounded numeric range. | [Reference](https://gh.s7a.dev/strata/api/dev.s7a.strata.component/-slider.html) |
+| [Tab](#tab) | Present an externally selected navigation option. | [Reference](https://gh.s7a.dev/strata/api/dev.s7a.strata.component/-tab.html) |
 
-The tree shows Minecraft components in logical draw order; platform-neutral layout scaffolding remains visible in the compiled source.
+### Scrolling and lists
 
-```text
-`- Stack [Size(width=320, height=180)]
-  `- Column [Spacing(value=24)]
-    |- Column [Spacing(value=8)]
-    | |- Text
-    | `- Text
-    `- Row [Spacing(value=4)]
-      |- Button
-      `- Button
-```
+| Component | Choose it for | API |
+| --- | --- | --- |
+| [ScrollArea](#scroll-area) | Scroll content that extends beyond its viewport. | [Reference](https://gh.s7a.dev/strata/api/dev.s7a.strata.component/-scroll-area.html) |
+| [Scrollbar](#scrollbar) | Show and control the position of a shared scroll state. | [Reference](https://gh.s7a.dev/strata/api/dev.s7a.strata.component/-scrollbar.html) |
+| [VirtualList](#virtual-list) | Build only the visible rows of a large or loadable list. | [Reference](https://gh.s7a.dev/strata/api/dev.s7a.strata.component/-virtual-list.html) |
+| [SelectionList](#selection-list) | Select entries in a virtualized list. | [Reference](https://gh.s7a.dev/strata/api/dev.s7a.strata.component/-selection-list.html) |
 
-</details>
+### Images and external rendering
 
-## Components
+| Component | Choose it for | API |
+| --- | --- | --- |
+| [Image](#image) | Display an immutable image or a region of that image. | [Reference](https://gh.s7a.dev/strata/api/dev.s7a.strata.component/-image.html) |
+| [Canvas](#canvas) | Present frames from an external renderer or image producer. | [Reference](https://gh.s7a.dev/strata/api/dev.s7a.strata.component/-canvas.html) |
+| [TiledImage](#tiled-image) | Navigate large maps or images supplied as independent tiles. | [Reference](https://gh.s7a.dev/strata/api/dev.s7a.strata.component/-tiled-image.html) |
+| [PlayerHead](#player-head) | Display a player's skin face and hat layers. | [Reference](https://gh.s7a.dev/strata/api/dev.s7a.strata.component/-player-head.html) |
 
-- [Row](#row)
-- [FlowRow](#flow-row)
-- [Column](#column)
-- [Stack](#stack)
-- [Grid](#grid)
-- [Spacer](#spacer)
-- [Text](#text)
-- [TextField](#text-field)
-- [TextArea](#text-area)
-- [Button](#button)
-- [Checkbox](#checkbox)
-- [CycleButton](#cycle-button)
-- [Slider](#slider)
-- [Tab](#tab)
-- [ScrollArea](#scroll-area)
-- [Scrollbar](#scrollbar)
-- [VirtualList](#virtual-list)
-- [SelectionList](#selection-list)
-- [Image](#image)
-- [Canvas](#canvas)
-- [TiledImage](#tiled-image)
-- [Slot](#slot)
-- [PlayerHead](#player-head)
-- [LoadingIndicator](#loading-indicator)
-- [ProgressBar](#progress-bar)
+### Inventory
+
+| Component | Choose it for | API |
+| --- | --- | --- |
+| [Slot](#slot) | Show an inventory slot bound to a typed slot source. | [Reference](https://gh.s7a.dev/strata/api/dev.s7a.strata.component/-slot.html) |
+
+### Progress feedback
+
+| Component | Choose it for | API |
+| --- | --- | --- |
+| [LoadingIndicator](#loading-indicator) | Show that work is in progress when no completion value is available. | [Reference](https://gh.s7a.dev/strata/api/dev.s7a.strata.component/-loading-indicator.html) |
+| [ProgressBar](#progress-bar) | Show progress toward a known completion value. | [Reference](https://gh.s7a.dev/strata/api/dev.s7a.strata.component/-progress-bar.html) |
+
+## Rendered examples
+
+Images come from the compiled examples included with Strata.
+Expand an entry for its source, modifier and parent-scope guidance, or component tree.
+Menu and container backgrounds are modifiers on layout components.
 
 <a id="row"></a>
 
 ## Row
 
+Arrange siblings horizontally on one line.
+
+![Row headless showcase](../components/row.png)
+
+[API reference](https://gh.s7a.dev/strata/api/dev.s7a.strata.component/-row.html)
+
+<details><summary>Usage and compiled example</summary>
+
 Row places an ordered sibling sequence on one horizontal main axis, with typed arrangement, spacing, default vertical alignment, and direct-child overrides.
-
-This 136 by 64 PNG is the complete frame of the compiled dedicated `ScreenDefinition`, with a 136 by 64 logical viewport at GUI scale 1. Headless rendering samples the assets at this physical density; the image is not upscaled from a lower-resolution raster or cropped from a larger screen. Its source, asset, viewport, and image hashes are recorded in [the headless render receipt](components/headless-render.properties).
-
-![Row headless showcase](components/row.png)
 
 ### Compiled example
 
@@ -166,6 +131,8 @@ Sizing, padding, paint, semantics, focus, and input modifiers apply to the Row i
 
 `Row` evaluates a callback-lifetime `RowScope`, emits children in declaration order, and exposes only vertical alignment and weight parent data to its direct children.
 
+</details>
+
 <details><summary>Component tree</summary>
 
 The tree mirrors the complete dedicated definition, including the featured component, its minimum parent layout, and the children used to demonstrate its responsibility.
@@ -178,15 +145,25 @@ The tree mirrors the complete dedicated definition, including the featured compo
 
 </details>
 
+<details><summary>Image verification</summary>
+
+This 136 by 64 PNG is the complete frame of the compiled dedicated `ScreenDefinition`, with a 136 by 64 logical viewport at GUI scale 1. Headless rendering samples the assets at this physical density; the image is not upscaled from a lower-resolution raster or cropped from a larger screen. Its source, asset, viewport, and image hashes are recorded in [the headless render receipt](../components/headless-render.properties).
+
+</details>
+
 <a id="flow-row"></a>
 
 ## FlowRow
 
+Wrap horizontal siblings when the available width changes.
+
+![FlowRow headless showcase](../components/flow-row.png)
+
+[API reference](https://gh.s7a.dev/strata/api/dev.s7a.strata.component/-flow-row.html)
+
+<details><summary>Usage and compiled example</summary>
+
 FlowRow wraps an ordered sibling sequence at the available width, measures each child against the full parent maximums, and arranges each row independently. It serves action-button groups and option groups without encoding either domain.
-
-This 168 by 60 PNG is the complete frame of the compiled dedicated `ScreenDefinition`, with a 168 by 60 logical viewport at GUI scale 1. Headless rendering samples the assets at this physical density; the image is not upscaled from a lower-resolution raster or cropped from a larger screen. Its source, asset, viewport, and image hashes are recorded in [the headless render receipt](components/headless-render.properties).
-
-![FlowRow headless showcase](components/flow-row.png)
 
 ### Compiled example
 
@@ -236,6 +213,8 @@ Sizing, padding, paint, semantics, focus, and input modifiers apply to the FlowR
 
 `FlowRow` evaluates a callback-lifetime `FlowRowScope` and exposes only vertical alignment parent data. Wrapping preserves its direct children's retained identity and focus without synthetic Row parents. It has no weight, row-count limit, implicit clipping, or truncation; with unbounded width it produces one row.
 
+</details>
+
 <details><summary>Component tree</summary>
 
 The tree mirrors the complete dedicated definition, including the featured component, its minimum parent layout, and the children used to demonstrate its responsibility.
@@ -250,15 +229,25 @@ The tree mirrors the complete dedicated definition, including the featured compo
 
 </details>
 
+<details><summary>Image verification</summary>
+
+This 168 by 60 PNG is the complete frame of the compiled dedicated `ScreenDefinition`, with a 168 by 60 logical viewport at GUI scale 1. Headless rendering samples the assets at this physical density; the image is not upscaled from a lower-resolution raster or cropped from a larger screen. Its source, asset, viewport, and image hashes are recorded in [the headless render receipt](../components/headless-render.properties).
+
+</details>
+
 <a id="column"></a>
 
 ## Column
 
+Arrange siblings vertically.
+
+![Column headless showcase](../components/column.png)
+
+[API reference](https://gh.s7a.dev/strata/api/dev.s7a.strata.component/-column.html)
+
+<details><summary>Usage and compiled example</summary>
+
 Column places an ordered sibling sequence on one vertical main axis, with typed arrangement, spacing, default horizontal alignment, and direct-child overrides.
-
-This 120 by 64 PNG is the complete frame of the compiled dedicated `ScreenDefinition`, with a 120 by 64 logical viewport at GUI scale 1. Headless rendering samples the assets at this physical density; the image is not upscaled from a lower-resolution raster or cropped from a larger screen. Its source, asset, viewport, and image hashes are recorded in [the headless render receipt](components/headless-render.properties).
-
-![Column headless showcase](components/column.png)
 
 ### Compiled example
 
@@ -303,6 +292,8 @@ Sizing, padding, paint, semantics, focus, and input modifiers apply to the Colum
 
 `Column` evaluates a callback-lifetime `ColumnScope`, emits children in declaration order, and exposes only horizontal alignment and weight parent data to its direct children.
 
+</details>
+
 <details><summary>Component tree</summary>
 
 The tree mirrors the complete dedicated definition, including the featured component, its minimum parent layout, and the children used to demonstrate its responsibility.
@@ -315,15 +306,25 @@ The tree mirrors the complete dedicated definition, including the featured compo
 
 </details>
 
+<details><summary>Image verification</summary>
+
+This 120 by 64 PNG is the complete frame of the compiled dedicated `ScreenDefinition`, with a 120 by 64 logical viewport at GUI scale 1. Headless rendering samples the assets at this physical density; the image is not upscaled from a lower-resolution raster or cropped from a larger screen. Its source, asset, viewport, and image hashes are recorded in [the headless render receipt](../components/headless-render.properties).
+
+</details>
+
 <a id="stack"></a>
 
 ## Stack
 
+Overlap children intentionally within one rectangle.
+
+![Stack headless showcase](../components/stack.png)
+
+[API reference](https://gh.s7a.dev/strata/api/dev.s7a.strata.component/-stack.html)
+
+<details><summary>Usage and compiled example</summary>
+
 Stack is the explicit overlay primitive: children share one content rectangle, receive two-axis alignment, and paint in declaration order. It is not a generic div-like container.
-
-This 64 by 64 PNG is the complete frame of the compiled dedicated `ScreenDefinition`, with a 64 by 64 logical viewport at GUI scale 1. Headless rendering samples the assets at this physical density; the image is not upscaled from a lower-resolution raster or cropped from a larger screen. Its source, asset, viewport, and image hashes are recorded in [the headless render receipt](components/headless-render.properties).
-
-![Stack headless showcase](components/stack.png)
 
 ### Compiled example
 
@@ -372,6 +373,8 @@ Use Stack only when children intentionally overlap. Ordinary sizing and backgrou
 
 `Stack` evaluates a callback-lifetime `StackScope`; it measures and paints overlapping direct children in declaration order and exposes two-axis alignment parent data.
 
+</details>
+
 <details><summary>Component tree</summary>
 
 The tree mirrors the complete dedicated definition, including the featured component, its minimum parent layout, and the children used to demonstrate its responsibility.
@@ -384,15 +387,25 @@ The tree mirrors the complete dedicated definition, including the featured compo
 
 </details>
 
+<details><summary>Image verification</summary>
+
+This 64 by 64 PNG is the complete frame of the compiled dedicated `ScreenDefinition`, with a 64 by 64 logical viewport at GUI scale 1. Headless rendering samples the assets at this physical density; the image is not upscaled from a lower-resolution raster or cropped from a larger screen. Its source, asset, viewport, and image hashes are recorded in [the headless render receipt](../components/headless-render.properties).
+
+</details>
+
 <a id="grid"></a>
 
 ## Grid
 
+Align repeated content in a fixed number of columns.
+
+![Grid headless showcase](../components/grid.png)
+
+[API reference](https://gh.s7a.dev/strata/api/dev.s7a.strata.component/-grid.html)
+
+<details><summary>Usage and compiled example</summary>
+
 Grid assigns children row-major to a fixed column count, measures each column and row from its largest member, and supports an incomplete final row without placeholders.
-
-This 64 by 64 PNG is the complete frame of the compiled dedicated `ScreenDefinition`, with a 64 by 64 logical viewport at GUI scale 1. Headless rendering samples the assets at this physical density; the image is not upscaled from a lower-resolution raster or cropped from a larger screen. Its source, asset, viewport, and image hashes are recorded in [the headless render receipt](components/headless-render.properties).
-
-![Grid headless showcase](components/grid.png)
 
 ### Compiled example
 
@@ -436,6 +449,8 @@ Sizing, padding, and paint modifiers apply to the Grid. Fixed columns, independe
 
 `Grid` evaluates a callback-lifetime `GridScope`; it assigns direct children row-major and exposes two-axis alignment only inside each measured cell.
 
+</details>
+
 <details><summary>Component tree</summary>
 
 The tree mirrors the complete dedicated definition, including the featured component, its minimum parent layout, and the children used to demonstrate its responsibility.
@@ -455,15 +470,25 @@ The tree mirrors the complete dedicated definition, including the featured compo
 
 </details>
 
+<details><summary>Image verification</summary>
+
+This 64 by 64 PNG is the complete frame of the compiled dedicated `ScreenDefinition`, with a 64 by 64 logical viewport at GUI scale 1. Headless rendering samples the assets at this physical density; the image is not upscaled from a lower-resolution raster or cropped from a larger screen. Its source, asset, viewport, and image hashes are recorded in [the headless render receipt](../components/headless-render.properties).
+
+</details>
+
 <a id="spacer"></a>
 
 ## Spacer
 
+Reserve an intentional gap or flexible space in a layout.
+
+![Spacer headless showcase](../components/spacer.png)
+
+[API reference](https://gh.s7a.dev/strata/api/dev.s7a.strata.component/-spacer.html)
+
+<details><summary>Usage and compiled example</summary>
+
 Spacer is an empty measurable primitive for genuine visual separators, connectors, and weighted empty regions; it carries no screen-specific meaning.
-
-This 160 by 64 PNG is the complete frame of the compiled dedicated `ScreenDefinition`, with a 160 by 64 logical viewport at GUI scale 1. Headless rendering samples the assets at this physical density; the image is not upscaled from a lower-resolution raster or cropped from a larger screen. Its source, asset, viewport, and image hashes are recorded in [the headless render receipt](components/headless-render.properties).
-
-![Spacer headless showcase](components/spacer.png)
 
 ### Compiled example
 
@@ -509,6 +534,8 @@ Sizing, weight, and paint modifiers give Spacer a deliberate empty footprint, su
 
 `Spacer` has no content scope or children. Its size and modifier chain alone define its retained layout and paint behavior.
 
+</details>
+
 <details><summary>Component tree</summary>
 
 The tree mirrors the complete dedicated definition, including the featured component, its minimum parent layout, and the children used to demonstrate its responsibility.
@@ -522,15 +549,25 @@ The tree mirrors the complete dedicated definition, including the featured compo
 
 </details>
 
+<details><summary>Image verification</summary>
+
+This 160 by 64 PNG is the complete frame of the compiled dedicated `ScreenDefinition`, with a 160 by 64 logical viewport at GUI scale 1. Headless rendering samples the assets at this physical density; the image is not upscaled from a lower-resolution raster or cropped from a larger screen. Its source, asset, viewport, and image hashes are recorded in [the headless render receipt](../components/headless-render.properties).
+
+</details>
+
 <a id="text"></a>
 
 ## Text
 
+Display labels, messages, or wrapped read-only text.
+
+![Text headless showcase](../components/text.png)
+
+[API reference](https://gh.s7a.dev/strata/api/dev.s7a.strata.component/-text.html)
+
+<details><summary>Usage and compiled example</summary>
+
 Text renders Unicode literals and composed text using the active profile's font resources, glyph advances, shadow layer, foreground layer, and baseline. Explicit `TextLayout.Multiline` adds hard line breaks, wrapping, line limits, and clip or ellipsis overflow; the existing overload remains single-line. Glyph availability follows the selected resource pack.
-
-This 384 by 176 PNG is the complete frame of the compiled dedicated `ScreenDefinition`, with a 192 by 88 logical viewport at GUI scale 2. Headless rendering samples the assets at this physical density; the image is not upscaled from a lower-resolution raster or cropped from a larger screen. Its source, asset, viewport, and image hashes are recorded in [the headless render receipt](components/headless-render.properties).
-
-![Text headless showcase](components/text.png)
 
 ### Compiled example
 
@@ -583,6 +620,8 @@ Ordinary sizing, padding, placement, and paint modifiers compose around `Text`; 
 
 `Text` is a top-level extension on the active `UiScope`. The screen runtime installs its selected Minecraft profile only for the definition callback, and the component has no content callback or parent-data API. Unicode and custom fonts require a font-resource profile; the older printable-ASCII glyph builder remains a compatibility path.
 
+</details>
+
 <details><summary>Component tree</summary>
 
 The tree mirrors the complete dedicated definition, including the featured component, its minimum parent layout, and the children used to demonstrate its responsibility.
@@ -594,15 +633,25 @@ The tree mirrors the complete dedicated definition, including the featured compo
 
 </details>
 
+<details><summary>Image verification</summary>
+
+This 384 by 176 PNG is the complete frame of the compiled dedicated `ScreenDefinition`, with a 192 by 88 logical viewport at GUI scale 2. Headless rendering samples the assets at this physical density; the image is not upscaled from a lower-resolution raster or cropped from a larger screen. Its source, asset, viewport, and image hashes are recorded in [the headless render receipt](../components/headless-render.properties).
+
+</details>
+
 <a id="text-field"></a>
 
 ## TextField
 
+Edit a single line of caller-owned text.
+
+![TextField headless showcase](../components/text-field.png)
+
+[API reference](https://gh.s7a.dev/strata/api/dev.s7a.strata.component/-text-field.html)
+
+<details><summary>Usage and compiled example</summary>
+
 TextField reproduces the 200 by 20 Minecraft EditBox sprites, text origin, glyph colors, owner-thread value state, and focus, with Unicode scalar editing and inline IME composition.
-
-This 432 by 128 PNG is the complete frame of the compiled dedicated `ScreenDefinition`, with a 216 by 64 logical viewport at GUI scale 2. Headless rendering samples the assets at this physical density; the image is not upscaled from a lower-resolution raster or cropped from a larger screen. Its source, asset, viewport, and image hashes are recorded in [the headless render receipt](components/headless-render.properties).
-
-![TextField headless showcase](components/text-field.png)
 
 ### Compiled example
 
@@ -650,6 +699,8 @@ Pointer, keyboard, committed-character, preedit, and focus modifiers run as acti
 
 `TextField` is a top-level extension on the active `UiScope`. Caller-owned `TextFieldState` owns the value and its positive UTF-16 maximum length. Movement and deletion operate on Unicode scalars, not whole grapheme clusters; preedit text remains separate until committed input arrives. The inline composition display does not reproduce Minecraft's native IME popup or platform candidate window.
 
+</details>
+
 <details><summary>Component tree</summary>
 
 The tree mirrors the complete dedicated definition, including the featured component, its minimum parent layout, and the children used to demonstrate its responsibility.
@@ -661,15 +712,25 @@ The tree mirrors the complete dedicated definition, including the featured compo
 
 </details>
 
+<details><summary>Image verification</summary>
+
+This 432 by 128 PNG is the complete frame of the compiled dedicated `ScreenDefinition`, with a 216 by 64 logical viewport at GUI scale 2. Headless rendering samples the assets at this physical density; the image is not upscaled from a lower-resolution raster or cropped from a larger screen. Its source, asset, viewport, and image hashes are recorded in [the headless render receipt](../components/headless-render.properties).
+
+</details>
+
 <a id="text-area"></a>
 
 ## TextArea
 
+Edit multiline text inside a scrollable viewport.
+
+![TextArea headless showcase](../components/text-area.png)
+
+[API reference](https://gh.s7a.dev/strata/api/dev.s7a.strata.component/-text-area.html)
+
+<details><summary>Usage and compiled example</summary>
+
 TextArea edits one multiline value inside an explicit viewport with Unicode scalar navigation, inline IME composition, and independent vertical scrolling. It serves both note editing and message drafts without encoding an application model.
-
-This 452 by 160 PNG is the complete frame of the compiled dedicated `ScreenDefinition`, with a 226 by 80 logical viewport at GUI scale 2. Headless rendering samples the assets at this physical density; the image is not upscaled from a lower-resolution raster or cropped from a larger screen. Its source, asset, viewport, and image hashes are recorded in [the headless render receipt](components/headless-render.properties).
-
-![TextArea headless showcase](components/text-area.png)
 
 ### Compiled example
 
@@ -731,6 +792,8 @@ Place `TextArea` with ordinary layout modifiers and select its outer extent thro
 
 `TextArea` is a leaf extension on the active `UiScope`; one retained editor observes its owner-thread `TextAreaState`. Creating an immutable description does not attach the state, and descriptions can be reused after detachment. Simultaneous attachment with the same caller-owned state throws `IllegalStateException`. The state stores canonical LF newlines and enforces a positive UTF-16 maximum length. Soft wrapping never edits the stored value, and IME preedit remains separate until committed. `SemanticsRole.TextArea` exposes the committed text through `Semantics.value`, without typed accessibility edit actions. Selection, clipboard commands, grapheme-cluster editing, and the platform IME candidate window are outside this component's contract.
 
+</details>
+
 <details><summary>Component tree</summary>
 
 The tree mirrors the complete dedicated definition, including the featured component, its minimum parent layout, and the children used to demonstrate its responsibility.
@@ -743,15 +806,25 @@ The tree mirrors the complete dedicated definition, including the featured compo
 
 </details>
 
+<details><summary>Image verification</summary>
+
+This 452 by 160 PNG is the complete frame of the compiled dedicated `ScreenDefinition`, with a 226 by 80 logical viewport at GUI scale 2. Headless rendering samples the assets at this physical density; the image is not upscaled from a lower-resolution raster or cropped from a larger screen. Its source, asset, viewport, and image hashes are recorded in [the headless render receipt](../components/headless-render.properties).
+
+</details>
+
 <a id="button"></a>
 
 ## Button
 
+Present an action with activation supplied by modifiers.
+
+![Button headless showcase](../components/button.png)
+
+[API reference](https://gh.s7a.dev/strata/api/dev.s7a.strata.component/-button.html)
+
+<details><summary>Usage and compiled example</summary>
+
 Button renders verified fixed-height Minecraft sprite, label, and enabled semantic states, including the native 150- and 200-pixel widths. It owns no implicit focus or activation, while reusable input actions live in modifiers.
-
-This 166 by 64 PNG is the complete frame of the compiled dedicated `ScreenDefinition`, with a 166 by 64 logical viewport at GUI scale 1. Headless rendering samples the assets at this physical density; the image is not upscaled from a lower-resolution raster or cropped from a larger screen. Its source, asset, viewport, and image hashes are recorded in [the headless render receipt](components/headless-render.properties).
-
-![Button headless showcase](components/button.png)
 
 ### Compiled example
 
@@ -802,6 +875,8 @@ Compose `onActivate` with the component's enabled state when a primary pointer p
 
 `Button` is a top-level extension on the active `UiScope`. The screen runtime installs its selected Minecraft profile only for the definition callback, while caller-owned activation and pointer modifiers remain valid only through their retained modifier-node lifetime.
 
+</details>
+
 <details><summary>Component tree</summary>
 
 The tree mirrors the complete dedicated definition, including the featured component, its minimum parent layout, and the children used to demonstrate its responsibility.
@@ -813,15 +888,25 @@ The tree mirrors the complete dedicated definition, including the featured compo
 
 </details>
 
+<details><summary>Image verification</summary>
+
+This 166 by 64 PNG is the complete frame of the compiled dedicated `ScreenDefinition`, with a 166 by 64 logical viewport at GUI scale 1. Headless rendering samples the assets at this physical density; the image is not upscaled from a lower-resolution raster or cropped from a larger screen. Its source, asset, viewport, and image hashes are recorded in [the headless render receipt](../components/headless-render.properties).
+
+</details>
+
 <a id="checkbox"></a>
 
 ## Checkbox
 
+Let the user toggle a boolean value.
+
+![Checkbox headless showcase](../components/checkbox.png)
+
+[API reference](https://gh.s7a.dev/strata/api/dev.s7a.strata.component/-checkbox.html)
+
+<details><summary>Usage and compiled example</summary>
+
 Checkbox reproduces the verified 20-pixel Minecraft checkbox surface, label spacing, focused input, checked semantics, and caller-owned boolean state.
-
-This 166 by 36 PNG is the complete frame of the compiled dedicated `ScreenDefinition`, with a 166 by 36 logical viewport at GUI scale 1. Headless rendering samples the assets at this physical density; the image is not upscaled from a lower-resolution raster or cropped from a larger screen. Its source, asset, viewport, and image hashes are recorded in [the headless render receipt](components/headless-render.properties).
-
-![Checkbox headless showcase](components/checkbox.png)
 
 ### Compiled example
 
@@ -858,6 +943,8 @@ Sizing and placement modifiers compose around `Checkbox`; caller-owned state and
 
 `Checkbox` is a leaf extension on the active `UiScope`; `CheckboxState` is caller-owned, owner-thread confined, and may be shared with application state adapters.
 
+</details>
+
 <details><summary>Component tree</summary>
 
 The tree mirrors the complete dedicated definition, including the featured component, its minimum parent layout, and the children used to demonstrate its responsibility.
@@ -869,15 +956,25 @@ The tree mirrors the complete dedicated definition, including the featured compo
 
 </details>
 
+<details><summary>Image verification</summary>
+
+This 166 by 36 PNG is the complete frame of the compiled dedicated `ScreenDefinition`, with a 166 by 36 logical viewport at GUI scale 1. Headless rendering samples the assets at this physical density; the image is not upscaled from a lower-resolution raster or cropped from a larger screen. Its source, asset, viewport, and image hashes are recorded in [the headless render receipt](../components/headless-render.properties).
+
+</details>
+
 <a id="cycle-button"></a>
 
 ## CycleButton
 
+Cycle through a finite set of choices.
+
+![CycleButton headless showcase](../components/cycle-button.png)
+
+[API reference](https://gh.s7a.dev/strata/api/dev.s7a.strata.component/-cycle-button.html)
+
+<details><summary>Usage and compiled example</summary>
+
 CycleButton reuses the verified button surface for a finite generic option sequence with forward, backward, wheel, and keyboard navigation.
-
-This 166 by 36 PNG is the complete frame of the compiled dedicated `ScreenDefinition`, with a 166 by 36 logical viewport at GUI scale 1. Headless rendering samples the assets at this physical density; the image is not upscaled from a lower-resolution raster or cropped from a larger screen. Its source, asset, viewport, and image hashes are recorded in [the headless render receipt](components/headless-render.properties).
-
-![CycleButton headless showcase](components/cycle-button.png)
 
 ### Compiled example
 
@@ -924,6 +1021,8 @@ Sizing and placement modifiers compose around `CycleButton`; its immutable optio
 
 `CycleButton` is a leaf extension on the active `UiScope`; it snapshots labels for the validated finite option set and retains no child scope.
 
+</details>
+
 <details><summary>Component tree</summary>
 
 The tree mirrors the complete dedicated definition, including the featured component, its minimum parent layout, and the children used to demonstrate its responsibility.
@@ -935,15 +1034,25 @@ The tree mirrors the complete dedicated definition, including the featured compo
 
 </details>
 
+<details><summary>Image verification</summary>
+
+This 166 by 36 PNG is the complete frame of the compiled dedicated `ScreenDefinition`, with a 166 by 36 logical viewport at GUI scale 1. Headless rendering samples the assets at this physical density; the image is not upscaled from a lower-resolution raster or cropped from a larger screen. Its source, asset, viewport, and image hashes are recorded in [the headless render receipt](../components/headless-render.properties).
+
+</details>
+
 <a id="slider"></a>
 
 ## Slider
 
+Adjust a value within a bounded numeric range.
+
+![Slider headless showcase](../components/slider.png)
+
+[API reference](https://gh.s7a.dev/strata/api/dev.s7a.strata.component/-slider.html)
+
+<details><summary>Usage and compiled example</summary>
+
 Slider reproduces Minecraft's profile-backed track and handle while normalizing finite numeric ranges and optional discrete steps in caller-owned state.
-
-This 166 by 36 PNG is the complete frame of the compiled dedicated `ScreenDefinition`, with a 166 by 36 logical viewport at GUI scale 1. Headless rendering samples the assets at this physical density; the image is not upscaled from a lower-resolution raster or cropped from a larger screen. Its source, asset, viewport, and image hashes are recorded in [the headless render receipt](components/headless-render.properties).
-
-![Slider headless showcase](components/slider.png)
 
 ### Compiled example
 
@@ -980,6 +1089,8 @@ Sizing and placement modifiers compose around `Slider`; caller-owned range state
 
 `Slider` is a leaf extension on the active `UiScope`; `SliderState` owns normalization and quantization while the active profile owns rendering.
 
+</details>
+
 <details><summary>Component tree</summary>
 
 The tree mirrors the complete dedicated definition, including the featured component, its minimum parent layout, and the children used to demonstrate its responsibility.
@@ -991,15 +1102,25 @@ The tree mirrors the complete dedicated definition, including the featured compo
 
 </details>
 
+<details><summary>Image verification</summary>
+
+This 166 by 36 PNG is the complete frame of the compiled dedicated `ScreenDefinition`, with a 166 by 36 logical viewport at GUI scale 1. Headless rendering samples the assets at this physical density; the image is not upscaled from a lower-resolution raster or cropped from a larger screen. Its source, asset, viewport, and image hashes are recorded in [the headless render receipt](../components/headless-render.properties).
+
+</details>
+
 <a id="tab"></a>
 
 ## Tab
 
+Present an externally selected navigation option.
+
+![Tab headless showcase](../components/tab.png)
+
+[API reference](https://gh.s7a.dev/strata/api/dev.s7a.strata.component/-tab.html)
+
+<details><summary>Usage and compiled example</summary>
+
 Tab combines the verified button surface with external selection semantics and a reusable underline or caller-defined selected indicator, without encoding a particular screen's tab model or owning implicit focus and activation.
-
-This 160 by 64 PNG is the complete frame of the compiled dedicated `ScreenDefinition`, with a 160 by 64 logical viewport at GUI scale 1. Headless rendering samples the assets at this physical density; the image is not upscaled from a lower-resolution raster or cropped from a larger screen. Its source, asset, viewport, and image hashes are recorded in [the headless render receipt](components/headless-render.properties).
-
-![Tab headless showcase](components/tab.png)
 
 ### Compiled example
 
@@ -1057,6 +1178,8 @@ Selection is caller-owned data, while `Underline` or `Custom` controls its reusa
 
 `Tab` is a top-level extension on the active `UiScope`. A custom selected indicator emits exactly one nested root; the selected value and event actions remain application-owned.
 
+</details>
+
 <details><summary>Component tree</summary>
 
 The tree mirrors the complete dedicated definition, including the featured component, its minimum parent layout, and the children used to demonstrate its responsibility.
@@ -1069,15 +1192,25 @@ The tree mirrors the complete dedicated definition, including the featured compo
 
 </details>
 
+<details><summary>Image verification</summary>
+
+This 160 by 64 PNG is the complete frame of the compiled dedicated `ScreenDefinition`, with a 160 by 64 logical viewport at GUI scale 1. Headless rendering samples the assets at this physical density; the image is not upscaled from a lower-resolution raster or cropped from a larger screen. Its source, asset, viewport, and image hashes are recorded in [the headless render receipt](../components/headless-render.properties).
+
+</details>
+
 <a id="scroll-area"></a>
 
 ## ScrollArea
 
+Scroll content that extends beyond its viewport.
+
+![ScrollArea headless showcase](../components/scroll-area.png)
+
+[API reference](https://gh.s7a.dev/strata/api/dev.s7a.strata.component/-scroll-area.html)
+
+<details><summary>Usage and compiled example</summary>
+
 ScrollArea reproduces the verified Minecraft menu-list background, clipping, separators, and wheel behavior without owning or positioning a scrollbar.
-
-This 120 by 48 PNG is the complete frame of the compiled dedicated `ScreenDefinition`, with a 120 by 48 logical viewport at GUI scale 1. Headless rendering samples the assets at this physical density; the image is not upscaled from a lower-resolution raster or cropped from a larger screen. Its source, asset, viewport, and image hashes are recorded in [the headless render receipt](components/headless-render.properties).
-
-![ScrollArea headless showcase](components/scroll-area.png)
 
 ### Compiled example
 
@@ -1117,6 +1250,8 @@ Ordinary sizing and placement modifiers define only the clipped viewport. The sh
 
 `ScrollArea` evaluates a callback-lifetime `UiScope` that emits exactly one content root; the caller owns the linked state and may omit a scrollbar.
 
+</details>
+
 <details><summary>Component tree</summary>
 
 The tree mirrors the complete dedicated definition, including the featured component, its minimum parent layout, and the children used to demonstrate its responsibility.
@@ -1132,15 +1267,25 @@ The tree mirrors the complete dedicated definition, including the featured compo
 
 </details>
 
+<details><summary>Image verification</summary>
+
+This 120 by 48 PNG is the complete frame of the compiled dedicated `ScreenDefinition`, with a 120 by 48 logical viewport at GUI scale 1. Headless rendering samples the assets at this physical density; the image is not upscaled from a lower-resolution raster or cropped from a larger screen. Its source, asset, viewport, and image hashes are recorded in [the headless render receipt](../components/headless-render.properties).
+
+</details>
+
 <a id="scrollbar"></a>
 
 ## Scrollbar
 
+Show and control the position of a shared scroll state.
+
+![Scrollbar headless showcase](../components/scrollbar.png)
+
+[API reference](https://gh.s7a.dev/strata/api/dev.s7a.strata.component/-scrollbar.html)
+
+<details><summary>Usage and compiled example</summary>
+
 Scrollbar reproduces the verified tiled track and proportional thumb while remaining an independently placed observer of shared scroll metrics.
-
-This 94 by 48 PNG is the complete frame of the compiled dedicated `ScreenDefinition`, with a 94 by 48 logical viewport at GUI scale 1. Headless rendering samples the assets at this physical density; the image is not upscaled from a lower-resolution raster or cropped from a larger screen. Its source, asset, viewport, and image hashes are recorded in [the headless render receipt](components/headless-render.properties).
-
-![Scrollbar headless showcase](components/scrollbar.png)
 
 ### Compiled example
 
@@ -1184,6 +1329,8 @@ Sizing and parent placement modifiers position `Scrollbar` independently from it
 
 `Scrollbar` is an independent leaf in any surrounding layout. It observes caller-owned `ScrollState` and releases that observation when its retained node is disposed.
 
+</details>
+
 <details><summary>Component tree</summary>
 
 The tree mirrors the complete dedicated definition, including the featured component, its minimum parent layout, and the children used to demonstrate its responsibility.
@@ -1203,15 +1350,25 @@ The tree mirrors the complete dedicated definition, including the featured compo
 
 </details>
 
+<details><summary>Image verification</summary>
+
+This 94 by 48 PNG is the complete frame of the compiled dedicated `ScreenDefinition`, with a 94 by 48 logical viewport at GUI scale 1. Headless rendering samples the assets at this physical density; the image is not upscaled from a lower-resolution raster or cropped from a larger screen. Its source, asset, viewport, and image hashes are recorded in [the headless render receipt](../components/headless-render.properties).
+
+</details>
+
 <a id="virtual-list"></a>
 
 ## VirtualList
 
+Build only the visible rows of a large or loadable list.
+
+![VirtualList headless showcase](../components/virtual-list.png)
+
+[API reference](https://gh.s7a.dev/strata/api/dev.s7a.strata.component/-virtual-list.html)
+
+<details><summary>Usage and compiled example</summary>
+
 VirtualList retains only visible fixed-height rows plus bounded overscan, supports prepended and appended loading, and can jump by index or stable key.
-
-This 120 by 48 PNG is the complete frame of the compiled dedicated `ScreenDefinition`, with a 120 by 48 logical viewport at GUI scale 1. Headless rendering samples the assets at this physical density; the image is not upscaled from a lower-resolution raster or cropped from a larger screen. Its source, asset, viewport, and image hashes are recorded in [the headless render receipt](components/headless-render.properties).
-
-![VirtualList headless showcase](components/virtual-list.png)
 
 ### Compiled example
 
@@ -1253,6 +1410,8 @@ Sizing is expressed by `viewportSize`; modifier actions receive leading and trai
 
 `VirtualList` evaluates row callbacks only for visible rows plus bounded overscan; stable keys preserve retained identity while the caller owns source and navigation state.
 
+</details>
+
 <details><summary>Component tree</summary>
 
 The tree mirrors the complete dedicated definition, including the featured component, its minimum parent layout, and the children used to demonstrate its responsibility.
@@ -1263,15 +1422,25 @@ The tree mirrors the complete dedicated definition, including the featured compo
 
 </details>
 
+<details><summary>Image verification</summary>
+
+This 120 by 48 PNG is the complete frame of the compiled dedicated `ScreenDefinition`, with a 120 by 48 logical viewport at GUI scale 1. Headless rendering samples the assets at this physical density; the image is not upscaled from a lower-resolution raster or cropped from a larger screen. Its source, asset, viewport, and image hashes are recorded in [the headless render receipt](../components/headless-render.properties).
+
+</details>
+
 <a id="selection-list"></a>
 
 ## SelectionList
 
+Select entries in a virtualized list.
+
+![SelectionList headless showcase](../components/selection-list.png)
+
+[API reference](https://gh.s7a.dev/strata/api/dev.s7a.strata.component/-selection-list.html)
+
+<details><summary>Usage and compiled example</summary>
+
 SelectionList adds generic caller-owned selection and typed selection-change actions to VirtualList without encoding Social, inventory, advancement, or Mod-specific rows.
-
-This 120 by 48 PNG is the complete frame of the compiled dedicated `ScreenDefinition`, with a 120 by 48 logical viewport at GUI scale 1. Headless rendering samples the assets at this physical density; the image is not upscaled from a lower-resolution raster or cropped from a larger screen. Its source, asset, viewport, and image hashes are recorded in [the headless render receipt](components/headless-render.properties).
-
-![SelectionList headless showcase](components/selection-list.png)
 
 ### Compiled example
 
@@ -1314,6 +1483,8 @@ Viewport behavior composes with typed selection actions and caller-owned selecti
 
 `SelectionList` wraps visible virtual rows with generic selection semantics and press handling while leaving each row's single content root to the caller.
 
+</details>
+
 <details><summary>Component tree</summary>
 
 The tree mirrors the complete dedicated definition, including the featured component, its minimum parent layout, and the children used to demonstrate its responsibility.
@@ -1324,15 +1495,25 @@ The tree mirrors the complete dedicated definition, including the featured compo
 
 </details>
 
+<details><summary>Image verification</summary>
+
+This 120 by 48 PNG is the complete frame of the compiled dedicated `ScreenDefinition`, with a 120 by 48 logical viewport at GUI scale 1. Headless rendering samples the assets at this physical density; the image is not upscaled from a lower-resolution raster or cropped from a larger screen. Its source, asset, viewport, and image hashes are recorded in [the headless render receipt](../components/headless-render.properties).
+
+</details>
+
 <a id="image"></a>
 
 ## Image
 
+Display an immutable image or a region of that image.
+
+![Image headless showcase](../components/image.png)
+
+[API reference](https://gh.s7a.dev/strata/api/dev.s7a.strata.component/-image.html)
+
+<details><summary>Usage and compiled example</summary>
+
 Image maps one immutable resource-pack image to an exact logical size with deterministic nearest sampling; it is reusable for icons, portraits, diagrams, and Mod-owned panels.
-
-This 64 by 64 PNG is the complete frame of the compiled dedicated `ScreenDefinition`, with a 64 by 64 logical viewport at GUI scale 1. Headless rendering samples the assets at this physical density; the image is not upscaled from a lower-resolution raster or cropped from a larger screen. Its source, asset, viewport, and image hashes are recorded in [the headless render receipt](components/headless-render.properties).
-
-![Image headless showcase](components/image.png)
 
 ### Compiled example
 
@@ -1376,6 +1557,8 @@ Sizing and placement modifiers compose around `Image`; `imageBackground` paints 
 
 `Image` is a top-level extension on the active `UiScope`. It retains detached pixels rather than a Minecraft resource object, so the Fabric loader may resolve a resource-pack replacement before the description is built.
 
+</details>
+
 <details><summary>Component tree</summary>
 
 The tree mirrors the complete dedicated definition, including the featured component, its minimum parent layout, and the children used to demonstrate its responsibility.
@@ -1387,15 +1570,25 @@ The tree mirrors the complete dedicated definition, including the featured compo
 
 </details>
 
+<details><summary>Image verification</summary>
+
+This 64 by 64 PNG is the complete frame of the compiled dedicated `ScreenDefinition`, with a 64 by 64 logical viewport at GUI scale 1. Headless rendering samples the assets at this physical density; the image is not upscaled from a lower-resolution raster or cropped from a larger screen. Its source, asset, viewport, and image hashes are recorded in [the headless render receipt](../components/headless-render.properties).
+
+</details>
+
 <a id="canvas"></a>
 
 ## Canvas
 
+Present frames from an external renderer or image producer.
+
+![Canvas headless showcase](../components/canvas.png)
+
+[API reference](https://gh.s7a.dev/strata/api/dev.s7a.strata.component/-canvas.html)
+
+<details><summary>Usage and compiled example</summary>
+
 Canvas displays externally produced CPU frames or version-runtime native output in one input-passive rectangle. Decoded video and camera, filter, or custom-renderer output are independent uses; composing Image and Stack cannot provide source cutoffs, attachment lifetimes, leased GPU capture, or owned offscreen targets. The component does not implement a decoder, camera, world renderer, filter, or browser engine.
-
-This 96 by 64 PNG is the complete frame of the compiled dedicated `ScreenDefinition`, with a 96 by 64 logical viewport at GUI scale 1. Headless rendering samples the assets at this physical density; the image is not upscaled from a lower-resolution raster or cropped from a larger screen. Its source, asset, viewport, and image hashes are recorded in [the headless render receipt](components/headless-render.properties).
-
-![Canvas headless showcase](components/canvas.png)
 
 ### Compiled example
 
@@ -1458,6 +1651,8 @@ Use an explicit positive logical `size`; the whole source stretches with nearest
 
 `Canvas` is a leaf extension with no content scope or parent-data API. `canvasSource(image)` retains immutable CPU pixels, while `canvasSource(frames)` observes `StateSource<DrawImage>` through owner-thread frame cutoffs. Each attachment owns its binding; replacement, detachment, and close stop that binding without closing the externally owned source. Native sources require the matching versioned runtime and do not read back pixels during normal presentation. Native headless capture requires an immutable snapshot of the same committed generation, physical extent, and top-left orientation; a missing or mismatched snapshot fails before any output.
 
+</details>
+
 <details><summary>Component tree</summary>
 
 The tree mirrors the complete dedicated definition, including the featured component, its minimum parent layout, and the children used to demonstrate its responsibility.
@@ -1469,15 +1664,25 @@ The tree mirrors the complete dedicated definition, including the featured compo
 
 </details>
 
+<details><summary>Image verification</summary>
+
+This 96 by 64 PNG is the complete frame of the compiled dedicated `ScreenDefinition`, with a 96 by 64 logical viewport at GUI scale 1. Headless rendering samples the assets at this physical density; the image is not upscaled from a lower-resolution raster or cropped from a larger screen. Its source, asset, viewport, and image hashes are recorded in [the headless render receipt](../components/headless-render.properties).
+
+</details>
+
 <a id="tiled-image"></a>
 
 ## TiledImage
 
+Navigate large maps or images supplied as independent tiles.
+
+![TiledImage headless showcase](../components/tiled-image.png)
+
+[API reference](https://gh.s7a.dev/strata/api/dev.s7a.strata.component/-tiled-image.html)
+
+<details><summary>Usage and compiled example</summary>
+
 TiledImage presents one bounded logical raster from independently revisioned immutable tiles, selecting only the visible level and coarser fallback working set instead of joining or copying the complete image. Maps, scans, and schematics are independent uses that cannot preserve bounded subscriptions and reusable tile images through ordinary Image composition alone.
-
-This 112 by 88 PNG is the complete frame of the compiled dedicated `ScreenDefinition`, with a 112 by 88 logical viewport at GUI scale 1. Headless rendering samples the assets at this physical density; the image is not upscaled from a lower-resolution raster or cropped from a larger screen. Its source, asset, viewport, and image hashes are recorded in [the headless render receipt](components/headless-render.properties).
-
-![TiledImage headless showcase](components/tiled-image.png)
 
 ### Compiled example
 
@@ -1593,6 +1798,8 @@ Use the explicit positive `size` as the clipped viewport, keep navigation in cal
 
 `TiledImage` evaluates a callback-lifetime `TiledImageScope`; each fixed-size direct child uses `atContentPosition` with either a fixed coordinate or a `StateSource<DoubleOffset>` committed at frame cutoff. Revisioned marker movement changes only overlay placement while tiles retain their identities. The source instance identifies immutable exactly representable bounds and level geometry and owns every tile history. One retained attachment owns its bounded subscriptions and derived presentation cache, closes them on replacement or detach, and never closes the source or mutates returned images.
 
+</details>
+
 <details><summary>Component tree</summary>
 
 The tree mirrors the complete dedicated definition, including the featured component, its minimum parent layout, and the children used to demonstrate its responsibility.
@@ -1605,15 +1812,25 @@ The tree mirrors the complete dedicated definition, including the featured compo
 
 </details>
 
+<details><summary>Image verification</summary>
+
+This 112 by 88 PNG is the complete frame of the compiled dedicated `ScreenDefinition`, with a 112 by 88 logical viewport at GUI scale 1. Headless rendering samples the assets at this physical density; the image is not upscaled from a lower-resolution raster or cropped from a larger screen. Its source, asset, viewport, and image hashes are recorded in [the headless render receipt](../components/headless-render.properties).
+
+</details>
+
 <a id="slot"></a>
 
 ## Slot
 
+Show an inventory slot bound to a typed slot source.
+
+![Slot headless showcase](../components/slot.png)
+
+[API reference](https://gh.s7a.dev/strata/api/dev.s7a.strata.component/-slot.html)
+
+<details><summary>Usage and compiled example</summary>
+
 Slot reproduces the native 18 by 18 hit region and 24 by 24 back-item-front highlight order; its binding overload polls real ItemStack state and delegates interaction through Minecraft's active container menu.
-
-This 64 by 64 PNG is the complete frame of the compiled dedicated `ScreenDefinition`, with a 64 by 64 logical viewport at GUI scale 1. Headless rendering samples the assets at this physical density; the image is not upscaled from a lower-resolution raster or cropped from a larger screen. Its source, asset, viewport, and image hashes are recorded in [the headless render receipt](components/headless-render.properties).
-
-![Slot headless showcase](components/slot.png)
 
 ### Compiled example
 
@@ -1656,6 +1873,8 @@ Sizing is native-fixed at 18 by 18. `Slots.playerInventory(index)` binds player 
 
 `Slot` is a member extension on the active `UiScope`. Its optional callback emits at most one 16 by 16 content root, while its bound overload obtains the version platform implicitly and retains no public Minecraft type.
 
+</details>
+
 <details><summary>Component tree</summary>
 
 The tree mirrors the complete dedicated definition, including the featured component, its minimum parent layout, and the children used to demonstrate its responsibility.
@@ -1667,15 +1886,25 @@ The tree mirrors the complete dedicated definition, including the featured compo
 
 </details>
 
+<details><summary>Image verification</summary>
+
+This 64 by 64 PNG is the complete frame of the compiled dedicated `ScreenDefinition`, with a 64 by 64 logical viewport at GUI scale 1. Headless rendering samples the assets at this physical density; the image is not upscaled from a lower-resolution raster or cropped from a larger screen. Its source, asset, viewport, and image hashes are recorded in [the headless render receipt](../components/headless-render.properties).
+
+</details>
+
 <a id="player-head"></a>
 
 ## PlayerHead
 
+Display a player's skin face and hat layers.
+
+![PlayerHead headless showcase](../components/player-head.png)
+
+[API reference](https://gh.s7a.dev/strata/api/dev.s7a.strata.component/-player-head.html)
+
+<details><summary>Usage and compiled example</summary>
+
 PlayerHead reproduces Minecraft 26.2 face-then-hat rendering from a 64 by 64 skin. PlayerHeadScale gives every source texel an equal integer-sized square for crisp lists, profiles, scoreboards, and Mod screens; the deprecated arbitrary-size overload uses region-clamped bilinear interpolation when an exact integer scale is impossible.
-
-This 64 by 64 PNG is the complete frame of the compiled dedicated `ScreenDefinition`, with a 64 by 64 logical viewport at GUI scale 1. Headless rendering samples the assets at this physical density; the image is not upscaled from a lower-resolution raster or cropped from a larger screen. Its source, asset, viewport, and image hashes are recorded in [the headless render receipt](components/headless-render.properties).
-
-![PlayerHead headless showcase](components/player-head.png)
 
 ### Compiled example
 
@@ -1718,6 +1947,8 @@ Pass `PlayerHeadScale(1)` for an 8 by 8 head, or another positive factor when ev
 
 `PlayerHead` is a top-level extension on the active `UiScope`. `Pixels` retains a detached immutable skin, while `CurrentPlayer`, `Name`, and `Uuid` remain structural asynchronous lookups deferred to node attachment; the retained node owns and releases that lookup lifetime.
 
+</details>
+
 <details><summary>Component tree</summary>
 
 The tree mirrors the complete dedicated definition, including the featured component, its minimum parent layout, and the children used to demonstrate its responsibility.
@@ -1729,15 +1960,25 @@ The tree mirrors the complete dedicated definition, including the featured compo
 
 </details>
 
+<details><summary>Image verification</summary>
+
+This 64 by 64 PNG is the complete frame of the compiled dedicated `ScreenDefinition`, with a 64 by 64 logical viewport at GUI scale 1. Headless rendering samples the assets at this physical density; the image is not upscaled from a lower-resolution raster or cropped from a larger screen. Its source, asset, viewport, and image hashes are recorded in [the headless render receipt](../components/headless-render.properties).
+
+</details>
+
 <a id="loading-indicator"></a>
 
 ## LoadingIndicator
 
+Show that work is in progress when no completion value is available.
+
+![LoadingIndicator headless showcase](../components/loading-indicator.png)
+
+[API reference](https://gh.s7a.dev/strata/api/dev.s7a.strata.component/-loading-indicator.html)
+
+<details><summary>Usage and compiled example</summary>
+
 LoadingIndicator reproduces the Minecraft 26.2 friends-loading sprite as three vertical 5 by 2 cells with the native six-tick frame duration; older runtimes use the same pack-overridable path before their compatibility fallback.
-
-This 32 by 24 PNG is the complete frame of the compiled dedicated `ScreenDefinition`, with a 32 by 24 logical viewport at GUI scale 1. Headless rendering samples the assets at this physical density; the image is not upscaled from a lower-resolution raster or cropped from a larger screen. Its source, asset, viewport, and image hashes are recorded in [the headless render receipt](components/headless-render.properties).
-
-![LoadingIndicator headless showcase](components/loading-indicator.png)
 
 ### Compiled example
 
@@ -1773,6 +2014,8 @@ Sizing and placement modifiers compose around `LoadingIndicator`; explicit host 
 
 `LoadingIndicator` is a top-level extension on the active `UiScope`. The Fabric host supplies one timestamp per native render pass and the retained node invalidates only when its discrete animation cell changes.
 
+</details>
+
 <details><summary>Component tree</summary>
 
 The tree mirrors the complete dedicated definition, including the featured component, its minimum parent layout, and the children used to demonstrate its responsibility.
@@ -1784,15 +2027,25 @@ The tree mirrors the complete dedicated definition, including the featured compo
 
 </details>
 
+<details><summary>Image verification</summary>
+
+This 32 by 24 PNG is the complete frame of the compiled dedicated `ScreenDefinition`, with a 32 by 24 logical viewport at GUI scale 1. Headless rendering samples the assets at this physical density; the image is not upscaled from a lower-resolution raster or cropped from a larger screen. Its source, asset, viewport, and image hashes are recorded in [the headless render receipt](../components/headless-render.properties).
+
+</details>
+
 <a id="progress-bar"></a>
 
 ## ProgressBar
 
+Show progress toward a known completion value.
+
+![ProgressBar headless showcase](../components/progress-bar.png)
+
+[API reference](https://gh.s7a.dev/strata/api/dev.s7a.strata.component/-progress-bar.html)
+
+<details><summary>Usage and compiled example</summary>
+
 ProgressBar uses the reusable bundle progress border, partial fill, and completed fill with their native two-pixel nine-slice borders and exposes read-only progress semantics.
-
-This 116 by 28 PNG is the complete frame of the compiled dedicated `ScreenDefinition`, with a 116 by 28 logical viewport at GUI scale 1. Headless rendering samples the assets at this physical density; the image is not upscaled from a lower-resolution raster or cropped from a larger screen. Its source, asset, viewport, and image hashes are recorded in [the headless render receipt](components/headless-render.properties).
-
-![ProgressBar headless showcase](components/progress-bar.png)
 
 ### Compiled example
 
@@ -1828,6 +2081,8 @@ Sizing and placement modifiers compose around `ProgressBar`; its normalized valu
 
 `ProgressBar` is a top-level extension on the active `UiScope`. The implicit profile resolves the active resource pack before retaining immutable sprite pixels.
 
+</details>
+
 <details><summary>Component tree</summary>
 
 The tree mirrors the complete dedicated definition, including the featured component, its minimum parent layout, and the children used to demonstrate its responsibility.
@@ -1839,578 +2094,17 @@ The tree mirrors the complete dedicated definition, including the featured compo
 
 </details>
 
-## Complete screens
+<details><summary>Image verification</summary>
 
-These screens exercise the primitives in real vanilla-shaped and Mod-shaped use cases.
-Purpose-specific compositions stay in the compiled examples instead of becoming standard components; reusable capabilities remain available as general layout, image, text, input, slot-binding, and player-rendering primitives.
+This 116 by 28 PNG is the complete frame of the compiled dedicated `ScreenDefinition`, with a 116 by 28 logical viewport at GUI scale 1. Headless rendering samples the assets at this physical density; the image is not upscaled from a lower-resolution raster or cropped from a larger screen. Its source, asset, viewport, and image hashes are recorded in [the headless render receipt](../components/headless-render.properties).
 
-- [Social Interactions](#screen-social)
-- [Synchronized inventory](#screen-inventory)
-- [Industrial controller](#screen-industrial)
-- [Power milestones](#screen-progress)
+</details>
 
-<a id="screen-social"></a>
+## Image verification
 
-## Social Interactions
+Each component image is the complete frame of its dedicated minimal `ScreenDefinition`, including only the layout and children needed for the example.
+Generation renders these definitions with the headless runtime and explicit Minecraft assets without starting Minecraft or creating a GPU context.
+Animated examples use the frame at time zero; the independent native check accepts a complete supported animation phase.
 
-A Social Interactions reconstruction composes `Text`, `TextField`, `ScrollArea`, `Scrollbar`, `PlayerHead`, and ordinary layout primitives without introducing a purpose-specific SocialEntry component.
-
-Documentation generation freshly renders this frame on the CPU from explicit Minecraft assets without starting the game or creating a GPU context. An independent loaded Fabric GameTest requires exact ARGB equality between the native Minecraft screen, the Strata Fabric screen, and the headless frame; its [native parity receipt](evidence/minecraft-26.2-parity.properties) is separate from the [headless generation receipt](components/headless-render.properties).
-
-![Social Interactions screen showcase](components/screen-social.png)
-
-### Compiled screen
-
-```kotlin
-import dev.s7a.strata.component.Button
-import dev.s7a.strata.component.Column
-import dev.s7a.strata.component.Image
-import dev.s7a.strata.component.ImageSource
-import dev.s7a.strata.component.NineSliceCenterMode
-import dev.s7a.strata.component.PlayerHead
-import dev.s7a.strata.component.PlayerHeadScale
-import dev.s7a.strata.component.PlayerSkinSource
-import dev.s7a.strata.component.Row
-import dev.s7a.strata.component.Stack
-import dev.s7a.strata.component.Tab
-import dev.s7a.strata.component.Text
-import dev.s7a.strata.component.TextField
-import dev.s7a.strata.component.TextFieldState
-import dev.s7a.strata.component.TextStyle
-import dev.s7a.strata.geometry.Insets
-import dev.s7a.strata.geometry.IntSize
-import dev.s7a.strata.layout.Alignment
-import dev.s7a.strata.layout.Arrangement
-import dev.s7a.strata.layout.HorizontalAlignment
-import dev.s7a.strata.layout.VerticalAlignment
-import dev.s7a.strata.modifier.Modifier
-import dev.s7a.strata.modifier.background
-import dev.s7a.strata.modifier.imageBackground
-import dev.s7a.strata.modifier.initialFocus
-import dev.s7a.strata.modifier.menuBackground
-import dev.s7a.strata.modifier.onActivate
-import dev.s7a.strata.modifier.padding
-import dev.s7a.strata.modifier.size
-import dev.s7a.strata.render.ArgbColor
-import dev.s7a.strata.resource.ResourceId
-import dev.s7a.strata.screen.ScreenDefinition
-
-/**
- * Builds the deterministic one-player Minecraft Social Interactions screen from general-purpose primitives.
- *
- * Social-entry composition remains application code: the public runtime supplies PlayerHead, text, actions, images, fields, layout, and active backgrounds without exposing a purpose-specific SocialEntry component.
- *
- * @param panel active-resource `social_interactions/background` source.
- * @param searchIcon active-resource `icon/search` source.
- * @param playerSkin selected player lookup or detached skin source.
- * @param playerName active local player name shown by the native screen.
- * @return one-shot screen definition reproducing the native screen geometry and draw order.
- */
-internal fun createSocialScreenDefinition(
-    panel: ImageSource = socialPanel,
-    searchIcon: ImageSource = socialSearchIcon,
-    playerSkin: PlayerSkinSource = PlayerSkinSource.Name("Player0"),
-    playerName: String = "Player0",
-): ScreenDefinition {
-    val search = TextFieldState("", maxLength = 16)
-    return ScreenDefinition("Social Interactions") {
-        Stack(
-            modifier =
-                Modifier.Empty
-                    .size(320, 240)
-                    .background(ArgbColor(0xFF000000.toInt()))
-                    .menuBackground(),
-        ) {
-            Stack(
-                modifier = Modifier.Empty.size(320, 176),
-                contentAlignment = Alignment.BottomCenter,
-            ) {
-                Stack(
-                    modifier =
-                        Modifier.Empty
-                            .padding(left = 4)
-                            .size(236, 112)
-                            .imageBackground(
-                                panel,
-                                Insets.all(8),
-                                NineSliceCenterMode.Tiled,
-                            ),
-                ) {}
-            }
-            Column(
-                modifier = Modifier.Empty.size(222, 234).align(Alignment.TopCenter),
-                verticalArrangement = Arrangement.SpaceBetween,
-            ) {
-                Column(modifier = Modifier.Empty.padding(top = 12)) {
-                    Column(
-                        modifier = Modifier.Empty.size(222, 32),
-                        spacing = 14,
-                    ) {
-                        Text(
-                            "Social Interactions",
-                            modifier = Modifier.Empty.align(HorizontalAlignment.Center),
-                        )
-                        Text("$playerName - New World - 1 player")
-                    }
-                    Row(modifier = Modifier.Empty.padding(left = 1, top = 1), spacing = 1) {
-                        Tab("All", selected = true, width = 73, modifier = Modifier.Empty.onActivate {})
-                        Tab("Hidden", selected = false, width = 73, modifier = Modifier.Empty.onActivate {})
-                        Tab("Blocked", selected = false, width = 73, modifier = Modifier.Empty.onActivate {})
-                    }
-                    Row(
-                        modifier = Modifier.Empty.padding(left = 5, top = 9),
-                        spacing = 3,
-                        verticalAlignment = VerticalAlignment.Center,
-                    ) {
-                        Image(
-                            searchIcon,
-                            size = IntSize(12, 12),
-                            modifier = Modifier.Empty.padding(top = 2),
-                        )
-                        TextField(
-                            search,
-                            size = IntSize(200, 15),
-                            textStyle = TextStyle.Normal,
-                            modifier = Modifier.Empty.initialFocus(),
-                        )
-                    }
-                    Row(
-                        modifier =
-                            Modifier.Empty
-                                .padding(left = 3, top = 3)
-                                .size(216, 32)
-                                .background(ArgbColor(0xFF4A4A4A.toInt())),
-                        spacing = 4,
-                        verticalAlignment = VerticalAlignment.Center,
-                    ) {
-                        PlayerHead(source = playerSkin, scale = PlayerHeadScale(3), modifier = Modifier.Empty.padding(left = 4))
-                        Text(playerName)
-                    }
-                }
-                Button(
-                    "Done",
-                    width = 200,
-                    modifier = Modifier.Empty.align(HorizontalAlignment.Center).onActivate {},
-                )
-            }
-        }
-    }
-}
-
-private val socialPanel = ImageSource.Resource(ResourceId("minecraft", "textures/gui/sprites/social_interactions/background.png"))
-private val socialSearchIcon = ImageSource.Resource(ResourceId("minecraft", "textures/gui/sprites/icon/search.png"))
-```
-
-### Primitive boundary
-
-The player row remains example-owned because its mute/report relationship is Social-screen domain state. `PlayerHead`, scrolling, text input, text, buttons, and pointer actions remain reusable standard primitives.
-
-<a id="screen-inventory"></a>
-
-## Synchronized inventory
-
-A loaded multiplayer container screen binds its lower grid to the real player inventory and can bind the upper grid to chest, ender-chest, furnace, or custom server-menu storage.
-
-This image is explicit native evidence from a loaded Fabric client/server GameTest that performs authoritative inventory interaction. Generation verifies its Minecraft version, PNG hash, and current compiled-source hash against the [native inventory receipt](evidence/minecraft-26.2-inventory.properties); it does not start a server or replace this bound screen with a portable-only substitute.
-
-![Synchronized inventory screen showcase](components/screen-inventory.png)
-
-### Compiled screen
-
-```kotlin
-import dev.s7a.strata.component.Column
-import dev.s7a.strata.component.Grid
-import dev.s7a.strata.component.Slot
-import dev.s7a.strata.component.SlotBinding
-import dev.s7a.strata.component.Slots
-import dev.s7a.strata.component.Stack
-import dev.s7a.strata.component.Text
-import dev.s7a.strata.component.TextStyle
-import dev.s7a.strata.layout.Alignment
-import dev.s7a.strata.modifier.Modifier
-import dev.s7a.strata.modifier.background
-import dev.s7a.strata.modifier.containerBackground
-import dev.s7a.strata.modifier.menuBackground
-import dev.s7a.strata.modifier.padding
-import dev.s7a.strata.modifier.size
-import dev.s7a.strata.render.ArgbColor
-import dev.s7a.strata.screen.ScreenDefinition
-
-/**
- * Builds a generic chest-shaped screen whose lower 36 Slots are bound to the active player's inventory.
- *
- * The upper grid remains empty unless [primaryContainerBinding] is supplied by a server-owned container test.
- * The returned definition requires the Fabric version adapter and is not renderable by the portable-only headless host.
- *
- * @param primaryPlayerBinding binding used by the first hotbar cell.
- * @param primaryContainerBinding optional binding used by the first upper Container cell.
- * @return one-shot screen definition used to verify live item rendering and authoritative container input in a loaded client.
- */
-internal fun createInventorySlotScreenDefinition(
-    primaryPlayerBinding: SlotBinding = Slots.playerInventory(0),
-    primaryContainerBinding: SlotBinding? = null,
-): ScreenDefinition =
-    ScreenDefinition("Synchronized inventory") {
-        Stack(
-            modifier =
-                Modifier.Empty
-                    .size(320, 240)
-                    .background(ArgbColor(0xFF000000.toInt()))
-                    .menuBackground(),
-            contentAlignment = Alignment.Center,
-        ) {
-            Stack(
-                modifier = Modifier.Empty.containerBackground(rows = 3),
-                contentAlignment = Alignment.Center,
-            ) {
-                Column(
-                    modifier = Modifier.Empty.size(162, 156),
-                    spacing = 3,
-                ) {
-                    Column(spacing = 2) {
-                        Text(
-                            "Chest",
-                            style = TextStyle.ContainerLabel,
-                            modifier = Modifier.Empty.padding(left = 1),
-                        )
-                        Grid(columns = 9) {
-                            repeat(27) { index ->
-                                if (index == 0 && primaryContainerBinding != null) {
-                                    Slot(bind = primaryContainerBinding)
-                                } else {
-                                    Slot()
-                                }
-                            }
-                        }
-                    }
-                    Column {
-                        Text(
-                            "Inventory",
-                            style = TextStyle.ContainerLabel,
-                            modifier = Modifier.Empty.padding(left = 1),
-                        )
-                        Grid(columns = 9, modifier = Modifier.Empty.padding(top = 1)) {
-                            repeat(27) { index ->
-                                Slot(bind = Slots.playerInventory(9 + index))
-                            }
-                        }
-                        Grid(columns = 9, modifier = Modifier.Empty.padding(top = 4)) {
-                            repeat(9) { index ->
-                                Slot(
-                                    bind =
-                                        if (index == 0) {
-                                            primaryPlayerBinding
-                                        } else {
-                                            Slots.playerInventory(index)
-                                        },
-                                )
-                            }
-                        }
-                    }
-                }
-            }
-        }
-    }
-```
-
-### Primitive boundary
-
-`Slot` and `SlotBinding` are reusable primitives. The chest-shaped grouping and server menu decide which player, container, ender-chest, furnace, or custom inventory indices each slot binds.
-
-<a id="screen-industrial"></a>
-
-## Industrial controller
-
-A resource-pack-aware Mod controller composes a public custom image, Minecraft text, buttons, and layout primitives into an energy-machine interface.
-
-Documentation generation freshly renders this frame on the CPU from explicit Minecraft assets without starting the game or creating a GPU context. The independent loaded Fabric gate requires exact ARGB equality between the Strata Fabric screen and the headless frame using active resources; its [native parity receipt](evidence/minecraft-26.2-parity.properties) remains separate from the [headless generation receipt](components/headless-render.properties).
-
-![Industrial controller screen showcase](components/screen-industrial.png)
-
-### Compiled screen
-
-```kotlin
-import dev.s7a.strata.component.Column
-import dev.s7a.strata.component.Grid
-import dev.s7a.strata.component.ImageScale
-import dev.s7a.strata.component.ImageSource
-import dev.s7a.strata.component.Row
-import dev.s7a.strata.component.Slot
-import dev.s7a.strata.component.SlotBinding
-import dev.s7a.strata.component.Slots
-import dev.s7a.strata.component.Spacer
-import dev.s7a.strata.component.Stack
-import dev.s7a.strata.component.Text
-import dev.s7a.strata.component.UiScope
-import dev.s7a.strata.layout.Alignment
-import dev.s7a.strata.layout.Arrangement
-import dev.s7a.strata.layout.HorizontalAlignment
-import dev.s7a.strata.layout.VerticalAlignment
-import dev.s7a.strata.modifier.Modifier
-import dev.s7a.strata.modifier.background
-import dev.s7a.strata.modifier.imageBackground
-import dev.s7a.strata.modifier.menuBackground
-import dev.s7a.strata.modifier.padding
-import dev.s7a.strata.modifier.size
-import dev.s7a.strata.render.ArgbColor
-import dev.s7a.strata.resource.ResourceId
-import dev.s7a.strata.screen.ScreenDefinition
-
-/**
- * Builds a resource-pack-aware coal generator screen from general-purpose components.
- *
- * The default fuel and charge slots address the active server-owned container while the lower grid addresses the player's inventory through the active menu.
- * Tests that exercise the same pixels without a live menu may supply null bindings without changing the component structure.
- *
- * @param panel active Mod-resource panel source.
- * @param fuelBinding server-owned combustible-input slot.
- * @param chargeBinding server-owned chargeable-item slot.
- * @param playerInventory resolves each logical player-inventory index used by the lower grid.
- * @return one-shot definition containing only reusable layout, image-background, text, gauge, and slot primitives.
- */
-internal fun createIndustrialScreenDefinition(
-    panel: ImageSource = coalGeneratorPanel,
-    fuelBinding: SlotBinding? = Slots.container(0),
-    chargeBinding: SlotBinding? = Slots.container(1),
-    playerInventory: (Int) -> SlotBinding? = Slots::playerInventory,
-): ScreenDefinition =
-    ScreenDefinition("Coal Generator") {
-        Stack(
-            modifier =
-                Modifier.Empty
-                    .size(320, 180)
-                    .background(ArgbColor(0xFF000000.toInt()))
-                    .menuBackground(),
-            contentAlignment = Alignment.Center,
-        ) {
-            Stack(
-                modifier =
-                    Modifier.Empty
-                        .size(176, 166)
-                        .imageBackground(panel, ImageScale.Stretch),
-            ) {
-                Column(
-                    modifier = Modifier.Empty.padding(left = 7, top = 5, right = 7, bottom = 7),
-                    spacing = 5,
-                ) {
-                    Text("Coal Generator")
-                    Row(
-                        modifier = Modifier.Empty.size(162, 36),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = VerticalAlignment.Center,
-                    ) {
-                        machineSlot("Fuel", fuelBinding)
-                        Column(
-                            spacing = 3,
-                            horizontalAlignment = HorizontalAlignment.Center,
-                        ) {
-                            Text("32 E/t")
-                            Stack(
-                                modifier = Modifier.Empty.size(54, 8).background(bufferTrackColor),
-                                contentAlignment = Alignment.CenterStart,
-                            ) {
-                                Spacer(modifier = Modifier.Empty.size(41, 6).background(bufferFillColor))
-                            }
-                        }
-                        machineSlot("Charge", chargeBinding)
-                    }
-                    Column(spacing = 1) {
-                        Text("Inventory")
-                        Grid(columns = 9) {
-                            repeat(27) { index ->
-                                Slot(bind = playerInventory(9 + index))
-                            }
-                        }
-                        Grid(columns = 9, modifier = Modifier.Empty.padding(top = 4)) {
-                            repeat(9) { index ->
-                                Slot(bind = playerInventory(index))
-                            }
-                        }
-                    }
-                }
-            }
-        }
-    }
-
-private fun UiScope.machineSlot(
-    label: String,
-    binding: SlotBinding?,
-) {
-    this.Column(
-        spacing = 1,
-        horizontalAlignment = HorizontalAlignment.Center,
-    ) {
-        Text(label)
-        Slot(bind = binding)
-    }
-}
-
-private val coalGeneratorPanel = ImageSource.Resource(ResourceId("strata_test", "textures/gui/coal_generator.png"))
-private val bufferTrackColor = ArgbColor(0xFF1A2226.toInt())
-private val bufferFillColor = ArgbColor(0xFF20C7DF.toInt())
-```
-
-### Primitive boundary
-
-The runtime supplies general image, background, text, button, slot, and input primitives. Energy capacity, charge state, machine recipes, and networking remain application-owned state and server protocol.
-
-<a id="screen-progress"></a>
-
-## Power milestones
-
-An advancement-inspired Mod progression screen composes active vanilla advancement assets with an application-owned downstream graph component.
-
-Documentation generation freshly renders this frame on the CPU from explicit Minecraft assets without starting the game or creating a GPU context. The independent loaded Fabric gate requires exact ARGB equality between the Strata Fabric screen and the headless frame using active resources; its [native parity receipt](evidence/minecraft-26.2-parity.properties) remains separate from the [headless generation receipt](components/headless-render.properties).
-
-![Power milestones screen showcase](components/screen-progress.png)
-
-### Compiled screen
-
-```kotlin
-import dev.s7a.strata.component.Button
-import dev.s7a.strata.component.Column
-import dev.s7a.strata.component.Image
-import dev.s7a.strata.component.ImageScale
-import dev.s7a.strata.component.ImageSource
-import dev.s7a.strata.component.Row
-import dev.s7a.strata.component.Spacer
-import dev.s7a.strata.component.Stack
-import dev.s7a.strata.component.Text
-import dev.s7a.strata.component.TextStyle
-import dev.s7a.strata.component.UiScope
-import dev.s7a.strata.element.ElementKey
-import dev.s7a.strata.geometry.IntRect
-import dev.s7a.strata.layout.Alignment
-import dev.s7a.strata.layout.Arrangement
-import dev.s7a.strata.layout.HorizontalAlignment
-import dev.s7a.strata.layout.VerticalAlignment
-import dev.s7a.strata.modifier.Modifier
-import dev.s7a.strata.modifier.background
-import dev.s7a.strata.modifier.imageBackground
-import dev.s7a.strata.modifier.menuBackground
-import dev.s7a.strata.modifier.onActivate
-import dev.s7a.strata.modifier.padding
-import dev.s7a.strata.modifier.size
-import dev.s7a.strata.render.ArgbColor
-import dev.s7a.strata.resource.ResourceId
-import dev.s7a.strata.screen.ScreenDefinition
-
-/**
- * Builds one advancement-inspired Mod screen from resource-pack sources and an application-owned component.
- *
- * The standard runtime remains limited to reusable primitives; [ExampleProgressGraph] may encode this Mod's progression domain because it remains downstream application code.
- *
- * @param window active advancement-window source.
- * @param background active advancement-background tile source.
- * @param obtained active obtained task-frame source.
- * @param unobtained active unobtained task-frame source.
- * @return one-shot definition for the verified Fabric and headless screen.
- */
-internal fun createProgressScreenDefinition(
-    window: ImageSource = advancementWindow,
-    background: ImageSource = advancementBackground,
-    obtained: ImageSource = obtainedTaskFrame,
-    unobtained: ImageSource = unobtainedTaskFrame,
-): ScreenDefinition =
-    ScreenDefinition("Power milestones") {
-        Stack(
-            modifier =
-                Modifier.Empty
-                    .size(320, 180)
-                    .background(ArgbColor(0xFF000000.toInt()))
-                    .menuBackground(),
-            contentAlignment = Alignment.Center,
-        ) {
-            Stack(modifier = Modifier.Empty.size(252, 140)) {
-                Image(window, sourceRegion = IntRect(0, 0, 252, 140))
-                Column(
-                    modifier = Modifier.Empty.padding(left = 9, top = 6, right = 9, bottom = 9),
-                    spacing = 4,
-                    horizontalAlignment = HorizontalAlignment.Center,
-                ) {
-                    Text("Power milestones", style = TextStyle.ContainerLabel)
-                    ExampleProgressGraph(background, obtained, unobtained)
-                }
-            }
-            Button(
-                "Done",
-                width = 200,
-                modifier =
-                    Modifier.Empty
-                        .padding(bottom = 6)
-                        .align(Alignment.BottomCenter)
-                        .onActivate {},
-            )
-        }
-    }
-
-/**
- * Emits one application-owned progression graph by composing only public Strata primitives.
- *
- * This downstream component is deliberately not part of the standard runtime because its node meanings and progression domain belong to the application.
- * It retains no callback or scope after synchronous emission.
- *
- * @receiver active owner-thread UI scope.
- * @param background immutable or resource-backed background tile.
- * @param obtained immutable or resource-backed obtained frame.
- * @param unobtained immutable or resource-backed unobtained frame.
- * @param modifier active behavior surrounding the fixed graph.
- * @param key optional stable sibling identity.
- * @throws IllegalStateException when used from another thread or outside its callback lifetime.
- */
-internal fun UiScope.ExampleProgressGraph(
-    background: ImageSource,
-    obtained: ImageSource,
-    unobtained: ImageSource,
-    modifier: Modifier = Modifier.Empty,
-    key: ElementKey<*>? = null,
-) {
-    Row(
-        modifier = modifier.size(234, 113).imageBackground(background, ImageScale.Tile),
-        key = key,
-        horizontalArrangement = Arrangement.Center,
-        verticalAlignment = VerticalAlignment.Center,
-    ) {
-        progressNode(obtained, ArgbColor(0xFF22D3EE.toInt()), "Generator")
-        Spacer(modifier = Modifier.Empty.size(32, 2).background(connectionColor))
-        Column(
-            spacing = 4,
-            horizontalAlignment = HorizontalAlignment.Center,
-        ) {
-            progressNode(obtained, ArgbColor(0xFFFBBF24.toInt()), "Storage")
-            Spacer(modifier = Modifier.Empty.size(2, 12).background(connectionColor))
-            progressNode(unobtained, ArgbColor(0xFFA78BFA.toInt()), "Automation")
-        }
-    }
-}
-
-private fun UiScope.progressNode(
-    frame: ImageSource,
-    color: ArgbColor,
-    label: String,
-) {
-    this.Column(
-        horizontalAlignment = HorizontalAlignment.Center,
-        spacing = 1,
-    ) {
-        Stack(
-            modifier = Modifier.Empty.size(26, 26),
-            contentAlignment = Alignment.Center,
-        ) {
-            Image(frame)
-            Spacer(modifier = Modifier.Empty.size(16, 16).background(color))
-        }
-        Text(label)
-    }
-}
-
-private val advancementWindow = ImageSource.Resource(ResourceId("minecraft", "textures/gui/advancements/window.png"))
-private val advancementBackground = ImageSource.Resource(ResourceId("minecraft", "textures/gui/advancements/backgrounds/stone.png"))
-private val obtainedTaskFrame = ImageSource.Resource(ResourceId("minecraft", "textures/gui/sprites/advancements/task_frame_obtained.png"))
-private val unobtainedTaskFrame = ImageSource.Resource(ResourceId("minecraft", "textures/gui/sprites/advancements/task_frame_unobtained.png"))
-private val connectionColor = ArgbColor(0xFF7A7A7A.toInt())
-```
-
-### Primitive boundary
-
-`ExampleProgressGraph` deliberately stays in downstream example code because milestone names and graph meaning are specific to this Mod. Images, backgrounds, text, buttons, layout, and pointer actions remain reusable primitives.
+The [headless render receipt](../components/headless-render.properties) records the source, asset, viewport, and image hashes.
+The separate [native parity receipt](../evidence/minecraft-26.2-parity.properties) records the loaded-game comparisons.

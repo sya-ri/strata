@@ -18,7 +18,7 @@ import org.junit.jupiter.api.Test
  */
 internal class ShowcaseMarkdownTest {
     @Test
-    fun combinedDocumentIsExactAndUsesOverviewSource() {
+    fun catalogComparesEveryComponentAndScreensKeepTheOverviewSource() {
         val overview = ShowcaseOutput.Overview("import sample\ninternal fun overview() {}", "|- Text\n`- Button", byteArrayOf(1))
         val sections =
             ShowcaseScenarioCatalog.components.map { scenario ->
@@ -36,35 +36,42 @@ internal class ShowcaseMarkdownTest {
                     byteArrayOf(scenario.screen.ordinal.toByte()),
                 )
             }
-        val document = ShowcaseMarkdown.components(overview, sections, screens)
-        assertTrue(document.startsWith("<!-- Generated file. Do not edit. -->\n\n# Minecraft component showcase\n"))
-        assertTrue(document.contains("complete frame of the dedicated minimal `ScreenDefinition`"))
-        assertTrue(document.contains("publishes the entire resulting frame without cropping a larger showcase screen"))
-        assertTrue(document.contains("Separate native full-screen parity scenes"))
-        assertTrue(document.contains("`ConfirmScreen`"))
-        val componentLinks = DocumentedComponent.entries.joinToString("\n") { component -> "- [${component.apiMethodName}](#${component.slug})" }
-        assertTrue(document.contains(componentLinks))
-        assertTrue(document.contains("The tree shows Minecraft components in logical draw order"))
-        assertTrue(document.contains(overview.source))
+        val document = ShowcaseMarkdown.components(sections)
+        val screenDocument = ShowcaseScreenMarkdown.document(overview, screens)
+        assertTrue(document.startsWith("<!-- Generated file. Do not edit. -->\n\n# Component catalog\n"))
+        assertTrue(document.contains("[complete screen examples](../examples/screens.md)"))
+        assertTrue(document.contains("### Layout"))
+        assertTrue(document.contains("### Text and editing"))
+        assertTrue(document.contains("### Scrolling and lists"))
+        assertTrue(document.contains(overview.source).not())
         assertTrue(document.contains("without starting Minecraft or creating a GPU context"))
-        assertTrue(document.contains("(components/headless-render.properties)"))
-        assertTrue(document.contains("(evidence/minecraft-26.2-parity.properties)"))
-        assertTrue(document.contains("synchronized inventory image is the explicit exception"))
+        assertTrue(document.contains("(../components/headless-render.properties)"))
+        assertTrue(document.contains("(../evidence/minecraft-26.2-parity.properties)"))
         assertEquals(1, "<!-- Generated file. Do not edit. -->".toRegex().findAll(document).count())
-        DocumentedComponent.entries.forEach { component -> assertTrue(document.contains("<a id=\"${component.slug}\"></a>")) }
-        DocumentedScreen.entries.forEach { screen -> assertTrue(document.contains("<a id=\"screen-${screen.slug}\"></a>")) }
+        DocumentedComponent.entries.forEach { component ->
+            assertTrue(document.contains("<a id=\"${component.slug}\"></a>"))
+            val rowPrefix = "| [${component.apiMethodName}](#${component.slug}) |"
+            assertEquals(1, document.lineSequence().count { line -> line.startsWith(rowPrefix) })
+            assertTrue(document.contains("https://gh.s7a.dev/strata/api/dev.s7a.strata.component/-${component.slug}.html)"))
+        }
+        assertTrue(screenDocument.contains(overview.source))
+        assertTrue(screenDocument.contains(overview.tree))
+        assertTrue(screenDocument.contains("[component catalog](../reference/components.md)"))
+        DocumentedScreen.entries.forEach { screen ->
+            val anchor = "<a id=\"screen-${screen.slug}\"></a>"
+            assertTrue(document.contains(anchor).not())
+            assertTrue(screenDocument.contains(anchor))
+        }
     }
 
     @Test
-    fun rootRegionIsExactAndUsesOverviewSource() {
-        val overview = ShowcaseOutput.Overview("import sample\ninternal fun overview() {}", "|- Text\n`- Button", byteArrayOf(1))
-        val root = ShowcaseMarkdown.rootReadme(overview)
-        assertTrue(root.contains("## Minecraft component showcase"))
-        assertTrue(root.contains("fresh 320 by 180 headless `ConfirmScreen` reconstruction"))
+    fun rootPreviewLinksToTheCatalogWithoutDuplicatingExampleSource() {
+        val root = ShowcaseMarkdown.rootReadme()
+        assertTrue(root.contains("## A screen built from components"))
         assertTrue(root.contains("![Strata component showcase](docs/components/overview.png)"))
-        assertTrue(root.contains(overview.source))
-        assertTrue(root.contains("Generation does not start Minecraft or create a GPU context"))
-        assertTrue(root.contains("(docs/components.md)"))
+        assertTrue(root.contains("```kotlin").not())
+        assertTrue(root.contains("GameTest").not())
+        assertTrue(root.contains("(docs/reference/components.md)"))
     }
 
     @Test
@@ -106,7 +113,7 @@ internal class ShowcaseMarkdownTest {
             assertTrue(value.contains("\n\n## "))
             assertTrue(value.contains("complete frame of the compiled dedicated `ScreenDefinition`"))
             assertTrue(value.contains("source, asset, viewport, and image hashes"))
-            assertTrue(value.contains("(components/headless-render.properties)"))
+            assertTrue(value.contains("(../components/headless-render.properties)"))
             assertTrue(value.contains("or cropped from a larger screen"))
             assertTrue(value.contains("component crop").not())
             assertTrue(value.contains("The tree mirrors the complete dedicated definition"))
@@ -146,15 +153,15 @@ internal class ShowcaseMarkdownTest {
         assertTrue(sections.getValue(DocumentedScreen.SocialInteractions).contains("without introducing a purpose-specific SocialEntry component"))
         assertTrue(sections.getValue(DocumentedScreen.SynchronizedInventory).contains("loaded Fabric client/server GameTest"))
         assertTrue(sections.getValue(DocumentedScreen.SynchronizedInventory).contains("current compiled-source hash"))
-        assertTrue(sections.getValue(DocumentedScreen.SynchronizedInventory).contains("(evidence/minecraft-26.2-inventory.properties)"))
+        assertTrue(sections.getValue(DocumentedScreen.SynchronizedInventory).contains("(../evidence/minecraft-26.2-inventory.properties)"))
         assertTrue(sections.getValue(DocumentedScreen.SynchronizedInventory).contains("does not start a server"))
         assertTrue(sections.getValue(DocumentedScreen.SynchronizedInventory).contains("ender-chest, furnace, or custom inventory"))
         assertTrue(sections.getValue(DocumentedScreen.IndustrialController).contains("resource-pack-aware Mod controller"))
         assertTrue(sections.getValue(DocumentedScreen.PowerMilestones).contains("ExampleProgressGraph` deliberately stays in downstream example code"))
         sections.forEach { (screen, value) ->
-            assertTrue(value.contains("![${screen.title} screen showcase](components/screen-${screen.slug}.png)"))
-            assertTrue(value.contains("### Compiled screen"))
-            assertTrue(value.contains("### Primitive boundary"))
+            assertTrue(value.contains("![${screen.title} screen showcase](../components/screen-${screen.slug}.png)"))
+            assertTrue(value.contains("<details><summary>Compiled screen</summary>"))
+            assertTrue(value.contains("<details><summary>Image verification</summary>"))
             assertTrue(value.endsWith("\n"))
         }
     }

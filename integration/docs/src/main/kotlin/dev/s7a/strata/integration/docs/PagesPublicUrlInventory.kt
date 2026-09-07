@@ -158,7 +158,7 @@ internal object PagesPublicUrlInventory {
 
     private val CHECKED_EXTENSIONS =
         setOf("gradle", "html", "java", "json", "kt", "kts", "md", "properties", "toml", "txt", "xml", "yaml", "yml")
-    private val EXCLUDED_DIRECTORIES = setOf(".git", ".gradle", "build", "out")
+    private val EXCLUDED_DIRECTORIES = setOf(".git", ".gradle", ".worktrees", "build", "out")
     private val PAGES_URL =
         Regex(
             """https://gh\.s7a\.dev/strata/(?:[A-Za-z0-9._~%+-]+/)*[A-Za-z0-9._~%+-]*(?:#[A-Za-z0-9._~-]+)?(?=[\s"'`),;<>\]}]|$)""",

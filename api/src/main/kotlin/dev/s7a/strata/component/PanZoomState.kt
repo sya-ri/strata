@@ -14,12 +14,12 @@ import dev.s7a.strata.spi.InternalStrataRuntimeApi
  * Center coordinates use the content coordinate space, and zoom is a multiplier over the viewport's [PanZoomFit] scale.
  * One live retained observer may own viewport geometry, while additional observers may read transform changes without publishing geometry.
  * Reads, writes, observation, geometry publication, and observer release are confined to the constructing thread.
- * Observer callbacks may read state and release observers, but synchronous state writes are rejected so every observer sees a publication that still matches [metrics].
+ * Observer callbacks may read state and release observers, but synchronous state writes are rejected so every observer sees a publication that still matches [PanZoomState.metrics].
  * If an observer fails, the committed metrics remain current, every other still-live observer is attempted, and the first failure escapes with later failures suppressed.
  * The state owns no retained nodes or rendering resources.
  *
  * @param initialCenter requested initial content center, or null to center the first published content bounds.
- * @param initialZoom initial zoom multiplier within [minimumZoom] and [maximumZoom].
+ * @param initialZoom initial zoom multiplier within [PanZoomState.minimumZoom] and [PanZoomState.maximumZoom].
  * @property minimumZoom positive finite minimum zoom multiplier.
  * @property maximumZoom positive finite maximum zoom multiplier.
  * @throws IllegalArgumentException when zoom limits or initial values are invalid.
@@ -106,7 +106,7 @@ public class PanZoomState(
      * @param factor positive finite zoom multiplier.
      * @param anchor optional finite viewport-local coordinate to keep over the same content coordinate.
      * @return the resulting clamped zoom multiplier.
-     * @throws IllegalArgumentException when [factor] is not finite and positive or the resolved transform cannot remain finite and positive.
+     * @throws IllegalArgumentException when `factor` is not finite and positive or the resolved transform cannot remain finite and positive.
      * @throws IllegalStateException when called from another thread or synchronously from an observer callback.
      * @throws Throwable when a state observer fails after the new metrics are committed.
      */
@@ -135,7 +135,7 @@ public class PanZoomState(
      * @param zoom requested positive finite zoom multiplier.
      * @param anchor optional finite viewport-local coordinate to keep over the same content coordinate.
      * @return the resulting clamped zoom multiplier.
-     * @throws IllegalArgumentException when [zoom] is not finite and positive or the resolved transform or anchor arithmetic cannot remain finite and positive.
+     * @throws IllegalArgumentException when `zoom` is not finite and positive or the resolved transform or anchor arithmetic cannot remain finite and positive.
      * @throws IllegalStateException when called from another thread or synchronously from an observer callback.
      * @throws Throwable when a state observer fails after the new metrics are committed.
      */

@@ -9,7 +9,7 @@
 - Use `Stack` only when children intentionally overlap or align against the same rectangle. It is not a generic `div` or box container.
 - Do not wrap one element in a `Row` or `Column`. Put its modifier on that element or use the consuming parent's alignment API.
 - Prefer layout spacing, arrangement, alignment, and weight over coordinate-shaped padding.
-- Use small padding for local insets. Treat 20 or more as a review signal and retain it only for a documented native dimension or fixed panel geometry.
+- Choose padding for the intended inset; express relationships between siblings with layout spacing and alignment.
 - A background is paint: apply `background`, `imageBackground`, `menuBackground`, or `containerBackground` to the layout that owns the surface.
 
 ## Compiled structural example
@@ -137,3 +137,42 @@ internal fun storageScreen(onDone: () -> Unit): ScreenDefinition {
 - Use `TiledImageSource` for a large logical raster whose tiles load or change independently, keep navigation in `PanZoomState`, compose `panZoom(state)` for direct input, and place fixed-size markers through `TiledImageScope.atContentPosition`; pass a `StateSource<DoubleOffset>` when marker positions change independently.
 - Use `PlayerSkinSource` for profile-driven heads rather than pre-rendering a skin outside the component.
 - Bind `Slot` with `Slots.playerInventory`, `Slots.container`, or `Slots.activeMenu`; authoritative inventory mutation belongs to the active server menu.
+
+The sealed `UiText` and `DrawCommand` hierarchies include `WithFont` and `SampledImage`; exhaustive visitors must handle every case.
+Read the [rendering contracts](https://github.com/sya-ri/strata/blob/master/docs/development/rendering.md) when extending a backend.
+
+## Unicode and resource-pack fonts
+
+Use `font = ResourceId("example", "body")` on `Text`, `TextField`, or `TextArea` to select `assets/example/font/body.json`, or use `UiText.withFont` for reusable labels and parts of composed text.
+The ID is a font definition, not an operating-system font family or a direct TTF path.
+An inner font wrapper takes precedence over an outer wrapper or component font argument.
+Existing overloads without a font argument remain available.
+
+Japanese, Korean, supplementary characters, and emoji require glyph coverage in the selected resources.
+Unknown font IDs produce missing glyphs instead of silently selecting `minecraft:default`.
+Strata does not provide an independent color-emoji or ZWJ-sequence renderer, and the compatibility ASCII profile builder alone cannot render arbitrary Unicode.
+See [Text and text input](https://github.com/sya-ri/strata/blob/master/docs/guides/text.md) for a compiled API-only example.
+
+Existing `Text` overloads remain single-line; a required `TextLayout.Multiline` argument enables parent-width wrapping, hard breaks, line limits, clipping or ellipsis, and non-negative line spacing.
+`TextField` is single-line, while `TextArea` edits canonical LF text using `TextAreaState` and `TextAreaViewport.Lines` or `TextAreaViewport.Size`.
+An external `Scrollbar(state.scrollState)` shares the editor's stable owned vertical position.
+Immutable descriptions can be created without attaching state and reused after detachment; simultaneous attachment with the same `TextAreaState` throws `IllegalStateException`.
+Both editors navigate Unicode scalars rather than grapheme clusters, and positive `maxLength` counts UTF-16 code units.
+Delivered preedit events are shown as inline IME composition, with the supplied caret and focused block, separately from the committed value.
+TextArea also bounds the complete normalized composed value by its state's maxLength.
+TextArea semantics expose the typed TextArea role and editing value; the current semantics API does not expose typed accessibility edit or focus actions.
+Focus loss and terminal lifecycle paths clear composition.
+This does not add selection or clipboard commands, reproduce the native IME popup, or install new platform IME hooks on adapters that expose only committed characters.
+
+## Optional CPU backend for offline tools
+
+`dev.s7a.strata:strata-runtime-minecraft-fonts-lwjgl:0.1.4` supplies PNG decoding, the selected TrueType rasterizer, and ICU text ordering for resource-backed offline rendering without launching Minecraft.
+Versioned Fabric runtimes already include the backend and use the game's libraries; do not add runtime imports or native font objects to ordinary UI definitions.
+The backend does not bundle LWJGL, ICU, Gson, or native binaries.
+An offline host must supply the exact target's library dependencies and native classifier, caller-owned font resources, and `MinecraftFontCompatibility`; native library generations must not be mixed in one process.
+Use the pinned dependency declarations linked from [Font resources](https://github.com/sya-ri/strata/blob/master/docs/guides/fonts.md) rather than copying another release's versions.
+
+The resource loader creates an immutable snapshot, and each host owns and closes its own backend and bounded caches.
+Signed and zero TrueType settings follow the target contract, but non-finite JSON settings and unsafe STB coordinate conversions remain invalid.
+Read [Numeric provider settings](https://github.com/sya-ri/strata/blob/master/docs/guides/fonts.md#numeric-provider-settings) for atlas limits, non-finite glyph metrics, and compatibility options.
+[Font verification](https://github.com/sya-ri/strata/blob/master/docs/development/font-verification.md) requires exact native metrics and glyph texels; only final-image differences with independent GPU evidence are permitted, not a general pixel tolerance.

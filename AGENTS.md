@@ -1,8 +1,8 @@
 # Strata implementation invariants
 
 This file records durable project invariants for future implementers.
-The canonical architecture and build details live in [docs/architecture.md](docs/architecture.md) and [docs/build.md](docs/build.md).
-Follow [docs/minecraft-versions.md](docs/minecraft-versions.md) when adding a supported game version.
+The canonical architecture and build details live in [docs/development/architecture.md](docs/development/architecture.md) and [docs/development/build.md](docs/development/build.md).
+Follow [docs/development/minecraft-versions.md](docs/development/minecraft-versions.md) when adding a supported game version.
 Update the canonical document when its contract changes.
 
 ## Architecture and API
@@ -19,12 +19,12 @@ Update the canonical document when its contract changes.
   This gate does not restrict downstream applications or Mods: consumers may freely define purpose-specific composition functions or retained primitives through the public `Element` and `Node` SPI without registration.
 - Modifiers are active behavior, while parent data is exposed only by the layout scope that consumes it.
   Do not turn either into a passive settings bag or hidden global state.
-  Follow [docs/modifiers.md](docs/modifiers.md) for modifier identity, virtual ancestry, lifecycle, and extension behavior.
-- Keep shared screen-session orchestration in `runtime:core` and follow [docs/ui-sessions.md](docs/ui-sessions.md) for lifecycle, state cutoff, coroutine generation, and failure behavior.
+  Follow [docs/reference/modifier-spi.md](docs/reference/modifier-spi.md) for modifier identity, virtual ancestry, lifecycle, and extension behavior.
+- Keep shared screen-session orchestration in `runtime:core` and follow [docs/development/ui-sessions.md](docs/development/ui-sessions.md) for lifecycle, state cutoff, coroutine generation, and failure behavior.
   External source callbacks only enqueue revisions, and declarative frame phases do not mutate session state.
 - Admit a runtime cache only with an explicit key, invalidation rule, size or current-state bound, owner and threading contract, terminal release path, and deterministic parity and retention tests.
   Cache only derived presentation state; authoritative binding or server state must remain outside the cache.
-  Follow [docs/performance.md](docs/performance.md) for the review contract.
+  Follow [docs/development/performance.md](docs/development/performance.md) for the review contract.
 - Preserve null-safety and do not use `!!` in production or test code.
 
 ## Source and documentation
@@ -51,11 +51,16 @@ Update the canonical document when its contract changes.
 
 ## Reader documentation
 
+- Organize documentation by reader purpose and maintain [docs/README.md](docs/README.md) as the navigation index.
+  Guides explain use, references define public contracts, development documents own internal contracts and procedures, and release notes own versioned changes.
+  Follow [documentation maintenance](docs/development/documentation.md) for canonical ownership and generated content.
+
 - Keep the root README sufficient to understand the problem Strata solves, its verified features, installation, a minimal compiled example, the module choices, and the next documentation links without opening another file.
 - Back README API examples with compilation tests and render README images from shipped examples.
   Do not advertise behavior before its test and implementation are part of the same release.
 - Generate the component showcase from compiled scenario metadata.
-  Each component page contains its generated image, corresponding source, modifier and parent-scope guidance, and a component tree hidden inside a `details` element.
+  Keep one browsable component overview containing generated images, compiled examples, modifier and parent-scope guidance, and component trees hidden inside `details` elements.
+  Put complete screen examples in their own generated document and link API detail to Dokka rather than creating per-component prose API pages.
 
 ## Verification
 

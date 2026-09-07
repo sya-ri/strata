@@ -1,97 +1,66 @@
 package dev.s7a.strata.integration.docs
 
 /**
- * Produces deterministic Markdown for the combined component showcase and README region.
+ * Produces deterministic Markdown for the component catalog and README preview.
  */
 internal object ShowcaseMarkdown {
     /**
      * Builds the generated component document in catalog order.
      *
-     * @param overview rendered overview output.
      * @param sections rendered component sections.
-     * @param screens verified complete-screen use cases.
      * @return UTF-8-ready LF Markdown with one terminal newline.
      */
     internal fun components(
-        overview: ShowcaseOutput.Overview,
         sections: List<ShowcaseOutput.Section>,
-        screens: List<ShowcaseOutput.Screen>,
     ): String =
         markdown(
             """<!-- Generated file. Do not edit. -->
 
-# Minecraft component showcase
+# Component catalog
 
-Each component image is the complete frame of the dedicated minimal `ScreenDefinition` shown in its compiled example, containing the featured primitive and only the parent layout needed to demonstrate its responsibility.
-The documentation task freshly renders these definitions with the headless runtime and explicit Minecraft asset files without starting Minecraft or creating a GPU context, and publishes the entire resulting frame without cropping a larger showcase screen.
-Separate native full-screen parity scenes for `ConfirmScreen`, `DirectJoinServerScreen`, `ContainerScreen`, Social Interactions, and `ObjectSelectionList`, plus complete test Mod screens, remain independent acceptance evidence for real assets, fonts, textures, placement, and draw order.
-Animated examples publish the canonical frame at time zero; their native capture must exactly match a complete supported animation phase, which need not be the stored phase.
-The synchronized inventory image is the explicit exception: generation verifies a previously captured native image against its image and current compiled-source hashes instead of emulating a loaded server.
-The menu and generic-container images are active background modifiers on layout components rather than logical component entries.
+Choose components by the responsibility they serve in your screen.
+Each entry shows a rendered example, practical composition guidance, and a link to the API reference for signatures and overloads.
+Use the [complete screen examples](../examples/screens.md) to see how these primitives work together.
 
-[Open the deterministic headless render receipt](components/headless-render.properties)
+## Choose a component
 
-[Open the independent native parity receipt](evidence/minecraft-26.2-parity.properties)
+${ShowcaseComponentGuide.comparison(sections)}
 
-![Overview headless showcase](components/overview.png)
+## Rendered examples
 
-## Overview source
-
-```kotlin
-${overview.source}
-```
-
-<details><summary>Overview component tree</summary>
-
-The tree shows Minecraft components in logical draw order; platform-neutral layout scaffolding remains visible in the compiled source.
-
-```text
-${overview.tree}
-```
-
-</details>
-
-## Components
-
-${sections.joinToString("\n") { section -> "- [${section.title}](#${section.slug})" }}
+Images come from the compiled examples included with Strata.
+Expand an entry for its source, modifier and parent-scope guidance, or component tree.
+Menu and container backgrounds are modifiers on layout components.
 
 ${sections.joinToString("\n\n") { section -> section.section.trimEnd('\n') }}
 
-## Complete screens
+## Image verification
 
-These screens exercise the primitives in real vanilla-shaped and Mod-shaped use cases.
-Purpose-specific compositions stay in the compiled examples instead of becoming standard components; reusable capabilities remain available as general layout, image, text, input, slot-binding, and player-rendering primitives.
+Each component image is the complete frame of its dedicated minimal `ScreenDefinition`, including only the layout and children needed for the example.
+Generation renders these definitions with the headless runtime and explicit Minecraft assets without starting Minecraft or creating a GPU context.
+Animated examples use the frame at time zero; the independent native check accepts a complete supported animation phase.
 
-${screens.joinToString("\n") { screen -> "- [${screen.title}](#${screen.slug})" }}
-
-${screens.joinToString("\n\n") { screen -> screen.section.trimEnd('\n') }}
+The [headless render receipt](../components/headless-render.properties) records the source, asset, viewport, and image hashes.
+The separate [native parity receipt](../evidence/minecraft-26.2-parity.properties) records the loaded-game comparisons.
 """,
         )
 
     /**
      * Builds the generated root README region for the overview page.
      *
-     * @param overview rendered overview output.
      * @return UTF-8-ready LF Markdown with one terminal newline.
      */
-    internal fun rootReadme(overview: ShowcaseOutput.Overview): String =
+    internal fun rootReadme(): String =
         markdown(
             """<!-- Generated file. Do not edit. -->
 
-## Minecraft component showcase
+## A screen built from components
 
-This deterministic image is a fresh 320 by 180 headless `ConfirmScreen` reconstruction using explicit Minecraft asset files.
-Generation does not start Minecraft or create a GPU context; native-screen, Fabric-adapter, and headless comparisons run in a separate [acceptance gate](docs/components.md).
+A confirmation screen combines text, buttons, and layout components into a reusable UI definition.
 
 ![Strata component showcase](docs/components/overview.png)
 
-### Overview source
-
-```kotlin
-${overview.source}
-```
-
-[Open the complete component showcase](docs/components.md)
+[Compare components and browse their examples](docs/reference/components.md).
 """,
         )
 
@@ -108,17 +77,21 @@ ${overview.source}
     ): String {
         val physical = spec.viewportMetadata.physicalSize
         val renderSentence =
-            "This ${physical.width} by ${physical.height} PNG is the complete frame of the compiled dedicated `ScreenDefinition`, with a ${spec.viewport.width} by ${spec.viewport.height} logical viewport at GUI scale ${spec.scale}. Headless rendering samples the assets at this physical density; the image is not upscaled from a lower-resolution raster or cropped from a larger screen. Its source, asset, viewport, and image hashes are recorded in [the headless render receipt](components/headless-render.properties)."
+            "This ${physical.width} by ${physical.height} PNG is the complete frame of the compiled dedicated `ScreenDefinition`, with a ${spec.viewport.width} by ${spec.viewport.height} logical viewport at GUI scale ${spec.scale}. Headless rendering samples the assets at this physical density; the image is not upscaled from a lower-resolution raster or cropped from a larger screen. Its source, asset, viewport, and image hashes are recorded in [the headless render receipt](../components/headless-render.properties)."
         return markdown(
             """<a id="${spec.component.slug}"></a>
 
 ## ${spec.component.apiMethodName}
 
+${ShowcaseComponentGuide.purpose(spec.component)}
+
+![${spec.component.apiMethodName} headless showcase](../components/${spec.component.slug}.png)
+
+[API reference](${ShowcaseComponentGuide.apiUrl(spec.component)})
+
+<details><summary>Usage and compiled example</summary>
+
 ${ComponentDocumentationCatalog.summary(spec.component)}
-
-$renderSentence
-
-![${spec.component.apiMethodName} headless showcase](components/${spec.component.slug}.png)
 
 ### Compiled example
 
@@ -134,6 +107,8 @@ ${ComponentDocumentationCatalog.modifierGuidance(spec.component)}
 
 ${ComponentDocumentationCatalog.parentScopeGuidance(spec.component)}
 
+</details>
+
 <details><summary>Component tree</summary>
 
 The tree mirrors the complete dedicated definition, including the featured component, its minimum parent layout, and the children used to demonstrate its responsibility.
@@ -141,6 +116,12 @@ The tree mirrors the complete dedicated definition, including the featured compo
 ```text
 ${tree(spec.tree)}
 ```
+
+</details>
+
+<details><summary>Image verification</summary>
+
+$renderSentence
 
 </details>
 """,

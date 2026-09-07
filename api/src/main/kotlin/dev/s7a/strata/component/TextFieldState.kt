@@ -10,8 +10,8 @@ import dev.s7a.strata.spi.InternalStrataRuntimeApi
  * Reads, writes, observation, and subscription release are confined to the thread that constructs the state.
  *
  * @param initialValue initial well-formed single-line text.
- * @property maxLength positive maximum UTF-16 length accepted by [value].
- * @throws IllegalArgumentException when [maxLength] is not positive or [initialValue] is unsupported or too long.
+ * @property maxLength positive maximum UTF-16 length accepted by [TextFieldState.value].
+ * @throws IllegalArgumentException when [TextFieldState.maxLength] is not positive or `initialValue` is unsupported or too long.
  */
 public class TextFieldState(
     initialValue: String = "",
@@ -31,7 +31,7 @@ public class TextFieldState(
      *
      * A distinct successful write synchronously notifies the attached retained observer.
      *
-     * @throws IllegalArgumentException when a value contains unsupported text or exceeds [maxLength].
+     * @throws IllegalArgumentException when a value contains unsupported text or exceeds [TextFieldState.maxLength].
      * @throws IllegalStateException when accessed from another thread.
      */
     public var value: String

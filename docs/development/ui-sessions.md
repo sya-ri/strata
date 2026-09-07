@@ -1,8 +1,8 @@
 # UI sessions
 
-`runtime:core` owns a tested internal session that coordinates retained trees, local state, revisioned sources, pointer input, and coroutine work.
-It is not yet a public screen-definition API.
-Keeping this orchestration in the Minecraft-independent runtime gives headless and game adapters the same lifecycle and state semantics.
+This is the internal session contract for runtime implementers.
+`runtime:core` coordinates retained trees, local state, revisioned sources, input, and coroutine work so adapters share one lifecycle and failure model.
+Application authors use [ScreenDefinition and component state](../guides/screens-and-state.md); the local delegates and coroutine generations described here are not a public screen-definition API.
 
 ## Runtime adapter bridge
 
@@ -26,40 +26,6 @@ After reconciliation, attachment resumes these nodes in effective parent-first o
 Session detach suspends every such node in reverse-sibling descendant-first order even before the first successful frame, while retaining node identity and externally owned sources.
 Suspension clears active references before fallible cleanup, and terminal lifecycle cleanup remains safe after an earlier suspension.
 The opt-in `resetInputState` bridge gives native window-blur and input-reset handlers the same capture, hover, and focus cleanup without detaching the session or invalidating its committed frame.
-
-The common `runtime:minecraft` adapter consumes a one-shot screen definition and a complete immutable profile.
-Definition close and host transfer race atomically, and a transferred host exposes only owner-thread metadata, lifecycle, fixed-viewport frames, and typed pointer, keyboard, committed-character, and preedit input.
-Its screen-content callback is an ordinary `UiScope`, while the host installs its selected Minecraft profile behind that callback for top-level Minecraft components and modifiers.
-Callers therefore declare `Text`, `TextField`, `TextArea`, `Button`, `Checkbox`, `CycleButton`, `Slider`, `Tab`, `ScrollArea`, `Scrollbar`, `VirtualList`, `SelectionList`, `Image`, `Canvas`, `Slot`, `PlayerHead`, `LoadingIndicator`, and `ProgressBar` directly without an additional root builder or an explicit Minecraft context receiver.
-Application code emits those components directly and composes profile-backed `menuBackground()`, `containerBackground(rows)`, or immutable `imageBackground(image, scale)` behavior into ordinary modifier chains; screen definitions, `Text`, and `Button` accept `String` literals without requiring `UiText.Literal`, while typed overloads retain unresolved `UiText` values when needed.
-The fixed-height profile-backed Button and Tab own appearance, hover visuals, and enabled semantics, while reusable pointer, keyboard, text-input, preedit, focus, activation, press, release, move, drag, scroll, and hover actions are active modifiers shared with other component kinds.
-TextField owns the verified EditBox sprites, typed profile-backed text colors, insert or append cursor, Unicode scalar editing, and semantics while caller-owned owner-thread `TextFieldState` owns the value and positive UTF-16 maximum length.
-The ordinary field is 200 by 20, while the explicit-size overload applies the native one-pixel nine-slice border and integer-centered glyph row to any extent of at least 9 by 9.
-TextArea shares the typed frame assets and font layout, with canonical LF values, visual-line cursor affinity, a constrained inner viewport, and owner-thread `TextAreaState`.
-Its state owns one stable vertical `ScrollState` that an independent `Scrollbar` may observe; one state may attach to only one editor at a time.
-Mutable editor, focus, preedit, current-layout, and invalidation ownership live only in retained nodes, never in reusable immutable element descriptions.
-Focused input modifiers run before either built-in editor, so consuming a typed event overrides its default action and ignoring the event permits the editor to handle it.
-Text, TextField, and TextArea accept resource-pack font IDs, and `UiText.withFont` carries the same selection through composed labels.
-Existing Text overloads remain single-line; typed `TextLayout.Multiline` uses parent width constraints and shares line breaking with TextArea.
-Font metrics drive measurement, drawing, cursor placement, and scrolling together; Unicode glyph availability follows the selected resource pack.
-Inline preedit text has its own caret and focused block and does not change the caller's value until committed input arrives.
-It does not reproduce the native IME popup or platform candidate window.
-See [Text and text input](text.md) for font selection, Unicode boundaries, and the compatibility limits.
-ScrollArea owns the active Minecraft profile's menu-list background, child clipping, separators, wheel behavior, and retained offset through caller-owned `ScrollState`.
-An independently placed Scrollbar observes the same state and owns the track sprites, proportional thumb, and thumb dragging; a caller may omit it or place it away from the viewport while preserving the native background-to-content-to-overlay paint order.
-The container-background modifier owns the verified row-dependent generic chest geometry and two native texture regions, while Slot owns the exact 18 by 18 pointer region, optional 16 by 16 content root, and back-content-front hover layers.
-The Fabric-backed `Slot(bind = ...)` form accepts `Slots.playerInventory(index)`, a logical `Slots.container(index)`, or the raw-menu escape hatch `Slots.activeMenu(index)`; it polls the current authoritative menu before each frame, inserts native item rendering at the Slot's ordered item phase, and sends pointer transactions through Minecraft's container-input operation instead of mutating inventory storage.
-The loaded integration opens storage on the integrated server and proves player inventory, a custom `SimpleContainer`, and ender-chest pickup and restoration through the same binding protocol.
-That live overload is intentionally unavailable to portable-only hosts because arbitrary `ItemStack` models are native version assets; the optional-content overload remains the headless-compatible Slot contract.
-Button and Tab do not install keyboard focus or activation implicitly; callers compose `onActivate(enabled)` when primary pointer and focused Enter or Space presses mean the same action, while pointer-specific behavior remains on `onPress`.
-The common component boundary exposes only structural resource-pack identifiers and detached immutable pixels, not resource-manager objects, native Minecraft values, renderers, input mappers, or task facilities.
-Client and server code may share a `ResourceId`; only the versioned client resolves its pixels through the active resource-pack stack before building an `Image` or image-background modifier.
-One common host memoizes each admitted resource-image resolution by structural `ResourceId` across immediate and deferred component evaluation, while direct pixel sources bypass platform resolution.
-The fixed host cache admits at most 512 identifiers and 128 MiB of straight-RGBA8 pixels without eviction; results beyond either admission limit and all failed resolutions bypass retention.
-All access is owner-thread confined, detachment preserves the cache with the host, and terminal host cleanup clears it before closing the platform.
-Resolution remains lazy, so the first use observes the then-active pack stack, but an admitted image stays fixed until host close; a new host is required to resolve replacement pixels reliably.
-Image may retain either the complete immutable asset or one nonempty contained source rectangle, allowing sprite-atlas regions to map to an independent destination size without copying pixels or introducing a purpose-specific component.
-The Fabric adapter snapshots the current selected player skin from either its resource-backed default path or registered downloaded texture; `PlayerHead` then renders the native face layer followed by the optional hat layer without retaining a player or platform texture.
 
 ## Ownership and lifecycle
 
@@ -107,10 +73,7 @@ A callback arriving after the cutoff remains pending for the following frame.
 Each participating binding retains at most one transaction-local captured observation between these two phases, in addition to its committed and latest pending state.
 Sources newly attached or replaced during reconciliation may paint their subscription's initial snapshot, but later callbacks wait for the next frame cutoff.
 
-`canvasSource(frames)` uses this protocol for immutable `DrawImage` revisions without introducing a streaming or timestamp protocol.
-Its any-thread observer only enqueues the newest revision; both timed and untimed frames drain it before paint-cache reuse.
-An image's pixel extent may change while the Canvas destination remains its explicit positive logical size.
-The node owns only its attachment binding and stops observing on source replacement, session detach, or terminal cleanup; it never closes the caller-owned source.
+Public source consumers follow the same cutoff and attachment contracts; see [Canvas](../guides/canvas.md#cpu-sources) for the externally owned image-source case.
 
 ## Frames and input
 

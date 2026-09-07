@@ -33,17 +33,17 @@ internal class ShowcaseSourcesTest {
         val root = if (Files.isDirectory(current.resolve("api"))) current else current.resolve("../..").normalize()
         val examples =
             listOf(
-                "docs/text.md" to
+                "docs/guides/text.md" to
                     SourceReference(
                         "integration/api/src/main/kotlin/dev/s7a/strata/integration/consumer/ApiOnlyUnicodeTextScreen.kt",
                         "unicode-text",
                     ),
-                "docs/text.md" to
+                "docs/guides/text.md" to
                     SourceReference(
                         "integration/api/src/main/kotlin/dev/s7a/strata/integration/consumer/ApiOnlyMultilineTextScreen.kt",
                         "multiline-text",
                     ),
-                "docs/font-resources.md" to
+                "docs/guides/fonts.md" to
                     SourceReference(
                         "integration/docs/src/main/kotlin/dev/s7a/strata/integration/docs/FontResourceExample.kt",
                         "font-resources",

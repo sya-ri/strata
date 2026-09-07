@@ -1,7 +1,7 @@
 # Contributing to Strata
 
-Read the [implementation invariants](AGENTS.md) and [Architecture](docs/architecture.md) before changing public contracts or module boundaries.
-[Build and release](docs/build.md) is the canonical reference for build configuration and verification.
+Read the [implementation invariants](AGENTS.md) and [Architecture](docs/development/architecture.md) before changing public contracts or module boundaries.
+[Build and verification](docs/development/build.md) is the canonical reference for build configuration and verification.
 
 ## Development setup
 
@@ -27,7 +27,7 @@ Verify additions and updates against current primary documentation, and keep dep
   Update the canonical documentation whenever a contract changes, and advertise only implemented, tested behavior.
 
 For Minecraft changes, use the Minecraft evidence tools first, then authoritative local files or primary sources instead of inferring version-sensitive behavior.
-Follow [Supporting a new Minecraft version](docs/minecraft-versions.md) when adding an adapter.
+Follow [Supporting a new Minecraft version](docs/development/minecraft-versions.md) when adding an adapter.
 
 ## Verification
 
@@ -49,9 +49,10 @@ For documentation and public-skill changes, run these focused checks:
 ./gradlew :integration:docs:checkStrataSkill :integration:docs:checkDocumentationLinks
 ```
 
-The anchored README API example and component showcase are generated regions; do not edit their contents by hand.
-Update their source examples and use the generation tasks described in [Build and release](docs/build.md).
-The showcase check also requires fresh loaded-game parity evidence.
+The README installation, API example, and showcase regions, component overview, complete screens, and compatibility reference have generated owners.
+Update their sources and use the generation tasks in [Documentation maintenance](docs/development/documentation.md).
+Headless showcase generation and freshness checks do not launch Minecraft; the separate native parity check requires fresh loaded-game evidence.
+Keep documentation organized by purpose through the [documentation index](docs/README.md), with exact declarations linked to the existing Dokka API reference.
 
 ## Commits and pull requests
 

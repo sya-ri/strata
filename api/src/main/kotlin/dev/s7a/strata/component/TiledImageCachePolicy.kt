@@ -4,7 +4,7 @@ package dev.s7a.strata.component
  * Bounds one retained tiled-image attachment's current tile working set.
  *
  * The component reserves one entry and the level's complete RGBA8 byte cost before subscribing, even while a tile is empty.
- * The working set contains only tiles intersecting the visible rectangle plus [overscanTiles], together with visible coarser fallback tiles; it retains no offscreen history beyond that margin.
+ * The working set contains only tiles intersecting the visible rectangle plus [TiledImageCachePolicy.overscanTiles], together with visible coarser fallback tiles; it retains no offscreen history beyond that margin.
  * If the preferred level cannot fit, the component selects a coarser level before changing subscriptions.
  * If even the coarsest visible set cannot fit, layout fails before partially installing that set.
  *

@@ -7,14 +7,14 @@ import dev.s7a.strata.geometry.LongRect
 /**
  * Immutable position and resolved geometry snapshot for a pan-and-zoom viewport.
  *
- * [zoom] is a multiplier over the base [fit] scale, while [scale] is the resolved number of logical viewport pixels per content unit.
- * Before a viewport publishes geometry, [geometryKnown] is false and [scale] is only a finite placeholder that must not be used for coordinate conversion.
+ * [PanZoomMetrics.zoom] is a multiplier over the base [PanZoomMetrics.fit] scale, while [PanZoomMetrics.scale] is the resolved number of logical viewport pixels per content unit.
+ * Before a viewport publishes geometry, [PanZoomMetrics.geometryKnown] is false and [PanZoomMetrics.scale] is only a finite placeholder that must not be used for coordinate conversion.
  *
  * @property center content coordinate shown at the viewport center.
  * @property zoom caller-controlled multiplier over the base fit scale.
  * @property scale resolved logical viewport pixels per content unit.
- * @property viewportSize current positive viewport extent when [geometryKnown] is true.
- * @property contentBounds current positive half-open content bounds when [geometryKnown] is true.
+ * @property viewportSize current positive viewport extent when [PanZoomMetrics.geometryKnown] is true.
+ * @property contentBounds current positive half-open content bounds when [PanZoomMetrics.geometryKnown] is true.
  * @property fit base scale policy.
  * @property geometryKnown whether a viewport has published usable geometry.
  * @throws IllegalArgumentException when numeric values are not finite and positive where required, or known geometry is empty.

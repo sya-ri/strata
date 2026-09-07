@@ -1,8 +1,14 @@
-# Tiled images and pan-and-zoom navigation
+# Tiled images and navigation
 
-`TiledImage` presents a bounded logical raster from independently revisioned immutable image tiles.
-It is a standard component because maps, large scans, and schematics all need visible-tile demand, resolution selection, and bounded observation that composition from independent `Image` children cannot provide.
-It does not load files, decode images, perform network requests, generate map data, or own application markers.
+Use `TiledImage` when a map, scan, or schematic is supplied as independently revisioned immutable image tiles.
+The component observes the visible tile range, selects a usable resolution, and positions optional overlays in content coordinates.
+The application supplies loading, decoding, retries, and domain data.
+
+Start with the compiled TiledImage example in the [component overview](../reference/components.md).
+Provide a `TiledImageSource`, retain a caller-owned `PanZoomState`, and compose `panZoom` for pointer navigation.
+The [API reference](https://gh.s7a.dev/strata/) defines the source and geometry types.
+
+## Navigation state
 
 `PanZoomState` is caller-owned navigation state.
 The state stores a content-space center and a zoom multiplier over either a contain or cover fit scale, while the attached viewport publishes its current content bounds and logical size.
@@ -64,19 +70,10 @@ An interactive overlay that consumes a primary press prevents the later pan modi
 A consumed primary press captures subsequent drag and matching release outside bounds and clips; cancel, removal, detach, close, window input reset, and failure end the gesture once.
 Wheel zoom preserves the content coordinate under the pointer, and programmatic controls use the same `PanZoomState` operations.
 
-Rotation, tilt, inertia, multi-touch gestures, arbitrary subtree scaling, marker models, selection, route finding, and editing are outside the initial contract.
+Rotation, tilt, inertia, multi-touch gestures, arbitrary subtree scaling, marker models, selection, route finding, and editing are outside the component contract.
 
-## Minecraft presentation acceleration
+## Presentation and reuse
 
-Portable correctness does not require a native cache, but repeatedly rasterizing a moved tile run into a viewport-sized CPU image would defeat the component's invalidation boundary.
-Fabric presenters therefore directly draw eligible `SampledImage` commands from a bounded device-owned texture cache.
-
-The native cache key is the physical device generation and `DrawImage` referential identity.
-Source and destination rectangles, clip, GUI scale, overlay state, and frame revision are deliberately excluded.
-Pan and zoom may issue new destination geometry without another pixel copy or upload, player-marker movement cannot invalidate tile textures, and one replacement image uploads only that identity.
-Unsupported commands retain their exact semantics through a tightly bounded portable fallback layer.
-
-Active, initializing, retired, and physically releasing native entries count against explicit entry and byte limits.
-Entries used by an extracted GUI frame remain pinned through the actual GUI-consumption fence.
-Eviction first removes an unpinned least-recently-used cache entry, then transfers its native storage to device-owned retirement; failed destruction remains charged until terminal acknowledgement.
-Screen release drops screen-owned image references immediately, while device shutdown completes submitted work and independently drains every retained native resource.
+Pan, zoom, resize, and overlay movement preserve ready image identities, allowing supported Fabric presenters to reuse uploaded pixels.
+Portable correctness uses the same draw commands in headless and Minecraft rendering.
+The [sampled-image cache contract](../development/performance.md#direct-sampled-image-texture-cache) owns native cache keys and limits; [rendering](../development/rendering.md) owns GUI-consumption fences and fallback order.

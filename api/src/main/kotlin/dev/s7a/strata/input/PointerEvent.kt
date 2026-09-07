@@ -47,8 +47,8 @@ public sealed interface PointerEvent {
     /**
      * A pointer movement event while one typed button remains held.
      *
-     * Positive [deltaX] requests motion toward increasing logical x.
-     * Positive [deltaY] requests motion toward increasing logical y.
+     * Positive [PointerEvent.Drag.deltaX] requests motion toward increasing logical x.
+     * Positive [PointerEvent.Drag.deltaY] requests motion toward increasing logical y.
      * Adapters normalize native coordinates and units into this logical displacement.
      *
      * @property position current tree-coordinate event position.
@@ -71,8 +71,8 @@ public sealed interface PointerEvent {
     /**
      * A pointer scroll event with finite logical input displacement.
      *
-     * Positive [deltaX] requests motion toward increasing logical x.
-     * Positive [deltaY] requests motion toward increasing logical y.
+     * Positive [PointerEvent.Scroll.deltaX] requests motion toward increasing logical x.
+     * Positive [PointerEvent.Scroll.deltaY] requests motion toward increasing logical y.
      * Adapters normalize native signs and units into this logical displacement.
      *
      * @property position the tree-coordinate event position.
