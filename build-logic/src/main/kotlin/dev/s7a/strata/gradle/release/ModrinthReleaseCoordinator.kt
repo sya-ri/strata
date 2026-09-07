@@ -114,7 +114,7 @@ internal class ModrinthReleaseCoordinator(
     /**
      * Transitions the project body only after approval and after every version in this release is exact.
      *
-     * Release orchestration invokes this phase only after the predecessor release has completed its own final verification.
+     * Release orchestration may invoke this phase after publishing the current release, then invokes it idempotently again after the predecessor release completes final verification.
      * This coordinator retains no project response after the call, runs synchronously on the invoking release-task thread, and returns the exact approved remote inventory.
      * It fails before a write when project metadata or release files drift, and recovers an ambiguous accepted body update only by re-reading and matching the complete tracked contract.
      */

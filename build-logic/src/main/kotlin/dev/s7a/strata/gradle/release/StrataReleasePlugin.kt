@@ -156,7 +156,7 @@ public class StrataReleasePlugin : Plugin<Project> {
         val finalizeProject =
             registerNetworkTask(
                 "modrinthReleaseFinalizeProject",
-                "Transitions the approved Modrinth project body after predecessor-release verification.",
+                "Transitions the approved Modrinth project body after release publication or predecessor verification.",
                 ModrinthReleaseTask.Operation.FINALIZE_PROJECT,
             )
         val verify =

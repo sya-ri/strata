@@ -250,6 +250,7 @@ for required_contract in \
   'task=":integration:minecraft-fabric-$minecraft_version:runPublishedCoordinateClientGameTest"' \
   'run-publish-controller-recovery.sh' \
   'backlog-recovery.json' \
+  'Finalize approved Modrinth body during release' \
   'Verify complete predecessor release before Modrinth body finalization' \
   'Finalize current Modrinth body and verify approved release'; do
   grep --fixed-strings "$required_contract" "$workflow" >/dev/null || fail "Forward-controller contract is missing: $required_contract"
@@ -326,7 +327,8 @@ for mutation_spec in \
   'Publish wholly absent Maven Central release|publishAndReleaseToMavenCentral' \
   'Stage only missing Modrinth versions|modrinthReleaseStage' \
   'Create or verify immutable GitHub Release|gh release create' \
-  'Submit or observe Modrinth review|modrinthReleaseSubmit'; do
+  'Submit or observe Modrinth review|modrinthReleaseSubmit' \
+  'Finalize approved Modrinth body during release|modrinthReleaseFinalizeProject'; do
   mutation_name="${mutation_spec%%|*}"
   mutation_write="${mutation_spec#*|}"
   mutation_block="$(step_block "$mutation_name")"
@@ -348,6 +350,7 @@ for controller_call_spec in \
   'Verify public Pages and tagged Skill source|bash "$CONTROLLER_TOOL_DIRECTORY/verify-pages-deployment-source.sh"' \
   'Verify public predecessor services and Pages provenance|bash "$CONTROLLER_TOOL_DIRECTORY/wait-for-pages-source-receipt.sh"' \
   'Verify public predecessor services and Pages provenance|bash "$CONTROLLER_TOOL_DIRECTORY/verify-pages-deployment-source.sh"' \
+  'Finalize approved Modrinth body during release|bash "$CONTROLLER_TOOL_DIRECTORY/verify-github-tag-ruleset.sh"' \
   'Finalize current Modrinth body and verify approved release|bash "$CONTROLLER_TOOL_DIRECTORY/verify-github-tag-ruleset.sh"'; do
   controller_step="${controller_call_spec%%|*}"
   controller_call="${controller_call_spec#*|}"
@@ -386,6 +389,60 @@ release_job="$(sed -n '/^  release:$/,/^  public_skills:$/p' "$workflow")"
 public_job="$(sed -n '/^  public_skills:$/,/^  verify:$/p' "$workflow")"
 verify_job="$(sed -n '/^  verify:$/,$p' "$workflow")"
 [[ "$(grep --fixed-strings -c 'bash "$CONTROLLER_TOOL_DIRECTORY/run-publish-controller-recovery.sh"' <<< "$release_job")" == '3' ]] || fail 'Release job must contain exactly three generic recovery calls.'
+[[ "$(grep --fixed-strings -c 'modrinthReleaseFinalizeProject' <<< "$release_job")" == '1' ]] || fail 'Release must contain exactly one approved-project body finalizer.'
+[[ "$(grep --fixed-strings -c 'modrinthReleaseFinalizeProject' <<< "$verify_job")" == '1' ]] || fail 'Final verification must retain exactly one idempotent project-body finalizer.'
+release_finalize_block="$(step_block 'Finalize approved Modrinth body during release')"
+for release_finalize_contract in \
+  'if [[ "$PREFLIGHT_BODY_STATE" == '\''recovery'\'' ]]; then' \
+  'Backlog recovery keeps Description finalization deferred to operation=verify.' \
+  '(.projectStatus == "processing" or .projectStatus == "approved")' \
+  'if [[ "$project_status" == '\''processing'\'' ]]; then' \
+  'operation=verify will finalize Description after approval.' \
+  '[[ "$project_status" == '\''approved'\'' ]]' \
+  '[[ "$GITHUB_SHA" == "$EXPECTED_CONTROLLER_COMMIT" && "$(git rev-parse origin/master)" == "$EXPECTED_CONTROLLER_COMMIT" ]]' \
+  '[[ "$(git rev-parse HEAD)" == "$EXPECTED_TAG_COMMIT" && "$(git rev-parse --verify "refs/tags/$RELEASE_TAG^{commit}")" == "$EXPECTED_TAG_COMMIT" ]]' \
+  '$(git rev-parse "refs/tags/$RELEASE_TAG")" == "$EXPECTED_TAG_OBJECT"' \
+  '$(git rev-parse --verify "refs/tags/$PREDECESSOR_TAG^{commit}")" == "$PREDECESSOR_RELEASE_COMMIT"' \
+  '$(git rev-parse "refs/tags/$PREDECESSOR_TAG")" == "$PREDECESSOR_RELEASE_OBJECT"' \
+  'git merge-base --is-ancestor "$PREDECESSOR_RELEASE_COMMIT" "$EXPECTED_TAG_COMMIT"' \
+  'git merge-base --is-ancestor "$EXPECTED_TAG_COMMIT" origin/master' \
+  'bash "$CONTROLLER_TOOL_DIRECTORY/verify-current-controller-release-order.sh"' \
+  'read -r release_pages_run_id _ _ controller_pages_run_id _ _ <<< "$EXPECTED_PAGES_RECORD"' \
+  '"$controller_pages_run_id" "$EXPECTED_CONTROLLER_COMMIT")" == "$EXPECTED_PAGES_RECORD"' \
+  '[[ "$(git rev-parse origin/master)" == "$EXPECTED_CONTROLLER_COMMIT" ]]' \
+  'git diff --quiet -- .' \
+  'git diff --cached --quiet -- .' \
+  '.operation == "finalize-project" and .projectStatus == "approved" and (.absent | length) == 0 and (.listed | length) == $artifacts'; do
+  grep --fixed-strings "$release_finalize_contract" <<< "$release_finalize_block" >/dev/null || \
+    fail "Release-time Modrinth body finalization contract is missing: $release_finalize_contract"
+done
+require_before "$release_finalize_block" 'if [[ "$PREFLIGHT_BODY_STATE" == '\''recovery'\'' ]]; then' 'modrinthReleaseFinalizeProject'
+require_before "$release_finalize_block" 'if [[ "$project_status" == '\''processing'\'' ]]; then' 'modrinthReleaseFinalizeProject'
+require_before "$release_finalize_block" '[[ "$project_status" == '\''approved'\'' ]]' 'modrinthReleaseFinalizeProject'
+require_before "$release_finalize_block" 'git fetch --force origin' 'modrinthReleaseFinalizeProject'
+require_before "$release_finalize_block" 'bash "$CONTROLLER_TOOL_DIRECTORY/verify-pages-deployment-source.sh"' 'modrinthReleaseFinalizeProject'
+for release_finalize_boundary in \
+  '[[ "$GITHUB_SHA" == "$EXPECTED_CONTROLLER_COMMIT" && "$(git rev-parse origin/master)" == "$EXPECTED_CONTROLLER_COMMIT" ]]' \
+  '[[ "$(git rev-parse HEAD)" == "$EXPECTED_TAG_COMMIT" && "$(git rev-parse --verify "refs/tags/$RELEASE_TAG^{commit}")" == "$EXPECTED_TAG_COMMIT" ]]' \
+  '$(git rev-parse "refs/tags/$RELEASE_TAG")" == "$EXPECTED_TAG_OBJECT"' \
+  '$(git rev-parse --verify "refs/tags/$PREDECESSOR_TAG^{commit}")" == "$PREDECESSOR_RELEASE_COMMIT"' \
+  '$(git rev-parse "refs/tags/$PREDECESSOR_TAG")" == "$PREDECESSOR_RELEASE_OBJECT"' \
+  'git merge-base --is-ancestor "$PREDECESSOR_RELEASE_COMMIT" "$EXPECTED_TAG_COMMIT"' \
+  'git merge-base --is-ancestor "$EXPECTED_TAG_COMMIT" origin/master' \
+  'bash "$CONTROLLER_TOOL_DIRECTORY/verify-release-tag.sh" "$RELEASE_TAG"' \
+  'bash "$CONTROLLER_TOOL_DIRECTORY/verify-release-tag.sh" "$PREDECESSOR_TAG"' \
+  'bash "$CONTROLLER_TOOL_DIRECTORY/verify-current-controller-release-order.sh"' \
+  '"$controller_pages_run_id" "$EXPECTED_CONTROLLER_COMMIT")" == "$EXPECTED_PAGES_RECORD"' \
+  '[[ "$(git rev-parse origin/master)" == "$EXPECTED_CONTROLLER_COMMIT" ]]' \
+  'git diff --quiet -- .' \
+  'git diff --cached --quiet -- .'; do
+  require_before "$release_finalize_block" "$release_finalize_boundary" 'modrinthReleaseFinalizeProject'
+done
+require_immediate_guard "$release_finalize_block" 'bash "$CONTROLLER_TOOL_DIRECTORY/verify-release-tag.sh" "$RELEASE_TAG"' 'verify_controller_tools'
+require_immediate_guard "$release_finalize_block" 'bash "$CONTROLLER_TOOL_DIRECTORY/verify-release-tag.sh" "$PREDECESSOR_TAG"' 'verify_controller_tools'
+require_immediate_guard "$release_finalize_block" 'bash "$CONTROLLER_TOOL_DIRECTORY/verify-current-controller-release-order.sh"' 'verify_controller_tools'
+require_immediate_guard "$release_finalize_block" 'bash "$CONTROLLER_TOOL_DIRECTORY/verify-pages-deployment-source.sh"' 'verify_controller_tools'
+require_immediate_guard "$release_finalize_block" 'bash ./gradlew --no-parallel --max-workers=2 --no-build-cache modrinthReleaseFinalizeProject' 'verify_controller_tools'
 if grep --fixed-strings 'run-publish-controller-recovery.sh' <<< "$verify_job" >/dev/null; then
   fail 'Final verification must not invoke backlog recovery.'
 fi
@@ -419,10 +476,11 @@ step_line() {
 central_line="$(step_line 'Publish wholly absent Maven Central release')"
 github_line="$(step_line 'Create or verify immutable GitHub Release')"
 submit_line="$(step_line 'Submit or observe Modrinth review')"
+release_finalize_line="$(step_line 'Finalize approved Modrinth body during release')"
 predecessor_line="$(step_line 'Verify complete predecessor release before Modrinth body finalization')"
 finalize_line="$(step_line 'Finalize current Modrinth body and verify approved release')"
-[[ -n "$central_line" && -n "$github_line" && -n "$submit_line" && -n "$predecessor_line" && -n "$finalize_line" ]] || fail 'A mutation or predecessor boundary is missing.'
-(( central_line < github_line && github_line < submit_line && predecessor_line < finalize_line )) || fail 'Release mutation or finalization ordering differs.'
+[[ -n "$central_line" && -n "$github_line" && -n "$submit_line" && -n "$release_finalize_line" && -n "$predecessor_line" && -n "$finalize_line" ]] || fail 'A mutation or predecessor boundary is missing.'
+(( central_line < github_line && github_line < submit_line && submit_line < release_finalize_line && predecessor_line < finalize_line )) || fail 'Release mutation or finalization ordering differs.'
 
 controller_test_root="$(mktemp -d)"
 cleanup_controller_test() {
