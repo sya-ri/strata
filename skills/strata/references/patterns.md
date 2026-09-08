@@ -166,7 +166,7 @@ This does not add selection or clipboard commands, reproduce the native IME popu
 
 ## Optional CPU backend for offline tools
 
-`dev.s7a.strata:strata-runtime-minecraft-fonts-lwjgl:0.1.4` supplies PNG decoding, the selected TrueType rasterizer, and ICU text ordering for resource-backed offline rendering without launching Minecraft.
+`dev.s7a.strata:strata-runtime-minecraft-fonts-lwjgl:0.1.5` supplies PNG decoding, the selected TrueType rasterizer, and ICU text ordering for resource-backed offline rendering without launching Minecraft.
 Versioned Fabric runtimes already include the backend and use the game's libraries; do not add runtime imports or native font objects to ordinary UI definitions.
 The backend does not bundle LWJGL, ICU, Gson, or native binaries.
 An offline host must supply the exact target's library dependencies and native classifier, caller-owned font resources, and `MinecraftFontCompatibility`; native library generations must not be mixed in one process.

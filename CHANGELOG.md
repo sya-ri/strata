@@ -2,6 +2,23 @@
 
 All notable changes to Strata are documented in this file.
 
+## 0.1.5 - 2026-09-08
+
+See the [0.1.5 release notes](docs/releases/v0.1.5.md) for installation and observation contracts.
+
+### Added
+
+- `Observe` binds a retained region to one through 22 typed `StateSource` arguments and reevaluates its content when committed values or its parent-supplied callback change, without reopening the screen.
+- Source-backed `Text` accepts `StateSource<String>` and `StateSource<UiText>`, including explicit-font overloads, through the same retained observation mechanism.
+- Observed regions share subscriptions and committed frame snapshots by source reference identity, coalesce pending revisions, and reconcile nested changes parent-first while preserving compatible keyed descendants.
+
+### Compatibility
+
+- Existing `ScreenDefinition` and literal `Text` APIs remain available; ordinary captured Kotlin variables do not become observable automatically.
+- Observe occupies one parent-layout slot and emits zero or one child root; use an inner layout for multiple children and apply containing-layout parent data to Observe's modifier.
+- Sources and editable state remain application-owned. Independent sources do not form an atomic application transaction; publish one immutable model through one source when fields must change together.
+- The supported Minecraft matrix remains 1.20 through 1.20.6, 1.21 through 1.21.11, 26.1, and 26.2; all Strata artifacts must use the same 0.1.5 version.
+
 ## 0.1.4 - 2026-09-06
 
 ### Added
