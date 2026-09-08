@@ -29,7 +29,7 @@ runner_temporary="$temporary_root/runner"
 mkdir -p "$runner_temporary"
 
 for input in "$runner" "$manifest" "$patch"; do
-  if LC_ALL=C od -An -t x1 "$input" | grep -Eq '(^|[[:space:]])0d([[:space:]]|$)'; then
+  if LC_ALL=C od -An -t x1 "$input" | grep -E '(^|[[:space:]])0d([[:space:]]|$)' >/dev/null; then
     fail "Central controller overlay input does not use LF line endings: $input"
   fi
 done
@@ -119,7 +119,7 @@ fi
 
 crlf_manifest="$temporary_root/crlf-central-signature-checksums.json"
 awk '{ printf "%s%c\n", $0, 13 }' "$manifest" > "$crlf_manifest"
-LC_ALL=C od -An -t x1 "$crlf_manifest" | grep -Eq '(^|[[:space:]])0d([[:space:]]|$)' || \
+LC_ALL=C od -An -t x1 "$crlf_manifest" | grep -E '(^|[[:space:]])0d([[:space:]]|$)' >/dev/null || \
   fail 'The CRLF rejection fixture does not contain carriage returns.'
 if run_overlay build-logic-test "$crlf_manifest" "$patch" >/dev/null 2>&1; then
   fail 'A Central controller overlay accepted a manifest with CRLF line endings.'
