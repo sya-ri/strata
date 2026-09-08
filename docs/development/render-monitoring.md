@@ -15,3 +15,23 @@ Collection is disabled by default: there is no collector, diagnostic event alloc
 Native tests first wait for resource loading and initial painting to stabilize, then checkpoint. Publish state and wait for a successful host frame to advance; elapsed sleep alone is not evidence. Equal mapped output must leave dependent content, node update, measure, layout, paint, and semantics counts unchanged and reuse the previous frame. Compare the existing native preparation, rasterization, and texture-upload counters too; Minecraft extraction and host-frame calls continue normally.
 
 Tests also compare diagnostics against independent primitive callback counters and virtual-list row callbacks. A count is actual invocation work, not a statement that every invocation was avoidable. Necessary text geometry propagation and continuous Minecraft rendering are valid. Timing and allocation comparisons are diagnostic measurements under documented conditions; deterministic work counts, retention limits, and image equality are the CI gates.
+
+## Overlapping content and overlays
+
+Updating a lower node does not mean drawing its pixels directly over the previous final image.
+The paint pipeline regenerates dirty local commands, then assembles the complete ordered display list, including cached foreground sibling commands, child clips, post-child overlays, and root overlays.
+Unchanged foreground content and paint callbacks can remain cached while those commands still participate in composition.
+This applies to a paint-only change below an overlay; a child geometry change propagates measure/layout and conservative paint invalidation to ancestors.
+An ancestor overlay may use child geometry cached during measure/layout even when its own outer bounds remain the same, so its paint callback can run again without reevaluating the screen or unrelated sibling content.
+Semi-transparent foreground pixels depend on the current background; clearing lower content must reveal that background without retaining the previous color.
+
+`Paint`, `OverlayPaint`, and `RootOverlayPaint` count callback invocations, not command submission, blended pixels, or native rasterization.
+A zero foreground callback count therefore does not imply zero foreground composition cost.
+The native portable cache keys a complete ordered command run: a changed lower command can require rasterizing and uploading the layer containing an unchanged overlay.
+Strata does not promise per-node damage rectangles or independent cached textures for every overlapping component, and fully occluded nodes are not exempt from state evaluation.
+Use the native preparation/rasterization/upload counters alongside UI counters before making performance claims about a layered screen.
+
+Regression tests change and clear a lower sibling under opaque and translucent foregrounds and compare every pixel with manually calculated colors.
+Separate core assertions retain child clips and both overlay kinds while invoking only the changed child's paint callback.
+The shared loaded-client scenario changes direct state inputs beneath clipped translucent post-child paint and opaque root paint: paint-only progress updates keep overlay callbacks at zero while portable composition does run; a text-width change also runs the ancestor overlay callbacks once after geometry propagation.
+The updated screenshot must equal the literal headless reference.

@@ -60,6 +60,9 @@ Loading indicators and delayed tooltips additionally verify that timestamps insi
 
 The Fabric presenter reuses the complete partitioned frame when the immutable draw-command list has referential identity, the logical viewport is equal, and the actual GUI scale is unchanged.
 When a mixed portable-and-platform display list changes, portable textures may be reused only when the complete ordered list of localized immutable commands, image extents, viewport, and GUI scale is equal; platform layers are still extracted natively every time.
+Cached foreground paint callbacks do not make overlapping composition free: changing a lower command can invalidate the portable run containing the foreground, requiring its rasterization and upload again.
+The full ordered commands and clips are replayed, so translucent overlays blend against the updated background and erased lower pixels do not persist.
+See [render monitoring](render-monitoring.md#overlapping-content-and-overlays) for the distinction between callback counts and composition work and the corresponding pixel regressions.
 Sampled glyph geometry is rasterized at physical resolution, so a scale change requires a new raster and texture even when the logical display list is identical.
 Changed portable inputs allocate a complete replacement generation before any GUI output, rather than modifying a texture that unconsumed GUI work may still reference.
 The screen retains only its current portable generation, and equivalent replacement commands replace old CPU input references without uploading identical pixels again.

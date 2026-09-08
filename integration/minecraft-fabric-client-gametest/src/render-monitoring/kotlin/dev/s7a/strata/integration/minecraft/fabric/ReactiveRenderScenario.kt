@@ -38,7 +38,7 @@ internal object ReactiveRenderScenario {
                 verifyProgress(driver, monitor, progress)
                 driver.onClient { monitor.close() }
                 driver.assertPixels(literalReference())
-                "stableHostFrames=100\nequalMapUiWork=0\nequalMapNativeWork=0\nchangedMapEvaluations=1\nprogressMeasure=0\nprogressLayout=0\nupdatedPixels=literal-headless-exact\n"
+                "stableHostFrames=100\nequalMapUiWork=0\nequalMapNativeWork=0\nchangedMapEvaluations=1\nprogressMeasure=0\nprogressLayout=0\noverlayCallbacksOnPaintOnlyLowerUpdate=0\noverlayCallbacksOnChildGeometryChange=1\noverlayComposition=clipped-translucent-and-root-opaque\nupdatedPixels=literal-headless-exact\n"
             }
         val cleanup = runCatching { driver.onClient { driver.closeScreen() } }
         outcome.exceptionOrNull()?.let { failure ->
@@ -60,6 +60,7 @@ internal object ReactiveRenderScenario {
                     Modifier.Empty
                         .size(160, 48)
                         .background(ArgbColor(0xFF000000.toInt()))
+                        .then(ReactiveRenderOverlays)
                         .padding(8),
                 spacing = 4,
             ) {
@@ -76,6 +77,7 @@ internal object ReactiveRenderScenario {
                     Modifier.Empty
                         .size(160, 48)
                         .background(ArgbColor(0xFF000000.toInt()))
+                        .then(ReactiveRenderOverlays)
                         .padding(8),
                 spacing = 4,
             ) {
@@ -130,6 +132,10 @@ internal object ReactiveRenderScenario {
             check(snapshot.counts.getValue(UiRenderMetric.StateComponentEvaluation) == 1L)
             check(0L < snapshot.counts.getValue(UiRenderMetric.Paint))
             check(changed.preparations < driver.work().preparations)
+            // Ancestor paint can depend on child geometry cached during measure/layout, even at fixed outer size.
+            check(0L < snapshot.counts.getValue(UiRenderMetric.Measure))
+            check(snapshot.counts.getValue(UiRenderMetric.OverlayPaint) == 1L)
+            check(snapshot.counts.getValue(UiRenderMetric.RootOverlayPaint) == 1L)
             val progressId = monitor.findNodes(ElementKey("progress")).single()
             check(
                 snapshot.nodes
@@ -145,13 +151,19 @@ internal object ReactiveRenderScenario {
         monitor: UiRenderMonitor,
         progress: ReactiveRenderSource<Double>,
     ) {
-        publish(driver, monitor) { progress.publish(0.75) }
+        val before = publish(driver, monitor) { progress.publish(0.75) }
         driver.onClient {
             val snapshot = monitor.snapshot()
             check(snapshot.counts.getValue(UiRenderMetric.StateComponentEvaluation) == 1L)
             check(snapshot.counts.getValue(UiRenderMetric.Measure) == 0L)
             check(snapshot.counts.getValue(UiRenderMetric.Layout) == 0L)
             check(snapshot.counts.getValue(UiRenderMetric.Paint) == 1L)
+            assertCachedOverlays(snapshot)
+            val after = driver.work()
+            check(before.preparations < after.preparations)
+            check(before.rasterizations < after.rasterizations && before.uploads < after.uploads) {
+                "Changed lower progress must recompose its portable layer, including the cached foreground: before=$before, after=$after"
+            }
         }
     }
 
@@ -179,10 +191,18 @@ internal object ReactiveRenderScenario {
             UiRenderMetric.Measure,
             UiRenderMetric.Layout,
             UiRenderMetric.Paint,
+            UiRenderMetric.OverlayPaint,
+            UiRenderMetric.RootOverlayPaint,
             UiRenderMetric.Semantics,
         ).forEach { metric ->
             check(snapshot.counts.getValue(metric) == 0L) { "Unexpected reactive UI work: $metric=${snapshot.counts.getValue(metric)}" }
         }
+    }
+
+    private fun assertCachedOverlays(snapshot: UiRenderSnapshot) {
+        check(snapshot.overflowed.not())
+        check(snapshot.counts.getValue(UiRenderMetric.OverlayPaint) == 0L)
+        check(snapshot.counts.getValue(UiRenderMetric.RootOverlayPaint) == 0L)
     }
 
     private fun assertNoNativeWork(

@@ -41,6 +41,7 @@ Read the reactive examples and counterexamples in [patterns.md](references/patte
 Prefer `Row`, `Column`, and `Grid` structure with arrangement, alignment, spacing, weight, and small local padding.
 Default `Text` is a natural-size single line: forcing a larger `size` or filled weight can violate its constraints. For a reserved clock/status rectangle, use `Text(layout = TextLayout.Multiline(), ...)`; this also applies to the single root inside a fixed-size Observe. A literal or reactive label follows the same geometry contract.
 Use `Stack` only for intentional overlap.
+Partial updates preserve overlay order, but unchanged foreground callbacks do not imply free composition: a lower-layer change can require rasterizing and uploading the shared layer again, especially with transparency. Do not claim zero native redraw from zero foreground evaluation or paint counts; compare native work and final pixels too.
 Keep events on modifiers, mutable values in caller-owned state, and platform work behind the installed runtime.
 
 ## Output expectations
