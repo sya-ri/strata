@@ -134,6 +134,26 @@ internal object ShowcaseScenarioCatalog {
                     ),
             ),
             ComponentScenario(
+                component = DocumentedComponent.Observe,
+                source = componentSource("MinecraftObserveExample.kt", "observe"),
+                viewportMetadata = ShowcaseViewport(IntSize(160, 48), 1),
+                tree =
+                    tree(
+                        DocumentedComponent.Observe,
+                        listOf(
+                            ShowcaseTreeDetail.Size(160, 48),
+                            ShowcaseTreeDetail.Background(ArgbColor(0xFF000000.toInt())),
+                            ShowcaseTreeDetail.Padding(8),
+                        ),
+                        tree(
+                            DocumentedComponent.Column,
+                            listOf(ShowcaseTreeDetail.Spacing(4)),
+                            tree(DocumentedComponent.Text, emptyList()),
+                            tree(DocumentedComponent.Text, emptyList()),
+                        ),
+                    ),
+            ),
+            ComponentScenario(
                 component = DocumentedComponent.Text,
                 source = componentSource("MinecraftTextExample.kt", "text"),
                 viewportMetadata = ShowcaseViewport(IntSize(192, 88), 2),

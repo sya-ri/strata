@@ -16,6 +16,7 @@ import dev.s7a.strata.integration.minecraft.fabric.createGridShowcaseScreenDefin
 import dev.s7a.strata.integration.minecraft.fabric.createImageShowcaseScreenDefinition
 import dev.s7a.strata.integration.minecraft.fabric.createIndustrialScreenDefinition
 import dev.s7a.strata.integration.minecraft.fabric.createLoadingIndicatorShowcaseScreenDefinition
+import dev.s7a.strata.integration.minecraft.fabric.createObserveShowcaseScreenDefinition
 import dev.s7a.strata.integration.minecraft.fabric.createPlayerHeadShowcaseScreenDefinition
 import dev.s7a.strata.integration.minecraft.fabric.createProgressBarShowcaseScreenDefinition
 import dev.s7a.strata.integration.minecraft.fabric.createProgressScreenDefinition
@@ -82,6 +83,7 @@ internal object ShowcaseHeadlessRenderer {
                 DocumentedComponent.Stack -> createStackShowcaseScreenDefinition()
                 DocumentedComponent.Grid -> createGridShowcaseScreenDefinition()
                 DocumentedComponent.Spacer -> createSpacerShowcaseScreenDefinition()
+                DocumentedComponent.Observe -> createObserveShowcaseScreenDefinition()
                 DocumentedComponent.Text -> createTextShowcaseScreenDefinition()
                 DocumentedComponent.TextField -> createTextFieldShowcaseScreenDefinition()
                 DocumentedComponent.TextArea -> createTextAreaShowcaseScreenDefinition()

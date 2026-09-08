@@ -38,11 +38,12 @@ internal class LifecycleManager(
     }
 
     /**
-     * Attaches every not-yet-reached component and modifier in parent-first order.
+     * Attaches only this component and its modifiers before a caller-owned parent-first traversal.
+     * Descendants remain untouched so deferred reconciliation can replace them before their own visit.
      *
-     * @param retained the root of the subtree to attach.
+     * @param retained the installed node whose local attachment is required.
      */
-    fun attach(retained: RetainedNode) {
+    fun attachCurrent(retained: RetainedNode) {
         retained.modifiers.forEach { modifier -> attachModifier(modifier) }
         if (retained.attachAttempted) {
             return
@@ -50,7 +51,6 @@ internal class LifecycleManager(
         retained.attachAttempted = true
         val lifecycle = retained.node as? LifecycleNode
         lifecycle?.attach()
-        retained.children.forEach(::attach)
     }
 
     /**
@@ -72,11 +72,7 @@ internal class LifecycleManager(
      * @param retained the installed root to scan.
      */
     fun attachPending(retained: RetainedNode) {
-        if (retained.attachAttempted.not()) {
-            attach(retained)
-            return
-        }
-        retained.modifiers.forEach { modifier -> attachModifier(modifier) }
+        attachCurrent(retained)
         retained.children.forEach(::attachPending)
     }
 

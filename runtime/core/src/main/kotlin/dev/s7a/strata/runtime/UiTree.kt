@@ -7,6 +7,7 @@ import dev.s7a.strata.input.InputResult
 import dev.s7a.strata.input.KeyboardEvent
 import dev.s7a.strata.input.PointerEvent
 import dev.s7a.strata.input.TextInputEvent
+import dev.s7a.strata.node.StateObserverNode
 import dev.s7a.strata.runtime.render.DrawCommand
 import dev.s7a.strata.runtime.semantics.SemanticsEntry
 import dev.s7a.strata.runtime.spi.RuntimeTextInputFocus
@@ -35,8 +36,15 @@ public class UiTree : AutoCloseable {
     private val dirtyTracker = DirtyTracker()
     private val registry = NodeOwnershipRegistry()
     private val pipeline = Pipeline(threadGuard)
-    private val lifecycle = LifecycleManager(registry, threadGuard, dirtyTracker, pipeline::entryWillCleanup)
-    private val reconciler = Reconciler(lifecycle, dirtyTracker)
+    private val observedSources = ObservedSourceRegistry()
+    private val lifecycle =
+        LifecycleManager(registry, threadGuard, dirtyTracker) { entry ->
+            val failures = FailureAccumulator()
+            (entry.node as? StateObserverNode)?.let { node -> failures.capture { observedSources.remove(node) } }
+            failures.capture { pipeline.entryWillCleanup(entry) }
+            failures.throwIfPresent()
+        }
+    private val reconciler = Reconciler(lifecycle, dirtyTracker, observedSources)
     private val validator = DescriptionValidator()
     private var currentState: TreeState = TreeState.Active
     private var root: RetainedNode? = null
@@ -121,6 +129,7 @@ public class UiTree : AutoCloseable {
      */
     internal fun captureFrameState() {
         pipelineOperation {
+            observedSources.capture()
             root?.let(pipeline::captureFrameState)
         }
     }
@@ -131,8 +140,17 @@ public class UiTree : AutoCloseable {
      */
     internal fun commitFrameState() {
         pipelineOperation {
+            observedSources.commit()
             root?.let(pipeline::commitFrameState)
         }
+    }
+
+    /**
+     * Releases sources left unreferenced by the completed owner-thread session frame or attachment.
+     * Replacements keep their existing committed and pending snapshots; cleanup failures poison this tree.
+     */
+    internal fun finishFrameState() {
+        pipelineOperation(observedSources::finishFrame)
     }
 
     /**
@@ -176,10 +194,12 @@ public class UiTree : AutoCloseable {
         try {
             validator.validate(description)
             runCatching {
+                observedSources.beginOperation()
                 val nextRoot = reconciler.reconcileRoot(root, description)
                 root = nextRoot
                 reconciler.markInstalled(nextRoot)
                 lifecycle.attachPending(nextRoot)
+                observedSources.endOperation()
             }.getOrElse { failure -> poison(failure) }
         } finally {
             operationActive = false
@@ -405,6 +425,7 @@ public class UiTree : AutoCloseable {
                 failures.addOptional(lifecycle.cleanup(capturedRoot))
             }
             failures.addOptional(reconciler.cleanupProvisionals())
+            failures.capture(observedSources::close)
             failures.throwIfPresent()
         } finally {
             operationActive = false
@@ -421,7 +442,12 @@ public class UiTree : AutoCloseable {
     private inline fun <T> pipelineOperation(block: () -> T): T {
         beginOperation()
         try {
-            return runCatching(block).getOrElse { failure -> poison(failure) }
+            return runCatching {
+                observedSources.beginOperation()
+                val result = block()
+                observedSources.endOperation()
+                result
+            }.getOrElse { failure -> poison(failure) }
         } finally {
             operationActive = false
         }
@@ -439,6 +465,7 @@ public class UiTree : AutoCloseable {
             failures.addOptional(lifecycle.cleanup(capturedRoot))
         }
         failures.addOptional(reconciler.cleanupProvisionals())
+        failures.capture(observedSources::close)
         failures.throwFirst()
     }
 }

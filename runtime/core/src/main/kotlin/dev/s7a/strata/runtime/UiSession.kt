@@ -219,6 +219,7 @@ internal class UiSession private constructor(
                     rebuildContent()
                 }
                 checkNotNull(tree) { "An attached session has no retained tree." }.sessionAttached()
+                checkNotNull(tree) { "An attached session has no retained tree." }.finishFrameState()
             }.getOrElse { failure -> fail(failure) }
         } finally {
             endOperation()
@@ -329,6 +330,9 @@ internal class UiSession private constructor(
                     cachedTreeRevision = revision
                     cachedFrame = frame
                 }
+                frame
+            }.mapCatching { frame ->
+                checkNotNull(tree) { "An attached session has no retained tree." }.finishFrameState()
                 frame
             }.getOrElse { failure -> fail(failure) }
         } finally {

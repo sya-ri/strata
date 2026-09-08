@@ -38,6 +38,11 @@ internal enum class DocumentedComponent(
     Spacer("Spacer", "spacer"),
 
     /**
+     * One explicitly source-observed retained region with optional content.
+     */
+    Observe("Observe", "observe"),
+
+    /**
      * The text component identity.
      */
     Text("Text", "text"),
@@ -138,12 +143,18 @@ internal enum class DocumentedComponent(
      * Decoding operations for external API method names.
      */
     companion object {
+        private val apiMethodAliases =
+            mapOf(
+                "TextStringSource" to Text,
+                "TextUiTextSource" to Text,
+            )
+
         /**
          * Decodes an external API method name at the inventory boundary.
          *
          * @param name raw JVM method name.
          * @return the typed identity or null when the name is not a documented component.
          */
-        internal fun fromApiMethodName(name: String): DocumentedComponent? = entries.firstOrNull { component -> component.apiMethodName == name }
+        internal fun fromApiMethodName(name: String): DocumentedComponent? = apiMethodAliases[name] ?: entries.firstOrNull { component -> component.apiMethodName == name }
     }
 }

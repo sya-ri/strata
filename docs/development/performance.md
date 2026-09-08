@@ -267,6 +267,20 @@ A virtual list materializes only the visible rows plus its bounded overscan rows
 Jumping across a large indexed source replaces the current range instead of retaining visited ranges.
 Prepending data preserves the visible stable key without materializing the intervening items.
 
+### Observed-region retention
+
+Observe retains its current child descriptions and committed value tuple, rebuilding only for a changed tuple or parent callback.
+Repeated geometry passes reuse those descriptions; compatible child nodes preserve editing and viewport state.
+Source-backed Text delegates to the same region mechanism and never opens another screen.
+The tree-owned registry shares one source subscription by reference identity and is bounded by the sources referenced during the current frame or standalone tree operation.
+Bindings whose last owner disappears remain available for same-operation readmission, preserving the committed cutoff and pending notifications; still-unused bindings are released before the operation returns.
+An ordered pending-release set is empty on stable frames, so frame completion does not add a full registry scan when no source was removed.
+Its revision binding retains committed, pending, and captured values plus the subscription carrier; terminal release drops registry references and closes each subscription once.
+Core tests count content evaluations and subscriptions for nested, repeated-argument, equal-value, background-burst, removal, replacement, and closed-tree cases.
+After initial dynamic materialization settles, unchanged frames retain their immutable frame cache and perform no additional component, measure, layout, paint, or semantics work.
+The bounded regression scenario holds 128 independent regions, runs 100 unchanged frames, and requires one sibling content evaluation and one primitive update when one source changes.
+A changed label may legitimately invalidate ancestor measurement.
+
 ### Player-skin lifecycle
 
 The asynchronous skin completion path must retain only its detached lifecycle target and must not capture the screen, platform bridge, or binding owner after close.

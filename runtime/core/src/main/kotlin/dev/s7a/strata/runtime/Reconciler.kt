@@ -6,6 +6,7 @@ import dev.s7a.strata.element.ElementKey
 import dev.s7a.strata.modifier.ModifierElement
 import dev.s7a.strata.node.DirtyMask
 import dev.s7a.strata.node.DynamicChildrenNode
+import dev.s7a.strata.node.StateObserverNode
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
 import java.util.Collections
 import java.util.IdentityHashMap
@@ -19,6 +20,7 @@ import java.util.LinkedHashSet
 internal class Reconciler(
     private val lifecycle: LifecycleManager,
     private val dirtyTracker: DirtyTracker,
+    private val observedSources: ObservedSourceRegistry = ObservedSourceRegistry(),
 ) {
     private val provisionalRoots: MutableSet<RetainedNode> = LinkedHashSet()
 
@@ -84,6 +86,8 @@ internal class Reconciler(
         root: RetainedNode,
         validator: DescriptionValidator,
     ) {
+        lifecycle.attachCurrent(root)
+        (root.node as? StateObserverNode)?.let(observedSources::synchronize)
         val dynamic = root.node as? DynamicChildrenNode
         if (dynamic != null) {
             val descriptions = dynamic.dynamicChildren()
@@ -127,6 +131,7 @@ internal class Reconciler(
         description: Element,
     ) {
         val previous = retained.element
+        if (previous === description) return
         val mask = description.type.updateErased(previous, description, retained.node)
         val modifierUpdate = reconcileModifiers(retained, description.modifier.elements())
         retained.element = description
@@ -135,6 +140,7 @@ internal class Reconciler(
         if (modifierUpdate.structural) {
             dirtyTracker.structural(retained)
         }
+        if (retained.node is DynamicChildrenNode) return
         reconcileChildren(retained, description.children)
     }
 

@@ -1332,6 +1332,7 @@ public class StrataMinecraftClientGameTest : FabricClientGameTest {
             ComponentShowcase.Grid -> createGridShowcaseScreenDefinition()
             ComponentShowcase.Spacer -> createSpacerShowcaseScreenDefinition()
             ComponentShowcase.Text -> createTextShowcaseScreenDefinition()
+            ComponentShowcase.Observe -> createObserveShowcaseScreenDefinition()
             ComponentShowcase.TextField -> createTextFieldShowcaseScreenDefinition()
             ComponentShowcase.TextArea -> createTextAreaShowcaseScreenDefinition()
             ComponentShowcase.Button -> createButtonShowcaseScreenDefinition()
@@ -2005,6 +2006,7 @@ public class StrataMinecraftClientGameTest : FabricClientGameTest {
         Stack("stack", IntSize(64, 64)),
         Grid("grid", IntSize(64, 64)),
         Spacer("spacer", IntSize(160, 64)),
+        Observe("observe", IntSize(160, 48)),
         Text("text", IntSize(192, 88), scale = 2),
         TextField("text-field", IntSize(216, 64), scale = 2),
         TextArea("text-area", IntSize(226, 80), scale = 2),

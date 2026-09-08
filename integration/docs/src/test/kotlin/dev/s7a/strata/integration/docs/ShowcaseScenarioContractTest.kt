@@ -34,6 +34,7 @@ internal class ShowcaseScenarioContractTest {
                 "MinecraftStackExample.kt" to "stack",
                 "MinecraftGridExample.kt" to "grid",
                 "MinecraftSpacerExample.kt" to "spacer",
+                "MinecraftObserveExample.kt" to "observe",
                 "MinecraftTextExample.kt" to "text",
                 "MinecraftTextFieldShowcaseExample.kt" to "text-field",
                 "MinecraftTextAreaShowcaseExample.kt" to "text-area",
@@ -64,6 +65,7 @@ internal class ShowcaseScenarioContractTest {
                 IntSize(64, 64),
                 IntSize(64, 64),
                 IntSize(160, 64),
+                IntSize(160, 48),
                 IntSize(192, 88),
                 IntSize(216, 64),
                 IntSize(226, 80),
@@ -178,6 +180,16 @@ internal class ShowcaseScenarioContractTest {
                     expectedTree(DocumentedComponent.Button, listOf(ShowcaseTreeDetail.Size(60, 20))),
                     expectedTree(DocumentedComponent.Spacer, listOf(ShowcaseTreeDetail.Size(16, 20))),
                     expectedTree(DocumentedComponent.Button, listOf(ShowcaseTreeDetail.Size(60, 20))),
+                ),
+                expectedTree(
+                    DocumentedComponent.Observe,
+                    listOf(ShowcaseTreeDetail.Size(160, 48), black, ShowcaseTreeDetail.Padding(8)),
+                    expectedTree(
+                        DocumentedComponent.Column,
+                        listOf(ShowcaseTreeDetail.Spacing(4)),
+                        expectedTree(DocumentedComponent.Text),
+                        expectedTree(DocumentedComponent.Text),
+                    ),
                 ),
                 expectedTree(
                     DocumentedComponent.Stack,

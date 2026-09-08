@@ -57,7 +57,7 @@ internal object ShowcaseInventory {
                         requireClassOrigin(type, directories)
                         declaredMethods(type, className, origin(type), uiScopeType)
                     }.sortedWith(compareBy({ method -> method.declaringClass.name }, { method -> method.name }, { method -> descriptor(method) }))
-                    .groupBy { method -> method.name }
+                    .groupBy { method -> DocumentedComponent.fromApiMethodName(method.name)?.apiMethodName ?: method.name }
                     .toSortedMap()
             require(methods.keys.all { name -> DocumentedComponent.fromApiMethodName(name) != null }) {
                 "Minecraft component inventory contains an undecoded component method: ${methods.keys}."

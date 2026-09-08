@@ -30,6 +30,7 @@ ${rows.joinToString("\n") { section -> "| [${section.title}](#${section.slug}) |
     @Suppress("CyclomaticComplexMethod")
     internal fun purpose(component: DocumentedComponent): String =
         when (component) {
+            DocumentedComponent.Observe -> "Update one retained region when explicitly supplied sources change."
             DocumentedComponent.Row -> "Arrange siblings horizontally on one line."
             DocumentedComponent.FlowRow -> "Wrap horizontal siblings when the available width changes."
             DocumentedComponent.Column -> "Arrange siblings vertically."
@@ -69,7 +70,7 @@ ${rows.joinToString("\n") { section -> "| [${section.title}](#${section.slug}) |
     private fun group(component: DocumentedComponent): Group =
         when (component) {
             DocumentedComponent.Row, DocumentedComponent.FlowRow, DocumentedComponent.Column,
-            DocumentedComponent.Stack, DocumentedComponent.Grid, DocumentedComponent.Spacer,
+            DocumentedComponent.Stack, DocumentedComponent.Grid, DocumentedComponent.Spacer, DocumentedComponent.Observe,
             -> Group.Layout
 
             DocumentedComponent.Text, DocumentedComponent.TextField, DocumentedComponent.TextArea -> Group.Text
