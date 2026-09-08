@@ -300,6 +300,19 @@ Owner-thread draining must transfer an accepted completion at most once, and a c
 
 ## Interpreting measurements
 
+`OverlayRenderingBenchmark` separates retained command generation from full headless source-over composition with one changing opaque lower layer and 1, 16, or 64 immutable translucent foregrounds.
+It runs at 320 by 180 and 1920 by 1080 physical pixels, with diagnostics disabled and enabled.
+The command fixture still assembles the complete ordered display list; the composition fixture also allocates a complete output image and blends every covered foreground pixel.
+These are different costs, and the headless timings are not native GPU frame-rate measurements.
+Repeated full-area alpha blending is proportional to area and layer count; a narrow Observe or a direct State input does not remove that raster work.
+Do not recommend dense full-area translucent stacks for frequent updates without measuring their intended physical resolution and composition path.
+
+`:quality:benchmarks:verifyOverlayRenderingWork` uses the same fixture for deterministic retention and pixel checks.
+Each layer count runs 10,000 changes, requires exactly one lower paint and Observe evaluation per update, no measure/layout or node creation/disposal, one active source subscription, bounded node/display-list counts, and no subscription after close.
+Every verification image is compared pixel-for-pixel with an independently calculated source-over color.
+For a longer local soak, invoke `OverlayWorkEvidence` from the JMH jar with explicit update count, raster frame count, and viewport width; it keeps the same assertions and never accumulates frame history.
+Record those counts and any elapsed-time measurements with the review evidence; no elapsed-time threshold gates CI.
+
 Record the measured revision, configuration, and environment with each temporary report.
 Compare wall-clock results only when host load and power conditions are controlled; normalized allocation and deterministic retention checks provide different evidence.
 Historical measurements in Git history do not establish performance on the current revision.

@@ -6,6 +6,9 @@
   "environment": "client",
   "mixins": ${gameTestMixins},
   "entrypoints": {
+    "client": [
+      "dev.s7a.strata.integration.minecraft.fabric.ManualImeVerification"
+    ],
     "fabric-client-gametest": [
       "${gameTestEntrypoint}"
     ]

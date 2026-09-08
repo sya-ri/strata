@@ -98,6 +98,11 @@ internal fun focusMinecraftWindow(focused: Boolean) {
     MinecraftCanvasWindowTestScope.invoke(window, window.window, focused)
 }
 
+/**
+ * Returns the borrowed native handle on the client thread for physical framebuffer verification.
+ */
+internal fun minecraftTestWindowHandle(): Long = Minecraft.getInstance().window.window
+
 private const val PRIMARY_MOUSE_BUTTON = 0
 private const val NO_SCAN_CODE = 0
 private const val NO_MODIFIERS = 0

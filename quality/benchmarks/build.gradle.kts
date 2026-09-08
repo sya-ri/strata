@@ -10,7 +10,7 @@ dependencies {
 
 jmh {
     jmhVersion.set(libs.versions.benchmark.harness)
-    includes.set(listOf("dev\\.s7a\\.strata\\.quality\\.benchmark\\.(RenderingBenchmark|ReactiveRenderingBenchmark).*"))
+    includes.set(listOf("dev\\.s7a\\.strata\\.quality\\.benchmark\\.(RenderingBenchmark|ReactiveRenderingBenchmark|OverlayRenderingBenchmark).*"))
     benchmarkMode.set(listOf("avgt"))
     warmupIterations.set(3)
     warmup.set("1s")
@@ -34,3 +34,13 @@ val verifyReactiveRenderingWork by tasks.registering(JavaExec::class) {
 }
 
 tasks.named("check") { dependsOn(verifyReactiveRenderingWork) }
+
+val verifyOverlayRenderingWork by tasks.registering(JavaExec::class) {
+    group = "verification"
+    description = "Verifies long-lived lower-layer updates and exact translucent composition with bounded retention."
+    dependsOn(tasks.named("jmhClasses"))
+    classpath = sourceSets.named("jmh").get().runtimeClasspath
+    mainClass.set("dev.s7a.strata.quality.benchmark.OverlayWorkEvidence")
+}
+
+tasks.named("check") { dependsOn(verifyOverlayRenderingWork) }

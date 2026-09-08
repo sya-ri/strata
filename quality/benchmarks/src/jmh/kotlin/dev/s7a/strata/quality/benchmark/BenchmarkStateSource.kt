@@ -14,6 +14,11 @@ internal class BenchmarkStateSource<T>(
     private var snapshot = StateSnapshot(StateRevision(0), initial)
     private var observer: ((StateSnapshot<T>) -> Unit)? = null
 
+    /**
+     * Whether the worker-owned fixture still holds its one upstream consumer.
+     */
+    val subscribed: Boolean get() = observer != null
+
     override fun subscribe(observer: (StateSnapshot<T>) -> Unit): StateSubscription<T> {
         check(this.observer == null)
         this.observer = observer

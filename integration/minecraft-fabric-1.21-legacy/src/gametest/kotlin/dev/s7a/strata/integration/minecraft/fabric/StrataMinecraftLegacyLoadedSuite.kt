@@ -87,11 +87,9 @@ internal class StrataMinecraftLegacyLoadedSuite {
 
     private fun configureViewport(context: MinecraftLoadedTestContext) {
         context.computeOnClient { minecraft ->
-            minecraft.window.setWindowed(viewport.width, viewport.height)
-            minecraft.options.guiScale().set(1)
             minecraft.options.forceUnicodeFont().set(false)
-            minecraft.resizeDisplay()
         }
+        context.configureVerificationViewport(viewport, 1)
     }
 
     private fun verifyProfileCache(

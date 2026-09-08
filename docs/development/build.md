@@ -3,6 +3,23 @@
 Use this document to build and check Strata locally.
 [CI](ci.md), [release publication](release.md), and [documentation maintenance](documentation.md) describe their separate operational boundaries.
 
+## Manual OS IME verification
+
+Use `:integration:minecraft-fabric-26.2:runManualIme` to open the isolated native editor with normal OS keyboard callbacks.
+This opt-in task is separate from `check` and from Fabric Client GameTest, whose `InputConstantsMixin` deliberately prevents native keyboard and mouse callback installation.
+Do not treat a synthetic PreeditEvent or Fabric TestInput result as proof of operating-system composition.
+The normal run has its own build directory and must not connect to a multiplayer server.
+After any first-run accessibility page, the fixture opens from the title screen.
+Use the installed Japanese IME to type `nihongo`, leave the composition and candidate window active while the update label advances, convert and confirm `日本語`, then use Enter to insert a newline.
+Verify the caret, candidate selection, and text visually before selecting Finish test.
+The task requires a fresh invocation-specific `manual-ime-evidence/manual-os-ime.txt` receipt with the converted phrase, newline, stable input-node identity, and concurrent label updates.
+A closed window or an old receipt cannot pass this task.
+The receipt establishes confirmed input and retained nodes; the operator's observation establishes candidate/preedit continuity.
+
+Legacy automated screenshot suites also wait for the requested physical viewport to match GLFW, the native Window framebuffer, and the render target across client ticks.
+This avoids assuming that an asynchronous OS resize completed when its request returned.
+Timeouts and screenshot failures report actual dimensions and do not crop, rescale, or weaken pixel assertions.
+
 ## Environment
 
 Run commands from the repository root with the checked-in wrapper: `./gradlew`, or `.\gradlew.bat` in PowerShell.

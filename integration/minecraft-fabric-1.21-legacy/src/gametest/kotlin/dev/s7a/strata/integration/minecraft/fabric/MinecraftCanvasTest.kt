@@ -90,11 +90,7 @@ private fun withMinecraftCanvasContext(
                 size: IntSize,
                 guiScale: Int,
             ) {
-                context.computeOnClient { minecraft ->
-                    minecraft.window.setWindowed(size.width, size.height)
-                    minecraft.options.guiScale().set(guiScale)
-                    minecraft.resizeDisplay()
-                }
+                context.configureVerificationViewport(size, guiScale)
             }
 
             override fun waitFor(condition: () -> Boolean) {
