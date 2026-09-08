@@ -520,7 +520,9 @@ for body_fixture_content in '' 'No terminal newline' $'# LF body\n\nParagraph\n\
   for body_normalization_command in "${body_normalization_commands[@]}"; do
     (
       cd "$body_fixture_root"
-      jq() { portable_jq "$@"; }
+      jq() {
+        portable_jq "$@"
+      }
       current_body="$body_fixture_actual"
       eval "$body_normalization_command"
     )
