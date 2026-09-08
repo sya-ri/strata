@@ -488,6 +488,49 @@ cleanup_controller_test() {
   rm -rf -- "$controller_test_root"
 }
 trap cleanup_controller_test EXIT INT TERM
+
+if grep --fixed-strings 'docs/modrinth-project.md' "$workflow" >/dev/null; then
+  fail 'The forward workflow still reads the Modrinth body from a layout-specific Markdown path.'
+fi
+mapfile -t body_normalization_commands < <(awk '
+  /jq --raw-output --join-output/ && /\.project\.body/ {
+    command = $0
+    getline
+    if ($0 ~ /build\/release\/modrinth\/manifest\.json > "\$current_body"/) {
+      sub(/^          /, "", command)
+      sub(/\\$/, "", command)
+      sub(/^          /, "")
+      print command $0
+    }
+  }
+' "$workflow")
+[[ "${#body_normalization_commands[@]}" == '2' ]] || \
+  fail 'Both current-body checks must normalize the generated manifest body.'
+body_fixture_root="$controller_test_root/body-normalization"
+mkdir -p "$body_fixture_root/build/release/modrinth"
+body_fixture_source="$body_fixture_root/source.md"
+body_fixture_expected="$body_fixture_root/expected.md"
+body_fixture_actual="$body_fixture_root/actual.md"
+for body_fixture_content in '' 'No terminal newline' $'# LF body\n\nParagraph\n\n' $'# CRLF body\r\n\r\nParagraph\r\n \t\r\n'; do
+  printf '%s' "$body_fixture_content" > "$body_fixture_source"
+  portable_jq --null-input --rawfile body "$body_fixture_source" '{project: {body: $body}}' \
+    > "$body_fixture_root/build/release/modrinth/manifest.json"
+  portable_jq --null-input --rawfile body "$body_fixture_source" --raw-output --join-output \
+    '$body | gsub("\r\n"; "\n") | sub("[[:space:]]+$"; "") + "\n"' > "$body_fixture_expected"
+  for body_normalization_command in "${body_normalization_commands[@]}"; do
+    (
+      cd "$body_fixture_root"
+      jq() {
+        portable_jq "$@"
+      }
+      current_body="$body_fixture_actual"
+      eval "$body_normalization_command"
+    )
+    cmp --silent "$body_fixture_expected" "$body_fixture_actual" || \
+      fail 'Manifest body normalization differs from the historical Markdown normalization.'
+  done
+done
+
 fixture_repository="$controller_test_root/repository"
 mkdir -p "$fixture_repository/release" "$fixture_repository/gradle"
 git init --quiet "$fixture_repository"

@@ -12,8 +12,8 @@ import dev.s7a.strata.spi.InternalStrataRuntimeApi
  * Reads, writes, observation, and subscription release are confined to the constructing thread.
  *
  * @param initialValue initial text, normalized before storage.
- * @property maxLength positive maximum UTF-16 length of the normalized [value].
- * @throws IllegalArgumentException when [maxLength] is not positive or [initialValue] is unsupported or too long after normalization.
+ * @property maxLength positive maximum UTF-16 length of the normalized [TextAreaState.value].
+ * @throws IllegalArgumentException when [TextAreaState.maxLength] is not positive or `initialValue` is unsupported or too long after normalization.
  */
 public class TextAreaState(
     initialValue: String = "",
@@ -35,7 +35,7 @@ public class TextAreaState(
      * A distinct normalized write synchronously notifies the attached retained observer.
      * Equivalent newline spellings do not notify again or replace the owned scroll state.
      *
-     * @throws IllegalArgumentException when text is unsupported or its normalized UTF-16 length exceeds [maxLength].
+     * @throws IllegalArgumentException when text is unsupported or its normalized UTF-16 length exceeds [TextAreaState.maxLength].
      * @throws IllegalStateException when accessed from another thread.
      */
     public var value: String
@@ -55,7 +55,7 @@ public class TextAreaState(
      * Stable owned vertical position shared by the editor and optional external scrollbars.
      *
      * Its lifetime matches this state and it is not replaced by value writes or observer release.
-     * Runtime geometry clamps the position after layout; assigning [value] alone does not reset it.
+     * Runtime geometry clamps the position after layout; assigning [TextAreaState.value] alone does not reset it.
      *
      * @throws IllegalStateException when accessed from another thread.
      */

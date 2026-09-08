@@ -1,35 +1,12 @@
-# Text and text input
+# Text and editing
 
-`Text`, component labels, `TextField`, and `TextArea` can use Japanese, Korean, supplementary Unicode characters such as emoji, and resource-pack fonts.
-The active profile supplies both glyph metrics and pixels, so the same font selection controls layout and drawing.
-Available glyphs and emoji presentation depend on the selected Minecraft resources.
-Strata does not provide an independent color-emoji or ZWJ-sequence renderer.
+Use `Text` for display, `TextField` for one editable line, and `TextArea` for an editable multiline value.
+Labels and editors share font selection, while caller-owned state holds committed editor values.
+The [component overview](../reference/components.md) contains their images and compiled examples, and the [API reference](https://gh.s7a.dev/strata/) lists all overloads.
 
-## Source compatibility
-
-`UiText` and `DrawCommand` are sealed hierarchies whose exhaustive visitors must handle every current variant, including `UiText.WithFont` and `DrawCommand.SampledImage`.
-Adding a variant requires a corresponding branch before recompilation, and a previously compiled visitor can throw when it receives an unknown case even when older constructors, methods, and component overloads remain available.
-
-Text visitors should traverse `WithFont.text` and preserve its inherited font selection, with inner selections taking precedence.
-Custom rendering backends must implement the fractional `SampledImage` contract or reject unsupported commands before producing output; treating it as the integer `BlitImage` command or silently skipping it changes the image.
-The default Fabric resource-font profile can emit sampled images for ordinary existing `Text(...)` calls, so this requirement is not limited to explicitly selected fonts.
-Update custom visitors and keep all Strata artifacts on the same version.
-The supplied Fabric and headless backends handle both cases.
-
-## Rendering density
-
-GUI scale affects readability, especially for characters with many strokes.
-In the Minecraft 26.2 default-font comparison, a 16-by-16 CJK Unihex glyph occupies eight logical pixels in each direction: eight physical pixels at GUI scale 1, sixteen at scale 2, and twenty-four at scale 3.
-Scale 1 therefore loses fine strokes even when the Unicode text and selected Japanese glyph are correct.
-The Text, TextField, and TextArea component images are rendered at scale 2 so the source glyph's fine strokes remain visible.
-Their logical viewports are unchanged; the headless renderer samples the original font resources directly into the larger physical image.
-The documentation generator does not start Minecraft or require a graphics context.
-
-Use a larger Minecraft GUI scale or headless output scale when those strokes need to remain readable.
-Both backends sample the source glyph at the final output density; enlarging an already rendered scale-1 image cannot recover the omitted detail.
-The independent default-font gate compares Japanese and Korean text through native Minecraft, Fabric Text, and headless Text at scales 1, 2, and 3 with exact ARGB equality.
-See [font verification](font-resources.md#acceptance-evidence) for the evidence scope and resource-dependent limitations.
-The separate Minecraft showcase check compares those headless frames with the Fabric renderer; generation and native acceptance are independent tasks.
+Text can contain Japanese, Korean, and supplementary Unicode characters such as emoji when the selected resource pack supplies the glyphs.
+The active profile supplies both metrics and pixels, so the same font choice controls layout and drawing.
+Strata does not add an operating-system font, color-emoji, or ZWJ-sequence renderer.
 
 ## Selecting a font
 
@@ -88,7 +65,7 @@ internal fun unicodeTextScreen(
 
 The existing overloads without a font argument remain available, including the fixed-size and explicit-size `TextField` forms.
 No font objects or rendering implementation are needed in application declarations.
-See [Font resources](font-resources.md) for profile snapshots, offline resource loading, and native backend configuration.
+See [Font resources](../guides/fonts.md) for profile snapshots, offline resource loading, and native backend configuration.
 The older profile builder that accepts a finite printable-ASCII glyph table remains available for compatibility; that table alone cannot render arbitrary Unicode or custom fonts.
 
 ## Multiline display
@@ -206,8 +183,10 @@ Current layout is replaced when its value or layout inputs change; no historical
 The semantic role is `SemanticsRole.TextArea`, its committed content is `Semantics.value`, and disabled state is explicit.
 The current semantics API does not expose typed accessibility edit or focus actions; role and value reporting alone does not implement those actions.
 
-## Field values and editing
+## Single-line editing
 
+The ordinary `TextField` is 200 by 20 logical pixels.
+Its explicit-size overload supports extents of at least 9 by 9, preserving the native one-pixel nine-slice border and centered glyph row.
 `TextFieldState` remains caller-owned and confined to the thread that creates it.
 Its `maxLength` is a positive number of UTF-16 code units, with a default of 32.
 For example, `日` uses one unit and `🙂` uses two; `TextFieldState("日🙂", maxLength = 3)` fits exactly.
@@ -225,7 +204,7 @@ Editable text stays in logical scalar order, matching the native EditBox default
 
 Scalar editing is not grapheme-cluster editing.
 A combining mark, variation selector, or part of an emoji ZWJ sequence can therefore be moved over or deleted separately.
-This change does not add selection ranges, clipboard commands, or word-navigation commands to the built-in editor.
+The built-in editor does not provide selection ranges, clipboard commands, or word-navigation commands.
 Existing focused input modifiers can still consume an event before the editor handles it.
 
 ## IME composition
@@ -247,9 +226,15 @@ This preserves Strata's inline composition contract.
 It does not reproduce Minecraft's native IME popup, position the operating system's candidate window, or install new platform IME hooks on adapters that expose only committed characters.
 Native EditBox pixel comparisons apply to committed text and cursor rendering; inline preedit tests verify event delivery, value isolation, caret position, and focused-block state separately.
 
-## Verification scope
+## Rendering density
 
-The fixed ASCII native comparison scenes remain supported, and the component catalog adds compiled Unicode multiline Text and TextArea viewports.
-Minecraft-independent tests cover supplementary insertion and deletion, UTF-16 limits, malformed input, scrolled pointer placement, visual-line affinity, custom-font metrics, fractional glyph bounds, composition state, clip lifetime, and bounded current-layout painting.
-Those deterministic tests do not by themselves establish native pixel equality for every resource pack, provider, or GUI scale.
-Native font acceptance must compare the selected resources against an independent Minecraft rendering result.
+GUI scale affects the physical detail available to each glyph.
+Use a larger Minecraft GUI scale or headless output scale when small glyphs lose fine strokes.
+Both renderers sample original font resources at the final output density; enlarging an already rendered image cannot recover omitted detail.
+The text component previews use scale 2 without changing their logical viewport.
+
+## Compatibility and verification
+
+Glyph coverage and native rendering depend on the selected resources and target contract.
+The [font guide](fonts.md) describes offline configuration and numeric boundaries, and [font verification](../development/font-verification.md#acceptance-evidence) defines the evidence needed for native equality claims.
+Custom `UiText` visitors must follow the [source compatibility contract](../reference/element-spi.md#source-compatibility).

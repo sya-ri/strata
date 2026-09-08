@@ -46,7 +46,13 @@ internal class ShowcaseLaunchArguments private constructor(
                     parsePath(args[8], "native inventory receipt"),
                 )
             inputs.requireOutside(
-                listOf(stagingRoot, projectRoot.resolve("docs/components"), projectRoot.resolve("docs/components.md"), projectRoot.resolve("README.md")),
+                listOf(
+                    stagingRoot,
+                    projectRoot.resolve("docs/components"),
+                    projectRoot.resolve("docs/reference/components.md"),
+                    projectRoot.resolve("docs/examples/screens.md"),
+                    projectRoot.resolve("README.md"),
+                ),
             )
             val classDirectories = args.drop(9).map { value -> parsePath(value, "component class directory") }
             require(classDirectories.toSet().size == classDirectories.size) { "Component class directories must be unique after normalization." }

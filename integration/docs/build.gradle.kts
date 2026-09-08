@@ -74,6 +74,13 @@ tasks.withType<Test>().configureEach {
     javaLauncher.set(showcaseLauncher)
     jvmArgs("--enable-native-access=ALL-UNNAMED")
     systemProperty("java.awt.headless", "true")
+    inputs.files(
+        rootProject.layout.projectDirectory.file("docs/guides/text.md"),
+        rootProject.layout.projectDirectory.file("docs/guides/fonts.md"),
+        rootProject.layout.projectDirectory.file("integration/api/src/main/kotlin/dev/s7a/strata/integration/consumer/ApiOnlyUnicodeTextScreen.kt"),
+        rootProject.layout.projectDirectory.file("integration/api/src/main/kotlin/dev/s7a/strata/integration/consumer/ApiOnlyMultilineTextScreen.kt"),
+        rootProject.layout.projectDirectory.file("integration/docs/src/main/kotlin/dev/s7a/strata/integration/docs/FontResourceExample.kt"),
+    ).withPropertyName("compiledGuideInputs").withPathSensitivity(PathSensitivity.RELATIVE)
 }
 
 val skillExamples = sourceSets.create("skillExamples")
@@ -228,7 +235,8 @@ fun JavaExec.configureShowcaseLauncher(
     outputs.cacheIf { false }
     if (synchronizeSource.not()) {
         inputs.file(rootProject.layout.projectDirectory.file("README.md"))
-        inputs.file(rootProject.layout.projectDirectory.file("docs/components.md"))
+        inputs.file(rootProject.layout.projectDirectory.file("docs/reference/components.md"))
+        inputs.file(rootProject.layout.projectDirectory.file("docs/examples/screens.md"))
         inputs.files(rootProject.layout.projectDirectory.dir("docs/components"))
     }
 }
@@ -335,7 +343,7 @@ fun JavaExec.configureStrataSkillLauncher(
     outputs.upToDateWhen { false }
     if (synchronizeSource.not()) {
         inputs.dir(rootProject.layout.projectDirectory.dir("skills/strata"))
-        inputs.file(rootProject.layout.projectDirectory.file("docs/modrinth-project.md"))
+        inputs.file(rootProject.layout.projectDirectory.file("docs/publication/modrinth-project.md"))
         inputs.file(rootProject.layout.projectDirectory.file("LICENSE"))
     }
 }
@@ -379,11 +387,13 @@ val checkDocumentationLinks =
     tasks.register<JavaExec>("checkDocumentationLinks") {
         group = "verification"
         description = "Checks repository-local README, docs, and public-skill links."
-        dependsOn("classes")
+        dependsOn("classes", ":checkCompatibilityDocumentation")
         mainClass.set("dev.s7a.strata.integration.docs.DocumentationLinkChecker")
         classpath = sourceSets.main.get().runtimeClasspath
         args(repositoryRoot.get().asFile.absolutePath)
-        inputs.file(rootProject.layout.projectDirectory.file("README.md"))
+        listOf("README.md", "AGENTS.md", "CONTRIBUTING.md", "CHANGELOG.md").forEach { name ->
+            inputs.file(rootProject.layout.projectDirectory.file(name))
+        }
         inputs.dir(rootProject.layout.projectDirectory.dir("docs"))
         inputs.dir(rootProject.layout.projectDirectory.dir("skills"))
         outputs.upToDateWhen { false }
@@ -420,10 +430,12 @@ val pagesRepositoryInputs =
                 }
                 exclude(
                     ".git/**",
+                    ".worktrees/**",
                     ".gradle/**",
                     "build/**",
                     "out/**",
                     "**/.git/**",
+                    "**/.worktrees/**",
                     "**/.gradle/**",
                     "**/build/**",
                     "**/out/**",
@@ -474,5 +486,5 @@ tasks.register<JavaExec>("checkDokkaPagesStaging") {
 
 tasks.named("check") {
     dependsOn(checkComponentShowcase, checkMinecraftShowcaseParity)
-    dependsOn(checkStrataSkill, checkStrataSkillExampleClasspath, checkDocumentationLinks)
+    dependsOn(checkStrataSkill, checkStrataSkillExampleClasspath, checkDocumentationLinks, ":checkCompatibilityDocumentation")
 }

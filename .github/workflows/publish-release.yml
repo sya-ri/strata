@@ -659,8 +659,8 @@ jobs:
           predecessor_sha256="$(jq -er '.previousBodySha256 | select(type == "string" and test("^[0-9a-f]{64}$"))' release/modrinth-project.json)"
           current_body="$(mktemp)"
           trap 'rm -f -- "$project_json" "$body" "$body_after" "$current_body"' EXIT
-          jq --null-input --rawfile body docs/modrinth-project.md --raw-output --join-output \
-            '$body | gsub("\r\n"; "\n") | sub("[[:space:]]+$"; "") + "\n"' > "$current_body"
+          jq --raw-output --join-output '.project.body | gsub("\r\n"; "\n") | sub("[[:space:]]+$"; "") + "\n"' \
+            build/release/modrinth/manifest.json > "$current_body"
           current_sha256="$(sha256sum "$current_body" | cut -d ' ' -f 1)"
           recovery_contract="$CONTROLLER_TOOL_DIRECTORY/backlog-recovery.json"
           recovery_sha256=""
@@ -1909,8 +1909,8 @@ jobs:
             "$project_json" >/dev/null || { echo 'Modrinth project identity or approval state differs before predecessor verification.' >&2; exit 1; }
           jq --raw-output --join-output '(.body // "") | gsub("\r\n"; "\n") | sub("[[:space:]]+$"; "") + "\n"' \
             "$project_json" > "$remote_body"
-          jq --null-input --rawfile body docs/modrinth-project.md --raw-output --join-output \
-            '$body | gsub("\r\n"; "\n") | sub("[[:space:]]+$"; "") + "\n"' > "$current_body"
+          jq --raw-output --join-output '.project.body | gsub("\r\n"; "\n") | sub("[[:space:]]+$"; "") + "\n"' \
+            build/release/modrinth/manifest.json > "$current_body"
           remote_body_sha256="$(sha256sum "$remote_body" | cut -d ' ' -f 1)"
           predecessor_body_sha256="$(jq -er '.previousBodySha256' release/modrinth-project.json)"
           current_body_sha256="$(sha256sum "$current_body" | cut -d ' ' -f 1)"

@@ -41,7 +41,7 @@ The session invokes `sessionAttached` on initial session attachment or reattachm
 This callback resumes suspended resources and leaves an already active binding unchanged.
 `sessionDetached` clears owned binding references before cleanup, and reattachment creates a new binding without replacing the node.
 Externally supplied sources remain application-owned.
-See [UI sessions](ui-sessions.md) for ordering, failure, and retained-tree behavior.
+See [UI sessions](../development/ui-sessions.md) for ordering, failure, and retained-tree behavior.
 
 ## Stable element tokens
 
@@ -106,7 +106,7 @@ Define a stable `ParentDataKey<D>` and implement `ParentDataModifierNode<D>` on 
 The lookup does not measure or place the child.
 The selected provider runs on the tree owner thread inside the current callback lifetime and must return an immutable value of the key's runtime type.
 Changing the key or value requires measure invalidation.
-See [Modifiers](modifiers.md#parent-data) for ordering and failure behavior.
+See [Modifiers](../reference/modifier-spi.md#parent-data) for ordering and failure behavior.
 
 ## Paint, input, and semantics
 
@@ -118,7 +118,7 @@ The runtime returns `DrawCommand` values in regular-paint, clipped-descendant, a
 Custom backends with exhaustive `DrawCommand` visitors need an explicit `SampledImage` sampling implementation or an unsupported-command preflight.
 Its fractional geometry, final-density sampling, tint multiplication, and alpha cutoff are distinct from the unchanged integer `BlitImage` contract.
 A backend compiled against a smaller variant set can fail on this command; ordinary Text calls can emit it through the resource-font profile.
-See [Source compatibility](text.md#source-compatibility) for the corresponding `UiText.WithFont` visitor contract.
+See [Source compatibility](#source-compatibility) for the corresponding `UiText.WithFont` visitor contract.
 Portable primitive nodes emit only platform-neutral fill and image commands.
 An opt-in version adapter may instead pass an immutable opaque `PlatformDrawCommand` through `PaintScope.drawPlatform`; core maps its declared bounds and preserves its opaque payload, clip, and draw order for execution by the matching adapter.
 Current frame painting accepts that command only when its accumulated transform is an exact integer translation.
@@ -148,7 +148,7 @@ Hover, other buttons, and scroll still follow actual hit testing.
 Matching Release clears capture before the callback; removal, replacement, unplacement, session detach, input reset, close, or failure clears it before one cancellation callback and before disposal.
 If acquisition confirmation fails, terminal tree cleanup follows the same cancellation-before-disposal order exactly once.
 Cleanup continues if cancellation throws, preserving the primary failure and suppressing independent cleanup failures.
-Applications and third-party primitives can use the same capability directly or compose `onCapturedPointerEvent`; see [Modifiers](modifiers.md#built-in-modifiers).
+Applications and third-party primitives can use the same capability directly or compose `onCapturedPointerEvent`; see [Modifiers](../guides/modifiers.md#pointer-input-and-capture).
 
 ## Keys and reconciliation
 
@@ -171,7 +171,18 @@ Each description creates an active `ModifierNode`, and no modifier property is f
 Modifiers form virtual pipeline ancestry without changing logical component children or keyed component identity.
 The default modifier node measures its one virtual child with unchanged constraints and places that child at its origin.
 Typed parent-data providers remain active modifier capabilities and are read only by the parent scope that consumes them.
-See [Modifiers](modifiers.md) for reconciliation, lifecycle, failure behavior, and the third-party extension contract.
+See [Modifiers](../reference/modifier-spi.md) for reconciliation, lifecycle, failure behavior, and the third-party extension contract.
+
+## Source compatibility
+
+`UiText` and `DrawCommand` are sealed hierarchies whose exhaustive visitors must handle every current variant, including `UiText.WithFont` and `DrawCommand.SampledImage`.
+Adding a variant requires a corresponding branch before recompilation, and a previously compiled visitor can throw when it receives an unknown case even when older constructors, methods, and component overloads remain available.
+
+Text visitors should traverse `WithFont.text` and preserve its inherited font selection, with inner selections taking precedence.
+Custom rendering backends must implement the fractional `SampledImage` contract or reject unsupported commands before producing output; treating it as the integer `BlitImage` command or silently skipping it changes the image.
+The default Fabric resource-font profile can emit sampled images for ordinary existing `Text(...)` calls, so this requirement is not limited to explicitly selected fonts.
+Update custom visitors and keep all Strata artifacts on the same version.
+The supplied Fabric and headless backends handle both cases.
 
 ## Exceptions and threads
 
@@ -189,9 +200,9 @@ Calls re-entering an operation from an element hook, pipeline callback, or lifec
 
 ## Minimal external primitive
 
-The compiling external primitive in [`integration:api`](https://github.com/sya-ri/strata/blob/v0.1.0/integration/api/src/test/kotlin/dev/s7a/strata/integration/external/ExternalElement.kt) implements the v0.1.0 public SPI.
+The compiling [external primitive](../../integration/api/src/test/kotlin/dev/s7a/strata/integration/external/ExternalElement.kt) implements the current public SPI outside Strata implementation packages.
 It includes a stable typed `ElementType`, a measured and placed child, painting, pointer consumption, unresolved semantics, and lifecycle events.
-Its behavior is exercised by the [external integration test](https://github.com/sya-ri/strata/blob/v0.1.0/integration/api/src/test/kotlin/dev/s7a/strata/integration/external/ExternalPrimitiveIntegrationTest.kt).
+Its behavior is exercised by the [external integration test](../../integration/api/src/test/kotlin/dev/s7a/strata/integration/external/ExternalPrimitiveIntegrationTest.kt).
 
 Use that fixture as the executable example.
 Application code emits the external element directly inside `ScreenDefinition { element(external) }`, alongside any standard component composition.

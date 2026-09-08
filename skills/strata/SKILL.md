@@ -32,5 +32,5 @@ Keep events on modifiers, mutable values in caller-owned state, and platform wor
 
 ## Output expectations
 
-Return API-only UI definitions that compile without runtime imports, use exact public signatures from the references, and explain any fixed geometry or padding of 20 or more.
+Return API-only UI definitions that compile without runtime imports, use exact public signatures from the references, and explain fixed geometry when the screen depends on it.
 When reviewing a proposed Strata built-in, explicitly decide whether it is too purpose-specific and whether existing primitives already compose into it.

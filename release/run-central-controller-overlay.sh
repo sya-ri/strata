@@ -35,7 +35,7 @@ cache_paths=(
 )
 
 contains_carriage_return() {
-  LC_ALL=C od -An -t x1 "$1" | grep -Eq '(^|[[:space:]])0d([[:space:]]|$)'
+  LC_ALL=C od -An -t x1 "$1" | grep -E '(^|[[:space:]])0d([[:space:]]|$)' >/dev/null
 }
 
 if contains_carriage_return "$manifest_file" || contains_carriage_return "$patch_file"; then

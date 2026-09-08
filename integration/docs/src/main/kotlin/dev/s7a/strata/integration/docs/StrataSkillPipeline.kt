@@ -36,11 +36,11 @@ internal object StrataSkillPipeline {
         val readme = generatedReadme(launch.projectRoot, openExample, launch.releaseVersion)
         return linkedMapOf(
             "README.md" to readme,
-            "docs/modrinth-project.md" to ModrinthProjectMarkdown.render(versions, openExample, launch.releaseVersion),
+            "docs/publication/modrinth-project.md" to ModrinthProjectMarkdown.render(versions, openExample, launch.releaseVersion),
             "skills/strata/references/setup.md" to StrataSkillMarkdown.setup(versions, openExample, launch.releaseVersion),
             "skills/strata/references/components.md" to StrataSkillMarkdown.components(signatures.components),
             "skills/strata/references/modifiers-and-layout.md" to StrataSkillMarkdown.modifiers(compiledModifiers, compiledStateAndBindings, signatures),
-            "skills/strata/references/patterns.md" to StrataSkillMarkdown.patterns(layoutExample),
+            "skills/strata/references/patterns.md" to StrataSkillMarkdown.patterns(layoutExample, launch.releaseVersion),
             "skills/strata/references/custom-components.md" to StrataSkillMarkdown.customComponents(customExample),
         )
     }

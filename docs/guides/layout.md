@@ -1,11 +1,26 @@
-# Built-in layout components
+# Layout
 
-The platform-neutral API provides `UiScope.Row`, `UiScope.FlowRow`, `UiScope.Column`, `UiScope.Stack`, `UiScope.Grid`, and `UiScope.Spacer`.
-Each component emits one immutable description into its enclosing callback-lifetime scope.
-Rows and columns share one retained linear `ElementType` and one axis-polymorphic node implementation.
-A same-key row-to-column or column-to-row update preserves the retained node and reconciles its logical descendants under the changed orientation.
-Container callbacks may emit zero or more direct children.
-The row, flow-row, column, stack, and grid scopes are owner-thread capabilities and are closed immediately after their callbacks return.
+Choose a container from the relationship between its children, then use constraints and modifiers to control the space it occupies.
+The [component overview](../reference/components.md) provides compiled examples and images; the [API reference](https://gh.s7a.dev/strata/) contains parameter and overload details.
+
+## Choose a container
+
+| Container | Relationship |
+| --- | --- |
+| `Row` | Horizontal siblings on one line. |
+| `FlowRow` | Horizontal siblings that wrap at the available width. |
+| `Column` | Vertical siblings. |
+| `Grid` | Repeated cells in fixed columns with shared track sizes. |
+| `Stack` | Children that intentionally overlap or align in one rectangle. |
+| `Spacer` | An intentional empty visual primitive, separator, connector, or fill. |
+
+Use container spacing for repeated gaps and padding for an inset around a group.
+A single child does not need a Row or Column just for positioning; use the nearest layout scope's alignment.
+Large padding does not replace arrangement or alignment.
+Row never wraps, and manually grouping children into Rows cannot provide measured reflow under one stable parent.
+
+Container callbacks may emit zero or more direct children and are confined to the invoking thread and callback lifetime.
+Rows and columns share a retained layout implementation, so a same-key orientation change preserves the node and its logical descendants.
 
 ## Container modifiers
 
@@ -89,13 +104,7 @@ Weight and child-alignment parent-data changes conservatively invalidate measure
 Grid column-count or track-spacing changes invalidate measurement, while default or per-child cell alignment changes invalidate layout.
 Equal property updates remain clean.
 
-## Structural composition
+## Continue reading
 
-Choose containers from the logical relationship among siblings rather than from copied screen coordinates.
-Use Row for a horizontal group, FlowRow for horizontal siblings that wrap at the available width, Column for a vertical group, Grid for repeated cells, and Stack only when children intentionally overlap or align within the same rectangle.
-FlowRow has one focused responsibility and serves independent action-button groups and option or checkbox groups without encoding a screen or domain model.
-Row never wraps, Grid uses fixed columns with shared track widths, and manually grouping children into Rows cannot perform measured wrapping while preserving one stable direct-child parent.
-A single child does not need a Row or Column solely to position it; apply alignment through the nearest layout scope or size and align the child in its existing parent.
-Container padding represents an inset around the whole group, while spacing represents the repeated distance between siblings.
-Large padding is not a substitute for arrangement or alignment; showcase code treats padding of 20 logical pixels or more as an exception that requires a geometry or native-frame rationale.
-Spacer is reserved for a visible separator, connector, fill, or other intentional empty visual primitive, not for routine sibling distance that spacing or padding already expresses.
+[Modifiers](modifiers.md) explains chain order and sizing behavior.
+Custom layouts use the [Element SPI](../reference/element-spi.md) and [typed parent data](../reference/modifier-spi.md#parent-data).

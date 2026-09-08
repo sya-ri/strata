@@ -427,7 +427,7 @@ During current frame painting, a `PlatformDrawCommand` is supported only through
 
 - Use `spacing`, `horizontalArrangement`, `verticalArrangement`, and parent alignment to describe sibling structure.
 - Use `weight` only for remaining main-axis space and `align` only for a direct-child override.
-- Use small `padding` for local insets. A value of 20 or more needs a concrete native-frame or fixed-geometry reason.
+- Use `padding` for local insets, and describe sibling relationships with layout spacing and alignment.
 - Use `fillMaxSize().scaleToFit(contentSize)` for a fixed design surface that should shrink uniformly with the viewport while retaining the user's GUI-scale accessibility setting.
 - Put images on `imageBackground` when they paint a container; use `Image` when the image is itself a logical child.
 - Put reusable actions on modifiers. `Button`, `Tab`, `Checkbox`, `CycleButton`, `Slider`, and list components keep application callbacks out of their component signatures.

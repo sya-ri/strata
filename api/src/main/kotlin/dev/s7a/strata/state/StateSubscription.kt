@@ -6,7 +6,7 @@ import java.util.concurrent.locks.ReentrantLock
  * The atomic result of subscribing to a [StateSource].
  *
  * A source establishes observation before returning this handle.
- * It may therefore invoke the callback before [StateSource.subscribe] returns; [initialSnapshot] remains the observation at the subscription linearization point.
+ * It may therefore invoke the callback before [StateSource.subscribe] returns; [StateSubscription.initialSnapshot] remains the observation at the subscription linearization point.
  * Closing is idempotent and thread-safe.
  * Concurrent callers wait for the one close action to finish and observe the same failure when it fails.
  *

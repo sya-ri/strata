@@ -36,3 +36,9 @@ A notification whose delivery races `close` may be delivered or suppressed.
 Concurrent close callers wait for the one source close action to finish.
 If that action fails, every close caller observes the same failure and no successful-closure guarantee is made.
 If establishment fails before the subscription linearization point, it transfers no subscription and starts no observer callback.
+
+## Use in a screen
+
+[Screens and state](../guides/screens-and-state.md) distinguishes caller-owned component state from external sources.
+[Canvas](../guides/canvas.md) and [tiled images](../guides/tiled-images.md) show public source consumers.
+Runtime implementers commit their queued observations through the [session frame cutoff](../development/ui-sessions.md#local-and-external-state).

@@ -16,7 +16,7 @@ internal enum class StrataGeneratedDocument(
     /**
      * Canonical long-form body mirrored to the Modrinth project.
      */
-    ModrinthProject("docs/modrinth-project.md"),
+    ModrinthProject("docs/publication/modrinth-project.md"),
 
     /**
      * Skill setup and version-selection reference.

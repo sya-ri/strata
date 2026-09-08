@@ -126,6 +126,25 @@ internal class PagesStagingCheckerTest {
     }
 
     @Test
+    fun ignoresOldUrlsInNestedWorktreesButChecksTheSameUrlInActiveSources() {
+        val (project, site) = createBaseTrees("nested-worktree")
+        val oldSource = project.resolve("tools/.worktrees/previous/docs/README.md")
+        Files.createDirectories(oldSource.parent)
+        val oldLink = "${PAGES_BASE}guide/components.md"
+        Files.writeString(oldSource, oldLink)
+        val inventory = writeInventory(project, site)
+
+        PagesStagingChecker.check(project, site, inventory)
+
+        Files.writeString(project.resolve("README.md"), oldLink)
+        val failure =
+            assertThrows(IllegalArgumentException::class.java) {
+                writeInventory(project, site)
+            }
+        assertTrue(failure.message.orEmpty().contains("Reader Markdown must link to GitHub"))
+    }
+
+    @Test
     fun rejectsHtmlLinksToMarkdownEvenWhenTheFileExists() {
         val (project, site) = createBaseTrees("markdown-html")
         writeStagedFile(site, "index.html", "<a href='api/index.html'>API</a>")

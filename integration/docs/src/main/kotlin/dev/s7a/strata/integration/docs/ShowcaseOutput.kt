@@ -26,14 +26,19 @@ internal class ShowcaseOutput internal constructor(
     internal fun receipt(): ByteArray = receiptSnapshot.copyOf()
 
     /**
-     * Markdown containing the overview and every generated component section.
+     * Markdown comparing components and containing every generated component example.
      */
-    internal val componentsMarkdown: String = ShowcaseMarkdown.components(overview, this.sections, this.screens)
+    internal val componentsMarkdown: String = ShowcaseMarkdown.components(this.sections)
+
+    /**
+     * Markdown containing the confirmation overview and complete screen examples.
+     */
+    internal val screensMarkdown: String = ShowcaseScreenMarkdown.document(overview, this.screens)
 
     /**
      * Markdown inserted between the manually maintained root README anchors.
      */
-    internal val rootReadmeRegion: String = ShowcaseMarkdown.rootReadme(overview)
+    internal val rootReadmeRegion: String = ShowcaseMarkdown.rootReadme()
 
     /**
      * A rendered overview image and its extracted source.
@@ -57,7 +62,7 @@ internal class ShowcaseOutput internal constructor(
      * A rendered component section and its extracted source-backed Markdown.
      */
     internal class Section internal constructor(
-        component: DocumentedComponent,
+        internal val component: DocumentedComponent,
         internal val section: String,
         png: ByteArray,
     ) {

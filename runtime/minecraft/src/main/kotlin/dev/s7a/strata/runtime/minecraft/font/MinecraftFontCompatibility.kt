@@ -102,7 +102,7 @@ public data class MinecraftFontCompatibility(
      * Converts an accumulated native advance to the selected release's signed text width without clamping it to layout geometry.
      * The pure operation accepts every floating-point value and retains native overflow behavior.
      * NaN becomes zero and negative infinity becomes [Int.MIN_VALUE] in both modes.
-     * Positive infinity becomes [Int.MAX_VALUE] with [saturatingCeil], or [Int.MIN_VALUE] through the earlier increment overflow.
+     * Positive infinity becomes [Int.MAX_VALUE] with [MinecraftFontCompatibility.saturatingCeil], or [Int.MIN_VALUE] through the earlier increment overflow.
      *
      * @param advance logical glyph advances accumulated with native floating-point arithmetic.
      * @return the native signed width; callers must project negative results before constructing non-negative layout extents.
