@@ -12,6 +12,7 @@ import dev.s7a.strata.spi.InternalStrataRuntimeApi
 internal class ObserveContent(
     private val evaluator: ComponentEvaluator?,
     private val content: UiScope.(List<Any?>) -> Unit,
+    private val requireSingleRoot: Boolean = false,
 ) {
     /**
      * Constructs the current optional child with a fresh scope and the captured profile.
@@ -22,6 +23,7 @@ internal class ObserveContent(
         }
         val children = (evaluator?.evaluate(collect) ?: buildComponentTree(collect)).children
         require(children.size <= 1) { "Observe content must emit zero or one root; use Row or Column for multiple children." }
+        require(requireSingleRoot.not() || children.size == 1) { "A state-backed component must emit exactly one root." }
         return children
     }
 }

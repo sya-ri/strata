@@ -42,6 +42,14 @@ The internal runtime session's local delegates and coroutine scope are implement
 
 ## Observe changing regions
 
+Prefer direct `StateSource` arguments for displayed data and enabled/selected flags. Retain `source.map { ... }` for transformed presentation, and reserve `Observe` for structural or unsupported style/layout changes.
+Do not enclose a complete screen in an Observe for independently changing labels: parent reevaluation creates new child definitions and callbacks, even when most child source values are unchanged.
+Do not extract snapshots to literals or recreate projections inside callbacks. See the [compiled reactive example](../../integration/docs/src/skillExamples/kotlin/dev/s7a/strata/integration/docs/skill/ReactiveScreenExample.kt).
+
+Direct overloads cover Text, ProgressBar, Image, PlayerHead, Canvas/TiledImage descriptor replacement, Slot, Button, Tab, Checkbox, Slider, CycleButton, editor enabled flags, and list items/load availability. Literal and source arguments can be mixed.
+The internal direct binding owns the sibling key while the real component retains its complete modifier, focus and action dispatcher. Parent weight and alignment reach that component through a generic delegation contract.
+Progress-only changes repaint without forcing ancestor measurement. Text geometry changes propagate the necessary measurement work. Dedicated editing and navigation state remains caller-owned and must live outside reevaluation.
+
 `Observe(source) { value -> ... }` binds one region to an external `StateSource<T>` without reopening its screen.
 Typed overloads accept one through 22 sources and pass their committed values to the callback in argument order.
 `Text(source)` directly displays either a `StateSource<String>` or `StateSource<UiText>`, with the same shared observation mechanism and the usual font, wrapping, style, modifier, and key options.

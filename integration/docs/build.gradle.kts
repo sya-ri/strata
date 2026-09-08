@@ -84,9 +84,13 @@ tasks.withType<Test>().configureEach {
 }
 
 val skillExamples = sourceSets.create("skillExamples")
+val skillForwardFirst = sourceSets.create("skillForwardFirst")
 
 dependencies {
     add(skillExamples.compileOnlyConfigurationName, project(":api"))
+    add(skillForwardFirst.compileOnlyConfigurationName, project(":api"))
+    testImplementation(skillForwardFirst.output)
+    testImplementation(skillExamples.output)
 }
 
 val apiMainClasses =

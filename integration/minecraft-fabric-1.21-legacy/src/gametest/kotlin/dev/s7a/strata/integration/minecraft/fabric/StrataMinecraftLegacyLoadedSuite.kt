@@ -31,6 +31,7 @@ import dev.s7a.strata.runtime.minecraft.fabric.FabricMinecraftScreen
 import dev.s7a.strata.runtime.minecraft.fabric.createMinecraftScreen
 import dev.s7a.strata.runtime.minecraft.fabric.extractMinecraftUiProfile
 import dev.s7a.strata.runtime.minecraft.fabric.loadMinecraftUiImage
+import dev.s7a.strata.runtime.spi.RuntimeUiDiagnosticsOwner
 import dev.s7a.strata.screen.ScreenDefinition
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
 import net.minecraft.client.Minecraft
@@ -78,6 +79,7 @@ internal class StrataMinecraftLegacyLoadedSuite {
         verifyProfileCache(context, output)
         verifyKeyboardActivationAndScreenTransition(context, profile)
         verifyContinuousInput(context, profile, output)
+        verifyReactiveRendering(context, profile, output)
         runMinecraftCanvasTest(context, profile, output)
         verifyPortableScene(context, output)
         verifyPlayerInventoryBinding(context, profile, output)
@@ -158,6 +160,46 @@ internal class StrataMinecraftLegacyLoadedSuite {
             }
         cleanup.getOrThrow()
         Files.writeString(output.resolve("continuous-input.txt"), "minecraftVersion=${minecraftVersion()}\n$receipt")
+    }
+
+    @OptIn(InternalStrataRuntimeApi::class)
+    private fun verifyReactiveRendering(
+        context: MinecraftLoadedTestContext,
+        profile: MinecraftUiProfile,
+        output: Path,
+    ) {
+        val receipt =
+            ReactiveRenderScenario.verify(
+                object : ReactiveRenderTestDriver {
+                    override fun <T : Any> onClient(action: () -> T): T = context.computeOnClient { action() }
+
+                    override fun await(condition: () -> Boolean) {
+                        context.waitFor { condition() }
+                    }
+
+                    override fun open(definition: ScreenDefinition): RuntimeUiDiagnosticsOwner {
+                        val screen = createMinecraftScreen(definition, profile, parent = null)
+                        Minecraft.getInstance().setScreen(screen)
+                        return screen
+                    }
+
+                    override fun work(): ReactiveNativeWork {
+                        val counters = readRenderWork(Minecraft.getInstance())
+                        return ReactiveNativeWork(counters.hostFrames, counters.framePreparations, counters.rasterizations, counters.textureUploads)
+                    }
+
+                    override fun assertPixels(definition: ScreenDefinition) {
+                        val expected = onClient { ReactiveRenderPixels.reference(definition, profile) }
+                        val screenshot = takeScreenshot(context, "reactive-rendering-native", output)
+                        ReactiveRenderPixels.verify(expected, screenshot, output)
+                    }
+
+                    override fun closeScreen() {
+                        activeFabricScreen(Minecraft.getInstance()).onClose()
+                    }
+                },
+            )
+        Files.writeString(output.resolve("reactive-rendering.txt"), "minecraftVersion=${minecraftVersion()}\n$receipt")
     }
 
     private fun verifyKeyboardActivationAndScreenTransition(

@@ -10,6 +10,9 @@ See the [0.1.5 release notes](docs/releases/v0.1.5.md) for installation and obse
 
 - `Observe` binds a retained region to one through 22 typed `StateSource` arguments and reevaluates its content when committed values or its parent-supplied callback change, without reopening the screen.
 - Source-backed `Text` accepts `StateSource<String>` and `StateSource<UiText>`, including explicit-font overloads, through the same retained observation mechanism.
+- Generated direct-source overloads cover display data, labels, enablement, selection appearance, and collection/loading inputs; `onActivate` accepts the same enabled source as its control.
+- Lazy `StateSource.map` shares upstream frame snapshots and suppresses dependent UI work for equal projected values.
+- Optional session render monitoring exposes bounded detached counters and node identities through runtime hosts and Fabric screens, with shared native regression scenarios and API-only authoring exercises.
 - Observed regions share subscriptions and committed frame snapshots by source reference identity, coalesce pending revisions, and reconcile nested changes parent-first while preserving compatible keyed descendants.
 
 ### Compatibility

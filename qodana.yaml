@@ -44,6 +44,7 @@ exclude:
     paths:
       - api/src/main/kotlin/dev/s7a/strata/component/CanvasComponents.kt
       - api/src/main/kotlin/dev/s7a/strata/component/ObserveComponents.kt
+      - api/src/main/kotlin/dev/s7a/strata/component/ObservedComponents.kt
       - api/src/main/kotlin/dev/s7a/strata/component/ObservedTextComponents.kt
       - api/src/main/kotlin/dev/s7a/strata/component/ProfileComponents.kt
       - api/src/main/kotlin/dev/s7a/strata/component/SelectionListComponents.kt

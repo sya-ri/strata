@@ -931,6 +931,7 @@ subprojects {
         if (path == target.integrationProjectPath) {
             val profileCacheTests = rootProject.file("integration/minecraft-fabric-client-gametest/src/profile-cache/kotlin")
             val continuousInputTests = rootProject.file("integration/minecraft-fabric-client-gametest/src/continuous-input/kotlin")
+            val renderMonitoringTests = rootProject.file("integration/minecraft-fabric-client-gametest/src/render-monitoring/kotlin")
             val continuousScrollTests =
                 rootProject.file(
                     if (target.version in legacyScrollTargets) {
@@ -943,12 +944,14 @@ subprojects {
                 sourceSets.matching { sourceSet -> sourceSet.name == "gametest" }.configureEach {
                     kotlin.srcDir(profileCacheTests)
                     kotlin.srcDir(continuousInputTests)
+                    kotlin.srcDir(renderMonitoringTests)
                     kotlin.srcDir(continuousScrollTests)
                 }
             }
             extensions.configure<DetektExtension> {
                 source.from(profileCacheTests)
                 source.from(continuousInputTests, continuousScrollTests)
+                source.from(renderMonitoringTests)
             }
             fontParityComparisonsByVersion[target.version]?.let { comparison ->
                 tasks.named("check") { dependsOn(comparison) }

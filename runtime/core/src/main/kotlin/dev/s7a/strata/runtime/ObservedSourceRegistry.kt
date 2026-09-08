@@ -1,7 +1,9 @@
 package dev.s7a.strata.runtime
 
 import dev.s7a.strata.node.StateObserverNode
+import dev.s7a.strata.runtime.diagnostics.UiRenderMetric
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
+import dev.s7a.strata.state.DerivedStateSource
 import dev.s7a.strata.state.StateSource
 import java.util.Collections
 import java.util.IdentityHashMap
@@ -12,12 +14,30 @@ import java.util.IdentityHashMap
  * External callbacks only enqueue into bindings; capture precedes every commit and terminal close releases all sources.
  */
 @OptIn(InternalStrataRuntimeApi::class)
-internal class ObservedSourceRegistry : AutoCloseable {
+@Suppress("TooManyFunctions") // Subscription and dependency lifetimes must share one operation boundary.
+internal class ObservedSourceRegistry(
+    private val monitoring: RenderMonitoring = RenderMonitoring(),
+) : AutoCloseable {
     private val bindings = IdentityHashMap<StateSource<*>, ObservedSourceBinding>()
     private val owners = IdentityHashMap<StateObserverNode, List<StateSource<*>>>()
     private val unusedBindings = LinkedHashSet<ObservedSourceBinding>()
+    private val acquiring: MutableSet<StateSource<*>> = Collections.newSetFromMap(IdentityHashMap())
     private var frameActive = false
     private var operationActive = false
+    private var contentUpdates = false
+    private val changed = ArrayDeque<ObservedSourceBinding>()
+    private val notified: MutableSet<StateObserverNode> = Collections.newSetFromMap(IdentityHashMap())
+
+    /**
+     * Number of currently acquired external subscriptions, excluding derived graph edges.
+     */
+    var activeSubscriptions: Int = 0
+        private set
+
+    /**
+     * Consumes the owner-thread scheduling signal without evaluating any content.
+     */
+    fun takeContentUpdates(): Boolean = contentUpdates.also { contentUpdates = false }
 
     /**
      * Retains temporarily unreferenced bindings during one owner-thread tree operation.
@@ -48,17 +68,20 @@ internal class ObservedSourceRegistry : AutoCloseable {
      * Acquires newly referenced sources before releasing old ones and supplies the frame-consistent values.
      */
     fun synchronize(node: StateObserverNode) {
-        val sources = node.observedSources.toList()
+        val declaredSources = node.observedSources
         val previous = owners[node]
-        if (previous != null && previous.size == sources.size && previous.indices.all { previous[it] === sources[it] }) return
+        if (previous != null && previous.size == declaredSources.size && previous.indices.all { previous[it] === declaredSources[it] }) return
+        val sources = declaredSources.toList()
         sources.forEach { source ->
-            val binding = bindings[source] ?: ObservedSourceBinding(source).also { bindings[source] = it }
-            binding.references += 1
-            unusedBindings.remove(binding)
+            acquire(source)
         }
         owners[node] = sources
+        previous?.forEach { source -> checkNotNull(bindings[source]).consumers.remove(node) }
+        sources.forEach { source -> checkNotNull(bindings[source]).consumers.add(node) }
         if (previous != null) release(previous)
+        monitoring.record(UiRenderMetric.ConsumerNotification)
         node.commitObservedValues(values(sources))
+        contentUpdates = true
     }
 
     /**
@@ -73,11 +96,27 @@ internal class ObservedSourceRegistry : AutoCloseable {
      * Commits every captured source before notifying any region; notifications never evaluate content.
      */
     fun commit() {
-        var changed = false
         bindings.values.forEach { binding ->
-            if (binding.commit()) changed = true
+            if (binding.commit()) {
+                monitoring.record(UiRenderMetric.RootValueChange)
+                changed.addLast(binding)
+            }
         }
-        if (changed) owners.forEach { (node, sources) -> node.commitObservedValues(values(sources)) }
+        if (changed.isEmpty()) return
+        while (changed.isNotEmpty()) {
+            val binding = changed.removeFirst()
+            notified.addAll(binding.consumers)
+            binding.dependents.forEach { dependent ->
+                monitoring.record(UiRenderMetric.Projection)
+                if (dependent.derive()) changed.addLast(dependent) else monitoring.record(UiRenderMetric.ProjectionEqual)
+            }
+        }
+        notified.forEach { node ->
+            monitoring.record(UiRenderMetric.ConsumerNotification)
+            node.commitObservedValues(values(checkNotNull(owners[node])))
+        }
+        if (notified.isNotEmpty()) contentUpdates = true
+        notified.clear()
     }
 
     /**
@@ -85,27 +124,68 @@ internal class ObservedSourceRegistry : AutoCloseable {
      * The current frame or operation may retain its last binding for a later replacement node.
      */
     fun remove(node: StateObserverNode) {
-        owners.remove(node)?.let(::release)
+        owners.remove(node)?.let { sources ->
+            sources.forEach { source -> checkNotNull(bindings[source]).consumers.remove(node) }
+            release(sources)
+        }
+    }
+
+    private fun acquire(source: StateSource<*>): ObservedSourceBinding {
+        val binding = bindings[source] ?: createBinding(source).also { bindings[source] = it }
+        binding.references += 1
+        unusedBindings.remove(binding)
+        return binding
+    }
+
+    private fun createBinding(source: StateSource<*>): ObservedSourceBinding {
+        check(acquiring.add(source)) { "Derived state dependencies must be acyclic." }
+        try {
+            val upstream = (source as? DerivedStateSource<*>)?.let { acquire(it.upstream) }
+            if (upstream != null) monitoring.record(UiRenderMetric.Projection)
+            return runCatching { ObservedSourceBinding(source, upstream) }
+                .getOrElse { failure ->
+                    if (upstream != null) releaseBinding(upstream)
+                    throw failure
+                }.also { binding ->
+                    if (upstream == null) {
+                        activeSubscriptions += 1
+                        monitoring.subscription(true)
+                    } else {
+                        upstream.dependents.add(binding)
+                    }
+                }
+        } finally {
+            acquiring.remove(source)
+        }
     }
 
     private fun values(sources: List<StateSource<*>>): List<Any?> = Collections.unmodifiableList(sources.map { source -> checkNotNull(bindings[source]).value })
 
     private fun release(sources: List<StateSource<*>>) {
         sources.forEach { source ->
-            val binding = checkNotNull(bindings[source])
-            binding.references -= 1
-            if (binding.references == 0) unusedBindings.add(binding)
+            releaseBinding(checkNotNull(bindings[source]))
         }
         releaseUnused()
     }
 
+    private fun releaseBinding(binding: ObservedSourceBinding) {
+        binding.references -= 1
+        if (binding.references == 0) unusedBindings.add(binding)
+    }
+
     private fun releaseUnused() {
         if (frameActive || operationActive || unusedBindings.isEmpty()) return
-        val closing = unusedBindings.toList()
-        unusedBindings.clear()
-        bindings.entries.removeIf { entry -> entry.value.references == 0 }
         val failures = FailureAccumulator()
-        closing.forEach { binding -> failures.capture(binding::close) }
+        while (unusedBindings.isNotEmpty()) {
+            val binding = unusedBindings.first()
+            unusedBindings.remove(binding)
+            bindings.remove(binding.source)
+            binding.upstream?.let { upstream ->
+                upstream.dependents.remove(binding)
+                releaseBinding(upstream)
+            }
+            failures.capture { closeBinding(binding) }
+        }
         failures.throwIfPresent()
     }
 
@@ -113,11 +193,23 @@ internal class ObservedSourceRegistry : AutoCloseable {
         frameActive = false
         operationActive = false
         owners.clear()
+        acquiring.clear()
         unusedBindings.clear()
+        changed.clear()
+        notified.clear()
+        contentUpdates = false
         val closing = bindings.values.toList()
         bindings.clear()
         val failures = FailureAccumulator()
-        closing.forEach { binding -> failures.capture(binding::close) }
+        closing.forEach { binding -> failures.capture { closeBinding(binding) } }
         failures.throwIfPresent()
+    }
+
+    private fun closeBinding(binding: ObservedSourceBinding) {
+        if (binding.upstream == null) {
+            activeSubscriptions -= 1
+            monitoring.subscription(false)
+        }
+        binding.close()
     }
 }

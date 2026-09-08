@@ -24,6 +24,10 @@ internal object StateBindingDocumentationCatalog {
      */
     internal val entries: List<Entry> =
         listOf(
+            Entry("StateSource", "StateSource.kt", "Read-only external revision source. Pass directly to supported component arguments; retain pure map projections for derived presentation.", "dev.s7a.strata.state"),
+            Entry("StateSnapshot", "StateSnapshot.kt", "Atomic revision/value pair for source publishers and ordinary subscribers; extracting its value into a literal does not establish UI observation.", "dev.s7a.strata.state"),
+            Entry("StateRevision", "StateRevision.kt", "Source-owned monotonically increasing revision, independent of value equality.", "dev.s7a.strata.state"),
+            Entry("StateSubscription", "StateSubscription.kt", "Atomic initial snapshot and idempotent subscription close; ordinary mapped subscriptions preserve all revisions.", "dev.s7a.strata.state"),
             Entry(
                 "ListLoadRequest",
                 "ListLoadRequest.kt",

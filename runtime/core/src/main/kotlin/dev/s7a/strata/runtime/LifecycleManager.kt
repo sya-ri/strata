@@ -16,6 +16,7 @@ internal class LifecycleManager(
     private val registry: NodeOwnershipRegistry,
     private val threadGuard: ThreadGuard,
     private val dirtyTracker: DirtyTracker,
+    private val monitoring: RenderMonitoring = RenderMonitoring(),
     private val beforeEntryCleanup: (RetainedEntry) -> Unit,
 ) {
     /**
@@ -35,6 +36,7 @@ internal class LifecycleManager(
                 }
             }.onFailure { registry.release(retained.node) }.getOrThrow()
         retained.bindingRelease = binding
+        monitoring.created(retained)
     }
 
     /**
@@ -153,6 +155,7 @@ internal class LifecycleManager(
             if (lifecycle != null) {
                 failures.capture { lifecycle.dispose() }
             }
+            monitoring.disposed(retained)
         }
         val release = retained.bindingRelease
         retained.bindingRelease = null

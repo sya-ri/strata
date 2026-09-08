@@ -1,4 +1,4 @@
-@file:Suppress("FunctionNaming", "ktlint:standard:function-naming", "LongParameterList")
+@file:Suppress("FunctionNaming", "ktlint:standard:function-naming", "LongParameterList", "UNCHECKED_CAST")
 
 package dev.s7a.strata.component
 
@@ -13,7 +13,7 @@ import dev.s7a.strata.text.withFont
 /**
  * Emits source-backed text using the same frame snapshot and retained-region ownership as [Observe].
  * The caller owns the source; text resolution and wrapping happen on the tree owner thread.
- * Modifier and key belong to the single text region in its parent layout.
+ * The complete modifier chain stays on the actual text node; the transparent region owns the sibling key and delegates parent data.
  */
 @JvmName("TextUiTextSource")
 public fun UiScope.Text(
@@ -23,7 +23,7 @@ public fun UiScope.Text(
     modifier: Modifier = Modifier.Empty,
     key: ElementKey<*>? = null,
 ) {
-    Observe(text, modifier, key) { value -> Text(value, layout, style) }
+    emitObservedComponent(listOf(text), key) { values -> Text(values[0] as UiText, layout, style, modifier) }
 }
 
 /**
@@ -37,7 +37,7 @@ public fun UiScope.Text(
     modifier: Modifier = Modifier.Empty,
     key: ElementKey<*>? = null,
 ) {
-    Observe(text, modifier, key) { value -> Text(value, layout, style) }
+    emitObservedComponent(listOf(text), key) { values -> Text(values[0] as String, layout, style, modifier) }
 }
 
 /**
@@ -52,7 +52,7 @@ public fun UiScope.Text(
     modifier: Modifier = Modifier.Empty,
     key: ElementKey<*>? = null,
 ) {
-    Observe(text, modifier, key) { value -> Text(value.withFont(font), layout, style) }
+    emitObservedComponent(listOf(text), key) { values -> Text((values[0] as UiText).withFont(font), layout, style, modifier) }
 }
 
 /**
@@ -67,5 +67,5 @@ public fun UiScope.Text(
     modifier: Modifier = Modifier.Empty,
     key: ElementKey<*>? = null,
 ) {
-    Observe(text, modifier, key) { value -> Text(UiText.Literal(value).withFont(font), layout, style) }
+    emitObservedComponent(listOf(text), key) { values -> Text(UiText.Literal(values[0] as String).withFont(font), layout, style, modifier) }
 }

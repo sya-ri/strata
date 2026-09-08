@@ -155,6 +155,10 @@ internal enum class DocumentedComponent(
          * @param name raw JVM method name.
          * @return the typed identity or null when the name is not a documented component.
          */
-        internal fun fromApiMethodName(name: String): DocumentedComponent? = apiMethodAliases[name] ?: entries.firstOrNull { component -> component.apiMethodName == name }
+        internal fun fromApiMethodName(name: String): DocumentedComponent? {
+            apiMethodAliases[name]?.let { return it }
+            val sourceName = Regex("^([A-Z][A-Za-z]+)State[0-9a-f]{12}_[1-7]$").matchEntire(name)?.groupValues?.get(1) ?: name
+            return entries.firstOrNull { component -> component.apiMethodName == sourceName }
+        }
     }
 }

@@ -163,7 +163,7 @@ internal object ShowcaseInventory {
         return Modifier.isPublic(method.modifiers) &&
             Modifier.isStatic(method.modifiers) &&
             method.isSynthetic.not() &&
-            isUpperCamel(method.name) &&
+            (isUpperCamel(method.name) || DocumentedComponent.fromApiMethodName(method.name) != null) &&
             parameters.isNotEmpty() &&
             parameters[0] == uiScopeType &&
             method.returnType == Void.TYPE

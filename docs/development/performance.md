@@ -23,7 +23,7 @@ Run the complete suite from the repository root with `./gradlew :quality:benchma
 The benchmark module uses the catalog-selected JMH dependency in average-time mode with one worker thread, three one-second warmup iterations, five one-second measurement iterations, and one fork.
 The built-in `gc` profiler records normalized allocation in bytes per operation alongside elapsed time in microseconds per operation.
 The three logical viewports are `Compact` at 320 by 180, `Windowed` at 854 by 480, and `FullHd` at 1920 by 1080.
-Every case uses the same public API-built scene containing a full-viewport background and 54 keyed paint-and-semantics leaves in a centered nine-column grid.
+The original RenderingBenchmark cases use the same public API-built scene containing a full-viewport background and 54 keyed paint-and-semantics leaves in a centered nine-column grid.
 
 `cleanUiSessionFrame` primes one retained session before measurement and then requests another frame without invalidation.
 `cleanTimedUiSessionFrame` advances that same clean scene with a stable explicit host timestamp before requesting the frame, matching the per-render call shape used by Minecraft without causing a time-dependent invalidation.
@@ -32,6 +32,8 @@ Every case uses the same public API-built scene containing a full-viewport backg
 
 JMH writes structured output to `quality/benchmarks/build/reports/jmh/results.json`.
 The report and every other file under `quality/benchmarks/build/` are temporary, untracked build outputs and must not be committed.
+
+The reactive JMH fixture adds static, single source, equal/changed projection, nested observation, 128 independent consumers, 128 shared consumers, and 200-row list append/prepend cases at 320 by 180. Each case runs with monitoring disabled and enabled. Enabled runs checkpoint every 64 invocations to keep node turnover within the diagnostic record bound; that checkpoint cost is included. Initial subscription and layout are outside measurement, while publication and its immutable snapshot allocation are included. Lists alternate fixed immutable ranges and preserve their current anchor. The [monitoring contract](render-monitoring.md) describes deterministic work counters used alongside timing and allocation.
 
 ## Why wall-clock time is not a hard CI gate
 
@@ -271,7 +273,13 @@ Prepending data preserves the visible stable key without materializing the inter
 
 Observe retains its current child descriptions and committed value tuple, rebuilding only for a changed tuple or parent callback.
 Repeated geometry passes reuse those descriptions; compatible child nodes preserve editing and viewport state.
-Source-backed Text delegates to the same region mechanism and never opens another screen.
+Direct source components delegate to the same region mechanism and never open another screen.
+The source registry indexes consumers and derived dependents by source identity, so one changed source does not allocate value tuples for unrelated consumers.
+Each retained map descriptor stores one current projected result; changed inputs recompute the result, while equal outputs stop downstream propagation.
+Current immutable dynamic-child lists are keyed by list identity and replaced after actual content evaluation; identical cached lists skip sibling validation and reconciliation.
+Pending content and measure dirtiness are separate: only the actual child difference propagates layout work, and paint-only progress updates do not remeasure ancestors.
+Parent-data delegation caches only the immutable node capability on its retained entry; layout still reads current parent data on every required pass, and replacing the node replaces this capability reference.
+Projection edges, consumer tuples, cached child descriptions, and monitoring callbacks belong to the current tree and are released with their last owner or terminal cleanup.
 The tree-owned registry shares one source subscription by reference identity and is bounded by the sources referenced during the current frame or standalone tree operation.
 Bindings whose last owner disappears remain available for same-operation readmission, preserving the committed cutoff and pending notifications; still-unused bindings are released before the operation returns.
 An ordered pending-release set is empty on stable frames, so frame completion does not add a full registry scan when no source was removed.

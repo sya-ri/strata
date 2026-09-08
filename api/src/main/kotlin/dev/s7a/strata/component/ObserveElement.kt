@@ -10,15 +10,18 @@ import dev.s7a.strata.geometry.IntSize
 import dev.s7a.strata.layout.LayoutScope
 import dev.s7a.strata.layout.MeasureScope
 import dev.s7a.strata.modifier.Modifier
+import dev.s7a.strata.node.ContentInvalidation
+import dev.s7a.strata.node.ContentKind
+import dev.s7a.strata.node.DeferredContentNode
 import dev.s7a.strata.node.DirtyMask
-import dev.s7a.strata.node.DirtyPhase
-import dev.s7a.strata.node.DynamicChildrenNode
 import dev.s7a.strata.node.LayoutNode
 import dev.s7a.strata.node.LifecycleNode
 import dev.s7a.strata.node.MeasureNode
+import dev.s7a.strata.node.ParentDataDelegateNode
 import dev.s7a.strata.node.StateObserverNode
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
 import dev.s7a.strata.state.StateSource
+import java.util.EnumSet
 import dev.s7a.strata.node.Node as RetainedNode
 
 /**
@@ -30,9 +33,10 @@ internal class ObserveElement(
     private val content: ObserveContent,
     modifier: Modifier,
     key: ElementKey<*>?,
+    private val transparent: Boolean = false,
 ) : Element(
         identity = key?.let(ElementIdentity::Keyed) ?: ElementIdentity.Positional,
-        type = TYPE,
+        type = if (transparent) TRANSPARENT_TYPE else TYPE,
         modifier = modifier,
     ) {
     /**
@@ -42,7 +46,8 @@ internal class ObserveElement(
         initial: ObserveElement,
     ) : RetainedNode(),
         StateObserverNode,
-        DynamicChildrenNode,
+        DeferredContentNode,
+        ParentDataDelegateNode,
         MeasureNode,
         LayoutNode,
         LifecycleNode {
@@ -51,20 +56,21 @@ internal class ObserveElement(
         private var content: ObserveContent? = initial.content
         private var values: List<Any?>? = null
         private var children: List<Element> = emptyList()
-        private var pending = true
+        override val pendingContentReasons: MutableSet<ContentInvalidation> = EnumSet.of(ContentInvalidation.Initial)
+        override val parentDataChild: Int? = if (initial.transparent) 0 else null
+        override val contentKind: ContentKind = if (initial.transparent) ContentKind.StateComponent else ContentKind.ObservedRegion
 
         override fun commitObservedValues(values: List<Any?>) {
             if (this.values != values) {
                 this.values = values
-                pending = true
-                invalidate(DirtyMask.of(DirtyPhase.Measure))
+                pendingContentReasons.add(ContentInvalidation.SourceValue)
             }
         }
 
         override fun dynamicChildren(): List<Element> {
-            if (pending) {
+            if (pendingContentReasons.isNotEmpty()) {
                 children = checkNotNull(content).evaluate(checkNotNull(values))
-                pending = false
+                pendingContentReasons.clear()
             }
             return children
         }
@@ -87,6 +93,7 @@ internal class ObserveElement(
             values = null
             children = emptyList()
             observedSources = emptyList()
+            pendingContentReasons.clear()
         }
 
         /**
@@ -95,14 +102,20 @@ internal class ObserveElement(
         fun update(current: ObserveElement): DirtyMask {
             if (content === current.content) return DirtyMask.None
             content = current.content
+            if (observedSources.size != current.sources.size || observedSources.indices.any { observedSources[it] !== current.sources[it] }) {
+                pendingContentReasons.add(ContentInvalidation.SourceReplacement)
+            }
             observedSources = current.sources
-            pending = true
-            return DirtyMask.of(DirtyPhase.Measure)
+            pendingContentReasons.add(ContentInvalidation.ParentDefinition)
+            return DirtyMask.None
         }
     }
 
     private companion object {
-        private val TYPE =
+        private val TYPE = createType()
+        private val TRANSPARENT_TYPE = createType()
+
+        private fun createType() =
             ElementType(
                 elementClass = ObserveElement::class,
                 nodeClass = Node::class,
