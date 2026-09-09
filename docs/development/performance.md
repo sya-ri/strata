@@ -23,7 +23,7 @@ Run the complete suite from the repository root with `./gradlew :quality:benchma
 The benchmark module uses the catalog-selected JMH dependency in average-time mode with one worker thread, three one-second warmup iterations, five one-second measurement iterations, and one fork.
 The built-in `gc` profiler records normalized allocation in bytes per operation alongside elapsed time in microseconds per operation.
 The three logical viewports are `Compact` at 320 by 180, `Windowed` at 854 by 480, and `FullHd` at 1920 by 1080.
-Every case uses the same public API-built scene containing a full-viewport background and 54 keyed paint-and-semantics leaves in a centered nine-column grid.
+The original RenderingBenchmark cases use the same public API-built scene containing a full-viewport background and 54 keyed paint-and-semantics leaves in a centered nine-column grid.
 
 `cleanUiSessionFrame` primes one retained session before measurement and then requests another frame without invalidation.
 `cleanTimedUiSessionFrame` advances that same clean scene with a stable explicit host timestamp before requesting the frame, matching the per-render call shape used by Minecraft without causing a time-dependent invalidation.
@@ -32,6 +32,8 @@ Every case uses the same public API-built scene containing a full-viewport backg
 
 JMH writes structured output to `quality/benchmarks/build/reports/jmh/results.json`.
 The report and every other file under `quality/benchmarks/build/` are temporary, untracked build outputs and must not be committed.
+
+The reactive JMH fixture adds static, single source, equal/changed projection, nested observation, 128 independent consumers, 128 shared consumers, and 200-row list append/prepend cases at 320 by 180. Each case runs with monitoring disabled and enabled. Enabled runs checkpoint every 64 invocations to keep node turnover within the diagnostic record bound; that checkpoint cost is included. Initial subscription and layout are outside measurement, while publication and its immutable snapshot allocation are included. Lists alternate fixed immutable ranges and preserve their current anchor. The [monitoring contract](render-monitoring.md) describes deterministic work counters used alongside timing and allocation.
 
 ## Why wall-clock time is not a hard CI gate
 
@@ -58,6 +60,9 @@ Loading indicators and delayed tooltips additionally verify that timestamps insi
 
 The Fabric presenter reuses the complete partitioned frame when the immutable draw-command list has referential identity, the logical viewport is equal, and the actual GUI scale is unchanged.
 When a mixed portable-and-platform display list changes, portable textures may be reused only when the complete ordered list of localized immutable commands, image extents, viewport, and GUI scale is equal; platform layers are still extracted natively every time.
+Cached foreground paint callbacks do not make overlapping composition free: changing a lower command can invalidate the portable run containing the foreground, requiring its rasterization and upload again.
+The full ordered commands and clips are replayed, so translucent overlays blend against the updated background and erased lower pixels do not persist.
+See [render monitoring](render-monitoring.md#overlapping-content-and-overlays) for the distinction between callback counts and composition work and the corresponding pixel regressions.
 Sampled glyph geometry is rasterized at physical resolution, so a scale change requires a new raster and texture even when the logical display list is identical.
 Changed portable inputs allocate a complete replacement generation before any GUI output, rather than modifying a texture that unconsumed GUI work may still reference.
 The screen retains only its current portable generation, and equivalent replacement commands replace old CPU input references without uploading identical pixels again.
@@ -267,6 +272,26 @@ A virtual list materializes only the visible rows plus its bounded overscan rows
 Jumping across a large indexed source replaces the current range instead of retaining visited ranges.
 Prepending data preserves the visible stable key without materializing the intervening items.
 
+### Observed-region retention
+
+Observe retains its current child descriptions and committed value tuple, rebuilding only for a changed tuple or parent callback.
+Repeated geometry passes reuse those descriptions; compatible child nodes preserve editing and viewport state.
+Direct source components delegate to the same region mechanism and never open another screen.
+The source registry indexes consumers and derived dependents by source identity, so one changed source does not allocate value tuples for unrelated consumers.
+Each retained map descriptor stores one current projected result; changed inputs recompute the result, while equal outputs stop downstream propagation.
+Current immutable dynamic-child lists are keyed by list identity and replaced after actual content evaluation; identical cached lists skip sibling validation and reconciliation.
+Pending content and measure dirtiness are separate: only the actual child difference propagates layout work, and paint-only progress updates do not remeasure ancestors.
+Parent-data delegation caches only the immutable node capability on its retained entry; layout still reads current parent data on every required pass, and replacing the node replaces this capability reference.
+Projection edges, consumer tuples, cached child descriptions, and monitoring callbacks belong to the current tree and are released with their last owner or terminal cleanup.
+The tree-owned registry shares one source subscription by reference identity and is bounded by the sources referenced during the current frame or standalone tree operation.
+Bindings whose last owner disappears remain available for same-operation readmission, preserving the committed cutoff and pending notifications; still-unused bindings are released before the operation returns.
+An ordered pending-release set is empty on stable frames, so frame completion does not add a full registry scan when no source was removed.
+Its revision binding retains committed, pending, and captured values plus the subscription carrier; terminal release drops registry references and closes each subscription once.
+Core tests count content evaluations and subscriptions for nested, repeated-argument, equal-value, background-burst, removal, replacement, and closed-tree cases.
+After initial dynamic materialization settles, unchanged frames retain their immutable frame cache and perform no additional component, measure, layout, paint, or semantics work.
+The bounded regression scenario holds 128 independent regions, runs 100 unchanged frames, and requires one sibling content evaluation and one primitive update when one source changes.
+A changed label may legitimately invalidate ancestor measurement.
+
 ### Player-skin lifecycle
 
 The asynchronous skin completion path must retain only its detached lifecycle target and must not capture the screen, platform bridge, or binding owner after close.
@@ -274,6 +299,19 @@ Close must atomically reject late publication, drop a queued completion, clear a
 Owner-thread draining must transfer an accepted completion at most once, and a closed lifecycle must never accept another snapshot commit.
 
 ## Interpreting measurements
+
+`OverlayRenderingBenchmark` separates retained command generation from full headless source-over composition with one changing opaque lower layer and 1, 16, or 64 immutable translucent foregrounds.
+It runs at 320 by 180 and 1920 by 1080 physical pixels, with diagnostics disabled and enabled.
+The command fixture still assembles the complete ordered display list; the composition fixture also allocates a complete output image and blends every covered foreground pixel.
+These are different costs, and the headless timings are not native GPU frame-rate measurements.
+Repeated full-area alpha blending is proportional to area and layer count; a narrow Observe or a direct State input does not remove that raster work.
+Do not recommend dense full-area translucent stacks for frequent updates without measuring their intended physical resolution and composition path.
+
+`:quality:benchmarks:verifyOverlayRenderingWork` uses the same fixture for deterministic retention and pixel checks.
+Each layer count runs 10,000 changes, requires exactly one lower paint and Observe evaluation per update, no measure/layout or node creation/disposal, one active source subscription, bounded node/display-list counts, and no subscription after close.
+Every verification image is compared pixel-for-pixel with an independently calculated source-over color.
+For a longer local soak, invoke `OverlayWorkEvidence` from the JMH jar with explicit update count, raster frame count, and viewport width; it keeps the same assertions and never accumulates frame history.
+Record those counts and any elapsed-time measurements with the review evidence; no elapsed-time threshold gates CI.
 
 Record the measured revision, configuration, and environment with each temporary report.
 Compare wall-clock results only when host load and power conditions are controlled; normalized allocation and deterministic retention checks provide different evidence.

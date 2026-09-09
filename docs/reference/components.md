@@ -18,6 +18,7 @@ Use the [complete screen examples](../examples/screens.md) to see how these prim
 | [Stack](#stack) | Overlap children intentionally within one rectangle. | [Reference](https://gh.s7a.dev/strata/api/dev.s7a.strata.component/-stack.html) |
 | [Grid](#grid) | Align repeated content in a fixed number of columns. | [Reference](https://gh.s7a.dev/strata/api/dev.s7a.strata.component/-grid.html) |
 | [Spacer](#spacer) | Reserve an intentional gap or flexible space in a layout. | [Reference](https://gh.s7a.dev/strata/api/dev.s7a.strata.component/-spacer.html) |
+| [Observe](#observe) | Update one retained region when explicitly supplied sources change. | [Reference](https://gh.s7a.dev/strata/api/dev.s7a.strata.component/-observe.html) |
 
 ### Text and editing
 
@@ -555,6 +556,92 @@ This 160 by 64 PNG is the complete frame of the compiled dedicated `ScreenDefini
 
 </details>
 
+<a id="observe"></a>
+
+## Observe
+
+Update one retained region when explicitly supplied sources change.
+
+![Observe headless showcase](../components/observe.png)
+
+[API reference](https://gh.s7a.dev/strata/api/dev.s7a.strata.component/-observe.html)
+
+<details><summary>Usage and compiled example</summary>
+
+Observe recomputes one retained region from one to 22 typed StateSource values. Live status panels and conditional editing controls are independent uses; ordinary static layout composition cannot subscribe, coalesce frame snapshots, or reconcile deferred structure. Nested regions share source subscriptions and preserve compatible keyed nodes.
+
+### Compiled example
+
+```kotlin
+import dev.s7a.strata.component.Column
+import dev.s7a.strata.component.Observe
+import dev.s7a.strata.component.Text
+import dev.s7a.strata.modifier.Modifier
+import dev.s7a.strata.modifier.background
+import dev.s7a.strata.modifier.padding
+import dev.s7a.strata.modifier.size
+import dev.s7a.strata.render.ArgbColor
+import dev.s7a.strata.screen.ScreenDefinition
+import dev.s7a.strata.state.StateRevision
+import dev.s7a.strata.state.StateSnapshot
+import dev.s7a.strata.state.StateSource
+import dev.s7a.strata.state.StateSubscription
+
+/**
+ * Creates a deterministic observed status region; live applications supply their own revisioned sources.
+ */
+internal fun createObserveShowcaseScreenDefinition(): ScreenDefinition {
+    val status =
+        StateSource<String> {
+            StateSubscription(StateSnapshot(StateRevision(0), "Connected")) {}
+        }
+    return ScreenDefinition("Observe showcase") {
+        Observe(
+            status,
+            modifier =
+                Modifier.Empty
+                    .size(160, 48)
+                    .background(ArgbColor(0xFF000000.toInt()))
+                    .padding(8),
+        ) { value ->
+            Column(spacing = 4) {
+                Text(value)
+                Text(status)
+            }
+        }
+    }
+}
+```
+
+### Modifiers
+
+Observe is one child of its containing layout. Apply weight, alignment, sizing, and event modifiers to the region itself. Content emits zero or one root; use an inner Row or Column for multiple children. Empty content has zero natural size and still obeys incoming constraints.
+
+### Parent scope
+
+Observe evaluates a fresh UiScope when source values or its parent-provided callback change. Keep input and scroll states outside that callback. Source notifications never evaluate UI on their delivery thread; nested regions consume the final parent definition once per frame.
+
+</details>
+
+<details><summary>Component tree</summary>
+
+The tree mirrors the complete dedicated definition, including the featured component, its minimum parent layout, and the children used to demonstrate its responsibility.
+
+```text
+`- Observe [Size(width=160, height=48), Background(color=0xFF000000), Padding(all=8)]
+  `- Column [Spacing(value=4)]
+    |- Text
+    `- Text
+```
+
+</details>
+
+<details><summary>Image verification</summary>
+
+This 160 by 48 PNG is the complete frame of the compiled dedicated `ScreenDefinition`, with a 160 by 48 logical viewport at GUI scale 1. Headless rendering samples the assets at this physical density; the image is not upscaled from a lower-resolution raster or cropped from a larger screen. Its source, asset, viewport, and image hashes are recorded in [the headless render receipt](../components/headless-render.properties).
+
+</details>
+
 <a id="text"></a>
 
 ## Text
@@ -618,7 +705,7 @@ Ordinary sizing, padding, placement, and paint modifiers compose around `Text`; 
 
 ### Parent scope
 
-`Text` is a top-level extension on the active `UiScope`. The screen runtime installs its selected Minecraft profile only for the definition callback, and the component has no content callback or parent-data API. Unicode and custom fonts require a font-resource profile; the older printable-ASCII glyph builder remains a compatibility path.
+`Text` accepts fixed values or a `StateSource<String>` / `StateSource<UiText>`. Source-backed text uses Observe's shared frame snapshots and retained region without reopening its screen. Unicode and custom fonts require a font-resource profile; the older printable-ASCII glyph builder remains a compatibility path.
 
 </details>
 

@@ -158,6 +158,30 @@ extensions.configure<DetektExtension> {
 }
 
 val gametestSourceSet = extensions.getByType<SourceSetContainer>().named("gametest")
+
+loom {
+    runs.register("manualIme") {
+        client()
+        sourceSet.set("gametest")
+        runDirectory.set(layout.buildDirectory.dir("manual-ime-client"))
+        generateRunConfig.set(false)
+        systemProperties.put("strata.ime.manual", "true")
+        systemProperties.put("strata.ime.output", layout.buildDirectory.dir("manual-ime-evidence").get().asFile.absolutePath)
+        programArguments.addAll("--width", "960", "--height", "540")
+    }
+}
+tasks.named<JavaExec>("runManualIme") {
+    description = "Opens a normal client for manual OS IME verification; never enables simulated GameTest input."
+    val runId = UUID.randomUUID().toString()
+    doFirst { systemProperty("strata.ime.runId", runId) }
+    doLast {
+        val receipt = layout.buildDirectory.file("manual-ime-evidence/manual-os-ime.txt").get().asFile
+        val proof = Properties().apply { receipt.reader(Charsets.UTF_8).use(::load) }
+        check(proof.getProperty("runId") == runId) { "The OS IME receipt is missing or belongs to another invocation." }
+        check(proof.getProperty("input") == "OS-keyboard-only" && proof.getProperty("editorIdentity") == "retained")
+        check(0 < checkNotNull(proof.getProperty("updates")?.toIntOrNull()))
+    }
+}
 tasks.named<ProcessResources>("processGametestResources") {
     from(sharedGameTest.resolve("resources")) {
         exclude("fabric.mod.json")

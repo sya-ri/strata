@@ -20,6 +20,8 @@ import dev.s7a.strata.input.InputResult
 import dev.s7a.strata.input.PointerEvent
 import dev.s7a.strata.modifier.Modifier
 import dev.s7a.strata.node.ClipChildrenNode
+import dev.s7a.strata.node.ContentWork
+import dev.s7a.strata.node.ContentWorkNode
 import dev.s7a.strata.node.DirtyMask
 import dev.s7a.strata.node.DirtyPhase
 import dev.s7a.strata.node.DynamicChildrenNode
@@ -66,6 +68,7 @@ internal class VirtualListElement(
         initial: VirtualListElement,
     ) : RetainedNode(),
         DynamicChildrenNode,
+        ContentWorkNode,
         MeasureNode,
         LayoutNode,
         PointerInputNode,
@@ -93,6 +96,7 @@ internal class VirtualListElement(
         private var anchorIntraRowOffset = 0.0
         private var observer: ScrollStateObserver? = null
         private var attached = false
+        override var contentWorkObserver: ((ContentWork) -> Unit)? = null
 
         override fun dynamicChildren(): List<Element> {
             if (itemCount == 0) {
@@ -117,10 +121,13 @@ internal class VirtualListElement(
             cachedChildren =
                 (visibleStart until endExclusive).map { index ->
                     val item = itemAt(index)
+                    val itemKey = keyAt(index)
+                    contentWorkObserver?.invoke(ContentWork.RowEvaluation)
+                    val child = itemContent(item)
                     StackElement(
                         contentAlignment = Alignment.TopStart,
-                        key = ElementKey(keyAt(index)),
-                        children = listOf(itemContent(item)),
+                        key = ElementKey(itemKey),
+                        children = listOf(child),
                         modifier = Modifier.Empty,
                     )
                 }

@@ -28,10 +28,10 @@ internal class KotlinSourceSignatureInventoryTest {
         assertTrue(
             source.components
                 .getValue(DocumentedComponent.CycleButton)
-                .single()
-                .contains("CycleButtonState<T>"),
+                .all { it.contains("CycleButtonState<T>") },
         )
         assertTrue(source.modifiers.getValue("padding").any { signature -> signature.contains("left: Int") })
+        assertEquals(listOf("fun <T, R> StateSource<T>.map(transform: (T) -> R): StateSource<R>"), source.stateExtensions.getValue("map"))
     }
 
     @Test

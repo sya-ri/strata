@@ -39,6 +39,20 @@ If establishment fails before the subscription linearization point, it transfers
 
 ## Use in a screen
 
+`StateSource<T>.map(transform: (T) -> R): StateSource<R>` creates a lazy read-only projection. Import `dev.s7a.strata.state.map`.
+It supports nullable values and chained projections. Keep its identity beside the caller-owned source, outside callbacks that Strata reevaluates.
+Transforms must be deterministic, inexpensive, and free from side effects and I/O.
+
+Ordinary `subscribe` transforms the atomic initial snapshot and every later delivered snapshot, retaining the original revision and ordering even when outputs compare equal.
+A close racing an in-progress transform prevents a new downstream callback after successful close. A callback already entered may finish.
+An initial transform failure releases the upstream subscription and preserves cleanup failures as suppressed exceptions; later observer/transform failures are ordinary subscriber contract violations.
+
+The UI runtime recognizes the projection dependency graph and shares one external subscription when the original and its projections are consumed together.
+It freezes original inputs before deriving values, calculates each admitted projection once per changed committed input, and compares outputs using `==`.
+Equal outputs stop propagation to later projections and UI consumers. This does not promise that a mapper never runs: changed inputs may require computation to determine equality.
+Source identity replacement and changed parent declarations remain distinct reasons to reevaluate; callback captures cannot be compared semantically.
+Only current dependencies and latest snapshots are retained; failure, replacement, final removal, and close release the corresponding ownership.
+
 [Screens and state](../guides/screens-and-state.md) distinguishes caller-owned component state from external sources.
 [Canvas](../guides/canvas.md) and [tiled images](../guides/tiled-images.md) show public source consumers.
 Runtime implementers commit their queued observations through the [session frame cutoff](../development/ui-sessions.md#local-and-external-state).

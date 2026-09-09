@@ -32,15 +32,21 @@ internal class UiSessionBinding<T>(
     private var disabled: Boolean = false
 
     /**
+     * Returns the owner-thread committed value without consuming a pending notification.
+     */
+    val committedValue: T
+        get() {
+            checkReadable()
+            return checkNotNull(committed) { "A binding has not received its initial snapshot." }.value
+        }
+
+    /**
      * Reads the currently committed value and never consumes a pending callback.
      */
     override fun getValue(
         thisRef: Any?,
         property: KProperty<*>,
-    ): T {
-        checkReadable()
-        return checkNotNull(committed) { "A binding has not received its initial snapshot." }.value
-    }
+    ): T = committedValue
 
     /**
      * Enqueues the newest callback snapshot and returns normally on every lifecycle state.

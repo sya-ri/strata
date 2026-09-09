@@ -28,9 +28,17 @@ internal object StrataSkillPipeline {
         val compiledStateAndBindings = StateBindingBinaryInventory.discover(launch.apiClassDirectories)
         val apiSourceRoot = launch.projectRoot.resolve("api/src/main/kotlin")
         val signatures = KotlinSourceSignatureInventory.discover(apiSourceRoot)
+        val stateExtensions = StateBindingBinaryInventory.discoverExtensions(launch.apiClassDirectories)
+        require(signatures.stateExtensions.keys == stateExtensions.keys && stateExtensions.keys == setOf("map")) {
+            "StateSource extension source/binary inventory differs or contains undocumented extensions."
+        }
+        stateExtensions.forEach { (name, compiled) ->
+            require(signatures.stateExtensions.getValue(name).size == compiled.size) { "StateSource extension overload count differs: $name" }
+        }
         validateSignatures(compiledComponents, compiledModifiers, compiledStateAndBindings, signatures)
         val openExample = example(launch.exampleSourceRoot, "OpenScreenExample.kt", "skill-open")
         val layoutExample = example(launch.exampleSourceRoot, "StructuredScreenExample.kt", "skill-layout")
+        val reactiveExample = example(launch.exampleSourceRoot, "ReactiveScreenExample.kt", "skill-reactive")
         val customExample = example(launch.exampleSourceRoot, "CustomComponentExample.kt", "skill-custom")
         val versions = supportedVersions(launch.projectRoot)
         val readme = generatedReadme(launch.projectRoot, openExample, launch.releaseVersion)
@@ -39,8 +47,8 @@ internal object StrataSkillPipeline {
             "docs/publication/modrinth-project.md" to ModrinthProjectMarkdown.render(versions, openExample, launch.releaseVersion),
             "skills/strata/references/setup.md" to StrataSkillMarkdown.setup(versions, openExample, launch.releaseVersion),
             "skills/strata/references/components.md" to StrataSkillMarkdown.components(signatures.components),
-            "skills/strata/references/modifiers-and-layout.md" to StrataSkillMarkdown.modifiers(compiledModifiers, compiledStateAndBindings, signatures),
-            "skills/strata/references/patterns.md" to StrataSkillMarkdown.patterns(layoutExample, launch.releaseVersion),
+            "skills/strata/references/modifiers-and-layout.md" to StrataSkillMarkdown.modifiers(compiledModifiers, compiledStateAndBindings, signatures, stateExtensions),
+            "skills/strata/references/patterns.md" to StrataSkillMarkdown.patterns(layoutExample, launch.releaseVersion, reactiveExample),
             "skills/strata/references/custom-components.md" to StrataSkillMarkdown.customComponents(customExample),
         )
     }
@@ -133,7 +141,7 @@ internal object StrataSkillPipeline {
             }
         }
         require(compiledModifiers.modifiers.size == 44) { "Expected 44 top-level modifier groups, found ${compiledModifiers.modifiers.size}." }
-        require(compiledModifiers.modifiers.values.sum() == 55) { "Expected 55 top-level modifier overloads, found ${compiledModifiers.modifiers.values.sum()}." }
+        require(compiledModifiers.modifiers.values.sum() == 56) { "Expected 56 top-level modifier overloads, found ${compiledModifiers.modifiers.values.sum()}." }
         require(compiledModifiers.modifiers.keys == ModifierDocumentationCatalog.entries.keys) {
             "Modifier guidance differs from the compiled modifier surface."
         }
@@ -192,7 +200,7 @@ internal object StrataSkillPipeline {
                     }
 
                     DeclarationKind.CONSTRUCTOR -> {
-                        fingerprints.any { fingerprint -> fingerprint.startsWith("constructor $binaryOwner(") }
+                        fingerprints.any { fingerprint -> fingerprint.startsWith("constructor $binaryOwner(") || fingerprint.startsWith("method $binaryOwner.constructor-impl(") }
                     }
 
                     DeclarationKind.FUNCTION -> {
@@ -204,6 +212,7 @@ internal object StrataSkillPipeline {
                         val getterName = "get${declaration.name.replaceFirstChar(Char::uppercase)}"
                         fingerprints.any { fingerprint ->
                             fingerprint.startsWith("method $binaryOwner.$getterName(") ||
+                                fingerprint.startsWith("method $binaryOwner.$getterName-") ||
                                 fingerprint.startsWith("field $binaryOwner.${declaration.name}:")
                         }
                     }

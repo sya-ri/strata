@@ -34,6 +34,7 @@ The [complete screen examples](examples/screens.md) show how those components wo
 Start with [Contributing](../CONTRIBUTING.md) and the [architecture](development/architecture.md).
 Use [build and verification](development/build.md) for local commands, [CI](development/ci.md) for workflow ownership, [release](development/release.md) for publication, and [documentation maintenance](development/documentation.md) for generated content.
 Runtime contributors should also read [UI sessions](development/ui-sessions.md), [rendering](development/rendering.md), [performance](development/performance.md), and [font verification](development/font-verification.md).
+Use [render monitoring](development/render-monitoring.md) to verify actual update work and the [independent screen exercise](development/skill-forward-evaluation.md) to maintain the skill's authoring guidance.
 Follow [Minecraft adapter development](development/minecraft-versions.md) when changing version support.
 
 The [publication introductions](publication/dokka-module.md) and [Modrinth body](publication/modrinth-project.md) serve their respective distribution surfaces.

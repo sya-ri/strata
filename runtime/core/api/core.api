@@ -22,7 +22,7 @@ public final class dev/s7a/strata/runtime/TreeState$Poisoned : dev/s7a/strata/ru
 	public fun toString ()Ljava/lang/String;
 }
 
-public final class dev/s7a/strata/runtime/UiTree : java/lang/AutoCloseable {
+public final class dev/s7a/strata/runtime/UiTree : dev/s7a/strata/runtime/spi/RuntimeUiDiagnosticsOwner, java/lang/AutoCloseable {
 	public fun <init> ()V
 	public fun close ()V
 	public final fun dispatchKeyboard (Ldev/s7a/strata/input/KeyboardEvent;)Ldev/s7a/strata/input/InputResult;
@@ -33,7 +33,127 @@ public final class dev/s7a/strata/runtime/UiTree : java/lang/AutoCloseable {
 	public final fun measure (Ldev/s7a/strata/geometry/Constraints;)Ldev/s7a/strata/geometry/IntSize;
 	public final fun paint ()Ljava/util/List;
 	public final fun semantics ()Ljava/util/List;
+	public fun startRenderMonitoring ()Ldev/s7a/strata/runtime/diagnostics/UiRenderMonitor;
 	public final fun update (Ldev/s7a/strata/element/Element;)V
+}
+
+public final class dev/s7a/strata/runtime/diagnostics/UiRenderMetric : java/lang/Enum {
+	public static final field AncestorInvalidation Ldev/s7a/strata/runtime/diagnostics/UiRenderMetric;
+	public static final field ConsumerNotification Ldev/s7a/strata/runtime/diagnostics/UiRenderMetric;
+	public static final field ContentEvaluation Ldev/s7a/strata/runtime/diagnostics/UiRenderMetric;
+	public static final field ContentEvaluationSuccess Ldev/s7a/strata/runtime/diagnostics/UiRenderMetric;
+	public static final field FrameAttempt Ldev/s7a/strata/runtime/diagnostics/UiRenderMetric;
+	public static final field FrameCacheHit Ldev/s7a/strata/runtime/diagnostics/UiRenderMetric;
+	public static final field FrameFailure Ldev/s7a/strata/runtime/diagnostics/UiRenderMetric;
+	public static final field FrameSuccess Ldev/s7a/strata/runtime/diagnostics/UiRenderMetric;
+	public static final field InitialContent Ldev/s7a/strata/runtime/diagnostics/UiRenderMetric;
+	public static final field Layout Ldev/s7a/strata/runtime/diagnostics/UiRenderMetric;
+	public static final field LocalInvalidation Ldev/s7a/strata/runtime/diagnostics/UiRenderMetric;
+	public static final field Measure Ldev/s7a/strata/runtime/diagnostics/UiRenderMetric;
+	public static final field NodeCreate Ldev/s7a/strata/runtime/diagnostics/UiRenderMetric;
+	public static final field NodeDispose Ldev/s7a/strata/runtime/diagnostics/UiRenderMetric;
+	public static final field NodeUpdate Ldev/s7a/strata/runtime/diagnostics/UiRenderMetric;
+	public static final field ObserveEvaluation Ldev/s7a/strata/runtime/diagnostics/UiRenderMetric;
+	public static final field OverlayPaint Ldev/s7a/strata/runtime/diagnostics/UiRenderMetric;
+	public static final field Paint Ldev/s7a/strata/runtime/diagnostics/UiRenderMetric;
+	public static final field ParentDefinitionContent Ldev/s7a/strata/runtime/diagnostics/UiRenderMetric;
+	public static final field Projection Ldev/s7a/strata/runtime/diagnostics/UiRenderMetric;
+	public static final field ProjectionEqual Ldev/s7a/strata/runtime/diagnostics/UiRenderMetric;
+	public static final field RootEvaluation Ldev/s7a/strata/runtime/diagnostics/UiRenderMetric;
+	public static final field RootOverlayPaint Ldev/s7a/strata/runtime/diagnostics/UiRenderMetric;
+	public static final field RootValueChange Ldev/s7a/strata/runtime/diagnostics/UiRenderMetric;
+	public static final field RowEvaluation Ldev/s7a/strata/runtime/diagnostics/UiRenderMetric;
+	public static final field Semantics Ldev/s7a/strata/runtime/diagnostics/UiRenderMetric;
+	public static final field SourceContent Ldev/s7a/strata/runtime/diagnostics/UiRenderMetric;
+	public static final field SourceReplacementContent Ldev/s7a/strata/runtime/diagnostics/UiRenderMetric;
+	public static final field StateComponentEvaluation Ldev/s7a/strata/runtime/diagnostics/UiRenderMetric;
+	public static final field StructureInvalidation Ldev/s7a/strata/runtime/diagnostics/UiRenderMetric;
+	public static final field SubscriptionClose Ldev/s7a/strata/runtime/diagnostics/UiRenderMetric;
+	public static final field SubscriptionOpen Ldev/s7a/strata/runtime/diagnostics/UiRenderMetric;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public static fun valueOf (Ljava/lang/String;)Ldev/s7a/strata/runtime/diagnostics/UiRenderMetric;
+	public static fun values ()[Ldev/s7a/strata/runtime/diagnostics/UiRenderMetric;
+}
+
+public abstract interface class dev/s7a/strata/runtime/diagnostics/UiRenderMonitor : java/lang/AutoCloseable {
+	public abstract fun checkpoint ()V
+	public abstract fun close ()V
+	public abstract fun findNodes (Ldev/s7a/strata/element/ElementKey;)Ljava/util/List;
+	public abstract fun snapshot ()Ldev/s7a/strata/runtime/diagnostics/UiRenderSnapshot;
+}
+
+public final class dev/s7a/strata/runtime/diagnostics/UiRenderNodeId {
+	public static final synthetic fun box-impl (J)Ldev/s7a/strata/runtime/diagnostics/UiRenderNodeId;
+	public static fun constructor-impl (J)J
+	public fun equals (Ljava/lang/Object;)Z
+	public static fun equals-impl (JLjava/lang/Object;)Z
+	public static final fun equals-impl0 (JJ)Z
+	public final fun getValue ()J
+	public fun hashCode ()I
+	public static fun hashCode-impl (J)I
+	public fun toString ()Ljava/lang/String;
+	public static fun toString-impl (J)Ljava/lang/String;
+	public final synthetic fun unbox-impl ()J
+}
+
+public final class dev/s7a/strata/runtime/diagnostics/UiRenderNodeKind : java/lang/Enum {
+	public static final field Component Ldev/s7a/strata/runtime/diagnostics/UiRenderNodeKind;
+	public static final field Modifier Ldev/s7a/strata/runtime/diagnostics/UiRenderNodeKind;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public static fun valueOf (Ljava/lang/String;)Ldev/s7a/strata/runtime/diagnostics/UiRenderNodeKind;
+	public static fun values ()[Ldev/s7a/strata/runtime/diagnostics/UiRenderNodeKind;
+}
+
+public final class dev/s7a/strata/runtime/diagnostics/UiRenderNodeSnapshot {
+	public synthetic fun <init> (JLdev/s7a/strata/runtime/diagnostics/UiRenderNodeId;Ldev/s7a/strata/runtime/diagnostics/UiRenderNodeKind;Ljava/lang/String;ZLjava/util/Map;Ljava/util/Map;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1-qzpUuq0 ()J
+	public final fun component2-ELJ4UTI ()Ldev/s7a/strata/runtime/diagnostics/UiRenderNodeId;
+	public final fun component3 ()Ldev/s7a/strata/runtime/diagnostics/UiRenderNodeKind;
+	public final fun component4 ()Ljava/lang/String;
+	public final fun component5 ()Z
+	public final fun component6 ()Ljava/util/Map;
+	public final fun component7 ()Ljava/util/Map;
+	public final fun copy-jfsi6QE (JLdev/s7a/strata/runtime/diagnostics/UiRenderNodeId;Ldev/s7a/strata/runtime/diagnostics/UiRenderNodeKind;Ljava/lang/String;ZLjava/util/Map;Ljava/util/Map;)Ldev/s7a/strata/runtime/diagnostics/UiRenderNodeSnapshot;
+	public static synthetic fun copy-jfsi6QE$default (Ldev/s7a/strata/runtime/diagnostics/UiRenderNodeSnapshot;JLdev/s7a/strata/runtime/diagnostics/UiRenderNodeId;Ldev/s7a/strata/runtime/diagnostics/UiRenderNodeKind;Ljava/lang/String;ZLjava/util/Map;Ljava/util/Map;ILjava/lang/Object;)Ldev/s7a/strata/runtime/diagnostics/UiRenderNodeSnapshot;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getCounts ()Ljava/util/Map;
+	public final fun getId-qzpUuq0 ()J
+	public final fun getKind ()Ldev/s7a/strata/runtime/diagnostics/UiRenderNodeKind;
+	public final fun getOperations ()Ljava/util/Map;
+	public final fun getParentId-ELJ4UTI ()Ldev/s7a/strata/runtime/diagnostics/UiRenderNodeId;
+	public final fun getRetired ()Z
+	public final fun getTypeName ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class dev/s7a/strata/runtime/diagnostics/UiRenderOperation : java/lang/Enum {
+	public static final field Attach Ldev/s7a/strata/runtime/diagnostics/UiRenderOperation;
+	public static final field Frame Ldev/s7a/strata/runtime/diagnostics/UiRenderOperation;
+	public static final field InputGeometry Ldev/s7a/strata/runtime/diagnostics/UiRenderOperation;
+	public static final field Other Ldev/s7a/strata/runtime/diagnostics/UiRenderOperation;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public static fun valueOf (Ljava/lang/String;)Ldev/s7a/strata/runtime/diagnostics/UiRenderOperation;
+	public static fun values ()[Ldev/s7a/strata/runtime/diagnostics/UiRenderOperation;
+}
+
+public final class dev/s7a/strata/runtime/diagnostics/UiRenderSnapshot {
+	public fun <init> (Ljava/util/Map;Ljava/util/Map;Ljava/util/List;IZ)V
+	public final fun component1 ()Ljava/util/Map;
+	public final fun component2 ()Ljava/util/Map;
+	public final fun component3 ()Ljava/util/List;
+	public final fun component4 ()I
+	public final fun component5 ()Z
+	public final fun copy (Ljava/util/Map;Ljava/util/Map;Ljava/util/List;IZ)Ldev/s7a/strata/runtime/diagnostics/UiRenderSnapshot;
+	public static synthetic fun copy$default (Ldev/s7a/strata/runtime/diagnostics/UiRenderSnapshot;Ljava/util/Map;Ljava/util/Map;Ljava/util/List;IZILjava/lang/Object;)Ldev/s7a/strata/runtime/diagnostics/UiRenderSnapshot;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getActiveSubscriptions ()I
+	public final fun getCounts ()Ljava/util/Map;
+	public final fun getNodes ()Ljava/util/List;
+	public final fun getOperations ()Ljava/util/Map;
+	public final fun getOverflowed ()Z
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
 }
 
 public abstract interface class dev/s7a/strata/runtime/render/DrawCommand {
@@ -153,13 +273,17 @@ public final class dev/s7a/strata/runtime/semantics/SemanticsEntry {
 public final class dev/s7a/strata/runtime/spi/RuntimeTextInputFocus {
 }
 
+public abstract interface class dev/s7a/strata/runtime/spi/RuntimeUiDiagnosticsOwner {
+	public abstract fun startRenderMonitoring ()Ldev/s7a/strata/runtime/diagnostics/UiRenderMonitor;
+}
+
 public abstract interface class dev/s7a/strata/runtime/spi/RuntimeUiFrame {
 	public abstract fun getDrawCommands ()Ljava/util/List;
 	public abstract fun getSemantics ()Ljava/util/List;
 	public abstract fun getSize ()Ldev/s7a/strata/geometry/IntSize;
 }
 
-public abstract interface class dev/s7a/strata/runtime/spi/RuntimeUiSession : java/lang/AutoCloseable {
+public abstract interface class dev/s7a/strata/runtime/spi/RuntimeUiSession : dev/s7a/strata/runtime/spi/RuntimeUiDiagnosticsOwner, java/lang/AutoCloseable {
 	public abstract fun attach ()V
 	public abstract fun close ()V
 	public abstract fun detach ()V

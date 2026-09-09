@@ -2,6 +2,7 @@ package dev.s7a.strata.modifier
 
 import dev.s7a.strata.input.InputResult
 import dev.s7a.strata.input.KeyCode
+import dev.s7a.strata.state.StateSource
 
 /**
  * Runs one action for a primary pointer press or a focused Enter or Space press and consumes that event.
@@ -39,3 +40,19 @@ public fun Modifier.onActivate(
     enabled: Boolean,
     action: () -> Unit,
 ): Modifier = if (enabled) onActivate(action) else this
+
+/**
+ * Keeps activation attached while its enabled value follows a frame-committed source.
+ * Pass the same source to the component's enabled argument when appearance and input must agree.
+ * Unlike the Boolean overload, a false source retains the action so it can become enabled without rebuilding its parent.
+ * Notifications never dispatch actions; pointer and keyboard input use the last committed value on the owner thread.
+ * The caller owns the source. Replacement, disposal, failure, and close release the runtime observation and action.
+ *
+ * @param enabled caller-owned source controlling this modifier's focus eligibility and activation.
+ * @param action synchronous owner-thread action with the ordinary input failure contract.
+ * @return this chain with one retained source-backed activation node.
+ */
+public fun Modifier.onActivate(
+    enabled: StateSource<Boolean>,
+    action: () -> Unit,
+): Modifier = then(ObservedActivationModifier(enabled, action))

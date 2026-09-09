@@ -4,6 +4,37 @@ This is the internal session contract for runtime implementers.
 `runtime:core` coordinates retained trees, local state, revisioned sources, input, and coroutine work so adapters share one lifecycle and failure model.
 Application authors use [ScreenDefinition and component state](../guides/screens-and-state.md); the local delegates and coroutine generations described here are not a public screen-definition API.
 
+## Retained observed regions
+
+Observe, direct-source components, and observed activation modifiers use one ObservedSourceRegistry in the session-owned UiTree.
+The registry indexes sources by reference identity and retains each live source's committed, pending, and captured snapshots plus its subscription carrier, and the current source list of each observing node.
+Source callbacks only enqueue revisions through the existing UiSessionBinding implementation.
+Every binding is captured before any value comparison or node notification; all values are committed before observing nodes are notified.
+DerivedStateSource exposes a pure upstream edge to this registry; ordinary mapped subscriptions remain independent adapters outside a UI tree.
+After root snapshots commit, the registry walks only affected projection edges, computes each retained projection once for its input, and stops at equal results.
+An identity-indexed consumer set coalesces repeated arguments, original/derived inputs, and multiple changed dependencies into one committed value tuple per affected node.
+Unrelated consumers receive no tuple or callback.
+Observation resources remain with retained nodes through session detachment.
+Removing a node immediately removes its observation ownership, while a frame temporarily retains its last source binding until replacement nodes have been synchronized.
+Readmission of the same source instance reuses that binding's committed and pending snapshots, even when its last former owner changed key, kind, or parent structure.
+Sources still unreferenced at successful frame or attachment completion are closed before the operation returns, including cached-frame returns.
+Standalone tree pipeline operations use the same temporary retention boundary and release unused bindings before returning.
+Terminal failure or close releases all bindings; cleanup failures preserve the existing primary and suppressed-exception contract.
+Deferred source cleanup follows the order in which final references were removed, and same-operation readmission cancels that source's pending release.
+
+StateObserverNode is a privileged capability rather than a concrete-component branch in core.
+The reconciler synchronizes its final source list immediately before deferred child materialization and visits parents before descendants.
+Updating a DynamicChildrenNode description preserves its existing child set until dynamic reconciliation; an empty immutable description is not a request to dispose retained dynamic children.
+Observe caches only its current derived child list and rebuilds it after a committed value or parent callback change.
+Repeated geometry passes reuse that list, and identity-equal descriptions skip redundant reconciliation callbacks.
+DeferredContentNode exposes pending evaluation separately from phase dirtiness, so evaluation runs before frame-cache selection without forcing measure or layout.
+Actual reconciled child differences determine pipeline invalidation.
+Transparent direct-source regions retain modifiers on the real primitive, forwarding parent data through ParentDataDelegateNode rather than moving focus or action ownership to a wrapper.
+An observed region owns a fresh content scope per evaluation and at most one logical child, retaining input nodes through ordinary type and key matching.
+
+RuntimeUiDiagnosticsOwner delegates optional bounded [render monitoring](render-monitoring.md) through the same session boundary.
+Collection remains absent by default; enabled collectors count actual callback execution and retain only detached interval evidence after terminal failure.
+
 ## Runtime adapter bridge
 
 `dev.s7a.strata.runtime.spi` provides a public but opt-in runtime adapter bridge for platform runtimes that need to drive this session.

@@ -84,9 +84,16 @@ tasks.withType<Test>().configureEach {
 }
 
 val skillExamples = sourceSets.create("skillExamples")
+val skillForwardFirst = sourceSets.create("skillForwardFirst")
+val skillRecheckFirst = sourceSets.create("skillRecheckFirst")
 
 dependencies {
     add(skillExamples.compileOnlyConfigurationName, project(":api"))
+    add(skillForwardFirst.compileOnlyConfigurationName, project(":api"))
+    add(skillRecheckFirst.compileOnlyConfigurationName, project(":api"))
+    testImplementation(skillRecheckFirst.output)
+    testImplementation(skillForwardFirst.output)
+    testImplementation(skillExamples.output)
 }
 
 val apiMainClasses =
@@ -366,19 +373,21 @@ val checkStrataSkillExampleClasspath =
     tasks.register("checkStrataSkillExampleClasspath") {
         group = "verification"
         description = "Verifies that public-skill examples compile against only the API project."
-        dependsOn("compileSkillExamplesKotlin")
+        dependsOn("compileSkillExamplesKotlin", "compileSkillForwardFirstKotlin", "compileSkillRecheckFirstKotlin")
         doLast {
-            val projectDependencies =
-                configurations
-                    .getByName(skillExamples.compileClasspathConfigurationName)
-                    .incoming
-                    .resolutionResult
-                    .allComponents
-                    .mapNotNull { component -> (component.id as? ProjectComponentIdentifier)?.projectPath }
-                    .filter { projectPath -> projectPath != project.path }
-                    .toSet()
-            require(projectDependencies == setOf(":api")) {
-                "Strata skill example compile classpath contains project dependencies: $projectDependencies"
+            listOf(skillExamples, skillForwardFirst, skillRecheckFirst).forEach { examples ->
+                val projectDependencies =
+                    configurations
+                        .getByName(examples.compileClasspathConfigurationName)
+                        .incoming
+                        .resolutionResult
+                        .allComponents
+                        .mapNotNull { component -> (component.id as? ProjectComponentIdentifier)?.projectPath }
+                        .filter { projectPath -> projectPath != project.path }
+                        .toSet()
+                require(projectDependencies == setOf(":api")) {
+                    "Strata ${examples.name} compile classpath contains project dependencies: $projectDependencies"
+                }
             }
         }
     }

@@ -40,6 +40,41 @@ For external asynchronous observations, use the [StateSource contract](../refere
 Source callbacks may arrive on other threads, but retained source consumers commit observations through owner-thread frames.
 The internal runtime session's local delegates and coroutine scope are implementation facilities, not an application screen API.
 
+## Observe changing regions
+
+Prefer direct `StateSource` arguments for displayed data and enabled/selected flags. Retain `source.map { ... }` for transformed presentation, and reserve `Observe` for structural or unsupported style/layout changes.
+Do not enclose a complete screen in an Observe for independently changing labels: parent reevaluation creates new child definitions and callbacks, even when most child source values are unchanged.
+Do not extract snapshots to literals or recreate projections inside callbacks. See the [compiled reactive example](../../integration/docs/src/skillExamples/kotlin/dev/s7a/strata/integration/docs/skill/ReactiveScreenExample.kt).
+
+Direct overloads cover Text, ProgressBar, Image, PlayerHead, Canvas/TiledImage descriptor replacement, Slot, Button, Tab, Checkbox, Slider, CycleButton, editor enabled flags, and list items/load availability. Literal and source arguments can be mixed.
+The internal direct binding owns the sibling key while the real component retains its complete modifier, focus and action dispatcher. Parent weight and alignment reach that component through a generic delegation contract.
+Progress-only changes repaint without forcing ancestor measurement. Text geometry changes propagate the necessary measurement work. Dedicated editing and navigation state remains caller-owned and must live outside reevaluation.
+
+`Observe(source) { value -> ... }` binds one region to an external `StateSource<T>` without reopening its screen.
+Typed overloads accept one through 22 sources and pass their committed values to the callback in argument order.
+`Text(source)` directly displays either a `StateSource<String>` or `StateSource<UiText>`, with the same shared observation mechanism and the usual font, wrapping, style, modifier, and key options.
+Sources remain application-owned; fixed values and ordinary captured Kotlin variables are not automatically reactive.
+
+Observe is one layout child, with its own modifier and optional key.
+Its callback emits zero or one root; put an inner Row or Column around multiple components.
+An empty region has zero natural size, constrained by its parent and modifiers.
+Apply weight and alignment from the containing layout to Observe itself, and create child-layout parent data inside that child's fresh callback scope.
+Keep TextAreaState, TextFieldState, scroll states, and other editable values outside observed callbacks to preserve their ownership.
+
+Each retained tree shares subscriptions by source reference identity, including sources repeated in one Observe or used by nested Observe and Text regions.
+At a frame boundary, the runtime captures all pending snapshots before committing any value, then evaluates changed regions parent-first.
+Multiple publications coalesce to the newest revision; equal values do not cause a source-driven evaluation.
+A changed parent callback also updates its region, even when that region's source value is unchanged, so captured parent values remain correct.
+Compatible keyed descendants retain their nodes and input state.
+Removed regions do not run pending callbacks.
+Replacing the last reader of a source within a frame reuses its committed snapshot and pending notifications; sources with no remaining reader are released before that frame returns.
+
+All callbacks run on the tree owner thread with a fresh UiScope; callback scopes must not escape or mutate sources.
+Notifications arriving after capture wait for the next frame.
+A source first referenced during deferred construction supplies its atomic subscription snapshot; further publications wait for the next frame, and other readers reuse that same committed snapshot.
+Sources have independent revisions: updates to multiple sources are not an application-level transaction.
+Publish one immutable model through one source when multiple fields must change atomically.
+
 ## Add actions and focus
 
 `Button` and `Tab` supply appearance and enabled semantics.

@@ -47,7 +47,7 @@ plugins {
 }
 
 group = "dev.s7a.strata"
-version = "0.1.4"
+version = "0.1.5"
 private val sourceRevision = providers.gradleProperty("strata.sourceRevision").getOrElse("master")
 check(sourceRevision.matches(Regex("(?:master|v[0-9]+\\.[0-9]+\\.[0-9]+(?:[-+][0-9A-Za-z.-]+)?|[0-9a-f]{40})"))) {
     "strata.sourceRevision must be master, a release tag, or a full lowercase Git commit."
@@ -931,6 +931,7 @@ subprojects {
         if (path == target.integrationProjectPath) {
             val profileCacheTests = rootProject.file("integration/minecraft-fabric-client-gametest/src/profile-cache/kotlin")
             val continuousInputTests = rootProject.file("integration/minecraft-fabric-client-gametest/src/continuous-input/kotlin")
+            val renderMonitoringTests = rootProject.file("integration/minecraft-fabric-client-gametest/src/render-monitoring/kotlin")
             val continuousScrollTests =
                 rootProject.file(
                     if (target.version in legacyScrollTargets) {
@@ -943,12 +944,14 @@ subprojects {
                 sourceSets.matching { sourceSet -> sourceSet.name == "gametest" }.configureEach {
                     kotlin.srcDir(profileCacheTests)
                     kotlin.srcDir(continuousInputTests)
+                    kotlin.srcDir(renderMonitoringTests)
                     kotlin.srcDir(continuousScrollTests)
                 }
             }
             extensions.configure<DetektExtension> {
                 source.from(profileCacheTests)
                 source.from(continuousInputTests, continuousScrollTests)
+                source.from(renderMonitoringTests)
             }
             fontParityComparisonsByVersion[target.version]?.let { comparison ->
                 tasks.named("check") { dependsOn(comparison) }

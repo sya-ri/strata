@@ -20,6 +20,7 @@ import dev.s7a.strata.node.LayoutNode
 import dev.s7a.strata.node.MeasureNode
 import dev.s7a.strata.node.ParentDataModifierNode
 import dev.s7a.strata.node.SessionAttachmentNode
+import dev.s7a.strata.runtime.diagnostics.UiRenderMetric
 import dev.s7a.strata.runtime.render.DrawCommand
 import dev.s7a.strata.runtime.semantics.SemanticsEntry
 import dev.s7a.strata.runtime.spi.RuntimeTextInputFocus
@@ -35,11 +36,12 @@ import dev.s7a.strata.spi.InternalStrataRuntimeApi
 @OptIn(InternalStrataRuntimeApi::class)
 internal class Pipeline(
     private val threadGuard: ThreadGuard,
+    private val monitoring: RenderMonitoring = RenderMonitoring(),
 ) {
-    private val paintPipeline = PaintPipeline(threadGuard)
+    private val paintPipeline = PaintPipeline(threadGuard, monitoring)
     private val focusedInputPipeline = FocusedInputPipeline()
     private val inputPipeline = InputPipeline(focusedInputPipeline)
-    private val semanticsPipeline = SemanticsPipeline(threadGuard)
+    private val semanticsPipeline = SemanticsPipeline(threadGuard, monitoring)
 
     /**
      * Detached current editable-focus identity, read outside a tree operation on its owner thread.
@@ -307,6 +309,7 @@ internal class Pipeline(
             val measured =
                 try {
                     if (retained.node is MeasureNode) {
+                        monitoring.record(UiRenderMetric.Measure, retained)
                         retained.node.measure(scope, constraints)
                     } else {
                         constraints.constrain(IntSize.Zero)
@@ -379,6 +382,7 @@ internal class Pipeline(
                         }
                     }
                 try {
+                    monitoring.record(UiRenderMetric.Layout, retained)
                     layoutCapability.layout(scope)
                 } finally {
                     scope.guard.close()
@@ -416,14 +420,19 @@ internal class Pipeline(
         child: RetainedEntry,
         key: ParentDataKey<D>,
     ): D? {
-        var current: RetainedEntry = child
+        var current: RetainedEntry? = child
         var matchingProvider: ParentDataModifierNode<*>? = null
-        while (current is RetainedModifier) {
-            val provider = current.modifierNode as? ParentDataModifierNode<*>
-            if (provider != null && provider.parentDataKey === key) {
-                matchingProvider = provider
+        while (current != null) {
+            if (current is RetainedModifier) {
+                val provider = current.modifierNode as? ParentDataModifierNode<*>
+                if (provider != null && provider.parentDataKey === key) {
+                    matchingProvider = provider
+                }
+                current = current.effectiveChildAt(0)
+            } else {
+                val delegated = current.parentDataDelegate?.parentDataChild
+                current = if (delegated != null && delegated in 0 until current.effectiveChildCount) current.effectiveChildAt(delegated) else null
             }
-            current = current.effectiveChildAt(0)
         }
         // Scan the complete chain before reading data so an outer provider is never invoked when shadowed.
         return matchingProvider?.let { provider -> key.castErased(provider.parentData()) }

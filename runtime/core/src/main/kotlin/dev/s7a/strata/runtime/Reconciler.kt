@@ -4,8 +4,13 @@ import dev.s7a.strata.element.Element
 import dev.s7a.strata.element.ElementIdentity
 import dev.s7a.strata.element.ElementKey
 import dev.s7a.strata.modifier.ModifierElement
+import dev.s7a.strata.node.ContentInvalidation
+import dev.s7a.strata.node.ContentKind
+import dev.s7a.strata.node.DeferredContentNode
 import dev.s7a.strata.node.DirtyMask
 import dev.s7a.strata.node.DynamicChildrenNode
+import dev.s7a.strata.node.StateObserverNode
+import dev.s7a.strata.runtime.diagnostics.UiRenderMetric
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
 import java.util.Collections
 import java.util.IdentityHashMap
@@ -19,8 +24,47 @@ import java.util.LinkedHashSet
 internal class Reconciler(
     private val lifecycle: LifecycleManager,
     private val dirtyTracker: DirtyTracker,
+    private val observedSources: ObservedSourceRegistry = ObservedSourceRegistry(),
+    private val monitoring: RenderMonitoring = RenderMonitoring(),
 ) {
     private val provisionalRoots: MutableSet<RetainedNode> = LinkedHashSet()
+    private var pendingContent = false
+
+    /**
+     * Reconciles pending declarations before cache selection, leaving phase invalidation to actual child changes.
+     */
+    fun refreshObservedContent(
+        root: RetainedNode,
+        validator: DescriptionValidator,
+    ): Boolean {
+        val sourceUpdates = observedSources.takeContentUpdates()
+        if (pendingContent.not() && sourceUpdates.not()) return false
+        refreshDeferred(root, validator)
+        pendingContent = false
+        observedSources.takeContentUpdates()
+        return true
+    }
+
+    private fun refreshDeferred(
+        root: RetainedNode,
+        validator: DescriptionValidator,
+    ) {
+        lifecycle.attachCurrent(root)
+        synchronizeObservers(root)
+        val deferred = root.node as? DeferredContentNode
+        if (deferred != null && deferred.pendingContentReasons.isNotEmpty()) {
+            val descriptions = evaluateChildren(root, deferred)
+            reconcileDynamicChildren(root, descriptions, validator)
+        }
+        for (index in root.children.indices) refreshDeferred(root.children[index], validator)
+    }
+
+    private fun synchronizeObservers(root: RetainedNode) {
+        for (index in root.modifiers.indices) {
+            (root.modifiers[index].node as? StateObserverNode)?.let(observedSources::synchronize)
+        }
+        (root.node as? StateObserverNode)?.let(observedSources::synchronize)
+    }
 
     /**
      * Reconciles [description] against [previous] without attaching new nodes.
@@ -84,13 +128,25 @@ internal class Reconciler(
         root: RetainedNode,
         validator: DescriptionValidator,
     ) {
+        lifecycle.attachCurrent(root)
+        synchronizeObservers(root)
         val dynamic = root.node as? DynamicChildrenNode
         if (dynamic != null) {
-            val descriptions = dynamic.dynamicChildren()
-            validator.validateChildren(descriptions)
-            reconcileChildren(root, descriptions)
+            val descriptions = evaluateChildren(root, dynamic)
+            reconcileDynamicChildren(root, descriptions, validator)
         }
-        root.children.toList().forEach { child -> refreshDynamicChildren(child, validator) }
+        for (index in root.children.indices) refreshDynamicChildren(root.children[index], validator)
+    }
+
+    private fun reconcileDynamicChildren(
+        root: RetainedNode,
+        descriptions: List<Element>,
+        validator: DescriptionValidator,
+    ) {
+        if (root.dynamicDescriptions === descriptions) return
+        validator.validateChildren(descriptions)
+        reconcileChildren(root, descriptions)
+        root.dynamicDescriptions = descriptions
     }
 
     private fun createDetached(description: Element): RetainedNode {
@@ -99,9 +155,40 @@ internal class Reconciler(
         return retained
     }
 
+    private fun evaluateChildren(
+        retained: RetainedNode,
+        dynamic: DynamicChildrenNode,
+    ): List<Element> {
+        val collector = monitoring.collector
+        val deferred = dynamic as? DeferredContentNode
+        if (collector == null || deferred == null || deferred.pendingContentReasons.isEmpty()) return dynamic.dynamicChildren()
+        deferred.pendingContentReasons.forEach { reason ->
+            val metric =
+                when (reason) {
+                    ContentInvalidation.Initial -> UiRenderMetric.InitialContent
+                    ContentInvalidation.SourceValue -> UiRenderMetric.SourceContent
+                    ContentInvalidation.SourceReplacement -> UiRenderMetric.SourceReplacementContent
+                    ContentInvalidation.ParentDefinition -> UiRenderMetric.ParentDefinitionContent
+                }
+            monitoring.record(metric, retained)
+        }
+        monitoring.record(UiRenderMetric.ContentEvaluation, retained)
+        monitoring.record(
+            when (deferred.contentKind) {
+                ContentKind.ObservedRegion -> UiRenderMetric.ObserveEvaluation
+                ContentKind.StateComponent -> UiRenderMetric.StateComponentEvaluation
+            },
+            retained,
+        )
+        val children = dynamic.dynamicChildren()
+        monitoring.record(UiRenderMetric.ContentEvaluationSuccess, retained)
+        return children
+    }
+
     private fun createSubtree(description: Element): RetainedNode {
         val node = description.type.createErased(description)
         val retained = RetainedNode(description, node, null)
+        if (node is DeferredContentNode) pendingContent = true
         lifecycle.bind(retained)
         val result =
             runCatching {
@@ -127,7 +214,10 @@ internal class Reconciler(
         description: Element,
     ) {
         val previous = retained.element
+        if (previous === description) return
+        monitoring.record(UiRenderMetric.NodeUpdate, retained)
         val mask = description.type.updateErased(previous, description, retained.node)
+        if (retained.node is DeferredContentNode) pendingContent = true
         val modifierUpdate = reconcileModifiers(retained, description.modifier.elements())
         retained.element = description
         dirtyTracker.record(retained, mask)
@@ -135,6 +225,7 @@ internal class Reconciler(
         if (modifierUpdate.structural) {
             dirtyTracker.structural(retained)
         }
+        if (retained.node is DynamicChildrenNode) return
         reconcileChildren(retained, description.children)
     }
 
@@ -164,7 +255,13 @@ internal class Reconciler(
             descriptions.forEachIndexed { index, description ->
                 val previous = oldModifiers.getOrNull(index)
                 if (previous != null && previous.element.type === description.type) {
-                    val mask = description.type.updateErased(previous.element, description, previous.modifierNode)
+                    val mask =
+                        if (previous.element === description) {
+                            DirtyMask.None
+                        } else {
+                            monitoring.record(UiRenderMetric.NodeUpdate, previous)
+                            description.type.updateErased(previous.element, description, previous.modifierNode)
+                        }
                     previous.element = description
                     reused.add(previous)
                     nextModifiers.add(previous)

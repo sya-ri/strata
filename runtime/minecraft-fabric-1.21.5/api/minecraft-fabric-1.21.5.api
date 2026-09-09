@@ -33,7 +33,7 @@ public final class dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftProfil
 	public static final fun extractMinecraftUiProfile ()Ldev/s7a/strata/runtime/minecraft/MinecraftUiProfile;
 }
 
-public final class dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreen : net/minecraft/class_437, dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftInputReset, java/lang/AutoCloseable {
+public final class dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreen : net/minecraft/class_437, dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftInputReset, dev/s7a/strata/runtime/spi/RuntimeUiDiagnosticsOwner, java/lang/AutoCloseable {
 	public final fun captureCanvasFrame ()Ljava/util/List;
 	public fun close ()V
 	public fun method_16014 (DD)V
@@ -50,6 +50,7 @@ public final class dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreen
 	public fun method_25432 ()V
 	public fun method_49589 ()V
 	public synthetic fun resetInputFromNative ()V
+	public fun startRenderMonitoring ()Ldev/s7a/strata/runtime/diagnostics/UiRenderMonitor;
 }
 
 public final class dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreens {

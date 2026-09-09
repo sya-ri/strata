@@ -20,6 +20,18 @@ Only read Strata's `Element` and `Node` SPI when the request explicitly needs re
 
 ## Workflow
 
+Choose the smallest automatic update boundary before writing a screen:
+
+1. Pass fixed values as literals.
+2. Pass an existing `StateSource` directly to a supported component argument.
+3. For a displayed transformation, create and retain `source.map { ... }` outside reevaluated content, then pass that source directly.
+4. Use a narrow `Observe` only for adding, removing, or switching children, or for unsupported layout/style arguments.
+5. Keep editor, selection, cursor, and scroll state outside reevaluation. Never recreate them for a clock tick or new message.
+6. Use `VirtualList` with stable item keys for large lists; keep its navigation state.
+
+Do not wrap an entire screen in `Observe` for independent labels. Reading a snapshot into `Text(snapshot.value)` loses automatic observation. Recreating a mapped source inside observed content changes its identity and repeats binding/initial transformation work. Ordinary captured lambdas cannot be compared semantically: a parent content change also refreshes retained child definitions, even when the child's source is unchanged.
+Read the reactive examples and counterexamples in [patterns.md](references/patterns.md) before implementing stateful screens. Updates should follow the caller's state; do not add screen close/reopen, `fromState`, or manual refresh for supported direct arguments.
+
 1. Read [setup.md](references/setup.md) to select one matching runtime and open an API-only `ScreenDefinition`.
 2. Read [components.md](references/components.md) when choosing component overloads and ownership boundaries.
 3. Read [modifiers-and-layout.md](references/modifiers-and-layout.md) for exact Modifier, parent-scope, state, and binding signatures.
@@ -27,7 +39,10 @@ Only read Strata's `Element` and `Node` SPI when the request explicitly needs re
 5. Read [custom-components.md](references/custom-components.md) before adding a component or retained primitive.
 
 Prefer `Row`, `Column`, and `Grid` structure with arrangement, alignment, spacing, weight, and small local padding.
+Default `Text` is a natural-size single line: forcing a larger `size` or filled weight can violate its constraints. For a reserved clock/status rectangle, use `Text(layout = TextLayout.Multiline(), ...)`; this also applies to the single root inside a fixed-size Observe. A literal or reactive label follows the same geometry contract.
 Use `Stack` only for intentional overlap.
+Partial updates preserve overlay order, but unchanged foreground callbacks do not imply free composition: a lower-layer change can require rasterizing and uploading the shared layer again, especially with transparency. Do not claim zero native redraw from zero foreground evaluation or paint counts; compare native work and final pixels too.
+Keep the number and covered area of translucent layers small around frequently changing content. Full-area stacks multiply blending work even when only one component is reevaluated; direct State inputs do not solve this rasterization cost. For a required dense overlay design, measure composition separately at the intended physical resolution and update rate before promising smooth animation.
 Keep events on modifiers, mutable values in caller-owned state, and platform work behind the installed runtime.
 
 ## Output expectations

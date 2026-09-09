@@ -7,9 +7,14 @@ import dev.s7a.strata.input.InputResult
 import dev.s7a.strata.input.KeyboardEvent
 import dev.s7a.strata.input.PointerEvent
 import dev.s7a.strata.input.TextInputEvent
+import dev.s7a.strata.node.StateObserverNode
+import dev.s7a.strata.runtime.diagnostics.UiRenderMetric
+import dev.s7a.strata.runtime.diagnostics.UiRenderMonitor
+import dev.s7a.strata.runtime.diagnostics.UiRenderOperation
 import dev.s7a.strata.runtime.render.DrawCommand
 import dev.s7a.strata.runtime.semantics.SemanticsEntry
 import dev.s7a.strata.runtime.spi.RuntimeTextInputFocus
+import dev.s7a.strata.runtime.spi.RuntimeUiDiagnosticsOwner
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
 
 // Why: this public owner intentionally exposes each retained lifecycle, frame, input, and inspection operation through one guarded boundary.
@@ -30,17 +35,57 @@ import dev.s7a.strata.spi.InternalStrataRuntimeApi
  */
 @OptIn(InternalStrataRuntimeApi::class)
 @Suppress("TooManyFunctions")
-public class UiTree : AutoCloseable {
+public class UiTree :
+    AutoCloseable,
+    RuntimeUiDiagnosticsOwner {
     private val threadGuard: ThreadGuard = ThreadGuard.currentThread()
-    private val dirtyTracker = DirtyTracker()
+
+    /**
+     * Shared nullable diagnostics gate used by the owning session.
+     */
+    internal val monitoring = RenderMonitoring()
+    private val dirtyTracker = DirtyTracker(monitoring)
     private val registry = NodeOwnershipRegistry()
-    private val pipeline = Pipeline(threadGuard)
-    private val lifecycle = LifecycleManager(registry, threadGuard, dirtyTracker, pipeline::entryWillCleanup)
-    private val reconciler = Reconciler(lifecycle, dirtyTracker)
+    private val pipeline = Pipeline(threadGuard, monitoring)
+    private val observedSources = ObservedSourceRegistry(monitoring)
+    private val lifecycle =
+        LifecycleManager(registry, threadGuard, dirtyTracker, monitoring) { entry ->
+            val failures = FailureAccumulator()
+            (entry.node as? StateObserverNode)?.let { node -> failures.capture { observedSources.remove(node) } }
+            failures.capture { pipeline.entryWillCleanup(entry) }
+            failures.throwIfPresent()
+        }
+    private val reconciler = Reconciler(lifecycle, dirtyTracker, observedSources, monitoring)
     private val validator = DescriptionValidator()
     private var currentState: TreeState = TreeState.Active
     private var root: RetainedNode? = null
     private var operationActive: Boolean = false
+
+    @InternalStrataRuntimeApi
+    override fun startRenderMonitoring(): UiRenderMonitor = startMonitoring { }
+
+    /**
+     * Adds the owning session's boundary check without exposing its implementation to callers.
+     */
+    internal fun startMonitoring(ownerBoundary: () -> Unit): UiRenderMonitor {
+        threadGuard.check()
+        check(operationActive.not() && currentState === TreeState.Active) { "Monitoring requires an idle active tree." }
+        ownerBoundary()
+        check(monitoring.collector == null) { "Render monitoring is already active." }
+        val collector =
+            RenderMonitorImpl(
+                boundary = {
+                    check(operationActive.not() && currentState === TreeState.Active) { "Monitoring requires an idle active tree." }
+                    ownerBoundary()
+                },
+                onClose = { monitoring.collector = null },
+                activeSubscriptions = observedSources.activeSubscriptions,
+                monitoring = monitoring,
+            )
+        root?.let { collector.baseline(it.effectiveRoot) }
+        monitoring.collector = collector
+        return collector
+    }
 
     /**
      * The current lifecycle state, read on the owning tree thread.
@@ -121,6 +166,7 @@ public class UiTree : AutoCloseable {
      */
     internal fun captureFrameState() {
         pipelineOperation {
+            observedSources.capture()
             root?.let(pipeline::captureFrameState)
         }
     }
@@ -131,7 +177,27 @@ public class UiTree : AutoCloseable {
      */
     internal fun commitFrameState() {
         pipelineOperation {
+            observedSources.commit()
             root?.let(pipeline::commitFrameState)
+        }
+    }
+
+    /**
+     * Releases sources left unreferenced by the completed owner-thread session frame or attachment.
+     * Replacements keep their existing committed and pending snapshots; cleanup failures poison this tree.
+     */
+    internal fun finishFrameState() {
+        pipelineOperation(observedSources::finishFrame)
+    }
+
+    /**
+     * Applies pending source-backed declarations before a session checks retained frame identity.
+     */
+    internal fun refreshObservedContent() {
+        pipelineOperation {
+            root?.let { retainedRoot ->
+                if (reconciler.refreshObservedContent(retainedRoot, validator)) lifecycle.attachPending(retainedRoot)
+            }
         }
     }
 
@@ -176,10 +242,12 @@ public class UiTree : AutoCloseable {
         try {
             validator.validate(description)
             runCatching {
+                observedSources.beginOperation()
                 val nextRoot = reconciler.reconcileRoot(root, description)
                 root = nextRoot
                 reconciler.markInstalled(nextRoot)
                 lifecycle.attachPending(nextRoot)
+                observedSources.endOperation()
             }.getOrElse { failure -> poison(failure) }
         } finally {
             operationActive = false
@@ -405,6 +473,8 @@ public class UiTree : AutoCloseable {
                 failures.addOptional(lifecycle.cleanup(capturedRoot))
             }
             failures.addOptional(reconciler.cleanupProvisionals())
+            failures.capture(observedSources::close)
+            monitoring.release()
             failures.throwIfPresent()
         } finally {
             operationActive = false
@@ -421,13 +491,20 @@ public class UiTree : AutoCloseable {
     private inline fun <T> pipelineOperation(block: () -> T): T {
         beginOperation()
         try {
-            return runCatching(block).getOrElse { failure -> poison(failure) }
+            return runCatching {
+                observedSources.beginOperation()
+                val result = block()
+                observedSources.endOperation()
+                result
+            }.getOrElse { failure -> poison(failure) }
         } finally {
             operationActive = false
         }
     }
 
     private fun poison(failure: Throwable): Nothing {
+        if (monitoring.operation == UiRenderOperation.Frame) monitoring.record(UiRenderMetric.FrameFailure)
+        monitoring.failed()
         currentState = TreeState.Poisoned
         val capturedRoot = root
         root = null
@@ -439,6 +516,8 @@ public class UiTree : AutoCloseable {
             failures.addOptional(lifecycle.cleanup(capturedRoot))
         }
         failures.addOptional(reconciler.cleanupProvisionals())
+        failures.capture(observedSources::close)
+        monitoring.release()
         failures.throwFirst()
     }
 }
