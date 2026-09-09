@@ -12,12 +12,52 @@ import dev.s7a.strata.spi.InternalStrataRuntimeApi
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertSame
+import org.junit.jupiter.api.Assertions.assertThrows
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 
 /** Verifies pure direct-image eligibility, barriers, clips, and tight fallback localization. */
 @OptIn(InternalStrataRuntimeApi::class)
 internal class FabricMinecraftFrameLayerTest {
+    @Test
+    fun distantFractionalEdgesAreBoundedBeforeIntegerEnvelopeConversion() {
+        val image = createDrawImage(IntSize(1, 1), intArrayOf(-1))
+        val command = DrawCommand.SampledImage(image, FloatRect(0f, 0f, 1f, 1f), FloatRect(1f, 1f, 2f, 2f), alphaCutoff = 0f)
+        val layers =
+            partitionFabricMinecraftFrame(
+                listOf(DrawCommand.PushFractionalClip(FloatRect(-1e20f, -1e20f, 1e20f, 1e20f)), command, DrawCommand.PopClip),
+                IntSize(10, 10),
+            )
+        assertEquals(IntRect(0, 0, 10, 10), (layers.single() as FabricMinecraftFrameLayer.Sampled).clip)
+    }
+
+    @Test
+    fun integerInnerClipCanResolveAFractionalOuterClipBeforeNativeSubmission() {
+        val platform = DrawCommand.Platform(TestPlatform, IntRect(0, 0, 10, 10))
+        val outer = DrawCommand.PushFractionalClip(FloatRect(0.5f, 0.5f, 8.5f, 8.5f))
+        val inner = DrawCommand.PushClip(IntRect(1, 1, 8, 8))
+        val layers = partitionFabricMinecraftFrame(listOf(outer, inner, platform, DrawCommand.PopClip, DrawCommand.PopClip), IntSize(10, 10))
+        assertEquals(IntRect(1, 1, 8, 8), (layers.single() as FabricMinecraftFrameLayer.Platform).clip)
+        assertThrows(IllegalArgumentException::class.java) {
+            partitionFabricMinecraftFrame(listOf(outer, platform, DrawCommand.PopClip), IntSize(10, 10))
+        }
+    }
+
+    @Test
+    fun fractionalClipKeepsInteriorImagesDirectAndPreservesBoundarySamplingInFallback() {
+        val image = createDrawImage(IntSize(3, 3), IntArray(9) { -1 })
+        val edge = DrawCommand.SampledImage(image, FloatRect(0f, 0f, 3f, 3f), FloatRect(0f, 0f, 3f, 3f), alphaCutoff = 0f)
+        val interior = edge.copy(destination = FloatRect(2f, 2f, 5f, 5f))
+        val clip = DrawCommand.PushFractionalClip(FloatRect(0.5f, 0.5f, 8.5f, 8.5f))
+        val layers = partitionFabricMinecraftFrame(listOf(clip, edge, interior, DrawCommand.PopClip, edge), IntSize(10, 10))
+        assertEquals(3, layers.size)
+        val portable = layers[0] as FabricMinecraftFrameLayer.Portable
+        assertEquals(DrawCommand.PushFractionalClip(FloatRect(0.5f, 0.5f, 3f, 3f)), portable.commands.first())
+        assertEquals(edge, portable.commands.filterIsInstance<DrawCommand.SampledImage>().single())
+        assertEquals(interior, (layers[1] as FabricMinecraftFrameLayer.Sampled).command)
+        assertEquals(edge, (layers[2] as FabricMinecraftFrameLayer.Sampled).command)
+    }
+
     @Test
     fun eligibleImagesSplitAtTheirExactOrderWhileUnsupportedSamplingStaysPortable() {
         val image = createDrawImage(IntSize(4, 4), IntArray(16) { 0x80336699.toInt() })

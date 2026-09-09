@@ -342,6 +342,25 @@ internal class MinecraftFontGpuComparisonTest {
         assertEquals(Difference.GpuRasterBoundary, comparison.classify(1, 0, Observation(-1, candidate.argbAt(1, 0), gray(1f))))
     }
 
+    @Test
+    fun `fractional clips include left centers and reject right edge raster alternatives`() {
+        val viewport = IntSize(2, 1)
+        val unclipped = scene(viewport, intArrayOf(-1), one, FloatRect(0.5f, 0f, 1.5f, 1f))
+        val commands =
+            listOf(
+                unclipped.first(),
+                DrawCommand.PushClip(IntRect(0, 0, 2, 1)),
+                DrawCommand.PushFractionalClip(FloatRect(0.5f, 0f, 1.5f, 1f)),
+                unclipped.last(),
+                DrawCommand.PopClip,
+                DrawCommand.PopClip,
+            )
+        val candidate = rasterizeHeadless(commands, viewport)
+        val comparison = MinecraftFontGpuComparison(commands, viewport, 1, precision)
+        assertEquals(Difference.GpuRasterBoundary, comparison.classify(0, 0, Observation(black, candidate.argbAt(0, 0), gray(0f))))
+        assertEquals(Difference.UnverifiedNativeFloat, comparison.classify(1, 0, Observation(-1, candidate.argbAt(1, 0), gray(1f))))
+    }
+
     private fun gray(value: Float): MinecraftFontFloatImage.Sample = MinecraftFontFloatImage.Sample(value, value, value, 1f)
 
     private fun writeCalibration(scale: Int): Path {

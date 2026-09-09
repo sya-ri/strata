@@ -18,4 +18,9 @@ internal enum class ReactiveRenderCapture(
      * Standard input appearance evidence.
      */
     InputAppearance("input-appearance", IntSize(160, 64)),
+
+    /**
+     * Fractional viewport edges checked against independent integer coverage.
+     */
+    FractionalClip("fractional-clip", IntSize(64, 64)),
 }

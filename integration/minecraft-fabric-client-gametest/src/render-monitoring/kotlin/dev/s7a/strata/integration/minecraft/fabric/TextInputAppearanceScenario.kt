@@ -108,10 +108,12 @@ internal object TextInputAppearanceScenario {
             val snapshot = monitor.snapshot()
             check(snapshot.overflowed.not())
             listOf(UiRenderMetric.ContentEvaluation, UiRenderMetric.NodeUpdate, UiRenderMetric.Measure, UiRenderMetric.Layout, UiRenderMetric.Paint).forEach {
-                check(snapshot.counts.getValue(it) == 0L)
+                check(snapshot.counts.getValue(it) == 0L) { "Unexpected static input work: metric=$it counts=${snapshot.counts}" }
             }
             val after = driver.work()
-            check(stable.preparations == after.preparations && stable.rasterizations == after.rasterizations && stable.uploads == after.uploads)
+            check(stable.preparations == after.preparations && stable.rasterizations == after.rasterizations && stable.uploads == after.uploads) {
+                "Unexpected static input native work: before=$stable after=$after"
+            }
         }
     }
 

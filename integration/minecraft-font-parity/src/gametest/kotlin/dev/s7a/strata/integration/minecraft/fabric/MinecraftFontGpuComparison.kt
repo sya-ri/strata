@@ -1,5 +1,6 @@
 package dev.s7a.strata.integration.minecraft.fabric
 
+import dev.s7a.strata.geometry.FloatRect
 import dev.s7a.strata.geometry.IntRect
 import dev.s7a.strata.geometry.IntSize
 import dev.s7a.strata.runtime.render.DrawCommand
@@ -91,7 +92,14 @@ internal class MinecraftFontGpuComparison(
         viewport: IntRect,
     ): List<Quad> {
         val result = mutableListOf<Quad>()
-        val clips = mutableListOf(viewport)
+        val clips = mutableListOf(FloatRect(viewport.left.toFloat(), viewport.top.toFloat(), viewport.right.toFloat(), viewport.bottom.toFloat()))
+
+        fun push(bounds: FloatRect) {
+            val previous = clips.last()
+            val left = maxOf(previous.left, bounds.left)
+            val top = maxOf(previous.top, bounds.top)
+            clips += FloatRect(left, top, maxOf(left, minOf(previous.right, bounds.right)), maxOf(top, minOf(previous.bottom, bounds.bottom)))
+        }
         commands.forEach { command ->
             when (command) {
                 is DrawCommand.SampledImage -> {
@@ -99,10 +107,12 @@ internal class MinecraftFontGpuComparison(
                 }
 
                 is DrawCommand.PushClip -> {
-                    val previous = clips.last()
-                    val left = maxOf(previous.left, command.bounds.left)
-                    val top = maxOf(previous.top, command.bounds.top)
-                    clips += IntRect(left, top, maxOf(left, minOf(previous.right, command.bounds.right)), maxOf(top, minOf(previous.bottom, command.bounds.bottom)))
+                    val bounds = command.bounds
+                    push(FloatRect(bounds.left.toFloat(), bounds.top.toFloat(), bounds.right.toFloat(), bounds.bottom.toFloat()))
+                }
+
+                is DrawCommand.PushFractionalClip -> {
+                    push(command.bounds)
                 }
 
                 DrawCommand.PopClip -> {
@@ -121,13 +131,19 @@ internal class MinecraftFontGpuComparison(
 
     private data class Quad(
         val command: DrawCommand.SampledImage,
-        val clip: IntRect,
+        val clip: FloatRect,
     ) {
         fun contains(
             x: Int,
             y: Int,
             scale: Int,
-        ): Boolean = clip.left * scale <= x && x < clip.right * scale && clip.top * scale <= y && y < clip.bottom * scale
+        ): Boolean {
+            val centerX = (x + 0.5) / scale
+            val centerY = (y + 0.5) / scale
+            val horizontal = clip.left <= centerX && centerX < clip.right
+            val vertical = clip.top <= centerY && centerY < clip.bottom
+            return horizontal && vertical
+        }
     }
 
     /**

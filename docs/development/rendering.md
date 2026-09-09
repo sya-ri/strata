@@ -61,6 +61,8 @@ The full modifier contract and external implementation guidance are defined in [
 The headless facade validates positive logical width, height, and scale before description validation, node creation, or lifecycle hooks.
 It checks physical width, height, and row-major area with checked integer arithmetic and reports arithmetic failure instead of wrapping or allocating an invalid image.
 Low-level commands are snapshotted in list order, validated for balanced nested child clips, intersected with those clips and the positive logical viewport, and painted onto transparent black.
+Clips use final physical pixel-center coverage, including fractional transformed viewport edges.
+A partial physical block does not change the source coordinate used by an integer image command.
 BlitImage preserves its original rule: select a nearest source texel at each logical pixel center and replicate it at the requested integer scale.
 BlitImagePixels instead samples each physical output pixel center, preserving the full resolution of a native Canvas capture.
 Subsequent logical fills and image overlays blend separately against each physical destination pixel, without erasing existing subpixel detail.
@@ -133,3 +135,17 @@ Screen release drops screen-owned image references immediately, while device shu
 The [loaded-client tasks](../development/build.md#loaded-client-verification) independently compare native scenes, Fabric output, portable output, and server-backed interactions.
 The [font gate](font-verification.md#acceptance-evidence) defines the additional evidence required for classified GPU differences.
 Documentation rendering and its native acceptance are separate workflows described in [documentation maintenance](documentation.md).
+
+## Fractional viewport boundaries
+
+Core keeps integer clip commands for exact integer edges and emits `PushFractionalClip` for fractional edges.
+The headless renderer intersects their physical coverage before painting, retaining each primitive's original source mapping.
+The Minecraft partitioner uses conservative integer bounds only for allocation and visibility envelopes.
+A direct sampled image wholly contained by fractional clips keeps its existing immutable texture cache and native path.
+An image crossing a fractional boundary uses the existing bounded portable fallback with the original source and destination, avoiding source-UV cropping or resampling drift.
+Opaque platform payloads crossing such boundaries are rejected during partition preflight rather than drawn with an expanded clip.
+No frame history or additional image cache is introduced; static frames reuse their prepared layers.
+
+Verify coverage independently of backend equality: both backends can agree on the same incorrect rounded clip.
+The shared loaded-client scenario compares a three-quarter-scaled VirtualList with an independently defined integer reference, then requires 100 stable host frames without new preparation, rasterization, or upload.
+Headless tests additionally mask an unclipped reference by physical pixel-center predicates across output scales 1-4, all portable primitive types, mixed nested clips, and empty or offscreen bounds.
