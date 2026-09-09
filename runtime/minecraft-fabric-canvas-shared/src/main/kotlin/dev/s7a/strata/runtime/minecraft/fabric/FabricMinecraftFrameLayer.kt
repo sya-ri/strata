@@ -10,6 +10,7 @@ import dev.s7a.strata.render.ArgbColor
 import dev.s7a.strata.render.SampledImageOrientation
 import dev.s7a.strata.runtime.render.DrawCommand
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
+import kotlin.math.ceil
 import kotlin.math.floor
 
 /**
@@ -86,13 +87,15 @@ internal inline fun submitFabricMinecraftFrameLayers(
  * @return immutable layers in exact display-list order.
  */
 @JvmSynthetic
-@Suppress("CyclomaticComplexMethod")
+// Keep clip-stack changes and layer flushes in one ordered traversal of the exhaustive command variants.
+@Suppress("CyclomaticComplexMethod", "LongMethod")
 internal fun partitionFabricMinecraftFrame(
     commands: List<DrawCommand>,
     viewport: IntSize,
 ): List<FabricMinecraftFrameLayer> {
     val layers = ArrayList<FabricMinecraftFrameLayer>()
     val activeClips = ArrayList<IntRect>()
+    val activeClipCommands = ArrayList<DrawCommand>()
     val viewportBounds = IntRect(0, 0, viewport.width, viewport.height)
     var portable = ArrayList<DrawCommand>()
     var portableBounds: IntRect? = null
@@ -105,7 +108,7 @@ internal fun partitionFabricMinecraftFrame(
             layers.add(FabricMinecraftFrameLayer.Portable(localizeFabricPortable(portable, bounds), bounds, portableIneligibleSampledImages))
         }
         portable = ArrayList()
-        activeClips.forEach { clip -> portable.add(DrawCommand.PushClip(clip)) }
+        portable.addAll(activeClipCommands)
         portableBounds = null
         portableIneligibleSampledImages = 0
     }
@@ -123,15 +126,14 @@ internal fun partitionFabricMinecraftFrame(
             }
 
             is DrawCommand.SampledImage -> {
-                if (isDirectFabricSampledImage(command)) {
+                val visibleClip = activeClips.fold(viewportBounds, ::intersectFabricBounds)
+                if (isDirectFabricSampledImage(command) && fractionalClipsContain(activeClipCommands, command.destination, visibleClip)) {
                     flushPortable()
-                    val visibleClip = activeClips.fold(viewportBounds, ::intersectFabricBounds)
                     command.destination.enclosingFabricViewportBounds(visibleClip)?.let { visible ->
                         layers.add(FabricMinecraftFrameLayer.Sampled(command, visibleClip.takeIf { activeClips.isNotEmpty() }, visible))
                     }
                 } else {
                     portable.add(command)
-                    val visibleClip = activeClips.fold(viewportBounds, ::intersectFabricBounds)
                     command.destination.enclosingFabricViewportBounds(visibleClip)?.let { bounds ->
                         portableBounds = includeFabricVisibleBounds(portableBounds, bounds, activeClips, viewportBounds)
                         portableIneligibleSampledImages = Math.incrementExact(portableIneligibleSampledImages)
@@ -146,18 +148,38 @@ internal fun partitionFabricMinecraftFrame(
 
             is DrawCommand.PushClip -> {
                 activeClips.add(command.bounds)
+                activeClipCommands.add(command)
+                portable.add(command)
+            }
+
+            is DrawCommand.PushFractionalClip -> {
+                val bounds = command.bounds
+                activeClips.add(
+                    IntRect(
+                        floor(bounds.left.coerceIn(0f, viewport.width.toFloat())).toInt(),
+                        floor(bounds.top.coerceIn(0f, viewport.height.toFloat())).toInt(),
+                        ceil(bounds.right.coerceIn(0f, viewport.width.toFloat())).toInt(),
+                        ceil(bounds.bottom.coerceIn(0f, viewport.height.toFloat())).toInt(),
+                    ),
+                )
+                activeClipCommands.add(command)
                 portable.add(command)
             }
 
             DrawCommand.PopClip -> {
                 require(activeClips.isNotEmpty()) { "Clip pop has no matching push." }
                 activeClips.removeAt(activeClips.lastIndex)
+                activeClipCommands.removeAt(activeClipCommands.lastIndex)
                 portable.add(command)
             }
 
             is DrawCommand.Platform -> {
-                flushPortable()
+                val bounds = command.bounds
                 val clip = activeClips.fold(viewportBounds, ::intersectFabricBounds)
+                require(fractionalClipsContain(activeClipCommands, FloatRect(bounds.left.toFloat(), bounds.top.toFloat(), bounds.right.toFloat(), bounds.bottom.toFloat()), clip)) {
+                    "Opaque platform drawing intersecting a fractional clip is unsupported."
+                }
+                flushPortable()
                 layers.add(FabricMinecraftFrameLayer.Platform(command, clip.takeIf { activeClips.isNotEmpty() }))
             }
         }
@@ -236,6 +258,8 @@ private fun includeFabricVisibleBounds(
     )
 }
 
+// Every portable command variant has an explicit coordinate conversion; splitting the visitor obscures clip balance.
+@Suppress("CyclomaticComplexMethod")
 private fun localizeFabricPortable(
     commands: List<DrawCommand>,
     bounds: IntRect,
@@ -267,6 +291,15 @@ private fun localizeFabricPortable(
                 DrawCommand.PushClip(intersectFabricBounds(command.bounds, bounds) + offset)
             }
 
+            is DrawCommand.PushFractionalClip -> {
+                val clip = command.bounds
+                val left = clip.left.coerceIn(bounds.left.toFloat(), bounds.right.toFloat())
+                val top = clip.top.coerceIn(bounds.top.toFloat(), bounds.bottom.toFloat())
+                val right = clip.right.coerceIn(left, bounds.right.toFloat())
+                val bottom = clip.bottom.coerceIn(top, bounds.bottom.toFloat())
+                DrawCommand.PushFractionalClip(FloatRect(left + offset.x, top + offset.y, right + offset.x, bottom + offset.y))
+            }
+
             DrawCommand.PopClip -> {
                 DrawCommand.PopClip
             }
@@ -287,4 +320,22 @@ private fun intersectFabricBounds(
     val right = maxOf(left, minOf(first.right, second.right))
     val bottom = maxOf(top, minOf(first.bottom, second.bottom))
     return IntRect(left, top, right, bottom)
+}
+
+private fun fractionalClipsContain(
+    clips: List<DrawCommand>,
+    bounds: FloatRect,
+    integerClip: IntRect,
+): Boolean {
+    val left = maxOf(bounds.left, integerClip.left.toFloat())
+    val top = maxOf(bounds.top, integerClip.top.toFloat())
+    val right = minOf(bounds.right, integerClip.right.toFloat())
+    val bottom = minOf(bounds.bottom, integerClip.bottom.toFloat())
+    if (right <= left || bottom <= top) return true
+    return clips.all { command ->
+        if (command !is DrawCommand.PushFractionalClip) return@all true
+        val horizontal = command.bounds.left <= left && right <= command.bounds.right
+        val vertical = command.bounds.top <= top && bottom <= command.bounds.bottom
+        horizontal && vertical
+    }
 }

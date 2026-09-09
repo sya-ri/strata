@@ -17,6 +17,10 @@ internal fun MinecraftLoadedTestContext.configureVerificationViewport(
 ) {
     computeOnClient { minecraft ->
         minecraft.window.setWindowed(size.width, size.height)
+        val handle = minecraftTestWindowHandle()
+        // Fabric's test Window mixin owns synthetic dimensions; request the physical window separately.
+        if (GLFW.glfwGetWindowAttrib(handle, GLFW.GLFW_ICONIFIED) == GLFW.GLFW_TRUE) GLFW.glfwRestoreWindow(handle)
+        GLFW.glfwSetWindowSize(handle, size.width, size.height)
         minecraft.options.guiScale().set(guiScale)
         minecraft.resizeDisplay()
     }

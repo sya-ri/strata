@@ -95,7 +95,7 @@ internal class ChildTransformPipelineTest {
     }
 
     @Test
-    fun fractionalTransformConvertsPortablePaintAndRoundsClipsOutward() {
+    fun fractionalTransformConvertsPortablePaintAndPreservesExactClips() {
         val source = FloatRect(0.25f, 0.5f, 1.75f, 1.5f)
         val sampledDestination = FloatRect(-0.5f, 0.25f, 2.5f, 1.25f)
         val probe = LeafProbe()
@@ -124,7 +124,7 @@ internal class ChildTransformPipelineTest {
 
         val commands = tree.paint()
         assertEquals(7, commands.size)
-        assertEquals(DrawCommand.PushClip(IntRect(0, 2, 3, 6)), commands[0])
+        assertEquals(DrawCommand.PushFractionalClip(FloatRect(0.75f, 2.75f, 2.75f, 5.25f)), commands[0])
 
         val fill = commands[1] as DrawCommand.SampledImage
         assertEquals(IntSize(1, 1), fill.image.size)
@@ -152,7 +152,7 @@ internal class ChildTransformPipelineTest {
         assertEquals(SampledImageOrientation.FlipBoth, sampled.orientation)
 
         assertEquals(DrawCommand.PopClip, commands[4])
-        assertEquals(DrawCommand.PushClip(IntRect(1, 2, 5, 6)), commands[5])
+        assertEquals(DrawCommand.PushFractionalClip(FloatRect(1.25f, 2.75f, 4.25f, 5.75f)), commands[5])
         assertEquals(DrawCommand.PopClip, commands[6])
         tree.close()
     }

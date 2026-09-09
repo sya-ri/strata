@@ -67,6 +67,8 @@ The production loaded suite calls an inherited screen method through the concret
 ## Loaded-client verification
 
 Each versioned integration project verifies its exact adapter through development outputs and packaged production jars.
+The legacy viewport fixture requests both Minecraft's test dimensions and the real GLFW window size, then requires two matching native/window/render-target samples.
+Fabric's test Window mixin can substitute Minecraft's dimensions, so those values alone do not prove that a physical resize completed.
 Run `:integration:minecraft-fabric-<version>:runClientGameTest` and `:integration:minecraft-fabric-<version>:runProductionClientGameTest` for the target being changed.
 Every supported integration project's `check` requires both gates.
 Where provided, `runPublishedCoordinateClientGameTest` additionally checks externally resolved publications.

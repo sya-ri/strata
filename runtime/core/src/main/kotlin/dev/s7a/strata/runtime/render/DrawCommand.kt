@@ -15,7 +15,7 @@ import dev.s7a.strata.spi.InternalStrataRuntimeApi
  *
  * Commands are returned in retained paint order, including explicit nested child clips and post-child overlays.
  * A backend must execute the list in that order.
- * Backends must intersect drawing with every active [PushClip] until the matching [PopClip].
+ * Backends must intersect drawing with every active [PushClip] and [PushFractionalClip] until the matching [PopClip].
  * The core records these contracts without clipping, blending, or sampling pixels.
  * Portable commands carry platform-neutral values, while the opt-in [Platform] variant preserves an opaque version-adapter payload without teaching core its type.
  * Exhaustive backends must handle every variant, including [SampledImage], or explicitly reject unsupported commands before producing output.
@@ -150,6 +150,19 @@ public sealed interface DrawCommand {
      */
     public data class PushClip(
         public val bounds: IntRect,
+    ) : DrawCommand
+
+    /**
+     * Begins a clip whose transformed edges remain fractional until final pixel coverage is determined.
+     *
+     * Intersect this half-open rectangle with all active clips before testing final physical pixel centers.
+     * Do not round the edges to logical pixels. Empty rectangles hide subsequent drawing until [PopClip].
+     * Like other detached commands, this immutable value owns no resources and may be read on any thread.
+     *
+     * @property bounds finite ordered edges in accumulated tree coordinates.
+     */
+    public data class PushFractionalClip(
+        public val bounds: FloatRect,
     ) : DrawCommand
 
     /**

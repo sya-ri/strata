@@ -54,7 +54,7 @@ internal class PaintPipeline(
         appendTransformed(retained.localCommands.orEmpty(), retained, output)
         val clipsChildren = retained.node is ClipChildrenNode
         if (clipsChildren) {
-            output.add(DrawCommand.PushClip(retained.bounds))
+            output.add(transformClip(IntRect(0, 0, retained.measuredSize.width, retained.measuredSize.height), retained.localToTree))
         }
         for (index in 0 until retained.effectiveChildCount) {
             val child = retained.effectiveChildAt(index)
@@ -152,7 +152,7 @@ internal class PaintPipeline(
         }
         return when (command) {
             is LocalDrawCommand.PushClip -> {
-                DrawCommand.PushClip(transform.enclosing(command.bounds))
+                transformClip(command.bounds, transform)
             }
 
             LocalDrawCommand.PopClip -> {
@@ -201,6 +201,22 @@ internal class PaintPipeline(
                     "Platform draw commands require an exact integer-translation child transform.",
                 )
             }
+        }
+    }
+
+    private fun transformClip(
+        bounds: IntRect,
+        transform: TreeTransform,
+    ): DrawCommand {
+        val enclosing = transform.enclosing(bounds)
+        if (transform.integerTranslationOrNull() != null) return DrawCommand.PushClip(enclosing)
+        val exact = transform.mapFractional(bounds)
+        val horizontal = exact.left.toDouble() == enclosing.left.toDouble() && exact.right.toDouble() == enclosing.right.toDouble()
+        val vertical = exact.top.toDouble() == enclosing.top.toDouble() && exact.bottom.toDouble() == enclosing.bottom.toDouble()
+        return if (horizontal && vertical) {
+            DrawCommand.PushClip(enclosing)
+        } else {
+            DrawCommand.PushFractionalClip(exact)
         }
     }
 

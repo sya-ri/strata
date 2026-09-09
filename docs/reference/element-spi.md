@@ -97,7 +97,9 @@ Placement offsets and accumulated bounds use checked integer arithmetic.
 The runtime scales child-local coordinates, then adds the transform offset and child's ordinary integer placement, so the mapping is `placement + offset + childLocal * scale`.
 `ChildTransform.Identity` retains ordinary placement behavior, and nested child transforms compose through the effective descendant subtree without transforming the providing node's own local paint.
 When continuous transformed geometry crosses an `IntRect` boundary, each nonempty rectangle is projected outward by flooring its left and top edges and ceiling its right and bottom edges.
-Accumulated node bounds, child clips, semantics and focus geometry, and root-overlay anchors use that enclosing projection rather than independently rounding an origin and extent.
+Accumulated node bounds, semantics and focus geometry, and root-overlay anchors use that enclosing projection rather than independently rounding an origin and extent.
+Drawing clips retain fractional transformed edges until the backend tests final physical pixel centers.
+Rounding a clip outward at logical density would allow descendants to overwrite adjacent regions at higher output densities.
 Portable paint destinations retain fractional geometry where their draw-command contract supports it.
 
 Both scopes expose typed parent data from a direct child's active modifier chain.
@@ -113,15 +115,18 @@ See [Modifiers](../reference/modifier-spi.md#parent-data) for ordering and failu
 `PaintNode.paint` emits a complete local display list through `PaintScope`.
 A clean paint pass reuses that immutable list and maps it through the current accumulated tree transform.
 `OverlayPaintNode.paintOverlay` emits a separately cached local display list after all effective descendants.
-`ClipChildrenNode` inserts balanced outward-projected tree-coordinate clip commands around effective descendant drawing without clipping the node's own regular or overlay commands.
+`ClipChildrenNode` inserts balanced exact tree-coordinate clip commands around effective descendant drawing without clipping the node's own regular or overlay commands.
 The runtime returns `DrawCommand` values in regular-paint, clipped-descendant, and overlay-paint order.
-Custom backends with exhaustive `DrawCommand` visitors need an explicit `SampledImage` sampling implementation or an unsupported-command preflight.
-Its fractional geometry, final-density sampling, tint multiplication, and alpha cutoff are distinct from the unchanged integer `BlitImage` contract.
-A backend compiled against a smaller variant set can fail on this command; ordinary Text calls can emit it through the resource-font profile.
+Custom backends with exhaustive `DrawCommand` visitors need explicit `SampledImage` and `PushFractionalClip` implementations or an unsupported-command preflight.
+`PushFractionalClip` intersects with integer and fractional outer clips; it must not be quantized to logical pixels.
+Both clip variants use the same `PopClip` stack discipline.
+The fractional geometry, final-density sampling, tint multiplication, and alpha cutoff of `SampledImage` are distinct from the unchanged integer `BlitImage` contract.
+A backend compiled against a smaller variant set can fail on a new command; ordinary Text calls can emit `SampledImage` through the resource-font profile.
 See [Source compatibility](#source-compatibility) for the corresponding `UiText.WithFont` visitor contract.
 Portable primitive nodes emit only platform-neutral fill and image commands.
 An opt-in version adapter may instead pass an immutable opaque `PlatformDrawCommand` through `PaintScope.drawPlatform`; core maps its declared bounds and preserves its opaque payload, clip, and draw order for execution by the matching adapter.
 Current frame painting accepts that command only when its accumulated transform is an exact integer translation.
+The Minecraft presenter also rejects an opaque payload whose bounds cross an active fractional clip before submitting any frame layers; a payload wholly inside that clip remains supported.
 A non-unit scale or fractional translation throws `UnsupportedOperationException` during frame paint before any adapter output, because core cannot generically transform the opaque payload or safely produce a partial frame.
 `RootOverlayPaintNode` receives the node's outward-projected root-coordinate `anchorBounds`, but every command it emits is already in root coordinates and is not scaled or translated again by the node's accumulated child transform.
 Nodes without `ClipChildrenNode` preserve valid local and descendant paint overflow.
