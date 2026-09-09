@@ -306,7 +306,7 @@ internal class MinecraftTextAreaEditor(
         val stateChanged = previous.state !== next.state
         val clearComposition = stateChanged || next.enabled.not()
         val resetPan = stateChanged || next.policy.wrap != TextWrap.None
-        private val frameChanged = previous.normalSprite !== next.normalSprite || previous.highlightedSprite !== next.highlightedSprite
+        private val frameChanged = previous.appearance != next.appearance
         val dirty =
             if (layoutChanged.not() && frameChanged.not()) {
                 DirtyMask.None

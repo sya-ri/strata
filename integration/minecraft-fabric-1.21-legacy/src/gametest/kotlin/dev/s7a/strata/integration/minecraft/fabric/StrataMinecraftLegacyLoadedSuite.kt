@@ -186,10 +186,13 @@ internal class StrataMinecraftLegacyLoadedSuite {
                         return ReactiveNativeWork(counters.hostFrames, counters.framePreparations, counters.rasterizations, counters.textureUploads)
                     }
 
-                    override fun assertPixels(definition: ScreenDefinition) {
-                        val expected = onClient { ReactiveRenderPixels.reference(definition, profile) }
-                        val screenshot = takeScreenshot(context, "reactive-rendering-native", output)
-                        ReactiveRenderPixels.verify(expected, screenshot, output)
+                    override fun assertPixels(
+                        definition: ScreenDefinition,
+                        capture: ReactiveRenderCapture,
+                    ) {
+                        val expected = onClient { ReactiveRenderPixels.reference(definition, profile, capture) }
+                        val screenshot = takeScreenshot(context, "${capture.artifactName}-native", output)
+                        ReactiveRenderPixels.verify(expected, screenshot, output, capture)
                     }
 
                     override fun closeScreen() {

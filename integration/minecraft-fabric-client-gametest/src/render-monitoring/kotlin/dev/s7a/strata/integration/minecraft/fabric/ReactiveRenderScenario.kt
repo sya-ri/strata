@@ -38,7 +38,8 @@ internal object ReactiveRenderScenario {
                 verifyProgress(driver, monitor, progress)
                 driver.onClient { monitor.close() }
                 driver.assertPixels(literalReference())
-                "stableHostFrames=100\nequalMapUiWork=0\nequalMapNativeWork=0\nchangedMapEvaluations=1\nprogressMeasure=0\nprogressLayout=0\noverlayCallbacksOnPaintOnlyLowerUpdate=0\noverlayCallbacksOnChildGeometryChange=1\noverlayComposition=clipped-translucent-and-root-opaque\nupdatedPixels=literal-headless-exact\n"
+                val inputEvidence = TextInputAppearanceScenario.verify(driver)
+                "stableHostFrames=100\nequalMapUiWork=0\nequalMapNativeWork=0\nchangedMapEvaluations=1\nprogressMeasure=0\nprogressLayout=0\noverlayCallbacksOnPaintOnlyLowerUpdate=0\noverlayCallbacksOnChildGeometryChange=1\noverlayComposition=clipped-translucent-and-root-opaque\nupdatedPixels=literal-headless-exact\n" + inputEvidence
             }
         val cleanup = runCatching { driver.onClient { driver.closeScreen() } }
         outcome.exceptionOrNull()?.let { failure ->

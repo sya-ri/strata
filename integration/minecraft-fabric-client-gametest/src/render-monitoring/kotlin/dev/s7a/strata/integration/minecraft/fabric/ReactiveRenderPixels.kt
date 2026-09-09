@@ -1,6 +1,5 @@
 package dev.s7a.strata.integration.minecraft.fabric
 
-import dev.s7a.strata.geometry.IntSize
 import dev.s7a.strata.runtime.headless.HeadlessImage
 import dev.s7a.strata.runtime.headless.rasterizeHeadless
 import dev.s7a.strata.runtime.minecraft.MinecraftUiProfile
@@ -23,10 +22,11 @@ internal object ReactiveRenderPixels {
     fun reference(
         definition: ScreenDefinition,
         profile: MinecraftUiProfile,
+        capture: ReactiveRenderCapture,
     ): HeadlessImage =
         createMinecraftUiHost(definition, profile, LwjglMinecraftFontBackendFactory).use { host ->
             host.attach()
-            val frame = host.frame(IntSize(160, 48))
+            val frame = host.frame(capture.size)
             rasterizeHeadless(frame.drawCommands, frame.size)
         }
 
@@ -37,8 +37,9 @@ internal object ReactiveRenderPixels {
         expected: HeadlessImage,
         screenshot: Path,
         output: Path,
+        capture: ReactiveRenderCapture,
     ) {
-        Files.write(output.resolve("reactive-rendering-headless.png"), expected.encodePng())
+        Files.write(output.resolve("${capture.artifactName}-headless.png"), expected.encodePng())
         val native = checkNotNull(ImageIO.read(screenshot.toFile()))
         check(expected.size.width <= native.width && expected.size.height <= native.height)
         repeat(expected.size.height) { y ->
