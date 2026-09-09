@@ -22,8 +22,8 @@ Compile ordinary Mod source against the API only, then install the runtime match
 
 ```kotlin
 dependencies {
-    compileOnly("dev.s7a.strata:strata-api:0.1.5")
-    modRuntimeOnly("dev.s7a.strata:strata-runtime-minecraft-fabric-<minecraft-version>:0.1.5")
+    compileOnly("dev.s7a.strata:strata-api:0.1.6")
+    modRuntimeOnly("dev.s7a.strata:strata-runtime-minecraft-fabric-<minecraft-version>:0.1.6")
     modRuntimeOnly("net.fabricmc:fabric-language-kotlin:<compatible-version>")
 }
 ```

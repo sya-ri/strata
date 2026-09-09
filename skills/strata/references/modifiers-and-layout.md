@@ -823,6 +823,66 @@ method dev.s7a.strata.component.TextAreaViewport$Size.toString(): java.lang.Stri
 
 </details>
 
+### TextInputAppearance
+
+Default profile frame or immutable custom normal/focused/disabled nine-slice images with caret and composition underline colors. Retain the appearance outside reevaluation; appearance-only replacement repaints without resetting editing or remeasuring.
+
+#### `TextInputAppearance`
+
+```kotlin
+sealed interface TextInputAppearance
+```
+
+#### `TextInputAppearance.Custom`
+
+```kotlin
+data class Custom(public val normal: ImageSource, public val focused: ImageSource, public val caretColor: ArgbColor, public val disabled: ImageSource = normal, public val border: Insets = Insets.all(1), public val compositionUnderlineColor: ArgbColor = caretColor) : TextInputAppearance
+val border: Insets
+val caretColor: ArgbColor
+val compositionUnderlineColor: ArgbColor
+val disabled: ImageSource
+val focused: ImageSource
+val normal: ImageSource
+```
+
+#### `TextInputAppearance.Default`
+
+```kotlin
+data object Default : TextInputAppearance
+```
+
+<details><summary>Compiled JVM API fingerprints</summary>
+
+```text
+class dev.s7a.strata.component.TextInputAppearance$Custom
+class dev.s7a.strata.component.TextInputAppearance$Default
+constructor dev.s7a.strata.component.TextInputAppearance$Custom(dev.s7a.strata.component.ImageSource, dev.s7a.strata.component.ImageSource, int, dev.s7a.strata.component.ImageSource, dev.s7a.strata.geometry.Insets, int, int, kotlin.jvm.internal.DefaultConstructorMarker)
+constructor dev.s7a.strata.component.TextInputAppearance$Custom(dev.s7a.strata.component.ImageSource, dev.s7a.strata.component.ImageSource, int, dev.s7a.strata.component.ImageSource, dev.s7a.strata.geometry.Insets, int, kotlin.jvm.internal.DefaultConstructorMarker)
+field dev.s7a.strata.component.TextInputAppearance$Default.INSTANCE: dev.s7a.strata.component.TextInputAppearance$Default
+interface dev.s7a.strata.component.TextInputAppearance
+method dev.s7a.strata.component.TextInputAppearance$Custom.component1(): dev.s7a.strata.component.ImageSource
+method dev.s7a.strata.component.TextInputAppearance$Custom.component2(): dev.s7a.strata.component.ImageSource
+method dev.s7a.strata.component.TextInputAppearance$Custom.component3-e0e5deU(): int
+method dev.s7a.strata.component.TextInputAppearance$Custom.component4(): dev.s7a.strata.component.ImageSource
+method dev.s7a.strata.component.TextInputAppearance$Custom.component5(): dev.s7a.strata.geometry.Insets
+method dev.s7a.strata.component.TextInputAppearance$Custom.component6-e0e5deU(): int
+method dev.s7a.strata.component.TextInputAppearance$Custom.copy-W3MKq70(dev.s7a.strata.component.ImageSource, dev.s7a.strata.component.ImageSource, int, dev.s7a.strata.component.ImageSource, dev.s7a.strata.geometry.Insets, int): dev.s7a.strata.component.TextInputAppearance$Custom
+method dev.s7a.strata.component.TextInputAppearance$Custom.equals(java.lang.Object): boolean
+method dev.s7a.strata.component.TextInputAppearance$Custom.getBorder(): dev.s7a.strata.geometry.Insets
+method dev.s7a.strata.component.TextInputAppearance$Custom.getCaretColor-e0e5deU(): int
+method dev.s7a.strata.component.TextInputAppearance$Custom.getCompositionUnderlineColor-e0e5deU(): int
+method dev.s7a.strata.component.TextInputAppearance$Custom.getDisabled(): dev.s7a.strata.component.ImageSource
+method dev.s7a.strata.component.TextInputAppearance$Custom.getFocused(): dev.s7a.strata.component.ImageSource
+method dev.s7a.strata.component.TextInputAppearance$Custom.getNormal(): dev.s7a.strata.component.ImageSource
+method dev.s7a.strata.component.TextInputAppearance$Custom.hashCode(): int
+method dev.s7a.strata.component.TextInputAppearance$Custom.toString(): java.lang.String
+method dev.s7a.strata.component.TextInputAppearance$Default.equals(java.lang.Object): boolean
+method dev.s7a.strata.component.TextInputAppearance$Default.hashCode(): int
+method dev.s7a.strata.component.TextInputAppearance$Default.toString(): java.lang.String
+```
+
+</details>
+
 ### TextLayout
 
 Single-line compatibility or structural multiline wrapping, line limits, overflow, and spacing.

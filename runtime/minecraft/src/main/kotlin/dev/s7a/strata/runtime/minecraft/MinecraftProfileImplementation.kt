@@ -13,6 +13,7 @@ import dev.s7a.strata.component.TabSelectionIndicator
 import dev.s7a.strata.component.TextAreaState
 import dev.s7a.strata.component.TextAreaViewport
 import dev.s7a.strata.component.TextFieldState
+import dev.s7a.strata.component.TextInputAppearance
 import dev.s7a.strata.component.TextStyle
 import dev.s7a.strata.component.UiScope
 import dev.s7a.strata.element.Element
@@ -1079,6 +1080,106 @@ internal object MinecraftProfileImplementation {
                 key,
             )
         }
+
+        override fun textField(
+            state: TextFieldState,
+            size: IntSize,
+            appearance: TextInputAppearance,
+            enabled: Boolean,
+            style: TextStyle,
+            modifier: Modifier,
+            key: ElementKey<*>?,
+        ): Element = textField(state, size, appearance, enabled, style, MinecraftTextRenderer.defaultFont, modifier, key)
+
+        override fun textField(
+            state: TextFieldState,
+            size: IntSize,
+            appearance: TextInputAppearance,
+            enabled: Boolean,
+            style: TextStyle,
+            font: ResourceId,
+            modifier: Modifier,
+            key: ElementKey<*>?,
+        ): Element {
+            val currentProfile = requireProfile()
+            return createMinecraftTextFieldElement(
+                currentProfile.normalTextField,
+                currentProfile.highlightedTextField,
+                requireTextRenderer(),
+                font,
+                state,
+                size,
+                enabled,
+                style,
+                modifier,
+                key,
+                resolveTextInputAppearance(appearance, currentProfile),
+            )
+        }
+
+        override fun textArea(
+            state: TextAreaState,
+            viewport: TextAreaViewport,
+            appearance: TextInputAppearance,
+            enabled: Boolean,
+            style: TextStyle,
+            wrap: TextWrap,
+            lineSpacing: Int,
+            modifier: Modifier,
+            key: ElementKey<*>?,
+        ): Element = textArea(state, viewport, appearance, enabled, style, MinecraftTextRenderer.defaultFont, wrap, lineSpacing, modifier, key)
+
+        override fun textArea(
+            state: TextAreaState,
+            viewport: TextAreaViewport,
+            appearance: TextInputAppearance,
+            enabled: Boolean,
+            style: TextStyle,
+            font: ResourceId,
+            wrap: TextWrap,
+            lineSpacing: Int,
+            modifier: Modifier,
+            key: ElementKey<*>?,
+        ): Element {
+            val currentProfile = requireProfile()
+            return createMinecraftTextAreaElement(
+                currentProfile.normalTextField,
+                currentProfile.highlightedTextField,
+                requireTextRenderer(),
+                font,
+                state,
+                viewport,
+                enabled,
+                style,
+                wrap,
+                lineSpacing,
+                modifier,
+                key,
+                resolveTextInputAppearance(appearance, currentProfile),
+            )
+        }
+
+        private fun resolveTextInputAppearance(
+            appearance: TextInputAppearance,
+            currentProfile: ProfileSnapshot,
+        ): MinecraftTextInputAppearance =
+            when (appearance) {
+                TextInputAppearance.Default -> {
+                    MinecraftTextInputAppearance(currentProfile.normalTextField, currentProfile.highlightedTextField)
+                }
+
+                is TextInputAppearance.Custom -> {
+                    MinecraftTextInputAppearance(
+                        resolveImage(appearance.normal),
+                        resolveImage(appearance.focused),
+                        resolveImage(appearance.disabled),
+                        appearance.border,
+                        appearance.caretColor,
+                        appearance.compositionUnderlineColor,
+                        legacyAppendCaret = false,
+                    )
+                }
+            }
 
         override fun tab(
             label: UiText,

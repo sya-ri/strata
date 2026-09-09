@@ -45,6 +45,8 @@ Partial updates preserve overlay order, but unchanged foreground callbacks do no
 Keep the number and covered area of translucent layers small around frequently changing content. Full-area stacks multiply blending work even when only one component is reevaluated; direct State inputs do not solve this rasterization cost. For a required dense overlay design, measure composition separately at the intended physical resolution and update rate before promising smooth animation.
 Keep events on modifiers, mutable values in caller-owned state, and platform work behind the installed runtime.
 
+For a light or application-colored input, use the standard `TextField` or `TextArea` with `TextInputAppearance.Custom`; a background modifier cannot replace the editor's own frame. Supply normal, focused, and disabled nine-slice images and readable caret/composition underline colors, alongside `textStyle = TextStyle.ContainerLabel` for dark glyphs. Keep these immutable images, the appearance, and editing state outside reevaluation. Only a changing theme needs a narrow `Observe`; an appearance-only change repaints the same editor without remeasurement. Omit appearance to retain the default Minecraft frame. Do not replace global Minecraft textures or build a second editor solely to change its colors.
+
 ## Output expectations
 
 Return API-only UI definitions that compile without runtime imports, use exact public signatures from the references, and explain fixed geometry when the screen depends on it.

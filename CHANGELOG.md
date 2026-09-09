@@ -2,6 +2,21 @@
 
 All notable changes to Strata are documented in this file.
 
+## 0.1.6 - 2026-09-09
+
+See the [0.1.6 release notes](docs/releases/v0.1.6.md) for input appearance and compatibility.
+
+### Added
+
+- `TextInputAppearance` gives standard single-line and multiline editors per-instance normal, focused, and disabled nine-slice frames, caret colors, and IME underline colors.
+- Additive appearance overloads preserve explicit fonts and direct State enablement; the existing overloads and default pixels remain unchanged.
+- Shared host and loaded-client acceptance verifies appearance-only repainting, retained input nodes, idle work, and native/headless pixels.
+
+### Compatibility
+
+- Appearance does not change padding, text metrics, state ownership, or editing behavior. Custom frames need a nonempty nine-slice center and use stretched centers; `Default` preserves legacy rendering.
+- Use matching 0.1.6 API and runtime artifacts to use custom appearance. Existing component calls remain binary compatible.
+
 ## 0.1.5 - 2026-09-08
 
 See the [0.1.5 release notes](docs/releases/v0.1.5.md) for installation and observation contracts.

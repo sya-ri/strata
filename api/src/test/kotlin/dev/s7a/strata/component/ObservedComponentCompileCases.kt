@@ -1225,6 +1225,178 @@ private fun UiScope.compileTab06dab4066e27_7(
 }
 
 /**
+ * Source-backed [TextField] observing enabled at the next frame cutoff.
+ * Sources remain caller-owned; compatible nodes retain editing, focus, and scrolling state.
+ * Literal arguments keep their existing contracts. Equal source values do not re-evaluate this component.
+ * The complete modifier chain stays on the actual component; the wrapper delegates parent data and owns the sibling key.
+ * Keep sources and dedicated editing states outside observed callbacks. Evaluation and input failures follow ordinary runtime cleanup.
+ */
+private fun UiScope.compileTextField8ebce6a07628_1(
+    state: TextFieldState,
+    appearance: TextInputAppearance,
+    enabled: StateSource<Boolean>,
+    textStyle: TextStyle = TextStyle.TextField,
+    modifier: Modifier = Modifier.Empty,
+    key: ElementKey<*>? = null,
+) {
+    TextField(
+        state = state,
+        appearance = appearance,
+        enabled = enabled,
+        textStyle = textStyle,
+        modifier = modifier,
+        key = key,
+    )
+}
+
+/**
+ * Source-backed [TextField] observing enabled at the next frame cutoff.
+ * Sources remain caller-owned; compatible nodes retain editing, focus, and scrolling state.
+ * Literal arguments keep their existing contracts. Equal source values do not re-evaluate this component.
+ * The complete modifier chain stays on the actual component; the wrapper delegates parent data and owns the sibling key.
+ * Keep sources and dedicated editing states outside observed callbacks. Evaluation and input failures follow ordinary runtime cleanup.
+ */
+private fun UiScope.compileTextField68d5823f42d7_1(
+    state: TextFieldState,
+    appearance: TextInputAppearance,
+    size: IntSize,
+    enabled: StateSource<Boolean>,
+    textStyle: TextStyle = TextStyle.TextField,
+    modifier: Modifier = Modifier.Empty,
+    key: ElementKey<*>? = null,
+) {
+    TextField(
+        state = state,
+        appearance = appearance,
+        size = size,
+        enabled = enabled,
+        textStyle = textStyle,
+        modifier = modifier,
+        key = key,
+    )
+}
+
+/**
+ * Source-backed [TextField] observing enabled at the next frame cutoff.
+ * Sources remain caller-owned; compatible nodes retain editing, focus, and scrolling state.
+ * Literal arguments keep their existing contracts. Equal source values do not re-evaluate this component.
+ * The complete modifier chain stays on the actual component; the wrapper delegates parent data and owns the sibling key.
+ * Keep sources and dedicated editing states outside observed callbacks. Evaluation and input failures follow ordinary runtime cleanup.
+ */
+private fun UiScope.compileTextField715dafc3f527_1(
+    state: TextFieldState,
+    appearance: TextInputAppearance,
+    font: ResourceId,
+    enabled: StateSource<Boolean>,
+    textStyle: TextStyle = TextStyle.TextField,
+    modifier: Modifier = Modifier.Empty,
+    key: ElementKey<*>? = null,
+) {
+    TextField(
+        state = state,
+        appearance = appearance,
+        font = font,
+        enabled = enabled,
+        textStyle = textStyle,
+        modifier = modifier,
+        key = key,
+    )
+}
+
+/**
+ * Source-backed [TextField] observing enabled at the next frame cutoff.
+ * Sources remain caller-owned; compatible nodes retain editing, focus, and scrolling state.
+ * Literal arguments keep their existing contracts. Equal source values do not re-evaluate this component.
+ * The complete modifier chain stays on the actual component; the wrapper delegates parent data and owns the sibling key.
+ * Keep sources and dedicated editing states outside observed callbacks. Evaluation and input failures follow ordinary runtime cleanup.
+ */
+private fun UiScope.compileTextFieldfd7b3be167e7_1(
+    state: TextFieldState,
+    appearance: TextInputAppearance,
+    size: IntSize,
+    font: ResourceId,
+    enabled: StateSource<Boolean>,
+    textStyle: TextStyle = TextStyle.TextField,
+    modifier: Modifier = Modifier.Empty,
+    key: ElementKey<*>? = null,
+) {
+    TextField(
+        state = state,
+        appearance = appearance,
+        size = size,
+        font = font,
+        enabled = enabled,
+        textStyle = textStyle,
+        modifier = modifier,
+        key = key,
+    )
+}
+
+/**
+ * Source-backed [TextArea] observing enabled at the next frame cutoff.
+ * Sources remain caller-owned; compatible nodes retain editing, focus, and scrolling state.
+ * Literal arguments keep their existing contracts. Equal source values do not re-evaluate this component.
+ * The complete modifier chain stays on the actual component; the wrapper delegates parent data and owns the sibling key.
+ * Keep sources and dedicated editing states outside observed callbacks. Evaluation and input failures follow ordinary runtime cleanup.
+ */
+private fun UiScope.compileTextArea80c0b5b4cb37_1(
+    state: TextAreaState,
+    appearance: TextInputAppearance,
+    viewport: TextAreaViewport,
+    enabled: StateSource<Boolean>,
+    textStyle: TextStyle = TextStyle.TextField,
+    wrap: TextWrap = TextWrap.Word,
+    lineSpacing: Int = 0,
+    modifier: Modifier = Modifier.Empty,
+    key: ElementKey<*>? = null,
+) {
+    TextArea(
+        state = state,
+        appearance = appearance,
+        viewport = viewport,
+        enabled = enabled,
+        textStyle = textStyle,
+        wrap = wrap,
+        lineSpacing = lineSpacing,
+        modifier = modifier,
+        key = key,
+    )
+}
+
+/**
+ * Source-backed [TextArea] observing enabled at the next frame cutoff.
+ * Sources remain caller-owned; compatible nodes retain editing, focus, and scrolling state.
+ * Literal arguments keep their existing contracts. Equal source values do not re-evaluate this component.
+ * The complete modifier chain stays on the actual component; the wrapper delegates parent data and owns the sibling key.
+ * Keep sources and dedicated editing states outside observed callbacks. Evaluation and input failures follow ordinary runtime cleanup.
+ */
+private fun UiScope.compileTextArea4da1faac4769_1(
+    state: TextAreaState,
+    appearance: TextInputAppearance,
+    viewport: TextAreaViewport,
+    font: ResourceId,
+    enabled: StateSource<Boolean>,
+    textStyle: TextStyle = TextStyle.TextField,
+    wrap: TextWrap = TextWrap.Word,
+    lineSpacing: Int = 0,
+    modifier: Modifier = Modifier.Empty,
+    key: ElementKey<*>? = null,
+) {
+    TextArea(
+        state = state,
+        appearance = appearance,
+        viewport = viewport,
+        font = font,
+        enabled = enabled,
+        textStyle = textStyle,
+        wrap = wrap,
+        lineSpacing = lineSpacing,
+        modifier = modifier,
+        key = key,
+    )
+}
+
+/**
  * Source-backed [Canvas] observing source at the next frame cutoff.
  * Sources remain caller-owned; compatible nodes retain editing, focus, and scrolling state.
  * Literal arguments keep their existing contracts. Equal source values do not re-evaluate this component.

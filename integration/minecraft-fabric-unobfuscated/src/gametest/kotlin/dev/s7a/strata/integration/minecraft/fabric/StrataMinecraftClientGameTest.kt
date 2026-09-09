@@ -1717,13 +1717,16 @@ public class StrataMinecraftClientGameTest : FabricClientGameTest {
                         return ReactiveNativeWork(counters.hostFrames, counters.framePreparations, counters.rasterizations, counters.textureUploads)
                     }
 
-                    override fun assertPixels(definition: ScreenDefinition) {
-                        val expected = onClient { ReactiveRenderPixels.reference(definition, profile) }
+                    override fun assertPixels(
+                        definition: ScreenDefinition,
+                        capture: ReactiveRenderCapture,
+                    ) {
+                        val expected = onClient { ReactiveRenderPixels.reference(definition, profile, capture) }
                         val screenshot =
                             context.takeScreenshot(
-                                TestScreenshotOptions.of("reactive-rendering-native").disableCounterPrefix().withDestinationDir(output),
+                                TestScreenshotOptions.of("${capture.artifactName}-native").disableCounterPrefix().withDestinationDir(output),
                             )
-                        ReactiveRenderPixels.verify(expected, screenshot, output)
+                        ReactiveRenderPixels.verify(expected, screenshot, output, capture)
                     }
 
                     override fun closeScreen() {

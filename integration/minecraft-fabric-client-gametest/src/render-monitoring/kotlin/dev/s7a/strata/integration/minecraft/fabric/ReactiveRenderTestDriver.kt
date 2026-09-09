@@ -33,7 +33,10 @@ internal interface ReactiveRenderTestDriver {
      * Captures the current native image and compares it with an independently rendered literal reference.
      * Called on the suite thread after successful host-frame assertions.
      */
-    fun assertPixels(definition: ScreenDefinition)
+    fun assertPixels(
+        definition: ScreenDefinition,
+        capture: ReactiveRenderCapture = ReactiveRenderCapture.State,
+    )
 
     /**
      * Closes the screen on its owner thread, including after failed assertions.

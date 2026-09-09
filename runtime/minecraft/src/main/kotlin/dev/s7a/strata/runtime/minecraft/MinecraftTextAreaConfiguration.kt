@@ -25,6 +25,7 @@ import dev.s7a.strata.text.TextWrap
  * @property style profile-backed text colors and shadows.
  * @param wrap presentation-only wrapping policy.
  * @param lineSpacing non-negative extra logical pixels between lines.
+ * @property appearance detached frame and editing colors, independent of layout.
  * @throws IllegalArgumentException when the requested extent cannot contain the frame and a positive inner viewport.
  * @throws ArithmeticException when line-count sizing exceeds portable integer geometry.
  */
@@ -39,6 +40,7 @@ internal class MinecraftTextAreaConfiguration(
     @get:JvmSynthetic internal val style: TextStyle,
     wrap: TextWrap,
     lineSpacing: Int,
+    @get:JvmSynthetic internal val appearance: MinecraftTextInputAppearance = MinecraftTextInputAppearance(normalSprite, highlightedSprite),
 ) {
     /**
      * Complete editable layout policy; content is never truncated to the viewport's height.

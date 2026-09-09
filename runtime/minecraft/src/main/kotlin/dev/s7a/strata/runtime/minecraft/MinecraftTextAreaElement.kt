@@ -1,6 +1,5 @@
 package dev.s7a.strata.runtime.minecraft
 
-import dev.s7a.strata.component.NineSliceCenterMode
 import dev.s7a.strata.component.TextAreaState
 import dev.s7a.strata.component.TextAreaViewport
 import dev.s7a.strata.component.TextStyle
@@ -9,7 +8,6 @@ import dev.s7a.strata.element.ElementIdentity
 import dev.s7a.strata.element.ElementKey
 import dev.s7a.strata.element.ElementType
 import dev.s7a.strata.geometry.Constraints
-import dev.s7a.strata.geometry.Insets
 import dev.s7a.strata.geometry.IntOffset
 import dev.s7a.strata.geometry.IntRect
 import dev.s7a.strata.geometry.IntSize
@@ -86,8 +84,7 @@ private class MinecraftTextAreaElement(
         override fun paint(scope: PaintScope) {
             val current = checkNotNull(editor)
             val settings = current.configuration
-            val sprite = if (current.focused && settings.enabled) settings.highlightedSprite else settings.normalSprite
-            paintMinecraftNineSlice(scope, sprite, Insets.all(1), NineSliceCenterMode.Tiled)
+            settings.appearance.paint(scope, settings.enabled, current.focused)
             scope.withClip(IntRect(4, 4, settings.size.width - 4, settings.size.height - 4)) {
                 current.paint(scope)
             }
@@ -157,6 +154,7 @@ private class MinecraftTextAreaElement(
  * @param lineSpacing non-negative additional logical pixels between lines.
  * @param modifier active outer layout and input behavior.
  * @param key optional stable sibling identity.
+ * @param appearance detached per-editor appearance, defaulting to the profile frames.
  * @return immutable private editor description without attached observer or native resource ownership.
  */
 @JvmSynthetic
@@ -173,9 +171,10 @@ internal fun createMinecraftTextAreaElement(
     lineSpacing: Int,
     modifier: Modifier,
     key: ElementKey<*>?,
+    appearance: MinecraftTextInputAppearance = MinecraftTextInputAppearance(normalSprite, highlightedSprite),
 ): Element =
     MinecraftTextAreaElement(
-        MinecraftTextAreaConfiguration(normalSprite, highlightedSprite, renderer, font, state, viewport, enabled, style, wrap, lineSpacing),
+        MinecraftTextAreaConfiguration(normalSprite, highlightedSprite, renderer, font, state, viewport, enabled, style, wrap, lineSpacing, appearance),
         modifier,
         key,
     )

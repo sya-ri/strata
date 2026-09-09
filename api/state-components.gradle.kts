@@ -1,7 +1,7 @@
 import java.security.MessageDigest
 
 val componentDirectory = layout.projectDirectory.dir("src/main/kotlin/dev/s7a/strata/component")
-val componentInputs = listOf("ProfileComponents.kt", "CanvasComponents.kt", "TiledImageComponents.kt", "VirtualListComponents.kt", "SelectionListComponents.kt").map { componentDirectory.file(it).asFile }
+val componentInputs = listOf("ProfileComponents.kt", "TextInputComponents.kt", "CanvasComponents.kt", "TiledImageComponents.kt", "VirtualListComponents.kt", "SelectionListComponents.kt").map { componentDirectory.file(it).asFile }
 val componentOutput = componentDirectory.file("ObservedComponents.kt").asFile
 val componentCompileOutput = layout.projectDirectory.file("src/test/kotlin/dev/s7a/strata/component/ObservedComponentCompileCases.kt").asFile
 val reactiveParameters = mapOf(

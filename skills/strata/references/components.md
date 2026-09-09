@@ -164,12 +164,20 @@ fun UiScope.Text(text: UiText, style: TextStyle = TextStyle.Normal, modifier: Mo
 
 TextField reproduces the 200 by 20 Minecraft EditBox sprites, text origin, glyph colors, owner-thread value state, and focus, with Unicode scalar editing and inline IME composition.
 
-- Compiled overloads: 8
+- Compiled overloads: 16
 - Modifiers: Pointer, keyboard, committed-character, preedit, and focus modifiers run as active retained behavior around `TextField`; a consuming focused modifier overrides built-in editing. The `font: ResourceId` overload changes metrics and drawing together, including cursor placement and horizontal scrolling.
 - Parent scope: `TextField` is a top-level extension on the active `UiScope`. Caller-owned `TextFieldState` owns the value and its positive UTF-16 maximum length. Movement and deletion operate on Unicode scalars, not whole grapheme clusters; preedit text remains separate until committed input arrives. The inline composition display does not reproduce Minecraft's native IME popup or platform candidate window.
 - [Showcase image and compiled example](https://github.com/sya-ri/strata/blob/master/docs/reference/components.md#text-field)
 
 ```kotlin
+fun UiScope.TextField(state: TextFieldState, appearance: TextInputAppearance, enabled: Boolean = true, textStyle: TextStyle = TextStyle.TextField, modifier: Modifier = Modifier.Empty, key: ElementKey<*>? = null)
+fun UiScope.TextField(state: TextFieldState, appearance: TextInputAppearance, enabled: StateSource<Boolean>, textStyle: TextStyle = TextStyle.TextField, modifier: Modifier = Modifier.Empty, key: ElementKey<*>? = null)
+fun UiScope.TextField(state: TextFieldState, appearance: TextInputAppearance, font: ResourceId, enabled: Boolean = true, textStyle: TextStyle = TextStyle.TextField, modifier: Modifier = Modifier.Empty, key: ElementKey<*>? = null)
+fun UiScope.TextField(state: TextFieldState, appearance: TextInputAppearance, font: ResourceId, enabled: StateSource<Boolean>, textStyle: TextStyle = TextStyle.TextField, modifier: Modifier = Modifier.Empty, key: ElementKey<*>? = null)
+fun UiScope.TextField(state: TextFieldState, appearance: TextInputAppearance, size: IntSize, enabled: Boolean = true, textStyle: TextStyle = TextStyle.TextField, modifier: Modifier = Modifier.Empty, key: ElementKey<*>? = null)
+fun UiScope.TextField(state: TextFieldState, appearance: TextInputAppearance, size: IntSize, enabled: StateSource<Boolean>, textStyle: TextStyle = TextStyle.TextField, modifier: Modifier = Modifier.Empty, key: ElementKey<*>? = null)
+fun UiScope.TextField(state: TextFieldState, appearance: TextInputAppearance, size: IntSize, font: ResourceId, enabled: Boolean = true, textStyle: TextStyle = TextStyle.TextField, modifier: Modifier = Modifier.Empty, key: ElementKey<*>? = null)
+fun UiScope.TextField(state: TextFieldState, appearance: TextInputAppearance, size: IntSize, font: ResourceId, enabled: StateSource<Boolean>, textStyle: TextStyle = TextStyle.TextField, modifier: Modifier = Modifier.Empty, key: ElementKey<*>? = null)
 fun UiScope.TextField(state: TextFieldState, enabled: Boolean = true, textStyle: TextStyle = TextStyle.TextField, modifier: Modifier = Modifier.Empty, key: ElementKey<*>? = null)
 fun UiScope.TextField(state: TextFieldState, enabled: StateSource<Boolean>, textStyle: TextStyle = TextStyle.TextField, modifier: Modifier = Modifier.Empty, key: ElementKey<*>? = null)
 fun UiScope.TextField(state: TextFieldState, font: ResourceId, enabled: Boolean = true, textStyle: TextStyle = TextStyle.TextField, modifier: Modifier = Modifier.Empty, key: ElementKey<*>? = null)
@@ -186,12 +194,16 @@ fun UiScope.TextField(state: TextFieldState, size: IntSize, font: ResourceId, en
 
 TextArea edits one multiline value inside an explicit viewport with Unicode scalar navigation, inline IME composition, and independent vertical scrolling. It serves both note editing and message drafts without encoding an application model.
 
-- Compiled overloads: 4
+- Compiled overloads: 8
 - Modifiers: Place `TextArea` with ordinary layout modifiers and select its outer extent through `TextAreaViewport.Size` or `Lines`. Minecraft uses a fixed 9-pixel logical line box, optional extra line spacing, and four-pixel padding on each side. An external `Scrollbar(state.scrollState)` observes the editor's caller-owned scroll state; the editor does not insert a scrollbar or toolbar. The `font: ResourceId` overload changes layout, cursor placement, and drawing together.
 - Parent scope: `TextArea` is a leaf extension on the active `UiScope`; one retained editor observes its owner-thread `TextAreaState`. Creating an immutable description does not attach the state, and descriptions can be reused after detachment. Simultaneous attachment with the same caller-owned state throws `IllegalStateException`. The state stores canonical LF newlines and enforces a positive UTF-16 maximum length. Soft wrapping never edits the stored value, and IME preedit remains separate until committed. `SemanticsRole.TextArea` exposes the committed text through `Semantics.value`, without typed accessibility edit actions. Selection, clipboard commands, grapheme-cluster editing, and the platform IME candidate window are outside this component's contract.
 - [Showcase image and compiled example](https://github.com/sya-ri/strata/blob/master/docs/reference/components.md#text-area)
 
 ```kotlin
+fun UiScope.TextArea(state: TextAreaState, appearance: TextInputAppearance, viewport: TextAreaViewport, enabled: Boolean = true, textStyle: TextStyle = TextStyle.TextField, wrap: TextWrap = TextWrap.Word, lineSpacing: Int = 0, modifier: Modifier = Modifier.Empty, key: ElementKey<*>? = null)
+fun UiScope.TextArea(state: TextAreaState, appearance: TextInputAppearance, viewport: TextAreaViewport, enabled: StateSource<Boolean>, textStyle: TextStyle = TextStyle.TextField, wrap: TextWrap = TextWrap.Word, lineSpacing: Int = 0, modifier: Modifier = Modifier.Empty, key: ElementKey<*>? = null)
+fun UiScope.TextArea(state: TextAreaState, appearance: TextInputAppearance, viewport: TextAreaViewport, font: ResourceId, enabled: Boolean = true, textStyle: TextStyle = TextStyle.TextField, wrap: TextWrap = TextWrap.Word, lineSpacing: Int = 0, modifier: Modifier = Modifier.Empty, key: ElementKey<*>? = null)
+fun UiScope.TextArea(state: TextAreaState, appearance: TextInputAppearance, viewport: TextAreaViewport, font: ResourceId, enabled: StateSource<Boolean>, textStyle: TextStyle = TextStyle.TextField, wrap: TextWrap = TextWrap.Word, lineSpacing: Int = 0, modifier: Modifier = Modifier.Empty, key: ElementKey<*>? = null)
 fun UiScope.TextArea(state: TextAreaState, viewport: TextAreaViewport, enabled: Boolean = true, textStyle: TextStyle = TextStyle.TextField, wrap: TextWrap = TextWrap.Word, lineSpacing: Int = 0, modifier: Modifier = Modifier.Empty, key: ElementKey<*>? = null)
 fun UiScope.TextArea(state: TextAreaState, viewport: TextAreaViewport, enabled: StateSource<Boolean>, textStyle: TextStyle = TextStyle.TextField, wrap: TextWrap = TextWrap.Word, lineSpacing: Int = 0, modifier: Modifier = Modifier.Empty, key: ElementKey<*>? = null)
 fun UiScope.TextArea(state: TextAreaState, viewport: TextAreaViewport, font: ResourceId, enabled: Boolean = true, textStyle: TextStyle = TextStyle.TextField, wrap: TextWrap = TextWrap.Word, lineSpacing: Int = 0, modifier: Modifier = Modifier.Empty, key: ElementKey<*>? = null)

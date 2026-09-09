@@ -68,6 +68,14 @@ No font objects or rendering implementation are needed in application declaratio
 See [Font resources](../guides/fonts.md) for profile snapshots, offline resource loading, and native backend configuration.
 The older profile builder that accepts a finite printable-ASCII glyph table remains available for compatibility; that table alone cannot render arbitrary Unicode or custom fonts.
 
+## Input appearance
+
+Use `TextInputAppearance.Custom` on standard `TextField` and `TextArea` when the editor should blend into a light search panel or a colored message/note composer. Provide normal, focused, and disabled `ImageSource` frames with a shared nine-slice border, a caret color, and a composition underline color. Set `textStyle = TextStyle.ContainerLabel` for dark glyphs on a light frame; font selection remains independent.
+
+Create immutable frame images and the appearance beside the caller-owned editor state, outside reevaluated content. A narrow `Observe` can replace the appearance when a theme changes; this repaints the existing input without remeasurement or loss of focus, composition, or scroll. Repainting can still require native rasterization and upload. See the [compiled reactive example](../../skills/strata/references/patterns.md#choose-the-smallest-reactive-boundary) for retained construction.
+
+Omitting the appearance or passing `TextInputAppearance.Default` keeps the previous profile frame and white editing decorations. Custom frames replace the profile frame, including transparent pixels, and stretch their centers while retaining their border widths. Each source image must have a nonempty center after the border is removed. Editor padding and glyph metrics do not change, and a background modifier alone cannot replace the input's own frame. The new overloads retain explicit fonts and State-backed `enabled` arguments; they do not add a second editor or replace global Minecraft assets.
+
 ## Multiline display
 
 Existing `Text` overloads and `TextLayout.SingleLine` remain strict single-line display.

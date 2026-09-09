@@ -139,16 +139,21 @@ internal fun storageScreen(onDone: () -> Unit): ScreenDefinition {
 ```kotlin
 import dev.s7a.strata.component.Button
 import dev.s7a.strata.component.Column
+import dev.s7a.strata.component.ImageSource
 import dev.s7a.strata.component.Observe
 import dev.s7a.strata.component.Text
 import dev.s7a.strata.component.TextArea
 import dev.s7a.strata.component.TextAreaState
 import dev.s7a.strata.component.TextAreaViewport
+import dev.s7a.strata.component.TextInputAppearance
+import dev.s7a.strata.component.TextStyle
 import dev.s7a.strata.component.VirtualList
 import dev.s7a.strata.component.VirtualListState
 import dev.s7a.strata.geometry.IntSize
 import dev.s7a.strata.modifier.Modifier
 import dev.s7a.strata.modifier.onActivate
+import dev.s7a.strata.render.ArgbColor
+import dev.s7a.strata.render.createDrawImage
 import dev.s7a.strata.screen.ScreenDefinition
 import dev.s7a.strata.state.StateSource
 import dev.s7a.strata.state.map
@@ -167,12 +172,32 @@ internal fun reactiveScreen(
     val enabled = sending.map { it.not() }
     val sendLabel = sending.map { if (it) "Sending..." else "Send" }
     val historyState = VirtualListState<String>()
+    // Retain immutable frame pixels and the appearance beside the editor state.
+    val frame = ImageSource.Pixels(createDrawImage(IntSize(3, 3), IntArray(9) { 0xFFF1F3F4.toInt() }))
+    val focused =
+        ImageSource.Pixels(
+            createDrawImage(
+                IntSize(3, 3),
+                intArrayOf(
+                    0xFF008040.toInt(),
+                    0xFF008040.toInt(),
+                    0xFF008040.toInt(),
+                    0xFF008040.toInt(),
+                    0xFFF1F3F4.toInt(),
+                    0xFF008040.toInt(),
+                    0xFF008040.toInt(),
+                    0xFF008040.toInt(),
+                    0xFF008040.toInt(),
+                ),
+            ),
+        )
+    val appearance = TextInputAppearance.Custom(frame, focused, ArgbColor(0xFF203020.toInt()))
     return ScreenDefinition("Conversation") {
         Column(spacing = 4) {
             Text(clock)
             Observe(loading) { active -> if (active) Text("Loading...") }
             VirtualList(items = history, keyOf = { it }, state = historyState, viewportSize = IntSize(160, 60), rowHeight = 12) { Text(it) }
-            TextArea(draft, TextAreaViewport.Size(IntSize(160, 40)))
+            TextArea(draft, appearance, TextAreaViewport.Size(IntSize(160, 40)), textStyle = TextStyle.ContainerLabel)
             Button(sendLabel, enabled = enabled, modifier = Modifier.Empty.onActivate(enabled, onSend))
         }
     }
@@ -183,6 +208,7 @@ The example requires unique history strings as keys; real messages should use th
 Caller-owned sources publish immutable snapshots. No manual screen refresh or close/reopen is needed.
 Text, progress, image/head/source descriptors, slot binding/highlighting, labels, enabled/selected flags, cycle label formatting, list items, and leading/trailing availability have direct source overloads. Literal and source arguments may be mixed; consult the exact component signatures.
 Editing values and selections still use their dedicated mutable state. Size, color, decoration, and layout arguments use literals or a narrow `Observe`.
+For search fields and message/note drafts with light backgrounds, pass `TextInputAppearance.Custom` to standard `TextField` and `TextArea`, with `TextStyle.ContainerLabel` for dark glyphs. Supply normal/focused/disabled frames, their nine-slice border, caret color, and composition underline color. The frame replaces the profile frame, including transparent corners; a background modifier alone cannot override that frame. All three images need a nonempty center after their borders are removed. Custom centers stretch; the legacy default retains its original tiled frame and editing decorations. Padding and glyph metrics stay unchanged. Keep images, appearance, and editor state outside reevaluation. Use a narrow `Observe` only for theme changes; an appearance-only update preserves the input node, focus, composition, and scroll and does not remeasure. It can still require native rasterization and image upload.
 Indexed list counts and lookup functions remain one coherent caller-owned indexed API: mutate the backing model and call its existing `refresh()`. Do not split count and lookup into independent sources.
 Canvas frame and tiled-image tile delivery retain their dedicated lifetimes; a direct source replaces the source descriptor itself.
 
@@ -244,7 +270,7 @@ This does not add selection or clipboard commands, reproduce the native IME popu
 
 ## Optional CPU backend for offline tools
 
-`dev.s7a.strata:strata-runtime-minecraft-fonts-lwjgl:0.1.5` supplies PNG decoding, the selected TrueType rasterizer, and ICU text ordering for resource-backed offline rendering without launching Minecraft.
+`dev.s7a.strata:strata-runtime-minecraft-fonts-lwjgl:0.1.6` supplies PNG decoding, the selected TrueType rasterizer, and ICU text ordering for resource-backed offline rendering without launching Minecraft.
 Versioned Fabric runtimes already include the backend and use the game's libraries; do not add runtime imports or native font objects to ordinary UI definitions.
 The backend does not bundle LWJGL, ICU, Gson, or native binaries.
 An offline host must supply the exact target's library dependencies and native classifier, caller-owned font resources, and `MinecraftFontCompatibility`; native library generations must not be mixed in one process.

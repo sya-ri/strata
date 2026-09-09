@@ -8,8 +8,8 @@ Use the component catalog for available primitives and the guides for compositio
 
 ```kotlin
 dependencies {
-    compileOnly("dev.s7a.strata:strata-api:0.1.5")
-    modRuntimeOnly("dev.s7a.strata:strata-runtime-minecraft-fabric-<minecraft-version>:0.1.5")
+    compileOnly("dev.s7a.strata:strata-api:0.1.6")
+    modRuntimeOnly("dev.s7a.strata:strata-runtime-minecraft-fabric-<minecraft-version>:0.1.6")
     modRuntimeOnly("net.fabricmc:fabric-language-kotlin:<compatible-version>")
 }
 ```
@@ -19,7 +19,7 @@ Declare the runtime as a required Mod dependency so a production instance cannot
 ```json
 {
   "depends": {
-    "strata": ">=0.1.5"
+    "strata": ">=0.1.6"
   }
 }
 ```

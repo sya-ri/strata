@@ -1,6 +1,5 @@
 package dev.s7a.strata.runtime.minecraft
 
-import dev.s7a.strata.component.NineSliceCenterMode
 import dev.s7a.strata.component.TextFieldState
 import dev.s7a.strata.component.TextStyle
 import dev.s7a.strata.element.Element
@@ -8,7 +7,6 @@ import dev.s7a.strata.element.ElementIdentity
 import dev.s7a.strata.element.ElementKey
 import dev.s7a.strata.element.ElementType
 import dev.s7a.strata.geometry.Constraints
-import dev.s7a.strata.geometry.Insets
 import dev.s7a.strata.geometry.IntOffset
 import dev.s7a.strata.geometry.IntRect
 import dev.s7a.strata.geometry.IntSize
@@ -30,7 +28,6 @@ import dev.s7a.strata.node.PaintNode
 import dev.s7a.strata.node.PointerInputNode
 import dev.s7a.strata.node.SemanticsNode
 import dev.s7a.strata.node.TextInputNode
-import dev.s7a.strata.render.ArgbColor
 import dev.s7a.strata.render.DrawImage
 import dev.s7a.strata.render.PaintScope
 import dev.s7a.strata.resource.ResourceId
@@ -50,11 +47,7 @@ import dev.s7a.strata.node.Node as RetainedNode
  * Editable text paints in logical scalar order, matching native EditBox's forward formatter rather than display-label shaping.
  * Caret and composition geometry uses signed native widths; portions outside the field are omitted before conversion to portable integer bounds.
  */
-private class MinecraftTextFieldElement private constructor(
-    @get:JvmSynthetic
-    internal val normalSprite: DrawImage,
-    @get:JvmSynthetic
-    internal val highlightedSprite: DrawImage,
+private class MinecraftTextFieldElement(
     @get:JvmSynthetic
     internal val textRenderer: MinecraftTextRenderer,
     @get:JvmSynthetic
@@ -69,6 +62,7 @@ private class MinecraftTextFieldElement private constructor(
     internal val textStyle: TextStyle,
     modifier: Modifier,
     key: ElementKey<*>?,
+    @get:JvmSynthetic internal val appearance: MinecraftTextInputAppearance,
 ) : Element(
         identity = key?.let(ElementIdentity::Keyed) ?: ElementIdentity.Positional,
         type = TYPE,
@@ -79,14 +73,13 @@ private class MinecraftTextFieldElement private constructor(
      */
     @Suppress("TooManyFunctions")
     private class Node(
-        initialNormalSprite: DrawImage,
-        initialHighlightedSprite: DrawImage,
         initialTextRenderer: MinecraftTextRenderer,
         initialFont: ResourceId,
         initialState: TextFieldState,
         initialFieldSize: IntSize,
         initialEnabled: Boolean,
         initialTextStyle: TextStyle,
+        initialAppearance: MinecraftTextInputAppearance,
     ) : RetainedNode(),
         MeasureNode,
         PaintNode,
@@ -101,9 +94,7 @@ private class MinecraftTextFieldElement private constructor(
             get() = IntOffset(4, Math.subtractExact(fieldSize.height, 8) / 2)
         private val innerWidth: Int
             get() = Math.subtractExact(fieldSize.width, 8)
-        private val cursorColor = ArgbColor(0xFFFFFFFF.toInt())
-        private var normalSprite: DrawImage? = initialNormalSprite
-        private var highlightedSprite: DrawImage? = initialHighlightedSprite
+        private var appearance: MinecraftTextInputAppearance? = initialAppearance
         private var textRenderer: MinecraftTextRenderer? = initialTextRenderer
         private var font = initialFont
         private var state: TextFieldState? = initialState
@@ -132,8 +123,8 @@ private class MinecraftTextFieldElement private constructor(
         }
 
         override fun paint(scope: PaintScope) {
-            val sprite = if (focused && enabled) checkNotNull(highlightedSprite) else checkNotNull(normalSprite)
-            paintMinecraftNineSlice(scope, sprite, Insets.all(1), NineSliceCenterMode.Tiled)
+            val appearance = checkNotNull(appearance)
+            appearance.paint(scope, enabled, focused)
             val currentValue = checkNotNull(state).value
             val composed = composedText(currentValue)
             val visualCursor = Math.addExact(cursor, preedit?.caretPosition ?: 0)
@@ -146,13 +137,13 @@ private class MinecraftTextFieldElement private constructor(
                 if (cursorPosition < 0L || fieldSize.width.toLong() <= cursorPosition) return
                 val cursorX = cursorPosition.toInt()
                 val appendCursor = preedit == null && cursor == currentValue.length && currentValue.length < checkNotNull(state).maxLength
-                if (appendCursor) {
+                if (appendCursor && appearance.legacyAppendCaret) {
                     createRun("_").paint(scope, cursorX, textOrigin.y)
                 } else {
                     val cursorTop = Math.subtractExact(textOrigin.y, 1)
                     scope.fillRectangle(
                         IntRect(cursorX, cursorTop, Math.addExact(cursorX, 1), Math.addExact(textOrigin.y, 10)),
-                        cursorColor,
+                        appearance.caretColor,
                     )
                 }
             }
@@ -231,8 +222,7 @@ private class MinecraftTextFieldElement private constructor(
             releaseObserver?.close()
             releaseObserver = null
             attached = false
-            normalSprite = null
-            highlightedSprite = null
+            appearance = null
             textRenderer = null
             state = null
             preedit = null
@@ -248,8 +238,7 @@ private class MinecraftTextFieldElement private constructor(
                 releaseObserver = null
             }
             val paintChanged =
-                normalSprite !== current.normalSprite ||
-                    highlightedSprite !== current.highlightedSprite ||
+                appearance != current.appearance ||
                     textRenderer !== current.textRenderer ||
                     font != current.font ||
                     stateChanged ||
@@ -257,8 +246,7 @@ private class MinecraftTextFieldElement private constructor(
                     textStyle != current.textStyle
             val semanticsChanged = stateChanged || enabled != current.enabled
             val sizeChanged = fieldSize != current.fieldSize
-            normalSprite = current.normalSprite
-            highlightedSprite = current.highlightedSprite
+            appearance = current.appearance
             textRenderer = current.textRenderer
             font = current.font
             state = current.state
@@ -424,7 +412,7 @@ private class MinecraftTextFieldElement private constructor(
             val left = minOf(first, last).coerceIn(0L, fieldSize.width.toLong()).toInt()
             val right = maxOf(first, last).coerceIn(0L, fieldSize.width.toLong()).toInt()
             val top = Math.addExact(textOrigin.y, 9)
-            if (left < right) scope.fillRectangle(IntRect(left, top, right, Math.addExact(top, 1)), cursorColor)
+            if (left < right) scope.fillRectangle(IntRect(left, top, right, Math.addExact(top, 1)), checkNotNull(appearance).compositionUnderlineColor)
         }
 
         private fun clearPreedit() {
@@ -497,32 +485,17 @@ private class MinecraftTextFieldElement private constructor(
                 },
                 createNode = { element ->
                     Node(
-                        element.normalSprite,
-                        element.highlightedSprite,
                         element.textRenderer,
                         element.font,
                         element.state,
                         element.fieldSize,
                         element.enabled,
                         element.textStyle,
+                        element.appearance,
                     )
                 },
                 updateNode = { _, current, node -> node.updateFrom(current) },
             )
-
-        @JvmSynthetic
-        internal fun create(
-            normalSprite: DrawImage,
-            highlightedSprite: DrawImage,
-            textRenderer: MinecraftTextRenderer,
-            font: ResourceId,
-            state: TextFieldState,
-            fieldSize: IntSize,
-            enabled: Boolean,
-            textStyle: TextStyle,
-            modifier: Modifier,
-            key: ElementKey<*>?,
-        ): Element = MinecraftTextFieldElement(normalSprite, highlightedSprite, textRenderer, font, state, fieldSize, enabled, textStyle, modifier, key)
     }
 }
 
@@ -539,6 +512,7 @@ private class MinecraftTextFieldElement private constructor(
  * @param textStyle profile-backed glyph layers used by the field.
  * @param modifier active behavior.
  * @param key optional stable identity.
+ * @param appearance detached per-editor appearance, defaulting to the profile frames.
  * @return private retained TextField description.
  */
 @JvmSynthetic
@@ -553,4 +527,5 @@ internal fun createMinecraftTextFieldElement(
     textStyle: TextStyle,
     modifier: Modifier,
     key: ElementKey<*>?,
-): Element = MinecraftTextFieldElement.create(normalSprite, highlightedSprite, textRenderer, font, state, fieldSize, enabled, textStyle, modifier, key)
+    appearance: MinecraftTextInputAppearance = MinecraftTextInputAppearance(normalSprite, highlightedSprite),
+): Element = MinecraftTextFieldElement(textRenderer, font, state, fieldSize, enabled, textStyle, modifier, key, appearance)
