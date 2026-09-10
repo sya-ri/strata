@@ -184,6 +184,20 @@ jobs:
       - name: Run ${{ matrix.name }}
         # Loom's client run tasks select xvfb-run automatically on Linux when CI is true.
         run: bash ./gradlew ${{ matrix.gradle_arguments }}
+      - name: Upload loaded-client failure evidence
+        # Loaded-client assertions retain their framebuffer PNGs, receipts with GUI scale and lease/frame
+        # counters, and the client's crash reports in the build directories; CI keeps them diagnosable.
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: minecraft-failure-evidence-${{ matrix.id }}
+          path: |
+            integration/*/build/minecraft-verification/
+            integration/*/build/minecraft-production-verification/
+            integration/*/build/run/*/crash-reports/
+            integration/*/build/run/*/logs/latest.log
+          if-no-files-found: ignore
+          retention-days: 7
       - name: Save Loom project cache
         if: success() && github.ref == 'refs/heads/master' && steps.loom_cache.outputs.cache-hit != 'true'
         uses: actions/cache/save@v6

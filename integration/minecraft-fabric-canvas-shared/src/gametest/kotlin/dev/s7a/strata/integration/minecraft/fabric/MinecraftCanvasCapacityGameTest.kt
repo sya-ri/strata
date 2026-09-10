@@ -63,7 +63,10 @@ internal object MinecraftCanvasCapacityGameTest {
             }
             check(image.getRGB(257, 1) == 0xFF000000.toInt()) { "The first uncommitted Canvas must remain transparent when all target permits are reserved." }
             context.onClient { fixture.snapshotMode = MinecraftCanvasSnapshotMode.Matching }
-            context.waitTicks(3)
+            // Backpressure skips producer updates per committed frame, not per tick: fence one committed host
+            // frame after the snapshot-mode flip so the bounded-output assertions observe a skipped attempt.
+            val frameBaseline = MinecraftCanvasFrameFence.hostFrameCount(context, owned)
+            MinecraftCanvasFrameFence.awaitCompletedFrame(context, owned, frameBaseline)
             context.onClient {
                 check(fixture.leasesOpened == 64) { "A full device must skip producer updates without allocating beyond its physical bound." }
                 check(NativeCanvasDevices.retainedTargetCount() == 64)
