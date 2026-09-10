@@ -153,7 +153,7 @@ grep --fixed-strings 'name: Revalidate exact controller immediately before deplo
   fail 'Pages does not revalidate origin/master after artifact comparison.'
 [[ "$(grep --fixed-strings -c -- '--paginate --slurp' "$pages_deployment_verifier")" == '3' ]] || \
   fail 'Pages deployment verification does not fetch complete paginated job, artifact, and deployment API results.'
-[[ "$(grep --fixed-strings -c 'sort_by([(.created_at | fromdateiso8601), .id])' "$pages_deployment_verifier")" == '4' ]] || \
+[[ "$(grep --fixed-strings -c 'sort_by([(.created_at | fromdateiso8601), .id])' "$pages_deployment_verifier")" == '5' ]] || \
   fail 'Pages deployment verification relies on undocumented API response ordering.'
 if grep --extended-regexp 'for release_tag in v[0-9]' "$pages_workflow" >/dev/null; then
   fail 'Pages retains a hand-maintained release tag list.'
