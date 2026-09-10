@@ -301,6 +301,8 @@ for controller_mode_contract in \
   'verify_controller_tool release/verify-pages-artifact-equivalence.sh verify-pages-artifact-equivalence.sh bash 100644' \
   'verify_controller_tool release/wait-for-pages-source-receipt.sh wait-for-pages-source-receipt.sh bash 100644' \
   'verify_controller_tool release/run-publish-controller-recovery.sh run-publish-controller-recovery.sh bash 100755' \
+  'verify_controller_tool release/github-release-read.sh github-release-read.sh bash 100644' \
+  'verify_controller_tool release/github-release-preflight.sh github-release-preflight.sh bash 100644' \
   'verify_controller_tool gradle/list-java-toolchains.sh list-java-toolchains.sh bash 100755'; do
   grep --fixed-strings "$controller_mode_contract" "$controller_guard" >/dev/null || \
     fail "Controller source does not declare its exact reviewed Git mode: $controller_mode_contract"
@@ -341,6 +343,14 @@ central_block="$(step_block 'Publish wholly absent Maven Central release')"
 github_block="$(step_block 'Create or verify immutable GitHub Release')"
 [[ "$(grep --extended-regexp -c '^[[:space:]]+revalidate_release_source$' <<< "$central_block")" == '2' ]] || fail 'Central publication must revalidate before absence confirmation and write.'
 [[ "$(grep --extended-regexp -c '^[[:space:]]+revalidate_release_source$' <<< "$github_block")" == '3' ]] || fail 'Every GitHub Release mutation phase must revalidate source and controller tools.'
+grep --fixed-strings 'bash "$CONTROLLER_TOOL_DIRECTORY/github-release-read.sh" find' <<< "$github_block" >/dev/null || fail 'GitHub publication must include draft releases in lookup.'
+grep --fixed-strings 'bash "$CONTROLLER_TOOL_DIRECTORY/github-release-read.sh" download' <<< "$github_block" >/dev/null || fail 'GitHub publication must use bounded asset reads.'
+grep --fixed-strings '== "$release_id"' <<< "$github_block" >/dev/null || fail 'GitHub retry must retain its discovered release ID.'
+if grep --fixed-strings '/releases/tags/' <<< "$github_block" >/dev/null; then
+  fail 'Published-only tag lookup cannot establish draft absence.'
+fi
+github_preflight_block="$(step_block 'Preflight GitHub Release without mutation')"
+grep --fixed-strings 'bash "$CONTROLLER_TOOL_DIRECTORY/github-release-preflight.sh"' <<< "$github_preflight_block" >/dev/null || fail 'GitHub preflight must load the verified controller helper.'
 
 for controller_call_spec in \
   'Preflight Modrinth without mutation|bash "$CONTROLLER_TOOL_DIRECTORY/run-publish-controller-recovery.sh"' \
@@ -578,6 +588,8 @@ for source in \
   release/verify-pages-artifact-equivalence.sh \
   release/wait-for-pages-source-receipt.sh \
   release/run-publish-controller-recovery.sh \
+  release/github-release-read.sh \
+  release/github-release-preflight.sh \
   gradle/list-java-toolchains.sh; do
   write_script "$source"
 done
@@ -594,6 +606,8 @@ git -C "$fixture_repository" update-index --chmod=-x \
   release/verify-github-tag-ruleset.sh \
   release/verify-pages-deployment-source.sh \
   release/verify-pages-artifact-equivalence.sh \
+  release/github-release-read.sh \
+  release/github-release-preflight.sh \
   release/wait-for-pages-source-receipt.sh
 git -C "$fixture_repository" update-index --chmod=+x \
   release/list-release-tags.sh \
@@ -643,6 +657,7 @@ for materialized_mode_spec in \
     fail "Materialized 100644/100755 fixture bytes differ from $materialized_source."
 done
 for generic in current-controller.json verify-release-tag.sh list-release-tags.sh verify-current-controller-release-order.sh \
+  github-release-read.sh github-release-preflight.sh \
   verify-github-tag-ruleset.sh github-release-tag-ruleset.json \
   github-release-tag-ruleset-receipt.json verify-pages-deployment-source.sh verify-pages-artifact-equivalence.sh wait-for-pages-source-receipt.sh \
   run-publish-controller-recovery.sh list-java-toolchains.sh; do

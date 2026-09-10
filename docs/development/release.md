@@ -33,6 +33,10 @@ Central preflight distinguishes wholly absent content from a complete exact publ
 Only the wholly absent pair may invoke the single Vanniktech publication task; partial, conflicting, or cross-service state stops before any write, while an exact publication is verified and reused idempotently.
 Representative client task paths are generated from the frozen metadata array rather than written into the workflow, and the verified controller bundle derives the setup-java matrix from the tagged source's version catalog.
 Maven Central publication and the immutable GitHub Release complete before Modrinth review submission, so an externally pending Modrinth approval does not block or roll back either public service.
+GitHub Release lookup enumerates the complete paginated release inventory with the protected token, including drafts; the published-only tag endpoint cannot prove that no draft exists.
+Duplicate release identities, multiple entries for the requested tag, malformed pages, inaccessible pages, and the bounded pagination limit all fail closed before creation or publication.
+An existing draft retains its release ID and must match the exact title, body, lifecycle and every uploaded asset before missing files can be appended or publication can resume.
+The controller-owned read helper retries only bounded read requests, including asset downloads after transient GitHub errors; it never retries creation, uploads or publication blindly.
 Normal Modrinth staging accepts only the generated predecessor or current project-body lineage, appends only missing manifest entries, and never replaces historical versions.
 After Maven Central and the immutable GitHub Release are complete, the release job reads the exact submission receipt and finalizes the canonical project body when Modrinth is already approved.
 It revalidates the controller, both signed release identities, their order and ancestry, the tag ruleset, protected Pages evidence, and the clean tagged source immediately before that write; a processing project or identity-bound backlog recovery remains deferred to `operation=verify`.

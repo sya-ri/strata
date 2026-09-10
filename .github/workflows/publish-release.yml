@@ -723,8 +723,9 @@ jobs:
               -Pstrata.sourceCommit="$RELEASE_SOURCE_COMMIT" \
               -Pstrata.modrinthProjectId="$PROJECT_ID"
           fi
-          bash -n release/github-release-preflight.sh
-          bash release/github-release-preflight.sh build/release/github
+          git --no-replace-objects cat-file blob "$GITHUB_SHA:release/verify-controller-tools.sh" | \
+            bash -s -- verify "$GITHUB_SHA" "$CONTROLLER_TOOL_DIRECTORY"
+          bash "$CONTROLLER_TOOL_DIRECTORY/github-release-preflight.sh" build/release/github
       - name: Publish wholly absent Maven Central release
         if: steps.central.outputs.public_state == 'absent' && steps.central.outputs.portal_state == 'absent'
         shell: bash
@@ -1027,11 +1028,13 @@ jobs:
             local remote_inventory
             local unexpected
             local snapshot_directory
-            release_json="$(gh release view "$RELEASE_TAG" --json tagName,name,body,isDraft,isPrerelease,assets)"
-            [[ "$(jq -r '.tagName' <<< "$release_json")" == "$RELEASE_TAG" && "$(jq -r '.name' <<< "$release_json")" == "$expected_title" ]] || { echo 'GitHub Release identity differs.' >&2; exit 1; }
+            local asset_id
+            verify_controller_tools
+            release_json="$(bash "$CONTROLLER_TOOL_DIRECTORY/github-release-read.sh" find)"
+            [[ "$(jq -r '.id' <<< "$release_json")" == "$release_id" && "$(jq -r '.tag_name' <<< "$release_json")" == "$RELEASE_TAG" && "$(jq -r '.name' <<< "$release_json")" == "$expected_title" ]] || { echo 'GitHub Release identity differs.' >&2; exit 1; }
             jq --raw-output --join-output '(.body // "") | gsub("\r\n"; "\n") | if contains("\r") then error("lone carriage return") else @base64 end' <<< "$release_json" | base64 --decode > "$actual_body"
             cmp --silent "docs/releases/$RELEASE_TAG.md" "$actual_body" || { echo 'GitHub Release body differs.' >&2; exit 1; }
-            [[ "$(jq -r '.isDraft' <<< "$release_json")" == "$expected_draft" && "$(jq -r '.isPrerelease' <<< "$release_json")" == "false" ]] || { echo 'GitHub Release lifecycle differs.' >&2; exit 1; }
+            [[ "$(jq -r '.draft' <<< "$release_json")" == "$expected_draft" && "$(jq -r '.prerelease' <<< "$release_json")" == "false" ]] || { echo 'GitHub Release lifecycle differs.' >&2; exit 1; }
             remote_inventory="$(jq -r '.assets[].name' <<< "$release_json" | sort)"
             unexpected="$(comm -13 <(printf '%s\n' "$expected") <(printf '%s\n' "$remote_inventory"))"
             [[ -z "$unexpected" ]] || { echo "GitHub Release contains unexpected assets: $unexpected" >&2; exit 1; }
@@ -1047,32 +1050,32 @@ jobs:
               local name
               name="$(basename "$asset")"
               if grep --fixed-strings --line-regexp "$name" "$actual_inventory" >/dev/null; then
-                gh release download "$RELEASE_TAG" --pattern "$name" --dir "$snapshot_directory"
+                asset_id="$(jq -er --arg name "$name" '[.assets[] | select(.name == $name)] | if length == 1 then .[0].id else error("Ambiguous GitHub asset") end' <<< "$release_json")"
+                verify_controller_tools
+                bash "$CONTROLLER_TOOL_DIRECTORY/github-release-read.sh" download "$asset_id" "$snapshot_directory/$name"
                 cmp --silent "$asset" "$snapshot_directory/$name" || { echo "GitHub asset differs: $name" >&2; exit 1; }
               fi
             done
           }
-          release_status="$(curl --silent --show-error --retry 3 --retry-all-errors --retry-delay 1 \
-            --proto '=https' \
-            --header 'Accept: application/vnd.github+json' \
-            --header "Authorization: Bearer $GH_TOKEN" \
-            --header 'X-GitHub-Api-Version: 2022-11-28' \
-            --output "$release_probe" --write-out '%{http_code}' \
-            "$GITHUB_API_URL/repos/$GITHUB_REPOSITORY/releases/tags/$RELEASE_TAG")"
-          if [[ "$release_status" == "200" ]]; then
-            draft="$(gh release view "$RELEASE_TAG" --json isDraft --jq '.isDraft')"
+          verify_controller_tools
+          bash "$CONTROLLER_TOOL_DIRECTORY/github-release-read.sh" find > "$release_probe"
+          if [[ "$(jq -r 'type' "$release_probe")" == "object" ]]; then
+            release_id="$(jq -er '.id' "$release_probe")"
+            draft="$(jq -r '.draft' "$release_probe")"
             if [[ "$draft" == "true" ]]; then
               verify_release_contract true false
             else
               verify_release_contract false true
             fi
-          elif [[ "$release_status" == "404" ]]; then
+          elif [[ "$(jq -r 'type' "$release_probe")" == "null" ]]; then
             revalidate_release_source
             gh release create "$RELEASE_TAG" --draft --verify-tag --title "$expected_title" --notes-file "docs/releases/$RELEASE_TAG.md"
+            verify_controller_tools
+            release_id="$(bash "$CONTROLLER_TOOL_DIRECTORY/github-release-read.sh" find | jq -er '.id')"
             draft=true
             verify_release_contract true false
           else
-            echo "GitHub Release lookup failed with HTTP $release_status." >&2
+            echo 'GitHub Release lookup returned an invalid result.' >&2
             exit 1
           fi
           missing_assets=()

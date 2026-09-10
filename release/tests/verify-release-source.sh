@@ -2042,5 +2042,6 @@ grep --fixed-strings 'expected_overlay_directory="$RUNNER_TEMP/strata-central-co
 bash "$repository_root/release/tests/verify-controller-overlay.sh" >/dev/null
 bash "$repository_root/release/tests/verify-central-controller-overlay.sh" >/dev/null
 bash "$repository_root/release/tests/verify-github-release-preflight.sh" >/dev/null
+bash "$repository_root/release/tests/verify-github-release-read.sh" >/dev/null
 
 echo 'Release source guards passed.'
