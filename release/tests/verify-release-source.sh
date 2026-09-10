@@ -653,6 +653,48 @@ expected_pages_result="$pages_run_id $release_pages_artifact_id $pages_deploymen
 expected_pages_result+=" $pages_run_id $controller_pages_artifact_id $pages_deployment_id"
 [[ "$pages_result" == "$expected_pages_result" ]] || \
   fail 'A paginated rerun inventory did not select the exact artifacts from the latest logical producer windows.'
+
+jq -s --argjson runId "$pages_run_id" --arg commit "$controller_commit" '
+  .[0].jobs += [
+    {id: 4001, run_id: $runId, head_sha: $commit, name: "Qodana for JVM", run_attempt: 3, started_at: "2026-08-31T12:20:00Z", completed_at: "2026-08-31T12:20:00Z", status: "completed", conclusion: "success"},
+    {id: 4002, run_id: $runId, head_sha: $commit, name: "Qodana for JVM", run_attempt: 3, started_at: "2026-08-31T12:25:00Z", completed_at: "2026-08-31T12:25:00Z", status: "completed", conclusion: "success"}
+  ] |
+  map(.total_count += 2) |
+  .[]
+' "$pages_all_jobs_response" > "$pages_all_jobs_response.changed"
+mv "$pages_all_jobs_response.changed" "$pages_all_jobs_response"
+pages_result="$(
+  bash "$repository_root/release/verify-pages-deployment-source.sh" \
+    "$pages_run_id" v0.1.0 "$replacement_commit" "$pages_run_id" "$controller_commit"
+)"
+[[ "$pages_result" == "$expected_pages_result" ]] || \
+  fail 'Additional check runs changed the verified Pages producer identities.'
+
+jq '(.jobs[] | select(.id == 4001).run_id) = 999' \
+  "$pages_all_jobs_response" > "$pages_all_jobs_response.changed"
+mv "$pages_all_jobs_response.changed" "$pages_all_jobs_response"
+if bash "$repository_root/release/verify-pages-deployment-source.sh" \
+  "$pages_run_id" v0.1.0 "$replacement_commit" "$pages_run_id" "$controller_commit" >/dev/null 2>&1; then
+  fail 'An additional check run from another workflow run escaped inventory validation.'
+fi
+jq --argjson runId "$pages_run_id" '(.jobs[] | select(.id == 4001).run_id) = $runId' \
+  "$pages_all_jobs_response" > "$pages_all_jobs_response.changed"
+mv "$pages_all_jobs_response.changed" "$pages_all_jobs_response"
+
+jq '(.jobs[] | select(.name == "release-evidence").name) = "unrelated check"' \
+  "$pages_all_jobs_response" > "$pages_all_jobs_response.changed"
+mv "$pages_all_jobs_response.changed" "$pages_all_jobs_response"
+if bash "$repository_root/release/verify-pages-deployment-source.sh" \
+  "$pages_run_id" v0.1.0 "$replacement_commit" "$pages_run_id" "$controller_commit" >/dev/null 2>&1; then
+  fail 'Additional check runs substituted for a missing required Pages producer.'
+fi
+jq '(.jobs[] | select(.name == "unrelated check").name) = "release-evidence"' \
+  "$pages_all_jobs_response" > "$pages_all_jobs_response.changed"
+mv "$pages_all_jobs_response.changed" "$pages_all_jobs_response"
+
+jq -s '.[0].jobs |= map(select(.id != 4001 and .id != 4002)) | map(.total_count -= 2) | .[]' \
+  "$pages_all_jobs_response" > "$pages_all_jobs_response.changed"
+mv "$pages_all_jobs_response.changed" "$pages_all_jobs_response"
 write_pages_artifacts_response
 
 if bash "$repository_root/release/verify-pages-deployment-source.sh" \

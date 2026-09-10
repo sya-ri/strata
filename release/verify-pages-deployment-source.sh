@@ -149,9 +149,11 @@ derive_latest_jobs() {
   local expected_names="$2"
   local output="$3"
 
+  # GitHub can include ancillary check runs in the job inventory. Only required
+  # jobs provide producer evidence; the complete inventory is still validated.
   portable_jq -e --argjson expectedNames "$expected_names" '
+    .jobs |= map(select(.name as $name | any($expectedNames[]; . == $name))) |
     . as $inventory |
-    select(all($inventory.jobs[]; .name as $name | any($expectedNames[]; . == $name))) |
     select([
       $expectedNames[] as $name |
       any($inventory.jobs[]; .name == $name and .conclusion != "skipped")
