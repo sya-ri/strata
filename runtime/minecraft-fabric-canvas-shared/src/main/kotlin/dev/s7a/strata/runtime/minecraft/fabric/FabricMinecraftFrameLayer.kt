@@ -331,11 +331,11 @@ private fun fractionalClipsContain(
     val top = maxOf(bounds.top, integerClip.top.toFloat())
     val right = minOf(bounds.right, integerClip.right.toFloat())
     val bottom = minOf(bounds.bottom, integerClip.bottom.toFloat())
-    if (right <= left || bottom <= top) return true
-    return clips.all { command ->
-        if (command !is DrawCommand.PushFractionalClip) return@all true
-        val horizontal = command.bounds.left <= left && right <= command.bounds.right
-        val vertical = command.bounds.top <= top && bottom <= command.bounds.bottom
-        horizontal && vertical
-    }
+    return right <= left || bottom <= top ||
+        clips.all { command ->
+            if (command !is DrawCommand.PushFractionalClip) return@all true
+            val horizontal = command.bounds.left <= left && right <= command.bounds.right
+            val vertical = command.bounds.top <= top && bottom <= command.bounds.bottom
+            horizontal && vertical
+        }
 }
