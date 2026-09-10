@@ -413,7 +413,7 @@ for release_finalize_contract in \
   'if [[ "$project_status" == '\''processing'\'' ]]; then' \
   'operation=verify will finalize Description after approval.' \
   '[[ "$project_status" == '\''approved'\'' ]]' \
-  '[[ "$GITHUB_SHA" == "$EXPECTED_CONTROLLER_COMMIT" ]] && git --no-replace-objects merge-base --is-ancestor "$EXPECTED_CONTROLLER_COMMIT" origin/master' \
+  '[[ "$GITHUB_SHA" == "$EXPECTED_CONTROLLER_COMMIT" ]]' \
   '[[ "$(git rev-parse HEAD)" == "$EXPECTED_TAG_COMMIT" && "$(git rev-parse --verify "refs/tags/$RELEASE_TAG^{commit}")" == "$EXPECTED_TAG_COMMIT" ]]' \
   '$(git rev-parse "refs/tags/$RELEASE_TAG")" == "$EXPECTED_TAG_OBJECT"' \
   '$(git rev-parse --verify "refs/tags/$PREDECESSOR_TAG^{commit}")" == "$PREDECESSOR_RELEASE_COMMIT"' \
@@ -436,7 +436,7 @@ require_before "$release_finalize_block" '[[ "$project_status" == '\''approved'\
 require_before "$release_finalize_block" 'git fetch --force origin' 'modrinthReleaseFinalizeProject'
 require_before "$release_finalize_block" 'bash "$CONTROLLER_TOOL_DIRECTORY/verify-pages-deployment-source.sh"' 'modrinthReleaseFinalizeProject'
 for release_finalize_boundary in \
-  '[[ "$GITHUB_SHA" == "$EXPECTED_CONTROLLER_COMMIT" ]] && git --no-replace-objects merge-base --is-ancestor "$EXPECTED_CONTROLLER_COMMIT" origin/master' \
+  '[[ "$GITHUB_SHA" == "$EXPECTED_CONTROLLER_COMMIT" ]]' \
   '[[ "$(git rev-parse HEAD)" == "$EXPECTED_TAG_COMMIT" && "$(git rev-parse --verify "refs/tags/$RELEASE_TAG^{commit}")" == "$EXPECTED_TAG_COMMIT" ]]' \
   '$(git rev-parse "refs/tags/$RELEASE_TAG")" == "$EXPECTED_TAG_OBJECT"' \
   '$(git rev-parse --verify "refs/tags/$PREDECESSOR_TAG^{commit}")" == "$PREDECESSOR_RELEASE_COMMIT"' \

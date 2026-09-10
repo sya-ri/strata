@@ -662,7 +662,8 @@ jobs:
           git fetch --force origin \
             '+refs/heads/master:refs/remotes/origin/master' \
             '+refs/tags/*:refs/tags/*'
-          [[ "$GITHUB_SHA" == "$EXPECTED_CONTROLLER_COMMIT" ]] && git --no-replace-objects merge-base --is-ancestor "$EXPECTED_CONTROLLER_COMMIT" origin/master || { echo 'Controller master changed before Modrinth preflight.' >&2; exit 1; }
+          [[ "$GITHUB_SHA" == "$EXPECTED_CONTROLLER_COMMIT" ]] || { echo 'The frozen workflow identity changed.' >&2; exit 1; }
+          git --no-replace-objects merge-base --is-ancestor "$EXPECTED_CONTROLLER_COMMIT" origin/master || { echo 'Controller master changed before Modrinth preflight.' >&2; exit 1; }
           [[ "$(git rev-parse HEAD)" == "$EXPECTED_TAG_COMMIT" && "$(git rev-parse --verify "refs/tags/$RELEASE_TAG^{commit}")" == "$EXPECTED_TAG_COMMIT" ]] || { echo 'Release commit changed before Modrinth preflight.' >&2; exit 1; }
           [[ "$(git rev-parse "refs/tags/$RELEASE_TAG")" == "$EXPECTED_TAG_OBJECT" ]] || { echo 'Release tag object changed before Modrinth preflight.' >&2; exit 1; }
           [[ "$(git rev-parse --verify "refs/tags/$PREDECESSOR_TAG^{commit}")" == "$PREDECESSOR_RELEASE_COMMIT" && \
@@ -787,7 +788,8 @@ jobs:
             git fetch --force origin \
               '+refs/heads/master:refs/remotes/origin/master' \
               '+refs/tags/*:refs/tags/*'
-            [[ "$GITHUB_SHA" == "$EXPECTED_CONTROLLER_COMMIT" ]] && git --no-replace-objects merge-base --is-ancestor "$EXPECTED_CONTROLLER_COMMIT" origin/master || { echo 'Controller master changed before Central publication.' >&2; exit 1; }
+            [[ "$GITHUB_SHA" == "$EXPECTED_CONTROLLER_COMMIT" ]] || { echo 'The frozen workflow identity changed.' >&2; exit 1; }
+            git --no-replace-objects merge-base --is-ancestor "$EXPECTED_CONTROLLER_COMMIT" origin/master || { echo 'Controller master changed before Central publication.' >&2; exit 1; }
             [[ "$(git rev-parse HEAD)" == "$EXPECTED_TAG_COMMIT" && "$(git rev-parse --verify "refs/tags/$RELEASE_TAG^{commit}")" == "$EXPECTED_TAG_COMMIT" ]] || { echo 'Release commit changed before Central publication.' >&2; exit 1; }
             [[ "$(git rev-parse "refs/tags/$RELEASE_TAG")" == "$EXPECTED_TAG_OBJECT" ]] || { echo 'Release tag object changed before Central publication.' >&2; exit 1; }
             [[ "$(git rev-parse --verify "refs/tags/$PREDECESSOR_TAG^{commit}")" == "$PREDECESSOR_RELEASE_COMMIT" && \
@@ -908,7 +910,8 @@ jobs:
             git fetch --force origin \
               '+refs/heads/master:refs/remotes/origin/master' \
               '+refs/tags/*:refs/tags/*'
-            [[ "$GITHUB_SHA" == "$EXPECTED_CONTROLLER_COMMIT" ]] && git --no-replace-objects merge-base --is-ancestor "$EXPECTED_CONTROLLER_COMMIT" origin/master || { echo 'Controller master changed before Modrinth staging.' >&2; exit 1; }
+            [[ "$GITHUB_SHA" == "$EXPECTED_CONTROLLER_COMMIT" ]] || { echo 'The frozen workflow identity changed.' >&2; exit 1; }
+            git --no-replace-objects merge-base --is-ancestor "$EXPECTED_CONTROLLER_COMMIT" origin/master || { echo 'Controller master changed before Modrinth staging.' >&2; exit 1; }
             [[ "$(git rev-parse HEAD)" == "$EXPECTED_TAG_COMMIT" && "$(git rev-parse --verify "refs/tags/$RELEASE_TAG^{commit}")" == "$EXPECTED_TAG_COMMIT" ]] || { echo 'Release commit changed before Modrinth staging.' >&2; exit 1; }
             [[ "$(git rev-parse "refs/tags/$RELEASE_TAG")" == "$EXPECTED_TAG_OBJECT" ]] || { echo 'Release tag object changed before Modrinth staging.' >&2; exit 1; }
             [[ "$(git rev-parse --verify "refs/tags/$PREDECESSOR_TAG^{commit}")" == "$PREDECESSOR_RELEASE_COMMIT" && \
@@ -1031,7 +1034,8 @@ jobs:
             git fetch --force origin \
               '+refs/heads/master:refs/remotes/origin/master' \
               '+refs/tags/*:refs/tags/*'
-            [[ "$GITHUB_SHA" == "$EXPECTED_CONTROLLER_COMMIT" ]] && git --no-replace-objects merge-base --is-ancestor "$EXPECTED_CONTROLLER_COMMIT" origin/master || { echo 'Controller master changed before GitHub mutation.' >&2; exit 1; }
+            [[ "$GITHUB_SHA" == "$EXPECTED_CONTROLLER_COMMIT" ]] || { echo 'The frozen workflow identity changed.' >&2; exit 1; }
+            git --no-replace-objects merge-base --is-ancestor "$EXPECTED_CONTROLLER_COMMIT" origin/master || { echo 'Controller master changed before GitHub mutation.' >&2; exit 1; }
             [[ "$(git rev-parse HEAD)" == "$EXPECTED_TAG_COMMIT" && "$(git rev-parse --verify "refs/tags/$RELEASE_TAG^{commit}")" == "$EXPECTED_TAG_COMMIT" ]] || { echo 'Release commit changed before GitHub mutation.' >&2; exit 1; }
             [[ "$(git rev-parse "refs/tags/$RELEASE_TAG")" == "$EXPECTED_TAG_OBJECT" ]] || { echo 'Release tag object changed before GitHub mutation.' >&2; exit 1; }
             [[ "$(git rev-parse --verify "refs/tags/$PREDECESSOR_TAG^{commit}")" == "$PREDECESSOR_RELEASE_COMMIT" && \
@@ -1179,7 +1183,8 @@ jobs:
           git fetch --force origin \
             '+refs/heads/master:refs/remotes/origin/master' \
             '+refs/tags/*:refs/tags/*'
-          [[ "$GITHUB_SHA" == "$EXPECTED_CONTROLLER_COMMIT" ]] && git --no-replace-objects merge-base --is-ancestor "$EXPECTED_CONTROLLER_COMMIT" origin/master || { echo 'Controller master changed before Modrinth submission.' >&2; exit 1; }
+          [[ "$GITHUB_SHA" == "$EXPECTED_CONTROLLER_COMMIT" ]] || { echo 'The frozen workflow identity changed.' >&2; exit 1; }
+          git --no-replace-objects merge-base --is-ancestor "$EXPECTED_CONTROLLER_COMMIT" origin/master || { echo 'Controller master changed before Modrinth submission.' >&2; exit 1; }
           [[ "$(git rev-parse HEAD)" == "$EXPECTED_TAG_COMMIT" && "$(git rev-parse --verify "refs/tags/$RELEASE_TAG^{commit}")" == "$EXPECTED_TAG_COMMIT" ]] || { echo 'Release commit changed before Modrinth submission.' >&2; exit 1; }
           [[ "$(git rev-parse "refs/tags/$RELEASE_TAG")" == "$EXPECTED_TAG_OBJECT" ]] || { echo 'Release tag object changed before Modrinth submission.' >&2; exit 1; }
           [[ "$(git rev-parse --verify "refs/tags/$PREDECESSOR_TAG^{commit}")" == "$PREDECESSOR_RELEASE_COMMIT" && \
@@ -1265,7 +1270,8 @@ jobs:
           git fetch --force origin \
             '+refs/heads/master:refs/remotes/origin/master' \
             '+refs/tags/*:refs/tags/*'
-          [[ "$GITHUB_SHA" == "$EXPECTED_CONTROLLER_COMMIT" ]] && git --no-replace-objects merge-base --is-ancestor "$EXPECTED_CONTROLLER_COMMIT" origin/master || { echo 'Controller master changed before release-time Modrinth body finalization.' >&2; exit 1; }
+          [[ "$GITHUB_SHA" == "$EXPECTED_CONTROLLER_COMMIT" ]] || { echo 'The frozen workflow identity changed.' >&2; exit 1; }
+          git --no-replace-objects merge-base --is-ancestor "$EXPECTED_CONTROLLER_COMMIT" origin/master || { echo 'Controller master changed before release-time Modrinth body finalization.' >&2; exit 1; }
           [[ "$(git rev-parse HEAD)" == "$EXPECTED_TAG_COMMIT" && "$(git rev-parse --verify "refs/tags/$RELEASE_TAG^{commit}")" == "$EXPECTED_TAG_COMMIT" ]] || { echo 'Release commit changed before release-time Modrinth body finalization.' >&2; exit 1; }
           [[ "$(git rev-parse "refs/tags/$RELEASE_TAG")" == "$EXPECTED_TAG_OBJECT" ]] || { echo 'Release tag object changed before release-time Modrinth body finalization.' >&2; exit 1; }
           [[ "$(git rev-parse --verify "refs/tags/$PREDECESSOR_TAG^{commit}")" == "$PREDECESSOR_RELEASE_COMMIT" && \
