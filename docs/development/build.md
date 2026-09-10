@@ -18,6 +18,9 @@ The receipt establishes confirmed input and retained nodes; the operator's obser
 
 Legacy automated screenshot suites also wait for the requested physical viewport to match GLFW, the native Window framebuffer, and the render target across client ticks.
 This avoids assuming that an asynchronous OS resize completed when its request returned.
+Native Canvas screenshot scenes additionally fence on the runtime's committed host-frame counter through `MinecraftCanvasFrameFence` instead of waiting a fixed tick count: a tick proves time passed, while a committed host frame after the scene signal proves the frame the signal observed completed its render call before the main framebuffer is read.
+The fence fails when the runtime counter becomes unreadable rather than silently degrading to fixed-tick behavior.
+Assertion receipts record the GUI scale, lease, and host-frame counters alongside the retained PNG, so a failed pixel assertion keeps its synchronization evidence.
 Timeouts and screenshot failures report actual dimensions and do not crop, rescale, or weaken pixel assertions.
 
 ## Environment
