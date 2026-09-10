@@ -28,29 +28,12 @@ actual_checksum_inventory="$(mktemp)"
 local_inventory="$(mktemp)"
 trap 'rm -rf -- "$release_json" "$release_body" "$downloads" "$expected_inventory" "$actual_inventory" "$expected_checksum_inventory" "$actual_checksum_inventory" "$local_inventory"' EXIT
 
-status="$(
-  curl --silent --show-error --retry 3 --retry-all-errors --retry-delay 1 \
-    --proto '=https' \
-    --header 'Accept: application/vnd.github+json' \
-    --header "Authorization: Bearer $GH_TOKEN" \
-    --header 'X-GitHub-Api-Version: 2022-11-28' \
-    --output "$release_json" \
-    --write-out '%{http_code}' \
-    "$GITHUB_API_URL/repos/$GITHUB_REPOSITORY/releases/tags/$RELEASE_TAG"
-)"
-
-case "$status" in
-  404)
-    echo "No GitHub Release exists for $RELEASE_TAG."
-    exit 0
-    ;;
-  200)
-    ;;
-  *)
-    echo "GitHub Release preflight failed with HTTP $status." >&2
-    exit 1
-    ;;
-esac
+read_tool="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/github-release-read.sh"
+bash "$read_tool" find > "$release_json"
+if [[ "$(jq -r 'type' "$release_json")" == null ]]; then
+  echo "No GitHub Release exists for $RELEASE_TAG."
+  exit 0
+fi
 
 [[ "$CENTRAL_STATE" == exact ]] || {
   echo 'A GitHub Release already exists while Maven Central is absent; refusing any external write.' >&2
@@ -124,13 +107,7 @@ fi
 while IFS=$'\t' read -r name asset_id; do
   [[ -n "$name" && -n "$asset_id" ]] || { echo 'GitHub returned incomplete release-asset metadata.' >&2; exit 1; }
   grep --fixed-strings --line-regexp "$name" "$expected_inventory" >/dev/null || { echo "Unsafe GitHub Release asset name: $name" >&2; exit 1; }
-  curl --fail --silent --show-error --location --retry 3 --retry-all-errors --retry-delay 1 \
-    --proto '=https' --proto-redir '=https' \
-    --header 'Accept: application/octet-stream' \
-    --header "Authorization: Bearer $GH_TOKEN" \
-    --header 'X-GitHub-Api-Version: 2022-11-28' \
-    "$GITHUB_API_URL/repos/$GITHUB_REPOSITORY/releases/assets/$asset_id" \
-    --output "$downloads/$name"
+  bash "$read_tool" download "$asset_id" "$downloads/$name"
   cmp --silent "$bundle_directory/$name" "$downloads/$name" || { echo "Existing GitHub Release asset differs: $name" >&2; exit 1; }
 done < <(jq -r '.assets[] | [.name, (.id | tostring)] | @tsv' "$release_json")
 

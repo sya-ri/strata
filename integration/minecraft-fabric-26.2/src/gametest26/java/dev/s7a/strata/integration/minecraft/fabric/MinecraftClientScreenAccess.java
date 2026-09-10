@@ -7,6 +7,22 @@ import net.minecraft.client.gui.screens.Screen;
  * Isolates the 26.2 GUI holder used by shared loaded-client tests.
  */
 final class MinecraftClientScreenAccess {
+    /**
+     * Changes test-owned HUD visibility on the client thread, returning the state the caller must restore.
+     * Native screens keep rendering while vanilla HUD elements and toasts are hidden.
+     *
+     * @param minecraft borrowed client GUI owner
+     * @param hidden temporary HUD visibility
+     * @return previous hidden state
+     */
+    static boolean exchangeHudHidden(Minecraft minecraft, boolean hidden) {
+        boolean previous = minecraft.gui.hud.isHidden();
+        if (previous != hidden) {
+            minecraft.gui.hud.toggle();
+        }
+        return previous;
+    }
+
     private MinecraftClientScreenAccess() {
     }
 

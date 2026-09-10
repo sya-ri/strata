@@ -7,6 +7,12 @@ expected_release_commit="${2:-}"
 expected_controller_commit="${3:-}"
 timeout_seconds="${4:-900}"
 poll_interval_seconds="${5:-15}"
+receipt_scope="${6:-controller-and-release}"
+
+[[ "$receipt_scope" == controller-and-release || "$receipt_scope" == release-only ]] || {
+  echo 'Pages receipt scope must be controller-and-release or release-only.' >&2
+  exit 1
+}
 
 [[ "$release_tag" =~ ^v[0-9]+\.[0-9]+\.[0-9]+([+-][0-9A-Za-z.-]+)?$ ]] || {
   echo 'A canonical release tag is required.' >&2
@@ -84,6 +90,7 @@ release_pages_base="$pages_base/releases/${release_tag#v}"
 deadline=$((SECONDS + timeout_seconds))
 attempt=0
 controller_verified=false
+if [[ "$receipt_scope" == release-only ]]; then controller_verified=true; fi
 release_verified=false
 while (( SECONDS < deadline )); do
   attempt=$((attempt + 1))
@@ -105,7 +112,7 @@ while (( SECONDS < deadline )); do
     release_verified=true
   fi
   if [[ "$controller_verified" == true && "$release_verified" == true ]]; then
-    echo "Verified current public controller and immutable release Pages receipts for $release_tag."
+    echo "Verified public Pages receipts ($receipt_scope) for $release_tag."
     exit 0
   fi
   remaining=$((deadline - SECONDS))
