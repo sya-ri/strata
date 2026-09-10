@@ -15,7 +15,8 @@ Documentation launchers inherit common compile and JAR dependencies from their r
 Full `check`, publication, Qodana, and loaded-game commands still select and configure every required target through their real project and task dependencies.
 Minecraft client verification associates every selected Loom asset preparation task and client launch with one Gradle shared build service whose single usage permit prevents races on Loom's mutable asset cache and the native client environment without coupling a targeted task to every other version project.
 It also orders the selected asset tasks before the selected clients so Gradle can validate their intentionally shared output directory while configuration on demand leaves unselected versions untouched.
-Every development, production, and published-coordinate client verification task seeds its own disposable run directory after cleanup and before the JVM launches: initial accessibility onboarding is disabled, narration is off, and master sound volume is zero.
+Every development, production, and published-coordinate client verification task seeds its own disposable run directory after cleanup and before the JVM launches: initial accessibility onboarding and gameplay tutorials are disabled, narration is off, and master sound volume is zero.
+Vanilla tutorial toasts can otherwise cover the screenshot's pixel-oracle panels even after the frame readiness fence completes; the test-owned `tutorialStep:none` option removes that unrelated overlay while retaining the exact rendering assertions.
 The shared setup preserves unrelated test options and rejects paths outside the owning project's build directory; ordinary `runClient` launches and personal Minecraft settings are unchanged.
 The official-mapping `remapJar` tasks use a second single-permit build service because each concurrent remapper retains a complete mapped game graph and can exhaust a hosted CI runner's heap.
 
