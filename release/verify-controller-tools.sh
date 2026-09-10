@@ -147,6 +147,8 @@ verify_controller_tool release/run-publish-controller-recovery.sh run-publish-co
 verify_controller_tool gradle/list-java-toolchains.sh list-java-toolchains.sh bash 100755
 verify_controller_tool release/github-release-read.sh github-release-read.sh bash 100644
 verify_controller_tool release/github-release-preflight.sh github-release-preflight.sh bash 100644
+verify_controller_tool release/select-release-source.sh select-release-source.sh bash 100644
+verify_controller_tool release/select-release-pages.sh select-release-pages.sh bash 100644
 
 current_tag="$(portable_jq -er '.current.tag' "$tool_directory/current-controller.json")"
 current_commit="$(portable_jq -er '.current.commit' "$tool_directory/current-controller.json")"

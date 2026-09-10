@@ -1109,6 +1109,39 @@ jq -n \
   fail 'Deployment status ordering did not use the numeric ID to break an equal creation-time tie.'
 write_pages_deployment_responses
 
+# A frozen historical producer remains usable after an authorized newer Pages deployment.
+jq '. += [{id:99999,ref:"master",sha:"0000000000000000000000000000000000000000",
+  environment:"github-pages-controller",task:"deploy",created_at:"2026-08-31T14:00:00Z"}]' \
+  "$global_pages_deployments_response" > "$global_pages_deployments_response.changed"
+mv "$global_pages_deployments_response.changed" "$global_pages_deployments_response"
+jq '. += [{id:99999,state:"inactive",environment:"github-pages-controller",created_at:"2026-08-31T14:00:00Z"}]' \
+  "$pages_statuses_response" > "$pages_statuses_response.changed"
+mv "$pages_statuses_response.changed" "$pages_statuses_response"
+[[ "$(bash "$repository_root/release/verify-pages-deployment-source.sh" \
+  "$pages_run_id" v0.1.0 "$replacement_commit" "$pages_run_id" "$controller_commit" historical)" == "$expected_pages_result" ]] || \
+  fail 'Historical Pages verification rejected a bound success followed by supersession.'
+if bash "$repository_root/release/verify-pages-deployment-source.sh" \
+  "$pages_run_id" v0.1.0 "$replacement_commit" "$pages_run_id" "$controller_commit" >/dev/null 2>&1; then
+  fail 'Default Pages verification silently accepted historical deployment evidence.'
+fi
+for invalid_status in failure pending; do
+  jq --arg status "$invalid_status" 'map(if .id == 99999 then .state = $status else . end)' \
+    "$pages_statuses_response" > "$pages_statuses_response.changed"
+  mv "$pages_statuses_response.changed" "$pages_statuses_response"
+  if bash "$repository_root/release/verify-pages-deployment-source.sh" \
+    "$pages_run_id" v0.1.0 "$replacement_commit" "$pages_run_id" "$controller_commit" historical >/dev/null 2>&1; then
+    fail 'Historical Pages verification accepted a subsequent failure or pending status.'
+  fi
+done
+jq '[{id:99999,state:"inactive",environment:"github-pages-controller",created_at:"2026-08-31T14:00:00Z"}]' \
+  "$pages_statuses_response" > "$pages_statuses_response.changed"
+mv "$pages_statuses_response.changed" "$pages_statuses_response"
+if bash "$repository_root/release/verify-pages-deployment-source.sh" \
+  "$pages_run_id" v0.1.0 "$replacement_commit" "$pages_run_id" "$controller_commit" historical >/dev/null 2>&1; then
+  fail 'Historical Pages verification accepted an inactive deployment without a proven success.'
+fi
+write_pages_deployment_responses
+
 # Each top-level array is one compact fake API page. Two pages exercise complete --paginate --slurp handling
 # without creating more than 100 fixture records.
 jq -n '[{
@@ -1818,6 +1851,16 @@ bash "$repository_root/release/wait-for-pages-source-receipt.sh" \
 [[ "$(< "$FAKE_CURL_STATE")" == "2" ]] || \
   fail 'A redirect Age leaked into the final header block and delayed a current public Pages receipt.'
 
+export FAKE_CURL_MODE=redirect-old-final-no-age
+export FAKE_CURL_STATE="$temporary_root/immutable-only-state"
+export FAKE_CURL_LOG="$temporary_root/immutable-only-log"
+bash "$repository_root/release/wait-for-pages-source-receipt.sh" \
+  v0.1.0 "$replacement_commit" "$controller_commit" 30 0 release-only >/dev/null
+[[ "$(< "$FAKE_CURL_STATE")" == "1" ]] || fail 'Release-only receipt verification read the mutable root.'
+if grep --fixed-strings 'https://gh.s7a.dev/strata/source-receipt.json' "$FAKE_CURL_LOG" >/dev/null; then
+  fail 'Release-only receipt verification depended on the current documentation root.'
+fi
+
 grep --fixed-strings 'timeout_seconds="${4:-900}"' \
   "$repository_root/release/wait-for-pages-source-receipt.sh" >/dev/null || \
   fail 'The public Pages polling default does not outlive the observed 600-second CDN TTL.'
@@ -2043,5 +2086,8 @@ bash "$repository_root/release/tests/verify-controller-overlay.sh" >/dev/null
 bash "$repository_root/release/tests/verify-central-controller-overlay.sh" >/dev/null
 bash "$repository_root/release/tests/verify-github-release-preflight.sh" >/dev/null
 bash "$repository_root/release/tests/verify-github-release-read.sh" >/dev/null
+
+bash "$repository_root/release/tests/verify-selected-release-source.sh" >/dev/null
+bash "$repository_root/release/tests/verify-selected-publication.sh" >/dev/null
 
 echo 'Release source guards passed.'

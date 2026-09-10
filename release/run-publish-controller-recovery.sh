@@ -108,6 +108,8 @@ optional_bundle_files=(
   list-java-toolchains.sh
   github-release-read.sh
   github-release-preflight.sh
+  select-release-source.sh
+  select-release-pages.sh
 )
 for bundle_file in "${optional_bundle_files[@]}"; do
   if [[ -e "$controller_directory/$bundle_file" || -L "$controller_directory/$bundle_file" ]]; then
