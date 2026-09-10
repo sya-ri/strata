@@ -21,7 +21,10 @@ The selected signed annotated tag must already exist and point directly to that 
 `select-release-source.sh` resolves the preceding stable tag once and freezes both tag objects and commits as job outputs.
 Later commits or release tags do not replace this selection.
 The predecessor must be an ancestor of the selected product, and the product must be contained in the frozen controller history.
-Representative clients come from the first, middle and last numerically sorted runtime versions in the selected source (deduplicated for smaller inventories).
+Published-client acceptance uses every integration project that explicitly registers `runPublishedCoordinateClientGameTest` as a `ClientProductionRunTask` in the selected source, ordered by numeric Minecraft version.
+Ordinary runtime support does not imply that this task exists; the controller never samples the complete runtime list or narrows a frozen acceptance inventory.
+The selector reads regular Git blobs, requires one canonical task declaration per owner, and re-derives the complete inventory when verifying the frozen selection.
+An empty inventory, ambiguous or unsupported declaration, missing paired runtime, or altered frozen list stops publication.
 Every representative must own regular runtime and integration project blobs before the build and exactly one generated Maven artifact and Modrinth manifest entry afterward.
 The controller reads the metadata and every controller-owned verifier as regular Git blobs from the exact controller commit, validates their Git modes and hashes with replacement objects disabled, and requires the frozen controller commit to remain an ancestor of `origin/master`; ordinary master advancement is allowed, while removal from its history fails.
 Both identities must resolve to annotated tags whose signatures GitHub reports as verified, whose tag objects and target commits match the frozen selection, and whose root project versions match their tags.

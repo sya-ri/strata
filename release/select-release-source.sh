@@ -7,6 +7,30 @@ tool_directory="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd -P)"
 
 fail() { echo "$1" >&2; exit 1; }
 
+registered_clients() {
+  local commit="$1" path record mode object_type blob actual_path definition registrations
+  local versions=()
+  while IFS= read -r path; do
+    [[ "$path" =~ ^integration/minecraft-fabric-([0-9]+(\.[0-9]+)*)/build\.gradle\.kts$ ]] || continue
+    local version="${BASH_REMATCH[1]}"
+    record="$(git --no-replace-objects ls-tree --full-tree "$commit" -- "$path")"
+    read -r mode object_type blob actual_path <<< "$record"
+    [[ "$mode" == 100644 && "$object_type" == blob && "$blob" =~ ^[0-9a-f]{40}$ && "$actual_path" == "$path" ]] || fail 'Integration project is not a regular source blob.'
+    definition="$(git --no-replace-objects cat-file blob "$blob")"
+    # Published-client tasks are explicit declarations in the tagged build files.
+    # Ordinary runtime support does not imply this acceptance task exists.
+    registrations="$(grep -Ec '^tasks\.register<ClientProductionRunTask>\("runPublishedCoordinateClientGameTest"\)[[:blank:]]*\{' <<< "$definition" || true)"
+    if [[ "$registrations" != 0 ]]; then
+      [[ "$registrations" == 1 ]] || fail 'Published-client task registration is ambiguous.'
+      versions+=("$version")
+    elif grep -Fq '"runPublishedCoordinateClientGameTest"' <<< "$definition"; then
+      fail 'Published-client task uses an unsupported registration form.'
+    fi
+  done < <(git --no-replace-objects ls-tree -r --name-only "$commit" -- integration/)
+  (( 0 < ${#versions[@]} )) || fail 'Selected source has no registered published-client acceptance task.'
+  printf '%s\n' "${versions[@]}" | sort -Vu | jq -Rsc 'split("\n") | map(select(length != 0))'
+}
+
 verify_identity() {
   local tag="$1" commit="$2" object="$3"
   [[ "$tag" =~ ^v(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)$ ]] || fail 'A canonical stable release tag is required.'
@@ -28,7 +52,7 @@ verify_selection() {
   jq -e 'type == "object" and keys == ["current","predecessor","schemaVersion"] and .schemaVersion == 1 and
     (.current | keys == ["commit","representativeMinecraftVersions","tag","tagObject"]) and
     (.predecessor | keys == ["commit","tag","tagObject"]) and
-    (.current.representativeMinecraftVersions | type == "array" and length > 0 and length <= 3 and length == (unique | length) and all(.[]; type == "string"))' "$metadata" >/dev/null
+    (.current.representativeMinecraftVersions | type == "array" and length > 0 and length == (unique | length) and all(.[]; type == "string"))' "$metadata" >/dev/null
   local tag commit object previous_tag previous_commit previous_object version path record mode project_kind object_type blob actual_path
   tag="$(jq -er '.current.tag' "$metadata")"
   commit="$(jq -er '.current.commit' "$metadata")"
@@ -38,6 +62,7 @@ verify_selection() {
   previous_object="$(jq -er '.predecessor.tagObject' "$metadata")"
   verify_identity "$tag" "$commit" "$object"
   verify_identity "$previous_tag" "$previous_commit" "$previous_object"
+  [[ "$(jq -c '.current.representativeMinecraftVersions' "$metadata")" == "$(registered_clients "$commit")" ]] || fail 'Selected clients differ from the tagged acceptance-task inventory.'
   [[ "$tag" != "$previous_tag" && "$(printf '%s\n%s\n' "$previous_tag" "$tag" | sort -V | head -n 1)" == "$previous_tag" ]] || fail 'Selected predecessor must have a lower version.'
   git --no-replace-objects merge-base --is-ancestor "$previous_commit" "$commit" || fail 'Selected predecessor is not an ancestor of the product.'
   git --no-replace-objects merge-base --is-ancestor "$commit" "$controller" || fail 'Selected product is not contained in the frozen controller history.'
@@ -68,11 +93,7 @@ case "${1:-}" in
       previous_tag="$candidate"
     done <<< "$release_tags"
     [[ "$found" == true && -n "$previous_tag" ]] || fail 'Forward release requires an existing stable predecessor.'
-    mapfile -t versions < <(git --no-replace-objects ls-tree -r --name-only "$commit" -- runtime/ |
-      sed -nE 's#^runtime/minecraft-fabric-([0-9]+(\.[0-9]+)*)/build.gradle.kts$#\1#p' | sort -Vu)
-    (( 0 < ${#versions[@]} )) || fail 'Selected source has no supported runtime.'
-    representatives="$(printf '%s\n' "${versions[0]}" "${versions[(${#versions[@]} - 1) / 2]}" "${versions[${#versions[@]} - 1]}" |
-      sort -Vu | jq -Rsc 'split("\n") | map(select(length != 0))')"
+    representatives="$(registered_clients "$commit")"
     temporary="$(mktemp)"
     trap 'rm -f -- "$temporary"' EXIT
     jq -n --arg tag "$tag" --arg commit "$commit" --arg object "$object" --argjson versions "$representatives" \
