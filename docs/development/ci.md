@@ -21,12 +21,17 @@ The official-mapping `remapJar` tasks use a second single-permit build service b
 
 ## JVM shards and reusable inputs
 
-The JVM workflow discovers every paired versioned runtime and integration project, sorts their numeric Minecraft versions, and distributes them across generated bounded shards on separate hosted runners with fail-fast disabled; the final shard also checks the generated documentation, while every shard preserves the in-build client and remap limits above.
+The JVM workflow discovers every paired versioned runtime and integration project, sorts their numeric Minecraft versions, and deals successive versions across generated bounded shards on separate hosted runners with fail-fast disabled.
+This spreads older, slower release families across runners instead of grouping them together; each shard still preserves the in-build client and remap limits above.
+The planner reads the explicit native integration input from the documentation build and assigns documentation checks exactly once to the shard containing that target, even when it is not the newest supported version.
+Missing, ambiguous, or unpaired documentation inputs fail planning rather than launching an extra client outside the selected shard.
+The complete Loom inventory remains numerically ordered independently of shard assignment, and each shard's displayed name lists its actual versions.
 Common checks include the CPU font backend and its isolated dependency and font-capability workers without launching Minecraft.
 The representative integration checks own their matching native-to-offline font comparisons, so full `check` and the existing Minecraft shards run those gates without adding loaded clients to the common shard.
 It runs only when code, build inputs, its own workflow, the compiled README contract, or generated showcase evidence changes; canonical prose that cannot affect those gates does not launch loaded clients.
 Gradle's enhanced user-home cache uses strict job matching for common and Minecraft shards so one writer cannot restore and resave state from another matrix entry.
-The read-only coverage shard deliberately accepts the newest compatible Linux job cache and never writes it back, avoiding a cold dependency fan-out and upstream rate limits without sharing Loom state.
+Read-only coverage, Qodana, and Documentation jobs deliberately accept the newest compatible Linux job cache and never write it back, avoiding a cold dependency fan-out and upstream rate limits without sharing Loom state.
+Requiring a strict own-job match in a job that never writes a cache would prevent these readers from using the successful common and Minecraft writers.
 It is writable only from successful `master` runs of common checks and generated Minecraft shards because each produces distinct reusable outputs; pull requests, coverage, Qodana, and Documentation restore it read-only to avoid redundant, evidence-only, or branch-scoped entries.
 Every hosted job excludes Loom state from the enhanced Gradle user-home cache.
 Each Minecraft shard separately restores its project-local Loom repository with an OS-, shard-, and build-model-derived immutable key.
@@ -62,6 +67,11 @@ The common JVM shard runs the pinned official actionlint container, parses every
 Run `./gradlew :quality:benchmarks:jmh` for the temporary JSON report and follow the methodology and acceptance gates in [Rendering performance](../development/performance.md).
 
 ## Documentation ownership
+
+Pages first freezes the exact master controller and release identities in a small read-only source job.
+The controller-site and independent immutable-release producers then run concurrently on separate runners, each revalidating those identities before executing a local action or build.
+Deployment requires both successful producers and preserves their exact artifact identities, byte-equivalence checks, and final current-master verification.
+The independent producer still regenerates the tagged source without the build cache; parallelism does not make one producer's output evidence for the other.
 
 Keep canonical API and runtime contracts, reader guides, release notes and publication bodies, compiled examples, and deterministic generated images and receipts in Git.
 Update generator sources and regenerate checked outputs instead of editing generated documents by hand.

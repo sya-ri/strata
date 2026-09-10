@@ -83,7 +83,7 @@ jobs:
         uses: gradle/actions/setup-gradle@v6
         with:
           cache-read-only: true
-          gradle-home-cache-strict-match: true
+          gradle-home-cache-strict-match: false
           gradle-home-cache-excludes: caches/fabric-loom
       - name: Generate Minecraft cache inventory
         run: bash gradle/plan-minecraft-ci.sh

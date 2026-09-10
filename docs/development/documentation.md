@@ -82,6 +82,8 @@ Keep the public skill's existing directory structure and update its links and ge
 
 The root `./gradlew :dokkaGenerate` task aggregates every published module into `build/dokka/html`.
 The Pages workflow uses `docs/publication/dokka-module.md` as the API landing-page introduction instead of the root README.
+After a read-only job freezes the source identities, separate controller and immutable-release producers run concurrently and independently revalidate those identities before building.
+Deployment waits for both artifacts and verifies their immutable release subtrees byte for byte.
 `generateDokkaModuleMarkdown` prepares an ignored build-only include whose GitHub reader links use the selected `strata.sourceRevision`, so tagged API sites link to their matching repository guides.
 Reader guides and verified component images stay in the repository and are rendered on GitHub; the current Dokka artifact contains the generated API reference.
 
