@@ -74,6 +74,8 @@ private fun withMinecraftCanvasContext(
 
             override fun hasOverlay(): Boolean = MinecraftClientScreenAccess.hasOverlay(Minecraft.getInstance())
 
+            override fun exchangeHudHidden(hidden: Boolean): Boolean = MinecraftClientScreenAccess.exchangeHudHidden(Minecraft.getInstance(), hidden)
+
             override fun pressPointer(
                 screen: Screen,
                 position: IntOffset,

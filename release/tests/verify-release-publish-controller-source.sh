@@ -234,14 +234,16 @@ if grep --fixed-strings 'java-version: |' "$workflow" >/dev/null; then
 fi
 
 for required_contract in \
-  'current-controller.json' \
+  'source_commit:' \
+  'source_selection: ${{ steps.source.outputs.source_selection }}' \
   'current_tag: ${{ steps.source.outputs.current_tag }}' \
   'representative_minecraft_versions: ${{ steps.source.outputs.representative_minecraft_versions }}' \
   'predecessor_tag: ${{ steps.source.outputs.predecessor_tag }}' \
   'current_tag: ${{ steps.source.outputs.current_tag }}' \
   'predecessor_commit: ${{ steps.source.outputs.predecessor_commit }}' \
   'refs/tags/v*' \
-  'verify-current-controller-release-order.sh' \
+  'select-release-source.sh' \
+  'select-release-pages.sh' \
   'list-java-toolchains.sh' \
   'for candidate in build/release/maven-coordinates.txt release/maven-coordinates.txt; do' \
   'RELEASE_MAVEN_INVENTORY_SHA256=' \
@@ -301,6 +303,10 @@ for controller_mode_contract in \
   'verify_controller_tool release/verify-pages-artifact-equivalence.sh verify-pages-artifact-equivalence.sh bash 100644' \
   'verify_controller_tool release/wait-for-pages-source-receipt.sh wait-for-pages-source-receipt.sh bash 100644' \
   'verify_controller_tool release/run-publish-controller-recovery.sh run-publish-controller-recovery.sh bash 100755' \
+  'verify_controller_tool release/github-release-read.sh github-release-read.sh bash 100644' \
+  'verify_controller_tool release/github-release-preflight.sh github-release-preflight.sh bash 100644' \
+  'verify_controller_tool release/select-release-source.sh select-release-source.sh bash 100644' \
+  'verify_controller_tool release/select-release-pages.sh select-release-pages.sh bash 100644' \
   'verify_controller_tool gradle/list-java-toolchains.sh list-java-toolchains.sh bash 100755'; do
   grep --fixed-strings "$controller_mode_contract" "$controller_guard" >/dev/null || \
     fail "Controller source does not declare its exact reviewed Git mode: $controller_mode_contract"
@@ -341,6 +347,14 @@ central_block="$(step_block 'Publish wholly absent Maven Central release')"
 github_block="$(step_block 'Create or verify immutable GitHub Release')"
 [[ "$(grep --extended-regexp -c '^[[:space:]]+revalidate_release_source$' <<< "$central_block")" == '2' ]] || fail 'Central publication must revalidate before absence confirmation and write.'
 [[ "$(grep --extended-regexp -c '^[[:space:]]+revalidate_release_source$' <<< "$github_block")" == '3' ]] || fail 'Every GitHub Release mutation phase must revalidate source and controller tools.'
+grep --fixed-strings 'bash "$CONTROLLER_TOOL_DIRECTORY/github-release-read.sh" find' <<< "$github_block" >/dev/null || fail 'GitHub publication must include draft releases in lookup.'
+grep --fixed-strings 'bash "$CONTROLLER_TOOL_DIRECTORY/github-release-read.sh" download' <<< "$github_block" >/dev/null || fail 'GitHub publication must use bounded asset reads.'
+grep --fixed-strings '== "$release_id"' <<< "$github_block" >/dev/null || fail 'GitHub retry must retain its discovered release ID.'
+if grep --fixed-strings '/releases/tags/' <<< "$github_block" >/dev/null; then
+  fail 'Published-only tag lookup cannot establish draft absence.'
+fi
+github_preflight_block="$(step_block 'Preflight GitHub Release without mutation')"
+grep --fixed-strings 'bash "$CONTROLLER_TOOL_DIRECTORY/github-release-preflight.sh"' <<< "$github_preflight_block" >/dev/null || fail 'GitHub preflight must load the verified controller helper.'
 
 for controller_call_spec in \
   'Preflight Modrinth without mutation|bash "$CONTROLLER_TOOL_DIRECTORY/run-publish-controller-recovery.sh"' \
@@ -399,17 +413,17 @@ for release_finalize_contract in \
   'if [[ "$project_status" == '\''processing'\'' ]]; then' \
   'operation=verify will finalize Description after approval.' \
   '[[ "$project_status" == '\''approved'\'' ]]' \
-  '[[ "$GITHUB_SHA" == "$EXPECTED_CONTROLLER_COMMIT" && "$(git rev-parse origin/master)" == "$EXPECTED_CONTROLLER_COMMIT" ]]' \
+  '[[ "$GITHUB_SHA" == "$EXPECTED_CONTROLLER_COMMIT" ]]' \
   '[[ "$(git rev-parse HEAD)" == "$EXPECTED_TAG_COMMIT" && "$(git rev-parse --verify "refs/tags/$RELEASE_TAG^{commit}")" == "$EXPECTED_TAG_COMMIT" ]]' \
   '$(git rev-parse "refs/tags/$RELEASE_TAG")" == "$EXPECTED_TAG_OBJECT"' \
   '$(git rev-parse --verify "refs/tags/$PREDECESSOR_TAG^{commit}")" == "$PREDECESSOR_RELEASE_COMMIT"' \
   '$(git rev-parse "refs/tags/$PREDECESSOR_TAG")" == "$PREDECESSOR_RELEASE_OBJECT"' \
   'git merge-base --is-ancestor "$PREDECESSOR_RELEASE_COMMIT" "$EXPECTED_TAG_COMMIT"' \
   'git merge-base --is-ancestor "$EXPECTED_TAG_COMMIT" origin/master' \
-  'bash "$CONTROLLER_TOOL_DIRECTORY/verify-current-controller-release-order.sh"' \
+  'bash "$CONTROLLER_TOOL_DIRECTORY/select-release-source.sh"' \
   'read -r release_pages_run_id _ _ controller_pages_run_id _ _ <<< "$EXPECTED_PAGES_RECORD"' \
-  '"$controller_pages_run_id" "$EXPECTED_CONTROLLER_COMMIT")" == "$EXPECTED_PAGES_RECORD"' \
-  '[[ "$(git rev-parse origin/master)" == "$EXPECTED_CONTROLLER_COMMIT" ]]' \
+  '"$controller_pages_run_id" "$PAGES_PRODUCER_COMMIT" historical)" == "$EXPECTED_PAGES_RECORD"' \
+  'git --no-replace-objects merge-base --is-ancestor "$EXPECTED_CONTROLLER_COMMIT" origin/master' \
   'git diff --quiet -- .' \
   'git diff --cached --quiet -- .' \
   '.operation == "finalize-project" and .projectStatus == "approved" and (.absent | length) == 0 and (.listed | length) == $artifacts'; do
@@ -422,7 +436,7 @@ require_before "$release_finalize_block" '[[ "$project_status" == '\''approved'\
 require_before "$release_finalize_block" 'git fetch --force origin' 'modrinthReleaseFinalizeProject'
 require_before "$release_finalize_block" 'bash "$CONTROLLER_TOOL_DIRECTORY/verify-pages-deployment-source.sh"' 'modrinthReleaseFinalizeProject'
 for release_finalize_boundary in \
-  '[[ "$GITHUB_SHA" == "$EXPECTED_CONTROLLER_COMMIT" && "$(git rev-parse origin/master)" == "$EXPECTED_CONTROLLER_COMMIT" ]]' \
+  '[[ "$GITHUB_SHA" == "$EXPECTED_CONTROLLER_COMMIT" ]]' \
   '[[ "$(git rev-parse HEAD)" == "$EXPECTED_TAG_COMMIT" && "$(git rev-parse --verify "refs/tags/$RELEASE_TAG^{commit}")" == "$EXPECTED_TAG_COMMIT" ]]' \
   '$(git rev-parse "refs/tags/$RELEASE_TAG")" == "$EXPECTED_TAG_OBJECT"' \
   '$(git rev-parse --verify "refs/tags/$PREDECESSOR_TAG^{commit}")" == "$PREDECESSOR_RELEASE_COMMIT"' \
@@ -431,16 +445,16 @@ for release_finalize_boundary in \
   'git merge-base --is-ancestor "$EXPECTED_TAG_COMMIT" origin/master' \
   'bash "$CONTROLLER_TOOL_DIRECTORY/verify-release-tag.sh" "$RELEASE_TAG"' \
   'bash "$CONTROLLER_TOOL_DIRECTORY/verify-release-tag.sh" "$PREDECESSOR_TAG"' \
-  'bash "$CONTROLLER_TOOL_DIRECTORY/verify-current-controller-release-order.sh"' \
-  '"$controller_pages_run_id" "$EXPECTED_CONTROLLER_COMMIT")" == "$EXPECTED_PAGES_RECORD"' \
-  '[[ "$(git rev-parse origin/master)" == "$EXPECTED_CONTROLLER_COMMIT" ]]' \
+  'bash "$CONTROLLER_TOOL_DIRECTORY/select-release-source.sh"' \
+  '"$controller_pages_run_id" "$PAGES_PRODUCER_COMMIT" historical)" == "$EXPECTED_PAGES_RECORD"' \
+  'git --no-replace-objects merge-base --is-ancestor "$EXPECTED_CONTROLLER_COMMIT" origin/master' \
   'git diff --quiet -- .' \
   'git diff --cached --quiet -- .'; do
   require_before "$release_finalize_block" "$release_finalize_boundary" 'modrinthReleaseFinalizeProject'
 done
 require_immediate_guard "$release_finalize_block" 'bash "$CONTROLLER_TOOL_DIRECTORY/verify-release-tag.sh" "$RELEASE_TAG"' 'verify_controller_tools'
 require_immediate_guard "$release_finalize_block" 'bash "$CONTROLLER_TOOL_DIRECTORY/verify-release-tag.sh" "$PREDECESSOR_TAG"' 'verify_controller_tools'
-require_immediate_guard "$release_finalize_block" 'bash "$CONTROLLER_TOOL_DIRECTORY/verify-current-controller-release-order.sh"' 'verify_controller_tools'
+require_immediate_guard "$release_finalize_block" 'bash "$CONTROLLER_TOOL_DIRECTORY/select-release-source.sh"' 'verify_controller_tools'
 require_immediate_guard "$release_finalize_block" 'bash "$CONTROLLER_TOOL_DIRECTORY/verify-pages-deployment-source.sh"' 'verify_controller_tools'
 require_immediate_guard "$release_finalize_block" 'bash ./gradlew --no-parallel --max-workers=2 --no-build-cache modrinthReleaseFinalizeProject' 'verify_controller_tools'
 if grep --fixed-strings 'run-publish-controller-recovery.sh' <<< "$verify_job" >/dev/null; then
@@ -466,7 +480,7 @@ central_write='publishAndReleaseToMaven''Central'
 
 [[ "$(grep --fixed-strings -c 'publishAndReleaseToMavenCentral' "$workflow")" == '1' ]] || fail 'Forward controller must contain exactly one Central write.'
 [[ "$(grep --fixed-strings -c "+refs/tags/*:refs/tags/*" "$workflow")" -ge 7 ]] || fail 'Mutation boundaries do not repeatedly fetch the complete release-tag namespace.'
-[[ "$(grep --fixed-strings -c 'verify-current-controller-release-order.sh' "$workflow")" -ge 7 ]] || fail 'Mutation boundaries do not repeatedly prove the frozen pair is still latest.'
+[[ "$(grep --fixed-strings -c 'select-release-source.sh' "$workflow")" -ge 7 ]] || fail 'Mutation boundaries do not repeatedly verify the frozen release selection.'
 [[ "$(grep --fixed-strings -c 'PREDECESSOR_RELEASE_OBJECT' "$workflow")" -ge 5 ]] || fail 'Mutation boundaries do not repeatedly compare the frozen predecessor object.'
 
 step_line() {
@@ -578,6 +592,10 @@ for source in \
   release/verify-pages-artifact-equivalence.sh \
   release/wait-for-pages-source-receipt.sh \
   release/run-publish-controller-recovery.sh \
+  release/github-release-read.sh \
+  release/github-release-preflight.sh \
+  release/select-release-source.sh \
+  release/select-release-pages.sh \
   gradle/list-java-toolchains.sh; do
   write_script "$source"
 done
@@ -594,6 +612,10 @@ git -C "$fixture_repository" update-index --chmod=-x \
   release/verify-github-tag-ruleset.sh \
   release/verify-pages-deployment-source.sh \
   release/verify-pages-artifact-equivalence.sh \
+  release/github-release-read.sh \
+  release/github-release-preflight.sh \
+  release/select-release-source.sh \
+  release/select-release-pages.sh \
   release/wait-for-pages-source-receipt.sh
 git -C "$fixture_repository" update-index --chmod=+x \
   release/list-release-tags.sh \
@@ -643,6 +665,7 @@ for materialized_mode_spec in \
     fail "Materialized 100644/100755 fixture bytes differ from $materialized_source."
 done
 for generic in current-controller.json verify-release-tag.sh list-release-tags.sh verify-current-controller-release-order.sh \
+  github-release-read.sh github-release-preflight.sh select-release-source.sh select-release-pages.sh \
   verify-github-tag-ruleset.sh github-release-tag-ruleset.json \
   github-release-tag-ruleset-receipt.json verify-pages-deployment-source.sh verify-pages-artifact-equivalence.sh wait-for-pages-source-receipt.sh \
   run-publish-controller-recovery.sh list-java-toolchains.sh; do

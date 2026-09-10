@@ -25,6 +25,7 @@ fixture_target_count=3
 expected_asset_count=$((fixture_target_count * 2 + 1))
 mkdir -p "$fixture/release" "$fixture/docs/releases" "$bundle" "$fake_bin"
 cp "$repository_root/release/github-release-preflight.sh" "$fixture/release/github-release-preflight.sh"
+cp "$repository_root/release/github-release-read.sh" "$fixture/release/github-release-read.sh"
 printf '# Test release\n\nExact body.\n' > "$fixture/docs/releases/v0.1.0.md"
 
 for index in $(seq 1 "$fixture_target_count"); do
@@ -48,6 +49,7 @@ write_release_json() {
     --rawfile body "$body_file" \
     --slurpfile assets "$assets_json" \
     '{
+      id: 1000,
       tag_name: "v0.1.0",
       name: "Strata 0.1.0",
       body: $body,
@@ -63,16 +65,11 @@ cat > "$fake_bin/curl" <<'SCRIPT'
 set -euo pipefail
 
 output=""
-write_out=""
 url=""
 while (( 0 < $# )); do
   case "$1" in
     --output)
       output="$2"
-      shift 2
-      ;;
-    --write-out)
-      write_out="$2"
       shift 2
       ;;
     https://*)
@@ -87,10 +84,8 @@ done
 [[ -n "$output" && -n "$url" ]] || exit 64
 
 case "$url" in
-  */releases/tags/v0.1.0)
-    cp "$FAKE_RELEASE_JSON" "$output"
-    [[ "$write_out" == '%{http_code}' ]] || exit 64
-    printf '200'
+  */releases\?per_page=100\&page=1)
+    jq -s '.' "$FAKE_RELEASE_JSON" > "$output"
     ;;
   */releases/assets/*)
     asset_id="${url##*/}"
@@ -138,6 +133,15 @@ if ! lf_output="$(run_preflight 2>&1)"; then
 fi
 grep --fixed-strings 'Existing GitHub Release metadata and uploaded assets are conflict-free.' <<< "$lf_output" >/dev/null ||
   fail 'The GitHub Release preflight rejected an exact LF remote body.'
+
+jq '.draft = true | .assets = .assets[:-1]' "$release_json" > "$temporary_root/draft.json"
+cp "$temporary_root/draft.json" "$release_json"
+run_preflight >/dev/null || fail 'An exact partial draft should be resumable.'
+jq '.draft = false' "$release_json" > "$temporary_root/published.json"
+cp "$temporary_root/published.json" "$release_json"
+if run_preflight >/dev/null 2>&1; then
+  fail 'An incomplete published release was accepted as a resumable draft.'
+fi
 
 crlf_body="$temporary_root/crlf-body.md"
 printf '# Test release\r\n\r\nExact body.\r\n' > "$crlf_body"

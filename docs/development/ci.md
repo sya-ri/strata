@@ -18,6 +18,9 @@ It also orders the selected asset tasks before the selected clients so Gradle ca
 Every development, production, and published-coordinate client verification task seeds its own disposable run directory after cleanup and before the JVM launches: initial accessibility onboarding and gameplay tutorials are disabled, narration is off, and master sound volume is zero.
 Vanilla tutorial toasts can otherwise cover the screenshot's pixel-oracle panels even after the frame readiness fence completes; the test-owned `tutorialStep:none` option removes that unrelated overlay while retaining the exact rendering assertions.
 The shared setup preserves unrelated test options and rejects paths outside the owning project's build directory; ordinary `runClient` launches and personal Minecraft settings are unchanged.
+The Canvas/Slot pixel oracle temporarily hides the native HUD for its complete screenshot scene, restoring the previous state even on failure.
+This also suppresses tutorial and recipe toasts, including recipe notifications arriving after the server-seeded inventory synchronization; clearing an existing toast queue once would not cover that race.
+The actual Strata screen, native item rendering, frame fence, and every pixel assertion remain enabled.
 The official-mapping `remapJar` tasks use a second single-permit build service because each concurrent remapper retains a complete mapped game graph and can exhaust a hosted CI runner's heap.
 
 ## JVM shards and reusable inputs

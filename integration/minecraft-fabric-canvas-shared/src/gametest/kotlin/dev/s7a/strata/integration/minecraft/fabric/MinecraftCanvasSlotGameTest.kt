@@ -61,7 +61,11 @@ internal object MinecraftCanvasSlotGameTest {
         val fixture = context.onClient { MinecraftCanvasTestFixture(createMinecraftCanvasTestResources()) }
         var screen: FabricMinecraftScreen? = null
         var failure: Throwable? = null
+        var previousHudHidden: Boolean? = null
         try {
+            // Recipe packets can arrive after the inventory synchronization and after a one-time toast clear.
+            // Keep vanilla HUD/toasts hidden for the entire scene; the native Strata screen still renders normally.
+            previousHudHidden = context.onClient { context.exchangeHudHidden(true) }
             context.configureViewport(viewport, 1)
             val owned = context.onClient { createMinecraftScreen(definition(fixture, Slots.playerInventory(inventoryIndex)), profile, parent = null) }
             screen = owned
@@ -79,6 +83,7 @@ internal object MinecraftCanvasSlotGameTest {
                 { context.onClient { screen?.close() ?: Unit } },
                 { context.waitFor { fixture.leasesOpened == fixture.leasesClosed } },
                 { context.onClient { fixture.close() } },
+                { previousHudHidden?.let { previous -> context.onClient { context.exchangeHudHidden(previous) } } },
             )
         }
     }
