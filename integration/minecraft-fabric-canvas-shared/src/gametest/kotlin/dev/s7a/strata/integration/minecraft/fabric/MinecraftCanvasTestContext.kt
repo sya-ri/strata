@@ -5,6 +5,8 @@ import dev.s7a.strata.geometry.IntSize
 import net.minecraft.client.gui.screens.Screen
 import java.nio.file.Path
 
+// Why: this test-only bridge keeps the version-specific native operations of one Canvas acceptance scene together.
+
 /**
  * Adapts loaded-client scheduling and native screenshots for Canvas acceptance across game versions.
  *
@@ -13,6 +15,7 @@ import java.nio.file.Path
  * Screenshot output belongs to the runner's contained build directory and is recreated for each execution.
  * Scheduling, native rendering, timeout, and file failures propagate without replacement.
  */
+@Suppress("TooManyFunctions")
 internal interface MinecraftCanvasTestContext {
     /**
      * Immutable path to the runner-owned contained build directory receiving acceptance artifacts.
@@ -40,6 +43,14 @@ internal interface MinecraftCanvasTestContext {
      * The overlay remains owned by Minecraft; callers use this observation to avoid sending input while loading hides the screen.
      */
     fun hasOverlay(): Boolean
+
+    /**
+     * Sets native HUD visibility on the client thread and returns its previous hidden state.
+     *
+     * Minecraft also suppresses tutorial and recipe toasts while its HUD is hidden; native screens remain rendered.
+     * The caller restores the returned state after its screenshot scene, including on failure.
+     */
+    fun exchangeHudHidden(hidden: Boolean): Boolean
 
     /**
      * Delivers a primary-button press through the borrowed [screen]'s native callback on the client thread.

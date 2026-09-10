@@ -17,6 +17,9 @@ Minecraft client verification associates every selected Loom asset preparation t
 It also orders the selected asset tasks before the selected clients so Gradle can validate their intentionally shared output directory while configuration on demand leaves unselected versions untouched.
 Every development, production, and published-coordinate client verification task seeds its own disposable run directory after cleanup and before the JVM launches: initial accessibility onboarding is disabled, narration is off, and master sound volume is zero.
 The shared setup preserves unrelated test options and rejects paths outside the owning project's build directory; ordinary `runClient` launches and personal Minecraft settings are unchanged.
+The Canvas/Slot pixel oracle temporarily hides the native HUD for its complete screenshot scene, restoring the previous state even on failure.
+This also suppresses tutorial and recipe toasts, including recipe notifications arriving after the server-seeded inventory synchronization; clearing an existing toast queue once would not cover that race.
+The actual Strata screen, native item rendering, frame fence, and every pixel assertion remain enabled.
 The official-mapping `remapJar` tasks use a second single-permit build service because each concurrent remapper retains a complete mapped game graph and can exhaust a hosted CI runner's heap.
 
 ## JVM shards and reusable inputs
