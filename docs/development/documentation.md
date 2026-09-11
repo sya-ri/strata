@@ -86,6 +86,7 @@ Run `./gradlew :integration:docs:checkReadmeDemo --no-configure-on-demand` to re
 These tasks reuse the component showcase's four `strata.showcase` asset properties and their default Loom publications, but do not require a loaded client or native inventory evidence.
 Each invocation uses fixed offline default skins, a zero frame time, a fixed viewport and GUI scale, and the bundled JetBrains Mono typeface with its original license.
 The font version is owned by the version catalog; the render receipt records its actual bytes along with source, asset, and output hashes.
+Source hashes normalize CRLF and CR line endings to LF before UTF-8 encoding, matching excerpt extraction across Windows and Linux; all other source characters and all binary input and output bytes remain significant.
 The GIF uses a shared palette, complete opaque frames, explicit delays totaling 34 seconds, and an infinite loop; the final two seconds hold the completed source without change highlighting.
 Full-color stills retain the actual headless screen pixels separately from GIF palette conversion.
 The preview uses the original Social Interactions panel and standard Minecraft widgets.

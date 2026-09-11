@@ -30,7 +30,7 @@ internal data class ReadmeDemoSource(
             root: Path,
             stage: ReadmeDemoStage,
         ): ReadmeDemoSource {
-            val full = Files.readString(root.resolve("$DIRECTORY/${stage.sourceName}.kt")).replace("\r\n", "\n")
+            val full = readText(root.resolve("$DIRECTORY/${stage.sourceName}.kt"))
             val start = "// readme-demo:start"
             val end = "// readme-demo:end"
             require(full.split(start).size == 2 && full.split(end).size == 2) { "README demo source markers must be unique." }
@@ -39,5 +39,11 @@ internal data class ReadmeDemoSource(
             require(body.isNotBlank()) { "README demo source is empty." }
             return ReadmeDemoSource(full, body.lines())
         }
+
+        /**
+         * Reads caller-owned UTF-8 source with CRLF and CR normalized to LF for excerpts and receipt hashes.
+         * Preserves every other character, never writes the file, and propagates read failures on the calling thread.
+         */
+        fun readText(path: Path): String = Files.readString(path).replace("\r\n", "\n").replace('\r', '\n')
     }
 }

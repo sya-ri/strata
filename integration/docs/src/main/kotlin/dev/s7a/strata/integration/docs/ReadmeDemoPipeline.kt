@@ -17,7 +17,7 @@ import javax.imageio.ImageIO
 internal object ReadmeDemoPipeline {
     /**
      * Renders the compiled stages, complete stills, exact extracted source, a 34-second GIF, and input/output hashes.
-     * The font version is supplied by the version catalog; all other identities are computed from actual bytes.
+     * The font version is supplied by the version catalog; source hashes use LF-normalized UTF-8 and binary hashes use actual bytes.
      */
     fun prepare(
         root: Path,
@@ -150,7 +150,7 @@ internal object ReadmeDemoPipeline {
             assets.hashes.forEach { (name, hash) -> appendLine("input.$name=$hash") }
             Files.list(root.resolve(ReadmeDemoSource.DIRECTORY)).use { paths ->
                 paths.filter { Files.isRegularFile(it) }.sorted().forEach { path ->
-                    appendLine("source.${path.fileName}.sha256=${ShowcaseAssetIntegrity.sha256(Files.readAllBytes(path))}")
+                    appendLine("source.${path.fileName}.sha256=${ShowcaseAssetIntegrity.sha256(ReadmeDemoSource.readText(path).toByteArray())}")
                 }
             }
             files.forEach { (name, bytes) -> appendLine("output.$name.sha256=${ShowcaseAssetIntegrity.sha256(bytes)}") }

@@ -65,12 +65,47 @@ internal class ReadmeDemoArtifactsTest {
     }
 
     @Test
+    fun sourceLineEndingsPreserveArtifactsWhileHelperEditsInvalidateTheReceipt() {
+        val root = temporary.resolve("checkout")
+        val sources = root.resolve(ReadmeDemoSource.DIRECTORY)
+        Files.createDirectories(sources)
+        Files.list(repository().resolve(ReadmeDemoSource.DIRECTORY)).use { paths ->
+            paths.filter { Files.isRegularFile(it) }.forEach { path ->
+                val text = Files.readString(path).replace("\r\n", "\n").replace('\r', '\n')
+                Files.writeString(sources.resolve(path.fileName), text)
+            }
+        }
+        val assets = ReadmeDemoFixture.assets(temporary.resolve("assets"))
+        val lf = ReadmeDemoPipeline.prepare(root, assets, "test")
+        ReadmeDemoPipeline.write(root.resolve("docs/readme-demo"), lf)
+        Files.writeString(root.resolve("README.md"), ReadmeDemoReadme.replace("<!-- strata-readme-demo:start -->\n<!-- strata-readme-demo:end -->\n"))
+        Files.list(sources).use { paths ->
+            paths.forEach { path -> Files.writeString(path, Files.readString(path).replace("\n", "\r\n")) }
+        }
+        val crlf = ReadmeDemoPipeline.prepare(root, assets, "test")
+        lf.files.forEach { (name, bytes) -> assertArrayEquals(bytes, crlf.files.getValue(name), name) }
+        ReadmeDemoPipeline.check(root, crlf)
+        val helper = sources.resolve("ReadmePlayerRow.kt")
+        Files.writeString(helper, Files.readString(helper) + "// Changed helper source.\r\n")
+        val edited = ReadmeDemoPipeline.prepare(root, assets, "test")
+        assertArrayEquals(crlf.files.getValue("demo.gif"), edited.files.getValue("demo.gif"))
+        val failure = assertThrows(IllegalArgumentException::class.java) { ReadmeDemoPipeline.check(root, edited) }
+        assertTrue(failure.message.orEmpty().contains("render.properties"))
+        assertArrayEquals(lf.files.getValue("render.properties"), Files.readAllBytes(root.resolve("docs/readme-demo/render.properties")))
+    }
+
+    @Test
     fun sourceExtractionAndReadmeReplacementRejectAmbiguityAndPreserveSurroundingContent() {
         val sourceDirectory = temporary.resolve(ReadmeDemoSource.DIRECTORY)
         Files.createDirectories(sourceDirectory)
         val sourceFile = sourceDirectory.resolve("BasicPlayersExample.kt")
-        Files.writeString(sourceFile, "fun example() {\n    // readme-demo:start\n    Column {}\n    // readme-demo:end\n}\n")
-        assertEquals(listOf("Column {}"), ReadmeDemoSource.read(temporary, ReadmeDemoStage.Basic).lines)
+        val source = "fun example() {\n    // readme-demo:start\n    Column {}\n    // readme-demo:end\n}\n"
+        listOf("\n", "\r\n", "\r").forEach { newline ->
+            Files.writeString(sourceFile, source.replace("\n", newline))
+            val read = ReadmeDemoSource.read(temporary, ReadmeDemoStage.Basic)
+            assertEquals(source, read.full)
+            assertEquals(listOf("Column {}"), read.lines)
+        }
         Files.writeString(sourceFile, "// readme-demo:start\n// readme-demo:start\n// readme-demo:end")
         assertThrows(IllegalArgumentException::class.java) { ReadmeDemoSource.read(temporary, ReadmeDemoStage.Basic) }
         val before = "unchanged before\n<!-- strata-readme-demo:start -->\nstale\n<!-- strata-readme-demo:end -->\nunchanged after"
