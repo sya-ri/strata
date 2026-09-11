@@ -109,5 +109,7 @@ These receipts prove the actual shutdown boundary, while the Minecraft-independe
 ## Documentation and benchmarks
 
 [Documentation maintenance](documentation.md) lists the focused link, compiled-example, generation, and freshness checks.
+Run `./gradlew :integration:docs:generateReadmeDemo --no-configure-on-demand` to regenerate the README GIF, or `./gradlew :integration:docs:checkReadmeDemo --no-configure-on-demand` to verify it without modifying tracked files.
+The [README demo generation contract](documentation.md#readme-code-and-screen-demo) describes its compiled examples, resource inputs, and validation.
 Run `./gradlew :quality:benchmarks:jmh` for temporary measurements, then apply the [performance review contract](../development/performance.md).
 Test, coverage, native evidence, and benchmark reports belong under their module build directories and must be recreated for the revision being reviewed.
