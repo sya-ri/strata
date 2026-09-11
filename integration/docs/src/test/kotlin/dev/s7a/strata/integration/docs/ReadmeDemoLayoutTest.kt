@@ -1,11 +1,16 @@
 package dev.s7a.strata.integration.docs
 
+import dev.s7a.strata.component.Column
 import dev.s7a.strata.geometry.IntOffset
 import dev.s7a.strata.geometry.IntRect
 import dev.s7a.strata.geometry.IntSize
 import dev.s7a.strata.input.InputResult
 import dev.s7a.strata.input.PointerEvent
+import dev.s7a.strata.integration.docs.example.ReadmeDemoChrome
 import dev.s7a.strata.integration.docs.example.ReadmeDemoColors
+import dev.s7a.strata.integration.docs.example.playerRow
+import dev.s7a.strata.modifier.Modifier
+import dev.s7a.strata.modifier.width
 import dev.s7a.strata.runtime.FrameTime
 import dev.s7a.strata.runtime.minecraft.createMinecraftUiHost
 import dev.s7a.strata.runtime.minecraft.font.lwjgl.LwjglMinecraftFontBackendFactory
@@ -22,7 +27,7 @@ import org.junit.jupiter.api.io.TempDir
 import java.nio.file.Path
 
 /**
- * Verifies natural sizing, fixed row widths, and text-only alignment using real compiled screen geometry.
+ * Verifies natural sizing, parent-controlled row widths, and text-only alignment using real compiled screen geometry.
  */
 @OptIn(InternalStrataRuntimeApi::class)
 internal class ReadmeDemoLayoutTest {
@@ -103,6 +108,36 @@ internal class ReadmeDemoLayoutTest {
                 val box = entry.bounds
                 assertTrue(0 <= box.left && box.right <= 256 && 0 <= box.top && box.bottom <= 192)
             }
+        }
+    }
+
+    @Test
+    fun outerColumnWidthControlsEveryRowWithoutChangingTheRowDefinition() {
+        val assets = ReadmeDemoFixture.assets(temporary)
+        val frames =
+            listOf(180, 220).map { width ->
+                val screen =
+                    ReadmeDemoChrome.screen(assets.panel) { rowModifier ->
+                        Column(Modifier.Empty.width(width), spacing = 6) {
+                            assets.players.take(3).forEach { player -> playerRow(player, rowModifier) }
+                        }
+                    }
+                createMinecraftUiHost(screen, assets.minecraft.profile, LwjglMinecraftFontBackendFactory).use { host ->
+                    host.attach()
+                    host.frame(IntSize(256, 192), FrameTime(0L))
+                }
+            }
+        assertEquals(List(3) { 180 }, rows(frames[0]).map { it.width })
+        assertEquals(List(3) { 220 }, rows(frames[1]).map { it.width })
+        rows(frames[0]).zip(rows(frames[1])).forEach { (narrow, wide) ->
+            assertEquals(narrow.left, wide.left)
+            assertEquals(narrow.top, wide.top)
+            assertEquals(narrow.height, wide.height)
+        }
+        buttons(frames[0]).zip(buttons(frames[1])).forEach { (narrow, wide) ->
+            assertEquals(narrow.bounds.size, wide.bounds.size)
+            assertEquals(narrow.bounds.top, wide.bounds.top)
+            assertEquals(40, wide.bounds.left - narrow.bounds.left)
         }
     }
 

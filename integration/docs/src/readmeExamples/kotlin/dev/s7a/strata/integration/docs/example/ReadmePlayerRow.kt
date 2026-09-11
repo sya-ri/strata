@@ -10,10 +10,10 @@ import dev.s7a.strata.component.UiScope
 import dev.s7a.strata.layout.HorizontalAlignment.Start
 import dev.s7a.strata.layout.VerticalAlignment.Center
 import dev.s7a.strata.modifier.Modifier
-import dev.s7a.strata.modifier.width
+import dev.s7a.strata.modifier.fillMaxWidth
 
 /**
- * Reuses the completed fixed-width player row while the final chapters change list size and scrolling.
+ * Reuses the completed player row, filling its parent list width, while the final chapters change list size and scrolling.
  * Reads caller-owned immutable presentation data on the active host thread and propagates layout failures.
  */
 internal fun UiScope.playerRow(
@@ -21,7 +21,7 @@ internal fun UiScope.playerRow(
     rowModifier: Modifier,
 ) {
     Row(
-        modifier = rowModifier.width(208),
+        modifier = rowModifier.fillMaxWidth(),
         spacing = 8,
         verticalAlignment = Center,
     ) {

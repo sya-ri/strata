@@ -54,9 +54,9 @@ internal enum class ReadmeDemoStage(
     Actions("Add a button", "One Button extends every row without calculating its position.", "ActionsPlayersExample", 400, ::actionsPlayersScreen),
 
     /**
-     * Weight assigns the remaining fixed row width to the text.
+     * The outer Column sets the list width; rows fill it and weight assigns the remaining space to text.
      */
-    Fixed("Fix the row width", "Set a fixed row width and give the text the remaining space with weight.", "FixedPlayersExample", 500, ::fixedPlayersScreen),
+    Fixed("Fix the list width", "Set the outer Column width once; every row fills it and weight gives text the remaining space.", "FixedPlayersExample", 500, ::fixedPlayersScreen),
 
     /**
      * Only names and roles move inside the allocated text column.

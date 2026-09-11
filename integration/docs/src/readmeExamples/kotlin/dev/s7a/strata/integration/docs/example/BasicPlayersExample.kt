@@ -12,7 +12,7 @@ import dev.s7a.strata.screen.ScreenDefinition
 /**
  * Builds the basic stage of the README player-list demonstration using only the public API.
  * The one-shot definition reads caller-owned immutable players on its host thread and propagates layout failures.
- * All child positions come from parent layout; the final stages fix row width and align only the weighted text column.
+ * All child positions come from parent layout; the final stages fix the outer list width and align only the weighted text column.
  *
  * @param players ordered offline presentation data, shared read-only with the definition.
  * @param panel detached original Minecraft Social Interactions panel.
@@ -22,9 +22,9 @@ internal fun basicPlayersScreen(
     players: List<ReadmePlayer>,
     panel: ImageSource,
 ): ScreenDefinition =
-    ReadmeDemoChrome.screen(panel) { panelModifier, rowModifier ->
+    ReadmeDemoChrome.screen(panel) { rowModifier ->
         // readme-demo:start
-        Column(modifier = panelModifier, spacing = 6) {
+        Column(spacing = 6) {
             players.forEach { player ->
                 Row(
                     modifier = rowModifier,

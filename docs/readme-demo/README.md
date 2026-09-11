@@ -2,7 +2,7 @@
 
 # Add components. Let the layout make room.
 
-Three players first demonstrate added content, fixed widths, and text alignment; five more then arrive one at a time before scrolling is added.
+Three players first demonstrate added content, a fixed list width, and text alignment; five more then arrive one at a time before scrolling is added.
 Every screen is freshly rendered by Strata Headless from the compiled Kotlin example and original Minecraft assets.
 Overflow during the five short arrival frames is intentional: ScrollArea then contains the list, and a separately added Scrollbar shares its state.
 The GIF compares source revisions; it does not demonstrate hot reload or an in-game invitation service.
@@ -20,7 +20,7 @@ Each row takes the width of its contents.
 <details><summary>Source shown in this frame</summary>
 
 ```kotlin
-Column(modifier = panelModifier, spacing = 6) {
+Column(spacing = 6) {
     players.forEach { player ->
         Row(
             modifier = rowModifier,
@@ -49,7 +49,7 @@ One Text adds a role to every player.
 <details><summary>Source shown in this frame</summary>
 
 ```kotlin
-Column(modifier = panelModifier, spacing = 6) {
+Column(spacing = 6) {
     players.forEach { player ->
         Row(
             modifier = rowModifier,
@@ -79,7 +79,7 @@ One Button extends every row without calculating its position.
 <details><summary>Source shown in this frame</summary>
 
 ```kotlin
-Column(modifier = panelModifier, spacing = 6) {
+Column(spacing = 6) {
     players.forEach { player ->
         Row(
             modifier = rowModifier,
@@ -99,21 +99,21 @@ Column(modifier = panelModifier, spacing = 6) {
 
 </details>
 
-## 4. Fix the row width
+## 4. Fix the list width
 
-Set a fixed row width and give the text the remaining space with weight.
+Set the outer Column width once; every row fills it and weight gives text the remaining space.
 
-![Set a fixed row width and give the text the remaining space with weight.](4-fixed.png)
+![Set the outer Column width once; every row fills it and weight gives text the remaining space.](4-fixed.png)
 
 [Complete screen pixels](4-fixed-screen.png) · [Compiled source](../../integration/docs/src/readmeExamples/kotlin/dev/s7a/strata/integration/docs/example/FixedPlayersExample.kt)
 
 <details><summary>Source shown in this frame</summary>
 
 ```kotlin
-Column(modifier = panelModifier, spacing = 6) {
+Column(Modifier.Empty.width(220), spacing = 6) {
     players.forEach { player ->
         Row(
-            modifier = rowModifier.width(208),
+            modifier = rowModifier.fillMaxWidth(),
             spacing = 8,
             verticalAlignment = Center,
         ) {
@@ -145,10 +145,10 @@ End aligns names and roles; row frames, faces, and buttons stay still.
 <details><summary>Source shown in this frame</summary>
 
 ```kotlin
-Column(modifier = panelModifier, spacing = 6) {
+Column(Modifier.Empty.width(220), spacing = 6) {
     players.forEach { player ->
         Row(
-            modifier = rowModifier.width(208),
+            modifier = rowModifier.fillMaxWidth(),
             spacing = 8,
             verticalAlignment = Center,
         ) {
@@ -180,10 +180,10 @@ Start moves only the text back to the left.
 <details><summary>Source shown in this frame</summary>
 
 ```kotlin
-Column(modifier = panelModifier, spacing = 6) {
+Column(Modifier.Empty.width(220), spacing = 6) {
     players.forEach { player ->
         Row(
-            modifier = rowModifier.width(208),
+            modifier = rowModifier.fillMaxWidth(),
             spacing = 8,
             verticalAlignment = Center,
         ) {
@@ -215,7 +215,7 @@ The same row composition is reused as the list starts to overflow.
 <details><summary>Source shown in this frame</summary>
 
 ```kotlin
-Column(modifier = panelModifier, spacing = 6) {
+Column(Modifier.Empty.width(220), spacing = 6) {
     players.take(4).forEach { player ->
         playerRow(player, rowModifier)
     }
@@ -235,7 +235,7 @@ Players arrive one at a time.
 <details><summary>Source shown in this frame</summary>
 
 ```kotlin
-Column(modifier = panelModifier, spacing = 6) {
+Column(Modifier.Empty.width(220), spacing = 6) {
     players.take(5).forEach { player ->
         playerRow(player, rowModifier)
     }
@@ -255,7 +255,7 @@ The list is now taller than the screen.
 <details><summary>Source shown in this frame</summary>
 
 ```kotlin
-Column(modifier = panelModifier, spacing = 6) {
+Column(Modifier.Empty.width(220), spacing = 6) {
     players.take(6).forEach { player ->
         playerRow(player, rowModifier)
     }
@@ -275,7 +275,7 @@ Additional rows cannot be reached yet.
 <details><summary>Source shown in this frame</summary>
 
 ```kotlin
-Column(modifier = panelModifier, spacing = 6) {
+Column(Modifier.Empty.width(220), spacing = 6) {
     players.take(7).forEach { player ->
         playerRow(player, rowModifier)
     }
@@ -295,7 +295,7 @@ Eight players now need a scroll viewport.
 <details><summary>Source shown in this frame</summary>
 
 ```kotlin
-Column(modifier = panelModifier, spacing = 6) {
+Column(Modifier.Empty.width(220), spacing = 6) {
     players.take(8).forEach { player ->
         playerRow(player, rowModifier)
     }
@@ -316,8 +316,11 @@ Wrap the existing Column in ScrollArea to contain the list.
 
 ```kotlin
 val scroll = ScrollState()
-ScrollArea(state = scroll, modifier = panelModifier) {
-    Column(spacing = 6) {
+ScrollArea(
+    state = scroll,
+    modifier = Modifier.Empty.height(126),
+) {
+    Column(Modifier.Empty.width(220), spacing = 6) {
         players.forEach { player ->
             playerRow(player, rowModifier)
         }
@@ -339,8 +342,11 @@ Wheel input reaches the final players; no scrollbar has been added yet.
 
 ```kotlin
 val scroll = ScrollState()
-ScrollArea(state = scroll, modifier = panelModifier) {
-    Column(spacing = 6) {
+ScrollArea(
+    state = scroll,
+    modifier = Modifier.Empty.height(126),
+) {
+    Column(Modifier.Empty.width(220), spacing = 6) {
         players.forEach { player ->
             playerRow(player, rowModifier)
         }
@@ -362,12 +368,15 @@ Pass the same ScrollState to Scrollbar; its thumb reflects the list position.
 
 ```kotlin
 val scroll = ScrollState()
-Row(modifier = panelModifier, spacing = 4) {
+Row(spacing = 4) {
     ScrollArea(
         state = scroll,
         modifier = Modifier.Empty.size(220, 126),
     ) {
-        Column(spacing = 6) {
+        Column(
+            modifier = Modifier.Empty.width(220),
+            spacing = 6,
+        ) {
             players.forEach { player ->
                 playerRow(player, rowModifier)
             }
@@ -394,12 +403,15 @@ The list and linked scrollbar move together under wheel input.
 
 ```kotlin
 val scroll = ScrollState()
-Row(modifier = panelModifier, spacing = 4) {
+Row(spacing = 4) {
     ScrollArea(
         state = scroll,
         modifier = Modifier.Empty.size(220, 126),
     ) {
-        Column(spacing = 6) {
+        Column(
+            modifier = Modifier.Empty.width(220),
+            spacing = 6,
+        ) {
             players.forEach { player ->
                 playerRow(player, rowModifier)
             }
@@ -426,12 +438,15 @@ The linked thumb follows the list back to its last player.
 
 ```kotlin
 val scroll = ScrollState()
-Row(modifier = panelModifier, spacing = 4) {
+Row(spacing = 4) {
     ScrollArea(
         state = scroll,
         modifier = Modifier.Empty.size(220, 126),
     ) {
-        Column(spacing = 6) {
+        Column(
+            modifier = Modifier.Empty.width(220),
+            spacing = 6,
+        ) {
             players.forEach { player ->
                 playerRow(player, rowModifier)
             }

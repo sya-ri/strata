@@ -3,6 +3,7 @@ package dev.s7a.strata.integration.docs.example
 import dev.s7a.strata.component.Column
 import dev.s7a.strata.component.ImageSource
 import dev.s7a.strata.component.NineSliceCenterMode
+import dev.s7a.strata.component.Stack
 import dev.s7a.strata.component.Text
 import dev.s7a.strata.component.UiScope
 import dev.s7a.strata.geometry.Insets
@@ -22,14 +23,15 @@ import dev.s7a.strata.screen.ScreenDefinition
 internal object ReadmeDemoChrome {
     /**
      * Creates an unopened caller-owned definition with a roster count and original panel.
-     * The callback receives immutable active panel and row modifiers on the host thread.
+     * The callback receives an immutable row modifier inside the panel on the host thread.
+     * Panel decoration bounds the available space without fixing the child list width.
      * The caller owns the detached panel pixels; asset and layout failures propagate through screen evaluation.
      */
     fun screen(
         panel: ImageSource,
         playerCount: Int = 3,
         panelWidth: Int = 236,
-        content: UiScope.(Modifier, Modifier) -> Unit,
+        content: UiScope.(Modifier) -> Unit,
     ): ScreenDefinition =
         ScreenDefinition("Players") {
             Column(
@@ -47,8 +49,10 @@ internal object ReadmeDemoChrome {
                         .size(panelWidth, 142)
                         .imageBackground(panel, Insets.all(8), NineSliceCenterMode.Tiled)
                         .padding(8)
-                val rowModifier = Modifier.Empty.background(ReadmeDemoColors.row).padding(6)
-                content(panelModifier, rowModifier)
+                Stack(modifier = panelModifier) {
+                    val rowModifier = Modifier.Empty.background(ReadmeDemoColors.row).padding(6)
+                    content(rowModifier)
+                }
             }
         }
 }

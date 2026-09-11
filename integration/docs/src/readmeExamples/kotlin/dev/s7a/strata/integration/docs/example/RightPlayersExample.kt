@@ -10,13 +10,14 @@ import dev.s7a.strata.component.Text
 import dev.s7a.strata.layout.HorizontalAlignment.End
 import dev.s7a.strata.layout.VerticalAlignment.Center
 import dev.s7a.strata.modifier.Modifier
+import dev.s7a.strata.modifier.fillMaxWidth
 import dev.s7a.strata.modifier.width
 import dev.s7a.strata.screen.ScreenDefinition
 
 /**
  * Builds the right stage of the README player-list demonstration using only the public API.
  * The one-shot definition reads caller-owned immutable players on its host thread and propagates layout failures.
- * All child positions come from parent layout; the final stages fix row width and align only the weighted text column.
+ * All child positions come from parent layout; the final stages fix the outer list width and align only the weighted text column.
  *
  * @param players ordered offline presentation data, shared read-only with the definition.
  * @param panel detached original Minecraft Social Interactions panel.
@@ -26,12 +27,12 @@ internal fun rightPlayersScreen(
     players: List<ReadmePlayer>,
     panel: ImageSource,
 ): ScreenDefinition =
-    ReadmeDemoChrome.screen(panel) { panelModifier, rowModifier ->
+    ReadmeDemoChrome.screen(panel) { rowModifier ->
         // readme-demo:start
-        Column(modifier = panelModifier, spacing = 6) {
+        Column(Modifier.Empty.width(220), spacing = 6) {
             players.forEach { player ->
                 Row(
-                    modifier = rowModifier.width(208),
+                    modifier = rowModifier.fillMaxWidth(),
                     spacing = 8,
                     verticalAlignment = Center,
                 ) {

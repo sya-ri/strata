@@ -96,7 +96,7 @@ internal object ReadmeDemoPipeline {
             appendLine()
             appendLine("# Add components. Let the layout make room.")
             appendLine()
-            appendLine("Three players first demonstrate added content, fixed widths, and text alignment; five more then arrive one at a time before scrolling is added.")
+            appendLine("Three players first demonstrate added content, a fixed list width, and text alignment; five more then arrive one at a time before scrolling is added.")
             appendLine("Every screen is freshly rendered by Strata Headless from the compiled Kotlin example and original Minecraft assets.")
             appendLine("Overflow during the five short arrival frames is intentional: ScrollArea then contains the list, and a separately added Scrollbar shares its state.")
             appendLine("The GIF compares source revisions; it does not demonstrate hot reload or an in-game invitation service.")

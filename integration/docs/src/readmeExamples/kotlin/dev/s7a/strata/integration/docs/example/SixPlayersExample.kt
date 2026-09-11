@@ -2,6 +2,8 @@ package dev.s7a.strata.integration.docs.example
 
 import dev.s7a.strata.component.Column
 import dev.s7a.strata.component.ImageSource
+import dev.s7a.strata.modifier.Modifier
+import dev.s7a.strata.modifier.width
 import dev.s7a.strata.screen.ScreenDefinition
 
 /**
@@ -12,9 +14,9 @@ internal fun sixPlayersScreen(
     players: List<ReadmePlayer>,
     panel: ImageSource,
 ): ScreenDefinition =
-    ReadmeDemoChrome.screen(panel, playerCount = 6) { panelModifier, rowModifier ->
+    ReadmeDemoChrome.screen(panel, playerCount = 6) { rowModifier ->
         // readme-demo:start
-        Column(modifier = panelModifier, spacing = 6) {
+        Column(Modifier.Empty.width(220), spacing = 6) {
             players.take(6).forEach { player ->
                 playerRow(player, rowModifier)
             }

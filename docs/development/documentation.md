@@ -89,7 +89,7 @@ The font version is owned by the version catalog; the render receipt records its
 The GIF uses a shared palette, complete opaque frames, explicit delays totaling 34 seconds, and an infinite loop; the final two seconds hold the completed source without change highlighting.
 Full-color stills retain the actual headless screen pixels separately from GIF palette conversion.
 The preview uses the original Social Interactions panel and standard Minecraft widgets.
-The GIF contains only highlighted source and screen pixels: natural row sizing, added content, fixed-width rows, then right and left text alignment while frames, heads, and buttons stay fixed.
+The GIF contains only highlighted source and screen pixels: natural row sizing, added content, a fixed outer Column width that every row fills, then right and left text alignment while frames, heads, and buttons stay fixed.
 The final sequence adds players one at a time at 0.4-second intervals, intentionally exposes the unscrollable list overflow, adds ScrollArea, and then adds an independent Scrollbar sharing the same ScrollState.
 Fixed wheel inputs demonstrate scrolling before the bar exists and synchronized list and thumb movement afterward; screen positions are sampled without interpolation.
 

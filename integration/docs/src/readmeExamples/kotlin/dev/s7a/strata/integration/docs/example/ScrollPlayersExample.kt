@@ -8,6 +8,7 @@ import dev.s7a.strata.component.ScrollState
 import dev.s7a.strata.component.Scrollbar
 import dev.s7a.strata.modifier.Modifier
 import dev.s7a.strata.modifier.size
+import dev.s7a.strata.modifier.width
 import dev.s7a.strata.screen.ScreenDefinition
 
 /**
@@ -19,15 +20,18 @@ internal fun scrollPlayersScreen(
     players: List<ReadmePlayer>,
     panel: ImageSource,
 ): ScreenDefinition =
-    ReadmeDemoChrome.screen(panel, playerCount = players.size, panelWidth = 246) { panelModifier, rowModifier ->
+    ReadmeDemoChrome.screen(panel, playerCount = players.size, panelWidth = 246) { rowModifier ->
         // readme-demo:start
         val scroll = ScrollState()
-        Row(modifier = panelModifier, spacing = 4) {
+        Row(spacing = 4) {
             ScrollArea(
                 state = scroll,
                 modifier = Modifier.Empty.size(220, 126),
             ) {
-                Column(spacing = 6) {
+                Column(
+                    modifier = Modifier.Empty.width(220),
+                    spacing = 6,
+                ) {
                     players.forEach { player ->
                         playerRow(player, rowModifier)
                     }
