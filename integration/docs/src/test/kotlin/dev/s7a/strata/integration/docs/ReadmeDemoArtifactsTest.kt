@@ -1,0 +1,154 @@
+package dev.s7a.strata.integration.docs
+
+import org.junit.jupiter.api.Assertions.assertArrayEquals
+import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertFalse
+import org.junit.jupiter.api.Assertions.assertThrows
+import org.junit.jupiter.api.Assertions.assertTrue
+import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.io.TempDir
+import java.nio.file.Files
+import java.nio.file.Path
+import javax.imageio.ImageIO
+import javax.imageio.metadata.IIOMetadataNode
+import javax.imageio.stream.MemoryCacheImageInputStream
+
+/**
+ * Verifies replay timing, exact source/pixel pairing, repeatability, and non-mutating stale-output detection.
+ */
+internal class ReadmeDemoArtifactsTest {
+    @TempDir
+    lateinit var temporary: Path
+
+    @Test
+    fun storyboardRecreatesAnInfiniteTwentyFourSecondGifAndUnmodifiedScreenStills() {
+        val root = repository()
+        val assets = ReadmeDemoFixture.assets(temporary.resolve("assets"))
+        val first = ReadmeDemoPipeline.prepare(root, assets, "test")
+        val second = ReadmeDemoPipeline.prepare(root, assets, "test")
+        first.files.forEach { (name, bytes) -> assertArrayEquals(bytes, second.files.getValue(name), name) }
+        val gif = first.files.getValue("demo.gif")
+        assertTrue(gif.size <= 5 * 1024 * 1024)
+        verifyGif(gif)
+        ReadmeDemoStage.entries.forEach { stage ->
+            val stem = "${stage.ordinal + 1}-${stage.name.lowercase()}"
+            val screen =
+                first.files
+                    .getValue("$stem-screen.png")
+                    .inputStream()
+                    .use(ImageIO::read)
+            val composed =
+                first.files
+                    .getValue("$stem.png")
+                    .inputStream()
+                    .use(ImageIO::read)
+            assertArrayEquals(
+                screen.getRGB(0, 0, 512, 384, null, 0, 512),
+                composed.getRGB(672, 258, 512, 384, null, 0, 512),
+                "The full-color still must contain the original complete screen pixels.",
+            )
+            val source = ReadmeDemoSource.read(root, stage)
+            assertEquals(1, source.lines.count { it.contains("PlayerHead(") }, "Every stage must retain its inline row definition.")
+            assertTrue(source.lines.size <= 36)
+            val markdown = first.files.getValue("README.md").toString(Charsets.UTF_8)
+            assertTrue(markdown.contains(source.lines.joinToString("\n")))
+            assertTrue(source.full.contains(source.lines.first()))
+        }
+        val checkedRoot = temporary.resolve("checked")
+        ReadmeDemoPipeline.write(checkedRoot.resolve("docs/readme-demo"), first)
+        val readme = ReadmeDemoReadme.replace("before\n<!-- strata-readme-demo:start -->\n<!-- strata-readme-demo:end -->\nafter\n")
+        Files.writeString(checkedRoot.resolve("README.md"), readme)
+        ReadmeDemoPipeline.check(checkedRoot, first)
+        val target = checkedRoot.resolve("docs/readme-demo/demo.gif")
+        Files.write(target, byteArrayOf(1, 2, 3))
+        assertThrows(IllegalArgumentException::class.java) { ReadmeDemoPipeline.check(checkedRoot, first) }
+        assertArrayEquals(byteArrayOf(1, 2, 3), Files.readAllBytes(target))
+        assertEquals(readme, Files.readString(checkedRoot.resolve("README.md")))
+    }
+
+    @Test
+    fun sourceLineEndingsPreserveArtifactsWhileHelperEditsInvalidateTheReceipt() {
+        val root = temporary.resolve("checkout")
+        val sources = root.resolve(ReadmeDemoSource.DIRECTORY)
+        Files.createDirectories(sources)
+        Files.list(repository().resolve(ReadmeDemoSource.DIRECTORY)).use { paths ->
+            paths.filter { Files.isRegularFile(it) }.forEach { path ->
+                val text = Files.readString(path).replace("\r\n", "\n").replace('\r', '\n')
+                Files.writeString(sources.resolve(path.fileName), text)
+            }
+        }
+        val assets = ReadmeDemoFixture.assets(temporary.resolve("assets"))
+        val lf = ReadmeDemoPipeline.prepare(root, assets, "test")
+        ReadmeDemoPipeline.write(root.resolve("docs/readme-demo"), lf)
+        Files.writeString(root.resolve("README.md"), ReadmeDemoReadme.replace("<!-- strata-readme-demo:start -->\n<!-- strata-readme-demo:end -->\n"))
+        Files.list(sources).use { paths ->
+            paths.forEach { path -> Files.writeString(path, Files.readString(path).replace("\n", "\r\n")) }
+        }
+        val crlf = ReadmeDemoPipeline.prepare(root, assets, "test")
+        lf.files.forEach { (name, bytes) -> assertArrayEquals(bytes, crlf.files.getValue(name), name) }
+        ReadmeDemoPipeline.check(root, crlf)
+        val helper = sources.resolve("ReadmeDemoChrome.kt")
+        Files.writeString(helper, Files.readString(helper) + "// Changed helper source.\r\n")
+        val edited = ReadmeDemoPipeline.prepare(root, assets, "test")
+        assertArrayEquals(crlf.files.getValue("demo.gif"), edited.files.getValue("demo.gif"))
+        val failure = assertThrows(IllegalArgumentException::class.java) { ReadmeDemoPipeline.check(root, edited) }
+        assertTrue(failure.message.orEmpty().contains("render.properties"))
+        assertArrayEquals(lf.files.getValue("render.properties"), Files.readAllBytes(root.resolve("docs/readme-demo/render.properties")))
+    }
+
+    @Test
+    fun sourceExtractionAndReadmeReplacementRejectAmbiguityAndPreserveSurroundingContent() {
+        val sourceDirectory = temporary.resolve(ReadmeDemoSource.DIRECTORY)
+        Files.createDirectories(sourceDirectory)
+        val sourceFile = sourceDirectory.resolve("BasicPlayersExample.kt")
+        val source = "fun example() {\n    // readme-demo:start\n    Column {}\n    // readme-demo:end\n}\n"
+        listOf("\n", "\r\n", "\r").forEach { newline ->
+            Files.writeString(sourceFile, source.replace("\n", newline))
+            val read = ReadmeDemoSource.read(temporary, ReadmeDemoStage.Basic)
+            assertEquals(source, read.full)
+            assertEquals(listOf("Column {}"), read.lines)
+        }
+        Files.writeString(sourceFile, "// readme-demo:start\n// readme-demo:start\n// readme-demo:end")
+        assertThrows(IllegalArgumentException::class.java) { ReadmeDemoSource.read(temporary, ReadmeDemoStage.Basic) }
+        val before = "unchanged before\n<!-- strata-readme-demo:start -->\nstale\n<!-- strata-readme-demo:end -->\nunchanged after"
+        val after = ReadmeDemoReadme.replace(before)
+        assertTrue(after.startsWith("unchanged before\n"))
+        assertTrue(after.endsWith("\nunchanged after"))
+        assertFalse(after.contains("stale"))
+        assertThrows(IllegalArgumentException::class.java) { ReadmeDemoReadme.replace(before + "\n<!-- strata-readme-demo:start -->") }
+        assertThrows(IllegalArgumentException::class.java) { ReadmeDemoReadme.replace("no anchors") }
+    }
+
+    private fun verifyGif(bytes: ByteArray) {
+        val reader = ImageIO.getImageReadersByFormatName("gif").asSequence().first()
+        try {
+            MemoryCacheImageInputStream(bytes.inputStream()).use { input ->
+                reader.input = input
+                assertEquals(26, reader.getNumImages(true))
+                val delays =
+                    (0 until 26).map { index ->
+                        val image = reader.read(index)
+                        assertEquals(1200, image.width)
+                        assertEquals(900, image.height)
+                        val metadata = reader.getImageMetadata(index).getAsTree("javax_imageio_gif_image_1.0") as IIOMetadataNode
+                        val control = metadata.getElementsByTagName("GraphicControlExtension").item(0) as IIOMetadataNode
+                        if (index == 0) {
+                            val loop = metadata.getElementsByTagName("ApplicationExtension").item(0) as IIOMetadataNode
+                            assertEquals("NETSCAPE", loop.getAttribute("applicationID"))
+                            assertArrayEquals(byteArrayOf(1, 0, 0), loop.userObject as ByteArray)
+                        }
+                        control.getAttribute("delayTime").toInt()
+                    }
+                assertEquals(listOf(200, 250, 250, 250, 250, 200, 150) + List(5) { 25 } + listOf(150, 75, 150) + List(10) { 25 } + 100, delays)
+                assertEquals(2400, delays.sum())
+            }
+        } finally {
+            reader.dispose()
+        }
+    }
+
+    private fun repository(): Path {
+        val current = Path.of(System.getProperty("user.dir")).toAbsolutePath().normalize()
+        return if (Files.isDirectory(current.resolve("api"))) current else current.resolve("../..").normalize()
+    }
+}

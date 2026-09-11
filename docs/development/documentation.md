@@ -74,9 +74,27 @@ The same module owns the public `skills/strata` package and its API-only compile
 `./gradlew :integration:docs:generateStrataSkill` deliberately synchronizes the five generated skill references, the anchored README installation and API-only example regions, and the canonical `docs/publication/modrinth-project.md` body after a release-version, API, or example change.
 The skill examples use a separate source set whose compile classpath contains only `:api`; ordinary application examples therefore cannot acquire a runtime import transitively.
 
-The three README marker pairs own installation, the API opening example, and the showcase region.
+The README marker pairs own installation, the API opening example, the component showcase, and the animated player-list demo.
 Preserve those markers and update their source examples or templates instead of hand-editing generated content.
 Keep the public skill's existing directory structure and update its links and generated references when documentation moves.
+
+## README code-and-screen demo
+
+The nonpublished `integration:docs` module compiles the player-list stages from `src/readmeExamples/kotlin` against `:api` alone and also includes those exact sources in its generator.
+Run `./gradlew :integration:docs:generateReadmeDemo --no-configure-on-demand` to render fresh Minecraft-backed screens, compose the displayed source, and synchronize `docs/readme-demo` plus the anchored root README region.
+Run `./gradlew :integration:docs:checkReadmeDemo --no-configure-on-demand` to recreate and compare every artifact without modifying tracked files; the module's `check` includes this gate.
+These tasks reuse the component showcase's four `strata.showcase` asset properties and their default Loom publications, but do not require a loaded client or native inventory evidence.
+Each invocation uses fixed offline default skins, a zero frame time, a fixed viewport and GUI scale, and the bundled JetBrains Mono typeface with its original license.
+The font version is owned by the version catalog; the render receipt records its actual bytes along with source, asset, and output hashes.
+Source hashes normalize CRLF and CR line endings to LF before UTF-8 encoding, matching excerpt extraction across Windows and Linux; all other source characters and all binary input and output bytes remain significant.
+The GIF uses a shared palette, complete opaque frames, explicit delays totaling 24 seconds, and an infinite loop; the final second holds the completed source without change highlighting.
+Full-color stills retain the actual headless screen pixels separately from GIF palette conversion.
+The preview uses the original Social Interactions panel and standard Minecraft widgets.
+The GIF contains only highlighted source and screen pixels: natural row sizing, added content, a fixed outer Column width that every row fills, a separate weight edit that gives text the remaining space, then right and left text alignment while frames, heads, and buttons stay fixed.
+The final sequence adds players one at a time at 0.25-second intervals, intentionally exposes the unscrollable list overflow, adds ScrollArea, and then adds an independent Scrollbar sharing the same ScrollState.
+The player row stays inline in every compiled sample.
+The 1200 by 900 canvas displays each complete source excerpt without scrolling, using the bundled font at 18 pixels with compact indentation; the screen keeps its integer 2x scale.
+Fixed wheel inputs demonstrate scrolling before the bar exists and synchronized list and thumb movement afterward; screen positions are sampled without interpolation.
 
 ## API site and Pages
 

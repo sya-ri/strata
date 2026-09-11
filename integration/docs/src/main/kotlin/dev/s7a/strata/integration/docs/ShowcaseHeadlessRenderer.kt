@@ -157,17 +157,22 @@ internal object ShowcaseHeadlessRenderer {
     /**
      * Creates fresh commands and pixels at a fixed time, keeping logical layout independent of physical density.
      * The supplied definition is evaluated only inside this host and no mutable state escapes on success or failure.
+     * Optional wheel input is delivered at [pointer] after the initial layout; zero leaves existing stills unchanged.
      */
     internal fun render(
         profile: MinecraftUiProfile,
         definition: ScreenDefinition,
         viewport: ShowcaseViewport,
         pointer: IntOffset = IntOffset.Zero,
+        wheelDelta: Double = 0.0,
     ): ByteArray =
         createMinecraftUiHost(definition, profile, LwjglMinecraftFontBackendFactory).use { host ->
             host.attach()
             host.frame(viewport.size, FrameTime(0L))
             host.dispatchPointer(PointerEvent.Move(pointer))
+            if (wheelDelta != 0.0) {
+                host.dispatchPointer(PointerEvent.Scroll(pointer, 0.0, wheelDelta))
+            }
             val frame = host.frame(viewport.size, FrameTime(0L))
             val framebufferClear =
                 DrawCommand.FillRectangle(

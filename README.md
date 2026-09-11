@@ -5,6 +5,12 @@
 
 Declarative Minecraft UI with reusable components, caller-owned state, and headless rendering.
 
+<!-- strata-readme-demo:start -->
+[![Strata: compose player rows, align text, and link a scrollbar](docs/readme-demo/demo.gif)](docs/readme-demo/README.md)
+
+[Example](integration/docs/src/readmeExamples/kotlin/dev/s7a/strata/integration/docs/example/ScrollPlayersExample.kt) · [Still frames](docs/readme-demo/README.md)
+<!-- strata-readme-demo:end -->
+
 Minecraft screens often mix layout, input, state, resources, and version-specific calls in one class.
 Strata separates those responsibilities so an interface can be composed, reused, and tested through a common API.
 Applications describe a component tree; the runtime retains its nodes and adapts rendering, input, and lifecycle to the selected environment.
