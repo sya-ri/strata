@@ -12,17 +12,13 @@ concurrency:
   cancel-in-progress: ${{ github.run_attempt == 1 }}
 
 jobs:
-  build:
+  source:
     if: github.ref == 'refs/heads/master'
     permissions:
-      actions: read
       contents: read
     runs-on: ubuntu-latest
     outputs:
       controller_commit: ${{ steps.source.outputs.controller_commit }}
-      controller_pages_artifact_digest: ${{ steps.artifact_metadata.outputs.digest }}
-      controller_pages_artifact_id: ${{ steps.pages_artifact.outputs.artifact_id }}
-      controller_pages_artifact_name: ${{ steps.artifact_identity.outputs.name }}
       release_commit: ${{ steps.source.outputs.release_commit }}
       release_tag: ${{ steps.source.outputs.release_tag }}
     steps:
@@ -32,7 +28,7 @@ jobs:
           ref: master
           fetch-depth: 0
           persist-credentials: false
-      - name: Verify exact master controller
+      - name: Freeze exact documentation identities
         id: source
         shell: bash
         run: |
@@ -51,6 +47,60 @@ jobs:
           bash release/verify-pages-release-source.sh \
             "$controller_commit" "$release_tag" "$release_commit" >/dev/null
           {
+            echo "controller_commit=$controller_commit"
+            echo "release_tag=$release_tag"
+            echo "release_commit=$release_commit"
+          } >> "$GITHUB_OUTPUT"
+
+  build:
+    if: github.ref == 'refs/heads/master'
+    permissions:
+      actions: read
+      contents: read
+    runs-on: ubuntu-latest
+    needs: source
+    outputs:
+      controller_commit: ${{ steps.source.outputs.controller_commit }}
+      controller_pages_artifact_digest: ${{ steps.artifact_metadata.outputs.digest }}
+      controller_pages_artifact_id: ${{ steps.pages_artifact.outputs.artifact_id }}
+      controller_pages_artifact_name: ${{ steps.artifact_identity.outputs.name }}
+      release_commit: ${{ steps.source.outputs.release_commit }}
+      release_tag: ${{ steps.source.outputs.release_tag }}
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v7
+        with:
+          ref: master
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Verify exact master controller
+        id: source
+        shell: bash
+        env:
+          EXPECTED_CONTROLLER_COMMIT: ${{ needs.source.outputs.controller_commit }}
+          EXPECTED_RELEASE_COMMIT: ${{ needs.source.outputs.release_commit }}
+          EXPECTED_RELEASE_TAG: ${{ needs.source.outputs.release_tag }}
+        run: |
+          set -euo pipefail
+          [[ "$GITHUB_REF" == 'refs/heads/master' ]] || { echo 'Documentation runs must use master.' >&2; exit 1; }
+          git fetch --force --prune --prune-tags origin \
+            '+refs/heads/master:refs/remotes/origin/master' \
+            '+refs/tags/*:refs/tags/*'
+          controller_commit="$(git rev-parse --verify refs/remotes/origin/master)"
+          [[ "$GITHUB_SHA" == "$controller_commit" && "$(git rev-parse HEAD)" == "$controller_commit" ]] || {
+            echo 'Documentation source is not the exact origin/master head.' >&2
+            exit 1
+          }
+          release_tag="$(jq -er '.current.tag' release/current-controller.json)"
+          release_commit="$(jq -er '.current.commit' release/current-controller.json)"
+          [[ "$controller_commit" == "$EXPECTED_CONTROLLER_COMMIT" && \
+            "$release_tag" == "$EXPECTED_RELEASE_TAG" && "$release_commit" == "$EXPECTED_RELEASE_COMMIT" ]] || {
+            echo 'Documentation identities changed after source selection.' >&2
+            exit 1
+          }
+          bash release/verify-pages-release-source.sh \
+            "$controller_commit" "$release_tag" "$release_commit" >/dev/null
+          {
             echo 'revision=master'
             echo "controller_commit=$controller_commit"
             echo "release_tag=$release_tag"
@@ -62,7 +112,7 @@ jobs:
         uses: gradle/actions/setup-gradle@v6
         with:
           cache-read-only: true
-          gradle-home-cache-strict-match: true
+          gradle-home-cache-strict-match: false
           gradle-home-cache-excludes: caches/fabric-loom
       - name: Check reader documentation and public skill
         shell: bash
@@ -155,7 +205,7 @@ jobs:
     permissions:
       contents: read
     runs-on: ubuntu-latest
-    needs: build
+    needs: source
     outputs:
       release_pages_artifact_digest: ${{ steps.pages_artifact.outputs.artifact-digest }}
       release_pages_artifact_id: ${{ steps.pages_artifact.outputs.artifact-id }}
@@ -171,9 +221,9 @@ jobs:
         id: source
         shell: bash
         env:
-          EXPECTED_CONTROLLER_COMMIT: ${{ needs.build.outputs.controller_commit }}
-          EXPECTED_RELEASE_COMMIT: ${{ needs.build.outputs.release_commit }}
-          EXPECTED_RELEASE_TAG: ${{ needs.build.outputs.release_tag }}
+          EXPECTED_CONTROLLER_COMMIT: ${{ needs.source.outputs.controller_commit }}
+          EXPECTED_RELEASE_COMMIT: ${{ needs.source.outputs.release_commit }}
+          EXPECTED_RELEASE_TAG: ${{ needs.source.outputs.release_tag }}
         run: |
           set -euo pipefail
           [[ "$GITHUB_REF" == 'refs/heads/master' ]] || { echo 'Release Pages evidence must use master.' >&2; exit 1; }
@@ -226,7 +276,7 @@ jobs:
         uses: gradle/actions/setup-gradle@v6
         with:
           cache-read-only: true
-          gradle-home-cache-strict-match: true
+          gradle-home-cache-strict-match: false
           gradle-home-cache-excludes: caches/fabric-loom
       - name: Generate independent release Pages evidence
         id: evidence

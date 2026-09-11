@@ -123,6 +123,8 @@ Every deployment reconstructs each existing release tag under its immutable `/re
 
 The [documentation workflow](documentation.md#api-site-and-pages) reconstructs immutable release sites from the controller-owned inventory.
 Its artifacts and deployment must satisfy the provenance checks above before protected publication continues.
+A read-only source job freezes the exact controller and current release identities before the independent controller and release-evidence producers start concurrently on separate runners.
+Each producer revalidates those identities before executing repository-local actions or Gradle, and deployment remains dependent on both successful producers and their independently generated artifacts.
 Do not preserve incident timelines or service-status snapshots in reader guides; keep required recovery boundaries in executable contracts and tests.
 
 ## Pages artifacts and deployment

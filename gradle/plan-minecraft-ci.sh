@@ -53,6 +53,19 @@ if [[ $(printf '%s\n' "${runtime_versions[@]}") != $(printf '%s\n' "${integratio
 fi
 
 versions=("${runtime_versions[@]}")
+# Documentation must share the shard that owns its actual native parity input.
+# Read the checked build dependency instead of assuming the newest target owns it.
+docs_build="$project_root/integration/docs/build.gradle.kts"
+[[ -f "$docs_build" ]] || fail 'The documentation build is missing.'
+mapfile -t docs_versions < <(
+  grep -oE ':integration:minecraft-fabric-[^":[:space:]]+' "$docs_build" |
+    sed 's/^:integration:minecraft-fabric-//' | LC_ALL=C sort -u
+)
+(( ${#docs_versions[@]} == 1 )) || fail 'Documentation must declare exactly one native Minecraft input version.'
+docs_version=${docs_versions[0]}
+[[ "$docs_version" =~ $version_pattern ]] || fail "Invalid documentation native Minecraft input: $docs_version"
+printf '%s\n' "${versions[@]}" | grep -Fx "$docs_version" >/dev/null ||
+  fail "Documentation native input has no paired Minecraft target: $docs_version"
 minimum_shard_count=$(( (${#versions[@]} + maximum_shard_size - 1) / maximum_shard_size ))
 shard_count=$target_parallelism
 (( minimum_shard_count <= shard_count )) || shard_count=$minimum_shard_count
@@ -60,28 +73,32 @@ shard_count=$target_parallelism
 
 matrix_entries=()
 loom_projects=()
-first_version_index=0
+for version in "${versions[@]}"; do
+  loom_projects+=("runtime/minecraft-fabric-$version" "integration/minecraft-fabric-$version")
+done
+planned_version_count=0
 for (( shard_index = 0; shard_index < shard_count; shard_index++ )); do
-  shard_size=$(( ${#versions[@]} / shard_count ))
-  (( shard_index < ${#versions[@]} % shard_count )) && shard_size=$(( shard_size + 1 ))
+  shard_versions=()
+  for (( version_index = shard_index; version_index < ${#versions[@]}; version_index += shard_count )); do
+    shard_versions+=("${versions[version_index]}")
+  done
+  shard_size=${#shard_versions[@]}
   (( shard_size <= maximum_shard_size )) || fail "Minecraft CI shard $shard_index exceeds $maximum_shard_size versions."
-  shard_versions=("${versions[@]:first_version_index:shard_size}")
-  first_version_index=$(( first_version_index + shard_size ))
+  planned_version_count=$(( planned_version_count + shard_size ))
 
   shard_loom_projects=()
+  owns_documentation=false
   for version in "${shard_versions[@]}"; do
     shard_loom_projects+=("runtime/minecraft-fabric-$version" "integration/minecraft-fabric-$version")
-    loom_projects+=("runtime/minecraft-fabric-$version" "integration/minecraft-fabric-$version")
+    [[ "$version" != "$docs_version" ]] || owns_documentation=true
   done
 
   first_version=${shard_versions[0]}
   last_version=${shard_versions[${#shard_versions[@]} - 1]}
-  version_range=$first_version
-  [[ $first_version == "$last_version" ]] || version_range="$first_version-$last_version"
   version_csv=$(IFS=,; printf '%s' "${shard_versions[*]}")
   gradle_arguments=":ciMinecraftCheck -Pstrata.minecraftVersions=$version_csv"
-  shard_name="Minecraft $version_range"
-  if (( shard_index == shard_count - 1 )); then
+  shard_name="Minecraft $version_csv"
+  if [[ "$owns_documentation" == true ]]; then
     gradle_arguments=":ciMinecraftCheck :integration:docs:check -Pstrata.minecraftVersions=$version_csv"
     shard_name="$shard_name and documentation"
   fi
@@ -92,7 +109,7 @@ for (( shard_index = 0; shard_index < shard_count; shard_index++ )); do
   )
 done
 
-(( first_version_index == ${#versions[@]} )) || fail 'Minecraft CI shards did not consume every discovered version.'
+(( planned_version_count == ${#versions[@]} )) || fail 'Minecraft CI shards did not consume every discovered version.'
 (( ${#loom_projects[@]} == ${#versions[@]} * 2 )) || fail 'Minecraft Loom project inventory is incomplete.'
 
 mkdir -p "$output_directory"
