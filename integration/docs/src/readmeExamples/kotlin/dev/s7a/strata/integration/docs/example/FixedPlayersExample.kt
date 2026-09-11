@@ -7,7 +7,6 @@ import dev.s7a.strata.component.PlayerHead
 import dev.s7a.strata.component.PlayerHeadScale
 import dev.s7a.strata.component.Row
 import dev.s7a.strata.component.Text
-import dev.s7a.strata.layout.HorizontalAlignment.Start
 import dev.s7a.strata.layout.VerticalAlignment.Center
 import dev.s7a.strata.modifier.Modifier
 import dev.s7a.strata.modifier.fillMaxWidth
@@ -37,11 +36,7 @@ internal fun fixedPlayersScreen(
                     verticalAlignment = Center,
                 ) {
                     PlayerHead(player.skin, PlayerHeadScale(3))
-                    Column(
-                        modifier = Modifier.Empty.weight(1f),
-                        spacing = 4,
-                        horizontalAlignment = Start,
-                    ) {
+                    Column(spacing = 4) {
                         Text(player.name)
                         Text(player.role)
                     }

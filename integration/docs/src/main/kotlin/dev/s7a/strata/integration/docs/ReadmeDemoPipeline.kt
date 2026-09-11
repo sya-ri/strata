@@ -16,7 +16,7 @@ import javax.imageio.ImageIO
 @OptIn(InternalStrataRuntimeApi::class)
 internal object ReadmeDemoPipeline {
     /**
-     * Renders the compiled stages, complete stills, exact extracted source, a 34-second GIF, and input/output hashes.
+     * Renders the compiled stages, complete stills, exact extracted source, a 24-second GIF, and input/output hashes.
      * The font version is supplied by the version catalog; source hashes use LF-normalized UTF-8 and binary hashes use actual bytes.
      */
     fun prepare(
@@ -45,14 +45,14 @@ internal object ReadmeDemoPipeline {
                 files[screenName(stage)] = png(requireNotNull(screen.inputStream().use(ImageIO::read)))
                 val delay =
                     if (index == stage.scrollOffsets.lastIndex) {
-                        stage.durationCentiseconds - 30 * index
+                        stage.durationCentiseconds - 25 * index
                     } else {
-                        30
+                        25
                     }
                 frames += ReadmeGifFrame(image, delay)
             }
         }
-        check(frames.sumOf { it.delayCentiseconds } == 3400) { "README demo must last exactly 34 seconds." }
+        check(frames.sumOf { it.delayCentiseconds } == 2400) { "README demo must last exactly 24 seconds." }
         files["demo.gif"] = ReadmeGifEncoder.encode(frames)
         require(files.getValue("demo.gif").size <= 5 * 1024 * 1024) { "README demo GIF exceeds 5 MiB." }
         files["README.md"] = markdown(sources).toByteArray()
@@ -99,9 +99,10 @@ internal object ReadmeDemoPipeline {
             appendLine("Three players first demonstrate added content, a fixed list width, and text alignment; five more then arrive one at a time before scrolling is added.")
             appendLine("Every screen is freshly rendered by Strata Headless from the compiled Kotlin example and original Minecraft assets.")
             appendLine("Overflow during the five short arrival frames is intentional: ScrollArea then contains the list, and a separately added Scrollbar shares its state.")
+            appendLine("Row definitions stay inline throughout, with the complete source excerpt visible in every frame.")
             appendLine("The GIF compares source revisions; it does not demonstrate hot reload or an in-game invitation service.")
             appendLine()
-            appendLine("[Play the 34-second GIF](demo.gif) · [Render receipt](render.properties)")
+            appendLine("[Play the 24-second GIF](demo.gif) · [Render receipt](render.properties)")
             appendLine()
             ReadmeDemoStage.entries.forEach { stage ->
                 appendLine("## ${stage.ordinal + 1}. ${stage.title}")
@@ -112,7 +113,7 @@ internal object ReadmeDemoPipeline {
                 appendLine()
                 appendLine("[Complete screen pixels](${screenName(stage)}) · [Compiled source](../../${ReadmeDemoSource.DIRECTORY}/${stage.sourceName}.kt)")
                 appendLine()
-                appendLine("<details><summary>Source shown in this frame</summary>")
+                appendLine("<details><summary>Complete source for this stage</summary>")
                 appendLine()
                 appendLine("```kotlin")
                 appendLine(sources.getValue(stage).lines.joinToString("\n"))
@@ -124,7 +125,7 @@ internal object ReadmeDemoPipeline {
             appendLine("## Running the example")
             appendLine()
             appendLine("The final example accepts immutable `ReadmePlayer` values with names, roles, and detached `PlayerSkinSource.Pixels` skins.")
-            appendLine("Copy [the final screen](../../${ReadmeDemoSource.DIRECTORY}/ScrollPlayersExample.kt), [the player model](../../${ReadmeDemoSource.DIRECTORY}/ReadmePlayer.kt), [the screen chrome](../../${ReadmeDemoSource.DIRECTORY}/ReadmeDemoChrome.kt), [the row composition](../../${ReadmeDemoSource.DIRECTORY}/ReadmePlayerRow.kt), and [the colors](../../${ReadmeDemoSource.DIRECTORY}/ReadmeDemoColors.kt) into a Mod using Strata, then call `scrollPlayersScreen(players, panel).open()`.")
+            appendLine("Copy [the final screen](../../${ReadmeDemoSource.DIRECTORY}/ScrollPlayersExample.kt), [the player model](../../${ReadmeDemoSource.DIRECTORY}/ReadmePlayer.kt), [the screen chrome](../../${ReadmeDemoSource.DIRECTORY}/ReadmeDemoChrome.kt), and [the colors](../../${ReadmeDemoSource.DIRECTORY}/ReadmeDemoColors.kt) into a Mod using Strata, then call `scrollPlayersScreen(players, panel).open()`.")
             appendLine("Supply the original Minecraft Social Interactions panel as an `ImageSource` alongside the player data; headless generation supplies detached pixels from the same asset.")
             appendLine("The `Invite` button demonstrates layout only; add an `onActivate` modifier to connect application behavior.")
             appendLine()
@@ -139,11 +140,11 @@ internal object ReadmeDemoPipeline {
     ): String =
         buildString {
             appendLine("format=1")
-            appendLine("duration.centiseconds=3400")
+            appendLine("duration.centiseconds=2400")
             appendLine("frame.count=${ReadmeDemoStage.entries.sumOf { it.scrollOffsets.size }}")
             appendLine("viewport=256x192")
             appendLine("scale=2")
-            appendLine("canvas=1200x576")
+            appendLine("canvas=1200x900")
             appendLine("font.version=$fontVersion")
             appendLine("font.sha256=${ShowcaseAssetIntegrity.sha256(ReadmeDemoAssets.resource("JetBrainsMono-Regular.ttf"))}")
             appendLine("font.license.sha256=${ShowcaseAssetIntegrity.sha256(ReadmeDemoAssets.resource("OFL.txt"))}")

@@ -15,7 +15,7 @@ internal object ReadmeCodePainter {
     private val accent = Color(0x68D5EB)
 
     /**
-     * Paints exact lines without wrapping or abbreviating them, rejecting overflow before output is published.
+     * Paints the complete source with compact indentation and rejects horizontal or vertical overflow before publication.
      * [previous] determines inserted or changed lines; null starts with an unhighlighted baseline.
      */
     fun paint(
@@ -27,8 +27,10 @@ internal object ReadmeCodePainter {
         graphics.font = font.deriveFont(18f)
         val metrics = graphics.fontMetrics
         val previousLines = previous?.lines?.map(String::trimStart)?.toSet()
-        require(source.lines.size <= 22) { "README demo source exceeds the code panel height." }
-        source.lines.forEachIndexed { index, line ->
+        require(source.lines.size <= 36) { "README demo source exceeds the code panel height." }
+        source.lines.forEachIndexed { index, original ->
+            val content = original.trimStart()
+            val line = " ".repeat((original.length - content.length) / 2) + content
             require(metrics.stringWidth(line) <= 612) { "README demo source exceeds the code panel width: $line" }
             val baseline = 48 + index * 24
             val changed = previousLines != null && line.isNotBlank() && line.trimStart() !in previousLines

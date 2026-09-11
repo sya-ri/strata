@@ -1,6 +1,11 @@
 package dev.s7a.strata.integration.docs
 
+import dev.s7a.strata.component.Button
 import dev.s7a.strata.component.Column
+import dev.s7a.strata.component.PlayerHead
+import dev.s7a.strata.component.PlayerHeadScale
+import dev.s7a.strata.component.Row
+import dev.s7a.strata.component.Text
 import dev.s7a.strata.geometry.IntOffset
 import dev.s7a.strata.geometry.IntRect
 import dev.s7a.strata.geometry.IntSize
@@ -8,8 +13,10 @@ import dev.s7a.strata.input.InputResult
 import dev.s7a.strata.input.PointerEvent
 import dev.s7a.strata.integration.docs.example.ReadmeDemoChrome
 import dev.s7a.strata.integration.docs.example.ReadmeDemoColors
-import dev.s7a.strata.integration.docs.example.playerRow
+import dev.s7a.strata.layout.HorizontalAlignment.Start
+import dev.s7a.strata.layout.VerticalAlignment.Center
 import dev.s7a.strata.modifier.Modifier
+import dev.s7a.strata.modifier.fillMaxWidth
 import dev.s7a.strata.modifier.width
 import dev.s7a.strata.runtime.FrameTime
 import dev.s7a.strata.runtime.minecraft.createMinecraftUiHost
@@ -67,7 +74,7 @@ internal class ReadmeDemoLayoutTest {
     fun fixedRowsKeepFramesFacesAndButtonsStillWhenOnlyTextAlignmentChanges() {
         val assets = ReadmeDemoFixture.assets(temporary)
         val natural = rows(frame(ReadmeDemoStage.Actions, assets))
-        val fixed = frame(ReadmeDemoStage.Fixed, assets)
+        val fixed = frame(ReadmeDemoStage.Weighted, assets)
         val right = frame(ReadmeDemoStage.Right, assets)
         val left = frame(ReadmeDemoStage.Left, assets)
         val fixedRows = rows(fixed)
@@ -99,7 +106,7 @@ internal class ReadmeDemoLayoutTest {
         rightText.chunked(2).forEach { pair -> assertEquals(pair[0].bounds.right, pair[1].bounds.right) }
         leftText.chunked(2).forEach { pair -> assertEquals(pair[0].bounds.left, pair[1].bounds.left) }
         assertEquals(fixedText, leftText)
-        ReadmeDemoStage.entries.take(6).forEach { stage ->
+        ReadmeDemoStage.entries.take(7).forEach { stage ->
             val current = frame(stage, assets)
             val bounds = rows(current)
             assertEquals(3, bounds.size)
@@ -112,6 +119,22 @@ internal class ReadmeDemoLayoutTest {
     }
 
     @Test
+    fun fixingListWidthPrecedesExpandingTheTextSpace() {
+        val assets = ReadmeDemoFixture.assets(temporary)
+        val natural = frame(ReadmeDemoStage.Actions, assets)
+        val fixed = frame(ReadmeDemoStage.Fixed, assets)
+        val weighted = frame(ReadmeDemoStage.Weighted, assets)
+        assertEquals(List(3) { 220 }, rows(fixed).map { it.width })
+        assertEquals(rows(fixed), rows(weighted), "Adding weight must preserve the already fixed row frames.")
+        assertEquals(buttons(natural), buttons(fixed), "Fixing row widths must precede moving their buttons.")
+        buttons(fixed).zip(buttons(weighted)).forEach { (before, after) ->
+            assertTrue(before.bounds.left < after.bounds.left, "The separate weight edit must visibly move each button.")
+            assertEquals(before.bounds.top, after.bounds.top)
+        }
+        assertEquals(1, buttons(weighted).map { it.bounds.right }.distinct().size)
+    }
+
+    @Test
     fun outerColumnWidthControlsEveryRowWithoutChangingTheRowDefinition() {
         val assets = ReadmeDemoFixture.assets(temporary)
         val frames =
@@ -119,7 +142,24 @@ internal class ReadmeDemoLayoutTest {
                 val screen =
                     ReadmeDemoChrome.screen(assets.panel) { rowModifier ->
                         Column(Modifier.Empty.width(width), spacing = 6) {
-                            assets.players.take(3).forEach { player -> playerRow(player, rowModifier) }
+                            assets.players.take(3).forEach { player ->
+                                Row(
+                                    modifier = rowModifier.fillMaxWidth(),
+                                    spacing = 8,
+                                    verticalAlignment = Center,
+                                ) {
+                                    PlayerHead(player.skin, PlayerHeadScale(3))
+                                    Column(
+                                        modifier = Modifier.Empty.weight(1f),
+                                        spacing = 4,
+                                        horizontalAlignment = Start,
+                                    ) {
+                                        Text(player.name)
+                                        Text(player.role)
+                                    }
+                                    Button("Invite", width = 60)
+                                }
+                            }
                         }
                     }
                 createMinecraftUiHost(screen, assets.minecraft.profile, LwjglMinecraftFontBackendFactory).use { host ->

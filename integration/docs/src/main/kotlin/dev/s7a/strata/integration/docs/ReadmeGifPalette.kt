@@ -16,7 +16,7 @@ internal object ReadmeGifPalette {
         require(frames.isNotEmpty() && frames.size <= 32) { "README GIF must contain one to 32 frames." }
         val histogram = HashMap<Int, Int>()
         frames.forEach { frame ->
-            require(frame.width == 1200 && frame.height == 576) { "README GIF dimensions must be fixed." }
+            require(frame.width == 1200 && frame.height == 900) { "README GIF dimensions must be fixed." }
             pixels(frame).forEach { color -> histogram[color] = (histogram[color] ?: 0) + 1 }
         }
         val colors =

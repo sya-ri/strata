@@ -7,7 +7,6 @@ import dev.s7a.strata.component.PlayerHead
 import dev.s7a.strata.component.PlayerHeadScale
 import dev.s7a.strata.component.Row
 import dev.s7a.strata.component.Text
-import dev.s7a.strata.layout.HorizontalAlignment.Start
 import dev.s7a.strata.layout.VerticalAlignment.Center
 import dev.s7a.strata.modifier.Modifier
 import dev.s7a.strata.modifier.fillMaxWidth
@@ -15,17 +14,22 @@ import dev.s7a.strata.modifier.width
 import dev.s7a.strata.screen.ScreenDefinition
 
 /**
- * Shows 4 players before a scroll viewport is introduced, deliberately exposing the list overflow.
- * The unopened definition reads caller-owned immutable inputs on its host thread and propagates layout failures.
+ * Builds the weighted-text stage of the README player-list demonstration using only the public API.
+ * The one-shot definition reads caller-owned immutable players on its host thread and propagates layout failures.
+ * All child positions come from parent layout; the final stages fix the outer list width and align only the weighted text column.
+ *
+ * @param players ordered offline presentation data, shared read-only with the definition.
+ * @param panel detached original Minecraft Social Interactions panel.
+ * @return an unopened definition; the caller owns opening or closing it.
  */
-internal fun fourPlayersScreen(
+internal fun weightedPlayersScreen(
     players: List<ReadmePlayer>,
     panel: ImageSource,
 ): ScreenDefinition =
-    ReadmeDemoChrome.screen(panel, playerCount = 4) { rowModifier ->
+    ReadmeDemoChrome.screen(panel) { rowModifier ->
         // readme-demo:start
         Column(Modifier.Empty.width(220), spacing = 6) {
-            players.take(4).forEach { player ->
+            players.forEach { player ->
                 Row(
                     modifier = rowModifier.fillMaxWidth(),
                     spacing = 8,
@@ -35,7 +39,6 @@ internal fun fourPlayersScreen(
                     Column(
                         modifier = Modifier.Empty.weight(1f),
                         spacing = 4,
-                        horizontalAlignment = Start,
                     ) {
                         Text(player.name)
                         Text(player.role)
