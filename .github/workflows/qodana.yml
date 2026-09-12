@@ -69,7 +69,21 @@ jobs:
           fetch-depth: 0
       - name: Set up Java
         uses: ./.github/actions/setup-strata-java
+      - name: Check analysis disk space
+        id: analysis_disk
+        shell: bash
+        run: |
+          available_kib=$(df --output=avail -k "$GITHUB_WORKSPACE" | tail -n 1 | tr -d ' ')
+          [[ "$available_kib" =~ ^[0-9]+$ ]] || { echo 'Cannot measure analysis disk space.' >&2; exit 1; }
+          df -h "$GITHUB_WORKSPACE"
+          # Leave room for the complete Loom model and the disposable Qodana IDE cache.
+          if (( available_kib < 40 * 1024 * 1024 )); then
+            echo 'reclaim=true' >> "$GITHUB_OUTPUT"
+          else
+            echo 'reclaim=false' >> "$GITHUB_OUTPUT"
+          fi
       - name: Reclaim analysis disk space
+        if: steps.analysis_disk.outputs.reclaim == 'true'
         uses: insightsengineering/disk-space-reclaimer@v1
         with:
           tools-cache: false
@@ -95,18 +109,13 @@ jobs:
           export LOOM_PROJECTS
           bash gradle/loom-cache-key.sh >> "$GITHUB_OUTPUT"
       - name: Restore Minecraft Loom project cache
+        id: loom_cache
         uses: actions/cache/restore@v6
         with:
           path: .gradle/loom-cache
           key: loom-${{ runner.os }}-minecraft-all-${{ steps.loom_inputs.outputs.hash }}
           restore-keys: |
             loom-${{ runner.os }}-minecraft-
-      - name: Compile analysis inputs
-        run: bash ./gradlew :api:jar :runtime:core:jar :runtime:headless:jar :runtime:minecraft:jar :runtime:minecraft-fonts-lwjgl:jar classes gametestClasses
-      - name: Stop Gradle daemons
-        run: |
-          bash ./gradlew --stop
-          df -h /
       - name: Run Qodana
         uses: JetBrains/qodana-action@v2026.2
         with:
@@ -120,6 +129,7 @@ jobs:
       - name: Measure Qodana cache
         if: always()
         run: |
+          df -h "$GITHUB_WORKSPACE"
           if [[ -d "${{ runner.temp }}/qodana/caches" ]]; then
             du -sh "${{ runner.temp }}/qodana/caches"
           else
@@ -135,3 +145,9 @@ jobs:
           name: qodana-report
           path: ${{ runner.temp }}/qodana/results
           if-no-files-found: error
+      - name: Save complete Minecraft Loom project cache
+        if: success() && github.ref == 'refs/heads/master' && steps.loom_cache.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v6
+        with:
+          path: .gradle/loom-cache
+          key: ${{ steps.loom_cache.outputs.cache-primary-key }}

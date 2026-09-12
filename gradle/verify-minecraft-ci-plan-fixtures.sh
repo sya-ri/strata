@@ -36,6 +36,14 @@ for name, count in [("qodana.yml", 1), ("pages.yml", 2)]:
             f"{name} must accept compatible writer caches, not require a nonexistent own-job cache"
         )
         assert "gradle-home-cache-excludes: caches/fabric-loom" in block
+qodana = workflow_path.with_name("qodana.yml").read_text(encoding="utf-8")
+loom_saves = [block for block in qodana.split("\n      - name: ")
+              if "uses: actions/cache/save@" in block]
+assert len(loom_saves) == 1, "Qodana must save only its complete Loom input cache"
+assert "if: success() && github.ref == 'refs/heads/master' && steps.loom_cache.outputs.cache-hit != 'true'" in loom_saves[0]
+assert "path: .gradle/loom-cache\n" in loom_saves[0]
+assert "key: ${{ steps.loom_cache.outputs.cache-primary-key }}" in loom_saves[0]
+assert "use-caches: false" in qodana, "Qodana analysis evidence must remain fresh"
 PY
 
 add_project() {

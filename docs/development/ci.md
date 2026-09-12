@@ -31,6 +31,8 @@ The planner reads the explicit native integration input from the documentation b
 Missing, ambiguous, or unpaired documentation inputs fail planning rather than launching an extra client outside the selected shard.
 The complete Loom inventory remains numerically ordered independently of shard assignment, and each shard's displayed name lists its actual versions.
 Common checks include the CPU font backend and its isolated dependency and font-capability workers without launching Minecraft.
+Workflow syntax and the release, Java-inventory, and CI-model shell regressions run in an independent `Workflow checks` job alongside Gradle checks.
+That job needs the complete Git history for release fixtures but does not install Java or restore Gradle caches; common checks and coverage keep their existing matrix identities for cache reuse.
 The representative integration checks own their matching native-to-offline font comparisons, so full `check` and the existing Minecraft shards run those gates without adding loaded clients to the common shard.
 It runs only when code, build inputs, its own workflow, the compiled README contract, or generated showcase evidence changes; canonical prose that cannot affect those gates does not launch loaded clients.
 Gradle's enhanced user-home cache uses strict job matching for common and Minecraft shards so one writer cannot restore and resave state from another matrix entry.
@@ -42,7 +44,10 @@ Each Minecraft shard separately restores its project-local Loom repository with 
 The model hash includes the catalog, wrapper, Gradle properties, root build and settings, and only the versioned runtime and integration build scripts selected by that shard, so changing one release family does not evict every unrelated family.
 Restoration accepts only that exact complete model hash; a miss regenerates the Loom repository from authoritative inputs, and a replacement is saved only after a successful `master` cache miss.
 Minecraft assets remain ordinary upstream inputs fetched by the loaded-client tasks instead of being copied into per-shard multi-gigabyte job caches that evict the smaller build-model and dependency entries.
-Qodana hashes the complete discovered Loom project inventory and restores the newest compatible Minecraft cache read-only as a warm starting point before compiling and importing the complete model; missing content-addressed entries are reproduced from authoritative inputs and are never accepted as analysis evidence.
+Qodana hashes the complete discovered Loom project inventory and first restores its exact all-project Loom cache, falling back to the newest Minecraft cache as a warm starting point on a miss.
+Missing content-addressed entries are reproduced from authoritative inputs and are never accepted as analysis evidence.
+After successful analysis, model verification, and report upload on `master`, Qodana saves only `.gradle/loom-cache` under that complete model key when the exact entry was absent.
+This gives subsequent analysis jobs the complete dependency model instead of repeatedly rebuilding the versions absent from a single Minecraft shard; pull requests only restore it, and neither the Gradle user home nor IDE or analysis outputs become additional cache writers.
 Loaded-client worlds, screenshots, parity receipts, release documentation, test reports, coverage, and Qodana results are never accepted from the build cache; protected release invocations and the master-owned Pages reconstruction of immutable tags use `--no-build-cache` so mandatory release evidence is recreated and validated on the selected revision.
 Gradle configuration-cache diagnostics accept and reuse the targeted common `runtime:minecraft` check, but a versioned Loom `classes` invocation currently rejects its `ProcessResources` action because the per-version metadata expansion captures the Gradle `Project` object.
 It is therefore not enabled globally: every hosted shard currently uses one Gradle invocation, so persisting that project-local cache would add transfer cost without avoiding any loaded client, remap, or analysis work, and the versioned resource boundary must become configuration-cache-compatible before this decision is reopened.
@@ -53,8 +58,8 @@ Superseded JVM and Qodana workflow runs on the same ref are cancelled so rapid p
 Qodana runs its recommended JVM inspection profile in CI without a baseline.
 The workflow makes every Java toolchain declared by the version catalog available to the host-side native Qodana process so it can resolve each module model and its dependencies.
 It restores the Gradle user home read-only, compiles every `classes` and `gametestClasses` boundary, and assembles the five plain common jars referenced by Loom's nested-library model before inspection without assembling remapped distribution jars.
-The workflow retains those analysis inputs for the IDE model and stops only the Gradle daemons before analysis to release their memory and file handles.
-Qodana's bootstrap invokes Gradle with configuration on demand disabled, the analysis-only `strata.completeIdeaModel` project property, and Loom's official `fabric.loom.ci` system property.
+Qodana's bootstrap compiles those inputs and generates the IDEA model in one Gradle invocation, with configuration on demand disabled, the analysis-only `strata.completeIdeaModel` project property, and Loom's official `fabric.loom.ci` system property.
+The invocation uses `--no-daemon` so its Gradle JVM exits before inspection without a second project configuration or separate daemon-stop step.
 The CI property keeps mapped binary dependencies in the IDEA modules while preventing Loom from downloading and remapping optional dependency source artifacts.
 The analysis-only property generates the official Gradle IDEA project and augments each versioned module with the real compile classpath and, for integration projects, the real test and GameTest classpaths and source roots.
 This preserves one canonical physical copy of compatible mapped sources while preventing IntelliJ from assigning linked roots to dependency-free directory modules.
@@ -62,11 +67,13 @@ The explicitly authorized bootstrap may replace its generated model while Qodana
 The `rootJavaProjects` setting opens that model directly instead of asking Qodana to reconstruct a different Gradle model.
 The workflow then checks the emitted project structure against every discovered versioned runtime and integration owner, including their SDK, dependency, runtime-source, and GameTest-source boundaries, so a partial project import cannot pass only because inspections were excluded.
 The much larger Qodana IDE cache is not persisted and is removed after the run to preserve hosted-runner disk space; it may be enabled only after the complete-model import is green and its key covers every IDE-model input, while required analysis inputs remain ordinary reproducible build outputs rather than cache-only state.
+Before analysis, the workflow measures free disk space and runs the existing reclamation action only below 40 GiB.
+That budget leaves room for dependency restoration, the complete compiled model, and the disposable IDE cache without uninstalling unrelated runner packages on every run; free space is logged again after analysis.
 Static-analysis rules are enabled when they produce actionable improvements; rules that systematically make code less clear are disabled with a durable rationale in the checked-in configuration.
 
 ## Controller regression checks
 
-The common JVM shard runs the pinned official actionlint container, parses every tracked release shell script with `bash -n`, and runs isolated regressions for tag replacement, ruleset drift and response normalization, release and controller Pages run/artifact/deployment binding, safe immutable-subtree comparison, archive receipt drift, global deployment ordering, CDN age handling, and bounded public polling before its Gradle gates.
+The independent workflow-check job runs the pinned official actionlint container, parses every tracked release shell script with `bash -n`, and runs isolated regressions for tag replacement, ruleset drift and response normalization, release and controller Pages run/artifact/deployment binding, safe immutable-subtree comparison, archive receipt drift, global deployment ordering, CDN age handling, and bounded public polling alongside the Gradle gates.
 
 Run `./gradlew :quality:benchmarks:jmh` for the temporary JSON report and follow the methodology and acceptance gates in [Rendering performance](../development/performance.md).
 
