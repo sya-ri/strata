@@ -1,9 +1,7 @@
 package dev.s7a.strata.runtime.minecraft
 
 /**
- * Visual side of an insertion offset shared by two soft-wrapped lines.
- *
- * The value owns no layout or state and remains meaningful after reflow without retaining an obsolete line index.
+ * Visual side of a soft-wrap insertion offset; survives reflow without storing a line index.
  */
 internal enum class MinecraftTextCaretAffinity {
     /**

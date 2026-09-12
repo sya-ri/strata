@@ -25,10 +25,14 @@ The [animated README demo](readme-demo/README.md) follows a player list from nat
 
 - [Dokka API reference](https://gh.s7a.dev/strata/) contains declarations, signatures, and KDoc.
 - [Runtime compatibility](reference/compatibility.md) lists the supported targets, artifacts, and Java requirements.
+- [Layout contract](reference/layout.md) defines measurement, wrapping, weight allocation, and integer placement.
 - [Element SPI](reference/element-spi.md) describes custom primitives, retained phases, and ownership.
 - [Modifier SPI](reference/modifier-spi.md) describes active modifier nodes and typed parent data.
 - [External state sources](reference/state-sources.md) specifies revisioned observation across threads.
-- [Changelog](../CHANGELOG.md) and its linked release notes describe versioned changes and migration.
+
+## Changelog
+
+See the [changelog](../CHANGELOG.md) for release summaries and links to detailed changes and upgrade notes.
 
 ## Develop Strata
 

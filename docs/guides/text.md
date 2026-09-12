@@ -19,14 +19,10 @@ Legacy section-sign formatting codes remain unsupported; use the component style
 Use `UiText.withFont` when the font belongs to a reusable label or one part of `UiText.concat`.
 Font selection is inherited through composition: a nested `withFont` takes precedence over an outer wrapper or the `Text` font argument.
 An outer selection does not overwrite an explicitly styled child.
-The wrapper retains only an immutable resource ID and does not resolve or own native resources.
-Display shaping and bidirectional ordering preserve each glyph's original logical font selection, including after Arabic contractions and around supplementary scalars.
-A Lam-Alef ligature uses the Lam's selection; following text keeps its own original selection rather than inheriting a contracted string offset.
-Multiline layout uses the same provenance and retains the innermost selection even for empty content.
+Shaping, bidirectional ordering, and multiline layout preserve the selected fonts.
 
-This complete example is compiled against `api` alone in `integration:api`.
-The documentation test compares this block with its marked source in `ApiOnlyUnicodeTextScreen.kt`.
-The caller creates `TextFieldState` on the host thread and supplies a pack containing `example:body`, or passes another font ID.
+Create the state on the host thread and supply a pack containing `example:body`, or pass another font ID.
+This [compiled API-only example](../../integration/api/src/main/kotlin/dev/s7a/strata/integration/consumer/ApiOnlyUnicodeTextScreen.kt) shows both label and editor selection.
 
 ```kotlin
 import dev.s7a.strata.component.Column
@@ -39,14 +35,8 @@ import dev.s7a.strata.text.UiText
 import dev.s7a.strata.text.withFont
 
 /**
- * Creates a Unicode text screen using a caller-supplied resource-pack font.
- *
- * The returned definition is unevaluated and must be opened or closed once.
- * Its host must use a font-resource profile containing the selected font.
- *
- * @param state caller-owned field state created on the host's owner thread.
- * @param font resource identifier of the font definition supplied by the active pack.
- * @return one-shot screen definition that retains the state without changing its value.
+ * Creates a one-shot screen with caller-owned [state] created on the host thread.
+ * The active resource pack must supply [font].
  */
 internal fun unicodeTextScreen(
     state: TextFieldState,
@@ -70,31 +60,36 @@ The older profile builder that accepts a finite printable-ASCII glyph table rema
 
 ## Input appearance
 
-Use `TextInputAppearance.Custom` on standard `TextField` and `TextArea` when the editor should blend into a light search panel or a colored message/note composer. Provide normal, focused, and disabled `ImageSource` frames with a shared nine-slice border, a caret color, and a composition underline color. Set `textStyle = TextStyle.ContainerLabel` for dark glyphs on a light frame; font selection remains independent.
+Use `TextInputAppearance.Custom` on standard TextField or TextArea for a light or colored editor.
+Supply normal, focused, and disabled nine-slice frames, a caret color, and a composition underline color.
+Use `TextStyle.ContainerLabel` for dark glyphs on light frames; font selection remains independent.
 
-Create immutable frame images and the appearance beside the caller-owned editor state, outside reevaluated content. A narrow `Observe` can replace the appearance when a theme changes; this repaints the existing input without remeasurement or loss of focus, composition, or scroll. Repainting can still require native rasterization and upload. See the [compiled reactive example](../../skills/strata/references/patterns.md#choose-the-smallest-reactive-boundary) for retained construction.
+Keep immutable images, appearance, and editing state outside reevaluation.
+Use a narrow Observe for theme changes: replacing appearance repaints without remeasurement or loss of focus, composition, or scroll, though native upload may still be required.
+See the [compiled reactive example](../../skills/strata/references/patterns.md#choose-the-smallest-reactive-boundary).
 
-Omitting the appearance or passing `TextInputAppearance.Default` keeps the previous profile frame and white editing decorations. Custom frames replace the profile frame, including transparent pixels, and stretch their centers while retaining their border widths. Each source image must have a nonempty center after the border is removed. Editor padding and glyph metrics do not change, and a background modifier alone cannot replace the input's own frame. The new overloads retain explicit fonts and State-backed `enabled` arguments; they do not add a second editor or replace global Minecraft assets.
+Each image needs a nonempty center after removing its border; custom centers stretch and transparent pixels reveal the background.
+Padding and glyph metrics do not change.
+A background modifier cannot replace the editor's own frame.
+Omit appearance or select `TextInputAppearance.Default` to keep the profile frame and default decorations.
 
 ## Multiline display
 
-Existing `Text` overloads and `TextLayout.SingleLine` remain strict single-line display.
-They reject LF, CR, VT, FF, NEL, line separator, and paragraph separator.
-Pass a required `TextLayout.Multiline` argument to accept those hard breaks; CRLF is one break, including when the two code units belong to different font wrappers.
-The original UiText, including hard breaks and omitted content, remains the semantic label.
+Default Text and `TextLayout.SingleLine` reject hard line breaks.
+Use `TextLayout.Multiline` to accept them and measure against the parent's available width; CRLF counts as one break.
+The original UiText remains the semantic label even when presentation omits content.
 
-Multiline Text measures against the maximum width supplied by its parent.
-No absolute position or required width argument is introduced; ordinary layout constraints and modifiers choose the available space.
-`TextWrap.None` uses hard breaks only, `TextWrap.Character` wraps at Unicode scalar boundaries, and `TextWrap.Word` prefers breakable whitespace before falling back to scalar boundaries for overlong segments such as Japanese text without spaces.
-This is a limited whitespace policy, not a language-specific line-breaking engine.
-NBSP, figure space, and narrow NBSP are not preferred break opportunities, although an overlong unbroken segment can still use scalar fallback.
-Leading, repeated, and trailing spaces remain part of the text and its insertion offsets.
+| Wrap policy | Behavior |
+| --- | --- |
+| `TextWrap.None` | Hard breaks only. |
+| `TextWrap.Character` | Wrap at Unicode scalar boundaries. |
+| `TextWrap.Word` | Prefer breakable whitespace, then fall back to scalars for overlong segments. |
 
-Each line has a logical height of nine pixels; non-negative `lineSpacing` adds space between lines.
-`maxLines` omits subsequent runs without cutting legal ink overhang from the last visible line.
-`TextOverflow.Clip` uses the actual constrained viewport; `TextOverflow.Ellipsis` appends `...` only when the selected font's marker fits, otherwise it keeps the Clip result without a marker.
-Natural, unconstrained text preserves glyph bearings, shadow extents, and ink outside the logical line box.
-Finite or exact viewport restrictions clip at that viewport, including a partially visible first line for any positive height; a zero-height viewport displays no lines.
+Word wrapping is not a language-specific line-breaking engine.
+Nonbreaking spaces are not preferred breaks; whitespace and insertion offsets are preserved.
+Lines have a nine-pixel logical height plus non-negative `lineSpacing` between them.
+`maxLines` limits visible lines; `TextOverflow.Clip` clips to the viewport, and `Ellipsis` adds `...` only when it fits.
+Natural text preserves glyph overhang; constrained text clips at its actual viewport, with no lines visible at zero height.
 
 ## Multiline editing
 
@@ -137,16 +132,8 @@ import dev.s7a.strata.text.TextWrap
 import dev.s7a.strata.text.UiText
 
 /**
- * Creates message and notes editors while compiling against the API artifact alone.
- *
- * Both editor states belong to the caller and must be distinct and created on the host's owner thread.
- * Scrollbars are independent siblings sharing each editor's vertical position.
- * The returned definition remains unevaluated until a compatible runtime transfers or closes it.
- *
- * @param message caller-owned multiline message being composed.
- * @param notes independent caller-owned notes value.
- * @param font resource-pack font available in the eventual runtime profile.
- * @return a one-shot definition that retains neither native fonts nor an attached editor.
+ * Creates a one-shot screen with independent message and notes editors.
+ * Supply distinct caller-owned states created on the host thread and a pack containing [font].
  */
 internal fun multilineTextScreen(
     message: TextAreaState,
@@ -174,19 +161,14 @@ internal fun multilineTextScreen(
 Enter inserts LF; Left and Right traverse scalar positions and both visual sides of a soft-wrap boundary.
 Home and End select the current visual line edges; Control or Super selects the document edges.
 Up, Down, PageUp, and PageDown preserve the preferred horizontal column, with page movement based on the current viewport and line spacing.
-Pointer placement uses the current scrolled layout; a spacing gap belongs to the nearer nine-pixel line box, with an exact midpoint assigned to the preceding line.
-At a shared soft-wrap offset the cursor keeps upstream or downstream affinity so an end-of-line click or vertical move does not jump to the following line.
-Edits and external value changes reset affinity; reflow preserves it when the corresponding soft boundary remains.
-An exact-fit line-end caret paints at the final inner pixel without changing glyph metrics or wrapping.
+Pointer placement follows the current scrolled layout and preserves the selected side of a soft-wrap boundary.
 Tab remains focus navigation rather than inserting a tab character.
-Focused modifier and editor handlers receive the event first; only an ignored Tab press traverses visible accepting owners, with Shift selecting the reverse direction and other keyboard modifiers leaving the direction unchanged.
-Traversal wraps in parent-before-child and declared sibling paint order, while a removed or unmaterialized focused editor loses focus and the next Tab starts from the current first or last eligible owner.
+Focused handlers may consume Tab before [automatic traversal](modifiers.md#keyboard-focus-and-text-input).
 
 Vertical wheel movement and external ScrollState writes change the current viewport.
 Input-driven caret or IME-caret movement follows the caret; `TextWrap.None` additionally pans horizontally, with horizontal position clamped to current content and reset when editor state ownership changes.
 Word and Character wrapping keep horizontal position at zero.
-TextArea clips exactly its inner viewport after painting its frame, while line and glyph culling retain original sampling coordinates and shadow order.
-Current layout is replaced when its value or layout inputs change; no historical text or layout cache is retained.
+TextArea clips content to its inner viewport after painting its frame.
 
 The semantic role is `SemanticsRole.TextArea`, its committed content is `Semantics.value`, and disabled state is explicit.
 The current semantics API does not expose typed accessibility edit or focus actions; role and value reporting alone does not implement those actions.
@@ -206,8 +188,6 @@ When only one UTF-16 unit remains, a supplementary character is consumed without
 The field never truncates a committed Unicode scalar to fit.
 Left, Right, Backspace, and Delete move or delete one Unicode scalar at a time; Home and End move to the string boundaries.
 Pointer placement and horizontal scrolling use the selected font's measured advances and preserve scalar boundaries.
-Caret and composition positions retain signed native widths rather than the non-negative layout extent.
-Arithmetic uses bounded integer geometry, omitting caret and underline portions outside the field when unusual font metrics move them beyond its edges.
 Editable text stays in logical scalar order, matching the native EditBox default formatter; display text and labels use the font backend's shaping and bidirectional ordering.
 
 Scalar editing is not grapheme-cluster editing.
@@ -220,19 +200,15 @@ Existing focused input modifiers can still consume an event before the editor ha
 A delivered preedit event is displayed inline at the committed cursor, with its supplied UTF-16 caret and focused block.
 Preedit text is temporary presentation state and does not enter `TextFieldState.value` until committed character events arrive.
 TextArea applies the same separation to `TextAreaState.value` and bounds the complete normalized composed value by its state's maxLength.
-Oversized or malformed TextArea preedit is rejected before replacing the previous composition, cursor, layout, or scroll position; repeated replacement does not accumulate history.
-Canonical full text controls layout reuse, while caret and focused-range changes update only their necessary presentation phases.
-Malformed surrogate boundaries are rejected rather than exposing half a character.
+Invalid or oversized TextArea preedit leaves the previous composition, cursor, layout, and scroll unchanged.
+Malformed surrogate boundaries are rejected.
 An empty or cleared native preedit event removes the composition; focus loss, detachment, disabling, and external value changes also clear it.
 Changing TextArea's viewport, font, style, wrapping, or frame alone preserves the current composition.
 
 Minecraft 26.1 and 26.2 activate Minecraft's existing text-input mode for focused targets whose `FocusTargetNode.requiresTextInput` capability is true.
 Enabled `TextField` and `TextArea` components supply this capability; passive input observers keep its default false value.
-Native focus acquisition runs after retained operations complete because Minecraft may synchronously resubmit preedit, while focus loss, screen removal, and close release the previous native input ownership.
-
-This preserves Strata's inline composition contract.
 It does not reproduce Minecraft's native IME popup, position the operating system's candidate window, or install new platform IME hooks on adapters that expose only committed characters.
-Native EditBox pixel comparisons apply to committed text and cursor rendering; inline preedit tests verify event delivery, value isolation, caret position, and focused-block state separately.
+For implementation and verification boundaries, see [UI sessions](../development/ui-sessions.md) and [manual OS IME verification](../development/build.md#manual-os-ime-verification).
 
 ## Rendering density
 

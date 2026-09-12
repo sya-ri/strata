@@ -69,10 +69,7 @@ internal class ShowcaseFrameReceipt(
         private val pngSignature = byteArrayOf(0x89.toByte(), 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A)
 
         /**
-         * Hashes the supplied bytes synchronously without retaining or modifying them.
-         *
-         * @param bytes exact file or metadata bytes.
-         * @return lowercase 64-character SHA-256 value.
+         * Returns the lowercase 64-character SHA-256 identity of [bytes].
          */
         internal fun sha256(bytes: ByteArray): String = HexFormat.of().formatHex(MessageDigest.getInstance("SHA-256").digest(bytes))
     }

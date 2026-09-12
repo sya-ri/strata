@@ -23,10 +23,7 @@ internal class StrataSkillLaunchArguments private constructor(
      */
     internal companion object {
         /**
-         * Parses launcher arguments without retaining mutable caller state.
-         *
-         * @param args repository root, staging root, example source root, release version, and one or more API class directories.
-         * @return validated immutable launch arguments.
+         * Parses repository, staging, example-source, release-version, and API-class-directory arguments; rejects invalid input.
          */
         internal fun parse(args: Array<String>): StrataSkillLaunchArguments {
             require(5 <= args.size) { "Strata skill launcher requires project root, staging root, example root, release version, and API classes." }

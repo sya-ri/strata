@@ -23,8 +23,7 @@ Omit `--verify` only when intentionally regenerating the receipt after an input 
 The tool requires each version metadata ID to match its catalog entry before opening the associated index or client.
 Its synthetic provenance regressions run with `python -B -m unittest discover -s tools -p 'test_*.py'` and require no game files.
 JVM tests compare the receipt's complete ordered version list with the root typed target matrix, check observations against default ceilings, and recompute maxima without requiring official assets.
-The largest observed selected asset is 1,615,995 bytes; the largest font document is 19,118 bytes; the largest Unihex expanded entry is 7,771,248 bytes; and the largest bitmap is 129,600 pixels.
-These are observed payload sizes, not total heap or native-memory bounds.
+Use the receipt for measured payload maxima; they are not total heap or native-memory bounds.
 Vanilla supplies no TTF providers: the TrueType ceilings are explicit security policy backed by synthetic and redistributable-font tests, not by this dataset.
 
 ## Acceptance evidence

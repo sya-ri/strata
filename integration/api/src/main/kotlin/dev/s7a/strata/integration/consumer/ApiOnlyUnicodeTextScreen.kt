@@ -11,14 +11,8 @@ import dev.s7a.strata.text.UiText
 import dev.s7a.strata.text.withFont
 
 /**
- * Creates a Unicode text screen using a caller-supplied resource-pack font.
- *
- * The returned definition is unevaluated and must be opened or closed once.
- * Its host must use a font-resource profile containing the selected font.
- *
- * @param state caller-owned field state created on the host's owner thread.
- * @param font resource identifier of the font definition supplied by the active pack.
- * @return one-shot screen definition that retains the state without changing its value.
+ * Creates a one-shot screen with caller-owned [state] created on the host thread.
+ * The active resource pack must supply [font].
  */
 internal fun unicodeTextScreen(
     state: TextFieldState,

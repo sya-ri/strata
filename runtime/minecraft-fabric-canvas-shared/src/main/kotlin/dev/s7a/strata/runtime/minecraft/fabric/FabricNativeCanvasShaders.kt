@@ -12,14 +12,10 @@ internal object FabricNativeCanvasShaders {
     private const val MAXIMUM_AXIS = 32_768
 
     /**
-     * Checks the native extent bound required by the shader's exact signed-integer pixel-center arithmetic.
+     * Validates native source or target axes in 1 through 32,768 for exact signed-integer sampling.
+     * The device may impose a lower limit; CPU sources and common logical geometry use their own bounds.
      *
-     * This pure check may run on any thread and allocates no native resource.
-     * Both source and physical destination axes must be in 1 through 32,768; the device may impose a lower limit.
-     * The bound applies only to these native adapters, not to CPU Canvas sources or common logical geometry.
-     *
-     * @param size source mip-zero or physical destination extent to validate before native allocation or sampling.
-     * @throws IllegalArgumentException when either axis lies outside the supported arithmetic range.
+     * @throws IllegalArgumentException when either axis is outside that range.
      */
     @JvmSynthetic
     internal fun requireSupportedExtent(size: IntSize) {
@@ -47,27 +43,19 @@ internal object FabricNativeCanvasShaders {
         """.trimIndent()
 
     /**
-     * Builds a fragment shader with a direct integer extent uniform for exact nearest mip-zero sampling.
+     * Builds exact nearest mip-zero GLSL using a direct CanvasTargetExtent uniform.
+     * The driver sets the validated physical target extent and owns compilation and its failures.
      *
-     * This pure operation may run on any thread, retains no lease or target, and neither compiles a program nor changes texture parameters.
-     * The driver must set CanvasTargetExtent to the validated physical target extent before drawing.
-     * Native shader compilation and its failures remain the consuming driver's responsibility.
-     *
-     * @param origin identifies which logical row is stored at source texel row zero.
-     * @return immutable GLSL source; no GPU work occurs during construction.
+     * @param origin logical edge stored at source texel row zero.
      */
     @JvmSynthetic
     internal fun fragment(origin: MinecraftCanvasTextureOrigin): String = fragment(origin, "uniform ivec3 CanvasTargetExtent;")
 
     /**
-     * Builds the same exact nearest sampler with a 16-byte std140 CanvasCapture uniform block.
+     * Builds the nearest sampler with a 16-byte std140 CanvasCapture block: physical width, height, then two unused integers.
+     * The driver owns compilation and keeps the capture-specific buffer alive through its completion fence.
      *
-     * The block contains the validated physical width and height followed by two unused integers.
-     * The driver owns its immutable capture-specific buffer through the capture completion fence; this pure function owns no buffer or cache.
-     * Construction is safe on any thread, while compilation and native failures remain the consuming driver's responsibility.
-     *
-     * @param origin identifies which logical row is stored at source texel row zero.
-     * @return immutable GLSL source using the same integer sampling rule as the direct-uniform variant.
+     * @param origin logical edge stored at source texel row zero.
      */
     @JvmSynthetic
     internal fun bufferedFragment(origin: MinecraftCanvasTextureOrigin): String = fragment(origin, "layout(std140) uniform CanvasCapture { ivec3 CanvasTargetExtent; };")

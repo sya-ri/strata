@@ -126,17 +126,15 @@ internal fun createRowShowcaseScreenDefinition(): ScreenDefinition =
 
 ### Modifiers
 
-Sizing, padding, paint, semantics, focus, and input modifiers apply to the Row itself; `spacing` and `horizontalArrangement` express structure, while `RowScope.weight` and `RowScope.align` affect only direct children.
+Apply sizing, padding, backgrounds, and input to the Row. Use `spacing` and `horizontalArrangement` for sibling structure.
 
 ### Parent scope
 
-`Row` evaluates a callback-lifetime `RowScope`, emits children in declaration order, and exposes only vertical alignment and weight parent data to its direct children.
+`RowScope` exposes vertical `align` and `weight` for direct children; the scope expires with its callback.
 
 </details>
 
 <details><summary>Component tree</summary>
-
-The tree mirrors the complete dedicated definition, including the featured component, its minimum parent layout, and the children used to demonstrate its responsibility.
 
 ```text
 `- Row [Size(width=136, height=64), Background(color=0xFF000000), Spacing(value=4), Arrangement(value=Center), RowDefaultAlignment(alignment=Center)]
@@ -148,7 +146,7 @@ The tree mirrors the complete dedicated definition, including the featured compo
 
 <details><summary>Image verification</summary>
 
-This 136 by 64 PNG is the complete frame of the compiled dedicated `ScreenDefinition`, with a 136 by 64 logical viewport at GUI scale 1. Headless rendering samples the assets at this physical density; the image is not upscaled from a lower-resolution raster or cropped from a larger screen. Its source, asset, viewport, and image hashes are recorded in [the headless render receipt](../components/headless-render.properties).
+136 by 64 PNG; 136 by 64 logical viewport at GUI scale 1. [Image verification](#image-verification).
 
 </details>
 
@@ -164,7 +162,7 @@ Wrap horizontal siblings when the available width changes.
 
 <details><summary>Usage and compiled example</summary>
 
-FlowRow wraps an ordered sibling sequence at the available width, measures each child against the full parent maximums, and arranges each row independently. It serves action-button groups and option groups without encoding either domain.
+FlowRow wraps an ordered sibling sequence at the available width and arranges each row independently.
 
 ### Compiled example
 
@@ -208,7 +206,7 @@ internal fun createFlowRowShowcaseScreenDefinition(): ScreenDefinition =
 
 ### Modifiers
 
-Sizing, padding, paint, semantics, focus, and input modifiers apply to the FlowRow itself. It uses its natural width unless constraints or `fillMaxWidth()` expand it; `horizontalSpacing`, `verticalSpacing`, and `horizontalArrangement` control its rows, while `FlowRowScope.align` overrides one child's vertical alignment within its row.
+Use `fillMaxWidth()` to arrange rows across the available width; `horizontalSpacing` and `verticalSpacing` set gaps. `FlowRowScope.align` overrides one child's vertical alignment.
 
 ### Parent scope
 
@@ -217,8 +215,6 @@ Sizing, padding, paint, semantics, focus, and input modifiers apply to the FlowR
 </details>
 
 <details><summary>Component tree</summary>
-
-The tree mirrors the complete dedicated definition, including the featured component, its minimum parent layout, and the children used to demonstrate its responsibility.
 
 ```text
 `- FlowRow [Size(width=168, height=60), Background(color=0xFF000000), Padding(all=8), FlowRowSpacing(horizontal=4, vertical=4), Arrangement(value=Center), FlowRowDefaultAlignment(alignment=Center)]
@@ -232,7 +228,7 @@ The tree mirrors the complete dedicated definition, including the featured compo
 
 <details><summary>Image verification</summary>
 
-This 168 by 60 PNG is the complete frame of the compiled dedicated `ScreenDefinition`, with a 168 by 60 logical viewport at GUI scale 1. Headless rendering samples the assets at this physical density; the image is not upscaled from a lower-resolution raster or cropped from a larger screen. Its source, asset, viewport, and image hashes are recorded in [the headless render receipt](../components/headless-render.properties).
+168 by 60 PNG; 168 by 60 logical viewport at GUI scale 1. [Image verification](#image-verification).
 
 </details>
 
@@ -287,17 +283,15 @@ internal fun createColumnShowcaseScreenDefinition(): ScreenDefinition =
 
 ### Modifiers
 
-Sizing, padding, paint, semantics, focus, and input modifiers apply to the Column itself; `spacing` and `verticalArrangement` express structure, while `ColumnScope.weight` and `ColumnScope.align` affect only direct children.
+Apply sizing, padding, backgrounds, and input to the Column. Use `spacing` and `verticalArrangement` for sibling structure.
 
 ### Parent scope
 
-`Column` evaluates a callback-lifetime `ColumnScope`, emits children in declaration order, and exposes only horizontal alignment and weight parent data to its direct children.
+`ColumnScope` exposes horizontal `align` and `weight` for direct children; the scope expires with its callback.
 
 </details>
 
 <details><summary>Component tree</summary>
-
-The tree mirrors the complete dedicated definition, including the featured component, its minimum parent layout, and the children used to demonstrate its responsibility.
 
 ```text
 `- Column [Size(width=120, height=64), Background(color=0xFF000000), Spacing(value=4), Arrangement(value=Center), ColumnDefaultAlignment(alignment=Center)]
@@ -309,7 +303,7 @@ The tree mirrors the complete dedicated definition, including the featured compo
 
 <details><summary>Image verification</summary>
 
-This 120 by 64 PNG is the complete frame of the compiled dedicated `ScreenDefinition`, with a 120 by 64 logical viewport at GUI scale 1. Headless rendering samples the assets at this physical density; the image is not upscaled from a lower-resolution raster or cropped from a larger screen. Its source, asset, viewport, and image hashes are recorded in [the headless render receipt](../components/headless-render.properties).
+120 by 64 PNG; 120 by 64 logical viewport at GUI scale 1. [Image verification](#image-verification).
 
 </details>
 
@@ -372,13 +366,11 @@ Use Stack only when children intentionally overlap. Ordinary sizing and backgrou
 
 ### Parent scope
 
-`Stack` evaluates a callback-lifetime `StackScope`; it measures and paints overlapping direct children in declaration order and exposes two-axis alignment parent data.
+`StackScope.align` positions direct overlays, which paint in declaration order.
 
 </details>
 
 <details><summary>Component tree</summary>
-
-The tree mirrors the complete dedicated definition, including the featured component, its minimum parent layout, and the children used to demonstrate its responsibility.
 
 ```text
 `- Stack [Size(width=64, height=64), Background(color=0xFF000000), StackContentAlignment(alignment=Center)]
@@ -390,7 +382,7 @@ The tree mirrors the complete dedicated definition, including the featured compo
 
 <details><summary>Image verification</summary>
 
-This 64 by 64 PNG is the complete frame of the compiled dedicated `ScreenDefinition`, with a 64 by 64 logical viewport at GUI scale 1. Headless rendering samples the assets at this physical density; the image is not upscaled from a lower-resolution raster or cropped from a larger screen. Its source, asset, viewport, and image hashes are recorded in [the headless render receipt](../components/headless-render.properties).
+64 by 64 PNG; 64 by 64 logical viewport at GUI scale 1. [Image verification](#image-verification).
 
 </details>
 
@@ -448,13 +440,11 @@ Sizing, padding, and paint modifiers apply to the Grid. Fixed columns, independe
 
 ### Parent scope
 
-`Grid` evaluates a callback-lifetime `GridScope`; it assigns direct children row-major and exposes two-axis alignment only inside each measured cell.
+`GridScope.align` positions a direct child within its measured cell.
 
 </details>
 
 <details><summary>Component tree</summary>
-
-The tree mirrors the complete dedicated definition, including the featured component, its minimum parent layout, and the children used to demonstrate its responsibility.
 
 ```text
 `- Grid [Size(width=64, height=64), Background(color=0xFF000000), GridColumns(value=3), GridSpacing(horizontal=2, vertical=2)]
@@ -473,7 +463,7 @@ The tree mirrors the complete dedicated definition, including the featured compo
 
 <details><summary>Image verification</summary>
 
-This 64 by 64 PNG is the complete frame of the compiled dedicated `ScreenDefinition`, with a 64 by 64 logical viewport at GUI scale 1. Headless rendering samples the assets at this physical density; the image is not upscaled from a lower-resolution raster or cropped from a larger screen. Its source, asset, viewport, and image hashes are recorded in [the headless render receipt](../components/headless-render.properties).
+64 by 64 PNG; 64 by 64 logical viewport at GUI scale 1. [Image verification](#image-verification).
 
 </details>
 
@@ -533,13 +523,11 @@ Sizing, weight, and paint modifiers give Spacer a deliberate empty footprint, su
 
 ### Parent scope
 
-`Spacer` has no content scope or children. Its size and modifier chain alone define its retained layout and paint behavior.
+No children or content scope; modifiers define its empty footprint.
 
 </details>
 
 <details><summary>Component tree</summary>
-
-The tree mirrors the complete dedicated definition, including the featured component, its minimum parent layout, and the children used to demonstrate its responsibility.
 
 ```text
 `- Row [Size(width=160, height=64), Background(color=0xFF000000), Arrangement(value=Center), RowDefaultAlignment(alignment=Center)]
@@ -552,7 +540,7 @@ The tree mirrors the complete dedicated definition, including the featured compo
 
 <details><summary>Image verification</summary>
 
-This 160 by 64 PNG is the complete frame of the compiled dedicated `ScreenDefinition`, with a 160 by 64 logical viewport at GUI scale 1. Headless rendering samples the assets at this physical density; the image is not upscaled from a lower-resolution raster or cropped from a larger screen. Its source, asset, viewport, and image hashes are recorded in [the headless render receipt](../components/headless-render.properties).
+160 by 64 PNG; 160 by 64 logical viewport at GUI scale 1. [Image verification](#image-verification).
 
 </details>
 
@@ -568,7 +556,7 @@ Update one retained region when explicitly supplied sources change.
 
 <details><summary>Usage and compiled example</summary>
 
-Observe recomputes one retained region from one to 22 typed StateSource values. Live status panels and conditional editing controls are independent uses; ordinary static layout composition cannot subscribe, coalesce frame snapshots, or reconcile deferred structure. Nested regions share source subscriptions and preserve compatible keyed nodes.
+Observe recomputes one region from up to 22 typed StateSource values, for conditional children or layout/style changes. Compatible keyed nodes survive reevaluation.
 
 ### Compiled example
 
@@ -619,13 +607,11 @@ Observe is one child of its containing layout. Apply weight, alignment, sizing, 
 
 ### Parent scope
 
-Observe evaluates a fresh UiScope when source values or its parent-provided callback change. Keep input and scroll states outside that callback. Source notifications never evaluate UI on their delivery thread; nested regions consume the final parent definition once per frame.
+Content emits zero or one root on the owner thread. Keep editing and navigation state outside reevaluation.
 
 </details>
 
 <details><summary>Component tree</summary>
-
-The tree mirrors the complete dedicated definition, including the featured component, its minimum parent layout, and the children used to demonstrate its responsibility.
 
 ```text
 `- Observe [Size(width=160, height=48), Background(color=0xFF000000), Padding(all=8)]
@@ -638,7 +624,7 @@ The tree mirrors the complete dedicated definition, including the featured compo
 
 <details><summary>Image verification</summary>
 
-This 160 by 48 PNG is the complete frame of the compiled dedicated `ScreenDefinition`, with a 160 by 48 logical viewport at GUI scale 1. Headless rendering samples the assets at this physical density; the image is not upscaled from a lower-resolution raster or cropped from a larger screen. Its source, asset, viewport, and image hashes are recorded in [the headless render receipt](../components/headless-render.properties).
+160 by 48 PNG; 160 by 48 logical viewport at GUI scale 1. [Image verification](#image-verification).
 
 </details>
 
@@ -654,7 +640,7 @@ Display labels, messages, or wrapped read-only text.
 
 <details><summary>Usage and compiled example</summary>
 
-Text renders Unicode literals and composed text using the active profile's font resources, glyph advances, shadow layer, foreground layer, and baseline. Explicit `TextLayout.Multiline` adds hard line breaks, wrapping, line limits, and clip or ellipsis overflow; the existing overload remains single-line. Glyph availability follows the selected resource pack.
+Text renders Unicode literals and composed text from the selected resource pack. Use `TextLayout.Multiline` for hard breaks, wrapping, line limits, and overflow.
 
 ### Compiled example
 
@@ -701,17 +687,15 @@ internal fun createTextShowcaseScreenDefinition(): ScreenDefinition =
 
 ### Modifiers
 
-Ordinary sizing, padding, placement, and paint modifiers compose around `Text`; multiline layout uses the available width and height. `TextWrap.None`, `Word`, or `Character`, `maxLines`, `TextOverflow.Clip` or `Ellipsis`, and `lineSpacing` control presentation without changing the original semantic label. Text content and the optional `font: ResourceId` remain typed component arguments. `UiText.withFont` also selects a font for labels and composed text; an inner selection takes precedence over an outer one.
+Use `TextLayout.Multiline` to fit reserved text rectangles. Set wrapping, overflow, and line spacing on Text; `UiText.withFont` selects fonts within composed labels, with inner selections taking precedence.
 
 ### Parent scope
 
-`Text` accepts fixed values or a `StateSource<String>` / `StateSource<UiText>`. Source-backed text uses Observe's shared frame snapshots and retained region without reopening its screen. Unicode and custom fonts require a font-resource profile; the older printable-ASCII glyph builder remains a compatibility path.
+No children. Fixed and source-backed labels share font and geometry rules; source values commit at frame boundaries.
 
 </details>
 
 <details><summary>Component tree</summary>
-
-The tree mirrors the complete dedicated definition, including the featured component, its minimum parent layout, and the children used to demonstrate its responsibility.
 
 ```text
 `- Stack [Size(width=192, height=88), Background(color=0xFF000000), Padding(all=8), StackContentAlignment(alignment=Center)]
@@ -722,7 +706,7 @@ The tree mirrors the complete dedicated definition, including the featured compo
 
 <details><summary>Image verification</summary>
 
-This 384 by 176 PNG is the complete frame of the compiled dedicated `ScreenDefinition`, with a 192 by 88 logical viewport at GUI scale 2. Headless rendering samples the assets at this physical density; the image is not upscaled from a lower-resolution raster or cropped from a larger screen. Its source, asset, viewport, and image hashes are recorded in [the headless render receipt](../components/headless-render.properties).
+384 by 176 PNG; 192 by 88 logical viewport at GUI scale 2. [Image verification](#image-verification).
 
 </details>
 
@@ -738,7 +722,7 @@ Edit a single line of caller-owned text.
 
 <details><summary>Usage and compiled example</summary>
 
-TextField reproduces the 200 by 20 Minecraft EditBox sprites, text origin, glyph colors, owner-thread value state, and focus, with Unicode scalar editing and inline IME composition.
+TextField uses the 200 by 20 Minecraft EditBox sprites with Unicode scalar editing and inline IME composition.
 
 ### Compiled example
 
@@ -784,13 +768,11 @@ Pointer, keyboard, committed-character, preedit, and focus modifiers run as acti
 
 ### Parent scope
 
-`TextField` is a top-level extension on the active `UiScope`. Caller-owned `TextFieldState` owns the value and its positive UTF-16 maximum length. Movement and deletion operate on Unicode scalars, not whole grapheme clusters; preedit text remains separate until committed input arrives. The inline composition display does not reproduce Minecraft's native IME popup or platform candidate window.
+Keep caller-owned `TextFieldState` on its owner thread with a positive UTF-16 maximum length. Editing uses scalars, not grapheme clusters. Preedit stays separate until committed; it does not reproduce Minecraft's native IME popup.
 
 </details>
 
 <details><summary>Component tree</summary>
-
-The tree mirrors the complete dedicated definition, including the featured component, its minimum parent layout, and the children used to demonstrate its responsibility.
 
 ```text
 `- Stack [Size(width=216, height=64), Background(color=0xFF000000), StackContentAlignment(alignment=Center)]
@@ -801,7 +783,7 @@ The tree mirrors the complete dedicated definition, including the featured compo
 
 <details><summary>Image verification</summary>
 
-This 432 by 128 PNG is the complete frame of the compiled dedicated `ScreenDefinition`, with a 216 by 64 logical viewport at GUI scale 2. Headless rendering samples the assets at this physical density; the image is not upscaled from a lower-resolution raster or cropped from a larger screen. Its source, asset, viewport, and image hashes are recorded in [the headless render receipt](../components/headless-render.properties).
+432 by 128 PNG; 216 by 64 logical viewport at GUI scale 2. [Image verification](#image-verification).
 
 </details>
 
@@ -817,7 +799,7 @@ Edit multiline text inside a scrollable viewport.
 
 <details><summary>Usage and compiled example</summary>
 
-TextArea edits one multiline value inside an explicit viewport with Unicode scalar navigation, inline IME composition, and independent vertical scrolling. It serves both note editing and message drafts without encoding an application model.
+TextArea supports note editing and message drafts with multiline scalar navigation, inline IME composition, and independent scrolling.
 
 ### Compiled example
 
@@ -873,17 +855,15 @@ internal fun createTextAreaShowcaseScreenDefinition(): ScreenDefinition {
 
 ### Modifiers
 
-Place `TextArea` with ordinary layout modifiers and select its outer extent through `TextAreaViewport.Size` or `Lines`. Minecraft uses a fixed 9-pixel logical line box, optional extra line spacing, and four-pixel padding on each side. An external `Scrollbar(state.scrollState)` observes the editor's caller-owned scroll state; the editor does not insert a scrollbar or toolbar. The `font: ResourceId` overload changes layout, cursor placement, and drawing together.
+Choose `TextAreaViewport.Size` or `Lines`; the fixed 9-pixel logical line box has optional extra spacing and four-pixel frame insets. Link an optional `Scrollbar(state.scrollState)` independently.
 
 ### Parent scope
 
-`TextArea` is a leaf extension on the active `UiScope`; one retained editor observes its owner-thread `TextAreaState`. Creating an immutable description does not attach the state, and descriptions can be reused after detachment. Simultaneous attachment with the same caller-owned state throws `IllegalStateException`. The state stores canonical LF newlines and enforces a positive UTF-16 maximum length. Soft wrapping never edits the stored value, and IME preedit remains separate until committed. `SemanticsRole.TextArea` exposes the committed text through `Semantics.value`, without typed accessibility edit actions. Selection, clipboard commands, grapheme-cluster editing, and the platform IME candidate window are outside this component's contract.
+One attached editor per owner-thread `TextAreaState`; reuse after detach is allowed. State stores LF text and a positive UTF-16 limit. `SemanticsRole.TextArea` and `Semantics.value` expose committed text; selection, clipboard, typed accessibility edit actions, and grapheme editing are unavailable.
 
 </details>
 
 <details><summary>Component tree</summary>
-
-The tree mirrors the complete dedicated definition, including the featured component, its minimum parent layout, and the children used to demonstrate its responsibility.
 
 ```text
 `- Row [Size(width=226, height=80), Background(color=0xFF000000), Spacing(value=4), Arrangement(value=Center), RowDefaultAlignment(alignment=Center)]
@@ -895,7 +875,7 @@ The tree mirrors the complete dedicated definition, including the featured compo
 
 <details><summary>Image verification</summary>
 
-This 452 by 160 PNG is the complete frame of the compiled dedicated `ScreenDefinition`, with a 226 by 80 logical viewport at GUI scale 2. Headless rendering samples the assets at this physical density; the image is not upscaled from a lower-resolution raster or cropped from a larger screen. Its source, asset, viewport, and image hashes are recorded in [the headless render receipt](../components/headless-render.properties).
+452 by 160 PNG; 226 by 80 logical viewport at GUI scale 2. [Image verification](#image-verification).
 
 </details>
 
@@ -911,7 +891,7 @@ Present an action with activation supplied by modifiers.
 
 <details><summary>Usage and compiled example</summary>
 
-Button renders verified fixed-height Minecraft sprite, label, and enabled semantic states, including the native 150- and 200-pixel widths. It owns no implicit focus or activation, while reusable input actions live in modifiers.
+Button renders a label and enabled state. It owns no implicit focus or activation; reusable input actions live in modifiers.
 
 ### Compiled example
 
@@ -960,13 +940,11 @@ Compose `onActivate` with the component's enabled state when a primary pointer p
 
 ### Parent scope
 
-`Button` is a top-level extension on the active `UiScope`. The screen runtime installs its selected Minecraft profile only for the definition callback, while caller-owned activation and pointer modifiers remain valid only through their retained modifier-node lifetime.
+The screen runtime installs its selected Minecraft profile only for the definition callback. Button has no child scope.
 
 </details>
 
 <details><summary>Component tree</summary>
-
-The tree mirrors the complete dedicated definition, including the featured component, its minimum parent layout, and the children used to demonstrate its responsibility.
 
 ```text
 `- Stack [Size(width=166, height=64), Background(color=0xFF000000), StackContentAlignment(alignment=Center)]
@@ -977,7 +955,7 @@ The tree mirrors the complete dedicated definition, including the featured compo
 
 <details><summary>Image verification</summary>
 
-This 166 by 64 PNG is the complete frame of the compiled dedicated `ScreenDefinition`, with a 166 by 64 logical viewport at GUI scale 1. Headless rendering samples the assets at this physical density; the image is not upscaled from a lower-resolution raster or cropped from a larger screen. Its source, asset, viewport, and image hashes are recorded in [the headless render receipt](../components/headless-render.properties).
+166 by 64 PNG; 166 by 64 logical viewport at GUI scale 1. [Image verification](#image-verification).
 
 </details>
 
@@ -1024,17 +1002,15 @@ internal fun createCheckboxShowcaseScreenDefinition(): ScreenDefinition {
 
 ### Modifiers
 
-Sizing and placement modifiers compose around `Checkbox`; caller-owned state and typed checked-change actions keep the reusable boolean control independent of a settings domain.
+Use typed checked-change modifiers with caller-owned boolean state.
 
 ### Parent scope
 
-`Checkbox` is a leaf extension on the active `UiScope`; `CheckboxState` is caller-owned, owner-thread confined, and may be shared with application state adapters.
+No children. Retain `CheckboxState` on its owner thread.
 
 </details>
 
 <details><summary>Component tree</summary>
-
-The tree mirrors the complete dedicated definition, including the featured component, its minimum parent layout, and the children used to demonstrate its responsibility.
 
 ```text
 `- Stack [Size(width=166, height=36), Background(color=0xFF000000), StackContentAlignment(alignment=Center)]
@@ -1045,7 +1021,7 @@ The tree mirrors the complete dedicated definition, including the featured compo
 
 <details><summary>Image verification</summary>
 
-This 166 by 36 PNG is the complete frame of the compiled dedicated `ScreenDefinition`, with a 166 by 36 logical viewport at GUI scale 1. Headless rendering samples the assets at this physical density; the image is not upscaled from a lower-resolution raster or cropped from a larger screen. Its source, asset, viewport, and image hashes are recorded in [the headless render receipt](../components/headless-render.properties).
+166 by 36 PNG; 166 by 36 logical viewport at GUI scale 1. [Image verification](#image-verification).
 
 </details>
 
@@ -1102,17 +1078,15 @@ internal fun createCycleButtonShowcaseScreenDefinition(): ScreenDefinition {
 
 ### Modifiers
 
-Sizing and placement modifiers compose around `CycleButton`; its immutable option set and typed change action remain generic rather than encoding one game's option model.
+Use typed change modifiers with an immutable finite option set.
 
 ### Parent scope
 
-`CycleButton` is a leaf extension on the active `UiScope`; it snapshots labels for the validated finite option set and retains no child scope.
+No children. Labels are snapshotted for the validated option set.
 
 </details>
 
 <details><summary>Component tree</summary>
-
-The tree mirrors the complete dedicated definition, including the featured component, its minimum parent layout, and the children used to demonstrate its responsibility.
 
 ```text
 `- Stack [Size(width=166, height=36), Background(color=0xFF000000), StackContentAlignment(alignment=Center)]
@@ -1123,7 +1097,7 @@ The tree mirrors the complete dedicated definition, including the featured compo
 
 <details><summary>Image verification</summary>
 
-This 166 by 36 PNG is the complete frame of the compiled dedicated `ScreenDefinition`, with a 166 by 36 logical viewport at GUI scale 1. Headless rendering samples the assets at this physical density; the image is not upscaled from a lower-resolution raster or cropped from a larger screen. Its source, asset, viewport, and image hashes are recorded in [the headless render receipt](../components/headless-render.properties).
+166 by 36 PNG; 166 by 36 logical viewport at GUI scale 1. [Image verification](#image-verification).
 
 </details>
 
@@ -1170,17 +1144,15 @@ internal fun createSliderShowcaseScreenDefinition(): ScreenDefinition {
 
 ### Modifiers
 
-Sizing and placement modifiers compose around `Slider`; caller-owned range state and typed value-change actions remain reusable across volume, brightness, machine power, and other numeric domains.
+Use typed value-change modifiers with caller-owned range and step state.
 
 ### Parent scope
 
-`Slider` is a leaf extension on the active `UiScope`; `SliderState` owns normalization and quantization while the active profile owns rendering.
+No children. `SliderState` owns normalization and quantization.
 
 </details>
 
 <details><summary>Component tree</summary>
-
-The tree mirrors the complete dedicated definition, including the featured component, its minimum parent layout, and the children used to demonstrate its responsibility.
 
 ```text
 `- Stack [Size(width=166, height=36), Background(color=0xFF000000), StackContentAlignment(alignment=Center)]
@@ -1191,7 +1163,7 @@ The tree mirrors the complete dedicated definition, including the featured compo
 
 <details><summary>Image verification</summary>
 
-This 166 by 36 PNG is the complete frame of the compiled dedicated `ScreenDefinition`, with a 166 by 36 logical viewport at GUI scale 1. Headless rendering samples the assets at this physical density; the image is not upscaled from a lower-resolution raster or cropped from a larger screen. Its source, asset, viewport, and image hashes are recorded in [the headless render receipt](../components/headless-render.properties).
+166 by 36 PNG; 166 by 36 logical viewport at GUI scale 1. [Image verification](#image-verification).
 
 </details>
 
@@ -1269,8 +1241,6 @@ Selection is caller-owned data, while `Underline` or `Custom` controls its reusa
 
 <details><summary>Component tree</summary>
 
-The tree mirrors the complete dedicated definition, including the featured component, its minimum parent layout, and the children used to demonstrate its responsibility.
-
 ```text
 `- Row [Size(width=160, height=64), Background(color=0xFF000000), Spacing(value=1), Arrangement(value=Center), RowDefaultAlignment(alignment=Center)]
   |- Tab [Size(width=73, height=20)]
@@ -1281,7 +1251,7 @@ The tree mirrors the complete dedicated definition, including the featured compo
 
 <details><summary>Image verification</summary>
 
-This 160 by 64 PNG is the complete frame of the compiled dedicated `ScreenDefinition`, with a 160 by 64 logical viewport at GUI scale 1. Headless rendering samples the assets at this physical density; the image is not upscaled from a lower-resolution raster or cropped from a larger screen. Its source, asset, viewport, and image hashes are recorded in [the headless render receipt](../components/headless-render.properties).
+160 by 64 PNG; 160 by 64 logical viewport at GUI scale 1. [Image verification](#image-verification).
 
 </details>
 
@@ -1341,8 +1311,6 @@ Ordinary sizing and placement modifiers define only the clipped viewport. The sh
 
 <details><summary>Component tree</summary>
 
-The tree mirrors the complete dedicated definition, including the featured component, its minimum parent layout, and the children used to demonstrate its responsibility.
-
 ```text
 `- ScrollArea [Size(width=120, height=48), Background(color=0xFF000000), ScrollRate(value=9)]
   `- Column [Size(width=120, height=72), ColumnDefaultAlignment(alignment=Center)]
@@ -1356,7 +1324,7 @@ The tree mirrors the complete dedicated definition, including the featured compo
 
 <details><summary>Image verification</summary>
 
-This 120 by 48 PNG is the complete frame of the compiled dedicated `ScreenDefinition`, with a 120 by 48 logical viewport at GUI scale 1. Headless rendering samples the assets at this physical density; the image is not upscaled from a lower-resolution raster or cropped from a larger screen. Its source, asset, viewport, and image hashes are recorded in [the headless render receipt](../components/headless-render.properties).
+120 by 48 PNG; 120 by 48 logical viewport at GUI scale 1. [Image verification](#image-verification).
 
 </details>
 
@@ -1414,13 +1382,11 @@ Sizing and parent placement modifiers position `Scrollbar` independently from it
 
 ### Parent scope
 
-`Scrollbar` is an independent leaf in any surrounding layout. It observes caller-owned `ScrollState` and releases that observation when its retained node is disposed.
+An independent leaf observing caller-owned `ScrollState`; disposal releases that observation.
 
 </details>
 
 <details><summary>Component tree</summary>
-
-The tree mirrors the complete dedicated definition, including the featured component, its minimum parent layout, and the children used to demonstrate its responsibility.
 
 ```text
 `- Row [Size(width=94, height=48), Background(color=0xFF000000), Spacing(value=8)]
@@ -1439,7 +1405,7 @@ The tree mirrors the complete dedicated definition, including the featured compo
 
 <details><summary>Image verification</summary>
 
-This 94 by 48 PNG is the complete frame of the compiled dedicated `ScreenDefinition`, with a 94 by 48 logical viewport at GUI scale 1. Headless rendering samples the assets at this physical density; the image is not upscaled from a lower-resolution raster or cropped from a larger screen. Its source, asset, viewport, and image hashes are recorded in [the headless render receipt](../components/headless-render.properties).
+94 by 48 PNG; 94 by 48 logical viewport at GUI scale 1. [Image verification](#image-verification).
 
 </details>
 
@@ -1501,8 +1467,6 @@ Sizing is expressed by `viewportSize`; modifier actions receive leading and trai
 
 <details><summary>Component tree</summary>
 
-The tree mirrors the complete dedicated definition, including the featured component, its minimum parent layout, and the children used to demonstrate its responsibility.
-
 ```text
 `- VirtualList [Size(width=120, height=48)]
 ```
@@ -1511,7 +1475,7 @@ The tree mirrors the complete dedicated definition, including the featured compo
 
 <details><summary>Image verification</summary>
 
-This 120 by 48 PNG is the complete frame of the compiled dedicated `ScreenDefinition`, with a 120 by 48 logical viewport at GUI scale 1. Headless rendering samples the assets at this physical density; the image is not upscaled from a lower-resolution raster or cropped from a larger screen. Its source, asset, viewport, and image hashes are recorded in [the headless render receipt](../components/headless-render.properties).
+120 by 48 PNG; 120 by 48 logical viewport at GUI scale 1. [Image verification](#image-verification).
 
 </details>
 
@@ -1527,7 +1491,7 @@ Select entries in a virtualized list.
 
 <details><summary>Usage and compiled example</summary>
 
-SelectionList adds generic caller-owned selection and typed selection-change actions to VirtualList without encoding Social, inventory, advancement, or Mod-specific rows.
+SelectionList adds caller-owned selection and typed change actions to virtual rows.
 
 ### Compiled example
 
@@ -1574,8 +1538,6 @@ Viewport behavior composes with typed selection actions and caller-owned selecti
 
 <details><summary>Component tree</summary>
 
-The tree mirrors the complete dedicated definition, including the featured component, its minimum parent layout, and the children used to demonstrate its responsibility.
-
 ```text
 `- SelectionList [Size(width=120, height=48)]
 ```
@@ -1584,7 +1546,7 @@ The tree mirrors the complete dedicated definition, including the featured compo
 
 <details><summary>Image verification</summary>
 
-This 120 by 48 PNG is the complete frame of the compiled dedicated `ScreenDefinition`, with a 120 by 48 logical viewport at GUI scale 1. Headless rendering samples the assets at this physical density; the image is not upscaled from a lower-resolution raster or cropped from a larger screen. Its source, asset, viewport, and image hashes are recorded in [the headless render receipt](../components/headless-render.properties).
+120 by 48 PNG; 120 by 48 logical viewport at GUI scale 1. [Image verification](#image-verification).
 
 </details>
 
@@ -1638,17 +1600,15 @@ internal fun createImageShowcaseScreenDefinition(source: ImageSource): ScreenDef
 
 ### Modifiers
 
-Sizing and placement modifiers compose around `Image`; `imageBackground` paints the same immutable resource behind any layout component with typed stretch or tile mapping.
+Use Image as a child; use `imageBackground` to paint the same resource behind a container.
 
 ### Parent scope
 
-`Image` is a top-level extension on the active `UiScope`. It retains detached pixels rather than a Minecraft resource object, so the Fabric loader may resolve a resource-pack replacement before the description is built.
+No children. The description retains detached pixels, not a mapped Minecraft resource.
 
 </details>
 
 <details><summary>Component tree</summary>
-
-The tree mirrors the complete dedicated definition, including the featured component, its minimum parent layout, and the children used to demonstrate its responsibility.
 
 ```text
 `- Stack [Size(width=64, height=64), Background(color=0xFF000000), StackContentAlignment(alignment=Center)]
@@ -1659,7 +1619,7 @@ The tree mirrors the complete dedicated definition, including the featured compo
 
 <details><summary>Image verification</summary>
 
-This 64 by 64 PNG is the complete frame of the compiled dedicated `ScreenDefinition`, with a 64 by 64 logical viewport at GUI scale 1. Headless rendering samples the assets at this physical density; the image is not upscaled from a lower-resolution raster or cropped from a larger screen. Its source, asset, viewport, and image hashes are recorded in [the headless render receipt](../components/headless-render.properties).
+64 by 64 PNG; 64 by 64 logical viewport at GUI scale 1. [Image verification](#image-verification).
 
 </details>
 
@@ -1675,7 +1635,7 @@ Present frames from an external renderer or image producer.
 
 <details><summary>Usage and compiled example</summary>
 
-Canvas displays externally produced CPU frames or version-runtime native output in one input-passive rectangle. Decoded video and camera, filter, or custom-renderer output are independent uses; composing Image and Stack cannot provide source cutoffs, attachment lifetimes, leased GPU capture, or owned offscreen targets. The component does not implement a decoder, camera, world renderer, filter, or browser engine.
+Canvas displays external CPU frames or native drawing in an input-passive rectangle. The application owns decoding and rendering; Strata owns placement and attachment lifetimes.
 
 ### Compiled example
 
@@ -1736,13 +1696,11 @@ Use an explicit positive logical `size`; the whole source stretches with nearest
 
 ### Parent scope
 
-`Canvas` is a leaf extension with no content scope or parent-data API. `canvasSource(image)` retains immutable CPU pixels, while `canvasSource(frames)` observes `StateSource<DrawImage>` through owner-thread frame cutoffs. Each attachment owns its binding; replacement, detachment, and close stop that binding without closing the externally owned source. Native sources require the matching versioned runtime and do not read back pixels during normal presentation. Native headless capture requires an immutable snapshot of the same committed generation, physical extent, and top-left orientation; a missing or mismatched snapshot fails before any output.
+No children. Each attachment observes its source without owning it. Native factories need the matching runtime; portable capture requires a snapshot matching the presented generation and extent. See the Canvas guide for lease and capture contracts.
 
 </details>
 
 <details><summary>Component tree</summary>
-
-The tree mirrors the complete dedicated definition, including the featured component, its minimum parent layout, and the children used to demonstrate its responsibility.
 
 ```text
 `- Stack [Size(width=96, height=64), Background(color=0xFF000000), StackContentAlignment(alignment=Center)]
@@ -1753,7 +1711,7 @@ The tree mirrors the complete dedicated definition, including the featured compo
 
 <details><summary>Image verification</summary>
 
-This 96 by 64 PNG is the complete frame of the compiled dedicated `ScreenDefinition`, with a 96 by 64 logical viewport at GUI scale 1. Headless rendering samples the assets at this physical density; the image is not upscaled from a lower-resolution raster or cropped from a larger screen. Its source, asset, viewport, and image hashes are recorded in [the headless render receipt](../components/headless-render.properties).
+96 by 64 PNG; 96 by 64 logical viewport at GUI scale 1. [Image verification](#image-verification).
 
 </details>
 
@@ -1769,7 +1727,7 @@ Navigate large maps or images supplied as independent tiles.
 
 <details><summary>Usage and compiled example</summary>
 
-TiledImage presents one bounded logical raster from independently revisioned immutable tiles, selecting only the visible level and coarser fallback working set instead of joining or copying the complete image. Maps, scans, and schematics are independent uses that cannot preserve bounded subscriptions and reusable tile images through ordinary Image composition alone.
+TiledImage displays maps, scans, or schematics from independently revisioned immutable tiles, observing only a bounded visible set and coarser fallbacks.
 
 ### Compiled example
 
@@ -1883,13 +1841,11 @@ Use the explicit positive `size` as the clipped viewport, keep navigation in cal
 
 ### Parent scope
 
-`TiledImage` evaluates a callback-lifetime `TiledImageScope`; each fixed-size direct child uses `atContentPosition` with either a fixed coordinate or a `StateSource<DoubleOffset>` committed at frame cutoff. Revisioned marker movement changes only overlay placement while tiles retain their identities. The source instance identifies immutable exactly representable bounds and level geometry and owns every tile history. One retained attachment owns its bounded subscriptions and derived presentation cache, closes them on replacement or detach, and never closes the source or mutates returned images.
+`TiledImageScope.atContentPosition` anchors fixed-size children using fixed or source-backed coordinates. Marker movement changes placement without changing tile identities. The source fixes bounds and levels; attachment replacement or detach closes observations, not the source.
 
 </details>
 
 <details><summary>Component tree</summary>
-
-The tree mirrors the complete dedicated definition, including the featured component, its minimum parent layout, and the children used to demonstrate its responsibility.
 
 ```text
 `- Stack [Size(width=112, height=88), Background(color=0xFF000000), StackContentAlignment(alignment=Center)]
@@ -1901,7 +1857,7 @@ The tree mirrors the complete dedicated definition, including the featured compo
 
 <details><summary>Image verification</summary>
 
-This 112 by 88 PNG is the complete frame of the compiled dedicated `ScreenDefinition`, with a 112 by 88 logical viewport at GUI scale 1. Headless rendering samples the assets at this physical density; the image is not upscaled from a lower-resolution raster or cropped from a larger screen. Its source, asset, viewport, and image hashes are recorded in [the headless render receipt](../components/headless-render.properties).
+112 by 88 PNG; 112 by 88 logical viewport at GUI scale 1. [Image verification](#image-verification).
 
 </details>
 
@@ -1964,8 +1920,6 @@ Sizing is native-fixed at 18 by 18. `Slots.playerInventory(index)` binds player 
 
 <details><summary>Component tree</summary>
 
-The tree mirrors the complete dedicated definition, including the featured component, its minimum parent layout, and the children used to demonstrate its responsibility.
-
 ```text
 `- Stack [Size(width=64, height=64), Background(color=0xFF000000), StackContentAlignment(alignment=Center)]
   `- Slot [SlotHighlightable(value=true), Size(width=18, height=18)]
@@ -1975,7 +1929,7 @@ The tree mirrors the complete dedicated definition, including the featured compo
 
 <details><summary>Image verification</summary>
 
-This 64 by 64 PNG is the complete frame of the compiled dedicated `ScreenDefinition`, with a 64 by 64 logical viewport at GUI scale 1. Headless rendering samples the assets at this physical density; the image is not upscaled from a lower-resolution raster or cropped from a larger screen. Its source, asset, viewport, and image hashes are recorded in [the headless render receipt](../components/headless-render.properties).
+64 by 64 PNG; 64 by 64 logical viewport at GUI scale 1. [Image verification](#image-verification).
 
 </details>
 
@@ -1991,7 +1945,7 @@ Display a player's skin face and hat layers.
 
 <details><summary>Usage and compiled example</summary>
 
-PlayerHead reproduces Minecraft 26.2 face-then-hat rendering from a 64 by 64 skin. PlayerHeadScale gives every source texel an equal integer-sized square for crisp lists, profiles, scoreboards, and Mod screens; the deprecated arbitrary-size overload uses region-clamped bilinear interpolation when an exact integer scale is impossible.
+PlayerHead provides face-then-hat rendering from a skin. Prefer `PlayerHeadScale` for equal integer-sized texels; the deprecated arbitrary-size overload interpolates when needed.
 
 ### Compiled example
 
@@ -2028,17 +1982,15 @@ internal fun createPlayerHeadShowcaseScreenDefinition(
 
 ### Modifiers
 
-Pass `PlayerHeadScale(1)` for an 8 by 8 head, or another positive factor when every source texel should remain the same size. Sizing and placement modifiers compose around `PlayerHead`; its immutable skin argument stays separate from Social, player-list, scoreboard, profile, and Mod-specific row state.
+Use `PlayerHeadScale(1)` for an 8 by 8 head, or a larger positive factor. Apply ordinary placement modifiers around it.
 
 ### Parent scope
 
-`PlayerHead` is a top-level extension on the active `UiScope`. `Pixels` retains a detached immutable skin, while `CurrentPlayer`, `Name`, and `Uuid` remain structural asynchronous lookups deferred to node attachment; the retained node owns and releases that lookup lifetime.
+`Pixels` retains a detached skin. `CurrentPlayer`, `Name`, and `Uuid` defer asynchronous lookup to attachment, which owns its release.
 
 </details>
 
 <details><summary>Component tree</summary>
-
-The tree mirrors the complete dedicated definition, including the featured component, its minimum parent layout, and the children used to demonstrate its responsibility.
 
 ```text
 `- Stack [Size(width=64, height=64), Background(color=0xFF000000), StackContentAlignment(alignment=Center)]
@@ -2049,7 +2001,7 @@ The tree mirrors the complete dedicated definition, including the featured compo
 
 <details><summary>Image verification</summary>
 
-This 64 by 64 PNG is the complete frame of the compiled dedicated `ScreenDefinition`, with a 64 by 64 logical viewport at GUI scale 1. Headless rendering samples the assets at this physical density; the image is not upscaled from a lower-resolution raster or cropped from a larger screen. Its source, asset, viewport, and image hashes are recorded in [the headless render receipt](../components/headless-render.properties).
+64 by 64 PNG; 64 by 64 logical viewport at GUI scale 1. [Image verification](#image-verification).
 
 </details>
 
@@ -2065,7 +2017,7 @@ Show that work is in progress when no completion value is available.
 
 <details><summary>Usage and compiled example</summary>
 
-LoadingIndicator reproduces the Minecraft 26.2 friends-loading sprite as three vertical 5 by 2 cells with the native six-tick frame duration; older runtimes use the same pack-overridable path before their compatibility fallback.
+LoadingIndicator displays the profile's discrete loading animation using host frame time.
 
 ### Compiled example
 
@@ -2095,17 +2047,15 @@ internal fun createLoadingIndicatorShowcaseScreenDefinition(): ScreenDefinition 
 
 ### Modifiers
 
-Sizing and placement modifiers compose around `LoadingIndicator`; explicit host frame time advances its discrete profile animation without application-owned timer state.
+Position it with layout modifiers; host time advances the animation without application timer state.
 
 ### Parent scope
 
-`LoadingIndicator` is a top-level extension on the active `UiScope`. The Fabric host supplies one timestamp per native render pass and the retained node invalidates only when its discrete animation cell changes.
+No children. The retained node invalidates only when its animation cell changes.
 
 </details>
 
 <details><summary>Component tree</summary>
-
-The tree mirrors the complete dedicated definition, including the featured component, its minimum parent layout, and the children used to demonstrate its responsibility.
 
 ```text
 `- Stack [Size(width=32, height=24), Background(color=0xFF000000), StackContentAlignment(alignment=Center)]
@@ -2116,7 +2066,7 @@ The tree mirrors the complete dedicated definition, including the featured compo
 
 <details><summary>Image verification</summary>
 
-This 32 by 24 PNG is the complete frame of the compiled dedicated `ScreenDefinition`, with a 32 by 24 logical viewport at GUI scale 1. Headless rendering samples the assets at this physical density; the image is not upscaled from a lower-resolution raster or cropped from a larger screen. Its source, asset, viewport, and image hashes are recorded in [the headless render receipt](../components/headless-render.properties).
+32 by 24 PNG; 32 by 24 logical viewport at GUI scale 1. [Image verification](#image-verification).
 
 </details>
 
@@ -2162,17 +2112,15 @@ internal fun createProgressBarShowcaseScreenDefinition(): ScreenDefinition =
 
 ### Modifiers
 
-Sizing and placement modifiers compose around `ProgressBar`; its normalized value is immutable component data while the active profile supplies resource-pack-aware fill, completed-fill, and border sprites.
+Position it with layout modifiers; the active profile supplies fill, completed-fill, and border sprites.
 
 ### Parent scope
 
-`ProgressBar` is a top-level extension on the active `UiScope`. The implicit profile resolves the active resource pack before retaining immutable sprite pixels.
+No children. The profile resolves resource-pack sprites before retaining their pixels.
 
 </details>
 
 <details><summary>Component tree</summary>
-
-The tree mirrors the complete dedicated definition, including the featured component, its minimum parent layout, and the children used to demonstrate its responsibility.
 
 ```text
 `- Stack [Size(width=116, height=28), Background(color=0xFF000000), StackContentAlignment(alignment=Center)]
@@ -2183,15 +2131,16 @@ The tree mirrors the complete dedicated definition, including the featured compo
 
 <details><summary>Image verification</summary>
 
-This 116 by 28 PNG is the complete frame of the compiled dedicated `ScreenDefinition`, with a 116 by 28 logical viewport at GUI scale 1. Headless rendering samples the assets at this physical density; the image is not upscaled from a lower-resolution raster or cropped from a larger screen. Its source, asset, viewport, and image hashes are recorded in [the headless render receipt](../components/headless-render.properties).
+116 by 28 PNG; 116 by 28 logical viewport at GUI scale 1. [Image verification](#image-verification).
 
 </details>
 
 ## Image verification
 
-Each component image is the complete frame of its dedicated minimal `ScreenDefinition`, including only the layout and children needed for the example.
+Each image is the complete frame of its compiled dedicated `ScreenDefinition`, sampled at the stated physical density without upscaling or cropping.
 Generation renders these definitions with the headless runtime and explicit Minecraft assets without starting Minecraft or creating a GPU context.
 Animated examples use the frame at time zero; the independent native check accepts a complete supported animation phase.
 
-The [headless render receipt](../components/headless-render.properties) records the source, asset, viewport, and image hashes.
-The separate [native parity receipt](../evidence/minecraft-26.2-parity.properties) records the loaded-game comparisons.
+The [headless render receipt](../components/headless-render.properties) records source, asset, viewport, and image hashes.
+The separate [native parity receipt](../evidence/minecraft-26.2-parity.properties) records loaded-game comparisons.
+See [documentation maintenance](../development/documentation.md) for regeneration and acceptance tasks.

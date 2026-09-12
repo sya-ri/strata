@@ -2,11 +2,9 @@
 
 # Add components. Let the layout make room.
 
-Three players first demonstrate added content, a fixed list width, and text alignment; five more then arrive one at a time before scrolling is added.
-Every screen is freshly rendered by Strata Headless from the compiled Kotlin example and original Minecraft assets.
-Overflow during the five short arrival frames is intentional: ScrollArea then contains the list, and a separately added Scrollbar shares its state.
-Row definitions stay inline throughout, with the complete source excerpt visible in every frame.
-The GIF compares source revisions; it does not demonstrate hot reload or an in-game invitation service.
+Build a player list step by step: add content, set width and alignment, then contain overflow with ScrollArea and a linked Scrollbar.
+Each frame pairs compiled source with a fresh headless render from original Minecraft assets.
+The GIF compares source revisions, not hot reload.
 
 [Play the 24-second GIF](demo.gif) · [Render receipt](render.properties)
 

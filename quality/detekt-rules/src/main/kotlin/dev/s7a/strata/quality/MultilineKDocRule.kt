@@ -9,12 +9,14 @@ import org.jetbrains.kotlin.psi.KtAnnotationEntry
 import org.jetbrains.kotlin.psi.KtClassBody
 import org.jetbrains.kotlin.psi.KtClassOrObject
 import org.jetbrains.kotlin.psi.KtDeclaration
+import org.jetbrains.kotlin.psi.KtEnumEntry
 import org.jetbrains.kotlin.psi.KtFile
 import org.jetbrains.kotlin.psi.KtNamedFunction
 import java.net.URI
 
 /**
- * Requires multiline KDoc on externally visible classes and methods.
+ * Requires multiline KDoc on visible classes and methods.
+ * Enum values may rely on their enclosing contract; their methods still require documentation.
  */
 internal class MultilineKDocRule(
     config: Config,
@@ -23,31 +25,16 @@ internal class MultilineKDocRule(
         description = "Requires KDoc on visible classes and methods and multiline syntax for any existing KDoc.",
         url = URI("https://github.com/sya-ri/strata/blob/master/AGENTS.md"),
     ) {
-    /**
-     * Reports a visible class without multiline KDoc.
-     *
-     * @param declaration the class or object currently being visited.
-     */
     override fun visitClassOrObject(declaration: KtClassOrObject) {
         reportIfMissingDocumentation(declaration)
         super.visitClassOrObject(declaration)
     }
 
-    /**
-     * Reports a visible method without multiline KDoc.
-     *
-     * @param declaration the function currently being visited.
-     */
     override fun visitNamedFunction(declaration: KtNamedFunction) {
         reportIfMissingDocumentation(declaration)
         super.visitNamedFunction(declaration)
     }
 
-    /**
-     * Reports a declaration that has a one-line KDoc regardless of its visibility.
-     *
-     * @param declaration the declaration currently being visited.
-     */
     override fun visitDeclaration(declaration: KtDeclaration) {
         val documentation = declaration.docComment
         if (documentation != null && documentation.text.contains('\n').not()) {
@@ -73,6 +60,9 @@ internal class MultilineKDocRule(
     }
 
     private fun requiresDocumentation(declaration: KtDeclaration): Boolean {
+        if (declaration is KtEnumEntry) {
+            return false
+        }
         val owner = declaration.parent
         if (owner !is KtFile && owner !is KtClassBody) {
             return false

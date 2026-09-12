@@ -36,12 +36,13 @@ ${sections.joinToString("\n\n") { section -> section.section.trimEnd('\n') }}
 
 ## Image verification
 
-Each component image is the complete frame of its dedicated minimal `ScreenDefinition`, including only the layout and children needed for the example.
+Each image is the complete frame of its compiled dedicated `ScreenDefinition`, sampled at the stated physical density without upscaling or cropping.
 Generation renders these definitions with the headless runtime and explicit Minecraft assets without starting Minecraft or creating a GPU context.
 Animated examples use the frame at time zero; the independent native check accepts a complete supported animation phase.
 
-The [headless render receipt](../components/headless-render.properties) records the source, asset, viewport, and image hashes.
-The separate [native parity receipt](../evidence/minecraft-26.2-parity.properties) records the loaded-game comparisons.
+The [headless render receipt](../components/headless-render.properties) records source, asset, viewport, and image hashes.
+The separate [native parity receipt](../evidence/minecraft-26.2-parity.properties) records loaded-game comparisons.
+See [documentation maintenance](../development/documentation.md) for regeneration and acceptance tasks.
 """,
         )
 
@@ -77,7 +78,7 @@ A confirmation screen combines text, buttons, and layout components into a reusa
     ): String {
         val physical = spec.viewportMetadata.physicalSize
         val renderSentence =
-            "This ${physical.width} by ${physical.height} PNG is the complete frame of the compiled dedicated `ScreenDefinition`, with a ${spec.viewport.width} by ${spec.viewport.height} logical viewport at GUI scale ${spec.scale}. Headless rendering samples the assets at this physical density; the image is not upscaled from a lower-resolution raster or cropped from a larger screen. Its source, asset, viewport, and image hashes are recorded in [the headless render receipt](../components/headless-render.properties)."
+            "${physical.width} by ${physical.height} PNG; ${spec.viewport.width} by ${spec.viewport.height} logical viewport at GUI scale ${spec.scale}. [Image verification](#image-verification)."
         return markdown(
             """<a id="${spec.component.slug}"></a>
 
@@ -110,8 +111,6 @@ ${ComponentDocumentationCatalog.parentScopeGuidance(spec.component)}
 </details>
 
 <details><summary>Component tree</summary>
-
-The tree mirrors the complete dedicated definition, including the featured component, its minimum parent layout, and the children used to demonstrate its responsibility.
 
 ```text
 ${tree(spec.tree)}
