@@ -44,6 +44,9 @@ assert "if: success() && github.ref == 'refs/heads/master' && steps.loom_cache.o
 assert "path: .gradle/loom-cache\n" in loom_saves[0]
 assert "key: ${{ steps.loom_cache.outputs.cache-primary-key }}" in loom_saves[0]
 assert "use-caches: false" in qodana, "Qodana analysis evidence must remain fresh"
+assert "args: --linter=qodana-jvm-community --within-docker=false" in qodana, (
+    "Qodana must select the native linter explicitly so bootstrap can use the installed Java toolchains"
+)
 PY
 
 add_project() {

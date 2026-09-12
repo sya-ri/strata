@@ -122,7 +122,8 @@ jobs:
           cache-dir: ${{ runner.temp }}/qodana/caches
           results-dir: ${{ runner.temp }}/qodana/results
           use-caches: false
-          args: --within-docker false
+          # Override the legacy image-valued YAML linter, which otherwise selects Docker even in native mode.
+          args: --linter=qodana-jvm-community --within-docker=false
       - name: Verify complete Gradle IDE model
         if: always()
         run: bash gradle/verify-qodana-model.sh "${{ runner.temp }}/qodana/results/projectStructure/Modules.json" "$GITHUB_WORKSPACE" /data/project

@@ -58,6 +58,7 @@ Superseded JVM and Qodana workflow runs on the same ref are cancelled so rapid p
 
 Qodana runs its recommended JVM inspection profile in CI without a baseline.
 The workflow makes every Java toolchain declared by the version catalog available to the host-side native Qodana process so it can resolve each module model and its dependencies.
+It explicitly selects the `qodana-jvm-community` linter and native mode on the CLI; the legacy image-valued YAML linter otherwise selects Docker, isolating analysis from the installed toolchains and restored Gradle user home.
 It restores the Gradle user home read-only, compiles every `classes` and `gametestClasses` boundary, and assembles the five plain common jars referenced by Loom's nested-library model before inspection without assembling remapped distribution jars.
 Qodana's bootstrap compiles those inputs and generates the IDEA model in one Gradle invocation, with configuration on demand disabled, the analysis-only `strata.completeIdeaModel` project property, and Loom's official `fabric.loom.ci` system property.
 The invocation uses `--no-daemon` so its Gradle JVM exits before inspection without a second project configuration or separate daemon-stop step.
