@@ -37,28 +37,23 @@ The retained component captures every active tile at the shared frame cutoff bef
 
 ## Working set and invalidation
 
-The component observes only tiles intersecting the viewport plus the configured overscan margin and any visible coarser fallbacks.
-It reserves entry count and RGBA8 byte cost before replacing the current working set.
-When a preferred level exceeds the policy, it selects a coarser level; if the coarsest visible set still exceeds the policy, the change fails before partial subscriptions are installed.
+The component observes visible tiles plus configured overscan and visible coarser fallbacks.
+It reserves entry count and RGBA8 byte cost before replacing subscriptions, choosing a coarser level if the preferred set exceeds the budget.
+If even the coarsest set cannot fit, the change fails before partial installation.
 
-The retained working-set key is the source identity and `TiledImageTileId`.
-A binding accepts only newer `StateRevision` values and retains its committed value, newest pending value, and cutoff capture while required by the current transaction.
-Leaving the working set, changing source identity, detaching, closing, or failing terminal cleanup closes the observation without closing the externally owned source.
-No historical offscreen tile cache belongs to the component.
-
-Pan, zoom, and resize change only the visible plan, destination rectangles, and selected level.
-They do not change a ready `DrawImage` identity.
-Overlay movement changes only overlay layout and paint.
-A tile revision invalidates only that tile binding, while source replacement invalidates the complete generation.
+Pan, zoom, and resize change placement and level selection without changing ready image identities.
+Tile revisions update their bindings; overlay movement changes only placement and paint.
+Source replacement invalidates the generation.
+Leaving the working set, replacement, detach, close, or failure releases observations without closing the externally owned source.
+No historical offscreen cache is retained.
+See the [working-set contract](../development/performance.md#tiled-image-working-set-cache) for exact accounting and cutoff rules.
 
 ## Painting and overlays
 
 Ready fallback tiles paint as complete images from the coarsest subscribed level toward the selected level, with deterministic row-major order inside each level and one viewport clip.
 Finer ready tiles cover their corresponding coarser output, while an empty fine tile leaves the best available coarser image visible.
-The component never slices a coarser image into selected-level cells, so every command retains an integral whole-image source rectangle and cannot introduce fallback seams or a new joined-image copy.
-Absolute content coordinates remain `Long` or `Double` until the viewport origin is subtracted; only local destination rectangles convert to `Float`.
-This preserves useful precision at ordinary Minecraft world coordinates.
-Headless and Minecraft adapters consume the same portable command list.
+Tiles keep their whole-image sampling and content-coordinate precision through placement.
+Headless and Minecraft adapters consume the same portable commands.
 
 The optional `TiledImageScope` positions fixed-size direct children with `Modifier.atContentPosition`.
 Children share the image transform for placement, paint after tiles, and remain clipped to the viewport, but their own size does not scale with zoom.

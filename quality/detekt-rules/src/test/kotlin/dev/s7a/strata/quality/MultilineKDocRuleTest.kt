@@ -9,9 +9,31 @@ import org.junit.jupiter.api.Test
  * Verifies visible declaration documentation and its intentional exemptions.
  */
 internal class MultilineKDocRuleTest {
-    /**
-     * Reports undocumented visible classes and methods.
-     */
+    @Test
+    fun skipsEnumValuesButRequiresTheirMethods() {
+        val source =
+            """
+            /**
+             * Named demo stages with their display captions.
+             */
+            enum class Stage(val caption: String) {
+                Start("Start with a row") {
+                    fun render() = Unit
+                },
+                End("Add scrolling"),
+            }
+            """.trimIndent()
+
+        assertEquals(1, MultilineKDocRule(Config.empty).lint(source).size)
+    }
+
+    @Test
+    fun requiresDocumentationOnTheEnumType() {
+        val source = "enum class Stage { Start, End }"
+
+        assertEquals(1, MultilineKDocRule(Config.empty).lint(source).size)
+    }
+
     @Test
     internal fun reportsMissingDocumentation() {
         val source =
@@ -24,9 +46,6 @@ internal class MultilineKDocRuleTest {
         assertEquals(2, MultilineKDocRule(Config.empty).lint(source).size)
     }
 
-    /**
-     * Accepts multiline KDoc and skips overrides and standard test functions.
-     */
     @Test
     internal fun acceptsDocumentedAndExemptDeclarations() {
         val source =
@@ -60,9 +79,6 @@ internal class MultilineKDocRuleTest {
         assertEquals(0, MultilineKDocRule(Config.empty).lint(source).size)
     }
 
-    /**
-     * Skips the standard JUnit Jupiter test annotations in short and qualified forms.
-     */
     @Test
     internal fun skipsKnownJUnitAnnotations() {
         val source =
@@ -89,9 +105,6 @@ internal class MultilineKDocRuleTest {
         assertEquals(0, MultilineKDocRule(Config.empty).lint(source).size)
     }
 
-    /**
-     * Reports an unrelated annotation whose name happens to end with the word Test.
-     */
     @Test
     internal fun reportsUnknownTestSuffixAnnotation() {
         val source =
@@ -103,9 +116,6 @@ internal class MultilineKDocRuleTest {
         assertEquals(1, MultilineKDocRule(Config.empty).lint(source).size)
     }
 
-    /**
-     * Skips undocumented methods whose enclosing class is private.
-     */
     @Test
     internal fun skipsMembersOfPrivateTypes() {
         val source =
@@ -118,9 +128,6 @@ internal class MultilineKDocRuleTest {
         assertEquals(0, MultilineKDocRule(Config.empty).lint(source).size)
     }
 
-    /**
-     * Rejects a one-line KDoc even when a declaration has documentation text.
-     */
     @Test
     internal fun rejectsOneLineKDoc() {
         val documentation = "/" + "** One-line documentation. " + "*/"
@@ -133,9 +140,6 @@ internal class MultilineKDocRuleTest {
         assertEquals(1, MultilineKDocRule(Config.empty).lint(source).size)
     }
 
-    /**
-     * Rejects one-line KDoc on a private property even though private properties need no KDoc.
-     */
     @Test
     internal fun rejectsOneLineKDocOnPrivateProperty() {
         val documentation = "/" + "** Private state. " + "*/"
@@ -148,9 +152,6 @@ internal class MultilineKDocRuleTest {
         assertEquals(1, MultilineKDocRule(Config.empty).lint(source).size)
     }
 
-    /**
-     * Rejects one-line KDoc on a visible property while keeping missing visible-property documentation optional.
-     */
     @Test
     internal fun rejectsOneLineKDocOnVisibleProperty() {
         val documentation = "/" + "** Public state. " + "*/"

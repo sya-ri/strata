@@ -65,7 +65,6 @@ The review is part of version support, not optional follow-up work.
 Complete every supported patch in a minor family before changing that family range.
 Repeat benchmarks and retention tests, inspect loaded-client lifecycle evidence, and audit runtime and build caches against their ownership and acceptance contract.
 Promote durable decisions into architecture, build, rendering, and performance documents instead of appending a completed-family status report here.
-Minecraft 1.20 remains the accepted support floor; reopening backward expansion requires a scope change.
 
 ## Native adapter boundaries
 
@@ -114,7 +113,6 @@ The 1.20.4 through 1.20.2 projects keep the compatible complete roots and share 
 The 1.20 and 1.20.1 projects keep only their proven complete shared roots and own exact artifacts and ABIs around the shared earlier atlas extraction, Authlib 4 skin bridge, and client-runner APIs; their portable profile records exact Vanilla atlas borders so the common renderer reproduces those nine-slices without recognizing a game version.
 The shared frame presenter calls compile-time dynamic-texture and native-pixel bridges supplied by the 1.21 through 1.21.5 version projects, the 1.21.6 release-family root, or the unobfuscated release-family root, preserving ABGR-versus-ARGB access and unnamed-versus-named texture construction without reflection.
 Code enters the legacy source root only after every consuming target compiles it and passes both development and production-jar loaded-client verification.
-Every source directory is linked as a whole root because Gradle file-tree include filters are not a reliable IDE or static-analysis ownership boundary.
 
 ## Integration runner boundaries
 

@@ -102,13 +102,8 @@ Drawing clips retain fractional transformed edges until the backend tests final 
 Rounding a clip outward at logical density would allow descendants to overwrite adjacent regions at higher output densities.
 Portable paint destinations retain fractional geometry where their draw-command contract supports it.
 
-Both scopes expose typed parent data from a direct child's active modifier chain.
-Define a stable `ParentDataKey<D>` and implement `ParentDataModifierNode<D>` on the providing modifier node.
-`childParentData(index, key)` scans only the requested direct child's consecutive modifiers, selects the innermost provider with the same key instance, and stops before the component node.
-The lookup does not measure or place the child.
-The selected provider runs on the tree owner thread inside the current callback lifetime and must return an immutable value of the key's runtime type.
-Changing the key or value requires measure invalidation.
-See [Modifiers](../reference/modifier-spi.md#parent-data) for ordering and failure behavior.
+Both scopes expose `childParentData(index, key)` for direct children.
+Use a stable `ParentDataKey<D>` and a `ParentDataModifierNode<D>` provider; the [Modifier SPI](modifier-spi.md#parent-data) defines lookup, invalidation, typing, and failure rules.
 
 ## Paint, input, and semantics
 

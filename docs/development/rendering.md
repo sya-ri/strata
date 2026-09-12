@@ -42,19 +42,10 @@ The core preserves local and descendant overflow by default.
 A node that implements `ClipChildrenNode` emits a balanced clip around effective descendant painting and gates descendant pointer hit testing to its measured half-open bounds, while its own regular and post-child overlay paint remain unclipped by that marker.
 Pointer hit testing uses half-open bounds, visits deepest and latest-painted candidates first, and bubbles ignored events.
 Pointer hover is a separate typed node capability evaluated for every placed node before move dispatch, producing distinct enter and exit transitions without changing ordinary consumption.
-Focused handlers run from the current owner's innermost modifier through its component before the core interprets an ignored Tab press.
-Traversal visits accepting visible logical owners cyclically in parent-before-child and declared sibling paint order, with Shift reversing direction and every other modifier bit leaving it unchanged.
-Visibility requires a nonempty intersection with the fixed root viewport and every ancestor child clip, excluding clip-only VirtualList overscan while retaining a placed hidden current owner until explicit traversal.
-Removing or unplacing the current owner clears focus; a later Tab starts at the first or last eligible owner without stable-key reacquisition.
-`onActivate` supplies one accepting focus target and maps primary pointer presses plus each focused Enter or Space press or repeat to the same action, while its disabled overload contributes no retained node.
+The [session input contract](ui-sessions.md#frames-and-input) defines focused dispatch, traversal, activation, and input reset.
 
-Modifiers are active retained nodes in the effective pipeline ancestry and do not become settings copied into component nodes.
-Component scopes continue to expose logical children, while a modifier scope exposes its one virtual child.
-Modifier-chain changes preserve the retained component and its logical subtree.
-Removed modifier nodes finish cleanup during reconciliation, and newly created modifier nodes attach only after the complete incoming tree reconciles successfully.
-Typed parent data is supplied by active modifier capabilities and queried only through measure or layout scopes.
-Lookup uses a referential key, scans the requested direct child's modifier chain, selects the innermost match, and stops before the component node without measuring or placing the child.
-The full modifier contract and external implementation guidance are defined in [Modifiers](../reference/modifier-spi.md).
+Modifiers create effective pipeline ancestry while preserving logical component identity and children.
+Follow the [Modifier SPI](../reference/modifier-spi.md) for reconciliation, lifecycle, callback scopes, and parent-data lookup.
 
 ## Headless rasterization
 
@@ -76,7 +67,7 @@ Transparent sources are no-ops, opaque sources replace, and there is no interpol
 Images expose only immutable reads, fresh pixel copies, and deterministic PNG encoding.
 PNG output contains exactly one IHDR, one IDAT, and one IEND in that order, uses noninterlaced RGBA8 filter-zero rows, deterministic stored DEFLATE blocks no larger than 65,535 bytes, and checked CRC32 and Adler32 values.
 Frames retain no description, tree, or draw-command list; semantics are defensive, logical, unscaled, unclipped, and in core emission order.
-The exact built-in layout measurement, wrapping, weight, arrangement, alignment, and overflow contracts are defined in [Built-in layout components](../guides/layout.md).
+The exact built-in layout measurement, wrapping, weight, arrangement, alignment, and overflow contracts are defined in [layout reference](../reference/layout.md).
 The headless adapter's fixed-viewport, clipping, source-over, scaling, PNG, and immutable semantics contracts are exercised by its module tests.
 
 `SampledImage` maps final physical pixel centers through its original fractional destination into the source image.
