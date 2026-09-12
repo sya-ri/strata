@@ -23,15 +23,21 @@ fun observeOverloads(): String = buildString {
         appendLine("/**")
         appendLine(" * Emits one retained region observing $arity source${if (arity == 1) "" else "s"} without evaluating content immediately.")
         appendLine(" *")
-        appendLine(" * The owner-thread callback emits zero or one root; use Row or Column to arrange multiple children.")
-        appendLine(" * Source identities share frame snapshots and subscriptions in one tree. Updates coalesce before parent-first evaluation.")
-        appendLine(" * The region is one parent-layout child; apply parent data to its modifier. An empty region has zero natural size.")
-        appendLine(" * Keep editable state outside content. Content must not mutate sources or retain its callback-lifetime scope.")
-        appendLine(" * Subscriptions and captured content are released when the region leaves its tree or the tree fails or closes.")
-        indices.forEach { appendLine(" * @param state$it caller-owned source whose value becomes callback argument $it.") }
-        appendLine(" * @param modifier active behavior on this region, including parent data for its containing layout.")
-        appendLine(" * @param key optional stable identity among the parent region's direct children.")
-        appendLine(" * @param content deferred owner-thread callback receiving the frame-committed values in declaration order.")
+        if (arity == 1) {
+            appendLine(" * The owner-thread callback emits zero or one root; use Row or Column for multiple children.")
+            appendLine(" * The region is one layout child: apply parent data to its modifier. Empty content has zero natural size.")
+            appendLine(" * Source identities share subscriptions and frame snapshots; updates coalesce before parent-first evaluation.")
+            appendLine(" * Equal values skip source-driven evaluation; changed parent callbacks still refresh captures.")
+            appendLine(" * Keep editable state outside content. Do not mutate sources or retain the callback scope.")
+            appendLine(" * Removal, failure, and close release subscriptions and captured content without closing caller-owned sources.")
+            appendLine(" * @param state1 caller-owned source whose committed value is passed to content.")
+            appendLine(" * @param modifier active behavior and parent data for the region.")
+            appendLine(" * @param key optional stable sibling identity.")
+            appendLine(" * @param content deferred owner-thread callback.")
+        } else {
+            appendLine(" * Uses the single-source [Observe] contract; caller-owned source values are passed in declaration order.")
+            appendLine(" * Independent sources are not atomic together; publish one model when fields must change as a unit.")
+        }
         appendLine(" */")
         appendLine("public fun <$types> UiScope.Observe(")
         indices.forEach { appendLine("    state$it: StateSource<V$it>,") }

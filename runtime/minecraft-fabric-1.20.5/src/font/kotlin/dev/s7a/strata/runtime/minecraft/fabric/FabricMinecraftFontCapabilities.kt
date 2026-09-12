@@ -10,7 +10,6 @@ import net.minecraft.server.packs.PackType
 
 /**
  * Supplies the compiler-selected Minecraft 1.20.5 font resource and shader contract without runtime version dispatch.
- * The returned value contains no native ownership and may be shared across host snapshots.
  */
 @JvmSynthetic
 internal fun fabricMinecraftFontCompatibility(): MinecraftFontCompatibility =

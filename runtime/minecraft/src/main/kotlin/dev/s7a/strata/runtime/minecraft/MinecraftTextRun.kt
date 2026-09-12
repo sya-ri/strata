@@ -331,7 +331,7 @@ internal class MinecraftTextRun private constructor(
 
     private object Visibility {
         /**
-         * Finds the first true value of a monotonic predicate without retaining the borrowed callback.
+         * Finds the first true value of a monotonic predicate.
          */
         inline fun firstMatching(
             size: Int,
@@ -369,7 +369,7 @@ internal class MinecraftTextRun private constructor(
     ) {
         companion object {
             /**
-             * Reduces the current positioned glyphs to finite horizontal extrema without retaining the input list.
+             * Computes finite horizontal extrema of the current positioned glyphs.
              */
             fun create(glyphs: List<SampledGlyph>): SampledIndex? {
                 var minimumLeft = Float.MAX_VALUE

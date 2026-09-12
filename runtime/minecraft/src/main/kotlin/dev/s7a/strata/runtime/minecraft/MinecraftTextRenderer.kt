@@ -105,7 +105,7 @@ internal class MinecraftTextRenderer private constructor(
     }
 
     /**
-     * Constructs distinct owner-thread services without retaining any mutable global font state.
+     * Constructs independent owner-thread text services.
      */
     companion object {
         /**

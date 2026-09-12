@@ -29,15 +29,13 @@ internal fun validateBlitImage(
 }
 
 /**
- * Validates a sampled image command without retaining or modifying its immutable inputs.
+ * Validates source/destination rectangles and alpha cutoff on any thread.
  *
- * This function has no thread affinity and is shared by local and tree-coordinate command construction.
- *
- * @param image the immutable source image.
- * @param source the fractional source rectangle in image pixel coordinates.
- * @param destination the fractional destination in local or tree coordinates.
- * @param alphaCutoff the inclusive minimum normalized alpha after tint multiplication.
- * @throws IllegalArgumentException when a rectangle is empty, the source is outside [image], or the cutoff is invalid.
+ * @param image immutable source image.
+ * @param source nonempty rectangle contained in the image, in source pixels.
+ * @param destination nonempty rectangle in local or tree coordinates.
+ * @param alphaCutoff finite inclusive minimum normalized alpha after tint multiplication, from zero to one.
+ * @throws IllegalArgumentException when a rectangle or cutoff is invalid.
  */
 @JvmSynthetic
 internal fun validateSampledImage(

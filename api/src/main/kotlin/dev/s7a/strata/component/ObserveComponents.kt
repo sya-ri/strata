@@ -10,15 +10,16 @@ import dev.s7a.strata.state.StateSource
 /**
  * Emits one retained region observing 1 source without evaluating content immediately.
  *
- * The owner-thread callback emits zero or one root; use Row or Column to arrange multiple children.
- * Source identities share frame snapshots and subscriptions in one tree. Updates coalesce before parent-first evaluation.
- * The region is one parent-layout child; apply parent data to its modifier. An empty region has zero natural size.
- * Keep editable state outside content. Content must not mutate sources or retain its callback-lifetime scope.
- * Subscriptions and captured content are released when the region leaves its tree or the tree fails or closes.
- * @param state1 caller-owned source whose value becomes callback argument 1.
- * @param modifier active behavior on this region, including parent data for its containing layout.
- * @param key optional stable identity among the parent region's direct children.
- * @param content deferred owner-thread callback receiving the frame-committed values in declaration order.
+ * The owner-thread callback emits zero or one root; use Row or Column for multiple children.
+ * The region is one layout child: apply parent data to its modifier. Empty content has zero natural size.
+ * Source identities share subscriptions and frame snapshots; updates coalesce before parent-first evaluation.
+ * Equal values skip source-driven evaluation; changed parent callbacks still refresh captures.
+ * Keep editable state outside content. Do not mutate sources or retain the callback scope.
+ * Removal, failure, and close release subscriptions and captured content without closing caller-owned sources.
+ * @param state1 caller-owned source whose committed value is passed to content.
+ * @param modifier active behavior and parent data for the region.
+ * @param key optional stable sibling identity.
+ * @param content deferred owner-thread callback.
  */
 public fun <V1> UiScope.Observe(
     state1: StateSource<V1>,
@@ -35,16 +36,8 @@ public fun <V1> UiScope.Observe(
 /**
  * Emits one retained region observing 2 sources without evaluating content immediately.
  *
- * The owner-thread callback emits zero or one root; use Row or Column to arrange multiple children.
- * Source identities share frame snapshots and subscriptions in one tree. Updates coalesce before parent-first evaluation.
- * The region is one parent-layout child; apply parent data to its modifier. An empty region has zero natural size.
- * Keep editable state outside content. Content must not mutate sources or retain its callback-lifetime scope.
- * Subscriptions and captured content are released when the region leaves its tree or the tree fails or closes.
- * @param state1 caller-owned source whose value becomes callback argument 1.
- * @param state2 caller-owned source whose value becomes callback argument 2.
- * @param modifier active behavior on this region, including parent data for its containing layout.
- * @param key optional stable identity among the parent region's direct children.
- * @param content deferred owner-thread callback receiving the frame-committed values in declaration order.
+ * Uses the single-source [Observe] contract; caller-owned source values are passed in declaration order.
+ * Independent sources are not atomic together; publish one model when fields must change as a unit.
  */
 public fun <V1, V2> UiScope.Observe(
     state1: StateSource<V1>,
@@ -62,17 +55,8 @@ public fun <V1, V2> UiScope.Observe(
 /**
  * Emits one retained region observing 3 sources without evaluating content immediately.
  *
- * The owner-thread callback emits zero or one root; use Row or Column to arrange multiple children.
- * Source identities share frame snapshots and subscriptions in one tree. Updates coalesce before parent-first evaluation.
- * The region is one parent-layout child; apply parent data to its modifier. An empty region has zero natural size.
- * Keep editable state outside content. Content must not mutate sources or retain its callback-lifetime scope.
- * Subscriptions and captured content are released when the region leaves its tree or the tree fails or closes.
- * @param state1 caller-owned source whose value becomes callback argument 1.
- * @param state2 caller-owned source whose value becomes callback argument 2.
- * @param state3 caller-owned source whose value becomes callback argument 3.
- * @param modifier active behavior on this region, including parent data for its containing layout.
- * @param key optional stable identity among the parent region's direct children.
- * @param content deferred owner-thread callback receiving the frame-committed values in declaration order.
+ * Uses the single-source [Observe] contract; caller-owned source values are passed in declaration order.
+ * Independent sources are not atomic together; publish one model when fields must change as a unit.
  */
 public fun <V1, V2, V3> UiScope.Observe(
     state1: StateSource<V1>,
@@ -91,18 +75,8 @@ public fun <V1, V2, V3> UiScope.Observe(
 /**
  * Emits one retained region observing 4 sources without evaluating content immediately.
  *
- * The owner-thread callback emits zero or one root; use Row or Column to arrange multiple children.
- * Source identities share frame snapshots and subscriptions in one tree. Updates coalesce before parent-first evaluation.
- * The region is one parent-layout child; apply parent data to its modifier. An empty region has zero natural size.
- * Keep editable state outside content. Content must not mutate sources or retain its callback-lifetime scope.
- * Subscriptions and captured content are released when the region leaves its tree or the tree fails or closes.
- * @param state1 caller-owned source whose value becomes callback argument 1.
- * @param state2 caller-owned source whose value becomes callback argument 2.
- * @param state3 caller-owned source whose value becomes callback argument 3.
- * @param state4 caller-owned source whose value becomes callback argument 4.
- * @param modifier active behavior on this region, including parent data for its containing layout.
- * @param key optional stable identity among the parent region's direct children.
- * @param content deferred owner-thread callback receiving the frame-committed values in declaration order.
+ * Uses the single-source [Observe] contract; caller-owned source values are passed in declaration order.
+ * Independent sources are not atomic together; publish one model when fields must change as a unit.
  */
 public fun <V1, V2, V3, V4> UiScope.Observe(
     state1: StateSource<V1>,
@@ -122,19 +96,8 @@ public fun <V1, V2, V3, V4> UiScope.Observe(
 /**
  * Emits one retained region observing 5 sources without evaluating content immediately.
  *
- * The owner-thread callback emits zero or one root; use Row or Column to arrange multiple children.
- * Source identities share frame snapshots and subscriptions in one tree. Updates coalesce before parent-first evaluation.
- * The region is one parent-layout child; apply parent data to its modifier. An empty region has zero natural size.
- * Keep editable state outside content. Content must not mutate sources or retain its callback-lifetime scope.
- * Subscriptions and captured content are released when the region leaves its tree or the tree fails or closes.
- * @param state1 caller-owned source whose value becomes callback argument 1.
- * @param state2 caller-owned source whose value becomes callback argument 2.
- * @param state3 caller-owned source whose value becomes callback argument 3.
- * @param state4 caller-owned source whose value becomes callback argument 4.
- * @param state5 caller-owned source whose value becomes callback argument 5.
- * @param modifier active behavior on this region, including parent data for its containing layout.
- * @param key optional stable identity among the parent region's direct children.
- * @param content deferred owner-thread callback receiving the frame-committed values in declaration order.
+ * Uses the single-source [Observe] contract; caller-owned source values are passed in declaration order.
+ * Independent sources are not atomic together; publish one model when fields must change as a unit.
  */
 public fun <V1, V2, V3, V4, V5> UiScope.Observe(
     state1: StateSource<V1>,
@@ -155,20 +118,8 @@ public fun <V1, V2, V3, V4, V5> UiScope.Observe(
 /**
  * Emits one retained region observing 6 sources without evaluating content immediately.
  *
- * The owner-thread callback emits zero or one root; use Row or Column to arrange multiple children.
- * Source identities share frame snapshots and subscriptions in one tree. Updates coalesce before parent-first evaluation.
- * The region is one parent-layout child; apply parent data to its modifier. An empty region has zero natural size.
- * Keep editable state outside content. Content must not mutate sources or retain its callback-lifetime scope.
- * Subscriptions and captured content are released when the region leaves its tree or the tree fails or closes.
- * @param state1 caller-owned source whose value becomes callback argument 1.
- * @param state2 caller-owned source whose value becomes callback argument 2.
- * @param state3 caller-owned source whose value becomes callback argument 3.
- * @param state4 caller-owned source whose value becomes callback argument 4.
- * @param state5 caller-owned source whose value becomes callback argument 5.
- * @param state6 caller-owned source whose value becomes callback argument 6.
- * @param modifier active behavior on this region, including parent data for its containing layout.
- * @param key optional stable identity among the parent region's direct children.
- * @param content deferred owner-thread callback receiving the frame-committed values in declaration order.
+ * Uses the single-source [Observe] contract; caller-owned source values are passed in declaration order.
+ * Independent sources are not atomic together; publish one model when fields must change as a unit.
  */
 public fun <V1, V2, V3, V4, V5, V6> UiScope.Observe(
     state1: StateSource<V1>,
@@ -190,21 +141,8 @@ public fun <V1, V2, V3, V4, V5, V6> UiScope.Observe(
 /**
  * Emits one retained region observing 7 sources without evaluating content immediately.
  *
- * The owner-thread callback emits zero or one root; use Row or Column to arrange multiple children.
- * Source identities share frame snapshots and subscriptions in one tree. Updates coalesce before parent-first evaluation.
- * The region is one parent-layout child; apply parent data to its modifier. An empty region has zero natural size.
- * Keep editable state outside content. Content must not mutate sources or retain its callback-lifetime scope.
- * Subscriptions and captured content are released when the region leaves its tree or the tree fails or closes.
- * @param state1 caller-owned source whose value becomes callback argument 1.
- * @param state2 caller-owned source whose value becomes callback argument 2.
- * @param state3 caller-owned source whose value becomes callback argument 3.
- * @param state4 caller-owned source whose value becomes callback argument 4.
- * @param state5 caller-owned source whose value becomes callback argument 5.
- * @param state6 caller-owned source whose value becomes callback argument 6.
- * @param state7 caller-owned source whose value becomes callback argument 7.
- * @param modifier active behavior on this region, including parent data for its containing layout.
- * @param key optional stable identity among the parent region's direct children.
- * @param content deferred owner-thread callback receiving the frame-committed values in declaration order.
+ * Uses the single-source [Observe] contract; caller-owned source values are passed in declaration order.
+ * Independent sources are not atomic together; publish one model when fields must change as a unit.
  */
 public fun <V1, V2, V3, V4, V5, V6, V7> UiScope.Observe(
     state1: StateSource<V1>,
@@ -227,22 +165,8 @@ public fun <V1, V2, V3, V4, V5, V6, V7> UiScope.Observe(
 /**
  * Emits one retained region observing 8 sources without evaluating content immediately.
  *
- * The owner-thread callback emits zero or one root; use Row or Column to arrange multiple children.
- * Source identities share frame snapshots and subscriptions in one tree. Updates coalesce before parent-first evaluation.
- * The region is one parent-layout child; apply parent data to its modifier. An empty region has zero natural size.
- * Keep editable state outside content. Content must not mutate sources or retain its callback-lifetime scope.
- * Subscriptions and captured content are released when the region leaves its tree or the tree fails or closes.
- * @param state1 caller-owned source whose value becomes callback argument 1.
- * @param state2 caller-owned source whose value becomes callback argument 2.
- * @param state3 caller-owned source whose value becomes callback argument 3.
- * @param state4 caller-owned source whose value becomes callback argument 4.
- * @param state5 caller-owned source whose value becomes callback argument 5.
- * @param state6 caller-owned source whose value becomes callback argument 6.
- * @param state7 caller-owned source whose value becomes callback argument 7.
- * @param state8 caller-owned source whose value becomes callback argument 8.
- * @param modifier active behavior on this region, including parent data for its containing layout.
- * @param key optional stable identity among the parent region's direct children.
- * @param content deferred owner-thread callback receiving the frame-committed values in declaration order.
+ * Uses the single-source [Observe] contract; caller-owned source values are passed in declaration order.
+ * Independent sources are not atomic together; publish one model when fields must change as a unit.
  */
 public fun <V1, V2, V3, V4, V5, V6, V7, V8> UiScope.Observe(
     state1: StateSource<V1>,
@@ -266,23 +190,8 @@ public fun <V1, V2, V3, V4, V5, V6, V7, V8> UiScope.Observe(
 /**
  * Emits one retained region observing 9 sources without evaluating content immediately.
  *
- * The owner-thread callback emits zero or one root; use Row or Column to arrange multiple children.
- * Source identities share frame snapshots and subscriptions in one tree. Updates coalesce before parent-first evaluation.
- * The region is one parent-layout child; apply parent data to its modifier. An empty region has zero natural size.
- * Keep editable state outside content. Content must not mutate sources or retain its callback-lifetime scope.
- * Subscriptions and captured content are released when the region leaves its tree or the tree fails or closes.
- * @param state1 caller-owned source whose value becomes callback argument 1.
- * @param state2 caller-owned source whose value becomes callback argument 2.
- * @param state3 caller-owned source whose value becomes callback argument 3.
- * @param state4 caller-owned source whose value becomes callback argument 4.
- * @param state5 caller-owned source whose value becomes callback argument 5.
- * @param state6 caller-owned source whose value becomes callback argument 6.
- * @param state7 caller-owned source whose value becomes callback argument 7.
- * @param state8 caller-owned source whose value becomes callback argument 8.
- * @param state9 caller-owned source whose value becomes callback argument 9.
- * @param modifier active behavior on this region, including parent data for its containing layout.
- * @param key optional stable identity among the parent region's direct children.
- * @param content deferred owner-thread callback receiving the frame-committed values in declaration order.
+ * Uses the single-source [Observe] contract; caller-owned source values are passed in declaration order.
+ * Independent sources are not atomic together; publish one model when fields must change as a unit.
  */
 public fun <V1, V2, V3, V4, V5, V6, V7, V8, V9> UiScope.Observe(
     state1: StateSource<V1>,
@@ -307,24 +216,8 @@ public fun <V1, V2, V3, V4, V5, V6, V7, V8, V9> UiScope.Observe(
 /**
  * Emits one retained region observing 10 sources without evaluating content immediately.
  *
- * The owner-thread callback emits zero or one root; use Row or Column to arrange multiple children.
- * Source identities share frame snapshots and subscriptions in one tree. Updates coalesce before parent-first evaluation.
- * The region is one parent-layout child; apply parent data to its modifier. An empty region has zero natural size.
- * Keep editable state outside content. Content must not mutate sources or retain its callback-lifetime scope.
- * Subscriptions and captured content are released when the region leaves its tree or the tree fails or closes.
- * @param state1 caller-owned source whose value becomes callback argument 1.
- * @param state2 caller-owned source whose value becomes callback argument 2.
- * @param state3 caller-owned source whose value becomes callback argument 3.
- * @param state4 caller-owned source whose value becomes callback argument 4.
- * @param state5 caller-owned source whose value becomes callback argument 5.
- * @param state6 caller-owned source whose value becomes callback argument 6.
- * @param state7 caller-owned source whose value becomes callback argument 7.
- * @param state8 caller-owned source whose value becomes callback argument 8.
- * @param state9 caller-owned source whose value becomes callback argument 9.
- * @param state10 caller-owned source whose value becomes callback argument 10.
- * @param modifier active behavior on this region, including parent data for its containing layout.
- * @param key optional stable identity among the parent region's direct children.
- * @param content deferred owner-thread callback receiving the frame-committed values in declaration order.
+ * Uses the single-source [Observe] contract; caller-owned source values are passed in declaration order.
+ * Independent sources are not atomic together; publish one model when fields must change as a unit.
  */
 public fun <V1, V2, V3, V4, V5, V6, V7, V8, V9, V10> UiScope.Observe(
     state1: StateSource<V1>,
@@ -350,25 +243,8 @@ public fun <V1, V2, V3, V4, V5, V6, V7, V8, V9, V10> UiScope.Observe(
 /**
  * Emits one retained region observing 11 sources without evaluating content immediately.
  *
- * The owner-thread callback emits zero or one root; use Row or Column to arrange multiple children.
- * Source identities share frame snapshots and subscriptions in one tree. Updates coalesce before parent-first evaluation.
- * The region is one parent-layout child; apply parent data to its modifier. An empty region has zero natural size.
- * Keep editable state outside content. Content must not mutate sources or retain its callback-lifetime scope.
- * Subscriptions and captured content are released when the region leaves its tree or the tree fails or closes.
- * @param state1 caller-owned source whose value becomes callback argument 1.
- * @param state2 caller-owned source whose value becomes callback argument 2.
- * @param state3 caller-owned source whose value becomes callback argument 3.
- * @param state4 caller-owned source whose value becomes callback argument 4.
- * @param state5 caller-owned source whose value becomes callback argument 5.
- * @param state6 caller-owned source whose value becomes callback argument 6.
- * @param state7 caller-owned source whose value becomes callback argument 7.
- * @param state8 caller-owned source whose value becomes callback argument 8.
- * @param state9 caller-owned source whose value becomes callback argument 9.
- * @param state10 caller-owned source whose value becomes callback argument 10.
- * @param state11 caller-owned source whose value becomes callback argument 11.
- * @param modifier active behavior on this region, including parent data for its containing layout.
- * @param key optional stable identity among the parent region's direct children.
- * @param content deferred owner-thread callback receiving the frame-committed values in declaration order.
+ * Uses the single-source [Observe] contract; caller-owned source values are passed in declaration order.
+ * Independent sources are not atomic together; publish one model when fields must change as a unit.
  */
 public fun <V1, V2, V3, V4, V5, V6, V7, V8, V9, V10, V11> UiScope.Observe(
     state1: StateSource<V1>,
@@ -395,26 +271,8 @@ public fun <V1, V2, V3, V4, V5, V6, V7, V8, V9, V10, V11> UiScope.Observe(
 /**
  * Emits one retained region observing 12 sources without evaluating content immediately.
  *
- * The owner-thread callback emits zero or one root; use Row or Column to arrange multiple children.
- * Source identities share frame snapshots and subscriptions in one tree. Updates coalesce before parent-first evaluation.
- * The region is one parent-layout child; apply parent data to its modifier. An empty region has zero natural size.
- * Keep editable state outside content. Content must not mutate sources or retain its callback-lifetime scope.
- * Subscriptions and captured content are released when the region leaves its tree or the tree fails or closes.
- * @param state1 caller-owned source whose value becomes callback argument 1.
- * @param state2 caller-owned source whose value becomes callback argument 2.
- * @param state3 caller-owned source whose value becomes callback argument 3.
- * @param state4 caller-owned source whose value becomes callback argument 4.
- * @param state5 caller-owned source whose value becomes callback argument 5.
- * @param state6 caller-owned source whose value becomes callback argument 6.
- * @param state7 caller-owned source whose value becomes callback argument 7.
- * @param state8 caller-owned source whose value becomes callback argument 8.
- * @param state9 caller-owned source whose value becomes callback argument 9.
- * @param state10 caller-owned source whose value becomes callback argument 10.
- * @param state11 caller-owned source whose value becomes callback argument 11.
- * @param state12 caller-owned source whose value becomes callback argument 12.
- * @param modifier active behavior on this region, including parent data for its containing layout.
- * @param key optional stable identity among the parent region's direct children.
- * @param content deferred owner-thread callback receiving the frame-committed values in declaration order.
+ * Uses the single-source [Observe] contract; caller-owned source values are passed in declaration order.
+ * Independent sources are not atomic together; publish one model when fields must change as a unit.
  */
 public fun <V1, V2, V3, V4, V5, V6, V7, V8, V9, V10, V11, V12> UiScope.Observe(
     state1: StateSource<V1>,
@@ -442,27 +300,8 @@ public fun <V1, V2, V3, V4, V5, V6, V7, V8, V9, V10, V11, V12> UiScope.Observe(
 /**
  * Emits one retained region observing 13 sources without evaluating content immediately.
  *
- * The owner-thread callback emits zero or one root; use Row or Column to arrange multiple children.
- * Source identities share frame snapshots and subscriptions in one tree. Updates coalesce before parent-first evaluation.
- * The region is one parent-layout child; apply parent data to its modifier. An empty region has zero natural size.
- * Keep editable state outside content. Content must not mutate sources or retain its callback-lifetime scope.
- * Subscriptions and captured content are released when the region leaves its tree or the tree fails or closes.
- * @param state1 caller-owned source whose value becomes callback argument 1.
- * @param state2 caller-owned source whose value becomes callback argument 2.
- * @param state3 caller-owned source whose value becomes callback argument 3.
- * @param state4 caller-owned source whose value becomes callback argument 4.
- * @param state5 caller-owned source whose value becomes callback argument 5.
- * @param state6 caller-owned source whose value becomes callback argument 6.
- * @param state7 caller-owned source whose value becomes callback argument 7.
- * @param state8 caller-owned source whose value becomes callback argument 8.
- * @param state9 caller-owned source whose value becomes callback argument 9.
- * @param state10 caller-owned source whose value becomes callback argument 10.
- * @param state11 caller-owned source whose value becomes callback argument 11.
- * @param state12 caller-owned source whose value becomes callback argument 12.
- * @param state13 caller-owned source whose value becomes callback argument 13.
- * @param modifier active behavior on this region, including parent data for its containing layout.
- * @param key optional stable identity among the parent region's direct children.
- * @param content deferred owner-thread callback receiving the frame-committed values in declaration order.
+ * Uses the single-source [Observe] contract; caller-owned source values are passed in declaration order.
+ * Independent sources are not atomic together; publish one model when fields must change as a unit.
  */
 public fun <V1, V2, V3, V4, V5, V6, V7, V8, V9, V10, V11, V12, V13> UiScope.Observe(
     state1: StateSource<V1>,
@@ -491,28 +330,8 @@ public fun <V1, V2, V3, V4, V5, V6, V7, V8, V9, V10, V11, V12, V13> UiScope.Obse
 /**
  * Emits one retained region observing 14 sources without evaluating content immediately.
  *
- * The owner-thread callback emits zero or one root; use Row or Column to arrange multiple children.
- * Source identities share frame snapshots and subscriptions in one tree. Updates coalesce before parent-first evaluation.
- * The region is one parent-layout child; apply parent data to its modifier. An empty region has zero natural size.
- * Keep editable state outside content. Content must not mutate sources or retain its callback-lifetime scope.
- * Subscriptions and captured content are released when the region leaves its tree or the tree fails or closes.
- * @param state1 caller-owned source whose value becomes callback argument 1.
- * @param state2 caller-owned source whose value becomes callback argument 2.
- * @param state3 caller-owned source whose value becomes callback argument 3.
- * @param state4 caller-owned source whose value becomes callback argument 4.
- * @param state5 caller-owned source whose value becomes callback argument 5.
- * @param state6 caller-owned source whose value becomes callback argument 6.
- * @param state7 caller-owned source whose value becomes callback argument 7.
- * @param state8 caller-owned source whose value becomes callback argument 8.
- * @param state9 caller-owned source whose value becomes callback argument 9.
- * @param state10 caller-owned source whose value becomes callback argument 10.
- * @param state11 caller-owned source whose value becomes callback argument 11.
- * @param state12 caller-owned source whose value becomes callback argument 12.
- * @param state13 caller-owned source whose value becomes callback argument 13.
- * @param state14 caller-owned source whose value becomes callback argument 14.
- * @param modifier active behavior on this region, including parent data for its containing layout.
- * @param key optional stable identity among the parent region's direct children.
- * @param content deferred owner-thread callback receiving the frame-committed values in declaration order.
+ * Uses the single-source [Observe] contract; caller-owned source values are passed in declaration order.
+ * Independent sources are not atomic together; publish one model when fields must change as a unit.
  */
 public fun <V1, V2, V3, V4, V5, V6, V7, V8, V9, V10, V11, V12, V13, V14> UiScope.Observe(
     state1: StateSource<V1>,
@@ -542,29 +361,8 @@ public fun <V1, V2, V3, V4, V5, V6, V7, V8, V9, V10, V11, V12, V13, V14> UiScope
 /**
  * Emits one retained region observing 15 sources without evaluating content immediately.
  *
- * The owner-thread callback emits zero or one root; use Row or Column to arrange multiple children.
- * Source identities share frame snapshots and subscriptions in one tree. Updates coalesce before parent-first evaluation.
- * The region is one parent-layout child; apply parent data to its modifier. An empty region has zero natural size.
- * Keep editable state outside content. Content must not mutate sources or retain its callback-lifetime scope.
- * Subscriptions and captured content are released when the region leaves its tree or the tree fails or closes.
- * @param state1 caller-owned source whose value becomes callback argument 1.
- * @param state2 caller-owned source whose value becomes callback argument 2.
- * @param state3 caller-owned source whose value becomes callback argument 3.
- * @param state4 caller-owned source whose value becomes callback argument 4.
- * @param state5 caller-owned source whose value becomes callback argument 5.
- * @param state6 caller-owned source whose value becomes callback argument 6.
- * @param state7 caller-owned source whose value becomes callback argument 7.
- * @param state8 caller-owned source whose value becomes callback argument 8.
- * @param state9 caller-owned source whose value becomes callback argument 9.
- * @param state10 caller-owned source whose value becomes callback argument 10.
- * @param state11 caller-owned source whose value becomes callback argument 11.
- * @param state12 caller-owned source whose value becomes callback argument 12.
- * @param state13 caller-owned source whose value becomes callback argument 13.
- * @param state14 caller-owned source whose value becomes callback argument 14.
- * @param state15 caller-owned source whose value becomes callback argument 15.
- * @param modifier active behavior on this region, including parent data for its containing layout.
- * @param key optional stable identity among the parent region's direct children.
- * @param content deferred owner-thread callback receiving the frame-committed values in declaration order.
+ * Uses the single-source [Observe] contract; caller-owned source values are passed in declaration order.
+ * Independent sources are not atomic together; publish one model when fields must change as a unit.
  */
 public fun <V1, V2, V3, V4, V5, V6, V7, V8, V9, V10, V11, V12, V13, V14, V15> UiScope.Observe(
     state1: StateSource<V1>,
@@ -595,30 +393,8 @@ public fun <V1, V2, V3, V4, V5, V6, V7, V8, V9, V10, V11, V12, V13, V14, V15> Ui
 /**
  * Emits one retained region observing 16 sources without evaluating content immediately.
  *
- * The owner-thread callback emits zero or one root; use Row or Column to arrange multiple children.
- * Source identities share frame snapshots and subscriptions in one tree. Updates coalesce before parent-first evaluation.
- * The region is one parent-layout child; apply parent data to its modifier. An empty region has zero natural size.
- * Keep editable state outside content. Content must not mutate sources or retain its callback-lifetime scope.
- * Subscriptions and captured content are released when the region leaves its tree or the tree fails or closes.
- * @param state1 caller-owned source whose value becomes callback argument 1.
- * @param state2 caller-owned source whose value becomes callback argument 2.
- * @param state3 caller-owned source whose value becomes callback argument 3.
- * @param state4 caller-owned source whose value becomes callback argument 4.
- * @param state5 caller-owned source whose value becomes callback argument 5.
- * @param state6 caller-owned source whose value becomes callback argument 6.
- * @param state7 caller-owned source whose value becomes callback argument 7.
- * @param state8 caller-owned source whose value becomes callback argument 8.
- * @param state9 caller-owned source whose value becomes callback argument 9.
- * @param state10 caller-owned source whose value becomes callback argument 10.
- * @param state11 caller-owned source whose value becomes callback argument 11.
- * @param state12 caller-owned source whose value becomes callback argument 12.
- * @param state13 caller-owned source whose value becomes callback argument 13.
- * @param state14 caller-owned source whose value becomes callback argument 14.
- * @param state15 caller-owned source whose value becomes callback argument 15.
- * @param state16 caller-owned source whose value becomes callback argument 16.
- * @param modifier active behavior on this region, including parent data for its containing layout.
- * @param key optional stable identity among the parent region's direct children.
- * @param content deferred owner-thread callback receiving the frame-committed values in declaration order.
+ * Uses the single-source [Observe] contract; caller-owned source values are passed in declaration order.
+ * Independent sources are not atomic together; publish one model when fields must change as a unit.
  */
 public fun <V1, V2, V3, V4, V5, V6, V7, V8, V9, V10, V11, V12, V13, V14, V15, V16> UiScope.Observe(
     state1: StateSource<V1>,
@@ -650,31 +426,8 @@ public fun <V1, V2, V3, V4, V5, V6, V7, V8, V9, V10, V11, V12, V13, V14, V15, V1
 /**
  * Emits one retained region observing 17 sources without evaluating content immediately.
  *
- * The owner-thread callback emits zero or one root; use Row or Column to arrange multiple children.
- * Source identities share frame snapshots and subscriptions in one tree. Updates coalesce before parent-first evaluation.
- * The region is one parent-layout child; apply parent data to its modifier. An empty region has zero natural size.
- * Keep editable state outside content. Content must not mutate sources or retain its callback-lifetime scope.
- * Subscriptions and captured content are released when the region leaves its tree or the tree fails or closes.
- * @param state1 caller-owned source whose value becomes callback argument 1.
- * @param state2 caller-owned source whose value becomes callback argument 2.
- * @param state3 caller-owned source whose value becomes callback argument 3.
- * @param state4 caller-owned source whose value becomes callback argument 4.
- * @param state5 caller-owned source whose value becomes callback argument 5.
- * @param state6 caller-owned source whose value becomes callback argument 6.
- * @param state7 caller-owned source whose value becomes callback argument 7.
- * @param state8 caller-owned source whose value becomes callback argument 8.
- * @param state9 caller-owned source whose value becomes callback argument 9.
- * @param state10 caller-owned source whose value becomes callback argument 10.
- * @param state11 caller-owned source whose value becomes callback argument 11.
- * @param state12 caller-owned source whose value becomes callback argument 12.
- * @param state13 caller-owned source whose value becomes callback argument 13.
- * @param state14 caller-owned source whose value becomes callback argument 14.
- * @param state15 caller-owned source whose value becomes callback argument 15.
- * @param state16 caller-owned source whose value becomes callback argument 16.
- * @param state17 caller-owned source whose value becomes callback argument 17.
- * @param modifier active behavior on this region, including parent data for its containing layout.
- * @param key optional stable identity among the parent region's direct children.
- * @param content deferred owner-thread callback receiving the frame-committed values in declaration order.
+ * Uses the single-source [Observe] contract; caller-owned source values are passed in declaration order.
+ * Independent sources are not atomic together; publish one model when fields must change as a unit.
  */
 public fun <V1, V2, V3, V4, V5, V6, V7, V8, V9, V10, V11, V12, V13, V14, V15, V16, V17> UiScope.Observe(
     state1: StateSource<V1>,
@@ -707,32 +460,8 @@ public fun <V1, V2, V3, V4, V5, V6, V7, V8, V9, V10, V11, V12, V13, V14, V15, V1
 /**
  * Emits one retained region observing 18 sources without evaluating content immediately.
  *
- * The owner-thread callback emits zero or one root; use Row or Column to arrange multiple children.
- * Source identities share frame snapshots and subscriptions in one tree. Updates coalesce before parent-first evaluation.
- * The region is one parent-layout child; apply parent data to its modifier. An empty region has zero natural size.
- * Keep editable state outside content. Content must not mutate sources or retain its callback-lifetime scope.
- * Subscriptions and captured content are released when the region leaves its tree or the tree fails or closes.
- * @param state1 caller-owned source whose value becomes callback argument 1.
- * @param state2 caller-owned source whose value becomes callback argument 2.
- * @param state3 caller-owned source whose value becomes callback argument 3.
- * @param state4 caller-owned source whose value becomes callback argument 4.
- * @param state5 caller-owned source whose value becomes callback argument 5.
- * @param state6 caller-owned source whose value becomes callback argument 6.
- * @param state7 caller-owned source whose value becomes callback argument 7.
- * @param state8 caller-owned source whose value becomes callback argument 8.
- * @param state9 caller-owned source whose value becomes callback argument 9.
- * @param state10 caller-owned source whose value becomes callback argument 10.
- * @param state11 caller-owned source whose value becomes callback argument 11.
- * @param state12 caller-owned source whose value becomes callback argument 12.
- * @param state13 caller-owned source whose value becomes callback argument 13.
- * @param state14 caller-owned source whose value becomes callback argument 14.
- * @param state15 caller-owned source whose value becomes callback argument 15.
- * @param state16 caller-owned source whose value becomes callback argument 16.
- * @param state17 caller-owned source whose value becomes callback argument 17.
- * @param state18 caller-owned source whose value becomes callback argument 18.
- * @param modifier active behavior on this region, including parent data for its containing layout.
- * @param key optional stable identity among the parent region's direct children.
- * @param content deferred owner-thread callback receiving the frame-committed values in declaration order.
+ * Uses the single-source [Observe] contract; caller-owned source values are passed in declaration order.
+ * Independent sources are not atomic together; publish one model when fields must change as a unit.
  */
 public fun <V1, V2, V3, V4, V5, V6, V7, V8, V9, V10, V11, V12, V13, V14, V15, V16, V17, V18> UiScope.Observe(
     state1: StateSource<V1>,
@@ -766,33 +495,8 @@ public fun <V1, V2, V3, V4, V5, V6, V7, V8, V9, V10, V11, V12, V13, V14, V15, V1
 /**
  * Emits one retained region observing 19 sources without evaluating content immediately.
  *
- * The owner-thread callback emits zero or one root; use Row or Column to arrange multiple children.
- * Source identities share frame snapshots and subscriptions in one tree. Updates coalesce before parent-first evaluation.
- * The region is one parent-layout child; apply parent data to its modifier. An empty region has zero natural size.
- * Keep editable state outside content. Content must not mutate sources or retain its callback-lifetime scope.
- * Subscriptions and captured content are released when the region leaves its tree or the tree fails or closes.
- * @param state1 caller-owned source whose value becomes callback argument 1.
- * @param state2 caller-owned source whose value becomes callback argument 2.
- * @param state3 caller-owned source whose value becomes callback argument 3.
- * @param state4 caller-owned source whose value becomes callback argument 4.
- * @param state5 caller-owned source whose value becomes callback argument 5.
- * @param state6 caller-owned source whose value becomes callback argument 6.
- * @param state7 caller-owned source whose value becomes callback argument 7.
- * @param state8 caller-owned source whose value becomes callback argument 8.
- * @param state9 caller-owned source whose value becomes callback argument 9.
- * @param state10 caller-owned source whose value becomes callback argument 10.
- * @param state11 caller-owned source whose value becomes callback argument 11.
- * @param state12 caller-owned source whose value becomes callback argument 12.
- * @param state13 caller-owned source whose value becomes callback argument 13.
- * @param state14 caller-owned source whose value becomes callback argument 14.
- * @param state15 caller-owned source whose value becomes callback argument 15.
- * @param state16 caller-owned source whose value becomes callback argument 16.
- * @param state17 caller-owned source whose value becomes callback argument 17.
- * @param state18 caller-owned source whose value becomes callback argument 18.
- * @param state19 caller-owned source whose value becomes callback argument 19.
- * @param modifier active behavior on this region, including parent data for its containing layout.
- * @param key optional stable identity among the parent region's direct children.
- * @param content deferred owner-thread callback receiving the frame-committed values in declaration order.
+ * Uses the single-source [Observe] contract; caller-owned source values are passed in declaration order.
+ * Independent sources are not atomic together; publish one model when fields must change as a unit.
  */
 public fun <V1, V2, V3, V4, V5, V6, V7, V8, V9, V10, V11, V12, V13, V14, V15, V16, V17, V18, V19> UiScope.Observe(
     state1: StateSource<V1>,
@@ -827,34 +531,8 @@ public fun <V1, V2, V3, V4, V5, V6, V7, V8, V9, V10, V11, V12, V13, V14, V15, V1
 /**
  * Emits one retained region observing 20 sources without evaluating content immediately.
  *
- * The owner-thread callback emits zero or one root; use Row or Column to arrange multiple children.
- * Source identities share frame snapshots and subscriptions in one tree. Updates coalesce before parent-first evaluation.
- * The region is one parent-layout child; apply parent data to its modifier. An empty region has zero natural size.
- * Keep editable state outside content. Content must not mutate sources or retain its callback-lifetime scope.
- * Subscriptions and captured content are released when the region leaves its tree or the tree fails or closes.
- * @param state1 caller-owned source whose value becomes callback argument 1.
- * @param state2 caller-owned source whose value becomes callback argument 2.
- * @param state3 caller-owned source whose value becomes callback argument 3.
- * @param state4 caller-owned source whose value becomes callback argument 4.
- * @param state5 caller-owned source whose value becomes callback argument 5.
- * @param state6 caller-owned source whose value becomes callback argument 6.
- * @param state7 caller-owned source whose value becomes callback argument 7.
- * @param state8 caller-owned source whose value becomes callback argument 8.
- * @param state9 caller-owned source whose value becomes callback argument 9.
- * @param state10 caller-owned source whose value becomes callback argument 10.
- * @param state11 caller-owned source whose value becomes callback argument 11.
- * @param state12 caller-owned source whose value becomes callback argument 12.
- * @param state13 caller-owned source whose value becomes callback argument 13.
- * @param state14 caller-owned source whose value becomes callback argument 14.
- * @param state15 caller-owned source whose value becomes callback argument 15.
- * @param state16 caller-owned source whose value becomes callback argument 16.
- * @param state17 caller-owned source whose value becomes callback argument 17.
- * @param state18 caller-owned source whose value becomes callback argument 18.
- * @param state19 caller-owned source whose value becomes callback argument 19.
- * @param state20 caller-owned source whose value becomes callback argument 20.
- * @param modifier active behavior on this region, including parent data for its containing layout.
- * @param key optional stable identity among the parent region's direct children.
- * @param content deferred owner-thread callback receiving the frame-committed values in declaration order.
+ * Uses the single-source [Observe] contract; caller-owned source values are passed in declaration order.
+ * Independent sources are not atomic together; publish one model when fields must change as a unit.
  */
 public fun <V1, V2, V3, V4, V5, V6, V7, V8, V9, V10, V11, V12, V13, V14, V15, V16, V17, V18, V19, V20> UiScope.Observe(
     state1: StateSource<V1>,
@@ -890,35 +568,8 @@ public fun <V1, V2, V3, V4, V5, V6, V7, V8, V9, V10, V11, V12, V13, V14, V15, V1
 /**
  * Emits one retained region observing 21 sources without evaluating content immediately.
  *
- * The owner-thread callback emits zero or one root; use Row or Column to arrange multiple children.
- * Source identities share frame snapshots and subscriptions in one tree. Updates coalesce before parent-first evaluation.
- * The region is one parent-layout child; apply parent data to its modifier. An empty region has zero natural size.
- * Keep editable state outside content. Content must not mutate sources or retain its callback-lifetime scope.
- * Subscriptions and captured content are released when the region leaves its tree or the tree fails or closes.
- * @param state1 caller-owned source whose value becomes callback argument 1.
- * @param state2 caller-owned source whose value becomes callback argument 2.
- * @param state3 caller-owned source whose value becomes callback argument 3.
- * @param state4 caller-owned source whose value becomes callback argument 4.
- * @param state5 caller-owned source whose value becomes callback argument 5.
- * @param state6 caller-owned source whose value becomes callback argument 6.
- * @param state7 caller-owned source whose value becomes callback argument 7.
- * @param state8 caller-owned source whose value becomes callback argument 8.
- * @param state9 caller-owned source whose value becomes callback argument 9.
- * @param state10 caller-owned source whose value becomes callback argument 10.
- * @param state11 caller-owned source whose value becomes callback argument 11.
- * @param state12 caller-owned source whose value becomes callback argument 12.
- * @param state13 caller-owned source whose value becomes callback argument 13.
- * @param state14 caller-owned source whose value becomes callback argument 14.
- * @param state15 caller-owned source whose value becomes callback argument 15.
- * @param state16 caller-owned source whose value becomes callback argument 16.
- * @param state17 caller-owned source whose value becomes callback argument 17.
- * @param state18 caller-owned source whose value becomes callback argument 18.
- * @param state19 caller-owned source whose value becomes callback argument 19.
- * @param state20 caller-owned source whose value becomes callback argument 20.
- * @param state21 caller-owned source whose value becomes callback argument 21.
- * @param modifier active behavior on this region, including parent data for its containing layout.
- * @param key optional stable identity among the parent region's direct children.
- * @param content deferred owner-thread callback receiving the frame-committed values in declaration order.
+ * Uses the single-source [Observe] contract; caller-owned source values are passed in declaration order.
+ * Independent sources are not atomic together; publish one model when fields must change as a unit.
  */
 public fun <V1, V2, V3, V4, V5, V6, V7, V8, V9, V10, V11, V12, V13, V14, V15, V16, V17, V18, V19, V20, V21> UiScope.Observe(
     state1: StateSource<V1>,
@@ -955,36 +606,8 @@ public fun <V1, V2, V3, V4, V5, V6, V7, V8, V9, V10, V11, V12, V13, V14, V15, V1
 /**
  * Emits one retained region observing 22 sources without evaluating content immediately.
  *
- * The owner-thread callback emits zero or one root; use Row or Column to arrange multiple children.
- * Source identities share frame snapshots and subscriptions in one tree. Updates coalesce before parent-first evaluation.
- * The region is one parent-layout child; apply parent data to its modifier. An empty region has zero natural size.
- * Keep editable state outside content. Content must not mutate sources or retain its callback-lifetime scope.
- * Subscriptions and captured content are released when the region leaves its tree or the tree fails or closes.
- * @param state1 caller-owned source whose value becomes callback argument 1.
- * @param state2 caller-owned source whose value becomes callback argument 2.
- * @param state3 caller-owned source whose value becomes callback argument 3.
- * @param state4 caller-owned source whose value becomes callback argument 4.
- * @param state5 caller-owned source whose value becomes callback argument 5.
- * @param state6 caller-owned source whose value becomes callback argument 6.
- * @param state7 caller-owned source whose value becomes callback argument 7.
- * @param state8 caller-owned source whose value becomes callback argument 8.
- * @param state9 caller-owned source whose value becomes callback argument 9.
- * @param state10 caller-owned source whose value becomes callback argument 10.
- * @param state11 caller-owned source whose value becomes callback argument 11.
- * @param state12 caller-owned source whose value becomes callback argument 12.
- * @param state13 caller-owned source whose value becomes callback argument 13.
- * @param state14 caller-owned source whose value becomes callback argument 14.
- * @param state15 caller-owned source whose value becomes callback argument 15.
- * @param state16 caller-owned source whose value becomes callback argument 16.
- * @param state17 caller-owned source whose value becomes callback argument 17.
- * @param state18 caller-owned source whose value becomes callback argument 18.
- * @param state19 caller-owned source whose value becomes callback argument 19.
- * @param state20 caller-owned source whose value becomes callback argument 20.
- * @param state21 caller-owned source whose value becomes callback argument 21.
- * @param state22 caller-owned source whose value becomes callback argument 22.
- * @param modifier active behavior on this region, including parent data for its containing layout.
- * @param key optional stable identity among the parent region's direct children.
- * @param content deferred owner-thread callback receiving the frame-committed values in declaration order.
+ * Uses the single-source [Observe] contract; caller-owned source values are passed in declaration order.
+ * Independent sources are not atomic together; publish one model when fields must change as a unit.
  */
 public fun <V1, V2, V3, V4, V5, V6, V7, V8, V9, V10, V11, V12, V13, V14, V15, V16, V17, V18, V19, V20, V21, V22> UiScope.Observe(
     state1: StateSource<V1>,

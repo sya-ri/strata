@@ -6,8 +6,7 @@ import java.security.MessageDigest
 import java.util.HexFormat
 
 /**
- * Reads bounded caller-owned inputs and computes content identities without retaining streams.
- * Callers keep the files stable during a showcase load; all methods are synchronous and stateless.
+ * Reads bounded inputs and computes content hashes, closing streams before return. Callers keep files stable during a load.
  */
 internal object ShowcaseAssetIntegrity {
     /**
@@ -55,12 +54,12 @@ internal object ShowcaseAssetIntegrity {
     }
 
     /**
-     * Returns the SHA-256 identity of immutable bytes without retaining or changing them.
+     * Returns the SHA-256 identity of [bytes].
      */
     fun sha256(bytes: ByteArray): String = hex.formatHex(MessageDigest.getInstance("SHA-256").digest(bytes))
 
     /**
-     * Returns the SHA-1 identity used by an official asset index without retaining its input.
+     * Returns the SHA-1 identity used by an official asset index.
      */
     fun sha1(bytes: ByteArray): String = hex.formatHex(MessageDigest.getInstance("SHA-1").digest(bytes))
 

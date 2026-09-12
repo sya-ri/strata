@@ -48,13 +48,19 @@ The example requires unique history strings as keys; real messages should use th
 Caller-owned sources publish immutable snapshots. No manual screen refresh or close/reopen is needed.
 Text, progress, image/head/source descriptors, slot binding/highlighting, labels, enabled/selected flags, cycle label formatting, list items, and leading/trailing availability have direct source overloads. Literal and source arguments may be mixed; consult the exact component signatures.
 Editing values and selections still use their dedicated mutable state. Size, color, decoration, and layout arguments use literals or a narrow `Observe`.
-For search fields and message/note drafts with light backgrounds, pass `TextInputAppearance.Custom` to standard `TextField` and `TextArea`, with `TextStyle.ContainerLabel` for dark glyphs. Supply normal/focused/disabled frames, their nine-slice border, caret color, and composition underline color. The frame replaces the profile frame, including transparent corners; a background modifier alone cannot override that frame. All three images need a nonempty center after their borders are removed. Custom centers stretch; the legacy default retains its original tiled frame and editing decorations. Padding and glyph metrics stay unchanged. Keep images, appearance, and editor state outside reevaluation. Use a narrow `Observe` only for theme changes; an appearance-only update preserves the input node, focus, composition, and scroll and does not remeasure. It can still require native rasterization and image upload.
+For a light or colored editor, use `TextInputAppearance.Custom` with `TextStyle.ContainerLabel`.
+Supply normal/focused/disabled nine-slice frames, caret and composition colors, and nonempty image centers after borders.
+Custom frames replace the editor frame, including transparent pixels; a background modifier cannot replace it.
+Retain images, appearance, and state outside reevaluation; use a narrow Observe for theme changes.
+Appearance-only changes repaint without remeasurement or loss of focus/composition/scroll, but may still upload pixels.
 Indexed list counts and lookup functions remain one coherent caller-owned indexed API: mutate the backing model and call its existing `refresh()`. Do not split count and lookup into independent sources.
 Canvas frame and tiled-image tile delivery retain their dedicated lifetimes; a direct source replaces the source descriptor itself.
 
 ## Avoid unnecessary reevaluation
 
-Default `Text` measures to its natural single-line size. Do not force a larger fixed `size` or filled weight onto it, including a Text that is the only root of a fixed-size Observe. For a reserved clock/loading rectangle, select `TextLayout.Multiline()` so the text can satisfy that rectangle's constraints. Reactive and literal Text share this geometry contract. The independent skill exercise below preserves a first attempt that compiled but failed this runtime constraint, alongside the corrected deterministic fixture.
+Default Text has natural single-line size.
+For a reserved clock/loading rectangle, use `TextLayout.Multiline()`, including a Text inside a fixed-size Observe.
+Literal and source-backed text share this geometry contract.
 
 | Pattern to avoid | Actual cost or missing behavior | Replacement |
 | --- | --- | --- |
@@ -63,11 +69,19 @@ Default `Text` measures to its natural single-line size. Do not force a larger f
 | Creating `state.map { ... }` inside an `Observe` | A new source identity causes graph admission and initial transformation; changed parent content still refreshes the child declaration. | Create the projection once beside the retained editor/list state. |
 | Creating `TextAreaState` or list navigation state inside reevaluation | Replaces editing/scroll ownership and can reset focus, composition, cursor, or the visible anchor. | Retain each dedicated state outside callbacks. |
 
-`Observe` is one layout child and emits zero or one root; put `weight` and parent alignment on that region. Direct source components keep their complete modifier on the real component and forward parent layout data through their internal binding.
-Mapping is lazy, pure, nullable-safe, and chainable. Creating a projection does not subscribe. A frame shares the original source subscription and its committed snapshot with all projections. Equal mapped values suppress downstream UI evaluation, node updates, and phase work; the mapper itself may run for a changed input. Ordinary `subscribe` still delivers every revision, including equal mapped values.
-Do not perform I/O, mutate sources, or create asynchronous work in a mapper or declaration callback. Notifications during evaluation wait for the next frame. Publish one immutable model when several fields must change atomically.
-Parent callback identity changes are reevaluation reasons because arbitrary captured values cannot be compared. Stable keys preserve compatible nodes but do not suppress changed callback evaluation. A real text-width change must remeasure affected ancestors; paint-only progress changes do not.
-Overlapping foreground commands and clips remain in the final composition even when their callbacks stay cached. A paint-only lower-layer change can reuse overlay callbacks but still require rerasterizing and uploading the shared native layer, including unchanged translucent foregrounds. Child geometry changes conservatively invalidate ancestor paint too, since an overlay may depend on measured child geometry even with fixed outer bounds. Zero foreground evaluation/paint counts do not mean zero composition cost; Strata does not promise per-component damage rectangles or skip fully occluded state updates.
-Keep the number and covered area of translucent layers small around frequently changing content. A full-area translucent Stack multiplies blended pixel work despite narrow State inputs. If the visual design requires many such layers, measure command regeneration and complete composition separately at its physical resolution and update rate; an evaluation counter alone cannot justify a smooth-animation claim.
-Runtime tests can use `RuntimeUiDiagnosticsOwner.startRenderMonitoring()` on the current screen and compare actual work after `checkpoint()`. Keep diagnostics imports out of application UI source. See [render monitoring](https://github.com/sya-ri/strata/blob/master/docs/development/render-monitoring.md) for bounded snapshots and native frame assertions."""
+`Observe` is one layout child and emits zero or one root; put weight and parent alignment on the region.
+Direct inputs keep modifiers on the actual component.
+Projections share committed source snapshots in a tree; equal results stop downstream work, although changed inputs may still run the mapper.
+Ordinary subscriptions retain every revision, including equal mapped values.
+Mappers and declaration callbacks must not mutate sources or perform I/O; publish one immutable model for atomic field changes.
+Changed parent callbacks refresh captures even with stable keys, and real text-width changes still require ancestor measurement.
+
+## Rendering cost
+
+Cached foreground callbacks still contribute commands to composition.
+A lower-layer change can require rasterizing and uploading an unchanged translucent foreground; geometry changes can also invalidate ancestor overlays.
+Strata does not promise per-component damage rectangles or skip fully occluded updates.
+Limit full-area translucent layers around frequent updates, or measure their complete composition at the intended resolution and rate.
+Use native rasterization/upload counts and final pixels alongside UI counters; see [render monitoring](https://github.com/sya-ri/strata/blob/master/docs/development/render-monitoring.md).
+Diagnostics belong in the runtime test harness, outside application UI source."""
 }

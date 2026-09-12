@@ -45,13 +45,15 @@ fun stateComponentOverloads(compileCases: Boolean = false): String {
                 for (mask in 1 until (1 shl reactive.size)) {
                     val sources = reactive.filterIndexed { index, _ -> mask and (1 shl index) != 0 }
                     appendLine()
-                    appendLine("/**")
-                    appendLine(" * Source-backed [$name] observing ${sources.joinToString()} at the next frame cutoff.")
-                    appendLine(" * Sources remain caller-owned; compatible nodes retain editing, focus, and scrolling state.")
-                    appendLine(" * Literal arguments keep their existing contracts. Equal source values do not re-evaluate this component.")
-                    appendLine(" * The complete modifier chain stays on the actual component; the wrapper delegates parent data and owns the sibling key.")
-                    appendLine(" * Keep sources and dedicated editing states outside observed callbacks. Evaluation and input failures follow ordinary runtime cleanup.")
-                    appendLine(" */")
+                    if (compileCases.not()) {
+                        appendLine("/**")
+                        appendLine(" * Observes ${sources.joinToString()} for [$name] at the next owner-thread frame cutoff.")
+                        appendLine(" *")
+                        appendLine(" * Retain caller-owned sources and editing state outside reevaluation.")
+                        appendLine(" * See [Observe] for shared snapshots, equal-value suppression, and cleanup; literal arguments follow [$name].")
+                        appendLine(" * Modifiers and parent data apply to the actual component, while the binding owns its sibling key.")
+                        appendLine(" */")
+                    }
                     if (compileCases.not()) appendLine("@JvmName(\"${name}State${signature}_$mask\")")
                     val functionName = if (compileCases) "compile${name}${signature}_$mask" else name
                     appendLine("${if (compileCases) "private" else "public"} fun ${if (generics.isEmpty()) "" else "$generics "}UiScope.$functionName(")

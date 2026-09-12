@@ -6,7 +6,5 @@ import net.minecraft.ResourceLocationException
 
 /**
  * Names the native invalid-resource exception used by Minecraft 1.21.9.
- *
- * The alias is compile-time only and lets shared parsing code preserve the native failure as its cause.
  */
 internal typealias MinecraftResourceLocationException = ResourceLocationException

@@ -37,9 +37,7 @@ internal class FabricMinecraftPortableImage(
     }
 
     /**
-     * Compares derived pixel inputs without consulting a device, allocating storage, or retaining [other].
-     *
-     * The render owner uses this pure comparison before deciding whether to allocate a whole portable generation.
+     * Compares pixel inputs before allocating a replacement portable generation; performs no device work or allocation.
      */
     @JvmSynthetic
     internal fun equivalent(other: FabricMinecraftPortableImage): Boolean = size == other.size && scale == other.scale && commands == other.commands

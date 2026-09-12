@@ -13,9 +13,7 @@ import dev.s7a.strata.modifier.size
 import dev.s7a.strata.screen.ScreenDefinition
 
 /**
- * Builds and opens a screen while compiling against `strata-api` alone.
- *
- * The separately installed Fabric runtime supplies Minecraft rendering and becomes the current screen.
+ * Opens a confirmation screen on the installed runtime's owner thread.
  */
 internal fun openConfirmationScreen(onConfirm: () -> Unit) {
     ScreenDefinition("Confirm action") {

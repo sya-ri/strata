@@ -1,8 +1,7 @@
 package dev.s7a.strata.integration.docs
 
 /**
- * Supplies reader-facing comparison guidance for the compiled component catalog.
- * All lookups are pure and exhaustive over the documented public component identities.
+ * Provides exhaustive component-choice guidance for the generated catalog.
  */
 internal object ShowcaseComponentGuide {
     /**

@@ -13,7 +13,6 @@ Declarative Minecraft UI with reusable components, caller-owned state, and headl
 
 Minecraft screens often mix layout, input, state, resources, and version-specific calls in one class.
 Strata separates those responsibilities so an interface can be composed, reused, and tested through a common API.
-Applications describe a component tree; the runtime retains its nodes and adapts rendering, input, and lifecycle to the selected environment.
 
 ## What you can build
 
@@ -64,15 +63,12 @@ Declare it as a required dependency in the consuming Mod so `ScreenDefinition.op
 ```
 <!-- strata-installation:end -->
 
-Choose exactly one runtime matching the target Minecraft release.
 The [compatibility reference](docs/reference/compatibility.md) lists supported targets, artifact names, and Java requirements.
 
 ## Open a screen
 
-Application UI source compiles against `strata-api` alone.
-Create a one-shot `ScreenDefinition` and open it on the installed runtime's owner thread.
-The runtime supplies the active resource profile before evaluating the component callback.
-Actions are composed with modifiers, so controls can share pointer and keyboard behavior.
+Create a new `ScreenDefinition` for each opening and call `open()` on the installed runtime's owner thread.
+Compose actions with modifiers, as in this API-only example:
 
 <a id="api-only-open-example"></a>
 
@@ -90,9 +86,7 @@ import dev.s7a.strata.modifier.size
 import dev.s7a.strata.screen.ScreenDefinition
 
 /**
- * Builds and opens a screen while compiling against `strata-api` alone.
- *
- * The separately installed Fabric runtime supplies Minecraft rendering and becomes the current screen.
+ * Opens a confirmation screen on the installed runtime's owner thread.
  */
 internal fun openConfirmationScreen(onConfirm: () -> Unit) {
     ScreenDefinition("Confirm action") {
@@ -116,7 +110,6 @@ internal fun openConfirmationScreen(onConfirm: () -> Unit) {
 ```
 <!-- strata-api-open-example:end -->
 
-The example is compiled from the shipped API-only integration source.
 [Screens and state](docs/guides/screens-and-state.md) explains definition ownership, state, input, and resource use.
 
 ## Choose modules
@@ -142,7 +135,6 @@ The [Dokka API reference](https://gh.s7a.dev/strata/) contains signatures and KD
 
 The public [Strata skill](skills/strata/SKILL.md) provides checked authoring guidance for AI tools.
 Preview it with `gh skill preview sya-ri/strata skills/strata` or install it with `npx skills add sya-ri/strata --skill strata`.
-Runtime Mods are also distributed through [Modrinth](https://modrinth.com/mod/strata-ui).
 
 Strata is pronounced “STRAY-tuh” (`/ˈstreɪtə/`), the plural of *stratum*, meaning a layer.
 It is available under the [MIT License](LICENSE).

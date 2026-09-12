@@ -25,7 +25,7 @@ internal class MinecraftTextAreaUnderlines private constructor(
     internal fun bounds(line: Int): IntRange? = ranges.getOrNull(line - firstLine)
 
     /**
-     * Constructs one bounded current composition result without retaining any inputs.
+     * Constructs the bounded underline result for the current composition.
      */
     companion object {
         /**
