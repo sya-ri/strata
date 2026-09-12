@@ -32,13 +32,14 @@ Missing, ambiguous, or unpaired documentation inputs fail planning rather than l
 The complete Loom inventory remains numerically ordered independently of shard assignment, and each shard's displayed name lists its actual versions.
 Common checks include the CPU font backend and its isolated dependency and font-capability workers without launching Minecraft.
 Workflow syntax and the release, Java-inventory, and CI-model shell regressions run in an independent `Workflow checks` job alongside Gradle checks.
-That job needs the complete Git history for release fixtures but does not install Java or restore Gradle caches; common checks and coverage keep their existing matrix identities for cache reuse.
+That job retains the complete Git history and catalog-selected Java toolchains because release fixtures invoke Gradle in temporary checkouts.
+It restores a compatible Gradle cache read-only; common checks and coverage keep their existing matrix identities for cache reuse.
 The representative integration checks own their matching native-to-offline font comparisons, so full `check` and the existing Minecraft shards run those gates without adding loaded clients to the common shard.
 It runs only when code, build inputs, its own workflow, the compiled README contract, or generated showcase evidence changes; canonical prose that cannot affect those gates does not launch loaded clients.
 Gradle's enhanced user-home cache uses strict job matching for common and Minecraft shards so one writer cannot restore and resave state from another matrix entry.
-Read-only coverage, Qodana, and Documentation jobs deliberately accept the newest compatible Linux job cache and never write it back, avoiding a cold dependency fan-out and upstream rate limits without sharing Loom state.
+Read-only workflow checks, coverage, Qodana, and Documentation jobs deliberately accept the newest compatible Linux job cache and never write it back, avoiding a cold dependency fan-out and upstream rate limits without sharing Loom state.
 Requiring a strict own-job match in a job that never writes a cache would prevent these readers from using the successful common and Minecraft writers.
-It is writable only from successful `master` runs of common checks and generated Minecraft shards because each produces distinct reusable outputs; pull requests, coverage, Qodana, and Documentation restore it read-only to avoid redundant, evidence-only, or branch-scoped entries.
+It is writable only from successful `master` runs of common checks and generated Minecraft shards because each produces distinct reusable outputs; pull requests, workflow checks, coverage, Qodana, and Documentation restore it read-only to avoid redundant, evidence-only, or branch-scoped entries.
 Every hosted job excludes Loom state from the enhanced Gradle user-home cache.
 Each Minecraft shard separately restores its project-local Loom repository with an OS-, shard-, and build-model-derived immutable key.
 The model hash includes the catalog, wrapper, Gradle properties, root build and settings, and only the versioned runtime and integration build scripts selected by that shard, so changing one release family does not evict every unrelated family.
