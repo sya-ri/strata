@@ -29,7 +29,7 @@ The [animated README demo](readme-demo/README.md) follows a player list from nat
 - [Element SPI](reference/element-spi.md) describes custom primitives, retained phases, and ownership.
 - [Modifier SPI](reference/modifier-spi.md) describes active modifier nodes and typed parent data.
 - [External state sources](reference/state-sources.md) specifies revisioned observation across threads.
-- [Changelog](../CHANGELOG.md) and its linked release notes describe versioned changes and migration.
+- [Changelog](../CHANGELOG.md#releases) summarizes changes and upgrade notes, with links to each version's section.
 
 ## Develop Strata
 
