@@ -16,8 +16,8 @@ Choose detail by the reader's task:
 | AGENTS.md and skill entrypoint | Make AI implementation decisions | Project-specific rules and routing to details needed for the current task. |
 | Release notes | Upgrade from an earlier version | User-visible changes, compatibility, migration. |
 
-Keep reader-facing release summaries and upgrade notes in `CHANGELOG.md`, with stable version anchors for section links.
-Files under `docs/releases` are the standalone publication bodies consumed verbatim by release services.
+Link the README's Changelog section to `CHANGELOG.md`, which summarizes each version and links to its detailed notes under `docs/releases`.
+Those detailed notes also serve as the standalone publication bodies consumed verbatim by release services.
 
 Lead with the answer or ordinary use; link to specialist detail instead of repeating it.
 A short declaration may need only one KDoc sentence.

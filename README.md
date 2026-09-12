@@ -127,11 +127,15 @@ Versioned Fabric Mods package their common runtime libraries.
 Integration modules contain verification and examples and are not published.
 See [architecture](docs/development/architecture.md) for dependency boundaries.
 
+## Changelog
+
+See the [changelog](CHANGELOG.md) for release summaries, detailed changes, and upgrade notes.
+
 ## Documentation
 
 Start with the [documentation index](docs/README.md), then use [layout](docs/guides/layout.md), [modifiers](docs/guides/modifiers.md), and [text and editing](docs/guides/text.md) to build an interface.
 The [Dokka API reference](https://gh.s7a.dev/strata/) contains signatures and KDoc; the [Element SPI](docs/reference/element-spi.md) explains custom primitives.
-[Contributing](CONTRIBUTING.md) covers development, and the [changelog](CHANGELOG.md#releases) summarizes changes and upgrade notes by version.
+[Contributing](CONTRIBUTING.md) covers development.
 
 The public [Strata skill](skills/strata/SKILL.md) provides checked authoring guidance for AI tools.
 Preview it with `gh skill preview sya-ri/strata skills/strata` or install it with `npx skills add sya-ri/strata --skill strata`.
