@@ -21,9 +21,12 @@ project_jdk=${java_toolchains[${#java_toolchains[@]} - 1]}
 project_language_level="JDK_$project_jdk"
 
 bash ./gradlew \
+  --no-daemon \
   --no-configure-on-demand \
   --project-prop=strata.completeIdeaModel=true \
   --system-prop=fabric.loom.ci=true \
+  :api:jar :runtime:core:jar :runtime:headless:jar :runtime:minecraft:jar :runtime:minecraft-fonts-lwjgl:jar \
+  classes gametestClasses \
   idea
 
 verify_generated_projects() {

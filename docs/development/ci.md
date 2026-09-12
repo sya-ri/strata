@@ -33,9 +33,9 @@ Prose-only changes outside compiled documentation contracts do not launch the JV
 
 | Cache | Identity and access |
 | --- | --- |
-| Gradle user home | Common/Minecraft writers use strict job matching and write only after successful `master` runs. Coverage, Qodana, Documentation, and PR jobs restore read-only; readers may use the newest compatible Linux job cache. Loom state is excluded. |
+| Gradle user home | Common/Minecraft writers use strict job matching and write only after successful `master` runs. Workflow checks, coverage, Qodana, Documentation, and PR jobs restore read-only; readers may use the newest compatible Linux job cache. Loom state is excluded. |
 | Project-local Loom | Exact OS, shard, and complete selected build-model hash. A miss regenerates from authoritative inputs; only a successful `master` miss saves a replacement. |
-| Qodana Loom warm start | Hash the full discovered inventory and restore compatible state read-only; missing content is rebuilt. |
+| Qodana project-local Loom | Key the complete discovered inventory; fall back to the newest Minecraft cache on a miss and rebuild missing content. Only a successful `master` run saves a missing exact entry, after analysis, model verification, and report upload. |
 
 Model hashes include the catalog, wrapper, Gradle properties, root build/settings, and selected version build scripts.
 Minecraft assets remain upstream inputs instead of large per-shard archives.
@@ -45,8 +45,9 @@ Superseded JVM and Qodana runs on the same ref are cancelled.
 ## Qodana model
 
 Qodana uses its recommended JVM profile without a baseline and receives every catalog-declared Java toolchain.
-Before analysis, compile `classes` and `gametestClasses`, assemble the five plain common jars required by Loom's nested-library model, and stop Gradle daemons while retaining those inputs.
-Remapped distributions are unnecessary for the IDE model.
+The workflow explicitly selects `qodana-jvm-community` in native mode so analysis can use the installed toolchains and restored Gradle user home.
+One `--no-daemon` Gradle invocation compiles `classes` and `gametestClasses`, assembles the five plain common jars required by Loom's nested-library model, and generates the IDEA model.
+Its JVM exits before analysis; compiled inputs remain available without assembling remapped distributions.
 
 Bootstrap disables configuration on demand and sets `strata.completeIdeaModel` plus `fabric.loom.ci`.
 The latter preserves mapped binaries without optional source remapping.
@@ -54,12 +55,14 @@ The generated IDEA model assigns linked source roots, real compile/test/GameTest
 Bootstrap may replace its disposable `.idea`/`*.iml` outputs between revisions.
 The workflow validates every discovered owner so an incomplete import cannot pass through exclusions.
 
+Before analysis, disk reclamation runs only when free space is below 40 GiB; free space is logged again afterward.
 The IDE cache is removed after analysis; enabling persistence requires a verified complete import and a key covering all model inputs.
 Disable an inspection only with an actionable rationale in the checked-in configuration.
 
 ## Controller regression checks
 
-Before Gradle gates, the common shard runs the pinned official actionlint container, `bash -n` on release scripts, and isolated controller regressions.
+The independent `Workflow checks` job runs alongside Gradle checks: pinned official actionlint, `bash -n` on release scripts, and release, Java-inventory, and CI-model regressions.
+It retains complete Git history and catalog-selected Java toolchains because release fixtures invoke Gradle in temporary checkouts.
 These cover source/tag/ruleset drift, artifact and deployment binding, immutable-subtree comparison, receipt drift, pagination/order, and bounded public polling.
 Benchmark procedures belong in [performance](performance.md#benchmark-methodology).
 

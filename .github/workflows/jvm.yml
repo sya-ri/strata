@@ -56,6 +56,47 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  workflow-checks:
+    name: Workflow checks
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+      - name: Check GitHub Actions workflows
+        uses: docker://rhysd/actionlint:1.7.12
+      - name: Set up Java
+        uses: ./.github/actions/setup-strata-java
+      - name: Set up Gradle for release fixtures
+        uses: gradle/actions/setup-gradle@v6
+        with:
+          cache-read-only: true
+          gradle-home-cache-strict-match: false
+          gradle-home-cache-excludes: caches/fabric-loom
+      - name: Check release shell syntax
+        shell: bash
+        run: |
+          for script in release/*.sh release/tests/*.sh; do
+            bash -n "$script"
+          done
+      - name: Test release source guards
+        shell: bash
+        run: |
+          for source_guard in release/tests/verify-release*-source.sh; do
+            bash "$source_guard"
+          done
+          bash release/tests/verify-versioned-pages-staging.sh
+      - name: Test Java toolchain inventory
+        shell: bash
+        run: bash release/tests/verify-java-toolchain-inventory.sh
+      - name: Test CI project model guards
+        run: |
+          bash -n gradle/plan-minecraft-ci.sh gradle/verify-minecraft-ci-plan-fixtures.sh gradle/prepare-qodana-idea-model.sh gradle/verify-qodana-model.sh gradle/verify-qodana-model-fixtures.sh gradle/verify-qodana-bootstrap-fixtures.sh
+          bash gradle/verify-minecraft-ci-plan-fixtures.sh
+          bash gradle/verify-qodana-model-fixtures.sh
+          bash gradle/verify-qodana-bootstrap-fixtures.sh
+
   checks:
     name: ${{ matrix.name }}
     runs-on: ubuntu-latest
@@ -81,9 +122,6 @@ jobs:
         uses: actions/checkout@v7
         with:
           fetch-depth: ${{ matrix.fetch_depth }}
-      - name: Check GitHub Actions workflows
-        if: matrix.id == 'common'
-        uses: docker://rhysd/actionlint:1.7.12
       - name: Set up Java
         uses: ./.github/actions/setup-strata-java
       - name: Set up Gradle
@@ -92,31 +130,6 @@ jobs:
           cache-read-only: ${{ matrix.cache_read_only || github.ref != 'refs/heads/master' }}
           gradle-home-cache-strict-match: ${{ matrix.id != 'coverage' }}
           gradle-home-cache-excludes: caches/fabric-loom
-      - name: Check release shell syntax
-        if: matrix.id == 'common'
-        shell: bash
-        run: |
-          for script in release/*.sh release/tests/*.sh; do
-            bash -n "$script"
-          done
-      - name: Test release source guards
-        if: matrix.id == 'common'
-        shell: bash
-        run: |
-          for source_guard in release/tests/verify-release*-source.sh; do
-            bash "$source_guard"
-          done
-          bash release/tests/verify-versioned-pages-staging.sh
-      - name: Test Java toolchain inventory
-        if: matrix.id == 'common'
-        shell: bash
-        run: bash release/tests/verify-java-toolchain-inventory.sh
-      - name: Test CI project model guards
-        if: matrix.id == 'common'
-        run: |
-          bash -n gradle/plan-minecraft-ci.sh gradle/verify-minecraft-ci-plan-fixtures.sh gradle/prepare-qodana-idea-model.sh gradle/verify-qodana-model.sh gradle/verify-qodana-model-fixtures.sh
-          bash gradle/verify-minecraft-ci-plan-fixtures.sh
-          bash gradle/verify-qodana-model-fixtures.sh
       - name: Run ${{ matrix.name }}
         run: bash ./gradlew ${{ matrix.gradle_arguments }}
       - name: Upload coverage reports
