@@ -118,6 +118,7 @@ include(
     ":api",
     ":integration:api",
     ":integration:docs",
+    ":integration:web",
     ":quality:benchmarks",
     ":quality:detekt-rules",
     ":runtime:core",

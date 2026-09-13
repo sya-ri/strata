@@ -464,7 +464,7 @@ val releaseArtifactByProjectPath =
         "$group:strata-${projectPath.removePrefix(":").replace(':', '-')}"
     }
 val legacyJvmMultiplatformProjectPaths = setOf(":api", ":runtime:core")
-val multiplatformProjectPaths = legacyJvmMultiplatformProjectPaths + ":runtime:web"
+val multiplatformProjectPaths = legacyJvmMultiplatformProjectPaths + setOf(":runtime:web", ":integration:web")
 val publishableProjectPaths = releasePublicationProjectPaths.toSet()
 val verifyMinecraftFabricTargetMatrix = tasks.register("verifyMinecraftFabricTargetMatrix") {
     group = "verification"
@@ -770,10 +770,13 @@ subprojects {
     }
 
     if (path in multiplatformProjectPaths) {
-        val hasJvmTarget = path in legacyJvmMultiplatformProjectPaths
+        val hasJvmTarget = path in legacyJvmMultiplatformProjectPaths || path == ":integration:web"
+        val published = path in releaseArtifactByProjectPath
         apply(plugin = "org.jetbrains.kotlin.multiplatform")
-        apply(plugin = "maven-publish")
-        apply(plugin = "com.vanniktech.maven.publish")
+        if (published) {
+            apply(plugin = "maven-publish")
+            apply(plugin = "com.vanniktech.maven.publish")
+        }
         if (hasJvmTarget) apply(plugin = "org.jetbrains.kotlinx.kover")
         apply(plugin = "org.jmailen.kotlinter")
         apply(plugin = "dev.detekt")
@@ -804,8 +807,10 @@ subprojects {
                 commonMain { kotlin.srcDir("src/main/kotlin") }
                 if (hasJvmTarget) jvmTest { kotlin.srcDir("src/test/kotlin") }
             }
-            @OptIn(ExperimentalAbiValidation::class)
-            abiValidation()
+            if (published) {
+                @OptIn(ExperimentalAbiValidation::class)
+                abiValidation()
+            }
         }
 
         tasks.withType<Test>().configureEach { useJUnitPlatform() }
@@ -825,9 +830,11 @@ subprojects {
         extensions.configure<DetektExtension> {
             buildUponDefaultConfig = true
             config.setFrom(rootProject.file("config/detekt/detekt.yml"))
-            source.from("src/main/kotlin", "src/commonMain/kotlin", "src/jvmMain/kotlin", "src/jsMain/kotlin", "src/commonTest/kotlin", "src/jsTest/kotlin", "src/test/kotlin")
+            source.from("src/main/kotlin", "src/commonMain/kotlin", "src/jvmMain/kotlin", "src/jsMain/kotlin", "src/commonTest/kotlin", "src/jsTest/kotlin", "src/jvmTest/kotlin", "src/test/kotlin")
         }
         dependencies.add("detektPlugins", project(":quality:detekt-rules"))
+
+        if (published.not()) return@subprojects
 
         val multiplatformArtifact = releaseArtifactByProjectPath.getValue(path).substringAfter(':')
         val metadataArtifact = if (hasJvmTarget) "$multiplatformArtifact-multiplatform" else multiplatformArtifact

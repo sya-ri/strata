@@ -23,6 +23,15 @@ Initial child identities, element kinds, and supported presentation values are v
 The caller currently supplies the bundled script URL and writes the returned document to disk; these runtime functions do not bundle application code or copy assets.
 Run `./gradlew :runtime:web:check` to verify document generation, adoption, reactive content, and retained DOM identity in headless Chrome.
 
+The executable `integration:web` consumer demonstrates the complete build boundary with `./gradlew :integration:web:buildWeb`.
+It bundles Kotlin/JS with webpack, renders an independent initial definition in a build browser, and writes `integration/web/build/site/index.html` beside the application bundle and copied resources.
+The emitted site needs only a static HTTP server.
+Node.js must be available on `PATH`; Playwright is resolved by the Kotlin npm installation using the version catalog, and `installWebBrowsers` installs its matching engines.
+Run `./gradlew :integration:web:check` to compare the shared scenario's Minecraft semantics and headless rasterization with Chromium, Firefox, and WebKit state transitions.
+The browser check opens the emitted document with JavaScript disabled first, then verifies startup adoption, native button actions, ordinary conditionals, and keyed sibling identity.
+Fresh screenshots and comparison receipts are written to `integration/web/build/parity` on every browser verification run.
+This comparison covers presentation labels and state transitions; native platform typography and geometry are intentionally different and are not asserted pixel-identical.
+
 ## Environment
 
 Run commands from the repository root with the checked-in wrapper: `./gradlew`, or `.\gradlew.bat` in PowerShell.
