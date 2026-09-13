@@ -31,9 +31,7 @@ import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 
 /**
-
  * Verifies appearance pixels and retained input through the production DSL, host, and monitoring path.
-
  */
 @OptIn(InternalStrataRuntimeApi::class)
 internal class MinecraftTextInputAppearanceTest {

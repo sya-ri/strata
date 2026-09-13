@@ -1,9 +1,7 @@
 package dev.s7a.strata.internal.platform
 
 /**
-
  * Tracks synchronous lock ownership in one JavaScript execution agent.
-
  */
 internal actual class PlatformLock actual constructor() {
     private var depth = 0

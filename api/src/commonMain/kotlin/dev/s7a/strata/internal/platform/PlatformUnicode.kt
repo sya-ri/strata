@@ -12,9 +12,7 @@ internal fun String.scalarAt(index: Int): Int {
 }
 
 /**
-
  * Appends a validated Unicode scalar as one or two UTF-16 code units.
-
  */
 internal fun StringBuilder.appendScalar(scalar: Int): StringBuilder {
     require(scalar in 0..0x10FFFF && (scalar in 0xD800..0xDFFF).not()) { "Invalid Unicode scalar." }

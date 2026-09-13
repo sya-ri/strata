@@ -3,9 +3,7 @@ package dev.s7a.strata.internal.platform
 import java.util.concurrent.locks.Condition
 
 /**
-
  * Preserves uninterruptible JVM close coordination.
-
  */
 internal actual class PlatformCondition(
     private val delegate: Condition,

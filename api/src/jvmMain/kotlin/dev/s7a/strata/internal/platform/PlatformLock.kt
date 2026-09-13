@@ -3,9 +3,7 @@ package dev.s7a.strata.internal.platform
 import java.util.concurrent.locks.ReentrantLock
 
 /**
-
  * Preserves JVM callback synchronization with a reentrant lock.
-
  */
 internal actual class PlatformLock actual constructor() {
     private val delegate = ReentrantLock()

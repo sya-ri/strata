@@ -130,7 +130,7 @@ internal class MultilineKDocRuleTest {
 
     @Test
     internal fun rejectsOneLineKDoc() {
-        val documentation = "/" + "** One-line documentation. " + "*/"
+        val documentation = "/** One-line documentation. */"
         val source =
             """
             $documentation
@@ -142,7 +142,7 @@ internal class MultilineKDocRuleTest {
 
     @Test
     internal fun rejectsOneLineKDocOnPrivateProperty() {
-        val documentation = "/" + "** Private state. " + "*/"
+        val documentation = "/** Private state. */"
         val source =
             """
             $documentation
@@ -154,7 +154,7 @@ internal class MultilineKDocRuleTest {
 
     @Test
     internal fun rejectsOneLineKDocOnVisibleProperty() {
-        val documentation = "/" + "** Public state. " + "*/"
+        val documentation = "/** Public state. */"
         val source =
             """
             $documentation
@@ -162,5 +162,50 @@ internal class MultilineKDocRuleTest {
             """.trimIndent()
 
         assertEquals(1, MultilineKDocRule(Config.empty).lint(source).size)
+    }
+
+    @Test
+    fun rejectsUnmarkedBlankLinesAndEdgePadding() {
+        val bodies =
+            listOf(
+                "\n * A documented value.",
+                " * A documented value.\n",
+                " * A documented value.\n   \n * More detail.",
+                " *\n * A documented value.",
+                " * A documented value.\n *",
+            )
+        for (body in bodies) {
+            for (lineEnding in listOf("\n", "\r\n")) {
+                val documentation = "/**\n$body\n */".replace("\n", lineEnding)
+                val source = "$documentation${lineEnding}private val value = 0"
+
+                assertEquals(1, MultilineKDocRule(Config.empty).lint(source).size, source)
+            }
+        }
+    }
+
+    @Test
+    fun acceptsMarkedParagraphsAndTagSeparators() {
+        val source =
+            """
+            /**
+             * Returns the current value.
+             *
+             * The value remains owned by the caller.
+             *
+             * @return the caller's value.
+             */
+            fun value() = 0
+            """.trimIndent()
+
+        assertEquals(0, MultilineKDocRule(Config.empty).lint(source).size)
+    }
+
+    @Test
+    fun ignoresKDocDelimitersInStrings() {
+        val documentation = "/**\n\n * Not a documentation comment.\n\n */"
+        val source = "private val example = \"\"\"$documentation\"\"\""
+
+        assertEquals(0, MultilineKDocRule(Config.empty).lint(source).size)
     }
 }
