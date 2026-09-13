@@ -12,6 +12,7 @@ import dev.s7a.strata.node.DirtyMask
 import dev.s7a.strata.node.DirtyPhase
 import dev.s7a.strata.node.LayoutNode
 import dev.s7a.strata.node.MeasureNode
+import dev.s7a.strata.internal.platform.PlatformMath as Math
 import dev.s7a.strata.node.Node as RetainedNode
 
 /**

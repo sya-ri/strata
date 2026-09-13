@@ -1,5 +1,8 @@
 package dev.s7a.strata.component
 
+import dev.s7a.strata.internal.platform.PlatformThreads
+import dev.s7a.strata.internal.platform.appendScalar
+import dev.s7a.strata.internal.platform.scalarAt
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
 
 /**
@@ -19,7 +22,7 @@ public class TextAreaState(
     initialValue: String = "",
     public val maxLength: Int = 32767,
 ) {
-    private val ownerThread: Thread = Thread.currentThread()
+    private val ownerThread: Any = PlatformThreads.current()
     private val ownedScrollState: ScrollState = ScrollState()
     private var observer: ((String) -> Unit)? = null
     private var currentValue: String
@@ -95,7 +98,7 @@ public class TextAreaState(
         val result = StringBuilder(minOf(value.length, maxLength))
         var offset = 0
         while (offset < value.length) {
-            val codePoint = value.codePointAt(offset)
+            val codePoint = value.scalarAt(offset)
             require((codePoint in 0xD800..0xDFFF).not()) { "Text area value contains an isolated surrogate." }
             when (codePoint) {
                 0x0A, 0x0B, 0x0C, 0x0D, 0x85, 0x2028, 0x2029 -> {
@@ -107,16 +110,16 @@ public class TextAreaState(
                     require(0x20 <= codePoint && codePoint != 0x7F && codePoint != 0xA7) {
                         "Text area value contains a control character or formatting marker."
                     }
-                    result.appendCodePoint(codePoint)
+                    result.appendScalar(codePoint)
                 }
             }
             require(result.length <= maxLength) { "Text area value exceeds its maximum length after newline normalization." }
-            offset += Character.charCount(codePoint)
+            offset += (if (codePoint < 0x10000) 1 else 2)
         }
         return result.toString()
     }
 
     private fun checkThread() {
-        check(Thread.currentThread() === ownerThread) { "Text area state requires its creator thread." }
+        check(PlatformThreads.current() === ownerThread) { "Text area state requires its creator thread." }
     }
 }

@@ -3,7 +3,7 @@ package dev.s7a.strata.screen
 import dev.s7a.strata.component.UiScope
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
 import dev.s7a.strata.text.UiText
-import java.util.concurrent.atomic.AtomicReference
+import dev.s7a.strata.internal.platform.PlatformAtomicReference as AtomicReference
 
 /**
  * One-shot platform-neutral definition for one declarative screen.

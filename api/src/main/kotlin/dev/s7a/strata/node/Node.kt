@@ -1,7 +1,7 @@
 package dev.s7a.strata.node
 
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
-import java.util.concurrent.atomic.AtomicReference
+import dev.s7a.strata.internal.platform.PlatformAtomicReference as AtomicReference
 
 /**
  * Base retained node with phase invalidation only.

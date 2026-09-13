@@ -5,6 +5,8 @@ Applications describe a tree of UI nodes and application-owned state.
 Runtimes translate that description into platform operations while preserving deterministic retained behavior.
 This document describes the verified current architecture.
 A module joins the build only with working behavior and tests.
+The API and retained core share their implementation between JVM and JavaScript; platform-specific synchronization, exact arithmetic, identity, and coroutine-context adapters preserve the same observable contracts.
+Headless and Minecraft integration remain JVM adapters.
 
 ## Module boundaries
 

@@ -11,6 +11,7 @@ import dev.s7a.strata.runtime.render.DrawCommand
 import dev.s7a.strata.runtime.semantics.SemanticsEntry
 import dev.s7a.strata.runtime.spi.RuntimeTextInputFocus
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
+import kotlin.jvm.JvmSynthetic
 
 // Why: this public owner intentionally exposes each retained lifecycle, frame, input, and inspection operation through one guarded boundary.
 

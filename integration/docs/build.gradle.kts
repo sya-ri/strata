@@ -85,7 +85,7 @@ dependencies {
 val apiMainClasses =
     rootProject.project(":api").extensions
         .getByType<SourceSetContainer>()
-        .named("main")
+        .named("jvmMain")
         .map { sourceSet -> sourceSet.output.classesDirs }
 val showcaseSources = rootProject.layout.projectDirectory.dir("integration/minecraft-fabric-unobfuscated/src/gametest/kotlin")
 val showcaseFixtureResources = rootProject.layout.projectDirectory.dir("integration/minecraft-fabric-unobfuscated/src/gametest/resources")

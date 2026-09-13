@@ -1,6 +1,7 @@
 package dev.s7a.strata.component
 
 import dev.s7a.strata.geometry.IntSize
+import dev.s7a.strata.internal.platform.PlatformMath as Math
 
 /**
  * Describes one immutable resolution level in a tiled raster source.

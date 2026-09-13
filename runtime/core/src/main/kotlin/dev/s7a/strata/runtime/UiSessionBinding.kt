@@ -2,9 +2,9 @@ package dev.s7a.strata.runtime
 
 import dev.s7a.strata.state.StateSnapshot
 import dev.s7a.strata.state.StateSubscription
-import java.util.concurrent.locks.ReentrantLock
 import kotlin.properties.ReadOnlyProperty
 import kotlin.reflect.KProperty
+import dev.s7a.strata.runtime.platform.PlatformLock as ReentrantLock
 
 /**
  * Revision-coalescing source binding owned by one [UiSession].

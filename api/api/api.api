@@ -1555,6 +1555,10 @@ public final class dev/s7a/strata/render/SampledImageOrientation : java/lang/Enu
 	public static fun values ()[Ldev/s7a/strata/render/SampledImageOrientation;
 }
 
+public final class dev/s7a/strata/resource/ProfileUuidKt {
+	public static final fun parseProfileUuid (Ljava/lang/String;)Ljava/util/UUID;
+}
+
 public final class dev/s7a/strata/resource/ResourceId {
 	public fun <init> (Ljava/lang/String;Ljava/lang/String;)V
 	public final fun component1 ()Ljava/lang/String;
@@ -1770,6 +1774,27 @@ public final class dev/s7a/strata/spi/ScreenPresenters {
 	public static final field INSTANCE Ldev/s7a/strata/spi/ScreenPresenters;
 	public final fun install (Ldev/s7a/strata/spi/ScreenPresenter;)Ldev/s7a/strata/spi/ScreenPresenterRegistration;
 	public final fun present (Ldev/s7a/strata/screen/ScreenDefinition;)V
+}
+
+public final class dev/s7a/strata/state/MutableState : dev/s7a/strata/state/State {
+	public fun getValue ()Ljava/lang/Object;
+	public fun setValue (Ljava/lang/Object;)V
+}
+
+public final class dev/s7a/strata/state/MutableStateKt {
+	public static final fun mutableStateOf (Ljava/lang/Object;)Ldev/s7a/strata/state/MutableState;
+}
+
+public abstract interface class dev/s7a/strata/state/State {
+	public abstract fun getValue ()Ljava/lang/Object;
+}
+
+public final class dev/s7a/strata/state/StateObservation : java/lang/AutoCloseable {
+	public fun <init> (Lkotlin/jvm/functions/Function0;Lkotlin/jvm/functions/Function0;Lkotlin/jvm/functions/Function0;Lkotlin/jvm/functions/Function0;)V
+	public fun close ()V
+	public final fun enterOperation ()V
+	public final fun evaluate (Lkotlin/jvm/functions/Function0;)Ljava/lang/Object;
+	public final fun leaveOperation ()V
 }
 
 public final class dev/s7a/strata/state/StateRevision : java/lang/Comparable {

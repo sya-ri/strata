@@ -6,6 +6,7 @@ import dev.s7a.strata.geometry.LongRect
 import dev.s7a.strata.geometry.exactDoubleCenterOrNull
 import dev.s7a.strata.geometry.exactDoubleMidpointOrNull
 import dev.s7a.strata.geometry.hasExactlyRepresentableDoubleEdges
+import dev.s7a.strata.internal.platform.PlatformThreads
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
 
 /**
@@ -31,7 +32,7 @@ public class PanZoomState(
     public val minimumZoom: Double = 1.0,
     public val maximumZoom: Double = 64.0,
 ) {
-    private val ownerThread: Thread = Thread.currentThread()
+    private val ownerThread: Any = PlatformThreads.current()
     private val observers: MutableMap<Any, (PanZoomMetrics) -> Unit> = LinkedHashMap()
     private var geometryOwner: Any? = null
     private var centerRequested: Boolean = initialCenter != null
@@ -371,7 +372,7 @@ public class PanZoomState(
     }
 
     private fun checkThread() {
-        check(Thread.currentThread() === ownerThread) { "Pan-and-zoom state requires its creator thread." }
+        check(PlatformThreads.current() === ownerThread) { "Pan-and-zoom state requires its creator thread." }
     }
 
     private companion object {

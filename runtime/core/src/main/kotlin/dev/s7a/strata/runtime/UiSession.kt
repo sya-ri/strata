@@ -6,23 +6,28 @@ import dev.s7a.strata.input.InputResult
 import dev.s7a.strata.input.KeyboardEvent
 import dev.s7a.strata.input.PointerEvent
 import dev.s7a.strata.input.TextInputEvent
+import dev.s7a.strata.runtime.platform.PlatformThreads
+import dev.s7a.strata.runtime.platform.runWithPlatformContext
 import dev.s7a.strata.runtime.spi.RuntimeTextInputFocus
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
+import dev.s7a.strata.state.StateObservation
 import dev.s7a.strata.state.StateSource
 import kotlinx.coroutines.CompletableJob
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Runnable
 import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.ThreadContextElement
-import java.util.concurrent.CancellationException
-import java.util.concurrent.atomic.AtomicBoolean
-import java.util.concurrent.atomic.AtomicReference
+import kotlin.concurrent.Volatile
 import kotlin.coroutines.AbstractCoroutineContextElement
 import kotlin.coroutines.CoroutineContext
 import kotlin.coroutines.EmptyCoroutineContext
+import kotlin.coroutines.cancellation.CancellationException
 import kotlin.properties.ReadOnlyProperty
 import kotlin.properties.ReadWriteProperty
+import dev.s7a.strata.runtime.platform.PlatformAtomicReference as AtomicReference
+import dev.s7a.strata.runtime.platform.PlatformThreadContextElement as ThreadContextElement
+import dev.s7a.strata.runtime.platform.PlatformThreadLocal as ThreadLocal
 
 /**
  * Owns one retained UI description, its state declarations, and its external bindings.
@@ -72,6 +77,16 @@ internal class UiSession private constructor(
     ) : this(ownerDispatcher, taskFailureHandler, contentOwner)
 
     private val threadGuard: ThreadGuard = ThreadGuard.currentThread()
+    private val stateObservation =
+        StateObservation(
+            beforeMutation = {
+                checkWritable()
+                beginStateMutation()
+            },
+            afterMutation = ::endStateMutation,
+            invalidated = ::markDirty,
+            validateMutation = ::checkWritable,
+        )
     private val bindings: MutableList<UiSessionBinding<*>> = ArrayList()
     private val screenScopeFacade = SessionScreenScope()
 
@@ -463,6 +478,7 @@ internal class UiSession private constructor(
             return
         }
         operationKind = SessionOperation.Close
+        stateObservation.enterOperation()
         try {
             currentState = UiSessionState.Closed
             clearCachedFrame()
@@ -481,7 +497,7 @@ internal class UiSession private constructor(
         evaluatingContent = true
         val description =
             try {
-                contentOwner.evaluate()
+                stateObservation.evaluate(contentOwner::evaluate)
             } finally {
                 evaluatingContent = false
             }
@@ -547,9 +563,11 @@ internal class UiSession private constructor(
         checkGenerationForLifecycleAccess()
         check(operationKind == null) { "A session operation is already active." }
         operationKind = kind
+        stateObservation.enterOperation()
     }
 
     private fun endOperation() {
+        stateObservation.leaveOperation()
         operationKind = null
     }
 
@@ -597,6 +615,7 @@ internal class UiSession private constructor(
     }
 
     private fun releaseContent() {
+        stateObservation.close()
         contentOwner.release()
     }
 
@@ -714,6 +733,7 @@ internal class UiSession private constructor(
         check(stateMutationActive.not()) { "Session mutation is already active." }
         check(operationKind == null) { "A session operation is already active." }
         operationKind = SessionOperation.TaskFailure
+        stateObservation.enterOperation()
     }
 
     private fun failTaskDuringDelivery(
@@ -786,17 +806,17 @@ internal class UiSession private constructor(
             context: CoroutineContext,
             block: Runnable,
         ) {
-            val dispatchThread = Thread.currentThread()
-            val returned = AtomicBoolean(false)
+            val dispatchThread = PlatformThreads.current()
+            val returned = AtomicReference(false)
             val violation = AtomicReference<Throwable?>(null)
             ownerDispatcher.dispatch(context) {
-                if (returned.get().not() && Thread.currentThread() === dispatchThread) {
+                if (returned.get().not() && PlatformThreads.current() === dispatchThread) {
                     val failure = IllegalStateException("The owner dispatcher must queue before execution.")
                     violation.set(failure)
                     throw failure
                 }
                 threadGuard.check()
-                block.run()
+                runWithPlatformContext(context, block)
             }
             returned.set(true)
             violation.get()?.let { failure -> throw failure }
@@ -821,11 +841,11 @@ internal class UiSession private constructor(
         context: CoroutineContext,
         block: () -> Unit,
     ) {
-        val dispatchThread = Thread.currentThread()
-        val returned = AtomicBoolean(false)
+        val dispatchThread = PlatformThreads.current()
+        val returned = AtomicReference(false)
         val violation = AtomicReference<Throwable?>(null)
         ownerDispatcher.dispatch(context) {
-            if (returned.get().not() && Thread.currentThread() === dispatchThread) {
+            if (returned.get().not() && PlatformThreads.current() === dispatchThread) {
                 val failure = IllegalStateException("The owner dispatcher must queue before execution.")
                 violation.set(failure)
                 throw failure

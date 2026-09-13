@@ -8,6 +8,7 @@ import dev.s7a.strata.component.NineSliceCenterMode
 import dev.s7a.strata.geometry.Insets
 import dev.s7a.strata.spi.ComponentRuntimeBridge
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
+import kotlin.jvm.JvmName
 
 /**
  * Paints arbitrary immutable image pixels behind the modified component's content.

@@ -1,7 +1,6 @@
 package dev.s7a.strata.runtime
 
-import java.util.Collections
-import java.util.IdentityHashMap
+import dev.s7a.strata.runtime.platform.identitySet
 
 /**
  * Accumulates failures without self-suppression or duplicate throwable instances.
@@ -9,7 +8,7 @@ import java.util.IdentityHashMap
 internal class FailureAccumulator(
     initial: Throwable? = null,
 ) {
-    private val seen: MutableSet<Throwable> = Collections.newSetFromMap(IdentityHashMap())
+    private val seen: MutableSet<Throwable> = identitySet()
 
     /**
      * The first failure observed.
@@ -35,7 +34,7 @@ internal class FailureAccumulator(
         val current = first
         if (current == null) {
             first = failure
-            failure.suppressed.forEach(::markSeen)
+            failure.suppressedExceptions.forEach(::markSeen)
         } else {
             current.addSuppressed(failure)
         }
@@ -90,7 +89,7 @@ internal class FailureAccumulator(
         if (seen.contains(failure)) {
             return
         }
-        val nested = failure.suppressed.toList()
+        val nested = failure.suppressedExceptions.toList()
         add(failure)
         nested.forEach(::addFlattened)
     }
@@ -99,6 +98,6 @@ internal class FailureAccumulator(
         if (seen.add(failure).not()) {
             return
         }
-        failure.suppressed.forEach(::markSeen)
+        failure.suppressedExceptions.forEach(::markSeen)
     }
 }

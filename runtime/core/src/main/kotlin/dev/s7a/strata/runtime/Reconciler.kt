@@ -6,10 +6,8 @@ import dev.s7a.strata.element.ElementKey
 import dev.s7a.strata.modifier.ModifierElement
 import dev.s7a.strata.node.DirtyMask
 import dev.s7a.strata.node.DynamicChildrenNode
+import dev.s7a.strata.runtime.platform.identitySet
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
-import java.util.Collections
-import java.util.IdentityHashMap
-import java.util.LinkedHashSet
 
 /**
  * Reconciles immutable descriptions into retained nodes with linear direct-sibling matching.
@@ -156,7 +154,7 @@ internal class Reconciler(
     ): ModifierUpdate {
         val oldModifiers = retained.modifiers.toList()
         val nextModifiers = ArrayList<RetainedModifier>(descriptions.size)
-        val reused = Collections.newSetFromMap(IdentityHashMap<RetainedModifier, Boolean>())
+        val reused = identitySet<RetainedModifier>()
         val created = ArrayList<RetainedModifier>()
         val updates = ArrayList<ModifierMask>()
         var removed = emptyList<RetainedModifier>()
@@ -225,7 +223,7 @@ internal class Reconciler(
                 keyed[identity.key] = oldChild
             }
         }
-        val used = Collections.newSetFromMap(IdentityHashMap<RetainedNode, Boolean>())
+        val used = identitySet<RetainedNode>()
         val nextChildren = ArrayList<RetainedNode>(descriptions.size)
         val newlyCreated = ArrayList<RetainedNode>()
         descriptions.forEachIndexed { index, childDescription ->

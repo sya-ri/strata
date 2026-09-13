@@ -32,6 +32,28 @@ dependencyResolutionManagement {
                 }
             }
         }
+        exclusiveContent {
+            forRepository {
+                ivy {
+                    name = "NodeDistributions"
+                    url = uri("https://nodejs.org/dist/")
+                    patternLayout { artifact("v[revision]/[artifact](-v[revision]-[classifier]).[ext]") }
+                    metadataSources { artifact() }
+                }
+            }
+            filter { includeModule("org.nodejs", "node") }
+        }
+        exclusiveContent {
+            forRepository {
+                ivy {
+                    name = "YarnDistributions"
+                    url = uri("https://github.com/yarnpkg/yarn/releases/download/")
+                    patternLayout { artifact("v[revision]/[artifact]-v[revision].[ext]") }
+                    metadataSources { artifact() }
+                }
+            }
+            filter { includeModule("com.yarnpkg", "yarn") }
+        }
         // Why: Minecraft's patched Intel macOS FreeType classifier is absent from the upstream Maven Central module.
         exclusiveContent {
             forRepository {

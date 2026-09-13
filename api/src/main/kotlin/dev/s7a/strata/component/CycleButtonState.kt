@@ -1,8 +1,9 @@
 package dev.s7a.strata.component
 
+import dev.s7a.strata.internal.platform.Collections
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
-import java.util.Collections
 import kotlin.enums.enumEntries
+import dev.s7a.strata.internal.platform.PlatformMath as Math
 
 /**
  * Caller-owned selected value and display conversion for one generic CycleButton.

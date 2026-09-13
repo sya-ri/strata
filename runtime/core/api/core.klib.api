@@ -1,0 +1,208 @@
+// Klib ABI Dump
+// Targets: [js]
+// Rendering settings:
+// - Signature version: 2
+// - Show manifest properties: true
+// - Show declarations: true
+
+// Library unique name: <dev.s7a.strata:core>
+sealed interface dev.s7a.strata.runtime.render/DrawCommand { // dev.s7a.strata.runtime.render/DrawCommand|null[0]
+    final class BlitImage : dev.s7a.strata.runtime.render/DrawCommand { // dev.s7a.strata.runtime.render/DrawCommand.BlitImage|null[0]
+        constructor <init>(dev.s7a.strata.render/DrawImage, dev.s7a.strata.geometry/IntRect, dev.s7a.strata.geometry/IntRect) // dev.s7a.strata.runtime.render/DrawCommand.BlitImage.<init>|<init>(dev.s7a.strata.render.DrawImage;dev.s7a.strata.geometry.IntRect;dev.s7a.strata.geometry.IntRect){}[0]
+
+        final val destination // dev.s7a.strata.runtime.render/DrawCommand.BlitImage.destination|{}destination[0]
+            final fun <get-destination>(): dev.s7a.strata.geometry/IntRect // dev.s7a.strata.runtime.render/DrawCommand.BlitImage.destination.<get-destination>|<get-destination>(){}[0]
+        final val image // dev.s7a.strata.runtime.render/DrawCommand.BlitImage.image|{}image[0]
+            final fun <get-image>(): dev.s7a.strata.render/DrawImage // dev.s7a.strata.runtime.render/DrawCommand.BlitImage.image.<get-image>|<get-image>(){}[0]
+        final val source // dev.s7a.strata.runtime.render/DrawCommand.BlitImage.source|{}source[0]
+            final fun <get-source>(): dev.s7a.strata.geometry/IntRect // dev.s7a.strata.runtime.render/DrawCommand.BlitImage.source.<get-source>|<get-source>(){}[0]
+
+        final fun component1(): dev.s7a.strata.render/DrawImage // dev.s7a.strata.runtime.render/DrawCommand.BlitImage.component1|component1(){}[0]
+        final fun component2(): dev.s7a.strata.geometry/IntRect // dev.s7a.strata.runtime.render/DrawCommand.BlitImage.component2|component2(){}[0]
+        final fun component3(): dev.s7a.strata.geometry/IntRect // dev.s7a.strata.runtime.render/DrawCommand.BlitImage.component3|component3(){}[0]
+        final fun copy(dev.s7a.strata.render/DrawImage = ..., dev.s7a.strata.geometry/IntRect = ..., dev.s7a.strata.geometry/IntRect = ...): dev.s7a.strata.runtime.render/DrawCommand.BlitImage // dev.s7a.strata.runtime.render/DrawCommand.BlitImage.copy|copy(dev.s7a.strata.render.DrawImage;dev.s7a.strata.geometry.IntRect;dev.s7a.strata.geometry.IntRect){}[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // dev.s7a.strata.runtime.render/DrawCommand.BlitImage.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // dev.s7a.strata.runtime.render/DrawCommand.BlitImage.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // dev.s7a.strata.runtime.render/DrawCommand.BlitImage.toString|toString(){}[0]
+    }
+
+    final class BlitImagePixels : dev.s7a.strata.runtime.render/DrawCommand { // dev.s7a.strata.runtime.render/DrawCommand.BlitImagePixels|null[0]
+        constructor <init>(dev.s7a.strata.render/DrawImage, dev.s7a.strata.geometry/IntRect, dev.s7a.strata.geometry/IntRect) // dev.s7a.strata.runtime.render/DrawCommand.BlitImagePixels.<init>|<init>(dev.s7a.strata.render.DrawImage;dev.s7a.strata.geometry.IntRect;dev.s7a.strata.geometry.IntRect){}[0]
+
+        final val destination // dev.s7a.strata.runtime.render/DrawCommand.BlitImagePixels.destination|{}destination[0]
+            final fun <get-destination>(): dev.s7a.strata.geometry/IntRect // dev.s7a.strata.runtime.render/DrawCommand.BlitImagePixels.destination.<get-destination>|<get-destination>(){}[0]
+        final val image // dev.s7a.strata.runtime.render/DrawCommand.BlitImagePixels.image|{}image[0]
+            final fun <get-image>(): dev.s7a.strata.render/DrawImage // dev.s7a.strata.runtime.render/DrawCommand.BlitImagePixels.image.<get-image>|<get-image>(){}[0]
+        final val source // dev.s7a.strata.runtime.render/DrawCommand.BlitImagePixels.source|{}source[0]
+            final fun <get-source>(): dev.s7a.strata.geometry/IntRect // dev.s7a.strata.runtime.render/DrawCommand.BlitImagePixels.source.<get-source>|<get-source>(){}[0]
+
+        final fun component1(): dev.s7a.strata.render/DrawImage // dev.s7a.strata.runtime.render/DrawCommand.BlitImagePixels.component1|component1(){}[0]
+        final fun component2(): dev.s7a.strata.geometry/IntRect // dev.s7a.strata.runtime.render/DrawCommand.BlitImagePixels.component2|component2(){}[0]
+        final fun component3(): dev.s7a.strata.geometry/IntRect // dev.s7a.strata.runtime.render/DrawCommand.BlitImagePixels.component3|component3(){}[0]
+        final fun copy(dev.s7a.strata.render/DrawImage = ..., dev.s7a.strata.geometry/IntRect = ..., dev.s7a.strata.geometry/IntRect = ...): dev.s7a.strata.runtime.render/DrawCommand.BlitImagePixels // dev.s7a.strata.runtime.render/DrawCommand.BlitImagePixels.copy|copy(dev.s7a.strata.render.DrawImage;dev.s7a.strata.geometry.IntRect;dev.s7a.strata.geometry.IntRect){}[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // dev.s7a.strata.runtime.render/DrawCommand.BlitImagePixels.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // dev.s7a.strata.runtime.render/DrawCommand.BlitImagePixels.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // dev.s7a.strata.runtime.render/DrawCommand.BlitImagePixels.toString|toString(){}[0]
+    }
+
+    final class FillRectangle : dev.s7a.strata.runtime.render/DrawCommand { // dev.s7a.strata.runtime.render/DrawCommand.FillRectangle|null[0]
+        constructor <init>(dev.s7a.strata.geometry/IntRect, dev.s7a.strata.render/ArgbColor) // dev.s7a.strata.runtime.render/DrawCommand.FillRectangle.<init>|<init>(dev.s7a.strata.geometry.IntRect;dev.s7a.strata.render.ArgbColor){}[0]
+
+        final val bounds // dev.s7a.strata.runtime.render/DrawCommand.FillRectangle.bounds|{}bounds[0]
+            final fun <get-bounds>(): dev.s7a.strata.geometry/IntRect // dev.s7a.strata.runtime.render/DrawCommand.FillRectangle.bounds.<get-bounds>|<get-bounds>(){}[0]
+        final val color // dev.s7a.strata.runtime.render/DrawCommand.FillRectangle.color|{}color[0]
+            final fun <get-color>(): dev.s7a.strata.render/ArgbColor // dev.s7a.strata.runtime.render/DrawCommand.FillRectangle.color.<get-color>|<get-color>(){}[0]
+
+        final fun component1(): dev.s7a.strata.geometry/IntRect // dev.s7a.strata.runtime.render/DrawCommand.FillRectangle.component1|component1(){}[0]
+        final fun component2(): dev.s7a.strata.render/ArgbColor // dev.s7a.strata.runtime.render/DrawCommand.FillRectangle.component2|component2(){}[0]
+        final fun copy(dev.s7a.strata.geometry/IntRect = ..., dev.s7a.strata.render/ArgbColor = ...): dev.s7a.strata.runtime.render/DrawCommand.FillRectangle // dev.s7a.strata.runtime.render/DrawCommand.FillRectangle.copy|copy(dev.s7a.strata.geometry.IntRect;dev.s7a.strata.render.ArgbColor){}[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // dev.s7a.strata.runtime.render/DrawCommand.FillRectangle.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // dev.s7a.strata.runtime.render/DrawCommand.FillRectangle.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // dev.s7a.strata.runtime.render/DrawCommand.FillRectangle.toString|toString(){}[0]
+    }
+
+    final class Platform : dev.s7a.strata.runtime.render/DrawCommand { // dev.s7a.strata.runtime.render/DrawCommand.Platform|null[0]
+        constructor <init>(dev.s7a.strata.render/PlatformDrawCommand, dev.s7a.strata.geometry/IntRect) // dev.s7a.strata.runtime.render/DrawCommand.Platform.<init>|<init>(dev.s7a.strata.render.PlatformDrawCommand;dev.s7a.strata.geometry.IntRect){}[0]
+
+        final val bounds // dev.s7a.strata.runtime.render/DrawCommand.Platform.bounds|{}bounds[0]
+            final fun <get-bounds>(): dev.s7a.strata.geometry/IntRect // dev.s7a.strata.runtime.render/DrawCommand.Platform.bounds.<get-bounds>|<get-bounds>(){}[0]
+        final val command // dev.s7a.strata.runtime.render/DrawCommand.Platform.command|{}command[0]
+            final fun <get-command>(): dev.s7a.strata.render/PlatformDrawCommand // dev.s7a.strata.runtime.render/DrawCommand.Platform.command.<get-command>|<get-command>(){}[0]
+
+        final fun component1(): dev.s7a.strata.render/PlatformDrawCommand // dev.s7a.strata.runtime.render/DrawCommand.Platform.component1|component1(){}[0]
+        final fun component2(): dev.s7a.strata.geometry/IntRect // dev.s7a.strata.runtime.render/DrawCommand.Platform.component2|component2(){}[0]
+        final fun copy(dev.s7a.strata.render/PlatformDrawCommand = ..., dev.s7a.strata.geometry/IntRect = ...): dev.s7a.strata.runtime.render/DrawCommand.Platform // dev.s7a.strata.runtime.render/DrawCommand.Platform.copy|copy(dev.s7a.strata.render.PlatformDrawCommand;dev.s7a.strata.geometry.IntRect){}[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // dev.s7a.strata.runtime.render/DrawCommand.Platform.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // dev.s7a.strata.runtime.render/DrawCommand.Platform.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // dev.s7a.strata.runtime.render/DrawCommand.Platform.toString|toString(){}[0]
+    }
+
+    final class PushClip : dev.s7a.strata.runtime.render/DrawCommand { // dev.s7a.strata.runtime.render/DrawCommand.PushClip|null[0]
+        constructor <init>(dev.s7a.strata.geometry/IntRect) // dev.s7a.strata.runtime.render/DrawCommand.PushClip.<init>|<init>(dev.s7a.strata.geometry.IntRect){}[0]
+
+        final val bounds // dev.s7a.strata.runtime.render/DrawCommand.PushClip.bounds|{}bounds[0]
+            final fun <get-bounds>(): dev.s7a.strata.geometry/IntRect // dev.s7a.strata.runtime.render/DrawCommand.PushClip.bounds.<get-bounds>|<get-bounds>(){}[0]
+
+        final fun component1(): dev.s7a.strata.geometry/IntRect // dev.s7a.strata.runtime.render/DrawCommand.PushClip.component1|component1(){}[0]
+        final fun copy(dev.s7a.strata.geometry/IntRect = ...): dev.s7a.strata.runtime.render/DrawCommand.PushClip // dev.s7a.strata.runtime.render/DrawCommand.PushClip.copy|copy(dev.s7a.strata.geometry.IntRect){}[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // dev.s7a.strata.runtime.render/DrawCommand.PushClip.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // dev.s7a.strata.runtime.render/DrawCommand.PushClip.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // dev.s7a.strata.runtime.render/DrawCommand.PushClip.toString|toString(){}[0]
+    }
+
+    final class SampledImage : dev.s7a.strata.runtime.render/DrawCommand { // dev.s7a.strata.runtime.render/DrawCommand.SampledImage|null[0]
+        constructor <init>(dev.s7a.strata.render/DrawImage, dev.s7a.strata.geometry/FloatRect, dev.s7a.strata.geometry/FloatRect, dev.s7a.strata.render/ArgbColor = ..., kotlin/Float = ...) // dev.s7a.strata.runtime.render/DrawCommand.SampledImage.<init>|<init>(dev.s7a.strata.render.DrawImage;dev.s7a.strata.geometry.FloatRect;dev.s7a.strata.geometry.FloatRect;dev.s7a.strata.render.ArgbColor;kotlin.Float){}[0]
+        constructor <init>(dev.s7a.strata.render/DrawImage, dev.s7a.strata.geometry/FloatRect, dev.s7a.strata.geometry/FloatRect, dev.s7a.strata.render/ArgbColor = ..., kotlin/Float = ..., dev.s7a.strata.render/SampledImageOrientation) // dev.s7a.strata.runtime.render/DrawCommand.SampledImage.<init>|<init>(dev.s7a.strata.render.DrawImage;dev.s7a.strata.geometry.FloatRect;dev.s7a.strata.geometry.FloatRect;dev.s7a.strata.render.ArgbColor;kotlin.Float;dev.s7a.strata.render.SampledImageOrientation){}[0]
+
+        final val alphaCutoff // dev.s7a.strata.runtime.render/DrawCommand.SampledImage.alphaCutoff|{}alphaCutoff[0]
+            final fun <get-alphaCutoff>(): kotlin/Float // dev.s7a.strata.runtime.render/DrawCommand.SampledImage.alphaCutoff.<get-alphaCutoff>|<get-alphaCutoff>(){}[0]
+        final val destination // dev.s7a.strata.runtime.render/DrawCommand.SampledImage.destination|{}destination[0]
+            final fun <get-destination>(): dev.s7a.strata.geometry/FloatRect // dev.s7a.strata.runtime.render/DrawCommand.SampledImage.destination.<get-destination>|<get-destination>(){}[0]
+        final val image // dev.s7a.strata.runtime.render/DrawCommand.SampledImage.image|{}image[0]
+            final fun <get-image>(): dev.s7a.strata.render/DrawImage // dev.s7a.strata.runtime.render/DrawCommand.SampledImage.image.<get-image>|<get-image>(){}[0]
+        final val orientation // dev.s7a.strata.runtime.render/DrawCommand.SampledImage.orientation|{}orientation[0]
+            final fun <get-orientation>(): dev.s7a.strata.render/SampledImageOrientation // dev.s7a.strata.runtime.render/DrawCommand.SampledImage.orientation.<get-orientation>|<get-orientation>(){}[0]
+        final val source // dev.s7a.strata.runtime.render/DrawCommand.SampledImage.source|{}source[0]
+            final fun <get-source>(): dev.s7a.strata.geometry/FloatRect // dev.s7a.strata.runtime.render/DrawCommand.SampledImage.source.<get-source>|<get-source>(){}[0]
+        final val tint // dev.s7a.strata.runtime.render/DrawCommand.SampledImage.tint|{}tint[0]
+            final fun <get-tint>(): dev.s7a.strata.render/ArgbColor // dev.s7a.strata.runtime.render/DrawCommand.SampledImage.tint.<get-tint>|<get-tint>(){}[0]
+
+        final fun component1(): dev.s7a.strata.render/DrawImage // dev.s7a.strata.runtime.render/DrawCommand.SampledImage.component1|component1(){}[0]
+        final fun component2(): dev.s7a.strata.geometry/FloatRect // dev.s7a.strata.runtime.render/DrawCommand.SampledImage.component2|component2(){}[0]
+        final fun component3(): dev.s7a.strata.geometry/FloatRect // dev.s7a.strata.runtime.render/DrawCommand.SampledImage.component3|component3(){}[0]
+        final fun component4(): dev.s7a.strata.render/ArgbColor // dev.s7a.strata.runtime.render/DrawCommand.SampledImage.component4|component4(){}[0]
+        final fun component5(): kotlin/Float // dev.s7a.strata.runtime.render/DrawCommand.SampledImage.component5|component5(){}[0]
+        final fun component6(): dev.s7a.strata.render/SampledImageOrientation // dev.s7a.strata.runtime.render/DrawCommand.SampledImage.component6|component6(){}[0]
+        final fun copy(dev.s7a.strata.render/DrawImage = ..., dev.s7a.strata.geometry/FloatRect = ..., dev.s7a.strata.geometry/FloatRect = ..., dev.s7a.strata.render/ArgbColor = ..., kotlin/Float = ..., dev.s7a.strata.render/SampledImageOrientation = ...): dev.s7a.strata.runtime.render/DrawCommand.SampledImage // dev.s7a.strata.runtime.render/DrawCommand.SampledImage.copy|copy(dev.s7a.strata.render.DrawImage;dev.s7a.strata.geometry.FloatRect;dev.s7a.strata.geometry.FloatRect;dev.s7a.strata.render.ArgbColor;kotlin.Float;dev.s7a.strata.render.SampledImageOrientation){}[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // dev.s7a.strata.runtime.render/DrawCommand.SampledImage.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // dev.s7a.strata.runtime.render/DrawCommand.SampledImage.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // dev.s7a.strata.runtime.render/DrawCommand.SampledImage.toString|toString(){}[0]
+    }
+
+    final object PopClip : dev.s7a.strata.runtime.render/DrawCommand { // dev.s7a.strata.runtime.render/DrawCommand.PopClip|null[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // dev.s7a.strata.runtime.render/DrawCommand.PopClip.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // dev.s7a.strata.runtime.render/DrawCommand.PopClip.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // dev.s7a.strata.runtime.render/DrawCommand.PopClip.toString|toString(){}[0]
+    }
+}
+
+sealed interface dev.s7a.strata.runtime.spi/RuntimeUiFrame { // dev.s7a.strata.runtime.spi/RuntimeUiFrame|null[0]
+    abstract val drawCommands // dev.s7a.strata.runtime.spi/RuntimeUiFrame.drawCommands|{}drawCommands[0]
+        abstract fun <get-drawCommands>(): kotlin.collections/List<dev.s7a.strata.runtime.render/DrawCommand> // dev.s7a.strata.runtime.spi/RuntimeUiFrame.drawCommands.<get-drawCommands>|<get-drawCommands>(){}[0]
+    abstract val semantics // dev.s7a.strata.runtime.spi/RuntimeUiFrame.semantics|{}semantics[0]
+        abstract fun <get-semantics>(): kotlin.collections/List<dev.s7a.strata.runtime.semantics/SemanticsEntry> // dev.s7a.strata.runtime.spi/RuntimeUiFrame.semantics.<get-semantics>|<get-semantics>(){}[0]
+    abstract val size // dev.s7a.strata.runtime.spi/RuntimeUiFrame.size|{}size[0]
+        abstract fun <get-size>(): dev.s7a.strata.geometry/IntSize // dev.s7a.strata.runtime.spi/RuntimeUiFrame.size.<get-size>|<get-size>(){}[0]
+}
+
+sealed interface dev.s7a.strata.runtime.spi/RuntimeUiSession : kotlin/AutoCloseable { // dev.s7a.strata.runtime.spi/RuntimeUiSession|null[0]
+    abstract val textInputFocus // dev.s7a.strata.runtime.spi/RuntimeUiSession.textInputFocus|{}textInputFocus[0]
+        abstract fun <get-textInputFocus>(): dev.s7a.strata.runtime.spi/RuntimeTextInputFocus? // dev.s7a.strata.runtime.spi/RuntimeUiSession.textInputFocus.<get-textInputFocus>|<get-textInputFocus>(){}[0]
+
+    abstract fun attach() // dev.s7a.strata.runtime.spi/RuntimeUiSession.attach|attach(){}[0]
+    abstract fun close() // dev.s7a.strata.runtime.spi/RuntimeUiSession.close|close(){}[0]
+    abstract fun detach() // dev.s7a.strata.runtime.spi/RuntimeUiSession.detach|detach(){}[0]
+    abstract fun dispatchKeyboard(dev.s7a.strata.input/KeyboardEvent): dev.s7a.strata.input/InputResult // dev.s7a.strata.runtime.spi/RuntimeUiSession.dispatchKeyboard|dispatchKeyboard(dev.s7a.strata.input.KeyboardEvent){}[0]
+    abstract fun dispatchPointer(dev.s7a.strata.input/PointerEvent): dev.s7a.strata.input/InputResult // dev.s7a.strata.runtime.spi/RuntimeUiSession.dispatchPointer|dispatchPointer(dev.s7a.strata.input.PointerEvent){}[0]
+    abstract fun dispatchTextInput(dev.s7a.strata.input/TextInputEvent): dev.s7a.strata.input/InputResult // dev.s7a.strata.runtime.spi/RuntimeUiSession.dispatchTextInput|dispatchTextInput(dev.s7a.strata.input.TextInputEvent){}[0]
+    abstract fun frame(dev.s7a.strata.geometry/Constraints): dev.s7a.strata.runtime.spi/RuntimeUiFrame // dev.s7a.strata.runtime.spi/RuntimeUiSession.frame|frame(dev.s7a.strata.geometry.Constraints){}[0]
+    abstract fun frame(dev.s7a.strata.geometry/Constraints, dev.s7a.strata.runtime/FrameTime): dev.s7a.strata.runtime.spi/RuntimeUiFrame // dev.s7a.strata.runtime.spi/RuntimeUiSession.frame|frame(dev.s7a.strata.geometry.Constraints;dev.s7a.strata.runtime.FrameTime){}[0]
+    abstract fun resetInputState() // dev.s7a.strata.runtime.spi/RuntimeUiSession.resetInputState|resetInputState(){}[0]
+}
+
+sealed interface dev.s7a.strata.runtime/TreeState { // dev.s7a.strata.runtime/TreeState|null[0]
+    final object Active : dev.s7a.strata.runtime/TreeState { // dev.s7a.strata.runtime/TreeState.Active|null[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // dev.s7a.strata.runtime/TreeState.Active.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // dev.s7a.strata.runtime/TreeState.Active.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // dev.s7a.strata.runtime/TreeState.Active.toString|toString(){}[0]
+    }
+
+    final object Closed : dev.s7a.strata.runtime/TreeState { // dev.s7a.strata.runtime/TreeState.Closed|null[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // dev.s7a.strata.runtime/TreeState.Closed.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // dev.s7a.strata.runtime/TreeState.Closed.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // dev.s7a.strata.runtime/TreeState.Closed.toString|toString(){}[0]
+    }
+
+    final object Poisoned : dev.s7a.strata.runtime/TreeState { // dev.s7a.strata.runtime/TreeState.Poisoned|null[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // dev.s7a.strata.runtime/TreeState.Poisoned.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // dev.s7a.strata.runtime/TreeState.Poisoned.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // dev.s7a.strata.runtime/TreeState.Poisoned.toString|toString(){}[0]
+    }
+}
+
+final class dev.s7a.strata.runtime.semantics/SemanticsEntry { // dev.s7a.strata.runtime.semantics/SemanticsEntry|null[0]
+    constructor <init>(dev.s7a.strata.geometry/IntRect, dev.s7a.strata.semantics/Semantics) // dev.s7a.strata.runtime.semantics/SemanticsEntry.<init>|<init>(dev.s7a.strata.geometry.IntRect;dev.s7a.strata.semantics.Semantics){}[0]
+
+    final val bounds // dev.s7a.strata.runtime.semantics/SemanticsEntry.bounds|{}bounds[0]
+        final fun <get-bounds>(): dev.s7a.strata.geometry/IntRect // dev.s7a.strata.runtime.semantics/SemanticsEntry.bounds.<get-bounds>|<get-bounds>(){}[0]
+    final val semantics // dev.s7a.strata.runtime.semantics/SemanticsEntry.semantics|{}semantics[0]
+        final fun <get-semantics>(): dev.s7a.strata.semantics/Semantics // dev.s7a.strata.runtime.semantics/SemanticsEntry.semantics.<get-semantics>|<get-semantics>(){}[0]
+
+    final fun component1(): dev.s7a.strata.geometry/IntRect // dev.s7a.strata.runtime.semantics/SemanticsEntry.component1|component1(){}[0]
+    final fun component2(): dev.s7a.strata.semantics/Semantics // dev.s7a.strata.runtime.semantics/SemanticsEntry.component2|component2(){}[0]
+    final fun copy(dev.s7a.strata.geometry/IntRect = ..., dev.s7a.strata.semantics/Semantics = ...): dev.s7a.strata.runtime.semantics/SemanticsEntry // dev.s7a.strata.runtime.semantics/SemanticsEntry.copy|copy(dev.s7a.strata.geometry.IntRect;dev.s7a.strata.semantics.Semantics){}[0]
+    final fun equals(kotlin/Any?): kotlin/Boolean // dev.s7a.strata.runtime.semantics/SemanticsEntry.equals|equals(kotlin.Any?){}[0]
+    final fun hashCode(): kotlin/Int // dev.s7a.strata.runtime.semantics/SemanticsEntry.hashCode|hashCode(){}[0]
+    final fun toString(): kotlin/String // dev.s7a.strata.runtime.semantics/SemanticsEntry.toString|toString(){}[0]
+}
+
+final class dev.s7a.strata.runtime.spi/RuntimeTextInputFocus // dev.s7a.strata.runtime.spi/RuntimeTextInputFocus|null[0]
+
+final class dev.s7a.strata.runtime/UiTree : kotlin/AutoCloseable { // dev.s7a.strata.runtime/UiTree|null[0]
+    constructor <init>() // dev.s7a.strata.runtime/UiTree.<init>|<init>(){}[0]
+
+    final val state // dev.s7a.strata.runtime/UiTree.state|{}state[0]
+        final fun <get-state>(): dev.s7a.strata.runtime/TreeState // dev.s7a.strata.runtime/UiTree.state.<get-state>|<get-state>(){}[0]
+
+    final fun close() // dev.s7a.strata.runtime/UiTree.close|close(){}[0]
+    final fun dispatchKeyboard(dev.s7a.strata.input/KeyboardEvent): dev.s7a.strata.input/InputResult // dev.s7a.strata.runtime/UiTree.dispatchKeyboard|dispatchKeyboard(dev.s7a.strata.input.KeyboardEvent){}[0]
+    final fun dispatchPointer(dev.s7a.strata.input/PointerEvent): dev.s7a.strata.input/InputResult // dev.s7a.strata.runtime/UiTree.dispatchPointer|dispatchPointer(dev.s7a.strata.input.PointerEvent){}[0]
+    final fun dispatchTextInput(dev.s7a.strata.input/TextInputEvent): dev.s7a.strata.input/InputResult // dev.s7a.strata.runtime/UiTree.dispatchTextInput|dispatchTextInput(dev.s7a.strata.input.TextInputEvent){}[0]
+    final fun layout() // dev.s7a.strata.runtime/UiTree.layout|layout(){}[0]
+    final fun measure(dev.s7a.strata.geometry/Constraints): dev.s7a.strata.geometry/IntSize // dev.s7a.strata.runtime/UiTree.measure|measure(dev.s7a.strata.geometry.Constraints){}[0]
+    final fun paint(): kotlin.collections/List<dev.s7a.strata.runtime.render/DrawCommand> // dev.s7a.strata.runtime/UiTree.paint|paint(){}[0]
+    final fun semantics(): kotlin.collections/List<dev.s7a.strata.runtime.semantics/SemanticsEntry> // dev.s7a.strata.runtime/UiTree.semantics|semantics(){}[0]
+    final fun update(dev.s7a.strata.element/Element) // dev.s7a.strata.runtime/UiTree.update|update(dev.s7a.strata.element.Element){}[0]
+}
+
+final fun dev.s7a.strata.runtime.spi/createRuntimeUiSession(kotlin/Function0<dev.s7a.strata.element/Element>): dev.s7a.strata.runtime.spi/RuntimeUiSession // dev.s7a.strata.runtime.spi/createRuntimeUiSession|createRuntimeUiSession(kotlin.Function0<dev.s7a.strata.element.Element>){}[0]

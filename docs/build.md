@@ -1,7 +1,7 @@
 # Build and release
 
 The checked-in wrapper and version catalog are the source of truth for build-tool and dependency versions.
-Common modules target the baseline Java toolchain; version-specific Minecraft modules target the toolchain required by their game version.
+The API and retained core compile shared Kotlin for JVM and JavaScript; their JVM variants target the baseline Java toolchain, while version-specific Minecraft modules target the toolchain required by their game version.
 The `runtime:minecraft-fabric-26.2` and `runtime:minecraft-fabric-26.1` modules target Java 25, use the version-catalog Fabric Loom plugin in no-remap mode for their unobfuscated clients, and package the `api`, `runtime:core`, `runtime:headless`, `runtime:minecraft`, and `runtime:minecraft-fonts-lwjgl` jars under `META-INF/jars` exactly once.
 Their Fabric metadata declares an exact Minecraft requirement and catalog-derived Loader and Fabric Language Kotlin lower bounds; neither runtime uses Fabric API.
 The `runtime:minecraft-fabric-1.21.11` through `runtime:minecraft-fabric-1.20.5` modules target Java 21, compile against official Mojang mappings, remap their distribution jars through the version-catalog Fabric Loom remap plugin, and package the same common jars exactly once.
@@ -25,12 +25,12 @@ Consumers select exactly one versioned runtime artifact because the adapters del
 The root build owns one typed Minecraft target matrix containing each exact version, Java toolchain, distribution kind, runtime and integration project paths, and linked Dokka source ownership.
 That matrix derives aggregate documentation dependencies, loaded-client sequencing, remap sequencing, publishable runtime selection, artifact coordinates, and per-project toolchains; `verifyMinecraftFabricTargetMatrix` rejects an included version project or linked source boundary that is missing from the matrix.
 Loom's runtime Java compatibility property follows the same typed toolchain, so development clients select native libraries for their own Java release rather than the Gradle daemon's Java release.
-Configuration on demand is enabled so a targeted API, core, headless, documentation-helper, or benchmark task does not configure the complete Loom project inventory.
-Each targeted integration project explicitly evaluates its paired runtime project before reading that runtime's compiled source-set output, so an isolated integration task retains the exact Loom-provided Minecraft classpath under configuration on demand.
+Configuration on demand is disabled because the Kotlin/JS workspace and its dependency lock require a complete project model.
+Each targeted integration project explicitly evaluates its paired runtime project before reading that runtime's compiled source-set output, so an isolated integration task retains the exact Loom-provided Minecraft classpath in the complete build model.
 Documentation launchers inherit common compile and JAR dependencies from their runtime classpath rather than forcing redundant cross-project `classes` task paths.
 Full `check`, publication, Qodana, and loaded-game commands still select and configure every required target through their real project and task dependencies.
 Minecraft client verification associates every selected Loom asset preparation task and client launch with one Gradle shared build service whose single usage permit prevents races on Loom's mutable asset cache and the native client environment without coupling a targeted task to every other version project.
-It also orders the selected asset tasks before the selected clients so Gradle can validate their intentionally shared output directory while configuration on demand leaves unselected versions untouched.
+It also orders the selected asset tasks before the selected clients so Gradle can validate their intentionally shared output directory without selecting additional client launches.
 Every development, production, and published-coordinate client verification task seeds its own disposable run directory after cleanup and before the JVM launches: initial accessibility onboarding is disabled, narration is off, and master sound volume is zero.
 The shared setup preserves unrelated test options and rejects paths outside the owning project's build directory; ordinary `runClient` launches and personal Minecraft settings are unchanged.
 The official-mapping `remapJar` tasks use a second single-permit build service because each concurrent remapper retains a complete mapped game graph and can exhaust a hosted CI runner's heap.
@@ -245,3 +245,11 @@ Update generator sources and regenerate checked outputs instead of editing gener
 Keep task plans, working notes, status reports, and unfinished drafts under the ignored `build/` directory; promote durable decisions into the relevant canonical guide when the work is complete.
 Do not retain release-incident timelines or external-service status snapshots in reader guides; encode any required recovery boundary in executable contracts and tests.
 Loaded worlds, transient screenshots, raw benchmark output, and test or coverage reports remain untracked build outputs.
+
+## Shared Kotlin targets
+
+The API and retained core publish JVM variants at their existing `strata-api` and `strata-runtime-core` coordinates.
+Multiplatform consumers select `strata-api-multiplatform` and `strata-runtime-core-multiplatform`; their Gradle metadata resolves JVM to those existing artifacts and JavaScript to the corresponding `-js` artifacts.
+The canonical release inventory includes all target artifacts.
+Common behavior tests run on JVM, Node.js, and headless Chrome, while JVM-only concurrency tests continue to exercise real threads.
+KMP documentation uses Dokka HTML in the conventional `javadoc` classifier because the Javadoc output plugin does not support multiplatform declarations.

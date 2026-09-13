@@ -1,7 +1,7 @@
 package dev.s7a.strata.element
 
+import dev.s7a.strata.internal.platform.Collections
 import dev.s7a.strata.modifier.Modifier
-import java.util.Collections
 
 /**
  * Immutable description of one retained node and its direct children.

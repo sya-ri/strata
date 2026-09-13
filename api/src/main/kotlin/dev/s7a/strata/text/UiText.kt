@@ -1,7 +1,7 @@
 package dev.s7a.strata.text
 
+import dev.s7a.strata.internal.platform.Collections
 import dev.s7a.strata.resource.ResourceId
-import java.util.Collections
 
 /**
  * Unresolved text retained by the platform-neutral tree.

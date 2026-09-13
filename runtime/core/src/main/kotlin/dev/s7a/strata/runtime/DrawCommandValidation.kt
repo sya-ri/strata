@@ -3,6 +3,7 @@ package dev.s7a.strata.runtime
 import dev.s7a.strata.geometry.FloatRect
 import dev.s7a.strata.geometry.IntRect
 import dev.s7a.strata.render.DrawImage
+import kotlin.jvm.JvmSynthetic
 
 /**
  * Validates the shared source and destination contract for image commands.

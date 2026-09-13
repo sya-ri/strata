@@ -16,6 +16,7 @@ import dev.s7a.strata.text.TextLayout
 import dev.s7a.strata.text.TextWrap
 import dev.s7a.strata.text.UiText
 import dev.s7a.strata.text.withFont
+import kotlin.jvm.JvmName
 
 /**
  * Emits one determinate Minecraft-profile progress bar.

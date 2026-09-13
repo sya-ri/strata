@@ -1,7 +1,7 @@
 package dev.s7a.strata.modifier
 
+import dev.s7a.strata.internal.platform.Collections
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
-import java.util.Collections
 
 /**
  * Immutable ordered active modifier descriptions.

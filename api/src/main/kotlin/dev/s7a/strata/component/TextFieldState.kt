@@ -1,5 +1,7 @@
 package dev.s7a.strata.component
 
+import dev.s7a.strata.internal.platform.PlatformThreads
+import dev.s7a.strata.internal.platform.scalarAt
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
 
 /**
@@ -17,7 +19,7 @@ public class TextFieldState(
     initialValue: String = "",
     public val maxLength: Int = 32,
 ) {
-    private val ownerThread: Thread = Thread.currentThread()
+    private val ownerThread: Any = PlatformThreads.current()
     private var observer: ((String) -> Unit)? = null
     private var currentValue: String
 
@@ -78,12 +80,12 @@ public class TextFieldState(
         require(value.length <= maxLength) { "TextField value exceeds its maximum length." }
         var offset = 0
         while (offset < value.length) {
-            val codePoint = value.codePointAt(offset)
+            val codePoint = value.scalarAt(offset)
             require((codePoint in 0xD800..0xDFFF).not()) { "TextField value contains an isolated surrogate." }
             require(isAcceptedCodePoint(codePoint)) {
                 "TextField value contains a control character, line separator, or formatting marker."
             }
-            offset += Character.charCount(codePoint)
+            offset += (if (codePoint < 0x10000) 1 else 2)
         }
         return value
     }
@@ -95,6 +97,6 @@ public class TextFieldState(
         }
 
     private fun checkThread() {
-        check(Thread.currentThread() === ownerThread) { "TextField state requires its creator thread." }
+        check(PlatformThreads.current() === ownerThread) { "TextField state requires its creator thread." }
     }
 }

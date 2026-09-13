@@ -28,6 +28,7 @@ import dev.s7a.strata.node.LifecycleNode
 import dev.s7a.strata.node.MeasureNode
 import dev.s7a.strata.node.PointerInputNode
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
+import dev.s7a.strata.internal.platform.PlatformMath as Math
 import dev.s7a.strata.node.Node as RetainedNode
 
 /**
