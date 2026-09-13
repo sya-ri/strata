@@ -243,7 +243,7 @@ internal class MinecraftUiHostTest {
     }
 
     @Test
-    fun evaluatorOwnershipClearsBeforeCloseAndAfterEvaluationOrFailure() {
+    fun evaluatorResourcesRemainForReevaluationAndClearAtTerminalRelease() {
         val beforeAttach = host { MinecraftHostProbe().element() }
         assertTrue(readPrivateField(beforeAttach, "evaluator") != null)
         beforeAttach.close()
@@ -251,8 +251,9 @@ internal class MinecraftUiHostTest {
 
         val afterAttach = host { MinecraftHostProbe().element() }
         afterAttach.attach()
-        assertNull(readPrivateField(afterAttach, "evaluator"))
+        assertTrue(readPrivateField(afterAttach, "evaluator") != null)
         afterAttach.close()
+        assertNull(readPrivateField(afterAttach, "evaluator"))
 
         val failure = IllegalStateException("content")
         val failed = host { throw failure }
