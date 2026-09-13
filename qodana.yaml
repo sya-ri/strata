@@ -236,6 +236,7 @@ exclude:
       - api/src/jvmMain/kotlin/dev/s7a/strata/internal/platform/PlatformThreadLocal.kt
       - api/src/jvmMain/kotlin/dev/s7a/strata/resource/ProfileUuid.kt
       - runtime/core/src/commonMain/kotlin/dev/s7a/strata/runtime/platform/PlatformLock.kt
+      - runtime/core/src/commonMain/kotlin/dev/s7a/strata/runtime/platform/PlatformThreadContextElement.kt
       - runtime/core/src/jvmMain/kotlin/dev/s7a/strata/runtime/platform/IdentityMap.kt
       - runtime/core/src/jvmMain/kotlin/dev/s7a/strata/runtime/platform/PlatformLock.kt
       - runtime/core/src/jvmMain/kotlin/dev/s7a/strata/runtime/platform/PlatformThreadContextElement.kt
