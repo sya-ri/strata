@@ -6,6 +6,7 @@ Use this document to build and check Strata locally.
 ## Shared Kotlin targets
 
 The API and retained core publish JVM variants at their existing `strata-api` and `strata-runtime-core` coordinates.
+Their JVM archive names also remain unchanged so Fabric includes the same common-runtime jar names after the multiplatform migration.
 Multiplatform consumers select `strata-api-multiplatform` and `strata-runtime-core-multiplatform`; their Gradle metadata resolves JVM to those existing artifacts and JavaScript to the corresponding `-js` artifacts.
 The canonical release inventory includes all target artifacts.
 Common behavior tests run on JVM, Node.js, and headless Chrome, while JVM-only concurrency tests continue to exercise real threads.

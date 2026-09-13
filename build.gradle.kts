@@ -810,6 +810,8 @@ subprojects {
 
         tasks.withType<Test>().configureEach { useJUnitPlatform() }
         if (hasJvmTarget) {
+            // Fabric nested-jar names remain stable when their producer becomes multiplatform.
+            tasks.named<Jar>("jvmJar") { archiveAppendix.set("") }
             extensions.configure<SourceSetContainer> {
                 matching { it.name == "jvmTest" }.configureEach {
                     java.srcDir("src/test/java")
