@@ -826,6 +826,23 @@ subprojects {
         }
         tasks.register("test") { dependsOn(if (hasJvmTarget) "jvmTest" else "jsTest") }
         tasks.register("classes") { dependsOn(if (hasJvmTarget) "jvmMainClasses" else "jsMainClasses") }
+        if (completeIdeaModelActive && hasJvmTarget) {
+            apply(plugin = "idea")
+            afterEvaluate {
+                val kotlinSources = extensions.getByType<KotlinMultiplatformExtension>().sourceSets
+                val javaSources = extensions.getByType<SourceSetContainer>()
+                extensions.configure<IdeaModel> {
+                    module {
+                        sourceDirs = setOf("commonMain", "jvmMain").flatMap { kotlinSources.getByName(it).kotlin.srcDirs }.toSet() + javaSources.getByName("jvmMain").java.srcDirs
+                        resourceDirs = setOf("commonMain", "jvmMain").flatMap { kotlinSources.getByName(it).resources.srcDirs }.toSet()
+                        testSources.setFrom(setOf("commonTest", "jvmTest").flatMap { kotlinSources.getByName(it).kotlin.srcDirs }, javaSources.getByName("jvmTest").java.srcDirs)
+                        testResources.setFrom(setOf("commonTest", "jvmTest").flatMap { kotlinSources.getByName(it).resources.srcDirs }, javaSources.getByName("jvmTest").resources.srcDirs)
+                        scopes["COMPILE"] = mapOf("plus" to listOf(configurations.getByName("jvmCompileClasspath")), "minus" to emptyList())
+                        scopes["TEST"] = mapOf("plus" to listOf(configurations.getByName("jvmTestCompileClasspath")), "minus" to emptyList())
+                    }
+                }
+            }
+        }
         tasks.matching { it.name in setOf("buildWeb", "verifyWeb", "jsBrowserTest") }.configureEach {
             usesService(minecraftClientExecutionService)
         }

@@ -25,7 +25,7 @@ bash ./gradlew \
   --no-configure-on-demand \
   --project-prop=strata.completeIdeaModel=true \
   --system-prop=fabric.loom.ci=true \
-  :api:jar :runtime:core:jar :runtime:headless:jar :runtime:minecraft:jar :runtime:minecraft-fonts-lwjgl:jar \
+  :api:jvmJar :runtime:core:jvmJar :runtime:headless:jar :runtime:minecraft:jar :runtime:minecraft-fonts-lwjgl:jar \
   classes gametestClasses \
   idea
 
