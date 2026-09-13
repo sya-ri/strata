@@ -126,6 +126,8 @@ Build the [compiled shared example](integration/web/src/commonMain/kotlin/dev/s7
 ```
 
 Serve `integration/web/build/site` with any static HTTP server.
+Open `minecraft.html` for the Minecraft-inspired theme, or `index.html` for native browser styling.
+Pass `WebTheme.Minecraft` to both initial rendering and `mountWeb` to use the themed borders, text shadows, button states, and progress bars in another application.
 The [browser entry point](integration/web/src/jsMain/kotlin/dev/s7a/strata/integration/web/WebApplication.kt) shows independent build and client definition creation.
 The [build guide](docs/development/build.md#initial-web-documents) explains prerequisites, output ownership, and three-browser verification against the shared Minecraft and Headless scenario.
 

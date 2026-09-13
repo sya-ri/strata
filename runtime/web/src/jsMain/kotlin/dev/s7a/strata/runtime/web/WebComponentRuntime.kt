@@ -41,7 +41,9 @@ import kotlin.math.ceil
  * Each host owns its identity sequence; immutable frames retain no evaluator or application callbacks.
  */
 @Suppress("TooManyFunctions")
-internal class WebComponentRuntime : ComponentRuntime {
+internal class WebComponentRuntime(
+    private val theme: WebTheme = WebTheme.Native,
+) : ComponentRuntime {
     override fun retainEvaluator(): ComponentEvaluator = ComponentEvaluator { content -> ComponentRuntimeBridge.evaluate(this, content) }
 
     override fun tooltip(
@@ -209,7 +211,7 @@ internal class WebComponentRuntime : ComponentRuntime {
     ): Element {
         val canvas = document.createElement("canvas") as HTMLCanvasElement
         val context = checkNotNull(canvas.getContext("2d") as? CanvasRenderingContext2D)
-        context.font = "16px sans-serif"
+        context.font = theme.font
         val measured = ceil(context.measureText(label).width).toInt()
         val size = IntSize(width ?: measured, if (kind == WebPresentation.Kind.Button) 32 else 24)
         return WebPrimitiveElement(WebPresentation(0, kind, label, enabled, style), size, ::allocateIdentity, modifier, key)

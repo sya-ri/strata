@@ -26,11 +26,17 @@ Run `./gradlew :runtime:web:check` to verify document generation, adoption, reac
 The executable `integration:web` consumer demonstrates the complete build boundary with `./gradlew :integration:web:buildWeb`.
 It bundles Kotlin/JS with webpack, renders an independent initial definition in a build browser, and writes `integration/web/build/site/index.html` beside the application bundle and copied resources.
 The emitted site needs only a static HTTP server.
+It includes `index.html` with native styling and `minecraft.html` with `WebTheme.Minecraft`.
+The theme uses original CSS and browser monospace text, with no dependency on game assets or native font libraries.
+Build and mount must use the same theme; adoption rejects mismatches before modifying initial markup.
+The full-document renderer includes theme CSS before the body, and interactive hosts release their own stylesheet on close.
 Node.js must be available on `PATH`; Playwright is resolved by the Kotlin npm installation using the version catalog, and `installWebBrowsers` installs its matching engines.
 Run `./gradlew :integration:web:check` to compare the shared scenario's Minecraft semantics and headless rasterization with Chromium, Firefox, and WebKit state transitions.
 The browser check opens the emitted document with JavaScript disabled first, then verifies startup adoption, native button actions, ordinary conditionals, and keyed sibling identity.
 Fresh screenshots and comparison receipts are written to `integration/web/build/parity` on every browser verification run.
 This comparison covers presentation labels and state transitions; native platform typography and geometry are intentionally different and are not asserted pixel-identical.
+Both themes are verified in each browser, including disabled button behavior and determinate progress.
+Browser tasks share the loaded-client execution service so headless browsers and Minecraft clients do not contend for the desktop graphics device during aggregate checks.
 
 ## Environment
 

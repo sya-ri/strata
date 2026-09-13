@@ -2,11 +2,13 @@ package dev.s7a.strata.integration.web
 
 import dev.s7a.strata.component.Button
 import dev.s7a.strata.component.Column
+import dev.s7a.strata.component.ProgressBar
 import dev.s7a.strata.component.Text
 import dev.s7a.strata.element.ElementKey
 import dev.s7a.strata.geometry.IntSize
 import dev.s7a.strata.modifier.Modifier
 import dev.s7a.strata.modifier.onActivate
+import dev.s7a.strata.modifier.padding
 import dev.s7a.strata.screen.ScreenDefinition
 import dev.s7a.strata.state.mutableStateOf
 
@@ -23,11 +25,13 @@ internal class ReactiveScenario {
      */
     fun definition(): ScreenDefinition =
         ScreenDefinition("Reactive runtime parity") {
-            Column(spacing = 8) {
+            Column(modifier = Modifier.Empty.padding(16), spacing = 8) {
                 Text("Strata runtime parity")
                 Button("Advance", modifier = Modifier.Empty.onActivate { advance() })
                 Button("Toggle", modifier = Modifier.Empty.onActivate { toggle() })
                 Button("Reorder", modifier = Modifier.Empty.onActivate { reorder() })
+                Button("Unavailable", enabled = false)
+                ProgressBar(if (advanced.value) 0.75 else 0.25, IntSize(150, 12))
                 if (shown.value) {
                     Text(
                         when (advanced.value) {
@@ -66,6 +70,6 @@ internal class ReactiveScenario {
      * Common logical geometry used independently at build and browser startup.
      */
     companion object {
-        val viewport: IntSize = IntSize(400, 320)
+        val viewport: IntSize = IntSize(400, 380)
     }
 }

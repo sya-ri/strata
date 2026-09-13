@@ -31,7 +31,7 @@ internal class RuntimeParityTest {
                 snapshots.add(frame.semantics.mapNotNull { (it.semantics.label as? UiText.Literal)?.value })
             }
         }
-        val prefix = listOf("Strata runtime parity", "Advance", "Toggle", "Reorder")
+        val prefix = listOf("Strata runtime parity", "Advance", "Toggle", "Reorder", "Unavailable")
         assertEquals(
             listOf(
                 prefix + listOf("Initial", "Alpha", "Beta"),

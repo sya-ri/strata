@@ -29,8 +29,9 @@ public class WebUiHost internal constructor(
     private val root: HTMLElement,
     private val session: RuntimeUiSession,
     private var viewport: IntSize,
+    theme: WebTheme = WebTheme.Native,
 ) : AutoCloseable {
-    private val renderer = WebDomRenderer(root)
+    private val renderer = WebDomRenderer(root, theme)
     private var lastFrame: RuntimeUiFrame? = null
     private var request: Int? = null
     private var closed = false
@@ -147,6 +148,17 @@ public fun mountWeb(
 ): WebUiHost = createWebHost(definition, root, viewport).also(WebUiHost::start)
 
 /**
+ * Mounts a themed screen using the ownership and failure contract of [mountWeb].
+ * The theme must match initial build rendering; mismatches fail before changing existing HTML.
+ */
+public fun mountWeb(
+    definition: ScreenDefinition,
+    root: HTMLElement,
+    viewport: IntSize,
+    theme: WebTheme,
+): WebUiHost = createWebHost(definition, root, viewport, theme).also(WebUiHost::start)
+
+/**
  * Transfers a definition to an unstarted host whose caller must prepare or start it and eventually close it.
  */
 @OptIn(InternalStrataRuntimeApi::class)
@@ -154,9 +166,10 @@ internal fun createWebHost(
     definition: ScreenDefinition,
     root: HTMLElement,
     viewport: IntSize,
+    theme: WebTheme = WebTheme.Native,
 ): WebUiHost {
-    val runtime = WebComponentRuntime()
+    val runtime = WebComponentRuntime(theme)
     val transferred = definition.transfer()
     val session = createRuntimeUiSession { ComponentRuntimeBridge.evaluate(runtime, transferred.content) }
-    return WebUiHost(root, session, viewport)
+    return WebUiHost(root, session, viewport, theme)
 }

@@ -1,5 +1,6 @@
 package dev.s7a.strata.runtime.web
 
+import dev.s7a.strata.component.TextStyle
 import dev.s7a.strata.geometry.IntRect
 import dev.s7a.strata.runtime.render.DrawCommand
 import dev.s7a.strata.runtime.spi.RuntimeUiFrame
@@ -17,9 +18,12 @@ import org.w3c.dom.Text
 @OptIn(InternalStrataRuntimeApi::class)
 internal class WebDomRenderer(
     private val root: HTMLElement,
+    private val theme: WebTheme = WebTheme.Native,
 ) : AutoCloseable {
     private var nodes = emptyMap<String, HTMLElement>()
     private var initialized = false
+    private var stylesheet: HTMLElement? = null
+    private val originalTheme = root.getAttribute("data-strata-theme-root")
 
     /**
      * Applies one detached frame in paint order, preserving matching native element identity across reordering.
@@ -28,12 +32,14 @@ internal class WebDomRenderer(
         val entries = entries(frame)
         if (initialized.not()) {
             adoptInitialDom(entries)
+            stylesheet = installWebTheme(root, theme)
             initialized = true
         }
         val next = LinkedHashMap<String, HTMLElement>()
         root.style.position = "relative"
         root.style.width = "${frame.size.width}px"
         root.style.height = "${frame.size.height}px"
+        root.setAttribute("data-strata-theme-root", theme.token)
         var cursor = root.firstChild
         entries.forEach { entry ->
             val previous = nodes[entry.identity]
@@ -44,6 +50,7 @@ internal class WebDomRenderer(
                     root.ownerDocument?.createElement(entry.tag) as HTMLElement
                 }
             element.setAttribute("data-strata-node", entry.identity)
+            element.setAttribute("data-strata-theme", theme.token)
             update(element, entry)
             if (element !== cursor) root.insertBefore(element, cursor) else cursor = cursor.nextSibling
             check(next.put(entry.identity, element) == null) { "Duplicate web presentation identity." }
@@ -57,9 +64,15 @@ internal class WebDomRenderer(
     override fun close() {
         nodes.values.forEach { element -> element.parentNode?.removeChild(element) }
         nodes = emptyMap()
+        stylesheet?.let { it.parentNode?.removeChild(it) }
+        stylesheet = null
+        if (initialized) {
+            if (originalTheme == null) root.removeAttribute("data-strata-theme-root") else root.setAttribute("data-strata-theme-root", originalTheme)
+        }
     }
 
     private fun adoptInitialDom(entries: List<Entry>) {
+        check(originalTheme == null || originalTheme == theme.token) { "Initial web root does not match the requested theme." }
         if (root.hasChildNodes().not()) return
         val initial = (0 until root.childNodes.length).map { index -> checkNotNull(root.childNodes.item(index)) }
         val elements = initial.filterIsInstance<HTMLElement>()
@@ -69,6 +82,9 @@ internal class WebDomRenderer(
         check(elements.size == entries.size) { "Initial web HTML does not match the screen's element count." }
         val adopted = LinkedHashMap<String, HTMLElement>()
         entries.zip(elements).forEach { (entry, element) ->
+            check((element.getAttribute("data-strata-theme") ?: WebTheme.Native.token) == theme.token) {
+                "Initial web HTML does not match the requested theme."
+            }
             check((0 until element.childNodes.length).all { element.childNodes.item(it) is Text }) {
                 "Initial web HTML contains unexpected nested markup inside a retained element."
             }
@@ -106,11 +122,22 @@ internal class WebDomRenderer(
         style.top = "${bounds.top}px"
         style.width = "${bounds.width}px"
         style.height = "${bounds.height}px"
-        style.font = "16px sans-serif"
+        style.font = theme.font
         style.whiteSpace = "pre"
         style.setProperty("clip-path", clipPath(bounds, entry.clip))
         style.backgroundColor = entry.background
         val presentation = entry.presentation
+        style.color =
+            if (theme == WebTheme.Minecraft && presentation?.kind == WebPresentation.Kind.Text) {
+                when (presentation.style) {
+                    TextStyle.Inactive -> "#a0a0a0"
+                    TextStyle.ContainerLabel -> "#404040"
+                    else -> "#ffffff"
+                }
+            } else {
+                ""
+            }
+        style.textShadow = if (presentation?.style == TextStyle.ContainerLabel) "none" else ""
         style.setProperty("pointer-events", if (presentation == null) "none" else "auto")
         if (element.textContent != presentation?.label.orEmpty()) element.textContent = presentation?.label.orEmpty()
         if (element is HTMLButtonElement) {

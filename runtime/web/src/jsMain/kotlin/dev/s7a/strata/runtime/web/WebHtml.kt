@@ -17,9 +17,19 @@ import org.w3c.dom.HTMLElement
 public fun renderWebHtml(
     definition: ScreenDefinition,
     viewport: IntSize,
+): String = renderWebHtml(definition, viewport, WebTheme.Native)
+
+/**
+ * Renders themed container markup with the same lifetime contract as [renderWebHtml].
+ * Use [renderWebDocument] to include the theme stylesheet and root background in a standalone document.
+ */
+public fun renderWebHtml(
+    definition: ScreenDefinition,
+    viewport: IntSize,
+    theme: WebTheme,
 ): String {
     val root = document.createElement("div") as HTMLElement
-    return createWebHost(definition, root, viewport).use { host ->
+    return createWebHost(definition, root, viewport, theme).use { host ->
         host.prepare()
         root.innerHTML
     }
@@ -43,9 +53,21 @@ public fun renderWebDocument(
     viewport: IntSize,
     title: String,
     scriptUrl: String,
+): String = renderWebDocument(definition, viewport, title, scriptUrl, WebTheme.Native)
+
+/**
+ * Renders a standalone themed document, including its stylesheet before initial body content.
+ * Client startup must pass the same [theme] to [mountWeb]; all other ownership follows [renderWebDocument].
+ */
+public fun renderWebDocument(
+    definition: ScreenDefinition,
+    viewport: IntSize,
+    title: String,
+    scriptUrl: String,
+    theme: WebTheme,
 ): String {
     require(scriptUrl.isNotBlank()) { "The application script URL must not be blank." }
-    val initialHtml = renderWebHtml(definition, viewport)
+    val initialHtml = renderWebHtml(definition, viewport, theme)
     val output = document.implementation.createHTMLDocument(title)
     val head = requireNotNull(output.head)
     val charset = output.createElement("meta")
@@ -55,10 +77,17 @@ public fun renderWebDocument(
     viewportMeta.setAttribute("name", "viewport")
     viewportMeta.setAttribute("content", "width=device-width, initial-scale=1")
     head.appendChild(viewportMeta)
+    if (theme != WebTheme.Native) {
+        val stylesheet = output.createElement("style")
+        stylesheet.textContent = webThemeStyles(theme)
+        head.appendChild(stylesheet)
+    }
     val body = requireNotNull(output.body)
     body.style.margin = "0"
+    if (theme == WebTheme.Minecraft) body.style.backgroundColor = "#171717"
     val root = output.createElement("div") as HTMLElement
     root.id = "strata-root"
+    root.setAttribute("data-strata-theme-root", theme.token)
     root.style.position = "relative"
     root.style.width = "${viewport.width}px"
     root.style.height = "${viewport.height}px"

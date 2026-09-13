@@ -826,6 +826,9 @@ subprojects {
         }
         tasks.register("test") { dependsOn(if (hasJvmTarget) "jvmTest" else "jsTest") }
         tasks.register("classes") { dependsOn(if (hasJvmTarget) "jvmMainClasses" else "jsMainClasses") }
+        tasks.matching { it.name in setOf("buildWeb", "verifyWeb", "jsBrowserTest") }.configureEach {
+            usesService(minecraftClientExecutionService)
+        }
 
         extensions.configure<DetektExtension> {
             buildUponDefaultConfig = true
