@@ -27,7 +27,7 @@ public sealed interface PlayerSkinSource {
      * Resolves a player profile and skin from a Minecraft account name.
      *
      * @property value nonblank account name.
-     * @throws IllegalArgumentException when [value] is blank.
+     * @throws IllegalArgumentException when [PlayerSkinSource.Name.value] is blank.
      */
     public data class Name(
         public val value: String,

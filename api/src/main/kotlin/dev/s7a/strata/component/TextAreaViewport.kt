@@ -14,7 +14,7 @@ public sealed interface TextAreaViewport {
      *
      * @property width positive outer logical width, including the runtime's horizontal frame insets.
      * @property lines positive number of visible text rows.
-     * @throws IllegalArgumentException when [width] or [lines] is not positive.
+     * @throws IllegalArgumentException when [TextAreaViewport.Lines.width] or [TextAreaViewport.Lines.lines] is not positive.
      */
     public data class Lines(
         public val width: Int,

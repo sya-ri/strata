@@ -1,5 +1,6 @@
 [versions]
 kotlin = "2.4.10"
+jetbrains-mono = "2.304"
 java-baseline = "17"
 java-minecraft = "25"
 java-minecraft121 = "21"

@@ -44,6 +44,12 @@ portable_jq() {
 }
 readonly -f portable_jq
 
+allow_inactive=false
+if (( 0 < $# )) && [[ "${!#}" == historical ]]; then
+  allow_inactive=true
+  set -- "${@:1:$#-1}"
+fi
+
 release_run_id="${1:-}"
 release_tag="${2:-}"
 expected_release_commit="${3:-}"
@@ -149,9 +155,11 @@ derive_latest_jobs() {
   local expected_names="$2"
   local output="$3"
 
+  # GitHub can include ancillary check runs in the job inventory. Only required
+  # jobs provide producer evidence; the complete inventory is still validated.
   portable_jq -e --argjson expectedNames "$expected_names" '
+    .jobs |= map(select(.name as $name | any($expectedNames[]; . == $name))) |
     . as $inventory |
-    select(all($inventory.jobs[]; .name as $name | any($expectedNames[]; . == $name))) |
     select([
       $expectedNames[] as $name |
       any($inventory.jobs[]; .name == $name and .conclusion != "skipped")
@@ -919,7 +927,7 @@ fetch_paginated_array \
   'global deployments'
 controller_deployment_id="$(
   jq -er \
-    --arg commit "$expected_controller_commit" '
+    --arg commit "$expected_controller_commit" --argjson allowHistorical "$allow_inactive" '
       def valid_id:
         type == "number" and . > 0 and . == floor;
       def valid_created_at:
@@ -931,6 +939,11 @@ controller_deployment_id="$(
       select(length > 0) |
       select(all(.[]; (.id | valid_id) and (.created_at | valid_created_at))) |
       select((map(.id) | unique | length) == length) |
+      select((sort_by([(.created_at | fromdateiso8601), .id]) | last | .environment) == "github-pages-controller") |
+      if $allowHistorical then
+        map(select(.sha == $commit and .ref == "master" and .environment == "github-pages-controller"))
+      else . end |
+      select(length > 0) |
       sort_by([(.created_at | fromdateiso8601), .id]) |
       last |
       select(
@@ -954,7 +967,8 @@ fetch_paginated_array \
   'controller deployment statuses'
 jq -e \
   --arg runUrl "https://github.com/$GITHUB_REPOSITORY/actions/runs/$controller_run_id" \
-  --arg runPrefix "https://github.com/$GITHUB_REPOSITORY/actions/runs/$controller_run_id/" '
+  --arg runPrefix "https://github.com/$GITHUB_REPOSITORY/actions/runs/$controller_run_id/" \
+  --argjson allowInactive "$allow_inactive" '
     def valid_id:
       type == "number" and . > 0 and . == floor;
     def valid_created_at:
@@ -965,17 +979,19 @@ jq -e \
     select(length > 0) |
     select(all(.[]; (.id | valid_id) and (.created_at | valid_created_at))) |
     select((map(.id) | unique | length) == length) |
-    sort_by([(.created_at | fromdateiso8601), .id]) |
-    last |
+    . as $statuses |
+    ($statuses | sort_by([(.created_at | fromdateiso8601), .id]) | last) as $latest |
+    def bound_success:
+      .state == "success" and .environment == "github-pages-controller" and
+      ([.log_url, .target_url] | map(select(type == "string")) |
+        any(. == $runUrl or startswith($runPrefix)));
     select(
-      .state == "success" and
-      .environment == "github-pages-controller" and
-      ([.log_url, .target_url] |
-        map(select(type == "string")) |
-        any(. == $runUrl or startswith($runPrefix)))
+      ($latest | bound_success) or
+      ($allowInactive and $latest.state == "inactive" and
+        $latest.environment == "github-pages-controller" and any($statuses[]; bound_success))
     )
   ' "$controller_statuses_response" >/dev/null || {
-  echo 'The current controller Pages deployment does not have a latest successful status bound to its exact run and environment.' >&2
+  echo 'The controller Pages deployment lacks a bound success or an explicitly allowed superseded success.' >&2
   exit 1
 }
 

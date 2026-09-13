@@ -10,7 +10,7 @@ package dev.s7a.strata.component
  * @property level zero-based index in the source's finest-to-coarsest level list.
  * @property column signed horizontal tile coordinate.
  * @property row signed vertical tile coordinate.
- * @throws IllegalArgumentException when [level] is negative.
+ * @throws IllegalArgumentException when [TiledImageTileId.level] is negative.
  */
 public data class TiledImageTileId(
     public val level: Int,

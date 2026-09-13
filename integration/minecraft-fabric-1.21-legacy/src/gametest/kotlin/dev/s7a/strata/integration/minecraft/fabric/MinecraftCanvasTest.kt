@@ -66,6 +66,13 @@ private fun withMinecraftCanvasContext(
 
             override fun hasOverlay(): Boolean = Minecraft.getInstance().overlay != null
 
+            override fun exchangeHudHidden(hidden: Boolean): Boolean {
+                val options = Minecraft.getInstance().options
+                val previous = options.hideGui
+                options.hideGui = hidden
+                return previous
+            }
+
             override fun pressPointer(
                 screen: Screen,
                 position: IntOffset,
@@ -90,11 +97,7 @@ private fun withMinecraftCanvasContext(
                 size: IntSize,
                 guiScale: Int,
             ) {
-                context.computeOnClient { minecraft ->
-                    minecraft.window.setWindowed(size.width, size.height)
-                    minecraft.options.guiScale().set(guiScale)
-                    minecraft.resizeDisplay()
-                }
+                context.configureVerificationViewport(size, guiScale)
             }
 
             override fun waitFor(condition: () -> Boolean) {

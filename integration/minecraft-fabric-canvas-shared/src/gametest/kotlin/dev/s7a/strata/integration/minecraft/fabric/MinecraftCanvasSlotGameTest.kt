@@ -61,14 +61,18 @@ internal object MinecraftCanvasSlotGameTest {
         val fixture = context.onClient { MinecraftCanvasTestFixture(createMinecraftCanvasTestResources()) }
         var screen: FabricMinecraftScreen? = null
         var failure: Throwable? = null
+        var previousHudHidden: Boolean? = null
         try {
+            // Recipe packets can arrive after the inventory synchronization and after a one-time toast clear.
+            // Keep vanilla HUD/toasts hidden for the entire scene; the native Strata screen still renders normally.
+            previousHudHidden = context.onClient { context.exchangeHudHidden(true) }
             context.configureViewport(viewport, 1)
             val owned = context.onClient { createMinecraftScreen(definition(fixture, Slots.playerInventory(inventoryIndex)), profile, parent = null) }
             screen = owned
             context.onClient { context.setScreen(owned) }
-            verify(context, fixture, 1)
+            verify(context, fixture, owned, 1)
             context.configureViewport(viewport, 2)
-            verify(context, fixture, 2)
+            verify(context, fixture, owned, 2)
         } catch (caught: Throwable) {
             failure = caught
             throw caught
@@ -79,6 +83,7 @@ internal object MinecraftCanvasSlotGameTest {
                 { context.onClient { screen?.close() ?: Unit } },
                 { context.waitFor { fixture.leasesOpened == fixture.leasesClosed } },
                 { context.onClient { fixture.close() } },
+                { previousHudHidden?.let { previous -> context.onClient { context.exchangeHudHidden(previous) } } },
             )
         }
     }
@@ -127,21 +132,47 @@ internal object MinecraftCanvasSlotGameTest {
     private fun verify(
         context: MinecraftCanvasTestContext,
         fixture: MinecraftCanvasTestFixture,
+        screen: FabricMinecraftScreen,
         scale: Int,
     ) {
         val earlierLeases = context.onClient { fixture.leasesOpened }
         context.waitFor { earlierLeases < fixture.leasesOpened }
-        context.waitTicks(2)
+        // A tick count proves time passed, not that the first complete frame carrying every scale-dependent
+        // Canvas, Slot, clip, and overlay was presented (issue 40). Fence on the runtime's committed host-frame
+        // counter so the screenshot reads a frame at or after the presentation the lease signal observed.
+        val frameBaseline = MinecraftCanvasFrameFence.hostFrameCount(context, screen)
+        MinecraftCanvasFrameFence.awaitCompletedFrame(context, screen, frameBaseline)
         val name = "strata-canvas-slot-order-scale-$scale"
         val path = context.takeScreenshot(name, viewport)
         val image = checkNotNull(ImageIO.read(path.toFile())) { "The Canvas/Slot native screenshot must be readable." }
         check(image.width == viewport.width && image.height == viewport.height) { "Canvas/Slot screenshots must preserve their full physical extent." }
-        val opaqueItemTexels = verifyPanels(image, scale)
-        Files.writeString(
-            path.resolveSibling("$name.txt"),
-            "case=$name\nphysical=640x480\nguiScale=$scale\nsourceSnapshots=absent\nopaqueItemTexels=$opaqueItemTexels\n" +
-                "itemOracle=matching-populated-slot-over-black-and-white-distinct-from-empty-slot\nbackend=${fixture.backendDescription}\n",
-        )
+        // The receipt is written before the assertions throw so a failing run retains the framebuffer PNG plus
+        // the GUI scale, lease, and frame counters needed to diagnose the mismatch (issue 40 evidence rule).
+        val verified = runCatching { verifyPanels(image, scale) }
+        val counters = context.onClient { "leasesOpened=${fixture.leasesOpened}\nleasesClosed=${fixture.leasesClosed}" }
+        // The fence already marshals its own client-thread read; never nest it inside another onClient handoff.
+        val hostFrames = MinecraftCanvasFrameFence.hostFrameCount(context, screen)
+        val evidence =
+            "case=$name\nphysical=640x480\nguiScale=$scale\nsourceSnapshots=absent\n" +
+                "hostFrameBaseline=$frameBaseline\nhostFramesObserved=$hostFrames\n$counters\n"
+        when (val outcome = verified.exceptionOrNull()) {
+            null -> {
+                Files.writeString(
+                    path.resolveSibling("$name.txt"),
+                    evidence +
+                        "opaqueItemTexels=${verified.getOrThrow()}\n" +
+                        "itemOracle=matching-populated-slot-over-black-and-white-distinct-from-empty-slot\nbackend=${fixture.backendDescription}\n",
+                )
+            }
+
+            else -> {
+                Files.writeString(
+                    path.resolveSibling("$name.txt"),
+                    evidence + "failure=${outcome.message}\nbackend=${fixture.backendDescription}\n",
+                )
+            }
+        }
+        verified.getOrThrow()
     }
 
     private fun verifyPanels(

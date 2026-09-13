@@ -2,6 +2,41 @@
 
 All notable changes to Strata are documented in this file.
 
+## 0.1.6 - 2026-09-09
+
+See the [0.1.6 release notes](docs/releases/v0.1.6.md) for input appearance and compatibility.
+
+### Added
+
+- `TextInputAppearance` gives standard single-line and multiline editors per-instance normal, focused, and disabled nine-slice frames, caret colors, and IME underline colors.
+- Additive appearance overloads preserve explicit fonts and direct State enablement; the existing overloads and default pixels remain unchanged.
+- Shared host and loaded-client acceptance verifies appearance-only repainting, retained input nodes, idle work, and native/headless pixels.
+
+### Compatibility
+
+- Appearance does not change padding, text metrics, state ownership, or editing behavior. Custom frames need a nonempty nine-slice center and use stretched centers; `Default` preserves legacy rendering.
+- Use matching 0.1.6 API and runtime artifacts to use custom appearance. Existing component calls remain binary compatible.
+
+## 0.1.5 - 2026-09-08
+
+See the [0.1.5 release notes](docs/releases/v0.1.5.md) for installation and observation contracts.
+
+### Added
+
+- `Observe` binds a retained region to one through 22 typed `StateSource` arguments and reevaluates its content when committed values or its parent-supplied callback change, without reopening the screen.
+- Source-backed `Text` accepts `StateSource<String>` and `StateSource<UiText>`, including explicit-font overloads, through the same retained observation mechanism.
+- Generated direct-source overloads cover display data, labels, enablement, selection appearance, and collection/loading inputs; `onActivate` accepts the same enabled source as its control.
+- Lazy `StateSource.map` shares upstream frame snapshots and suppresses dependent UI work for equal projected values.
+- Optional session render monitoring exposes bounded detached counters and node identities through runtime hosts and Fabric screens, with shared native regression scenarios and API-only authoring exercises.
+- Observed regions share subscriptions and committed frame snapshots by source reference identity, coalesce pending revisions, and reconcile nested changes parent-first while preserving compatible keyed descendants.
+
+### Compatibility
+
+- Existing `ScreenDefinition` and literal `Text` APIs remain available; ordinary captured Kotlin variables do not become observable automatically.
+- Observe occupies one parent-layout slot and emits zero or one child root; use an inner layout for multiple children and apply containing-layout parent data to Observe's modifier.
+- Sources and editable state remain application-owned. Independent sources do not form an atomic application transaction; publish one immutable model through one source when fields must change together.
+- The supported Minecraft matrix remains 1.20 through 1.20.6, 1.21 through 1.21.11, 26.1, and 26.2; all Strata artifacts must use the same 0.1.5 version.
+
 ## 0.1.4 - 2026-09-06
 
 ### Added

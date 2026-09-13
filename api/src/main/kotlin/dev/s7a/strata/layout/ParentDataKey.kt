@@ -7,10 +7,10 @@ import kotlin.reflect.KClass
 /**
  * Referential token identifying one parent-data value type.
  *
- * Key identity is the key instance itself, so two keys constructed with the same [dataClass] remain distinct contracts.
+ * Key identity is the key instance itself, so two keys constructed with the same `dataClass` remain distinct contracts.
  * The class token is immutable for the lifetime of the key and is owned by the code that defines the corresponding provider and consumer.
  *
- * The runtime bridge validates an erased provider value against [dataClass] and returns the checked value.
+ * The runtime bridge validates an erased provider value against `dataClass` and returns the checked value.
  * A value of the wrong runtime class fails with [IllegalArgumentException].
  *
  * @param D the parent-data value type represented by this key.

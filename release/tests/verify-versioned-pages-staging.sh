@@ -51,10 +51,34 @@ grep --fixed-strings 'release_tags="$(bash release/list-release-tags.sh)"' "$pag
 if grep --fixed-strings '    tags:' "$pages_workflow" >/dev/null; then
   fail 'Pages still executes a tag-owned workflow definition.'
 fi
-[[ "$(grep --fixed-strings -c "if: github.ref == 'refs/heads/master'" "$pages_workflow")" == '3' ]] || \
+[[ "$(grep --fixed-strings -c "if: github.ref == 'refs/heads/master'" "$pages_workflow")" == '4' ]] || \
   fail 'Pages does not restrict every workflow job to master.'
-[[ "$(grep --fixed-strings -c 'bash release/verify-pages-release-source.sh' "$pages_workflow")" == '3' ]] || \
+[[ "$(grep --fixed-strings -c 'bash release/verify-pages-release-source.sh' "$pages_workflow")" == '4' ]] || \
   fail 'Pages does not verify the exact controller release before both builds and deployment.'
+python3 - "$pages_workflow" <<'PY'
+import pathlib
+import re
+import sys
+
+workflow = pathlib.Path(sys.argv[1]).read_text(encoding="utf-8")
+parts = re.split(r"^  ([a-z-]+):\n", workflow.split("jobs:\n", 1)[1], flags=re.M)
+jobs = dict(zip(parts[1::2], parts[2::2]))
+assert set(jobs) == {"source", "build", "release-evidence", "deploy"}
+source = jobs["source"]
+assert "      contents: read\n" in source and ": write" not in source
+assert "    needs:" not in source and "setup-gradle" not in source
+assert "persist-credentials: false" in source
+assert "bash release/verify-pages-release-source.sh" in source
+for name in ("build", "release-evidence"):
+    job = jobs[name]
+    assert re.findall(r"^    needs: (.+)$", job, re.M) == ["source"], name
+    for field in ("controller_commit", "release_commit", "release_tag"):
+        assert f"needs.source.outputs.{field}" in job, (name, field)
+    assert job.index("bash release/verify-pages-release-source.sh") < job.index("uses: ./.github/actions/"), name
+    assert "if: always()" not in job and "continue-on-error:" not in job
+assert re.search(r"needs:\s*\n\s*- build\s*\n\s*- release-evidence", jobs["deploy"])
+assert "if: always()" not in jobs["deploy"] and "continue-on-error:" not in jobs["deploy"]
+PY
 for attempt_bound_artifact_guard in \
   'name=github-pages-${GITHUB_RUN_ID}-build-${GITHUB_RUN_ATTEMPT}' \
   'name=release-pages-evidence-${GITHUB_RUN_ID}-release-evidence-${GITHUB_RUN_ATTEMPT}' \
@@ -153,7 +177,7 @@ grep --fixed-strings 'name: Revalidate exact controller immediately before deplo
   fail 'Pages does not revalidate origin/master after artifact comparison.'
 [[ "$(grep --fixed-strings -c -- '--paginate --slurp' "$pages_deployment_verifier")" == '3' ]] || \
   fail 'Pages deployment verification does not fetch complete paginated job, artifact, and deployment API results.'
-[[ "$(grep --fixed-strings -c 'sort_by([(.created_at | fromdateiso8601), .id])' "$pages_deployment_verifier")" == '4' ]] || \
+[[ "$(grep --fixed-strings -c 'sort_by([(.created_at | fromdateiso8601), .id])' "$pages_deployment_verifier")" == '5' ]] || \
   fail 'Pages deployment verification relies on undocumented API response ordering.'
 if grep --extended-regexp 'for release_tag in v[0-9]' "$pages_workflow" >/dev/null; then
   fail 'Pages retains a hand-maintained release tag list.'

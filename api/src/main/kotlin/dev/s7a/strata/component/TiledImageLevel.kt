@@ -6,8 +6,8 @@ import dev.s7a.strata.internal.platform.PlatformMath as Math
 /**
  * Describes one immutable resolution level in a tiled raster source.
  *
- * Each source pixel covers a square of [contentUnitsPerPixel] content units.
- * Multiplying that value by [tilePixelSize] gives the content extent of one tile at this level.
+ * Each source pixel covers a square of [TiledImageLevel.contentUnitsPerPixel] content units.
+ * Multiplying that value by [TiledImageLevel.tilePixelSize] gives the content extent of one tile at this level.
  * Sources list levels from finest to coarsest and keep this geometry unchanged for their entire identity lifetime.
  *
  * @property tilePixelSize exact positive pixel extent required from every ready tile at this level.

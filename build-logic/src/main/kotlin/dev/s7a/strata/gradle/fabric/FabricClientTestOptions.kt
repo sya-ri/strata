@@ -10,7 +10,7 @@ import java.nio.file.Path
 import java.nio.file.StandardCopyOption
 
 /**
- * Prepare silent Minecraft client-test options without changing ordinary launch or personal settings.
+ * Prepare silent Minecraft client-test options without tutorial overlays or changes to ordinary launch or personal settings.
  * This stateless helper retains no path or stream and supports concurrent calls for independent run directories.
  * The caller owns each test directory exclusively during preparation and must invoke this helper after run-directory cleanup.
  */
@@ -20,6 +20,7 @@ public object FabricClientTestOptions {
             "onboardAccessibility" to "false",
             "narrator" to "0",
             "soundCategory_master" to "0.0",
+            "tutorialStep" to "none",
         )
 
     /**

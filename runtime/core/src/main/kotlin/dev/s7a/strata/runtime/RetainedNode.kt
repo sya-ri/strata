@@ -14,6 +14,11 @@ internal class RetainedNode(
     node: Node,
     var logicalParent: RetainedNode?,
 ) : RetainedEntry(node) {
+    /**
+     * Last immutable dynamic-child list already validated and reconciled; cached access requires no sibling diff.
+     */
+    var dynamicDescriptions: List<Element>? = null
+
     override val effectiveChildCount: Int
         get() = children.size
 

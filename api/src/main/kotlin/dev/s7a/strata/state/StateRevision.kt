@@ -11,7 +11,7 @@ import kotlin.jvm.JvmInline
  * Once [Long.MAX_VALUE] is published, that source cannot publish a later snapshot and must fail without mutating or notifying.
  *
  * @property value the non-negative revision number.
- * @throws IllegalArgumentException when [value] is negative.
+ * @throws IllegalArgumentException when [StateRevision.value] is negative.
  */
 @JvmInline
 public value class StateRevision(

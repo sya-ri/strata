@@ -21,19 +21,19 @@ internal object ModrinthProjectMarkdown {
 
 # Strata
 
-Strata is a declarative Minecraft UI library for Fabric Mods.
-Application code builds platform-neutral `ScreenDefinition` values from reusable components, structural layouts, active modifiers, typed state, and inventory bindings; a separately installed version-matched runtime renders them with Minecraft assets and behavior.
-Strata supports Minecraft 1.20 and later adapters, Unicode and resource-pack fonts, multiline text editing, wrapping `FlowRow` layout, extensible canvases, retained sampled-image acceleration, tiled pan-and-zoom images, and typed player-head scaling.
-Standard Image and PlayerHead textures can be retained directly while preserving the Minecraft source and sampling contracts.
+Strata is a declarative UI library for Minecraft Fabric Mods.
+Build screens from reusable components, keep application state in your own code, and test UI behavior without launching Minecraft.
+A separately installed runtime connects those definitions to the client version and its resources.
 
-## Highlights
+## What you can build
 
-- Structure screens with `Row`, wrapping `FlowRow`, `Column`, `Grid`, and intentional-overlap `Stack` instead of absolute coordinates.
-- Compose ${DocumentedComponent.entries.size} focused standard components, including independent `ScrollArea` and `Scrollbar`, multiline `TextArea`, virtual and tiled images, slots, tabs, player heads, and progress controls.
-- Display Japanese, Korean, and supported emoji with the selected Minecraft font resources, and choose custom font definitions through the public API.
-- Keep events on modifiers and mutable values in caller-owned typed state; `onActivate(enabled)` unifies primary pointer and focused Enter or Space actions without making Button or Tab implicitly interactive.
-- Bind player, container, ender-chest, furnace, active-menu, or custom slot sources without coupling UI definitions to runtime packages.
-- Define purpose-specific downstream components as ordinary `UiScope` compositions or use the public `Element` and `Node` SPI when retained behavior is necessary.
+- Arrange controls with layouts that measure and place their children.
+- Combine text, inputs, scrolling lists, images, and Minecraft inventory bindings into application screens.
+- Add sizing, appearance, focus, and input behavior through composable modifiers.
+- Reuse screen definitions in headless tests and the Minecraft client.
+- Compose your own components, or extend the public Element and Node contracts for retained behavior.
+
+Browse the [component catalog](https://github.com/sya-ri/strata/blob/master/docs/reference/components.md) for images, compiled examples, and individual API links.
 
 ## Install and open a screen
 
@@ -54,20 +54,18 @@ The following exact example is compiled against `strata-api` alone and is also u
 $openExample
 ```
 
-${textAndFontGuidance(releaseVersion)}
-
 ## Supported Minecraft versions
 
 ${versions.joinToString(", ") { version -> "`$version`" }}
 
-Minecraft 1.20 is the support floor.
 Install exactly one Strata runtime matching the client version.
+See [Minecraft compatibility](https://github.com/sya-ri/strata/blob/master/docs/reference/compatibility.md) for artifact names and Java requirements.
 
 ## Documentation and source
 
 - [Dokka API reference](https://gh.s7a.dev/strata/)
-- [Reader guides on GitHub](https://github.com/sya-ri/strata/blob/master/README.md#documentation)
-- [Component catalog and verified images](https://github.com/sya-ri/strata/blob/master/docs/components.md)
+- [Reader guides on GitHub](https://github.com/sya-ri/strata/blob/master/docs/README.md)
+- [Component catalog and verified images](https://github.com/sya-ri/strata/blob/master/docs/reference/components.md)
 - [Source repository](https://github.com/sya-ri/strata)
 - [Issue tracker](https://github.com/sya-ri/strata/issues)
 - [Public AI authoring skill](https://github.com/sya-ri/strata/tree/master/skills/strata)
@@ -75,33 +73,4 @@ Install exactly one Strata runtime matching the client version.
 Generative AI substantially assisted implementation, review, tests, documentation, and release-page text.
 The maintainer directed the design and validates release artifacts through the public test suite.
 """.replace("\r\n", "\n").replace('\r', '\n').trimEnd('\n') + "\n"
-
-    private fun textAndFontGuidance(releaseVersion: String): String =
-        """## Unicode, fonts, and text input
-
-Pass `font = ResourceId("example", "body")` to `Text`, `TextField`, or `TextArea`, or use `UiText.withFont` for labels and composed text.
-The ID selects a resource-pack font definition, not an operating-system font family.
-Existing overloads without a font argument remain available.
-The sealed `UiText` and `DrawCommand` hierarchies include `WithFont` and `SampledImage`; custom exhaustive visitors must handle those cases as described in [Source compatibility](https://github.com/sya-ri/strata/blob/master/docs/text.md#source-compatibility).
-Glyph coverage and emoji presentation depend on the selected resources; Strata does not supply an independent color-emoji or ZWJ-sequence renderer.
-Unknown font IDs produce missing glyphs instead of silently selecting `minecraft:default`.
-
-Existing `Text` and `TextField` calls stay single-line.
-Select `TextLayout.Multiline` to wrap display text to its parent's width, or `TextArea` with a typed viewport for multiline editing.
-TextAreaState normalizes hard breaks to LF and owns the ScrollState shared with an optional external Scrollbar.
-Both editors move and delete one Unicode scalar at a time, with `maxLength` measured in UTF-16 code units.
-Delivered preedit events appear as inline IME composition without changing the committed value.
-This does not add grapheme-cluster editing, selection or clipboard commands, a native IME popup, or new platform IME hooks on adapters that expose only committed characters.
-See [Text and text input](https://github.com/sya-ri/strata/blob/master/docs/text.md) for the compiled font example, input policy, and composition lifecycle.
-
-## Optional CPU font backend
-
-Offline tools can use `dev.s7a.strata:strata-runtime-minecraft-fonts-lwjgl:$releaseVersion` for resource decoding, TrueType rasterization, and text ordering without launching Minecraft.
-Versioned Fabric runtimes already include this backend; ordinary UI declarations still compile against `strata-api` alone.
-The backend does not bundle LWJGL, ICU, Gson, or native binaries.
-Offline callers must supply the exact target's library dependencies, native classifier, font resources, and compatibility options; do not mix native library generations in one process.
-
-See [Font resources](https://github.com/sya-ri/strata/blob/master/docs/font-resources.md) for immutable profiles and dependency setup.
-Signed and zero TrueType settings follow the selected native contract; non-finite JSON settings and unsafe STB coordinate conversions remain invalid, as described in [Numeric provider settings](https://github.com/sya-ri/strata/blob/master/docs/font-resources.md#numeric-provider-settings).
-[Acceptance evidence](https://github.com/sya-ri/strata/blob/master/docs/font-resources.md#acceptance-evidence) distinguishes exact metrics and glyph texels from final-image differences supported by independent GPU evidence; it is not a promise of identical pixels for every resource pack or device."""
 }

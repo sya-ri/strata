@@ -22,7 +22,7 @@ public sealed interface TextInputEvent {
         /**
          * Returns this scalar value as one UTF-16 string.
          *
-         * @return one or two UTF-16 code units representing [codePoint].
+         * @return one or two UTF-16 code units representing [TextInputEvent.Character.codePoint].
          */
         public fun asString(): String =
             if (codePoint <= 0xFFFF) {
@@ -39,11 +39,11 @@ public sealed interface TextInputEvent {
     /**
      * Immutable input-method composition state.
      *
-     * The constructor snapshots [blocks] and exposes an unmodifiable list.
+     * The constructor snapshots `blocks` and exposes an unmodifiable list.
      * Empty text clears active composition.
      *
      * @param fullText complete current preedit text.
-     * @param caretPosition UTF-16 caret offset within [fullText].
+     * @param caretPosition UTF-16 caret offset within [TextInputEvent.Preedit.fullText].
      * @param blocks ordered platform composition blocks.
      * @param focusedBlock selected block index, or -1 when no block is selected.
      * @throws IllegalArgumentException when caret or block indices are outside their typed ranges.

@@ -24,7 +24,7 @@ public sealed interface UiText {
      * Text carrying a resource-pack font identifier without resolving or owning the font resource.
      *
      * The immutable wrapper is safe to retain and share across threads under the wrapped text's ownership contract.
-     * Runtime adapters resolve [font] against their pinned resource state when measuring and drawing [text].
+     * Runtime adapters resolve [UiText.WithFont.font] against their pinned resource state when measuring and drawing [UiText.WithFont.text].
      * The font is inherited by the wrapped text; a nested [WithFont] takes precedence over this outer selection.
      *
      * @property text unresolved text to render with the selected font.

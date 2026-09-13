@@ -9,7 +9,7 @@
 - Use `Stack` only when children intentionally overlap or align against the same rectangle. It is not a generic `div` or box container.
 - Do not wrap one element in a `Row` or `Column`. Put its modifier on that element or use the consuming parent's alignment API.
 - Prefer layout spacing, arrangement, alignment, and weight over coordinate-shaped padding.
-- Use small padding for local insets. Treat 20 or more as a review signal and retain it only for a documented native dimension or fixed panel geometry.
+- Choose padding for the intended inset; express relationships between siblings with layout spacing and alignment.
 - A background is paint: apply `background`, `imageBackground`, `menuBackground`, or `containerBackground` to the layout that owns the surface.
 
 ## Compiled structural example
@@ -127,9 +127,113 @@ internal fun storageScreen(onDone: () -> Unit): ScreenDefinition {
 }
 ```
 
+## Choose the smallest reactive boundary
+
+1. Fixed value: pass a literal.
+2. Existing `StateSource`: pass it directly to the supported argument.
+3. Transformed display: retain `source.map { ... }` outside reevaluated content and pass that projection directly.
+4. Structural addition, removal, or switching: use a narrow `Observe` (one through 22 typed sources).
+5. Retain editor, selection, and scrolling state outside every observed callback.
+6. Large histories: use `VirtualList` with stable keys and retained navigation state.
+
+```kotlin
+import dev.s7a.strata.component.Button
+import dev.s7a.strata.component.Column
+import dev.s7a.strata.component.ImageSource
+import dev.s7a.strata.component.Observe
+import dev.s7a.strata.component.Text
+import dev.s7a.strata.component.TextArea
+import dev.s7a.strata.component.TextAreaState
+import dev.s7a.strata.component.TextAreaViewport
+import dev.s7a.strata.component.TextInputAppearance
+import dev.s7a.strata.component.TextStyle
+import dev.s7a.strata.component.VirtualList
+import dev.s7a.strata.component.VirtualListState
+import dev.s7a.strata.geometry.IntSize
+import dev.s7a.strata.modifier.Modifier
+import dev.s7a.strata.modifier.onActivate
+import dev.s7a.strata.render.ArgbColor
+import dev.s7a.strata.render.createDrawImage
+import dev.s7a.strata.screen.ScreenDefinition
+import dev.s7a.strata.state.StateSource
+import dev.s7a.strata.state.map
+
+/**
+ * A retained API-only screen whose independent clock cannot rebuild its editor or history.
+ */
+internal fun reactiveScreen(
+    clock: StateSource<String>,
+    sending: StateSource<Boolean>,
+    loading: StateSource<Boolean>,
+    history: StateSource<List<String>>,
+    draft: TextAreaState,
+    onSend: () -> Unit,
+): ScreenDefinition {
+    val enabled = sending.map { it.not() }
+    val sendLabel = sending.map { if (it) "Sending..." else "Send" }
+    val historyState = VirtualListState<String>()
+    // Retain immutable frame pixels and the appearance beside the editor state.
+    val frame = ImageSource.Pixels(createDrawImage(IntSize(3, 3), IntArray(9) { 0xFFF1F3F4.toInt() }))
+    val focused =
+        ImageSource.Pixels(
+            createDrawImage(
+                IntSize(3, 3),
+                intArrayOf(
+                    0xFF008040.toInt(),
+                    0xFF008040.toInt(),
+                    0xFF008040.toInt(),
+                    0xFF008040.toInt(),
+                    0xFFF1F3F4.toInt(),
+                    0xFF008040.toInt(),
+                    0xFF008040.toInt(),
+                    0xFF008040.toInt(),
+                    0xFF008040.toInt(),
+                ),
+            ),
+        )
+    val appearance = TextInputAppearance.Custom(frame, focused, ArgbColor(0xFF203020.toInt()))
+    return ScreenDefinition("Conversation") {
+        Column(spacing = 4) {
+            Text(clock)
+            Observe(loading) { active -> if (active) Text("Loading...") }
+            VirtualList(items = history, keyOf = { it }, state = historyState, viewportSize = IntSize(160, 60), rowHeight = 12) { Text(it) }
+            TextArea(draft, appearance, TextAreaViewport.Size(IntSize(160, 40)), textStyle = TextStyle.ContainerLabel)
+            Button(sendLabel, enabled = enabled, modifier = Modifier.Empty.onActivate(enabled, onSend))
+        }
+    }
+}
+```
+
+The example requires unique history strings as keys; real messages should use their immutable message ID.
+Caller-owned sources publish immutable snapshots. No manual screen refresh or close/reopen is needed.
+Text, progress, image/head/source descriptors, slot binding/highlighting, labels, enabled/selected flags, cycle label formatting, list items, and leading/trailing availability have direct source overloads. Literal and source arguments may be mixed; consult the exact component signatures.
+Editing values and selections still use their dedicated mutable state. Size, color, decoration, and layout arguments use literals or a narrow `Observe`.
+For search fields and message/note drafts with light backgrounds, pass `TextInputAppearance.Custom` to standard `TextField` and `TextArea`, with `TextStyle.ContainerLabel` for dark glyphs. Supply normal/focused/disabled frames, their nine-slice border, caret color, and composition underline color. The frame replaces the profile frame, including transparent corners; a background modifier alone cannot override that frame. All three images need a nonempty center after their borders are removed. Custom centers stretch; the legacy default retains its original tiled frame and editing decorations. Padding and glyph metrics stay unchanged. Keep images, appearance, and editor state outside reevaluation. Use a narrow `Observe` only for theme changes; an appearance-only update preserves the input node, focus, composition, and scroll and does not remeasure. It can still require native rasterization and image upload.
+Indexed list counts and lookup functions remain one coherent caller-owned indexed API: mutate the backing model and call its existing `refresh()`. Do not split count and lookup into independent sources.
+Canvas frame and tiled-image tile delivery retain their dedicated lifetimes; a direct source replaces the source descriptor itself.
+
+## Avoid unnecessary reevaluation
+
+Default `Text` measures to its natural single-line size. Do not force a larger fixed `size` or filled weight onto it, including a Text that is the only root of a fixed-size Observe. For a reserved clock/loading rectangle, select `TextLayout.Multiline()` so the text can satisfy that rectangle's constraints. Reactive and literal Text share this geometry contract. The independent skill exercise below preserves a first attempt that compiled but failed this runtime constraint, alongside the corrected deterministic fixture.
+
+| Pattern to avoid | Actual cost or missing behavior | Replacement |
+| --- | --- | --- |
+| One `Observe(clock, history, sending)` around the whole screen | Every clock change invokes the screen-sized callback and supplies new child definitions; captured child callbacks also change. | `Text(clock)`, direct list items, and retained enabled/label projections. |
+| `Text(snapshot.value)` | This is a literal; publishing a later revision does not update it. | `Text(source)` or a retained `source.map { ... }`. |
+| Creating `state.map { ... }` inside an `Observe` | A new source identity causes graph admission and initial transformation; changed parent content still refreshes the child declaration. | Create the projection once beside the retained editor/list state. |
+| Creating `TextAreaState` or list navigation state inside reevaluation | Replaces editing/scroll ownership and can reset focus, composition, cursor, or the visible anchor. | Retain each dedicated state outside callbacks. |
+
+`Observe` is one layout child and emits zero or one root; put `weight` and parent alignment on that region. Direct source components keep their complete modifier on the real component and forward parent layout data through their internal binding.
+Mapping is lazy, pure, nullable-safe, and chainable. Creating a projection does not subscribe. A frame shares the original source subscription and its committed snapshot with all projections. Equal mapped values suppress downstream UI evaluation, node updates, and phase work; the mapper itself may run for a changed input. Ordinary `subscribe` still delivers every revision, including equal mapped values.
+Do not perform I/O, mutate sources, or create asynchronous work in a mapper or declaration callback. Notifications during evaluation wait for the next frame. Publish one immutable model when several fields must change atomically.
+Parent callback identity changes are reevaluation reasons because arbitrary captured values cannot be compared. Stable keys preserve compatible nodes but do not suppress changed callback evaluation. A real text-width change must remeasure affected ancestors; paint-only progress changes do not.
+Overlapping foreground commands and clips remain in the final composition even when their callbacks stay cached. A paint-only lower-layer change can reuse overlay callbacks but still require rerasterizing and uploading the shared native layer, including unchanged translucent foregrounds. Child geometry changes conservatively invalidate ancestor paint too, since an overlay may depend on measured child geometry even with fixed outer bounds. Zero foreground evaluation/paint counts do not mean zero composition cost; Strata does not promise per-component damage rectangles or skip fully occluded state updates.
+Keep the number and covered area of translucent layers small around frequently changing content. A full-area translucent Stack multiplies blended pixel work despite narrow State inputs. If the visual design requires many such layers, measure command regeneration and complete composition separately at its physical resolution and update rate; an evaluation counter alone cannot justify a smooth-animation claim.
+Runtime tests can use `RuntimeUiDiagnosticsOwner.startRenderMonitoring()` on the current screen and compare actual work after `checkpoint()`. Keep diagnostics imports out of application UI source. See [render monitoring](https://github.com/sya-ri/strata/blob/master/docs/development/render-monitoring.md) for bounded snapshots and native frame assertions.
+
 ## State, scrolling, resources, and bindings
 
-- Keep mutable values in caller-owned state objects. Rebuild immutable component arguments from that state and receive typed changes through modifiers.
+- Keep mutable values in caller-owned state objects and receive typed changes through modifiers. Use direct sources for immutable arguments that change automatically.
 - Place `ScrollArea` and `Scrollbar` separately and link them with one `ScrollState`. A viewport may omit its scrollbar or place it away from the content.
 - Use `TextAreaState` for multiline editing and link an optional `Scrollbar` to `state.scrollState`. Creating immutable descriptions does not attach the state, and descriptions may be reused after detachment; simultaneous attachment with the same caller-owned state throws `IllegalStateException`.
 - Use the dynamic `VirtualList(itemCount = { ... })` overload for a loadable indexed source. Complete each prepend, append, or same-count row mutation inside its leading or trailing request handler, then call owner-thread `VirtualListState.refresh()` so the list resamples the count, rebuilds visible rows, and preserves its stable-key anchor when possible. The `Int` and `List` overloads are immutable snapshots. Use the same state for index or stable-key jumps.
@@ -137,3 +241,42 @@ internal fun storageScreen(onDone: () -> Unit): ScreenDefinition {
 - Use `TiledImageSource` for a large logical raster whose tiles load or change independently, keep navigation in `PanZoomState`, compose `panZoom(state)` for direct input, and place fixed-size markers through `TiledImageScope.atContentPosition`; pass a `StateSource<DoubleOffset>` when marker positions change independently.
 - Use `PlayerSkinSource` for profile-driven heads rather than pre-rendering a skin outside the component.
 - Bind `Slot` with `Slots.playerInventory`, `Slots.container`, or `Slots.activeMenu`; authoritative inventory mutation belongs to the active server menu.
+
+The sealed `UiText` and `DrawCommand` hierarchies include `WithFont` and `SampledImage`; exhaustive visitors must handle every case.
+Read the [rendering contracts](https://github.com/sya-ri/strata/blob/master/docs/development/rendering.md) when extending a backend.
+
+## Unicode and resource-pack fonts
+
+Use `font = ResourceId("example", "body")` on `Text`, `TextField`, or `TextArea` to select `assets/example/font/body.json`, or use `UiText.withFont` for reusable labels and parts of composed text.
+The ID is a font definition, not an operating-system font family or a direct TTF path.
+An inner font wrapper takes precedence over an outer wrapper or component font argument.
+Existing overloads without a font argument remain available.
+
+Japanese, Korean, supplementary characters, and emoji require glyph coverage in the selected resources.
+Unknown font IDs produce missing glyphs instead of silently selecting `minecraft:default`.
+Strata does not provide an independent color-emoji or ZWJ-sequence renderer, and the compatibility ASCII profile builder alone cannot render arbitrary Unicode.
+See [Text and text input](https://github.com/sya-ri/strata/blob/master/docs/guides/text.md) for a compiled API-only example.
+
+Existing `Text` overloads remain single-line; a required `TextLayout.Multiline` argument enables parent-width wrapping, hard breaks, line limits, clipping or ellipsis, and non-negative line spacing.
+`TextField` is single-line, while `TextArea` edits canonical LF text using `TextAreaState` and `TextAreaViewport.Lines` or `TextAreaViewport.Size`.
+An external `Scrollbar(state.scrollState)` shares the editor's stable owned vertical position.
+Immutable descriptions can be created without attaching state and reused after detachment; simultaneous attachment with the same `TextAreaState` throws `IllegalStateException`.
+Both editors navigate Unicode scalars rather than grapheme clusters, and positive `maxLength` counts UTF-16 code units.
+Delivered preedit events are shown as inline IME composition, with the supplied caret and focused block, separately from the committed value.
+TextArea also bounds the complete normalized composed value by its state's maxLength.
+TextArea semantics expose the typed TextArea role and editing value; the current semantics API does not expose typed accessibility edit or focus actions.
+Focus loss and terminal lifecycle paths clear composition.
+This does not add selection or clipboard commands, reproduce the native IME popup, or install new platform IME hooks on adapters that expose only committed characters.
+
+## Optional CPU backend for offline tools
+
+`dev.s7a.strata:strata-runtime-minecraft-fonts-lwjgl:0.1.6` supplies PNG decoding, the selected TrueType rasterizer, and ICU text ordering for resource-backed offline rendering without launching Minecraft.
+Versioned Fabric runtimes already include the backend and use the game's libraries; do not add runtime imports or native font objects to ordinary UI definitions.
+The backend does not bundle LWJGL, ICU, Gson, or native binaries.
+An offline host must supply the exact target's library dependencies and native classifier, caller-owned font resources, and `MinecraftFontCompatibility`; native library generations must not be mixed in one process.
+Use the pinned dependency declarations linked from [Font resources](https://github.com/sya-ri/strata/blob/master/docs/guides/fonts.md) rather than copying another release's versions.
+
+The resource loader creates an immutable snapshot, and each host owns and closes its own backend and bounded caches.
+Signed and zero TrueType settings follow the target contract, but non-finite JSON settings and unsafe STB coordinate conversions remain invalid.
+Read [Numeric provider settings](https://github.com/sya-ri/strata/blob/master/docs/guides/fonts.md#numeric-provider-settings) for atlas limits, non-finite glyph metrics, and compatibility options.
+[Font verification](https://github.com/sya-ri/strata/blob/master/docs/development/font-verification.md) requires exact native metrics and glyph texels; only final-image differences with independent GPU evidence are permitted, not a general pixel tolerance.

@@ -2,11 +2,16 @@ package dev.s7a.strata.runtime
 
 import dev.s7a.strata.node.DirtyMask
 import dev.s7a.strata.node.DirtyPhase
+import dev.s7a.strata.runtime.diagnostics.UiRenderMetric
+import dev.s7a.strata.spi.InternalStrataRuntimeApi
 
 /**
  * Expands downstream local phases and propagates measurement work to ancestors.
  */
-internal class DirtyTracker {
+@OptIn(InternalStrataRuntimeApi::class)
+internal class DirtyTracker(
+    private val monitoring: RenderMonitoring = RenderMonitoring(),
+) {
     private var currentRevision: Long = 0L
 
     /**
@@ -31,6 +36,7 @@ internal class DirtyTracker {
         mask: DirtyMask,
     ) {
         if (mask != DirtyMask.None) {
+            monitoring.record(UiRenderMetric.LocalInvalidation, retained)
             advanceRevision()
         }
         val expanded = expand(mask)
@@ -39,6 +45,7 @@ internal class DirtyTracker {
             val ancestorMask = DirtyMask.of(DirtyPhase.Measure, DirtyPhase.Layout, DirtyPhase.Paint, DirtyPhase.Semantics)
             var ancestor = retained.parent
             while (ancestor != null) {
+                monitoring.record(UiRenderMetric.AncestorInvalidation, ancestor)
                 ancestor.dirty += ancestorMask
                 ancestor = ancestor.parent
             }
@@ -51,6 +58,7 @@ internal class DirtyTracker {
      * @param retained the parent whose direct-child structure changed.
      */
     fun structural(retained: RetainedEntry) {
+        monitoring.record(UiRenderMetric.StructureInvalidation, retained)
         advanceRevision()
         var current: RetainedEntry? = retained
         while (current != null) {

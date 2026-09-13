@@ -8,9 +8,9 @@ import dev.s7a.strata.render.SampledImageOrientation
  * Immutable detached glyph pixels and native logical metrics.
  * Ink bounds are relative to the same top-left logical origin supplied to Minecraft text drawing.
  * The image contains the complete sampled glyph rectangle, ready for ordinary RGBA tint multiplication; intensity backends replicate coverage into every channel before returning it.
- * A null image represents an advance without ink unless [oversizedRasterSize] records an atlas-rejected source raster.
- * [channel] records provenance without requiring another shader conversion.
- * [orientation] preserves reversed native source coordinates through normalized ink bounds without rearranging pixels.
+ * A null image represents an advance without ink unless [MinecraftFontGlyph.oversizedRasterSize] records an atlas-rejected source raster.
+ * [MinecraftFontGlyph.channel] records provenance without requiring another shader conversion.
+ * [MinecraftFontGlyph.orientation] preserves reversed native source coordinates through normalized ink bounds without rearranging pixels.
  * Advance and ink metrics may retain native NaN or infinity; callers must omit non-finite final quads before constructing portable geometry.
  * Finite bounds remain normalized, while offsets stay finite and non-negative.
  * Values are safe to retain after their engine and native face close.

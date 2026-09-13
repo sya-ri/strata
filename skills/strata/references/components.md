@@ -2,9 +2,9 @@
 
 # Component catalog
 
-Strata exposes 25 focused standard components from `dev.s7a.strata.component`.
+Strata exposes 26 focused standard components from `dev.s7a.strata.component`.
 Every Kotlin declaration below is paired with the compiled `strata-api` overload inventory; generation fails when source and binary identities diverge or an undocumented component enters the API.
-Use the [component showcase on GitHub](https://github.com/sya-ri/strata/blob/master/docs/components.md) for complete compiled examples and Minecraft-verified images.
+Use the [component showcase on GitHub](https://github.com/sya-ri/strata/blob/master/docs/reference/components.md) for complete compiled examples and Minecraft-verified images.
 
 <a id="row"></a>
 
@@ -15,7 +15,7 @@ Row places an ordered sibling sequence on one horizontal main axis, with typed a
 - Compiled overloads: 1
 - Modifiers: Sizing, padding, paint, semantics, focus, and input modifiers apply to the Row itself; `spacing` and `horizontalArrangement` express structure, while `RowScope.weight` and `RowScope.align` affect only direct children.
 - Parent scope: `Row` evaluates a callback-lifetime `RowScope`, emits children in declaration order, and exposes only vertical alignment and weight parent data to its direct children.
-- [Showcase image and compiled example](https://github.com/sya-ri/strata/blob/master/docs/components.md#row)
+- [Showcase image and compiled example](https://github.com/sya-ri/strata/blob/master/docs/reference/components.md#row)
 
 ```kotlin
 fun UiScope.Row(modifier: Modifier = Modifier.Empty, key: ElementKey<*>? = null, spacing: Int = 0, horizontalArrangement: Arrangement = Arrangement.Start, verticalAlignment: VerticalAlignment = VerticalAlignment.Top, content: RowScope.() -> Unit)
@@ -30,7 +30,7 @@ FlowRow wraps an ordered sibling sequence at the available width, measures each 
 - Compiled overloads: 1
 - Modifiers: Sizing, padding, paint, semantics, focus, and input modifiers apply to the FlowRow itself. It uses its natural width unless constraints or `fillMaxWidth()` expand it; `horizontalSpacing`, `verticalSpacing`, and `horizontalArrangement` control its rows, while `FlowRowScope.align` overrides one child's vertical alignment within its row.
 - Parent scope: `FlowRow` evaluates a callback-lifetime `FlowRowScope` and exposes only vertical alignment parent data. Wrapping preserves its direct children's retained identity and focus without synthetic Row parents. It has no weight, row-count limit, implicit clipping, or truncation; with unbounded width it produces one row.
-- [Showcase image and compiled example](https://github.com/sya-ri/strata/blob/master/docs/components.md#flow-row)
+- [Showcase image and compiled example](https://github.com/sya-ri/strata/blob/master/docs/reference/components.md#flow-row)
 
 ```kotlin
 fun UiScope.FlowRow(modifier: Modifier = Modifier.Empty, key: ElementKey<*>? = null, horizontalSpacing: Int = 0, verticalSpacing: Int = 0, horizontalArrangement: Arrangement = Arrangement.Start, verticalAlignment: VerticalAlignment = VerticalAlignment.Top, content: FlowRowScope.() -> Unit)
@@ -45,7 +45,7 @@ Column places an ordered sibling sequence on one vertical main axis, with typed 
 - Compiled overloads: 1
 - Modifiers: Sizing, padding, paint, semantics, focus, and input modifiers apply to the Column itself; `spacing` and `verticalArrangement` express structure, while `ColumnScope.weight` and `ColumnScope.align` affect only direct children.
 - Parent scope: `Column` evaluates a callback-lifetime `ColumnScope`, emits children in declaration order, and exposes only horizontal alignment and weight parent data to its direct children.
-- [Showcase image and compiled example](https://github.com/sya-ri/strata/blob/master/docs/components.md#column)
+- [Showcase image and compiled example](https://github.com/sya-ri/strata/blob/master/docs/reference/components.md#column)
 
 ```kotlin
 fun UiScope.Column(modifier: Modifier = Modifier.Empty, key: ElementKey<*>? = null, spacing: Int = 0, verticalArrangement: Arrangement = Arrangement.Start, horizontalAlignment: HorizontalAlignment = HorizontalAlignment.Start, content: ColumnScope.() -> Unit)
@@ -60,7 +60,7 @@ Stack is the explicit overlay primitive: children share one content rectangle, r
 - Compiled overloads: 1
 - Modifiers: Use Stack only when children intentionally overlap. Ordinary sizing and background modifiers belong on the Stack; `StackScope.align` positions an individual overlay child without coordinate padding.
 - Parent scope: `Stack` evaluates a callback-lifetime `StackScope`; it measures and paints overlapping direct children in declaration order and exposes two-axis alignment parent data.
-- [Showcase image and compiled example](https://github.com/sya-ri/strata/blob/master/docs/components.md#stack)
+- [Showcase image and compiled example](https://github.com/sya-ri/strata/blob/master/docs/reference/components.md#stack)
 
 ```kotlin
 fun UiScope.Stack(modifier: Modifier = Modifier.Empty, key: ElementKey<*>? = null, contentAlignment: Alignment = Alignment.TopStart, content: StackScope.() -> Unit)
@@ -75,7 +75,7 @@ Grid assigns children row-major to a fixed column count, measures each column an
 - Compiled overloads: 1
 - Modifiers: Sizing, padding, and paint modifiers apply to the Grid. Fixed columns, independent horizontal and vertical spacing, and `GridScope.align` replace repeated Row declarations and per-cell coordinate padding.
 - Parent scope: `Grid` evaluates a callback-lifetime `GridScope`; it assigns direct children row-major and exposes two-axis alignment only inside each measured cell.
-- [Showcase image and compiled example](https://github.com/sya-ri/strata/blob/master/docs/components.md#grid)
+- [Showcase image and compiled example](https://github.com/sya-ri/strata/blob/master/docs/reference/components.md#grid)
 
 ```kotlin
 fun UiScope.Grid(columns: Int, modifier: Modifier = Modifier.Empty, key: ElementKey<*>? = null, horizontalSpacing: Int = 0, verticalSpacing: Int = 0, contentAlignment: Alignment = Alignment.TopStart, content: GridScope.() -> Unit)
@@ -90,10 +90,46 @@ Spacer is an empty measurable primitive for genuine visual separators, connector
 - Compiled overloads: 1
 - Modifiers: Sizing, weight, and paint modifiers give Spacer a deliberate empty footprint, such as a separator or progress connector; ordinary parent spacing and alignment should remain layout arguments rather than placeholder children.
 - Parent scope: `Spacer` has no content scope or children. Its size and modifier chain alone define its retained layout and paint behavior.
-- [Showcase image and compiled example](https://github.com/sya-ri/strata/blob/master/docs/components.md#spacer)
+- [Showcase image and compiled example](https://github.com/sya-ri/strata/blob/master/docs/reference/components.md#spacer)
 
 ```kotlin
 fun UiScope.Spacer(modifier: Modifier = Modifier.Empty, key: ElementKey<*>? = null)
+```
+
+<a id="observe"></a>
+
+## Observe
+
+Observe recomputes one retained region from one to 22 typed StateSource values. Live status panels and conditional editing controls are independent uses; ordinary static layout composition cannot subscribe, coalesce frame snapshots, or reconcile deferred structure. Nested regions share source subscriptions and preserve compatible keyed nodes.
+
+- Compiled overloads: 22
+- Modifiers: Observe is one child of its containing layout. Apply weight, alignment, sizing, and event modifiers to the region itself. Content emits zero or one root; use an inner Row or Column for multiple children. Empty content has zero natural size and still obeys incoming constraints.
+- Parent scope: Observe evaluates a fresh UiScope when source values or its parent-provided callback change. Keep input and scroll states outside that callback. Source notifications never evaluate UI on their delivery thread; nested regions consume the final parent definition once per frame.
+- [Showcase image and compiled example](https://github.com/sya-ri/strata/blob/master/docs/reference/components.md#observe)
+
+```kotlin
+fun <V1, V2, V3, V4, V5, V6, V7, V8, V9, V10, V11, V12, V13, V14, V15, V16, V17, V18, V19, V20, V21, V22> UiScope.Observe(state1: StateSource<V1>, state2: StateSource<V2>, state3: StateSource<V3>, state4: StateSource<V4>, state5: StateSource<V5>, state6: StateSource<V6>, state7: StateSource<V7>, state8: StateSource<V8>, state9: StateSource<V9>, state10: StateSource<V10>, state11: StateSource<V11>, state12: StateSource<V12>, state13: StateSource<V13>, state14: StateSource<V14>, state15: StateSource<V15>, state16: StateSource<V16>, state17: StateSource<V17>, state18: StateSource<V18>, state19: StateSource<V19>, state20: StateSource<V20>, state21: StateSource<V21>, state22: StateSource<V22>, modifier: Modifier = Modifier.Empty, key: ElementKey<*>? = null, content: UiScope.(V1, V2, V3, V4, V5, V6, V7, V8, V9, V10, V11, V12, V13, V14, V15, V16, V17, V18, V19, V20, V21, V22) -> Unit)
+fun <V1, V2, V3, V4, V5, V6, V7, V8, V9, V10, V11, V12, V13, V14, V15, V16, V17, V18, V19, V20, V21> UiScope.Observe(state1: StateSource<V1>, state2: StateSource<V2>, state3: StateSource<V3>, state4: StateSource<V4>, state5: StateSource<V5>, state6: StateSource<V6>, state7: StateSource<V7>, state8: StateSource<V8>, state9: StateSource<V9>, state10: StateSource<V10>, state11: StateSource<V11>, state12: StateSource<V12>, state13: StateSource<V13>, state14: StateSource<V14>, state15: StateSource<V15>, state16: StateSource<V16>, state17: StateSource<V17>, state18: StateSource<V18>, state19: StateSource<V19>, state20: StateSource<V20>, state21: StateSource<V21>, modifier: Modifier = Modifier.Empty, key: ElementKey<*>? = null, content: UiScope.(V1, V2, V3, V4, V5, V6, V7, V8, V9, V10, V11, V12, V13, V14, V15, V16, V17, V18, V19, V20, V21) -> Unit)
+fun <V1, V2, V3, V4, V5, V6, V7, V8, V9, V10, V11, V12, V13, V14, V15, V16, V17, V18, V19, V20> UiScope.Observe(state1: StateSource<V1>, state2: StateSource<V2>, state3: StateSource<V3>, state4: StateSource<V4>, state5: StateSource<V5>, state6: StateSource<V6>, state7: StateSource<V7>, state8: StateSource<V8>, state9: StateSource<V9>, state10: StateSource<V10>, state11: StateSource<V11>, state12: StateSource<V12>, state13: StateSource<V13>, state14: StateSource<V14>, state15: StateSource<V15>, state16: StateSource<V16>, state17: StateSource<V17>, state18: StateSource<V18>, state19: StateSource<V19>, state20: StateSource<V20>, modifier: Modifier = Modifier.Empty, key: ElementKey<*>? = null, content: UiScope.(V1, V2, V3, V4, V5, V6, V7, V8, V9, V10, V11, V12, V13, V14, V15, V16, V17, V18, V19, V20) -> Unit)
+fun <V1, V2, V3, V4, V5, V6, V7, V8, V9, V10, V11, V12, V13, V14, V15, V16, V17, V18, V19> UiScope.Observe(state1: StateSource<V1>, state2: StateSource<V2>, state3: StateSource<V3>, state4: StateSource<V4>, state5: StateSource<V5>, state6: StateSource<V6>, state7: StateSource<V7>, state8: StateSource<V8>, state9: StateSource<V9>, state10: StateSource<V10>, state11: StateSource<V11>, state12: StateSource<V12>, state13: StateSource<V13>, state14: StateSource<V14>, state15: StateSource<V15>, state16: StateSource<V16>, state17: StateSource<V17>, state18: StateSource<V18>, state19: StateSource<V19>, modifier: Modifier = Modifier.Empty, key: ElementKey<*>? = null, content: UiScope.(V1, V2, V3, V4, V5, V6, V7, V8, V9, V10, V11, V12, V13, V14, V15, V16, V17, V18, V19) -> Unit)
+fun <V1, V2, V3, V4, V5, V6, V7, V8, V9, V10, V11, V12, V13, V14, V15, V16, V17, V18> UiScope.Observe(state1: StateSource<V1>, state2: StateSource<V2>, state3: StateSource<V3>, state4: StateSource<V4>, state5: StateSource<V5>, state6: StateSource<V6>, state7: StateSource<V7>, state8: StateSource<V8>, state9: StateSource<V9>, state10: StateSource<V10>, state11: StateSource<V11>, state12: StateSource<V12>, state13: StateSource<V13>, state14: StateSource<V14>, state15: StateSource<V15>, state16: StateSource<V16>, state17: StateSource<V17>, state18: StateSource<V18>, modifier: Modifier = Modifier.Empty, key: ElementKey<*>? = null, content: UiScope.(V1, V2, V3, V4, V5, V6, V7, V8, V9, V10, V11, V12, V13, V14, V15, V16, V17, V18) -> Unit)
+fun <V1, V2, V3, V4, V5, V6, V7, V8, V9, V10, V11, V12, V13, V14, V15, V16, V17> UiScope.Observe(state1: StateSource<V1>, state2: StateSource<V2>, state3: StateSource<V3>, state4: StateSource<V4>, state5: StateSource<V5>, state6: StateSource<V6>, state7: StateSource<V7>, state8: StateSource<V8>, state9: StateSource<V9>, state10: StateSource<V10>, state11: StateSource<V11>, state12: StateSource<V12>, state13: StateSource<V13>, state14: StateSource<V14>, state15: StateSource<V15>, state16: StateSource<V16>, state17: StateSource<V17>, modifier: Modifier = Modifier.Empty, key: ElementKey<*>? = null, content: UiScope.(V1, V2, V3, V4, V5, V6, V7, V8, V9, V10, V11, V12, V13, V14, V15, V16, V17) -> Unit)
+fun <V1, V2, V3, V4, V5, V6, V7, V8, V9, V10, V11, V12, V13, V14, V15, V16> UiScope.Observe(state1: StateSource<V1>, state2: StateSource<V2>, state3: StateSource<V3>, state4: StateSource<V4>, state5: StateSource<V5>, state6: StateSource<V6>, state7: StateSource<V7>, state8: StateSource<V8>, state9: StateSource<V9>, state10: StateSource<V10>, state11: StateSource<V11>, state12: StateSource<V12>, state13: StateSource<V13>, state14: StateSource<V14>, state15: StateSource<V15>, state16: StateSource<V16>, modifier: Modifier = Modifier.Empty, key: ElementKey<*>? = null, content: UiScope.(V1, V2, V3, V4, V5, V6, V7, V8, V9, V10, V11, V12, V13, V14, V15, V16) -> Unit)
+fun <V1, V2, V3, V4, V5, V6, V7, V8, V9, V10, V11, V12, V13, V14, V15> UiScope.Observe(state1: StateSource<V1>, state2: StateSource<V2>, state3: StateSource<V3>, state4: StateSource<V4>, state5: StateSource<V5>, state6: StateSource<V6>, state7: StateSource<V7>, state8: StateSource<V8>, state9: StateSource<V9>, state10: StateSource<V10>, state11: StateSource<V11>, state12: StateSource<V12>, state13: StateSource<V13>, state14: StateSource<V14>, state15: StateSource<V15>, modifier: Modifier = Modifier.Empty, key: ElementKey<*>? = null, content: UiScope.(V1, V2, V3, V4, V5, V6, V7, V8, V9, V10, V11, V12, V13, V14, V15) -> Unit)
+fun <V1, V2, V3, V4, V5, V6, V7, V8, V9, V10, V11, V12, V13, V14> UiScope.Observe(state1: StateSource<V1>, state2: StateSource<V2>, state3: StateSource<V3>, state4: StateSource<V4>, state5: StateSource<V5>, state6: StateSource<V6>, state7: StateSource<V7>, state8: StateSource<V8>, state9: StateSource<V9>, state10: StateSource<V10>, state11: StateSource<V11>, state12: StateSource<V12>, state13: StateSource<V13>, state14: StateSource<V14>, modifier: Modifier = Modifier.Empty, key: ElementKey<*>? = null, content: UiScope.(V1, V2, V3, V4, V5, V6, V7, V8, V9, V10, V11, V12, V13, V14) -> Unit)
+fun <V1, V2, V3, V4, V5, V6, V7, V8, V9, V10, V11, V12, V13> UiScope.Observe(state1: StateSource<V1>, state2: StateSource<V2>, state3: StateSource<V3>, state4: StateSource<V4>, state5: StateSource<V5>, state6: StateSource<V6>, state7: StateSource<V7>, state8: StateSource<V8>, state9: StateSource<V9>, state10: StateSource<V10>, state11: StateSource<V11>, state12: StateSource<V12>, state13: StateSource<V13>, modifier: Modifier = Modifier.Empty, key: ElementKey<*>? = null, content: UiScope.(V1, V2, V3, V4, V5, V6, V7, V8, V9, V10, V11, V12, V13) -> Unit)
+fun <V1, V2, V3, V4, V5, V6, V7, V8, V9, V10, V11, V12> UiScope.Observe(state1: StateSource<V1>, state2: StateSource<V2>, state3: StateSource<V3>, state4: StateSource<V4>, state5: StateSource<V5>, state6: StateSource<V6>, state7: StateSource<V7>, state8: StateSource<V8>, state9: StateSource<V9>, state10: StateSource<V10>, state11: StateSource<V11>, state12: StateSource<V12>, modifier: Modifier = Modifier.Empty, key: ElementKey<*>? = null, content: UiScope.(V1, V2, V3, V4, V5, V6, V7, V8, V9, V10, V11, V12) -> Unit)
+fun <V1, V2, V3, V4, V5, V6, V7, V8, V9, V10, V11> UiScope.Observe(state1: StateSource<V1>, state2: StateSource<V2>, state3: StateSource<V3>, state4: StateSource<V4>, state5: StateSource<V5>, state6: StateSource<V6>, state7: StateSource<V7>, state8: StateSource<V8>, state9: StateSource<V9>, state10: StateSource<V10>, state11: StateSource<V11>, modifier: Modifier = Modifier.Empty, key: ElementKey<*>? = null, content: UiScope.(V1, V2, V3, V4, V5, V6, V7, V8, V9, V10, V11) -> Unit)
+fun <V1, V2, V3, V4, V5, V6, V7, V8, V9, V10> UiScope.Observe(state1: StateSource<V1>, state2: StateSource<V2>, state3: StateSource<V3>, state4: StateSource<V4>, state5: StateSource<V5>, state6: StateSource<V6>, state7: StateSource<V7>, state8: StateSource<V8>, state9: StateSource<V9>, state10: StateSource<V10>, modifier: Modifier = Modifier.Empty, key: ElementKey<*>? = null, content: UiScope.(V1, V2, V3, V4, V5, V6, V7, V8, V9, V10) -> Unit)
+fun <V1, V2, V3, V4, V5, V6, V7, V8, V9> UiScope.Observe(state1: StateSource<V1>, state2: StateSource<V2>, state3: StateSource<V3>, state4: StateSource<V4>, state5: StateSource<V5>, state6: StateSource<V6>, state7: StateSource<V7>, state8: StateSource<V8>, state9: StateSource<V9>, modifier: Modifier = Modifier.Empty, key: ElementKey<*>? = null, content: UiScope.(V1, V2, V3, V4, V5, V6, V7, V8, V9) -> Unit)
+fun <V1, V2, V3, V4, V5, V6, V7, V8> UiScope.Observe(state1: StateSource<V1>, state2: StateSource<V2>, state3: StateSource<V3>, state4: StateSource<V4>, state5: StateSource<V5>, state6: StateSource<V6>, state7: StateSource<V7>, state8: StateSource<V8>, modifier: Modifier = Modifier.Empty, key: ElementKey<*>? = null, content: UiScope.(V1, V2, V3, V4, V5, V6, V7, V8) -> Unit)
+fun <V1, V2, V3, V4, V5, V6, V7> UiScope.Observe(state1: StateSource<V1>, state2: StateSource<V2>, state3: StateSource<V3>, state4: StateSource<V4>, state5: StateSource<V5>, state6: StateSource<V6>, state7: StateSource<V7>, modifier: Modifier = Modifier.Empty, key: ElementKey<*>? = null, content: UiScope.(V1, V2, V3, V4, V5, V6, V7) -> Unit)
+fun <V1, V2, V3, V4, V5, V6> UiScope.Observe(state1: StateSource<V1>, state2: StateSource<V2>, state3: StateSource<V3>, state4: StateSource<V4>, state5: StateSource<V5>, state6: StateSource<V6>, modifier: Modifier = Modifier.Empty, key: ElementKey<*>? = null, content: UiScope.(V1, V2, V3, V4, V5, V6) -> Unit)
+fun <V1, V2, V3, V4, V5> UiScope.Observe(state1: StateSource<V1>, state2: StateSource<V2>, state3: StateSource<V3>, state4: StateSource<V4>, state5: StateSource<V5>, modifier: Modifier = Modifier.Empty, key: ElementKey<*>? = null, content: UiScope.(V1, V2, V3, V4, V5) -> Unit)
+fun <V1, V2, V3, V4> UiScope.Observe(state1: StateSource<V1>, state2: StateSource<V2>, state3: StateSource<V3>, state4: StateSource<V4>, modifier: Modifier = Modifier.Empty, key: ElementKey<*>? = null, content: UiScope.(V1, V2, V3, V4) -> Unit)
+fun <V1, V2, V3> UiScope.Observe(state1: StateSource<V1>, state2: StateSource<V2>, state3: StateSource<V3>, modifier: Modifier = Modifier.Empty, key: ElementKey<*>? = null, content: UiScope.(V1, V2, V3) -> Unit)
+fun <V1, V2> UiScope.Observe(state1: StateSource<V1>, state2: StateSource<V2>, modifier: Modifier = Modifier.Empty, key: ElementKey<*>? = null, content: UiScope.(V1, V2) -> Unit)
+fun <V1> UiScope.Observe(state1: StateSource<V1>, modifier: Modifier = Modifier.Empty, key: ElementKey<*>? = null, content: UiScope.(V1) -> Unit)
 ```
 
 <a id="text"></a>
@@ -102,12 +138,16 @@ fun UiScope.Spacer(modifier: Modifier = Modifier.Empty, key: ElementKey<*>? = nu
 
 Text renders Unicode literals and composed text using the active profile's font resources, glyph advances, shadow layer, foreground layer, and baseline. Explicit `TextLayout.Multiline` adds hard line breaks, wrapping, line limits, and clip or ellipsis overflow; the existing overload remains single-line. Glyph availability follows the selected resource pack.
 
-- Compiled overloads: 8
+- Compiled overloads: 12
 - Modifiers: Ordinary sizing, padding, placement, and paint modifiers compose around `Text`; multiline layout uses the available width and height. `TextWrap.None`, `Word`, or `Character`, `maxLines`, `TextOverflow.Clip` or `Ellipsis`, and `lineSpacing` control presentation without changing the original semantic label. Text content and the optional `font: ResourceId` remain typed component arguments. `UiText.withFont` also selects a font for labels and composed text; an inner selection takes precedence over an outer one.
-- Parent scope: `Text` is a top-level extension on the active `UiScope`. The screen runtime installs its selected Minecraft profile only for the definition callback, and the component has no content callback or parent-data API. Unicode and custom fonts require a font-resource profile; the older printable-ASCII glyph builder remains a compatibility path.
-- [Showcase image and compiled example](https://github.com/sya-ri/strata/blob/master/docs/components.md#text)
+- Parent scope: `Text` accepts fixed values or a `StateSource<String>` / `StateSource<UiText>`. Source-backed text uses Observe's shared frame snapshots and retained region without reopening its screen. Unicode and custom fonts require a font-resource profile; the older printable-ASCII glyph builder remains a compatibility path.
+- [Showcase image and compiled example](https://github.com/sya-ri/strata/blob/master/docs/reference/components.md#text)
 
 ```kotlin
+fun UiScope.Text(text: StateSource<String>, font: ResourceId, layout: TextLayout = TextLayout.SingleLine, style: TextStyle = TextStyle.Normal, modifier: Modifier = Modifier.Empty, key: ElementKey<*>? = null)
+fun UiScope.Text(text: StateSource<String>, layout: TextLayout = TextLayout.SingleLine, style: TextStyle = TextStyle.Normal, modifier: Modifier = Modifier.Empty, key: ElementKey<*>? = null)
+fun UiScope.Text(text: StateSource<UiText>, font: ResourceId, layout: TextLayout = TextLayout.SingleLine, style: TextStyle = TextStyle.Normal, modifier: Modifier = Modifier.Empty, key: ElementKey<*>? = null)
+fun UiScope.Text(text: StateSource<UiText>, layout: TextLayout = TextLayout.SingleLine, style: TextStyle = TextStyle.Normal, modifier: Modifier = Modifier.Empty, key: ElementKey<*>? = null)
 fun UiScope.Text(text: String, font: ResourceId, style: TextStyle = TextStyle.Normal, modifier: Modifier = Modifier.Empty, key: ElementKey<*>? = null)
 fun UiScope.Text(text: String, layout: TextLayout, font: ResourceId, style: TextStyle = TextStyle.Normal, modifier: Modifier = Modifier.Empty, key: ElementKey<*>? = null)
 fun UiScope.Text(text: String, layout: TextLayout, style: TextStyle = TextStyle.Normal, modifier: Modifier = Modifier.Empty, key: ElementKey<*>? = null)
@@ -124,16 +164,28 @@ fun UiScope.Text(text: UiText, style: TextStyle = TextStyle.Normal, modifier: Mo
 
 TextField reproduces the 200 by 20 Minecraft EditBox sprites, text origin, glyph colors, owner-thread value state, and focus, with Unicode scalar editing and inline IME composition.
 
-- Compiled overloads: 4
+- Compiled overloads: 16
 - Modifiers: Pointer, keyboard, committed-character, preedit, and focus modifiers run as active retained behavior around `TextField`; a consuming focused modifier overrides built-in editing. The `font: ResourceId` overload changes metrics and drawing together, including cursor placement and horizontal scrolling.
 - Parent scope: `TextField` is a top-level extension on the active `UiScope`. Caller-owned `TextFieldState` owns the value and its positive UTF-16 maximum length. Movement and deletion operate on Unicode scalars, not whole grapheme clusters; preedit text remains separate until committed input arrives. The inline composition display does not reproduce Minecraft's native IME popup or platform candidate window.
-- [Showcase image and compiled example](https://github.com/sya-ri/strata/blob/master/docs/components.md#text-field)
+- [Showcase image and compiled example](https://github.com/sya-ri/strata/blob/master/docs/reference/components.md#text-field)
 
 ```kotlin
+fun UiScope.TextField(state: TextFieldState, appearance: TextInputAppearance, enabled: Boolean = true, textStyle: TextStyle = TextStyle.TextField, modifier: Modifier = Modifier.Empty, key: ElementKey<*>? = null)
+fun UiScope.TextField(state: TextFieldState, appearance: TextInputAppearance, enabled: StateSource<Boolean>, textStyle: TextStyle = TextStyle.TextField, modifier: Modifier = Modifier.Empty, key: ElementKey<*>? = null)
+fun UiScope.TextField(state: TextFieldState, appearance: TextInputAppearance, font: ResourceId, enabled: Boolean = true, textStyle: TextStyle = TextStyle.TextField, modifier: Modifier = Modifier.Empty, key: ElementKey<*>? = null)
+fun UiScope.TextField(state: TextFieldState, appearance: TextInputAppearance, font: ResourceId, enabled: StateSource<Boolean>, textStyle: TextStyle = TextStyle.TextField, modifier: Modifier = Modifier.Empty, key: ElementKey<*>? = null)
+fun UiScope.TextField(state: TextFieldState, appearance: TextInputAppearance, size: IntSize, enabled: Boolean = true, textStyle: TextStyle = TextStyle.TextField, modifier: Modifier = Modifier.Empty, key: ElementKey<*>? = null)
+fun UiScope.TextField(state: TextFieldState, appearance: TextInputAppearance, size: IntSize, enabled: StateSource<Boolean>, textStyle: TextStyle = TextStyle.TextField, modifier: Modifier = Modifier.Empty, key: ElementKey<*>? = null)
+fun UiScope.TextField(state: TextFieldState, appearance: TextInputAppearance, size: IntSize, font: ResourceId, enabled: Boolean = true, textStyle: TextStyle = TextStyle.TextField, modifier: Modifier = Modifier.Empty, key: ElementKey<*>? = null)
+fun UiScope.TextField(state: TextFieldState, appearance: TextInputAppearance, size: IntSize, font: ResourceId, enabled: StateSource<Boolean>, textStyle: TextStyle = TextStyle.TextField, modifier: Modifier = Modifier.Empty, key: ElementKey<*>? = null)
 fun UiScope.TextField(state: TextFieldState, enabled: Boolean = true, textStyle: TextStyle = TextStyle.TextField, modifier: Modifier = Modifier.Empty, key: ElementKey<*>? = null)
+fun UiScope.TextField(state: TextFieldState, enabled: StateSource<Boolean>, textStyle: TextStyle = TextStyle.TextField, modifier: Modifier = Modifier.Empty, key: ElementKey<*>? = null)
 fun UiScope.TextField(state: TextFieldState, font: ResourceId, enabled: Boolean = true, textStyle: TextStyle = TextStyle.TextField, modifier: Modifier = Modifier.Empty, key: ElementKey<*>? = null)
+fun UiScope.TextField(state: TextFieldState, font: ResourceId, enabled: StateSource<Boolean>, textStyle: TextStyle = TextStyle.TextField, modifier: Modifier = Modifier.Empty, key: ElementKey<*>? = null)
 fun UiScope.TextField(state: TextFieldState, size: IntSize, enabled: Boolean = true, textStyle: TextStyle = TextStyle.TextField, modifier: Modifier = Modifier.Empty, key: ElementKey<*>? = null)
+fun UiScope.TextField(state: TextFieldState, size: IntSize, enabled: StateSource<Boolean>, textStyle: TextStyle = TextStyle.TextField, modifier: Modifier = Modifier.Empty, key: ElementKey<*>? = null)
 fun UiScope.TextField(state: TextFieldState, size: IntSize, font: ResourceId, enabled: Boolean = true, textStyle: TextStyle = TextStyle.TextField, modifier: Modifier = Modifier.Empty, key: ElementKey<*>? = null)
+fun UiScope.TextField(state: TextFieldState, size: IntSize, font: ResourceId, enabled: StateSource<Boolean>, textStyle: TextStyle = TextStyle.TextField, modifier: Modifier = Modifier.Empty, key: ElementKey<*>? = null)
 ```
 
 <a id="text-area"></a>
@@ -142,14 +194,20 @@ fun UiScope.TextField(state: TextFieldState, size: IntSize, font: ResourceId, en
 
 TextArea edits one multiline value inside an explicit viewport with Unicode scalar navigation, inline IME composition, and independent vertical scrolling. It serves both note editing and message drafts without encoding an application model.
 
-- Compiled overloads: 2
+- Compiled overloads: 8
 - Modifiers: Place `TextArea` with ordinary layout modifiers and select its outer extent through `TextAreaViewport.Size` or `Lines`. Minecraft uses a fixed 9-pixel logical line box, optional extra line spacing, and four-pixel padding on each side. An external `Scrollbar(state.scrollState)` observes the editor's caller-owned scroll state; the editor does not insert a scrollbar or toolbar. The `font: ResourceId` overload changes layout, cursor placement, and drawing together.
 - Parent scope: `TextArea` is a leaf extension on the active `UiScope`; one retained editor observes its owner-thread `TextAreaState`. Creating an immutable description does not attach the state, and descriptions can be reused after detachment. Simultaneous attachment with the same caller-owned state throws `IllegalStateException`. The state stores canonical LF newlines and enforces a positive UTF-16 maximum length. Soft wrapping never edits the stored value, and IME preedit remains separate until committed. `SemanticsRole.TextArea` exposes the committed text through `Semantics.value`, without typed accessibility edit actions. Selection, clipboard commands, grapheme-cluster editing, and the platform IME candidate window are outside this component's contract.
-- [Showcase image and compiled example](https://github.com/sya-ri/strata/blob/master/docs/components.md#text-area)
+- [Showcase image and compiled example](https://github.com/sya-ri/strata/blob/master/docs/reference/components.md#text-area)
 
 ```kotlin
+fun UiScope.TextArea(state: TextAreaState, appearance: TextInputAppearance, viewport: TextAreaViewport, enabled: Boolean = true, textStyle: TextStyle = TextStyle.TextField, wrap: TextWrap = TextWrap.Word, lineSpacing: Int = 0, modifier: Modifier = Modifier.Empty, key: ElementKey<*>? = null)
+fun UiScope.TextArea(state: TextAreaState, appearance: TextInputAppearance, viewport: TextAreaViewport, enabled: StateSource<Boolean>, textStyle: TextStyle = TextStyle.TextField, wrap: TextWrap = TextWrap.Word, lineSpacing: Int = 0, modifier: Modifier = Modifier.Empty, key: ElementKey<*>? = null)
+fun UiScope.TextArea(state: TextAreaState, appearance: TextInputAppearance, viewport: TextAreaViewport, font: ResourceId, enabled: Boolean = true, textStyle: TextStyle = TextStyle.TextField, wrap: TextWrap = TextWrap.Word, lineSpacing: Int = 0, modifier: Modifier = Modifier.Empty, key: ElementKey<*>? = null)
+fun UiScope.TextArea(state: TextAreaState, appearance: TextInputAppearance, viewport: TextAreaViewport, font: ResourceId, enabled: StateSource<Boolean>, textStyle: TextStyle = TextStyle.TextField, wrap: TextWrap = TextWrap.Word, lineSpacing: Int = 0, modifier: Modifier = Modifier.Empty, key: ElementKey<*>? = null)
 fun UiScope.TextArea(state: TextAreaState, viewport: TextAreaViewport, enabled: Boolean = true, textStyle: TextStyle = TextStyle.TextField, wrap: TextWrap = TextWrap.Word, lineSpacing: Int = 0, modifier: Modifier = Modifier.Empty, key: ElementKey<*>? = null)
+fun UiScope.TextArea(state: TextAreaState, viewport: TextAreaViewport, enabled: StateSource<Boolean>, textStyle: TextStyle = TextStyle.TextField, wrap: TextWrap = TextWrap.Word, lineSpacing: Int = 0, modifier: Modifier = Modifier.Empty, key: ElementKey<*>? = null)
 fun UiScope.TextArea(state: TextAreaState, viewport: TextAreaViewport, font: ResourceId, enabled: Boolean = true, textStyle: TextStyle = TextStyle.TextField, wrap: TextWrap = TextWrap.Word, lineSpacing: Int = 0, modifier: Modifier = Modifier.Empty, key: ElementKey<*>? = null)
+fun UiScope.TextArea(state: TextAreaState, viewport: TextAreaViewport, font: ResourceId, enabled: StateSource<Boolean>, textStyle: TextStyle = TextStyle.TextField, wrap: TextWrap = TextWrap.Word, lineSpacing: Int = 0, modifier: Modifier = Modifier.Empty, key: ElementKey<*>? = null)
 ```
 
 <a id="button"></a>
@@ -158,14 +216,20 @@ fun UiScope.TextArea(state: TextAreaState, viewport: TextAreaViewport, font: Res
 
 Button renders verified fixed-height Minecraft sprite, label, and enabled semantic states, including the native 150- and 200-pixel widths. It owns no implicit focus or activation, while reusable input actions live in modifiers.
 
-- Compiled overloads: 2
+- Compiled overloads: 8
 - Modifiers: Compose `onActivate` with the component's enabled state when a primary pointer press and each focused Enter or Space press represent the same action; false adds no input or focus node. `onPointerEvent`, `onPress`, `onRelease`, `onMove`, `onDrag`, `onScroll`, and `onHover` remain available for pointer-specific behavior without component callback parameters.
 - Parent scope: `Button` is a top-level extension on the active `UiScope`. The screen runtime installs its selected Minecraft profile only for the definition callback, while caller-owned activation and pointer modifiers remain valid only through their retained modifier-node lifetime.
-- [Showcase image and compiled example](https://github.com/sya-ri/strata/blob/master/docs/components.md#button)
+- [Showcase image and compiled example](https://github.com/sya-ri/strata/blob/master/docs/reference/components.md#button)
 
 ```kotlin
+fun UiScope.Button(label: StateSource<String>, width: Int = 150, enabled: Boolean = true, modifier: Modifier = Modifier.Empty, key: ElementKey<*>? = null)
+fun UiScope.Button(label: StateSource<String>, width: Int = 150, enabled: StateSource<Boolean>, modifier: Modifier = Modifier.Empty, key: ElementKey<*>? = null)
+fun UiScope.Button(label: StateSource<UiText>, width: Int = 150, enabled: Boolean = true, modifier: Modifier = Modifier.Empty, key: ElementKey<*>? = null)
+fun UiScope.Button(label: StateSource<UiText>, width: Int = 150, enabled: StateSource<Boolean>, modifier: Modifier = Modifier.Empty, key: ElementKey<*>? = null)
 fun UiScope.Button(label: String, width: Int = 150, enabled: Boolean = true, modifier: Modifier = Modifier.Empty, key: ElementKey<*>? = null)
+fun UiScope.Button(label: String, width: Int = 150, enabled: StateSource<Boolean>, modifier: Modifier = Modifier.Empty, key: ElementKey<*>? = null)
 fun UiScope.Button(label: UiText, width: Int = 150, enabled: Boolean = true, modifier: Modifier = Modifier.Empty, key: ElementKey<*>? = null)
+fun UiScope.Button(label: UiText, width: Int = 150, enabled: StateSource<Boolean>, modifier: Modifier = Modifier.Empty, key: ElementKey<*>? = null)
 ```
 
 <a id="checkbox"></a>
@@ -174,14 +238,20 @@ fun UiScope.Button(label: UiText, width: Int = 150, enabled: Boolean = true, mod
 
 Checkbox reproduces the verified 20-pixel Minecraft checkbox surface, label spacing, focused input, checked semantics, and caller-owned boolean state.
 
-- Compiled overloads: 2
+- Compiled overloads: 8
 - Modifiers: Sizing and placement modifiers compose around `Checkbox`; caller-owned state and typed checked-change actions keep the reusable boolean control independent of a settings domain.
 - Parent scope: `Checkbox` is a leaf extension on the active `UiScope`; `CheckboxState` is caller-owned, owner-thread confined, and may be shared with application state adapters.
-- [Showcase image and compiled example](https://github.com/sya-ri/strata/blob/master/docs/components.md#checkbox)
+- [Showcase image and compiled example](https://github.com/sya-ri/strata/blob/master/docs/reference/components.md#checkbox)
 
 ```kotlin
+fun UiScope.Checkbox(label: StateSource<String>, state: CheckboxState, width: Int = 150, enabled: Boolean = true, modifier: Modifier = Modifier.Empty, key: ElementKey<*>? = null)
+fun UiScope.Checkbox(label: StateSource<String>, state: CheckboxState, width: Int = 150, enabled: StateSource<Boolean>, modifier: Modifier = Modifier.Empty, key: ElementKey<*>? = null)
+fun UiScope.Checkbox(label: StateSource<UiText>, state: CheckboxState, width: Int = 150, enabled: Boolean = true, modifier: Modifier = Modifier.Empty, key: ElementKey<*>? = null)
+fun UiScope.Checkbox(label: StateSource<UiText>, state: CheckboxState, width: Int = 150, enabled: StateSource<Boolean>, modifier: Modifier = Modifier.Empty, key: ElementKey<*>? = null)
 fun UiScope.Checkbox(label: String, state: CheckboxState, width: Int = 150, enabled: Boolean = true, modifier: Modifier = Modifier.Empty, key: ElementKey<*>? = null)
+fun UiScope.Checkbox(label: String, state: CheckboxState, width: Int = 150, enabled: StateSource<Boolean>, modifier: Modifier = Modifier.Empty, key: ElementKey<*>? = null)
 fun UiScope.Checkbox(label: UiText, state: CheckboxState, width: Int = 150, enabled: Boolean = true, modifier: Modifier = Modifier.Empty, key: ElementKey<*>? = null)
+fun UiScope.Checkbox(label: UiText, state: CheckboxState, width: Int = 150, enabled: StateSource<Boolean>, modifier: Modifier = Modifier.Empty, key: ElementKey<*>? = null)
 ```
 
 <a id="cycle-button"></a>
@@ -190,13 +260,16 @@ fun UiScope.Checkbox(label: UiText, state: CheckboxState, width: Int = 150, enab
 
 CycleButton reuses the verified button surface for a finite generic option sequence with forward, backward, wheel, and keyboard navigation.
 
-- Compiled overloads: 1
+- Compiled overloads: 4
 - Modifiers: Sizing and placement modifiers compose around `CycleButton`; its immutable option set and typed change action remain generic rather than encoding one game's option model.
 - Parent scope: `CycleButton` is a leaf extension on the active `UiScope`; it snapshots labels for the validated finite option set and retains no child scope.
-- [Showcase image and compiled example](https://github.com/sya-ri/strata/blob/master/docs/components.md#cycle-button)
+- [Showcase image and compiled example](https://github.com/sya-ri/strata/blob/master/docs/reference/components.md#cycle-button)
 
 ```kotlin
 fun <T : Any> UiScope.CycleButton(state: CycleButtonState<T>, width: Int = 150, enabled: Boolean = true, modifier: Modifier = Modifier.Empty, key: ElementKey<*>? = null, label: (T) -> UiText = { value -> UiText.Literal(state.formatKnownMember(value)) })
+fun <T : Any> UiScope.CycleButton(state: CycleButtonState<T>, width: Int = 150, enabled: Boolean = true, modifier: Modifier = Modifier.Empty, key: ElementKey<*>? = null, label: StateSource<(T) -> UiText>)
+fun <T : Any> UiScope.CycleButton(state: CycleButtonState<T>, width: Int = 150, enabled: StateSource<Boolean>, modifier: Modifier = Modifier.Empty, key: ElementKey<*>? = null, label: (T) -> UiText = { value -> UiText.Literal(state.formatKnownMember(value)) })
+fun <T : Any> UiScope.CycleButton(state: CycleButtonState<T>, width: Int = 150, enabled: StateSource<Boolean>, modifier: Modifier = Modifier.Empty, key: ElementKey<*>? = null, label: StateSource<(T) -> UiText>)
 ```
 
 <a id="slider"></a>
@@ -205,14 +278,20 @@ fun <T : Any> UiScope.CycleButton(state: CycleButtonState<T>, width: Int = 150, 
 
 Slider reproduces Minecraft's profile-backed track and handle while normalizing finite numeric ranges and optional discrete steps in caller-owned state.
 
-- Compiled overloads: 2
+- Compiled overloads: 8
 - Modifiers: Sizing and placement modifiers compose around `Slider`; caller-owned range state and typed value-change actions remain reusable across volume, brightness, machine power, and other numeric domains.
 - Parent scope: `Slider` is a leaf extension on the active `UiScope`; `SliderState` owns normalization and quantization while the active profile owns rendering.
-- [Showcase image and compiled example](https://github.com/sya-ri/strata/blob/master/docs/components.md#slider)
+- [Showcase image and compiled example](https://github.com/sya-ri/strata/blob/master/docs/reference/components.md#slider)
 
 ```kotlin
+fun UiScope.Slider(label: StateSource<String>, state: SliderState, width: Int = 150, enabled: Boolean = true, modifier: Modifier = Modifier.Empty, key: ElementKey<*>? = null)
+fun UiScope.Slider(label: StateSource<String>, state: SliderState, width: Int = 150, enabled: StateSource<Boolean>, modifier: Modifier = Modifier.Empty, key: ElementKey<*>? = null)
+fun UiScope.Slider(label: StateSource<UiText>, state: SliderState, width: Int = 150, enabled: Boolean = true, modifier: Modifier = Modifier.Empty, key: ElementKey<*>? = null)
+fun UiScope.Slider(label: StateSource<UiText>, state: SliderState, width: Int = 150, enabled: StateSource<Boolean>, modifier: Modifier = Modifier.Empty, key: ElementKey<*>? = null)
 fun UiScope.Slider(label: String, state: SliderState, width: Int = 150, enabled: Boolean = true, modifier: Modifier = Modifier.Empty, key: ElementKey<*>? = null)
+fun UiScope.Slider(label: String, state: SliderState, width: Int = 150, enabled: StateSource<Boolean>, modifier: Modifier = Modifier.Empty, key: ElementKey<*>? = null)
 fun UiScope.Slider(label: UiText, state: SliderState, width: Int = 150, enabled: Boolean = true, modifier: Modifier = Modifier.Empty, key: ElementKey<*>? = null)
+fun UiScope.Slider(label: UiText, state: SliderState, width: Int = 150, enabled: StateSource<Boolean>, modifier: Modifier = Modifier.Empty, key: ElementKey<*>? = null)
 ```
 
 <a id="tab"></a>
@@ -221,14 +300,28 @@ fun UiScope.Slider(label: UiText, state: SliderState, width: Int = 150, enabled:
 
 Tab combines the verified button surface with external selection semantics and a reusable underline or caller-defined selected indicator, without encoding a particular screen's tab model or owning implicit focus and activation.
 
-- Compiled overloads: 2
+- Compiled overloads: 16
 - Modifiers: Selection is caller-owned data, while `Underline` or `Custom` controls its reusable selected-state presentation. Compose `onActivate(enabled)` for shared primary-pointer and focused Enter-or-Space activation; raw pointer actions remain ordinary event modifiers.
 - Parent scope: `Tab` is a top-level extension on the active `UiScope`. A custom selected indicator emits exactly one nested root; the selected value and event actions remain application-owned.
-- [Showcase image and compiled example](https://github.com/sya-ri/strata/blob/master/docs/components.md#tab)
+- [Showcase image and compiled example](https://github.com/sya-ri/strata/blob/master/docs/reference/components.md#tab)
 
 ```kotlin
+fun UiScope.Tab(label: StateSource<String>, selected: Boolean, width: Int = 150, enabled: Boolean = true, indicator: TabSelectionIndicator = TabSelectionIndicator.Underline, modifier: Modifier = Modifier.Empty, key: ElementKey<*>? = null)
+fun UiScope.Tab(label: StateSource<String>, selected: Boolean, width: Int = 150, enabled: StateSource<Boolean>, indicator: TabSelectionIndicator = TabSelectionIndicator.Underline, modifier: Modifier = Modifier.Empty, key: ElementKey<*>? = null)
+fun UiScope.Tab(label: StateSource<String>, selected: StateSource<Boolean>, width: Int = 150, enabled: Boolean = true, indicator: TabSelectionIndicator = TabSelectionIndicator.Underline, modifier: Modifier = Modifier.Empty, key: ElementKey<*>? = null)
+fun UiScope.Tab(label: StateSource<String>, selected: StateSource<Boolean>, width: Int = 150, enabled: StateSource<Boolean>, indicator: TabSelectionIndicator = TabSelectionIndicator.Underline, modifier: Modifier = Modifier.Empty, key: ElementKey<*>? = null)
+fun UiScope.Tab(label: StateSource<UiText>, selected: Boolean, width: Int = 150, enabled: Boolean = true, indicator: TabSelectionIndicator = TabSelectionIndicator.Underline, modifier: Modifier = Modifier.Empty, key: ElementKey<*>? = null)
+fun UiScope.Tab(label: StateSource<UiText>, selected: Boolean, width: Int = 150, enabled: StateSource<Boolean>, indicator: TabSelectionIndicator = TabSelectionIndicator.Underline, modifier: Modifier = Modifier.Empty, key: ElementKey<*>? = null)
+fun UiScope.Tab(label: StateSource<UiText>, selected: StateSource<Boolean>, width: Int = 150, enabled: Boolean = true, indicator: TabSelectionIndicator = TabSelectionIndicator.Underline, modifier: Modifier = Modifier.Empty, key: ElementKey<*>? = null)
+fun UiScope.Tab(label: StateSource<UiText>, selected: StateSource<Boolean>, width: Int = 150, enabled: StateSource<Boolean>, indicator: TabSelectionIndicator = TabSelectionIndicator.Underline, modifier: Modifier = Modifier.Empty, key: ElementKey<*>? = null)
 fun UiScope.Tab(label: String, selected: Boolean, width: Int = 150, enabled: Boolean = true, indicator: TabSelectionIndicator = TabSelectionIndicator.Underline, modifier: Modifier = Modifier.Empty, key: ElementKey<*>? = null)
+fun UiScope.Tab(label: String, selected: Boolean, width: Int = 150, enabled: StateSource<Boolean>, indicator: TabSelectionIndicator = TabSelectionIndicator.Underline, modifier: Modifier = Modifier.Empty, key: ElementKey<*>? = null)
+fun UiScope.Tab(label: String, selected: StateSource<Boolean>, width: Int = 150, enabled: Boolean = true, indicator: TabSelectionIndicator = TabSelectionIndicator.Underline, modifier: Modifier = Modifier.Empty, key: ElementKey<*>? = null)
+fun UiScope.Tab(label: String, selected: StateSource<Boolean>, width: Int = 150, enabled: StateSource<Boolean>, indicator: TabSelectionIndicator = TabSelectionIndicator.Underline, modifier: Modifier = Modifier.Empty, key: ElementKey<*>? = null)
 fun UiScope.Tab(label: UiText, selected: Boolean, width: Int = 150, enabled: Boolean = true, indicator: TabSelectionIndicator = TabSelectionIndicator.Underline, modifier: Modifier = Modifier.Empty, key: ElementKey<*>? = null)
+fun UiScope.Tab(label: UiText, selected: Boolean, width: Int = 150, enabled: StateSource<Boolean>, indicator: TabSelectionIndicator = TabSelectionIndicator.Underline, modifier: Modifier = Modifier.Empty, key: ElementKey<*>? = null)
+fun UiScope.Tab(label: UiText, selected: StateSource<Boolean>, width: Int = 150, enabled: Boolean = true, indicator: TabSelectionIndicator = TabSelectionIndicator.Underline, modifier: Modifier = Modifier.Empty, key: ElementKey<*>? = null)
+fun UiScope.Tab(label: UiText, selected: StateSource<Boolean>, width: Int = 150, enabled: StateSource<Boolean>, indicator: TabSelectionIndicator = TabSelectionIndicator.Underline, modifier: Modifier = Modifier.Empty, key: ElementKey<*>? = null)
 ```
 
 <a id="scroll-area"></a>
@@ -240,7 +333,7 @@ ScrollArea reproduces the verified Minecraft menu-list background, clipping, sep
 - Compiled overloads: 1
 - Modifiers: Ordinary sizing and placement modifiers define only the clipped viewport. The shared `ScrollState` links optional external controls without forcing a scrollbar into the component tree.
 - Parent scope: `ScrollArea` evaluates a callback-lifetime `UiScope` that emits exactly one content root; the caller owns the linked state and may omit a scrollbar.
-- [Showcase image and compiled example](https://github.com/sya-ri/strata/blob/master/docs/components.md#scroll-area)
+- [Showcase image and compiled example](https://github.com/sya-ri/strata/blob/master/docs/reference/components.md#scroll-area)
 
 ```kotlin
 fun UiScope.ScrollArea(state: ScrollState, modifier: Modifier = Modifier.Empty, key: ElementKey<*>? = null, scrollRate: Int = 9, content: UiScope.() -> Unit)
@@ -255,7 +348,7 @@ Scrollbar reproduces the verified tiled track and proportional thumb while remai
 - Compiled overloads: 1
 - Modifiers: Sizing and parent placement modifiers position `Scrollbar` independently from its viewport; sharing `ScrollState` is the only link required.
 - Parent scope: `Scrollbar` is an independent leaf in any surrounding layout. It observes caller-owned `ScrollState` and releases that observation when its retained node is disposed.
-- [Showcase image and compiled example](https://github.com/sya-ri/strata/blob/master/docs/components.md#scrollbar)
+- [Showcase image and compiled example](https://github.com/sya-ri/strata/blob/master/docs/reference/components.md#scrollbar)
 
 ```kotlin
 fun UiScope.Scrollbar(state: ScrollState, modifier: Modifier = Modifier.Empty, key: ElementKey<*>? = null)
@@ -267,15 +360,28 @@ fun UiScope.Scrollbar(state: ScrollState, modifier: Modifier = Modifier.Empty, k
 
 VirtualList retains only visible fixed-height rows plus bounded overscan, supports prepended and appended loading, and can jump by index or stable key.
 
-- Compiled overloads: 3
+- Compiled overloads: 16
 - Modifiers: Sizing is expressed by `viewportSize`; modifier actions receive leading and trailing load requests while caller-owned state supports index, key, and boundary navigation.
 - Parent scope: `VirtualList` evaluates row callbacks only for visible rows plus bounded overscan; stable keys preserve retained identity while the caller owns source and navigation state.
-- [Showcase image and compiled example](https://github.com/sya-ri/strata/blob/master/docs/components.md#virtual-list)
+- [Showcase image and compiled example](https://github.com/sya-ri/strata/blob/master/docs/reference/components.md#virtual-list)
 
 ```kotlin
 fun <T : Any, K : Any> UiScope.VirtualList(itemCount: () -> Int, itemAt: (Int) -> T, keyAt: (Int) -> K, state: VirtualListState<K>, viewportSize: IntSize, rowHeight: Int, indexOfKey: ((K) -> Int?)? = null, scrollRate: Int = 10, canLoadLeading: Boolean = false, canLoadTrailing: Boolean = false, modifier: Modifier = Modifier.Empty, key: ElementKey<*>? = null, content: UiScope.(T) -> Unit)
+fun <T : Any, K : Any> UiScope.VirtualList(itemCount: () -> Int, itemAt: (Int) -> T, keyAt: (Int) -> K, state: VirtualListState<K>, viewportSize: IntSize, rowHeight: Int, indexOfKey: ((K) -> Int?)? = null, scrollRate: Int = 10, canLoadLeading: Boolean = false, canLoadTrailing: StateSource<Boolean>, modifier: Modifier = Modifier.Empty, key: ElementKey<*>? = null, content: UiScope.(T) -> Unit)
+fun <T : Any, K : Any> UiScope.VirtualList(itemCount: () -> Int, itemAt: (Int) -> T, keyAt: (Int) -> K, state: VirtualListState<K>, viewportSize: IntSize, rowHeight: Int, indexOfKey: ((K) -> Int?)? = null, scrollRate: Int = 10, canLoadLeading: StateSource<Boolean>, canLoadTrailing: Boolean = false, modifier: Modifier = Modifier.Empty, key: ElementKey<*>? = null, content: UiScope.(T) -> Unit)
+fun <T : Any, K : Any> UiScope.VirtualList(itemCount: () -> Int, itemAt: (Int) -> T, keyAt: (Int) -> K, state: VirtualListState<K>, viewportSize: IntSize, rowHeight: Int, indexOfKey: ((K) -> Int?)? = null, scrollRate: Int = 10, canLoadLeading: StateSource<Boolean>, canLoadTrailing: StateSource<Boolean>, modifier: Modifier = Modifier.Empty, key: ElementKey<*>? = null, content: UiScope.(T) -> Unit)
 fun <T : Any, K : Any> UiScope.VirtualList(itemCount: Int, itemAt: (Int) -> T, keyAt: (Int) -> K, state: VirtualListState<K>, viewportSize: IntSize, rowHeight: Int, indexOfKey: (K) -> Int? = { target -> (0 until itemCount).firstOrNull { index -> keyAt(index) == target } }, scrollRate: Int = 10, canLoadLeading: Boolean = false, canLoadTrailing: Boolean = false, modifier: Modifier = Modifier.Empty, key: ElementKey<*>? = null, content: UiScope.(T) -> Unit)
+fun <T : Any, K : Any> UiScope.VirtualList(itemCount: Int, itemAt: (Int) -> T, keyAt: (Int) -> K, state: VirtualListState<K>, viewportSize: IntSize, rowHeight: Int, indexOfKey: (K) -> Int? = { target -> (0 until itemCount).firstOrNull { index -> keyAt(index) == target } }, scrollRate: Int = 10, canLoadLeading: Boolean = false, canLoadTrailing: StateSource<Boolean>, modifier: Modifier = Modifier.Empty, key: ElementKey<*>? = null, content: UiScope.(T) -> Unit)
+fun <T : Any, K : Any> UiScope.VirtualList(itemCount: Int, itemAt: (Int) -> T, keyAt: (Int) -> K, state: VirtualListState<K>, viewportSize: IntSize, rowHeight: Int, indexOfKey: (K) -> Int? = { target -> (0 until itemCount).firstOrNull { index -> keyAt(index) == target } }, scrollRate: Int = 10, canLoadLeading: StateSource<Boolean>, canLoadTrailing: Boolean = false, modifier: Modifier = Modifier.Empty, key: ElementKey<*>? = null, content: UiScope.(T) -> Unit)
+fun <T : Any, K : Any> UiScope.VirtualList(itemCount: Int, itemAt: (Int) -> T, keyAt: (Int) -> K, state: VirtualListState<K>, viewportSize: IntSize, rowHeight: Int, indexOfKey: (K) -> Int? = { target -> (0 until itemCount).firstOrNull { index -> keyAt(index) == target } }, scrollRate: Int = 10, canLoadLeading: StateSource<Boolean>, canLoadTrailing: StateSource<Boolean>, modifier: Modifier = Modifier.Empty, key: ElementKey<*>? = null, content: UiScope.(T) -> Unit)
 fun <T : Any, K : Any> UiScope.VirtualList(items: List<T>, keyOf: (T) -> K, state: VirtualListState<K>, viewportSize: IntSize, rowHeight: Int, scrollRate: Int = 10, canLoadLeading: Boolean = false, canLoadTrailing: Boolean = false, modifier: Modifier = Modifier.Empty, key: ElementKey<*>? = null, content: UiScope.(T) -> Unit)
+fun <T : Any, K : Any> UiScope.VirtualList(items: List<T>, keyOf: (T) -> K, state: VirtualListState<K>, viewportSize: IntSize, rowHeight: Int, scrollRate: Int = 10, canLoadLeading: Boolean = false, canLoadTrailing: StateSource<Boolean>, modifier: Modifier = Modifier.Empty, key: ElementKey<*>? = null, content: UiScope.(T) -> Unit)
+fun <T : Any, K : Any> UiScope.VirtualList(items: List<T>, keyOf: (T) -> K, state: VirtualListState<K>, viewportSize: IntSize, rowHeight: Int, scrollRate: Int = 10, canLoadLeading: StateSource<Boolean>, canLoadTrailing: Boolean = false, modifier: Modifier = Modifier.Empty, key: ElementKey<*>? = null, content: UiScope.(T) -> Unit)
+fun <T : Any, K : Any> UiScope.VirtualList(items: List<T>, keyOf: (T) -> K, state: VirtualListState<K>, viewportSize: IntSize, rowHeight: Int, scrollRate: Int = 10, canLoadLeading: StateSource<Boolean>, canLoadTrailing: StateSource<Boolean>, modifier: Modifier = Modifier.Empty, key: ElementKey<*>? = null, content: UiScope.(T) -> Unit)
+fun <T : Any, K : Any> UiScope.VirtualList(items: StateSource<List<T>>, keyOf: (T) -> K, state: VirtualListState<K>, viewportSize: IntSize, rowHeight: Int, scrollRate: Int = 10, canLoadLeading: Boolean = false, canLoadTrailing: Boolean = false, modifier: Modifier = Modifier.Empty, key: ElementKey<*>? = null, content: UiScope.(T) -> Unit)
+fun <T : Any, K : Any> UiScope.VirtualList(items: StateSource<List<T>>, keyOf: (T) -> K, state: VirtualListState<K>, viewportSize: IntSize, rowHeight: Int, scrollRate: Int = 10, canLoadLeading: Boolean = false, canLoadTrailing: StateSource<Boolean>, modifier: Modifier = Modifier.Empty, key: ElementKey<*>? = null, content: UiScope.(T) -> Unit)
+fun <T : Any, K : Any> UiScope.VirtualList(items: StateSource<List<T>>, keyOf: (T) -> K, state: VirtualListState<K>, viewportSize: IntSize, rowHeight: Int, scrollRate: Int = 10, canLoadLeading: StateSource<Boolean>, canLoadTrailing: Boolean = false, modifier: Modifier = Modifier.Empty, key: ElementKey<*>? = null, content: UiScope.(T) -> Unit)
+fun <T : Any, K : Any> UiScope.VirtualList(items: StateSource<List<T>>, keyOf: (T) -> K, state: VirtualListState<K>, viewportSize: IntSize, rowHeight: Int, scrollRate: Int = 10, canLoadLeading: StateSource<Boolean>, canLoadTrailing: StateSource<Boolean>, modifier: Modifier = Modifier.Empty, key: ElementKey<*>? = null, content: UiScope.(T) -> Unit)
 ```
 
 <a id="selection-list"></a>
@@ -284,13 +390,20 @@ fun <T : Any, K : Any> UiScope.VirtualList(items: List<T>, keyOf: (T) -> K, stat
 
 SelectionList adds generic caller-owned selection and typed selection-change actions to VirtualList without encoding Social, inventory, advancement, or Mod-specific rows.
 
-- Compiled overloads: 1
+- Compiled overloads: 8
 - Modifiers: Viewport behavior composes with typed selection actions and caller-owned selection state; row visuals remain application composition rather than a screen-specific built-in.
 - Parent scope: `SelectionList` wraps visible virtual rows with generic selection semantics and press handling while leaving each row's single content root to the caller.
-- [Showcase image and compiled example](https://github.com/sya-ri/strata/blob/master/docs/components.md#selection-list)
+- [Showcase image and compiled example](https://github.com/sya-ri/strata/blob/master/docs/reference/components.md#selection-list)
 
 ```kotlin
 fun <T : Any, K : Any> UiScope.SelectionList(items: List<T>, keyOf: (T) -> K, state: SelectionListState<K>, viewportSize: IntSize, rowHeight: Int, canLoadLeading: Boolean = false, canLoadTrailing: Boolean = false, scrollRate: Int = 10, modifier: Modifier = Modifier.Empty, key: ElementKey<*>? = null, content: UiScope.(T) -> Unit)
+fun <T : Any, K : Any> UiScope.SelectionList(items: List<T>, keyOf: (T) -> K, state: SelectionListState<K>, viewportSize: IntSize, rowHeight: Int, canLoadLeading: Boolean = false, canLoadTrailing: StateSource<Boolean>, scrollRate: Int = 10, modifier: Modifier = Modifier.Empty, key: ElementKey<*>? = null, content: UiScope.(T) -> Unit)
+fun <T : Any, K : Any> UiScope.SelectionList(items: List<T>, keyOf: (T) -> K, state: SelectionListState<K>, viewportSize: IntSize, rowHeight: Int, canLoadLeading: StateSource<Boolean>, canLoadTrailing: Boolean = false, scrollRate: Int = 10, modifier: Modifier = Modifier.Empty, key: ElementKey<*>? = null, content: UiScope.(T) -> Unit)
+fun <T : Any, K : Any> UiScope.SelectionList(items: List<T>, keyOf: (T) -> K, state: SelectionListState<K>, viewportSize: IntSize, rowHeight: Int, canLoadLeading: StateSource<Boolean>, canLoadTrailing: StateSource<Boolean>, scrollRate: Int = 10, modifier: Modifier = Modifier.Empty, key: ElementKey<*>? = null, content: UiScope.(T) -> Unit)
+fun <T : Any, K : Any> UiScope.SelectionList(items: StateSource<List<T>>, keyOf: (T) -> K, state: SelectionListState<K>, viewportSize: IntSize, rowHeight: Int, canLoadLeading: Boolean = false, canLoadTrailing: Boolean = false, scrollRate: Int = 10, modifier: Modifier = Modifier.Empty, key: ElementKey<*>? = null, content: UiScope.(T) -> Unit)
+fun <T : Any, K : Any> UiScope.SelectionList(items: StateSource<List<T>>, keyOf: (T) -> K, state: SelectionListState<K>, viewportSize: IntSize, rowHeight: Int, canLoadLeading: Boolean = false, canLoadTrailing: StateSource<Boolean>, scrollRate: Int = 10, modifier: Modifier = Modifier.Empty, key: ElementKey<*>? = null, content: UiScope.(T) -> Unit)
+fun <T : Any, K : Any> UiScope.SelectionList(items: StateSource<List<T>>, keyOf: (T) -> K, state: SelectionListState<K>, viewportSize: IntSize, rowHeight: Int, canLoadLeading: StateSource<Boolean>, canLoadTrailing: Boolean = false, scrollRate: Int = 10, modifier: Modifier = Modifier.Empty, key: ElementKey<*>? = null, content: UiScope.(T) -> Unit)
+fun <T : Any, K : Any> UiScope.SelectionList(items: StateSource<List<T>>, keyOf: (T) -> K, state: SelectionListState<K>, viewportSize: IntSize, rowHeight: Int, canLoadLeading: StateSource<Boolean>, canLoadTrailing: StateSource<Boolean>, scrollRate: Int = 10, modifier: Modifier = Modifier.Empty, key: ElementKey<*>? = null, content: UiScope.(T) -> Unit)
 ```
 
 <a id="image"></a>
@@ -299,14 +412,16 @@ fun <T : Any, K : Any> UiScope.SelectionList(items: List<T>, keyOf: (T) -> K, st
 
 Image maps one immutable resource-pack image to an exact logical size with deterministic nearest sampling; it is reusable for icons, portraits, diagrams, and Mod-owned panels.
 
-- Compiled overloads: 2
+- Compiled overloads: 4
 - Modifiers: Sizing and placement modifiers compose around `Image`; `imageBackground` paints the same immutable resource behind any layout component with typed stretch or tile mapping.
 - Parent scope: `Image` is a top-level extension on the active `UiScope`. It retains detached pixels rather than a Minecraft resource object, so the Fabric loader may resolve a resource-pack replacement before the description is built.
-- [Showcase image and compiled example](https://github.com/sya-ri/strata/blob/master/docs/components.md#image)
+- [Showcase image and compiled example](https://github.com/sya-ri/strata/blob/master/docs/reference/components.md#image)
 
 ```kotlin
 fun UiScope.Image(source: ImageSource, size: IntSize? = null, modifier: Modifier = Modifier.Empty, key: ElementKey<*>? = null)
 fun UiScope.Image(source: ImageSource, sourceRegion: IntRect, size: IntSize = IntSize(sourceRegion.width, sourceRegion.height), modifier: Modifier = Modifier.Empty, key: ElementKey<*>? = null)
+fun UiScope.Image(source: StateSource<ImageSource>, size: IntSize? = null, modifier: Modifier = Modifier.Empty, key: ElementKey<*>? = null)
+fun UiScope.Image(source: StateSource<ImageSource>, sourceRegion: IntRect, size: IntSize = IntSize(sourceRegion.width, sourceRegion.height), modifier: Modifier = Modifier.Empty, key: ElementKey<*>? = null)
 ```
 
 <a id="canvas"></a>
@@ -315,13 +430,14 @@ fun UiScope.Image(source: ImageSource, sourceRegion: IntRect, size: IntSize = In
 
 Canvas displays externally produced CPU frames or version-runtime native output in one input-passive rectangle. Decoded video and camera, filter, or custom-renderer output are independent uses; composing Image and Stack cannot provide source cutoffs, attachment lifetimes, leased GPU capture, or owned offscreen targets. The component does not implement a decoder, camera, world renderer, filter, or browser engine.
 
-- Compiled overloads: 1
+- Compiled overloads: 2
 - Modifiers: Use an explicit positive logical `size`; the whole source stretches with nearest sampling, and changes to source pixel extent only repaint that destination. Canvas is input-passive. Compose `onCapturedPointerEvent` to forward unclamped local logical pointer coordinates, and use ordinary focus and keyboard modifiers only when the application needs them.
 - Parent scope: `Canvas` is a leaf extension with no content scope or parent-data API. `canvasSource(image)` retains immutable CPU pixels, while `canvasSource(frames)` observes `StateSource<DrawImage>` through owner-thread frame cutoffs. Each attachment owns its binding; replacement, detachment, and close stop that binding without closing the externally owned source. Native sources require the matching versioned runtime and do not read back pixels during normal presentation. Native headless capture requires an immutable snapshot of the same committed generation, physical extent, and top-left orientation; a missing or mismatched snapshot fails before any output.
-- [Showcase image and compiled example](https://github.com/sya-ri/strata/blob/master/docs/components.md#canvas)
+- [Showcase image and compiled example](https://github.com/sya-ri/strata/blob/master/docs/reference/components.md#canvas)
 
 ```kotlin
 fun UiScope.Canvas(source: CanvasSource, size: IntSize, modifier: Modifier = Modifier.Empty, key: ElementKey<*>? = null)
+fun UiScope.Canvas(source: StateSource<CanvasSource>, size: IntSize, modifier: Modifier = Modifier.Empty, key: ElementKey<*>? = null)
 ```
 
 <a id="tiled-image"></a>
@@ -330,12 +446,13 @@ fun UiScope.Canvas(source: CanvasSource, size: IntSize, modifier: Modifier = Mod
 
 TiledImage presents one bounded logical raster from independently revisioned immutable tiles, selecting only the visible level and coarser fallback working set instead of joining or copying the complete image. Maps, scans, and schematics are independent uses that cannot preserve bounded subscriptions and reusable tile images through ordinary Image composition alone.
 
-- Compiled overloads: 1
+- Compiled overloads: 2
 - Modifiers: Use the explicit positive `size` as the clipped viewport, keep navigation in caller-owned `PanZoomState`, and compose `panZoom(state)` when direct drag and wheel navigation is wanted. `PanZoomFit.Contain` or `Cover` defines zoom one; ordinary paint and semantics modifiers apply to the viewport without changing tile identities.
 - Parent scope: `TiledImage` evaluates a callback-lifetime `TiledImageScope`; each fixed-size direct child uses `atContentPosition` with either a fixed coordinate or a `StateSource<DoubleOffset>` committed at frame cutoff. Revisioned marker movement changes only overlay placement while tiles retain their identities. The source instance identifies immutable exactly representable bounds and level geometry and owns every tile history. One retained attachment owns its bounded subscriptions and derived presentation cache, closes them on replacement or detach, and never closes the source or mutates returned images.
-- [Showcase image and compiled example](https://github.com/sya-ri/strata/blob/master/docs/components.md#tiled-image)
+- [Showcase image and compiled example](https://github.com/sya-ri/strata/blob/master/docs/reference/components.md#tiled-image)
 
 ```kotlin
+fun UiScope.TiledImage(source: StateSource<TiledImageSource>, state: PanZoomState, size: IntSize, fit: PanZoomFit = PanZoomFit.Contain, cachePolicy: TiledImageCachePolicy = TiledImageCachePolicy.Default, modifier: Modifier = Modifier.Empty, key: ElementKey<*>? = null, content: TiledImageScope.() -> Unit = {})
 fun UiScope.TiledImage(source: TiledImageSource, state: PanZoomState, size: IntSize, fit: PanZoomFit = PanZoomFit.Contain, cachePolicy: TiledImageCachePolicy = TiledImageCachePolicy.Default, modifier: Modifier = Modifier.Empty, key: ElementKey<*>? = null, content: TiledImageScope.() -> Unit = {})
 ```
 
@@ -345,13 +462,16 @@ fun UiScope.TiledImage(source: TiledImageSource, state: PanZoomState, size: IntS
 
 Slot reproduces the native 18 by 18 hit region and 24 by 24 back-item-front highlight order; its binding overload polls real ItemStack state and delegates interaction through Minecraft's active container menu.
 
-- Compiled overloads: 1
+- Compiled overloads: 4
 - Modifiers: Sizing is native-fixed at 18 by 18. `Slots.playerInventory(index)` binds player storage, `Slots.container(index)` addresses logical storage exposed by chests, ender chests, furnaces, and custom server menus, and `Slots.activeMenu(index)` remains the raw-menu escape hatch; the optional-content overload remains portable for custom item visuals.
 - Parent scope: `Slot` is a member extension on the active `UiScope`. Its optional callback emits at most one 16 by 16 content root, while its bound overload obtains the version platform implicitly and retains no public Minecraft type.
-- [Showcase image and compiled example](https://github.com/sya-ri/strata/blob/master/docs/components.md#slot)
+- [Showcase image and compiled example](https://github.com/sya-ri/strata/blob/master/docs/reference/components.md#slot)
 
 ```kotlin
 fun UiScope.Slot(bind: SlotBinding? = null, highlightable: Boolean = true, modifier: Modifier = Modifier.Empty, key: ElementKey<*>? = null, content: (UiScope.() -> Unit)? = null)
+fun UiScope.Slot(bind: SlotBinding? = null, highlightable: StateSource<Boolean>, modifier: Modifier = Modifier.Empty, key: ElementKey<*>? = null, content: (UiScope.() -> Unit)? = null)
+fun UiScope.Slot(bind: StateSource<SlotBinding?>, highlightable: Boolean = true, modifier: Modifier = Modifier.Empty, key: ElementKey<*>? = null, content: (UiScope.() -> Unit)? = null)
+fun UiScope.Slot(bind: StateSource<SlotBinding?>, highlightable: StateSource<Boolean>, modifier: Modifier = Modifier.Empty, key: ElementKey<*>? = null, content: (UiScope.() -> Unit)? = null)
 ```
 
 <a id="player-head"></a>
@@ -360,14 +480,15 @@ fun UiScope.Slot(bind: SlotBinding? = null, highlightable: Boolean = true, modif
 
 PlayerHead reproduces Minecraft 26.2 face-then-hat rendering from a 64 by 64 skin. PlayerHeadScale gives every source texel an equal integer-sized square for crisp lists, profiles, scoreboards, and Mod screens; the deprecated arbitrary-size overload uses region-clamped bilinear interpolation when an exact integer scale is impossible.
 
-- Compiled overloads: 2
+- Compiled overloads: 3
 - Modifiers: Pass `PlayerHeadScale(1)` for an 8 by 8 head, or another positive factor when every source texel should remain the same size. Sizing and placement modifiers compose around `PlayerHead`; its immutable skin argument stays separate from Social, player-list, scoreboard, profile, and Mod-specific row state.
 - Parent scope: `PlayerHead` is a top-level extension on the active `UiScope`. `Pixels` retains a detached immutable skin, while `CurrentPlayer`, `Name`, and `Uuid` remain structural asynchronous lookups deferred to node attachment; the retained node owns and releases that lookup lifetime.
-- [Showcase image and compiled example](https://github.com/sya-ri/strata/blob/master/docs/components.md#player-head)
+- [Showcase image and compiled example](https://github.com/sya-ri/strata/blob/master/docs/reference/components.md#player-head)
 
 ```kotlin
 fun UiScope.PlayerHead(source: PlayerSkinSource = PlayerSkinSource.CurrentPlayer, scale: PlayerHeadScale, showHat: Boolean = true, modifier: Modifier = Modifier.Empty, key: ElementKey<*>? = null, loadingContent: (UiScope.() -> Unit)? = null, failureContent: (UiScope.() -> Unit)? = null)
 fun UiScope.PlayerHead(source: PlayerSkinSource = PlayerSkinSource.CurrentPlayer, size: Int = 24, showHat: Boolean = true, modifier: Modifier = Modifier.Empty, key: ElementKey<*>? = null, loadingContent: (UiScope.() -> Unit)? = null, failureContent: (UiScope.() -> Unit)? = null)
+fun UiScope.PlayerHead(source: StateSource<PlayerSkinSource>, scale: PlayerHeadScale, showHat: Boolean = true, modifier: Modifier = Modifier.Empty, key: ElementKey<*>? = null, loadingContent: (UiScope.() -> Unit)? = null, failureContent: (UiScope.() -> Unit)? = null)
 ```
 
 <a id="loading-indicator"></a>
@@ -379,7 +500,7 @@ LoadingIndicator reproduces the Minecraft 26.2 friends-loading sprite as three v
 - Compiled overloads: 1
 - Modifiers: Sizing and placement modifiers compose around `LoadingIndicator`; explicit host frame time advances its discrete profile animation without application-owned timer state.
 - Parent scope: `LoadingIndicator` is a top-level extension on the active `UiScope`. The Fabric host supplies one timestamp per native render pass and the retained node invalidates only when its discrete animation cell changes.
-- [Showcase image and compiled example](https://github.com/sya-ri/strata/blob/master/docs/components.md#loading-indicator)
+- [Showcase image and compiled example](https://github.com/sya-ri/strata/blob/master/docs/reference/components.md#loading-indicator)
 
 ```kotlin
 fun UiScope.LoadingIndicator(size: IntSize = IntSize(10, 4), modifier: Modifier = Modifier.Empty, key: ElementKey<*>? = null)
@@ -391,11 +512,12 @@ fun UiScope.LoadingIndicator(size: IntSize = IntSize(10, 4), modifier: Modifier 
 
 ProgressBar uses the reusable bundle progress border, partial fill, and completed fill with their native two-pixel nine-slice borders and exposes read-only progress semantics.
 
-- Compiled overloads: 1
+- Compiled overloads: 2
 - Modifiers: Sizing and placement modifiers compose around `ProgressBar`; its normalized value is immutable component data while the active profile supplies resource-pack-aware fill, completed-fill, and border sprites.
 - Parent scope: `ProgressBar` is a top-level extension on the active `UiScope`. The implicit profile resolves the active resource pack before retaining immutable sprite pixels.
-- [Showcase image and compiled example](https://github.com/sya-ri/strata/blob/master/docs/components.md#progress-bar)
+- [Showcase image and compiled example](https://github.com/sya-ri/strata/blob/master/docs/reference/components.md#progress-bar)
 
 ```kotlin
 fun UiScope.ProgressBar(progress: Double, size: IntSize = IntSize(100, 12), modifier: Modifier = Modifier.Empty, key: ElementKey<*>? = null)
+fun UiScope.ProgressBar(progress: StateSource<Double>, size: IntSize = IntSize(100, 12), modifier: Modifier = Modifier.Empty, key: ElementKey<*>? = null)
 ```

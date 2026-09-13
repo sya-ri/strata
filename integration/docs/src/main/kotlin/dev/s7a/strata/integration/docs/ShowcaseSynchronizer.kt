@@ -8,7 +8,7 @@ import java.util.Collections
 import java.util.IdentityHashMap
 
 /**
- * Synchronizes the generator-owned component assets, combined Markdown, and README region as one recoverable replacement.
+ * Synchronizes the generator-owned component assets, catalog, screen examples, and README region as one recoverable replacement.
  *
  * All source paths and replacement bytes are preflighted before sibling transaction files are created.
  * Recovery derives ownership from physical transaction paths, including when a delegate completes an operation before reporting a failure.
@@ -18,7 +18,7 @@ import java.util.IdentityHashMap
 @Suppress("TooManyFunctions")
 internal object ShowcaseSynchronizer {
     /**
-     * Replaces the exact owned component assets, combined Markdown, and README region, attempting independent restoration of each original when replacement fails.
+     * Replaces the exact owned component assets, both documents, and README region, attempting independent restoration of each original when replacement fails.
      *
      * @param launch validated repository, build, and staging paths.
      * @param output fully rendered and serialized output.
@@ -58,11 +58,16 @@ internal object ShowcaseSynchronizer {
         validateDirectoryTree(staged, "component staging", required = true)
         require(fileSet(staged) == expectedFiles(output)) { "Staged component file set is not exact." }
 
-        val markdown = ShowcasePaths.contained(docs, docs.resolve("components.md"), "component Markdown")
-        val stagedMarkdown = ShowcasePaths.contained(output.stagingRoot, output.stagingRoot.resolve("components.md"), "component Markdown staging")
+        val markdown = ShowcasePaths.contained(docs, docs.resolve("reference/components.md"), "component Markdown")
+        val stagedMarkdown = ShowcasePaths.contained(output.stagingRoot, output.stagingRoot.resolve("reference/components.md"), "component Markdown staging")
         validateRegularFile(markdown, "component Markdown", required = false)
         validateRegularFile(stagedMarkdown, "component Markdown staging", required = true)
         val updatedMarkdown = Files.readAllBytes(stagedMarkdown)
+        val screens = ShowcasePaths.contained(docs, docs.resolve("examples/screens.md"), "screen Markdown")
+        val stagedScreens = ShowcasePaths.contained(output.stagingRoot, output.stagingRoot.resolve("examples/screens.md"), "screen Markdown staging")
+        validateRegularFile(screens, "screen Markdown", required = false)
+        validateRegularFile(stagedScreens, "screen Markdown staging", required = true)
+        val updatedScreens = Files.readAllBytes(stagedScreens)
 
         val readme = root.resolve("README.md").toAbsolutePath().normalize()
         ShowcasePaths.requireSafeSegments(readme, "README")
@@ -78,10 +83,10 @@ internal object ShowcaseSynchronizer {
                 target = target,
                 markdown = markdown,
                 updatedMarkdown = updatedMarkdown,
+                screens = screens,
+                updatedScreens = updatedScreens,
                 readme = readme,
                 updatedReadme = updatedReadme,
-                hadTarget = Files.exists(target, LinkOption.NOFOLLOW_LINKS),
-                hadMarkdown = Files.exists(markdown, LinkOption.NOFOLLOW_LINKS),
             )
         transaction.transientPaths().forEach { path ->
             ShowcasePaths.requireSafeSegments(path, "showcase transaction")
@@ -97,8 +102,11 @@ internal object ShowcaseSynchronizer {
         fileSystem: ShowcaseFileSystem,
     ) {
         fileSystem.copy(transaction.staged, transaction.nextTarget)
+        Files.createDirectories(transaction.markdown.parent)
+        Files.createDirectories(transaction.screens.parent)
         fileSystem.write(transaction.nextMarkdown, transaction.updatedMarkdown)
         fileSystem.write(transaction.nextReadme, transaction.updatedReadme)
+        fileSystem.write(transaction.nextScreens, transaction.updatedScreens)
     }
 
     private fun replace(
@@ -115,6 +123,10 @@ internal object ShowcaseSynchronizer {
         fileSystem.move(transaction.nextMarkdown, transaction.markdown)
         fileSystem.move(transaction.readme, transaction.backupReadme)
         fileSystem.move(transaction.nextReadme, transaction.readme)
+        if (transaction.hadScreens) {
+            fileSystem.move(transaction.screens, transaction.backupScreens)
+        }
+        fileSystem.move(transaction.nextScreens, transaction.screens)
     }
 
     private fun rollback(
@@ -122,9 +134,27 @@ internal object ShowcaseSynchronizer {
         fileSystem: ShowcaseFileSystem,
         primary: Throwable,
     ) {
+        rollbackScreens(transaction, fileSystem, primary)
         rollbackReadme(transaction, fileSystem, primary)
         rollbackMarkdown(transaction, fileSystem, primary)
         rollbackTarget(transaction, fileSystem, primary)
+    }
+
+    private fun rollbackScreens(
+        transaction: Transaction,
+        fileSystem: ShowcaseFileSystem,
+        primary: Throwable,
+    ) {
+        if (exists(transaction.backupScreens)) {
+            attempt(primary) {
+                if (exists(transaction.screens)) fileSystem.delete(transaction.screens)
+            }
+            attempt(primary) {
+                if (exists(transaction.backupScreens)) fileSystem.move(transaction.backupScreens, transaction.screens)
+            }
+        } else if (transaction.hadScreens.not() && exists(transaction.screens)) {
+            attempt(primary) { fileSystem.delete(transaction.screens) }
+        }
     }
 
     private fun rollbackMarkdown(
@@ -190,6 +220,9 @@ internal object ShowcaseSynchronizer {
         attempt(primary) {
             if (exists(transaction.nextReadme)) fileSystem.delete(transaction.nextReadme)
         }
+        attempt(primary) {
+            if (exists(transaction.nextScreens)) fileSystem.delete(transaction.nextScreens)
+        }
     }
 
     @Suppress("TooGenericExceptionCaught")
@@ -220,6 +253,9 @@ internal object ShowcaseSynchronizer {
             if (exists(transaction.nextReadme)) fileSystem.delete(transaction.nextReadme)
         }
         cleanup {
+            if (exists(transaction.nextScreens)) fileSystem.delete(transaction.nextScreens)
+        }
+        cleanup {
             if (exists(transaction.backupTarget)) fileSystem.deleteTree(transaction.backupTarget)
         }
         cleanup {
@@ -227,6 +263,9 @@ internal object ShowcaseSynchronizer {
         }
         cleanup {
             if (exists(transaction.backupReadme)) fileSystem.delete(transaction.backupReadme)
+        }
+        cleanup {
+            if (exists(transaction.backupScreens)) fileSystem.delete(transaction.backupScreens)
         }
         val failure = cleanupFailure
         if (failure != null) throw failure
@@ -359,18 +398,23 @@ internal object ShowcaseSynchronizer {
         val target: Path,
         val markdown: Path,
         val updatedMarkdown: ByteArray,
+        val screens: Path,
+        val updatedScreens: ByteArray,
         val readme: Path,
         val updatedReadme: ByteArray,
-        val hadTarget: Boolean,
-        val hadMarkdown: Boolean,
     ) {
+        val hadTarget: Boolean = Files.exists(target, LinkOption.NOFOLLOW_LINKS)
+        val hadMarkdown: Boolean = Files.exists(markdown, LinkOption.NOFOLLOW_LINKS)
+        val hadScreens: Boolean = Files.exists(screens, LinkOption.NOFOLLOW_LINKS)
         val nextTarget: Path = requireNotNull(target.parent).resolve(".strata-components-next")
         val backupTarget: Path = requireNotNull(target.parent).resolve(".strata-components-backup")
         val nextMarkdown: Path = requireNotNull(markdown.parent).resolve(".strata-components-markdown-next")
         val backupMarkdown: Path = requireNotNull(markdown.parent).resolve(".strata-components-markdown-backup")
         val nextReadme: Path = requireNotNull(readme.parent).resolve(".strata-readme-next")
         val backupReadme: Path = requireNotNull(readme.parent).resolve(".strata-readme-backup")
+        val nextScreens: Path = requireNotNull(screens.parent).resolve(".strata-screens-markdown-next")
+        val backupScreens: Path = requireNotNull(screens.parent).resolve(".strata-screens-markdown-backup")
 
-        fun transientPaths(): List<Path> = listOf(nextTarget, backupTarget, nextMarkdown, backupMarkdown, nextReadme, backupReadme)
+        fun transientPaths(): List<Path> = listOf(nextTarget, backupTarget, nextMarkdown, backupMarkdown, nextReadme, backupReadme, nextScreens, backupScreens)
     }
 }

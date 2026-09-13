@@ -4,7 +4,7 @@
 
 Modifiers are active retained behavior, not a passive settings bag.
 Order matters: layout and input elements wrap the behavior that follows them in the chain.
-The 55 compiled overloads below form 44 top-level extension groups.
+The 56 compiled overloads below form 44 top-level extension groups.
 
 | Extension | Overloads | Category | Use |
 | --- | ---: | --- | --- |
@@ -21,7 +21,7 @@ The 55 compiled overloads below form 44 top-level extension groups.
 | `initialFocus` | 1 | Focus and text | Requests initial focus when the retained node first attaches. |
 | `menuBackground` | 1 | Paint | Paints the active resource-pack menu background without creating a separate background component. |
 | `onAction` | 1 | Advanced actions | Handles an extensible typed action key; prefer a focused built-in action extension when one exists. |
-| `onActivate` | 2 | Activation | Runs one shared action for a primary pointer press or each focused Enter or Space press, makes the owner focusable, and adds no node or action reference when its enabled overload is false. |
+| `onActivate` | 3 | Activation | Runs one shared action for a primary pointer press or each focused Enter or Space press, makes the owner focusable, and adds no node or action reference when its enabled overload is false. |
 | `onCapturedPointerEvent` | 1 | Pointer | Captures a consumed press for one button, forwards movement and matching drag/release outside bounds or ancestor clips, and reports cancellation when ownership ends early. |
 | `onCharacterInput` | 1 | Focus and text | Handles committed character input while the element is focused. |
 | `onCheckedChange` | 1 | Component actions | Receives the next boolean value emitted by `Checkbox`. |
@@ -139,6 +139,7 @@ fun <T : Any> Modifier.onAction(key: ActionKey<T>, callback: (T) -> ActionResult
 ```kotlin
 fun Modifier.onActivate(action: () -> Unit): Modifier
 fun Modifier.onActivate(enabled: Boolean, action: () -> Unit): Modifier
+fun Modifier.onActivate(enabled: StateSource<Boolean>, action: () -> Unit): Modifier
 ```
 
 ### `onCapturedPointerEvent`
@@ -427,7 +428,7 @@ During current frame painting, a `PlatformDrawCommand` is supported only through
 
 - Use `spacing`, `horizontalArrangement`, `verticalArrangement`, and parent alignment to describe sibling structure.
 - Use `weight` only for remaining main-axis space and `align` only for a direct-child override.
-- Use small `padding` for local insets. A value of 20 or more needs a concrete native-frame or fixed-geometry reason.
+- Use `padding` for local insets, and describe sibling relationships with layout spacing and alignment.
 - Use `fillMaxSize().scaleToFit(contentSize)` for a fixed design surface that should shrink uniformly with the viewport while retaining the user's GUI-scale accessibility setting.
 - Put images on `imageBackground` when they paint a container; use `Image` when the image is itself a logical child.
 - Put reusable actions on modifiers. `Button`, `Tab`, `Checkbox`, `CycleButton`, `Slider`, and list components keep application callbacks out of their component signatures.
@@ -435,9 +436,152 @@ During current frame painting, a `PlatformDrawCommand` is supported only through
 
 ## State and binding signatures
 
+### StateSource extensions
+
+Import `dev.s7a.strata.state.map` to derive a read-only source. Retain projections outside reevaluation; direct component inputs observe them automatically and suppress equal mapped results. Transformations must be pure and inexpensive. Ordinary subscriptions retain the source's revision and close contracts.
+
+```kotlin
+fun <T, R> StateSource<T>.map(transform: (T) -> R): StateSource<R>
+```
+
+<details><summary>Compiled extension fingerprints</summary>
+
+```text
+public static final <T,R> dev.s7a.strata.state.StateSource<R> dev.s7a.strata.state.StateSourceExtensionsKt.map(dev.s7a.strata.state.StateSource<? extends T>,kotlin.jvm.functions.Function1<? super T, ? extends R>)
+```
+
+</details>
+
 The following declarations are extracted from the public state and binding source files that compile into `strata-api`.
 Use them to choose ownership and source types; application state remains authoritative.
 Members marked `@InternalStrataRuntimeApi` are deliberately omitted from consumer signatures; the collapsed JVM fingerprints retain them only so binary drift still invalidates generation.
+
+### StateSource
+
+Read-only external revision source. Pass directly to supported component arguments; retain pure map projections for derived presentation.
+
+#### `StateSource`
+
+```kotlin
+fun interface StateSource<out T>
+fun subscribe(observer: (StateSnapshot<T>) -> Unit): StateSubscription<T>
+```
+
+<details><summary>Compiled JVM API fingerprints</summary>
+
+```text
+interface dev.s7a.strata.state.StateSource
+method dev.s7a.strata.state.StateSource.subscribe(kotlin.jvm.functions.Function1): dev.s7a.strata.state.StateSubscription
+```
+
+</details>
+
+### StateSnapshot
+
+Atomic revision/value pair for source publishers and ordinary subscribers; extracting its value into a literal does not establish UI observation.
+
+#### `StateSnapshot`
+
+```kotlin
+data class StateSnapshot<out T>(public val revision: StateRevision, public val value: T)
+val revision: StateRevision
+val value: T
+```
+
+<details><summary>Compiled JVM API fingerprints</summary>
+
+```text
+class dev.s7a.strata.state.StateSnapshot
+constructor dev.s7a.strata.state.StateSnapshot(long, java.lang.Object, kotlin.jvm.internal.DefaultConstructorMarker)
+method dev.s7a.strata.state.StateSnapshot.component1-GiWAOYM(): long
+method dev.s7a.strata.state.StateSnapshot.component2(): java.lang.Object
+method dev.s7a.strata.state.StateSnapshot.copy-vDtxdoA(long, java.lang.Object): dev.s7a.strata.state.StateSnapshot
+method dev.s7a.strata.state.StateSnapshot.equals(java.lang.Object): boolean
+method dev.s7a.strata.state.StateSnapshot.getRevision-GiWAOYM(): long
+method dev.s7a.strata.state.StateSnapshot.getValue(): java.lang.Object
+method dev.s7a.strata.state.StateSnapshot.hashCode(): int
+method dev.s7a.strata.state.StateSnapshot.toString(): java.lang.String
+```
+
+</details>
+
+### StateRevision
+
+Source-owned monotonically increasing revision, independent of value equality.
+
+#### `StateRevision`
+
+```kotlin
+val value: Long
+value class StateRevision(public val value: Long) : Comparable<StateRevision>
+```
+
+<details><summary>Compiled JVM API fingerprints</summary>
+
+```text
+class dev.s7a.strata.state.StateRevision
+method dev.s7a.strata.state.StateRevision.compareTo-0Utrm5c(long): int
+method dev.s7a.strata.state.StateRevision.compareTo-0Utrm5c(long, long): int
+method dev.s7a.strata.state.StateRevision.constructor-impl(long): long
+method dev.s7a.strata.state.StateRevision.equals(java.lang.Object): boolean
+method dev.s7a.strata.state.StateRevision.equals-impl(long, java.lang.Object): boolean
+method dev.s7a.strata.state.StateRevision.equals-impl0(long, long): boolean
+method dev.s7a.strata.state.StateRevision.getValue(): long
+method dev.s7a.strata.state.StateRevision.hashCode(): int
+method dev.s7a.strata.state.StateRevision.hashCode-impl(long): int
+method dev.s7a.strata.state.StateRevision.toString(): java.lang.String
+method dev.s7a.strata.state.StateRevision.toString-impl(long): java.lang.String
+```
+
+</details>
+
+### StateSubscription
+
+Atomic initial snapshot and idempotent subscription close; ordinary mapped subscriptions preserve all revisions.
+
+#### `StateSubscription`
+
+```kotlin
+class StateSubscription<out T> public constructor(public val initialSnapshot: StateSnapshot<T>, closeAction: () -> Unit) : AutoCloseable
+val initialSnapshot: StateSnapshot<T>
+```
+
+<details><summary>Compiled JVM API fingerprints</summary>
+
+```text
+class dev.s7a.strata.state.StateSubscription
+class dev.s7a.strata.state.StateSubscription$CloseController$CloseState$Closed
+class dev.s7a.strata.state.StateSubscription$CloseController$CloseState$Closing
+class dev.s7a.strata.state.StateSubscription$CloseController$CloseState$Failed
+class dev.s7a.strata.state.StateSubscription$CloseController$CloseState$Open
+constructor dev.s7a.strata.state.StateSubscription$CloseController$CloseState$Closing(java.lang.Thread)
+constructor dev.s7a.strata.state.StateSubscription$CloseController$CloseState$Failed(java.lang.Throwable)
+constructor dev.s7a.strata.state.StateSubscription(dev.s7a.strata.state.StateSnapshot, kotlin.jvm.functions.Function0)
+field dev.s7a.strata.state.StateSubscription$CloseController$CloseState$Closed.INSTANCE: dev.s7a.strata.state.StateSubscription$CloseController$CloseState$Closed
+field dev.s7a.strata.state.StateSubscription$CloseController$CloseState$Open.INSTANCE: dev.s7a.strata.state.StateSubscription$CloseController$CloseState$Open
+method dev.s7a.strata.state.StateSubscription$CloseController$CloseState$Closed.equals(java.lang.Object): boolean
+method dev.s7a.strata.state.StateSubscription$CloseController$CloseState$Closed.hashCode(): int
+method dev.s7a.strata.state.StateSubscription$CloseController$CloseState$Closed.toString(): java.lang.String
+method dev.s7a.strata.state.StateSubscription$CloseController$CloseState$Closing.component1(): java.lang.Thread
+method dev.s7a.strata.state.StateSubscription$CloseController$CloseState$Closing.copy(java.lang.Thread): dev.s7a.strata.state.StateSubscription$CloseController$CloseState$Closing
+method dev.s7a.strata.state.StateSubscription$CloseController$CloseState$Closing.equals(java.lang.Object): boolean
+method dev.s7a.strata.state.StateSubscription$CloseController$CloseState$Closing.getOwner(): java.lang.Thread
+method dev.s7a.strata.state.StateSubscription$CloseController$CloseState$Closing.hashCode(): int
+method dev.s7a.strata.state.StateSubscription$CloseController$CloseState$Closing.toString(): java.lang.String
+method dev.s7a.strata.state.StateSubscription$CloseController$CloseState$Failed.component1(): java.lang.Throwable
+method dev.s7a.strata.state.StateSubscription$CloseController$CloseState$Failed.copy(java.lang.Throwable): dev.s7a.strata.state.StateSubscription$CloseController$CloseState$Failed
+method dev.s7a.strata.state.StateSubscription$CloseController$CloseState$Failed.equals(java.lang.Object): boolean
+method dev.s7a.strata.state.StateSubscription$CloseController$CloseState$Failed.getFailure(): java.lang.Throwable
+method dev.s7a.strata.state.StateSubscription$CloseController$CloseState$Failed.hashCode(): int
+method dev.s7a.strata.state.StateSubscription$CloseController$CloseState$Failed.toString(): java.lang.String
+method dev.s7a.strata.state.StateSubscription$CloseController$CloseState$Open.equals(java.lang.Object): boolean
+method dev.s7a.strata.state.StateSubscription$CloseController$CloseState$Open.hashCode(): int
+method dev.s7a.strata.state.StateSubscription$CloseController$CloseState$Open.toString(): java.lang.String
+method dev.s7a.strata.state.StateSubscription.close(): void
+method dev.s7a.strata.state.StateSubscription.getInitialSnapshot(): dev.s7a.strata.state.StateSnapshot
+```
+
+</details>
 
 ### ListLoadRequest
 
@@ -483,6 +627,7 @@ var checked: Boolean
 class dev.s7a.strata.component.CheckboxState
 constructor dev.s7a.strata.component.CheckboxState()
 constructor dev.s7a.strata.component.CheckboxState(boolean)
+constructor dev.s7a.strata.component.CheckboxState(boolean, int, kotlin.jvm.internal.DefaultConstructorMarker)
 method dev.s7a.strata.component.CheckboxState.getChecked(): boolean
 method dev.s7a.strata.component.CheckboxState.observe(kotlin.jvm.functions.Function1): dev.s7a.strata.component.ComponentStateSubscription
 method dev.s7a.strata.component.CheckboxState.setChecked(boolean): void
@@ -522,6 +667,7 @@ class dev.s7a.strata.component.CycleButtonState
 class dev.s7a.strata.component.CycleButtonState$Companion
 class dev.s7a.strata.component.CycleButtonState$Companion$invoke$1
 constructor dev.s7a.strata.component.CycleButtonState$Companion$invoke$1()
+constructor dev.s7a.strata.component.CycleButtonState$Companion(kotlin.jvm.internal.DefaultConstructorMarker)
 constructor dev.s7a.strata.component.CycleButtonState(java.util.Collection, java.lang.Object, kotlin.jvm.functions.Function1)
 constructor dev.s7a.strata.component.CycleButtonState(java.util.List)
 constructor dev.s7a.strata.component.CycleButtonState(java.util.List, java.lang.Object)
@@ -559,6 +705,7 @@ var value: Double
 ```text
 class dev.s7a.strata.component.SliderState
 constructor dev.s7a.strata.component.SliderState(double, kotlin.ranges.ClosedFloatingPointRange, int)
+constructor dev.s7a.strata.component.SliderState(double, kotlin.ranges.ClosedFloatingPointRange, int, int, kotlin.jvm.internal.DefaultConstructorMarker)
 method dev.s7a.strata.component.SliderState.getFraction(): double
 method dev.s7a.strata.component.SliderState.getRange(): kotlin.ranges.ClosedFloatingPointRange
 method dev.s7a.strata.component.SliderState.getSteps(): int
@@ -587,6 +734,7 @@ var value: String
 class dev.s7a.strata.component.TextFieldState
 constructor dev.s7a.strata.component.TextFieldState()
 constructor dev.s7a.strata.component.TextFieldState(java.lang.String, int)
+constructor dev.s7a.strata.component.TextFieldState(java.lang.String, int, int, kotlin.jvm.internal.DefaultConstructorMarker)
 method dev.s7a.strata.component.TextFieldState.getMaxLength(): int
 method dev.s7a.strata.component.TextFieldState.getValue(): java.lang.String
 method dev.s7a.strata.component.TextFieldState.observe(kotlin.jvm.functions.Function1): java.lang.AutoCloseable
@@ -614,6 +762,7 @@ var value: String
 class dev.s7a.strata.component.TextAreaState
 constructor dev.s7a.strata.component.TextAreaState()
 constructor dev.s7a.strata.component.TextAreaState(java.lang.String, int)
+constructor dev.s7a.strata.component.TextAreaState(java.lang.String, int, int, kotlin.jvm.internal.DefaultConstructorMarker)
 method dev.s7a.strata.component.TextAreaState.getMaxLength(): int
 method dev.s7a.strata.component.TextAreaState.getScrollState(): dev.s7a.strata.component.ScrollState
 method dev.s7a.strata.component.TextAreaState.getValue(): java.lang.String
@@ -674,6 +823,66 @@ method dev.s7a.strata.component.TextAreaViewport$Size.toString(): java.lang.Stri
 
 </details>
 
+### TextInputAppearance
+
+Default profile frame or immutable custom normal/focused/disabled nine-slice images with caret and composition underline colors. Retain the appearance outside reevaluation; appearance-only replacement repaints without resetting editing or remeasuring.
+
+#### `TextInputAppearance`
+
+```kotlin
+sealed interface TextInputAppearance
+```
+
+#### `TextInputAppearance.Custom`
+
+```kotlin
+data class Custom(public val normal: ImageSource, public val focused: ImageSource, public val caretColor: ArgbColor, public val disabled: ImageSource = normal, public val border: Insets = Insets.all(1), public val compositionUnderlineColor: ArgbColor = caretColor) : TextInputAppearance
+val border: Insets
+val caretColor: ArgbColor
+val compositionUnderlineColor: ArgbColor
+val disabled: ImageSource
+val focused: ImageSource
+val normal: ImageSource
+```
+
+#### `TextInputAppearance.Default`
+
+```kotlin
+data object Default : TextInputAppearance
+```
+
+<details><summary>Compiled JVM API fingerprints</summary>
+
+```text
+class dev.s7a.strata.component.TextInputAppearance$Custom
+class dev.s7a.strata.component.TextInputAppearance$Default
+constructor dev.s7a.strata.component.TextInputAppearance$Custom(dev.s7a.strata.component.ImageSource, dev.s7a.strata.component.ImageSource, int, dev.s7a.strata.component.ImageSource, dev.s7a.strata.geometry.Insets, int, int, kotlin.jvm.internal.DefaultConstructorMarker)
+constructor dev.s7a.strata.component.TextInputAppearance$Custom(dev.s7a.strata.component.ImageSource, dev.s7a.strata.component.ImageSource, int, dev.s7a.strata.component.ImageSource, dev.s7a.strata.geometry.Insets, int, kotlin.jvm.internal.DefaultConstructorMarker)
+field dev.s7a.strata.component.TextInputAppearance$Default.INSTANCE: dev.s7a.strata.component.TextInputAppearance$Default
+interface dev.s7a.strata.component.TextInputAppearance
+method dev.s7a.strata.component.TextInputAppearance$Custom.component1(): dev.s7a.strata.component.ImageSource
+method dev.s7a.strata.component.TextInputAppearance$Custom.component2(): dev.s7a.strata.component.ImageSource
+method dev.s7a.strata.component.TextInputAppearance$Custom.component3-e0e5deU(): int
+method dev.s7a.strata.component.TextInputAppearance$Custom.component4(): dev.s7a.strata.component.ImageSource
+method dev.s7a.strata.component.TextInputAppearance$Custom.component5(): dev.s7a.strata.geometry.Insets
+method dev.s7a.strata.component.TextInputAppearance$Custom.component6-e0e5deU(): int
+method dev.s7a.strata.component.TextInputAppearance$Custom.copy-W3MKq70(dev.s7a.strata.component.ImageSource, dev.s7a.strata.component.ImageSource, int, dev.s7a.strata.component.ImageSource, dev.s7a.strata.geometry.Insets, int): dev.s7a.strata.component.TextInputAppearance$Custom
+method dev.s7a.strata.component.TextInputAppearance$Custom.equals(java.lang.Object): boolean
+method dev.s7a.strata.component.TextInputAppearance$Custom.getBorder(): dev.s7a.strata.geometry.Insets
+method dev.s7a.strata.component.TextInputAppearance$Custom.getCaretColor-e0e5deU(): int
+method dev.s7a.strata.component.TextInputAppearance$Custom.getCompositionUnderlineColor-e0e5deU(): int
+method dev.s7a.strata.component.TextInputAppearance$Custom.getDisabled(): dev.s7a.strata.component.ImageSource
+method dev.s7a.strata.component.TextInputAppearance$Custom.getFocused(): dev.s7a.strata.component.ImageSource
+method dev.s7a.strata.component.TextInputAppearance$Custom.getNormal(): dev.s7a.strata.component.ImageSource
+method dev.s7a.strata.component.TextInputAppearance$Custom.hashCode(): int
+method dev.s7a.strata.component.TextInputAppearance$Custom.toString(): java.lang.String
+method dev.s7a.strata.component.TextInputAppearance$Default.equals(java.lang.Object): boolean
+method dev.s7a.strata.component.TextInputAppearance$Default.hashCode(): int
+method dev.s7a.strata.component.TextInputAppearance$Default.toString(): java.lang.String
+```
+
+</details>
+
 ### TextLayout
 
 Single-line compatibility or structural multiline wrapping, line limits, overflow, and spacing.
@@ -707,6 +916,7 @@ class dev.s7a.strata.text.TextLayout$Multiline
 class dev.s7a.strata.text.TextLayout$SingleLine
 constructor dev.s7a.strata.text.TextLayout$Multiline()
 constructor dev.s7a.strata.text.TextLayout$Multiline(dev.s7a.strata.text.TextWrap, int, dev.s7a.strata.text.TextOverflow, int)
+constructor dev.s7a.strata.text.TextLayout$Multiline(dev.s7a.strata.text.TextWrap, int, dev.s7a.strata.text.TextOverflow, int, int, kotlin.jvm.internal.DefaultConstructorMarker)
 field dev.s7a.strata.text.TextLayout$SingleLine.INSTANCE: dev.s7a.strata.text.TextLayout$SingleLine
 interface dev.s7a.strata.text.TextLayout
 method dev.s7a.strata.text.TextLayout$Multiline.component1(): dev.s7a.strata.text.TextWrap
@@ -794,6 +1004,7 @@ val metrics: ScrollMetrics
 class dev.s7a.strata.component.ScrollState
 constructor dev.s7a.strata.component.ScrollState()
 constructor dev.s7a.strata.component.ScrollState(double)
+constructor dev.s7a.strata.component.ScrollState(double, int, kotlin.jvm.internal.DefaultConstructorMarker)
 method dev.s7a.strata.component.ScrollState.getMetrics(): dev.s7a.strata.component.ScrollMetrics
 method dev.s7a.strata.component.ScrollState.observe(kotlin.jvm.functions.Function1): dev.s7a.strata.component.ScrollStateObserver
 method dev.s7a.strata.component.ScrollState.scrollBy(double): double
@@ -825,6 +1036,7 @@ val scrollState: ScrollState
 class dev.s7a.strata.component.VirtualListState
 constructor dev.s7a.strata.component.VirtualListState()
 constructor dev.s7a.strata.component.VirtualListState(dev.s7a.strata.component.ScrollState, java.lang.Integer)
+constructor dev.s7a.strata.component.VirtualListState(dev.s7a.strata.component.ScrollState, java.lang.Integer, int, kotlin.jvm.internal.DefaultConstructorMarker)
 method dev.s7a.strata.component.VirtualListState.attach$dev_s7a_strata_api(dev.s7a.strata.component.VirtualListController): void
 method dev.s7a.strata.component.VirtualListState.detach$dev_s7a_strata_api(dev.s7a.strata.component.VirtualListController): void
 method dev.s7a.strata.component.VirtualListState.getScrollState(): dev.s7a.strata.component.ScrollState
@@ -855,6 +1067,7 @@ val selectedKey: K?
 class dev.s7a.strata.component.SelectionListState
 constructor dev.s7a.strata.component.SelectionListState()
 constructor dev.s7a.strata.component.SelectionListState(dev.s7a.strata.component.VirtualListState, java.lang.Object)
+constructor dev.s7a.strata.component.SelectionListState(dev.s7a.strata.component.VirtualListState, java.lang.Object, int, kotlin.jvm.internal.DefaultConstructorMarker)
 method dev.s7a.strata.component.SelectionListState.clearSelection(): boolean
 method dev.s7a.strata.component.SelectionListState.getListState(): dev.s7a.strata.component.VirtualListState
 method dev.s7a.strata.component.SelectionListState.getSelectedKey(): java.lang.Object
@@ -1015,6 +1228,7 @@ val zoom: Double
 class dev.s7a.strata.component.PanZoomMetrics
 constructor dev.s7a.strata.component.PanZoomMetrics()
 constructor dev.s7a.strata.component.PanZoomMetrics(dev.s7a.strata.geometry.DoubleOffset, double, double, dev.s7a.strata.geometry.IntSize, dev.s7a.strata.geometry.LongRect, dev.s7a.strata.component.PanZoomFit, boolean)
+constructor dev.s7a.strata.component.PanZoomMetrics(dev.s7a.strata.geometry.DoubleOffset, double, double, dev.s7a.strata.geometry.IntSize, dev.s7a.strata.geometry.LongRect, dev.s7a.strata.component.PanZoomFit, boolean, int, kotlin.jvm.internal.DefaultConstructorMarker)
 method dev.s7a.strata.component.PanZoomMetrics.component1(): dev.s7a.strata.geometry.DoubleOffset
 method dev.s7a.strata.component.PanZoomMetrics.component2(): double
 method dev.s7a.strata.component.PanZoomMetrics.component3(): double
@@ -1064,6 +1278,7 @@ class dev.s7a.strata.component.PanZoomState
 class dev.s7a.strata.component.PanZoomState$Companion$WhenMappings
 constructor dev.s7a.strata.component.PanZoomState()
 constructor dev.s7a.strata.component.PanZoomState(dev.s7a.strata.geometry.DoubleOffset, double, double, double)
+constructor dev.s7a.strata.component.PanZoomState(dev.s7a.strata.geometry.DoubleOffset, double, double, double, int, kotlin.jvm.internal.DefaultConstructorMarker)
 method dev.s7a.strata.component.PanZoomState.centerOn(dev.s7a.strata.geometry.DoubleOffset): dev.s7a.strata.geometry.DoubleOffset
 method dev.s7a.strata.component.PanZoomState.contentToLocal(dev.s7a.strata.geometry.DoubleOffset): dev.s7a.strata.geometry.DoubleOffset
 method dev.s7a.strata.component.PanZoomState.getMaximumZoom(): double
@@ -1105,8 +1320,10 @@ val Default: TiledImageCachePolicy
 ```text
 class dev.s7a.strata.component.TiledImageCachePolicy
 class dev.s7a.strata.component.TiledImageCachePolicy$Companion
+constructor dev.s7a.strata.component.TiledImageCachePolicy$Companion(kotlin.jvm.internal.DefaultConstructorMarker)
 constructor dev.s7a.strata.component.TiledImageCachePolicy()
 constructor dev.s7a.strata.component.TiledImageCachePolicy(int, long, int)
+constructor dev.s7a.strata.component.TiledImageCachePolicy(int, long, int, int, kotlin.jvm.internal.DefaultConstructorMarker)
 field dev.s7a.strata.component.TiledImageCachePolicy.Companion: dev.s7a.strata.component.TiledImageCachePolicy$Companion
 method dev.s7a.strata.component.TiledImageCachePolicy$Companion.getDefault(): dev.s7a.strata.component.TiledImageCachePolicy
 method dev.s7a.strata.component.TiledImageCachePolicy.component1(): int

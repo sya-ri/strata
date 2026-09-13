@@ -21,8 +21,8 @@ internal object SampledImageRasterizer {
      * @param physicalSize the positive physical destination extent.
      * @param scale the positive integer logical-to-physical density.
      * @param command the immutable sampled-image command.
-     * @param clip the logical clip already intersected with the viewport.
-     * The caller guarantees that clip coordinates scaled by [scale] fit in [physicalSize].
+     * @param clip the physical clip already intersected with the output viewport.
+     * The caller guarantees that clip coordinates fit in [physicalSize].
      * Clipping preserves the source mapping from the original destination and the method retains no arguments.
      */
     fun paint(
@@ -33,10 +33,10 @@ internal object SampledImageRasterizer {
         clip: IntRect,
     ) {
         val destination = command.destination
-        val left = maxOf(firstPixel(destination.left, scale), clip.left * scale)
-        val top = maxOf(firstPixel(destination.top, scale), clip.top * scale)
-        val right = minOf(firstPixel(destination.right, scale), clip.right * scale)
-        val bottom = minOf(firstPixel(destination.bottom, scale), clip.bottom * scale)
+        val left = maxOf(firstPixel(destination.left, scale), clip.left)
+        val top = maxOf(firstPixel(destination.top, scale), clip.top)
+        val right = minOf(firstPixel(destination.right, scale), clip.right)
+        val bottom = minOf(firstPixel(destination.bottom, scale), clip.bottom)
         if (right <= left || bottom <= top) return
 
         val color = SampledColor(command.tint.value, command.alphaCutoff)

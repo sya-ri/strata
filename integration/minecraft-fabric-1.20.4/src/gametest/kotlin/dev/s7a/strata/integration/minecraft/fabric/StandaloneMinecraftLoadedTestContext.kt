@@ -111,7 +111,10 @@ internal class StandaloneMinecraftLoadedTestContext : MinecraftLoadedTestContext
         computeOnClient { minecraft ->
             Screenshot.takeScreenshot(minecraft.mainRenderTarget).use { image ->
                 require(image.getWidth() == size.width && image.getHeight() == size.height) {
-                    "The loaded client did not honor the configured verification viewport."
+                    "The loaded client did not honor the configured verification viewport: " +
+                        "expected=${size.width}x${size.height}, screenshot=${image.getWidth()}x${image.getHeight()}, " +
+                        "window=${minecraft.window.width}x${minecraft.window.height}, " +
+                        "target=${minecraft.mainRenderTarget.width}x${minecraft.mainRenderTarget.height}."
                 }
                 image.writeToFile(destination)
             }

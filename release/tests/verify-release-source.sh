@@ -653,6 +653,48 @@ expected_pages_result="$pages_run_id $release_pages_artifact_id $pages_deploymen
 expected_pages_result+=" $pages_run_id $controller_pages_artifact_id $pages_deployment_id"
 [[ "$pages_result" == "$expected_pages_result" ]] || \
   fail 'A paginated rerun inventory did not select the exact artifacts from the latest logical producer windows.'
+
+jq -s --argjson runId "$pages_run_id" --arg commit "$controller_commit" '
+  .[0].jobs += [
+    {id: 4001, run_id: $runId, head_sha: $commit, name: "Qodana for JVM", run_attempt: 3, started_at: "2026-08-31T12:20:00Z", completed_at: "2026-08-31T12:20:00Z", status: "completed", conclusion: "success"},
+    {id: 4002, run_id: $runId, head_sha: $commit, name: "Qodana for JVM", run_attempt: 3, started_at: "2026-08-31T12:25:00Z", completed_at: "2026-08-31T12:25:00Z", status: "completed", conclusion: "success"}
+  ] |
+  map(.total_count += 2) |
+  .[]
+' "$pages_all_jobs_response" > "$pages_all_jobs_response.changed"
+mv "$pages_all_jobs_response.changed" "$pages_all_jobs_response"
+pages_result="$(
+  bash "$repository_root/release/verify-pages-deployment-source.sh" \
+    "$pages_run_id" v0.1.0 "$replacement_commit" "$pages_run_id" "$controller_commit"
+)"
+[[ "$pages_result" == "$expected_pages_result" ]] || \
+  fail 'Additional check runs changed the verified Pages producer identities.'
+
+jq '(.jobs[] | select(.id == 4001).run_id) = 999' \
+  "$pages_all_jobs_response" > "$pages_all_jobs_response.changed"
+mv "$pages_all_jobs_response.changed" "$pages_all_jobs_response"
+if bash "$repository_root/release/verify-pages-deployment-source.sh" \
+  "$pages_run_id" v0.1.0 "$replacement_commit" "$pages_run_id" "$controller_commit" >/dev/null 2>&1; then
+  fail 'An additional check run from another workflow run escaped inventory validation.'
+fi
+jq --argjson runId "$pages_run_id" '(.jobs[] | select(.id == 4001).run_id) = $runId' \
+  "$pages_all_jobs_response" > "$pages_all_jobs_response.changed"
+mv "$pages_all_jobs_response.changed" "$pages_all_jobs_response"
+
+jq '(.jobs[] | select(.name == "release-evidence").name) = "unrelated check"' \
+  "$pages_all_jobs_response" > "$pages_all_jobs_response.changed"
+mv "$pages_all_jobs_response.changed" "$pages_all_jobs_response"
+if bash "$repository_root/release/verify-pages-deployment-source.sh" \
+  "$pages_run_id" v0.1.0 "$replacement_commit" "$pages_run_id" "$controller_commit" >/dev/null 2>&1; then
+  fail 'Additional check runs substituted for a missing required Pages producer.'
+fi
+jq '(.jobs[] | select(.name == "unrelated check").name) = "release-evidence"' \
+  "$pages_all_jobs_response" > "$pages_all_jobs_response.changed"
+mv "$pages_all_jobs_response.changed" "$pages_all_jobs_response"
+
+jq -s '.[0].jobs |= map(select(.id != 4001 and .id != 4002)) | map(.total_count -= 2) | .[]' \
+  "$pages_all_jobs_response" > "$pages_all_jobs_response.changed"
+mv "$pages_all_jobs_response.changed" "$pages_all_jobs_response"
 write_pages_artifacts_response
 
 if bash "$repository_root/release/verify-pages-deployment-source.sh" \
@@ -1065,6 +1107,39 @@ jq -n \
 [[ "$(bash "$repository_root/release/verify-pages-deployment-source.sh" \
   "$pages_run_id" v0.1.0 "$replacement_commit" "$pages_run_id" "$controller_commit")" == "$expected_pages_result" ]] || \
   fail 'Deployment status ordering did not use the numeric ID to break an equal creation-time tie.'
+write_pages_deployment_responses
+
+# A frozen historical producer remains usable after an authorized newer Pages deployment.
+jq '. += [{id:99999,ref:"master",sha:"0000000000000000000000000000000000000000",
+  environment:"github-pages-controller",task:"deploy",created_at:"2026-08-31T14:00:00Z"}]' \
+  "$global_pages_deployments_response" > "$global_pages_deployments_response.changed"
+mv "$global_pages_deployments_response.changed" "$global_pages_deployments_response"
+jq '. += [{id:99999,state:"inactive",environment:"github-pages-controller",created_at:"2026-08-31T14:00:00Z"}]' \
+  "$pages_statuses_response" > "$pages_statuses_response.changed"
+mv "$pages_statuses_response.changed" "$pages_statuses_response"
+[[ "$(bash "$repository_root/release/verify-pages-deployment-source.sh" \
+  "$pages_run_id" v0.1.0 "$replacement_commit" "$pages_run_id" "$controller_commit" historical)" == "$expected_pages_result" ]] || \
+  fail 'Historical Pages verification rejected a bound success followed by supersession.'
+if bash "$repository_root/release/verify-pages-deployment-source.sh" \
+  "$pages_run_id" v0.1.0 "$replacement_commit" "$pages_run_id" "$controller_commit" >/dev/null 2>&1; then
+  fail 'Default Pages verification silently accepted historical deployment evidence.'
+fi
+for invalid_status in failure pending; do
+  jq --arg status "$invalid_status" 'map(if .id == 99999 then .state = $status else . end)' \
+    "$pages_statuses_response" > "$pages_statuses_response.changed"
+  mv "$pages_statuses_response.changed" "$pages_statuses_response"
+  if bash "$repository_root/release/verify-pages-deployment-source.sh" \
+    "$pages_run_id" v0.1.0 "$replacement_commit" "$pages_run_id" "$controller_commit" historical >/dev/null 2>&1; then
+    fail 'Historical Pages verification accepted a subsequent failure or pending status.'
+  fi
+done
+jq '[{id:99999,state:"inactive",environment:"github-pages-controller",created_at:"2026-08-31T14:00:00Z"}]' \
+  "$pages_statuses_response" > "$pages_statuses_response.changed"
+mv "$pages_statuses_response.changed" "$pages_statuses_response"
+if bash "$repository_root/release/verify-pages-deployment-source.sh" \
+  "$pages_run_id" v0.1.0 "$replacement_commit" "$pages_run_id" "$controller_commit" historical >/dev/null 2>&1; then
+  fail 'Historical Pages verification accepted an inactive deployment without a proven success.'
+fi
 write_pages_deployment_responses
 
 # Each top-level array is one compact fake API page. Two pages exercise complete --paginate --slurp handling
@@ -1776,6 +1851,16 @@ bash "$repository_root/release/wait-for-pages-source-receipt.sh" \
 [[ "$(< "$FAKE_CURL_STATE")" == "2" ]] || \
   fail 'A redirect Age leaked into the final header block and delayed a current public Pages receipt.'
 
+export FAKE_CURL_MODE=redirect-old-final-no-age
+export FAKE_CURL_STATE="$temporary_root/immutable-only-state"
+export FAKE_CURL_LOG="$temporary_root/immutable-only-log"
+bash "$repository_root/release/wait-for-pages-source-receipt.sh" \
+  v0.1.0 "$replacement_commit" "$controller_commit" 30 0 release-only >/dev/null
+[[ "$(< "$FAKE_CURL_STATE")" == "1" ]] || fail 'Release-only receipt verification read the mutable root.'
+if grep --fixed-strings 'https://gh.s7a.dev/strata/source-receipt.json' "$FAKE_CURL_LOG" >/dev/null; then
+  fail 'Release-only receipt verification depended on the current documentation root.'
+fi
+
 grep --fixed-strings 'timeout_seconds="${4:-900}"' \
   "$repository_root/release/wait-for-pages-source-receipt.sh" >/dev/null || \
   fail 'The public Pages polling default does not outlive the observed 600-second CDN TTL.'
@@ -2000,5 +2085,9 @@ grep --fixed-strings 'expected_overlay_directory="$RUNNER_TEMP/strata-central-co
 bash "$repository_root/release/tests/verify-controller-overlay.sh" >/dev/null
 bash "$repository_root/release/tests/verify-central-controller-overlay.sh" >/dev/null
 bash "$repository_root/release/tests/verify-github-release-preflight.sh" >/dev/null
+bash "$repository_root/release/tests/verify-github-release-read.sh" >/dev/null
+
+bash "$repository_root/release/tests/verify-selected-release-source.sh" >/dev/null
+bash "$repository_root/release/tests/verify-selected-publication.sh" >/dev/null
 
 echo 'Release source guards passed.'

@@ -8,7 +8,7 @@ import java.nio.file.Files
 import java.nio.file.Path
 
 /**
- * Verifies release-link portability without changing ordinary repository-link checks or requesting external URLs.
+ * Verifies current paths and anchors, historical release-link portability, and fenced-example isolation without external requests.
  */
 internal class DocumentationLinkCheckerTest {
     @TempDir
@@ -114,11 +114,131 @@ internal class DocumentationLinkCheckerTest {
         assertTrue(failure.message.orEmpty().contains("Documentation link target is missing"))
     }
 
+    @Test
+    fun checksEveryRootDocumentForMissingLinks() {
+        val project = createRepository()
+        listOf("AGENTS.md", "CONTRIBUTING.md", "CHANGELOG.md").forEach { name ->
+            val document = project.resolve(name)
+            Files.writeString(document, "[Missing](docs/missing.md)")
+
+            val failure =
+                assertThrows(IllegalArgumentException::class.java) {
+                    DocumentationLinkChecker.main(arrayOf(project.toString()))
+                }
+            assertTrue(failure.message.orEmpty().contains(document.toString()))
+            Files.writeString(document, "# Restored")
+        }
+    }
+
+    @Test
+    fun acceptsLocalAndCurrentGithubLinksWithMarkdownAndExplicitHtmlAnchors() {
+        val project = createRepository()
+        Files.writeString(project.resolve("docs/README.md"), "# Documentation")
+        Files.writeString(project.resolve("docs/page.html"), "<h1 id='exact'>Heading</h1><a name=\"named\"></a>")
+        Files.writeString(
+            project.resolve("README.md"),
+            """
+            # Project
+
+            [Same page](#project)
+            [Encoded fragment](docs/font-resources.md#%73ettings)
+            [Current file](https://github.com/sya-ri/strata/blob/master/docs/font-resources.md#settings)
+            [Current directory](https://github.com/sya-ri/strata/tree/master/docs#documentation)
+            <a href='docs/page.html#exact'>HTML anchor</a>
+            <a href="docs/page.html#named">Named HTML anchor</a>
+            """.trimIndent(),
+        )
+
+        DocumentationLinkChecker.main(arrayOf(project.toString()))
+    }
+
+    @Test
+    fun rejectsMissingLocalAndCurrentGithubFragments() {
+        val project = createRepository()
+        listOf("#missing", "docs/font-resources.md#missing", "https://github.com/sya-ri/strata/blob/master/docs/font-resources.md#missing").forEach { target ->
+            Files.writeString(project.resolve("README.md"), "# Present\n\n[Missing]($target)")
+
+            val failure =
+                assertThrows(IllegalArgumentException::class.java) {
+                    DocumentationLinkChecker.main(arrayOf(project.toString()))
+                }
+            assertTrue(failure.message.orEmpty().contains("Documentation link anchor is missing"))
+        }
+    }
+
+    @Test
+    fun rejectsMissingCurrentGithubTargetsButIgnoresOtherRevisionsAndOrigins() {
+        val project = createRepository()
+        val readme = project.resolve("README.md")
+        listOf("blob", "tree").forEach { kind ->
+            Files.writeString(readme, "[Missing](https://github.com/sya-ri/strata/$kind/master/docs/old.md)")
+            val failure =
+                assertThrows(IllegalArgumentException::class.java) {
+                    DocumentationLinkChecker.main(arrayOf(project.toString()))
+                }
+            assertTrue(failure.message.orEmpty().contains("Documentation link target is missing"))
+        }
+        Files.writeString(
+            readme,
+            """
+            [Tag](https://github.com/sya-ri/strata/blob/v0.1.0/docs/old.md#old)
+            [Commit](https://github.com/sya-ri/strata/blob/0123456789abcdef0123456789abcdef01234567/docs/old.md#old)
+            [Other project](https://github.com/example/strata/blob/master/docs/old.md#old)
+            [Other host](https://example.invalid/docs/old.md#old)
+            [Protocol-relative external](//example.invalid/docs/old.md#old)
+            """.trimIndent(),
+        )
+
+        DocumentationLinkChecker.main(arrayOf(project.toString()))
+    }
+
+    @Test
+    fun preservesHistoricalReleaseBodiesWithOldCurrentLinksAndAnchors() {
+        val project = createRepository()
+        val release = project.resolve("docs/releases/v0.1.1.md")
+        val body =
+            """
+            [Old current link](https://github.com/sya-ri/strata/blob/master/docs/old.md#removed)
+            [Historical fragment](#removed)
+            """.trimIndent()
+        Files.writeString(release, body)
+
+        DocumentationLinkChecker.main(arrayOf(project.toString()))
+
+        assertTrue(Files.readString(release) == body)
+    }
+
+    @Test
+    fun rejectsEncodedCurrentGithubTraversalOutsideTheRepository() {
+        val project = createRepository()
+        Files.writeString(project.resolve("README.md"), "[Outside](https://github.com/sya-ri/strata/blob/master/%2e%2e/outside.md)")
+
+        val failure =
+            assertThrows(IllegalArgumentException::class.java) {
+                DocumentationLinkChecker.main(arrayOf(project.toString()))
+            }
+        assertTrue(failure.message.orEmpty().contains("escapes the repository"))
+    }
+
+    @Test
+    fun rejectsInventedHtmlHeadingAnchors() {
+        val project = createRepository()
+        Files.writeString(project.resolve("docs/page.html"), "<h1>Settings</h1>")
+        Files.writeString(project.resolve("README.md"), "[Missing](docs/page.html#settings)")
+
+        val failure =
+            assertThrows(IllegalArgumentException::class.java) {
+                DocumentationLinkChecker.main(arrayOf(project.toString()))
+            }
+        assertTrue(failure.message.orEmpty().contains("Documentation link anchor is missing"))
+    }
+
     private fun createRepository(): Path {
         val project = Files.createDirectories(temporaryRoot.resolve("project"))
         Files.createDirectories(project.resolve("docs/releases"))
         Files.createDirectories(project.resolve("skills"))
         Files.writeString(project.resolve("README.md"), "[Guide](docs/font-resources.md#settings)")
+        listOf("AGENTS.md", "CONTRIBUTING.md", "CHANGELOG.md").forEach { name -> Files.writeString(project.resolve(name), "# Project") }
         Files.writeString(project.resolve("docs/font-resources.md"), "# Settings")
         return project
     }

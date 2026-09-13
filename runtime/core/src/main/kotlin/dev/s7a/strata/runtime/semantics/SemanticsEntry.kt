@@ -8,7 +8,7 @@ import dev.s7a.strata.semantics.Semantics
  *
  * Entries are returned in parent-before-child and local emission order.
  * Their bounds combine the cached local payload with the current accumulated tree coordinates.
- * The [semantics] payload remains unresolved for the platform adapter.
+ * The [SemanticsEntry.semantics] payload remains unresolved for the platform adapter.
  *
  * @property bounds the node's accumulated bounds in tree coordinates.
  * @property semantics the unresolved semantics payload.

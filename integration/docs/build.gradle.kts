@@ -74,12 +74,28 @@ tasks.withType<Test>().configureEach {
     javaLauncher.set(showcaseLauncher)
     jvmArgs("--enable-native-access=ALL-UNNAMED")
     systemProperty("java.awt.headless", "true")
+    inputs.files(
+        rootProject.layout.projectDirectory.file("docs/guides/text.md"),
+        rootProject.layout.projectDirectory.file("docs/guides/fonts.md"),
+        rootProject.layout.projectDirectory.file("integration/api/src/main/kotlin/dev/s7a/strata/integration/consumer/ApiOnlyUnicodeTextScreen.kt"),
+        rootProject.layout.projectDirectory.file("integration/api/src/main/kotlin/dev/s7a/strata/integration/consumer/ApiOnlyMultilineTextScreen.kt"),
+        rootProject.layout.projectDirectory.file("integration/docs/src/main/kotlin/dev/s7a/strata/integration/docs/FontResourceExample.kt"),
+    ).withPropertyName("compiledGuideInputs").withPathSensitivity(PathSensitivity.RELATIVE)
 }
 
 val skillExamples = sourceSets.create("skillExamples")
+val skillForwardFirst = sourceSets.create("skillForwardFirst")
+val skillRecheckFirst = sourceSets.create("skillRecheckFirst")
+val readmeExamples = sourceSets.create("readmeExamples")
 
 dependencies {
     add(skillExamples.compileOnlyConfigurationName, project(":api"))
+    add(skillForwardFirst.compileOnlyConfigurationName, project(":api"))
+    add(skillRecheckFirst.compileOnlyConfigurationName, project(":api"))
+    testImplementation(skillRecheckFirst.output)
+    testImplementation(skillForwardFirst.output)
+    testImplementation(skillExamples.output)
+    add(readmeExamples.compileOnlyConfigurationName, project(":api"))
 }
 
 val apiMainClasses =
@@ -96,6 +112,7 @@ val showcaseExampleSources = objects.sourceDirectorySet("showcaseExamples", "API
 extensions.configure<KotlinJvmProjectExtension> {
     sourceSets.named("main") {
         kotlin.source(showcaseExampleSources)
+        kotlin.srcDir("src/readmeExamples/kotlin")
     }
 }
 
@@ -146,6 +163,50 @@ val showcaseAssetIndex = showcaseAssetInput("strata.showcase.assetIndex", "showc
 val showcaseAssetObjects = showcaseAssetInput("strata.showcase.assetObjects", "showcaseAssetObjects")
 val showcaseVersionManifest = showcaseAssetInput("strata.showcase.versionManifest", "showcaseVersionManifest")
 val showcaseAssetInputs = files(showcaseClientJar, showcaseAssetIndex, showcaseAssetObjects, showcaseVersionManifest)
+
+/**
+ * Configures independent CPU-only README rendering from explicit original assets and compiled sources.
+ * Every invocation recreates its evidence; generation alone may synchronize the checked outputs.
+ */
+fun JavaExec.configureReadmeDemo(mainClassName: String, stagingName: String) {
+    dependsOn("classes", "compileReadmeExamplesKotlin", showcaseAssetInputs)
+    mainClass.set(mainClassName)
+    classpath = sourceSets.main.get().runtimeClasspath
+    val staging = layout.buildDirectory.dir("readme-demo/$stagingName")
+    argumentProviders.add(CommandLineArgumentProvider {
+        listOf(
+            rootProject.projectDir.absolutePath,
+            staging.get().asFile.absolutePath,
+            showcaseClientJar.singleFile.absolutePath,
+            showcaseAssetIndex.singleFile.absolutePath,
+            showcaseAssetObjects.singleFile.absolutePath,
+            showcaseVersionManifest.singleFile.absolutePath,
+            libs.versions.jetbrains.mono.get(),
+        )
+    })
+    inputs.dir("src/readmeExamples/kotlin")
+    inputs.dir("src/main/resources/readme-demo")
+    inputs.files(showcaseClientJar, showcaseAssetIndex, showcaseVersionManifest)
+    inputs.property("minecraftAssetObjectsLocation", providers.provider { showcaseAssetObjects.singleFile.absolutePath })
+    outputs.dir(staging)
+    outputs.upToDateWhen { false }
+    outputs.cacheIf { false }
+}
+
+val generateReadmeDemo = tasks.register<JavaExec>("generateReadmeDemo") {
+    group = "documentation"
+    description = "Generates the README code-and-screen GIF and still images from compiled examples."
+    configureReadmeDemo("dev.s7a.strata.integration.docs.ReadmeDemoGenerator", "generate")
+}
+
+val checkReadmeDemo = tasks.register<JavaExec>("checkReadmeDemo") {
+    group = "verification"
+    description = "Freshly renders and verifies the README demo without changing tracked files."
+    configureReadmeDemo("dev.s7a.strata.integration.docs.ReadmeDemoChecker", "check")
+    mustRunAfter(generateReadmeDemo)
+    inputs.dir(rootProject.layout.projectDirectory.dir("docs/readme-demo"))
+    inputs.file(rootProject.layout.projectDirectory.file("README.md"))
+}
 
 class ShowcaseArgumentProvider(
     private val repositoryRoot: Provider<Directory>,
@@ -228,7 +289,8 @@ fun JavaExec.configureShowcaseLauncher(
     outputs.cacheIf { false }
     if (synchronizeSource.not()) {
         inputs.file(rootProject.layout.projectDirectory.file("README.md"))
-        inputs.file(rootProject.layout.projectDirectory.file("docs/components.md"))
+        inputs.file(rootProject.layout.projectDirectory.file("docs/reference/components.md"))
+        inputs.file(rootProject.layout.projectDirectory.file("docs/examples/screens.md"))
         inputs.files(rootProject.layout.projectDirectory.dir("docs/components"))
     }
 }
@@ -335,7 +397,7 @@ fun JavaExec.configureStrataSkillLauncher(
     outputs.upToDateWhen { false }
     if (synchronizeSource.not()) {
         inputs.dir(rootProject.layout.projectDirectory.dir("skills/strata"))
-        inputs.file(rootProject.layout.projectDirectory.file("docs/modrinth-project.md"))
+        inputs.file(rootProject.layout.projectDirectory.file("docs/publication/modrinth-project.md"))
         inputs.file(rootProject.layout.projectDirectory.file("LICENSE"))
     }
 }
@@ -358,19 +420,21 @@ val checkStrataSkillExampleClasspath =
     tasks.register("checkStrataSkillExampleClasspath") {
         group = "verification"
         description = "Verifies that public-skill examples compile against only the API project."
-        dependsOn("compileSkillExamplesKotlin")
+        dependsOn("compileSkillExamplesKotlin", "compileSkillForwardFirstKotlin", "compileSkillRecheckFirstKotlin")
         doLast {
-            val projectDependencies =
-                configurations
-                    .getByName(skillExamples.compileClasspathConfigurationName)
-                    .incoming
-                    .resolutionResult
-                    .allComponents
-                    .mapNotNull { component -> (component.id as? ProjectComponentIdentifier)?.projectPath }
-                    .filter { projectPath -> projectPath != project.path }
-                    .toSet()
-            require(projectDependencies == setOf(":api")) {
-                "Strata skill example compile classpath contains project dependencies: $projectDependencies"
+            listOf(skillExamples, skillForwardFirst, skillRecheckFirst).forEach { examples ->
+                val projectDependencies =
+                    configurations
+                        .getByName(examples.compileClasspathConfigurationName)
+                        .incoming
+                        .resolutionResult
+                        .allComponents
+                        .mapNotNull { component -> (component.id as? ProjectComponentIdentifier)?.projectPath }
+                        .filter { projectPath -> projectPath != project.path }
+                        .toSet()
+                require(projectDependencies == setOf(":api")) {
+                    "Strata ${examples.name} compile classpath contains project dependencies: $projectDependencies"
+                }
             }
         }
     }
@@ -379,11 +443,13 @@ val checkDocumentationLinks =
     tasks.register<JavaExec>("checkDocumentationLinks") {
         group = "verification"
         description = "Checks repository-local README, docs, and public-skill links."
-        dependsOn("classes")
+        dependsOn("classes", ":checkCompatibilityDocumentation")
         mainClass.set("dev.s7a.strata.integration.docs.DocumentationLinkChecker")
         classpath = sourceSets.main.get().runtimeClasspath
         args(repositoryRoot.get().asFile.absolutePath)
-        inputs.file(rootProject.layout.projectDirectory.file("README.md"))
+        listOf("README.md", "AGENTS.md", "CONTRIBUTING.md", "CHANGELOG.md").forEach { name ->
+            inputs.file(rootProject.layout.projectDirectory.file(name))
+        }
         inputs.dir(rootProject.layout.projectDirectory.dir("docs"))
         inputs.dir(rootProject.layout.projectDirectory.dir("skills"))
         outputs.upToDateWhen { false }
@@ -420,10 +486,12 @@ val pagesRepositoryInputs =
                 }
                 exclude(
                     ".git/**",
+                    ".worktrees/**",
                     ".gradle/**",
                     "build/**",
                     "out/**",
                     "**/.git/**",
+                    "**/.worktrees/**",
                     "**/.gradle/**",
                     "**/build/**",
                     "**/out/**",
@@ -473,6 +541,7 @@ tasks.register<JavaExec>("checkDokkaPagesStaging") {
 }
 
 tasks.named("check") {
+    dependsOn(checkReadmeDemo)
     dependsOn(checkComponentShowcase, checkMinecraftShowcaseParity)
-    dependsOn(checkStrataSkill, checkStrataSkillExampleClasspath, checkDocumentationLinks)
+    dependsOn(checkStrataSkill, checkStrataSkillExampleClasspath, checkDocumentationLinks, ":checkCompatibilityDocumentation")
 }

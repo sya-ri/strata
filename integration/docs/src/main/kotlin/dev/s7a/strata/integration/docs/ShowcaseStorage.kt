@@ -28,7 +28,8 @@ internal object ShowcaseStorage {
         clearDirectory(staging)
         val components = staging.resolve("components")
         Files.createDirectories(components)
-        writeText(staging.resolve("components.md"), result.componentsMarkdown)
+        writeText(staging.resolve("reference/components.md"), result.componentsMarkdown)
+        writeText(staging.resolve("examples/screens.md"), result.screensMarkdown)
         result.sections.forEach { section ->
             writeBytes(components.resolve("${section.slug}.png"), section.png())
         }
@@ -56,8 +57,10 @@ internal object ShowcaseStorage {
         ShowcasePaths.requireSafeSegments(docs, "Showcase documentation root")
         val components = projectRoot.resolve("docs/components").toAbsolutePath().normalize()
         ShowcasePaths.requireSafeSegments(components, "Showcase component root")
-        val componentsMarkdown = projectRoot.resolve("docs/components.md").toAbsolutePath().normalize()
+        val componentsMarkdown = projectRoot.resolve("docs/reference/components.md").toAbsolutePath().normalize()
         ShowcasePaths.requireSafeSegments(componentsMarkdown, "Showcase component Markdown")
+        val screensMarkdown = projectRoot.resolve("docs/examples/screens.md").toAbsolutePath().normalize()
+        ShowcasePaths.requireSafeSegments(screensMarkdown, "Showcase screen Markdown")
         require(Files.exists(components).not() || Files.isDirectory(components, LinkOption.NOFOLLOW_LINKS)) {
             "Showcase component root is not a directory: $components"
         }
@@ -87,23 +90,24 @@ internal object ShowcaseStorage {
         val sortedExpected = expected.sorted()
         val failures = ArrayList<String>()
         failures += fileFailures(components, sortedExpected, actual, generated)
-        failures += componentsMarkdownFailures(componentsMarkdown, generated)
+        failures += markdownFailures(componentsMarkdown, generated.stagingRoot.resolve("reference/components.md"), "reference/components.md")
+        failures += markdownFailures(screensMarkdown, generated.stagingRoot.resolve("examples/screens.md"), "examples/screens.md")
         failures += readmeFailures(projectRoot, generated)
         require(failures.isEmpty()) { failures.sorted().joinToString("\n") }
     }
 
-    private fun componentsMarkdownFailures(
-        componentsMarkdown: Path,
-        generated: ShowcaseOutput,
+    private fun markdownFailures(
+        source: Path,
+        staged: Path,
+        label: String,
     ): List<String> {
-        if (Files.isRegularFile(componentsMarkdown, LinkOption.NOFOLLOW_LINKS).not()) {
-            return listOf("components.md: missing or not regular")
+        if (Files.isRegularFile(source, LinkOption.NOFOLLOW_LINKS).not()) {
+            return listOf("$label: missing or not regular")
         }
-        val staged = generated.stagingRoot.resolve("components.md")
-        return if (Files.readAllBytes(componentsMarkdown).contentEquals(Files.readAllBytes(staged))) {
+        return if (Files.readAllBytes(source).contentEquals(Files.readAllBytes(staged))) {
             emptyList()
         } else {
-            listOf("components.md: different")
+            listOf("$label: different")
         }
     }
 

@@ -15,6 +15,25 @@ on:
         description: Exact release tag
         required: true
         type: string
+      source_commit:
+        description: Exact 40-character product commit matching the signed tag (need not be latest)
+        required: true
+        type: string
+      maven_central:
+        description: Enable new Maven publication (canonical artifact verification always runs)
+        required: true
+        type: boolean
+        default: true
+      github_release:
+        description: Publish or verify GitHub Release; false skips this destination
+        required: true
+        type: boolean
+        default: true
+      modrinth:
+        description: Publish or verify Modrinth; false skips this destination
+        required: true
+        type: boolean
+        default: true
       modrinth_project_id:
         description: Optional cross-check of the committed immutable Modrinth project ID
         required: false
@@ -52,6 +71,8 @@ jobs:
       predecessor_commit: ${{ steps.source.outputs.predecessor_commit }}
       predecessor_object: ${{ steps.source.outputs.predecessor_object }}
       pages_record: ${{ steps.pages.outputs.pages_record }}
+      pages_producer_commit: ${{ steps.pages.outputs.pages_producer_commit }}
+      source_selection: ${{ steps.source.outputs.source_selection }}
     steps:
       - name: Check out master
         uses: actions/checkout@v7
@@ -64,6 +85,10 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
           RELEASE_TAG: ${{ inputs.tag }}
+          SOURCE_COMMIT: ${{ inputs.source_commit }}
+          SELECT_MAVEN: ${{ inputs.maven_central }}
+          SELECT_GITHUB: ${{ inputs.github_release }}
+          SELECT_MODRINTH: ${{ inputs.modrinth }}
           CONFIRMATION: ${{ inputs.confirmation }}
         run: |
           set -euo pipefail
@@ -107,10 +132,12 @@ jobs:
           readonly -f portable_jq
           [[ "$GITHUB_REF" == "refs/heads/master" ]] || { echo 'Release must be dispatched from master.' >&2; exit 1; }
           [[ "$CONFIRMATION" == "release $RELEASE_TAG" ]] || { echo 'Release confirmation does not match.' >&2; exit 1; }
+          [[ "$SOURCE_COMMIT" =~ ^[0-9a-f]{40}$ ]] || { echo 'An exact product commit is required.' >&2; exit 1; }
+          [[ "$SELECT_MAVEN" == true || "$SELECT_GITHUB" == true || "$SELECT_MODRINTH" == true ]] || { echo 'Select at least one publication destination.' >&2; exit 1; }
           [[ "$RELEASE_TAG" =~ ^v(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)$ ]] || { echo 'A canonical stable semantic release tag is required.' >&2; exit 1; }
           [[ "$(git rev-parse HEAD)" == "$GITHUB_SHA" ]] || { echo 'Checked-out controller differs from the workflow commit.' >&2; exit 1; }
-          git fetch --force origin '+refs/heads/master:refs/remotes/origin/master'
-          [[ "$(git rev-parse origin/master)" == "$GITHUB_SHA" ]] || { echo 'Controller SHA is not the exact origin/master head.' >&2; exit 1; }
+          git fetch --force origin '+refs/heads/master:refs/remotes/origin/master' '+refs/tags/*:refs/tags/*'
+          git --no-replace-objects merge-base --is-ancestor "$GITHUB_SHA" origin/master || { echo 'The frozen controller left master history.' >&2; exit 1; }
           run_controller_tool_guard() {
             local operation="$1"
             local controller_commit="$2"
@@ -128,12 +155,15 @@ jobs:
           }
           controller_directory="$(mktemp -d "$RUNNER_TEMP/strata-preflight-controller-tools.XXXXXX")"
           cleanup() {
+            if [[ -n "${metadata:-}" ]]; then rm -f -- "$metadata"; fi
             chmod -R u+w -- "$controller_directory" >/dev/null 2>&1 || true
             rm -rf -- "$controller_directory"
           }
           trap cleanup EXIT INT TERM
           run_controller_tool_guard materialize "$GITHUB_SHA" "$controller_directory"
-          metadata="$controller_directory/current-controller.json"
+          metadata="$(mktemp "$RUNNER_TEMP/strata-selected-release.XXXXXX")"
+          run_controller_tool_guard verify "$GITHUB_SHA" "$controller_directory"
+          bash "$controller_directory/select-release-source.sh" resolve "$RELEASE_TAG" "$SOURCE_COMMIT" "$GITHUB_SHA" > "$metadata"
           current_tag="$(portable_jq -er '.current.tag' "$metadata")"
           current_commit="$(portable_jq -er '.current.commit' "$metadata")"
           current_object="$(portable_jq -er '.current.tagObject' "$metadata")"
@@ -141,7 +171,7 @@ jobs:
           predecessor_tag="$(portable_jq -er '.predecessor.tag' "$metadata")"
           predecessor_commit="$(portable_jq -er '.predecessor.commit' "$metadata")"
           predecessor_object="$(portable_jq -er '.predecessor.tagObject' "$metadata")"
-          [[ "$RELEASE_TAG" == "$current_tag" ]] || { echo 'Requested tag does not match current-controller metadata.' >&2; exit 1; }
+          [[ "$RELEASE_TAG" == "$current_tag" ]] || { echo 'Requested tag differs from the selected source.' >&2; exit 1; }
           [[ "$predecessor_tag" =~ ^v(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)$ ]] || { echo 'Predecessor tag is not canonical stable semantic syntax.' >&2; exit 1; }
           [[ "$(printf '%s\n' "${predecessor_tag#v}" "${current_tag#v}" | sort -V | head -n 1)" == "${predecessor_tag#v}" && \
             "$predecessor_tag" != "$current_tag" ]] || { echo 'Predecessor semantic version must be earlier than current.' >&2; exit 1; }
@@ -157,13 +187,13 @@ jobs:
           run_controller_tool_guard verify "$GITHUB_SHA" "$controller_directory"
           bash "$controller_directory/verify-release-tag.sh" "$predecessor_tag" "$predecessor_commit" "$predecessor_object" >/dev/null
           run_controller_tool_guard verify "$GITHUB_SHA" "$controller_directory"
-          bash "$controller_directory/verify-current-controller-release-order.sh" "$metadata" >/dev/null
+          bash "$controller_directory/select-release-source.sh" verify "$metadata" "$GITHUB_SHA"
           jq -e '.conditions.ref_name.include == ["refs/tags/v*"]' "$controller_directory/github-release-tag-ruleset.json" >/dev/null
           run_controller_tool_guard verify "$GITHUB_SHA" "$controller_directory"
           bash "$controller_directory/verify-github-tag-ruleset.sh" \
             "$controller_directory/github-release-tag-ruleset.json" \
             "$controller_directory/github-release-tag-ruleset-receipt.json" >/dev/null
-          [[ "$(git rev-parse origin/master)" == "$GITHUB_SHA" ]] || { echo 'Controller master changed during tag verification.' >&2; exit 1; }
+          git --no-replace-objects merge-base --is-ancestor "$GITHUB_SHA" origin/master || { echo 'The frozen controller left master history during tag verification.' >&2; exit 1; }
           git merge-base --is-ancestor "$predecessor_commit" "$current_commit" || { echo 'Predecessor is not an ancestor of the current release.' >&2; exit 1; }
           git merge-base --is-ancestor "$current_commit" origin/master || { echo 'Current release is not contained in controller master.' >&2; exit 1; }
           for identity in \
@@ -185,6 +215,7 @@ jobs:
           done < <(portable_jq -er '.current.representativeMinecraftVersions[]' "$metadata")
           {
             echo "controller_commit=$GITHUB_SHA"
+            echo "source_selection=$(portable_jq -c . "$metadata")"
             echo "current_tag=$current_tag"
             echo "current_commit=$current_commit"
             echo "current_object=$current_object"
@@ -214,25 +245,23 @@ jobs:
               }
             done
           done
-          controller_pages="$(gh run list --workflow pages.yml --commit "$GITHUB_SHA" --event push --status completed --limit 100 --json conclusion,databaseId,event,headBranch,headSha)"
-          controller_pages_run_id="$(jq -er --arg sha "$GITHUB_SHA" '
-            [.[] | select(.conclusion == "success" and .event == "push" and .headBranch == "master" and .headSha == $sha)] |
-            select(length == 1) | .[0].databaseId | select(type == "number" and . > 0 and . == floor) | tostring
-          ' <<< "$controller_pages")" || { echo 'Expected one successful controller Pages run.' >&2; exit 1; }
+          pages_selection="$(bash release/select-release-pages.sh "$RELEASE_TAG" "$TAG_COMMIT" "$GITHUB_SHA")"
+          read -r controller_pages_run_id pages_producer_commit <<< "$pages_selection"
           release_pages_run_id="$controller_pages_run_id"
           bash -n release/verify-pages-deployment-source.sh
           bash -n release/wait-for-pages-source-receipt.sh
           pages_record="$(bash release/verify-pages-deployment-source.sh \
             "$release_pages_run_id" "$RELEASE_TAG" "$TAG_COMMIT" \
-            "$controller_pages_run_id" "$GITHUB_SHA")"
-          bash release/wait-for-pages-source-receipt.sh "$RELEASE_TAG" "$TAG_COMMIT" "$GITHUB_SHA"
+            "$controller_pages_run_id" "$pages_producer_commit" historical)"
+          bash release/wait-for-pages-source-receipt.sh "$RELEASE_TAG" "$TAG_COMMIT" "$pages_producer_commit" 900 15 release-only
           [[ "$(bash release/verify-pages-deployment-source.sh \
             "$release_pages_run_id" "$RELEASE_TAG" "$TAG_COMMIT" \
-            "$controller_pages_run_id" "$GITHUB_SHA")" == "$pages_record" ]] || {
+            "$controller_pages_run_id" "$pages_producer_commit" historical)" == "$pages_record" ]] || {
             echo 'Pages provenance changed while polling public receipts.' >&2
             exit 1
           }
           echo "pages_record=$pages_record" >> "$GITHUB_OUTPUT"
+          echo "pages_producer_commit=$pages_producer_commit" >> "$GITHUB_OUTPUT"
 
   release:
     if: inputs.operation == 'release'
@@ -260,6 +289,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           RELEASE_TAG: ${{ inputs.tag }}
           CONFIRMATION: ${{ inputs.confirmation }}
+          EXPECTED_SOURCE_SELECTION: ${{ needs.preflight.outputs.source_selection }}
           EXPECTED_CONTROLLER_COMMIT: ${{ needs.preflight.outputs.controller_commit }}
           EXPECTED_TAG: ${{ needs.preflight.outputs.current_tag }}
           EXPECTED_TAG_COMMIT: ${{ needs.preflight.outputs.current_commit }}
@@ -269,6 +299,7 @@ jobs:
           EXPECTED_PREDECESSOR_COMMIT: ${{ needs.preflight.outputs.predecessor_commit }}
           EXPECTED_PREDECESSOR_OBJECT: ${{ needs.preflight.outputs.predecessor_object }}
           EXPECTED_PAGES_RECORD: ${{ needs.preflight.outputs.pages_record }}
+          PAGES_PRODUCER_COMMIT: ${{ needs.preflight.outputs.pages_producer_commit }}
         run: |
           set -euo pipefail
           [[ "$GITHUB_REF" == "refs/heads/master" ]] || { echo 'Release must be dispatched from master.' >&2; exit 1; }
@@ -278,7 +309,7 @@ jobs:
             '+refs/heads/master:refs/remotes/origin/master' \
             '+refs/tags/*:refs/tags/*'
           [[ "$(git rev-parse HEAD)" == "$EXPECTED_TAG_COMMIT" ]] || { echo 'Checked-out release source differs from preflight.' >&2; exit 1; }
-          [[ "$(git rev-parse origin/master)" == "$GITHUB_SHA" ]] || { echo 'Controller is no longer the exact master head.' >&2; exit 1; }
+          git --no-replace-objects merge-base --is-ancestor "$GITHUB_SHA" origin/master || { echo 'The frozen controller left master history.' >&2; exit 1; }
           [[ "$(git rev-parse --verify "refs/tags/$RELEASE_TAG^{commit}")" == "$EXPECTED_TAG_COMMIT" && \
             "$(git rev-parse "refs/tags/$RELEASE_TAG")" == "$EXPECTED_TAG_OBJECT" ]] || { echo 'Current tag identity differs from preflight.' >&2; exit 1; }
           [[ "$(git rev-parse --verify "refs/tags/$EXPECTED_PREDECESSOR_TAG^{commit}")" == "$EXPECTED_PREDECESSOR_COMMIT" && \
@@ -318,20 +349,19 @@ jobs:
           controller_pages_verifier="$controller_tool_directory/verify-pages-deployment-source.sh"
           controller_pages_waiter="$controller_tool_directory/wait-for-pages-source-receipt.sh"
           run_controller_tool_guard materialize "$EXPECTED_CONTROLLER_COMMIT" "$controller_tool_directory"
-          metadata="$controller_tool_directory/current-controller.json"
           jq -e \
             --arg current_tag "$EXPECTED_TAG" --arg current_commit "$EXPECTED_TAG_COMMIT" --arg current_object "$EXPECTED_TAG_OBJECT" \
             --argjson representative_versions "$EXPECTED_REPRESENTATIVE_MINECRAFT_VERSIONS" \
             --arg predecessor_tag "$EXPECTED_PREDECESSOR_TAG" --arg predecessor_commit "$EXPECTED_PREDECESSOR_COMMIT" --arg predecessor_object "$EXPECTED_PREDECESSOR_OBJECT" '
               .current == {tag: $current_tag, commit: $current_commit, tagObject: $current_object, representativeMinecraftVersions: $representative_versions} and
               .predecessor == {tag: $predecessor_tag, commit: $predecessor_commit, tagObject: $predecessor_object}
-            ' "$metadata" >/dev/null || { echo 'Materialized controller identities differ from frozen preflight outputs.' >&2; exit 1; }
+            ' <<< "$EXPECTED_SOURCE_SELECTION" >/dev/null || { echo 'Selected release identities differ from frozen preflight outputs.' >&2; exit 1; }
           run_controller_tool_guard verify "$EXPECTED_CONTROLLER_COMMIT" "$controller_tool_directory"
           bash "$controller_tool_directory/verify-release-tag.sh" "$RELEASE_TAG" "$EXPECTED_TAG_COMMIT" "$EXPECTED_TAG_OBJECT" >/dev/null
           run_controller_tool_guard verify "$EXPECTED_CONTROLLER_COMMIT" "$controller_tool_directory"
           bash "$controller_tool_directory/verify-release-tag.sh" "$EXPECTED_PREDECESSOR_TAG" "$EXPECTED_PREDECESSOR_COMMIT" "$EXPECTED_PREDECESSOR_OBJECT" >/dev/null
           run_controller_tool_guard verify "$EXPECTED_CONTROLLER_COMMIT" "$controller_tool_directory"
-          bash "$controller_tool_directory/verify-current-controller-release-order.sh" "$metadata" >/dev/null
+          bash "$controller_tool_directory/select-release-source.sh" verify-input "$EXPECTED_CONTROLLER_COMMIT" <<< "$EXPECTED_SOURCE_SELECTION"
           run_controller_tool_guard verify "$EXPECTED_CONTROLLER_COMMIT" "$controller_tool_directory"
           bash "$controller_ruleset_verifier" "$controller_ruleset_contract" "$controller_ruleset_receipt" >/dev/null
           root_version="$(sed -nE 's/^version = "([^"]+)"$/\1/p' build.gradle.kts)"
@@ -340,14 +370,14 @@ jobs:
           run_controller_tool_guard verify "$EXPECTED_CONTROLLER_COMMIT" "$controller_tool_directory"
           pages_record="$(bash "$controller_pages_verifier" \
             "$release_pages_run_id" "$RELEASE_TAG" "$EXPECTED_TAG_COMMIT" \
-            "$controller_pages_run_id" "$GITHUB_SHA")"
+            "$controller_pages_run_id" "$PAGES_PRODUCER_COMMIT" historical)"
           [[ "$pages_record" == "$EXPECTED_PAGES_RECORD" ]] || { echo 'Protected Pages evidence differs from preflight.' >&2; exit 1; }
           run_controller_tool_guard verify "$EXPECTED_CONTROLLER_COMMIT" "$controller_tool_directory"
-          bash "$controller_pages_waiter" "$RELEASE_TAG" "$EXPECTED_TAG_COMMIT" "$GITHUB_SHA"
+          bash "$controller_pages_waiter" "$RELEASE_TAG" "$EXPECTED_TAG_COMMIT" "$PAGES_PRODUCER_COMMIT" 900 15 release-only
           run_controller_tool_guard verify "$EXPECTED_CONTROLLER_COMMIT" "$controller_tool_directory"
           [[ "$(bash "$controller_pages_verifier" \
             "$release_pages_run_id" "$RELEASE_TAG" "$EXPECTED_TAG_COMMIT" \
-            "$controller_pages_run_id" "$GITHUB_SHA")" == "$EXPECTED_PAGES_RECORD" ]] || {
+            "$controller_pages_run_id" "$PAGES_PRODUCER_COMMIT" historical)" == "$EXPECTED_PAGES_RECORD" ]] || {
             echo 'Protected Pages provenance changed while polling public receipts.' >&2
             exit 1
           }
@@ -386,6 +416,7 @@ jobs:
         id: modrinth
         shell: bash
         env:
+          SELECT_MODRINTH: ${{ inputs.modrinth }}
           REQUESTED_PROJECT_ID: ${{ inputs.modrinth_project_id }}
           MODRINTH_TOKEN: ${{ secrets.MODRINTH_TOKEN }}
           SIGNING_KEY: ${{ secrets.SIGNING_KEY }}
@@ -397,7 +428,7 @@ jobs:
           tracked="$(jq -r '.projectId // empty' release/modrinth-project.json)"
           [[ -n "$tracked" ]] || { echo 'The immutable Modrinth project ID is not tracked.' >&2; exit 1; }
           [[ -z "$REQUESTED_PROJECT_ID" || "$REQUESTED_PROJECT_ID" == "$tracked" ]] || { echo 'Requested Modrinth project ID differs from tracked ID.' >&2; exit 1; }
-          [[ -n "$MODRINTH_TOKEN" ]] || { echo 'MODRINTH_TOKEN is missing.' >&2; exit 1; }
+          [[ "$SELECT_MODRINTH" != true || -n "$MODRINTH_TOKEN" ]] || { echo 'MODRINTH_TOKEN is missing.' >&2; exit 1; }
           [[ -n "$SIGNING_KEY" && -n "$SIGNING_PASSWORD" ]] || { echo 'Release signing credentials are missing.' >&2; exit 1; }
           [[ -n "$MAVEN_CENTRAL_USERNAME" && -n "$MAVEN_CENTRAL_PASSWORD" ]] || { echo 'Maven Central credentials are missing.' >&2; exit 1; }
           echo "project_id=$tracked" >> "$GITHUB_OUTPUT"
@@ -565,6 +596,7 @@ jobs:
         id: central
         shell: bash
         env:
+          SELECT_MAVEN: ${{ inputs.maven_central }}
           RELEASE_TAG: ${{ inputs.tag }}
           ORG_GRADLE_PROJECT_signingInMemoryKey: ${{ secrets.SIGNING_KEY }}
           ORG_GRADLE_PROJECT_signingInMemoryKeyPassword: ${{ secrets.SIGNING_PASSWORD }}
@@ -601,11 +633,13 @@ jobs:
             *) echo "Unexpected Central Portal state: $portal_state" >&2; exit 1 ;;
           esac
           [[ "$public_state" != "exact" || "$portal_state" == "exact" ]] || { echo 'Public Central is exact but the authenticated deployment is absent.' >&2; exit 1; }
+          [[ "$SELECT_MAVEN" == true || "$public_state" == exact ]] || { echo 'Maven publication is disabled, but canonical Central artifacts are not available.' >&2; exit 1; }
           {
             echo "public_state=$public_state"
             echo "portal_state=$portal_state"
           } >> "$GITHUB_OUTPUT"
       - name: Preflight Modrinth without mutation
+        if: inputs.modrinth
         id: modrinth_preflight
         shell: bash
         env:
@@ -613,10 +647,12 @@ jobs:
           MODRINTH_TOKEN: ${{ secrets.MODRINTH_TOKEN }}
           PROJECT_ID: ${{ steps.modrinth.outputs.project_id }}
           RELEASE_TAG: ${{ inputs.tag }}
+          EXPECTED_SOURCE_SELECTION: ${{ needs.preflight.outputs.source_selection }}
           EXPECTED_CONTROLLER_COMMIT: ${{ needs.preflight.outputs.controller_commit }}
           EXPECTED_TAG_COMMIT: ${{ needs.preflight.outputs.current_commit }}
           EXPECTED_TAG_OBJECT: ${{ needs.preflight.outputs.current_object }}
           EXPECTED_PAGES_RECORD: ${{ needs.preflight.outputs.pages_record }}
+          PAGES_PRODUCER_COMMIT: ${{ needs.preflight.outputs.pages_producer_commit }}
         run: |
           set -euo pipefail
           verify_controller_tools() {
@@ -626,7 +662,8 @@ jobs:
           git fetch --force origin \
             '+refs/heads/master:refs/remotes/origin/master' \
             '+refs/tags/*:refs/tags/*'
-          [[ "$GITHUB_SHA" == "$EXPECTED_CONTROLLER_COMMIT" && "$(git rev-parse origin/master)" == "$EXPECTED_CONTROLLER_COMMIT" ]] || { echo 'Controller master changed before Modrinth preflight.' >&2; exit 1; }
+          [[ "$GITHUB_SHA" == "$EXPECTED_CONTROLLER_COMMIT" ]] || { echo 'The frozen workflow identity changed.' >&2; exit 1; }
+          git --no-replace-objects merge-base --is-ancestor "$EXPECTED_CONTROLLER_COMMIT" origin/master || { echo 'Controller master changed before Modrinth preflight.' >&2; exit 1; }
           [[ "$(git rev-parse HEAD)" == "$EXPECTED_TAG_COMMIT" && "$(git rev-parse --verify "refs/tags/$RELEASE_TAG^{commit}")" == "$EXPECTED_TAG_COMMIT" ]] || { echo 'Release commit changed before Modrinth preflight.' >&2; exit 1; }
           [[ "$(git rev-parse "refs/tags/$RELEASE_TAG")" == "$EXPECTED_TAG_OBJECT" ]] || { echo 'Release tag object changed before Modrinth preflight.' >&2; exit 1; }
           [[ "$(git rev-parse --verify "refs/tags/$PREDECESSOR_TAG^{commit}")" == "$PREDECESSOR_RELEASE_COMMIT" && \
@@ -645,8 +682,8 @@ jobs:
           verify_controller_tools
           [[ "$(bash "$CONTROLLER_TOOL_DIRECTORY/verify-pages-deployment-source.sh" \
             "$release_pages_run_id" "$RELEASE_TAG" "$EXPECTED_TAG_COMMIT" \
-            "$controller_pages_run_id" "$EXPECTED_CONTROLLER_COMMIT")" == "$EXPECTED_PAGES_RECORD" ]] || { echo 'Protected Pages evidence changed before Modrinth preflight.' >&2; exit 1; }
-          [[ "$(git rev-parse origin/master)" == "$EXPECTED_CONTROLLER_COMMIT" ]] || { echo 'Controller master changed during Modrinth preflight source verification.' >&2; exit 1; }
+            "$controller_pages_run_id" "$PAGES_PRODUCER_COMMIT" historical)" == "$EXPECTED_PAGES_RECORD" ]] || { echo 'Protected Pages evidence changed before Modrinth preflight.' >&2; exit 1; }
+          git --no-replace-objects merge-base --is-ancestor "$EXPECTED_CONTROLLER_COMMIT" origin/master || { echo 'Controller master changed during Modrinth preflight source verification.' >&2; exit 1; }
           project_json="$(mktemp)"
           body="$(mktemp)"
           body_after="$(mktemp)"
@@ -659,8 +696,8 @@ jobs:
           predecessor_sha256="$(jq -er '.previousBodySha256 | select(type == "string" and test("^[0-9a-f]{64}$"))' release/modrinth-project.json)"
           current_body="$(mktemp)"
           trap 'rm -f -- "$project_json" "$body" "$body_after" "$current_body"' EXIT
-          jq --null-input --rawfile body docs/modrinth-project.md --raw-output --join-output \
-            '$body | gsub("\r\n"; "\n") | sub("[[:space:]]+$"; "") + "\n"' > "$current_body"
+          jq --raw-output --join-output '.project.body | gsub("\r\n"; "\n") | sub("[[:space:]]+$"; "") + "\n"' \
+            build/release/modrinth/manifest.json > "$current_body"
           current_sha256="$(sha256sum "$current_body" | cut -d ' ' -f 1)"
           recovery_contract="$CONTROLLER_TOOL_DIRECTORY/backlog-recovery.json"
           recovery_sha256=""
@@ -707,6 +744,7 @@ jobs:
             echo "body_state=$body_state"
           } >> "$GITHUB_OUTPUT"
       - name: Preflight GitHub Release without mutation
+        if: inputs.github_release
         shell: bash
         env:
           CENTRAL_STATE: ${{ steps.central.outputs.public_state }}
@@ -723,14 +761,16 @@ jobs:
               -Pstrata.sourceCommit="$RELEASE_SOURCE_COMMIT" \
               -Pstrata.modrinthProjectId="$PROJECT_ID"
           fi
-          bash -n release/github-release-preflight.sh
-          bash release/github-release-preflight.sh build/release/github
+          git --no-replace-objects cat-file blob "$GITHUB_SHA:release/verify-controller-tools.sh" | \
+            bash -s -- verify "$GITHUB_SHA" "$CONTROLLER_TOOL_DIRECTORY"
+          bash "$CONTROLLER_TOOL_DIRECTORY/github-release-preflight.sh" build/release/github
       - name: Publish wholly absent Maven Central release
-        if: steps.central.outputs.public_state == 'absent' && steps.central.outputs.portal_state == 'absent'
+        if: inputs.maven_central && steps.central.outputs.public_state == 'absent' && steps.central.outputs.portal_state == 'absent'
         shell: bash
         env:
           GH_TOKEN: ${{ github.token }}
           RELEASE_TAG: ${{ inputs.tag }}
+          EXPECTED_SOURCE_SELECTION: ${{ needs.preflight.outputs.source_selection }}
           EXPECTED_CONTROLLER_COMMIT: ${{ needs.preflight.outputs.controller_commit }}
           EXPECTED_TAG_COMMIT: ${{ needs.preflight.outputs.current_commit }}
           EXPECTED_TAG_OBJECT: ${{ needs.preflight.outputs.current_object }}
@@ -748,7 +788,8 @@ jobs:
             git fetch --force origin \
               '+refs/heads/master:refs/remotes/origin/master' \
               '+refs/tags/*:refs/tags/*'
-            [[ "$GITHUB_SHA" == "$EXPECTED_CONTROLLER_COMMIT" && "$(git rev-parse origin/master)" == "$EXPECTED_CONTROLLER_COMMIT" ]] || { echo 'Controller master changed before Central publication.' >&2; exit 1; }
+            [[ "$GITHUB_SHA" == "$EXPECTED_CONTROLLER_COMMIT" ]] || { echo 'The frozen workflow identity changed.' >&2; exit 1; }
+            git --no-replace-objects merge-base --is-ancestor "$EXPECTED_CONTROLLER_COMMIT" origin/master || { echo 'Controller master changed before Central publication.' >&2; exit 1; }
             [[ "$(git rev-parse HEAD)" == "$EXPECTED_TAG_COMMIT" && "$(git rev-parse --verify "refs/tags/$RELEASE_TAG^{commit}")" == "$EXPECTED_TAG_COMMIT" ]] || { echo 'Release commit changed before Central publication.' >&2; exit 1; }
             [[ "$(git rev-parse "refs/tags/$RELEASE_TAG")" == "$EXPECTED_TAG_OBJECT" ]] || { echo 'Release tag object changed before Central publication.' >&2; exit 1; }
             [[ "$(git rev-parse --verify "refs/tags/$PREDECESSOR_TAG^{commit}")" == "$PREDECESSOR_RELEASE_COMMIT" && \
@@ -760,13 +801,13 @@ jobs:
             verify_controller_tools
             bash "$CONTROLLER_TOOL_DIRECTORY/verify-release-tag.sh" "$PREDECESSOR_TAG" "$PREDECESSOR_RELEASE_COMMIT" "$PREDECESSOR_RELEASE_OBJECT" >/dev/null
             verify_controller_tools
-            bash "$CONTROLLER_TOOL_DIRECTORY/verify-current-controller-release-order.sh" \
-              "$CONTROLLER_TOOL_DIRECTORY/current-controller.json" >/dev/null
+            bash "$CONTROLLER_TOOL_DIRECTORY/select-release-source.sh" verify-input \
+              "$EXPECTED_CONTROLLER_COMMIT" <<< "$EXPECTED_SOURCE_SELECTION"
             verify_controller_tools
             bash "$CONTROLLER_TOOL_DIRECTORY/verify-github-tag-ruleset.sh" \
               "$CONTROLLER_TOOL_DIRECTORY/github-release-tag-ruleset.json" \
               "$CONTROLLER_TOOL_DIRECTORY/github-release-tag-ruleset-receipt.json" >/dev/null
-            [[ "$(git rev-parse origin/master)" == "$EXPECTED_CONTROLLER_COMMIT" ]] || { echo 'Controller master changed during Central source verification.' >&2; exit 1; }
+            git --no-replace-objects merge-base --is-ancestor "$EXPECTED_CONTROLLER_COMMIT" origin/master || { echo 'Controller master changed during Central source verification.' >&2; exit 1; }
           }
           verify_release_inventory() {
             [[ "$RELEASE_MAVEN_INVENTORY" == 'build/release/maven-coordinates.txt' || "$RELEASE_MAVEN_INVENTORY" == 'release/maven-coordinates.txt' ]] || { echo 'Maven artifact inventory path escaped the allowed release locations.' >&2; exit 1; }
@@ -844,6 +885,7 @@ jobs:
             gpg --batch --verify "$jar.asc" "$jar"
           done
       - name: Stage only missing Modrinth versions
+        if: inputs.modrinth
         shell: bash
         env:
           GH_TOKEN: ${{ github.token }}
@@ -852,10 +894,12 @@ jobs:
           RELEASE_TAG: ${{ inputs.tag }}
           PREFLIGHT_BODY_STATE: ${{ steps.modrinth_preflight.outputs.body_state }}
           PREFLIGHT_BODY_SHA256: ${{ steps.modrinth_preflight.outputs.body_sha256 }}
+          EXPECTED_SOURCE_SELECTION: ${{ needs.preflight.outputs.source_selection }}
           EXPECTED_CONTROLLER_COMMIT: ${{ needs.preflight.outputs.controller_commit }}
           EXPECTED_TAG_COMMIT: ${{ needs.preflight.outputs.current_commit }}
           EXPECTED_TAG_OBJECT: ${{ needs.preflight.outputs.current_object }}
           EXPECTED_PAGES_RECORD: ${{ needs.preflight.outputs.pages_record }}
+          PAGES_PRODUCER_COMMIT: ${{ needs.preflight.outputs.pages_producer_commit }}
         run: |
           set -euo pipefail
           verify_controller_tools() {
@@ -866,7 +910,8 @@ jobs:
             git fetch --force origin \
               '+refs/heads/master:refs/remotes/origin/master' \
               '+refs/tags/*:refs/tags/*'
-            [[ "$GITHUB_SHA" == "$EXPECTED_CONTROLLER_COMMIT" && "$(git rev-parse origin/master)" == "$EXPECTED_CONTROLLER_COMMIT" ]] || { echo 'Controller master changed before Modrinth staging.' >&2; exit 1; }
+            [[ "$GITHUB_SHA" == "$EXPECTED_CONTROLLER_COMMIT" ]] || { echo 'The frozen workflow identity changed.' >&2; exit 1; }
+            git --no-replace-objects merge-base --is-ancestor "$EXPECTED_CONTROLLER_COMMIT" origin/master || { echo 'Controller master changed before Modrinth staging.' >&2; exit 1; }
             [[ "$(git rev-parse HEAD)" == "$EXPECTED_TAG_COMMIT" && "$(git rev-parse --verify "refs/tags/$RELEASE_TAG^{commit}")" == "$EXPECTED_TAG_COMMIT" ]] || { echo 'Release commit changed before Modrinth staging.' >&2; exit 1; }
             [[ "$(git rev-parse "refs/tags/$RELEASE_TAG")" == "$EXPECTED_TAG_OBJECT" ]] || { echo 'Release tag object changed before Modrinth staging.' >&2; exit 1; }
             [[ "$(git rev-parse --verify "refs/tags/$PREDECESSOR_TAG^{commit}")" == "$PREDECESSOR_RELEASE_COMMIT" && \
@@ -878,8 +923,8 @@ jobs:
             verify_controller_tools
             bash "$CONTROLLER_TOOL_DIRECTORY/verify-release-tag.sh" "$PREDECESSOR_TAG" "$PREDECESSOR_RELEASE_COMMIT" "$PREDECESSOR_RELEASE_OBJECT" >/dev/null
             verify_controller_tools
-            bash "$CONTROLLER_TOOL_DIRECTORY/verify-current-controller-release-order.sh" \
-              "$CONTROLLER_TOOL_DIRECTORY/current-controller.json" >/dev/null
+            bash "$CONTROLLER_TOOL_DIRECTORY/select-release-source.sh" verify-input \
+              "$EXPECTED_CONTROLLER_COMMIT" <<< "$EXPECTED_SOURCE_SELECTION"
             verify_controller_tools
             bash "$CONTROLLER_TOOL_DIRECTORY/verify-github-tag-ruleset.sh" \
               "$CONTROLLER_TOOL_DIRECTORY/github-release-tag-ruleset.json" \
@@ -888,8 +933,8 @@ jobs:
             verify_controller_tools
             [[ "$(bash "$CONTROLLER_TOOL_DIRECTORY/verify-pages-deployment-source.sh" \
               "$release_pages_run_id" "$RELEASE_TAG" "$EXPECTED_TAG_COMMIT" \
-              "$controller_pages_run_id" "$EXPECTED_CONTROLLER_COMMIT")" == "$EXPECTED_PAGES_RECORD" ]] || { echo 'Protected Pages evidence changed before Modrinth staging.' >&2; exit 1; }
-            [[ "$(git rev-parse origin/master)" == "$EXPECTED_CONTROLLER_COMMIT" ]] || { echo 'Controller master changed during Modrinth source verification.' >&2; exit 1; }
+              "$controller_pages_run_id" "$PAGES_PRODUCER_COMMIT" historical)" == "$EXPECTED_PAGES_RECORD" ]] || { echo 'Protected Pages evidence changed before Modrinth staging.' >&2; exit 1; }
+            git --no-replace-objects merge-base --is-ancestor "$EXPECTED_CONTROLLER_COMMIT" origin/master || { echo 'Controller master changed during Modrinth source verification.' >&2; exit 1; }
           }
           revalidate_release_source
           git diff --quiet -- . || { echo 'Tracked release source changed before Modrinth staging.' >&2; exit 1; }
@@ -970,10 +1015,12 @@ jobs:
               -Pstrata.sourceCommit="$RELEASE_SOURCE_COMMIT"
           done
       - name: Create or verify immutable GitHub Release
+        if: inputs.github_release
         shell: bash
         env:
           GH_TOKEN: ${{ github.token }}
           RELEASE_TAG: ${{ inputs.tag }}
+          EXPECTED_SOURCE_SELECTION: ${{ needs.preflight.outputs.source_selection }}
           EXPECTED_CONTROLLER_COMMIT: ${{ needs.preflight.outputs.controller_commit }}
           EXPECTED_TAG_COMMIT: ${{ needs.preflight.outputs.current_commit }}
           EXPECTED_TAG_OBJECT: ${{ needs.preflight.outputs.current_object }}
@@ -987,7 +1034,8 @@ jobs:
             git fetch --force origin \
               '+refs/heads/master:refs/remotes/origin/master' \
               '+refs/tags/*:refs/tags/*'
-            [[ "$GITHUB_SHA" == "$EXPECTED_CONTROLLER_COMMIT" && "$(git rev-parse origin/master)" == "$EXPECTED_CONTROLLER_COMMIT" ]] || { echo 'Controller master changed before GitHub mutation.' >&2; exit 1; }
+            [[ "$GITHUB_SHA" == "$EXPECTED_CONTROLLER_COMMIT" ]] || { echo 'The frozen workflow identity changed.' >&2; exit 1; }
+            git --no-replace-objects merge-base --is-ancestor "$EXPECTED_CONTROLLER_COMMIT" origin/master || { echo 'Controller master changed before GitHub mutation.' >&2; exit 1; }
             [[ "$(git rev-parse HEAD)" == "$EXPECTED_TAG_COMMIT" && "$(git rev-parse --verify "refs/tags/$RELEASE_TAG^{commit}")" == "$EXPECTED_TAG_COMMIT" ]] || { echo 'Release commit changed before GitHub mutation.' >&2; exit 1; }
             [[ "$(git rev-parse "refs/tags/$RELEASE_TAG")" == "$EXPECTED_TAG_OBJECT" ]] || { echo 'Release tag object changed before GitHub mutation.' >&2; exit 1; }
             [[ "$(git rev-parse --verify "refs/tags/$PREDECESSOR_TAG^{commit}")" == "$PREDECESSOR_RELEASE_COMMIT" && \
@@ -999,13 +1047,13 @@ jobs:
             verify_controller_tools
             bash "$CONTROLLER_TOOL_DIRECTORY/verify-release-tag.sh" "$PREDECESSOR_TAG" "$PREDECESSOR_RELEASE_COMMIT" "$PREDECESSOR_RELEASE_OBJECT" >/dev/null
             verify_controller_tools
-            bash "$CONTROLLER_TOOL_DIRECTORY/verify-current-controller-release-order.sh" \
-              "$CONTROLLER_TOOL_DIRECTORY/current-controller.json" >/dev/null
+            bash "$CONTROLLER_TOOL_DIRECTORY/select-release-source.sh" verify-input \
+              "$EXPECTED_CONTROLLER_COMMIT" <<< "$EXPECTED_SOURCE_SELECTION"
             verify_controller_tools
             bash "$CONTROLLER_TOOL_DIRECTORY/verify-github-tag-ruleset.sh" \
               "$CONTROLLER_TOOL_DIRECTORY/github-release-tag-ruleset.json" \
               "$CONTROLLER_TOOL_DIRECTORY/github-release-tag-ruleset-receipt.json" >/dev/null
-            [[ "$(git rev-parse origin/master)" == "$EXPECTED_CONTROLLER_COMMIT" ]] || { echo 'Controller master changed during GitHub source verification.' >&2; exit 1; }
+            git --no-replace-objects merge-base --is-ancestor "$EXPECTED_CONTROLLER_COMMIT" origin/master || { echo 'Controller master changed during GitHub source verification.' >&2; exit 1; }
           }
           git diff --quiet -- . || { echo 'Tracked release source changed before GitHub mutation.' >&2; exit 1; }
           git diff --cached --quiet -- . || { echo 'Tracked release source changed before GitHub mutation.' >&2; exit 1; }
@@ -1027,11 +1075,13 @@ jobs:
             local remote_inventory
             local unexpected
             local snapshot_directory
-            release_json="$(gh release view "$RELEASE_TAG" --json tagName,name,body,isDraft,isPrerelease,assets)"
-            [[ "$(jq -r '.tagName' <<< "$release_json")" == "$RELEASE_TAG" && "$(jq -r '.name' <<< "$release_json")" == "$expected_title" ]] || { echo 'GitHub Release identity differs.' >&2; exit 1; }
+            local asset_id
+            verify_controller_tools
+            release_json="$(bash "$CONTROLLER_TOOL_DIRECTORY/github-release-read.sh" find)"
+            [[ "$(jq -r '.id' <<< "$release_json")" == "$release_id" && "$(jq -r '.tag_name' <<< "$release_json")" == "$RELEASE_TAG" && "$(jq -r '.name' <<< "$release_json")" == "$expected_title" ]] || { echo 'GitHub Release identity differs.' >&2; exit 1; }
             jq --raw-output --join-output '(.body // "") | gsub("\r\n"; "\n") | if contains("\r") then error("lone carriage return") else @base64 end' <<< "$release_json" | base64 --decode > "$actual_body"
             cmp --silent "docs/releases/$RELEASE_TAG.md" "$actual_body" || { echo 'GitHub Release body differs.' >&2; exit 1; }
-            [[ "$(jq -r '.isDraft' <<< "$release_json")" == "$expected_draft" && "$(jq -r '.isPrerelease' <<< "$release_json")" == "false" ]] || { echo 'GitHub Release lifecycle differs.' >&2; exit 1; }
+            [[ "$(jq -r '.draft' <<< "$release_json")" == "$expected_draft" && "$(jq -r '.prerelease' <<< "$release_json")" == "false" ]] || { echo 'GitHub Release lifecycle differs.' >&2; exit 1; }
             remote_inventory="$(jq -r '.assets[].name' <<< "$release_json" | sort)"
             unexpected="$(comm -13 <(printf '%s\n' "$expected") <(printf '%s\n' "$remote_inventory"))"
             [[ -z "$unexpected" ]] || { echo "GitHub Release contains unexpected assets: $unexpected" >&2; exit 1; }
@@ -1047,32 +1097,32 @@ jobs:
               local name
               name="$(basename "$asset")"
               if grep --fixed-strings --line-regexp "$name" "$actual_inventory" >/dev/null; then
-                gh release download "$RELEASE_TAG" --pattern "$name" --dir "$snapshot_directory"
+                asset_id="$(jq -er --arg name "$name" '[.assets[] | select(.name == $name)] | if length == 1 then .[0].id else error("Ambiguous GitHub asset") end' <<< "$release_json")"
+                verify_controller_tools
+                bash "$CONTROLLER_TOOL_DIRECTORY/github-release-read.sh" download "$asset_id" "$snapshot_directory/$name"
                 cmp --silent "$asset" "$snapshot_directory/$name" || { echo "GitHub asset differs: $name" >&2; exit 1; }
               fi
             done
           }
-          release_status="$(curl --silent --show-error --retry 3 --retry-all-errors --retry-delay 1 \
-            --proto '=https' \
-            --header 'Accept: application/vnd.github+json' \
-            --header "Authorization: Bearer $GH_TOKEN" \
-            --header 'X-GitHub-Api-Version: 2022-11-28' \
-            --output "$release_probe" --write-out '%{http_code}' \
-            "$GITHUB_API_URL/repos/$GITHUB_REPOSITORY/releases/tags/$RELEASE_TAG")"
-          if [[ "$release_status" == "200" ]]; then
-            draft="$(gh release view "$RELEASE_TAG" --json isDraft --jq '.isDraft')"
+          verify_controller_tools
+          bash "$CONTROLLER_TOOL_DIRECTORY/github-release-read.sh" find > "$release_probe"
+          if [[ "$(jq -r 'type' "$release_probe")" == "object" ]]; then
+            release_id="$(jq -er '.id' "$release_probe")"
+            draft="$(jq -r '.draft' "$release_probe")"
             if [[ "$draft" == "true" ]]; then
               verify_release_contract true false
             else
               verify_release_contract false true
             fi
-          elif [[ "$release_status" == "404" ]]; then
+          elif [[ "$(jq -r 'type' "$release_probe")" == "null" ]]; then
             revalidate_release_source
             gh release create "$RELEASE_TAG" --draft --verify-tag --title "$expected_title" --notes-file "docs/releases/$RELEASE_TAG.md"
+            verify_controller_tools
+            release_id="$(bash "$CONTROLLER_TOOL_DIRECTORY/github-release-read.sh" find | jq -er '.id')"
             draft=true
             verify_release_contract true false
           else
-            echo "GitHub Release lookup failed with HTTP $release_status." >&2
+            echo 'GitHub Release lookup returned an invalid result.' >&2
             exit 1
           fi
           missing_assets=()
@@ -1105,10 +1155,12 @@ jobs:
           if [[ "$draft" == "true" ]]; then
             revalidate_release_source
             verify_release_contract true true
-            gh release edit "$RELEASE_TAG" --draft=false
+            gh api --method PATCH "repos/$GITHUB_REPOSITORY/releases/$release_id" \
+              -F draft=false -f make_latest=legacy >/dev/null
           fi
           verify_release_contract false true
       - name: Submit or observe Modrinth review
+        if: inputs.modrinth
         shell: bash
         env:
           GH_TOKEN: ${{ github.token }}
@@ -1116,10 +1168,12 @@ jobs:
           PROJECT_ID: ${{ steps.modrinth.outputs.project_id }}
           RELEASE_TAG: ${{ inputs.tag }}
           PREFLIGHT_BODY_STATE: ${{ steps.modrinth_preflight.outputs.body_state }}
+          EXPECTED_SOURCE_SELECTION: ${{ needs.preflight.outputs.source_selection }}
           EXPECTED_CONTROLLER_COMMIT: ${{ needs.preflight.outputs.controller_commit }}
           EXPECTED_TAG_COMMIT: ${{ needs.preflight.outputs.current_commit }}
           EXPECTED_TAG_OBJECT: ${{ needs.preflight.outputs.current_object }}
           EXPECTED_PAGES_RECORD: ${{ needs.preflight.outputs.pages_record }}
+          PAGES_PRODUCER_COMMIT: ${{ needs.preflight.outputs.pages_producer_commit }}
         run: |
           set -euo pipefail
           verify_controller_tools() {
@@ -1129,7 +1183,8 @@ jobs:
           git fetch --force origin \
             '+refs/heads/master:refs/remotes/origin/master' \
             '+refs/tags/*:refs/tags/*'
-          [[ "$GITHUB_SHA" == "$EXPECTED_CONTROLLER_COMMIT" && "$(git rev-parse origin/master)" == "$EXPECTED_CONTROLLER_COMMIT" ]] || { echo 'Controller master changed before Modrinth submission.' >&2; exit 1; }
+          [[ "$GITHUB_SHA" == "$EXPECTED_CONTROLLER_COMMIT" ]] || { echo 'The frozen workflow identity changed.' >&2; exit 1; }
+          git --no-replace-objects merge-base --is-ancestor "$EXPECTED_CONTROLLER_COMMIT" origin/master || { echo 'Controller master changed before Modrinth submission.' >&2; exit 1; }
           [[ "$(git rev-parse HEAD)" == "$EXPECTED_TAG_COMMIT" && "$(git rev-parse --verify "refs/tags/$RELEASE_TAG^{commit}")" == "$EXPECTED_TAG_COMMIT" ]] || { echo 'Release commit changed before Modrinth submission.' >&2; exit 1; }
           [[ "$(git rev-parse "refs/tags/$RELEASE_TAG")" == "$EXPECTED_TAG_OBJECT" ]] || { echo 'Release tag object changed before Modrinth submission.' >&2; exit 1; }
           [[ "$(git rev-parse --verify "refs/tags/$PREDECESSOR_TAG^{commit}")" == "$PREDECESSOR_RELEASE_COMMIT" && \
@@ -1141,8 +1196,8 @@ jobs:
           verify_controller_tools
           bash "$CONTROLLER_TOOL_DIRECTORY/verify-release-tag.sh" "$PREDECESSOR_TAG" "$PREDECESSOR_RELEASE_COMMIT" "$PREDECESSOR_RELEASE_OBJECT" >/dev/null
           verify_controller_tools
-          bash "$CONTROLLER_TOOL_DIRECTORY/verify-current-controller-release-order.sh" \
-            "$CONTROLLER_TOOL_DIRECTORY/current-controller.json" >/dev/null
+          bash "$CONTROLLER_TOOL_DIRECTORY/select-release-source.sh" verify-input \
+            "$EXPECTED_CONTROLLER_COMMIT" <<< "$EXPECTED_SOURCE_SELECTION"
           verify_controller_tools
           bash "$CONTROLLER_TOOL_DIRECTORY/verify-github-tag-ruleset.sh" \
             "$CONTROLLER_TOOL_DIRECTORY/github-release-tag-ruleset.json" \
@@ -1151,8 +1206,8 @@ jobs:
           verify_controller_tools
           [[ "$(bash "$CONTROLLER_TOOL_DIRECTORY/verify-pages-deployment-source.sh" \
             "$release_pages_run_id" "$RELEASE_TAG" "$EXPECTED_TAG_COMMIT" \
-            "$controller_pages_run_id" "$EXPECTED_CONTROLLER_COMMIT")" == "$EXPECTED_PAGES_RECORD" ]] || { echo 'Protected Pages evidence changed before Modrinth observation.' >&2; exit 1; }
-          [[ "$(git rev-parse origin/master)" == "$EXPECTED_CONTROLLER_COMMIT" ]] || { echo 'Controller master changed during Modrinth source verification.' >&2; exit 1; }
+            "$controller_pages_run_id" "$PAGES_PRODUCER_COMMIT" historical)" == "$EXPECTED_PAGES_RECORD" ]] || { echo 'Protected Pages evidence changed before Modrinth observation.' >&2; exit 1; }
+          git --no-replace-objects merge-base --is-ancestor "$EXPECTED_CONTROLLER_COMMIT" origin/master || { echo 'Controller master changed during Modrinth source verification.' >&2; exit 1; }
           git diff --quiet -- . || { echo 'Tracked release source changed before Modrinth submission.' >&2; exit 1; }
           git diff --cached --quiet -- . || { echo 'Tracked release source changed before Modrinth submission.' >&2; exit 1; }
           if [[ "$PREFLIGHT_BODY_STATE" == 'recovery' ]]; then
@@ -1175,6 +1230,7 @@ jobs:
           fi
           echo '::notice::Modrinth submission or observation completed.'
       - name: Finalize approved Modrinth body during release
+        if: inputs.modrinth
         shell: bash
         env:
           GH_TOKEN: ${{ github.token }}
@@ -1182,10 +1238,12 @@ jobs:
           PROJECT_ID: ${{ steps.modrinth.outputs.project_id }}
           RELEASE_TAG: ${{ inputs.tag }}
           PREFLIGHT_BODY_STATE: ${{ steps.modrinth_preflight.outputs.body_state }}
+          EXPECTED_SOURCE_SELECTION: ${{ needs.preflight.outputs.source_selection }}
           EXPECTED_CONTROLLER_COMMIT: ${{ needs.preflight.outputs.controller_commit }}
           EXPECTED_TAG_COMMIT: ${{ needs.preflight.outputs.current_commit }}
           EXPECTED_TAG_OBJECT: ${{ needs.preflight.outputs.current_object }}
           EXPECTED_PAGES_RECORD: ${{ needs.preflight.outputs.pages_record }}
+          PAGES_PRODUCER_COMMIT: ${{ needs.preflight.outputs.pages_producer_commit }}
         run: |
           set -euo pipefail
           if [[ "$PREFLIGHT_BODY_STATE" == 'recovery' ]]; then
@@ -1212,7 +1270,8 @@ jobs:
           git fetch --force origin \
             '+refs/heads/master:refs/remotes/origin/master' \
             '+refs/tags/*:refs/tags/*'
-          [[ "$GITHUB_SHA" == "$EXPECTED_CONTROLLER_COMMIT" && "$(git rev-parse origin/master)" == "$EXPECTED_CONTROLLER_COMMIT" ]] || { echo 'Controller master changed before release-time Modrinth body finalization.' >&2; exit 1; }
+          [[ "$GITHUB_SHA" == "$EXPECTED_CONTROLLER_COMMIT" ]] || { echo 'The frozen workflow identity changed.' >&2; exit 1; }
+          git --no-replace-objects merge-base --is-ancestor "$EXPECTED_CONTROLLER_COMMIT" origin/master || { echo 'Controller master changed before release-time Modrinth body finalization.' >&2; exit 1; }
           [[ "$(git rev-parse HEAD)" == "$EXPECTED_TAG_COMMIT" && "$(git rev-parse --verify "refs/tags/$RELEASE_TAG^{commit}")" == "$EXPECTED_TAG_COMMIT" ]] || { echo 'Release commit changed before release-time Modrinth body finalization.' >&2; exit 1; }
           [[ "$(git rev-parse "refs/tags/$RELEASE_TAG")" == "$EXPECTED_TAG_OBJECT" ]] || { echo 'Release tag object changed before release-time Modrinth body finalization.' >&2; exit 1; }
           [[ "$(git rev-parse --verify "refs/tags/$PREDECESSOR_TAG^{commit}")" == "$PREDECESSOR_RELEASE_COMMIT" && \
@@ -1224,8 +1283,8 @@ jobs:
           verify_controller_tools
           bash "$CONTROLLER_TOOL_DIRECTORY/verify-release-tag.sh" "$PREDECESSOR_TAG" "$PREDECESSOR_RELEASE_COMMIT" "$PREDECESSOR_RELEASE_OBJECT" >/dev/null
           verify_controller_tools
-          bash "$CONTROLLER_TOOL_DIRECTORY/verify-current-controller-release-order.sh" \
-            "$CONTROLLER_TOOL_DIRECTORY/current-controller.json" >/dev/null
+          bash "$CONTROLLER_TOOL_DIRECTORY/select-release-source.sh" verify-input \
+            "$EXPECTED_CONTROLLER_COMMIT" <<< "$EXPECTED_SOURCE_SELECTION"
           verify_controller_tools
           bash "$CONTROLLER_TOOL_DIRECTORY/verify-github-tag-ruleset.sh" \
             "$CONTROLLER_TOOL_DIRECTORY/github-release-tag-ruleset.json" \
@@ -1234,8 +1293,8 @@ jobs:
           verify_controller_tools
           [[ "$(bash "$CONTROLLER_TOOL_DIRECTORY/verify-pages-deployment-source.sh" \
             "$release_pages_run_id" "$RELEASE_TAG" "$EXPECTED_TAG_COMMIT" \
-            "$controller_pages_run_id" "$EXPECTED_CONTROLLER_COMMIT")" == "$EXPECTED_PAGES_RECORD" ]] || { echo 'Protected Pages evidence changed before release-time Modrinth body finalization.' >&2; exit 1; }
-          [[ "$(git rev-parse origin/master)" == "$EXPECTED_CONTROLLER_COMMIT" ]] || { echo 'Controller master changed during release-time Modrinth source verification.' >&2; exit 1; }
+            "$controller_pages_run_id" "$PAGES_PRODUCER_COMMIT" historical)" == "$EXPECTED_PAGES_RECORD" ]] || { echo 'Protected Pages evidence changed before release-time Modrinth body finalization.' >&2; exit 1; }
+          git --no-replace-objects merge-base --is-ancestor "$EXPECTED_CONTROLLER_COMMIT" origin/master || { echo 'Controller master changed during release-time Modrinth source verification.' >&2; exit 1; }
           git diff --quiet -- . || { echo 'Tracked release source changed before release-time Modrinth body finalization.' >&2; exit 1; }
           git diff --cached --quiet -- . || { echo 'Tracked release source changed before release-time Modrinth body finalization.' >&2; exit 1; }
           verify_controller_tools
@@ -1275,6 +1334,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 30
     outputs:
+      source_selection: ${{ steps.source.outputs.source_selection }}
       current_tag: ${{ steps.source.outputs.current_tag }}
       current_commit: ${{ steps.source.outputs.current_commit }}
       current_object: ${{ steps.source.outputs.current_object }}
@@ -1289,6 +1349,10 @@ jobs:
         env:
           CONFIRMATION: ${{ inputs.confirmation }}
           RELEASE_TAG: ${{ inputs.tag }}
+          SOURCE_COMMIT: ${{ inputs.source_commit }}
+          SELECT_MAVEN: ${{ inputs.maven_central }}
+          SELECT_GITHUB: ${{ inputs.github_release }}
+          SELECT_MODRINTH: ${{ inputs.modrinth }}
         run: |
           set -euo pipefail
           strata_jq_path="$(type -P jq || true)"
@@ -1331,6 +1395,7 @@ jobs:
           readonly -f portable_jq
           [[ "$GITHUB_REF" == "refs/heads/master" ]] || { echo 'Public Skill verification must be dispatched from master.' >&2; exit 1; }
           [[ "$CONFIRMATION" == "verify $RELEASE_TAG" ]] || { echo 'Public Skill verification request differs.' >&2; exit 1; }
+          [[ "$SELECT_MAVEN" == true || "$SELECT_GITHUB" == true || "$SELECT_MODRINTH" == true ]] || { echo 'Select at least one publication destination.' >&2; exit 1; }
           for forbidden_secret in GH_TOKEN GITHUB_TOKEN MODRINTH_TOKEN SIGNING_KEY SIGNING_PASSWORD ORG_GRADLE_PROJECT_signingInMemoryKey ORG_GRADLE_PROJECT_signingInMemoryKeyPassword GNUPGHOME; do
             [[ -z "${!forbidden_secret:-}" ]] || { echo "Credential reached the isolated public Skill runner: $forbidden_secret" >&2; exit 1; }
           done
@@ -1341,8 +1406,8 @@ jobs:
           [[ ! -e "$repository" && ! -e "$predecessor_source" && ! -e "$current_source" && ! -e "$controller_directory" ]] || { echo 'Public Skill source path already exists.' >&2; exit 1; }
           git init "$repository"
           git -C "$repository" remote add origin https://github.com/sya-ri/strata.git
-          git -C "$repository" fetch --force --no-tags origin '+refs/heads/master:refs/remotes/origin/master'
-          [[ "$(git -C "$repository" rev-parse refs/remotes/origin/master)" == "$GITHUB_SHA" ]] || { echo 'Public Skill controller is not exact master.' >&2; exit 1; }
+          git -C "$repository" fetch --force origin '+refs/heads/master:refs/remotes/origin/master' '+refs/tags/*:refs/tags/*'
+          git -C "$repository" --no-replace-objects merge-base --is-ancestor "$GITHUB_SHA" refs/remotes/origin/master || { echo 'The public Skill controller left master history.' >&2; exit 1; }
           mkdir "$controller_directory"
           record="$(git -C "$repository" --no-replace-objects ls-tree --full-tree "$GITHUB_SHA" -- release/verify-controller-tools.sh)"
           read -r mode object_type blob verified_path <<< "$record"
@@ -1350,7 +1415,9 @@ jobs:
             "$blob" =~ ^([0-9a-f]{40}|[0-9a-f]{64})$ && "$verified_path" == "release/verify-controller-tools.sh" ]] || { echo 'Public Skill controller guard differs.' >&2; exit 1; }
           git -C "$repository" --no-replace-objects cat-file blob "$blob" | \
             (cd "$repository" && bash -s -- materialize "$GITHUB_SHA" "$controller_directory")
-          metadata="$controller_directory/current-controller.json"
+          metadata="$(mktemp "$RUNNER_TEMP/strata-public-source-selection.XXXXXX")"
+          trap 'rm -f -- "$metadata"' EXIT
+          (cd "$repository" && bash "$controller_directory/select-release-source.sh" resolve "$RELEASE_TAG" "$SOURCE_COMMIT" "$GITHUB_SHA") > "$metadata"
           current_tag="$(portable_jq -er '.current.tag' "$metadata")"
           current_commit="$(portable_jq -er '.current.commit' "$metadata")"
           current_object="$(portable_jq -er '.current.tagObject' "$metadata")"
@@ -1358,7 +1425,7 @@ jobs:
           predecessor_tag="$(portable_jq -er '.predecessor.tag' "$metadata")"
           predecessor_commit="$(portable_jq -er '.predecessor.commit' "$metadata")"
           predecessor_object="$(portable_jq -er '.predecessor.tagObject' "$metadata")"
-          [[ "$RELEASE_TAG" == "$current_tag" ]] || { echo 'Requested public Skill tag differs from current-controller metadata.' >&2; exit 1; }
+          [[ "$RELEASE_TAG" == "$current_tag" ]] || { echo 'Requested public Skill tag differs from the selected source.' >&2; exit 1; }
           [[ "$(printf '%s\n' "${predecessor_tag#v}" "${current_tag#v}" | sort -V | head -n 1)" == "${predecessor_tag#v}" && \
             "$predecessor_tag" != "$current_tag" ]] || { echo 'Public Skill predecessor semantic ordering differs.' >&2; exit 1; }
           git -C "$repository" fetch --force --no-tags origin '+refs/tags/*:refs/tags/*'
@@ -1370,7 +1437,7 @@ jobs:
             "$(git -C "$repository" cat-file -t "refs/tags/$current_tag")" == "tag" ]] || { echo 'A public Skill release tag is not annotated.' >&2; exit 1; }
           git -C "$repository" --no-replace-objects cat-file blob "$blob" | \
             (cd "$repository" && bash -s -- verify "$GITHUB_SHA" "$controller_directory")
-          bash "$controller_directory/verify-current-controller-release-order.sh" "$metadata" "$repository" >/dev/null
+          (cd "$repository" && bash "$controller_directory/select-release-source.sh" verify "$metadata" "$GITHUB_SHA")
           git -C "$repository" merge-base --is-ancestor "$predecessor_commit" "$current_commit" || { echo 'Public Skill predecessor ancestry differs.' >&2; exit 1; }
           git -C "$repository" merge-base --is-ancestor "$current_commit" refs/remotes/origin/master || { echo 'Public current Skill source left master.' >&2; exit 1; }
           for identity in "$predecessor_tag|$predecessor_commit" "$current_tag|$current_commit"; do
@@ -1402,6 +1469,7 @@ jobs:
             echo "PUBLIC_SKILL_REPRESENTATIVE_MINECRAFT_VERSIONS=$representative_minecraft_versions"
           } >> "$GITHUB_ENV"
           {
+            echo "source_selection=$(portable_jq -c . "$metadata")"
             echo "current_tag=$current_tag"
             echo "current_commit=$current_commit"
             echo "current_object=$current_object"
@@ -1473,6 +1541,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           RELEASE_TAG: ${{ inputs.tag }}
           CONFIRMATION: ${{ inputs.confirmation }}
+          EXPECTED_SOURCE_SELECTION: ${{ needs.public_skills.outputs.source_selection }}
           EXPECTED_CURRENT_TAG: ${{ needs.public_skills.outputs.current_tag }}
           EXPECTED_CURRENT_COMMIT: ${{ needs.public_skills.outputs.current_commit }}
           EXPECTED_CURRENT_OBJECT: ${{ needs.public_skills.outputs.current_object }}
@@ -1526,7 +1595,7 @@ jobs:
             '+refs/heads/master:refs/remotes/origin/master' \
             '+refs/tags/*:refs/tags/*'
           checked_commit="$(git rev-parse HEAD)"
-          [[ "$(git rev-parse origin/master)" == "$GITHUB_SHA" ]] || { echo 'Verification controller is not the exact master head.' >&2; exit 1; }
+          git --no-replace-objects merge-base --is-ancestor "$GITHUB_SHA" origin/master || { echo 'The verification controller left master history.' >&2; exit 1; }
           [[ "$checked_commit" == "$EXPECTED_CURRENT_COMMIT" && \
             "$(git rev-parse --verify "refs/tags/$RELEASE_TAG^{commit}")" == "$EXPECTED_CURRENT_COMMIT" ]] || { echo 'Checked-out current release identity differs.' >&2; exit 1; }
           tag_object="$(git rev-parse "refs/tags/$RELEASE_TAG")"
@@ -1574,14 +1643,13 @@ jobs:
             --arg predecessor_tag "$EXPECTED_PREDECESSOR_TAG" --arg predecessor_commit "$EXPECTED_PREDECESSOR_COMMIT" --arg predecessor_object "$EXPECTED_PREDECESSOR_OBJECT" '
               .current == {tag: $current_tag, commit: $current_commit, tagObject: $current_object, representativeMinecraftVersions: $representative_versions} and
               .predecessor == {tag: $predecessor_tag, commit: $predecessor_commit, tagObject: $predecessor_object}
-            ' "$controller_tool_directory/current-controller.json" >/dev/null || { echo 'Final controller identities differ from the isolated public Skill outputs.' >&2; exit 1; }
+            ' <<< "$EXPECTED_SOURCE_SELECTION" >/dev/null || { echo 'Final selection differs from the isolated public Skill outputs.' >&2; exit 1; }
           run_controller_tool_guard verify "$GITHUB_SHA" "$controller_tool_directory"
           bash "$controller_tool_directory/verify-release-tag.sh" "$RELEASE_TAG" "$checked_commit" "$tag_object" >/dev/null
           run_controller_tool_guard verify "$GITHUB_SHA" "$controller_tool_directory"
           bash "$controller_tool_directory/verify-release-tag.sh" "$EXPECTED_PREDECESSOR_TAG" "$EXPECTED_PREDECESSOR_COMMIT" "$EXPECTED_PREDECESSOR_OBJECT" >/dev/null
           run_controller_tool_guard verify "$GITHUB_SHA" "$controller_tool_directory"
-          bash "$controller_tool_directory/verify-current-controller-release-order.sh" \
-            "$controller_tool_directory/current-controller.json" >/dev/null
+          bash "$controller_tool_directory/select-release-source.sh" verify-input "$GITHUB_SHA" <<< "$EXPECTED_SOURCE_SELECTION"
           run_controller_tool_guard verify "$GITHUB_SHA" "$controller_tool_directory"
           bash "$controller_ruleset_verifier" "$controller_ruleset_contract" "$controller_ruleset_receipt" >/dev/null
           for identity in \
@@ -1607,18 +1675,20 @@ jobs:
               jq -e --arg commit "$required_commit" 'any(.[]; .conclusion == "success" and .event == "push" and .headBranch == "master" and .headSha == $commit)' <<< "$runs" >/dev/null || { echo "No successful $workflow run exists for $required_commit." >&2; exit 1; }
             done
           done
-          controller_pages_run_id="$(gh run list --workflow pages.yml --commit "$GITHUB_SHA" --event push --status completed --limit 100 --json conclusion,databaseId,event,headBranch,headSha | jq -er --arg sha "$GITHUB_SHA" '[.[] | select(.conclusion == "success" and .event == "push" and .headBranch == "master" and .headSha == $sha)] | select(length == 1) | .[0].databaseId | tostring')"
+          run_controller_tool_guard verify "$GITHUB_SHA" "$controller_tool_directory"
+          pages_selection="$(bash "$controller_tool_directory/select-release-pages.sh" "$RELEASE_TAG" "$checked_commit" "$GITHUB_SHA")"
+          read -r controller_pages_run_id pages_producer_commit <<< "$pages_selection"
           release_pages_run_id="$controller_pages_run_id"
           run_controller_tool_guard verify "$GITHUB_SHA" "$controller_tool_directory"
           pages_record="$(bash "$controller_pages_verifier" \
             "$release_pages_run_id" "$RELEASE_TAG" "$checked_commit" \
-              "$controller_pages_run_id" "$GITHUB_SHA")"
+              "$controller_pages_run_id" "$pages_producer_commit" historical)"
           run_controller_tool_guard verify "$GITHUB_SHA" "$controller_tool_directory"
-          bash "$controller_pages_waiter" "$RELEASE_TAG" "$checked_commit" "$GITHUB_SHA"
+          bash "$controller_pages_waiter" "$RELEASE_TAG" "$checked_commit" "$pages_producer_commit" 900 15 release-only
           run_controller_tool_guard verify "$GITHUB_SHA" "$controller_tool_directory"
           [[ "$(bash "$controller_pages_verifier" \
             "$release_pages_run_id" "$RELEASE_TAG" "$checked_commit" \
-            "$controller_pages_run_id" "$GITHUB_SHA")" == "$pages_record" ]] || { echo 'Pages provenance changed during final verification.' >&2; exit 1; }
+            "$controller_pages_run_id" "$pages_producer_commit" historical)" == "$pages_record" ]] || { echo 'Pages provenance changed during final verification.' >&2; exit 1; }
           {
             echo "RELEASE_SOURCE_COMMIT=$checked_commit"
             echo "RELEASE_TAG_OBJECT=$tag_object"
@@ -1627,6 +1697,7 @@ jobs:
             echo "PREDECESSOR_RELEASE_COMMIT=$EXPECTED_PREDECESSOR_COMMIT"
             echo "PREDECESSOR_RELEASE_OBJECT=$EXPECTED_PREDECESSOR_OBJECT"
             echo "PAGES_PROVENANCE_RECORD=$pages_record"
+            echo "PAGES_PRODUCER_COMMIT=$pages_producer_commit"
           } >> "$GITHUB_ENV"
       - name: Resolve Java toolchains from the release catalog
         id: java
@@ -1655,6 +1726,7 @@ jobs:
         id: modrinth
         shell: bash
         env:
+          SELECT_MODRINTH: ${{ inputs.modrinth }}
           REQUESTED_PROJECT_ID: ${{ inputs.modrinth_project_id }}
           MODRINTH_TOKEN: ${{ secrets.MODRINTH_TOKEN }}
           SIGNING_KEY: ${{ secrets.SIGNING_KEY }}
@@ -1665,7 +1737,7 @@ jobs:
           set -euo pipefail
           tracked="$(jq -r '.projectId // empty' release/modrinth-project.json)"
           [[ -n "$tracked" && (-z "$REQUESTED_PROJECT_ID" || "$REQUESTED_PROJECT_ID" == "$tracked") ]] || { echo 'Modrinth project ID differs.' >&2; exit 1; }
-          [[ -n "$MODRINTH_TOKEN" && -n "$SIGNING_KEY" && -n "$SIGNING_PASSWORD" ]] || { echo 'Modrinth or signing credentials are missing.' >&2; exit 1; }
+          [[ ("$SELECT_MODRINTH" != true || -n "$MODRINTH_TOKEN") && -n "$SIGNING_KEY" && -n "$SIGNING_PASSWORD" ]] || { echo 'Modrinth or signing credentials are missing.' >&2; exit 1; }
           [[ -n "$MAVEN_CENTRAL_USERNAME" && -n "$MAVEN_CENTRAL_PASSWORD" ]] || { echo 'Maven Central credentials are missing.' >&2; exit 1; }
           echo "project_id=$tracked" >> "$GITHUB_OUTPUT"
       - name: Rebuild and verify Central release evidence
@@ -1771,6 +1843,7 @@ jobs:
       - name: Verify GitHub release assets and all Central signatures
         shell: bash
         env:
+          SELECT_GITHUB: ${{ inputs.github_release }}
           GH_TOKEN: ${{ github.token }}
           RELEASE_TAG: ${{ inputs.tag }}
           SIGNING_KEY: ${{ secrets.SIGNING_KEY }}
@@ -1798,6 +1871,7 @@ jobs:
           shopt -s nullglob
           assets=(build/release/github/*)
           [[ "${#assets[@]}" == "$EXPECTED_GITHUB_ASSET_COUNT" ]] || { echo 'Canonical GitHub asset count differs.' >&2; exit 1; }
+          [[ "$SELECT_GITHUB" == true ]] || exit 0
           release_json="$(gh release view "$RELEASE_TAG" --json tagName,name,body,isDraft,isPrerelease)"
           [[ "$(jq -r '.tagName' <<< "$release_json")" == "$RELEASE_TAG" && "$(jq -r '.name' <<< "$release_json")" == "Strata ${RELEASE_TAG#v}" ]] || { echo 'GitHub Release identity differs.' >&2; exit 1; }
           [[ "$(jq -r '.isDraft' <<< "$release_json")" == "false" && "$(jq -r '.isPrerelease' <<< "$release_json")" == "false" ]] || { echo 'GitHub Release is not published stable.' >&2; exit 1; }
@@ -1847,14 +1921,15 @@ jobs:
           read -r release_pages_run_id _ _ controller_pages_run_id _ _ <<< "$PAGES_PROVENANCE_RECORD"
           verify_controller_tools
           bash "$CONTROLLER_TOOL_DIRECTORY/wait-for-pages-source-receipt.sh" \
-            "$RELEASE_TAG" "$RELEASE_SOURCE_COMMIT" "$GITHUB_SHA"
+            "$RELEASE_TAG" "$RELEASE_SOURCE_COMMIT" "$PAGES_PRODUCER_COMMIT" 900 15 release-only
           verify_controller_tools
           [[ "$(bash "$CONTROLLER_TOOL_DIRECTORY/verify-pages-deployment-source.sh" \
             "$release_pages_run_id" "$RELEASE_TAG" "$RELEASE_SOURCE_COMMIT" \
-            "$controller_pages_run_id" "$GITHUB_SHA")" == "$PAGES_PROVENANCE_RECORD" ]] || { echo 'Public Pages provenance changed.' >&2; exit 1; }
+            "$controller_pages_run_id" "$PAGES_PRODUCER_COMMIT" historical)" == "$PAGES_PROVENANCE_RECORD" ]] || { echo 'Public Pages provenance changed.' >&2; exit 1; }
           curl --fail --silent --show-error --location --proto '=https' "https://raw.githubusercontent.com/sya-ri/strata/$RELEASE_TAG/skills/strata/SKILL.md" --output "$skill"
           cmp --silent skills/strata/SKILL.md "$skill" || { echo 'Public Skill source differs.' >&2; exit 1; }
       - name: Verify complete predecessor release before Modrinth body finalization
+        if: inputs.modrinth
         shell: bash
         env:
           GH_TOKEN: ${{ github.token }}
@@ -1877,7 +1952,7 @@ jobs:
           git fetch --force origin \
             '+refs/heads/master:refs/remotes/origin/master' \
             "+refs/tags/$previous_tag:refs/tags/$previous_tag"
-          [[ "$(git rev-parse origin/master)" == "$GITHUB_SHA" ]] || { echo 'Verification controller changed before predecessor verification.' >&2; exit 1; }
+          git --no-replace-objects merge-base --is-ancestor "$GITHUB_SHA" origin/master || { echo 'Verification controller changed before predecessor verification.' >&2; exit 1; }
           previous_commit="$(git rev-parse --verify "refs/tags/$previous_tag^{commit}")"
           previous_object="$(git rev-parse "refs/tags/$previous_tag")"
           [[ "$previous_commit" == "$expected_previous_commit" ]] || { echo 'The predecessor tag does not point to the frozen release commit.' >&2; exit 1; }
@@ -1909,8 +1984,8 @@ jobs:
             "$project_json" >/dev/null || { echo 'Modrinth project identity or approval state differs before predecessor verification.' >&2; exit 1; }
           jq --raw-output --join-output '(.body // "") | gsub("\r\n"; "\n") | sub("[[:space:]]+$"; "") + "\n"' \
             "$project_json" > "$remote_body"
-          jq --null-input --rawfile body docs/modrinth-project.md --raw-output --join-output \
-            '$body | gsub("\r\n"; "\n") | sub("[[:space:]]+$"; "") + "\n"' > "$current_body"
+          jq --raw-output --join-output '.project.body | gsub("\r\n"; "\n") | sub("[[:space:]]+$"; "") + "\n"' \
+            build/release/modrinth/manifest.json > "$current_body"
           remote_body_sha256="$(sha256sum "$remote_body" | cut -d ' ' -f 1)"
           predecessor_body_sha256="$(jq -er '.previousBodySha256' release/modrinth-project.json)"
           current_body_sha256="$(sha256sum "$current_body" | cut -d ' ' -f 1)"
@@ -2050,6 +2125,7 @@ jobs:
             echo "PREDECESSOR_TEMPORARY=$predecessor_temporary"
           } >> "$GITHUB_ENV"
       - name: Verify public predecessor services and Pages provenance
+        if: inputs.modrinth
         shell: bash
         env:
           GH_TOKEN: ${{ github.token }}
@@ -2093,14 +2169,14 @@ jobs:
             verify_controller_tools
             previous_pages_record="$(bash "$CONTROLLER_TOOL_DIRECTORY/verify-pages-deployment-source.sh" \
               "$previous_pages_run_id" "$previous_tag" "$PROVED_PREDECESSOR_COMMIT" \
-              "$controller_pages_run_id" "$GITHUB_SHA" "$RELEASE_TAG" "$RELEASE_SOURCE_COMMIT")"
+              "$controller_pages_run_id" "$PAGES_PRODUCER_COMMIT" "$RELEASE_TAG" "$RELEASE_SOURCE_COMMIT" historical)"
             verify_controller_tools
             bash "$CONTROLLER_TOOL_DIRECTORY/wait-for-pages-source-receipt.sh" \
-              "$previous_tag" "$PROVED_PREDECESSOR_COMMIT" "$GITHUB_SHA"
+              "$previous_tag" "$PROVED_PREDECESSOR_COMMIT" "$PAGES_PRODUCER_COMMIT" 900 15 release-only
             verify_controller_tools
             [[ "$(bash "$CONTROLLER_TOOL_DIRECTORY/verify-pages-deployment-source.sh" \
               "$previous_pages_run_id" "$previous_tag" "$PROVED_PREDECESSOR_COMMIT" \
-              "$controller_pages_run_id" "$GITHUB_SHA" "$RELEASE_TAG" "$RELEASE_SOURCE_COMMIT")" == "$previous_pages_record" ]] || { echo 'Predecessor Pages provenance changed during verification.' >&2; exit 1; }
+              "$controller_pages_run_id" "$PAGES_PRODUCER_COMMIT" "$RELEASE_TAG" "$RELEASE_SOURCE_COMMIT" historical)" == "$previous_pages_record" ]] || { echo 'Predecessor Pages provenance changed during verification.' >&2; exit 1; }
 
             pages_base="https://gh.s7a.dev/strata/releases/${previous_tag#v}"
             pages_inventory="$PREDECESSOR_TEMPORARY/pages-public-urls.txt"
@@ -2131,9 +2207,11 @@ jobs:
           trap - EXIT INT TERM
           [[ ! -e "$PREDECESSOR_WORKTREE" && ! -e "$PREDECESSOR_TEMPORARY" ]] || { echo 'Public predecessor verification paths remained after cleanup.' >&2; exit 1; }
       - name: Finalize current Modrinth body and verify approved release
+        if: inputs.modrinth
         shell: bash
         env:
           GH_TOKEN: ${{ github.token }}
+          EXPECTED_SOURCE_SELECTION: ${{ needs.public_skills.outputs.source_selection }}
           MODRINTH_TOKEN: ${{ secrets.MODRINTH_TOKEN }}
           PROJECT_ID: ${{ steps.modrinth.outputs.project_id }}
           RELEASE_TAG: ${{ inputs.tag }}
@@ -2146,7 +2224,7 @@ jobs:
           git fetch --force origin \
             '+refs/heads/master:refs/remotes/origin/master' \
             '+refs/tags/*:refs/tags/*'
-          [[ "$(git rev-parse origin/master)" == "$GITHUB_SHA" ]] || { echo 'Verification controller changed before Modrinth finalization.' >&2; exit 1; }
+          git --no-replace-objects merge-base --is-ancestor "$GITHUB_SHA" origin/master || { echo 'Verification controller changed before Modrinth finalization.' >&2; exit 1; }
           [[ "$(git rev-parse HEAD)" == "$RELEASE_SOURCE_COMMIT" && "$(git rev-parse --verify "refs/tags/$RELEASE_TAG^{commit}")" == "$RELEASE_SOURCE_COMMIT" ]] || { echo 'Release commit changed before Modrinth finalization.' >&2; exit 1; }
           tag_object="$(git rev-parse "refs/tags/$RELEASE_TAG")"
           [[ "$tag_object" == "$RELEASE_TAG_OBJECT" ]] || { echo 'Current tag object changed before Modrinth finalization.' >&2; exit 1; }
@@ -2164,19 +2242,19 @@ jobs:
             --arg predecessor_tag "$PREDECESSOR_TAG" --arg predecessor_commit "$PROVED_PREDECESSOR_COMMIT" --arg predecessor_object "$PROVED_PREDECESSOR_OBJECT" '
               .current == {tag: $current_tag, commit: $current_commit, tagObject: $current_object, representativeMinecraftVersions: $representative_versions} and
               .predecessor == {tag: $predecessor_tag, commit: $predecessor_commit, tagObject: $predecessor_object}
-            ' "$CONTROLLER_TOOL_DIRECTORY/current-controller.json" >/dev/null || { echo 'Controller metadata changed before Modrinth finalization.' >&2; exit 1; }
+            ' <<< "$EXPECTED_SOURCE_SELECTION" >/dev/null || { echo 'Selected source changed before Modrinth finalization.' >&2; exit 1; }
           verify_controller_tools
           bash "$CONTROLLER_TOOL_DIRECTORY/verify-release-tag.sh" "$RELEASE_TAG" "$RELEASE_SOURCE_COMMIT" "$tag_object" >/dev/null
           verify_controller_tools
           bash "$CONTROLLER_TOOL_DIRECTORY/verify-release-tag.sh" "$PREDECESSOR_TAG" "$PROVED_PREDECESSOR_COMMIT" "$PROVED_PREDECESSOR_OBJECT" >/dev/null
           verify_controller_tools
-          bash "$CONTROLLER_TOOL_DIRECTORY/verify-current-controller-release-order.sh" \
-            "$CONTROLLER_TOOL_DIRECTORY/current-controller.json" >/dev/null
+          bash "$CONTROLLER_TOOL_DIRECTORY/select-release-source.sh" verify-input \
+            "$GITHUB_SHA" <<< "$EXPECTED_SOURCE_SELECTION"
           verify_controller_tools
           bash "$CONTROLLER_TOOL_DIRECTORY/verify-github-tag-ruleset.sh" \
             "$CONTROLLER_TOOL_DIRECTORY/github-release-tag-ruleset.json" \
             "$CONTROLLER_TOOL_DIRECTORY/github-release-tag-ruleset-receipt.json" >/dev/null
-          [[ "$(git rev-parse origin/master)" == "$GITHUB_SHA" ]] || { echo 'Verification controller changed during Modrinth source verification.' >&2; exit 1; }
+          git --no-replace-objects merge-base --is-ancestor "$GITHUB_SHA" origin/master || { echo 'Verification controller changed during Modrinth source verification.' >&2; exit 1; }
           git diff --quiet -- . || { echo 'Tracked release source changed before Modrinth finalization.' >&2; exit 1; }
           git diff --cached --quiet -- . || { echo 'Tracked release source changed before Modrinth finalization.' >&2; exit 1; }
           bash ./gradlew --no-parallel --max-workers=2 --no-build-cache modrinthReleaseFinalizeProject \
@@ -2192,6 +2270,7 @@ jobs:
           jq -e --argjson artifacts "$RELEASE_ARTIFACT_COUNT" '.operation == "verify" and .projectStatus == "approved" and (.absent | length) == 0 and (.listed | length) == $artifacts' \
             build/release/modrinth-receipts/verify.json >/dev/null || { echo 'Approved Modrinth verification receipt differs.' >&2; exit 1; }
       - name: Verify public Modrinth inventory and CDN files
+        if: inputs.modrinth
         shell: bash
         env:
           PROJECT_ID: ${{ steps.modrinth.outputs.project_id }}

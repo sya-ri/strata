@@ -24,6 +24,10 @@ internal object StateBindingDocumentationCatalog {
      */
     internal val entries: List<Entry> =
         listOf(
+            Entry("StateSource", "StateSource.kt", "Read-only external revision source. Pass directly to supported component arguments; retain pure map projections for derived presentation.", "dev.s7a.strata.state"),
+            Entry("StateSnapshot", "StateSnapshot.kt", "Atomic revision/value pair for source publishers and ordinary subscribers; extracting its value into a literal does not establish UI observation.", "dev.s7a.strata.state"),
+            Entry("StateRevision", "StateRevision.kt", "Source-owned monotonically increasing revision, independent of value equality.", "dev.s7a.strata.state"),
+            Entry("StateSubscription", "StateSubscription.kt", "Atomic initial snapshot and idempotent subscription close; ordinary mapped subscriptions preserve all revisions.", "dev.s7a.strata.state"),
             Entry(
                 "ListLoadRequest",
                 "ListLoadRequest.kt",
@@ -36,6 +40,7 @@ internal object StateBindingDocumentationCatalog {
             Entry("TextFieldState", "TextFieldState.kt", "Caller-owned bounded string value and observation."),
             Entry("TextAreaState", "TextAreaState.kt", "Caller-owned canonical LF text with a UTF-16 length limit and a stable owned vertical ScrollState. Immutable descriptions can be reused after detachment; simultaneous attachment with the same state throws IllegalStateException."),
             Entry("TextAreaViewport", "TextAreaViewport.kt", "Typed outer editor viewport from a positive width and visible line count, or an explicit positive IntSize."),
+            Entry("TextInputAppearance", "TextInputAppearance.kt", "Default profile frame or immutable custom normal/focused/disabled nine-slice images with caret and composition underline colors. Retain the appearance outside reevaluation; appearance-only replacement repaints without resetting editing or remeasuring."),
             Entry("TextLayout", "TextLayout.kt", "Single-line compatibility or structural multiline wrapping, line limits, overflow, and spacing.", "dev.s7a.strata.text"),
             Entry("TextWrap", "TextWrap.kt", "No soft wrapping, breakable-whitespace preference with scalar fallback, or scalar wrapping.", "dev.s7a.strata.text"),
             Entry("TextOverflow", "TextOverflow.kt", "Clip overflowing display text or append a fitting ellipsis without changing full semantics.", "dev.s7a.strata.text"),

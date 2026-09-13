@@ -8,7 +8,7 @@ import dev.s7a.strata.internal.platform.PlatformThreads
  * Index and key jumps issued before attachment remain pending and are applied when a list model attaches.
  * A refresh issued before attachment also remains pending and is applied before pending navigation.
  * A key jump returns false when the attached model can prove the key is absent; before attachment it is accepted as pending.
- * Only one retained VirtualList may attach at a time, while any number of Scrollbars may observe [scrollState].
+ * Only one retained VirtualList may attach at a time, while any number of Scrollbars may observe [VirtualListState.scrollState].
  *
  * @param K stable item key type.
  * @property scrollState position and geometry shared with independent scrollbars.
@@ -43,7 +43,7 @@ public class VirtualListState<K : Any>(
      * Moves the keyed item to the viewport start or retains the request until attachment.
      *
      * @param key stable item key.
-     * @return false only when an attached model cannot resolve [key].
+     * @return false only when an attached model cannot resolve `key`.
      */
     public fun jumpToKey(key: K): Boolean {
         checkThread()

@@ -218,7 +218,7 @@ fi
 
 docs_directory="$fixture_project/integration/docs"
 mkdir -p "$docs_directory/src/extra/kotlin"
-printf '' > "$docs_directory/build.gradle.kts"
+printf 'dependsOn(":integration:minecraft-fabric-9:runClientGameTest")\n' > "$docs_directory/build.gradle.kts"
 write_iml \
   "$docs_directory/docs.iml" \
   'Source;src/main/kotlin' \

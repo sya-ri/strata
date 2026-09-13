@@ -8,4 +8,9 @@ internal expect object Collections {
      * Wraps a caller-created snapshot as an immutable list.
      */
     fun <T> unmodifiableList(values: List<T>): List<T>
+
+    /**
+     * Wraps a caller-created snapshot as an immutable map.
+     */
+    fun <K, V> unmodifiableMap(values: Map<K, V>): Map<K, V>
 }

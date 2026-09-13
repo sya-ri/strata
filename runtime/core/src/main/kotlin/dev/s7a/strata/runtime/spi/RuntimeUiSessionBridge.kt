@@ -12,6 +12,7 @@ import dev.s7a.strata.input.TextInputEvent
 import dev.s7a.strata.runtime.FrameTime
 import dev.s7a.strata.runtime.UiFrame
 import dev.s7a.strata.runtime.UiSession
+import dev.s7a.strata.runtime.diagnostics.UiRenderMonitor
 import dev.s7a.strata.runtime.platform.PlatformThreads
 import dev.s7a.strata.runtime.render.DrawCommand
 import dev.s7a.strata.runtime.semantics.SemanticsEntry
@@ -57,6 +58,8 @@ private object RuntimeUiSessionImplementation {
 
         override val textInputFocus: RuntimeTextInputFocus?
             get() = session.textInputFocus
+
+        override fun startRenderMonitoring(): UiRenderMonitor = session.startRenderMonitoring()
 
         override fun attach() {
             lifecycleOperation(session::attach)

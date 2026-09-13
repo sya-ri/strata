@@ -16,6 +16,7 @@ import dev.s7a.strata.input.PointerButton
 import dev.s7a.strata.input.PointerEvent
 import dev.s7a.strata.render.DrawImage
 import dev.s7a.strata.render.createDrawImage
+import dev.s7a.strata.runtime.diagnostics.UiRenderMetric
 import dev.s7a.strata.runtime.render.DrawCommand
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
 import dev.s7a.strata.state.StateRevision
@@ -35,6 +36,39 @@ import kotlin.properties.ReadWriteProperty
  */
 @OptIn(InternalStrataRuntimeApi::class)
 internal class CanvasSessionTest {
+    @Test
+    fun directDescriptorReplacementReleasesOldStreamAndKeepsTheCanvasIdentity() {
+        val first = Frames(image(1))
+        val second = Frames(image(2))
+        val descriptor = ObserveTestSource(canvasSource(first))
+        val session =
+            UiSession(TestOwnerDispatcher()) {
+                evaluateComponentTree { Canvas(descriptor, IntSize(1, 1)) }
+            }
+        session.use {
+            session.attach()
+            session.frame(Constraints.fixed(1, 1))
+            session.startRenderMonitoring().use { monitor ->
+                descriptor.publish(canvasSource(second))
+                val replaced = session.frame(Constraints.fixed(1, 1))
+                assertEquals(1, first.closes)
+                assertEquals(1, second.subscriptions)
+                assertEquals(1L, monitor.snapshot().counts[UiRenderMetric.StateComponentEvaluation])
+                assertEquals(0L, monitor.snapshot().counts[UiRenderMetric.NodeCreate])
+                assertEquals(0L, monitor.snapshot().counts[UiRenderMetric.NodeDispose])
+                monitor.checkpoint()
+                first.publish(image(3))
+                assertSame(replaced, session.frame(Constraints.fixed(1, 1)))
+                val next = image(4)
+                second.publish(next)
+                assertSame(next, images(session.frame(Constraints.fixed(1, 1))).single())
+                assertEquals(0L, monitor.snapshot().counts[UiRenderMetric.ContentEvaluation])
+            }
+        }
+        assertEquals(1, second.closes)
+        assertEquals(1, descriptor.releases)
+    }
+
     @Test
     fun untimedFramesDrainImagesWithoutRebuildingContentOrRemeasuring() {
         val frames = Frames(image(1))

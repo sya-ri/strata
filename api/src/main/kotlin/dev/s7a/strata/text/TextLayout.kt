@@ -21,9 +21,9 @@ public sealed interface TextLayout {
      *
      * @property wrap presentation-only wrapping policy.
      * @property maxLines positive maximum number of displayed lines, including empty explicit lines.
-     * @property overflow treatment of text omitted by the available space or [maxLines].
+     * @property overflow treatment of text omitted by the available space or [TextLayout.Multiline.maxLines].
      * @property lineSpacing non-negative additional logical pixels between adjacent lines.
-     * @throws IllegalArgumentException when [maxLines] is not positive or [lineSpacing] is negative.
+     * @throws IllegalArgumentException when [TextLayout.Multiline.maxLines] is not positive or [TextLayout.Multiline.lineSpacing] is negative.
      */
     public data class Multiline(
         public val wrap: TextWrap = TextWrap.Word,

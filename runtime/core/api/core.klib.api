@@ -6,6 +6,82 @@
 // - Show declarations: true
 
 // Library unique name: <dev.s7a.strata:core>
+final enum class dev.s7a.strata.runtime.diagnostics/UiRenderMetric : kotlin/Enum<dev.s7a.strata.runtime.diagnostics/UiRenderMetric> { // dev.s7a.strata.runtime.diagnostics/UiRenderMetric|null[0]
+    enum entry AncestorInvalidation // dev.s7a.strata.runtime.diagnostics/UiRenderMetric.AncestorInvalidation|null[0]
+    enum entry ConsumerNotification // dev.s7a.strata.runtime.diagnostics/UiRenderMetric.ConsumerNotification|null[0]
+    enum entry ContentEvaluation // dev.s7a.strata.runtime.diagnostics/UiRenderMetric.ContentEvaluation|null[0]
+    enum entry ContentEvaluationSuccess // dev.s7a.strata.runtime.diagnostics/UiRenderMetric.ContentEvaluationSuccess|null[0]
+    enum entry FrameAttempt // dev.s7a.strata.runtime.diagnostics/UiRenderMetric.FrameAttempt|null[0]
+    enum entry FrameCacheHit // dev.s7a.strata.runtime.diagnostics/UiRenderMetric.FrameCacheHit|null[0]
+    enum entry FrameFailure // dev.s7a.strata.runtime.diagnostics/UiRenderMetric.FrameFailure|null[0]
+    enum entry FrameSuccess // dev.s7a.strata.runtime.diagnostics/UiRenderMetric.FrameSuccess|null[0]
+    enum entry InitialContent // dev.s7a.strata.runtime.diagnostics/UiRenderMetric.InitialContent|null[0]
+    enum entry Layout // dev.s7a.strata.runtime.diagnostics/UiRenderMetric.Layout|null[0]
+    enum entry LocalInvalidation // dev.s7a.strata.runtime.diagnostics/UiRenderMetric.LocalInvalidation|null[0]
+    enum entry Measure // dev.s7a.strata.runtime.diagnostics/UiRenderMetric.Measure|null[0]
+    enum entry NodeCreate // dev.s7a.strata.runtime.diagnostics/UiRenderMetric.NodeCreate|null[0]
+    enum entry NodeDispose // dev.s7a.strata.runtime.diagnostics/UiRenderMetric.NodeDispose|null[0]
+    enum entry NodeUpdate // dev.s7a.strata.runtime.diagnostics/UiRenderMetric.NodeUpdate|null[0]
+    enum entry ObserveEvaluation // dev.s7a.strata.runtime.diagnostics/UiRenderMetric.ObserveEvaluation|null[0]
+    enum entry OverlayPaint // dev.s7a.strata.runtime.diagnostics/UiRenderMetric.OverlayPaint|null[0]
+    enum entry Paint // dev.s7a.strata.runtime.diagnostics/UiRenderMetric.Paint|null[0]
+    enum entry ParentDefinitionContent // dev.s7a.strata.runtime.diagnostics/UiRenderMetric.ParentDefinitionContent|null[0]
+    enum entry Projection // dev.s7a.strata.runtime.diagnostics/UiRenderMetric.Projection|null[0]
+    enum entry ProjectionEqual // dev.s7a.strata.runtime.diagnostics/UiRenderMetric.ProjectionEqual|null[0]
+    enum entry RootEvaluation // dev.s7a.strata.runtime.diagnostics/UiRenderMetric.RootEvaluation|null[0]
+    enum entry RootOverlayPaint // dev.s7a.strata.runtime.diagnostics/UiRenderMetric.RootOverlayPaint|null[0]
+    enum entry RootValueChange // dev.s7a.strata.runtime.diagnostics/UiRenderMetric.RootValueChange|null[0]
+    enum entry RowEvaluation // dev.s7a.strata.runtime.diagnostics/UiRenderMetric.RowEvaluation|null[0]
+    enum entry Semantics // dev.s7a.strata.runtime.diagnostics/UiRenderMetric.Semantics|null[0]
+    enum entry SourceContent // dev.s7a.strata.runtime.diagnostics/UiRenderMetric.SourceContent|null[0]
+    enum entry SourceReplacementContent // dev.s7a.strata.runtime.diagnostics/UiRenderMetric.SourceReplacementContent|null[0]
+    enum entry StateComponentEvaluation // dev.s7a.strata.runtime.diagnostics/UiRenderMetric.StateComponentEvaluation|null[0]
+    enum entry StructureInvalidation // dev.s7a.strata.runtime.diagnostics/UiRenderMetric.StructureInvalidation|null[0]
+    enum entry SubscriptionClose // dev.s7a.strata.runtime.diagnostics/UiRenderMetric.SubscriptionClose|null[0]
+    enum entry SubscriptionOpen // dev.s7a.strata.runtime.diagnostics/UiRenderMetric.SubscriptionOpen|null[0]
+
+    final val entries // dev.s7a.strata.runtime.diagnostics/UiRenderMetric.entries|#static{}entries[0]
+        final fun <get-entries>(): kotlin.enums/EnumEntries<dev.s7a.strata.runtime.diagnostics/UiRenderMetric> // dev.s7a.strata.runtime.diagnostics/UiRenderMetric.entries.<get-entries>|<get-entries>#static(){}[0]
+
+    final fun valueOf(kotlin/String): dev.s7a.strata.runtime.diagnostics/UiRenderMetric // dev.s7a.strata.runtime.diagnostics/UiRenderMetric.valueOf|valueOf#static(kotlin.String){}[0]
+    final fun values(): kotlin/Array<dev.s7a.strata.runtime.diagnostics/UiRenderMetric> // dev.s7a.strata.runtime.diagnostics/UiRenderMetric.values|values#static(){}[0]
+}
+
+final enum class dev.s7a.strata.runtime.diagnostics/UiRenderNodeKind : kotlin/Enum<dev.s7a.strata.runtime.diagnostics/UiRenderNodeKind> { // dev.s7a.strata.runtime.diagnostics/UiRenderNodeKind|null[0]
+    enum entry Component // dev.s7a.strata.runtime.diagnostics/UiRenderNodeKind.Component|null[0]
+    enum entry Modifier // dev.s7a.strata.runtime.diagnostics/UiRenderNodeKind.Modifier|null[0]
+
+    final val entries // dev.s7a.strata.runtime.diagnostics/UiRenderNodeKind.entries|#static{}entries[0]
+        final fun <get-entries>(): kotlin.enums/EnumEntries<dev.s7a.strata.runtime.diagnostics/UiRenderNodeKind> // dev.s7a.strata.runtime.diagnostics/UiRenderNodeKind.entries.<get-entries>|<get-entries>#static(){}[0]
+
+    final fun valueOf(kotlin/String): dev.s7a.strata.runtime.diagnostics/UiRenderNodeKind // dev.s7a.strata.runtime.diagnostics/UiRenderNodeKind.valueOf|valueOf#static(kotlin.String){}[0]
+    final fun values(): kotlin/Array<dev.s7a.strata.runtime.diagnostics/UiRenderNodeKind> // dev.s7a.strata.runtime.diagnostics/UiRenderNodeKind.values|values#static(){}[0]
+}
+
+final enum class dev.s7a.strata.runtime.diagnostics/UiRenderOperation : kotlin/Enum<dev.s7a.strata.runtime.diagnostics/UiRenderOperation> { // dev.s7a.strata.runtime.diagnostics/UiRenderOperation|null[0]
+    enum entry Attach // dev.s7a.strata.runtime.diagnostics/UiRenderOperation.Attach|null[0]
+    enum entry Frame // dev.s7a.strata.runtime.diagnostics/UiRenderOperation.Frame|null[0]
+    enum entry InputGeometry // dev.s7a.strata.runtime.diagnostics/UiRenderOperation.InputGeometry|null[0]
+    enum entry Other // dev.s7a.strata.runtime.diagnostics/UiRenderOperation.Other|null[0]
+
+    final val entries // dev.s7a.strata.runtime.diagnostics/UiRenderOperation.entries|#static{}entries[0]
+        final fun <get-entries>(): kotlin.enums/EnumEntries<dev.s7a.strata.runtime.diagnostics/UiRenderOperation> // dev.s7a.strata.runtime.diagnostics/UiRenderOperation.entries.<get-entries>|<get-entries>#static(){}[0]
+
+    final fun valueOf(kotlin/String): dev.s7a.strata.runtime.diagnostics/UiRenderOperation // dev.s7a.strata.runtime.diagnostics/UiRenderOperation.valueOf|valueOf#static(kotlin.String){}[0]
+    final fun values(): kotlin/Array<dev.s7a.strata.runtime.diagnostics/UiRenderOperation> // dev.s7a.strata.runtime.diagnostics/UiRenderOperation.values|values#static(){}[0]
+}
+
+abstract interface dev.s7a.strata.runtime.diagnostics/UiRenderMonitor : kotlin/AutoCloseable { // dev.s7a.strata.runtime.diagnostics/UiRenderMonitor|null[0]
+    abstract fun checkpoint() // dev.s7a.strata.runtime.diagnostics/UiRenderMonitor.checkpoint|checkpoint(){}[0]
+    abstract fun close() // dev.s7a.strata.runtime.diagnostics/UiRenderMonitor.close|close(){}[0]
+    abstract fun findNodes(dev.s7a.strata.element/ElementKey<*>): kotlin.collections/List<dev.s7a.strata.runtime.diagnostics/UiRenderNodeId> // dev.s7a.strata.runtime.diagnostics/UiRenderMonitor.findNodes|findNodes(dev.s7a.strata.element.ElementKey<*>){}[0]
+    abstract fun snapshot(): dev.s7a.strata.runtime.diagnostics/UiRenderSnapshot // dev.s7a.strata.runtime.diagnostics/UiRenderMonitor.snapshot|snapshot(){}[0]
+}
+
+abstract interface dev.s7a.strata.runtime.spi/RuntimeUiDiagnosticsOwner { // dev.s7a.strata.runtime.spi/RuntimeUiDiagnosticsOwner|null[0]
+    abstract fun startRenderMonitoring(): dev.s7a.strata.runtime.diagnostics/UiRenderMonitor // dev.s7a.strata.runtime.spi/RuntimeUiDiagnosticsOwner.startRenderMonitoring|startRenderMonitoring(){}[0]
+}
+
 sealed interface dev.s7a.strata.runtime.render/DrawCommand { // dev.s7a.strata.runtime.render/DrawCommand|null[0]
     final class BlitImage : dev.s7a.strata.runtime.render/DrawCommand { // dev.s7a.strata.runtime.render/DrawCommand.BlitImage|null[0]
         constructor <init>(dev.s7a.strata.render/DrawImage, dev.s7a.strata.geometry/IntRect, dev.s7a.strata.geometry/IntRect) // dev.s7a.strata.runtime.render/DrawCommand.BlitImage.<init>|<init>(dev.s7a.strata.render.DrawImage;dev.s7a.strata.geometry.IntRect;dev.s7a.strata.geometry.IntRect){}[0]
@@ -90,6 +166,19 @@ sealed interface dev.s7a.strata.runtime.render/DrawCommand { // dev.s7a.strata.r
         final fun toString(): kotlin/String // dev.s7a.strata.runtime.render/DrawCommand.PushClip.toString|toString(){}[0]
     }
 
+    final class PushFractionalClip : dev.s7a.strata.runtime.render/DrawCommand { // dev.s7a.strata.runtime.render/DrawCommand.PushFractionalClip|null[0]
+        constructor <init>(dev.s7a.strata.geometry/FloatRect) // dev.s7a.strata.runtime.render/DrawCommand.PushFractionalClip.<init>|<init>(dev.s7a.strata.geometry.FloatRect){}[0]
+
+        final val bounds // dev.s7a.strata.runtime.render/DrawCommand.PushFractionalClip.bounds|{}bounds[0]
+            final fun <get-bounds>(): dev.s7a.strata.geometry/FloatRect // dev.s7a.strata.runtime.render/DrawCommand.PushFractionalClip.bounds.<get-bounds>|<get-bounds>(){}[0]
+
+        final fun component1(): dev.s7a.strata.geometry/FloatRect // dev.s7a.strata.runtime.render/DrawCommand.PushFractionalClip.component1|component1(){}[0]
+        final fun copy(dev.s7a.strata.geometry/FloatRect = ...): dev.s7a.strata.runtime.render/DrawCommand.PushFractionalClip // dev.s7a.strata.runtime.render/DrawCommand.PushFractionalClip.copy|copy(dev.s7a.strata.geometry.FloatRect){}[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // dev.s7a.strata.runtime.render/DrawCommand.PushFractionalClip.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // dev.s7a.strata.runtime.render/DrawCommand.PushFractionalClip.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // dev.s7a.strata.runtime.render/DrawCommand.PushFractionalClip.toString|toString(){}[0]
+    }
+
     final class SampledImage : dev.s7a.strata.runtime.render/DrawCommand { // dev.s7a.strata.runtime.render/DrawCommand.SampledImage|null[0]
         constructor <init>(dev.s7a.strata.render/DrawImage, dev.s7a.strata.geometry/FloatRect, dev.s7a.strata.geometry/FloatRect, dev.s7a.strata.render/ArgbColor = ..., kotlin/Float = ...) // dev.s7a.strata.runtime.render/DrawCommand.SampledImage.<init>|<init>(dev.s7a.strata.render.DrawImage;dev.s7a.strata.geometry.FloatRect;dev.s7a.strata.geometry.FloatRect;dev.s7a.strata.render.ArgbColor;kotlin.Float){}[0]
         constructor <init>(dev.s7a.strata.render/DrawImage, dev.s7a.strata.geometry/FloatRect, dev.s7a.strata.geometry/FloatRect, dev.s7a.strata.render/ArgbColor = ..., kotlin/Float = ..., dev.s7a.strata.render/SampledImageOrientation) // dev.s7a.strata.runtime.render/DrawCommand.SampledImage.<init>|<init>(dev.s7a.strata.render.DrawImage;dev.s7a.strata.geometry.FloatRect;dev.s7a.strata.geometry.FloatRect;dev.s7a.strata.render.ArgbColor;kotlin.Float;dev.s7a.strata.render.SampledImageOrientation){}[0]
@@ -135,7 +224,7 @@ sealed interface dev.s7a.strata.runtime.spi/RuntimeUiFrame { // dev.s7a.strata.r
         abstract fun <get-size>(): dev.s7a.strata.geometry/IntSize // dev.s7a.strata.runtime.spi/RuntimeUiFrame.size.<get-size>|<get-size>(){}[0]
 }
 
-sealed interface dev.s7a.strata.runtime.spi/RuntimeUiSession : kotlin/AutoCloseable { // dev.s7a.strata.runtime.spi/RuntimeUiSession|null[0]
+sealed interface dev.s7a.strata.runtime.spi/RuntimeUiSession : dev.s7a.strata.runtime.spi/RuntimeUiDiagnosticsOwner, kotlin/AutoCloseable { // dev.s7a.strata.runtime.spi/RuntimeUiSession|null[0]
     abstract val textInputFocus // dev.s7a.strata.runtime.spi/RuntimeUiSession.textInputFocus|{}textInputFocus[0]
         abstract fun <get-textInputFocus>(): dev.s7a.strata.runtime.spi/RuntimeTextInputFocus? // dev.s7a.strata.runtime.spi/RuntimeUiSession.textInputFocus.<get-textInputFocus>|<get-textInputFocus>(){}[0]
 
@@ -170,6 +259,62 @@ sealed interface dev.s7a.strata.runtime/TreeState { // dev.s7a.strata.runtime/Tr
     }
 }
 
+final class dev.s7a.strata.runtime.diagnostics/UiRenderNodeSnapshot { // dev.s7a.strata.runtime.diagnostics/UiRenderNodeSnapshot|null[0]
+    constructor <init>(dev.s7a.strata.runtime.diagnostics/UiRenderNodeId, dev.s7a.strata.runtime.diagnostics/UiRenderNodeId?, dev.s7a.strata.runtime.diagnostics/UiRenderNodeKind, kotlin/String, kotlin/Boolean, kotlin.collections/Map<dev.s7a.strata.runtime.diagnostics/UiRenderMetric, kotlin/Long>, kotlin.collections/Map<dev.s7a.strata.runtime.diagnostics/UiRenderOperation, kotlin.collections/Map<dev.s7a.strata.runtime.diagnostics/UiRenderMetric, kotlin/Long>>) // dev.s7a.strata.runtime.diagnostics/UiRenderNodeSnapshot.<init>|<init>(dev.s7a.strata.runtime.diagnostics.UiRenderNodeId;dev.s7a.strata.runtime.diagnostics.UiRenderNodeId?;dev.s7a.strata.runtime.diagnostics.UiRenderNodeKind;kotlin.String;kotlin.Boolean;kotlin.collections.Map<dev.s7a.strata.runtime.diagnostics.UiRenderMetric,kotlin.Long>;kotlin.collections.Map<dev.s7a.strata.runtime.diagnostics.UiRenderOperation,kotlin.collections.Map<dev.s7a.strata.runtime.diagnostics.UiRenderMetric,kotlin.Long>>){}[0]
+
+    final val counts // dev.s7a.strata.runtime.diagnostics/UiRenderNodeSnapshot.counts|{}counts[0]
+        final fun <get-counts>(): kotlin.collections/Map<dev.s7a.strata.runtime.diagnostics/UiRenderMetric, kotlin/Long> // dev.s7a.strata.runtime.diagnostics/UiRenderNodeSnapshot.counts.<get-counts>|<get-counts>(){}[0]
+    final val id // dev.s7a.strata.runtime.diagnostics/UiRenderNodeSnapshot.id|{}id[0]
+        final fun <get-id>(): dev.s7a.strata.runtime.diagnostics/UiRenderNodeId // dev.s7a.strata.runtime.diagnostics/UiRenderNodeSnapshot.id.<get-id>|<get-id>(){}[0]
+    final val kind // dev.s7a.strata.runtime.diagnostics/UiRenderNodeSnapshot.kind|{}kind[0]
+        final fun <get-kind>(): dev.s7a.strata.runtime.diagnostics/UiRenderNodeKind // dev.s7a.strata.runtime.diagnostics/UiRenderNodeSnapshot.kind.<get-kind>|<get-kind>(){}[0]
+    final val operations // dev.s7a.strata.runtime.diagnostics/UiRenderNodeSnapshot.operations|{}operations[0]
+        final fun <get-operations>(): kotlin.collections/Map<dev.s7a.strata.runtime.diagnostics/UiRenderOperation, kotlin.collections/Map<dev.s7a.strata.runtime.diagnostics/UiRenderMetric, kotlin/Long>> // dev.s7a.strata.runtime.diagnostics/UiRenderNodeSnapshot.operations.<get-operations>|<get-operations>(){}[0]
+    final val parentId // dev.s7a.strata.runtime.diagnostics/UiRenderNodeSnapshot.parentId|{}parentId[0]
+        final fun <get-parentId>(): dev.s7a.strata.runtime.diagnostics/UiRenderNodeId? // dev.s7a.strata.runtime.diagnostics/UiRenderNodeSnapshot.parentId.<get-parentId>|<get-parentId>(){}[0]
+    final val retired // dev.s7a.strata.runtime.diagnostics/UiRenderNodeSnapshot.retired|{}retired[0]
+        final fun <get-retired>(): kotlin/Boolean // dev.s7a.strata.runtime.diagnostics/UiRenderNodeSnapshot.retired.<get-retired>|<get-retired>(){}[0]
+    final val typeName // dev.s7a.strata.runtime.diagnostics/UiRenderNodeSnapshot.typeName|{}typeName[0]
+        final fun <get-typeName>(): kotlin/String // dev.s7a.strata.runtime.diagnostics/UiRenderNodeSnapshot.typeName.<get-typeName>|<get-typeName>(){}[0]
+
+    final fun component1(): dev.s7a.strata.runtime.diagnostics/UiRenderNodeId // dev.s7a.strata.runtime.diagnostics/UiRenderNodeSnapshot.component1|component1(){}[0]
+    final fun component2(): dev.s7a.strata.runtime.diagnostics/UiRenderNodeId? // dev.s7a.strata.runtime.diagnostics/UiRenderNodeSnapshot.component2|component2(){}[0]
+    final fun component3(): dev.s7a.strata.runtime.diagnostics/UiRenderNodeKind // dev.s7a.strata.runtime.diagnostics/UiRenderNodeSnapshot.component3|component3(){}[0]
+    final fun component4(): kotlin/String // dev.s7a.strata.runtime.diagnostics/UiRenderNodeSnapshot.component4|component4(){}[0]
+    final fun component5(): kotlin/Boolean // dev.s7a.strata.runtime.diagnostics/UiRenderNodeSnapshot.component5|component5(){}[0]
+    final fun component6(): kotlin.collections/Map<dev.s7a.strata.runtime.diagnostics/UiRenderMetric, kotlin/Long> // dev.s7a.strata.runtime.diagnostics/UiRenderNodeSnapshot.component6|component6(){}[0]
+    final fun component7(): kotlin.collections/Map<dev.s7a.strata.runtime.diagnostics/UiRenderOperation, kotlin.collections/Map<dev.s7a.strata.runtime.diagnostics/UiRenderMetric, kotlin/Long>> // dev.s7a.strata.runtime.diagnostics/UiRenderNodeSnapshot.component7|component7(){}[0]
+    final fun copy(dev.s7a.strata.runtime.diagnostics/UiRenderNodeId = ..., dev.s7a.strata.runtime.diagnostics/UiRenderNodeId? = ..., dev.s7a.strata.runtime.diagnostics/UiRenderNodeKind = ..., kotlin/String = ..., kotlin/Boolean = ..., kotlin.collections/Map<dev.s7a.strata.runtime.diagnostics/UiRenderMetric, kotlin/Long> = ..., kotlin.collections/Map<dev.s7a.strata.runtime.diagnostics/UiRenderOperation, kotlin.collections/Map<dev.s7a.strata.runtime.diagnostics/UiRenderMetric, kotlin/Long>> = ...): dev.s7a.strata.runtime.diagnostics/UiRenderNodeSnapshot // dev.s7a.strata.runtime.diagnostics/UiRenderNodeSnapshot.copy|copy(dev.s7a.strata.runtime.diagnostics.UiRenderNodeId;dev.s7a.strata.runtime.diagnostics.UiRenderNodeId?;dev.s7a.strata.runtime.diagnostics.UiRenderNodeKind;kotlin.String;kotlin.Boolean;kotlin.collections.Map<dev.s7a.strata.runtime.diagnostics.UiRenderMetric,kotlin.Long>;kotlin.collections.Map<dev.s7a.strata.runtime.diagnostics.UiRenderOperation,kotlin.collections.Map<dev.s7a.strata.runtime.diagnostics.UiRenderMetric,kotlin.Long>>){}[0]
+    final fun equals(kotlin/Any?): kotlin/Boolean // dev.s7a.strata.runtime.diagnostics/UiRenderNodeSnapshot.equals|equals(kotlin.Any?){}[0]
+    final fun hashCode(): kotlin/Int // dev.s7a.strata.runtime.diagnostics/UiRenderNodeSnapshot.hashCode|hashCode(){}[0]
+    final fun toString(): kotlin/String // dev.s7a.strata.runtime.diagnostics/UiRenderNodeSnapshot.toString|toString(){}[0]
+}
+
+final class dev.s7a.strata.runtime.diagnostics/UiRenderSnapshot { // dev.s7a.strata.runtime.diagnostics/UiRenderSnapshot|null[0]
+    constructor <init>(kotlin.collections/Map<dev.s7a.strata.runtime.diagnostics/UiRenderMetric, kotlin/Long>, kotlin.collections/Map<dev.s7a.strata.runtime.diagnostics/UiRenderOperation, kotlin.collections/Map<dev.s7a.strata.runtime.diagnostics/UiRenderMetric, kotlin/Long>>, kotlin.collections/List<dev.s7a.strata.runtime.diagnostics/UiRenderNodeSnapshot>, kotlin/Int, kotlin/Boolean) // dev.s7a.strata.runtime.diagnostics/UiRenderSnapshot.<init>|<init>(kotlin.collections.Map<dev.s7a.strata.runtime.diagnostics.UiRenderMetric,kotlin.Long>;kotlin.collections.Map<dev.s7a.strata.runtime.diagnostics.UiRenderOperation,kotlin.collections.Map<dev.s7a.strata.runtime.diagnostics.UiRenderMetric,kotlin.Long>>;kotlin.collections.List<dev.s7a.strata.runtime.diagnostics.UiRenderNodeSnapshot>;kotlin.Int;kotlin.Boolean){}[0]
+
+    final val activeSubscriptions // dev.s7a.strata.runtime.diagnostics/UiRenderSnapshot.activeSubscriptions|{}activeSubscriptions[0]
+        final fun <get-activeSubscriptions>(): kotlin/Int // dev.s7a.strata.runtime.diagnostics/UiRenderSnapshot.activeSubscriptions.<get-activeSubscriptions>|<get-activeSubscriptions>(){}[0]
+    final val counts // dev.s7a.strata.runtime.diagnostics/UiRenderSnapshot.counts|{}counts[0]
+        final fun <get-counts>(): kotlin.collections/Map<dev.s7a.strata.runtime.diagnostics/UiRenderMetric, kotlin/Long> // dev.s7a.strata.runtime.diagnostics/UiRenderSnapshot.counts.<get-counts>|<get-counts>(){}[0]
+    final val nodes // dev.s7a.strata.runtime.diagnostics/UiRenderSnapshot.nodes|{}nodes[0]
+        final fun <get-nodes>(): kotlin.collections/List<dev.s7a.strata.runtime.diagnostics/UiRenderNodeSnapshot> // dev.s7a.strata.runtime.diagnostics/UiRenderSnapshot.nodes.<get-nodes>|<get-nodes>(){}[0]
+    final val operations // dev.s7a.strata.runtime.diagnostics/UiRenderSnapshot.operations|{}operations[0]
+        final fun <get-operations>(): kotlin.collections/Map<dev.s7a.strata.runtime.diagnostics/UiRenderOperation, kotlin.collections/Map<dev.s7a.strata.runtime.diagnostics/UiRenderMetric, kotlin/Long>> // dev.s7a.strata.runtime.diagnostics/UiRenderSnapshot.operations.<get-operations>|<get-operations>(){}[0]
+    final val overflowed // dev.s7a.strata.runtime.diagnostics/UiRenderSnapshot.overflowed|{}overflowed[0]
+        final fun <get-overflowed>(): kotlin/Boolean // dev.s7a.strata.runtime.diagnostics/UiRenderSnapshot.overflowed.<get-overflowed>|<get-overflowed>(){}[0]
+
+    final fun component1(): kotlin.collections/Map<dev.s7a.strata.runtime.diagnostics/UiRenderMetric, kotlin/Long> // dev.s7a.strata.runtime.diagnostics/UiRenderSnapshot.component1|component1(){}[0]
+    final fun component2(): kotlin.collections/Map<dev.s7a.strata.runtime.diagnostics/UiRenderOperation, kotlin.collections/Map<dev.s7a.strata.runtime.diagnostics/UiRenderMetric, kotlin/Long>> // dev.s7a.strata.runtime.diagnostics/UiRenderSnapshot.component2|component2(){}[0]
+    final fun component3(): kotlin.collections/List<dev.s7a.strata.runtime.diagnostics/UiRenderNodeSnapshot> // dev.s7a.strata.runtime.diagnostics/UiRenderSnapshot.component3|component3(){}[0]
+    final fun component4(): kotlin/Int // dev.s7a.strata.runtime.diagnostics/UiRenderSnapshot.component4|component4(){}[0]
+    final fun component5(): kotlin/Boolean // dev.s7a.strata.runtime.diagnostics/UiRenderSnapshot.component5|component5(){}[0]
+    final fun copy(kotlin.collections/Map<dev.s7a.strata.runtime.diagnostics/UiRenderMetric, kotlin/Long> = ..., kotlin.collections/Map<dev.s7a.strata.runtime.diagnostics/UiRenderOperation, kotlin.collections/Map<dev.s7a.strata.runtime.diagnostics/UiRenderMetric, kotlin/Long>> = ..., kotlin.collections/List<dev.s7a.strata.runtime.diagnostics/UiRenderNodeSnapshot> = ..., kotlin/Int = ..., kotlin/Boolean = ...): dev.s7a.strata.runtime.diagnostics/UiRenderSnapshot // dev.s7a.strata.runtime.diagnostics/UiRenderSnapshot.copy|copy(kotlin.collections.Map<dev.s7a.strata.runtime.diagnostics.UiRenderMetric,kotlin.Long>;kotlin.collections.Map<dev.s7a.strata.runtime.diagnostics.UiRenderOperation,kotlin.collections.Map<dev.s7a.strata.runtime.diagnostics.UiRenderMetric,kotlin.Long>>;kotlin.collections.List<dev.s7a.strata.runtime.diagnostics.UiRenderNodeSnapshot>;kotlin.Int;kotlin.Boolean){}[0]
+    final fun equals(kotlin/Any?): kotlin/Boolean // dev.s7a.strata.runtime.diagnostics/UiRenderSnapshot.equals|equals(kotlin.Any?){}[0]
+    final fun hashCode(): kotlin/Int // dev.s7a.strata.runtime.diagnostics/UiRenderSnapshot.hashCode|hashCode(){}[0]
+    final fun toString(): kotlin/String // dev.s7a.strata.runtime.diagnostics/UiRenderSnapshot.toString|toString(){}[0]
+}
+
 final class dev.s7a.strata.runtime.semantics/SemanticsEntry { // dev.s7a.strata.runtime.semantics/SemanticsEntry|null[0]
     constructor <init>(dev.s7a.strata.geometry/IntRect, dev.s7a.strata.semantics/Semantics) // dev.s7a.strata.runtime.semantics/SemanticsEntry.<init>|<init>(dev.s7a.strata.geometry.IntRect;dev.s7a.strata.semantics.Semantics){}[0]
 
@@ -188,7 +333,7 @@ final class dev.s7a.strata.runtime.semantics/SemanticsEntry { // dev.s7a.strata.
 
 final class dev.s7a.strata.runtime.spi/RuntimeTextInputFocus // dev.s7a.strata.runtime.spi/RuntimeTextInputFocus|null[0]
 
-final class dev.s7a.strata.runtime/UiTree : kotlin/AutoCloseable { // dev.s7a.strata.runtime/UiTree|null[0]
+final class dev.s7a.strata.runtime/UiTree : dev.s7a.strata.runtime.spi/RuntimeUiDiagnosticsOwner, kotlin/AutoCloseable { // dev.s7a.strata.runtime/UiTree|null[0]
     constructor <init>() // dev.s7a.strata.runtime/UiTree.<init>|<init>(){}[0]
 
     final val state // dev.s7a.strata.runtime/UiTree.state|{}state[0]
@@ -202,7 +347,19 @@ final class dev.s7a.strata.runtime/UiTree : kotlin/AutoCloseable { // dev.s7a.st
     final fun measure(dev.s7a.strata.geometry/Constraints): dev.s7a.strata.geometry/IntSize // dev.s7a.strata.runtime/UiTree.measure|measure(dev.s7a.strata.geometry.Constraints){}[0]
     final fun paint(): kotlin.collections/List<dev.s7a.strata.runtime.render/DrawCommand> // dev.s7a.strata.runtime/UiTree.paint|paint(){}[0]
     final fun semantics(): kotlin.collections/List<dev.s7a.strata.runtime.semantics/SemanticsEntry> // dev.s7a.strata.runtime/UiTree.semantics|semantics(){}[0]
+    final fun startRenderMonitoring(): dev.s7a.strata.runtime.diagnostics/UiRenderMonitor // dev.s7a.strata.runtime/UiTree.startRenderMonitoring|startRenderMonitoring(){}[0]
     final fun update(dev.s7a.strata.element/Element) // dev.s7a.strata.runtime/UiTree.update|update(dev.s7a.strata.element.Element){}[0]
+}
+
+final value class dev.s7a.strata.runtime.diagnostics/UiRenderNodeId { // dev.s7a.strata.runtime.diagnostics/UiRenderNodeId|null[0]
+    constructor <init>(kotlin/Long) // dev.s7a.strata.runtime.diagnostics/UiRenderNodeId.<init>|<init>(kotlin.Long){}[0]
+
+    final val value // dev.s7a.strata.runtime.diagnostics/UiRenderNodeId.value|{}value[0]
+        final fun <get-value>(): kotlin/Long // dev.s7a.strata.runtime.diagnostics/UiRenderNodeId.value.<get-value>|<get-value>(){}[0]
+
+    final fun equals(kotlin/Any?): kotlin/Boolean // dev.s7a.strata.runtime.diagnostics/UiRenderNodeId.equals|equals(kotlin.Any?){}[0]
+    final fun hashCode(): kotlin/Int // dev.s7a.strata.runtime.diagnostics/UiRenderNodeId.hashCode|hashCode(){}[0]
+    final fun toString(): kotlin/String // dev.s7a.strata.runtime.diagnostics/UiRenderNodeId.toString|toString(){}[0]
 }
 
 final fun dev.s7a.strata.runtime.spi/createRuntimeUiSession(kotlin/Function0<dev.s7a.strata.element/Element>): dev.s7a.strata.runtime.spi/RuntimeUiSession // dev.s7a.strata.runtime.spi/createRuntimeUiSession|createRuntimeUiSession(kotlin.Function0<dev.s7a.strata.element.Element>){}[0]

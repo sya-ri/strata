@@ -7,7 +7,9 @@ import dev.s7a.strata.geometry.IntSize
 import dev.s7a.strata.node.ChildTransform
 import dev.s7a.strata.node.DirtyMask
 import dev.s7a.strata.node.Node
+import dev.s7a.strata.node.ParentDataDelegateNode
 import dev.s7a.strata.semantics.Semantics
+import dev.s7a.strata.spi.InternalStrataRuntimeApi
 
 /**
  * Common retained pipeline state for a component node or active modifier node.
@@ -15,9 +17,21 @@ import dev.s7a.strata.semantics.Semantics
  * The runtime owns one entry until its lifecycle and node binding cleanup completes.
  * The parent link is effective pipeline ancestry, while component logical children remain on [RetainedNode].
  */
+@OptIn(InternalStrataRuntimeApi::class)
 internal sealed class RetainedEntry(
     val node: Node,
 ) {
+    /**
+     * Session-local diagnostic identity, assigned lazily on first monitoring and retained without a collector.
+     */
+    var diagnosticId: Long = 0L
+
+    /**
+     * Immutable node capability cached at ownership creation, avoiding repeated interface checks during parent layout.
+     * The capability remains valid for this entry's node lifetime and is released with the entry.
+     */
+    val parentDataDelegate: ParentDataDelegateNode? = node as? ParentDataDelegateNode
+
     /**
      * Number of direct children in the effective pipeline tree.
      */

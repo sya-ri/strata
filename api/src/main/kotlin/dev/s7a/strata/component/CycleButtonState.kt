@@ -16,8 +16,8 @@ import dev.s7a.strata.internal.platform.PlatformMath as Math
  *
  * @param T immutable option type.
  * @param values nonempty unique option order.
- * @param initialValue initially selected member of [values].
- * @throws IllegalArgumentException when [values] is empty or contains equal members, or when [initialValue] is outside [values].
+ * @param initialValue initially selected member of [CycleButtonState.values].
+ * @throws IllegalArgumentException when [CycleButtonState.values] is empty or contains equal members, or when `initialValue` is outside [CycleButtonState.values].
  */
 public class CycleButtonState<T : Any>(
     values: List<T>,
@@ -45,9 +45,9 @@ public class CycleButtonState<T : Any>(
      * The conversion is retained for the state lifetime, runs only on the creating thread, and propagates its exceptions unchanged when invoked.
      *
      * @param values nonempty unique option order.
-     * @param initialValue initially selected member of [values].
-     * @param toString synchronous display conversion used by [format].
-     * @throws IllegalArgumentException when [values] is empty or contains equal members, or when [initialValue] is outside [values].
+     * @param initialValue initially selected member of [CycleButtonState.values].
+     * @param toString synchronous display conversion used by [CycleButtonState.format].
+     * @throws IllegalArgumentException when [CycleButtonState.values] is empty or contains equal members, or when `initialValue` is outside [CycleButtonState.values].
      */
     public constructor(
         values: Collection<T>,
@@ -58,10 +58,10 @@ public class CycleButtonState<T : Any>(
     }
 
     /**
-     * Creates state selecting the first member of a validated nonempty [values] list.
+     * Creates state selecting the first member of a validated nonempty [CycleButtonState.values] list.
      *
      * @param values nonempty unique option order formatted through [Any.toString].
-     * @throws IllegalArgumentException when [values] is empty or contains equal members.
+     * @throws IllegalArgumentException when [CycleButtonState.values] is empty or contains equal members.
      */
     public constructor(values: List<T>) : this(values, requireFirst(values))
 
@@ -79,9 +79,9 @@ public class CycleButtonState<T : Any>(
      *
      * The canonical member from the immutable option snapshot is passed to the conversion.
      *
-     * @param value option equal to one member of [values].
+     * @param value option equal to one member of [CycleButtonState.values].
      * @return display string produced synchronously on the state-owning thread.
-     * @throws IllegalArgumentException when [value] is outside [values].
+     * @throws IllegalArgumentException when `value` is outside [CycleButtonState.values].
      * @throws IllegalStateException when called from a thread other than the creating thread.
      */
     public fun format(value: T): String {
@@ -92,13 +92,13 @@ public class CycleButtonState<T : Any>(
     }
 
     /**
-     * Formats a canonical option already obtained from the immutable [values] snapshot.
+     * Formats a canonical option already obtained from the immutable [CycleButtonState.values] snapshot.
      *
      * This bounded internal path avoids another membership scan while a CycleButton snapshots every label.
      * The caller must supply the canonical snapshot member rather than an arbitrary equal object.
      * Conversion exceptions propagate unchanged.
      *
-     * @param value canonical member obtained from [values].
+     * @param value canonical member obtained from [CycleButtonState.values].
      * @return display string produced synchronously on the state-owning thread.
      * @throws IllegalStateException when called from a thread other than the creating thread.
      */
@@ -135,9 +135,9 @@ public class CycleButtonState<T : Any>(
      */
     public companion object {
         /**
-         * Creates state containing every constant of [E] in declaration order.
+         * Creates state containing every constant of `E` in declaration order.
          *
-         * @param E enum option type inferred from [initialValue].
+         * @param E enum option type inferred from `initialValue`.
          * @param initialValue initially selected enum constant.
          * @param toString synchronous display conversion retained for the state lifetime, defaulting to [Enum.name].
          * @return caller-owned state over the complete enum constant set, confined to the calling thread.

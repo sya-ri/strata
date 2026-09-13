@@ -25,6 +25,7 @@ internal object KotlinSourceSignatureInventory {
         internal val modifiers: Map<String, List<String>>,
         internal val parentScopeModifiers: Map<ModifierInventory.ParentScopeModifier, List<String>>,
         internal val stateAndBindings: Map<String, List<OwnedDeclaration>>,
+        internal val stateExtensions: Map<String, List<String>> = emptyMap(),
     )
 
     /**
@@ -119,7 +120,13 @@ internal object KotlinSourceSignatureInventory {
                 require(signatures.isNotEmpty()) { "State or binding source contains no public declarations: $source" }
                 entry.typeName to signatures
             }
-        return Result(components, modifiers, parentScopeModifiers, stateAndBindings)
+        val stateExtensions =
+            kotlinFiles(root.resolve("dev/s7a/strata/state"))
+                .flatMap { declarations(it, "StateSource", genericReceiver = true) }
+                .groupBy(Declaration::name, Declaration::signature)
+                .mapValues { (_, values) -> values.sorted() }
+                .toSortedMap()
+        return Result(components, modifiers, parentScopeModifiers, stateAndBindings, stateExtensions)
     }
 
     private fun kotlinFiles(directory: Path): List<Path> =
@@ -134,14 +141,16 @@ internal object KotlinSourceSignatureInventory {
     private fun declarations(
         sourceFile: Path,
         receiver: String,
+        genericReceiver: Boolean = false,
     ): List<Declaration> {
         ShowcasePaths.requireSafeSegments(sourceFile, "API Kotlin source file")
         require(Files.isSymbolicLink(sourceFile).not()) { "API Kotlin source file is symbolic: $sourceFile" }
         val source = Files.readString(sourceFile, StandardCharsets.UTF_8)
         require(source.startsWith('\uFEFF').not()) { "API Kotlin source contains a UTF-8 BOM: $sourceFile" }
+        val receiverPattern = Regex.escape(receiver) + if (genericReceiver) "<[^>\\r\\n]+>" else ""
         val pattern =
             Regex(
-                "(?m)^[ \\t]*public fun(?:[ \\t]+<[^>\\r\\n]+>)?[ \\t]+${Regex.escape(receiver)}\\.([A-Za-z][A-Za-z0-9]*)[ \\t]*\\(",
+                "(?m)^[ \\t]*public fun(?:[ \\t]+<[^>\\r\\n]+>)?[ \\t]+$receiverPattern\\.([A-Za-z][A-Za-z0-9]*)[ \\t]*\\(",
             )
         return pattern
             .findAll(source)

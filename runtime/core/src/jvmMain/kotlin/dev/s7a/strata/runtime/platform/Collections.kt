@@ -10,4 +10,9 @@ internal actual object Collections {
      * Wraps a caller-created snapshot as an immutable list.
      */
     actual fun <T> unmodifiableList(values: List<T>): List<T> = JavaCollections.unmodifiableList(values)
+
+    /**
+     * Preserves the JVM mutation failure contract of an immutable map snapshot.
+     */
+    actual fun <K, V> unmodifiableMap(values: Map<K, V>): Map<K, V> = JavaCollections.unmodifiableMap(values)
 }

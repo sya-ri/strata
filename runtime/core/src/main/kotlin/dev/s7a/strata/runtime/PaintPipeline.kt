@@ -17,6 +17,7 @@ import dev.s7a.strata.render.PlatformDrawCommand
 import dev.s7a.strata.render.RootOverlayPaintScope
 import dev.s7a.strata.render.SampledImageOrientation
 import dev.s7a.strata.render.createDrawImage
+import dev.s7a.strata.runtime.diagnostics.UiRenderMetric
 import dev.s7a.strata.runtime.platform.Collections
 import dev.s7a.strata.runtime.render.DrawCommand
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
@@ -27,6 +28,7 @@ import dev.s7a.strata.spi.InternalStrataRuntimeApi
 @OptIn(InternalStrataRuntimeApi::class)
 internal class PaintPipeline(
     private val threadGuard: ThreadGuard,
+    private val monitoring: RenderMonitoring = RenderMonitoring(),
 ) {
     /**
      * Paints [root] in parent-before-child order.
@@ -52,7 +54,7 @@ internal class PaintPipeline(
         appendTransformed(retained.localCommands.orEmpty(), retained, output)
         val clipsChildren = retained.node is ClipChildrenNode
         if (clipsChildren) {
-            output.add(DrawCommand.PushClip(retained.bounds))
+            output.add(transformClip(IntRect(0, 0, retained.measuredSize.width, retained.measuredSize.height), retained.localToTree))
         }
         for (index in 0 until retained.effectiveChildCount) {
             val child = retained.effectiveChildAt(index)
@@ -79,8 +81,8 @@ internal class PaintPipeline(
             DirtyPhase.Paint in retained.dirty || retained.localCommands == null || retained.localOverlayCommands == null
         if (localNeedsUpdate) {
             retained.dirty -= DirtyMask.of(DirtyPhase.Paint)
-            retained.localCommands = collect(retained, paintNode?.let { node -> node::paint })
-            retained.localOverlayCommands = collect(retained, overlayNode?.let { node -> node::paintOverlay })
+            retained.localCommands = collect(retained, UiRenderMetric.Paint, paintNode?.let { node -> node::paint })
+            retained.localOverlayCommands = collect(retained, UiRenderMetric.OverlayPaint, overlayNode?.let { node -> node::paintOverlay })
         }
         if (localNeedsUpdate || retained.rootOverlayCommands == null || rootOverlayGeometryChanged) {
             retained.rootOverlayCommands = collectRootOverlay(retained, viewport, rootOverlayNode)
@@ -97,6 +99,7 @@ internal class PaintPipeline(
         if (node == null) return emptyList()
         val collector = RootOverlayPaintScopeImplementation(threadGuard, viewport, retained.bounds)
         return try {
+            monitoring.record(UiRenderMetric.RootOverlayPaint, retained)
             node.paintRootOverlay(collector)
             collector.snapshot()
         } finally {
@@ -106,6 +109,7 @@ internal class PaintPipeline(
 
     private fun collect(
         retained: RetainedEntry,
+        metric: UiRenderMetric,
         callback: ((PaintScope) -> Unit)?,
     ): List<LocalDrawCommand> {
         if (callback == null) {
@@ -113,6 +117,7 @@ internal class PaintPipeline(
         }
         val collector = LocalPaintScope(threadGuard, retained.measuredSize)
         return try {
+            monitoring.record(metric, retained)
             callback(collector)
             collector.snapshot()
         } finally {
@@ -147,7 +152,7 @@ internal class PaintPipeline(
         }
         return when (command) {
             is LocalDrawCommand.PushClip -> {
-                DrawCommand.PushClip(transform.enclosing(command.bounds))
+                transformClip(command.bounds, transform)
             }
 
             LocalDrawCommand.PopClip -> {
@@ -196,6 +201,22 @@ internal class PaintPipeline(
                     "Platform draw commands require an exact integer-translation child transform.",
                 )
             }
+        }
+    }
+
+    private fun transformClip(
+        bounds: IntRect,
+        transform: TreeTransform,
+    ): DrawCommand {
+        val enclosing = transform.enclosing(bounds)
+        if (transform.integerTranslationOrNull() != null) return DrawCommand.PushClip(enclosing)
+        val exact = transform.mapFractional(bounds)
+        val horizontal = exact.left.toDouble() == enclosing.left.toDouble() && exact.right.toDouble() == enclosing.right.toDouble()
+        val vertical = exact.top.toDouble() == enclosing.top.toDouble() && exact.bottom.toDouble() == enclosing.bottom.toDouble()
+        return if (horizontal && vertical) {
+            DrawCommand.PushClip(enclosing)
+        } else {
+            DrawCommand.PushFractionalClip(exact)
         }
     }
 

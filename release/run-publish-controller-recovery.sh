@@ -106,6 +106,10 @@ optional_bundle_files=(
   verify-pages-artifact-equivalence.sh
   wait-for-pages-source-receipt.sh
   list-java-toolchains.sh
+  github-release-read.sh
+  github-release-preflight.sh
+  select-release-source.sh
+  select-release-pages.sh
 )
 for bundle_file in "${optional_bundle_files[@]}"; do
   if [[ -e "$controller_directory/$bundle_file" || -L "$controller_directory/$bundle_file" ]]; then

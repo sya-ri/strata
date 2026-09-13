@@ -12,6 +12,38 @@ import java.nio.file.Path
  */
 internal object StateBindingBinaryInventory {
     /**
+     * Discovers public StateSource extensions from compiled class files, including top-level map.
+     */
+    internal fun discoverExtensions(classDirectories: List<Path>): Map<String, List<String>> {
+        val names =
+            classDirectories.flatMap { directory ->
+                Files.walk(directory.resolve("dev/s7a/strata/state")).use { paths ->
+                    paths
+                        .filter { Files.isRegularFile(it) && it.toString().endsWith(".class") }
+                        .map {
+                            directory
+                                .relativize(it)
+                                .toString()
+                                .replace('\\', '.')
+                                .replace('/', '.')
+                                .removeSuffix(".class")
+                        }.toList()
+                }
+            }
+        return ApiClassLoader(classDirectories.map { it.toUri().toURL() }.toTypedArray(), javaClass.classLoader).use { loader ->
+            val sourceType = loadClass(loader, "dev.s7a.strata.state.StateSource")
+            names
+                .flatMap { loadClass(loader, it).declaredMethods.toList() }
+                .filter {
+                    Modifier.isPublic(it.modifiers) && Modifier.isStatic(it.modifiers) && it.isSynthetic.not() &&
+                        it.parameterTypes.firstOrNull() == sourceType
+                }.groupBy({ it.name }, { it.toGenericString() })
+                .mapValues { (_, signatures) -> signatures.sorted() }
+                .toSortedMap()
+        }
+    }
+
+    /**
      * Discovers public binary fingerprints without initializing API classes.
      *
      * @param classDirectories compiled API output directories.
@@ -69,8 +101,10 @@ internal object StateBindingBinaryInventory {
                 }
             add("$typeKind ${type.name}")
             type.declaredConstructors
-                .filter { constructor -> Modifier.isPublic(constructor.modifiers) && constructor.isSynthetic.not() }
-                .forEach { constructor -> add("constructor ${type.name}${parameters(constructor.parameterTypes)}") }
+                .filter { constructor ->
+                    Modifier.isPublic(constructor.modifiers) &&
+                        (constructor.isSynthetic.not() || constructor.parameterTypes.lastOrNull() == defaultConstructorMarker)
+                }.forEach { constructor -> add("constructor ${type.name}${parameters(constructor.parameterTypes)}") }
             type.declaredMethods
                 .filter { method -> Modifier.isPublic(method.modifiers) && method.isSynthetic.not() && method.isBridge.not() }
                 .forEach { method -> add("method ${type.name}.${method.name}${parameters(method.parameterTypes)}: ${typeName(method.returnType)}") }
@@ -117,4 +151,5 @@ internal object StateBindingBinaryInventory {
     }
 
     private const val CLASS_SUFFIX = ".class"
+    private val defaultConstructorMarker = Class.forName("kotlin.jvm.internal.DefaultConstructorMarker")
 }

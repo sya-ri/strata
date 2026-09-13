@@ -33,7 +33,7 @@ internal class StrataSkillPipelineTest {
         assertEquals(
             setOf(
                 "README.md",
-                "docs/modrinth-project.md",
+                "docs/publication/modrinth-project.md",
                 "skills/strata/references/setup.md",
                 "skills/strata/references/components.md",
                 "skills/strata/references/modifiers-and-layout.md",
@@ -43,7 +43,7 @@ internal class StrataSkillPipelineTest {
             first.keys,
         )
         val readme = first.getValue("README.md")
-        val modrinthProject = first.getValue("docs/modrinth-project.md")
+        val modrinthProject = first.getValue("docs/publication/modrinth-project.md")
         val setup = first.getValue("skills/strata/references/setup.md")
         val openExample =
             ShowcaseSources
@@ -54,10 +54,10 @@ internal class StrataSkillPipelineTest {
         val fencedExample = "```kotlin\n$openExample\n```"
         assertTrue(openExample.contains("onActivate"))
         assertGeneratedDocumentContracts(readme, modrinthProject, setup, fencedExample, releaseVersion)
-        listOf(modrinthProject, setup).forEach { document -> assertUnicodeFontSetup(document, releaseVersion) }
         val components = first.getValue("skills/strata/references/components.md")
         val modifiers = first.getValue("skills/strata/references/modifiers-and-layout.md")
         val patterns = first.getValue("skills/strata/references/patterns.md")
+        assertUnicodeFontSetup(patterns, releaseVersion)
         val customComponents = first.getValue("skills/strata/references/custom-components.md")
         assertComponentReferences(components)
         assertModifierReferences(modifiers)
@@ -68,7 +68,7 @@ internal class StrataSkillPipelineTest {
         assertTrue(patterns.contains("listState.refresh()"))
         assertTrue(patterns.contains("listState.jumpToKey"))
         assertTrue(patterns.contains("The `Int` and `List` overloads are immutable snapshots."))
-        assertTrue(customComponents.contains("https://github.com/sya-ri/strata/blob/master/docs/element-spi.md"))
+        assertTrue(customComponents.contains("https://github.com/sya-ri/strata/blob/master/docs/reference/element-spi.md"))
         assertDocumentationLinks(first)
     }
 
@@ -103,17 +103,17 @@ internal class StrataSkillPipelineTest {
         assertTrue(components.contains("fun UiScope.Button"))
         assertTrue(components.contains("fun UiScope.TextArea"))
         assertTrue(components.contains("fun UiScope.TiledImage"))
-        assertTrue(components.contains("https://github.com/sya-ri/strata/blob/master/docs/components.md#text-area"))
-        assertTrue(components.contains("https://github.com/sya-ri/strata/blob/master/docs/components.md#tiled-image"))
-        assertTrue(components.contains("https://github.com/sya-ri/strata/blob/master/docs/components.md#button"))
+        assertTrue(components.contains("https://github.com/sya-ri/strata/blob/master/docs/reference/components.md#text-area"))
+        assertTrue(components.contains("https://github.com/sya-ri/strata/blob/master/docs/reference/components.md#tiled-image"))
+        assertTrue(components.contains("https://github.com/sya-ri/strata/blob/master/docs/reference/components.md#button"))
     }
 
     private fun assertDocumentationLinks(documents: Map<String, String>) {
         assertTrue(documents.values.none { document -> document.contains("../../../docs/") })
         assertTrue(documents.values.none { document -> document.contains("strata/guide/") })
-        val modrinthProject = documents.getValue("docs/modrinth-project.md")
+        val modrinthProject = documents.getValue("docs/publication/modrinth-project.md")
         assertTrue(modrinthProject.contains("[Dokka API reference](https://gh.s7a.dev/strata/)"))
-        assertTrue(modrinthProject.contains("[Reader guides on GitHub](https://github.com/sya-ri/strata/blob/master/README.md#documentation)"))
+        assertTrue(modrinthProject.contains("[Reader guides on GitHub](https://github.com/sya-ri/strata/blob/master/docs/README.md)"))
     }
 
     private fun assertTiledImageReferences(modifiers: String) {
@@ -188,9 +188,9 @@ internal class StrataSkillPipelineTest {
         assertTrue(document.contains("dev.s7a.strata:strata-runtime-minecraft-fonts-lwjgl:$releaseVersion"))
         assertTrue(document.contains("does not bundle LWJGL, ICU, Gson, or native binaries"))
         assertTrue(document.contains("unsafe STB coordinate conversions remain invalid"))
-        assertTrue(document.contains("https://github.com/sya-ri/strata/blob/master/docs/text.md"))
-        assertTrue(document.contains("https://github.com/sya-ri/strata/blob/master/docs/font-resources.md#numeric-provider-settings"))
-        assertTrue(document.contains("https://github.com/sya-ri/strata/blob/master/docs/font-resources.md#acceptance-evidence"))
+        assertTrue(document.contains("https://github.com/sya-ri/strata/blob/master/docs/guides/text.md"))
+        assertTrue(document.contains("https://github.com/sya-ri/strata/blob/master/docs/guides/fonts.md#numeric-provider-settings"))
+        assertTrue(document.contains("https://github.com/sya-ri/strata/blob/master/docs/development/font-verification.md"))
         assertTrue(document.contains("independent GPU evidence"))
     }
 

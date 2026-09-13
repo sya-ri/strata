@@ -6,10 +6,10 @@ import kotlin.math.round
 /**
  * Caller-owned owner-thread numeric state for one Slider.
  *
- * Values are finite, clamped to [range], and quantized to [steps] evenly spaced interior stops when steps are requested.
+ * Values are finite, clamped to [SliderState.range], and quantized to [SliderState.steps] evenly spaced interior stops when steps are requested.
  * Distinct normalized writes synchronously invalidate attached retained observers.
  *
- * @param initialValue initial value normalized into [range].
+ * @param initialValue initial value normalized into [SliderState.range].
  * @property range finite increasing inclusive range.
  * @property steps number of evenly spaced selectable values excluding both endpoints.
  */
@@ -38,7 +38,7 @@ public class SliderState(
         }
 
     /**
-     * Current zero-to-one fraction within [range].
+     * Current zero-to-one fraction within [SliderState.range].
      */
     public val fraction: Double
         get() = (value - range.start) / (range.endInclusive - range.start)

@@ -51,11 +51,11 @@ internal object MinecraftCanvasGameTest {
                 check(owned.isPauseScreen().not()) { "A native Canvas screen must preserve its non-pausing definition policy." }
                 context.setScreen(owned)
             }
-            verify(context, fixture, 1, "strata-canvas-native-scale-1")
+            verify(context, fixture, owned, 1, "strata-canvas-native-scale-1")
             requireMissingSnapshot(context, owned)
 
             context.configureViewport(viewport, 2)
-            verify(context, fixture, 2, "strata-canvas-native-scale-2")
+            verify(context, fixture, owned, 2, "strata-canvas-native-scale-2")
             closeAndAwaitResources(context, fixture)
             context.onClient {
                 check(fixture.renderersOpened == 3) { "Each of the three custom canvases must own one renderer." }
@@ -63,7 +63,7 @@ internal object MinecraftCanvasGameTest {
             }
 
             context.onClient { context.setScreen(owned) }
-            verify(context, fixture, 2, "strata-canvas-native-reattached")
+            verify(context, fixture, owned, 2, "strata-canvas-native-reattached")
             requireMissingSnapshot(context, owned)
             verifyExplicitCapture(context, owned, fixture)
             closeAndAwaitResources(context, fixture)
@@ -93,6 +93,7 @@ internal object MinecraftCanvasGameTest {
     private fun verify(
         context: MinecraftCanvasTestContext,
         fixture: MinecraftCanvasTestFixture,
+        screen: FabricMinecraftScreen,
         scale: Int,
         name: String,
     ) {
@@ -101,7 +102,11 @@ internal object MinecraftCanvasGameTest {
                 fixture.physicalSize == IntSize(32 * scale, 32 * scale) &&
                 0 < fixture.renderCalls
         }
-        context.waitTicks(2)
+        // A tick count proves time passed, not that the first complete frame at the requested GUI scale was
+        // presented (issue 40). Fence on the runtime's committed host-frame counter so the screenshot reads a
+        // frame at or after the presentation the callback-scope signal observed.
+        val frameBaseline = MinecraftCanvasFrameFence.hostFrameCount(context, screen)
+        MinecraftCanvasFrameFence.awaitCompletedFrame(context, screen, frameBaseline)
         val path = context.takeScreenshot(name, viewport)
         val image = ImageIO.read(path.toFile())
         checkNotNull(image) { "The loaded Canvas screenshot must be a readable native PNG." }

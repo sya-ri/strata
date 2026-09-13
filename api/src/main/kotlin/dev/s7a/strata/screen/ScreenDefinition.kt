@@ -8,7 +8,7 @@ import dev.s7a.strata.internal.platform.PlatformAtomicReference as AtomicReferen
 /**
  * One-shot platform-neutral definition for one declarative screen.
  *
- * Construction retains but does not evaluate [content].
+ * Construction retains but does not evaluate `content`.
  * The definition owns its title, pause policy, callback, and caller capture graph until one runtime atomically transfers them or [close] releases them.
  * Transfer and close may race across threads, but exactly one operation owns the payload and no value is transferred twice.
  * Definitions have referential identity and do not define value equality.

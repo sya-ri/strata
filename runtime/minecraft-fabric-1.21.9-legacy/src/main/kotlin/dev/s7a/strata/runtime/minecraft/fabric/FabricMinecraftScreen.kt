@@ -12,11 +12,13 @@ import dev.s7a.strata.input.PointerButton
 import dev.s7a.strata.input.PointerEvent
 import dev.s7a.strata.input.TextInputEvent
 import dev.s7a.strata.runtime.FrameTime
+import dev.s7a.strata.runtime.diagnostics.UiRenderMonitor
 import dev.s7a.strata.runtime.minecraft.MinecraftUiHost
 import dev.s7a.strata.runtime.minecraft.MinecraftUiProfile
 import dev.s7a.strata.runtime.minecraft.createMinecraftUiHost
 import dev.s7a.strata.runtime.minecraft.font.lwjgl.LwjglMinecraftFontBackendFactory
 import dev.s7a.strata.runtime.render.DrawCommand
+import dev.s7a.strata.runtime.spi.RuntimeUiDiagnosticsOwner
 import dev.s7a.strata.screen.ScreenDefinition
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
 import net.minecraft.client.Minecraft
@@ -49,8 +51,13 @@ public class FabricMinecraftScreen private constructor(
     private val minecraftClient: Minecraft,
 ) : Screen(mapMinecraftText(host.title)),
     AutoCloseable,
+    RuntimeUiDiagnosticsOwner,
     FabricMinecraftInputReset {
     private var closed = false
+
+    @InternalStrataRuntimeApi
+    override fun startRenderMonitoring(): UiRenderMonitor = host.startRenderMonitoring()
+
     private var attached = false
     private val presentation = FabricMinecraftFramePresenter(minecraftClient)
     private val canvasPresentation = FabricMinecraftCanvasPresentation()

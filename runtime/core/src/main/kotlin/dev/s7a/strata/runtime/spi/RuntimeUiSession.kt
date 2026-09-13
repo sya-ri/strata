@@ -22,7 +22,9 @@ import dev.s7a.strata.spi.InternalStrataRuntimeApi
  * A failed session has already performed cleanup; closing it records the closed terminal state without repeating cleanup.
  */
 @InternalStrataRuntimeApi
-public sealed interface RuntimeUiSession : AutoCloseable {
+public sealed interface RuntimeUiSession :
+    AutoCloseable,
+    RuntimeUiDiagnosticsOwner {
     /**
      * Detached identity of the current editable focus interval in the most recently committed attached tree.
      *

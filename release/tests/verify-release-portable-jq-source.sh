@@ -65,11 +65,11 @@ assert_portable_scope() {
 }
 
 workflow_scope_specs=(
-  'Validate immutable release source|8'
+  'Validate immutable release source|9'
   'Build the release inventory and manifest|1'
   'Run representative clients from Maven Local|1'
   'Run representative clients from Maven Central|1'
-  'Fetch immutable public Skill sources without credentials|8'
+  'Fetch immutable public Skill sources without credentials|9'
   'Validate final verification source and Pages provenance|1'
   'Rebuild and verify Central release evidence|1'
 )
@@ -90,7 +90,7 @@ script_scope_specs=(
   'release/verify-current-controller-release-order.sh|2'
   'release/verify-controller-tools.sh|12'
   'release/verify-pages-deployment-source.sh|3'
-  'release/tests/verify-release-publish-controller-source.sh|14'
+  'release/tests/verify-release-publish-controller-source.sh|17'
 )
 for scope_spec in "${script_scope_specs[@]}"; do
   scope_path="${scope_spec%|*}"
@@ -100,7 +100,7 @@ for scope_spec in "${script_scope_specs[@]}"; do
   total_calls=$((total_calls + expected_calls))
 done
 
-[[ "$total_calls" == '82' ]] || fail 'Portable jq inventory does not cover all 82 platform-sensitive calls.'
+[[ "$total_calls" == '87' ]] || fail 'Portable jq inventory does not cover all 87 platform-sensitive calls.'
 
 fixture_root="$(mktemp -d "${RUNNER_TEMP:-/tmp}/strata-portable-jq.XXXXXX")"
 cleanup() {

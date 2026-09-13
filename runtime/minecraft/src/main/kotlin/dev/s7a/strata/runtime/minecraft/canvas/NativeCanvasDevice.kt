@@ -407,7 +407,7 @@ public class NativeCanvasDevice(
         var clips = 0
         commands.forEach { command ->
             when (command) {
-                is DrawCommand.PushClip -> {
+                is DrawCommand.PushClip, is DrawCommand.PushFractionalClip -> {
                     clips = Math.incrementExact(clips)
                 }
 

@@ -19,7 +19,7 @@ internal class FabricClientTestOptionsTest {
     @TempDir
     lateinit var directory: Path
 
-    private val expected = "onboardAccessibility:false\nnarrator:0\nsoundCategory_master:0.0\n"
+    private val expected = "onboardAccessibility:false\nnarrator:0\nsoundCategory_master:0.0\ntutorialStep:none\n"
 
     @Test
     fun `fresh development production and published test directories receive silent options`() {
@@ -41,7 +41,7 @@ internal class FabricClientTestOptionsTest {
             options,
             "\uFEFFlang:ja_jp\r\nonboardAccessibility:true\r\nnarrator:2\r\nresourcePacks:[\"日本語 한글 😀\"]\r\n" +
                 "soundCategory_master:1.0\r\n# retained:comment\r\nnarrator:3\r\nonboardAccessibility:true\r\n" +
-                "soundCategory_music:0.5\r\nsoundCategory_master:0.2\r\n",
+                "soundCategory_music:0.5\r\nsoundCategory_master:0.2\r\ntutorialStep:movement\r\ntutorialStep:find_tree\r\n",
             StandardCharsets.UTF_8,
         )
         FabricClientTestOptions.prepare(build.toFile(), run.toFile())

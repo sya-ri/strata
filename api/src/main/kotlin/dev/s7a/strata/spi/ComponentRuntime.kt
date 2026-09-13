@@ -13,6 +13,7 @@ import dev.s7a.strata.component.TabSelectionIndicator
 import dev.s7a.strata.component.TextAreaState
 import dev.s7a.strata.component.TextAreaViewport
 import dev.s7a.strata.component.TextFieldState
+import dev.s7a.strata.component.TextInputAppearance
 import dev.s7a.strata.component.TextStyle
 import dev.s7a.strata.element.Element
 import dev.s7a.strata.element.ElementKey
@@ -280,6 +281,96 @@ public interface ComponentRuntime {
         modifier: Modifier,
         key: ElementKey<*>?,
     ): Element = throw UnsupportedOperationException("This runtime does not support multiline editing with explicit font selection.")
+
+    /**
+     * Creates an editor with an independently resolved frame and editing-decoration appearance.
+     * Caller state and font ownership follow the existing editor overload; appearance changes do not reset editing.
+     * Default appearance delegates to the legacy overload for compatible third-party runtimes.
+     * @throws UnsupportedOperationException when custom appearance is unavailable in this runtime.
+     */
+    public fun textField(
+        state: TextFieldState,
+        size: IntSize,
+        appearance: TextInputAppearance,
+        enabled: Boolean,
+        style: TextStyle,
+        modifier: Modifier,
+        key: ElementKey<*>?,
+    ): Element =
+        if (appearance == TextInputAppearance.Default) {
+            textField(state, size, enabled, style, modifier, key)
+        } else {
+            throw UnsupportedOperationException("This runtime does not support custom text input appearance.")
+        }
+
+    /**
+     * Creates an editor with an independently resolved frame and editing-decoration appearance.
+     * Caller state and font ownership follow the existing editor overload; appearance changes do not reset editing.
+     * Default appearance delegates to the legacy overload for compatible third-party runtimes.
+     * @throws UnsupportedOperationException when custom appearance is unavailable in this runtime.
+     */
+    public fun textField(
+        state: TextFieldState,
+        size: IntSize,
+        appearance: TextInputAppearance,
+        enabled: Boolean,
+        style: TextStyle,
+        font: ResourceId,
+        modifier: Modifier,
+        key: ElementKey<*>?,
+    ): Element =
+        if (appearance == TextInputAppearance.Default) {
+            textField(state, size, enabled, style, font, modifier, key)
+        } else {
+            throw UnsupportedOperationException("This runtime does not support custom text input appearance.")
+        }
+
+    /**
+     * Creates an editor with an independently resolved frame and editing-decoration appearance.
+     * Caller state and font ownership follow the existing editor overload; appearance changes do not reset editing.
+     * Default appearance delegates to the legacy overload for compatible third-party runtimes.
+     * @throws UnsupportedOperationException when custom appearance is unavailable in this runtime.
+     */
+    public fun textArea(
+        state: TextAreaState,
+        viewport: TextAreaViewport,
+        appearance: TextInputAppearance,
+        enabled: Boolean,
+        style: TextStyle,
+        wrap: TextWrap,
+        lineSpacing: Int,
+        modifier: Modifier,
+        key: ElementKey<*>?,
+    ): Element =
+        if (appearance == TextInputAppearance.Default) {
+            textArea(state, viewport, enabled, style, wrap, lineSpacing, modifier, key)
+        } else {
+            throw UnsupportedOperationException("This runtime does not support custom text input appearance.")
+        }
+
+    /**
+     * Creates an editor with an independently resolved frame and editing-decoration appearance.
+     * Caller state and font ownership follow the existing editor overload; appearance changes do not reset editing.
+     * Default appearance delegates to the legacy overload for compatible third-party runtimes.
+     * @throws UnsupportedOperationException when custom appearance is unavailable in this runtime.
+     */
+    public fun textArea(
+        state: TextAreaState,
+        viewport: TextAreaViewport,
+        appearance: TextInputAppearance,
+        enabled: Boolean,
+        style: TextStyle,
+        font: ResourceId,
+        wrap: TextWrap,
+        lineSpacing: Int,
+        modifier: Modifier,
+        key: ElementKey<*>?,
+    ): Element =
+        if (appearance == TextInputAppearance.Default) {
+            textArea(state, viewport, enabled, style, font, wrap, lineSpacing, modifier, key)
+        } else {
+            throw UnsupportedOperationException("This runtime does not support custom text input appearance.")
+        }
 
     /**
      * Creates one profile-backed tab element with an optional selected custom indicator root.

@@ -2,7 +2,6 @@ package dev.s7a.strata.runtime.minecraft
 
 import dev.s7a.strata.geometry.IntRect
 import dev.s7a.strata.geometry.IntSize
-import dev.s7a.strata.render.ArgbColor
 import dev.s7a.strata.render.PaintScope
 
 /**
@@ -45,7 +44,7 @@ internal object MinecraftTextAreaPainter {
                 .toInt()
         paintLines(scope, layout, settings.innerSize, horizontalOffset, verticalOffset)
         if (focused && settings.enabled) {
-            val decoration = Decoration(scope, layout, settings.innerSize, horizontalOffset, verticalOffset)
+            val decoration = Decoration(scope, layout, settings.innerSize, horizontalOffset, verticalOffset, settings.appearance)
             decoration.preedit(underlines)
             decoration.caret(Math.addExact(cursor, preedit?.caretPosition ?: 0), affinity)
         }
@@ -72,9 +71,8 @@ internal object MinecraftTextAreaPainter {
         private val viewport: IntSize,
         private val horizontalOffset: Int,
         private val verticalOffset: Int,
+        private val appearance: MinecraftTextInputAppearance,
     ) {
-        private val color = ArgbColor(-1)
-
         fun caret(
             offset: Int,
             affinity: MinecraftTextCaretAffinity,
@@ -93,7 +91,7 @@ internal object MinecraftTextAreaPainter {
                     Math.toIntExact(left + 5L),
                     Math.toIntExact(minOf(viewport.height.toLong(), bottom) + 4L),
                 ),
-                color,
+                appearance.caretColor,
             )
         }
 
@@ -106,7 +104,7 @@ internal object MinecraftTextAreaPainter {
                 val top = index.toLong() * layout.lineStep - verticalOffset + 8L
                 val left = (range.first.toLong() - horizontalOffset).coerceIn(0L, viewport.width.toLong()).toInt()
                 val right = (range.last.toLong() - horizontalOffset).coerceIn(0L, viewport.width.toLong()).toInt()
-                if (left < right) scope.fillRectangle(IntRect(left + 4, top.toInt() + 4, right + 4, top.toInt() + 5), color)
+                if (left < right) scope.fillRectangle(IntRect(left + 4, top.toInt() + 4, right + 4, top.toInt() + 5), appearance.compositionUnderlineColor)
             }
         }
     }
