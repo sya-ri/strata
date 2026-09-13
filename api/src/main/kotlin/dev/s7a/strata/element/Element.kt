@@ -1,6 +1,5 @@
 package dev.s7a.strata.element
 
-import dev.s7a.strata.internal.platform.Collections
 import dev.s7a.strata.modifier.Modifier
 
 /**
@@ -21,5 +20,5 @@ public abstract class Element public constructor(
     children: List<Element> = emptyList(),
     public val modifier: Modifier = Modifier.Empty,
 ) {
-    public val children: List<Element> = Collections.unmodifiableList(children.toList())
+    public val children: List<Element> = buildList { addAll(children) }
 }

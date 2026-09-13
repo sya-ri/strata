@@ -22,13 +22,15 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Runnable
 import kotlinx.coroutines.SupervisorJob
 import kotlin.concurrent.Volatile
+import kotlin.concurrent.atomics.AtomicBoolean
+import kotlin.concurrent.atomics.AtomicReference
+import kotlin.concurrent.atomics.ExperimentalAtomicApi
 import kotlin.coroutines.AbstractCoroutineContextElement
 import kotlin.coroutines.CoroutineContext
 import kotlin.coroutines.EmptyCoroutineContext
 import kotlin.coroutines.cancellation.CancellationException
 import kotlin.properties.ReadOnlyProperty
 import kotlin.properties.ReadWriteProperty
-import dev.s7a.strata.runtime.platform.PlatformAtomicReference as AtomicReference
 import dev.s7a.strata.runtime.platform.PlatformThreadContextElement as ThreadContextElement
 import dev.s7a.strata.runtime.platform.PlatformThreadLocal as ThreadLocal
 
@@ -45,7 +47,7 @@ import dev.s7a.strata.runtime.platform.PlatformThreadLocal as ThreadLocal
  * @param contentOwner owns and evaluates the content description until terminal failure or close releases it.
  */
 @Suppress("TooManyFunctions", "LargeClass") // One owner enforces frame, input, coroutine, and diagnostic operation boundaries.
-@OptIn(InternalStrataRuntimeApi::class)
+@OptIn(InternalStrataRuntimeApi::class, ExperimentalAtomicApi::class)
 internal class UiSession private constructor(
     private val ownerDispatcher: CoroutineDispatcher,
     private val taskFailureHandler: (Throwable) -> UiTaskFailureDecision,
@@ -849,19 +851,19 @@ internal class UiSession private constructor(
             block: Runnable,
         ) {
             val dispatchThread = PlatformThreads.current()
-            val returned = AtomicReference(false)
+            val returned = AtomicBoolean(false)
             val violation = AtomicReference<Throwable?>(null)
             ownerDispatcher.dispatch(context) {
-                if (returned.get().not() && PlatformThreads.current() === dispatchThread) {
+                if (returned.load().not() && PlatformThreads.current() === dispatchThread) {
                     val failure = IllegalStateException("The owner dispatcher must queue before execution.")
-                    violation.set(failure)
+                    violation.store(failure)
                     throw failure
                 }
                 threadGuard.check()
                 runWithPlatformContext(context, block)
             }
-            returned.set(true)
-            violation.get()?.let { failure -> throw failure }
+            returned.store(true)
+            violation.load()?.let { failure -> throw failure }
         }
     }
 
@@ -884,19 +886,19 @@ internal class UiSession private constructor(
         block: () -> Unit,
     ) {
         val dispatchThread = PlatformThreads.current()
-        val returned = AtomicReference(false)
+        val returned = AtomicBoolean(false)
         val violation = AtomicReference<Throwable?>(null)
         ownerDispatcher.dispatch(context) {
-            if (returned.get().not() && PlatformThreads.current() === dispatchThread) {
+            if (returned.load().not() && PlatformThreads.current() === dispatchThread) {
                 val failure = IllegalStateException("The owner dispatcher must queue before execution.")
-                violation.set(failure)
+                violation.store(failure)
                 throw failure
             }
             threadGuard.check()
             block()
         }
-        returned.set(true)
-        violation.get()?.let { failure -> throw failure }
+        returned.store(true)
+        violation.load()?.let { failure -> throw failure }
     }
 
     private class SessionGenerationContext(

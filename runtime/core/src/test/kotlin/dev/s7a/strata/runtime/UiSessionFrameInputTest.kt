@@ -401,8 +401,9 @@ internal class UiSessionFrameInputTest {
         val reattached = session.frame(constraints)
 
         assertNotSame(first, reattached)
-        assertNotSame(first.drawCommands, reattached.drawCommands)
-        assertNotSame(first.semantics, reattached.semantics)
+        // Empty immutable collections may be shared; the frame owns the attachment-specific cache identity.
+        assertEquals(emptyList<DrawCommand>(), reattached.drawCommands)
+        assertEquals(emptyList<SemanticsEntry>(), reattached.semantics)
         assertEquals(listOf(FocusEvent.Gained, FocusEvent.Lost, FocusEvent.Gained), focusEvents)
         assertSame(reattached, session.frame(constraints))
         session.close()

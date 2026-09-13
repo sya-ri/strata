@@ -16,7 +16,9 @@ import dev.s7a.strata.node.PaintNode
 import dev.s7a.strata.node.SessionAttachmentNode
 import dev.s7a.strata.render.PaintScope
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
-import dev.s7a.strata.internal.platform.PlatformAtomicLong as AtomicLong
+import kotlin.concurrent.atomics.AtomicLong
+import kotlin.concurrent.atomics.ExperimentalAtomicApi
+import kotlin.concurrent.atomics.updateAndFetch
 import dev.s7a.strata.internal.platform.PlatformMath as Math
 import dev.s7a.strata.node.Node as RetainedNode
 
@@ -31,7 +33,7 @@ import dev.s7a.strata.node.Node as RetainedNode
  * @param modifier ordered active behavior.
  * @param key optional stable sibling identity.
  */
-@OptIn(InternalStrataRuntimeApi::class)
+@OptIn(InternalStrataRuntimeApi::class, ExperimentalAtomicApi::class)
 internal class CanvasElement(
     private val source: CanvasSource,
     private val destinationSize: IntSize,
@@ -130,7 +132,7 @@ internal class CanvasElement(
     }
 
     private companion object {
-        private val nextIdentity: AtomicLong = AtomicLong()
+        private val nextIdentity: AtomicLong = AtomicLong(0L)
         val TYPE: ElementType<CanvasElement, Node> =
             ElementType(
                 elementClass = CanvasElement::class,
@@ -141,7 +143,7 @@ internal class CanvasElement(
                     }
                 },
                 createNode = { element ->
-                    Node(element.source, element.destinationSize, CanvasId(nextIdentity.updateAndGet(Math::incrementExact)))
+                    Node(element.source, element.destinationSize, CanvasId(nextIdentity.updateAndFetch(Math::incrementExact)))
                 },
                 updateNode = { _, current, node -> node.update(current) },
             )

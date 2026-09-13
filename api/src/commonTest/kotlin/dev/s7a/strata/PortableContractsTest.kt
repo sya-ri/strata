@@ -25,10 +25,10 @@ internal class PortableContractsTest {
         assertFailsWith<ArithmeticException> { PlatformMath.multiplyExact(Long.MIN_VALUE, -1L) }
         assertFailsWith<ArithmeticException> { PlatformMath.multiplyExact(1L shl 40, 1L shl 40) }
         assertFailsWith<ArithmeticException> { PlatformMath.toIntExact(1L shl 40) }
-        assertEquals(-3L, PlatformMath.floorDiv(-5L, 2L))
-        assertEquals(1L, PlatformMath.floorMod(-5L, 2L))
-        assertEquals(Long.MIN_VALUE, PlatformMath.floorDiv(Long.MIN_VALUE, -1L))
-        assertEquals(0L, PlatformMath.floorMod(Long.MIN_VALUE, -1L))
+        assertEquals(-3L, (-5L).floorDiv(2L))
+        assertEquals(1L, (-5L).mod(2L))
+        assertEquals(Long.MIN_VALUE, Long.MIN_VALUE.floorDiv(-1L))
+        assertEquals(0L, Long.MIN_VALUE.mod(-1L))
     }
 
     @Test

@@ -4,7 +4,6 @@ import dev.s7a.strata.node.DirtyMask
 import dev.s7a.strata.node.DirtyPhase
 import dev.s7a.strata.node.SemanticsNode
 import dev.s7a.strata.runtime.diagnostics.UiRenderMetric
-import dev.s7a.strata.runtime.platform.Collections
 import dev.s7a.strata.runtime.semantics.SemanticsEntry
 import dev.s7a.strata.semantics.Semantics
 import dev.s7a.strata.semantics.SemanticsScope
@@ -24,11 +23,7 @@ internal class SemanticsPipeline(
      * @param root the laid-out retained root.
      * @return immutable tree-coordinate entries.
      */
-    fun semantics(root: RetainedEntry): List<SemanticsEntry> {
-        val output = ArrayList<SemanticsEntry>()
-        semanticsNode(root, output)
-        return Collections.unmodifiableList(output.toList())
-    }
+    fun semantics(root: RetainedEntry): List<SemanticsEntry> = buildList { semanticsNode(root, this) }
 
     private fun semanticsNode(
         retained: RetainedEntry,

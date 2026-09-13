@@ -2,7 +2,6 @@ package dev.s7a.strata.runtime
 
 import dev.s7a.strata.runtime.diagnostics.UiRenderMetric
 import dev.s7a.strata.runtime.diagnostics.UiRenderOperation
-import dev.s7a.strata.runtime.platform.Collections
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
 
 /**
@@ -32,26 +31,27 @@ internal class RenderWorkCounts {
     /**
      * Copies aggregate counts without retaining this mutable counter.
      */
-    fun totals(): Map<UiRenderMetric, Long> {
-        val result = LinkedHashMap<UiRenderMetric, Long>()
-        UiRenderMetric.entries.forEach { metric ->
-            result[metric] = UiRenderOperation.entries.sumOf { operation -> count(metric, operation) }
+    fun totals(): Map<UiRenderMetric, Long> =
+        buildMap {
+            UiRenderMetric.entries.forEach { metric ->
+                put(metric, UiRenderOperation.entries.sumOf { operation -> count(metric, operation) })
+            }
         }
-        return Collections.unmodifiableMap(result)
-    }
 
     /**
      * Copies counts grouped by host operation.
      */
-    fun operations(): Map<UiRenderOperation, Map<UiRenderMetric, Long>> {
-        val result = LinkedHashMap<UiRenderOperation, Map<UiRenderMetric, Long>>()
-        UiRenderOperation.entries.forEach { operation ->
-            val metrics = LinkedHashMap<UiRenderMetric, Long>()
-            UiRenderMetric.entries.forEach { metric -> metrics[metric] = count(metric, operation) }
-            result[operation] = Collections.unmodifiableMap(metrics)
+    fun operations(): Map<UiRenderOperation, Map<UiRenderMetric, Long>> =
+        buildMap {
+            UiRenderOperation.entries.forEach { operation ->
+                put(
+                    operation,
+                    buildMap {
+                        UiRenderMetric.entries.forEach { metric -> put(metric, count(metric, operation)) }
+                    },
+                )
+            }
         }
-        return Collections.unmodifiableMap(result)
-    }
 
     private fun count(
         metric: UiRenderMetric,

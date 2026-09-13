@@ -14,7 +14,6 @@ import dev.s7a.strata.geometry.IntSize
 import dev.s7a.strata.geometry.LongRect
 import dev.s7a.strata.geometry.exactDoubleCenterOrNull
 import dev.s7a.strata.geometry.hasExactlyRepresentableDoubleEdges
-import dev.s7a.strata.internal.platform.Collections
 import dev.s7a.strata.layout.Alignment
 import dev.s7a.strata.layout.HorizontalAlignment
 import dev.s7a.strata.layout.LayoutScope
@@ -269,7 +268,7 @@ internal class TiledImageElement private constructor(
             overlays: List<Element>,
         ): Element {
             val bounds = source.bounds
-            val levels = Collections.unmodifiableList(source.levels.toList())
+            val levels = buildList { addAll(source.levels) }
             validateGeometry(bounds, levels, destinationSize)
             return TiledImageElement(source, bounds, levels, state, destinationSize, fit, cachePolicy, modifier, key, overlays)
         }
@@ -318,8 +317,8 @@ internal class TiledImageElement private constructor(
             maximum: Long,
             tileExtent: Long,
         ) {
-            val first = Math.floorDiv(minimum, tileExtent)
-            val last = Math.floorDiv(Math.subtractExact(maximum, 1L), tileExtent)
+            val first = minimum.floorDiv(tileExtent)
+            val last = Math.subtractExact(maximum, 1L).floorDiv(tileExtent)
             Math.multiplyExact(first, tileExtent)
             Math.addExact(Math.multiplyExact(last, tileExtent), tileExtent)
         }

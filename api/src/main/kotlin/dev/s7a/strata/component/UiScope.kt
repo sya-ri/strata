@@ -1,7 +1,6 @@
 package dev.s7a.strata.component
 
 import dev.s7a.strata.element.Element
-import dev.s7a.strata.internal.platform.Collections
 import dev.s7a.strata.internal.platform.PlatformThreads
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
 import kotlin.jvm.JvmSynthetic
@@ -59,7 +58,7 @@ public sealed class UiScope protected constructor() {
     @JvmSynthetic
     internal fun childElementsSnapshot(): List<Element> {
         checkUsable()
-        return Collections.unmodifiableList(emittedElements.toList())
+        return buildList { addAll(emittedElements) }
     }
 
     /**

@@ -2,7 +2,6 @@ package dev.s7a.strata.runtime
 
 import dev.s7a.strata.node.StateObserverNode
 import dev.s7a.strata.runtime.diagnostics.UiRenderMetric
-import dev.s7a.strata.runtime.platform.Collections
 import dev.s7a.strata.runtime.platform.IdentityMap
 import dev.s7a.strata.runtime.platform.identitySet
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
@@ -160,7 +159,7 @@ internal class ObservedSourceRegistry(
         }
     }
 
-    private fun values(sources: List<StateSource<*>>): List<Any?> = Collections.unmodifiableList(sources.map { source -> checkNotNull(bindings[source]).value })
+    private fun values(sources: List<StateSource<*>>): List<Any?> = buildList { sources.mapTo(this) { source -> checkNotNull(bindings[source]).value } }
 
     private fun release(sources: List<StateSource<*>>) {
         sources.forEach { source ->

@@ -1,9 +1,7 @@
 package dev.s7a.strata.component
 
-import dev.s7a.strata.internal.platform.Collections
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
 import kotlin.enums.enumEntries
-import dev.s7a.strata.internal.platform.PlatformMath as Math
 
 /**
  * Caller-owned selected value and display conversion for one generic CycleButton.
@@ -23,7 +21,7 @@ public class CycleButtonState<T : Any>(
     values: List<T>,
     initialValue: T,
 ) {
-    public val values: List<T> = Collections.unmodifiableList(values.toList())
+    public val values: List<T> = buildList { addAll(values) }
     private var valueToString: (T) -> String = { value -> value.toString() }
     private val observable: ObservableComponentState<T>
 
@@ -125,7 +123,7 @@ public class CycleButtonState<T : Any>(
 
     private fun move(delta: Int): T {
         val index = values.indexOf(value)
-        val next = values[Math.floorMod(index + delta, values.size)]
+        val next = values[(index + delta).mod(values.size)]
         value = next
         return next
     }

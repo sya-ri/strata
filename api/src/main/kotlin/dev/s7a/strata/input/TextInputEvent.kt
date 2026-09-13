@@ -1,7 +1,5 @@
 package dev.s7a.strata.input
 
-import dev.s7a.strata.internal.platform.Collections
-
 /**
  * Immutable committed-character or input-method preedit event delivered to the currently focused component.
  */
@@ -57,7 +55,7 @@ public sealed interface TextInputEvent {
         /**
          * Detached immutable composition blocks.
          */
-        public val blocks: List<String> = Collections.unmodifiableList(blocks.toList())
+        public val blocks: List<String> = buildList { addAll(blocks) }
 
         init {
             require(caretPosition in 0..fullText.length) { "Preedit caret is outside the composition text." }

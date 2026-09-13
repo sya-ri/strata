@@ -42,8 +42,8 @@ internal fun exactDoubleMidpointOrNull(
     first: Long,
     second: Long,
 ): Double? {
-    val quotient = Math.addExact(Math.floorDiv(first, 2L), Math.floorDiv(second, 2L))
-    val remainder = Math.addExact(Math.floorMod(first, 2L), Math.floorMod(second, 2L))
+    val quotient = Math.addExact(first.floorDiv(2L), second.floorDiv(2L))
+    val remainder = Math.addExact(first.mod(2L), second.mod(2L))
     val whole = if (remainder == 2L) Math.incrementExact(quotient) else quotient
     if (remainder != 1L) return whole.takeIf(Long::isExactlyRepresentableAsDouble)?.toDouble()
     val candidate = whole.toDouble() + 0.5

@@ -80,31 +80,4 @@ internal object PlatformMath {
         if (value < Int.MIN_VALUE.toLong() || Int.MAX_VALUE.toLong() < value) throw ArithmeticException("Integer overflow")
         return value.toInt()
     }
-
-    /**
-     * Divides toward negative infinity, preserving JVM minimum-value overflow behavior.
-     */
-    fun floorDiv(
-        a: Long,
-        b: Long,
-    ): Long {
-        val quotient = a / b
-        return if ((a xor b) < 0L && a % b != 0L) quotient - 1L else quotient
-    }
-
-    /**
-     * Computes a remainder having the divisor's sign.
-     */
-    fun floorMod(
-        a: Long,
-        b: Long,
-    ): Long = a - floorDiv(a, b) * b
-
-    /**
-     * Computes an integer remainder having the divisor's sign.
-     */
-    fun floorMod(
-        a: Int,
-        b: Int,
-    ): Int = floorMod(a.toLong(), b.toLong()).toInt()
 }

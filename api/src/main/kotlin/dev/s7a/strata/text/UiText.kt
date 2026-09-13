@@ -1,6 +1,5 @@
 package dev.s7a.strata.text
 
-import dev.s7a.strata.internal.platform.Collections
 import dev.s7a.strata.resource.ResourceId
 
 /**
@@ -50,7 +49,7 @@ public sealed interface UiText {
         arguments: List<UiTextArgument> = emptyList(),
         public val fallback: TranslationFallback = TranslationFallback.UseKey,
     ) : UiText {
-        public val arguments: List<UiTextArgument> = Collections.unmodifiableList(arguments.toList())
+        public val arguments: List<UiTextArgument> = buildList { addAll(arguments) }
 
         init {
             require(key.isNotBlank()) { "Translation keys must not be blank." }
@@ -95,7 +94,7 @@ public sealed interface UiText {
     public class Concatenated public constructor(
         parts: List<UiText>,
     ) : UiText {
-        public val parts: List<UiText> = Collections.unmodifiableList(parts.toList())
+        public val parts: List<UiText> = buildList { addAll(parts) }
 
         init {
             require(parts.isNotEmpty()) { "Concatenated text must contain at least one part." }

@@ -6,6 +6,8 @@ For application use, start with [screens and state](../guides/screens-and-state.
 
 The API and retained core share their implementation between JVM and JavaScript; platform-specific synchronization, exact arithmetic, identity, and coroutine-context adapters preserve the same observable contracts.
 Headless and Minecraft integration remain JVM adapters.
+Prefer Kotlin standard-library facilities in shared code: collection builders produce detached read-only snapshots, and standard atomics preserve cross-thread ownership with implementation-local experimental opt-ins.
+Keep custom platform adapters only for contracts the standard library cannot supply, such as reentrant conditions, thread-local context, and exact arithmetic with overflow rejection.
 
 ## Module boundaries
 

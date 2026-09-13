@@ -1,7 +1,6 @@
 package dev.s7a.strata.runtime
 
 import dev.s7a.strata.geometry.IntSize
-import dev.s7a.strata.runtime.platform.Collections
 import dev.s7a.strata.runtime.render.DrawCommand
 import dev.s7a.strata.runtime.semantics.SemanticsEntry
 
@@ -20,8 +19,8 @@ internal class UiFrame internal constructor(
     drawCommands: List<DrawCommand>,
     semantics: List<SemanticsEntry>,
 ) {
-    val drawCommands: List<DrawCommand> = immutableList(drawCommands)
-    val semantics: List<SemanticsEntry> = immutableList(semantics)
+    val drawCommands: List<DrawCommand> = buildList { addAll(drawCommands) }
+    val semantics: List<SemanticsEntry> = buildList { addAll(semantics) }
 
     override fun equals(other: Any?): Boolean =
         other is UiFrame &&
@@ -37,6 +36,4 @@ internal class UiFrame internal constructor(
     }
 
     override fun toString(): String = "UiFrame(size=$size, drawCommands=$drawCommands, semantics=$semantics)"
-
-    private fun <T> immutableList(values: List<T>): List<T> = Collections.unmodifiableList(values.toList())
 }

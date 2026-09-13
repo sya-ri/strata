@@ -1,6 +1,5 @@
 package dev.s7a.strata.modifier
 
-import dev.s7a.strata.internal.platform.Collections
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
 
 /**
@@ -15,7 +14,7 @@ import dev.s7a.strata.spi.InternalStrataRuntimeApi
 public class Modifier private constructor(
     elements: List<ModifierElement>,
 ) {
-    private val descriptions: List<ModifierElement> = Collections.unmodifiableList(elements.toList())
+    private val descriptions: List<ModifierElement> = buildList { addAll(elements) }
 
     /**
      * Appends one description inside the existing chain.

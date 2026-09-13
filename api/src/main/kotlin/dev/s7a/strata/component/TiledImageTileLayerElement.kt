@@ -317,8 +317,8 @@ internal class TiledImageTileLayerElement(
             halfExtent: Double,
             overscan: Int,
         ): TileAxisRange {
-            val minimumIndex = Math.floorDiv(minimumContent, tileExtent)
-            val maximumIndex = Math.addExact(Math.floorDiv(Math.subtractExact(maximumContent, 1L), tileExtent), 1L)
+            val minimumIndex = minimumContent.floorDiv(tileExtent)
+            val maximumIndex = Math.addExact(Math.subtractExact(maximumContent, 1L).floorDiv(tileExtent), 1L)
             val visibleFirst =
                 lowerBoundTile(minimumIndex, maximumIndex) { index ->
                     val left = Math.multiplyExact(index, tileExtent)

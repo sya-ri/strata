@@ -10,7 +10,6 @@ import dev.s7a.strata.runtime.diagnostics.UiRenderNodeId
 import dev.s7a.strata.runtime.diagnostics.UiRenderNodeKind
 import dev.s7a.strata.runtime.diagnostics.UiRenderOperation
 import dev.s7a.strata.runtime.diagnostics.UiRenderSnapshot
-import dev.s7a.strata.runtime.platform.Collections
 import dev.s7a.strata.runtime.platform.IdentityMap
 import dev.s7a.strata.runtime.platform.diagnosticName
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
@@ -113,7 +112,7 @@ internal class RenderMonitorImpl(
         return UiRenderSnapshot(
             totals.totals(),
             totals.operations(),
-            Collections.unmodifiableList(records.map { it.snapshot() }),
+            buildList { records.mapTo(this) { it.snapshot() } },
             subscriptions,
             overflowed,
         )
@@ -121,13 +120,13 @@ internal class RenderMonitorImpl(
 
     override fun findNodes(key: ElementKey<*>): List<UiRenderNodeId> {
         checkBoundary()
-        return Collections.unmodifiableList(
-            records.mapNotNull { record ->
+        return buildList {
+            records.mapNotNullTo(this) { record ->
                 val entry = record.entry as? RetainedNode
                 val identity = entry?.element?.identity as? ElementIdentity.Keyed
                 if (identity?.key == key) record.id else null
-            },
-        )
+            }
+        }
     }
 
     override fun close() {

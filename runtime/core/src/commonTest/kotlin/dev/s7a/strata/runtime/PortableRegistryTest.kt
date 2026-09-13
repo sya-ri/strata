@@ -1,7 +1,9 @@
 package dev.s7a.strata.runtime
 
-import dev.s7a.strata.runtime.platform.Collections
+import dev.s7a.strata.runtime.diagnostics.UiRenderMetric
+import dev.s7a.strata.runtime.diagnostics.UiRenderOperation
 import dev.s7a.strata.runtime.platform.IdentityMap
+import dev.s7a.strata.spi.InternalStrataRuntimeApi
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
@@ -10,6 +12,7 @@ import kotlin.test.assertNull
 /**
  * Checks identity ownership and detached diagnostic collection contracts on JVM and JavaScript.
  */
+@OptIn(InternalStrataRuntimeApi::class)
 internal class PortableRegistryTest {
     @Test
     fun equalKeysRemainIndependentAndSnapshotsSurviveRelease() {
@@ -29,12 +32,22 @@ internal class PortableRegistryTest {
 
     @Test
     fun diagnosticMapsPreserveValueEqualityAndRejectMutation() {
-        val source = mutableMapOf("count" to 1L)
-        val snapshot = Collections.unmodifiableMap(source.toMap())
-        source["count"] = 2L
-        assertEquals(mapOf("count" to 1L), snapshot)
-        assertEquals(mapOf("count" to 1L).hashCode(), snapshot.hashCode())
-        assertFailsWith<UnsupportedOperationException> { (snapshot as MutableMap)["count"] = 3L }
-        assertEquals(1L, snapshot["count"])
+        val counts = RenderWorkCounts()
+        counts.record(UiRenderMetric.FrameAttempt, UiRenderOperation.Frame)
+        val totals = counts.totals()
+        val operations = counts.operations()
+        val frame = operations.getValue(UiRenderOperation.Frame)
+        counts.clear()
+        assertEquals(1L, totals[UiRenderMetric.FrameAttempt])
+        assertEquals(1L, frame[UiRenderMetric.FrameAttempt])
+        assertEquals(0L, counts.totals()[UiRenderMetric.FrameAttempt])
+        assertEquals(totals.toMap(), totals)
+        assertEquals(totals.toMap().hashCode(), totals.hashCode())
+        assertFailsWith<UnsupportedOperationException> { (totals as MutableMap).clear() }
+        assertFailsWith<UnsupportedOperationException> { (operations as MutableMap).clear() }
+        assertFailsWith<UnsupportedOperationException> { (frame as MutableMap)[UiRenderMetric.FrameAttempt] = 3L }
+        assertFailsWith<UnsupportedOperationException> {
+            (frame.entries.first() as MutableMap.MutableEntry).setValue(3L)
+        }
     }
 }

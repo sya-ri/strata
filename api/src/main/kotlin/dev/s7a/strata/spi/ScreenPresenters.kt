@@ -2,7 +2,8 @@ package dev.s7a.strata.spi
 
 import dev.s7a.strata.screen.ScreenDefinition
 import dev.s7a.strata.screen.ScreenRuntimeUnavailableException
-import dev.s7a.strata.internal.platform.PlatformAtomicReference as AtomicReference
+import kotlin.concurrent.atomics.AtomicReference
+import kotlin.concurrent.atomics.ExperimentalAtomicApi
 
 /**
  * Process-wide bridge between the public screen API and one installed platform runtime.
@@ -11,6 +12,7 @@ import dev.s7a.strata.internal.platform.PlatformAtomicReference as AtomicReferen
  * Exactly one presenter may be installed at a time, while a presentation call executes synchronously through the presenter captured at call entry.
  * Application code must not access this bridge.
  */
+@OptIn(ExperimentalAtomicApi::class)
 @InternalStrataRuntimeApi
 public object ScreenPresenters {
     private val current = AtomicReference<Entry?>(null)
@@ -36,7 +38,7 @@ public object ScreenPresenters {
      * @throws Throwable when the presenter rejects or fails the operation.
      */
     public fun present(definition: ScreenDefinition) {
-        val presenter = current.get()?.presenter ?: throw ScreenRuntimeUnavailableException()
+        val presenter = current.load()?.presenter ?: throw ScreenRuntimeUnavailableException()
         presenter.present(definition)
     }
 
@@ -50,7 +52,7 @@ public object ScreenPresenters {
         private val entry = AtomicReference<Entry?>(entry)
 
         override fun close() {
-            val installed = entry.getAndSet(null) ?: return
+            val installed = entry.exchange(null) ?: return
             current.compareAndSet(installed, null)
         }
     }

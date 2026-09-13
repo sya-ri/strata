@@ -18,7 +18,6 @@ import dev.s7a.strata.render.RootOverlayPaintScope
 import dev.s7a.strata.render.SampledImageOrientation
 import dev.s7a.strata.render.createDrawImage
 import dev.s7a.strata.runtime.diagnostics.UiRenderMetric
-import dev.s7a.strata.runtime.platform.Collections
 import dev.s7a.strata.runtime.render.DrawCommand
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
 
@@ -36,13 +35,12 @@ internal class PaintPipeline(
      * @param root the laid-out retained root.
      * @return tree-coordinate draw commands.
      */
-    fun paint(root: RetainedEntry): List<DrawCommand> {
-        val output = ArrayList<DrawCommand>()
-        val rootOverlays = ArrayList<DrawCommand>()
-        paintNode(root, root.measuredSize, output, rootOverlays)
-        output.addAll(rootOverlays)
-        return Collections.unmodifiableList(output.toList())
-    }
+    fun paint(root: RetainedEntry): List<DrawCommand> =
+        buildList {
+            val rootOverlays = mutableListOf<DrawCommand>()
+            paintNode(root, root.measuredSize, this, rootOverlays)
+            addAll(rootOverlays)
+        }
 
     private fun paintNode(
         retained: RetainedEntry,
