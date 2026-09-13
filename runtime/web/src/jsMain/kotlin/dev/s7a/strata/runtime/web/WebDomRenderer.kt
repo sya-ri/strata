@@ -53,7 +53,7 @@ internal class WebDomRenderer(
             element.setAttribute("data-strata-theme", theme.token)
             update(element, entry)
             if (element !== cursor) root.insertBefore(element, cursor) else cursor = cursor.nextSibling
-            check(next.put(entry.identity, element) == null) { "Duplicate web presentation identity." }
+            next[entry.identity] = element
         }
         nodes.forEach { (identity, element) ->
             if (next[identity] !== element) element.parentNode?.removeChild(element)

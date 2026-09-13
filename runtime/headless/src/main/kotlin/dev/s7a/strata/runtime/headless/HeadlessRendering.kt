@@ -469,10 +469,8 @@ private object HeadlessImplementation {
         override val viewport: IntSize,
         override val pixelScale: Int,
         override val image: HeadlessImage,
-        semantics: List<SemanticsEntry>,
-    ) : HeadlessFrame {
-        override val semantics: List<SemanticsEntry> = semantics.toList()
-    }
+        override val semantics: List<SemanticsEntry>,
+    ) : HeadlessFrame
 
     private object PngEncoder {
         private val signature =

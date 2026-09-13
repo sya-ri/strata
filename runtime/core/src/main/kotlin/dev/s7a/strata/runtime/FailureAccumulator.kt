@@ -17,9 +17,7 @@ internal class FailureAccumulator(
         private set
 
     init {
-        initial?.let { failure ->
-            markSeen(failure)
-        }
+        initial?.let(::markSeen)
     }
 
     /**
@@ -62,21 +60,13 @@ internal class FailureAccumulator(
      * @param action the callback that may fail.
      */
     fun capture(action: () -> Unit) {
-        runCatching(action).exceptionOrNull()?.let { failure ->
-            addOptional(failure)
-        }
+        addOptional(runCatching(action).exceptionOrNull())
     }
 
     /**
      * Throws the first recorded failure.
      */
-    fun throwFirst(): Nothing {
-        val failure = first
-        if (failure != null) {
-            throw failure
-        }
-        throw IllegalStateException("No failure was recorded.")
-    }
+    fun throwFirst(): Nothing = throw checkNotNull(first) { "No failure was recorded." }
 
     /**
      * Throws the first recorded failure when one exists.
@@ -86,12 +76,11 @@ internal class FailureAccumulator(
     }
 
     private fun addFlattened(failure: Throwable) {
-        if (seen.contains(failure)) {
+        if (failure in seen) {
             return
         }
-        val nested = failure.suppressedExceptions.toList()
         add(failure)
-        nested.forEach(::addFlattened)
+        failure.suppressedExceptions.forEach(::addFlattened)
     }
 
     private fun markSeen(failure: Throwable) {
