@@ -146,8 +146,7 @@ Removing or unmaterializing that owner clears focus without stable-key reacquisi
 An unambiguous placed `initialFocus` request applies after layout whenever the tree has no owner, including a newly opened screen or reattachment after focus-clearing detach; focus never transfers from a replaced screen into its successor.
 Every Enter or Space `Press` that reaches a focused `onActivate` node, including repeats, invokes its action, while its false enabled overload contributes no pointer, keyboard, focus, or action reference.
 Detach cancels active pointer capture, emits exit for active pointer-hover observers, clears focused ownership, invalidates the committed-frame marker, and retains the tree and state.
-The input pipeline retains at most one captured entry and its starting button, releases that reference before matching-release or cancellation callbacks, and cancels before entry disposal as well as on session input reset.
-Captured move and matching-button drag or release delivery uses the latest committed layout even outside ancestor clips, while other buttons, scrolling, and hover preserve ordinary hit testing.
+Captured input follows the [Element SPI](../reference/element-spi.md#paint-input-and-semantics); session detach and input reset cancel it even while nodes remain retained.
 Input reset is owner-thread confined, preserves committed pixels and retained ownership, and prohibits session-state mutation from its cleanup callbacks.
 Capture, hover, and focus cleanup are all attempted when an earlier callback throws; the original failure remains primary and distinct later failures are suppressed in observation order.
 

@@ -12,13 +12,6 @@ import dev.s7a.strata.state.StateSource
 import dev.s7a.strata.text.TextWrap
 import dev.s7a.strata.text.UiText
 
-/**
- * Source-backed [ProgressBar] observing progress at the next frame cutoff.
- * Sources remain caller-owned; compatible nodes retain editing, focus, and scrolling state.
- * Literal arguments keep their existing contracts. Equal source values do not re-evaluate this component.
- * The complete modifier chain stays on the actual component; the wrapper delegates parent data and owns the sibling key.
- * Keep sources and dedicated editing states outside observed callbacks. Evaluation and input failures follow ordinary runtime cleanup.
- */
 private fun UiScope.compileProgressBar4c303dc4114b_1(
     progress: StateSource<Double>,
     size: IntSize = IntSize(100, 12),
@@ -33,13 +26,6 @@ private fun UiScope.compileProgressBar4c303dc4114b_1(
     )
 }
 
-/**
- * Source-backed [Checkbox] observing label at the next frame cutoff.
- * Sources remain caller-owned; compatible nodes retain editing, focus, and scrolling state.
- * Literal arguments keep their existing contracts. Equal source values do not re-evaluate this component.
- * The complete modifier chain stays on the actual component; the wrapper delegates parent data and owns the sibling key.
- * Keep sources and dedicated editing states outside observed callbacks. Evaluation and input failures follow ordinary runtime cleanup.
- */
 private fun UiScope.compileCheckbox3bddea62a5dc_1(
     label: StateSource<UiText>,
     state: CheckboxState,
@@ -58,13 +44,6 @@ private fun UiScope.compileCheckbox3bddea62a5dc_1(
     )
 }
 
-/**
- * Source-backed [Checkbox] observing enabled at the next frame cutoff.
- * Sources remain caller-owned; compatible nodes retain editing, focus, and scrolling state.
- * Literal arguments keep their existing contracts. Equal source values do not re-evaluate this component.
- * The complete modifier chain stays on the actual component; the wrapper delegates parent data and owns the sibling key.
- * Keep sources and dedicated editing states outside observed callbacks. Evaluation and input failures follow ordinary runtime cleanup.
- */
 private fun UiScope.compileCheckbox3bddea62a5dc_2(
     label: UiText,
     state: CheckboxState,
@@ -83,13 +62,6 @@ private fun UiScope.compileCheckbox3bddea62a5dc_2(
     )
 }
 
-/**
- * Source-backed [Checkbox] observing label, enabled at the next frame cutoff.
- * Sources remain caller-owned; compatible nodes retain editing, focus, and scrolling state.
- * Literal arguments keep their existing contracts. Equal source values do not re-evaluate this component.
- * The complete modifier chain stays on the actual component; the wrapper delegates parent data and owns the sibling key.
- * Keep sources and dedicated editing states outside observed callbacks. Evaluation and input failures follow ordinary runtime cleanup.
- */
 private fun UiScope.compileCheckbox3bddea62a5dc_3(
     label: StateSource<UiText>,
     state: CheckboxState,
@@ -108,13 +80,6 @@ private fun UiScope.compileCheckbox3bddea62a5dc_3(
     )
 }
 
-/**
- * Source-backed [CycleButton] observing enabled at the next frame cutoff.
- * Sources remain caller-owned; compatible nodes retain editing, focus, and scrolling state.
- * Literal arguments keep their existing contracts. Equal source values do not re-evaluate this component.
- * The complete modifier chain stays on the actual component; the wrapper delegates parent data and owns the sibling key.
- * Keep sources and dedicated editing states outside observed callbacks. Evaluation and input failures follow ordinary runtime cleanup.
- */
 private fun <T : Any> UiScope.compileCycleButton454065400fd3_1(
     state: CycleButtonState<T>,
     width: Int = 150,
@@ -133,13 +98,6 @@ private fun <T : Any> UiScope.compileCycleButton454065400fd3_1(
     )
 }
 
-/**
- * Source-backed [CycleButton] observing label at the next frame cutoff.
- * Sources remain caller-owned; compatible nodes retain editing, focus, and scrolling state.
- * Literal arguments keep their existing contracts. Equal source values do not re-evaluate this component.
- * The complete modifier chain stays on the actual component; the wrapper delegates parent data and owns the sibling key.
- * Keep sources and dedicated editing states outside observed callbacks. Evaluation and input failures follow ordinary runtime cleanup.
- */
 private fun <T : Any> UiScope.compileCycleButton454065400fd3_2(
     state: CycleButtonState<T>,
     width: Int = 150,
@@ -158,13 +116,6 @@ private fun <T : Any> UiScope.compileCycleButton454065400fd3_2(
     )
 }
 
-/**
- * Source-backed [CycleButton] observing enabled, label at the next frame cutoff.
- * Sources remain caller-owned; compatible nodes retain editing, focus, and scrolling state.
- * Literal arguments keep their existing contracts. Equal source values do not re-evaluate this component.
- * The complete modifier chain stays on the actual component; the wrapper delegates parent data and owns the sibling key.
- * Keep sources and dedicated editing states outside observed callbacks. Evaluation and input failures follow ordinary runtime cleanup.
- */
 private fun <T : Any> UiScope.compileCycleButton454065400fd3_3(
     state: CycleButtonState<T>,
     width: Int = 150,
@@ -183,13 +134,6 @@ private fun <T : Any> UiScope.compileCycleButton454065400fd3_3(
     )
 }
 
-/**
- * Source-backed [Slider] observing label at the next frame cutoff.
- * Sources remain caller-owned; compatible nodes retain editing, focus, and scrolling state.
- * Literal arguments keep their existing contracts. Equal source values do not re-evaluate this component.
- * The complete modifier chain stays on the actual component; the wrapper delegates parent data and owns the sibling key.
- * Keep sources and dedicated editing states outside observed callbacks. Evaluation and input failures follow ordinary runtime cleanup.
- */
 private fun UiScope.compileSliderf08abfd13498_1(
     label: StateSource<UiText>,
     state: SliderState,
@@ -208,13 +152,6 @@ private fun UiScope.compileSliderf08abfd13498_1(
     )
 }
 
-/**
- * Source-backed [Slider] observing enabled at the next frame cutoff.
- * Sources remain caller-owned; compatible nodes retain editing, focus, and scrolling state.
- * Literal arguments keep their existing contracts. Equal source values do not re-evaluate this component.
- * The complete modifier chain stays on the actual component; the wrapper delegates parent data and owns the sibling key.
- * Keep sources and dedicated editing states outside observed callbacks. Evaluation and input failures follow ordinary runtime cleanup.
- */
 private fun UiScope.compileSliderf08abfd13498_2(
     label: UiText,
     state: SliderState,
@@ -233,13 +170,6 @@ private fun UiScope.compileSliderf08abfd13498_2(
     )
 }
 
-/**
- * Source-backed [Slider] observing label, enabled at the next frame cutoff.
- * Sources remain caller-owned; compatible nodes retain editing, focus, and scrolling state.
- * Literal arguments keep their existing contracts. Equal source values do not re-evaluate this component.
- * The complete modifier chain stays on the actual component; the wrapper delegates parent data and owns the sibling key.
- * Keep sources and dedicated editing states outside observed callbacks. Evaluation and input failures follow ordinary runtime cleanup.
- */
 private fun UiScope.compileSliderf08abfd13498_3(
     label: StateSource<UiText>,
     state: SliderState,
@@ -258,13 +188,6 @@ private fun UiScope.compileSliderf08abfd13498_3(
     )
 }
 
-/**
- * Source-backed [Slider] observing label at the next frame cutoff.
- * Sources remain caller-owned; compatible nodes retain editing, focus, and scrolling state.
- * Literal arguments keep their existing contracts. Equal source values do not re-evaluate this component.
- * The complete modifier chain stays on the actual component; the wrapper delegates parent data and owns the sibling key.
- * Keep sources and dedicated editing states outside observed callbacks. Evaluation and input failures follow ordinary runtime cleanup.
- */
 private fun UiScope.compileSlidercccdb0fa60d4_1(
     label: StateSource<String>,
     state: SliderState,
@@ -283,13 +206,6 @@ private fun UiScope.compileSlidercccdb0fa60d4_1(
     )
 }
 
-/**
- * Source-backed [Slider] observing enabled at the next frame cutoff.
- * Sources remain caller-owned; compatible nodes retain editing, focus, and scrolling state.
- * Literal arguments keep their existing contracts. Equal source values do not re-evaluate this component.
- * The complete modifier chain stays on the actual component; the wrapper delegates parent data and owns the sibling key.
- * Keep sources and dedicated editing states outside observed callbacks. Evaluation and input failures follow ordinary runtime cleanup.
- */
 private fun UiScope.compileSlidercccdb0fa60d4_2(
     label: String,
     state: SliderState,
@@ -308,13 +224,6 @@ private fun UiScope.compileSlidercccdb0fa60d4_2(
     )
 }
 
-/**
- * Source-backed [Slider] observing label, enabled at the next frame cutoff.
- * Sources remain caller-owned; compatible nodes retain editing, focus, and scrolling state.
- * Literal arguments keep their existing contracts. Equal source values do not re-evaluate this component.
- * The complete modifier chain stays on the actual component; the wrapper delegates parent data and owns the sibling key.
- * Keep sources and dedicated editing states outside observed callbacks. Evaluation and input failures follow ordinary runtime cleanup.
- */
 private fun UiScope.compileSlidercccdb0fa60d4_3(
     label: StateSource<String>,
     state: SliderState,
@@ -333,13 +242,6 @@ private fun UiScope.compileSlidercccdb0fa60d4_3(
     )
 }
 
-/**
- * Source-backed [Checkbox] observing label at the next frame cutoff.
- * Sources remain caller-owned; compatible nodes retain editing, focus, and scrolling state.
- * Literal arguments keep their existing contracts. Equal source values do not re-evaluate this component.
- * The complete modifier chain stays on the actual component; the wrapper delegates parent data and owns the sibling key.
- * Keep sources and dedicated editing states outside observed callbacks. Evaluation and input failures follow ordinary runtime cleanup.
- */
 private fun UiScope.compileCheckbox1d460d77bb71_1(
     label: StateSource<String>,
     state: CheckboxState,
@@ -358,13 +260,6 @@ private fun UiScope.compileCheckbox1d460d77bb71_1(
     )
 }
 
-/**
- * Source-backed [Checkbox] observing enabled at the next frame cutoff.
- * Sources remain caller-owned; compatible nodes retain editing, focus, and scrolling state.
- * Literal arguments keep their existing contracts. Equal source values do not re-evaluate this component.
- * The complete modifier chain stays on the actual component; the wrapper delegates parent data and owns the sibling key.
- * Keep sources and dedicated editing states outside observed callbacks. Evaluation and input failures follow ordinary runtime cleanup.
- */
 private fun UiScope.compileCheckbox1d460d77bb71_2(
     label: String,
     state: CheckboxState,
@@ -383,13 +278,6 @@ private fun UiScope.compileCheckbox1d460d77bb71_2(
     )
 }
 
-/**
- * Source-backed [Checkbox] observing label, enabled at the next frame cutoff.
- * Sources remain caller-owned; compatible nodes retain editing, focus, and scrolling state.
- * Literal arguments keep their existing contracts. Equal source values do not re-evaluate this component.
- * The complete modifier chain stays on the actual component; the wrapper delegates parent data and owns the sibling key.
- * Keep sources and dedicated editing states outside observed callbacks. Evaluation and input failures follow ordinary runtime cleanup.
- */
 private fun UiScope.compileCheckbox1d460d77bb71_3(
     label: StateSource<String>,
     state: CheckboxState,
@@ -408,13 +296,6 @@ private fun UiScope.compileCheckbox1d460d77bb71_3(
     )
 }
 
-/**
- * Source-backed [Image] observing source at the next frame cutoff.
- * Sources remain caller-owned; compatible nodes retain editing, focus, and scrolling state.
- * Literal arguments keep their existing contracts. Equal source values do not re-evaluate this component.
- * The complete modifier chain stays on the actual component; the wrapper delegates parent data and owns the sibling key.
- * Keep sources and dedicated editing states outside observed callbacks. Evaluation and input failures follow ordinary runtime cleanup.
- */
 private fun UiScope.compileImage386405e1017f_1(
     source: StateSource<ImageSource>,
     size: IntSize? = null,
@@ -429,13 +310,6 @@ private fun UiScope.compileImage386405e1017f_1(
     )
 }
 
-/**
- * Source-backed [Image] observing source at the next frame cutoff.
- * Sources remain caller-owned; compatible nodes retain editing, focus, and scrolling state.
- * Literal arguments keep their existing contracts. Equal source values do not re-evaluate this component.
- * The complete modifier chain stays on the actual component; the wrapper delegates parent data and owns the sibling key.
- * Keep sources and dedicated editing states outside observed callbacks. Evaluation and input failures follow ordinary runtime cleanup.
- */
 private fun UiScope.compileImage6751db0e9723_1(
     source: StateSource<ImageSource>,
     sourceRegion: IntRect,
@@ -452,13 +326,6 @@ private fun UiScope.compileImage6751db0e9723_1(
     )
 }
 
-/**
- * Source-backed [PlayerHead] observing source at the next frame cutoff.
- * Sources remain caller-owned; compatible nodes retain editing, focus, and scrolling state.
- * Literal arguments keep their existing contracts. Equal source values do not re-evaluate this component.
- * The complete modifier chain stays on the actual component; the wrapper delegates parent data and owns the sibling key.
- * Keep sources and dedicated editing states outside observed callbacks. Evaluation and input failures follow ordinary runtime cleanup.
- */
 private fun UiScope.compilePlayerHead339c1e7d20b9_1(
     source: StateSource<PlayerSkinSource>,
     scale: PlayerHeadScale,
@@ -479,13 +346,6 @@ private fun UiScope.compilePlayerHead339c1e7d20b9_1(
     )
 }
 
-/**
- * Source-backed [Slot] observing bind at the next frame cutoff.
- * Sources remain caller-owned; compatible nodes retain editing, focus, and scrolling state.
- * Literal arguments keep their existing contracts. Equal source values do not re-evaluate this component.
- * The complete modifier chain stays on the actual component; the wrapper delegates parent data and owns the sibling key.
- * Keep sources and dedicated editing states outside observed callbacks. Evaluation and input failures follow ordinary runtime cleanup.
- */
 private fun UiScope.compileSlota3c7818cbdc8_1(
     bind: StateSource<SlotBinding?>,
     highlightable: Boolean = true,
@@ -502,13 +362,6 @@ private fun UiScope.compileSlota3c7818cbdc8_1(
     )
 }
 
-/**
- * Source-backed [Slot] observing highlightable at the next frame cutoff.
- * Sources remain caller-owned; compatible nodes retain editing, focus, and scrolling state.
- * Literal arguments keep their existing contracts. Equal source values do not re-evaluate this component.
- * The complete modifier chain stays on the actual component; the wrapper delegates parent data and owns the sibling key.
- * Keep sources and dedicated editing states outside observed callbacks. Evaluation and input failures follow ordinary runtime cleanup.
- */
 private fun UiScope.compileSlota3c7818cbdc8_2(
     bind: SlotBinding? = null,
     highlightable: StateSource<Boolean>,
@@ -525,13 +378,6 @@ private fun UiScope.compileSlota3c7818cbdc8_2(
     )
 }
 
-/**
- * Source-backed [Slot] observing bind, highlightable at the next frame cutoff.
- * Sources remain caller-owned; compatible nodes retain editing, focus, and scrolling state.
- * Literal arguments keep their existing contracts. Equal source values do not re-evaluate this component.
- * The complete modifier chain stays on the actual component; the wrapper delegates parent data and owns the sibling key.
- * Keep sources and dedicated editing states outside observed callbacks. Evaluation and input failures follow ordinary runtime cleanup.
- */
 private fun UiScope.compileSlota3c7818cbdc8_3(
     bind: StateSource<SlotBinding?>,
     highlightable: StateSource<Boolean>,
@@ -548,13 +394,6 @@ private fun UiScope.compileSlota3c7818cbdc8_3(
     )
 }
 
-/**
- * Source-backed [TextField] observing enabled at the next frame cutoff.
- * Sources remain caller-owned; compatible nodes retain editing, focus, and scrolling state.
- * Literal arguments keep their existing contracts. Equal source values do not re-evaluate this component.
- * The complete modifier chain stays on the actual component; the wrapper delegates parent data and owns the sibling key.
- * Keep sources and dedicated editing states outside observed callbacks. Evaluation and input failures follow ordinary runtime cleanup.
- */
 private fun UiScope.compileTextFieldbdacf61484d9_1(
     state: TextFieldState,
     enabled: StateSource<Boolean>,
@@ -571,13 +410,6 @@ private fun UiScope.compileTextFieldbdacf61484d9_1(
     )
 }
 
-/**
- * Source-backed [TextField] observing enabled at the next frame cutoff.
- * Sources remain caller-owned; compatible nodes retain editing, focus, and scrolling state.
- * Literal arguments keep their existing contracts. Equal source values do not re-evaluate this component.
- * The complete modifier chain stays on the actual component; the wrapper delegates parent data and owns the sibling key.
- * Keep sources and dedicated editing states outside observed callbacks. Evaluation and input failures follow ordinary runtime cleanup.
- */
 private fun UiScope.compileTextField06eec201bfdd_1(
     state: TextFieldState,
     size: IntSize,
@@ -596,13 +428,6 @@ private fun UiScope.compileTextField06eec201bfdd_1(
     )
 }
 
-/**
- * Source-backed [TextField] observing enabled at the next frame cutoff.
- * Sources remain caller-owned; compatible nodes retain editing, focus, and scrolling state.
- * Literal arguments keep their existing contracts. Equal source values do not re-evaluate this component.
- * The complete modifier chain stays on the actual component; the wrapper delegates parent data and owns the sibling key.
- * Keep sources and dedicated editing states outside observed callbacks. Evaluation and input failures follow ordinary runtime cleanup.
- */
 private fun UiScope.compileTextFieldac020717728e_1(
     state: TextFieldState,
     font: ResourceId,
@@ -621,13 +446,6 @@ private fun UiScope.compileTextFieldac020717728e_1(
     )
 }
 
-/**
- * Source-backed [TextField] observing enabled at the next frame cutoff.
- * Sources remain caller-owned; compatible nodes retain editing, focus, and scrolling state.
- * Literal arguments keep their existing contracts. Equal source values do not re-evaluate this component.
- * The complete modifier chain stays on the actual component; the wrapper delegates parent data and owns the sibling key.
- * Keep sources and dedicated editing states outside observed callbacks. Evaluation and input failures follow ordinary runtime cleanup.
- */
 private fun UiScope.compileTextField0f2e4a0352af_1(
     state: TextFieldState,
     size: IntSize,
@@ -648,13 +466,6 @@ private fun UiScope.compileTextField0f2e4a0352af_1(
     )
 }
 
-/**
- * Source-backed [TextArea] observing enabled at the next frame cutoff.
- * Sources remain caller-owned; compatible nodes retain editing, focus, and scrolling state.
- * Literal arguments keep their existing contracts. Equal source values do not re-evaluate this component.
- * The complete modifier chain stays on the actual component; the wrapper delegates parent data and owns the sibling key.
- * Keep sources and dedicated editing states outside observed callbacks. Evaluation and input failures follow ordinary runtime cleanup.
- */
 private fun UiScope.compileTextAreac0abf0512fec_1(
     state: TextAreaState,
     viewport: TextAreaViewport,
@@ -677,13 +488,6 @@ private fun UiScope.compileTextAreac0abf0512fec_1(
     )
 }
 
-/**
- * Source-backed [TextArea] observing enabled at the next frame cutoff.
- * Sources remain caller-owned; compatible nodes retain editing, focus, and scrolling state.
- * Literal arguments keep their existing contracts. Equal source values do not re-evaluate this component.
- * The complete modifier chain stays on the actual component; the wrapper delegates parent data and owns the sibling key.
- * Keep sources and dedicated editing states outside observed callbacks. Evaluation and input failures follow ordinary runtime cleanup.
- */
 private fun UiScope.compileTextAreac701b9e2eaf6_1(
     state: TextAreaState,
     viewport: TextAreaViewport,
@@ -708,13 +512,6 @@ private fun UiScope.compileTextAreac701b9e2eaf6_1(
     )
 }
 
-/**
- * Source-backed [Button] observing label at the next frame cutoff.
- * Sources remain caller-owned; compatible nodes retain editing, focus, and scrolling state.
- * Literal arguments keep their existing contracts. Equal source values do not re-evaluate this component.
- * The complete modifier chain stays on the actual component; the wrapper delegates parent data and owns the sibling key.
- * Keep sources and dedicated editing states outside observed callbacks. Evaluation and input failures follow ordinary runtime cleanup.
- */
 private fun UiScope.compileButtoncffa97b99dc2_1(
     label: StateSource<UiText>,
     width: Int = 150,
@@ -731,13 +528,6 @@ private fun UiScope.compileButtoncffa97b99dc2_1(
     )
 }
 
-/**
- * Source-backed [Button] observing enabled at the next frame cutoff.
- * Sources remain caller-owned; compatible nodes retain editing, focus, and scrolling state.
- * Literal arguments keep their existing contracts. Equal source values do not re-evaluate this component.
- * The complete modifier chain stays on the actual component; the wrapper delegates parent data and owns the sibling key.
- * Keep sources and dedicated editing states outside observed callbacks. Evaluation and input failures follow ordinary runtime cleanup.
- */
 private fun UiScope.compileButtoncffa97b99dc2_2(
     label: UiText,
     width: Int = 150,
@@ -754,13 +544,6 @@ private fun UiScope.compileButtoncffa97b99dc2_2(
     )
 }
 
-/**
- * Source-backed [Button] observing label, enabled at the next frame cutoff.
- * Sources remain caller-owned; compatible nodes retain editing, focus, and scrolling state.
- * Literal arguments keep their existing contracts. Equal source values do not re-evaluate this component.
- * The complete modifier chain stays on the actual component; the wrapper delegates parent data and owns the sibling key.
- * Keep sources and dedicated editing states outside observed callbacks. Evaluation and input failures follow ordinary runtime cleanup.
- */
 private fun UiScope.compileButtoncffa97b99dc2_3(
     label: StateSource<UiText>,
     width: Int = 150,
@@ -777,13 +560,6 @@ private fun UiScope.compileButtoncffa97b99dc2_3(
     )
 }
 
-/**
- * Source-backed [Button] observing label at the next frame cutoff.
- * Sources remain caller-owned; compatible nodes retain editing, focus, and scrolling state.
- * Literal arguments keep their existing contracts. Equal source values do not re-evaluate this component.
- * The complete modifier chain stays on the actual component; the wrapper delegates parent data and owns the sibling key.
- * Keep sources and dedicated editing states outside observed callbacks. Evaluation and input failures follow ordinary runtime cleanup.
- */
 private fun UiScope.compileButton6e1d7e05cd68_1(
     label: StateSource<String>,
     width: Int = 150,
@@ -800,13 +576,6 @@ private fun UiScope.compileButton6e1d7e05cd68_1(
     )
 }
 
-/**
- * Source-backed [Button] observing enabled at the next frame cutoff.
- * Sources remain caller-owned; compatible nodes retain editing, focus, and scrolling state.
- * Literal arguments keep their existing contracts. Equal source values do not re-evaluate this component.
- * The complete modifier chain stays on the actual component; the wrapper delegates parent data and owns the sibling key.
- * Keep sources and dedicated editing states outside observed callbacks. Evaluation and input failures follow ordinary runtime cleanup.
- */
 private fun UiScope.compileButton6e1d7e05cd68_2(
     label: String,
     width: Int = 150,
@@ -823,13 +592,6 @@ private fun UiScope.compileButton6e1d7e05cd68_2(
     )
 }
 
-/**
- * Source-backed [Button] observing label, enabled at the next frame cutoff.
- * Sources remain caller-owned; compatible nodes retain editing, focus, and scrolling state.
- * Literal arguments keep their existing contracts. Equal source values do not re-evaluate this component.
- * The complete modifier chain stays on the actual component; the wrapper delegates parent data and owns the sibling key.
- * Keep sources and dedicated editing states outside observed callbacks. Evaluation and input failures follow ordinary runtime cleanup.
- */
 private fun UiScope.compileButton6e1d7e05cd68_3(
     label: StateSource<String>,
     width: Int = 150,
@@ -846,13 +608,6 @@ private fun UiScope.compileButton6e1d7e05cd68_3(
     )
 }
 
-/**
- * Source-backed [Tab] observing label at the next frame cutoff.
- * Sources remain caller-owned; compatible nodes retain editing, focus, and scrolling state.
- * Literal arguments keep their existing contracts. Equal source values do not re-evaluate this component.
- * The complete modifier chain stays on the actual component; the wrapper delegates parent data and owns the sibling key.
- * Keep sources and dedicated editing states outside observed callbacks. Evaluation and input failures follow ordinary runtime cleanup.
- */
 private fun UiScope.compileTab58ed18680f25_1(
     label: StateSource<UiText>,
     selected: Boolean,
@@ -873,13 +628,6 @@ private fun UiScope.compileTab58ed18680f25_1(
     )
 }
 
-/**
- * Source-backed [Tab] observing selected at the next frame cutoff.
- * Sources remain caller-owned; compatible nodes retain editing, focus, and scrolling state.
- * Literal arguments keep their existing contracts. Equal source values do not re-evaluate this component.
- * The complete modifier chain stays on the actual component; the wrapper delegates parent data and owns the sibling key.
- * Keep sources and dedicated editing states outside observed callbacks. Evaluation and input failures follow ordinary runtime cleanup.
- */
 private fun UiScope.compileTab58ed18680f25_2(
     label: UiText,
     selected: StateSource<Boolean>,
@@ -900,13 +648,6 @@ private fun UiScope.compileTab58ed18680f25_2(
     )
 }
 
-/**
- * Source-backed [Tab] observing label, selected at the next frame cutoff.
- * Sources remain caller-owned; compatible nodes retain editing, focus, and scrolling state.
- * Literal arguments keep their existing contracts. Equal source values do not re-evaluate this component.
- * The complete modifier chain stays on the actual component; the wrapper delegates parent data and owns the sibling key.
- * Keep sources and dedicated editing states outside observed callbacks. Evaluation and input failures follow ordinary runtime cleanup.
- */
 private fun UiScope.compileTab58ed18680f25_3(
     label: StateSource<UiText>,
     selected: StateSource<Boolean>,
@@ -927,13 +668,6 @@ private fun UiScope.compileTab58ed18680f25_3(
     )
 }
 
-/**
- * Source-backed [Tab] observing enabled at the next frame cutoff.
- * Sources remain caller-owned; compatible nodes retain editing, focus, and scrolling state.
- * Literal arguments keep their existing contracts. Equal source values do not re-evaluate this component.
- * The complete modifier chain stays on the actual component; the wrapper delegates parent data and owns the sibling key.
- * Keep sources and dedicated editing states outside observed callbacks. Evaluation and input failures follow ordinary runtime cleanup.
- */
 private fun UiScope.compileTab58ed18680f25_4(
     label: UiText,
     selected: Boolean,
@@ -954,13 +688,6 @@ private fun UiScope.compileTab58ed18680f25_4(
     )
 }
 
-/**
- * Source-backed [Tab] observing label, enabled at the next frame cutoff.
- * Sources remain caller-owned; compatible nodes retain editing, focus, and scrolling state.
- * Literal arguments keep their existing contracts. Equal source values do not re-evaluate this component.
- * The complete modifier chain stays on the actual component; the wrapper delegates parent data and owns the sibling key.
- * Keep sources and dedicated editing states outside observed callbacks. Evaluation and input failures follow ordinary runtime cleanup.
- */
 private fun UiScope.compileTab58ed18680f25_5(
     label: StateSource<UiText>,
     selected: Boolean,
@@ -981,13 +708,6 @@ private fun UiScope.compileTab58ed18680f25_5(
     )
 }
 
-/**
- * Source-backed [Tab] observing selected, enabled at the next frame cutoff.
- * Sources remain caller-owned; compatible nodes retain editing, focus, and scrolling state.
- * Literal arguments keep their existing contracts. Equal source values do not re-evaluate this component.
- * The complete modifier chain stays on the actual component; the wrapper delegates parent data and owns the sibling key.
- * Keep sources and dedicated editing states outside observed callbacks. Evaluation and input failures follow ordinary runtime cleanup.
- */
 private fun UiScope.compileTab58ed18680f25_6(
     label: UiText,
     selected: StateSource<Boolean>,
@@ -1008,13 +728,6 @@ private fun UiScope.compileTab58ed18680f25_6(
     )
 }
 
-/**
- * Source-backed [Tab] observing label, selected, enabled at the next frame cutoff.
- * Sources remain caller-owned; compatible nodes retain editing, focus, and scrolling state.
- * Literal arguments keep their existing contracts. Equal source values do not re-evaluate this component.
- * The complete modifier chain stays on the actual component; the wrapper delegates parent data and owns the sibling key.
- * Keep sources and dedicated editing states outside observed callbacks. Evaluation and input failures follow ordinary runtime cleanup.
- */
 private fun UiScope.compileTab58ed18680f25_7(
     label: StateSource<UiText>,
     selected: StateSource<Boolean>,
@@ -1035,13 +748,6 @@ private fun UiScope.compileTab58ed18680f25_7(
     )
 }
 
-/**
- * Source-backed [Tab] observing label at the next frame cutoff.
- * Sources remain caller-owned; compatible nodes retain editing, focus, and scrolling state.
- * Literal arguments keep their existing contracts. Equal source values do not re-evaluate this component.
- * The complete modifier chain stays on the actual component; the wrapper delegates parent data and owns the sibling key.
- * Keep sources and dedicated editing states outside observed callbacks. Evaluation and input failures follow ordinary runtime cleanup.
- */
 private fun UiScope.compileTab06dab4066e27_1(
     label: StateSource<String>,
     selected: Boolean,
@@ -1062,13 +768,6 @@ private fun UiScope.compileTab06dab4066e27_1(
     )
 }
 
-/**
- * Source-backed [Tab] observing selected at the next frame cutoff.
- * Sources remain caller-owned; compatible nodes retain editing, focus, and scrolling state.
- * Literal arguments keep their existing contracts. Equal source values do not re-evaluate this component.
- * The complete modifier chain stays on the actual component; the wrapper delegates parent data and owns the sibling key.
- * Keep sources and dedicated editing states outside observed callbacks. Evaluation and input failures follow ordinary runtime cleanup.
- */
 private fun UiScope.compileTab06dab4066e27_2(
     label: String,
     selected: StateSource<Boolean>,
@@ -1089,13 +788,6 @@ private fun UiScope.compileTab06dab4066e27_2(
     )
 }
 
-/**
- * Source-backed [Tab] observing label, selected at the next frame cutoff.
- * Sources remain caller-owned; compatible nodes retain editing, focus, and scrolling state.
- * Literal arguments keep their existing contracts. Equal source values do not re-evaluate this component.
- * The complete modifier chain stays on the actual component; the wrapper delegates parent data and owns the sibling key.
- * Keep sources and dedicated editing states outside observed callbacks. Evaluation and input failures follow ordinary runtime cleanup.
- */
 private fun UiScope.compileTab06dab4066e27_3(
     label: StateSource<String>,
     selected: StateSource<Boolean>,
@@ -1116,13 +808,6 @@ private fun UiScope.compileTab06dab4066e27_3(
     )
 }
 
-/**
- * Source-backed [Tab] observing enabled at the next frame cutoff.
- * Sources remain caller-owned; compatible nodes retain editing, focus, and scrolling state.
- * Literal arguments keep their existing contracts. Equal source values do not re-evaluate this component.
- * The complete modifier chain stays on the actual component; the wrapper delegates parent data and owns the sibling key.
- * Keep sources and dedicated editing states outside observed callbacks. Evaluation and input failures follow ordinary runtime cleanup.
- */
 private fun UiScope.compileTab06dab4066e27_4(
     label: String,
     selected: Boolean,
@@ -1143,13 +828,6 @@ private fun UiScope.compileTab06dab4066e27_4(
     )
 }
 
-/**
- * Source-backed [Tab] observing label, enabled at the next frame cutoff.
- * Sources remain caller-owned; compatible nodes retain editing, focus, and scrolling state.
- * Literal arguments keep their existing contracts. Equal source values do not re-evaluate this component.
- * The complete modifier chain stays on the actual component; the wrapper delegates parent data and owns the sibling key.
- * Keep sources and dedicated editing states outside observed callbacks. Evaluation and input failures follow ordinary runtime cleanup.
- */
 private fun UiScope.compileTab06dab4066e27_5(
     label: StateSource<String>,
     selected: Boolean,
@@ -1170,13 +848,6 @@ private fun UiScope.compileTab06dab4066e27_5(
     )
 }
 
-/**
- * Source-backed [Tab] observing selected, enabled at the next frame cutoff.
- * Sources remain caller-owned; compatible nodes retain editing, focus, and scrolling state.
- * Literal arguments keep their existing contracts. Equal source values do not re-evaluate this component.
- * The complete modifier chain stays on the actual component; the wrapper delegates parent data and owns the sibling key.
- * Keep sources and dedicated editing states outside observed callbacks. Evaluation and input failures follow ordinary runtime cleanup.
- */
 private fun UiScope.compileTab06dab4066e27_6(
     label: String,
     selected: StateSource<Boolean>,
@@ -1197,13 +868,6 @@ private fun UiScope.compileTab06dab4066e27_6(
     )
 }
 
-/**
- * Source-backed [Tab] observing label, selected, enabled at the next frame cutoff.
- * Sources remain caller-owned; compatible nodes retain editing, focus, and scrolling state.
- * Literal arguments keep their existing contracts. Equal source values do not re-evaluate this component.
- * The complete modifier chain stays on the actual component; the wrapper delegates parent data and owns the sibling key.
- * Keep sources and dedicated editing states outside observed callbacks. Evaluation and input failures follow ordinary runtime cleanup.
- */
 private fun UiScope.compileTab06dab4066e27_7(
     label: StateSource<String>,
     selected: StateSource<Boolean>,
@@ -1224,13 +888,6 @@ private fun UiScope.compileTab06dab4066e27_7(
     )
 }
 
-/**
- * Source-backed [TextField] observing enabled at the next frame cutoff.
- * Sources remain caller-owned; compatible nodes retain editing, focus, and scrolling state.
- * Literal arguments keep their existing contracts. Equal source values do not re-evaluate this component.
- * The complete modifier chain stays on the actual component; the wrapper delegates parent data and owns the sibling key.
- * Keep sources and dedicated editing states outside observed callbacks. Evaluation and input failures follow ordinary runtime cleanup.
- */
 private fun UiScope.compileTextField8ebce6a07628_1(
     state: TextFieldState,
     appearance: TextInputAppearance,
@@ -1249,13 +906,6 @@ private fun UiScope.compileTextField8ebce6a07628_1(
     )
 }
 
-/**
- * Source-backed [TextField] observing enabled at the next frame cutoff.
- * Sources remain caller-owned; compatible nodes retain editing, focus, and scrolling state.
- * Literal arguments keep their existing contracts. Equal source values do not re-evaluate this component.
- * The complete modifier chain stays on the actual component; the wrapper delegates parent data and owns the sibling key.
- * Keep sources and dedicated editing states outside observed callbacks. Evaluation and input failures follow ordinary runtime cleanup.
- */
 private fun UiScope.compileTextField68d5823f42d7_1(
     state: TextFieldState,
     appearance: TextInputAppearance,
@@ -1276,13 +926,6 @@ private fun UiScope.compileTextField68d5823f42d7_1(
     )
 }
 
-/**
- * Source-backed [TextField] observing enabled at the next frame cutoff.
- * Sources remain caller-owned; compatible nodes retain editing, focus, and scrolling state.
- * Literal arguments keep their existing contracts. Equal source values do not re-evaluate this component.
- * The complete modifier chain stays on the actual component; the wrapper delegates parent data and owns the sibling key.
- * Keep sources and dedicated editing states outside observed callbacks. Evaluation and input failures follow ordinary runtime cleanup.
- */
 private fun UiScope.compileTextField715dafc3f527_1(
     state: TextFieldState,
     appearance: TextInputAppearance,
@@ -1303,13 +946,6 @@ private fun UiScope.compileTextField715dafc3f527_1(
     )
 }
 
-/**
- * Source-backed [TextField] observing enabled at the next frame cutoff.
- * Sources remain caller-owned; compatible nodes retain editing, focus, and scrolling state.
- * Literal arguments keep their existing contracts. Equal source values do not re-evaluate this component.
- * The complete modifier chain stays on the actual component; the wrapper delegates parent data and owns the sibling key.
- * Keep sources and dedicated editing states outside observed callbacks. Evaluation and input failures follow ordinary runtime cleanup.
- */
 private fun UiScope.compileTextFieldfd7b3be167e7_1(
     state: TextFieldState,
     appearance: TextInputAppearance,
@@ -1332,13 +968,6 @@ private fun UiScope.compileTextFieldfd7b3be167e7_1(
     )
 }
 
-/**
- * Source-backed [TextArea] observing enabled at the next frame cutoff.
- * Sources remain caller-owned; compatible nodes retain editing, focus, and scrolling state.
- * Literal arguments keep their existing contracts. Equal source values do not re-evaluate this component.
- * The complete modifier chain stays on the actual component; the wrapper delegates parent data and owns the sibling key.
- * Keep sources and dedicated editing states outside observed callbacks. Evaluation and input failures follow ordinary runtime cleanup.
- */
 private fun UiScope.compileTextArea80c0b5b4cb37_1(
     state: TextAreaState,
     appearance: TextInputAppearance,
@@ -1363,13 +992,6 @@ private fun UiScope.compileTextArea80c0b5b4cb37_1(
     )
 }
 
-/**
- * Source-backed [TextArea] observing enabled at the next frame cutoff.
- * Sources remain caller-owned; compatible nodes retain editing, focus, and scrolling state.
- * Literal arguments keep their existing contracts. Equal source values do not re-evaluate this component.
- * The complete modifier chain stays on the actual component; the wrapper delegates parent data and owns the sibling key.
- * Keep sources and dedicated editing states outside observed callbacks. Evaluation and input failures follow ordinary runtime cleanup.
- */
 private fun UiScope.compileTextArea4da1faac4769_1(
     state: TextAreaState,
     appearance: TextInputAppearance,
@@ -1396,13 +1018,6 @@ private fun UiScope.compileTextArea4da1faac4769_1(
     )
 }
 
-/**
- * Source-backed [Canvas] observing source at the next frame cutoff.
- * Sources remain caller-owned; compatible nodes retain editing, focus, and scrolling state.
- * Literal arguments keep their existing contracts. Equal source values do not re-evaluate this component.
- * The complete modifier chain stays on the actual component; the wrapper delegates parent data and owns the sibling key.
- * Keep sources and dedicated editing states outside observed callbacks. Evaluation and input failures follow ordinary runtime cleanup.
- */
 private fun UiScope.compileCanvas7047d39d3483_1(
     source: StateSource<CanvasSource>,
     size: IntSize,
@@ -1417,13 +1032,6 @@ private fun UiScope.compileCanvas7047d39d3483_1(
     )
 }
 
-/**
- * Source-backed [TiledImage] observing source at the next frame cutoff.
- * Sources remain caller-owned; compatible nodes retain editing, focus, and scrolling state.
- * Literal arguments keep their existing contracts. Equal source values do not re-evaluate this component.
- * The complete modifier chain stays on the actual component; the wrapper delegates parent data and owns the sibling key.
- * Keep sources and dedicated editing states outside observed callbacks. Evaluation and input failures follow ordinary runtime cleanup.
- */
 private fun UiScope.compileTiledImage06558dbd1f3e_1(
     source: StateSource<TiledImageSource>,
     state: PanZoomState,
@@ -1446,13 +1054,6 @@ private fun UiScope.compileTiledImage06558dbd1f3e_1(
     )
 }
 
-/**
- * Source-backed [VirtualList] observing canLoadLeading at the next frame cutoff.
- * Sources remain caller-owned; compatible nodes retain editing, focus, and scrolling state.
- * Literal arguments keep their existing contracts. Equal source values do not re-evaluate this component.
- * The complete modifier chain stays on the actual component; the wrapper delegates parent data and owns the sibling key.
- * Keep sources and dedicated editing states outside observed callbacks. Evaluation and input failures follow ordinary runtime cleanup.
- */
 private fun <T : Any, K : Any> UiScope.compileVirtualList7e3481099f80_1(
     itemCount: Int,
     itemAt: (Int) -> T,
@@ -1485,13 +1086,6 @@ private fun <T : Any, K : Any> UiScope.compileVirtualList7e3481099f80_1(
     )
 }
 
-/**
- * Source-backed [VirtualList] observing canLoadTrailing at the next frame cutoff.
- * Sources remain caller-owned; compatible nodes retain editing, focus, and scrolling state.
- * Literal arguments keep their existing contracts. Equal source values do not re-evaluate this component.
- * The complete modifier chain stays on the actual component; the wrapper delegates parent data and owns the sibling key.
- * Keep sources and dedicated editing states outside observed callbacks. Evaluation and input failures follow ordinary runtime cleanup.
- */
 private fun <T : Any, K : Any> UiScope.compileVirtualList7e3481099f80_2(
     itemCount: Int,
     itemAt: (Int) -> T,
@@ -1524,13 +1118,6 @@ private fun <T : Any, K : Any> UiScope.compileVirtualList7e3481099f80_2(
     )
 }
 
-/**
- * Source-backed [VirtualList] observing canLoadLeading, canLoadTrailing at the next frame cutoff.
- * Sources remain caller-owned; compatible nodes retain editing, focus, and scrolling state.
- * Literal arguments keep their existing contracts. Equal source values do not re-evaluate this component.
- * The complete modifier chain stays on the actual component; the wrapper delegates parent data and owns the sibling key.
- * Keep sources and dedicated editing states outside observed callbacks. Evaluation and input failures follow ordinary runtime cleanup.
- */
 private fun <T : Any, K : Any> UiScope.compileVirtualList7e3481099f80_3(
     itemCount: Int,
     itemAt: (Int) -> T,
@@ -1563,13 +1150,6 @@ private fun <T : Any, K : Any> UiScope.compileVirtualList7e3481099f80_3(
     )
 }
 
-/**
- * Source-backed [VirtualList] observing canLoadLeading at the next frame cutoff.
- * Sources remain caller-owned; compatible nodes retain editing, focus, and scrolling state.
- * Literal arguments keep their existing contracts. Equal source values do not re-evaluate this component.
- * The complete modifier chain stays on the actual component; the wrapper delegates parent data and owns the sibling key.
- * Keep sources and dedicated editing states outside observed callbacks. Evaluation and input failures follow ordinary runtime cleanup.
- */
 private fun <T : Any, K : Any> UiScope.compileVirtualList4013cecb450b_1(
     itemCount: () -> Int,
     itemAt: (Int) -> T,
@@ -1602,13 +1182,6 @@ private fun <T : Any, K : Any> UiScope.compileVirtualList4013cecb450b_1(
     )
 }
 
-/**
- * Source-backed [VirtualList] observing canLoadTrailing at the next frame cutoff.
- * Sources remain caller-owned; compatible nodes retain editing, focus, and scrolling state.
- * Literal arguments keep their existing contracts. Equal source values do not re-evaluate this component.
- * The complete modifier chain stays on the actual component; the wrapper delegates parent data and owns the sibling key.
- * Keep sources and dedicated editing states outside observed callbacks. Evaluation and input failures follow ordinary runtime cleanup.
- */
 private fun <T : Any, K : Any> UiScope.compileVirtualList4013cecb450b_2(
     itemCount: () -> Int,
     itemAt: (Int) -> T,
@@ -1641,13 +1214,6 @@ private fun <T : Any, K : Any> UiScope.compileVirtualList4013cecb450b_2(
     )
 }
 
-/**
- * Source-backed [VirtualList] observing canLoadLeading, canLoadTrailing at the next frame cutoff.
- * Sources remain caller-owned; compatible nodes retain editing, focus, and scrolling state.
- * Literal arguments keep their existing contracts. Equal source values do not re-evaluate this component.
- * The complete modifier chain stays on the actual component; the wrapper delegates parent data and owns the sibling key.
- * Keep sources and dedicated editing states outside observed callbacks. Evaluation and input failures follow ordinary runtime cleanup.
- */
 private fun <T : Any, K : Any> UiScope.compileVirtualList4013cecb450b_3(
     itemCount: () -> Int,
     itemAt: (Int) -> T,
@@ -1680,13 +1246,6 @@ private fun <T : Any, K : Any> UiScope.compileVirtualList4013cecb450b_3(
     )
 }
 
-/**
- * Source-backed [VirtualList] observing items at the next frame cutoff.
- * Sources remain caller-owned; compatible nodes retain editing, focus, and scrolling state.
- * Literal arguments keep their existing contracts. Equal source values do not re-evaluate this component.
- * The complete modifier chain stays on the actual component; the wrapper delegates parent data and owns the sibling key.
- * Keep sources and dedicated editing states outside observed callbacks. Evaluation and input failures follow ordinary runtime cleanup.
- */
 private fun <T : Any, K : Any> UiScope.compileVirtualList91e435daa5f9_1(
     items: StateSource<List<T>>,
     keyOf: (T) -> K,
@@ -1715,13 +1274,6 @@ private fun <T : Any, K : Any> UiScope.compileVirtualList91e435daa5f9_1(
     )
 }
 
-/**
- * Source-backed [VirtualList] observing canLoadLeading at the next frame cutoff.
- * Sources remain caller-owned; compatible nodes retain editing, focus, and scrolling state.
- * Literal arguments keep their existing contracts. Equal source values do not re-evaluate this component.
- * The complete modifier chain stays on the actual component; the wrapper delegates parent data and owns the sibling key.
- * Keep sources and dedicated editing states outside observed callbacks. Evaluation and input failures follow ordinary runtime cleanup.
- */
 private fun <T : Any, K : Any> UiScope.compileVirtualList91e435daa5f9_2(
     items: List<T>,
     keyOf: (T) -> K,
@@ -1750,13 +1302,6 @@ private fun <T : Any, K : Any> UiScope.compileVirtualList91e435daa5f9_2(
     )
 }
 
-/**
- * Source-backed [VirtualList] observing items, canLoadLeading at the next frame cutoff.
- * Sources remain caller-owned; compatible nodes retain editing, focus, and scrolling state.
- * Literal arguments keep their existing contracts. Equal source values do not re-evaluate this component.
- * The complete modifier chain stays on the actual component; the wrapper delegates parent data and owns the sibling key.
- * Keep sources and dedicated editing states outside observed callbacks. Evaluation and input failures follow ordinary runtime cleanup.
- */
 private fun <T : Any, K : Any> UiScope.compileVirtualList91e435daa5f9_3(
     items: StateSource<List<T>>,
     keyOf: (T) -> K,
@@ -1785,13 +1330,6 @@ private fun <T : Any, K : Any> UiScope.compileVirtualList91e435daa5f9_3(
     )
 }
 
-/**
- * Source-backed [VirtualList] observing canLoadTrailing at the next frame cutoff.
- * Sources remain caller-owned; compatible nodes retain editing, focus, and scrolling state.
- * Literal arguments keep their existing contracts. Equal source values do not re-evaluate this component.
- * The complete modifier chain stays on the actual component; the wrapper delegates parent data and owns the sibling key.
- * Keep sources and dedicated editing states outside observed callbacks. Evaluation and input failures follow ordinary runtime cleanup.
- */
 private fun <T : Any, K : Any> UiScope.compileVirtualList91e435daa5f9_4(
     items: List<T>,
     keyOf: (T) -> K,
@@ -1820,13 +1358,6 @@ private fun <T : Any, K : Any> UiScope.compileVirtualList91e435daa5f9_4(
     )
 }
 
-/**
- * Source-backed [VirtualList] observing items, canLoadTrailing at the next frame cutoff.
- * Sources remain caller-owned; compatible nodes retain editing, focus, and scrolling state.
- * Literal arguments keep their existing contracts. Equal source values do not re-evaluate this component.
- * The complete modifier chain stays on the actual component; the wrapper delegates parent data and owns the sibling key.
- * Keep sources and dedicated editing states outside observed callbacks. Evaluation and input failures follow ordinary runtime cleanup.
- */
 private fun <T : Any, K : Any> UiScope.compileVirtualList91e435daa5f9_5(
     items: StateSource<List<T>>,
     keyOf: (T) -> K,
@@ -1855,13 +1386,6 @@ private fun <T : Any, K : Any> UiScope.compileVirtualList91e435daa5f9_5(
     )
 }
 
-/**
- * Source-backed [VirtualList] observing canLoadLeading, canLoadTrailing at the next frame cutoff.
- * Sources remain caller-owned; compatible nodes retain editing, focus, and scrolling state.
- * Literal arguments keep their existing contracts. Equal source values do not re-evaluate this component.
- * The complete modifier chain stays on the actual component; the wrapper delegates parent data and owns the sibling key.
- * Keep sources and dedicated editing states outside observed callbacks. Evaluation and input failures follow ordinary runtime cleanup.
- */
 private fun <T : Any, K : Any> UiScope.compileVirtualList91e435daa5f9_6(
     items: List<T>,
     keyOf: (T) -> K,
@@ -1890,13 +1414,6 @@ private fun <T : Any, K : Any> UiScope.compileVirtualList91e435daa5f9_6(
     )
 }
 
-/**
- * Source-backed [VirtualList] observing items, canLoadLeading, canLoadTrailing at the next frame cutoff.
- * Sources remain caller-owned; compatible nodes retain editing, focus, and scrolling state.
- * Literal arguments keep their existing contracts. Equal source values do not re-evaluate this component.
- * The complete modifier chain stays on the actual component; the wrapper delegates parent data and owns the sibling key.
- * Keep sources and dedicated editing states outside observed callbacks. Evaluation and input failures follow ordinary runtime cleanup.
- */
 private fun <T : Any, K : Any> UiScope.compileVirtualList91e435daa5f9_7(
     items: StateSource<List<T>>,
     keyOf: (T) -> K,
@@ -1925,13 +1442,6 @@ private fun <T : Any, K : Any> UiScope.compileVirtualList91e435daa5f9_7(
     )
 }
 
-/**
- * Source-backed [SelectionList] observing items at the next frame cutoff.
- * Sources remain caller-owned; compatible nodes retain editing, focus, and scrolling state.
- * Literal arguments keep their existing contracts. Equal source values do not re-evaluate this component.
- * The complete modifier chain stays on the actual component; the wrapper delegates parent data and owns the sibling key.
- * Keep sources and dedicated editing states outside observed callbacks. Evaluation and input failures follow ordinary runtime cleanup.
- */
 private fun <T : Any, K : Any> UiScope.compileSelectionList685be857e721_1(
     items: StateSource<List<T>>,
     keyOf: (T) -> K,
@@ -1960,13 +1470,6 @@ private fun <T : Any, K : Any> UiScope.compileSelectionList685be857e721_1(
     )
 }
 
-/**
- * Source-backed [SelectionList] observing canLoadLeading at the next frame cutoff.
- * Sources remain caller-owned; compatible nodes retain editing, focus, and scrolling state.
- * Literal arguments keep their existing contracts. Equal source values do not re-evaluate this component.
- * The complete modifier chain stays on the actual component; the wrapper delegates parent data and owns the sibling key.
- * Keep sources and dedicated editing states outside observed callbacks. Evaluation and input failures follow ordinary runtime cleanup.
- */
 private fun <T : Any, K : Any> UiScope.compileSelectionList685be857e721_2(
     items: List<T>,
     keyOf: (T) -> K,
@@ -1995,13 +1498,6 @@ private fun <T : Any, K : Any> UiScope.compileSelectionList685be857e721_2(
     )
 }
 
-/**
- * Source-backed [SelectionList] observing items, canLoadLeading at the next frame cutoff.
- * Sources remain caller-owned; compatible nodes retain editing, focus, and scrolling state.
- * Literal arguments keep their existing contracts. Equal source values do not re-evaluate this component.
- * The complete modifier chain stays on the actual component; the wrapper delegates parent data and owns the sibling key.
- * Keep sources and dedicated editing states outside observed callbacks. Evaluation and input failures follow ordinary runtime cleanup.
- */
 private fun <T : Any, K : Any> UiScope.compileSelectionList685be857e721_3(
     items: StateSource<List<T>>,
     keyOf: (T) -> K,
@@ -2030,13 +1526,6 @@ private fun <T : Any, K : Any> UiScope.compileSelectionList685be857e721_3(
     )
 }
 
-/**
- * Source-backed [SelectionList] observing canLoadTrailing at the next frame cutoff.
- * Sources remain caller-owned; compatible nodes retain editing, focus, and scrolling state.
- * Literal arguments keep their existing contracts. Equal source values do not re-evaluate this component.
- * The complete modifier chain stays on the actual component; the wrapper delegates parent data and owns the sibling key.
- * Keep sources and dedicated editing states outside observed callbacks. Evaluation and input failures follow ordinary runtime cleanup.
- */
 private fun <T : Any, K : Any> UiScope.compileSelectionList685be857e721_4(
     items: List<T>,
     keyOf: (T) -> K,
@@ -2065,13 +1554,6 @@ private fun <T : Any, K : Any> UiScope.compileSelectionList685be857e721_4(
     )
 }
 
-/**
- * Source-backed [SelectionList] observing items, canLoadTrailing at the next frame cutoff.
- * Sources remain caller-owned; compatible nodes retain editing, focus, and scrolling state.
- * Literal arguments keep their existing contracts. Equal source values do not re-evaluate this component.
- * The complete modifier chain stays on the actual component; the wrapper delegates parent data and owns the sibling key.
- * Keep sources and dedicated editing states outside observed callbacks. Evaluation and input failures follow ordinary runtime cleanup.
- */
 private fun <T : Any, K : Any> UiScope.compileSelectionList685be857e721_5(
     items: StateSource<List<T>>,
     keyOf: (T) -> K,
@@ -2100,13 +1582,6 @@ private fun <T : Any, K : Any> UiScope.compileSelectionList685be857e721_5(
     )
 }
 
-/**
- * Source-backed [SelectionList] observing canLoadLeading, canLoadTrailing at the next frame cutoff.
- * Sources remain caller-owned; compatible nodes retain editing, focus, and scrolling state.
- * Literal arguments keep their existing contracts. Equal source values do not re-evaluate this component.
- * The complete modifier chain stays on the actual component; the wrapper delegates parent data and owns the sibling key.
- * Keep sources and dedicated editing states outside observed callbacks. Evaluation and input failures follow ordinary runtime cleanup.
- */
 private fun <T : Any, K : Any> UiScope.compileSelectionList685be857e721_6(
     items: List<T>,
     keyOf: (T) -> K,
@@ -2135,13 +1610,6 @@ private fun <T : Any, K : Any> UiScope.compileSelectionList685be857e721_6(
     )
 }
 
-/**
- * Source-backed [SelectionList] observing items, canLoadLeading, canLoadTrailing at the next frame cutoff.
- * Sources remain caller-owned; compatible nodes retain editing, focus, and scrolling state.
- * Literal arguments keep their existing contracts. Equal source values do not re-evaluate this component.
- * The complete modifier chain stays on the actual component; the wrapper delegates parent data and owns the sibling key.
- * Keep sources and dedicated editing states outside observed callbacks. Evaluation and input failures follow ordinary runtime cleanup.
- */
 private fun <T : Any, K : Any> UiScope.compileSelectionList685be857e721_7(
     items: StateSource<List<T>>,
     keyOf: (T) -> K,

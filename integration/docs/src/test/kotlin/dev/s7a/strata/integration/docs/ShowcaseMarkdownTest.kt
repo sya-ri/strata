@@ -100,7 +100,7 @@ internal class ShowcaseMarkdownTest {
         assertTrue(sections.getValue(DocumentedComponent.Tab).contains("external selection semantics"))
         assertTrue(sections.getValue(DocumentedComponent.Stack).contains("not a generic div-like container"))
         val tiledImage = sections.getValue(DocumentedComponent.TiledImage)
-        listOf("independently revisioned immutable tiles", "`PanZoomState`", "`panZoom(state)`", "`atContentPosition`").forEach { contract ->
+        listOf("independently revisioned immutable tiles", "`PanZoomState`", "`panZoom(state)`", "`TiledImageScope.atContentPosition`").forEach { contract ->
             assertTrue(tiledImage.contains(contract))
         }
         val button = sections.getValue(DocumentedComponent.Button)
@@ -109,14 +109,10 @@ internal class ShowcaseMarkdownTest {
         }
         assertTrue(button.contains("owns no implicit focus or activation"))
         sections.values.forEach { value ->
+            assertTrue(value.contains("[Image verification](#image-verification)"))
+            assertTrue(value.contains(source))
             assertTrue(value.startsWith("<a id=\""))
             assertTrue(value.contains("\n\n## "))
-            assertTrue(value.contains("complete frame of the compiled dedicated `ScreenDefinition`"))
-            assertTrue(value.contains("source, asset, viewport, and image hashes"))
-            assertTrue(value.contains("(../components/headless-render.properties)"))
-            assertTrue(value.contains("or cropped from a larger screen"))
-            assertTrue(value.contains("component crop").not())
-            assertTrue(value.contains("The tree mirrors the complete dedicated definition"))
             assertTrue(value.contains("\n\n<details><summary>Component tree</summary>\n"))
             assertTrue(value.endsWith("\n"))
             assertTrue(value.endsWith("\n\n").not())
@@ -137,8 +133,6 @@ internal class ShowcaseMarkdownTest {
             val section = ShowcaseMarkdown.section(scenario, "internal fun example() {}")
             assertTrue(section.contains(dimensions.first))
             assertTrue(section.contains(dimensions.second))
-            assertTrue(section.contains("Headless rendering samples the assets at this physical density"))
-            assertTrue(section.contains("not upscaled from a lower-resolution raster"))
         }
     }
 

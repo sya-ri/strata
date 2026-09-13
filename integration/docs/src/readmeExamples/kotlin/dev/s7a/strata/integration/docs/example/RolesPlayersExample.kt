@@ -11,12 +11,7 @@ import dev.s7a.strata.screen.ScreenDefinition
 
 /**
  * Builds the roles stage of the README player-list demonstration using only the public API.
- * The one-shot definition reads caller-owned immutable players on its host thread and propagates layout failures.
- * All child positions come from parent layout; the final stages fix the outer list width and align only the weighted text column.
- *
- * @param players ordered offline presentation data, shared read-only with the definition.
- * @param panel detached original Minecraft Social Interactions panel.
- * @return an unopened definition; the caller owns opening or closing it.
+ * Returns an unopened screen borrowing caller-owned players and panel pixels; open it on the host thread.
  */
 internal fun rolesPlayersScreen(
     players: List<ReadmePlayer>,

@@ -11,26 +11,6 @@ The canonical release inventory includes all target artifacts.
 Common behavior tests run on JVM, Node.js, and headless Chrome, while JVM-only concurrency tests continue to exercise real threads.
 KMP documentation uses Dokka HTML in the conventional `javadoc` classifier because the Javadoc output plugin does not support multiplatform declarations.
 
-## Manual OS IME verification
-
-Use `:integration:minecraft-fabric-26.2:runManualIme` to open the isolated native editor with normal OS keyboard callbacks.
-This opt-in task is separate from `check` and from Fabric Client GameTest, whose `InputConstantsMixin` deliberately prevents native keyboard and mouse callback installation.
-Do not treat a synthetic PreeditEvent or Fabric TestInput result as proof of operating-system composition.
-The normal run has its own build directory and must not connect to a multiplayer server.
-After any first-run accessibility page, the fixture opens from the title screen.
-Use the installed Japanese IME to type `nihongo`, leave the composition and candidate window active while the update label advances, convert and confirm `日本語`, then use Enter to insert a newline.
-Verify the caret, candidate selection, and text visually before selecting Finish test.
-The task requires a fresh invocation-specific `manual-ime-evidence/manual-os-ime.txt` receipt with the converted phrase, newline, stable input-node identity, and concurrent label updates.
-A closed window or an old receipt cannot pass this task.
-The receipt establishes confirmed input and retained nodes; the operator's observation establishes candidate/preedit continuity.
-
-Legacy automated screenshot suites also wait for the requested physical viewport to match GLFW, the native Window framebuffer, and the render target across client ticks.
-This avoids assuming that an asynchronous OS resize completed when its request returned.
-Native Canvas screenshot scenes additionally fence on the runtime's committed host-frame counter through `MinecraftCanvasFrameFence` instead of waiting a fixed tick count: a tick proves time passed, while a committed host frame after the scene signal proves the frame the signal observed completed its render call before the main framebuffer is read.
-The fence fails when the runtime counter becomes unreadable rather than silently degrading to fixed-tick behavior.
-Assertion receipts record the GUI scale, lease, and host-frame counters alongside the retained PNG, so a failed pixel assertion keeps its synchronization evidence.
-Timeouts and screenshot failures report actual dimensions and do not crop, rescale, or weaken pixel assertions.
-
 ## Environment
 
 Run commands from the repository root with the checked-in wrapper: `./gradlew`, or `.\gradlew.bat` in PowerShell.
@@ -89,6 +69,13 @@ The nonpublished `integration:minecraft-fabric-26.2` and `integration:minecraft-
 `./gradlew :integration:minecraft-fabric-26.2:runClientGameTest` fixes the viewport, GUI scale, locale, resource profile, and pointer state, then requires exact native-Screen, Fabric-adapter, and headless ARGB equality for the existing screen scenes before writing build-only evidence.
 Its independent resource-font scenes additionally require exact native metrics, glyph texels, and layout, with final native image differences accepted only by the [font GPU evidence gate](../development/font-verification.md#acceptance-evidence); Fabric and headless output remain exact.
 
+Legacy automated screenshot suites also wait for the requested physical viewport to match GLFW, the native Window framebuffer, and the render target across client ticks.
+This avoids assuming that an asynchronous OS resize completed when its request returned.
+Native Canvas screenshot scenes additionally fence on the runtime's committed host-frame counter through `MinecraftCanvasFrameFence` instead of waiting a fixed tick count: a tick proves time passed, while a committed host frame after the scene signal proves the frame the signal observed completed its render call before the main framebuffer is read.
+The fence fails when the runtime counter becomes unreadable rather than silently degrading to fixed-tick behavior.
+Assertion receipts record the GUI scale, lease, and host-frame counters alongside the retained PNG, so a failed pixel assertion keeps its synchronization evidence.
+Timeouts and screenshot failures report actual dimensions and do not crop, rescale, or weaken pixel assertions.
+
 ## Canvas backend and terminal checks
 
 For explicit Canvas backend verification, run that task separately with `'-Pstrata.canvas.backend=opengl'` and `'-Pstrata.canvas.backend=vulkan'`; quote these dotted property arguments in PowerShell.
@@ -113,6 +100,19 @@ Development and primary production runs write `strata-canvas-terminal.properties
 The terminal receipt records `suiteScope`, `verifiedChecks`, `excludedChecks`, and the actual `menuBackgroundBlurriness` option, which must remain unchanged between arming and entry into native shutdown after the harness restores the test viewport through its backend-owned path.
 Gradle rejects a receipt from a different scope or invocation and validates the recorded blur option against Minecraft's supported range.
 These receipts prove the actual shutdown boundary, while the Minecraft-independent tests separately cover fences that remain unsignalled for arbitrarily many frames.
+
+## Manual OS IME verification
+
+Use `:integration:minecraft-fabric-26.2:runManualIme` to open the isolated native editor with normal OS keyboard callbacks.
+This opt-in task is separate from `check` and from Fabric Client GameTest, whose `InputConstantsMixin` deliberately prevents native keyboard and mouse callback installation.
+Do not treat a synthetic PreeditEvent or Fabric TestInput result as proof of operating-system composition.
+The normal run has its own build directory and must not connect to a multiplayer server.
+After any first-run accessibility page, the fixture opens from the title screen.
+Use the installed Japanese IME to type `nihongo`, leave the composition and candidate window active while the update label advances, convert and confirm `日本語`, then use Enter to insert a newline.
+Verify the caret, candidate selection, and text visually before selecting Finish test.
+The task requires a fresh invocation-specific `manual-ime-evidence/manual-os-ime.txt` receipt with the converted phrase, newline, stable input-node identity, and concurrent label updates.
+A closed window or an old receipt cannot pass this task.
+The receipt establishes confirmed input and retained nodes; the operator's observation establishes candidate/preedit continuity.
 
 ## Documentation and benchmarks
 

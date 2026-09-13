@@ -11,18 +11,9 @@ import dev.s7a.strata.runtime.minecraft.font.MinecraftIndexedFontAssetSource
 import java.nio.file.Path
 
 /**
- * Loads detached font resources synchronously while the caller keeps its input files stable.
- * The returned snapshot may be shared across hosts and threads; no input stream remains open.
- * Invalid documents and pack metadata produce snapshot diagnostics; ordinary source enumeration failures propagate.
- *
- * @param clientJar caller-supplied client archive for the exact target release.
- * @param assetIndex caller-supplied Minecraft asset index.
- * @param objects directory containing the index's hashed asset objects.
- * @param customPack directory containing the highest-priority custom pack.
- * @param compatibility exact release capabilities selected by the caller.
- * @param options captured font and language options for the new profile.
- * @param limits immutable allocation and work ceilings applied before reading the index and snapshot.
- * @return immutable resource snapshot, independent of later input-file changes.
+ * Loads a shareable snapshot while the caller keeps the exact-target files stable.
+ * The custom pack has highest priority; [limits] applies to both index reads and loading.
+ * Invalid documents produce diagnostics, enumeration failures propagate, and streams close before return.
  */
 internal fun loadFonts(
     clientJar: Path,

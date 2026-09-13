@@ -13,31 +13,21 @@ import dev.s7a.strata.spi.InternalStrataRuntimeApi
 import java.math.BigInteger
 
 /**
- * Rasterizes portable draw commands into a deterministic physical image.
+ * Rasterizes ordered portable commands into an immutable physical ARGB image.
  *
- * Commands are snapshotted in their supplied order before pixel allocation or painting.
- * The caller must not mutate the supplied list or command graph concurrently with this call.
- * Each call owns its raster storage and shares no mutable state with another call.
- * Rectangles use the logical origin at the top-left, x increasing rightward, y increasing downward, and half-open edges; the positive [viewport] and every active nested child clip are intersected before sampling.
- * BlitImage uses nearest pixel-center sampling: for destination-relative coordinate `d`, source extent `S`, and destination extent `D`, the sampled source offset is `floor(((2 * d + 1) * S) / (2 * D))`; viewport clipping preserves this mapping against the original unclipped destination rectangle.
- * FillRectangle and BlitImage apply the same logical source pixel to every physical pixel in its [scale] block, while BlitImagePixels applies the same mapping separately to each physical output pixel and the scaled destination extent.
- * SampledImage instead maps final physical pixel centers through its original fractional destination into the source and samples the nearest texel.
- * Its normalized source channels are multiplied by normalized tint channels without intermediate eight-bit rounding, and samples below the command's alpha cutoff are discarded before blending.
- * Every command blends against each existing physical destination pixel independently, preserving image detail beneath later logical overlays.
- * Painting starts with transparent black and uses straight ARGB source-over; integral blending uses Long intermediates.
- * For source alpha `sa`, destination alpha `da`, and channel values `sc` and `dc`, `alphaN = sa * 255 + da * (255 - sa)`, `oa = floor((alphaN + 127) / 255)`, and when `alphaN != 0` each channel is `floor((sc * sa * 255 + dc * da * (255 - sa) + floor(alphaN / 2)) / alphaN)`.
- * When `alphaN == 0`, the result is exactly `0x00000000`.
- * Each channel and alpha is rounded half-up per command, with canonical zero for transparent output.
- * SampledImage uses floating-point normalized source-over and quantizes only the final blended channels and alpha by the same half-up rule.
- * Transparent sources are no-ops, opaque sources replace, and no gamma conversion, interpolation, or saturation is applied.
+ * Commands are snapshotted before allocation; callers must not mutate the input graph concurrently.
+ * Coordinates are top-left, x-right, y-down, with half-open edges clipped to the viewport and nested child clips.
+ * Integer BlitImage samples logical pixel centers and replicates at [scale]; BlitImagePixels and SampledImage sample final physical pixel centers.
+ * Clipping preserves the original source mapping. SampledImage applies normalized tint and alpha cutoff before blending.
+ * Output starts transparent black and uses straight-ARGB source-over with half-up rounding per command, without gamma conversion.
+ * Exact arithmetic is defined in the [rendering contract](https://github.com/sya-ri/strata/blob/master/docs/development/rendering.md#headless-rasterization).
  *
- * @param commands the core-emitted draw commands in execution order; opaque platform commands are unsupported.
- * @param viewport the positive logical viewport.
- * @param scale the positive integer logical-to-physical scale.
- * @return an immutable physical ARGB image with transparent-black initial pixels.
- * The physical size is the checked viewport width and height multiplied by [scale].
- * @throws IllegalArgumentException when the viewport or scale is invalid, a command is unsupported or null from Java, or the clip stack is unbalanced.
- * @throws ArithmeticException when checked physical dimensions, pixel area, or derived raster storage exceeds Int.MAX_VALUE.
+ * @param commands draw commands in execution order; opaque platform commands are unsupported.
+ * @param viewport positive logical extent.
+ * @param scale positive integer logical-to-physical scale.
+ * @return a new image whose dimensions are the checked viewport dimensions multiplied by [scale].
+ * @throws IllegalArgumentException for invalid dimensions/scale, unsupported commands, Java null commands, or unbalanced clips.
+ * @throws ArithmeticException when physical dimensions, pixel area, or raster storage exceed Int.MAX_VALUE.
  */
 @JvmOverloads
 public fun rasterizeHeadless(

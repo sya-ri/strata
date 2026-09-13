@@ -409,20 +409,15 @@ val modifier = Modifier.Empty
     .scaleToFit(contentSize = IntSize(320, 180))
 ```
 
-The modifier takes the smaller width and height ratio and uses `contentAlignment` to position remaining slack with a fractional offset.
-The default `allowUpscaling = false` keeps one design unit equal to one logical unit whenever the content fits and only shrinks when necessary, so the platform GUI density continues to control its accessible physical size.
-Set `allowUpscaling = true` when the same design should also grow into a larger logical viewport.
-Together with outer `fillMaxSize()`, that option makes the fit track viewport growth and shrinkage; on a fixed physical window it compensates for host GUI-density changes and keeps approximately the same physical proportions, subject to aspect ratio and integer rasterization.
-Modifiers after `scaleToFit` and the component itself use the fixed design coordinates, while modifiers before it remain in viewport coordinates.
-If a constrained outer axis is zero, the child remains unplaced for that pass and contributes no paint, input, or semantics.
+The smaller axis ratio determines the uniform fit; `contentAlignment` positions remaining space.
+By default, `allowUpscaling = false` preserves logical size when content fits, leaving GUI density to control physical size.
+Enable upscaling when the design should also grow with the viewport.
+Earlier modifiers use viewport coordinates; later modifiers use design coordinates.
+A zero outer axis leaves the subtree unplaced.
 
-A custom design-surface primitive implements `ChildTransformNode` and returns a finite positive `ChildTransform` for each placed direct child.
-The runtime maps a child as `ordinaryPlacement + transform.offset + childLocal * transform.scale` and composes nested transforms.
-When transformed geometry must become an `IntRect`, Strata floors its left and top edges and ceils its right and bottom edges so clips, semantics, focus geometry, and overlay anchors enclose the continuous result.
-Pointer hit testing uses exact transformed half-open bounds, and delivered local pointer coordinates apply the inverse accumulated transform before flooring each axis.
-A delivered drag keeps its tree-coordinate position but inverse-scales its displacement into the receiving node's local logical units; scroll displacement remains in adapter-normalized wheel units.
-`RootOverlayPaintNode` commands remain root-coordinate and unscaled; only the scope's `anchorBounds` reflects the outward-projected transform.
-During current frame painting, a `PlatformDrawCommand` is supported only through an exact integer translation; a non-unit scale or fractional translation throws `UnsupportedOperationException` before any adapter output.
+Custom primitives may implement `ChildTransformNode`; see the [Element SPI](https://github.com/sya-ri/strata/blob/master/docs/reference/element-spi.md#measure-and-layout) for transform composition and input mapping.
+Semantics, focus bounds, and overlay anchors use outward integer bounds; drawing clips retain fractional edges until final physical pixel coverage.
+Opaque platform draws require unit scale and exact integer translation and fail before output otherwise.
 
 ## Selection guide
 

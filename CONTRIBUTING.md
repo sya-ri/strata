@@ -1,61 +1,44 @@
 # Contributing to Strata
 
-Read the [implementation invariants](AGENTS.md) and [Architecture](docs/development/architecture.md) before changing public contracts or module boundaries.
-[Build and verification](docs/development/build.md) is the canonical reference for build configuration and verification.
+Use the [architecture](docs/development/architecture.md) to understand module boundaries and [AGENTS.md](AGENTS.md) for repository rules.
+The [documentation index](docs/README.md) routes to guides and implementation contracts.
 
 ## Development setup
 
-Run commands from the repository root with the checked-in Gradle wrapper: `./gradlew`, or `.\gradlew.bat` in PowerShell.
-Install the Java toolchains declared by the build: common modules use the baseline toolchain, while each Minecraft adapter uses its target's required toolchain.
-Automatic toolchain downloads are disabled.
-The wrapper and [version catalog](gradle/libs.versions.toml) define build-tool, plugin, and dependency versions.
-Verify additions and updates against current primary documentation, and keep dependency and plugin versions in the catalog rather than copying them into prose or module scripts.
+Run the checked-in Gradle wrapper from the repository root: `./gradlew`, or `.\gradlew.bat` in PowerShell.
+Install the Java toolchains declared in the [version catalog](gradle/libs.versions.toml); automatic downloads are disabled.
+See [build and verification](docs/development/build.md) for environment details and target-specific tasks.
 
-## Contribution standards
+## Making a change
 
-- Preserve the acyclic module boundaries and keep platform integration inside runtime and integration modules.
-  Add modules only with working behavior and tests, and extend the public contracts without dispatching on concrete component types.
-- Standard built-ins must have one focused UI responsibility and at least two natural independent uses.
-  Review whether a proposal is too specialized or can be composed from existing primitives; this restriction does not apply to downstream application components.
-- Preserve null-safety without `!!`, use imports instead of body-qualified type names, and write boolean negation with `.not()`.
-  Express ordering with `<` and `<=`, preserving evaluation order when reversing operands.
-  Decode external discriminators into enums, sealed hierarchies, or value types at adapter boundaries.
-- Keep at most one named top-level type per source file; extension-only files may group functions for one domain and receiver.
-- Document public, protected, and internal classes and methods with KDoc covering contracts, inputs, outputs, ownership, threading, and failures.
-  Test methods are exempt, and overrides may inherit their contract.
-- Write code and documentation in English, and break prose at semantic boundaries rather than a fixed column.
-  Update the canonical documentation whenever a contract changes, and advertise only implemented, tested behavior.
+- Keep platform code at runtime/integration boundaries and test behavior without Minecraft when possible.
+- Before proposing a built-in component, check its focused responsibility and two independent uses, and assess whether composition from existing primitives is sufficient.
+  Downstream application components have no such admission requirement.
+- Follow the [adapter process](docs/development/minecraft-versions.md) for version support.
+  Use Minecraft evidence tools or authoritative sources for version-sensitive facts.
+- Update the canonical document when a contract changes.
+  Match detail to the reader's task; comments should explain contracts or non-obvious decisions.
+- Edit generated documentation through its source and run the tasks in [documentation maintenance](docs/development/documentation.md).
 
-For Minecraft changes, use the Minecraft evidence tools first, then authoritative local files or primary sources instead of inferring version-sensitive behavior.
-Follow [Supporting a new Minecraft version](docs/development/minecraft-versions.md) when adding an adapter.
+## Before review
 
-## Verification
-
-Keep tests independent of Minecraft whenever a loaded game is unnecessary, and run the affected module checks during development.
-Before review, run the full checks and coverage reports:
+Run affected module checks during development, then:
 
 ```shell
 ./gradlew check koverHtmlReport koverXmlReport -Pkover
 ```
 
-Keep Detekt, Kotlinter, Qodana, explicit API mode, warnings-as-errors, ABI validation, and both Kover reports enabled.
-Coverage reports run after JVM tests without a coverage threshold.
-Loaded worlds, screenshots, parity receipts, generated documentation, and analysis or coverage reports must be recreated and verified on the current revision, not accepted from a build cache.
-When publication code changes, also run `./gradlew publishToMavenLocal` and inspect the publication metadata.
-
-For documentation and public-skill changes, run these focused checks:
+Acceptance evidence must be recreated on the revision being reviewed.
+For publication-code changes, also run `./gradlew publishToMavenLocal` and inspect the artifacts and metadata.
+For documentation or public-skill changes, run:
 
 ```shell
 ./gradlew :integration:docs:checkStrataSkill :integration:docs:checkDocumentationLinks
 ```
 
-The README installation, API example, and showcase regions, component overview, complete screens, and compatibility reference have generated owners.
-Update their sources and use the generation tasks in [Documentation maintenance](docs/development/documentation.md).
-Headless showcase generation and freshness checks do not launch Minecraft; the separate native parity check requires fresh loaded-game evidence.
-Keep documentation organized by purpose through the [documentation index](docs/README.md), with exact declarations linked to the existing Dokka API reference.
-
 ## Commits and pull requests
 
-Commit coherent changes with passing checks rather than accumulating an entire release in one commit.
-Inspect recent commits and follow the repository's English imperative commit-message style without a prefix.
+Commit coherent changes with passing checks.
+Follow recent commits: English imperative messages without a prefix.
 Do not use `codex` in branch names or pull-request titles.
+Describe the resulting behavior, relevant validation, and any remaining limits in the PR.

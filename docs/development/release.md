@@ -125,7 +125,7 @@ The [documentation workflow](documentation.md#api-site-and-pages) reconstructs i
 Its artifacts and deployment must satisfy the provenance checks above before protected publication continues.
 A read-only source job freezes the exact controller and current release identities before the independent controller and release-evidence producers start concurrently on separate runners.
 Each producer revalidates those identities before executing repository-local actions or Gradle, and deployment remains dependent on both successful producers and their independently generated artifacts.
-Do not preserve incident timelines or service-status snapshots in reader guides; keep required recovery boundaries in executable contracts and tests.
+Follow [documentation ownership](documentation.md#documentation-ownership) for durable contracts and temporary evidence.
 
 ## Pages artifacts and deployment
 
@@ -137,7 +137,7 @@ Before any repository-local action runs and again immediately before deployment,
 Release-tag pushes and manual dispatches never execute the Documentation workflow; every `master` push reconstructs the release inventory from the trusted controller definition.
 The deployable `github-pages` artifact and its separate immutable-release evidence artifact are retained for thirty days so a delayed protected release approval can still revalidate the exact archives from the same run.
 The full-history checkout lets `release/stage-versioned-pages.sh` reproduce tagged documentation in a detached worktree on later `master` runs and copy each independently checked site into `build/dokka/html/releases/{version}` without changing the current root documentation or recursively nesting older release trees.
-Repository settings must select GitHub Actions as the Pages source, configure `github-pages-controller` with administrator bypass disabled and exactly the `master` branch policy, and retire `github-pages` with administrator bypass disabled and no branch or tag policy.
+Repository settings select GitHub Actions as the Pages source; both deployment environments must satisfy the [protected execution policy](#provenance-and-protected-execution).
 The build job receives read access to actions and contents so it can freeze the upload-pages artifact digest that the composite action does not expose, the release-evidence job receives only read access to contents, and only the deploy job receives read access to actions, contents, and deployments plus `pages: write` and `id-token: write`.
 
 Each immutable tagged site retains its own public-path inventory and source receipt below `releases/{version}`.

@@ -1,8 +1,7 @@
 package dev.s7a.strata.integration.docs
 
 /**
- * Strict replacement of the README demo's unique anchored region without touching other generated sections.
- * The caller owns reading and writing; these pure operations return new strings and reject malformed anchors.
+ * Replaces the unique README demo region, rejecting missing or duplicate anchors. File I/O belongs to the caller.
  */
 internal object ReadmeDemoReadme {
     private const val BEGIN = "<!-- strata-readme-demo:start -->"

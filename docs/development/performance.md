@@ -19,21 +19,24 @@ The same distinction applies to the build: dependency and tool-derived intermedi
 
 ## Benchmark methodology
 
-Run the complete suite from the repository root with `./gradlew :quality:benchmarks:jmh`.
-The benchmark module uses the catalog-selected JMH dependency in average-time mode with one worker thread, three one-second warmup iterations, five one-second measurement iterations, and one fork.
-The built-in `gc` profiler records normalized allocation in bytes per operation alongside elapsed time in microseconds per operation.
-The three logical viewports are `Compact` at 320 by 180, `Windowed` at 854 by 480, and `FullHd` at 1920 by 1080.
-The original RenderingBenchmark cases use the same public API-built scene containing a full-viewport background and 54 keyed paint-and-semantics leaves in a centered nine-column grid.
+Run `./gradlew :quality:benchmarks:jmh` for average time and normalized allocation using the `gc` profiler.
+The [benchmark build](../../quality/benchmarks/build.gradle.kts) owns iteration, fork, and output settings; [benchmark sources](../../quality/benchmarks/src/jmh/kotlin) own scenes and viewports.
 
-`cleanUiSessionFrame` primes one retained session before measurement and then requests another frame without invalidation.
-`cleanTimedUiSessionFrame` advances that same clean scene with a stable explicit host timestamp before requesting the frame, matching the per-render call shape used by Minecraft without causing a time-dependent invalidation.
-`dirtyUiSessionFrame` invalidates every representative leaf with all retained phases before requesting the measured frame.
-`headlessRasterization` obtains a detached display list from a real retained frame, closes the temporary session, and measures creation of fresh headless pixel storage.
+Compare these costs separately:
 
-JMH writes structured output to `quality/benchmarks/build/reports/jmh/results.json`.
-The report and every other file under `quality/benchmarks/build/` are temporary, untracked build outputs and must not be committed.
+| Case | Measurement |
+| --- | --- |
+| Clean session frame | A primed retained session with no invalidation. |
+| Clean timed frame | The same path with an explicit unchanged host timestamp. |
+| Dirty session frame | Representative leaves invalidated across all retained phases. |
+| Headless rasterization | Fresh pixel storage from detached commands after closing the source session. |
+| Reactive scenarios | Publication, projection, shared/independent consumers, and list changes, with monitoring off and on. |
 
-The reactive JMH fixture adds static, single source, equal/changed projection, nested observation, 128 independent consumers, 128 shared consumers, and 200-row list append/prepend cases at 320 by 180. Each case runs with monitoring disabled and enabled. Enabled runs checkpoint every 64 invocations to keep node turnover within the diagnostic record bound; that checkpoint cost is included. Initial subscription and layout are outside measurement, while publication and its immutable snapshot allocation are included. Lists alternate fixed immutable ranges and preserve their current anchor. The [monitoring contract](render-monitoring.md) describes deterministic work counters used alongside timing and allocation.
+Reactive setup excludes initial subscription/layout but includes publication and snapshot allocation.
+Enabled monitoring checkpoints every 64 invocations; checkpoint cost is included.
+Lists alternate fixed immutable ranges while preserving their anchor.
+Use [render monitoring](render-monitoring.md) counters alongside timing and allocation.
+Reports under `quality/benchmarks/build/` are temporary and untracked.
 
 ## Why wall-clock time is not a hard CI gate
 

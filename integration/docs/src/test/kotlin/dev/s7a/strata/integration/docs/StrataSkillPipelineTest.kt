@@ -22,7 +22,7 @@ internal class StrataSkillPipelineTest {
                     root.resolve("integration/docs/build/strata-skill/test").toString(),
                     root.resolve("integration/docs/src/skillExamples/kotlin").toString(),
                     releaseVersion,
-                    root.resolve("api/build/classes/kotlin/main").toString(),
+                    CompiledApiFixture.classes.toString(),
                 ),
             )
 
@@ -83,7 +83,7 @@ internal class StrataSkillPipelineTest {
                     root.resolve("integration/docs/build/strata-skill/test").toString(),
                     root.resolve("integration/docs/src/skillExamples/kotlin").toString(),
                     "latest",
-                    root.resolve("api/build/classes/kotlin/main").toString(),
+                    CompiledApiFixture.classes.toString(),
                 ),
             )
         }
@@ -176,22 +176,22 @@ internal class StrataSkillPipelineTest {
     ) {
         assertTrue(document.contains("makes no other functional change").not())
         assertTrue(document.contains("UiText.withFont"))
-        assertTrue(document.contains("Existing overloads without a font argument remain available."))
-        assertTrue(document.contains("Unknown font IDs produce missing glyphs instead of silently selecting `minecraft:default`."))
+        assertTrue(document.contains("An inner font wrapper wins over outer or component selection."))
+        assertTrue(document.contains("unknown font IDs produce missing glyphs"))
         assertTrue(document.contains("Unicode scalar"))
         assertTrue(document.contains("UTF-16 code units"))
-        assertTrue(document.contains("inline IME composition"))
+        assertTrue(document.contains("keep preedit separate until committed"))
+        assertTrue(document.contains("Focus loss and terminal cleanup clear composition."))
         assertTrue(document.contains("TextLayout.Multiline"))
         assertTrue(document.contains("TextArea"))
         assertTrue(document.contains("TextField"))
-        assertTrue(document.contains("adapters that expose only committed characters"))
+        assertTrue(document.contains("target-specific IME support"))
         assertTrue(document.contains("dev.s7a.strata:strata-runtime-minecraft-fonts-lwjgl:$releaseVersion"))
         assertTrue(document.contains("does not bundle LWJGL, ICU, Gson, or native binaries"))
-        assertTrue(document.contains("unsafe STB coordinate conversions remain invalid"))
+        assertTrue(document.contains("incompatible native generations must run in separate processes"))
+        assertTrue(document.contains("Each host owns and closes its backend and bounded caches"))
         assertTrue(document.contains("https://github.com/sya-ri/strata/blob/master/docs/guides/text.md"))
         assertTrue(document.contains("https://github.com/sya-ri/strata/blob/master/docs/guides/fonts.md#numeric-provider-settings"))
-        assertTrue(document.contains("https://github.com/sya-ri/strata/blob/master/docs/development/font-verification.md"))
-        assertTrue(document.contains("independent GPU evidence"))
     }
 
     private fun repositoryRoot(): Path {

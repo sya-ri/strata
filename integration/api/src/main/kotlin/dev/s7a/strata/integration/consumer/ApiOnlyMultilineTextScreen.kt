@@ -20,16 +20,8 @@ import dev.s7a.strata.text.TextWrap
 import dev.s7a.strata.text.UiText
 
 /**
- * Creates message and notes editors while compiling against the API artifact alone.
- *
- * Both editor states belong to the caller and must be distinct and created on the host's owner thread.
- * Scrollbars are independent siblings sharing each editor's vertical position.
- * The returned definition remains unevaluated until a compatible runtime transfers or closes it.
- *
- * @param message caller-owned multiline message being composed.
- * @param notes independent caller-owned notes value.
- * @param font resource-pack font available in the eventual runtime profile.
- * @return a one-shot definition that retains neither native fonts nor an attached editor.
+ * Creates a one-shot screen with independent message and notes editors.
+ * Supply distinct caller-owned states created on the host thread and a pack containing [font].
  */
 internal fun multilineTextScreen(
     message: TextAreaState,

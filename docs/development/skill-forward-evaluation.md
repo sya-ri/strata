@@ -10,22 +10,11 @@ The corrected `integration/docs/src/skillExamples/kotlin/dev/s7a/strata/integrat
 
 ## Fresh-author recheck
 
-A different author received two tasks, the improved skill, and its public references, with no earlier outputs, evaluation tests, or intended API-selection answer.
-The message editor requires a seconds-based minute clock, sending/loading states, a caller-owned multiline draft, and a 10,000-message history.
-The player search requires elapsed minutes, a searching state, a caller-owned query, loading/empty results, and a 10,000-player list.
-Both fit a 200 by 180 viewport and preserve input focus and scrolling across independent updates.
+The API-only first submissions under `integration/docs/src/skillRecheckFirst/kotlin/dev/s7a/strata/integration/docs/recheck` implement a message editor and player search in a 200 by 180 viewport.
+Both receive changing status, caller-owned editing state, and 10,000 keyed rows; their initial outputs compile and render without author corrections.
+Keep these submissions unchanged as evidence.
 
-The four first implementations are preserved in `integration/docs/src/skillRecheckFirst/kotlin/dev/s7a/strata/integration/docs/recheck`.
-Initial compilation and runtime acceptance happened before repository formatting; the formatter subsequently expanded only the two outer Modifier chains across lines, without changing any expression or behavior.
-Both first outputs compile against API alone and render successfully without author corrections.
-They retain projected sources and dedicated editing/list state, bind changing component inputs directly, and reserve multiline text geometry.
-The search status uses a narrow two-source Observe; a nonempty-to-nonempty result update suppresses that status evaluation because its empty projection is unchanged.
-
-`SkillRecheckTest` runs both original definitions using real font metrics and runtime monitoring.
-It requires zero dependent UI work for within-minute updates, one direct component evaluation for a changed minute, no history-row evaluation for independent clock/action updates, stable editor focus during composition, and unchanged visible semantics after simultaneous prepend/append.
-The measured materialization limits are nine rows in the 68-pixel history viewport and eleven in the 92-pixel search viewport, including partially visible rows and one overscan row per edge.
-An initial harness bound omitted the additional partially visible row; the harness was corrected after inspecting the nine/eleven actual evaluations, without modifying either submitted screen.
-The API-only classpath gate now checks accepted examples and both independent first-output source sets.
-
-This recheck succeeded on two of two tasks from one fresh author, following the earlier one-task exercise.
-It is evidence for these tasks, not a statistically representative success rate for arbitrary models, prompts, or screens.
+`SkillRecheckTest` checks equal minute projections, independent clock/action updates, focus during composition, prepend/append semantics, and bounded visible-row creation.
+The history and search viewports materialize at most nine and eleven rows respectively, including partial and overscan rows.
+All accepted and original-example source sets compile against `:api` alone.
+This is evidence for these tasks, not a general model success rate; CI does not require an agent run.

@@ -14,11 +14,11 @@ import dev.s7a.strata.text.UiText
 import kotlin.jvm.JvmName
 
 /**
- * Source-backed [ProgressBar] observing progress at the next frame cutoff.
- * Sources remain caller-owned; compatible nodes retain editing, focus, and scrolling state.
- * Literal arguments keep their existing contracts. Equal source values do not re-evaluate this component.
- * The complete modifier chain stays on the actual component; the wrapper delegates parent data and owns the sibling key.
- * Keep sources and dedicated editing states outside observed callbacks. Evaluation and input failures follow ordinary runtime cleanup.
+ * Observes progress for [ProgressBar] at the next owner-thread frame cutoff.
+ *
+ * Retain caller-owned sources and editing state outside reevaluation.
+ * See [Observe] for shared snapshots, equal-value suppression, and cleanup; literal arguments follow [ProgressBar].
+ * Modifiers and parent data apply to the actual component, while the binding owns its sibling key.
  */
 @JvmName("ProgressBarState4c303dc4114b_1")
 public fun UiScope.ProgressBar(
@@ -38,11 +38,11 @@ public fun UiScope.ProgressBar(
 }
 
 /**
- * Source-backed [Checkbox] observing label at the next frame cutoff.
- * Sources remain caller-owned; compatible nodes retain editing, focus, and scrolling state.
- * Literal arguments keep their existing contracts. Equal source values do not re-evaluate this component.
- * The complete modifier chain stays on the actual component; the wrapper delegates parent data and owns the sibling key.
- * Keep sources and dedicated editing states outside observed callbacks. Evaluation and input failures follow ordinary runtime cleanup.
+ * Observes label for [Checkbox] at the next owner-thread frame cutoff.
+ *
+ * Retain caller-owned sources and editing state outside reevaluation.
+ * See [Observe] for shared snapshots, equal-value suppression, and cleanup; literal arguments follow [Checkbox].
+ * Modifiers and parent data apply to the actual component, while the binding owns its sibling key.
  */
 @JvmName("CheckboxState3bddea62a5dc_1")
 public fun UiScope.Checkbox(
@@ -66,11 +66,11 @@ public fun UiScope.Checkbox(
 }
 
 /**
- * Source-backed [Checkbox] observing enabled at the next frame cutoff.
- * Sources remain caller-owned; compatible nodes retain editing, focus, and scrolling state.
- * Literal arguments keep their existing contracts. Equal source values do not re-evaluate this component.
- * The complete modifier chain stays on the actual component; the wrapper delegates parent data and owns the sibling key.
- * Keep sources and dedicated editing states outside observed callbacks. Evaluation and input failures follow ordinary runtime cleanup.
+ * Observes enabled for [Checkbox] at the next owner-thread frame cutoff.
+ *
+ * Retain caller-owned sources and editing state outside reevaluation.
+ * See [Observe] for shared snapshots, equal-value suppression, and cleanup; literal arguments follow [Checkbox].
+ * Modifiers and parent data apply to the actual component, while the binding owns its sibling key.
  */
 @JvmName("CheckboxState3bddea62a5dc_2")
 public fun UiScope.Checkbox(
@@ -94,11 +94,11 @@ public fun UiScope.Checkbox(
 }
 
 /**
- * Source-backed [Checkbox] observing label, enabled at the next frame cutoff.
- * Sources remain caller-owned; compatible nodes retain editing, focus, and scrolling state.
- * Literal arguments keep their existing contracts. Equal source values do not re-evaluate this component.
- * The complete modifier chain stays on the actual component; the wrapper delegates parent data and owns the sibling key.
- * Keep sources and dedicated editing states outside observed callbacks. Evaluation and input failures follow ordinary runtime cleanup.
+ * Observes label, enabled for [Checkbox] at the next owner-thread frame cutoff.
+ *
+ * Retain caller-owned sources and editing state outside reevaluation.
+ * See [Observe] for shared snapshots, equal-value suppression, and cleanup; literal arguments follow [Checkbox].
+ * Modifiers and parent data apply to the actual component, while the binding owns its sibling key.
  */
 @JvmName("CheckboxState3bddea62a5dc_3")
 public fun UiScope.Checkbox(
@@ -122,11 +122,11 @@ public fun UiScope.Checkbox(
 }
 
 /**
- * Source-backed [CycleButton] observing enabled at the next frame cutoff.
- * Sources remain caller-owned; compatible nodes retain editing, focus, and scrolling state.
- * Literal arguments keep their existing contracts. Equal source values do not re-evaluate this component.
- * The complete modifier chain stays on the actual component; the wrapper delegates parent data and owns the sibling key.
- * Keep sources and dedicated editing states outside observed callbacks. Evaluation and input failures follow ordinary runtime cleanup.
+ * Observes enabled for [CycleButton] at the next owner-thread frame cutoff.
+ *
+ * Retain caller-owned sources and editing state outside reevaluation.
+ * See [Observe] for shared snapshots, equal-value suppression, and cleanup; literal arguments follow [CycleButton].
+ * Modifiers and parent data apply to the actual component, while the binding owns its sibling key.
  */
 @JvmName("CycleButtonState454065400fd3_1")
 public fun <T : Any> UiScope.CycleButton(
@@ -150,11 +150,11 @@ public fun <T : Any> UiScope.CycleButton(
 }
 
 /**
- * Source-backed [CycleButton] observing label at the next frame cutoff.
- * Sources remain caller-owned; compatible nodes retain editing, focus, and scrolling state.
- * Literal arguments keep their existing contracts. Equal source values do not re-evaluate this component.
- * The complete modifier chain stays on the actual component; the wrapper delegates parent data and owns the sibling key.
- * Keep sources and dedicated editing states outside observed callbacks. Evaluation and input failures follow ordinary runtime cleanup.
+ * Observes label for [CycleButton] at the next owner-thread frame cutoff.
+ *
+ * Retain caller-owned sources and editing state outside reevaluation.
+ * See [Observe] for shared snapshots, equal-value suppression, and cleanup; literal arguments follow [CycleButton].
+ * Modifiers and parent data apply to the actual component, while the binding owns its sibling key.
  */
 @JvmName("CycleButtonState454065400fd3_2")
 public fun <T : Any> UiScope.CycleButton(
@@ -178,11 +178,11 @@ public fun <T : Any> UiScope.CycleButton(
 }
 
 /**
- * Source-backed [CycleButton] observing enabled, label at the next frame cutoff.
- * Sources remain caller-owned; compatible nodes retain editing, focus, and scrolling state.
- * Literal arguments keep their existing contracts. Equal source values do not re-evaluate this component.
- * The complete modifier chain stays on the actual component; the wrapper delegates parent data and owns the sibling key.
- * Keep sources and dedicated editing states outside observed callbacks. Evaluation and input failures follow ordinary runtime cleanup.
+ * Observes enabled, label for [CycleButton] at the next owner-thread frame cutoff.
+ *
+ * Retain caller-owned sources and editing state outside reevaluation.
+ * See [Observe] for shared snapshots, equal-value suppression, and cleanup; literal arguments follow [CycleButton].
+ * Modifiers and parent data apply to the actual component, while the binding owns its sibling key.
  */
 @JvmName("CycleButtonState454065400fd3_3")
 public fun <T : Any> UiScope.CycleButton(
@@ -206,11 +206,11 @@ public fun <T : Any> UiScope.CycleButton(
 }
 
 /**
- * Source-backed [Slider] observing label at the next frame cutoff.
- * Sources remain caller-owned; compatible nodes retain editing, focus, and scrolling state.
- * Literal arguments keep their existing contracts. Equal source values do not re-evaluate this component.
- * The complete modifier chain stays on the actual component; the wrapper delegates parent data and owns the sibling key.
- * Keep sources and dedicated editing states outside observed callbacks. Evaluation and input failures follow ordinary runtime cleanup.
+ * Observes label for [Slider] at the next owner-thread frame cutoff.
+ *
+ * Retain caller-owned sources and editing state outside reevaluation.
+ * See [Observe] for shared snapshots, equal-value suppression, and cleanup; literal arguments follow [Slider].
+ * Modifiers and parent data apply to the actual component, while the binding owns its sibling key.
  */
 @JvmName("SliderStatef08abfd13498_1")
 public fun UiScope.Slider(
@@ -234,11 +234,11 @@ public fun UiScope.Slider(
 }
 
 /**
- * Source-backed [Slider] observing enabled at the next frame cutoff.
- * Sources remain caller-owned; compatible nodes retain editing, focus, and scrolling state.
- * Literal arguments keep their existing contracts. Equal source values do not re-evaluate this component.
- * The complete modifier chain stays on the actual component; the wrapper delegates parent data and owns the sibling key.
- * Keep sources and dedicated editing states outside observed callbacks. Evaluation and input failures follow ordinary runtime cleanup.
+ * Observes enabled for [Slider] at the next owner-thread frame cutoff.
+ *
+ * Retain caller-owned sources and editing state outside reevaluation.
+ * See [Observe] for shared snapshots, equal-value suppression, and cleanup; literal arguments follow [Slider].
+ * Modifiers and parent data apply to the actual component, while the binding owns its sibling key.
  */
 @JvmName("SliderStatef08abfd13498_2")
 public fun UiScope.Slider(
@@ -262,11 +262,11 @@ public fun UiScope.Slider(
 }
 
 /**
- * Source-backed [Slider] observing label, enabled at the next frame cutoff.
- * Sources remain caller-owned; compatible nodes retain editing, focus, and scrolling state.
- * Literal arguments keep their existing contracts. Equal source values do not re-evaluate this component.
- * The complete modifier chain stays on the actual component; the wrapper delegates parent data and owns the sibling key.
- * Keep sources and dedicated editing states outside observed callbacks. Evaluation and input failures follow ordinary runtime cleanup.
+ * Observes label, enabled for [Slider] at the next owner-thread frame cutoff.
+ *
+ * Retain caller-owned sources and editing state outside reevaluation.
+ * See [Observe] for shared snapshots, equal-value suppression, and cleanup; literal arguments follow [Slider].
+ * Modifiers and parent data apply to the actual component, while the binding owns its sibling key.
  */
 @JvmName("SliderStatef08abfd13498_3")
 public fun UiScope.Slider(
@@ -290,11 +290,11 @@ public fun UiScope.Slider(
 }
 
 /**
- * Source-backed [Slider] observing label at the next frame cutoff.
- * Sources remain caller-owned; compatible nodes retain editing, focus, and scrolling state.
- * Literal arguments keep their existing contracts. Equal source values do not re-evaluate this component.
- * The complete modifier chain stays on the actual component; the wrapper delegates parent data and owns the sibling key.
- * Keep sources and dedicated editing states outside observed callbacks. Evaluation and input failures follow ordinary runtime cleanup.
+ * Observes label for [Slider] at the next owner-thread frame cutoff.
+ *
+ * Retain caller-owned sources and editing state outside reevaluation.
+ * See [Observe] for shared snapshots, equal-value suppression, and cleanup; literal arguments follow [Slider].
+ * Modifiers and parent data apply to the actual component, while the binding owns its sibling key.
  */
 @JvmName("SliderStatecccdb0fa60d4_1")
 public fun UiScope.Slider(
@@ -318,11 +318,11 @@ public fun UiScope.Slider(
 }
 
 /**
- * Source-backed [Slider] observing enabled at the next frame cutoff.
- * Sources remain caller-owned; compatible nodes retain editing, focus, and scrolling state.
- * Literal arguments keep their existing contracts. Equal source values do not re-evaluate this component.
- * The complete modifier chain stays on the actual component; the wrapper delegates parent data and owns the sibling key.
- * Keep sources and dedicated editing states outside observed callbacks. Evaluation and input failures follow ordinary runtime cleanup.
+ * Observes enabled for [Slider] at the next owner-thread frame cutoff.
+ *
+ * Retain caller-owned sources and editing state outside reevaluation.
+ * See [Observe] for shared snapshots, equal-value suppression, and cleanup; literal arguments follow [Slider].
+ * Modifiers and parent data apply to the actual component, while the binding owns its sibling key.
  */
 @JvmName("SliderStatecccdb0fa60d4_2")
 public fun UiScope.Slider(
@@ -346,11 +346,11 @@ public fun UiScope.Slider(
 }
 
 /**
- * Source-backed [Slider] observing label, enabled at the next frame cutoff.
- * Sources remain caller-owned; compatible nodes retain editing, focus, and scrolling state.
- * Literal arguments keep their existing contracts. Equal source values do not re-evaluate this component.
- * The complete modifier chain stays on the actual component; the wrapper delegates parent data and owns the sibling key.
- * Keep sources and dedicated editing states outside observed callbacks. Evaluation and input failures follow ordinary runtime cleanup.
+ * Observes label, enabled for [Slider] at the next owner-thread frame cutoff.
+ *
+ * Retain caller-owned sources and editing state outside reevaluation.
+ * See [Observe] for shared snapshots, equal-value suppression, and cleanup; literal arguments follow [Slider].
+ * Modifiers and parent data apply to the actual component, while the binding owns its sibling key.
  */
 @JvmName("SliderStatecccdb0fa60d4_3")
 public fun UiScope.Slider(
@@ -374,11 +374,11 @@ public fun UiScope.Slider(
 }
 
 /**
- * Source-backed [Checkbox] observing label at the next frame cutoff.
- * Sources remain caller-owned; compatible nodes retain editing, focus, and scrolling state.
- * Literal arguments keep their existing contracts. Equal source values do not re-evaluate this component.
- * The complete modifier chain stays on the actual component; the wrapper delegates parent data and owns the sibling key.
- * Keep sources and dedicated editing states outside observed callbacks. Evaluation and input failures follow ordinary runtime cleanup.
+ * Observes label for [Checkbox] at the next owner-thread frame cutoff.
+ *
+ * Retain caller-owned sources and editing state outside reevaluation.
+ * See [Observe] for shared snapshots, equal-value suppression, and cleanup; literal arguments follow [Checkbox].
+ * Modifiers and parent data apply to the actual component, while the binding owns its sibling key.
  */
 @JvmName("CheckboxState1d460d77bb71_1")
 public fun UiScope.Checkbox(
@@ -402,11 +402,11 @@ public fun UiScope.Checkbox(
 }
 
 /**
- * Source-backed [Checkbox] observing enabled at the next frame cutoff.
- * Sources remain caller-owned; compatible nodes retain editing, focus, and scrolling state.
- * Literal arguments keep their existing contracts. Equal source values do not re-evaluate this component.
- * The complete modifier chain stays on the actual component; the wrapper delegates parent data and owns the sibling key.
- * Keep sources and dedicated editing states outside observed callbacks. Evaluation and input failures follow ordinary runtime cleanup.
+ * Observes enabled for [Checkbox] at the next owner-thread frame cutoff.
+ *
+ * Retain caller-owned sources and editing state outside reevaluation.
+ * See [Observe] for shared snapshots, equal-value suppression, and cleanup; literal arguments follow [Checkbox].
+ * Modifiers and parent data apply to the actual component, while the binding owns its sibling key.
  */
 @JvmName("CheckboxState1d460d77bb71_2")
 public fun UiScope.Checkbox(
@@ -430,11 +430,11 @@ public fun UiScope.Checkbox(
 }
 
 /**
- * Source-backed [Checkbox] observing label, enabled at the next frame cutoff.
- * Sources remain caller-owned; compatible nodes retain editing, focus, and scrolling state.
- * Literal arguments keep their existing contracts. Equal source values do not re-evaluate this component.
- * The complete modifier chain stays on the actual component; the wrapper delegates parent data and owns the sibling key.
- * Keep sources and dedicated editing states outside observed callbacks. Evaluation and input failures follow ordinary runtime cleanup.
+ * Observes label, enabled for [Checkbox] at the next owner-thread frame cutoff.
+ *
+ * Retain caller-owned sources and editing state outside reevaluation.
+ * See [Observe] for shared snapshots, equal-value suppression, and cleanup; literal arguments follow [Checkbox].
+ * Modifiers and parent data apply to the actual component, while the binding owns its sibling key.
  */
 @JvmName("CheckboxState1d460d77bb71_3")
 public fun UiScope.Checkbox(
@@ -458,11 +458,11 @@ public fun UiScope.Checkbox(
 }
 
 /**
- * Source-backed [Image] observing source at the next frame cutoff.
- * Sources remain caller-owned; compatible nodes retain editing, focus, and scrolling state.
- * Literal arguments keep their existing contracts. Equal source values do not re-evaluate this component.
- * The complete modifier chain stays on the actual component; the wrapper delegates parent data and owns the sibling key.
- * Keep sources and dedicated editing states outside observed callbacks. Evaluation and input failures follow ordinary runtime cleanup.
+ * Observes source for [Image] at the next owner-thread frame cutoff.
+ *
+ * Retain caller-owned sources and editing state outside reevaluation.
+ * See [Observe] for shared snapshots, equal-value suppression, and cleanup; literal arguments follow [Image].
+ * Modifiers and parent data apply to the actual component, while the binding owns its sibling key.
  */
 @JvmName("ImageState386405e1017f_1")
 public fun UiScope.Image(
@@ -482,11 +482,11 @@ public fun UiScope.Image(
 }
 
 /**
- * Source-backed [Image] observing source at the next frame cutoff.
- * Sources remain caller-owned; compatible nodes retain editing, focus, and scrolling state.
- * Literal arguments keep their existing contracts. Equal source values do not re-evaluate this component.
- * The complete modifier chain stays on the actual component; the wrapper delegates parent data and owns the sibling key.
- * Keep sources and dedicated editing states outside observed callbacks. Evaluation and input failures follow ordinary runtime cleanup.
+ * Observes source for [Image] at the next owner-thread frame cutoff.
+ *
+ * Retain caller-owned sources and editing state outside reevaluation.
+ * See [Observe] for shared snapshots, equal-value suppression, and cleanup; literal arguments follow [Image].
+ * Modifiers and parent data apply to the actual component, while the binding owns its sibling key.
  */
 @JvmName("ImageState6751db0e9723_1")
 public fun UiScope.Image(
@@ -508,11 +508,11 @@ public fun UiScope.Image(
 }
 
 /**
- * Source-backed [PlayerHead] observing source at the next frame cutoff.
- * Sources remain caller-owned; compatible nodes retain editing, focus, and scrolling state.
- * Literal arguments keep their existing contracts. Equal source values do not re-evaluate this component.
- * The complete modifier chain stays on the actual component; the wrapper delegates parent data and owns the sibling key.
- * Keep sources and dedicated editing states outside observed callbacks. Evaluation and input failures follow ordinary runtime cleanup.
+ * Observes source for [PlayerHead] at the next owner-thread frame cutoff.
+ *
+ * Retain caller-owned sources and editing state outside reevaluation.
+ * See [Observe] for shared snapshots, equal-value suppression, and cleanup; literal arguments follow [PlayerHead].
+ * Modifiers and parent data apply to the actual component, while the binding owns its sibling key.
  */
 @JvmName("PlayerHeadState339c1e7d20b9_1")
 public fun UiScope.PlayerHead(
@@ -538,11 +538,11 @@ public fun UiScope.PlayerHead(
 }
 
 /**
- * Source-backed [Slot] observing bind at the next frame cutoff.
- * Sources remain caller-owned; compatible nodes retain editing, focus, and scrolling state.
- * Literal arguments keep their existing contracts. Equal source values do not re-evaluate this component.
- * The complete modifier chain stays on the actual component; the wrapper delegates parent data and owns the sibling key.
- * Keep sources and dedicated editing states outside observed callbacks. Evaluation and input failures follow ordinary runtime cleanup.
+ * Observes bind for [Slot] at the next owner-thread frame cutoff.
+ *
+ * Retain caller-owned sources and editing state outside reevaluation.
+ * See [Observe] for shared snapshots, equal-value suppression, and cleanup; literal arguments follow [Slot].
+ * Modifiers and parent data apply to the actual component, while the binding owns its sibling key.
  */
 @JvmName("SlotStatea3c7818cbdc8_1")
 public fun UiScope.Slot(
@@ -564,11 +564,11 @@ public fun UiScope.Slot(
 }
 
 /**
- * Source-backed [Slot] observing highlightable at the next frame cutoff.
- * Sources remain caller-owned; compatible nodes retain editing, focus, and scrolling state.
- * Literal arguments keep their existing contracts. Equal source values do not re-evaluate this component.
- * The complete modifier chain stays on the actual component; the wrapper delegates parent data and owns the sibling key.
- * Keep sources and dedicated editing states outside observed callbacks. Evaluation and input failures follow ordinary runtime cleanup.
+ * Observes highlightable for [Slot] at the next owner-thread frame cutoff.
+ *
+ * Retain caller-owned sources and editing state outside reevaluation.
+ * See [Observe] for shared snapshots, equal-value suppression, and cleanup; literal arguments follow [Slot].
+ * Modifiers and parent data apply to the actual component, while the binding owns its sibling key.
  */
 @JvmName("SlotStatea3c7818cbdc8_2")
 public fun UiScope.Slot(
@@ -590,11 +590,11 @@ public fun UiScope.Slot(
 }
 
 /**
- * Source-backed [Slot] observing bind, highlightable at the next frame cutoff.
- * Sources remain caller-owned; compatible nodes retain editing, focus, and scrolling state.
- * Literal arguments keep their existing contracts. Equal source values do not re-evaluate this component.
- * The complete modifier chain stays on the actual component; the wrapper delegates parent data and owns the sibling key.
- * Keep sources and dedicated editing states outside observed callbacks. Evaluation and input failures follow ordinary runtime cleanup.
+ * Observes bind, highlightable for [Slot] at the next owner-thread frame cutoff.
+ *
+ * Retain caller-owned sources and editing state outside reevaluation.
+ * See [Observe] for shared snapshots, equal-value suppression, and cleanup; literal arguments follow [Slot].
+ * Modifiers and parent data apply to the actual component, while the binding owns its sibling key.
  */
 @JvmName("SlotStatea3c7818cbdc8_3")
 public fun UiScope.Slot(
@@ -616,11 +616,11 @@ public fun UiScope.Slot(
 }
 
 /**
- * Source-backed [TextField] observing enabled at the next frame cutoff.
- * Sources remain caller-owned; compatible nodes retain editing, focus, and scrolling state.
- * Literal arguments keep their existing contracts. Equal source values do not re-evaluate this component.
- * The complete modifier chain stays on the actual component; the wrapper delegates parent data and owns the sibling key.
- * Keep sources and dedicated editing states outside observed callbacks. Evaluation and input failures follow ordinary runtime cleanup.
+ * Observes enabled for [TextField] at the next owner-thread frame cutoff.
+ *
+ * Retain caller-owned sources and editing state outside reevaluation.
+ * See [Observe] for shared snapshots, equal-value suppression, and cleanup; literal arguments follow [TextField].
+ * Modifiers and parent data apply to the actual component, while the binding owns its sibling key.
  */
 @JvmName("TextFieldStatebdacf61484d9_1")
 public fun UiScope.TextField(
@@ -642,11 +642,11 @@ public fun UiScope.TextField(
 }
 
 /**
- * Source-backed [TextField] observing enabled at the next frame cutoff.
- * Sources remain caller-owned; compatible nodes retain editing, focus, and scrolling state.
- * Literal arguments keep their existing contracts. Equal source values do not re-evaluate this component.
- * The complete modifier chain stays on the actual component; the wrapper delegates parent data and owns the sibling key.
- * Keep sources and dedicated editing states outside observed callbacks. Evaluation and input failures follow ordinary runtime cleanup.
+ * Observes enabled for [TextField] at the next owner-thread frame cutoff.
+ *
+ * Retain caller-owned sources and editing state outside reevaluation.
+ * See [Observe] for shared snapshots, equal-value suppression, and cleanup; literal arguments follow [TextField].
+ * Modifiers and parent data apply to the actual component, while the binding owns its sibling key.
  */
 @JvmName("TextFieldState06eec201bfdd_1")
 public fun UiScope.TextField(
@@ -670,11 +670,11 @@ public fun UiScope.TextField(
 }
 
 /**
- * Source-backed [TextField] observing enabled at the next frame cutoff.
- * Sources remain caller-owned; compatible nodes retain editing, focus, and scrolling state.
- * Literal arguments keep their existing contracts. Equal source values do not re-evaluate this component.
- * The complete modifier chain stays on the actual component; the wrapper delegates parent data and owns the sibling key.
- * Keep sources and dedicated editing states outside observed callbacks. Evaluation and input failures follow ordinary runtime cleanup.
+ * Observes enabled for [TextField] at the next owner-thread frame cutoff.
+ *
+ * Retain caller-owned sources and editing state outside reevaluation.
+ * See [Observe] for shared snapshots, equal-value suppression, and cleanup; literal arguments follow [TextField].
+ * Modifiers and parent data apply to the actual component, while the binding owns its sibling key.
  */
 @JvmName("TextFieldStateac020717728e_1")
 public fun UiScope.TextField(
@@ -698,11 +698,11 @@ public fun UiScope.TextField(
 }
 
 /**
- * Source-backed [TextField] observing enabled at the next frame cutoff.
- * Sources remain caller-owned; compatible nodes retain editing, focus, and scrolling state.
- * Literal arguments keep their existing contracts. Equal source values do not re-evaluate this component.
- * The complete modifier chain stays on the actual component; the wrapper delegates parent data and owns the sibling key.
- * Keep sources and dedicated editing states outside observed callbacks. Evaluation and input failures follow ordinary runtime cleanup.
+ * Observes enabled for [TextField] at the next owner-thread frame cutoff.
+ *
+ * Retain caller-owned sources and editing state outside reevaluation.
+ * See [Observe] for shared snapshots, equal-value suppression, and cleanup; literal arguments follow [TextField].
+ * Modifiers and parent data apply to the actual component, while the binding owns its sibling key.
  */
 @JvmName("TextFieldState0f2e4a0352af_1")
 public fun UiScope.TextField(
@@ -728,11 +728,11 @@ public fun UiScope.TextField(
 }
 
 /**
- * Source-backed [TextArea] observing enabled at the next frame cutoff.
- * Sources remain caller-owned; compatible nodes retain editing, focus, and scrolling state.
- * Literal arguments keep their existing contracts. Equal source values do not re-evaluate this component.
- * The complete modifier chain stays on the actual component; the wrapper delegates parent data and owns the sibling key.
- * Keep sources and dedicated editing states outside observed callbacks. Evaluation and input failures follow ordinary runtime cleanup.
+ * Observes enabled for [TextArea] at the next owner-thread frame cutoff.
+ *
+ * Retain caller-owned sources and editing state outside reevaluation.
+ * See [Observe] for shared snapshots, equal-value suppression, and cleanup; literal arguments follow [TextArea].
+ * Modifiers and parent data apply to the actual component, while the binding owns its sibling key.
  */
 @JvmName("TextAreaStatec0abf0512fec_1")
 public fun UiScope.TextArea(
@@ -760,11 +760,11 @@ public fun UiScope.TextArea(
 }
 
 /**
- * Source-backed [TextArea] observing enabled at the next frame cutoff.
- * Sources remain caller-owned; compatible nodes retain editing, focus, and scrolling state.
- * Literal arguments keep their existing contracts. Equal source values do not re-evaluate this component.
- * The complete modifier chain stays on the actual component; the wrapper delegates parent data and owns the sibling key.
- * Keep sources and dedicated editing states outside observed callbacks. Evaluation and input failures follow ordinary runtime cleanup.
+ * Observes enabled for [TextArea] at the next owner-thread frame cutoff.
+ *
+ * Retain caller-owned sources and editing state outside reevaluation.
+ * See [Observe] for shared snapshots, equal-value suppression, and cleanup; literal arguments follow [TextArea].
+ * Modifiers and parent data apply to the actual component, while the binding owns its sibling key.
  */
 @JvmName("TextAreaStatec701b9e2eaf6_1")
 public fun UiScope.TextArea(
@@ -794,11 +794,11 @@ public fun UiScope.TextArea(
 }
 
 /**
- * Source-backed [Button] observing label at the next frame cutoff.
- * Sources remain caller-owned; compatible nodes retain editing, focus, and scrolling state.
- * Literal arguments keep their existing contracts. Equal source values do not re-evaluate this component.
- * The complete modifier chain stays on the actual component; the wrapper delegates parent data and owns the sibling key.
- * Keep sources and dedicated editing states outside observed callbacks. Evaluation and input failures follow ordinary runtime cleanup.
+ * Observes label for [Button] at the next owner-thread frame cutoff.
+ *
+ * Retain caller-owned sources and editing state outside reevaluation.
+ * See [Observe] for shared snapshots, equal-value suppression, and cleanup; literal arguments follow [Button].
+ * Modifiers and parent data apply to the actual component, while the binding owns its sibling key.
  */
 @JvmName("ButtonStatecffa97b99dc2_1")
 public fun UiScope.Button(
@@ -820,11 +820,11 @@ public fun UiScope.Button(
 }
 
 /**
- * Source-backed [Button] observing enabled at the next frame cutoff.
- * Sources remain caller-owned; compatible nodes retain editing, focus, and scrolling state.
- * Literal arguments keep their existing contracts. Equal source values do not re-evaluate this component.
- * The complete modifier chain stays on the actual component; the wrapper delegates parent data and owns the sibling key.
- * Keep sources and dedicated editing states outside observed callbacks. Evaluation and input failures follow ordinary runtime cleanup.
+ * Observes enabled for [Button] at the next owner-thread frame cutoff.
+ *
+ * Retain caller-owned sources and editing state outside reevaluation.
+ * See [Observe] for shared snapshots, equal-value suppression, and cleanup; literal arguments follow [Button].
+ * Modifiers and parent data apply to the actual component, while the binding owns its sibling key.
  */
 @JvmName("ButtonStatecffa97b99dc2_2")
 public fun UiScope.Button(
@@ -846,11 +846,11 @@ public fun UiScope.Button(
 }
 
 /**
- * Source-backed [Button] observing label, enabled at the next frame cutoff.
- * Sources remain caller-owned; compatible nodes retain editing, focus, and scrolling state.
- * Literal arguments keep their existing contracts. Equal source values do not re-evaluate this component.
- * The complete modifier chain stays on the actual component; the wrapper delegates parent data and owns the sibling key.
- * Keep sources and dedicated editing states outside observed callbacks. Evaluation and input failures follow ordinary runtime cleanup.
+ * Observes label, enabled for [Button] at the next owner-thread frame cutoff.
+ *
+ * Retain caller-owned sources and editing state outside reevaluation.
+ * See [Observe] for shared snapshots, equal-value suppression, and cleanup; literal arguments follow [Button].
+ * Modifiers and parent data apply to the actual component, while the binding owns its sibling key.
  */
 @JvmName("ButtonStatecffa97b99dc2_3")
 public fun UiScope.Button(
@@ -872,11 +872,11 @@ public fun UiScope.Button(
 }
 
 /**
- * Source-backed [Button] observing label at the next frame cutoff.
- * Sources remain caller-owned; compatible nodes retain editing, focus, and scrolling state.
- * Literal arguments keep their existing contracts. Equal source values do not re-evaluate this component.
- * The complete modifier chain stays on the actual component; the wrapper delegates parent data and owns the sibling key.
- * Keep sources and dedicated editing states outside observed callbacks. Evaluation and input failures follow ordinary runtime cleanup.
+ * Observes label for [Button] at the next owner-thread frame cutoff.
+ *
+ * Retain caller-owned sources and editing state outside reevaluation.
+ * See [Observe] for shared snapshots, equal-value suppression, and cleanup; literal arguments follow [Button].
+ * Modifiers and parent data apply to the actual component, while the binding owns its sibling key.
  */
 @JvmName("ButtonState6e1d7e05cd68_1")
 public fun UiScope.Button(
@@ -898,11 +898,11 @@ public fun UiScope.Button(
 }
 
 /**
- * Source-backed [Button] observing enabled at the next frame cutoff.
- * Sources remain caller-owned; compatible nodes retain editing, focus, and scrolling state.
- * Literal arguments keep their existing contracts. Equal source values do not re-evaluate this component.
- * The complete modifier chain stays on the actual component; the wrapper delegates parent data and owns the sibling key.
- * Keep sources and dedicated editing states outside observed callbacks. Evaluation and input failures follow ordinary runtime cleanup.
+ * Observes enabled for [Button] at the next owner-thread frame cutoff.
+ *
+ * Retain caller-owned sources and editing state outside reevaluation.
+ * See [Observe] for shared snapshots, equal-value suppression, and cleanup; literal arguments follow [Button].
+ * Modifiers and parent data apply to the actual component, while the binding owns its sibling key.
  */
 @JvmName("ButtonState6e1d7e05cd68_2")
 public fun UiScope.Button(
@@ -924,11 +924,11 @@ public fun UiScope.Button(
 }
 
 /**
- * Source-backed [Button] observing label, enabled at the next frame cutoff.
- * Sources remain caller-owned; compatible nodes retain editing, focus, and scrolling state.
- * Literal arguments keep their existing contracts. Equal source values do not re-evaluate this component.
- * The complete modifier chain stays on the actual component; the wrapper delegates parent data and owns the sibling key.
- * Keep sources and dedicated editing states outside observed callbacks. Evaluation and input failures follow ordinary runtime cleanup.
+ * Observes label, enabled for [Button] at the next owner-thread frame cutoff.
+ *
+ * Retain caller-owned sources and editing state outside reevaluation.
+ * See [Observe] for shared snapshots, equal-value suppression, and cleanup; literal arguments follow [Button].
+ * Modifiers and parent data apply to the actual component, while the binding owns its sibling key.
  */
 @JvmName("ButtonState6e1d7e05cd68_3")
 public fun UiScope.Button(
@@ -950,11 +950,11 @@ public fun UiScope.Button(
 }
 
 /**
- * Source-backed [Tab] observing label at the next frame cutoff.
- * Sources remain caller-owned; compatible nodes retain editing, focus, and scrolling state.
- * Literal arguments keep their existing contracts. Equal source values do not re-evaluate this component.
- * The complete modifier chain stays on the actual component; the wrapper delegates parent data and owns the sibling key.
- * Keep sources and dedicated editing states outside observed callbacks. Evaluation and input failures follow ordinary runtime cleanup.
+ * Observes label for [Tab] at the next owner-thread frame cutoff.
+ *
+ * Retain caller-owned sources and editing state outside reevaluation.
+ * See [Observe] for shared snapshots, equal-value suppression, and cleanup; literal arguments follow [Tab].
+ * Modifiers and parent data apply to the actual component, while the binding owns its sibling key.
  */
 @JvmName("TabState58ed18680f25_1")
 public fun UiScope.Tab(
@@ -980,11 +980,11 @@ public fun UiScope.Tab(
 }
 
 /**
- * Source-backed [Tab] observing selected at the next frame cutoff.
- * Sources remain caller-owned; compatible nodes retain editing, focus, and scrolling state.
- * Literal arguments keep their existing contracts. Equal source values do not re-evaluate this component.
- * The complete modifier chain stays on the actual component; the wrapper delegates parent data and owns the sibling key.
- * Keep sources and dedicated editing states outside observed callbacks. Evaluation and input failures follow ordinary runtime cleanup.
+ * Observes selected for [Tab] at the next owner-thread frame cutoff.
+ *
+ * Retain caller-owned sources and editing state outside reevaluation.
+ * See [Observe] for shared snapshots, equal-value suppression, and cleanup; literal arguments follow [Tab].
+ * Modifiers and parent data apply to the actual component, while the binding owns its sibling key.
  */
 @JvmName("TabState58ed18680f25_2")
 public fun UiScope.Tab(
@@ -1010,11 +1010,11 @@ public fun UiScope.Tab(
 }
 
 /**
- * Source-backed [Tab] observing label, selected at the next frame cutoff.
- * Sources remain caller-owned; compatible nodes retain editing, focus, and scrolling state.
- * Literal arguments keep their existing contracts. Equal source values do not re-evaluate this component.
- * The complete modifier chain stays on the actual component; the wrapper delegates parent data and owns the sibling key.
- * Keep sources and dedicated editing states outside observed callbacks. Evaluation and input failures follow ordinary runtime cleanup.
+ * Observes label, selected for [Tab] at the next owner-thread frame cutoff.
+ *
+ * Retain caller-owned sources and editing state outside reevaluation.
+ * See [Observe] for shared snapshots, equal-value suppression, and cleanup; literal arguments follow [Tab].
+ * Modifiers and parent data apply to the actual component, while the binding owns its sibling key.
  */
 @JvmName("TabState58ed18680f25_3")
 public fun UiScope.Tab(
@@ -1040,11 +1040,11 @@ public fun UiScope.Tab(
 }
 
 /**
- * Source-backed [Tab] observing enabled at the next frame cutoff.
- * Sources remain caller-owned; compatible nodes retain editing, focus, and scrolling state.
- * Literal arguments keep their existing contracts. Equal source values do not re-evaluate this component.
- * The complete modifier chain stays on the actual component; the wrapper delegates parent data and owns the sibling key.
- * Keep sources and dedicated editing states outside observed callbacks. Evaluation and input failures follow ordinary runtime cleanup.
+ * Observes enabled for [Tab] at the next owner-thread frame cutoff.
+ *
+ * Retain caller-owned sources and editing state outside reevaluation.
+ * See [Observe] for shared snapshots, equal-value suppression, and cleanup; literal arguments follow [Tab].
+ * Modifiers and parent data apply to the actual component, while the binding owns its sibling key.
  */
 @JvmName("TabState58ed18680f25_4")
 public fun UiScope.Tab(
@@ -1070,11 +1070,11 @@ public fun UiScope.Tab(
 }
 
 /**
- * Source-backed [Tab] observing label, enabled at the next frame cutoff.
- * Sources remain caller-owned; compatible nodes retain editing, focus, and scrolling state.
- * Literal arguments keep their existing contracts. Equal source values do not re-evaluate this component.
- * The complete modifier chain stays on the actual component; the wrapper delegates parent data and owns the sibling key.
- * Keep sources and dedicated editing states outside observed callbacks. Evaluation and input failures follow ordinary runtime cleanup.
+ * Observes label, enabled for [Tab] at the next owner-thread frame cutoff.
+ *
+ * Retain caller-owned sources and editing state outside reevaluation.
+ * See [Observe] for shared snapshots, equal-value suppression, and cleanup; literal arguments follow [Tab].
+ * Modifiers and parent data apply to the actual component, while the binding owns its sibling key.
  */
 @JvmName("TabState58ed18680f25_5")
 public fun UiScope.Tab(
@@ -1100,11 +1100,11 @@ public fun UiScope.Tab(
 }
 
 /**
- * Source-backed [Tab] observing selected, enabled at the next frame cutoff.
- * Sources remain caller-owned; compatible nodes retain editing, focus, and scrolling state.
- * Literal arguments keep their existing contracts. Equal source values do not re-evaluate this component.
- * The complete modifier chain stays on the actual component; the wrapper delegates parent data and owns the sibling key.
- * Keep sources and dedicated editing states outside observed callbacks. Evaluation and input failures follow ordinary runtime cleanup.
+ * Observes selected, enabled for [Tab] at the next owner-thread frame cutoff.
+ *
+ * Retain caller-owned sources and editing state outside reevaluation.
+ * See [Observe] for shared snapshots, equal-value suppression, and cleanup; literal arguments follow [Tab].
+ * Modifiers and parent data apply to the actual component, while the binding owns its sibling key.
  */
 @JvmName("TabState58ed18680f25_6")
 public fun UiScope.Tab(
@@ -1130,11 +1130,11 @@ public fun UiScope.Tab(
 }
 
 /**
- * Source-backed [Tab] observing label, selected, enabled at the next frame cutoff.
- * Sources remain caller-owned; compatible nodes retain editing, focus, and scrolling state.
- * Literal arguments keep their existing contracts. Equal source values do not re-evaluate this component.
- * The complete modifier chain stays on the actual component; the wrapper delegates parent data and owns the sibling key.
- * Keep sources and dedicated editing states outside observed callbacks. Evaluation and input failures follow ordinary runtime cleanup.
+ * Observes label, selected, enabled for [Tab] at the next owner-thread frame cutoff.
+ *
+ * Retain caller-owned sources and editing state outside reevaluation.
+ * See [Observe] for shared snapshots, equal-value suppression, and cleanup; literal arguments follow [Tab].
+ * Modifiers and parent data apply to the actual component, while the binding owns its sibling key.
  */
 @JvmName("TabState58ed18680f25_7")
 public fun UiScope.Tab(
@@ -1160,11 +1160,11 @@ public fun UiScope.Tab(
 }
 
 /**
- * Source-backed [Tab] observing label at the next frame cutoff.
- * Sources remain caller-owned; compatible nodes retain editing, focus, and scrolling state.
- * Literal arguments keep their existing contracts. Equal source values do not re-evaluate this component.
- * The complete modifier chain stays on the actual component; the wrapper delegates parent data and owns the sibling key.
- * Keep sources and dedicated editing states outside observed callbacks. Evaluation and input failures follow ordinary runtime cleanup.
+ * Observes label for [Tab] at the next owner-thread frame cutoff.
+ *
+ * Retain caller-owned sources and editing state outside reevaluation.
+ * See [Observe] for shared snapshots, equal-value suppression, and cleanup; literal arguments follow [Tab].
+ * Modifiers and parent data apply to the actual component, while the binding owns its sibling key.
  */
 @JvmName("TabState06dab4066e27_1")
 public fun UiScope.Tab(
@@ -1190,11 +1190,11 @@ public fun UiScope.Tab(
 }
 
 /**
- * Source-backed [Tab] observing selected at the next frame cutoff.
- * Sources remain caller-owned; compatible nodes retain editing, focus, and scrolling state.
- * Literal arguments keep their existing contracts. Equal source values do not re-evaluate this component.
- * The complete modifier chain stays on the actual component; the wrapper delegates parent data and owns the sibling key.
- * Keep sources and dedicated editing states outside observed callbacks. Evaluation and input failures follow ordinary runtime cleanup.
+ * Observes selected for [Tab] at the next owner-thread frame cutoff.
+ *
+ * Retain caller-owned sources and editing state outside reevaluation.
+ * See [Observe] for shared snapshots, equal-value suppression, and cleanup; literal arguments follow [Tab].
+ * Modifiers and parent data apply to the actual component, while the binding owns its sibling key.
  */
 @JvmName("TabState06dab4066e27_2")
 public fun UiScope.Tab(
@@ -1220,11 +1220,11 @@ public fun UiScope.Tab(
 }
 
 /**
- * Source-backed [Tab] observing label, selected at the next frame cutoff.
- * Sources remain caller-owned; compatible nodes retain editing, focus, and scrolling state.
- * Literal arguments keep their existing contracts. Equal source values do not re-evaluate this component.
- * The complete modifier chain stays on the actual component; the wrapper delegates parent data and owns the sibling key.
- * Keep sources and dedicated editing states outside observed callbacks. Evaluation and input failures follow ordinary runtime cleanup.
+ * Observes label, selected for [Tab] at the next owner-thread frame cutoff.
+ *
+ * Retain caller-owned sources and editing state outside reevaluation.
+ * See [Observe] for shared snapshots, equal-value suppression, and cleanup; literal arguments follow [Tab].
+ * Modifiers and parent data apply to the actual component, while the binding owns its sibling key.
  */
 @JvmName("TabState06dab4066e27_3")
 public fun UiScope.Tab(
@@ -1250,11 +1250,11 @@ public fun UiScope.Tab(
 }
 
 /**
- * Source-backed [Tab] observing enabled at the next frame cutoff.
- * Sources remain caller-owned; compatible nodes retain editing, focus, and scrolling state.
- * Literal arguments keep their existing contracts. Equal source values do not re-evaluate this component.
- * The complete modifier chain stays on the actual component; the wrapper delegates parent data and owns the sibling key.
- * Keep sources and dedicated editing states outside observed callbacks. Evaluation and input failures follow ordinary runtime cleanup.
+ * Observes enabled for [Tab] at the next owner-thread frame cutoff.
+ *
+ * Retain caller-owned sources and editing state outside reevaluation.
+ * See [Observe] for shared snapshots, equal-value suppression, and cleanup; literal arguments follow [Tab].
+ * Modifiers and parent data apply to the actual component, while the binding owns its sibling key.
  */
 @JvmName("TabState06dab4066e27_4")
 public fun UiScope.Tab(
@@ -1280,11 +1280,11 @@ public fun UiScope.Tab(
 }
 
 /**
- * Source-backed [Tab] observing label, enabled at the next frame cutoff.
- * Sources remain caller-owned; compatible nodes retain editing, focus, and scrolling state.
- * Literal arguments keep their existing contracts. Equal source values do not re-evaluate this component.
- * The complete modifier chain stays on the actual component; the wrapper delegates parent data and owns the sibling key.
- * Keep sources and dedicated editing states outside observed callbacks. Evaluation and input failures follow ordinary runtime cleanup.
+ * Observes label, enabled for [Tab] at the next owner-thread frame cutoff.
+ *
+ * Retain caller-owned sources and editing state outside reevaluation.
+ * See [Observe] for shared snapshots, equal-value suppression, and cleanup; literal arguments follow [Tab].
+ * Modifiers and parent data apply to the actual component, while the binding owns its sibling key.
  */
 @JvmName("TabState06dab4066e27_5")
 public fun UiScope.Tab(
@@ -1310,11 +1310,11 @@ public fun UiScope.Tab(
 }
 
 /**
- * Source-backed [Tab] observing selected, enabled at the next frame cutoff.
- * Sources remain caller-owned; compatible nodes retain editing, focus, and scrolling state.
- * Literal arguments keep their existing contracts. Equal source values do not re-evaluate this component.
- * The complete modifier chain stays on the actual component; the wrapper delegates parent data and owns the sibling key.
- * Keep sources and dedicated editing states outside observed callbacks. Evaluation and input failures follow ordinary runtime cleanup.
+ * Observes selected, enabled for [Tab] at the next owner-thread frame cutoff.
+ *
+ * Retain caller-owned sources and editing state outside reevaluation.
+ * See [Observe] for shared snapshots, equal-value suppression, and cleanup; literal arguments follow [Tab].
+ * Modifiers and parent data apply to the actual component, while the binding owns its sibling key.
  */
 @JvmName("TabState06dab4066e27_6")
 public fun UiScope.Tab(
@@ -1340,11 +1340,11 @@ public fun UiScope.Tab(
 }
 
 /**
- * Source-backed [Tab] observing label, selected, enabled at the next frame cutoff.
- * Sources remain caller-owned; compatible nodes retain editing, focus, and scrolling state.
- * Literal arguments keep their existing contracts. Equal source values do not re-evaluate this component.
- * The complete modifier chain stays on the actual component; the wrapper delegates parent data and owns the sibling key.
- * Keep sources and dedicated editing states outside observed callbacks. Evaluation and input failures follow ordinary runtime cleanup.
+ * Observes label, selected, enabled for [Tab] at the next owner-thread frame cutoff.
+ *
+ * Retain caller-owned sources and editing state outside reevaluation.
+ * See [Observe] for shared snapshots, equal-value suppression, and cleanup; literal arguments follow [Tab].
+ * Modifiers and parent data apply to the actual component, while the binding owns its sibling key.
  */
 @JvmName("TabState06dab4066e27_7")
 public fun UiScope.Tab(
@@ -1370,11 +1370,11 @@ public fun UiScope.Tab(
 }
 
 /**
- * Source-backed [TextField] observing enabled at the next frame cutoff.
- * Sources remain caller-owned; compatible nodes retain editing, focus, and scrolling state.
- * Literal arguments keep their existing contracts. Equal source values do not re-evaluate this component.
- * The complete modifier chain stays on the actual component; the wrapper delegates parent data and owns the sibling key.
- * Keep sources and dedicated editing states outside observed callbacks. Evaluation and input failures follow ordinary runtime cleanup.
+ * Observes enabled for [TextField] at the next owner-thread frame cutoff.
+ *
+ * Retain caller-owned sources and editing state outside reevaluation.
+ * See [Observe] for shared snapshots, equal-value suppression, and cleanup; literal arguments follow [TextField].
+ * Modifiers and parent data apply to the actual component, while the binding owns its sibling key.
  */
 @JvmName("TextFieldState8ebce6a07628_1")
 public fun UiScope.TextField(
@@ -1398,11 +1398,11 @@ public fun UiScope.TextField(
 }
 
 /**
- * Source-backed [TextField] observing enabled at the next frame cutoff.
- * Sources remain caller-owned; compatible nodes retain editing, focus, and scrolling state.
- * Literal arguments keep their existing contracts. Equal source values do not re-evaluate this component.
- * The complete modifier chain stays on the actual component; the wrapper delegates parent data and owns the sibling key.
- * Keep sources and dedicated editing states outside observed callbacks. Evaluation and input failures follow ordinary runtime cleanup.
+ * Observes enabled for [TextField] at the next owner-thread frame cutoff.
+ *
+ * Retain caller-owned sources and editing state outside reevaluation.
+ * See [Observe] for shared snapshots, equal-value suppression, and cleanup; literal arguments follow [TextField].
+ * Modifiers and parent data apply to the actual component, while the binding owns its sibling key.
  */
 @JvmName("TextFieldState68d5823f42d7_1")
 public fun UiScope.TextField(
@@ -1428,11 +1428,11 @@ public fun UiScope.TextField(
 }
 
 /**
- * Source-backed [TextField] observing enabled at the next frame cutoff.
- * Sources remain caller-owned; compatible nodes retain editing, focus, and scrolling state.
- * Literal arguments keep their existing contracts. Equal source values do not re-evaluate this component.
- * The complete modifier chain stays on the actual component; the wrapper delegates parent data and owns the sibling key.
- * Keep sources and dedicated editing states outside observed callbacks. Evaluation and input failures follow ordinary runtime cleanup.
+ * Observes enabled for [TextField] at the next owner-thread frame cutoff.
+ *
+ * Retain caller-owned sources and editing state outside reevaluation.
+ * See [Observe] for shared snapshots, equal-value suppression, and cleanup; literal arguments follow [TextField].
+ * Modifiers and parent data apply to the actual component, while the binding owns its sibling key.
  */
 @JvmName("TextFieldState715dafc3f527_1")
 public fun UiScope.TextField(
@@ -1458,11 +1458,11 @@ public fun UiScope.TextField(
 }
 
 /**
- * Source-backed [TextField] observing enabled at the next frame cutoff.
- * Sources remain caller-owned; compatible nodes retain editing, focus, and scrolling state.
- * Literal arguments keep their existing contracts. Equal source values do not re-evaluate this component.
- * The complete modifier chain stays on the actual component; the wrapper delegates parent data and owns the sibling key.
- * Keep sources and dedicated editing states outside observed callbacks. Evaluation and input failures follow ordinary runtime cleanup.
+ * Observes enabled for [TextField] at the next owner-thread frame cutoff.
+ *
+ * Retain caller-owned sources and editing state outside reevaluation.
+ * See [Observe] for shared snapshots, equal-value suppression, and cleanup; literal arguments follow [TextField].
+ * Modifiers and parent data apply to the actual component, while the binding owns its sibling key.
  */
 @JvmName("TextFieldStatefd7b3be167e7_1")
 public fun UiScope.TextField(
@@ -1490,11 +1490,11 @@ public fun UiScope.TextField(
 }
 
 /**
- * Source-backed [TextArea] observing enabled at the next frame cutoff.
- * Sources remain caller-owned; compatible nodes retain editing, focus, and scrolling state.
- * Literal arguments keep their existing contracts. Equal source values do not re-evaluate this component.
- * The complete modifier chain stays on the actual component; the wrapper delegates parent data and owns the sibling key.
- * Keep sources and dedicated editing states outside observed callbacks. Evaluation and input failures follow ordinary runtime cleanup.
+ * Observes enabled for [TextArea] at the next owner-thread frame cutoff.
+ *
+ * Retain caller-owned sources and editing state outside reevaluation.
+ * See [Observe] for shared snapshots, equal-value suppression, and cleanup; literal arguments follow [TextArea].
+ * Modifiers and parent data apply to the actual component, while the binding owns its sibling key.
  */
 @JvmName("TextAreaState80c0b5b4cb37_1")
 public fun UiScope.TextArea(
@@ -1524,11 +1524,11 @@ public fun UiScope.TextArea(
 }
 
 /**
- * Source-backed [TextArea] observing enabled at the next frame cutoff.
- * Sources remain caller-owned; compatible nodes retain editing, focus, and scrolling state.
- * Literal arguments keep their existing contracts. Equal source values do not re-evaluate this component.
- * The complete modifier chain stays on the actual component; the wrapper delegates parent data and owns the sibling key.
- * Keep sources and dedicated editing states outside observed callbacks. Evaluation and input failures follow ordinary runtime cleanup.
+ * Observes enabled for [TextArea] at the next owner-thread frame cutoff.
+ *
+ * Retain caller-owned sources and editing state outside reevaluation.
+ * See [Observe] for shared snapshots, equal-value suppression, and cleanup; literal arguments follow [TextArea].
+ * Modifiers and parent data apply to the actual component, while the binding owns its sibling key.
  */
 @JvmName("TextAreaState4da1faac4769_1")
 public fun UiScope.TextArea(
@@ -1560,11 +1560,11 @@ public fun UiScope.TextArea(
 }
 
 /**
- * Source-backed [Canvas] observing source at the next frame cutoff.
- * Sources remain caller-owned; compatible nodes retain editing, focus, and scrolling state.
- * Literal arguments keep their existing contracts. Equal source values do not re-evaluate this component.
- * The complete modifier chain stays on the actual component; the wrapper delegates parent data and owns the sibling key.
- * Keep sources and dedicated editing states outside observed callbacks. Evaluation and input failures follow ordinary runtime cleanup.
+ * Observes source for [Canvas] at the next owner-thread frame cutoff.
+ *
+ * Retain caller-owned sources and editing state outside reevaluation.
+ * See [Observe] for shared snapshots, equal-value suppression, and cleanup; literal arguments follow [Canvas].
+ * Modifiers and parent data apply to the actual component, while the binding owns its sibling key.
  */
 @JvmName("CanvasState7047d39d3483_1")
 public fun UiScope.Canvas(
@@ -1584,11 +1584,11 @@ public fun UiScope.Canvas(
 }
 
 /**
- * Source-backed [TiledImage] observing source at the next frame cutoff.
- * Sources remain caller-owned; compatible nodes retain editing, focus, and scrolling state.
- * Literal arguments keep their existing contracts. Equal source values do not re-evaluate this component.
- * The complete modifier chain stays on the actual component; the wrapper delegates parent data and owns the sibling key.
- * Keep sources and dedicated editing states outside observed callbacks. Evaluation and input failures follow ordinary runtime cleanup.
+ * Observes source for [TiledImage] at the next owner-thread frame cutoff.
+ *
+ * Retain caller-owned sources and editing state outside reevaluation.
+ * See [Observe] for shared snapshots, equal-value suppression, and cleanup; literal arguments follow [TiledImage].
+ * Modifiers and parent data apply to the actual component, while the binding owns its sibling key.
  */
 @JvmName("TiledImageState06558dbd1f3e_1")
 public fun UiScope.TiledImage(
@@ -1616,11 +1616,11 @@ public fun UiScope.TiledImage(
 }
 
 /**
- * Source-backed [VirtualList] observing canLoadLeading at the next frame cutoff.
- * Sources remain caller-owned; compatible nodes retain editing, focus, and scrolling state.
- * Literal arguments keep their existing contracts. Equal source values do not re-evaluate this component.
- * The complete modifier chain stays on the actual component; the wrapper delegates parent data and owns the sibling key.
- * Keep sources and dedicated editing states outside observed callbacks. Evaluation and input failures follow ordinary runtime cleanup.
+ * Observes canLoadLeading for [VirtualList] at the next owner-thread frame cutoff.
+ *
+ * Retain caller-owned sources and editing state outside reevaluation.
+ * See [Observe] for shared snapshots, equal-value suppression, and cleanup; literal arguments follow [VirtualList].
+ * Modifiers and parent data apply to the actual component, while the binding owns its sibling key.
  */
 @JvmName("VirtualListState7e3481099f80_1")
 public fun <T : Any, K : Any> UiScope.VirtualList(
@@ -1658,11 +1658,11 @@ public fun <T : Any, K : Any> UiScope.VirtualList(
 }
 
 /**
- * Source-backed [VirtualList] observing canLoadTrailing at the next frame cutoff.
- * Sources remain caller-owned; compatible nodes retain editing, focus, and scrolling state.
- * Literal arguments keep their existing contracts. Equal source values do not re-evaluate this component.
- * The complete modifier chain stays on the actual component; the wrapper delegates parent data and owns the sibling key.
- * Keep sources and dedicated editing states outside observed callbacks. Evaluation and input failures follow ordinary runtime cleanup.
+ * Observes canLoadTrailing for [VirtualList] at the next owner-thread frame cutoff.
+ *
+ * Retain caller-owned sources and editing state outside reevaluation.
+ * See [Observe] for shared snapshots, equal-value suppression, and cleanup; literal arguments follow [VirtualList].
+ * Modifiers and parent data apply to the actual component, while the binding owns its sibling key.
  */
 @JvmName("VirtualListState7e3481099f80_2")
 public fun <T : Any, K : Any> UiScope.VirtualList(
@@ -1700,11 +1700,11 @@ public fun <T : Any, K : Any> UiScope.VirtualList(
 }
 
 /**
- * Source-backed [VirtualList] observing canLoadLeading, canLoadTrailing at the next frame cutoff.
- * Sources remain caller-owned; compatible nodes retain editing, focus, and scrolling state.
- * Literal arguments keep their existing contracts. Equal source values do not re-evaluate this component.
- * The complete modifier chain stays on the actual component; the wrapper delegates parent data and owns the sibling key.
- * Keep sources and dedicated editing states outside observed callbacks. Evaluation and input failures follow ordinary runtime cleanup.
+ * Observes canLoadLeading, canLoadTrailing for [VirtualList] at the next owner-thread frame cutoff.
+ *
+ * Retain caller-owned sources and editing state outside reevaluation.
+ * See [Observe] for shared snapshots, equal-value suppression, and cleanup; literal arguments follow [VirtualList].
+ * Modifiers and parent data apply to the actual component, while the binding owns its sibling key.
  */
 @JvmName("VirtualListState7e3481099f80_3")
 public fun <T : Any, K : Any> UiScope.VirtualList(
@@ -1742,11 +1742,11 @@ public fun <T : Any, K : Any> UiScope.VirtualList(
 }
 
 /**
- * Source-backed [VirtualList] observing canLoadLeading at the next frame cutoff.
- * Sources remain caller-owned; compatible nodes retain editing, focus, and scrolling state.
- * Literal arguments keep their existing contracts. Equal source values do not re-evaluate this component.
- * The complete modifier chain stays on the actual component; the wrapper delegates parent data and owns the sibling key.
- * Keep sources and dedicated editing states outside observed callbacks. Evaluation and input failures follow ordinary runtime cleanup.
+ * Observes canLoadLeading for [VirtualList] at the next owner-thread frame cutoff.
+ *
+ * Retain caller-owned sources and editing state outside reevaluation.
+ * See [Observe] for shared snapshots, equal-value suppression, and cleanup; literal arguments follow [VirtualList].
+ * Modifiers and parent data apply to the actual component, while the binding owns its sibling key.
  */
 @JvmName("VirtualListState4013cecb450b_1")
 public fun <T : Any, K : Any> UiScope.VirtualList(
@@ -1784,11 +1784,11 @@ public fun <T : Any, K : Any> UiScope.VirtualList(
 }
 
 /**
- * Source-backed [VirtualList] observing canLoadTrailing at the next frame cutoff.
- * Sources remain caller-owned; compatible nodes retain editing, focus, and scrolling state.
- * Literal arguments keep their existing contracts. Equal source values do not re-evaluate this component.
- * The complete modifier chain stays on the actual component; the wrapper delegates parent data and owns the sibling key.
- * Keep sources and dedicated editing states outside observed callbacks. Evaluation and input failures follow ordinary runtime cleanup.
+ * Observes canLoadTrailing for [VirtualList] at the next owner-thread frame cutoff.
+ *
+ * Retain caller-owned sources and editing state outside reevaluation.
+ * See [Observe] for shared snapshots, equal-value suppression, and cleanup; literal arguments follow [VirtualList].
+ * Modifiers and parent data apply to the actual component, while the binding owns its sibling key.
  */
 @JvmName("VirtualListState4013cecb450b_2")
 public fun <T : Any, K : Any> UiScope.VirtualList(
@@ -1826,11 +1826,11 @@ public fun <T : Any, K : Any> UiScope.VirtualList(
 }
 
 /**
- * Source-backed [VirtualList] observing canLoadLeading, canLoadTrailing at the next frame cutoff.
- * Sources remain caller-owned; compatible nodes retain editing, focus, and scrolling state.
- * Literal arguments keep their existing contracts. Equal source values do not re-evaluate this component.
- * The complete modifier chain stays on the actual component; the wrapper delegates parent data and owns the sibling key.
- * Keep sources and dedicated editing states outside observed callbacks. Evaluation and input failures follow ordinary runtime cleanup.
+ * Observes canLoadLeading, canLoadTrailing for [VirtualList] at the next owner-thread frame cutoff.
+ *
+ * Retain caller-owned sources and editing state outside reevaluation.
+ * See [Observe] for shared snapshots, equal-value suppression, and cleanup; literal arguments follow [VirtualList].
+ * Modifiers and parent data apply to the actual component, while the binding owns its sibling key.
  */
 @JvmName("VirtualListState4013cecb450b_3")
 public fun <T : Any, K : Any> UiScope.VirtualList(
@@ -1868,11 +1868,11 @@ public fun <T : Any, K : Any> UiScope.VirtualList(
 }
 
 /**
- * Source-backed [VirtualList] observing items at the next frame cutoff.
- * Sources remain caller-owned; compatible nodes retain editing, focus, and scrolling state.
- * Literal arguments keep their existing contracts. Equal source values do not re-evaluate this component.
- * The complete modifier chain stays on the actual component; the wrapper delegates parent data and owns the sibling key.
- * Keep sources and dedicated editing states outside observed callbacks. Evaluation and input failures follow ordinary runtime cleanup.
+ * Observes items for [VirtualList] at the next owner-thread frame cutoff.
+ *
+ * Retain caller-owned sources and editing state outside reevaluation.
+ * See [Observe] for shared snapshots, equal-value suppression, and cleanup; literal arguments follow [VirtualList].
+ * Modifiers and parent data apply to the actual component, while the binding owns its sibling key.
  */
 @JvmName("VirtualListState91e435daa5f9_1")
 public fun <T : Any, K : Any> UiScope.VirtualList(
@@ -1906,11 +1906,11 @@ public fun <T : Any, K : Any> UiScope.VirtualList(
 }
 
 /**
- * Source-backed [VirtualList] observing canLoadLeading at the next frame cutoff.
- * Sources remain caller-owned; compatible nodes retain editing, focus, and scrolling state.
- * Literal arguments keep their existing contracts. Equal source values do not re-evaluate this component.
- * The complete modifier chain stays on the actual component; the wrapper delegates parent data and owns the sibling key.
- * Keep sources and dedicated editing states outside observed callbacks. Evaluation and input failures follow ordinary runtime cleanup.
+ * Observes canLoadLeading for [VirtualList] at the next owner-thread frame cutoff.
+ *
+ * Retain caller-owned sources and editing state outside reevaluation.
+ * See [Observe] for shared snapshots, equal-value suppression, and cleanup; literal arguments follow [VirtualList].
+ * Modifiers and parent data apply to the actual component, while the binding owns its sibling key.
  */
 @JvmName("VirtualListState91e435daa5f9_2")
 public fun <T : Any, K : Any> UiScope.VirtualList(
@@ -1944,11 +1944,11 @@ public fun <T : Any, K : Any> UiScope.VirtualList(
 }
 
 /**
- * Source-backed [VirtualList] observing items, canLoadLeading at the next frame cutoff.
- * Sources remain caller-owned; compatible nodes retain editing, focus, and scrolling state.
- * Literal arguments keep their existing contracts. Equal source values do not re-evaluate this component.
- * The complete modifier chain stays on the actual component; the wrapper delegates parent data and owns the sibling key.
- * Keep sources and dedicated editing states outside observed callbacks. Evaluation and input failures follow ordinary runtime cleanup.
+ * Observes items, canLoadLeading for [VirtualList] at the next owner-thread frame cutoff.
+ *
+ * Retain caller-owned sources and editing state outside reevaluation.
+ * See [Observe] for shared snapshots, equal-value suppression, and cleanup; literal arguments follow [VirtualList].
+ * Modifiers and parent data apply to the actual component, while the binding owns its sibling key.
  */
 @JvmName("VirtualListState91e435daa5f9_3")
 public fun <T : Any, K : Any> UiScope.VirtualList(
@@ -1982,11 +1982,11 @@ public fun <T : Any, K : Any> UiScope.VirtualList(
 }
 
 /**
- * Source-backed [VirtualList] observing canLoadTrailing at the next frame cutoff.
- * Sources remain caller-owned; compatible nodes retain editing, focus, and scrolling state.
- * Literal arguments keep their existing contracts. Equal source values do not re-evaluate this component.
- * The complete modifier chain stays on the actual component; the wrapper delegates parent data and owns the sibling key.
- * Keep sources and dedicated editing states outside observed callbacks. Evaluation and input failures follow ordinary runtime cleanup.
+ * Observes canLoadTrailing for [VirtualList] at the next owner-thread frame cutoff.
+ *
+ * Retain caller-owned sources and editing state outside reevaluation.
+ * See [Observe] for shared snapshots, equal-value suppression, and cleanup; literal arguments follow [VirtualList].
+ * Modifiers and parent data apply to the actual component, while the binding owns its sibling key.
  */
 @JvmName("VirtualListState91e435daa5f9_4")
 public fun <T : Any, K : Any> UiScope.VirtualList(
@@ -2020,11 +2020,11 @@ public fun <T : Any, K : Any> UiScope.VirtualList(
 }
 
 /**
- * Source-backed [VirtualList] observing items, canLoadTrailing at the next frame cutoff.
- * Sources remain caller-owned; compatible nodes retain editing, focus, and scrolling state.
- * Literal arguments keep their existing contracts. Equal source values do not re-evaluate this component.
- * The complete modifier chain stays on the actual component; the wrapper delegates parent data and owns the sibling key.
- * Keep sources and dedicated editing states outside observed callbacks. Evaluation and input failures follow ordinary runtime cleanup.
+ * Observes items, canLoadTrailing for [VirtualList] at the next owner-thread frame cutoff.
+ *
+ * Retain caller-owned sources and editing state outside reevaluation.
+ * See [Observe] for shared snapshots, equal-value suppression, and cleanup; literal arguments follow [VirtualList].
+ * Modifiers and parent data apply to the actual component, while the binding owns its sibling key.
  */
 @JvmName("VirtualListState91e435daa5f9_5")
 public fun <T : Any, K : Any> UiScope.VirtualList(
@@ -2058,11 +2058,11 @@ public fun <T : Any, K : Any> UiScope.VirtualList(
 }
 
 /**
- * Source-backed [VirtualList] observing canLoadLeading, canLoadTrailing at the next frame cutoff.
- * Sources remain caller-owned; compatible nodes retain editing, focus, and scrolling state.
- * Literal arguments keep their existing contracts. Equal source values do not re-evaluate this component.
- * The complete modifier chain stays on the actual component; the wrapper delegates parent data and owns the sibling key.
- * Keep sources and dedicated editing states outside observed callbacks. Evaluation and input failures follow ordinary runtime cleanup.
+ * Observes canLoadLeading, canLoadTrailing for [VirtualList] at the next owner-thread frame cutoff.
+ *
+ * Retain caller-owned sources and editing state outside reevaluation.
+ * See [Observe] for shared snapshots, equal-value suppression, and cleanup; literal arguments follow [VirtualList].
+ * Modifiers and parent data apply to the actual component, while the binding owns its sibling key.
  */
 @JvmName("VirtualListState91e435daa5f9_6")
 public fun <T : Any, K : Any> UiScope.VirtualList(
@@ -2096,11 +2096,11 @@ public fun <T : Any, K : Any> UiScope.VirtualList(
 }
 
 /**
- * Source-backed [VirtualList] observing items, canLoadLeading, canLoadTrailing at the next frame cutoff.
- * Sources remain caller-owned; compatible nodes retain editing, focus, and scrolling state.
- * Literal arguments keep their existing contracts. Equal source values do not re-evaluate this component.
- * The complete modifier chain stays on the actual component; the wrapper delegates parent data and owns the sibling key.
- * Keep sources and dedicated editing states outside observed callbacks. Evaluation and input failures follow ordinary runtime cleanup.
+ * Observes items, canLoadLeading, canLoadTrailing for [VirtualList] at the next owner-thread frame cutoff.
+ *
+ * Retain caller-owned sources and editing state outside reevaluation.
+ * See [Observe] for shared snapshots, equal-value suppression, and cleanup; literal arguments follow [VirtualList].
+ * Modifiers and parent data apply to the actual component, while the binding owns its sibling key.
  */
 @JvmName("VirtualListState91e435daa5f9_7")
 public fun <T : Any, K : Any> UiScope.VirtualList(
@@ -2134,11 +2134,11 @@ public fun <T : Any, K : Any> UiScope.VirtualList(
 }
 
 /**
- * Source-backed [SelectionList] observing items at the next frame cutoff.
- * Sources remain caller-owned; compatible nodes retain editing, focus, and scrolling state.
- * Literal arguments keep their existing contracts. Equal source values do not re-evaluate this component.
- * The complete modifier chain stays on the actual component; the wrapper delegates parent data and owns the sibling key.
- * Keep sources and dedicated editing states outside observed callbacks. Evaluation and input failures follow ordinary runtime cleanup.
+ * Observes items for [SelectionList] at the next owner-thread frame cutoff.
+ *
+ * Retain caller-owned sources and editing state outside reevaluation.
+ * See [Observe] for shared snapshots, equal-value suppression, and cleanup; literal arguments follow [SelectionList].
+ * Modifiers and parent data apply to the actual component, while the binding owns its sibling key.
  */
 @JvmName("SelectionListState685be857e721_1")
 public fun <T : Any, K : Any> UiScope.SelectionList(
@@ -2172,11 +2172,11 @@ public fun <T : Any, K : Any> UiScope.SelectionList(
 }
 
 /**
- * Source-backed [SelectionList] observing canLoadLeading at the next frame cutoff.
- * Sources remain caller-owned; compatible nodes retain editing, focus, and scrolling state.
- * Literal arguments keep their existing contracts. Equal source values do not re-evaluate this component.
- * The complete modifier chain stays on the actual component; the wrapper delegates parent data and owns the sibling key.
- * Keep sources and dedicated editing states outside observed callbacks. Evaluation and input failures follow ordinary runtime cleanup.
+ * Observes canLoadLeading for [SelectionList] at the next owner-thread frame cutoff.
+ *
+ * Retain caller-owned sources and editing state outside reevaluation.
+ * See [Observe] for shared snapshots, equal-value suppression, and cleanup; literal arguments follow [SelectionList].
+ * Modifiers and parent data apply to the actual component, while the binding owns its sibling key.
  */
 @JvmName("SelectionListState685be857e721_2")
 public fun <T : Any, K : Any> UiScope.SelectionList(
@@ -2210,11 +2210,11 @@ public fun <T : Any, K : Any> UiScope.SelectionList(
 }
 
 /**
- * Source-backed [SelectionList] observing items, canLoadLeading at the next frame cutoff.
- * Sources remain caller-owned; compatible nodes retain editing, focus, and scrolling state.
- * Literal arguments keep their existing contracts. Equal source values do not re-evaluate this component.
- * The complete modifier chain stays on the actual component; the wrapper delegates parent data and owns the sibling key.
- * Keep sources and dedicated editing states outside observed callbacks. Evaluation and input failures follow ordinary runtime cleanup.
+ * Observes items, canLoadLeading for [SelectionList] at the next owner-thread frame cutoff.
+ *
+ * Retain caller-owned sources and editing state outside reevaluation.
+ * See [Observe] for shared snapshots, equal-value suppression, and cleanup; literal arguments follow [SelectionList].
+ * Modifiers and parent data apply to the actual component, while the binding owns its sibling key.
  */
 @JvmName("SelectionListState685be857e721_3")
 public fun <T : Any, K : Any> UiScope.SelectionList(
@@ -2248,11 +2248,11 @@ public fun <T : Any, K : Any> UiScope.SelectionList(
 }
 
 /**
- * Source-backed [SelectionList] observing canLoadTrailing at the next frame cutoff.
- * Sources remain caller-owned; compatible nodes retain editing, focus, and scrolling state.
- * Literal arguments keep their existing contracts. Equal source values do not re-evaluate this component.
- * The complete modifier chain stays on the actual component; the wrapper delegates parent data and owns the sibling key.
- * Keep sources and dedicated editing states outside observed callbacks. Evaluation and input failures follow ordinary runtime cleanup.
+ * Observes canLoadTrailing for [SelectionList] at the next owner-thread frame cutoff.
+ *
+ * Retain caller-owned sources and editing state outside reevaluation.
+ * See [Observe] for shared snapshots, equal-value suppression, and cleanup; literal arguments follow [SelectionList].
+ * Modifiers and parent data apply to the actual component, while the binding owns its sibling key.
  */
 @JvmName("SelectionListState685be857e721_4")
 public fun <T : Any, K : Any> UiScope.SelectionList(
@@ -2286,11 +2286,11 @@ public fun <T : Any, K : Any> UiScope.SelectionList(
 }
 
 /**
- * Source-backed [SelectionList] observing items, canLoadTrailing at the next frame cutoff.
- * Sources remain caller-owned; compatible nodes retain editing, focus, and scrolling state.
- * Literal arguments keep their existing contracts. Equal source values do not re-evaluate this component.
- * The complete modifier chain stays on the actual component; the wrapper delegates parent data and owns the sibling key.
- * Keep sources and dedicated editing states outside observed callbacks. Evaluation and input failures follow ordinary runtime cleanup.
+ * Observes items, canLoadTrailing for [SelectionList] at the next owner-thread frame cutoff.
+ *
+ * Retain caller-owned sources and editing state outside reevaluation.
+ * See [Observe] for shared snapshots, equal-value suppression, and cleanup; literal arguments follow [SelectionList].
+ * Modifiers and parent data apply to the actual component, while the binding owns its sibling key.
  */
 @JvmName("SelectionListState685be857e721_5")
 public fun <T : Any, K : Any> UiScope.SelectionList(
@@ -2324,11 +2324,11 @@ public fun <T : Any, K : Any> UiScope.SelectionList(
 }
 
 /**
- * Source-backed [SelectionList] observing canLoadLeading, canLoadTrailing at the next frame cutoff.
- * Sources remain caller-owned; compatible nodes retain editing, focus, and scrolling state.
- * Literal arguments keep their existing contracts. Equal source values do not re-evaluate this component.
- * The complete modifier chain stays on the actual component; the wrapper delegates parent data and owns the sibling key.
- * Keep sources and dedicated editing states outside observed callbacks. Evaluation and input failures follow ordinary runtime cleanup.
+ * Observes canLoadLeading, canLoadTrailing for [SelectionList] at the next owner-thread frame cutoff.
+ *
+ * Retain caller-owned sources and editing state outside reevaluation.
+ * See [Observe] for shared snapshots, equal-value suppression, and cleanup; literal arguments follow [SelectionList].
+ * Modifiers and parent data apply to the actual component, while the binding owns its sibling key.
  */
 @JvmName("SelectionListState685be857e721_6")
 public fun <T : Any, K : Any> UiScope.SelectionList(
@@ -2362,11 +2362,11 @@ public fun <T : Any, K : Any> UiScope.SelectionList(
 }
 
 /**
- * Source-backed [SelectionList] observing items, canLoadLeading, canLoadTrailing at the next frame cutoff.
- * Sources remain caller-owned; compatible nodes retain editing, focus, and scrolling state.
- * Literal arguments keep their existing contracts. Equal source values do not re-evaluate this component.
- * The complete modifier chain stays on the actual component; the wrapper delegates parent data and owns the sibling key.
- * Keep sources and dedicated editing states outside observed callbacks. Evaluation and input failures follow ordinary runtime cleanup.
+ * Observes items, canLoadLeading, canLoadTrailing for [SelectionList] at the next owner-thread frame cutoff.
+ *
+ * Retain caller-owned sources and editing state outside reevaluation.
+ * See [Observe] for shared snapshots, equal-value suppression, and cleanup; literal arguments follow [SelectionList].
+ * Modifiers and parent data apply to the actual component, while the binding owns its sibling key.
  */
 @JvmName("SelectionListState685be857e721_7")
 public fun <T : Any, K : Any> UiScope.SelectionList(

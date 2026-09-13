@@ -253,20 +253,15 @@ Read the [Element SPI contract]($ELEMENT_SPI_GUIDE_URL) before implementing a re
             .scaleToFit(contentSize = IntSize(320, 180))
         ```
 
-        The modifier takes the smaller width and height ratio and uses `contentAlignment` to position remaining slack with a fractional offset.
-        The default `allowUpscaling = false` keeps one design unit equal to one logical unit whenever the content fits and only shrinks when necessary, so the platform GUI density continues to control its accessible physical size.
-        Set `allowUpscaling = true` when the same design should also grow into a larger logical viewport.
-        Together with outer `fillMaxSize()`, that option makes the fit track viewport growth and shrinkage; on a fixed physical window it compensates for host GUI-density changes and keeps approximately the same physical proportions, subject to aspect ratio and integer rasterization.
-        Modifiers after `scaleToFit` and the component itself use the fixed design coordinates, while modifiers before it remain in viewport coordinates.
-        If a constrained outer axis is zero, the child remains unplaced for that pass and contributes no paint, input, or semantics.
+        The smaller axis ratio determines the uniform fit; `contentAlignment` positions remaining space.
+        By default, `allowUpscaling = false` preserves logical size when content fits, leaving GUI density to control physical size.
+        Enable upscaling when the design should also grow with the viewport.
+        Earlier modifiers use viewport coordinates; later modifiers use design coordinates.
+        A zero outer axis leaves the subtree unplaced.
 
-        A custom design-surface primitive implements `ChildTransformNode` and returns a finite positive `ChildTransform` for each placed direct child.
-        The runtime maps a child as `ordinaryPlacement + transform.offset + childLocal * transform.scale` and composes nested transforms.
-        When transformed geometry must become an `IntRect`, Strata floors its left and top edges and ceils its right and bottom edges so clips, semantics, focus geometry, and overlay anchors enclose the continuous result.
-        Pointer hit testing uses exact transformed half-open bounds, and delivered local pointer coordinates apply the inverse accumulated transform before flooring each axis.
-        A delivered drag keeps its tree-coordinate position but inverse-scales its displacement into the receiving node's local logical units; scroll displacement remains in adapter-normalized wheel units.
-        `RootOverlayPaintNode` commands remain root-coordinate and unscaled; only the scope's `anchorBounds` reflects the outward-projected transform.
-        During current frame painting, a `PlatformDrawCommand` is supported only through an exact integer translation; a non-unit scale or fractional translation throws `UnsupportedOperationException` before any adapter output.
+        Custom primitives may implement `ChildTransformNode`; see the [Element SPI]($ELEMENT_SPI_GUIDE_URL#measure-and-layout) for transform composition and input mapping.
+        Semantics, focus bounds, and overlay anchors use outward integer bounds; drawing clips retain fractional edges until final physical pixel coverage.
+        Opaque platform draws require unit scale and exact integer translation and fail before output otherwise.
         """.trimIndent()
 
     private fun component(
@@ -364,37 +359,22 @@ ${compiledFingerprints.joinToString("\n")}
     private const val FONT_SETUP: String =
         """## Unicode and resource-pack fonts
 
-Use `font = ResourceId("example", "body")` on `Text`, `TextField`, or `TextArea` to select `assets/example/font/body.json`, or use `UiText.withFont` for reusable labels and parts of composed text.
-The ID is a font definition, not an operating-system font family or a direct TTF path.
-An inner font wrapper takes precedence over an outer wrapper or component font argument.
-Existing overloads without a font argument remain available.
+Use `font = ResourceId("example", "body")` to select `assets/example/font/body.json`, or `UiText.withFont` for reusable/composed labels.
+An inner font wrapper wins over outer or component selection.
+Glyph coverage follows the pack: unknown font IDs produce missing glyphs, and Strata adds no system-font, color-emoji, or ZWJ renderer.
 
-Japanese, Korean, supplementary characters, and emoji require glyph coverage in the selected resources.
-Unknown font IDs produce missing glyphs instead of silently selecting `minecraft:default`.
-Strata does not provide an independent color-emoji or ZWJ-sequence renderer, and the compatibility ASCII profile builder alone cannot render arbitrary Unicode.
-See [Text and text input]($TEXT_GUIDE_URL) for a compiled API-only example.
-
-Existing `Text` overloads remain single-line; a required `TextLayout.Multiline` argument enables parent-width wrapping, hard breaks, line limits, clipping or ellipsis, and non-negative line spacing.
-`TextField` is single-line, while `TextArea` edits canonical LF text using `TextAreaState` and `TextAreaViewport.Lines` or `TextAreaViewport.Size`.
-An external `Scrollbar(state.scrollState)` shares the editor's stable owned vertical position.
-Immutable descriptions can be created without attaching state and reused after detachment; simultaneous attachment with the same `TextAreaState` throws `IllegalStateException`.
-Both editors navigate Unicode scalars rather than grapheme clusters, and positive `maxLength` counts UTF-16 code units.
-Delivered preedit events are shown as inline IME composition, with the supplied caret and focused block, separately from the committed value.
-TextArea also bounds the complete normalized composed value by its state's maxLength.
-TextArea semantics expose the typed TextArea role and editing value; the current semantics API does not expose typed accessibility edit or focus actions.
-Focus loss and terminal lifecycle paths clear composition.
-This does not add selection or clipboard commands, reproduce the native IME popup, or install new platform IME hooks on adapters that expose only committed characters.
+Use `TextLayout.Multiline` for wrapping, hard breaks, or reserved text rectangles.
+TextField edits one line; TextArea uses LF text and an explicit `TextAreaViewport`.
+Both navigate Unicode scalars rather than grapheme clusters, count `maxLength` in UTF-16 code units, and keep preedit separate until committed.
+Focus loss and terminal cleanup clear composition.
+Selection, clipboard commands, and an OS candidate-window implementation are unavailable.
+See [text and editing]($TEXT_GUIDE_URL) for compiled examples, input appearance, and target-specific IME support.
 
 ## Optional CPU backend for offline tools
 
-`dev.s7a.strata:strata-runtime-minecraft-fonts-lwjgl:$RELEASE_VERSION_PLACEHOLDER` supplies PNG decoding, the selected TrueType rasterizer, and ICU text ordering for resource-backed offline rendering without launching Minecraft.
-Versioned Fabric runtimes already include the backend and use the game's libraries; do not add runtime imports or native font objects to ordinary UI definitions.
-The backend does not bundle LWJGL, ICU, Gson, or native binaries.
-An offline host must supply the exact target's library dependencies and native classifier, caller-owned font resources, and `MinecraftFontCompatibility`; native library generations must not be mixed in one process.
-Use the pinned dependency declarations linked from [Font resources]($FONT_GUIDE_URL) rather than copying another release's versions.
-
-The resource loader creates an immutable snapshot, and each host owns and closes its own backend and bounded caches.
-Signed and zero TrueType settings follow the target contract, but non-finite JSON settings and unsafe STB coordinate conversions remain invalid.
-Read [Numeric provider settings]($FONT_GUIDE_URL#numeric-provider-settings) for atlas limits, non-finite glyph metrics, and compatibility options.
-[Font verification](https://github.com/sya-ri/strata/blob/master/docs/development/font-verification.md) requires exact native metrics and glyph texels; only final-image differences with independent GPU evidence are permitted, not a general pixel tolerance."""
+Ordinary Fabric screens already receive the font backend; keep runtime imports out of UI definitions.
+Offline hosts may use `dev.s7a.strata:strata-runtime-minecraft-fonts-lwjgl:$RELEASE_VERSION_PLACEHOLDER` with caller-supplied resources, exact target compatibility, matching libraries, and native classifiers.
+The backend does not bundle LWJGL, ICU, Gson, or native binaries; incompatible native generations must run in separate processes.
+Each host owns and closes its backend and bounded caches; snapshots are immutable and shareable.
+Follow [Font resources]($FONT_GUIDE_URL) for setup and limits, including [numeric provider settings]($FONT_GUIDE_URL#numeric-provider-settings)."""
 }

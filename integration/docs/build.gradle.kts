@@ -12,6 +12,7 @@ import org.gradle.jvm.toolchain.JavaLanguageVersion
 import org.gradle.jvm.toolchain.JavaToolchainService
 import org.gradle.process.CommandLineArgumentProvider
 import org.jetbrains.kotlin.gradle.dsl.KotlinJvmProjectExtension
+import org.jetbrains.kotlin.gradle.tasks.KotlinJvmCompile
 import java.nio.file.Files
 import java.nio.file.LinkOption
 
@@ -103,6 +104,13 @@ val apiMainClasses =
         .getByType<SourceSetContainer>()
         .named("jvmMain")
         .map { sourceSet -> sourceSet.output.classesDirs }
+val apiKotlinClasses = rootProject.project(":api").tasks.named<KotlinJvmCompile>("compileKotlinJvm")
+    .flatMap { it.destinationDirectory }
+tasks.withType<Test>().configureEach {
+    inputs.dir(apiKotlinClasses).withPropertyName("compiledApiClasses").withNormalizer(ClasspathNormalizer::class)
+    dependsOn(apiKotlinClasses)
+    doFirst { systemProperty("strata.test.apiClasses", apiKotlinClasses.get().asFile.absolutePath) }
+}
 val showcaseSources = rootProject.layout.projectDirectory.dir("integration/minecraft-fabric-unobfuscated/src/gametest/kotlin")
 val showcaseFixtureResources = rootProject.layout.projectDirectory.dir("integration/minecraft-fabric-unobfuscated/src/gametest/resources")
 val showcaseExampleSources = objects.sourceDirectorySet("showcaseExamples", "API-only showcase examples").apply {

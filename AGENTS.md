@@ -1,9 +1,7 @@
 # Strata implementation invariants
 
-This file records durable project invariants for future implementers.
-The canonical architecture and build details live in [docs/development/architecture.md](docs/development/architecture.md) and [docs/development/build.md](docs/development/build.md).
-Follow [docs/development/minecraft-versions.md](docs/development/minecraft-versions.md) when adding a supported game version.
-Update the canonical document when its contract changes.
+Use these rules when changing Strata.
+Read the linked contract only when the change touches that area; [architecture](docs/development/architecture.md) and [build](docs/development/build.md) are the starting points.
 
 ## Architecture and API
 
@@ -36,9 +34,12 @@ Update the canonical document when its contract changes.
 - Do not discriminate domain state or component kinds with string-literal comparisons or string/number constants.
   Decode external values at the adapter boundary into enums, sealed hierarchies, or value types.
   Replacing a `const val` with a `val` does not make a discriminator type-safe; use a compile-time constant only when an external API requires one.
-- Public, protected, and internal classes and methods require KDoc that describes the contract, inputs, outputs, ownership, threading, and failure behavior.
-  Test methods are exempt, and overrides may inherit the contract of the method they implement.
-  Comments in implementation code explain only non-obvious rationale or invariants.
+- Document public, protected, and internal classes and methods at the level needed to use or change them.
+  A short contract is enough for a simple declaration; describe inputs, outputs, ownership, threading, or failures when they add information beyond the signature or enclosing contract.
+  Link shared contracts instead of repeating them across overloads.
+  Test methods are exempt, and overrides may inherit documentation.
+  Document enum values when their meaning adds to the name or enclosing contract; do not repeat adjacent display text.
+  Implementation comments explain non-obvious rationale or invariants, not the code in prose.
 - Keep at most one named top-level type per source file.
   A file containing only extensions may group functions for one domain and receiver.
   All documentation and code text is English.
@@ -51,9 +52,10 @@ Update the canonical document when its contract changes.
 
 ## Reader documentation
 
-- Organize documentation by reader purpose and maintain [docs/README.md](docs/README.md) as the navigation index.
-  Guides explain use, references define public contracts, development documents own internal contracts and procedures, and release notes own versioned changes.
-  Follow [documentation maintenance](docs/development/documentation.md) for canonical ownership and generated content.
+- Match documentation to its reader and task: overviews support orientation, guides support use, references define contracts, and development documents support implementation.
+  AI instructions contain decision rules and links to task-specific detail.
+  Keep each contract in one canonical place and maintain [docs/README.md](docs/README.md) as the navigation index.
+  Follow [documentation maintenance](docs/development/documentation.md) for writing and generated ownership.
 
 - Keep the root README sufficient to understand the problem Strata solves, its verified features, installation, a minimal compiled example, the module choices, and the next documentation links without opening another file.
 - Back README API examples with compilation tests and render README images from shipped examples.

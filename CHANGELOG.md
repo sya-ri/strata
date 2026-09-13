@@ -1,140 +1,46 @@
 # Changelog
 
-All notable changes to Strata are documented in this file.
+Each version below summarizes the release and links to its detailed changes and upgrade notes.
+Keep all Strata artifacts on the same release version.
 
 ## 0.1.6 - 2026-09-09
 
-See the [0.1.6 release notes](docs/releases/v0.1.6.md) for input appearance and compatibility.
+Per-editor TextField/TextArea frames, caret and IME colors; exact fractional viewport clipping. Existing appearance defaults remain available.
 
-### Added
-
-- `TextInputAppearance` gives standard single-line and multiline editors per-instance normal, focused, and disabled nine-slice frames, caret colors, and IME underline colors.
-- Additive appearance overloads preserve explicit fonts and direct State enablement; the existing overloads and default pixels remain unchanged.
-- Shared host and loaded-client acceptance verifies appearance-only repainting, retained input nodes, idle work, and native/headless pixels.
-
-### Compatibility
-
-- Appearance does not change padding, text metrics, state ownership, or editing behavior. Custom frames need a nonempty nine-slice center and use stretched centers; `Default` preserves legacy rendering.
-- Use matching 0.1.6 API and runtime artifacts to use custom appearance. Existing component calls remain binary compatible.
+[Detailed changes and upgrade notes](docs/releases/v0.1.6.md)
 
 ## 0.1.5 - 2026-09-08
 
-See the [0.1.5 release notes](docs/releases/v0.1.5.md) for installation and observation contracts.
+Direct StateSource component inputs, retained projections, Observe regions, and optional render monitoring. Keep editing and navigation state outside reevaluation.
 
-### Added
-
-- `Observe` binds a retained region to one through 22 typed `StateSource` arguments and reevaluates its content when committed values or its parent-supplied callback change, without reopening the screen.
-- Source-backed `Text` accepts `StateSource<String>` and `StateSource<UiText>`, including explicit-font overloads, through the same retained observation mechanism.
-- Generated direct-source overloads cover display data, labels, enablement, selection appearance, and collection/loading inputs; `onActivate` accepts the same enabled source as its control.
-- Lazy `StateSource.map` shares upstream frame snapshots and suppresses dependent UI work for equal projected values.
-- Optional session render monitoring exposes bounded detached counters and node identities through runtime hosts and Fabric screens, with shared native regression scenarios and API-only authoring exercises.
-- Observed regions share subscriptions and committed frame snapshots by source reference identity, coalesce pending revisions, and reconcile nested changes parent-first while preserving compatible keyed descendants.
-
-### Compatibility
-
-- Existing `ScreenDefinition` and literal `Text` APIs remain available; ordinary captured Kotlin variables do not become observable automatically.
-- Observe occupies one parent-layout slot and emits zero or one child root; use an inner layout for multiple children and apply containing-layout parent data to Observe's modifier.
-- Sources and editable state remain application-owned. Independent sources do not form an atomic application transaction; publish one immutable model through one source when fields must change together.
-- The supported Minecraft matrix remains 1.20 through 1.20.6, 1.21 through 1.21.11, 26.1, and 26.2; all Strata artifacts must use the same 0.1.5 version.
+[Detailed changes and upgrade notes](docs/releases/v0.1.5.md)
 
 ## 0.1.4 - 2026-09-06
 
-### Added
+Uniform `scaleToFit` layout and child transforms, plus corrected deferred Fabric layer ordering. Opaque platform draws still require integer translation and unit scale.
 
-- `Modifier.scaleToFit` measures a component subtree in one fixed design coordinate space and uniformly contains it in its resulting outer bounds, with configurable alignment and opt-in upscaling; pair it with an outer sizing modifier such as `fillMaxSize` to consume a loose viewport.
-- Generic child transforms now carry accumulated scale and translation through descendant layout bounds, portable painting, clipping, pointer input, focus visibility, semantics, and root-overlay anchors.
-
-### Fixed
-
-- Deferred Fabric GUI renderers now preserve committed Strata frame-layer order across portable, sampled-image, fallback, and platform layers, including fractional scale-to-fit edges whose visible overlap is not represented by transformed integer bounds.
-
-### Compatibility
-
-- The public API change is additive: existing modifiers remain available, while custom retained nodes may opt into the new child-transform SPI.
-- Opaque platform draw commands still require unit scale and exact integer translation; painting rejects unsupported transformed commands instead of rendering them incorrectly.
-- The supported Minecraft matrix remains 1.20 through 1.20.6, 1.21 through 1.21.11, 26.1, and 26.2; all Strata artifacts must use the same 0.1.4 version.
+[Detailed changes and upgrade notes](docs/releases/v0.1.4.md)
 
 ## 0.1.3 - 2026-09-01
 
-### Added
+Tab/Shift+Tab focus traversal, shared `onActivate` actions, bounded host resource-image reuse, and metadata-driven release/CI workflows.
 
-- Focus moves cyclically through eligible components with Tab and Shift+Tab after the focused handler ignores the key, following declared layout and paint order while excluding fully clipped targets.
-- `Modifier.onActivate` provides one shared primary-pointer, Enter, and Space action, including a disabled overload that retains no callback and installs no input or focus target.
-
-### Fixed
-
-- Minecraft resource-backed images now keep one stable immutable identity within a UI host, including deferred evaluation, so retained presentation can reuse native textures instead of recreating equivalent image objects.
-- Host-owned resource-image retention is bounded to 512 identifiers and 128 MiB of straight RGBA8 pixels; overflow and failed resolutions remain retryable, and terminal host cleanup releases retained identities before platform shutdown.
-
-### Changed
-
-- Forward release, Pages, Qodana, Minecraft CI, Maven inventory, and installation-example generation now derive from canonical project and current/predecessor metadata instead of requiring version-specific workflow copies, conditionals, or duplicated inventories.
-
-### Compatibility
-
-- The public API change is additive: existing focus and pointer modifiers remain available, focused handlers that consume Tab retain first refusal, and `Button` and `Tab` still require callers to opt into activation behavior.
-- Implementations opting into the internal `MinecraftUiPlatform` SPI must not rely on `image(ResourceId)` being called for every declarative use because admitted successful resolutions may be reused for the host lifetime.
-- The supported Minecraft matrix remains 1.20 through 1.20.6, 1.21 through 1.21.11, 26.1, and 26.2; all Strata artifacts must use the same 0.1.3 version.
+[Detailed changes and upgrade notes](docs/releases/v0.1.3.md)
 
 ## 0.1.2 - 2026-08-30
 
-### Fixed
+Image and PlayerHead use retained sampled-image presentation so placement changes can reuse native textures. No public members changed from 0.1.1.
 
-- Standard Minecraft `Image` components now emit `DrawCommand.SampledImage`, allowing supported Fabric runtimes to retain their immutable source textures when only placement changes.
-- `PlayerHead` now presents its face and optional hat through the same sampled-image path, preserving source regions, layer order, transparent pixels, and exact integer skin-texel scaling across headless and Fabric rendering.
-- Arbitrary legacy `PlayerHead(size = ...)` values retain the existing bounded premultiplied bilinear result while making that derived image eligible for direct texture reuse.
-
-### Compatibility
-
-- This patch does not add or remove public API members relative to 0.1.1.
-- Custom backends still need the `DrawCommand.SampledImage` support introduced in 0.1.1; all Strata artifacts must use the same 0.1.2 version.
+[Detailed changes and upgrade notes](docs/releases/v0.1.2.md)
 
 ## 0.1.1 - 2026-08-30
 
-### Added
+Minecraft 1.20 support, resource fonts, Unicode and multiline editing, FlowRow, Canvas, TiledImage, captured pointer input, and integer player-head scaling. Custom exhaustive visitors must handle `UiText.WithFont` and `DrawCommand.SampledImage`.
 
-- A separate Fabric runtime for Minecraft 1.20, extending the supported release floor from Minecraft 1.20.1 to 1.20.
-- Unicode and resource-pack font selection for Text, common labels, tooltips, TextField, and TextArea while retaining the existing overloads and TextStyle.
-- Typed multiline Text layout with structural wrapping, line limits, clipping or ellipsis, and preserved Unicode/font provenance; existing Text calls remain single-line.
-- General-purpose TextArea editing with canonical LF state, Unicode scalar and visual-line navigation, bounded IME composition, and an owned ScrollState shared with external scrollbars.
-- Portable scoped paint clips with default-method compatibility for existing PaintScope implementations.
-- FlowRow wrapping with checked spacing, arrangement, exact-fit rows, and per-child vertical alignment.
-- Canvas sources for immutable CPU frames, leased native textures, and per-attachment custom offscreen rendering, together with captured pointer input outside component bounds.
-- Bounded direct sampled-image presentation that reuses native textures across frames while preserving portable rendering for unsupported sources and capacity pressure.
-- TiledImage, multiresolution tile sources, bounded visible and overscan caching, and PanZoomState navigation with anchored zoom, fit modes, and world-to-local transforms.
-- PlayerHeadScale for crisp integer skin-texel scaling; the retained arbitrary-size overload now uses region-clamped bilinear sampling for sizes not divisible by eight.
-- Immutable font-resource snapshots, standard bitmap/space/reference/Unihex/TrueType providers, and the optional `runtime:minecraft-fonts-lwjgl` CPU backend with bounded per-host caches and explicit native dependency contracts.
-- Native behavior for signed and signed-zero TrueType settings, including atlas fallback, signed widths, and prepared-text bounds, subject to the documented native-conversion safety boundary.
-- Exact native glyph metrics, raw glyph data, and layout checks, plus exact Fabric/headless output at GUI scales 1, 2, and 3; final native image differences require independent evidence of a GPU effect.
-
-### Fixed
-
-- TextField scalar-boundary editing, supplementary-character UTF-16 limits, scrolled pointer placement, and duplicate cursor movement after state notifications.
-- Delivered IME composition isolation and native text-input focus ownership on adapters with Minecraft preedit events.
-- Consecutive input events synchronize dirty retained geometry before hit testing, preventing scroll-to-move or scroll-to-press failures between rendered frames.
-- Mixed-font Arabic shaping preserves original font selection across contractions and bidirectional reordering.
-- Repeated Fabric screen opens reuse one immutable profile generation; reload and terminal close invalidate it without changing snapshots still used by open hosts.
-- Font resource enumeration, decoding, reference expansion, and decompression enforce explicit per-input and aggregate work limits, including rejected input.
-- Sampled-image, Canvas, and tiled-image resources retain ownership through their last proven presentation, release bounded caches deterministically, and fail closed when native completion is unknown.
-- Tiled-image frame cutoffs, extreme-coordinate geometry, anchor resets, and cache accounting remain stable across retained layout changes and nested capacity pressure.
-
-### Compatibility
-
-- `UiText.WithFont` and `DrawCommand.SampledImage` intentionally expand existing sealed hierarchies. Exhaustive visitors must handle the new cases before recompilation; previously compiled visitors can fail when they receive those cases.
-- `PlayerHead(size = ...)` remains binary compatible but is deprecated. Use `PlayerHeadScale` for pixel-perfect integer scaling; custom image backends must support fractional sampling for accepted arbitrary sizes.
-- Existing component overloads, TextStyle, and JVM signatures remain available. This member compatibility does not imply source or behavioral compatibility for old text visitors or custom rendering backends.
+[Detailed changes and upgrade notes](docs/releases/v0.1.1.md)
 
 ## 0.1.0 - 2026-08-25
 
-### Added
+Initial API-only screen definitions, components and modifiers, retained/headless runtimes, and versioned Fabric adapters. This release's font path supports printable ASCII only.
 
-- API-only declarative screen authoring with `ScreenDefinition.open()` and the Java `Screens.open(definition)` facade.
-- Row, Column, Stack, Grid, and Spacer layouts; 16 profile-backed and data-oriented components; active modifiers; caller-owned state; resource sources; inventory bindings; and public Element and Node extension SPI.
-- Retained core, deterministic headless rendering, common Minecraft integration, and separate client Fabric runtimes for Minecraft 1.20.1 through 1.21.11, 26.1, and 26.2.
-- Loaded Minecraft comparison, production-jar, inventory synchronization, lifecycle, performance, retention, and documentation-generation tests.
-- Generated component showcase, Dokka GitHub Pages site, public `skills/strata` Codex skill, Maven Central publication, GitHub Release artifacts, and Modrinth runtime distribution.
-
-### Known limitations
-
-- The verified bitmap font path supports printable ASCII with the regular Minecraft glyph sheet; forced Unicode and multi-resource font stacks are not supported.
-- Resource-backed images retain their declared logical dimensions and use nearest sampling.
+[Detailed changes and upgrade notes](docs/releases/v0.1.0.md)
