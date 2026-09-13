@@ -49,7 +49,9 @@ internal class PortableContractsTest {
         assertEquals(3, text.length)
         assertEquals(0x1F600, text.scalarAt(0))
         assertEquals(0x3042, text.scalarAt(2))
-        assertEquals(0xD800, "\uD800".scalarAt(0))
+        // The JS compiler may replace an isolated surrogate literal while serializing its intermediate representation.
+        val isolated = charArrayOf(0xD800.toChar()).concatToString()
+        assertEquals(0xD800, isolated.scalarAt(0))
         assertFailsWith<IllegalArgumentException> { StringBuilder().appendScalar(0xD800) }
     }
 

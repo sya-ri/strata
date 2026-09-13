@@ -2,6 +2,7 @@ package dev.s7a.strata.component
 
 import dev.s7a.strata.internal.platform.PlatformThreads
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
+import dev.s7a.strata.state.mutableStateOf
 
 /**
  * Owner-thread observable value implementation shared by standard component states.
@@ -12,7 +13,7 @@ internal class ObservableComponentState<T : Any>(
 ) {
     private val ownerThread = PlatformThreads.current()
     private val observers: MutableSet<(T) -> Unit> = LinkedHashSet()
-    private var currentValue = initialValue
+    private val currentValue = mutableStateOf(initialValue)
 
     init {
         validate(initialValue)
@@ -23,7 +24,7 @@ internal class ObservableComponentState<T : Any>(
      */
     fun get(): T {
         checkOwnerThread()
-        return currentValue
+        return currentValue.value
     }
 
     /**
@@ -32,8 +33,7 @@ internal class ObservableComponentState<T : Any>(
     fun set(value: T): Boolean {
         checkOwnerThread()
         validate(value)
-        if (currentValue == value) return false
-        currentValue = value
+        if (currentValue.update(value).not()) return false
         observers.toList().forEach { observer -> observer(value) }
         return true
     }

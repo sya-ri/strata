@@ -27,24 +27,33 @@ public class MutableState<T> internal constructor(
             return current
         }
         set(value) {
-            checkAccess()
-            StateObservation.checkMutation()
-            val active = observations.toList()
-            val entered = ArrayList<StateObservation>()
-            try {
-                active.forEach { observation ->
-                    observation.beginMutation()
-                    entered.add(observation)
-                }
-                val equal = StateObservation.compare { current == value }
-                if (equal.not()) {
-                    current = value
-                    active.forEach(StateObservation::invalidate)
-                }
-            } finally {
-                entered.asReversed().forEach(StateObservation::endMutation)
-            }
+            update(value)
         }
+
+    /**
+     * Assigns an owner-thread value through the same equality and session guards as [value].
+     * Returns whether it changed so standard component states can notify their retained observers without comparing twice.
+     */
+    internal fun update(value: T): Boolean {
+        checkAccess()
+        StateObservation.checkMutation()
+        val active = observations.toList()
+        val entered = ArrayList<StateObservation>()
+        try {
+            active.forEach { observation ->
+                observation.beginMutation()
+                entered.add(observation)
+            }
+            val changed = StateObservation.compare { current == value }.not()
+            if (changed) {
+                current = value
+                active.forEach(StateObservation::invalidate)
+            }
+            return changed
+        } finally {
+            entered.asReversed().forEach(StateObservation::endMutation)
+        }
+    }
 
     private fun checkAccess() {
         check(PlatformThreads.current() === owner) { "State requires its construction thread." }

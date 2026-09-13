@@ -96,6 +96,8 @@ Unequal assignments mark every observing session dirty, and the next frame reeva
 Equal assignments do not invalidate content, and multiple writes before a frame are coalesced.
 Each successful evaluation replaces its dependencies with exactly the states read by that evaluation, so values used only by an inactive branch no longer trigger rebuilds.
 State read exclusively in an event callback is not a content dependency.
+The value getters of existing `CheckboxState`, `CycleButtonState`, `SliderState`, `TextFieldState`, and `TextAreaState` participate in the same tracking, so conditions based on those values also rebuild their screen.
+Their retained component subscriptions remain independent and continue to receive distinct normalized value changes.
 
 The caller owns state independently of a screen.
 Detach retains content dependencies so changes made while detached are observed on reattachment; close or terminal failure releases all dependencies without disposing caller-owned state.

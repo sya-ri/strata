@@ -3,6 +3,8 @@ package dev.s7a.strata.component
 import dev.s7a.strata.internal.platform.PlatformThreads
 import dev.s7a.strata.internal.platform.scalarAt
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
+import dev.s7a.strata.state.MutableState
+import dev.s7a.strata.state.mutableStateOf
 
 /**
  * Owner-thread mutable value for one single-line text field.
@@ -21,11 +23,11 @@ public class TextFieldState(
 ) {
     private val ownerThread: Any = PlatformThreads.current()
     private var observer: ((String) -> Unit)? = null
-    private var currentValue: String
+    private val currentValue: MutableState<String>
 
     init {
         require(0 < maxLength) { "TextField maximum length must be positive." }
-        currentValue = validate(initialValue)
+        currentValue = mutableStateOf(validate(initialValue))
     }
 
     /**
@@ -39,13 +41,12 @@ public class TextFieldState(
     public var value: String
         get() {
             checkThread()
-            return currentValue
+            return currentValue.value
         }
         set(value) {
             checkThread()
             val validated = validate(value)
-            if (currentValue == validated) return
-            currentValue = validated
+            if (currentValue.update(validated).not()) return
             observer?.invoke(validated)
         }
 

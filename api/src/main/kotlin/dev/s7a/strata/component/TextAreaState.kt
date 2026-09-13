@@ -4,6 +4,8 @@ import dev.s7a.strata.internal.platform.PlatformThreads
 import dev.s7a.strata.internal.platform.appendScalar
 import dev.s7a.strata.internal.platform.scalarAt
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
+import dev.s7a.strata.state.MutableState
+import dev.s7a.strata.state.mutableStateOf
 
 /**
  * Owner-thread mutable text and vertical scroll position for one multiline editor.
@@ -25,11 +27,11 @@ public class TextAreaState(
     private val ownerThread: Any = PlatformThreads.current()
     private val ownedScrollState: ScrollState = ScrollState()
     private var observer: ((String) -> Unit)? = null
-    private var currentValue: String
+    private val currentValue: MutableState<String>
 
     init {
         require(0 < maxLength) { "Text area maximum length must be positive." }
-        currentValue = normalize(initialValue)
+        currentValue = mutableStateOf(normalize(initialValue))
     }
 
     /**
@@ -44,13 +46,12 @@ public class TextAreaState(
     public var value: String
         get() {
             checkThread()
-            return currentValue
+            return currentValue.value
         }
         set(value) {
             checkThread()
             val normalized = normalize(value)
-            if (currentValue == normalized) return
-            currentValue = normalized
+            if (currentValue.update(normalized).not()) return
             observer?.invoke(normalized)
         }
 
