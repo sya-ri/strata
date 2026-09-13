@@ -11,6 +11,10 @@ import dev.s7a.strata.runtime.semantics.SemanticsEntry
 import dev.s7a.strata.runtime.spi.createRuntimeUiSession
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
 import java.math.BigInteger
+import java.nio.ByteBuffer
+import java.nio.ByteOrder
+import java.util.zip.Adler32
+import java.util.zip.CRC32
 
 /**
  * Rasterizes ordered portable commands into an immutable physical ARGB image.
@@ -69,10 +73,7 @@ private object HeadlessImplementation {
         scale: Int,
     ): HeadlessImage {
         val dimensions = checkedDimensions(viewport, scale)
-        val snapshot = snapshotCommands(commands)
-        val pixels = IntArray(dimensions.area)
-        paintSnapshot(pixels, dimensions, snapshot)
-        return ImageImpl.create(dimensions.physicalSize, pixels)
+        return rasterizeSnapshot(commands, dimensions)
     }
 
     fun render(
@@ -90,7 +91,7 @@ private object HeadlessImplementation {
                     "The retained root did not report the fixed headless viewport."
                 }
                 val image = rasterizeSnapshot(frame.drawCommands, dimensions)
-                FrameImpl.create(viewport, scale, image, frame.semantics)
+                FrameImpl(viewport, scale, image, frame.semantics)
             },
             close = session::close,
         )
@@ -103,47 +104,37 @@ private object HeadlessImplementation {
         val snapshot = snapshotCommands(commands)
         val pixels = IntArray(dimensions.area)
         paintSnapshot(pixels, dimensions, snapshot)
-        return ImageImpl.create(dimensions.physicalSize, pixels)
+        return ImageImpl(dimensions.physicalSize, pixels)
     }
 
     private fun snapshotCommands(commands: List<DrawCommand>): List<DrawCommand> {
         var clipDepth = 0
-        val snapshot = ArrayList<DrawCommand>(commands.size)
-        commands.forEach { command ->
-            val checkedCommand = requireNotNull(command) { "Unsupported or null draw command." }
-            when (checkedCommand) {
-                is DrawCommand.FillRectangle -> {
-                    snapshot.add(checkedCommand)
-                }
+        val snapshot =
+            commands.map { command ->
+                val checkedCommand = requireNotNull(command) { "Unsupported or null draw command." }
+                when (checkedCommand) {
+                    is DrawCommand.Platform -> {
+                        throw IllegalArgumentException("Headless rendering does not support platform draw commands.")
+                    }
 
-                is DrawCommand.BlitImage -> {
-                    snapshot.add(checkedCommand)
-                }
+                    is DrawCommand.PushClip, is DrawCommand.PushFractionalClip -> {
+                        checkedCommand.also {
+                            clipDepth = Math.incrementExact(clipDepth)
+                        }
+                    }
 
-                is DrawCommand.SampledImage -> {
-                    snapshot.add(checkedCommand)
-                }
+                    DrawCommand.PopClip -> {
+                        checkedCommand.also {
+                            require(0 < clipDepth) { "Clip pop has no matching push." }
+                            clipDepth -= 1
+                        }
+                    }
 
-                is DrawCommand.BlitImagePixels -> {
-                    snapshot.add(checkedCommand)
-                }
-
-                is DrawCommand.Platform -> {
-                    throw IllegalArgumentException("Headless rendering does not support platform draw commands.")
-                }
-
-                is DrawCommand.PushClip, is DrawCommand.PushFractionalClip -> {
-                    clipDepth = Math.incrementExact(clipDepth)
-                    snapshot.add(checkedCommand)
-                }
-
-                DrawCommand.PopClip -> {
-                    require(0 < clipDepth) { "Clip pop has no matching push." }
-                    clipDepth -= 1
-                    snapshot.add(checkedCommand)
+                    is DrawCommand.FillRectangle, is DrawCommand.BlitImage, is DrawCommand.SampledImage, is DrawCommand.BlitImagePixels -> {
+                        checkedCommand
+                    }
                 }
             }
-        }
         require(clipDepth == 0) { "Clip push has no matching pop." }
         return snapshot
     }
@@ -456,7 +447,7 @@ private object HeadlessImplementation {
         }
     }
 
-    private class ImageImpl private constructor(
+    private class ImageImpl(
         override val size: IntSize,
         private val pixels: IntArray,
     ) : HeadlessImage {
@@ -466,41 +457,21 @@ private object HeadlessImplementation {
         ): Int {
             require(0 <= x && x < size.width) { "X coordinate must be inside the image." }
             require(0 <= y && y < size.height) { "Y coordinate must be inside the image." }
-            val rowOffset = Math.multiplyExact(y, size.width)
-            val index = Math.addExact(rowOffset, x)
-            return pixels[index]
+            return pixels[y * size.width + x]
         }
 
         override fun copyArgb(): IntArray = pixels.copyOf()
 
         override fun encodePng(): ByteArray = PngEncoder.encode(size, pixels)
-
-        companion object {
-            @JvmSynthetic
-            internal fun create(
-                size: IntSize,
-                pixels: IntArray,
-            ): ImageImpl = ImageImpl(size, pixels)
-        }
     }
 
-    private class FrameImpl private constructor(
+    private class FrameImpl(
         override val viewport: IntSize,
         override val pixelScale: Int,
         override val image: HeadlessImage,
         semantics: List<SemanticsEntry>,
     ) : HeadlessFrame {
         override val semantics: List<SemanticsEntry> = semantics.toList()
-
-        companion object {
-            @JvmSynthetic
-            internal fun create(
-                viewport: IntSize,
-                pixelScale: Int,
-                image: HeadlessImage,
-                semantics: List<SemanticsEntry>,
-            ): FrameImpl = FrameImpl(viewport, pixelScale, image, semantics)
-        }
     }
 
     private object PngEncoder {
@@ -516,7 +487,6 @@ private object HeadlessImplementation {
                 0x0A,
             )
         private const val MAX_STORED_BLOCK_LENGTH: Int = 65535
-        private const val ADLER_MODULUS: Long = 65521L
 
         fun encode(
             size: IntSize,
@@ -524,17 +494,20 @@ private object HeadlessImplementation {
         ): ByteArray {
             val scanlines = scanlines(size, pixels)
             val compressed = zlib(scanlines)
-            val ihdr = ByteArray(13)
-            writeInt(ihdr, 0, size.width)
-            writeInt(ihdr, 4, size.height)
-            ihdr[8] = 8
-            ihdr[9] = 6
-            val output = ByteArrayOutput(sizeBytes(ihdr, compressed))
-            output.write(signature)
+            val ihdr =
+                ByteBuffer
+                    .allocate(13)
+                    .putInt(size.width)
+                    .putInt(size.height)
+                    .put(8)
+                    .put(6)
+                    .array()
+            val output = ByteBuffer.allocate(sizeBytes(ihdr, compressed))
+            output.put(signature)
             output.writeChunk("IHDR", ihdr)
             output.writeChunk("IDAT", compressed)
             output.writeChunk("IEND", ByteArray(0))
-            return output.toByteArray()
+            return output.array()
         }
 
         private fun scanlines(
@@ -565,45 +538,20 @@ private object HeadlessImplementation {
         private fun zlib(data: ByteArray): ByteArray {
             val blockCount = data.size / MAX_STORED_BLOCK_LENGTH + if (data.size % MAX_STORED_BLOCK_LENGTH == 0) 0 else 1
             val deflateBytes = checkedAdd(data.size, checkedMultiply(blockCount, 5, "PNG stored-block headers"), "PNG deflate stream")
-            val output = ByteArray(checkedAdd(deflateBytes, 6, "PNG zlib stream"))
-            var target = 0
-            output[target] = 0x78
-            target += 1
-            output[target] = 0x01
-            target += 1
+            val output = ByteBuffer.allocate(checkedAdd(deflateBytes, 6, "PNG zlib stream"))
+            output.put(0x78).put(0x01).order(ByteOrder.LITTLE_ENDIAN)
             var source = 0
             repeat(blockCount) { blockIndex ->
-                val remaining = data.size - source
-                val blockLength = minOf(remaining, MAX_STORED_BLOCK_LENGTH)
-                val finalBlock = blockIndex == blockCount - 1
-                output[target] = if (finalBlock) 0x01 else 0x00
-                target += 1
-                output[target] = blockLength.toByte()
-                output[target + 1] = (blockLength ushr 8).toByte()
-                val complement = blockLength.inv()
-                output[target + 2] = complement.toByte()
-                output[target + 3] = (complement ushr 8).toByte()
-                target += 4
-                data.copyInto(output, target, source, source + blockLength)
-                target += blockLength
+                val blockLength = minOf(data.size - source, MAX_STORED_BLOCK_LENGTH)
+                output.put(if (blockIndex == blockCount - 1) 0x01 else 0x00)
+                output.putShort(blockLength.toShort())
+                output.putShort(blockLength.inv().toShort())
+                output.put(data, source, blockLength)
                 source += blockLength
             }
-            val adler = adler32(data)
-            output[target] = (adler ushr 24).toByte()
-            output[target + 1] = (adler ushr 16).toByte()
-            output[target + 2] = (adler ushr 8).toByte()
-            output[target + 3] = adler.toByte()
-            return output
-        }
-
-        private fun adler32(data: ByteArray): Long {
-            var first = 1L
-            var second = 0L
-            data.forEach { value ->
-                first = (first + (value.toInt() and 0xFF)) % ADLER_MODULUS
-                second = (second + first) % ADLER_MODULUS
-            }
-            return (second shl 16) or first
+            val adler = Adler32().apply { update(data) }.value.toInt()
+            output.order(ByteOrder.BIG_ENDIAN).putInt(adler)
+            return output.array()
         }
 
         private fun sizeBytes(
@@ -618,17 +566,6 @@ private object HeadlessImplementation {
 
         private fun chunkSize(payloadSize: Int): Int = checkedAdd(payloadSize, 12, "PNG chunk")
 
-        private fun checkedMultiply(
-            first: Int,
-            second: Int,
-            label: String,
-        ): Int =
-            try {
-                Math.multiplyExact(first, second)
-            } catch (_: ArithmeticException) {
-                throw ArithmeticException("$label exceeds Int.MAX_VALUE.")
-            }
-
         private fun checkedAdd(
             first: Int,
             second: Int,
@@ -640,66 +577,22 @@ private object HeadlessImplementation {
                 throw ArithmeticException("$label exceeds Int.MAX_VALUE.")
             }
 
-        private fun writeInt(
-            target: ByteArray,
-            offset: Int,
-            value: Int,
+        private fun ByteBuffer.writeChunk(
+            type: String,
+            payload: ByteArray,
         ) {
-            target[offset] = (value ushr 24).toByte()
-            target[offset + 1] = (value ushr 16).toByte()
-            target[offset + 2] = (value ushr 8).toByte()
-            target[offset + 3] = value.toByte()
-        }
-
-        private class ByteArrayOutput(
-            initialCapacity: Int,
-        ) {
-            private val bytes = ByteArray(initialCapacity)
-            private var position = 0
-
-            fun write(source: ByteArray) {
-                source.copyInto(bytes, position)
-                position += source.size
-            }
-
-            fun writeChunk(
-                type: String,
-                payload: ByteArray,
-            ) {
-                writeInt(bytes, position, payload.size)
-                position += 4
-                val typeBytes = type.encodeToByteArray()
-                typeBytes.copyInto(bytes, position)
-                position += typeBytes.size
-                payload.copyInto(bytes, position)
-                position += payload.size
-                val crc = crc32(typeBytes, payload)
-                writeInt(bytes, position, crc)
-                position += 4
-            }
-
-            fun toByteArray(): ByteArray = bytes.copyOf()
-
-            private fun crc32(
-                type: ByteArray,
-                payload: ByteArray,
-            ): Int {
-                var crc = -1
-                type.forEach { value -> crc = updateCrc(crc, value) }
-                payload.forEach { value -> crc = updateCrc(crc, value) }
-                return crc.inv()
-            }
-
-            private fun updateCrc(
-                initial: Int,
-                value: Byte,
-            ): Int {
-                var crc = initial xor (value.toInt() and 0xFF)
-                repeat(8) {
-                    crc = if (crc and 1 == 1) (crc ushr 1) xor 0xEDB88320.toInt() else crc ushr 1
-                }
-                return crc
-            }
+            val typeBytes = type.encodeToByteArray()
+            putInt(payload.size)
+            put(typeBytes)
+            put(payload)
+            val crc =
+                CRC32()
+                    .apply {
+                        update(typeBytes)
+                        update(payload)
+                    }.value
+                    .toInt()
+            putInt(crc)
         }
     }
 
