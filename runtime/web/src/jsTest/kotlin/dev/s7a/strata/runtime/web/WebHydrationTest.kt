@@ -73,13 +73,5 @@ internal class WebHydrationTest {
         }
     }
 
-    private fun initialHtml(): String {
-        val root = document.createElement("div") as HTMLElement
-        val host = mountWeb(ScreenDefinition("Build") { Stack { Text("Initial") } }, root, viewport)
-        return try {
-            root.innerHTML
-        } finally {
-            host.close()
-        }
-    }
+    private fun initialHtml(): String = renderWebHtml(ScreenDefinition("Build") { Stack { Text("Initial") } }, viewport)
 }

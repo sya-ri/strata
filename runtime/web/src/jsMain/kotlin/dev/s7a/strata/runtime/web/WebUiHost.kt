@@ -60,10 +60,19 @@ public class WebUiHost internal constructor(
      */
     internal fun start() {
         guarded {
-            session.attach()
-            render(viewport)
+            prepare()
             root.addEventListener("pointerdown", pressListener)
             schedule()
+        }
+    }
+
+    /**
+     * Produces the initial DOM without native listeners or animation requests, for deterministic build rendering.
+     */
+    internal fun prepare() {
+        guarded {
+            session.attach()
+            render(viewport)
         }
     }
 
@@ -135,9 +144,19 @@ public fun mountWeb(
     definition: ScreenDefinition,
     root: HTMLElement,
     viewport: IntSize,
+): WebUiHost = createWebHost(definition, root, viewport).also(WebUiHost::start)
+
+/**
+ * Transfers a definition to an unstarted host whose caller must prepare or start it and eventually close it.
+ */
+@OptIn(InternalStrataRuntimeApi::class)
+internal fun createWebHost(
+    definition: ScreenDefinition,
+    root: HTMLElement,
+    viewport: IntSize,
 ): WebUiHost {
     val runtime = WebComponentRuntime()
     val transferred = definition.transfer()
     val session = createRuntimeUiSession { ComponentRuntimeBridge.evaluate(runtime, transferred.content) }
-    return WebUiHost(root, session, viewport).also(WebUiHost::start)
+    return WebUiHost(root, session, viewport)
 }
