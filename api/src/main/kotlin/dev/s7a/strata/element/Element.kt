@@ -11,7 +11,7 @@ import dev.s7a.strata.modifier.Modifier
  *
  * @property identity positional or keyed identity under the parent.
  * @property type stable element-kind token.
- * @property children immutable defensive snapshot of direct child descriptions.
+ * @property children detached read-only snapshot of direct child descriptions.
  * @property modifier immutable active modifier descriptions applied to this component.
  */
 public abstract class Element public constructor(
@@ -20,5 +20,5 @@ public abstract class Element public constructor(
     children: List<Element> = emptyList(),
     public val modifier: Modifier = Modifier.Empty,
 ) {
-    public val children: List<Element> = buildList { addAll(children) }
+    public val children: List<Element> = children.toList()
 }

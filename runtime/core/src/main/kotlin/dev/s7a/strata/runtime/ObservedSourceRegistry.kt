@@ -159,7 +159,7 @@ internal class ObservedSourceRegistry(
         }
     }
 
-    private fun values(sources: List<StateSource<*>>): List<Any?> = buildList { sources.mapTo(this) { source -> checkNotNull(bindings[source]).value } }
+    private fun values(sources: List<StateSource<*>>): List<Any?> = sources.map { source -> checkNotNull(bindings[source]).value }
 
     private fun release(sources: List<StateSource<*>>) {
         sources.forEach { source ->

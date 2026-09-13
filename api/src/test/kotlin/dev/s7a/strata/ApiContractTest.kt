@@ -106,12 +106,6 @@ internal class ApiContractTest {
             translated.arguments,
         )
         assertEquals(listOf(UiText.Literal("a"), UiText.Literal("b")), concatenated.parts)
-        assertThrows(UnsupportedOperationException::class.java) {
-            (translated.arguments as MutableList<UiTextArgument>).add(UiTextArgument.BooleanValue(true))
-        }
-        assertThrows(UnsupportedOperationException::class.java) {
-            (concatenated.parts as MutableList<UiText>).add(UiText.Literal("c"))
-        }
         assertEquals(
             translated,
             UiText.Translated(
@@ -340,9 +334,6 @@ internal class ApiContractTest {
         val element = ContractElement(children = children)
         children.clear()
         assertEquals(2, element.children.size)
-        assertThrows(UnsupportedOperationException::class.java) {
-            (element.children as MutableList<Element>).add(ContractElement())
-        }
     }
 
     @Test

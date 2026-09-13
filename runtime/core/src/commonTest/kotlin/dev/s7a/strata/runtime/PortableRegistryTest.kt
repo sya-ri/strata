@@ -6,7 +6,6 @@ import dev.s7a.strata.runtime.platform.IdentityMap
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
 import kotlin.test.Test
 import kotlin.test.assertEquals
-import kotlin.test.assertFailsWith
 import kotlin.test.assertNull
 
 /**
@@ -31,7 +30,7 @@ internal class PortableRegistryTest {
     }
 
     @Test
-    fun diagnosticMapsPreserveValueEqualityAndRejectMutation() {
+    fun diagnosticMapsRemainDetachedAfterCountersReset() {
         val counts = RenderWorkCounts()
         counts.record(UiRenderMetric.FrameAttempt, UiRenderOperation.Frame)
         val totals = counts.totals()
@@ -43,11 +42,5 @@ internal class PortableRegistryTest {
         assertEquals(0L, counts.totals()[UiRenderMetric.FrameAttempt])
         assertEquals(totals.toMap(), totals)
         assertEquals(totals.toMap().hashCode(), totals.hashCode())
-        assertFailsWith<UnsupportedOperationException> { (totals as MutableMap).clear() }
-        assertFailsWith<UnsupportedOperationException> { (operations as MutableMap).clear() }
-        assertFailsWith<UnsupportedOperationException> { (frame as MutableMap)[UiRenderMetric.FrameAttempt] = 3L }
-        assertFailsWith<UnsupportedOperationException> {
-            (frame.entries.first() as MutableMap.MutableEntry).setValue(3L)
-        }
     }
 }

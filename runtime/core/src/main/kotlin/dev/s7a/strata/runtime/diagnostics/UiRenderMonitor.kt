@@ -16,7 +16,7 @@ public interface UiRenderMonitor : AutoCloseable {
     public fun checkpoint()
 
     /**
-     * Copies detached, unmodifiable interval evidence without evaluating or modifying the screen.
+     * Copies detached, read-only interval evidence without evaluating or modifying the screen.
      * Terminal failure releases runtime references but leaves a final detached snapshot readable until explicit close.
      */
     public fun snapshot(): UiRenderSnapshot

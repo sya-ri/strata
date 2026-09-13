@@ -21,12 +21,12 @@ public sealed interface RuntimeUiFrame {
     public val size: IntSize
 
     /**
-     * The detached, unmodifiable drawing-command snapshot in tree coordinates and emission order.
+     * The detached, read-only drawing-command snapshot in tree coordinates and emission order.
      */
     public val drawCommands: List<DrawCommand>
 
     /**
-     * The detached, unmodifiable semantics snapshot in tree coordinates and traversal order.
+     * The detached, read-only semantics snapshot in tree coordinates and traversal order.
      */
     public val semantics: List<SemanticsEntry>
 }

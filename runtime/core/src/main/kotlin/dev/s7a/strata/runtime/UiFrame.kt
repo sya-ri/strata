@@ -7,7 +7,7 @@ import dev.s7a.strata.runtime.semantics.SemanticsEntry
 /**
  * Immutable output of one successful synchronous UI session frame.
  *
- * The frame owns defensive immutable snapshots of its drawing and semantics collections.
+ * The frame owns defensive read-only snapshots of its drawing and semantics collections.
  * An owning session may retain and reuse this instance while the retained tree revision and root constraints remain unchanged.
  *
  * @property size the measured root size.
@@ -19,8 +19,8 @@ internal class UiFrame internal constructor(
     drawCommands: List<DrawCommand>,
     semantics: List<SemanticsEntry>,
 ) {
-    val drawCommands: List<DrawCommand> = buildList { addAll(drawCommands) }
-    val semantics: List<SemanticsEntry> = buildList { addAll(semantics) }
+    val drawCommands: List<DrawCommand> = drawCommands.toList()
+    val semantics: List<SemanticsEntry> = semantics.toList()
 
     override fun equals(other: Any?): Boolean =
         other is UiFrame &&

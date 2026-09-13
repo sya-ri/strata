@@ -112,7 +112,7 @@ internal class RenderMonitorImpl(
         return UiRenderSnapshot(
             totals.totals(),
             totals.operations(),
-            buildList { records.mapTo(this) { it.snapshot() } },
+            records.map { it.snapshot() },
             subscriptions,
             overflowed,
         )
@@ -120,12 +120,10 @@ internal class RenderMonitorImpl(
 
     override fun findNodes(key: ElementKey<*>): List<UiRenderNodeId> {
         checkBoundary()
-        return buildList {
-            records.mapNotNullTo(this) { record ->
-                val entry = record.entry as? RetainedNode
-                val identity = entry?.element?.identity as? ElementIdentity.Keyed
-                if (identity?.key == key) record.id else null
-            }
+        return records.mapNotNull { record ->
+            val entry = record.entry as? RetainedNode
+            val identity = entry?.element?.identity as? ElementIdentity.Keyed
+            if (identity?.key == key) record.id else null
         }
     }
 

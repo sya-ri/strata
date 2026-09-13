@@ -42,7 +42,7 @@ It is not an application screen-definition API and does not expose coroutines, s
 `attach`, `detach`, `frame`, pointer input, focused keyboard and text input, input reset, and `close` are synchronous calls that must already run on the construction and owner thread.
 The synchronous bridge exposes no task-launching or dispatcher facility.
 Its content lambda is evaluated during the first attach and reevaluated before a subsequent frame when an observed caller-owned state changes; reconciliation preserves matching retained nodes until terminal failure or close.
-Each successful frame owns immutable defensive snapshots of size, drawing commands, and semantics, and all input is ignored until the first successful frame commits.
+Each successful frame owns defensive read-only snapshots of size, drawing commands, and semantics, and all input is ignored until the first successful frame commits.
 After that first frame, consecutive pointer, keyboard, and text events may arrive without another frame between them.
 Before each event, the session resolves only pending retained measurement and layout using the last committed constraints; clean geometry invokes no measure or layout callbacks.
 Dirty measurement also refreshes the retained dynamic children needed by virtual viewports.
@@ -137,7 +137,7 @@ Public source consumers follow the same cutoff and attachment contracts; see [Ca
 
 Attach creates a retained tree when necessary, activates one task generation, applies pending source values, rebuilds dirty content once, and resumes attachment-scoped resources.
 A frame applies another source cutoff, rebuilds dirty content at most once, then measures, lays out, paints, and collects semantics in order.
-Its size, drawing commands, and semantics entries are immutable defensive snapshots.
+Its size, drawing commands, and semantics entries are defensive read-only snapshots.
 
 Pointer, keyboard, committed-character, and preedit input are ignored until one complete frame has committed.
 Afterward it targets the most recently committed tree.

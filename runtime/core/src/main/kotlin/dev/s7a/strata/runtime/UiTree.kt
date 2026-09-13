@@ -317,7 +317,7 @@ public class UiTree :
     /**
      * Paints the laid-out tree in parent-before-child order.
      *
-     * An empty tree returns an empty immutable list.
+     * An empty tree returns an empty read-only list.
      * A non-empty tree must be laid out with no pending measurement or layout work.
      * If that precondition fails, the tree is poisoned.
      * A clean node reuses its complete local display list and combines it with current accumulated coordinates.
@@ -325,7 +325,7 @@ public class UiTree :
      * The core applies no implicit node or parent clipping.
      * Valid local overflow outside those bounds is retained.
      *
-     * @return an immutable list of retained commands with bounds in accumulated tree coordinates.
+     * @return an read-only list of retained commands with bounds in accumulated tree coordinates.
      * @throws IllegalStateException when layout is incomplete or geometry remains pending.
      * It is also thrown when the operation is called from the wrong thread, re-enters an active operation, or the tree is not active.
      * @throws Throwable when a paint callback or scope operation throws after pipeline work begins and the exception escapes the callback.
@@ -427,7 +427,7 @@ public class UiTree :
     /**
      * Collects unresolved semantics in parent-before-child order.
      *
-     * An empty tree returns an empty immutable list.
+     * An empty tree returns an empty read-only list.
      * A non-empty tree must be laid out with no pending measurement or layout work.
      * If that precondition fails, the tree is poisoned.
      * A clean node reuses its complete local semantics payload and combines it with current accumulated bounds.
@@ -435,7 +435,7 @@ public class UiTree :
      * Text remains unresolved for the platform adapter.
      * Callback failures poison the tree.
      *
-     * @return an immutable list of entries with accumulated tree-coordinate bounds.
+     * @return an read-only list of entries with accumulated tree-coordinate bounds.
      * @throws IllegalStateException when layout is incomplete or geometry remains pending.
      * It is also thrown when the operation is called from the wrong thread, re-enters an active operation, or the tree is not active.
      * @throws Throwable when a semantics callback or scope operation throws after pipeline work begins.

@@ -6,7 +6,10 @@ For application use, start with [screens and state](../guides/screens-and-state.
 
 The API and retained core share their implementation between JVM and JavaScript; platform-specific synchronization, exact arithmetic, identity, and coroutine-context adapters preserve the same observable contracts.
 Headless and Minecraft integration remain JVM adapters.
-Prefer Kotlin standard-library facilities in shared code: collection builders produce detached read-only snapshots, and standard atomics preserve cross-thread ownership with implementation-local experimental opt-ins.
+Prefer Kotlin standard-library facilities in shared code: `toList()` and `toMap()` copy caller-owned collections into read-only snapshots, and standard atomics preserve cross-thread ownership with implementation-local experimental opt-ins.
+Collection snapshots are shallow: they detach collection membership from the input but retain the element references.
+Consumers must respect the read-only collection types; mutation through casts or Java collection methods is unsupported and is not required to throw.
+Element immutability is defined by each element contract.
 Keep custom platform adapters only for contracts the standard library cannot supply, such as reentrant conditions, thread-local context, and exact arithmetic with overflow rejection.
 
 ## Module boundaries

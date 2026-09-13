@@ -53,12 +53,12 @@ public sealed class UiScope protected constructor() {
      *
      * The copy remains valid after this scope is closed, which releases the scope's references to the descriptions.
      *
-     * @return an unmodifiable snapshot for a new parent description.
+     * @return an read-only snapshot for a new parent description.
      */
     @JvmSynthetic
     internal fun childElementsSnapshot(): List<Element> {
         checkUsable()
-        return buildList { addAll(emittedElements) }
+        return emittedElements.toList()
     }
 
     /**

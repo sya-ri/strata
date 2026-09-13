@@ -23,9 +23,6 @@ internal class TextInputEventTest {
         val event = TextInputEvent.Preedit("composition", 4, source, 1)
         source.clear()
         assertEquals(listOf("first", "second"), event.blocks)
-        assertThrows(UnsupportedOperationException::class.java) {
-            (event.blocks as MutableList<String>).clear()
-        }
         assertThrows(IllegalArgumentException::class.java) { TextInputEvent.Preedit("x", 2, emptyList(), -1) }
         assertThrows(IllegalArgumentException::class.java) { TextInputEvent.Preedit("x", 1, emptyList(), 0) }
     }

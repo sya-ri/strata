@@ -32,25 +32,16 @@ internal class RenderWorkCounts {
      * Copies aggregate counts without retaining this mutable counter.
      */
     fun totals(): Map<UiRenderMetric, Long> =
-        buildMap {
-            UiRenderMetric.entries.forEach { metric ->
-                put(metric, UiRenderOperation.entries.sumOf { operation -> count(metric, operation) })
-            }
+        UiRenderMetric.entries.associateWith { metric ->
+            UiRenderOperation.entries.sumOf { operation -> count(metric, operation) }
         }
 
     /**
      * Copies counts grouped by host operation.
      */
     fun operations(): Map<UiRenderOperation, Map<UiRenderMetric, Long>> =
-        buildMap {
-            UiRenderOperation.entries.forEach { operation ->
-                put(
-                    operation,
-                    buildMap {
-                        UiRenderMetric.entries.forEach { metric -> put(metric, count(metric, operation)) }
-                    },
-                )
-            }
+        UiRenderOperation.entries.associateWith { operation ->
+            UiRenderMetric.entries.associateWith { metric -> count(metric, operation) }
         }
 
     private fun count(

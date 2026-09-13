@@ -147,7 +147,7 @@ private object RuntimeUiSessionImplementation {
     private class RuntimeUiFrameSnapshot private constructor(
         frame: UiFrame,
     ) : RuntimeUiFrame {
-        // Why: UiFrame already owns defensive unmodifiable list snapshots, so reusing those lists avoids copying them on every frame.
+        // Why: UiFrame already owns defensive read-only list snapshots, so reusing those lists avoids copying them on every frame.
         override val size: IntSize = frame.size
         override val drawCommands: List<DrawCommand> = frame.drawCommands
         override val semantics: List<SemanticsEntry> = frame.semantics

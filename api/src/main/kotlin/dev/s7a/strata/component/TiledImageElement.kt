@@ -268,7 +268,7 @@ internal class TiledImageElement private constructor(
             overlays: List<Element>,
         ): Element {
             val bounds = source.bounds
-            val levels = buildList { addAll(source.levels) }
+            val levels = source.levels.toList()
             validateGeometry(bounds, levels, destinationSize)
             return TiledImageElement(source, bounds, levels, state, destinationSize, fit, cachePolicy, modifier, key, overlays)
         }

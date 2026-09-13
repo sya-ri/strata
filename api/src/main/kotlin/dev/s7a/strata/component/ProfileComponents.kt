@@ -91,7 +91,7 @@ public fun UiScope.Checkbox(
  * Emits one finite-option Minecraft-profile CycleButton.
  *
  * Pointer press, wheel, and focused keyboard input update caller-owned [state] before emitting the typed cycle action through [modifier].
- * Labels are evaluated once for the immutable option snapshot and must be supported by the active profile.
+ * Labels are evaluated once for the read-only option snapshot and must be supported by the active profile.
  * The default label uses the display conversion owned by [state]; an explicit [label] may instead provide translated or composed text.
  * Label or state-conversion exceptions propagate synchronously before element emission.
  *

@@ -262,12 +262,6 @@ internal class UiSessionFrameInputTest {
             session.dispatchPointer(PointerEvent.Move(IntOffset(0, 0))),
         )
         val frame = session.frame(Constraints.fixed(2, 1))
-        assertThrows(UnsupportedOperationException::class.java) {
-            (frame.drawCommands as MutableList<DrawCommand>).add(frame.drawCommands.single())
-        }
-        assertThrows(UnsupportedOperationException::class.java) {
-            (frame.semantics as MutableList<SemanticsEntry>).add(frame.semantics.single())
-        }
         assertEquals(InputResult.Consumed, session.dispatchPointer(PointerEvent.Move(IntOffset(0, 0))))
         session.close()
     }
@@ -509,7 +503,7 @@ internal class UiSessionFrameInputTest {
     }
 
     @Test
-    fun frameConstructorCopiesCollectionsAndExposesUnmodifiableViews() {
+    fun frameConstructorCopiesCollectionsAndPreservesValueEquality() {
         val bounds = IntRect(0, 0, 1, 1)
         val command = DrawCommand.FillRectangle(bounds, ArgbColor(0))
         val entry = SemanticsEntry(bounds, Semantics())
@@ -522,12 +516,6 @@ internal class UiSessionFrameInputTest {
 
         assertEquals(listOf(command), frame.drawCommands)
         assertEquals(listOf(entry), frame.semantics)
-        assertThrows(UnsupportedOperationException::class.java) {
-            (frame.drawCommands as MutableList<DrawCommand>).clear()
-        }
-        assertThrows(UnsupportedOperationException::class.java) {
-            (frame.semantics as MutableList<SemanticsEntry>).clear()
-        }
 
         val equalFrame = UiFrame(IntSize.Zero, listOf(command), listOf(entry))
         val differentFrame = UiFrame(IntSize(1, 0), listOf(command), listOf(entry))

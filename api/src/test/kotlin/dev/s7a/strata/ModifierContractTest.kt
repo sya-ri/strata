@@ -32,9 +32,6 @@ internal class ModifierContractTest {
         assertEquals(chain.toString(), equal.toString())
         assertEquals(Modifier.Empty, Modifier.Empty.then(Modifier.Empty))
         assertSame(chain, Modifier.Empty.then(chain))
-        assertThrows(UnsupportedOperationException::class.java) {
-            (chain.elements() as MutableList<ModifierElement>).add(TestModifierElement(3))
-        }
         val repeated = Modifier.Empty.then(TestModifierElement(4)).then(TestModifierElement(5))
         assertEquals(listOf(TestModifierElement(4), TestModifierElement(5)), repeated.elements())
         assertEquals(repeated, Modifier.Empty.then(TestModifierElement(4)).then(TestModifierElement(5)))

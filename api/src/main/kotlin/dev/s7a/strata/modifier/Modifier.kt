@@ -14,7 +14,7 @@ import dev.s7a.strata.spi.InternalStrataRuntimeApi
 public class Modifier private constructor(
     elements: List<ModifierElement>,
 ) {
-    private val descriptions: List<ModifierElement> = buildList { addAll(elements) }
+    private val descriptions: List<ModifierElement> = elements.toList()
 
     /**
      * Appends one description inside the existing chain.
@@ -43,7 +43,7 @@ public class Modifier private constructor(
         }
 
     /**
-     * Returns the immutable description snapshot to the retained runtime.
+     * Returns the read-only description snapshot to the retained runtime.
      *
      * @return the stable ordered snapshot owned by this value.
      */

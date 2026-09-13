@@ -64,7 +64,7 @@ public sealed interface RuntimeUiSession :
      *
      * Pending content changes are reconciled before measurement, layout, paint, and semantics run in order on the retained tree.
      * When content was not rebuilt and both constraints and the whole-tree revision are unchanged, implementations may return the same immutable frame instance without rerunning the pipeline.
-     * The returned frame owns detached unmodifiable snapshots and does not retain the session or source collections.
+     * The returned frame owns detached read-only snapshots and does not retain the session or source collections.
      * A pipeline failure poisons the session and performs cleanup before rethrowing the exact primary failure.
      *
      * @param constraints the root measurement constraints for this frame.
