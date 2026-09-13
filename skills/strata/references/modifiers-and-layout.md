@@ -549,7 +549,7 @@ class dev.s7a.strata.state.StateSubscription$CloseController$CloseState$Closed
 class dev.s7a.strata.state.StateSubscription$CloseController$CloseState$Closing
 class dev.s7a.strata.state.StateSubscription$CloseController$CloseState$Failed
 class dev.s7a.strata.state.StateSubscription$CloseController$CloseState$Open
-constructor dev.s7a.strata.state.StateSubscription$CloseController$CloseState$Closing(java.lang.Thread)
+constructor dev.s7a.strata.state.StateSubscription$CloseController$CloseState$Closing(java.lang.Object)
 constructor dev.s7a.strata.state.StateSubscription$CloseController$CloseState$Failed(java.lang.Throwable)
 constructor dev.s7a.strata.state.StateSubscription(dev.s7a.strata.state.StateSnapshot, kotlin.jvm.functions.Function0)
 field dev.s7a.strata.state.StateSubscription$CloseController$CloseState$Closed.INSTANCE: dev.s7a.strata.state.StateSubscription$CloseController$CloseState$Closed
@@ -557,10 +557,10 @@ field dev.s7a.strata.state.StateSubscription$CloseController$CloseState$Open.INS
 method dev.s7a.strata.state.StateSubscription$CloseController$CloseState$Closed.equals(java.lang.Object): boolean
 method dev.s7a.strata.state.StateSubscription$CloseController$CloseState$Closed.hashCode(): int
 method dev.s7a.strata.state.StateSubscription$CloseController$CloseState$Closed.toString(): java.lang.String
-method dev.s7a.strata.state.StateSubscription$CloseController$CloseState$Closing.component1(): java.lang.Thread
-method dev.s7a.strata.state.StateSubscription$CloseController$CloseState$Closing.copy(java.lang.Thread): dev.s7a.strata.state.StateSubscription$CloseController$CloseState$Closing
+method dev.s7a.strata.state.StateSubscription$CloseController$CloseState$Closing.component1(): java.lang.Object
+method dev.s7a.strata.state.StateSubscription$CloseController$CloseState$Closing.copy(java.lang.Object): dev.s7a.strata.state.StateSubscription$CloseController$CloseState$Closing
 method dev.s7a.strata.state.StateSubscription$CloseController$CloseState$Closing.equals(java.lang.Object): boolean
-method dev.s7a.strata.state.StateSubscription$CloseController$CloseState$Closing.getOwner(): java.lang.Thread
+method dev.s7a.strata.state.StateSubscription$CloseController$CloseState$Closing.getOwner(): java.lang.Object
 method dev.s7a.strata.state.StateSubscription$CloseController$CloseState$Closing.hashCode(): int
 method dev.s7a.strata.state.StateSubscription$CloseController$CloseState$Closing.toString(): java.lang.String
 method dev.s7a.strata.state.StateSubscription$CloseController$CloseState$Failed.component1(): java.lang.Throwable
