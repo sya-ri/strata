@@ -49,18 +49,13 @@ internal class RuntimeUiSessionBridgeApiContractTest {
     }
 
     @Test
-    fun permittedImplementationsArePrivateAndNotConstructiblePublicly() {
+    fun permittedImplementationsAreNotPublicTypes() {
         listOf(RuntimeUiFrame::class.java, RuntimeUiSession::class.java).forEach { type ->
             val implementations = type.permittedSubclasses.toList()
             assertEquals(1, implementations.size)
             val implementation = implementations.single()
             assertFalse(Modifier.isPublic(implementation.modifiers))
             assertFalse(Modifier.isProtected(implementation.modifiers))
-            assertTrue(
-                implementation.declaredConstructors.none { constructor ->
-                    Modifier.isPublic(constructor.modifiers) && constructor.isSynthetic.not()
-                },
-            )
         }
     }
 
@@ -91,7 +86,6 @@ internal class RuntimeUiSessionBridgeApiContractTest {
         val descriptor = method.toGenericString()
         listOf(
             "dev.s7a.strata.runtime.UiSession",
-            "dev.s7a.strata.runtime.UiFrame",
             "dev.s7a.strata.runtime.UiSessionState",
             "dev.s7a.strata.runtime.UiTaskFailureDecision",
             "kotlinx.coroutines",

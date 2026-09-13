@@ -1,6 +1,5 @@
 package dev.s7a.strata.modifier
 
-import dev.s7a.strata.internal.platform.castValue
 import dev.s7a.strata.node.DirtyMask
 import dev.s7a.strata.node.ModifierNode
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
@@ -28,24 +27,17 @@ public class ModifierNodeType<E : ModifierElement, N : ModifierNode> public cons
     private val createNode: (E) -> N,
     private val updateNode: (E, E, N) -> DirtyMask,
 ) {
-    private fun <R> bridge(
-        previous: ModifierElement,
-        current: ModifierElement,
-        node: ModifierNode?,
-        operation: (E, E, N?) -> R,
-    ): R {
-        require(previous.type === this) { "The previous modifier uses another node type." }
-        require(current.type === this) { "The current modifier uses another node type." }
-        require(elementClass.isInstance(previous)) { "Modifier node type rejected the previous description." }
-        require(elementClass.isInstance(current)) { "Modifier node type rejected the current description." }
-        val typedNode =
-            if (node == null) {
-                null
-            } else {
-                require(nodeClass.isInstance(node)) { "Modifier node type rejected the retained node." }
-                nodeClass.castValue(node)
-            }
-        return operation(elementClass.castValue(previous), elementClass.castValue(current), typedNode)
+    @Suppress("UNCHECKED_CAST")
+    private fun checkedElement(element: ModifierElement): E {
+        require(element.type === this) { "The modifier uses another node type." }
+        require(elementClass.isInstance(element)) { "Modifier node type rejected the description." }
+        return element as E
+    }
+
+    @Suppress("UNCHECKED_CAST")
+    private fun checkedNode(node: ModifierNode): N {
+        require(nodeClass.isInstance(node)) { "Modifier node type rejected the node." }
+        return node as N
     }
 
     /**
@@ -59,7 +51,7 @@ public class ModifierNodeType<E : ModifierElement, N : ModifierNode> public cons
      */
     @InternalStrataRuntimeApi
     public fun validateErased(element: ModifierElement) {
-        bridge(element, element, null) { typedElement, _, _ -> validateLocal(typedElement) }
+        validateLocal(checkedElement(element))
     }
 
     /**
@@ -75,12 +67,7 @@ public class ModifierNodeType<E : ModifierElement, N : ModifierNode> public cons
      * @throws Throwable when node creation fails.
      */
     @InternalStrataRuntimeApi
-    public fun createErased(element: ModifierElement): ModifierNode =
-        bridge(element, element, null) { typedElement, _, _ ->
-            val created = createNode(typedElement)
-            require(nodeClass.isInstance(created)) { "Modifier node type created the wrong node type." }
-            created
-        }
+    public fun createErased(element: ModifierElement): ModifierNode = checkedNode(createNode(checkedElement(element)))
 
     /**
      * Updates one retained modifier node through its typed diff hook.
@@ -101,9 +88,5 @@ public class ModifierNodeType<E : ModifierElement, N : ModifierNode> public cons
         previous: ModifierElement,
         current: ModifierElement,
         node: ModifierNode,
-    ): DirtyMask =
-        bridge(previous, current, node) { previousElement, currentElement, typedNode ->
-            requireNotNull(typedNode) { "A retained modifier node is required for updates." }
-            updateNode(previousElement, currentElement, typedNode)
-        }
+    ): DirtyMask = updateNode(checkedElement(previous), checkedElement(current), checkedNode(node))
 }

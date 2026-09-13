@@ -40,7 +40,7 @@ import kotlin.jvm.JvmSynthetic
 public class UiTree :
     AutoCloseable,
     RuntimeUiDiagnosticsOwner {
-    private val threadGuard: ThreadGuard = ThreadGuard.currentThread()
+    private val threadGuard: ThreadGuard = ThreadGuard()
 
     /**
      * Shared nullable diagnostics gate used by the owning session.

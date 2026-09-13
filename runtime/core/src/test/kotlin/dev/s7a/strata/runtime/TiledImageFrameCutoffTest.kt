@@ -17,6 +17,7 @@ import dev.s7a.strata.geometry.LongRect
 import dev.s7a.strata.render.DrawImage
 import dev.s7a.strata.render.createDrawImage
 import dev.s7a.strata.runtime.render.DrawCommand
+import dev.s7a.strata.runtime.spi.RuntimeUiFrame
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
 import dev.s7a.strata.state.StateRevision
 import dev.s7a.strata.state.StateSnapshot
@@ -64,7 +65,7 @@ internal class TiledImageFrameCutoffTest {
             val frameFuture =
                 secondGate.withLock {
                     val future =
-                        executor.submit<UiFrame> {
+                        executor.submit<RuntimeUiFrame> {
                             frameStarted.countDown()
                             setup.first.frame(CONSTRAINTS, FrameTime(1L))
                         }

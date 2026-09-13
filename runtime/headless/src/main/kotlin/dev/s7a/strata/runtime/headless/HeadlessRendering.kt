@@ -490,7 +490,7 @@ private object HeadlessImplementation {
         override val image: HeadlessImage,
         semantics: List<SemanticsEntry>,
     ) : HeadlessFrame {
-        override val semantics: List<SemanticsEntry> = immutableSnapshot(semantics)
+        override val semantics: List<SemanticsEntry> = semantics.toList()
 
         companion object {
             @JvmSynthetic

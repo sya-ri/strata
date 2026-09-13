@@ -12,6 +12,8 @@ import dev.s7a.strata.runtime.diagnostics.UiRenderOperation
 import dev.s7a.strata.runtime.platform.PlatformThreads
 import dev.s7a.strata.runtime.platform.runWithPlatformContext
 import dev.s7a.strata.runtime.spi.RuntimeTextInputFocus
+import dev.s7a.strata.runtime.spi.RuntimeUiFrame
+import dev.s7a.strata.runtime.spi.createRuntimeUiFrame
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
 import dev.s7a.strata.state.StateObservation
 import dev.s7a.strata.state.StateSource
@@ -44,44 +46,17 @@ import dev.s7a.strata.runtime.platform.PlatformThreadLocal as ThreadLocal
  *
  * @param ownerDispatcher is caller-owned, always queues onto the construction thread, never runs inline, and remains serviced until cancelled generations finish.
  * @param taskFailureHandler receives non-cancellation root coroutine failures on the owner thread and selects whether the session continues or fails.
- * @param contentOwner owns and evaluates the content description until terminal failure or close releases it.
+ * @param content the owner-thread content evaluator, released before terminal cleanup callbacks.
  */
 @Suppress("TooManyFunctions", "LargeClass") // One owner enforces frame, input, coroutine, and diagnostic operation boundaries.
 @OptIn(InternalStrataRuntimeApi::class, ExperimentalAtomicApi::class)
-internal class UiSession private constructor(
+internal class UiSession(
     private val ownerDispatcher: CoroutineDispatcher,
-    private val taskFailureHandler: (Throwable) -> UiTaskFailureDecision,
-    private val contentOwner: SessionContent,
+    private val taskFailureHandler: (Throwable) -> UiTaskFailureDecision = { UiTaskFailureDecision.FailSession },
+    content: () -> Element,
 ) : AutoCloseable {
-    /**
-     * Creates a session that owns a content lambda.
-     *
-     * @param ownerDispatcher the dispatcher used by retained coroutine generations.
-     * @param taskFailureHandler the typed task-failure policy.
-     * @param content the owner-thread content evaluator.
-     */
-    internal constructor(
-        ownerDispatcher: CoroutineDispatcher,
-        taskFailureHandler: (Throwable) -> UiTaskFailureDecision = { UiTaskFailureDecision.FailSession },
-        content: () -> Element,
-    ) : this(ownerDispatcher, taskFailureHandler, SessionContent(content))
-
-    /**
-     * Creates a session from an existing content owner.
-     *
-     * The supplied owner follows the same terminal-release contract as content created by the other constructor.
-     *
-     * @param ownerDispatcher the dispatcher used by retained coroutine generations.
-     * @param contentOwner the owner of the content evaluator.
-     * @param taskFailureHandler the typed task-failure policy.
-     */
-    internal constructor(
-        ownerDispatcher: CoroutineDispatcher,
-        contentOwner: SessionContent,
-        taskFailureHandler: (Throwable) -> UiTaskFailureDecision = { UiTaskFailureDecision.FailSession },
-    ) : this(ownerDispatcher, taskFailureHandler, contentOwner)
-
-    private val threadGuard: ThreadGuard = ThreadGuard.currentThread()
+    private var retainedContent: (() -> Element)? = content
+    private val threadGuard: ThreadGuard = ThreadGuard()
     private val stateObservation =
         StateObservation(
             beforeMutation = {
@@ -123,7 +98,7 @@ internal class UiSession private constructor(
 
     private var frameAvailable: Boolean = false
     private var committedFrameConstraints: Constraints? = null
-    private var cachedFrame: UiFrame? = null
+    private var cachedFrame: RuntimeUiFrame? = null
     private var cachedFrameConstraints: Constraints? = null
     private var cachedTreeRevision: Long = 0L
 
@@ -312,7 +287,7 @@ internal class UiSession private constructor(
      * @throws Throwable when content, retained reconciliation, or any tree pipeline fails.
      * @throws IllegalStateException when called from a wrong lifecycle state, wrong thread, or reentrant operation.
      */
-    internal fun frame(constraints: Constraints): UiFrame = frame(constraints, null)
+    internal fun frame(constraints: Constraints): RuntimeUiFrame = frame(constraints, null)
 
     /**
      * Produces one immutable frame after notifying time-aware retained nodes with [time].
@@ -324,7 +299,7 @@ internal class UiSession private constructor(
     internal fun frame(
         constraints: Constraints,
         time: FrameTime?,
-    ): UiFrame {
+    ): RuntimeUiFrame {
         beginOperation(SessionOperation.Frame)
         try {
             check(currentState === UiSessionState.Attached) {
@@ -361,7 +336,7 @@ internal class UiSession private constructor(
                 retainedTree.layout()
                 val draw = retainedTree.paint()
                 val semantics = retainedTree.semantics()
-                val frame = UiFrame(size, draw, semantics)
+                val frame = createRuntimeUiFrame(size, draw, semantics)
                 committedFrameConstraints = constraints
                 frameAvailable = true
                 if (retainedTree.currentRevision() == revision) {
@@ -533,7 +508,7 @@ internal class UiSession private constructor(
         evaluatingContent = true
         val description =
             try {
-                stateObservation.evaluate(contentOwner::evaluate)
+                stateObservation.evaluate(checkNotNull(retainedContent) { "Session content has already been released." })
             } finally {
                 evaluatingContent = false
             }
@@ -660,7 +635,7 @@ internal class UiSession private constructor(
 
     private fun releaseContent() {
         stateObservation.close()
-        contentOwner.release()
+        retainedContent = null
     }
 
     private fun closeBinding(
@@ -702,7 +677,7 @@ internal class UiSession private constructor(
     private fun createGeneration(): SessionGeneration {
         val job = SupervisorJob()
         val token = SessionGenerationToken()
-        val dispatcher = GenerationDispatcher(ownerDispatcher, threadGuard)
+        val dispatcher = GenerationDispatcher()
         val context =
             job +
                 dispatcher +
@@ -840,30 +815,14 @@ internal class UiSession private constructor(
         val context: CoroutineContext,
     )
 
-    private class GenerationDispatcher(
-        private val ownerDispatcher: CoroutineDispatcher,
-        private val threadGuard: ThreadGuard,
-    ) : CoroutineDispatcher() {
+    private inner class GenerationDispatcher : CoroutineDispatcher() {
         override fun isDispatchNeeded(context: CoroutineContext): Boolean = true
 
         override fun dispatch(
             context: CoroutineContext,
             block: Runnable,
         ) {
-            val dispatchThread = PlatformThreads.current()
-            val returned = AtomicBoolean(false)
-            val violation = AtomicReference<Throwable?>(null)
-            ownerDispatcher.dispatch(context) {
-                if (returned.load().not() && PlatformThreads.current() === dispatchThread) {
-                    val failure = IllegalStateException("The owner dispatcher must queue before execution.")
-                    violation.store(failure)
-                    throw failure
-                }
-                threadGuard.check()
-                runWithPlatformContext(context, block)
-            }
-            returned.store(true)
-            violation.load()?.let { failure -> throw failure }
+            dispatchOwner(context) { runWithPlatformContext(context, block) }
         }
     }
 

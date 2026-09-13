@@ -1,6 +1,5 @@
 package dev.s7a.strata.layout
 
-import dev.s7a.strata.internal.platform.castValue
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
 import kotlin.reflect.KClass
 
@@ -30,8 +29,9 @@ public class ParentDataKey<D : Any> public constructor(
      * @throws IllegalArgumentException when [value] is outside this key's runtime type.
      */
     @InternalStrataRuntimeApi
+    @Suppress("UNCHECKED_CAST")
     public fun castErased(value: Any): D {
         require(dataClass.isInstance(value)) { "Parent data provider returned the wrong runtime type." }
-        return dataClass.castValue(value)
+        return value as D
     }
 }

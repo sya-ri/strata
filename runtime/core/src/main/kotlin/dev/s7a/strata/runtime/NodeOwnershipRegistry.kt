@@ -19,8 +19,7 @@ internal class NodeOwnershipRegistry {
     fun claim(
         node: Node,
     ) {
-        check(nodes.contains(node).not()) { "The node instance is already runtime-owned by this tree." }
-        nodes.add(node)
+        check(nodes.add(node)) { "The node instance is already runtime-owned by this tree." }
     }
 
     /**

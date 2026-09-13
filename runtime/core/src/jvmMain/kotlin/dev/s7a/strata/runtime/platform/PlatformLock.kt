@@ -1,26 +1,16 @@
 package dev.s7a.strata.runtime.platform
 
 import java.util.concurrent.locks.ReentrantLock
+import kotlin.concurrent.withLock
 
 /**
-
- * Preserves JVM callback synchronization with a reentrant lock.
-
+ * Serializes callback queue access with a reentrant JVM lock.
  */
 internal actual class PlatformLock actual constructor() {
     private val delegate = ReentrantLock()
 
     /**
-     * Acquires this lock on the current thread.
+     * Returns the action's result and releases the JVM lock on every exit.
      */
-    actual fun lock() {
-        delegate.lock()
-    }
-
-    /**
-     * Releases one acquisition owned by the current thread.
-     */
-    actual fun unlock() {
-        delegate.unlock()
-    }
+    actual fun <T> withLock(action: () -> T): T = delegate.withLock(action)
 }

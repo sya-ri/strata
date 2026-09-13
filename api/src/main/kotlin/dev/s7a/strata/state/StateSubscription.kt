@@ -1,6 +1,7 @@
 package dev.s7a.strata.state
 
 import dev.s7a.strata.internal.platform.PlatformThreads
+import dev.s7a.strata.internal.platform.synchronized
 import kotlin.jvm.JvmSynthetic
 import dev.s7a.strata.internal.platform.PlatformLock as ReentrantLock
 
@@ -66,15 +67,12 @@ public class StateSubscription<out T> public constructor(
         }
 
         private fun claimClose(currentThread: Any): Boolean {
-            var runAction: Boolean? = null
-            var observedFailure: Throwable? = null
-            monitor.lock()
-            try {
-                while (runAction == null && observedFailure == null) {
+            synchronized(monitor) {
+                while (true) {
                     when (val current = state) {
                         CloseState.Open -> {
                             state = CloseState.Closing(currentThread)
-                            runAction = true
+                            return true
                         }
 
                         is CloseState.Closing -> {
@@ -89,24 +87,19 @@ public class StateSubscription<out T> public constructor(
                         }
 
                         CloseState.Closed -> {
-                            runAction = false
+                            return false
                         }
 
                         is CloseState.Failed -> {
-                            observedFailure = current.failure
+                            throw current.failure
                         }
                     }
                 }
-            } finally {
-                monitor.unlock()
             }
-            observedFailure?.let { failure -> throw failure }
-            return runAction == true
         }
 
         private fun finishClose(failure: Throwable?): Throwable? {
-            monitor.lock()
-            try {
+            synchronized(monitor) {
                 val reentrant = reentrantFailure
                 if (reentrant != null && failure != null && reentrant !== failure) {
                     reentrant.addSuppressed(failure)
@@ -115,8 +108,6 @@ public class StateSubscription<out T> public constructor(
                 state = if (terminalFailure == null) CloseState.Closed else CloseState.Failed(terminalFailure)
                 completed.signalAll()
                 return terminalFailure
-            } finally {
-                monitor.unlock()
             }
         }
 

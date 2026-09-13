@@ -4,24 +4,18 @@ package dev.s7a.strata.runtime.spi
 
 import dev.s7a.strata.element.Element
 import dev.s7a.strata.geometry.Constraints
-import dev.s7a.strata.geometry.IntSize
 import dev.s7a.strata.input.InputResult
 import dev.s7a.strata.input.KeyboardEvent
 import dev.s7a.strata.input.PointerEvent
 import dev.s7a.strata.input.TextInputEvent
 import dev.s7a.strata.runtime.FrameTime
-import dev.s7a.strata.runtime.UiFrame
 import dev.s7a.strata.runtime.UiSession
 import dev.s7a.strata.runtime.diagnostics.UiRenderMonitor
-import dev.s7a.strata.runtime.platform.PlatformThreads
-import dev.s7a.strata.runtime.render.DrawCommand
-import dev.s7a.strata.runtime.semantics.SemanticsEntry
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Runnable
 import kotlin.coroutines.CoroutineContext
 import kotlin.jvm.JvmName
-import kotlin.jvm.JvmSynthetic
 
 /**
  * Creates one owner-thread runtime UI session bridge.
@@ -38,131 +32,42 @@ import kotlin.jvm.JvmSynthetic
 @InternalStrataRuntimeApi
 public fun createRuntimeUiSession(
     content: () -> Element,
-): RuntimeUiSession = RuntimeUiSessionImplementation.create(content)
+): RuntimeUiSession = RuntimeUiSessionBridge(content)
 
 /**
- * Owns the private implementation of the public runtime UI bridge.
+ * Adapts synchronous runtime calls to the session that owns lifecycle, frame caching, and cleanup.
  */
 @OptIn(InternalStrataRuntimeApi::class)
-private object RuntimeUiSessionImplementation {
-    fun create(content: () -> Element): RuntimeUiSession = RuntimeUiSessionBridge.create(content)
+private class RuntimeUiSessionBridge(
+    content: () -> Element,
+) : RuntimeUiSession {
+    private val session = UiSession(SynchronousBridgeDispatcher, content = content)
 
-    @Suppress("TooManyFunctions") // This narrow bridge implements the complete lifecycle, timed frame, input, cache, and cleanup protocol.
-    private class RuntimeUiSessionBridge private constructor(
-        content: () -> Element,
-    ) : RuntimeUiSession {
-        private val ownerThread: Any = PlatformThreads.current()
-        private val session: UiSession = UiSession(SynchronousBridgeDispatcher, content = content)
-        private var cachedSourceFrame: UiFrame? = null
-        private var cachedSnapshot: RuntimeUiFrame? = null
+    override val textInputFocus: RuntimeTextInputFocus?
+        get() = session.textInputFocus
 
-        override val textInputFocus: RuntimeTextInputFocus?
-            get() = session.textInputFocus
+    override fun startRenderMonitoring(): UiRenderMonitor = session.startRenderMonitoring()
 
-        override fun startRenderMonitoring(): UiRenderMonitor = session.startRenderMonitoring()
+    override fun attach(): Unit = session.attach()
 
-        override fun attach() {
-            lifecycleOperation(session::attach)
-        }
+    override fun detach(): Unit = session.detach()
 
-        override fun detach() {
-            lifecycleOperation(session::detach)
-        }
+    override fun frame(constraints: Constraints): RuntimeUiFrame = session.frame(constraints)
 
-        override fun frame(constraints: Constraints): RuntimeUiFrame {
-            val frame = cachedOperation { session.frame(constraints) }
-            return snapshot(frame)
-        }
+    override fun frame(
+        constraints: Constraints,
+        time: FrameTime,
+    ): RuntimeUiFrame = session.frame(constraints, time)
 
-        override fun frame(
-            constraints: Constraints,
-            time: FrameTime,
-        ): RuntimeUiFrame {
-            val frame = cachedOperation { session.frame(constraints, time) }
-            return snapshot(frame)
-        }
+    override fun dispatchPointer(event: PointerEvent): InputResult = session.dispatchPointer(event)
 
-        private fun snapshot(frame: UiFrame): RuntimeUiFrame {
-            val retainedSnapshot = cachedSnapshot
-            if (cachedSourceFrame === frame && retainedSnapshot != null) {
-                return retainedSnapshot
-            }
-            val snapshot = RuntimeUiFrameSnapshot.create(frame)
-            cachedSourceFrame = frame
-            cachedSnapshot = snapshot
-            return snapshot
-        }
+    override fun dispatchKeyboard(event: KeyboardEvent): InputResult = session.dispatchKeyboard(event)
 
-        override fun dispatchPointer(event: PointerEvent): InputResult = cachedOperation { session.dispatchPointer(event) }
+    override fun dispatchTextInput(event: TextInputEvent): InputResult = session.dispatchTextInput(event)
 
-        override fun dispatchKeyboard(event: KeyboardEvent): InputResult = cachedOperation { session.dispatchKeyboard(event) }
+    override fun resetInputState(): Unit = session.resetInputState()
 
-        override fun dispatchTextInput(event: TextInputEvent): InputResult = cachedOperation { session.dispatchTextInput(event) }
-
-        override fun resetInputState() {
-            cachedOperation(session::resetInputState)
-        }
-
-        override fun close() {
-            val result = runCatching(session::close)
-            clearCachedFrameOnOwnerThread()
-            result.getOrThrow()
-        }
-
-        private inline fun <T> cachedOperation(operation: () -> T): T =
-            runCatching(operation).getOrElse { failure ->
-                clearCachedFrameOnOwnerThread()
-                throw failure
-            }
-
-        private inline fun lifecycleOperation(operation: () -> Unit) {
-            val result = runCatching(operation)
-            clearCachedFrameOnOwnerThread()
-            result.getOrThrow()
-        }
-
-        private fun clearCachedFrameOnOwnerThread() {
-            if (PlatformThreads.current() === ownerThread) {
-                clearCachedFrame()
-            }
-        }
-
-        private fun clearCachedFrame() {
-            cachedSourceFrame = null
-            cachedSnapshot = null
-        }
-
-        companion object {
-            /**
-             * Creates the private session implementation without exposing a public construction hook.
-             *
-             * @param content the caller-owned retained content lambda.
-             * @return the private session implementation.
-             */
-            @JvmSynthetic
-            internal fun create(content: () -> Element): RuntimeUiSessionBridge = RuntimeUiSessionBridge(content)
-        }
-    }
-
-    private class RuntimeUiFrameSnapshot private constructor(
-        frame: UiFrame,
-    ) : RuntimeUiFrame {
-        // Why: UiFrame already owns defensive read-only list snapshots, so reusing those lists avoids copying them on every frame.
-        override val size: IntSize = frame.size
-        override val drawCommands: List<DrawCommand> = frame.drawCommands
-        override val semantics: List<SemanticsEntry> = frame.semantics
-
-        companion object {
-            /**
-             * Creates a private immutable frame snapshot.
-             *
-             * @param frame the already immutable internal frame to retain.
-             * @return a private frame implementation delegating immutable output.
-             */
-            @JvmSynthetic
-            internal fun create(frame: UiFrame): RuntimeUiFrameSnapshot = RuntimeUiFrameSnapshot(frame)
-        }
-    }
+    override fun close(): Unit = session.close()
 
     private object SynchronousBridgeDispatcher : CoroutineDispatcher() {
         override fun isDispatchNeeded(context: CoroutineContext): Boolean = true

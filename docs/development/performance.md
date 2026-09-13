@@ -53,7 +53,7 @@ Existing exact headless-to-Fabric rendering parity tests remain required so cach
 ### Clean frame reuse
 
 An unchanged session with equal constraints and an unchanged whole-tree revision must return the same immutable core frame instance.
-The public runtime bridge must also return the same read-only bridge snapshot, draw-command list, and semantics list for that clean frame.
+The public runtime bridge returns the session's read-only frame directly, including the same draw-command and semantics lists for that clean frame.
 A content rebuild, changed constraints, retained invalidation, or invalidation raised during a frame must prevent stale reuse and produce a fresh snapshot before the next clean frame can be retained.
 Failure and close paths must clear cached references so a session cannot keep a released tree or content graph alive.
 The time-aware clean path must preserve the same complete frame snapshot when no time-aware node changes observable state.

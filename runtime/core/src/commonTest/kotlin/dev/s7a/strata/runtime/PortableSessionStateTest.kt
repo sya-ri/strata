@@ -39,7 +39,9 @@ internal class PortableSessionStateTest {
                 )
             }
         session.attach()
-        session.frame(Constraints.fixed(2, 1))
+        val initialFrame = session.frame(Constraints.fixed(2, 1))
+        assertSame(initialFrame, session.frame(Constraints.fixed(2, 1)))
+        val initialSemantics = initialFrame.semantics.toList()
         assertEquals("Initial", label)
         probe.nodeForTag(TestProbe.ProbeId("root")).onInput = {
             shown.value = true
@@ -62,6 +64,7 @@ internal class PortableSessionStateTest {
         assertNotSame(original, probe.nodeForTag(branch))
         session.close()
         assertEquals(2, disposed)
+        assertEquals(initialSemantics, initialFrame.semantics)
         shown.value = false
     }
 }

@@ -6,7 +6,9 @@ import dev.s7a.strata.internal.platform.PlatformMath
 import dev.s7a.strata.internal.platform.appendScalar
 import dev.s7a.strata.internal.platform.scalarAt
 import dev.s7a.strata.internal.platform.synchronized
+import dev.s7a.strata.layout.ParentDataKey
 import dev.s7a.strata.resource.parseProfileUuid
+import dev.s7a.strata.spi.InternalStrataRuntimeApi
 import dev.s7a.strata.state.mutableStateOf
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -18,6 +20,14 @@ import kotlin.test.assertTrue
  * Runs deterministic low-level portability contracts on JVM and JavaScript.
  */
 internal class PortableContractsTest {
+    @Test
+    @OptIn(InternalStrataRuntimeApi::class)
+    fun parentDataChecksTheRuntimeClassBeforeItsErasedCast() {
+        val key = ParentDataKey(Int::class)
+        assertEquals(7, key.castErased(7))
+        assertFailsWith<IllegalArgumentException> { key.castErased("7") }
+    }
+
     @Test
     fun exactArithmeticRejectsOverflowAndPreservesNegativeRounding() {
         assertFailsWith<ArithmeticException> { PlatformMath.addExact(Long.MAX_VALUE, 1L) }

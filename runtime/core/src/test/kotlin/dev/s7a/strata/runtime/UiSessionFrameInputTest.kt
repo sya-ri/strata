@@ -503,29 +503,6 @@ internal class UiSessionFrameInputTest {
     }
 
     @Test
-    fun frameConstructorCopiesCollectionsAndPreservesValueEquality() {
-        val bounds = IntRect(0, 0, 1, 1)
-        val command = DrawCommand.FillRectangle(bounds, ArgbColor(0))
-        val entry = SemanticsEntry(bounds, Semantics())
-        val sourceCommands = arrayListOf<DrawCommand>(command)
-        val sourceSemantics = arrayListOf(entry)
-        val frame = UiFrame(IntSize.Zero, sourceCommands, sourceSemantics)
-
-        sourceCommands.clear()
-        sourceSemantics.clear()
-
-        assertEquals(listOf(command), frame.drawCommands)
-        assertEquals(listOf(entry), frame.semantics)
-
-        val equalFrame = UiFrame(IntSize.Zero, listOf(command), listOf(entry))
-        val differentFrame = UiFrame(IntSize(1, 0), listOf(command), listOf(entry))
-        assertEquals(frame, equalFrame)
-        assertEquals(frame.hashCode(), equalFrame.hashCode())
-        assertNotEquals(frame, differentFrame)
-        assertNotEquals(frame, "frame")
-    }
-
-    @Test
     fun detachCancelsCaptureWithoutDisposingRetainedNodesAndReattachStartsUncaptured() {
         val probe = TestProbe(inputResult = InputResult.Ignored)
         val cancellations = ArrayList<PointerButton>()

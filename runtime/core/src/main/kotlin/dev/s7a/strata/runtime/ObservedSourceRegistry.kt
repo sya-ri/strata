@@ -198,7 +198,7 @@ internal class ObservedSourceRegistry(
         changed.clear()
         notified.clear()
         contentUpdates = false
-        val closing = bindings.values.toList()
+        val closing = bindings.values
         bindings.clear()
         val failures = FailureAccumulator()
         closing.forEach { binding -> failures.capture { closeBinding(binding) } }

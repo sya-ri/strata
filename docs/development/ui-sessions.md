@@ -38,11 +38,12 @@ Collection remains absent by default; enabled collectors count actual callback e
 ## Runtime adapter bridge
 
 `dev.s7a.strata.runtime.spi` provides a public but opt-in runtime adapter bridge for platform runtimes that need to drive this session.
-It is not an application screen-definition API and does not expose coroutines, state declarations, source bindings, `UiSession`, `UiFrame`, session state, or task-failure decision types.
+It is not an application screen-definition API and does not expose coroutines, state declarations, source bindings, `UiSession`, session state, or task-failure decision types.
 `attach`, `detach`, `frame`, pointer input, focused keyboard and text input, input reset, and `close` are synchronous calls that must already run on the construction and owner thread.
 The synchronous bridge exposes no task-launching or dispatcher facility.
 Its content lambda is evaluated during the first attach and reevaluated before a subsequent frame when an observed caller-owned state changes; reconciliation preserves matching retained nodes until terminal failure or close.
 Each successful frame owns defensive read-only snapshots of size, drawing commands, and semantics, and all input is ignored until the first successful frame commits.
+The session and adapter return the same `RuntimeUiFrame` value; only the session owns its cache and invalidation, so the adapter needs no wrapper cache or parallel cleanup state.
 After that first frame, consecutive pointer, keyboard, and text events may arrive without another frame between them.
 Before each event, the session resolves only pending retained measurement and layout using the last committed constraints; clean geometry invokes no measure or layout callbacks.
 Dirty measurement also refreshes the retained dynamic children needed by virtual viewports.

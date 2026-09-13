@@ -4,7 +4,6 @@ package dev.s7a.strata.render
 
 import dev.s7a.strata.geometry.IntSize
 import kotlin.jvm.JvmName
-import kotlin.jvm.JvmSynthetic
 import dev.s7a.strata.internal.platform.PlatformMath as Math
 
 /**
@@ -26,10 +25,10 @@ public fun createDrawImage(
 ): DrawImage {
     val area = Math.multiplyExact(size.width, size.height)
     require(area == argb.size) { "Pixel array length must equal the image area." }
-    return DrawImageSnapshot.create(size, argb.copyOf())
+    return DrawImageSnapshot(size, argb.copyOf())
 }
 
-private class DrawImageSnapshot private constructor(
+private class DrawImageSnapshot(
     override val size: IntSize,
     private val pixels: IntArray,
 ) : DrawImage {
@@ -50,19 +49,4 @@ private class DrawImageSnapshot private constructor(
             (other is DrawImageSnapshot && size == other.size && pixels.contentEquals(other.pixels))
 
     override fun hashCode(): Int = 31 * size.hashCode() + pixels.contentHashCode()
-
-    companion object {
-        /**
-         * Creates one private snapshot after the caller has validated the image area.
-         *
-         * @param size the immutable image extent.
-         * @param pixels the already detached row-major pixel storage.
-         * @return a private immutable image implementation.
-         */
-        @JvmSynthetic
-        internal fun create(
-            size: IntSize,
-            pixels: IntArray,
-        ): DrawImageSnapshot = DrawImageSnapshot(size, pixels)
-    }
 }

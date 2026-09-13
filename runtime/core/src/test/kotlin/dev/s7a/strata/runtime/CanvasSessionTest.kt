@@ -18,6 +18,7 @@ import dev.s7a.strata.render.DrawImage
 import dev.s7a.strata.render.createDrawImage
 import dev.s7a.strata.runtime.diagnostics.UiRenderMetric
 import dev.s7a.strata.runtime.render.DrawCommand
+import dev.s7a.strata.runtime.spi.RuntimeUiFrame
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
 import dev.s7a.strata.state.StateRevision
 import dev.s7a.strata.state.StateSnapshot
@@ -445,7 +446,7 @@ internal class CanvasSessionTest {
 
     private fun image(value: Int): DrawImage = createDrawImage(IntSize(1, 1), intArrayOf(0xFF000000.toInt() or value))
 
-    private fun images(frame: UiFrame): List<DrawImage> =
+    private fun images(frame: RuntimeUiFrame): List<DrawImage> =
         frame.drawCommands
             .filterIsInstance<DrawCommand.BlitImage>()
             .map(DrawCommand.BlitImage::image)

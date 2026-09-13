@@ -1,6 +1,5 @@
 package dev.s7a.strata.element
 
-import dev.s7a.strata.internal.platform.castValue
 import dev.s7a.strata.internal.platform.diagnosticName
 import dev.s7a.strata.node.DirtyMask
 import dev.s7a.strata.node.Node
@@ -27,30 +26,21 @@ public class ElementType<E : Element, N : Node> public constructor(
     private val createNode: (E) -> N,
     private val updateNode: (E, E, N) -> DirtyMask,
 ) {
-    private fun <R> bridge(
-        previous: Element,
-        current: Element,
-        node: Node?,
-        operation: (E, E, N?) -> R,
-    ): R {
-        require(previous.type === this) { "The previous element is owned by another element type." }
-        require(current.type === this) { "The current element is owned by another element type." }
-        require(elementClass.isInstance(previous)) {
-            "Element type ${elementClass.diagnosticName()} rejected ${previous::class.diagnosticName()}."
+    @Suppress("UNCHECKED_CAST")
+    private fun checkedElement(element: Element): E {
+        require(element.type === this) { "The element is owned by another element type." }
+        require(elementClass.isInstance(element)) {
+            "Element type ${elementClass.diagnosticName()} rejected ${element::class.diagnosticName()}."
         }
-        require(elementClass.isInstance(current)) {
-            "Element type ${elementClass.diagnosticName()} rejected ${current::class.diagnosticName()}."
+        return element as E
+    }
+
+    @Suppress("UNCHECKED_CAST")
+    private fun checkedNode(node: Node): N {
+        require(nodeClass.isInstance(node)) {
+            "Element type ${elementClass.diagnosticName()} rejected node ${node::class.diagnosticName()}."
         }
-        val typedNode =
-            if (node == null) {
-                null
-            } else {
-                require(nodeClass.isInstance(node)) {
-                    "Element type ${elementClass.diagnosticName()} rejected node ${node::class.diagnosticName()}."
-                }
-                nodeClass.castValue(node)
-            }
-        return operation(elementClass.castValue(previous), elementClass.castValue(current), typedNode)
+        return node as N
     }
 
     /**
@@ -64,7 +54,7 @@ public class ElementType<E : Element, N : Node> public constructor(
      */
     @InternalStrataRuntimeApi
     public fun validateErased(element: Element) {
-        bridge(element, element, null) { typedElement, _, _ -> validateLocal(typedElement) }
+        validateLocal(checkedElement(element))
     }
 
     /**
@@ -79,14 +69,7 @@ public class ElementType<E : Element, N : Node> public constructor(
      * @throws Throwable when the node creation hook fails.
      */
     @InternalStrataRuntimeApi
-    public fun createErased(element: Element): Node =
-        bridge(element, element, null) { typedElement, _, _ ->
-            val created = createNode(typedElement)
-            require(nodeClass.isInstance(created)) {
-                "Element type ${elementClass.diagnosticName()} created ${created::class.diagnosticName()}."
-            }
-            created
-        }
+    public fun createErased(element: Element): Node = checkedNode(createNode(checkedElement(element)))
 
     /**
      * Updates a retained node through this token's typed property-diff hook.
@@ -105,9 +88,5 @@ public class ElementType<E : Element, N : Node> public constructor(
         previous: Element,
         current: Element,
         node: Node,
-    ): DirtyMask =
-        bridge(previous, current, node) { previousElement, currentElement, typedNode ->
-            requireNotNull(typedNode) { "A retained node is required for element updates." }
-            updateNode(previousElement, currentElement, typedNode)
-        }
+    ): DirtyMask = updateNode(checkedElement(previous), checkedElement(current), checkedNode(node))
 }

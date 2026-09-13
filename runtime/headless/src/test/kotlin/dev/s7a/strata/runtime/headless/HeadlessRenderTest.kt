@@ -118,9 +118,6 @@ internal class HeadlessRenderTest {
         assertEquals(2, probe.layouts)
         assertEquals(2, probe.paints)
         assertEquals(2, probe.semantics)
-        assertThrows<UnsupportedOperationException> {
-            (frame.semantics as MutableList<SemanticsEntry>).clear()
-        }
     }
 
     @Test

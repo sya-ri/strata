@@ -25,7 +25,7 @@ internal class RenderMonitorImpl(
     activeSubscriptions: Int,
     private var monitoring: RenderMonitoring?,
 ) : UiRenderMonitor {
-    private val threadGuard = ThreadGuard.currentThread()
+    private val threadGuard = ThreadGuard()
     private val totals = RenderWorkCounts()
     private val live = IdentityMap<RetainedEntry, RenderNodeRecord>()
     private val records = ArrayList<RenderNodeRecord>()

@@ -81,7 +81,7 @@ internal class ModifierContractTest {
             assertThrows(IllegalArgumentException::class.java) {
                 WrongReturnedModifierElement.TYPE.createErased(WrongReturnedModifierElement())
             }
-        assertEquals("Modifier node type created the wrong node type.", thrown.message)
+        assertEquals("Modifier node type rejected the node.", thrown.message)
     }
 
     @Test
