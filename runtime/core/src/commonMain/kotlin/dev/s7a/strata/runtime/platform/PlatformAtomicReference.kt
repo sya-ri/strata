@@ -15,17 +15,4 @@ internal expect class PlatformAtomicReference<V>(
      * Replaces the current value with platform synchronization.
      */
     fun set(value: V)
-
-    /**
-     * Atomically replaces the value and returns its previous identity.
-     */
-    fun getAndSet(value: V): V
-
-    /**
-     * Replaces the value only when its current identity matches expected.
-     */
-    fun compareAndSet(
-        expected: V,
-        value: V,
-    ): Boolean
 }

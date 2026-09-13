@@ -226,6 +226,21 @@ exclude:
   # Canonical Canvas and sampled-image roots are compiled into multiple exact-version source sets; calls resolved in another assigned owner or driver family therefore appear unused.
   - name: UnusedSymbol
     paths:
+      # The generated JVM IDEA model co-locates expect/actual declarations without KMP source-set relationships.
+      # UnusedSymbol loses references across that boundary, including JVM typealiases and fields used by actual members.
+      # These exact bridges are exercised by common/JVM tests; retain every other inspection and remove this exception when the model resolves KMP usages.
+      - api/src/commonMain/kotlin/dev/s7a/strata/internal/platform/PlatformAtomicLong.kt
+      - api/src/commonMain/kotlin/dev/s7a/strata/internal/platform/PlatformAtomicReference.kt
+      - api/src/commonMain/kotlin/dev/s7a/strata/internal/platform/PlatformBigInteger.kt
+      - api/src/commonMain/kotlin/dev/s7a/strata/internal/platform/PlatformCondition.kt
+      - api/src/jvmMain/kotlin/dev/s7a/strata/internal/platform/PlatformBigInteger.kt
+      - api/src/jvmMain/kotlin/dev/s7a/strata/internal/platform/PlatformLock.kt
+      - api/src/jvmMain/kotlin/dev/s7a/strata/internal/platform/PlatformThreadLocal.kt
+      - api/src/jvmMain/kotlin/dev/s7a/strata/resource/ProfileUuid.kt
+      - runtime/core/src/jvmMain/kotlin/dev/s7a/strata/runtime/platform/IdentityMap.kt
+      - runtime/core/src/jvmMain/kotlin/dev/s7a/strata/runtime/platform/PlatformLock.kt
+      - runtime/core/src/jvmMain/kotlin/dev/s7a/strata/runtime/platform/PlatformThreadContextElement.kt
+      - runtime/core/src/jvmMain/kotlin/dev/s7a/strata/runtime/platform/PlatformThreadLocal.kt
       - api/src/main/kotlin/dev/s7a/strata/geometry/Constraints.kt
       - api/src/main/kotlin/dev/s7a/strata/input/PointerEvent.kt
       - api/src/main/kotlin/dev/s7a/strata/input/KeyCode.kt

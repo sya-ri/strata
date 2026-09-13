@@ -23,14 +23,4 @@ internal actual class PlatformLock actual constructor() {
     actual fun unlock() {
         delegate.unlock()
     }
-
-    /**
-     * Reports whether the current thread owns this lock.
-     */
-    actual fun isHeldByCurrentThread(): Boolean = delegate.isHeldByCurrentThread
-
-    /**
-     * Creates a condition tied to this lock's ownership.
-     */
-    actual fun newCondition(): PlatformCondition = PlatformCondition(delegate.newCondition())
 }

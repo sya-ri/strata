@@ -22,14 +22,4 @@ internal actual class PlatformLock actual constructor() {
         check(0 < depth) { "Unlock requires ownership." }
         depth -= 1
     }
-
-    /**
-     * Reports whether the current thread owns this lock.
-     */
-    actual fun isHeldByCurrentThread(): Boolean = 0 < depth
-
-    /**
-     * Creates a condition tied to this lock's ownership.
-     */
-    actual fun newCondition(): PlatformCondition = PlatformCondition(this)
 }
