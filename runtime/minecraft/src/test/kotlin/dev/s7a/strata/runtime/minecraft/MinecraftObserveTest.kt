@@ -28,6 +28,33 @@ import org.junit.jupiter.api.Test
 @OptIn(InternalStrataRuntimeApi::class)
 internal class MinecraftObserveTest {
     @Test
+    fun editorConstructionDoesNotSubscribeItsParentToTextChanges() {
+        val source = Source(Unit)
+        val state = TextAreaState("A")
+        val size = IntSize(32, 26)
+        var evaluations = 0
+        MinecraftTextAreaFixture().use { fixture ->
+            val definition =
+                ScreenDefinition("editor observation") {
+                    Observe(source) {
+                        evaluations += 1
+                        element(fixture.description(state, size))
+                    }
+                }
+            createMinecraftUiHost(definition, MinecraftProfileFixture.create()).use { host ->
+                host.attach()
+                host.frame(size)
+                host.dispatchTextInput(TextInputEvent.Character('B'.code))
+                val edited = host.frame(size)
+                assertEquals("AB", state.value)
+                val editorSemantics = edited.semantics.single().semantics
+                assertEquals(UiText.Literal("AB"), editorSemantics.value)
+                assertEquals(1, evaluations)
+            }
+        }
+    }
+
+    @Test
     fun textSourcesShareTheirAncestorSubscriptionAndUpdateWithoutReopeningTheDefinition() {
         val source = Source("A")
         val unresolved = Source<UiText>(UiText.Literal("B"))
