@@ -55,7 +55,16 @@ internal class WebComponentRuntime : ComponentRuntime {
         size: IntSize,
         modifier: Modifier,
         key: ElementKey<*>?,
-    ): Element = throw UnsupportedOperationException("Web capability is unavailable: progressBar")
+    ): Element {
+        require(0 < size.width && 0 < size.height) { "ProgressBar size must be positive." }
+        return WebPrimitiveElement(
+            WebPresentation(0, WebPresentation.Kind.Progress, "${(progress * 100.0).toInt()}%", true, TextStyle.Normal, progress),
+            size,
+            ::allocateIdentity,
+            modifier,
+            key,
+        )
+    }
 
     override fun loadingIndicator(
         size: IntSize,

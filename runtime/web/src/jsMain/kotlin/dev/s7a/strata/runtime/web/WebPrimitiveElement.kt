@@ -10,6 +10,7 @@ import dev.s7a.strata.geometry.IntSize
 import dev.s7a.strata.layout.MeasureScope
 import dev.s7a.strata.modifier.Modifier
 import dev.s7a.strata.node.DirtyMask
+import dev.s7a.strata.node.DirtyPhase
 import dev.s7a.strata.node.LifecycleNode
 import dev.s7a.strata.node.MeasureNode
 import dev.s7a.strata.node.PaintNode
@@ -61,7 +62,14 @@ internal class WebPrimitiveElement(
 
         override fun semantics(scope: SemanticsScope) {
             val current = checkNotNull(presentation)
-            scope.emit(Semantics(label = UiText.Literal(current.label), role = current.kind.role, disabled = current.enabled.not()))
+            scope.emit(
+                Semantics(
+                    label = if (current.kind == WebPresentation.Kind.Progress) null else UiText.Literal(current.label),
+                    value = if (current.kind == WebPresentation.Kind.Progress) UiText.Literal(current.label) else null,
+                    role = current.kind.role,
+                    disabled = current.enabled.not(),
+                ),
+            )
         }
 
         override fun attach() = Unit
@@ -77,10 +85,14 @@ internal class WebPrimitiveElement(
          */
         fun update(current: WebPrimitiveElement): DirtyMask {
             val next = current.presentation.copy(identity = identity)
-            if (presentation == next && naturalSize == current.naturalSize) return DirtyMask.None
+            val previous = presentation
+            var dirty = DirtyMask.None
+            if (naturalSize != current.naturalSize) dirty += DirtyMask.of(DirtyPhase.Measure)
+            if (previous != next) dirty += DirtyMask.of(DirtyPhase.Paint)
+            if (previous?.label != next.label || previous.enabled != next.enabled) dirty += DirtyMask.of(DirtyPhase.Semantics)
             presentation = next
             naturalSize = current.naturalSize
-            return DirtyMask.All
+            return dirty
         }
     }
 

@@ -14,6 +14,7 @@ Headless and Minecraft integration remain JVM adapters.
 | `api` | Screen definitions, components and state, resource identifiers, modifiers, and the public Element/Node SPI. | Platform-neutral; sufficient for application compilation. |
 | `runtime:core` | Reconciliation, retained phases, input, semantics, and internal session orchestration. | Depends on `api`; contains no Minecraft integration. |
 | `runtime:headless` | Portable command rasterization, immutable frames, and deterministic PNG output. | Uses core contracts without a desktop graphics dependency. |
+| `runtime:web` | Retained native DOM text, buttons, and progress indicators, including deterministic initial HTML adoption. | JavaScript browser adapter using the shared API and core; other profile capabilities currently fail explicitly. |
 | `runtime:minecraft` | Profile-backed component implementation, resources, bindings, and screen hosts. | Depends on public contracts and core without mapped game types. |
 | `runtime:minecraft-fonts-lwjgl` | Optional CPU font decoding, rasterization, and text ordering. | Uses common font contracts and target-matched native libraries. |
 | `runtime:minecraft-fabric-<version>` | Native screen, resource, input, and presentation adapters for one exact target. | Owns mapped Minecraft and Fabric dependencies. |

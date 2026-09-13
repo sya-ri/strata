@@ -6,6 +6,7 @@ import dev.s7a.strata.runtime.spi.RuntimeUiFrame
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
 import org.w3c.dom.HTMLButtonElement
 import org.w3c.dom.HTMLElement
+import org.w3c.dom.HTMLProgressElement
 import org.w3c.dom.Text
 
 /**
@@ -82,6 +83,11 @@ internal class WebDomRenderer(
                     "Initial web HTML does not match the screen's initial enabled state."
                 }
             }
+            if (element is HTMLProgressElement) {
+                check(element.max == 1.0 && element.value == entry.presentation?.progress && element.hasAttribute("value")) {
+                    "Initial web HTML does not match the screen's initial progress."
+                }
+            }
             adopted[entry.identity] = element
         }
         initial.filter { (it is HTMLElement).not() }.forEach { root.removeChild(it) }
@@ -110,6 +116,10 @@ internal class WebDomRenderer(
         if (element is HTMLButtonElement) {
             element.type = "button"
             element.disabled = presentation?.enabled != true
+        }
+        if (element is HTMLProgressElement) {
+            element.max = 1.0
+            element.value = checkNotNull(presentation?.progress)
         }
     }
 

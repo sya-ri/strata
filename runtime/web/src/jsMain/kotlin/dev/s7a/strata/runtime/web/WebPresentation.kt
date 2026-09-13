@@ -16,6 +16,7 @@ internal data class WebPresentation(
     val label: String,
     val enabled: Boolean,
     val style: TextStyle,
+    val progress: Double? = null,
 ) : PlatformDrawCommand {
     /**
      * Native DOM kinds and their matching portable semantics.
@@ -33,5 +34,10 @@ internal data class WebPresentation(
          * Native button appearance with portable button semantics.
          */
         Button("button", SemanticsRole.Button),
+
+        /**
+         * Native determinate progress with a bounded value.
+         */
+        Progress("progress", SemanticsRole.ProgressBar),
     }
 }
