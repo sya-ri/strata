@@ -12,6 +12,17 @@ The canonical release inventory includes all target artifacts.
 Common behavior tests run on JVM, Node.js, and headless Chrome, while JVM-only concurrency tests continue to exercise real threads.
 KMP documentation uses Dokka HTML in the conventional `javadoc` classifier because the Javadoc output plugin does not support multiplatform declarations.
 
+## Initial web documents
+
+The JavaScript browser runtime exposes `renderWebHtml` for container markup and `renderWebDocument` for a complete document with initial content and a deferred application script.
+Both render synchronously in a browser environment and release retained nodes and subscriptions before returning.
+They do not schedule animation frames or install input listeners.
+The complete document uses a relatively positioned `strata-root` container with the supplied viewport dimensions in CSS pixels.
+Its application script must create an independent definition from the same deterministic initial values and call `mountWeb` with that container and viewport.
+Initial child identities, element kinds, and supported presentation values are validated before adoption; mismatches fail without modifying the generated children.
+The caller currently supplies the bundled script URL and writes the returned document to disk; these runtime functions do not bundle application code or copy assets.
+Run `./gradlew :runtime:web:check` to verify document generation, adoption, reactive content, and retained DOM identity in headless Chrome.
+
 ## Environment
 
 Run commands from the repository root with the checked-in wrapper: `./gradlew`, or `.\gradlew.bat` in PowerShell.

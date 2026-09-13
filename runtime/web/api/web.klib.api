@@ -12,4 +12,5 @@ final class dev.s7a.strata.runtime.web/WebUiHost : kotlin/AutoCloseable { // dev
 }
 
 final fun dev.s7a.strata.runtime.web/mountWeb(dev.s7a.strata.screen/ScreenDefinition, org.w3c.dom/HTMLElement, dev.s7a.strata.geometry/IntSize): dev.s7a.strata.runtime.web/WebUiHost // dev.s7a.strata.runtime.web/mountWeb|mountWeb(dev.s7a.strata.screen.ScreenDefinition;org.w3c.dom.HTMLElement;dev.s7a.strata.geometry.IntSize){}[0]
+final fun dev.s7a.strata.runtime.web/renderWebDocument(dev.s7a.strata.screen/ScreenDefinition, dev.s7a.strata.geometry/IntSize, kotlin/String, kotlin/String): kotlin/String // dev.s7a.strata.runtime.web/renderWebDocument|renderWebDocument(dev.s7a.strata.screen.ScreenDefinition;dev.s7a.strata.geometry.IntSize;kotlin.String;kotlin.String){}[0]
 final fun dev.s7a.strata.runtime.web/renderWebHtml(dev.s7a.strata.screen/ScreenDefinition, dev.s7a.strata.geometry/IntSize): kotlin/String // dev.s7a.strata.runtime.web/renderWebHtml|renderWebHtml(dev.s7a.strata.screen.ScreenDefinition;dev.s7a.strata.geometry.IntSize){}[0]
