@@ -9,6 +9,7 @@ import dev.s7a.strata.layout.MeasureScope
 import dev.s7a.strata.node.DirtyMask
 import dev.s7a.strata.node.DirtyPhase
 import dev.s7a.strata.node.ModifierNode
+import dev.s7a.strata.internal.platform.PlatformMath as Math
 
 /**
  * Internal implementation of the padding modifier family.

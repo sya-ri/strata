@@ -12,7 +12,7 @@ import dev.s7a.strata.text.UiText
  *
  * @property title exact unresolved screen title.
  * @property pausesGame whether the screen pauses its host game.
- * @property content owner-thread declarative callback evaluated by the runtime exactly once.
+ * @property content owner-thread declarative callback evaluated on attachment and again when an observed state changes.
  */
 @InternalStrataRuntimeApi
 public class ScreenDefinitionPayload internal constructor(

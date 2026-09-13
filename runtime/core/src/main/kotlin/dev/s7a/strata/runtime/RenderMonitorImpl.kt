@@ -10,9 +10,10 @@ import dev.s7a.strata.runtime.diagnostics.UiRenderNodeId
 import dev.s7a.strata.runtime.diagnostics.UiRenderNodeKind
 import dev.s7a.strata.runtime.diagnostics.UiRenderOperation
 import dev.s7a.strata.runtime.diagnostics.UiRenderSnapshot
+import dev.s7a.strata.runtime.platform.Collections
+import dev.s7a.strata.runtime.platform.IdentityMap
+import dev.s7a.strata.runtime.platform.diagnosticName
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
-import java.util.Collections
-import java.util.IdentityHashMap
 
 /**
  * Bounded owner-thread collector with a detachable public handle and no frame history.
@@ -27,7 +28,7 @@ internal class RenderMonitorImpl(
 ) : UiRenderMonitor {
     private val threadGuard = ThreadGuard.currentThread()
     private val totals = RenderWorkCounts()
-    private val live = IdentityHashMap<RetainedEntry, RenderNodeRecord>()
+    private val live = IdentityMap<RetainedEntry, RenderNodeRecord>()
     private val records = ArrayList<RenderNodeRecord>()
     private var failed = false
     private var finalSnapshot: UiRenderSnapshot? = null
@@ -182,7 +183,7 @@ internal class RenderMonitorImpl(
                 UiRenderNodeId(entry.diagnosticId.takeUnless { it == 0L } ?: checkNotNull(monitoring).allocateId().also { entry.diagnosticId = it }),
                 entry,
                 if (entry is RetainedNode) UiRenderNodeKind.Component else UiRenderNodeKind.Modifier,
-                entry.node.javaClass.name,
+                diagnosticName(entry.node),
             )
         live[entry] = record
         records.add(record)

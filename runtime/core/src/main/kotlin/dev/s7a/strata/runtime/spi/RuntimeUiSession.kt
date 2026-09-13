@@ -15,7 +15,7 @@ import dev.s7a.strata.spi.InternalStrataRuntimeApi
  * Operations reject reentrancy except that recursive [close] from its own cleanup is an idempotent no-op.
  * The first successful [frame] gates pointer dispatch.
  * This synchronous bridge does not expose local-state declarations, source bindings, or task launch.
- * Its content is evaluated during the first [attach], while later synchronous changes are driven by retained node invalidation before another [frame].
+ * Its content is evaluated during the first [attach] and reevaluated before a later [frame] when caller-owned observed state changes.
  * The bridge retains the content lambda while created, attached, or detached and releases it before cleanup callbacks after failure or close.
  *
  * Content, reconciliation, pipeline, input, and cleanup failures preserve the exact primary [Throwable] and suppression order defined by the core session.

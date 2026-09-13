@@ -65,15 +65,15 @@ internal object MinecraftProfileImplementation {
     }
 
     /**
-     * Creates one core-session evaluator from a complete profile and transferred content callback.
+     * Creates a caller-owned evaluator for direct retained-tree construction.
      *
-     * The evaluator retains its complete profile and content callback until one evaluation or explicit release and then clears them.
-     * Its resource-image resolver remains available to deferred evaluators until [releaseEvaluatorResources] performs terminal host release.
+     * The returned lambda retains its profile and content callback for its own lifetime.
+     * Screen hosts use the content-free overload so core can release application captures independently of presentation resources.
      *
      * @param profile complete profile produced by this runtime.
      * @param content transferred application callback.
-     * @param platform optional version services retained until evaluation or explicit release.
-     * @return an owner-thread one-shot element evaluator.
+     * @param platform optional borrowed version services.
+     * @return an owner-thread reusable element evaluator.
      */
     @JvmSynthetic
     fun createEvaluator(
@@ -83,7 +83,27 @@ internal object MinecraftProfileImplementation {
         textRenderer: MinecraftTextRenderer,
     ): () -> Element =
         when (profile) {
-            is ProfileSnapshot -> Evaluator.create(profile, content, platform, textRenderer)
+            is ProfileSnapshot -> Evaluator.create(profile, platform, textRenderer).let { evaluator -> { evaluator(content) } }
+        }
+
+    /**
+     * Creates reusable owner-thread component resources without capturing application content.
+     * The core session owns the application callback separately and releases it before node cleanup.
+     * The host retains this evaluator through detachment and releases its profile and resources at terminal cleanup.
+     *
+     * @param profile complete immutable profile.
+     * @param platform optional borrowed host services.
+     * @param textRenderer borrowed host-owned text renderer.
+     * @return evaluator accepting each synchronous declarative callback without retaining it.
+     */
+    @JvmSynthetic
+    fun createEvaluator(
+        profile: MinecraftUiProfile,
+        platform: MinecraftUiPlatform?,
+        textRenderer: MinecraftTextRenderer,
+    ): (UiScope.() -> Unit) -> Element =
+        when (profile) {
+            is ProfileSnapshot -> Evaluator.create(profile, platform, textRenderer)
         }
 
     /**
@@ -109,15 +129,15 @@ internal object MinecraftProfileImplementation {
         }
 
     /**
-     * Releases a one-shot evaluator created by [createEvaluator].
+     * Releases the profile and borrowed service references of a content-free evaluator.
      *
-     * The operation is owner-thread confined and idempotent after evaluation or an earlier release.
+     * The operation is owner-thread confined and idempotent after an earlier release.
      *
      * @param evaluator evaluator whose captured profile and application callback are released.
      * @throws IllegalStateException when the evaluator is foreign or release runs from another thread.
      */
     @JvmSynthetic
-    fun releaseEvaluator(evaluator: () -> Element) {
+    fun releaseEvaluator(evaluator: (UiScope.() -> Unit) -> Element) {
         check(evaluator is Evaluator) { "Minecraft content evaluator was not created by this runtime." }
         evaluator.release()
     }
@@ -132,7 +152,7 @@ internal object MinecraftProfileImplementation {
      * @throws IllegalStateException when the evaluator is foreign or release runs from another thread.
      */
     @JvmSynthetic
-    fun releaseEvaluatorResources(evaluator: () -> Element) {
+    fun releaseEvaluatorResources(evaluator: (UiScope.() -> Unit) -> Element) {
         check(evaluator is Evaluator) { "Minecraft content evaluator was not created by this runtime." }
         evaluator.releaseResources()
     }
@@ -1416,30 +1436,23 @@ internal object MinecraftProfileImplementation {
 
     private class Evaluator private constructor(
         initialProfile: ProfileSnapshot,
-        initialContent: UiScope.() -> Unit,
         initialPlatform: MinecraftUiPlatform?,
         initialTextRenderer: MinecraftTextRenderer,
-    ) : () -> Element {
+    ) : (UiScope.() -> Unit) -> Element {
         private val ownerThread = Thread.currentThread()
         private val resourceImages = ResourceImages()
         private var profile: ProfileSnapshot? = initialProfile
-        private var content: (UiScope.() -> Unit)? = initialContent
         private var platform: MinecraftUiPlatform? = initialPlatform
         private var textRenderer: MinecraftTextRenderer? = initialTextRenderer
 
-        override fun invoke(): Element {
+        override fun invoke(content: UiScope.() -> Unit): Element {
             check(Thread.currentThread() === ownerThread) { "Minecraft content evaluation requires the host owner thread." }
-            val currentProfile = checkNotNull(profile) { "Minecraft screen content was already evaluated." }
-            val currentContent = checkNotNull(content) { "Minecraft screen content was already evaluated." }
+            val currentProfile = checkNotNull(profile) { "Minecraft content resources were released." }
             val currentPlatform = platform
-            val currentTextRenderer = checkNotNull(textRenderer) { "Minecraft screen content was already evaluated." }
-            profile = null
-            content = null
-            platform = null
-            textRenderer = null
+            val currentTextRenderer = checkNotNull(textRenderer) { "Minecraft content resources were released." }
             val context = Context.create(currentProfile, currentPlatform, currentTextRenderer, resourceImages)
             return try {
-                ComponentRuntimeBridge.evaluate(context, currentContent)
+                ComponentRuntimeBridge.evaluate(context, content)
             } finally {
                 context.close()
             }
@@ -1449,7 +1462,6 @@ internal object MinecraftProfileImplementation {
         fun release() {
             check(Thread.currentThread() === ownerThread) { "Minecraft content release requires the host owner thread." }
             profile = null
-            content = null
             platform = null
             textRenderer = null
         }
@@ -1463,18 +1475,16 @@ internal object MinecraftProfileImplementation {
             /**
              * Creates one private owner-thread evaluator.
              *
-             * @param profile complete profile retained until evaluation or release.
-             * @param content application content retained until evaluation or release.
-             * @param platform optional version services retained until evaluation or release.
-             * @return a one-shot evaluator.
+             * @param profile complete profile retained until terminal release.
+             * @param platform optional version services borrowed until terminal release.
+             * @return a reusable evaluator that never retains application content.
              */
             @JvmSynthetic
             internal fun create(
                 profile: ProfileSnapshot,
-                content: UiScope.() -> Unit,
                 platform: MinecraftUiPlatform?,
                 textRenderer: MinecraftTextRenderer,
-            ): Evaluator = Evaluator(profile, content, platform, textRenderer)
+            ): Evaluator = Evaluator(profile, platform, textRenderer)
         }
     }
 }

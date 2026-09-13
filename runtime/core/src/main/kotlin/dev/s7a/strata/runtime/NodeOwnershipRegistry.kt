@@ -1,8 +1,7 @@
 package dev.s7a.strata.runtime
 
 import dev.s7a.strata.node.Node
-import java.util.Collections
-import java.util.IdentityHashMap
+import dev.s7a.strata.runtime.platform.identitySet
 
 /**
  * Tracks ownership claims by node identity inside one tree build.
@@ -10,7 +9,7 @@ import java.util.IdentityHashMap
  * Node equality is deliberately ignored because a user node may define value equality unrelated to ownership.
  */
 internal class NodeOwnershipRegistry {
-    private val nodes: MutableSet<Node> = Collections.newSetFromMap(IdentityHashMap())
+    private val nodes: MutableSet<Node> = identitySet()
 
     /**
      * Claims [node] for this tree's retained ownership.

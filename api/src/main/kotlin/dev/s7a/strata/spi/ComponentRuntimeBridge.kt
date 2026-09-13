@@ -3,6 +3,8 @@ package dev.s7a.strata.spi
 import dev.s7a.strata.component.UiScope
 import dev.s7a.strata.component.buildComponentTree
 import dev.s7a.strata.element.Element
+import kotlin.jvm.JvmSynthetic
+import dev.s7a.strata.internal.platform.PlatformThreadLocal as ThreadLocal
 
 /**
  * Privileged dynamic boundary between platform-neutral screen callbacks and one runtime implementation.

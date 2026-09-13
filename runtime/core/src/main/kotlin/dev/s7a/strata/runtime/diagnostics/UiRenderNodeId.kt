@@ -1,6 +1,7 @@
 package dev.s7a.strata.runtime.diagnostics
 
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
+import kotlin.jvm.JvmInline
 
 /**
  * Monotonic identity scoped to one retained session, stable across monitor restarts while the node survives.

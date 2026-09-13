@@ -1,12 +1,14 @@
 package dev.s7a.strata.runtime
 
+import dev.s7a.strata.runtime.platform.PlatformThreads
+
 /**
  * Verifies that retained runtime operations run on one owning thread.
  *
  * @property owner the thread captured when this guard was created.
  */
 internal class ThreadGuard private constructor(
-    private val owner: Thread,
+    private val owner: Any,
 ) {
     /**
      * Fails when the current thread is not the owner.
@@ -14,15 +16,15 @@ internal class ThreadGuard private constructor(
      * @throws IllegalStateException when called from another thread.
      */
     internal fun check() {
-        check(Thread.currentThread() === owner) {
-            "This runtime object is owned by ${owner.name}."
+        check(PlatformThreads.current() === owner) {
+            "This runtime object is owned by ${PlatformThreads.name(owner)}."
         }
     }
 
     /**
      * Returns whether the current thread owns this guard without throwing.
      */
-    internal fun isOwnerThread(): Boolean = Thread.currentThread() === owner
+    internal fun isOwnerThread(): Boolean = PlatformThreads.current() === owner
 
     /**
      * Factory methods for thread guards.
@@ -31,6 +33,6 @@ internal class ThreadGuard private constructor(
         /**
          * Creates a guard owned by the current thread.
          */
-        internal fun currentThread(): ThreadGuard = ThreadGuard(Thread.currentThread())
+        internal fun currentThread(): ThreadGuard = ThreadGuard(PlatformThreads.current())
     }
 }

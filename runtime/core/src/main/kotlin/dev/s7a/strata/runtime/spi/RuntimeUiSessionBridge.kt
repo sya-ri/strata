@@ -13,11 +13,15 @@ import dev.s7a.strata.runtime.FrameTime
 import dev.s7a.strata.runtime.UiFrame
 import dev.s7a.strata.runtime.UiSession
 import dev.s7a.strata.runtime.diagnostics.UiRenderMonitor
+import dev.s7a.strata.runtime.platform.PlatformThreads
 import dev.s7a.strata.runtime.render.DrawCommand
 import dev.s7a.strata.runtime.semantics.SemanticsEntry
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
 import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.Runnable
 import kotlin.coroutines.CoroutineContext
+import kotlin.jvm.JvmName
+import kotlin.jvm.JvmSynthetic
 
 /**
  * Creates one owner-thread runtime UI session bridge.
@@ -28,7 +32,7 @@ import kotlin.coroutines.CoroutineContext
  * The content lambda is retained while the session is created, attached, or detached and is released before cleanup callbacks after failure or close.
  * Construction does not invoke [content].
  *
- * @param content the complete element description, evaluated on the owner thread during the first attach.
+ * @param content the complete declarative element description, evaluated on the owner thread at first attachment and after observed state changes.
  * @return a private implementation exposing only the runtime bridge contract.
  */
 @InternalStrataRuntimeApi
@@ -47,7 +51,7 @@ private object RuntimeUiSessionImplementation {
     private class RuntimeUiSessionBridge private constructor(
         content: () -> Element,
     ) : RuntimeUiSession {
-        private val ownerThread: Thread = Thread.currentThread()
+        private val ownerThread: Any = PlatformThreads.current()
         private val session: UiSession = UiSession(SynchronousBridgeDispatcher, content = content)
         private var cachedSourceFrame: UiFrame? = null
         private var cachedSnapshot: RuntimeUiFrame? = null
@@ -118,7 +122,7 @@ private object RuntimeUiSessionImplementation {
         }
 
         private fun clearCachedFrameOnOwnerThread() {
-            if (Thread.currentThread() === ownerThread) {
+            if (PlatformThreads.current() === ownerThread) {
                 clearCachedFrame()
             }
         }

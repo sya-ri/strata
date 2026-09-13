@@ -2,6 +2,8 @@ package dev.s7a.strata.runtime
 
 import dev.s7a.strata.element.Element
 import dev.s7a.strata.node.Node
+import dev.s7a.strata.spi.InternalStrataRuntimeApi
+import dev.s7a.strata.state.StateObservation
 
 /**
  * Stores one owned node, its immutable description, and retained pipeline state.
@@ -9,6 +11,7 @@ import dev.s7a.strata.node.Node
  * The runtime owns this storage until cleanup completes.
  * Lifecycle attempt flags make cleanup idempotent after a failed operation.
  */
+@OptIn(InternalStrataRuntimeApi::class)
 internal class RetainedNode(
     var element: Element,
     node: Node,
@@ -18,6 +21,11 @@ internal class RetainedNode(
      * Last immutable dynamic-child list already validated and reconciled; cached access requires no sibling diff.
      */
     var dynamicDescriptions: List<Element>? = null
+
+    /**
+     * State reads of the current deferred callback, released before node cleanup.
+     */
+    var contentObservation: StateObservation? = null
 
     override val effectiveChildCount: Int
         get() = children.size

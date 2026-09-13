@@ -9,12 +9,12 @@ import dev.s7a.strata.node.ContentKind
 import dev.s7a.strata.node.DeferredContentNode
 import dev.s7a.strata.node.DirtyMask
 import dev.s7a.strata.node.DynamicChildrenNode
+import dev.s7a.strata.node.ReactiveContentNode
 import dev.s7a.strata.node.StateObserverNode
 import dev.s7a.strata.runtime.diagnostics.UiRenderMetric
+import dev.s7a.strata.runtime.platform.identitySet
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
-import java.util.Collections
-import java.util.IdentityHashMap
-import java.util.LinkedHashSet
+import dev.s7a.strata.state.StateObservation
 
 /**
  * Reconciles immutable descriptions into retained nodes with linear direct-sibling matching.
@@ -26,6 +26,7 @@ internal class Reconciler(
     private val dirtyTracker: DirtyTracker,
     private val observedSources: ObservedSourceRegistry = ObservedSourceRegistry(),
     private val monitoring: RenderMonitoring = RenderMonitoring(),
+    private val observationOwner: () -> StateObservation? = { null },
 ) {
     private val provisionalRoots: MutableSet<RetainedNode> = LinkedHashSet()
     private var pendingContent = false
@@ -161,7 +162,8 @@ internal class Reconciler(
     ): List<Element> {
         val collector = monitoring.collector
         val deferred = dynamic as? DeferredContentNode
-        if (collector == null || deferred == null || deferred.pendingContentReasons.isEmpty()) return dynamic.dynamicChildren()
+        if (deferred == null || deferred.pendingContentReasons.isEmpty()) return dynamic.dynamicChildren()
+        if (collector == null) return evaluateObservedChildren(retained, deferred)
         deferred.pendingContentReasons.forEach { reason ->
             val metric =
                 when (reason) {
@@ -180,9 +182,23 @@ internal class Reconciler(
             },
             retained,
         )
-        val children = dynamic.dynamicChildren()
+        val children = evaluateObservedChildren(retained, deferred)
         monitoring.record(UiRenderMetric.ContentEvaluationSuccess, retained)
         return children
+    }
+
+    private fun evaluateObservedChildren(
+        retained: RetainedNode,
+        deferred: DeferredContentNode,
+    ): List<Element> {
+        if (deferred !is ReactiveContentNode) return deferred.dynamicChildren()
+        val observation =
+            retained.contentObservation ?: observationOwner()
+                ?.fork {
+                    deferred.invalidateObservedContent()
+                    pendingContent = true
+                }?.also { retained.contentObservation = it }
+        return observation?.evaluate(deferred::dynamicChildren) ?: deferred.dynamicChildren()
     }
 
     private fun createSubtree(description: Element): RetainedNode {
@@ -247,7 +263,7 @@ internal class Reconciler(
     ): ModifierUpdate {
         val oldModifiers = retained.modifiers.toList()
         val nextModifiers = ArrayList<RetainedModifier>(descriptions.size)
-        val reused = Collections.newSetFromMap(IdentityHashMap<RetainedModifier, Boolean>())
+        val reused = identitySet<RetainedModifier>()
         val created = ArrayList<RetainedModifier>()
         val updates = ArrayList<ModifierMask>()
         var removed = emptyList<RetainedModifier>()
@@ -322,7 +338,7 @@ internal class Reconciler(
                 keyed[identity.key] = oldChild
             }
         }
-        val used = Collections.newSetFromMap(IdentityHashMap<RetainedNode, Boolean>())
+        val used = identitySet<RetainedNode>()
         val nextChildren = ArrayList<RetainedNode>(descriptions.size)
         val newlyCreated = ArrayList<RetainedNode>()
         descriptions.forEachIndexed { index, childDescription ->

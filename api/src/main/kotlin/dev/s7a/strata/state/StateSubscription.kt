@@ -1,6 +1,8 @@
 package dev.s7a.strata.state
 
-import java.util.concurrent.locks.ReentrantLock
+import dev.s7a.strata.internal.platform.PlatformThreads
+import kotlin.jvm.JvmSynthetic
+import dev.s7a.strata.internal.platform.PlatformLock as ReentrantLock
 
 /**
  * The atomic result of subscribing to a [StateSource].
@@ -56,14 +58,14 @@ public class StateSubscription<out T> public constructor(
         private var reentrantFailure: Throwable? = null
 
         override fun close() {
-            val runAction = claimClose(Thread.currentThread())
+            val runAction = claimClose(PlatformThreads.current())
             if (runAction.not()) return
             val failure = runCatching(closeAction).exceptionOrNull()
             val terminalFailure = finishClose(failure)
             terminalFailure?.let { thrown -> throw thrown }
         }
 
-        private fun claimClose(currentThread: Thread): Boolean {
+        private fun claimClose(currentThread: Any): Boolean {
             var runAction: Boolean? = null
             var observedFailure: Throwable? = null
             monitor.lock()
@@ -122,7 +124,7 @@ public class StateSubscription<out T> public constructor(
             data object Open : CloseState
 
             data class Closing(
-                val owner: Thread,
+                val owner: Any,
             ) : CloseState
 
             data object Closed : CloseState

@@ -2,6 +2,7 @@ package dev.s7a.strata.screen
 
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
 import dev.s7a.strata.spi.ScreenPresenters
+import kotlin.jvm.JvmStatic
 
 /**
  * Java facade for presenting platform-neutral screen definitions.

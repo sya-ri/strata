@@ -3,6 +3,41 @@
 Use this document to build and check Strata locally.
 [CI](ci.md), [release publication](release.md), and [documentation maintenance](documentation.md) describe their separate operational boundaries.
 
+## Shared Kotlin targets
+
+The API and retained core publish JVM variants at their existing `strata-api` and `strata-runtime-core` coordinates.
+Their JVM archive names also remain unchanged so Fabric includes the same common-runtime jar names after the multiplatform migration.
+Multiplatform consumers select `strata-api-multiplatform` and `strata-runtime-core-multiplatform`; their Gradle metadata resolves JVM to those existing artifacts and JavaScript to the corresponding `-js` artifacts.
+The canonical release inventory includes all target artifacts.
+Common behavior tests run on JVM, Node.js, and headless Chrome, while JVM-only concurrency tests continue to exercise real threads.
+KMP documentation uses Dokka HTML in the conventional `javadoc` classifier because the Javadoc output plugin does not support multiplatform declarations.
+
+## Initial web documents
+
+The JavaScript browser runtime exposes `renderWebHtml` for container markup and `renderWebDocument` for a complete document with initial content and a deferred application script.
+Both render synchronously in a browser environment and release retained nodes and subscriptions before returning.
+They do not schedule animation frames or install input listeners.
+The complete document uses a relatively positioned `strata-root` container with the supplied viewport dimensions in CSS pixels.
+Its application script must create an independent definition from the same deterministic initial values and call `mountWeb` with that container and viewport.
+Initial child identities, element kinds, and supported presentation values are validated before adoption; mismatches fail without modifying the generated children.
+The caller currently supplies the bundled script URL and writes the returned document to disk; these runtime functions do not bundle application code or copy assets.
+Run `./gradlew :runtime:web:check` to verify document generation, adoption, reactive content, and retained DOM identity in headless Chrome.
+
+The executable `integration:web` consumer demonstrates the complete build boundary with `./gradlew :integration:web:buildWeb`.
+It bundles Kotlin/JS with webpack, renders an independent initial definition in a build browser, and writes `integration/web/build/site/index.html` beside the application bundle and copied resources.
+The emitted site needs only a static HTTP server.
+It includes `index.html` with native styling and `minecraft.html` with `WebTheme.Minecraft`.
+The theme uses original CSS and browser monospace text, with no dependency on game assets or native font libraries.
+Build and mount must use the same theme; adoption rejects mismatches before modifying initial markup.
+The full-document renderer includes theme CSS before the body, and interactive hosts release their own stylesheet on close.
+Node.js must be available on `PATH`; Playwright is resolved by the Kotlin npm installation using the version catalog, and `installWebBrowsers` installs its matching engines.
+Run `./gradlew :integration:web:check` to compare the shared scenario's Minecraft semantics and headless rasterization with Chromium, Firefox, and WebKit state transitions.
+The browser check opens the emitted document with JavaScript disabled first, then verifies startup adoption, native button actions, ordinary conditionals, and keyed sibling identity.
+Fresh screenshots and comparison receipts are written to `integration/web/build/parity` on every browser verification run.
+This comparison covers presentation labels and state transitions; native platform typography and geometry are intentionally different and are not asserted pixel-identical.
+Both themes are verified in each browser, including disabled button behavior and determinate progress.
+Browser tasks share the loaded-client execution service so headless browsers and Minecraft clients do not contend for the desktop graphics device during aggregate checks.
+
 ## Environment
 
 Run commands from the repository root with the checked-in wrapper: `./gradlew`, or `.\gradlew.bat` in PowerShell.

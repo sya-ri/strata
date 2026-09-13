@@ -14,6 +14,7 @@ import dev.s7a.strata.geometry.IntSize
 import dev.s7a.strata.geometry.LongRect
 import dev.s7a.strata.geometry.exactDoubleCenterOrNull
 import dev.s7a.strata.geometry.hasExactlyRepresentableDoubleEdges
+import dev.s7a.strata.internal.platform.Collections
 import dev.s7a.strata.layout.Alignment
 import dev.s7a.strata.layout.HorizontalAlignment
 import dev.s7a.strata.layout.LayoutScope
@@ -27,8 +28,8 @@ import dev.s7a.strata.node.LayoutNode
 import dev.s7a.strata.node.MeasureNode
 import dev.s7a.strata.node.SessionAttachmentNode
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
-import java.util.Collections
 import kotlin.math.roundToLong
+import dev.s7a.strata.internal.platform.PlatformMath as Math
 import dev.s7a.strata.node.Node as RetainedNode
 
 /**

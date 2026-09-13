@@ -9,7 +9,7 @@ The typed Minecraft target matrix owns versions, toolchains, distributions, pair
 It derives task selection, artifact coordinates, sequencing, and runtime Java compatibility.
 `verifyMinecraftFabricTargetMatrix` rejects missing owners.
 
-Configuration on demand keeps targeted common tasks from configuring every Loom project.
+Configuration on demand is disabled because the Kotlin/JS workspace and dependency lock require a complete project model.
 Integration projects evaluate their paired runtime before reading compiled output; documentation launchers inherit dependencies from their runtime classpath.
 Full verification selects every required target through task dependencies.
 

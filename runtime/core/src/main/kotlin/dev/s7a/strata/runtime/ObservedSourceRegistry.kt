@@ -2,11 +2,12 @@ package dev.s7a.strata.runtime
 
 import dev.s7a.strata.node.StateObserverNode
 import dev.s7a.strata.runtime.diagnostics.UiRenderMetric
+import dev.s7a.strata.runtime.platform.Collections
+import dev.s7a.strata.runtime.platform.IdentityMap
+import dev.s7a.strata.runtime.platform.identitySet
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
 import dev.s7a.strata.state.DerivedStateSource
 import dev.s7a.strata.state.StateSource
-import java.util.Collections
-import java.util.IdentityHashMap
 
 /**
  * Tree-owned identity registry sharing source subscriptions across retained observation regions.
@@ -18,15 +19,15 @@ import java.util.IdentityHashMap
 internal class ObservedSourceRegistry(
     private val monitoring: RenderMonitoring = RenderMonitoring(),
 ) : AutoCloseable {
-    private val bindings = IdentityHashMap<StateSource<*>, ObservedSourceBinding>()
-    private val owners = IdentityHashMap<StateObserverNode, List<StateSource<*>>>()
+    private val bindings = IdentityMap<StateSource<*>, ObservedSourceBinding>()
+    private val owners = IdentityMap<StateObserverNode, List<StateSource<*>>>()
     private val unusedBindings = LinkedHashSet<ObservedSourceBinding>()
-    private val acquiring: MutableSet<StateSource<*>> = Collections.newSetFromMap(IdentityHashMap())
+    private val acquiring: MutableSet<StateSource<*>> = identitySet()
     private var frameActive = false
     private var operationActive = false
     private var contentUpdates = false
     private val changed = ArrayDeque<ObservedSourceBinding>()
-    private val notified: MutableSet<StateObserverNode> = Collections.newSetFromMap(IdentityHashMap())
+    private val notified: MutableSet<StateObserverNode> = identitySet()
 
     /**
      * Number of currently acquired external subscriptions, excluding derived graph edges.

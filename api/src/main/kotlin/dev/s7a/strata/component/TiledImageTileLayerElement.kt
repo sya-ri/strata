@@ -10,6 +10,8 @@ import dev.s7a.strata.geometry.DoubleOffset
 import dev.s7a.strata.geometry.FloatRect
 import dev.s7a.strata.geometry.IntSize
 import dev.s7a.strata.geometry.LongRect
+import dev.s7a.strata.internal.platform.PlatformLock
+import dev.s7a.strata.internal.platform.synchronized
 import dev.s7a.strata.layout.LayoutScope
 import dev.s7a.strata.layout.MeasureScope
 import dev.s7a.strata.modifier.Modifier
@@ -24,7 +26,7 @@ import dev.s7a.strata.render.PaintScope
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
 import dev.s7a.strata.state.StateSnapshot
 import dev.s7a.strata.state.StateSubscription
-import java.util.LinkedHashMap
+import dev.s7a.strata.internal.platform.PlatformMath as Math
 import dev.s7a.strata.node.Node as RetainedNode
 
 /**
@@ -76,7 +78,7 @@ internal class TiledImageTileLayerElement(
         PaintNode,
         FrameCutoffNode,
         SessionAttachmentNode {
-        private val frameGate: Any = Any()
+        private val frameGate: PlatformLock = PlatformLock()
         private val entries: MutableMap<TiledImageTileId, TileEntry> = LinkedHashMap()
         private var plan: TilePlan = TilePlan.Empty
         private var observer: PanZoomStateObserver? = null
@@ -483,7 +485,7 @@ internal class TiledImageTileLayerElement(
         }
 
         private class TileEntry(
-            private val frameGate: Any,
+            private val frameGate: PlatformLock,
             private val expectedSize: IntSize,
         ) : AutoCloseable {
             private var committed: StateSnapshot<TiledImageTile>? = null
@@ -521,7 +523,7 @@ internal class TiledImageTileLayerElement(
             }
 
             fun captureFrameLocked() {
-                check(Thread.holdsLock(frameGate)) { "A tiled image frame cutoff requires its shared gate." }
+                check(frameGate.isHeldByCurrentThread()) { "A tiled image frame cutoff requires its shared gate." }
                 check(closed.not()) { "A closed tiled image observation cannot capture a frame." }
                 check(frameCaptured.not()) { "A tiled image frame cutoff is already captured." }
                 captured = pending
@@ -539,7 +541,7 @@ internal class TiledImageTileLayerElement(
             }
 
             fun applyCapturedLocked(): Boolean {
-                check(Thread.holdsLock(frameGate)) { "A tiled image frame commit requires its shared gate." }
+                check(frameGate.isHeldByCurrentThread()) { "A tiled image frame commit requires its shared gate." }
                 check(frameCaptured) { "A tiled image frame must be captured before commit." }
                 frameCaptured = false
                 val next = captured

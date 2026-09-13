@@ -1,6 +1,6 @@
 package dev.s7a.strata.input
 
-import java.util.Collections
+import dev.s7a.strata.internal.platform.Collections
 
 /**
  * Immutable committed-character or input-method preedit event delivered to the currently focused component.

@@ -2,7 +2,7 @@ package dev.s7a.strata.spi
 
 import dev.s7a.strata.screen.ScreenDefinition
 import dev.s7a.strata.screen.ScreenRuntimeUnavailableException
-import java.util.concurrent.atomic.AtomicReference
+import dev.s7a.strata.internal.platform.PlatformAtomicReference as AtomicReference
 
 /**
  * Process-wide bridge between the public screen API and one installed platform runtime.
@@ -13,7 +13,7 @@ import java.util.concurrent.atomic.AtomicReference
  */
 @InternalStrataRuntimeApi
 public object ScreenPresenters {
-    private val current = AtomicReference<Entry?>()
+    private val current = AtomicReference<Entry?>(null)
 
     /**
      * Installs [presenter] for the current platform-runtime lifetime.
@@ -47,7 +47,7 @@ public object ScreenPresenters {
     private class Registration(
         entry: Entry,
     ) : ScreenPresenterRegistration {
-        private val entry = AtomicReference(entry)
+        private val entry = AtomicReference<Entry?>(entry)
 
         override fun close() {
             val installed = entry.getAndSet(null) ?: return

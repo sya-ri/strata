@@ -1,5 +1,7 @@
 package dev.s7a.strata.state
 
+import kotlin.jvm.JvmInline
+
 /**
  * Identifies one observation in the ordered history of a state source.
  *

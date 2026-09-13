@@ -16,7 +16,8 @@ import dev.s7a.strata.node.PaintNode
 import dev.s7a.strata.node.SessionAttachmentNode
 import dev.s7a.strata.render.PaintScope
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
-import java.util.concurrent.atomic.AtomicLong
+import dev.s7a.strata.internal.platform.PlatformAtomicLong as AtomicLong
+import dev.s7a.strata.internal.platform.PlatformMath as Math
 import dev.s7a.strata.node.Node as RetainedNode
 
 /**

@@ -1,9 +1,9 @@
 package dev.s7a.strata.runtime
 
 import dev.s7a.strata.geometry.IntSize
+import dev.s7a.strata.runtime.platform.Collections
 import dev.s7a.strata.runtime.render.DrawCommand
 import dev.s7a.strata.runtime.semantics.SemanticsEntry
-import java.util.Collections
 
 /**
  * Immutable output of one successful synchronous UI session frame.

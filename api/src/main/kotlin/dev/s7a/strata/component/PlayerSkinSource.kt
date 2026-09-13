@@ -1,7 +1,7 @@
 package dev.s7a.strata.component
 
 import dev.s7a.strata.render.DrawImage
-import java.util.UUID
+import dev.s7a.strata.resource.ProfileUuid as UUID
 
 /**
  * Platform-neutral source for a player skin used by [PlayerHead].

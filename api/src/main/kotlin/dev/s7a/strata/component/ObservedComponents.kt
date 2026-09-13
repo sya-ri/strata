@@ -11,6 +11,7 @@ import dev.s7a.strata.resource.ResourceId
 import dev.s7a.strata.state.StateSource
 import dev.s7a.strata.text.TextWrap
 import dev.s7a.strata.text.UiText
+import kotlin.jvm.JvmName
 
 /**
  * Observes progress for [ProgressBar] at the next owner-thread frame cutoff.

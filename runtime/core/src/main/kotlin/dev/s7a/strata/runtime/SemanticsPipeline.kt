@@ -4,11 +4,11 @@ import dev.s7a.strata.node.DirtyMask
 import dev.s7a.strata.node.DirtyPhase
 import dev.s7a.strata.node.SemanticsNode
 import dev.s7a.strata.runtime.diagnostics.UiRenderMetric
+import dev.s7a.strata.runtime.platform.Collections
 import dev.s7a.strata.runtime.semantics.SemanticsEntry
 import dev.s7a.strata.semantics.Semantics
 import dev.s7a.strata.semantics.SemanticsScope
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
-import java.util.Collections
 
 /**
  * Collects unresolved semantics from laid-out retained nodes.

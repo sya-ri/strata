@@ -1,5 +1,7 @@
 package dev.s7a.strata.geometry
 
+import dev.s7a.strata.internal.platform.PlatformMath as Math
+
 /**
  * An immutable half-open rectangle in a large integer content coordinate space.
  *

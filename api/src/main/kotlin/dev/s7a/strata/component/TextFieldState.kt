@@ -1,6 +1,10 @@
 package dev.s7a.strata.component
 
+import dev.s7a.strata.internal.platform.PlatformThreads
+import dev.s7a.strata.internal.platform.scalarAt
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
+import dev.s7a.strata.state.MutableState
+import dev.s7a.strata.state.mutableStateOf
 
 /**
  * Owner-thread mutable value for one single-line text field.
@@ -17,13 +21,13 @@ public class TextFieldState(
     initialValue: String = "",
     public val maxLength: Int = 32,
 ) {
-    private val ownerThread: Thread = Thread.currentThread()
+    private val ownerThread: Any = PlatformThreads.current()
     private var observer: ((String) -> Unit)? = null
-    private var currentValue: String
+    private val currentValue: MutableState<String>
 
     init {
         require(0 < maxLength) { "TextField maximum length must be positive." }
-        currentValue = validate(initialValue)
+        currentValue = mutableStateOf(validate(initialValue))
     }
 
     /**
@@ -37,13 +41,12 @@ public class TextFieldState(
     public var value: String
         get() {
             checkThread()
-            return currentValue
+            return currentValue.value
         }
         set(value) {
             checkThread()
             val validated = validate(value)
-            if (currentValue == validated) return
-            currentValue = validated
+            if (currentValue.update(validated).not()) return
             observer?.invoke(validated)
         }
 
@@ -78,12 +81,12 @@ public class TextFieldState(
         require(value.length <= maxLength) { "TextField value exceeds its maximum length." }
         var offset = 0
         while (offset < value.length) {
-            val codePoint = value.codePointAt(offset)
+            val codePoint = value.scalarAt(offset)
             require((codePoint in 0xD800..0xDFFF).not()) { "TextField value contains an isolated surrogate." }
             require(isAcceptedCodePoint(codePoint)) {
                 "TextField value contains a control character, line separator, or formatting marker."
             }
-            offset += Character.charCount(codePoint)
+            offset += (if (codePoint < 0x10000) 1 else 2)
         }
         return value
     }
@@ -95,6 +98,6 @@ public class TextFieldState(
         }
 
     private fun checkThread() {
-        check(Thread.currentThread() === ownerThread) { "TextField state requires its creator thread." }
+        check(PlatformThreads.current() === ownerThread) { "TextField state requires its creator thread." }
     }
 }

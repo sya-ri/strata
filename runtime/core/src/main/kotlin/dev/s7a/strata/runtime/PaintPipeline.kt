@@ -18,9 +18,9 @@ import dev.s7a.strata.render.RootOverlayPaintScope
 import dev.s7a.strata.render.SampledImageOrientation
 import dev.s7a.strata.render.createDrawImage
 import dev.s7a.strata.runtime.diagnostics.UiRenderMetric
+import dev.s7a.strata.runtime.platform.Collections
 import dev.s7a.strata.runtime.render.DrawCommand
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
-import java.util.Collections
 
 /**
  * Executes retained local paint and transforms commands into tree coordinates.

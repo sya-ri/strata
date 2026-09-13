@@ -41,7 +41,7 @@ Collection remains absent by default; enabled collectors count actual callback e
 It is not an application screen-definition API and does not expose coroutines, state declarations, source bindings, `UiSession`, `UiFrame`, session state, or task-failure decision types.
 `attach`, `detach`, `frame`, pointer input, focused keyboard and text input, input reset, and `close` are synchronous calls that must already run on the construction and owner thread.
 The synchronous bridge exposes no task-launching or dispatcher facility.
-Its content lambda is evaluated during the first attach, after which the retained tree handles frames and input until terminal failure or close.
+Its content lambda is evaluated during the first attach and reevaluated before a subsequent frame when an observed caller-owned state changes; reconciliation preserves matching retained nodes until terminal failure or close.
 Each successful frame owns immutable defensive snapshots of size, drawing commands, and semantics, and all input is ignored until the first successful frame commits.
 After that first frame, consecutive pointer, keyboard, and text events may arrive without another frame between them.
 Before each event, the session resolves only pending retained measurement and layout using the last committed constraints; clean geometry invokes no measure or layout callbacks.
@@ -57,6 +57,9 @@ After reconciliation, attachment resumes these nodes in effective parent-first o
 Session detach suspends every such node in reverse-sibling descendant-first order even before the first successful frame, while retaining node identity and externally owned sources.
 Suspension clears active references before fallible cleanup, and terminal lifecycle cleanup remains safe after an earlier suspension.
 The opt-in `resetInputState` bridge gives native window-blur and input-reset handlers the same capture, hover, and focus cleanup without detaching the session or invalidating its committed frame.
+
+The core session exclusively owns the screen callback across reactive evaluations and clears application captures before terminal node cleanup.
+The Minecraft host retains a separate content-free evaluator so profile, font, and image resources remain available through reevaluation and detachment, then releases them after the retained tree.
 
 ## Ownership and lifecycle
 
@@ -81,6 +84,30 @@ Closing a failed session changes only the lifecycle to `Closed`, because failure
 Repeated close after `Closed` is an owner-thread no-op.
 
 ## Local and external state
+
+### Caller-owned reactive state
+
+`mutableStateOf(initialValue)` creates an owner-thread `MutableState<T>` with a read-only `State<T>` view.
+Create it outside the `ScreenDefinition` content callback so reevaluation does not reset its value.
+The retained session tracks reads of `value` during content evaluation, including reads in ordinary Kotlin `if`, `when`, loops, and called composition functions.
+Unequal assignments mark every observing session dirty, and the next frame reevaluates content once before reconciliation.
+Equal assignments do not invalidate content, and multiple writes before a frame are coalesced.
+Each successful evaluation replaces its dependencies with exactly the states read by that evaluation, so values used only by an inactive branch no longer trigger rebuilds.
+State read exclusively in an event callback is not a content dependency.
+Deferred `Observe` regions own separate dependency sets and refresh without reevaluating an otherwise clean root.
+Cached region access preserves those dependencies; a successful callback replaces them, and removal releases them before node cleanup.
+Regions in one session share one mutation guard even when several regions and the root read the same state.
+The value getters of existing `CheckboxState`, `CycleButtonState`, `SliderState`, `TextFieldState`, and `TextAreaState` participate in the same tracking, so conditions based on those values also rebuild their screen.
+Their retained component subscriptions remain independent and continue to receive distinct normalized value changes.
+
+The caller owns state independently of a screen.
+Detach retains content dependencies so changes made while detached are observed on reattachment; close or terminal failure releases all dependencies without disposing caller-owned state.
+Removing a branch follows ordinary retained-node cleanup and key identity rules; values that must survive removal belong outside that branch's node lifetime.
+State access is rejected from another thread or from arbitrary value-equality code.
+Writes during content evaluation, frame phases, lifecycle operations, and terminal cleanup fail before changing the value, including writes to values the screen has never read.
+Input callbacks may write state, and throwing equality preserves the previous value and the original exception.
+
+### Session-owned declarations
 
 Local state and external source bindings are declared only in `Created`, before content evaluation begins.
 Their delegates may be read in `Created`, `Attached`, and `Detached`.

@@ -16,6 +16,7 @@ For installation and a complete opening example, start with the [project README]
 | [Canvas](guides/canvas.md) | Embed external CPU images or native drawing output. |
 | [Tiled images](guides/tiled-images.md) | Connect tile sources, navigation state, and content-position overlays. |
 | [Headless rendering](guides/headless.md) | Render and inspect portable UI output without opening Minecraft. |
+| [Browser runtime example](../README.md#build-a-web-screen-from-source) | Build initial HTML and try the supported native DOM components. |
 
 Browse the [component overview](reference/components.md) for images and compiled examples in one place.
 The [complete screen examples](examples/screens.md) show how those components work together.

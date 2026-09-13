@@ -26,14 +26,8 @@ internal class ModifierInventoryTest {
     }
 
     private fun apiClasses(): Path {
-        val root = repositoryRoot()
-        val classes = root.resolve("api/build/classes/kotlin/main")
+        val classes = CompiledApiFixture.classes
         assertTrue(Files.isDirectory(classes))
         return classes
-    }
-
-    private fun repositoryRoot(): Path {
-        val current = Path.of(System.getProperty("user.dir")).toAbsolutePath().normalize()
-        return if (Files.isDirectory(current.resolve("api"))) current else current.resolve("../..").normalize()
     }
 }

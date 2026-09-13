@@ -112,6 +112,25 @@ internal fun openConfirmationScreen(onConfirm: () -> Unit) {
 
 [Screens and state](docs/guides/screens-and-state.md) explains definition ownership, state, input, and resource use.
 
+## Build a web screen from source
+
+The experimental browser runtime shares the Kotlin API and retained core with the JVM runtimes.
+It renders native DOM text, buttons, progress indicators, and common layout primitives, with initial HTML that remains visible before JavaScript starts.
+Caller-owned state drives ordinary Kotlin `if`, `when`, and keyed loops; startup reuses matching generated DOM.
+Text editors, scrolling profiles, resource images, and Minecraft-specific appearances are not implemented by the browser adapter yet.
+
+Build the [compiled shared example](integration/web/src/commonMain/kotlin/dev/s7a/strata/integration/web/ReactiveScenario.kt) with:
+
+```shell
+./gradlew :integration:web:buildWeb
+```
+
+Serve `integration/web/build/site` with any static HTTP server.
+Open `minecraft.html` for the Minecraft-inspired theme, or `index.html` for native browser styling.
+Pass `WebTheme.Minecraft` to both initial rendering and `mountWeb` to use the themed borders, text shadows, button states, and progress bars in another application.
+The [browser entry point](integration/web/src/jsMain/kotlin/dev/s7a/strata/integration/web/WebApplication.kt) shows independent build and client definition creation.
+The [build guide](docs/development/build.md#initial-web-documents) explains prerequisites, output ownership, and three-browser verification against the shared Minecraft and Headless scenario.
+
 ## Choose modules
 
 | Module | Use |
@@ -119,6 +138,7 @@ internal fun openConfirmationScreen(onConfirm: () -> Unit) {
 | `api` | Compile application UI and custom components. |
 | `runtime/core` | Integrate the shared retained engine through its runtime contracts. |
 | `runtime/headless` | Render portable output and inspect UI behavior without launching Minecraft. |
+| `runtime/web` | Build initial HTML and mount supported components into native browser DOM. |
 | `runtime/minecraft` | Host profile-backed components and resources in a common runtime. |
 | `runtime/minecraft-fonts-lwjgl` | Supply a CPU backend for offline resource-font rendering. |
 | `runtime/minecraft-fabric-<version>` | Run the interface as a client Fabric screen on one matching game version. |

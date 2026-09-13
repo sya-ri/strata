@@ -1,5 +1,7 @@
 package dev.s7a.strata.component
 
+import dev.s7a.strata.internal.platform.PlatformThreads
+
 /**
  * Caller-owned owner-thread navigation state shared by one VirtualList and optional independent Scrollbar.
  *
@@ -16,7 +18,7 @@ public class VirtualListState<K : Any>(
     public val scrollState: ScrollState = ScrollState(),
     initialIndex: Int? = null,
 ) {
-    private val ownerThread = Thread.currentThread()
+    private val ownerThread = PlatformThreads.current()
     private var controller: VirtualListController<K>? = null
     private var refreshPending = false
     private var pending: VirtualListJump<K>? =
@@ -105,6 +107,6 @@ public class VirtualListState<K : Any>(
     }
 
     private fun checkThread() {
-        check(Thread.currentThread() === ownerThread) { "VirtualListState requires its creator thread." }
+        check(PlatformThreads.current() === ownerThread) { "VirtualListState requires its creator thread." }
     }
 }

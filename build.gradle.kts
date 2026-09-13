@@ -1,6 +1,7 @@
 import com.vanniktech.maven.publish.Checksum
 import com.vanniktech.maven.publish.JavadocJar
 import com.vanniktech.maven.publish.KotlinJvm
+import com.vanniktech.maven.publish.KotlinMultiplatform
 import com.vanniktech.maven.publish.MavenPublishBaseExtension
 import com.vanniktech.maven.publish.SourcesJar
 import dev.detekt.gradle.extensions.DetektExtension
@@ -26,6 +27,9 @@ import org.gradle.jvm.toolchain.JavaLanguageVersion
 import org.gradle.plugins.ide.idea.model.IdeaModel
 import org.jetbrains.dokka.gradle.DokkaExtension
 import org.jetbrains.kotlin.gradle.dsl.KotlinJvmProjectExtension
+import org.jetbrains.kotlin.gradle.dsl.KotlinMultiplatformExtension
+import org.gradle.api.publish.PublishingExtension
+import org.gradle.api.publish.maven.MavenPublication
 import org.jetbrains.kotlin.gradle.dsl.abi.BinariesSource.MAVEN_PUBLICATIONS
 import org.jetbrains.kotlin.gradle.dsl.abi.ExperimentalAbiValidation
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
@@ -35,6 +39,7 @@ import java.util.zip.ZipFile
 plugins {
     base
     alias(libs.plugins.kotlin.jvm) apply false
+    alias(libs.plugins.kotlin.multiplatform) apply false
     alias(libs.plugins.detekt)
     alias(libs.plugins.kotlinter) apply false
     alias(libs.plugins.vanniktechMavenPublish) apply false
@@ -449,6 +454,7 @@ val releasePublicationProjectPaths =
     listOf(
         ":api",
         ":runtime:core",
+        ":runtime:web",
         ":runtime:headless",
         ":runtime:minecraft",
         ":runtime:minecraft-fonts-lwjgl",
@@ -457,6 +463,8 @@ val releaseArtifactByProjectPath =
     releasePublicationProjectPaths.associateWith { projectPath ->
         "$group:strata-${projectPath.removePrefix(":").replace(':', '-')}"
     }
+val legacyJvmMultiplatformProjectPaths = setOf(":api", ":runtime:core")
+val multiplatformProjectPaths = legacyJvmMultiplatformProjectPaths + setOf(":runtime:web", ":integration:web")
 val publishableProjectPaths = releasePublicationProjectPaths.toSet()
 val verifyMinecraftFabricTargetMatrix = tasks.register("verifyMinecraftFabricTargetMatrix") {
     group = "verification"
@@ -758,6 +766,155 @@ allprojects {
 
 subprojects {
     if (file("build.gradle.kts").isFile.not()) {
+        return@subprojects
+    }
+
+    if (path in multiplatformProjectPaths) {
+        val hasJvmTarget = path in legacyJvmMultiplatformProjectPaths || path == ":integration:web"
+        val published = path in releaseArtifactByProjectPath
+        apply(plugin = "org.jetbrains.kotlin.multiplatform")
+        if (published) {
+            apply(plugin = "maven-publish")
+            apply(plugin = "com.vanniktech.maven.publish")
+        }
+        if (hasJvmTarget) apply(plugin = "org.jetbrains.kotlinx.kover")
+        apply(plugin = "org.jmailen.kotlinter")
+        apply(plugin = "dev.detekt")
+        apply(plugin = "org.jetbrains.dokka")
+
+
+        val baseline = baselineJavaVersion
+
+        extensions.configure<KotlinMultiplatformExtension> {
+            explicitApi()
+            if (hasJvmTarget) {
+                jvmToolchain(baseline)
+                jvm()
+            }
+            js {
+                browser {
+                    testTask {
+                        useKarma { useChromeHeadless() }
+                    }
+                }
+                if (hasJvmTarget) nodejs()
+            }
+            compilerOptions {
+                allWarningsAsErrors.set(true)
+                freeCompilerArgs.add("-Xexpect-actual-classes")
+            }
+            sourceSets {
+                commonMain { kotlin.srcDir("src/main/kotlin") }
+                if (hasJvmTarget) jvmTest { kotlin.srcDir("src/test/kotlin") }
+            }
+            if (published) {
+                @OptIn(ExperimentalAbiValidation::class)
+                abiValidation()
+            }
+        }
+
+        tasks.withType<Test>().configureEach { useJUnitPlatform() }
+        if (hasJvmTarget) {
+            // Fabric nested-jar names remain stable when their producer becomes multiplatform.
+            tasks.named<Jar>("jvmJar") { archiveAppendix.set("") }
+            extensions.configure<SourceSetContainer> {
+                matching { it.name == "jvmTest" }.configureEach {
+                    java.srcDir("src/test/java")
+                    resources.srcDir("src/test/resources")
+                }
+            }
+        }
+        tasks.register("test") { dependsOn(if (hasJvmTarget) "jvmTest" else "jsTest") }
+        tasks.register("classes") { dependsOn(if (hasJvmTarget) "jvmMainClasses" else "jsMainClasses") }
+        tasks.matching { it.name in setOf("buildWeb", "verifyWeb", "jsBrowserTest") }.configureEach {
+            usesService(minecraftClientExecutionService)
+        }
+
+        extensions.configure<DetektExtension> {
+            buildUponDefaultConfig = true
+            config.setFrom(rootProject.file("config/detekt/detekt.yml"))
+            source.from("src/main/kotlin", "src/commonMain/kotlin", "src/jvmMain/kotlin", "src/jsMain/kotlin", "src/commonTest/kotlin", "src/jsTest/kotlin", "src/jvmTest/kotlin", "src/test/kotlin")
+        }
+        dependencies.add("detektPlugins", project(":quality:detekt-rules"))
+
+        if (published.not()) return@subprojects
+
+        val multiplatformArtifact = releaseArtifactByProjectPath.getValue(path).substringAfter(':')
+        val metadataArtifact = if (hasJvmTarget) "$multiplatformArtifact-multiplatform" else multiplatformArtifact
+        extensions.configure<MavenPublishBaseExtension> {
+            coordinates(group.toString(), metadataArtifact, version.toString())
+            configure(
+                KotlinMultiplatform(
+                    javadocJar = JavadocJar.Dokka("dokkaGeneratePublicationHtml"),
+                    sourcesJar = SourcesJar.Sources(),
+                ),
+            )
+            publishToMavenCentral()
+            checksums(Checksum.MD5, Checksum.SHA1, Checksum.SHA256, Checksum.SHA512)
+            excludeSignatureChecksums()
+            signAllPublications()
+        }
+        extensions.configure<PublishingExtension> {
+            publications.withType<MavenPublication>().configureEach {
+                pom {
+                    name.set("Strata ${project.name}")
+                    description.set("Platform-neutral declarative UI contracts and retained behavior.")
+                    url.set("https://github.com/sya-ri/strata")
+                    inceptionYear.set("2026")
+                    licenses {
+                        license {
+                            name.set("The MIT License")
+                            url.set("https://opensource.org/licenses/MIT")
+                            distribution.set("repo")
+                        }
+                    }
+                    developers {
+                        developer {
+                            id.set("sya-ri")
+                            name.set("sya-ri")
+                            url.set("https://github.com/sya-ri")
+                        }
+                    }
+                    scm {
+                        connection.set("scm:git:https://github.com/sya-ri/strata.git")
+                        developerConnection.set("scm:git:ssh://git@github.com/sya-ri/strata.git")
+                        tag.set("v${project.version}")
+                        url.set("https://github.com/sya-ri/strata")
+                    }
+                }
+            }
+        }
+        afterEvaluate {
+            extensions.configure<PublishingExtension> {
+                publications.withType<MavenPublication>().configureEach {
+                    artifactId = when (name) {
+                        "jvm" -> multiplatformArtifact
+                        "kotlinMultiplatform" -> metadataArtifact
+                        else -> "$multiplatformArtifact-$name"
+                    }
+                }
+            }
+        }
+        extensions.configure<DokkaExtension> {
+            dokkaSourceSets.configureEach {
+                sourceLink {
+                    localDirectory.set(project.layout.projectDirectory)
+                    remoteUrl("https://github.com/sya-ri/strata/tree/$sourceRevision/${project.path.removePrefix(":").replace(":", "/")}")
+                    remoteLineSuffix.set("#L")
+                }
+            }
+        }
+        tasks.withType<GenerateModuleMetadata>().configureEach {
+            dependsOn(tasks.matching { it.name.endsWith("DokkaJavadocJar") })
+        }
+        tasks.named("check") { dependsOn("dokkaGeneratePublicationHtml") }
+
+        tasks.withType<AbstractArchiveTask>().configureEach {
+            from(rootProject.file("LICENSE")) {
+                into("META-INF")
+                rename { "LICENSE-strata" }
+            }
+        }
         return@subprojects
     }
 
@@ -1231,7 +1388,16 @@ tasks.named("check") {
     dependsOn(gradle.includedBuild("build-logic").task(":check"), verifyGeneratedDokkaSourceLinks)
 }
 
-val releaseArtifacts = releasePublicationProjectPaths.map { projectPath -> releaseArtifactByProjectPath.getValue(projectPath) }
+val releaseArtifacts = releasePublicationProjectPaths.flatMap { projectPath ->
+    val artifact = releaseArtifactByProjectPath.getValue(projectPath)
+    if (projectPath in legacyJvmMultiplatformProjectPaths) {
+        listOf(artifact, "$artifact-multiplatform", "$artifact-js")
+    } else if (projectPath in multiplatformProjectPaths) {
+        listOf(artifact, "$artifact-js")
+    } else {
+        listOf(artifact)
+    }
+}
 val verifyReleasePublicationMatrix =
     tasks.register("verifyReleasePublicationMatrix") {
         group = "verification"

@@ -1,5 +1,7 @@
 package dev.s7a.strata.element
 
+import dev.s7a.strata.internal.platform.castValue
+import dev.s7a.strata.internal.platform.diagnosticName
 import dev.s7a.strata.node.DirtyMask
 import dev.s7a.strata.node.Node
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
@@ -34,21 +36,21 @@ public class ElementType<E : Element, N : Node> public constructor(
         require(previous.type === this) { "The previous element is owned by another element type." }
         require(current.type === this) { "The current element is owned by another element type." }
         require(elementClass.isInstance(previous)) {
-            "Element type ${elementClass.qualifiedName} rejected ${previous::class.qualifiedName}."
+            "Element type ${elementClass.diagnosticName()} rejected ${previous::class.diagnosticName()}."
         }
         require(elementClass.isInstance(current)) {
-            "Element type ${elementClass.qualifiedName} rejected ${current::class.qualifiedName}."
+            "Element type ${elementClass.diagnosticName()} rejected ${current::class.diagnosticName()}."
         }
         val typedNode =
             if (node == null) {
                 null
             } else {
                 require(nodeClass.isInstance(node)) {
-                    "Element type ${elementClass.qualifiedName} rejected node ${node::class.qualifiedName}."
+                    "Element type ${elementClass.diagnosticName()} rejected node ${node::class.diagnosticName()}."
                 }
-                nodeClass.java.cast(node)
+                nodeClass.castValue(node)
             }
-        return operation(elementClass.java.cast(previous), elementClass.java.cast(current), typedNode)
+        return operation(elementClass.castValue(previous), elementClass.castValue(current), typedNode)
     }
 
     /**
@@ -81,7 +83,7 @@ public class ElementType<E : Element, N : Node> public constructor(
         bridge(element, element, null) { typedElement, _, _ ->
             val created = createNode(typedElement)
             require(nodeClass.isInstance(created)) {
-                "Element type ${elementClass.qualifiedName} created ${created::class.qualifiedName}."
+                "Element type ${elementClass.diagnosticName()} created ${created::class.diagnosticName()}."
             }
             created
         }

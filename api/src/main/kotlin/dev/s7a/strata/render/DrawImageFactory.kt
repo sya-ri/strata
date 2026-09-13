@@ -3,6 +3,9 @@
 package dev.s7a.strata.render
 
 import dev.s7a.strata.geometry.IntSize
+import kotlin.jvm.JvmName
+import kotlin.jvm.JvmSynthetic
+import dev.s7a.strata.internal.platform.PlatformMath as Math
 
 /**
  * Creates an immutable source image for platform-neutral drawing.

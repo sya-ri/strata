@@ -1,5 +1,6 @@
 package dev.s7a.strata.modifier
 
+import dev.s7a.strata.internal.platform.castValue
 import dev.s7a.strata.node.DirtyMask
 import dev.s7a.strata.node.ModifierNode
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
@@ -42,9 +43,9 @@ public class ModifierNodeType<E : ModifierElement, N : ModifierNode> public cons
                 null
             } else {
                 require(nodeClass.isInstance(node)) { "Modifier node type rejected the retained node." }
-                nodeClass.java.cast(node)
+                nodeClass.castValue(node)
             }
-        return operation(elementClass.java.cast(previous), elementClass.java.cast(current), typedNode)
+        return operation(elementClass.castValue(previous), elementClass.castValue(current), typedNode)
     }
 
     /**

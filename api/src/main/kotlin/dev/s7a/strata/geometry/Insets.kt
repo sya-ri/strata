@@ -1,5 +1,7 @@
 package dev.s7a.strata.geometry
 
+import dev.s7a.strata.internal.platform.PlatformMath as Math
+
 /**
  * Immutable non-negative distances applied to the four sides of a rectangle.
  *

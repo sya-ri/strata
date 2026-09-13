@@ -29,6 +29,8 @@ import java.util.LinkedHashMap
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
+import java.util.concurrent.locks.ReentrantLock
+import kotlin.concurrent.withLock
 
 /**
  * Verifies that every tile observation owned by one retained layer shares a single frame cutoff.
@@ -60,14 +62,14 @@ internal class TiledImageFrameCutoffTest {
             val secondGate = source.history(secondId).observerGate()
             val frameStarted = CountDownLatch(1)
             val frameFuture =
-                synchronized(secondGate) {
+                secondGate.withLock {
                     val future =
                         executor.submit<UiFrame> {
                             frameStarted.countDown()
                             setup.first.frame(CONSTRAINTS, FrameTime(1L))
                         }
                     check(frameStarted.await(TIMEOUT_SECONDS, TimeUnit.SECONDS)) { "The cutoff frame did not start." }
-                    waitUntilBlocked(setup.second)
+                    waitUntilBlocked(setup.second, secondGate)
                     source.history(firstId).publish(TiledImageTile.Ready(updatedFirst))
                     source.history(secondId).publish(TiledImageTile.Ready(updatedSecond))
                     future
@@ -99,10 +101,13 @@ internal class TiledImageFrameCutoffTest {
 
     private fun image(color: Int): DrawImage = createDrawImage(TILE_SIZE, IntArray(64) { color })
 
-    private fun waitUntilBlocked(thread: Thread) {
+    private fun waitUntilBlocked(
+        thread: Thread,
+        gate: ReentrantLock,
+    ) {
         val deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(TIMEOUT_SECONDS)
-        while (thread.state != Thread.State.BLOCKED && System.nanoTime() < deadline) Thread.onSpinWait()
-        check(thread.state == Thread.State.BLOCKED) { "The cutoff frame did not block on the selected tile slot." }
+        while (gate.hasQueuedThread(thread).not() && System.nanoTime() < deadline) Thread.onSpinWait()
+        check(gate.hasQueuedThread(thread)) { "The cutoff frame did not block on the selected tile slot." }
     }
 
     private class TwoTileSource(
@@ -154,7 +159,7 @@ internal class TiledImageFrameCutoffTest {
             notification.second(notification.first)
         }
 
-        fun observerGate(): Any {
+        fun observerGate(): ReentrantLock {
             val callback = synchronized(monitor) { checkNotNull(observer) }
             val receiverField =
                 generateSequence(callback.javaClass as Class<*>?) { type -> type.superclass }
@@ -162,9 +167,12 @@ internal class TiledImageFrameCutoffTest {
                     .single { field -> field.type == Any::class.java && Modifier.isStatic(field.modifiers).not() }
             check(receiverField.trySetAccessible()) { "The tile observer receiver is inaccessible." }
             val receiver = checkNotNull(receiverField.get(callback))
-            val gateField = receiver.javaClass.declaredFields.single { field -> field.type == Any::class.java }
+            val gateField = receiver.javaClass.getDeclaredField("frameGate")
             check(gateField.trySetAccessible()) { "The tile observer gate is inaccessible." }
-            return checkNotNull(gateField.get(receiver))
+            val gate = checkNotNull(gateField.get(receiver))
+            val delegateField = gate.javaClass.declaredFields.single { field -> field.type == ReentrantLock::class.java }
+            check(delegateField.trySetAccessible()) { "The tile observer lock is inaccessible." }
+            return ReentrantLock::class.java.cast(checkNotNull(delegateField.get(gate)))
         }
     }
 

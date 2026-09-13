@@ -1,6 +1,7 @@
 package dev.s7a.strata.geometry
 
 import kotlin.math.floor
+import dev.s7a.strata.internal.platform.PlatformMath as Math
 
 /**
  * Reports whether every edge can cross the public double-coordinate transform without rounding.

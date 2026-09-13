@@ -1,5 +1,7 @@
 package dev.s7a.strata.layout
 
+import dev.s7a.strata.internal.platform.PlatformMath as Math
+
 /**
  * Calculates the absolute slack offset for one child in an arranged sequence.
  *

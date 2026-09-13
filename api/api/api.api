@@ -1769,6 +1769,10 @@ public abstract interface class dev/s7a/strata/node/PointerInputNode {
 	public abstract fun onPointerEvent (Ldev/s7a/strata/input/PointerEvent;Ldev/s7a/strata/geometry/IntOffset;)Ldev/s7a/strata/input/InputResult;
 }
 
+public abstract interface class dev/s7a/strata/node/ReactiveContentNode : dev/s7a/strata/node/DeferredContentNode {
+	public abstract fun invalidateObservedContent ()V
+}
+
 public abstract interface class dev/s7a/strata/node/RootOverlayPaintNode {
 	public abstract fun paintRootOverlay (Ldev/s7a/strata/render/RootOverlayPaintScope;)V
 }
@@ -1858,6 +1862,10 @@ public final class dev/s7a/strata/render/SampledImageOrientation : java/lang/Enu
 	public final fun getFlipY ()Z
 	public static fun valueOf (Ljava/lang/String;)Ldev/s7a/strata/render/SampledImageOrientation;
 	public static fun values ()[Ldev/s7a/strata/render/SampledImageOrientation;
+}
+
+public final class dev/s7a/strata/resource/ProfileUuidKt {
+	public static final fun parseProfileUuid (Ljava/lang/String;)Ljava/util/UUID;
 }
 
 public final class dev/s7a/strata/resource/ResourceId {
@@ -2088,6 +2096,28 @@ public final class dev/s7a/strata/spi/ScreenPresenters {
 public abstract interface class dev/s7a/strata/state/DerivedStateSource : dev/s7a/strata/state/StateSource {
 	public abstract fun derive (Ljava/lang/Object;)Ljava/lang/Object;
 	public abstract fun getUpstream ()Ldev/s7a/strata/state/StateSource;
+}
+
+public final class dev/s7a/strata/state/MutableState : dev/s7a/strata/state/State {
+	public fun getValue ()Ljava/lang/Object;
+	public fun setValue (Ljava/lang/Object;)V
+}
+
+public final class dev/s7a/strata/state/MutableStateKt {
+	public static final fun mutableStateOf (Ljava/lang/Object;)Ldev/s7a/strata/state/MutableState;
+}
+
+public abstract interface class dev/s7a/strata/state/State {
+	public abstract fun getValue ()Ljava/lang/Object;
+}
+
+public final class dev/s7a/strata/state/StateObservation : java/lang/AutoCloseable {
+	public fun <init> (Lkotlin/jvm/functions/Function0;Lkotlin/jvm/functions/Function0;Lkotlin/jvm/functions/Function0;Lkotlin/jvm/functions/Function0;)V
+	public fun close ()V
+	public final fun enterOperation ()V
+	public final fun evaluate (Lkotlin/jvm/functions/Function0;)Ljava/lang/Object;
+	public final fun fork (Lkotlin/jvm/functions/Function0;)Ldev/s7a/strata/state/StateObservation;
+	public final fun leaveOperation ()V
 }
 
 public final class dev/s7a/strata/state/StateRevision : java/lang/Comparable {
