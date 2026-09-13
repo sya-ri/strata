@@ -94,6 +94,9 @@ Unequal assignments mark every observing session dirty, and the next frame reeva
 Equal assignments do not invalidate content, and multiple writes before a frame are coalesced.
 Each successful evaluation replaces its dependencies with exactly the states read by that evaluation, so values used only by an inactive branch no longer trigger rebuilds.
 State read exclusively in an event callback is not a content dependency.
+Deferred `Observe` regions own separate dependency sets and refresh without reevaluating an otherwise clean root.
+Cached region access preserves those dependencies; a successful callback replaces them, and removal releases them before node cleanup.
+Regions in one session share one mutation guard even when several regions and the root read the same state.
 The value getters of existing `CheckboxState`, `CycleButtonState`, `SliderState`, `TextFieldState`, and `TextAreaState` participate in the same tracking, so conditions based on those values also rebuild their screen.
 Their retained component subscriptions remain independent and continue to receive distinct normalized value changes.
 

@@ -238,7 +238,11 @@ internal class UiSession private constructor(
             }
             runCatching {
                 if (tree == null) {
-                    tree = UiTree().also { it.monitoring.operation = UiRenderOperation.Attach }
+                    tree =
+                        UiTree().also {
+                            it.monitoring.operation = UiRenderOperation.Attach
+                            it.stateObservation = stateObservation
+                        }
                 }
                 val generation = createGeneration()
                 currentState = UiSessionState.Attached

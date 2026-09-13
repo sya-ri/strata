@@ -405,6 +405,10 @@ abstract interface dev.s7a.strata.node/PointerInputNode { // dev.s7a.strata.node
     abstract fun onPointerEvent(dev.s7a.strata.input/PointerEvent, dev.s7a.strata.geometry/IntOffset): dev.s7a.strata.input/InputResult // dev.s7a.strata.node/PointerInputNode.onPointerEvent|onPointerEvent(dev.s7a.strata.input.PointerEvent;dev.s7a.strata.geometry.IntOffset){}[0]
 }
 
+abstract interface dev.s7a.strata.node/ReactiveContentNode : dev.s7a.strata.node/DeferredContentNode { // dev.s7a.strata.node/ReactiveContentNode|null[0]
+    abstract fun invalidateObservedContent() // dev.s7a.strata.node/ReactiveContentNode.invalidateObservedContent|invalidateObservedContent(){}[0]
+}
+
 abstract interface dev.s7a.strata.node/RootOverlayPaintNode { // dev.s7a.strata.node/RootOverlayPaintNode|null[0]
     abstract fun paintRootOverlay(dev.s7a.strata.render/RootOverlayPaintScope) // dev.s7a.strata.node/RootOverlayPaintNode.paintRootOverlay|paintRootOverlay(dev.s7a.strata.render.RootOverlayPaintScope){}[0]
 }
@@ -2041,6 +2045,7 @@ final class dev.s7a.strata.state/StateObservation : kotlin/AutoCloseable { // de
     final fun <#A1: kotlin/Any?> evaluate(kotlin/Function0<#A1>): #A1 // dev.s7a.strata.state/StateObservation.evaluate|evaluate(kotlin.Function0<0:0>){0§<kotlin.Any?>}[0]
     final fun close() // dev.s7a.strata.state/StateObservation.close|close(){}[0]
     final fun enterOperation() // dev.s7a.strata.state/StateObservation.enterOperation|enterOperation(){}[0]
+    final fun fork(kotlin/Function0<kotlin/Unit>): dev.s7a.strata.state/StateObservation // dev.s7a.strata.state/StateObservation.fork|fork(kotlin.Function0<kotlin.Unit>){}[0]
     final fun leaveOperation() // dev.s7a.strata.state/StateObservation.leaveOperation|leaveOperation(){}[0]
 }
 

@@ -16,6 +16,7 @@ import dev.s7a.strata.runtime.semantics.SemanticsEntry
 import dev.s7a.strata.runtime.spi.RuntimeTextInputFocus
 import dev.s7a.strata.runtime.spi.RuntimeUiDiagnosticsOwner
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
+import dev.s7a.strata.state.StateObservation
 import kotlin.jvm.JvmSynthetic
 
 // Why: this public owner intentionally exposes each retained lifecycle, frame, input, and inspection operation through one guarded boundary.
@@ -45,6 +46,11 @@ public class UiTree :
      * Shared nullable diagnostics gate used by the owning session.
      */
     internal val monitoring = RenderMonitoring()
+
+    /**
+     * Optional session owner used to track independently evaluated deferred regions.
+     */
+    internal var stateObservation: StateObservation? = null
     private val dirtyTracker = DirtyTracker(monitoring)
     private val registry = NodeOwnershipRegistry()
     private val pipeline = Pipeline(threadGuard, monitoring)
@@ -52,11 +58,15 @@ public class UiTree :
     private val lifecycle =
         LifecycleManager(registry, threadGuard, dirtyTracker, monitoring) { entry ->
             val failures = FailureAccumulator()
+            if (entry is RetainedNode) {
+                failures.capture { entry.contentObservation?.close() }
+                entry.contentObservation = null
+            }
             (entry.node as? StateObserverNode)?.let { node -> failures.capture { observedSources.remove(node) } }
             failures.capture { pipeline.entryWillCleanup(entry) }
             failures.throwIfPresent()
         }
-    private val reconciler = Reconciler(lifecycle, dirtyTracker, observedSources, monitoring)
+    private val reconciler = Reconciler(lifecycle, dirtyTracker, observedSources, monitoring) { stateObservation }
     private val validator = DescriptionValidator()
     private var currentState: TreeState = TreeState.Active
     private var root: RetainedNode? = null

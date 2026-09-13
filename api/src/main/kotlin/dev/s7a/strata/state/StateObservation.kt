@@ -25,6 +25,28 @@ public class StateObservation(
     private val dependencies = LinkedHashSet<MutableState<*>>()
     private var collecting: MutableSet<MutableState<*>>? = null
     private var closed = false
+    private var parent: StateObservation? = null
+    private val children = LinkedHashSet<StateObservation>()
+
+    /**
+     * Shared mutation guard identity for independently evaluated regions of one session.
+     */
+    internal var mutationOwner: StateObservation = this
+        private set
+
+    /**
+     * Creates an independently tracked retained region sharing this session's mutation guard.
+     * The region owner closes it on removal; closing this observation also releases every remaining region.
+     */
+    public fun fork(invalidated: () -> Unit): StateObservation {
+        checkOwner()
+        check(closed.not()) { "State observation is closed." }
+        return StateObservation(beforeMutation, afterMutation, invalidated, validateMutation).also { child ->
+            child.parent = this
+            child.mutationOwner = mutationOwner
+            children.add(child)
+        }
+    }
 
     /**
      * Installs this session's phase guard for all state writes on the owner thread.
@@ -79,6 +101,10 @@ public class StateObservation(
         check(collecting == null) { "State observation cannot close during evaluation." }
         if (closed) return
         closed = true
+        children.toList().forEach(StateObservation::close)
+        children.clear()
+        parent?.children?.remove(this)
+        parent = null
         val released = dependencies.toList()
         dependencies.clear()
         released.forEach { state -> state.forget(this) }

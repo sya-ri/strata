@@ -12,12 +12,12 @@ import dev.s7a.strata.layout.MeasureScope
 import dev.s7a.strata.modifier.Modifier
 import dev.s7a.strata.node.ContentInvalidation
 import dev.s7a.strata.node.ContentKind
-import dev.s7a.strata.node.DeferredContentNode
 import dev.s7a.strata.node.DirtyMask
 import dev.s7a.strata.node.LayoutNode
 import dev.s7a.strata.node.LifecycleNode
 import dev.s7a.strata.node.MeasureNode
 import dev.s7a.strata.node.ParentDataDelegateNode
+import dev.s7a.strata.node.ReactiveContentNode
 import dev.s7a.strata.node.StateObserverNode
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
 import dev.s7a.strata.state.StateSource
@@ -45,7 +45,7 @@ internal class ObserveElement(
         initial: ObserveElement,
     ) : RetainedNode(),
         StateObserverNode,
-        DeferredContentNode,
+        ReactiveContentNode,
         ParentDataDelegateNode,
         MeasureNode,
         LayoutNode,
@@ -72,6 +72,10 @@ internal class ObserveElement(
                 pendingContentReasons.clear()
             }
             return children
+        }
+
+        override fun invalidateObservedContent() {
+            pendingContentReasons.add(ContentInvalidation.SourceValue)
         }
 
         override fun measure(

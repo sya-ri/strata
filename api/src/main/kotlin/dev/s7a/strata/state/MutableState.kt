@@ -40,7 +40,7 @@ public class MutableState<T> internal constructor(
         val active = observations.toList()
         val entered = ArrayList<StateObservation>()
         try {
-            active.forEach { observation ->
+            active.map { it.mutationOwner }.distinct().forEach { observation ->
                 observation.beginMutation()
                 entered.add(observation)
             }
