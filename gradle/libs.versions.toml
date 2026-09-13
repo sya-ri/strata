@@ -12,6 +12,7 @@ benchmark-harness = "1.37"
 vanniktech-maven-publish = "0.37.0"
 dokka = "2.2.0"
 kotlinx-coroutines = "1.11.0"
+kotlinx-browser = "0.5.0"
 gson-minecraft = "2.10.1"
 gson-minecraft-early = "2.10"
 gson-minecraft-later = "2.11.0"
@@ -82,6 +83,7 @@ junit-jupiter = { module = "org.junit.jupiter:junit-jupiter", version.ref = "jun
 kotlin-test = { module = "org.jetbrains.kotlin:kotlin-test", version.ref = "kotlin" }
 junit-platform-launcher = { module = "org.junit.platform:junit-platform-launcher", version.ref = "junit" }
 kotlinx-coroutines-core = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-core", version.ref = "kotlinx-coroutines" }
+kotlinx-browser = { module = "org.jetbrains.kotlinx:kotlinx-browser", version.ref = "kotlinx-browser" }
 gson-minecraft = { module = "com.google.code.gson:gson", version.ref = "gson-minecraft" }
 icu-minecraft-baseline = { module = "com.ibm.icu:icu4j", version.ref = "icu-minecraft-baseline" }
 lwjgl-font-core = { module = "org.lwjgl:lwjgl", version.ref = "lwjgl-minecraft-freetype" }

@@ -1,0 +1,14 @@
+// Klib ABI Dump
+// Targets: [js]
+// Rendering settings:
+// - Signature version: 2
+// - Show manifest properties: true
+// - Show declarations: true
+
+// Library unique name: <dev.s7a.strata:web>
+final class dev.s7a.strata.runtime.web/WebUiHost : kotlin/AutoCloseable { // dev.s7a.strata.runtime.web/WebUiHost|null[0]
+    final fun close() // dev.s7a.strata.runtime.web/WebUiHost.close|close(){}[0]
+    final fun render(dev.s7a.strata.geometry/IntSize) // dev.s7a.strata.runtime.web/WebUiHost.render|render(dev.s7a.strata.geometry.IntSize){}[0]
+}
+
+final fun dev.s7a.strata.runtime.web/mountWeb(dev.s7a.strata.screen/ScreenDefinition, org.w3c.dom/HTMLElement, dev.s7a.strata.geometry/IntSize): dev.s7a.strata.runtime.web/WebUiHost // dev.s7a.strata.runtime.web/mountWeb|mountWeb(dev.s7a.strata.screen.ScreenDefinition;org.w3c.dom.HTMLElement;dev.s7a.strata.geometry.IntSize){}[0]

@@ -121,6 +121,7 @@ include(
     ":quality:benchmarks",
     ":quality:detekt-rules",
     ":runtime:core",
+    ":runtime:web",
     ":runtime:headless",
     ":runtime:minecraft",
     ":runtime:minecraft-fonts-lwjgl",

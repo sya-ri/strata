@@ -454,6 +454,7 @@ val releasePublicationProjectPaths =
     listOf(
         ":api",
         ":runtime:core",
+        ":runtime:web",
         ":runtime:headless",
         ":runtime:minecraft",
         ":runtime:minecraft-fonts-lwjgl",
@@ -462,7 +463,8 @@ val releaseArtifactByProjectPath =
     releasePublicationProjectPaths.associateWith { projectPath ->
         "$group:strata-${projectPath.removePrefix(":").replace(':', '-')}"
     }
-val multiplatformProjectPaths = setOf(":api", ":runtime:core")
+val legacyJvmMultiplatformProjectPaths = setOf(":api", ":runtime:core")
+val multiplatformProjectPaths = legacyJvmMultiplatformProjectPaths + ":runtime:web"
 val publishableProjectPaths = releasePublicationProjectPaths.toSet()
 val verifyMinecraftFabricTargetMatrix = tasks.register("verifyMinecraftFabricTargetMatrix") {
     group = "verification"
@@ -718,10 +720,11 @@ subprojects {
     }
 
     if (path in multiplatformProjectPaths) {
+        val hasJvmTarget = path in legacyJvmMultiplatformProjectPaths
         apply(plugin = "org.jetbrains.kotlin.multiplatform")
         apply(plugin = "maven-publish")
         apply(plugin = "com.vanniktech.maven.publish")
-        apply(plugin = "org.jetbrains.kotlinx.kover")
+        if (hasJvmTarget) apply(plugin = "org.jetbrains.kotlinx.kover")
         apply(plugin = "org.jmailen.kotlinter")
         apply(plugin = "dev.detekt")
         apply(plugin = "org.jetbrains.dokka")
@@ -731,15 +734,17 @@ subprojects {
 
         extensions.configure<KotlinMultiplatformExtension> {
             explicitApi()
-            jvmToolchain(baseline)
-            jvm()
+            if (hasJvmTarget) {
+                jvmToolchain(baseline)
+                jvm()
+            }
             js {
                 browser {
                     testTask {
                         useKarma { useChromeHeadless() }
                     }
                 }
-                nodejs()
+                if (hasJvmTarget) nodejs()
             }
             compilerOptions {
                 allWarningsAsErrors.set(true)
@@ -747,21 +752,23 @@ subprojects {
             }
             sourceSets {
                 commonMain { kotlin.srcDir("src/main/kotlin") }
-                jvmTest { kotlin.srcDir("src/test/kotlin") }
+                if (hasJvmTarget) jvmTest { kotlin.srcDir("src/test/kotlin") }
             }
             @OptIn(ExperimentalAbiValidation::class)
             abiValidation()
         }
 
         tasks.withType<Test>().configureEach { useJUnitPlatform() }
-        extensions.configure<SourceSetContainer> {
-            matching { it.name == "jvmTest" }.configureEach {
-                java.srcDir("src/test/java")
-                resources.srcDir("src/test/resources")
+        if (hasJvmTarget) {
+            extensions.configure<SourceSetContainer> {
+                matching { it.name == "jvmTest" }.configureEach {
+                    java.srcDir("src/test/java")
+                    resources.srcDir("src/test/resources")
+                }
             }
         }
-        tasks.register("test") { dependsOn("jvmTest") }
-        tasks.register("classes") { dependsOn("jvmMainClasses") }
+        tasks.register("test") { dependsOn(if (hasJvmTarget) "jvmTest" else "jsTest") }
+        tasks.register("classes") { dependsOn(if (hasJvmTarget) "jvmMainClasses" else "jsMainClasses") }
 
         extensions.configure<DetektExtension> {
             buildUponDefaultConfig = true
@@ -771,8 +778,9 @@ subprojects {
         dependencies.add("detektPlugins", project(":quality:detekt-rules"))
 
         val multiplatformArtifact = releaseArtifactByProjectPath.getValue(path).substringAfter(':')
+        val metadataArtifact = if (hasJvmTarget) "$multiplatformArtifact-multiplatform" else multiplatformArtifact
         extensions.configure<MavenPublishBaseExtension> {
-            coordinates(group.toString(), "$multiplatformArtifact-multiplatform", version.toString())
+            coordinates(group.toString(), metadataArtifact, version.toString())
             configure(
                 KotlinMultiplatform(
                     javadocJar = JavadocJar.Dokka("dokkaGeneratePublicationHtml"),
@@ -819,7 +827,7 @@ subprojects {
                 publications.withType<MavenPublication>().configureEach {
                     artifactId = when (name) {
                         "jvm" -> multiplatformArtifact
-                        "kotlinMultiplatform" -> "$multiplatformArtifact-multiplatform"
+                        "kotlinMultiplatform" -> metadataArtifact
                         else -> "$multiplatformArtifact-$name"
                     }
                 }
@@ -1317,8 +1325,10 @@ tasks.named("check") {
 
 val releaseArtifacts = releasePublicationProjectPaths.flatMap { projectPath ->
     val artifact = releaseArtifactByProjectPath.getValue(projectPath)
-    if (projectPath in multiplatformProjectPaths) {
+    if (projectPath in legacyJvmMultiplatformProjectPaths) {
         listOf(artifact, "$artifact-multiplatform", "$artifact-js")
+    } else if (projectPath in multiplatformProjectPaths) {
+        listOf(artifact, "$artifact-js")
     } else {
         listOf(artifact)
     }
