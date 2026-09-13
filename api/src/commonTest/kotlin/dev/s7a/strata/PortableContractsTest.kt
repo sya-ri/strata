@@ -1,6 +1,5 @@
 package dev.s7a.strata
 
-import dev.s7a.strata.internal.platform.PlatformBigInteger
 import dev.s7a.strata.internal.platform.PlatformLock
 import dev.s7a.strata.internal.platform.PlatformMath
 import dev.s7a.strata.internal.platform.appendScalar
@@ -39,18 +38,6 @@ internal class PortableContractsTest {
         assertEquals(1L, (-5L).mod(2L))
         assertEquals(Long.MIN_VALUE, Long.MIN_VALUE.floorDiv(-1L))
         assertEquals(0L, Long.MIN_VALUE.mod(-1L))
-    }
-
-    @Test
-    fun binaryWeightsRemainExactBeyondDoublePrecision() {
-        val unit = PlatformBigInteger.valueOf(1L)
-        val enormous = unit.shiftLeft(270)
-        val tiny = unit.shiftLeft(250)
-        assertEquals(1L shl 20, enormous.divide(tiny).longValueExact())
-        assertEquals(0, PlatformBigInteger.ZERO.signum())
-        assertEquals(1, enormous.add(unit).signum())
-        assertEquals(3L, unit.multiply(PlatformBigInteger.valueOf(3L)).longValueExact())
-        assertFailsWith<ArithmeticException> { enormous.longValueExact() }
     }
 
     @Test

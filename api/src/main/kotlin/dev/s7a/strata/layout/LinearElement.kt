@@ -12,7 +12,6 @@ import dev.s7a.strata.node.DirtyMask
 import dev.s7a.strata.node.DirtyPhase
 import dev.s7a.strata.node.LayoutNode
 import dev.s7a.strata.node.MeasureNode
-import dev.s7a.strata.internal.platform.PlatformBigInteger as BigInteger
 import dev.s7a.strata.internal.platform.PlatformMath as Math
 import dev.s7a.strata.node.Node as RetainedNode
 
@@ -223,85 +222,34 @@ internal class LinearElement(
             childCount: Int,
             constraints: Constraints,
             fixedMain: Long,
-        ): Long {
+        ): Int {
             val gapCount = if (0 < childCount) childCount - 1 else 0
             val fixedGaps = Math.multiplyExact(spacing.toLong(), gapCount.toLong())
             val parentRemaining = Math.subtractExact(mainMaximum(constraints).toLong(), fixedMain)
             val remaining = Math.subtractExact(parentRemaining, fixedGaps)
-            return remaining.coerceAtLeast(0L)
+            return Math.toIntExact(remaining.coerceAtLeast(0L))
         }
 
         private fun allocateWeightedSlots(
             weights: Array<WeightParentData.Data?>,
-            available: Long,
+            available: Int,
         ): IntArray {
             val slots = IntArray(weights.size)
-            val exactWeights = arrayOfNulls<ExactWeight>(weights.size)
-            var minimumExponent = Int.MAX_VALUE
+            val spacePerWeight = available / weights.sumOf { it?.weight?.toDouble() ?: 0.0 }
+            val lastWeighted = weights.indexOfLast { it != null }
+            var remaining = available
             for (index in weights.indices) {
-                val weight = weights[index]
-                if (weight != null) {
-                    val exactWeight = decodeWeight(weight.weight)
-                    exactWeights[index] = exactWeight
-                    if (exactWeight.exponent < minimumExponent) {
-                        minimumExponent = exactWeight.exponent
+                val weight = weights[index] ?: continue
+                val slot =
+                    if (index == lastWeighted) {
+                        remaining
+                    } else {
+                        (spacePerWeight * weight.weight).toInt().coerceIn(0, remaining)
                     }
-                }
+                slots[index] = slot
+                remaining -= slot
             }
-            val numerators = arrayOfNulls<BigInteger>(weights.size)
-            var total = BigInteger.ZERO
-            for (index in weights.indices) {
-                val exactWeight = exactWeights[index]
-                if (exactWeight != null) {
-                    val numerator = exactWeight.significand.shiftLeft(exactWeight.exponent - minimumExponent)
-                    numerators[index] = numerator
-                    total = total.add(numerator)
-                }
-            }
-            check(total.signum() == 1) { "Linear layout weight total must be positive." }
-            val availableValue = BigInteger.valueOf(available)
-            var allocated = 0L
-            var lastWeighted = -1
-            for (index in weights.indices) {
-                if (weights[index] != null) {
-                    lastWeighted = index
-                }
-            }
-            for (index in weights.indices) {
-                val weight = weights[index]
-                if (weight != null) {
-                    val slot =
-                        if (index == lastWeighted) {
-                            Math.subtractExact(available, allocated)
-                        } else {
-                            val numerator = requireNotNull(numerators[index])
-                            availableValue.multiply(numerator).divide(total).longValueExact()
-                        }
-                    check(0 <= slot) { "Linear layout weight allocation became negative." }
-                    allocated = Math.addExact(allocated, slot)
-                    check(allocated <= available) { "Linear layout weight allocation exceeded available space." }
-                    slots[index] = Math.toIntExact(slot)
-                }
-            }
-            check(allocated == available) { "Linear layout weight allocation did not consume available space." }
             return slots
-        }
-
-        private data class ExactWeight(
-            val significand: BigInteger,
-            val exponent: Int,
-        )
-
-        private fun decodeWeight(weight: Float): ExactWeight {
-            val bits = weight.toRawBits()
-            val rawExponent = (bits ushr 23) and 0xff
-            val fraction = bits and 0x7fffff
-            return if (rawExponent == 0) {
-                ExactWeight(BigInteger.valueOf(fraction.toLong()), -149)
-            } else {
-                val significand = (1 shl 23) or fraction
-                ExactWeight(BigInteger.valueOf(significand.toLong()), rawExponent - 127 - 23)
-            }
         }
 
         private fun naturalSize(childSizes: Array<IntSize?>): IntSize {

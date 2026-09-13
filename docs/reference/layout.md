@@ -49,7 +49,10 @@ FlowRow does not expose weight, per-row item limits, or maximum-row and overflow
 When the main-axis maximum is bounded and positive finite weights are present, fixed children are measured first.
 The available weighted extent is the checked maximum of zero and the parent maximum minus fixed extents and all fixed gaps.
 Each weighted child receives its proportional share of that extent.
-Every weighted child except the last receives the floor of its exact share, and the last weighted child receives the checked integer residue.
+Weight sums and proportional shares are calculated in `Double`; allocated extents and the remaining space are `Int`.
+Every weighted child except the last receives its calculated share rounded down and capped by the remaining space; the last weighted child receives the integer residue.
+Slots are non-negative and their sum equals the available weighted extent.
+The ratio calculation uses ordinary floating-point rounding rather than arbitrary-precision arithmetic, so an extremely small relative weight may have no effect.
 `fill = true` measures a child at its exact slot, while `fill = false` supplies zero minimum and the slot maximum.
 Unused space from a non-filling child is not redistributed.
 
