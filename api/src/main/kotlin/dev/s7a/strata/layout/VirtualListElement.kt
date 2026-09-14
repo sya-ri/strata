@@ -18,6 +18,7 @@ import dev.s7a.strata.geometry.IntOffset
 import dev.s7a.strata.geometry.IntSize
 import dev.s7a.strata.input.InputResult
 import dev.s7a.strata.input.PointerEvent
+import dev.s7a.strata.internal.toIntExact
 import dev.s7a.strata.modifier.Modifier
 import dev.s7a.strata.node.ClipChildrenNode
 import dev.s7a.strata.node.ContentWork
@@ -30,7 +31,6 @@ import dev.s7a.strata.node.LifecycleNode
 import dev.s7a.strata.node.MeasureNode
 import dev.s7a.strata.node.PointerInputNode
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
-import dev.s7a.strata.internal.platform.PlatformMath as Math
 import dev.s7a.strata.node.Node as RetainedNode
 
 /**
@@ -113,7 +113,7 @@ internal class VirtualListElement(
             rememberAnchor(first, offset)
             val lastVisible = ((offset + viewportSize.height - 1.0) / rowHeight.toDouble()).toInt().coerceIn(first, itemCount - 1)
             visibleStart = maxOf(0, first - OVERSCAN_ROWS)
-            val endExclusive = minOf(itemCount, lastVisible + OVERSCAN_ROWS + 1)
+            val endExclusive = minOf(itemCount.toLong(), lastVisible.toLong() + OVERSCAN_ROWS + 1L).toInt()
             if (cachedChildren.isNotEmpty() && cachedStart == visibleStart && cachedEndExclusive == endExclusive) {
                 return cachedChildren
             }
@@ -145,7 +145,7 @@ internal class VirtualListElement(
             }
             state.scrollState.updateGeometry(
                 viewportExtent = viewportSize.height,
-                contentExtent = Math.multiplyExact(itemCount, rowHeight),
+                contentExtent = (itemCount.toLong() * rowHeight).toIntExact(),
                 origin = checkNotNull(observer),
             )
             return viewportSize
@@ -156,8 +156,8 @@ internal class VirtualListElement(
                 state.scrollState.metrics.offset
                     .toInt()
             for (childIndex in 0 until scope.childCount) {
-                val itemIndex = Math.addExact(visibleStart, childIndex)
-                val top = Math.subtractExact(Math.multiplyExact(itemIndex, rowHeight), offset)
+                val itemIndex = visibleStart + childIndex
+                val top = itemIndex * rowHeight - offset
                 scope.placeChild(childIndex, IntOffset(0, top))
             }
         }
@@ -185,18 +185,18 @@ internal class VirtualListElement(
                     is VirtualListJump.Index -> target.value.takeIf { value -> value < itemCount }
                     is VirtualListJump.Key -> resolveIndex(target.value, itemCount)
                 } ?: return false
-            state.scrollState.scrollTo(Math.multiplyExact(index, rowHeight).toDouble())
+            state.scrollState.scrollTo((index.toLong() * rowHeight).toIntExact().toDouble())
             return true
         }
 
         override fun refresh() {
             val nextItemCount = validateItemCount(itemCountProvider())
-            val nextContentExtent = Math.multiplyExact(nextItemCount, rowHeight)
+            val nextContentExtent = (nextItemCount.toLong() * rowHeight).toIntExact()
             val retainedAnchor = anchorKey
             val nextAnchorIndex = retainedAnchor?.let { key -> resolveIndex(key, nextItemCount) }
             val nextAnchorOffset =
                 nextAnchorIndex?.let { index ->
-                    Math.multiplyExact(index, rowHeight).toDouble() + anchorIntraRowOffset
+                    (index.toLong() * rowHeight).toIntExact().toDouble() + anchorIntraRowOffset
                 }
             itemCount = nextItemCount
             clearCachedChildren()
@@ -241,7 +241,7 @@ internal class VirtualListElement(
         internal fun update(current: VirtualListElement): DirtyMask {
             val stateChanged = state !== current.state
             val nextItemCount = validateItemCount(current.initialItemCount)
-            val nextContentExtent = Math.multiplyExact(nextItemCount, current.rowHeight)
+            val nextContentExtent = (nextItemCount.toLong() * current.rowHeight).toIntExact()
             val retainedAnchor = anchorKey
             val nextAnchorIndex =
                 if (stateChanged) {
@@ -251,7 +251,7 @@ internal class VirtualListElement(
                 }
             val nextAnchorOffset =
                 nextAnchorIndex?.let { index ->
-                    Math.multiplyExact(index, current.rowHeight).toDouble() + anchorIntraRowOffset
+                    (index.toLong() * current.rowHeight).toIntExact().toDouble() + anchorIntraRowOffset
                 }
             if (stateChanged && attached) {
                 state.detach(this)
@@ -292,7 +292,7 @@ internal class VirtualListElement(
         }
 
         private fun requestBoundaryItems(delta: Double) {
-            val visibleRows = Math.addExact((viewportSize.height - 1) / rowHeight, 1)
+            val visibleRows = (viewportSize.height - 1) / rowHeight + 1
             val suggested = maxOf(visibleRows, LOAD_REQUEST_MINIMUM)
             val firstVisible = (state.scrollState.metrics.offset / rowHeight.toDouble()).toInt()
             if (delta < 0.0 && canLoadLeading && firstVisible <= LOAD_THRESHOLD_ROWS) {
@@ -327,7 +327,7 @@ internal class VirtualListElement(
             offset: Double,
         ) {
             anchorKey = keyAt(index)
-            anchorIntraRowOffset = offset - Math.multiplyExact(index, rowHeight).toDouble()
+            anchorIntraRowOffset = offset - (index.toLong() * rowHeight).toIntExact().toDouble()
         }
 
         private fun clearAnchor() {

@@ -19,7 +19,6 @@ import dev.s7a.strata.spi.InternalStrataRuntimeApi
 import kotlin.concurrent.atomics.AtomicLong
 import kotlin.concurrent.atomics.ExperimentalAtomicApi
 import kotlin.concurrent.atomics.updateAndFetch
-import dev.s7a.strata.internal.platform.PlatformMath as Math
 import dev.s7a.strata.node.Node as RetainedNode
 
 /**
@@ -143,7 +142,12 @@ internal class CanvasElement(
                     }
                 },
                 createNode = { element ->
-                    Node(element.source, element.destinationSize, CanvasId(nextIdentity.updateAndFetch(Math::incrementExact)))
+                    val identity =
+                        nextIdentity.updateAndFetch {
+                            if (it == Long.MAX_VALUE) throw ArithmeticException("Canvas identities exhausted.")
+                            it + 1L
+                        }
+                    Node(element.source, element.destinationSize, CanvasId(identity))
                 },
                 updateNode = { _, current, node -> node.update(current) },
             )

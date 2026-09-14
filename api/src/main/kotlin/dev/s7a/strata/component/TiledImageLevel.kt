@@ -1,7 +1,6 @@
 package dev.s7a.strata.component
 
 import dev.s7a.strata.geometry.IntSize
-import dev.s7a.strata.internal.platform.PlatformMath as Math
 
 /**
  * Describes one immutable resolution level in a tiled raster source.
@@ -22,7 +21,8 @@ public data class TiledImageLevel(
     init {
         require(0 < tilePixelSize.width && 0 < tilePixelSize.height) { "Tiled image tile dimensions must be positive." }
         require(0 < contentUnitsPerPixel) { "Tiled image content units per pixel must be positive." }
-        Math.multiplyExact(tilePixelSize.width.toLong(), contentUnitsPerPixel)
-        Math.multiplyExact(tilePixelSize.height.toLong(), contentUnitsPerPixel)
+        if (Long.MAX_VALUE / contentUnitsPerPixel < maxOf(tilePixelSize.width, tilePixelSize.height).toLong()) {
+            throw ArithmeticException("Tile content extent exceeds Long.MAX_VALUE.")
+        }
     }
 }

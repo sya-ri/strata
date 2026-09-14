@@ -1,11 +1,16 @@
 package dev.s7a.strata
 
+import dev.s7a.strata.geometry.Insets
+import dev.s7a.strata.geometry.IntOffset
+import dev.s7a.strata.geometry.IntRect
+import dev.s7a.strata.geometry.IntSize
+import dev.s7a.strata.geometry.LongRect
 import dev.s7a.strata.internal.platform.PlatformLock
-import dev.s7a.strata.internal.platform.PlatformMath
 import dev.s7a.strata.internal.platform.appendScalar
 import dev.s7a.strata.internal.platform.scalarAt
 import dev.s7a.strata.internal.platform.synchronized
 import dev.s7a.strata.layout.ParentDataKey
+import dev.s7a.strata.render.createDrawImage
 import dev.s7a.strata.resource.parseProfileUuid
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
 import dev.s7a.strata.state.mutableStateOf
@@ -20,24 +25,25 @@ import kotlin.test.assertTrue
  */
 internal class PortableContractsTest {
     @Test
+    fun geometryAndImageBoundariesRejectWrappedValues() {
+        assertFailsWith<ArithmeticException> { IntOffset(Int.MAX_VALUE, 0) + IntOffset(1, 0) }
+        assertFailsWith<ArithmeticException> { IntOffset(Int.MIN_VALUE, 0) - IntOffset(1, 0) }
+        assertFailsWith<ArithmeticException> { IntRect(Int.MIN_VALUE, 0, Int.MAX_VALUE, 1) }
+        assertFailsWith<ArithmeticException> { LongRect(Long.MIN_VALUE, 0L, Long.MAX_VALUE, 1L) }
+        assertFailsWith<ArithmeticException> { Insets(left = Int.MAX_VALUE, right = 1) }
+        assertFailsWith<ArithmeticException> { createDrawImage(IntSize(65_536, 65_536), intArrayOf()) }
+        assertEquals(Long.MAX_VALUE, LongRect(Long.MIN_VALUE, 0L, -1L, 1L).width)
+        val image = createDrawImage(IntSize(2, 2), intArrayOf(1, 2, 3, 4))
+        assertEquals(4, image.argbAt(1, 1))
+        assertFailsWith<IllegalArgumentException> { image.argbAt(2, 1) }
+    }
+
+    @Test
     @OptIn(InternalStrataRuntimeApi::class)
     fun parentDataChecksTheRuntimeClassBeforeItsErasedCast() {
         val key = ParentDataKey(Int::class)
         assertEquals(7, key.castErased(7))
         assertFailsWith<IllegalArgumentException> { key.castErased("7") }
-    }
-
-    @Test
-    fun exactArithmeticRejectsOverflowAndPreservesNegativeRounding() {
-        assertFailsWith<ArithmeticException> { PlatformMath.addExact(Long.MAX_VALUE, 1L) }
-        assertFailsWith<ArithmeticException> { PlatformMath.subtractExact(Long.MIN_VALUE, 1L) }
-        assertFailsWith<ArithmeticException> { PlatformMath.multiplyExact(Long.MIN_VALUE, -1L) }
-        assertFailsWith<ArithmeticException> { PlatformMath.multiplyExact(1L shl 40, 1L shl 40) }
-        assertFailsWith<ArithmeticException> { PlatformMath.toIntExact(1L shl 40) }
-        assertEquals(-3L, (-5L).floorDiv(2L))
-        assertEquals(1L, (-5L).mod(2L))
-        assertEquals(Long.MIN_VALUE, Long.MIN_VALUE.floorDiv(-1L))
-        assertEquals(0L, Long.MIN_VALUE.mod(-1L))
     }
 
     @Test

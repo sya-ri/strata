@@ -1,7 +1,5 @@
 package dev.s7a.strata.geometry
 
-import dev.s7a.strata.internal.platform.PlatformMath as Math
-
 /**
  * An immutable half-open rectangle in a large integer content coordinate space.
  *
@@ -25,8 +23,8 @@ public data class LongRect(
     init {
         require(left <= right) { "Right must not be less than left." }
         require(top <= bottom) { "Bottom must not be less than top." }
-        Math.subtractExact(right, left)
-        Math.subtractExact(bottom, top)
+        // Ordered edges have a non-negative extent, so a negative difference identifies overflow.
+        if (right - left < 0L || bottom - top < 0L) throw ArithmeticException("Rectangle extent exceeds Long.MAX_VALUE.")
     }
 
     /**

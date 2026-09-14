@@ -7,12 +7,12 @@ import dev.s7a.strata.element.ElementType
 import dev.s7a.strata.geometry.Constraints
 import dev.s7a.strata.geometry.IntOffset
 import dev.s7a.strata.geometry.IntSize
+import dev.s7a.strata.internal.toIntExact
 import dev.s7a.strata.modifier.Modifier
 import dev.s7a.strata.node.DirtyMask
 import dev.s7a.strata.node.DirtyPhase
 import dev.s7a.strata.node.LayoutNode
 import dev.s7a.strata.node.MeasureNode
-import dev.s7a.strata.internal.platform.PlatformMath as Math
 import dev.s7a.strata.node.Node as RetainedNode
 
 /**
@@ -97,14 +97,14 @@ internal class GridElement(
                 val row = index / columns
                 val childSize = scope.measuredChildSize(index)
                 val alignment = scope.childParentData(index, GridAlignmentParentData.KEY)?.alignment ?: contentAlignment
-                val horizontalSlack = Math.subtractExact(columnWidths[column], childSize.width)
-                val verticalSlack = Math.subtractExact(rowHeights[row], childSize.height)
+                val horizontalSlack = columnWidths[column] - childSize.width
+                val verticalSlack = rowHeights[row] - childSize.height
                 val cellOffset = alignmentOffset(alignment, horizontalSlack, verticalSlack)
                 scope.placeChild(
                     index,
                     IntOffset(
-                        Math.addExact(columnOffsets[column], cellOffset.x),
-                        Math.addExact(rowOffsets[row], cellOffset.y),
+                        (columnOffsets[column].toLong() + cellOffset.x).toIntExact(),
+                        (rowOffsets[row].toLong() + cellOffset.y).toIntExact(),
                     ),
                 )
             }
@@ -167,13 +167,9 @@ internal class GridElement(
             tracks: IntArray,
             spacing: Int,
         ): Int {
-            var extent = 0L
-            for (track in tracks) {
-                extent = Math.addExact(extent, track.toLong())
-            }
+            val extent = tracks.sumOf(Int::toLong)
             val gapCount = if (tracks.isEmpty()) 0 else tracks.size - 1
-            extent = Math.addExact(extent, Math.multiplyExact(spacing.toLong(), gapCount.toLong()))
-            return Math.toIntExact(extent)
+            return (extent + spacing.toLong() * gapCount).toIntExact()
         }
 
         private fun trackOffsets(
@@ -183,10 +179,10 @@ internal class GridElement(
             val offsets = IntArray(tracks.size)
             var offset = 0L
             for (index in tracks.indices) {
-                offsets[index] = Math.toIntExact(offset)
-                offset = Math.addExact(offset, tracks[index].toLong())
+                offsets[index] = offset.toIntExact()
+                offset += tracks[index]
                 if (index < tracks.lastIndex) {
-                    offset = Math.addExact(offset, spacing.toLong())
+                    offset += spacing
                 }
             }
             return offsets

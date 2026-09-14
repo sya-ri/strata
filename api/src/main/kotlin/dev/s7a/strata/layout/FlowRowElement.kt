@@ -7,12 +7,12 @@ import dev.s7a.strata.element.ElementType
 import dev.s7a.strata.geometry.Constraints
 import dev.s7a.strata.geometry.IntOffset
 import dev.s7a.strata.geometry.IntSize
+import dev.s7a.strata.internal.toIntExact
 import dev.s7a.strata.modifier.Modifier
 import dev.s7a.strata.node.DirtyMask
 import dev.s7a.strata.node.DirtyPhase
 import dev.s7a.strata.node.LayoutNode
 import dev.s7a.strata.node.MeasureNode
-import dev.s7a.strata.internal.platform.PlatformMath as Math
 import dev.s7a.strata.node.Node as RetainedNode
 
 /**
@@ -91,10 +91,10 @@ internal class FlowRowElement(
             var top = 0L
             for (index in rows.indices) {
                 val row = rows[index]
-                placeRow(scope, row, childSizes, Math.toIntExact(top))
-                top = Math.addExact(top, row.height.toLong())
+                placeRow(scope, row, childSizes, top.toIntExact())
+                top += row.height
                 if (index < rows.lastIndex) {
-                    top = Math.addExact(top, verticalSpacing.toLong())
+                    top += verticalSpacing
                 }
             }
         }
@@ -143,10 +143,10 @@ internal class FlowRowElement(
                     if (index == start) {
                         child.width.toLong()
                     } else {
-                        Math.addExact(Math.addExact(width, horizontalSpacing.toLong()), child.width.toLong())
+                        width + horizontalSpacing + child.width
                     }
                 if (start < index && maximumWidth != Int.MAX_VALUE && maximumWidth.toLong() < nextWidth) {
-                    rows += Row(start, index, Math.toIntExact(width), height)
+                    rows += Row(start, index, width.toIntExact(), height)
                     start = index
                     width = child.width.toLong()
                     height = child.height
@@ -156,7 +156,7 @@ internal class FlowRowElement(
                 }
             }
             if (start < childSizes.size) {
-                rows += Row(start, childSizes.size, Math.toIntExact(width), height)
+                rows += Row(start, childSizes.size, width.toIntExact(), height)
             }
             return rows
         }
@@ -167,12 +167,12 @@ internal class FlowRowElement(
             for (index in rows.indices) {
                 val row = rows[index]
                 width = maxOf(width, row.width)
-                height = Math.addExact(height, row.height.toLong())
+                height += row.height
                 if (index < rows.lastIndex) {
-                    height = Math.addExact(height, verticalSpacing.toLong())
+                    height += verticalSpacing
                 }
             }
-            return IntSize(width, Math.toIntExact(height))
+            return IntSize(width, height.toIntExact())
         }
 
         private fun placeRow(
@@ -181,7 +181,7 @@ internal class FlowRowElement(
             childSizes: List<IntSize>,
             top: Int,
         ) {
-            val slack = Math.subtractExact(scope.size.width.toLong(), row.width.toLong()).coerceAtLeast(0L)
+            val slack = (scope.size.width - row.width).coerceAtLeast(0)
             val childCount = row.end - row.start
             var left = 0L
             for (index in row.start until row.end) {
@@ -190,11 +190,11 @@ internal class FlowRowElement(
                 val verticalOffset = verticalOffset(scope, index, row.height, child.height)
                 scope.placeChild(
                     index,
-                    IntOffset(Math.toIntExact(Math.addExact(left, extra)), Math.addExact(top, verticalOffset)),
+                    IntOffset((left + extra).toIntExact(), (top.toLong() + verticalOffset).toIntExact()),
                 )
-                left = Math.addExact(left, child.width.toLong())
+                left += child.width
                 if (index < row.end - 1) {
-                    left = Math.addExact(left, horizontalSpacing.toLong())
+                    left += horizontalSpacing
                 }
             }
         }
@@ -206,7 +206,7 @@ internal class FlowRowElement(
             childHeight: Int,
         ): Int {
             val alignment = scope.childParentData(index, FlowRowAlignmentParentData.KEY)?.alignment ?: verticalAlignment
-            val slack = Math.subtractExact(rowHeight, childHeight)
+            val slack = rowHeight - childHeight
             return when (alignment) {
                 VerticalAlignment.Top -> 0
                 VerticalAlignment.Center -> slack / 2

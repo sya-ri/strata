@@ -28,7 +28,6 @@ import dev.s7a.strata.node.MeasureNode
 import dev.s7a.strata.node.SessionAttachmentNode
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
 import kotlin.math.roundToLong
-import dev.s7a.strata.internal.platform.PlatformMath as Math
 import dev.s7a.strata.node.Node as RetainedNode
 
 /**
@@ -308,9 +307,9 @@ internal class TiledImageElement private constructor(
             }
         }
 
-        private fun contentWidth(level: TiledImageLevel): Long = Math.multiplyExact(level.tilePixelSize.width.toLong(), level.contentUnitsPerPixel)
+        private fun contentWidth(level: TiledImageLevel): Long = level.tilePixelSize.width * level.contentUnitsPerPixel
 
-        private fun contentHeight(level: TiledImageLevel): Long = Math.multiplyExact(level.tilePixelSize.height.toLong(), level.contentUnitsPerPixel)
+        private fun contentHeight(level: TiledImageLevel): Long = level.tilePixelSize.height * level.contentUnitsPerPixel
 
         private fun validateEdgeGrid(
             minimum: Long,
@@ -318,9 +317,10 @@ internal class TiledImageElement private constructor(
             tileExtent: Long,
         ) {
             val first = minimum.floorDiv(tileExtent)
-            val last = Math.subtractExact(maximum, 1L).floorDiv(tileExtent)
-            Math.multiplyExact(first, tileExtent)
-            Math.addExact(Math.multiplyExact(last, tileExtent), tileExtent)
+            val last = (maximum - 1L).floorDiv(tileExtent)
+            if (first < Long.MIN_VALUE / tileExtent || Long.MAX_VALUE / tileExtent <= last) {
+                throw ArithmeticException("Tile grid exceeds Long coordinates.")
+            }
         }
     }
 }

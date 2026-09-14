@@ -12,7 +12,6 @@ import dev.s7a.strata.node.DirtyMask
 import dev.s7a.strata.node.DirtyPhase
 import dev.s7a.strata.node.LayoutNode
 import dev.s7a.strata.node.MeasureNode
-import dev.s7a.strata.internal.platform.PlatformMath as Math
 import dev.s7a.strata.node.Node as RetainedNode
 
 /**
@@ -77,8 +76,8 @@ internal class StackElement(
             for (index in 0 until scope.childCount) {
                 val childSize = scope.measuredChildSize(index)
                 val alignment = scope.childParentData(index, StackAlignmentParentData.KEY)?.alignment ?: contentAlignment
-                val horizontalDifference = Math.subtractExact(scope.size.width, childSize.width)
-                val verticalDifference = Math.subtractExact(scope.size.height, childSize.height)
+                val horizontalDifference = scope.size.width - childSize.width
+                val verticalDifference = scope.size.height - childSize.height
                 val x =
                     when (alignment.horizontalAlignment) {
                         HorizontalAlignment.Start -> 0

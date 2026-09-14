@@ -7,12 +7,12 @@ import dev.s7a.strata.element.ElementType
 import dev.s7a.strata.geometry.Constraints
 import dev.s7a.strata.geometry.IntOffset
 import dev.s7a.strata.geometry.IntSize
+import dev.s7a.strata.internal.toIntExact
 import dev.s7a.strata.modifier.Modifier
 import dev.s7a.strata.node.DirtyMask
 import dev.s7a.strata.node.DirtyPhase
 import dev.s7a.strata.node.LayoutNode
 import dev.s7a.strata.node.MeasureNode
-import dev.s7a.strata.internal.platform.PlatformMath as Math
 import dev.s7a.strata.node.Node as RetainedNode
 
 /**
@@ -80,37 +80,28 @@ internal class LinearElement(
             for (index in 0 until childCount) {
                 val size = scope.measuredChildSize(index)
                 childSizes[index] = size
-                totalMain = Math.addExact(totalMain, mainExtent(size).toLong())
+                totalMain += mainExtent(size)
             }
             val gapCount = if (0 < childCount) childCount - 1 else 0
-            val fixedGaps = Math.multiplyExact(spacing.toLong(), gapCount.toLong())
-            val totalWithGaps = Math.addExact(totalMain, fixedGaps)
+            val fixedGaps = spacing.toLong() * gapCount
+            val totalWithGaps = totalMain + fixedGaps
             val containerMain = mainExtent(scope.size)
-            val slack =
-                if (totalWithGaps <= containerMain.toLong()) {
-                    containerMain.toLong() - totalWithGaps
-                } else {
-                    0L
-                }
+            val slack = (containerMain.toLong() - totalWithGaps).coerceAtLeast(0L).toInt()
             var prefix = 0L
             for (index in 0 until childCount) {
                 val size = requireNotNull(childSizes[index]) { "A linear child was not measured." }
                 val arrangementOffset = arrangement.offset(slack, index, childCount)
-                val spacingOffset = Math.multiplyExact(spacing.toLong(), index.toLong())
-                val mainPosition =
-                    Math.addExact(
-                        Math.addExact(arrangementOffset, prefix),
-                        spacingOffset,
-                    )
+                val spacingOffset = spacing.toLong() * index
+                val mainPosition = (arrangementOffset + prefix + spacingOffset).toIntExact()
                 val crossPosition = crossPosition(scope, index, size)
                 val offset =
                     if (orientation.axis == LinearAxis.Horizontal) {
-                        IntOffset(Math.toIntExact(mainPosition), crossPosition)
+                        IntOffset(mainPosition, crossPosition)
                     } else {
-                        IntOffset(crossPosition, Math.toIntExact(mainPosition))
+                        IntOffset(crossPosition, mainPosition)
                     }
                 scope.placeChild(index, offset)
-                prefix = Math.addExact(prefix, mainExtent(size).toLong())
+                prefix += mainExtent(size)
             }
         }
 
@@ -174,7 +165,7 @@ internal class LinearElement(
                 if (weights[index] == null) {
                     val size = scope.measureChild(index, fixedConstraints(constraints))
                     childSizes[index] = size
-                    fixedMain = Math.addExact(fixedMain, mainExtent(size).toLong())
+                    fixedMain += mainExtent(size)
                 }
             }
             return fixedMain
@@ -224,10 +215,8 @@ internal class LinearElement(
             fixedMain: Long,
         ): Int {
             val gapCount = if (0 < childCount) childCount - 1 else 0
-            val fixedGaps = Math.multiplyExact(spacing.toLong(), gapCount.toLong())
-            val parentRemaining = Math.subtractExact(mainMaximum(constraints).toLong(), fixedMain)
-            val remaining = Math.subtractExact(parentRemaining, fixedGaps)
-            return Math.toIntExact(remaining.coerceAtLeast(0L))
+            val fixedGaps = spacing.toLong() * gapCount
+            return (mainMaximum(constraints).toLong() - fixedMain - fixedGaps).coerceAtLeast(0L).toInt()
         }
 
         private fun allocateWeightedSlots(
@@ -257,23 +246,19 @@ internal class LinearElement(
             var naturalCross = 0
             for (index in childSizes.indices) {
                 val size = requireNotNull(childSizes[index]) { "A linear child was not measured." }
-                naturalMain = Math.addExact(naturalMain, mainExtent(size).toLong())
+                naturalMain += mainExtent(size)
                 val cross = crossExtent(size)
                 if (naturalCross < cross) {
                     naturalCross = cross
                 }
             }
             if (1 < childSizes.size) {
-                naturalMain =
-                    Math.addExact(
-                        naturalMain,
-                        Math.multiplyExact(spacing.toLong(), (childSizes.size - 1).toLong()),
-                    )
+                naturalMain += spacing.toLong() * (childSizes.size - 1)
             }
             return if (orientation.axis == LinearAxis.Horizontal) {
-                IntSize(Math.toIntExact(naturalMain), naturalCross)
+                IntSize(naturalMain.toIntExact(), naturalCross)
             } else {
-                IntSize(naturalCross, Math.toIntExact(naturalMain))
+                IntSize(naturalCross, naturalMain.toIntExact())
             }
         }
 
@@ -337,7 +322,7 @@ internal class LinearElement(
             childSize: IntSize,
         ): Int {
             val containerCross = if (orientation.axis == LinearAxis.Horizontal) scope.size.height else scope.size.width
-            val difference = Math.subtractExact(containerCross, crossExtent(childSize))
+            val difference = containerCross - crossExtent(childSize)
             return when (val policy = orientation) {
                 is LinearOrientation.Row -> {
                     val alignment = scope.childParentData(index, RowAlignmentParentData.KEY)?.alignment ?: policy.alignment

@@ -1,6 +1,6 @@
 package dev.s7a.strata.geometry
 
-import dev.s7a.strata.internal.platform.PlatformMath as Math
+import dev.s7a.strata.internal.toIntExact
 
 /**
  * Immutable non-negative distances applied to the four sides of a rectangle.
@@ -26,8 +26,8 @@ public data class Insets(
         require(0 <= top) { "Top inset must be non-negative." }
         require(0 <= right) { "Right inset must be non-negative." }
         require(0 <= bottom) { "Bottom inset must be non-negative." }
-        Math.addExact(left, right)
-        Math.addExact(top, bottom)
+        (left.toLong() + right).toIntExact()
+        (top.toLong() + bottom).toIntExact()
     }
 
     /**

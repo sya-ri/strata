@@ -1,7 +1,6 @@
 package dev.s7a.strata.geometry
 
 import kotlin.math.floor
-import dev.s7a.strata.internal.platform.PlatformMath as Math
 
 /**
  * Reports whether every edge can cross the public double-coordinate transform without rounding.
@@ -42,9 +41,9 @@ internal fun exactDoubleMidpointOrNull(
     first: Long,
     second: Long,
 ): Double? {
-    val quotient = Math.addExact(first.floorDiv(2L), second.floorDiv(2L))
-    val remainder = Math.addExact(first.mod(2L), second.mod(2L))
-    val whole = if (remainder == 2L) Math.incrementExact(quotient) else quotient
+    val quotient = first.floorDiv(2L) + second.floorDiv(2L)
+    val remainder = first.mod(2L) + second.mod(2L)
+    val whole = if (remainder == 2L) quotient + 1L else quotient
     if (remainder != 1L) return whole.takeIf(Long::isExactlyRepresentableAsDouble)?.toDouble()
     val candidate = whole.toDouble() + 0.5
     val candidateFloor = floor(candidate)
