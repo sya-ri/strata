@@ -229,9 +229,7 @@ exclude:
       # The generated JVM IDEA model co-locates expect/actual declarations without KMP source-set relationships.
       # UnusedSymbol loses references across that boundary, including JVM typealiases and fields used by actual members.
       # These exact bridges are exercised by common/JVM tests; retain every other inspection and remove this exception when the model resolves KMP usages.
-      - api/src/commonMain/kotlin/dev/s7a/strata/internal/platform/PlatformCondition.kt
       - api/src/commonMain/kotlin/dev/s7a/strata/internal/platform/PlatformLock.kt
-      - api/src/jvmMain/kotlin/dev/s7a/strata/internal/platform/PlatformCondition.kt
       - api/src/jvmMain/kotlin/dev/s7a/strata/internal/platform/PlatformLock.kt
       - api/src/jvmMain/kotlin/dev/s7a/strata/internal/platform/PlatformThreadLocal.kt
       - api/src/jvmMain/kotlin/dev/s7a/strata/resource/ProfileUuid.kt

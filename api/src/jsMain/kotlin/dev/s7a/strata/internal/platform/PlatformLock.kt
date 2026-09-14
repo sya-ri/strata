@@ -25,9 +25,4 @@ internal actual class PlatformLock actual constructor() {
      * Reports whether the current thread owns this lock.
      */
     actual fun isHeldByCurrentThread(): Boolean = 0 < depth
-
-    /**
-     * Creates a condition tied to this lock's ownership.
-     */
-    actual fun newCondition(): PlatformCondition = PlatformCondition(this)
 }

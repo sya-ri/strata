@@ -10,7 +10,7 @@ Prefer Kotlin standard-library facilities in shared code: `toList()` and `toMap(
 Collection snapshots are shallow: they detach collection membership from the input but retain the element references.
 Consumers must respect the read-only collection types; mutation through casts or Java collection methods is unsupported and is not required to throw.
 Element immutability is defined by each element contract.
-Keep custom platform adapters only for contracts the standard library cannot supply, such as reentrant conditions and thread-local context.
+Keep custom platform adapters only where the standard library cannot supply the required contract.
 Use ordinary arithmetic when validated input bounds guarantee representable results; check coordinate, extent, and allocation boundaries before narrowing or accepting external values.
 
 ## Module boundaries

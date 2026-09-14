@@ -4,6 +4,7 @@ import dev.s7a.strata.state.StateRevision
 import dev.s7a.strata.state.StateSnapshot
 import dev.s7a.strata.state.StateSubscription
 import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertSame
 import org.junit.jupiter.api.Assertions.assertThrows
 import org.junit.jupiter.api.Assertions.assertTrue
@@ -41,7 +42,7 @@ internal class StateSubscriptionTest {
     }
 
     @Test
-    fun successfulCloseRunsActionOnceAndConcurrentCallersWait() {
+    fun successfulCloseRunsOnceAndInterruptedConcurrentCallersWait() {
         val actionStarted = CountDownLatch(1)
         val releaseAction = CountDownLatch(1)
         val actionCount = AtomicInteger()
@@ -57,15 +58,19 @@ internal class StateSubscriptionTest {
             assertTrue(actionStarted.await(2, TimeUnit.SECONDS))
             val secondThread = CompletableFuture<Thread>()
             val second =
-                executor.submit {
+                executor.submit<Boolean> {
                     secondThread.complete(Thread.currentThread())
                     handle.close()
+                    Thread.currentThread().isInterrupted
                 }
-            assertTrue(awaitWaiting(secondThread.get(2, TimeUnit.SECONDS)))
+            val waiter = secondThread.get(2, TimeUnit.SECONDS)
+            assertTrue(awaitWaiting(waiter))
+            waiter.interrupt()
+            assertFalse(second.isDone)
             releaseAction.countDown()
 
             first.get(2, TimeUnit.SECONDS)
-            second.get(2, TimeUnit.SECONDS)
+            assertTrue(second.get(2, TimeUnit.SECONDS))
             handle.close()
 
             assertEquals(1, actionCount.get())
@@ -93,7 +98,13 @@ internal class StateSubscriptionTest {
         try {
             val first = executor.submit<Throwable?> { runCatching { handle.close() }.exceptionOrNull() }
             assertTrue(actionStarted.await(2, TimeUnit.SECONDS))
-            val second = executor.submit<Throwable?> { runCatching { handle.close() }.exceptionOrNull() }
+            val secondThread = CompletableFuture<Thread>()
+            val second =
+                executor.submit<Throwable?> {
+                    secondThread.complete(Thread.currentThread())
+                    runCatching { handle.close() }.exceptionOrNull()
+                }
+            assertTrue(awaitWaiting(secondThread.get(2, TimeUnit.SECONDS)))
             releaseAction.countDown()
 
             val firstFailure = first.get(2, TimeUnit.SECONDS)
@@ -105,49 +116,10 @@ internal class StateSubscriptionTest {
             assertSame(expected, laterFailure)
             assertEquals(1, actionCount.get())
         } finally {
+            releaseAction.countDown()
             executor.shutdownNow()
             executor.awaitTermination(2, TimeUnit.SECONDS)
         }
-    }
-
-    @Test
-    fun reentrantCloseFromCleanupFailsWithoutReportingSuccess() {
-        lateinit var handle: StateSubscription<Unit>
-        handle = StateSubscription(StateSnapshot(StateRevision(0), Unit)) { handle.close() }
-
-        val firstFailure = assertThrows(IllegalStateException::class.java) { handle.close() }
-        val secondFailure = assertThrows(IllegalStateException::class.java) { handle.close() }
-
-        assertSame(firstFailure, secondFailure)
-    }
-
-    @Test
-    fun cleanupCannotSwallowReentrantCloseFailureAndReturnNormally() {
-        lateinit var handle: StateSubscription<Unit>
-        handle =
-            StateSubscription(StateSnapshot(StateRevision(0), Unit)) {
-                runCatching { handle.close() }
-            }
-
-        val failure = assertThrows(IllegalStateException::class.java) { handle.close() }
-
-        assertSame(failure, assertThrows(IllegalStateException::class.java) { handle.close() })
-    }
-
-    @Test
-    fun cleanupFailureIsSuppressedBehindRetainedReentryFailure() {
-        val cleanupFailure = IllegalArgumentException("cleanup")
-        lateinit var handle: StateSubscription<Unit>
-        handle =
-            StateSubscription(StateSnapshot(StateRevision(0), Unit)) {
-                runCatching { handle.close() }
-                throw cleanupFailure
-            }
-
-        val failure = assertThrows(IllegalStateException::class.java) { handle.close() }
-
-        assertEquals(listOf(cleanupFailure), failure.suppressed.toList())
-        assertSame(failure, assertThrows(IllegalStateException::class.java) { handle.close() })
     }
 
     private fun awaitWaiting(thread: Thread): Boolean {

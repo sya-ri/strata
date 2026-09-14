@@ -18,9 +18,4 @@ internal expect class PlatformLock() {
      * Reports whether the current thread owns this lock.
      */
     fun isHeldByCurrentThread(): Boolean
-
-    /**
-     * Creates a condition tied to this lock's ownership.
-     */
-    fun newCondition(): PlatformCondition
 }
