@@ -5,6 +5,7 @@
 `PlayerSkinSource.Uuid.value` now uses `kotlin.uuid.Uuid` on every platform.
 Use `Uuid.parse(text)` or `Uuid.fromLongs(mostSignificantBits, leastSignificantBits)` to create profile identifiers in shared code.
 The standard parser accepts canonical dashed UUIDs and compact hexadecimal UUIDs; parsing follows the Kotlin standard-library contract on every target.
+These APIs are stable with Kotlin 2.4 or newer; consumers still compiling with Kotlin 2.3 must opt in to `ExperimentalUuidApi` at UUID use sites.
 
 On JVM, convert values from Java or Minecraft APIs at the boundary:
 
