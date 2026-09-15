@@ -5,9 +5,7 @@ Keep all Strata artifacts on the same release version.
 
 ## Unreleased
 
-Player profile identifiers use Kotlin's standard UUID implementation on JavaScript while preserving native Java UUIDs and the existing player-skin API on JVM.
-
-[Detailed changes and upgrade notes](docs/releases/unreleased.md)
+Portable `Uuid` identifiers use Kotlin's standard UUID implementation on JavaScript while preserving native Java UUIDs and the existing player-skin API on JVM.
 
 ## 0.1.6 - 2026-09-09
 

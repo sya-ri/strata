@@ -10,7 +10,7 @@ import dev.s7a.strata.internal.platform.appendScalar
 import dev.s7a.strata.internal.platform.scalarAt
 import dev.s7a.strata.layout.ParentDataKey
 import dev.s7a.strata.render.createDrawImage
-import dev.s7a.strata.resource.parseProfileUuid
+import dev.s7a.strata.resource.parseUuid
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
 import dev.s7a.strata.state.StateObservation
 import dev.s7a.strata.state.mutableStateOf
@@ -60,14 +60,14 @@ internal class PortableContractsTest {
     @OptIn(InternalStrataRuntimeApi::class)
     fun equivalentProfileIdentitiesDoNotInvalidateObservedSkinSources() {
         val text = "01234567-89ab-cdef-8123-456789abcdef"
-        val state = mutableStateOf(PlayerSkinSource.Uuid(parseProfileUuid(text)))
+        val state = mutableStateOf(PlayerSkinSource.Uuid(parseUuid(text)))
         var invalidations = 0
         val observation = StateObservation({}, {}, { invalidations += 1 }, {})
         try {
             observation.evaluate { state.value }
-            state.value = PlayerSkinSource.Uuid(parseProfileUuid(text.uppercase()))
+            state.value = PlayerSkinSource.Uuid(parseUuid(text.uppercase()))
             assertEquals(0, invalidations)
-            val changed = parseProfileUuid("80000000-0000-0000-ffff-ffffffffffff")
+            val changed = parseUuid("80000000-0000-0000-ffff-ffffffffffff")
             state.value = PlayerSkinSource.Uuid(changed)
             assertEquals(1, invalidations)
             assertEquals(changed, state.value.value)

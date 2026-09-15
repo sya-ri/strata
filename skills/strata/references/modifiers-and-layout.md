@@ -1494,8 +1494,8 @@ val skin: DrawImage
 #### `PlayerSkinSource.Uuid`
 
 ```kotlin
-data class Uuid(public val value: ProfileUuid) : PlayerSkinSource
-val value: ProfileUuid
+data class Uuid(public val value: KotlinUuid) : PlayerSkinSource
+val value: KotlinUuid
 ```
 
 <details><summary>Compiled JVM API fingerprints</summary>
