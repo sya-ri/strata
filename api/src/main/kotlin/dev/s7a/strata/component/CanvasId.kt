@@ -1,6 +1,7 @@
 package dev.s7a.strata.component
 
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
+import kotlin.jvm.JvmInline
 
 /**
  * Immutable scalar identity of one retained canvas, independent of its current source or attachment.

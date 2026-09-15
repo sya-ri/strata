@@ -49,7 +49,10 @@ FlowRow does not expose weight, per-row item limits, or maximum-row and overflow
 When the main-axis maximum is bounded and positive finite weights are present, fixed children are measured first.
 The available weighted extent is the checked maximum of zero and the parent maximum minus fixed extents and all fixed gaps.
 Each weighted child receives its proportional share of that extent.
-Every weighted child except the last receives the floor of its exact share, and the last weighted child receives the checked integer residue.
+Weight sums and proportional shares are calculated in `Double`; allocated extents and the remaining space are `Int`.
+Every weighted child except the last receives its calculated share rounded down and capped by the remaining space; the last weighted child receives the integer residue.
+Slots are non-negative and their sum equals the available weighted extent.
+The ratio calculation uses ordinary floating-point rounding rather than arbitrary-precision arithmetic, so an extremely small relative weight may have no effect.
 `fill = true` measures a child at its exact slot, while `fill = false` supplies zero minimum and the slot maximum.
 Unused space from a non-filling child is not redistributed.
 
@@ -60,10 +63,11 @@ Proportional allocation and filling are ignored in that case.
 
 Arrangement is applied after measurement to non-negative slack remaining after actual child extents and fixed spacing.
 Centering floors toward the start or top edge.
-Distributed arrangements compute each absolute offset from the full slack using checked integer intermediates.
+Distributed arrangements compute each absolute offset from the full slack using Long intermediates bounded by Int-sized containers and child counts.
 For child index `i` and child count `n`, `SpaceBetween` uses `floor(slack * i / (n - 1))` when `1 < n`, `SpaceAround` uses `floor(slack * (2 * i + 1) / (2 * n))`, and `SpaceEvenly` uses `floor(slack * (i + 1) / (n + 1))`.
 Overflow uses start arrangement and extends toward the end or bottom edge.
-Every sum, product, cursor, and offset conversion is checked and fails instead of wrapping or saturating.
+Natural extents and placed offsets must fit Int and fail instead of wrapping or saturating.
+Sums and products use Long intermediates; non-negative Int dimensions, spacing, and child counts keep those intermediates representable without checking every operation.
 
 Rows and individual FlowRow rows use vertical cross-axis alignment, and columns use horizontal cross-axis alignment.
 Stacks use typed two-axis alignment within the overlay extent.

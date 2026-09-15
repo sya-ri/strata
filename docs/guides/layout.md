@@ -57,6 +57,7 @@ In a bounded Row or Column, `weight` divides the space remaining after fixed chi
 Weights must be positive and finite.
 `fill = true` gives the child an exact slot; `fill = false` lets it use less without redistributing the unused space.
 Integer rounding leaves the final weighted child the remainder.
+Very small relative weights can receive zero pixels; weights do not guarantee a minimum size.
 With an unbounded main axis, children use intrinsic size instead of proportional allocation.
 
 ## Arrangement and alignment

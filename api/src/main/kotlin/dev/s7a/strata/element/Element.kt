@@ -1,7 +1,6 @@
 package dev.s7a.strata.element
 
 import dev.s7a.strata.modifier.Modifier
-import java.util.Collections
 
 /**
  * Immutable description of one retained node and its direct children.
@@ -12,7 +11,7 @@ import java.util.Collections
  *
  * @property identity positional or keyed identity under the parent.
  * @property type stable element-kind token.
- * @property children immutable defensive snapshot of direct child descriptions.
+ * @property children detached read-only snapshot of direct child descriptions.
  * @property modifier immutable active modifier descriptions applied to this component.
  */
 public abstract class Element public constructor(
@@ -21,5 +20,5 @@ public abstract class Element public constructor(
     children: List<Element> = emptyList(),
     public val modifier: Modifier = Modifier.Empty,
 ) {
-    public val children: List<Element> = Collections.unmodifiableList(children.toList())
+    public val children: List<Element> = children.toList()
 }

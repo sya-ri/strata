@@ -8,33 +8,17 @@ package dev.s7a.strata.runtime.headless
  * If work succeeds, a cleanup failure escapes directly.
  */
 @JvmSynthetic
-@Suppress("TooGenericExceptionCaught")
 internal fun <T : Any> completeWithClose(
     work: () -> T,
     close: () -> Unit,
 ): T {
-    var result: T? = null
-    var failure: Throwable? = null
-    try {
-        result = work()
-    } catch (workFailure: Throwable) {
-        failure = workFailure
+    val result = runCatching(work)
+    val cleanupFailure = runCatching(close).exceptionOrNull()
+    if (cleanupFailure != null) {
+        val primary = result.exceptionOrNull() ?: throw cleanupFailure
+        appendSuppressedIdentity(primary, cleanupFailure)
     }
-    try {
-        close()
-    } catch (closeFailure: Throwable) {
-        val currentFailure = failure
-        if (currentFailure == null) {
-            failure = closeFailure
-        } else {
-            appendSuppressedIdentity(currentFailure, closeFailure)
-        }
-    }
-    val capturedFailure = failure
-    if (capturedFailure != null) {
-        throw capturedFailure
-    }
-    return checkNotNull(result)
+    return result.getOrThrow()
 }
 
 private fun appendSuppressedIdentity(

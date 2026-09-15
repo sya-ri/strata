@@ -9,6 +9,7 @@ import dev.s7a.strata.state.StateSource
 import dev.s7a.strata.text.TextLayout
 import dev.s7a.strata.text.UiText
 import dev.s7a.strata.text.withFont
+import kotlin.jvm.JvmName
 
 /**
  * Emits source-backed text using the same frame snapshot and retained-region ownership as [Observe].

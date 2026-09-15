@@ -122,7 +122,7 @@ internal class LayoutIntegrationTest {
     }
 
     @Test
-    fun weightedRowUsesExactFloatRatiosAtExtremeMagnitudes() {
+    fun weightedRowAllowsTinyRelativeWeightsToReceiveZeroPixels() {
         val largeFirstProbe = ExternalProbe()
         val largeFirstTree = UiTree()
         largeFirstTree.update(
@@ -144,8 +144,8 @@ internal class LayoutIntegrationTest {
             },
         )
         largeFirstTree.measure(Constraints.fixed(width = 100, height = 10))
-        assertEquals(Constraints(minWidth = 99, maxWidth = 99, minHeight = 0, maxHeight = 10), largeFirstProbe.componentMeasureConstraints[0])
-        assertEquals(Constraints(minWidth = 1, maxWidth = 1, minHeight = 0, maxHeight = 10), largeFirstProbe.componentMeasureConstraints[1])
+        assertEquals(Constraints(minWidth = 100, maxWidth = 100, minHeight = 0, maxHeight = 10), largeFirstProbe.componentMeasureConstraints[0])
+        assertEquals(Constraints(minWidth = 0, maxWidth = 0, minHeight = 0, maxHeight = 10), largeFirstProbe.componentMeasureConstraints[1])
         largeFirstTree.close()
 
         val smallFirstProbe = ExternalProbe()

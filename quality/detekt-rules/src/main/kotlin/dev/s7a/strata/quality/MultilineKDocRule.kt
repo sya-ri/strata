@@ -17,12 +17,13 @@ import java.net.URI
 /**
  * Requires multiline KDoc on visible classes and methods.
  * Enum values may rely on their enclosing contract; their methods still require documentation.
+ * Existing KDoc must have no edge padding and must mark paragraph separators with an asterisk.
  */
 internal class MultilineKDocRule(
     config: Config,
 ) : Rule(
         config = config,
-        description = "Requires KDoc on visible classes and methods and multiline syntax for any existing KDoc.",
+        description = "Requires documented visible declarations and multiline KDoc without empty edge padding or unmarked blank lines.",
         url = URI("https://github.com/sya-ri/strata/blob/master/AGENTS.md"),
     ) {
     override fun visitClassOrObject(declaration: KtClassOrObject) {
@@ -36,16 +37,31 @@ internal class MultilineKDocRule(
     }
 
     override fun visitDeclaration(declaration: KtDeclaration) {
-        val documentation = declaration.docComment
-        if (documentation != null && documentation.text.contains('\n').not()) {
+        val violation = declaration.docComment?.let { formattingViolation(it.text) }
+        if (violation != null) {
             report(
                 Finding(
                     entity = Entity.from(declaration),
-                    message = "Use multiline KDoc for declarations that have documentation.",
+                    message = violation,
                 ),
             )
         }
         super.visitDeclaration(declaration)
+    }
+
+    private fun formattingViolation(documentation: String): String? {
+        val lines = documentation.lines()
+        if (lines.size == 1) {
+            return "Use multiline KDoc for declarations that have documentation."
+        }
+        val content = lines.drop(1).dropLast(1)
+        if (content.any(String::isBlank)) {
+            return "Remove unmarked blank lines from KDoc; use an asterisk-only line between paragraphs."
+        }
+        if (content.firstOrNull()?.trim() == "*" || content.lastOrNull()?.trim() == "*") {
+            return "Remove empty lines immediately after the KDoc opening or before its closing delimiter."
+        }
+        return null
     }
 
     private fun reportIfMissingDocumentation(declaration: KtDeclaration) {

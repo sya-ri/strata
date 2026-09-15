@@ -2,7 +2,6 @@ package dev.s7a.strata.runtime.minecraft.font
 
 import java.nio.file.Files
 import java.nio.file.Path
-import java.util.Collections
 
 /**
  * Directory-backed pack source that closes each enumeration and read before returning.
@@ -44,7 +43,7 @@ public class MinecraftDirectoryFontAssetSource(
                     if (Files.isRegularFile(entry)) paths.add(path)
                 }
             }
-            Collections.unmodifiableSet(LinkedHashSet(paths.sorted()))
+            paths.sorted().toSet()
         }
 
     override fun read(path: String): ByteArray? = read(path, MinecraftFontLoadLimits())

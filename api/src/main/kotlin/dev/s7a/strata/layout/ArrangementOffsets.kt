@@ -6,14 +6,13 @@ package dev.s7a.strata.layout
  * This stateless calculation is shared by linear layouts and individual flow rows.
  * Integer division rounds non-negative slack toward the start edge without accumulating rounding error.
  *
- * @param slack non-negative space remaining after child extents and fixed gaps.
+ * @param slack non-negative space remaining within an Int-sized container after child extents and fixed gaps.
  * @param index zero-based child index within the sequence.
  * @param childCount positive number of children in the sequence.
  * @return the additional main-axis offset before this child.
- * @throws ArithmeticException when checked intermediate arithmetic overflows.
  */
 internal fun Arrangement.offset(
-    slack: Long,
+    slack: Int,
     index: Int,
     childCount: Int,
 ): Long =
@@ -27,28 +26,22 @@ internal fun Arrangement.offset(
         }
 
         Arrangement.End -> {
-            slack
+            slack.toLong()
         }
 
         Arrangement.SpaceBetween -> {
             if (1 < childCount) {
-                Math.multiplyExact(slack, index.toLong()) / (childCount - 1).toLong()
+                slack.toLong() * index / (childCount - 1)
             } else {
                 0L
             }
         }
 
         Arrangement.SpaceAround -> {
-            val numerator =
-                Math.multiplyExact(
-                    slack,
-                    Math.addExact(Math.multiplyExact(2L, index.toLong()), 1L),
-                )
-            numerator / Math.multiplyExact(2L, childCount.toLong())
+            slack.toLong() * (2L * index + 1L) / (2L * childCount)
         }
 
         Arrangement.SpaceEvenly -> {
-            Math.multiplyExact(slack, Math.addExact(index.toLong(), 1L)) /
-                Math.addExact(childCount.toLong(), 1L)
+            slack.toLong() * (index.toLong() + 1L) / (childCount.toLong() + 1L)
         }
     }

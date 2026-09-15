@@ -12,7 +12,6 @@ import dev.s7a.strata.runtime.minecraft.font.MinecraftIndexedFontAssetSource
 import dev.s7a.strata.runtime.minecraft.font.MinecraftTrueTypeRasterizer
 import java.nio.file.Files
 import java.nio.file.Path
-import java.util.Collections
 
 /**
  * Validates the explicitly declared official 26.2 client, asset index, object directory, and repository fixtures.
@@ -119,7 +118,7 @@ internal class ShowcaseMinecraftInputs(
                 "selection" to ShowcaseAssetIntegrity.sha256((compatibility.toString() + "\n" + options + "\n" + ShowcaseGuiAsset.PlayerSkin.id + "\n" + playerName + "\n").toByteArray()),
             )
         sources.forEach { source -> hashes.putAll(source.hashes()) }
-        return Collections.unmodifiableMap(hashes.toSortedMap())
+        return hashes.toSortedMap()
     }
 
     private fun validateManifest(document: JsonObject): JsonObject {

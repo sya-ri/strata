@@ -8,7 +8,6 @@ import dev.s7a.strata.runtime.semantics.SemanticsEntry
 import dev.s7a.strata.semantics.Semantics
 import dev.s7a.strata.semantics.SemanticsScope
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
-import java.util.Collections
 
 /**
  * Collects unresolved semantics from laid-out retained nodes.
@@ -24,11 +23,7 @@ internal class SemanticsPipeline(
      * @param root the laid-out retained root.
      * @return immutable tree-coordinate entries.
      */
-    fun semantics(root: RetainedEntry): List<SemanticsEntry> {
-        val output = ArrayList<SemanticsEntry>()
-        semanticsNode(root, output)
-        return Collections.unmodifiableList(output.toList())
-    }
+    fun semantics(root: RetainedEntry): List<SemanticsEntry> = buildList { semanticsNode(root, this) }
 
     private fun semanticsNode(
         retained: RetainedEntry,

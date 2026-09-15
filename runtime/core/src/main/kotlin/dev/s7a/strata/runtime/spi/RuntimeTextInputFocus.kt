@@ -1,6 +1,7 @@
 package dev.s7a.strata.runtime.spi
 
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
+import kotlin.jvm.JvmSynthetic
 
 /**
  * Opaque identity of one committed editable-text focus interval.

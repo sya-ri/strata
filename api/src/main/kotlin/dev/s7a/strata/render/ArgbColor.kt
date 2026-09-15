@@ -1,5 +1,7 @@
 package dev.s7a.strata.render
 
+import kotlin.jvm.JvmInline
+
 /**
  * A non-premultiplied ARGB color represented in one platform-neutral four-byte integer.
  *

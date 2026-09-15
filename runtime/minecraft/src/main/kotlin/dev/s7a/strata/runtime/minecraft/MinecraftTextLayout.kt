@@ -4,7 +4,6 @@ import dev.s7a.strata.geometry.IntOffset
 import dev.s7a.strata.geometry.IntRect
 import dev.s7a.strata.geometry.IntSize
 import dev.s7a.strata.render.PaintScope
-import java.util.Collections
 import kotlin.math.floor
 
 /**
@@ -35,7 +34,7 @@ internal class MinecraftTextLayout(
      * Read-only current lines; their runs contain no live font ownership.
      */
     @get:JvmSynthetic
-    internal val lines: List<MinecraftTextLine> = Collections.unmodifiableList(lines.toList())
+    internal val lines: List<MinecraftTextLine> = lines.toList()
     private val verticalMetrics: MinecraftTextVerticalMetrics? =
         MinecraftTextVerticalMetrics
             .Builder()

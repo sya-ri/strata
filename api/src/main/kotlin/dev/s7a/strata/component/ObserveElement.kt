@@ -12,16 +12,15 @@ import dev.s7a.strata.layout.MeasureScope
 import dev.s7a.strata.modifier.Modifier
 import dev.s7a.strata.node.ContentInvalidation
 import dev.s7a.strata.node.ContentKind
-import dev.s7a.strata.node.DeferredContentNode
 import dev.s7a.strata.node.DirtyMask
 import dev.s7a.strata.node.LayoutNode
 import dev.s7a.strata.node.LifecycleNode
 import dev.s7a.strata.node.MeasureNode
 import dev.s7a.strata.node.ParentDataDelegateNode
+import dev.s7a.strata.node.ReactiveContentNode
 import dev.s7a.strata.node.StateObserverNode
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
 import dev.s7a.strata.state.StateSource
-import java.util.EnumSet
 import dev.s7a.strata.node.Node as RetainedNode
 
 /**
@@ -46,7 +45,7 @@ internal class ObserveElement(
         initial: ObserveElement,
     ) : RetainedNode(),
         StateObserverNode,
-        DeferredContentNode,
+        ReactiveContentNode,
         ParentDataDelegateNode,
         MeasureNode,
         LayoutNode,
@@ -56,7 +55,7 @@ internal class ObserveElement(
         private var content: ObserveContent? = initial.content
         private var values: List<Any?>? = null
         private var children: List<Element> = emptyList()
-        override val pendingContentReasons: MutableSet<ContentInvalidation> = EnumSet.of(ContentInvalidation.Initial)
+        override val pendingContentReasons: MutableSet<ContentInvalidation> = mutableSetOf(ContentInvalidation.Initial)
         override val parentDataChild: Int? = if (initial.transparent) 0 else null
         override val contentKind: ContentKind = if (initial.transparent) ContentKind.StateComponent else ContentKind.ObservedRegion
 
@@ -73,6 +72,10 @@ internal class ObserveElement(
                 pendingContentReasons.clear()
             }
             return children
+        }
+
+        override fun invalidateObservedContent() {
+            pendingContentReasons.add(ContentInvalidation.SourceValue)
         }
 
         override fun measure(

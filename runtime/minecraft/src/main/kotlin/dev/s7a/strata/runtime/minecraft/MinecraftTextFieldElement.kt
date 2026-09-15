@@ -476,9 +476,6 @@ private class MinecraftTextFieldElement(
                 elementClass = MinecraftTextFieldElement::class,
                 nodeClass = Node::class,
                 validateLocal = { element ->
-                    require(element.state.value.length <= element.state.maxLength) {
-                        "Minecraft TextField state exceeds its maximum length."
-                    }
                     require(9 <= element.fieldSize.width && 9 <= element.fieldSize.height) {
                         "Minecraft TextField size must be at least 9 by 9."
                     }

@@ -226,6 +226,13 @@ exclude:
   # Canonical Canvas and sampled-image roots are compiled into multiple exact-version source sets; calls resolved in another assigned owner or driver family therefore appear unused.
   - name: UnusedSymbol
     paths:
+      # The generated JVM IDEA model co-locates expect/actual declarations without KMP source-set relationships.
+      # UnusedSymbol loses references across that boundary, including JVM typealiases and fields used by actual members.
+      # These exact bridges are exercised by common/JVM tests; retain every other inspection and remove this exception when the model resolves KMP usages.
+      - api/src/jvmMain/kotlin/dev/s7a/strata/internal/platform/EvaluationContext.kt
+      - api/src/jvmMain/kotlin/dev/s7a/strata/resource/Uuid.kt
+      - runtime/core/src/jvmMain/kotlin/dev/s7a/strata/runtime/SessionGenerationToken.kt
+      - runtime/core/src/jvmMain/kotlin/dev/s7a/strata/runtime/platform/IdentityMap.kt
       - api/src/main/kotlin/dev/s7a/strata/geometry/Constraints.kt
       - api/src/main/kotlin/dev/s7a/strata/input/PointerEvent.kt
       - api/src/main/kotlin/dev/s7a/strata/input/KeyCode.kt

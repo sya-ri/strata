@@ -1,6 +1,7 @@
 package dev.s7a.strata.component
 
 import dev.s7a.strata.geometry.DoubleOffset
+import dev.s7a.strata.internal.platform.synchronized
 import dev.s7a.strata.layout.Alignment
 import dev.s7a.strata.layout.ParentDataKey
 import dev.s7a.strata.modifier.ModifierElement

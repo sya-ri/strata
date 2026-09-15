@@ -4,6 +4,7 @@ import dev.s7a.strata.geometry.Constraints
 import dev.s7a.strata.geometry.Insets
 import dev.s7a.strata.geometry.IntOffset
 import dev.s7a.strata.geometry.IntSize
+import dev.s7a.strata.internal.toIntExact
 import dev.s7a.strata.layout.LayoutScope
 import dev.s7a.strata.layout.MeasureScope
 import dev.s7a.strata.node.DirtyMask
@@ -50,8 +51,8 @@ internal object PaddingModifier {
             constraints: Constraints,
         ): IntSize {
             require(scope.childCount == 1) { "A padding modifier must have exactly one virtual child." }
-            val horizontal = Math.addExact(insets.left, insets.right)
-            val vertical = Math.addExact(insets.top, insets.bottom)
+            val horizontal = insets.left + insets.right
+            val vertical = insets.top + insets.bottom
             val childConstraints =
                 Constraints(
                     minWidth = subtractMinimum(constraints.minWidth, horizontal),
@@ -62,8 +63,8 @@ internal object PaddingModifier {
             val childSize = scope.measureChild(0, childConstraints)
             return constraints.constrain(
                 IntSize(
-                    width = Math.addExact(childSize.width, horizontal),
-                    height = Math.addExact(childSize.height, vertical),
+                    width = (childSize.width.toLong() + horizontal).toIntExact(),
+                    height = (childSize.height.toLong() + vertical).toIntExact(),
                 ),
             )
         }

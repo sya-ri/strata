@@ -1,5 +1,7 @@
 package dev.s7a.strata.geometry
 
+import dev.s7a.strata.internal.toIntExact
+
 /**
  * An immutable integer coordinate or displacement.
  *
@@ -16,7 +18,7 @@ public data class IntOffset(
      * @param other the offset to add.
      * @return the checked coordinate sum.
      */
-    public operator fun plus(other: IntOffset): IntOffset = IntOffset(Math.addExact(x, other.x), Math.addExact(y, other.y))
+    public operator fun plus(other: IntOffset): IntOffset = IntOffset((x.toLong() + other.x).toIntExact(), (y.toLong() + other.y).toIntExact())
 
     /**
      * Subtracts two offsets and fails when either coordinate would overflow.
@@ -24,7 +26,7 @@ public data class IntOffset(
      * @param other the offset to subtract.
      * @return the checked coordinate difference.
      */
-    public operator fun minus(other: IntOffset): IntOffset = IntOffset(Math.subtractExact(x, other.x), Math.subtractExact(y, other.y))
+    public operator fun minus(other: IntOffset): IntOffset = IntOffset((x.toLong() - other.x).toIntExact(), (y.toLong() - other.y).toIntExact())
 
     /**
      * Common offset constants.

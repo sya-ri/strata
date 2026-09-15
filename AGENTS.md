@@ -39,6 +39,8 @@ Read the linked contract only when the change touches that area; [architecture](
   Link shared contracts instead of repeating them across overloads.
   Test methods are exempt, and overrides may inherit documentation.
   Document enum values when their meaning adds to the name or enclosing contract; do not repeat adjacent display text.
+  Do not put empty lines immediately after a KDoc opening delimiter or before its closing delimiter, including asterisk-only padding lines.
+  Inside KDoc, mark paragraph-separating blank lines with `*`; never leave a physically blank line.
   Implementation comments explain non-obvious rationale or invariants, not the code in prose.
 - Keep at most one named top-level type per source file.
   A file containing only extensions may group functions for one domain and receiver.

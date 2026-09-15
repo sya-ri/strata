@@ -1,7 +1,5 @@
 package dev.s7a.strata.runtime.minecraft.font
 
-import java.util.Collections
-
 /**
  * Immutable thread-safe in-memory pack source used by adapters and deterministic fixtures.
  * Construction copies all bytes and paths; reads always return a fresh array.
@@ -26,10 +24,11 @@ public class MinecraftMemoryFontAssetSource(
             requireFontLimit(bytes.size.toLong(), limits.maxInputBytes - total, "in-memory source bytes")
             total += bytes.size
         }
-        this.files = Collections.unmodifiableMap(files.mapKeys { (path, _) -> path.checkedFontSourcePath() }.mapValues { (_, bytes) -> bytes.copyOf() })
+        files.keys.forEach { path -> path.checkedFontSourcePath() }
+        this.files = files.mapValues { (_, bytes) -> bytes.copyOf() }
     }
 
-    private val filePaths: Set<String> = Collections.unmodifiableSet(LinkedHashSet(this.files.keys))
+    private val filePaths: Set<String> = this.files.keys.toSet()
 
     /**
      * Copies an in-memory source using default ceilings while retaining the existing constructor signature.

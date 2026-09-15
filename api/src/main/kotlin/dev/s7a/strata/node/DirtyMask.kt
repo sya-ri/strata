@@ -1,5 +1,7 @@
 package dev.s7a.strata.node
 
+import kotlin.jvm.JvmInline
+
 /**
  * Immutable set of phases affected by a property change.
  *

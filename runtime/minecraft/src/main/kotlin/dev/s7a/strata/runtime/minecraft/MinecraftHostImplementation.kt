@@ -1,5 +1,6 @@
 package dev.s7a.strata.runtime.minecraft
 
+import dev.s7a.strata.component.UiScope
 import dev.s7a.strata.element.Element
 import dev.s7a.strata.geometry.Constraints
 import dev.s7a.strata.geometry.IntSize
@@ -46,8 +47,8 @@ internal object MinecraftHostImplementation {
         val textRenderer = MinecraftProfileImplementation.createTextRenderer(profile, fontBackend)
         return runCatching {
             val transferred = definition.transfer()
-            val evaluator = MinecraftProfileImplementation.createEvaluator(profile, transferred.content, platform, textRenderer)
-            val session = createRuntimeUiSession(evaluator)
+            val evaluator = MinecraftProfileImplementation.createEvaluator(profile, platform, textRenderer)
+            val session = createRuntimeUiSession { evaluator(transferred.content) }
             Host.create(session, evaluator, platform, textRenderer, transferred.title, transferred.pausesGame)
         }.getOrElse { failure ->
             runCatching { textRenderer.close() }.exceptionOrNull()?.let { cleanup ->
@@ -84,15 +85,15 @@ internal object MinecraftHostImplementation {
     @Suppress("TooManyFunctions")
     private class Host private constructor(
         private val session: RuntimeUiSession,
-        initialEvaluator: () -> Element,
+        initialEvaluator: (UiScope.() -> Unit) -> Element,
         initialPlatform: MinecraftUiPlatform?,
         initialTextRenderer: MinecraftTextRenderer,
         title: UiText,
         pausesGame: Boolean,
     ) : MinecraftUiHost {
         private val ownerThread = Thread.currentThread()
-        private var evaluator: (() -> Element)? = initialEvaluator
-        private var resourceEvaluator: (() -> Element)? = initialEvaluator
+        private var evaluator: ((UiScope.() -> Unit) -> Element)? = initialEvaluator
+        private var resourceEvaluator: ((UiScope.() -> Unit) -> Element)? = initialEvaluator
         private var platform: MinecraftUiPlatform? = initialPlatform
         private var textRenderer: MinecraftTextRenderer? = initialTextRenderer
         private var metadata: Metadata? = Metadata(title, pausesGame)
@@ -126,7 +127,6 @@ internal object MinecraftHostImplementation {
                 runCatching { session.attach() }.getOrElse { failure -> fail(failure) }
                 state = State.Attached
             } finally {
-                releaseEvaluator()
                 operation = null
             }
         }
@@ -313,7 +313,7 @@ internal object MinecraftHostImplementation {
              * Creates the private host implementation without a public constructor.
              *
              * @param session independently owned core runtime session.
-             * @param evaluator one-shot content evaluator released with the host.
+             * @param evaluator reusable content-free component resources released with the host.
              * @param platform optional version services owned until terminal close.
              * @param textRenderer independently owned text service closed after the retained session.
              * @param title exact unresolved transferred title.
@@ -323,7 +323,7 @@ internal object MinecraftHostImplementation {
             @JvmSynthetic
             internal fun create(
                 session: RuntimeUiSession,
-                evaluator: () -> Element,
+                evaluator: (UiScope.() -> Unit) -> Element,
                 platform: MinecraftUiPlatform?,
                 textRenderer: MinecraftTextRenderer,
                 title: UiText,

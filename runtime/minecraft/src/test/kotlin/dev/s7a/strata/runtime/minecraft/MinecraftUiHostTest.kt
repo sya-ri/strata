@@ -159,8 +159,6 @@ internal class MinecraftUiHostTest {
         assertEquals(IntSize(4, 3), first.size)
         assertEquals(listOf(Constraints.fixed(4, 3)), probe.constraints)
         assertEquals(InputResult.Consumed, host.dispatchPointer(PointerEvent.Move(IntOffset.Zero)))
-        assertThrows(UnsupportedOperationException::class.java) { (first.drawCommands as MutableList).clear() }
-        assertThrows(UnsupportedOperationException::class.java) { (first.semantics as MutableList).clear() }
 
         retained.invalidatePaint()
         val paintsBeforeReattach = probe.paintCalls
@@ -243,7 +241,7 @@ internal class MinecraftUiHostTest {
     }
 
     @Test
-    fun evaluatorOwnershipClearsBeforeCloseAndAfterEvaluationOrFailure() {
+    fun evaluatorResourcesRemainForReevaluationAndClearAtTerminalRelease() {
         val beforeAttach = host { MinecraftHostProbe().element() }
         assertTrue(readPrivateField(beforeAttach, "evaluator") != null)
         beforeAttach.close()
@@ -251,8 +249,9 @@ internal class MinecraftUiHostTest {
 
         val afterAttach = host { MinecraftHostProbe().element() }
         afterAttach.attach()
-        assertNull(readPrivateField(afterAttach, "evaluator"))
+        assertTrue(readPrivateField(afterAttach, "evaluator") != null)
         afterAttach.close()
+        assertNull(readPrivateField(afterAttach, "evaluator"))
 
         val failure = IllegalStateException("content")
         val failed = host { throw failure }

@@ -272,7 +272,7 @@ fi
 for publication_contract in \
   'val releasePublicationProjectPaths =' \
   'val releaseArtifactByProjectPath =' \
-  'val releaseArtifacts = releasePublicationProjectPaths.map' \
+  'val releaseArtifacts = releasePublicationProjectPaths.flatMap' \
   'dependsOn("mavenArtifactInventory")' \
   'dependsOn(verifyReleasePublicationMatrix)' \
   'mavenArtifacts.set(releaseArtifacts)'; do

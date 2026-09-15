@@ -4,6 +4,17 @@ Strata separates application declarations from retained UI behavior and platform
 This document defines module responsibilities and extension boundaries for contributors.
 For application use, start with [screens and state](../guides/screens-and-state.md).
 
+The API and retained core share their implementation between JVM and JavaScript; platform-specific synchronization, identity, and coroutine-context adapters preserve the same observable contracts.
+Headless and Minecraft integration remain JVM adapters.
+Prefer Kotlin standard-library facilities in shared code: `toList()` and `toMap()` copy caller-owned collections into read-only snapshots, and standard atomics preserve cross-thread ownership with implementation-local experimental opt-ins.
+Collection snapshots are shallow: they detach collection membership from the input but retain the element references.
+Consumers must respect the read-only collection types; mutation through casts or Java collection methods is unsupported and is not required to throw.
+Element immutability is defined by each element contract.
+Keep custom platform adapters only where the standard library cannot supply the required contract.
+Synchronous evaluation contexts restore the caller's value on every exit and isolate JVM owners with a private thread local; JavaScript stores only the value currently executing in its agent.
+Coroutine generation propagation belongs to the session implementation described in [UI sessions](ui-sessions.md#coroutine-generations).
+Use ordinary arithmetic when validated input bounds guarantee representable results; check coordinate, extent, and allocation boundaries before narrowing or accepting external values.
+
 ## Module boundaries
 
 | Module | Responsibility | Dependency boundary |
@@ -11,6 +22,7 @@ For application use, start with [screens and state](../guides/screens-and-state.
 | `api` | Screen definitions, components and state, resource identifiers, modifiers, and the public Element/Node SPI. | Platform-neutral; sufficient for application compilation. |
 | `runtime:core` | Reconciliation, retained phases, input, semantics, and internal session orchestration. | Depends on `api`; contains no Minecraft integration. |
 | `runtime:headless` | Portable command rasterization, immutable frames, and deterministic PNG output. | Uses core contracts without a desktop graphics dependency. |
+| `runtime:web` | Retained native DOM text, buttons, and progress indicators, including deterministic initial HTML adoption. | JavaScript browser adapter using the shared API and core; other profile capabilities currently fail explicitly. |
 | `runtime:minecraft` | Profile-backed component implementation, resources, bindings, and screen hosts. | Depends on public contracts and core without mapped game types. |
 | `runtime:minecraft-fonts-lwjgl` | Optional CPU font decoding, rasterization, and text ordering. | Uses common font contracts and target-matched native libraries. |
 | `runtime:minecraft-fabric-<version>` | Native screen, resource, input, and presentation adapters for one exact target. | Owns mapped Minecraft and Fabric dependencies. |

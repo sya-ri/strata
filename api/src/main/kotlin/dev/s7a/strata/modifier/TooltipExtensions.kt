@@ -5,6 +5,7 @@ package dev.s7a.strata.modifier
 import dev.s7a.strata.spi.ComponentRuntimeBridge
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
 import dev.s7a.strata.text.UiText
+import kotlin.jvm.JvmName
 
 /**
  * Shows a profile-backed root tooltip while the modified element remains hovered.

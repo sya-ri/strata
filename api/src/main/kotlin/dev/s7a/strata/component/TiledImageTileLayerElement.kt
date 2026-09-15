@@ -10,6 +10,7 @@ import dev.s7a.strata.geometry.DoubleOffset
 import dev.s7a.strata.geometry.FloatRect
 import dev.s7a.strata.geometry.IntSize
 import dev.s7a.strata.geometry.LongRect
+import dev.s7a.strata.internal.platform.synchronized
 import dev.s7a.strata.layout.LayoutScope
 import dev.s7a.strata.layout.MeasureScope
 import dev.s7a.strata.modifier.Modifier
@@ -24,7 +25,6 @@ import dev.s7a.strata.render.PaintScope
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
 import dev.s7a.strata.state.StateSnapshot
 import dev.s7a.strata.state.StateSubscription
-import java.util.LinkedHashMap
 import dev.s7a.strata.node.Node as RetainedNode
 
 /**
@@ -76,7 +76,7 @@ internal class TiledImageTileLayerElement(
         PaintNode,
         FrameCutoffNode,
         SessionAttachmentNode {
-        private val frameGate: Any = Any()
+        private val frameGate = Any()
         private val entries: MutableMap<TiledImageTileId, TileEntry> = LinkedHashMap()
         private var plan: TilePlan = TilePlan.Empty
         private var observer: PanZoomStateObserver? = null
@@ -262,21 +262,21 @@ internal class TiledImageTileLayerElement(
         }
 
         private fun fitsPolicy(ranges: List<LevelRange>): Boolean {
-            var entries = 0L
-            var bytes = 0L
-            return try {
-                ranges.forEach { levelRange ->
-                    val count = levelRange.range.count()
-                    entries = Math.addExact(entries, count)
-                    val level = levels[levelRange.level]
-                    val pixels = Math.multiplyExact(level.tilePixelSize.width.toLong(), level.tilePixelSize.height.toLong())
-                    val tileBytes = Math.multiplyExact(pixels, 4L)
-                    bytes = Math.addExact(bytes, Math.multiplyExact(count, tileBytes))
-                }
-                entries <= cachePolicy.maxEntries.toLong() && bytes <= cachePolicy.maxBytes
-            } catch (_: ArithmeticException) {
-                false
+            var remainingEntries = cachePolicy.maxEntries.toLong()
+            var remainingBytes = cachePolicy.maxBytes
+            for ((levelIndex, range) in ranges) {
+                val columns = range.lastColumnExclusive - range.firstColumn
+                val rows = range.lastRowExclusive - range.firstRow
+                if (columns == 0L || rows == 0L) continue
+                if (remainingEntries / rows < columns) return false
+                val count = columns * rows
+                val size = levels[levelIndex].tilePixelSize
+                val pixels = size.width.toLong() * size.height
+                if (remainingBytes / 4L / count < pixels) return false
+                remainingEntries -= count
+                remainingBytes -= count * pixels * 4L
             }
+            return true
         }
 
         private fun visibleContent(metrics: PanZoomMetrics): VisibleContent {
@@ -315,17 +315,17 @@ internal class TiledImageTileLayerElement(
             halfExtent: Double,
             overscan: Int,
         ): TileAxisRange {
-            val minimumIndex = Math.floorDiv(minimumContent, tileExtent)
-            val maximumIndex = Math.addExact(Math.floorDiv(Math.subtractExact(maximumContent, 1L), tileExtent), 1L)
+            val minimumIndex = minimumContent.floorDiv(tileExtent)
+            val maximumIndex = (maximumContent - 1L).floorDiv(tileExtent) + 1L
             val visibleFirst =
                 lowerBoundTile(minimumIndex, maximumIndex) { index ->
-                    val left = Math.multiplyExact(index, tileExtent)
-                    val right = Math.addExact(left, tileExtent)
+                    val left = index * tileExtent
+                    val right = left + tileExtent
                     -halfExtent < relativeCoordinate(right, center)
                 }
             val visibleLastExclusive =
                 lowerBoundTile(visibleFirst, maximumIndex) { index ->
-                    val left = Math.multiplyExact(index, tileExtent)
+                    val left = index * tileExtent
                     halfExtent <= relativeCoordinate(left, center)
                 }
             val margin = overscan.toLong()
@@ -343,12 +343,11 @@ internal class TiledImageTileLayerElement(
             var low = first
             var high = lastExclusive
             while (low < high) {
-                val distance = Math.subtractExact(high, low)
-                val middle = Math.addExact(low, distance / 2L)
+                val middle = low + (high - low) / 2L
                 if (matches(middle)) {
                     high = middle
                 } else {
-                    low = Math.incrementExact(middle)
+                    low = middle + 1L
                 }
             }
             return low
@@ -362,14 +361,14 @@ internal class TiledImageTileLayerElement(
             val level = levels[levelIndex]
             val width = tileContentWidth(level)
             val height = tileContentHeight(level)
-            val left = Math.multiplyExact(column, width)
-            val top = Math.multiplyExact(row, height)
+            val left = column * width
+            val top = row * height
             return TileCell(
                 id = TiledImageTileId(levelIndex, column, row),
                 left = left,
                 top = top,
-                right = Math.addExact(left, width),
-                bottom = Math.addExact(top, height),
+                right = left + width,
+                bottom = top + height,
             )
         }
 
@@ -423,12 +422,9 @@ internal class TiledImageTileLayerElement(
             center: Double,
         ): Double {
             val integerCenter = center.toLong()
-            val integerDelta =
-                try {
-                    Math.subtractExact(value, integerCenter)
-                } catch (_: ArithmeticException) {
-                    return value.toDouble() - center
-                }
+            val integerDelta = value - integerCenter
+            // Preserve nearby integer precision; a reversed sign identifies an overflowing subtraction.
+            if ((value < integerCenter) != (integerDelta < 0L)) return value.toDouble() - center
             return integerDelta.toDouble() - (center - integerCenter.toDouble())
         }
 
@@ -462,9 +458,9 @@ internal class TiledImageTileLayerElement(
             return previous
         }
 
-        private fun tileContentWidth(level: TiledImageLevel): Long = Math.multiplyExact(level.tilePixelSize.width.toLong(), level.contentUnitsPerPixel)
+        private fun tileContentWidth(level: TiledImageLevel): Long = level.tilePixelSize.width * level.contentUnitsPerPixel
 
-        private fun tileContentHeight(level: TiledImageLevel): Long = Math.multiplyExact(level.tilePixelSize.height.toLong(), level.contentUnitsPerPixel)
+        private fun tileContentHeight(level: TiledImageLevel): Long = level.tilePixelSize.height * level.contentUnitsPerPixel
 
         private fun saturatingSubtract(
             value: Long,
@@ -521,7 +517,6 @@ internal class TiledImageTileLayerElement(
             }
 
             fun captureFrameLocked() {
-                check(Thread.holdsLock(frameGate)) { "A tiled image frame cutoff requires its shared gate." }
                 check(closed.not()) { "A closed tiled image observation cannot capture a frame." }
                 check(frameCaptured.not()) { "A tiled image frame cutoff is already captured." }
                 captured = pending
@@ -539,7 +534,6 @@ internal class TiledImageTileLayerElement(
             }
 
             fun applyCapturedLocked(): Boolean {
-                check(Thread.holdsLock(frameGate)) { "A tiled image frame commit requires its shared gate." }
                 check(frameCaptured) { "A tiled image frame must be captured before commit." }
                 frameCaptured = false
                 val next = captured
@@ -591,21 +585,15 @@ internal class TiledImageTileLayerElement(
             val firstRow: Long,
             val lastRowExclusive: Long,
         ) {
-            fun count(): Long =
-                Math.multiplyExact(
-                    Math.subtractExact(lastColumnExclusive, firstColumn),
-                    Math.subtractExact(lastRowExclusive, firstRow),
-                )
-
             fun forEach(action: (Long, Long) -> Unit) {
                 var row = firstRow
                 while (row < lastRowExclusive) {
                     var column = firstColumn
                     while (column < lastColumnExclusive) {
                         action(column, row)
-                        column = Math.incrementExact(column)
+                        column += 1L
                     }
-                    row = Math.incrementExact(row)
+                    row += 1L
                 }
             }
         }

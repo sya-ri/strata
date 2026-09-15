@@ -72,7 +72,6 @@ internal class MinecraftTextAreaConfiguration(
     init {
         require(9 <= size.width && 9 <= size.height) { "Minecraft TextArea size must be at least 9 by 9." }
         innerSize = IntSize(size.width - 8, size.height - 8)
-        require(state.value.length <= state.maxLength) { "Minecraft TextArea state exceeds its maximum length." }
     }
 
     /**

@@ -15,7 +15,7 @@ import dev.s7a.strata.spi.InternalStrataRuntimeApi
  * Operations reject reentrancy except that recursive [close] from its own cleanup is an idempotent no-op.
  * The first successful [frame] gates pointer dispatch.
  * This synchronous bridge does not expose local-state declarations, source bindings, or task launch.
- * Its content is evaluated during the first [attach], while later synchronous changes are driven by retained node invalidation before another [frame].
+ * Its content is evaluated during the first [attach] and reevaluated before a later [frame] when caller-owned observed state changes.
  * The bridge retains the content lambda while created, attached, or detached and releases it before cleanup callbacks after failure or close.
  *
  * Content, reconciliation, pipeline, input, and cleanup failures preserve the exact primary [Throwable] and suppression order defined by the core session.
@@ -64,7 +64,7 @@ public sealed interface RuntimeUiSession :
      *
      * Pending content changes are reconciled before measurement, layout, paint, and semantics run in order on the retained tree.
      * When content was not rebuilt and both constraints and the whole-tree revision are unchanged, implementations may return the same immutable frame instance without rerunning the pipeline.
-     * The returned frame owns detached unmodifiable snapshots and does not retain the session or source collections.
+     * The returned frame owns detached read-only snapshots and does not retain the session or source collections.
      * A pipeline failure poisons the session and performs cleanup before rethrowing the exact primary failure.
      *
      * @param constraints the root measurement constraints for this frame.

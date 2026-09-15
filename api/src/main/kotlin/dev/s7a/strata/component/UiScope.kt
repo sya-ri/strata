@@ -1,8 +1,8 @@
 package dev.s7a.strata.component
 
 import dev.s7a.strata.element.Element
+import dev.s7a.strata.internal.platform.currentThread
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
-import java.util.Collections
 import kotlin.jvm.JvmSynthetic
 
 /**
@@ -14,7 +14,7 @@ import kotlin.jvm.JvmSynthetic
  */
 @StrataDsl
 public sealed class UiScope protected constructor() {
-    private val ownerThread: Thread = Thread.currentThread()
+    private val ownerThread: Any = currentThread()
     private val emittedElements: MutableList<Element> = ArrayList()
     private var active: Boolean = true
 
@@ -40,7 +40,7 @@ public sealed class UiScope protected constructor() {
      */
     @JvmSynthetic
     internal fun checkUsable() {
-        check(Thread.currentThread() === ownerThread) {
+        check(currentThread() === ownerThread) {
             "UiScope can only be used from its constructing thread."
         }
         check(active) {
@@ -53,12 +53,12 @@ public sealed class UiScope protected constructor() {
      *
      * The copy remains valid after this scope is closed, which releases the scope's references to the descriptions.
      *
-     * @return an unmodifiable snapshot for a new parent description.
+     * @return an read-only snapshot for a new parent description.
      */
     @JvmSynthetic
     internal fun childElementsSnapshot(): List<Element> {
         checkUsable()
-        return Collections.unmodifiableList(emittedElements.toList())
+        return emittedElements.toList()
     }
 
     /**

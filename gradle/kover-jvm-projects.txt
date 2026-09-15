@@ -1,6 +1,7 @@
 :api
 :integration:api
 :integration:docs
+:integration:web
 :quality:detekt-rules
 :runtime:core
 :runtime:headless

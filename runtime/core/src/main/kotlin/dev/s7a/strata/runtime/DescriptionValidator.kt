@@ -3,9 +3,8 @@ package dev.s7a.strata.runtime
 import dev.s7a.strata.element.Element
 import dev.s7a.strata.element.ElementIdentity
 import dev.s7a.strata.element.ElementKey
+import dev.s7a.strata.runtime.platform.identitySet
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
-import java.util.Collections
-import java.util.IdentityHashMap
 
 /**
  * Validates a complete element description before retained state is mutated.
@@ -18,7 +17,7 @@ internal class DescriptionValidator {
      * @param root the proposed root description.
      */
     fun validate(root: Element) {
-        val active = Collections.newSetFromMap(IdentityHashMap<Element, Boolean>())
+        val active = identitySet<Element>()
         visit(root, active)
     }
 
@@ -28,7 +27,7 @@ internal class DescriptionValidator {
      * @param children complete proposed direct-child descriptions.
      */
     fun validateChildren(children: List<Element>) {
-        val active = Collections.newSetFromMap(IdentityHashMap<Element, Boolean>())
+        val active = identitySet<Element>()
         val keys = HashSet<ElementKey<*>>()
         children.forEach { child ->
             val identity = child.identity

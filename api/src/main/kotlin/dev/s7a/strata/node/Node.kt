@@ -1,7 +1,8 @@
 package dev.s7a.strata.node
 
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
-import java.util.concurrent.atomic.AtomicReference
+import kotlin.concurrent.atomics.AtomicReference
+import kotlin.concurrent.atomics.ExperimentalAtomicApi
 
 /**
  * Base retained node with phase invalidation only.
@@ -11,6 +12,7 @@ import java.util.concurrent.atomic.AtomicReference
  * Concrete behavior is expressed by capability interfaces.
  * Nodes acquire external resources from lifecycle attachment, never from their constructors.
  */
+@OptIn(ExperimentalAtomicApi::class)
 public abstract class Node {
     private val binding = AtomicReference<BindingState>(BindingState.Unclaimed)
 
@@ -29,7 +31,7 @@ public abstract class Node {
      * It is also thrown when the runtime callback rejects the calling thread.
      */
     protected fun invalidate(mask: DirtyMask) {
-        val active = binding.get() as? ActiveBinding
+        val active = binding.load() as? ActiveBinding
         checkNotNull(active) { "Node invalidation requires a runtime-bound node." }.callback.invoke(mask)
     }
 

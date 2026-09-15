@@ -18,7 +18,7 @@ public interface StateObserverNode {
     public val observedSources: List<StateSource<*>>
 
     /**
-     * Receives the frame's immutable value list in source declaration order.
+     * Receives the frame's read-only value list in source declaration order.
      * Values may be null and remain owned by their sources; the runtime never deep-copies them.
      */
     public fun commitObservedValues(values: List<Any?>)

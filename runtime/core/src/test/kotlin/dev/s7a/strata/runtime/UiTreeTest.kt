@@ -62,18 +62,12 @@ internal class UiTreeTest {
         tree.update(TestElement(ArgbColor(0xFFFF0000.toInt())))
         val commands = tree.paintAfterMeasureAndLayout()
         assertEquals(ArgbColor(0xFFFF0000.toInt()), (commands.single() as DrawCommand.FillRectangle).color)
-        assertThrows(UnsupportedOperationException::class.java) {
-            (commands as MutableList<DrawCommand>).add(commands.single())
-        }
         assertEquals(
             InputResult.Consumed,
             tree.dispatchPointer(PointerEvent.Press(IntOffset(1, 1), PointerButton.Primary)),
         )
         val semantics = tree.semantics()
         assertEquals(UiText.Literal("test"), semantics.single().semantics.label)
-        assertThrows(UnsupportedOperationException::class.java) {
-            (semantics as MutableList<SemanticsEntry>).add(semantics.single())
-        }
         tree.close()
     }
 

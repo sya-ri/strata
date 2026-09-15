@@ -5,7 +5,6 @@ import com.mojang.blaze3d.pipeline.ColorTargetState
 import com.mojang.blaze3d.pipeline.RenderPipeline
 import net.minecraft.client.renderer.state.gui.GuiElementRenderState
 import net.minecraft.client.renderer.state.gui.GuiRenderState
-import java.util.EnumMap
 import java.util.IdentityHashMap
 import java.util.function.Consumer
 
@@ -31,7 +30,7 @@ internal class MinecraftNativeFontCaptureState(
      * Unsupported formats, extra color attachments, capacity overflow, and reuse after close fail the capture instead of changing native rendering behavior.
      */
     internal class Pipelines : AutoCloseable {
-        private val originals = IdentityHashMap<RenderPipeline, EnumMap<GpuFormat, RenderPipeline>>()
+        private val originals = IdentityHashMap<RenderPipeline, MutableMap<GpuFormat, RenderPipeline>>()
         private var closed = false
 
         /**
@@ -47,7 +46,7 @@ internal class MinecraftNativeFontCaptureState(
             val formats =
                 originals.getOrPut(original) {
                     check(originals.size < MAX_ORIGINAL_PIPELINES) { "Native capture exceeded its bounded pipeline set." }
-                    EnumMap(GpuFormat::class.java)
+                    mutableMapOf()
                 }
             return formats.getOrPut(format) { Pipeline(original, format) }
         }

@@ -1,13 +1,12 @@
 package dev.s7a.strata.component
 
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
-import java.util.Collections
 import kotlin.enums.enumEntries
 
 /**
  * Caller-owned selected value and display conversion for one generic CycleButton.
  *
- * The immutable nonempty option snapshot defines forward and backward wraparound order.
+ * The read-only nonempty option snapshot defines forward and backward wraparound order.
  * Every value must be unique by equality, and writes outside the option set fail without mutation.
  * The primary list constructor uses [Any.toString], while the collection constructor and enum factory retain their supplied conversion for the state lifetime.
  * Selection, observation, and display conversion are confined to the thread that creates the state.
@@ -22,7 +21,7 @@ public class CycleButtonState<T : Any>(
     values: List<T>,
     initialValue: T,
 ) {
-    public val values: List<T> = Collections.unmodifiableList(values.toList())
+    public val values: List<T> = values.toList()
     private var valueToString: (T) -> String = { value -> value.toString() }
     private val observable: ObservableComponentState<T>
 
@@ -76,7 +75,7 @@ public class CycleButtonState<T : Any>(
     /**
      * Formats one option through the conversion supplied at construction.
      *
-     * The canonical member from the immutable option snapshot is passed to the conversion.
+     * The canonical member from the read-only option snapshot is passed to the conversion.
      *
      * @param value option equal to one member of [CycleButtonState.values].
      * @return display string produced synchronously on the state-owning thread.
@@ -124,7 +123,7 @@ public class CycleButtonState<T : Any>(
 
     private fun move(delta: Int): T {
         val index = values.indexOf(value)
-        val next = values[Math.floorMod(index + delta, values.size)]
+        val next = values[(index + delta).mod(values.size)]
         value = next
         return next
     }

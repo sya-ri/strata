@@ -10,9 +10,8 @@ import dev.s7a.strata.runtime.diagnostics.UiRenderNodeId
 import dev.s7a.strata.runtime.diagnostics.UiRenderNodeKind
 import dev.s7a.strata.runtime.diagnostics.UiRenderOperation
 import dev.s7a.strata.runtime.diagnostics.UiRenderSnapshot
+import dev.s7a.strata.runtime.platform.diagnosticName
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
-import java.util.Collections
-import java.util.IdentityHashMap
 
 /**
  * Bounded owner-thread collector with a detachable public handle and no frame history.
@@ -25,9 +24,9 @@ internal class RenderMonitorImpl(
     activeSubscriptions: Int,
     private var monitoring: RenderMonitoring?,
 ) : UiRenderMonitor {
-    private val threadGuard = ThreadGuard.currentThread()
+    private val threadGuard = ThreadGuard()
     private val totals = RenderWorkCounts()
-    private val live = IdentityHashMap<RetainedEntry, RenderNodeRecord>()
+    private val live = mutableMapOf<RetainedEntry, RenderNodeRecord>()
     private val records = ArrayList<RenderNodeRecord>()
     private var failed = false
     private var finalSnapshot: UiRenderSnapshot? = null
@@ -112,7 +111,7 @@ internal class RenderMonitorImpl(
         return UiRenderSnapshot(
             totals.totals(),
             totals.operations(),
-            Collections.unmodifiableList(records.map { it.snapshot() }),
+            records.map { it.snapshot() },
             subscriptions,
             overflowed,
         )
@@ -120,13 +119,11 @@ internal class RenderMonitorImpl(
 
     override fun findNodes(key: ElementKey<*>): List<UiRenderNodeId> {
         checkBoundary()
-        return Collections.unmodifiableList(
-            records.mapNotNull { record ->
-                val entry = record.entry as? RetainedNode
-                val identity = entry?.element?.identity as? ElementIdentity.Keyed
-                if (identity?.key == key) record.id else null
-            },
-        )
+        return records.mapNotNull { record ->
+            val entry = record.entry as? RetainedNode
+            val identity = entry?.element?.identity as? ElementIdentity.Keyed
+            if (identity?.key == key) record.id else null
+        }
     }
 
     override fun close() {
@@ -182,7 +179,7 @@ internal class RenderMonitorImpl(
                 UiRenderNodeId(entry.diagnosticId.takeUnless { it == 0L } ?: checkNotNull(monitoring).allocateId().also { entry.diagnosticId = it }),
                 entry,
                 if (entry is RetainedNode) UiRenderNodeKind.Component else UiRenderNodeKind.Modifier,
-                entry.node.javaClass.name,
+                diagnosticName(entry.node),
             )
         live[entry] = record
         records.add(record)

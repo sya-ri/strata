@@ -22,7 +22,7 @@ internal class StrataSkillPipelineTest {
                     root.resolve("integration/docs/build/strata-skill/test").toString(),
                     root.resolve("integration/docs/src/skillExamples/kotlin").toString(),
                     releaseVersion,
-                    root.resolve("api/build/classes/kotlin/main").toString(),
+                    CompiledApiFixture.classes.toString(),
                 ),
             )
 
@@ -83,7 +83,7 @@ internal class StrataSkillPipelineTest {
                     root.resolve("integration/docs/build/strata-skill/test").toString(),
                     root.resolve("integration/docs/src/skillExamples/kotlin").toString(),
                     "latest",
-                    root.resolve("api/build/classes/kotlin/main").toString(),
+                    CompiledApiFixture.classes.toString(),
                 ),
             )
         }

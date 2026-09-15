@@ -201,23 +201,17 @@ internal class RuntimeUiSessionBridgeTest {
     }
 
     @Test
-    fun frameSnapshotsAreStableAndRejectJavaMutableCasts() {
+    fun frameSnapshotsSurviveSessionClose() {
         val probe = TestProbe()
         val session = createRuntimeUiSession { probe.root(emptyList()) }
         session.attach()
         val frame = session.frame(Constraints.fixed(2, 1))
         val sourceDrawCommands = frame.drawCommands.toList()
         val sourceSemantics = frame.semantics.toList()
+        session.close()
 
-        assertThrows(UnsupportedOperationException::class.java) {
-            (frame.drawCommands as MutableList).clear()
-        }
-        assertThrows(UnsupportedOperationException::class.java) {
-            (frame.semantics as MutableList).clear()
-        }
         assertEquals(sourceDrawCommands, frame.drawCommands)
         assertEquals(sourceSemantics, frame.semantics)
-        session.close()
     }
 
     @Test

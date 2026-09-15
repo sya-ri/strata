@@ -21,7 +21,7 @@ internal class ShowcaseInventoryTest {
 
     @Test
     fun realApiOutputDiscoversOnlyDocumentedComponents() {
-        val classes = repositoryRoot().resolve("api/build/classes/kotlin/main")
+        val classes = CompiledApiFixture.classes
         assertTrue(Files.isDirectory(classes))
 
         assertEquals(DocumentedComponent.entries.toSet(), ShowcaseInventory.discover(listOf(classes)))
@@ -29,7 +29,7 @@ internal class ShowcaseInventoryTest {
 
     @Test
     fun duplicateDirectoriesBinaryNamesAndUnsafeRootsAreRejected() {
-        val classes = repositoryRoot().resolve("api/build/classes/kotlin/main")
+        val classes = CompiledApiFixture.classes
         val duplicate =
             assertThrows(IllegalArgumentException::class.java) {
                 ShowcaseInventory.discover(listOf(classes, classes))
@@ -135,7 +135,7 @@ internal class ShowcaseInventoryTest {
 
     private fun repositoryRoot(): Path {
         val current = Path.of(System.getProperty("user.dir")).toAbsolutePath().normalize()
-        return if (Files.isDirectory(current.resolve("api/build/classes/kotlin/main"))) current else current.resolve("../..").normalize()
+        return if (Files.isDirectory(current.resolve("api"))) current else current.resolve("../..").normalize()
     }
 
     private fun copyClass(
@@ -167,7 +167,7 @@ internal class ShowcaseInventoryTest {
                 "-classpath",
                 listOf(
                     System.getProperty("java.class.path"),
-                    repositoryRoot().resolve("api/build/classes/kotlin/main").toString(),
+                    CompiledApiFixture.classes.toString(),
                 ).joinToString(File.pathSeparator),
                 "-d",
                 output.toString(),

@@ -9,7 +9,7 @@ The typed Minecraft target matrix owns versions, toolchains, distributions, pair
 It derives task selection, artifact coordinates, sequencing, and runtime Java compatibility.
 `verifyMinecraftFabricTargetMatrix` rejects missing owners.
 
-Configuration on demand keeps targeted common tasks from configuring every Loom project.
+Configuration on demand is disabled because the Kotlin/JS workspace and dependency lock require a complete project model.
 Integration projects evaluate their paired runtime before reading compiled output; documentation launchers inherit dependencies from their runtime classpath.
 Full verification selects every required target through task dependencies.
 
@@ -48,6 +48,11 @@ Qodana uses its recommended JVM profile without a baseline and receives every ca
 The workflow explicitly selects `qodana-jvm-community` in native mode so analysis can use the installed toolchains and restored Gradle user home.
 One `--no-daemon` Gradle invocation compiles `classes` and `gametestClasses`, assembles the five plain common jars required by Loom's nested-library model, and generates the IDEA model.
 Its JVM exits before analysis; compiled inputs remain available without assembling remapped distributions.
+API/core use their `jvmJar` tasks, and multiplatform JVM modules expose common and JVM production/test roots with their real JVM classpaths.
+Qodana's JVM model covers that JVM view; JavaScript-specific sources are checked by Detekt, the Kotlin/JS compiler, and browser tests.
+The generated model co-locates common and JVM declarations without KMP source-set relationships, so `UnusedSymbol` can miss real calls across `expect`/`actual` declarations and typealiases.
+The configuration lists only the affected bridge files for that inspection; other inspections and the zero failure threshold remain enabled.
+Before extending that list, verify real callers and remove unused operations from every target; remove the exceptions when the analysis model can resolve those relationships.
 
 Bootstrap disables configuration on demand and sets `strata.completeIdeaModel` plus `fabric.loom.ci`.
 The latter preserves mapped binaries without optional source remapping.

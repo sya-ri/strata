@@ -8,13 +8,10 @@ import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertThrows
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
-import java.util.ArrayDeque
 import java.util.concurrent.CopyOnWriteArrayList
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
-import java.util.concurrent.atomic.AtomicBoolean
-import java.util.concurrent.atomic.AtomicInteger
 
 /**
  * Verifies source linearization, ordered delivery, and terminal observation behavior.
@@ -56,8 +53,8 @@ internal class StateSourceTest {
 
     @Test
     fun callbackCanRunBeforeSubscribeReturns() {
-        val returned = AtomicBoolean()
-        val callbackBeforeReturn = AtomicBoolean()
+        var returned = false
+        var callbackBeforeReturn = false
         val source =
             ConformingSource(
                 initialValue = 0,
@@ -65,12 +62,12 @@ internal class StateSourceTest {
             )
         val subscription =
             source.subscribe {
-                callbackBeforeReturn.set(returned.get().not())
+                callbackBeforeReturn = returned.not()
             }
-        returned.set(true)
+        returned = true
         subscription.close()
 
-        assertTrue(callbackBeforeReturn.get())
+        assertTrue(callbackBeforeReturn)
         assertEquals(StateRevision(0), subscription.initialSnapshot.revision)
     }
 
@@ -102,8 +99,8 @@ internal class StateSourceTest {
 
     @Test
     fun equalRevisionsAcrossSubscriptionsIdentifyOneLogicalSnapshot() {
-        val firstSnapshots = CopyOnWriteArrayList<StateSnapshot<Int>>()
-        val secondSnapshots = CopyOnWriteArrayList<StateSnapshot<Int>>()
+        val firstSnapshots = mutableListOf<StateSnapshot<Int>>()
+        val secondSnapshots = mutableListOf<StateSnapshot<Int>>()
         val source = ConformingSource(0)
         val first = source.subscribe { snapshot -> firstSnapshots.add(snapshot) }
         val second = source.subscribe { snapshot -> secondSnapshots.add(snapshot) }
@@ -119,41 +116,37 @@ internal class StateSourceTest {
 
     @Test
     fun callbacksNeverOverlapOrReenterAndReentrantPublishIsSerialized() {
-        val activeCallbacks = AtomicInteger()
-        val maximumActive = AtomicInteger()
-        val publishDuringCallback = AtomicBoolean(true)
-        val values = CopyOnWriteArrayList<Int>()
+        var activeCallbacks = 0
+        var maximumActive = 0
+        val values = mutableListOf<Int>()
         val source = ConformingSource(0)
         val subscription =
             source.subscribe { snapshot ->
-                val active = activeCallbacks.incrementAndGet()
-                maximumActive.updateAndGet { current -> maxOf(current, active) }
+                activeCallbacks += 1
+                maximumActive = maxOf(maximumActive, activeCallbacks)
                 values.add(snapshot.value)
-                if (publishDuringCallback.compareAndSet(true, false)) {
+                if (values.size == 1) {
                     source.publish(2)
                 }
-                activeCallbacks.decrementAndGet()
+                activeCallbacks -= 1
             }
 
         source.publish(1)
         subscription.close()
 
         assertEquals(listOf(1, 2), values)
-        assertEquals(1, maximumActive.get())
+        assertEquals(1, maximumActive)
     }
 
     @Test
     fun closeFromCallbackStopsLaterNotifications() {
-        val values = CopyOnWriteArrayList<Int>()
-        val closeDuringCallback = AtomicBoolean(true)
+        val values = mutableListOf<Int>()
         val source = ConformingSource(0)
         lateinit var subscription: StateSubscription<Int>
         subscription =
             source.subscribe { snapshot ->
                 values.add(snapshot.value)
-                if (closeDuringCallback.compareAndSet(true, false)) {
-                    subscription.close()
-                }
+                subscription.close()
             }
 
         source.publish(1)
@@ -164,7 +157,7 @@ internal class StateSourceTest {
 
     @Test
     fun revisionExhaustionDoesNotMutateOrNotify() {
-        val received = CopyOnWriteArrayList<StateSnapshot<Int>>()
+        val received = mutableListOf<StateSnapshot<Int>>()
         val source = ConformingSource(0, initialRevision = StateRevision(Long.MAX_VALUE))
         val subscription = source.subscribe { snapshot -> received.add(snapshot) }
 

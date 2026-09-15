@@ -1,11 +1,10 @@
 package dev.s7a.strata.runtime
 
 import dev.s7a.strata.node.StateObserverNode
+import dev.s7a.strata.runtime.platform.identitySet
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
 import dev.s7a.strata.state.DerivedStateSource
 import dev.s7a.strata.state.StateSource
-import java.util.Collections
-import java.util.IdentityHashMap
 
 /**
  * One current root or derived observation in a tree-owned dependency graph.
@@ -33,7 +32,7 @@ internal class ObservedSourceBinding(
     /**
      * Identity-indexed UI consumers notified only when this binding's value changes.
      */
-    val consumers: MutableSet<StateObserverNode> = Collections.newSetFromMap(IdentityHashMap())
+    val consumers: MutableSet<StateObserverNode> = identitySet()
 
     /**
      * Last frame-committed value; reads are confined to the owning tree.

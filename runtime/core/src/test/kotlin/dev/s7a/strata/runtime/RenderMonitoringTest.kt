@@ -51,9 +51,6 @@ internal class RenderMonitoringTest {
                 assertEquals(1L, changed.counts[UiRenderMetric.NodeDispose])
                 assertEquals(1, changed.nodes.count { it.retired })
                 assertEquals(0L, first.counts[UiRenderMetric.NodeDispose])
-                assertThrows(UnsupportedOperationException::class.java) {
-                    (first.counts as MutableMap)[UiRenderMetric.NodeCreate] = 999L
-                }
                 monitor.checkpoint()
                 assertEquals(1, monitor.snapshot().nodes.size)
             }

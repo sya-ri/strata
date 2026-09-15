@@ -16,7 +16,7 @@ internal class KotlinSourceSignatureInventoryTest {
     @Test
     fun sourceSignaturesMatchCompiledComponentAndModifierGroups() {
         val root = repositoryRoot()
-        val classes = root.resolve("api/build/classes/kotlin/main")
+        val classes = CompiledApiFixture.classes
         val source = KotlinSourceSignatureInventory.discover(root.resolve("api/src/main/kotlin"))
         val components = ShowcaseInventory.discoverOverloads(listOf(classes))
         val modifiers = ModifierInventory.discover(listOf(classes))
@@ -93,7 +93,7 @@ internal class KotlinSourceSignatureInventoryTest {
     @Test
     fun binaryPairingRejectsAPropertyFingerprintMovedToItsSiblingOwner() {
         val root = repositoryRoot()
-        val classes = listOf(root.resolve("api/build/classes/kotlin/main"))
+        val classes = listOf(CompiledApiFixture.classes)
         val entry = StateBindingDocumentationCatalog.entries.associateBy(StateBindingDocumentationCatalog.Entry::typeName).getValue("ImageSource")
         val declarations = KotlinSourceSignatureInventory.discover(root.resolve("api/src/main/kotlin")).stateAndBindings.getValue(entry.typeName)
         val fingerprints = StateBindingBinaryInventory.discover(classes).getValue(entry.typeName)

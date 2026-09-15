@@ -1,6 +1,11 @@
-dependencies {
-    testImplementation(libs.junit.jupiter)
-    testRuntimeOnly(libs.junit.platform.launcher)
+kotlin {
+    sourceSets {
+        commonTest.dependencies { implementation(libs.kotlin.test) }
+        jvmTest.dependencies {
+            implementation(libs.junit.jupiter)
+            runtimeOnly(libs.junit.platform.launcher)
+        }
+    }
 }
 
 apply(from = "state-components.gradle.kts")

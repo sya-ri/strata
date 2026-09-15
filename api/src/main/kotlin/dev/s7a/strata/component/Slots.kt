@@ -1,6 +1,7 @@
 package dev.s7a.strata.component
 
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
+import kotlin.jvm.JvmStatic
 
 /**
  * Creates immutable synchronized slot locators without retaining a player, menu, or platform.

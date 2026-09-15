@@ -3,8 +3,6 @@ package dev.s7a.strata.runtime
 import dev.s7a.strata.runtime.diagnostics.UiRenderMetric
 import dev.s7a.strata.runtime.diagnostics.UiRenderOperation
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
-import java.util.Collections
-import java.util.EnumMap
 
 /**
  * Fixed-size primitive counters; detached maps are allocated only for an explicit snapshot.
@@ -33,26 +31,18 @@ internal class RenderWorkCounts {
     /**
      * Copies aggregate counts without retaining this mutable counter.
      */
-    fun totals(): Map<UiRenderMetric, Long> {
-        val result = EnumMap<UiRenderMetric, Long>(UiRenderMetric::class.java)
-        UiRenderMetric.entries.forEach { metric ->
-            result[metric] = UiRenderOperation.entries.sumOf { operation -> count(metric, operation) }
+    fun totals(): Map<UiRenderMetric, Long> =
+        UiRenderMetric.entries.associateWith { metric ->
+            UiRenderOperation.entries.sumOf { operation -> count(metric, operation) }
         }
-        return Collections.unmodifiableMap(result)
-    }
 
     /**
      * Copies counts grouped by host operation.
      */
-    fun operations(): Map<UiRenderOperation, Map<UiRenderMetric, Long>> {
-        val result = EnumMap<UiRenderOperation, Map<UiRenderMetric, Long>>(UiRenderOperation::class.java)
-        UiRenderOperation.entries.forEach { operation ->
-            val metrics = EnumMap<UiRenderMetric, Long>(UiRenderMetric::class.java)
-            UiRenderMetric.entries.forEach { metric -> metrics[metric] = count(metric, operation) }
-            result[operation] = Collections.unmodifiableMap(metrics)
+    fun operations(): Map<UiRenderOperation, Map<UiRenderMetric, Long>> =
+        UiRenderOperation.entries.associateWith { operation ->
+            UiRenderMetric.entries.associateWith { metric -> count(metric, operation) }
         }
-        return Collections.unmodifiableMap(result)
-    }
 
     private fun count(
         metric: UiRenderMetric,

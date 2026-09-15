@@ -53,7 +53,7 @@ Existing exact headless-to-Fabric rendering parity tests remain required so cach
 ### Clean frame reuse
 
 An unchanged session with equal constraints and an unchanged whole-tree revision must return the same immutable core frame instance.
-The public runtime bridge must also return the same immutable bridge snapshot, draw-command list, and semantics list for that clean frame.
+The public runtime bridge returns the session's read-only frame directly, including the same draw-command and semantics lists for that clean frame.
 A content rebuild, changed constraints, retained invalidation, or invalidation raised during a frame must prevent stale reuse and produce a fresh snapshot before the next clean frame can be retained.
 Failure and close paths must clear cached references so a session cannot keep a released tree or content graph alive.
 The time-aware clean path must preserve the same complete frame snapshot when no time-aware node changes observable state.
@@ -61,7 +61,7 @@ Loading indicators and delayed tooltips additionally verify that timestamps insi
 
 ### Bounded raster texture cache
 
-The Fabric presenter reuses the complete partitioned frame when the immutable draw-command list has referential identity, the logical viewport is equal, and the actual GUI scale is unchanged.
+The Fabric presenter reuses the complete partitioned frame when the read-only draw-command list has referential identity, the logical viewport is equal, and the actual GUI scale is unchanged.
 When a mixed portable-and-platform display list changes, portable textures may be reused only when the complete ordered list of localized immutable commands, image extents, viewport, and GUI scale is equal; platform layers are still extracted natively every time.
 Cached foreground paint callbacks do not make overlapping composition free: changing a lower command can invalidate the portable run containing the foreground, requiring its rasterization and upload again.
 The full ordered commands and clips are replayed, so translucent overlays blend against the updated background and erased lower pixels do not persist.

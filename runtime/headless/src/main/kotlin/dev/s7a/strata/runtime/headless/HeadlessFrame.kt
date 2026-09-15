@@ -6,7 +6,7 @@ import dev.s7a.strata.runtime.semantics.SemanticsEntry
 /**
  * An immutable, thread-safe result of one synchronous headless render.
  *
- * The frame retains the physical image and a defensive, unmodifiable snapshot of logical semantics.
+ * The frame retains the physical image and a detached, read-only snapshot of logical semantics.
  * Semantics are in core emission order, remain unscaled and unclipped, and no description, tree, or command list is retained.
  * The image size is exactly the checked logical viewport multiplied by [pixelScale].
  * All exposed frame, image, and semantics reads are safe from any thread after construction.
@@ -33,7 +33,7 @@ public sealed interface HeadlessFrame {
     public val image: HeadlessImage
 
     /**
-     * The defensive, unmodifiable logical semantics snapshot.
+     * The detached, read-only logical semantics snapshot.
      */
     public val semantics: List<SemanticsEntry>
 }

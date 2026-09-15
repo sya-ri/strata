@@ -1,8 +1,13 @@
+@file:OptIn(InternalStrataRuntimeApi::class)
+
 package dev.s7a.strata.runtime
 
+import dev.s7a.strata.element.Element
 import dev.s7a.strata.geometry.Constraints
+import dev.s7a.strata.spi.InternalStrataRuntimeApi
 import kotlinx.coroutines.CoroutineDispatcher
 import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Assertions.assertSame
 import org.junit.jupiter.api.Assertions.assertThrows
 import org.junit.jupiter.api.Test
@@ -16,55 +21,51 @@ internal class SessionContentTest {
     fun detachedSessionRetainsContentUntilCloseReleasesIt() {
         val probe = TestProbe()
         var evaluations = 0
-        val content =
-            SessionContent {
+        val content: () -> Element =
+            {
                 evaluations += 1
                 probe.root(emptyList())
             }
-        val session = UiSession(RejectingDispatcher, contentOwner = content)
+        val session = UiSession(RejectingDispatcher, content = content)
 
         session.attach()
         session.detach()
-        content.evaluate()
-        assertEquals(2, evaluations)
+        assertSame(content, session.retainedContent())
+        assertEquals(1, evaluations)
 
         session.close()
-        assertThrows(IllegalStateException::class.java) { content.evaluate() }
+        assertNull(session.retainedContent())
         session.close()
     }
 
     @Test
     fun closeReleasesContentBeforeLifecycleCleanupCallbacks() {
         val probe = TestProbe()
-        var contentReference: SessionContent? = null
-        val content =
-            SessionContent {
+        lateinit var session: UiSession
+        val content: () -> Element =
+            {
                 probe.element(
                     tag = TestProbe.ProbeId("root"),
                     onDetach = {
-                        assertThrows(IllegalStateException::class.java) {
-                            checkNotNull(contentReference).evaluate()
-                        }
+                        assertNull(session.retainedContent())
                     },
                 )
             }
-        contentReference = content
-        val session = UiSession(RejectingDispatcher, contentOwner = content)
+        session = UiSession(RejectingDispatcher, content = content)
         session.attach()
 
         session.close()
-        assertThrows(IllegalStateException::class.java) { content.evaluate() }
+        assertNull(session.retainedContent())
     }
 
     @Test
     fun terminalFailureReleasesContentAndPreservesItsIdentity() {
         val primary = IllegalArgumentException("content")
-        val content = SessionContent { throw primary }
-        val session = UiSession(RejectingDispatcher, contentOwner = content)
+        val content: () -> Element = { throw primary }
+        val session = UiSession(RejectingDispatcher, content = content)
 
         assertSame(primary, assertThrows(IllegalArgumentException::class.java) { session.attach() })
-        val released = assertThrows(IllegalStateException::class.java) { content.evaluate() }
-        assertEquals("Session content has already been released.", released.message)
+        assertNull(session.retainedContent())
         session.close()
     }
 
@@ -76,20 +77,17 @@ internal class SessionContentTest {
                 failingPaintTag = TestProbe.ProbeId("root"),
                 paintFailure = primary,
             )
-        var contentReference: SessionContent? = null
-        val content =
-            SessionContent {
+        lateinit var session: UiSession
+        val content: () -> Element =
+            {
                 probe.element(
                     tag = TestProbe.ProbeId("root"),
                     onDetach = {
-                        assertThrows(IllegalStateException::class.java) {
-                            checkNotNull(contentReference).evaluate()
-                        }
+                        assertNull(session.retainedContent())
                     },
                 )
             }
-        contentReference = content
-        val session = UiSession(RejectingDispatcher, contentOwner = content)
+        session = UiSession(RejectingDispatcher, content = content)
         session.attach()
 
         val thrown =
@@ -99,6 +97,12 @@ internal class SessionContentTest {
         assertSame(primary, thrown)
         session.close()
     }
+
+    private fun UiSession.retainedContent(): Any? =
+        UiSession::class.java
+            .getDeclaredField("retainedContent")
+            .apply { isAccessible = true }
+            .get(this)
 
     private object RejectingDispatcher : CoroutineDispatcher() {
         override fun dispatch(

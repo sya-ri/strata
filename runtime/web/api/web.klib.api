@@ -1,0 +1,30 @@
+// Klib ABI Dump
+// Targets: [js]
+// Rendering settings:
+// - Signature version: 2
+// - Show manifest properties: true
+// - Show declarations: true
+
+// Library unique name: <dev.s7a.strata:web>
+final enum class dev.s7a.strata.runtime.web/WebTheme : kotlin/Enum<dev.s7a.strata.runtime.web/WebTheme> { // dev.s7a.strata.runtime.web/WebTheme|null[0]
+    enum entry Minecraft // dev.s7a.strata.runtime.web/WebTheme.Minecraft|null[0]
+    enum entry Native // dev.s7a.strata.runtime.web/WebTheme.Native|null[0]
+
+    final val entries // dev.s7a.strata.runtime.web/WebTheme.entries|#static{}entries[0]
+        final fun <get-entries>(): kotlin.enums/EnumEntries<dev.s7a.strata.runtime.web/WebTheme> // dev.s7a.strata.runtime.web/WebTheme.entries.<get-entries>|<get-entries>#static(){}[0]
+
+    final fun valueOf(kotlin/String): dev.s7a.strata.runtime.web/WebTheme // dev.s7a.strata.runtime.web/WebTheme.valueOf|valueOf#static(kotlin.String){}[0]
+    final fun values(): kotlin/Array<dev.s7a.strata.runtime.web/WebTheme> // dev.s7a.strata.runtime.web/WebTheme.values|values#static(){}[0]
+}
+
+final class dev.s7a.strata.runtime.web/WebUiHost : kotlin/AutoCloseable { // dev.s7a.strata.runtime.web/WebUiHost|null[0]
+    final fun close() // dev.s7a.strata.runtime.web/WebUiHost.close|close(){}[0]
+    final fun render(dev.s7a.strata.geometry/IntSize) // dev.s7a.strata.runtime.web/WebUiHost.render|render(dev.s7a.strata.geometry.IntSize){}[0]
+}
+
+final fun dev.s7a.strata.runtime.web/mountWeb(dev.s7a.strata.screen/ScreenDefinition, org.w3c.dom/HTMLElement, dev.s7a.strata.geometry/IntSize): dev.s7a.strata.runtime.web/WebUiHost // dev.s7a.strata.runtime.web/mountWeb|mountWeb(dev.s7a.strata.screen.ScreenDefinition;org.w3c.dom.HTMLElement;dev.s7a.strata.geometry.IntSize){}[0]
+final fun dev.s7a.strata.runtime.web/mountWeb(dev.s7a.strata.screen/ScreenDefinition, org.w3c.dom/HTMLElement, dev.s7a.strata.geometry/IntSize, dev.s7a.strata.runtime.web/WebTheme): dev.s7a.strata.runtime.web/WebUiHost // dev.s7a.strata.runtime.web/mountWeb|mountWeb(dev.s7a.strata.screen.ScreenDefinition;org.w3c.dom.HTMLElement;dev.s7a.strata.geometry.IntSize;dev.s7a.strata.runtime.web.WebTheme){}[0]
+final fun dev.s7a.strata.runtime.web/renderWebDocument(dev.s7a.strata.screen/ScreenDefinition, dev.s7a.strata.geometry/IntSize, kotlin/String, kotlin/String): kotlin/String // dev.s7a.strata.runtime.web/renderWebDocument|renderWebDocument(dev.s7a.strata.screen.ScreenDefinition;dev.s7a.strata.geometry.IntSize;kotlin.String;kotlin.String){}[0]
+final fun dev.s7a.strata.runtime.web/renderWebDocument(dev.s7a.strata.screen/ScreenDefinition, dev.s7a.strata.geometry/IntSize, kotlin/String, kotlin/String, dev.s7a.strata.runtime.web/WebTheme): kotlin/String // dev.s7a.strata.runtime.web/renderWebDocument|renderWebDocument(dev.s7a.strata.screen.ScreenDefinition;dev.s7a.strata.geometry.IntSize;kotlin.String;kotlin.String;dev.s7a.strata.runtime.web.WebTheme){}[0]
+final fun dev.s7a.strata.runtime.web/renderWebHtml(dev.s7a.strata.screen/ScreenDefinition, dev.s7a.strata.geometry/IntSize): kotlin/String // dev.s7a.strata.runtime.web/renderWebHtml|renderWebHtml(dev.s7a.strata.screen.ScreenDefinition;dev.s7a.strata.geometry.IntSize){}[0]
+final fun dev.s7a.strata.runtime.web/renderWebHtml(dev.s7a.strata.screen/ScreenDefinition, dev.s7a.strata.geometry/IntSize, dev.s7a.strata.runtime.web/WebTheme): kotlin/String // dev.s7a.strata.runtime.web/renderWebHtml|renderWebHtml(dev.s7a.strata.screen.ScreenDefinition;dev.s7a.strata.geometry.IntSize;dev.s7a.strata.runtime.web.WebTheme){}[0]

@@ -1,5 +1,7 @@
 package dev.s7a.strata.geometry
 
+import dev.s7a.strata.internal.toIntExact
+
 /**
  * An immutable half-open integer rectangle.
  *
@@ -17,8 +19,8 @@ public data class IntRect(
     init {
         require(left <= right) { "Right must not be less than left." }
         require(top <= bottom) { "Bottom must not be less than top." }
-        Math.subtractExact(right, left)
-        Math.subtractExact(bottom, top)
+        (right.toLong() - left).toIntExact()
+        (bottom.toLong() - top).toIntExact()
     }
 
     /**
@@ -49,10 +51,10 @@ public data class IntRect(
      */
     public operator fun plus(offset: IntOffset): IntRect =
         IntRect(
-            Math.addExact(left, offset.x),
-            Math.addExact(top, offset.y),
-            Math.addExact(right, offset.x),
-            Math.addExact(bottom, offset.y),
+            (left.toLong() + offset.x).toIntExact(),
+            (top.toLong() + offset.y).toIntExact(),
+            (right.toLong() + offset.x).toIntExact(),
+            (bottom.toLong() + offset.y).toIntExact(),
         )
 
     /**

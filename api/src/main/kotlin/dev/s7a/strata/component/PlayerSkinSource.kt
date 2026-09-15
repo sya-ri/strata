@@ -1,7 +1,7 @@
 package dev.s7a.strata.component
 
 import dev.s7a.strata.render.DrawImage
-import java.util.UUID
+import dev.s7a.strata.resource.Uuid as KotlinUuid
 
 /**
  * Platform-neutral source for a player skin used by [PlayerHead].
@@ -43,6 +43,6 @@ public sealed interface PlayerSkinSource {
      * @property value immutable profile UUID.
      */
     public data class Uuid(
-        public val value: UUID,
+        public val value: KotlinUuid,
     ) : PlayerSkinSource
 }

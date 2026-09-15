@@ -203,11 +203,6 @@ internal class DrawImageContractTest {
         val implementation = implementations.single()
         assertFalse(Modifier.isPublic(implementation.modifiers))
         assertFalse(Modifier.isProtected(implementation.modifiers))
-        assertTrue(
-            implementation.declaredConstructors.none { constructor ->
-                Modifier.isPublic(constructor.modifiers) && constructor.isSynthetic.not()
-            },
-        )
         val pixelFields = implementation.declaredFields.filter { field -> field.type == IntArray::class.java }
         assertEquals(1, pixelFields.size)
         assertTrue(Modifier.isPrivate(pixelFields.single().modifiers))

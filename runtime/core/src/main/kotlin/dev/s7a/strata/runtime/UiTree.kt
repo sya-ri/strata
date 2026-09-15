@@ -16,6 +16,8 @@ import dev.s7a.strata.runtime.semantics.SemanticsEntry
 import dev.s7a.strata.runtime.spi.RuntimeTextInputFocus
 import dev.s7a.strata.runtime.spi.RuntimeUiDiagnosticsOwner
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
+import dev.s7a.strata.state.StateObservation
+import kotlin.jvm.JvmSynthetic
 
 // Why: this public owner intentionally exposes each retained lifecycle, frame, input, and inspection operation through one guarded boundary.
 
@@ -38,12 +40,17 @@ import dev.s7a.strata.spi.InternalStrataRuntimeApi
 public class UiTree :
     AutoCloseable,
     RuntimeUiDiagnosticsOwner {
-    private val threadGuard: ThreadGuard = ThreadGuard.currentThread()
+    private val threadGuard: ThreadGuard = ThreadGuard()
 
     /**
      * Shared nullable diagnostics gate used by the owning session.
      */
     internal val monitoring = RenderMonitoring()
+
+    /**
+     * Optional session owner used to track independently evaluated deferred regions.
+     */
+    internal var stateObservation: StateObservation? = null
     private val dirtyTracker = DirtyTracker(monitoring)
     private val registry = NodeOwnershipRegistry()
     private val pipeline = Pipeline(threadGuard, monitoring)
@@ -51,11 +58,15 @@ public class UiTree :
     private val lifecycle =
         LifecycleManager(registry, threadGuard, dirtyTracker, monitoring) { entry ->
             val failures = FailureAccumulator()
+            if (entry is RetainedNode) {
+                failures.capture { entry.contentObservation?.close() }
+                entry.contentObservation = null
+            }
             (entry.node as? StateObserverNode)?.let { node -> failures.capture { observedSources.remove(node) } }
             failures.capture { pipeline.entryWillCleanup(entry) }
             failures.throwIfPresent()
         }
-    private val reconciler = Reconciler(lifecycle, dirtyTracker, observedSources, monitoring)
+    private val reconciler = Reconciler(lifecycle, dirtyTracker, observedSources, monitoring) { stateObservation }
     private val validator = DescriptionValidator()
     private var currentState: TreeState = TreeState.Active
     private var root: RetainedNode? = null
@@ -306,7 +317,7 @@ public class UiTree :
     /**
      * Paints the laid-out tree in parent-before-child order.
      *
-     * An empty tree returns an empty immutable list.
+     * An empty tree returns an empty read-only list.
      * A non-empty tree must be laid out with no pending measurement or layout work.
      * If that precondition fails, the tree is poisoned.
      * A clean node reuses its complete local display list and combines it with current accumulated coordinates.
@@ -314,7 +325,7 @@ public class UiTree :
      * The core applies no implicit node or parent clipping.
      * Valid local overflow outside those bounds is retained.
      *
-     * @return an immutable list of retained commands with bounds in accumulated tree coordinates.
+     * @return an read-only list of retained commands with bounds in accumulated tree coordinates.
      * @throws IllegalStateException when layout is incomplete or geometry remains pending.
      * It is also thrown when the operation is called from the wrong thread, re-enters an active operation, or the tree is not active.
      * @throws Throwable when a paint callback or scope operation throws after pipeline work begins and the exception escapes the callback.
@@ -416,7 +427,7 @@ public class UiTree :
     /**
      * Collects unresolved semantics in parent-before-child order.
      *
-     * An empty tree returns an empty immutable list.
+     * An empty tree returns an empty read-only list.
      * A non-empty tree must be laid out with no pending measurement or layout work.
      * If that precondition fails, the tree is poisoned.
      * A clean node reuses its complete local semantics payload and combines it with current accumulated bounds.
@@ -424,7 +435,7 @@ public class UiTree :
      * Text remains unresolved for the platform adapter.
      * Callback failures poison the tree.
      *
-     * @return an immutable list of entries with accumulated tree-coordinate bounds.
+     * @return an read-only list of entries with accumulated tree-coordinate bounds.
      * @throws IllegalStateException when layout is incomplete or geometry remains pending.
      * It is also thrown when the operation is called from the wrong thread, re-enters an active operation, or the tree is not active.
      * @throws Throwable when a semantics callback or scope operation throws after pipeline work begins.

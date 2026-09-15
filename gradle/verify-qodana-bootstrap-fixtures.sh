@@ -41,7 +41,7 @@ bash "$fixture_root/gradle/prepare-qodana-idea-model.sh"
 [[ $(wc -l < "$fixture_root/gradle-invocations.txt") -eq 1 ]]
 for argument in --no-daemon --no-configure-on-demand \
   --project-prop=strata.completeIdeaModel=true --system-prop=fabric.loom.ci=true \
-  :api:jar :runtime:core:jar :runtime:headless:jar :runtime:minecraft:jar \
+  :api:jvmJar :runtime:core:jvmJar :runtime:headless:jar :runtime:minecraft:jar \
   :runtime:minecraft-fonts-lwjgl:jar classes gametestClasses idea; do
   [[ $(grep -Fxc -- "$argument" "$fixture_root/gradle-arguments.txt") -eq 1 ]]
 done

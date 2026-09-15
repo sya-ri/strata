@@ -25,6 +25,8 @@ on:
       - runtime/**
       - settings.gradle.kts
       - skills/**
+      - tools/web/**
+      - kotlin-js-store/**
   pull_request:
     paths:
       - .github/actions/**
@@ -47,6 +49,8 @@ on:
       - runtime/**
       - settings.gradle.kts
       - skills/**
+      - tools/web/**
+      - kotlin-js-store/**
 
 permissions:
   contents: read
@@ -96,6 +100,27 @@ jobs:
           bash gradle/verify-minecraft-ci-plan-fixtures.sh
           bash gradle/verify-qodana-model-fixtures.sh
           bash gradle/verify-qodana-bootstrap-fixtures.sh
+
+  web:
+    name: Web build and browser parity
+    runs-on: windows-latest
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v7
+      - name: Set up Java
+        uses: ./.github/actions/setup-strata-java
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v6
+        with:
+          cache-read-only: ${{ github.ref != 'refs/heads/master' }}
+      - name: Verify Web runtime and static build
+        run: .\gradlew.bat :runtime:web:check :integration:web:check
+      - name: Upload browser evidence
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: web-parity
+          path: integration/web/build/parity
 
   checks:
     name: ${{ matrix.name }}

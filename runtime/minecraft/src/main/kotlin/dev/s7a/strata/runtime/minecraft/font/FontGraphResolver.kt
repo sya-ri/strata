@@ -1,7 +1,6 @@
 package dev.s7a.strata.runtime.minecraft.font
 
 import dev.s7a.strata.resource.ResourceId
-import java.util.Collections
 
 /**
  * Resolves ordered provider references with outer-filter precedence and whole-bundle failure semantics.
@@ -85,7 +84,7 @@ internal class FontGraphResolver(
                             graphDepth = maxOf(graphDepth, target.depth + 1)
                             budget.claim(FontLoadBudget.Kind.ResolvedProviders, target.providers.size.toLong())
                             for (nested in target.providers) {
-                                resolved += nested.copy(filter = Collections.unmodifiableMap(nested.filter + entry.filter))
+                                resolved += nested.copy(filter = nested.filter + entry.filter)
                             }
                         }
 
@@ -109,7 +108,7 @@ internal class FontGraphResolver(
                 }
             }
         }
-        return if (failed) Resolution.Failed else Resolution.Ready(Collections.unmodifiableList(resolved), graphDepth)
+        return if (failed) Resolution.Failed else Resolution.Ready(resolved, graphDepth)
     }
 
     private sealed interface Resolution {

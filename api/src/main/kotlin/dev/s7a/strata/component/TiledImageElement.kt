@@ -27,7 +27,6 @@ import dev.s7a.strata.node.LayoutNode
 import dev.s7a.strata.node.MeasureNode
 import dev.s7a.strata.node.SessionAttachmentNode
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
-import java.util.Collections
 import kotlin.math.roundToLong
 import dev.s7a.strata.node.Node as RetainedNode
 
@@ -268,7 +267,7 @@ internal class TiledImageElement private constructor(
             overlays: List<Element>,
         ): Element {
             val bounds = source.bounds
-            val levels = Collections.unmodifiableList(source.levels.toList())
+            val levels = source.levels.toList()
             validateGeometry(bounds, levels, destinationSize)
             return TiledImageElement(source, bounds, levels, state, destinationSize, fit, cachePolicy, modifier, key, overlays)
         }
@@ -308,19 +307,20 @@ internal class TiledImageElement private constructor(
             }
         }
 
-        private fun contentWidth(level: TiledImageLevel): Long = Math.multiplyExact(level.tilePixelSize.width.toLong(), level.contentUnitsPerPixel)
+        private fun contentWidth(level: TiledImageLevel): Long = level.tilePixelSize.width * level.contentUnitsPerPixel
 
-        private fun contentHeight(level: TiledImageLevel): Long = Math.multiplyExact(level.tilePixelSize.height.toLong(), level.contentUnitsPerPixel)
+        private fun contentHeight(level: TiledImageLevel): Long = level.tilePixelSize.height * level.contentUnitsPerPixel
 
         private fun validateEdgeGrid(
             minimum: Long,
             maximum: Long,
             tileExtent: Long,
         ) {
-            val first = Math.floorDiv(minimum, tileExtent)
-            val last = Math.floorDiv(Math.subtractExact(maximum, 1L), tileExtent)
-            Math.multiplyExact(first, tileExtent)
-            Math.addExact(Math.multiplyExact(last, tileExtent), tileExtent)
+            val first = minimum.floorDiv(tileExtent)
+            val last = (maximum - 1L).floorDiv(tileExtent)
+            if (first < Long.MIN_VALUE / tileExtent || Long.MAX_VALUE / tileExtent <= last) {
+                throw ArithmeticException("Tile grid exceeds Long coordinates.")
+            }
         }
     }
 }

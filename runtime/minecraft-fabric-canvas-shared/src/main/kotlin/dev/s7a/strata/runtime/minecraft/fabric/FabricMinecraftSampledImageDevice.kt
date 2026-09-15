@@ -6,7 +6,6 @@ import dev.s7a.strata.runtime.minecraft.canvas.NativeCanvasFence
 import dev.s7a.strata.runtime.minecraft.canvas.NativeGuiResource
 import dev.s7a.strata.runtime.minecraft.canvas.NativeGuiResourceManager
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
-import java.util.ArrayDeque
 import java.util.Collections
 import java.util.IdentityHashMap
 
@@ -80,8 +79,8 @@ internal class FabricMinecraftSampledImageDevice(
             check(owner.closed.not()) { "A released sampled-image owner cannot borrow textures." }
             check(terminal.not()) { "Sampled images cannot be borrowed after native shutdown begins." }
             pollInternal()
-            val requested = identityDistinct(images)
-            val protected = identitySet(requested)
+            val protected = Collections.newSetFromMap(IdentityHashMap<DrawImage, Boolean>())
+            val requested = images.filter(protected::add)
             requested.forEach { image ->
                 nextUse = Math.incrementExact(nextUse)
                 val owned = owner.images[image]
@@ -106,7 +105,7 @@ internal class FabricMinecraftSampledImageDevice(
                     available[image] = entry
                 }
             }
-            Borrow(available, available.values.toIdentitySet())
+            Borrow(available, available.values.toSet())
         }
 
     /**
@@ -535,15 +534,6 @@ internal class FabricMinecraftSampledImageDevice(
             operating = false
         }
     }
-
-    private fun identityDistinct(images: List<DrawImage>): List<DrawImage> {
-        val seen = IdentityHashMap<DrawImage, Boolean>()
-        return images.filter { image -> seen.put(image, true) == null }
-    }
-
-    private fun identitySet(images: List<DrawImage>): Set<DrawImage> = Collections.newSetFromMap(IdentityHashMap<DrawImage, Boolean>()).also { it.addAll(images) }
-
-    private fun <T : Any> Collection<T>.toIdentitySet(): Set<T> = Collections.newSetFromMap(IdentityHashMap<T, Boolean>()).also { it.addAll(this) }
 
     private fun imageBytes(image: DrawImage): Long = Math.multiplyExact(Math.multiplyExact(image.size.width.toLong(), image.size.height.toLong()), 4L)
 

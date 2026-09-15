@@ -3,7 +3,8 @@ package dev.s7a.strata.screen
 import dev.s7a.strata.component.UiScope
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
 import dev.s7a.strata.text.UiText
-import java.util.concurrent.atomic.AtomicReference
+import kotlin.concurrent.atomics.AtomicReference
+import kotlin.concurrent.atomics.ExperimentalAtomicApi
 
 /**
  * One-shot platform-neutral definition for one declarative screen.
@@ -17,7 +18,7 @@ import java.util.concurrent.atomic.AtomicReference
  * @param pausesGame whether the screen pauses its host game.
  * @param content owner-thread callback that emits exactly one root component when evaluated by a runtime.
  */
-@OptIn(InternalStrataRuntimeApi::class)
+@OptIn(InternalStrataRuntimeApi::class, ExperimentalAtomicApi::class)
 public class ScreenDefinition(
     title: UiText,
     pausesGame: Boolean = false,
@@ -68,7 +69,7 @@ public class ScreenDefinition(
     @InternalStrataRuntimeApi
     public fun transfer(): ScreenDefinitionPayload {
         while (true) {
-            when (val current = state.get()) {
+            when (val current = state.load()) {
                 is State.Available -> {
                     if (state.compareAndSet(current, State.Transferred)) {
                         return current.payload
@@ -94,7 +95,7 @@ public class ScreenDefinition(
      */
     override fun close() {
         while (true) {
-            when (val current = state.get()) {
+            when (val current = state.load()) {
                 is State.Available -> if (state.compareAndSet(current, State.Closed)) return
                 State.Transferred, State.Closed -> return
             }

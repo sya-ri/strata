@@ -3,6 +3,8 @@
 package dev.s7a.strata.render
 
 import dev.s7a.strata.geometry.IntSize
+import dev.s7a.strata.internal.toIntExact
+import kotlin.jvm.JvmName
 
 /**
  * Creates an immutable source image for platform-neutral drawing.
@@ -21,12 +23,12 @@ public fun createDrawImage(
     size: IntSize,
     argb: IntArray,
 ): DrawImage {
-    val area = Math.multiplyExact(size.width, size.height)
+    val area = (size.width.toLong() * size.height).toIntExact()
     require(area == argb.size) { "Pixel array length must equal the image area." }
-    return DrawImageSnapshot.create(size, argb.copyOf())
+    return DrawImageSnapshot(size, argb.copyOf())
 }
 
-private class DrawImageSnapshot private constructor(
+private class DrawImageSnapshot(
     override val size: IntSize,
     private val pixels: IntArray,
 ) : DrawImage {
@@ -36,8 +38,7 @@ private class DrawImageSnapshot private constructor(
     ): Int {
         require(x in 0 until size.width) { "X coordinate must be inside the image." }
         require(y in 0 until size.height) { "Y coordinate must be inside the image." }
-        val rowOffset = Math.multiplyExact(y, size.width)
-        return pixels[Math.addExact(rowOffset, x)]
+        return pixels[y * size.width + x]
     }
 
     override fun copyArgb(): IntArray = pixels.copyOf()
@@ -47,19 +48,4 @@ private class DrawImageSnapshot private constructor(
             (other is DrawImageSnapshot && size == other.size && pixels.contentEquals(other.pixels))
 
     override fun hashCode(): Int = 31 * size.hashCode() + pixels.contentHashCode()
-
-    companion object {
-        /**
-         * Creates one private snapshot after the caller has validated the image area.
-         *
-         * @param size the immutable image extent.
-         * @param pixels the already detached row-major pixel storage.
-         * @return a private immutable image implementation.
-         */
-        @JvmSynthetic
-        internal fun create(
-            size: IntSize,
-            pixels: IntArray,
-        ): DrawImageSnapshot = DrawImageSnapshot(size, pixels)
-    }
 }

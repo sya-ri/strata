@@ -1,9 +1,9 @@
 package dev.s7a.strata.runtime
 
-import org.junit.jupiter.api.Assertions.assertEquals
-import org.junit.jupiter.api.Assertions.assertSame
-import org.junit.jupiter.api.Assertions.assertThrows
-import org.junit.jupiter.api.Test
+import kotlin.test.Test
+import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
+import kotlin.test.assertSame
 
 /**
  * Verifies identity-based cleanup failure accumulation and suppression order.
@@ -24,7 +24,7 @@ internal class FailureAccumulatorTest {
         accumulator.addOptional(existing)
 
         assertSame(first, accumulator.first)
-        assertEquals(listOf(existing, later), first.suppressed.toList())
+        assertEquals(listOf(existing, later), first.suppressedExceptions)
     }
 
     @Test
@@ -39,7 +39,7 @@ internal class FailureAccumulatorTest {
         accumulator.add(second)
 
         assertSame(first, accumulator.first)
-        assertEquals(listOf(second), first.suppressed.toList())
+        assertEquals(listOf(second), first.suppressedExceptions)
     }
 
     @Test
@@ -52,7 +52,7 @@ internal class FailureAccumulatorTest {
         accumulator.addOptional(first)
 
         assertSame(first, accumulator.first)
-        assertEquals(listOf(existing), first.suppressed.toList())
+        assertEquals(listOf(existing), first.suppressedExceptions)
     }
 
     @Test
@@ -66,7 +66,7 @@ internal class FailureAccumulatorTest {
         accumulator.addOptional(later)
 
         assertSame(first, accumulator.first)
-        assertEquals(listOf(later, nested), first.suppressed.toList())
+        assertEquals(listOf(later, nested), first.suppressedExceptions)
     }
 
     @Test
@@ -83,13 +83,13 @@ internal class FailureAccumulatorTest {
         accumulator.addOptional(later)
 
         assertSame(first, accumulator.first)
-        assertEquals(listOf(later, nested, deepest), first.suppressed.toList())
+        assertEquals(listOf(later, nested, deepest), first.suppressedExceptions)
     }
 
     @Test
     fun throwingWithoutARecordedFailureIsRejected() {
         val accumulator = FailureAccumulator()
 
-        assertThrows(IllegalStateException::class.java) { accumulator.throwFirst() }
+        assertFailsWith<IllegalStateException> { accumulator.throwFirst() }
     }
 }

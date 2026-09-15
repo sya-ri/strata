@@ -9,7 +9,6 @@ import dev.s7a.strata.runtime.minecraft.font.MinecraftFontSnapshot
 import dev.s7a.strata.runtime.minecraft.font.readMinecraftFontBytes
 import net.minecraft.server.packs.resources.Resource
 import net.minecraft.server.packs.resources.ResourceManager
-import java.util.Collections
 
 /**
  * Detaches font document stacks and their individually selected assets from a stable resource manager.
@@ -98,7 +97,7 @@ private class FabricFontAssetSource(
             if (limits.maxPathLength < path.length) throw MinecraftFontLoadLimitException("Active font document path exceeds its loading ceiling.")
             paths.add(path)
         }
-        return Collections.unmodifiableSet(paths)
+        return paths
     }
 
     override fun read(path: String): ByteArray? = read(path, MinecraftFontLoadLimits())

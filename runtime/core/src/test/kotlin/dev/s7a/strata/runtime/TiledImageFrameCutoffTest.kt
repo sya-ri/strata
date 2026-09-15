@@ -17,6 +17,7 @@ import dev.s7a.strata.geometry.LongRect
 import dev.s7a.strata.render.DrawImage
 import dev.s7a.strata.render.createDrawImage
 import dev.s7a.strata.runtime.render.DrawCommand
+import dev.s7a.strata.runtime.spi.RuntimeUiFrame
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
 import dev.s7a.strata.state.StateRevision
 import dev.s7a.strata.state.StateSnapshot
@@ -24,8 +25,8 @@ import dev.s7a.strata.state.StateSource
 import dev.s7a.strata.state.StateSubscription
 import org.junit.jupiter.api.Assertions.assertSame
 import org.junit.jupiter.api.Test
+import java.lang.management.ManagementFactory
 import java.lang.reflect.Modifier
-import java.util.LinkedHashMap
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
@@ -62,12 +63,12 @@ internal class TiledImageFrameCutoffTest {
             val frameFuture =
                 synchronized(secondGate) {
                     val future =
-                        executor.submit<UiFrame> {
+                        executor.submit<RuntimeUiFrame> {
                             frameStarted.countDown()
                             setup.first.frame(CONSTRAINTS, FrameTime(1L))
                         }
                     check(frameStarted.await(TIMEOUT_SECONDS, TimeUnit.SECONDS)) { "The cutoff frame did not start." }
-                    waitUntilBlocked(setup.second)
+                    waitUntilBlocked(setup.second, secondGate)
                     source.history(firstId).publish(TiledImageTile.Ready(updatedFirst))
                     source.history(secondId).publish(TiledImageTile.Ready(updatedSecond))
                     future
@@ -99,10 +100,19 @@ internal class TiledImageFrameCutoffTest {
 
     private fun image(color: Int): DrawImage = createDrawImage(TILE_SIZE, IntArray(64) { color })
 
-    private fun waitUntilBlocked(thread: Thread) {
+    private fun waitUntilBlocked(
+        thread: Thread,
+        gate: Any,
+    ) {
+        val threads = ManagementFactory.getThreadMXBean()
+        val monitorId = System.identityHashCode(gate)
         val deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(TIMEOUT_SECONDS)
-        while (thread.state != Thread.State.BLOCKED && System.nanoTime() < deadline) Thread.onSpinWait()
-        check(thread.state == Thread.State.BLOCKED) { "The cutoff frame did not block on the selected tile slot." }
+        while (System.nanoTime() < deadline) {
+            val info = threads.getThreadInfo(thread.id)
+            if (info?.threadState == Thread.State.BLOCKED && info.lockInfo?.identityHashCode == monitorId) return
+            Thread.onSpinWait()
+        }
+        error("The cutoff frame did not block on the selected tile slot.")
     }
 
     private class TwoTileSource(
@@ -113,7 +123,7 @@ internal class TiledImageFrameCutoffTest {
     ) : TiledImageSource {
         override val bounds: LongRect = LongRect(0L, 0L, 16L, 8L)
         override val levels: List<TiledImageLevel> = listOf(level)
-        private val histories: MutableMap<TiledImageTileId, TileHistory> = LinkedHashMap()
+        private val histories = mutableMapOf<TiledImageTileId, TileHistory>()
 
         override fun tile(id: TiledImageTileId): StateSource<TiledImageTile> =
             histories.getOrPut(id) {
@@ -162,7 +172,7 @@ internal class TiledImageFrameCutoffTest {
                     .single { field -> field.type == Any::class.java && Modifier.isStatic(field.modifiers).not() }
             check(receiverField.trySetAccessible()) { "The tile observer receiver is inaccessible." }
             val receiver = checkNotNull(receiverField.get(callback))
-            val gateField = receiver.javaClass.declaredFields.single { field -> field.type == Any::class.java }
+            val gateField = receiver.javaClass.getDeclaredField("frameGate")
             check(gateField.trySetAccessible()) { "The tile observer gate is inaccessible." }
             return checkNotNull(gateField.get(receiver))
         }

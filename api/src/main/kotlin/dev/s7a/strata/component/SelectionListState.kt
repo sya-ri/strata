@@ -1,5 +1,7 @@
 package dev.s7a.strata.component
 
+import dev.s7a.strata.internal.platform.currentThread
+
 /**
  * Caller-owned owner-thread selection and navigation state for a generic SelectionList.
  *
@@ -13,7 +15,7 @@ public class SelectionListState<K : Any>(
     public val listState: VirtualListState<K> = VirtualListState(),
     initialSelection: K? = null,
 ) {
-    private val ownerThread = Thread.currentThread()
+    private val ownerThread = currentThread()
     private var currentSelection: K? = initialSelection
 
     /**
@@ -48,6 +50,6 @@ public class SelectionListState<K : Any>(
     }
 
     private fun checkThread() {
-        check(Thread.currentThread() === ownerThread) { "SelectionListState requires its creator thread." }
+        check(currentThread() === ownerThread) { "SelectionListState requires its creator thread." }
     }
 }

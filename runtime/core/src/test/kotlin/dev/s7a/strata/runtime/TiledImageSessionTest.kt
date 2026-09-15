@@ -21,6 +21,7 @@ import dev.s7a.strata.modifier.Modifier
 import dev.s7a.strata.render.DrawImage
 import dev.s7a.strata.render.createDrawImage
 import dev.s7a.strata.runtime.render.DrawCommand
+import dev.s7a.strata.runtime.spi.RuntimeUiFrame
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
 import dev.s7a.strata.state.StateRevision
 import dev.s7a.strata.state.StateSnapshot
@@ -654,7 +655,7 @@ internal class TiledImageSessionTest {
             }
         }
 
-    private fun samples(frame: UiFrame): List<DrawCommand.SampledImage> = frame.drawCommands.filterIsInstance<DrawCommand.SampledImage>()
+    private fun samples(frame: RuntimeUiFrame): List<DrawCommand.SampledImage> = frame.drawCommands.filterIsInstance<DrawCommand.SampledImage>()
 
     private fun policy(maxEntries: Int): TiledImageCachePolicy = TiledImageCachePolicy(maxEntries = maxEntries, maxBytes = 8_388_608L, overscanTiles = 0)
 

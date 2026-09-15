@@ -16,9 +16,9 @@ import dev.s7a.strata.text.UiText
  * Owner-thread bridge for one Minecraft screen definition host.
  *
  * Lifecycle, frame, input, and close calls are synchronous and must run on the construction thread.
- * The host retains its independent core runtime session, transferred metadata, one-shot evaluator until evaluation or terminal release, one resource-image resolver shared by initial and deferred evaluation until terminal release, and any version services transferred by an adapter until terminal release, but does not directly retain the definition object.
- * The evaluator temporarily retains the complete profile and every caller object, including a definition reference, captured by application content.
- * Content evaluates during the first [attach], while later synchronous changes use retained node invalidation before another [frame].
+ * The host retains its independent core runtime session, transferred metadata, reusable component evaluator until terminal release, one resource-image resolver shared by initial and deferred evaluation until terminal release, and any version services transferred by an adapter until terminal release, but does not directly retain the definition object.
+ * The core session exclusively retains application content and its capture graph until terminal release before node cleanup; the component evaluator retains only profile and presentation services.
+ * Content evaluates during the first [attach] and reevaluates before a later [frame] after observed state changes.
  * The host exposes no coroutine, local-state, source-binding, resource, rendering, or version-specific contract.
  * Core lifecycle, first-frame input gating, failure identity, suppression order, and cleanup behavior are delegated unchanged.
  * Every factory call creates distinct retained ownership with referential identity.
