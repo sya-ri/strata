@@ -3,6 +3,12 @@
 Each version below summarizes the release and links to its detailed changes and upgrade notes.
 Keep all Strata artifacts on the same release version.
 
+## Unreleased
+
+Player profile identifiers use the standard multiplatform `kotlin.uuid.Uuid`. JVM consumers convert Java UUIDs at their application boundary and recompile against the updated API.
+
+[Detailed changes and upgrade notes](docs/releases/unreleased.md)
+
 ## 0.1.6 - 2026-09-09
 
 Per-editor TextField/TextArea frames, caret and IME colors; exact fractional viewport clipping. Existing appearance defaults remain available.

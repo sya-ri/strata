@@ -625,13 +625,13 @@ sealed interface dev.s7a.strata.component/PlayerSkinSource { // dev.s7a.strata.c
     }
 
     final class Uuid : dev.s7a.strata.component/PlayerSkinSource { // dev.s7a.strata.component/PlayerSkinSource.Uuid|null[0]
-        constructor <init>(dev.s7a.strata.resource/ProfileUuid) // dev.s7a.strata.component/PlayerSkinSource.Uuid.<init>|<init>(dev.s7a.strata.resource.ProfileUuid){}[0]
+        constructor <init>(kotlin.uuid/Uuid) // dev.s7a.strata.component/PlayerSkinSource.Uuid.<init>|<init>(kotlin.uuid.Uuid){}[0]
 
         final val value // dev.s7a.strata.component/PlayerSkinSource.Uuid.value|{}value[0]
-            final fun <get-value>(): dev.s7a.strata.resource/ProfileUuid // dev.s7a.strata.component/PlayerSkinSource.Uuid.value.<get-value>|<get-value>(){}[0]
+            final fun <get-value>(): kotlin.uuid/Uuid // dev.s7a.strata.component/PlayerSkinSource.Uuid.value.<get-value>|<get-value>(){}[0]
 
-        final fun component1(): dev.s7a.strata.resource/ProfileUuid // dev.s7a.strata.component/PlayerSkinSource.Uuid.component1|component1(){}[0]
-        final fun copy(dev.s7a.strata.resource/ProfileUuid = ...): dev.s7a.strata.component/PlayerSkinSource.Uuid // dev.s7a.strata.component/PlayerSkinSource.Uuid.copy|copy(dev.s7a.strata.resource.ProfileUuid){}[0]
+        final fun component1(): kotlin.uuid/Uuid // dev.s7a.strata.component/PlayerSkinSource.Uuid.component1|component1(){}[0]
+        final fun copy(kotlin.uuid/Uuid = ...): dev.s7a.strata.component/PlayerSkinSource.Uuid // dev.s7a.strata.component/PlayerSkinSource.Uuid.copy|copy(kotlin.uuid.Uuid){}[0]
         final fun equals(kotlin/Any?): kotlin/Boolean // dev.s7a.strata.component/PlayerSkinSource.Uuid.equals|equals(kotlin.Any?){}[0]
         final fun hashCode(): kotlin/Int // dev.s7a.strata.component/PlayerSkinSource.Uuid.hashCode|hashCode(){}[0]
         final fun toString(): kotlin/String // dev.s7a.strata.component/PlayerSkinSource.Uuid.toString|toString(){}[0]
@@ -1940,18 +1940,6 @@ final class dev.s7a.strata.node/ChildTransform { // dev.s7a.strata.node/ChildTra
     }
 }
 
-final class dev.s7a.strata.resource/ProfileUuid { // dev.s7a.strata.resource/ProfileUuid|null[0]
-    constructor <init>(kotlin/Long, kotlin/Long) // dev.s7a.strata.resource/ProfileUuid.<init>|<init>(kotlin.Long;kotlin.Long){}[0]
-
-    final fun equals(kotlin/Any?): kotlin/Boolean // dev.s7a.strata.resource/ProfileUuid.equals|equals(kotlin.Any?){}[0]
-    final fun hashCode(): kotlin/Int // dev.s7a.strata.resource/ProfileUuid.hashCode|hashCode(){}[0]
-    final fun toString(): kotlin/String // dev.s7a.strata.resource/ProfileUuid.toString|toString(){}[0]
-
-    final object Companion { // dev.s7a.strata.resource/ProfileUuid.Companion|null[0]
-        final fun fromString(kotlin/String): dev.s7a.strata.resource/ProfileUuid // dev.s7a.strata.resource/ProfileUuid.Companion.fromString|fromString(kotlin.String){}[0]
-    }
-}
-
 final class dev.s7a.strata.resource/ResourceId { // dev.s7a.strata.resource/ResourceId|null[0]
     constructor <init>(kotlin/String, kotlin/String) // dev.s7a.strata.resource/ResourceId.<init>|<init>(kotlin.String;kotlin.String){}[0]
 
@@ -2379,4 +2367,3 @@ final fun dev.s7a.strata.component/canvasSource(dev.s7a.strata.render/DrawImage)
 final fun dev.s7a.strata.component/canvasSource(dev.s7a.strata.state/StateSource<dev.s7a.strata.render/DrawImage>): dev.s7a.strata.component/CanvasSource // dev.s7a.strata.component/canvasSource|canvasSource(dev.s7a.strata.state.StateSource<dev.s7a.strata.render.DrawImage>){}[0]
 final fun dev.s7a.strata.component/evaluateComponentTree(kotlin/Function1<dev.s7a.strata.component/UiScope, kotlin/Unit>): dev.s7a.strata.element/Element // dev.s7a.strata.component/evaluateComponentTree|evaluateComponentTree(kotlin.Function1<dev.s7a.strata.component.UiScope,kotlin.Unit>){}[0]
 final fun dev.s7a.strata.render/createDrawImage(dev.s7a.strata.geometry/IntSize, kotlin/IntArray): dev.s7a.strata.render/DrawImage // dev.s7a.strata.render/createDrawImage|createDrawImage(dev.s7a.strata.geometry.IntSize;kotlin.IntArray){}[0]
-final fun dev.s7a.strata.resource/parseProfileUuid(kotlin/String): dev.s7a.strata.resource/ProfileUuid // dev.s7a.strata.resource/parseProfileUuid|parseProfileUuid(kotlin.String){}[0]

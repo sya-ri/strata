@@ -26,6 +26,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BooleanSupplier;
 import kotlin.Unit;
 import kotlin.jvm.functions.Function0;
+import kotlin.uuid.UuidKt;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
@@ -956,7 +957,7 @@ final class FabricMinecraftInventoryBridge implements MinecraftUiPlatform, Minec
         } else if (source instanceof PlayerSkinSource.Name name) {
             profile = ResolvableProfile.createUnresolved(name.getValue()).resolveProfile(client.services().profileResolver());
         } else if (source instanceof PlayerSkinSource.Uuid uuid) {
-            profile = ResolvableProfile.createUnresolved(uuid.getValue()).resolveProfile(client.services().profileResolver());
+            profile = ResolvableProfile.createUnresolved(UuidKt.toJavaUuid(uuid.getValue())).resolveProfile(client.services().profileResolver());
         } else {
             throw new IllegalArgumentException("Unsupported player skin source: " + source.getClass().getName());
         }

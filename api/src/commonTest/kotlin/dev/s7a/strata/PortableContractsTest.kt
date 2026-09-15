@@ -1,5 +1,6 @@
 package dev.s7a.strata
 
+import dev.s7a.strata.component.PlayerSkinSource
 import dev.s7a.strata.geometry.Insets
 import dev.s7a.strata.geometry.IntOffset
 import dev.s7a.strata.geometry.IntRect
@@ -9,12 +10,13 @@ import dev.s7a.strata.internal.platform.appendScalar
 import dev.s7a.strata.internal.platform.scalarAt
 import dev.s7a.strata.layout.ParentDataKey
 import dev.s7a.strata.render.createDrawImage
-import dev.s7a.strata.resource.parseProfileUuid
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
+import dev.s7a.strata.state.StateObservation
 import dev.s7a.strata.state.mutableStateOf
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
+import kotlin.uuid.Uuid
 
 /**
  * Runs deterministic low-level portability contracts on JVM and JavaScript.
@@ -55,14 +57,21 @@ internal class PortableContractsTest {
     }
 
     @Test
-    fun profileIdentityAndCallerStateRoundTrip() {
+    @OptIn(InternalStrataRuntimeApi::class)
+    fun equivalentProfileIdentitiesDoNotInvalidateObservedSkinSources() {
         val text = "01234567-89ab-cdef-8123-456789abcdef"
-        val parsed = parseProfileUuid(text)
-        assertEquals(text, parsed.toString())
-        assertEquals(parsed, parseProfileUuid(text.uppercase()))
-        val state = mutableStateOf(parsed)
-        state.value = parseProfileUuid(text)
-        assertEquals(parsed, state.value)
-        assertFailsWith<IllegalArgumentException> { parseProfileUuid("invalid") }
+        val state = mutableStateOf(PlayerSkinSource.Uuid(Uuid.parse(text)))
+        var invalidations = 0
+        val observation = StateObservation({}, {}, { invalidations += 1 }, {})
+        try {
+            observation.evaluate { state.value }
+            state.value = PlayerSkinSource.Uuid(Uuid.parse(text.uppercase()))
+            assertEquals(0, invalidations)
+            state.value = PlayerSkinSource.Uuid(Uuid.fromLongs(Long.MIN_VALUE, -1L))
+            assertEquals(1, invalidations)
+            assertEquals(Uuid.fromLongs(Long.MIN_VALUE, -1L), state.value.value)
+        } finally {
+            observation.close()
+        }
     }
 }

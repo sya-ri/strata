@@ -1494,8 +1494,8 @@ val skin: DrawImage
 #### `PlayerSkinSource.Uuid`
 
 ```kotlin
-data class Uuid(public val value: UUID) : PlayerSkinSource
-val value: UUID
+data class Uuid(public val value: KotlinUuid) : PlayerSkinSource
+val value: KotlinUuid
 ```
 
 <details><summary>Compiled JVM API fingerprints</summary>
@@ -1507,7 +1507,7 @@ class dev.s7a.strata.component.PlayerSkinSource$Pixels
 class dev.s7a.strata.component.PlayerSkinSource$Uuid
 constructor dev.s7a.strata.component.PlayerSkinSource$Name(java.lang.String)
 constructor dev.s7a.strata.component.PlayerSkinSource$Pixels(dev.s7a.strata.render.DrawImage)
-constructor dev.s7a.strata.component.PlayerSkinSource$Uuid(java.util.UUID)
+constructor dev.s7a.strata.component.PlayerSkinSource$Uuid(kotlin.uuid.Uuid)
 field dev.s7a.strata.component.PlayerSkinSource$CurrentPlayer.INSTANCE: dev.s7a.strata.component.PlayerSkinSource$CurrentPlayer
 interface dev.s7a.strata.component.PlayerSkinSource
 method dev.s7a.strata.component.PlayerSkinSource$CurrentPlayer.equals(java.lang.Object): boolean
@@ -1525,10 +1525,10 @@ method dev.s7a.strata.component.PlayerSkinSource$Pixels.equals(java.lang.Object)
 method dev.s7a.strata.component.PlayerSkinSource$Pixels.getSkin(): dev.s7a.strata.render.DrawImage
 method dev.s7a.strata.component.PlayerSkinSource$Pixels.hashCode(): int
 method dev.s7a.strata.component.PlayerSkinSource$Pixels.toString(): java.lang.String
-method dev.s7a.strata.component.PlayerSkinSource$Uuid.component1(): java.util.UUID
-method dev.s7a.strata.component.PlayerSkinSource$Uuid.copy(java.util.UUID): dev.s7a.strata.component.PlayerSkinSource$Uuid
+method dev.s7a.strata.component.PlayerSkinSource$Uuid.component1(): kotlin.uuid.Uuid
+method dev.s7a.strata.component.PlayerSkinSource$Uuid.copy(kotlin.uuid.Uuid): dev.s7a.strata.component.PlayerSkinSource$Uuid
 method dev.s7a.strata.component.PlayerSkinSource$Uuid.equals(java.lang.Object): boolean
-method dev.s7a.strata.component.PlayerSkinSource$Uuid.getValue(): java.util.UUID
+method dev.s7a.strata.component.PlayerSkinSource$Uuid.getValue(): kotlin.uuid.Uuid
 method dev.s7a.strata.component.PlayerSkinSource$Uuid.hashCode(): int
 method dev.s7a.strata.component.PlayerSkinSource$Uuid.toString(): java.lang.String
 ```
