@@ -13,7 +13,6 @@ import dev.s7a.strata.resource.ResourceId;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
-import kotlin.uuid.UuidKt;
 import net.minecraft.Util;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.texture.DynamicTexture;
@@ -45,7 +44,7 @@ final class FabricMinecraftSkinBridge {
         } else if (source instanceof PlayerSkinSource.Name name) {
             profile = resolveName(minecraft, name.getValue());
         } else if (source instanceof PlayerSkinSource.Uuid uuid) {
-            profile = resolveUuid(minecraft, UuidKt.toJavaUuid(uuid.getValue()));
+            profile = resolveUuid(minecraft, uuid.getValue());
         } else {
             throw new IllegalArgumentException("Unsupported player skin source: " + source.getClass().getName());
         }
