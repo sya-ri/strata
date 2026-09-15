@@ -3,8 +3,9 @@ package dev.s7a.strata.spi
 import dev.s7a.strata.component.UiScope
 import dev.s7a.strata.component.buildComponentTree
 import dev.s7a.strata.element.Element
+import dev.s7a.strata.internal.platform.EvaluationContext
+import dev.s7a.strata.internal.platform.withValue
 import kotlin.jvm.JvmSynthetic
-import dev.s7a.strata.internal.platform.PlatformThreadLocal as ThreadLocal
 
 /**
  * Privileged dynamic boundary between platform-neutral screen callbacks and one runtime implementation.
@@ -14,7 +15,7 @@ import dev.s7a.strata.internal.platform.PlatformThreadLocal as ThreadLocal
  */
 @InternalStrataRuntimeApi
 public object ComponentRuntimeBridge {
-    private val active = ThreadLocal<ComponentRuntime?>()
+    private val active = EvaluationContext<ComponentRuntime>()
 
     /**
      * Evaluates one screen callback with [runtime] implicitly available to profile-backed component functions.
@@ -28,19 +29,7 @@ public object ComponentRuntimeBridge {
     public fun evaluate(
         runtime: ComponentRuntime,
         content: UiScope.() -> Unit,
-    ): Element {
-        val previous = active.get()
-        active.set(runtime)
-        return try {
-            buildComponentTree(content)
-        } finally {
-            if (previous == null) {
-                active.remove()
-            } else {
-                active.set(previous)
-            }
-        }
-    }
+    ): Element = active.withValue(runtime) { buildComponentTree(content) }
 
     /**
      * Returns the runtime active for the current owner-thread screen callback.
@@ -50,7 +39,7 @@ public object ComponentRuntimeBridge {
      */
     @JvmSynthetic
     internal fun current(): ComponentRuntime =
-        checkNotNull(active.get()) {
+        checkNotNull(active.current) {
             "Profile-backed components require an active runtime screen callback on this thread."
         }
 
@@ -58,5 +47,5 @@ public object ComponentRuntimeBridge {
      * Returns the current runtime for deferred component construction, or null during raw structural evaluation.
      */
     @JvmSynthetic
-    internal fun currentOrNull(): ComponentRuntime? = active.get()
+    internal fun currentOrNull(): ComponentRuntime? = active.current
 }

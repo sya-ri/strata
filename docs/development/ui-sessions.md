@@ -161,6 +161,12 @@ Created, detached, failed, and closed contexts contain an already-cancelled job,
 Detach, failure, and close mark the current generation stale before cancelling its job.
 Stale cancellation code cannot read or write session state or launch into a later generation.
 
+The attachment token is also its coroutine context element.
+On JVM it implements `ThreadContextElement`, so coroutine machinery installs and restores the generation even when execution moves through worker dispatchers.
+On JavaScript the owner dispatcher installs the token only while running one synchronous continuation segment, then restores the caller's token in a `finally` block.
+Failure delivery uses the same scoped installation on both targets.
+Ordinary synchronous evaluation contexts do not propagate across suspension or asynchronous callbacks.
+
 The caller supplies a runtime-owned dispatcher that always queues work onto the session's construction thread.
 The dispatcher must not run a submitted block inline and must remain serviced while cancellation finalizers can resume.
 Detach and close request cancellation but do not synchronously join arbitrary child work.

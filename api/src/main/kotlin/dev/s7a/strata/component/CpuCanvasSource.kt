@@ -1,7 +1,7 @@
 package dev.s7a.strata.component
 
 import dev.s7a.strata.geometry.IntRect
-import dev.s7a.strata.internal.platform.PlatformThreads
+import dev.s7a.strata.internal.platform.currentThread
 import dev.s7a.strata.internal.platform.synchronized
 import dev.s7a.strata.render.DrawImage
 import dev.s7a.strata.render.PaintScope
@@ -35,7 +35,7 @@ internal class CpuCanvasSource(
     }
 
     private class Binding : CanvasBinding {
-        private val ownerThread: Any = PlatformThreads.current()
+        private val ownerThread: Any = currentThread()
         private val monitor = Any()
         private var committed: StateSnapshot<DrawImage>? = null
         private var pending: StateSnapshot<DrawImage>? = null
@@ -129,7 +129,7 @@ internal class CpuCanvasSource(
         }
 
         private fun checkOwner() {
-            check(PlatformThreads.current() === ownerThread) { "Canvas bindings are confined to their owner thread." }
+            check(currentThread() === ownerThread) { "Canvas bindings are confined to their owner thread." }
         }
 
         private fun requireImage(image: DrawImage) {

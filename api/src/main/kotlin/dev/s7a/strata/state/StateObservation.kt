@@ -1,8 +1,9 @@
 package dev.s7a.strata.state
 
-import dev.s7a.strata.internal.platform.PlatformThreads
+import dev.s7a.strata.internal.platform.EvaluationContext
+import dev.s7a.strata.internal.platform.currentThread
+import dev.s7a.strata.internal.platform.withValue
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
-import dev.s7a.strata.internal.platform.PlatformThreadLocal as ThreadLocal
 
 /**
  * Runtime-owned dependency set for one owner-thread screen evaluator.
@@ -21,7 +22,7 @@ public class StateObservation(
     private val invalidated: () -> Unit,
     private val validateMutation: () -> Unit,
 ) : AutoCloseable {
-    private val owner = PlatformThreads.current()
+    private val owner = currentThread()
     private val dependencies = LinkedHashSet<MutableState<*>>()
     private var collecting: MutableSet<MutableState<*>>? = null
     private var closed = false
@@ -55,7 +56,7 @@ public class StateObservation(
      */
     public fun enterOperation() {
         checkOwner()
-        val guards = operations.get() ?: ArrayList<StateObservation>().also(operations::set)
+        val guards = operations.current ?: ArrayList<StateObservation>().also { operations.current = it }
         check((this in guards).not()) { "A state observation operation is already active." }
         guards.add(this)
     }
@@ -66,10 +67,10 @@ public class StateObservation(
      */
     public fun leaveOperation() {
         checkOwner()
-        val guards = checkNotNull(operations.get()) { "No state observation operation is active." }
+        val guards = checkNotNull(operations.current) { "No state observation operation is active." }
         check(guards.last() === this) { "State observation operations must leave in reverse order." }
         guards.removeAt(guards.lastIndex)
-        if (guards.isEmpty()) operations.remove()
+        if (guards.isEmpty()) operations.current = null
     }
 
     /**
@@ -81,18 +82,17 @@ public class StateObservation(
         checkOwner()
         check(closed.not() && collecting == null) { "State observation is closed or already evaluating." }
         checkAccess()
-        val previous = active.get()
         val reads = LinkedHashSet<MutableState<*>>()
         collecting = reads
-        active.set(this)
-        try {
-            val result = content()
-            dependencies.filter { (it in reads).not() }.forEach { state -> state.forget(this) }
-            dependencies.retainAll(reads)
-            return result
+        return try {
+            active.withValue(this) {
+                val result = content()
+                dependencies.filter { (it in reads).not() }.forEach { state -> state.forget(this) }
+                dependencies.retainAll(reads)
+                result
+            }
         } finally {
             collecting = null
-            if (previous == null) active.remove() else active.set(previous)
         }
     }
 
@@ -111,7 +111,7 @@ public class StateObservation(
     }
 
     private fun checkOwner() {
-        check(PlatformThreads.current() === owner) { "State observation requires its construction thread." }
+        check(currentThread() === owner) { "State observation requires its construction thread." }
     }
 
     /**
@@ -133,15 +133,15 @@ public class StateObservation(
      * Owns dynamically scoped read tracking and equality guards for the current thread.
      */
     internal companion object {
-        private val active = ThreadLocal<StateObservation?>()
-        private val comparing = ThreadLocal<Boolean?>()
-        private val operations = ThreadLocal<MutableList<StateObservation>?>()
+        private val active = EvaluationContext<StateObservation>()
+        private val comparing = EvaluationContext<Boolean>()
+        private val operations = EvaluationContext<MutableList<StateObservation>>()
 
         /**
          * Records a state read in the innermost screen evaluation on this thread.
          */
         internal fun record(state: MutableState<*>) {
-            val observation = active.get() ?: return
+            val observation = active.current ?: return
             checkNotNull(observation.collecting).add(state)
             if (observation.dependencies.add(state)) state.observe(observation)
         }
@@ -150,28 +150,23 @@ public class StateObservation(
          * Rejects state access from arbitrary user equality code.
          */
         internal fun checkAccess() {
-            check(comparing.get() != true) { "State access is forbidden during equality comparison." }
+            check(comparing.current != true) { "State access is forbidden during equality comparison." }
         }
 
         /**
          * Rejects writes during declarative screen evaluation.
          */
         internal fun checkMutation() {
-            check(active.get() == null) { "State mutation is forbidden during screen evaluation." }
-            operations.get()?.forEach { observation -> observation.validateMutation() }
+            check(active.current == null) { "State mutation is forbidden during screen evaluation." }
+            operations.current?.forEach { observation -> observation.validateMutation() }
         }
 
         /**
-         * Executes caller equality under a thread-local guard, restoring it even after failure.
+         * Executes caller equality under a scoped guard, restoring it even after failure.
          */
         internal fun compare(equality: () -> Boolean): Boolean {
             checkAccess()
-            comparing.set(true)
-            return try {
-                equality()
-            } finally {
-                comparing.remove()
-            }
+            return comparing.withValue(true, equality)
         }
     }
 }

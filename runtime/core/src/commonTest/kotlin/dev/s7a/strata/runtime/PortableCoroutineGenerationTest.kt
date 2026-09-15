@@ -16,6 +16,50 @@ import kotlin.test.assertSame
  */
 internal class PortableCoroutineGenerationTest {
     @Test
+    fun interleavedSessionsKeepTheirGenerationAcrossSuspensionAndRestoreTheCaller() {
+        val dispatcher = QueuedDispatcher()
+        val first = UiSession(dispatcher) { TestProbe().root(emptyList()) }
+        val second = UiSession(dispatcher) { TestProbe().root(emptyList()) }
+        var firstValue by first.state(0)
+        var secondValue by second.state(0)
+        val order = mutableListOf<Int>()
+        try {
+            first.attach()
+            second.attach()
+            first.screenScope.launch {
+                order.add(1)
+                firstValue = 1
+                assertFailsWith<IllegalStateException> { secondValue }
+                yield()
+                order.add(3)
+                firstValue += 1
+                assertFailsWith<IllegalStateException> { secondValue = 99 }
+            }
+            second.screenScope.launch {
+                order.add(2)
+                secondValue = 1
+                assertFailsWith<IllegalStateException> { firstValue }
+                yield()
+                order.add(4)
+                secondValue += 1
+                assertFailsWith<IllegalStateException> { firstValue = 99 }
+            }
+            dispatcher.drain()
+            assertEquals(listOf(1, 2, 3, 4), order)
+            assertEquals(2, firstValue)
+            assertEquals(2, secondValue)
+            firstValue = 3
+            secondValue = 3
+            assertEquals(3, firstValue)
+            assertEquals(3, secondValue)
+        } finally {
+            first.close()
+            second.close()
+            dispatcher.drain()
+        }
+    }
+
+    @Test
     fun retiredFinallyCannotMutateTheReattachedSession() {
         val dispatcher = QueuedDispatcher()
         val session = UiSession(dispatcher) { TestProbe().root(emptyList()) }

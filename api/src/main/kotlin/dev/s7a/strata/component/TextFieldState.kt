@@ -1,6 +1,6 @@
 package dev.s7a.strata.component
 
-import dev.s7a.strata.internal.platform.PlatformThreads
+import dev.s7a.strata.internal.platform.currentThread
 import dev.s7a.strata.internal.platform.scalarAt
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
 import dev.s7a.strata.state.MutableState
@@ -21,7 +21,7 @@ public class TextFieldState(
     initialValue: String = "",
     public val maxLength: Int = 32,
 ) {
-    private val ownerThread: Any = PlatformThreads.current()
+    private val ownerThread: Any = currentThread()
     private var observer: ((String) -> Unit)? = null
     private val currentValue: MutableState<String>
 
@@ -98,6 +98,6 @@ public class TextFieldState(
         }
 
     private fun checkThread() {
-        check(PlatformThreads.current() === ownerThread) { "TextField state requires its creator thread." }
+        check(currentThread() === ownerThread) { "TextField state requires its creator thread." }
     }
 }

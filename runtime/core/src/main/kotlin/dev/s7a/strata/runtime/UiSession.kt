@@ -9,8 +9,7 @@ import dev.s7a.strata.input.TextInputEvent
 import dev.s7a.strata.runtime.diagnostics.UiRenderMetric
 import dev.s7a.strata.runtime.diagnostics.UiRenderMonitor
 import dev.s7a.strata.runtime.diagnostics.UiRenderOperation
-import dev.s7a.strata.runtime.platform.PlatformThreads
-import dev.s7a.strata.runtime.platform.runWithPlatformContext
+import dev.s7a.strata.runtime.platform.currentThread
 import dev.s7a.strata.runtime.spi.RuntimeTextInputFocus
 import dev.s7a.strata.runtime.spi.RuntimeUiFrame
 import dev.s7a.strata.runtime.spi.createRuntimeUiFrame
@@ -29,12 +28,9 @@ import kotlin.concurrent.atomics.AtomicReference
 import kotlin.concurrent.atomics.ExperimentalAtomicApi
 import kotlin.coroutines.AbstractCoroutineContextElement
 import kotlin.coroutines.CoroutineContext
-import kotlin.coroutines.EmptyCoroutineContext
 import kotlin.coroutines.cancellation.CancellationException
 import kotlin.properties.ReadOnlyProperty
 import kotlin.properties.ReadWriteProperty
-import dev.s7a.strata.runtime.platform.PlatformThreadContextElement as ThreadContextElement
-import dev.s7a.strata.runtime.platform.PlatformThreadLocal as ThreadLocal
 
 /**
  * Owns one retained UI description, its state declarations, and its external bindings.
@@ -651,7 +647,7 @@ internal class UiSession(
     }
 
     private fun checkGenerationForLifecycleAccess() {
-        val generation = SessionGenerationContext.current() ?: return
+        val generation = SessionGenerationToken.current ?: return
         check(
             generation.active && generation === currentGeneration?.token && currentState === UiSessionState.Attached,
         ) {
@@ -660,7 +656,7 @@ internal class UiSession(
     }
 
     private fun checkGenerationForStateAccess() {
-        val generation = SessionGenerationContext.current()
+        val generation = SessionGenerationToken.current
         if (generation == null) {
             check(
                 currentState === UiSessionState.Created ||
@@ -681,7 +677,7 @@ internal class UiSession(
         val context =
             job +
                 dispatcher +
-                SessionGenerationContext(token) +
+                token +
                 GenerationExceptionHandler(token)
         return SessionGeneration(token, job, context)
     }
@@ -704,7 +700,7 @@ internal class UiSession(
         if (threadGuard.isOwnerThread()) {
             check(evaluatingContent.not()) { "The screen scope is unavailable during content evaluation." }
         }
-        val generation = SessionGenerationContext.current()
+        val generation = SessionGenerationToken.current
         if (generation != null) {
             check(
                 generation.active && generation === currentGeneration?.token && currentState === UiSessionState.Attached,
@@ -774,19 +770,6 @@ internal class UiSession(
         generation.active &&
             (generation === currentGeneration?.token && currentState === UiSessionState.Attached)
 
-    private fun runWithGeneration(
-        generation: SessionGenerationToken,
-        action: () -> Unit,
-    ) {
-        val contextElement = SessionGenerationContext(generation)
-        val oldGeneration = contextElement.updateThreadContext(EmptyCoroutineContext)
-        try {
-            action()
-        } finally {
-            contextElement.restoreThreadContext(EmptyCoroutineContext, oldGeneration)
-        }
-    }
-
     private enum class SessionOperation {
         Attach,
         Detach,
@@ -804,11 +787,6 @@ internal class UiSession(
             get() = currentScreenScopeContext()
     }
 
-    private class SessionGenerationToken {
-        @Volatile
-        var active: Boolean = true
-    }
-
     private class SessionGeneration(
         val token: SessionGenerationToken,
         val job: CompletableJob,
@@ -822,7 +800,10 @@ internal class UiSession(
             context: CoroutineContext,
             block: Runnable,
         ) {
-            dispatchOwner(context) { runWithPlatformContext(context, block) }
+            dispatchOwner(context) {
+                val generation = context[SessionGenerationToken]
+                if (generation == null) block.run() else generation.resume(block)
+            }
         }
     }
 
@@ -835,7 +816,7 @@ internal class UiSession(
             exception: Throwable,
         ) {
             dispatchOwner(context) {
-                runWithGeneration(generation) { handleTaskFailure(generation, exception) }
+                generation.run { handleTaskFailure(generation, exception) }
             }
         }
     }
@@ -844,11 +825,11 @@ internal class UiSession(
         context: CoroutineContext,
         block: () -> Unit,
     ) {
-        val dispatchThread = PlatformThreads.current()
+        val dispatchThread = currentThread()
         val returned = AtomicBoolean(false)
         val violation = AtomicReference<Throwable?>(null)
         ownerDispatcher.dispatch(context) {
-            if (returned.load().not() && PlatformThreads.current() === dispatchThread) {
+            if (returned.load().not() && currentThread() === dispatchThread) {
                 val failure = IllegalStateException("The owner dispatcher must queue before execution.")
                 violation.store(failure)
                 throw failure
@@ -858,35 +839,5 @@ internal class UiSession(
         }
         returned.store(true)
         violation.load()?.let { failure -> throw failure }
-    }
-
-    private class SessionGenerationContext(
-        private val generation: SessionGenerationToken,
-    ) : AbstractCoroutineContextElement(Key),
-        ThreadContextElement<SessionGenerationToken?> {
-        override fun updateThreadContext(context: CoroutineContext): SessionGenerationToken? {
-            val previous = threadGeneration.get()
-            threadGeneration.set(generation)
-            return previous
-        }
-
-        override fun restoreThreadContext(
-            context: CoroutineContext,
-            oldState: SessionGenerationToken?,
-        ) {
-            if (oldState == null) {
-                threadGeneration.remove()
-            } else {
-                threadGeneration.set(oldState)
-            }
-        }
-
-        companion object {
-            val threadGeneration: ThreadLocal<SessionGenerationToken?> = ThreadLocal()
-
-            object Key : CoroutineContext.Key<SessionGenerationContext>
-
-            fun current(): SessionGenerationToken? = threadGeneration.get()
-        }
     }
 }

@@ -1,6 +1,6 @@
 package dev.s7a.strata.component
 
-import dev.s7a.strata.internal.platform.PlatformThreads
+import dev.s7a.strata.internal.platform.currentThread
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
 
 /**
@@ -16,7 +16,7 @@ import dev.s7a.strata.spi.InternalStrataRuntimeApi
 public class ScrollState(
     initialOffset: Double = 0.0,
 ) {
-    private val ownerThread = PlatformThreads.current()
+    private val ownerThread = currentThread()
     private val observers: MutableMap<Any, (ScrollMetrics) -> Unit> = LinkedHashMap()
     private var currentMetrics = ScrollMetrics(offset = validateOffset(initialOffset))
     private var geometryKnown = false
@@ -130,7 +130,7 @@ public class ScrollState(
     }
 
     private fun checkThread() {
-        check(PlatformThreads.current() === ownerThread) { "Scroll state requires its creator thread." }
+        check(currentThread() === ownerThread) { "Scroll state requires its creator thread." }
     }
 
     private companion object {

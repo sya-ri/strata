@@ -1,7 +1,7 @@
 package dev.s7a.strata.component
 
-import dev.s7a.strata.internal.platform.PlatformThreads
 import dev.s7a.strata.internal.platform.appendScalar
+import dev.s7a.strata.internal.platform.currentThread
 import dev.s7a.strata.internal.platform.scalarAt
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
 import dev.s7a.strata.state.MutableState
@@ -24,7 +24,7 @@ public class TextAreaState(
     initialValue: String = "",
     public val maxLength: Int = 32767,
 ) {
-    private val ownerThread: Any = PlatformThreads.current()
+    private val ownerThread: Any = currentThread()
     private val ownedScrollState: ScrollState = ScrollState()
     private var observer: ((String) -> Unit)? = null
     private val currentValue: MutableState<String>
@@ -121,6 +121,6 @@ public class TextAreaState(
     }
 
     private fun checkThread() {
-        check(PlatformThreads.current() === ownerThread) { "Text area state requires its creator thread." }
+        check(currentThread() === ownerThread) { "Text area state requires its creator thread." }
     }
 }

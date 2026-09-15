@@ -1,6 +1,6 @@
 package dev.s7a.strata.state
 
-import dev.s7a.strata.internal.platform.PlatformThreads
+import dev.s7a.strata.internal.platform.currentThread
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
 
 /**
@@ -16,7 +16,7 @@ import dev.s7a.strata.spi.InternalStrataRuntimeApi
 public class MutableState<T> internal constructor(
     initialValue: T,
 ) : State<T> {
-    private val owner = PlatformThreads.current()
+    private val owner = currentThread()
     private var current = initialValue
     private val observations = LinkedHashSet<StateObservation>()
 
@@ -56,7 +56,7 @@ public class MutableState<T> internal constructor(
     }
 
     private fun checkAccess() {
-        check(PlatformThreads.current() === owner) { "State requires its construction thread." }
+        check(currentThread() === owner) { "State requires its construction thread." }
         StateObservation.checkAccess()
     }
 
@@ -72,7 +72,7 @@ public class MutableState<T> internal constructor(
      * Releases an owner-thread screen dependency without disposing the caller-owned value.
      */
     internal fun forget(observation: StateObservation) {
-        check(PlatformThreads.current() === owner) { "State requires its construction thread." }
+        check(currentThread() === owner) { "State requires its construction thread." }
         observations.remove(observation)
     }
 }

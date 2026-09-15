@@ -1,7 +1,7 @@
 package dev.s7a.strata.component
 
 import dev.s7a.strata.element.Element
-import dev.s7a.strata.internal.platform.PlatformThreads
+import dev.s7a.strata.internal.platform.currentThread
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
 import kotlin.jvm.JvmSynthetic
 
@@ -14,7 +14,7 @@ import kotlin.jvm.JvmSynthetic
  */
 @StrataDsl
 public sealed class UiScope protected constructor() {
-    private val ownerThread: Any = PlatformThreads.current()
+    private val ownerThread: Any = currentThread()
     private val emittedElements: MutableList<Element> = ArrayList()
     private var active: Boolean = true
 
@@ -40,7 +40,7 @@ public sealed class UiScope protected constructor() {
      */
     @JvmSynthetic
     internal fun checkUsable() {
-        check(PlatformThreads.current() === ownerThread) {
+        check(currentThread() === ownerThread) {
             "UiScope can only be used from its constructing thread."
         }
         check(active) {

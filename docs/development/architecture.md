@@ -11,6 +11,8 @@ Collection snapshots are shallow: they detach collection membership from the inp
 Consumers must respect the read-only collection types; mutation through casts or Java collection methods is unsupported and is not required to throw.
 Element immutability is defined by each element contract.
 Keep custom platform adapters only where the standard library cannot supply the required contract.
+Synchronous evaluation contexts restore the caller's value on every exit and isolate JVM owners with a private thread local; JavaScript stores only the value currently executing in its agent.
+Coroutine generation propagation belongs to the session implementation described in [UI sessions](ui-sessions.md#coroutine-generations).
 Use ordinary arithmetic when validated input bounds guarantee representable results; check coordinate, extent, and allocation boundaries before narrowing or accepting external values.
 
 ## Module boundaries

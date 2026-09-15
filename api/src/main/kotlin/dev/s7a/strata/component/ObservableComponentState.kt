@@ -1,6 +1,6 @@
 package dev.s7a.strata.component
 
-import dev.s7a.strata.internal.platform.PlatformThreads
+import dev.s7a.strata.internal.platform.currentThread
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
 import dev.s7a.strata.state.mutableStateOf
 
@@ -11,7 +11,7 @@ internal class ObservableComponentState<T : Any>(
     initialValue: T,
     private val validate: (T) -> Unit,
 ) {
-    private val ownerThread = PlatformThreads.current()
+    private val ownerThread = currentThread()
     private val observers: MutableSet<(T) -> Unit> = LinkedHashSet()
     private val currentValue = mutableStateOf(initialValue)
 
@@ -57,6 +57,6 @@ internal class ObservableComponentState<T : Any>(
      * @throws IllegalStateException when called from another thread.
      */
     fun checkOwnerThread() {
-        check(PlatformThreads.current() === ownerThread) { "Component state requires its creator thread." }
+        check(currentThread() === ownerThread) { "Component state requires its creator thread." }
     }
 }
