@@ -188,11 +188,18 @@ exclude:
       - runtime/minecraft-fabric-1.20.4/src/main/java/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftSkinBridge.java
       - runtime/minecraft-fabric-unobfuscated/src/main/java/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftInventoryBridge.java
       - runtime/minecraft-fabric-1.21-legacy/src/main/java/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftInventoryBridge.java
-  # Qodana treats the Strata minecraft module as a runtime class source and reports its Kotlin and annotation dependencies as classpath overrides.
-  # Exact loaded-client tests exercise these inventory bridges with the owning Minecraft runtime and dependency set.
+  # Qodana treats the shared Minecraft and font modules as runtime class sources and reports their dependencies as classpath overrides.
+  # UUID bridges resolve the same kotlin-stdlib JAR directly and transitively; neither shared artifact embeds Kotlin classes.
+  # Exact loaded-client tests exercise these bridges with the owning Minecraft runtime and dependency set.
+  # Keep this exception limited to the confirmed bridge files until the inspection recognizes the identical dependency paths.
   - name: ClassOverriddenAtRuntime
     paths:
+      - runtime/minecraft-fabric-1.20.1/src/main/java/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftSkinBridge.java
+      - runtime/minecraft-fabric-1.20.4/src/main/java/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftSkinBridge.java
       - runtime/minecraft-fabric-1.21-legacy/src/main/java/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftInventoryBridge.java
+      - runtime/minecraft-fabric-1.21.3-legacy/src/main/java/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftSkinBridge.java
+      - runtime/minecraft-fabric-1.21.8-legacy/src/main/java/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftSkinBridge.java
+      - runtime/minecraft-fabric-1.21.9-legacy/src/main/java/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftSkinBridge.java
       - runtime/minecraft-fabric-unobfuscated/src/main/java/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftInventoryBridge.java
   # Mixin target self-casts are valid only after bytecode transformation, which Qodana deliberately does not execute.
   - name: DataFlowIssue
