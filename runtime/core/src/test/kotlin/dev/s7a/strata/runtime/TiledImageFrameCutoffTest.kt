@@ -27,7 +27,6 @@ import org.junit.jupiter.api.Assertions.assertSame
 import org.junit.jupiter.api.Test
 import java.lang.management.ManagementFactory
 import java.lang.reflect.Modifier
-import java.util.LinkedHashMap
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
@@ -124,7 +123,7 @@ internal class TiledImageFrameCutoffTest {
     ) : TiledImageSource {
         override val bounds: LongRect = LongRect(0L, 0L, 16L, 8L)
         override val levels: List<TiledImageLevel> = listOf(level)
-        private val histories: MutableMap<TiledImageTileId, TileHistory> = LinkedHashMap()
+        private val histories = mutableMapOf<TiledImageTileId, TileHistory>()
 
         override fun tile(id: TiledImageTileId): StateSource<TiledImageTile> =
             histories.getOrPut(id) {
