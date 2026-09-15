@@ -1,7 +1,6 @@
 package dev.s7a.strata.component
 
 import dev.s7a.strata.geometry.DoubleOffset
-import dev.s7a.strata.internal.platform.PlatformLock
 import dev.s7a.strata.internal.platform.synchronized
 import dev.s7a.strata.layout.Alignment
 import dev.s7a.strata.layout.ParentDataKey
@@ -183,7 +182,7 @@ internal object TiledImageContentParentData {
     }
 
     private class PositionBinding : AutoCloseable {
-        private val monitor = PlatformLock()
+        private val monitor = Any()
         private var committed: StateSnapshot<DoubleOffset>? = null
         private var pending: StateSnapshot<DoubleOffset>? = null
         private var captured: StateSnapshot<DoubleOffset>? = null

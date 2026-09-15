@@ -1,7 +1,6 @@
 package dev.s7a.strata.component
 
 import dev.s7a.strata.geometry.IntRect
-import dev.s7a.strata.internal.platform.PlatformLock
 import dev.s7a.strata.internal.platform.PlatformThreads
 import dev.s7a.strata.internal.platform.synchronized
 import dev.s7a.strata.render.DrawImage
@@ -37,7 +36,7 @@ internal class CpuCanvasSource(
 
     private class Binding : CanvasBinding {
         private val ownerThread: Any = PlatformThreads.current()
-        private val monitor: PlatformLock = PlatformLock()
+        private val monitor = Any()
         private var committed: StateSnapshot<DrawImage>? = null
         private var pending: StateSnapshot<DrawImage>? = null
         private var captured: StateSnapshot<DrawImage>? = null
@@ -76,19 +75,17 @@ internal class CpuCanvasSource(
 
         override fun commitFrame(): Boolean {
             checkOwner()
-            val previous: DrawImage?
-            val next: StateSnapshot<DrawImage>
-            synchronized(monitor) {
+            return synchronized(monitor) {
                 check(frameCaptured) { "A canvas frame must be captured before commit." }
                 frameCaptured = false
-                next = captured ?: return false
+                val next = captured ?: return@synchronized false
                 captured = null
                 requireImage(next.value)
-                previous = committed?.value
+                val previous = committed?.value
                 committed = next
+                // A distinct image replaces the cached command even when pixels compare equal, releasing obsolete image storage.
+                previous !== next.value
             }
-            // A distinct image must replace the cached command even when pixels compare equal, so obsolete image storage is released.
-            return previous !== next.value
         }
 
         override fun paint(scope: PaintScope) {

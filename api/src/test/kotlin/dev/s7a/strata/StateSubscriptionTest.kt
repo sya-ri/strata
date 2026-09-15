@@ -64,7 +64,7 @@ internal class StateSubscriptionTest {
                     Thread.currentThread().isInterrupted
                 }
             val waiter = secondThread.get(2, TimeUnit.SECONDS)
-            assertTrue(awaitWaiting(waiter))
+            assertTrue(awaitBlocked(waiter))
             waiter.interrupt()
             assertFalse(second.isDone)
             releaseAction.countDown()
@@ -104,7 +104,7 @@ internal class StateSubscriptionTest {
                     secondThread.complete(Thread.currentThread())
                     runCatching { handle.close() }.exceptionOrNull()
                 }
-            assertTrue(awaitWaiting(secondThread.get(2, TimeUnit.SECONDS)))
+            assertTrue(awaitBlocked(secondThread.get(2, TimeUnit.SECONDS)))
             releaseAction.countDown()
 
             val firstFailure = first.get(2, TimeUnit.SECONDS)
@@ -122,14 +122,14 @@ internal class StateSubscriptionTest {
         }
     }
 
-    private fun awaitWaiting(thread: Thread): Boolean {
+    private fun awaitBlocked(thread: Thread): Boolean {
         val deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(2)
         while (System.nanoTime() < deadline) {
-            if (thread.state == ThreadState.WAITING) {
+            if (thread.state == ThreadState.BLOCKED) {
                 return true
             }
             Thread.onSpinWait()
         }
-        return thread.state == ThreadState.WAITING
+        return thread.state == ThreadState.BLOCKED
     }
 }

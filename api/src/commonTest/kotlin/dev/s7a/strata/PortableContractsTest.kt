@@ -5,10 +5,8 @@ import dev.s7a.strata.geometry.IntOffset
 import dev.s7a.strata.geometry.IntRect
 import dev.s7a.strata.geometry.IntSize
 import dev.s7a.strata.geometry.LongRect
-import dev.s7a.strata.internal.platform.PlatformLock
 import dev.s7a.strata.internal.platform.appendScalar
 import dev.s7a.strata.internal.platform.scalarAt
-import dev.s7a.strata.internal.platform.synchronized
 import dev.s7a.strata.layout.ParentDataKey
 import dev.s7a.strata.render.createDrawImage
 import dev.s7a.strata.resource.parseProfileUuid
@@ -17,8 +15,6 @@ import dev.s7a.strata.state.mutableStateOf
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
-import kotlin.test.assertFalse
-import kotlin.test.assertTrue
 
 /**
  * Runs deterministic low-level portability contracts on JVM and JavaScript.
@@ -56,20 +52,6 @@ internal class PortableContractsTest {
         val isolated = charArrayOf(0xD800.toChar()).concatToString()
         assertEquals(0xD800, isolated.scalarAt(0))
         assertFailsWith<IllegalArgumentException> { StringBuilder().appendScalar(0xD800) }
-    }
-
-    @Test
-    fun lockOwnershipSurvivesNestedOperationsAndFailure() {
-        val lock = PlatformLock()
-        assertFalse(lock.isHeldByCurrentThread())
-        assertFailsWith<IllegalArgumentException> {
-            synchronized(lock) {
-                assertTrue(lock.isHeldByCurrentThread())
-                synchronized(lock) { assertTrue(lock.isHeldByCurrentThread()) }
-                throw IllegalArgumentException("Expected failure")
-            }
-        }
-        assertFalse(lock.isHeldByCurrentThread())
     }
 
     @Test

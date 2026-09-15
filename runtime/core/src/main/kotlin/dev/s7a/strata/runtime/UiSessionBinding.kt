@@ -1,6 +1,6 @@
 package dev.s7a.strata.runtime
 
-import dev.s7a.strata.runtime.platform.PlatformLock
+import dev.s7a.strata.runtime.platform.synchronized
 import dev.s7a.strata.state.StateSnapshot
 import dev.s7a.strata.state.StateSubscription
 import kotlin.properties.ReadOnlyProperty
@@ -23,7 +23,7 @@ internal class UiSessionBinding<T>(
     private val beginMutation: () -> Unit,
     private val endMutation: () -> Unit,
 ) : ReadOnlyProperty<Any?, T> {
-    private val lock = PlatformLock()
+    private val monitor = Any()
     private var committed: StateSnapshot<T>? = null
     private var pending: StateSnapshot<T>? = null
     private var captured: StateSnapshot<T>? = null
@@ -54,21 +54,21 @@ internal class UiSessionBinding<T>(
      * @param snapshot the source observation to coalesce.
      */
     fun enqueue(snapshot: StateSnapshot<T>) {
-        lock.withLock {
+        synchronized(monitor) {
             if (disabled) {
-                return@withLock
+                return
             }
             val committedRevision = committed?.revision
             if (committedRevision != null && snapshot.revision <= committedRevision) {
-                return@withLock
+                return
             }
             val pendingRevision = pending?.revision
             if (pendingRevision != null && snapshot.revision <= pendingRevision) {
-                return@withLock
+                return
             }
             val capturedRevision = captured?.revision
             if (capturedRevision != null && snapshot.revision <= capturedRevision) {
-                return@withLock
+                return
             }
             pending = snapshot
         }
@@ -81,7 +81,7 @@ internal class UiSessionBinding<T>(
      */
     fun install(nextSubscription: StateSubscription<T>) {
         val closeNow =
-            lock.withLock {
+            synchronized(monitor) {
                 if (closeRequested || disabled) {
                     true
                 } else {
@@ -98,7 +98,7 @@ internal class UiSessionBinding<T>(
      * @param initial the source-provided initial snapshot.
      */
     fun commitInitial(initial: StateSnapshot<T>) {
-        lock.withLock {
+        synchronized(monitor) {
             val queued = pending
             if (queued == null || queued.revision <= initial.revision) {
                 pending = null
@@ -114,7 +114,7 @@ internal class UiSessionBinding<T>(
      * Only one transaction-local snapshot is retained until [applyPending] or terminal cleanup.
      */
     fun capturePending() {
-        lock.withLock {
+        synchronized(monitor) {
             captured = pending
             pending = null
         }
@@ -127,13 +127,13 @@ internal class UiSessionBinding<T>(
      */
     fun applyPending(): Boolean {
         val (previous, next) =
-            lock.withLock {
-                val next = captured ?: return@withLock null
+            synchronized(monitor) {
+                val next = captured ?: return false
                 val previous = committed
                 captured = null
                 committed = next
                 previous to next
-            } ?: return false
+            }
         beginMutation()
         try {
             return previous?.value != next.value
@@ -146,7 +146,7 @@ internal class UiSessionBinding<T>(
      * Disables callbacks and discards pending values during session cleanup.
      */
     fun disable() {
-        lock.withLock {
+        synchronized(monitor) {
             disabled = true
             pending = null
             captured = null
@@ -160,7 +160,7 @@ internal class UiSessionBinding<T>(
      */
     fun closeSubscription(): Throwable? {
         val toClose =
-            lock.withLock {
+            synchronized(monitor) {
                 closeRequested = true
                 subscription.also { subscription = null }
             }

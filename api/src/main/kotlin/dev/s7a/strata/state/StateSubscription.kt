@@ -1,6 +1,5 @@
 package dev.s7a.strata.state
 
-import dev.s7a.strata.internal.platform.PlatformLock
 import dev.s7a.strata.internal.platform.synchronized
 import kotlin.jvm.JvmSynthetic
 
@@ -52,7 +51,7 @@ public class StateSubscription<out T> public constructor(
     private class CloseController(
         private val closeAction: () -> Unit,
     ) : AutoCloseable {
-        private val monitor = PlatformLock()
+        private val monitor = Any()
         private var state: CloseState = CloseState.Open
         private var reentrantFailure: Throwable? = null
 

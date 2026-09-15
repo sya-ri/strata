@@ -1,6 +1,5 @@
 package dev.s7a.strata.state
 
-import dev.s7a.strata.internal.platform.PlatformLock
 import dev.s7a.strata.internal.platform.synchronized
 
 /**
@@ -10,7 +9,7 @@ import dev.s7a.strata.internal.platform.synchronized
 internal class MappedStateDelivery<T>(
     observer: (StateSnapshot<T>) -> Unit,
 ) : AutoCloseable {
-    private val monitor = PlatformLock()
+    private val monitor = Any()
     private var observer: ((StateSnapshot<T>) -> Unit)? = observer
 
     /**
