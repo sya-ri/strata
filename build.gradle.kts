@@ -924,7 +924,7 @@ subprojects {
         tasks.withType<GenerateModuleMetadata>().configureEach {
             dependsOn(tasks.matching { it.name.endsWith("DokkaJavadocJar") })
         }
-        tasks.named("check") { dependsOn("dokkaGeneratePublicationHtml") }
+        tasks.named("check") { dependsOn("allMetadataJar", "dokkaGeneratePublicationHtml") }
 
         tasks.withType<AbstractArchiveTask>().configureEach {
             from(rootProject.file("LICENSE")) {

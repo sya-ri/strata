@@ -10,6 +10,7 @@ Their JVM archive names also remain unchanged so Fabric includes the same common
 Multiplatform consumers select `strata-api-multiplatform` and `strata-runtime-core-multiplatform`; their Gradle metadata resolves JVM to those existing artifacts and JavaScript to the corresponding `-js` artifacts.
 The canonical release inventory includes all target artifacts.
 Common behavior tests run on JVM, Node.js, and headless Chrome, while JVM-only concurrency tests continue to exercise real threads.
+Published multiplatform modules also compile and package their common metadata during `check`, so target-specific implementations cannot conceal invalid shared declarations until publication.
 KMP documentation uses Dokka HTML in the conventional `javadoc` classifier because the Javadoc output plugin does not support multiplatform declarations.
 
 ## Initial web documents
