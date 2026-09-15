@@ -563,10 +563,8 @@ internal class MinecraftImageTest {
     private fun solidImage(color: Int): DrawImage = createDrawImage(IntSize(2, 2), IntArray(4) { color })
 
     private fun activeComponentRuntime(): ComponentRuntime {
-        val activeField = ComponentRuntimeBridge::class.java.getDeclaredField("active")
-        check(activeField.trySetAccessible()) { "The active component runtime is inaccessible." }
-        val active = checkNotNull(activeField.get(ComponentRuntimeBridge) as? ThreadLocal<*>)
-        return checkNotNull(active.get() as? ComponentRuntime)
+        val current = ComponentRuntimeBridge::class.java.declaredMethods.single { method -> method.name.startsWith("current$") }
+        return current.invoke(ComponentRuntimeBridge) as ComponentRuntime
     }
 
     private fun captureResourceImages(runtime: ComponentRuntime): Any {
