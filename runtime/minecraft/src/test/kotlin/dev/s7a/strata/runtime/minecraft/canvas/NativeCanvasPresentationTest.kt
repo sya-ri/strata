@@ -172,9 +172,6 @@ internal class NativeCanvasPresentationTest {
                     assertTrue(fields.all { Modifier.isFinal(it.modifiers) })
                     assertTrue(fields.all { it.type == Long::class.javaPrimitiveType || it.type == IntSize::class.java })
                 }
-                assertThrows(UnsupportedOperationException::class.java) { (original.drawCommands as MutableList).clear() }
-                assertThrows(UnsupportedOperationException::class.java) { (presentation.drawCommands as MutableList).clear() }
-                assertThrows(UnsupportedOperationException::class.java) { (presentation.capture() as MutableList).clear() }
                 assertThrows(IllegalStateException::class.java) { fixture.device.target(presentation, nativeToken) }
             }
         }

@@ -12,7 +12,6 @@ import dev.s7a.strata.node.DynamicChildrenNode
 import dev.s7a.strata.node.ReactiveContentNode
 import dev.s7a.strata.node.StateObserverNode
 import dev.s7a.strata.runtime.diagnostics.UiRenderMetric
-import dev.s7a.strata.runtime.platform.identitySet
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
 import dev.s7a.strata.state.StateObservation
 
@@ -263,7 +262,7 @@ internal class Reconciler(
     ): ModifierUpdate {
         val oldModifiers = retained.modifiers.toList()
         val nextModifiers = ArrayList<RetainedModifier>(descriptions.size)
-        val reused = identitySet<RetainedModifier>()
+        val reused = mutableSetOf<RetainedModifier>()
         val created = ArrayList<RetainedModifier>()
         val updates = ArrayList<ModifierMask>()
         var removed = emptyList<RetainedModifier>()
@@ -338,7 +337,7 @@ internal class Reconciler(
                 keyed[identity.key] = oldChild
             }
         }
-        val used = identitySet<RetainedNode>()
+        val used = mutableSetOf<RetainedNode>()
         val nextChildren = ArrayList<RetainedNode>(descriptions.size)
         val newlyCreated = ArrayList<RetainedNode>()
         descriptions.forEachIndexed { index, childDescription ->

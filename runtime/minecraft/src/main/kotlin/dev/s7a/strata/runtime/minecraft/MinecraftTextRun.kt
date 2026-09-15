@@ -12,7 +12,6 @@ import dev.s7a.strata.runtime.minecraft.font.MinecraftFontEngine
 import dev.s7a.strata.runtime.minecraft.font.MinecraftFontGlyph
 import dev.s7a.strata.runtime.minecraft.font.MinecraftVisualGlyph
 import dev.s7a.strata.text.UiText
-import java.util.Collections
 import kotlin.math.max
 import kotlin.math.min
 
@@ -42,8 +41,8 @@ internal class MinecraftTextRun private constructor(
 ) {
     private val glyphSize = IntSize(8, 8)
     private val shadowOffset = IntOffset(1, 1)
-    private val glyphs: List<PositionedGlyph> = Collections.unmodifiableList(glyphs.toList())
-    private val sampledGlyphs: List<SampledGlyph> = Collections.unmodifiableList(sampledGlyphs.toList())
+    private val glyphs = glyphs.toList()
+    private val sampledGlyphs = sampledGlyphs.toList()
     private val sampledIndex: SampledIndex? = if (paintPolicy.forwardAdvances) SampledIndex.create(this.sampledGlyphs) else null
     private val sampledShadows: Boolean = this.sampledGlyphs.any { it.shadow != null }
 

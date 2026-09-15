@@ -2,7 +2,6 @@ package dev.s7a.strata.runtime.minecraft.font
 
 import com.google.gson.JsonObject
 import dev.s7a.strata.resource.ResourceId
-import java.util.Collections
 
 /**
  * Synchronous callback-lifetime parser for the complete immutable font graph.
@@ -77,7 +76,7 @@ internal class FontSnapshotLoader(
         val filter = if (compatibility.providerFilters) filter(document) else emptyMap()
         val identity = nextIdentity
         nextIdentity = Math.incrementExact(nextIdentity)
-        return FontProviderEntry(identity, provider, Collections.unmodifiableMap(filter), source)
+        return FontProviderEntry(identity, provider, filter, source)
     }
 
     private fun bitmap(
@@ -112,7 +111,7 @@ internal class FontSnapshotLoader(
                 .getOrPut(resource) {
                     runCatching { resource.checkBitmap(limits) { amount -> budget.claim(FontLoadBudget.Kind.DecompressedBytes, amount) } }
                 }.getOrThrow()
-            FontProvider.Bitmap(resource, height, ascent, columns, rows.size(), Collections.unmodifiableMap(cells))
+            FontProvider.Bitmap(resource, height, ascent, columns, rows.size(), cells)
         }
     }
 
@@ -123,7 +122,7 @@ internal class FontSnapshotLoader(
         for ((key, value) in records.entrySet()) {
             advances[FontJson.codePoint(key)] = FontJson.decimal(value)
         }
-        return FontProvider.Space(Collections.unmodifiableMap(advances))
+        return FontProvider.Space(advances)
     }
 
     private fun trueType(
@@ -158,7 +157,7 @@ internal class FontSnapshotLoader(
                         budget.claim(FontLoadBudget.Kind.TrueTypeInputBytes, resource.size.toLong())
                     }
                 }.getOrThrow()
-            FontProvider.TrueType(resource, settings, Collections.unmodifiableSet(skipped))
+            FontProvider.TrueType(resource, settings, skipped)
         }
     }
 
@@ -183,7 +182,7 @@ internal class FontSnapshotLoader(
                 }.orEmpty()
         val file = FontJson.identifier(FontJson.string(document.get("hex_file")))
         return asset(font, source, file) { resource ->
-            FontProvider.Unihex(FontUnihexData.load(resource.copyBytes(), budget), Collections.unmodifiableList(overrides))
+            FontProvider.Unihex(FontUnihexData.load(resource.copyBytes(), budget), overrides)
         }
     }
 

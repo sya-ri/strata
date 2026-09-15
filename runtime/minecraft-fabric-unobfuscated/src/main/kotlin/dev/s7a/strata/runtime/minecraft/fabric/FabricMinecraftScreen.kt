@@ -26,7 +26,6 @@ import net.minecraft.client.Minecraft
 import net.minecraft.client.gui.GuiGraphicsExtractor
 import net.minecraft.client.gui.screens.Screen
 import net.minecraft.client.input.MouseButtonEvent
-import java.util.IdentityHashMap
 import net.minecraft.client.input.CharacterEvent as MinecraftCharacterEvent
 import net.minecraft.client.input.KeyEvent as MinecraftKeyEvent
 import net.minecraft.client.input.PreeditEvent as MinecraftPreeditEvent
@@ -609,7 +608,7 @@ public class FabricMinecraftScreen private constructor(
                 { sampledImageUploadCount += 1L },
                 { sampledImageEvictionCount += 1L },
             ) { textureFor, sampledQueued ->
-                val resolvedTextures = IdentityHashMap<FabricMinecraftFrameLayer.Sampled, FabricMinecraftPortableTexture>()
+                val resolvedTextures = mutableMapOf<FabricMinecraftFrameLayer.Sampled, FabricMinecraftPortableTexture>()
                 val resolved =
                     layers.map { layer ->
                         if (layer is FabricMinecraftFrameLayer.Sampled) {

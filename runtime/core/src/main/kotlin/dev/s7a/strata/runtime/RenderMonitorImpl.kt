@@ -10,7 +10,6 @@ import dev.s7a.strata.runtime.diagnostics.UiRenderNodeId
 import dev.s7a.strata.runtime.diagnostics.UiRenderNodeKind
 import dev.s7a.strata.runtime.diagnostics.UiRenderOperation
 import dev.s7a.strata.runtime.diagnostics.UiRenderSnapshot
-import dev.s7a.strata.runtime.platform.IdentityMap
 import dev.s7a.strata.runtime.platform.diagnosticName
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
 
@@ -27,7 +26,7 @@ internal class RenderMonitorImpl(
 ) : UiRenderMonitor {
     private val threadGuard = ThreadGuard()
     private val totals = RenderWorkCounts()
-    private val live = IdentityMap<RetainedEntry, RenderNodeRecord>()
+    private val live = mutableMapOf<RetainedEntry, RenderNodeRecord>()
     private val records = ArrayList<RenderNodeRecord>()
     private var failed = false
     private var finalSnapshot: UiRenderSnapshot? = null

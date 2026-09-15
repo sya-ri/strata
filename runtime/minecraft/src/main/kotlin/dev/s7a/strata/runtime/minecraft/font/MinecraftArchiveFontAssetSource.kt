@@ -2,7 +2,6 @@ package dev.s7a.strata.runtime.minecraft.font
 
 import java.nio.file.Files
 import java.nio.file.Path
-import java.util.Collections
 import java.util.zip.ZipFile
 
 /**
@@ -44,7 +43,7 @@ public class MinecraftArchiveFontAssetSource(
                     .map { entry -> entry.name.checkedFontSourcePath() }
                     .sorted()
                     .toList()
-            Collections.unmodifiableSet(LinkedHashSet(paths))
+            paths.toSet()
         }
 
     override fun read(path: String): ByteArray? = read(path, MinecraftFontLoadLimits())

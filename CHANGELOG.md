@@ -6,6 +6,7 @@ Keep all Strata artifacts on the same release version.
 ## Unreleased
 
 Portable `Uuid` identifiers use Kotlin's standard UUID implementation on JavaScript while preserving native Java UUIDs and the existing player-skin API on JVM.
+Runtime collection snapshots use Kotlin standard copies, while reference identity is preserved where ownership requires it.
 
 ## 0.1.6 - 2026-09-09
 

@@ -11,7 +11,6 @@ import dev.s7a.strata.runtime.minecraft.font.MinecraftFontBackendFactory
 import dev.s7a.strata.runtime.minecraft.font.lwjgl.LwjglMinecraftFontBackendFactory
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
 import java.nio.file.Path
-import java.util.Collections
 
 /**
  * Owns immutable original-resource images, fonts, and input hashes for one headless showcase generation.
@@ -57,17 +56,15 @@ internal class ShowcaseMinecraftAssets(
         images =
             backendFactory.open(inputs.compatibility).use { backend ->
                 require(backend is MinecraftBoundedFontBackend) { "Showcase image decoding requires a bounded CPU backend." }
-                Collections.unmodifiableMap(
-                    ShowcaseGuiAsset.entries.associateWith { asset ->
-                        val bytes = requireNotNull(inputs.read(asset.id)) { "Missing original showcase resource: " + asset.id }
-                        require(inputs.limits.checkPng(bytes)) { "Showcase images must be original PNG resources." }
-                        val image = backend.decodePng(bytes, inputs.limits)
-                        inputs.limits.requireImageSize(image.size.width, image.size.height)
-                        require(image.size == asset.size) { "Showcase resource has unexpected dimensions: " + asset.id }
-                        asset.metadata.validate(inputs.read(asset.id, metadata = true), image.size, inputs.limits)
-                        image
-                    },
-                )
+                ShowcaseGuiAsset.entries.associateWith { asset ->
+                    val bytes = requireNotNull(inputs.read(asset.id)) { "Missing original showcase resource: " + asset.id }
+                    require(inputs.limits.checkPng(bytes)) { "Showcase images must be original PNG resources." }
+                    val image = backend.decodePng(bytes, inputs.limits)
+                    inputs.limits.requireImageSize(image.size.width, image.size.height)
+                    require(image.size == asset.size) { "Showcase resource has unexpected dimensions: " + asset.id }
+                    asset.metadata.validate(inputs.read(asset.id, metadata = true), image.size, inputs.limits)
+                    image
+                }
             }
         profile = createShowcaseMinecraftProfile(fonts, images)
         playerSkin = PlayerSkinSource.Pixels(images.getValue(ShowcaseGuiAsset.PlayerSkin))
@@ -84,7 +81,7 @@ internal class ShowcaseMinecraftAssets(
 
     /**
      * Returns stable logical keys and lowercase SHA-256 values for every consumed source and selected configuration.
-     * No absolute filesystem path or native screenshot appears in this immutable map.
+     * No absolute filesystem path or native screenshot appears in this read-only snapshot.
      */
     fun inputHashes(): Map<String, String> = hashes
 }

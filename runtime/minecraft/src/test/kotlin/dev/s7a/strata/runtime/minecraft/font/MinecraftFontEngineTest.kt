@@ -312,9 +312,27 @@ internal class MinecraftFontEngineTest {
             val glyphs = engine.visualGlyphs("日😀한\uD800")
             assertEquals(listOf('日'.code, 0x1F600, '한'.code, 0xFFFD), glyphs.map(MinecraftVisualGlyph::codePoint))
             assertEquals(listOf(0, 1, 3, 4), glyphs.map(MinecraftVisualGlyph::sourceIndex))
-            assertThrows(UnsupportedOperationException::class.java) { (glyphs as MutableList<MinecraftVisualGlyph>).clear() }
             assertEquals(0, engine.retainedRasterEntries)
             assertThrows(IllegalArgumentException::class.java) { engine.glyph(FontTestResources.defaultFont, 0xD800) }
+        }
+    }
+
+    @Test
+    fun visualGlyphSnapshotsSurviveBackendBufferReuse() {
+        val buffer = mutableListOf(MinecraftVisualGlyph('A'.code, 0), MinecraftVisualGlyph('B'.code, 1))
+        val backend =
+            object : MinecraftFontBackend by FontTestBackend() {
+                override fun visualGlyphs(
+                    text: String,
+                    rightToLeft: Boolean,
+                ): List<MinecraftVisualGlyph> = buffer
+            }
+        MinecraftFontEngine(trueTypeSnapshot("default"), MinecraftFontBackendFactory { backend }).use { engine ->
+            val first = engine.visualGlyphs("AB")
+            buffer.clear()
+            buffer.add(MinecraftVisualGlyph('C'.code, 0))
+            assertEquals(listOf('A'.code, 'B'.code), first.map(MinecraftVisualGlyph::codePoint))
+            assertEquals(listOf('C'.code), engine.visualGlyphs("C").map(MinecraftVisualGlyph::codePoint))
         }
     }
 

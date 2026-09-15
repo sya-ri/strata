@@ -159,8 +159,6 @@ internal class MinecraftUiHostTest {
         assertEquals(IntSize(4, 3), first.size)
         assertEquals(listOf(Constraints.fixed(4, 3)), probe.constraints)
         assertEquals(InputResult.Consumed, host.dispatchPointer(PointerEvent.Move(IntOffset.Zero)))
-        assertThrows(UnsupportedOperationException::class.java) { (first.drawCommands as MutableList).clear() }
-        assertThrows(UnsupportedOperationException::class.java) { (first.semantics as MutableList).clear() }
 
         retained.invalidatePaint()
         val paintsBeforeReattach = probe.paintCalls

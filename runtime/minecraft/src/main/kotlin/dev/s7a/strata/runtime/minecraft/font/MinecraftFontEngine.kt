@@ -5,7 +5,6 @@ import dev.s7a.strata.render.DrawImage
 import dev.s7a.strata.render.SampledImageOrientation
 import dev.s7a.strata.render.createDrawImage
 import dev.s7a.strata.resource.ResourceId
-import java.util.Collections
 
 /**
  * Owner-thread portable glyph engine for one immutable resource state.
@@ -108,7 +107,7 @@ public class MinecraftFontEngine
         public val diagnostics: List<MinecraftFontDiagnostic>
             get() {
                 checkOwner()
-                return Collections.unmodifiableList(loadDiagnostics.toList())
+                return loadDiagnostics.toList()
             }
 
         /**
@@ -169,7 +168,7 @@ public class MinecraftFontEngine
          *
          * @param text immutable logical text containing all spans on one line.
          * @param rightToLeft whether the fallback paragraph direction is right-to-left; defaults to the captured language option.
-         * @return detached immutable visual glyphs whose source offsets belong to the original logical line.
+         * @return a detached read-only list of visual glyphs whose source offsets belong to the original logical line.
          * @throws IllegalStateException when accessed from another thread or after close.
          */
         @JvmOverloads
@@ -178,7 +177,7 @@ public class MinecraftFontEngine
             rightToLeft: Boolean = options.rightToLeft,
         ): List<MinecraftVisualGlyph> {
             requireSnapshot()
-            return Collections.unmodifiableList(checkNotNull(backend).visualGlyphs(text, rightToLeft).toList())
+            return checkNotNull(backend).visualGlyphs(text, rightToLeft).toList()
         }
 
         /**

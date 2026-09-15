@@ -1,10 +1,9 @@
 package dev.s7a.strata.runtime.minecraft.font
 
 import dev.s7a.strata.resource.ResourceId
-import java.util.Collections
 
 /**
- * Immutable detached font-provider graph loaded directly from a resource-pack stack.
+ * Detached font-provider graph with read-only collections loaded directly from a resource-pack stack.
  * All referenced bytes and sparse Unihex rows are owned snapshots; no source, stream, native face, or game object is retained.
  * The same snapshot may be shared across threads and independent engines.
  *
@@ -23,7 +22,7 @@ public class MinecraftFontSnapshot internal constructor(
 ) {
     /**
      * Preserves the existing internal construction boundary using default allocation ceilings.
-     * Inputs and immutable ownership follow the primary constructor.
+     * Inputs and snapshot ownership follow the primary constructor.
      */
     internal constructor(
         compatibility: MinecraftFontCompatibility,
@@ -36,17 +35,17 @@ public class MinecraftFontSnapshot internal constructor(
      * Copied resolved providers, shared read-only by engines without retaining loader state.
      */
     internal val fonts: Map<ResourceId, List<FontProviderEntry>> =
-        Collections.unmodifiableMap(fonts.mapValues { (_, entries) -> Collections.unmodifiableList(entries.toList()) })
+        fonts.mapValues { (_, entries) -> entries.toList() }
 
     /**
      * Available font families whose complete reference graphs resolved.
      */
-    public val fontIds: Set<ResourceId> = Collections.unmodifiableSet(LinkedHashSet(this.fonts.keys))
+    public val fontIds: Set<ResourceId> = this.fonts.keys.toSet()
 
     /**
      * Detached diagnostics for skipped documents and unresolved bundles, in deterministic load order.
      */
-    public val diagnostics: List<MinecraftFontDiagnostic> = Collections.unmodifiableList(diagnostics.toList())
+    public val diagnostics: List<MinecraftFontDiagnostic> = diagnostics.toList()
 
     /**
      * Owns synchronous resource-pack snapshot loading without a Minecraft dependency.

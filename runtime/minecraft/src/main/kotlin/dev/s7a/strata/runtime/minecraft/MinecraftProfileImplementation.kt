@@ -37,7 +37,6 @@ import dev.s7a.strata.spi.InternalStrataRuntimeApi
 import dev.s7a.strata.text.TextLayout
 import dev.s7a.strata.text.TextWrap
 import dev.s7a.strata.text.UiText
-import java.util.Collections
 
 /**
  * Owns profile construction, host-lifetime resource-image resolution, retained evaluation, and dynamically scoped component dispatch.
@@ -703,7 +702,7 @@ internal object MinecraftProfileImplementation {
         val highlightedButton: MinecraftButtonSpriteSnapshot,
         val disabledButton: MinecraftButtonSpriteSnapshot,
     ) : MinecraftUiProfile {
-        private val glyphs: Map<Int, MinecraftGlyphSnapshot> = Collections.unmodifiableMap(LinkedHashMap(glyphs))
+        private val glyphs = glyphs.toMap()
 
         fun glyphSnapshot(): Map<Int, MinecraftGlyphSnapshot> = glyphs
 

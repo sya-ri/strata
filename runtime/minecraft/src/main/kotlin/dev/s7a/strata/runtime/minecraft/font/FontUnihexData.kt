@@ -2,7 +2,6 @@ package dev.s7a.strata.runtime.minecraft.font
 
 import java.io.ByteArrayInputStream
 import java.io.InputStream
-import java.util.Collections
 import java.util.zip.ZipInputStream
 
 /**
@@ -11,7 +10,7 @@ import java.util.zip.ZipInputStream
 internal class FontUnihexData private constructor(
     glyphs: Map<Int, FontHexGlyph>,
 ) {
-    private val glyphs = Collections.unmodifiableMap(LinkedHashMap(glyphs))
+    private val glyphs = glyphs.toMap()
 
     /**
      * Returns source rows for one scalar, or null when the archive provides no glyph.

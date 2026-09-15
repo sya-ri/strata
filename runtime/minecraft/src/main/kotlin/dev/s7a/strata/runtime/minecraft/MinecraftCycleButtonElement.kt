@@ -35,7 +35,6 @@ import dev.s7a.strata.semantics.Semantics
 import dev.s7a.strata.semantics.SemanticsRole
 import dev.s7a.strata.semantics.SemanticsScope
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
-import java.util.Collections
 import dev.s7a.strata.node.Node as RetainedNode
 
 /**
@@ -58,7 +57,7 @@ private class MinecraftCycleButtonElement private constructor(
         children = emptyList(),
         modifier = modifier,
     ) {
-    internal val labels: List<Pair<MinecraftTextRun, MinecraftTextRun>> = Collections.unmodifiableList(labels.toList())
+    internal val labels: List<Pair<MinecraftTextRun, MinecraftTextRun>> = labels.toList()
 
     @Suppress("TooManyFunctions") // The retained node implements the component's input, lifecycle, drawing, and semantics contracts.
     private class Node(

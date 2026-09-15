@@ -2,7 +2,6 @@ package dev.s7a.strata.runtime.minecraft.font
 
 import java.nio.file.Files
 import java.nio.file.Path
-import java.util.Collections
 
 /**
  * Offline source for a Minecraft asset index and its already-downloaded object directory.
@@ -40,7 +39,7 @@ public class MinecraftIndexedFontAssetSource(
             require(Regex("[0-9a-f]{40}").matches(hash)) { "Asset index object hash is invalid." }
             hashes[relative] = hash
         }
-        entries = Collections.unmodifiableMap(hashes)
+        entries = hashes
     }
 
     /**

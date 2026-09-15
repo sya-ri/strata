@@ -7,7 +7,6 @@ import dev.s7a.strata.runtime.render.DrawCommand
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
 import net.minecraft.client.Minecraft
 import net.minecraft.client.gui.GuiGraphics
-import java.util.IdentityHashMap
 
 /**
  * Owns prepared display layers, native frame textures, and render-work counters for one Fabric screen.
@@ -155,7 +154,7 @@ internal class FabricMinecraftFramePresenter(
                 { sampledImageUploadCount += 1L },
                 { sampledImageEvictionCount += 1L },
             ) { textureFor, sampledQueued ->
-                val resolvedTextures = IdentityHashMap<FabricMinecraftFrameLayer.Sampled, FabricMinecraftPortableTexture>()
+                val resolvedTextures = mutableMapOf<FabricMinecraftFrameLayer.Sampled, FabricMinecraftPortableTexture>()
                 val resolved =
                     layers.map { layer ->
                         if (layer is FabricMinecraftFrameLayer.Sampled) {
