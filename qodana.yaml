@@ -231,6 +231,8 @@ exclude:
       # These exact bridges are exercised by common/JVM tests; retain every other inspection and remove this exception when the model resolves KMP usages.
       - api/src/jvmMain/kotlin/dev/s7a/strata/internal/platform/EvaluationContext.kt
       - api/src/jvmMain/kotlin/dev/s7a/strata/resource/Uuid.kt
+      # UiSession.GenerationDispatcher calls resume; the flattened model resolves its JVM actual but misses the common expect.
+      - runtime/core/src/commonMain/kotlin/dev/s7a/strata/runtime/SessionGenerationToken.kt
       - runtime/core/src/jvmMain/kotlin/dev/s7a/strata/runtime/SessionGenerationToken.kt
       - runtime/core/src/jvmMain/kotlin/dev/s7a/strata/runtime/platform/IdentityMap.kt
       - api/src/main/kotlin/dev/s7a/strata/geometry/Constraints.kt
