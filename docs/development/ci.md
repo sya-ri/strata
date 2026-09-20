@@ -29,6 +29,8 @@ Ordinary client launches and personal settings are unaffected; frame fences and 
 The planner numerically sorts paired targets and deals them across bounded shards with fail-fast disabled.
 Documentation checks run exactly once on the shard owning their explicitly declared native input; missing or ambiguous ownership fails planning.
 Common checks include isolated CPU-font workers; native font comparisons stay with their integration targets.
+The web job checks the browser runtime, compiled demo factories, and production demo behavior at both current and release URL prefixes.
+It provisions version-matched Chromium and publishes freshly captured screenshots as acceptance evidence.
 Prose-only changes outside compiled documentation contracts do not launch the JVM workflow.
 
 | Cache | Identity and access |

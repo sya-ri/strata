@@ -133,6 +133,8 @@ Historical tagged sites keep the publication contract from their immutable sourc
 Final release verification downloads the selected `/releases/{version}/pages-public-urls.txt` from the configured Pages origin, requests every listed path relative to that immutable base, checks its `source-revision.txt`, and polls its receipt until both the release tag and exact commit are visible in a current final HTTP response.
 The Documentation workflow invokes `:integration:docs:checkDokkaPagesStaging` only from the exact `master` head; that task depends on the fully qualified root `:dokkaGenerate` and verifies the generated API site.
 The workflow deploys the resulting `build/dokka/html` directory through GitHub Pages' artifact and OIDC deployment path.
+That single directory includes the verified web demos under `demos/`, with their documents and assets in the public-path inventory.
+Tags created after the web demos were introduced retain their own demos under `releases/{version}/demos/`; older tagged sites remain unchanged.
 Before any repository-local action runs and again immediately before deployment, the workflow requires its checkout to equal the exact `origin/master` head and requires controller metadata to identify the current annotated tag, commit, tag object, latest-release order, and ancestry.
 Release-tag pushes and manual dispatches never execute the Documentation workflow; every `master` push reconstructs the release inventory from the trusted controller definition.
 The deployable `github-pages` artifact and its separate immutable-release evidence artifact are retained for thirty days so a delayed protected release approval can still revalidate the exact archives from the same run.

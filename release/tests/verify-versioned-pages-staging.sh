@@ -193,7 +193,12 @@ printf 'old release\n' > "$fixture/build/dokka/html/releases/0.1.0/index.html"
 printf 'old guide\n' > "$fixture/build/dokka/html/releases/0.1.0/guide/index.html"
 printf 'current release\n' > "$fixture/build/dokka/html/index.html"
 printf 'current API\n' > "$fixture/build/dokka/html/api/index.html"
-printf '%s\n' / /api/index.html /index.html /source-receipt.json /source-revision.txt > \
+mkdir -p "$fixture/build/dokka/html/demos/counter"
+printf '<a href="counter/">Counter</a>\n' > "$fixture/build/dokka/html/demos/index.html"
+printf '<script src="../app.js"></script><a href="../../index.html">API</a>\n' > "$fixture/build/dokka/html/demos/counter/index.html"
+printf 'window.demo = true;\n' > "$fixture/build/dokka/html/demos/app.js"
+printf '%s\n' index.html counter/index.html > "$fixture/build/dokka/html/demos/pages.txt"
+printf '%s\n' / /api/index.html /demos/app.js /demos/counter/index.html /demos/index.html /demos/pages.txt /index.html /source-receipt.json /source-revision.txt > \
   "$fixture/build/dokka/html/pages-public-urls.txt"
 
 git -C "$fixture" init --quiet
@@ -325,6 +330,11 @@ printf '{"commit":"%s","revision":"v0.1.1"}\n' "$tag_commit" > "$fixture/build/d
 [[ -f "$fixture/build/dokka/html/releases/0.1.0/guide/index.html" ]] || fail 'Staging removed an immutable legacy guide.'
 [[ -f "$fixture/build/dokka/html/releases/0.1.1/index.html" ]] || fail 'Staging omitted the current release root.'
 [[ -f "$fixture/build/dokka/html/releases/0.1.1/api/index.html" ]] || fail 'Staging omitted the current Dokka API.'
+[[ ! -e "$fixture/build/dokka/html/releases/0.1.0/demos" ]] || fail 'Staging injected demos into a historical release.'
+for demo_path in index.html counter/index.html app.js pages.txt; do
+  cmp --silent "$fixture/build/dokka/html/demos/$demo_path" "$fixture/build/dokka/html/releases/0.1.1/demos/$demo_path" || \
+    fail "Staging changed or omitted the release demo: $demo_path"
+done
 [[ ! -e "$fixture/build/dokka/html/releases/0.1.1/guide" ]] || fail 'Staging injected a reader guide into the Dokka-only release.'
 [[ ! -e "$fixture/build/dokka/html/releases/0.1.1/releases" ]] || fail 'A release snapshot recursively nested older releases.'
 cmp --silent "$fixture/build/dokka/html/index.html" "$fixture/build/dokka/html/releases/0.1.1/index.html" || \

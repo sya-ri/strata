@@ -464,7 +464,7 @@ val releaseArtifactByProjectPath =
         "$group:strata-${projectPath.removePrefix(":").replace(':', '-')}"
     }
 val legacyJvmMultiplatformProjectPaths = setOf(":api", ":runtime:core")
-val multiplatformProjectPaths = legacyJvmMultiplatformProjectPaths + setOf(":runtime:web", ":integration:web")
+val multiplatformProjectPaths = legacyJvmMultiplatformProjectPaths + setOf(":runtime:web", ":integration:web", ":examples:web")
 val publishableProjectPaths = releasePublicationProjectPaths.toSet()
 val verifyMinecraftFabricTargetMatrix = tasks.register("verifyMinecraftFabricTargetMatrix") {
     group = "verification"
@@ -622,7 +622,7 @@ val generateDokkaModuleMarkdown =
                 template.asFile.readText().replace(
                     "https://github.com/sya-ri/strata/blob/master/",
                     "https://github.com/sya-ri/strata/blob/$sourceRevision/",
-                )
+                ).replace("https://gh.s7a.dev/strata/demos/", "demos/index.html")
             val file = output.get().asFile
             file.parentFile.mkdirs()
             file.writeText(content)
@@ -776,13 +776,11 @@ subprojects {
         if (published) {
             apply(plugin = "maven-publish")
             apply(plugin = "com.vanniktech.maven.publish")
+            apply(plugin = "org.jetbrains.dokka")
         }
         if (hasJvmTarget) apply(plugin = "org.jetbrains.kotlinx.kover")
         apply(plugin = "org.jmailen.kotlinter")
         apply(plugin = "dev.detekt")
-        apply(plugin = "org.jetbrains.dokka")
-
-
         val baseline = baselineJavaVersion
 
         extensions.configure<KotlinMultiplatformExtension> {
@@ -1000,6 +998,10 @@ subprojects {
                 )
             }
         }
+    }
+
+    tasks.matching { name in setOf("generateWebDemos", "checkWebDemos") }.configureEach {
+        usesService(minecraftClientExecutionService)
     }
 
     tasks.matching { task -> task.name == "downloadAssets" }.configureEach {
