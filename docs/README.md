@@ -20,6 +20,7 @@ For installation and a complete opening example, start with the [project README]
 
 Browse the [component overview](reference/components.md) for images and compiled examples in one place.
 The [complete screen examples](examples/screens.md) show how those components work together.
+The [interactive web demos](https://gh.s7a.dev/strata/demos/) let you try state changes, progress, and keyed reordering in a browser.
 The [animated README demo](readme-demo/README.md) follows a player list from natural sizing through text alignment and linked scrolling.
 
 ## Look up a contract

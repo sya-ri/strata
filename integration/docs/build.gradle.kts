@@ -46,6 +46,7 @@ require(showcaseNativeClassifier.matches(Regex("natives-[a-z0-9-]+"))) {
 }
 
 dependencies {
+    implementation(libs.playwright)
     implementation(project(":runtime:headless"))
     implementation(project(":runtime:minecraft"))
     implementation(project(":runtime:minecraft-fonts-lwjgl"))
@@ -463,6 +464,64 @@ val checkDocumentationLinks =
         outputs.upToDateWhen { false }
     }
 
+val webDemoDistribution = project(":examples:web").layout.buildDirectory.dir("dist/js/productionExecutable")
+val webDemoOutput = layout.buildDirectory.dir("web-demos/generated")
+val webDemoEvidence = layout.buildDirectory.dir("web-demos/evidence")
+val webDemoSourceRevision = providers.gradleProperty("strata.sourceRevision").getOrElse("master")
+
+val installWebDemoBrowser = tasks.register<JavaExec>("installWebDemoBrowser") {
+    group = "documentation"
+    description = "Installs the version-matched Chromium used to render and verify web demos."
+    classpath = configurations.runtimeClasspath.get()
+    mainClass.set("com.microsoft.playwright.CLI")
+    environment("PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD", "1")
+    args("install", "--no-remove", "chromium")
+    if (providers.gradleProperty("strata.webDemoInstallSystemDependencies").map(String::toBoolean).getOrElse(false)) {
+        args("--with-deps")
+    }
+}
+
+val generateWebDemos = tasks.register<JavaExec>("generateWebDemos") {
+    group = "documentation"
+    description = "Renders initial web demo documents from the compiled production application in Chromium."
+    dependsOn("classes", ":examples:web:jsBrowserDistribution", installWebDemoBrowser)
+    mainClass.set("dev.s7a.strata.integration.docs.WebDemoGenerator")
+    classpath = sourceSets.main.get().runtimeClasspath
+    environment("PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD", "1")
+    args(webDemoDistribution.get().asFile.absolutePath, webDemoOutput.get().asFile.absolutePath, webDemoSourceRevision)
+    inputs.dir(webDemoDistribution)
+    inputs.property("sourceRevision", webDemoSourceRevision)
+    outputs.dir(webDemoOutput)
+    outputs.upToDateWhen { false }
+    outputs.cacheIf { false }
+    doFirst { delete(webDemoOutput) }
+}
+
+val checkWebDemos = tasks.register<JavaExec>("checkWebDemos") {
+    group = "verification"
+    description = "Checks production web demo adoption, interactions, and current/release URL prefixes in Chromium."
+    dependsOn(generateWebDemos)
+    mainClass.set("dev.s7a.strata.integration.docs.WebDemoChecker")
+    classpath = sourceSets.main.get().runtimeClasspath
+    environment("PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD", "1")
+    args(webDemoOutput.get().asFile.absolutePath, webDemoEvidence.get().asFile.absolutePath)
+    inputs.dir(webDemoOutput)
+    outputs.dir(webDemoEvidence)
+    outputs.upToDateWhen { false }
+    outputs.cacheIf { false }
+    doFirst { delete(webDemoEvidence) }
+}
+
+val stageWebDemos = tasks.register<Sync>("stageWebDemos") {
+    group = "documentation"
+    description = "Stages verified web demos beside Dokka without replacing API documentation."
+    dependsOn(checkWebDemos, rootProject.tasks.named("dokkaGenerate"))
+    from(webDemoOutput)
+    into(rootProject.layout.buildDirectory.dir("dokka/html/demos"))
+}
+
+rootProject.tasks.named("verifyGeneratedDokkaSourceLinks") { mustRunAfter(stageWebDemos) }
+
 val dokkaPagesRoot = rootProject.layout.buildDirectory.dir("dokka/html")
 val dokkaPagesInputs =
     dokkaPagesRoot.map { directory ->
@@ -512,7 +571,7 @@ val generateDokkaPagesInventory =
     tasks.register<JavaExec>("generateDokkaPagesInventory") {
         group = "documentation"
         description = "Generates deterministic public URLs for the staged Dokka API site."
-        dependsOn(rootProject.tasks.named("dokkaGenerate"), rootProject.tasks.named("stagePagesSourceRevision"), checkDocumentationLinks, "classes")
+        dependsOn(rootProject.tasks.named("dokkaGenerate"), rootProject.tasks.named("stagePagesSourceRevision"), stageWebDemos, checkDocumentationLinks, "classes")
         mustRunAfter(rootProject.tasks.named("verifyGeneratedDokkaSourceLinks"))
         mainClass.set("dev.s7a.strata.integration.docs.PagesPublicUrlInventory")
         classpath = sourceSets.main.get().runtimeClasspath
@@ -549,6 +608,7 @@ tasks.register<JavaExec>("checkDokkaPagesStaging") {
 }
 
 tasks.named("check") {
+    dependsOn(checkWebDemos)
     dependsOn(checkReadmeDemo)
     dependsOn(checkComponentShowcase, checkMinecraftShowcaseParity)
     dependsOn(checkStrataSkill, checkStrataSkillExampleClasspath, checkDocumentationLinks, ":checkCompatibilityDocumentation")

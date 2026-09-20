@@ -117,6 +117,15 @@ Visual settings and timings belong in the generator, not a second prose specific
 The generated build-only include pins GitHub guide links to `strata.sourceRevision`.
 Reader guides and images remain in the repository.
 
+The compiled `examples:web` catalog owns the interactive web demos, their descriptions, and source links.
+`:integration:docs:generateWebDemos` uses the production application and `renderWebDocument` in Chromium to recreate initial HTML without leaving mounted hosts.
+The client creates independent initial state and adopts the generated DOM through `mountWeb`.
+The documentation harness owns generation, browser verification, and fresh screenshot evidence; the application sources, shell stylesheet, and licensed font inputs are tracked.
+The shell's Minecraft-inspired theme uses original CSS and the locally bundled [Monocraft typeface](../../examples/web/FONTS.md); its license is included in every generated site.
+`:integration:docs:stageWebDemos` synchronizes verified output into `build/dokka/html/demos` after Dokka completes.
+The Pages check depends on this staging task, inventories every demo document and asset, and rejects missing pages or stale HTML against the compiled catalog's generated manifest.
+Demo navigation and assets use relative URLs so the same files work inside an immutable release subtree.
+
 `./gradlew :integration:docs:checkDokkaPagesStaging` generates the site and checks inventoried HTML links, anchors, assets, and hard-coded Pages targets against real staged files.
 `generateDokkaPagesInventory` records sorted public paths and source receipts.
 The [release contract](release.md#pages-artifacts-and-deployment) owns immutable subtrees, producer identities, deployment permissions, retention, and propagation checks.

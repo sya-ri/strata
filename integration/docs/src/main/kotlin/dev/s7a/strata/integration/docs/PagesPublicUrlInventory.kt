@@ -80,6 +80,7 @@ internal object PagesPublicUrlInventory {
             add("/source-revision.txt")
             addAll(hardCodedPublicPaths(project))
             addAll(PagesStagingChecker.rootEntrypointPaths(site))
+            addAll(WebDemoInventory.paths(site))
         }.sorted()
     }
 

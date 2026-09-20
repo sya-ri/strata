@@ -60,6 +60,7 @@ else
     cd "$worktree"
     bash ./gradlew --no-parallel --max-workers=2 --no-build-cache \
       :integration:docs:checkDokkaPagesStaging \
+      -Pstrata.webDemoInstallSystemDependencies="${CI:-false}" \
       -Pstrata.sourceRevision="$release_tag" \
       -Pstrata.sourceCommit="$tag_commit"
   )

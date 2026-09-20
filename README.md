@@ -24,6 +24,7 @@ Strata separates those responsibilities so an interface can be composed, reused,
 
 The [component overview](docs/reference/components.md) shows the available components with images and compiled examples.
 [Complete screens](docs/examples/screens.md) demonstrate how they fit together.
+Try the [interactive web demos](https://gh.s7a.dev/strata/demos/) for a counter, progress controls, and a keyed list running in your browser.
 
 <!-- strata-component-showcase:start -->
 <!-- Generated file. Do not edit. -->

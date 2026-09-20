@@ -13,6 +13,7 @@ on:
       - CHANGELOG.md
       - config/**
       - docs/**
+      - examples/**
       - gradle/**
       - gradle.properties
       - icon.svg
@@ -37,6 +38,7 @@ on:
       - CHANGELOG.md
       - config/**
       - docs/**
+      - examples/**
       - gradle/**
       - gradle.properties
       - icon.svg
@@ -60,6 +62,31 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  web-demos:
+    name: Web runtime and demos
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v7
+      - name: Set up Java
+        uses: ./.github/actions/setup-strata-java
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v6
+        with:
+          cache-read-only: ${{ github.ref != 'refs/heads/master' }}
+          gradle-home-cache-excludes: caches/fabric-loom
+      - name: Check browser runtime and production demos
+        run: >-
+          bash ./gradlew :runtime:web:check :examples:web:check
+          :integration:docs:checkWebDemos
+          -Pstrata.webDemoInstallSystemDependencies=true
+      - name: Upload fresh demo screenshots
+        uses: actions/upload-artifact@v7
+        with:
+          name: web-demo-screenshots
+          path: integration/docs/build/web-demos/evidence
+          if-no-files-found: error
+
   workflow-checks:
     name: Workflow checks
     runs-on: ubuntu-latest
@@ -221,7 +248,7 @@ jobs:
           key: loom-${{ runner.os }}-${{ matrix.id }}-${{ steps.loom_inputs.outputs.hash }}
       - name: Run ${{ matrix.name }}
         # Loom's client run tasks select xvfb-run automatically on Linux when CI is true.
-        run: bash ./gradlew ${{ matrix.gradle_arguments }}
+        run: bash ./gradlew ${{ matrix.gradle_arguments }} -Pstrata.webDemoInstallSystemDependencies=true
       - name: Upload loaded-client failure evidence
         # Loaded-client assertions retain their framebuffer PNGs, receipts with GUI scale and lease/frame
         # counters, and the client's crash reports in the build directories; CI keeps them diagnosable.

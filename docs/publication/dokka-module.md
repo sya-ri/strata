@@ -4,6 +4,7 @@ Strata is a declarative UI library for Minecraft.
 Applications compose reusable components and own their state; retained runtimes provide layout, input, rendering, and lifecycle behavior.
 
 This site contains the generated API declarations and KDoc.
+Try the [interactive web demos](https://gh.s7a.dev/strata/demos/) to explore a counter, progress controls, and a keyed list.
 Start with the [project README](https://github.com/sya-ri/strata/blob/master/README.md) for installation and a complete example, or the [documentation index](https://github.com/sya-ri/strata/blob/master/docs/README.md) for reader guides.
 
 - [Component overview](https://github.com/sya-ri/strata/blob/master/docs/reference/components.md)

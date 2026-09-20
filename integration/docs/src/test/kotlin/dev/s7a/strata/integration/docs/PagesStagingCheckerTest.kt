@@ -16,6 +16,44 @@ internal class PagesStagingCheckerTest {
     lateinit var temporaryRoot: Path
 
     @Test
+    fun inventoriesEveryDemoAndAssetAndChecksNestedRelativeLinks() {
+        val (project, site) = createBaseTrees("web-demos")
+        writeDemoFiles(site)
+        val inventory = writeInventory(project, site)
+        PagesStagingChecker.check(project, site, inventory)
+        assertTrue(Files.readAllLines(inventory).containsAll(listOf("/demos/counter/index.html", "/demos/app.js", "/demos/styles.css", "/demos/pages.txt")))
+        Files.delete(site.resolve("demos/app.js"))
+        assertThrows(IllegalArgumentException::class.java) { PagesStagingChecker.check(project, site, writeInventory(project, site)) }
+    }
+
+    @Test
+    fun rejectsMissingDeclaredDemoAndStaleUnlistedHtml() {
+        val (project, site) = createBaseTrees("web-manifest")
+        writeDemoFiles(site)
+        Files.delete(site.resolve("demos/counter/index.html"))
+        assertThrows(IllegalArgumentException::class.java) { writeInventory(project, site) }
+        writeDemoFiles(site)
+        writeStagedFile(site, "demos/retired/index.html", "<h1>Retired</h1>")
+        assertThrows(IllegalArgumentException::class.java) { writeInventory(project, site) }
+    }
+
+    @Test
+    fun demoLinksRemainContainedInTheirReleaseSnapshot() {
+        val (project, site) = createBaseTrees("web-release")
+        writeDemoFiles(site)
+        writeStagedFile(site, "demos/counter/index.html", "<a href='../../../index.html'>Wrong API root</a>")
+        assertThrows(IllegalArgumentException::class.java) { PagesStagingChecker.check(project, site, writeInventory(project, site)) }
+    }
+
+    private fun writeDemoFiles(site: Path) {
+        writeStagedFile(site, "demos/pages.txt", "index.html\ncounter/index.html\n")
+        writeStagedFile(site, "demos/index.html", "<a href='counter/'>Counter</a><a href='../index.html'>API</a>")
+        writeStagedFile(site, "demos/counter/index.html", "<a href='../'>Demos</a><a href='../../index.html'>API</a><script src='../app.js'></script><link href='../styles.css' rel='stylesheet'>")
+        writeStagedFile(site, "demos/app.js", "window.demo = true;")
+        writeStagedFile(site, "demos/styles.css", "body { color: black; }")
+    }
+
+    @Test
     fun acceptsDokkaWithoutGuideAndDiscoversNestedModuleEntrypoints() {
         val (project, site) = createBaseTrees("dokka")
         Files.writeString(

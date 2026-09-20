@@ -136,6 +136,7 @@ jobs:
           set -euo pipefail
           bash ./gradlew --no-parallel --max-workers=2 \
             :integration:docs:checkDokkaPagesStaging \
+            -Pstrata.webDemoInstallSystemDependencies=true \
             -Pstrata.sourceRevision="$SOURCE_REVISION" \
             -Pstrata.sourceCommit="$SOURCE_COMMIT"
       - name: Preserve immutable release documentation
@@ -305,6 +306,7 @@ jobs:
             cd "$release_worktree"
             bash ./gradlew --no-parallel --max-workers=2 --no-build-cache \
               :integration:docs:checkDokkaPagesStaging \
+              -Pstrata.webDemoInstallSystemDependencies=true \
               -Pstrata.sourceRevision="$RELEASE_TAG" \
               -Pstrata.sourceCommit="$RELEASE_COMMIT"
           )

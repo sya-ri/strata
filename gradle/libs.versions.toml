@@ -15,6 +15,7 @@ dokka = "2.2.0"
 kotlinx-coroutines = "1.11.0"
 kotlinx-browser = "0.5.0"
 playwright = "1.63.0"
+monocraft = "4.2.1"
 gson-minecraft = "2.10.1"
 gson-minecraft-early = "2.10"
 gson-minecraft-later = "2.11.0"
@@ -78,6 +79,7 @@ fabric-api1205 = "0.97.8+1.20.5"
 fabric-api1206 = "0.100.8+1.20.6"
 
 [libraries]
+playwright = { module = "com.microsoft.playwright:playwright", version.ref = "playwright" }
 detekt-api = { module = "dev.detekt:detekt-api", version.ref = "detekt" }
 detekt-test = { module = "dev.detekt:detekt-test", version.ref = "detekt" }
 detekt-test-utils = { module = "dev.detekt:detekt-test-utils", version.ref = "detekt" }

@@ -418,6 +418,7 @@ jobs:
           bash ./gradlew --no-parallel --max-workers=2 --no-build-cache \
             :check :api:check :integration:api:check :integration:docs:check \
             :integration:docs:checkDokkaPagesStaging \
+            -Pstrata.webDemoInstallSystemDependencies=true \
             :quality:benchmarks:check :quality:detekt-rules:check \
             :runtime:core:check :runtime:headless:check :runtime:minecraft:check \
             :koverJvmTests :koverHtmlReport :koverXmlReport -Pkover \

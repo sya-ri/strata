@@ -27,6 +27,7 @@ Use ordinary arithmetic when validated input bounds guarantee representable resu
 | `runtime:minecraft-fonts-lwjgl` | Optional CPU font decoding, rasterization, and text ordering. | Uses common font contracts and target-matched native libraries. |
 | `runtime:minecraft-fabric-<version>` | Native screen, resource, input, and presentation adapters for one exact target. | Owns mapped Minecraft and Fabric dependencies. |
 | `integration:*` | External API, loaded-client, and documentation verification. | Not published. |
+| `examples:web` | Interactive browser demos and deterministic initial-document factories. | Uses public API and web runtime contracts; not published. |
 
 Keep this module graph acyclic and include a module only when it contains working, tested behavior.
 Application source does not need a runtime module on its compile classpath.

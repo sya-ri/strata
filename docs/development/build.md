@@ -39,6 +39,17 @@ This comparison covers presentation labels and state transitions; native platfor
 Both themes are verified in each browser, including disabled button behavior and determinate progress.
 Browser tasks share the loaded-client execution service so headless browsers and Minecraft clients do not contend for the desktop graphics device during aggregate checks.
 
+## Interactive web demos
+
+The unpublished `examples:web` browser application contains the compiled counter, progress, and keyed-list factories.
+Run `./gradlew :integration:docs:generateWebDemos` to bundle that application and render initial documents in version-matched Chromium.
+Serve `integration/docs/build/web-demos/generated` with any local static HTTP server to browse the demo index; its API link expects the Dokka site one directory above the demo directory.
+Run `./gradlew :runtime:web:check :examples:web:check :integration:docs:checkWebDemos` to check the runtime, deterministic factories, production adoption, pointer interactions, and current/release URL prefixes.
+The checker recreates screenshots under `integration/docs/build/web-demos/evidence` on every run.
+The browser installation task preserves browser binaries belonging to other Playwright versions so tagged sites can rebuild independently.
+On Linux CI, add `-Pstrata.webDemoInstallSystemDependencies=true` to install Chromium's operating-system dependencies as well; local builds install only the browser binary.
+The Playwright version belongs in the version catalog, and browser provisioning caches are separate from freshly generated acceptance evidence.
+
 ## Environment
 
 Run commands from the repository root with the checked-in wrapper: `./gradlew`, or `.\gradlew.bat` in PowerShell.

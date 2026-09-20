@@ -116,6 +116,7 @@ rootProject.name = "strata"
 
 include(
     ":api",
+    ":examples:web",
     ":integration:api",
     ":integration:docs",
     ":integration:web",
