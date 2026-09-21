@@ -28,7 +28,7 @@ internal object ShowcaseAssetIntegrity {
 
     /**
      * Hashes one complete regular file with fixed scratch storage and an inclusive byte ceiling.
-     * SHA-1 verifies Mojang metadata; SHA-256 binds the generated showcase inputs.
+     * SHA-1 matches Mojang's declared checksums; SHA-256 binds the generated showcase inputs.
      */
     fun hashes(
         path: Path,
@@ -36,7 +36,7 @@ internal object ShowcaseAssetIntegrity {
     ): Hashes {
         require(Files.isRegularFile(path)) { "A declared showcase input is not a regular file." }
         require(Files.size(path) <= maximum) { "A declared showcase input exceeds its byte ceiling." }
-        val sha1 = MessageDigest.getInstance("SHA-1")
+        val sha1 = mojangSha1Digest()
         val sha256 = MessageDigest.getInstance("SHA-256")
         Files.newInputStream(path).use { input ->
             val buffer = ByteArray(8 * 1024)
@@ -59,9 +59,14 @@ internal object ShowcaseAssetIntegrity {
     fun sha256(bytes: ByteArray): String = hex.formatHex(MessageDigest.getInstance("SHA-256").digest(bytes))
 
     /**
-     * Returns the SHA-1 identity used by an official asset index.
+     * Returns the compatibility checksum used by Mojang's asset index.
      */
-    fun sha1(bytes: ByteArray): String = hex.formatHex(MessageDigest.getInstance("SHA-1").digest(bytes))
+    fun sha1(bytes: ByteArray): String = hex.formatHex(mojangSha1Digest().digest(bytes))
+
+    // Mojang's manifest and asset index require SHA-1 for compatibility with their declared checksums.
+    // Input provenance belongs to the caller; SHA-256 is used for retained identities and mutation detection.
+    @Suppress("kotlin:S4790")
+    private fun mojangSha1Digest(): MessageDigest = MessageDigest.getInstance("SHA-1")
 
     /**
      * Detached identities of the same bounded file read, safe to retain in immutable evidence.
