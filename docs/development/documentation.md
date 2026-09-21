@@ -64,6 +64,8 @@ To use existing inputs, supply all four properties; relative paths resolve from 
 
 Inputs are read-only regular files or directories without symbolic links.
 The launcher verifies manifests and consumed object hashes on every run; render tasks do not reuse build-cache evidence.
+Mojang's declared client, index, and object checksums require SHA-1 for format compatibility; the caller supplies inputs from a trusted source because these checksums do not authenticate them.
+`ShowcaseAssetIntegrity` confines this compatibility exception to one digest factory with a rule-specific Sonar suppression, while retained identities and mutation checks use SHA-256.
 Receipts record consumed asset/source identities, logical paths, viewports, GUI scales, output dimensions, origins, and hashes without absolute paths or timestamps.
 Unrelated asset-index entries do not invalidate unchanged consumed identities.
 

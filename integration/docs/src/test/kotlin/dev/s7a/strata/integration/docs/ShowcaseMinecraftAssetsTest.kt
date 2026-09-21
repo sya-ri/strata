@@ -113,13 +113,13 @@ internal class ShowcaseMinecraftAssetsTest {
     fun clientAndIndexHashMismatchesFailBeforeOpeningTheDecoder() {
         val client = ShowcaseMinecraftAssetFixture(directory.resolve("client"))
         val clientFactory = ProbeFactory()
-        Files.write(client.clientJar, byteArrayOf(1), StandardOpenOption.APPEND)
+        corruptWithoutChangingSize(client.clientJar)
         assertThrows(IllegalArgumentException::class.java) { client.assets(clientFactory) }
         assertEquals(0, clientFactory.opened)
 
         val index = ShowcaseMinecraftAssetFixture(directory.resolve("index"))
         val indexFactory = ProbeFactory()
-        Files.writeString(index.assetIndex, " ", StandardOpenOption.APPEND)
+        corruptWithoutChangingSize(index.assetIndex)
         assertThrows(IllegalArgumentException::class.java) { index.assets(indexFactory) }
         assertEquals(0, indexFactory.opened)
     }
