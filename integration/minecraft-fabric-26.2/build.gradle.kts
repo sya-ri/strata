@@ -323,7 +323,6 @@ val runProductionClientGameTest = tasks.register<ClientProductionRunTask>("runPr
     jvmArgs.add("-Dfabric.client.gametest")
     providers.gradleProperty("strata.paper.address").orNull?.let {
         jvmArgs.add("-Dstrata.paper.address=$it")
-        jvmArgs.add("-Dfabric.client.gametest.disableNetworkSynchronizer=true")
     }
     providers.gradleProperty("strata.paper.run").orNull?.let { jvmArgs.add("-Dstrata.paper.run=$it") }
     jvmArgs.addAll(canvasBackend.map { backend -> listOf("-Dstrata.canvas.expectedBackend=${backend.argument}") }.orElse(emptyList<String>()))
@@ -383,7 +382,6 @@ tasks.matching { task -> task.name == "koverGenerateArtifact" }.configureEach {
 tasks.named<JavaExec>("runClientGameTest") {
     providers.gradleProperty("strata.paper.address").orNull?.let {
         systemProperty("strata.paper.address", it)
-        systemProperty("fabric.client.gametest.disableNetworkSynchronizer", true)
     }
     providers.gradleProperty("strata.paper.run").orNull?.let { systemProperty("strata.paper.run", it) }
     val parityOutput = layout.buildDirectory.dir(

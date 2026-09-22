@@ -1068,6 +1068,11 @@ subprojects {
                 minecraftTargetByProjectPath[task.project.path]?.integrationProjectPath == task.project.path
         }
         .configureEach {
+            // Native custom payloads and external hosts use real asynchronous delivery instead of Fabric's paired test scheduler.
+            when (this) {
+                is ClientProductionRunTask -> jvmArgs.add("-Dfabric.client.gametest.disableNetworkSynchronizer=true")
+                is JavaExec -> systemProperty("fabric.client.gametest.disableNetworkSynchronizer", true)
+            }
             usesService(minecraftClientExecutionService)
             mustRunAfter(selectedMinecraftAssetTasks)
             val clientTaskIndex = selectedMinecraftClientTasks.indexOf(path)

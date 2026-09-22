@@ -172,9 +172,9 @@ It runs development and packaged production clients and requires matching invoca
 The manifest, logs, receipt copies, and plugin hashes remain beside that result, and the runner stops only its owned server process on success or failure.
 `--development-only` is a diagnostic subset and records only that task; it cannot establish production-JAR acceptance.
 The normal loaded suite still runs before the optional Paper fixture.
-When a Paper address is supplied, Fabric Client GameTest targets disable Fabric's test-only network synchronizer through its documented `fabric.client.gametest.disableNetworkSynchronizer` property.
-External Paper packets do not participate in Fabric's paired test scheduler; the fixture instead awaits actual connection state, remote screen revisions, and authoritative container changes.
-Ordinary integrated-server verification retains the target's default synchronizer configuration.
+Loaded-client suites disable Fabric's test-only network synchronizer through its documented `fabric.client.gametest.disableNetworkSynchronizer` property.
+Native custom-payload probes and external connections use asynchronous delivery across world and connection lifetimes; the fixture instead awaits actual connection state, remote screen revisions, and authoritative container changes.
+Framebuffer fences, protocol assertions, and container round-trip checks remain enabled in both development and production runs.
 Versions without an exact official Paper distribution must retain separate client-transport evidence; a nearby Paper release cannot establish an exact-version pair.
 Every loaded client suite also runs a native custom-payload fixture against its exact integrated server.
 It checks server-confirmed text and actions, applied-revision acknowledgements, visible updates, a registered native Canvas renderer with literal framebuffer texels and retained attachment ownership, and terminal renderer release.
