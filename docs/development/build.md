@@ -108,8 +108,9 @@ Fabric's test Window mixin can substitute Minecraft's dimensions, so those value
 Run `:integration:minecraft-fabric-<version>:runClientGameTest` and `:integration:minecraft-fabric-<version>:runProductionClientGameTest` for the target being changed.
 Every supported integration project's `check` requires both gates.
 On Linux under Xvfb, export `SDL_VIDEO_FORCE_EGL=1` before running SDL clients so their sRGB framebuffer can be created through EGL.
+Debian/Ubuntu environments also need the `libegl1` loader and `libegl-mesa0` implementation for Mesa rendering.
 Xvfb's GLX cannot satisfy that visual requirement; the [SDL hint](https://wiki.libsdl.org/SDL3/SDL_HINT_VIDEO_FORCE_EGL) preserves the requested OpenGL context and sRGB attributes.
-The Minecraft CI matrix and active release controller set this environment variable for their native verification.
+The Minecraft CI matrix and active release controller install these libraries and set the environment variable for their native verification.
 Where provided, `runPublishedCoordinateClientGameTest` additionally checks externally resolved publications.
 The [adapter process](../development/minecraft-versions.md) describes native boundaries and integration runner ownership.
 
