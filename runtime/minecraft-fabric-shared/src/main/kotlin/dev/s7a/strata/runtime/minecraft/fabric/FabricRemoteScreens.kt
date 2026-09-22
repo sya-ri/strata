@@ -99,7 +99,10 @@ public object FabricRemoteScreens {
                 val bytes = inbox.poll() ?: return@repeat
                 receiveFrame(native, bytes)
             }
-            peers.values.toList().filter { it.isClosed.not() }.forEach(::tickPeer)
+            peers.values
+                .toList()
+                .filter { it.isClosed.not() }
+                .forEach(::tickPeer)
         }.onFailure { failure ->
             failed = true
             peers.values.forEach { peer -> runCatching { peer.close(RemoteFailure.InvalidMessage) }.onFailure(failure::addSuppressed) }
