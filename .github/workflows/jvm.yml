@@ -266,6 +266,8 @@ jobs:
           path: |
             integration/*/build/minecraft-verification/
             integration/*/build/minecraft-production-verification/
+            integration/*/build/minecraft-*parity*/
+            integration/docs/build/component-showcase/check/
             integration/*/build/run/*/crash-reports/
             integration/*/build/run/*/logs/latest.log
           if-no-files-found: ignore
