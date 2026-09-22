@@ -58,15 +58,12 @@ public final class dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreen
 	public static synthetic fun createMinecraftScreen$default (Ldev/s7a/strata/screen/ScreenDefinition;Ldev/s7a/strata/runtime/minecraft/MinecraftUiProfile;Lnet/minecraft/class_437;ILjava/lang/Object;)Ldev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreen;
 }
 
-public final class dev/s7a/strata/runtime/minecraft/fabric/FabricRemotePayload : java/lang/Record, net/minecraft/class_8710 {
+public final class dev/s7a/strata/runtime/minecraft/fabric/FabricRemotePayload : net/minecraft/class_8710 {
 	public static final field CODEC Lnet/minecraft/class_9139;
 	public static final field TYPE Lnet/minecraft/class_8710$class_9154;
 	public fun <init> ([B)V
 	public fun bytes ()[B
-	public final fun equals (Ljava/lang/Object;)Z
-	public final fun hashCode ()I
 	public fun method_56479 ()Lnet/minecraft/class_8710$class_9154;
-	public final fun toString ()Ljava/lang/String;
 }
 
 public final class dev/s7a/strata/runtime/minecraft/fabric/FabricRemoteRegistration : java/lang/Record, net/minecraft/class_8710 {

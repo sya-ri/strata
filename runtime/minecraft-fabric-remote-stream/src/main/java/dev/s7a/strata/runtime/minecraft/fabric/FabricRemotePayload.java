@@ -8,16 +8,22 @@ import org.jetbrains.annotations.NotNull;
 /**
  * Bounded opaque plugin-message bytes shared by the modern native stream codecs.
  */
-public record FabricRemotePayload(byte[] bytes) implements CustomPacketPayload {
+public final class FabricRemotePayload implements CustomPacketPayload {
+    private final byte[] bytes;
     public static final Type<FabricRemotePayload> TYPE = FabricRemotePayloadTypes.create();
     public static final StreamCodec<FriendlyByteBuf, FabricRemotePayload> CODEC = CustomPacketPayload.codec(FabricRemotePayload::write, FabricRemotePayload::read);
 
-    public FabricRemotePayload {
+    /**
+     * Copies a bounded message independently of its caller-owned storage.
+     */
+    public FabricRemotePayload(byte[] bytes) {
         if (bytes.length < 1 || 24576 < bytes.length) throw new IllegalArgumentException("Invalid Strata frame length.");
-        bytes = bytes.clone();
+        this.bytes = bytes.clone();
     }
 
-    @Override
+    /**
+     * Returns a detached frame for the receiving adapter's queue.
+     */
     public byte[] bytes() { return bytes.clone(); }
 
     @Override

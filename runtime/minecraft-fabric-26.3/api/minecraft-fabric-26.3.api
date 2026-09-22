@@ -60,14 +60,11 @@ public final class dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreen
 	public static synthetic fun createMinecraftScreen$default (Ldev/s7a/strata/screen/ScreenDefinition;Ldev/s7a/strata/runtime/minecraft/MinecraftUiProfile;Lnet/minecraft/client/gui/screens/Screen;ILjava/lang/Object;)Ldev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreen;
 }
 
-public final class dev/s7a/strata/runtime/minecraft/fabric/FabricRemotePayload : java/lang/Record, net/minecraft/network/protocol/common/custom/CustomPacketPayload {
+public final class dev/s7a/strata/runtime/minecraft/fabric/FabricRemotePayload : net/minecraft/network/protocol/common/custom/CustomPacketPayload {
 	public static final field CODEC Lnet/minecraft/network/codec/StreamCodec;
 	public static final field TYPE Lnet/minecraft/network/protocol/common/custom/CustomPacketPayload$Type;
 	public fun <init> ([B)V
 	public fun bytes ()[B
-	public final fun equals (Ljava/lang/Object;)Z
-	public final fun hashCode ()I
-	public final fun toString ()Ljava/lang/String;
 	public fun type ()Lnet/minecraft/network/protocol/common/custom/CustomPacketPayload$Type;
 }
 
