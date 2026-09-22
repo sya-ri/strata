@@ -120,6 +120,8 @@ val runProductionClientGameTest = tasks.register<ClientProductionRunTask>("runPr
     val verificationOutput = layout.buildDirectory.dir("minecraft-production-verification")
     jvmArgs.add(verificationOutput.map { directory -> "-Dstrata.minecraftLegacyOutput=${directory.asFile.absolutePath}" })
     jvmArgs.add(libs.versions.minecraft1205.map { version -> "-Dstrata.minecraftVersion=$version" })
+    // Native font references share unsynchronized FreeType faces during every resource reload.
+    jvmArgs.add("-Dmax.bg.threads=1")
 }
 
 tasks.named("check") {
@@ -131,6 +133,8 @@ tasks.matching { task -> task.name == "koverGenerateArtifact" }.configureEach {
 }
 
 tasks.named<JavaExec>("runClientGameTest") {
+    // Keep ordinary reloads as serial as the independent native font oracle's preparation.
+    systemProperty("max.bg.threads", "1")
     val verificationOutput = layout.buildDirectory.dir("minecraft-verification")
     inputs.property("strataMinecraftLegacyOutput", verificationOutput.map { it.asFile.absolutePath })
     doFirst {
