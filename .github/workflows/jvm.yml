@@ -216,6 +216,9 @@ jobs:
     name: ${{ matrix.name }}
     needs: minecraft-matrix
     runs-on: ubuntu-latest
+    env:
+      # Xvfb's GLX lacks the sRGB visual required by SDL; EGL preserves that requirement.
+      SDL_VIDEO_FORCE_EGL: "1"
     strategy:
       fail-fast: false
       max-parallel: 4
