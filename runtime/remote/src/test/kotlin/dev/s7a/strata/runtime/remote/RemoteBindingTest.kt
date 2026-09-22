@@ -88,7 +88,7 @@ internal class RemoteBindingTest {
 
     private fun binding(state: Value): ProjectionBinding<String> =
         ProjectionBinding(
-            BuiltinProjection.PrimaryPress.type,
+            BuiltinProjection.PointerPress.type,
             state,
             { state.text },
             ProjectionValue::Text,
@@ -113,7 +113,10 @@ internal class RemoteBindingTest {
 
         val actions = mutableListOf<ProjectionAction<*>>()
 
-        override fun action(action: ProjectionAction<*>): Long {
+        override fun action(
+            action: ProjectionAction<*>,
+            key: ProjectionValue,
+        ): Long {
             actions.add(action)
             return actions.size.toLong()
         }

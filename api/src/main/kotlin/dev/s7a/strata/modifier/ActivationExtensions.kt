@@ -2,7 +2,7 @@ package dev.s7a.strata.modifier
 
 import dev.s7a.strata.input.InputResult
 import dev.s7a.strata.input.KeyCode
-import dev.s7a.strata.projection.BuiltinProjection
+import dev.s7a.strata.input.KeyboardInputFilter
 import dev.s7a.strata.state.StateSource
 
 /**
@@ -16,20 +16,7 @@ import dev.s7a.strata.state.StateSource
  * @return this chain with one primary-press handler followed by one focused key-press handler.
  * @throws Throwable when [action] fails during input dispatch; the owning tree preserves the exact failure as primary while poisoning and cleaning retained ownership.
  */
-public fun Modifier.onActivate(action: () -> Unit): Modifier =
-    onPress(action).then(
-        FocusedInputModifier.Element(
-            FocusedInputModifier.Action.KeyPress { event ->
-                if (event.key == KeyCode.Enter || event.key == KeyCode.Space) {
-                    action()
-                    InputResult.Consumed
-                } else {
-                    InputResult.Ignored
-                }
-            },
-            BuiltinProjection.ActivationKeys.callback(action),
-        ),
-    )
+public fun Modifier.onActivate(action: () -> Unit): Modifier = onPress(action).onKeyPress(InputResult.Consumed, KeyboardInputFilter(setOf(KeyCode.Enter, KeyCode.Space))) { action() }
 
 /**
  * Conditionally installs the shared pointer and keyboard activation behavior from [onActivate].

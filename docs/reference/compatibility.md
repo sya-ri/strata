@@ -6,30 +6,30 @@ Choose the Strata runtime that matches the Minecraft version of your client.
 Install exactly one versioned runtime together with Fabric Language Kotlin; each runtime includes the common Strata libraries.
 The table is generated from the build's target matrix and describes supported artifacts and Java requirements.
 
-| Minecraft | Fabric runtime artifact | Required Java | Exact Paper distribution |
+| Minecraft | Fabric runtime artifact | Required Java | Paper distribution |
 | --- | --- | --- | --- |
-| 1.20 | `strata-runtime-minecraft-fabric-1.20` | 17 | Available; requires exact-pair acceptance |
-| 1.20.1 | `strata-runtime-minecraft-fabric-1.20.1` | 17 | Available; requires exact-pair acceptance |
-| 1.20.2 | `strata-runtime-minecraft-fabric-1.20.2` | 17 | Available; requires exact-pair acceptance |
-| 1.20.3 | `strata-runtime-minecraft-fabric-1.20.3` | 17 | No exact Paper distribution; client verification only |
-| 1.20.4 | `strata-runtime-minecraft-fabric-1.20.4` | 17 | Available; requires exact-pair acceptance |
-| 1.20.5 | `strata-runtime-minecraft-fabric-1.20.5` | 21 | Available; requires exact-pair acceptance |
-| 1.20.6 | `strata-runtime-minecraft-fabric-1.20.6` | 21 | Available; requires exact-pair acceptance |
-| 1.21 | `strata-runtime-minecraft-fabric-1.21` | 21 | Available; requires exact-pair acceptance |
-| 1.21.1 | `strata-runtime-minecraft-fabric-1.21.1` | 21 | Available; requires exact-pair acceptance |
-| 1.21.2 | `strata-runtime-minecraft-fabric-1.21.2` | 21 | No exact Paper distribution; client verification only |
-| 1.21.3 | `strata-runtime-minecraft-fabric-1.21.3` | 21 | Available; requires exact-pair acceptance |
-| 1.21.4 | `strata-runtime-minecraft-fabric-1.21.4` | 21 | Available; requires exact-pair acceptance |
-| 1.21.5 | `strata-runtime-minecraft-fabric-1.21.5` | 21 | Available; requires exact-pair acceptance |
-| 1.21.6 | `strata-runtime-minecraft-fabric-1.21.6` | 21 | Available; requires exact-pair acceptance |
-| 1.21.7 | `strata-runtime-minecraft-fabric-1.21.7` | 21 | Available; requires exact-pair acceptance |
-| 1.21.8 | `strata-runtime-minecraft-fabric-1.21.8` | 21 | Available; requires exact-pair acceptance |
-| 1.21.9 | `strata-runtime-minecraft-fabric-1.21.9` | 21 | Available; requires exact-pair acceptance |
-| 1.21.10 | `strata-runtime-minecraft-fabric-1.21.10` | 21 | Available; requires exact-pair acceptance |
-| 1.21.11 | `strata-runtime-minecraft-fabric-1.21.11` | 21 | Available; requires exact-pair acceptance |
-| 26.1 | `strata-runtime-minecraft-fabric-26.1` | 25 | No exact Paper distribution; client verification only |
-| 26.2 | `strata-runtime-minecraft-fabric-26.2` | 25 | Available; requires exact-pair acceptance |
-| 26.3 | `strata-runtime-minecraft-fabric-26.3` | 25 | Available; requires exact-pair acceptance |
+| 1.20 | `strata-runtime-minecraft-fabric-1.20` | 17 | ✅ |
+| 1.20.1 | `strata-runtime-minecraft-fabric-1.20.1` | 17 | ✅ |
+| 1.20.2 | `strata-runtime-minecraft-fabric-1.20.2` | 17 | ✅ |
+| 1.20.3 | `strata-runtime-minecraft-fabric-1.20.3` | 17 | ❌ |
+| 1.20.4 | `strata-runtime-minecraft-fabric-1.20.4` | 17 | ✅ |
+| 1.20.5 | `strata-runtime-minecraft-fabric-1.20.5` | 21 | ✅ |
+| 1.20.6 | `strata-runtime-minecraft-fabric-1.20.6` | 21 | ✅ |
+| 1.21 | `strata-runtime-minecraft-fabric-1.21` | 21 | ✅ |
+| 1.21.1 | `strata-runtime-minecraft-fabric-1.21.1` | 21 | ✅ |
+| 1.21.2 | `strata-runtime-minecraft-fabric-1.21.2` | 21 | ❌ |
+| 1.21.3 | `strata-runtime-minecraft-fabric-1.21.3` | 21 | ✅ |
+| 1.21.4 | `strata-runtime-minecraft-fabric-1.21.4` | 21 | ✅ |
+| 1.21.5 | `strata-runtime-minecraft-fabric-1.21.5` | 21 | ✅ |
+| 1.21.6 | `strata-runtime-minecraft-fabric-1.21.6` | 21 | ✅ |
+| 1.21.7 | `strata-runtime-minecraft-fabric-1.21.7` | 21 | ✅ |
+| 1.21.8 | `strata-runtime-minecraft-fabric-1.21.8` | 21 | ✅ |
+| 1.21.9 | `strata-runtime-minecraft-fabric-1.21.9` | 21 | ✅ |
+| 1.21.10 | `strata-runtime-minecraft-fabric-1.21.10` | 21 | ✅ |
+| 1.21.11 | `strata-runtime-minecraft-fabric-1.21.11` | 21 | ✅ |
+| 26.1 | `strata-runtime-minecraft-fabric-26.1` | 25 | ❌ |
+| 26.2 | `strata-runtime-minecraft-fabric-26.2` | 25 | ✅ |
+| 26.3 | `strata-runtime-minecraft-fabric-26.3` | 25 | ✅ |
 
 Application UI source compiles against `strata-api`; version-specific dependencies belong to the installed runtime.
 Use the aligned Strata release version shown in the [installation example](../../README.md#installation).

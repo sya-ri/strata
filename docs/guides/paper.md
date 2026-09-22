@@ -22,6 +22,15 @@ The [compiled counter screen](../../examples/paper/src/main/kotlin/dev/s7a/strat
 Build `:runtime:paper:pluginJar :examples:paper:jar`, install both artifacts, and use `/strata-demo` after joining with the matching client.
 The example's JVM test evaluates and updates its actual screen factory through the public remote API.
 
+Use `onActivate { ... }` for ordinary button actions.
+For typed notifications, choose an explicit local propagation policy: `onKeyPress(propagation = InputResult.Consumed, filter = KeyboardInputFilter(setOf(KeyCode.Enter))) { event -> ... }` runs the handler on Paper while the client immediately consumes matching Enter presses.
+The [compiled input screen](../../examples/paper/src/main/kotlin/dev/s7a/strata/examples/paper/PaperInputScreens.kt) also demonstrates button filtering, pointer coordinates, and preedit notifications.
+Available subscriptions include key press/release, character/preedit input, pointer press/release/move/drag/scroll, and fixed-button capture with cancellation.
+Unsubscribed variants and nonmatching keys/buttons are not transmitted.
+Use `InputResult.Ignored` when the existing client control should continue processing the input, such as observing text-field composition.
+The overloads return no handler result: the declared propagation/capture policy is already applied locally when the server receives the notification.
+Event-dependent synchronous decisions require an installed client extension, as specified in the [remote protocol](../reference/remote-protocol.md#editing-and-local-behavior).
+
 Paper executes declaration evaluation and accepted actions on its primary thread.
 External state sources may notify from other threads; the shared session queues those revisions and commits them at its next cutoff.
 Keep database and network work asynchronous and publish its result through a state source instead of blocking a handler.

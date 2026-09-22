@@ -8,6 +8,7 @@ import dev.s7a.strata.node.DirtyMask
 import dev.s7a.strata.node.LifecycleNode
 import dev.s7a.strata.node.ModifierNode
 import dev.s7a.strata.node.PointerCaptureNode
+import dev.s7a.strata.projection.DeclarationProjection
 
 /**
  * Owns the stable retained token for captured pointer handlers.
@@ -21,10 +22,14 @@ internal object CapturedPointerInputModifier {
      *
      * @property onCancel owner-thread cancellation callback retained until replacement or disposal.
      * @property callback owner-thread event callback receiving current local logical coordinates.
+     * @property projection optional fixed-policy remote subscription.
+     * @property captureButton fixed policy retained by an active gesture, or null for dynamic local callbacks.
      */
     internal data class Element(
         val onCancel: (PointerButton) -> Unit,
         val callback: (PointerEvent, IntOffset) -> InputResult,
+        override val projection: DeclarationProjection<*>? = null,
+        val captureButton: PointerButton? = null,
     ) : ModifierElement {
         override val type: ModifierNodeType<*, *>
             get() = TYPE
@@ -44,14 +49,30 @@ internal object CapturedPointerInputModifier {
         PointerCaptureNode,
         LifecycleNode {
         private var element: Element? = initial
+        private var captured: Element? = null
+        private var heldButton: PointerButton? = null
 
         override fun onPointerEvent(
             event: PointerEvent,
             localPosition: IntOffset,
-        ): InputResult = element?.callback?.invoke(event, localPosition) ?: InputResult.Ignored
+        ): InputResult {
+            val current = captured ?: element
+            if (event is PointerEvent.Release && event.button == heldButton) clearGesture()
+            return current?.callback?.invoke(event, localPosition) ?: InputResult.Ignored
+        }
+
+        override fun onPointerCaptureAcquired(button: PointerButton) {
+            val current = element
+            if (current?.captureButton != null) {
+                captured = current
+                heldButton = button
+            }
+        }
 
         override fun onPointerCaptureCancelled(button: PointerButton) {
-            element?.onCancel?.invoke(button)
+            val current = captured ?: element
+            clearGesture()
+            current?.onCancel?.invoke(button)
         }
 
         override fun attach() = Unit
@@ -60,6 +81,7 @@ internal object CapturedPointerInputModifier {
 
         override fun dispose() {
             element = null
+            clearGesture()
         }
 
         /**
@@ -69,8 +91,15 @@ internal object CapturedPointerInputModifier {
          * @return no dirty phases because input reads live callbacks on the owner thread.
          */
         internal fun update(current: Element): DirtyMask {
+            // An in-flight gesture keeps its original filter; callback-only changes remain live.
+            if (captured?.captureButton == current.captureButton && captured != null) captured = current
             element = current
             return DirtyMask.None
+        }
+
+        private fun clearGesture() {
+            captured = null
+            heldButton = null
         }
     }
 

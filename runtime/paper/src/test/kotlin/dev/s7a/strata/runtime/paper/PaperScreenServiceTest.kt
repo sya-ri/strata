@@ -2,12 +2,16 @@ package dev.s7a.strata.runtime.paper
 
 import dev.s7a.strata.component.Canvas
 import dev.s7a.strata.component.Spacer
+import dev.s7a.strata.geometry.IntOffset
 import dev.s7a.strata.geometry.IntSize
+import dev.s7a.strata.input.PointerButton
+import dev.s7a.strata.input.PointerEvent
 import dev.s7a.strata.modifier.Modifier
 import dev.s7a.strata.modifier.background
 import dev.s7a.strata.modifier.onActivate
 import dev.s7a.strata.modifier.size
 import dev.s7a.strata.projection.BuiltinProjection
+import dev.s7a.strata.projection.ProjectionInputCodec
 import dev.s7a.strata.projection.ProjectionType
 import dev.s7a.strata.projection.ProjectionValue
 import dev.s7a.strata.render.ArgbColor
@@ -56,9 +60,10 @@ internal class PaperScreenServiceTest {
             val endpoint =
                 snapshot.tree.nodes.values
                     .flatMap { it.modifiers }
-                    .single { it.type == BuiltinProjection.PrimaryPress.type }
-                    .value as ProjectionValue.Integer
-            fixture.client.send(RemoteMessage.Action(first.identity, 1, endpoint.value, BuiltinProjection.PrimaryPress.type, ProjectionValue.Absent))
+                    .single { it.type == BuiltinProjection.PointerPress.type }
+                    .value
+                    .let { (it as ProjectionValue.Sequence).values[1] as ProjectionValue.Integer }
+            fixture.client.send(RemoteMessage.Action(first.identity, 1, endpoint.value, BuiltinProjection.PointerPress.type, ProjectionInputCodec.pointer(PointerEvent.Press(IntOffset.Zero, PointerButton.Primary), IntOffset.Zero)))
             fixture.client.flush()
             fixture.service.tick()
             assertEquals(RemoteSessionStatus.Closed(RemoteFailure.Replaced), first.status)
@@ -104,9 +109,10 @@ internal class PaperScreenServiceTest {
             val action =
                 snapshot.tree.nodes.values
                     .flatMap { it.modifiers }
-                    .single { it.type == BuiltinProjection.PrimaryPress.type }
-                    .value as ProjectionValue.Integer
-            fixture.client.send(RemoteMessage.Action(handle.identity, 1, action.value, BuiltinProjection.PrimaryPress.type, ProjectionValue.Absent))
+                    .single { it.type == BuiltinProjection.PointerPress.type }
+                    .value
+                    .let { (it as ProjectionValue.Sequence).values[1] as ProjectionValue.Integer }
+            fixture.client.send(RemoteMessage.Action(handle.identity, 1, action.value, BuiltinProjection.PointerPress.type, ProjectionInputCodec.pointer(PointerEvent.Press(IntOffset.Zero, PointerButton.Primary), IntOffset.Zero)))
             fixture.client.flush()
             fixture.service.containerChanged(fixture.player)
             fixture.service.tick()
@@ -174,9 +180,10 @@ internal class PaperScreenServiceTest {
             val endpoint =
                 snapshot.tree.nodes.values
                     .flatMap { it.modifiers }
-                    .single { it.type == BuiltinProjection.PrimaryPress.type }
-                    .value as ProjectionValue.Integer
-            fixture.client.send(RemoteMessage.Action(handle.identity, 1, endpoint.value, BuiltinProjection.PrimaryPress.type, ProjectionValue.Absent))
+                    .single { it.type == BuiltinProjection.PointerPress.type }
+                    .value
+                    .let { (it as ProjectionValue.Sequence).values[1] as ProjectionValue.Integer }
+            fixture.client.send(RemoteMessage.Action(handle.identity, 1, endpoint.value, BuiltinProjection.PointerPress.type, ProjectionInputCodec.pointer(PointerEvent.Press(IntOffset.Zero, PointerButton.Primary), IntOffset.Zero)))
             fixture.client.flush()
             assertEquals(0, clicks.value)
             fixture.service.tick()
@@ -205,7 +212,7 @@ internal class PaperScreenServiceTest {
             fixture.negotiate()
             val first = fixture.service.open(fixture.plugin, fixture.player, ScreenDefinition("Remote test") { Spacer() })
             val second = fixture.service.open(fixture.plugin, fixture.player, ScreenDefinition("Remote test") { Spacer() })
-            fixture.client.send(RemoteMessage.Action(first.identity, 1, 1, BuiltinProjection.PrimaryPress.type, ProjectionValue.Absent))
+            fixture.client.send(RemoteMessage.Action(first.identity, 1, 1, BuiltinProjection.PointerPress.type, ProjectionInputCodec.pointer(PointerEvent.Press(IntOffset.Zero, PointerButton.Primary), IntOffset.Zero)))
             fixture.client.flush()
             fixture.service.tick()
             assertEquals(RemoteSessionStatus.Open, second.status)

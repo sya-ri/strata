@@ -36,8 +36,14 @@ It flushes pending edits before a business action and before accepting an incomi
 An older acknowledgement does not replace a newer local draft; a server replacement generation supersedes pending edits.
 Equal confirmed text does not assign the native editor again, preserving its retained editing state.
 
-Standard Unit callbacks use fixed local propagation behavior and server endpoints.
-Arbitrary callbacks returning `InputResult` or controlling event propagation/capture need a registered client implementation.
+Input modifier projections declare their event variants, optional key/button filters, fixed propagation result, and typed server endpoints before input occurs.
+The client installs only those subscriptions and checks their filters before sending an event.
+The server validates the same variant and filter before invoking its current handler.
+Changing a subscription policy retires its endpoints; already queued events for the old policy are acknowledged without calling a replacement handler.
+Keyboard notifications preserve the physical key, scan code, and complete modifiers; pointer notifications preserve tree/local coordinates and fractional deltas; text notifications preserve committed Unicode scalars and IME composition details.
+Fixed-button capture acquires and releases locally and sends gesture/cancellation notifications through separate endpoints.
+An active gesture retains its original button policy until release or cancellation.
+Callbacks that choose an `InputResult` or capture policy dynamically from an event still need a registered client implementation.
 The client never waits for a server response to obtain a synchronous input result.
 Stateful modifier registrations prepare shared native state outside declaration evaluation, alongside component preparation.
 

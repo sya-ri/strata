@@ -60,20 +60,7 @@ public fun Modifier.onPress(callback: (PointerEvent.Press, IntOffset) -> InputRe
  * @return this chain with one appended consuming press handler.
  * @throws Throwable when [action] fails during dispatch.
  */
-public fun Modifier.onPress(action: () -> Unit): Modifier =
-    then(
-        PointerInputModifier.Element(
-            PointerInputModifier.Action.Press { event, _ ->
-                if (event.button === PointerButton.Primary) {
-                    action()
-                    InputResult.Consumed
-                } else {
-                    InputResult.Ignored
-                }
-            },
-            BuiltinProjection.PrimaryPress.callback(action),
-        ),
-    )
+public fun Modifier.onPress(action: () -> Unit): Modifier = onPress(InputResult.Consumed, PointerButton.Primary) { _, _ -> action() }
 
 /**
  * Handles every pointer release that hits this modifier's laid-out bounds.
@@ -91,16 +78,7 @@ public fun Modifier.onRelease(callback: (PointerEvent.Release, IntOffset) -> Inp
  * @return this chain with one appended consuming release handler.
  * @throws Throwable when [action] fails during dispatch.
  */
-public fun Modifier.onRelease(action: () -> Unit): Modifier =
-    then(
-        PointerInputModifier.Element(
-            PointerInputModifier.Action.Release { _, _ ->
-                action()
-                InputResult.Consumed
-            },
-            BuiltinProjection.Release.callback(action),
-        ),
-    )
+public fun Modifier.onRelease(action: () -> Unit): Modifier = onRelease(InputResult.Consumed) { _, _ -> action() }
 
 /**
  * Handles every pointer move that hits this modifier's laid-out bounds.
@@ -120,16 +98,7 @@ public fun Modifier.onMove(callback: (PointerEvent.Move, IntOffset) -> InputResu
  * @return this chain with one appended non-consuming move handler.
  * @throws Throwable when [action] fails during dispatch.
  */
-public fun Modifier.onMove(action: () -> Unit): Modifier =
-    then(
-        PointerInputModifier.Element(
-            PointerInputModifier.Action.Move { _, _ ->
-                action()
-                InputResult.Ignored
-            },
-            BuiltinProjection.Move.callback(action),
-        ),
-    )
+public fun Modifier.onMove(action: () -> Unit): Modifier = onMove(InputResult.Ignored) { _, _ -> action() }
 
 /**
  * Handles every pointer scroll event that hits this modifier's laid-out bounds.
@@ -147,16 +116,7 @@ public fun Modifier.onScroll(callback: (PointerEvent.Scroll, IntOffset) -> Input
  * @return this chain with one appended consuming scroll handler.
  * @throws Throwable when [action] fails during dispatch.
  */
-public fun Modifier.onScroll(action: () -> Unit): Modifier =
-    then(
-        PointerInputModifier.Element(
-            PointerInputModifier.Action.Scroll { _, _ ->
-                action()
-                InputResult.Consumed
-            },
-            BuiltinProjection.Scroll.callback(action),
-        ),
-    )
+public fun Modifier.onScroll(action: () -> Unit): Modifier = onScroll(InputResult.Consumed) { _, _ -> action() }
 
 /**
  * Observes distinct pointer enter and exit transitions for this modifier's laid-out bounds.

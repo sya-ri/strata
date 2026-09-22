@@ -36,7 +36,7 @@ internal object RemoteProfileComponents {
             val style = enumeration<TextStyle>(this)
             val factory: (RemoteElementContext) -> Element = { context ->
                 require(context.children.isEmpty())
-                ComponentRuntimeBridge.currentRuntime().text(text, layout, style, context.modifier, context.key)
+                ComponentRuntimeBridge.current().text(text, layout, style, context.modifier, context.key)
             }
             factory
         }
@@ -46,7 +46,7 @@ internal object RemoteProfileComponents {
             val enabled = flag()
             val factory: (RemoteElementContext) -> Element = { context ->
                 require(context.children.isEmpty())
-                ComponentRuntimeBridge.currentRuntime().button(label, width, enabled, context.modifier, context.key)
+                ComponentRuntimeBridge.current().button(label, width, enabled, context.modifier, context.key)
             }
             factory
         }
@@ -59,7 +59,7 @@ internal object RemoteProfileComponents {
             val factory: (RemoteElementContext) -> Element = { context ->
                 require(context.children.size <= 1)
                 val indicator = if (customIndicator) TabSelectionIndicator.Custom { context.children.forEach(::element) } else TabSelectionIndicator.Underline
-                ComponentRuntimeBridge.currentRuntime().tab(label, selected, width, enabled, indicator, context.children.singleOrNull(), context.modifier, context.key)
+                ComponentRuntimeBridge.current().tab(label, selected, width, enabled, indicator, context.children.singleOrNull(), context.modifier, context.key)
             }
             factory
         }
@@ -71,7 +71,7 @@ internal object RemoteProfileComponents {
             val size = RemoteProperties.size(value())
             val factory: (RemoteElementContext) -> Element = { context ->
                 require(context.children.isEmpty())
-                ComponentRuntimeBridge.currentRuntime().progressBar(progress, size, context.modifier, context.key)
+                ComponentRuntimeBridge.current().progressBar(progress, size, context.modifier, context.key)
             }
             factory
         }
@@ -79,7 +79,7 @@ internal object RemoteProfileComponents {
             val size = RemoteProperties.size(value())
             val factory: (RemoteElementContext) -> Element = { context ->
                 require(context.children.isEmpty())
-                ComponentRuntimeBridge.currentRuntime().loadingIndicator(size, context.modifier, context.key)
+                ComponentRuntimeBridge.current().loadingIndicator(size, context.modifier, context.key)
             }
             factory
         }
@@ -89,7 +89,7 @@ internal object RemoteProfileComponents {
             val size = optional(value(), RemoteProperties::size)
             val factory: (RemoteElementContext) -> Element = { context ->
                 require(context.children.isEmpty())
-                ComponentRuntimeBridge.currentRuntime().image(source, sourceRegion, size, context.modifier, context.key)
+                ComponentRuntimeBridge.current().image(source, sourceRegion, size, context.modifier, context.key)
             }
             factory
         }
@@ -98,7 +98,7 @@ internal object RemoteProfileComponents {
             val highlightable = flag()
             val factory: (RemoteElementContext) -> Element = { context ->
                 require(context.children.size <= 1)
-                ComponentRuntimeBridge.currentRuntime().slot(binding, highlightable, context.children.singleOrNull(), context.modifier, context.key)
+                ComponentRuntimeBridge.current().slot(binding, highlightable, context.children.singleOrNull(), context.modifier, context.key)
             }
             factory
         }
@@ -110,7 +110,7 @@ internal object RemoteProfileComponents {
             val failure = flag()
             val factory: (RemoteElementContext) -> Element = { context ->
                 require(context.children.size == (if (loading) 1 else 0) + (if (failure) 1 else 0))
-                ComponentRuntimeBridge.currentRuntime().playerHead(source, size, showHat, if (loading) context.children.first() else null, if (failure) context.children.last() else null, context.modifier, context.key)
+                ComponentRuntimeBridge.current().playerHead(source, size, showHat, if (loading) context.children.first() else null, if (failure) context.children.last() else null, context.modifier, context.key)
             }
             factory
         }
@@ -120,29 +120,29 @@ internal object RemoteProfileComponents {
         modifier(registry, RemoteProfileComponent.Tooltip) {
             val text = RemoteTextCodec.decode(value())
             val delay = long().also { require(0 <= it) }
-            val factory = { ComponentRuntimeBridge.currentRuntime().tooltip(Modifier.Empty, text, delay) }
+            val factory = { ComponentRuntimeBridge.current().tooltip(Modifier.Empty, text, delay) }
             factory
         }
         modifier(registry, RemoteProfileComponent.MenuBackground) {
-            val factory = { ComponentRuntimeBridge.currentRuntime().menuBackground(Modifier.Empty) }
+            val factory = { ComponentRuntimeBridge.current().menuBackground(Modifier.Empty) }
             factory
         }
         modifier(registry, RemoteProfileComponent.ContainerBackground) {
             val rows = int(1..6)
-            val factory = { ComponentRuntimeBridge.currentRuntime().containerBackground(Modifier.Empty, rows) }
+            val factory = { ComponentRuntimeBridge.current().containerBackground(Modifier.Empty, rows) }
             factory
         }
         modifier(registry, RemoteProfileComponent.ImageBackground) {
             val source = RemoteProperties.image(value())
             val scale = enumeration<ImageScale>(this)
-            val factory = { ComponentRuntimeBridge.currentRuntime().imageBackground(Modifier.Empty, source, scale) }
+            val factory = { ComponentRuntimeBridge.current().imageBackground(Modifier.Empty, source, scale) }
             factory
         }
         modifier(registry, RemoteProfileComponent.NineSliceBackground) {
             val source = RemoteProperties.image(value())
             val border = RemoteProperties.insets(value())
             val mode = if (flag()) NineSliceCenterMode.Stretched else NineSliceCenterMode.Tiled
-            val factory = { ComponentRuntimeBridge.currentRuntime().imageBackground(Modifier.Empty, source, border, mode) }
+            val factory = { ComponentRuntimeBridge.current().imageBackground(Modifier.Empty, source, border, mode) }
             factory
         }
     }

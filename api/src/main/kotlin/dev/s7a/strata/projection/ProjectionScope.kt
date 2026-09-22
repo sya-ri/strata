@@ -11,8 +11,13 @@ import dev.s7a.strata.text.UiText
 public interface ProjectionScope {
     /**
      * Binds an event endpoint and returns its opaque positive session-local identity.
+     * Changing [key] retires the previous endpoint at this declaration position, so queued events
+     * for an obsolete subscription are acknowledged without invoking its replacement handler.
      */
-    public fun action(action: ProjectionAction<*>): Long
+    public fun action(
+        action: ProjectionAction<*>,
+        key: ProjectionValue = ProjectionValue.Absent,
+    ): Long
 
     /**
      * Projects a typed value with stable source identity, replacement generation, acknowledged edit, and endpoint.

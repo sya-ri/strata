@@ -297,6 +297,7 @@ public class RemoteServerSession(
         val owner: Long,
         val index: Int,
         val type: ProjectionType,
+        val key: ProjectionValue,
     )
 
     private class Endpoint(
@@ -338,11 +339,14 @@ public class RemoteServerSession(
             return bindings.project(binding, this)
         }
 
-        override fun action(action: ProjectionAction<*>): Long {
+        override fun action(
+            action: ProjectionAction<*>,
+            key: ProjectionValue,
+        ): Long {
             checkOwner()
             check(active) { "Projection scope has expired." }
             require(nextActions.size < limits.collectionEntries) { "Too many remote actions." }
-            val slot = ActionSlot(identity, position++, action.type)
+            val slot = ActionSlot(identity, position++, action.type, key)
             val endpoint =
                 slots[slot] ?: run {
                     check(nextAction < Long.MAX_VALUE) { "Remote endpoint identity space is exhausted." }

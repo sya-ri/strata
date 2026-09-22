@@ -18,12 +18,6 @@ public object ComponentRuntimeBridge {
     private val active = EvaluationContext<ComponentRuntime>()
 
     /**
-     * Returns the installed component runtime to an integration reconstructing declarations inside its active evaluation.
-     * The returned runtime must not escape that owner-thread evaluation; deferred content uses [ComponentRuntime.retainEvaluator].
-     */
-    public fun currentRuntime(): ComponentRuntime = current()
-
-    /**
      * Evaluates one screen callback with [runtime] implicitly available to profile-backed component functions.
      *
      * @param runtime owner-thread runtime implementation active only during [content].
@@ -39,12 +33,12 @@ public object ComponentRuntimeBridge {
 
     /**
      * Returns the runtime active for the current owner-thread screen callback.
+     * The returned runtime must not escape that evaluation; deferred content uses [ComponentRuntime.retainEvaluator].
      *
      * @return current runtime implementation.
      * @throws IllegalStateException when called outside runtime evaluation.
      */
-    @JvmSynthetic
-    internal fun current(): ComponentRuntime =
+    public fun current(): ComponentRuntime =
         checkNotNull(active.current) {
             "Profile-backed components require an active runtime screen callback on this thread."
         }

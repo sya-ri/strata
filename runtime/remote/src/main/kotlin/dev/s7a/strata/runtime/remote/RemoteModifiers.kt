@@ -3,13 +3,9 @@
 package dev.s7a.strata.runtime.remote
 
 import dev.s7a.strata.geometry.Insets
-import dev.s7a.strata.input.InputResult
-import dev.s7a.strata.input.KeyCode
 import dev.s7a.strata.modifier.Modifier
 import dev.s7a.strata.modifier.background
 import dev.s7a.strata.modifier.onActivate
-import dev.s7a.strata.modifier.onKeyPress
-import dev.s7a.strata.modifier.onPress
 import dev.s7a.strata.modifier.padding
 import dev.s7a.strata.modifier.semantics
 import dev.s7a.strata.projection.BuiltinProjection
@@ -57,19 +53,6 @@ internal object RemoteModifiers {
             result
         }) { (enabled, endpoint), actions ->
             Modifier.Empty.onActivate(enabled) { actions.send(endpoint, BuiltinProjection.ObservedActivation.type, ProjectionValue.Absent) }
-        }
-        registry.modifier(BuiltinProjection.PrimaryPress.type, ::endpoint) { endpoint, actions ->
-            Modifier.Empty.onPress { actions.send(endpoint, BuiltinProjection.PrimaryPress.type, ProjectionValue.Absent) }
-        }
-        registry.modifier(BuiltinProjection.ActivationKeys.type, ::endpoint) { endpoint, actions ->
-            Modifier.Empty.onKeyPress { event ->
-                if (event.key == KeyCode.Enter || event.key == KeyCode.Space) {
-                    actions.send(endpoint, BuiltinProjection.ActivationKeys.type, ProjectionValue.Absent)
-                    InputResult.Consumed
-                } else {
-                    InputResult.Ignored
-                }
-            }
         }
     }
 

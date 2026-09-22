@@ -11,6 +11,7 @@ public object RemoteBuiltins {
         RemoteLayouts.register(registry)
         RemoteModifiers.register(registry)
         RemoteInputModifiers.register(registry)
+        RemoteInputSubscriptions.register(registry)
         RemoteProfileComponents.register(registry)
         RemoteForms.register(registry)
         RemoteCanvas.registerPixels(registry)

@@ -54,7 +54,7 @@ internal object RemoteForms {
             control.specification(binding, ::CheckboxState, { state, context ->
                 require(context.children.isEmpty())
                 val modifier = context.modifier.onCheckedChange { context.states.flushEdits(context.actions) }
-                ComponentRuntimeBridge.currentRuntime().checkbox(label, state, width, enabled, modifier, context.key)
+                ComponentRuntimeBridge.current().checkbox(label, state, width, enabled, modifier, context.key)
             })
         }
     }
@@ -74,7 +74,7 @@ internal object RemoteForms {
             control.specification(binding, { SliderState(it, minimum..maximum, steps) }, { state, context ->
                 require(context.children.isEmpty())
                 val modifier = context.modifier.onSliderChange { context.states.flushEdits(context.actions) }
-                ComponentRuntimeBridge.currentRuntime().slider(label, state, width, enabled, modifier, context.key)
+                ComponentRuntimeBridge.current().slider(label, state, width, enabled, modifier, context.key)
             })
         }
     }
@@ -93,7 +93,7 @@ internal object RemoteForms {
             control.specification(binding, { CycleButtonState(labels.indices.toList(), it) }, { state, context ->
                 require(context.children.isEmpty())
                 val modifier = context.modifier.onCycle<Int> { context.states.flushEdits(context.actions) }
-                ComponentRuntimeBridge.currentRuntime().cycleButton(state, labels, width, enabled, modifier, context.key)
+                ComponentRuntimeBridge.current().cycleButton(state, labels, width, enabled, modifier, context.key)
             })
         }
     }
@@ -111,7 +111,7 @@ internal object RemoteForms {
             val font = optional(value(), RemoteProperties::resource)
             control.specification(binding, { TextFieldState(it, maximum) }, { state, context ->
                 require(context.children.isEmpty())
-                val runtime = ComponentRuntimeBridge.currentRuntime()
+                val runtime = ComponentRuntimeBridge.current()
                 if (font == null) {
                     runtime.textField(state, size, appearance, enabled, style, context.modifier, context.key)
                 } else {
@@ -141,7 +141,7 @@ internal object RemoteForms {
             require(0.0 <= real(position.value))
             control.specification(binding, { TextAreaState(it, maximum) }, { state, context ->
                 require(context.children.isEmpty())
-                val runtime = ComponentRuntimeBridge.currentRuntime()
+                val runtime = ComponentRuntimeBridge.current()
                 if (font == null) {
                     runtime.textArea(state, viewport, appearance, enabled, style, wrap, spacing, context.modifier, context.key)
                 } else {
@@ -162,7 +162,7 @@ internal object RemoteForms {
             require(0.0 <= real(binding.value))
             val rate = int(1..Int.MAX_VALUE)
             control.specification(binding, ::ScrollState, { state, context ->
-                ComponentRuntimeBridge.currentRuntime().scrollArea(state, context.children.single(), rate, context.modifier, context.key)
+                ComponentRuntimeBridge.current().scrollArea(state, context.children.single(), rate, context.modifier, context.key)
             })
         }
         register(registry, RemoteProfileComponent.Scrollbar, RemotePreparationPhase.References) {
@@ -170,7 +170,7 @@ internal object RemoteForms {
             require(0.0 <= real(binding.value))
             control.specification(binding, ::ScrollState, { state, context ->
                 require(context.children.isEmpty())
-                ComponentRuntimeBridge.currentRuntime().scrollbar(state, context.modifier, context.key)
+                ComponentRuntimeBridge.current().scrollbar(state, context.modifier, context.key)
             })
         }
     }

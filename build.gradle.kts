@@ -137,8 +137,8 @@ private data class MinecraftFabricTarget(
 
     /** Native custom-payload families verified against their exact mapped client archives. */
     enum class PaperDistribution(val description: String) {
-        Available("Available; requires exact-pair acceptance"),
-        Unavailable("No exact Paper distribution; client verification only"),
+        Available("✅"),
+        Unavailable("❌"),
     }
 
     enum class RemoteNetworkFamily(val sourceRoot: String) {
@@ -614,7 +614,7 @@ val compatibilityMarkdown = providers.provider {
         appendLine("Install exactly one versioned runtime together with Fabric Language Kotlin; each runtime includes the common Strata libraries.")
         appendLine("The table is generated from the build's target matrix and describes supported artifacts and Java requirements.")
         appendLine()
-        appendLine("| Minecraft | Fabric runtime artifact | Required Java | Exact Paper distribution |")
+        appendLine("| Minecraft | Fabric runtime artifact | Required Java | Paper distribution |")
         appendLine("| --- | --- | --- | --- |")
         minecraftFabricTargets.forEach { target ->
             val artifact = releaseArtifactByProjectPath.getValue(target.runtimeProjectPath).substringAfter(':')

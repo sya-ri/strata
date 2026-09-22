@@ -1223,6 +1223,17 @@ public final class dev/s7a/strata/input/KeyboardEvent$Release : dev/s7a/strata/i
 	public fun toString ()Ljava/lang/String;
 }
 
+public final class dev/s7a/strata/input/KeyboardInputFilter {
+	public fun <init> ()V
+	public fun <init> (Ljava/util/Set;Ldev/s7a/strata/input/KeyboardModifiers;)V
+	public synthetic fun <init> (Ljava/util/Set;Ldev/s7a/strata/input/KeyboardModifiers;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getKeys ()Ljava/util/Set;
+	public final fun getModifiers ()Ldev/s7a/strata/input/KeyboardModifiers;
+	public fun hashCode ()I
+	public final fun matches (Ldev/s7a/strata/input/KeyboardEvent;)Z
+}
+
 public final class dev/s7a/strata/input/KeyboardModifiers {
 	public fun <init> ()V
 	public fun <init> (ZZZZZZ)V
@@ -1478,6 +1489,34 @@ public final class dev/s7a/strata/modifier/ComponentActionExtensionsKt {
 	public static final fun onSelectionChange (Ldev/s7a/strata/modifier/Modifier;Lkotlin/jvm/functions/Function1;)Ldev/s7a/strata/modifier/Modifier;
 	public static final fun onSliderChange (Ldev/s7a/strata/modifier/Modifier;Lkotlin/jvm/functions/Function1;)Ldev/s7a/strata/modifier/Modifier;
 	public static final fun onTrailingItemsRequested (Ldev/s7a/strata/modifier/Modifier;Lkotlin/jvm/functions/Function1;)Ldev/s7a/strata/modifier/Modifier;
+}
+
+public final class dev/s7a/strata/modifier/DeclaredKeyboardInputExtensionsKt {
+	public static final fun onKeyEvent (Ldev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/input/InputResult;Ldev/s7a/strata/input/KeyboardInputFilter;Lkotlin/jvm/functions/Function1;)Ldev/s7a/strata/modifier/Modifier;
+	public static synthetic fun onKeyEvent$default (Ldev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/input/InputResult;Ldev/s7a/strata/input/KeyboardInputFilter;Lkotlin/jvm/functions/Function1;ILjava/lang/Object;)Ldev/s7a/strata/modifier/Modifier;
+	public static final fun onKeyPress (Ldev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/input/InputResult;Ldev/s7a/strata/input/KeyboardInputFilter;Lkotlin/jvm/functions/Function1;)Ldev/s7a/strata/modifier/Modifier;
+	public static synthetic fun onKeyPress$default (Ldev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/input/InputResult;Ldev/s7a/strata/input/KeyboardInputFilter;Lkotlin/jvm/functions/Function1;ILjava/lang/Object;)Ldev/s7a/strata/modifier/Modifier;
+	public static final fun onKeyRelease (Ldev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/input/InputResult;Ldev/s7a/strata/input/KeyboardInputFilter;Lkotlin/jvm/functions/Function1;)Ldev/s7a/strata/modifier/Modifier;
+	public static synthetic fun onKeyRelease$default (Ldev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/input/InputResult;Ldev/s7a/strata/input/KeyboardInputFilter;Lkotlin/jvm/functions/Function1;ILjava/lang/Object;)Ldev/s7a/strata/modifier/Modifier;
+}
+
+public final class dev/s7a/strata/modifier/DeclaredPointerInputExtensionsKt {
+	public static final fun onCapturedPointerEvent (Ldev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/input/PointerButton;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function2;)Ldev/s7a/strata/modifier/Modifier;
+	public static final fun onDrag (Ldev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/input/InputResult;Ldev/s7a/strata/input/PointerButton;Lkotlin/jvm/functions/Function2;)Ldev/s7a/strata/modifier/Modifier;
+	public static synthetic fun onDrag$default (Ldev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/input/InputResult;Ldev/s7a/strata/input/PointerButton;Lkotlin/jvm/functions/Function2;ILjava/lang/Object;)Ldev/s7a/strata/modifier/Modifier;
+	public static final fun onMove (Ldev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/input/InputResult;Lkotlin/jvm/functions/Function2;)Ldev/s7a/strata/modifier/Modifier;
+	public static final fun onPointerEvent (Ldev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/input/InputResult;Lkotlin/jvm/functions/Function2;)Ldev/s7a/strata/modifier/Modifier;
+	public static final fun onPress (Ldev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/input/InputResult;Ldev/s7a/strata/input/PointerButton;Lkotlin/jvm/functions/Function2;)Ldev/s7a/strata/modifier/Modifier;
+	public static synthetic fun onPress$default (Ldev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/input/InputResult;Ldev/s7a/strata/input/PointerButton;Lkotlin/jvm/functions/Function2;ILjava/lang/Object;)Ldev/s7a/strata/modifier/Modifier;
+	public static final fun onRelease (Ldev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/input/InputResult;Ldev/s7a/strata/input/PointerButton;Lkotlin/jvm/functions/Function2;)Ldev/s7a/strata/modifier/Modifier;
+	public static synthetic fun onRelease$default (Ldev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/input/InputResult;Ldev/s7a/strata/input/PointerButton;Lkotlin/jvm/functions/Function2;ILjava/lang/Object;)Ldev/s7a/strata/modifier/Modifier;
+	public static final fun onScroll (Ldev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/input/InputResult;Lkotlin/jvm/functions/Function2;)Ldev/s7a/strata/modifier/Modifier;
+}
+
+public final class dev/s7a/strata/modifier/DeclaredTextInputExtensionsKt {
+	public static final fun onCharacterInput (Ldev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/input/InputResult;Lkotlin/jvm/functions/Function1;)Ldev/s7a/strata/modifier/Modifier;
+	public static final fun onPreedit (Ldev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/input/InputResult;Lkotlin/jvm/functions/Function1;)Ldev/s7a/strata/modifier/Modifier;
+	public static final fun onTextInput (Ldev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/input/InputResult;Lkotlin/jvm/functions/Function1;)Ldev/s7a/strata/modifier/Modifier;
 }
 
 public final class dev/s7a/strata/modifier/FocusedInputExtensionsKt {
@@ -1813,30 +1852,36 @@ public abstract interface class dev/s7a/strata/node/TextInputNode {
 }
 
 public final class dev/s7a/strata/projection/BuiltinProjection : java/lang/Enum {
-	public static final field ActivationKeys Ldev/s7a/strata/projection/BuiltinProjection;
 	public static final field Background Ldev/s7a/strata/projection/BuiltinProjection;
 	public static final field CanvasPixels Ldev/s7a/strata/projection/BuiltinProjection;
+	public static final field CharacterInput Ldev/s7a/strata/projection/BuiltinProjection;
 	public static final field Column Ldev/s7a/strata/projection/BuiltinProjection;
 	public static final field ColumnAlignment Ldev/s7a/strata/projection/BuiltinProjection;
 	public static final field ComponentAction Ldev/s7a/strata/projection/BuiltinProjection;
-	public static final field Drag Ldev/s7a/strata/projection/BuiltinProjection;
 	public static final field FlowRow Ldev/s7a/strata/projection/BuiltinProjection;
 	public static final field FocusChanged Ldev/s7a/strata/projection/BuiltinProjection;
 	public static final field Focusable Ldev/s7a/strata/projection/BuiltinProjection;
 	public static final field Grid Ldev/s7a/strata/projection/BuiltinProjection;
 	public static final field Hover Ldev/s7a/strata/projection/BuiltinProjection;
 	public static final field InitialFocus Ldev/s7a/strata/projection/BuiltinProjection;
-	public static final field Move Ldev/s7a/strata/projection/BuiltinProjection;
+	public static final field KeyPress Ldev/s7a/strata/projection/BuiltinProjection;
+	public static final field KeyRelease Ldev/s7a/strata/projection/BuiltinProjection;
+	public static final field KeyboardEvents Ldev/s7a/strata/projection/BuiltinProjection;
 	public static final field Observe Ldev/s7a/strata/projection/BuiltinProjection;
 	public static final field ObservedActivation Ldev/s7a/strata/projection/BuiltinProjection;
 	public static final field Padding Ldev/s7a/strata/projection/BuiltinProjection;
 	public static final field PanZoom Ldev/s7a/strata/projection/BuiltinProjection;
-	public static final field PrimaryPress Ldev/s7a/strata/projection/BuiltinProjection;
-	public static final field Release Ldev/s7a/strata/projection/BuiltinProjection;
+	public static final field PointerCapture Ldev/s7a/strata/projection/BuiltinProjection;
+	public static final field PointerDrag Ldev/s7a/strata/projection/BuiltinProjection;
+	public static final field PointerEvents Ldev/s7a/strata/projection/BuiltinProjection;
+	public static final field PointerMove Ldev/s7a/strata/projection/BuiltinProjection;
+	public static final field PointerPress Ldev/s7a/strata/projection/BuiltinProjection;
+	public static final field PointerRelease Ldev/s7a/strata/projection/BuiltinProjection;
+	public static final field PointerScroll Ldev/s7a/strata/projection/BuiltinProjection;
+	public static final field PreeditInput Ldev/s7a/strata/projection/BuiltinProjection;
 	public static final field Row Ldev/s7a/strata/projection/BuiltinProjection;
 	public static final field RowAlignment Ldev/s7a/strata/projection/BuiltinProjection;
 	public static final field ScaleToFit Ldev/s7a/strata/projection/BuiltinProjection;
-	public static final field Scroll Ldev/s7a/strata/projection/BuiltinProjection;
 	public static final field ScrollPosition Ldev/s7a/strata/projection/BuiltinProjection;
 	public static final field Semantics Ldev/s7a/strata/projection/BuiltinProjection;
 	public static final field Size Ldev/s7a/strata/projection/BuiltinProjection;
@@ -1844,12 +1889,12 @@ public final class dev/s7a/strata/projection/BuiltinProjection : java/lang/Enum 
 	public static final field Stack Ldev/s7a/strata/projection/BuiltinProjection;
 	public static final field StackAlignment Ldev/s7a/strata/projection/BuiltinProjection;
 	public static final field StateComponent Ldev/s7a/strata/projection/BuiltinProjection;
+	public static final field TextInput Ldev/s7a/strata/projection/BuiltinProjection;
 	public static final field TiledImage Ldev/s7a/strata/projection/BuiltinProjection;
 	public static final field TiledImageLayer Ldev/s7a/strata/projection/BuiltinProjection;
 	public static final field TiledImagePosition Ldev/s7a/strata/projection/BuiltinProjection;
 	public static final field VirtualList Ldev/s7a/strata/projection/BuiltinProjection;
 	public static final field Weight Ldev/s7a/strata/projection/BuiltinProjection;
-	public final fun callback (Lkotlin/jvm/functions/Function0;)Ldev/s7a/strata/projection/DeclarationProjection;
 	public static fun getEntries ()Lkotlin/enums/EnumEntries;
 	public final fun getType ()Ldev/s7a/strata/projection/ProjectionType;
 	public final fun properties ([Ldev/s7a/strata/projection/ProjectionValue;)Ldev/s7a/strata/projection/DeclarationProjection;
@@ -1895,12 +1940,31 @@ public final class dev/s7a/strata/projection/ProjectionFields {
 	public final fun values ()Ljava/util/List;
 }
 
+public final class dev/s7a/strata/projection/ProjectionInputCodec {
+	public static final field INSTANCE Ldev/s7a/strata/projection/ProjectionInputCodec;
+	public final fun button (Ldev/s7a/strata/input/PointerButton;)Ldev/s7a/strata/projection/ProjectionValue;
+	public final fun button (Ldev/s7a/strata/projection/ProjectionValue;)Ldev/s7a/strata/input/PointerButton;
+	public final fun filter (Ldev/s7a/strata/input/KeyboardInputFilter;)Ldev/s7a/strata/projection/ProjectionValue;
+	public final fun filter (Ldev/s7a/strata/projection/ProjectionValue;)Ldev/s7a/strata/input/KeyboardInputFilter;
+	public final fun keyboard (Ldev/s7a/strata/input/KeyboardEvent;)Ldev/s7a/strata/projection/ProjectionValue;
+	public final fun keyboard (Ldev/s7a/strata/projection/ProjectionValue;)Ldev/s7a/strata/input/KeyboardEvent;
+	public final fun pointer (Ldev/s7a/strata/input/PointerEvent;Ldev/s7a/strata/geometry/IntOffset;)Ldev/s7a/strata/projection/ProjectionValue;
+	public final fun pointer (Ldev/s7a/strata/projection/ProjectionValue;)Lkotlin/Pair;
+	public final fun text (Ldev/s7a/strata/input/TextInputEvent;)Ldev/s7a/strata/projection/ProjectionValue;
+	public final fun text (Ldev/s7a/strata/projection/ProjectionValue;)Ldev/s7a/strata/input/TextInputEvent;
+}
+
 public abstract interface class dev/s7a/strata/projection/ProjectionScope {
-	public abstract fun action (Ldev/s7a/strata/projection/ProjectionAction;)J
+	public abstract fun action (Ldev/s7a/strata/projection/ProjectionAction;Ldev/s7a/strata/projection/ProjectionValue;)J
+	public static synthetic fun action$default (Ldev/s7a/strata/projection/ProjectionScope;Ldev/s7a/strata/projection/ProjectionAction;Ldev/s7a/strata/projection/ProjectionValue;ILjava/lang/Object;)J
 	public abstract fun binding (Ldev/s7a/strata/projection/ProjectionBinding;)Ldev/s7a/strata/projection/ProjectionValue;
 	public abstract fun image (Ldev/s7a/strata/render/DrawImage;)Ldev/s7a/strata/projection/ProjectionValue;
 	public abstract fun requireType (Ldev/s7a/strata/projection/ProjectionType;)V
 	public abstract fun text (Ldev/s7a/strata/text/UiText;)Ldev/s7a/strata/projection/ProjectionValue;
+}
+
+public final class dev/s7a/strata/projection/ProjectionScope$DefaultImpls {
+	public static synthetic fun action$default (Ldev/s7a/strata/projection/ProjectionScope;Ldev/s7a/strata/projection/ProjectionAction;Ldev/s7a/strata/projection/ProjectionValue;ILjava/lang/Object;)J
 }
 
 public final class dev/s7a/strata/projection/ProjectionScrollBinding {
@@ -2297,7 +2361,7 @@ public final class dev/s7a/strata/spi/ComponentRuntime$DefaultImpls {
 
 public final class dev/s7a/strata/spi/ComponentRuntimeBridge {
 	public static final field INSTANCE Ldev/s7a/strata/spi/ComponentRuntimeBridge;
-	public final fun currentRuntime ()Ldev/s7a/strata/spi/ComponentRuntime;
+	public final fun current ()Ldev/s7a/strata/spi/ComponentRuntime;
 	public final fun evaluate (Ldev/s7a/strata/spi/ComponentRuntime;Lkotlin/jvm/functions/Function1;)Ldev/s7a/strata/element/Element;
 }
 
