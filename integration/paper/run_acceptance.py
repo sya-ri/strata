@@ -90,7 +90,7 @@ def main() -> None:
         shutil.copyfile(distribution, plugins / f"strata-{index}.jar")
     shutil.copyfile(eula, server / "eula.txt")
     (server / "server.properties").write_text(
-        f"server-ip=127.0.0.1\nserver-port={arguments.port}\nonline-mode=false\nenforce-secure-profile=false\n"
+        f"server-ip=127.0.0.1\nserver-port={arguments.port}\nonline-mode=false\nenforce-secure-profile=false\nwhite-list=false\n"
         "view-distance=2\nsimulation-distance=2\nspawn-protection=0\nmax-players=1\nlevel-seed=1\n"
         "level-type=minecraft:flat\ngenerate-structures=false\nenable-rcon=false\n",
         encoding="utf-8",

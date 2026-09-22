@@ -161,6 +161,7 @@ Confirmed-character injection does not establish operating-system IME compositio
 
 Run `python integration/paper/run_acceptance.py 26.3 --java <compatible-java-executable>` from the repository after that version's ordinary client setup has recorded EULA acceptance.
 The runner fetches exact-version metadata from Paper's official distribution service, verifies the server binary's SHA-256, builds the three plugin JARs, and starts a fresh world bound only to loopback.
+The isolated offline fixture explicitly disables its whitelist so test players can connect regardless of version-specific defaults.
 It runs development and packaged production clients and requires matching invocation IDs in both client and server receipts before writing `build/paper-acceptance/<version>/<run>/passed.json`.
 The manifest, logs, receipt copies, and plugin hashes remain beside that result, and the runner stops only its owned server process on success or failure.
 `--development-only` is a diagnostic subset and records only that task; it cannot establish production-JAR acceptance.
