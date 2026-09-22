@@ -51,7 +51,7 @@ extensions.configure<SourceSetContainer> {
 val gametestSourceSet = extensions.getByType<SourceSetContainer>().named("gametest")
 tasks.named<ProcessResources>("processGametestResources") {
     val gameTestEntrypoint = "dev.s7a.strata.integration.minecraft.fabric.StrataMinecraftClientGameTest"
-    val gameTestMixins = listOf("strata.canvas.tests.mixins.json")
+    val gameTestMixins = listOf("strata.canvas.tests.mixins.json", "strata.remote.tests.mixins.json")
     inputs.property("version", project.version)
     inputs.property("minecraftVersion", libs.versions.minecraft261)
     inputs.property("integrationModId", "strata-integration-minecraft-fabric-26-1")
@@ -76,6 +76,7 @@ dependencies {
     implementation(libs.fabric.api261)
     add("gametestImplementation", files(runtimeFabricMain.map { sourceSet -> sourceSet.output }))
     add("gametestImplementation", project(":runtime:headless"))
+    add("gametestImplementation", project(":runtime:remote"))
     add("gametestImplementation", project(":runtime:minecraft"))
     add("gametestImplementation", project(":runtime:minecraft-fonts-lwjgl"))
     add("gametestRuntimeOnly", libs.fabric.language.kotlin)

@@ -6,6 +6,9 @@ import dev.s7a.strata.input.PointerButton
 import dev.s7a.strata.input.PointerEvent
 import dev.s7a.strata.input.PointerHoverEvent
 import dev.s7a.strata.projection.BuiltinProjection
+import dev.s7a.strata.projection.DeclarationProjection
+import dev.s7a.strata.projection.ProjectionAction
+import dev.s7a.strata.projection.ProjectionValue
 
 /**
  * Handles every typed pointer event that hits this modifier's laid-out bounds.
@@ -89,10 +92,15 @@ public fun Modifier.onRelease(callback: (PointerEvent.Release, IntOffset) -> Inp
  * @throws Throwable when [action] fails during dispatch.
  */
 public fun Modifier.onRelease(action: () -> Unit): Modifier =
-    onRelease { _, _ ->
-        action()
-        InputResult.Consumed
-    }
+    then(
+        PointerInputModifier.Element(
+            PointerInputModifier.Action.Release { _, _ ->
+                action()
+                InputResult.Consumed
+            },
+            BuiltinProjection.Release.callback(action),
+        ),
+    )
 
 /**
  * Handles every pointer move that hits this modifier's laid-out bounds.
@@ -113,10 +121,15 @@ public fun Modifier.onMove(callback: (PointerEvent.Move, IntOffset) -> InputResu
  * @throws Throwable when [action] fails during dispatch.
  */
 public fun Modifier.onMove(action: () -> Unit): Modifier =
-    onMove { _, _ ->
-        action()
-        InputResult.Ignored
-    }
+    then(
+        PointerInputModifier.Element(
+            PointerInputModifier.Action.Move { _, _ ->
+                action()
+                InputResult.Ignored
+            },
+            BuiltinProjection.Move.callback(action),
+        ),
+    )
 
 /**
  * Handles every pointer scroll event that hits this modifier's laid-out bounds.
@@ -135,10 +148,15 @@ public fun Modifier.onScroll(callback: (PointerEvent.Scroll, IntOffset) -> Input
  * @throws Throwable when [action] fails during dispatch.
  */
 public fun Modifier.onScroll(action: () -> Unit): Modifier =
-    onScroll { _, _ ->
-        action()
-        InputResult.Consumed
-    }
+    then(
+        PointerInputModifier.Element(
+            PointerInputModifier.Action.Scroll { _, _ ->
+                action()
+                InputResult.Consumed
+            },
+            BuiltinProjection.Scroll.callback(action),
+        ),
+    )
 
 /**
  * Observes distinct pointer enter and exit transitions for this modifier's laid-out bounds.
@@ -151,4 +169,18 @@ public fun Modifier.onScroll(action: () -> Unit): Modifier =
  * @return this chain with one appended active hover observer.
  * @throws Throwable when [callback] fails while a move or detach transition is delivered.
  */
-public fun Modifier.onHover(callback: (PointerHoverEvent) -> Unit): Modifier = then(PointerInputModifier.Element(PointerInputModifier.Action.Hover(callback)))
+public fun Modifier.onHover(callback: (PointerHoverEvent) -> Unit): Modifier =
+    then(
+        PointerInputModifier.Element(
+            PointerInputModifier.Action.Hover(callback),
+            DeclarationProjection(BuiltinProjection.Hover.type, callback) { handler, scope ->
+                ProjectionValue.Integer(
+                    scope.action(
+                        ProjectionAction(BuiltinProjection.Hover.type, { value ->
+                            if (requireNotNull(value as? ProjectionValue.Flag).value) PointerHoverEvent.Enter else PointerHoverEvent.Exit
+                        }, handler),
+                    ),
+                )
+            },
+        ),
+    )

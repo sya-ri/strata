@@ -6,12 +6,17 @@ import dev.s7a.strata.layout.Alignment
 import dev.s7a.strata.layout.ParentDataKey
 import dev.s7a.strata.modifier.ModifierElement
 import dev.s7a.strata.modifier.ModifierNodeType
+import dev.s7a.strata.node.DeclarationProjectionNode
 import dev.s7a.strata.node.DirtyMask
 import dev.s7a.strata.node.DirtyPhase
 import dev.s7a.strata.node.FrameCutoffNode
 import dev.s7a.strata.node.ModifierNode
 import dev.s7a.strata.node.ParentDataModifierNode
 import dev.s7a.strata.node.SessionAttachmentNode
+import dev.s7a.strata.projection.BuiltinProjection
+import dev.s7a.strata.projection.DeclarationProjection
+import dev.s7a.strata.projection.ProjectionFields
+import dev.s7a.strata.projection.ProjectionValue
 import dev.s7a.strata.state.StateSnapshot
 import dev.s7a.strata.state.StateSource
 import dev.s7a.strata.state.StateSubscription
@@ -83,11 +88,22 @@ internal object TiledImageContentParentData {
     ) : ModifierNode(),
         ParentDataModifierNode<Data>,
         FrameCutoffNode,
-        SessionAttachmentNode {
+        SessionAttachmentNode,
+        DeclarationProjectionNode {
         private var position: Position? = initial.position
         private var alignment: Alignment = initial.alignment
         private var binding: PositionBinding? = null
         private var active: Boolean = false
+
+        override val declarationProjection: DeclarationProjection<*>
+            get() =
+                parentData().let { data ->
+                    BuiltinProjection.TiledImagePosition.properties(
+                        ProjectionValue.Real(data.position.x),
+                        ProjectionValue.Real(data.position.y),
+                        ProjectionValue.Integer(data.alignment.ordinal.toLong()),
+                    )
+                }
 
         override val parentDataKey: ParentDataKey<Data>
             get() = KEY
@@ -265,4 +281,15 @@ internal object TiledImageContentParentData {
             createNode = { element -> Node(element) },
             updateNode = { _, current, node -> node.update(current) },
         )
+
+    /**
+     * Decodes the committed content anchor into the ordinary active parent-data modifier.
+     */
+    internal fun decode(value: ProjectionValue): ModifierElement {
+        val fields = ProjectionFields(value)
+        val position = DoubleOffset(fields.real(), fields.real())
+        val alignment = Alignment.entries[fields.int(Alignment.entries.indices)]
+        fields.finish()
+        return Element(Position.Fixed(position), alignment)
+    }
 }

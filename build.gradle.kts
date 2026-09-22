@@ -81,6 +81,8 @@ private data class MinecraftFabricTarget(
     val remapped: Boolean,
     val canvasFamily: CanvasFamily,
     val sourceLinkPaths: List<String>,
+    val remoteNetworkFamily: RemoteNetworkFamily = RemoteNetworkFamily.Stream,
+    val paperDistribution: PaperDistribution = PaperDistribution.Available,
     val canvasTestExtraction: CanvasTestExtraction =
         when (canvasFamily) {
             CanvasFamily.GlLegacy, CanvasFamily.GlModern, CanvasFamily.Gpu125 -> CanvasTestExtraction.Flush
@@ -97,7 +99,8 @@ private data class MinecraftFabricTarget(
     val canvasSourcePaths: List<String> =
         (listOf("shared") + canvasFamily.sourceRoots).map { suffix -> "runtime/minecraft-fabric-canvas-$suffix" }
     val inputSourcePaths: List<String> = if (canvasFamily == CanvasFamily.Gpu263) emptyList() else listOf("runtime/minecraft-fabric-glfw")
-    val allSourceLinkPaths: List<String> = sourceLinkPaths + canvasSourcePaths + inputSourcePaths
+    val allSourceLinkPaths: List<String> =
+        sourceLinkPaths + canvasSourcePaths + inputSourcePaths + "runtime/minecraft-fabric-remote-${remoteNetworkFamily.sourceRoot}"
     val canvasTestSourcePaths: List<String> =
         (if (canvasFamily == CanvasFamily.Gpu263) emptyList() else listOf("integration/minecraft-fabric-canvas-target-blaze3d")) + listOf(
             "integration/minecraft-fabric-canvas-shared",
@@ -131,6 +134,18 @@ private data class MinecraftFabricTarget(
         BufferedPointer("buffer-pointer"),
         Unobfuscated("unobfuscated"),
     }
+
+    /** Native custom-payload families verified against their exact mapped client archives. */
+    enum class PaperDistribution(val description: String) {
+        Available("Available; requires exact-pair acceptance"),
+        Unavailable("No exact Paper distribution; client verification only"),
+    }
+
+    enum class RemoteNetworkFamily(val sourceRoot: String) {
+        Legacy("legacy"),
+        Payload("payload"),
+        Stream("stream"),
+    }
 }
 
 val baselineJavaVersion = libs.versions.java.baseline.get().toInt()
@@ -150,6 +165,7 @@ private val minecraftFabricTargets =
     listOf(
         MinecraftFabricTarget(
             version = libs.versions.minecraft120.get(),
+            remoteNetworkFamily = MinecraftFabricTarget.RemoteNetworkFamily.Legacy,
             canvasFamily = MinecraftFabricTarget.CanvasFamily.GlLegacy,
             javaVersion = baselineJavaVersion,
             remapped = true,
@@ -162,6 +178,7 @@ private val minecraftFabricTargets =
         ),
         MinecraftFabricTarget(
             version = libs.versions.minecraft1201.get(),
+            remoteNetworkFamily = MinecraftFabricTarget.RemoteNetworkFamily.Legacy,
             canvasFamily = MinecraftFabricTarget.CanvasFamily.GlLegacy,
             javaVersion = baselineJavaVersion,
             remapped = true,
@@ -173,6 +190,7 @@ private val minecraftFabricTargets =
         ),
         MinecraftFabricTarget(
             version = libs.versions.minecraft1202.get(),
+            remoteNetworkFamily = MinecraftFabricTarget.RemoteNetworkFamily.Payload,
             canvasFamily = MinecraftFabricTarget.CanvasFamily.GlLegacy,
             javaVersion = baselineJavaVersion,
             remapped = true,
@@ -186,6 +204,8 @@ private val minecraftFabricTargets =
         ),
         MinecraftFabricTarget(
             version = libs.versions.minecraft1203.get(),
+            paperDistribution = MinecraftFabricTarget.PaperDistribution.Unavailable,
+            remoteNetworkFamily = MinecraftFabricTarget.RemoteNetworkFamily.Payload,
             canvasFamily = MinecraftFabricTarget.CanvasFamily.GlLegacy,
             javaVersion = baselineJavaVersion,
             remapped = true,
@@ -199,6 +219,7 @@ private val minecraftFabricTargets =
         ),
         MinecraftFabricTarget(
             version = libs.versions.minecraft1204.get(),
+            remoteNetworkFamily = MinecraftFabricTarget.RemoteNetworkFamily.Payload,
             canvasFamily = MinecraftFabricTarget.CanvasFamily.GlLegacy,
             javaVersion = baselineJavaVersion,
             remapped = true,
@@ -263,6 +284,7 @@ private val minecraftFabricTargets =
         ),
         MinecraftFabricTarget(
             version = libs.versions.minecraft1212.get(),
+            paperDistribution = MinecraftFabricTarget.PaperDistribution.Unavailable,
             canvasFamily = MinecraftFabricTarget.CanvasFamily.GlModern,
             javaVersion = minecraftJava21Version,
             remapped = true,
@@ -389,6 +411,7 @@ private val minecraftFabricTargets =
         ),
         MinecraftFabricTarget(
             version = libs.versions.minecraft261.get(),
+            paperDistribution = MinecraftFabricTarget.PaperDistribution.Unavailable,
             canvasFamily = MinecraftFabricTarget.CanvasFamily.Gpu261,
             javaVersion = minecraftJavaVersion,
             remapped = false,
@@ -472,6 +495,8 @@ val releasePublicationProjectPaths =
     listOf(
         ":api",
         ":runtime:core",
+        ":runtime:remote",
+        ":runtime:paper",
         ":runtime:web",
         ":runtime:headless",
         ":runtime:minecraft",
@@ -570,6 +595,8 @@ tasks.named("check") {
 dependencies {
     dokka(project(":api"))
     dokka(project(":runtime:core"))
+    dokka(project(":runtime:remote"))
+    dokka(project(":runtime:paper"))
     dokka(project(":runtime:headless"))
     dokka(project(":runtime:minecraft"))
     dokka(project(":runtime:minecraft-fonts-lwjgl"))
@@ -587,11 +614,11 @@ val compatibilityMarkdown = providers.provider {
         appendLine("Install exactly one versioned runtime together with Fabric Language Kotlin; each runtime includes the common Strata libraries.")
         appendLine("The table is generated from the build's target matrix and describes supported artifacts and Java requirements.")
         appendLine()
-        appendLine("| Minecraft | Fabric runtime artifact | Required Java |")
-        appendLine("| --- | --- | --- |")
+        appendLine("| Minecraft | Fabric runtime artifact | Required Java | Exact Paper distribution |")
+        appendLine("| --- | --- | --- | --- |")
         minecraftFabricTargets.forEach { target ->
             val artifact = releaseArtifactByProjectPath.getValue(target.runtimeProjectPath).substringAfter(':')
-            appendLine("| ${target.version} | `$artifact` | ${target.javaVersion} |")
+            appendLine("| ${target.version} | `$artifact` | ${target.javaVersion} | ${target.paperDistribution.description} |")
         }
         appendLine()
         appendLine("Application UI source compiles against `strata-api`; version-specific dependencies belong to the installed runtime.")
@@ -600,6 +627,9 @@ val compatibilityMarkdown = providers.provider {
         appendLine()
         appendLine("See [adapter development](../development/minecraft-versions.md) for native boundaries and [verification](../development/build.md) for the executable checks.")
         appendLine("This table does not record a test run or replace release acceptance evidence.")
+        appendLine("All listed clients compile the native Strata remote transport without requiring Fabric API.")
+        appendLine("Paper acceptance uses an exact Minecraft version from the [official distribution inventory](https://fill.papermc.io/v3/projects/paper); distribution availability alone is not a successful test receipt.")
+        appendLine("See [Paper screens](../guides/paper.md) for installation and [remote protocol](remote-protocol.md) for connection and extension contracts.")
     }
 }
 val generateCompatibilityDocumentation = tasks.register("generateCompatibilityDocumentation") {
@@ -1123,6 +1153,26 @@ subprojects {
         // Why: Loom otherwise selects native library upgrades using the Gradle daemon's Java instead of this game's toolchain.
         extensions.extraProperties["fabric.loom.runtimeJavaCompatibilityVersion"] = target.javaVersion
         if (path == target.integrationProjectPath) {
+            val remoteVerification = rootProject.file("integration/minecraft-fabric-remote-verification/src")
+            val remoteVerificationFamily = remoteVerification.resolve(target.remoteNetworkFamily.sourceRoot)
+            extensions.configure<KotlinJvmProjectExtension> {
+                sourceSets.matching { it.name == "gametest" }.configureEach {
+                    kotlin.srcDir(remoteVerification.resolve("gametest/kotlin"))
+                    kotlin.srcDir(remoteVerificationFamily.resolve("kotlin"))
+                    if (target.remapped) kotlin.srcDir(remoteVerification.resolve("legacy-scenario/kotlin"))
+                }
+            }
+            extensions.configure<SourceSetContainer> {
+                matching { it.name == "gametest" }.configureEach {
+                    java.srcDir(remoteVerification.resolve("gametest/java"))
+                    java.srcDir(remoteVerificationFamily.resolve("java"))
+                    resources.srcDir(remoteVerificationFamily.resolve("resources"))
+                }
+            }
+            extensions.configure<DetektExtension> {
+                source.from(remoteVerification.resolve("gametest/kotlin"), remoteVerificationFamily.resolve("kotlin"))
+                if (target.remapped) source.from(remoteVerification.resolve("legacy-scenario/kotlin"))
+            }
             val profileCacheTests = rootProject.file("integration/minecraft-fabric-client-gametest/src/profile-cache/kotlin")
             val continuousInputTests = rootProject.file("integration/minecraft-fabric-client-gametest/src/continuous-input/kotlin")
             val renderMonitoringTests = rootProject.file("integration/minecraft-fabric-client-gametest/src/render-monitoring/kotlin")
@@ -1231,14 +1281,22 @@ subprojects {
                 }
             }
             val sharedFabricRuntime = rootProject.file("runtime/minecraft-fabric-shared/src/main")
+            val remoteNetworkingRuntime = rootProject.file("runtime/minecraft-fabric-remote-${target.remoteNetworkFamily.sourceRoot}/src/main")
+            extensions.configure<KotlinJvmProjectExtension> {
+                sourceSets.named("main") { kotlin.srcDir(remoteNetworkingRuntime.resolve("kotlin")) }
+            }
             extensions.configure<SourceSetContainer> {
                 named("main") {
                     resources.srcDir(sharedFabricRuntime.resolve("resources"))
+                    resources.srcDir(remoteNetworkingRuntime.resolve("resources"))
+                    java.srcDir(remoteNetworkingRuntime.resolve("java"))
                 }
             }
             extensions.configure<DetektExtension> {
+                source.from(remoteNetworkingRuntime.resolve("kotlin"))
                 source.from(
                     sharedFabricRuntime.resolve("kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftProfileLifecycle.kt"),
+                    sharedFabricRuntime.resolve("kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricRemoteScreens.kt"),
                     sharedFabricRuntime.resolve("kotlin/dev/s7a/strata/runtime/minecraft/fabric/mixin"),
                 )
             }

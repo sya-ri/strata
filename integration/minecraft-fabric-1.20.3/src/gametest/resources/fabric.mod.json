@@ -4,9 +4,14 @@
   "version": "${version}",
   "name": "Strata Minecraft ${minecraftVersion} integration verification",
   "environment": "client",
-  "mixins": ["strata.canvas.tests.mixins.json"],
+  "mixins": [
+    "strata.canvas.tests.mixins.json",
+    "strata.remote.tests.mixins.json"
+  ],
   "entrypoints": {
     "client": [
+      "dev.s7a.strata.integration.minecraft.fabric.RemoteNativeCanvasFixture",
+      "dev.s7a.strata.integration.minecraft.fabric.PaperRemoteExtensionClient",
       "dev.s7a.strata.integration.minecraft.fabric.StrataMinecraftLegacyClientTest"
     ]
   },

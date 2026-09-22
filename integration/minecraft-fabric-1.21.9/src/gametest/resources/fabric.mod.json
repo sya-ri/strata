@@ -4,14 +4,20 @@
   "version": "${version}",
   "name": "Strata Minecraft ${minecraftVersion} integration verification",
   "environment": "client",
-  "mixins": ["strata.canvas.tests.mixins.json"],
+  "mixins": [
+    "strata.canvas.tests.mixins.json",
+    "strata.remote.tests.mixins.json"
+  ],
   "entrypoints": {
     "fabric-client-gametest": [
       "dev.s7a.strata.integration.minecraft.fabric.StrataMinecraftLegacyClientGameTest"
+    ],
+    "client": [
+      "dev.s7a.strata.integration.minecraft.fabric.RemoteNativeCanvasFixture",
+      "dev.s7a.strata.integration.minecraft.fabric.PaperRemoteExtensionClient"
     ]
   },
   "depends": {
     "${runtimeModId}": "*"
   }
 }
-

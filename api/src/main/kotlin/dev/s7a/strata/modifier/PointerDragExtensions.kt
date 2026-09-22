@@ -3,6 +3,7 @@ package dev.s7a.strata.modifier
 import dev.s7a.strata.geometry.IntOffset
 import dev.s7a.strata.input.InputResult
 import dev.s7a.strata.input.PointerEvent
+import dev.s7a.strata.projection.BuiltinProjection
 
 /**
  * Handles every pointer drag that hits this modifier's laid-out bounds.
@@ -24,7 +25,12 @@ public fun Modifier.onDrag(callback: (PointerEvent.Drag, IntOffset) -> InputResu
  * @throws Throwable when [action] fails during dispatch.
  */
 public fun Modifier.onDrag(action: () -> Unit): Modifier =
-    onDrag { _, _ ->
-        action()
-        InputResult.Ignored
-    }
+    then(
+        PointerInputModifier.Element(
+            PointerInputModifier.Action.Drag { _, _ ->
+                action()
+                InputResult.Ignored
+            },
+            BuiltinProjection.Drag.callback(action),
+        ),
+    )

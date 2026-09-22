@@ -58,6 +58,46 @@ public final class dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreen
 	public static synthetic fun createMinecraftScreen$default (Ldev/s7a/strata/screen/ScreenDefinition;Ldev/s7a/strata/runtime/minecraft/MinecraftUiProfile;Lnet/minecraft/class_437;ILjava/lang/Object;)Ldev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreen;
 }
 
+public final class dev/s7a/strata/runtime/minecraft/fabric/FabricRemotePayload : java/lang/Record, net/minecraft/class_8710 {
+	public static final field CODEC Lnet/minecraft/class_9139;
+	public static final field TYPE Lnet/minecraft/class_8710$class_9154;
+	public fun <init> ([B)V
+	public fun bytes ()[B
+	public final fun equals (Ljava/lang/Object;)Z
+	public final fun hashCode ()I
+	public fun method_56479 ()Lnet/minecraft/class_8710$class_9154;
+	public final fun toString ()Ljava/lang/String;
+}
+
+public final class dev/s7a/strata/runtime/minecraft/fabric/FabricRemoteRegistration : java/lang/Record, net/minecraft/class_8710 {
+	public static final field TYPE Lnet/minecraft/class_8710$class_9154;
+	public fun <init> ()V
+	public final fun equals (Ljava/lang/Object;)Z
+	public final fun hashCode ()I
+	public fun method_56479 ()Lnet/minecraft/class_8710$class_9154;
+	public final fun toString ()Ljava/lang/String;
+	public fun write (Lnet/minecraft/class_2540;)V
+}
+
+public final class dev/s7a/strata/runtime/minecraft/fabric/FabricRemoteRegistrationCodec {
+	public static fun wrap (Lnet/minecraft/class_9139;)Lnet/minecraft/class_9139;
+}
+
+public final class dev/s7a/strata/runtime/minecraft/fabric/FabricRemoteScreens {
+	public static final field INSTANCE Ldev/s7a/strata/runtime/minecraft/fabric/FabricRemoteScreens;
+	public final fun enqueue (Lnet/minecraft/class_2535;[B)V
+	public final fun fail (Lnet/minecraft/class_437;Ljava/lang/Throwable;)Z
+	public final fun getRegistry ()Ldev/s7a/strata/runtime/remote/RemoteRegistry;
+	public final fun requireContainer (Ljava/lang/Object;)V
+	public final fun shutdown ()V
+	public final fun tick ()V
+}
+
+public final class dev/s7a/strata/runtime/minecraft/fabric/FabricRemoteTransport {
+	public static fun register (Lnet/minecraft/class_634;)V
+	public static fun send (Lnet/minecraft/class_634;[B)V
+}
+
 public final class dev/s7a/strata/runtime/minecraft/fabric/MinecraftCanvasContext {
 	public final fun getFrameTime ()Ldev/s7a/strata/runtime/FrameTime;
 	public final fun getLogicalSize ()Ldev/s7a/strata/geometry/IntSize;

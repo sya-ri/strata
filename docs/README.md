@@ -9,6 +9,7 @@ For installation and a complete opening example, start with the [project README]
 | Read | Use it to |
 | --- | --- |
 | [Screens and state](guides/screens-and-state.md) | Declare and open a screen, own its state, and connect application resources. |
+| [Paper screens](guides/paper.md) | Install the server plugin, open player screens, and register matching client extensions. |
 | [Layout](guides/layout.md) | Choose containers and control spacing, sizing, wrapping, and alignment. |
 | [Modifiers](guides/modifiers.md) | Add sizing, backgrounds, input, focus, and parent-scope behavior. |
 | [Text and editing](guides/text.md) | Display labels, edit single-line or multiline values, and select fonts. |
@@ -31,6 +32,7 @@ The [animated README demo](readme-demo/README.md) follows a player list from nat
 - [Element SPI](reference/element-spi.md) describes custom primitives, retained phases, and ownership.
 - [Modifier SPI](reference/modifier-spi.md) describes active modifier nodes and typed parent data.
 - [Declaration projection](reference/declaration-projection.md) defines optional typed properties, remote action bindings, and retained resource projection.
+- [Remote protocol](reference/remote-protocol.md) defines negotiation, atomic updates, input ordering, resource bounds, and extension ownership.
 - [External state sources](reference/state-sources.md) specifies revisioned observation across threads.
 
 ## Changelog

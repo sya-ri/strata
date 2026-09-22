@@ -38,6 +38,9 @@ fabricApi {
 
 extensions.configure<KotlinJvmProjectExtension> {
     sourceSets.named("gametest") {
+        kotlin.srcDir(rootProject.file("integration/minecraft-fabric-remote-stream/src/gametest/kotlin"))
+        kotlin.srcDir(rootProject.file("examples/paper/src/main/kotlin"))
+        kotlin.exclude("**/PaperDemoPlugin.kt", "**/PaperDemoScreens.kt")
         kotlin.srcDir(sharedLegacyGameTest.resolve("kotlin"))
         kotlin.srcDir(standaloneLegacyGameTest.resolve("kotlin"))
         kotlin.srcDir(versionGameTest.resolve("kotlin"))
@@ -68,6 +71,7 @@ dependencies {
     modImplementation(libs.fabric.api1213)
     add("gametestImplementation", files(runtimeFabricMain.map { sourceSet -> sourceSet.output }))
     add("gametestImplementation", project(":runtime:headless"))
+    add("gametestImplementation", project(":runtime:remote"))
     add("gametestImplementation", project(":runtime:minecraft"))
     add("gametestImplementation", project(":runtime:minecraft-fonts-lwjgl"))
     add("gametestRuntimeOnly", libs.fabric.language.kotlin)
@@ -87,6 +91,8 @@ val deleteProductionGameTestRunDir = tasks.register<Delete>("deleteProductionGam
 val runProductionClientGameTest = tasks.register<ClientProductionRunTask>("runProductionClientGameTest") {
     group = "verification"
     description = "Runs standalone loaded-client verification from the actual remapped integration and runtime mod jars."
+    providers.gradleProperty("strata.paper.address").orNull?.let { jvmArgs.add("-Dstrata.paper.address=$it") }
+    providers.gradleProperty("strata.paper.run").orNull?.let { jvmArgs.add("-Dstrata.paper.run=$it") }
     dependsOn(deleteProductionGameTestRunDir, ":runtime:minecraft-fabric-1.21.3:remapJar")
     mods.from(runtimeRemappedJar)
     runDir.set(productionRunDirectory)
@@ -104,6 +110,8 @@ tasks.matching { task -> task.name == "koverGenerateArtifact" }.configureEach {
 }
 
 tasks.named<JavaExec>("runClientGameTest") {
+    providers.gradleProperty("strata.paper.address").orNull?.let { systemProperty("strata.paper.address", it) }
+    providers.gradleProperty("strata.paper.run").orNull?.let { systemProperty("strata.paper.run", it) }
     val verificationOutput = layout.buildDirectory.dir("minecraft-verification")
     inputs.property("strataMinecraftLegacyOutput", verificationOutput.map { it.asFile.absolutePath })
     doFirst {

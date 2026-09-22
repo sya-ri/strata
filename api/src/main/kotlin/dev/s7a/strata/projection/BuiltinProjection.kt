@@ -33,6 +33,18 @@ public enum class BuiltinProjection(
     ScrollPosition("scroll_position"),
     Semantics("semantics"),
     ObservedActivation("observed_activation"),
+    PanZoom("pan_zoom"),
+    TiledImage("tiled_image"),
+    TiledImageLayer("tiled_image_layer"),
+    TiledImagePosition("tiled_image_position"),
+    Release("release"),
+    Move("move"),
+    Scroll("scroll"),
+    Drag("drag"),
+    Hover("hover"),
+    Focusable("focusable"),
+    InitialFocus("initial_focus"),
+    FocusChanged("focus_changed"),
     ;
 
     public val type: ProjectionType = ProjectionType(ResourceId("strata", path))

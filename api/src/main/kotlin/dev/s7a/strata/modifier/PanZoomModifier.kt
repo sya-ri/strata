@@ -9,6 +9,10 @@ import dev.s7a.strata.input.PointerEvent
 import dev.s7a.strata.node.DirtyMask
 import dev.s7a.strata.node.ModifierNode
 import dev.s7a.strata.node.PointerCaptureNode
+import dev.s7a.strata.projection.BuiltinProjection
+import dev.s7a.strata.projection.DeclarationProjection
+import dev.s7a.strata.projection.ProjectionPanZoomBinding
+import dev.s7a.strata.projection.ProjectionValue
 import kotlin.math.exp
 import kotlin.math.ln
 
@@ -37,6 +41,27 @@ internal object PanZoomModifier {
 
         override val type: ModifierNodeType<*, *>
             get() = TYPE
+
+        override val projection: DeclarationProjection<*>
+            get() =
+                DeclarationProjection(BuiltinProjection.PanZoom.type, this) { element, scope ->
+                    val button =
+                        when (val button = element.panButton) {
+                            PointerButton.Primary -> 0L
+                            PointerButton.Secondary -> 1L
+                            PointerButton.Middle -> 2L
+                            is PointerButton.Auxiliary -> button.index.toLong() + 3L
+                        }
+                    ProjectionValue.Sequence(
+                        listOf(
+                            ProjectionPanZoomBinding.project(scope, element.state),
+                            ProjectionValue.Real(element.state.minimumZoom),
+                            ProjectionValue.Real(element.state.maximumZoom),
+                            ProjectionValue.Integer(button),
+                            ProjectionValue.Real(element.zoomStep),
+                        ),
+                    )
+                }
     }
 
     /**

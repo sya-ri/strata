@@ -21,6 +21,7 @@
   },
   "mixins": [
     "strata.client.mixins.json",
+    "strata.remote.mixins.json",
     "strata.canvas.mixins.json",
     "strata.canvas.gui.mixins.json"
   ],

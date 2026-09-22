@@ -1,0 +1,25 @@
+public final class dev/s7a/strata/runtime/paper/PaperScreenSession : java/lang/AutoCloseable {
+	public fun close ()V
+	public final fun getIdentity ()J
+	public final fun getStatus ()Ldev/s7a/strata/runtime/remote/RemoteSessionStatus;
+}
+
+public final class dev/s7a/strata/runtime/paper/PaperScreens {
+	public static final field INSTANCE Ldev/s7a/strata/runtime/paper/PaperScreens;
+	public final fun capabilities (Lorg/bukkit/entity/Player;)Ldev/s7a/strata/runtime/remote/RemoteCapabilities;
+	public final fun open (Lorg/bukkit/plugin/Plugin;Lorg/bukkit/entity/Player;Ldev/s7a/strata/screen/ScreenDefinition;)Ldev/s7a/strata/runtime/paper/PaperScreenSession;
+	public final fun register (Lorg/bukkit/plugin/Plugin;Ldev/s7a/strata/projection/ProjectionType;)V
+}
+
+public final class dev/s7a/strata/runtime/paper/StrataPlugin : org/bukkit/plugin/java/JavaPlugin, org/bukkit/event/Listener, org/bukkit/plugin/messaging/PluginMessageListener {
+	public fun <init> ()V
+	public fun onDisable ()V
+	public fun onEnable ()V
+	public final fun onInventoryClose (Lorg/bukkit/event/inventory/InventoryCloseEvent;)V
+	public final fun onInventoryOpen (Lorg/bukkit/event/inventory/InventoryOpenEvent;)V
+	public final fun onJoin (Lorg/bukkit/event/player/PlayerJoinEvent;)V
+	public final fun onPluginDisable (Lorg/bukkit/event/server/PluginDisableEvent;)V
+	public fun onPluginMessageReceived (Ljava/lang/String;Lorg/bukkit/entity/Player;[B)V
+	public final fun onQuit (Lorg/bukkit/event/player/PlayerQuitEvent;)V
+}
+

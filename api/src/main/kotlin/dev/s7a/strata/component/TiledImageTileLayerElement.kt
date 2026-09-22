@@ -14,6 +14,7 @@ import dev.s7a.strata.internal.platform.synchronized
 import dev.s7a.strata.layout.LayoutScope
 import dev.s7a.strata.layout.MeasureScope
 import dev.s7a.strata.modifier.Modifier
+import dev.s7a.strata.node.DeclarationProjectionNode
 import dev.s7a.strata.node.DirtyMask
 import dev.s7a.strata.node.DirtyPhase
 import dev.s7a.strata.node.FrameCutoffNode
@@ -21,6 +22,9 @@ import dev.s7a.strata.node.LayoutNode
 import dev.s7a.strata.node.MeasureNode
 import dev.s7a.strata.node.PaintNode
 import dev.s7a.strata.node.SessionAttachmentNode
+import dev.s7a.strata.projection.BuiltinProjection
+import dev.s7a.strata.projection.DeclarationProjection
+import dev.s7a.strata.projection.ProjectionValue
 import dev.s7a.strata.render.PaintScope
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
 import dev.s7a.strata.state.StateSnapshot
@@ -75,12 +79,48 @@ internal class TiledImageTileLayerElement(
         LayoutNode,
         PaintNode,
         FrameCutoffNode,
-        SessionAttachmentNode {
+        SessionAttachmentNode,
+        DeclarationProjectionNode {
         private val frameGate = Any()
         private val entries: MutableMap<TiledImageTileId, TileEntry> = LinkedHashMap()
         private var plan: TilePlan = TilePlan.Empty
         private var observer: PanZoomStateObserver? = null
         private var active: Boolean = false
+        private var sourceGeneration: Long = 1L
+
+        override fun prepareDeclaration() {
+            if (active.not()) return
+            val next = createPlan(checkNotNull(state).metrics)
+            reconcileEntries(next.requiredIds)
+            plan = next
+        }
+
+        override val declarationProjection: DeclarationProjection<*>
+            get() =
+                DeclarationProjection(BuiltinProjection.TiledImageLayer.type, this) { node, scope ->
+                    val tiles =
+                        node.entries.map { (id, entry) ->
+                            val image = (entry.committedTile() as? TiledImageTile.Ready)?.image
+                            ProjectionValue.Sequence(
+                                listOf(
+                                    ProjectionValue.Integer(id.level.toLong()),
+                                    ProjectionValue.Integer(id.column),
+                                    ProjectionValue.Integer(id.row),
+                                    image?.let(scope::image) ?: ProjectionValue.Absent,
+                                ),
+                            )
+                        }
+                    ProjectionValue.Sequence(
+                        TiledImageProjectionFields.encode(node.bounds, node.levels, checkNotNull(node.state), node.destinationSize, scope) +
+                            listOf(
+                                ProjectionValue.Integer(node.sourceGeneration),
+                                ProjectionValue.Integer(node.cachePolicy.maxEntries.toLong()),
+                                ProjectionValue.Integer(node.cachePolicy.maxBytes),
+                                ProjectionValue.Integer(node.cachePolicy.overscanTiles.toLong()),
+                                ProjectionValue.Sequence(tiles),
+                            ),
+                    )
+                }
 
         override fun attach() {
             sessionAttached()
@@ -189,6 +229,8 @@ internal class TiledImageTileLayerElement(
             destinationSize = current.destinationSize
             cachePolicy = current.cachePolicy
             if (sourceChanged) {
+                if (sourceGeneration == Long.MAX_VALUE) throw ArithmeticException("Tile source generations exhausted.")
+                sourceGeneration++
                 source = current.source
                 plan = TilePlan.Empty
                 closeEntries(removeAllEntries())

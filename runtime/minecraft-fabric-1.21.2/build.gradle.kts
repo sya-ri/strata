@@ -72,6 +72,7 @@ val verifyFabricModArtifact = tasks.register("verifyFabricModArtifact") {
                 listOf(
                     "api-${project.version}.jar",
                     "core-${project.version}.jar",
+                    "remote-${project.version}.jar",
                     "headless-${project.version}.jar",
                     "minecraft-${project.version}.jar",
                     "minecraft-fonts-lwjgl-${project.version}.jar",
@@ -164,6 +165,7 @@ tasks.named("check") {
 }
 
 dependencies {
+    compileOnly(project(":runtime:remote"))
     compileOnly(project(":runtime:minecraft"))
     compileOnly(project(":runtime:minecraft-fonts-lwjgl"))
     compileOnly(project(":runtime:headless"))
@@ -173,6 +175,7 @@ dependencies {
     runtimeOnly(libs.fabric.language.kotlin)
     include(project(":api"))
     include(project(":runtime:core"))
+    include(project(":runtime:remote"))
     include(project(":runtime:headless"))
     include(project(":runtime:minecraft"))
     include(project(":runtime:minecraft-fonts-lwjgl"))

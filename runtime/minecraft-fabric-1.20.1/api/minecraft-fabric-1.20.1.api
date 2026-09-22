@@ -58,6 +58,22 @@ public final class dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreen
 	public static synthetic fun createMinecraftScreen$default (Ldev/s7a/strata/screen/ScreenDefinition;Ldev/s7a/strata/runtime/minecraft/MinecraftUiProfile;Lnet/minecraft/class_437;ILjava/lang/Object;)Ldev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreen;
 }
 
+public final class dev/s7a/strata/runtime/minecraft/fabric/FabricRemoteScreens {
+	public static final field INSTANCE Ldev/s7a/strata/runtime/minecraft/fabric/FabricRemoteScreens;
+	public final fun enqueue (Lnet/minecraft/class_2535;[B)V
+	public final fun fail (Lnet/minecraft/class_437;Ljava/lang/Throwable;)Z
+	public final fun getRegistry ()Ldev/s7a/strata/runtime/remote/RemoteRegistry;
+	public final fun requireContainer (Ljava/lang/Object;)V
+	public final fun shutdown ()V
+	public final fun tick ()V
+}
+
+public final class dev/s7a/strata/runtime/minecraft/fabric/FabricRemoteTransport {
+	public static final field ID Lnet/minecraft/class_2960;
+	public static fun register (Lnet/minecraft/class_634;)V
+	public static fun send (Lnet/minecraft/class_634;[B)V
+}
+
 public final class dev/s7a/strata/runtime/minecraft/fabric/MinecraftCanvasContext {
 	public final fun getFrameTime ()Ldev/s7a/strata/runtime/FrameTime;
 	public final fun getLogicalSize ()Ldev/s7a/strata/geometry/IntSize;

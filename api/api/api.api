@@ -1819,15 +1819,24 @@ public final class dev/s7a/strata/projection/BuiltinProjection : java/lang/Enum 
 	public static final field Column Ldev/s7a/strata/projection/BuiltinProjection;
 	public static final field ColumnAlignment Ldev/s7a/strata/projection/BuiltinProjection;
 	public static final field ComponentAction Ldev/s7a/strata/projection/BuiltinProjection;
+	public static final field Drag Ldev/s7a/strata/projection/BuiltinProjection;
 	public static final field FlowRow Ldev/s7a/strata/projection/BuiltinProjection;
+	public static final field FocusChanged Ldev/s7a/strata/projection/BuiltinProjection;
+	public static final field Focusable Ldev/s7a/strata/projection/BuiltinProjection;
 	public static final field Grid Ldev/s7a/strata/projection/BuiltinProjection;
+	public static final field Hover Ldev/s7a/strata/projection/BuiltinProjection;
+	public static final field InitialFocus Ldev/s7a/strata/projection/BuiltinProjection;
+	public static final field Move Ldev/s7a/strata/projection/BuiltinProjection;
 	public static final field Observe Ldev/s7a/strata/projection/BuiltinProjection;
 	public static final field ObservedActivation Ldev/s7a/strata/projection/BuiltinProjection;
 	public static final field Padding Ldev/s7a/strata/projection/BuiltinProjection;
+	public static final field PanZoom Ldev/s7a/strata/projection/BuiltinProjection;
 	public static final field PrimaryPress Ldev/s7a/strata/projection/BuiltinProjection;
+	public static final field Release Ldev/s7a/strata/projection/BuiltinProjection;
 	public static final field Row Ldev/s7a/strata/projection/BuiltinProjection;
 	public static final field RowAlignment Ldev/s7a/strata/projection/BuiltinProjection;
 	public static final field ScaleToFit Ldev/s7a/strata/projection/BuiltinProjection;
+	public static final field Scroll Ldev/s7a/strata/projection/BuiltinProjection;
 	public static final field ScrollPosition Ldev/s7a/strata/projection/BuiltinProjection;
 	public static final field Semantics Ldev/s7a/strata/projection/BuiltinProjection;
 	public static final field Size Ldev/s7a/strata/projection/BuiltinProjection;
@@ -1835,6 +1844,9 @@ public final class dev/s7a/strata/projection/BuiltinProjection : java/lang/Enum 
 	public static final field Stack Ldev/s7a/strata/projection/BuiltinProjection;
 	public static final field StackAlignment Ldev/s7a/strata/projection/BuiltinProjection;
 	public static final field StateComponent Ldev/s7a/strata/projection/BuiltinProjection;
+	public static final field TiledImage Ldev/s7a/strata/projection/BuiltinProjection;
+	public static final field TiledImageLayer Ldev/s7a/strata/projection/BuiltinProjection;
+	public static final field TiledImagePosition Ldev/s7a/strata/projection/BuiltinProjection;
 	public static final field VirtualList Ldev/s7a/strata/projection/BuiltinProjection;
 	public static final field Weight Ldev/s7a/strata/projection/BuiltinProjection;
 	public final fun callback (Lkotlin/jvm/functions/Function0;)Ldev/s7a/strata/projection/DeclarationProjection;
@@ -1983,6 +1995,13 @@ public final class dev/s7a/strata/projection/ProjectionValue$Text : dev/s7a/stra
 public final class dev/s7a/strata/projection/StandardModifierProjections {
 	public static final field INSTANCE Ldev/s7a/strata/projection/StandardModifierProjections;
 	public final fun register (Lkotlin/jvm/functions/Function2;)V
+}
+
+public final class dev/s7a/strata/projection/StandardTiledImageProjections {
+	public static final field INSTANCE Ldev/s7a/strata/projection/StandardTiledImageProjections;
+	public final fun layer (Ldev/s7a/strata/component/TiledImageSource;Ldev/s7a/strata/component/PanZoomState;Ldev/s7a/strata/geometry/IntSize;Ldev/s7a/strata/component/TiledImageCachePolicy;)Ldev/s7a/strata/element/Element;
+	public final fun validate (Ldev/s7a/strata/geometry/LongRect;Ljava/util/List;Ldev/s7a/strata/geometry/IntSize;)V
+	public final fun viewport (Ljava/lang/Object;Ldev/s7a/strata/geometry/LongRect;Ljava/util/List;Ldev/s7a/strata/component/PanZoomState;Ldev/s7a/strata/geometry/IntSize;Ldev/s7a/strata/component/PanZoomFit;Ldev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/element/ElementKey;Ljava/util/List;)Ldev/s7a/strata/element/Element;
 }
 
 public final class dev/s7a/strata/render/ArgbColor {

@@ -925,7 +925,9 @@ final class FabricMinecraftInventoryBridge implements MinecraftUiPlatform, Minec
     }
 
     private AbstractContainerMenu activeMenu() {
-        return requirePlayer().containerMenu;
+        AbstractContainerMenu menu = requirePlayer().containerMenu;
+        FabricRemoteScreens.INSTANCE.requireContainer(menu);
+        return menu;
     }
 
     private static Slot resolveContainerSlot(AbstractContainerMenu menu, Inventory playerInventory, int index) {

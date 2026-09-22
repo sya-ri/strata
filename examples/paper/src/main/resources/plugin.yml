@@ -1,0 +1,9 @@
+name: StrataPaperExample
+version: '${version}'
+main: dev.s7a.strata.examples.paper.PaperDemoPlugin
+api-version: '1.20'
+depend: [Strata]
+commands:
+  strata-demo:
+    description: Opens the server-owned Strata example screen.
+    usage: /strata-demo

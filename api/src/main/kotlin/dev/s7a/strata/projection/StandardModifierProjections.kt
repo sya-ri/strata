@@ -1,5 +1,6 @@
 package dev.s7a.strata.projection
 
+import dev.s7a.strata.component.TiledImageContentParentData
 import dev.s7a.strata.layout.ColumnAlignmentParentData
 import dev.s7a.strata.layout.RowAlignmentParentData
 import dev.s7a.strata.layout.StackAlignmentParentData
@@ -26,5 +27,6 @@ public object StandardModifierProjections {
         register(BuiltinProjection.RowAlignment.type, RowAlignmentParentData::decode)
         register(BuiltinProjection.ColumnAlignment.type, ColumnAlignmentParentData::decode)
         register(BuiltinProjection.StackAlignment.type, StackAlignmentParentData::decode)
+        register(BuiltinProjection.TiledImagePosition.type, TiledImageContentParentData::decode)
     }
 }

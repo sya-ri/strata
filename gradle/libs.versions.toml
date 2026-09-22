@@ -1,5 +1,6 @@
 [versions]
 kotlin = "2.4.10"
+paper-api = "1.20-R0.1-SNAPSHOT"
 jetbrains-mono = "2.304"
 java-baseline = "17"
 java-minecraft = "25"
@@ -82,6 +83,7 @@ fabric-api1205 = "0.97.8+1.20.5"
 fabric-api1206 = "0.100.8+1.20.6"
 
 [libraries]
+paper-api = { module = "io.papermc.paper:paper-api", version.ref = "paper-api" }
 playwright = { module = "com.microsoft.playwright:playwright", version.ref = "playwright" }
 detekt-api = { module = "dev.detekt:detekt-api", version.ref = "detekt" }
 detekt-test = { module = "dev.detekt:detekt-test", version.ref = "detekt" }

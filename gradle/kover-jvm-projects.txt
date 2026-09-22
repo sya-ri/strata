@@ -1,9 +1,12 @@
 :api
+:examples:paper
 :integration:api
 :integration:docs
 :integration:web
 :quality:detekt-rules
 :runtime:core
+:runtime:remote
+:runtime:paper
 :runtime:headless
 :runtime:minecraft
 :runtime:minecraft-fonts-lwjgl

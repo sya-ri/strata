@@ -208,15 +208,24 @@ final enum class dev.s7a.strata.projection/BuiltinProjection : kotlin/Enum<dev.s
     enum entry Column // dev.s7a.strata.projection/BuiltinProjection.Column|null[0]
     enum entry ColumnAlignment // dev.s7a.strata.projection/BuiltinProjection.ColumnAlignment|null[0]
     enum entry ComponentAction // dev.s7a.strata.projection/BuiltinProjection.ComponentAction|null[0]
+    enum entry Drag // dev.s7a.strata.projection/BuiltinProjection.Drag|null[0]
     enum entry FlowRow // dev.s7a.strata.projection/BuiltinProjection.FlowRow|null[0]
+    enum entry FocusChanged // dev.s7a.strata.projection/BuiltinProjection.FocusChanged|null[0]
+    enum entry Focusable // dev.s7a.strata.projection/BuiltinProjection.Focusable|null[0]
     enum entry Grid // dev.s7a.strata.projection/BuiltinProjection.Grid|null[0]
+    enum entry Hover // dev.s7a.strata.projection/BuiltinProjection.Hover|null[0]
+    enum entry InitialFocus // dev.s7a.strata.projection/BuiltinProjection.InitialFocus|null[0]
+    enum entry Move // dev.s7a.strata.projection/BuiltinProjection.Move|null[0]
     enum entry Observe // dev.s7a.strata.projection/BuiltinProjection.Observe|null[0]
     enum entry ObservedActivation // dev.s7a.strata.projection/BuiltinProjection.ObservedActivation|null[0]
     enum entry Padding // dev.s7a.strata.projection/BuiltinProjection.Padding|null[0]
+    enum entry PanZoom // dev.s7a.strata.projection/BuiltinProjection.PanZoom|null[0]
     enum entry PrimaryPress // dev.s7a.strata.projection/BuiltinProjection.PrimaryPress|null[0]
+    enum entry Release // dev.s7a.strata.projection/BuiltinProjection.Release|null[0]
     enum entry Row // dev.s7a.strata.projection/BuiltinProjection.Row|null[0]
     enum entry RowAlignment // dev.s7a.strata.projection/BuiltinProjection.RowAlignment|null[0]
     enum entry ScaleToFit // dev.s7a.strata.projection/BuiltinProjection.ScaleToFit|null[0]
+    enum entry Scroll // dev.s7a.strata.projection/BuiltinProjection.Scroll|null[0]
     enum entry ScrollPosition // dev.s7a.strata.projection/BuiltinProjection.ScrollPosition|null[0]
     enum entry Semantics // dev.s7a.strata.projection/BuiltinProjection.Semantics|null[0]
     enum entry Size // dev.s7a.strata.projection/BuiltinProjection.Size|null[0]
@@ -224,6 +233,9 @@ final enum class dev.s7a.strata.projection/BuiltinProjection : kotlin/Enum<dev.s
     enum entry Stack // dev.s7a.strata.projection/BuiltinProjection.Stack|null[0]
     enum entry StackAlignment // dev.s7a.strata.projection/BuiltinProjection.StackAlignment|null[0]
     enum entry StateComponent // dev.s7a.strata.projection/BuiltinProjection.StateComponent|null[0]
+    enum entry TiledImage // dev.s7a.strata.projection/BuiltinProjection.TiledImage|null[0]
+    enum entry TiledImageLayer // dev.s7a.strata.projection/BuiltinProjection.TiledImageLayer|null[0]
+    enum entry TiledImagePosition // dev.s7a.strata.projection/BuiltinProjection.TiledImagePosition|null[0]
     enum entry VirtualList // dev.s7a.strata.projection/BuiltinProjection.VirtualList|null[0]
     enum entry Weight // dev.s7a.strata.projection/BuiltinProjection.Weight|null[0]
 
@@ -2383,6 +2395,12 @@ final object dev.s7a.strata.projection/ProjectionScrollBinding { // dev.s7a.stra
 
 final object dev.s7a.strata.projection/StandardModifierProjections { // dev.s7a.strata.projection/StandardModifierProjections|null[0]
     final fun register(kotlin/Function2<dev.s7a.strata.projection/ProjectionType, kotlin/Function1<dev.s7a.strata.projection/ProjectionValue, dev.s7a.strata.modifier/ModifierElement>, kotlin/Unit>) // dev.s7a.strata.projection/StandardModifierProjections.register|register(kotlin.Function2<dev.s7a.strata.projection.ProjectionType,kotlin.Function1<dev.s7a.strata.projection.ProjectionValue,dev.s7a.strata.modifier.ModifierElement>,kotlin.Unit>){}[0]
+}
+
+final object dev.s7a.strata.projection/StandardTiledImageProjections { // dev.s7a.strata.projection/StandardTiledImageProjections|null[0]
+    final fun layer(dev.s7a.strata.component/TiledImageSource, dev.s7a.strata.component/PanZoomState, dev.s7a.strata.geometry/IntSize, dev.s7a.strata.component/TiledImageCachePolicy): dev.s7a.strata.element/Element // dev.s7a.strata.projection/StandardTiledImageProjections.layer|layer(dev.s7a.strata.component.TiledImageSource;dev.s7a.strata.component.PanZoomState;dev.s7a.strata.geometry.IntSize;dev.s7a.strata.component.TiledImageCachePolicy){}[0]
+    final fun validate(dev.s7a.strata.geometry/LongRect, kotlin.collections/List<dev.s7a.strata.component/TiledImageLevel>, dev.s7a.strata.geometry/IntSize) // dev.s7a.strata.projection/StandardTiledImageProjections.validate|validate(dev.s7a.strata.geometry.LongRect;kotlin.collections.List<dev.s7a.strata.component.TiledImageLevel>;dev.s7a.strata.geometry.IntSize){}[0]
+    final fun viewport(kotlin/Any, dev.s7a.strata.geometry/LongRect, kotlin.collections/List<dev.s7a.strata.component/TiledImageLevel>, dev.s7a.strata.component/PanZoomState, dev.s7a.strata.geometry/IntSize, dev.s7a.strata.component/PanZoomFit, dev.s7a.strata.modifier/Modifier, dev.s7a.strata.element/ElementKey<*>?, kotlin.collections/List<dev.s7a.strata.element/Element>): dev.s7a.strata.element/Element // dev.s7a.strata.projection/StandardTiledImageProjections.viewport|viewport(kotlin.Any;dev.s7a.strata.geometry.LongRect;kotlin.collections.List<dev.s7a.strata.component.TiledImageLevel>;dev.s7a.strata.component.PanZoomState;dev.s7a.strata.geometry.IntSize;dev.s7a.strata.component.PanZoomFit;dev.s7a.strata.modifier.Modifier;dev.s7a.strata.element.ElementKey<*>?;kotlin.collections.List<dev.s7a.strata.element.Element>){}[0]
 }
 
 final object dev.s7a.strata.screen/Screens { // dev.s7a.strata.screen/Screens|null[0]

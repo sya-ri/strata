@@ -70,43 +70,50 @@ internal object ShowcaseHeadlessRenderer {
      * Resource, layout, unsupported command, and rasterization failures propagate after the host closes.
      * The catalog dispatch is intentionally exhaustive so a new built-in cannot silently lack its compiled renderer.
      */
-    @Suppress("CyclomaticComplexMethod")
     internal fun component(
         scenario: ComponentScenario,
         assets: ShowcaseMinecraftAssets,
     ): ByteArray {
-        val definition =
-            when (scenario.component) {
-                DocumentedComponent.Row -> createRowShowcaseScreenDefinition()
-                DocumentedComponent.FlowRow -> createFlowRowShowcaseScreenDefinition()
-                DocumentedComponent.Column -> createColumnShowcaseScreenDefinition()
-                DocumentedComponent.Stack -> createStackShowcaseScreenDefinition()
-                DocumentedComponent.Grid -> createGridShowcaseScreenDefinition()
-                DocumentedComponent.Spacer -> createSpacerShowcaseScreenDefinition()
-                DocumentedComponent.Observe -> createObserveShowcaseScreenDefinition()
-                DocumentedComponent.Text -> createTextShowcaseScreenDefinition()
-                DocumentedComponent.TextField -> createTextFieldShowcaseScreenDefinition()
-                DocumentedComponent.TextArea -> createTextAreaShowcaseScreenDefinition()
-                DocumentedComponent.Button -> createButtonShowcaseScreenDefinition()
-                DocumentedComponent.Checkbox -> createCheckboxShowcaseScreenDefinition()
-                DocumentedComponent.CycleButton -> createCycleButtonShowcaseScreenDefinition()
-                DocumentedComponent.Slider -> createSliderShowcaseScreenDefinition()
-                DocumentedComponent.Tab -> createTabShowcaseScreenDefinition()
-                DocumentedComponent.ScrollArea -> createScrollAreaShowcaseScreenDefinition()
-                DocumentedComponent.Scrollbar -> createScrollbarShowcaseScreenDefinition()
-                DocumentedComponent.VirtualList -> createVirtualListShowcaseScreenDefinition()
-                DocumentedComponent.SelectionList -> createSelectionListShowcaseScreenDefinition()
-                DocumentedComponent.Image -> createImageShowcaseScreenDefinition(image(assets, coalGenerator))
-                DocumentedComponent.Canvas -> createCanvasShowcaseScreenDefinition()
-                DocumentedComponent.TiledImage -> createTiledImageShowcaseScreenDefinition()
-                DocumentedComponent.Slot -> createSlotShowcaseScreenDefinition()
-                DocumentedComponent.PlayerHead -> createPlayerHeadShowcaseScreenDefinition(assets.playerSkin)
-                DocumentedComponent.LoadingIndicator -> createLoadingIndicatorShowcaseScreenDefinition()
-                DocumentedComponent.ProgressBar -> createProgressBarShowcaseScreenDefinition()
-            }
         val pointer = if (scenario.component == DocumentedComponent.Slot) IntOffset(32, 32) else IntOffset.Zero
-        return render(assets.profile, definition, scenario.viewportMetadata, pointer)
+        return render(assets.profile, componentDefinition(scenario, assets), scenario.viewportMetadata, pointer)
     }
+
+    /**
+     * Creates a fresh definition for both local rendering and independent remote parity of the compiled example.
+     */
+    @Suppress("CyclomaticComplexMethod")
+    internal fun componentDefinition(
+        scenario: ComponentScenario,
+        assets: ShowcaseMinecraftAssets,
+    ): ScreenDefinition =
+        when (scenario.component) {
+            DocumentedComponent.Row -> createRowShowcaseScreenDefinition()
+            DocumentedComponent.FlowRow -> createFlowRowShowcaseScreenDefinition()
+            DocumentedComponent.Column -> createColumnShowcaseScreenDefinition()
+            DocumentedComponent.Stack -> createStackShowcaseScreenDefinition()
+            DocumentedComponent.Grid -> createGridShowcaseScreenDefinition()
+            DocumentedComponent.Spacer -> createSpacerShowcaseScreenDefinition()
+            DocumentedComponent.Observe -> createObserveShowcaseScreenDefinition()
+            DocumentedComponent.Text -> createTextShowcaseScreenDefinition()
+            DocumentedComponent.TextField -> createTextFieldShowcaseScreenDefinition()
+            DocumentedComponent.TextArea -> createTextAreaShowcaseScreenDefinition()
+            DocumentedComponent.Button -> createButtonShowcaseScreenDefinition()
+            DocumentedComponent.Checkbox -> createCheckboxShowcaseScreenDefinition()
+            DocumentedComponent.CycleButton -> createCycleButtonShowcaseScreenDefinition()
+            DocumentedComponent.Slider -> createSliderShowcaseScreenDefinition()
+            DocumentedComponent.Tab -> createTabShowcaseScreenDefinition()
+            DocumentedComponent.ScrollArea -> createScrollAreaShowcaseScreenDefinition()
+            DocumentedComponent.Scrollbar -> createScrollbarShowcaseScreenDefinition()
+            DocumentedComponent.VirtualList -> createVirtualListShowcaseScreenDefinition()
+            DocumentedComponent.SelectionList -> createSelectionListShowcaseScreenDefinition()
+            DocumentedComponent.Image -> createImageShowcaseScreenDefinition(image(assets, coalGenerator))
+            DocumentedComponent.Canvas -> createCanvasShowcaseScreenDefinition()
+            DocumentedComponent.TiledImage -> createTiledImageShowcaseScreenDefinition()
+            DocumentedComponent.Slot -> createSlotShowcaseScreenDefinition()
+            DocumentedComponent.PlayerHead -> createPlayerHeadShowcaseScreenDefinition(assets.playerSkin)
+            DocumentedComponent.LoadingIndicator -> createLoadingIndicatorShowcaseScreenDefinition()
+            DocumentedComponent.ProgressBar -> createProgressBarShowcaseScreenDefinition()
+        }
 
     /**
      * Renders a portable complete-screen example using explicit immutable image and player inputs.

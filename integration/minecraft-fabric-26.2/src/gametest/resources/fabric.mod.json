@@ -7,6 +7,12 @@
   "accessWidener": "strata-font-parity.accesswidener",
   "mixins": ${gameTestMixins},
   "entrypoints": {
+    "client": [
+      "dev.s7a.strata.integration.minecraft.fabric.RemoteNativeCanvasFixture",
+      "dev.s7a.strata.integration.minecraft.fabric.ManualImeVerification",
+      "dev.s7a.strata.integration.minecraft.fabric.PaperManualImeVerification",
+      "dev.s7a.strata.integration.minecraft.fabric.PaperRemoteExtensionClient"
+    ],
     "fabric-client-gametest": [
       "${gameTestEntrypoint}"
     ]

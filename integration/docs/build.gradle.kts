@@ -59,6 +59,7 @@ dependencies {
         runtimeOnly("org.lwjgl:$binding:$showcaseLwjglVersion:$showcaseNativeClassifier") { isTransitive = false }
     }
     testImplementation(libs.junit.jupiter)
+    testImplementation(project(":runtime:remote"))
     testRuntimeOnly(libs.junit.platform.launcher)
 }
 

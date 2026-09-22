@@ -60,6 +60,46 @@ public final class dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreen
 	public static synthetic fun createMinecraftScreen$default (Ldev/s7a/strata/screen/ScreenDefinition;Ldev/s7a/strata/runtime/minecraft/MinecraftUiProfile;Lnet/minecraft/client/gui/screens/Screen;ILjava/lang/Object;)Ldev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreen;
 }
 
+public final class dev/s7a/strata/runtime/minecraft/fabric/FabricRemotePayload : java/lang/Record, net/minecraft/network/protocol/common/custom/CustomPacketPayload {
+	public static final field CODEC Lnet/minecraft/network/codec/StreamCodec;
+	public static final field TYPE Lnet/minecraft/network/protocol/common/custom/CustomPacketPayload$Type;
+	public fun <init> ([B)V
+	public fun bytes ()[B
+	public final fun equals (Ljava/lang/Object;)Z
+	public final fun hashCode ()I
+	public final fun toString ()Ljava/lang/String;
+	public fun type ()Lnet/minecraft/network/protocol/common/custom/CustomPacketPayload$Type;
+}
+
+public final class dev/s7a/strata/runtime/minecraft/fabric/FabricRemoteRegistration : java/lang/Record, net/minecraft/network/protocol/common/custom/CustomPacketPayload {
+	public static final field TYPE Lnet/minecraft/network/protocol/common/custom/CustomPacketPayload$Type;
+	public fun <init> ()V
+	public final fun equals (Ljava/lang/Object;)Z
+	public final fun hashCode ()I
+	public final fun toString ()Ljava/lang/String;
+	public fun type ()Lnet/minecraft/network/protocol/common/custom/CustomPacketPayload$Type;
+	public fun write (Lnet/minecraft/network/FriendlyByteBuf;)V
+}
+
+public final class dev/s7a/strata/runtime/minecraft/fabric/FabricRemoteRegistrationCodec {
+	public static fun wrap (Lnet/minecraft/network/codec/StreamCodec;)Lnet/minecraft/network/codec/StreamCodec;
+}
+
+public final class dev/s7a/strata/runtime/minecraft/fabric/FabricRemoteScreens {
+	public static final field INSTANCE Ldev/s7a/strata/runtime/minecraft/fabric/FabricRemoteScreens;
+	public final fun enqueue (Lnet/minecraft/network/Connection;[B)V
+	public final fun fail (Lnet/minecraft/client/gui/screens/Screen;Ljava/lang/Throwable;)Z
+	public final fun getRegistry ()Ldev/s7a/strata/runtime/remote/RemoteRegistry;
+	public final fun requireContainer (Ljava/lang/Object;)V
+	public final fun shutdown ()V
+	public final fun tick ()V
+}
+
+public final class dev/s7a/strata/runtime/minecraft/fabric/FabricRemoteTransport {
+	public static fun register (Lnet/minecraft/client/multiplayer/ClientPacketListener;)V
+	public static fun send (Lnet/minecraft/client/multiplayer/ClientPacketListener;[B)V
+}
+
 public abstract interface class dev/s7a/strata/runtime/minecraft/fabric/FabricVulkanDestroyedResource {
 	public abstract fun strataCanvasResourceDestroyed ()Z
 }

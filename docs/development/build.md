@@ -83,7 +83,7 @@ Run aggregate coverage with `./gradlew :koverHtmlReport :koverXmlReport -Pkover`
 When publication code changes, run `./gradlew publishToMavenLocal` and inspect artifact contents and publication metadata.
 The [release procedure](release.md) defines external publication and credentials.
 
-Each versioned Fabric artifact packages the `api`, `runtime:core`, `runtime:headless`, `runtime:minecraft`, and `runtime:minecraft-fonts-lwjgl` jars under `META-INF/jars` exactly once.
+Each versioned Fabric artifact packages the `api`, `runtime:core`, `runtime:remote`, `runtime:headless`, `runtime:minecraft`, and `runtime:minecraft-fonts-lwjgl` jars under `META-INF/jars` exactly once.
 Its Java toolchain and distribution mapping follow the typed target matrix summarized in the [compatibility reference](../reference/compatibility.md).
 Unobfuscated clients use the catalog-selected Fabric Loom plugin in no-remap mode; remapped clients compile against official Mojang mappings and remap their distribution jars with the catalog-selected remap plugin.
 Every versioned Fabric runtime module declares an exact Minecraft requirement and catalog-derived Loader, Fabric Language Kotlin, and Java lower bounds; none uses Fabric API at runtime.
@@ -95,6 +95,12 @@ Integration jar remapping includes the GameTest compile classpath because those 
 The production loaded suite calls an inherited screen method through the concrete public runtime type to verify that boundary after remapping.
 
 ## Loaded-client verification
+
+The Paper plugin distribution is `:runtime:paper:pluginJar`; its classifier is `plugin` and its archive includes Kotlin and the shared Strata runtime without Paper API classes.
+The `:examples:paper:jar` artifact is an external plugin consumer requiring Strata, not another runtime bundle.
+Run `:runtime:remote:test :runtime:paper:test :examples:paper:check` for the transport, plugin ownership, and compiled-example checks; `:runtime:minecraft:test --tests '*MinecraftRemoteScreenTest'` compares reconstructed standard controls and tile output with the common Minecraft profile.
+Those tests do not constitute a Paper server run or operating-system IME acceptance.
+Paper/native acceptance uses matching game versions only; the [generated compatibility table](../reference/compatibility.md) records missing exact distributions separately from Fabric client targets.
 
 Each versioned integration project verifies its exact adapter through development outputs and packaged production jars.
 The legacy viewport fixture requests both Minecraft's test dimensions and the real GLFW window size, then requires two matching native/window/render-target samples.
@@ -146,6 +152,27 @@ The terminal receipt records `suiteScope`, `verifiedChecks`, `excludedChecks`, a
 Gradle rejects a receipt from a different scope or invocation and validates the recorded blur option against Minecraft's supported range.
 These receipts prove the actual shutdown boundary, while the Minecraft-independent tests separately cover fences that remain unsignalled for arbitrarily many frames.
 
+## Paper connection verification
+
+The nonpublished `integration:paper` plugin owns the server assertions for an isolated real-player connection.
+Its screen uses the compiled external component/modifier example and checks confirmed Japanese text, button activation, independent server updates, screen replacement, and a vanilla Slot pickup/restore transaction.
+The client fixture invokes native input callbacks and captures the rendered screens.
+Confirmed-character injection does not establish operating-system IME composition acceptance.
+
+Run `python integration/paper/run_acceptance.py 26.3 --java <compatible-java-executable>` from the repository after that version's ordinary client setup has recorded EULA acceptance.
+The runner fetches exact-version metadata from Paper's official distribution service, verifies the server binary's SHA-256, builds the three plugin JARs, and starts a fresh world bound only to loopback.
+It runs development and packaged production clients and requires matching invocation IDs in both client and server receipts before writing `build/paper-acceptance/<version>/<run>/passed.json`.
+The manifest, logs, receipt copies, and plugin hashes remain beside that result, and the runner stops only its owned server process on success or failure.
+`--development-only` is a diagnostic subset and records only that task; it cannot establish production-JAR acceptance.
+The normal loaded suite still runs before the optional Paper fixture.
+When a Paper address is supplied, Fabric Client GameTest targets disable Fabric's test-only network synchronizer through its documented `fabric.client.gametest.disableNetworkSynchronizer` property.
+External Paper packets do not participate in Fabric's paired test scheduler; the fixture instead awaits actual connection state, remote screen revisions, and authoritative container changes.
+Ordinary integrated-server verification retains the target's default synchronizer configuration.
+Versions without an exact official Paper distribution must retain separate client-transport evidence; a nearby Paper release cannot establish an exact-version pair.
+Every loaded client suite also runs a native custom-payload fixture against its exact integrated server.
+It checks server-confirmed text and actions, applied-revision acknowledgements, visible updates, a registered native Canvas renderer with literal framebuffer texels and retained attachment ownership, and terminal renderer release.
+Its `native-remote.properties` receipt and screenshot are client-transport evidence and remain distinct from the real Paper runner's receipts.
+
 ## Manual OS IME verification
 
 Use `:integration:minecraft-fabric-26.3:runManualIme` to open the isolated native editor with normal OS keyboard callbacks.
@@ -159,6 +186,14 @@ If the converted phrase or newline is missing, the fixture explains the missing 
 The task requires a fresh invocation-specific `manual-ime-evidence/manual-os-ime.txt` receipt with the converted phrase, newline, stable input-node identity, and concurrent label updates.
 A closed window or an old receipt cannot pass this task.
 The receipt establishes confirmed input and retained nodes; the operator's observation establishes candidate/preedit continuity.
+
+For the same acceptance across a real Paper connection, run `python integration/paper/run_acceptance.py 26.3 --java <compatible-java-executable> --manual-ime`.
+The normal-client Paper IME fixture supports both 26.2 and 26.3 through the same shared scenario.
+This opens a normal client against the runner's isolated exact-version server and automatically opens its remote multiline editor.
+The manual fixture uses peaceful difficulty so hostile mobs cannot interrupt composition during a long observation.
+Follow the same conversion, candidate continuity, and newline checks while Paper sends periodic label revisions, then select Finish test.
+The runner requires fresh matching `manual-client.properties` and `manual-server.properties` receipts, including retained client nodes and server-confirmed input.
+The operator must separately confirm candidate/preedit continuity; the receipts do not observe the operating system's candidate window.
 
 ## Documentation and benchmarks
 
