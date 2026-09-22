@@ -46,6 +46,10 @@ on:
 permissions:
   contents: read
 
+env:
+  # Published-client verification uses Xvfb; SDL needs EGL for its sRGB framebuffer.
+  SDL_VIDEO_FORCE_EGL: "1"
+
 # Historical release controllers use this legacy group too, serializing every
 # operation that may observe or change the shared Modrinth project body.
 concurrency:
