@@ -299,6 +299,8 @@ internal object InventorySlotSynchronizationGameTest {
             )
         }
         context.waitForScreen(FabricMinecraftScreen::class.java)
+        // Native window transitions can center the pointer over a Slot; screenshots require a fixed non-hover position.
+        context.input.setCursorPos(0.0, 0.0)
         context.waitTicks(2)
     }
 
