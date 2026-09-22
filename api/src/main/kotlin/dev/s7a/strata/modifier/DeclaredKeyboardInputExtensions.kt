@@ -8,7 +8,7 @@ import dev.s7a.strata.projection.BuiltinProjection
 /**
  * Subscribes to typed keyboard notifications with a fixed immediate dispatch result.
  * Only events matching [filter] invoke [action] or cross a remote connection; other events continue propagation.
- * The handler runs on the screen owner thread, on Paper when the screen is remote.
+ * The handler runs on the screen owner thread, on the hosting server or proxy when the screen is remote.
  * [propagation] is decided locally without waiting for that handler; dynamic result callbacks use the other overload.
  */
 public fun Modifier.onKeyEvent(
@@ -33,7 +33,7 @@ public fun Modifier.onKeyEvent(
 /**
  * Subscribes to typed keyboard notifications with a fixed immediate dispatch result.
  * Only events matching [filter] invoke [action] or cross a remote connection; other events continue propagation.
- * The handler runs on the screen owner thread, on Paper when the screen is remote.
+ * The handler runs on the screen owner thread, on the hosting server or proxy when the screen is remote.
  * [propagation] is decided locally without waiting for that handler; dynamic result callbacks use the other overload.
  */
 public fun Modifier.onKeyPress(
@@ -58,7 +58,7 @@ public fun Modifier.onKeyPress(
 /**
  * Subscribes to typed keyboard notifications with a fixed immediate dispatch result.
  * Only events matching [filter] invoke [action] or cross a remote connection; other events continue propagation.
- * The handler runs on the screen owner thread, on Paper when the screen is remote.
+ * The handler runs on the screen owner thread, on the hosting server or proxy when the screen is remote.
  * [propagation] is decided locally without waiting for that handler; dynamic result callbacks use the other overload.
  */
 public fun Modifier.onKeyRelease(

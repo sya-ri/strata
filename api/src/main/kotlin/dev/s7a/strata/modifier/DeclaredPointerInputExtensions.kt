@@ -8,7 +8,7 @@ import dev.s7a.strata.projection.BuiltinProjection
 
 /**
  * Subscribes to typed pointer notifications within the modifier's hit region, including local coordinates.
- * [propagation] is applied immediately; [action] runs on the screen owner thread, on Paper for remote screens.
+ * [propagation] is applied immediately; [action] runs on the screen owner thread, on the hosting server or proxy for remote screens.
  * Only the subscribed event variant and optional button are delivered or transmitted.
  */
 public fun Modifier.onPointerEvent(
@@ -27,7 +27,7 @@ public fun Modifier.onPointerEvent(
 
 /**
  * Subscribes to typed pointer notifications within the modifier's hit region, including local coordinates.
- * [propagation] is applied immediately; [action] runs on the screen owner thread, on Paper for remote screens.
+ * [propagation] is applied immediately; [action] runs on the screen owner thread, on the hosting server or proxy for remote screens.
  * Only the subscribed event variant and optional button are delivered or transmitted.
  */
 public fun Modifier.onPress(
@@ -51,7 +51,7 @@ public fun Modifier.onPress(
 
 /**
  * Subscribes to typed pointer notifications within the modifier's hit region, including local coordinates.
- * [propagation] is applied immediately; [action] runs on the screen owner thread, on Paper for remote screens.
+ * [propagation] is applied immediately; [action] runs on the screen owner thread, on the hosting server or proxy for remote screens.
  * Only the subscribed event variant and optional button are delivered or transmitted.
  */
 public fun Modifier.onRelease(
@@ -75,7 +75,7 @@ public fun Modifier.onRelease(
 
 /**
  * Subscribes to typed pointer notifications within the modifier's hit region, including local coordinates.
- * [propagation] is applied immediately; [action] runs on the screen owner thread, on Paper for remote screens.
+ * [propagation] is applied immediately; [action] runs on the screen owner thread, on the hosting server or proxy for remote screens.
  * Only the subscribed event variant and optional button are delivered or transmitted.
  */
 public fun Modifier.onMove(
@@ -94,7 +94,7 @@ public fun Modifier.onMove(
 
 /**
  * Subscribes to typed pointer notifications within the modifier's hit region, including local coordinates.
- * [propagation] is applied immediately; [action] runs on the screen owner thread, on Paper for remote screens.
+ * [propagation] is applied immediately; [action] runs on the screen owner thread, on the hosting server or proxy for remote screens.
  * Only the subscribed event variant and optional button are delivered or transmitted.
  */
 public fun Modifier.onDrag(
@@ -118,7 +118,7 @@ public fun Modifier.onDrag(
 
 /**
  * Subscribes to typed pointer notifications within the modifier's hit region, including local coordinates.
- * [propagation] is applied immediately; [action] runs on the screen owner thread, on Paper for remote screens.
+ * [propagation] is applied immediately; [action] runs on the screen owner thread, on the hosting server or proxy for remote screens.
  * Only the subscribed event variant and optional button are delivered or transmitted.
  */
 public fun Modifier.onScroll(

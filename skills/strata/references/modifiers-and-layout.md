@@ -4,7 +4,7 @@
 
 Modifiers are active retained behavior, not a passive settings bag.
 Order matters: layout and input elements wrap the behavior that follows them in the chain.
-The 56 compiled overloads below form 44 top-level extension groups.
+The 69 compiled overloads below form 44 top-level extension groups.
 
 | Extension | Overloads | Category | Use |
 | --- | ---: | --- | --- |
@@ -22,26 +22,26 @@ The 56 compiled overloads below form 44 top-level extension groups.
 | `menuBackground` | 1 | Paint | Paints the active resource-pack menu background without creating a separate background component. |
 | `onAction` | 1 | Advanced actions | Handles an extensible typed action key; prefer a focused built-in action extension when one exists. |
 | `onActivate` | 3 | Activation | Runs one shared action for a primary pointer press or each focused Enter or Space press, makes the owner focusable, and adds no node or action reference when its enabled overload is false. |
-| `onCapturedPointerEvent` | 1 | Pointer | Captures a consumed press for one button, forwards movement and matching drag/release outside bounds or ancestor clips, and reports cancellation when ownership ends early. |
-| `onCharacterInput` | 1 | Focus and text | Handles committed character input while the element is focused. |
+| `onCapturedPointerEvent` | 2 | Pointer | Captures a consumed press for one button, forwards movement and matching drag/release outside bounds or ancestor clips, and reports cancellation when ownership ends early. |
+| `onCharacterInput` | 2 | Focus and text | Handles committed character input while the element is focused. |
 | `onCheckedChange` | 1 | Component actions | Receives the next boolean value emitted by `Checkbox`. |
 | `onCycle` | 1 | Component actions | Receives the next typed value emitted by `CycleButton`. |
-| `onDrag` | 2 | Pointer | Handles pointer drag events or invokes a simple action overload. |
+| `onDrag` | 3 | Pointer | Handles pointer drag events or invokes a simple action overload. |
 | `onFocusChanged` | 1 | Focus and text | Observes focus gain and loss for the retained element. |
 | `onHover` | 1 | Pointer | Observes pointer enter and exit without adding hover state to a component signature. |
-| `onKeyEvent` | 1 | Focus and text | Handles every focused key event before a narrower built-in behavior. |
-| `onKeyPress` | 1 | Focus and text | Handles a focused key press. |
-| `onKeyRelease` | 1 | Focus and text | Handles a focused key release. |
+| `onKeyEvent` | 2 | Focus and text | Handles every focused key event before a narrower built-in behavior. |
+| `onKeyPress` | 2 | Focus and text | Handles a focused key press. |
+| `onKeyRelease` | 2 | Focus and text | Handles a focused key release. |
 | `onLeadingItemsRequested` | 1 | Component actions | Requests items before the current virtual-list boundary for prepend-style infinite loading. |
-| `onMove` | 2 | Pointer | Handles pointer movement or invokes a simple action overload. |
-| `onPointerEvent` | 1 | Pointer | Handles every pointer event when a specialized pointer extension is insufficient. |
-| `onPreedit` | 1 | Focus and text | Handles input-method preedit updates while focused. |
-| `onPress` | 2 | Pointer | Handles a pointer press or invokes a simple action overload; use `onActivate` instead when primary pointer and focused keyboard input represent the same action. |
-| `onRelease` | 2 | Pointer | Handles a pointer release or invokes a simple action overload. |
-| `onScroll` | 2 | Pointer | Handles pointer-wheel input or invokes a simple action overload. |
+| `onMove` | 3 | Pointer | Handles pointer movement or invokes a simple action overload. |
+| `onPointerEvent` | 2 | Pointer | Handles every pointer event when a specialized pointer extension is insufficient. |
+| `onPreedit` | 2 | Focus and text | Handles input-method preedit updates while focused. |
+| `onPress` | 3 | Pointer | Handles a pointer press or invokes a simple action overload; use `onActivate` instead when primary pointer and focused keyboard input represent the same action. |
+| `onRelease` | 3 | Pointer | Handles a pointer release or invokes a simple action overload. |
+| `onScroll` | 3 | Pointer | Handles pointer-wheel input or invokes a simple action overload. |
 | `onSelectionChange` | 1 | Component actions | Receives the stable key selected by `SelectionList`. |
 | `onSliderChange` | 1 | Component actions | Receives the normalized value emitted by `Slider`. |
-| `onTextInput` | 1 | Focus and text | Handles every focused text-input event when committed-character and preedit handlers are too narrow. |
+| `onTextInput` | 2 | Focus and text | Handles every focused text-input event when committed-character and preedit handlers are too narrow. |
 | `onTrailingItemsRequested` | 1 | Component actions | Requests items after the current virtual-list boundary for append-style infinite loading. |
 | `padding` | 4 | Layout | Adds checked local insets around an element; use parent spacing and alignment for sibling structure. |
 | `panZoom` | 1 | Pointer | Pans a caller-owned `PanZoomState` with a captured button drag and zooms around the pointer with the vertical wheel delta. |
@@ -145,6 +145,7 @@ fun Modifier.onActivate(enabled: StateSource<Boolean>, action: () -> Unit): Modi
 ### `onCapturedPointerEvent`
 
 ```kotlin
+fun Modifier.onCapturedPointerEvent(button: PointerButton, onCancel: (PointerButton) -> Unit, action: (PointerEvent, IntOffset) -> Unit): Modifier
 fun Modifier.onCapturedPointerEvent(onCancel: (PointerButton) -> Unit, callback: (PointerEvent, IntOffset) -> InputResult): Modifier
 ```
 
@@ -152,6 +153,7 @@ fun Modifier.onCapturedPointerEvent(onCancel: (PointerButton) -> Unit, callback:
 
 ```kotlin
 fun Modifier.onCharacterInput(callback: (TextInputEvent.Character) -> InputResult): Modifier
+fun Modifier.onCharacterInput(propagation: InputResult, action: (TextInputEvent.Character) -> Unit): Modifier
 ```
 
 ### `onCheckedChange`
@@ -171,6 +173,7 @@ fun <T : Any> Modifier.onCycle(action: (T) -> Unit): Modifier
 ```kotlin
 fun Modifier.onDrag(action: () -> Unit): Modifier
 fun Modifier.onDrag(callback: (PointerEvent.Drag, IntOffset) -> InputResult): Modifier
+fun Modifier.onDrag(propagation: InputResult, button: PointerButton? = null, action: (PointerEvent.Drag, IntOffset) -> Unit): Modifier
 ```
 
 ### `onFocusChanged`
@@ -189,18 +192,21 @@ fun Modifier.onHover(callback: (PointerHoverEvent) -> Unit): Modifier
 
 ```kotlin
 fun Modifier.onKeyEvent(callback: (KeyboardEvent) -> InputResult): Modifier
+fun Modifier.onKeyEvent(propagation: InputResult, filter: KeyboardInputFilter = KeyboardInputFilter(), action: (KeyboardEvent) -> Unit): Modifier
 ```
 
 ### `onKeyPress`
 
 ```kotlin
 fun Modifier.onKeyPress(callback: (KeyboardEvent.Press) -> InputResult): Modifier
+fun Modifier.onKeyPress(propagation: InputResult, filter: KeyboardInputFilter = KeyboardInputFilter(), action: (KeyboardEvent.Press) -> Unit): Modifier
 ```
 
 ### `onKeyRelease`
 
 ```kotlin
 fun Modifier.onKeyRelease(callback: (KeyboardEvent.Release) -> InputResult): Modifier
+fun Modifier.onKeyRelease(propagation: InputResult, filter: KeyboardInputFilter = KeyboardInputFilter(), action: (KeyboardEvent.Release) -> Unit): Modifier
 ```
 
 ### `onLeadingItemsRequested`
@@ -214,18 +220,21 @@ fun Modifier.onLeadingItemsRequested(action: (ListLoadRequest) -> Unit): Modifie
 ```kotlin
 fun Modifier.onMove(action: () -> Unit): Modifier
 fun Modifier.onMove(callback: (PointerEvent.Move, IntOffset) -> InputResult): Modifier
+fun Modifier.onMove(propagation: InputResult, action: (PointerEvent.Move, IntOffset) -> Unit): Modifier
 ```
 
 ### `onPointerEvent`
 
 ```kotlin
 fun Modifier.onPointerEvent(callback: (PointerEvent, IntOffset) -> InputResult): Modifier
+fun Modifier.onPointerEvent(propagation: InputResult, action: (PointerEvent, IntOffset) -> Unit): Modifier
 ```
 
 ### `onPreedit`
 
 ```kotlin
 fun Modifier.onPreedit(callback: (TextInputEvent.Preedit) -> InputResult): Modifier
+fun Modifier.onPreedit(propagation: InputResult, action: (TextInputEvent.Preedit) -> Unit): Modifier
 ```
 
 ### `onPress`
@@ -233,6 +242,7 @@ fun Modifier.onPreedit(callback: (TextInputEvent.Preedit) -> InputResult): Modif
 ```kotlin
 fun Modifier.onPress(action: () -> Unit): Modifier
 fun Modifier.onPress(callback: (PointerEvent.Press, IntOffset) -> InputResult): Modifier
+fun Modifier.onPress(propagation: InputResult, button: PointerButton? = null, action: (PointerEvent.Press, IntOffset) -> Unit): Modifier
 ```
 
 ### `onRelease`
@@ -240,6 +250,7 @@ fun Modifier.onPress(callback: (PointerEvent.Press, IntOffset) -> InputResult): 
 ```kotlin
 fun Modifier.onRelease(action: () -> Unit): Modifier
 fun Modifier.onRelease(callback: (PointerEvent.Release, IntOffset) -> InputResult): Modifier
+fun Modifier.onRelease(propagation: InputResult, button: PointerButton? = null, action: (PointerEvent.Release, IntOffset) -> Unit): Modifier
 ```
 
 ### `onScroll`
@@ -247,6 +258,7 @@ fun Modifier.onRelease(callback: (PointerEvent.Release, IntOffset) -> InputResul
 ```kotlin
 fun Modifier.onScroll(action: () -> Unit): Modifier
 fun Modifier.onScroll(callback: (PointerEvent.Scroll, IntOffset) -> InputResult): Modifier
+fun Modifier.onScroll(propagation: InputResult, action: (PointerEvent.Scroll, IntOffset) -> Unit): Modifier
 ```
 
 ### `onSelectionChange`
@@ -265,6 +277,7 @@ fun Modifier.onSliderChange(action: (Double) -> Unit): Modifier
 
 ```kotlin
 fun Modifier.onTextInput(callback: (TextInputEvent) -> InputResult): Modifier
+fun Modifier.onTextInput(propagation: InputResult, action: (TextInputEvent) -> Unit): Modifier
 ```
 
 ### `onTrailingItemsRequested`
@@ -428,6 +441,7 @@ Opaque platform draws require unit scale and exact integer translation and fail 
 - Put images on `imageBackground` when they paint a container; use `Image` when the image is itself a logical child.
 - Put reusable actions on modifiers. `Button`, `Tab`, `Checkbox`, `CycleButton`, `Slider`, and list components keep application callbacks out of their component signatures.
 - Use `onActivate(enabled)` for an action shared by primary pointer and focused Enter or Space input; use `onPress` only when the action is pointer-specific.
+- For Paper or Velocity notifications, choose typed input overloads with explicit local `propagation` and optional key/button filters; event-dependent synchronous results require a client implementation. See the [remote input contract](https://github.com/sya-ri/strata/blob/master/docs/reference/remote-protocol.md#editing-and-local-behavior).
 
 ## State and binding signatures
 

@@ -81,6 +81,7 @@ $scaleToFitGuidance
 - Put images on `imageBackground` when they paint a container; use `Image` when the image is itself a logical child.
 - Put reusable actions on modifiers. `Button`, `Tab`, `Checkbox`, `CycleButton`, `Slider`, and list components keep application callbacks out of their component signatures.
 - Use `onActivate(enabled)` for an action shared by primary pointer and focused Enter or Space input; use `onPress` only when the action is pointer-specific.
+- For Paper or Velocity notifications, choose typed input overloads with explicit local `propagation` and optional key/button filters; event-dependent synchronous results require a client implementation. See the [remote input contract](https://github.com/sya-ri/strata/blob/master/docs/reference/remote-protocol.md#editing-and-local-behavior).
 
 ## State and binding signatures
 
