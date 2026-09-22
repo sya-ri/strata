@@ -140,7 +140,7 @@ internal class MinecraftImageTest {
         val host =
             createMinecraftUiHost(
                 ScreenDefinition("Deferred resource images") {
-                    val runtime = activeComponentRuntime()
+                    val runtime = ComponentRuntimeBridge.current()
                     evaluator = runtime.retainEvaluator()
                     resourceImages = captureResourceImages(runtime)
                     Stack(modifier = Modifier.Empty.imageBackground(ImageSource.Resource(firstId))) {
@@ -281,7 +281,7 @@ internal class MinecraftImageTest {
             createMinecraftUiHost(
                 ScreenDefinition("Owner-thread resource image") {
                     val background = Modifier.Empty.imageBackground(source)
-                    val runtime = activeComponentRuntime()
+                    val runtime = ComponentRuntimeBridge.current()
                     val task =
                         FutureTask<Throwable?> {
                             runCatching {
@@ -322,7 +322,7 @@ internal class MinecraftImageTest {
         val host =
             createMinecraftUiHost(
                 ScreenDefinition("Failed resource image content") {
-                    val runtime = activeComponentRuntime()
+                    val runtime = ComponentRuntimeBridge.current()
                     evaluator = runtime.retainEvaluator()
                     resourceImages = captureResourceImages(runtime)
                     Image(source, IntSize(2, 2))
@@ -561,11 +561,6 @@ internal class MinecraftImageTest {
         )
 
     private fun solidImage(color: Int): DrawImage = createDrawImage(IntSize(2, 2), IntArray(4) { color })
-
-    private fun activeComponentRuntime(): ComponentRuntime {
-        val current = ComponentRuntimeBridge::class.java.declaredMethods.single { method -> method.name.startsWith("current$") }
-        return current.invoke(ComponentRuntimeBridge) as ComponentRuntime
-    }
 
     private fun captureResourceImages(runtime: ComponentRuntime): Any {
         val field = runtime.javaClass.getDeclaredField("resourceImages")

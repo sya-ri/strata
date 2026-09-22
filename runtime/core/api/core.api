@@ -281,6 +281,20 @@ public final class dev/s7a/strata/runtime/semantics/SemanticsEntry {
 	public fun toString ()Ljava/lang/String;
 }
 
+public final class dev/s7a/strata/runtime/spi/RuntimeDeclaration {
+	public final fun getChildren ()Ljava/util/List;
+	public final fun getElement ()Ldev/s7a/strata/element/Element;
+	public final fun getIdentity ()J
+	public final fun getModifiers ()Ljava/util/List;
+	public final fun getProjection ()Ldev/s7a/strata/projection/DeclarationProjection;
+}
+
+public final class dev/s7a/strata/runtime/spi/RuntimeDeclaration$Modifier {
+	public final fun getElement ()Ldev/s7a/strata/modifier/ModifierElement;
+	public final fun getIdentity ()J
+	public final fun getProjection ()Ldev/s7a/strata/projection/DeclarationProjection;
+}
+
 public final class dev/s7a/strata/runtime/spi/RuntimeTextInputFocus {
 }
 
@@ -298,12 +312,14 @@ public abstract interface class dev/s7a/strata/runtime/spi/RuntimeUiSession : de
 	public abstract fun attach ()V
 	public abstract fun close ()V
 	public abstract fun detach ()V
+	public abstract fun dispatchAction (Lkotlin/jvm/functions/Function0;)V
 	public abstract fun dispatchKeyboard (Ldev/s7a/strata/input/KeyboardEvent;)Ldev/s7a/strata/input/InputResult;
 	public abstract fun dispatchPointer (Ldev/s7a/strata/input/PointerEvent;)Ldev/s7a/strata/input/InputResult;
 	public abstract fun dispatchTextInput (Ldev/s7a/strata/input/TextInputEvent;)Ldev/s7a/strata/input/InputResult;
 	public abstract fun frame (Ldev/s7a/strata/geometry/Constraints;)Ldev/s7a/strata/runtime/spi/RuntimeUiFrame;
 	public abstract fun frame (Ldev/s7a/strata/geometry/Constraints;Ldev/s7a/strata/runtime/FrameTime;)Ldev/s7a/strata/runtime/spi/RuntimeUiFrame;
 	public abstract fun getTextInputFocus ()Ldev/s7a/strata/runtime/spi/RuntimeTextInputFocus;
+	public abstract fun projectDeclarations (Lkotlin/jvm/functions/Function1;)Ljava/lang/Object;
 	public abstract fun resetInputState ()V
 }
 

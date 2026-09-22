@@ -12,6 +12,9 @@ import dev.s7a.strata.node.DirtyMask
 import dev.s7a.strata.node.DirtyPhase
 import dev.s7a.strata.node.LayoutNode
 import dev.s7a.strata.node.MeasureNode
+import dev.s7a.strata.projection.BuiltinProjection
+import dev.s7a.strata.projection.DeclarationProjection
+import dev.s7a.strata.projection.ProjectionValue
 import dev.s7a.strata.node.Node as RetainedNode
 
 /**
@@ -37,6 +40,8 @@ internal class StackElement(
         children = children,
         modifier = modifier,
     ) {
+    override val projection: DeclarationProjection<*> get() = BuiltinProjection.Stack.properties(ProjectionValue.Integer(contentAlignment.ordinal.toLong()))
+
     /**
      * Retained node that measures every child and places each child in the stack.
      *

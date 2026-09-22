@@ -29,6 +29,7 @@ public final class FabricMinecraftCanvasHooks {
     public static void beginShutdown() {
         RenderSystem.assertOnRenderThread();
         shutdownStarted = true;
+        FabricRemoteScreens.INSTANCE.shutdown();
     }
 
     /**

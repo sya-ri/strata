@@ -1,8 +1,12 @@
 package dev.s7a.strata.component
 
 import dev.s7a.strata.geometry.IntRect
+import dev.s7a.strata.geometry.IntSize
 import dev.s7a.strata.internal.platform.currentThread
 import dev.s7a.strata.internal.platform.synchronized
+import dev.s7a.strata.projection.BuiltinProjection
+import dev.s7a.strata.projection.DeclarationProjection
+import dev.s7a.strata.projection.ProjectionValue
 import dev.s7a.strata.render.DrawImage
 import dev.s7a.strata.render.PaintScope
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
@@ -43,6 +47,21 @@ internal class CpuCanvasSource(
         private var frameCaptured: Boolean = false
         private var closed: Boolean = false
         private var closeAction: (() -> Unit)? = null
+
+        override fun project(destinationSize: IntSize): DeclarationProjection<*> {
+            checkOwner()
+            val snapshot = checkNotNull(committed) { "An inactive canvas binding cannot project." }
+            return DeclarationProjection(BuiltinProjection.CanvasPixels.type, snapshot) { frame, scope ->
+                ProjectionValue.Sequence(
+                    listOf(
+                        ProjectionValue.Integer(destinationSize.width.toLong()),
+                        ProjectionValue.Integer(destinationSize.height.toLong()),
+                        ProjectionValue.Integer(frame.revision.value),
+                        scope.image(frame.value),
+                    ),
+                )
+            }
+        }
 
         /**
          * Acquires one source-owned observation and transfers its initial snapshot on the owner thread.

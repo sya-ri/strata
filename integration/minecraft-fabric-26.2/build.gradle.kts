@@ -147,6 +147,9 @@ extensions.configure<SourceSetContainer> {
 
 extensions.configure<KotlinJvmProjectExtension> {
     sourceSets.named("gametest") {
+        kotlin.srcDir(rootProject.file("integration/minecraft-fabric-paper-unobfuscated/src/gametest/kotlin"))
+        kotlin.srcDir(rootProject.file("examples/paper/src/main/kotlin"))
+        kotlin.exclude("**/PaperDemoPlugin.kt", "**/PaperDemoScreens.kt")
         kotlin.srcDir(sharedGameTest.resolve("kotlin"))
         kotlin.srcDir(fontParityGameTest.resolve("kotlin"))
         kotlin.srcDir(nativeFontParityGameTest.resolve("kotlin"))
@@ -155,12 +158,23 @@ extensions.configure<KotlinJvmProjectExtension> {
 }
 
 extensions.configure<DetektExtension> {
-    source.from(layout.projectDirectory.dir("src/gametest/kotlin"))
+    source.from(layout.projectDirectory.dir("src/gametest/kotlin"), rootProject.file("integration/minecraft-fabric-paper-unobfuscated/src/gametest/kotlin"))
 }
 
 val gametestSourceSet = extensions.getByType<SourceSetContainer>().named("gametest")
 
 loom {
+    runs.register("manualPaperIme") {
+        client()
+        sourceSet.set("gametest")
+        runDirectory.set(layout.buildDirectory.dir("manual-paper-ime-client"))
+        generateRunConfig.set(false)
+        systemProperties.put("strata.paper.ime.manual", "true")
+        systemProperties.put("strata.paper.ime.output", layout.buildDirectory.dir("manual-paper-ime-evidence").get().asFile.absolutePath)
+        providers.gradleProperty("strata.paper.address").orNull?.let { systemProperties.put("strata.paper.address", it) }
+        providers.gradleProperty("strata.paper.run").orNull?.let { systemProperties.put("strata.paper.run", it) }
+        programArguments.addAll("--width", "960", "--height", "540")
+    }
     runs.register("manualIme") {
         client()
         sourceSet.set("gametest")
@@ -183,6 +197,17 @@ tasks.named<JavaExec>("runManualIme") {
         check(0 < checkNotNull(proof.getProperty("updates")?.toIntOrNull()))
     }
 }
+tasks.named<JavaExec>("runManualPaperIme") {
+    description = "Opens the real Paper remote editor for OS IME verification with normal native input callbacks."
+    doLast {
+        val receipt = layout.buildDirectory.file("manual-paper-ime-evidence/manual-client.properties").get().asFile
+        check(receipt.isFile) { "The manual remote IME fixture did not complete." }
+        val proof = Properties().apply { receipt.reader(Charsets.UTF_8).use(::load) }
+        check(proof.getProperty("runId") == providers.gradleProperty("strata.paper.run").get()) { "The manual remote IME receipt belongs to another invocation." }
+        check(proof.getProperty("input") == "OS-keyboard-only" && proof.getProperty("editorIdentity") == "retained")
+        check(1 < checkNotNull(proof.getProperty("updates")?.toIntOrNull()))
+    }
+}
 tasks.named<ProcessResources>("processGametestResources") {
     from(sharedGameTest.resolve("resources")) {
         exclude("fabric.mod.json")
@@ -191,7 +216,7 @@ tasks.named<ProcessResources>("processGametestResources") {
         into("assets/strata_font_test/font")
     }
     val gameTestEntrypoint = "dev.s7a.strata.integration.minecraft.fabric.StrataMinecraftCanvasTerminalClientGameTest"
-    val gameTestMixins = listOf("strata.canvas.tests.mixins.json", "strata.canvas.terminal.tests.mixins.json")
+    val gameTestMixins = listOf("strata.canvas.tests.mixins.json", "strata.canvas.terminal.tests.mixins.json", "strata.remote.tests.mixins.json")
     inputs.property("version", project.version)
     inputs.property("minecraftVersion", libs.versions.minecraft262)
     inputs.property("integrationModId", "strata-integration-minecraft-fabric-26-2")
@@ -216,6 +241,7 @@ dependencies {
     implementation(libs.fabric.api262)
     add("gametestImplementation", files(runtimeFabricMain.map { sourceSet -> sourceSet.output }))
     add("gametestImplementation", project(":runtime:headless"))
+    add("gametestImplementation", project(":runtime:remote"))
     add("gametestImplementation", project(":runtime:minecraft"))
     add("gametestImplementation", project(":runtime:minecraft-fonts-lwjgl"))
     add("gametestRuntimeOnly", libs.fabric.language.kotlin)
@@ -295,6 +321,10 @@ val runProductionClientGameTest = tasks.register<ClientProductionRunTask>("runPr
     programArgs.addAll(showcaseClientIdentityArguments)
     programArgs.addAll(canvasBackend.map { backend -> listOf("--graphicsBackend", backend.argument) }.orElse(emptyList<String>()))
     jvmArgs.add("-Dfabric.client.gametest")
+    providers.gradleProperty("strata.paper.address").orNull?.let {
+        jvmArgs.add("-Dstrata.paper.address=$it")
+    }
+    providers.gradleProperty("strata.paper.run").orNull?.let { jvmArgs.add("-Dstrata.paper.run=$it") }
     jvmArgs.addAll(canvasBackend.map { backend -> listOf("-Dstrata.canvas.expectedBackend=${backend.argument}") }.orElse(emptyList<String>()))
     val verificationOutput = layout.buildDirectory.dir(
         canvasScope.map { scope ->
@@ -350,6 +380,10 @@ tasks.matching { task -> task.name == "koverGenerateArtifact" }.configureEach {
 }
 
 tasks.named<JavaExec>("runClientGameTest") {
+    providers.gradleProperty("strata.paper.address").orNull?.let {
+        systemProperty("strata.paper.address", it)
+    }
+    providers.gradleProperty("strata.paper.run").orNull?.let { systemProperty("strata.paper.run", it) }
     val parityOutput = layout.buildDirectory.dir(
         canvasScope.map { scope ->
             when (scope) {

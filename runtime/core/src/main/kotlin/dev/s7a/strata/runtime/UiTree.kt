@@ -7,12 +7,14 @@ import dev.s7a.strata.input.InputResult
 import dev.s7a.strata.input.KeyboardEvent
 import dev.s7a.strata.input.PointerEvent
 import dev.s7a.strata.input.TextInputEvent
+import dev.s7a.strata.node.DeclarationProjectionNode
 import dev.s7a.strata.node.StateObserverNode
 import dev.s7a.strata.runtime.diagnostics.UiRenderMetric
 import dev.s7a.strata.runtime.diagnostics.UiRenderMonitor
 import dev.s7a.strata.runtime.diagnostics.UiRenderOperation
 import dev.s7a.strata.runtime.render.DrawCommand
 import dev.s7a.strata.runtime.semantics.SemanticsEntry
+import dev.s7a.strata.runtime.spi.RuntimeDeclaration
 import dev.s7a.strata.runtime.spi.RuntimeTextInputFocus
 import dev.s7a.strata.runtime.spi.RuntimeUiDiagnosticsOwner
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
@@ -71,6 +73,35 @@ public class UiTree :
     private var currentState: TreeState = TreeState.Active
     private var root: RetainedNode? = null
     private var operationActive: Boolean = false
+    private var nextDeclarationId: Long = 1L
+
+    /**
+     * Projects reconciled declarations without executing measurement, layout, paint, or semantics.
+     */
+    internal fun <T> projectDeclarations(project: (RuntimeDeclaration) -> T): T =
+        pipelineOperation {
+            val retained = checkNotNull(root) { "Declaration projection requires an attached root." }
+            reconciler.refreshProjectedChildren(retained, validator)
+            lifecycle.attachPending(retained)
+            project(declaration(retained))
+        }
+
+    private fun declaration(entry: RetainedNode): RuntimeDeclaration =
+        RuntimeDeclaration(
+            declarationId(entry),
+            entry.element,
+            (entry.node as? DeclarationProjectionNode)?.declarationProjection ?: entry.element.projection,
+            entry.modifiers.map { modifier -> RuntimeDeclaration.Modifier(declarationId(modifier), modifier.element, (modifier.node as? DeclarationProjectionNode)?.declarationProjection ?: modifier.element.projection) },
+            entry.children.map(::declaration),
+        )
+
+    private fun declarationId(entry: RetainedEntry): Long {
+        if (entry.declarationId == 0L) {
+            check(nextDeclarationId < Long.MAX_VALUE) { "Declaration identity space is exhausted." }
+            entry.declarationId = nextDeclarationId++
+        }
+        return entry.declarationId
+    }
 
     @InternalStrataRuntimeApi
     override fun startRenderMonitoring(): UiRenderMonitor = startMonitoring { }

@@ -8,12 +8,14 @@ import dev.s7a.strata.geometry.Constraints
 import dev.s7a.strata.geometry.IntSize
 import dev.s7a.strata.layout.MeasureScope
 import dev.s7a.strata.modifier.Modifier
+import dev.s7a.strata.node.DeclarationProjectionNode
 import dev.s7a.strata.node.DirtyMask
 import dev.s7a.strata.node.DirtyPhase
 import dev.s7a.strata.node.FrameCutoffNode
 import dev.s7a.strata.node.MeasureNode
 import dev.s7a.strata.node.PaintNode
 import dev.s7a.strata.node.SessionAttachmentNode
+import dev.s7a.strata.projection.DeclarationProjection
 import dev.s7a.strata.render.PaintScope
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
 import kotlin.concurrent.atomics.AtomicLong
@@ -51,9 +53,13 @@ internal class CanvasElement(
         MeasureNode,
         PaintNode,
         FrameCutoffNode,
+        DeclarationProjectionNode,
         SessionAttachmentNode {
         private var active: Boolean = false
         private var binding: CanvasBinding? = null
+
+        override val declarationProjection: DeclarationProjection<*>?
+            get() = binding?.project(destinationSize)
 
         override fun attach() {
             sessionAttached()

@@ -23,8 +23,4 @@ public fun Modifier.onDrag(callback: (PointerEvent.Drag, IntOffset) -> InputResu
  * @return this chain with one appended non-consuming drag handler.
  * @throws Throwable when [action] fails during dispatch.
  */
-public fun Modifier.onDrag(action: () -> Unit): Modifier =
-    onDrag { _, _ ->
-        action()
-        InputResult.Ignored
-    }
+public fun Modifier.onDrag(action: () -> Unit): Modifier = onDrag(InputResult.Ignored) { _, _ -> action() }

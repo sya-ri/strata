@@ -201,6 +201,61 @@ final enum class dev.s7a.strata.node/DirtyPhase : kotlin/Enum<dev.s7a.strata.nod
     final fun values(): kotlin/Array<dev.s7a.strata.node/DirtyPhase> // dev.s7a.strata.node/DirtyPhase.values|values#static(){}[0]
 }
 
+final enum class dev.s7a.strata.projection/BuiltinProjection : kotlin/Enum<dev.s7a.strata.projection/BuiltinProjection> { // dev.s7a.strata.projection/BuiltinProjection|null[0]
+    enum entry Background // dev.s7a.strata.projection/BuiltinProjection.Background|null[0]
+    enum entry CanvasPixels // dev.s7a.strata.projection/BuiltinProjection.CanvasPixels|null[0]
+    enum entry CharacterInput // dev.s7a.strata.projection/BuiltinProjection.CharacterInput|null[0]
+    enum entry Column // dev.s7a.strata.projection/BuiltinProjection.Column|null[0]
+    enum entry ColumnAlignment // dev.s7a.strata.projection/BuiltinProjection.ColumnAlignment|null[0]
+    enum entry ComponentAction // dev.s7a.strata.projection/BuiltinProjection.ComponentAction|null[0]
+    enum entry FlowRow // dev.s7a.strata.projection/BuiltinProjection.FlowRow|null[0]
+    enum entry FocusChanged // dev.s7a.strata.projection/BuiltinProjection.FocusChanged|null[0]
+    enum entry Focusable // dev.s7a.strata.projection/BuiltinProjection.Focusable|null[0]
+    enum entry Grid // dev.s7a.strata.projection/BuiltinProjection.Grid|null[0]
+    enum entry Hover // dev.s7a.strata.projection/BuiltinProjection.Hover|null[0]
+    enum entry InitialFocus // dev.s7a.strata.projection/BuiltinProjection.InitialFocus|null[0]
+    enum entry KeyPress // dev.s7a.strata.projection/BuiltinProjection.KeyPress|null[0]
+    enum entry KeyRelease // dev.s7a.strata.projection/BuiltinProjection.KeyRelease|null[0]
+    enum entry KeyboardEvents // dev.s7a.strata.projection/BuiltinProjection.KeyboardEvents|null[0]
+    enum entry Observe // dev.s7a.strata.projection/BuiltinProjection.Observe|null[0]
+    enum entry ObservedActivation // dev.s7a.strata.projection/BuiltinProjection.ObservedActivation|null[0]
+    enum entry Padding // dev.s7a.strata.projection/BuiltinProjection.Padding|null[0]
+    enum entry PanZoom // dev.s7a.strata.projection/BuiltinProjection.PanZoom|null[0]
+    enum entry PointerCapture // dev.s7a.strata.projection/BuiltinProjection.PointerCapture|null[0]
+    enum entry PointerDrag // dev.s7a.strata.projection/BuiltinProjection.PointerDrag|null[0]
+    enum entry PointerEvents // dev.s7a.strata.projection/BuiltinProjection.PointerEvents|null[0]
+    enum entry PointerMove // dev.s7a.strata.projection/BuiltinProjection.PointerMove|null[0]
+    enum entry PointerPress // dev.s7a.strata.projection/BuiltinProjection.PointerPress|null[0]
+    enum entry PointerRelease // dev.s7a.strata.projection/BuiltinProjection.PointerRelease|null[0]
+    enum entry PointerScroll // dev.s7a.strata.projection/BuiltinProjection.PointerScroll|null[0]
+    enum entry PreeditInput // dev.s7a.strata.projection/BuiltinProjection.PreeditInput|null[0]
+    enum entry Row // dev.s7a.strata.projection/BuiltinProjection.Row|null[0]
+    enum entry RowAlignment // dev.s7a.strata.projection/BuiltinProjection.RowAlignment|null[0]
+    enum entry ScaleToFit // dev.s7a.strata.projection/BuiltinProjection.ScaleToFit|null[0]
+    enum entry ScrollPosition // dev.s7a.strata.projection/BuiltinProjection.ScrollPosition|null[0]
+    enum entry Semantics // dev.s7a.strata.projection/BuiltinProjection.Semantics|null[0]
+    enum entry Size // dev.s7a.strata.projection/BuiltinProjection.Size|null[0]
+    enum entry Spacer // dev.s7a.strata.projection/BuiltinProjection.Spacer|null[0]
+    enum entry Stack // dev.s7a.strata.projection/BuiltinProjection.Stack|null[0]
+    enum entry StackAlignment // dev.s7a.strata.projection/BuiltinProjection.StackAlignment|null[0]
+    enum entry StateComponent // dev.s7a.strata.projection/BuiltinProjection.StateComponent|null[0]
+    enum entry TextInput // dev.s7a.strata.projection/BuiltinProjection.TextInput|null[0]
+    enum entry TiledImage // dev.s7a.strata.projection/BuiltinProjection.TiledImage|null[0]
+    enum entry TiledImageLayer // dev.s7a.strata.projection/BuiltinProjection.TiledImageLayer|null[0]
+    enum entry TiledImagePosition // dev.s7a.strata.projection/BuiltinProjection.TiledImagePosition|null[0]
+    enum entry VirtualList // dev.s7a.strata.projection/BuiltinProjection.VirtualList|null[0]
+    enum entry Weight // dev.s7a.strata.projection/BuiltinProjection.Weight|null[0]
+
+    final val entries // dev.s7a.strata.projection/BuiltinProjection.entries|#static{}entries[0]
+        final fun <get-entries>(): kotlin.enums/EnumEntries<dev.s7a.strata.projection/BuiltinProjection> // dev.s7a.strata.projection/BuiltinProjection.entries.<get-entries>|<get-entries>#static(){}[0]
+    final val type // dev.s7a.strata.projection/BuiltinProjection.type|{}type[0]
+        final fun <get-type>(): dev.s7a.strata.projection/ProjectionType // dev.s7a.strata.projection/BuiltinProjection.type.<get-type>|<get-type>(){}[0]
+
+    final fun properties(kotlin/Array<out dev.s7a.strata.projection/ProjectionValue>...): dev.s7a.strata.projection/DeclarationProjection<dev.s7a.strata.projection/ProjectionValue.Sequence> // dev.s7a.strata.projection/BuiltinProjection.properties|properties(kotlin.Array<out|dev.s7a.strata.projection.ProjectionValue>...){}[0]
+    final fun valueOf(kotlin/String): dev.s7a.strata.projection/BuiltinProjection // dev.s7a.strata.projection/BuiltinProjection.valueOf|valueOf#static(kotlin.String){}[0]
+    final fun values(): kotlin/Array<dev.s7a.strata.projection/BuiltinProjection> // dev.s7a.strata.projection/BuiltinProjection.values|values#static(){}[0]
+}
+
 final enum class dev.s7a.strata.render/SampledImageOrientation : kotlin/Enum<dev.s7a.strata.render/SampledImageOrientation> { // dev.s7a.strata.render/SampledImageOrientation|null[0]
     enum entry FlipBoth // dev.s7a.strata.render/SampledImageOrientation.FlipBoth|null[0]
     enum entry FlipHorizontal // dev.s7a.strata.render/SampledImageOrientation.FlipHorizontal|null[0]
@@ -289,6 +344,7 @@ abstract interface dev.s7a.strata.component/CanvasBinding : kotlin/AutoCloseable
     abstract fun paint(dev.s7a.strata.render/PaintScope) // dev.s7a.strata.component/CanvasBinding.paint|paint(dev.s7a.strata.render.PaintScope){}[0]
     open fun captureFrame() // dev.s7a.strata.component/CanvasBinding.captureFrame|captureFrame(){}[0]
     open fun commitFrame(): kotlin/Boolean // dev.s7a.strata.component/CanvasBinding.commitFrame|commitFrame(){}[0]
+    open fun project(dev.s7a.strata.geometry/IntSize): dev.s7a.strata.projection/DeclarationProjection<*>? // dev.s7a.strata.component/CanvasBinding.project|project(dev.s7a.strata.geometry.IntSize){}[0]
 }
 
 abstract interface dev.s7a.strata.component/TiledImageSource { // dev.s7a.strata.component/TiledImageSource|null[0]
@@ -324,6 +380,8 @@ abstract interface dev.s7a.strata.layout/ParentDataScope { // dev.s7a.strata.lay
 abstract interface dev.s7a.strata.modifier/ModifierElement { // dev.s7a.strata.modifier/ModifierElement|null[0]
     abstract val type // dev.s7a.strata.modifier/ModifierElement.type|{}type[0]
         abstract fun <get-type>(): dev.s7a.strata.modifier/ModifierNodeType<*, *> // dev.s7a.strata.modifier/ModifierElement.type.<get-type>|<get-type>(){}[0]
+    open val projection // dev.s7a.strata.modifier/ModifierElement.projection|{}projection[0]
+        open fun <get-projection>(): dev.s7a.strata.projection/DeclarationProjection<*>? // dev.s7a.strata.modifier/ModifierElement.projection.<get-projection>|<get-projection>(){}[0]
 }
 
 abstract interface dev.s7a.strata.node/ChildTransformNode { // dev.s7a.strata.node/ChildTransformNode|null[0]
@@ -336,6 +394,13 @@ abstract interface dev.s7a.strata.node/ContentWorkNode { // dev.s7a.strata.node/
     abstract var contentWorkObserver // dev.s7a.strata.node/ContentWorkNode.contentWorkObserver|{}contentWorkObserver[0]
         abstract fun <get-contentWorkObserver>(): kotlin/Function1<dev.s7a.strata.node/ContentWork, kotlin/Unit>? // dev.s7a.strata.node/ContentWorkNode.contentWorkObserver.<get-contentWorkObserver>|<get-contentWorkObserver>(){}[0]
         abstract fun <set-contentWorkObserver>(kotlin/Function1<dev.s7a.strata.node/ContentWork, kotlin/Unit>?) // dev.s7a.strata.node/ContentWorkNode.contentWorkObserver.<set-contentWorkObserver>|<set-contentWorkObserver>(kotlin.Function1<dev.s7a.strata.node.ContentWork,kotlin.Unit>?){}[0]
+}
+
+abstract interface dev.s7a.strata.node/DeclarationProjectionNode { // dev.s7a.strata.node/DeclarationProjectionNode|null[0]
+    abstract val declarationProjection // dev.s7a.strata.node/DeclarationProjectionNode.declarationProjection|{}declarationProjection[0]
+        abstract fun <get-declarationProjection>(): dev.s7a.strata.projection/DeclarationProjection<*>? // dev.s7a.strata.node/DeclarationProjectionNode.declarationProjection.<get-declarationProjection>|<get-declarationProjection>(){}[0]
+
+    open fun prepareDeclaration() // dev.s7a.strata.node/DeclarationProjectionNode.prepareDeclaration|prepareDeclaration(){}[0]
 }
 
 abstract interface dev.s7a.strata.node/DeferredContentNode : dev.s7a.strata.node/DynamicChildrenNode { // dev.s7a.strata.node/DeferredContentNode|null[0]
@@ -433,6 +498,14 @@ abstract interface dev.s7a.strata.node/TextInputNode { // dev.s7a.strata.node/Te
     abstract fun onTextInput(dev.s7a.strata.input/TextInputEvent): dev.s7a.strata.input/InputResult // dev.s7a.strata.node/TextInputNode.onTextInput|onTextInput(dev.s7a.strata.input.TextInputEvent){}[0]
 }
 
+abstract interface dev.s7a.strata.projection/ProjectionScope { // dev.s7a.strata.projection/ProjectionScope|null[0]
+    abstract fun <#A1: kotlin/Any> binding(dev.s7a.strata.projection/ProjectionBinding<#A1>): dev.s7a.strata.projection/ProjectionValue // dev.s7a.strata.projection/ProjectionScope.binding|binding(dev.s7a.strata.projection.ProjectionBinding<0:0>){0§<kotlin.Any>}[0]
+    abstract fun action(dev.s7a.strata.projection/ProjectionAction<*>, dev.s7a.strata.projection/ProjectionValue = ...): kotlin/Long // dev.s7a.strata.projection/ProjectionScope.action|action(dev.s7a.strata.projection.ProjectionAction<*>;dev.s7a.strata.projection.ProjectionValue){}[0]
+    abstract fun image(dev.s7a.strata.render/DrawImage): dev.s7a.strata.projection/ProjectionValue // dev.s7a.strata.projection/ProjectionScope.image|image(dev.s7a.strata.render.DrawImage){}[0]
+    abstract fun requireType(dev.s7a.strata.projection/ProjectionType) // dev.s7a.strata.projection/ProjectionScope.requireType|requireType(dev.s7a.strata.projection.ProjectionType){}[0]
+    abstract fun text(dev.s7a.strata.text/UiText): dev.s7a.strata.projection/ProjectionValue // dev.s7a.strata.projection/ProjectionScope.text|text(dev.s7a.strata.text.UiText){}[0]
+}
+
 abstract interface dev.s7a.strata.render/PaintScope { // dev.s7a.strata.render/PaintScope|null[0]
     abstract val size // dev.s7a.strata.render/PaintScope.size|{}size[0]
         abstract fun <get-size>(): dev.s7a.strata.geometry/IntSize // dev.s7a.strata.render/PaintScope.size.<get-size>|<get-size>(){}[0]
@@ -453,61 +526,94 @@ abstract interface dev.s7a.strata.render/RootOverlayPaintScope : dev.s7a.strata.
 }
 
 abstract interface dev.s7a.strata.semantics/SemanticsRole { // dev.s7a.strata.semantics/SemanticsRole|null[0]
+    open val projectionType // dev.s7a.strata.semantics/SemanticsRole.projectionType|{}projectionType[0]
+        open fun <get-projectionType>(): dev.s7a.strata.projection/ProjectionType? // dev.s7a.strata.semantics/SemanticsRole.projectionType.<get-projectionType>|<get-projectionType>(){}[0]
+
     final object Button : dev.s7a.strata.semantics/SemanticsRole { // dev.s7a.strata.semantics/SemanticsRole.Button|null[0]
+        final val projectionType // dev.s7a.strata.semantics/SemanticsRole.Button.projectionType|{}projectionType[0]
+            final fun <get-projectionType>(): dev.s7a.strata.projection/ProjectionType // dev.s7a.strata.semantics/SemanticsRole.Button.projectionType.<get-projectionType>|<get-projectionType>(){}[0]
+
         final fun equals(kotlin/Any?): kotlin/Boolean // dev.s7a.strata.semantics/SemanticsRole.Button.equals|equals(kotlin.Any?){}[0]
         final fun hashCode(): kotlin/Int // dev.s7a.strata.semantics/SemanticsRole.Button.hashCode|hashCode(){}[0]
         final fun toString(): kotlin/String // dev.s7a.strata.semantics/SemanticsRole.Button.toString|toString(){}[0]
     }
 
     final object Checkbox : dev.s7a.strata.semantics/SemanticsRole { // dev.s7a.strata.semantics/SemanticsRole.Checkbox|null[0]
+        final val projectionType // dev.s7a.strata.semantics/SemanticsRole.Checkbox.projectionType|{}projectionType[0]
+            final fun <get-projectionType>(): dev.s7a.strata.projection/ProjectionType // dev.s7a.strata.semantics/SemanticsRole.Checkbox.projectionType.<get-projectionType>|<get-projectionType>(){}[0]
+
         final fun equals(kotlin/Any?): kotlin/Boolean // dev.s7a.strata.semantics/SemanticsRole.Checkbox.equals|equals(kotlin.Any?){}[0]
         final fun hashCode(): kotlin/Int // dev.s7a.strata.semantics/SemanticsRole.Checkbox.hashCode|hashCode(){}[0]
         final fun toString(): kotlin/String // dev.s7a.strata.semantics/SemanticsRole.Checkbox.toString|toString(){}[0]
     }
 
     final object CycleButton : dev.s7a.strata.semantics/SemanticsRole { // dev.s7a.strata.semantics/SemanticsRole.CycleButton|null[0]
+        final val projectionType // dev.s7a.strata.semantics/SemanticsRole.CycleButton.projectionType|{}projectionType[0]
+            final fun <get-projectionType>(): dev.s7a.strata.projection/ProjectionType // dev.s7a.strata.semantics/SemanticsRole.CycleButton.projectionType.<get-projectionType>|<get-projectionType>(){}[0]
+
         final fun equals(kotlin/Any?): kotlin/Boolean // dev.s7a.strata.semantics/SemanticsRole.CycleButton.equals|equals(kotlin.Any?){}[0]
         final fun hashCode(): kotlin/Int // dev.s7a.strata.semantics/SemanticsRole.CycleButton.hashCode|hashCode(){}[0]
         final fun toString(): kotlin/String // dev.s7a.strata.semantics/SemanticsRole.CycleButton.toString|toString(){}[0]
     }
 
     final object ProgressBar : dev.s7a.strata.semantics/SemanticsRole { // dev.s7a.strata.semantics/SemanticsRole.ProgressBar|null[0]
+        final val projectionType // dev.s7a.strata.semantics/SemanticsRole.ProgressBar.projectionType|{}projectionType[0]
+            final fun <get-projectionType>(): dev.s7a.strata.projection/ProjectionType // dev.s7a.strata.semantics/SemanticsRole.ProgressBar.projectionType.<get-projectionType>|<get-projectionType>(){}[0]
+
         final fun equals(kotlin/Any?): kotlin/Boolean // dev.s7a.strata.semantics/SemanticsRole.ProgressBar.equals|equals(kotlin.Any?){}[0]
         final fun hashCode(): kotlin/Int // dev.s7a.strata.semantics/SemanticsRole.ProgressBar.hashCode|hashCode(){}[0]
         final fun toString(): kotlin/String // dev.s7a.strata.semantics/SemanticsRole.ProgressBar.toString|toString(){}[0]
     }
 
     final object SelectionList : dev.s7a.strata.semantics/SemanticsRole { // dev.s7a.strata.semantics/SemanticsRole.SelectionList|null[0]
+        final val projectionType // dev.s7a.strata.semantics/SemanticsRole.SelectionList.projectionType|{}projectionType[0]
+            final fun <get-projectionType>(): dev.s7a.strata.projection/ProjectionType // dev.s7a.strata.semantics/SemanticsRole.SelectionList.projectionType.<get-projectionType>|<get-projectionType>(){}[0]
+
         final fun equals(kotlin/Any?): kotlin/Boolean // dev.s7a.strata.semantics/SemanticsRole.SelectionList.equals|equals(kotlin.Any?){}[0]
         final fun hashCode(): kotlin/Int // dev.s7a.strata.semantics/SemanticsRole.SelectionList.hashCode|hashCode(){}[0]
         final fun toString(): kotlin/String // dev.s7a.strata.semantics/SemanticsRole.SelectionList.toString|toString(){}[0]
     }
 
     final object Slider : dev.s7a.strata.semantics/SemanticsRole { // dev.s7a.strata.semantics/SemanticsRole.Slider|null[0]
+        final val projectionType // dev.s7a.strata.semantics/SemanticsRole.Slider.projectionType|{}projectionType[0]
+            final fun <get-projectionType>(): dev.s7a.strata.projection/ProjectionType // dev.s7a.strata.semantics/SemanticsRole.Slider.projectionType.<get-projectionType>|<get-projectionType>(){}[0]
+
         final fun equals(kotlin/Any?): kotlin/Boolean // dev.s7a.strata.semantics/SemanticsRole.Slider.equals|equals(kotlin.Any?){}[0]
         final fun hashCode(): kotlin/Int // dev.s7a.strata.semantics/SemanticsRole.Slider.hashCode|hashCode(){}[0]
         final fun toString(): kotlin/String // dev.s7a.strata.semantics/SemanticsRole.Slider.toString|toString(){}[0]
     }
 
     final object Tab : dev.s7a.strata.semantics/SemanticsRole { // dev.s7a.strata.semantics/SemanticsRole.Tab|null[0]
+        final val projectionType // dev.s7a.strata.semantics/SemanticsRole.Tab.projectionType|{}projectionType[0]
+            final fun <get-projectionType>(): dev.s7a.strata.projection/ProjectionType // dev.s7a.strata.semantics/SemanticsRole.Tab.projectionType.<get-projectionType>|<get-projectionType>(){}[0]
+
         final fun equals(kotlin/Any?): kotlin/Boolean // dev.s7a.strata.semantics/SemanticsRole.Tab.equals|equals(kotlin.Any?){}[0]
         final fun hashCode(): kotlin/Int // dev.s7a.strata.semantics/SemanticsRole.Tab.hashCode|hashCode(){}[0]
         final fun toString(): kotlin/String // dev.s7a.strata.semantics/SemanticsRole.Tab.toString|toString(){}[0]
     }
 
     final object Text : dev.s7a.strata.semantics/SemanticsRole { // dev.s7a.strata.semantics/SemanticsRole.Text|null[0]
+        final val projectionType // dev.s7a.strata.semantics/SemanticsRole.Text.projectionType|{}projectionType[0]
+            final fun <get-projectionType>(): dev.s7a.strata.projection/ProjectionType // dev.s7a.strata.semantics/SemanticsRole.Text.projectionType.<get-projectionType>|<get-projectionType>(){}[0]
+
         final fun equals(kotlin/Any?): kotlin/Boolean // dev.s7a.strata.semantics/SemanticsRole.Text.equals|equals(kotlin.Any?){}[0]
         final fun hashCode(): kotlin/Int // dev.s7a.strata.semantics/SemanticsRole.Text.hashCode|hashCode(){}[0]
         final fun toString(): kotlin/String // dev.s7a.strata.semantics/SemanticsRole.Text.toString|toString(){}[0]
     }
 
     final object TextArea : dev.s7a.strata.semantics/SemanticsRole { // dev.s7a.strata.semantics/SemanticsRole.TextArea|null[0]
+        final val projectionType // dev.s7a.strata.semantics/SemanticsRole.TextArea.projectionType|{}projectionType[0]
+            final fun <get-projectionType>(): dev.s7a.strata.projection/ProjectionType // dev.s7a.strata.semantics/SemanticsRole.TextArea.projectionType.<get-projectionType>|<get-projectionType>(){}[0]
+
         final fun equals(kotlin/Any?): kotlin/Boolean // dev.s7a.strata.semantics/SemanticsRole.TextArea.equals|equals(kotlin.Any?){}[0]
         final fun hashCode(): kotlin/Int // dev.s7a.strata.semantics/SemanticsRole.TextArea.hashCode|hashCode(){}[0]
         final fun toString(): kotlin/String // dev.s7a.strata.semantics/SemanticsRole.TextArea.toString|toString(){}[0]
     }
 
     final object TextField : dev.s7a.strata.semantics/SemanticsRole { // dev.s7a.strata.semantics/SemanticsRole.TextField|null[0]
+        final val projectionType // dev.s7a.strata.semantics/SemanticsRole.TextField.projectionType|{}projectionType[0]
+            final fun <get-projectionType>(): dev.s7a.strata.projection/ProjectionType // dev.s7a.strata.semantics/SemanticsRole.TextField.projectionType.<get-projectionType>|<get-projectionType>(){}[0]
+
         final fun equals(kotlin/Any?): kotlin/Boolean // dev.s7a.strata.semantics/SemanticsRole.TextField.equals|equals(kotlin.Any?){}[0]
         final fun hashCode(): kotlin/Int // dev.s7a.strata.semantics/SemanticsRole.TextField.hashCode|hashCode(){}[0]
         final fun toString(): kotlin/String // dev.s7a.strata.semantics/SemanticsRole.TextField.toString|toString(){}[0]
@@ -991,6 +1097,87 @@ sealed interface dev.s7a.strata.input/TextInputEvent { // dev.s7a.strata.input/T
     }
 }
 
+sealed interface dev.s7a.strata.projection/ProjectionValue { // dev.s7a.strata.projection/ProjectionValue|null[0]
+    final class Bytes : dev.s7a.strata.projection/ProjectionValue { // dev.s7a.strata.projection/ProjectionValue.Bytes|null[0]
+        constructor <init>(kotlin/ByteArray) // dev.s7a.strata.projection/ProjectionValue.Bytes.<init>|<init>(kotlin.ByteArray){}[0]
+
+        final val size // dev.s7a.strata.projection/ProjectionValue.Bytes.size|{}size[0]
+            final fun <get-size>(): kotlin/Int // dev.s7a.strata.projection/ProjectionValue.Bytes.size.<get-size>|<get-size>(){}[0]
+
+        final fun equals(kotlin/Any?): kotlin/Boolean // dev.s7a.strata.projection/ProjectionValue.Bytes.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // dev.s7a.strata.projection/ProjectionValue.Bytes.hashCode|hashCode(){}[0]
+        final fun toByteArray(): kotlin/ByteArray // dev.s7a.strata.projection/ProjectionValue.Bytes.toByteArray|toByteArray(){}[0]
+    }
+
+    final class Flag : dev.s7a.strata.projection/ProjectionValue { // dev.s7a.strata.projection/ProjectionValue.Flag|null[0]
+        constructor <init>(kotlin/Boolean) // dev.s7a.strata.projection/ProjectionValue.Flag.<init>|<init>(kotlin.Boolean){}[0]
+
+        final val value // dev.s7a.strata.projection/ProjectionValue.Flag.value|{}value[0]
+            final fun <get-value>(): kotlin/Boolean // dev.s7a.strata.projection/ProjectionValue.Flag.value.<get-value>|<get-value>(){}[0]
+
+        final fun component1(): kotlin/Boolean // dev.s7a.strata.projection/ProjectionValue.Flag.component1|component1(){}[0]
+        final fun copy(kotlin/Boolean = ...): dev.s7a.strata.projection/ProjectionValue.Flag // dev.s7a.strata.projection/ProjectionValue.Flag.copy|copy(kotlin.Boolean){}[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // dev.s7a.strata.projection/ProjectionValue.Flag.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // dev.s7a.strata.projection/ProjectionValue.Flag.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // dev.s7a.strata.projection/ProjectionValue.Flag.toString|toString(){}[0]
+    }
+
+    final class Integer : dev.s7a.strata.projection/ProjectionValue { // dev.s7a.strata.projection/ProjectionValue.Integer|null[0]
+        constructor <init>(kotlin/Long) // dev.s7a.strata.projection/ProjectionValue.Integer.<init>|<init>(kotlin.Long){}[0]
+
+        final val value // dev.s7a.strata.projection/ProjectionValue.Integer.value|{}value[0]
+            final fun <get-value>(): kotlin/Long // dev.s7a.strata.projection/ProjectionValue.Integer.value.<get-value>|<get-value>(){}[0]
+
+        final fun component1(): kotlin/Long // dev.s7a.strata.projection/ProjectionValue.Integer.component1|component1(){}[0]
+        final fun copy(kotlin/Long = ...): dev.s7a.strata.projection/ProjectionValue.Integer // dev.s7a.strata.projection/ProjectionValue.Integer.copy|copy(kotlin.Long){}[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // dev.s7a.strata.projection/ProjectionValue.Integer.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // dev.s7a.strata.projection/ProjectionValue.Integer.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // dev.s7a.strata.projection/ProjectionValue.Integer.toString|toString(){}[0]
+    }
+
+    final class Real : dev.s7a.strata.projection/ProjectionValue { // dev.s7a.strata.projection/ProjectionValue.Real|null[0]
+        constructor <init>(kotlin/Double) // dev.s7a.strata.projection/ProjectionValue.Real.<init>|<init>(kotlin.Double){}[0]
+
+        final val value // dev.s7a.strata.projection/ProjectionValue.Real.value|{}value[0]
+            final fun <get-value>(): kotlin/Double // dev.s7a.strata.projection/ProjectionValue.Real.value.<get-value>|<get-value>(){}[0]
+
+        final fun component1(): kotlin/Double // dev.s7a.strata.projection/ProjectionValue.Real.component1|component1(){}[0]
+        final fun copy(kotlin/Double = ...): dev.s7a.strata.projection/ProjectionValue.Real // dev.s7a.strata.projection/ProjectionValue.Real.copy|copy(kotlin.Double){}[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // dev.s7a.strata.projection/ProjectionValue.Real.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // dev.s7a.strata.projection/ProjectionValue.Real.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // dev.s7a.strata.projection/ProjectionValue.Real.toString|toString(){}[0]
+    }
+
+    final class Sequence : dev.s7a.strata.projection/ProjectionValue { // dev.s7a.strata.projection/ProjectionValue.Sequence|null[0]
+        constructor <init>(kotlin.collections/List<dev.s7a.strata.projection/ProjectionValue>) // dev.s7a.strata.projection/ProjectionValue.Sequence.<init>|<init>(kotlin.collections.List<dev.s7a.strata.projection.ProjectionValue>){}[0]
+
+        final val values // dev.s7a.strata.projection/ProjectionValue.Sequence.values|{}values[0]
+            final fun <get-values>(): kotlin.collections/List<dev.s7a.strata.projection/ProjectionValue> // dev.s7a.strata.projection/ProjectionValue.Sequence.values.<get-values>|<get-values>(){}[0]
+
+        final fun equals(kotlin/Any?): kotlin/Boolean // dev.s7a.strata.projection/ProjectionValue.Sequence.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // dev.s7a.strata.projection/ProjectionValue.Sequence.hashCode|hashCode(){}[0]
+    }
+
+    final class Text : dev.s7a.strata.projection/ProjectionValue { // dev.s7a.strata.projection/ProjectionValue.Text|null[0]
+        constructor <init>(kotlin/String) // dev.s7a.strata.projection/ProjectionValue.Text.<init>|<init>(kotlin.String){}[0]
+
+        final val value // dev.s7a.strata.projection/ProjectionValue.Text.value|{}value[0]
+            final fun <get-value>(): kotlin/String // dev.s7a.strata.projection/ProjectionValue.Text.value.<get-value>|<get-value>(){}[0]
+
+        final fun component1(): kotlin/String // dev.s7a.strata.projection/ProjectionValue.Text.component1|component1(){}[0]
+        final fun copy(kotlin/String = ...): dev.s7a.strata.projection/ProjectionValue.Text // dev.s7a.strata.projection/ProjectionValue.Text.copy|copy(kotlin.String){}[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // dev.s7a.strata.projection/ProjectionValue.Text.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // dev.s7a.strata.projection/ProjectionValue.Text.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // dev.s7a.strata.projection/ProjectionValue.Text.toString|toString(){}[0]
+    }
+
+    final object Absent : dev.s7a.strata.projection/ProjectionValue { // dev.s7a.strata.projection/ProjectionValue.Absent|null[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // dev.s7a.strata.projection/ProjectionValue.Absent.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // dev.s7a.strata.projection/ProjectionValue.Absent.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // dev.s7a.strata.projection/ProjectionValue.Absent.toString|toString(){}[0]
+    }
+}
+
 sealed interface dev.s7a.strata.render/DrawImage { // dev.s7a.strata.render/DrawImage|null[0]
     abstract val size // dev.s7a.strata.render/DrawImage.size|{}size[0]
         abstract fun <get-size>(): dev.s7a.strata.geometry/IntSize // dev.s7a.strata.render/DrawImage.size.<get-size>|<get-size>(){}[0]
@@ -1231,6 +1418,8 @@ abstract class dev.s7a.strata.element/Element { // dev.s7a.strata.element/Elemen
         final fun <get-modifier>(): dev.s7a.strata.modifier/Modifier // dev.s7a.strata.element/Element.modifier.<get-modifier>|<get-modifier>(){}[0]
     final val type // dev.s7a.strata.element/Element.type|{}type[0]
         final fun <get-type>(): dev.s7a.strata.element/ElementType<*, *> // dev.s7a.strata.element/Element.type.<get-type>|<get-type>(){}[0]
+    open val projection // dev.s7a.strata.element/Element.projection|{}projection[0]
+        open fun <get-projection>(): dev.s7a.strata.projection/DeclarationProjection<*>? // dev.s7a.strata.element/Element.projection.<get-projection>|<get-projection>(){}[0]
 }
 
 abstract class dev.s7a.strata.node/ModifierNode : dev.s7a.strata.node/LayoutNode, dev.s7a.strata.node/MeasureNode, dev.s7a.strata.node/Node { // dev.s7a.strata.node/ModifierNode|null[0]
@@ -1334,6 +1523,44 @@ final class <#A: kotlin/Any> dev.s7a.strata.layout/ParentDataKey { // dev.s7a.st
     constructor <init>(kotlin.reflect/KClass<#A>) // dev.s7a.strata.layout/ParentDataKey.<init>|<init>(kotlin.reflect.KClass<1:0>){}[0]
 
     final fun castErased(kotlin/Any): #A // dev.s7a.strata.layout/ParentDataKey.castErased|castErased(kotlin.Any){}[0]
+}
+
+final class <#A: kotlin/Any> dev.s7a.strata.projection/ProjectionAction { // dev.s7a.strata.projection/ProjectionAction|null[0]
+    constructor <init>(dev.s7a.strata.projection/ProjectionType, kotlin/Function1<dev.s7a.strata.projection/ProjectionValue, #A>, kotlin/Function1<#A, kotlin/Unit>) // dev.s7a.strata.projection/ProjectionAction.<init>|<init>(dev.s7a.strata.projection.ProjectionType;kotlin.Function1<dev.s7a.strata.projection.ProjectionValue,1:0>;kotlin.Function1<1:0,kotlin.Unit>){}[0]
+
+    final val type // dev.s7a.strata.projection/ProjectionAction.type|{}type[0]
+        final fun <get-type>(): dev.s7a.strata.projection/ProjectionType // dev.s7a.strata.projection/ProjectionAction.type.<get-type>|<get-type>(){}[0]
+
+    final fun dispatch(dev.s7a.strata.projection/ProjectionValue) // dev.s7a.strata.projection/ProjectionAction.dispatch|dispatch(dev.s7a.strata.projection.ProjectionValue){}[0]
+    final fun prepare(dev.s7a.strata.projection/ProjectionValue): kotlin/Function0<kotlin/Unit> // dev.s7a.strata.projection/ProjectionAction.prepare|prepare(dev.s7a.strata.projection.ProjectionValue){}[0]
+}
+
+final class <#A: kotlin/Any> dev.s7a.strata.projection/ProjectionBinding { // dev.s7a.strata.projection/ProjectionBinding|null[0]
+    constructor <init>(dev.s7a.strata.projection/ProjectionType, kotlin/Any, kotlin/Function0<#A>, kotlin/Function1<#A, dev.s7a.strata.projection/ProjectionValue>, kotlin/Function1<dev.s7a.strata.projection/ProjectionValue, #A>, kotlin/Function1<#A, kotlin/Unit>) // dev.s7a.strata.projection/ProjectionBinding.<init>|<init>(dev.s7a.strata.projection.ProjectionType;kotlin.Any;kotlin.Function0<1:0>;kotlin.Function1<1:0,dev.s7a.strata.projection.ProjectionValue>;kotlin.Function1<dev.s7a.strata.projection.ProjectionValue,1:0>;kotlin.Function1<1:0,kotlin.Unit>){}[0]
+
+    final val decode // dev.s7a.strata.projection/ProjectionBinding.decode|{}decode[0]
+        final fun <get-decode>(): kotlin/Function1<dev.s7a.strata.projection/ProjectionValue, #A> // dev.s7a.strata.projection/ProjectionBinding.decode.<get-decode>|<get-decode>(){}[0]
+    final val encode // dev.s7a.strata.projection/ProjectionBinding.encode|{}encode[0]
+        final fun <get-encode>(): kotlin/Function1<#A, dev.s7a.strata.projection/ProjectionValue> // dev.s7a.strata.projection/ProjectionBinding.encode.<get-encode>|<get-encode>(){}[0]
+    final val identity // dev.s7a.strata.projection/ProjectionBinding.identity|{}identity[0]
+        final fun <get-identity>(): kotlin/Any // dev.s7a.strata.projection/ProjectionBinding.identity.<get-identity>|<get-identity>(){}[0]
+    final val read // dev.s7a.strata.projection/ProjectionBinding.read|{}read[0]
+        final fun <get-read>(): kotlin/Function0<#A> // dev.s7a.strata.projection/ProjectionBinding.read.<get-read>|<get-read>(){}[0]
+    final val type // dev.s7a.strata.projection/ProjectionBinding.type|{}type[0]
+        final fun <get-type>(): dev.s7a.strata.projection/ProjectionType // dev.s7a.strata.projection/ProjectionBinding.type.<get-type>|<get-type>(){}[0]
+    final val write // dev.s7a.strata.projection/ProjectionBinding.write|{}write[0]
+        final fun <get-write>(): kotlin/Function1<#A, kotlin/Unit> // dev.s7a.strata.projection/ProjectionBinding.write.<get-write>|<get-write>(){}[0]
+}
+
+final class <#A: kotlin/Any?> dev.s7a.strata.projection/DeclarationProjection { // dev.s7a.strata.projection/DeclarationProjection|null[0]
+    constructor <init>(dev.s7a.strata.projection/ProjectionType, #A, kotlin/Boolean = ..., kotlin/Function2<#A, dev.s7a.strata.projection/ProjectionScope, dev.s7a.strata.projection/ProjectionValue>) // dev.s7a.strata.projection/DeclarationProjection.<init>|<init>(dev.s7a.strata.projection.ProjectionType;1:0;kotlin.Boolean;kotlin.Function2<1:0,dev.s7a.strata.projection.ProjectionScope,dev.s7a.strata.projection.ProjectionValue>){}[0]
+
+    final val inputEnabled // dev.s7a.strata.projection/DeclarationProjection.inputEnabled|{}inputEnabled[0]
+        final fun <get-inputEnabled>(): kotlin/Boolean // dev.s7a.strata.projection/DeclarationProjection.inputEnabled.<get-inputEnabled>|<get-inputEnabled>(){}[0]
+    final val type // dev.s7a.strata.projection/DeclarationProjection.type|{}type[0]
+        final fun <get-type>(): dev.s7a.strata.projection/ProjectionType // dev.s7a.strata.projection/DeclarationProjection.type.<get-type>|<get-type>(){}[0]
+
+    final fun encode(dev.s7a.strata.projection/ProjectionScope): dev.s7a.strata.projection/ProjectionValue // dev.s7a.strata.projection/DeclarationProjection.encode|encode(dev.s7a.strata.projection.ProjectionScope){}[0]
 }
 
 final class <#A: kotlin/Any?> dev.s7a.strata.state/MutableState : dev.s7a.strata.state/State<#A> { // dev.s7a.strata.state/MutableState|null[0]
@@ -1877,6 +2104,19 @@ final class dev.s7a.strata.input/KeyCode { // dev.s7a.strata.input/KeyCode|null[
     }
 }
 
+final class dev.s7a.strata.input/KeyboardInputFilter { // dev.s7a.strata.input/KeyboardInputFilter|null[0]
+    constructor <init>(kotlin.collections/Set<dev.s7a.strata.input/KeyCode> = ..., dev.s7a.strata.input/KeyboardModifiers? = ...) // dev.s7a.strata.input/KeyboardInputFilter.<init>|<init>(kotlin.collections.Set<dev.s7a.strata.input.KeyCode>;dev.s7a.strata.input.KeyboardModifiers?){}[0]
+
+    final val keys // dev.s7a.strata.input/KeyboardInputFilter.keys|{}keys[0]
+        final fun <get-keys>(): kotlin.collections/Set<dev.s7a.strata.input/KeyCode> // dev.s7a.strata.input/KeyboardInputFilter.keys.<get-keys>|<get-keys>(){}[0]
+    final val modifiers // dev.s7a.strata.input/KeyboardInputFilter.modifiers|{}modifiers[0]
+        final fun <get-modifiers>(): dev.s7a.strata.input/KeyboardModifiers? // dev.s7a.strata.input/KeyboardInputFilter.modifiers.<get-modifiers>|<get-modifiers>(){}[0]
+
+    final fun equals(kotlin/Any?): kotlin/Boolean // dev.s7a.strata.input/KeyboardInputFilter.equals|equals(kotlin.Any?){}[0]
+    final fun hashCode(): kotlin/Int // dev.s7a.strata.input/KeyboardInputFilter.hashCode|hashCode(){}[0]
+    final fun matches(dev.s7a.strata.input/KeyboardEvent): kotlin/Boolean // dev.s7a.strata.input/KeyboardInputFilter.matches|matches(dev.s7a.strata.input.KeyboardEvent){}[0]
+}
+
 final class dev.s7a.strata.input/KeyboardModifiers { // dev.s7a.strata.input/KeyboardModifiers|null[0]
     constructor <init>(kotlin/Boolean = ..., kotlin/Boolean = ..., kotlin/Boolean = ..., kotlin/Boolean = ..., kotlin/Boolean = ..., kotlin/Boolean = ...) // dev.s7a.strata.input/KeyboardModifiers.<init>|<init>(kotlin.Boolean;kotlin.Boolean;kotlin.Boolean;kotlin.Boolean;kotlin.Boolean;kotlin.Boolean){}[0]
 
@@ -1938,6 +2178,35 @@ final class dev.s7a.strata.node/ChildTransform { // dev.s7a.strata.node/ChildTra
         final val Identity // dev.s7a.strata.node/ChildTransform.Companion.Identity|{}Identity[0]
             final fun <get-Identity>(): dev.s7a.strata.node/ChildTransform // dev.s7a.strata.node/ChildTransform.Companion.Identity.<get-Identity>|<get-Identity>(){}[0]
     }
+}
+
+final class dev.s7a.strata.projection/ProjectionFields { // dev.s7a.strata.projection/ProjectionFields|null[0]
+    constructor <init>(dev.s7a.strata.projection/ProjectionValue) // dev.s7a.strata.projection/ProjectionFields.<init>|<init>(dev.s7a.strata.projection.ProjectionValue){}[0]
+
+    final fun finish() // dev.s7a.strata.projection/ProjectionFields.finish|finish(){}[0]
+    final fun flag(): kotlin/Boolean // dev.s7a.strata.projection/ProjectionFields.flag|flag(){}[0]
+    final fun int(kotlin.ranges/IntRange = ...): kotlin/Int // dev.s7a.strata.projection/ProjectionFields.int|int(kotlin.ranges.IntRange){}[0]
+    final fun long(): kotlin/Long // dev.s7a.strata.projection/ProjectionFields.long|long(){}[0]
+    final fun real(): kotlin/Double // dev.s7a.strata.projection/ProjectionFields.real|real(){}[0]
+    final fun text(): kotlin/String // dev.s7a.strata.projection/ProjectionFields.text|text(){}[0]
+    final fun value(): dev.s7a.strata.projection/ProjectionValue // dev.s7a.strata.projection/ProjectionFields.value|value(){}[0]
+    final fun values(): kotlin.collections/List<dev.s7a.strata.projection/ProjectionValue> // dev.s7a.strata.projection/ProjectionFields.values|values(){}[0]
+}
+
+final class dev.s7a.strata.projection/ProjectionType { // dev.s7a.strata.projection/ProjectionType|null[0]
+    constructor <init>(dev.s7a.strata.resource/ResourceId, kotlin/Int = ...) // dev.s7a.strata.projection/ProjectionType.<init>|<init>(dev.s7a.strata.resource.ResourceId;kotlin.Int){}[0]
+
+    final val name // dev.s7a.strata.projection/ProjectionType.name|{}name[0]
+        final fun <get-name>(): dev.s7a.strata.resource/ResourceId // dev.s7a.strata.projection/ProjectionType.name.<get-name>|<get-name>(){}[0]
+    final val version // dev.s7a.strata.projection/ProjectionType.version|{}version[0]
+        final fun <get-version>(): kotlin/Int // dev.s7a.strata.projection/ProjectionType.version.<get-version>|<get-version>(){}[0]
+
+    final fun component1(): dev.s7a.strata.resource/ResourceId // dev.s7a.strata.projection/ProjectionType.component1|component1(){}[0]
+    final fun component2(): kotlin/Int // dev.s7a.strata.projection/ProjectionType.component2|component2(){}[0]
+    final fun copy(dev.s7a.strata.resource/ResourceId = ..., kotlin/Int = ...): dev.s7a.strata.projection/ProjectionType // dev.s7a.strata.projection/ProjectionType.copy|copy(dev.s7a.strata.resource.ResourceId;kotlin.Int){}[0]
+    final fun equals(kotlin/Any?): kotlin/Boolean // dev.s7a.strata.projection/ProjectionType.equals|equals(kotlin.Any?){}[0]
+    final fun hashCode(): kotlin/Int // dev.s7a.strata.projection/ProjectionType.hashCode|hashCode(){}[0]
+    final fun toString(): kotlin/String // dev.s7a.strata.projection/ProjectionType.toString|toString(){}[0]
 }
 
 final class dev.s7a.strata.resource/ResourceId { // dev.s7a.strata.resource/ResourceId|null[0]
@@ -2139,11 +2408,39 @@ final object dev.s7a.strata.component/Slots { // dev.s7a.strata.component/Slots|
     final fun playerInventory(kotlin/Int): dev.s7a.strata.component/SlotBinding // dev.s7a.strata.component/Slots.playerInventory|playerInventory(kotlin.Int){}[0]
 }
 
+final object dev.s7a.strata.projection/ProjectionInputCodec { // dev.s7a.strata.projection/ProjectionInputCodec|null[0]
+    final fun button(dev.s7a.strata.input/PointerButton): dev.s7a.strata.projection/ProjectionValue // dev.s7a.strata.projection/ProjectionInputCodec.button|button(dev.s7a.strata.input.PointerButton){}[0]
+    final fun button(dev.s7a.strata.projection/ProjectionValue): dev.s7a.strata.input/PointerButton // dev.s7a.strata.projection/ProjectionInputCodec.button|button(dev.s7a.strata.projection.ProjectionValue){}[0]
+    final fun filter(dev.s7a.strata.input/KeyboardInputFilter): dev.s7a.strata.projection/ProjectionValue // dev.s7a.strata.projection/ProjectionInputCodec.filter|filter(dev.s7a.strata.input.KeyboardInputFilter){}[0]
+    final fun filter(dev.s7a.strata.projection/ProjectionValue): dev.s7a.strata.input/KeyboardInputFilter // dev.s7a.strata.projection/ProjectionInputCodec.filter|filter(dev.s7a.strata.projection.ProjectionValue){}[0]
+    final fun keyboard(dev.s7a.strata.input/KeyboardEvent): dev.s7a.strata.projection/ProjectionValue // dev.s7a.strata.projection/ProjectionInputCodec.keyboard|keyboard(dev.s7a.strata.input.KeyboardEvent){}[0]
+    final fun keyboard(dev.s7a.strata.projection/ProjectionValue): dev.s7a.strata.input/KeyboardEvent // dev.s7a.strata.projection/ProjectionInputCodec.keyboard|keyboard(dev.s7a.strata.projection.ProjectionValue){}[0]
+    final fun pointer(dev.s7a.strata.input/PointerEvent, dev.s7a.strata.geometry/IntOffset): dev.s7a.strata.projection/ProjectionValue // dev.s7a.strata.projection/ProjectionInputCodec.pointer|pointer(dev.s7a.strata.input.PointerEvent;dev.s7a.strata.geometry.IntOffset){}[0]
+    final fun pointer(dev.s7a.strata.projection/ProjectionValue): kotlin/Pair<dev.s7a.strata.input/PointerEvent, dev.s7a.strata.geometry/IntOffset> // dev.s7a.strata.projection/ProjectionInputCodec.pointer|pointer(dev.s7a.strata.projection.ProjectionValue){}[0]
+    final fun text(dev.s7a.strata.input/TextInputEvent): dev.s7a.strata.projection/ProjectionValue // dev.s7a.strata.projection/ProjectionInputCodec.text|text(dev.s7a.strata.input.TextInputEvent){}[0]
+    final fun text(dev.s7a.strata.projection/ProjectionValue): dev.s7a.strata.input/TextInputEvent // dev.s7a.strata.projection/ProjectionInputCodec.text|text(dev.s7a.strata.projection.ProjectionValue){}[0]
+}
+
+final object dev.s7a.strata.projection/ProjectionScrollBinding { // dev.s7a.strata.projection/ProjectionScrollBinding|null[0]
+    final fun project(dev.s7a.strata.projection/ProjectionScope, dev.s7a.strata.component/ScrollState, kotlin/Function1<kotlin/Double, kotlin/Unit> = ...): dev.s7a.strata.projection/ProjectionValue // dev.s7a.strata.projection/ProjectionScrollBinding.project|project(dev.s7a.strata.projection.ProjectionScope;dev.s7a.strata.component.ScrollState;kotlin.Function1<kotlin.Double,kotlin.Unit>){}[0]
+}
+
+final object dev.s7a.strata.projection/StandardModifierProjections { // dev.s7a.strata.projection/StandardModifierProjections|null[0]
+    final fun register(kotlin/Function2<dev.s7a.strata.projection/ProjectionType, kotlin/Function1<dev.s7a.strata.projection/ProjectionValue, dev.s7a.strata.modifier/ModifierElement>, kotlin/Unit>) // dev.s7a.strata.projection/StandardModifierProjections.register|register(kotlin.Function2<dev.s7a.strata.projection.ProjectionType,kotlin.Function1<dev.s7a.strata.projection.ProjectionValue,dev.s7a.strata.modifier.ModifierElement>,kotlin.Unit>){}[0]
+}
+
+final object dev.s7a.strata.projection/StandardTiledImageProjections { // dev.s7a.strata.projection/StandardTiledImageProjections|null[0]
+    final fun layer(dev.s7a.strata.component/TiledImageSource, dev.s7a.strata.component/PanZoomState, dev.s7a.strata.geometry/IntSize, dev.s7a.strata.component/TiledImageCachePolicy): dev.s7a.strata.element/Element // dev.s7a.strata.projection/StandardTiledImageProjections.layer|layer(dev.s7a.strata.component.TiledImageSource;dev.s7a.strata.component.PanZoomState;dev.s7a.strata.geometry.IntSize;dev.s7a.strata.component.TiledImageCachePolicy){}[0]
+    final fun validate(dev.s7a.strata.geometry/LongRect, kotlin.collections/List<dev.s7a.strata.component/TiledImageLevel>, dev.s7a.strata.geometry/IntSize) // dev.s7a.strata.projection/StandardTiledImageProjections.validate|validate(dev.s7a.strata.geometry.LongRect;kotlin.collections.List<dev.s7a.strata.component.TiledImageLevel>;dev.s7a.strata.geometry.IntSize){}[0]
+    final fun viewport(kotlin/Any, dev.s7a.strata.geometry/LongRect, kotlin.collections/List<dev.s7a.strata.component/TiledImageLevel>, dev.s7a.strata.component/PanZoomState, dev.s7a.strata.geometry/IntSize, dev.s7a.strata.component/PanZoomFit, dev.s7a.strata.modifier/Modifier, dev.s7a.strata.element/ElementKey<*>?, kotlin.collections/List<dev.s7a.strata.element/Element>): dev.s7a.strata.element/Element // dev.s7a.strata.projection/StandardTiledImageProjections.viewport|viewport(kotlin.Any;dev.s7a.strata.geometry.LongRect;kotlin.collections.List<dev.s7a.strata.component.TiledImageLevel>;dev.s7a.strata.component.PanZoomState;dev.s7a.strata.geometry.IntSize;dev.s7a.strata.component.PanZoomFit;dev.s7a.strata.modifier.Modifier;dev.s7a.strata.element.ElementKey<*>?;kotlin.collections.List<dev.s7a.strata.element.Element>){}[0]
+}
+
 final object dev.s7a.strata.screen/Screens { // dev.s7a.strata.screen/Screens|null[0]
     final fun open(dev.s7a.strata.screen/ScreenDefinition) // dev.s7a.strata.screen/Screens.open|open(dev.s7a.strata.screen.ScreenDefinition){}[0]
 }
 
 final object dev.s7a.strata.spi/ComponentRuntimeBridge { // dev.s7a.strata.spi/ComponentRuntimeBridge|null[0]
+    final fun current(): dev.s7a.strata.spi/ComponentRuntime // dev.s7a.strata.spi/ComponentRuntimeBridge.current|current(){}[0]
     final fun evaluate(dev.s7a.strata.spi/ComponentRuntime, kotlin/Function1<dev.s7a.strata.component/UiScope, kotlin/Unit>): dev.s7a.strata.element/Element // dev.s7a.strata.spi/ComponentRuntimeBridge.evaluate|evaluate(dev.s7a.strata.spi.ComponentRuntime;kotlin.Function1<dev.s7a.strata.component.UiScope,kotlin.Unit>){}[0]
 }
 
@@ -2270,28 +2567,41 @@ final fun (dev.s7a.strata.modifier/Modifier).dev.s7a.strata.modifier/menuBackgro
 final fun (dev.s7a.strata.modifier/Modifier).dev.s7a.strata.modifier/onActivate(dev.s7a.strata.state/StateSource<kotlin/Boolean>, kotlin/Function0<kotlin/Unit>): dev.s7a.strata.modifier/Modifier // dev.s7a.strata.modifier/onActivate|onActivate@dev.s7a.strata.modifier.Modifier(dev.s7a.strata.state.StateSource<kotlin.Boolean>;kotlin.Function0<kotlin.Unit>){}[0]
 final fun (dev.s7a.strata.modifier/Modifier).dev.s7a.strata.modifier/onActivate(kotlin/Boolean, kotlin/Function0<kotlin/Unit>): dev.s7a.strata.modifier/Modifier // dev.s7a.strata.modifier/onActivate|onActivate@dev.s7a.strata.modifier.Modifier(kotlin.Boolean;kotlin.Function0<kotlin.Unit>){}[0]
 final fun (dev.s7a.strata.modifier/Modifier).dev.s7a.strata.modifier/onActivate(kotlin/Function0<kotlin/Unit>): dev.s7a.strata.modifier/Modifier // dev.s7a.strata.modifier/onActivate|onActivate@dev.s7a.strata.modifier.Modifier(kotlin.Function0<kotlin.Unit>){}[0]
+final fun (dev.s7a.strata.modifier/Modifier).dev.s7a.strata.modifier/onCapturedPointerEvent(dev.s7a.strata.input/PointerButton, kotlin/Function1<dev.s7a.strata.input/PointerButton, kotlin/Unit>, kotlin/Function2<dev.s7a.strata.input/PointerEvent, dev.s7a.strata.geometry/IntOffset, kotlin/Unit>): dev.s7a.strata.modifier/Modifier // dev.s7a.strata.modifier/onCapturedPointerEvent|onCapturedPointerEvent@dev.s7a.strata.modifier.Modifier(dev.s7a.strata.input.PointerButton;kotlin.Function1<dev.s7a.strata.input.PointerButton,kotlin.Unit>;kotlin.Function2<dev.s7a.strata.input.PointerEvent,dev.s7a.strata.geometry.IntOffset,kotlin.Unit>){}[0]
 final fun (dev.s7a.strata.modifier/Modifier).dev.s7a.strata.modifier/onCapturedPointerEvent(kotlin/Function1<dev.s7a.strata.input/PointerButton, kotlin/Unit>, kotlin/Function2<dev.s7a.strata.input/PointerEvent, dev.s7a.strata.geometry/IntOffset, dev.s7a.strata.input/InputResult>): dev.s7a.strata.modifier/Modifier // dev.s7a.strata.modifier/onCapturedPointerEvent|onCapturedPointerEvent@dev.s7a.strata.modifier.Modifier(kotlin.Function1<dev.s7a.strata.input.PointerButton,kotlin.Unit>;kotlin.Function2<dev.s7a.strata.input.PointerEvent,dev.s7a.strata.geometry.IntOffset,dev.s7a.strata.input.InputResult>){}[0]
+final fun (dev.s7a.strata.modifier/Modifier).dev.s7a.strata.modifier/onCharacterInput(dev.s7a.strata.input/InputResult, kotlin/Function1<dev.s7a.strata.input/TextInputEvent.Character, kotlin/Unit>): dev.s7a.strata.modifier/Modifier // dev.s7a.strata.modifier/onCharacterInput|onCharacterInput@dev.s7a.strata.modifier.Modifier(dev.s7a.strata.input.InputResult;kotlin.Function1<dev.s7a.strata.input.TextInputEvent.Character,kotlin.Unit>){}[0]
 final fun (dev.s7a.strata.modifier/Modifier).dev.s7a.strata.modifier/onCharacterInput(kotlin/Function1<dev.s7a.strata.input/TextInputEvent.Character, dev.s7a.strata.input/InputResult>): dev.s7a.strata.modifier/Modifier // dev.s7a.strata.modifier/onCharacterInput|onCharacterInput@dev.s7a.strata.modifier.Modifier(kotlin.Function1<dev.s7a.strata.input.TextInputEvent.Character,dev.s7a.strata.input.InputResult>){}[0]
 final fun (dev.s7a.strata.modifier/Modifier).dev.s7a.strata.modifier/onCheckedChange(kotlin/Function1<kotlin/Boolean, kotlin/Unit>): dev.s7a.strata.modifier/Modifier // dev.s7a.strata.modifier/onCheckedChange|onCheckedChange@dev.s7a.strata.modifier.Modifier(kotlin.Function1<kotlin.Boolean,kotlin.Unit>){}[0]
+final fun (dev.s7a.strata.modifier/Modifier).dev.s7a.strata.modifier/onDrag(dev.s7a.strata.input/InputResult, dev.s7a.strata.input/PointerButton? = ..., kotlin/Function2<dev.s7a.strata.input/PointerEvent.Drag, dev.s7a.strata.geometry/IntOffset, kotlin/Unit>): dev.s7a.strata.modifier/Modifier // dev.s7a.strata.modifier/onDrag|onDrag@dev.s7a.strata.modifier.Modifier(dev.s7a.strata.input.InputResult;dev.s7a.strata.input.PointerButton?;kotlin.Function2<dev.s7a.strata.input.PointerEvent.Drag,dev.s7a.strata.geometry.IntOffset,kotlin.Unit>){}[0]
 final fun (dev.s7a.strata.modifier/Modifier).dev.s7a.strata.modifier/onDrag(kotlin/Function0<kotlin/Unit>): dev.s7a.strata.modifier/Modifier // dev.s7a.strata.modifier/onDrag|onDrag@dev.s7a.strata.modifier.Modifier(kotlin.Function0<kotlin.Unit>){}[0]
 final fun (dev.s7a.strata.modifier/Modifier).dev.s7a.strata.modifier/onDrag(kotlin/Function2<dev.s7a.strata.input/PointerEvent.Drag, dev.s7a.strata.geometry/IntOffset, dev.s7a.strata.input/InputResult>): dev.s7a.strata.modifier/Modifier // dev.s7a.strata.modifier/onDrag|onDrag@dev.s7a.strata.modifier.Modifier(kotlin.Function2<dev.s7a.strata.input.PointerEvent.Drag,dev.s7a.strata.geometry.IntOffset,dev.s7a.strata.input.InputResult>){}[0]
 final fun (dev.s7a.strata.modifier/Modifier).dev.s7a.strata.modifier/onFocusChanged(kotlin/Function1<dev.s7a.strata.input/FocusEvent, kotlin/Unit>): dev.s7a.strata.modifier/Modifier // dev.s7a.strata.modifier/onFocusChanged|onFocusChanged@dev.s7a.strata.modifier.Modifier(kotlin.Function1<dev.s7a.strata.input.FocusEvent,kotlin.Unit>){}[0]
 final fun (dev.s7a.strata.modifier/Modifier).dev.s7a.strata.modifier/onHover(kotlin/Function1<dev.s7a.strata.input/PointerHoverEvent, kotlin/Unit>): dev.s7a.strata.modifier/Modifier // dev.s7a.strata.modifier/onHover|onHover@dev.s7a.strata.modifier.Modifier(kotlin.Function1<dev.s7a.strata.input.PointerHoverEvent,kotlin.Unit>){}[0]
+final fun (dev.s7a.strata.modifier/Modifier).dev.s7a.strata.modifier/onKeyEvent(dev.s7a.strata.input/InputResult, dev.s7a.strata.input/KeyboardInputFilter = ..., kotlin/Function1<dev.s7a.strata.input/KeyboardEvent, kotlin/Unit>): dev.s7a.strata.modifier/Modifier // dev.s7a.strata.modifier/onKeyEvent|onKeyEvent@dev.s7a.strata.modifier.Modifier(dev.s7a.strata.input.InputResult;dev.s7a.strata.input.KeyboardInputFilter;kotlin.Function1<dev.s7a.strata.input.KeyboardEvent,kotlin.Unit>){}[0]
 final fun (dev.s7a.strata.modifier/Modifier).dev.s7a.strata.modifier/onKeyEvent(kotlin/Function1<dev.s7a.strata.input/KeyboardEvent, dev.s7a.strata.input/InputResult>): dev.s7a.strata.modifier/Modifier // dev.s7a.strata.modifier/onKeyEvent|onKeyEvent@dev.s7a.strata.modifier.Modifier(kotlin.Function1<dev.s7a.strata.input.KeyboardEvent,dev.s7a.strata.input.InputResult>){}[0]
+final fun (dev.s7a.strata.modifier/Modifier).dev.s7a.strata.modifier/onKeyPress(dev.s7a.strata.input/InputResult, dev.s7a.strata.input/KeyboardInputFilter = ..., kotlin/Function1<dev.s7a.strata.input/KeyboardEvent.Press, kotlin/Unit>): dev.s7a.strata.modifier/Modifier // dev.s7a.strata.modifier/onKeyPress|onKeyPress@dev.s7a.strata.modifier.Modifier(dev.s7a.strata.input.InputResult;dev.s7a.strata.input.KeyboardInputFilter;kotlin.Function1<dev.s7a.strata.input.KeyboardEvent.Press,kotlin.Unit>){}[0]
 final fun (dev.s7a.strata.modifier/Modifier).dev.s7a.strata.modifier/onKeyPress(kotlin/Function1<dev.s7a.strata.input/KeyboardEvent.Press, dev.s7a.strata.input/InputResult>): dev.s7a.strata.modifier/Modifier // dev.s7a.strata.modifier/onKeyPress|onKeyPress@dev.s7a.strata.modifier.Modifier(kotlin.Function1<dev.s7a.strata.input.KeyboardEvent.Press,dev.s7a.strata.input.InputResult>){}[0]
+final fun (dev.s7a.strata.modifier/Modifier).dev.s7a.strata.modifier/onKeyRelease(dev.s7a.strata.input/InputResult, dev.s7a.strata.input/KeyboardInputFilter = ..., kotlin/Function1<dev.s7a.strata.input/KeyboardEvent.Release, kotlin/Unit>): dev.s7a.strata.modifier/Modifier // dev.s7a.strata.modifier/onKeyRelease|onKeyRelease@dev.s7a.strata.modifier.Modifier(dev.s7a.strata.input.InputResult;dev.s7a.strata.input.KeyboardInputFilter;kotlin.Function1<dev.s7a.strata.input.KeyboardEvent.Release,kotlin.Unit>){}[0]
 final fun (dev.s7a.strata.modifier/Modifier).dev.s7a.strata.modifier/onKeyRelease(kotlin/Function1<dev.s7a.strata.input/KeyboardEvent.Release, dev.s7a.strata.input/InputResult>): dev.s7a.strata.modifier/Modifier // dev.s7a.strata.modifier/onKeyRelease|onKeyRelease@dev.s7a.strata.modifier.Modifier(kotlin.Function1<dev.s7a.strata.input.KeyboardEvent.Release,dev.s7a.strata.input.InputResult>){}[0]
 final fun (dev.s7a.strata.modifier/Modifier).dev.s7a.strata.modifier/onLeadingItemsRequested(kotlin/Function1<dev.s7a.strata.action/ListLoadRequest, kotlin/Unit>): dev.s7a.strata.modifier/Modifier // dev.s7a.strata.modifier/onLeadingItemsRequested|onLeadingItemsRequested@dev.s7a.strata.modifier.Modifier(kotlin.Function1<dev.s7a.strata.action.ListLoadRequest,kotlin.Unit>){}[0]
+final fun (dev.s7a.strata.modifier/Modifier).dev.s7a.strata.modifier/onMove(dev.s7a.strata.input/InputResult, kotlin/Function2<dev.s7a.strata.input/PointerEvent.Move, dev.s7a.strata.geometry/IntOffset, kotlin/Unit>): dev.s7a.strata.modifier/Modifier // dev.s7a.strata.modifier/onMove|onMove@dev.s7a.strata.modifier.Modifier(dev.s7a.strata.input.InputResult;kotlin.Function2<dev.s7a.strata.input.PointerEvent.Move,dev.s7a.strata.geometry.IntOffset,kotlin.Unit>){}[0]
 final fun (dev.s7a.strata.modifier/Modifier).dev.s7a.strata.modifier/onMove(kotlin/Function0<kotlin/Unit>): dev.s7a.strata.modifier/Modifier // dev.s7a.strata.modifier/onMove|onMove@dev.s7a.strata.modifier.Modifier(kotlin.Function0<kotlin.Unit>){}[0]
 final fun (dev.s7a.strata.modifier/Modifier).dev.s7a.strata.modifier/onMove(kotlin/Function2<dev.s7a.strata.input/PointerEvent.Move, dev.s7a.strata.geometry/IntOffset, dev.s7a.strata.input/InputResult>): dev.s7a.strata.modifier/Modifier // dev.s7a.strata.modifier/onMove|onMove@dev.s7a.strata.modifier.Modifier(kotlin.Function2<dev.s7a.strata.input.PointerEvent.Move,dev.s7a.strata.geometry.IntOffset,dev.s7a.strata.input.InputResult>){}[0]
+final fun (dev.s7a.strata.modifier/Modifier).dev.s7a.strata.modifier/onPointerEvent(dev.s7a.strata.input/InputResult, kotlin/Function2<dev.s7a.strata.input/PointerEvent, dev.s7a.strata.geometry/IntOffset, kotlin/Unit>): dev.s7a.strata.modifier/Modifier // dev.s7a.strata.modifier/onPointerEvent|onPointerEvent@dev.s7a.strata.modifier.Modifier(dev.s7a.strata.input.InputResult;kotlin.Function2<dev.s7a.strata.input.PointerEvent,dev.s7a.strata.geometry.IntOffset,kotlin.Unit>){}[0]
 final fun (dev.s7a.strata.modifier/Modifier).dev.s7a.strata.modifier/onPointerEvent(kotlin/Function2<dev.s7a.strata.input/PointerEvent, dev.s7a.strata.geometry/IntOffset, dev.s7a.strata.input/InputResult>): dev.s7a.strata.modifier/Modifier // dev.s7a.strata.modifier/onPointerEvent|onPointerEvent@dev.s7a.strata.modifier.Modifier(kotlin.Function2<dev.s7a.strata.input.PointerEvent,dev.s7a.strata.geometry.IntOffset,dev.s7a.strata.input.InputResult>){}[0]
+final fun (dev.s7a.strata.modifier/Modifier).dev.s7a.strata.modifier/onPreedit(dev.s7a.strata.input/InputResult, kotlin/Function1<dev.s7a.strata.input/TextInputEvent.Preedit, kotlin/Unit>): dev.s7a.strata.modifier/Modifier // dev.s7a.strata.modifier/onPreedit|onPreedit@dev.s7a.strata.modifier.Modifier(dev.s7a.strata.input.InputResult;kotlin.Function1<dev.s7a.strata.input.TextInputEvent.Preedit,kotlin.Unit>){}[0]
 final fun (dev.s7a.strata.modifier/Modifier).dev.s7a.strata.modifier/onPreedit(kotlin/Function1<dev.s7a.strata.input/TextInputEvent.Preedit, dev.s7a.strata.input/InputResult>): dev.s7a.strata.modifier/Modifier // dev.s7a.strata.modifier/onPreedit|onPreedit@dev.s7a.strata.modifier.Modifier(kotlin.Function1<dev.s7a.strata.input.TextInputEvent.Preedit,dev.s7a.strata.input.InputResult>){}[0]
+final fun (dev.s7a.strata.modifier/Modifier).dev.s7a.strata.modifier/onPress(dev.s7a.strata.input/InputResult, dev.s7a.strata.input/PointerButton? = ..., kotlin/Function2<dev.s7a.strata.input/PointerEvent.Press, dev.s7a.strata.geometry/IntOffset, kotlin/Unit>): dev.s7a.strata.modifier/Modifier // dev.s7a.strata.modifier/onPress|onPress@dev.s7a.strata.modifier.Modifier(dev.s7a.strata.input.InputResult;dev.s7a.strata.input.PointerButton?;kotlin.Function2<dev.s7a.strata.input.PointerEvent.Press,dev.s7a.strata.geometry.IntOffset,kotlin.Unit>){}[0]
 final fun (dev.s7a.strata.modifier/Modifier).dev.s7a.strata.modifier/onPress(kotlin/Function0<kotlin/Unit>): dev.s7a.strata.modifier/Modifier // dev.s7a.strata.modifier/onPress|onPress@dev.s7a.strata.modifier.Modifier(kotlin.Function0<kotlin.Unit>){}[0]
 final fun (dev.s7a.strata.modifier/Modifier).dev.s7a.strata.modifier/onPress(kotlin/Function2<dev.s7a.strata.input/PointerEvent.Press, dev.s7a.strata.geometry/IntOffset, dev.s7a.strata.input/InputResult>): dev.s7a.strata.modifier/Modifier // dev.s7a.strata.modifier/onPress|onPress@dev.s7a.strata.modifier.Modifier(kotlin.Function2<dev.s7a.strata.input.PointerEvent.Press,dev.s7a.strata.geometry.IntOffset,dev.s7a.strata.input.InputResult>){}[0]
+final fun (dev.s7a.strata.modifier/Modifier).dev.s7a.strata.modifier/onRelease(dev.s7a.strata.input/InputResult, dev.s7a.strata.input/PointerButton? = ..., kotlin/Function2<dev.s7a.strata.input/PointerEvent.Release, dev.s7a.strata.geometry/IntOffset, kotlin/Unit>): dev.s7a.strata.modifier/Modifier // dev.s7a.strata.modifier/onRelease|onRelease@dev.s7a.strata.modifier.Modifier(dev.s7a.strata.input.InputResult;dev.s7a.strata.input.PointerButton?;kotlin.Function2<dev.s7a.strata.input.PointerEvent.Release,dev.s7a.strata.geometry.IntOffset,kotlin.Unit>){}[0]
 final fun (dev.s7a.strata.modifier/Modifier).dev.s7a.strata.modifier/onRelease(kotlin/Function0<kotlin/Unit>): dev.s7a.strata.modifier/Modifier // dev.s7a.strata.modifier/onRelease|onRelease@dev.s7a.strata.modifier.Modifier(kotlin.Function0<kotlin.Unit>){}[0]
 final fun (dev.s7a.strata.modifier/Modifier).dev.s7a.strata.modifier/onRelease(kotlin/Function2<dev.s7a.strata.input/PointerEvent.Release, dev.s7a.strata.geometry/IntOffset, dev.s7a.strata.input/InputResult>): dev.s7a.strata.modifier/Modifier // dev.s7a.strata.modifier/onRelease|onRelease@dev.s7a.strata.modifier.Modifier(kotlin.Function2<dev.s7a.strata.input.PointerEvent.Release,dev.s7a.strata.geometry.IntOffset,dev.s7a.strata.input.InputResult>){}[0]
+final fun (dev.s7a.strata.modifier/Modifier).dev.s7a.strata.modifier/onScroll(dev.s7a.strata.input/InputResult, kotlin/Function2<dev.s7a.strata.input/PointerEvent.Scroll, dev.s7a.strata.geometry/IntOffset, kotlin/Unit>): dev.s7a.strata.modifier/Modifier // dev.s7a.strata.modifier/onScroll|onScroll@dev.s7a.strata.modifier.Modifier(dev.s7a.strata.input.InputResult;kotlin.Function2<dev.s7a.strata.input.PointerEvent.Scroll,dev.s7a.strata.geometry.IntOffset,kotlin.Unit>){}[0]
 final fun (dev.s7a.strata.modifier/Modifier).dev.s7a.strata.modifier/onScroll(kotlin/Function0<kotlin/Unit>): dev.s7a.strata.modifier/Modifier // dev.s7a.strata.modifier/onScroll|onScroll@dev.s7a.strata.modifier.Modifier(kotlin.Function0<kotlin.Unit>){}[0]
 final fun (dev.s7a.strata.modifier/Modifier).dev.s7a.strata.modifier/onScroll(kotlin/Function2<dev.s7a.strata.input/PointerEvent.Scroll, dev.s7a.strata.geometry/IntOffset, dev.s7a.strata.input/InputResult>): dev.s7a.strata.modifier/Modifier // dev.s7a.strata.modifier/onScroll|onScroll@dev.s7a.strata.modifier.Modifier(kotlin.Function2<dev.s7a.strata.input.PointerEvent.Scroll,dev.s7a.strata.geometry.IntOffset,dev.s7a.strata.input.InputResult>){}[0]
 final fun (dev.s7a.strata.modifier/Modifier).dev.s7a.strata.modifier/onSliderChange(kotlin/Function1<kotlin/Double, kotlin/Unit>): dev.s7a.strata.modifier/Modifier // dev.s7a.strata.modifier/onSliderChange|onSliderChange@dev.s7a.strata.modifier.Modifier(kotlin.Function1<kotlin.Double,kotlin.Unit>){}[0]
+final fun (dev.s7a.strata.modifier/Modifier).dev.s7a.strata.modifier/onTextInput(dev.s7a.strata.input/InputResult, kotlin/Function1<dev.s7a.strata.input/TextInputEvent, kotlin/Unit>): dev.s7a.strata.modifier/Modifier // dev.s7a.strata.modifier/onTextInput|onTextInput@dev.s7a.strata.modifier.Modifier(dev.s7a.strata.input.InputResult;kotlin.Function1<dev.s7a.strata.input.TextInputEvent,kotlin.Unit>){}[0]
 final fun (dev.s7a.strata.modifier/Modifier).dev.s7a.strata.modifier/onTextInput(kotlin/Function1<dev.s7a.strata.input/TextInputEvent, dev.s7a.strata.input/InputResult>): dev.s7a.strata.modifier/Modifier // dev.s7a.strata.modifier/onTextInput|onTextInput@dev.s7a.strata.modifier.Modifier(kotlin.Function1<dev.s7a.strata.input.TextInputEvent,dev.s7a.strata.input.InputResult>){}[0]
 final fun (dev.s7a.strata.modifier/Modifier).dev.s7a.strata.modifier/onTrailingItemsRequested(kotlin/Function1<dev.s7a.strata.action/ListLoadRequest, kotlin/Unit>): dev.s7a.strata.modifier/Modifier // dev.s7a.strata.modifier/onTrailingItemsRequested|onTrailingItemsRequested@dev.s7a.strata.modifier.Modifier(kotlin.Function1<dev.s7a.strata.action.ListLoadRequest,kotlin.Unit>){}[0]
 final fun (dev.s7a.strata.modifier/Modifier).dev.s7a.strata.modifier/padding(dev.s7a.strata.geometry/Insets): dev.s7a.strata.modifier/Modifier // dev.s7a.strata.modifier/padding|padding@dev.s7a.strata.modifier.Modifier(dev.s7a.strata.geometry.Insets){}[0]

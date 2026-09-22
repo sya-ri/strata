@@ -56,6 +56,9 @@ local.properties
 .DS_Store
 Thumbs.db
 
+# Python runner imports
+**/__pycache__/
+
 # Generated reports
 **/reports/
 **/test-results/

@@ -6,6 +6,7 @@ import dev.s7a.strata.element.ElementKey
 import dev.s7a.strata.modifier.ModifierElement
 import dev.s7a.strata.node.ContentInvalidation
 import dev.s7a.strata.node.ContentKind
+import dev.s7a.strata.node.DeclarationProjectionNode
 import dev.s7a.strata.node.DeferredContentNode
 import dev.s7a.strata.node.DirtyMask
 import dev.s7a.strata.node.DynamicChildrenNode
@@ -136,6 +137,22 @@ internal class Reconciler(
             reconcileDynamicChildren(root, descriptions, validator)
         }
         for (index in root.children.indices) refreshDynamicChildren(root.children[index], validator)
+    }
+
+    /**
+     * Reconciles bounded dynamic declarations after projection-only metadata preparation, without presentation phases.
+     */
+    fun refreshProjectedChildren(
+        root: RetainedNode,
+        validator: DescriptionValidator,
+    ) {
+        lifecycle.attachCurrent(root)
+        synchronizeObservers(root)
+        (root.node as? DeclarationProjectionNode)?.prepareDeclaration()
+        (root.node as? DynamicChildrenNode)?.let { dynamic ->
+            reconcileDynamicChildren(root, evaluateChildren(root, dynamic), validator)
+        }
+        root.children.forEach { refreshProjectedChildren(it, validator) }
     }
 
     private fun reconcileDynamicChildren(

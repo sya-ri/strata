@@ -1,5 +1,7 @@
 package dev.s7a.strata.modifier
 
+import dev.s7a.strata.projection.DeclarationProjection
+
 /**
  * Immutable value description for one active modifier node.
  *
@@ -9,6 +11,11 @@ package dev.s7a.strata.modifier
  * The runtime invokes token hooks on the owning tree thread and propagates their failures unchanged.
  */
 public interface ModifierElement {
+    /**
+     * Optional typed export; the receiving runtime reconstructs this modifier's active behavior.
+     */
+    public val projection: DeclarationProjection<*>? get() = null
+
     /**
      * The stable referential token that owns this description and its retained node type.
      */

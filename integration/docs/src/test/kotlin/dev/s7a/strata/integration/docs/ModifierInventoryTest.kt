@@ -15,7 +15,7 @@ internal class ModifierInventoryTest {
         val inventory = ModifierInventory.discover(listOf(apiClasses()))
 
         assertEquals(44, inventory.modifiers.size)
-        assertEquals(56, inventory.modifiers.values.sum())
+        assertEquals(69, inventory.modifiers.values.sum())
         assertEquals(ModifierDocumentationCatalog.entries.keys, inventory.modifiers.keys)
         assertEquals(ModifierInventory.ParentScopeModifier.entries.toSet(), inventory.parentScopeModifiers.keys)
         assertEquals(9, inventory.parentScopeModifiers.values.sum())

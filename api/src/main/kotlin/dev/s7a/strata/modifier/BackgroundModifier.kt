@@ -5,6 +5,9 @@ import dev.s7a.strata.node.DirtyMask
 import dev.s7a.strata.node.DirtyPhase
 import dev.s7a.strata.node.ModifierNode
 import dev.s7a.strata.node.PaintNode
+import dev.s7a.strata.projection.BuiltinProjection
+import dev.s7a.strata.projection.DeclarationProjection
+import dev.s7a.strata.projection.ProjectionValue
 import dev.s7a.strata.render.ArgbColor
 import dev.s7a.strata.render.PaintScope
 
@@ -20,6 +23,8 @@ internal object BackgroundModifier {
     internal data class Element(
         val color: ArgbColor,
     ) : ModifierElement {
+        override val projection: DeclarationProjection<*> get() = BuiltinProjection.Background.properties(ProjectionValue.Integer(color.value.toLong()))
+
         /**
          * The stable background modifier token.
          */

@@ -55,6 +55,13 @@ dependencyResolutionManagement {
             filter { includeModule("com.yarnpkg", "yarn") }
         }
         // Why: Minecraft's patched Intel macOS FreeType classifier is absent from the upstream Maven Central module.
+        maven("https://repo.papermc.io/repository/maven-public/") {
+            content {
+                includeGroup("io.papermc.paper")
+                includeGroup("com.velocitypowered")
+                includeGroup("net.md-5")
+            }
+        }
         exclusiveContent {
             forRepository {
                 maven {
@@ -117,12 +124,19 @@ rootProject.name = "strata"
 include(
     ":api",
     ":examples:web",
+    ":examples:paper",
+    ":examples:velocity",
     ":integration:api",
     ":integration:docs",
     ":integration:web",
+    ":integration:paper",
+    ":integration:velocity",
     ":quality:benchmarks",
     ":quality:detekt-rules",
     ":runtime:core",
+    ":runtime:remote",
+    ":runtime:paper",
+    ":runtime:velocity",
     ":runtime:web",
     ":runtime:headless",
     ":runtime:minecraft",

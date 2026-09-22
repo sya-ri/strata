@@ -442,6 +442,9 @@ classify_target_source_path() {
     target_source_allowed_owners='font-backend'
     target_source_root='runtime/minecraft-fonts-lwjgl'
     target_source_is_module_root=true
+  elif [[ "$repository_relative_path" == 'examples/paper/src/main/kotlin' ]]; then
+    target_source_allowed_owners='integration,paper-example'
+    target_source_root='examples/paper'
   elif [[ "$repository_relative_path" == 'runtime/minecraft-fonts-lwjgl/'* ]]; then
     target_source_allowed_owners='font-backend'
     target_source_root='runtime/minecraft-fonts-lwjgl'
@@ -449,7 +452,7 @@ classify_target_source_path() {
     target_source_allowed_owners='runtime'
     target_source_root=${BASH_REMATCH[1]}
     [[ "$repository_relative_path" != "$target_source_root" ]] || target_source_is_module_root=true
-  elif [[ "$repository_relative_path" =~ ^(runtime/minecraft-fabric-(shared|identifier|glfw|unobfuscated(-glfw)?))(/|$) ]]; then
+  elif [[ "$repository_relative_path" =~ ^(runtime/minecraft-fabric-(shared|identifier|glfw|unobfuscated(-glfw)?|remote-(legacy|payload|stream)))(/|$) ]]; then
     target_source_allowed_owners='runtime'
     target_source_root=${BASH_REMATCH[1]}
     [[ "$repository_relative_path" != "$target_source_root" ]] || target_source_is_module_root=true
@@ -461,7 +464,7 @@ classify_target_source_path() {
     target_source_allowed_owners='integration'
     target_source_root=${BASH_REMATCH[1]}
     [[ "$repository_relative_path" != "$target_source_root" ]] || target_source_is_module_root=true
-  elif [[ "$repository_relative_path" =~ ^(integration/minecraft-fabric-(client-gametest|unobfuscated))(/|$) ]]; then
+  elif [[ "$repository_relative_path" =~ ^(integration/minecraft-fabric-(client-gametest|unobfuscated|remote-(legacy|payload|stream|verification)|paper-unobfuscated))(/|$) ]]; then
     target_source_allowed_owners='integration'
     target_source_root=${BASH_REMATCH[1]}
     [[ "$repository_relative_path" != "$target_source_root" ]] || target_source_is_module_root=true
@@ -787,6 +790,11 @@ record_expected_target_source_roots \
   '-' \
   'runtime/minecraft-fonts-lwjgl' \
   'minecraft-fonts-lwjgl.iml'
+record_expected_target_source_roots \
+  'paper-example' \
+  '-' \
+  'examples/paper' \
+  'examples-paper.iml'
 
 docs_showcase_source_path='file://$PROJECT_DIR$/integration/minecraft-fabric-unobfuscated/src/gametest/kotlin'
 required_docs_showcase_source=$'docs\t-\tSource\t'"$docs_showcase_source_path"
@@ -1007,6 +1015,8 @@ target_source_mismatches=$(
           {owner: "docs", version: "-"}
         elif .name | test($fontPattern) then
           {owner: "font-backend", version: "-"}
+        elif .name | test("^(examples-paper|strata\\.examples\\.paper)$") then
+          {owner: "paper-example", version: "-"}
         else
           {owner: "unexpected-module", version: .name}
         end;

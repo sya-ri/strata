@@ -1,0 +1,11 @@
+name: StrataPaperAcceptance
+version: '${version}'
+main: dev.s7a.strata.integration.paper.PaperAcceptancePlugin
+api-version: '1.20'
+depend: [Strata, StrataPaperExample]
+description: Isolated real-server acceptance fixture for Strata remote screens.
+commands:
+  strata-verify:
+    description: Starts the isolated Paper acceptance scene.
+  strata-verify-ime:
+    description: Starts the manual remote operating-system IME scene.

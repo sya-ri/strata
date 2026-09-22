@@ -10,11 +10,12 @@ The callback emits exactly one root, usually a layout container.
 The runtime supplies the active resource profile; application code needs no Minecraft context or separate root builder.
 
 Create a new definition for each opening.
-`open()` is synchronous and does not switch threads.
+The local `open()` is synchronous and does not switch threads.
 If the runtime is missing or rejects the calling thread, the caller may retry or close the definition.
 Once ownership transfers, the runtime handles cleanup, including opening failures.
 Closing an untransferred definition releases its captures; closing after transfer does not close the active screen.
 Do not retain the callback's `UiScope` beyond that invocation.
+Use the host-specific opening boundary for [Paper](paper.md), [Velocity](velocity.md), or the [browser runtime](../../README.md#build-a-web-screen-from-source).
 
 ## Own component state
 
@@ -22,8 +23,21 @@ Create editing and navigation states on the host thread and keep them outside ca
 Change application state in event handlers, not during declaration, measurement, layout, or painting.
 Captured Kotlin variables are not automatically reactive.
 
+Use `mutableStateOf(initialValue)` from `dev.s7a.strata.state` for an application-owned value and `State<T>` for a read-only view.
+Create it outside content on the host's owner thread.
+Reads of `.value` during evaluation track dependencies, so ordinary Kotlin `if`, `when`, loops, and called composition functions update when the value changes.
+Equal assignments do not invalidate content; changed assignments coalesce until the next evaluation.
+Only values read in the active branch remain dependencies, and reads exclusively inside event handlers do not subscribe content.
+Use stable keys for reordered children and retain state outside branches when it must survive their removal.
+The [compiled shared scenario](../../integration/web/src/commonMain/kotlin/dev/s7a/strata/integration/web/ReactiveScenario.kt) demonstrates conditional content and keyed reordering on Minecraft, Headless, and Web.
+
+Dedicated control values such as `TextFieldState.value` also participate when read in content.
+Passing the state object to its editor alone does not make the parent reevaluate on every edit.
+For external publishers, use `StateSource` and the queued observation paths below; it is a different contract from owner-thread `State`.
+
 | State | Use |
 | --- | --- |
+| `MutableState<T>` | Track application-owned values read during declaration evaluation. |
 | `TextFieldState`, `TextAreaState` | Keep committed text and editing ownership. |
 | `ScrollState` | Link a `ScrollArea` to an independently placed `Scrollbar`. |
 | `TextAreaState.scrollState` | Add an external scrollbar to an editor. |
@@ -39,7 +53,7 @@ Choose the smallest update boundary:
 1. Pass a fixed value directly.
 2. Pass a `StateSource` directly when the component supports it, such as `Text(source)`.
 3. Retain `source.map { ... }` outside reevaluation for a displayed transformation.
-4. Use `Observe` to add, remove, or switch children, or to change unsupported layout/style arguments.
+4. Use `Observe` for external-source-driven child changes or unsupported layout/style arguments; owner-thread `State.value` reads already track ordinary Kotlin declarations.
 
 Do not read a snapshot into a literal and expect observation, recreate mapped sources inside content, or wrap a whole screen in `Observe` for independent labels.
 The [compiled reactive example](../../integration/docs/src/skillExamples/kotlin/dev/s7a/strata/integration/docs/skill/ReactiveScreenExample.kt) demonstrates these choices.
@@ -50,6 +64,7 @@ Use an inner Row or Column for multiple children; apply parent weight and alignm
 An empty region has zero natural size, subject to its constraints.
 Keep editable state outside its callback and never retain the callback scope or mutate sources there.
 Typed overloads accept up to 22 sources in declaration order.
+Local state reads inside an Observe callback belong to that region, allowing it to refresh without reevaluating a clean root.
 
 The tree shares subscriptions by source identity and commits pending values at frame boundaries.
 Publications coalesce, equal values skip source-driven evaluation, and changed parents refresh child callbacks so captures stay current.

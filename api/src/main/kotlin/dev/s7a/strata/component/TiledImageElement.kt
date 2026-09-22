@@ -21,11 +21,15 @@ import dev.s7a.strata.layout.MeasureScope
 import dev.s7a.strata.layout.VerticalAlignment
 import dev.s7a.strata.modifier.Modifier
 import dev.s7a.strata.node.ClipChildrenNode
+import dev.s7a.strata.node.DeclarationProjectionNode
 import dev.s7a.strata.node.DirtyMask
 import dev.s7a.strata.node.DirtyPhase
 import dev.s7a.strata.node.LayoutNode
 import dev.s7a.strata.node.MeasureNode
 import dev.s7a.strata.node.SessionAttachmentNode
+import dev.s7a.strata.projection.BuiltinProjection
+import dev.s7a.strata.projection.DeclarationProjection
+import dev.s7a.strata.projection.ProjectionValue
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
 import kotlin.math.roundToLong
 import dev.s7a.strata.node.Node as RetainedNode
@@ -42,26 +46,24 @@ import dev.s7a.strata.node.Node as RetainedNode
  * @param state caller-owned transform.
  * @param destinationSize exact viewport extent.
  * @param fit base fit policy.
- * @param cachePolicy bounded tile working-set policy.
  * @param modifier active behavior around the viewport.
  * @param key optional stable sibling identity.
- * @param overlays direct fixed-size overlay descriptions.
+ * @param children retained tile layer followed by direct fixed-size overlay descriptions.
  */
 internal class TiledImageElement private constructor(
-    private val source: TiledImageSource,
+    private val source: Any,
     private val bounds: LongRect,
     private val levels: List<TiledImageLevel>,
     private val state: PanZoomState,
     private val destinationSize: IntSize,
     private val fit: PanZoomFit,
-    private val cachePolicy: TiledImageCachePolicy,
     modifier: Modifier,
     key: ElementKey<*>?,
-    overlays: List<Element>,
+    children: List<Element>,
 ) : Element(
         identity = key?.let(ElementIdentity::Keyed) ?: ElementIdentity.Positional,
         type = TYPE,
-        children = listOf(TiledImageTileLayerElement(source, bounds, levels, state, destinationSize, cachePolicy)) + overlays,
+        children = children,
         modifier = modifier,
     ) {
     /**
@@ -72,8 +74,9 @@ internal class TiledImageElement private constructor(
      * @param destinationSize initial exact viewport size.
      * @param fit initial fit policy.
      */
+    @Suppress("TooManyFunctions") // Geometry ownership, lifecycle, projection, and layout share one retained viewport.
     private class Node(
-        private var source: TiledImageSource,
+        private var source: Any,
         private var bounds: LongRect,
         private var levels: List<TiledImageLevel>,
         private var state: PanZoomState?,
@@ -83,9 +86,20 @@ internal class TiledImageElement private constructor(
         MeasureNode,
         LayoutNode,
         ClipChildrenNode,
-        SessionAttachmentNode {
+        SessionAttachmentNode,
+        DeclarationProjectionNode {
         private var active: Boolean = false
         private var observer: PanZoomStateObserver? = null
+
+        override fun prepareDeclaration() {
+            checkNotNull(state).updateGeometry(bounds, destinationSize, fit, checkNotNull(observer))
+        }
+
+        override val declarationProjection: DeclarationProjection<*>
+            get() =
+                DeclarationProjection(BuiltinProjection.TiledImage.type, this) { node, scope ->
+                    ProjectionValue.Sequence(TiledImageProjectionFields.encode(node.bounds, node.levels, checkNotNull(node.state), node.destinationSize, scope) + ProjectionValue.Integer(node.fit.ordinal.toLong()))
+                }
 
         override fun attach() {
             sessionAttached()
@@ -269,10 +283,42 @@ internal class TiledImageElement private constructor(
             val bounds = source.bounds
             val levels = source.levels.toList()
             validateGeometry(bounds, levels, destinationSize)
-            return TiledImageElement(source, bounds, levels, state, destinationSize, fit, cachePolicy, modifier, key, overlays)
+            return TiledImageElement(
+                source,
+                bounds,
+                levels,
+                state,
+                destinationSize,
+                fit,
+                modifier,
+                key,
+                listOf(TiledImageTileLayerElement(source, bounds, levels, state, destinationSize, cachePolicy)) + overlays,
+            )
         }
 
-        private fun validateGeometry(
+        /**
+         * Reuses the ordinary clipped viewport and overlay layout with an independently projected tile child.
+         */
+        internal fun projected(
+            sourceIdentity: Any,
+            bounds: LongRect,
+            levels: List<TiledImageLevel>,
+            state: PanZoomState,
+            size: IntSize,
+            fit: PanZoomFit,
+            modifier: Modifier,
+            key: ElementKey<*>?,
+            children: List<Element>,
+        ): Element {
+            validateGeometry(bounds, levels, size)
+            require(children.isNotEmpty()) { "A projected tiled image requires its tile layer." }
+            return TiledImageElement(sourceIdentity, bounds, levels, state, size, fit, modifier, key, children)
+        }
+
+        /**
+         * Validates the complete immutable source geometry without attaching a viewport or requesting tiles.
+         */
+        internal fun validateGeometry(
             bounds: LongRect,
             levels: List<TiledImageLevel>,
             destinationSize: IntSize,

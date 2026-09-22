@@ -1,0 +1,8 @@
+{
+  "id": "strata",
+  "name": "Strata",
+  "version": "${version}",
+  "description": "Server-owned Strata screens over native plugin messaging",
+  "main": "dev.s7a.strata.runtime.velocity.StrataVelocityPlugin",
+  "authors": ["sya-ri"]
+}

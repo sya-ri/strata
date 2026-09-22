@@ -1,9 +1,14 @@
 :api
+:examples:paper
+:examples:velocity
 :integration:api
 :integration:docs
 :integration:web
 :quality:detekt-rules
 :runtime:core
+:runtime:remote
+:runtime:paper
+:runtime:velocity
 :runtime:headless
 :runtime:minecraft
 :runtime:minecraft-fonts-lwjgl

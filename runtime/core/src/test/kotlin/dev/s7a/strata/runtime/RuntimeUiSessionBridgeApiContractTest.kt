@@ -41,6 +41,8 @@ internal class RuntimeUiSessionBridgeApiContractTest {
                 "dispatchPointer",
                 "dispatchKeyboard",
                 "dispatchTextInput",
+                "projectDeclarations",
+                "dispatchAction",
                 "getTextInputFocus",
                 "resetInputState",
                 "close",
@@ -142,6 +144,10 @@ internal class RuntimeUiSessionBridgeApiContractTest {
 
     private fun assertSessionSurface(methods: Array<Method>) {
         val byName = methods.associateBy { method -> method.name }
+        assertEquals(Any::class.java, byName.getValue("projectDeclarations").returnType)
+        assertEquals(listOf(Function1::class.java), byName.getValue("projectDeclarations").parameterTypes.toList())
+        assertEquals(Void.TYPE, byName.getValue("dispatchAction").returnType)
+        assertEquals(listOf(Function0::class.java), byName.getValue("dispatchAction").parameterTypes.toList())
         val attach = byName.getValue("attach")
         val close = byName.getValue("close")
         val detach = byName.getValue("detach")

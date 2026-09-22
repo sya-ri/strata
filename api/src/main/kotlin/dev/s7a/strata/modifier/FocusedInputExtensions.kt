@@ -4,6 +4,10 @@ import dev.s7a.strata.input.FocusEvent
 import dev.s7a.strata.input.InputResult
 import dev.s7a.strata.input.KeyboardEvent
 import dev.s7a.strata.input.TextInputEvent
+import dev.s7a.strata.projection.BuiltinProjection
+import dev.s7a.strata.projection.DeclarationProjection
+import dev.s7a.strata.projection.ProjectionAction
+import dev.s7a.strata.projection.ProjectionValue
 
 /**
  * Adds a focused callback for every key press and release.
@@ -62,7 +66,7 @@ public fun Modifier.onPreedit(callback: (TextInputEvent.Preedit) -> InputResult)
  *
  * @return a modifier with active focus-target behavior appended nearest the component.
  */
-public fun Modifier.focusable(): Modifier = then(FocusedInputModifier.Element(FocusedInputModifier.Action.Focusable))
+public fun Modifier.focusable(): Modifier = then(FocusedInputModifier.Element(FocusedInputModifier.Action.Focusable, BuiltinProjection.Focusable.properties()))
 
 /**
  * Makes the logical component the initial focus target when layout has no retained focus owner.
@@ -71,7 +75,7 @@ public fun Modifier.focusable(): Modifier = then(FocusedInputModifier.Element(Fo
  *
  * @return a modifier with active initial-focus behavior appended nearest the component.
  */
-public fun Modifier.initialFocus(): Modifier = then(FocusedInputModifier.Element(FocusedInputModifier.Action.InitialFocus))
+public fun Modifier.initialFocus(): Modifier = then(FocusedInputModifier.Element(FocusedInputModifier.Action.InitialFocus, BuiltinProjection.InitialFocus.properties()))
 
 /**
  * Adds a callback for distinct retained focus transitions and makes the logical component focusable.
@@ -81,4 +85,18 @@ public fun Modifier.initialFocus(): Modifier = then(FocusedInputModifier.Element
  * @param callback synchronous distinct transition observer.
  * @return a modifier with the active callback appended nearest the component.
  */
-public fun Modifier.onFocusChanged(callback: (FocusEvent) -> Unit): Modifier = then(FocusedInputModifier.Element(FocusedInputModifier.Action.FocusChange(callback)))
+public fun Modifier.onFocusChanged(callback: (FocusEvent) -> Unit): Modifier =
+    then(
+        FocusedInputModifier.Element(
+            FocusedInputModifier.Action.FocusChange(callback),
+            DeclarationProjection(BuiltinProjection.FocusChanged.type, callback) { handler, scope ->
+                ProjectionValue.Integer(
+                    scope.action(
+                        ProjectionAction(BuiltinProjection.FocusChanged.type, { value ->
+                            if (requireNotNull(value as? ProjectionValue.Flag).value) FocusEvent.Gained else FocusEvent.Lost
+                        }, handler),
+                    ),
+                )
+            },
+        ),
+    )

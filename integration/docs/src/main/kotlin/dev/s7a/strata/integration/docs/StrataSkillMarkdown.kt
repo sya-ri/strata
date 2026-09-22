@@ -21,6 +21,7 @@ internal object StrataSkillMarkdown {
 Strata exposes ${signatures.size} focused standard components from `dev.s7a.strata.component`.
 Every Kotlin declaration below is paired with the compiled `strata-api` overload inventory; generation fails when source and binary identities diverge or an undocumented component enters the API.
 Use the [component showcase on GitHub]($COMPONENT_GUIDE_URL) for complete compiled examples and Minecraft-verified images.
+The catalog describes the shared API; host support differs, especially for the experimental browser runtime. Check [setup](setup.md) before selecting profile-dependent components.
 
 ${signatures.entries.joinToString("\n\n") { (component, overloads) -> component(component, overloads) }}
 """,
@@ -76,11 +77,15 @@ $scaleToFitGuidance
 
 - Use `spacing`, `horizontalArrangement`, `verticalArrangement`, and parent alignment to describe sibling structure.
 - Use `weight` only for remaining main-axis space and `align` only for a direct-child override.
+- A very small relative weight can receive zero pixels; weight guarantees no minimum size. See the [layout contract](https://github.com/sya-ri/strata/blob/master/docs/reference/layout.md#weight-allocation) for rounding and unbounded axes.
 - Use `padding` for local insets, and describe sibling relationships with layout spacing and alignment.
 - Use `fillMaxSize().scaleToFit(contentSize)` for a fixed design surface that should shrink uniformly with the viewport while retaining the user's GUI-scale accessibility setting.
 - Put images on `imageBackground` when they paint a container; use `Image` when the image is itself a logical child.
 - Put reusable actions on modifiers. `Button`, `Tab`, `Checkbox`, `CycleButton`, `Slider`, and list components keep application callbacks out of their component signatures.
 - Use `onActivate(enabled)` for an action shared by primary pointer and focused Enter or Space input; use `onPress` only when the action is pointer-specific.
+- For Paper or Velocity notifications, choose typed input overloads with explicit local `propagation` and optional key/button filters; event-dependent synchronous results require a client implementation. See the [remote input contract](https://github.com/sya-ri/strata/blob/master/docs/reference/remote-protocol.md#editing-and-local-behavior).
+- The host declares subscriptions before input occurs; only subscribed variants matching their key/button filters are transmitted. Standard controls declare their required binding events automatically.
+- Match physical keys with `KeyCode` and pointer buttons with `PointerButton`, rather than native GLFW or SDL constants. Adapters normalize recognized keys; `KeyCode.Unknown` and `KeyboardEvent.scanCode` preserve the distinction for unrecognized native keys. Text arrives separately through `TextInputEvent`.
 
 ## State and binding signatures
 
@@ -112,7 +117,15 @@ ${StateBindingDocumentationCatalog.entries.joinToString("\n\n") { entry -> state
 
 # Setup and screen opening
 
-Application UI source compiles against `strata-api` only.
+Reusable UI declarations compile against `strata-api` only; the opening boundary depends on the chosen host.
+Fabric can own a local screen, or Paper and Velocity can own its declarations, state, and handlers while an installed Fabric client handles layout, drawing, and immediate input.
+Remote screens require Strata on the client; vanilla clients cannot display them.
+Use the same Strata release on both ends and select the Fabric runtime for the client's Minecraft version.
+
+$HOSTS
+
+## Local Fabric installation
+
 Install exactly one matching Strata Fabric runtime as a separate client Mod together with Fabric Language Kotlin.
 Use the component catalog for available primitives and the guides for composition and resource ownership.
 
@@ -144,6 +157,10 @@ $openExample
 ```
 
 See [Authoring patterns](patterns.md) for state, input, and resource ownership.
+
+${REMOTE_SETUP.replace(RELEASE_VERSION_PLACEHOLDER, releaseVersion)}
+
+${BROWSER_SETUP.replace(RELEASE_VERSION_PLACEHOLDER, releaseVersion)}
 
 ## Supported Minecraft versions
 
@@ -198,6 +215,7 @@ ${StrataReactiveSkillMarkdown.patterns(reactiveExample)}
 - Use `ImageSource.Resource(ResourceId(...))` and image backgrounds for resource-pack-replaceable Mod assets.
 - Use `TiledImageSource` for a large logical raster whose tiles load or change independently, keep navigation in `PanZoomState`, compose `panZoom(state)` for direct input, and place fixed-size markers through `TiledImageScope.atContentPosition`; pass a `StateSource<DoubleOffset>` when marker positions change independently.
 - Use `PlayerSkinSource` for profile-driven heads rather than pre-rendering a skin outside the component.
+- Shared JVM/JavaScript code uses `dev.s7a.strata.resource.Uuid` and `parseUuid` with canonical dashed UUID text; the JVM alias preserves existing `java.util.UUID` interoperability. API portability does not add player-head rendering to the browser runtime.
 - Bind `Slot` with `Slots.playerInventory`, `Slots.container`, or `Slots.activeMenu`; authoritative inventory mutation belongs to the active server menu.
 
 The sealed `UiText` and `DrawCommand` hierarchies include `WithFont` and `SampledImage`; exhaustive visitors must handle every case.
@@ -219,7 +237,7 @@ ${FONT_SETUP.replace(RELEASE_VERSION_PLACEHOLDER, releaseVersion)}
 
 # Custom components
 
-Downstream Mods may create purpose-specific components as ordinary `UiScope` extension functions.
+Downstream Mods and plugins may create purpose-specific components as ordinary `UiScope` extension functions.
 An energy gauge, social-entry row, advancement graph, machine controller, or application settings section belongs downstream when its meaning is specific to that product.
 
 Admit a component to Strata's standard built-ins only when all of these are true:
@@ -236,9 +254,154 @@ $customExample
 ```
 
 Use public `Element` and `Node` SPI only when composition cannot provide the required retained measurement, drawing, input, semantics, or lifecycle behavior.
-Read the [Element SPI contract]($ELEMENT_SPI_GUIDE_URL) before implementing a retained primitive; no central component registration is required.
+Read the [Element SPI contract]($ELEMENT_SPI_GUIDE_URL) before implementing a retained primitive; local-only components and modifiers need no central registration.
+Keep shared implementations free of JVM-only APIs and verify the target host's rendering capabilities.
+Collection snapshots detach membership but retain element references; respect their read-only types rather than relying on mutation through a cast or Java collection methods throwing. See the [architecture contract](https://github.com/sya-ri/strata/blob/master/docs/development/architecture.md).
+
+$CUSTOM_EXTENSIONS
 """,
         )
+
+    private const val COMPONENT_GUIDE_URL = "https://github.com/sya-ri/strata/blob/master/docs/reference/components.md"
+    private const val ELEMENT_SPI_GUIDE_URL = "https://github.com/sya-ri/strata/blob/master/docs/reference/element-spi.md"
+    private const val PAPER_GUIDE_URL = "https://github.com/sya-ri/strata/blob/master/docs/guides/paper.md"
+    private const val VELOCITY_GUIDE_URL = "https://github.com/sya-ri/strata/blob/master/docs/guides/velocity.md"
+    private const val PROJECTION_GUIDE_URL = "https://github.com/sya-ri/strata/blob/master/docs/reference/declaration-projection.md"
+    private const val REMOTE_PROTOCOL_URL = "https://github.com/sya-ri/strata/blob/master/docs/reference/remote-protocol.md"
+    private const val TEXT_GUIDE_URL = "https://github.com/sya-ri/strata/blob/master/docs/guides/text.md"
+    private const val FONT_GUIDE_URL = "https://github.com/sya-ri/strata/blob/master/docs/guides/fonts.md"
+    private const val RELEASE_VERSION_PLACEHOLDER = "<generated-strata-release-version>"
+
+    private const val CUSTOM_EXTENSIONS: String =
+        """## Sharing custom components
+
+Start with a `UiScope` composition of existing primitives; being application-specific does not itself require a retained primitive, wire registration, or a client Mod.
+When several consumers need the component or a remote extension needs a shared contract, put that reusable code in a shared component module as the default.
+A JVM-only shared module is sufficient for Mod/Paper/Velocity reuse; add Kotlin Multiplatform JVM and JS targets when the same declarations need a Web preview.
+Keep host opening code, player/service access, client resources, and target-specific rendering in their consumers.
+Without cross-project reuse, an ordinary composition can remain in the application's existing module.
+
+For a remote primitive, share the type identifiers, immutable property/event types, and codecs where possible.
+If repository, release, or dependency constraints prevent a shared module, independent implementations are valid; the required agreement in the table below is sufficient for protocol interoperability.
+Do not turn source sharing, an identical artifact, or a common implementation class into an admission requirement.
+The following wire contracts must agree even when the endpoint implementations live in different projects:
+
+| Surface | Required agreement | Implementation ownership |
+| --- | --- | --- |
+| Component/modifier capability | Exact namespaced `ProjectionType` ID and schema version. | Register on both host and installed client before negotiation. |
+| Action identity | Exact action type ID and schema version used by the sender and `ProjectionAction` decoder. | `ProjectionScope.action` binds the host endpoint; a separate action-only registry entry is not required. |
+| Properties and events | Value kinds, record order, field meaning, optional values, and validation domains for matching encoders/decoders. | Prefer shared immutable types/codecs; server handlers and client factories may differ. |
+| Input policy | Declared event variants, key/button filters, propagation, and capture contracts. | Immediate behavior runs on the client; authenticated business handlers run on the host. |
+| Assets and native renderer references | Referenced resource IDs and required renderer schema capabilities. | Client installation supplies the actual assets/renderers. |
+
+Identical source, class names, module layouts, codec implementations, or business-handler code on both endpoints are not required.
+Local-only Element/Node extensions retain their registration-free contract.
+For Web/Headless previews, reuse the application's definition factory with deterministic sample data; do not maintain a second preview-only component tree.
+Target-specific component adapters may differ while preserving the property/action contract; report missing rendering or input capabilities.
+
+## Remote extensions
+
+Composition from supported standard components needs no new wire schema.
+For remote screens built only from those components and compositions, the client needs Strata and Fabric Language Kotlin, with no application-specific client Mod.
+A custom retained component or modifier used remotely must provide a typed declaration projection; a local `Node` implementation alone is insufficient.
+Read the [declaration projection SPI]($PROJECTION_GUIDE_URL) for `DeclarationProjection`, `ProjectionType`, detached properties, `ProjectionAction`, and `ProjectionBinding`.
+Transfer properties and typed action endpoints, keeping application models, functions, and native handles on their owning host.
+
+Choose a namespaced type ID and schema version, register it through `PaperScreens.register` or `VelocityScreens.register` before negotiation, and install matching decoders/factories in `FabricRemoteScreens.registry` before its first connection freezes registration.
+Changed wire schemas require a new version; existing connections must reconnect to negotiate newly registered types.
+Missing projections or client capabilities reject the whole screen explicitly.
+Follow the [extension and ownership contract]($REMOTE_PROTOCOL_URL#extensions-and-ownership) for `RemoteRegistry.element`, `modifier`, `statefulModifier`, and release of retained client resources.
+The [compiled external extension](https://github.com/sya-ri/strata/blob/master/examples/paper/src/main/kotlin/dev/s7a/strata/examples/paper/DemoRemoteExtensions.kt) demonstrates a custom primitive and active modifier; its [round-trip and rejection tests](https://github.com/sya-ri/strata/blob/master/examples/paper/src/test/kotlin/dev/s7a/strata/examples/paper/ExternalProjectionTest.kt) exercise the public contracts.
+
+Typed input subscriptions can run handlers on Paper or Velocity with declared local filters, propagation, and fixed-button capture.
+Event-dependent synchronous `InputResult` or capture decisions and native Canvas drawing need an installed client implementation; a server response cannot supply an immediate local result."""
+
+    private const val HOSTS: String =
+        """| Host | Public opening API | State and handler owner |
+| --- | --- | --- |
+| Fabric | `ScreenDefinition.open()` | Client thread |
+| Paper | `PaperScreens.open(ownerPlugin, player, definition)` | Paper primary thread |
+| Velocity | `VelocityScreens.open(ownerPlugin, player) { definition }` | Strata's dedicated proxy UI thread |
+"""
+
+    private const val REMOTE_SETUP: String =
+        """## Paper and Velocity installation
+
+Install the chosen host's `plugin` classifier JAR in its `plugins` directory.
+Consumer plugins compile against `dev.s7a.strata:strata-runtime-paper:$RELEASE_VERSION_PLACEHOLDER` or `dev.s7a.strata:strata-runtime-velocity:$RELEASE_VERSION_PLACEHOLDER` and the host API with `compileOnly` dependencies.
+Declare `depend: [Strata]` for Paper or a required dependency on plugin ID `strata` for Velocity; do not package another Strata runtime in the consumer.
+Players still install their matching Fabric runtime and Fabric Language Kotlin.
+If the screen only uses standard components or custom compositions of them, those client dependencies are sufficient; no application-specific client Mod is needed.
+Custom retained renderers, modifiers, or synchronous input implementations need their registered client extension in addition to Strata.
+Velocity can own screens without Strata on its backends; install the Paper plugin as well when a backend also owns screens.
+
+Follow the [Paper guide]($PAPER_GUIDE_URL) or [Velocity guide]($VELOCITY_GUIDE_URL) for the compiled consumer build, descriptor, and opening examples.
+The Paper guide includes a compiled typed-input screen; use these examples when wiring host APIs instead of changing the API-only declaration classpath.
+
+### Opening, state, and lifecycle
+
+- On Paper's primary thread, inspect `PaperScreens.capabilities(player)`, create independent state outside the DSL callback, and pass a fresh definition to `PaperScreens.open`.
+- On Velocity, inspect the future from `VelocityScreens.capabilities(player)` and construct the definition and owner-thread state inside the factory passed to `VelocityScreens.open`. Its future returns the session handle. Queue external state access with `VelocityScreens.execute(ownerPlugin) { ... }`; never join another UI future from a handler or completion callback.
+- A null capability result means negotiation is incomplete or unavailable. Opening with an unsupported declaration returns a terminal session reason; do not silently omit missing components or extensions.
+- Retain the returned `RemoteScreenSession` when status inspection or explicit `close()` is needed. Replacement, disconnect, and failures release its handlers, observations, and transfers. Paper plugin disable releases its owners; a Velocity consumer stopping early calls `VelocityScreens.release(ownerPlugin)`.
+- Keep database and network work off the UI owner thread. Publish asynchronous results through state sources or the host's state-update boundary; source notifications are queued and committed at the next session cutoff.
+
+### Remote resources and client behavior
+
+Resource IDs, fonts, and player skins resolve against installed client resources.
+CPU Canvas snapshots and ready tiles transfer pixels; native Canvas requires a registered client renderer.
+Virtual-list models and row factories remain on the host and produce only the requested visible/overscan window.
+Slot binds an existing backend-managed container and uses normal Minecraft item transactions; Velocity does not create server containers.
+Backend switches retire the visible remote screen and renew negotiation before another screen can open.
+
+Use `onActivate` for ordinary server actions and typed modifiers for subscribed input notifications; see [modifiers](modifiers-and-layout.md#selection-guide).
+Focus, hover, immediate propagation, capture, and IME composition remain client behavior.
+See the [remote protocol]($REMOTE_PROTOCOL_URL) for editing acknowledgements, explicit replacements, bounds, and terminal reasons, and [custom components](custom-components.md#remote-extensions) when client code is required."""
+
+    private const val BROWSER_SETUP: String =
+        """## Preview the same screen with Web or Headless
+
+Author the application screen for its Mod, Paper, or Velocity owner, then reuse its `ScreenDefinition` factory in the preview harness.
+Pass deterministic sample data and test action implementations through the same application boundary; keep host APIs outside the reusable declaration.
+Do not create a second browser-only layout, silently remove unsupported controls, or treat a reduced preview as full Minecraft parity.
+
+### Project structure when Web preview is needed
+
+Use a multi-project build with one shared screen project, a JVM consumer, and a JS preview consumer.
+The screen project uses Kotlin Multiplatform with JVM and JS targets and keeps its state, callbacks, and definition factories in `commonMain`.
+For published dependencies, use `api("dev.s7a.strata:strata-api-multiplatform:$RELEASE_VERSION_PLACEHOLDER")` there; `strata-api` is the preserved JVM-only publication and cannot resolve JS variants.
+The JVM project depends on that screen project and supplies the Mod, Paper, or Velocity opening boundary and business actions.
+The JS project depends on the same screen project and `dev.s7a.strata:strata-runtime-web:$RELEASE_VERSION_PLACEHOLDER`, supplying deterministic preview data, action implementations, and browser mounting.
+Both consumers call the same definition factory; platform services stay behind shared callbacks or interfaces.
+Include the application's shared JVM classes in the deployable plugin/Mod artifact or provide them through its explicitly supported runtime dependency mechanism; a compile-time project dependency alone does not package them.
+Keep Strata and its Kotlin runtime supplied by the installed Strata runtime instead of shading a second copy into Paper or Velocity consumers.
+
+Do not introduce this split when Web preview is not needed.
+An ordinary Mod or plugin can keep its screen definitions in its existing JVM project, and Headless verification can live in that project's test or preview harness.
+
+### Experimental browser preview
+
+The API and retained core support JVM and JavaScript; sharing a declaration does not imply that every host implements every component.
+Use `runtime:web` for native DOM Text, Button, ProgressBar, and common layout primitives.
+Editors, scrolling profiles, resource images, and Minecraft-specific component appearances are not implemented by that adapter and fail explicitly.
+`WebTheme.Minecraft` styles the supported browser controls; it does not add those missing capabilities.
+
+Build the [compiled shared scenario](https://github.com/sya-ri/strata/blob/master/integration/web/src/commonMain/kotlin/dev/s7a/strata/integration/web/ReactiveScenario.kt) with `:integration:web:buildWeb`, then serve `integration/web/build/site` over HTTP.
+Follow the [browser entry point](https://github.com/sya-ri/strata/blob/master/integration/web/src/jsMain/kotlin/dev/s7a/strata/integration/web/WebApplication.kt) and [initial-document build guide](https://github.com/sya-ri/strata/blob/master/docs/development/build.md#initial-web-documents) for host wiring and browser verification.
+The [interactive demo catalog](https://github.com/sya-ri/strata/tree/master/examples/web) supplies compiled counter, progress, and keyed-list reference harnesses.
+
+`renderWebHtml` renders root-child markup, and `renderWebDocument` renders a complete initial document on a browser agent without starting interactive listeners or frame scheduling.
+Build rendering and client startup create independent one-shot definitions with identical deterministic initial values, viewport, and theme.
+`mountWeb` validates and reuses matching generated DOM; a mismatch fails before changing that HTML.
+Keep browser-only application effects outside declaration evaluation and close the returned host when its page or owning application is disposed.
+
+### Headless preview
+
+Use the [Headless guide](https://github.com/sya-ri/strata/blob/master/docs/guides/headless.md) to select the rendering boundary and supply the viewport, output scale, and resource profile.
+For an application `ScreenDefinition`, follow the [compiled external host tests](https://github.com/sya-ri/strata/blob/master/integration/api/src/test/kotlin/dev/s7a/strata/integration/external/ExternalMinecraftUiHostIntegrationTest.kt); `renderHeadless` directly accepts an Element root, not a screen definition.
+Keep opt-in host bridge imports in the preview/test harness and create fresh definitions and state for each independent preview.
+Headless images and semantics verify portable behavior; live Slot items and opaque native commands still need Minecraft or a supported exact-generation capture.
+Report missing profile assets and unsupported capabilities instead of substituting a different component tree."""
 
     private val scaleToFitGuidance: String =
         """
@@ -350,12 +513,6 @@ ${compiledFingerprints.joinToString("\n")}
 
     private fun markdown(value: String): String = value.replace("\r\n", "\n").replace('\r', '\n').trimEnd('\n') + "\n"
 
-    private const val COMPONENT_GUIDE_URL = "https://github.com/sya-ri/strata/blob/master/docs/reference/components.md"
-    private const val ELEMENT_SPI_GUIDE_URL = "https://github.com/sya-ri/strata/blob/master/docs/reference/element-spi.md"
-    private const val TEXT_GUIDE_URL = "https://github.com/sya-ri/strata/blob/master/docs/guides/text.md"
-    private const val FONT_GUIDE_URL = "https://github.com/sya-ri/strata/blob/master/docs/guides/fonts.md"
-    private const val RELEASE_VERSION_PLACEHOLDER = "<generated-strata-release-version>"
-
     private const val FONT_SETUP: String =
         """## Unicode and resource-pack fonts
 
@@ -367,7 +524,9 @@ Use `TextLayout.Multiline` for wrapping, hard breaks, or reserved text rectangle
 TextField edits one line; TextArea uses LF text and an explicit `TextAreaViewport`.
 Both navigate Unicode scalars rather than grapheme clusters, count `maxLength` in UTF-16 code units, and keep preedit separate until committed.
 Focus loss and terminal cleanup clear composition.
-Selection, clipboard commands, and an OS candidate-window implementation are unavailable.
+Built-in editors do not provide selection ranges, clipboard commands, or word-navigation commands.
+Minecraft 26.1 through 26.3 activate native text-input mode for focused targets with `requiresTextInput`; passive observers alone do not request it.
+Strata does not implement or position its own OS candidate window, and older adapters exposing only committed characters gain no additional IME hooks.
 See [text and editing]($TEXT_GUIDE_URL) for compiled examples, input appearance, and target-specific IME support.
 
 ## Optional CPU backend for offline tools

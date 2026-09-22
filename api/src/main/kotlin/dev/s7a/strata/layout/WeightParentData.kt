@@ -6,11 +6,27 @@ import dev.s7a.strata.node.DirtyMask
 import dev.s7a.strata.node.DirtyPhase
 import dev.s7a.strata.node.ModifierNode
 import dev.s7a.strata.node.ParentDataModifierNode
+import dev.s7a.strata.projection.BuiltinProjection
+import dev.s7a.strata.projection.DeclarationProjection
+import dev.s7a.strata.projection.ProjectionFields
+import dev.s7a.strata.projection.ProjectionValue
 
 /**
  * Internal active weighted-child parent-data modifier implementation.
  */
 internal object WeightParentData {
+    /**
+     * Reconstructs active parent data using the exact key consumed by the standard layout.
+     */
+    fun decode(value: ProjectionValue): ModifierElement {
+        val fields = ProjectionFields(value)
+        val weight = fields.real().toFloat()
+        require(weight.isFinite() && 0 < weight) { "Weight must be finite and positive." }
+        val result = Element(Data(weight, fields.flag()))
+        fields.finish()
+        return result
+    }
+
     /**
      * Immutable weighted-child parent data.
      *
@@ -35,6 +51,8 @@ internal object WeightParentData {
     internal data class Element(
         val data: Data,
     ) : ModifierElement {
+        override val projection: DeclarationProjection<*> get() = BuiltinProjection.Weight.properties(ProjectionValue.Real(data.weight.toDouble()), ProjectionValue.Flag(data.fill))
+
         override val type: ModifierNodeType<*, *>
             get() = TYPE
     }

@@ -5,6 +5,10 @@ Keep all Strata artifacts on the same release version.
 
 ## Unreleased
 
+Paper and Velocity plugins can own Strata screen declarations and typed event handlers while the installed Fabric runtime renders and handles immediate input locally.
+Remote connections negotiate component and extension capabilities, declare input subscriptions, and synchronize bounded state revisions with authenticated host generations.
+See the [Paper](docs/guides/paper.md), [Velocity](docs/guides/velocity.md), and [remote protocol](docs/reference/remote-protocol.md) guides.
+
 Portable `Uuid` identifiers use Kotlin's standard UUID implementation on JavaScript while preserving native Java UUIDs and the existing player-skin API on JVM.
 Runtime collection snapshots use Kotlin standard copies, while reference identity is preserved where ownership requires it.
 

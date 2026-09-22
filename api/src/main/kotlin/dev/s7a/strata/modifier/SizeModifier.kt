@@ -6,11 +6,25 @@ import dev.s7a.strata.layout.MeasureScope
 import dev.s7a.strata.node.DirtyMask
 import dev.s7a.strata.node.DirtyPhase
 import dev.s7a.strata.node.ModifierNode
+import dev.s7a.strata.projection.BuiltinProjection
+import dev.s7a.strata.projection.DeclarationProjection
+import dev.s7a.strata.projection.ProjectionFields
+import dev.s7a.strata.projection.ProjectionValue
 
 /**
  * Internal implementation of the size constraint modifier family.
  */
 internal object SizeModifier {
+    /**
+     * Reconstructs both axis policies as the original single modifier, preserving order and virtual ancestry.
+     */
+    fun decode(value: ProjectionValue): ModifierElement {
+        val fields = ProjectionFields(value)
+        val result = Element(AxisConstraint.decode(fields.value()), AxisConstraint.decode(fields.value()))
+        fields.finish()
+        return result
+    }
+
     /**
      * Immutable size policy description shared by all size extension functions.
      *
@@ -21,6 +35,8 @@ internal object SizeModifier {
         val width: AxisConstraint,
         val height: AxisConstraint,
     ) : ModifierElement {
+        override val projection: DeclarationProjection<*> get() = BuiltinProjection.Size.properties(width.project(), height.project())
+
         /**
          * The stable size modifier token.
          */

@@ -1,7 +1,7 @@
 interface:
   display_name: "Strata"
-  short_description: "Build declarative Minecraft UIs with Strata"
-  default_prompt: "Use $strata to build a reusable Minecraft screen from Strata components."
+  short_description: "Build Minecraft UIs and preview them with Web or Headless"
+  default_prompt: "Use $strata to build a Minecraft screen for my Mod, Paper, or Velocity plugin and preview the same definition."
 
 policy:
   allow_implicit_invocation: true

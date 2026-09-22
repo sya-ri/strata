@@ -5,6 +5,10 @@ import dev.s7a.strata.input.InputResult
 import dev.s7a.strata.input.PointerButton
 import dev.s7a.strata.input.PointerEvent
 import dev.s7a.strata.input.PointerHoverEvent
+import dev.s7a.strata.projection.BuiltinProjection
+import dev.s7a.strata.projection.DeclarationProjection
+import dev.s7a.strata.projection.ProjectionAction
+import dev.s7a.strata.projection.ProjectionValue
 
 /**
  * Handles every typed pointer event that hits this modifier's laid-out bounds.
@@ -56,15 +60,7 @@ public fun Modifier.onPress(callback: (PointerEvent.Press, IntOffset) -> InputRe
  * @return this chain with one appended consuming press handler.
  * @throws Throwable when [action] fails during dispatch.
  */
-public fun Modifier.onPress(action: () -> Unit): Modifier =
-    onPress { event, _ ->
-        if (event.button === PointerButton.Primary) {
-            action()
-            InputResult.Consumed
-        } else {
-            InputResult.Ignored
-        }
-    }
+public fun Modifier.onPress(action: () -> Unit): Modifier = onPress(InputResult.Consumed, PointerButton.Primary) { _, _ -> action() }
 
 /**
  * Handles every pointer release that hits this modifier's laid-out bounds.
@@ -82,11 +78,7 @@ public fun Modifier.onRelease(callback: (PointerEvent.Release, IntOffset) -> Inp
  * @return this chain with one appended consuming release handler.
  * @throws Throwable when [action] fails during dispatch.
  */
-public fun Modifier.onRelease(action: () -> Unit): Modifier =
-    onRelease { _, _ ->
-        action()
-        InputResult.Consumed
-    }
+public fun Modifier.onRelease(action: () -> Unit): Modifier = onRelease(InputResult.Consumed) { _, _ -> action() }
 
 /**
  * Handles every pointer move that hits this modifier's laid-out bounds.
@@ -106,11 +98,7 @@ public fun Modifier.onMove(callback: (PointerEvent.Move, IntOffset) -> InputResu
  * @return this chain with one appended non-consuming move handler.
  * @throws Throwable when [action] fails during dispatch.
  */
-public fun Modifier.onMove(action: () -> Unit): Modifier =
-    onMove { _, _ ->
-        action()
-        InputResult.Ignored
-    }
+public fun Modifier.onMove(action: () -> Unit): Modifier = onMove(InputResult.Ignored) { _, _ -> action() }
 
 /**
  * Handles every pointer scroll event that hits this modifier's laid-out bounds.
@@ -128,11 +116,7 @@ public fun Modifier.onScroll(callback: (PointerEvent.Scroll, IntOffset) -> Input
  * @return this chain with one appended consuming scroll handler.
  * @throws Throwable when [action] fails during dispatch.
  */
-public fun Modifier.onScroll(action: () -> Unit): Modifier =
-    onScroll { _, _ ->
-        action()
-        InputResult.Consumed
-    }
+public fun Modifier.onScroll(action: () -> Unit): Modifier = onScroll(InputResult.Consumed) { _, _ -> action() }
 
 /**
  * Observes distinct pointer enter and exit transitions for this modifier's laid-out bounds.
@@ -145,4 +129,18 @@ public fun Modifier.onScroll(action: () -> Unit): Modifier =
  * @return this chain with one appended active hover observer.
  * @throws Throwable when [callback] fails while a move or detach transition is delivered.
  */
-public fun Modifier.onHover(callback: (PointerHoverEvent) -> Unit): Modifier = then(PointerInputModifier.Element(PointerInputModifier.Action.Hover(callback)))
+public fun Modifier.onHover(callback: (PointerHoverEvent) -> Unit): Modifier =
+    then(
+        PointerInputModifier.Element(
+            PointerInputModifier.Action.Hover(callback),
+            DeclarationProjection(BuiltinProjection.Hover.type, callback) { handler, scope ->
+                ProjectionValue.Integer(
+                    scope.action(
+                        ProjectionAction(BuiltinProjection.Hover.type, { value ->
+                            if (requireNotNull(value as? ProjectionValue.Flag).value) PointerHoverEvent.Enter else PointerHoverEvent.Exit
+                        }, handler),
+                    ),
+                )
+            },
+        ),
+    )

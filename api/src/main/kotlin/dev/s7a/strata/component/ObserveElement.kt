@@ -19,6 +19,8 @@ import dev.s7a.strata.node.MeasureNode
 import dev.s7a.strata.node.ParentDataDelegateNode
 import dev.s7a.strata.node.ReactiveContentNode
 import dev.s7a.strata.node.StateObserverNode
+import dev.s7a.strata.projection.BuiltinProjection
+import dev.s7a.strata.projection.DeclarationProjection
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
 import dev.s7a.strata.state.StateSource
 import dev.s7a.strata.node.Node as RetainedNode
@@ -38,6 +40,8 @@ internal class ObserveElement(
         type = if (transparent) TRANSPARENT_TYPE else TYPE,
         modifier = modifier,
     ) {
+    override val projection: DeclarationProjection<*> get() = (if (transparent) BuiltinProjection.StateComponent else BuiltinProjection.Observe).properties()
+
     /**
      * Owns only current derived children and values, preserving compatible descendants across updates.
      */

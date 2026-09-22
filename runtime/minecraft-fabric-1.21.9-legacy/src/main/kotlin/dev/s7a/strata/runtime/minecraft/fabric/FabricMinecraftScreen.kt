@@ -417,12 +417,13 @@ public class FabricMinecraftScreen private constructor(
             terminalFailure(failure)
         }
 
-    private fun terminalFailure(failure: Throwable): Nothing {
+    private fun terminalFailure(failure: Throwable): Boolean {
         try {
             close()
         } catch (cleanup: Throwable) {
             FabricMinecraftFailures.addSuppressed(failure, cleanup)
         }
+        if (FabricRemoteScreens.fail(this, failure)) return true
         throw failure
     }
 

@@ -13,6 +13,9 @@ import dev.s7a.strata.node.DirtyMask
 import dev.s7a.strata.node.DirtyPhase
 import dev.s7a.strata.node.LayoutNode
 import dev.s7a.strata.node.MeasureNode
+import dev.s7a.strata.projection.BuiltinProjection
+import dev.s7a.strata.projection.DeclarationProjection
+import dev.s7a.strata.projection.ProjectionValue
 import dev.s7a.strata.node.Node as RetainedNode
 
 /**
@@ -44,6 +47,8 @@ internal class GridElement(
         children = children,
         modifier = modifier,
     ) {
+    override val projection: DeclarationProjection<*> get() = BuiltinProjection.Grid.properties(ProjectionValue.Integer(columns.toLong()), ProjectionValue.Integer(horizontalSpacing.toLong()), ProjectionValue.Integer(verticalSpacing.toLong()), ProjectionValue.Integer(contentAlignment.ordinal.toLong()))
+
     init {
         validate(columns, horizontalSpacing, verticalSpacing)
     }

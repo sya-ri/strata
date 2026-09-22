@@ -1,0 +1,7 @@
+{
+  "id": "strata-acceptance",
+  "name": "Strata Velocity Acceptance",
+  "version": "${version}",
+  "main": "dev.s7a.strata.integration.velocity.VelocityAcceptancePlugin",
+  "dependencies": [{"id": "strata", "optional": false}]
+}

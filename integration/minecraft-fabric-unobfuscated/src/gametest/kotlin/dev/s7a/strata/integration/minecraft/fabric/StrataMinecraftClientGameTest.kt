@@ -233,6 +233,7 @@ public class StrataMinecraftClientGameTest : FabricClientGameTest {
         }
 
         closeFabricScreen(context)
+        RemoteNativeGameTest.run(context)
     }
 
     @OptIn(InternalStrataRuntimeApi::class)

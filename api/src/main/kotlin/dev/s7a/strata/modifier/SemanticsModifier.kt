@@ -4,6 +4,9 @@ import dev.s7a.strata.node.DirtyMask
 import dev.s7a.strata.node.DirtyPhase
 import dev.s7a.strata.node.ModifierNode
 import dev.s7a.strata.node.SemanticsNode
+import dev.s7a.strata.projection.BuiltinProjection
+import dev.s7a.strata.projection.DeclarationProjection
+import dev.s7a.strata.projection.ProjectionValue
 import dev.s7a.strata.semantics.Semantics
 import dev.s7a.strata.semantics.SemanticsScope
 
@@ -19,6 +22,28 @@ internal object SemanticsModifier {
     internal data class Element(
         val value: Semantics,
     ) : ModifierElement {
+        override val projection: DeclarationProjection<*>? =
+            if (value.role != null && value.role.projectionType == null) {
+                null
+            } else {
+                DeclarationProjection(BuiltinProjection.Semantics.type, value) { semantics, scope ->
+                    ProjectionValue.Sequence(
+                        listOf(
+                            semantics.label?.let(scope::text) ?: ProjectionValue.Absent,
+                            semantics.role?.let { role ->
+                                val type = checkNotNull(role.projectionType)
+                                scope.requireType(type)
+                                ProjectionValue.Sequence(listOf(ProjectionValue.Text(type.name.namespace), ProjectionValue.Text(type.name.path), ProjectionValue.Integer(type.version.toLong())))
+                            } ?: ProjectionValue.Absent,
+                            semantics.value?.let(scope::text) ?: ProjectionValue.Absent,
+                            ProjectionValue.Flag(semantics.disabled),
+                            semantics.selected?.let(ProjectionValue::Flag) ?: ProjectionValue.Absent,
+                            semantics.checked?.let(ProjectionValue::Flag) ?: ProjectionValue.Absent,
+                        ),
+                    )
+                }
+            }
+
         /**
          * The stable semantics modifier token.
          */

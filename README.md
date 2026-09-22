@@ -138,6 +138,9 @@ The [build guide](docs/development/build.md#initial-web-documents) explains prer
 | --- | --- |
 | `api` | Compile application UI and custom components. |
 | `runtime/core` | Integrate the shared retained engine through its runtime contracts. |
+| `runtime/remote` | Encode, negotiate, and synchronize server-owned declarations and typed client events. |
+| `runtime/paper` | Open server-owned DSL screens through an installed Paper plugin. |
+| `runtime/velocity` | Own DSL screens on a Velocity proxy and coordinate backend connection lifetimes. |
 | `runtime/headless` | Render portable output and inspect UI behavior without launching Minecraft. |
 | `runtime/web` | Build initial HTML and mount supported components into native browser DOM. |
 | `runtime/minecraft` | Host profile-backed components and resources in a common runtime. |
@@ -147,6 +150,12 @@ The [build guide](docs/development/build.md#initial-web-documents) explains prer
 Versioned Fabric Mods package their common runtime libraries.
 Integration modules contain verification and examples and are not published.
 See [architecture](docs/development/architecture.md) for dependency boundaries.
+
+Paper plugins can own screen state and handlers through `PaperScreens.open(ownerPlugin, player, definition)` while the installed Fabric runtime handles layout, drawing, and input.
+The [Paper guide](docs/guides/paper.md) covers the separate server plugin artifact, capability checks, and the [compiled example plugin](examples/paper/src/main/kotlin/dev/s7a/strata/examples/paper/PaperDemoPlugin.kt).
+Velocity plugins use `VelocityScreens.open(ownerPlugin, player) { ... }` to construct their screen and state on the proxy runtime's dedicated UI thread.
+The [Velocity guide](docs/guides/velocity.md) covers installation, asynchronous state updates, and the [compiled example plugin](examples/velocity/src/main/kotlin/dev/s7a/strata/examples/velocity/VelocityDemoPlugin.kt).
+Both hosts share typed input subscriptions, validated operations, and capability negotiation; the [compatibility table](docs/reference/compatibility.md) lists client artifacts and Paper distributions.
 
 ## Changelog
 

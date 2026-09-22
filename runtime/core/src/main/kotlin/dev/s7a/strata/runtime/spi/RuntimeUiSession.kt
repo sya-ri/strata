@@ -26,6 +26,21 @@ public sealed interface RuntimeUiSession :
     AutoCloseable,
     RuntimeUiDiagnosticsOwner {
     /**
+     * Commits the shared declaration cutoff and calls [project] without measuring or painting.
+     * The callback is owner-thread confined, read-only, and cannot reenter session operations.
+     * Its failure poisons and cleans the session exactly like a frame failure.
+     * This operation does not enable geometry-based pointer or keyboard dispatch.
+     */
+    public fun <T> projectDeclarations(project: (RuntimeDeclaration) -> T): T
+
+    /**
+     * Runs an authenticated remote action on the session owner thread.
+     * The adapter must validate connection ownership, endpoint generation, and event data first.
+     * State mutations are allowed; failures poison the session and preserve cleanup failure ordering.
+     */
+    public fun dispatchAction(action: () -> Unit)
+
+    /**
      * Detached identity of the current editable focus interval in the most recently committed attached tree.
      *
      * The value is null before a successful frame, while detached, or without an accepting target that requires text input.

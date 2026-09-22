@@ -13,6 +13,9 @@ import dev.s7a.strata.node.DirtyMask
 import dev.s7a.strata.node.DirtyPhase
 import dev.s7a.strata.node.LayoutNode
 import dev.s7a.strata.node.MeasureNode
+import dev.s7a.strata.projection.BuiltinProjection
+import dev.s7a.strata.projection.DeclarationProjection
+import dev.s7a.strata.projection.ProjectionValue
 import dev.s7a.strata.node.Node as RetainedNode
 
 /**
@@ -43,6 +46,13 @@ internal class LinearElement(
         children = children,
         modifier = modifier,
     ) {
+    override val projection: DeclarationProjection<*>
+        get() =
+            when (val direction = orientation) {
+                is LinearOrientation.Row -> BuiltinProjection.Row.properties(ProjectionValue.Integer(spacing.toLong()), ProjectionValue.Integer(arrangement.ordinal.toLong()), ProjectionValue.Integer(direction.alignment.ordinal.toLong()))
+                is LinearOrientation.Column -> BuiltinProjection.Column.properties(ProjectionValue.Integer(spacing.toLong()), ProjectionValue.Integer(arrangement.ordinal.toLong()), ProjectionValue.Integer(direction.alignment.ordinal.toLong()))
+            }
+
     init {
         require(0 <= spacing) { "Linear layout spacing must be non-negative." }
     }

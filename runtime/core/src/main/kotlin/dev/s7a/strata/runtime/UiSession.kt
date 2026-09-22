@@ -10,6 +10,7 @@ import dev.s7a.strata.runtime.diagnostics.UiRenderMetric
 import dev.s7a.strata.runtime.diagnostics.UiRenderMonitor
 import dev.s7a.strata.runtime.diagnostics.UiRenderOperation
 import dev.s7a.strata.runtime.platform.currentThread
+import dev.s7a.strata.runtime.spi.RuntimeDeclaration
 import dev.s7a.strata.runtime.spi.RuntimeTextInputFocus
 import dev.s7a.strata.runtime.spi.RuntimeUiFrame
 import dev.s7a.strata.runtime.spi.createRuntimeUiFrame
@@ -284,6 +285,41 @@ internal class UiSession(
      * @throws IllegalStateException when called from a wrong lifecycle state, wrong thread, or reentrant operation.
      */
     internal fun frame(constraints: Constraints): RuntimeUiFrame = frame(constraints, null)
+
+    /**
+     * Commits declarations at the ordinary frame cutoff without running any presentation phase.
+     * Projection is read-only and follows the same failure and cleanup contract as a rendered frame.
+     */
+    internal fun <T> projectDeclarations(project: (RuntimeDeclaration) -> T): T {
+        beginOperation(SessionOperation.Frame)
+        try {
+            check(currentState === UiSessionState.Attached) { "Declaration projection requires an attached session." }
+            return runCatching {
+                applyBindingCutoff()
+                if (dirty) rebuildContent()
+                val retainedTree = checkNotNull(tree)
+                retainedTree.refreshObservedContent()
+                val result = retainedTree.projectDeclarations(project)
+                retainedTree.finishFrameState()
+                result
+            }.getOrElse(::fail)
+        } finally {
+            endOperation()
+        }
+    }
+
+    /**
+     * Executes an already authenticated remote action through the shared owner-thread input boundary.
+     */
+    internal fun dispatchAction(action: () -> Unit) {
+        beginOperation(SessionOperation.Input)
+        try {
+            check(currentState === UiSessionState.Attached) { "Remote actions require an attached session." }
+            runCatching(action).getOrElse(::fail)
+        } finally {
+            endOperation()
+        }
+    }
 
     /**
      * Produces one immutable frame after notifying time-aware retained nodes with [time].

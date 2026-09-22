@@ -9,6 +9,8 @@ import dev.s7a.strata.geometry.IntSize
 import dev.s7a.strata.modifier.Modifier
 import dev.s7a.strata.node.DirtyMask
 import dev.s7a.strata.node.MeasureNode
+import dev.s7a.strata.projection.BuiltinProjection
+import dev.s7a.strata.projection.DeclarationProjection
 import dev.s7a.strata.node.Node as RetainedNode
 
 /**
@@ -28,6 +30,8 @@ internal class SpacerElement(
         type = TYPE,
         modifier = modifier,
     ) {
+    override val projection: DeclarationProjection<*> get() = BuiltinProjection.Spacer.properties()
+
     /**
      * Retained spacer node that reports the constrained zero extent.
      */

@@ -33,12 +33,12 @@ public object ComponentRuntimeBridge {
 
     /**
      * Returns the runtime active for the current owner-thread screen callback.
+     * The returned runtime must not escape that evaluation; deferred content uses [ComponentRuntime.retainEvaluator].
      *
      * @return current runtime implementation.
      * @throws IllegalStateException when called outside runtime evaluation.
      */
-    @JvmSynthetic
-    internal fun current(): ComponentRuntime =
+    public fun current(): ComponentRuntime =
         checkNotNull(active.current) {
             "Profile-backed components require an active runtime screen callback on this thread."
         }
