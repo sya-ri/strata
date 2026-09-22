@@ -191,10 +191,16 @@ exclude:
       - runtime/minecraft-fabric-1.21-legacy/src/main/java/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftInventoryBridge.java
   # Qodana treats the Strata minecraft module as a runtime class source and reports its Kotlin and annotation dependencies as classpath overrides.
   # Exact loaded-client tests exercise these inventory bridges with the owning Minecraft runtime and dependency set.
+  # The flattened remote module likewise misattributes the native payloads' compile-time nullability annotations; published remote JARs contain no annotation classes.
   - name: ClassOverriddenAtRuntime
     paths:
       - runtime/minecraft-fabric-1.21-legacy/src/main/java/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftInventoryBridge.java
       - runtime/minecraft-fabric-unobfuscated/src/main/java/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftInventoryBridge.java
+      - runtime/minecraft-fabric-remote-payload/src/main/java/dev/s7a/strata/runtime/minecraft/fabric/FabricRemotePayload.java
+      - runtime/minecraft-fabric-remote-payload/src/main/java/dev/s7a/strata/runtime/minecraft/fabric/FabricRemoteRegistration.java
+      - runtime/minecraft-fabric-remote-stream/src/main/java/dev/s7a/strata/runtime/minecraft/fabric/FabricRemotePayload.java
+      - runtime/minecraft-fabric-remote-stream/src/main/java/dev/s7a/strata/runtime/minecraft/fabric/FabricRemoteRegistration.java
+      - runtime/minecraft-fabric-remote-stream/src/main/java/dev/s7a/strata/runtime/minecraft/fabric/FabricRemoteRegistrationCodec.java
   # Mixin target self-casts are valid only after bytecode transformation, which Qodana deliberately does not execute.
   - name: DataFlowIssue
     paths:
@@ -232,6 +238,10 @@ exclude:
       # Paper invokes annotated event handlers reflectively; the external example plugin exercises the public registration API across linked roots.
       - runtime/paper/src/main/kotlin/dev/s7a/strata/runtime/paper/StrataPlugin.kt
       - runtime/paper/src/main/kotlin/dev/s7a/strata/runtime/paper/PaperScreens.kt
+      # Shared native sources are indexed under one exact-version owner; even calls within FabricRemoteScreens and Java calls to FabricRemotePayloadTypes lose their matching owner.
+      # Every adapter compiles these calls, and integrated/Paper client receipts exercise their negotiation, updates, and teardown.
+      - runtime/minecraft-fabric-shared/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricRemoteScreens.kt
+      - runtime/minecraft-fabric-remote-stream/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricRemotePayloadTypes.kt
       # The generated JVM IDEA model co-locates expect/actual declarations without KMP source-set relationships.
       # UnusedSymbol loses references across that boundary, including JVM typealiases and fields used by actual members.
       # These exact bridges are exercised by common/JVM tests; retain every other inspection and remove this exception when the model resolves KMP usages.
