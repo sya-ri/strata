@@ -35,7 +35,6 @@ internal object MinecraftFontDisplay {
         context.computeOnClient { minecraft ->
             minecraft.window.setWindowed(size.width, size.height)
             minecraft.options.forceUnicodeFont().set(false)
-            minecraft.options.guiScale().set(scale)
         }
         context.movePointer(IntOffset.Zero)
         var state = context.computeOnClient(::snapshot)
@@ -46,6 +45,7 @@ internal object MinecraftFontDisplay {
                     GLFW.glfwRestoreWindow(minecraft.window.window)
                     GLFW.glfwSetWindowSize(minecraft.window.window, size.width, size.height)
                 } else if (state.matches(size, scale).not()) {
+                    minecraft.options.guiScale().set(scale)
                     minecraft.resizeDisplay()
                 }
             }
