@@ -180,6 +180,7 @@ for version in "${fixture_versions[@]}"; do
     'TestSource;../minecraft-fabric-remote-stream/src/gametest/kotlin'
     'TestSource;../minecraft-fabric-remote-verification/src/gametest/kotlin'
     'TestSource;../minecraft-fabric-paper-unobfuscated/src/gametest/kotlin'
+    'TestSource;../../examples/paper/src/main/kotlin'
     'TestSource;../minecraft-fabric-canvas-fixture-probe/src/gametest/kotlin'
     'TestSource;../minecraft-fabric-1.10-legacy/src/gametest/kotlin'
     'TestResource;../minecraft-font-parity/src/gametest/resources'
@@ -227,6 +228,14 @@ if [[ "$fixture_project_file_path" != "$fixture_project" ]]; then
     's#file://\$MODULE_DIR\$/../minecraft-fabric-1.10/src/gametest/java#file:///'"$fixture_project_case_changed_file_path"'/integration/minecraft-fabric-1.10/src/gametest/java#' \
     "$fixture_integration_iml"
 fi
+
+paper_example_directory="$fixture_project/examples/paper"
+mkdir -p "$paper_example_directory"
+printf '' > "$paper_example_directory/build.gradle.kts"
+write_iml \
+  "$paper_example_directory/examples-paper.iml" \
+  'Source;src/main/kotlin' \
+  'TestSource;src/test/kotlin'
 
 docs_directory="$fixture_project/integration/docs"
 mkdir -p "$docs_directory/src/extra/kotlin"
@@ -297,6 +306,7 @@ portable_jq -n --argjson versions "$fixture_versions_json" '
       {type: "TestSource", path: "file://$PROJECT_DIR$/integration/minecraft-fabric-remote-stream/src/gametest/kotlin"},
       {type: "TestSource", path: "file://$PROJECT_DIR$/integration/minecraft-fabric-remote-verification/src/gametest/kotlin"},
       {type: "TestSource", path: "file://$PROJECT_DIR$/integration/minecraft-fabric-paper-unobfuscated/src/gametest/kotlin"},
+      {type: "TestSource", path: "file://$PROJECT_DIR$/examples/paper/src/main/kotlin"},
       {type: "TestSource", path: "file://$PROJECT_DIR$/integration/minecraft-fabric-canvas-fixture-probe/src/gametest/kotlin"},
       {type: "TestSource", path: "file://$PROJECT_DIR$/integration/minecraft-fabric-1.10-legacy/src/gametest/kotlin"},
       {type: "TestResource", path: "file://$PROJECT_DIR$/integration/minecraft-font-parity/src/gametest/resources"},
@@ -333,6 +343,14 @@ portable_jq -n --argjson versions "$fixture_versions_json" '
       [
         {type: "Source", path: "file://$PROJECT_DIR$/integration/minecraft-fabric-unobfuscated/src/gametest/kotlin"}
       ]
+    )]
+    + [projectModule(
+      "examples-paper";
+      [
+        {type: "Source", path: "file://$PROJECT_DIR$/examples/paper/src/main/kotlin"},
+        {type: "TestSource", path: "file://$PROJECT_DIR$/examples/paper/src/test/kotlin"}
+      ];
+      []
     )]
     + [projectModule(
       "minecraft-fonts-lwjgl";
@@ -383,6 +401,9 @@ assert_rejected() {
 assert_rejected '.modules |= map(select(.name != "integration-minecraft-fabric-1.10"))'
 assert_rejected '.modules |= map(select(.name != "runtime-minecraft-fabric-1.10"))'
 assert_rejected '.modules |= map(select(.name != "docs"))'
+assert_rejected '.modules |= map(select(.name != "examples-paper"))'
+assert_rejected '(.modules[] | select(.name == "integration-minecraft-fabric-1.10").contentEntries[0].sourceFolders) |= map(select(.path != "file://$PROJECT_DIR$/examples/paper/src/main/kotlin"))'
+assert_rejected '(.modules[] | select(.name == "examples-paper")).name = "unexpected-paper-example"'
 assert_rejected '.modules += [.modules[0]]'
 assert_rejected '.modules += [(.modules[0] | .name = "runtime-minecraft-fabric-10.1")]'
 assert_rejected '(.modules[] | select(.name == "integration-minecraft-fabric-1.10")).name = "integration-minecraft-fabric-10.1"'
