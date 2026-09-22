@@ -40,20 +40,19 @@ public class VelocityAcceptancePlugin
                     .open(this, player) {
                         sessions.remove(player.uniqueId)?.close()
                         VelocityAcceptanceSession(this, proxy, player, directory).also { sessions[player.uniqueId] = it }.controls()
-                    }.thenAccept { handle -> checkNotNull(sessions[player.uniqueId]).bind(handle) }
-                    .exceptionally {
+                    }.thenCompose { handle ->
+                        VelocityScreens.execute(this) { checkNotNull(sessions[player.uniqueId]).bind(handle) }
+                    }.exceptionally {
                         logger.error("Velocity acceptance could not start", it)
-                        null
                     }
             }
             register("strata-proxy-resume") { player ->
                 VelocityScreens
                     .open(this, player) { checkNotNull(sessions[player.uniqueId]).resume() }
-                    .thenAccept { handle ->
-                        checkNotNull(sessions[player.uniqueId]).bind(handle)
+                    .thenCompose { handle ->
+                        VelocityScreens.execute(this) { checkNotNull(sessions[player.uniqueId]).bind(handle) }
                     }.exceptionally {
                         logger.error("Velocity acceptance could not resume", it)
-                        null
                     }
             }
         }

@@ -61,7 +61,7 @@ internal class VelocityAcceptanceSession(
         }
 
     /**
-     * Requires terminal cleanup of the previous screen and continued capabilities on the same proxy connection.
+     * Requires terminal cleanup of the previous screen and renewed capabilities after backend replacement.
      */
     fun resume(): ScreenDefinition {
         checkOwner()
