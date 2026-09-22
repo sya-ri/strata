@@ -175,6 +175,8 @@ for version in "${fixture_versions[@]}"; do
     'TestSource;../minecraft-fabric-canvas-fixture-probe/src/gametest/kotlin'
     'TestSource;../minecraft-fabric-1.10-legacy/src/gametest/kotlin'
     'TestResource;../minecraft-font-parity/src/gametest/resources'
+    'TestSource;../minecraft-font-parity-blaze3d/src/gametest/kotlin'
+    'TestSource;../minecraft-font-parity-renderpearl/src/gametest/kotlin'
   )
   case "$version" in
     1.2)
@@ -281,7 +283,9 @@ portable_jq -n --argjson versions "$fixture_versions_json" '
       {type: "TestSource", path: "file://$PROJECT_DIR$/integration/minecraft-fabric-canvas-shared/src/gametest/kotlin"},
       {type: "TestSource", path: "file://$PROJECT_DIR$/integration/minecraft-fabric-canvas-fixture-probe/src/gametest/kotlin"},
       {type: "TestSource", path: "file://$PROJECT_DIR$/integration/minecraft-fabric-1.10-legacy/src/gametest/kotlin"},
-      {type: "TestResource", path: "file://$PROJECT_DIR$/integration/minecraft-font-parity/src/gametest/resources"}
+      {type: "TestResource", path: "file://$PROJECT_DIR$/integration/minecraft-font-parity/src/gametest/resources"},
+      {type: "TestSource", path: "file://$PROJECT_DIR$/integration/minecraft-font-parity-blaze3d/src/gametest/kotlin"},
+      {type: "TestSource", path: "file://$PROJECT_DIR$/integration/minecraft-font-parity-renderpearl/src/gametest/kotlin"}
     ]
     + if $version == "1.2" then
         [{type: "TestSource", path: "file://$PROJECT_DIR$/integration/minecraft-fabric-1.10/src/gametest/java"}]

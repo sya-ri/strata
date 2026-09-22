@@ -472,7 +472,7 @@ classify_target_source_path() {
     target_source_allowed_owners='integration'
     target_source_root=${BASH_REMATCH[1]}
     [[ "$repository_relative_path" != "$target_source_root" ]] || target_source_is_module_root=true
-  elif [[ "$repository_relative_path" =~ ^(integration/minecraft-font-parity(-legacy|-26)?)(/|$) ]]; then
+  elif [[ "$repository_relative_path" =~ ^(integration/minecraft-font-parity(-legacy|-26|-blaze3d|-renderpearl)?)(/|$) ]]; then
     target_source_allowed_owners='integration'
     target_source_root=${BASH_REMATCH[1]}
     if [[ "$repository_relative_path" == 'integration/minecraft-font-parity/src/gametest/kotlin' || \
