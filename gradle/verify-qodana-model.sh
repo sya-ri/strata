@@ -449,7 +449,7 @@ classify_target_source_path() {
     target_source_allowed_owners='runtime'
     target_source_root=${BASH_REMATCH[1]}
     [[ "$repository_relative_path" != "$target_source_root" ]] || target_source_is_module_root=true
-  elif [[ "$repository_relative_path" =~ ^(runtime/minecraft-fabric-(shared|identifier|unobfuscated))(/|$) ]]; then
+  elif [[ "$repository_relative_path" =~ ^(runtime/minecraft-fabric-(shared|identifier|glfw|unobfuscated(-glfw)?))(/|$) ]]; then
     target_source_allowed_owners='runtime'
     target_source_root=${BASH_REMATCH[1]}
     [[ "$repository_relative_path" != "$target_source_root" ]] || target_source_is_module_root=true

@@ -168,6 +168,7 @@ exclude:
       - runtime/minecraft/src/main/kotlin/dev/s7a/strata/runtime/minecraft/MinecraftRectPaintScope.kt
       - runtime/minecraft-fabric-canvas-extractor/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricNativeCanvasDrawing.kt
       - runtime/minecraft-fabric-canvas-gui/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricNativeCanvasDrawing.kt
+      - runtime/minecraft-fabric-canvas-gpu263/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricNativeCanvasDrawing.kt
       - runtime/minecraft-fabric-shared/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftProfileFactory.kt
   # The destructured observer token is used to suppress feedback to the originating scroll controller.
   - name: UnusedVariable
@@ -201,7 +202,8 @@ exclude:
   # Native focus callbacks retain defensive initialization guards across all linked Minecraft owners despite their annotated non-null facade.
   - name: ConstantValue
     paths:
-      - runtime/minecraft-fabric-shared/src/main/java/dev/s7a/strata/runtime/minecraft/fabric/mixin/lifecycle/FabricMinecraftWindowMixin.java
+      - runtime/minecraft-fabric-glfw/src/main/java/dev/s7a/strata/runtime/minecraft/fabric/mixin/lifecycle/FabricMinecraftWindowMixin.java
+      - runtime/minecraft-fabric-26.3/src/main/java/dev/s7a/strata/runtime/minecraft/fabric/mixin/lifecycle/FabricMinecraftWindowMixin.java
   # Mixin shadow fields are target-owned runtime fields and cannot be converted into locals in the untransformed mixin source.
   - name: FieldCanBeLocal
     paths:
@@ -321,6 +323,9 @@ exclude:
       - runtime/minecraft-fabric-shared/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftFontContract.kt
       - runtime/minecraft-fabric-shared/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftGuiScaling.kt
       - runtime/minecraft-fabric-shared/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftInputMapping.kt
+      - runtime/minecraft-fabric-glfw/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftPointerMapping.kt
+      - runtime/minecraft-fabric-unobfuscated-glfw/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftKeyMapping.kt
+      - runtime/minecraft-fabric-26.3/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftKeyMapping.kt
       - runtime/minecraft-fabric-shared/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftTextMapping.kt
       - runtime/minecraft-fabric-shared/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftWidgetImages.kt
       - runtime/minecraft-fabric-unobfuscated/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftFocusedInputMapping.kt
@@ -371,6 +376,14 @@ exclude:
       - runtime/minecraft-fabric-canvas-gpu262/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftPortableTextureFactory.kt
       - runtime/minecraft-fabric-canvas-gpu262/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricNativeCanvasDestructionFactory.kt
       - runtime/minecraft-fabric-canvas-gpu262/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricNativeCanvasDriver.kt
+      - runtime/minecraft-fabric-canvas-gpu263/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftPortableTextureFactory.kt
+      - runtime/minecraft-fabric-canvas-gpu263/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftSampledImageDrawing.kt
+      - runtime/minecraft-fabric-canvas-gpu263/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricNativeCanvasDestructionFactory.kt
+      - runtime/minecraft-fabric-canvas-gpu263/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricNativeCanvasDrawing.kt
+      - runtime/minecraft-fabric-canvas-gpu263/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricNativeCanvasDriver.kt
+      - runtime/minecraft-fabric-canvas-gpu263/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricNativeCanvasTargetDestruction.kt
+      - runtime/minecraft-fabric-canvas-gpu263/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricNativeCanvasTextureFactory.kt
+      - runtime/minecraft-fabric-canvas-gpu263/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/MinecraftCanvasContext.kt
       - runtime/minecraft-fabric-canvas-gui/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricNativeCanvasDrawing.kt
       - runtime/minecraft-fabric-canvas-shared/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftCanvasPresentation.kt
       - runtime/minecraft-fabric-canvas-shared/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftPortableFrames.kt
