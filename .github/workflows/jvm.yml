@@ -249,6 +249,10 @@ jobs:
           path: .gradle/loom-cache
           # Never fall back by prefix: Loom's generated Minecraft artifacts are valid only for this complete input hash.
           key: loom-${{ runner.os }}-${{ matrix.id }}-${{ steps.loom_inputs.outputs.hash }}
+      - name: Install EGL libraries
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes --no-install-recommends libegl1 libegl-mesa0
       - name: Run ${{ matrix.name }}
         # Loom's client run tasks select xvfb-run automatically on Linux when CI is true.
         run: bash ./gradlew ${{ matrix.gradle_arguments }} -Pstrata.webDemoInstallSystemDependencies=true
