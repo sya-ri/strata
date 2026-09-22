@@ -21,7 +21,7 @@ abstract class FabricRemoteReceiveMixin {
             FriendlyByteBuf data = packet.getData();
             try {
                 int count = data.readableBytes();
-                if (count < 17 || 24576 < count) throw new IllegalArgumentException("Invalid Strata frame length.");
+                if (count < 1 || 24576 < count) throw new IllegalArgumentException("Invalid Strata frame length.");
                 byte[] bytes = new byte[count];
                 data.getBytes(data.readerIndex(), bytes);
                 FabricRemoteScreens.INSTANCE.enqueue(((ClientPacketListener) (Object) this).getConnection(), bytes);

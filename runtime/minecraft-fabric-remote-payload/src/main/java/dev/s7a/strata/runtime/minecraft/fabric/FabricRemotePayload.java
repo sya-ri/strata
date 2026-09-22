@@ -13,7 +13,7 @@ public record FabricRemotePayload(byte[] bytes) implements CustomPacketPayload {
     public static final ResourceLocation ID = new ResourceLocation(RemoteConnection.CHANNEL);
 
     public FabricRemotePayload {
-        if (bytes.length < 17 || 24576 < bytes.length) throw new IllegalArgumentException("Invalid Strata frame length.");
+        if (bytes.length < 1 || 24576 < bytes.length) throw new IllegalArgumentException("Invalid Strata frame length.");
         bytes = bytes.clone();
     }
 
@@ -31,7 +31,7 @@ public record FabricRemotePayload(byte[] bytes) implements CustomPacketPayload {
      */
     public static FabricRemotePayload read(FriendlyByteBuf buffer) {
         int count = buffer.readableBytes();
-        if (count < 17 || 24576 < count) throw new IllegalArgumentException("Invalid Strata frame length.");
+        if (count < 1 || 24576 < count) throw new IllegalArgumentException("Invalid Strata frame length.");
         byte[] bytes = new byte[count];
         buffer.readBytes(bytes);
         return new FabricRemotePayload(bytes);

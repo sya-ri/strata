@@ -12,13 +12,17 @@ import dev.s7a.strata.modifier.background
 import dev.s7a.strata.modifier.onActivate
 import dev.s7a.strata.projection.ProjectionValue
 import dev.s7a.strata.render.ArgbColor
+import dev.s7a.strata.runtime.remote.RemoteAddress
 import dev.s7a.strata.runtime.remote.RemoteBuiltins
 import dev.s7a.strata.runtime.remote.RemoteCanvas
 import dev.s7a.strata.runtime.remote.RemoteComponentRuntime
 import dev.s7a.strata.runtime.remote.RemoteConnection
+import dev.s7a.strata.runtime.remote.RemoteEndpoint
 import dev.s7a.strata.runtime.remote.RemoteFailure
 import dev.s7a.strata.runtime.remote.RemoteFrameInbox
 import dev.s7a.strata.runtime.remote.RemoteMessage
+import dev.s7a.strata.runtime.remote.RemotePacket
+import dev.s7a.strata.runtime.remote.RemotePacketStream
 import dev.s7a.strata.runtime.remote.RemoteRegistry
 import dev.s7a.strata.runtime.remote.RemoteServerSession
 import dev.s7a.strata.runtime.remote.RemoteSessionStatus
@@ -106,7 +110,10 @@ public object RemoteNativeServerFixture {
     private class Peer(
         player: ServerPlayer,
     ) : AutoCloseable {
-        val connection = RemoteConnection(RemoteRegistry().also(RemoteBuiltins::register).types + RemoteNativeCanvasFixture.type) { sendRemoteTestPacket(player, it) }
+        private val address = RemoteAddress(RemoteEndpoint.Server)
+        private var discovered = false
+        private val stream = RemotePacketStream(address) { sendRemoteTestPacket(player, it) }
+        val connection = RemoteConnection(RemoteRegistry().also(RemoteBuiltins::register).types + RemoteNativeCanvasFixture.type, RemotePacket.limits, stream::send)
         var screen: RemoteServerSession? = null
         var accepted = false
         private val field = TextFieldState(maxLength = 64)
@@ -114,6 +121,20 @@ public object RemoteNativeServerFixture {
         private val activated = mutableStateOf(false)
 
         fun receive(bytes: ByteArray) {
+            val packet = RemotePacket.decode(bytes)
+            if (packet === RemotePacket.Discovery) {
+                if (discovered.not()) {
+                    discovered = true
+                    connection.start()
+                }
+                return
+            }
+            check(packet is RemotePacket.Frame)
+            if (packet.address != address || discovered.not()) return
+            stream.offer(packet, now())
+        }
+
+        private fun receiveFrame(bytes: ByteArray) {
             when (val message = connection.receive(bytes, now())) {
                 null -> Unit
                 is RemoteMessage.Action -> checkNotNull(screen).receive(message)
@@ -151,18 +172,27 @@ public object RemoteNativeServerFixture {
         }
 
         fun tick() {
+            if (discovered) {
+                stream.drain(now()) { bytes ->
+                    receiveFrame(bytes)
+                    connection.capabilities?.let { stream.limitTo(it.limits) }
+                }
+            }
             val session = screen
             if (session != null && session.status !is RemoteSessionStatus.Closed) {
                 ticks.value++
                 session.tick()
             }
-            connection.tick(now())
-            connection.flush()
+            if (discovered) {
+                connection.tick(now())
+                connection.flush()
+            }
         }
 
         override fun close() {
             screen?.close(RemoteFailure.Disconnected, false)
             screen = null
+            stream.close()
             connection.close()
         }
 

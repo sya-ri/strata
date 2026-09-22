@@ -1,7 +1,9 @@
 package dev.s7a.strata.runtime.remote
 
 import dev.s7a.strata.projection.BuiltinProjection
+import dev.s7a.strata.projection.ProjectionType
 import dev.s7a.strata.projection.ProjectionValue
+import dev.s7a.strata.resource.ResourceId
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Assertions.assertThrows
@@ -98,5 +100,46 @@ internal class RemoteConnectionTest {
         assertThrows(IllegalStateException::class.java) { connection.flush() }
         assertEquals(0, frames.size)
         peer.close()
+    }
+
+    @Test
+    fun fragmentedBootstrapReservesTheNativeRoutingEnvelope() {
+        val types = (0 until 2000).map { ProjectionType(ResourceId("test", "component_$it"), 1) }.toSet()
+        val address = RemoteAddress(RemoteEndpoint.Proxy)
+        val packets = mutableListOf<ByteArray>()
+        RemotePacketStream(address, send = packets::add).use { stream ->
+            RemoteConnection(types, RemotePacket.limits, stream::send).use { connection ->
+                connection.start()
+                connection.flush(64)
+            }
+        }
+        check(1 < packets.size)
+        check(packets.all { it.size <= RemoteLimits().frameBytes })
+        RemoteConnection(types, RemotePacket.limits.copy(reconstructionMillis = 60_000), {}).use { receiver ->
+            packets.forEach { receiver.receive((RemotePacket.decode(it) as RemotePacket.Frame).bytes, 0) }
+            assertEquals(types, receiver.capabilities?.types)
+        }
+    }
+
+    @Test
+    fun aSmallNegotiatedLimitDoesNotInvalidateThePendingBootstrapReply() {
+        val types = (0 until 100).map { ProjectionType(ResourceId("test", "component_$it")) }.toSet()
+        val address = RemoteAddress(RemoteEndpoint.Proxy)
+        val toClient = ArrayDeque<ByteArray>()
+        val toServer = ArrayDeque<ByteArray>()
+        RemotePacketStream(address, send = toServer::addLast).use { stream ->
+            RemoteConnection(types, RemotePacket.limits.copy(frameBytes = 64), toClient::addLast).use { server ->
+                RemoteConnection(types, RemotePacket.limits, stream::send).use { client ->
+                    server.start()
+                    server.flush(64)
+                    toClient.forEach { client.receive(it, 0) }
+                    stream.limitTo(checkNotNull(client.capabilities).limits)
+                    client.flush(64)
+                    toServer.forEach { server.receive((RemotePacket.decode(it) as RemotePacket.Frame).bytes, 0) }
+                    assertEquals(64, server.capabilities?.limits?.frameBytes)
+                    assertEquals(types, server.capabilities?.types)
+                }
+            }
+        }
     }
 }

@@ -1,0 +1,7 @@
+{
+  "id": "strata-demo",
+  "name": "Strata Demo",
+  "version": "${version}",
+  "main": "dev.s7a.strata.examples.velocity.VelocityDemoPlugin",
+  "dependencies": [{"id": "strata", "optional": false}]
+}

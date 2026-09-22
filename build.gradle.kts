@@ -149,6 +149,7 @@ private data class MinecraftFabricTarget(
 }
 
 val baselineJavaVersion = libs.versions.java.baseline.get().toInt()
+val velocityJavaVersion = libs.versions.java.velocity.get().toInt()
 val minecraftJavaVersion = libs.versions.java.minecraft.get().toInt()
 val minecraftJava21Version = libs.versions.java.minecraft121.get().toInt()
 private val legacyScrollTargets = setOf(libs.versions.minecraft120.get(), libs.versions.minecraft1201.get())
@@ -497,6 +498,7 @@ val releasePublicationProjectPaths =
         ":runtime:core",
         ":runtime:remote",
         ":runtime:paper",
+        ":runtime:velocity",
         ":runtime:web",
         ":runtime:headless",
         ":runtime:minecraft",
@@ -597,6 +599,7 @@ dependencies {
     dokka(project(":runtime:core"))
     dokka(project(":runtime:remote"))
     dokka(project(":runtime:paper"))
+    dokka(project(":runtime:velocity"))
     dokka(project(":runtime:headless"))
     dokka(project(":runtime:minecraft"))
     dokka(project(":runtime:minecraft-fonts-lwjgl"))
@@ -629,7 +632,7 @@ val compatibilityMarkdown = providers.provider {
         appendLine("This table does not record a test run or replace release acceptance evidence.")
         appendLine("All listed clients compile the native Strata remote transport without requiring Fabric API.")
         appendLine("Paper acceptance uses an exact Minecraft version from the [official distribution inventory](https://fill.papermc.io/v3/projects/paper); distribution availability alone is not a successful test receipt.")
-        appendLine("See [Paper screens](../guides/paper.md) for installation and [remote protocol](remote-protocol.md) for connection and extension contracts.")
+        appendLine("See [Paper screens](../guides/paper.md) and [Velocity screens](../guides/velocity.md) for installation, and [remote protocol](remote-protocol.md) for connection and extension contracts.")
     }
 }
 val generateCompatibilityDocumentation = tasks.register("generateCompatibilityDocumentation") {
@@ -1202,7 +1205,16 @@ subprojects {
             }
         }
     }
-    val javaVersion = minecraftTargetByProjectPath[path]?.javaVersion ?: baselineJavaVersion
+    if (path.startsWith(":integration:minecraft-fabric-")) {
+        providers.gradleProperty("strata.velocity.run").orNull?.let { run ->
+            tasks.withType<JavaExec>().configureEach { systemProperty("strata.velocity.run", run) }
+            tasks.withType<ClientProductionRunTask>().configureEach { jvmArgs.add("-Dstrata.velocity.run=$run") }
+        }
+    }
+    val javaVersion = when (path) {
+        ":runtime:velocity", ":examples:velocity", ":integration:velocity" -> velocityJavaVersion
+        else -> minecraftTargetByProjectPath[path]?.javaVersion ?: baselineJavaVersion
+    }
 
     extensions.configure<JavaPluginExtension> {
         val compatibility = JavaVersion.toVersion(javaVersion)

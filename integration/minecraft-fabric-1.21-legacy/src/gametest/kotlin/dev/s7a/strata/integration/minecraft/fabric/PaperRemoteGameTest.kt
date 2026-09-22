@@ -41,6 +41,20 @@ internal object PaperRemoteGameTest {
         context.computeOnClient { connectPaperTest(it, address) }
         awaitConnection(context)
         context.waitTicks(40)
+        verifyPaper(context, run)
+        System.getProperty("strata.velocity.run")?.let { verifyProxy(context, it) }
+        context.computeOnClient { minecraft ->
+            (minecraft.screen as? FabricMinecraftScreen)?.onClose()
+            disconnectPaperTest(minecraft)
+            minecraft.setScreen(TitleScreen())
+        }
+        context.waitTicks(5)
+    }
+
+    private fun verifyPaper(
+        context: MinecraftLoadedTestContext,
+        run: String,
+    ) {
         context.computeOnClient { checkNotNull(it.connection).sendCommand("strata-verify") }
         await(context, Stage.Controls)
         capture(context, "controls")
@@ -70,12 +84,36 @@ internal object PaperRemoteGameTest {
         val output = output()
         Files.createDirectories(output)
         Files.writeString(output.resolve("paper-client.properties"), "runId=$run\nversion=${System.getProperty("strata.minecraftVersion")}\ncontrols=confirmed\ncustomExtension=confirmed\nslot=round-trip\n")
+    }
+
+    private fun verifyProxy(
+        context: MinecraftLoadedTestContext,
+        run: String,
+    ) {
+        context.computeOnClient { checkNotNull(it.connection).sendCommand("strata-proxy-verify") }
+        await(context, Stage.ProxyControls)
+        typeProxy(context, "proxy-日本語")
+        context.waitFor(1200) { it.player != null && it.screen == null }
+        context.waitTicks(40)
+        context.computeOnClient { checkNotNull(it.connection).sendCommand("strata-proxy-resume") }
+        await(context, Stage.ProxyResumed)
+        typeProxy(context, "resumed-日本語")
+        await(context, Stage.ProxyComplete)
+        verifyPaper(context, requireNotNull(System.getProperty("strata.paper.run")))
+        val output = output()
+        Files.writeString(output.resolve("velocity-client.properties"), "runId=$run\ntext=confirmed\nbackendSwitch=confirmed\npaperAfterSwitch=confirmed\n")
+    }
+
+    private fun typeProxy(
+        context: MinecraftLoadedTestContext,
+        value: String,
+    ) {
+        click(context, IntOffset(12, 12), consumesPress = false)
         context.computeOnClient { minecraft ->
-            (minecraft.screen as? FabricMinecraftScreen)?.onClose()
-            disconnectPaperTest(minecraft)
-            minecraft.setScreen(TitleScreen())
+            val screen = requireNotNull(minecraft.screen as? FabricMinecraftScreen)
+            value.codePoints().forEach { check(typePaperTestCharacter(screen, it)) }
         }
-        context.waitTicks(5)
+        click(context, IntOffset(20, 38))
     }
 
     private fun awaitConnection(context: MinecraftLoadedTestContext) {
@@ -137,6 +175,9 @@ internal object PaperRemoteGameTest {
         Controls("Strata verification controls"),
         Inventory("Strata verification inventory"),
         Complete("Strata verification complete"),
+        ProxyControls("Strata proxy controls"),
+        ProxyResumed("Strata proxy resumed"),
+        ProxyComplete("Strata proxy complete"),
         ;
 
         companion object {

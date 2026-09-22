@@ -39,6 +39,20 @@ internal object PaperRemoteGameTest {
         context.waitFor(Predicate { minecraft -> 176 <= minecraft.window.guiScaledWidth && 120 <= minecraft.window.guiScaledHeight })
         context.waitFor(Predicate { minecraft -> minecraft.player != null && MinecraftClientScreenAccess.currentScreen(minecraft) == null }, 1200)
         context.waitTicks(40)
+        verifyPaper(context, run)
+        System.getProperty("strata.velocity.run")?.let { verifyProxy(context, it) }
+        onClient(context) { minecraft ->
+            (MinecraftClientScreenAccess.currentScreen(minecraft) as? FabricMinecraftScreen)?.onClose()
+            minecraft.disconnectWithSavingScreen()
+            MinecraftClientScreenAccess.setScreen(minecraft, TitleScreen())
+        }
+        context.waitTicks(5)
+    }
+
+    private fun verifyPaper(
+        context: ClientGameTestContext,
+        run: String,
+    ) {
         onClient(context) { checkNotNull(it.connection).sendCommand("strata-verify") }
         await(context, Stage.Controls)
         capture(context, "controls")
@@ -72,12 +86,36 @@ internal object PaperRemoteGameTest {
         val output = Path.of(requireNotNull(System.getProperty("strata.minecraftParityOutput")))
         Files.createDirectories(output)
         Files.writeString(output.resolve("paper-client.properties"), "runId=$run\nversion=${System.getProperty("strata.minecraftVersion")}\ncontrols=confirmed\ncustomExtension=confirmed\nslot=round-trip\n")
+    }
+
+    private fun verifyProxy(
+        context: ClientGameTestContext,
+        run: String,
+    ) {
+        onClient(context) { checkNotNull(it.connection).sendCommand("strata-proxy-verify") }
+        await(context, Stage.ProxyControls)
+        typeProxy(context, "proxy-日本語")
+        context.waitFor(Predicate { it.player != null && MinecraftClientScreenAccess.currentScreen(it) == null }, 1200)
+        context.waitTicks(40)
+        onClient(context) { checkNotNull(it.connection).sendCommand("strata-proxy-resume") }
+        await(context, Stage.ProxyResumed)
+        typeProxy(context, "resumed-日本語")
+        await(context, Stage.ProxyComplete)
+        verifyPaper(context, requireNotNull(System.getProperty("strata.paper.run")))
+        val output = Path.of(requireNotNull(System.getProperty("strata.minecraftParityOutput")))
+        Files.writeString(output.resolve("velocity-client.properties"), "runId=$run\ntext=confirmed\nbackendSwitch=confirmed\npaperAfterSwitch=confirmed\n")
+    }
+
+    private fun typeProxy(
+        context: ClientGameTestContext,
+        value: String,
+    ) {
+        click(context, 12.0, 12.0, consumesPress = false)
         onClient(context) { minecraft ->
-            (MinecraftClientScreenAccess.currentScreen(minecraft) as? FabricMinecraftScreen)?.onClose()
-            minecraft.disconnectWithSavingScreen()
-            MinecraftClientScreenAccess.setScreen(minecraft, TitleScreen())
+            val screen = requireNotNull(MinecraftClientScreenAccess.currentScreen(minecraft) as? FabricMinecraftScreen)
+            value.codePoints().forEach { check(screen.charTyped(CharacterEvent(it))) }
         }
-        context.waitTicks(5)
+        click(context, 20.0, 38.0)
     }
 
     private fun await(
@@ -137,6 +175,9 @@ internal object PaperRemoteGameTest {
         Controls("Strata verification controls"),
         Inventory("Strata verification inventory"),
         Complete("Strata verification complete"),
+        ProxyControls("Strata proxy controls"),
+        ProxyResumed("Strata proxy resumed"),
+        ProxyComplete("Strata proxy complete"),
         ;
 
         companion object {

@@ -1,6 +1,7 @@
 package dev.s7a.strata.runtime.paper
 
 import dev.s7a.strata.runtime.remote.RemoteConnection
+import dev.s7a.strata.runtime.remote.RemoteScreenService
 import org.bukkit.entity.Player
 import org.bukkit.event.EventHandler
 import org.bukkit.event.EventPriority
@@ -11,6 +12,7 @@ import org.bukkit.event.inventory.InventoryOpenEvent
 import org.bukkit.event.player.PlayerJoinEvent
 import org.bukkit.event.player.PlayerQuitEvent
 import org.bukkit.event.server.PluginDisableEvent
+import org.bukkit.plugin.Plugin
 import org.bukkit.plugin.java.JavaPlugin
 import org.bukkit.plugin.messaging.PluginMessageListener
 import org.bukkit.scheduler.BukkitTask
@@ -23,11 +25,11 @@ public class StrataPlugin :
     JavaPlugin(),
     Listener,
     PluginMessageListener {
-    private var screens: PaperScreenService? = null
+    private var screens: RemoteScreenService<Player, Plugin>? = null
     private var ticker: BukkitTask? = null
 
     override fun onEnable() {
-        val service = PaperScreenService(this)
+        val service = paperScreenService(this)
         screens = service
         PaperScreens.install(service)
         server.messenger.registerOutgoingPluginChannel(this, RemoteConnection.CHANNEL)

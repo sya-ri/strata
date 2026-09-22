@@ -15,8 +15,8 @@ import dev.s7a.strata.modifier.onActivate
 import dev.s7a.strata.modifier.padding
 import dev.s7a.strata.modifier.size
 import dev.s7a.strata.render.ArgbColor
-import dev.s7a.strata.runtime.paper.PaperScreenSession
 import dev.s7a.strata.runtime.paper.PaperScreens
+import dev.s7a.strata.runtime.remote.RemoteScreenSession
 import dev.s7a.strata.runtime.remote.RemoteSessionStatus
 import dev.s7a.strata.screen.ScreenDefinition
 import dev.s7a.strata.state.mutableStateOf
@@ -45,7 +45,7 @@ internal class PaperAcceptanceSession(
     private var phase = Phase.Controls
     private var ticks = 0
     private var closed = false
-    private var handle: PaperScreenSession = PaperScreens.open(plugin, player, controls())
+    private var handle: RemoteScreenSession = PaperScreens.open(plugin, player, controls())
 
     /**
      * Advances the server assertions and returns true after terminal cleanup or an explicit failure.

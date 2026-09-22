@@ -23,6 +23,7 @@ Use ordinary arithmetic when validated input bounds guarantee representable resu
 | `runtime:core` | Reconciliation, retained phases, input, semantics, and internal session orchestration. | Depends on `api`; contains no Minecraft integration. |
 | `runtime:remote` | Typed binary protocol, validated declaration differences, capability registries, and authoritative/client sessions. | JVM adapter depending on API and core; no Minecraft or Paper classes. |
 | `runtime:paper` | Plugin messaging, authenticated player ownership, plugin lifecycle, and primary-thread scheduling. | Depends on remote; bundles common runtime and Kotlin dependencies while keeping Paper API compile-only. |
+| `runtime:velocity` | Authenticated proxy/backend routing, bounded UI requests, and a dedicated UI owner thread. | Depends on remote; bundles common runtime and Kotlin while keeping Velocity API compile-only. |
 | `runtime:headless` | Portable command rasterization, immutable frames, and deterministic PNG output. | Uses core contracts without a desktop graphics dependency. |
 | `runtime:web` | Retained native DOM text, buttons, and progress indicators, including deterministic initial HTML adoption. | JavaScript browser adapter using the shared API and core; other profile capabilities currently fail explicitly. |
 | `runtime:minecraft` | Profile-backed component implementation, resources, bindings, and screen hosts. | Depends on public contracts and core without mapped game types. |
@@ -31,6 +32,7 @@ Use ordinary arithmetic when validated input bounds guarantee representable resu
 | `integration:*` | External API, loaded-client, and documentation verification. | Not published. |
 | `examples:web` | Interactive browser demos and deterministic initial-document factories. | Uses public API and web runtime contracts; not published. |
 | `examples:paper` | Installable external example plugin and compiled server-owned screen factory. | Compiles against public Paper/Strata APIs and depends on the installed Strata plugin; not published. |
+| `examples:velocity` | Installable proxy example and compiled owner-thread screen factory. | Uses public Velocity/Strata APIs and the installed Strata plugin; not published. |
 
 Keep this module graph acyclic and include a module only when it contains working, tested behavior.
 Application source does not need a runtime module on its compile classpath.

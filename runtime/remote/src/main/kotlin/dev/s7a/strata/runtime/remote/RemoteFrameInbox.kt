@@ -22,7 +22,7 @@ public class RemoteFrameInbox(
     public fun offer(frame: ByteArray): Boolean =
         synchronized(lock) {
             if (closed) return@synchronized false
-            val invalidSize = frame.size <= 16 || limits.frameBytes < frame.size
+            val invalidSize = frame.isEmpty() || limits.frameBytes < frame.size
             if (invalidSize || limits.pendingBytes - pendingBytes < frame.size || limits.collectionEntries <= frames.size) {
                 exceeded = true
                 release()

@@ -1,5 +1,6 @@
 :api
 :examples:paper
+:examples:velocity
 :integration:api
 :integration:docs
 :integration:web
@@ -7,6 +8,7 @@
 :runtime:core
 :runtime:remote
 :runtime:paper
+:runtime:velocity
 :runtime:headless
 :runtime:minecraft
 :runtime:minecraft-fonts-lwjgl

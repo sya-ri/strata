@@ -16,7 +16,7 @@ public class RemoteConnection(
     private val owner = Thread.currentThread()
     private val supported = types.toSet()
     private var outgoing: ((ByteArray) -> Unit)? = send
-    private var framing = RemoteFraming()
+    private var framing = RemoteFraming(RemotePacket.limits)
     private var codec = RemoteMessageCodec(RemoteLimits(reconstructionMillis = limits.reconstructionMillis))
     private var greeted = false
     private var sending = false

@@ -1,3 +1,17 @@
+public final class dev/s7a/strata/runtime/remote/RemoteAddress {
+	public fun <init> (Ldev/s7a/strata/runtime/remote/RemoteEndpoint;Ljava/util/UUID;)V
+	public synthetic fun <init> (Ldev/s7a/strata/runtime/remote/RemoteEndpoint;Ljava/util/UUID;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Ldev/s7a/strata/runtime/remote/RemoteEndpoint;
+	public final fun component2 ()Ljava/util/UUID;
+	public final fun copy (Ldev/s7a/strata/runtime/remote/RemoteEndpoint;Ljava/util/UUID;)Ldev/s7a/strata/runtime/remote/RemoteAddress;
+	public static synthetic fun copy$default (Ldev/s7a/strata/runtime/remote/RemoteAddress;Ldev/s7a/strata/runtime/remote/RemoteEndpoint;Ljava/util/UUID;ILjava/lang/Object;)Ldev/s7a/strata/runtime/remote/RemoteAddress;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getEndpoint ()Ldev/s7a/strata/runtime/remote/RemoteEndpoint;
+	public final fun getIncarnation ()Ljava/util/UUID;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
 public final class dev/s7a/strata/runtime/remote/RemoteBindingSnapshot {
 	public static final field Companion Ldev/s7a/strata/runtime/remote/RemoteBindingSnapshot$Companion;
 	public fun <init> (JJJLdev/s7a/strata/projection/ProjectionValue;J)V
@@ -162,6 +176,14 @@ public final class dev/s7a/strata/runtime/remote/RemoteElementContext {
 	public final fun getKey ()Ldev/s7a/strata/element/ElementKey;
 	public final fun getModifier ()Ldev/s7a/strata/modifier/Modifier;
 	public final fun getStates ()Ldev/s7a/strata/runtime/remote/RemoteClientStates;
+}
+
+public final class dev/s7a/strata/runtime/remote/RemoteEndpoint : java/lang/Enum {
+	public static final field Proxy Ldev/s7a/strata/runtime/remote/RemoteEndpoint;
+	public static final field Server Ldev/s7a/strata/runtime/remote/RemoteEndpoint;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public static fun valueOf (Ljava/lang/String;)Ldev/s7a/strata/runtime/remote/RemoteEndpoint;
+	public static fun values ()[Ldev/s7a/strata/runtime/remote/RemoteEndpoint;
 }
 
 public final class dev/s7a/strata/runtime/remote/RemoteFailure : java/lang/Enum {
@@ -383,6 +405,50 @@ public final class dev/s7a/strata/runtime/remote/RemoteNode {
 	public fun hashCode ()I
 }
 
+public abstract interface class dev/s7a/strata/runtime/remote/RemotePacket {
+	public static final field Companion Ldev/s7a/strata/runtime/remote/RemotePacket$Companion;
+}
+
+public final class dev/s7a/strata/runtime/remote/RemotePacket$Companion {
+	public final fun decode ([B)Ldev/s7a/strata/runtime/remote/RemotePacket;
+	public final fun encode (Ldev/s7a/strata/runtime/remote/RemotePacket;)[B
+	public final fun getLimits ()Ldev/s7a/strata/runtime/remote/RemoteLimits;
+}
+
+public final class dev/s7a/strata/runtime/remote/RemotePacket$Discovery : dev/s7a/strata/runtime/remote/RemotePacket {
+	public static final field INSTANCE Ldev/s7a/strata/runtime/remote/RemotePacket$Discovery;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class dev/s7a/strata/runtime/remote/RemotePacket$Frame : dev/s7a/strata/runtime/remote/RemotePacket {
+	public fun <init> (Ldev/s7a/strata/runtime/remote/RemoteAddress;J[B)V
+	public final fun component1 ()Ldev/s7a/strata/runtime/remote/RemoteAddress;
+	public final fun component2 ()J
+	public final fun component3 ()[B
+	public final fun copy (Ldev/s7a/strata/runtime/remote/RemoteAddress;J[B)Ldev/s7a/strata/runtime/remote/RemotePacket$Frame;
+	public static synthetic fun copy$default (Ldev/s7a/strata/runtime/remote/RemotePacket$Frame;Ldev/s7a/strata/runtime/remote/RemoteAddress;J[BILjava/lang/Object;)Ldev/s7a/strata/runtime/remote/RemotePacket$Frame;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getAddress ()Ldev/s7a/strata/runtime/remote/RemoteAddress;
+	public final fun getBytes ()[B
+	public final fun getSequence ()J
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class dev/s7a/strata/runtime/remote/RemotePacketStream : java/lang/AutoCloseable {
+	public fun <init> (Ldev/s7a/strata/runtime/remote/RemoteAddress;Ldev/s7a/strata/runtime/remote/RemoteLimits;Lkotlin/jvm/functions/Function1;)V
+	public synthetic fun <init> (Ldev/s7a/strata/runtime/remote/RemoteAddress;Ldev/s7a/strata/runtime/remote/RemoteLimits;Lkotlin/jvm/functions/Function1;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public fun close ()V
+	public final fun drain (JILkotlin/jvm/functions/Function1;)V
+	public static synthetic fun drain$default (Ldev/s7a/strata/runtime/remote/RemotePacketStream;JILkotlin/jvm/functions/Function1;ILjava/lang/Object;)V
+	public final fun getAddress ()Ldev/s7a/strata/runtime/remote/RemoteAddress;
+	public final fun limitTo (Ldev/s7a/strata/runtime/remote/RemoteLimits;)V
+	public final fun offer (Ldev/s7a/strata/runtime/remote/RemotePacket$Frame;J)V
+	public final fun send ([B)V
+}
+
 public final class dev/s7a/strata/runtime/remote/RemotePatch {
 	public static final field Companion Ldev/s7a/strata/runtime/remote/RemotePatch$Companion;
 	public fun <init> (JLjava/util/Collection;Ljava/util/Collection;)V
@@ -426,6 +492,27 @@ public final class dev/s7a/strata/runtime/remote/RemoteRegistry {
 	public final fun statefulModifier (Ldev/s7a/strata/projection/ProjectionType;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function2;Ldev/s7a/strata/runtime/remote/RemotePreparationPhase;Lkotlin/jvm/functions/Function2;)V
 	public static synthetic fun statefulModifier$default (Ldev/s7a/strata/runtime/remote/RemoteRegistry;Ldev/s7a/strata/projection/ProjectionType;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function2;Ldev/s7a/strata/runtime/remote/RemotePreparationPhase;Lkotlin/jvm/functions/Function2;ILjava/lang/Object;)V
 	public final fun validateTypes (Ldev/s7a/strata/runtime/remote/RemoteTree;)V
+}
+
+public final class dev/s7a/strata/runtime/remote/RemoteScreenService : java/lang/AutoCloseable {
+	public fun <init> (Ldev/s7a/strata/runtime/remote/RemoteEndpoint;Lkotlin/jvm/functions/Function2;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function1;)V
+	public synthetic fun <init> (Ldev/s7a/strata/runtime/remote/RemoteEndpoint;Lkotlin/jvm/functions/Function2;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function1;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun capabilities (Ljava/lang/Object;)Ldev/s7a/strata/runtime/remote/RemoteCapabilities;
+	public fun close ()V
+	public final fun containerChanged (Ljava/lang/Object;)V
+	public final fun disconnect (Ljava/lang/Object;)V
+	public final fun enqueue (Ljava/lang/Object;[B)V
+	public final fun join (Ljava/lang/Object;)V
+	public final fun open (Ljava/lang/Object;Ljava/lang/Object;Ldev/s7a/strata/screen/ScreenDefinition;)Ldev/s7a/strata/runtime/remote/RemoteScreenSession;
+	public final fun ownerDisabled (Ljava/lang/Object;)V
+	public final fun register (Ljava/lang/Object;Ldev/s7a/strata/projection/ProjectionType;)V
+	public final fun tick ()V
+}
+
+public final class dev/s7a/strata/runtime/remote/RemoteScreenSession : java/lang/AutoCloseable {
+	public fun close ()V
+	public final fun getIdentity ()J
+	public final fun getStatus ()Ldev/s7a/strata/runtime/remote/RemoteSessionStatus;
 }
 
 public final class dev/s7a/strata/runtime/remote/RemoteServerSession : java/lang/AutoCloseable {

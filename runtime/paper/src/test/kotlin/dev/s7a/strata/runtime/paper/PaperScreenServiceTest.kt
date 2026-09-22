@@ -16,12 +16,15 @@ import dev.s7a.strata.projection.ProjectionType
 import dev.s7a.strata.projection.ProjectionValue
 import dev.s7a.strata.render.ArgbColor
 import dev.s7a.strata.resource.ResourceId
+import dev.s7a.strata.runtime.remote.RemoteAddress
 import dev.s7a.strata.runtime.remote.RemoteBuiltins
 import dev.s7a.strata.runtime.remote.RemoteCanvas
 import dev.s7a.strata.runtime.remote.RemoteConnection
 import dev.s7a.strata.runtime.remote.RemoteFailure
 import dev.s7a.strata.runtime.remote.RemoteMessage
+import dev.s7a.strata.runtime.remote.RemotePacket
 import dev.s7a.strata.runtime.remote.RemoteRegistry
+import dev.s7a.strata.runtime.remote.RemoteScreenSession
 import dev.s7a.strata.runtime.remote.RemoteSessionStatus
 import dev.s7a.strata.screen.ScreenDefinition
 import dev.s7a.strata.state.mutableStateOf
@@ -42,7 +45,7 @@ internal class PaperScreenServiceTest {
     fun anActionCanReplaceItsOwnScreenAfterTheHandlerReturns() {
         Harness().use { fixture ->
             fixture.negotiate()
-            var replacement: PaperScreenSession? = null
+            var replacement: RemoteScreenSession? = null
             val first =
                 fixture.service.open(
                     fixture.plugin,
@@ -249,8 +252,10 @@ internal class PaperScreenServiceTest {
                     }
                 }
             }
-        val service = PaperScreenService(plugin)
-        val client = RemoteConnection(RemoteRegistry().also(RemoteBuiltins::register).types + extraTypes) { service.enqueue(player, it) }
+        val service = paperScreenService(plugin)
+        private var address: RemoteAddress? = null
+        private var sequence = 1L
+        val client = RemoteConnection(RemoteRegistry().also(RemoteBuiltins::register).types + extraTypes, RemotePacket.limits) { service.enqueue(player, RemotePacket.encode(RemotePacket.Frame(checkNotNull(address), sequence++, it))) }
 
         fun otherPlugin(): Plugin =
             proxy(Plugin::class.java) { name, _ ->
@@ -264,16 +269,21 @@ internal class PaperScreenServiceTest {
             service.join(player)
             assertTrue(receive().isEmpty())
             channelRegistered = true
-            client.start()
-            client.flush()
+            service.enqueue(player, RemotePacket.encode(RemotePacket.Discovery))
             assertTrue(receive().isEmpty())
+            client.flush()
+            service.tick()
             assertTrue(service.capabilities(player) != null)
         }
 
         fun receive(): List<RemoteMessage> {
             service.tick()
             val result = mutableListOf<RemoteMessage>()
-            while (messages.isNotEmpty()) client.receive(messages.removeFirst(), 0)?.let(result::add)
+            while (messages.isNotEmpty()) {
+                val packet = RemotePacket.decode(messages.removeFirst()) as RemotePacket.Frame
+                address = packet.address
+                client.receive(packet.bytes, 0)?.let(result::add)
+            }
             return result
         }
 

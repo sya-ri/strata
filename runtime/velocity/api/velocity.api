@@ -1,0 +1,18 @@
+public final class dev/s7a/strata/runtime/velocity/StrataVelocityPlugin {
+	public fun <init> (Lcom/velocitypowered/api/proxy/ProxyServer;Lorg/slf4j/Logger;)V
+	public final fun connected (Lcom/velocitypowered/api/event/player/ServerPostConnectEvent;)Lcom/velocitypowered/api/event/EventTask;
+	public final fun disconnected (Lcom/velocitypowered/api/event/connection/DisconnectEvent;)Lcom/velocitypowered/api/event/EventTask;
+	public final fun initialize (Lcom/velocitypowered/api/event/proxy/ProxyInitializeEvent;)V
+	public final fun message (Lcom/velocitypowered/api/event/connection/PluginMessageEvent;)Lcom/velocitypowered/api/event/EventTask;
+	public final fun shutdown (Lcom/velocitypowered/api/event/proxy/ProxyShutdownEvent;)Lcom/velocitypowered/api/event/EventTask;
+}
+
+public final class dev/s7a/strata/runtime/velocity/VelocityScreens {
+	public static final field INSTANCE Ldev/s7a/strata/runtime/velocity/VelocityScreens;
+	public final fun capabilities (Lcom/velocitypowered/api/proxy/Player;)Ljava/util/concurrent/CompletableFuture;
+	public final fun execute (Ljava/lang/Object;Lkotlin/jvm/functions/Function0;)Ljava/util/concurrent/CompletableFuture;
+	public final fun open (Ljava/lang/Object;Lcom/velocitypowered/api/proxy/Player;Lkotlin/jvm/functions/Function0;)Ljava/util/concurrent/CompletableFuture;
+	public final fun register (Ljava/lang/Object;Ldev/s7a/strata/projection/ProjectionType;)Ljava/util/concurrent/CompletableFuture;
+	public final fun release (Ljava/lang/Object;)Ljava/util/concurrent/CompletableFuture;
+}
+

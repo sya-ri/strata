@@ -99,7 +99,9 @@ The production loaded suite calls an inherited screen method through the concret
 The Paper plugin distribution is `:runtime:paper:pluginJar`; its classifier is `plugin` and its archive includes Kotlin and the shared Strata runtime without Paper API classes.
 The `:examples:paper:jar` artifact is an external plugin consumer requiring Strata, not another runtime bundle.
 Run `:runtime:remote:test :runtime:paper:test :examples:paper:check` for the transport, plugin ownership, and compiled-example checks; `:runtime:minecraft:test --tests '*MinecraftRemoteScreenTest'` compares reconstructed standard controls and tile output with the common Minecraft profile.
-Those tests do not constitute a Paper server run or operating-system IME acceptance.
+The corresponding Velocity artifacts are `:runtime:velocity:pluginJar` and `:examples:velocity:jar`.
+Run `:runtime:velocity:check :examples:velocity:check` for authenticated routing, UI thread ownership, lifecycle, queue bounds, and the compiled proxy example.
+These JVM tests do not constitute a loaded Paper/Velocity run or operating-system IME acceptance.
 Paper/native acceptance uses matching game versions only; the [generated compatibility table](../reference/compatibility.md) records missing exact distributions separately from Fabric client targets.
 
 Each versioned integration project verifies its exact adapter through development outputs and packaged production jars.
@@ -177,6 +179,18 @@ Versions without an exact official Paper distribution must retain separate clien
 Every loaded client suite also runs a native custom-payload fixture against its exact integrated server.
 It checks server-confirmed text and actions, applied-revision acknowledgements, visible updates, a registered native Canvas renderer with literal framebuffer texels and retained attachment ownership, and terminal renderer release.
 Its `native-remote.properties` receipt and screenshot are client-transport evidence and remain distinct from the real Paper runner's receipts.
+
+## Velocity connection verification
+
+Run `python integration/velocity/run_acceptance.py <minecraft-version> --java <paper-java-executable> --proxy-java <velocity-java-executable>` after the target's ordinary EULA setup.
+The runner resolves the Velocity version from the catalog, verifies both official distribution checksums, and starts a fresh loopback proxy with two isolated Paper worlds.
+The native client first completes Paper's input, extension, and Slot assertions through the proxy.
+It then submits Japanese text and activation to a proxy-owned screen, switches backends through Velocity's native connection API, and opens a new proxy screen after the previous screen has closed.
+A second input/activation transaction and another complete Paper transaction on the new backend establish continued proxy capabilities and fresh backend discovery.
+Both development and production clients must produce current invocation-bound evidence alongside all three server receipts before `build/velocity-acceptance/<version>/<run>/passed.json` is written.
+`--development-only` is a diagnostic subset.
+The runner records plugin hashes and stops only the processes it owns on every exit.
+The nonpublished `integration:velocity` plugin uses public Strata and Velocity APIs; ordinary clients and plugins never start its test commands automatically.
 
 ## Manual OS IME verification
 

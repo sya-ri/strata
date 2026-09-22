@@ -10,6 +10,7 @@ For installation and a complete opening example, start with the [project README]
 | --- | --- |
 | [Screens and state](guides/screens-and-state.md) | Declare and open a screen, own its state, and connect application resources. |
 | [Paper screens](guides/paper.md) | Install the server plugin, open player screens, and register matching client extensions. |
+| [Velocity screens](guides/velocity.md) | Own screens on a proxy, queue UI state changes, and coexist with Paper backends. |
 | [Layout](guides/layout.md) | Choose containers and control spacing, sizing, wrapping, and alignment. |
 | [Modifiers](guides/modifiers.md) | Add sizing, backgrounds, input, focus, and parent-scope behavior. |
 | [Text and editing](guides/text.md) | Display labels, edit single-line or multiline values, and select fonts. |

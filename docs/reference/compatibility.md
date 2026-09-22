@@ -39,4 +39,4 @@ See [adapter development](../development/minecraft-versions.md) for native bound
 This table does not record a test run or replace release acceptance evidence.
 All listed clients compile the native Strata remote transport without requiring Fabric API.
 Paper acceptance uses an exact Minecraft version from the [official distribution inventory](https://fill.papermc.io/v3/projects/paper); distribution availability alone is not a successful test receipt.
-See [Paper screens](../guides/paper.md) for installation and [remote protocol](remote-protocol.md) for connection and extension contracts.
+See [Paper screens](../guides/paper.md) and [Velocity screens](../guides/velocity.md) for installation, and [remote protocol](remote-protocol.md) for connection and extension contracts.

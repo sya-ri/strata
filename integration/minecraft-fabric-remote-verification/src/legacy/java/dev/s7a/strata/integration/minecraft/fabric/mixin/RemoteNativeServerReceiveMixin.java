@@ -19,7 +19,7 @@ abstract class RemoteNativeServerReceiveMixin {
         if (FabricRemoteTransport.ID.equals(packet.getIdentifier())) {
             FriendlyByteBuf data = packet.getData();
             int count = data.readableBytes();
-            if (count < 17 || 24576 < count) throw new IllegalArgumentException("Invalid fixture frame length.");
+            if (count < 1 || 24576 < count) throw new IllegalArgumentException("Invalid fixture frame length.");
             byte[] bytes = new byte[count];
             data.getBytes(data.readerIndex(), bytes);
             RemoteNativeServerFixture.INSTANCE.enqueue(((ServerGamePacketListenerImpl) (Object) this).player, bytes);

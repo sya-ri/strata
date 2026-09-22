@@ -2,6 +2,8 @@ package dev.s7a.strata.runtime.paper
 
 import dev.s7a.strata.projection.ProjectionType
 import dev.s7a.strata.runtime.remote.RemoteCapabilities
+import dev.s7a.strata.runtime.remote.RemoteScreenService
+import dev.s7a.strata.runtime.remote.RemoteScreenSession
 import dev.s7a.strata.screen.ScreenDefinition
 import org.bukkit.Bukkit
 import org.bukkit.entity.Player
@@ -13,7 +15,7 @@ import org.bukkit.plugin.Plugin
  * The owner plugin controls the screen lifetime; its disable event closes every screen it owns.
  */
 public object PaperScreens {
-    private var service: PaperScreenService? = null
+    private var service: RemoteScreenService<Player, Plugin>? = null
 
     /**
      * Consumes one screen definition and replaces the player's previous Strata screen.
@@ -23,7 +25,7 @@ public object PaperScreens {
         ownerPlugin: Plugin,
         player: Player,
         definition: ScreenDefinition,
-    ): PaperScreenSession {
+    ): RemoteScreenSession {
         checkThread()
         require(ownerPlugin.isEnabled) { "The screen owner plugin must be enabled." }
         return checkNotNull(service) { "The Strata plugin is not enabled." }.open(ownerPlugin, player, definition)
@@ -55,7 +57,7 @@ public object PaperScreens {
     /**
      * Binds the enabled plugin service, or releases it before plugin shutdown.
      */
-    internal fun install(service: PaperScreenService?) {
+    internal fun install(service: RemoteScreenService<Player, Plugin>?) {
         checkThread()
         check(this.service == null || service == null) { "A Strata service is already installed." }
         this.service = service

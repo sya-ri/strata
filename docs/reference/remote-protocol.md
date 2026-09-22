@@ -1,13 +1,17 @@
 # Remote screen protocol
 
-`runtime:remote` owns the JVM wire model and sessions without depending on Paper or mapped Minecraft classes.
-Paper owns declarations, models, handlers, and authoritative state; the client owns retained layout, rendering, focus, hover, pointer capture, scroll gestures, and IME composition.
+`runtime:remote` owns the JVM wire model and sessions without depending on Paper, Velocity, or mapped Minecraft classes.
+The hosting Paper or Velocity plugin owns declarations, models, handlers, and authoritative state; the client owns retained layout, rendering, focus, hover, pointer capture, scroll gestures, and IME composition.
 The [declaration projection SPI](declaration-projection.md) is the optional platform-neutral boundary between those responsibilities.
 
 ## Connection and messages
 
-The Fabric adapter first advertises `strata:ui` through native `minecraft:register`, then sends its `Hello`.
-Paper's plugin-messaging transport replies only after receiving the client's greeting.
+The Fabric adapter advertises `strata:ui` through native `minecraft:register`, then sends bounded discovery.
+Each available host responds with a `Hello` in a fresh host-generated transport incarnation; the client replies through that same incarnation.
+Paper and Velocity have separate typed endpoint identities and independent capability handshakes.
+A proxy reissues backend discovery after a server switch, and stale-incarnation frames cannot enter a successor's protocol connection.
+Proxy routing admits only authenticated client proxy actions and current-backend server frames.
+It handles the native event and submits safe writes itself, preventing later asynchronous listeners from forwarding retired backend traffic.
 Both sides require the same protocol version, intersect exact namespace/schema-version capabilities, and negotiate the minimum of each resource limit.
 Registration freezes before a connection captures its capability snapshot.
 No message supplies a class name, executable body, function, or server model.
@@ -19,7 +23,7 @@ The client decodes registered properties and prepares state before replacing its
 A mismatched base revision requests `Resynchronize` without applying any patch prefix or replaying actions.
 
 `Action` identifies the session, endpoint, exact event schema, and increasing operation sequence.
-Paper binds reception to the actual sending player; callers cannot choose another player through a payload.
+Each host binds reception to the actual sending player; callers cannot choose another player through a payload.
 The server commits queued state before admitting a new action, checks current availability and the typed decoder, and executes through the shared core input boundary.
 Duplicate sequences and retired endpoints never invoke handlers; gaps or invalid values fail the session.
 `Acknowledgement` confirms processed operations and their resulting revision.
@@ -49,6 +53,10 @@ Stateful modifier registrations prepare shared native state outside declaration 
 
 ## Resources and bounds
 
+Each routed fragment has an independent strictly increasing envelope sequence.
+The receiver restores order across asynchronous proxy events using a queue bounded by bytes, entries, and gap timeout, and drains a bounded number per owner tick.
+Duplicate sequences are ignored; conflicting queued duplicates fail validation.
+The native packet bound includes the fixed envelope; negotiated fragment limits reserve its bytes.
 The binary value codec uses explicit tags, big-endian numeric fields, strict UTF-8, and bounded byte/collection lengths.
 Limits include frame/message bytes, aggregate values, structural depth, declaration count, queued bytes, fragment assembly time, and reconstruction time.
 Extension decoders and factories must be nonblocking; work-budget checks surround trusted callbacks and traversal rather than interrupting a running callback.
@@ -78,5 +86,5 @@ Registrations are optional for local-only components and modifiers.
 A remote screen requiring an absent projection or unsupported schema fails explicitly before it can become a supported screen.
 Plugin disable, disconnect, screen replacement, native container replacement, decoding failure, handler failure, and resource limits release the corresponding owner references and transfer queues.
 Common lifecycle/source-cutoff rules remain in [UI sessions](../development/ui-sessions.md); runtime cache admission remains in [performance](../development/performance.md).
-Paper queues at most 64 lifecycle transitions requested during one input handler and drains them on its owner thread after that handler returns.
+The shared host queues at most 64 lifecycle transitions requested during one input handler and drains them on its owner thread after that handler returns.
 Replacement, close, disconnect, inventory changes, and plugin shutdown therefore cannot reenter an active core input operation; excess transition requests fail explicitly.

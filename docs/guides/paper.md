@@ -13,7 +13,7 @@ The [example build](../../examples/paper/build.gradle.kts), [plugin descriptor](
 Call `PaperScreens.capabilities(player)` on Paper's primary thread before opening a screen.
 A null result means negotiation has not completed or the client is unavailable.
 Create independent state outside the DSL callback, construct a fresh `ScreenDefinition`, and pass it to `PaperScreens.open(ownerPlugin, player, definition)`.
-The returned `PaperScreenSession` exposes its identity and `RemoteSessionStatus`; `close()` releases its server-owned handlers and observations.
+The returned `RemoteScreenSession` exposes its identity and `RemoteSessionStatus`; `close()` releases its server-owned handlers and observations.
 Unsupported declarations return a terminal reason rather than dropping parts of the screen.
 Handlers may open another screen or close their current handle.
 The service applies those transitions after the handler returns, preserving the core session's non-reentrant input boundary; a replacement handle remains `Opening` until that boundary completes.
@@ -34,7 +34,8 @@ Event-dependent synchronous decisions require an installed client extension, as 
 Paper executes declaration evaluation and accepted actions on its primary thread.
 External state sources may notify from other threads; the shared session queues those revisions and commits them at its next cutoff.
 Keep database and network work asynchronous and publish its result through a state source instead of blocking a handler.
-Folia and proxy-specific routing are outside this runtime's contract.
+Folia is outside this runtime's contract.
+For proxy-owned screens and backend coexistence, use the separate [Velocity runtime](velocity.md).
 
 Resource identifiers, fonts, and player skins resolve against the installed client's resources.
 CPU Canvas snapshots and ready tiles transfer immutable pixels; native Canvas implementations must be installed and registered on the client.

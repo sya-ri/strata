@@ -1,11 +1,15 @@
 package dev.s7a.strata.runtime.minecraft.fabric
 
+import dev.s7a.strata.runtime.remote.RemoteAddress
 import dev.s7a.strata.runtime.remote.RemoteBuiltins
 import dev.s7a.strata.runtime.remote.RemoteClientSession
 import dev.s7a.strata.runtime.remote.RemoteConnection
+import dev.s7a.strata.runtime.remote.RemoteEndpoint
 import dev.s7a.strata.runtime.remote.RemoteFailure
 import dev.s7a.strata.runtime.remote.RemoteFrameInbox
 import dev.s7a.strata.runtime.remote.RemoteMessage
+import dev.s7a.strata.runtime.remote.RemotePacket
+import dev.s7a.strata.runtime.remote.RemotePacketStream
 import dev.s7a.strata.runtime.remote.RemoteProtocolException
 import dev.s7a.strata.runtime.remote.RemoteRegistry
 import dev.s7a.strata.runtime.remote.RemoteTextCodec
@@ -24,7 +28,9 @@ public object FabricRemoteScreens {
     public val registry: RemoteRegistry = RemoteRegistry().also(RemoteBuiltins::register)
     private val logger = LoggerFactory.getLogger(FabricRemoteScreens::class.java)
     private val inboxes = ConcurrentHashMap<Connection, RemoteFrameInbox>()
-    private var peer: Peer? = null
+    private val peers = mutableMapOf<RemoteEndpoint, Peer>()
+    private var nativeConnection: Connection? = null
+    private var failed = false
 
     @Volatile
     private var stopping: Boolean = false
@@ -49,14 +55,15 @@ public object FabricRemoteScreens {
      * Called by the existing render-thread shutdown transaction; cleanup failure is logged after independent queues are released.
      */
     public fun shutdown() {
-        val previous = peer
-        peer = null
+        val previous = peers.values.toList()
+        peers.clear()
+        nativeConnection = null
         synchronized(inboxes) {
             stopping = true
             inboxes.values.forEach(RemoteFrameInbox::close)
             inboxes.clear()
         }
-        runCatching { previous?.close(RemoteFailure.Disconnected, false) }.onFailure { logger.warn("Strata remote shutdown failed", it) }
+        previous.forEach { peer -> runCatching { peer.close(RemoteFailure.Disconnected, false) }.onFailure { logger.warn("Strata remote shutdown failed", it) } }
     }
 
     /**
@@ -67,37 +74,85 @@ public object FabricRemoteScreens {
         val minecraft = Minecraft.getInstance()
         val listener = minecraft.connection
         val native = listener?.connection
-        var current = peer
-        if (current?.native !== native) {
-            current?.close(RemoteFailure.Disconnected)
-            current =
-                listener?.let { endpoint ->
-                    FabricRemoteTransport.register(endpoint)
-                    val transport = RemoteConnection(registry.types) { FabricRemoteTransport.send(endpoint, it) }
-                    transport.start()
-                    Peer(endpoint.connection, transport)
-                }
-            peer = current
+        if (listener == null && nativeConnection?.isConnected == true) {
+            // Configuration changes replace the play listener while the authenticated transport remains connected.
+            peers.values.filter { it.isClosed.not() }.forEach { peer -> guard(peer) { peer.pausePlay() } }
+            return
+        }
+        if (nativeConnection !== native) {
+            val previous = peers.values.toList()
+            peers.clear()
+            previous.forEach { peer -> runCatching { peer.close(RemoteFailure.Disconnected) }.onFailure { logger.warn("Strata remote disconnect failed", it) } }
+            nativeConnection = native
+            failed = false
+            listener?.let { endpoint ->
+                FabricRemoteTransport.register(endpoint)
+                FabricRemoteTransport.send(endpoint, RemotePacket.encode(RemotePacket.Discovery))
+            }
         }
         inboxes.keys.filter { it !== native }.forEach { inboxes.remove(it)?.close() }
-        if (current == null) return
-        val active = current
-        if (active.isClosed) return
+        if (native == null || failed) return
         runCatching {
-            val inbox = inboxes.computeIfAbsent(active.native) { RemoteFrameInbox() }
+            val inbox = inboxes.computeIfAbsent(native) { RemoteFrameInbox() }
             if (inbox.failed) throw RemoteProtocolException(RemoteFailure.ResourceLimit, "Remote receive queue is full.")
             repeat(64) {
-                val frame = inbox.poll() ?: return@repeat
-                active.connection.receive(frame, now())?.let(active::receive)
+                val bytes = inbox.poll() ?: return@repeat
+                receiveFrame(native, bytes)
             }
-            active.pollScreen()
-            active.connection.tick(now())
-            active.connection.flush()
+            peers.values.toList().filter { it.isClosed.not() }.forEach(::tickPeer)
         }.onFailure { failure ->
+            failed = true
+            peers.values.forEach { peer -> runCatching { peer.close(RemoteFailure.InvalidMessage) }.onFailure(failure::addSuppressed) }
+            inboxes.remove(native)?.close()
+            logger.warn("Strata remote channel ended", failure)
+        }
+    }
+
+    private fun tickPeer(peer: Peer) {
+        guard(peer) {
+            peer.stream.drain(now()) { frame ->
+                peer.connection.receive(frame, now())?.let(peer::receive)
+                peer.connection.capabilities?.let { peer.stream.limitTo(it.limits) }
+            }
+            peer.pollScreen()
+            peer.connection.tick(now())
+            peer.connection.flush()
+        }
+    }
+
+    private fun receiveFrame(
+        native: Connection,
+        bytes: ByteArray,
+    ) {
+        val packet = RemotePacket.decode(bytes)
+        require(packet is RemotePacket.Frame) { "Unexpected client-bound discovery." }
+        val address = packet.address
+        val previous = peers[address.endpoint]
+        val peer =
+            if (previous?.address == address) {
+                previous
+            } else {
+                previous?.close(RemoteFailure.Disconnected)
+                val stream =
+                    RemotePacketStream(address) { frame ->
+                        val endpoint = checkNotNull(Minecraft.getInstance().connection) { "Native play connection is unavailable." }
+                        check(endpoint.connection === native) { "Native connection changed." }
+                        FabricRemoteTransport.send(endpoint, frame)
+                    }
+                val transport = RemoteConnection(registry.types, RemotePacket.limits, stream::send)
+                Peer(address, stream, transport).also { peers[address.endpoint] = it }
+            }
+        if (peer.isClosed.not()) guard(peer) { peer.stream.offer(packet, now()) }
+    }
+
+    private inline fun guard(
+        peer: Peer,
+        operation: () -> Unit,
+    ) {
+        runCatching(operation).onFailure { failure ->
             val reason = (failure as? RemoteProtocolException)?.reason ?: RemoteFailure.InvalidMessage
-            runCatching { active.close(reason) }.onFailure { failure.addSuppressed(it) }
-            inboxes.remove(active.native)?.close()
-            logger.warn("Strata remote connection ended", failure)
+            runCatching { peer.close(reason) }.onFailure(failure::addSuppressed)
+            logger.warn("Strata remote endpoint ended", failure)
         }
     }
 
@@ -108,7 +163,7 @@ public object FabricRemoteScreens {
      * Called at the existing versioned inventory boundary; vanilla remains authoritative for item movement.
      */
     public fun requireContainer(menu: Any) {
-        peer?.requireContainer(menu)
+        peers.values.forEach { it.requireContainer(menu) }
     }
 
     /**
@@ -119,8 +174,7 @@ public object FabricRemoteScreens {
         view: Screen,
         failure: Throwable,
     ): Boolean {
-        val active = peer ?: return false
-        if (active.owns(view).not()) return false
+        val active = peers.values.firstOrNull { it.owns(view) } ?: return false
         val reason = (failure as? RemoteProtocolException)?.reason ?: RemoteFailure.InvalidMessage
         runCatching { active.endScreen(reason) }.onFailure { failure.addSuppressed(it) }
         val minecraft = Minecraft.getInstance()
@@ -133,7 +187,8 @@ public object FabricRemoteScreens {
      * Owns exactly one transport and at most one visible remote screen.
      */
     private class Peer(
-        val native: Connection,
+        val address: RemoteAddress,
+        val stream: RemotePacketStream,
         val connection: RemoteConnection,
     ) {
         private var session: RemoteClientSession? = null
@@ -153,6 +208,10 @@ public object FabricRemoteScreens {
 
         fun endScreen(reason: RemoteFailure) {
             closeScreen(reason, true)
+        }
+
+        fun pausePlay() {
+            closeScreen(RemoteFailure.ContainerChanged, true, false)
         }
 
         fun receive(message: RemoteMessage) {
@@ -180,8 +239,8 @@ public object FabricRemoteScreens {
         ) {
             if (closed) return
             closed = true
-            connection.use {
-                closeScreen(reason, false, navigate)
+            stream.use {
+                connection.use { closeScreen(reason, false, navigate) }
             }
         }
 
@@ -194,6 +253,7 @@ public object FabricRemoteScreens {
             if (message.session <= lastSession) return
             lastSession = message.session
             closeScreen(RemoteFailure.Replaced, false)
+            peers.values.filter { it !== this }.forEach { it.endScreen(RemoteFailure.Replaced) }
             val limits = checkNotNull(connection.capabilities).limits
             val created = RemoteClientSession(message, registry, limits, connection::send)
             session = created

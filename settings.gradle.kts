@@ -58,6 +58,7 @@ dependencyResolutionManagement {
         maven("https://repo.papermc.io/repository/maven-public/") {
             content {
                 includeGroup("io.papermc.paper")
+                includeGroup("com.velocitypowered")
                 includeGroup("net.md-5")
             }
         }
@@ -124,15 +125,18 @@ include(
     ":api",
     ":examples:web",
     ":examples:paper",
+    ":examples:velocity",
     ":integration:api",
     ":integration:docs",
     ":integration:web",
     ":integration:paper",
+    ":integration:velocity",
     ":quality:benchmarks",
     ":quality:detekt-rules",
     ":runtime:core",
     ":runtime:remote",
     ":runtime:paper",
+    ":runtime:velocity",
     ":runtime:web",
     ":runtime:headless",
     ":runtime:minecraft",

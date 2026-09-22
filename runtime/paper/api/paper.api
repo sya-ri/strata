@@ -1,13 +1,7 @@
-public final class dev/s7a/strata/runtime/paper/PaperScreenSession : java/lang/AutoCloseable {
-	public fun close ()V
-	public final fun getIdentity ()J
-	public final fun getStatus ()Ldev/s7a/strata/runtime/remote/RemoteSessionStatus;
-}
-
 public final class dev/s7a/strata/runtime/paper/PaperScreens {
 	public static final field INSTANCE Ldev/s7a/strata/runtime/paper/PaperScreens;
 	public final fun capabilities (Lorg/bukkit/entity/Player;)Ldev/s7a/strata/runtime/remote/RemoteCapabilities;
-	public final fun open (Lorg/bukkit/plugin/Plugin;Lorg/bukkit/entity/Player;Ldev/s7a/strata/screen/ScreenDefinition;)Ldev/s7a/strata/runtime/paper/PaperScreenSession;
+	public final fun open (Lorg/bukkit/plugin/Plugin;Lorg/bukkit/entity/Player;Ldev/s7a/strata/screen/ScreenDefinition;)Ldev/s7a/strata/runtime/remote/RemoteScreenSession;
 	public final fun register (Lorg/bukkit/plugin/Plugin;Ldev/s7a/strata/projection/ProjectionType;)V
 }
 
