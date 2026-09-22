@@ -11,13 +11,15 @@ import org.lwjgl.glfw.GLFW
  */
 internal object MinecraftFontDisplay {
     private const val SCALE_TIMEOUT_TICKS = 1_200
+    private const val STABLE_TICKS = 3
 
     /**
      * Selects [scale] and waits for the exact [size] framebuffer before returning.
      *
      * Minecraft's legacy window transition uses the monitor-switching GLFW operation even when the window is already windowed.
-     * The explicit GLFW window-size operation follows that transition so the window manager receives a dedicated windowed resize request while the original call keeps Minecraft's stored dimensions coherent.
+     * Explicit GLFW window-size requests repair mismatched native geometry after that transition while the original call keeps Minecraft's stored dimensions coherent.
      * The framebuffer must converge before applying [scale] because legacy Minecraft clamps that value against its currently cached framebuffer dimensions.
+     * Delayed native resize notifications restart the consecutive-tick stability window; mismatched geometry is restored and resized within the same bounded setup interval.
      *
      * @param context loaded-client coordinator owning client-thread and tick handoffs.
      * @param scale exact integral GUI scale required by the comparison.
@@ -32,34 +34,29 @@ internal object MinecraftFontDisplay {
     ) {
         context.computeOnClient { minecraft ->
             minecraft.window.setWindowed(size.width, size.height)
-            GLFW.glfwSetWindowSize(minecraft.window.window, size.width, size.height)
-        }
-        var state = context.computeOnClient(::snapshot)
-        var elapsedTicks = 0
-        while (state.matchesFramebuffer(size).not() && elapsedTicks < SCALE_TIMEOUT_TICKS) {
-            context.waitTicks(1)
-            state = context.computeOnClient(::snapshot)
-            elapsedTicks += 1
-        }
-        check(state.matchesFramebuffer(size)) {
-            "Loaded framebuffer did not converge: expectedFramebuffer=${size.width}x${size.height}, $state"
-        }
-        context.computeOnClient { minecraft ->
             minecraft.options.forceUnicodeFont().set(false)
             minecraft.options.guiScale().set(scale)
-            minecraft.resizeDisplay()
-        }
-        state = context.computeOnClient(::snapshot)
-        while (state.matches(size, scale).not() && elapsedTicks < SCALE_TIMEOUT_TICKS) {
-            context.waitTicks(1)
-            state = context.computeOnClient(::snapshot)
-            elapsedTicks += 1
-        }
-        check(state.matches(size, scale)) {
-            "Loaded display did not converge: expectedFramebuffer=${size.width}x${size.height}, expectedGuiScale=$scale, $state"
         }
         context.movePointer(IntOffset.Zero)
-        context.waitTicks(3)
+        var state = context.computeOnClient(::snapshot)
+        var stableTicks = 0
+        repeat(SCALE_TIMEOUT_TICKS) {
+            context.computeOnClient { minecraft ->
+                if (state.matchesFramebuffer(size).not()) {
+                    GLFW.glfwRestoreWindow(minecraft.window.window)
+                    GLFW.glfwSetWindowSize(minecraft.window.window, size.width, size.height)
+                } else if (state.matches(size, scale).not()) {
+                    minecraft.resizeDisplay()
+                }
+            }
+            context.waitTicks(1)
+            state = context.computeOnClient(::snapshot)
+            stableTicks = if (state.matches(size, scale)) stableTicks + 1 else 0
+            if (STABLE_TICKS <= stableTicks) return
+        }
+        error(
+            "Loaded display did not converge: expectedFramebuffer=${size.width}x${size.height}, expectedGuiScale=$scale, $state",
+        )
     }
 
     private fun snapshot(minecraft: Minecraft): State {
