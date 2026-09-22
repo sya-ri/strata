@@ -51,42 +51,42 @@ internal class PaperAcceptanceSession(
      * Advances the server assertions and returns true after terminal cleanup or an explicit failure.
      */
     override fun tick(): Boolean {
-        if (closed) return true
-        return runCatching {
-            check(player.isOnline) { "Acceptance client disconnected before completing." }
-            check(ticks++ < 1200) { "Paper acceptance timed out in $phase." }
-            check(handle.status !is RemoteSessionStatus.Closed) { "Acceptance screen closed: ${handle.status}" }
-            when (phase) {
-                Phase.Controls -> {
-                    updates.value++
-                    if (applied == 1 && activated == 1) {
-                        check(field.value.contentEquals("remote-日本語")) { "Server text does not match confirmed native input." }
-                        player.inventory.setItem(9, ItemStack(Material.DIRT, 7))
-                        handle = PaperScreens.open(plugin, player, inventory())
-                        phase = Phase.Inventory
+        return closed ||
+            runCatching {
+                check(player.isOnline) { "Acceptance client disconnected before completing." }
+                check(ticks++ < 1200) { "Paper acceptance timed out in $phase." }
+                check(handle.status !is RemoteSessionStatus.Closed) { "Acceptance screen closed: ${handle.status}" }
+                when (phase) {
+                    Phase.Controls -> {
+                        updates.value++
+                        if (applied == 1 && activated == 1) {
+                            check(field.value.contentEquals("remote-日本語")) { "Server text does not match confirmed native input." }
+                            player.inventory.setItem(9, ItemStack(Material.DIRT, 7))
+                            handle = PaperScreens.open(plugin, player, inventory())
+                            phase = Phase.Inventory
+                        }
                     }
-                }
 
-                Phase.Inventory -> {
-                    if (player.itemOnCursor.type == Material.DIRT && player.itemOnCursor.amount == 7 && player.inventory
-                            .getItem(9)
-                            ?.type
-                            ?.isAir != false
-                    ) {
-                        pickedUp = true
-                    }
-                    if (pickedUp && player.itemOnCursor.type.isAir && player.inventory.getItem(9)?.amount == 7) {
-                        complete()
-                        return@runCatching true
+                    Phase.Inventory -> {
+                        if (player.itemOnCursor.type == Material.DIRT && player.itemOnCursor.amount == 7 && player.inventory
+                                .getItem(9)
+                                ?.type
+                                ?.isAir != false
+                        ) {
+                            pickedUp = true
+                        }
+                        if (pickedUp && player.itemOnCursor.type.isAir && player.inventory.getItem(9)?.amount == 7) {
+                            complete()
+                            return@runCatching true
+                        }
                     }
                 }
+                false
+            }.getOrElse { failure ->
+                plugin.logger.severe("Paper acceptance failed: ${failure.message}")
+                close()
+                true
             }
-            false
-        }.getOrElse { failure ->
-            plugin.logger.severe("Paper acceptance failed: ${failure.message}")
-            close()
-            true
-        }
     }
 
     private fun controls(): ScreenDefinition =

@@ -11,13 +11,12 @@ import dev.s7a.strata.projection.ProjectionValue
 public class RemoteEditingState<S : Any, T : Any>(
     public val state: S,
     private val type: ProjectionType,
-    snapshot: RemoteBindingSnapshot,
+    private var snapshot: RemoteBindingSnapshot,
     private val decode: (ProjectionValue) -> T,
     private val encode: (T) -> ProjectionValue,
     private val read: (S) -> T,
     private val write: (S, T) -> Unit,
 ) : RemoteEditableValue {
-    private var snapshot = snapshot
     private val buffer = RemoteEditBuffer(decode(snapshot.value), snapshot.generation)
     private var sending = false
 

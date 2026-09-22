@@ -4,6 +4,7 @@ import dev.s7a.strata.runtime.remote.RemoteConnection;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.resources.ResourceLocation;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * Opaque Strata frame for the native payload-record protocol preceding stream codecs.
@@ -20,7 +21,7 @@ public record FabricRemotePayload(byte[] bytes) implements CustomPacketPayload {
     public byte[] bytes() { return bytes.clone(); }
 
     @Override
-    public ResourceLocation id() { return ID; }
+    public @NotNull ResourceLocation id() { return ID; }
 
     @Override
     public void write(FriendlyByteBuf buffer) { buffer.writeBytes(bytes); }

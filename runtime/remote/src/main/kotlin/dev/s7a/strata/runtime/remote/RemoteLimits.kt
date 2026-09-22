@@ -16,13 +16,13 @@ public data class RemoteLimits(
     public val reconstructionMillis: Long = 1000,
 ) {
     init {
-        require(64 <= frameBytes && frameBytes <= messageBytes) { "Invalid frame bound." }
+        require(frameBytes in 64..messageBytes) { "Invalid frame bound." }
         require(messageBytes <= pendingBytes) { "A message must fit the pending-byte budget." }
-        require(0 < valueDepth && valueDepth <= 256) { "Invalid nesting bound." }
-        require(0 < collectionEntries && collectionEntries <= messageBytes) { "Invalid collection bound." }
-        require(0 < treeNodes && treeNodes <= collectionEntries) { "Invalid node bound." }
+        require(valueDepth in 1..256) { "Invalid nesting bound." }
+        require(collectionEntries in 1..messageBytes) { "Invalid collection bound." }
+        require(treeNodes in 1..collectionEntries) { "Invalid node bound." }
         require(0 < assemblyMillis) { "Assembly timeout must be positive." }
-        require(0 < valueEntries && valueEntries <= messageBytes) { "Invalid aggregate value bound." }
+        require(valueEntries in 1..messageBytes) { "Invalid aggregate value bound." }
         require(reconstructionMillis in 1..60000) { "Invalid reconstruction time bound." }
     }
 

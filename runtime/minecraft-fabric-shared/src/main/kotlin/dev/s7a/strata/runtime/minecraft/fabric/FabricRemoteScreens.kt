@@ -180,10 +180,8 @@ public object FabricRemoteScreens {
         ) {
             if (closed) return
             closed = true
-            try {
+            connection.use {
                 closeScreen(reason, false, navigate)
-            } finally {
-                connection.close()
             }
         }
 

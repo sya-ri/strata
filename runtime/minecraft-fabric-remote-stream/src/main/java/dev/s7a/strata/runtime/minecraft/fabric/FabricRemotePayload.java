@@ -3,6 +3,7 @@ package dev.s7a.strata.runtime.minecraft.fabric;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * Bounded opaque plugin-message bytes shared by the modern native stream codecs.
@@ -20,7 +21,7 @@ public record FabricRemotePayload(byte[] bytes) implements CustomPacketPayload {
     public byte[] bytes() { return bytes.clone(); }
 
     @Override
-    public Type<FabricRemotePayload> type() { return TYPE; }
+    public @NotNull Type<FabricRemotePayload> type() { return TYPE; }
 
     private void write(FriendlyByteBuf buffer) { buffer.writeBytes(bytes); }
 

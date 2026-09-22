@@ -108,7 +108,7 @@ public class RemoteServerSession(
                 send(RemoteMessage.Acknowledgement(identity, processedSequence, revision))
                 return@operation
             }
-            protocol(processedSequence < Long.MAX_VALUE && action.sequence == processedSequence + 1) { "Out-of-order remote action." }
+            protocol(action.sequence == processedSequence + 1) { "Out-of-order remote action." }
             val endpoint = actions[action.endpoint]
             if (endpoint != null && endpoint.enabled) {
                 val handler = endpoint.action

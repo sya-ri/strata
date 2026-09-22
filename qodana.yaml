@@ -199,6 +199,7 @@ exclude:
   - name: DataFlowIssue
     paths:
       - runtime/minecraft-fabric-shared/src/main/java/dev/s7a/strata/runtime/minecraft/fabric/mixin/lifecycle/FabricMinecraftLifetimeMixin.java
+      - runtime/minecraft-fabric-remote-legacy/src/main/java/dev/s7a/strata/runtime/minecraft/fabric/mixin/remote/FabricRemoteReceiveMixin.java
   # Native focus callbacks retain defensive initialization guards across all linked Minecraft owners despite their annotated non-null facade.
   - name: ConstantValue
     paths:
@@ -228,6 +229,9 @@ exclude:
   # Canonical Canvas and sampled-image roots are compiled into multiple exact-version source sets; calls resolved in another assigned owner or driver family therefore appear unused.
   - name: UnusedSymbol
     paths:
+      # Paper invokes annotated event handlers reflectively; the external example plugin exercises the public registration API across linked roots.
+      - runtime/paper/src/main/kotlin/dev/s7a/strata/runtime/paper/StrataPlugin.kt
+      - runtime/paper/src/main/kotlin/dev/s7a/strata/runtime/paper/PaperScreens.kt
       # The generated JVM IDEA model co-locates expect/actual declarations without KMP source-set relationships.
       # UnusedSymbol loses references across that boundary, including JVM typealiases and fields used by actual members.
       # These exact bridges are exercised by common/JVM tests; retain every other inspection and remove this exception when the model resolves KMP usages.

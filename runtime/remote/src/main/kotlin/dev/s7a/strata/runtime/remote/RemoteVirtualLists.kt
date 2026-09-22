@@ -4,7 +4,6 @@ import dev.s7a.strata.component.ScrollState
 import dev.s7a.strata.geometry.IntSize
 import dev.s7a.strata.projection.BuiltinProjection
 import dev.s7a.strata.projection.ProjectionFields
-import dev.s7a.strata.projection.ProjectionValue
 
 /**
  * Receives only the server-materialized visible window while retaining local viewport input and scroll state.
