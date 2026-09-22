@@ -97,7 +97,7 @@ internal class ShowcaseInventoryEvidence private constructor(
         private enum class MinecraftVersion(
             val receiptValue: String,
         ) {
-            Current("26.2"),
+            Current("26.3"),
         }
     }
 }

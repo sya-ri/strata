@@ -41,7 +41,7 @@ Generation renders these definitions with the headless runtime and explicit Mine
 Animated examples use the frame at time zero; the independent native check accepts a complete supported animation phase.
 
 The [headless render receipt](../components/headless-render.properties) records source, asset, viewport, and image hashes.
-The separate [native parity receipt](../evidence/minecraft-26.2-parity.properties) records loaded-game comparisons.
+The separate [native parity receipt](../evidence/minecraft-26.3-parity.properties) records loaded-game comparisons.
 See [documentation maintenance](../development/documentation.md) for regeneration and acceptance tasks.
 """,
         )

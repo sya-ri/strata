@@ -55,7 +55,7 @@ Edit the matrix, not generated rows; a model entry is not evidence of a successf
 ## Resource inputs and receipts
 
 Showcase and README render tasks use a client archive, asset index, objects directory, and version manifest.
-By default, dedicated Loom asset publications from `integration:minecraft-fabric-26.2` provision them without adding game or graphics classes to the documentation runtime.
+By default, dedicated Loom asset publications from `integration:minecraft-fabric-26.3` provision them without adding game or graphics classes to the documentation runtime.
 To use existing inputs, supply all four properties; relative paths resolve from the repository root:
 
 ```shell
@@ -69,7 +69,7 @@ Mojang's declared client, index, and object checksums require SHA-1 for format c
 Receipts record consumed asset/source identities, logical paths, viewports, GUI scales, output dimensions, origins, and hashes without absolute paths or timestamps.
 Unrelated asset-index entries do not invalidate unchanged consumed identities.
 
-The inventory example additionally requires `docs/evidence/minecraft-26.2-inventory.png` and its receipt.
+The inventory example additionally requires `docs/evidence/minecraft-26.3-inventory.png` and its receipt.
 Generation checks dimensions, game version, PNG hash, and the current example's LF-normalized source hash before copying it; refreshing that evidence requires the native task below.
 Text previews use GUI scale 2; other showcase images use scale 1.
 Animated examples store time zero; native comparison accepts an exact supported animation phase.
@@ -80,7 +80,7 @@ Animated examples store time zero; native comparison accepts an exact supported 
 `./gradlew :integration:docs:checkMinecraftShowcaseParity` compares fresh native evidence with fresh headless output.
 The module's `check` requires both freshness and native acceptance; focused headless tasks do not launch a client.
 
-The loaded 26.2 suite compares native screens, their Fabric reconstructions, and headless frames at fixed viewports with exact ARGB equality.
+The loaded 26.3 suite compares native screens, their Fabric reconstructions, and headless frames at fixed viewports with exact ARGB equality.
 It separately verifies minimal component definitions, animation phases, native heads, and a server-backed inventory.
 Application-specific social rows, industrial controls, and progression graphs remain example compositions.
 See [loaded-client verification](build.md#loaded-client-verification) and [font acceptance](font-verification.md#acceptance-evidence) for their independent boundaries.

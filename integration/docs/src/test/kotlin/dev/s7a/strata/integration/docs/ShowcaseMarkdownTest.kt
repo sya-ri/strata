@@ -46,7 +46,7 @@ internal class ShowcaseMarkdownTest {
         assertTrue(document.contains(overview.source).not())
         assertTrue(document.contains("without starting Minecraft or creating a GPU context"))
         assertTrue(document.contains("(../components/headless-render.properties)"))
-        assertTrue(document.contains("(../evidence/minecraft-26.2-parity.properties)"))
+        assertTrue(document.contains("(../evidence/minecraft-26.3-parity.properties)"))
         assertEquals(1, "<!-- Generated file. Do not edit. -->".toRegex().findAll(document).count())
         DocumentedComponent.entries.forEach { component ->
             assertTrue(document.contains("<a id=\"${component.slug}\"></a>"))
@@ -147,7 +147,7 @@ internal class ShowcaseMarkdownTest {
         assertTrue(sections.getValue(DocumentedScreen.SocialInteractions).contains("without introducing a purpose-specific SocialEntry component"))
         assertTrue(sections.getValue(DocumentedScreen.SynchronizedInventory).contains("loaded Fabric client/server GameTest"))
         assertTrue(sections.getValue(DocumentedScreen.SynchronizedInventory).contains("current compiled-source hash"))
-        assertTrue(sections.getValue(DocumentedScreen.SynchronizedInventory).contains("(../evidence/minecraft-26.2-inventory.properties)"))
+        assertTrue(sections.getValue(DocumentedScreen.SynchronizedInventory).contains("(../evidence/minecraft-26.3-inventory.properties)"))
         assertTrue(sections.getValue(DocumentedScreen.SynchronizedInventory).contains("does not start a server"))
         assertTrue(sections.getValue(DocumentedScreen.SynchronizedInventory).contains("ender-chest, furnace, or custom inventory"))
         assertTrue(sections.getValue(DocumentedScreen.IndustrialController).contains("resource-pack-aware Mod controller"))

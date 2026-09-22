@@ -161,7 +161,7 @@ internal class MinecraftCanvasTestFixture(
                 borrowed = context
                 renderCalls++
                 if (transparent.not()) {
-                    check(context.target.useDepth) { "A depth-enabled factory must receive a depth target." }
+                    check(hasMinecraftCanvasTestDepth(context)) { "A depth-enabled factory must receive a depth target." }
                     logicalSize = context.logicalSize
                     physicalSize = context.physicalSize
                     resources.render(context)

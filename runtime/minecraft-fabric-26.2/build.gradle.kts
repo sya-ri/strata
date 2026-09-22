@@ -29,8 +29,9 @@ extensions.configure<DetektExtension> {
         unobfuscatedRuntime.resolve("kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftFocusedInputMapping.kt"),
         unobfuscatedRuntime.resolve("kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreen.kt"),
         sharedTests.resolve("kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftFontContractTest.kt"),
-        sharedTests.resolve("kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftInputMappingTest.kt"),
-        sharedTests.resolve("kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftJvmSurfaceTest.kt"),
+        sharedTests.resolve("kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftContainerInputTest.kt"),
+        rootProject.file("runtime/minecraft-fabric-unobfuscated-glfw/src/test/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftInputMappingTest.kt"),
+        rootProject.file("runtime/minecraft-fabric-unobfuscated-glfw/src/test/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftJvmSurfaceTest.kt"),
         sharedTests.resolve("kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftSampledBoundsTest.kt"),
         sharedTests.resolve("kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftTextMappingTest.kt"),
     )
@@ -53,9 +54,11 @@ extensions.configure<KotlinJvmProjectExtension> {
         kotlin.srcDir(sharedRuntime.resolve("kotlin"))
         kotlin.srcDir(identifierRuntime.resolve("kotlin"))
         kotlin.srcDir(unobfuscatedRuntime.resolve("kotlin"))
+        kotlin.srcDir(rootProject.file("runtime/minecraft-fabric-unobfuscated-glfw/src/main/kotlin"))
     }
     sourceSets.named("test") {
         kotlin.srcDir(sharedTests.resolve("kotlin"))
+        kotlin.srcDir(rootProject.file("runtime/minecraft-fabric-unobfuscated-glfw/src/test/kotlin"))
     }
 }
 

@@ -55,7 +55,7 @@ ${screens.joinToString("\n\n") { screen -> screen.section.trimEnd('\n') }}
 
 The confirmation and portable screen examples are freshly rendered by the headless runtime from explicit Minecraft assets.
 The [headless render receipt](../components/headless-render.properties) identifies their inputs and output images.
-Independent loaded-game comparisons are recorded in the [native parity receipt](../evidence/minecraft-26.2-parity.properties).
+Independent loaded-game comparisons are recorded in the [native parity receipt](../evidence/minecraft-26.3-parity.properties).
 The synchronized inventory example uses a native capture because its slots require a running client and server; its section records that distinct evidence.
 """.replace("\r\n", "\n").replace('\r', '\n').trimEnd('\n') + "\n"
 
@@ -105,9 +105,9 @@ ${evidence(spec.screen)}
 
     private fun evidence(screen: DocumentedScreen): String =
         when (screen.verification) {
-            DocumentedScreen.Verification.NativeFabricHeadless -> "Documentation generation freshly renders this frame on the CPU from explicit Minecraft assets without starting the game or creating a GPU context. An independent loaded Fabric GameTest requires exact ARGB equality between the native Minecraft screen, the Strata Fabric screen, and the headless frame; its [native parity receipt](../evidence/minecraft-26.2-parity.properties) is separate from the [headless generation receipt](../components/headless-render.properties)."
-            DocumentedScreen.Verification.LoadedServerFabric -> "This image is explicit native evidence from a loaded Fabric client/server GameTest that performs authoritative inventory interaction. Generation verifies its Minecraft version, PNG hash, and current compiled-source hash against the [native inventory receipt](../evidence/minecraft-26.2-inventory.properties); it does not start a server or replace this bound screen with a portable-only substitute."
-            DocumentedScreen.Verification.FabricHeadless -> "Documentation generation freshly renders this frame on the CPU from explicit Minecraft assets without starting the game or creating a GPU context. The independent loaded Fabric gate requires exact ARGB equality between the Strata Fabric screen and the headless frame using active resources; its [native parity receipt](../evidence/minecraft-26.2-parity.properties) remains separate from the [headless generation receipt](../components/headless-render.properties)."
+            DocumentedScreen.Verification.NativeFabricHeadless -> "Documentation generation freshly renders this frame on the CPU from explicit Minecraft assets without starting the game or creating a GPU context. An independent loaded Fabric GameTest requires exact ARGB equality between the native Minecraft screen, the Strata Fabric screen, and the headless frame; its [native parity receipt](../evidence/minecraft-26.3-parity.properties) is separate from the [headless generation receipt](../components/headless-render.properties)."
+            DocumentedScreen.Verification.LoadedServerFabric -> "This image is explicit native evidence from a loaded Fabric client/server GameTest that performs authoritative inventory interaction. Generation verifies its Minecraft version, PNG hash, and current compiled-source hash against the [native inventory receipt](../evidence/minecraft-26.3-inventory.properties); it does not start a server or replace this bound screen with a portable-only substitute."
+            DocumentedScreen.Verification.FabricHeadless -> "Documentation generation freshly renders this frame on the CPU from explicit Minecraft assets without starting the game or creating a GPU context. The independent loaded Fabric gate requires exact ARGB equality between the Strata Fabric screen and the headless frame using active resources; its [native parity receipt](../evidence/minecraft-26.3-parity.properties) remains separate from the [headless generation receipt](../components/headless-render.properties)."
         }
 
     private fun primitiveBoundary(screen: DocumentedScreen): String =

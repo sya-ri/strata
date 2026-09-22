@@ -2,6 +2,7 @@
 
 package dev.s7a.strata.integration.minecraft.fabric
 
+import com.mojang.blaze3d.platform.InputConstants
 import dev.s7a.strata.geometry.IntOffset
 import dev.s7a.strata.geometry.IntSize
 import dev.s7a.strata.runtime.minecraft.MinecraftUiProfile
@@ -151,5 +152,5 @@ private fun withMinecraftCanvasContext(
 
 private fun IntOffset.canvasMouseEvent(): MouseButtonEvent = MouseButtonEvent(x.toDouble(), y.toDouble(), MouseButtonInfo(PRIMARY_MOUSE_BUTTON, NO_MODIFIERS))
 
-private const val PRIMARY_MOUSE_BUTTON = 0
+private const val PRIMARY_MOUSE_BUTTON = InputConstants.MOUSE_BUTTON_LEFT
 private const val NO_MODIFIERS = 0

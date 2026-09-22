@@ -127,7 +127,7 @@ internal class ShowcaseMinecraftAssetsTest {
     @Test
     fun aMatchingHashDoesNotPermitAnotherGameVersionOrPackFormat() {
         val manifest = ShowcaseMinecraftAssetFixture(directory.resolve("manifest"))
-        Files.writeString(manifest.versionManifest, Files.readString(manifest.versionManifest).replace("26.2", "26.1"))
+        Files.writeString(manifest.versionManifest, Files.readString(manifest.versionManifest).replace("26.3", "26.1"))
         assertThrows(IllegalArgumentException::class.java) { manifest.assets(ProbeFactory()) }
 
         val version = ShowcaseMinecraftAssetFixture(directory.resolve("version"))
@@ -135,7 +135,7 @@ internal class ShowcaseMinecraftAssetsTest {
         assertThrows(IllegalArgumentException::class.java) { version.assets(ProbeFactory()) }
 
         val pack = ShowcaseMinecraftAssetFixture(directory.resolve("pack"))
-        pack.replaceClient("version.json", """{"id":"26.2","pack_version":{"resource_major":87,"resource_minor":0}}""".toByteArray())
+        pack.replaceClient("version.json", """{"id":"26.3","pack_version":{"resource_major":87,"resource_minor":0}}""".toByteArray())
         assertThrows(IllegalArgumentException::class.java) { pack.assets(ProbeFactory()) }
     }
 

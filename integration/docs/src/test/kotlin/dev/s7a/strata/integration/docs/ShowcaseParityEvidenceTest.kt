@@ -257,7 +257,7 @@ internal class ShowcaseParityEvidenceTest {
         screenImages: Map<String, ByteArray>,
     ): String =
         buildString {
-            appendLine("minecraft.version=26.2")
+            appendLine("minecraft.version=26.3")
             appendLine("viewport.width=320")
             appendLine("viewport.height=180")
             appendLine("gui.scale=1")

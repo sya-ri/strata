@@ -11,7 +11,7 @@ import dev.s7a.strata.runtime.minecraft.font.MinecraftFontSnapshot
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
 
 /**
- * Assembles the complete 26.2 profile from validated original images and a detached font graph.
+ * Assembles the complete 26.3 profile from validated original images and a detached font graph.
  * The callback owns no native resource; the result retains immutable images and snapshot only.
  */
 internal fun createShowcaseMinecraftProfile(

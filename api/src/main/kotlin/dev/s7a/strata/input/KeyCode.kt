@@ -3,7 +3,8 @@ package dev.s7a.strata.input
 /**
  * Typed platform-neutral carrier for one physical keyboard key code.
  *
- * Platform adapters preserve the source key code without interpreting keyboard layout; character input arrives separately through [TextInputEvent.Character].
+ * Platform adapters normalize recognized physical keys into this namespace without interpreting keyboard layout.
+ * Unrecognized keys use [Unknown]; [KeyboardEvent.scanCode] preserves the native physical scan code, and character input arrives separately through [TextInputEvent.Character].
  *
  * @property value platform key identity at least as large as the unknown sentinel, with [Unknown] used when the platform cannot identify it.
  */

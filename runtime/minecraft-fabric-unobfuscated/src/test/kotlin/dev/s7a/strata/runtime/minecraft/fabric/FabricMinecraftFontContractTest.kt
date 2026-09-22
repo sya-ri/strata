@@ -40,7 +40,6 @@ import java.io.InputStream
 import java.nio.file.Files
 import java.nio.file.Path
 import java.util.Optional
-import java.util.function.Predicate
 import java.util.zip.ZipEntry
 import java.util.zip.ZipOutputStream
 
@@ -295,29 +294,6 @@ internal class FabricMinecraftFontContractTest {
             }
         }
     }
-
-    private fun observedFontResources(
-        manager: ResourceManager,
-        reads: MutableList<Identifier>,
-        transform: (Resource) -> Resource = { resource -> resource },
-        checkReading: () -> Unit,
-    ): ResourceManager =
-        object : ResourceManager by manager {
-            override fun listResourceStacks(
-                path: String,
-                predicate: Predicate<Identifier>,
-            ): Map<Identifier, List<Resource>> {
-                checkReading()
-                assertEquals("font", path)
-                return manager.listResourceStacks(path, predicate).mapValues { (_, resources) -> resources.map(transform) }
-            }
-
-            override fun getResource(location: Identifier): Optional<Resource> {
-                checkReading()
-                reads.add(location)
-                return manager.getResource(location).map { resource -> transform(resource) }
-            }
-        }
 
     private fun trackedFontResource(
         resource: Resource,

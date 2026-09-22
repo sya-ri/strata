@@ -316,9 +316,14 @@ internal object MinecraftFontParityFixture {
         LegacyFreeType("1.20.5", MinecraftFontCompatibility(MinecraftTrueTypeRasterizer.FreeType, 0, minorPackFormats = false, interleavedShadows = false)),
 
         /**
-         * The current native oracle uses interleaved shadows and fractional Unihex advances.
+         * The 26.2 native oracle uses interleaved shadows and fractional Unihex advances.
          */
         CurrentFreeType("26.2", MinecraftFontCompatibility(MinecraftTrueTypeRasterizer.FreeType, 0, fractionalUnihexAdvance = true, rejectMalformedOverlayMetadata = true, bakedGlyphMetrics = true, saturatingCeil = true, preparedTextBounds = true)),
+
+        /**
+         * RenderPearl retains interleaved shadows and restores integer Unihex advance rounding on its own dependency generation.
+         */
+        RenderPearlFreeType("26.3", MinecraftFontCompatibility(MinecraftTrueTypeRasterizer.FreeType, 0, fractionalUnihexAdvance = false, rejectMalformedOverlayMetadata = true, bakedGlyphMetrics = true, saturatingCeil = true, preparedTextBounds = true)),
         ;
 
         /**

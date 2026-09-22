@@ -29,17 +29,17 @@ internal object MinecraftShowcaseParityChecker {
         val mode = Mode.parse(args[3])
         ShowcasePaths.requireDirectory(project, "repository root")
         ShowcasePaths.requireSafeSegments(project, "repository root")
-        require(nativeRoot == project.resolve("integration/minecraft-fabric-26.2/build/minecraft-parity")) {
-            "Native showcase evidence must be the independent Minecraft 26.2 acceptance output."
+        require(nativeRoot == project.resolve("integration/minecraft-fabric-26.3/build/minecraft-parity")) {
+            "Native showcase evidence must be the independent Minecraft 26.3 acceptance output."
         }
         val evidence = ShowcaseParityEvidence.load(nativeRoot)
         val inventorySource = inventorySource(project)
         val inventory = evidence.screenPng(DocumentedScreen.SynchronizedInventory)
         val nativeOutputs =
             linkedMapOf(
-                "minecraft-26.2-parity.properties" to evidence.receipt(),
-                "minecraft-26.2-inventory.png" to inventory,
-                "minecraft-26.2-inventory.properties" to inventoryReceipt(inventory, inventorySource),
+                "minecraft-26.3-parity.properties" to evidence.receipt(),
+                "minecraft-26.3-inventory.png" to inventory,
+                "minecraft-26.3-inventory.properties" to inventoryReceipt(inventory, inventorySource),
             )
         val evidenceRoot = project.resolve("docs/evidence")
         ShowcasePaths.requireSafeSegments(evidenceRoot, "native documentation evidence")
@@ -86,7 +86,7 @@ internal object MinecraftShowcaseParityChecker {
         source: String,
     ): ByteArray =
         (
-            "minecraft.version=26.2\n" +
+            "minecraft.version=26.3\n" +
                 "png.sha256=${sha256(png)}\n" +
                 "source.sha256=${sha256(source.replace("\r\n", "\n").replace('\r', '\n').toByteArray(StandardCharsets.UTF_8))}\n"
         ).toByteArray(StandardCharsets.UTF_8)

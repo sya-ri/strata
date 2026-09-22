@@ -14,7 +14,7 @@ import java.nio.file.Files
 import java.nio.file.Path
 
 /**
- * Validates the explicitly declared official 26.2 client, asset index, object directory, and repository fixtures.
+ * Validates the explicitly declared official 26.3 client, asset index, object directory, and repository fixtures.
  * The caller keeps these files stable for one load; construction verifies the manifest hashes before any image decoding.
  * Aggregate manifest and index hashes fence that load but are not receipt identities because Mojang may revise bytes mapped by unrelated existing entries at the same logical version.
  * This temporary owner holds no native objects or open streams and is not retained by the completed assets.
@@ -37,13 +37,13 @@ internal class ShowcaseMinecraftInputs(
     val compatibility =
         MinecraftFontCompatibility(
             rasterizer = MinecraftTrueTypeRasterizer.FreeType,
-            packFormat = 88,
+            packFormat = 97,
             providerFilters = true,
             packOverlays = true,
-            packFormatMinor = 0,
+            packFormatMinor = 1,
             minorPackFormats = true,
             interleavedShadows = true,
-            fractionalUnihexAdvance = true,
+            fractionalUnihexAdvance = false,
             rejectMalformedOverlayMetadata = true,
             bakedGlyphMetrics = true,
             saturatingCeil = true,
@@ -122,8 +122,8 @@ internal class ShowcaseMinecraftInputs(
     }
 
     private fun validateManifest(document: JsonObject): JsonObject {
-        require(Release.entries.singleOrNull { release -> release.id == ShowcaseAssetJson.string(document.get("id")) } == Release.Minecraft262) {
-            "The showcase version manifest must describe Minecraft 26.2."
+        require(Release.entries.singleOrNull { release -> release.id == ShowcaseAssetJson.string(document.get("id")) } == Release.Minecraft263) {
+            "The showcase version manifest must describe Minecraft 26.3."
         }
         val downloads = ShowcaseAssetJson.objectValue(document.get("downloads"))
         ShowcaseAssetJson.objectValue(downloads.get("client"))
@@ -148,8 +148,8 @@ internal class ShowcaseMinecraftInputs(
     private fun validateClientVersion() {
         val bytes = requireNotNull(client.read("version.json", documentLimits)) { "The declared client archive has no version.json." }
         val version = ShowcaseAssetJson.document(bytes, limits)
-        require(Release.entries.singleOrNull { release -> release.id == ShowcaseAssetJson.string(version.get("id")) } == Release.Minecraft262) {
-            "The declared client archive must contain Minecraft 26.2."
+        require(Release.entries.singleOrNull { release -> release.id == ShowcaseAssetJson.string(version.get("id")) } == Release.Minecraft263) {
+            "The declared client archive must contain Minecraft 26.3."
         }
         val pack = ShowcaseAssetJson.objectValue(version.get("pack_version"))
         val major = ShowcaseAssetJson.integer(pack.get("resource_major"))
@@ -169,6 +169,6 @@ internal class ShowcaseMinecraftInputs(
     private enum class Release(
         val id: String,
     ) {
-        Minecraft262("26.2"),
+        Minecraft263("26.3"),
     }
 }

@@ -86,7 +86,7 @@ private data class MinecraftFabricTarget(
             CanvasFamily.GlLegacy, CanvasFamily.GlModern, CanvasFamily.Gpu125 -> CanvasTestExtraction.Flush
             CanvasFamily.Gpu126 -> CanvasTestExtraction.Buffered
             CanvasFamily.Gpu1211 -> CanvasTestExtraction.BufferedPointer
-            CanvasFamily.Gpu261, CanvasFamily.Gpu262 -> CanvasTestExtraction.Unobfuscated
+            CanvasFamily.Gpu261, CanvasFamily.Gpu262, CanvasFamily.Gpu263 -> CanvasTestExtraction.Unobfuscated
         },
 ) {
     /** Gradle-owned lock service used to limit unrelated tasks that share mutable external resources. */
@@ -96,16 +96,18 @@ private data class MinecraftFabricTarget(
     val integrationProjectPath: String = ":integration:minecraft-fabric-$version"
     val canvasSourcePaths: List<String> =
         (listOf("shared") + canvasFamily.sourceRoots).map { suffix -> "runtime/minecraft-fabric-canvas-$suffix" }
-    val allSourceLinkPaths: List<String> = sourceLinkPaths + canvasSourcePaths
+    val inputSourcePaths: List<String> = if (canvasFamily == CanvasFamily.Gpu263) emptyList() else listOf("runtime/minecraft-fabric-glfw")
+    val allSourceLinkPaths: List<String> = sourceLinkPaths + canvasSourcePaths + inputSourcePaths
     val canvasTestSourcePaths: List<String> =
-        listOf(
+        (if (canvasFamily == CanvasFamily.Gpu263) emptyList() else listOf("integration/minecraft-fabric-canvas-target-blaze3d")) + listOf(
             "integration/minecraft-fabric-canvas-shared",
+            if (canvasFamily == CanvasFamily.Gpu263) "integration/minecraft-fabric-canvas-sdl" else "integration/minecraft-fabric-canvas-glfw",
             "integration/minecraft-fabric-canvas-${canvasFamily.testSource}",
             "integration/minecraft-fabric-canvas-extract-${canvasTestExtraction.sourceRoot}",
             when (canvasFamily) {
                 CanvasFamily.GlLegacy, CanvasFamily.GlModern, CanvasFamily.Gpu125 -> "integration/minecraft-fabric-canvas-consumer-flush"
                 CanvasFamily.Gpu126, CanvasFamily.Gpu1211, CanvasFamily.Gpu261 -> "integration/minecraft-fabric-canvas-consumer-buffer"
-                CanvasFamily.Gpu262 -> "integration/minecraft-fabric-canvas-consumer-empty"
+                CanvasFamily.Gpu262, CanvasFamily.Gpu263 -> "integration/minecraft-fabric-canvas-consumer-empty"
             },
         )
 
@@ -118,6 +120,7 @@ private data class MinecraftFabricTarget(
         Gpu1211("gpu126", "gpu", "gpu1211", "gpu-sampler", "gui", "consumer-buffer", "discard-mapped", "release-immediate"),
         Gpu261("gpu126", "gpu", "gpu1211", "gpu-sampler", "extractor", "consumer-buffer", "discard-unobfuscated", "release-immediate", "frame"),
         Gpu262("gpu262", "gpu", "gpu262", "gpu-sampler", "extractor", "consumer-empty", "discard-unobfuscated", "frame"),
+        Gpu263("gpu263", "gpu263", "consumer-empty", "discard-unobfuscated", "frame"),
     }
 
     /** Verified test-only native GUI constructor and traversal contracts, independent of the GPU driver family. */
@@ -392,6 +395,7 @@ private val minecraftFabricTargets =
             sourceLinkPaths =
                 listOf(
                     "runtime/minecraft-fabric-26.1",
+                    "runtime/minecraft-fabric-unobfuscated-glfw",
                     "runtime/minecraft-fabric-identifier",
                     "runtime/minecraft-fabric-shared",
                     "runtime/minecraft-fabric-unobfuscated",
@@ -405,6 +409,20 @@ private val minecraftFabricTargets =
             sourceLinkPaths =
                 listOf(
                     "runtime/minecraft-fabric-26.2",
+                    "runtime/minecraft-fabric-unobfuscated-glfw",
+                    "runtime/minecraft-fabric-identifier",
+                    "runtime/minecraft-fabric-shared",
+                    "runtime/minecraft-fabric-unobfuscated",
+                ),
+        ),
+        MinecraftFabricTarget(
+            version = libs.versions.minecraft263.get(),
+            canvasFamily = MinecraftFabricTarget.CanvasFamily.Gpu263,
+            javaVersion = minecraftJavaVersion,
+            remapped = false,
+            sourceLinkPaths =
+                listOf(
+                    "runtime/minecraft-fabric-26.3",
                     "runtime/minecraft-fabric-identifier",
                     "runtime/minecraft-fabric-shared",
                     "runtime/minecraft-fabric-unobfuscated",
@@ -715,7 +733,7 @@ private val fontParityComparisonsByVersion =
     mapOf(
         libs.versions.minecraft120.get() to ":runtime:minecraft-fonts-lwjgl:compareOfflineFontMinecraft120",
         libs.versions.minecraft1205.get() to ":runtime:minecraft-fonts-lwjgl:compareOfflineFontMinecraft1205",
-        libs.versions.minecraft262.get() to ":runtime:minecraft-fonts-lwjgl:compareOfflineFontMinecraft262",
+        libs.versions.minecraft263.get() to ":runtime:minecraft-fonts-lwjgl:compareOfflineFontMinecraft263",
     )
 private val fontParityMinecraftVersions = fontParityComparisonsByVersion.keys
 private val selectedMinecraftExecutionTargets =
@@ -940,7 +958,7 @@ subprojects {
     minecraftFabricTargets.firstOrNull { target -> path == target.runtimeProjectPath }?.let { target ->
         dependencies.add("compileOnly", canvasMixinDependency)
         dependencies.add("compileOnly", canvasMixinExtrasDependency)
-        val nativeRoots = target.canvasSourcePaths.map { sourcePath -> rootProject.file("$sourcePath/src/main") }
+        val nativeRoots = (target.canvasSourcePaths + target.inputSourcePaths).map { sourcePath -> rootProject.file("$sourcePath/src/main") }
         extensions.configure<SourceSetContainer> {
             named("main") {
                 java.srcDirs(nativeRoots.map { sourceRoot -> sourceRoot.resolve("java") })

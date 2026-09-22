@@ -462,7 +462,7 @@ jobs:
           representative_tasks=(
             :integration:minecraft-fabric-1.20.1:runPublishedCoordinateClientGameTest
             :integration:minecraft-fabric-1.21.11:runPublishedCoordinateClientGameTest
-            :integration:minecraft-fabric-26.2:runPublishedCoordinateClientGameTest
+            :integration:minecraft-fabric-26.3:runPublishedCoordinateClientGameTest
           )
           for representative_task in "${representative_tasks[@]}"; do
             bash ./gradlew --no-parallel --max-workers=2 --no-build-cache \
@@ -701,7 +701,7 @@ jobs:
           representative_tasks=(
             :integration:minecraft-fabric-1.20.1:runPublishedCoordinateClientGameTest
             :integration:minecraft-fabric-1.21.11:runPublishedCoordinateClientGameTest
-            :integration:minecraft-fabric-26.2:runPublishedCoordinateClientGameTest
+            :integration:minecraft-fabric-26.3:runPublishedCoordinateClientGameTest
           )
           for representative_task in "${representative_tasks[@]}"; do
             bash ./gradlew --no-parallel --max-workers=2 --no-build-cache \

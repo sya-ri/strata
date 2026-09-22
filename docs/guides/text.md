@@ -205,7 +205,7 @@ Malformed surrogate boundaries are rejected.
 An empty or cleared native preedit event removes the composition; focus loss, detachment, disabling, and external value changes also clear it.
 Changing TextArea's viewport, font, style, wrapping, or frame alone preserves the current composition.
 
-Minecraft 26.1 and 26.2 activate Minecraft's existing text-input mode for focused targets whose `FocusTargetNode.requiresTextInput` capability is true.
+Minecraft 26.1 through 26.3 activate Minecraft's existing text-input mode for focused targets whose `FocusTargetNode.requiresTextInput` capability is true.
 Enabled `TextField` and `TextArea` components supply this capability; passive input observers keep its default false value.
 It does not reproduce Minecraft's native IME popup, position the operating system's candidate window, or install new platform IME hooks on adapters that expose only committed characters.
 For implementation and verification boundaries, see [UI sessions](../development/ui-sessions.md) and [manual OS IME verification](../development/build.md#manual-os-ime-verification).

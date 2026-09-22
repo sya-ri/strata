@@ -25,8 +25,8 @@
       "metadata": {
         "locator": "1.20/mojang_minecraft_info.json",
         "bytes": 34972,
-        "sha1": "9a4f980f373183d7d0befcc16a85d329c68835e4",
-        "sha256": "f039b080aeac05e1003d298c53381af22be3f875c1a3c509b50f6299ddf2502e"
+        "sha1": "38757375cb101ff96edfa4ed7cf25ccb2c0e97eb",
+        "sha256": "cc132d4bcea8e493b3f9dbed8d868dd183887101f8d765c04d456b4244d55f51"
       },
       "client": {
         "locator": "1.20/minecraft-client.jar",
@@ -37,8 +37,8 @@
       "assetIndex": {
         "locator": "assets/indexes/1.20-5.json",
         "bytes": 413067,
-        "sha1": "7c4533d4bec68552b39668ce65cdd5cabfe68351",
-        "sha256": "6897b3cc2efd4b3a750b309bacd6ba588b93bd7967bfc5309141035f10069ffe"
+        "sha1": "78fe335ef048443d060bc53ace10bb0f41af7d50",
+        "sha256": "b6946b8ffc4144bc9e5907bbda06468ad8f9cf798403776ada4c75ba411cbe6b"
       },
       "sources": {
         "clientJarEntries": 20953,
@@ -100,8 +100,8 @@
       "metadata": {
         "locator": "1.20.1/mojang_minecraft_info.json",
         "bytes": 34974,
-        "sha1": "c0de5c449687b39537226061fe3f2600ae77bf87",
-        "sha256": "53fcbdfef0f2cb016346b9ef9256631bb3f465d5ebc755e89964b85b8f54e912"
+        "sha1": "599695fee750ab157846886c6e69583003f22d07",
+        "sha256": "383b01b365cd875e304bd69496e2443c5704ae3483ac2d72d41a7c13ecbe52be"
       },
       "client": {
         "locator": "1.20.1/minecraft-client.jar",
@@ -112,8 +112,8 @@
       "assetIndex": {
         "locator": "assets/indexes/1.20.1-5.json",
         "bytes": 413067,
-        "sha1": "7c4533d4bec68552b39668ce65cdd5cabfe68351",
-        "sha256": "6897b3cc2efd4b3a750b309bacd6ba588b93bd7967bfc5309141035f10069ffe"
+        "sha1": "78fe335ef048443d060bc53ace10bb0f41af7d50",
+        "sha256": "b6946b8ffc4144bc9e5907bbda06468ad8f9cf798403776ada4c75ba411cbe6b"
       },
       "sources": {
         "clientJarEntries": 20953,
@@ -175,8 +175,8 @@
       "metadata": {
         "locator": "1.20.2/mojang_minecraft_info.json",
         "bytes": 35011,
-        "sha1": "3470345d9de229d1caf5be8b89d76a272f983a65",
-        "sha256": "0b5b20e6979e84b5f8e2084847158acd2dce774e3f95b98a21ab5f7f4c1a5a61"
+        "sha1": "01a86412323a385ab15dcc79e1690cc2a8fa5309",
+        "sha256": "65140cd78cc823c28d83ab9ee96989c57c42b9f940fc3272e2e605a3fc7c4c37"
       },
       "client": {
         "locator": "1.20.2/minecraft-client.jar",
@@ -187,8 +187,8 @@
       "assetIndex": {
         "locator": "assets/indexes/1.20.2-8.json",
         "bytes": 416952,
-        "sha1": "fff39c9c2e356781a905f8003949524bb5469ddb",
-        "sha256": "5a8dccc4542434bd0706393391a7b41e27f458f3e079e3f57550177a20f67894"
+        "sha1": "4033a026993c99ea75420fb4176de809098867d8",
+        "sha256": "e83c5b4de06f7ccabf7f1cd4ca094ecf681ea7c45ed8637451b365a0ab3a1fe9"
       },
       "sources": {
         "clientJarEntries": 21450,
@@ -250,8 +250,8 @@
       "metadata": {
         "locator": "1.20.3/mojang_minecraft_info.json",
         "bytes": 35014,
-        "sha1": "2685d8e9444f1208be064bf42fb3293e7e65d644",
-        "sha256": "8ca087aaf4ccb4f9b32b2b38c598f2298c82f443e3f6bf7899d569c65720ecd2"
+        "sha1": "0c1410071da02e280d577d9cca7f8309ca5a9c3a",
+        "sha256": "d817db33c3fde515c32ac3067205a619a019d5997cbe1e7236e4940f56b5e7f9"
       },
       "client": {
         "locator": "1.20.3/minecraft-client.jar",
@@ -262,8 +262,8 @@
       "assetIndex": {
         "locator": "assets/indexes/1.20.3-12.json",
         "bytes": 437886,
-        "sha1": "1c7bb2981d812eadd27bb590d74d561f3f88d11b",
-        "sha256": "927251ba339aacb7d4fdc408a931062d4ee5995f8bb99e05eb2772e2dbf3e698"
+        "sha1": "3d7bedf0dd2f50327523995fe73a4c0dd23fb350",
+        "sha256": "09edca379de39425a9799d24bc2515e2abf4d8a98ffd5a94aef0efc2f4f9b8a0"
       },
       "sources": {
         "clientJarEntries": 22597,
@@ -325,8 +325,8 @@
       "metadata": {
         "locator": "1.20.4/mojang_minecraft_info.json",
         "bytes": 35014,
-        "sha1": "8eb69c0ea5472f57c5596185059e061579a41b53",
-        "sha256": "28895158c9b95f2e46cb0a1066898c0c39943076712951f711cfdca3a52e36df"
+        "sha1": "1e91d526711be5cc021bc834d3fb0d543cb7546e",
+        "sha256": "754f7a6cc52102787ca7bf996d34e6b02e4d95016e157d6e7bcb306a5fce8a79"
       },
       "client": {
         "locator": "1.20.4/minecraft-client.jar",
@@ -337,8 +337,8 @@
       "assetIndex": {
         "locator": "assets/indexes/1.20.4-12.json",
         "bytes": 437886,
-        "sha1": "1c7bb2981d812eadd27bb590d74d561f3f88d11b",
-        "sha256": "927251ba339aacb7d4fdc408a931062d4ee5995f8bb99e05eb2772e2dbf3e698"
+        "sha1": "3d7bedf0dd2f50327523995fe73a4c0dd23fb350",
+        "sha256": "09edca379de39425a9799d24bc2515e2abf4d8a98ffd5a94aef0efc2f4f9b8a0"
       },
       "sources": {
         "clientJarEntries": 22597,
@@ -400,8 +400,8 @@
       "metadata": {
         "locator": "1.20.5/mojang_minecraft_info.json",
         "bytes": 38403,
-        "sha1": "f8aff8d0d5c0d98e1ebd7b9baec83c78ee82aba6",
-        "sha256": "59460977762d31d569cdc969d0acd873b0bb23b3fd242cb2893111f085296a12"
+        "sha1": "0361c90bd655c4b98605a2fb5ab287201d13b282",
+        "sha256": "baad72e936948e5a9900bb47e21d4b71a32a108ba2c4c8b47456c477be3a8cd9"
       },
       "client": {
         "locator": "1.20.5/minecraft-client.jar",
@@ -412,8 +412,8 @@
       "assetIndex": {
         "locator": "assets/indexes/1.20.5-16.json",
         "bytes": 446564,
-        "sha1": "0f490f0618b9426f51f7f0d21b9d6818a6c9647d",
-        "sha256": "001b3453419cd4d24e03f3125811254dd3b684d7a24dc22e39eb4f14d677e710"
+        "sha1": "20d463c249d5fccad978892f5a059d940fcb1c8e",
+        "sha256": "3c01db14f69a4d786971e9168f93578fbf928dcaa14e048bcdae2ffa7b2f2709"
       },
       "sources": {
         "clientJarEntries": 23402,
@@ -475,8 +475,8 @@
       "metadata": {
         "locator": "1.20.6/mojang_minecraft_info.json",
         "bytes": 38403,
-        "sha1": "05d2fcbc2babf01114142c5b576a3962d00c45d6",
-        "sha256": "a2321ac270a3b0bb98dc698604e25a3b83c46e5c5ea1495bd38f4657d082ec7b"
+        "sha1": "2f110963d3e4a75cc7842ef7c0545faae1fabd3c",
+        "sha256": "82520da304c99580c0ef80cb64b481dccb492a5e3436e811c292e3949c7adc22"
       },
       "client": {
         "locator": "1.20.6/minecraft-client.jar",
@@ -487,8 +487,8 @@
       "assetIndex": {
         "locator": "assets/indexes/1.20.6-16.json",
         "bytes": 446564,
-        "sha1": "0f490f0618b9426f51f7f0d21b9d6818a6c9647d",
-        "sha256": "001b3453419cd4d24e03f3125811254dd3b684d7a24dc22e39eb4f14d677e710"
+        "sha1": "20d463c249d5fccad978892f5a059d940fcb1c8e",
+        "sha256": "3c01db14f69a4d786971e9168f93578fbf928dcaa14e048bcdae2ffa7b2f2709"
       },
       "sources": {
         "clientJarEntries": 23403,
@@ -550,8 +550,8 @@
       "metadata": {
         "locator": "1.21/mojang_minecraft_info.json",
         "bytes": 38401,
-        "sha1": "388cfd72f3cf041a7988ea9dece98c03a45d9232",
-        "sha256": "6bfecac825f5787dbea9bde3f3305f53262f7cf74492fa21b158485af996d8c1"
+        "sha1": "3315b1371ec4dd0e2bac3d05bda0085c95162662",
+        "sha256": "ba4e700d49b070799aded62738c628ea5edd98c3a471d1f5cdb949cbf3075114"
       },
       "client": {
         "locator": "1.21/minecraft-client.jar",
@@ -562,8 +562,8 @@
       "assetIndex": {
         "locator": "assets/indexes/1.21-17.json",
         "bytes": 449557,
-        "sha1": "1f22f8f4b4575831ce8d1d74b5656eb1bc04732c",
-        "sha256": "8779cb0b10b5edbe494b69a3c5aaf823e1489b22497f40a985f5c35688eba635"
+        "sha1": "76d7a97b9e0778fda3b14e474f012450ca0de1bb",
+        "sha256": "4e4cec4134c0943183f7026a4b92a23d0a8033ebac267bedb7c2897c535d96c7"
       },
       "sources": {
         "clientJarEntries": 23519,
@@ -625,8 +625,8 @@
       "metadata": {
         "locator": "1.21.1/mojang_minecraft_info.json",
         "bytes": 38408,
-        "sha1": "7d538f57bd7f3d0638755fa605a432494e736db3",
-        "sha256": "06ba60da1f8c6fe469bed1b348a064648bfdda57fc2fb56920e3f177f844fdfd"
+        "sha1": "81396eb81dcfec06cf6fa1c6fa06e4ab0c15eb81",
+        "sha256": "4510accfc423d2f8863cd4e4c132b6d6c02b7b5999174b47c081c63a8880584e"
       },
       "client": {
         "locator": "1.21.1/minecraft-client.jar",
@@ -637,8 +637,8 @@
       "assetIndex": {
         "locator": "assets/indexes/1.21.1-17.json",
         "bytes": 449557,
-        "sha1": "1f22f8f4b4575831ce8d1d74b5656eb1bc04732c",
-        "sha256": "8779cb0b10b5edbe494b69a3c5aaf823e1489b22497f40a985f5c35688eba635"
+        "sha1": "76d7a97b9e0778fda3b14e474f012450ca0de1bb",
+        "sha256": "4e4cec4134c0943183f7026a4b92a23d0a8033ebac267bedb7c2897c535d96c7"
       },
       "sources": {
         "clientJarEntries": 23519,
@@ -700,8 +700,8 @@
       "metadata": {
         "locator": "1.21.2/mojang_minecraft_info.json",
         "bytes": 43664,
-        "sha1": "d0cdd0e0767dfc2495d3b12d24700f4c4dacce69",
-        "sha256": "3233c655b60075b0933f30850d14bcbbdff19c6dc755244a46647c2046e676b2"
+        "sha1": "f7cac938c8b0305d6dcea9af10aeaf16e93b97cb",
+        "sha256": "48db0624fb9887b584c52de98057e0524d7ed0e2287a7ffa9f06aa2e8ba03c11"
       },
       "client": {
         "locator": "1.21.2/minecraft-client.jar",
@@ -712,8 +712,8 @@
       "assetIndex": {
         "locator": "assets/indexes/1.21.2-18.json",
         "bytes": 457929,
-        "sha1": "e4200d9c6695f0b17be0c7737deb8198840a929b",
-        "sha256": "48c628f3cccf66ac7808016b437cddff62543b11c61e1b96308c314ac135d517"
+        "sha1": "a731b9783ba120df5e859ad7aec9c36bee7558bd",
+        "sha256": "ae841c3f9518df063881362181b75e625d89705aae552cee68ce81dfea6da41e"
       },
       "sources": {
         "clientJarEntries": 24563,
@@ -775,8 +775,8 @@
       "metadata": {
         "locator": "1.21.3/mojang_minecraft_info.json",
         "bytes": 43664,
-        "sha1": "b2529968f1003847905935d41cd8be67c47b26a0",
-        "sha256": "cbeb8269fd9fecf5d48a571b3f42bd08436f6cd5ea3c51852736ac3d29414456"
+        "sha1": "c0cffaeccefc2de1fade4b97ede3d37bdf4920b0",
+        "sha256": "c315321a9bf3d712882c01d732784942938599e14ce75e78943df26445439983"
       },
       "client": {
         "locator": "1.21.3/minecraft-client.jar",
@@ -787,8 +787,8 @@
       "assetIndex": {
         "locator": "assets/indexes/1.21.3-18.json",
         "bytes": 457929,
-        "sha1": "e4200d9c6695f0b17be0c7737deb8198840a929b",
-        "sha256": "48c628f3cccf66ac7808016b437cddff62543b11c61e1b96308c314ac135d517"
+        "sha1": "a731b9783ba120df5e859ad7aec9c36bee7558bd",
+        "sha256": "ae841c3f9518df063881362181b75e625d89705aae552cee68ce81dfea6da41e"
       },
       "sources": {
         "clientJarEntries": 24564,
@@ -850,8 +850,8 @@
       "metadata": {
         "locator": "1.21.4/mojang_minecraft_info.json",
         "bytes": 43714,
-        "sha1": "0f2a7d07999df088ad2988859b06c6aa6611aefe",
-        "sha256": "5c565493055c4fa3ec610752ff93f6a4b8bc35b5d954ad87877d248876d30c88"
+        "sha1": "d152a3712859b294a2dff641f99a7fe219cd3aec",
+        "sha256": "9bf163fb8eaf355d52985a6e85b5aecde15e54f4ceca796f39eab696a59b41c9"
       },
       "client": {
         "locator": "1.21.4/minecraft-client.jar",
@@ -862,8 +862,8 @@
       "assetIndex": {
         "locator": "assets/indexes/1.21.4-19.json",
         "bytes": 464718,
-        "sha1": "f95b2d091d1c4d7f353a1bbcb25d89bb61363142",
-        "sha256": "d0609ee2a193173b945b26e1a581fdcd6a7894dffc66271206d4db92ff02b7fb"
+        "sha1": "8d07e20a532738f3ee13392a23871abb5927fd79",
+        "sha256": "55f94bdb442eaa81699b1c4d4e5acb9e23e0347b531f080c254a4246824207b5"
       },
       "sources": {
         "clientJarEntries": 25367,
@@ -925,8 +925,8 @@
       "metadata": {
         "locator": "1.21.5/mojang_minecraft_info.json",
         "bytes": 43719,
-        "sha1": "8af01c6793fcfffd12d7666b9ce53072596a5be8",
-        "sha256": "6bf86ddc99dc564424a4a816732b5dd21a152335dc11c52ab57e5d7543728767"
+        "sha1": "9b841ffc9571fd1219b887b6ff3a705774cb9614",
+        "sha256": "0e71bbb663fd1fc4f2df3cc91d0e2263d7479451506ab17ecf236f3082d04257"
       },
       "client": {
         "locator": "1.21.5/minecraft-client.jar",
@@ -937,8 +937,8 @@
       "assetIndex": {
         "locator": "assets/indexes/1.21.5-24.json",
         "bytes": 483183,
-        "sha1": "202e99c74867f9b5d9055d811371d4165cf7e754",
-        "sha256": "075714c5cc0f4bc75ba4f456c00b0f43cdd2642906a36a2a6defd2b8a71465ac"
+        "sha1": "2b11bad5dd93d7eae4e86aaafd8029d0dc79bfb8",
+        "sha256": "89c19c41b83e12699be6dfb91c888db75edd25659f004ee8d41b83366f610be6"
       },
       "sources": {
         "clientJarEntries": 25955,
@@ -1000,8 +1000,8 @@
       "metadata": {
         "locator": "1.21.6/mojang_minecraft_info.json",
         "bytes": 43719,
-        "sha1": "be22490390461dc2ddc0049f57e931217df7b49b",
-        "sha256": "3026f54c431e860c6e575befea0ddcb083f72c98e742c67b999c27db9eae7225"
+        "sha1": "7f6e01a863f29a9e56cf84479ddb9645cb2a026c",
+        "sha256": "05a7afdaf4e2450b036fcde912225002a269c4e99a2608d7d8c41088bfa47bf1"
       },
       "client": {
         "locator": "1.21.6/minecraft-client.jar",
@@ -1012,8 +1012,8 @@
       "assetIndex": {
         "locator": "assets/indexes/1.21.6-26.json",
         "bytes": 491670,
-        "sha1": "a19fb461bd02ecc1604384dc72838a228df57b68",
-        "sha256": "5fdf7e00f680dffdcf412eca7ae81027cdf2bf2c13718e28004ce509bab540dc"
+        "sha1": "94077c8d52bb89d70e9ce408a56847423034c172",
+        "sha256": "2da166d072bdb98a220a52cbd2c8e8e747f91034aae02081c1f4b3329db6e431"
       },
       "sources": {
         "clientJarEntries": 26523,
@@ -1075,8 +1075,8 @@
       "metadata": {
         "locator": "1.21.7/mojang_minecraft_info.json",
         "bytes": 43719,
-        "sha1": "80ac9bce7435dc281ad55a91d2efc1c7af25c071",
-        "sha256": "eb8445a5f416d2b70814f84257334657ca96c2681a1725d2b458ed17f8af434c"
+        "sha1": "564e7615ef822e7b9c1d49fcd99af43c8dea7608",
+        "sha256": "23fd6c48d5e856008cb3b48d17b543cb4b15f03ac040c2f711541dfd74f93453"
       },
       "client": {
         "locator": "1.21.7/minecraft-client.jar",
@@ -1087,8 +1087,8 @@
       "assetIndex": {
         "locator": "assets/indexes/1.21.7-26.json",
         "bytes": 491670,
-        "sha1": "a19fb461bd02ecc1604384dc72838a228df57b68",
-        "sha256": "5fdf7e00f680dffdcf412eca7ae81027cdf2bf2c13718e28004ce509bab540dc"
+        "sha1": "94077c8d52bb89d70e9ce408a56847423034c172",
+        "sha256": "2da166d072bdb98a220a52cbd2c8e8e747f91034aae02081c1f4b3329db6e431"
       },
       "sources": {
         "clientJarEntries": 26530,
@@ -1150,8 +1150,8 @@
       "metadata": {
         "locator": "1.21.8/mojang_minecraft_info.json",
         "bytes": 43719,
-        "sha1": "1873c42e50571bfca4553f980f5ff0f334e78068",
-        "sha256": "1777758ba950fc03e7942314a821ff5c94070b895f522b810962eab7f1af925a"
+        "sha1": "f34765e6e291cdb47de80b7b3bd1cccd53e1fbf3",
+        "sha256": "ec9b1fe5f8d639d300530de7dde855d20c70703dbc8f332b468175ac81526f10"
       },
       "client": {
         "locator": "1.21.8/minecraft-client.jar",
@@ -1162,8 +1162,8 @@
       "assetIndex": {
         "locator": "assets/indexes/1.21.8-26.json",
         "bytes": 491670,
-        "sha1": "a19fb461bd02ecc1604384dc72838a228df57b68",
-        "sha256": "5fdf7e00f680dffdcf412eca7ae81027cdf2bf2c13718e28004ce509bab540dc"
+        "sha1": "94077c8d52bb89d70e9ce408a56847423034c172",
+        "sha256": "2da166d072bdb98a220a52cbd2c8e8e747f91034aae02081c1f4b3329db6e431"
       },
       "sources": {
         "clientJarEntries": 26531,
@@ -1225,8 +1225,8 @@
       "metadata": {
         "locator": "1.21.9/mojang_minecraft_info.json",
         "bytes": 44431,
-        "sha1": "54ff950651cc0c9d1616da77adefc329ae90d4a5",
-        "sha256": "9502756bf84aa487c15ada9a72522b031e4619db894251ae9c9aa3714b3e362f"
+        "sha1": "998141c91d7e1f1995f2ac66dcf03ff8dda87871",
+        "sha256": "b12c72ca837465090092a53bc9d4bb8330fa9cace1ee7f84a3677863bfad00d6"
       },
       "client": {
         "locator": "1.21.9/minecraft-client.jar",
@@ -1237,8 +1237,8 @@
       "assetIndex": {
         "locator": "assets/indexes/1.21.9-27.json",
         "bytes": 507956,
-        "sha1": "9e6dc548fd783e5f6e276792a03d2000fc4c47aa",
-        "sha256": "8effa8a289c4371da1f1507ad59afc822b1e0e433151ea54eefb4966ffa4de58"
+        "sha1": "5bcbc92cc2a59f0ac5af3ca59e871c7b06afc474",
+        "sha256": "b4ee7f847b30c7273b14eb7347e66fca76742d85bfd7fab41d504f05c5254b55"
       },
       "sources": {
         "clientJarEntries": 27645,
@@ -1300,8 +1300,8 @@
       "metadata": {
         "locator": "1.21.10/mojang_minecraft_info.json",
         "bytes": 44432,
-        "sha1": "08ea13c87b517255ae5940393db4535d66741f45",
-        "sha256": "e5fea7e0afc0d5c5f04bbacf4431f608dd2e5352c696ddf62256c5258b565bd8"
+        "sha1": "40ecc577e2cb5924df1f30e0ccc6d2ee9e812dd0",
+        "sha256": "c0bed08567ccd3db9641b4706ad1e7e814987806927642098046e3858eb16df7"
       },
       "client": {
         "locator": "1.21.10/minecraft-client.jar",
@@ -1312,8 +1312,8 @@
       "assetIndex": {
         "locator": "assets/indexes/1.21.10-27.json",
         "bytes": 507956,
-        "sha1": "9e6dc548fd783e5f6e276792a03d2000fc4c47aa",
-        "sha256": "8effa8a289c4371da1f1507ad59afc822b1e0e433151ea54eefb4966ffa4de58"
+        "sha1": "5bcbc92cc2a59f0ac5af3ca59e871c7b06afc474",
+        "sha256": "b4ee7f847b30c7273b14eb7347e66fca76742d85bfd7fab41d504f05c5254b55"
       },
       "sources": {
         "clientJarEntries": 27645,
@@ -1375,8 +1375,8 @@
       "metadata": {
         "locator": "1.21.11/mojang_minecraft_info.json",
         "bytes": 42184,
-        "sha1": "0d87fe006fbd25ef3f0e022d133f6efaed8a9a85",
-        "sha256": "9471dcb0b88c812d5af64259b4f62afc84c3c3ec2f3af64e972f48f7d45e9493"
+        "sha1": "f8d822c54003334930a71b7b7b5e16b3d98ea9fd",
+        "sha256": "dafadb917c4b4e9f84971f286db620b48750bbbbcf66208d49e506522e0169c9"
       },
       "client": {
         "locator": "1.21.11/minecraft-client.jar",
@@ -1387,8 +1387,8 @@
       "assetIndex": {
         "locator": "assets/indexes/1.21.11-29.json",
         "bytes": 529966,
-        "sha1": "e9eeaade32639d73d4f7a30a007ace472c61cbd6",
-        "sha256": "8e7c94ce232ccd328096bcf08fdf5edaa9c1a802372a7bde9fc29df2cf6db3af"
+        "sha1": "a63b2bea5bcbba70c87df110b64ab6f2d71d446f",
+        "sha256": "2a034bc059e1d9741fc15695a576371b53f18d127c435b794fbed5875a7ee451"
       },
       "sources": {
         "clientJarEntries": 28163,
@@ -1450,8 +1450,8 @@
       "metadata": {
         "locator": "26.1/mojang_minecraft_info.json",
         "bytes": 42489,
-        "sha1": "169f1ee4714af41b77897b683537fde2b4b9fce9",
-        "sha256": "11b0a2e28e15e91b338198875198b135b2797950b74ef6179da876c29f37e2d8"
+        "sha1": "497857352a4f2d450674b9e2a97426553c53d2a3",
+        "sha256": "a0671c39c1d20c9e7a1b525d5e17255d0730e8aaabe6bda6a186541bcf7d108a"
       },
       "client": {
         "locator": "26.1/minecraft-client.jar",
@@ -1462,8 +1462,8 @@
       "assetIndex": {
         "locator": "assets/indexes/26.1-30.json",
         "bytes": 548391,
-        "sha1": "f79274e7d9523e8ba9554a61877751a426e98c24",
-        "sha256": "6067dd3a13eb942efaa9587b34c200e95a01b93a8817e5b3f1b2b98e14436b43"
+        "sha1": "c0f421369aed2b80c0490be50630519c49a2db77",
+        "sha256": "afb600261763af4cb77516e2aff519338b0a7057b41b27157371a8bde21fa333"
       },
       "sources": {
         "clientJarEntries": 30675,
@@ -1525,8 +1525,8 @@
       "metadata": {
         "locator": "26.2/mojang_minecraft_info.json",
         "bytes": 51781,
-        "sha1": "f9e9e12c8b96ea9e04b7f87e36583a6ba0e2e9e6",
-        "sha256": "c734852dc266210b4f12f3938afc619f3d5da249b4817532680bd69ac577424c"
+        "sha1": "987b91a95ae93b3bb78cc14d6e0bbd31bad08d59",
+        "sha256": "b4ada8134759853edd432cf7d06c7ff536c1427af0467700a75d089145aaad5c"
       },
       "client": {
         "locator": "26.2/minecraft-client.jar",
@@ -1537,8 +1537,8 @@
       "assetIndex": {
         "locator": "assets/indexes/26.2-32.json",
         "bytes": 586366,
-        "sha1": "0a7b601915914596801099f0522ad169a995b010",
-        "sha256": "7bfe796463dbe4dcad6c858a5e16a838e1a5754e7dc20798ba9d622c0d0ddc94"
+        "sha1": "d6540f46a8fec49e45fb7312cdcf401a8e4e15ff",
+        "sha256": "e15c46b4444da5b5417f6fd3b183c7dd2df5fcbc3171caa822a6e762ab564d39"
       },
       "sources": {
         "clientJarEntries": 31709,
@@ -1552,6 +1552,81 @@
         "indexedObjectMaxPathLength": 75,
         "indexedAssetMaxPathLength": 82,
         "indexedJsonBytes": 586366
+      },
+      "summary": {
+        "fontDocumentInstances": 9,
+        "uniqueFontIds": 8,
+        "fontJsonBytes": 27088,
+        "maxFontJsonBytes": 19118,
+        "providers": 16,
+        "providerTypes": {
+          "reference": 7,
+          "bitmap": 5,
+          "space": 1,
+          "unihex": 3
+        },
+        "maxProvidersPerDocument": 3,
+        "maxExpandedProvidersPerFont": 6,
+        "maxBitmapRows": 75,
+        "maxBitmapCells": 1200,
+        "maxBitmapRowScalars": 16,
+        "referencedAssetFiles": 8,
+        "referencedAssetBytes": 1908885,
+        "maxReferencedAssetBytes": 1559654,
+        "trueTypeFiles": 0,
+        "maxPngWidth": 144,
+        "maxPngHeight": 900,
+        "maxPngPixels": 129600,
+        "allPngArgbBytes": 944384,
+        "unihexFiles": 3,
+        "unihexZipBytes": 1894914,
+        "unihexExpandedBytes": 9051200,
+        "maxUnihexExpandedEntryBytes": 7722308,
+        "maxUnihexExpandedArchiveBytes": 7746450,
+        "unihexRecords": 135933,
+        "uniqueGlyphsSummedPerArchive": 135933,
+        "maxUniqueGlyphsPerArchive": 114432,
+        "maxUnihexRecordBytesIncludingLF": 72,
+        "unihexPackedNaturalRowBytes": 4015952,
+        "unihexStrataLongRowBytes": 17399424,
+        "uniqueGlyphsAcrossArchives": 126121,
+        "maxUnihexArchiveEntries": 2,
+        "maxUnihexEntryPathLength": 30,
+        "documentsContainingTrailingCommas": 0
+      }
+    },
+    {
+      "version": "26.3",
+      "metadata": {
+        "locator": "26.3/mojang_minecraft_info.json",
+        "bytes": 44992,
+        "sha1": "96c00d95a31328714d3811cfade2804bb050e455",
+        "sha256": "9f6f8679c06425a6ac9e7cf2b32643cae7fa9292bdcb8288fd12899965781776"
+      },
+      "client": {
+        "locator": "26.3/minecraft-client.jar",
+        "bytes": 41483720,
+        "sha1": "e877b6a07acd633fb3bb475002175cec036e7b87",
+        "sha256": "4508d006323f24fa02876310c192d739af56516eb259000ac50f0909a68c9a2d"
+      },
+      "assetIndex": {
+        "locator": "assets/indexes/26.3-34.json",
+        "bytes": 597035,
+        "sha1": "d8492bc61d32a4874c77daa03c0cba9201e9b83b",
+        "sha256": "862adf3fd19138bdf54f7cf99dbd08e0efa66dc2db31563bbfac3821766b3a34"
+      },
+      "sources": {
+        "clientJarEntries": 34227,
+        "clientJarFiles": 32878,
+        "clientJarAssetFiles": 11604,
+        "clientJarMaxEntryPathLength": 139,
+        "clientJarMaxPathLength": 139,
+        "clientJarMaxAssetPathLength": 97,
+        "clientJarUncompressedBytes": 86167188,
+        "indexedAssetEntries": 5147,
+        "indexedObjectMaxPathLength": 75,
+        "indexedAssetMaxPathLength": 82,
+        "indexedJsonBytes": 597035
       },
       "summary": {
         "fontDocumentInstances": 9,
@@ -1620,7 +1695,8 @@
         "1.21.10",
         "1.21.11",
         "26.1",
-        "26.2"
+        "26.2",
+        "26.3"
       ]
     },
     "summary.documentsContainingTrailingCommas": {
@@ -1644,7 +1720,8 @@
         "1.21.10",
         "1.21.11",
         "26.1",
-        "26.2"
+        "26.2",
+        "26.3"
       ]
     },
     "summary.fontJsonBytes": {
@@ -1657,7 +1734,8 @@
         "1.21.10",
         "1.21.11",
         "26.1",
-        "26.2"
+        "26.2",
+        "26.3"
       ]
     },
     "summary.maxBitmapCells": {
@@ -1683,7 +1761,8 @@
         "1.21.10",
         "1.21.11",
         "26.1",
-        "26.2"
+        "26.2",
+        "26.3"
       ]
     },
     "summary.maxBitmapRowScalars": {
@@ -1709,7 +1788,8 @@
         "1.21.10",
         "1.21.11",
         "26.1",
-        "26.2"
+        "26.2",
+        "26.3"
       ]
     },
     "summary.maxBitmapRows": {
@@ -1735,7 +1815,8 @@
         "1.21.10",
         "1.21.11",
         "26.1",
-        "26.2"
+        "26.2",
+        "26.3"
       ]
     },
     "summary.maxExpandedProvidersPerFont": {
@@ -1756,7 +1837,8 @@
         "1.21.10",
         "1.21.11",
         "26.1",
-        "26.2"
+        "26.2",
+        "26.3"
       ]
     },
     "summary.maxFontJsonBytes": {
@@ -1782,7 +1864,8 @@
         "1.21.10",
         "1.21.11",
         "26.1",
-        "26.2"
+        "26.2",
+        "26.3"
       ]
     },
     "summary.maxPngHeight": {
@@ -1808,7 +1891,8 @@
         "1.21.10",
         "1.21.11",
         "26.1",
-        "26.2"
+        "26.2",
+        "26.3"
       ]
     },
     "summary.maxPngPixels": {
@@ -1834,7 +1918,8 @@
         "1.21.10",
         "1.21.11",
         "26.1",
-        "26.2"
+        "26.2",
+        "26.3"
       ]
     },
     "summary.maxPngWidth": {
@@ -1860,7 +1945,8 @@
         "1.21.10",
         "1.21.11",
         "26.1",
-        "26.2"
+        "26.2",
+        "26.3"
       ]
     },
     "summary.maxProvidersPerDocument": {
@@ -1886,7 +1972,8 @@
         "1.21.10",
         "1.21.11",
         "26.1",
-        "26.2"
+        "26.2",
+        "26.3"
       ]
     },
     "summary.maxReferencedAssetBytes": {
@@ -1921,7 +2008,8 @@
         "1.21.10",
         "1.21.11",
         "26.1",
-        "26.2"
+        "26.2",
+        "26.3"
       ]
     },
     "summary.maxUnihexEntryPathLength": {
@@ -1947,7 +2035,8 @@
         "1.21.10",
         "1.21.11",
         "26.1",
-        "26.2"
+        "26.2",
+        "26.3"
       ]
     },
     "summary.maxUnihexExpandedArchiveBytes": {
@@ -1991,7 +2080,8 @@
         "1.21.10",
         "1.21.11",
         "26.1",
-        "26.2"
+        "26.2",
+        "26.3"
       ]
     },
     "summary.maxUniqueGlyphsPerArchive": {
@@ -2013,7 +2103,8 @@
         "1.21.10",
         "1.21.11",
         "26.1",
-        "26.2"
+        "26.2",
+        "26.3"
       ]
     },
     "summary.referencedAssetBytes": {
@@ -2021,7 +2112,8 @@
       "versions": [
         "1.21.11",
         "26.1",
-        "26.2"
+        "26.2",
+        "26.3"
       ]
     },
     "summary.referencedAssetFiles": {
@@ -2034,7 +2126,8 @@
         "1.21.10",
         "1.21.11",
         "26.1",
-        "26.2"
+        "26.2",
+        "26.3"
       ]
     },
     "summary.trueTypeFiles": {
@@ -2060,7 +2153,8 @@
         "1.21.10",
         "1.21.11",
         "26.1",
-        "26.2"
+        "26.2",
+        "26.3"
       ]
     },
     "summary.unihexExpandedBytes": {
@@ -2083,7 +2177,8 @@
         "1.21.10",
         "1.21.11",
         "26.1",
-        "26.2"
+        "26.2",
+        "26.3"
       ]
     },
     "summary.unihexPackedNaturalRowBytes": {
@@ -2101,7 +2196,8 @@
       "versions": [
         "1.21.11",
         "26.1",
-        "26.2"
+        "26.2",
+        "26.3"
       ]
     },
     "summary.unihexStrataLongRowBytes": {
@@ -2109,7 +2205,8 @@
       "versions": [
         "1.21.11",
         "26.1",
-        "26.2"
+        "26.2",
+        "26.3"
       ]
     },
     "summary.unihexZipBytes": {
@@ -2117,7 +2214,8 @@
       "versions": [
         "1.21.11",
         "26.1",
-        "26.2"
+        "26.2",
+        "26.3"
       ]
     },
     "summary.uniqueFontIds": {
@@ -2130,7 +2228,8 @@
         "1.21.10",
         "1.21.11",
         "26.1",
-        "26.2"
+        "26.2",
+        "26.3"
       ]
     },
     "summary.uniqueGlyphsAcrossArchives": {
@@ -2138,7 +2237,8 @@
       "versions": [
         "1.21.11",
         "26.1",
-        "26.2"
+        "26.2",
+        "26.3"
       ]
     },
     "summary.uniqueGlyphsSummedPerArchive": {
@@ -2146,25 +2246,26 @@
       "versions": [
         "1.21.11",
         "26.1",
-        "26.2"
+        "26.2",
+        "26.3"
       ]
     },
     "sources.clientJarAssetFiles": {
-      "value": 10968,
+      "value": 11604,
       "versions": [
-        "26.2"
+        "26.3"
       ]
     },
     "sources.clientJarEntries": {
-      "value": 31709,
+      "value": 34227,
       "versions": [
-        "26.2"
+        "26.3"
       ]
     },
     "sources.clientJarFiles": {
-      "value": 30453,
+      "value": 32878,
       "versions": [
-        "26.2"
+        "26.3"
       ]
     },
     "sources.clientJarMaxAssetPathLength": {
@@ -2188,7 +2289,8 @@
         "1.21.10",
         "1.21.11",
         "26.1",
-        "26.2"
+        "26.2",
+        "26.3"
       ]
     },
     "sources.clientJarMaxEntryPathLength": {
@@ -2210,33 +2312,35 @@
       ]
     },
     "sources.clientJarUncompressedBytes": {
-      "value": 82127535,
+      "value": 86167188,
       "versions": [
-        "26.2"
+        "26.3"
       ]
     },
     "sources.indexedAssetEntries": {
-      "value": 5057,
+      "value": 5147,
       "versions": [
-        "26.2"
+        "26.3"
       ]
     },
     "sources.indexedAssetMaxPathLength": {
       "value": 82,
       "versions": [
-        "26.2"
+        "26.2",
+        "26.3"
       ]
     },
     "sources.indexedJsonBytes": {
-      "value": 586366,
+      "value": 597035,
       "versions": [
-        "26.2"
+        "26.3"
       ]
     },
     "sources.indexedObjectMaxPathLength": {
       "value": 75,
       "versions": [
-        "26.2"
+        "26.2",
+        "26.3"
       ]
     }
   }

@@ -38,7 +38,7 @@ internal object MinecraftFontGpuReceipt {
                 val calibration =
                     when (target) {
                         Target.LegacyStb, Target.LegacyFreeType -> emptyList()
-                        Target.CurrentFreeType -> listOf(verifyCalibration(output, scale))
+                        Target.CurrentFreeType, Target.RenderPearlFreeType -> listOf(verifyCalibration(output, scale))
                     }
                 evidence + listOf(report) + calibration
             }.distinct()

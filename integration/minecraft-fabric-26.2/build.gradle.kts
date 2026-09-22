@@ -120,7 +120,7 @@ val fontParityGameTest = rootProject.file("integration/minecraft-font-parity/src
 val nativeFontParityGameTest = rootProject.file("integration/minecraft-font-parity-26/src/gametest")
 
 extensions.configure<DetektExtension> {
-    source.from(fontParityGameTest.resolve("kotlin"), nativeFontParityGameTest.resolve("kotlin"))
+    source.from(fontParityGameTest.resolve("kotlin"), nativeFontParityGameTest.resolve("kotlin"), rootProject.file("integration/minecraft-font-parity-blaze3d/src/gametest/kotlin"))
 }
 
 loom {
@@ -150,6 +150,7 @@ extensions.configure<KotlinJvmProjectExtension> {
         kotlin.srcDir(sharedGameTest.resolve("kotlin"))
         kotlin.srcDir(fontParityGameTest.resolve("kotlin"))
         kotlin.srcDir(nativeFontParityGameTest.resolve("kotlin"))
+        kotlin.srcDir(rootProject.file("integration/minecraft-font-parity-blaze3d/src/gametest/kotlin"))
     }
 }
 
