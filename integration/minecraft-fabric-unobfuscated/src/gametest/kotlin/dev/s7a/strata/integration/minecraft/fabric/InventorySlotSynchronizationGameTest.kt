@@ -1,5 +1,6 @@
 package dev.s7a.strata.integration.minecraft.fabric
 
+import com.mojang.blaze3d.platform.InputConstants
 import dev.s7a.strata.component.SlotBinding
 import dev.s7a.strata.component.Slots
 import dev.s7a.strata.geometry.IntOffset
@@ -298,6 +299,8 @@ internal object InventorySlotSynchronizationGameTest {
             )
         }
         context.waitForScreen(FabricMinecraftScreen::class.java)
+        // Native window transitions can center the pointer over a Slot; screenshots require a fixed non-hover position.
+        context.input.setCursorPos(0.0, 0.0)
         context.waitTicks(2)
     }
 
@@ -433,7 +436,7 @@ internal object InventorySlotSynchronizationGameTest {
     private val itemCount = 7
 
     @Suppress("MayBeConstant")
-    private val primaryMouseButton = 0
+    private val primaryMouseButton = InputConstants.MOUSE_BUTTON_LEFT
 
     @Suppress("MayBeConstant")
     private val noModifiers = 0

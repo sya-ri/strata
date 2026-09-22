@@ -18,7 +18,7 @@ import java.util.concurrent.CompletableFuture
 import java.util.function.Predicate
 
 /**
- * Representative Minecraft 26.2 entrypoint running independent native font parity before the existing suite.
+ * Version-matched Minecraft entrypoint running independent native font parity before the existing suite.
  * All game and portable host operations run on the client thread; only detached evidence reaches the test thread.
  * Provider, dimension, texel, unexplained native pixel, or Fabric/headless pixel differences fail without a success receipt.
  */

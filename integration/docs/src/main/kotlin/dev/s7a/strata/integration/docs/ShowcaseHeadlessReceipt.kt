@@ -30,7 +30,7 @@ internal object ShowcaseHeadlessReceipt {
         require(frames.keys == origins.keys) { "Headless receipt frames differ from the complete showcase catalog." }
         require(assetHashes.isNotEmpty()) { "Headless receipt requires explicit asset hashes." }
         require(hashPattern.matches(inventoryProofSha256)) { "Native inventory receipt hash is invalid." }
-        val fields = sortedMapOf("format.version" to "1", "generator" to "headless", "minecraft.version" to "26.2", "locale" to "en_us")
+        val fields = sortedMapOf("format.version" to "1", "generator" to "headless", "minecraft.version" to "26.3", "locale" to "en_us")
         assetHashes.forEach { (key, hash) ->
             require(assetKeyPattern.matches(key) && hashPattern.matches(hash)) { "Headless receipt asset identity or hash is invalid: $key" }
             fields["asset.$key.sha256"] = hash

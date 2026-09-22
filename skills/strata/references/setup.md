@@ -90,6 +90,7 @@ See [Authoring patterns](patterns.md) for state, input, and resource ownership.
 - `1.21.11`: `strata-runtime-minecraft-fabric-1.21.11`
 - `26.1`: `strata-runtime-minecraft-fabric-26.1`
 - `26.2`: `strata-runtime-minecraft-fabric-26.2`
+- `26.3`: `strata-runtime-minecraft-fabric-26.3`
 
 Minecraft 1.20 is the support floor.
 Select one exact runtime matching the active game version; multiple versioned runtimes contain duplicate Strata classes.

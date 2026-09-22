@@ -69,7 +69,7 @@ internal fun openConfirmationScreen(onConfirm: () -> Unit) {
 
 ## Supported Minecraft versions
 
-`1.20`, `1.20.1`, `1.20.2`, `1.20.3`, `1.20.4`, `1.20.5`, `1.20.6`, `1.21`, `1.21.1`, `1.21.2`, `1.21.3`, `1.21.4`, `1.21.5`, `1.21.6`, `1.21.7`, `1.21.8`, `1.21.9`, `1.21.10`, `1.21.11`, `26.1`, `26.2`
+`1.20`, `1.20.1`, `1.20.2`, `1.20.3`, `1.20.4`, `1.20.5`, `1.20.6`, `1.21`, `1.21.1`, `1.21.2`, `1.21.3`, `1.21.4`, `1.21.5`, `1.21.6`, `1.21.7`, `1.21.8`, `1.21.9`, `1.21.10`, `1.21.11`, `26.1`, `26.2`, `26.3`
 
 Install exactly one Strata runtime matching the client version.
 See [Minecraft compatibility](https://github.com/sya-ri/strata/blob/master/docs/reference/compatibility.md) for artifact names and Java requirements.

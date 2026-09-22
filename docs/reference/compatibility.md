@@ -29,6 +29,7 @@ The table is generated from the build's target matrix and describes supported ar
 | 1.21.11 | `strata-runtime-minecraft-fabric-1.21.11` | 21 |
 | 26.1 | `strata-runtime-minecraft-fabric-26.1` | 25 |
 | 26.2 | `strata-runtime-minecraft-fabric-26.2` | 25 |
+| 26.3 | `strata-runtime-minecraft-fabric-26.3` | 25 |
 
 Application UI source compiles against `strata-api`; version-specific dependencies belong to the installed runtime.
 Use the aligned Strata release version shown in the [installation example](../../README.md#installation).

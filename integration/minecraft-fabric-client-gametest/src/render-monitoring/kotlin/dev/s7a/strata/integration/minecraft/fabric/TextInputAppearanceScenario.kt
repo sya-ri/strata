@@ -15,7 +15,6 @@ import dev.s7a.strata.element.ElementKey
 import dev.s7a.strata.geometry.IntSize
 import dev.s7a.strata.modifier.Modifier
 import dev.s7a.strata.modifier.background
-import dev.s7a.strata.modifier.initialFocus
 import dev.s7a.strata.modifier.size
 import dev.s7a.strata.render.ArgbColor
 import dev.s7a.strata.render.createDrawImage
@@ -27,6 +26,7 @@ import dev.s7a.strata.spi.InternalStrataRuntimeApi
 /**
  * Verifies custom input frames on every loaded runtime using actual host progress and native pixels.
  * Editor composition and focus dispatch are tested independently through the shared Minecraft host.
+ * Editors remain unfocused so native window focus changes cannot invalidate the static-work measurement.
  */
 @OptIn(InternalStrataRuntimeApi::class)
 internal object TextInputAppearanceScenario {
@@ -123,7 +123,7 @@ internal object TextInputAppearanceScenario {
         area: TextAreaState,
     ) {
         Column(modifier = Modifier.Empty.size(160, 64).background(ArgbColor(0xFF000000.toInt())), spacing = 4) {
-            TextField(field, appearance, IntSize(160, 20), textStyle = TextStyle.ContainerLabel, modifier = Modifier.Empty.initialFocus(), key = fieldKey)
+            TextField(field, appearance, IntSize(160, 20), textStyle = TextStyle.ContainerLabel, key = fieldKey)
             TextArea(area, appearance, TextAreaViewport.Size(IntSize(160, 40)), textStyle = TextStyle.ContainerLabel, key = areaKey)
         }
     }

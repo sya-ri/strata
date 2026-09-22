@@ -216,6 +216,9 @@ jobs:
     name: ${{ matrix.name }}
     needs: minecraft-matrix
     runs-on: ubuntu-latest
+    env:
+      # Xvfb's GLX lacks the sRGB visual required by SDL; EGL preserves that requirement.
+      SDL_VIDEO_FORCE_EGL: "1"
     strategy:
       fail-fast: false
       max-parallel: 4
@@ -246,6 +249,10 @@ jobs:
           path: .gradle/loom-cache
           # Never fall back by prefix: Loom's generated Minecraft artifacts are valid only for this complete input hash.
           key: loom-${{ runner.os }}-${{ matrix.id }}-${{ steps.loom_inputs.outputs.hash }}
+      - name: Install EGL libraries
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes --no-install-recommends libegl1 libegl-mesa0
       - name: Run ${{ matrix.name }}
         # Loom's client run tasks select xvfb-run automatically on Linux when CI is true.
         run: bash ./gradlew ${{ matrix.gradle_arguments }} -Pstrata.webDemoInstallSystemDependencies=true
@@ -259,6 +266,8 @@ jobs:
           path: |
             integration/*/build/minecraft-verification/
             integration/*/build/minecraft-production-verification/
+            integration/*/build/minecraft-*parity*/
+            integration/docs/build/component-showcase/check/
             integration/*/build/run/*/crash-reports/
             integration/*/build/run/*/logs/latest.log
           if-no-files-found: ignore

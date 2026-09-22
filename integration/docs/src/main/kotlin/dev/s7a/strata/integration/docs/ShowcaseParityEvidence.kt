@@ -14,7 +14,7 @@ import java.util.HexFormat
 /**
  * Immutable snapshots of the Minecraft GameTest receipt and its exact full-frame component renders.
  *
- * Loading verifies the fixed 26.2 environment, PNG dimensions, and every receipt hash for the independent native acceptance gate.
+ * Loading verifies the fixed 26.3 environment, PNG dimensions, and every receipt hash for the independent native acceptance gate.
  * Documentation generation does not load this evidence or start a game.
  */
 internal class ShowcaseParityEvidence private constructor(
@@ -70,7 +70,7 @@ internal class ShowcaseParityEvidence private constructor(
     internal fun receipt(): ByteArray = receiptSnapshot.copyOf()
 
     /**
-     * Loads and verifies one Minecraft 26.2 GameTest evidence directory.
+     * Loads and verifies one Minecraft 26.3 GameTest evidence directory.
      */
     companion object {
         /**
@@ -153,7 +153,7 @@ internal class ShowcaseParityEvidence private constructor(
             @Suppress("unused")
             val receiptValue: String,
         ) {
-            Current("26.2"),
+            Current("26.3"),
         }
 
         private enum class ParityLocale(

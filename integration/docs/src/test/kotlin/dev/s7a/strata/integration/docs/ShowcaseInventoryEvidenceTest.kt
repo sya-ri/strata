@@ -48,11 +48,11 @@ internal class ShowcaseInventoryEvidenceTest {
         Files.write(imagePath, image)
         val imageHash = ShowcaseFrameReceipt.sha256(image)
         listOf(
-            valid.replace("minecraft.version=26.2", "minecraft.version=26.1"),
+            valid.replace("minecraft.version=26.3", "minecraft.version=26.1"),
             valid.replace("png.sha256=$imageHash", "png.sha256=${"0".repeat(64)}"),
             valid.replace("png.sha256=$imageHash\n", ""),
             valid + "other=value\n",
-            valid + "minecraft.version=26.2\n",
+            valid + "minecraft.version=26.3\n",
             valid + "\n",
         ).forEach { proof ->
             Files.writeString(proofPath, proof)

@@ -38,9 +38,11 @@ extensions.configure<KotlinJvmProjectExtension> {
         kotlin.srcDir(sharedRuntime.resolve("kotlin"))
         kotlin.srcDir(identifierRuntime.resolve("kotlin"))
         kotlin.srcDir(unobfuscatedRuntime.resolve("kotlin"))
+        kotlin.srcDir(rootProject.file("runtime/minecraft-fabric-unobfuscated-glfw/src/main/kotlin"))
     }
     sourceSets.named("test") {
         kotlin.srcDir(sharedTests.resolve("kotlin"))
+        kotlin.srcDir(rootProject.file("runtime/minecraft-fabric-unobfuscated-glfw/src/test/kotlin"))
     }
 }
 

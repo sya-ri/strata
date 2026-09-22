@@ -49,7 +49,7 @@ internal class ShowcaseLauncherContractTest {
         assertEquals(temporaryRoot.resolve("inputs/version.json"), check.inputs.versionManifest)
         assertEquals(temporaryRoot.resolve("inputs/inventory.png"), check.inputs.nativeInventoryPng)
         assertEquals(temporaryRoot.resolve("inputs/inventory.properties"), check.inputs.nativeInventoryReceipt)
-        assertFalse(Files.exists(temporaryRoot.resolve("integration/minecraft-fabric-26.2/build/minecraft-parity")))
+        assertFalse(Files.exists(temporaryRoot.resolve("integration/minecraft-fabric-26.3/build/minecraft-parity")))
     }
 
     @Test
@@ -73,7 +73,7 @@ internal class ShowcaseLauncherContractTest {
 
         assertEquals(inputs.resolve("client.jar"), launch.inputs.clientJar)
         assertTrue(before.contentEquals(Files.readAllBytes(inputs.resolve("client.jar"))))
-        assertFalse(Files.exists(project.resolve("integration/minecraft-fabric-26.2")))
+        assertFalse(Files.exists(project.resolve("integration/minecraft-fabric-26.3")))
     }
 
     @Test

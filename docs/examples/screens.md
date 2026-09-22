@@ -245,7 +245,7 @@ private val socialSearchIcon = ImageSource.Resource(ResourceId("minecraft", "tex
 
 <details><summary>Image verification</summary>
 
-Documentation generation freshly renders this frame on the CPU from explicit Minecraft assets without starting the game or creating a GPU context. An independent loaded Fabric GameTest requires exact ARGB equality between the native Minecraft screen, the Strata Fabric screen, and the headless frame; its [native parity receipt](../evidence/minecraft-26.2-parity.properties) is separate from the [headless generation receipt](../components/headless-render.properties).
+Documentation generation freshly renders this frame on the CPU from explicit Minecraft assets without starting the game or creating a GPU context. An independent loaded Fabric GameTest requires exact ARGB equality between the native Minecraft screen, the Strata Fabric screen, and the headless frame; its [native parity receipt](../evidence/minecraft-26.3-parity.properties) is separate from the [headless generation receipt](../components/headless-render.properties).
 
 </details>
 
@@ -361,7 +361,7 @@ internal fun createInventorySlotScreenDefinition(
 
 <details><summary>Image verification</summary>
 
-This image is explicit native evidence from a loaded Fabric client/server GameTest that performs authoritative inventory interaction. Generation verifies its Minecraft version, PNG hash, and current compiled-source hash against the [native inventory receipt](../evidence/minecraft-26.2-inventory.properties); it does not start a server or replace this bound screen with a portable-only substitute.
+This image is explicit native evidence from a loaded Fabric client/server GameTest that performs authoritative inventory interaction. Generation verifies its Minecraft version, PNG hash, and current compiled-source hash against the [native inventory receipt](../evidence/minecraft-26.3-inventory.properties); it does not start a server or replace this bound screen with a portable-only substitute.
 
 </details>
 
@@ -502,7 +502,7 @@ private val bufferFillColor = ArgbColor(0xFF20C7DF.toInt())
 
 <details><summary>Image verification</summary>
 
-Documentation generation freshly renders this frame on the CPU from explicit Minecraft assets without starting the game or creating a GPU context. The independent loaded Fabric gate requires exact ARGB equality between the Strata Fabric screen and the headless frame using active resources; its [native parity receipt](../evidence/minecraft-26.2-parity.properties) remains separate from the [headless generation receipt](../components/headless-render.properties).
+Documentation generation freshly renders this frame on the CPU from explicit Minecraft assets without starting the game or creating a GPU context. The independent loaded Fabric gate requires exact ARGB equality between the Strata Fabric screen and the headless frame using active resources; its [native parity receipt](../evidence/minecraft-26.3-parity.properties) remains separate from the [headless generation receipt](../components/headless-render.properties).
 
 </details>
 
@@ -667,7 +667,7 @@ private val connectionColor = ArgbColor(0xFF7A7A7A.toInt())
 
 <details><summary>Image verification</summary>
 
-Documentation generation freshly renders this frame on the CPU from explicit Minecraft assets without starting the game or creating a GPU context. The independent loaded Fabric gate requires exact ARGB equality between the Strata Fabric screen and the headless frame using active resources; its [native parity receipt](../evidence/minecraft-26.2-parity.properties) remains separate from the [headless generation receipt](../components/headless-render.properties).
+Documentation generation freshly renders this frame on the CPU from explicit Minecraft assets without starting the game or creating a GPU context. The independent loaded Fabric gate requires exact ARGB equality between the Strata Fabric screen and the headless frame using active resources; its [native parity receipt](../evidence/minecraft-26.3-parity.properties) remains separate from the [headless generation receipt](../components/headless-render.properties).
 
 </details>
 
@@ -675,5 +675,5 @@ Documentation generation freshly renders this frame on the CPU from explicit Min
 
 The confirmation and portable screen examples are freshly rendered by the headless runtime from explicit Minecraft assets.
 The [headless render receipt](../components/headless-render.properties) identifies their inputs and output images.
-Independent loaded-game comparisons are recorded in the [native parity receipt](../evidence/minecraft-26.2-parity.properties).
+Independent loaded-game comparisons are recorded in the [native parity receipt](../evidence/minecraft-26.3-parity.properties).
 The synchronized inventory example uses a native capture because its slots require a running client and server; its section records that distinct evidence.

@@ -40,7 +40,8 @@ The resource-font gate permits final native image differences only when the same
 It does not apply a blanket image tolerance or reuse historical accepted pixels.
 
 The standard native renderer draws the unchanged scene into both its ordinary RGBA8 target and an owned RGBA32F target at the same physical viewport and GUI scale.
-Minecraft 26.2 validates a pipeline's declared color format against the actual target, so that capture copies the native pipeline declaration and changes only its color attachment format.
+Minecraft 26.2 and 26.3 validate a pipeline's declared color format against the actual target, so their capture copies the native pipeline declaration and changes only its color attachment format.
+The GPU capture source roots use each generation's native APIs, including RenderPearl in 26.3, while the scene and independent comparison contract remain shared.
 Every scale first renders the same declaration into RGBA8, requires every ordinary screenshot pixel to be opaque, and requires exact RGB equality at every pixel; `visibleRgbCalibration=exact` records this observation.
 Minecraft normalizes ordinary screenshot alpha to 255, so that screenshot cannot establish equality of hidden framebuffer alpha.
 The raw calibration image is retained without changing its alpha, hashed in the receipt, and compared again offline.
@@ -60,14 +61,16 @@ The separate CPU comparison process recomputes glyph metrics and texel hashes fr
 It also binds both saved metadata sets to the current packaged fixture bytes, scene, compiled target capabilities, and dependency generation rather than accepting agreement between two stale outputs.
 Missing, changed, incomplete, or unsuccessful evidence cannot produce an acceptance receipt.
 The native oracle serializes the standard font manager's preparation work to avoid concurrent access to shared FreeType faces; it retains the original resource definitions and standard provider and renderer implementations.
+The Minecraft 1.20.5 development and production test launches also set the game's `max.bg.threads` limit to one, keeping ordinary resource reloads serial when the reference-font fixture shares an unsynchronized native face.
+This test-only launch setting leaves font resources, providers, rendering, and acceptance assertions unchanged.
 
-The representative ordinary-font fixtures compare Minecraft 1.20, 1.20.5, and 26.2 at GUI scales 1, 2, and 3; a pass requires fresh successful receipts from the selected revision and environment.
+The representative ordinary-font fixtures compare Minecraft 1.20, 1.20.5, and 26.3 at GUI scales 1, 2, and 3; a pass requires fresh successful receipts from the selected revision and environment.
 Each target compares 23 provider metric probes, 21 glyph rasters, 19 layout rows, and 1,075,200 final pixels across the three scales, with no unclassified final-image differences.
 A successful receipt establishes evidence for its resources, target contract, and device observations, not pixel identity for every resource pack or graphics device.
 Build-only native evidence lives under each representative integration module's `font-parity` output; the separate CPU receipts live under `runtime/minecraft-fonts-lwjgl/build/font-offline-parity`.
 Earlier failed runs remain diagnostics, not acceptance receipts.
 
-Minecraft 26.2 also runs a separate default-font readability scene with Japanese, Korean, and a supplementary emoji, using the active resource stack and unchanged native font options.
+Minecraft 26.3 also runs a separate default-font readability scene with Japanese, Korean, and a supplementary emoji, using the active resource stack and unchanged native font options.
 Its opaque container-label text must match native Minecraft, Fabric, and headless ARGB exactly at GUI scales 1, 2, and 3, without a GPU-difference allowance.
 The `font-parity/readability` receipt records resource hashes, options, actual scales, and full-frame captures; separately labelled Text and TextArea previews are newly rasterized headlessly at scales 2 and 3.
 These previews explain the loss of CJK strokes at scale 1 without substituting a different font or enlarging an existing raster; see [rendering density](../guides/text.md#rendering-density).
@@ -89,7 +92,7 @@ Those deterministic tests do not by themselves establish native pixel equality f
 Native font acceptance must compare the selected resources against an independent Minecraft rendering result.
 
 GUI scale affects readability, especially for characters with many strokes.
-In the Minecraft 26.2 default-font comparison, a 16-by-16 CJK Unihex glyph occupies eight logical pixels in each direction: eight physical pixels at GUI scale 1, sixteen at scale 2, and twenty-four at scale 3.
+In the Minecraft 26.3 default-font comparison, a 16-by-16 CJK Unihex glyph occupies eight logical pixels in each direction: eight physical pixels at GUI scale 1, sixteen at scale 2, and twenty-four at scale 3.
 Scale 1 therefore loses fine strokes even when the Unicode text and selected Japanese glyph are correct.
 The Text, TextField, and TextArea component images are rendered at scale 2 so the source glyph's fine strokes remain visible.
 Their logical viewports are unchanged; the headless renderer samples the original font resources directly into the larger physical image.

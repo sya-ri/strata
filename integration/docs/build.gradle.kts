@@ -16,8 +16,8 @@ import org.jetbrains.kotlin.gradle.tasks.KotlinJvmCompile
 import java.nio.file.Files
 import java.nio.file.LinkOption
 
-val showcaseLwjglVersion = libs.versions.lwjgl.minecraft.modern.get()
 val showcaseCatalog = extensions.getByType<VersionCatalogsExtension>().named("libs")
+val showcaseLwjglVersion = showcaseCatalog.findVersion("lwjgl-minecraft-263").orElseThrow().requiredVersion
 val showcaseGsonVersion = showcaseCatalog.findVersion("gson-minecraft-262").orElseThrow().requiredVersion
 val showcaseIcuVersion = showcaseCatalog.findVersion("icu-minecraft-262").orElseThrow().requiredVersion
 val showcaseNativeClassifier =
@@ -52,7 +52,7 @@ dependencies {
     implementation(project(":runtime:minecraft-fonts-lwjgl"))
     implementation("com.google.code.gson:gson:$showcaseGsonVersion") { isTransitive = false }
     runtimeOnly("com.ibm.icu:icu4j:$showcaseIcuVersion") { isTransitive = false }
-    runtimeOnly("org.lwjgl:lwjgl:$showcaseLwjglVersion:unsafe") { isTransitive = false }
+    runtimeOnly("org.lwjgl:lwjgl:$showcaseLwjglVersion") { isTransitive = false }
     runtimeOnly("org.lwjgl:lwjgl-stb:$showcaseLwjglVersion") { isTransitive = false }
     runtimeOnly("org.lwjgl:lwjgl-freetype:$showcaseLwjglVersion") { isTransitive = false }
     listOf("lwjgl", "lwjgl-stb", "lwjgl-freetype").forEach { binding ->
@@ -129,11 +129,11 @@ val checkStaging = layout.buildDirectory.dir("component-showcase/check")
 val generateStaging = layout.buildDirectory.dir("component-showcase/generate")
 val repositoryRoot = providers.provider { rootProject.layout.projectDirectory }
 val parityOutput = providers.provider {
-    rootProject.project(":integration:minecraft-fabric-26.2").layout.buildDirectory.dir("minecraft-parity").get()
+    rootProject.project(":integration:minecraft-fabric-26.3").layout.buildDirectory.dir("minecraft-parity").get()
 }
-val nativeInventoryPng = rootProject.layout.projectDirectory.file("docs/evidence/minecraft-26.2-inventory.png")
-val nativeInventoryReceipt = rootProject.layout.projectDirectory.file("docs/evidence/minecraft-26.2-inventory.properties")
-val nativeParityReceipt = rootProject.layout.projectDirectory.file("docs/evidence/minecraft-26.2-parity.properties")
+val nativeInventoryPng = rootProject.layout.projectDirectory.file("docs/evidence/minecraft-26.3-inventory.png")
+val nativeInventoryReceipt = rootProject.layout.projectDirectory.file("docs/evidence/minecraft-26.3-inventory.properties")
+val nativeParityReceipt = rootProject.layout.projectDirectory.file("docs/evidence/minecraft-26.3-parity.properties")
 val skillCheckStaging = layout.buildDirectory.dir("strata-skill/check")
 val skillGenerateStaging = layout.buildDirectory.dir("strata-skill/generate")
 val skillExampleSources = layout.projectDirectory.dir("src/skillExamples/kotlin")
@@ -162,7 +162,7 @@ fun showcaseAssetInput(propertyName: String, configurationName: String): FileCol
     }
     dependencies.add(
         input.name,
-        dependencies.project(mapOf("path" to ":integration:minecraft-fabric-26.2", "configuration" to configurationName)),
+        dependencies.project(mapOf("path" to ":integration:minecraft-fabric-26.3", "configuration" to configurationName)),
     )
     return input
 }
@@ -322,7 +322,7 @@ val checkComponentShowcase =
  * Configures the separate loaded-game oracle boundary without making headless generation depend on it.
  */
 fun JavaExec.configureMinecraftShowcaseParity(mode: String) {
-    dependsOn(":integration:minecraft-fabric-26.2:runClientGameTest", "classes")
+    dependsOn(":integration:minecraft-fabric-26.3:runClientGameTest", "classes")
     mainClass.set("dev.s7a.strata.integration.docs.MinecraftShowcaseParityChecker")
     classpath = sourceSets.main.get().runtimeClasspath
     argumentProviders.add(CommandLineArgumentProvider {

@@ -59,7 +59,11 @@ enum class FontTestContract(
     ),
     Minecraft262(
         "minecraft262", "lwjgl-minecraft-modern", "icu-minecraft-262", "gson-minecraft-262", Rasterizer.FreeType, "java-minecraft",
-        unsafeCore = true, fractionalUnihexAdvance = true, rejectMalformedOverlayMetadata = true, bakedGlyphMetrics = true, saturatingCeil = true, preparedTextBounds = true, nativeOracle = NativeOracle.Current,
+        unsafeCore = true, fractionalUnihexAdvance = true, rejectMalformedOverlayMetadata = true, bakedGlyphMetrics = true, saturatingCeil = true, preparedTextBounds = true,
+    ),
+    Minecraft263(
+        "minecraft263", "lwjgl-minecraft-263", "icu-minecraft-262", "gson-minecraft-262", Rasterizer.FreeType, "java-minecraft",
+        fractionalUnihexAdvance = false, rejectMalformedOverlayMetadata = true, bakedGlyphMetrics = true, saturatingCeil = true, preparedTextBounds = true, nativeOracle = NativeOracle.Current,
     ),
     ;
 
@@ -87,7 +91,7 @@ enum class FontTestContract(
     fun bindingClassifier(binding: Binding): String = if (binding == Binding.Core && unsafeCore) ":unsafe" else ""
 
     /** Identifies the contracts whose newer Java native binding requires explicit native access. */
-    fun requiresNativeAccess(): Boolean = this == Minecraft261 || this == Minecraft262
+    fun requiresNativeAccess(): Boolean = this == Minecraft261 || this == Minecraft262 || this == Minecraft263
 }
 
 val fontCatalog = extensions.getByType<VersionCatalogsExtension>().named("libs")

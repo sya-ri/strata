@@ -5,7 +5,7 @@ import dev.s7a.strata.geometry.IntSize
 import dev.s7a.strata.resource.ResourceId
 
 /**
- * Complete typed image inventory for the 26.2 profile and non-inventory documentation scenes.
+ * Complete typed image inventory for the 26.3 profile and non-inventory documentation scenes.
  * Every image is decoded from an explicit caller input; no screenshot or generated image is an asset source.
  */
 internal enum class ShowcaseGuiAsset(

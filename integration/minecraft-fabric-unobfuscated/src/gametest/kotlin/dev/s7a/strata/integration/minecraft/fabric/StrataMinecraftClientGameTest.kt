@@ -1,5 +1,6 @@
 package dev.s7a.strata.integration.minecraft.fabric
 
+import com.mojang.blaze3d.platform.InputConstants
 import com.mojang.blaze3d.platform.NativeImage
 import dev.s7a.strata.component.Column
 import dev.s7a.strata.component.Image
@@ -151,6 +152,7 @@ public class StrataMinecraftClientGameTest : FabricClientGameTest {
 
         context.setScreen { DeterministicConfirmScreen() }
         context.waitForScreen(DeterministicConfirmScreen::class.java)
+        context.input.setCursorPos(pointer.x.toDouble(), pointer.y.toDouble())
         context.waitTicks(2)
         val nativePath =
             context.takeScreenshot(
@@ -177,6 +179,7 @@ public class StrataMinecraftClientGameTest : FabricClientGameTest {
                     },
                 )
                 context.waitForScreen(FabricMinecraftScreen::class.java)
+                context.input.setCursorPos(pointer.x.toDouble(), pointer.y.toDouble())
                 context.waitTicks(2)
                 context.assertScreenshotEquals(
                     TestScreenshotComparisonOptions
@@ -581,15 +584,15 @@ public class StrataMinecraftClientGameTest : FabricClientGameTest {
                 val preedit = PreeditEvent("日🙂", 3, listOf("日", "🙂"), 1)
                 check(screen.preeditUpdated(preedit))
                 check(firstState.value == "A") { "Preedit unexpectedly committed text." }
-                screen.mouseClicked(MouseButtonEvent(4.0, 24.0, MouseButtonInfo(0, 0)), false)
+                screen.mouseClicked(MouseButtonEvent(4.0, 24.0, MouseButtonInfo(InputConstants.MOUSE_BUTTON_LEFT, 0)), false)
                 check(nativeTextInputEnabled(minecraft))
                 check(secondPreeditCalls == 1) { "Switching editable owners did not resubmit native preedit." }
                 check(screen.charTyped(CharacterEvent('한'.code)))
                 check(firstState.value == "A" && secondState.value == "한B")
-                screen.mouseClicked(MouseButtonEvent(4.0, 44.0, MouseButtonInfo(0, 0)), false)
+                screen.mouseClicked(MouseButtonEvent(4.0, 44.0, MouseButtonInfo(InputConstants.MOUSE_BUTTON_LEFT, 0)), false)
                 check(nativeTextInputEnabled(minecraft).not()) { "A passive input observer enabled native text input." }
                 check(screen.preeditUpdated(preedit).not())
-                screen.mouseClicked(MouseButtonEvent(4.0, 4.0, MouseButtonInfo(0, 0)), false)
+                screen.mouseClicked(MouseButtonEvent(4.0, 4.0, MouseButtonInfo(InputConstants.MOUSE_BUTTON_LEFT, 0)), false)
                 check(nativeTextInputEnabled(minecraft))
                 MinecraftClientScreenAccess.setScreen(minecraft, null)
                 check(nativeTextInputEnabled(minecraft).not()) { "Detaching a screen retained native text-input focus." }
@@ -1482,6 +1485,7 @@ public class StrataMinecraftClientGameTest : FabricClientGameTest {
         context.input.setCursorPos(pointer.x.toDouble(), pointer.y.toDouble())
         context.setScreen { DeterministicDirectJoinScreen() }
         context.waitForScreen(DeterministicDirectJoinScreen::class.java)
+        context.input.setCursorPos(pointer.x.toDouble(), pointer.y.toDouble())
         context.runOnClient(
             FailableConsumer<Minecraft, RuntimeException> { minecraft ->
                 checkNotNull(MinecraftClientScreenAccess.currentScreen(minecraft)).setFocused(null)
@@ -1509,6 +1513,7 @@ public class StrataMinecraftClientGameTest : FabricClientGameTest {
 
             context.setScreen { createMinecraftScreen(createDirectJoinScreenDefinition(), profile, parent = null) }
             context.waitForScreen(FabricMinecraftScreen::class.java)
+            context.input.setCursorPos(pointer.x.toDouble(), pointer.y.toDouble())
             context.waitTicks(2)
             context.assertScreenshotEquals(
                 TestScreenshotComparisonOptions
@@ -1673,7 +1678,7 @@ public class StrataMinecraftClientGameTest : FabricClientGameTest {
                             scroll = { scrollMinecraftScreen(screen, probe.position) },
                             move = { screen.mouseMoved(probe.position.x.toDouble(), probe.position.y.toDouble()) },
                             click = {
-                                val event = MouseButtonEvent(probe.position.x.toDouble(), probe.position.y.toDouble(), MouseButtonInfo(0, 0))
+                                val event = MouseButtonEvent(probe.position.x.toDouble(), probe.position.y.toDouble(), MouseButtonInfo(InputConstants.MOUSE_BUTTON_LEFT, 0))
                                 check(screen.mouseClicked(event, false)) { "The Strata content must consume its native primary press." }
                                 screen.mouseReleased(event)
                             },

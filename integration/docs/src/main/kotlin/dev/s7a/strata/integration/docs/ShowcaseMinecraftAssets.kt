@@ -43,7 +43,7 @@ internal class ShowcaseMinecraftAssets(
 
     /**
      * Loads explicitly supplied official files and repository fixtures with the target CPU font backend.
-     * The version manifest must identify 26.2 and exactly hash both the client archive and asset index.
+     * The version manifest must identify 26.3 and exactly hash both the client archive and asset index.
      * The caller must keep all five input locations stable until construction returns; no implicit cache path is consulted.
      */
     constructor(clientJar: Path, assetIndex: Path, assetObjects: Path, versionManifest: Path, testResources: Path) : this(

@@ -1,0 +1,20 @@
+{
+  "schemaVersion": 1,
+  "id": "${integrationModId}",
+  "version": "${version}",
+  "name": "Strata Minecraft ${minecraftVersion} integration verification",
+  "environment": "client",
+  "accessWidener": "strata-font-parity.accesswidener",
+  "mixins": ${gameTestMixins},
+  "entrypoints": {
+    "client": [
+      "dev.s7a.strata.integration.minecraft.fabric.ManualImeVerification"
+    ],
+    "fabric-client-gametest": [
+      "${gameTestEntrypoint}"
+    ]
+  },
+  "depends": {
+    "${runtimeModId}": "*"
+  }
+}

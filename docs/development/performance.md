@@ -173,7 +173,7 @@ Custom renderer factories are evaluated only inside a reserved target's capture 
 GPU-fence creation or GUI-consumption failure quarantines affected targets, and device shutdown first discards GUI queues and submits as required before completing recorded GPU work and releasing resources.
 On a backend with one host-owned command encoder, ordinary Canvas uploads and fences are recorded in the current host submission; only terminal completion may submit explicitly after every GUI queue has been consumed or discarded.
 Failed target destruction retains ownership and its permit; terminal cleanup may retry only unreleased per-resource work, preserving the earlier failure if retry also fails.
-Successfully requested asynchronous destruction is polled without repeating `close()`; the 26.2 Vulkan adapter observes physical texture and view destruction rather than relying on a fixed number of delayed frames.
+Successfully requested asynchronous destruction is polled without repeating `close()`; the 26.2 and 26.3 Vulkan adapters observe physical texture and view destruction rather than relying on a fixed number of delayed frames.
 After submitted work completes, terminal cleanup requests all retirements, drains the backend destruction queue, and requires every target's physical acknowledgment before returning its permit.
 Repeated failed shutdown cannot report success.
 Once terminal shutdown starts, ordinary polling performs no further native work, including when device completion failed and old fences later signal.
@@ -183,7 +183,7 @@ The fixed orientation-specific sampling programs are device-owned, keyed only by
 Deterministic protocol tests independently control capture and GUI fences and cover long unsignalled histories, resize, source replacement, reattachment, shared sources, cancellation, partial producer/GUI/cleanup failures, partial allocation rollback, the three/64 limits, rapid key churn, and retained old frames.
 Loaded native tests must separately inspect known GPU texels and a custom offscreen renderer before comparing the same-generation Headless capture; agreement between two snapshots alone is not native parity evidence.
 Backend-specific loaded results, especially OpenGL versus Vulkan, are recorded separately and must not be inferred from JVM protocol tests.
-The 26.2 Vulkan Canvas-only resize gate keeps the native surface fixed while varying the logical viewport, framebuffer, and owned Canvas targets; it is target-retention evidence, not swapchain-resize or full-suite evidence.
+The 26.2 and 26.3 Vulkan Canvas resize gates keep the native surface fixed while varying the logical viewport, framebuffer, and owned Canvas targets; these scenes establish target retention, and separate full-suite runs establish complete acceptance.
 
 ### Player-head filtered-image cache
 

@@ -73,6 +73,7 @@ The following distinctions describe implementation ownership, not cross-version 
 
 | Minecraft | Native boundary |
 | --- | --- |
+| 26.3 | SDL physical input, `Window.onFocus(boolean)`, and RenderPearl GPU interfaces and compiled pipelines, with the GUI holder screen API and integer Unihex advance |
 | 26.2 | `Minecraft.gui.screen()` and `Minecraft.gui.setScreen` |
 | 26.1 | `Minecraft.screen` and `Minecraft.setScreen` |
 | 1.21.11 | Legacy `GuiGraphics` rendering, input callbacks, menu clicks, and `Identifier` names |
@@ -103,7 +104,9 @@ A runtime version links the complete shared root only after its compiler and loa
 The identifier root is limited to releases whose official mappings expose that native name; releases such as 1.21.10 through 1.20 with `ResourceLocation` own compile-time aliases and factories locally while reusing the compatible implementation roots.
 Do not use file-tree include filters to select individual version-compatible sources because IDE and static-analysis Gradle models operate at source-root granularity.
 
-The 26.x projects compile the complete neutral `runtime/minecraft-fabric-shared`, `runtime/minecraft-fabric-identifier`, and `runtime/minecraft-fabric-unobfuscated` source trees and add only their version-specific current-screen bridge and metadata.
+The 26.3 target selects its SDL input and RenderPearl Canvas roots while earlier targets retain complete GLFW and Blaze3D source roots.
+The native font oracle shares scene and comparison logic while its GPU capture sources follow the same native API boundary.
+The 26.x projects compile the complete neutral `runtime/minecraft-fabric-shared`, `runtime/minecraft-fabric-identifier`, and `runtime/minecraft-fabric-unobfuscated` source trees and add their version-specific current-screen bridge, font capabilities, input family, Canvas family, and metadata.
 The 1.21.11 project combines the cross-version and identifier-alias roots with the remapped 1.21 adapter sources and the record-input release-family root.
 The 1.21.10 and 1.21.9 projects combine the same cross-version, remapped 1.21, and record-input roots but keep their `ResourceLocation` aliases in each versioned module because that mapped name is not shared by every consumer.
 The 1.21.8 through 1.21.4 projects combine the cross-version and remapped 1.21 roots with the complete primitive-input release-family root, while 1.21.3 through 1.21 reuse its compatible Kotlin screen root and the complete Java bridge root for the direct player-skin result.

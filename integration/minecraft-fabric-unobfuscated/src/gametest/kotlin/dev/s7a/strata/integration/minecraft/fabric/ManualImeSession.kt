@@ -35,6 +35,7 @@ internal class ManualImeSession(
     private val minecraft: Minecraft,
 ) {
     private val source = ReactiveRenderSource(0)
+    private val instruction = ReactiveRenderSource("Enter confirms conversion. Enter again adds a new line.")
     private val draft = TextAreaState()
     private val label = source.map { "Updates: $it" }
     private var completed = false
@@ -47,12 +48,13 @@ internal class ManualImeSession(
             ScreenDefinition("Strata OS IME verification") {
                 Column(
                     Modifier.Empty
-                        .size(320, 180)
+                        .size(420, 220)
                         .menuBackground()
                         .padding(8),
                     spacing = 8,
                 ) {
                     Text("Japanese IME: type nihongo, convert, confirm.")
+                    Text(instruction)
                     Text(label)
                     TextArea(draft, TextAreaViewport.Size(IntSize(304, 72)), key = ElementKey("manual-ime-editor"))
                     Button("Finish test", modifier = Modifier.Empty.onActivate { completed = true })
@@ -85,9 +87,19 @@ internal class ManualImeSession(
     }
 
     private fun finish() {
+        val missingInput =
+            when {
+                draft.value.contains("日本語").not() -> "Convert and confirm 日本語 before finishing."
+                draft.value.contains('\n').not() -> "Press Enter in the editor once more to add a new line."
+                else -> null
+            }
+        if (missingInput != null) {
+            completed = false
+            instruction.publish(missingInput)
+            return
+        }
         val collector = checkNotNull(monitor)
         try {
-            check(draft.value.contains("日本語") && draft.value.contains('\n')) { "Confirm Japanese conversion and a literal Enter newline before finishing." }
             check(collector.findNodes(ElementKey("manual-ime-editor")) == editorIds)
             val snapshot = collector.snapshot()
             check(snapshot.overflowed.not())

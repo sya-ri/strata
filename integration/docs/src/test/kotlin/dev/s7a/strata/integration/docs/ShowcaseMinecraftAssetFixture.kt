@@ -20,7 +20,7 @@ internal class ShowcaseMinecraftAssetFixture(
     directory: Path,
 ) {
     /**
-     * Synthetic client archive containing a 26.2 version declaration and original GUI/font resources.
+     * Synthetic client archive containing a 26.3 version declaration and original GUI/font resources.
      */
     val clientJar: Path = directory.resolve("client.jar")
 
@@ -51,7 +51,7 @@ internal class ShowcaseMinecraftAssetFixture(
         Files.createDirectories(directory)
         Files.createDirectories(assetObjects)
         Files.createDirectories(testResources)
-        clientFiles["version.json"] = """{"id":"26.2","pack_version":{"resource_major":88,"resource_minor":0}}""".toByteArray()
+        clientFiles["version.json"] = """{"id":"26.3","pack_version":{"resource_major":97,"resource_minor":1}}""".toByteArray()
         ShowcaseGuiAsset.entries.forEach { asset ->
             val path = "assets/" + asset.id.namespace + "/" + asset.id.path
             val color = if (asset == ShowcaseGuiAsset.MenuBackground) 0x40243444 else 0xFF243444.toInt()
@@ -135,7 +135,7 @@ internal class ShowcaseMinecraftAssetFixture(
         val index = declaration(assetIndex).apply { addProperty("id", "synthetic-index") }
         val manifest =
             JsonObject().apply {
-                addProperty("id", "26.2")
+                addProperty("id", "26.3")
                 add("downloads", downloads)
                 add("assetIndex", index)
             }

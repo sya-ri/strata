@@ -5,7 +5,7 @@ import net.minecraft.client.gui.screens.Screen
 import net.minecraft.network.chat.Component
 
 /**
- * Native Minecraft 26.2 text extraction oracle for the shared original-font scene.
+ * Native Minecraft text extraction oracle for the shared original-font scene.
  * It borrows the game's font manager and never consumes a portable draw command or raster.
  */
 internal class MinecraftNativeFontScreen : Screen(Component.literal("Independent native font oracle")) {

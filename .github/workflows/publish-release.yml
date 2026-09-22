@@ -46,6 +46,10 @@ on:
 permissions:
   contents: read
 
+env:
+  # Published-client verification uses Xvfb; SDL needs EGL for its sRGB framebuffer.
+  SDL_VIDEO_FORCE_EGL: "1"
+
 # Historical release controllers use this legacy group too, serializing every
 # operation that may observe or change the shared Modrinth project body.
 concurrency:
@@ -412,6 +416,10 @@ jobs:
           cache-read-only: true
           gradle-home-cache-strict-match: true
           gradle-home-cache-excludes: caches/fabric-loom
+      - name: Install EGL libraries
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes --no-install-recommends libegl1 libegl-mesa0
       - name: Resolve immutable release credentials
         id: modrinth
         shell: bash
@@ -1723,6 +1731,10 @@ jobs:
           cache-read-only: true
           gradle-home-cache-strict-match: true
           gradle-home-cache-excludes: caches/fabric-loom
+      - name: Install EGL libraries
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes --no-install-recommends libegl1 libegl-mesa0
       - name: Resolve final verification credentials
         id: modrinth
         shell: bash
