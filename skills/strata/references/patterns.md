@@ -127,12 +127,29 @@ internal fun storageScreen(onDone: () -> Unit): ScreenDefinition {
 }
 ```
 
+## Choose state ownership first
+
+Use `mutableStateOf(initialValue)` for an application-owned `MutableState<T>` and expose `State<T>` for read-only access.
+Import it from `dev.s7a.strata.state`, construct it on the host's owner thread, and retain it outside the `ScreenDefinition` callback.
+Reading `.value` during evaluation records a dependency, including ordinary Kotlin `if`, `when`, loops, and called composition functions.
+Changed assignments schedule reevaluation; equal assignments do not, and multiple writes before the next frame coalesce.
+Event-callback-only reads do not subscribe content, and inactive branches stop observing values they no longer read.
+Use stable `ElementKey` values for reordered children and retain state that must survive branch removal outside that branch.
+The [compiled shared scenario](https://github.com/sya-ri/strata/blob/master/integration/web/src/commonMain/kotlin/dev/s7a/strata/integration/web/ReactiveScenario.kt) exercises these rules across Minecraft, Headless, and Web.
+
+Reading `CheckboxState.checked`, `CycleButtonState.value`, `SliderState.value`, `TextFieldState.value`, or `TextAreaState.value` in content also tracks a dependency.
+Checkbox updates its supplied `checked` state when activated; use `onCheckedChange` for notification or business effects rather than toggling that state a second time.
+Passing an editing state directly to its control does not subscribe the parent to every keystroke; the retained control manages its own binding.
+Do not mutate state during evaluation or other declaration/frame phases, including states not yet observed by the screen.
+Keep external publishers on `StateSource`; its revision snapshots and queued cutoff differ from owner-thread `State.value` reads.
+See [screens and state](https://github.com/sya-ri/strata/blob/master/docs/guides/screens-and-state.md) for ownership and [UI sessions](https://github.com/sya-ri/strata/blob/master/docs/development/ui-sessions.md#caller-owned-reactive-state) for dependency lifetimes.
+
 ## Choose the smallest reactive boundary
 
 1. Fixed value: pass a literal.
 2. Existing `StateSource`: pass it directly to the supported argument.
 3. Transformed display: retain `source.map { ... }` outside reevaluated content and pass that projection directly.
-4. Structural addition, removal, or switching: use a narrow `Observe` (one through 22 typed sources).
+4. External-source-driven structural addition, removal, or switching: use a narrow `Observe` (one through 22 typed sources).
 5. Retain editor, selection, and scrolling state outside every observed callback.
 6. Large histories: use `VirtualList` with stable keys and retained navigation state.
 
@@ -207,7 +224,7 @@ internal fun reactiveScreen(
 The example requires unique history strings as keys; real messages should use their immutable message ID.
 Caller-owned sources publish immutable snapshots. No manual screen refresh or close/reopen is needed.
 Text, progress, image/head/source descriptors, slot binding/highlighting, labels, enabled/selected flags, cycle label formatting, list items, and leading/trailing availability have direct source overloads. Literal and source arguments may be mixed; consult the exact component signatures.
-Editing values and selections still use their dedicated mutable state. Size, color, decoration, and layout arguments use literals or a narrow `Observe`.
+Editing values and selections still use their dedicated mutable state. Size, color, decoration, and layout arguments take literals produced by tracked local-state reads or a narrow external-source `Observe`.
 For a light or colored editor, use `TextInputAppearance.Custom` with `TextStyle.ContainerLabel`.
 Supply normal/focused/disabled nine-slice frames, caret and composition colors, and nonempty image centers after borders.
 Custom frames replace the editor frame, including transparent pixels; a background modifier cannot replace it.
@@ -233,6 +250,7 @@ Literal and source-backed text share this geometry contract.
 Direct inputs keep modifiers on the actual component.
 Projections share committed source snapshots in a tree; equal results stop downstream work, although changed inputs may still run the mapper.
 Ordinary subscriptions retain every revision, including equal mapped values.
+Owner-thread state read inside an `Observe` callback belongs to that retained region's dependency set, so it can refresh without reevaluating a clean root.
 Mappers and declaration callbacks must not mutate sources or perform I/O; publish one immutable model for atomic field changes.
 Changed parent callbacks refresh captures even with stable keys, and real text-width changes still require ancestor measurement.
 
@@ -254,6 +272,7 @@ Diagnostics belong in the runtime test harness, outside application UI source.
 - Use `ImageSource.Resource(ResourceId(...))` and image backgrounds for resource-pack-replaceable Mod assets.
 - Use `TiledImageSource` for a large logical raster whose tiles load or change independently, keep navigation in `PanZoomState`, compose `panZoom(state)` for direct input, and place fixed-size markers through `TiledImageScope.atContentPosition`; pass a `StateSource<DoubleOffset>` when marker positions change independently.
 - Use `PlayerSkinSource` for profile-driven heads rather than pre-rendering a skin outside the component.
+- Shared JVM/JavaScript code uses `dev.s7a.strata.resource.Uuid` and `parseUuid` with canonical dashed UUID text; the JVM alias preserves existing `java.util.UUID` interoperability. API portability does not add player-head rendering to the browser runtime.
 - Bind `Slot` with `Slots.playerInventory`, `Slots.container`, or `Slots.activeMenu`; authoritative inventory mutation belongs to the active server menu.
 
 The sealed `UiText` and `DrawCommand` hierarchies include `WithFont` and `SampledImage`; exhaustive visitors must handle every case.
@@ -269,7 +288,9 @@ Use `TextLayout.Multiline` for wrapping, hard breaks, or reserved text rectangle
 TextField edits one line; TextArea uses LF text and an explicit `TextAreaViewport`.
 Both navigate Unicode scalars rather than grapheme clusters, count `maxLength` in UTF-16 code units, and keep preedit separate until committed.
 Focus loss and terminal cleanup clear composition.
-Selection, clipboard commands, and an OS candidate-window implementation are unavailable.
+Built-in editors do not provide selection ranges, clipboard commands, or word-navigation commands.
+Minecraft 26.1 through 26.3 activate native text-input mode for focused targets with `requiresTextInput`; passive observers alone do not request it.
+Strata does not implement or position its own OS candidate window, and older adapters exposing only committed characters gain no additional IME hooks.
 See [text and editing](https://github.com/sya-ri/strata/blob/master/docs/guides/text.md) for compiled examples, input appearance, and target-specific IME support.
 
 ## Optional CPU backend for offline tools

@@ -5,6 +5,7 @@
 Strata exposes 26 focused standard components from `dev.s7a.strata.component`.
 Every Kotlin declaration below is paired with the compiled `strata-api` overload inventory; generation fails when source and binary identities diverge or an undocumented component enters the API.
 Use the [component showcase on GitHub](https://github.com/sya-ri/strata/blob/master/docs/reference/components.md) for complete compiled examples and Minecraft-verified images.
+The catalog describes the shared API; host support differs, especially for the experimental browser runtime. Check [setup](setup.md) before selecting profile-dependent components.
 
 <a id="row"></a>
 

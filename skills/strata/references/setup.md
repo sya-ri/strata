@@ -2,7 +2,20 @@
 
 # Setup and screen opening
 
-Application UI source compiles against `strata-api` only.
+Reusable UI declarations compile against `strata-api` only; the opening boundary depends on the chosen host.
+Fabric can own a local screen, or Paper and Velocity can own its declarations, state, and handlers while an installed Fabric client handles layout, drawing, and immediate input.
+Remote screens require Strata on the client; vanilla clients cannot display them.
+Use the same Strata release on both ends and select the Fabric runtime for the client's Minecraft version.
+
+| Host | Public opening API | State and handler owner |
+| --- | --- | --- |
+| Fabric | `ScreenDefinition.open()` | Client thread |
+| Paper | `PaperScreens.open(ownerPlugin, player, definition)` | Paper primary thread |
+| Velocity | `VelocityScreens.open(ownerPlugin, player) { definition }` | Strata's dedicated proxy UI thread |
+
+
+## Local Fabric installation
+
 Install exactly one matching Strata Fabric runtime as a separate client Mod together with Fabric Language Kotlin.
 Use the component catalog for available primitives and the guides for composition and resource ownership.
 
@@ -66,6 +79,83 @@ internal fun openConfirmationScreen(onConfirm: () -> Unit) {
 ```
 
 See [Authoring patterns](patterns.md) for state, input, and resource ownership.
+
+## Paper and Velocity installation
+
+Install the chosen host's `plugin` classifier JAR in its `plugins` directory.
+Consumer plugins compile against `dev.s7a.strata:strata-runtime-paper:0.1.6` or `dev.s7a.strata:strata-runtime-velocity:0.1.6` and the host API with `compileOnly` dependencies.
+Declare `depend: [Strata]` for Paper or a required dependency on plugin ID `strata` for Velocity; do not package another Strata runtime in the consumer.
+Players still install their matching Fabric runtime and Fabric Language Kotlin.
+If the screen only uses standard components or custom compositions of them, those client dependencies are sufficient; no application-specific client Mod is needed.
+Custom retained renderers, modifiers, or synchronous input implementations need their registered client extension in addition to Strata.
+Velocity can own screens without Strata on its backends; install the Paper plugin as well when a backend also owns screens.
+
+Follow the [Paper guide](https://github.com/sya-ri/strata/blob/master/docs/guides/paper.md) or [Velocity guide](https://github.com/sya-ri/strata/blob/master/docs/guides/velocity.md) for the compiled consumer build, descriptor, and opening examples.
+The Paper guide includes a compiled typed-input screen; use these examples when wiring host APIs instead of changing the API-only declaration classpath.
+
+### Opening, state, and lifecycle
+
+- On Paper's primary thread, inspect `PaperScreens.capabilities(player)`, create independent state outside the DSL callback, and pass a fresh definition to `PaperScreens.open`.
+- On Velocity, inspect the future from `VelocityScreens.capabilities(player)` and construct the definition and owner-thread state inside the factory passed to `VelocityScreens.open`. Its future returns the session handle. Queue external state access with `VelocityScreens.execute(ownerPlugin) { ... }`; never join another UI future from a handler or completion callback.
+- A null capability result means negotiation is incomplete or unavailable. Opening with an unsupported declaration returns a terminal session reason; do not silently omit missing components or extensions.
+- Retain the returned `RemoteScreenSession` when status inspection or explicit `close()` is needed. Replacement, disconnect, and failures release its handlers, observations, and transfers. Paper plugin disable releases its owners; a Velocity consumer stopping early calls `VelocityScreens.release(ownerPlugin)`.
+- Keep database and network work off the UI owner thread. Publish asynchronous results through state sources or the host's state-update boundary; source notifications are queued and committed at the next session cutoff.
+
+### Remote resources and client behavior
+
+Resource IDs, fonts, and player skins resolve against installed client resources.
+CPU Canvas snapshots and ready tiles transfer pixels; native Canvas requires a registered client renderer.
+Virtual-list models and row factories remain on the host and produce only the requested visible/overscan window.
+Slot binds an existing backend-managed container and uses normal Minecraft item transactions; Velocity does not create server containers.
+Backend switches retire the visible remote screen and renew negotiation before another screen can open.
+
+Use `onActivate` for ordinary server actions and typed modifiers for subscribed input notifications; see [modifiers](modifiers-and-layout.md#selection-guide).
+Focus, hover, immediate propagation, capture, and IME composition remain client behavior.
+See the [remote protocol](https://github.com/sya-ri/strata/blob/master/docs/reference/remote-protocol.md) for editing acknowledgements, explicit replacements, bounds, and terminal reasons, and [custom components](custom-components.md#remote-extensions) when client code is required.
+
+## Preview the same screen with Web or Headless
+
+Author the application screen for its Mod, Paper, or Velocity owner, then reuse its `ScreenDefinition` factory in the preview harness.
+Pass deterministic sample data and test action implementations through the same application boundary; keep host APIs outside the reusable declaration.
+Do not create a second browser-only layout, silently remove unsupported controls, or treat a reduced preview as full Minecraft parity.
+
+### Project structure when Web preview is needed
+
+Use a multi-project build with one shared screen project, a JVM consumer, and a JS preview consumer.
+The screen project uses Kotlin Multiplatform with JVM and JS targets and keeps its state, callbacks, and definition factories in `commonMain`.
+For published dependencies, use `api("dev.s7a.strata:strata-api-multiplatform:0.1.6")` there; `strata-api` is the preserved JVM-only publication and cannot resolve JS variants.
+The JVM project depends on that screen project and supplies the Mod, Paper, or Velocity opening boundary and business actions.
+The JS project depends on the same screen project and `dev.s7a.strata:strata-runtime-web:0.1.6`, supplying deterministic preview data, action implementations, and browser mounting.
+Both consumers call the same definition factory; platform services stay behind shared callbacks or interfaces.
+Include the application's shared JVM classes in the deployable plugin/Mod artifact or provide them through its explicitly supported runtime dependency mechanism; a compile-time project dependency alone does not package them.
+Keep Strata and its Kotlin runtime supplied by the installed Strata runtime instead of shading a second copy into Paper or Velocity consumers.
+
+Do not introduce this split when Web preview is not needed.
+An ordinary Mod or plugin can keep its screen definitions in its existing JVM project, and Headless verification can live in that project's test or preview harness.
+
+### Experimental browser preview
+
+The API and retained core support JVM and JavaScript; sharing a declaration does not imply that every host implements every component.
+Use `runtime:web` for native DOM Text, Button, ProgressBar, and common layout primitives.
+Editors, scrolling profiles, resource images, and Minecraft-specific component appearances are not implemented by that adapter and fail explicitly.
+`WebTheme.Minecraft` styles the supported browser controls; it does not add those missing capabilities.
+
+Build the [compiled shared scenario](https://github.com/sya-ri/strata/blob/master/integration/web/src/commonMain/kotlin/dev/s7a/strata/integration/web/ReactiveScenario.kt) with `:integration:web:buildWeb`, then serve `integration/web/build/site` over HTTP.
+Follow the [browser entry point](https://github.com/sya-ri/strata/blob/master/integration/web/src/jsMain/kotlin/dev/s7a/strata/integration/web/WebApplication.kt) and [initial-document build guide](https://github.com/sya-ri/strata/blob/master/docs/development/build.md#initial-web-documents) for host wiring and browser verification.
+The [interactive demo catalog](https://github.com/sya-ri/strata/tree/master/examples/web) supplies compiled counter, progress, and keyed-list reference harnesses.
+
+`renderWebHtml` renders root-child markup, and `renderWebDocument` renders a complete initial document on a browser agent without starting interactive listeners or frame scheduling.
+Build rendering and client startup create independent one-shot definitions with identical deterministic initial values, viewport, and theme.
+`mountWeb` validates and reuses matching generated DOM; a mismatch fails before changing that HTML.
+Keep browser-only application effects outside declaration evaluation and close the returned host when its page or owning application is disposed.
+
+### Headless preview
+
+Use the [Headless guide](https://github.com/sya-ri/strata/blob/master/docs/guides/headless.md) to select the rendering boundary and supply the viewport, output scale, and resource profile.
+For an application `ScreenDefinition`, follow the [compiled external host tests](https://github.com/sya-ri/strata/blob/master/integration/api/src/test/kotlin/dev/s7a/strata/integration/external/ExternalMinecraftUiHostIntegrationTest.kt); `renderHeadless` directly accepts an Element root, not a screen definition.
+Keep opt-in host bridge imports in the preview/test harness and create fresh definitions and state for each independent preview.
+Headless images and semantics verify portable behavior; live Slot items and opaque native commands still need Minecraft or a supported exact-generation capture.
+Report missing profile assets and unsupported capabilities instead of substituting a different component tree.
 
 ## Supported Minecraft versions
 

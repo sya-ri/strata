@@ -436,12 +436,15 @@ Opaque platform draws require unit scale and exact integer translation and fail 
 
 - Use `spacing`, `horizontalArrangement`, `verticalArrangement`, and parent alignment to describe sibling structure.
 - Use `weight` only for remaining main-axis space and `align` only for a direct-child override.
+- A very small relative weight can receive zero pixels; weight guarantees no minimum size. See the [layout contract](https://github.com/sya-ri/strata/blob/master/docs/reference/layout.md#weight-allocation) for rounding and unbounded axes.
 - Use `padding` for local insets, and describe sibling relationships with layout spacing and alignment.
 - Use `fillMaxSize().scaleToFit(contentSize)` for a fixed design surface that should shrink uniformly with the viewport while retaining the user's GUI-scale accessibility setting.
 - Put images on `imageBackground` when they paint a container; use `Image` when the image is itself a logical child.
 - Put reusable actions on modifiers. `Button`, `Tab`, `Checkbox`, `CycleButton`, `Slider`, and list components keep application callbacks out of their component signatures.
 - Use `onActivate(enabled)` for an action shared by primary pointer and focused Enter or Space input; use `onPress` only when the action is pointer-specific.
 - For Paper or Velocity notifications, choose typed input overloads with explicit local `propagation` and optional key/button filters; event-dependent synchronous results require a client implementation. See the [remote input contract](https://github.com/sya-ri/strata/blob/master/docs/reference/remote-protocol.md#editing-and-local-behavior).
+- The host declares subscriptions before input occurs; only subscribed variants matching their key/button filters are transmitted. Standard controls declare their required binding events automatically.
+- Match physical keys with `KeyCode` and pointer buttons with `PointerButton`, rather than native GLFW or SDL constants. Adapters normalize recognized keys; `KeyCode.Unknown` and `KeyboardEvent.scanCode` preserve the distinction for unrecognized native keys. Text arrives separately through `TextInputEvent`.
 
 ## State and binding signatures
 

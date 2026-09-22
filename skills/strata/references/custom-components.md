@@ -2,7 +2,7 @@
 
 # Custom components
 
-Downstream Mods may create purpose-specific components as ordinary `UiScope` extension functions.
+Downstream Mods and plugins may create purpose-specific components as ordinary `UiScope` extension functions.
 An energy gauge, social-entry row, advancement graph, machine controller, or application settings section belongs downstream when its meaning is specific to that product.
 
 Admit a component to Strata's standard built-ins only when all of these are true:
@@ -57,4 +57,49 @@ internal fun UiScope.EnergyGauge(
 ```
 
 Use public `Element` and `Node` SPI only when composition cannot provide the required retained measurement, drawing, input, semantics, or lifecycle behavior.
-Read the [Element SPI contract](https://github.com/sya-ri/strata/blob/master/docs/reference/element-spi.md) before implementing a retained primitive; no central component registration is required.
+Read the [Element SPI contract](https://github.com/sya-ri/strata/blob/master/docs/reference/element-spi.md) before implementing a retained primitive; local-only components and modifiers need no central registration.
+Keep shared implementations free of JVM-only APIs and verify the target host's rendering capabilities.
+Collection snapshots detach membership but retain element references; respect their read-only types rather than relying on mutation through a cast or Java collection methods throwing. See the [architecture contract](https://github.com/sya-ri/strata/blob/master/docs/development/architecture.md).
+
+## Sharing custom components
+
+Start with a `UiScope` composition of existing primitives; being application-specific does not itself require a retained primitive, wire registration, or a client Mod.
+When several consumers need the component or a remote extension needs a shared contract, put that reusable code in a shared component module as the default.
+A JVM-only shared module is sufficient for Mod/Paper/Velocity reuse; add Kotlin Multiplatform JVM and JS targets when the same declarations need a Web preview.
+Keep host opening code, player/service access, client resources, and target-specific rendering in their consumers.
+Without cross-project reuse, an ordinary composition can remain in the application's existing module.
+
+For a remote primitive, share the type identifiers, immutable property/event types, and codecs where possible.
+If repository, release, or dependency constraints prevent a shared module, independent implementations are valid; the required agreement in the table below is sufficient for protocol interoperability.
+Do not turn source sharing, an identical artifact, or a common implementation class into an admission requirement.
+The following wire contracts must agree even when the endpoint implementations live in different projects:
+
+| Surface | Required agreement | Implementation ownership |
+| --- | --- | --- |
+| Component/modifier capability | Exact namespaced `ProjectionType` ID and schema version. | Register on both host and installed client before negotiation. |
+| Action identity | Exact action type ID and schema version used by the sender and `ProjectionAction` decoder. | `ProjectionScope.action` binds the host endpoint; a separate action-only registry entry is not required. |
+| Properties and events | Value kinds, record order, field meaning, optional values, and validation domains for matching encoders/decoders. | Prefer shared immutable types/codecs; server handlers and client factories may differ. |
+| Input policy | Declared event variants, key/button filters, propagation, and capture contracts. | Immediate behavior runs on the client; authenticated business handlers run on the host. |
+| Assets and native renderer references | Referenced resource IDs and required renderer schema capabilities. | Client installation supplies the actual assets/renderers. |
+
+Identical source, class names, module layouts, codec implementations, or business-handler code on both endpoints are not required.
+Local-only Element/Node extensions retain their registration-free contract.
+For Web/Headless previews, reuse the application's definition factory with deterministic sample data; do not maintain a second preview-only component tree.
+Target-specific component adapters may differ while preserving the property/action contract; report missing rendering or input capabilities.
+
+## Remote extensions
+
+Composition from supported standard components needs no new wire schema.
+For remote screens built only from those components and compositions, the client needs Strata and Fabric Language Kotlin, with no application-specific client Mod.
+A custom retained component or modifier used remotely must provide a typed declaration projection; a local `Node` implementation alone is insufficient.
+Read the [declaration projection SPI](https://github.com/sya-ri/strata/blob/master/docs/reference/declaration-projection.md) for `DeclarationProjection`, `ProjectionType`, detached properties, `ProjectionAction`, and `ProjectionBinding`.
+Transfer properties and typed action endpoints, keeping application models, functions, and native handles on their owning host.
+
+Choose a namespaced type ID and schema version, register it through `PaperScreens.register` or `VelocityScreens.register` before negotiation, and install matching decoders/factories in `FabricRemoteScreens.registry` before its first connection freezes registration.
+Changed wire schemas require a new version; existing connections must reconnect to negotiate newly registered types.
+Missing projections or client capabilities reject the whole screen explicitly.
+Follow the [extension and ownership contract](https://github.com/sya-ri/strata/blob/master/docs/reference/remote-protocol.md#extensions-and-ownership) for `RemoteRegistry.element`, `modifier`, `statefulModifier`, and release of retained client resources.
+The [compiled external extension](https://github.com/sya-ri/strata/blob/master/examples/paper/src/main/kotlin/dev/s7a/strata/examples/paper/DemoRemoteExtensions.kt) demonstrates a custom primitive and active modifier; its [round-trip and rejection tests](https://github.com/sya-ri/strata/blob/master/examples/paper/src/test/kotlin/dev/s7a/strata/examples/paper/ExternalProjectionTest.kt) exercise the public contracts.
+
+Typed input subscriptions can run handlers on Paper or Velocity with declared local filters, propagation, and fixed-button capture.
+Event-dependent synchronous `InputResult` or capture decisions and native Canvas drawing need an installed client implementation; a server response cannot supply an immediate local result.
