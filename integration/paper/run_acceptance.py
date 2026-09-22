@@ -16,6 +16,7 @@ import subprocess
 import time
 import urllib.request
 import uuid
+from zipfile import ZipFile
 
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -43,6 +44,28 @@ def artifact(module: str, pattern: str) -> Path:
 def properties(path: Path) -> dict[str, str]:
     """Read the simple primitive acceptance receipt format without accepting stale or absent files."""
     return dict(line.split("=", 1) for line in path.read_text(encoding="utf-8").splitlines() if "=" in line)
+
+
+def prepare_paper_bootstrap(jar: Path, server: Path) -> None:
+    """Seed only the vanilla binary cache, validating it against the verified Paper archive's embedded digest."""
+    with ZipFile(jar) as archive:
+        checksum, url, name = archive.read("META-INF/download-context").decode("utf-8").strip().split("\t")
+    if Path(name).name != name or len(checksum) != 64:
+        raise RuntimeError("Invalid embedded Paper bootstrap metadata.")
+    cached = jar.parent / name
+    candidates = [cached]
+    candidates.extend((ROOT / "build/paper-acceptance").glob(f"*/*/server/cache/{name}"))
+    candidates.extend((ROOT / "build/velocity-acceptance").glob(f"*/*/*/cache/{name}"))
+    valid = next((path for path in candidates if path.is_file() and hashlib.sha256(path.read_bytes()).hexdigest() == checksum), None)
+    if valid is None:
+        content = request(url)
+        if hashlib.sha256(content).hexdigest() != checksum:
+            raise RuntimeError("The vanilla server checksum does not match Paper's embedded manifest.")
+        cached.write_bytes(content)
+    elif valid != cached:
+        shutil.copyfile(valid, cached)
+    (server / "cache").mkdir(parents=True, exist_ok=True)
+    shutil.copyfile(cached, server / "cache" / name)
 
 
 def main() -> None:
@@ -98,6 +121,7 @@ def main() -> None:
     if arguments.manual_ime:
         with (server / "server.properties").open("a", encoding="utf-8") as properties_file:
             properties_file.write("difficulty=peaceful\n")
+    prepare_paper_bootstrap(jar, server)
     server_log = output / "server.log"
     with server_log.open("w", encoding="utf-8") as log:
         process = subprocess.Popen(

@@ -22,7 +22,7 @@ import uuid
 from zipfile import ZipFile
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "paper"))
-from run_acceptance import ROOT, artifact, gradle, properties, request
+from run_acceptance import ROOT, artifact, gradle, prepare_paper_bootstrap, properties, request
 
 
 def download(project: str, version: str, output: Path) -> tuple[Path, str]:
@@ -47,6 +47,7 @@ def running(java: Path, jar: Path, directory: Path, output: Path, run: str, prox
     log_path = output / f"{directory.name}.log"
     arguments = [str(java.resolve()), "-Xms256m", "-Xmx2g", f"-Dstrata.paper.run={run}", f"-Dstrata.velocity.run={run}", "-jar", str(jar)]
     if not proxy:
+        prepare_paper_bootstrap(jar, directory)
         arguments.append("--nogui")
     with log_path.open("w", encoding="utf-8") as log:
         process = subprocess.Popen(arguments, cwd=directory, stdin=subprocess.PIPE, stdout=log, stderr=subprocess.STDOUT,
