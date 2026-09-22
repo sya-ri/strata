@@ -228,9 +228,11 @@ sealed interface dev.s7a.strata.runtime.spi/RuntimeUiSession : dev.s7a.strata.ru
     abstract val textInputFocus // dev.s7a.strata.runtime.spi/RuntimeUiSession.textInputFocus|{}textInputFocus[0]
         abstract fun <get-textInputFocus>(): dev.s7a.strata.runtime.spi/RuntimeTextInputFocus? // dev.s7a.strata.runtime.spi/RuntimeUiSession.textInputFocus.<get-textInputFocus>|<get-textInputFocus>(){}[0]
 
+    abstract fun <#A1: kotlin/Any?> projectDeclarations(kotlin/Function1<dev.s7a.strata.runtime.spi/RuntimeDeclaration, #A1>): #A1 // dev.s7a.strata.runtime.spi/RuntimeUiSession.projectDeclarations|projectDeclarations(kotlin.Function1<dev.s7a.strata.runtime.spi.RuntimeDeclaration,0:0>){0§<kotlin.Any?>}[0]
     abstract fun attach() // dev.s7a.strata.runtime.spi/RuntimeUiSession.attach|attach(){}[0]
     abstract fun close() // dev.s7a.strata.runtime.spi/RuntimeUiSession.close|close(){}[0]
     abstract fun detach() // dev.s7a.strata.runtime.spi/RuntimeUiSession.detach|detach(){}[0]
+    abstract fun dispatchAction(kotlin/Function0<kotlin/Unit>) // dev.s7a.strata.runtime.spi/RuntimeUiSession.dispatchAction|dispatchAction(kotlin.Function0<kotlin.Unit>){}[0]
     abstract fun dispatchKeyboard(dev.s7a.strata.input/KeyboardEvent): dev.s7a.strata.input/InputResult // dev.s7a.strata.runtime.spi/RuntimeUiSession.dispatchKeyboard|dispatchKeyboard(dev.s7a.strata.input.KeyboardEvent){}[0]
     abstract fun dispatchPointer(dev.s7a.strata.input/PointerEvent): dev.s7a.strata.input/InputResult // dev.s7a.strata.runtime.spi/RuntimeUiSession.dispatchPointer|dispatchPointer(dev.s7a.strata.input.PointerEvent){}[0]
     abstract fun dispatchTextInput(dev.s7a.strata.input/TextInputEvent): dev.s7a.strata.input/InputResult // dev.s7a.strata.runtime.spi/RuntimeUiSession.dispatchTextInput|dispatchTextInput(dev.s7a.strata.input.TextInputEvent){}[0]
@@ -329,6 +331,28 @@ final class dev.s7a.strata.runtime.semantics/SemanticsEntry { // dev.s7a.strata.
     final fun equals(kotlin/Any?): kotlin/Boolean // dev.s7a.strata.runtime.semantics/SemanticsEntry.equals|equals(kotlin.Any?){}[0]
     final fun hashCode(): kotlin/Int // dev.s7a.strata.runtime.semantics/SemanticsEntry.hashCode|hashCode(){}[0]
     final fun toString(): kotlin/String // dev.s7a.strata.runtime.semantics/SemanticsEntry.toString|toString(){}[0]
+}
+
+final class dev.s7a.strata.runtime.spi/RuntimeDeclaration { // dev.s7a.strata.runtime.spi/RuntimeDeclaration|null[0]
+    final val children // dev.s7a.strata.runtime.spi/RuntimeDeclaration.children|{}children[0]
+        final fun <get-children>(): kotlin.collections/List<dev.s7a.strata.runtime.spi/RuntimeDeclaration> // dev.s7a.strata.runtime.spi/RuntimeDeclaration.children.<get-children>|<get-children>(){}[0]
+    final val element // dev.s7a.strata.runtime.spi/RuntimeDeclaration.element|{}element[0]
+        final fun <get-element>(): dev.s7a.strata.element/Element // dev.s7a.strata.runtime.spi/RuntimeDeclaration.element.<get-element>|<get-element>(){}[0]
+    final val identity // dev.s7a.strata.runtime.spi/RuntimeDeclaration.identity|{}identity[0]
+        final fun <get-identity>(): kotlin/Long // dev.s7a.strata.runtime.spi/RuntimeDeclaration.identity.<get-identity>|<get-identity>(){}[0]
+    final val modifiers // dev.s7a.strata.runtime.spi/RuntimeDeclaration.modifiers|{}modifiers[0]
+        final fun <get-modifiers>(): kotlin.collections/List<dev.s7a.strata.runtime.spi/RuntimeDeclaration.Modifier> // dev.s7a.strata.runtime.spi/RuntimeDeclaration.modifiers.<get-modifiers>|<get-modifiers>(){}[0]
+    final val projection // dev.s7a.strata.runtime.spi/RuntimeDeclaration.projection|{}projection[0]
+        final fun <get-projection>(): dev.s7a.strata.projection/DeclarationProjection<*>? // dev.s7a.strata.runtime.spi/RuntimeDeclaration.projection.<get-projection>|<get-projection>(){}[0]
+
+    final class Modifier { // dev.s7a.strata.runtime.spi/RuntimeDeclaration.Modifier|null[0]
+        final val element // dev.s7a.strata.runtime.spi/RuntimeDeclaration.Modifier.element|{}element[0]
+            final fun <get-element>(): dev.s7a.strata.modifier/ModifierElement // dev.s7a.strata.runtime.spi/RuntimeDeclaration.Modifier.element.<get-element>|<get-element>(){}[0]
+        final val identity // dev.s7a.strata.runtime.spi/RuntimeDeclaration.Modifier.identity|{}identity[0]
+            final fun <get-identity>(): kotlin/Long // dev.s7a.strata.runtime.spi/RuntimeDeclaration.Modifier.identity.<get-identity>|<get-identity>(){}[0]
+        final val projection // dev.s7a.strata.runtime.spi/RuntimeDeclaration.Modifier.projection|{}projection[0]
+            final fun <get-projection>(): dev.s7a.strata.projection/DeclarationProjection<*>? // dev.s7a.strata.runtime.spi/RuntimeDeclaration.Modifier.projection.<get-projection>|<get-projection>(){}[0]
+    }
 }
 
 final class dev.s7a.strata.runtime.spi/RuntimeTextInputFocus // dev.s7a.strata.runtime.spi/RuntimeTextInputFocus|null[0]

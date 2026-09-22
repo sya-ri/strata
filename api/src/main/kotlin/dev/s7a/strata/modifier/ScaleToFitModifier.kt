@@ -14,11 +14,27 @@ import dev.s7a.strata.node.ChildTransformNode
 import dev.s7a.strata.node.DirtyMask
 import dev.s7a.strata.node.DirtyPhase
 import dev.s7a.strata.node.ModifierNode
+import dev.s7a.strata.projection.BuiltinProjection
+import dev.s7a.strata.projection.DeclarationProjection
+import dev.s7a.strata.projection.ProjectionFields
+import dev.s7a.strata.projection.ProjectionValue
 
 /**
  * Internal implementation of uniform scale-to-fit behavior.
  */
 internal object ScaleToFitModifier {
+    /**
+     * Reconstructs the original local transform policy from a complete validated record.
+     */
+    fun decode(value: ProjectionValue): ModifierElement {
+        val fields = ProjectionFields(value)
+        val size = IntSize(fields.int(1..Int.MAX_VALUE), fields.int(1..Int.MAX_VALUE))
+        val alignment = Alignment.entries[fields.int(Alignment.entries.indices)]
+        val result = Element(size, alignment, fields.flag())
+        fields.finish()
+        return result
+    }
+
     /**
      * Immutable scale-to-fit description.
      *
@@ -31,6 +47,14 @@ internal object ScaleToFitModifier {
         val contentAlignment: Alignment,
         val allowUpscaling: Boolean,
     ) : ModifierElement {
+        override val projection: DeclarationProjection<*> get() =
+            BuiltinProjection.ScaleToFit.properties(
+                ProjectionValue.Integer(contentSize.width.toLong()),
+                ProjectionValue.Integer(contentSize.height.toLong()),
+                ProjectionValue.Integer(contentAlignment.ordinal.toLong()),
+                ProjectionValue.Flag(allowUpscaling),
+            )
+
         /**
          * The stable scale-to-fit modifier token.
          */

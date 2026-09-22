@@ -1,5 +1,7 @@
 package dev.s7a.strata.component
 
+import dev.s7a.strata.geometry.IntSize
+import dev.s7a.strata.projection.DeclarationProjection
 import dev.s7a.strata.render.PaintScope
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
 
@@ -13,6 +15,12 @@ import dev.s7a.strata.spi.InternalStrataRuntimeApi
  */
 @InternalStrataRuntimeApi
 public interface CanvasBinding : AutoCloseable {
+    /**
+     * Returns a transfer declaration for the committed source and destination, or null for local-only sources.
+     * Called after the ordinary source cutoff; implementations must not acquire resources or invoke native producers.
+     */
+    public fun project(destinationSize: IntSize): DeclarationProjection<*>? = null
+
     /**
      * Takes this binding's pending observation for the current frame without publishing it or invoking external callbacks.
      *

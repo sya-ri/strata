@@ -47,10 +47,15 @@ The session and adapter return the same `RuntimeUiFrame` value; only the session
 After that first frame, consecutive pointer, keyboard, and text events may arrive without another frame between them.
 Before each event, the session resolves only pending retained measurement and layout using the last committed constraints; clean geometry invokes no measure or layout callbacks.
 Dirty measurement also refreshes the retained dynamic children needed by virtual viewports.
-Queued source revisions, session content evaluation, animation timestamps, paint, semantics, and frame snapshots still advance only through `frame`.
+Queued source revisions and session content evaluation advance through `frame` or the declaration-only projection boundary.
+Animation timestamps, paint, semantics, and frame snapshots advance only through `frame`.
 A future resize is not visible until its frame commits, and a pre-input geometry failure prevents event dispatch and follows the existing poison and cleanup contract.
 This shared behavior applies to Minecraft hosts in both headless tests and Fabric event bursts; low-level `UiTree` users still explicitly measure and lay out dirty geometry before dispatch.
 The bridge delegates exact primary-failure identity, suppression order, lifecycle transitions, and cleanup-once behavior to the retained session.
+`projectDeclarations` uses the same frame operation, source cutoff, state-read tracking, deferred evaluation, and reconciliation while skipping measurement, layout, paint, and semantics.
+It prepares declaration-specific derived metadata and bounded dynamic children, then exposes callback-local retained IDs and descriptions to a projection adapter.
+`dispatchAction` runs an already authenticated and decoded remote handler through the input operation without requiring a rendered frame; it does not perform transport validation itself.
+Both operations preserve the ordinary no-state-mutation-during-declaration rule and terminal failure cleanup.
 It retains the content lambda while created, attached, or detached and releases it before cleanup callbacks after terminal failure or close.
 Session detach retains the active `UiTree` and its node ownership; it cancels pointer capture and clears active hover and focused ownership before clearing the committed-frame marker, without rerunning node attach or detach lifecycle callbacks until terminal close.
 `SessionAttachmentNode` adds a separate resource lifetime for retained nodes whose observations cannot remain active while detached.

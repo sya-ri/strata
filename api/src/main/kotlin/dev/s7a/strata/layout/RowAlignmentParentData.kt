@@ -6,11 +6,25 @@ import dev.s7a.strata.node.DirtyMask
 import dev.s7a.strata.node.DirtyPhase
 import dev.s7a.strata.node.ModifierNode
 import dev.s7a.strata.node.ParentDataModifierNode
+import dev.s7a.strata.projection.BuiltinProjection
+import dev.s7a.strata.projection.DeclarationProjection
+import dev.s7a.strata.projection.ProjectionFields
+import dev.s7a.strata.projection.ProjectionValue
 
 /**
  * Internal active row cross-axis parent-data modifier implementation.
  */
 internal object RowAlignmentParentData {
+    /**
+     * Reconstructs active parent data using the exact key consumed by the standard layout.
+     */
+    fun decode(value: ProjectionValue): ModifierElement {
+        val fields = ProjectionFields(value)
+        val result = Element(Data(VerticalAlignment.entries[fields.int(VerticalAlignment.entries.indices)]))
+        fields.finish()
+        return result
+    }
+
     /**
      * Immutable row child alignment data.
      *
@@ -33,6 +47,8 @@ internal object RowAlignmentParentData {
     internal data class Element(
         val data: Data,
     ) : ModifierElement {
+        override val projection: DeclarationProjection<*> get() = BuiltinProjection.RowAlignment.properties(ProjectionValue.Integer(data.alignment.ordinal.toLong()))
+
         override val type: ModifierNodeType<*, *>
             get() = TYPE
     }

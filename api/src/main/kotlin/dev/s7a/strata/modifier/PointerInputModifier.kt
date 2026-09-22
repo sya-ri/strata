@@ -9,6 +9,7 @@ import dev.s7a.strata.node.LifecycleNode
 import dev.s7a.strata.node.ModifierNode
 import dev.s7a.strata.node.PointerHoverNode
 import dev.s7a.strata.node.PointerInputNode
+import dev.s7a.strata.projection.DeclarationProjection
 
 /**
  * Internal implementation of the general pointer-action modifier family.
@@ -24,6 +25,7 @@ internal object PointerInputModifier {
      */
     internal data class Element(
         val action: Action,
+        override val projection: DeclarationProjection<*>? = null,
     ) : ModifierElement {
         override val type: ModifierNodeType<*, *>
             get() = TYPE

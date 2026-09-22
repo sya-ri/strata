@@ -23,6 +23,7 @@ import dev.s7a.strata.modifier.Modifier
 import dev.s7a.strata.node.ClipChildrenNode
 import dev.s7a.strata.node.ContentWork
 import dev.s7a.strata.node.ContentWorkNode
+import dev.s7a.strata.node.DeclarationProjectionNode
 import dev.s7a.strata.node.DirtyMask
 import dev.s7a.strata.node.DirtyPhase
 import dev.s7a.strata.node.DynamicChildrenNode
@@ -30,6 +31,11 @@ import dev.s7a.strata.node.LayoutNode
 import dev.s7a.strata.node.LifecycleNode
 import dev.s7a.strata.node.MeasureNode
 import dev.s7a.strata.node.PointerInputNode
+import dev.s7a.strata.projection.BuiltinProjection
+import dev.s7a.strata.projection.DeclarationProjection
+import dev.s7a.strata.projection.ProjectionAction
+import dev.s7a.strata.projection.ProjectionScrollBinding
+import dev.s7a.strata.projection.ProjectionValue
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
 import dev.s7a.strata.node.Node as RetainedNode
 
@@ -75,6 +81,7 @@ internal class VirtualListElement(
         PointerInputNode,
         ClipChildrenNode,
         LifecycleNode,
+        DeclarationProjectionNode,
         VirtualListController<Any> {
         private var state = initial.state
         private var itemCount = initial.initialItemCount
@@ -98,6 +105,33 @@ internal class VirtualListElement(
         private var observer: ScrollStateObserver? = null
         private var attached = false
         override var contentWorkObserver: ((ContentWork) -> Unit)? = null
+
+        override fun prepareDeclaration() {
+            state.scrollState.updateGeometry(viewportSize.height, (itemCount.toLong() * rowHeight).toIntExact(), checkNotNull(observer))
+        }
+
+        override val declarationProjection: DeclarationProjection<*>
+            get() =
+                DeclarationProjection(BuiltinProjection.VirtualList.type, this) { node, scope ->
+                    ProjectionValue.Sequence(
+                        listOf(
+                            ProjectionValue.Integer(node.viewportSize.width.toLong()),
+                            ProjectionValue.Integer(node.viewportSize.height.toLong()),
+                            ProjectionValue.Integer(node.rowHeight.toLong()),
+                            ProjectionValue.Integer(node.scrollRate.toLong()),
+                            ProjectionValue.Integer(node.itemCount.toLong()),
+                            ProjectionValue.Integer(node.visibleStart.toLong()),
+                            ProjectionScrollBinding.project(scope, node.state.scrollState),
+                            ProjectionValue.Integer(
+                                scope.action(
+                                    ProjectionAction(BuiltinProjection.VirtualList.type, { value ->
+                                        requireNotNull(value as? ProjectionValue.Real).value.also { require(it in -Int.MAX_VALUE.toDouble()..Int.MAX_VALUE.toDouble()) }
+                                    }, node::requestBoundaryItems),
+                                ),
+                            ),
+                        ),
+                    )
+                }
 
         override fun dynamicChildren(): List<Element> {
             if (itemCount == 0) {

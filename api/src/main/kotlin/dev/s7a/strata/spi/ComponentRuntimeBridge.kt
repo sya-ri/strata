@@ -18,6 +18,12 @@ public object ComponentRuntimeBridge {
     private val active = EvaluationContext<ComponentRuntime>()
 
     /**
+     * Returns the installed component runtime to an integration reconstructing declarations inside its active evaluation.
+     * The returned runtime must not escape that owner-thread evaluation; deferred content uses [ComponentRuntime.retainEvaluator].
+     */
+    public fun currentRuntime(): ComponentRuntime = current()
+
+    /**
      * Evaluates one screen callback with [runtime] implicitly available to profile-backed component functions.
      *
      * @param runtime owner-thread runtime implementation active only during [content].

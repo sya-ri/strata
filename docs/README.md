@@ -30,6 +30,7 @@ The [animated README demo](readme-demo/README.md) follows a player list from nat
 - [Layout contract](reference/layout.md) defines measurement, wrapping, weight allocation, and integer placement.
 - [Element SPI](reference/element-spi.md) describes custom primitives, retained phases, and ownership.
 - [Modifier SPI](reference/modifier-spi.md) describes active modifier nodes and typed parent data.
+- [Declaration projection](reference/declaration-projection.md) defines optional typed properties, remote action bindings, and retained resource projection.
 - [External state sources](reference/state-sources.md) specifies revisioned observation across threads.
 
 ## Changelog

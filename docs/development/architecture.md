@@ -49,6 +49,10 @@ Measurement, layout, paint, and semantics have independent invalidation contract
 Modifiers are active nodes in an effective pipeline ancestry; they preserve the component's logical identity and subtree.
 Parent data is exposed only through the layout scope that consumes it.
 
+Descriptions may opt into [typed declaration projection](../reference/declaration-projection.md) without changing local rendering or requiring local extension registration.
+Retained resource nodes can project their committed state after the shared cutoff, and the core can reconcile dynamic declarations without running presentation phases.
+Transport adapters own codec and authentication policy; the core owns retained identity, action execution boundaries, and session cleanup.
+
 The [Element SPI](../reference/element-spi.md) and [Modifier SPI](../reference/modifier-spi.md) own those public contracts.
 [UI sessions](../development/ui-sessions.md) owns shared lifecycle, state cutoff, coroutine generations, and failure handling.
 [Rendering](rendering.md) owns command interpretation and platform presentation; [performance](../development/performance.md) owns cache admission and retention.

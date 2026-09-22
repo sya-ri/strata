@@ -10,6 +10,7 @@ import dev.s7a.strata.node.KeyboardInputNode
 import dev.s7a.strata.node.LifecycleNode
 import dev.s7a.strata.node.ModifierNode
 import dev.s7a.strata.node.TextInputNode
+import dev.s7a.strata.projection.DeclarationProjection
 
 /**
  * Internal implementation shared by focused keyboard, text-input, preedit, and focus modifiers.
@@ -25,6 +26,7 @@ internal object FocusedInputModifier {
      */
     internal data class Element(
         val action: Action,
+        override val projection: DeclarationProjection<*>? = null,
     ) : ModifierElement {
         override val type: ModifierNodeType<*, *>
             get() = TYPE

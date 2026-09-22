@@ -38,6 +38,7 @@ public fun createRuntimeUiSession(
  * Adapts synchronous runtime calls to the session that owns lifecycle, frame caching, and cleanup.
  */
 @OptIn(InternalStrataRuntimeApi::class)
+@Suppress("TooManyFunctions") // This adapter implements the complete lifecycle, rendering, input, and declaration contract.
 private class RuntimeUiSessionBridge(
     content: () -> Element,
 ) : RuntimeUiSession {
@@ -51,6 +52,10 @@ private class RuntimeUiSessionBridge(
     override fun attach(): Unit = session.attach()
 
     override fun detach(): Unit = session.detach()
+
+    override fun <T> projectDeclarations(project: (RuntimeDeclaration) -> T): T = session.projectDeclarations(project)
+
+    override fun dispatchAction(action: () -> Unit): Unit = session.dispatchAction(action)
 
     override fun frame(constraints: Constraints): RuntimeUiFrame = session.frame(constraints)
 

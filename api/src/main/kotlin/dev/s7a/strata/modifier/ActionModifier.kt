@@ -3,6 +3,7 @@ package dev.s7a.strata.modifier
 import dev.s7a.strata.action.ActionHandler
 import dev.s7a.strata.node.DirtyMask
 import dev.s7a.strata.node.ModifierNode
+import dev.s7a.strata.projection.DeclarationProjection
 
 /**
  * Internal pass-through node retaining one typed component-action callback.
@@ -13,6 +14,7 @@ internal object ActionModifier {
      */
     internal class Element(
         val handler: ActionHandler,
+        override val projection: DeclarationProjection<*>? = null,
     ) : ModifierElement {
         override val type: ModifierNodeType<*, *>
             get() = TYPE

@@ -27,6 +27,11 @@ internal sealed class RetainedEntry(
     var diagnosticId: Long = 0L
 
     /**
+     * Tree-local declaration identity, assigned only when a remote projection first visits this entry.
+     */
+    var declarationId: Long = 0L
+
+    /**
      * Immutable node capability cached at ownership creation, avoiding repeated interface checks during parent layout.
      * The capability remains valid for this entry's node lifetime and is released with the entry.
      */

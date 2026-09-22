@@ -6,6 +6,7 @@ import dev.s7a.strata.input.KeyCode
 import dev.s7a.strata.input.KeyboardEvent
 import dev.s7a.strata.input.PointerButton
 import dev.s7a.strata.input.PointerEvent
+import dev.s7a.strata.node.DeclarationProjectionNode
 import dev.s7a.strata.node.DirtyMask
 import dev.s7a.strata.node.DirtyPhase
 import dev.s7a.strata.node.FocusTargetNode
@@ -14,6 +15,10 @@ import dev.s7a.strata.node.LifecycleNode
 import dev.s7a.strata.node.ModifierNode
 import dev.s7a.strata.node.PointerInputNode
 import dev.s7a.strata.node.StateObserverNode
+import dev.s7a.strata.projection.BuiltinProjection
+import dev.s7a.strata.projection.DeclarationProjection
+import dev.s7a.strata.projection.ProjectionAction
+import dev.s7a.strata.projection.ProjectionValue
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
 import dev.s7a.strata.state.StateSource
 
@@ -38,11 +43,23 @@ internal class ObservedActivationModifier(
         PointerInputNode,
         KeyboardInputNode,
         FocusTargetNode,
+        DeclarationProjectionNode,
         LifecycleNode {
         override var observedSources: List<StateSource<*>> = listOf(initial.enabled)
             private set
         private var enabled = false
         private var action: (() -> Unit)? = initial.action
+
+        override val declarationProjection: DeclarationProjection<*>
+            get() =
+                DeclarationProjection(BuiltinProjection.ObservedActivation.type, checkNotNull(action), enabled) { action, scope ->
+                    ProjectionValue.Sequence(
+                        listOf(
+                            ProjectionValue.Flag(enabled),
+                            ProjectionValue.Integer(scope.action(ProjectionAction(BuiltinProjection.ObservedActivation.type, { require(it === ProjectionValue.Absent) }) { action() })),
+                        ),
+                    )
+                }
 
         override val acceptsFocus: Boolean
             get() = enabled

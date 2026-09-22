@@ -10,6 +10,9 @@ import dev.s7a.strata.layout.MeasureScope
 import dev.s7a.strata.node.DirtyMask
 import dev.s7a.strata.node.DirtyPhase
 import dev.s7a.strata.node.ModifierNode
+import dev.s7a.strata.projection.BuiltinProjection
+import dev.s7a.strata.projection.DeclarationProjection
+import dev.s7a.strata.projection.ProjectionValue
 
 /**
  * Internal implementation of the padding modifier family.
@@ -23,6 +26,8 @@ internal object PaddingModifier {
     internal data class Element(
         val insets: Insets,
     ) : ModifierElement {
+        override val projection: DeclarationProjection<*> get() = BuiltinProjection.Padding.properties(ProjectionValue.Integer(insets.left.toLong()), ProjectionValue.Integer(insets.top.toLong()), ProjectionValue.Integer(insets.right.toLong()), ProjectionValue.Integer(insets.bottom.toLong()))
+
         /**
          * The stable padding modifier token.
          */

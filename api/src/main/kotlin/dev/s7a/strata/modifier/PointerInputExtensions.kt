@@ -5,6 +5,7 @@ import dev.s7a.strata.input.InputResult
 import dev.s7a.strata.input.PointerButton
 import dev.s7a.strata.input.PointerEvent
 import dev.s7a.strata.input.PointerHoverEvent
+import dev.s7a.strata.projection.BuiltinProjection
 
 /**
  * Handles every typed pointer event that hits this modifier's laid-out bounds.
@@ -57,14 +58,19 @@ public fun Modifier.onPress(callback: (PointerEvent.Press, IntOffset) -> InputRe
  * @throws Throwable when [action] fails during dispatch.
  */
 public fun Modifier.onPress(action: () -> Unit): Modifier =
-    onPress { event, _ ->
-        if (event.button === PointerButton.Primary) {
-            action()
-            InputResult.Consumed
-        } else {
-            InputResult.Ignored
-        }
-    }
+    then(
+        PointerInputModifier.Element(
+            PointerInputModifier.Action.Press { event, _ ->
+                if (event.button === PointerButton.Primary) {
+                    action()
+                    InputResult.Consumed
+                } else {
+                    InputResult.Ignored
+                }
+            },
+            BuiltinProjection.PrimaryPress.callback(action),
+        ),
+    )
 
 /**
  * Handles every pointer release that hits this modifier's laid-out bounds.

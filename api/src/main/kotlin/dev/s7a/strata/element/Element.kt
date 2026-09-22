@@ -1,6 +1,7 @@
 package dev.s7a.strata.element
 
 import dev.s7a.strata.modifier.Modifier
+import dev.s7a.strata.projection.DeclarationProjection
 
 /**
  * Immutable description of one retained node and its direct children.
@@ -20,5 +21,11 @@ public abstract class Element public constructor(
     children: List<Element> = emptyList(),
     public val modifier: Modifier = Modifier.Empty,
 ) {
+    /**
+     * Optional typed declaration export used by remote runtimes.
+     * The default keeps existing local-only elements independent of networking.
+     */
+    public open val projection: DeclarationProjection<*>? get() = null
+
     public val children: List<Element> = children.toList()
 }
