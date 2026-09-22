@@ -449,7 +449,7 @@ classify_target_source_path() {
     target_source_allowed_owners='runtime'
     target_source_root=${BASH_REMATCH[1]}
     [[ "$repository_relative_path" != "$target_source_root" ]] || target_source_is_module_root=true
-  elif [[ "$repository_relative_path" =~ ^(runtime/minecraft-fabric-(shared|identifier|glfw|unobfuscated(-glfw)?))(/|$) ]]; then
+  elif [[ "$repository_relative_path" =~ ^(runtime/minecraft-fabric-(shared|identifier|glfw|unobfuscated(-glfw)?|remote-(legacy|payload|stream)))(/|$) ]]; then
     target_source_allowed_owners='runtime'
     target_source_root=${BASH_REMATCH[1]}
     [[ "$repository_relative_path" != "$target_source_root" ]] || target_source_is_module_root=true
@@ -461,7 +461,7 @@ classify_target_source_path() {
     target_source_allowed_owners='integration'
     target_source_root=${BASH_REMATCH[1]}
     [[ "$repository_relative_path" != "$target_source_root" ]] || target_source_is_module_root=true
-  elif [[ "$repository_relative_path" =~ ^(integration/minecraft-fabric-(client-gametest|unobfuscated))(/|$) ]]; then
+  elif [[ "$repository_relative_path" =~ ^(integration/minecraft-fabric-(client-gametest|unobfuscated|remote-(legacy|payload|stream|verification)|paper-unobfuscated))(/|$) ]]; then
     target_source_allowed_owners='integration'
     target_source_root=${BASH_REMATCH[1]}
     [[ "$repository_relative_path" != "$target_source_root" ]] || target_source_is_module_root=true

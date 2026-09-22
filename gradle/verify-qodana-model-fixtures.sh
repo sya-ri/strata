@@ -165,6 +165,9 @@ for version in "${fixture_versions[@]}"; do
     'Source;../minecraft-fabric-canvas-shared/src/main/kotlin'
     'Source;../minecraft-fabric-canvas-fixture-probe/src/main/kotlin'
     'Source;../minecraft-fabric-shared/src/main/kotlin'
+    'Source;../minecraft-fabric-remote-legacy/src/main/java'
+    'Source;../minecraft-fabric-remote-payload/src/main/java'
+    'Source;../minecraft-fabric-remote-stream/src/main/java'
     'Source;../minecraft-fabric-glfw/src/main/java'
     'Source;../minecraft-fabric-unobfuscated-glfw/src/main/kotlin'
     'Source;../minecraft-fabric-1.10-legacy/src/main/kotlin'
@@ -172,6 +175,11 @@ for version in "${fixture_versions[@]}"; do
   integration_roots=(
     'TestResource;src/gametest/resources'
     'TestSource;../minecraft-fabric-canvas-shared/src/gametest/kotlin'
+    'TestSource;../minecraft-fabric-remote-legacy/src/gametest/kotlin'
+    'TestSource;../minecraft-fabric-remote-payload/src/gametest/kotlin'
+    'TestSource;../minecraft-fabric-remote-stream/src/gametest/kotlin'
+    'TestSource;../minecraft-fabric-remote-verification/src/gametest/kotlin'
+    'TestSource;../minecraft-fabric-paper-unobfuscated/src/gametest/kotlin'
     'TestSource;../minecraft-fabric-canvas-fixture-probe/src/gametest/kotlin'
     'TestSource;../minecraft-fabric-1.10-legacy/src/gametest/kotlin'
     'TestResource;../minecraft-font-parity/src/gametest/resources'
@@ -269,6 +277,9 @@ portable_jq -n --argjson versions "$fixture_versions_json" '
       {type: "Source", path: "file://$PROJECT_DIR$/runtime/minecraft-fabric-canvas-shared/src/main/kotlin"},
       {type: "Source", path: "file://$PROJECT_DIR$/runtime/minecraft-fabric-canvas-fixture-probe/src/main/kotlin"},
       {type: "Source", path: "file://$PROJECT_DIR$/runtime/minecraft-fabric-shared/src/main/kotlin"},
+      {type: "Source", path: "file://$PROJECT_DIR$/runtime/minecraft-fabric-remote-legacy/src/main/java"},
+      {type: "Source", path: "file://$PROJECT_DIR$/runtime/minecraft-fabric-remote-payload/src/main/java"},
+      {type: "Source", path: "file://$PROJECT_DIR$/runtime/minecraft-fabric-remote-stream/src/main/java"},
       {type: "Source", path: "file://$PROJECT_DIR$/runtime/minecraft-fabric-glfw/src/main/java"},
       {type: "Source", path: "file://$PROJECT_DIR$/runtime/minecraft-fabric-unobfuscated-glfw/src/main/kotlin"},
       {type: "Source", path: "file://$PROJECT_DIR$/runtime/minecraft-fabric-1.10-legacy/src/main/kotlin"}
@@ -281,6 +292,11 @@ portable_jq -n --argjson versions "$fixture_versions_json" '
   def integrationLinkedRoots($version):
     [
       {type: "TestSource", path: "file://$PROJECT_DIR$/integration/minecraft-fabric-canvas-shared/src/gametest/kotlin"},
+      {type: "TestSource", path: "file://$PROJECT_DIR$/integration/minecraft-fabric-remote-legacy/src/gametest/kotlin"},
+      {type: "TestSource", path: "file://$PROJECT_DIR$/integration/minecraft-fabric-remote-payload/src/gametest/kotlin"},
+      {type: "TestSource", path: "file://$PROJECT_DIR$/integration/minecraft-fabric-remote-stream/src/gametest/kotlin"},
+      {type: "TestSource", path: "file://$PROJECT_DIR$/integration/minecraft-fabric-remote-verification/src/gametest/kotlin"},
+      {type: "TestSource", path: "file://$PROJECT_DIR$/integration/minecraft-fabric-paper-unobfuscated/src/gametest/kotlin"},
       {type: "TestSource", path: "file://$PROJECT_DIR$/integration/minecraft-fabric-canvas-fixture-probe/src/gametest/kotlin"},
       {type: "TestSource", path: "file://$PROJECT_DIR$/integration/minecraft-fabric-1.10-legacy/src/gametest/kotlin"},
       {type: "TestResource", path: "file://$PROJECT_DIR$/integration/minecraft-font-parity/src/gametest/resources"},
