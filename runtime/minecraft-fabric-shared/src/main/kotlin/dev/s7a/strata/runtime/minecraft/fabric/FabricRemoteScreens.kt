@@ -143,7 +143,9 @@ public object FabricRemoteScreens {
                         FabricRemoteTransport.send(endpoint, frame)
                     }
                 val transport = RemoteConnection(registry.types, RemotePacket.limits, stream::send)
-                Peer(address, stream, transport).also { peers[address.endpoint] = it }
+                Peer(address, stream, transport) {
+                    peers.values.filter { it.address != address }.forEach { it.endScreen(RemoteFailure.Replaced) }
+                }.also { peers[address.endpoint] = it }
             }
         if (peer.isClosed.not()) guard(peer) { peer.stream.offer(packet, now()) }
     }
@@ -193,6 +195,7 @@ public object FabricRemoteScreens {
         val address: RemoteAddress,
         val stream: RemotePacketStream,
         val connection: RemoteConnection,
+        private val beforeOpen: () -> Unit,
     ) {
         private var session: RemoteClientSession? = null
         private var screen: Screen? = null
@@ -214,7 +217,7 @@ public object FabricRemoteScreens {
         }
 
         fun pausePlay() {
-            closeScreen(RemoteFailure.ContainerChanged, true, false)
+            closeScreen(RemoteFailure.ContainerChanged, notify = true, navigate = false)
         }
 
         fun receive(message: RemoteMessage) {
@@ -256,7 +259,7 @@ public object FabricRemoteScreens {
             if (message.session <= lastSession) return
             lastSession = message.session
             closeScreen(RemoteFailure.Replaced, false)
-            peers.values.filter { it !== this }.forEach { it.endScreen(RemoteFailure.Replaced) }
+            beforeOpen()
             val limits = checkNotNull(connection.capabilities).limits
             val created = RemoteClientSession(message, registry, limits, connection::send)
             session = created

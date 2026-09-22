@@ -30,5 +30,5 @@ public class KeyboardInputFilter(
 
     override fun equals(other: Any?): Boolean = other is KeyboardInputFilter && keys == other.keys && modifiers == other.modifiers
 
-    override fun hashCode(): Int = 31 * keys.hashCode() + (modifiers?.hashCode() ?: 0)
+    override fun hashCode(): Int = 31 * keys.hashCode() + modifiers.hashCode()
 }

@@ -71,10 +71,8 @@ public class VelocityAcceptancePlugin
             action: (Player) -> Unit,
         ) {
             val command =
-                object : SimpleCommand {
-                    override fun execute(invocation: SimpleCommand.Invocation) {
-                        (invocation.source() as? Player)?.let(action)
-                    }
+                SimpleCommand { invocation ->
+                    (invocation.source() as? Player)?.let(action)
                 }
             proxy.commandManager.register(
                 proxy.commandManager

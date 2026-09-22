@@ -20,7 +20,7 @@ The [compiled counter](../../examples/velocity/src/main/kotlin/dev/s7a/strata/ex
 The returned future completes with a `RemoteScreenSession`; unavailable clients and unsupported declarations return a terminal handle with a typed reason.
 Read its detached `status` from any thread and call `close()` to queue terminal cleanup on the UI thread.
 
-`VelocityScreens.capabilities(player)` asynchronously reads the completed handshake, returning null before negotiation or after disconnect.
+`VelocityScreens.capabilities(player)` asynchronously reads the completed handshake, returning null before negotiation, during backend replacement, or after disconnect.
 `VelocityScreens.execute(ownerPlugin) { ... }` queues a short state update or read from an external event.
 Perform blocking database or network work elsewhere, then publish its result through a state source or queue the final UI state change with `execute`.
 Do not join another UI future from a handler or a completion callback; completions may run on the UI thread.
@@ -30,7 +30,8 @@ The request queue is bounded, and rejected requests fail explicitly instead of b
 
 Paper and Velocity negotiate independent capabilities and connection incarnations over the native Strata channel.
 Only one remote screen is visible; opening a screen from either host closes the previous visible screen through its owning connection.
-Switching backend servers retires the proxy screen's native-container binding and initiates a fresh Paper handshake.
+Switching backend servers retires the proxy screen's native-container binding and initiates fresh Paper and Velocity handshakes.
+Both routes use new transport incarnations because native switching can discard in-flight plugin messages.
 Old backend frames cannot execute operations on a new backend even when their screen and action numbers coincide.
 Proxy-side routing rejects backend packets claiming the proxy endpoint, and ordered bounded queues preserve fragment and operation order across asynchronous event delivery.
 No Minecraft protocol translation or nested-proxy integration is provided.

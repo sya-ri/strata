@@ -238,6 +238,11 @@ exclude:
       # Paper invokes annotated event handlers reflectively; the external example plugin exercises the public registration API across linked roots.
       - runtime/paper/src/main/kotlin/dev/s7a/strata/runtime/paper/StrataPlugin.kt
       - runtime/paper/src/main/kotlin/dev/s7a/strata/runtime/paper/PaperScreens.kt
+      # Velocity discovers plugin classes and subscribed handlers reflectively; its public API is consumed by external plugins.
+      - runtime/velocity/src/main/kotlin/dev/s7a/strata/runtime/velocity/StrataVelocityPlugin.kt
+      - runtime/velocity/src/main/kotlin/dev/s7a/strata/runtime/velocity/VelocityScreens.kt
+      - examples/velocity/src/main/kotlin/dev/s7a/strata/examples/velocity/VelocityDemoPlugin.kt
+      - integration/velocity/src/main/kotlin/dev/s7a/strata/integration/velocity/VelocityAcceptancePlugin.kt
       # Shared native sources are indexed under one exact-version owner; even calls within FabricRemoteScreens and Java calls to FabricRemotePayloadTypes lose their matching owner.
       # Every adapter compiles these calls, and integrated/Paper client receipts exercise their negotiation, updates, and teardown.
       - runtime/minecraft-fabric-shared/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricRemoteScreens.kt

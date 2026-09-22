@@ -323,7 +323,7 @@ internal class FabricMinecraftJvmSurfaceTest {
             mapOf(
                 "$packageName.FabricRemoteScreens" to setOf("getRegistry", "enqueue", "shutdown", "tick", "requireContainer", "fail"),
                 "$packageName.FabricRemotePayloadTypes" to setOf("create", "registration", "writeRegistrationIdentifier"),
-                "$packageName.FabricRemotePayload" to setOf("bytes", "type", "equals", "hashCode", "toString"),
+                "$packageName.FabricRemotePayload" to setOf("bytes", "type"),
                 "$packageName.FabricRemoteRegistration" to setOf("type", "write", "equals", "hashCode", "toString"),
                 "$packageName.FabricRemoteRegistrationCodec" to setOf("wrap"),
                 "$packageName.FabricRemoteTransport" to setOf("register", "send"),

@@ -20,7 +20,7 @@ internal class RemotePacketStreamTest {
         RemotePacketStream(address, send = {}).use { receiver ->
             frames.reversed().forEach { receiver.offer(it, 0) }
             receiver.offer(frames.first(), 0)
-            receiver.offer(frames.first().copy(address = RemoteAddress(RemoteEndpoint.Proxy)), 0)
+            receiver.offer(RemotePacket.Frame(RemoteAddress(RemoteEndpoint.Proxy), 1, frames.first().bytes), 0)
             receiver.drain(1, 2) { received.add(it[0].toInt()) }
             assertEquals(listOf(0, 1), received)
             receiver.drain(2, 2) { received.add(it[0].toInt()) }
@@ -37,9 +37,9 @@ internal class RemotePacketStreamTest {
         RemotePacketStream(address, limits, {}).use { stream ->
             val frame = RemotePacket.Frame(address, 2, ByteArray(17))
             stream.offer(frame, 0)
-            assertThrows(IllegalArgumentException::class.java) { stream.offer(frame.copy(bytes = ByteArray(17) { 1 }), 0) }
-            stream.offer(frame.copy(sequence = 3), 0)
-            val failure = assertThrows(RemoteProtocolException::class.java) { stream.offer(frame.copy(sequence = 4), 0) }
+            assertThrows(IllegalArgumentException::class.java) { stream.offer(RemotePacket.Frame(address, 2, ByteArray(17) { 1 }), 0) }
+            stream.offer(RemotePacket.Frame(address, 3, frame.bytes), 0)
+            val failure = assertThrows(RemoteProtocolException::class.java) { stream.offer(RemotePacket.Frame(address, 4, frame.bytes), 0) }
             assertEquals(RemoteFailure.ResourceLimit, failure.reason)
         }
     }

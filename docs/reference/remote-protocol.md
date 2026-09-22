@@ -9,7 +9,8 @@ The [declaration projection SPI](declaration-projection.md) is the optional plat
 The Fabric adapter advertises `strata:ui` through native `minecraft:register`, then sends bounded discovery.
 Each available host responds with a `Hello` in a fresh host-generated transport incarnation; the client replies through that same incarnation.
 Paper and Velocity have separate typed endpoint identities and independent capability handshakes.
-A proxy reissues backend discovery after a server switch, and stale-incarnation frames cannot enter a successor's protocol connection.
+A proxy reissues backend discovery and renews its own transport incarnation after a server switch, so discarded transition packets cannot leave sequence gaps in either successor connection.
+Stale-incarnation frames cannot enter a successor's protocol connection.
 Proxy routing admits only authenticated client proxy actions and current-backend server frames.
 It handles the native event and submits safe writes itself, preventing later asynchronous listeners from forwarding retired backend traffic.
 Both sides require the same protocol version, intersect exact namespace/schema-version capabilities, and negotiate the minimum of each resource limit.

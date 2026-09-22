@@ -19,7 +19,7 @@ public sealed interface RemotePacket {
      * One owned inner protocol fragment associated with its authenticated host incarnation.
      * Callers must not modify [bytes] after passing this packet to another owner.
      */
-    public data class Frame(
+    public class Frame(
         public val address: RemoteAddress,
         public val sequence: Long,
         public val bytes: ByteArray,

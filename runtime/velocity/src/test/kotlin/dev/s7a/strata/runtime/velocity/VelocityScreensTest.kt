@@ -34,6 +34,7 @@ import dev.s7a.strata.runtime.remote.RemoteSessionStatus
 import dev.s7a.strata.screen.ScreenDefinition
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
+import org.junit.jupiter.api.Assertions.assertNotEquals
 import org.junit.jupiter.api.Assertions.assertNotSame
 import org.junit.jupiter.api.Assertions.assertThrows
 import org.junit.jupiter.api.Assertions.assertTrue
@@ -114,9 +115,9 @@ internal class VelocityScreensTest {
     }
 
     @Test
-    fun backendReplacementRetiresPendingActionsAndRediscoversPaper() {
+    fun backendReplacementRenegotiatesAfterLostFramesAndRejectsRetiredActions() {
         Harness().use { fixture ->
-            fixture.negotiate()
+            val previous = fixture.negotiate()
             val calls = AtomicInteger()
             val handle =
                 VelocityScreens
@@ -124,16 +125,24 @@ internal class VelocityScreensTest {
                         ScreenDefinition("Before switch") { Spacer(Modifier.Empty.onActivate { calls.incrementAndGet() }) }
                     }.get(5, TimeUnit.SECONDS)
             val snapshot = fixture.nextMessage() as RemoteMessage.Snapshot
+            fixture.dropOutgoingFrame()
             fixture.currentBackend.set(fixture.replacementBackend())
             fixture.backendMessages.clear()
             fixture.plugin.connected(ServerPostConnectEvent(fixture.player, null))
             val discovery = checkNotNull(fixture.backendMessages.poll(5, TimeUnit.SECONDS))
             assertEquals(RemotePacket.Discovery, RemotePacket.decode(discovery))
             fixture.activate(snapshot)
-            assertTrue(fixture.nextMessage() is RemoteMessage.Close)
             assertEquals(RemoteSessionStatus.Closed(RemoteFailure.ContainerChanged), handle.status)
             assertEquals(0, calls.get())
-            assertTrue(VelocityScreens.capabilities(fixture.player).get(5, TimeUnit.SECONDS) != null)
+            assertEquals(null, VelocityScreens.capabilities(fixture.player).get(5, TimeUnit.SECONDS))
+            assertNotEquals(previous, fixture.negotiate(discover = false))
+            VelocityScreens
+                .open(fixture.owner, fixture.player) {
+                    ScreenDefinition("After switch") { Spacer(Modifier.Empty.onActivate { calls.incrementAndGet() }) }
+                }.get(5, TimeUnit.SECONDS)
+            fixture.activate(fixture.nextMessage() as RemoteMessage.Snapshot)
+            assertTrue(fixture.nextMessage() is RemoteMessage.Acknowledgement)
+            assertEquals(1, calls.get())
         }
     }
 
@@ -223,7 +232,7 @@ internal class VelocityScreensTest {
         val plugin = StrataVelocityPlugin(server, LoggerFactory.getLogger(VelocityScreensTest::class.java))
         private var address: RemoteAddress? = null
         private var sequence = 1L
-        private val client = RemoteConnection(RemoteRegistry().also(RemoteBuiltins::register).types, RemotePacket.limits) { send(RemotePacket.encode(RemotePacket.Frame(checkNotNull(address), sequence++, it))) }
+        private var client = createClient()
         private var closed = false
 
         init {
@@ -233,8 +242,11 @@ internal class VelocityScreensTest {
 
         fun send(bytes: ByteArray): PluginMessageEvent = PluginMessageEvent(player, backend, VelocityScreenService.CHANNEL, bytes).also { plugin.message(it) }
 
-        fun negotiate() {
-            assertFalse(send(RemotePacket.encode(RemotePacket.Discovery)).result.isAllowed)
+        fun negotiate(discover: Boolean = true): RemoteAddress {
+            if (discover) assertFalse(send(RemotePacket.encode(RemotePacket.Discovery)).result.isAllowed)
+            client.close()
+            client = createClient()
+            sequence = 1L
             val greeting = RemotePacket.decode(checkNotNull(outgoing.poll(5, TimeUnit.SECONDS))) as RemotePacket.Frame
             address = greeting.address
             assertEquals(RemoteEndpoint.Proxy, greeting.address.endpoint)
@@ -242,10 +254,19 @@ internal class VelocityScreensTest {
             client.flush()
             val deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(5)
             while (System.nanoTime() < deadline) {
-                if (VelocityScreens.capabilities(player).get(5, TimeUnit.SECONDS) != null) return
+                if (VelocityScreens.capabilities(player).get(5, TimeUnit.SECONDS) != null) return greeting.address
             }
             error("Proxy negotiation did not complete.")
         }
+
+        fun dropOutgoingFrame() {
+            sequence++
+        }
+
+        private fun createClient(): RemoteConnection =
+            RemoteConnection(RemoteRegistry().also(RemoteBuiltins::register).types, RemotePacket.limits) {
+                send(RemotePacket.encode(RemotePacket.Frame(checkNotNull(address), sequence++, it)))
+            }
 
         fun nextMessage(): RemoteMessage {
             while (true) {

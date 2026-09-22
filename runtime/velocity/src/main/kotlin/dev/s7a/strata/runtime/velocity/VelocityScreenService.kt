@@ -67,14 +67,18 @@ internal class VelocityScreenService(
         }
 
     /**
-     * Re-discovers the new backend and retires screens tied to its predecessor's native container.
+     * Re-negotiates both routes after a backend switch and retires the previous native-container binding.
+     * Velocity may discard plugin messages during the native transition, so its old sequence cannot be reused.
      */
     fun connected(player: Player): CompletableFuture<Unit> =
         submit {
             if (player in players) {
                 val current = player.currentServer.orElse(null)
                 val previous = players[player]
-                if (previous != null && previous !== current) host.containerChanged(player)
+                if (previous != null && previous !== current) {
+                    host.containerChanged(player)
+                    players[player] = null
+                }
                 joinReady(player)
                 discoverBackend(player)
             }
