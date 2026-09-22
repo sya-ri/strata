@@ -1,6 +1,7 @@
 package dev.s7a.strata.runtime.minecraft.fabric;
 
 import com.mojang.authlib.GameProfile;
+import com.mojang.blaze3d.platform.InputConstants;
 import com.mojang.blaze3d.platform.NativeImage;
 import dev.s7a.strata.component.PlayerSkinSource;
 import dev.s7a.strata.component.SlotBinding;
@@ -760,7 +761,7 @@ final class FabricMinecraftInventoryBridge implements MinecraftUiPlatform, Minec
     private InputResult handlePress(Binding binding, PointerEvent.Press event) {
         NativeInput current = requireInput(InputKind.PRESS);
         MouseButtonEvent mouse = current.mouse;
-        int rawButton = mouse.button();
+        int rawButton = containerClickButton(mouse);
         pendingDoubleClick = current.doubleClick && rawButton == 0;
         if (checkHotbarMouse(binding, mouse)) {
             skipNextRelease = true;
@@ -823,7 +824,7 @@ final class FabricMinecraftInventoryBridge implements MinecraftUiPlatform, Minec
     }
 
     private void finishRelease(Binding binding, MouseButtonEvent mouse) {
-        int rawButton = mouse.button();
+        int rawButton = containerClickButton(mouse);
         if (pendingDoubleClick && binding != null && rawButton == 0) {
             if (mouse.hasShiftDown() && lastQuickMoved.isEmpty() == false) {
                 quickMoveMatching(binding, rawButton);
@@ -890,7 +891,7 @@ final class FabricMinecraftInventoryBridge implements MinecraftUiPlatform, Minec
             }
         }
         if (isPickMouse(event) && player.hasInfiniteMaterials()) {
-            click(binding, event.button(), ContainerInput.CLONE);
+            click(binding, containerClickButton(event), ContainerInput.CLONE);
             return true;
         }
         return false;
@@ -898,6 +899,17 @@ final class FabricMinecraftInventoryBridge implements MinecraftUiPlatform, Minec
 
     private boolean isPickMouse(MouseButtonEvent event) {
         return requireMinecraft().options.keyPickItem.matchesMouse(event);
+    }
+
+    /**
+     * Converts platform mouse identities to the menu protocol's stable primary and secondary button numbers.
+     */
+    static int containerClickButton(MouseButtonEvent event) {
+        return switch (event.button()) {
+            case InputConstants.MOUSE_BUTTON_LEFT -> 0;
+            case InputConstants.MOUSE_BUTTON_RIGHT -> 1;
+            default -> event.button();
+        };
     }
 
     private void click(Binding binding, int button, ContainerInput action) {
