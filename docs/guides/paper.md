@@ -1,5 +1,9 @@
 # Open screens from Paper
 
+This guide describes the development sources.
+For a source build, build the server plugin and version-matched Fabric runtime from the same revision using the [build guide](../development/build.md#loaded-client-verification).
+For published artifacts, first check that the [matching release's documentation](https://github.com/sya-ri/strata/releases) includes this runtime and its required client support.
+
 Install the `strata-runtime-paper` artifact with the `plugin` classifier in the server's `plugins` directory.
 It contains Strata's shared runtime and Kotlin dependencies; Paper supplies its own API.
 Players install the exact Minecraft version's Strata Fabric runtime and Fabric Language Kotlin as described in the [README](../../README.md#installation).

@@ -5,6 +5,10 @@
 
 Declarative Minecraft UI with reusable components, caller-owned state, and headless rendering.
 
+This README follows the development branch and can describe features that are not in a published release yet.
+For an installed version, read the README and documentation at its matching [release tag](https://github.com/sya-ri/strata/releases).
+The Paper, Velocity, and browser guides below also cover building the current sources; do not infer their availability from the published client dependency example.
+
 <!-- strata-readme-demo:start -->
 [![Strata: compose player rows, align text, and link a scrollbar](docs/readme-demo/demo.gif)](docs/readme-demo/README.md)
 

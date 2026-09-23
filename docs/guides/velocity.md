@@ -1,5 +1,9 @@
 # Open screens from Velocity
 
+This guide describes the development sources.
+For a source build, build the proxy plugin and version-matched Fabric runtime from the same revision using the [build guide](../development/build.md#loaded-client-verification).
+For published artifacts, first check that the [matching release's documentation](https://github.com/sya-ri/strata/releases) includes this runtime and its required client support.
+
 Install `strata-runtime-velocity` with the `plugin` classifier in Velocity's `plugins` directory.
 It bundles Strata's common runtime and Kotlin dependencies; Velocity supplies its API and logging services.
 Players install their Minecraft version's Strata Fabric runtime and Fabric Language Kotlin as described in the [README](../../README.md#installation).
