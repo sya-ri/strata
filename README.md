@@ -5,6 +5,8 @@
 
 Declarative Minecraft UI with reusable components, caller-owned state, and headless rendering.
 
+This page documents the development sources; for an installed version, use the documentation at its matching [release tag](https://github.com/sya-ri/strata/releases).
+
 <!-- strata-readme-demo:start -->
 [![Strata: compose player rows, align text, and link a scrollbar](docs/readme-demo/demo.gif)](docs/readme-demo/README.md)
 
@@ -115,22 +117,8 @@ internal fun openConfirmationScreen(onConfirm: () -> Unit) {
 
 ## Build a web screen from source
 
-The experimental browser runtime shares the Kotlin API and retained core with the JVM runtimes.
-It renders native DOM text, buttons, progress indicators, and common layout primitives, with initial HTML that remains visible before JavaScript starts.
-Caller-owned state drives ordinary Kotlin `if`, `when`, and keyed loops; startup reuses matching generated DOM.
-Text editors, scrolling profiles, resource images, and Minecraft-specific appearances are not implemented by the browser adapter yet.
-
-Build the [compiled shared example](integration/web/src/commonMain/kotlin/dev/s7a/strata/integration/web/ReactiveScenario.kt) with:
-
-```shell
-./gradlew :integration:web:buildWeb
-```
-
-Serve `integration/web/build/site` with any static HTTP server.
-Open `minecraft.html` for the Minecraft-inspired theme, or `index.html` for native browser styling.
-Pass `WebTheme.Minecraft` to both initial rendering and `mountWeb` to use the themed borders, text shadows, button states, and progress bars in another application.
-The [browser entry point](integration/web/src/jsMain/kotlin/dev/s7a/strata/integration/web/WebApplication.kt) shows independent build and client definition creation.
-The [build guide](docs/development/build.md#initial-web-documents) explains prerequisites, output ownership, and three-browser verification against the shared Minecraft and Headless scenario.
+The experimental browser runtime renders supported Strata components into native browser DOM.
+See the [web build guide](docs/development/build.md#initial-web-documents) for the shared example, supported features, and build instructions.
 
 ## Choose modules
 
@@ -151,11 +139,7 @@ Versioned Fabric Mods package their common runtime libraries.
 Integration modules contain verification and examples and are not published.
 See [architecture](docs/development/architecture.md) for dependency boundaries.
 
-Paper plugins can own screen state and handlers through `PaperScreens.open(ownerPlugin, player, definition)` while the installed Fabric runtime handles layout, drawing, and input.
-The [Paper guide](docs/guides/paper.md) covers the separate server plugin artifact, capability checks, and the [compiled example plugin](examples/paper/src/main/kotlin/dev/s7a/strata/examples/paper/PaperDemoPlugin.kt).
-Velocity plugins use `VelocityScreens.open(ownerPlugin, player) { ... }` to construct their screen and state on the proxy runtime's dedicated UI thread.
-The [Velocity guide](docs/guides/velocity.md) covers installation, asynchronous state updates, and the [compiled example plugin](examples/velocity/src/main/kotlin/dev/s7a/strata/examples/velocity/VelocityDemoPlugin.kt).
-Both hosts share typed input subscriptions, validated operations, and capability negotiation; the [compatibility table](docs/reference/compatibility.md) lists client artifacts and Paper distributions.
+The [Paper](docs/guides/paper.md) and [Velocity](docs/guides/velocity.md) guides cover server-owned screens and their client requirements.
 
 ## Changelog
 

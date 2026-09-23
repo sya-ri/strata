@@ -4,6 +4,9 @@ Strata lets applications describe Minecraft interfaces with reusable components 
 Use these guides to build a screen, the references to extend the public contracts, and the development documents to change Strata itself.
 For installation and a complete opening example, start with the [project README](../README.md).
 
+These pages follow the development branch.
+For published artifacts, use the documentation at the matching [release tag](https://github.com/sya-ri/strata/releases); a feature documented here may require building the current sources.
+
 ## Build an interface
 
 | Read | Use it to |
