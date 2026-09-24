@@ -21,8 +21,8 @@ Use the component catalog for available primitives and the guides for compositio
 
 ```kotlin
 dependencies {
-    compileOnly("dev.s7a.strata:strata-api:0.1.6")
-    modRuntimeOnly("dev.s7a.strata:strata-runtime-minecraft-fabric-<minecraft-version>:0.1.6")
+    compileOnly("dev.s7a.strata:strata-api:0.2.0")
+    modRuntimeOnly("dev.s7a.strata:strata-runtime-minecraft-fabric-<minecraft-version>:0.2.0")
     modRuntimeOnly("net.fabricmc:fabric-language-kotlin:<compatible-version>")
 }
 ```
@@ -32,7 +32,7 @@ Declare the runtime as a required Mod dependency so a production instance cannot
 ```json
 {
   "depends": {
-    "strata": ">=0.1.6"
+    "strata": ">=0.2.0"
   }
 }
 ```
@@ -83,7 +83,7 @@ See [Authoring patterns](patterns.md) for state, input, and resource ownership.
 ## Paper, Folia, and Velocity installation
 
 Install the chosen host's `plugin` classifier JAR in its `plugins` directory.
-Consumer plugins compile against `dev.s7a.strata:strata-runtime-paper:0.1.6` or `dev.s7a.strata:strata-runtime-velocity:0.1.6` and the host API with `compileOnly` dependencies.
+Consumer plugins compile against `dev.s7a.strata:strata-runtime-paper:0.2.0` or `dev.s7a.strata:strata-runtime-velocity:0.2.0` and the host API with `compileOnly` dependencies.
 Declare `depend: [Strata]` for Paper or a required dependency on plugin ID `strata` for Velocity; do not package another Strata runtime in the consumer.
 Players still install their matching Fabric runtime and Fabric Language Kotlin.
 If the screen only uses standard components or custom compositions of them, those client dependencies are sufficient; no application-specific client Mod is needed.
@@ -123,9 +123,9 @@ Do not create a second browser-only layout, silently remove unsupported controls
 
 Use a multi-project build with one shared screen project, a JVM consumer, and a JS preview consumer.
 The screen project uses Kotlin Multiplatform with JVM and JS targets and keeps its state, callbacks, and definition factories in `commonMain`.
-For published dependencies, use `api("dev.s7a.strata:strata-api-multiplatform:0.1.6")` there; `strata-api` is the preserved JVM-only publication and cannot resolve JS variants.
+For published dependencies, use `api("dev.s7a.strata:strata-api-multiplatform:0.2.0")` there; `strata-api` is the preserved JVM-only publication and cannot resolve JS variants.
 The JVM project depends on that screen project and supplies the Mod, Paper, or Velocity opening boundary and business actions.
-The JS project depends on the same screen project and `dev.s7a.strata:strata-runtime-web:0.1.6`, supplying deterministic preview data, action implementations, and browser mounting.
+The JS project depends on the same screen project and `dev.s7a.strata:strata-runtime-web:0.2.0`, supplying deterministic preview data, action implementations, and browser mounting.
 Both consumers call the same definition factory; platform services stay behind shared callbacks or interfaces.
 Include the application's shared JVM classes in the deployable plugin/Mod artifact or provide them through its explicitly supported runtime dependency mechanism; a compile-time project dependency alone does not package them.
 Keep Strata and its Kotlin runtime supplied by the installed Strata runtime instead of shading a second copy into Paper or Velocity consumers.

@@ -21,6 +21,8 @@ public class StrataReleasePlugin : Plugin<Project> {
                 group = "release"
                 description = "Generates the canonical versionless Maven artifact inventory from publication projects."
                 artifacts.set(extension.mavenArtifacts)
+                publicationFiles.set(extension.mavenPublicationFiles)
+                publicationFilesFile.set(project.layout.buildDirectory.file("release/maven-files.txt"))
                 outputFile.set(project.layout.buildDirectory.file("release/maven-coordinates.txt"))
             }
         val generatedMavenCoordinatesFile = mavenArtifactInventory.flatMap(GenerateMavenArtifactInventory::outputFile)
@@ -61,6 +63,21 @@ public class StrataReleasePlugin : Plugin<Project> {
                 },
             )
             coordinatesFile.set(extension.mavenCoordinatesFile.orElse(generatedMavenCoordinatesFile))
+            publicationFilesFile.set(
+                project.layout.file(
+                    project.provider {
+                        if (extension.mavenCoordinatesFile.isPresent) {
+                            null
+                        } else {
+                            mavenArtifactInventory
+                                .get()
+                                .publicationFilesFile
+                                .get()
+                                .asFile
+                        }
+                    },
+                ),
+            )
             releaseVersion.set(extension.releaseVersion)
             localRepository.set(extension.mavenLocalRepository)
             repositoryBaseUrl.set("https://repo1.maven.org/maven2/")
@@ -96,6 +113,21 @@ public class StrataReleasePlugin : Plugin<Project> {
                 },
             )
             coordinatesFile.set(extension.mavenCoordinatesFile.orElse(generatedMavenCoordinatesFile))
+            publicationFilesFile.set(
+                project.layout.file(
+                    project.provider {
+                        if (extension.mavenCoordinatesFile.isPresent) {
+                            null
+                        } else {
+                            mavenArtifactInventory
+                                .get()
+                                .publicationFilesFile
+                                .get()
+                                .asFile
+                        }
+                    },
+                ),
+            )
             releaseVersion.set(extension.releaseVersion)
             localRepository.set(extension.mavenLocalRepository)
             portalBaseUrl.set("https://central.sonatype.com/")

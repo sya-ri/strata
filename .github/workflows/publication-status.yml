@@ -1,0 +1,34 @@
+name: Publication approval
+
+on:
+  workflow_run:
+    workflows: [Publish release]
+    types: [completed]
+    branches: [master]
+  schedule:
+    - cron: '17 * * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  actions: write
+
+concurrency:
+  group: publication-approval
+  cancel-in-progress: false
+
+jobs:
+  observe:
+    if: github.repository == 'sya-ri/strata' && (github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success')
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: master
+          persist-credentials: false
+      - name: Check approval and request final verification
+        env:
+          GH_TOKEN: ${{ github.token }}
+          CURSEFORGE_API_KEY: ${{ secrets.CURSEFORGE_API_KEY }}
+        run: python3 -B release/await-publication.py

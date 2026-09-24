@@ -5,6 +5,7 @@ import org.gradle.api.file.RegularFileProperty
 import org.gradle.api.provider.ListProperty
 import org.gradle.api.tasks.CacheableTask
 import org.gradle.api.tasks.Input
+import org.gradle.api.tasks.Optional
 import org.gradle.api.tasks.OutputFile
 import org.gradle.api.tasks.TaskAction
 
@@ -15,6 +16,13 @@ import org.gradle.api.tasks.TaskAction
 internal abstract class GenerateMavenArtifactInventory : DefaultTask() {
     @get:Input
     abstract val artifacts: ListProperty<String>
+
+    @get:Optional
+    @get:Input
+    abstract val publicationFiles: ListProperty<String>
+
+    @get:OutputFile
+    abstract val publicationFilesFile: RegularFileProperty
 
     @get:OutputFile
     abstract val outputFile: RegularFileProperty
@@ -27,10 +35,15 @@ internal abstract class GenerateMavenArtifactInventory : DefaultTask() {
     @TaskAction
     fun generate() {
         val canonicalArtifacts = MavenReleaseCoordinates.canonicalArtifacts(artifacts.get())
+        val files = MavenPublicationFiles.resolve(publicationFiles.orNull?.takeIf { it.isNotEmpty() }, canonicalArtifacts)
         val destination = outputFile.get().asFile
         check(destination.parentFile.mkdirs() || destination.parentFile.isDirectory) {
             "Unable to create the Maven artifact inventory directory: ${destination.parentFile}"
         }
+        publicationFilesFile.get().asFile.writeText(
+            files.flatMap { (artifact, suffixes) -> suffixes.map { suffix -> "$artifact:$suffix" } }.joinToString("\n", postfix = "\n"),
+            Charsets.UTF_8,
+        )
         destination.writeText(canonicalArtifacts.joinToString(separator = "\n", postfix = "\n"), Charsets.UTF_8)
     }
 }

@@ -93,6 +93,7 @@ See [loaded-client verification](build.md#loaded-client-verification) and [font 
 ```
 
 Generation owns the five skill references, README installation/opening-example regions, and Modrinth and CurseForge project bodies.
+The Hangar project body is maintained directly in `docs/publication/hangar-project.md` and synchronized by the release workflow; it links to compiled integration guides instead of duplicating their code examples.
 The checker pairs source declarations with compiled API inventories, validates state/binding fingerprints, and checks byte-exact freshness and repository-local links.
 Skill and README examples compile against `:api` alone.
 Preserve the public skill's package structure and README marker pairs; edit their templates or source examples.

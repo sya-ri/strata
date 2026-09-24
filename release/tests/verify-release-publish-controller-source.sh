@@ -602,6 +602,10 @@ printf '{}\n' > "$fixture_repository/release/github-release-tag-ruleset-receipt.
 printf '{}\n' > "$fixture_repository/release/curseforge-project.json"
 printf '"""Controller fixture."""\n' > "$fixture_repository/release/curseforge-release.py"
 printf '"""Receipt fixture."""\n' > "$fixture_repository/release/curseforge-receipts.py"
+printf '{}\n' > "$fixture_repository/release/hangar-project.json"
+for tool in hangar-release.py maven-file-count.py publication-summary.py; do
+  printf '"""Distribution fixture."""\n' > "$fixture_repository/release/$tool"
+done
 fixture_current_commit="$(printf 'a%.0s' {1..40})"
 fixture_current_object="$(printf 'b%.0s' {1..40})"
 fixture_predecessor_commit="$(printf 'c%.0s' {1..40})"
@@ -670,6 +674,7 @@ for generic in current-controller.json verify-release-tag.sh list-release-tags.s
   verify-github-tag-ruleset.sh github-release-tag-ruleset.json \
   github-release-tag-ruleset-receipt.json verify-pages-deployment-source.sh verify-pages-artifact-equivalence.sh wait-for-pages-source-receipt.sh \
   curseforge-release.py curseforge-receipts.py curseforge-project.json \
+  hangar-release.py hangar-project.json maven-file-count.py publication-summary.py \
   run-publish-controller-recovery.sh list-java-toolchains.sh; do
   [[ -f "$valid_directory/$generic" && ! -L "$valid_directory/$generic" ]] || fail "Generic controller mapping is missing: $generic"
 done

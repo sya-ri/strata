@@ -11,6 +11,7 @@ import sys
 workflow = pathlib.Path(sys.argv[1]).read_text()
 steps = dict(re.findall(r'^      - name: ([^\n]+)\n(.*?)(?=^      - name:|^  [a-z_]+:|\Z)', workflow, re.M | re.S))
 channels = {
+    'hangar': ['Preflight Hangar without mutation', 'Publish or reuse the exact Hangar version', 'Verify public Hangar files'],
     'curseforge': ['Preflight CurseForge without mutation', 'Stage only missing CurseForge files', 'Verify public CurseForge files'],
     'maven_central': ['Publish wholly absent Maven Central release'],
     'github_release': ['Preflight GitHub Release without mutation', 'Create or verify immutable GitHub Release'],
@@ -21,7 +22,7 @@ channels = {
                 'Finalize current Modrinth body and verify approved release',
                 'Verify public Modrinth inventory and CDN files'],
 }
-for values in itertools.product([False, True], repeat=4):
+for values in itertools.product([False, True], repeat=5):
     inputs = dict(zip(channels, values))
     for channel, names in channels.items():
         for name in names:
@@ -53,6 +54,14 @@ assert 'curseforge-release.py" verify' in steps['Verify public CurseForge files'
 assert 'if: always() && inputs.curseforge' in steps['Preserve CurseForge upload receipt']
 assert 'github.run_attempt' in steps['Preserve CurseForge upload receipt']
 assert workflow.count('- name: Restore prior CurseForge upload receipts\n        if: inputs.curseforge') == 2
+hangar_stage = steps['Publish or reuse the exact Hangar version']
+assert hangar_stage.index('revalidate_release_source\n') < hangar_stage.index('hangar-release.py" stage')
+assert 'verify-github-tag-ruleset.sh' in hangar_stage
+assert 'verify-pages-deployment-source.sh' in hangar_stage
+assert 'hangar-release.py" verify' in steps['Verify public Hangar files']
+assert 'HANGAR_API_TOKEN:' not in steps['Verify public Hangar files']
+assert 'if: always() && inputs.hangar' in steps['Preserve Hangar publication receipt']
+assert 'maven-file-count.py' in workflow
 print('All publication destination combinations and immutable-source boundaries passed.')
 PY
 

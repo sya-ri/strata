@@ -153,6 +153,10 @@ verify_controller_tool release/select-release-pages.sh select-release-pages.sh b
 verify_controller_tool release/curseforge-release.py curseforge-release.py python 100644
 verify_controller_tool release/curseforge-receipts.py curseforge-receipts.py python 100644
 verify_controller_tool release/curseforge-project.json curseforge-project.json json 100644
+verify_controller_tool release/hangar-release.py hangar-release.py python 100644
+verify_controller_tool release/hangar-project.json hangar-project.json json 100644
+verify_controller_tool release/maven-file-count.py maven-file-count.py python 100644
+verify_controller_tool release/publication-summary.py publication-summary.py python 100644
 
 current_tag="$(portable_jq -er '.current.tag' "$tool_directory/current-controller.json")"
 current_commit="$(portable_jq -er '.current.commit' "$tool_directory/current-controller.json")"

@@ -4,6 +4,35 @@ This is the maintainer contract for publishing and verifying a release.
 Build and test the selected product source first using [build and verification](../development/build.md).
 Release notes describe user-visible changes; executable manifests and controller metadata determine the exact publication inventory.
 
+## Prepare one coordinated release
+
+The release workflow publishes the Fabric client JARs to Modrinth and CurseForge, and the Paper/Folia and Velocity plugin JARs together as one Hangar version.
+Maven Central owns the canonical signed artifacts; GitHub receives the Fabric release bundle.
+Each destination can be disabled independently when completing an interrupted release.
+
+Before the first run, configure the project identities and credentials below, finish the release notes, and complete the checks, signed-tag, required-CI, and Pages prerequisites described in this document.
+Leave release notes marked unreleased until the product is ready; preparing these files or merging the workflows does not publish a version.
+Once an immutable tag exists, start **Actions → Publish release → Run workflow** on `master`, select `operation=release`, enter the tag and its full commit SHA, keep all five destinations enabled, and enter `release vX.Y.Z` as confirmation.
+The optional Modrinth project ID can remain empty because the controller reads the tracked identity.
+Approve the existing `release` environment request when GitHub presents it.
+
+The workflow builds and verifies the release, checks all selected services before upload, reuses exact existing publications, submits missing files, and retains per-service results in its run summary and `publication-…` artifact.
+Review the actual service states: an accepted upload can still be awaiting moderation.
+[Approval monitoring](#approval-monitoring-and-recovery) requests final verification automatically after the selected distributions become public.
+
+| Secret | Scope | Purpose |
+| --- | --- | --- |
+| `MAVEN_CENTRAL_USERNAME`, `MAVEN_CENTRAL_PASSWORD` | Repository or protected `release` environment | Publisher Portal publication and verification |
+| `SIGNING_KEY`, `SIGNING_PASSWORD` | Repository or protected `release` environment | In-memory signing and canonical signature verification |
+| `MODRINTH_TOKEN` | Protected `release` environment | Selected Modrinth publication and project-body finalization |
+| `CURSEFORGE_TOKEN` | Protected `release` environment | Selected CurseForge uploads |
+| `CURSEFORGE_API_KEY` | Repository secret | Read-only CurseForge reconciliation and unattended approval monitoring |
+| `HANGAR_API_TOKEN` | Protected `release` environment | Selected Hangar publication, page synchronization, and private version observation |
+
+Do not shadow the repository's CurseForge read key with a different environment value.
+The approval monitor has no `release` environment and receives no distribution upload tokens; it therefore needs the read key at repository scope.
+Existing required-reviewer and branch protections continue to apply to publication and final verification.
+
 ## Publication inputs
 
 Each publishable JVM module has a Maven publication with source and Javadoc artifacts, MIT license metadata, SCM metadata, and an optional in-memory signing setup.
@@ -32,13 +61,13 @@ All release tags matching `refs/tags/v*` are covered by `release/github-release-
 The wildcard ruleset has no bypass actors, forbids update including fetch-and-merge, and forbids deletion; its audited revision must remain unchanged at every release mutation boundary.
 The unprotected preflight freezes both identities as job outputs only after exact-controller, signed-tag, required-CI, root-version, ancestry, wildcard-ruleset, and current/controller Pages provenance checks pass.
 The protected job materializes the same controller bundle, validates the frozen source selection independently of the default documentation metadata, and re-fetches and compares both tag identities, their ancestry, the frozen controller ancestry, the wildcard ruleset, Pages evidence, and the clean tagged workspace before each external mutation.
-The ordered publication project matrix owns the actual Maven artifact IDs, aggregate publication tasks, and the non-empty, unique `build/release/maven-coordinates.txt` inventory; immutable tags created before that generator retain a controller-validated fallback to their tracked legacy exact-coordinate inventory.
+The ordered publication project matrix owns the actual Maven artifact IDs, aggregate publication tasks, and the non-empty, unique `build/release/maven-coordinates.txt` inventory and `maven-files.txt` file-suffix inventory; immutable tags created before that generator retain a controller-validated fallback to their tracked legacy exact-coordinate inventory.
 Central inventory sizes come from the selected generated or immutable-legacy inventory and the publication suffix, detached-signature, and checksum relationships; Modrinth and GitHub inventory sizes come from the generated manifest and the one-signature-per-JAR plus `SHA256SUMS` bundle relationship.
 Receipt fields must equal those derived inventories, so adding or removing a supported runtime changes the generated evidence without requiring an artifact-list, release-number, or fixed-count edit in the controller.
 
 ## Publication order and service state
 
-The four boolean inputs are independent and default to `true`:
+The five boolean inputs are independent and default to `true`:
 
 | Input | When enabled | When disabled |
 | --- | --- | --- |
@@ -46,13 +75,14 @@ The four boolean inputs are independent and default to `true`:
 | `github_release` | Create or resume the immutable GitHub Release (`verify` checks it without publishing) | Skip GitHub Release lookup, writes, uploads and verification |
 | `modrinth` | Stage, submit or finalize the applicable Modrinth lifecycle; verify public files | Skip Modrinth API calls and require no Modrinth token |
 | `curseforge` | Reconcile missing CurseForge files and verify approved downloads | Skip CurseForge API calls and require no CurseForge credentials |
+| `hangar` | Publish or reuse one exact Paper/Velocity version, synchronize its project page, and verify public downloads | Skip Hangar tasks and API calls and require no Hangar token |
 
 At least one destination must be enabled.
-For example, use `maven_central=false`, `github_release=true`, `modrinth=false`, `curseforge=false` to finish GitHub publication from already published Maven artifacts.
+For example, use `maven_central=false`, `github_release=true`, `modrinth=false`, `curseforge=false`, `hangar=false` to finish GitHub publication from already published Maven artifacts.
 Skipping Maven publication does not skip canonical artifact checks: selected downstream destinations consume the verified Central artifacts, including their original detached signatures.
 The signing and Publisher Portal verification credentials remain necessary for that evidence; missing, partial or conflicting Central content fails before downstream writes.
 The switches come from immutable workflow inputs and cannot be enabled by a later build step.
-`verify` never publishes to Maven, GitHub, or CurseForge and only performs Modrinth finalization when that destination is selected.
+`verify` never publishes to Maven, GitHub, CurseForge, or Hangar and only performs Modrinth finalization when that destination is selected.
 
 Central preflight distinguishes wholly absent content from a complete exact publication in both the public repository and authenticated Publisher Portal.
 Only the wholly absent pair with `maven_central=true` may invoke the single Vanniktech publication task; partial, conflicting, or cross-service state stops before any write, while an exact publication is verified and reused idempotently.
@@ -78,7 +108,7 @@ The project title distinguishes this UI library from unrelated projects named St
 Record the assigned positive numeric ID in `release/curseforge-project.json`; its initial `null` value deliberately prevents publication to an unconfigured destination.
 Keep CurseForge disabled on other release runs until this setup is complete.
 
-Add `CURSEFORGE_TOKEN` (the author's upload token) and `CURSEFORGE_API_KEY` (the separate read API key) to the existing protected `release` GitHub Environment.
+Add `CURSEFORGE_TOKEN` (the author's upload token) to the protected `release` GitHub Environment and `CURSEFORGE_API_KEY` (the separate read API key) as a repository secret, as listed above.
 The [Upload API](https://support.curseforge.com/support/solutions/articles/9000197321) uses `X-Api-Token`; the [read API](https://docs.curseforge.com/rest-api/) uses `x-api-key`.
 Third-party read API access requires the application linked from the official API documentation; do not create a game-studio account to represent Minecraft ownership.
 Credentials are never passed as URL parameters, written to receipts, or forwarded to download servers.
@@ -93,10 +123,10 @@ Java Minecraft version IDs are cross-checked against the official Minecraft vers
 Source and documentation JARs, detached signatures, and Maven-only modules are not uploaded.
 
 Preflight checks all target metadata before publication begins.
-After Central and enabled GitHub publication have completed, staging appends missing files without editing or deleting existing files.
+After Central publication has completed, staging appends missing files without editing or deleting existing files.
 Serialize Authors Console uploads and local historical imports with this workflow; local receipts do not coordinate independent writers.
 Accepted uploads remain pending until approval and public byte verification; a successful staging step is not proof of publication.
-Dispatch the same tag and source with `operation=verify` after moderation to verify every file's identity, exact game tags, dependency, size, and downloaded SHA-256.
+After moderation, automatic or manually dispatched `operation=verify` for the same tag and source verifies every file's identity, exact game tags, dependency, size, and downloaded SHA-256.
 Rejected, changed, duplicate, or unknown file states stop the operation and require inspection in the Authors Console.
 Release notes are submitted verbatim as Markdown from the canonical manifest.
 Project description changes remain Authors Console operations using the generated body; the documented upload API does not supply a project-description update endpoint.
@@ -113,6 +143,47 @@ For an explicitly authorized one-time historical import, use temporary manifests
 Keep import inventories, downloaded artifacts, and orchestration under ignored `build/` storage; do not add release-specific branches to the permanent controller.
 Retain execution evidence until public verification completes, then remove the temporary import material.
 Any temporary tracked migration material must be removed in a follow-up commit.
+
+## Hangar setup and publication
+
+The tracked namespace in `release/hangar-project.json` selects [sya-ri/Strata](https://hangar.papermc.io/sya-ri/Strata).
+Create a project-scoped API key with `view_public_info`, `create_version`, and `edit_page` permissions and store it as `HANGAR_API_TOKEN` in the protected `release` environment.
+The [official Hangar Gradle publisher](https://docs.papermc.io/misc/hangar-publishing/) performs uploads and resource-page synchronization; its version is owned by the Gradle catalog.
+
+`hangarReleaseManifest` derives the Paper versions from the typed target matrix and the Velocity version from the version catalog.
+It checks both assembled plugin JARs and records their hashes, canonical Central paths, release notes, and the [tracked Hangar project body](../publication/hangar-project.md).
+Folia uses the Paper download; it does not add a third artifact or platform to the Hangar version.
+CI checks token permissions and Hangar's current platform-version catalog before publishing to any distribution service.
+Disable `hangar` when publishing a historical source that predates this manifest task.
+
+After Central has been verified, the controller uploads those canonical plugin JARs together as a Release and synchronizes the main project page from the tracked Markdown.
+Existing exact versions, including versions awaiting review, are reused without another upload.
+A mismatched file, platform set, dependency, changelog, or channel stops publication; the controller never replaces an existing version.
+An uncertain upload is not retried within the run: inspect its attempt receipt and reconcile the exact server version before rerunning.
+If page synchronization failed after an accepted upload, a rerun can finish that page update while preserving the existing version.
+Final verification requires public metadata and independently hashes both CDN downloads without forwarding authentication.
+
+## Approval monitoring and recovery
+
+`publication-status.yml`, displayed as **Publication approval**, checks successful release runs after completion, hourly, or when manually dispatched.
+It validates the producer-bound result artifact and its digest before reading the selected services' review states.
+Modrinth and Hangar status reads are anonymous; CurseForge uses its separate read key.
+The monitor does not upload files, edit project descriptions, or execute code from result artifacts.
+
+When every selected distribution is public, it requests `Publish release` with `operation=verify`, the same immutable tag and commit, and the same destination switches.
+The protected `release` environment still requires its configured approval before verification can run.
+A release whose distributions are already public follows this path immediately after its successful publication job.
+Maven and GitHub-only runs can also proceed directly to verification.
+
+The monitor considers successful release runs from the last 30 days and requests at most one verification attempt per release identity.
+It does not automatically retry a failed or cancelled verification; inspect its error, correct the cause, and manually dispatch `operation=verify` with `verify vX.Y.Z` as confirmation.
+Older releases can also be verified manually.
+If uploading failed partway through, inspect the preserved receipts and rerun `operation=release` with the same inputs after resolving the cause; the successful-run monitor will not hide that failure.
+Review rejection, conflicting metadata, missing evidence, and service errors require investigation before another publication attempt.
+
+GitHub does not make the three services transactional.
+An earlier completed publication remains available when a later service fails or awaits review; reruns reuse verified existing content and append only missing content under each service's reconciliation contract.
+CurseForge project-body changes remain a manual Authors Console operation because its upload API has no project-description update endpoint.
 
 ## Provenance and protected execution
 

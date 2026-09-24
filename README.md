@@ -48,8 +48,8 @@ Install exactly one version-matched runtime as a separate client Fabric Mod toge
 
 ```kotlin
 dependencies {
-    compileOnly("dev.s7a.strata:strata-api:0.1.6")
-    modRuntimeOnly("dev.s7a.strata:strata-runtime-minecraft-fabric-<minecraft-version>:0.1.6")
+    compileOnly("dev.s7a.strata:strata-api:0.2.0")
+    modRuntimeOnly("dev.s7a.strata:strata-runtime-minecraft-fabric-<minecraft-version>:0.2.0")
     modRuntimeOnly("net.fabricmc:fabric-language-kotlin:<compatible-version>")
 }
 ```
@@ -60,7 +60,7 @@ Declare it as a required dependency in the consuming Mod so `ScreenDefinition.op
 ```json
 {
   "depends": {
-    "strata": ">=0.1.6"
+    "strata": ">=0.2.0"
   }
 }
 ```

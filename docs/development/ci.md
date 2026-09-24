@@ -73,6 +73,16 @@ It retains complete Git history and catalog-selected Java toolchains because rel
 These cover source/tag/ruleset drift, artifact and deployment binding, immutable-subtree comparison, receipt drift, pagination/order, and bounded public polling.
 Benchmark procedures belong in [performance](performance.md#benchmark-methodology).
 
+## Distribution publication
+
+`publish-release.yml` owns protected publication and verification across Maven Central, GitHub, Modrinth, CurseForge, and Hangar.
+The independent workflow checks exercise all destination combinations, immutable controller tools, service reconciliation, and approval-monitor artifact validation with local fixtures.
+
+`publication-status.yml` observes successful publication receipts on completion and hourly, then requests one protected verification run when all selected distributions become public.
+It uses anonymous Modrinth/Hangar reads and a repository-scoped CurseForge read key; distribution upload tokens stay in the protected release job.
+It never bypasses environment approval or retries an upload.
+See [release setup and recovery](release.md) for credentials, artifacts, and manual continuation.
+
 ## Documentation ownership
 
 Pages freezes controller/release identities in a read-only job, then runs independent controller-site and immutable-release producers concurrently.

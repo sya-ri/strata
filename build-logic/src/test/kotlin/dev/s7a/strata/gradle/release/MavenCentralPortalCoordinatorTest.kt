@@ -32,6 +32,32 @@ internal class MavenCentralPortalCoordinatorTest {
     }
 
     @Test
+    fun `non JVM artifacts are included in exact remote evidence`() {
+        val fixture = fixture()
+        val coordinate = fixture.coordinates.first()
+        val (group, artifact, version) = coordinate.split(':')
+        val directory = fixture.repository.resolve("${group.replace('.', '/')}/$artifact/$version")
+        val main = directory.resolve("$artifact-$version.jar")
+        Files.move(main, directory.resolve("$artifact-$version.klib"))
+        Files.writeString(directory.resolve("$artifact-$version-plugin.jar"), "installable plugin")
+        val entries =
+            fixture.coordinates.flatMap { entry ->
+                val identity = entry.substringBeforeLast(':')
+                val suffixes = if (entry == coordinate) BASE_SUFFIXES.minus(".jar") + listOf(".klib", "-plugin.jar") else BASE_SUFFIXES
+                suffixes.map { suffix -> "$identity:$suffix" }
+            }
+        val server = server(fixture)
+        server.statuses.add(MavenCentralPortalCoordinator.DeploymentState.PUBLISHED)
+        val receipt = fixture.coordinator(server, publicationFiles = entries).preflight(fixture.coordinates, temporaryDirectory.resolve("variable-evidence"))
+        assertEquals(entries.size * 2, receipt.verifiedContentFileCount)
+        assertEquals(entries.size * 4, receipt.verifiedChecksumCount)
+        Files.delete(directory.resolve("$artifact-$version-plugin.jar"))
+        assertThrows(IllegalStateException::class.java) {
+            fixture.coordinator(server, publicationFiles = entries).preflight(fixture.coordinates, temporaryDirectory.resolve("missing-evidence"))
+        }
+    }
+
+    @Test
     fun `preflight distinguishes absent and exact deployments with base checksums`() {
         val fixture = fixture()
         val server = server(fixture)
@@ -351,12 +377,14 @@ internal class MavenCentralPortalCoordinatorTest {
             server: MockCentralPortal,
             username: String = "user",
             password: String = "password",
+            publicationFiles: List<String>? = null,
         ): MavenCentralPortalCoordinator =
             MavenCentralPortalCoordinator(
                 portalBaseUri = URI("${server.baseUrl}/"),
                 username = username,
                 password = password,
                 localRepository = repository,
+                publicationFiles = publicationFiles,
                 requestTimeout = Duration.ofSeconds(2),
                 retryBaseMillis = 0L,
                 sleeper = {},

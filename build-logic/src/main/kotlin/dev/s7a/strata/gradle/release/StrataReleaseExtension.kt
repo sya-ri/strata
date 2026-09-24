@@ -63,6 +63,11 @@ public abstract class StrataReleaseExtension
         public val mavenArtifacts: ListProperty<String> = objects.listProperty(String::class.java)
 
         /**
+         * Exact `group:artifact:suffix` entries read from the configured Maven publications.
+         */
+        public val mavenPublicationFiles: ListProperty<String> = objects.listProperty(String::class.java)
+
+        /**
          * Canonical versionless inventory resolved against [releaseVersion] and reconciled with Central.
          *
          * The release plugin generates this file from [mavenArtifacts] by default.

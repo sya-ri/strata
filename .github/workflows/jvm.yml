@@ -123,8 +123,10 @@ jobs:
             bash "$source_guard"
           done
           bash release/tests/verify-versioned-pages-staging.sh
-      - name: Test CurseForge publication
-        run: python3 -B -m unittest discover -s release/tests -p "test_curseforge*.py"
+      - name: Test distribution publication
+        run: |
+          bash release/tests/verify-selected-publication.sh
+          python3 -B -m unittest discover -s release/tests -p "test_*.py"
       - name: Test Java toolchain inventory
         shell: bash
         run: bash release/tests/verify-java-toolchain-inventory.sh
