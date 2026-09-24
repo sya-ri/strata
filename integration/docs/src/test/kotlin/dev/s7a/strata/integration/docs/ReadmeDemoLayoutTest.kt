@@ -67,7 +67,7 @@ internal class ReadmeDemoLayoutTest {
             val basicName = basic.semantics.single { it.semantics.label == name }.bounds
             val roleName = roles.semantics.single { it.semantics.label == name }.bounds
             assertTrue(roleName.top < basicName.top, "Adding a role must recenter the text beside the larger face.")
-            assertEquals(basicName.left, roleName.left)
+            assertEquals(basicName.left - basicRows[index].left, roleName.left - roleRows[index].left)
             assertTrue(roleRows[index].width < actionRows[index].width)
             assertEquals(roleRows[index].height, actionRows[index].height)
         }
@@ -108,7 +108,12 @@ internal class ReadmeDemoLayoutTest {
         val weighted = frame(ReadmeDemoStage.Weighted, assets)
         assertEquals(List(8) { 220 }, rows(fixed).map { it.width })
         assertEquals(rows(fixed), rows(weighted), "Adding weight must preserve the already fixed row frames.")
-        assertEquals(buttons(natural), buttons(fixed), "Fixing row widths must precede moving their buttons.")
+        val panelShift = IntOffset(rows(fixed).first().left - rows(natural).first().left, 0)
+        assertEquals(
+            buttons(natural).map { it.bounds + panelShift },
+            buttons(fixed).map { it.bounds },
+            "Fixing row widths must preserve button offsets inside the naturally sized panel.",
+        )
         buttons(fixed).zip(buttons(weighted)).forEach { (before, after) ->
             assertTrue(before.bounds.left < after.bounds.left, "The separate weight edit must visibly move each button.")
             assertEquals(before.bounds.top, after.bounds.top)

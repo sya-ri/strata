@@ -44,7 +44,7 @@ internal class ReadmeDemoArtifactsTest {
                     .use(ImageIO::read)
             assertArrayEquals(
                 screen.getRGB(0, 0, 512, 384, null, 0, 512),
-                composed.getRGB(672, 558, 512, 384, null, 0, 512),
+                composed.getRGB(740, 816, 512, 384, null, 0, 512),
                 "The full-color still must contain the original complete screen pixels.",
             )
             val source = ReadmeDemoSource.read(root, stage)
@@ -131,19 +131,24 @@ internal class ReadmeDemoArtifactsTest {
         source: ReadmeDemoSource,
         markdown: String,
     ) {
-        assertEquals(1, source.lines.count { it.contains("PlayerHead(") }, "Every stage must retain its inline row definition.")
-        assertTrue(source.lines.size <= 60)
+        assertEquals(1, source.lines.count { it.contains("PlayerHead(") }, "Every stage must retain the complete row method.")
+        assertEquals(
+            3,
+            source.lines
+                .joinToString("\n")
+                .split("\n\n")
+                .size,
+        )
         val excerpt = source.lines.joinToString("\n")
         assertFalse(excerpt.contains("rowModifier"))
         assertFalse(excerpt.contains("ReadmeDemoColors"))
         assertFalse(excerpt.contains("ReadmeDemoChrome"))
-        assertTrue(excerpt.contains("ScreenDefinition(\"Players\")"))
         assertTrue(excerpt.contains(".menuBackground()"))
         assertTrue(excerpt.contains(".imageBackground("))
         assertTrue(excerpt.contains("NineSliceCenterMode.Tiled"))
         assertTrue(excerpt.contains("Text(\"Players (\${players.size})\")"))
-        assertTrue(excerpt.contains("val rowColor = ArgbColor(0xFF4A4A4A.toInt())"))
-        assertTrue(excerpt.contains(".background(rowColor)"))
+        assertFalse(excerpt.contains("rowColor"))
+        assertTrue(excerpt.contains(".background(ArgbColor(0xFF4A4A4A.toInt()))"))
         assertTrue(excerpt.contains(".padding(6)"))
         assertTrue(excerpt.contains("verticalAlignment = VerticalAlignment.Center"))
         assertTrue(markdown.contains(source.lines.joinToString("\n")))
@@ -159,8 +164,8 @@ internal class ReadmeDemoArtifactsTest {
                 val delays =
                     (0 until 19).map { index ->
                         val image = reader.read(index)
-                        assertEquals(1200, image.width)
-                        assertEquals(1500, image.height)
+                        assertEquals(1320, image.width)
+                        assertEquals(1320, image.height)
                         val metadata = reader.getImageMetadata(index).getAsTree("javax_imageio_gif_image_1.0") as IIOMetadataNode
                         val control = metadata.getElementsByTagName("GraphicControlExtension").item(0) as IIOMetadataNode
                         if (index == 0) {

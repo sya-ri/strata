@@ -5,7 +5,7 @@ import java.awt.Font
 import java.awt.Graphics2D
 
 /**
- * Draws the complete compiled screen definition with lexical colors and changed-line emphasis.
+ * Draws the compiled composition methods with lexical colors and changed-line emphasis.
  * All painting is synchronous on caller-owned graphics; it neither edits source nor retains the graphics.
  */
 internal object ReadmeCodePainter {
@@ -15,22 +15,22 @@ internal object ReadmeCodePainter {
     private val accent = Color(0x68D5EB)
 
     /**
-     * Paints the complete source with compact indentation and rejects horizontal or vertical overflow before publication.
+     * Paints one complete method with two spaces per indentation level and rejects horizontal or vertical overflow before publication.
      * [previous] determines inserted or changed lines; null starts with an unhighlighted baseline.
      */
     fun paint(
         graphics: Graphics2D,
         font: Font,
-        source: ReadmeDemoSource,
+        source: List<String>,
         previous: ReadmeDemoSource?,
     ) {
         graphics.font = font.deriveFont(18f)
         val metrics = graphics.fontMetrics
         val previousLines = previous?.lines?.map(String::trimStart)?.toSet()
-        require(source.lines.size <= 60) { "README demo source exceeds the code panel height." }
-        source.lines.forEachIndexed { index, original ->
+        require(48 + (source.size - 1) * 24 + 6 <= graphics.clipBounds.height) { "README demo source exceeds the code panel height." }
+        source.forEachIndexed { index, original ->
             val content = original.trimStart()
-            val line = " ".repeat((original.length - content.length) / 4) + content
+            val line = " ".repeat((original.length - content.length) / 2) + content
             require(metrics.stringWidth(line) <= 612) { "README demo source exceeds the code panel width: $line" }
             val baseline = 48 + index * 24
             val changed = previousLines != null && line.isNotBlank() && line.trimStart() !in previousLines

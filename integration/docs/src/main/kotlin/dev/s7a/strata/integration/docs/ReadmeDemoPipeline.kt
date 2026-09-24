@@ -142,7 +142,7 @@ internal object ReadmeDemoPipeline {
             appendLine("frame.count=${ReadmeDemoStage.entries.sumOf { it.scrollOffsets.size }}")
             appendLine("viewport=256x192")
             appendLine("scale=2")
-            appendLine("canvas=1200x1500")
+            appendLine("canvas=1320x1320")
             appendLine("font.version=$fontVersion")
             appendLine("font.sha256=${ShowcaseAssetIntegrity.sha256(ReadmeDemoAssets.resource("JetBrainsMono-Regular.ttf"))}")
             appendLine("font.license.sha256=${ShowcaseAssetIntegrity.sha256(ReadmeDemoAssets.resource("OFL.txt"))}")

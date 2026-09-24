@@ -19,11 +19,13 @@ Each row takes the width of its contents.
 <details><summary>Complete source for this stage</summary>
 
 ```kotlin
-ScreenDefinition("Players") {
+private fun UiScope.playerPanel(
+    players: List<ReadmePlayer>,
+    panel: ImageSource,
+) {
     Column(
         modifier =
             Modifier.Empty
-                .size(256, 192)
                 .menuBackground()
                 .padding(4),
         spacing = 4,
@@ -33,31 +35,40 @@ ScreenDefinition("Players") {
         Stack(
             modifier =
                 Modifier.Empty
-                    .size(236, 142)
+                    .height(142)
                     .imageBackground(
                         panel,
                         Insets.all(8),
                         NineSliceCenterMode.Tiled,
                     ).padding(8),
         ) {
-            val rowColor = ArgbColor(0xFF4A4A4A.toInt())
-            Column(spacing = 6) {
-                players.forEach { player ->
-                    Row(
-                        modifier =
-                            Modifier.Empty
-                                .background(rowColor)
-                                .padding(6),
-                        spacing = 8,
-                        verticalAlignment = VerticalAlignment.Center,
-                    ) {
-                        PlayerHead(player.skin, PlayerHeadScale(3))
-                        Column(spacing = 4) {
-                            Text(player.name)
-                        }
-                    }
-                }
-            }
+            playerList(players)
+        }
+    }
+}
+
+private fun UiScope.playerList(
+    players: List<ReadmePlayer>,
+) {
+    Column(spacing = 6) {
+        players.forEach { player ->
+            playerRow(player)
+        }
+    }
+}
+
+private fun UiScope.playerRow(player: ReadmePlayer) {
+    Row(
+        modifier =
+            Modifier.Empty
+                .background(ArgbColor(0xFF4A4A4A.toInt()))
+                .padding(6),
+        spacing = 8,
+        verticalAlignment = VerticalAlignment.Center,
+    ) {
+        PlayerHead(player.skin, PlayerHeadScale(3))
+        Column(spacing = 4) {
+            Text(player.name)
         }
     }
 }
@@ -76,11 +87,13 @@ One Text adds a role to every player.
 <details><summary>Complete source for this stage</summary>
 
 ```kotlin
-ScreenDefinition("Players") {
+private fun UiScope.playerPanel(
+    players: List<ReadmePlayer>,
+    panel: ImageSource,
+) {
     Column(
         modifier =
             Modifier.Empty
-                .size(256, 192)
                 .menuBackground()
                 .padding(4),
         spacing = 4,
@@ -90,32 +103,41 @@ ScreenDefinition("Players") {
         Stack(
             modifier =
                 Modifier.Empty
-                    .size(236, 142)
+                    .height(142)
                     .imageBackground(
                         panel,
                         Insets.all(8),
                         NineSliceCenterMode.Tiled,
                     ).padding(8),
         ) {
-            val rowColor = ArgbColor(0xFF4A4A4A.toInt())
-            Column(spacing = 6) {
-                players.forEach { player ->
-                    Row(
-                        modifier =
-                            Modifier.Empty
-                                .background(rowColor)
-                                .padding(6),
-                        spacing = 8,
-                        verticalAlignment = VerticalAlignment.Center,
-                    ) {
-                        PlayerHead(player.skin, PlayerHeadScale(3))
-                        Column(spacing = 4) {
-                            Text(player.name)
-                            Text(player.role)
-                        }
-                    }
-                }
-            }
+            playerList(players)
+        }
+    }
+}
+
+private fun UiScope.playerList(
+    players: List<ReadmePlayer>,
+) {
+    Column(spacing = 6) {
+        players.forEach { player ->
+            playerRow(player)
+        }
+    }
+}
+
+private fun UiScope.playerRow(player: ReadmePlayer) {
+    Row(
+        modifier =
+            Modifier.Empty
+                .background(ArgbColor(0xFF4A4A4A.toInt()))
+                .padding(6),
+        spacing = 8,
+        verticalAlignment = VerticalAlignment.Center,
+    ) {
+        PlayerHead(player.skin, PlayerHeadScale(3))
+        Column(spacing = 4) {
+            Text(player.name)
+            Text(player.role)
         }
     }
 }
@@ -134,11 +156,13 @@ One Button extends every row without calculating its position.
 <details><summary>Complete source for this stage</summary>
 
 ```kotlin
-ScreenDefinition("Players") {
+private fun UiScope.playerPanel(
+    players: List<ReadmePlayer>,
+    panel: ImageSource,
+) {
     Column(
         modifier =
             Modifier.Empty
-                .size(256, 192)
                 .menuBackground()
                 .padding(4),
         spacing = 4,
@@ -148,34 +172,43 @@ ScreenDefinition("Players") {
         Stack(
             modifier =
                 Modifier.Empty
-                    .size(236, 142)
+                    .height(142)
                     .imageBackground(
                         panel,
                         Insets.all(8),
                         NineSliceCenterMode.Tiled,
                     ).padding(8),
         ) {
-            val rowColor = ArgbColor(0xFF4A4A4A.toInt())
-            Column(spacing = 6) {
-                players.forEach { player ->
-                    Row(
-                        modifier =
-                            Modifier.Empty
-                                .background(rowColor)
-                                .padding(6),
-                        spacing = 8,
-                        verticalAlignment = VerticalAlignment.Center,
-                    ) {
-                        PlayerHead(player.skin, PlayerHeadScale(3))
-                        Column(spacing = 4) {
-                            Text(player.name)
-                            Text(player.role)
-                        }
-                        Button("Invite", width = 60)
-                    }
-                }
-            }
+            playerList(players)
         }
+    }
+}
+
+private fun UiScope.playerList(
+    players: List<ReadmePlayer>,
+) {
+    Column(spacing = 6) {
+        players.forEach { player ->
+            playerRow(player)
+        }
+    }
+}
+
+private fun UiScope.playerRow(player: ReadmePlayer) {
+    Row(
+        modifier =
+            Modifier.Empty
+                .background(ArgbColor(0xFF4A4A4A.toInt()))
+                .padding(6),
+        spacing = 8,
+        verticalAlignment = VerticalAlignment.Center,
+    ) {
+        PlayerHead(player.skin, PlayerHeadScale(3))
+        Column(spacing = 4) {
+            Text(player.name)
+            Text(player.role)
+        }
+        Button("Invite", width = 60)
     }
 }
 ```
@@ -193,11 +226,13 @@ Set the outer Column width once; every row fills it.
 <details><summary>Complete source for this stage</summary>
 
 ```kotlin
-ScreenDefinition("Players") {
+private fun UiScope.playerPanel(
+    players: List<ReadmePlayer>,
+    panel: ImageSource,
+) {
     Column(
         modifier =
             Modifier.Empty
-                .size(256, 192)
                 .menuBackground()
                 .padding(4),
         spacing = 4,
@@ -207,35 +242,44 @@ ScreenDefinition("Players") {
         Stack(
             modifier =
                 Modifier.Empty
-                    .size(236, 142)
+                    .height(142)
                     .imageBackground(
                         panel,
                         Insets.all(8),
                         NineSliceCenterMode.Tiled,
                     ).padding(8),
         ) {
-            val rowColor = ArgbColor(0xFF4A4A4A.toInt())
-            Column(Modifier.Empty.width(220), spacing = 6) {
-                players.forEach { player ->
-                    Row(
-                        modifier =
-                            Modifier.Empty
-                                .background(rowColor)
-                                .padding(6)
-                                .fillMaxWidth(),
-                        spacing = 8,
-                        verticalAlignment = VerticalAlignment.Center,
-                    ) {
-                        PlayerHead(player.skin, PlayerHeadScale(3))
-                        Column(spacing = 4) {
-                            Text(player.name)
-                            Text(player.role)
-                        }
-                        Button("Invite", width = 60)
-                    }
-                }
-            }
+            playerList(players)
         }
+    }
+}
+
+private fun UiScope.playerList(
+    players: List<ReadmePlayer>,
+) {
+    Column(Modifier.Empty.width(220), spacing = 6) {
+        players.forEach { player ->
+            playerRow(player)
+        }
+    }
+}
+
+private fun UiScope.playerRow(player: ReadmePlayer) {
+    Row(
+        modifier =
+            Modifier.Empty
+                .background(ArgbColor(0xFF4A4A4A.toInt()))
+                .padding(6)
+                .fillMaxWidth(),
+        spacing = 8,
+        verticalAlignment = VerticalAlignment.Center,
+    ) {
+        PlayerHead(player.skin, PlayerHeadScale(3))
+        Column(spacing = 4) {
+            Text(player.name)
+            Text(player.role)
+        }
+        Button("Invite", width = 60)
     }
 }
 ```
@@ -253,11 +297,13 @@ Weight expands the text column and lines up the buttons.
 <details><summary>Complete source for this stage</summary>
 
 ```kotlin
-ScreenDefinition("Players") {
+private fun UiScope.playerPanel(
+    players: List<ReadmePlayer>,
+    panel: ImageSource,
+) {
     Column(
         modifier =
             Modifier.Empty
-                .size(256, 192)
                 .menuBackground()
                 .padding(4),
         spacing = 4,
@@ -267,38 +313,47 @@ ScreenDefinition("Players") {
         Stack(
             modifier =
                 Modifier.Empty
-                    .size(236, 142)
+                    .height(142)
                     .imageBackground(
                         panel,
                         Insets.all(8),
                         NineSliceCenterMode.Tiled,
                     ).padding(8),
         ) {
-            val rowColor = ArgbColor(0xFF4A4A4A.toInt())
-            Column(Modifier.Empty.width(220), spacing = 6) {
-                players.forEach { player ->
-                    Row(
-                        modifier =
-                            Modifier.Empty
-                                .background(rowColor)
-                                .padding(6)
-                                .fillMaxWidth(),
-                        spacing = 8,
-                        verticalAlignment = VerticalAlignment.Center,
-                    ) {
-                        PlayerHead(player.skin, PlayerHeadScale(3))
-                        Column(
-                            modifier = Modifier.Empty.weight(1f),
-                            spacing = 4,
-                        ) {
-                            Text(player.name)
-                            Text(player.role)
-                        }
-                        Button("Invite", width = 60)
-                    }
-                }
-            }
+            playerList(players)
         }
+    }
+}
+
+private fun UiScope.playerList(
+    players: List<ReadmePlayer>,
+) {
+    Column(Modifier.Empty.width(220), spacing = 6) {
+        players.forEach { player ->
+            playerRow(player)
+        }
+    }
+}
+
+private fun UiScope.playerRow(player: ReadmePlayer) {
+    Row(
+        modifier =
+            Modifier.Empty
+                .background(ArgbColor(0xFF4A4A4A.toInt()))
+                .padding(6)
+                .fillMaxWidth(),
+        spacing = 8,
+        verticalAlignment = VerticalAlignment.Center,
+    ) {
+        PlayerHead(player.skin, PlayerHeadScale(3))
+        Column(
+            modifier = Modifier.Empty.weight(1f),
+            spacing = 4,
+        ) {
+            Text(player.name)
+            Text(player.role)
+        }
+        Button("Invite", width = 60)
     }
 }
 ```
@@ -316,11 +371,13 @@ Wrap the existing Column in ScrollArea to contain the list.
 <details><summary>Complete source for this stage</summary>
 
 ```kotlin
-ScreenDefinition("Players") {
+private fun UiScope.playerPanel(
+    players: List<ReadmePlayer>,
+    panel: ImageSource,
+) {
     Column(
         modifier =
             Modifier.Empty
-                .size(256, 192)
                 .menuBackground()
                 .padding(4),
         spacing = 4,
@@ -330,44 +387,53 @@ ScreenDefinition("Players") {
         Stack(
             modifier =
                 Modifier.Empty
-                    .size(236, 142)
+                    .height(142)
                     .imageBackground(
                         panel,
                         Insets.all(8),
                         NineSliceCenterMode.Tiled,
                     ).padding(8),
         ) {
-            val rowColor = ArgbColor(0xFF4A4A4A.toInt())
-            val scroll = ScrollState()
-            ScrollArea(
-                state = scroll,
-                modifier = Modifier.Empty.height(126),
-            ) {
-                Column(Modifier.Empty.width(220), spacing = 6) {
-                    players.forEach { player ->
-                        Row(
-                            modifier =
-                                Modifier.Empty
-                                    .background(rowColor)
-                                    .padding(6)
-                                    .fillMaxWidth(),
-                            spacing = 8,
-                            verticalAlignment = VerticalAlignment.Center,
-                        ) {
-                            PlayerHead(player.skin, PlayerHeadScale(3))
-                            Column(
-                                modifier = Modifier.Empty.weight(1f),
-                                spacing = 4,
-                            ) {
-                                Text(player.name)
-                                Text(player.role)
-                            }
-                            Button("Invite", width = 60)
-                        }
-                    }
-                }
+            playerList(players)
+        }
+    }
+}
+
+private fun UiScope.playerList(
+    players: List<ReadmePlayer>,
+) {
+    val scroll = ScrollState()
+    ScrollArea(
+        state = scroll,
+        modifier = Modifier.Empty.height(126),
+    ) {
+        Column(Modifier.Empty.width(220), spacing = 6) {
+            players.forEach { player ->
+                playerRow(player)
             }
         }
+    }
+}
+
+private fun UiScope.playerRow(player: ReadmePlayer) {
+    Row(
+        modifier =
+            Modifier.Empty
+                .background(ArgbColor(0xFF4A4A4A.toInt()))
+                .padding(6)
+                .fillMaxWidth(),
+        spacing = 8,
+        verticalAlignment = VerticalAlignment.Center,
+    ) {
+        PlayerHead(player.skin, PlayerHeadScale(3))
+        Column(
+            modifier = Modifier.Empty.weight(1f),
+            spacing = 4,
+        ) {
+            Text(player.name)
+            Text(player.role)
+        }
+        Button("Invite", width = 60)
     }
 }
 ```
@@ -385,11 +451,13 @@ Wheel input reaches the final players; no scrollbar has been added yet.
 <details><summary>Complete source for this stage</summary>
 
 ```kotlin
-ScreenDefinition("Players") {
+private fun UiScope.playerPanel(
+    players: List<ReadmePlayer>,
+    panel: ImageSource,
+) {
     Column(
         modifier =
             Modifier.Empty
-                .size(256, 192)
                 .menuBackground()
                 .padding(4),
         spacing = 4,
@@ -399,44 +467,53 @@ ScreenDefinition("Players") {
         Stack(
             modifier =
                 Modifier.Empty
-                    .size(236, 142)
+                    .height(142)
                     .imageBackground(
                         panel,
                         Insets.all(8),
                         NineSliceCenterMode.Tiled,
                     ).padding(8),
         ) {
-            val rowColor = ArgbColor(0xFF4A4A4A.toInt())
-            val scroll = ScrollState()
-            ScrollArea(
-                state = scroll,
-                modifier = Modifier.Empty.height(126),
-            ) {
-                Column(Modifier.Empty.width(220), spacing = 6) {
-                    players.forEach { player ->
-                        Row(
-                            modifier =
-                                Modifier.Empty
-                                    .background(rowColor)
-                                    .padding(6)
-                                    .fillMaxWidth(),
-                            spacing = 8,
-                            verticalAlignment = VerticalAlignment.Center,
-                        ) {
-                            PlayerHead(player.skin, PlayerHeadScale(3))
-                            Column(
-                                modifier = Modifier.Empty.weight(1f),
-                                spacing = 4,
-                            ) {
-                                Text(player.name)
-                                Text(player.role)
-                            }
-                            Button("Invite", width = 60)
-                        }
-                    }
-                }
+            playerList(players)
+        }
+    }
+}
+
+private fun UiScope.playerList(
+    players: List<ReadmePlayer>,
+) {
+    val scroll = ScrollState()
+    ScrollArea(
+        state = scroll,
+        modifier = Modifier.Empty.height(126),
+    ) {
+        Column(Modifier.Empty.width(220), spacing = 6) {
+            players.forEach { player ->
+                playerRow(player)
             }
         }
+    }
+}
+
+private fun UiScope.playerRow(player: ReadmePlayer) {
+    Row(
+        modifier =
+            Modifier.Empty
+                .background(ArgbColor(0xFF4A4A4A.toInt()))
+                .padding(6)
+                .fillMaxWidth(),
+        spacing = 8,
+        verticalAlignment = VerticalAlignment.Center,
+    ) {
+        PlayerHead(player.skin, PlayerHeadScale(3))
+        Column(
+            modifier = Modifier.Empty.weight(1f),
+            spacing = 4,
+        ) {
+            Text(player.name)
+            Text(player.role)
+        }
+        Button("Invite", width = 60)
     }
 }
 ```
@@ -454,11 +531,13 @@ Pass the same ScrollState to Scrollbar; its thumb reflects the list position.
 <details><summary>Complete source for this stage</summary>
 
 ```kotlin
-ScreenDefinition("Players") {
+private fun UiScope.playerPanel(
+    players: List<ReadmePlayer>,
+    panel: ImageSource,
+) {
     Column(
         modifier =
             Modifier.Empty
-                .size(256, 192)
                 .menuBackground()
                 .padding(4),
         spacing = 4,
@@ -468,50 +547,59 @@ ScreenDefinition("Players") {
         Stack(
             modifier =
                 Modifier.Empty
-                    .size(246, 142)
+                    .height(142)
                     .imageBackground(
                         panel,
                         Insets.all(8),
                         NineSliceCenterMode.Tiled,
                     ).padding(8),
         ) {
-            val rowColor = ArgbColor(0xFF4A4A4A.toInt())
-            val scroll = ScrollState()
-            Row(spacing = 4) {
-                ScrollArea(
-                    state = scroll,
-                    modifier = Modifier.Empty.size(220, 126),
-                ) {
-                    Column(Modifier.Empty.width(220), spacing = 6) {
-                        players.forEach { player ->
-                            Row(
-                                modifier =
-                                    Modifier.Empty
-                                        .background(rowColor)
-                                        .padding(6)
-                                        .fillMaxWidth(),
-                                spacing = 8,
-                                verticalAlignment = VerticalAlignment.Center,
-                            ) {
-                                PlayerHead(player.skin, PlayerHeadScale(3))
-                                Column(
-                                    modifier = Modifier.Empty.weight(1f),
-                                    spacing = 4,
-                                ) {
-                                    Text(player.name)
-                                    Text(player.role)
-                                }
-                                Button("Invite", width = 60)
-                            }
-                        }
-                    }
+            playerList(players)
+        }
+    }
+}
+
+private fun UiScope.playerList(
+    players: List<ReadmePlayer>,
+) {
+    val scroll = ScrollState()
+    Row(spacing = 4) {
+        ScrollArea(
+            state = scroll,
+            modifier = Modifier.Empty.size(220, 126),
+        ) {
+            Column(Modifier.Empty.width(220), spacing = 6) {
+                players.forEach { player ->
+                    playerRow(player)
                 }
-                Scrollbar(
-                    state = scroll,
-                    modifier = Modifier.Empty.size(6, 126),
-                )
             }
         }
+        Scrollbar(
+            state = scroll,
+            modifier = Modifier.Empty.size(6, 126),
+        )
+    }
+}
+
+private fun UiScope.playerRow(player: ReadmePlayer) {
+    Row(
+        modifier =
+            Modifier.Empty
+                .background(ArgbColor(0xFF4A4A4A.toInt()))
+                .padding(6)
+                .fillMaxWidth(),
+        spacing = 8,
+        verticalAlignment = VerticalAlignment.Center,
+    ) {
+        PlayerHead(player.skin, PlayerHeadScale(3))
+        Column(
+            modifier = Modifier.Empty.weight(1f),
+            spacing = 4,
+        ) {
+            Text(player.name)
+            Text(player.role)
+        }
+        Button("Invite", width = 60)
     }
 }
 ```
@@ -529,11 +617,13 @@ The list and linked scrollbar move together under wheel input.
 <details><summary>Complete source for this stage</summary>
 
 ```kotlin
-ScreenDefinition("Players") {
+private fun UiScope.playerPanel(
+    players: List<ReadmePlayer>,
+    panel: ImageSource,
+) {
     Column(
         modifier =
             Modifier.Empty
-                .size(256, 192)
                 .menuBackground()
                 .padding(4),
         spacing = 4,
@@ -543,50 +633,59 @@ ScreenDefinition("Players") {
         Stack(
             modifier =
                 Modifier.Empty
-                    .size(246, 142)
+                    .height(142)
                     .imageBackground(
                         panel,
                         Insets.all(8),
                         NineSliceCenterMode.Tiled,
                     ).padding(8),
         ) {
-            val rowColor = ArgbColor(0xFF4A4A4A.toInt())
-            val scroll = ScrollState()
-            Row(spacing = 4) {
-                ScrollArea(
-                    state = scroll,
-                    modifier = Modifier.Empty.size(220, 126),
-                ) {
-                    Column(Modifier.Empty.width(220), spacing = 6) {
-                        players.forEach { player ->
-                            Row(
-                                modifier =
-                                    Modifier.Empty
-                                        .background(rowColor)
-                                        .padding(6)
-                                        .fillMaxWidth(),
-                                spacing = 8,
-                                verticalAlignment = VerticalAlignment.Center,
-                            ) {
-                                PlayerHead(player.skin, PlayerHeadScale(3))
-                                Column(
-                                    modifier = Modifier.Empty.weight(1f),
-                                    spacing = 4,
-                                ) {
-                                    Text(player.name)
-                                    Text(player.role)
-                                }
-                                Button("Invite", width = 60)
-                            }
-                        }
-                    }
+            playerList(players)
+        }
+    }
+}
+
+private fun UiScope.playerList(
+    players: List<ReadmePlayer>,
+) {
+    val scroll = ScrollState()
+    Row(spacing = 4) {
+        ScrollArea(
+            state = scroll,
+            modifier = Modifier.Empty.size(220, 126),
+        ) {
+            Column(Modifier.Empty.width(220), spacing = 6) {
+                players.forEach { player ->
+                    playerRow(player)
                 }
-                Scrollbar(
-                    state = scroll,
-                    modifier = Modifier.Empty.size(6, 126),
-                )
             }
         }
+        Scrollbar(
+            state = scroll,
+            modifier = Modifier.Empty.size(6, 126),
+        )
+    }
+}
+
+private fun UiScope.playerRow(player: ReadmePlayer) {
+    Row(
+        modifier =
+            Modifier.Empty
+                .background(ArgbColor(0xFF4A4A4A.toInt()))
+                .padding(6)
+                .fillMaxWidth(),
+        spacing = 8,
+        verticalAlignment = VerticalAlignment.Center,
+    ) {
+        PlayerHead(player.skin, PlayerHeadScale(3))
+        Column(
+            modifier = Modifier.Empty.weight(1f),
+            spacing = 4,
+        ) {
+            Text(player.name)
+            Text(player.role)
+        }
+        Button("Invite", width = 60)
     }
 }
 ```
@@ -604,11 +703,13 @@ The linked thumb follows the list back to its last player.
 <details><summary>Complete source for this stage</summary>
 
 ```kotlin
-ScreenDefinition("Players") {
+private fun UiScope.playerPanel(
+    players: List<ReadmePlayer>,
+    panel: ImageSource,
+) {
     Column(
         modifier =
             Modifier.Empty
-                .size(256, 192)
                 .menuBackground()
                 .padding(4),
         spacing = 4,
@@ -618,50 +719,59 @@ ScreenDefinition("Players") {
         Stack(
             modifier =
                 Modifier.Empty
-                    .size(246, 142)
+                    .height(142)
                     .imageBackground(
                         panel,
                         Insets.all(8),
                         NineSliceCenterMode.Tiled,
                     ).padding(8),
         ) {
-            val rowColor = ArgbColor(0xFF4A4A4A.toInt())
-            val scroll = ScrollState()
-            Row(spacing = 4) {
-                ScrollArea(
-                    state = scroll,
-                    modifier = Modifier.Empty.size(220, 126),
-                ) {
-                    Column(Modifier.Empty.width(220), spacing = 6) {
-                        players.forEach { player ->
-                            Row(
-                                modifier =
-                                    Modifier.Empty
-                                        .background(rowColor)
-                                        .padding(6)
-                                        .fillMaxWidth(),
-                                spacing = 8,
-                                verticalAlignment = VerticalAlignment.Center,
-                            ) {
-                                PlayerHead(player.skin, PlayerHeadScale(3))
-                                Column(
-                                    modifier = Modifier.Empty.weight(1f),
-                                    spacing = 4,
-                                ) {
-                                    Text(player.name)
-                                    Text(player.role)
-                                }
-                                Button("Invite", width = 60)
-                            }
-                        }
-                    }
+            playerList(players)
+        }
+    }
+}
+
+private fun UiScope.playerList(
+    players: List<ReadmePlayer>,
+) {
+    val scroll = ScrollState()
+    Row(spacing = 4) {
+        ScrollArea(
+            state = scroll,
+            modifier = Modifier.Empty.size(220, 126),
+        ) {
+            Column(Modifier.Empty.width(220), spacing = 6) {
+                players.forEach { player ->
+                    playerRow(player)
                 }
-                Scrollbar(
-                    state = scroll,
-                    modifier = Modifier.Empty.size(6, 126),
-                )
             }
         }
+        Scrollbar(
+            state = scroll,
+            modifier = Modifier.Empty.size(6, 126),
+        )
+    }
+}
+
+private fun UiScope.playerRow(player: ReadmePlayer) {
+    Row(
+        modifier =
+            Modifier.Empty
+                .background(ArgbColor(0xFF4A4A4A.toInt()))
+                .padding(6)
+                .fillMaxWidth(),
+        spacing = 8,
+        verticalAlignment = VerticalAlignment.Center,
+    ) {
+        PlayerHead(player.skin, PlayerHeadScale(3))
+        Column(
+            modifier = Modifier.Empty.weight(1f),
+            spacing = 4,
+        ) {
+            Text(player.name)
+            Text(player.role)
+        }
+        Button("Invite", width = 60)
     }
 }
 ```

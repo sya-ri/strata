@@ -9,15 +9,16 @@ import dev.s7a.strata.component.PlayerHeadScale
 import dev.s7a.strata.component.Row
 import dev.s7a.strata.component.Stack
 import dev.s7a.strata.component.Text
+import dev.s7a.strata.component.UiScope
 import dev.s7a.strata.geometry.Insets
 import dev.s7a.strata.layout.HorizontalAlignment
 import dev.s7a.strata.layout.VerticalAlignment
 import dev.s7a.strata.modifier.Modifier
 import dev.s7a.strata.modifier.background
+import dev.s7a.strata.modifier.height
 import dev.s7a.strata.modifier.imageBackground
 import dev.s7a.strata.modifier.menuBackground
 import dev.s7a.strata.modifier.padding
-import dev.s7a.strata.modifier.size
 import dev.s7a.strata.render.ArgbColor
 import dev.s7a.strata.screen.ScreenDefinition
 
@@ -29,49 +30,64 @@ internal fun actionsPlayersScreen(
     players: List<ReadmePlayer>,
     panel: ImageSource,
 ): ScreenDefinition =
-    // readme-demo:start
     ScreenDefinition("Players") {
-        Column(
+        playerPanel(players, panel)
+    }
+
+// readme-demo:start
+private fun UiScope.playerPanel(
+    players: List<ReadmePlayer>,
+    panel: ImageSource,
+) {
+    Column(
+        modifier =
+            Modifier.Empty
+                .menuBackground()
+                .padding(4),
+        spacing = 4,
+        horizontalAlignment = HorizontalAlignment.Center,
+    ) {
+        Text("Players (${players.size})")
+        Stack(
             modifier =
                 Modifier.Empty
-                    .size(256, 192)
-                    .menuBackground()
-                    .padding(4),
-            spacing = 4,
-            horizontalAlignment = HorizontalAlignment.Center,
+                    .height(142)
+                    .imageBackground(
+                        panel,
+                        Insets.all(8),
+                        NineSliceCenterMode.Tiled,
+                    ).padding(8),
         ) {
-            Text("Players (${players.size})")
-            Stack(
-                modifier =
-                    Modifier.Empty
-                        .size(236, 142)
-                        .imageBackground(
-                            panel,
-                            Insets.all(8),
-                            NineSliceCenterMode.Tiled,
-                        ).padding(8),
-            ) {
-                val rowColor = ArgbColor(0xFF4A4A4A.toInt())
-                Column(spacing = 6) {
-                    players.forEach { player ->
-                        Row(
-                            modifier =
-                                Modifier.Empty
-                                    .background(rowColor)
-                                    .padding(6),
-                            spacing = 8,
-                            verticalAlignment = VerticalAlignment.Center,
-                        ) {
-                            PlayerHead(player.skin, PlayerHeadScale(3))
-                            Column(spacing = 4) {
-                                Text(player.name)
-                                Text(player.role)
-                            }
-                            Button("Invite", width = 60)
-                        }
-                    }
-                }
-            }
+            playerList(players)
         }
     }
+}
+
+private fun UiScope.playerList(
+    players: List<ReadmePlayer>,
+) {
+    Column(spacing = 6) {
+        players.forEach { player ->
+            playerRow(player)
+        }
+    }
+}
+
+private fun UiScope.playerRow(player: ReadmePlayer) {
+    Row(
+        modifier =
+            Modifier.Empty
+                .background(ArgbColor(0xFF4A4A4A.toInt()))
+                .padding(6),
+        spacing = 8,
+        verticalAlignment = VerticalAlignment.Center,
+    ) {
+        PlayerHead(player.skin, PlayerHeadScale(3))
+        Column(spacing = 4) {
+            Text(player.name)
+            Text(player.role)
+        }
+        Button("Invite", width = 60)
+    }
+}
 // readme-demo:end
