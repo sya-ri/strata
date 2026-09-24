@@ -12,12 +12,14 @@ import dev.s7a.strata.geometry.IntSize
 import dev.s7a.strata.input.InputResult
 import dev.s7a.strata.input.PointerEvent
 import dev.s7a.strata.integration.docs.example.ReadmeDemoChrome
-import dev.s7a.strata.integration.docs.example.ReadmeDemoColors
 import dev.s7a.strata.layout.HorizontalAlignment.Start
 import dev.s7a.strata.layout.VerticalAlignment.Center
 import dev.s7a.strata.modifier.Modifier
+import dev.s7a.strata.modifier.background
 import dev.s7a.strata.modifier.fillMaxWidth
+import dev.s7a.strata.modifier.padding
 import dev.s7a.strata.modifier.width
+import dev.s7a.strata.render.ArgbColor
 import dev.s7a.strata.runtime.FrameTime
 import dev.s7a.strata.runtime.minecraft.createMinecraftUiHost
 import dev.s7a.strata.runtime.minecraft.font.lwjgl.LwjglMinecraftFontBackendFactory
@@ -34,7 +36,7 @@ import org.junit.jupiter.api.io.TempDir
 import java.nio.file.Path
 
 /**
- * Verifies natural sizing, parent-controlled row widths, and text-only alignment using real compiled screen geometry.
+ * Verifies natural sizing, parent-controlled row widths, and fixed rosters and linked scrolling using real compiled screen geometry.
  */
 @OptIn(InternalStrataRuntimeApi::class)
 internal class ReadmeDemoLayoutTest {
@@ -50,13 +52,14 @@ internal class ReadmeDemoLayoutTest {
         val basicRows = rows(basic)
         val roleRows = rows(roles)
         val actionRows = rows(actions)
-        assertEquals(4, basic.semantics.count { it.semantics.role == SemanticsRole.Text })
-        assertEquals(7, roles.semantics.count { it.semantics.role == SemanticsRole.Text })
-        assertEquals(3, actions.semantics.count { it.semantics.role == SemanticsRole.Button })
+        assertEquals(9, basic.semantics.count { it.semantics.role == SemanticsRole.Text })
+        assertEquals(17, roles.semantics.count { it.semantics.role == SemanticsRole.Text })
+        assertEquals(8, actions.semantics.count { it.semantics.role == SemanticsRole.Button })
         assertEquals(0, roles.semantics.count { it.semantics.role == SemanticsRole.Button })
         assertTrue(1 < actionRows.map { it.width }.distinct().size)
+        assertTrue(basicRows.zip(roleRows).any { (basicRow, roleRow) -> basicRow.width < roleRow.width })
         basicRows.indices.forEach { index ->
-            assertTrue(basicRows[index].width < roleRows[index].width)
+            assertTrue(basicRows[index].width <= roleRows[index].width)
             assertEquals(36, basicRows[index].height)
             assertEquals(basicRows[index].height, roleRows[index].height)
             assertEquals(basicRows[index].top, roleRows[index].top)
@@ -71,49 +74,28 @@ internal class ReadmeDemoLayoutTest {
     }
 
     @Test
-    fun fixedRowsKeepFramesFacesAndButtonsStillWhenOnlyTextAlignmentChanges() {
+    fun everyStageKeepsEightPlayersAndLeftAlignedText() {
         val assets = ReadmeDemoFixture.assets(temporary)
-        val natural = rows(frame(ReadmeDemoStage.Actions, assets))
-        val fixed = frame(ReadmeDemoStage.Weighted, assets)
-        val right = frame(ReadmeDemoStage.Right, assets)
-        val left = frame(ReadmeDemoStage.Left, assets)
-        val fixedRows = rows(fixed)
-        assertEquals(List(3) { 220 }, fixedRows.map { it.width })
-        natural.indices.forEach { index ->
-            assertTrue(natural[index].width < fixedRows[index].width)
-            assertEquals(natural[index].top, fixedRows[index].top)
-            assertEquals(natural[index].height, fixedRows[index].height)
-        }
-        listOf(right, left).forEach { aligned ->
-            assertEquals(fixedRows, rows(aligned), "Row frames must not move during text alignment.")
-            assertEquals(buttons(fixed), buttons(aligned), "Buttons must stay at their fixed positions.")
-            val skins = assets.players.map { it.skin.skin }
-            val fixedHeads = fixed.drawCommands.filterIsInstance<DrawCommand.SampledImage>().filter { it.image in skins }
-            val alignedHeads = aligned.drawCommands.filterIsInstance<DrawCommand.SampledImage>().filter { it.image in skins }
-            assertEquals(6, fixedHeads.size)
-            assertEquals(fixedHeads, alignedHeads, "Face and hat layers must remain fixed.")
-        }
-        val labels = assets.players.flatMap { listOf(UiText.Literal(it.name), UiText.Literal(it.role)) }.toSet()
-        val fixedText = fixed.semantics.filter { it.semantics.label in labels }
-        val rightText = right.semantics.filter { it.semantics.label in labels }
-        val leftText = left.semantics.filter { it.semantics.label in labels }
-        assertEquals(6, fixedText.size)
-        fixedText.indices.forEach { index ->
-            assertEquals(fixedText[index].bounds.size, rightText[index].bounds.size)
-            assertEquals(fixedText[index].bounds.top, rightText[index].bounds.top)
-            assertTrue(fixedText[index].bounds.left < rightText[index].bounds.left, "Only the text must visibly move right.")
-        }
-        rightText.chunked(2).forEach { pair -> assertEquals(pair[0].bounds.right, pair[1].bounds.right) }
-        leftText.chunked(2).forEach { pair -> assertEquals(pair[0].bounds.left, pair[1].bounds.left) }
-        assertEquals(fixedText, leftText)
-        ReadmeDemoStage.entries.take(7).forEach { stage ->
+        val names = assets.players.map { UiText.Literal(it.name) }.toSet()
+        ReadmeDemoStage.entries.forEach { stage ->
             val current = frame(stage, assets)
             val bounds = rows(current)
-            assertEquals(3, bounds.size)
+            assertEquals(8, bounds.size)
+            assertEquals(1, current.semantics.count { it.semantics.label == UiText.Literal("Players (8)") })
+            assertEquals(
+                names,
+                current.semantics
+                    .filter { it.semantics.label in names }
+                    .map { it.semantics.label }
+                    .toSet(),
+            )
             bounds.zipWithNext().forEach { (first, second) -> assertEquals(6, second.top - first.bottom) }
-            current.semantics.forEach { entry ->
-                val box = entry.bounds
-                assertTrue(0 <= box.left && box.right <= 256 && 0 <= box.top && box.bottom <= 192)
+            assets.players.forEach { player ->
+                val name = current.semantics.single { it.semantics.label == UiText.Literal(player.name) }
+                val role = current.semantics.singleOrNull { it.semantics.label == UiText.Literal(player.role) }
+                if (role != null) {
+                    assertEquals(name.bounds.left, role.bounds.left)
+                }
             }
         }
     }
@@ -124,7 +106,7 @@ internal class ReadmeDemoLayoutTest {
         val natural = frame(ReadmeDemoStage.Actions, assets)
         val fixed = frame(ReadmeDemoStage.Fixed, assets)
         val weighted = frame(ReadmeDemoStage.Weighted, assets)
-        assertEquals(List(3) { 220 }, rows(fixed).map { it.width })
+        assertEquals(List(8) { 220 }, rows(fixed).map { it.width })
         assertEquals(rows(fixed), rows(weighted), "Adding weight must preserve the already fixed row frames.")
         assertEquals(buttons(natural), buttons(fixed), "Fixing row widths must precede moving their buttons.")
         buttons(fixed).zip(buttons(weighted)).forEach { (before, after) ->
@@ -140,11 +122,15 @@ internal class ReadmeDemoLayoutTest {
         val frames =
             listOf(180, 220).map { width ->
                 val screen =
-                    ReadmeDemoChrome.screen(assets.panel) { rowModifier ->
+                    ReadmeDemoChrome.screen(assets.panel, playerCount = assets.players.size) {
                         Column(Modifier.Empty.width(width), spacing = 6) {
-                            assets.players.take(3).forEach { player ->
+                            assets.players.forEach { player ->
                                 Row(
-                                    modifier = rowModifier.fillMaxWidth(),
+                                    modifier =
+                                        Modifier.Empty
+                                            .background(ArgbColor(0xFF4A4A4A.toInt()))
+                                            .padding(6)
+                                            .fillMaxWidth(),
                                     spacing = 8,
                                     verticalAlignment = Center,
                                 ) {
@@ -167,8 +153,8 @@ internal class ReadmeDemoLayoutTest {
                     host.frame(IntSize(256, 192), FrameTime(0L))
                 }
             }
-        assertEquals(List(3) { 180 }, rows(frames[0]).map { it.width })
-        assertEquals(List(3) { 220 }, rows(frames[1]).map { it.width })
+        assertEquals(List(8) { 180 }, rows(frames[0]).map { it.width })
+        assertEquals(List(8) { 220 }, rows(frames[1]).map { it.width })
         rows(frames[0]).zip(rows(frames[1])).forEach { (narrow, wide) ->
             assertEquals(narrow.left, wide.left)
             assertEquals(narrow.top, wide.top)
@@ -182,17 +168,14 @@ internal class ReadmeDemoLayoutTest {
     }
 
     @Test
-    fun growingRowsOverflowBeforeScrollingAndTheAddedBarTracksWheelInput() {
+    fun fixedRosterOverflowsBeforeScrollingAndTheAddedBarTracksWheelInput() {
         val assets = ReadmeDemoFixture.assets(temporary)
-        val baseline = rows(frame(ReadmeDemoStage.Left, assets))
-        val arrivals = listOf(ReadmeDemoStage.Four, ReadmeDemoStage.Five, ReadmeDemoStage.Six, ReadmeDemoStage.Seven, ReadmeDemoStage.Eight)
-        arrivals.forEachIndexed { index, stage ->
+        listOf(ReadmeDemoStage.Basic, ReadmeDemoStage.Roles, ReadmeDemoStage.Actions, ReadmeDemoStage.Fixed, ReadmeDemoStage.Weighted).forEach { stage ->
             val current = frame(stage, assets)
-            assertEquals(index + 4, rows(current).size)
-            assertEquals(baseline, rows(current).take(3), "Adding players must preserve existing row geometry.")
+            assertEquals(8, rows(current).size)
             assertTrue(current.drawCommands.none { it is DrawCommand.PushClip }, "Overflow precedes adding ScrollArea.")
+            assertTrue(192 < rows(current).last().bottom)
         }
-        assertTrue(192 < rows(frame(ReadmeDemoStage.Eight, assets)).last().bottom)
         val area = wheelFrame(ReadmeDemoStage.Area, assets, 208.0)
         assertTrue(thumb(area, assets).isEmpty(), "The area scrolls before any scrollbar is added.")
         assertVisibleLastRow(area)
@@ -267,7 +250,7 @@ internal class ReadmeDemoLayoutTest {
         stage: ReadmeDemoStage,
         assets: ReadmeDemoAssets,
     ): RuntimeUiFrame =
-        createMinecraftUiHost(stage.create(assets.players.take(stage.playerCount), assets.panel), assets.minecraft.profile, LwjglMinecraftFontBackendFactory).use { host ->
+        createMinecraftUiHost(stage.create(assets.players, assets.panel), assets.minecraft.profile, LwjglMinecraftFontBackendFactory).use { host ->
             host.attach()
             host.frame(IntSize(256, 192), FrameTime(0L))
         }
@@ -277,6 +260,6 @@ internal class ReadmeDemoLayoutTest {
     private fun rows(frame: RuntimeUiFrame): List<IntRect> =
         frame.drawCommands
             .filterIsInstance<DrawCommand.FillRectangle>()
-            .filter { it.color == ReadmeDemoColors.row }
+            .filter { it.color == ArgbColor(0xFF4A4A4A.toInt()) }
             .map { it.bounds }
 }

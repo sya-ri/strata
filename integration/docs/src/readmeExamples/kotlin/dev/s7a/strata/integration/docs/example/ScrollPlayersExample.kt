@@ -10,12 +10,14 @@ import dev.s7a.strata.component.ScrollArea
 import dev.s7a.strata.component.ScrollState
 import dev.s7a.strata.component.Scrollbar
 import dev.s7a.strata.component.Text
-import dev.s7a.strata.layout.HorizontalAlignment.Start
-import dev.s7a.strata.layout.VerticalAlignment.Center
+import dev.s7a.strata.layout.VerticalAlignment
 import dev.s7a.strata.modifier.Modifier
+import dev.s7a.strata.modifier.background
 import dev.s7a.strata.modifier.fillMaxWidth
+import dev.s7a.strata.modifier.padding
 import dev.s7a.strata.modifier.size
 import dev.s7a.strata.modifier.width
+import dev.s7a.strata.render.ArgbColor
 import dev.s7a.strata.screen.ScreenDefinition
 
 /**
@@ -27,8 +29,9 @@ internal fun scrollPlayersScreen(
     players: List<ReadmePlayer>,
     panel: ImageSource,
 ): ScreenDefinition =
-    ReadmeDemoChrome.screen(panel, playerCount = players.size, panelWidth = 246) { rowModifier ->
+    ReadmeDemoChrome.screen(panel, playerCount = players.size, panelWidth = 246) {
         // readme-demo:start
+        val rowColor = ArgbColor(0xFF4A4A4A.toInt())
         val scroll = ScrollState()
         Row(spacing = 4) {
             ScrollArea(
@@ -38,15 +41,18 @@ internal fun scrollPlayersScreen(
                 Column(Modifier.Empty.width(220), spacing = 6) {
                     players.forEach { player ->
                         Row(
-                            modifier = rowModifier.fillMaxWidth(),
+                            modifier =
+                                Modifier.Empty
+                                    .background(rowColor)
+                                    .padding(6)
+                                    .fillMaxWidth(),
                             spacing = 8,
-                            verticalAlignment = Center,
+                            verticalAlignment = VerticalAlignment.Center,
                         ) {
                             PlayerHead(player.skin, PlayerHeadScale(3))
                             Column(
                                 modifier = Modifier.Empty.weight(1f),
                                 spacing = 4,
-                                horizontalAlignment = Start,
                             ) {
                                 Text(player.name)
                                 Text(player.role)

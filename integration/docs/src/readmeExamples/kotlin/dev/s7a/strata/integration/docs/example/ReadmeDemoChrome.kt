@@ -9,7 +9,6 @@ import dev.s7a.strata.component.UiScope
 import dev.s7a.strata.geometry.Insets
 import dev.s7a.strata.layout.HorizontalAlignment
 import dev.s7a.strata.modifier.Modifier
-import dev.s7a.strata.modifier.background
 import dev.s7a.strata.modifier.imageBackground
 import dev.s7a.strata.modifier.menuBackground
 import dev.s7a.strata.modifier.padding
@@ -23,15 +22,15 @@ import dev.s7a.strata.screen.ScreenDefinition
 internal object ReadmeDemoChrome {
     /**
      * Creates an unopened caller-owned definition with a roster count and original panel.
-     * The callback receives an immutable row modifier inside the panel on the host thread.
+     * The callback composes the player list inside the panel on the host thread.
      * Panel decoration bounds the available space without fixing the child list width.
      * The caller owns the detached panel pixels; asset and layout failures propagate through screen evaluation.
      */
     fun screen(
         panel: ImageSource,
-        playerCount: Int = 3,
+        playerCount: Int,
         panelWidth: Int = 236,
-        content: UiScope.(Modifier) -> Unit,
+        content: UiScope.() -> Unit,
     ): ScreenDefinition =
         ScreenDefinition("Players") {
             Column(
@@ -50,8 +49,7 @@ internal object ReadmeDemoChrome {
                         .imageBackground(panel, Insets.all(8), NineSliceCenterMode.Tiled)
                         .padding(8)
                 Stack(modifier = panelModifier) {
-                    val rowModifier = Modifier.Empty.background(ReadmeDemoColors.row).padding(6)
-                    content(rowModifier)
+                    content()
                 }
             }
         }

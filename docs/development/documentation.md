@@ -92,7 +92,7 @@ See [loaded-client verification](build.md#loaded-client-verification) and [font 
 ./gradlew :integration:docs:checkStrataSkill :integration:docs:checkDocumentationLinks
 ```
 
-Generation owns the five skill references, README installation/opening-example regions, and Modrinth project body.
+Generation owns the five skill references, README installation/opening-example regions, and Modrinth, CurseForge, and Hangar project bodies.
 The checker pairs source declarations with compiled API inventories, validates state/binding fingerprints, and checks byte-exact freshness and repository-local links.
 Skill and README examples compile against `:api` alone.
 Preserve the public skill's package structure and README marker pairs; edit their templates or source examples.
@@ -110,8 +110,10 @@ No loaded client or inventory evidence is needed.
 
 Receipts hash sources after CRLF/CR-to-LF normalization and retain exact binary input/output hashes.
 The looping GIF uses a shared palette, complete opaque frames, explicit delays, and a final hold without change highlighting; full-color stills retain the original screen pixels.
-The stages demonstrate natural sizing, outer width, weight, text alignment, overflow, and linked ScrollArea/Scrollbar behavior with fixed wheel inputs.
+The stages demonstrate natural sizing, outer width, weight, a fixed eight-player roster, overflow, and linked ScrollArea/Scrollbar behavior with fixed wheel inputs.
 Visual settings and timings belong in the generator, not a second prose specification.
+The distribution project bodies reuse the demo with absolute GitHub image, compiled-source, and walkthrough links.
+Publish the updated image before synchronizing those bodies to the distribution services.
 
 ## API site and Pages
 

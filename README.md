@@ -8,7 +8,7 @@ Declarative Minecraft UI with reusable components, caller-owned state, and headl
 This page documents the development sources; for an installed version, use the documentation at its matching [release tag](https://github.com/sya-ri/strata/releases).
 
 <!-- strata-readme-demo:start -->
-[![Strata: compose player rows, align text, and link a scrollbar](docs/readme-demo/demo.gif)](docs/readme-demo/README.md)
+[![Strata: compose player rows, size the list, and link a scrollbar](docs/readme-demo/demo.gif)](docs/readme-demo/README.md)
 
 [Example](integration/docs/src/readmeExamples/kotlin/dev/s7a/strata/integration/docs/example/ScrollPlayersExample.kt) · [Still frames](docs/readme-demo/README.md)
 <!-- strata-readme-demo:end -->

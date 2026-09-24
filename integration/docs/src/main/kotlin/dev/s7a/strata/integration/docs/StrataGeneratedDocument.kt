@@ -19,6 +19,16 @@ internal enum class StrataGeneratedDocument(
     ModrinthProject("docs/publication/modrinth-project.md"),
 
     /**
+     * CurseForge project body sharing the compiled Fabric distribution example.
+     */
+    CurseForgeProject("docs/publication/curseforge-project.md"),
+
+    /**
+     * Hangar project body for Paper and Velocity users.
+     */
+    HangarProject("docs/publication/hangar-project.md"),
+
+    /**
      * Skill setup and version-selection reference.
      */
     Setup("skills/strata/references/setup.md"),

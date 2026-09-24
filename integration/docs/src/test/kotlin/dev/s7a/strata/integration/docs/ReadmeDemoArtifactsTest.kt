@@ -21,7 +21,7 @@ internal class ReadmeDemoArtifactsTest {
     lateinit var temporary: Path
 
     @Test
-    fun storyboardRecreatesAnInfiniteTwentyFourSecondGifAndUnmodifiedScreenStills() {
+    fun storyboardRecreatesAnInfiniteGifAndUnmodifiedScreenStills() {
         val root = repository()
         val assets = ReadmeDemoFixture.assets(temporary.resolve("assets"))
         val first = ReadmeDemoPipeline.prepare(root, assets, "test")
@@ -48,12 +48,20 @@ internal class ReadmeDemoArtifactsTest {
                 "The full-color still must contain the original complete screen pixels.",
             )
             val source = ReadmeDemoSource.read(root, stage)
-            assertEquals(1, source.lines.count { it.contains("PlayerHead(") }, "Every stage must retain its inline row definition.")
-            assertTrue(source.lines.size <= 36)
-            val markdown = first.files.getValue("README.md").toString(Charsets.UTF_8)
-            assertTrue(markdown.contains(source.lines.joinToString("\n")))
-            assertTrue(source.full.contains(source.lines.first()))
+            assertVisibleSource(source, first.files.getValue("README.md").toString(Charsets.UTF_8))
         }
+        assertTrue(
+            first.files
+                .getValue("README.md")
+                .toString(Charsets.UTF_8)
+                .contains("19.25-second GIF"),
+        )
+        assertTrue(
+            first.files
+                .getValue("render.properties")
+                .toString(Charsets.UTF_8)
+                .contains("duration.centiseconds=1925"),
+        )
         val checkedRoot = temporary.resolve("checked")
         ReadmeDemoPipeline.write(checkedRoot.resolve("docs/readme-demo"), first)
         val readme = ReadmeDemoReadme.replace("before\n<!-- strata-readme-demo:start -->\n<!-- strata-readme-demo:end -->\nafter\n")
@@ -119,14 +127,31 @@ internal class ReadmeDemoArtifactsTest {
         assertThrows(IllegalArgumentException::class.java) { ReadmeDemoReadme.replace("no anchors") }
     }
 
+    private fun assertVisibleSource(
+        source: ReadmeDemoSource,
+        markdown: String,
+    ) {
+        assertEquals(1, source.lines.count { it.contains("PlayerHead(") }, "Every stage must retain its inline row definition.")
+        assertTrue(source.lines.size <= 36)
+        val excerpt = source.lines.joinToString("\n")
+        assertFalse(excerpt.contains("rowModifier"))
+        assertFalse(excerpt.contains("ReadmeDemoColors"))
+        assertTrue(excerpt.contains("val rowColor = ArgbColor(0xFF4A4A4A.toInt())"))
+        assertTrue(excerpt.contains(".background(rowColor)"))
+        assertTrue(excerpt.contains(".padding(6)"))
+        assertTrue(excerpt.contains("verticalAlignment = VerticalAlignment.Center"))
+        assertTrue(markdown.contains(source.lines.joinToString("\n")))
+        assertTrue(source.full.contains(source.lines.first()))
+    }
+
     private fun verifyGif(bytes: ByteArray) {
         val reader = ImageIO.getImageReadersByFormatName("gif").asSequence().first()
         try {
             MemoryCacheImageInputStream(bytes.inputStream()).use { input ->
                 reader.input = input
-                assertEquals(26, reader.getNumImages(true))
+                assertEquals(19, reader.getNumImages(true))
                 val delays =
-                    (0 until 26).map { index ->
+                    (0 until 19).map { index ->
                         val image = reader.read(index)
                         assertEquals(1200, image.width)
                         assertEquals(900, image.height)
@@ -139,8 +164,8 @@ internal class ReadmeDemoArtifactsTest {
                         }
                         control.getAttribute("delayTime").toInt()
                     }
-                assertEquals(listOf(200, 250, 250, 250, 250, 200, 150) + List(5) { 25 } + listOf(150, 75, 150) + List(10) { 25 } + 100, delays)
-                assertEquals(2400, delays.sum())
+                assertEquals(listOf(200, 250, 250, 250, 250) + listOf(150, 75, 150) + List(10) { 25 } + 100, delays)
+                assertEquals(1925, delays.sum())
             }
         } finally {
             reader.dispose()
