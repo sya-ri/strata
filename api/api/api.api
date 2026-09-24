@@ -2365,6 +2365,18 @@ public final class dev/s7a/strata/spi/ComponentRuntimeBridge {
 	public final fun evaluate (Ldev/s7a/strata/spi/ComponentRuntime;Lkotlin/jvm/functions/Function1;)Ldev/s7a/strata/element/Element;
 }
 
+public final class dev/s7a/strata/spi/ExecutionOwnerId {
+	public static final synthetic fun box-impl (Ljava/lang/Object;)Ldev/s7a/strata/spi/ExecutionOwnerId;
+	public fun equals (Ljava/lang/Object;)Z
+	public static fun equals-impl (Ljava/lang/Object;Ljava/lang/Object;)Z
+	public static final fun equals-impl0 (Ljava/lang/Object;Ljava/lang/Object;)Z
+	public fun hashCode ()I
+	public static fun hashCode-impl (Ljava/lang/Object;)I
+	public fun toString ()Ljava/lang/String;
+	public static fun toString-impl (Ljava/lang/Object;)Ljava/lang/String;
+	public final synthetic fun unbox-impl ()Ljava/lang/Object;
+}
+
 public abstract interface annotation class dev/s7a/strata/spi/InternalStrataRuntimeApi : java/lang/annotation/Annotation {
 }
 
@@ -2375,7 +2387,7 @@ public final class dev/s7a/strata/spi/RuntimeExecutionOwner {
 }
 
 public final class dev/s7a/strata/spi/RuntimeExecutionOwner$Companion {
-	public final fun current ()Ljava/lang/Object;
+	public final fun current-5Aucch4 ()Ljava/lang/Object;
 }
 
 public abstract interface class dev/s7a/strata/spi/ScreenPresenter {

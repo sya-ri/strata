@@ -115,6 +115,6 @@ public class RemotePacketStream(
     }
 
     private fun checkOwner() {
-        check(RuntimeExecutionOwner.current() === owner) { "Remote packet stream belongs to another execution owner." }
+        check(RuntimeExecutionOwner.current() == owner) { "Remote packet stream belongs to another execution owner." }
     }
 }

@@ -181,6 +181,6 @@ public class RemoteClientSession(
         }
 
     private fun checkOwner() {
-        check(RuntimeExecutionOwner.current() === owner) { "Remote screen belongs to another execution owner." }
+        check(RuntimeExecutionOwner.current() == owner) { "Remote screen belongs to another execution owner." }
     }
 }

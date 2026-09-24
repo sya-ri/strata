@@ -110,7 +110,7 @@ public class RemoteClientStates internal constructor(
     }
 
     private fun checkOwner() {
-        check(RuntimeExecutionOwner.current() === owner) { "Remote presentation state belongs to another execution owner." }
+        check(RuntimeExecutionOwner.current() == owner) { "Remote presentation state belongs to another execution owner." }
     }
 
     private data class Key(

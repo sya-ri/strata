@@ -6,7 +6,7 @@ import dev.s7a.strata.internal.platform.withValue
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
 
 /**
- * Runtime-owned dependency set for one owner-thread screen evaluator.
+ * Runtime-owned dependency set for one owner-confined screen evaluator.
  * Successful evaluation replaces dependencies; failed evaluation retains them until terminal cleanup.
  * Closing releases every dependency without closing the caller-owned state and is idempotent.
  *
@@ -50,7 +50,7 @@ public class StateObservation(
     }
 
     /**
-     * Installs this session's phase guard for all state writes on the owner thread.
+     * Installs this session's phase guard for all state writes under the execution owner.
      * The runtime must pair a successful call with [leaveOperation] in a finally block, including after terminal cleanup.
      * Nested operations from different sessions must leave in reverse order.
      */
@@ -62,7 +62,7 @@ public class StateObservation(
     }
 
     /**
-     * Removes the innermost operation guard on its owner thread.
+     * Removes the innermost operation guard under its execution owner.
      * This remains valid after [close] releases dependencies during terminal session cleanup.
      */
     public fun leaveOperation() {
@@ -75,7 +75,7 @@ public class StateObservation(
 
     /**
      * Evaluates [content] synchronously and records exactly its state reads.
-     * Requires the owner thread and a live, non-evaluating observation.
+     * Requires the execution owner and a live, non-evaluating observation.
      * The result and any application failure are propagated unchanged; nested screen evaluations restore their caller's tracking context.
      */
     public fun <T> evaluate(content: () -> T): T {
@@ -111,7 +111,7 @@ public class StateObservation(
     }
 
     private fun checkOwner() {
-        check(currentOwner() === owner) { "State observation requires its construction execution owner." }
+        check(currentOwner() == owner) { "State observation requires its construction execution owner." }
     }
 
     /**

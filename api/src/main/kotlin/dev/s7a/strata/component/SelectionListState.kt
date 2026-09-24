@@ -3,7 +3,7 @@ package dev.s7a.strata.component
 import dev.s7a.strata.internal.platform.currentOwner
 
 /**
- * Caller-owned owner-thread selection and navigation state for a generic SelectionList.
+ * Caller-owned selection and navigation state for a generic SelectionList, confined to its construction execution owner.
  *
  * A nullable key represents no selection, while distinct writes reconstruct only the currently materialized rows.
  *
@@ -15,7 +15,7 @@ public class SelectionListState<K : Any>(
     public val listState: VirtualListState<K> = VirtualListState(),
     initialSelection: K? = null,
 ) {
-    private val ownerThread = currentOwner()
+    private val owner = currentOwner()
     private var currentSelection: K? = initialSelection
 
     /**
@@ -23,7 +23,7 @@ public class SelectionListState<K : Any>(
      */
     public val selectedKey: K?
         get() {
-            checkThread()
+            checkOwner()
             return currentSelection
         }
 
@@ -31,7 +31,7 @@ public class SelectionListState<K : Any>(
      * Selects [key] and returns whether the value changed.
      */
     public fun select(key: K): Boolean {
-        checkThread()
+        checkOwner()
         if (currentSelection == key) return false
         currentSelection = key
         listState.refresh()
@@ -42,14 +42,14 @@ public class SelectionListState<K : Any>(
      * Clears the current selection and returns whether a value was removed.
      */
     public fun clearSelection(): Boolean {
-        checkThread()
+        checkOwner()
         if (currentSelection == null) return false
         currentSelection = null
         listState.refresh()
         return true
     }
 
-    private fun checkThread() {
-        check(currentOwner() === ownerThread) { "SelectionListState requires its execution owner." }
+    private fun checkOwner() {
+        check(currentOwner() == owner) { "SelectionListState requires its execution owner." }
     }
 }

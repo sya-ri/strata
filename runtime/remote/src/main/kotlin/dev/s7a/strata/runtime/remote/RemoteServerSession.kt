@@ -281,7 +281,7 @@ public class RemoteServerSession(
     }
 
     private fun checkOwner() {
-        check(RuntimeExecutionOwner.current() === owner) { "Remote session belongs to another execution owner." }
+        check(RuntimeExecutionOwner.current() == owner) { "Remote session belongs to another execution owner." }
     }
 
     private inline fun protocol(

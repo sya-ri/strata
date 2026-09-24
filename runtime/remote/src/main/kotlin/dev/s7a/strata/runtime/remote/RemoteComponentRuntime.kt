@@ -50,7 +50,7 @@ public class RemoteComponentRuntime : ComponentRuntime {
      * Evaluates one root with this remote runtime, including deferred Observe and state-component content.
      */
     public fun evaluate(content: UiScope.() -> Unit): Element {
-        check(RuntimeExecutionOwner.current() === owner) { "Remote component evaluation belongs to another execution owner." }
+        check(RuntimeExecutionOwner.current() == owner) { "Remote component evaluation belongs to another execution owner." }
         return ComponentRuntimeBridge.evaluate(this, content)
     }
 

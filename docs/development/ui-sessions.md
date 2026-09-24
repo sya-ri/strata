@@ -75,6 +75,8 @@ A region-scheduled runtime can explicitly enter the opt-in `RuntimeExecutionOwne
 Every later lifecycle operation, state access, frame, input dispatch, and terminal cleanup must enter that same owner.
 It permits serial migration between physical threads, rejects concurrent entry before user code, and restores the caller's context even after failure.
 Different owners remain isolated even when they share one physical thread.
+`RuntimeExecutionOwner.current()` returns an opaque `ExecutionOwnerId`; compare captured identities with value equality.
+The physical-thread fallback retains one distinct identity per JVM thread or JavaScript agent, independently of host thread equality.
 The adapter must separately validate native region ownership; entering a UI owner does not grant platform access.
 Synchronous evaluation contexts remain thread-local, and asynchronous tasks do not inherit the owner implicitly.
 The synchronous runtime bridge uses this ownership rule; coroutine dispatch still checks physical-thread execution and is not a region-scheduling API.

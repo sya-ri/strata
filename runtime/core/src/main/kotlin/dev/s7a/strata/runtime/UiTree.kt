@@ -26,9 +26,9 @@ import kotlin.jvm.JvmSynthetic
 /**
  * A retained, platform-neutral UI tree.
  *
- * Every operation is confined to the thread that creates this tree.
+ * Every operation is confined to the execution owner that creates this tree.
  * Operational methods and [close] are not reentrant.
- * The [state] property may be read on the owner thread during an active callback.
+ * The [state] property may be read under the execution owner during an active callback.
  * An empty tree measures to [IntSize.Zero].
  * An empty tree performs no layout work and returns empty paint, input, and semantics results.
  * A complete description is validated before mutation.
@@ -42,7 +42,7 @@ import kotlin.jvm.JvmSynthetic
 public class UiTree :
     AutoCloseable,
     RuntimeUiDiagnosticsOwner {
-    private val threadGuard: ThreadGuard = ThreadGuard()
+    private val ownerGuard: OwnerGuard = OwnerGuard()
 
     /**
      * Shared nullable diagnostics gate used by the owning session.
@@ -55,10 +55,10 @@ public class UiTree :
     internal var stateObservation: StateObservation? = null
     private val dirtyTracker = DirtyTracker(monitoring)
     private val registry = NodeOwnershipRegistry()
-    private val pipeline = Pipeline(threadGuard, monitoring)
+    private val pipeline = Pipeline(ownerGuard, monitoring)
     private val observedSources = ObservedSourceRegistry(monitoring)
     private val lifecycle =
-        LifecycleManager(registry, threadGuard, dirtyTracker, monitoring) { entry ->
+        LifecycleManager(registry, ownerGuard, dirtyTracker, monitoring) { entry ->
             val failures = FailureAccumulator()
             if (entry is RetainedNode) {
                 failures.capture { entry.contentObservation?.close() }
@@ -110,7 +110,7 @@ public class UiTree :
      * Adds the owning session's boundary check without exposing its implementation to callers.
      */
     internal fun startMonitoring(ownerBoundary: () -> Unit): UiRenderMonitor {
-        threadGuard.check()
+        ownerGuard.check()
         check(operationActive.not() && currentState === TreeState.Active) { "Monitoring requires an idle active tree." }
         ownerBoundary()
         check(monitoring.collector == null) { "Render monitoring is already active." }
@@ -130,13 +130,13 @@ public class UiTree :
     }
 
     /**
-     * The current lifecycle state, read on the owning tree thread.
+     * The current lifecycle state, read under the tree's execution owner.
      *
-     * Reading this property from another thread fails without changing the tree.
+     * Reading this property from another execution owner fails without changing the tree.
      */
     public val state: TreeState
         get() {
-            threadGuard.check()
+            ownerGuard.check()
             return currentState
         }
 
@@ -144,11 +144,11 @@ public class UiTree :
      * Returns the detached identity of the current editable focus interval to its owning session.
      *
      * @return the committed editable interval, or null without an accepting editable focus target.
-     * @throws IllegalStateException when read from another thread, during a tree operation, or after terminal cleanup.
+     * @throws IllegalStateException when read from another execution owner, during a tree operation, or after terminal cleanup.
      */
     @JvmSynthetic
     internal fun currentTextInputFocus(): RuntimeTextInputFocus? {
-        threadGuard.check()
+        ownerGuard.check()
         check(operationActive.not()) { "A tree operation is already active." }
         check(currentState === TreeState.Active) { "The retained tree is not active." }
         return pipeline.textInputFocus
@@ -157,14 +157,14 @@ public class UiTree :
     /**
      * Returns the whole-tree change token used by an owning session's frame cache.
      *
-     * The token changes when retained phase or structural work is recorded and is read only on the tree's owner thread.
+     * The token changes when retained phase or structural work is recorded and is read only under the tree's execution owner.
      *
      * @return the current whole-tree change token.
-     * @throws IllegalStateException when read from another thread.
+     * @throws IllegalStateException when read from another execution owner.
      */
     @JvmSynthetic
     internal fun currentRevision(): Long {
-        threadGuard.check()
+        ownerGuard.check()
         return dirtyTracker.revision
     }
 
@@ -188,7 +188,7 @@ public class UiTree :
      *
      * @param constraints last successfully committed root constraints supplied by the owning session.
      * @throws Throwable when geometry fails; the tree is poisoned and cleaned before the event can be dispatched.
-     * @throws IllegalStateException for an inactive, reentrant, or foreign-thread operation.
+     * @throws IllegalStateException for an inactive or reentrant operation, or one from another execution owner.
      */
     @JvmSynthetic
     internal fun synchronizeInputGeometry(constraints: Constraints) {
@@ -203,7 +203,7 @@ public class UiTree :
     }
 
     /**
-     * Captures every retained external observation on the owner thread before any source value is committed.
+     * Captures every retained external observation under the execution owner before any source value is committed.
      * A callback failure poisons this tree and releases captured state through ordinary node cleanup.
      */
     internal fun captureFrameState() {
@@ -214,7 +214,7 @@ public class UiTree :
     }
 
     /**
-     * Commits the previously captured observations on the owner thread before declarative frame work.
+     * Commits the previously captured observations under the execution owner before declarative frame work.
      * A callback failure poisons this tree and preserves that failure through cleanup.
      */
     internal fun commitFrameState() {
@@ -225,7 +225,7 @@ public class UiTree :
     }
 
     /**
-     * Releases sources left unreferenced by the completed owner-thread session frame or attachment.
+     * Releases sources left unreferenced by the completed owner-confined session frame or attachment.
      * Replacements keep their existing committed and pending snapshots; cleanup failures poison this tree.
      */
     internal fun finishFrameState() {
@@ -245,7 +245,7 @@ public class UiTree :
 
     /**
      * Resumes session-scoped resources of the retained tree without changing ordinary lifecycle ownership.
-     * Calls run parent-first on the owner thread and a failure poisons this tree after best-effort cleanup.
+     * Calls run parent-first under the execution owner and a failure poisons this tree after best-effort cleanup.
      */
     internal fun sessionAttached() {
         pipelineOperation {
@@ -254,7 +254,7 @@ public class UiTree :
     }
 
     /**
-     * Suspends session-scoped resources while retaining node identity and layout on the owner thread.
+     * Suspends session-scoped resources while retaining node identity and layout under the execution owner.
      * Every callback is attempted; a failure poisons this tree and preserves the primary exception through cleanup.
      */
     internal fun sessionDetached() {
@@ -276,7 +276,7 @@ public class UiTree :
      * @param description the proposed root description.
      * @throws Throwable when a validation hook fails before mutation, or when reconciliation, lifecycle, or cleanup fails after validation.
      * The original throwable is propagated unchanged.
-     * @throws IllegalStateException when the operation is called from the wrong thread.
+     * @throws IllegalStateException when the operation is called from another execution owner.
      * It is also thrown when the operation re-enters an active operation or the tree is not active.
      */
     public fun update(description: Element) {
@@ -309,7 +309,7 @@ public class UiTree :
      * @return the measured root size, or [IntSize.Zero] when no root is installed.
      * @throws Throwable when a measure callback or scope operation fails after pipeline work begins.
      * The original throwable is propagated unchanged after cleanup attempts.
-     * @throws IllegalStateException when the operation is called from the wrong thread.
+     * @throws IllegalStateException when the operation is called from another execution owner.
      * It is also thrown when the operation re-enters an active operation or the tree is not active.
      */
     public fun measure(constraints: Constraints): IntSize =
@@ -333,7 +333,7 @@ public class UiTree :
      * Unmeasured or unplaced children are excluded from subsequent layout, paint, input, and semantics work.
      *
      * @throws IllegalStateException when the root has not been measured or measurement remains pending.
-     * It is also thrown when the operation is called from the wrong thread, re-enters an active operation, or the tree is not active.
+     * It is also thrown when the operation is called from another execution owner, re-enters an active operation, or the tree is not active.
      * @throws Throwable when a layout callback or scope operation throws after pipeline work begins and the exception escapes the callback.
      * The original throwable is propagated unchanged after cleanup attempts.
      */
@@ -358,7 +358,7 @@ public class UiTree :
      *
      * @return an read-only list of retained commands with bounds in accumulated tree coordinates.
      * @throws IllegalStateException when layout is incomplete or geometry remains pending.
-     * It is also thrown when the operation is called from the wrong thread, re-enters an active operation, or the tree is not active.
+     * It is also thrown when the operation is called from another execution owner, re-enters an active operation, or the tree is not active.
      * @throws Throwable when a paint callback or scope operation throws after pipeline work begins and the exception escapes the callback.
      * The original throwable is propagated unchanged after cleanup attempts.
      */
@@ -386,7 +386,7 @@ public class UiTree :
      * @param event the event in tree coordinates.
      * @return consumed when a node handled the event, otherwise ignored.
      * @throws IllegalStateException when layout is incomplete or geometry remains pending.
-     * It is also thrown when the operation is called from the wrong thread, re-enters an active operation, or the tree is not active.
+     * It is also thrown when the operation is called from another execution owner, re-enters an active operation, or the tree is not active.
      * @throws Throwable when a pointer callback fails after pipeline work begins.
      * The original throwable is propagated unchanged after cleanup attempts.
      */
@@ -408,7 +408,7 @@ public class UiTree :
      *
      * @param event immutable keyboard event.
      * @return consumed when focused behavior handles the event or Tab selects an eligible owner, otherwise ignored.
-     * @throws IllegalStateException when layout is incomplete, the call is from another thread, another operation is active, or the tree is not active.
+     * @throws IllegalStateException when layout is incomplete, the call is from another execution owner, another operation is active, or the tree is not active.
      * @throws Throwable when focused behavior fails; the original throwable escapes unchanged after cleanup attempts.
      */
     public fun dispatchKeyboard(event: KeyboardEvent): InputResult =
@@ -427,7 +427,7 @@ public class UiTree :
      *
      * @param event immutable committed-character or preedit event.
      * @return consumed when focused behavior handles the event, otherwise ignored.
-     * @throws IllegalStateException when layout is incomplete, the call is from another thread, another operation is active, or the tree is not active.
+     * @throws IllegalStateException when layout is incomplete, the call is from another execution owner, another operation is active, or the tree is not active.
      * @throws Throwable when focused behavior fails; the original throwable escapes unchanged after cleanup attempts.
      */
     public fun dispatchTextInput(event: TextInputEvent): InputResult =
@@ -440,11 +440,11 @@ public class UiTree :
     /**
      * Cancels capture and clears hover and focus when a retained session detaches or resets input without disposing this tree.
      *
-     * The operation is owner-thread confined and uses the most recently committed placement bounds even when later geometry became dirty.
+     * The operation is confined to the execution owner and uses the most recently committed placement bounds even when later geometry became dirty.
      * It clears capture before cancellation, then invokes retained hover nodes, including unplaced entries, in deepest/latest-painted-first order and clears focus.
      * Every independent cleanup is attempted even when cancellation fails; the tree is otherwise retained for continued input or reattachment.
      *
-     * @throws IllegalStateException when the call is from another thread, another operation is active, or this tree is not active.
+     * @throws IllegalStateException when the call is from another execution owner, another operation is active, or this tree is not active.
      * @throws Throwable when a cancellation, hover, or focus callback fails; the exact failure remains primary while the tree is poisoned and cleaned.
      */
     @JvmSynthetic
@@ -468,7 +468,7 @@ public class UiTree :
      *
      * @return an read-only list of entries with accumulated tree-coordinate bounds.
      * @throws IllegalStateException when layout is incomplete or geometry remains pending.
-     * It is also thrown when the operation is called from the wrong thread, re-enters an active operation, or the tree is not active.
+     * It is also thrown when the operation is called from another execution owner, re-enters an active operation, or the tree is not active.
      * @throws Throwable when a semantics callback or scope operation throws after pipeline work begins.
      * The exception must escape the callback.
      * The original throwable is propagated unchanged after cleanup attempts.
@@ -483,7 +483,7 @@ public class UiTree :
     /**
      * Cleans all retained ownership in descendant-first order.
      *
-     * Close is owner-thread confined and non-reentrant.
+     * Close is confined to the execution owner and non-reentrant.
      * It records [TreeState.Closed] before any cleanup callback.
      * It clears retained ownership and pipeline-held references before cleanup and remains closed even when cleanup fails.
      * Cleanup visits descendants before parents and later siblings before earlier siblings.
@@ -492,12 +492,12 @@ public class UiTree :
      * Cleanup continues after failures and rethrows the first [Throwable] instance with later distinct failures suppressed.
      * A repeated close after the operation has returned is a no-op.
      *
-     * @throws IllegalStateException when the operation is called from the wrong thread or re-enters an active operation.
+     * @throws IllegalStateException when the operation is called from another execution owner or re-enters an active operation.
      * @throws Throwable when a cleanup callback fails.
      * The first cleanup throwable is propagated unchanged after all cleanup attempts.
      */
     override fun close() {
-        threadGuard.check()
+        ownerGuard.check()
         check(operationActive.not()) { "A tree operation is already active." }
         if (currentState === TreeState.Closed) {
             return
@@ -524,7 +524,7 @@ public class UiTree :
     }
 
     private fun beginOperation() {
-        threadGuard.check()
+        ownerGuard.check()
         check(operationActive.not()) { "A tree operation is already active." }
         check(currentState === TreeState.Active) { "The retained tree is not active." }
         operationActive = true

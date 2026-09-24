@@ -1,7 +1,7 @@
 package dev.s7a.strata.spi
 
 import dev.s7a.strata.internal.platform.EvaluationContext
-import dev.s7a.strata.internal.platform.currentThread
+import dev.s7a.strata.internal.platform.currentThreadOwner
 import dev.s7a.strata.internal.platform.withValue
 import kotlin.concurrent.atomics.AtomicBoolean
 import kotlin.concurrent.atomics.ExperimentalAtomicApi
@@ -17,7 +17,7 @@ import kotlin.concurrent.atomics.ExperimentalAtomicApi
 @OptIn(ExperimentalAtomicApi::class)
 public class RuntimeExecutionOwner {
     private val entered = AtomicBoolean(false)
-    private val identity = Any()
+    private val identity = ExecutionOwnerId.create()
 
     /**
      * Executes synchronous work exclusively under this owner, releasing the scope even when it throws.
@@ -41,8 +41,8 @@ public class RuntimeExecutionOwner {
 
         /**
          * Returns the active serial owner, or the physical thread identity outside a runtime scope.
-         * Compare by reference identity; an identity itself cannot authorize entry into its scope.
+         * Compare identities with value equality; an identity itself cannot authorize entry into its scope.
          */
-        public fun current(): Any = active.current?.identity ?: currentThread()
+        public fun current(): ExecutionOwnerId = active.current?.identity ?: currentThreadOwner()
     }
 }

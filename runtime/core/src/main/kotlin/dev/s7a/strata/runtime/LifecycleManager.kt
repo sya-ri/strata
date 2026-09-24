@@ -6,7 +6,7 @@ import dev.s7a.strata.spi.InternalStrataRuntimeApi
 /**
  * Owns node binding, parent-first attachment, and descendant-first cleanup.
  *
- * The owning tree invokes this manager only on its construction thread.
+ * The owning tree invokes this manager only under its construction execution owner.
  * Cleanup runs the input-release hook before each entry's detach and dispose, and aggregates failures while attempting every resource.
  *
  * @param beforeEntryCleanup callback that clears entry-owned input before lifecycle resources are released.
@@ -14,7 +14,7 @@ import dev.s7a.strata.spi.InternalStrataRuntimeApi
 @OptIn(InternalStrataRuntimeApi::class)
 internal class LifecycleManager(
     private val registry: NodeOwnershipRegistry,
-    private val threadGuard: ThreadGuard,
+    private val ownerGuard: OwnerGuard,
     private val dirtyTracker: DirtyTracker,
     private val monitoring: RenderMonitoring = RenderMonitoring(),
     private val beforeEntryCleanup: (RetainedEntry) -> Unit,
@@ -30,7 +30,7 @@ internal class LifecycleManager(
         val binding =
             runCatching {
                 retained.node.bindRuntime { mask ->
-                    threadGuard.check()
+                    ownerGuard.check()
                     check(retained.cleanupStarted.not()) { "Node invalidation is unavailable during cleanup." }
                     dirtyTracker.record(retained, mask)
                 }
@@ -110,7 +110,7 @@ internal class LifecycleManager(
     /**
      * Rejects invalidation from every subtree entry before terminal input cancellation or lifecycle cleanup begins.
      *
-     * This owner-thread operation invokes no callbacks, releases no resources, and is safe to repeat before [cleanup].
+     * This owner-confined operation invokes no callbacks, releases no resources, and is safe to repeat before [cleanup].
      *
      * @param retained subtree whose node ownership is entering cleanup.
      */

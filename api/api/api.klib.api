@@ -2302,7 +2302,7 @@ final class dev.s7a.strata.spi/RuntimeExecutionOwner { // dev.s7a.strata.spi/Run
     final fun <#A1: kotlin/Any?> run(kotlin/Function0<#A1>): #A1 // dev.s7a.strata.spi/RuntimeExecutionOwner.run|run(kotlin.Function0<0:0>){0§<kotlin.Any?>}[0]
 
     final object Companion { // dev.s7a.strata.spi/RuntimeExecutionOwner.Companion|null[0]
-        final fun current(): kotlin/Any // dev.s7a.strata.spi/RuntimeExecutionOwner.Companion.current|current(){}[0]
+        final fun current(): dev.s7a.strata.spi/ExecutionOwnerId // dev.s7a.strata.spi/RuntimeExecutionOwner.Companion.current|current(){}[0]
     }
 }
 
@@ -2352,6 +2352,12 @@ final value class dev.s7a.strata.render/ArgbColor { // dev.s7a.strata.render/Arg
     final fun equals(kotlin/Any?): kotlin/Boolean // dev.s7a.strata.render/ArgbColor.equals|equals(kotlin.Any?){}[0]
     final fun hashCode(): kotlin/Int // dev.s7a.strata.render/ArgbColor.hashCode|hashCode(){}[0]
     final fun toString(): kotlin/String // dev.s7a.strata.render/ArgbColor.toString|toString(){}[0]
+}
+
+final value class dev.s7a.strata.spi/ExecutionOwnerId { // dev.s7a.strata.spi/ExecutionOwnerId|null[0]
+    final fun equals(kotlin/Any?): kotlin/Boolean // dev.s7a.strata.spi/ExecutionOwnerId.equals|equals(kotlin.Any?){}[0]
+    final fun hashCode(): kotlin/Int // dev.s7a.strata.spi/ExecutionOwnerId.hashCode|hashCode(){}[0]
+    final fun toString(): kotlin/String // dev.s7a.strata.spi/ExecutionOwnerId.toString|toString(){}[0]
 }
 
 final value class dev.s7a.strata.state/StateRevision : kotlin/Comparable<dev.s7a.strata.state/StateRevision> { // dev.s7a.strata.state/StateRevision|null[0]

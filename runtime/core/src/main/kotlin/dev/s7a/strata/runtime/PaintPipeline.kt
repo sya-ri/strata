@@ -26,7 +26,7 @@ import dev.s7a.strata.spi.InternalStrataRuntimeApi
  */
 @OptIn(InternalStrataRuntimeApi::class)
 internal class PaintPipeline(
-    private val threadGuard: ThreadGuard,
+    private val ownerGuard: OwnerGuard,
     private val monitoring: RenderMonitoring = RenderMonitoring(),
 ) {
     /**
@@ -95,7 +95,7 @@ internal class PaintPipeline(
         node: RootOverlayPaintNode?,
     ): List<LocalDrawCommand> {
         if (node == null) return emptyList()
-        val collector = RootOverlayPaintScopeImplementation(threadGuard, viewport, retained.bounds)
+        val collector = RootOverlayPaintScopeImplementation(ownerGuard, viewport, retained.bounds)
         return try {
             monitoring.record(UiRenderMetric.RootOverlayPaint, retained)
             node.paintRootOverlay(collector)
@@ -113,7 +113,7 @@ internal class PaintPipeline(
         if (callback == null) {
             return emptyList()
         }
-        val collector = LocalPaintScope(threadGuard, retained.measuredSize)
+        val collector = LocalPaintScope(ownerGuard, retained.measuredSize)
         return try {
             monitoring.record(metric, retained)
             callback(collector)
@@ -262,10 +262,10 @@ internal class PaintPipeline(
      * Collects local commands for one retained node.
      */
     private class LocalPaintScope(
-        threadGuard: ThreadGuard,
+        ownerGuard: OwnerGuard,
         private val nodeSize: IntSize,
     ) : PaintScope {
-        private val guard = ScopeGuard(threadGuard)
+        private val guard = ScopeGuard(ownerGuard)
 
         /**
          * Commands collected during one local paint call.
@@ -360,11 +360,11 @@ internal class PaintPipeline(
      * Collects one root overlay in root coordinates.
      */
     private class RootOverlayPaintScopeImplementation(
-        threadGuard: ThreadGuard,
+        ownerGuard: OwnerGuard,
         viewport: IntSize,
         private val anchor: IntRect,
     ) : RootOverlayPaintScope {
-        private val delegate = LocalPaintScope(threadGuard, viewport)
+        private val delegate = LocalPaintScope(ownerGuard, viewport)
 
         override val size: IntSize
             get() = delegate.size

@@ -9,7 +9,7 @@ import dev.s7a.strata.spi.RuntimeExecutionOwner
  * Construction captures the active serial runtime owner, or the current physical thread.
  */
 @OptIn(InternalStrataRuntimeApi::class)
-internal class ThreadGuard {
+internal class OwnerGuard {
     private val owner = RuntimeExecutionOwner.current()
 
     /**
@@ -18,7 +18,7 @@ internal class ThreadGuard {
      * @throws IllegalStateException when called from another execution owner.
      */
     internal fun check() {
-        check(RuntimeExecutionOwner.current() === owner) {
+        check(RuntimeExecutionOwner.current() == owner) {
             "This runtime object requires its owning execution context."
         }
     }
@@ -26,5 +26,5 @@ internal class ThreadGuard {
     /**
      * Returns whether the current execution context owns this guard without throwing.
      */
-    internal fun isOwnerThread(): Boolean = RuntimeExecutionOwner.current() === owner
+    internal fun isCurrentOwner(): Boolean = RuntimeExecutionOwner.current() == owner
 }

@@ -9,7 +9,7 @@ import kotlin.enums.enumEntries
  * The read-only nonempty option snapshot defines forward and backward wraparound order.
  * Every value must be unique by equality, and writes outside the option set fail without mutation.
  * The primary list constructor uses [Any.toString], while the collection constructor and enum factory retain their supplied conversion for the state lifetime.
- * Selection, observation, and display conversion are confined to the thread that creates the state.
+ * Selection, observation, and display conversion are confined to the execution owner that creates the state.
  * The display conversion runs synchronously when called directly or when a CycleButton snapshots its labels, is not used for option identity, and propagates its exceptions unchanged.
  *
  * @param T immutable option type.
@@ -40,7 +40,7 @@ public class CycleButtonState<T : Any>(
      *
      * Collection iteration order defines cycling order.
      * The collection is copied before validation and is not retained.
-     * The conversion is retained for the state lifetime, runs only on the creating thread, and propagates its exceptions unchanged when invoked.
+     * The conversion is retained for the state lifetime, runs only under the creating execution owner, and propagates its exceptions unchanged when invoked.
      *
      * @param values nonempty unique option order.
      * @param initialValue initially selected member of [CycleButtonState.values].
@@ -78,12 +78,12 @@ public class CycleButtonState<T : Any>(
      * The canonical member from the read-only option snapshot is passed to the conversion.
      *
      * @param value option equal to one member of [CycleButtonState.values].
-     * @return display string produced synchronously on the state-owning thread.
+     * @return display string produced synchronously under the state's execution owner.
      * @throws IllegalArgumentException when `value` is outside [CycleButtonState.values].
-     * @throws IllegalStateException when called from a thread other than the creating thread.
+     * @throws IllegalStateException when called from another execution owner.
      */
     public fun format(value: T): String {
-        observable.checkOwnerThread()
+        observable.checkOwner()
         val index = values.indexOf(value)
         require(0 <= index) { "CycleButton formatted value must belong to its values." }
         return valueToString(values[index])
@@ -97,11 +97,11 @@ public class CycleButtonState<T : Any>(
      * Conversion exceptions propagate unchanged.
      *
      * @param value canonical member obtained from [CycleButtonState.values].
-     * @return display string produced synchronously on the state-owning thread.
-     * @throws IllegalStateException when called from a thread other than the creating thread.
+     * @return display string produced synchronously under the state's execution owner.
+     * @throws IllegalStateException when called from another execution owner.
      */
     internal fun formatKnownMember(value: T): String {
-        observable.checkOwnerThread()
+        observable.checkOwner()
         return valueToString(value)
     }
 
@@ -138,7 +138,7 @@ public class CycleButtonState<T : Any>(
          * @param E enum option type inferred from `initialValue`.
          * @param initialValue initially selected enum constant.
          * @param toString synchronous display conversion retained for the state lifetime, defaulting to [Enum.name].
-         * @return caller-owned state over the complete enum constant set, confined to the calling thread.
+         * @return caller-owned state over the complete enum constant set, confined to the calling execution owner.
          */
         public inline operator fun <reified E : Enum<E>> invoke(
             initialValue: E,

@@ -198,7 +198,7 @@ public class RemoteConnection(
         }
 
     private fun checkOwner() {
-        check(RuntimeExecutionOwner.current() === owner) { "Remote connection belongs to another execution owner." }
+        check(RuntimeExecutionOwner.current() == owner) { "Remote connection belongs to another execution owner." }
     }
 
     /**

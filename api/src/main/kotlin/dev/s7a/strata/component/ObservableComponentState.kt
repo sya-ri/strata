@@ -5,13 +5,13 @@ import dev.s7a.strata.spi.InternalStrataRuntimeApi
 import dev.s7a.strata.state.mutableStateOf
 
 /**
- * Owner-thread observable value implementation shared by standard component states.
+ * Owner-confined observable value implementation shared by standard component states.
  */
 internal class ObservableComponentState<T : Any>(
     initialValue: T,
     private val validate: (T) -> Unit,
 ) {
-    private val ownerThread = currentOwner()
+    private val owner = currentOwner()
     private val observers: MutableSet<(T) -> Unit> = LinkedHashSet()
     private val currentValue = mutableStateOf(initialValue)
 
@@ -20,10 +20,10 @@ internal class ObservableComponentState<T : Any>(
     }
 
     /**
-     * Returns the current value on the owning thread.
+     * Returns the current value under the execution owner.
      */
     fun get(): T {
-        checkOwnerThread()
+        checkOwner()
         return currentValue.value
     }
 
@@ -31,7 +31,7 @@ internal class ObservableComponentState<T : Any>(
      * Validates and publishes [value], returning whether it differed from the current value.
      */
     fun set(value: T): Boolean {
-        checkOwnerThread()
+        checkOwner()
         validate(value)
         if (currentValue.update(value).not()) return false
         observers.toList().forEach { observer -> observer(value) }
@@ -39,14 +39,14 @@ internal class ObservableComponentState<T : Any>(
     }
 
     /**
-     * Registers one owner-thread observer and returns its idempotent release handle.
+     * Registers one owner-confined observer and returns its idempotent release handle.
      */
     @OptIn(InternalStrataRuntimeApi::class)
     fun observe(callback: (T) -> Unit): ComponentStateSubscription {
-        checkOwnerThread()
+        checkOwner()
         check(observers.add(callback)) { "A component state observer was already registered." }
         return ComponentStateSubscription {
-            checkOwnerThread()
+            checkOwner()
             observers.remove(callback)
         }
     }
@@ -56,7 +56,7 @@ internal class ObservableComponentState<T : Any>(
      *
      * @throws IllegalStateException when called from another execution owner.
      */
-    fun checkOwnerThread() {
-        check(currentOwner() === ownerThread) { "Component state requires its execution owner." }
+    fun checkOwner() {
+        check(currentOwner() == owner) { "Component state requires its execution owner." }
     }
 }

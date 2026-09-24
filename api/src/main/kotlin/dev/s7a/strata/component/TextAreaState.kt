@@ -8,7 +8,7 @@ import dev.s7a.strata.state.MutableState
 import dev.s7a.strata.state.mutableStateOf
 
 /**
- * Owner-thread mutable text and vertical scroll position for one multiline editor.
+ * Owner-confined mutable text and vertical scroll position for one multiline editor.
  *
  * Accepted input is well-formed Unicode with LF line breaks.
  * CRLF, CR, VT, FF, NEL, line separator, and paragraph separator normalize to LF before the UTF-16 length limit is applied.
@@ -24,7 +24,7 @@ public class TextAreaState(
     initialValue: String = "",
     public val maxLength: Int = 32767,
 ) {
-    private val ownerThread: Any = currentOwner()
+    private val owner = currentOwner()
     private val ownedScrollState: ScrollState = ScrollState()
     private var observer: ((String) -> Unit)? = null
     private val currentValue: MutableState<String>
@@ -41,15 +41,15 @@ public class TextAreaState(
      * Equivalent newline spellings do not notify again or replace the owned scroll state.
      *
      * @throws IllegalArgumentException when text is unsupported or its normalized UTF-16 length exceeds [TextAreaState.maxLength].
-     * @throws IllegalStateException when accessed from another thread.
+     * @throws IllegalStateException when accessed from another execution owner.
      */
     public var value: String
         get() {
-            checkThread()
+            checkOwner()
             return currentValue.value
         }
         set(value) {
-            checkThread()
+            checkOwner()
             val normalized = normalize(value)
             if (currentValue.update(normalized).not()) return
             observer?.invoke(normalized)
@@ -61,11 +61,11 @@ public class TextAreaState(
      * Its lifetime matches this state and it is not replaced by value writes or observer release.
      * Runtime geometry clamps the position after layout; assigning [TextAreaState.value] alone does not reset it.
      *
-     * @throws IllegalStateException when accessed from another thread.
+     * @throws IllegalStateException when accessed from another execution owner.
      */
     public val scrollState: ScrollState
         get() {
-            checkThread()
+            checkOwner()
             return ownedScrollState
         }
 
@@ -73,7 +73,7 @@ public class TextAreaState(
      * Installs the sole retained text observer used by a runtime text-area node.
      *
      * This privileged bridge is not an application event API.
-     * The returned release operation is idempotent and owner-thread confined.
+     * The returned release operation is idempotent and confined to the execution owner.
      * Releasing it does not release the caller-owned text or scroll state.
      *
      * @param callback callback invoked synchronously after each distinct normalized write.
@@ -82,12 +82,12 @@ public class TextAreaState(
      */
     @InternalStrataRuntimeApi
     public fun observe(callback: (String) -> Unit): AutoCloseable {
-        checkThread()
+        checkOwner()
         check(observer == null) { "Text area state already has a live observer." }
         observer = callback
         var released = false
         return AutoCloseable {
-            checkThread()
+            checkOwner()
             if (released.not()) {
                 released = true
                 if (observer === callback) observer = null
@@ -120,7 +120,7 @@ public class TextAreaState(
         return result.toString()
     }
 
-    private fun checkThread() {
-        check(currentOwner() === ownerThread) { "Text area state requires its execution owner." }
+    private fun checkOwner() {
+        check(currentOwner() == owner) { "Text area state requires its execution owner." }
     }
 }

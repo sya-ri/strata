@@ -16,7 +16,7 @@ import dev.s7a.strata.state.StateSource
 /**
  * Immutable CPU source description whose independent bindings coalesce revisioned images.
  *
- * [frames] remains externally owned and is accessed only to acquire a subscription on the attaching tree thread.
+ * [frames] remains externally owned and is accessed only to acquire a subscription under the attaching tree's execution owner.
  * The source itself owns no observer, pending image, or retained tree.
  * Acquisition failures propagate after any acquired close handle has been released.
  *
@@ -39,7 +39,7 @@ internal class CpuCanvasSource(
     }
 
     private class Binding : CanvasBinding {
-        private val ownerThread: Any = currentOwner()
+        private val owner = currentOwner()
         private val monitor = Any()
         private var committed: StateSnapshot<DrawImage>? = null
         private var pending: StateSnapshot<DrawImage>? = null
@@ -64,7 +64,7 @@ internal class CpuCanvasSource(
         }
 
         /**
-         * Acquires one source-owned observation and transfers its initial snapshot on the owner thread.
+         * Acquires one source-owned observation and transfers its initial snapshot under the execution owner.
          * The retained close action shares the source subscription's close state without retaining its initial pixels.
          *
          * @param source externally owned image source; callbacks may race this call and only enqueue.
@@ -148,7 +148,7 @@ internal class CpuCanvasSource(
         }
 
         private fun checkOwner() {
-            check(currentOwner() === ownerThread) { "Canvas bindings are confined to their execution owner." }
+            check(currentOwner() == owner) { "Canvas bindings are confined to their execution owner." }
         }
 
         private fun requireImage(image: DrawImage) {

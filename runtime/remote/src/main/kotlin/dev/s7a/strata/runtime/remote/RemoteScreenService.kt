@@ -19,7 +19,7 @@ public class RemoteScreenService<Player : Any, Owner : Any>(
     private val report: (Throwable) -> Unit,
     private val dispatchClose: (() -> Unit) -> Unit = { it() },
 ) : AutoCloseable {
-    private val ownerThread = RuntimeExecutionOwner.current()
+    private val owner = RuntimeExecutionOwner.current()
     private val types = RemoteRegistry().also(RemoteBuiltins::register).types
     private val peers = ConcurrentHashMap<Player, Peer<Owner>>()
     private val extensions = mutableMapOf<ProjectionType, Owner>()
@@ -244,7 +244,7 @@ public class RemoteScreenService<Player : Any, Owner : Any>(
     }
 
     private fun checkOwner() {
-        check(RuntimeExecutionOwner.current() === ownerThread) { "Remote service belongs to another execution owner." }
+        check(RuntimeExecutionOwner.current() == owner) { "Remote service belongs to another execution owner." }
     }
 
     private fun transition(operation: () -> Unit) {
