@@ -3,14 +3,11 @@
 Each version below summarizes the release and links to its detailed changes and upgrade notes.
 Keep all Strata artifacts on the same release version.
 
-## Unreleased
+## 0.2.0 - Unreleased
 
-Paper and Velocity plugins can own Strata screen declarations and typed event handlers while the installed Fabric runtime renders and handles immediate input locally.
-Remote connections negotiate component and extension capabilities, declare input subscriptions, and synchronize bounded state revisions with authenticated host generations.
-See the [Paper](docs/guides/paper.md), [Velocity](docs/guides/velocity.md), and [remote protocol](docs/reference/remote-protocol.md) guides.
+Common Screen/HUD sessions and input controls, reactive application state, Paper and Velocity UIs with public APIs and lifecycle events, JVM/JavaScript shared foundations, themed browser rendering, typed remote extensions, and Minecraft 26.3 support. Rebuild consumers for session-receiver event callbacks.
 
-Portable `Uuid` identifiers use Kotlin's standard UUID implementation on JavaScript while preserving native Java UUIDs and the existing player-skin API on JVM.
-Runtime collection snapshots use Kotlin standard copies, while reference identity is preserved where ownership requires it.
+[Detailed changes and upgrade notes](docs/releases/v0.2.0.md)
 
 ## 0.1.6 - 2026-09-09
 
