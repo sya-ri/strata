@@ -1,17 +1,17 @@
 package dev.s7a.strata.component
 
-import dev.s7a.strata.internal.platform.currentThread
+import dev.s7a.strata.internal.platform.currentOwner
 import dev.s7a.strata.internal.platform.scalarAt
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
 import dev.s7a.strata.state.MutableState
 import dev.s7a.strata.state.mutableStateOf
 
 /**
- * Owner-thread mutable value for one single-line text field.
+ * Owner-confined mutable value for one single-line text field.
  *
  * The state accepts well-formed Unicode text excluding C0 controls, DEL, NEL (U+0085), line and paragraph separators (U+2028/U+2029), and the section-sign formatting marker.
  * It owns its value and permits at most one live retained observer.
- * Reads, writes, observation, and subscription release are confined to the thread that constructs the state.
+ * Reads, writes, observation, and subscription release are confined to the execution owner that constructs the state.
  *
  * @param initialValue initial well-formed single-line text.
  * @property maxLength positive maximum UTF-16 length accepted by [TextFieldState.value].
@@ -21,7 +21,7 @@ public class TextFieldState(
     initialValue: String = "",
     public val maxLength: Int = 32,
 ) {
-    private val ownerThread: Any = currentThread()
+    private val owner = currentOwner()
     private var observer: ((String) -> Unit)? = null
     private val currentValue: MutableState<String>
 
@@ -36,15 +36,15 @@ public class TextFieldState(
      * A distinct successful write synchronously notifies the attached retained observer.
      *
      * @throws IllegalArgumentException when a value contains unsupported text or exceeds [TextFieldState.maxLength].
-     * @throws IllegalStateException when accessed from another thread.
+     * @throws IllegalStateException when accessed from another execution owner.
      */
     public var value: String
         get() {
-            checkThread()
+            checkOwner()
             return currentValue.value
         }
         set(value) {
-            checkThread()
+            checkOwner()
             val validated = validate(value)
             if (currentValue.update(validated).not()) return
             observer?.invoke(validated)
@@ -54,20 +54,20 @@ public class TextFieldState(
      * Installs the sole retained observer used by a runtime text-field node.
      *
      * This privileged bridge is not an application event API.
-     * The returned release operation is idempotent and owner-thread confined.
+     * The returned release operation is idempotent and confined to the execution owner.
      *
      * @param callback callback invoked synchronously after each distinct successful write.
      * @return an idempotent subscription release operation.
-     * @throws IllegalStateException when called from another thread or while another observer is live.
+     * @throws IllegalStateException when called from another execution owner or while another observer is live.
      */
     @InternalStrataRuntimeApi
     public fun observe(callback: (String) -> Unit): AutoCloseable {
-        checkThread()
+        checkOwner()
         check(observer == null) { "TextField state already has a live observer." }
         observer = callback
         var released = false
         return AutoCloseable {
-            checkThread()
+            checkOwner()
             if (released.not()) {
                 released = true
                 if (observer === callback) {
@@ -97,7 +97,7 @@ public class TextFieldState(
             else -> 0x20 <= codePoint
         }
 
-    private fun checkThread() {
-        check(currentThread() === ownerThread) { "TextField state requires its creator thread." }
+    private fun checkOwner() {
+        check(currentOwner() == owner) { "TextField state requires its execution owner." }
     }
 }

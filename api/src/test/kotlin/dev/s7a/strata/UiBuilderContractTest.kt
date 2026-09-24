@@ -144,7 +144,7 @@ internal class UiBuilderContractTest {
         val wrongThreadFailure = failure.get() ?: throw AssertionError("The worker did not report a failure.")
         assertTrue(wrongThreadFailure is IllegalStateException)
         assertEquals(
-            "UiScope can only be used from its constructing thread.",
+            "UiScope can only be used from its construction execution owner.",
             wrongThreadFailure.message,
         )
         assertSame(root, result)

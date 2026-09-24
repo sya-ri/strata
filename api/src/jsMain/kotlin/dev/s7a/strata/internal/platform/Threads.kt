@@ -1,6 +1,10 @@
 package dev.s7a.strata.internal.platform
 
+import dev.s7a.strata.spi.ExecutionOwnerId
+
+private val agentOwner = ExecutionOwnerId.create()
+
 /**
- * Returns a stable identity for the current JVM thread or JavaScript agent.
+ * Returns the stable execution identity of this JavaScript agent.
  */
-internal actual fun currentThread(): Any = Unit
+internal actual fun currentThreadOwner(): ExecutionOwnerId = agentOwner

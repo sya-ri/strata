@@ -4,3 +4,4 @@ main: dev.s7a.strata.runtime.paper.StrataPlugin
 api-version: '1.20'
 description: Server-owned Strata screens for installed Fabric clients.
 website: https://github.com/sya-ri/strata
+folia-supported: true

@@ -51,30 +51,28 @@ internal fun initializeFabricMinecraftPortableTexture(
  */
 @OptIn(InternalStrataRuntimeApi::class)
 private class FabricPortableNativeStorage : NativeGuiResource {
-    private val native = Texture()
-
     /**
      * Borrows the empty or initialized texture view without transferring storage or allocating a texture.
      */
     @get:JvmSynthetic
     internal val texture: AbstractTexture
-        get() = native
+        field = Texture()
 
     /**
      * Initializes the retained owner on the render thread; failure preserves every partial allocation for fenced cleanup.
      */
     @JvmSynthetic
     internal fun initialize(pixels: NativeImage) {
-        native.initialize(pixels)
+        texture.initialize(pixels)
     }
 
     @JvmSynthetic
     override fun close() {
-        native.destroy()
+        texture.destroy()
     }
 
     @JvmSynthetic
-    override fun isDestroyed(): Boolean = native.isDestroyed()
+    override fun isDestroyed(): Boolean = texture.isDestroyed()
 
     @Suppress("TooGenericExceptionCaught")
     private class Texture : AbstractTexture() {

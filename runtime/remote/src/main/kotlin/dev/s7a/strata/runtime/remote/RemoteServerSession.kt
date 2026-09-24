@@ -14,12 +14,13 @@ import dev.s7a.strata.render.DrawImage
 import dev.s7a.strata.runtime.spi.RuntimeDeclaration
 import dev.s7a.strata.runtime.spi.createRuntimeUiSession
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
+import dev.s7a.strata.spi.RuntimeExecutionOwner
 import dev.s7a.strata.text.UiText
 import java.util.Collections
 
 /**
  * One authoritative screen bound by its transport owner to one authenticated connection.
- * All calls run on the construction thread; source callbacks remain owned by the shared core session.
+ * All calls run under the construction execution owner; source callbacks remain owned by the shared core session.
  * Only the current tree and current action table are retained, and terminal cleanup releases both.
  */
 @Suppress("TooManyFunctions") // Owns the complete declaration, action, resynchronization, and terminal session lifecycle.
@@ -32,7 +33,7 @@ public class RemoteServerSession(
     private val pausesGame: Boolean = false,
     content: () -> Element,
 ) : AutoCloseable {
-    private val owner = Thread.currentThread()
+    private val owner = RuntimeExecutionOwner.current()
     private var outgoing: ((RemoteMessage) -> Unit)? = send
     private val supported = supportedTypes.toSet()
     private val session = createRuntimeUiSession(content)
@@ -280,7 +281,7 @@ public class RemoteServerSession(
     }
 
     private fun checkOwner() {
-        check(Thread.currentThread() === owner) { "Remote session belongs to another thread." }
+        check(RuntimeExecutionOwner.current() == owner) { "Remote session belongs to another execution owner." }
     }
 
     private inline fun protocol(

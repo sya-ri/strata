@@ -37,6 +37,11 @@ internal abstract class MavenCentralReleaseTask
         @get:PathSensitive(PathSensitivity.NONE)
         abstract val coordinatesFile: RegularFileProperty
 
+        @get:Optional
+        @get:InputFile
+        @get:PathSensitive(PathSensitivity.NONE)
+        abstract val publicationFilesFile: RegularFileProperty
+
         @get:Input
         abstract val releaseVersion: Property<String>
 
@@ -80,6 +85,7 @@ internal abstract class MavenCentralReleaseTask
             val verifier =
                 MavenCentralReleaseVerifier(
                     localRepository = localRepository.get().asFile.toPath(),
+                    publicationFiles = publicationFilesFile.orNull?.asFile?.readLines(),
                     repositoryBaseUri = URI(repositoryUrl),
                 )
             val receipt =

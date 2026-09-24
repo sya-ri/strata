@@ -31,6 +31,7 @@ internal class MavenCentralReleaseVerifier(
     private val requestTimeout: Duration = Duration.ofSeconds(30),
     private val retryBaseMillis: Long = 250L,
     private val sleeper: (Long) -> Unit = Thread::sleep,
+    private val publicationFiles: List<String>? = null,
 ) {
     private val repositoryBase = repositoryBaseUri.toString().let { value -> if (value.endsWith('/')) value else "$value/" }
 
@@ -122,7 +123,7 @@ internal class MavenCentralReleaseVerifier(
         Files.createDirectories(outputDirectory)
         val staged =
             coordinates.flatMap { coordinate ->
-                BASE_SUFFIXES.map { suffix ->
+                coordinate.suffixes.map { suffix ->
                     val basePath = coordinate.remotePath(suffix)
                     val remoteBase = readOptional(basePath) ?: error("Maven Central publication file is missing: $basePath")
                     val localBase = coordinate.localPath(localRepository, suffix).toFile().readBytes()
@@ -148,7 +149,7 @@ internal class MavenCentralReleaseVerifier(
                     )
                 }
             }
-        val expectedSignedFileCount = coordinates.size * BASE_SUFFIXES.size
+        val expectedSignedFileCount = coordinates.sumOf { it.suffixes.size }
         check(staged.size == expectedSignedFileCount) {
             "Canonical Central evidence must contain exactly $expectedSignedFileCount signed publication files."
         }
@@ -160,7 +161,9 @@ internal class MavenCentralReleaseVerifier(
     }
 
     private fun parseCoordinates(lines: List<String>): List<Coordinate> {
-        val coordinates = lines.filter(String::isNotBlank).map(Coordinate::parse)
+        val parsed = lines.filter(String::isNotBlank).map(Coordinate::parse)
+        val suffixes = MavenPublicationFiles.resolve(publicationFiles, parsed.map { "${it.group}:${it.artifact}" })
+        val coordinates = parsed.map { it.copy(suffixes = suffixes.getValue("${it.group}:${it.artifact}")) }
         check(coordinates.isNotEmpty()) { "Maven Central release verification requires at least one coordinate." }
         check(coordinates.distinct().size == coordinates.size) { "Maven Central release coordinates must be unique." }
         check(coordinates.map(Coordinate::version).distinct().size == 1) {
@@ -187,7 +190,13 @@ internal class MavenCentralReleaseVerifier(
                 coordinates
                     .asSequence()
                     .flatMap { coordinate ->
-                        REMOTE_ORPHAN_PROBE_SUFFIXES.asSequence().map(coordinate::remotePath)
+                        coordinate.suffixes
+                            .asSequence()
+                            .flatMap { suffix ->
+                                listOf(suffix, "$suffix.asc").flatMap { path ->
+                                    listOf(path) + ChecksumAlgorithm.entries.map { algorithm -> "$path.${algorithm.extension}" }
+                                }
+                            }.map(coordinate::remotePath)
                     }.firstOrNull { remotePath -> readOptional(remotePath) != null }
             return if (orphanedRemoteFile == null) {
                 Inspection(State.ABSENT, 0, 0, 0)
@@ -228,7 +237,7 @@ internal class MavenCentralReleaseVerifier(
         return Inspection(State.EXACT, presentCoordinateCount, verifiedFileCount, verifiedChecksumCount)
     }
 
-    private fun expectedBaseFiles(coordinate: Coordinate): List<ExpectedFile> = BASE_SUFFIXES.map { suffix -> ExpectedFile(suffix, coordinate.localPath(localRepository, suffix)) }
+    private fun expectedBaseFiles(coordinate: Coordinate): List<ExpectedFile> = coordinate.suffixes.map { suffix -> ExpectedFile(suffix, coordinate.localPath(localRepository, suffix)) }
 
     private fun verifyChecksums(
         remotePath: String,
@@ -368,6 +377,7 @@ internal class MavenCentralReleaseVerifier(
         val group: String,
         val artifact: String,
         val version: String,
+        val suffixes: List<String> = MavenPublicationFiles.legacySuffixes,
     ) {
         fun remotePath(suffix: String): String = "${group.replace('.', '/')}/$artifact/$version/$artifact-$version$suffix"
 
@@ -424,12 +434,5 @@ internal class MavenCentralReleaseVerifier(
         private const val POM_SUFFIX = ".pom"
         private const val MAIN_JAR_SUFFIX = ".jar"
         private const val FABRIC_ARTIFACT_PREFIX = "strata-runtime-minecraft-fabric-"
-        private val BASE_SUFFIXES = listOf(POM_SUFFIX, ".module", ".jar", "-sources.jar", "-javadoc.jar")
-        private val REMOTE_ORPHAN_PROBE_SUFFIXES =
-            BASE_SUFFIXES.flatMap { suffix ->
-                listOf(suffix, "$suffix.asc").flatMap { path ->
-                    listOf(path) + ChecksumAlgorithm.entries.map { algorithm -> "$path.${algorithm.extension}" }
-                }
-            }
     }
 }

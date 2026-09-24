@@ -1,12 +1,12 @@
 package dev.s7a.strata.component
 
-import dev.s7a.strata.internal.platform.currentThread
+import dev.s7a.strata.internal.platform.currentOwner
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
 
 /**
  * Caller-owned mutable position shared by a scroll area and zero or more independent scrollbars.
  *
- * Reads, writes, runtime observation, and subscription release are confined to the constructing thread.
+ * Reads, writes, runtime observation, and subscription release are confined to the construction execution owner.
  * Area attachment publishes viewport and content geometry, while application calls may request positions before or after attachment.
  * Requested positions are clamped whenever current geometry is known.
  * The state owns no retained nodes and does not own its observers.
@@ -16,7 +16,7 @@ import dev.s7a.strata.spi.InternalStrataRuntimeApi
 public class ScrollState(
     initialOffset: Double = 0.0,
 ) {
-    private val ownerThread = currentThread()
+    private val owner = currentOwner()
     private val observers: MutableMap<Any, (ScrollMetrics) -> Unit> = LinkedHashMap()
     private var currentMetrics = ScrollMetrics(offset = validateOffset(initialOffset))
     private var geometryKnown = false
@@ -26,7 +26,7 @@ public class ScrollState(
      */
     public val metrics: ScrollMetrics
         get() {
-            checkThread()
+            checkOwner()
             return currentMetrics
         }
 
@@ -36,7 +36,7 @@ public class ScrollState(
      * Non-finite deltas are rejected without changing state.
      */
     public fun scrollBy(delta: Double): Double {
-        checkThread()
+        checkOwner()
         require(delta.isFinite()) { "Scroll delta must be finite." }
         return setOffset(currentMetrics.offset + delta, origin = null)
     }
@@ -45,22 +45,22 @@ public class ScrollState(
      * Moves to [offset] logical pixels and returns the clamped resulting offset.
      */
     public fun scrollTo(offset: Double): Double {
-        checkThread()
+        checkOwner()
         return setOffset(validateOffset(offset), origin = null)
     }
 
     /**
-     * Installs one runtime observer and returns its owner-thread idempotent release handle.
+     * Installs one runtime observer and returns its owner-confined idempotent release handle.
      */
     @InternalStrataRuntimeApi
     public fun observe(callback: (ScrollMetrics) -> Unit): ScrollStateObserver {
-        checkThread()
+        checkOwner()
         val token = Any()
         observers[token] = callback
         return ScrollStateObserver(
             token = token,
             release = {
-                checkThread()
+                checkOwner()
                 observers.remove(token)
             },
         )
@@ -75,7 +75,7 @@ public class ScrollState(
         contentExtent: Int,
         origin: ScrollStateObserver,
     ) {
-        checkThread()
+        checkOwner()
         require(0 <= viewportExtent) { "Scroll viewport extent must be non-negative." }
         require(0 <= contentExtent) { "Scroll content extent must be non-negative." }
         geometryKnown = true
@@ -92,7 +92,7 @@ public class ScrollState(
         delta: Double,
         origin: ScrollStateObserver,
     ): Double {
-        checkThread()
+        checkOwner()
         require(delta.isFinite()) { "Scroll delta must be finite." }
         return setOffset(currentMetrics.offset + delta, origin.token)
     }
@@ -105,7 +105,7 @@ public class ScrollState(
         offset: Double,
         origin: ScrollStateObserver,
     ): Double {
-        checkThread()
+        checkOwner()
         return setOffset(validateOffset(offset), origin.token)
     }
 
@@ -129,8 +129,8 @@ public class ScrollState(
         }
     }
 
-    private fun checkThread() {
-        check(currentThread() === ownerThread) { "Scroll state requires its creator thread." }
+    private fun checkOwner() {
+        check(currentOwner() == owner) { "Scroll state requires its execution owner." }
     }
 
     private companion object {

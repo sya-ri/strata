@@ -418,7 +418,7 @@ internal class LayoutDslLifetimeValidationTest {
         assertEquals(expectedCount, failures.size)
         assertTrue(failures.all { error -> error is IllegalStateException })
         failures.forEach { error ->
-            assertEquals("UiScope can only be used from its constructing thread.", error.message)
+            assertEquals("UiScope can only be used from its construction execution owner.", error.message)
         }
     }
 

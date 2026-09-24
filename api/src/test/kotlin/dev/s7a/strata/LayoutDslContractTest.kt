@@ -163,7 +163,7 @@ internal class LayoutDslContractTest {
 
         assertFalse(contentRan.get())
         assertEquals(
-            "UiScope can only be used from its constructing thread.",
+            "UiScope can only be used from its construction execution owner.",
             requireNotNull(failure.get()).message,
         )
     }
@@ -240,7 +240,7 @@ internal class LayoutDslContractTest {
             assertFalse(worker.isAlive)
             assertFalse(contentRan.get())
             assertEquals(
-                "UiScope can only be used from its constructing thread.",
+                "UiScope can only be used from its construction execution owner.",
                 requireNotNull(failure.get()).message,
             )
         }

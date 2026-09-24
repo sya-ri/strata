@@ -1,6 +1,7 @@
 [versions]
+hangar-publish = "0.1.4"
 kotlin = "2.4.10"
-paper-api = "1.20-R0.1-SNAPSHOT"
+paper-api = "1.20.1-R0.1-SNAPSHOT"
 velocity-api = "4.2.0"
 java-velocity = "25"
 jetbrains-mono = "2.304"
@@ -151,6 +152,7 @@ fabric-api1205 = { module = "net.fabricmc.fabric-api:fabric-api", version.ref = 
 fabric-api1206 = { module = "net.fabricmc.fabric-api:fabric-api", version.ref = "fabric-api1206" }
 
 [plugins]
+hangarPublish = { id = "io.papermc.hangar-publish-plugin", version.ref = "hangar-publish" }
 kotlin-jvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
 kotlin-multiplatform = { id = "org.jetbrains.kotlin.multiplatform", version.ref = "kotlin" }
 kover = { id = "org.jetbrains.kotlinx.kover", version.ref = "kover" }

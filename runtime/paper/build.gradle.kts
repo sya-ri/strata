@@ -55,6 +55,7 @@ val verifyPluginJar = tasks.register("verifyPluginJar") {
             check(names.none { name -> platformRoots.any(name::startsWith) }) { "Platform classes must not be shaded into the Paper plugin." }
             val descriptor = jar.getInputStream(jar.getEntry("plugin.yml")).bufferedReader().use { it.readText() }
             check(descriptor.contains("main: dev.s7a.strata.runtime.paper.StrataPlugin"))
+            check(descriptor.contains("folia-supported: true"))
             check(descriptor.contains("version: '${project.version}'"))
             entries.filter { it.isDirectory.not() }.forEach { entry ->
                 val crc = CRC32()

@@ -5,10 +5,11 @@ package dev.s7a.strata.runtime.remote
 import dev.s7a.strata.projection.ProjectionType
 import dev.s7a.strata.screen.ScreenDefinition
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
+import dev.s7a.strata.spi.RuntimeExecutionOwner
 import java.util.concurrent.ConcurrentHashMap
 
 /**
- * Owns authenticated player transports and declarations on one adapter-owned thread.
+ * Owns authenticated player transports and declarations under one adapter execution owner.
  * Network callbacks only enqueue bounded bytes; handlers never run in messaging callbacks.
  */
 @Suppress("TooManyFunctions") // Keeps the owner, player, transport, and screen lifetime in one service.
@@ -18,7 +19,7 @@ public class RemoteScreenService<Player : Any, Owner : Any>(
     private val report: (Throwable) -> Unit,
     private val dispatchClose: (() -> Unit) -> Unit = { it() },
 ) : AutoCloseable {
-    private val ownerThread = Thread.currentThread()
+    private val owner = RuntimeExecutionOwner.current()
     private val types = RemoteRegistry().also(RemoteBuiltins::register).types
     private val peers = ConcurrentHashMap<Player, Peer<Owner>>()
     private val extensions = mutableMapOf<ProjectionType, Owner>()
@@ -243,7 +244,7 @@ public class RemoteScreenService<Player : Any, Owner : Any>(
     }
 
     private fun checkOwner() {
-        check(Thread.currentThread() === ownerThread) { "Remote service belongs to another thread." }
+        check(RuntimeExecutionOwner.current() == owner) { "Remote service belongs to another execution owner." }
     }
 
     private fun transition(operation: () -> Unit) {

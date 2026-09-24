@@ -12,7 +12,7 @@ For published artifacts, use the documentation at the matching [release tag](htt
 | Read | Use it to |
 | --- | --- |
 | [Screens and state](guides/screens-and-state.md) | Declare and open a screen, own its state, and connect application resources. |
-| [Paper screens](guides/paper.md) | Install the server plugin, open player screens, and register matching client extensions. |
+| [Paper and Folia screens](guides/paper.md) | Install the server plugin, open player screens, and register matching client extensions. |
 | [Velocity screens](guides/velocity.md) | Own screens on a proxy, queue UI state changes, and coexist with Paper backends. |
 | [Layout](guides/layout.md) | Choose containers and control spacing, sizing, wrapping, and alignment. |
 | [Modifiers](guides/modifiers.md) | Add sizing, backgrounds, input, focus, and parent-scope behavior. |

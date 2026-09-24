@@ -320,12 +320,12 @@ Event-dependent synchronous `InputResult` or capture decisions and native Canvas
         """| Host | Public opening API | State and handler owner |
 | --- | --- | --- |
 | Fabric | `ScreenDefinition.open()` | Client thread |
-| Paper | `PaperScreens.open(ownerPlugin, player, definition)` | Paper primary thread |
+| Paper / Folia | `PaperScreens.open(ownerPlugin, player) { definition }` | Paper primary thread or the player's Folia region |
 | Velocity | `VelocityScreens.open(ownerPlugin, player) { definition }` | Strata's dedicated proxy UI thread |
 """
 
     private const val REMOTE_SETUP: String =
-        """## Paper and Velocity installation
+        """## Paper, Folia, and Velocity installation
 
 Install the chosen host's `plugin` classifier JAR in its `plugins` directory.
 Consumer plugins compile against `dev.s7a.strata:strata-runtime-paper:$RELEASE_VERSION_PLACEHOLDER` or `dev.s7a.strata:strata-runtime-velocity:$RELEASE_VERSION_PLACEHOLDER` and the host API with `compileOnly` dependencies.
@@ -340,7 +340,7 @@ The Paper guide includes a compiled typed-input screen; use these examples when 
 
 ### Opening, state, and lifecycle
 
-- On Paper's primary thread, inspect `PaperScreens.capabilities(player)`, create independent state outside the DSL callback, and pass a fresh definition to `PaperScreens.open`.
+- On Paper's primary thread or the player's Folia region, inspect `PaperScreens.capabilities(player)` and create mutable state and a fresh definition inside the factory passed to `PaperScreens.open(ownerPlugin, player) { ... }`. On Folia, enter `PaperScreens.execute(player) { ... }` for external state access after scheduling onto that player. Do not share owner-confined state between players. Consuming plugins also declare `folia-supported: true`.
 - On Velocity, inspect the future from `VelocityScreens.capabilities(player)` and construct the definition and owner-thread state inside the factory passed to `VelocityScreens.open`. Its future returns the session handle. Queue external state access with `VelocityScreens.execute(ownerPlugin) { ... }`; never join another UI future from a handler or completion callback.
 - A null capability result means negotiation is incomplete or unavailable. Opening with an unsupported declaration returns a terminal session reason; do not silently omit missing components or extensions.
 - Retain the returned `RemoteScreenSession` when status inspection or explicit `close()` is needed. Replacement, disconnect, and failures release its handlers, observations, and transfers. Paper plugin disable releases its owners; a Velocity consumer stopping early calls `VelocityScreens.release(ownerPlugin)`.

@@ -1,11 +1,11 @@
 package dev.s7a.strata.integration.docs
 
 /**
- * Renders the canonical long-form Modrinth project body from checked release inputs.
+ * Renders distribution project bodies from checked release inputs.
  */
 internal object ModrinthProjectMarkdown {
     /**
-     * Renders a Modrinth project body from the shared compiled opening example.
+     * Renders a distribution project body from the shared compiled opening example.
      *
      * @param versions supported Minecraft version identifiers discovered from working runtime modules.
      * @param openExample compiled API-only Kotlin example shared with README and the public skill.

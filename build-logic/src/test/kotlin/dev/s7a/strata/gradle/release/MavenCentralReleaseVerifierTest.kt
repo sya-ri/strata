@@ -30,6 +30,37 @@ internal class MavenCentralReleaseVerifierTest {
     }
 
     @Test
+    fun `non JVM artifacts are included in exact remote evidence`() {
+        val fixture = fixture()
+        val coordinate = fixture.coordinates.first()
+        val (group, artifact, version) = coordinate.split(':')
+        val directory = fixture.repository.resolve("${group.replace('.', '/')}/$artifact/$version")
+        val main = directory.resolve("$artifact-$version.jar")
+        Files.move(main, directory.resolve("$artifact-$version.klib"))
+        Files.move(directory.resolve("$artifact-$version.jar.asc"), directory.resolve("$artifact-$version.klib.asc"))
+        Files.writeString(directory.resolve("$artifact-$version-plugin.jar"), "installable plugin")
+        Files.writeString(directory.resolve("$artifact-$version-plugin.jar.asc"), "plugin signature")
+        val entries =
+            fixture.coordinates.flatMap { entry ->
+                val identity = entry.substringBeforeLast(':')
+                val suffixes = if (entry == coordinate) BASE_SUFFIXES.minus(".jar") + listOf(".klib", "-plugin.jar") else BASE_SUFFIXES
+                suffixes.map { suffix -> "$identity:$suffix" }
+            }
+        val server = server(fixture)
+        val verifier = fixture.verifier(server, entries)
+        val receipt = verifier.preflight(fixture.coordinates)
+        assertEquals(entries.size * 2, receipt.verifiedFileCount)
+        assertEquals(entries.size * 4, receipt.verifiedChecksumCount)
+        val staged = verifier.stageCanonicalPublicationEvidence(fixture.coordinates, temporaryDirectory.resolve("variable-evidence"))
+        assertTrue(staged.any { it.baseRelativePath.endsWith("-plugin.jar") })
+        assertTrue(staged.any { it.baseRelativePath.endsWith(".klib") })
+        Files.delete(directory.resolve("$artifact-$version-plugin.jar"))
+        assertThrows(IllegalStateException::class.java) {
+            verifier.preflight(fixture.coordinates)
+        }
+    }
+
+    @Test
     fun `preflight distinguishes wholly absent and byte-exact releases`() {
         val fixture = fixture()
         val server = server(fixture)
@@ -199,9 +230,13 @@ internal class MavenCentralReleaseVerifierTest {
         val repository: Path,
         val coordinates: List<String>,
     ) {
-        fun verifier(server: MockCentralRepository): MavenCentralReleaseVerifier =
+        fun verifier(
+            server: MockCentralRepository,
+            publicationFiles: List<String>? = null,
+        ): MavenCentralReleaseVerifier =
             MavenCentralReleaseVerifier(
                 localRepository = repository,
+                publicationFiles = publicationFiles,
                 repositoryBaseUri = URI("${server.baseUrl}/maven2/"),
                 requestTimeout = Duration.ofSeconds(2),
                 retryBaseMillis = 0L,

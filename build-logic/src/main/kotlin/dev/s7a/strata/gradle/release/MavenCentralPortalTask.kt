@@ -9,6 +9,7 @@ import org.gradle.api.provider.Property
 import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.InputFile
 import org.gradle.api.tasks.Internal
+import org.gradle.api.tasks.Optional
 import org.gradle.api.tasks.OutputDirectory
 import org.gradle.api.tasks.OutputFile
 import org.gradle.api.tasks.PathSensitive
@@ -34,6 +35,11 @@ internal abstract class MavenCentralPortalTask
         @get:InputFile
         @get:PathSensitive(PathSensitivity.NONE)
         abstract val coordinatesFile: RegularFileProperty
+
+        @get:Optional
+        @get:InputFile
+        @get:PathSensitive(PathSensitivity.NONE)
+        abstract val publicationFilesFile: RegularFileProperty
 
         @get:Input
         abstract val releaseVersion: Property<String>
@@ -83,6 +89,7 @@ internal abstract class MavenCentralPortalTask
                     username = usernameValue,
                     password = passwordValue,
                     localRepository = localRepository.get().asFile.toPath(),
+                    publicationFiles = publicationFilesFile.orNull?.asFile?.readLines(),
                 )
             val coordinates =
                 MavenReleaseCoordinates.resolve(

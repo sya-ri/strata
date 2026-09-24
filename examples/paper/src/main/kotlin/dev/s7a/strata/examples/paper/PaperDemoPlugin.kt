@@ -27,7 +27,7 @@ public class PaperDemoPlugin : JavaPlugin() {
             player.sendMessage("Install the matching Strata Fabric runtime and reconnect before opening this screen.")
             return true
         }
-        val session = PaperScreens.open(this, player, PaperDemoScreens.counter())
+        val session = PaperScreens.open(this, player) { PaperDemoScreens.counter() }
         val status = session.status
         if (status is RemoteSessionStatus.Closed) player.sendMessage("The screen could not open: ${status.reason}.")
         return true

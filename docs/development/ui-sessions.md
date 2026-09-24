@@ -39,7 +39,7 @@ Collection remains absent by default; enabled collectors count actual callback e
 
 `dev.s7a.strata.runtime.spi` provides a public but opt-in runtime adapter bridge for platform runtimes that need to drive this session.
 It is not an application screen-definition API and does not expose coroutines, state declarations, source bindings, `UiSession`, session state, or task-failure decision types.
-`attach`, `detach`, `frame`, pointer input, focused keyboard and text input, input reset, and `close` are synchronous calls that must already run on the construction and owner thread.
+`attach`, `detach`, `frame`, pointer input, focused keyboard and text input, input reset, and `close` are synchronous calls that must already run on the construction execution owner described below.
 The synchronous bridge exposes no task-launching or dispatcher facility.
 Its content lambda is evaluated during the first attach and reevaluated before a subsequent frame when an observed caller-owned state changes; reconciliation preserves matching retained nodes until terminal failure or close.
 Each successful frame owns defensive read-only snapshots of size, drawing commands, and semantics, and all input is ignored until the first successful frame commits.
@@ -69,8 +69,17 @@ The Minecraft host retains a separate content-free evaluator so profile, font, a
 
 ## Ownership and lifecycle
 
-A session captures the thread that creates it.
-Lifecycle operations, delegate access, frame production, and every input dispatch are confined to that owner thread.
+A session captures the execution owner that creates it.
+Normally this is its physical construction thread, preserving the existing thread-confinement contract.
+A region-scheduled runtime can explicitly enter the opt-in `RuntimeExecutionOwner` before creating state and sessions.
+Every later lifecycle operation, state access, frame, input dispatch, and terminal cleanup must enter that same owner.
+It permits serial migration between physical threads, rejects concurrent entry before user code, and restores the caller's context even after failure.
+Different owners remain isolated even when they share one physical thread.
+`RuntimeExecutionOwner.current()` returns an opaque `ExecutionOwnerId`; compare captured identities with value equality.
+The physical-thread fallback retains one distinct identity per JVM thread or JavaScript agent, independently of host thread equality.
+The adapter must separately validate native region ownership; entering a UI owner does not grant platform access.
+Synchronous evaluation contexts remain thread-local, and asynchronous tasks do not inherit the owner implicitly.
+The synchronous runtime bridge uses this ownership rule; coroutine dispatch still checks physical-thread execution and is not a region-scheduling API.
 Revisioned source callbacks are the exception: they may arrive on any thread, only replace a lock-protected pending snapshot, and never execute session work.
 
 The lifecycle is:

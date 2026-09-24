@@ -2,31 +2,38 @@
 
 # Strata
 
-Strata is a declarative UI library for Paper and Velocity plugins.
-Build screens from reusable components, keep application state on the server or proxy, and test UI behavior without launching Minecraft.
+Build custom Minecraft interfaces that connect Paper, Folia, and Velocity plugins with a Fabric client mod.
+Plugin code owns screen state and handles player actions, while the matching Strata Fabric runtime renders the interface on the client.
 
 [![Strata: compose player rows, size the list, and link a scrollbar](https://raw.githubusercontent.com/sya-ri/strata/master/docs/readme-demo/demo.gif)](https://github.com/sya-ri/strata/blob/master/docs/readme-demo/README.md)
 
 [Example](https://github.com/sya-ri/strata/blob/master/integration/docs/src/readmeExamples/kotlin/dev/s7a/strata/integration/docs/example/ScrollPlayersExample.kt) · [Still frames](https://github.com/sya-ri/strata/blob/master/docs/readme-demo/README.md)
 
+## Plugin and Mod integration
+
+- Compose layouts, text, buttons, inputs, scrolling content, images, and native inventory bindings.
+- Keep application state in plugin code and receive typed input events from the client.
+- Extend the UI with matching plugin and client Mod components.
+- On Folia, screen updates and handlers follow the player's owning region.
+
 ## Installation
 
-Install the Paper plugin on a Paper server, or the Velocity plugin on a Velocity proxy.
-Players also need the Strata Fabric runtime matching their Minecraft version and Fabric Language Kotlin.
-Use the same Strata release on the server or proxy and the client.
+Choose the Paper download for Paper or Folia servers, or the Velocity download for a proxy, and place it in that platform's `plugins` directory.
+Players need the Strata Fabric runtime for their exact Minecraft version and Fabric Language Kotlin.
+Use the same Strata release on the client and server or proxy.
 Vanilla clients cannot render Strata screens.
 
-Strata provides a UI runtime for other plugins; application plugins define the screens and their behavior.
+Strata is a developer library; another plugin or Mod defines the screens and application behavior.
+See the integration guides for consumer dependencies and examples.
 
-## Documentation and examples
+## Documentation
 
-- [Paper setup and examples](https://github.com/sya-ri/strata/blob/master/docs/guides/paper.md)
-- [Velocity setup and examples](https://github.com/sya-ri/strata/blob/master/docs/guides/velocity.md)
-- [Client runtime and compatibility](https://github.com/sya-ri/strata/blob/master/docs/reference/compatibility.md)
+- [Paper and Folia integration](https://github.com/sya-ri/strata/blob/master/docs/guides/paper.md)
+- [Velocity integration](https://github.com/sya-ri/strata/blob/master/docs/guides/velocity.md)
 - [Component catalog](https://github.com/sya-ri/strata/blob/master/docs/reference/components.md)
+- [Minecraft compatibility](https://github.com/sya-ri/strata/blob/master/docs/reference/compatibility.md)
 - [Dokka API reference](https://gh.s7a.dev/strata/)
-- [Source repository](https://github.com/sya-ri/strata)
-- [Issue tracker](https://github.com/sya-ri/strata/issues)
+- [Source and issue tracker](https://github.com/sya-ri/strata)
 
-Generative AI substantially assisted implementation, review, tests, documentation, and release-page text.
-The maintainer directed the design and validates release artifacts through the public test suite.
+Licensed under MIT.
+Generative AI substantially assisted implementation, tests, documentation, and release-page text; the maintainer directs the design and validates release artifacts through the public test suite.

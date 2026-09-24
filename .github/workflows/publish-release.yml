@@ -1,10 +1,11 @@
 name: Publish release
+run-name: Publish ${{ inputs.operation }} ${{ inputs.tag }} (${{ inputs.source_commit }}) - CurseForge ${{ inputs.curseforge }}
 
 on:
   workflow_dispatch:
     inputs:
       operation:
-        description: Release once, or run final verification after Modrinth approval
+        description: Release once, or run final verification after distribution approval
         required: true
         type: choice
         default: release
@@ -34,6 +35,16 @@ on:
         required: true
         type: boolean
         default: true
+      curseforge:
+        description: Publish or verify CurseForge; false skips this destination
+        required: true
+        type: boolean
+        default: true
+      hangar:
+        description: Publish or verify Hangar Paper and Velocity plugins; false skips this destination
+        required: true
+        type: boolean
+        default: true
       modrinth_project_id:
         description: Optional cross-check of the committed immutable Modrinth project ID
         required: false
@@ -49,6 +60,7 @@ permissions:
 env:
   # Published-client verification uses Xvfb; SDL needs EGL for its sRGB framebuffer.
   SDL_VIDEO_FORCE_EGL: "1"
+  SELECT_HANGAR: ${{ inputs.hangar }}
 
 # Historical release controllers use this legacy group too, serializing every
 # operation that may observe or change the shared Modrinth project body.
@@ -93,6 +105,7 @@ jobs:
           SELECT_MAVEN: ${{ inputs.maven_central }}
           SELECT_GITHUB: ${{ inputs.github_release }}
           SELECT_MODRINTH: ${{ inputs.modrinth }}
+          SELECT_CURSEFORGE: ${{ inputs.curseforge }}
           CONFIRMATION: ${{ inputs.confirmation }}
         run: |
           set -euo pipefail
@@ -137,7 +150,7 @@ jobs:
           [[ "$GITHUB_REF" == "refs/heads/master" ]] || { echo 'Release must be dispatched from master.' >&2; exit 1; }
           [[ "$CONFIRMATION" == "release $RELEASE_TAG" ]] || { echo 'Release confirmation does not match.' >&2; exit 1; }
           [[ "$SOURCE_COMMIT" =~ ^[0-9a-f]{40}$ ]] || { echo 'An exact product commit is required.' >&2; exit 1; }
-          [[ "$SELECT_MAVEN" == true || "$SELECT_GITHUB" == true || "$SELECT_MODRINTH" == true ]] || { echo 'Select at least one publication destination.' >&2; exit 1; }
+          [[ "$SELECT_MAVEN" == true || "$SELECT_GITHUB" == true || "$SELECT_MODRINTH" == true || "$SELECT_CURSEFORGE" == true || "$SELECT_HANGAR" == true ]] || { echo 'Select at least one publication destination.' >&2; exit 1; }
           [[ "$RELEASE_TAG" =~ ^v(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)$ ]] || { echo 'A canonical stable semantic release tag is required.' >&2; exit 1; }
           [[ "$(git rev-parse HEAD)" == "$GITHUB_SHA" ]] || { echo 'Checked-out controller differs from the workflow commit.' >&2; exit 1; }
           git fetch --force origin '+refs/heads/master:refs/remotes/origin/master' '+refs/tags/*:refs/tags/*'
@@ -425,8 +438,11 @@ jobs:
         shell: bash
         env:
           SELECT_MODRINTH: ${{ inputs.modrinth }}
+          SELECT_CURSEFORGE: ${{ inputs.curseforge }}
           REQUESTED_PROJECT_ID: ${{ inputs.modrinth_project_id }}
           MODRINTH_TOKEN: ${{ secrets.MODRINTH_TOKEN }}
+          CURSEFORGE_TOKEN: ${{ secrets.CURSEFORGE_TOKEN }}
+          HANGAR_API_TOKEN: ${{ secrets.HANGAR_API_TOKEN }}
           SIGNING_KEY: ${{ secrets.SIGNING_KEY }}
           SIGNING_PASSWORD: ${{ secrets.SIGNING_PASSWORD }}
           MAVEN_CENTRAL_USERNAME: ${{ secrets.MAVEN_CENTRAL_USERNAME }}
@@ -437,6 +453,8 @@ jobs:
           [[ -n "$tracked" ]] || { echo 'The immutable Modrinth project ID is not tracked.' >&2; exit 1; }
           [[ -z "$REQUESTED_PROJECT_ID" || "$REQUESTED_PROJECT_ID" == "$tracked" ]] || { echo 'Requested Modrinth project ID differs from tracked ID.' >&2; exit 1; }
           [[ "$SELECT_MODRINTH" != true || -n "$MODRINTH_TOKEN" ]] || { echo 'MODRINTH_TOKEN is missing.' >&2; exit 1; }
+          [[ "$SELECT_CURSEFORGE" != true || -n "$CURSEFORGE_TOKEN" ]] || { echo 'CURSEFORGE_TOKEN is missing.' >&2; exit 1; }
+          [[ "$SELECT_HANGAR" != true || -n "$HANGAR_API_TOKEN" ]] || { echo 'HANGAR_API_TOKEN is missing.' >&2; exit 1; }
           [[ -n "$SIGNING_KEY" && -n "$SIGNING_PASSWORD" ]] || { echo 'Release signing credentials are missing.' >&2; exit 1; }
           [[ -n "$MAVEN_CENTRAL_USERNAME" && -n "$MAVEN_CENTRAL_PASSWORD" ]] || { echo 'Maven Central credentials are missing.' >&2; exit 1; }
           echo "project_id=$tracked" >> "$GITHUB_OUTPUT"
@@ -505,7 +523,9 @@ jobs:
             "$strata_jq_path" "${strata_jq_binary_options[@]}" "$@"
           }
           readonly -f portable_jq
-          bash ./gradlew --no-parallel --max-workers=2 --no-build-cache \
+          extra_tasks=()
+          if [[ "$SELECT_HANGAR" == true ]]; then extra_tasks+=(hangarReleaseManifest); fi
+          bash ./gradlew --no-parallel --max-workers=2 --no-build-cache "${extra_tasks[@]}" \
             verifyReleasePublicationMatrix verifyPublishedConsumer modrinthReleaseManifest \
             -Pstrata.sourceRevision="$RELEASE_TAG" \
             -Pstrata.sourceCommit="$RELEASE_SOURCE_COMMIT" \
@@ -534,7 +554,7 @@ jobs:
               '[.artifacts[] | select(.gameVersion == $minecraft_version)] | length == 1' \
               build/release/modrinth/manifest.json >/dev/null || { echo "Representative Minecraft version $minecraft_version does not map to one manifest artifact." >&2; exit 1; }
           done
-          publication_suffixes=(.pom .module .jar -sources.jar -javadoc.jar)
+          base_file_count="$(python3 "$CONTROLLER_TOOL_DIRECTORY/maven-file-count.py" "$maven_inventory")"
           signed_content_variants=(base signature)
           checksum_suffixes=(md5 sha1 sha256 sha512)
           github_artifact_variants=(jar signature)
@@ -543,10 +563,13 @@ jobs:
             echo "RELEASE_COORDINATE_COUNT=$coordinate_count"
             echo "RELEASE_MAVEN_INVENTORY=$maven_inventory"
             echo "RELEASE_MAVEN_INVENTORY_SHA256=$(sha256sum "$maven_inventory" | cut -d ' ' -f 1)"
+            if [[ -f "${maven_inventory%/*}/maven-files.txt" ]]; then
+              echo "RELEASE_MAVEN_FILES_SHA256=$(sha256sum "${maven_inventory%/*}/maven-files.txt" | cut -d ' ' -f 1)"
+            fi
             echo "RELEASE_ARTIFACT_COUNT=$artifact_count"
-            echo "EXPECTED_CENTRAL_CONTENT_COUNT=$((coordinate_count * ${#publication_suffixes[@]} * ${#signed_content_variants[@]}))"
-            echo "EXPECTED_CENTRAL_CHECKSUM_COUNT=$((coordinate_count * ${#publication_suffixes[@]} * ${#checksum_suffixes[@]}))"
-            echo "EXPECTED_CENTRAL_SIGNATURE_COUNT=$((coordinate_count * ${#publication_suffixes[@]}))"
+            echo "EXPECTED_CENTRAL_CONTENT_COUNT=$((base_file_count * ${#signed_content_variants[@]}))"
+            echo "EXPECTED_CENTRAL_CHECKSUM_COUNT=$((base_file_count * ${#checksum_suffixes[@]}))"
+            echo "EXPECTED_CENTRAL_SIGNATURE_COUNT=$((base_file_count))"
             echo "EXPECTED_GITHUB_ASSET_COUNT=$((artifact_count * ${#github_artifact_variants[@]} + ${#github_inventory_assets[@]}))"
           } >> "$GITHUB_ENV"
       - name: Run representative clients from Maven Local
@@ -647,6 +670,51 @@ jobs:
             echo "public_state=$public_state"
             echo "portal_state=$portal_state"
           } >> "$GITHUB_OUTPUT"
+      - name: Preflight Hangar without mutation
+        if: inputs.hangar
+        shell: bash
+        env:
+          HANGAR_API_TOKEN: ${{ secrets.HANGAR_API_TOKEN }}
+          SOURCE_COMMIT: ${{ inputs.source_commit }}
+        run: |
+          set -euo pipefail
+          git --no-replace-objects cat-file blob "$GITHUB_SHA:release/verify-controller-tools.sh" | \
+            bash -s -- verify "$GITHUB_SHA" "$CONTROLLER_TOOL_DIRECTORY"
+          python3 "$CONTROLLER_TOOL_DIRECTORY/hangar-release.py" preflight \
+            --manifest build/release/hangar/manifest.json \
+            --project "$CONTROLLER_TOOL_DIRECTORY/hangar-project.json" \
+            --source-commit "$SOURCE_COMMIT" --receipt build/release/hangar/preflight.json
+      - name: Restore prior CurseForge upload receipts
+        if: inputs.curseforge
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ inputs.tag }}
+          SOURCE_COMMIT: ${{ inputs.source_commit }}
+        run: |
+          set -euo pipefail
+          git --no-replace-objects cat-file blob "$GITHUB_SHA:release/verify-controller-tools.sh" | \
+            bash -s -- verify "$GITHUB_SHA" "$CONTROLLER_TOOL_DIRECTORY"
+          python3 "$CONTROLLER_TOOL_DIRECTORY/curseforge-receipts.py" \
+            --tag "$RELEASE_TAG" --source-commit "$SOURCE_COMMIT" \
+            --destination build/release/curseforge
+      - name: Preflight CurseForge without mutation
+        if: inputs.curseforge
+        shell: bash
+        env:
+          CURSEFORGE_API_KEY: ${{ secrets.CURSEFORGE_API_KEY }}
+          CURSEFORGE_TOKEN: ${{ secrets.CURSEFORGE_TOKEN }}
+          SOURCE_COMMIT: ${{ inputs.source_commit }}
+        run: |
+          set -euo pipefail
+          [[ -n "$CURSEFORGE_TOKEN" ]] || { echo 'CURSEFORGE_TOKEN is missing.' >&2; exit 1; }
+          git --no-replace-objects cat-file blob "$GITHUB_SHA:release/verify-controller-tools.sh" | \
+            bash -s -- verify "$GITHUB_SHA" "$CONTROLLER_TOOL_DIRECTORY"
+          python3 "$CONTROLLER_TOOL_DIRECTORY/curseforge-release.py" preflight \
+            --manifest build/release/modrinth/manifest.json \
+            --project "$CONTROLLER_TOOL_DIRECTORY/curseforge-project.json" \
+            --source-commit "$SOURCE_COMMIT" --receipt build/release/curseforge/receipt.json \
+            --history build/release/curseforge/history.json
       - name: Preflight Modrinth without mutation
         if: inputs.modrinth
         id: modrinth_preflight
@@ -822,6 +890,11 @@ jobs:
             [[ "$RELEASE_MAVEN_INVENTORY" == 'build/release/maven-coordinates.txt' || "$RELEASE_MAVEN_INVENTORY" == 'release/maven-coordinates.txt' ]] || { echo 'Maven artifact inventory path escaped the allowed release locations.' >&2; exit 1; }
             [[ -f "$RELEASE_MAVEN_INVENTORY" && ! -L "$RELEASE_MAVEN_INVENTORY" ]] || { echo 'Maven artifact inventory is missing or unsafe before Central publication.' >&2; exit 1; }
             [[ "$(sha256sum "$RELEASE_MAVEN_INVENTORY" | cut -d ' ' -f 1)" == "$RELEASE_MAVEN_INVENTORY_SHA256" ]] || { echo 'Maven artifact inventory changed before Central publication.' >&2; exit 1; }
+            if [[ -n "${RELEASE_MAVEN_FILES_SHA256:-}" ]]; then
+              [[ "$(sha256sum "${RELEASE_MAVEN_INVENTORY%/*}/maven-files.txt" | cut -d ' ' -f 1)" == "$RELEASE_MAVEN_FILES_SHA256" ]] || { echo 'Maven file inventory changed before Central publication.' >&2; exit 1; }
+            else
+              [[ ! -e "${RELEASE_MAVEN_INVENTORY%/*}/maven-files.txt" ]] || { echo 'Unexpected Maven file inventory appeared before Central publication.' >&2; exit 1; }
+            fi
           }
           revalidate_release_source
           verify_release_inventory
@@ -893,6 +966,75 @@ jobs:
           for jar in build/release/github/*.jar; do
             gpg --batch --verify "$jar.asc" "$jar"
           done
+      - name: Stage only missing CurseForge files
+        if: inputs.curseforge
+        id: curseforge_stage
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          CURSEFORGE_TOKEN: ${{ secrets.CURSEFORGE_TOKEN }}
+          CURSEFORGE_API_KEY: ${{ secrets.CURSEFORGE_API_KEY }}
+          RELEASE_TAG: ${{ inputs.tag }}
+          EXPECTED_SOURCE_SELECTION: ${{ needs.preflight.outputs.source_selection }}
+          EXPECTED_CONTROLLER_COMMIT: ${{ needs.preflight.outputs.controller_commit }}
+          EXPECTED_TAG_COMMIT: ${{ needs.preflight.outputs.current_commit }}
+          EXPECTED_TAG_OBJECT: ${{ needs.preflight.outputs.current_object }}
+          EXPECTED_PAGES_RECORD: ${{ needs.preflight.outputs.pages_record }}
+          PAGES_PRODUCER_COMMIT: ${{ needs.preflight.outputs.pages_producer_commit }}
+        run: |
+          set -euo pipefail
+          verify_controller_tools() {
+            git --no-replace-objects cat-file blob "$EXPECTED_CONTROLLER_COMMIT:release/verify-controller-tools.sh" | \
+              bash -s -- verify "$EXPECTED_CONTROLLER_COMMIT" "$CONTROLLER_TOOL_DIRECTORY"
+          }
+          revalidate_release_source() {
+            git fetch --force origin \
+              '+refs/heads/master:refs/remotes/origin/master' \
+              '+refs/tags/*:refs/tags/*'
+            [[ "$GITHUB_SHA" == "$EXPECTED_CONTROLLER_COMMIT" ]] || { echo 'The frozen workflow identity changed.' >&2; exit 1; }
+            git --no-replace-objects merge-base --is-ancestor "$EXPECTED_CONTROLLER_COMMIT" origin/master || { echo 'Controller master changed before CurseForge staging.' >&2; exit 1; }
+            [[ "$(git rev-parse HEAD)" == "$EXPECTED_TAG_COMMIT" && "$(git rev-parse --verify "refs/tags/$RELEASE_TAG^{commit}")" == "$EXPECTED_TAG_COMMIT" ]] || { echo 'Release commit changed before CurseForge staging.' >&2; exit 1; }
+            [[ "$(git rev-parse "refs/tags/$RELEASE_TAG")" == "$EXPECTED_TAG_OBJECT" ]] || { echo 'Release tag object changed before CurseForge staging.' >&2; exit 1; }
+            [[ "$(git rev-parse --verify "refs/tags/$PREDECESSOR_TAG^{commit}")" == "$PREDECESSOR_RELEASE_COMMIT" && \
+              "$(git rev-parse "refs/tags/$PREDECESSOR_TAG")" == "$PREDECESSOR_RELEASE_OBJECT" ]] || { echo 'Predecessor identity changed before CurseForge staging.' >&2; exit 1; }
+            git merge-base --is-ancestor "$PREDECESSOR_RELEASE_COMMIT" "$EXPECTED_TAG_COMMIT" || { echo 'Predecessor ancestry changed before CurseForge staging.' >&2; exit 1; }
+            git merge-base --is-ancestor "$EXPECTED_TAG_COMMIT" origin/master || { echo 'Release source left controller master before CurseForge staging.' >&2; exit 1; }
+            verify_controller_tools
+            bash "$CONTROLLER_TOOL_DIRECTORY/verify-release-tag.sh" "$RELEASE_TAG" "$EXPECTED_TAG_COMMIT" "$EXPECTED_TAG_OBJECT" >/dev/null
+            verify_controller_tools
+            bash "$CONTROLLER_TOOL_DIRECTORY/verify-release-tag.sh" "$PREDECESSOR_TAG" "$PREDECESSOR_RELEASE_COMMIT" "$PREDECESSOR_RELEASE_OBJECT" >/dev/null
+            verify_controller_tools
+            bash "$CONTROLLER_TOOL_DIRECTORY/select-release-source.sh" verify-input \
+              "$EXPECTED_CONTROLLER_COMMIT" <<< "$EXPECTED_SOURCE_SELECTION"
+            verify_controller_tools
+            bash "$CONTROLLER_TOOL_DIRECTORY/verify-github-tag-ruleset.sh" \
+              "$CONTROLLER_TOOL_DIRECTORY/github-release-tag-ruleset.json" \
+              "$CONTROLLER_TOOL_DIRECTORY/github-release-tag-ruleset-receipt.json" >/dev/null
+            read -r release_pages_run_id _ _ controller_pages_run_id _ _ <<< "$EXPECTED_PAGES_RECORD"
+            verify_controller_tools
+            [[ "$(bash "$CONTROLLER_TOOL_DIRECTORY/verify-pages-deployment-source.sh" \
+              "$release_pages_run_id" "$RELEASE_TAG" "$EXPECTED_TAG_COMMIT" \
+              "$controller_pages_run_id" "$PAGES_PRODUCER_COMMIT" historical)" == "$EXPECTED_PAGES_RECORD" ]] || { echo 'Protected Pages evidence changed before CurseForge staging.' >&2; exit 1; }
+            git --no-replace-objects merge-base --is-ancestor "$EXPECTED_CONTROLLER_COMMIT" origin/master || { echo 'Controller master changed during CurseForge source verification.' >&2; exit 1; }
+          }
+          revalidate_release_source
+          git diff --quiet -- . || { echo 'Tracked release source changed before CurseForge staging.' >&2; exit 1; }
+          git diff --cached --quiet -- . || { echo 'Tracked release source changed before CurseForge staging.' >&2; exit 1; }
+          verify_controller_tools
+          python3 "$CONTROLLER_TOOL_DIRECTORY/curseforge-release.py" stage \
+            --manifest build/release/modrinth/manifest.json \
+            --project "$CONTROLLER_TOOL_DIRECTORY/curseforge-project.json" \
+            --source-commit "$EXPECTED_TAG_COMMIT" --receipt build/release/curseforge/receipt.json \
+            --history build/release/curseforge/history.json
+      - name: Preserve CurseForge upload receipt
+        if: always() && inputs.curseforge && steps.curseforge_stage.outcome != 'skipped' && steps.curseforge_stage.outcome != ''
+        uses: actions/upload-artifact@v7
+        with:
+          name: curseforge-${{ inputs.tag }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: build/release/curseforge/receipt.json
+          if-no-files-found: error
+          retention-days: 90
+          archive: true
       - name: Stage only missing Modrinth versions
         if: inputs.modrinth
         shell: bash
@@ -1168,6 +1310,73 @@ jobs:
               -F draft=false -f make_latest=legacy >/dev/null
           fi
           verify_release_contract false true
+      - name: Publish or reuse the exact Hangar version
+        if: inputs.hangar
+        id: hangar_stage
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          HANGAR_API_TOKEN: ${{ secrets.HANGAR_API_TOKEN }}
+          RELEASE_TAG: ${{ inputs.tag }}
+          EXPECTED_SOURCE_SELECTION: ${{ needs.preflight.outputs.source_selection }}
+          EXPECTED_CONTROLLER_COMMIT: ${{ needs.preflight.outputs.controller_commit }}
+          EXPECTED_TAG_COMMIT: ${{ needs.preflight.outputs.current_commit }}
+          EXPECTED_TAG_OBJECT: ${{ needs.preflight.outputs.current_object }}
+          EXPECTED_PAGES_RECORD: ${{ needs.preflight.outputs.pages_record }}
+          PAGES_PRODUCER_COMMIT: ${{ needs.preflight.outputs.pages_producer_commit }}
+        run: |
+          set -euo pipefail
+          verify_controller_tools() {
+            git --no-replace-objects cat-file blob "$EXPECTED_CONTROLLER_COMMIT:release/verify-controller-tools.sh" | \
+              bash -s -- verify "$EXPECTED_CONTROLLER_COMMIT" "$CONTROLLER_TOOL_DIRECTORY"
+          }
+          revalidate_release_source() {
+            git fetch --force origin \
+              '+refs/heads/master:refs/remotes/origin/master' \
+              '+refs/tags/*:refs/tags/*'
+            [[ "$GITHUB_SHA" == "$EXPECTED_CONTROLLER_COMMIT" ]] || { echo 'The frozen workflow identity changed.' >&2; exit 1; }
+            git --no-replace-objects merge-base --is-ancestor "$EXPECTED_CONTROLLER_COMMIT" origin/master || { echo 'Controller master changed before Hangar staging.' >&2; exit 1; }
+            [[ "$(git rev-parse HEAD)" == "$EXPECTED_TAG_COMMIT" && "$(git rev-parse --verify "refs/tags/$RELEASE_TAG^{commit}")" == "$EXPECTED_TAG_COMMIT" ]] || { echo 'Release commit changed before Hangar staging.' >&2; exit 1; }
+            [[ "$(git rev-parse "refs/tags/$RELEASE_TAG")" == "$EXPECTED_TAG_OBJECT" ]] || { echo 'Release tag object changed before Hangar staging.' >&2; exit 1; }
+            [[ "$(git rev-parse --verify "refs/tags/$PREDECESSOR_TAG^{commit}")" == "$PREDECESSOR_RELEASE_COMMIT" && \
+              "$(git rev-parse "refs/tags/$PREDECESSOR_TAG")" == "$PREDECESSOR_RELEASE_OBJECT" ]] || { echo 'Predecessor identity changed before Hangar staging.' >&2; exit 1; }
+            git merge-base --is-ancestor "$PREDECESSOR_RELEASE_COMMIT" "$EXPECTED_TAG_COMMIT" || { echo 'Predecessor ancestry changed before Hangar staging.' >&2; exit 1; }
+            git merge-base --is-ancestor "$EXPECTED_TAG_COMMIT" origin/master || { echo 'Release source left controller master before Hangar staging.' >&2; exit 1; }
+            verify_controller_tools
+            bash "$CONTROLLER_TOOL_DIRECTORY/verify-release-tag.sh" "$RELEASE_TAG" "$EXPECTED_TAG_COMMIT" "$EXPECTED_TAG_OBJECT" >/dev/null
+            verify_controller_tools
+            bash "$CONTROLLER_TOOL_DIRECTORY/verify-release-tag.sh" "$PREDECESSOR_TAG" "$PREDECESSOR_RELEASE_COMMIT" "$PREDECESSOR_RELEASE_OBJECT" >/dev/null
+            verify_controller_tools
+            bash "$CONTROLLER_TOOL_DIRECTORY/select-release-source.sh" verify-input \
+              "$EXPECTED_CONTROLLER_COMMIT" <<< "$EXPECTED_SOURCE_SELECTION"
+            verify_controller_tools
+            bash "$CONTROLLER_TOOL_DIRECTORY/verify-github-tag-ruleset.sh" \
+              "$CONTROLLER_TOOL_DIRECTORY/github-release-tag-ruleset.json" \
+              "$CONTROLLER_TOOL_DIRECTORY/github-release-tag-ruleset-receipt.json" >/dev/null
+            read -r release_pages_run_id _ _ controller_pages_run_id _ _ <<< "$EXPECTED_PAGES_RECORD"
+            verify_controller_tools
+            [[ "$(bash "$CONTROLLER_TOOL_DIRECTORY/verify-pages-deployment-source.sh" \
+              "$release_pages_run_id" "$RELEASE_TAG" "$EXPECTED_TAG_COMMIT" \
+              "$controller_pages_run_id" "$PAGES_PRODUCER_COMMIT" historical)" == "$EXPECTED_PAGES_RECORD" ]] || { echo 'Protected Pages evidence changed before Hangar staging.' >&2; exit 1; }
+            git --no-replace-objects merge-base --is-ancestor "$EXPECTED_CONTROLLER_COMMIT" origin/master || { echo 'Controller master changed during Hangar source verification.' >&2; exit 1; }
+          }
+          revalidate_release_source
+          git diff --quiet -- . || { echo 'Tracked release source changed before Hangar staging.' >&2; exit 1; }
+          git diff --cached --quiet -- . || { echo 'Tracked release source changed before Hangar staging.' >&2; exit 1; }
+          verify_controller_tools
+          python3 "$CONTROLLER_TOOL_DIRECTORY/hangar-release.py" stage \
+            --manifest build/release/hangar/manifest.json \
+            --project "$CONTROLLER_TOOL_DIRECTORY/hangar-project.json" \
+            --source-commit "$EXPECTED_TAG_COMMIT" --receipt build/release/hangar/receipt.json
+      - name: Preserve Hangar publication receipt
+        if: always() && inputs.hangar && steps.hangar_stage.outcome != 'skipped' && steps.hangar_stage.outcome != ''
+        uses: actions/upload-artifact@v7
+        with:
+          name: hangar-${{ inputs.tag }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: build/release/hangar/*.json
+          if-no-files-found: error
+          retention-days: 90
+          archive: true
       - name: Submit or observe Modrinth review
         if: inputs.modrinth
         shell: bash
@@ -1314,6 +1523,31 @@ jobs:
           jq -e --argjson artifacts "$RELEASE_ARTIFACT_COUNT" '.operation == "finalize-project" and .projectStatus == "approved" and (.absent | length) == 0 and (.listed | length) == $artifacts' \
             build/release/modrinth-receipts/finalize_project.json >/dev/null || { echo 'Release-time Modrinth body finalization receipt differs.' >&2; exit 1; }
           echo '::notice::Modrinth Description now matches the released canonical project body.'
+      - name: Summarize publication results
+        if: always() && env.CONTROLLER_TOOL_DIRECTORY != ''
+        shell: bash
+        env:
+          CURSEFORGE_READ_ENABLED: ${{ secrets.CURSEFORGE_API_KEY != '' }}
+          PUBLICATION_REQUEST: >-
+            {"operation":${{ toJSON(inputs.operation) }},"tag":${{ toJSON(inputs.tag) }},"sourceCommit":${{ toJSON(inputs.source_commit) }},"destinations":{"maven_central":${{ inputs.maven_central }},"github_release":${{ inputs.github_release }},"modrinth":${{ inputs.modrinth }},"curseforge":${{ inputs.curseforge }},"hangar":${{ inputs.hangar }}}}
+        run: |
+          set -euo pipefail
+          git --no-replace-objects cat-file blob "$GITHUB_SHA:release/verify-controller-tools.sh" | \
+            bash -s -- verify "$GITHUB_SHA" "$CONTROLLER_TOOL_DIRECTORY"
+          python3 "$CONTROLLER_TOOL_DIRECTORY/publication-summary.py"
+      - name: Preserve publication results
+        if: always() && env.CONTROLLER_TOOL_DIRECTORY != ''
+        uses: actions/upload-artifact@v7
+        with:
+          name: publication-${{ inputs.tag }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            build/release/publication-request.json
+            build/release/modrinth-receipts/*.json
+            build/release/curseforge/receipt.json
+            build/release/hangar/receipt.json
+          if-no-files-found: error
+          retention-days: 90
+          archive: true
       - name: Clean up release controller tools
         if: always() && steps.controller_tools.outputs.directory != ''
         shell: bash
@@ -1362,6 +1596,7 @@ jobs:
           SELECT_MAVEN: ${{ inputs.maven_central }}
           SELECT_GITHUB: ${{ inputs.github_release }}
           SELECT_MODRINTH: ${{ inputs.modrinth }}
+          SELECT_CURSEFORGE: ${{ inputs.curseforge }}
         run: |
           set -euo pipefail
           strata_jq_path="$(type -P jq || true)"
@@ -1404,8 +1639,8 @@ jobs:
           readonly -f portable_jq
           [[ "$GITHUB_REF" == "refs/heads/master" ]] || { echo 'Public Skill verification must be dispatched from master.' >&2; exit 1; }
           [[ "$CONFIRMATION" == "verify $RELEASE_TAG" ]] || { echo 'Public Skill verification request differs.' >&2; exit 1; }
-          [[ "$SELECT_MAVEN" == true || "$SELECT_GITHUB" == true || "$SELECT_MODRINTH" == true ]] || { echo 'Select at least one publication destination.' >&2; exit 1; }
-          for forbidden_secret in GH_TOKEN GITHUB_TOKEN MODRINTH_TOKEN SIGNING_KEY SIGNING_PASSWORD ORG_GRADLE_PROJECT_signingInMemoryKey ORG_GRADLE_PROJECT_signingInMemoryKeyPassword GNUPGHOME; do
+          [[ "$SELECT_MAVEN" == true || "$SELECT_GITHUB" == true || "$SELECT_MODRINTH" == true || "$SELECT_CURSEFORGE" == true || "$SELECT_HANGAR" == true ]] || { echo 'Select at least one publication destination.' >&2; exit 1; }
+          for forbidden_secret in GH_TOKEN GITHUB_TOKEN MODRINTH_TOKEN CURSEFORGE_TOKEN CURSEFORGE_API_KEY HANGAR_API_TOKEN SIGNING_KEY SIGNING_PASSWORD ORG_GRADLE_PROJECT_signingInMemoryKey ORG_GRADLE_PROJECT_signingInMemoryKeyPassword GNUPGHOME; do
             [[ -z "${!forbidden_secret:-}" ]] || { echo "Credential reached the isolated public Skill runner: $forbidden_secret" >&2; exit 1; }
           done
           repository="$RUNNER_TEMP/strata-public-skills-repository"
@@ -1495,7 +1730,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          for forbidden_secret in GH_TOKEN GITHUB_TOKEN MODRINTH_TOKEN SIGNING_KEY SIGNING_PASSWORD ORG_GRADLE_PROJECT_signingInMemoryKey ORG_GRADLE_PROJECT_signingInMemoryKeyPassword GNUPGHOME; do
+          for forbidden_secret in GH_TOKEN GITHUB_TOKEN MODRINTH_TOKEN CURSEFORGE_TOKEN CURSEFORGE_API_KEY HANGAR_API_TOKEN SIGNING_KEY SIGNING_PASSWORD ORG_GRADLE_PROJECT_signingInMemoryKey ORG_GRADLE_PROJECT_signingInMemoryKeyPassword GNUPGHOME; do
             [[ -z "${!forbidden_secret:-}" ]] || { echo "Credential reached public Skill execution: $forbidden_secret" >&2; exit 1; }
           done
           if ! gh skill --help >/dev/null 2>&1; then
@@ -1802,7 +2037,9 @@ jobs:
             "$strata_jq_path" "${strata_jq_binary_options[@]}" "$@"
           }
           readonly -f portable_jq
-          bash ./gradlew --no-parallel --max-workers=2 --no-build-cache verifyPublishedConsumer modrinthReleaseManifest mavenCentralPortalVerify \
+          extra_tasks=()
+          if [[ "$SELECT_HANGAR" == true ]]; then extra_tasks+=(hangarReleaseManifest); fi
+          bash ./gradlew --no-parallel --max-workers=2 --no-build-cache "${extra_tasks[@]}" verifyPublishedConsumer modrinthReleaseManifest mavenCentralPortalVerify \
             -Pstrata.sourceRevision="$RELEASE_TAG" -Pstrata.sourceCommit="$RELEASE_SOURCE_COMMIT" -Pstrata.modrinthProjectId="$PROJECT_ID"
           maven_inventory=''
           for candidate in build/release/maven-coordinates.txt release/maven-coordinates.txt; do
@@ -1814,14 +2051,14 @@ jobs:
           [[ -n "$maven_inventory" ]] || { echo 'No final Maven artifact inventory was generated or supplied by the immutable release.' >&2; exit 1; }
           coordinate_count="$(grep -cve '^[[:space:]]*$' "$maven_inventory")"
           artifact_count="$(jq -er '.artifacts | length | select(. > 0)' build/release/modrinth/manifest.json)"
-          publication_suffixes=(.pom .module .jar -sources.jar -javadoc.jar)
+          base_file_count="$(python3 "$CONTROLLER_TOOL_DIRECTORY/maven-file-count.py" "$maven_inventory")"
           signed_content_variants=(base signature)
           checksum_suffixes=(md5 sha1 sha256 sha512)
           github_artifact_variants=(jar signature)
           github_inventory_assets=(SHA256SUMS)
-          expected_content_count=$((coordinate_count * ${#publication_suffixes[@]} * ${#signed_content_variants[@]}))
-          expected_checksum_count=$((coordinate_count * ${#publication_suffixes[@]} * ${#checksum_suffixes[@]}))
-          expected_signature_count=$((coordinate_count * ${#publication_suffixes[@]}))
+          expected_content_count=$((base_file_count * ${#signed_content_variants[@]}))
+          expected_checksum_count=$((base_file_count * ${#checksum_suffixes[@]}))
+          expected_signature_count=$((base_file_count))
           expected_asset_count=$((artifact_count * ${#github_artifact_variants[@]} + ${#github_inventory_assets[@]}))
           jq -e --argjson content "$expected_content_count" --argjson checksums "$expected_checksum_count" '
             .state == "exact" and .deploymentState == "PUBLISHED" and
@@ -2066,14 +2303,14 @@ jobs:
             done
             [[ -n "$predecessor_maven_inventory" ]] || { echo 'No predecessor Maven artifact inventory was generated or supplied by the immutable release.' >&2; exit 1; }
             predecessor_coordinate_count="$(grep -cve '^[[:space:]]*$' "$predecessor_maven_inventory")"
-            publication_suffixes=(.pom .module .jar -sources.jar -javadoc.jar)
+            predecessor_base_file_count="$(python3 "$CONTROLLER_TOOL_DIRECTORY/maven-file-count.py" "$predecessor_maven_inventory")"
             signed_content_variants=(base signature)
             checksum_suffixes=(md5 sha1 sha256 sha512)
             github_artifact_variants=(jar signature)
             github_inventory_assets=(SHA256SUMS)
-            predecessor_content_count=$((predecessor_coordinate_count * ${#publication_suffixes[@]} * ${#signed_content_variants[@]}))
-            predecessor_checksum_count=$((predecessor_coordinate_count * ${#publication_suffixes[@]} * ${#checksum_suffixes[@]}))
-            predecessor_signature_count=$((predecessor_coordinate_count * ${#publication_suffixes[@]}))
+            predecessor_content_count=$((predecessor_base_file_count * ${#signed_content_variants[@]}))
+            predecessor_checksum_count=$((predecessor_base_file_count * ${#checksum_suffixes[@]}))
+            predecessor_signature_count=$((predecessor_base_file_count))
             predecessor_asset_count=$((predecessor_artifact_count * ${#github_artifact_variants[@]} + ${#github_inventory_assets[@]}))
             jq -e --argjson content "$predecessor_content_count" --argjson checksums "$predecessor_checksum_count" \
               '.state == "exact" and .deploymentState == "PUBLISHED" and .verifiedContentFileCount == $content and .verifiedChecksumCount == $checksums' \
@@ -2292,6 +2529,73 @@ jobs:
           bash -n release/verify-public-modrinth.sh
           env -u MODRINTH_TOKEN -u GH_TOKEN -u GITHUB_TOKEN \
             bash release/verify-public-modrinth.sh build/release/modrinth/manifest.json "$PROJECT_ID" strata-ui
+      - name: Restore prior CurseForge upload receipts
+        if: inputs.curseforge
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ inputs.tag }}
+          SOURCE_COMMIT: ${{ inputs.source_commit }}
+        run: |
+          set -euo pipefail
+          git --no-replace-objects cat-file blob "$GITHUB_SHA:release/verify-controller-tools.sh" | \
+            bash -s -- verify "$GITHUB_SHA" "$CONTROLLER_TOOL_DIRECTORY"
+          python3 "$CONTROLLER_TOOL_DIRECTORY/curseforge-receipts.py" \
+            --tag "$RELEASE_TAG" --source-commit "$SOURCE_COMMIT" \
+            --destination build/release/curseforge
+      - name: Verify public CurseForge files
+        if: inputs.curseforge
+        shell: bash
+        env:
+          CURSEFORGE_API_KEY: ${{ secrets.CURSEFORGE_API_KEY }}
+          SOURCE_COMMIT: ${{ inputs.source_commit }}
+        run: |
+          set -euo pipefail
+          git --no-replace-objects cat-file blob "$GITHUB_SHA:release/verify-controller-tools.sh" | \
+            bash -s -- verify "$GITHUB_SHA" "$CONTROLLER_TOOL_DIRECTORY"
+          python3 "$CONTROLLER_TOOL_DIRECTORY/curseforge-release.py" verify \
+            --manifest build/release/modrinth/manifest.json \
+            --project "$CONTROLLER_TOOL_DIRECTORY/curseforge-project.json" \
+            --source-commit "$SOURCE_COMMIT" --receipt build/release/curseforge/receipt.json \
+            --history build/release/curseforge/history.json
+      - name: Verify public Hangar files
+        if: inputs.hangar
+        shell: bash
+        env:
+          SOURCE_COMMIT: ${{ inputs.source_commit }}
+        run: |
+          set -euo pipefail
+          git --no-replace-objects cat-file blob "$GITHUB_SHA:release/verify-controller-tools.sh" | \
+            bash -s -- verify "$GITHUB_SHA" "$CONTROLLER_TOOL_DIRECTORY"
+          python3 "$CONTROLLER_TOOL_DIRECTORY/hangar-release.py" verify \
+            --manifest build/release/hangar/manifest.json \
+            --project "$CONTROLLER_TOOL_DIRECTORY/hangar-project.json" \
+            --source-commit "$SOURCE_COMMIT" --receipt build/release/hangar/receipt.json
+      - name: Summarize publication results
+        if: always() && env.CONTROLLER_TOOL_DIRECTORY != ''
+        shell: bash
+        env:
+          CURSEFORGE_READ_ENABLED: ${{ secrets.CURSEFORGE_API_KEY != '' }}
+          PUBLICATION_REQUEST: >-
+            {"operation":${{ toJSON(inputs.operation) }},"tag":${{ toJSON(inputs.tag) }},"sourceCommit":${{ toJSON(inputs.source_commit) }},"destinations":{"maven_central":${{ inputs.maven_central }},"github_release":${{ inputs.github_release }},"modrinth":${{ inputs.modrinth }},"curseforge":${{ inputs.curseforge }},"hangar":${{ inputs.hangar }}}}
+        run: |
+          set -euo pipefail
+          git --no-replace-objects cat-file blob "$GITHUB_SHA:release/verify-controller-tools.sh" | \
+            bash -s -- verify "$GITHUB_SHA" "$CONTROLLER_TOOL_DIRECTORY"
+          python3 "$CONTROLLER_TOOL_DIRECTORY/publication-summary.py"
+      - name: Preserve publication results
+        if: always() && env.CONTROLLER_TOOL_DIRECTORY != ''
+        uses: actions/upload-artifact@v7
+        with:
+          name: publication-${{ inputs.tag }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            build/release/publication-request.json
+            build/release/modrinth-receipts/*.json
+            build/release/curseforge/receipt.json
+            build/release/hangar/receipt.json
+          if-no-files-found: error
+          retention-days: 90
+          archive: true
       - name: Clean up verification controller tools
         if: always() && steps.controller_tools.outputs.directory != ''
         shell: bash

@@ -1,5 +1,9 @@
+@file:OptIn(InternalStrataRuntimeApi::class)
+
 package dev.s7a.strata.runtime.remote
 
+import dev.s7a.strata.spi.InternalStrataRuntimeApi
+import dev.s7a.strata.spi.RuntimeExecutionOwner
 import java.util.TreeMap
 
 /**
@@ -13,7 +17,7 @@ public class RemotePacketStream(
     private var limits: RemoteLimits = RemotePacket.limits,
     send: (ByteArray) -> Unit,
 ) : AutoCloseable {
-    private val owner = Thread.currentThread()
+    private val owner = RuntimeExecutionOwner.current()
     private var outgoing: ((ByteArray) -> Unit)? = send
     private var nextOutgoing = 1L
     private var nextIncoming = 1L
@@ -111,6 +115,6 @@ public class RemotePacketStream(
     }
 
     private fun checkOwner() {
-        check(Thread.currentThread() === owner) { "Remote packet stream belongs to another thread." }
+        check(RuntimeExecutionOwner.current() == owner) { "Remote packet stream belongs to another execution owner." }
     }
 }

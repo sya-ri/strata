@@ -25,7 +25,7 @@ internal class PipelineInvariantTest {
         child.placed = true
         child.dirty = DirtyMask.of(DirtyPhase.Measure)
 
-        val pipeline = Pipeline(ThreadGuard())
+        val pipeline = Pipeline(OwnerGuard())
 
         assertEquals(DirtyMask.None, root.dirty)
         assertTrue(pipeline.hasPendingMeasure(root))

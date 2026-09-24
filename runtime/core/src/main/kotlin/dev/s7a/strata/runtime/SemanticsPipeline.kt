@@ -14,7 +14,7 @@ import dev.s7a.strata.spi.InternalStrataRuntimeApi
  */
 @OptIn(InternalStrataRuntimeApi::class)
 internal class SemanticsPipeline(
-    private val threadGuard: ThreadGuard,
+    private val ownerGuard: OwnerGuard,
     private val monitoring: RenderMonitoring = RenderMonitoring(),
 ) {
     /**
@@ -31,7 +31,7 @@ internal class SemanticsPipeline(
     ) {
         if (DirtyPhase.Semantics in retained.dirty || retained.localSemantics == null) {
             retained.dirty -= DirtyMask.of(DirtyPhase.Semantics)
-            val collector = SemanticsCollector(threadGuard)
+            val collector = SemanticsCollector(ownerGuard)
             try {
                 val semanticsCapability = retained.node as? SemanticsNode
                 if (semanticsCapability != null) {
@@ -58,9 +58,9 @@ internal class SemanticsPipeline(
      * Collects one node's unresolved semantics during its active callback.
      */
     private class SemanticsCollector(
-        threadGuard: ThreadGuard,
+        ownerGuard: OwnerGuard,
     ) : SemanticsScope {
-        private val guard = ScopeGuard(threadGuard)
+        private val guard = ScopeGuard(ownerGuard)
         private val values: MutableList<Semantics> = ArrayList()
 
         override fun emit(semantics: Semantics) {
