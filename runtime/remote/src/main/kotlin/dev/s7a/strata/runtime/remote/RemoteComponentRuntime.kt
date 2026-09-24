@@ -33,6 +33,7 @@ import dev.s7a.strata.spi.ComponentEvaluator
 import dev.s7a.strata.spi.ComponentRuntime
 import dev.s7a.strata.spi.ComponentRuntimeBridge
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
+import dev.s7a.strata.spi.RuntimeExecutionOwner
 import dev.s7a.strata.text.TextLayout
 import dev.s7a.strata.text.TextWrap
 import dev.s7a.strata.text.UiText
@@ -43,13 +44,13 @@ import dev.s7a.strata.text.UiText
  */
 @Suppress("TooManyFunctions") // Implements the complete component-runtime dispatch boundary.
 public class RemoteComponentRuntime : ComponentRuntime {
-    private val owner = Thread.currentThread()
+    private val owner = RuntimeExecutionOwner.current()
 
     /**
      * Evaluates one root with this remote runtime, including deferred Observe and state-component content.
      */
     public fun evaluate(content: UiScope.() -> Unit): Element {
-        check(Thread.currentThread() === owner) { "Remote component evaluation belongs to another thread." }
+        check(RuntimeExecutionOwner.current() == owner) { "Remote component evaluation belongs to another execution owner." }
         return ComponentRuntimeBridge.evaluate(this, content)
     }
 

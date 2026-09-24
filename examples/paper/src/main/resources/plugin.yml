@@ -7,3 +7,4 @@ commands:
   strata-demo:
     description: Opens the server-owned Strata example screen.
     usage: /strata-demo
+folia-supported: true

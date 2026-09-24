@@ -1,3 +1,7 @@
+import groovy.json.JsonOutput
+import groovy.json.JsonSlurper
+import io.papermc.hangarpublishplugin.model.Platforms
+import java.security.MessageDigest
 import com.vanniktech.maven.publish.Checksum
 import com.vanniktech.maven.publish.JavadocJar
 import com.vanniktech.maven.publish.KotlinJvm
@@ -49,10 +53,11 @@ plugins {
     alias(libs.plugins.fabricLoomRemap) apply false
     alias(libs.plugins.kover)
     id("dev.s7a.strata.release")
+    alias(libs.plugins.hangarPublish)
 }
 
 group = "dev.s7a.strata"
-version = "0.1.6"
+version = "0.2.0"
 private val sourceRevision = providers.gradleProperty("strata.sourceRevision").getOrElse("master")
 check(sourceRevision.matches(Regex("(?:master|v[0-9]+\\.[0-9]+\\.[0-9]+(?:[-+][0-9A-Za-z.-]+)?|[0-9a-f]{40})"))) {
     "strata.sourceRevision must be master, a release tag, or a full lowercase Git commit."
@@ -1637,6 +1642,17 @@ extensions.configure<StrataReleaseExtension> {
         layout.projectDirectory.file("docs/components/screen-progress.png"),
     )
     mavenArtifacts.set(releaseArtifacts)
+    mavenPublicationFiles.set(providers.provider {
+        releasePublicationProjectPaths.flatMap { path ->
+            project(path).extensions.getByType<PublishingExtension>().publications.withType<MavenPublication>().flatMap { publication ->
+                val identity = "${publication.groupId}:${publication.artifactId}"
+                val suffixes = publication.artifacts.filter { it.extension.endsWith(".asc").not() }.map { artifact ->
+                    artifact.classifier?.takeIf(String::isNotEmpty)?.let { "-$it.${artifact.extension}" } ?: ".${artifact.extension}"
+                }
+                (listOf(".pom", ".module") + suffixes).distinct().sorted().map { suffix -> "$identity:$suffix" }
+            }
+        }
+    })
     mavenLocalRepository.set(
         layout.dir(providers.provider { file("${System.getProperty("user.home")}/.m2/repository") }),
     )
@@ -1652,5 +1668,77 @@ extensions.configure<StrataReleaseExtension> {
                 },
             verificationTaskPath = "${fabricTarget.runtimeProjectPath}:verifyFabricModArtifact",
         )
+    }
+}
+
+val hangarProjectFile = layout.projectDirectory.file("release/hangar-project.json")
+val hangarNamespace = providers.fileContents(hangarProjectFile).asText.map { text ->
+    val metadata = JsonSlurper().parseText(text) as Map<*, *>
+    (metadata["namespace"] as? String)?.takeIf { it.matches(Regex("[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+")) }
+        ?: error("Configure the Hangar project namespace before publication.")
+}
+val hangarPaperVersions = minecraftFabricTargets.filter { it.paperDistribution == MinecraftFabricTarget.PaperDistribution.Available }.map { it.version }
+val hangarVelocityVersions = listOf(libs.versions.velocity.api.get())
+val hangarProjectBody = layout.projectDirectory.file("docs/publication/hangar-project.md")
+val hangarReleaseNotes = layout.projectDirectory.file("docs/releases/v${project.version}.md")
+val hangarPlatformVersions = mapOf("paper" to hangarPaperVersions, "velocity" to hangarVelocityVersions)
+val hangarPluginFiles = hangarPlatformVersions.keys.associateWith { platform ->
+    layout.projectDirectory.file("runtime/$platform/build/libs/strata-runtime-$platform-${project.version}-plugin.jar")
+}
+val hangarCanonicalFiles = hangarPlatformVersions.keys.associateWith { platform ->
+    layout.buildDirectory.file("release/maven-central/evidence/dev/s7a/strata/strata-runtime-$platform/${project.version}/strata-runtime-$platform-${project.version}-plugin.jar")
+}
+val hangarManifest = tasks.register("hangarReleaseManifest") {
+    group = "release"
+    description = "Generates Hangar metadata from verified plugin JARs and the configured platform matrix."
+    dependsOn(":runtime:paper:verifyPluginJar", ":runtime:velocity:verifyPluginJar")
+    inputs.files(hangarPluginFiles.values, hangarProjectFile, hangarReleaseNotes, hangarProjectBody)
+    inputs.property("releaseVersion", project.version.toString())
+    inputs.property("paperVersions", hangarPaperVersions)
+    inputs.property("velocityVersions", hangarVelocityVersions)
+    val output = layout.buildDirectory.file("release/hangar/manifest.json")
+    outputs.file(output)
+    doLast {
+        val artifacts = hangarPluginFiles.map { (platform, source) ->
+            val file = source.asFile
+            platform.uppercase() to linkedMapOf(
+                "fileName" to file.name,
+                "path" to file.absolutePath,
+                "canonicalPath" to hangarCanonicalFiles.getValue(platform).get().asFile.absolutePath,
+                "size" to file.length(),
+                "sha256" to MessageDigest.getInstance("SHA-256").digest(file.readBytes()).joinToString("") { "%02x".format(it) },
+                "platformVersions" to hangarPlatformVersions.getValue(platform),
+            )
+        }.toMap()
+        val manifest = linkedMapOf(
+            "schemaVersion" to 1, "version" to project.version.toString(), "namespace" to hangarNamespace.get(),
+            "projectBody" to hangarProjectBody.asFile.readText().replace("\r\n", "\n"),
+            "channel" to "Release", "description" to hangarReleaseNotes.asFile.readText().replace("\r\n", "\n"), "artifacts" to artifacts,
+        )
+        output.get().asFile.apply {
+            parentFile.mkdirs()
+            writeText(JsonOutput.prettyPrint(JsonOutput.toJson(manifest)) + "\n")
+        }
+    }
+}
+
+hangarPublish {
+    publications.register("strata") {
+        version.set(project.version.toString())
+        id.set(hangarNamespace)
+        channel.set("Release")
+        changelog.set(providers.fileContents(hangarReleaseNotes).asText.map { it.replace("\r\n", "\n") })
+        apiKey.set(providers.environmentVariable("HANGAR_API_TOKEN"))
+        pages.resourcePage(providers.fileContents(hangarProjectBody).asText.map { it.replace("\r\n", "\n") })
+        platforms {
+            register(Platforms.PAPER) {
+                jar.set(hangarCanonicalFiles.getValue("paper"))
+                platformVersions.set(hangarPaperVersions)
+            }
+            register(Platforms.VELOCITY) {
+                jar.set(hangarCanonicalFiles.getValue("velocity"))
+                platformVersions.set(hangarVelocityVersions)
+            }
+        }
     }
 }

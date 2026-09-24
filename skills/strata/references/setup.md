@@ -10,7 +10,7 @@ Use the same Strata release on both ends and select the Fabric runtime for the c
 | Host | Public opening API | State and handler owner |
 | --- | --- | --- |
 | Fabric | `UiDefinition.open()` | Client thread |
-| Paper | `definition.open(ownerPlugin, player)` | Paper primary thread |
+| Paper / Folia | `PaperUi.open(ownerPlugin, player) { definition }` | Paper primary thread or the player's Folia region |
 | Velocity | `VelocityUi.open(ownerPlugin, player) { definition }` | Strata's dedicated proxy UI thread |
 
 
@@ -21,8 +21,8 @@ Use the component catalog for available primitives and the guides for compositio
 
 ```kotlin
 dependencies {
-    compileOnly("dev.s7a.strata:strata-api:0.1.6")
-    modRuntimeOnly("dev.s7a.strata:strata-runtime-minecraft-fabric-<minecraft-version>:0.1.6")
+    compileOnly("dev.s7a.strata:strata-api:0.2.0")
+    modRuntimeOnly("dev.s7a.strata:strata-runtime-minecraft-fabric-<minecraft-version>:0.2.0")
     modRuntimeOnly("net.fabricmc:fabric-language-kotlin:<compatible-version>")
 }
 ```
@@ -32,7 +32,7 @@ Declare the runtime as a required Mod dependency so a production instance cannot
 ```json
 {
   "depends": {
-    "strata": ">=0.1.6"
+    "strata": ">=0.2.0"
   }
 }
 ```
@@ -87,10 +87,10 @@ See the [UI session guide](https://github.com/sya-ri/strata/blob/master/docs/gui
 
 See [Authoring patterns](patterns.md) for state, input, and resource ownership.
 
-## Paper and Velocity installation
+## Paper, Folia, and Velocity installation
 
 Install the chosen host's `plugin` classifier JAR in its `plugins` directory.
-Consumer plugins compile against `dev.s7a.strata:strata-paper-api:0.1.6` or `dev.s7a.strata:strata-velocity-api:0.1.6` and the host API with `compileOnly` dependencies.
+Consumer plugins compile against `dev.s7a.strata:strata-paper-api:0.2.0` or `dev.s7a.strata:strata-velocity-api:0.2.0` and the host API with `compileOnly` dependencies.
 Declare `depend: [Strata]` for Paper or a required dependency on plugin ID `strata` for Velocity; do not package another Strata runtime in the consumer.
 Players still install their matching Fabric runtime and Fabric Language Kotlin.
 If the screen only uses standard components or custom compositions of them, those client dependencies are sufficient; no application-specific client Mod is needed.
@@ -102,10 +102,10 @@ The Paper guide includes a compiled typed-input screen; use these examples when 
 
 ### Opening, state, and lifecycle
 
-- On Paper's primary thread, inspect `PaperUi.capabilities(player)`, create independent state outside the DSL callback, and call `definition.open(ownerPlugin, player)` using `dev.s7a.strata.paper.open`.
+- On Paper's primary thread or the player's Folia region, inspect `PaperUi.capabilities(player)` and create mutable state and a fresh definition inside the factory passed to `PaperUi.open(ownerPlugin, player) { ... }`. On Folia, enter `PaperUi.execute(player) { ... }` for external state access after scheduling onto that player. Do not share owner-confined state between players. Consuming plugins also declare `folia-supported: true`.
 - On Velocity, inspect the future from `VelocityUi.capabilities(player)` and construct the definition and owner-thread state inside the factory passed to `VelocityUi.open`. Its future returns the session handle. Queue external state access with `VelocityUi.execute(ownerPlugin) { ... }`; never join another UI future from a handler or completion callback.
 - A null capability result means negotiation is incomplete or unavailable. Opening with an unsupported declaration returns a terminal session reason; do not silently omit missing components or extensions.
-- Retain the returned `UiSession` when status inspection or explicit `close()` is needed. Read live handle properties only on its owner thread; Velocity listeners use detached platform event fields or queue access through `VelocityUi.execute`. Replacement, disconnect, and failures release its handlers, observations, and transfers. Paper plugin disable releases its owners; a Velocity consumer stopping early calls `VelocityUi.release(ownerPlugin)`.
+- Retain the returned `UiSession` when status inspection or explicit `close()` is needed. Read live handle properties inside its execution owner, using `PaperUi.execute` on Folia; Velocity listeners use detached platform event fields or queue access through `VelocityUi.execute`. Replacement, disconnect, and failures release its handlers, observations, and transfers. Paper plugin disable releases its owners; a Velocity consumer stopping early calls `VelocityUi.release(ownerPlugin)`.
 - Keep database and network work off the UI owner thread. Publish asynchronous results through state sources or the host's state-update boundary; source notifications are queued and committed at the next session cutoff.
 
 ### Remote resources and client behavior
@@ -130,9 +130,9 @@ Do not create a second browser-only layout, silently remove unsupported controls
 
 Use a multi-project build with one shared screen project, a JVM consumer, and a JS preview consumer.
 The screen project uses Kotlin Multiplatform with JVM and JS targets and keeps its state, callbacks, and definition factories in `commonMain`.
-For published dependencies, use `api("dev.s7a.strata:strata-api-multiplatform:0.1.6")` there; `strata-api` is the preserved JVM-only publication and cannot resolve JS variants.
+For published dependencies, use `api("dev.s7a.strata:strata-api-multiplatform:0.2.0")` there; `strata-api` is the preserved JVM-only publication and cannot resolve JS variants.
 The JVM project depends on that screen project and supplies the Mod, Paper, or Velocity opening boundary and business actions.
-The JS project depends on the same screen project and `dev.s7a.strata:strata-runtime-web:0.1.6`, supplying deterministic preview data, action implementations, and browser mounting.
+The JS project depends on the same screen project and `dev.s7a.strata:strata-runtime-web:0.2.0`, supplying deterministic preview data, action implementations, and browser mounting.
 Both consumers call the same definition factory; platform services stay behind shared callbacks or interfaces.
 Include the application's shared JVM classes in the deployable plugin/Mod artifact or provide them through its explicitly supported runtime dependency mechanism; a compile-time project dependency alone does not package them.
 Keep Strata and its Kotlin runtime supplied by the installed Strata runtime instead of shading a second copy into Paper or Velocity consumers.

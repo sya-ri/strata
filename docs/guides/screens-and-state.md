@@ -1,6 +1,6 @@
 # Screens and state
 
-Declare a component tree with `UiDefinition`, keep its state in the application, and open it on the installed runtime's owner thread.
+Declare a component tree with `UiDefinition`, keep its state in the application, and open it within the installed runtime's execution owner.
 Start with the [compiled README example](../../README.md#api-only-open-example).
 
 ## Declare and open a screen
@@ -18,7 +18,8 @@ Once ownership transfers, the runtime handles cleanup, including opening failure
 Closing an untransferred definition releases its captures; after opening, call the returned `UiSession.close()` to end the UI.
 Paper uses the same definition and handle through the `paper-api` extension `definition.open(plugin, player)`; the plugin owns cleanup on disable.
 Do not retain the callback's `UiScope` beyond that invocation.
-Use the host-specific opening boundary for [Paper](paper.md), [Velocity](velocity.md), or the [browser runtime](../../README.md#build-a-web-screen-from-source).
+On Folia, use `PaperUi.open` to create state inside the player's owner, and `PaperUi.execute` for later external state or session access from that player's region.
+Use the host-specific opening boundary for [Paper and Folia](paper.md), [Velocity](velocity.md), or the [browser runtime](../../README.md#build-a-web-screen-from-source).
 
 ## Switch presentation and close
 
@@ -92,12 +93,12 @@ Keep event arguments and return values unchanged; synchronous remote input resul
 
 ## Own component state
 
-Create editing and navigation states on the host thread and keep them outside callbacks that may be reevaluated.
+Create editing and navigation states inside the host's execution owner and keep them outside callbacks that may be reevaluated.
 Change application state in event handlers, not during declaration, measurement, layout, or painting.
 Captured Kotlin variables are not automatically reactive.
 
 Use `mutableStateOf(initialValue)` from `dev.s7a.strata.state` for an application-owned value and `State<T>` for a read-only view.
-Create it outside content on the host's owner thread.
+Create it outside content inside the host's execution owner.
 Reads of `.value` during evaluation track dependencies, so ordinary Kotlin `if`, `when`, loops, and called composition functions update when the value changes.
 Equal assignments do not invalidate content; changed assignments coalesce until the next evaluation.
 Only values read in the active branch remain dependencies, and reads exclusively inside event handlers do not subscribe content.
@@ -106,7 +107,7 @@ The [compiled shared scenario](../../integration/web/src/commonMain/kotlin/dev/s
 
 Dedicated control values such as `TextFieldState.value` also participate when read in content.
 Passing the state object to its editor alone does not make the parent reevaluate on every edit.
-For external publishers, use `StateSource` and the queued observation paths below; it is a different contract from owner-thread `State`.
+For external publishers, use `StateSource` and the queued observation paths below; it is a different contract from owner-confined `State`.
 
 | State | Use |
 | --- | --- |

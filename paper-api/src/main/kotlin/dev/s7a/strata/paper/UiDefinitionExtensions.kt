@@ -7,7 +7,8 @@ import org.bukkit.plugin.Plugin
 
 /**
  * Opens this definition on an authenticated client through the installed Strata Paper runtime.
- * Call on the primary thread; the enabled owner plugin bounds the session's lifetime.
+ * Call on Paper's primary thread or the player's Folia region; the enabled plugin bounds the lifetime.
+ * Captured mutable state must belong to the player's UI owner; [PaperUi.open] provides a factory for creating it.
  */
 public fun UiDefinition.open(
     ownerPlugin: Plugin,

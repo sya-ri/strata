@@ -159,7 +159,7 @@ The terminal receipt records `suiteScope`, `verifiedChecks`, `excludedChecks`, a
 Gradle rejects a receipt from a different scope or invocation and validates the recorded blur option against Minecraft's supported range.
 These receipts prove the actual shutdown boundary, while the Minecraft-independent tests separately cover fences that remain unsignalled for arbitrarily many frames.
 
-## Paper connection verification
+## Paper and Folia connection verification
 
 The nonpublished `integration:paper` plugin owns the server assertions for an isolated real-player connection.
 Its screen uses the compiled external component/modifier example and checks confirmed Japanese text, button activation, independent server updates, screen replacement, and a vanilla Slot pickup/restore transaction.
@@ -173,7 +173,12 @@ The isolated offline fixture explicitly disables its whitelist so test players c
 It runs development and packaged production clients and requires matching invocation IDs in both client and server receipts before writing `build/paper-acceptance/<version>/<run>/passed.json`.
 The manifest, logs, receipt copies, and plugin hashes remain beside that result, and the runner stops only its owned server process on success or failure.
 `--development-only` is a diagnostic subset and records only that task; it cannot establish production-JAR acceptance.
-The normal loaded suite still runs before the optional Paper fixture.
+Add `--platform folia` with an exact version present in the official Folia distribution inventory to test the same plugin and clients on Folia.
+Add `--minecart` to the Folia run to verify more than 64 blocks of mounted movement with screens open, including native text, button, extension, and inventory actions.
+The Folia fixture moves the connected player 4096 blocks with `teleportAsync` while retaining caller-owned UI state.
+It requires teleportation to retire the old native container, reopens the screen with the same state on the destination region, and verifies subsequent input, updates, and inventory round trips on the player's entity scheduler.
+Its invocation-bound result and server manifest are stored under `build/folia-acceptance`.
+The normal loaded suite still runs before the optional server fixture.
 Loaded-client suites disable Fabric's test-only network synchronizer through its documented `fabric.client.gametest.disableNetworkSynchronizer` property.
 Native custom-payload probes and external connections use asynchronous delivery across world and connection lifetimes; the fixture instead awaits actual connection state, remote screen revisions, and authoritative container changes.
 Framebuffer fences, protocol assertions, and container round-trip checks remain enabled in both development and production runs.

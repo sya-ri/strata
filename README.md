@@ -49,8 +49,8 @@ Install exactly one version-matched runtime as a separate client Fabric Mod toge
 
 ```kotlin
 dependencies {
-    compileOnly("dev.s7a.strata:strata-api:0.1.6")
-    modRuntimeOnly("dev.s7a.strata:strata-runtime-minecraft-fabric-<minecraft-version>:0.1.6")
+    compileOnly("dev.s7a.strata:strata-api:0.2.0")
+    modRuntimeOnly("dev.s7a.strata:strata-runtime-minecraft-fabric-<minecraft-version>:0.2.0")
     modRuntimeOnly("net.fabricmc:fabric-language-kotlin:<compatible-version>")
 }
 ```
@@ -61,7 +61,7 @@ Declare it as a required dependency in the consuming Mod so `UiDefinition.open()
 ```json
 {
   "depends": {
-    "strata": ">=0.1.6"
+    "strata": ">=0.2.0"
   }
 }
 ```
@@ -128,9 +128,9 @@ See the [web build guide](docs/development/build.md#initial-web-documents) for t
 | `api` | Compile application UI and custom components. |
 | `runtime/core` | Integrate the shared retained engine through its runtime contracts. |
 | `runtime/remote` | Encode, negotiate, and synchronize server-owned declarations and typed client events. |
-| `paper-api` | Compile Paper plugins against public opening methods and lifecycle events. |
+| `paper-api` | Compile Paper and Folia plugins against public opening methods and lifecycle events. |
 | `velocity-api` | Compile Velocity plugins against public asynchronous methods and lifecycle events. |
-| `runtime/paper` | Open server-owned DSL screens through an installed Paper plugin. |
+| `runtime/paper` | Open server-owned screens and HUDs through an installed Paper or Folia plugin. |
 | `runtime/velocity` | Own DSL screens on a Velocity proxy and coordinate backend connection lifetimes. |
 | `runtime/headless` | Render portable output and inspect UI behavior without launching Minecraft. |
 | `runtime/web` | Build initial HTML and mount supported components into native browser DOM. |
@@ -142,7 +142,7 @@ Versioned Fabric Mods package their common runtime libraries.
 Integration modules contain verification and examples and are not published.
 See [architecture](docs/development/architecture.md) for dependency boundaries.
 
-The [Paper](docs/guides/paper.md) and [Velocity](docs/guides/velocity.md) guides cover server-owned screens and their client requirements.
+The [Paper and Folia](docs/guides/paper.md) and [Velocity](docs/guides/velocity.md) guides cover server-owned screens, HUDs, and their client requirements.
 
 ## Changelog
 

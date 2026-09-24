@@ -1,9 +1,13 @@
+@file:OptIn(InternalStrataRuntimeApi::class)
+
 package dev.s7a.strata.runtime.remote
 
 import dev.s7a.strata.projection.ProjectionType
+import dev.s7a.strata.spi.InternalStrataRuntimeApi
+import dev.s7a.strata.spi.RuntimeExecutionOwner
 
 /**
- * Owner-thread protocol negotiation and ordered transport for one authenticated player connection.
+ * Protocol negotiation and ordered transport for one authenticated connection, confined to its execution owner.
  * The adapter supplies authenticated bytes and synchronous transport writes, never arbitrary peers.
  * The fixed bootstrap limits apply until both greetings have been sent; thereafter both sides use their intersection.
  * All partial buffers and the transport callback are released on close or protocol failure.
@@ -13,7 +17,7 @@ public class RemoteConnection(
     private val limits: RemoteLimits = RemoteLimits(),
     send: (ByteArray) -> Unit,
 ) : AutoCloseable {
-    private val owner = Thread.currentThread()
+    private val owner = RuntimeExecutionOwner.current()
     private val supported = types.toSet()
     private var outgoing: ((ByteArray) -> Unit)? = send
     private var framing = RemoteFraming(RemotePacket.limits)
@@ -194,7 +198,7 @@ public class RemoteConnection(
         }
 
     private fun checkOwner() {
-        check(Thread.currentThread() === owner) { "Remote connection belongs to another thread." }
+        check(RuntimeExecutionOwner.current() == owner) { "Remote connection belongs to another execution owner." }
     }
 
     /**

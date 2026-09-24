@@ -45,11 +45,9 @@ import dev.s7a.strata.ui.UiPresentation
 import dev.s7a.strata.ui.UiRejection
 import dev.s7a.strata.ui.UiSession
 import dev.s7a.strata.ui.UiSessionStatus
-import org.bukkit.Server
 import org.bukkit.entity.Player
 import org.bukkit.event.Event
 import org.bukkit.plugin.Plugin
-import org.bukkit.plugin.PluginManager
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Assertions.assertTrue
@@ -363,24 +361,12 @@ internal class PaperScreenServiceTest {
         limits: RemoteLimits = RemoteLimits(),
     ) : AutoCloseable {
         val events = mutableListOf<Event>()
-        private val eventManager =
-            proxy(PluginManager::class.java) { name, arguments ->
-                check(name == "callEvent")
-                events.add(arguments[0] as Event)
-                null
-            }
-        private val server =
-            proxy(Server::class.java) { name, _ ->
-                check(name == "getPluginManager")
-                eventManager
-            }
         private val messages = ArrayDeque<ByteArray>()
         private var channelRegistered = false
         val plugin: Plugin =
             proxy(Plugin::class.java) { name, _ ->
                 when (name) {
                     "getLogger" -> Logger.getLogger("strata-paper-test")
-                    "getServer" -> server
                     else -> error("Unexpected plugin API: $name")
                 }
             }
@@ -398,7 +384,7 @@ internal class PaperScreenServiceTest {
                     }
                 }
             }
-        val service = paperScreenService(plugin)
+        val service = paperScreenService(plugin) { events.add(it) }
         private var address: RemoteAddress? = null
         private var sequence = 1L
         val client = RemoteConnection(RemoteRegistry().also(RemoteBuiltins::register).types + extraTypes, limits) { service.enqueue(player, RemotePacket.encode(RemotePacket.Frame(checkNotNull(address), sequence++, it))) }

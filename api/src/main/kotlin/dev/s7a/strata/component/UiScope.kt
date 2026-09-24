@@ -3,30 +3,30 @@
 package dev.s7a.strata.component
 
 import dev.s7a.strata.element.Element
-import dev.s7a.strata.internal.platform.currentThread
+import dev.s7a.strata.internal.platform.currentOwner
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
 import kotlin.jvm.JvmSynthetic
 
 /**
  * Callback-lifetime scope used to emit immutable element descriptions.
- * A scope is confined to the thread that constructs it and remains valid only while its enclosing component callback is running.
+ * A scope is confined to the execution owner that constructs it and remains valid only while its enclosing component callback is running.
  * The scope temporarily retains references to caller-owned immutable [Element] instances and the builder returns the exact single root instance.
  * The protected constructor is reserved for scope implementations in this module and package, as required by Kotlin's sealed hierarchy rules.
  * Application code cannot construct or implement this sealed scope.
  */
 @StrataDsl
 public sealed class UiScope protected constructor() {
-    private val ownerThread: Any = currentThread()
+    private val owner = currentOwner()
     private val emittedElements: MutableList<Element> = ArrayList()
     private var active: Boolean = true
 
     /**
      * Emits one immutable element description.
      * The element is retained by this callback-lifetime scope without being copied, wrapped, registered, or dispatched by component type.
-     * The call must run on the scope's constructing thread while its enclosing callback is active.
+     * The call must run under the scope's construction execution owner while its enclosing callback is active.
      *
      * @param element immutable description to emit.
-     * @throws IllegalStateException when called from another thread or after the callback has completed.
+     * @throws IllegalStateException when called from another execution owner or after the callback has completed.
      */
     public fun element(element: Element) {
         checkUsable()
@@ -34,16 +34,16 @@ public sealed class UiScope protected constructor() {
     }
 
     /**
-     * Checks the callback-lifetime and owner-thread capability of this scope.
+     * Checks the callback-lifetime and execution-owner capability of this scope.
      *
      * Internal scope extensions use this guard before creating behavior tied to a scope.
      *
-     * @throws IllegalStateException when called from another thread or after the callback has completed.
+     * @throws IllegalStateException when called from another execution owner or after the callback has completed.
      */
     @JvmSynthetic
     internal fun checkUsable() {
-        check(currentThread() === ownerThread) {
-            "UiScope can only be used from its constructing thread."
+        check(currentOwner() == owner) {
+            "UiScope can only be used from its construction execution owner."
         }
         check(active) {
             "UiScope cannot be used after its callback has completed."

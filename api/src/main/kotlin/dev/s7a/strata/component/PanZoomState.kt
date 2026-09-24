@@ -6,7 +6,7 @@ import dev.s7a.strata.geometry.LongRect
 import dev.s7a.strata.geometry.exactDoubleCenterOrNull
 import dev.s7a.strata.geometry.exactDoubleMidpointOrNull
 import dev.s7a.strata.geometry.hasExactlyRepresentableDoubleEdges
-import dev.s7a.strata.internal.platform.currentThread
+import dev.s7a.strata.internal.platform.currentOwner
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
 
 /**
@@ -14,7 +14,7 @@ import dev.s7a.strata.spi.InternalStrataRuntimeApi
  *
  * Center coordinates use the content coordinate space, and zoom is a multiplier over the viewport's [PanZoomFit] scale.
  * One live retained observer may own viewport geometry, while additional observers may read transform changes without publishing geometry.
- * Reads, writes, observation, geometry publication, and observer release are confined to the constructing thread.
+ * Reads, writes, observation, geometry publication, and observer release are confined to the construction execution owner.
  * Observer callbacks may read state and release observers, but synchronous state writes are rejected so every observer sees a publication that still matches [PanZoomState.metrics].
  * If an observer fails, the committed metrics remain current, every other still-live observer is attempted, and the first failure escapes with later failures suppressed.
  * The state owns no retained nodes or rendering resources.
@@ -32,7 +32,7 @@ public class PanZoomState(
     public val minimumZoom: Double = 1.0,
     public val maximumZoom: Double = 64.0,
 ) {
-    private val ownerThread: Any = currentThread()
+    private val owner = currentOwner()
     private val observers: MutableMap<Any, (PanZoomMetrics) -> Unit> = LinkedHashMap()
     private var geometryOwner: Any? = null
     private var centerRequested: Boolean = initialCenter != null
@@ -55,11 +55,11 @@ public class PanZoomState(
     /**
      * Current immutable transform and geometry snapshot.
      *
-     * @throws IllegalStateException when read from another thread.
+     * @throws IllegalStateException when read from another execution owner.
      */
     public val metrics: PanZoomMetrics
         get() {
-            checkThread()
+            checkOwner()
             return currentMetrics
         }
 
@@ -72,11 +72,11 @@ public class PanZoomState(
      * @param delta finite content-coordinate displacement.
      * @return the resulting clamped center.
      * @throws IllegalArgumentException when arithmetic produces a non-finite coordinate.
-     * @throws IllegalStateException when called from another thread or synchronously from an observer callback.
+     * @throws IllegalStateException when called from another execution owner or synchronously from an observer callback.
      * @throws Throwable when a state observer fails after the new metrics are committed.
      */
     public fun panBy(delta: DoubleOffset): DoubleOffset {
-        checkThread()
+        checkOwner()
         return centerOn(currentMetrics.center + delta)
     }
 
@@ -85,11 +85,11 @@ public class PanZoomState(
      *
      * @param position requested finite content coordinate.
      * @return the resulting clamped center.
-     * @throws IllegalStateException when called from another thread or synchronously from an observer callback.
+     * @throws IllegalStateException when called from another execution owner or synchronously from an observer callback.
      * @throws Throwable when a state observer fails after the new metrics are committed.
      */
     public fun centerOn(position: DoubleOffset): DoubleOffset {
-        checkThread()
+        checkOwner()
         checkWritable()
         centerRequested = true
         val next = withCenter(currentMetrics, position)
@@ -108,14 +108,14 @@ public class PanZoomState(
      * @param anchor optional finite viewport-local coordinate to keep over the same content coordinate.
      * @return the resulting clamped zoom multiplier.
      * @throws IllegalArgumentException when `factor` is not finite and positive or the resolved transform cannot remain finite and positive.
-     * @throws IllegalStateException when called from another thread or synchronously from an observer callback.
+     * @throws IllegalStateException when called from another execution owner or synchronously from an observer callback.
      * @throws Throwable when a state observer fails after the new metrics are committed.
      */
     public fun zoomBy(
         factor: Double,
         anchor: DoubleOffset? = null,
     ): Double {
-        checkThread()
+        checkOwner()
         require(factor.isFinite() && 0.0 < factor) { "Zoom factor must be finite and positive." }
         val product = currentMetrics.zoom * factor
         val requested =
@@ -137,14 +137,14 @@ public class PanZoomState(
      * @param anchor optional finite viewport-local coordinate to keep over the same content coordinate.
      * @return the resulting clamped zoom multiplier.
      * @throws IllegalArgumentException when `zoom` is not finite and positive or the resolved transform or anchor arithmetic cannot remain finite and positive.
-     * @throws IllegalStateException when called from another thread or synchronously from an observer callback.
+     * @throws IllegalStateException when called from another execution owner or synchronously from an observer callback.
      * @throws Throwable when a state observer fails after the new metrics are committed.
      */
     public fun zoomTo(
         zoom: Double,
         anchor: DoubleOffset? = null,
     ): Double {
-        checkThread()
+        checkOwner()
         checkWritable()
         require(zoom.isFinite() && 0.0 < zoom) { "Zoom must be finite and positive." }
         val nextZoom = zoom.coerceIn(minimumZoom, maximumZoom)
@@ -160,11 +160,11 @@ public class PanZoomState(
      *
      * @return the resulting metrics snapshot.
      * @throws IllegalArgumentException when the minimum zoom cannot resolve to a finite positive scale for known geometry.
-     * @throws IllegalStateException when called from another thread or synchronously from an observer callback.
+     * @throws IllegalStateException when called from another execution owner or synchronously from an observer callback.
      * @throws Throwable when a state observer fails after the new metrics are committed.
      */
     public fun reset(): PanZoomMetrics {
-        checkThread()
+        checkOwner()
         checkWritable()
         val next =
             if (currentMetrics.geometryKnown) {
@@ -188,11 +188,11 @@ public class PanZoomState(
      *
      * @param position finite viewport-local coordinate.
      * @return the corresponding finite content coordinate.
-     * @throws IllegalStateException when geometry is not known or the caller uses another thread.
+     * @throws IllegalStateException when geometry is not known or the caller uses another execution owner.
      * @throws IllegalArgumentException when conversion produces a non-finite coordinate.
      */
     public fun localToContent(position: DoubleOffset): DoubleOffset {
-        checkThread()
+        checkOwner()
         check(currentMetrics.geometryKnown) { "Pan-and-zoom geometry is not known." }
         return localToContent(position, currentMetrics)
     }
@@ -202,11 +202,11 @@ public class PanZoomState(
      *
      * @param position finite content coordinate.
      * @return the corresponding finite viewport-local coordinate.
-     * @throws IllegalStateException when geometry is not known or the caller uses another thread.
+     * @throws IllegalStateException when geometry is not known or the caller uses another execution owner.
      * @throws IllegalArgumentException when conversion produces a non-finite coordinate.
      */
     public fun contentToLocal(position: DoubleOffset): DoubleOffset {
-        checkThread()
+        checkOwner()
         check(currentMetrics.geometryKnown) { "Pan-and-zoom geometry is not known." }
         val viewportCenter = viewportCenter(currentMetrics.viewportSize)
         return DoubleOffset(
@@ -216,25 +216,25 @@ public class PanZoomState(
     }
 
     /**
-     * Registers one privileged owner-thread observer without immediately invoking it.
+     * Registers one privileged owner-confined observer without immediately invoking it.
      *
      * The returned handle is the identity required for geometry publication and must be closed by its retained owner.
      * Closing the current geometry owner permits another viewport to attach while retaining the last metrics snapshot.
      * This runtime extension contract is opt-in and may evolve between minor releases.
      *
-     * @param callback owner-thread invalidation callback receiving each published metrics snapshot except geometry feedback from its own [updateGeometry] call; it may read state and release observers but must not write state synchronously.
+     * @param callback owner-confined invalidation callback receiving each published metrics snapshot except geometry feedback from its own [updateGeometry] call; it may read state and release observers but must not write state synchronously.
      * @return privileged observer identity owned by the caller until closed.
-     * @throws IllegalStateException when called from another thread.
+     * @throws IllegalStateException when called from another execution owner.
      */
     @InternalStrataRuntimeApi
     public fun observe(callback: (PanZoomMetrics) -> Unit): PanZoomStateObserver {
-        checkThread()
+        checkOwner()
         val token = Any()
         observers[token] = callback
         return PanZoomStateObserver(
             token = token,
             release = {
-                checkThread()
+                checkOwner()
                 val removedCallback = checkNotNull(observers.remove(token)) { "Pan-and-zoom observer was already released." }
                 check(removedCallback === callback) { "Pan-and-zoom observer callback identity changed." }
                 if (geometryOwner === token) geometryOwner = null
@@ -254,7 +254,7 @@ public class PanZoomState(
      * @param fit base scale policy.
      * @param origin live observer that owns this geometry.
      * @throws IllegalArgumentException when geometry is empty, its bound edges or axis midpoints are not exactly representable, or it cannot produce a finite positive transform.
-     * @throws IllegalStateException when the observer is released, another viewport owns geometry, the caller uses another thread, or an observer callback synchronously writes state.
+     * @throws IllegalStateException when the observer is released, another viewport owns geometry, the caller uses another execution owner, or an observer callback synchronously writes state.
      * @throws Throwable when a different state observer fails after the new geometry is committed.
      */
     @InternalStrataRuntimeApi
@@ -264,7 +264,7 @@ public class PanZoomState(
         fit: PanZoomFit,
         origin: PanZoomStateObserver,
     ) {
-        checkThread()
+        checkOwner()
         checkWritable()
         check(observers.containsKey(origin.token)) { "Pan-and-zoom geometry requires a live observer." }
         val existingOwner = geometryOwner
@@ -371,8 +371,8 @@ public class PanZoomState(
         check(notifyingObservers.not()) { "Pan-and-zoom state cannot be written synchronously from an observer callback." }
     }
 
-    private fun checkThread() {
-        check(currentThread() === ownerThread) { "Pan-and-zoom state requires its creator thread." }
+    private fun checkOwner() {
+        check(currentOwner() == owner) { "Pan-and-zoom state requires its execution owner." }
     }
 
     private companion object {

@@ -607,7 +607,7 @@ Observe is one child of its containing layout. Apply weight, alignment, sizing, 
 
 ### Parent scope
 
-Content emits zero or one root on the owner thread. Keep editing and navigation state outside reevaluation.
+Content emits zero or one root inside the execution owner. Keep editing and navigation state outside reevaluation.
 
 </details>
 
@@ -768,7 +768,7 @@ Pointer, keyboard, committed-character, preedit, and focus modifiers run as acti
 
 ### Parent scope
 
-Keep caller-owned `TextFieldState` on its owner thread with a positive UTF-16 maximum length. Editing uses scalars, not grapheme clusters. Preedit stays separate until committed; it does not reproduce Minecraft's native IME popup.
+Keep caller-owned `TextFieldState` inside its execution owner with a positive UTF-16 maximum length. Editing uses scalars, not grapheme clusters. Preedit stays separate until committed; it does not reproduce Minecraft's native IME popup.
 
 </details>
 
@@ -1008,7 +1008,7 @@ Use typed checked-change modifiers with caller-owned boolean state.
 
 ### Parent scope
 
-No children. Retain `CheckboxState` on its owner thread.
+No children. Retain `CheckboxState` inside its execution owner.
 
 </details>
 

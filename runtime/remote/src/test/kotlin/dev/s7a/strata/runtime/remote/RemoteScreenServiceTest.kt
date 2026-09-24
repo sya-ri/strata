@@ -1,4 +1,5 @@
 @file:Suppress("DEPRECATION") // Exercises the compatibility screen entry.
+@file:OptIn(InternalStrataRuntimeApi::class)
 
 package dev.s7a.strata.runtime.remote
 
@@ -12,14 +13,51 @@ import dev.s7a.strata.projection.BuiltinProjection
 import dev.s7a.strata.projection.ProjectionInputCodec
 import dev.s7a.strata.projection.ProjectionValue
 import dev.s7a.strata.screen.ScreenDefinition
+import dev.s7a.strata.spi.InternalStrataRuntimeApi
+import dev.s7a.strata.spi.RuntimeExecutionOwner
+import dev.s7a.strata.state.mutableStateOf
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertNotEquals
+import org.junit.jupiter.api.Assertions.assertThrows
+import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
+import java.util.concurrent.Executors
+import java.util.concurrent.TimeUnit
 
 /**
  * Proves that two backends reusing screen and action identities cannot execute each other's queued operations.
  */
 internal class RemoteScreenServiceTest {
+    @Test
+    fun migratingOwnerPreservesNegotiationRetainedStateAndActionDispatch() {
+        val owner = RuntimeExecutionOwner()
+        val fixture = owner.run { Host() }
+        val count = owner.run { mutableStateOf(0) }
+        val snapshot = owner.run { fixture.open { count.value += 1 } }
+        val packet = owner.run { fixture.action(snapshot) }
+        val executor = Executors.newSingleThreadExecutor()
+        try {
+            executor
+                .submit {
+                    assertThrows(IllegalStateException::class.java) { fixture.host.tick() }
+                    owner.run {
+                        fixture.host.enqueue(Unit, packet)
+                        fixture.host.tick()
+                        assertEquals(1, count.value)
+                    }
+                }.get(5, TimeUnit.SECONDS)
+            owner.run {
+                assertEquals(1, count.value)
+                fixture.host.tick()
+                fixture.close()
+            }
+        } finally {
+            owner.run { fixture.close() }
+            executor.shutdownNow()
+            assertTrue(executor.awaitTermination(5, TimeUnit.SECONDS))
+        }
+    }
+
     @Test
     fun aNewBackendIgnoresAnOldOperationWithOtherwiseIdenticalIds() {
         var oldCalls = 0

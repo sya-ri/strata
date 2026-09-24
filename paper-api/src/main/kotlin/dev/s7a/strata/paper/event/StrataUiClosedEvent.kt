@@ -11,7 +11,9 @@ import org.bukkit.plugin.Plugin
 
 /**
  * UI ownership has ended, including failed opening. Emitted once; the session cannot reopen.
- * Delivered synchronously on Paper's primary thread. Notification only; it is not cancellable.
+ * Retirement and shutdown callbacks do not grant native world access.
+ * Ordinarily delivered synchronously on Paper's primary thread or the player's Folia region.
+ * Notification only; it is not cancellable.
  */
 public class StrataUiClosedEvent(
     public val player: Player,

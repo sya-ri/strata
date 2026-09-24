@@ -14,7 +14,7 @@ import dev.s7a.strata.runtime.platform.diagnosticName
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
 
 /**
- * Bounded owner-thread collector with a detachable public handle and no frame history.
+ * Bounded owner-confined collector with a detachable public handle and no frame history.
  */
 @OptIn(InternalStrataRuntimeApi::class)
 @Suppress("TooManyFunctions") // Event counters and the public handle share the same bounded collector lifetime.
@@ -24,7 +24,7 @@ internal class RenderMonitorImpl(
     activeSubscriptions: Int,
     private var monitoring: RenderMonitoring?,
 ) : UiRenderMonitor {
-    private val threadGuard = ThreadGuard()
+    private val ownerGuard = OwnerGuard()
     private val totals = RenderWorkCounts()
     private val live = mutableMapOf<RetainedEntry, RenderNodeRecord>()
     private val records = ArrayList<RenderNodeRecord>()
@@ -98,7 +98,7 @@ internal class RenderMonitorImpl(
     }
 
     override fun snapshot(): UiRenderSnapshot {
-        threadGuard.check()
+        ownerGuard.check()
         finalSnapshot?.let { return it }
         checkBoundary()
         return detachedSnapshot()
@@ -127,7 +127,7 @@ internal class RenderMonitorImpl(
     }
 
     override fun close() {
-        threadGuard.check()
+        ownerGuard.check()
         if (boundary == null) {
             finalSnapshot = null
             return
@@ -164,7 +164,7 @@ internal class RenderMonitorImpl(
     }
 
     private fun checkBoundary() {
-        threadGuard.check()
+        ownerGuard.check()
         checkNotNull(boundary) { "Render monitoring is closed." }.invoke()
     }
 

@@ -348,7 +348,7 @@ public abstract interface class dev/s7a/strata/runtime/spi/RuntimeUiFrame {
 public final class dev/s7a/strata/runtime/spi/RuntimeUiInput : java/lang/AutoCloseable {
 	public fun <init> (Ljava/util/Map;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function1;)V
 	public fun close ()V
-	public final fun configure (Ljava/lang/Object;Ldev/s7a/strata/ui/UiInputPolicy;Z)V
+	public final fun configure (Ldev/s7a/strata/ui/UiSession;Ldev/s7a/strata/ui/UiInputPolicy;Z)V
 	public final fun event (Ljava/util/Collection;ZZ)V
 	public final fun reset ()V
 }

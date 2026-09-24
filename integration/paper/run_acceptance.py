@@ -72,6 +72,8 @@ def main() -> None:
     """Provision a verified Paper build, run development and production clients, then stop the owned server."""
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("version")
+    parser.add_argument("--platform", choices=("paper", "folia"), default="paper")
+    parser.add_argument("--minecart", action="store_true", help="Verify Folia movement with the screen open while riding a minecart.")
     parser.add_argument("--java", type=Path, required=True)
     parser.add_argument("--port", type=int, default=25588)
     parser.add_argument("--development-only", action="store_true")
@@ -83,16 +85,18 @@ def main() -> None:
         parser.error("Use an unprivileged local port.")
     if arguments.manual_ime and arguments.version not in ("26.2", "26.3"):
         parser.error("The manual OS IME fixture supports the 26.2 and 26.3 clients.")
+    if arguments.minecart and (arguments.platform != "folia" or arguments.manual_ime):
+        parser.error("Minecart verification requires automated Folia acceptance.")
     run_id = str(uuid.uuid4())
-    output = ROOT / "build/paper-acceptance" / arguments.version / run_id
+    output = ROOT / f"build/{arguments.platform}-acceptance" / arguments.version / run_id
     output.mkdir(parents=True)
     eula = ROOT / f"integration/minecraft-fabric-{arguments.version}/build/run/clientGameTest/eula.txt"
     if properties(eula).get("eula") != "true":
         raise RuntimeError("Existing workspace EULA acceptance is required before starting a server.")
-    versions = json.loads(request("https://fill.papermc.io/v3/projects/paper"))["versions"]
+    versions = json.loads(request(f"https://fill.papermc.io/v3/projects/{arguments.platform}"))["versions"]
     if arguments.version not in [version for group in versions.values() for version in group]:
         raise RuntimeError("Paper does not distribute the exact requested game version; client-only verification remains separate.")
-    manifest = json.loads(request(f"https://fill.papermc.io/v3/projects/paper/versions/{arguments.version}/builds/latest"))
+    manifest = json.loads(request(f"https://fill.papermc.io/v3/projects/{arguments.platform}/versions/{arguments.version}/builds/latest"))
     download = manifest["downloads"]["server:default"]
     expected = download["checksums"]["sha256"]
     cache = ROOT / "build/paper-downloads" / expected
@@ -103,7 +107,7 @@ def main() -> None:
         if hashlib.sha256(data).hexdigest() != expected:
             raise RuntimeError("Official Paper download checksum does not match.")
         jar.write_bytes(data)
-    (output / "paper-build.json").write_text(json.dumps(manifest, indent=2) + "\n", encoding="utf-8")
+    (output / "server-build.json").write_text(json.dumps(manifest, indent=2) + "\n", encoding="utf-8")
     gradle([":runtime:paper:pluginJar", ":examples:paper:jar", ":integration:paper:jar"], output / "build.log")
     server = output / "server"
     plugins = server / "plugins"
@@ -114,7 +118,7 @@ def main() -> None:
     shutil.copyfile(eula, server / "eula.txt")
     (server / "server.properties").write_text(
         f"server-ip=127.0.0.1\nserver-port={arguments.port}\nonline-mode=false\nenforce-secure-profile=false\nwhite-list=false\n"
-        "view-distance=2\nsimulation-distance=2\nspawn-protection=0\nmax-players=1\nlevel-seed=1\n"
+        "view-distance=2\nsimulation-distance=2\nspawn-protection=0\nmax-players=4\nlevel-seed=1\n"
         "level-type=minecraft:flat\ngenerate-structures=false\nenable-rcon=false\n",
         encoding="utf-8",
     )
@@ -125,7 +129,7 @@ def main() -> None:
     server_log = output / "server.log"
     with server_log.open("w", encoding="utf-8") as log:
         process = subprocess.Popen(
-            [str(arguments.java.resolve()), "-Xms512m", "-Xmx2g", f"-Dstrata.paper.run={run_id}", "-jar", str(jar), "--nogui"],
+            [str(arguments.java.resolve()), "-Xms512m", "-Xmx2g", f"-Dstrata.paper.run={run_id}", f"-Dstrata.paper.minecart={str(arguments.minecart).lower()}", "-jar", str(jar), "--nogui"],
             cwd=server, stdin=subprocess.PIPE, stdout=log, stderr=subprocess.STDOUT, text=True,
             creationflags=subprocess.CREATE_NO_WINDOW if os.name == "nt" else 0,
         )
@@ -135,6 +139,9 @@ def main() -> None:
                 if process.poll() is not None or deadline <= time.monotonic():
                     raise RuntimeError(f"Paper did not start; inspect {server_log}")
                 time.sleep(1)
+            startup = server_log.read_text(encoding="utf-8", errors="replace")
+            if "Failed to register events" in startup or "Error occurred while enabling" in startup:
+                raise RuntimeError(f"Acceptance plugins did not enable cleanly; inspect {server_log}")
             tasks = ["runClientGameTest"] if arguments.development_only else ["runClientGameTest", "runProductionClientGameTest"]
             if arguments.manual_ime:
                 tasks = ["runManualPaperIme"]
@@ -147,6 +154,10 @@ def main() -> None:
                     raise RuntimeError("Missing current server-side action and container evidence.")
                 if not arguments.manual_ime and any(proof.get(key) != "confirmed" for key in ("uiPresentations", "uiEvents")):
                     raise RuntimeError("Missing acknowledged HUD switching and lifecycle event evidence.")
+                if arguments.platform == "folia" and not arguments.manual_ime and not arguments.minecart and proof.get("regionMigration") != "true":
+                    raise RuntimeError("Missing Folia region-migration evidence.")
+                if arguments.minecart and float(proof.get("minecartDistance", "0")) < 64:
+                    raise RuntimeError("Missing mounted movement evidence.")
                 parity = "minecraft-parity" if task == "runClientGameTest" else "minecraft-production-parity"
                 if arguments.version.startswith("1."):
                     parity = "minecraft-verification" if task == "runClientGameTest" else "minecraft-production-verification"
@@ -157,8 +168,8 @@ def main() -> None:
                     raise RuntimeError("Missing current client-side Paper evidence.")
                 shutil.copyfile(server_receipt, output / f"{task}-server.properties")
                 shutil.copyfile(client_receipt, output / f"{task}-client.properties")
-            (output / "passed.json").write_text(json.dumps({"runId": run_id, "version": arguments.version, "paperSha256": expected, "tasks": tasks, "artifacts": {str(path.relative_to(ROOT)): hashlib.sha256(path.read_bytes()).hexdigest() for path in distributions}}, indent=2) + "\n", encoding="utf-8")
-            print(f"Paper acceptance passed: {output}")
+            (output / "passed.json").write_text(json.dumps({"runId": run_id, "version": arguments.version, "platform": arguments.platform, "minecart": arguments.minecart, "serverSha256": expected, "tasks": tasks, "artifacts": {str(path.relative_to(ROOT)): hashlib.sha256(path.read_bytes()).hexdigest() for path in distributions}}, indent=2) + "\n", encoding="utf-8")
+            print(f"{arguments.platform} acceptance passed: {output}")
         finally:
             if process.poll() is None:
                 try:

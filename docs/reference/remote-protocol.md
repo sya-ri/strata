@@ -99,5 +99,5 @@ Registrations are optional for local-only components and modifiers.
 A remote screen requiring an absent projection or unsupported schema fails explicitly before it can become a supported screen.
 Plugin disable, disconnect, screen replacement, native container replacement, decoding failure, handler failure, and resource limits release the corresponding owner references and transfer queues.
 Common lifecycle/source-cutoff rules remain in [UI sessions](../development/ui-sessions.md); runtime cache admission remains in [performance](../development/performance.md).
-The shared host queues at most 64 lifecycle transitions requested during one input handler and drains them on its owner thread after that handler returns.
+The shared host queues at most 64 lifecycle transitions requested during one input handler and drains them inside its execution owner after that handler returns.
 Replacement, close, disconnect, inventory changes, and plugin shutdown therefore cannot reenter an active core input operation; excess transition requests fail explicitly.

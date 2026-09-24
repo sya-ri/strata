@@ -1,7 +1,7 @@
 package dev.s7a.strata.ui
 
 /**
- * Owner-thread handle for one retained UI, shared by client and remote event callbacks.
+ * Execution-owner-confined handle for one retained UI, shared by client and remote event callbacks.
  * Controls requested inside an event are applied after event delivery finishes.
  * Terminal handles never reopen and retain their last applied presentation.
  */

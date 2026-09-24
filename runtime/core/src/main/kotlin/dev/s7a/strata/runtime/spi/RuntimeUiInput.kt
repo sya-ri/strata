@@ -1,13 +1,14 @@
 package dev.s7a.strata.runtime.spi
 
-import dev.s7a.strata.runtime.platform.currentThread
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
+import dev.s7a.strata.spi.RuntimeExecutionOwner
 import dev.s7a.strata.ui.UiGameAction
 import dev.s7a.strata.ui.UiInputPolicy
+import dev.s7a.strata.ui.UiSession
 
 /**
- * Owner-thread forwarding gate for a fixed set of native bindings.
- * Tracks at most [bindings]' size, releases before changing owner/policy or entering text editing, and never forwards consumed UI events.
+ * Execution-owner-confined forwarding gate for a fixed set of native bindings.
+ * Tracks at most [bindings]' size, releases before changing input session/policy or entering text editing, and never forwards consumed UI events.
  * The adapter resolves actual remapped keys for each event and supplies only matching binding identities.
  */
 @InternalStrataRuntimeApi
@@ -16,27 +17,27 @@ public class RuntimeUiInput<K : Any>(
     private val press: (K) -> Unit,
     private val release: (K) -> Unit,
 ) : AutoCloseable {
-    private val thread = currentThread()
+    private val owner = RuntimeExecutionOwner.current()
     private val bindings = bindings.toMap()
     private val pressed = mutableSetOf<K>()
-    private var owner: Any? = null
+    private var inputSession: UiSession? = null
     private var policy = UiInputPolicy.BlockAll
     private var editing = false
     private var closed = false
 
     /**
-     * Updates the active owner and permissions, clearing prior press ownership before adapter callbacks.
+     * Updates the active input session and permissions, clearing prior press ownership before adapter callbacks.
      */
     public fun configure(
-        owner: Any?,
+        inputSession: UiSession?,
         policy: UiInputPolicy,
         editing: Boolean,
     ) {
         checkOwner()
         if (closed) return
         val enteringEditor = editing && this.editing.not()
-        if (this.owner !== owner || this.policy != policy || enteringEditor) reset()
-        this.owner = owner
+        if (this.inputSession !== inputSession || this.policy != policy || enteringEditor) reset()
+        this.inputSession = inputSession
         this.policy = policy
         this.editing = editing
     }
@@ -55,7 +56,7 @@ public class RuntimeUiInput<K : Any>(
         val forwarding = down && consumed.not() && editing.not()
         matches.forEach { key ->
             val action = bindings[key] ?: return@forEach
-            if (forwarding && owner != null && policy.allows(action)) {
+            if (forwarding && inputSession != null && policy.allows(action)) {
                 if (pressed.add(key)) press(key)
             } else if (pressed.remove(key)) {
                 release(key)
@@ -88,11 +89,11 @@ public class RuntimeUiInput<K : Any>(
         checkOwner()
         if (closed) return
         closed = true
-        owner = null
+        inputSession = null
         reset()
     }
 
     private fun checkOwner() {
-        check(currentThread() === thread) { "UI input requires its owner thread." }
+        check(RuntimeExecutionOwner.current() == owner) { "UI input requires its execution owner." }
     }
 }

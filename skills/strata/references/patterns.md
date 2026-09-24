@@ -130,7 +130,7 @@ internal fun storageScreen(onDone: () -> Unit): UiDefinition {
 ## Choose state ownership first
 
 Use `mutableStateOf(initialValue)` for an application-owned `MutableState<T>` and expose `State<T>` for read-only access.
-Import it from `dev.s7a.strata.state`, construct it on the host's owner thread, and retain it outside the `UiDefinition` callback.
+Import it from `dev.s7a.strata.state`, construct it inside the host's execution owner, and retain it outside the `UiDefinition` callback.
 Reading `.value` during evaluation records a dependency, including ordinary Kotlin `if`, `when`, loops, and called composition functions.
 Changed assignments schedule reevaluation; equal assignments do not, and multiple writes before the next frame coalesce.
 Event-callback-only reads do not subscribe content, and inactive branches stop observing values they no longer read.
@@ -141,7 +141,7 @@ Reading `CheckboxState.checked`, `CycleButtonState.value`, `SliderState.value`, 
 Checkbox updates its supplied `checked` state when activated; use `onCheckedChange` for notification or business effects rather than toggling that state a second time.
 Passing an editing state directly to its control does not subscribe the parent to every keystroke; the retained control manages its own binding.
 Do not mutate state during evaluation or other declaration/frame phases, including states not yet observed by the screen.
-Keep external publishers on `StateSource`; its revision snapshots and queued cutoff differ from owner-thread `State.value` reads.
+Keep external publishers on `StateSource`; its revision snapshots and queued cutoff differ from owner-confined `State.value` reads.
 See [screens and state](https://github.com/sya-ri/strata/blob/master/docs/guides/screens-and-state.md) for ownership and [UI sessions](https://github.com/sya-ri/strata/blob/master/docs/development/ui-sessions.md#caller-owned-reactive-state) for dependency lifetimes.
 
 ## Choose the smallest reactive boundary
@@ -250,7 +250,7 @@ Literal and source-backed text share this geometry contract.
 Direct inputs keep modifiers on the actual component.
 Projections share committed source snapshots in a tree; equal results stop downstream work, although changed inputs may still run the mapper.
 Ordinary subscriptions retain every revision, including equal mapped values.
-Owner-thread state read inside an `Observe` callback belongs to that retained region's dependency set, so it can refresh without reevaluating a clean root.
+Owner-confined state read inside an `Observe` callback belongs to that retained region's dependency set, so it can refresh without reevaluating a clean root.
 Mappers and declaration callbacks must not mutate sources or perform I/O; publish one immutable model for atomic field changes.
 Changed parent callbacks refresh captures even with stable keys, and real text-width changes still require ancestor measurement.
 
@@ -297,7 +297,7 @@ See [text and editing](https://github.com/sya-ri/strata/blob/master/docs/guides/
 ## Optional CPU backend for offline tools
 
 Ordinary Fabric screens already receive the font backend; keep runtime imports out of UI definitions.
-Offline hosts may use `dev.s7a.strata:strata-runtime-minecraft-fonts-lwjgl:0.1.6` with caller-supplied resources, exact target compatibility, matching libraries, and native classifiers.
+Offline hosts may use `dev.s7a.strata:strata-runtime-minecraft-fonts-lwjgl:0.2.0` with caller-supplied resources, exact target compatibility, matching libraries, and native classifiers.
 The backend does not bundle LWJGL, ICU, Gson, or native binaries; incompatible native generations must run in separate processes.
 Each host owns and closes its backend and bounded caches; snapshots are immutable and shareable.
 Follow [Font resources](https://github.com/sya-ri/strata/blob/master/docs/guides/fonts.md) for setup and limits, including [numeric provider settings](https://github.com/sya-ri/strata/blob/master/docs/guides/fonts.md#numeric-provider-settings).

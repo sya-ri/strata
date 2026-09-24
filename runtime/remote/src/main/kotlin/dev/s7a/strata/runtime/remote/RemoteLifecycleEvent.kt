@@ -7,7 +7,7 @@ import dev.s7a.strata.ui.UiPresentation
 import dev.s7a.strata.ui.UiSession
 
 /**
- * Committed lifecycle notifications emitted on the service owner thread.
+ * Committed lifecycle notifications emitted inside the service's execution owner.
  * Adapters translate these into their platform event API; listener failures never undo committed state.
  * UI identity is scoped to the service and connection; application event fields are detached snapshots.
  */

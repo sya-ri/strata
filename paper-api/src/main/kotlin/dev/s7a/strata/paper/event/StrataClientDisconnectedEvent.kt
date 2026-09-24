@@ -7,7 +7,9 @@ import org.bukkit.event.HandlerList
 
 /**
  * A previously ready Strata connection has ended; all its UIs are already terminal.
- * Delivered synchronously on Paper's primary thread. Notification only; it is not cancellable.
+ * Retirement and shutdown callbacks do not grant native world access.
+ * Ordinarily delivered synchronously on Paper's primary thread or the player's Folia region.
+ * Notification only; it is not cancellable.
  */
 public class StrataClientDisconnectedEvent(
     public val player: Player,

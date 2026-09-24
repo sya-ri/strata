@@ -17,13 +17,13 @@ internal class UiInputGateTest {
     fun consumedInputAndTextEditingBlockForwardingAndReleaseHeldBindings() {
         val pressed = mutableSetOf<UiGameAction>()
         val gate = RuntimeUiInput(UiGameAction.entries.associateWith { it }, { pressed.add(it) }, { pressed.remove(it) })
-        val owner = Any()
-        gate.configure(owner, UiInputPolicy.All, false)
+        val inputSession = UnpresentedUiSession {}
+        gate.configure(inputSession, UiInputPolicy.All, false)
         gate.event(listOf(UiGameAction.Attack), true, true)
         assertEquals(emptySet<UiGameAction>(), pressed)
         gate.event(listOf(UiGameAction.Movement, UiGameAction.Attack), true, false)
         assertEquals(setOf(UiGameAction.Movement, UiGameAction.Attack), pressed)
-        gate.configure(owner, UiInputPolicy.All, true)
+        gate.configure(inputSession, UiInputPolicy.All, true)
         gate.event(UiGameAction.entries, true, false)
         assertEquals(emptySet<UiGameAction>(), pressed)
         gate.close()
@@ -33,14 +33,14 @@ internal class UiInputGateTest {
     fun ownerPolicyFocusAndTerminalChangesCannotLeavePressedKeys() {
         val down = mutableSetOf<UiGameAction>()
         val gate = RuntimeUiInput(UiGameAction.entries.associateWith { it }, { down.add(it) }, { down.remove(it) })
-        val owner = Any()
-        gate.configure(owner, UiInputPolicy.All, false)
+        val inputSession = UnpresentedUiSession {}
+        gate.configure(inputSession, UiInputPolicy.All, false)
         gate.event(UiGameAction.entries, true, false)
-        gate.configure(owner, UiInputPolicy.Movement, false)
+        gate.configure(inputSession, UiInputPolicy.Movement, false)
         assertEquals(emptySet<UiGameAction>(), down)
         gate.event(UiGameAction.entries, true, false)
         assertEquals(setOf(UiGameAction.Movement, UiGameAction.Jump, UiGameAction.Sneak, UiGameAction.Sprint), down)
-        gate.configure(Any(), UiInputPolicy.Movement, false)
+        gate.configure(UnpresentedUiSession {}, UiInputPolicy.Movement, false)
         assertEquals(emptySet<UiGameAction>(), down)
         gate.event(UiGameAction.entries, true, false)
         gate.reset()
@@ -56,7 +56,7 @@ internal class UiInputGateTest {
         var presses = 0
         var releases = 0
         val gate = RuntimeUiInput(mapOf(UiGameAction.Sneak to UiGameAction.Sneak), { presses++ }, { releases++ })
-        gate.configure(Any(), UiInputPolicy.Movement, false)
+        gate.configure(UnpresentedUiSession {}, UiInputPolicy.Movement, false)
         repeat(3) { gate.event(listOf(UiGameAction.Sneak), true, false) }
         assertEquals(1, presses)
         gate.event(listOf(UiGameAction.Sneak), false, false)

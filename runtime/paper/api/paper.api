@@ -1,7 +1,9 @@
 public final class dev/s7a/strata/runtime/paper/PaperScreens {
 	public static final field INSTANCE Ldev/s7a/strata/runtime/paper/PaperScreens;
 	public final fun capabilities (Lorg/bukkit/entity/Player;)Ldev/s7a/strata/runtime/remote/RemoteCapabilities;
+	public final fun execute (Lorg/bukkit/entity/Player;Lkotlin/jvm/functions/Function0;)Ljava/lang/Object;
 	public final fun open (Lorg/bukkit/plugin/Plugin;Lorg/bukkit/entity/Player;Ldev/s7a/strata/screen/ScreenDefinition;)Ldev/s7a/strata/runtime/remote/RemoteScreenSession;
+	public final fun open (Lorg/bukkit/plugin/Plugin;Lorg/bukkit/entity/Player;Lkotlin/jvm/functions/Function0;)Ldev/s7a/strata/runtime/remote/RemoteScreenSession;
 	public final fun register (Lorg/bukkit/plugin/Plugin;Ldev/s7a/strata/projection/ProjectionType;)V
 }
 

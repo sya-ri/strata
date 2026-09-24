@@ -7,7 +7,7 @@ import org.bukkit.event.HandlerList
 
 /**
  * Successful client negotiation. Emitted once per connection generation.
- * Delivered synchronously on Paper's primary thread. Notification only; it is not cancellable.
+ * Delivered synchronously on Paper's primary thread or the player's Folia region. Notification only; it is not cancellable.
  */
 public class StrataClientReadyEvent(
     public val player: Player,

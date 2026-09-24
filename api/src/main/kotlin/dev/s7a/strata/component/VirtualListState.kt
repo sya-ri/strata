@@ -1,9 +1,9 @@
 package dev.s7a.strata.component
 
-import dev.s7a.strata.internal.platform.currentThread
+import dev.s7a.strata.internal.platform.currentOwner
 
 /**
- * Caller-owned owner-thread navigation state shared by one VirtualList and optional independent Scrollbar.
+ * Caller-owned navigation state shared by one VirtualList and optional independent Scrollbar, confined to its construction execution owner.
  *
  * Index and key jumps issued before attachment remain pending and are applied when a list model attaches.
  * A refresh issued before attachment also remains pending and is applied before pending navigation.
@@ -18,7 +18,7 @@ public class VirtualListState<K : Any>(
     public val scrollState: ScrollState = ScrollState(),
     initialIndex: Int? = null,
 ) {
-    private val ownerThread = currentThread()
+    private val owner = currentOwner()
     private var controller: VirtualListController<K>? = null
     private var refreshPending = false
     private var pending: VirtualListJump<K>? =
@@ -34,7 +34,7 @@ public class VirtualListState<K : Any>(
      * @return false only when an attached model proves the index is outside its range.
      */
     public fun jumpToIndex(index: Int): Boolean {
-        checkThread()
+        checkOwner()
         require(0 <= index) { "VirtualList jump index must be non-negative." }
         return request(VirtualListJump.Index(index))
     }
@@ -46,23 +46,23 @@ public class VirtualListState<K : Any>(
      * @return false only when an attached model cannot resolve `key`.
      */
     public fun jumpToKey(key: K): Boolean {
-        checkThread()
+        checkOwner()
         return request(VirtualListJump.Key(key))
     }
 
     /**
      * Invalidates materialized rows after a caller-owned source or row-presentation mutation.
      *
-     * Complete the mutation before calling this method on the state creator thread.
+     * Complete the mutation before calling this method under the state execution owner.
      * A dynamic VirtualList then samples its count exactly once, validates the new range, reconstructs visible rows even when the count is unchanged, and preserves the last visible stable-key anchor when possible.
      * A call without an attached list is coalesced and applied before pending navigation when the next list attaches.
      * Count sampling and key-index validation failures propagate without replacing the attached list's last valid count and geometry, and the caller may correct the source and retry.
      *
-     * @throws IllegalStateException when called from a thread other than the state creator thread.
+     * @throws IllegalStateException when called outside the state execution owner.
      * @throws IllegalArgumentException when the attached dynamic source reports an invalid count or key index.
      */
     public fun refresh() {
-        checkThread()
+        checkOwner()
         val current = controller
         if (current == null) {
             refreshPending = true
@@ -75,7 +75,7 @@ public class VirtualListState<K : Any>(
      * Claims this state for one retained list and applies any pending jump.
      */
     internal fun attach(next: VirtualListController<K>) {
-        checkThread()
+        checkOwner()
         check(controller == null) { "VirtualListState is already attached to a list." }
         controller = next
         if (refreshPending) {
@@ -91,7 +91,7 @@ public class VirtualListState<K : Any>(
      * Releases the exact retained list claim without disturbing Scrollbar observers.
      */
     internal fun detach(current: VirtualListController<K>) {
-        checkThread()
+        checkOwner()
         if (controller === current) controller = null
     }
 
@@ -106,7 +106,7 @@ public class VirtualListState<K : Any>(
         return applied
     }
 
-    private fun checkThread() {
-        check(currentThread() === ownerThread) { "VirtualListState requires its creator thread." }
+    private fun checkOwner() {
+        check(currentOwner() == owner) { "VirtualListState requires its execution owner." }
     }
 }

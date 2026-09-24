@@ -1,10 +1,11 @@
 package dev.s7a.strata.state
 
-import dev.s7a.strata.internal.platform.currentThread
+import dev.s7a.strata.internal.platform.currentOwner
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
 
 /**
- * Caller-owned observable value whose reads and writes require its construction thread.
+ * Caller-owned observable value whose reads and writes require its construction execution owner.
+ * This is the physical construction thread unless a runtime explicitly creates it in a serial ownership scope.
  * Equal assignments do not invalidate observers; changed assignments invalidate every observing screen.
  * Screen evaluation and guarded equality reject mutation before changing the value.
  * A throwing equality comparison preserves the previous value and propagates the original failure.
@@ -16,7 +17,7 @@ import dev.s7a.strata.spi.InternalStrataRuntimeApi
 public class MutableState<T> internal constructor(
     initialValue: T,
 ) : State<T> {
-    private val owner = currentThread()
+    private val owner = currentOwner()
     private var current = initialValue
     private val observations = LinkedHashSet<StateObservation>()
 
@@ -31,7 +32,7 @@ public class MutableState<T> internal constructor(
         }
 
     /**
-     * Assigns an owner-thread value through the same equality and session guards as [value].
+     * Assigns a value under its execution owner through the same equality and session guards as [value].
      * Returns whether it changed so standard component states can notify their retained observers without comparing twice.
      */
     internal fun update(value: T): Boolean {
@@ -56,12 +57,12 @@ public class MutableState<T> internal constructor(
     }
 
     private fun checkAccess() {
-        check(currentThread() === owner) { "State requires its construction thread." }
+        check(currentOwner() == owner) { "State requires its construction execution owner." }
         StateObservation.checkAccess()
     }
 
     /**
-     * Adds an owner-thread screen dependency without invoking user code.
+     * Adds a screen dependency under its execution owner without invoking user code.
      */
     internal fun observe(observation: StateObservation) {
         checkAccess()
@@ -69,16 +70,16 @@ public class MutableState<T> internal constructor(
     }
 
     /**
-     * Releases an owner-thread screen dependency without disposing the caller-owned value.
+     * Releases a screen dependency under its execution owner without disposing the caller-owned value.
      */
     internal fun forget(observation: StateObservation) {
-        check(currentThread() === owner) { "State requires its construction thread." }
+        check(currentOwner() == owner) { "State requires its construction execution owner." }
         observations.remove(observation)
     }
 }
 
 /**
- * Creates a caller-owned observable value on the current thread.
+ * Creates a caller-owned observable value under the current execution owner.
  * Retain it outside screen evaluation; equal assignments leave observing screens clean.
  *
  * @param initialValue initial value retained by the returned state.

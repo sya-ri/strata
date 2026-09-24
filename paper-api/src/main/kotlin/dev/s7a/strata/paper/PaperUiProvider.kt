@@ -9,18 +9,27 @@ import org.bukkit.entity.Player
 import org.bukkit.plugin.Plugin
 
 /**
- * Installed runtime boundary. Every call runs on Paper's primary thread.
+ * Installed runtime boundary. The provider validates native ownership before evaluating factories or operations.
+ * Player calls require Paper's primary thread or the player's Folia region; execution-owner entry belongs here.
  */
 @InternalStrataRuntimeApi
 public interface PaperUiProvider {
     /**
-     * Transfers one available definition into a plugin-owned session.
+     * Creates and transfers one definition under the player's execution owner after validating native access.
      */
     public fun open(
         ownerPlugin: Plugin,
         player: Player,
-        definition: UiDefinition,
+        definition: () -> UiDefinition,
     ): UiSession
+
+    /**
+     * Enters an already-owned player's UI context without scheduling work or granting native region ownership.
+     */
+    public fun <T> execute(
+        player: Player,
+        operation: () -> T,
+    ): T
 
     /**
      * Returns detached negotiated support, or null while unavailable.

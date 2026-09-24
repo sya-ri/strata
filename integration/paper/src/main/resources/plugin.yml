@@ -9,3 +9,4 @@ commands:
     description: Starts the isolated Paper acceptance scene.
   strata-verify-ime:
     description: Starts the manual remote operating-system IME scene.
+folia-supported: true

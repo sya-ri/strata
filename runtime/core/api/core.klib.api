@@ -265,7 +265,7 @@ final class <#A: kotlin/Any> dev.s7a.strata.runtime.spi/RuntimeUiInput : kotlin/
     constructor <init>(kotlin.collections/Map<#A, dev.s7a.strata.ui/UiGameAction>, kotlin/Function1<#A, kotlin/Unit>, kotlin/Function1<#A, kotlin/Unit>) // dev.s7a.strata.runtime.spi/RuntimeUiInput.<init>|<init>(kotlin.collections.Map<1:0,dev.s7a.strata.ui.UiGameAction>;kotlin.Function1<1:0,kotlin.Unit>;kotlin.Function1<1:0,kotlin.Unit>){}[0]
 
     final fun close() // dev.s7a.strata.runtime.spi/RuntimeUiInput.close|close(){}[0]
-    final fun configure(kotlin/Any?, dev.s7a.strata.ui/UiInputPolicy, kotlin/Boolean) // dev.s7a.strata.runtime.spi/RuntimeUiInput.configure|configure(kotlin.Any?;dev.s7a.strata.ui.UiInputPolicy;kotlin.Boolean){}[0]
+    final fun configure(dev.s7a.strata.ui/UiSession?, dev.s7a.strata.ui/UiInputPolicy, kotlin/Boolean) // dev.s7a.strata.runtime.spi/RuntimeUiInput.configure|configure(dev.s7a.strata.ui.UiSession?;dev.s7a.strata.ui.UiInputPolicy;kotlin.Boolean){}[0]
     final fun event(kotlin.collections/Collection<#A>, kotlin/Boolean, kotlin/Boolean) // dev.s7a.strata.runtime.spi/RuntimeUiInput.event|event(kotlin.collections.Collection<1:0>;kotlin.Boolean;kotlin.Boolean){}[0]
     final fun reset() // dev.s7a.strata.runtime.spi/RuntimeUiInput.reset|reset(){}[0]
 }

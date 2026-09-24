@@ -104,7 +104,7 @@ internal class StrataSkillPipelineTest {
             assertTrue(document.contains("https://github.com/sya-ri/strata/blob/master/${ReadmeDemoSource.DIRECTORY}/ScrollPlayersExample.kt"))
             assertTrue(document.contains("https://github.com/sya-ri/strata/blob/master/docs/readme-demo/README.md"))
         }
-        assertTrue(hangarProject.contains("Paper and Velocity"))
+        assertTrue(hangarProject.contains("Paper, Folia, and Velocity"))
         assertTrue(hangarProject.contains("Vanilla clients cannot render Strata screens."))
     }
 

@@ -1,6 +1,11 @@
 package dev.s7a.strata.internal.platform
 
+import dev.s7a.strata.spi.ExecutionOwnerId
+
+// A plain marker cannot retain Strata's class loader through a long-lived host thread.
+private val threadOwner = ThreadLocal.withInitial { Any() }
+
 /**
- * Returns a stable identity for the current JVM thread or JavaScript agent.
+ * Retains one opaque identity per physical thread without depending on Thread equality.
  */
-internal actual fun currentThread(): Any = Thread.currentThread()
+internal actual fun currentThreadOwner(): ExecutionOwnerId = ExecutionOwnerId.create(threadOwner.get())

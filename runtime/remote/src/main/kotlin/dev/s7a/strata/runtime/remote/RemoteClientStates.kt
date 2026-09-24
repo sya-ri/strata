@@ -1,14 +1,19 @@
+@file:OptIn(InternalStrataRuntimeApi::class)
+
 package dev.s7a.strata.runtime.remote
 
+import dev.s7a.strata.spi.InternalStrataRuntimeApi
+import dev.s7a.strata.spi.RuntimeExecutionOwner
+
 /**
- * Owner-thread presentation-state store bounded by the current decoded screen and its negotiated entry limit.
+ * Execution-owner-confined presentation-state store bounded by the current decoded screen and its negotiated entry limit.
  * Keys combine a remote identity and a trusted type token; removed identities and terminal screens release their entries.
  * Preparation runs before declaration evaluation, so incoming values never mutate state from a render callback.
  */
 public class RemoteClientStates internal constructor(
     private val limits: RemoteLimits,
 ) : AutoCloseable {
-    private val owner = Thread.currentThread()
+    private val owner = RuntimeExecutionOwner.current()
     private val values = mutableMapOf<Key, Entry>()
     private val retained = mutableSetOf<Key>()
     private var phase = Phase.Idle
@@ -105,7 +110,7 @@ public class RemoteClientStates internal constructor(
     }
 
     private fun checkOwner() {
-        check(Thread.currentThread() === owner) { "Remote presentation state belongs to another thread." }
+        check(RuntimeExecutionOwner.current() == owner) { "Remote presentation state belongs to another execution owner." }
     }
 
     private data class Key(

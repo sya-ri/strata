@@ -1,7 +1,7 @@
 package dev.s7a.strata.runtime.spi
 
-import dev.s7a.strata.runtime.platform.currentThread
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
+import dev.s7a.strata.spi.RuntimeExecutionOwner
 import dev.s7a.strata.ui.UiCloseReason
 import dev.s7a.strata.ui.UiInputPolicy
 import dev.s7a.strata.ui.UiInteractionMode
@@ -12,7 +12,7 @@ import dev.s7a.strata.ui.UiSession
 import dev.s7a.strata.ui.UiSessionStatus
 
 /**
- * Owner-thread control state shared by native and remote sessions.
+ * Execution-owner-confined control state shared by native and remote sessions.
  * Drivers acknowledge completion with [applied] or [rejected]; returning from the driver is not an acknowledgement.
  * [transaction] defers controls until the outer event/lifecycle boundary returns.
  * Driver and cleanup captures are released before terminal cleanup calls user code.
@@ -25,7 +25,7 @@ public class RuntimeUiController(
     apply: (RuntimeUiControl) -> Unit,
     close: (UiCloseReason) -> Unit,
 ) : UiSession {
-    private val owner = currentThread()
+    private val owner = RuntimeExecutionOwner.current()
     private var driver: ((RuntimeUiControl) -> Unit)? = apply
     private var cleanup: ((UiCloseReason) -> Unit)? = close
     private var desired = RuntimeUiControl(0, presentation, inputPolicy, initialInteraction(presentation))
@@ -207,7 +207,7 @@ public class RuntimeUiController(
     }
 
     private fun checkOwner() {
-        check(currentThread() === owner) { "UI controls require their owner thread." }
+        check(RuntimeExecutionOwner.current() == owner) { "UI controls require their execution owner." }
     }
 
     private companion object {

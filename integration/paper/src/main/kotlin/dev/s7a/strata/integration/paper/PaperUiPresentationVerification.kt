@@ -20,7 +20,7 @@ import org.bukkit.plugin.Plugin
 
 /**
  * Verifies two real remote HUDs, acknowledged switches, stable event identity, and terminal notifications.
- * The owning acceptance fixture advances this listener only on Paper's primary thread.
+ * The owning acceptance fixture advances this listener inside the player's UI owner on Paper's primary thread or Folia region.
  */
 internal class PaperUiPresentationVerification(
     plugin: Plugin,

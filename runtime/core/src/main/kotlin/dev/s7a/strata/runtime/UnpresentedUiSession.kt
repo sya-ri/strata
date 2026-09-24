@@ -15,7 +15,7 @@ import dev.s7a.strata.ui.UiSessionStatus
 internal class UnpresentedUiSession(
     close: () -> Unit,
 ) : UiSession {
-    private val thread = ThreadGuard()
+    private val ownerGuard = OwnerGuard()
     private var release: (() -> Unit)? = close
     private var terminal: UiCloseReason? = null
     override val presentation: UiPresentation? get() = null
@@ -30,7 +30,7 @@ internal class UnpresentedUiSession(
     override fun setInteractionMode(mode: UiInteractionMode): UiOperationResult = unsupported()
 
     override fun close() {
-        thread.check()
+        ownerGuard.check()
         val cleanup = release ?: return
         finish(UiCloseReason.Closed)
         cleanup()
@@ -40,13 +40,13 @@ internal class UnpresentedUiSession(
      * Retires the callback before terminal node notifications can invoke application code.
      */
     fun finish(reason: UiCloseReason) {
-        thread.check()
+        ownerGuard.check()
         terminal = terminal ?: reason
         release = null
     }
 
     private fun unsupported(): UiOperationResult {
-        thread.check()
+        ownerGuard.check()
         return UiOperationResult.Rejected(if (terminal == null) UiRejection.Unsupported else UiRejection.Closed)
     }
 }

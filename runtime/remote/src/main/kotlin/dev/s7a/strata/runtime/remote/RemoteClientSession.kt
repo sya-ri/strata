@@ -6,6 +6,7 @@ import dev.s7a.strata.projection.ProjectionType
 import dev.s7a.strata.projection.ProjectionValue
 import dev.s7a.strata.runtime.spi.RuntimeUiControl
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
+import dev.s7a.strata.spi.RuntimeExecutionOwner
 import dev.s7a.strata.state.mutableStateOf
 import dev.s7a.strata.text.UiText
 import dev.s7a.strata.ui.UiDefinition
@@ -19,7 +20,7 @@ import dev.s7a.strata.ui.UiSessionStatus
 
 /**
  * One client-side retained declaration source bound to a server-issued session identity.
- * All calls run on the construction thread and network receivers must enqueue onto that thread.
+ * All calls run under the construction execution owner; network receivers must enqueue work for that owner.
  * Invalid patch bases request one snapshot; actions are never replayed during resynchronization.
  */
 @Suppress("TooManyFunctions", "TooGenericExceptionCaught") // Owns the session lifecycle and releases extension resources after any callback failure.
@@ -29,7 +30,7 @@ public class RemoteClientSession(
     private val limits: RemoteLimits = RemoteLimits(),
     send: (RemoteMessage) -> Unit,
 ) : AutoCloseable {
-    private val owner = Thread.currentThread()
+    private val owner = RuntimeExecutionOwner.current()
     public val identity: Long = snapshot.session
     private val pausesGame = snapshot.pausesGame
     private val settings = snapshot.settings
@@ -325,6 +326,6 @@ public class RemoteClientSession(
         }
 
     private fun checkOwner() {
-        check(Thread.currentThread() === owner) { "Remote screen belongs to another thread." }
+        check(RuntimeExecutionOwner.current() == owner) { "Remote screen belongs to another execution owner." }
     }
 }

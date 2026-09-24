@@ -21,9 +21,9 @@ Minecraft keeps one retained host and exchanges only its foreground/HUD attachme
 Screen/HUD switching clears focus, capture, and native key ownership before installing the next presentation.
 HUD visibility uses category, then native screen kind, then the definition default; hidden content retains source/remote updates.
 The adapter owns version-specific HUD, mouse, and native gameplay hooks; the public runtime has no Fabric API dependency.
-`RuntimeUiInput` bounds held state by the adapter's mapping set and releases it on owner, policy, editing, focus, and terminal boundaries.
+`RuntimeUiInput` bounds held state by the adapter's mapping set and releases it on input-session, policy, editing, focus, and terminal boundaries.
 
-Remote controls are ordered by the owning Paper or Velocity session and confirmed after the client applies native presentation.
+Remote controls are ordered by the owning Paper, Folia, or Velocity session and confirmed after the client applies native presentation.
 See the [remote protocol](../reference/remote-protocol.md) for application versus declaration acknowledgements and connection-wide budgets.
 
 ## Retained observed regions
@@ -61,7 +61,7 @@ Collection remains absent by default; enabled collectors count actual callback e
 
 `dev.s7a.strata.runtime.spi` provides a public but opt-in runtime adapter bridge for platform runtimes that need to drive this session.
 It is not an application screen-definition API and does not expose coroutines, state declarations, source bindings, `UiSession`, session state, or task-failure decision types.
-`attach`, `detach`, `frame`, pointer input, focused keyboard and text input, input reset, and `close` are synchronous calls that must already run on the construction and owner thread.
+`attach`, `detach`, `frame`, pointer input, focused keyboard and text input, input reset, and `close` are synchronous calls that must already run on the construction execution owner described below.
 The synchronous bridge exposes no task-launching or dispatcher facility.
 Its content lambda is evaluated during the first attach and reevaluated before a subsequent frame when an observed caller-owned state changes; reconciliation preserves matching retained nodes until terminal failure or close.
 Each successful frame owns defensive read-only snapshots of size, drawing commands, and semantics, and all input is ignored until the first successful frame commits.
@@ -91,8 +91,17 @@ The Minecraft host retains a separate content-free evaluator so profile, font, a
 
 ## Ownership and lifecycle
 
-A session captures the thread that creates it.
-Lifecycle operations, delegate access, frame production, and every input dispatch are confined to that owner thread.
+A session captures the execution owner that creates it.
+Normally this is its physical construction thread, preserving the existing thread-confinement contract.
+A region-scheduled runtime can explicitly enter the opt-in `RuntimeExecutionOwner` before creating state and sessions.
+Every later lifecycle operation, state access, frame, input dispatch, and terminal cleanup must enter that same owner.
+It permits serial migration between physical threads, rejects concurrent entry before user code, and restores the caller's context even after failure.
+Different owners remain isolated even when they share one physical thread.
+`RuntimeExecutionOwner.current()` returns an opaque `ExecutionOwnerId`; compare captured identities with value equality.
+The physical-thread fallback retains one distinct identity per JVM thread or JavaScript agent, independently of host thread equality.
+The adapter must separately validate native region ownership; entering a UI owner does not grant platform access.
+Synchronous evaluation contexts remain thread-local, and asynchronous tasks do not inherit the owner implicitly.
+The synchronous runtime bridge uses this ownership rule; coroutine dispatch still checks physical-thread execution and is not a region-scheduling API.
 Revisioned source callbacks are the exception: they may arrive on any thread, only replace a lock-protected pending snapshot, and never execute session work.
 
 The lifecycle is:
@@ -109,13 +118,13 @@ The subscriptions retained in `Detached` are session-declared bindings; attachme
 Invalid transitions fail before changing the lifecycle.
 An unrecoverable content, retained-tree, pipeline, or task failure records the exact primary `Throwable` in `Failed` and attempts cleanup.
 Closing a failed session changes only the lifecycle to `Closed`, because failure cleanup has already run.
-Repeated close after `Closed` is an owner-thread no-op.
+Repeated close after `Closed` is an execution-owner-confined no-op.
 
 ## Local and external state
 
 ### Caller-owned reactive state
 
-`mutableStateOf(initialValue)` creates an owner-thread `MutableState<T>` with a read-only `State<T>` view.
+`mutableStateOf(initialValue)` creates an owner-confined `MutableState<T>` with a read-only `State<T>` view.
 Create it outside the `UiDefinition` content callback so reevaluation does not reset its value.
 The retained session tracks reads of `value` during content evaluation, including reads in ordinary Kotlin `if`, `when`, loops, and called composition functions.
 Unequal assignments mark every observing session dirty, and the next frame reevaluates content once before reconciliation.
@@ -153,7 +162,7 @@ A source may still publish a later revision from equality; that callback only en
 
 Each source subscription returns an initial snapshot from the same linearization point that installs its observer.
 Callbacks that race or precede the return from `subscribe` are merged with that snapshot by revision.
-The owner thread first captures every session binding and every retained `FrameCutoffNode`, then commits the captured observations before content reconciliation.
+The execution owner first captures every session binding and every retained `FrameCutoffNode`, then commits the captured observations before content reconciliation.
 Capture cannot invoke caller value equality or publish observations; commit evaluates session-bound value equality after releasing the binding lock.
 A callback arriving after the cutoff remains pending for the following frame.
 Each participating binding retains at most one transaction-local captured observation between these two phases, in addition to its committed and latest pending state.
@@ -178,7 +187,7 @@ An unambiguous placed `initialFocus` request applies after layout whenever the t
 Every Enter or Space `Press` that reaches a focused `onActivate` node, including repeats, invokes its action, while its false enabled overload contributes no pointer, keyboard, focus, or action reference.
 Detach cancels active pointer capture, emits exit for active pointer-hover observers, clears focused ownership, invalidates the committed-frame marker, and retains the tree and state.
 Captured input follows the [Element SPI](../reference/element-spi.md#paint-input-and-semantics); session detach and input reset cancel it even while nodes remain retained.
-Input reset is owner-thread confined, preserves committed pixels and retained ownership, and prohibits session-state mutation from its cleanup callbacks.
+Input reset is execution-owner confined, preserves committed pixels and retained ownership, and prohibits session-state mutation from its cleanup callbacks.
 Capture, hover, and focus cleanup are all attempted when an earlier callback throws; the original failure remains primary and distinct later failures are suppressed in observation order.
 
 ## Coroutine generations

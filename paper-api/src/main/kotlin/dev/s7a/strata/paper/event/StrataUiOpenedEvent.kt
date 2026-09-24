@@ -10,7 +10,7 @@ import org.bukkit.plugin.Plugin
 
 /**
  * The client acknowledged the first native presentation. This does not certify a rendered frame.
- * Delivered synchronously on Paper's primary thread. Notification only; it is not cancellable.
+ * Delivered synchronously on Paper's primary thread or the player's Folia region. Notification only; it is not cancellable.
  */
 public class StrataUiOpenedEvent(
     public val player: Player,

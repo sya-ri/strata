@@ -69,7 +69,7 @@ internal class CycleButtonStateTest {
                     .get(2, TimeUnit.SECONDS)
 
             assertEquals(IllegalStateException::class.java, failure?.javaClass)
-            assertEquals("Component state requires its creator thread.", failure?.message)
+            assertEquals("Component state requires its execution owner.", failure?.message)
             assertFalse(conversionCalled.get())
         } finally {
             executor.shutdownNow()

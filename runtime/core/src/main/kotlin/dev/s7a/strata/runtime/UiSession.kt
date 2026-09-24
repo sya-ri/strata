@@ -38,14 +38,14 @@ import dev.s7a.strata.ui.UiSession as EventUiSession
 /**
  * Owns one retained UI description, its state declarations, and its external bindings.
  *
- * The session captures its owner thread at construction.
- * Lifecycle operations, delegate access, frame production, and pointer dispatch are confined to that thread.
+ * The session captures its execution owner at construction.
+ * Lifecycle operations, delegate access, frame production, and pointer dispatch are confined to that owner.
  * External source callbacks only enqueue a revisioned value and always return normally.
  * The session is an internal runtime component with complete lifecycle, frame, input, and cleanup behavior.
  *
  * @param ownerDispatcher is caller-owned, always queues onto the construction thread, never runs inline, and remains serviced until cancelled generations finish.
  * @param taskFailureHandler receives non-cancellation root coroutine failures on the owner thread and selects whether the session continues or fails.
- * @param content the owner-thread content evaluator, released before terminal cleanup callbacks.
+ * @param content the owner-confined content evaluator, released before terminal cleanup callbacks.
  */
 @Suppress("TooManyFunctions", "LargeClass") // One owner enforces frame, input, coroutine, and diagnostic operation boundaries.
 @OptIn(InternalStrataRuntimeApi::class, ExperimentalAtomicApi::class)
@@ -56,7 +56,7 @@ internal class UiSession(
     content: () -> Element,
 ) : AutoCloseable {
     private var retainedContent: (() -> Element)? = content
-    private val threadGuard: ThreadGuard = ThreadGuard()
+    private val ownerGuard: OwnerGuard = OwnerGuard()
     private val stateObservation =
         StateObservation(
             beforeMutation = {
@@ -91,7 +91,7 @@ internal class UiSession(
      * Starts bounded diagnostics without changing content or requesting a frame.
      */
     internal fun startRenderMonitoring(): UiRenderMonitor {
-        threadGuard.check()
+        ownerGuard.check()
         check(operationKind == null && stateMutationActive.not()) { "Monitoring requires an idle session." }
         return checkNotNull(tree) { "Attach the session before starting monitoring." }.startMonitoring {
             check(operationKind == null && stateMutationActive.not()) { "Monitoring requires an idle session." }
@@ -108,7 +108,7 @@ internal class UiSession(
      * Detached editable-focus identity from the latest committed attached frame.
      *
      * Created and detached sessions return null, as do attached sessions before a successful frame.
-     * Reads are confined to the owner thread outside session operations and reject terminal states without changing the session.
+     * Reads are confined to the execution owner outside session operations and reject terminal states without changing the session.
      */
     internal val textInputFocus: RuntimeTextInputFocus?
         get() {
@@ -130,12 +130,12 @@ internal class UiSession(
     /**
      * The lifecycle state read by synchronous runtime tests and integration code.
      *
-     * The value is owner-thread confined.
+     * The value is confined to the execution owner.
      * A failed session records its terminal failure until [close] transitions it to closed.
      */
     internal val lifecycleState: UiSessionState
         get() {
-            threadGuard.check()
+            ownerGuard.check()
             checkGenerationForLifecycleAccess()
             return currentState
         }
@@ -143,7 +143,7 @@ internal class UiSession(
     /**
      * Declares local mutable state for use by the content description.
      *
-     * Declaration is legal only before the first lifecycle transition and on the owner thread.
+     * Declaration is legal only before the first lifecycle transition and under the execution owner.
      * The returned delegate may be read or written while the session is created, attached, or detached.
      * A write that changes the value marks the next frame dirty.
      *
@@ -242,7 +242,7 @@ internal class UiSession(
     /**
      * Detaches the session while retaining its tree, state values, and session source subscriptions.
      *
-     * Detachment is owner-thread confined and legal only from the attached state.
+     * Detachment is confined to the execution owner and legal only from the attached state.
      * A previously committed frame cancels pointer capture and clears every active hover and focus transition before the tree is retained.
      * The immutable frame cache is released so reattachment always commits layout-dependent input state again.
      * Pending source values remain queued and are applied at the next frame after reattachment.
@@ -287,7 +287,7 @@ internal class UiSession(
      * @param constraints the root measurement constraints.
      * @return the immutable measured size, drawing commands, and semantics snapshot.
      * @throws Throwable when content, retained reconciliation, or any tree pipeline fails.
-     * @throws IllegalStateException when called from a wrong lifecycle state, wrong thread, or reentrant operation.
+     * @throws IllegalStateException when called from a wrong lifecycle state, wrong execution owner, or reentrant operation.
      */
     internal fun frame(constraints: Constraints): RuntimeUiFrame = frame(constraints, null)
 
@@ -314,7 +314,7 @@ internal class UiSession(
     }
 
     /**
-     * Executes an already authenticated remote action through the shared owner-thread input boundary.
+     * Executes an already authenticated remote action through the shared execution-owner input boundary.
      */
     internal fun dispatchAction(action: () -> Unit) {
         beginOperation(SessionOperation.Input)
@@ -446,10 +446,10 @@ internal class UiSession(
     /**
      * Cancels captured pointer input and clears hover and focus without detaching this session.
      *
-     * The owner thread may invoke this for window blur or an explicit native input reset while attached.
+     * The execution owner may invoke this for window blur or an explicit native input reset while attached.
      * It is a no-op before a successful frame, preserves the committed frame and retained node ownership, and does not permit session-state mutation from cleanup callbacks.
      *
-     * @throws IllegalStateException when called from another thread, reentrantly, or while the session is not attached.
+     * @throws IllegalStateException when called from another execution owner, reentrantly, or while the session is not attached.
      * @throws Throwable when input cleanup fails; the exact primary failure is preserved while remaining cleanup is attempted and the session fails.
      */
     internal fun resetInputState() {
@@ -505,10 +505,10 @@ internal class UiSession(
      * Cleanup continues after failures in binding declaration order and then closes the retained tree.
      * The first cleanup failure is rethrown unchanged with later distinct failures suppressed.
      * Closing a failed session only records the terminal Closed state because failure cleanup already ran.
-     * Closing after a completed close, or recursively from that close's cleanup, is an owner-thread no-op.
+     * Closing after a completed close, or recursively from that close's cleanup, is a no-op under the execution owner.
      */
     override fun close() {
-        threadGuard.check()
+        ownerGuard.check()
         check(stateMutationActive.not()) { "Session mutation is already active." }
         if (
             currentState === UiSessionState.Closed &&
@@ -568,7 +568,7 @@ internal class UiSession(
     }
 
     private fun checkDeclaration() {
-        threadGuard.check()
+        ownerGuard.check()
         check(stateMutationActive.not()) { "Session mutation is already active." }
         check(operationKind == null) { "A session operation is already active." }
         check(evaluatingContent.not()) { "State declarations are not allowed during content evaluation." }
@@ -576,20 +576,20 @@ internal class UiSession(
     }
 
     private fun checkReadable() {
-        threadGuard.check()
+        ownerGuard.check()
         check(stateMutationActive.not()) { "Session mutation is already active." }
         check(establishingBinding.not()) { "State access is not allowed during binding establishment." }
         checkGenerationForStateAccess()
     }
 
     private fun checkWritable() {
-        threadGuard.check()
+        ownerGuard.check()
         check(stateMutationActive.not()) { "Session mutation is already active." }
         checkWritablePhase()
     }
 
     private fun checkWritableAfterEquality() {
-        threadGuard.check()
+        ownerGuard.check()
         checkWritablePhase()
     }
 
@@ -608,7 +608,7 @@ internal class UiSession(
     }
 
     private fun beginOperation(kind: SessionOperation) {
-        threadGuard.check()
+        ownerGuard.check()
         check(stateMutationActive.not()) { "Session mutation is already active." }
         checkGenerationForLifecycleAccess()
         check(operationKind == null) { "A session operation is already active." }
@@ -634,7 +634,7 @@ internal class UiSession(
     }
 
     private fun requestEventClose() {
-        threadGuard.check()
+        ownerGuard.check()
         if (operationKind == null) close() else closeRequested = true
     }
 
@@ -750,7 +750,7 @@ internal class UiSession(
     }
 
     private fun currentScreenScopeContext(): CoroutineContext {
-        if (threadGuard.isOwnerThread()) {
+        if (ownerGuard.isCurrentOwner()) {
             check(evaluatingContent.not()) { "The screen scope is unavailable during content evaluation." }
         }
         val generation = SessionGenerationToken.current
@@ -797,7 +797,7 @@ internal class UiSession(
     }
 
     private fun beginTaskFailureDelivery() {
-        threadGuard.check()
+        ownerGuard.check()
         check(stateMutationActive.not()) { "Session mutation is already active." }
         check(operationKind == null) { "A session operation is already active." }
         operationKind = SessionOperation.TaskFailure
@@ -887,7 +887,7 @@ internal class UiSession(
                 violation.store(failure)
                 throw failure
             }
-            threadGuard.check()
+            ownerGuard.check()
             block()
         }
         returned.store(true)

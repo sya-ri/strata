@@ -1,13 +1,16 @@
 public final class dev/s7a/strata/paper/PaperUi {
 	public static final field INSTANCE Ldev/s7a/strata/paper/PaperUi;
 	public final fun capabilities (Lorg/bukkit/entity/Player;)Ldev/s7a/strata/ui/UiClientCapabilities;
+	public final fun execute (Lorg/bukkit/entity/Player;Lkotlin/jvm/functions/Function0;)Ljava/lang/Object;
 	public final fun install (Ldev/s7a/strata/paper/PaperUiProvider;)Ljava/lang/AutoCloseable;
+	public final fun open (Lorg/bukkit/plugin/Plugin;Lorg/bukkit/entity/Player;Lkotlin/jvm/functions/Function0;)Ldev/s7a/strata/ui/UiSession;
 	public final fun register (Lorg/bukkit/plugin/Plugin;Ldev/s7a/strata/projection/ProjectionType;)V
 }
 
 public abstract interface class dev/s7a/strata/paper/PaperUiProvider {
 	public abstract fun capabilities (Lorg/bukkit/entity/Player;)Ldev/s7a/strata/ui/UiClientCapabilities;
-	public abstract fun open (Lorg/bukkit/plugin/Plugin;Lorg/bukkit/entity/Player;Ldev/s7a/strata/ui/UiDefinition;)Ldev/s7a/strata/ui/UiSession;
+	public abstract fun execute (Lorg/bukkit/entity/Player;Lkotlin/jvm/functions/Function0;)Ljava/lang/Object;
+	public abstract fun open (Lorg/bukkit/plugin/Plugin;Lorg/bukkit/entity/Player;Lkotlin/jvm/functions/Function0;)Ldev/s7a/strata/ui/UiSession;
 	public abstract fun register (Lorg/bukkit/plugin/Plugin;Ldev/s7a/strata/projection/ProjectionType;)V
 }
 

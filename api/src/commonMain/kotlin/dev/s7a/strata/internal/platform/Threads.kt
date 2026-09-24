@@ -1,6 +1,8 @@
 package dev.s7a.strata.internal.platform
 
+import dev.s7a.strata.spi.ExecutionOwnerId
+
 /**
- * Returns a stable identity for the current JVM thread or JavaScript agent.
+ * Returns the stable execution identity of the current JVM thread or JavaScript agent.
  */
-internal expect fun currentThread(): Any
+internal expect fun currentThreadOwner(): ExecutionOwnerId

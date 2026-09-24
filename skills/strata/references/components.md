@@ -105,7 +105,7 @@ Observe recomputes one region from up to 22 typed StateSource values, for condit
 
 - Compiled overloads: 22
 - Modifiers: Observe is one child of its containing layout. Apply weight, alignment, sizing, and event modifiers to the region itself. Content emits zero or one root; use an inner Row or Column for multiple children. Empty content has zero natural size and still obeys incoming constraints.
-- Parent scope: Content emits zero or one root on the owner thread. Keep editing and navigation state outside reevaluation.
+- Parent scope: Content emits zero or one root inside the execution owner. Keep editing and navigation state outside reevaluation.
 - [Showcase image and compiled example](https://github.com/sya-ri/strata/blob/master/docs/reference/components.md#observe)
 
 ```kotlin
@@ -167,7 +167,7 @@ TextField uses the 200 by 20 Minecraft EditBox sprites with Unicode scalar editi
 
 - Compiled overloads: 16
 - Modifiers: Pointer, keyboard, committed-character, preedit, and focus modifiers run as active retained behavior around `TextField`; a consuming focused modifier overrides built-in editing. The `font: ResourceId` overload changes metrics and drawing together, including cursor placement and horizontal scrolling.
-- Parent scope: Keep caller-owned `TextFieldState` on its owner thread with a positive UTF-16 maximum length. Editing uses scalars, not grapheme clusters. Preedit stays separate until committed; it does not reproduce Minecraft's native IME popup.
+- Parent scope: Keep caller-owned `TextFieldState` inside its execution owner with a positive UTF-16 maximum length. Editing uses scalars, not grapheme clusters. Preedit stays separate until committed; it does not reproduce Minecraft's native IME popup.
 - [Showcase image and compiled example](https://github.com/sya-ri/strata/blob/master/docs/reference/components.md#text-field)
 
 ```kotlin
@@ -241,7 +241,7 @@ Checkbox reproduces the verified 20-pixel Minecraft checkbox surface, label spac
 
 - Compiled overloads: 8
 - Modifiers: Use typed checked-change modifiers with caller-owned boolean state.
-- Parent scope: No children. Retain `CheckboxState` on its owner thread.
+- Parent scope: No children. Retain `CheckboxState` inside its execution owner.
 - [Showcase image and compiled example](https://github.com/sya-ri/strata/blob/master/docs/reference/components.md#checkbox)
 
 ```kotlin

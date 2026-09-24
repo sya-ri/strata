@@ -329,12 +329,12 @@ Event-dependent synchronous `InputResult` or capture decisions and native Canvas
         """| Host | Public opening API | State and handler owner |
 | --- | --- | --- |
 | Fabric | `UiDefinition.open()` | Client thread |
-| Paper | `definition.open(ownerPlugin, player)` | Paper primary thread |
+| Paper / Folia | `PaperUi.open(ownerPlugin, player) { definition }` | Paper primary thread or the player's Folia region |
 | Velocity | `VelocityUi.open(ownerPlugin, player) { definition }` | Strata's dedicated proxy UI thread |
 """
 
     private const val REMOTE_SETUP: String =
-        """## Paper and Velocity installation
+        """## Paper, Folia, and Velocity installation
 
 Install the chosen host's `plugin` classifier JAR in its `plugins` directory.
 Consumer plugins compile against `dev.s7a.strata:strata-paper-api:$RELEASE_VERSION_PLACEHOLDER` or `dev.s7a.strata:strata-velocity-api:$RELEASE_VERSION_PLACEHOLDER` and the host API with `compileOnly` dependencies.
@@ -349,10 +349,10 @@ The Paper guide includes a compiled typed-input screen; use these examples when 
 
 ### Opening, state, and lifecycle
 
-- On Paper's primary thread, inspect `PaperUi.capabilities(player)`, create independent state outside the DSL callback, and call `definition.open(ownerPlugin, player)` using `dev.s7a.strata.paper.open`.
+- On Paper's primary thread or the player's Folia region, inspect `PaperUi.capabilities(player)` and create mutable state and a fresh definition inside the factory passed to `PaperUi.open(ownerPlugin, player) { ... }`. On Folia, enter `PaperUi.execute(player) { ... }` for external state access after scheduling onto that player. Do not share owner-confined state between players. Consuming plugins also declare `folia-supported: true`.
 - On Velocity, inspect the future from `VelocityUi.capabilities(player)` and construct the definition and owner-thread state inside the factory passed to `VelocityUi.open`. Its future returns the session handle. Queue external state access with `VelocityUi.execute(ownerPlugin) { ... }`; never join another UI future from a handler or completion callback.
 - A null capability result means negotiation is incomplete or unavailable. Opening with an unsupported declaration returns a terminal session reason; do not silently omit missing components or extensions.
-- Retain the returned `UiSession` when status inspection or explicit `close()` is needed. Read live handle properties only on its owner thread; Velocity listeners use detached platform event fields or queue access through `VelocityUi.execute`. Replacement, disconnect, and failures release its handlers, observations, and transfers. Paper plugin disable releases its owners; a Velocity consumer stopping early calls `VelocityUi.release(ownerPlugin)`.
+- Retain the returned `UiSession` when status inspection or explicit `close()` is needed. Read live handle properties inside its execution owner, using `PaperUi.execute` on Folia; Velocity listeners use detached platform event fields or queue access through `VelocityUi.execute`. Replacement, disconnect, and failures release its handlers, observations, and transfers. Paper plugin disable releases its owners; a Velocity consumer stopping early calls `VelocityUi.release(ownerPlugin)`.
 - Keep database and network work off the UI owner thread. Publish asynchronous results through state sources or the host's state-update boundary; source notifications are queued and committed at the next session cutoff.
 
 ### Remote resources and client behavior

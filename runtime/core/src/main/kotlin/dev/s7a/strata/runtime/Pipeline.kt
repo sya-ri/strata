@@ -35,16 +35,16 @@ import dev.s7a.strata.spi.InternalStrataRuntimeApi
 @Suppress("TooManyFunctions")
 @OptIn(InternalStrataRuntimeApi::class)
 internal class Pipeline(
-    private val threadGuard: ThreadGuard,
+    private val ownerGuard: OwnerGuard,
     private val monitoring: RenderMonitoring = RenderMonitoring(),
 ) {
-    private val paintPipeline = PaintPipeline(threadGuard, monitoring)
+    private val paintPipeline = PaintPipeline(ownerGuard, monitoring)
     private val focusedInputPipeline = FocusedInputPipeline()
     private val inputPipeline = InputPipeline(focusedInputPipeline)
-    private val semanticsPipeline = SemanticsPipeline(threadGuard, monitoring)
+    private val semanticsPipeline = SemanticsPipeline(ownerGuard, monitoring)
 
     /**
-     * Detached current editable-focus identity, read outside a tree operation on its owner thread.
+     * Detached current editable-focus identity, read outside a tree operation under its execution owner.
      */
     val textInputFocus: RuntimeTextInputFocus?
         get() = focusedInputPipeline.textInputFocus
@@ -120,7 +120,7 @@ internal class Pipeline(
     /**
      * Clears capture, hover, and focus from the retained tree rooted at [root], including unplaced hover observers.
      *
-     * Each independent cleanup is attempted on the tree owner thread even when an earlier callback fails.
+     * Each independent cleanup is attempted under the tree's execution owner even when an earlier callback fails.
      *
      * @param root the installed logical root retained across session detachment.
      * @throws Throwable when a callback rejects cancellation or an exit transition; the first failure remains primary and later distinct failures are suppressed.
@@ -136,7 +136,7 @@ internal class Pipeline(
     /**
      * Cancels a captured entry before its callbacks and lifecycle resources are disposed.
      *
-     * @param entry retained component or modifier being cleaned on the tree owner thread.
+     * @param entry retained component or modifier being cleaned under the tree's execution owner.
      * @throws Throwable when cancellation fails; the lifecycle owner still attempts remaining cleanup.
      */
     fun entryWillCleanup(entry: RetainedEntry) {
@@ -146,7 +146,7 @@ internal class Pipeline(
     /**
      * Releases retained input-pipeline references and cancels an unfinished captured gesture.
      *
-     * The owning tree calls this on its owner thread after entering a terminal state, and still performs lifecycle cleanup if cancellation fails.
+     * The owning tree calls this under its execution owner after entering a terminal state, and still performs lifecycle cleanup if cancellation fails.
      * Focus references and then capture references are cleared before cancellation is invoked.
      *
      * @throws Throwable when the previous capture owner rejects cancellation.
@@ -167,7 +167,7 @@ internal class Pipeline(
     /**
      * Captures pending external observations for every effective entry without committing any observation.
      *
-     * @param root installed logical root, borrowed on its owner thread.
+     * @param root installed logical root, borrowed under its execution owner.
      * @throws Throwable when capture fails; the tree performs terminal cleanup.
      */
     fun captureFrameState(root: RetainedNode) {
@@ -185,7 +185,7 @@ internal class Pipeline(
     }
 
     /**
-     * Resumes attachment-scoped node resources in effective parent-first order on the tree owner thread.
+     * Resumes attachment-scoped node resources in effective parent-first order under the tree's execution owner.
      *
      * @param root installed logical root retained by an attached session.
      * @throws Throwable when attachment fails; ordinary tree cleanup releases every claimed node.
@@ -278,7 +278,7 @@ internal class Pipeline(
             retained.dirty -= DirtyMask.of(DirtyPhase.Measure)
             retained.dirty += DirtyMask.of(DirtyPhase.Layout, DirtyPhase.Paint, DirtyPhase.Semantics)
             val measuredChildren = HashSet<Int>()
-            val guard = ScopeGuard(threadGuard)
+            val guard = ScopeGuard(ownerGuard)
             val scope =
                 object : MeasureScope {
                     override val childCount: Int
@@ -338,7 +338,7 @@ internal class Pipeline(
             if (layoutCapability != null) {
                 val scope =
                     object : LayoutScope {
-                        val guard = ScopeGuard(threadGuard)
+                        val guard = ScopeGuard(ownerGuard)
 
                         override val size: IntSize
                             get() {

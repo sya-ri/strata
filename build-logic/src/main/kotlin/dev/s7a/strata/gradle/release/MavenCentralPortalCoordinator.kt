@@ -40,6 +40,7 @@ internal class MavenCentralPortalCoordinator(
     private val requestTimeout: Duration = Duration.ofSeconds(60),
     private val retryBaseMillis: Long = DEFAULT_RETRY_MILLIS,
     private val sleeper: (Long) -> Unit = Thread::sleep,
+    private val publicationFiles: List<String>? = null,
 ) {
     private val portalBase = portalBaseUri.toString().let { value -> if (value.endsWith('/')) value else "$value/" }
     private val authorization =
@@ -76,7 +77,7 @@ internal class MavenCentralPortalCoordinator(
         statusAttempts: Int = DEFAULT_STATUS_ATTEMPTS,
         statusDelayMillis: Long = DEFAULT_STATUS_DELAY_MILLIS,
     ): Receipt {
-        val release = Release.parse(coordinateLines, localRepository)
+        val release = Release.parse(coordinateLines, localRepository, publicationFiles)
         val deployment =
             discover(release, allowAbsent = true, incompleteAttempts, pollDelayMillis)
                 ?: return Receipt(State.ABSENT, null, null, 0, 0)
@@ -111,7 +112,7 @@ internal class MavenCentralPortalCoordinator(
         statusAttempts: Int = DEFAULT_STATUS_ATTEMPTS,
         statusDelayMillis: Long = DEFAULT_STATUS_DELAY_MILLIS,
     ): Receipt {
-        val release = Release.parse(coordinateLines, localRepository)
+        val release = Release.parse(coordinateLines, localRepository, publicationFiles)
         val deployment =
             discover(release, allowAbsent = false, discoveryAttempts, discoveryDelayMillis)
                 ?: error("Central Publisher Portal deployment discovery unexpectedly returned no deployment.")
@@ -210,10 +211,10 @@ internal class MavenCentralPortalCoordinator(
             writeEvidence(evidenceDirectory, signaturePath, signature)
             contentCount += 1
         }
-        check(contentCount == release.coordinates.size * BASE_SUFFIXES.size * 2) {
+        check(contentCount == release.baseFiles.size * 2) {
             "Central Publisher Portal signed-content inventory has an unexpected size."
         }
-        check(checksumCount == release.coordinates.size * BASE_SUFFIXES.size * ChecksumAlgorithm.entries.size) {
+        check(checksumCount == release.baseFiles.size * ChecksumAlgorithm.entries.size) {
             "Central Publisher Portal checksum inventory has an unexpected size."
         }
         return Verification(contentCount, checksumCount)
@@ -708,6 +709,7 @@ internal class MavenCentralPortalCoordinator(
             fun parse(
                 lines: List<String>,
                 localRepository: Path,
+                publicationFiles: List<String>?,
             ): Release {
                 val coordinates = lines.filter(String::isNotBlank).map(Coordinate::parse)
                 check(coordinates.isNotEmpty()) { "Central Publisher Portal verification requires at least one coordinate." }
@@ -719,9 +721,10 @@ internal class MavenCentralPortalCoordinator(
                 val group = groups.single()
                 val version = versions.single()
                 val repositoryRoot = localRepository.toAbsolutePath().normalize()
+                val suffixes = MavenPublicationFiles.resolve(publicationFiles, coordinates.map { "${it.group}:${it.artifact}" })
                 val baseFiles =
                     coordinates.flatMap { coordinate ->
-                        BASE_SUFFIXES.map { suffix ->
+                        suffixes.getValue("${coordinate.group}:${coordinate.artifact}").map { suffix ->
                             val relativePath = coordinate.relativePath(suffix)
                             val localPath = repositoryRoot.resolve(relativePath).normalize()
                             check(localPath.startsWith(repositoryRoot)) {
@@ -792,6 +795,5 @@ internal class MavenCentralPortalCoordinator(
         private const val DEFAULT_STATUS_DELAY_MILLIS = 15_000L
         private const val MAX_ERROR_PATHS = 8
         private const val USER_AGENT = "sya-ri/strata-release"
-        private val BASE_SUFFIXES = listOf(".pom", ".module", ".jar", "-sources.jar", "-javadoc.jar")
     }
 }

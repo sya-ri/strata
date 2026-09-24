@@ -1,7 +1,6 @@
 package dev.s7a.strata.examples.paper
 
 import dev.s7a.strata.paper.PaperUi
-import dev.s7a.strata.paper.open
 import dev.s7a.strata.ui.UiSessionStatus
 import org.bukkit.command.Command
 import org.bukkit.command.CommandSender
@@ -28,8 +27,8 @@ public class PaperDemoPlugin : JavaPlugin() {
             player.sendMessage("Install the matching Strata Fabric runtime and reconnect before opening this screen.")
             return true
         }
-        val session = PaperDemoScreens.counter().open(this, player)
-        val status = session.status
+        val session = PaperUi.open(this, player) { PaperDemoScreens.counter() }
+        val status = PaperUi.execute(player) { session.status }
         if (status is UiSessionStatus.Closed) player.sendMessage("The screen could not open: ${status.reason}.")
         return true
     }

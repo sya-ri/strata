@@ -8,8 +8,10 @@ import dev.s7a.strata.spi.InternalStrataRuntimeApi
 import dev.s7a.strata.ui.UiSession
 
 /**
- * Owner-thread handle for one server-owned screen.
- * Terminal handles retain only their typed result, not the player, plugin, handlers, or UI state.
+ * Detached lifecycle handle for one host-owned screen.
+ * Status can be read from any thread; close uses the host's execution contract (Paper primary thread, Folia player region, or Velocity's UI queue).
+ * The common [uiSession] requires its execution owner for all property reads and controls.
+ * Terminal handles retain no player, plugin, handler, or UI state references.
  */
 public class RemoteScreenSession internal constructor(
     public val identity: Long,
