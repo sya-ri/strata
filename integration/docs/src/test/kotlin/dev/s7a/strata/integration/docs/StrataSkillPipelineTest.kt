@@ -34,6 +34,8 @@ internal class StrataSkillPipelineTest {
             setOf(
                 "README.md",
                 "docs/publication/modrinth-project.md",
+                "docs/publication/curseforge-project.md",
+                "docs/publication/hangar-project.md",
                 "skills/strata/references/setup.md",
                 "skills/strata/references/components.md",
                 "skills/strata/references/modifiers-and-layout.md",
@@ -44,6 +46,7 @@ internal class StrataSkillPipelineTest {
         )
         val readme = first.getValue("README.md")
         val modrinthProject = first.getValue("docs/publication/modrinth-project.md")
+        assertDistributionDemos(first)
         val setup = first.getValue("skills/strata/references/setup.md")
         val openExample =
             ShowcaseSources
@@ -87,6 +90,22 @@ internal class StrataSkillPipelineTest {
                 ),
             )
         }
+    }
+
+    private fun assertDistributionDemos(documents: Map<String, String>) {
+        val modrinthProject = documents.getValue("docs/publication/modrinth-project.md")
+        val curseforgeProject = documents.getValue("docs/publication/curseforge-project.md")
+        val hangarProject = documents.getValue("docs/publication/hangar-project.md")
+        assertEquals(modrinthProject.replace("# Strata\n", "# Strata UI\n"), curseforgeProject)
+        listOf(modrinthProject, curseforgeProject, hangarProject).forEach { document ->
+            assertEquals(1, document.split(ReadmeDemoReadme.projectRegion).size - 1)
+            assertTrue(document.indexOf(ReadmeDemoReadme.projectRegion) < document.indexOf("## "))
+            assertTrue(document.contains("https://raw.githubusercontent.com/sya-ri/strata/master/docs/readme-demo/demo.gif"))
+            assertTrue(document.contains("https://github.com/sya-ri/strata/blob/master/${ReadmeDemoSource.DIRECTORY}/ScrollPlayersExample.kt"))
+            assertTrue(document.contains("https://github.com/sya-ri/strata/blob/master/docs/readme-demo/README.md"))
+        }
+        assertTrue(hangarProject.contains("Paper and Velocity"))
+        assertTrue(hangarProject.contains("Vanilla clients cannot render Strata screens."))
     }
 
     private fun assertModifierReferences(modifiers: String) {

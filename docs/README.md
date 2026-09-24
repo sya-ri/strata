@@ -26,7 +26,7 @@ For published artifacts, use the documentation at the matching [release tag](htt
 Browse the [component overview](reference/components.md) for images and compiled examples in one place.
 The [complete screen examples](examples/screens.md) show how those components work together.
 The [interactive web demos](https://gh.s7a.dev/strata/demos/) let you try state changes, progress, and keyed reordering in a browser.
-The [animated README demo](readme-demo/README.md) follows a player list from natural sizing through text alignment and linked scrolling.
+The [animated README demo](readme-demo/README.md) follows a fixed player list from natural sizing through width, weight, and linked scrolling.
 
 ## Look up a contract
 
@@ -51,5 +51,5 @@ Runtime contributors should also read [UI sessions](development/ui-sessions.md),
 Use [render monitoring](development/render-monitoring.md) to verify actual update work and the [independent screen exercise](development/skill-forward-evaluation.md) to maintain the skill's authoring guidance.
 Follow [Minecraft adapter development](development/minecraft-versions.md) when changing version support.
 
-The [publication introductions](publication/dokka-module.md) and [Modrinth body](publication/modrinth-project.md) serve their respective distribution surfaces.
+The [publication introductions](publication/dokka-module.md) and the [Modrinth](publication/modrinth-project.md), [CurseForge](publication/curseforge-project.md), and [Hangar](publication/hangar-project.md) bodies serve their respective distribution surfaces.
 They are maintained through the [documentation ownership rules](development/documentation.md#documentation-ownership).

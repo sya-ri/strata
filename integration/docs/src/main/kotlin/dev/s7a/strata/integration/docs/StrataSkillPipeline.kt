@@ -45,6 +45,8 @@ internal object StrataSkillPipeline {
         return linkedMapOf(
             "README.md" to readme,
             "docs/publication/modrinth-project.md" to ModrinthProjectMarkdown.render(versions, openExample, launch.releaseVersion),
+            "docs/publication/curseforge-project.md" to ModrinthProjectMarkdown.render(versions, openExample, launch.releaseVersion, "Strata UI"),
+            "docs/publication/hangar-project.md" to HangarProjectMarkdown.render(),
             "skills/strata/references/setup.md" to StrataSkillMarkdown.setup(versions, openExample, launch.releaseVersion),
             "skills/strata/references/components.md" to StrataSkillMarkdown.components(signatures.components),
             "skills/strata/references/modifiers-and-layout.md" to StrataSkillMarkdown.modifiers(compiledModifiers, compiledStateAndBindings, signatures, stateExtensions),

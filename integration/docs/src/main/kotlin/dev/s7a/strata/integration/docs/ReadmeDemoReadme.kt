@@ -10,11 +10,25 @@ internal object ReadmeDemoReadme {
     /**
      * Fixed public entry point linking the animation, static walkthrough, and complete compiled final example.
      */
-    val region: String =
-        """
-        [![Strata: compose player rows, align text, and link a scrollbar](docs/readme-demo/demo.gif)](docs/readme-demo/README.md)
+    val region: String = render("docs/readme-demo/demo.gif", "")
 
-        [Example](${ReadmeDemoSource.DIRECTORY}/ScrollPlayersExample.kt) · [Still frames](docs/readme-demo/README.md)
+    /**
+     * Absolute image and source links for project descriptions outside the GitHub repository.
+     */
+    val projectRegion: String =
+        render(
+            "https://raw.githubusercontent.com/sya-ri/strata/master/docs/readme-demo/demo.gif",
+            "https://github.com/sya-ri/strata/blob/master/",
+        )
+
+    private fun render(
+        image: String,
+        sourcePrefix: String,
+    ): String =
+        """
+        [![Strata: compose player rows, size the list, and link a scrollbar]($image)](${sourcePrefix}docs/readme-demo/README.md)
+
+        [Example](${sourcePrefix}${ReadmeDemoSource.DIRECTORY}/ScrollPlayersExample.kt) · [Still frames](${sourcePrefix}docs/readme-demo/README.md)
         """.trimIndent() + "\n"
 
     /**

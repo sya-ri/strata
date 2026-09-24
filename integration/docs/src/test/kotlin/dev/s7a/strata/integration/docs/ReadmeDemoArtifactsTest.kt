@@ -21,7 +21,7 @@ internal class ReadmeDemoArtifactsTest {
     lateinit var temporary: Path
 
     @Test
-    fun storyboardRecreatesAnInfiniteTwentyFourSecondGifAndUnmodifiedScreenStills() {
+    fun storyboardRecreatesAnInfiniteGifAndUnmodifiedScreenStills() {
         val root = repository()
         val assets = ReadmeDemoFixture.assets(temporary.resolve("assets"))
         val first = ReadmeDemoPipeline.prepare(root, assets, "test")
@@ -44,16 +44,24 @@ internal class ReadmeDemoArtifactsTest {
                     .use(ImageIO::read)
             assertArrayEquals(
                 screen.getRGB(0, 0, 512, 384, null, 0, 512),
-                composed.getRGB(672, 258, 512, 384, null, 0, 512),
+                composed.getRGB(740, 816, 512, 384, null, 0, 512),
                 "The full-color still must contain the original complete screen pixels.",
             )
             val source = ReadmeDemoSource.read(root, stage)
-            assertEquals(1, source.lines.count { it.contains("PlayerHead(") }, "Every stage must retain its inline row definition.")
-            assertTrue(source.lines.size <= 36)
-            val markdown = first.files.getValue("README.md").toString(Charsets.UTF_8)
-            assertTrue(markdown.contains(source.lines.joinToString("\n")))
-            assertTrue(source.full.contains(source.lines.first()))
+            assertVisibleSource(source, first.files.getValue("README.md").toString(Charsets.UTF_8))
         }
+        assertTrue(
+            first.files
+                .getValue("README.md")
+                .toString(Charsets.UTF_8)
+                .contains("19.25-second GIF"),
+        )
+        assertTrue(
+            first.files
+                .getValue("render.properties")
+                .toString(Charsets.UTF_8)
+                .contains("duration.centiseconds=1925"),
+        )
         val checkedRoot = temporary.resolve("checked")
         ReadmeDemoPipeline.write(checkedRoot.resolve("docs/readme-demo"), first)
         val readme = ReadmeDemoReadme.replace("before\n<!-- strata-readme-demo:start -->\n<!-- strata-readme-demo:end -->\nafter\n")
@@ -87,7 +95,7 @@ internal class ReadmeDemoArtifactsTest {
         val crlf = ReadmeDemoPipeline.prepare(root, assets, "test")
         lf.files.forEach { (name, bytes) -> assertArrayEquals(bytes, crlf.files.getValue(name), name) }
         ReadmeDemoPipeline.check(root, crlf)
-        val helper = sources.resolve("ReadmeDemoChrome.kt")
+        val helper = sources.resolve("ReadmePlayer.kt")
         Files.writeString(helper, Files.readString(helper) + "// Changed helper source.\r\n")
         val edited = ReadmeDemoPipeline.prepare(root, assets, "test")
         assertArrayEquals(crlf.files.getValue("demo.gif"), edited.files.getValue("demo.gif"))
@@ -119,17 +127,45 @@ internal class ReadmeDemoArtifactsTest {
         assertThrows(IllegalArgumentException::class.java) { ReadmeDemoReadme.replace("no anchors") }
     }
 
+    private fun assertVisibleSource(
+        source: ReadmeDemoSource,
+        markdown: String,
+    ) {
+        assertEquals(1, source.lines.count { it.contains("PlayerHead(") }, "Every stage must retain the complete row method.")
+        assertEquals(
+            3,
+            source.lines
+                .joinToString("\n")
+                .split("\n\n")
+                .size,
+        )
+        val excerpt = source.lines.joinToString("\n")
+        assertFalse(excerpt.contains("rowModifier"))
+        assertFalse(excerpt.contains("ReadmeDemoColors"))
+        assertFalse(excerpt.contains("ReadmeDemoChrome"))
+        assertTrue(excerpt.contains(".menuBackground()"))
+        assertTrue(excerpt.contains(".imageBackground("))
+        assertTrue(excerpt.contains("NineSliceCenterMode.Tiled"))
+        assertTrue(excerpt.contains("Text(\"Players (\${players.size})\")"))
+        assertFalse(excerpt.contains("rowColor"))
+        assertTrue(excerpt.contains(".background(ArgbColor(0xFF4A4A4A.toInt()))"))
+        assertTrue(excerpt.contains(".padding(6)"))
+        assertTrue(excerpt.contains("verticalAlignment = VerticalAlignment.Center"))
+        assertTrue(markdown.contains(source.lines.joinToString("\n")))
+        assertTrue(source.full.contains(source.lines.first()))
+    }
+
     private fun verifyGif(bytes: ByteArray) {
         val reader = ImageIO.getImageReadersByFormatName("gif").asSequence().first()
         try {
             MemoryCacheImageInputStream(bytes.inputStream()).use { input ->
                 reader.input = input
-                assertEquals(26, reader.getNumImages(true))
+                assertEquals(19, reader.getNumImages(true))
                 val delays =
-                    (0 until 26).map { index ->
+                    (0 until 19).map { index ->
                         val image = reader.read(index)
-                        assertEquals(1200, image.width)
-                        assertEquals(900, image.height)
+                        assertEquals(1320, image.width)
+                        assertEquals(1320, image.height)
                         val metadata = reader.getImageMetadata(index).getAsTree("javax_imageio_gif_image_1.0") as IIOMetadataNode
                         val control = metadata.getElementsByTagName("GraphicControlExtension").item(0) as IIOMetadataNode
                         if (index == 0) {
@@ -139,8 +175,8 @@ internal class ReadmeDemoArtifactsTest {
                         }
                         control.getAttribute("delayTime").toInt()
                     }
-                assertEquals(listOf(200, 250, 250, 250, 250, 200, 150) + List(5) { 25 } + listOf(150, 75, 150) + List(10) { 25 } + 100, delays)
-                assertEquals(2400, delays.sum())
+                assertEquals(listOf(200, 250, 250, 250, 250) + listOf(150, 75, 150) + List(10) { 25 } + 100, delays)
+                assertEquals(1925, delays.sum())
             }
         } finally {
             reader.dispose()
