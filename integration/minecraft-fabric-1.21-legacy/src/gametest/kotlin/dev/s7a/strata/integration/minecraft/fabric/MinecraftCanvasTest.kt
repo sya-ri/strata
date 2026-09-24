@@ -8,6 +8,8 @@ import dev.s7a.strata.runtime.minecraft.MinecraftUiProfile
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
 import net.minecraft.client.Minecraft
 import net.minecraft.client.gui.screens.Screen
+import org.lwjgl.glfw.GLFW
+import org.lwjgl.system.MemoryStack
 import java.nio.file.Path
 
 /**
@@ -52,7 +54,14 @@ private fun withMinecraftCanvasContext(
 ) {
     val previous =
         context.computeOnClient { minecraft ->
-            Triple(minecraft.window.screenWidth, minecraft.window.screenHeight, minecraft.options.guiScale().get())
+            // Restore the physical window size; cached Window dimensions can be zero in loaded tests.
+            MemoryStack.stackPush().use { stack ->
+                val width = stack.mallocInt(1)
+                val height = stack.mallocInt(1)
+                GLFW.glfwGetWindowSize(minecraftTestWindowHandle(), width, height)
+                check(0 < width[0] && 0 < height[0]) { "The physical test window must have a restorable size." }
+                Triple(width[0], height[0], minecraft.options.guiScale().get())
+            }
         }
     val adapter =
         object : MinecraftCanvasTestContext {
