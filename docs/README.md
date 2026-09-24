@@ -51,5 +51,5 @@ Runtime contributors should also read [UI sessions](development/ui-sessions.md),
 Use [render monitoring](development/render-monitoring.md) to verify actual update work and the [independent screen exercise](development/skill-forward-evaluation.md) to maintain the skill's authoring guidance.
 Follow [Minecraft adapter development](development/minecraft-versions.md) when changing version support.
 
-The [publication introductions](publication/dokka-module.md) and [Modrinth body](publication/modrinth-project.md) serve their respective distribution surfaces.
+The [publication introductions](publication/dokka-module.md), [Modrinth body](publication/modrinth-project.md), and [CurseForge body](publication/curseforge-project.md) serve their respective distribution surfaces.
 They are maintained through the [documentation ownership rules](development/documentation.md#documentation-ownership).

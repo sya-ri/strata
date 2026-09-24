@@ -34,6 +34,7 @@ internal class StrataSkillPipelineTest {
             setOf(
                 "README.md",
                 "docs/publication/modrinth-project.md",
+                "docs/publication/curseforge-project.md",
                 "skills/strata/references/setup.md",
                 "skills/strata/references/components.md",
                 "skills/strata/references/modifiers-and-layout.md",
@@ -44,6 +45,7 @@ internal class StrataSkillPipelineTest {
         )
         val readme = first.getValue("README.md")
         val modrinthProject = first.getValue("docs/publication/modrinth-project.md")
+        assertEquals(modrinthProject.replace("# Strata\n", "# Strata UI\n"), first.getValue("docs/publication/curseforge-project.md"))
         val setup = first.getValue("skills/strata/references/setup.md")
         val openExample =
             ShowcaseSources

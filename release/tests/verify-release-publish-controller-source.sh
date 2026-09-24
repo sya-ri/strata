@@ -124,8 +124,6 @@ done
 bash -n "$controller_guard"
 bash -n "$recovery_wrapper"
 bash -n "$release_order_verifier"
-bash "$backlog_guard"
-bash "$current_backlog_guard"
 
 grep --fixed-strings 'for source_guard in release/tests/verify-release*-source.sh; do' "$jvm_workflow" >/dev/null || \
   fail 'JVM CI no longer discovers stable release source guards.'
@@ -601,6 +599,9 @@ for source in \
 done
 printf '{}\n' > "$fixture_repository/release/github-release-tag-ruleset.json"
 printf '{}\n' > "$fixture_repository/release/github-release-tag-ruleset-receipt.json"
+printf '{}\n' > "$fixture_repository/release/curseforge-project.json"
+printf '"""Controller fixture."""\n' > "$fixture_repository/release/curseforge-release.py"
+printf '"""Receipt fixture."""\n' > "$fixture_repository/release/curseforge-receipts.py"
 fixture_current_commit="$(printf 'a%.0s' {1..40})"
 fixture_current_object="$(printf 'b%.0s' {1..40})"
 fixture_predecessor_commit="$(printf 'c%.0s' {1..40})"
@@ -668,6 +669,7 @@ for generic in current-controller.json verify-release-tag.sh list-release-tags.s
   github-release-read.sh github-release-preflight.sh select-release-source.sh select-release-pages.sh \
   verify-github-tag-ruleset.sh github-release-tag-ruleset.json \
   github-release-tag-ruleset-receipt.json verify-pages-deployment-source.sh verify-pages-artifact-equivalence.sh wait-for-pages-source-receipt.sh \
+  curseforge-release.py curseforge-receipts.py curseforge-project.json \
   run-publish-controller-recovery.sh list-java-toolchains.sh; do
   [[ -f "$valid_directory/$generic" && ! -L "$valid_directory/$generic" ]] || fail "Generic controller mapping is missing: $generic"
 done

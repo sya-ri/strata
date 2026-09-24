@@ -38,20 +38,21 @@ Receipt fields must equal those derived inventories, so adding or removing a sup
 
 ## Publication order and service state
 
-The three boolean inputs are independent and default to `true`:
+The four boolean inputs are independent and default to `true`:
 
 | Input | When enabled | When disabled |
 | --- | --- | --- |
 | `maven_central` | Publish a wholly absent release, or verify and reuse an exact publication | Never invoke Maven publication; require existing exact Central evidence |
 | `github_release` | Create or resume the immutable GitHub Release (`verify` checks it without publishing) | Skip GitHub Release lookup, writes, uploads and verification |
 | `modrinth` | Stage, submit or finalize the applicable Modrinth lifecycle; verify public files | Skip Modrinth API calls and require no Modrinth token |
+| `curseforge` | Reconcile missing CurseForge files and verify approved downloads | Skip CurseForge API calls and require no CurseForge credentials |
 
 At least one destination must be enabled.
-For example, use `maven_central=false`, `github_release=true`, `modrinth=false` to finish GitHub publication from already published Maven artifacts.
+For example, use `maven_central=false`, `github_release=true`, `modrinth=false`, `curseforge=false` to finish GitHub publication from already published Maven artifacts.
 Skipping Maven publication does not skip canonical artifact checks: selected downstream destinations consume the verified Central artifacts, including their original detached signatures.
 The signing and Publisher Portal verification credentials remain necessary for that evidence; missing, partial or conflicting Central content fails before downstream writes.
 The switches come from immutable workflow inputs and cannot be enabled by a later build step.
-`verify` never publishes to Maven or GitHub and only performs Modrinth finalization when that destination is selected.
+`verify` never publishes to Maven, GitHub, or CurseForge and only performs Modrinth finalization when that destination is selected.
 
 Central preflight distinguishes wholly absent content from a complete exact publication in both the public repository and authenticated Publisher Portal.
 Only the wholly absent pair with `maven_central=true` may invoke the single Vanniktech publication task; partial, conflicting, or cross-service state stops before any write, while an exact publication is verified and reused idempotently.
@@ -68,6 +69,50 @@ It revalidates the controller, both signed release identities, their order and a
 Before protected final verification starts, an unprotected fresh-runner job with no repository-token permissions, checkout credential, or release secret anonymously loads the same exact-controller metadata, fetches both public tags, and runs Skill preview and installation checks against both frozen source trees.
 The secret-bearing verification job then re-proves the complete predecessor release from a detached worktree with that source's own Portal, Central, GitHub bundle, Modrinth, Pages, and tagged Skill contracts before invoking the same idempotent current project-body finalizer and complete verification.
 The current and predecessor body states are monotonic across every controller sharing the legacy release concurrency group, and unrelated body, metadata, status, tag, controller, artifact, or public-service drift fails closed.
+
+## CurseForge setup and publication
+
+Create the **Strata UI** Minecraft Mods project in the [Authors Console](https://authors.curseforge.com/), using the `strata-ui` slug, API and Library category, MIT license, and Client environment.
+Use the existing `icon.png`, verified component images, repository and issue links, and the [generated project body](../publication/curseforge-project.md).
+The project title distinguishes this UI library from unrelated projects named Strata.
+Record the assigned positive numeric ID in `release/curseforge-project.json`; its initial `null` value deliberately prevents publication to an unconfigured destination.
+Keep CurseForge disabled on other release runs until this setup is complete.
+
+Add `CURSEFORGE_TOKEN` (the author's upload token) and `CURSEFORGE_API_KEY` (the separate read API key) to the existing protected `release` GitHub Environment.
+The [Upload API](https://support.curseforge.com/support/solutions/articles/9000197321) uses `X-Api-Token`; the [read API](https://docs.curseforge.com/rest-api/) uses `x-api-key`.
+Third-party read API access requires the application linked from the official API documentation; do not create a game-studio account to represent Minecraft ownership.
+Credentials are never passed as URL parameters, written to receipts, or forwarded to download servers.
+An unreadable or unapproved project is not treated as an empty public project: complete initial project review in the Authors Console before using the ordinary publication controller.
+The initial file submission needed for that review is a one-time setup operation with its own recorded file ID; the normal controller subsequently verifies and reuses that file.
+For that submission, copy the canonical manifest's `fileName`, `versionName` (display name), `gameVersion`, and Markdown `changelog`, and apply the Fabric and Client tags and required Fabric Language Kotlin dependency described below.
+
+The controller materializes the CurseForge publisher, receipt reader, and project configuration from its frozen Git commit and checks their blob identities alongside its other release tools.
+The publisher consumes the existing generated release manifest and canonical JARs; it does not maintain another Minecraft target inventory or rebuild distribution files.
+Each file is a Release for exactly one supported Java Minecraft version, tagged Fabric and Client, with Fabric Language Kotlin as its required dependency.
+Java Minecraft version IDs are cross-checked against the official Minecraft version catalog, preventing an identically named version in another version type from being selected.
+Source and documentation JARs, detached signatures, and Maven-only modules are not uploaded.
+
+Preflight checks all target metadata before publication begins.
+After Central and enabled GitHub publication have completed, staging appends missing files without editing or deleting existing files.
+Serialize Authors Console uploads and local historical imports with this workflow; local receipts do not coordinate independent writers.
+Accepted uploads remain pending until approval and public byte verification; a successful staging step is not proof of publication.
+Dispatch the same tag and source with `operation=verify` after moderation to verify every file's identity, exact game tags, dependency, size, and downloaded SHA-256.
+Rejected, changed, duplicate, or unknown file states stop the operation and require inspection in the Authors Console.
+Release notes are submitted verbatim as Markdown from the canonical manifest.
+Project description changes remain Authors Console operations using the generated body; the documented upload API does not supply a project-description update endpoint.
+
+Every write first persists an `attempting` record and then records the returned file ID.
+The workflow retains the credential-free receipt as an attempt-qualified Actions artifact even when staging fails.
+Later runs inspect all relevant workflow attempts and restore receipts only after checking their producer identity, archive size, digest, and product identity.
+Do not rename the workflow run title or the CurseForge stage step independently of this restoration contract.
+Receipts are not caches: expired, missing, or incomplete evidence forbids additional uploads until the uncertain outcome is reconciled.
+A complete exact public release can still be verified without its old receipts.
+An accepted ID that is not publicly visible remains pending, and a failed upload is never retried blindly.
+
+For an explicitly authorized one-time historical import, use temporary manifests and the same publisher against previously released, signed, checksum-verified canonical files.
+Keep import inventories, downloaded artifacts, and orchestration under ignored `build/` storage; do not add release-specific branches to the permanent controller.
+Retain execution evidence until public verification completes, then remove the temporary import material.
+Any temporary tracked migration material must be removed in a follow-up commit.
 
 ## Provenance and protected execution
 

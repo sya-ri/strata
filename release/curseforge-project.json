@@ -1,0 +1,10 @@
+{
+  "projectId": 1707720,
+  "slug": "strata-ui",
+  "title": "Strata UI",
+  "description": "Declarative, reusable Minecraft UI with headless rendering and exact versioned Fabric adapters.",
+  "licenseId": "MIT",
+  "sourceUrl": "https://github.com/sya-ri/strata",
+  "issuesUrl": "https://github.com/sya-ri/strata/issues",
+  "documentationUrl": "https://gh.s7a.dev/strata/"
+}

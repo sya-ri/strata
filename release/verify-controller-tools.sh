@@ -103,6 +103,7 @@ verify_controller_tool() {
   case "$validation" in
     bash) bash -n "$destination" ;;
     json) portable_jq -e 'type == "object"' "$destination" >/dev/null ;;
+    python) python3 -c 'import ast, pathlib, sys; ast.parse(pathlib.Path(sys.argv[1]).read_text())' "$destination" ;;
     controller)
       portable_jq -e '
         type == "object" and
@@ -149,6 +150,9 @@ verify_controller_tool release/github-release-read.sh github-release-read.sh bas
 verify_controller_tool release/github-release-preflight.sh github-release-preflight.sh bash 100644
 verify_controller_tool release/select-release-source.sh select-release-source.sh bash 100644
 verify_controller_tool release/select-release-pages.sh select-release-pages.sh bash 100644
+verify_controller_tool release/curseforge-release.py curseforge-release.py python 100644
+verify_controller_tool release/curseforge-receipts.py curseforge-receipts.py python 100644
+verify_controller_tool release/curseforge-project.json curseforge-project.json json 100644
 
 current_tag="$(portable_jq -er '.current.tag' "$tool_directory/current-controller.json")"
 current_commit="$(portable_jq -er '.current.commit' "$tool_directory/current-controller.json")"

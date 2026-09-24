@@ -92,7 +92,7 @@ See [loaded-client verification](build.md#loaded-client-verification) and [font 
 ./gradlew :integration:docs:checkStrataSkill :integration:docs:checkDocumentationLinks
 ```
 
-Generation owns the five skill references, README installation/opening-example regions, and Modrinth project body.
+Generation owns the five skill references, README installation/opening-example regions, and Modrinth and CurseForge project bodies.
 The checker pairs source declarations with compiled API inventories, validates state/binding fingerprints, and checks byte-exact freshness and repository-local links.
 Skill and README examples compile against `:api` alone.
 Preserve the public skill's package structure and README marker pairs; edit their templates or source examples.
