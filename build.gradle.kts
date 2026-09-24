@@ -76,6 +76,7 @@ private val sourceCommit =
         }
 
 private data class MinecraftFabricTarget(
+    val uiFamily: UiFamily,
     val version: String,
     val javaVersion: Int,
     val remapped: Boolean,
@@ -99,8 +100,9 @@ private data class MinecraftFabricTarget(
     val canvasSourcePaths: List<String> =
         (listOf("shared") + canvasFamily.sourceRoots).map { suffix -> "runtime/minecraft-fabric-canvas-$suffix" }
     val inputSourcePaths: List<String> = if (canvasFamily == CanvasFamily.Gpu263) emptyList() else listOf("runtime/minecraft-fabric-glfw")
+    val uiInputSourcePath: String = "runtime/minecraft-fabric-input-${if (uiFamily == UiFamily.ExtractHud) "gui" else "legacy"}"
     val allSourceLinkPaths: List<String> =
-        sourceLinkPaths + canvasSourcePaths + inputSourcePaths + "runtime/minecraft-fabric-remote-${remoteNetworkFamily.sourceRoot}"
+        sourceLinkPaths + canvasSourcePaths + inputSourcePaths + uiInputSourcePath + "runtime/minecraft-fabric-hud-${uiFamily.sourceRoot}" + "runtime/minecraft-fabric-remote-${remoteNetworkFamily.sourceRoot}"
     val canvasTestSourcePaths: List<String> =
         (if (canvasFamily == CanvasFamily.Gpu263) emptyList() else listOf("integration/minecraft-fabric-canvas-target-blaze3d")) + listOf(
             "integration/minecraft-fabric-canvas-shared",
@@ -113,6 +115,11 @@ private data class MinecraftFabricTarget(
                 CanvasFamily.Gpu262, CanvasFamily.Gpu263 -> "integration/minecraft-fabric-canvas-consumer-empty"
             },
         )
+
+    /** Native HUD extraction signatures verified from the exact client archives. */
+    enum class UiFamily(val sourceRoot: String) {
+        Float("float"), Delta("delta"), ExtractGui("extract-gui"), ExtractHud("extract-hud"),
+    }
 
     /** Verified native API families, selected explicitly for every supported Minecraft artifact. */
     enum class CanvasFamily(val testSource: String, vararg val sourceRoots: String) {
@@ -166,6 +173,7 @@ private val minecraftFabricTargets =
     listOf(
         MinecraftFabricTarget(
             version = libs.versions.minecraft120.get(),
+            uiFamily = MinecraftFabricTarget.UiFamily.Float,
             remoteNetworkFamily = MinecraftFabricTarget.RemoteNetworkFamily.Legacy,
             canvasFamily = MinecraftFabricTarget.CanvasFamily.GlLegacy,
             javaVersion = baselineJavaVersion,
@@ -179,6 +187,7 @@ private val minecraftFabricTargets =
         ),
         MinecraftFabricTarget(
             version = libs.versions.minecraft1201.get(),
+            uiFamily = MinecraftFabricTarget.UiFamily.Float,
             remoteNetworkFamily = MinecraftFabricTarget.RemoteNetworkFamily.Legacy,
             canvasFamily = MinecraftFabricTarget.CanvasFamily.GlLegacy,
             javaVersion = baselineJavaVersion,
@@ -191,6 +200,7 @@ private val minecraftFabricTargets =
         ),
         MinecraftFabricTarget(
             version = libs.versions.minecraft1202.get(),
+            uiFamily = MinecraftFabricTarget.UiFamily.Float,
             remoteNetworkFamily = MinecraftFabricTarget.RemoteNetworkFamily.Payload,
             canvasFamily = MinecraftFabricTarget.CanvasFamily.GlLegacy,
             javaVersion = baselineJavaVersion,
@@ -205,6 +215,7 @@ private val minecraftFabricTargets =
         ),
         MinecraftFabricTarget(
             version = libs.versions.minecraft1203.get(),
+            uiFamily = MinecraftFabricTarget.UiFamily.Float,
             paperDistribution = MinecraftFabricTarget.PaperDistribution.Unavailable,
             remoteNetworkFamily = MinecraftFabricTarget.RemoteNetworkFamily.Payload,
             canvasFamily = MinecraftFabricTarget.CanvasFamily.GlLegacy,
@@ -220,6 +231,7 @@ private val minecraftFabricTargets =
         ),
         MinecraftFabricTarget(
             version = libs.versions.minecraft1204.get(),
+            uiFamily = MinecraftFabricTarget.UiFamily.Float,
             remoteNetworkFamily = MinecraftFabricTarget.RemoteNetworkFamily.Payload,
             canvasFamily = MinecraftFabricTarget.CanvasFamily.GlLegacy,
             javaVersion = baselineJavaVersion,
@@ -233,6 +245,7 @@ private val minecraftFabricTargets =
         ),
         MinecraftFabricTarget(
             version = libs.versions.minecraft1205.get(),
+            uiFamily = MinecraftFabricTarget.UiFamily.Float,
             canvasFamily = MinecraftFabricTarget.CanvasFamily.GlLegacy,
             javaVersion = minecraftJava21Version,
             remapped = true,
@@ -246,6 +259,7 @@ private val minecraftFabricTargets =
         ),
         MinecraftFabricTarget(
             version = libs.versions.minecraft1206.get(),
+            uiFamily = MinecraftFabricTarget.UiFamily.Float,
             canvasFamily = MinecraftFabricTarget.CanvasFamily.GlLegacy,
             javaVersion = minecraftJava21Version,
             remapped = true,
@@ -259,6 +273,7 @@ private val minecraftFabricTargets =
         ),
         MinecraftFabricTarget(
             version = libs.versions.minecraft121.get(),
+            uiFamily = MinecraftFabricTarget.UiFamily.Delta,
             canvasFamily = MinecraftFabricTarget.CanvasFamily.GlLegacy,
             javaVersion = minecraftJava21Version,
             remapped = true,
@@ -272,6 +287,7 @@ private val minecraftFabricTargets =
         ),
         MinecraftFabricTarget(
             version = libs.versions.minecraft1211.get(),
+            uiFamily = MinecraftFabricTarget.UiFamily.Delta,
             canvasFamily = MinecraftFabricTarget.CanvasFamily.GlLegacy,
             javaVersion = minecraftJava21Version,
             remapped = true,
@@ -285,6 +301,7 @@ private val minecraftFabricTargets =
         ),
         MinecraftFabricTarget(
             version = libs.versions.minecraft1212.get(),
+            uiFamily = MinecraftFabricTarget.UiFamily.Delta,
             paperDistribution = MinecraftFabricTarget.PaperDistribution.Unavailable,
             canvasFamily = MinecraftFabricTarget.CanvasFamily.GlModern,
             javaVersion = minecraftJava21Version,
@@ -299,6 +316,7 @@ private val minecraftFabricTargets =
         ),
         MinecraftFabricTarget(
             version = libs.versions.minecraft1213.get(),
+            uiFamily = MinecraftFabricTarget.UiFamily.Delta,
             canvasFamily = MinecraftFabricTarget.CanvasFamily.GlModern,
             javaVersion = minecraftJava21Version,
             remapped = true,
@@ -312,6 +330,7 @@ private val minecraftFabricTargets =
         ),
         MinecraftFabricTarget(
             version = libs.versions.minecraft1214.get(),
+            uiFamily = MinecraftFabricTarget.UiFamily.Delta,
             canvasFamily = MinecraftFabricTarget.CanvasFamily.GlModern,
             javaVersion = minecraftJava21Version,
             remapped = true,
@@ -324,6 +343,7 @@ private val minecraftFabricTargets =
         ),
         MinecraftFabricTarget(
             version = libs.versions.minecraft1215.get(),
+            uiFamily = MinecraftFabricTarget.UiFamily.Delta,
             canvasFamily = MinecraftFabricTarget.CanvasFamily.Gpu125,
             javaVersion = minecraftJava21Version,
             remapped = true,
@@ -336,6 +356,7 @@ private val minecraftFabricTargets =
         ),
         MinecraftFabricTarget(
             version = libs.versions.minecraft1216.get(),
+            uiFamily = MinecraftFabricTarget.UiFamily.Delta,
             canvasFamily = MinecraftFabricTarget.CanvasFamily.Gpu126,
             canvasTestExtraction = MinecraftFabricTarget.CanvasTestExtraction.BufferedLayered,
             javaVersion = minecraftJava21Version,
@@ -349,6 +370,7 @@ private val minecraftFabricTargets =
         ),
         MinecraftFabricTarget(
             version = libs.versions.minecraft1217.get(),
+            uiFamily = MinecraftFabricTarget.UiFamily.Delta,
             canvasFamily = MinecraftFabricTarget.CanvasFamily.Gpu126,
             canvasTestExtraction = MinecraftFabricTarget.CanvasTestExtraction.BufferedLayered,
             javaVersion = minecraftJava21Version,
@@ -362,6 +384,7 @@ private val minecraftFabricTargets =
         ),
         MinecraftFabricTarget(
             version = libs.versions.minecraft1218.get(),
+            uiFamily = MinecraftFabricTarget.UiFamily.Delta,
             canvasFamily = MinecraftFabricTarget.CanvasFamily.Gpu126,
             canvasTestExtraction = MinecraftFabricTarget.CanvasTestExtraction.BufferedLayered,
             javaVersion = minecraftJava21Version,
@@ -375,6 +398,7 @@ private val minecraftFabricTargets =
         ),
         MinecraftFabricTarget(
             version = libs.versions.minecraft1219.get(),
+            uiFamily = MinecraftFabricTarget.UiFamily.Delta,
             canvasFamily = MinecraftFabricTarget.CanvasFamily.Gpu126,
             javaVersion = minecraftJava21Version,
             remapped = true,
@@ -387,6 +411,7 @@ private val minecraftFabricTargets =
         ),
         MinecraftFabricTarget(
             version = libs.versions.minecraft12110.get(),
+            uiFamily = MinecraftFabricTarget.UiFamily.Delta,
             canvasFamily = MinecraftFabricTarget.CanvasFamily.Gpu126,
             javaVersion = minecraftJava21Version,
             remapped = true,
@@ -399,6 +424,7 @@ private val minecraftFabricTargets =
         ),
         MinecraftFabricTarget(
             version = libs.versions.minecraft12111.get(),
+            uiFamily = MinecraftFabricTarget.UiFamily.Delta,
             canvasFamily = MinecraftFabricTarget.CanvasFamily.Gpu1211,
             javaVersion = minecraftJava21Version,
             remapped = true,
@@ -412,6 +438,7 @@ private val minecraftFabricTargets =
         ),
         MinecraftFabricTarget(
             version = libs.versions.minecraft261.get(),
+            uiFamily = MinecraftFabricTarget.UiFamily.ExtractGui,
             paperDistribution = MinecraftFabricTarget.PaperDistribution.Unavailable,
             canvasFamily = MinecraftFabricTarget.CanvasFamily.Gpu261,
             javaVersion = minecraftJavaVersion,
@@ -427,6 +454,7 @@ private val minecraftFabricTargets =
         ),
         MinecraftFabricTarget(
             version = libs.versions.minecraft262.get(),
+            uiFamily = MinecraftFabricTarget.UiFamily.ExtractHud,
             canvasFamily = MinecraftFabricTarget.CanvasFamily.Gpu262,
             javaVersion = minecraftJavaVersion,
             remapped = false,
@@ -441,6 +469,7 @@ private val minecraftFabricTargets =
         ),
         MinecraftFabricTarget(
             version = libs.versions.minecraft263.get(),
+            uiFamily = MinecraftFabricTarget.UiFamily.ExtractHud,
             canvasFamily = MinecraftFabricTarget.CanvasFamily.Gpu263,
             javaVersion = minecraftJavaVersion,
             remapped = false,
@@ -495,6 +524,8 @@ private val minecraftTargetByProjectPath =
 val releasePublicationProjectPaths =
     listOf(
         ":api",
+        ":paper-api",
+        ":velocity-api",
         ":runtime:core",
         ":runtime:remote",
         ":runtime:paper",
@@ -598,6 +629,8 @@ dependencies {
     dokka(project(":api"))
     dokka(project(":runtime:core"))
     dokka(project(":runtime:remote"))
+    dokka(project(":paper-api"))
+    dokka(project(":velocity-api"))
     dokka(project(":runtime:paper"))
     dokka(project(":runtime:velocity"))
     dokka(project(":runtime:headless"))
@@ -991,7 +1024,7 @@ subprojects {
     minecraftFabricTargets.firstOrNull { target -> path == target.runtimeProjectPath }?.let { target ->
         dependencies.add("compileOnly", canvasMixinDependency)
         dependencies.add("compileOnly", canvasMixinExtrasDependency)
-        val nativeRoots = (target.canvasSourcePaths + target.inputSourcePaths).map { sourcePath -> rootProject.file("$sourcePath/src/main") }
+        val nativeRoots = (target.canvasSourcePaths + target.inputSourcePaths + target.uiInputSourcePath + "runtime/minecraft-fabric-hud-${target.uiFamily.sourceRoot}").map { sourcePath -> rootProject.file("$sourcePath/src/main") }
         extensions.configure<SourceSetContainer> {
             named("main") {
                 java.srcDirs(nativeRoots.map { sourceRoot -> sourceRoot.resolve("java") })
@@ -1217,7 +1250,7 @@ subprojects {
         }
     }
     val javaVersion = when (path) {
-        ":runtime:velocity", ":examples:velocity", ":integration:velocity" -> velocityJavaVersion
+        ":velocity-api", ":runtime:velocity", ":examples:velocity", ":integration:velocity" -> velocityJavaVersion
         else -> minecraftTargetByProjectPath[path]?.javaVersion ?: baselineJavaVersion
     }
 
@@ -1314,6 +1347,8 @@ subprojects {
                 source.from(
                     sharedFabricRuntime.resolve("kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftProfileLifecycle.kt"),
                     sharedFabricRuntime.resolve("kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricRemoteScreens.kt"),
+                    sharedFabricRuntime.resolve("kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricUiSessions.kt"),
+                    sharedFabricRuntime.resolve("kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricUiInput.kt"),
                     sharedFabricRuntime.resolve("kotlin/dev/s7a/strata/runtime/minecraft/fabric/mixin"),
                 )
             }

@@ -1,3 +1,5 @@
+@file:Suppress("DEPRECATION") // Compatibility overloads and regression coverage retain the deprecated screen entry points.
+
 @file:OptIn(InternalStrataRuntimeApi::class)
 
 package dev.s7a.strata.runtime.minecraft
@@ -108,9 +110,9 @@ internal class MinecraftUiHostTest {
                             Modifier.Empty
                                 .size(4, 3)
                                 .initialFocus()
-                                .onFocusChanged(focus::add)
+                                .onFocusChanged({ value -> focus.add(value) })
                                 .onKeyPress { _ -> InputResult.Consumed }
-                                .onCapturedPointerEvent(cancellations::add) { _, _ -> InputResult.Consumed },
+                                .onCapturedPointerEvent({ value -> cancellations.add(value) }) { _, _ -> InputResult.Consumed },
                     )
                 }
             }

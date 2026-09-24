@@ -1,3 +1,5 @@
+@file:Suppress("DEPRECATION") // Compatibility overloads and regression coverage retain the deprecated screen entry points.
+
 package dev.s7a.strata.runtime.minecraft.fabric
 
 import com.mojang.blaze3d.buffers.GpuBufferSlice
@@ -321,7 +323,12 @@ internal class FabricMinecraftJvmSurfaceTest {
 
         private val expectedPublicMethods =
             mapOf(
-                "$packageName.FabricRemoteScreens" to setOf("getRegistry", "enqueue", "shutdown", "tick", "requireContainer", "fail"),
+                "$packageName.FabricUiInput" to setOf("attackDelay", "beginScroll", "blocksLook", "endScroll", "getCapturing", "getDispatching", "getScrolling", "reset", "tick"),
+                "$packageName.FabricUiSessions" to setOf("acceptsPointer", "closeAll", "nativeScreen", "open", "prepareRender", "renderHuds", "resetInput", "tick", "visibleHuds"),
+                "$packageName.mixin.lifecycle.FabricUiKeyMappingAccess" to setOf("strataClicks", "strataDown", "strataKey"),
+                "$packageName.mixin.lifecycle.FabricUiMinecraftAccess" to setOf("strataHandleKeys", "strataMissTime"),
+                "$packageName.mixin.lifecycle.FabricUiMouseAccess" to setOf("strataScroll"),
+                "$packageName.FabricRemoteScreens" to setOf("getRegistry", "enqueue", "shutdown", "tick", "fail"),
                 "$packageName.FabricRemotePayloadTypes" to setOf("create", "registration", "writeRegistrationIdentifier"),
                 "$packageName.FabricRemotePayload" to setOf("bytes", "type"),
                 "$packageName.FabricRemoteRegistration" to setOf("type", "write", "equals", "hashCode", "toString"),

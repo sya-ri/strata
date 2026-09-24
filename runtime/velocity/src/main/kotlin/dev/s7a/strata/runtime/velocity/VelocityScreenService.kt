@@ -1,3 +1,5 @@
+@file:Suppress("DEPRECATION") // Retains the previous screen factory as a compatibility entry.
+
 package dev.s7a.strata.runtime.velocity
 
 import com.velocitypowered.api.proxy.Player
@@ -14,6 +16,8 @@ import dev.s7a.strata.runtime.remote.RemoteProtocolException
 import dev.s7a.strata.runtime.remote.RemoteScreenService
 import dev.s7a.strata.runtime.remote.RemoteScreenSession
 import dev.s7a.strata.screen.ScreenDefinition
+import dev.s7a.strata.ui.UiDefinition
+import dev.s7a.strata.ui.UiSession
 import java.util.concurrent.ArrayBlockingQueue
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.Executors
@@ -46,6 +50,7 @@ internal class VelocityScreenService(
                     },
                     report,
                     { operation -> if (Thread.currentThread() === owner) operation() else enqueue(operation) },
+                    { player, event -> proxy.eventManager.fire(velocityUiEvent(player, event)) },
                 )
             }.get()
     private val ticker =
@@ -114,6 +119,19 @@ internal class VelocityScreenService(
         submit {
             requireOwner(owner)
             host.open(owner, player, definition())
+        }
+
+    /**
+     * Creates a common UI and its state on the same owner thread as remote event callbacks.
+     */
+    fun openUi(
+        owner: Any,
+        player: Player,
+        definition: () -> UiDefinition,
+    ): CompletableFuture<UiSession> =
+        submit {
+            requireOwner(owner)
+            host.open(owner, player, definition()).uiSession
         }
 
     /**

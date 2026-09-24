@@ -1,6 +1,6 @@
 # Render monitoring
 
-`RuntimeUiDiagnosticsOwner` is an internal runtime capability implemented by the retained session bridge, Minecraft host, and every Fabric screen. Tests open the normal production `ScreenDefinition`, then obtain `startRenderMonitoring()` from the current screen on its owner thread. Application definitions need no runtime imports or diagnostics arguments.
+`RuntimeUiDiagnosticsOwner` is an internal runtime capability implemented by the retained session bridge, Minecraft host, and every Fabric screen. Tests open the normal production `UiDefinition`, then obtain `startRenderMonitoring()` from the current screen on its owner thread. Application definitions need no runtime imports or diagnostics arguments.
 
 Only one monitor may be active per session. `checkpoint()` resets interval counts, `snapshot()` returns detached read-only evidence, `findNodes(key)` returns current session node IDs, and `close()` releases the collector without closing the screen. All operations reject reentry and foreign threads; terminal tree failure or close ends monitoring automatically.
 

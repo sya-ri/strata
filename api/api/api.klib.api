@@ -296,6 +296,108 @@ final enum class dev.s7a.strata.text/TextWrap : kotlin/Enum<dev.s7a.strata.text/
     final fun values(): kotlin/Array<dev.s7a.strata.text/TextWrap> // dev.s7a.strata.text/TextWrap.values|values#static(){}[0]
 }
 
+final enum class dev.s7a.strata.ui/UiCloseReason : kotlin/Enum<dev.s7a.strata.ui/UiCloseReason> { // dev.s7a.strata.ui/UiCloseReason|null[0]
+    enum entry Closed // dev.s7a.strata.ui/UiCloseReason.Closed|null[0]
+    enum entry ContainerChanged // dev.s7a.strata.ui/UiCloseReason.ContainerChanged|null[0]
+    enum entry Disconnected // dev.s7a.strata.ui/UiCloseReason.Disconnected|null[0]
+    enum entry Failed // dev.s7a.strata.ui/UiCloseReason.Failed|null[0]
+    enum entry OwnerDisabled // dev.s7a.strata.ui/UiCloseReason.OwnerDisabled|null[0]
+    enum entry Replaced // dev.s7a.strata.ui/UiCloseReason.Replaced|null[0]
+    enum entry ResourceLimit // dev.s7a.strata.ui/UiCloseReason.ResourceLimit|null[0]
+    enum entry Unsupported // dev.s7a.strata.ui/UiCloseReason.Unsupported|null[0]
+    enum entry Visibility // dev.s7a.strata.ui/UiCloseReason.Visibility|null[0]
+    enum entry WorldExited // dev.s7a.strata.ui/UiCloseReason.WorldExited|null[0]
+
+    final val entries // dev.s7a.strata.ui/UiCloseReason.entries|#static{}entries[0]
+        final fun <get-entries>(): kotlin.enums/EnumEntries<dev.s7a.strata.ui/UiCloseReason> // dev.s7a.strata.ui/UiCloseReason.entries.<get-entries>|<get-entries>#static(){}[0]
+
+    final fun valueOf(kotlin/String): dev.s7a.strata.ui/UiCloseReason // dev.s7a.strata.ui/UiCloseReason.valueOf|valueOf#static(kotlin.String){}[0]
+    final fun values(): kotlin/Array<dev.s7a.strata.ui/UiCloseReason> // dev.s7a.strata.ui/UiCloseReason.values|values#static(){}[0]
+}
+
+final enum class dev.s7a.strata.ui/UiGameAction : kotlin/Enum<dev.s7a.strata.ui/UiGameAction> { // dev.s7a.strata.ui/UiGameAction|null[0]
+    enum entry Attack // dev.s7a.strata.ui/UiGameAction.Attack|null[0]
+    enum entry Drop // dev.s7a.strata.ui/UiGameAction.Drop|null[0]
+    enum entry Hotbar // dev.s7a.strata.ui/UiGameAction.Hotbar|null[0]
+    enum entry Jump // dev.s7a.strata.ui/UiGameAction.Jump|null[0]
+    enum entry Look // dev.s7a.strata.ui/UiGameAction.Look|null[0]
+    enum entry Movement // dev.s7a.strata.ui/UiGameAction.Movement|null[0]
+    enum entry Pick // dev.s7a.strata.ui/UiGameAction.Pick|null[0]
+    enum entry Sneak // dev.s7a.strata.ui/UiGameAction.Sneak|null[0]
+    enum entry Sprint // dev.s7a.strata.ui/UiGameAction.Sprint|null[0]
+    enum entry SwapHands // dev.s7a.strata.ui/UiGameAction.SwapHands|null[0]
+    enum entry Use // dev.s7a.strata.ui/UiGameAction.Use|null[0]
+
+    final val entries // dev.s7a.strata.ui/UiGameAction.entries|#static{}entries[0]
+        final fun <get-entries>(): kotlin.enums/EnumEntries<dev.s7a.strata.ui/UiGameAction> // dev.s7a.strata.ui/UiGameAction.entries.<get-entries>|<get-entries>#static(){}[0]
+
+    final fun valueOf(kotlin/String): dev.s7a.strata.ui/UiGameAction // dev.s7a.strata.ui/UiGameAction.valueOf|valueOf#static(kotlin.String){}[0]
+    final fun values(): kotlin/Array<dev.s7a.strata.ui/UiGameAction> // dev.s7a.strata.ui/UiGameAction.values|values#static(){}[0]
+}
+
+final enum class dev.s7a.strata.ui/UiInteractionMode : kotlin/Enum<dev.s7a.strata.ui/UiInteractionMode> { // dev.s7a.strata.ui/UiInteractionMode|null[0]
+    enum entry Cursor // dev.s7a.strata.ui/UiInteractionMode.Cursor|null[0]
+    enum entry Look // dev.s7a.strata.ui/UiInteractionMode.Look|null[0]
+    enum entry None // dev.s7a.strata.ui/UiInteractionMode.None|null[0]
+
+    final val entries // dev.s7a.strata.ui/UiInteractionMode.entries|#static{}entries[0]
+        final fun <get-entries>(): kotlin.enums/EnumEntries<dev.s7a.strata.ui/UiInteractionMode> // dev.s7a.strata.ui/UiInteractionMode.entries.<get-entries>|<get-entries>#static(){}[0]
+
+    final fun valueOf(kotlin/String): dev.s7a.strata.ui/UiInteractionMode // dev.s7a.strata.ui/UiInteractionMode.valueOf|valueOf#static(kotlin.String){}[0]
+    final fun values(): kotlin/Array<dev.s7a.strata.ui/UiInteractionMode> // dev.s7a.strata.ui/UiInteractionMode.values|values#static(){}[0]
+}
+
+final enum class dev.s7a.strata.ui/UiPresentation : kotlin/Enum<dev.s7a.strata.ui/UiPresentation> { // dev.s7a.strata.ui/UiPresentation|null[0]
+    enum entry Hud // dev.s7a.strata.ui/UiPresentation.Hud|null[0]
+    enum entry Screen // dev.s7a.strata.ui/UiPresentation.Screen|null[0]
+
+    final val entries // dev.s7a.strata.ui/UiPresentation.entries|#static{}entries[0]
+        final fun <get-entries>(): kotlin.enums/EnumEntries<dev.s7a.strata.ui/UiPresentation> // dev.s7a.strata.ui/UiPresentation.entries.<get-entries>|<get-entries>#static(){}[0]
+
+    final fun valueOf(kotlin/String): dev.s7a.strata.ui/UiPresentation // dev.s7a.strata.ui/UiPresentation.valueOf|valueOf#static(kotlin.String){}[0]
+    final fun values(): kotlin/Array<dev.s7a.strata.ui/UiPresentation> // dev.s7a.strata.ui/UiPresentation.values|values#static(){}[0]
+}
+
+final enum class dev.s7a.strata.ui/UiRejection : kotlin/Enum<dev.s7a.strata.ui/UiRejection> { // dev.s7a.strata.ui/UiRejection|null[0]
+    enum entry Capacity // dev.s7a.strata.ui/UiRejection.Capacity|null[0]
+    enum entry Closed // dev.s7a.strata.ui/UiRejection.Closed|null[0]
+    enum entry Hidden // dev.s7a.strata.ui/UiRejection.Hidden|null[0]
+    enum entry ScreenOpen // dev.s7a.strata.ui/UiRejection.ScreenOpen|null[0]
+    enum entry Unsupported // dev.s7a.strata.ui/UiRejection.Unsupported|null[0]
+
+    final val entries // dev.s7a.strata.ui/UiRejection.entries|#static{}entries[0]
+        final fun <get-entries>(): kotlin.enums/EnumEntries<dev.s7a.strata.ui/UiRejection> // dev.s7a.strata.ui/UiRejection.entries.<get-entries>|<get-entries>#static(){}[0]
+
+    final fun valueOf(kotlin/String): dev.s7a.strata.ui/UiRejection // dev.s7a.strata.ui/UiRejection.valueOf|valueOf#static(kotlin.String){}[0]
+    final fun values(): kotlin/Array<dev.s7a.strata.ui/UiRejection> // dev.s7a.strata.ui/UiRejection.values|values#static(){}[0]
+}
+
+final enum class dev.s7a.strata.ui/UiScreenKind : kotlin/Enum<dev.s7a.strata.ui/UiScreenKind> { // dev.s7a.strata.ui/UiScreenKind|null[0]
+    enum entry Chat // dev.s7a.strata.ui/UiScreenKind.Chat|null[0]
+    enum entry Inventory // dev.s7a.strata.ui/UiScreenKind.Inventory|null[0]
+    enum entry Other // dev.s7a.strata.ui/UiScreenKind.Other|null[0]
+    enum entry Pause // dev.s7a.strata.ui/UiScreenKind.Pause|null[0]
+    enum entry Strata // dev.s7a.strata.ui/UiScreenKind.Strata|null[0]
+
+    final val entries // dev.s7a.strata.ui/UiScreenKind.entries|#static{}entries[0]
+        final fun <get-entries>(): kotlin.enums/EnumEntries<dev.s7a.strata.ui/UiScreenKind> // dev.s7a.strata.ui/UiScreenKind.entries.<get-entries>|<get-entries>#static(){}[0]
+
+    final fun valueOf(kotlin/String): dev.s7a.strata.ui/UiScreenKind // dev.s7a.strata.ui/UiScreenKind.valueOf|valueOf#static(kotlin.String){}[0]
+    final fun values(): kotlin/Array<dev.s7a.strata.ui/UiScreenKind> // dev.s7a.strata.ui/UiScreenKind.values|values#static(){}[0]
+}
+
+final enum class dev.s7a.strata.ui/UiVisibility : kotlin/Enum<dev.s7a.strata.ui/UiVisibility> { // dev.s7a.strata.ui/UiVisibility|null[0]
+    enum entry Close // dev.s7a.strata.ui/UiVisibility.Close|null[0]
+    enum entry Hide // dev.s7a.strata.ui/UiVisibility.Hide|null[0]
+    enum entry KeepVisible // dev.s7a.strata.ui/UiVisibility.KeepVisible|null[0]
+
+    final val entries // dev.s7a.strata.ui/UiVisibility.entries|#static{}entries[0]
+        final fun <get-entries>(): kotlin.enums/EnumEntries<dev.s7a.strata.ui/UiVisibility> // dev.s7a.strata.ui/UiVisibility.entries.<get-entries>|<get-entries>#static(){}[0]
+
+    final fun valueOf(kotlin/String): dev.s7a.strata.ui/UiVisibility // dev.s7a.strata.ui/UiVisibility.valueOf|valueOf#static(kotlin.String){}[0]
+    final fun values(): kotlin/Array<dev.s7a.strata.ui/UiVisibility> // dev.s7a.strata.ui/UiVisibility.values|values#static(){}[0]
+}
+
 abstract fun interface <#A: out kotlin/Any?> dev.s7a.strata.state/StateSource { // dev.s7a.strata.state/StateSource|null[0]
     abstract fun subscribe(kotlin/Function1<dev.s7a.strata.state/StateSnapshot<#A>, kotlin/Unit>): dev.s7a.strata.state/StateSubscription<#A> // dev.s7a.strata.state/StateSource.subscribe|subscribe(kotlin.Function1<dev.s7a.strata.state.StateSnapshot<1:0>,kotlin.Unit>){}[0]
 }
@@ -318,6 +420,10 @@ abstract fun interface dev.s7a.strata.spi/ComponentEvaluator { // dev.s7a.strata
 
 abstract fun interface dev.s7a.strata.spi/ScreenPresenter { // dev.s7a.strata.spi/ScreenPresenter|null[0]
     abstract fun present(dev.s7a.strata.screen/ScreenDefinition) // dev.s7a.strata.spi/ScreenPresenter.present|present(dev.s7a.strata.screen.ScreenDefinition){}[0]
+}
+
+abstract fun interface dev.s7a.strata.spi/UiPresenter { // dev.s7a.strata.spi/UiPresenter|null[0]
+    abstract fun present(dev.s7a.strata.ui/UiDefinition): dev.s7a.strata.ui/UiSession // dev.s7a.strata.spi/UiPresenter.present|present(dev.s7a.strata.ui.UiDefinition){}[0]
 }
 
 abstract interface <#A: kotlin/Any> dev.s7a.strata.node/ParentDataModifierNode { // dev.s7a.strata.node/ParentDataModifierNode|null[0]
@@ -660,6 +766,22 @@ abstract interface dev.s7a.strata.spi/ScreenPresenterRegistration : kotlin/AutoC
 }
 
 abstract interface dev.s7a.strata.text/PlatformText // dev.s7a.strata.text/PlatformText|null[0]
+
+abstract interface dev.s7a.strata.ui/UiSession : kotlin/AutoCloseable { // dev.s7a.strata.ui/UiSession|null[0]
+    abstract val inputPolicy // dev.s7a.strata.ui/UiSession.inputPolicy|{}inputPolicy[0]
+        abstract fun <get-inputPolicy>(): dev.s7a.strata.ui/UiInputPolicy // dev.s7a.strata.ui/UiSession.inputPolicy.<get-inputPolicy>|<get-inputPolicy>(){}[0]
+    abstract val interactionMode // dev.s7a.strata.ui/UiSession.interactionMode|{}interactionMode[0]
+        abstract fun <get-interactionMode>(): dev.s7a.strata.ui/UiInteractionMode // dev.s7a.strata.ui/UiSession.interactionMode.<get-interactionMode>|<get-interactionMode>(){}[0]
+    abstract val presentation // dev.s7a.strata.ui/UiSession.presentation|{}presentation[0]
+        abstract fun <get-presentation>(): dev.s7a.strata.ui/UiPresentation? // dev.s7a.strata.ui/UiSession.presentation.<get-presentation>|<get-presentation>(){}[0]
+    abstract val status // dev.s7a.strata.ui/UiSession.status|{}status[0]
+        abstract fun <get-status>(): dev.s7a.strata.ui/UiSessionStatus // dev.s7a.strata.ui/UiSession.status.<get-status>|<get-status>(){}[0]
+
+    abstract fun close() // dev.s7a.strata.ui/UiSession.close|close(){}[0]
+    abstract fun setInputPolicy(dev.s7a.strata.ui/UiInputPolicy): dev.s7a.strata.ui/UiOperationResult // dev.s7a.strata.ui/UiSession.setInputPolicy|setInputPolicy(dev.s7a.strata.ui.UiInputPolicy){}[0]
+    abstract fun setInteractionMode(dev.s7a.strata.ui/UiInteractionMode): dev.s7a.strata.ui/UiOperationResult // dev.s7a.strata.ui/UiSession.setInteractionMode|setInteractionMode(dev.s7a.strata.ui.UiInteractionMode){}[0]
+    abstract fun switch(dev.s7a.strata.ui/UiPresentation): dev.s7a.strata.ui/UiOperationResult // dev.s7a.strata.ui/UiSession.switch|switch(dev.s7a.strata.ui.UiPresentation){}[0]
+}
 
 sealed interface dev.s7a.strata.component/ImageSource { // dev.s7a.strata.component/ImageSource|null[0]
     final class Pixels : dev.s7a.strata.component/ImageSource { // dev.s7a.strata.component/ImageSource.Pixels|null[0]
@@ -1407,6 +1529,74 @@ sealed interface dev.s7a.strata.text/UiTextArgument { // dev.s7a.strata.text/UiT
     }
 }
 
+sealed interface dev.s7a.strata.ui/UiOperationResult { // dev.s7a.strata.ui/UiOperationResult|null[0]
+    final class Rejected : dev.s7a.strata.ui/UiOperationResult { // dev.s7a.strata.ui/UiOperationResult.Rejected|null[0]
+        constructor <init>(dev.s7a.strata.ui/UiRejection) // dev.s7a.strata.ui/UiOperationResult.Rejected.<init>|<init>(dev.s7a.strata.ui.UiRejection){}[0]
+
+        final val reason // dev.s7a.strata.ui/UiOperationResult.Rejected.reason|{}reason[0]
+            final fun <get-reason>(): dev.s7a.strata.ui/UiRejection // dev.s7a.strata.ui/UiOperationResult.Rejected.reason.<get-reason>|<get-reason>(){}[0]
+
+        final fun component1(): dev.s7a.strata.ui/UiRejection // dev.s7a.strata.ui/UiOperationResult.Rejected.component1|component1(){}[0]
+        final fun copy(dev.s7a.strata.ui/UiRejection = ...): dev.s7a.strata.ui/UiOperationResult.Rejected // dev.s7a.strata.ui/UiOperationResult.Rejected.copy|copy(dev.s7a.strata.ui.UiRejection){}[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // dev.s7a.strata.ui/UiOperationResult.Rejected.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // dev.s7a.strata.ui/UiOperationResult.Rejected.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // dev.s7a.strata.ui/UiOperationResult.Rejected.toString|toString(){}[0]
+    }
+
+    final object Accepted : dev.s7a.strata.ui/UiOperationResult { // dev.s7a.strata.ui/UiOperationResult.Accepted|null[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // dev.s7a.strata.ui/UiOperationResult.Accepted.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // dev.s7a.strata.ui/UiOperationResult.Accepted.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // dev.s7a.strata.ui/UiOperationResult.Accepted.toString|toString(){}[0]
+    }
+}
+
+sealed interface dev.s7a.strata.ui/UiSessionStatus { // dev.s7a.strata.ui/UiSessionStatus|null[0]
+    final class Closed : dev.s7a.strata.ui/UiSessionStatus { // dev.s7a.strata.ui/UiSessionStatus.Closed|null[0]
+        constructor <init>(dev.s7a.strata.ui/UiCloseReason) // dev.s7a.strata.ui/UiSessionStatus.Closed.<init>|<init>(dev.s7a.strata.ui.UiCloseReason){}[0]
+
+        final val reason // dev.s7a.strata.ui/UiSessionStatus.Closed.reason|{}reason[0]
+            final fun <get-reason>(): dev.s7a.strata.ui/UiCloseReason // dev.s7a.strata.ui/UiSessionStatus.Closed.reason.<get-reason>|<get-reason>(){}[0]
+
+        final fun component1(): dev.s7a.strata.ui/UiCloseReason // dev.s7a.strata.ui/UiSessionStatus.Closed.component1|component1(){}[0]
+        final fun copy(dev.s7a.strata.ui/UiCloseReason = ...): dev.s7a.strata.ui/UiSessionStatus.Closed // dev.s7a.strata.ui/UiSessionStatus.Closed.copy|copy(dev.s7a.strata.ui.UiCloseReason){}[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // dev.s7a.strata.ui/UiSessionStatus.Closed.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // dev.s7a.strata.ui/UiSessionStatus.Closed.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // dev.s7a.strata.ui/UiSessionStatus.Closed.toString|toString(){}[0]
+    }
+
+    final class Ready : dev.s7a.strata.ui/UiSessionStatus { // dev.s7a.strata.ui/UiSessionStatus.Ready|null[0]
+        constructor <init>(dev.s7a.strata.ui/UiRejection? = ...) // dev.s7a.strata.ui/UiSessionStatus.Ready.<init>|<init>(dev.s7a.strata.ui.UiRejection?){}[0]
+
+        final val rejection // dev.s7a.strata.ui/UiSessionStatus.Ready.rejection|{}rejection[0]
+            final fun <get-rejection>(): dev.s7a.strata.ui/UiRejection? // dev.s7a.strata.ui/UiSessionStatus.Ready.rejection.<get-rejection>|<get-rejection>(){}[0]
+
+        final fun component1(): dev.s7a.strata.ui/UiRejection? // dev.s7a.strata.ui/UiSessionStatus.Ready.component1|component1(){}[0]
+        final fun copy(dev.s7a.strata.ui/UiRejection? = ...): dev.s7a.strata.ui/UiSessionStatus.Ready // dev.s7a.strata.ui/UiSessionStatus.Ready.copy|copy(dev.s7a.strata.ui.UiRejection?){}[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // dev.s7a.strata.ui/UiSessionStatus.Ready.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // dev.s7a.strata.ui/UiSessionStatus.Ready.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // dev.s7a.strata.ui/UiSessionStatus.Ready.toString|toString(){}[0]
+    }
+
+    final class Switching : dev.s7a.strata.ui/UiSessionStatus { // dev.s7a.strata.ui/UiSessionStatus.Switching|null[0]
+        constructor <init>(dev.s7a.strata.ui/UiPresentation) // dev.s7a.strata.ui/UiSessionStatus.Switching.<init>|<init>(dev.s7a.strata.ui.UiPresentation){}[0]
+
+        final val presentation // dev.s7a.strata.ui/UiSessionStatus.Switching.presentation|{}presentation[0]
+            final fun <get-presentation>(): dev.s7a.strata.ui/UiPresentation // dev.s7a.strata.ui/UiSessionStatus.Switching.presentation.<get-presentation>|<get-presentation>(){}[0]
+
+        final fun component1(): dev.s7a.strata.ui/UiPresentation // dev.s7a.strata.ui/UiSessionStatus.Switching.component1|component1(){}[0]
+        final fun copy(dev.s7a.strata.ui/UiPresentation = ...): dev.s7a.strata.ui/UiSessionStatus.Switching // dev.s7a.strata.ui/UiSessionStatus.Switching.copy|copy(dev.s7a.strata.ui.UiPresentation){}[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // dev.s7a.strata.ui/UiSessionStatus.Switching.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // dev.s7a.strata.ui/UiSessionStatus.Switching.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // dev.s7a.strata.ui/UiSessionStatus.Switching.toString|toString(){}[0]
+    }
+
+    final object Opening : dev.s7a.strata.ui/UiSessionStatus { // dev.s7a.strata.ui/UiSessionStatus.Opening|null[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // dev.s7a.strata.ui/UiSessionStatus.Opening.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // dev.s7a.strata.ui/UiSessionStatus.Opening.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // dev.s7a.strata.ui/UiSessionStatus.Opening.toString|toString(){}[0]
+    }
+}
+
 abstract class dev.s7a.strata.element/Element { // dev.s7a.strata.element/Element|null[0]
     constructor <init>(dev.s7a.strata.element/ElementIdentity, dev.s7a.strata.element/ElementType<*, *>, kotlin.collections/List<dev.s7a.strata.element/Element> = ..., dev.s7a.strata.modifier/Modifier = ...) // dev.s7a.strata.element/Element.<init>|<init>(dev.s7a.strata.element.ElementIdentity;dev.s7a.strata.element.ElementType<*,*>;kotlin.collections.List<dev.s7a.strata.element.Element>;dev.s7a.strata.modifier.Modifier){}[0]
 
@@ -1432,7 +1622,10 @@ abstract class dev.s7a.strata.node/ModifierNode : dev.s7a.strata.node/LayoutNode
 abstract class dev.s7a.strata.node/Node { // dev.s7a.strata.node/Node|null[0]
     constructor <init>() // dev.s7a.strata.node/Node.<init>|<init>(){}[0]
 
-    final fun bindRuntime(kotlin/Function1<dev.s7a.strata.node/DirtyMask, kotlin/Unit>): kotlin/Function0<kotlin/Unit> // dev.s7a.strata.node/Node.bindRuntime|bindRuntime(kotlin.Function1<dev.s7a.strata.node.DirtyMask,kotlin.Unit>){}[0]
+    final val uiSession // dev.s7a.strata.node/Node.uiSession|{}uiSession[0]
+        final fun <get-uiSession>(): dev.s7a.strata.ui/UiSession // dev.s7a.strata.node/Node.uiSession.<get-uiSession>|<get-uiSession>(){}[0]
+
+    final fun bindRuntime(dev.s7a.strata.ui/UiSession? = ..., kotlin/Function1<dev.s7a.strata.node/DirtyMask, kotlin/Unit>): kotlin/Function0<kotlin/Unit> // dev.s7a.strata.node/Node.bindRuntime|bindRuntime(dev.s7a.strata.ui.UiSession?;kotlin.Function1<dev.s7a.strata.node.DirtyMask,kotlin.Unit>){}[0]
     final fun invalidate(dev.s7a.strata.node/DirtyMask) // dev.s7a.strata.node/Node.invalidate|invalidate(dev.s7a.strata.node.DirtyMask){}[0]
 }
 
@@ -1526,17 +1719,17 @@ final class <#A: kotlin/Any> dev.s7a.strata.layout/ParentDataKey { // dev.s7a.st
 }
 
 final class <#A: kotlin/Any> dev.s7a.strata.projection/ProjectionAction { // dev.s7a.strata.projection/ProjectionAction|null[0]
-    constructor <init>(dev.s7a.strata.projection/ProjectionType, kotlin/Function1<dev.s7a.strata.projection/ProjectionValue, #A>, kotlin/Function1<#A, kotlin/Unit>) // dev.s7a.strata.projection/ProjectionAction.<init>|<init>(dev.s7a.strata.projection.ProjectionType;kotlin.Function1<dev.s7a.strata.projection.ProjectionValue,1:0>;kotlin.Function1<1:0,kotlin.Unit>){}[0]
+    constructor <init>(dev.s7a.strata.projection/ProjectionType, kotlin/Function1<dev.s7a.strata.projection/ProjectionValue, #A>, kotlin/Function2<dev.s7a.strata.ui/UiSession, #A, kotlin/Unit>) // dev.s7a.strata.projection/ProjectionAction.<init>|<init>(dev.s7a.strata.projection.ProjectionType;kotlin.Function1<dev.s7a.strata.projection.ProjectionValue,1:0>;kotlin.Function2<dev.s7a.strata.ui.UiSession,1:0,kotlin.Unit>){}[0]
 
     final val type // dev.s7a.strata.projection/ProjectionAction.type|{}type[0]
         final fun <get-type>(): dev.s7a.strata.projection/ProjectionType // dev.s7a.strata.projection/ProjectionAction.type.<get-type>|<get-type>(){}[0]
 
-    final fun dispatch(dev.s7a.strata.projection/ProjectionValue) // dev.s7a.strata.projection/ProjectionAction.dispatch|dispatch(dev.s7a.strata.projection.ProjectionValue){}[0]
-    final fun prepare(dev.s7a.strata.projection/ProjectionValue): kotlin/Function0<kotlin/Unit> // dev.s7a.strata.projection/ProjectionAction.prepare|prepare(dev.s7a.strata.projection.ProjectionValue){}[0]
+    final fun dispatch(dev.s7a.strata.ui/UiSession, dev.s7a.strata.projection/ProjectionValue) // dev.s7a.strata.projection/ProjectionAction.dispatch|dispatch(dev.s7a.strata.ui.UiSession;dev.s7a.strata.projection.ProjectionValue){}[0]
+    final fun prepare(dev.s7a.strata.projection/ProjectionValue): kotlin/Function1<dev.s7a.strata.ui/UiSession, kotlin/Unit> // dev.s7a.strata.projection/ProjectionAction.prepare|prepare(dev.s7a.strata.projection.ProjectionValue){}[0]
 }
 
 final class <#A: kotlin/Any> dev.s7a.strata.projection/ProjectionBinding { // dev.s7a.strata.projection/ProjectionBinding|null[0]
-    constructor <init>(dev.s7a.strata.projection/ProjectionType, kotlin/Any, kotlin/Function0<#A>, kotlin/Function1<#A, dev.s7a.strata.projection/ProjectionValue>, kotlin/Function1<dev.s7a.strata.projection/ProjectionValue, #A>, kotlin/Function1<#A, kotlin/Unit>) // dev.s7a.strata.projection/ProjectionBinding.<init>|<init>(dev.s7a.strata.projection.ProjectionType;kotlin.Any;kotlin.Function0<1:0>;kotlin.Function1<1:0,dev.s7a.strata.projection.ProjectionValue>;kotlin.Function1<dev.s7a.strata.projection.ProjectionValue,1:0>;kotlin.Function1<1:0,kotlin.Unit>){}[0]
+    constructor <init>(dev.s7a.strata.projection/ProjectionType, kotlin/Any, kotlin/Function0<#A>, kotlin/Function1<#A, dev.s7a.strata.projection/ProjectionValue>, kotlin/Function1<dev.s7a.strata.projection/ProjectionValue, #A>, kotlin/Function2<dev.s7a.strata.ui/UiSession, #A, kotlin/Unit>) // dev.s7a.strata.projection/ProjectionBinding.<init>|<init>(dev.s7a.strata.projection.ProjectionType;kotlin.Any;kotlin.Function0<1:0>;kotlin.Function1<1:0,dev.s7a.strata.projection.ProjectionValue>;kotlin.Function1<dev.s7a.strata.projection.ProjectionValue,1:0>;kotlin.Function2<dev.s7a.strata.ui.UiSession,1:0,kotlin.Unit>){}[0]
 
     final val decode // dev.s7a.strata.projection/ProjectionBinding.decode|{}decode[0]
         final fun <get-decode>(): kotlin/Function1<dev.s7a.strata.projection/ProjectionValue, #A> // dev.s7a.strata.projection/ProjectionBinding.decode.<get-decode>|<get-decode>(){}[0]
@@ -1549,7 +1742,7 @@ final class <#A: kotlin/Any> dev.s7a.strata.projection/ProjectionBinding { // de
     final val type // dev.s7a.strata.projection/ProjectionBinding.type|{}type[0]
         final fun <get-type>(): dev.s7a.strata.projection/ProjectionType // dev.s7a.strata.projection/ProjectionBinding.type.<get-type>|<get-type>(){}[0]
     final val write // dev.s7a.strata.projection/ProjectionBinding.write|{}write[0]
-        final fun <get-write>(): kotlin/Function1<#A, kotlin/Unit> // dev.s7a.strata.projection/ProjectionBinding.write.<get-write>|<get-write>(){}[0]
+        final fun <get-write>(): kotlin/Function2<dev.s7a.strata.ui/UiSession, #A, kotlin/Unit> // dev.s7a.strata.projection/ProjectionBinding.write.<get-write>|<get-write>(){}[0]
 }
 
 final class <#A: kotlin/Any?> dev.s7a.strata.projection/DeclarationProjection { // dev.s7a.strata.projection/DeclarationProjection|null[0]
@@ -1595,7 +1788,7 @@ final class <#A: out kotlin/Any?> dev.s7a.strata.state/StateSubscription : kotli
 }
 
 final class dev.s7a.strata.action/ActionDispatcher { // dev.s7a.strata.action/ActionDispatcher|null[0]
-    final fun <#A1: kotlin/Any> dispatch(dev.s7a.strata.action/ActionKey<#A1>, #A1): dev.s7a.strata.action/ActionResult // dev.s7a.strata.action/ActionDispatcher.dispatch|dispatch(dev.s7a.strata.action.ActionKey<0:0>;0:0){0§<kotlin.Any>}[0]
+    final fun <#A1: kotlin/Any> dispatch(dev.s7a.strata.ui/UiSession, dev.s7a.strata.action/ActionKey<#A1>, #A1): dev.s7a.strata.action/ActionResult // dev.s7a.strata.action/ActionDispatcher.dispatch|dispatch(dev.s7a.strata.ui.UiSession;dev.s7a.strata.action.ActionKey<0:0>;0:0){0§<kotlin.Any>}[0]
 }
 
 final class dev.s7a.strata.action/ListLoadRequest { // dev.s7a.strata.action/ListLoadRequest|null[0]
@@ -2242,6 +2435,7 @@ final class dev.s7a.strata.screen/ScreenDefinition : kotlin/AutoCloseable { // d
     constructor <init>(dev.s7a.strata.text/UiText, kotlin/Boolean = ..., kotlin/Function1<dev.s7a.strata.component/UiScope, kotlin/Unit>) // dev.s7a.strata.screen/ScreenDefinition.<init>|<init>(dev.s7a.strata.text.UiText;kotlin.Boolean;kotlin.Function1<dev.s7a.strata.component.UiScope,kotlin.Unit>){}[0]
     constructor <init>(kotlin/String, kotlin/Boolean = ..., kotlin/Function1<dev.s7a.strata.component/UiScope, kotlin/Unit>) // dev.s7a.strata.screen/ScreenDefinition.<init>|<init>(kotlin.String;kotlin.Boolean;kotlin.Function1<dev.s7a.strata.component.UiScope,kotlin.Unit>){}[0]
 
+    final fun asUiDefinition(): dev.s7a.strata.ui/UiDefinition // dev.s7a.strata.screen/ScreenDefinition.asUiDefinition|asUiDefinition(){}[0]
     final fun close() // dev.s7a.strata.screen/ScreenDefinition.close|close(){}[0]
     final fun open() // dev.s7a.strata.screen/ScreenDefinition.open|open(){}[0]
     final fun transfer(): dev.s7a.strata.screen/ScreenDefinitionPayload // dev.s7a.strata.screen/ScreenDefinition.transfer|transfer(){}[0]
@@ -2304,6 +2498,137 @@ final class dev.s7a.strata.state/StateObservation : kotlin/AutoCloseable { // de
     final fun enterOperation() // dev.s7a.strata.state/StateObservation.enterOperation|enterOperation(){}[0]
     final fun fork(kotlin/Function0<kotlin/Unit>): dev.s7a.strata.state/StateObservation // dev.s7a.strata.state/StateObservation.fork|fork(kotlin.Function0<kotlin.Unit>){}[0]
     final fun leaveOperation() // dev.s7a.strata.state/StateObservation.leaveOperation|leaveOperation(){}[0]
+}
+
+final class dev.s7a.strata.ui/UiCategory { // dev.s7a.strata.ui/UiCategory|null[0]
+    constructor <init>(dev.s7a.strata.resource/ResourceId) // dev.s7a.strata.ui/UiCategory.<init>|<init>(dev.s7a.strata.resource.ResourceId){}[0]
+
+    final val id // dev.s7a.strata.ui/UiCategory.id|{}id[0]
+        final fun <get-id>(): dev.s7a.strata.resource/ResourceId // dev.s7a.strata.ui/UiCategory.id.<get-id>|<get-id>(){}[0]
+
+    final fun component1(): dev.s7a.strata.resource/ResourceId // dev.s7a.strata.ui/UiCategory.component1|component1(){}[0]
+    final fun copy(dev.s7a.strata.resource/ResourceId = ...): dev.s7a.strata.ui/UiCategory // dev.s7a.strata.ui/UiCategory.copy|copy(dev.s7a.strata.resource.ResourceId){}[0]
+    final fun equals(kotlin/Any?): kotlin/Boolean // dev.s7a.strata.ui/UiCategory.equals|equals(kotlin.Any?){}[0]
+    final fun hashCode(): kotlin/Int // dev.s7a.strata.ui/UiCategory.hashCode|hashCode(){}[0]
+    final fun toString(): kotlin/String // dev.s7a.strata.ui/UiCategory.toString|toString(){}[0]
+}
+
+final class dev.s7a.strata.ui/UiClientCapabilities { // dev.s7a.strata.ui/UiClientCapabilities|null[0]
+    constructor <init>(kotlin.collections/Set<dev.s7a.strata.projection/ProjectionType>, kotlin/Int) // dev.s7a.strata.ui/UiClientCapabilities.<init>|<init>(kotlin.collections.Set<dev.s7a.strata.projection.ProjectionType>;kotlin.Int){}[0]
+
+    final val hudLimit // dev.s7a.strata.ui/UiClientCapabilities.hudLimit|{}hudLimit[0]
+        final fun <get-hudLimit>(): kotlin/Int // dev.s7a.strata.ui/UiClientCapabilities.hudLimit.<get-hudLimit>|<get-hudLimit>(){}[0]
+    final val types // dev.s7a.strata.ui/UiClientCapabilities.types|{}types[0]
+        final fun <get-types>(): kotlin.collections/Set<dev.s7a.strata.projection/ProjectionType> // dev.s7a.strata.ui/UiClientCapabilities.types.<get-types>|<get-types>(){}[0]
+}
+
+final class dev.s7a.strata.ui/UiDefinition : kotlin/AutoCloseable { // dev.s7a.strata.ui/UiDefinition|null[0]
+    constructor <init>(dev.s7a.strata.text/UiText? = ..., dev.s7a.strata.ui/UiPresentation = ..., dev.s7a.strata.ui/UiCategory? = ..., dev.s7a.strata.ui/UiInputPolicy = ..., dev.s7a.strata.ui/UiVisibilityPolicy = ..., kotlin/Int = ..., kotlin/Boolean = ..., kotlin/Function1<dev.s7a.strata.component/UiScope, kotlin/Unit>) // dev.s7a.strata.ui/UiDefinition.<init>|<init>(dev.s7a.strata.text.UiText?;dev.s7a.strata.ui.UiPresentation;dev.s7a.strata.ui.UiCategory?;dev.s7a.strata.ui.UiInputPolicy;dev.s7a.strata.ui.UiVisibilityPolicy;kotlin.Int;kotlin.Boolean;kotlin.Function1<dev.s7a.strata.component.UiScope,kotlin.Unit>){}[0]
+    constructor <init>(kotlin/String, dev.s7a.strata.ui/UiPresentation = ..., dev.s7a.strata.ui/UiCategory? = ..., dev.s7a.strata.ui/UiInputPolicy = ..., dev.s7a.strata.ui/UiVisibilityPolicy = ..., kotlin/Int = ..., kotlin/Boolean = ..., kotlin/Function1<dev.s7a.strata.component/UiScope, kotlin/Unit>) // dev.s7a.strata.ui/UiDefinition.<init>|<init>(kotlin.String;dev.s7a.strata.ui.UiPresentation;dev.s7a.strata.ui.UiCategory?;dev.s7a.strata.ui.UiInputPolicy;dev.s7a.strata.ui.UiVisibilityPolicy;kotlin.Int;kotlin.Boolean;kotlin.Function1<dev.s7a.strata.component.UiScope,kotlin.Unit>){}[0]
+
+    final val category // dev.s7a.strata.ui/UiDefinition.category|{}category[0]
+        final fun <get-category>(): dev.s7a.strata.ui/UiCategory? // dev.s7a.strata.ui/UiDefinition.category.<get-category>|<get-category>(){}[0]
+    final val hudOrder // dev.s7a.strata.ui/UiDefinition.hudOrder|{}hudOrder[0]
+        final fun <get-hudOrder>(): kotlin/Int // dev.s7a.strata.ui/UiDefinition.hudOrder.<get-hudOrder>|<get-hudOrder>(){}[0]
+    final val inputPolicy // dev.s7a.strata.ui/UiDefinition.inputPolicy|{}inputPolicy[0]
+        final fun <get-inputPolicy>(): dev.s7a.strata.ui/UiInputPolicy // dev.s7a.strata.ui/UiDefinition.inputPolicy.<get-inputPolicy>|<get-inputPolicy>(){}[0]
+    final val pausesGame // dev.s7a.strata.ui/UiDefinition.pausesGame|{}pausesGame[0]
+        final fun <get-pausesGame>(): kotlin/Boolean // dev.s7a.strata.ui/UiDefinition.pausesGame.<get-pausesGame>|<get-pausesGame>(){}[0]
+    final val presentation // dev.s7a.strata.ui/UiDefinition.presentation|{}presentation[0]
+        final fun <get-presentation>(): dev.s7a.strata.ui/UiPresentation // dev.s7a.strata.ui/UiDefinition.presentation.<get-presentation>|<get-presentation>(){}[0]
+    final val visibility // dev.s7a.strata.ui/UiDefinition.visibility|{}visibility[0]
+        final fun <get-visibility>(): dev.s7a.strata.ui/UiVisibilityPolicy // dev.s7a.strata.ui/UiDefinition.visibility.<get-visibility>|<get-visibility>(){}[0]
+
+    final fun close() // dev.s7a.strata.ui/UiDefinition.close|close(){}[0]
+    final fun open(): dev.s7a.strata.ui/UiSession // dev.s7a.strata.ui/UiDefinition.open|open(){}[0]
+    final fun transfer(): dev.s7a.strata.ui/UiDefinitionPayload // dev.s7a.strata.ui/UiDefinition.transfer|transfer(){}[0]
+}
+
+final class dev.s7a.strata.ui/UiDefinitionPayload { // dev.s7a.strata.ui/UiDefinitionPayload|null[0]
+    final val category // dev.s7a.strata.ui/UiDefinitionPayload.category|{}category[0]
+        final fun <get-category>(): dev.s7a.strata.ui/UiCategory? // dev.s7a.strata.ui/UiDefinitionPayload.category.<get-category>|<get-category>(){}[0]
+    final val content // dev.s7a.strata.ui/UiDefinitionPayload.content|{}content[0]
+        final fun <get-content>(): kotlin/Function1<dev.s7a.strata.component/UiScope, kotlin/Unit> // dev.s7a.strata.ui/UiDefinitionPayload.content.<get-content>|<get-content>(){}[0]
+    final val hudOrder // dev.s7a.strata.ui/UiDefinitionPayload.hudOrder|{}hudOrder[0]
+        final fun <get-hudOrder>(): kotlin/Int // dev.s7a.strata.ui/UiDefinitionPayload.hudOrder.<get-hudOrder>|<get-hudOrder>(){}[0]
+    final val inputPolicy // dev.s7a.strata.ui/UiDefinitionPayload.inputPolicy|{}inputPolicy[0]
+        final fun <get-inputPolicy>(): dev.s7a.strata.ui/UiInputPolicy // dev.s7a.strata.ui/UiDefinitionPayload.inputPolicy.<get-inputPolicy>|<get-inputPolicy>(){}[0]
+    final val pausesGame // dev.s7a.strata.ui/UiDefinitionPayload.pausesGame|{}pausesGame[0]
+        final fun <get-pausesGame>(): kotlin/Boolean // dev.s7a.strata.ui/UiDefinitionPayload.pausesGame.<get-pausesGame>|<get-pausesGame>(){}[0]
+    final val presentation // dev.s7a.strata.ui/UiDefinitionPayload.presentation|{}presentation[0]
+        final fun <get-presentation>(): dev.s7a.strata.ui/UiPresentation // dev.s7a.strata.ui/UiDefinitionPayload.presentation.<get-presentation>|<get-presentation>(){}[0]
+    final val title // dev.s7a.strata.ui/UiDefinitionPayload.title|{}title[0]
+        final fun <get-title>(): dev.s7a.strata.text/UiText // dev.s7a.strata.ui/UiDefinitionPayload.title.<get-title>|<get-title>(){}[0]
+    final val visibility // dev.s7a.strata.ui/UiDefinitionPayload.visibility|{}visibility[0]
+        final fun <get-visibility>(): dev.s7a.strata.ui/UiVisibilityPolicy // dev.s7a.strata.ui/UiDefinitionPayload.visibility.<get-visibility>|<get-visibility>(){}[0]
+}
+
+final class dev.s7a.strata.ui/UiInputPolicy { // dev.s7a.strata.ui/UiInputPolicy|null[0]
+    constructor <init>(kotlin/Boolean = ..., kotlin/Boolean = ..., kotlin/Boolean = ..., kotlin/Boolean = ..., kotlin/Boolean = ..., kotlin/Boolean = ..., kotlin/Boolean = ..., kotlin/Boolean = ..., kotlin/Boolean = ..., kotlin/Boolean = ..., kotlin/Boolean = ...) // dev.s7a.strata.ui/UiInputPolicy.<init>|<init>(kotlin.Boolean;kotlin.Boolean;kotlin.Boolean;kotlin.Boolean;kotlin.Boolean;kotlin.Boolean;kotlin.Boolean;kotlin.Boolean;kotlin.Boolean;kotlin.Boolean;kotlin.Boolean){}[0]
+
+    final val attack // dev.s7a.strata.ui/UiInputPolicy.attack|{}attack[0]
+        final fun <get-attack>(): kotlin/Boolean // dev.s7a.strata.ui/UiInputPolicy.attack.<get-attack>|<get-attack>(){}[0]
+    final val drop // dev.s7a.strata.ui/UiInputPolicy.drop|{}drop[0]
+        final fun <get-drop>(): kotlin/Boolean // dev.s7a.strata.ui/UiInputPolicy.drop.<get-drop>|<get-drop>(){}[0]
+    final val hotbar // dev.s7a.strata.ui/UiInputPolicy.hotbar|{}hotbar[0]
+        final fun <get-hotbar>(): kotlin/Boolean // dev.s7a.strata.ui/UiInputPolicy.hotbar.<get-hotbar>|<get-hotbar>(){}[0]
+    final val jump // dev.s7a.strata.ui/UiInputPolicy.jump|{}jump[0]
+        final fun <get-jump>(): kotlin/Boolean // dev.s7a.strata.ui/UiInputPolicy.jump.<get-jump>|<get-jump>(){}[0]
+    final val look // dev.s7a.strata.ui/UiInputPolicy.look|{}look[0]
+        final fun <get-look>(): kotlin/Boolean // dev.s7a.strata.ui/UiInputPolicy.look.<get-look>|<get-look>(){}[0]
+    final val movement // dev.s7a.strata.ui/UiInputPolicy.movement|{}movement[0]
+        final fun <get-movement>(): kotlin/Boolean // dev.s7a.strata.ui/UiInputPolicy.movement.<get-movement>|<get-movement>(){}[0]
+    final val pick // dev.s7a.strata.ui/UiInputPolicy.pick|{}pick[0]
+        final fun <get-pick>(): kotlin/Boolean // dev.s7a.strata.ui/UiInputPolicy.pick.<get-pick>|<get-pick>(){}[0]
+    final val sneak // dev.s7a.strata.ui/UiInputPolicy.sneak|{}sneak[0]
+        final fun <get-sneak>(): kotlin/Boolean // dev.s7a.strata.ui/UiInputPolicy.sneak.<get-sneak>|<get-sneak>(){}[0]
+    final val sprint // dev.s7a.strata.ui/UiInputPolicy.sprint|{}sprint[0]
+        final fun <get-sprint>(): kotlin/Boolean // dev.s7a.strata.ui/UiInputPolicy.sprint.<get-sprint>|<get-sprint>(){}[0]
+    final val swapHands // dev.s7a.strata.ui/UiInputPolicy.swapHands|{}swapHands[0]
+        final fun <get-swapHands>(): kotlin/Boolean // dev.s7a.strata.ui/UiInputPolicy.swapHands.<get-swapHands>|<get-swapHands>(){}[0]
+    final val use // dev.s7a.strata.ui/UiInputPolicy.use|{}use[0]
+        final fun <get-use>(): kotlin/Boolean // dev.s7a.strata.ui/UiInputPolicy.use.<get-use>|<get-use>(){}[0]
+
+    final fun allows(dev.s7a.strata.ui/UiGameAction): kotlin/Boolean // dev.s7a.strata.ui/UiInputPolicy.allows|allows(dev.s7a.strata.ui.UiGameAction){}[0]
+    final fun component1(): kotlin/Boolean // dev.s7a.strata.ui/UiInputPolicy.component1|component1(){}[0]
+    final fun component10(): kotlin/Boolean // dev.s7a.strata.ui/UiInputPolicy.component10|component10(){}[0]
+    final fun component11(): kotlin/Boolean // dev.s7a.strata.ui/UiInputPolicy.component11|component11(){}[0]
+    final fun component2(): kotlin/Boolean // dev.s7a.strata.ui/UiInputPolicy.component2|component2(){}[0]
+    final fun component3(): kotlin/Boolean // dev.s7a.strata.ui/UiInputPolicy.component3|component3(){}[0]
+    final fun component4(): kotlin/Boolean // dev.s7a.strata.ui/UiInputPolicy.component4|component4(){}[0]
+    final fun component5(): kotlin/Boolean // dev.s7a.strata.ui/UiInputPolicy.component5|component5(){}[0]
+    final fun component6(): kotlin/Boolean // dev.s7a.strata.ui/UiInputPolicy.component6|component6(){}[0]
+    final fun component7(): kotlin/Boolean // dev.s7a.strata.ui/UiInputPolicy.component7|component7(){}[0]
+    final fun component8(): kotlin/Boolean // dev.s7a.strata.ui/UiInputPolicy.component8|component8(){}[0]
+    final fun component9(): kotlin/Boolean // dev.s7a.strata.ui/UiInputPolicy.component9|component9(){}[0]
+    final fun copy(kotlin/Boolean = ..., kotlin/Boolean = ..., kotlin/Boolean = ..., kotlin/Boolean = ..., kotlin/Boolean = ..., kotlin/Boolean = ..., kotlin/Boolean = ..., kotlin/Boolean = ..., kotlin/Boolean = ..., kotlin/Boolean = ..., kotlin/Boolean = ...): dev.s7a.strata.ui/UiInputPolicy // dev.s7a.strata.ui/UiInputPolicy.copy|copy(kotlin.Boolean;kotlin.Boolean;kotlin.Boolean;kotlin.Boolean;kotlin.Boolean;kotlin.Boolean;kotlin.Boolean;kotlin.Boolean;kotlin.Boolean;kotlin.Boolean;kotlin.Boolean){}[0]
+    final fun equals(kotlin/Any?): kotlin/Boolean // dev.s7a.strata.ui/UiInputPolicy.equals|equals(kotlin.Any?){}[0]
+    final fun hashCode(): kotlin/Int // dev.s7a.strata.ui/UiInputPolicy.hashCode|hashCode(){}[0]
+    final fun toString(): kotlin/String // dev.s7a.strata.ui/UiInputPolicy.toString|toString(){}[0]
+
+    final object Companion { // dev.s7a.strata.ui/UiInputPolicy.Companion|null[0]
+        final val All // dev.s7a.strata.ui/UiInputPolicy.Companion.All|{}All[0]
+            final fun <get-All>(): dev.s7a.strata.ui/UiInputPolicy // dev.s7a.strata.ui/UiInputPolicy.Companion.All.<get-All>|<get-All>(){}[0]
+        final val BlockAll // dev.s7a.strata.ui/UiInputPolicy.Companion.BlockAll|{}BlockAll[0]
+            final fun <get-BlockAll>(): dev.s7a.strata.ui/UiInputPolicy // dev.s7a.strata.ui/UiInputPolicy.Companion.BlockAll.<get-BlockAll>|<get-BlockAll>(){}[0]
+        final val Movement // dev.s7a.strata.ui/UiInputPolicy.Companion.Movement|{}Movement[0]
+            final fun <get-Movement>(): dev.s7a.strata.ui/UiInputPolicy // dev.s7a.strata.ui/UiInputPolicy.Companion.Movement.<get-Movement>|<get-Movement>(){}[0]
+    }
+}
+
+final class dev.s7a.strata.ui/UiVisibilityPolicy { // dev.s7a.strata.ui/UiVisibilityPolicy|null[0]
+    constructor <init>(dev.s7a.strata.ui/UiVisibility = ..., kotlin.collections/Map<dev.s7a.strata.ui/UiCategory, dev.s7a.strata.ui/UiVisibility> = ..., kotlin.collections/Map<dev.s7a.strata.ui/UiScreenKind, dev.s7a.strata.ui/UiVisibility> = ...) // dev.s7a.strata.ui/UiVisibilityPolicy.<init>|<init>(dev.s7a.strata.ui.UiVisibility;kotlin.collections.Map<dev.s7a.strata.ui.UiCategory,dev.s7a.strata.ui.UiVisibility>;kotlin.collections.Map<dev.s7a.strata.ui.UiScreenKind,dev.s7a.strata.ui.UiVisibility>){}[0]
+
+    final val categories // dev.s7a.strata.ui/UiVisibilityPolicy.categories|{}categories[0]
+        final fun <get-categories>(): kotlin.collections/Map<dev.s7a.strata.ui/UiCategory, dev.s7a.strata.ui/UiVisibility> // dev.s7a.strata.ui/UiVisibilityPolicy.categories.<get-categories>|<get-categories>(){}[0]
+    final val default // dev.s7a.strata.ui/UiVisibilityPolicy.default|{}default[0]
+        final fun <get-default>(): dev.s7a.strata.ui/UiVisibility // dev.s7a.strata.ui/UiVisibilityPolicy.default.<get-default>|<get-default>(){}[0]
+    final val screens // dev.s7a.strata.ui/UiVisibilityPolicy.screens|{}screens[0]
+        final fun <get-screens>(): kotlin.collections/Map<dev.s7a.strata.ui/UiScreenKind, dev.s7a.strata.ui/UiVisibility> // dev.s7a.strata.ui/UiVisibilityPolicy.screens.<get-screens>|<get-screens>(){}[0]
+
+    final fun equals(kotlin/Any?): kotlin/Boolean // dev.s7a.strata.ui/UiVisibilityPolicy.equals|equals(kotlin.Any?){}[0]
+    final fun hashCode(): kotlin/Int // dev.s7a.strata.ui/UiVisibilityPolicy.hashCode|hashCode(){}[0]
+    final fun resolve(dev.s7a.strata.ui/UiScreenKind?, dev.s7a.strata.ui/UiCategory? = ...): dev.s7a.strata.ui/UiVisibility // dev.s7a.strata.ui/UiVisibilityPolicy.resolve|resolve(dev.s7a.strata.ui.UiScreenKind?;dev.s7a.strata.ui.UiCategory?){}[0]
 }
 
 final value class dev.s7a.strata.component/CanvasId { // dev.s7a.strata.component/CanvasId|null[0]
@@ -2449,6 +2774,11 @@ final object dev.s7a.strata.spi/ScreenPresenters { // dev.s7a.strata.spi/ScreenP
     final fun present(dev.s7a.strata.screen/ScreenDefinition) // dev.s7a.strata.spi/ScreenPresenters.present|present(dev.s7a.strata.screen.ScreenDefinition){}[0]
 }
 
+final object dev.s7a.strata.spi/UiPresenters { // dev.s7a.strata.spi/UiPresenters|null[0]
+    final fun install(dev.s7a.strata.spi/UiPresenter): kotlin/AutoCloseable // dev.s7a.strata.spi/UiPresenters.install|install(dev.s7a.strata.spi.UiPresenter){}[0]
+    final fun present(dev.s7a.strata.ui/UiDefinition): dev.s7a.strata.ui/UiSession // dev.s7a.strata.spi/UiPresenters.present|present(dev.s7a.strata.ui.UiDefinition){}[0]
+}
+
 final fun (dev.s7a.strata.component/UiScope).dev.s7a.strata.component/Button(dev.s7a.strata.state/StateSource<dev.s7a.strata.text/UiText>, kotlin/Int = ..., dev.s7a.strata.state/StateSource<kotlin/Boolean>, dev.s7a.strata.modifier/Modifier = ..., dev.s7a.strata.element/ElementKey<*>? = ...) // dev.s7a.strata.component/Button|Button@dev.s7a.strata.component.UiScope(dev.s7a.strata.state.StateSource<dev.s7a.strata.text.UiText>;kotlin.Int;dev.s7a.strata.state.StateSource<kotlin.Boolean>;dev.s7a.strata.modifier.Modifier;dev.s7a.strata.element.ElementKey<*>?){}[0]
 final fun (dev.s7a.strata.component/UiScope).dev.s7a.strata.component/Button(dev.s7a.strata.state/StateSource<dev.s7a.strata.text/UiText>, kotlin/Int = ..., kotlin/Boolean = ..., dev.s7a.strata.modifier/Modifier = ..., dev.s7a.strata.element/ElementKey<*>? = ...) // dev.s7a.strata.component/Button|Button@dev.s7a.strata.component.UiScope(dev.s7a.strata.state.StateSource<dev.s7a.strata.text.UiText>;kotlin.Int;kotlin.Boolean;dev.s7a.strata.modifier.Modifier;dev.s7a.strata.element.ElementKey<*>?){}[0]
 final fun (dev.s7a.strata.component/UiScope).dev.s7a.strata.component/Button(dev.s7a.strata.state/StateSource<kotlin/String>, kotlin/Int = ..., dev.s7a.strata.state/StateSource<kotlin/Boolean>, dev.s7a.strata.modifier/Modifier = ..., dev.s7a.strata.element/ElementKey<*>? = ...) // dev.s7a.strata.component/Button|Button@dev.s7a.strata.component.UiScope(dev.s7a.strata.state.StateSource<kotlin.String>;kotlin.Int;dev.s7a.strata.state.StateSource<kotlin.Boolean>;dev.s7a.strata.modifier.Modifier;dev.s7a.strata.element.ElementKey<*>?){}[0]
@@ -2564,46 +2894,46 @@ final fun (dev.s7a.strata.modifier/Modifier).dev.s7a.strata.modifier/imageBackgr
 final fun (dev.s7a.strata.modifier/Modifier).dev.s7a.strata.modifier/imageBackground(dev.s7a.strata.component/ImageSource, dev.s7a.strata.geometry/Insets, dev.s7a.strata.component/NineSliceCenterMode = ...): dev.s7a.strata.modifier/Modifier // dev.s7a.strata.modifier/imageBackground|imageBackground@dev.s7a.strata.modifier.Modifier(dev.s7a.strata.component.ImageSource;dev.s7a.strata.geometry.Insets;dev.s7a.strata.component.NineSliceCenterMode){}[0]
 final fun (dev.s7a.strata.modifier/Modifier).dev.s7a.strata.modifier/initialFocus(): dev.s7a.strata.modifier/Modifier // dev.s7a.strata.modifier/initialFocus|initialFocus@dev.s7a.strata.modifier.Modifier(){}[0]
 final fun (dev.s7a.strata.modifier/Modifier).dev.s7a.strata.modifier/menuBackground(): dev.s7a.strata.modifier/Modifier // dev.s7a.strata.modifier/menuBackground|menuBackground@dev.s7a.strata.modifier.Modifier(){}[0]
-final fun (dev.s7a.strata.modifier/Modifier).dev.s7a.strata.modifier/onActivate(dev.s7a.strata.state/StateSource<kotlin/Boolean>, kotlin/Function0<kotlin/Unit>): dev.s7a.strata.modifier/Modifier // dev.s7a.strata.modifier/onActivate|onActivate@dev.s7a.strata.modifier.Modifier(dev.s7a.strata.state.StateSource<kotlin.Boolean>;kotlin.Function0<kotlin.Unit>){}[0]
-final fun (dev.s7a.strata.modifier/Modifier).dev.s7a.strata.modifier/onActivate(kotlin/Boolean, kotlin/Function0<kotlin/Unit>): dev.s7a.strata.modifier/Modifier // dev.s7a.strata.modifier/onActivate|onActivate@dev.s7a.strata.modifier.Modifier(kotlin.Boolean;kotlin.Function0<kotlin.Unit>){}[0]
-final fun (dev.s7a.strata.modifier/Modifier).dev.s7a.strata.modifier/onActivate(kotlin/Function0<kotlin/Unit>): dev.s7a.strata.modifier/Modifier // dev.s7a.strata.modifier/onActivate|onActivate@dev.s7a.strata.modifier.Modifier(kotlin.Function0<kotlin.Unit>){}[0]
-final fun (dev.s7a.strata.modifier/Modifier).dev.s7a.strata.modifier/onCapturedPointerEvent(dev.s7a.strata.input/PointerButton, kotlin/Function1<dev.s7a.strata.input/PointerButton, kotlin/Unit>, kotlin/Function2<dev.s7a.strata.input/PointerEvent, dev.s7a.strata.geometry/IntOffset, kotlin/Unit>): dev.s7a.strata.modifier/Modifier // dev.s7a.strata.modifier/onCapturedPointerEvent|onCapturedPointerEvent@dev.s7a.strata.modifier.Modifier(dev.s7a.strata.input.PointerButton;kotlin.Function1<dev.s7a.strata.input.PointerButton,kotlin.Unit>;kotlin.Function2<dev.s7a.strata.input.PointerEvent,dev.s7a.strata.geometry.IntOffset,kotlin.Unit>){}[0]
-final fun (dev.s7a.strata.modifier/Modifier).dev.s7a.strata.modifier/onCapturedPointerEvent(kotlin/Function1<dev.s7a.strata.input/PointerButton, kotlin/Unit>, kotlin/Function2<dev.s7a.strata.input/PointerEvent, dev.s7a.strata.geometry/IntOffset, dev.s7a.strata.input/InputResult>): dev.s7a.strata.modifier/Modifier // dev.s7a.strata.modifier/onCapturedPointerEvent|onCapturedPointerEvent@dev.s7a.strata.modifier.Modifier(kotlin.Function1<dev.s7a.strata.input.PointerButton,kotlin.Unit>;kotlin.Function2<dev.s7a.strata.input.PointerEvent,dev.s7a.strata.geometry.IntOffset,dev.s7a.strata.input.InputResult>){}[0]
-final fun (dev.s7a.strata.modifier/Modifier).dev.s7a.strata.modifier/onCharacterInput(dev.s7a.strata.input/InputResult, kotlin/Function1<dev.s7a.strata.input/TextInputEvent.Character, kotlin/Unit>): dev.s7a.strata.modifier/Modifier // dev.s7a.strata.modifier/onCharacterInput|onCharacterInput@dev.s7a.strata.modifier.Modifier(dev.s7a.strata.input.InputResult;kotlin.Function1<dev.s7a.strata.input.TextInputEvent.Character,kotlin.Unit>){}[0]
-final fun (dev.s7a.strata.modifier/Modifier).dev.s7a.strata.modifier/onCharacterInput(kotlin/Function1<dev.s7a.strata.input/TextInputEvent.Character, dev.s7a.strata.input/InputResult>): dev.s7a.strata.modifier/Modifier // dev.s7a.strata.modifier/onCharacterInput|onCharacterInput@dev.s7a.strata.modifier.Modifier(kotlin.Function1<dev.s7a.strata.input.TextInputEvent.Character,dev.s7a.strata.input.InputResult>){}[0]
-final fun (dev.s7a.strata.modifier/Modifier).dev.s7a.strata.modifier/onCheckedChange(kotlin/Function1<kotlin/Boolean, kotlin/Unit>): dev.s7a.strata.modifier/Modifier // dev.s7a.strata.modifier/onCheckedChange|onCheckedChange@dev.s7a.strata.modifier.Modifier(kotlin.Function1<kotlin.Boolean,kotlin.Unit>){}[0]
-final fun (dev.s7a.strata.modifier/Modifier).dev.s7a.strata.modifier/onDrag(dev.s7a.strata.input/InputResult, dev.s7a.strata.input/PointerButton? = ..., kotlin/Function2<dev.s7a.strata.input/PointerEvent.Drag, dev.s7a.strata.geometry/IntOffset, kotlin/Unit>): dev.s7a.strata.modifier/Modifier // dev.s7a.strata.modifier/onDrag|onDrag@dev.s7a.strata.modifier.Modifier(dev.s7a.strata.input.InputResult;dev.s7a.strata.input.PointerButton?;kotlin.Function2<dev.s7a.strata.input.PointerEvent.Drag,dev.s7a.strata.geometry.IntOffset,kotlin.Unit>){}[0]
-final fun (dev.s7a.strata.modifier/Modifier).dev.s7a.strata.modifier/onDrag(kotlin/Function0<kotlin/Unit>): dev.s7a.strata.modifier/Modifier // dev.s7a.strata.modifier/onDrag|onDrag@dev.s7a.strata.modifier.Modifier(kotlin.Function0<kotlin.Unit>){}[0]
-final fun (dev.s7a.strata.modifier/Modifier).dev.s7a.strata.modifier/onDrag(kotlin/Function2<dev.s7a.strata.input/PointerEvent.Drag, dev.s7a.strata.geometry/IntOffset, dev.s7a.strata.input/InputResult>): dev.s7a.strata.modifier/Modifier // dev.s7a.strata.modifier/onDrag|onDrag@dev.s7a.strata.modifier.Modifier(kotlin.Function2<dev.s7a.strata.input.PointerEvent.Drag,dev.s7a.strata.geometry.IntOffset,dev.s7a.strata.input.InputResult>){}[0]
-final fun (dev.s7a.strata.modifier/Modifier).dev.s7a.strata.modifier/onFocusChanged(kotlin/Function1<dev.s7a.strata.input/FocusEvent, kotlin/Unit>): dev.s7a.strata.modifier/Modifier // dev.s7a.strata.modifier/onFocusChanged|onFocusChanged@dev.s7a.strata.modifier.Modifier(kotlin.Function1<dev.s7a.strata.input.FocusEvent,kotlin.Unit>){}[0]
-final fun (dev.s7a.strata.modifier/Modifier).dev.s7a.strata.modifier/onHover(kotlin/Function1<dev.s7a.strata.input/PointerHoverEvent, kotlin/Unit>): dev.s7a.strata.modifier/Modifier // dev.s7a.strata.modifier/onHover|onHover@dev.s7a.strata.modifier.Modifier(kotlin.Function1<dev.s7a.strata.input.PointerHoverEvent,kotlin.Unit>){}[0]
-final fun (dev.s7a.strata.modifier/Modifier).dev.s7a.strata.modifier/onKeyEvent(dev.s7a.strata.input/InputResult, dev.s7a.strata.input/KeyboardInputFilter = ..., kotlin/Function1<dev.s7a.strata.input/KeyboardEvent, kotlin/Unit>): dev.s7a.strata.modifier/Modifier // dev.s7a.strata.modifier/onKeyEvent|onKeyEvent@dev.s7a.strata.modifier.Modifier(dev.s7a.strata.input.InputResult;dev.s7a.strata.input.KeyboardInputFilter;kotlin.Function1<dev.s7a.strata.input.KeyboardEvent,kotlin.Unit>){}[0]
-final fun (dev.s7a.strata.modifier/Modifier).dev.s7a.strata.modifier/onKeyEvent(kotlin/Function1<dev.s7a.strata.input/KeyboardEvent, dev.s7a.strata.input/InputResult>): dev.s7a.strata.modifier/Modifier // dev.s7a.strata.modifier/onKeyEvent|onKeyEvent@dev.s7a.strata.modifier.Modifier(kotlin.Function1<dev.s7a.strata.input.KeyboardEvent,dev.s7a.strata.input.InputResult>){}[0]
-final fun (dev.s7a.strata.modifier/Modifier).dev.s7a.strata.modifier/onKeyPress(dev.s7a.strata.input/InputResult, dev.s7a.strata.input/KeyboardInputFilter = ..., kotlin/Function1<dev.s7a.strata.input/KeyboardEvent.Press, kotlin/Unit>): dev.s7a.strata.modifier/Modifier // dev.s7a.strata.modifier/onKeyPress|onKeyPress@dev.s7a.strata.modifier.Modifier(dev.s7a.strata.input.InputResult;dev.s7a.strata.input.KeyboardInputFilter;kotlin.Function1<dev.s7a.strata.input.KeyboardEvent.Press,kotlin.Unit>){}[0]
-final fun (dev.s7a.strata.modifier/Modifier).dev.s7a.strata.modifier/onKeyPress(kotlin/Function1<dev.s7a.strata.input/KeyboardEvent.Press, dev.s7a.strata.input/InputResult>): dev.s7a.strata.modifier/Modifier // dev.s7a.strata.modifier/onKeyPress|onKeyPress@dev.s7a.strata.modifier.Modifier(kotlin.Function1<dev.s7a.strata.input.KeyboardEvent.Press,dev.s7a.strata.input.InputResult>){}[0]
-final fun (dev.s7a.strata.modifier/Modifier).dev.s7a.strata.modifier/onKeyRelease(dev.s7a.strata.input/InputResult, dev.s7a.strata.input/KeyboardInputFilter = ..., kotlin/Function1<dev.s7a.strata.input/KeyboardEvent.Release, kotlin/Unit>): dev.s7a.strata.modifier/Modifier // dev.s7a.strata.modifier/onKeyRelease|onKeyRelease@dev.s7a.strata.modifier.Modifier(dev.s7a.strata.input.InputResult;dev.s7a.strata.input.KeyboardInputFilter;kotlin.Function1<dev.s7a.strata.input.KeyboardEvent.Release,kotlin.Unit>){}[0]
-final fun (dev.s7a.strata.modifier/Modifier).dev.s7a.strata.modifier/onKeyRelease(kotlin/Function1<dev.s7a.strata.input/KeyboardEvent.Release, dev.s7a.strata.input/InputResult>): dev.s7a.strata.modifier/Modifier // dev.s7a.strata.modifier/onKeyRelease|onKeyRelease@dev.s7a.strata.modifier.Modifier(kotlin.Function1<dev.s7a.strata.input.KeyboardEvent.Release,dev.s7a.strata.input.InputResult>){}[0]
-final fun (dev.s7a.strata.modifier/Modifier).dev.s7a.strata.modifier/onLeadingItemsRequested(kotlin/Function1<dev.s7a.strata.action/ListLoadRequest, kotlin/Unit>): dev.s7a.strata.modifier/Modifier // dev.s7a.strata.modifier/onLeadingItemsRequested|onLeadingItemsRequested@dev.s7a.strata.modifier.Modifier(kotlin.Function1<dev.s7a.strata.action.ListLoadRequest,kotlin.Unit>){}[0]
-final fun (dev.s7a.strata.modifier/Modifier).dev.s7a.strata.modifier/onMove(dev.s7a.strata.input/InputResult, kotlin/Function2<dev.s7a.strata.input/PointerEvent.Move, dev.s7a.strata.geometry/IntOffset, kotlin/Unit>): dev.s7a.strata.modifier/Modifier // dev.s7a.strata.modifier/onMove|onMove@dev.s7a.strata.modifier.Modifier(dev.s7a.strata.input.InputResult;kotlin.Function2<dev.s7a.strata.input.PointerEvent.Move,dev.s7a.strata.geometry.IntOffset,kotlin.Unit>){}[0]
-final fun (dev.s7a.strata.modifier/Modifier).dev.s7a.strata.modifier/onMove(kotlin/Function0<kotlin/Unit>): dev.s7a.strata.modifier/Modifier // dev.s7a.strata.modifier/onMove|onMove@dev.s7a.strata.modifier.Modifier(kotlin.Function0<kotlin.Unit>){}[0]
-final fun (dev.s7a.strata.modifier/Modifier).dev.s7a.strata.modifier/onMove(kotlin/Function2<dev.s7a.strata.input/PointerEvent.Move, dev.s7a.strata.geometry/IntOffset, dev.s7a.strata.input/InputResult>): dev.s7a.strata.modifier/Modifier // dev.s7a.strata.modifier/onMove|onMove@dev.s7a.strata.modifier.Modifier(kotlin.Function2<dev.s7a.strata.input.PointerEvent.Move,dev.s7a.strata.geometry.IntOffset,dev.s7a.strata.input.InputResult>){}[0]
-final fun (dev.s7a.strata.modifier/Modifier).dev.s7a.strata.modifier/onPointerEvent(dev.s7a.strata.input/InputResult, kotlin/Function2<dev.s7a.strata.input/PointerEvent, dev.s7a.strata.geometry/IntOffset, kotlin/Unit>): dev.s7a.strata.modifier/Modifier // dev.s7a.strata.modifier/onPointerEvent|onPointerEvent@dev.s7a.strata.modifier.Modifier(dev.s7a.strata.input.InputResult;kotlin.Function2<dev.s7a.strata.input.PointerEvent,dev.s7a.strata.geometry.IntOffset,kotlin.Unit>){}[0]
-final fun (dev.s7a.strata.modifier/Modifier).dev.s7a.strata.modifier/onPointerEvent(kotlin/Function2<dev.s7a.strata.input/PointerEvent, dev.s7a.strata.geometry/IntOffset, dev.s7a.strata.input/InputResult>): dev.s7a.strata.modifier/Modifier // dev.s7a.strata.modifier/onPointerEvent|onPointerEvent@dev.s7a.strata.modifier.Modifier(kotlin.Function2<dev.s7a.strata.input.PointerEvent,dev.s7a.strata.geometry.IntOffset,dev.s7a.strata.input.InputResult>){}[0]
-final fun (dev.s7a.strata.modifier/Modifier).dev.s7a.strata.modifier/onPreedit(dev.s7a.strata.input/InputResult, kotlin/Function1<dev.s7a.strata.input/TextInputEvent.Preedit, kotlin/Unit>): dev.s7a.strata.modifier/Modifier // dev.s7a.strata.modifier/onPreedit|onPreedit@dev.s7a.strata.modifier.Modifier(dev.s7a.strata.input.InputResult;kotlin.Function1<dev.s7a.strata.input.TextInputEvent.Preedit,kotlin.Unit>){}[0]
-final fun (dev.s7a.strata.modifier/Modifier).dev.s7a.strata.modifier/onPreedit(kotlin/Function1<dev.s7a.strata.input/TextInputEvent.Preedit, dev.s7a.strata.input/InputResult>): dev.s7a.strata.modifier/Modifier // dev.s7a.strata.modifier/onPreedit|onPreedit@dev.s7a.strata.modifier.Modifier(kotlin.Function1<dev.s7a.strata.input.TextInputEvent.Preedit,dev.s7a.strata.input.InputResult>){}[0]
-final fun (dev.s7a.strata.modifier/Modifier).dev.s7a.strata.modifier/onPress(dev.s7a.strata.input/InputResult, dev.s7a.strata.input/PointerButton? = ..., kotlin/Function2<dev.s7a.strata.input/PointerEvent.Press, dev.s7a.strata.geometry/IntOffset, kotlin/Unit>): dev.s7a.strata.modifier/Modifier // dev.s7a.strata.modifier/onPress|onPress@dev.s7a.strata.modifier.Modifier(dev.s7a.strata.input.InputResult;dev.s7a.strata.input.PointerButton?;kotlin.Function2<dev.s7a.strata.input.PointerEvent.Press,dev.s7a.strata.geometry.IntOffset,kotlin.Unit>){}[0]
-final fun (dev.s7a.strata.modifier/Modifier).dev.s7a.strata.modifier/onPress(kotlin/Function0<kotlin/Unit>): dev.s7a.strata.modifier/Modifier // dev.s7a.strata.modifier/onPress|onPress@dev.s7a.strata.modifier.Modifier(kotlin.Function0<kotlin.Unit>){}[0]
-final fun (dev.s7a.strata.modifier/Modifier).dev.s7a.strata.modifier/onPress(kotlin/Function2<dev.s7a.strata.input/PointerEvent.Press, dev.s7a.strata.geometry/IntOffset, dev.s7a.strata.input/InputResult>): dev.s7a.strata.modifier/Modifier // dev.s7a.strata.modifier/onPress|onPress@dev.s7a.strata.modifier.Modifier(kotlin.Function2<dev.s7a.strata.input.PointerEvent.Press,dev.s7a.strata.geometry.IntOffset,dev.s7a.strata.input.InputResult>){}[0]
-final fun (dev.s7a.strata.modifier/Modifier).dev.s7a.strata.modifier/onRelease(dev.s7a.strata.input/InputResult, dev.s7a.strata.input/PointerButton? = ..., kotlin/Function2<dev.s7a.strata.input/PointerEvent.Release, dev.s7a.strata.geometry/IntOffset, kotlin/Unit>): dev.s7a.strata.modifier/Modifier // dev.s7a.strata.modifier/onRelease|onRelease@dev.s7a.strata.modifier.Modifier(dev.s7a.strata.input.InputResult;dev.s7a.strata.input.PointerButton?;kotlin.Function2<dev.s7a.strata.input.PointerEvent.Release,dev.s7a.strata.geometry.IntOffset,kotlin.Unit>){}[0]
-final fun (dev.s7a.strata.modifier/Modifier).dev.s7a.strata.modifier/onRelease(kotlin/Function0<kotlin/Unit>): dev.s7a.strata.modifier/Modifier // dev.s7a.strata.modifier/onRelease|onRelease@dev.s7a.strata.modifier.Modifier(kotlin.Function0<kotlin.Unit>){}[0]
-final fun (dev.s7a.strata.modifier/Modifier).dev.s7a.strata.modifier/onRelease(kotlin/Function2<dev.s7a.strata.input/PointerEvent.Release, dev.s7a.strata.geometry/IntOffset, dev.s7a.strata.input/InputResult>): dev.s7a.strata.modifier/Modifier // dev.s7a.strata.modifier/onRelease|onRelease@dev.s7a.strata.modifier.Modifier(kotlin.Function2<dev.s7a.strata.input.PointerEvent.Release,dev.s7a.strata.geometry.IntOffset,dev.s7a.strata.input.InputResult>){}[0]
-final fun (dev.s7a.strata.modifier/Modifier).dev.s7a.strata.modifier/onScroll(dev.s7a.strata.input/InputResult, kotlin/Function2<dev.s7a.strata.input/PointerEvent.Scroll, dev.s7a.strata.geometry/IntOffset, kotlin/Unit>): dev.s7a.strata.modifier/Modifier // dev.s7a.strata.modifier/onScroll|onScroll@dev.s7a.strata.modifier.Modifier(dev.s7a.strata.input.InputResult;kotlin.Function2<dev.s7a.strata.input.PointerEvent.Scroll,dev.s7a.strata.geometry.IntOffset,kotlin.Unit>){}[0]
-final fun (dev.s7a.strata.modifier/Modifier).dev.s7a.strata.modifier/onScroll(kotlin/Function0<kotlin/Unit>): dev.s7a.strata.modifier/Modifier // dev.s7a.strata.modifier/onScroll|onScroll@dev.s7a.strata.modifier.Modifier(kotlin.Function0<kotlin.Unit>){}[0]
-final fun (dev.s7a.strata.modifier/Modifier).dev.s7a.strata.modifier/onScroll(kotlin/Function2<dev.s7a.strata.input/PointerEvent.Scroll, dev.s7a.strata.geometry/IntOffset, dev.s7a.strata.input/InputResult>): dev.s7a.strata.modifier/Modifier // dev.s7a.strata.modifier/onScroll|onScroll@dev.s7a.strata.modifier.Modifier(kotlin.Function2<dev.s7a.strata.input.PointerEvent.Scroll,dev.s7a.strata.geometry.IntOffset,dev.s7a.strata.input.InputResult>){}[0]
-final fun (dev.s7a.strata.modifier/Modifier).dev.s7a.strata.modifier/onSliderChange(kotlin/Function1<kotlin/Double, kotlin/Unit>): dev.s7a.strata.modifier/Modifier // dev.s7a.strata.modifier/onSliderChange|onSliderChange@dev.s7a.strata.modifier.Modifier(kotlin.Function1<kotlin.Double,kotlin.Unit>){}[0]
-final fun (dev.s7a.strata.modifier/Modifier).dev.s7a.strata.modifier/onTextInput(dev.s7a.strata.input/InputResult, kotlin/Function1<dev.s7a.strata.input/TextInputEvent, kotlin/Unit>): dev.s7a.strata.modifier/Modifier // dev.s7a.strata.modifier/onTextInput|onTextInput@dev.s7a.strata.modifier.Modifier(dev.s7a.strata.input.InputResult;kotlin.Function1<dev.s7a.strata.input.TextInputEvent,kotlin.Unit>){}[0]
-final fun (dev.s7a.strata.modifier/Modifier).dev.s7a.strata.modifier/onTextInput(kotlin/Function1<dev.s7a.strata.input/TextInputEvent, dev.s7a.strata.input/InputResult>): dev.s7a.strata.modifier/Modifier // dev.s7a.strata.modifier/onTextInput|onTextInput@dev.s7a.strata.modifier.Modifier(kotlin.Function1<dev.s7a.strata.input.TextInputEvent,dev.s7a.strata.input.InputResult>){}[0]
-final fun (dev.s7a.strata.modifier/Modifier).dev.s7a.strata.modifier/onTrailingItemsRequested(kotlin/Function1<dev.s7a.strata.action/ListLoadRequest, kotlin/Unit>): dev.s7a.strata.modifier/Modifier // dev.s7a.strata.modifier/onTrailingItemsRequested|onTrailingItemsRequested@dev.s7a.strata.modifier.Modifier(kotlin.Function1<dev.s7a.strata.action.ListLoadRequest,kotlin.Unit>){}[0]
+final fun (dev.s7a.strata.modifier/Modifier).dev.s7a.strata.modifier/onActivate(dev.s7a.strata.state/StateSource<kotlin/Boolean>, kotlin/Function1<dev.s7a.strata.ui/UiSession, kotlin/Unit>): dev.s7a.strata.modifier/Modifier // dev.s7a.strata.modifier/onActivate|onActivate@dev.s7a.strata.modifier.Modifier(dev.s7a.strata.state.StateSource<kotlin.Boolean>;kotlin.Function1<dev.s7a.strata.ui.UiSession,kotlin.Unit>){}[0]
+final fun (dev.s7a.strata.modifier/Modifier).dev.s7a.strata.modifier/onActivate(kotlin/Boolean, kotlin/Function1<dev.s7a.strata.ui/UiSession, kotlin/Unit>): dev.s7a.strata.modifier/Modifier // dev.s7a.strata.modifier/onActivate|onActivate@dev.s7a.strata.modifier.Modifier(kotlin.Boolean;kotlin.Function1<dev.s7a.strata.ui.UiSession,kotlin.Unit>){}[0]
+final fun (dev.s7a.strata.modifier/Modifier).dev.s7a.strata.modifier/onActivate(kotlin/Function1<dev.s7a.strata.ui/UiSession, kotlin/Unit>): dev.s7a.strata.modifier/Modifier // dev.s7a.strata.modifier/onActivate|onActivate@dev.s7a.strata.modifier.Modifier(kotlin.Function1<dev.s7a.strata.ui.UiSession,kotlin.Unit>){}[0]
+final fun (dev.s7a.strata.modifier/Modifier).dev.s7a.strata.modifier/onCapturedPointerEvent(dev.s7a.strata.input/PointerButton, kotlin/Function2<dev.s7a.strata.ui/UiSession, dev.s7a.strata.input/PointerButton, kotlin/Unit>, kotlin/Function3<dev.s7a.strata.ui/UiSession, dev.s7a.strata.input/PointerEvent, dev.s7a.strata.geometry/IntOffset, kotlin/Unit>): dev.s7a.strata.modifier/Modifier // dev.s7a.strata.modifier/onCapturedPointerEvent|onCapturedPointerEvent@dev.s7a.strata.modifier.Modifier(dev.s7a.strata.input.PointerButton;kotlin.Function2<dev.s7a.strata.ui.UiSession,dev.s7a.strata.input.PointerButton,kotlin.Unit>;kotlin.Function3<dev.s7a.strata.ui.UiSession,dev.s7a.strata.input.PointerEvent,dev.s7a.strata.geometry.IntOffset,kotlin.Unit>){}[0]
+final fun (dev.s7a.strata.modifier/Modifier).dev.s7a.strata.modifier/onCapturedPointerEvent(kotlin/Function2<dev.s7a.strata.ui/UiSession, dev.s7a.strata.input/PointerButton, kotlin/Unit>, kotlin/Function3<dev.s7a.strata.ui/UiSession, dev.s7a.strata.input/PointerEvent, dev.s7a.strata.geometry/IntOffset, dev.s7a.strata.input/InputResult>): dev.s7a.strata.modifier/Modifier // dev.s7a.strata.modifier/onCapturedPointerEvent|onCapturedPointerEvent@dev.s7a.strata.modifier.Modifier(kotlin.Function2<dev.s7a.strata.ui.UiSession,dev.s7a.strata.input.PointerButton,kotlin.Unit>;kotlin.Function3<dev.s7a.strata.ui.UiSession,dev.s7a.strata.input.PointerEvent,dev.s7a.strata.geometry.IntOffset,dev.s7a.strata.input.InputResult>){}[0]
+final fun (dev.s7a.strata.modifier/Modifier).dev.s7a.strata.modifier/onCharacterInput(dev.s7a.strata.input/InputResult, kotlin/Function2<dev.s7a.strata.ui/UiSession, dev.s7a.strata.input/TextInputEvent.Character, kotlin/Unit>): dev.s7a.strata.modifier/Modifier // dev.s7a.strata.modifier/onCharacterInput|onCharacterInput@dev.s7a.strata.modifier.Modifier(dev.s7a.strata.input.InputResult;kotlin.Function2<dev.s7a.strata.ui.UiSession,dev.s7a.strata.input.TextInputEvent.Character,kotlin.Unit>){}[0]
+final fun (dev.s7a.strata.modifier/Modifier).dev.s7a.strata.modifier/onCharacterInput(kotlin/Function2<dev.s7a.strata.ui/UiSession, dev.s7a.strata.input/TextInputEvent.Character, dev.s7a.strata.input/InputResult>): dev.s7a.strata.modifier/Modifier // dev.s7a.strata.modifier/onCharacterInput|onCharacterInput@dev.s7a.strata.modifier.Modifier(kotlin.Function2<dev.s7a.strata.ui.UiSession,dev.s7a.strata.input.TextInputEvent.Character,dev.s7a.strata.input.InputResult>){}[0]
+final fun (dev.s7a.strata.modifier/Modifier).dev.s7a.strata.modifier/onCheckedChange(kotlin/Function2<dev.s7a.strata.ui/UiSession, kotlin/Boolean, kotlin/Unit>): dev.s7a.strata.modifier/Modifier // dev.s7a.strata.modifier/onCheckedChange|onCheckedChange@dev.s7a.strata.modifier.Modifier(kotlin.Function2<dev.s7a.strata.ui.UiSession,kotlin.Boolean,kotlin.Unit>){}[0]
+final fun (dev.s7a.strata.modifier/Modifier).dev.s7a.strata.modifier/onDrag(dev.s7a.strata.input/InputResult, dev.s7a.strata.input/PointerButton? = ..., kotlin/Function3<dev.s7a.strata.ui/UiSession, dev.s7a.strata.input/PointerEvent.Drag, dev.s7a.strata.geometry/IntOffset, kotlin/Unit>): dev.s7a.strata.modifier/Modifier // dev.s7a.strata.modifier/onDrag|onDrag@dev.s7a.strata.modifier.Modifier(dev.s7a.strata.input.InputResult;dev.s7a.strata.input.PointerButton?;kotlin.Function3<dev.s7a.strata.ui.UiSession,dev.s7a.strata.input.PointerEvent.Drag,dev.s7a.strata.geometry.IntOffset,kotlin.Unit>){}[0]
+final fun (dev.s7a.strata.modifier/Modifier).dev.s7a.strata.modifier/onDrag(kotlin/Function1<dev.s7a.strata.ui/UiSession, kotlin/Unit>): dev.s7a.strata.modifier/Modifier // dev.s7a.strata.modifier/onDrag|onDrag@dev.s7a.strata.modifier.Modifier(kotlin.Function1<dev.s7a.strata.ui.UiSession,kotlin.Unit>){}[0]
+final fun (dev.s7a.strata.modifier/Modifier).dev.s7a.strata.modifier/onDrag(kotlin/Function3<dev.s7a.strata.ui/UiSession, dev.s7a.strata.input/PointerEvent.Drag, dev.s7a.strata.geometry/IntOffset, dev.s7a.strata.input/InputResult>): dev.s7a.strata.modifier/Modifier // dev.s7a.strata.modifier/onDrag|onDrag@dev.s7a.strata.modifier.Modifier(kotlin.Function3<dev.s7a.strata.ui.UiSession,dev.s7a.strata.input.PointerEvent.Drag,dev.s7a.strata.geometry.IntOffset,dev.s7a.strata.input.InputResult>){}[0]
+final fun (dev.s7a.strata.modifier/Modifier).dev.s7a.strata.modifier/onFocusChanged(kotlin/Function2<dev.s7a.strata.ui/UiSession, dev.s7a.strata.input/FocusEvent, kotlin/Unit>): dev.s7a.strata.modifier/Modifier // dev.s7a.strata.modifier/onFocusChanged|onFocusChanged@dev.s7a.strata.modifier.Modifier(kotlin.Function2<dev.s7a.strata.ui.UiSession,dev.s7a.strata.input.FocusEvent,kotlin.Unit>){}[0]
+final fun (dev.s7a.strata.modifier/Modifier).dev.s7a.strata.modifier/onHover(kotlin/Function2<dev.s7a.strata.ui/UiSession, dev.s7a.strata.input/PointerHoverEvent, kotlin/Unit>): dev.s7a.strata.modifier/Modifier // dev.s7a.strata.modifier/onHover|onHover@dev.s7a.strata.modifier.Modifier(kotlin.Function2<dev.s7a.strata.ui.UiSession,dev.s7a.strata.input.PointerHoverEvent,kotlin.Unit>){}[0]
+final fun (dev.s7a.strata.modifier/Modifier).dev.s7a.strata.modifier/onKeyEvent(dev.s7a.strata.input/InputResult, dev.s7a.strata.input/KeyboardInputFilter = ..., kotlin/Function2<dev.s7a.strata.ui/UiSession, dev.s7a.strata.input/KeyboardEvent, kotlin/Unit>): dev.s7a.strata.modifier/Modifier // dev.s7a.strata.modifier/onKeyEvent|onKeyEvent@dev.s7a.strata.modifier.Modifier(dev.s7a.strata.input.InputResult;dev.s7a.strata.input.KeyboardInputFilter;kotlin.Function2<dev.s7a.strata.ui.UiSession,dev.s7a.strata.input.KeyboardEvent,kotlin.Unit>){}[0]
+final fun (dev.s7a.strata.modifier/Modifier).dev.s7a.strata.modifier/onKeyEvent(kotlin/Function2<dev.s7a.strata.ui/UiSession, dev.s7a.strata.input/KeyboardEvent, dev.s7a.strata.input/InputResult>): dev.s7a.strata.modifier/Modifier // dev.s7a.strata.modifier/onKeyEvent|onKeyEvent@dev.s7a.strata.modifier.Modifier(kotlin.Function2<dev.s7a.strata.ui.UiSession,dev.s7a.strata.input.KeyboardEvent,dev.s7a.strata.input.InputResult>){}[0]
+final fun (dev.s7a.strata.modifier/Modifier).dev.s7a.strata.modifier/onKeyPress(dev.s7a.strata.input/InputResult, dev.s7a.strata.input/KeyboardInputFilter = ..., kotlin/Function2<dev.s7a.strata.ui/UiSession, dev.s7a.strata.input/KeyboardEvent.Press, kotlin/Unit>): dev.s7a.strata.modifier/Modifier // dev.s7a.strata.modifier/onKeyPress|onKeyPress@dev.s7a.strata.modifier.Modifier(dev.s7a.strata.input.InputResult;dev.s7a.strata.input.KeyboardInputFilter;kotlin.Function2<dev.s7a.strata.ui.UiSession,dev.s7a.strata.input.KeyboardEvent.Press,kotlin.Unit>){}[0]
+final fun (dev.s7a.strata.modifier/Modifier).dev.s7a.strata.modifier/onKeyPress(kotlin/Function2<dev.s7a.strata.ui/UiSession, dev.s7a.strata.input/KeyboardEvent.Press, dev.s7a.strata.input/InputResult>): dev.s7a.strata.modifier/Modifier // dev.s7a.strata.modifier/onKeyPress|onKeyPress@dev.s7a.strata.modifier.Modifier(kotlin.Function2<dev.s7a.strata.ui.UiSession,dev.s7a.strata.input.KeyboardEvent.Press,dev.s7a.strata.input.InputResult>){}[0]
+final fun (dev.s7a.strata.modifier/Modifier).dev.s7a.strata.modifier/onKeyRelease(dev.s7a.strata.input/InputResult, dev.s7a.strata.input/KeyboardInputFilter = ..., kotlin/Function2<dev.s7a.strata.ui/UiSession, dev.s7a.strata.input/KeyboardEvent.Release, kotlin/Unit>): dev.s7a.strata.modifier/Modifier // dev.s7a.strata.modifier/onKeyRelease|onKeyRelease@dev.s7a.strata.modifier.Modifier(dev.s7a.strata.input.InputResult;dev.s7a.strata.input.KeyboardInputFilter;kotlin.Function2<dev.s7a.strata.ui.UiSession,dev.s7a.strata.input.KeyboardEvent.Release,kotlin.Unit>){}[0]
+final fun (dev.s7a.strata.modifier/Modifier).dev.s7a.strata.modifier/onKeyRelease(kotlin/Function2<dev.s7a.strata.ui/UiSession, dev.s7a.strata.input/KeyboardEvent.Release, dev.s7a.strata.input/InputResult>): dev.s7a.strata.modifier/Modifier // dev.s7a.strata.modifier/onKeyRelease|onKeyRelease@dev.s7a.strata.modifier.Modifier(kotlin.Function2<dev.s7a.strata.ui.UiSession,dev.s7a.strata.input.KeyboardEvent.Release,dev.s7a.strata.input.InputResult>){}[0]
+final fun (dev.s7a.strata.modifier/Modifier).dev.s7a.strata.modifier/onLeadingItemsRequested(kotlin/Function2<dev.s7a.strata.ui/UiSession, dev.s7a.strata.action/ListLoadRequest, kotlin/Unit>): dev.s7a.strata.modifier/Modifier // dev.s7a.strata.modifier/onLeadingItemsRequested|onLeadingItemsRequested@dev.s7a.strata.modifier.Modifier(kotlin.Function2<dev.s7a.strata.ui.UiSession,dev.s7a.strata.action.ListLoadRequest,kotlin.Unit>){}[0]
+final fun (dev.s7a.strata.modifier/Modifier).dev.s7a.strata.modifier/onMove(dev.s7a.strata.input/InputResult, kotlin/Function3<dev.s7a.strata.ui/UiSession, dev.s7a.strata.input/PointerEvent.Move, dev.s7a.strata.geometry/IntOffset, kotlin/Unit>): dev.s7a.strata.modifier/Modifier // dev.s7a.strata.modifier/onMove|onMove@dev.s7a.strata.modifier.Modifier(dev.s7a.strata.input.InputResult;kotlin.Function3<dev.s7a.strata.ui.UiSession,dev.s7a.strata.input.PointerEvent.Move,dev.s7a.strata.geometry.IntOffset,kotlin.Unit>){}[0]
+final fun (dev.s7a.strata.modifier/Modifier).dev.s7a.strata.modifier/onMove(kotlin/Function1<dev.s7a.strata.ui/UiSession, kotlin/Unit>): dev.s7a.strata.modifier/Modifier // dev.s7a.strata.modifier/onMove|onMove@dev.s7a.strata.modifier.Modifier(kotlin.Function1<dev.s7a.strata.ui.UiSession,kotlin.Unit>){}[0]
+final fun (dev.s7a.strata.modifier/Modifier).dev.s7a.strata.modifier/onMove(kotlin/Function3<dev.s7a.strata.ui/UiSession, dev.s7a.strata.input/PointerEvent.Move, dev.s7a.strata.geometry/IntOffset, dev.s7a.strata.input/InputResult>): dev.s7a.strata.modifier/Modifier // dev.s7a.strata.modifier/onMove|onMove@dev.s7a.strata.modifier.Modifier(kotlin.Function3<dev.s7a.strata.ui.UiSession,dev.s7a.strata.input.PointerEvent.Move,dev.s7a.strata.geometry.IntOffset,dev.s7a.strata.input.InputResult>){}[0]
+final fun (dev.s7a.strata.modifier/Modifier).dev.s7a.strata.modifier/onPointerEvent(dev.s7a.strata.input/InputResult, kotlin/Function3<dev.s7a.strata.ui/UiSession, dev.s7a.strata.input/PointerEvent, dev.s7a.strata.geometry/IntOffset, kotlin/Unit>): dev.s7a.strata.modifier/Modifier // dev.s7a.strata.modifier/onPointerEvent|onPointerEvent@dev.s7a.strata.modifier.Modifier(dev.s7a.strata.input.InputResult;kotlin.Function3<dev.s7a.strata.ui.UiSession,dev.s7a.strata.input.PointerEvent,dev.s7a.strata.geometry.IntOffset,kotlin.Unit>){}[0]
+final fun (dev.s7a.strata.modifier/Modifier).dev.s7a.strata.modifier/onPointerEvent(kotlin/Function3<dev.s7a.strata.ui/UiSession, dev.s7a.strata.input/PointerEvent, dev.s7a.strata.geometry/IntOffset, dev.s7a.strata.input/InputResult>): dev.s7a.strata.modifier/Modifier // dev.s7a.strata.modifier/onPointerEvent|onPointerEvent@dev.s7a.strata.modifier.Modifier(kotlin.Function3<dev.s7a.strata.ui.UiSession,dev.s7a.strata.input.PointerEvent,dev.s7a.strata.geometry.IntOffset,dev.s7a.strata.input.InputResult>){}[0]
+final fun (dev.s7a.strata.modifier/Modifier).dev.s7a.strata.modifier/onPreedit(dev.s7a.strata.input/InputResult, kotlin/Function2<dev.s7a.strata.ui/UiSession, dev.s7a.strata.input/TextInputEvent.Preedit, kotlin/Unit>): dev.s7a.strata.modifier/Modifier // dev.s7a.strata.modifier/onPreedit|onPreedit@dev.s7a.strata.modifier.Modifier(dev.s7a.strata.input.InputResult;kotlin.Function2<dev.s7a.strata.ui.UiSession,dev.s7a.strata.input.TextInputEvent.Preedit,kotlin.Unit>){}[0]
+final fun (dev.s7a.strata.modifier/Modifier).dev.s7a.strata.modifier/onPreedit(kotlin/Function2<dev.s7a.strata.ui/UiSession, dev.s7a.strata.input/TextInputEvent.Preedit, dev.s7a.strata.input/InputResult>): dev.s7a.strata.modifier/Modifier // dev.s7a.strata.modifier/onPreedit|onPreedit@dev.s7a.strata.modifier.Modifier(kotlin.Function2<dev.s7a.strata.ui.UiSession,dev.s7a.strata.input.TextInputEvent.Preedit,dev.s7a.strata.input.InputResult>){}[0]
+final fun (dev.s7a.strata.modifier/Modifier).dev.s7a.strata.modifier/onPress(dev.s7a.strata.input/InputResult, dev.s7a.strata.input/PointerButton? = ..., kotlin/Function3<dev.s7a.strata.ui/UiSession, dev.s7a.strata.input/PointerEvent.Press, dev.s7a.strata.geometry/IntOffset, kotlin/Unit>): dev.s7a.strata.modifier/Modifier // dev.s7a.strata.modifier/onPress|onPress@dev.s7a.strata.modifier.Modifier(dev.s7a.strata.input.InputResult;dev.s7a.strata.input.PointerButton?;kotlin.Function3<dev.s7a.strata.ui.UiSession,dev.s7a.strata.input.PointerEvent.Press,dev.s7a.strata.geometry.IntOffset,kotlin.Unit>){}[0]
+final fun (dev.s7a.strata.modifier/Modifier).dev.s7a.strata.modifier/onPress(kotlin/Function1<dev.s7a.strata.ui/UiSession, kotlin/Unit>): dev.s7a.strata.modifier/Modifier // dev.s7a.strata.modifier/onPress|onPress@dev.s7a.strata.modifier.Modifier(kotlin.Function1<dev.s7a.strata.ui.UiSession,kotlin.Unit>){}[0]
+final fun (dev.s7a.strata.modifier/Modifier).dev.s7a.strata.modifier/onPress(kotlin/Function3<dev.s7a.strata.ui/UiSession, dev.s7a.strata.input/PointerEvent.Press, dev.s7a.strata.geometry/IntOffset, dev.s7a.strata.input/InputResult>): dev.s7a.strata.modifier/Modifier // dev.s7a.strata.modifier/onPress|onPress@dev.s7a.strata.modifier.Modifier(kotlin.Function3<dev.s7a.strata.ui.UiSession,dev.s7a.strata.input.PointerEvent.Press,dev.s7a.strata.geometry.IntOffset,dev.s7a.strata.input.InputResult>){}[0]
+final fun (dev.s7a.strata.modifier/Modifier).dev.s7a.strata.modifier/onRelease(dev.s7a.strata.input/InputResult, dev.s7a.strata.input/PointerButton? = ..., kotlin/Function3<dev.s7a.strata.ui/UiSession, dev.s7a.strata.input/PointerEvent.Release, dev.s7a.strata.geometry/IntOffset, kotlin/Unit>): dev.s7a.strata.modifier/Modifier // dev.s7a.strata.modifier/onRelease|onRelease@dev.s7a.strata.modifier.Modifier(dev.s7a.strata.input.InputResult;dev.s7a.strata.input.PointerButton?;kotlin.Function3<dev.s7a.strata.ui.UiSession,dev.s7a.strata.input.PointerEvent.Release,dev.s7a.strata.geometry.IntOffset,kotlin.Unit>){}[0]
+final fun (dev.s7a.strata.modifier/Modifier).dev.s7a.strata.modifier/onRelease(kotlin/Function1<dev.s7a.strata.ui/UiSession, kotlin/Unit>): dev.s7a.strata.modifier/Modifier // dev.s7a.strata.modifier/onRelease|onRelease@dev.s7a.strata.modifier.Modifier(kotlin.Function1<dev.s7a.strata.ui.UiSession,kotlin.Unit>){}[0]
+final fun (dev.s7a.strata.modifier/Modifier).dev.s7a.strata.modifier/onRelease(kotlin/Function3<dev.s7a.strata.ui/UiSession, dev.s7a.strata.input/PointerEvent.Release, dev.s7a.strata.geometry/IntOffset, dev.s7a.strata.input/InputResult>): dev.s7a.strata.modifier/Modifier // dev.s7a.strata.modifier/onRelease|onRelease@dev.s7a.strata.modifier.Modifier(kotlin.Function3<dev.s7a.strata.ui.UiSession,dev.s7a.strata.input.PointerEvent.Release,dev.s7a.strata.geometry.IntOffset,dev.s7a.strata.input.InputResult>){}[0]
+final fun (dev.s7a.strata.modifier/Modifier).dev.s7a.strata.modifier/onScroll(dev.s7a.strata.input/InputResult, kotlin/Function3<dev.s7a.strata.ui/UiSession, dev.s7a.strata.input/PointerEvent.Scroll, dev.s7a.strata.geometry/IntOffset, kotlin/Unit>): dev.s7a.strata.modifier/Modifier // dev.s7a.strata.modifier/onScroll|onScroll@dev.s7a.strata.modifier.Modifier(dev.s7a.strata.input.InputResult;kotlin.Function3<dev.s7a.strata.ui.UiSession,dev.s7a.strata.input.PointerEvent.Scroll,dev.s7a.strata.geometry.IntOffset,kotlin.Unit>){}[0]
+final fun (dev.s7a.strata.modifier/Modifier).dev.s7a.strata.modifier/onScroll(kotlin/Function1<dev.s7a.strata.ui/UiSession, kotlin/Unit>): dev.s7a.strata.modifier/Modifier // dev.s7a.strata.modifier/onScroll|onScroll@dev.s7a.strata.modifier.Modifier(kotlin.Function1<dev.s7a.strata.ui.UiSession,kotlin.Unit>){}[0]
+final fun (dev.s7a.strata.modifier/Modifier).dev.s7a.strata.modifier/onScroll(kotlin/Function3<dev.s7a.strata.ui/UiSession, dev.s7a.strata.input/PointerEvent.Scroll, dev.s7a.strata.geometry/IntOffset, dev.s7a.strata.input/InputResult>): dev.s7a.strata.modifier/Modifier // dev.s7a.strata.modifier/onScroll|onScroll@dev.s7a.strata.modifier.Modifier(kotlin.Function3<dev.s7a.strata.ui.UiSession,dev.s7a.strata.input.PointerEvent.Scroll,dev.s7a.strata.geometry.IntOffset,dev.s7a.strata.input.InputResult>){}[0]
+final fun (dev.s7a.strata.modifier/Modifier).dev.s7a.strata.modifier/onSliderChange(kotlin/Function2<dev.s7a.strata.ui/UiSession, kotlin/Double, kotlin/Unit>): dev.s7a.strata.modifier/Modifier // dev.s7a.strata.modifier/onSliderChange|onSliderChange@dev.s7a.strata.modifier.Modifier(kotlin.Function2<dev.s7a.strata.ui.UiSession,kotlin.Double,kotlin.Unit>){}[0]
+final fun (dev.s7a.strata.modifier/Modifier).dev.s7a.strata.modifier/onTextInput(dev.s7a.strata.input/InputResult, kotlin/Function2<dev.s7a.strata.ui/UiSession, dev.s7a.strata.input/TextInputEvent, kotlin/Unit>): dev.s7a.strata.modifier/Modifier // dev.s7a.strata.modifier/onTextInput|onTextInput@dev.s7a.strata.modifier.Modifier(dev.s7a.strata.input.InputResult;kotlin.Function2<dev.s7a.strata.ui.UiSession,dev.s7a.strata.input.TextInputEvent,kotlin.Unit>){}[0]
+final fun (dev.s7a.strata.modifier/Modifier).dev.s7a.strata.modifier/onTextInput(kotlin/Function2<dev.s7a.strata.ui/UiSession, dev.s7a.strata.input/TextInputEvent, dev.s7a.strata.input/InputResult>): dev.s7a.strata.modifier/Modifier // dev.s7a.strata.modifier/onTextInput|onTextInput@dev.s7a.strata.modifier.Modifier(kotlin.Function2<dev.s7a.strata.ui.UiSession,dev.s7a.strata.input.TextInputEvent,dev.s7a.strata.input.InputResult>){}[0]
+final fun (dev.s7a.strata.modifier/Modifier).dev.s7a.strata.modifier/onTrailingItemsRequested(kotlin/Function2<dev.s7a.strata.ui/UiSession, dev.s7a.strata.action/ListLoadRequest, kotlin/Unit>): dev.s7a.strata.modifier/Modifier // dev.s7a.strata.modifier/onTrailingItemsRequested|onTrailingItemsRequested@dev.s7a.strata.modifier.Modifier(kotlin.Function2<dev.s7a.strata.ui.UiSession,dev.s7a.strata.action.ListLoadRequest,kotlin.Unit>){}[0]
 final fun (dev.s7a.strata.modifier/Modifier).dev.s7a.strata.modifier/padding(dev.s7a.strata.geometry/Insets): dev.s7a.strata.modifier/Modifier // dev.s7a.strata.modifier/padding|padding@dev.s7a.strata.modifier.Modifier(dev.s7a.strata.geometry.Insets){}[0]
 final fun (dev.s7a.strata.modifier/Modifier).dev.s7a.strata.modifier/padding(kotlin/Int = ..., kotlin/Int = ..., kotlin/Int = ..., kotlin/Int = ...): dev.s7a.strata.modifier/Modifier // dev.s7a.strata.modifier/padding|padding@dev.s7a.strata.modifier.Modifier(kotlin.Int;kotlin.Int;kotlin.Int;kotlin.Int){}[0]
 final fun (dev.s7a.strata.modifier/Modifier).dev.s7a.strata.modifier/padding(kotlin/Int): dev.s7a.strata.modifier/Modifier // dev.s7a.strata.modifier/padding|padding@dev.s7a.strata.modifier.Modifier(kotlin.Int){}[0]
@@ -2646,9 +2976,9 @@ final fun <#A: kotlin/Any> (dev.s7a.strata.component/UiScope).dev.s7a.strata.com
 final fun <#A: kotlin/Any> (dev.s7a.strata.component/UiScope).dev.s7a.strata.component/CycleButton(dev.s7a.strata.component/CycleButtonState<#A>, kotlin/Int = ..., dev.s7a.strata.state/StateSource<kotlin/Boolean>, dev.s7a.strata.modifier/Modifier = ..., dev.s7a.strata.element/ElementKey<*>? = ..., kotlin/Function1<#A, dev.s7a.strata.text/UiText> = ...) // dev.s7a.strata.component/CycleButton|CycleButton@dev.s7a.strata.component.UiScope(dev.s7a.strata.component.CycleButtonState<0:0>;kotlin.Int;dev.s7a.strata.state.StateSource<kotlin.Boolean>;dev.s7a.strata.modifier.Modifier;dev.s7a.strata.element.ElementKey<*>?;kotlin.Function1<0:0,dev.s7a.strata.text.UiText>){0§<kotlin.Any>}[0]
 final fun <#A: kotlin/Any> (dev.s7a.strata.component/UiScope).dev.s7a.strata.component/CycleButton(dev.s7a.strata.component/CycleButtonState<#A>, kotlin/Int = ..., kotlin/Boolean = ..., dev.s7a.strata.modifier/Modifier = ..., dev.s7a.strata.element/ElementKey<*>? = ..., dev.s7a.strata.state/StateSource<kotlin/Function1<#A, dev.s7a.strata.text/UiText>>) // dev.s7a.strata.component/CycleButton|CycleButton@dev.s7a.strata.component.UiScope(dev.s7a.strata.component.CycleButtonState<0:0>;kotlin.Int;kotlin.Boolean;dev.s7a.strata.modifier.Modifier;dev.s7a.strata.element.ElementKey<*>?;dev.s7a.strata.state.StateSource<kotlin.Function1<0:0,dev.s7a.strata.text.UiText>>){0§<kotlin.Any>}[0]
 final fun <#A: kotlin/Any> (dev.s7a.strata.component/UiScope).dev.s7a.strata.component/CycleButton(dev.s7a.strata.component/CycleButtonState<#A>, kotlin/Int = ..., kotlin/Boolean = ..., dev.s7a.strata.modifier/Modifier = ..., dev.s7a.strata.element/ElementKey<*>? = ..., kotlin/Function1<#A, dev.s7a.strata.text/UiText> = ...) // dev.s7a.strata.component/CycleButton|CycleButton@dev.s7a.strata.component.UiScope(dev.s7a.strata.component.CycleButtonState<0:0>;kotlin.Int;kotlin.Boolean;dev.s7a.strata.modifier.Modifier;dev.s7a.strata.element.ElementKey<*>?;kotlin.Function1<0:0,dev.s7a.strata.text.UiText>){0§<kotlin.Any>}[0]
-final fun <#A: kotlin/Any> (dev.s7a.strata.modifier/Modifier).dev.s7a.strata.modifier/onAction(dev.s7a.strata.action/ActionKey<#A>, kotlin/Function1<#A, dev.s7a.strata.action/ActionResult>): dev.s7a.strata.modifier/Modifier // dev.s7a.strata.modifier/onAction|onAction@dev.s7a.strata.modifier.Modifier(dev.s7a.strata.action.ActionKey<0:0>;kotlin.Function1<0:0,dev.s7a.strata.action.ActionResult>){0§<kotlin.Any>}[0]
-final fun <#A: kotlin/Any> (dev.s7a.strata.modifier/Modifier).dev.s7a.strata.modifier/onCycle(kotlin/Function1<#A, kotlin/Unit>): dev.s7a.strata.modifier/Modifier // dev.s7a.strata.modifier/onCycle|onCycle@dev.s7a.strata.modifier.Modifier(kotlin.Function1<0:0,kotlin.Unit>){0§<kotlin.Any>}[0]
-final fun <#A: kotlin/Any> (dev.s7a.strata.modifier/Modifier).dev.s7a.strata.modifier/onSelectionChange(kotlin/Function1<#A, kotlin/Unit>): dev.s7a.strata.modifier/Modifier // dev.s7a.strata.modifier/onSelectionChange|onSelectionChange@dev.s7a.strata.modifier.Modifier(kotlin.Function1<0:0,kotlin.Unit>){0§<kotlin.Any>}[0]
+final fun <#A: kotlin/Any> (dev.s7a.strata.modifier/Modifier).dev.s7a.strata.modifier/onAction(dev.s7a.strata.action/ActionKey<#A>, kotlin/Function2<dev.s7a.strata.ui/UiSession, #A, dev.s7a.strata.action/ActionResult>): dev.s7a.strata.modifier/Modifier // dev.s7a.strata.modifier/onAction|onAction@dev.s7a.strata.modifier.Modifier(dev.s7a.strata.action.ActionKey<0:0>;kotlin.Function2<dev.s7a.strata.ui.UiSession,0:0,dev.s7a.strata.action.ActionResult>){0§<kotlin.Any>}[0]
+final fun <#A: kotlin/Any> (dev.s7a.strata.modifier/Modifier).dev.s7a.strata.modifier/onCycle(kotlin/Function2<dev.s7a.strata.ui/UiSession, #A, kotlin/Unit>): dev.s7a.strata.modifier/Modifier // dev.s7a.strata.modifier/onCycle|onCycle@dev.s7a.strata.modifier.Modifier(kotlin.Function2<dev.s7a.strata.ui.UiSession,0:0,kotlin.Unit>){0§<kotlin.Any>}[0]
+final fun <#A: kotlin/Any> (dev.s7a.strata.modifier/Modifier).dev.s7a.strata.modifier/onSelectionChange(kotlin/Function2<dev.s7a.strata.ui/UiSession, #A, kotlin/Unit>): dev.s7a.strata.modifier/Modifier // dev.s7a.strata.modifier/onSelectionChange|onSelectionChange@dev.s7a.strata.modifier.Modifier(kotlin.Function2<dev.s7a.strata.ui.UiSession,0:0,kotlin.Unit>){0§<kotlin.Any>}[0]
 final fun <#A: kotlin/Any?, #B: kotlin/Any?, #C: kotlin/Any?, #D: kotlin/Any?, #E: kotlin/Any?, #F: kotlin/Any?, #G: kotlin/Any?, #H: kotlin/Any?, #I: kotlin/Any?, #J: kotlin/Any?, #K: kotlin/Any?, #L: kotlin/Any?, #M: kotlin/Any?, #N: kotlin/Any?, #O: kotlin/Any?, #P: kotlin/Any?, #Q: kotlin/Any?, #R: kotlin/Any?, #S: kotlin/Any?, #T: kotlin/Any?, #U: kotlin/Any?, #V: kotlin/Any?> (dev.s7a.strata.component/UiScope).dev.s7a.strata.component/Observe(dev.s7a.strata.state/StateSource<#A>, dev.s7a.strata.state/StateSource<#B>, dev.s7a.strata.state/StateSource<#C>, dev.s7a.strata.state/StateSource<#D>, dev.s7a.strata.state/StateSource<#E>, dev.s7a.strata.state/StateSource<#F>, dev.s7a.strata.state/StateSource<#G>, dev.s7a.strata.state/StateSource<#H>, dev.s7a.strata.state/StateSource<#I>, dev.s7a.strata.state/StateSource<#J>, dev.s7a.strata.state/StateSource<#K>, dev.s7a.strata.state/StateSource<#L>, dev.s7a.strata.state/StateSource<#M>, dev.s7a.strata.state/StateSource<#N>, dev.s7a.strata.state/StateSource<#O>, dev.s7a.strata.state/StateSource<#P>, dev.s7a.strata.state/StateSource<#Q>, dev.s7a.strata.state/StateSource<#R>, dev.s7a.strata.state/StateSource<#S>, dev.s7a.strata.state/StateSource<#T>, dev.s7a.strata.state/StateSource<#U>, dev.s7a.strata.state/StateSource<#V>, dev.s7a.strata.modifier/Modifier = ..., dev.s7a.strata.element/ElementKey<*>? = ..., kotlin/Function23<dev.s7a.strata.component/UiScope, #A, #B, #C, #D, #E, #F, #G, #H, #I, #J, #K, #L, #M, #N, #O, #P, #Q, #R, #S, #T, #U, #V, kotlin/Unit>) // dev.s7a.strata.component/Observe|Observe@dev.s7a.strata.component.UiScope(dev.s7a.strata.state.StateSource<0:0>;dev.s7a.strata.state.StateSource<0:1>;dev.s7a.strata.state.StateSource<0:2>;dev.s7a.strata.state.StateSource<0:3>;dev.s7a.strata.state.StateSource<0:4>;dev.s7a.strata.state.StateSource<0:5>;dev.s7a.strata.state.StateSource<0:6>;dev.s7a.strata.state.StateSource<0:7>;dev.s7a.strata.state.StateSource<0:8>;dev.s7a.strata.state.StateSource<0:9>;dev.s7a.strata.state.StateSource<0:10>;dev.s7a.strata.state.StateSource<0:11>;dev.s7a.strata.state.StateSource<0:12>;dev.s7a.strata.state.StateSource<0:13>;dev.s7a.strata.state.StateSource<0:14>;dev.s7a.strata.state.StateSource<0:15>;dev.s7a.strata.state.StateSource<0:16>;dev.s7a.strata.state.StateSource<0:17>;dev.s7a.strata.state.StateSource<0:18>;dev.s7a.strata.state.StateSource<0:19>;dev.s7a.strata.state.StateSource<0:20>;dev.s7a.strata.state.StateSource<0:21>;dev.s7a.strata.modifier.Modifier;dev.s7a.strata.element.ElementKey<*>?;kotlin.Function23<dev.s7a.strata.component.UiScope,0:0,0:1,0:2,0:3,0:4,0:5,0:6,0:7,0:8,0:9,0:10,0:11,0:12,0:13,0:14,0:15,0:16,0:17,0:18,0:19,0:20,0:21,kotlin.Unit>){0§<kotlin.Any?>;1§<kotlin.Any?>;2§<kotlin.Any?>;3§<kotlin.Any?>;4§<kotlin.Any?>;5§<kotlin.Any?>;6§<kotlin.Any?>;7§<kotlin.Any?>;8§<kotlin.Any?>;9§<kotlin.Any?>;10§<kotlin.Any?>;11§<kotlin.Any?>;12§<kotlin.Any?>;13§<kotlin.Any?>;14§<kotlin.Any?>;15§<kotlin.Any?>;16§<kotlin.Any?>;17§<kotlin.Any?>;18§<kotlin.Any?>;19§<kotlin.Any?>;20§<kotlin.Any?>;21§<kotlin.Any?>}[0]
 final fun <#A: kotlin/Any?, #B: kotlin/Any?, #C: kotlin/Any?, #D: kotlin/Any?, #E: kotlin/Any?, #F: kotlin/Any?, #G: kotlin/Any?, #H: kotlin/Any?, #I: kotlin/Any?, #J: kotlin/Any?, #K: kotlin/Any?, #L: kotlin/Any?, #M: kotlin/Any?, #N: kotlin/Any?, #O: kotlin/Any?, #P: kotlin/Any?, #Q: kotlin/Any?, #R: kotlin/Any?, #S: kotlin/Any?, #T: kotlin/Any?, #U: kotlin/Any?> (dev.s7a.strata.component/UiScope).dev.s7a.strata.component/Observe(dev.s7a.strata.state/StateSource<#A>, dev.s7a.strata.state/StateSource<#B>, dev.s7a.strata.state/StateSource<#C>, dev.s7a.strata.state/StateSource<#D>, dev.s7a.strata.state/StateSource<#E>, dev.s7a.strata.state/StateSource<#F>, dev.s7a.strata.state/StateSource<#G>, dev.s7a.strata.state/StateSource<#H>, dev.s7a.strata.state/StateSource<#I>, dev.s7a.strata.state/StateSource<#J>, dev.s7a.strata.state/StateSource<#K>, dev.s7a.strata.state/StateSource<#L>, dev.s7a.strata.state/StateSource<#M>, dev.s7a.strata.state/StateSource<#N>, dev.s7a.strata.state/StateSource<#O>, dev.s7a.strata.state/StateSource<#P>, dev.s7a.strata.state/StateSource<#Q>, dev.s7a.strata.state/StateSource<#R>, dev.s7a.strata.state/StateSource<#S>, dev.s7a.strata.state/StateSource<#T>, dev.s7a.strata.state/StateSource<#U>, dev.s7a.strata.modifier/Modifier = ..., dev.s7a.strata.element/ElementKey<*>? = ..., kotlin/Function22<dev.s7a.strata.component/UiScope, #A, #B, #C, #D, #E, #F, #G, #H, #I, #J, #K, #L, #M, #N, #O, #P, #Q, #R, #S, #T, #U, kotlin/Unit>) // dev.s7a.strata.component/Observe|Observe@dev.s7a.strata.component.UiScope(dev.s7a.strata.state.StateSource<0:0>;dev.s7a.strata.state.StateSource<0:1>;dev.s7a.strata.state.StateSource<0:2>;dev.s7a.strata.state.StateSource<0:3>;dev.s7a.strata.state.StateSource<0:4>;dev.s7a.strata.state.StateSource<0:5>;dev.s7a.strata.state.StateSource<0:6>;dev.s7a.strata.state.StateSource<0:7>;dev.s7a.strata.state.StateSource<0:8>;dev.s7a.strata.state.StateSource<0:9>;dev.s7a.strata.state.StateSource<0:10>;dev.s7a.strata.state.StateSource<0:11>;dev.s7a.strata.state.StateSource<0:12>;dev.s7a.strata.state.StateSource<0:13>;dev.s7a.strata.state.StateSource<0:14>;dev.s7a.strata.state.StateSource<0:15>;dev.s7a.strata.state.StateSource<0:16>;dev.s7a.strata.state.StateSource<0:17>;dev.s7a.strata.state.StateSource<0:18>;dev.s7a.strata.state.StateSource<0:19>;dev.s7a.strata.state.StateSource<0:20>;dev.s7a.strata.modifier.Modifier;dev.s7a.strata.element.ElementKey<*>?;kotlin.Function22<dev.s7a.strata.component.UiScope,0:0,0:1,0:2,0:3,0:4,0:5,0:6,0:7,0:8,0:9,0:10,0:11,0:12,0:13,0:14,0:15,0:16,0:17,0:18,0:19,0:20,kotlin.Unit>){0§<kotlin.Any?>;1§<kotlin.Any?>;2§<kotlin.Any?>;3§<kotlin.Any?>;4§<kotlin.Any?>;5§<kotlin.Any?>;6§<kotlin.Any?>;7§<kotlin.Any?>;8§<kotlin.Any?>;9§<kotlin.Any?>;10§<kotlin.Any?>;11§<kotlin.Any?>;12§<kotlin.Any?>;13§<kotlin.Any?>;14§<kotlin.Any?>;15§<kotlin.Any?>;16§<kotlin.Any?>;17§<kotlin.Any?>;18§<kotlin.Any?>;19§<kotlin.Any?>;20§<kotlin.Any?>}[0]
 final fun <#A: kotlin/Any?, #B: kotlin/Any?, #C: kotlin/Any?, #D: kotlin/Any?, #E: kotlin/Any?, #F: kotlin/Any?, #G: kotlin/Any?, #H: kotlin/Any?, #I: kotlin/Any?, #J: kotlin/Any?, #K: kotlin/Any?, #L: kotlin/Any?, #M: kotlin/Any?, #N: kotlin/Any?, #O: kotlin/Any?, #P: kotlin/Any?, #Q: kotlin/Any?, #R: kotlin/Any?, #S: kotlin/Any?, #T: kotlin/Any?> (dev.s7a.strata.component/UiScope).dev.s7a.strata.component/Observe(dev.s7a.strata.state/StateSource<#A>, dev.s7a.strata.state/StateSource<#B>, dev.s7a.strata.state/StateSource<#C>, dev.s7a.strata.state/StateSource<#D>, dev.s7a.strata.state/StateSource<#E>, dev.s7a.strata.state/StateSource<#F>, dev.s7a.strata.state/StateSource<#G>, dev.s7a.strata.state/StateSource<#H>, dev.s7a.strata.state/StateSource<#I>, dev.s7a.strata.state/StateSource<#J>, dev.s7a.strata.state/StateSource<#K>, dev.s7a.strata.state/StateSource<#L>, dev.s7a.strata.state/StateSource<#M>, dev.s7a.strata.state/StateSource<#N>, dev.s7a.strata.state/StateSource<#O>, dev.s7a.strata.state/StateSource<#P>, dev.s7a.strata.state/StateSource<#Q>, dev.s7a.strata.state/StateSource<#R>, dev.s7a.strata.state/StateSource<#S>, dev.s7a.strata.state/StateSource<#T>, dev.s7a.strata.modifier/Modifier = ..., dev.s7a.strata.element/ElementKey<*>? = ..., kotlin/Function21<dev.s7a.strata.component/UiScope, #A, #B, #C, #D, #E, #F, #G, #H, #I, #J, #K, #L, #M, #N, #O, #P, #Q, #R, #S, #T, kotlin/Unit>) // dev.s7a.strata.component/Observe|Observe@dev.s7a.strata.component.UiScope(dev.s7a.strata.state.StateSource<0:0>;dev.s7a.strata.state.StateSource<0:1>;dev.s7a.strata.state.StateSource<0:2>;dev.s7a.strata.state.StateSource<0:3>;dev.s7a.strata.state.StateSource<0:4>;dev.s7a.strata.state.StateSource<0:5>;dev.s7a.strata.state.StateSource<0:6>;dev.s7a.strata.state.StateSource<0:7>;dev.s7a.strata.state.StateSource<0:8>;dev.s7a.strata.state.StateSource<0:9>;dev.s7a.strata.state.StateSource<0:10>;dev.s7a.strata.state.StateSource<0:11>;dev.s7a.strata.state.StateSource<0:12>;dev.s7a.strata.state.StateSource<0:13>;dev.s7a.strata.state.StateSource<0:14>;dev.s7a.strata.state.StateSource<0:15>;dev.s7a.strata.state.StateSource<0:16>;dev.s7a.strata.state.StateSource<0:17>;dev.s7a.strata.state.StateSource<0:18>;dev.s7a.strata.state.StateSource<0:19>;dev.s7a.strata.modifier.Modifier;dev.s7a.strata.element.ElementKey<*>?;kotlin.Function21<dev.s7a.strata.component.UiScope,0:0,0:1,0:2,0:3,0:4,0:5,0:6,0:7,0:8,0:9,0:10,0:11,0:12,0:13,0:14,0:15,0:16,0:17,0:18,0:19,kotlin.Unit>){0§<kotlin.Any?>;1§<kotlin.Any?>;2§<kotlin.Any?>;3§<kotlin.Any?>;4§<kotlin.Any?>;5§<kotlin.Any?>;6§<kotlin.Any?>;7§<kotlin.Any?>;8§<kotlin.Any?>;9§<kotlin.Any?>;10§<kotlin.Any?>;11§<kotlin.Any?>;12§<kotlin.Any?>;13§<kotlin.Any?>;14§<kotlin.Any?>;15§<kotlin.Any?>;16§<kotlin.Any?>;17§<kotlin.Any?>;18§<kotlin.Any?>;19§<kotlin.Any?>}[0]

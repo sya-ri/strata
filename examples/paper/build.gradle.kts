@@ -1,8 +1,10 @@
 group = "dev.s7a.strata.examples"
 
 dependencies {
-    compileOnly(project(":runtime:paper"))
+    compileOnly(project(":paper-api"))
     compileOnly(libs.paper.api)
+    // The companion client extension example registers native factories through the transport SPI.
+    compileOnly(project(":runtime:remote"))
     testImplementation(project(":runtime:remote"))
     testImplementation(libs.junit.jupiter)
     testRuntimeOnly(libs.junit.platform.launcher)

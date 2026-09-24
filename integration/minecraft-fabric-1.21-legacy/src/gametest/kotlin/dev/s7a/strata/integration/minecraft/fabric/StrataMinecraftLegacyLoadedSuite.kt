@@ -1,3 +1,5 @@
+@file:Suppress("DEPRECATION") // Compatibility overloads and regression coverage retain the deprecated screen entry points.
+
 package dev.s7a.strata.integration.minecraft.fabric
 
 import com.mojang.blaze3d.platform.NativeImage
@@ -342,6 +344,7 @@ internal class StrataMinecraftLegacyLoadedSuite {
                 stack != null && stack.`is`(Items.DIRT) && stack.count == itemCount
             }
 
+            runMinecraftUiSessionTest(context, output)
             runMinecraftCanvasSlotTest(context, profile, output, playerInventoryIndex)
             openPlayerInventoryScreen(context, profile, output)
             verifyPlayerInventoryRoundTrip(context, server, playerId)

@@ -256,7 +256,7 @@ dependencies {
 ```
 
 The version-matched runtimes are also available from [Modrinth](https://modrinth.com/mod/strata-ui).
-Declare it as a required dependency in the consuming Mod so `ScreenDefinition.open()` always has a presenter in production:
+Declare it as a required dependency in the consuming Mod so `UiDefinition.open()` always has a presenter in production:
 
 ```json
 {

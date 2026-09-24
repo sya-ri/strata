@@ -10,6 +10,8 @@ import net.minecraft.client.gui.components.AbstractButton
 import net.minecraft.client.gui.components.AbstractWidget
 import net.minecraft.client.gui.screens.worldselection.CreateWorldScreen
 import net.minecraft.network.chat.Component
+import net.minecraft.world.level.GameRules
+import net.minecraft.world.level.levelgen.presets.WorldPresets
 import org.lwjgl.glfw.GLFW
 import java.nio.file.Path
 import java.util.concurrent.CompletableFuture
@@ -131,6 +133,12 @@ internal class StandaloneMinecraftLoadedTestContext : MinecraftLoadedTestContext
             computeOnClient { minecraft ->
                 val screen = minecraft.screen as? CreateWorldScreen ?: error("The create-world screen is not active.")
                 screen.uiState.setName(WORLD_NAME)
+                screen.uiState.setWorldType(screen.uiState.normalPresetList.single { it.preset()?.`is`(WorldPresets.FLAT) == true })
+                screen.uiState.setSeed("1")
+                screen.uiState.setGenerateStructures(false)
+                screen.uiState.gameRules
+                    .getRule(GameRules.RULE_DOMOBSPAWNING)
+                    .set(false, null)
                 val targetFolder = screen.uiState.targetFolder
                 pressButton(screen, "selectWorld.create")
                 targetFolder

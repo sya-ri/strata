@@ -1,6 +1,9 @@
+@file:Suppress("DEPRECATION") // Exercises compatibility entry points and proxy routing.
+
 package dev.s7a.strata.runtime.velocity
 
 import com.velocitypowered.api.event.Continuation
+import com.velocitypowered.api.event.EventManager
 import com.velocitypowered.api.event.connection.PluginMessageEvent
 import com.velocitypowered.api.event.player.ServerPostConnectEvent
 import com.velocitypowered.api.event.proxy.ProxyInitializeEvent
@@ -32,6 +35,13 @@ import dev.s7a.strata.runtime.remote.RemoteProtocolException
 import dev.s7a.strata.runtime.remote.RemoteRegistry
 import dev.s7a.strata.runtime.remote.RemoteSessionStatus
 import dev.s7a.strata.screen.ScreenDefinition
+import dev.s7a.strata.spi.InternalStrataRuntimeApi
+import dev.s7a.strata.ui.UiDefinition
+import dev.s7a.strata.ui.UiPresentation
+import dev.s7a.strata.velocity.VelocityUi
+import dev.s7a.strata.velocity.event.StrataClientReadyEvent
+import dev.s7a.strata.velocity.event.StrataUiClosedEvent
+import dev.s7a.strata.velocity.event.StrataUiOpenedEvent
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertNotEquals
@@ -54,6 +64,25 @@ import java.util.concurrent.atomic.AtomicReference
  * Runs the actual Velocity plugin API, worker, routing, and common protocol against authenticated API doubles.
  */
 internal class VelocityScreensTest {
+    @Test
+    fun publicApiOpensHudAndEventsCanQueueSessionWork() {
+        Harness().use { fixture ->
+            fixture.negotiate()
+            assertTrue(fixture.events.poll(5, TimeUnit.SECONDS) is StrataClientReadyEvent)
+            val handle = VelocityUi.open(fixture.owner, fixture.player) { UiDefinition(presentation = UiPresentation.Hud) { Spacer() } }.get(5, TimeUnit.SECONDS)
+            val snapshot = fixture.nextMessage() as RemoteMessage.Snapshot
+            assertTrue(fixture.events.isEmpty())
+            fixture.acknowledge(snapshot)
+            val opened = fixture.events.poll(5, TimeUnit.SECONDS) as StrataUiOpenedEvent
+            assertEquals(handle, opened.session)
+            assertEquals(UiPresentation.Hud, opened.presentation)
+            VelocityUi.execute(fixture.owner) { opened.session.close() }.get(5, TimeUnit.SECONDS)
+            val closed = fixture.events.poll(5, TimeUnit.SECONDS) as StrataUiClosedEvent
+            assertEquals(opened.identity, closed.identity)
+            assertEquals(opened.ownerPlugin, closed.ownerPlugin)
+        }
+    }
+
     @Test
     fun boundsPendingApiWorkAndCompletesRequestsWhenShuttingDown() {
         Harness().use { fixture ->
@@ -172,7 +201,7 @@ internal class VelocityScreensTest {
             val first = VelocityScreens.open(fixture.owner, fixture.player) { ScreenDefinition("Owner") { Spacer() } }.get(5, TimeUnit.SECONDS)
             fixture.nextMessage()
             VelocityScreens.release(fixture.owner).get(5, TimeUnit.SECONDS)
-            assertEquals(RemoteSessionStatus.Closed(RemoteFailure.OwnerClosed), first.status)
+            assertEquals(RemoteSessionStatus.Closed(RemoteFailure.OwnerDisabled), first.status)
             fixture.nextMessage()
             val second = VelocityScreens.open(fixture.owner, fixture.player) { ScreenDefinition("Shutdown") { Spacer() } }.get(5, TimeUnit.SECONDS)
             fixture.nextMessage()
@@ -221,11 +250,20 @@ internal class VelocityScreensTest {
                 check(name in setOf("register", "unregister"))
                 null
             }
+        val events = LinkedBlockingQueue<Any>()
+        private val eventManager =
+            proxy(EventManager::class.java) { name, arguments ->
+                check(name == "fire")
+                val event = checkNotNull(arguments[0])
+                events.add(event)
+                CompletableFuture.completedFuture(event)
+            }
         private val server =
             proxy(ProxyServer::class.java) { name, _ ->
                 when (name) {
                     "getPluginManager" -> plugins
                     "getChannelRegistrar" -> registrar
+                    "getEventManager" -> eventManager
                     else -> error("Unexpected proxy API: $name")
                 }
             }
@@ -273,6 +311,12 @@ internal class VelocityScreensTest {
                 val packet = RemotePacket.decode(checkNotNull(outgoing.poll(5, TimeUnit.SECONDS)) { "Missing proxy output." }) as RemotePacket.Frame
                 client.receive(packet.bytes, 0)?.let { return it }
             }
+        }
+
+        @OptIn(InternalStrataRuntimeApi::class)
+        fun acknowledge(snapshot: RemoteMessage.Snapshot) {
+            client.send(RemoteMessage.ControlApplied(snapshot.session, checkNotNull(snapshot.control).sequence))
+            client.flush()
         }
 
         fun activate(snapshot: RemoteMessage.Snapshot) {

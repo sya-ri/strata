@@ -14,5 +14,5 @@ internal fun UiScope.actionButton(
     width: Int = 96,
     action: () -> Unit,
 ) {
-    Button(label, width = width, enabled = enabled, modifier = Modifier.Empty.onActivate(enabled = enabled, action = action))
+    Button(label, width = width, enabled = enabled, modifier = Modifier.Empty.onActivate(enabled = enabled) { action() })
 }

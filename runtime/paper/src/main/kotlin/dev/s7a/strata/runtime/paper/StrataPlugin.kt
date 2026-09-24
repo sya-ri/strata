@@ -1,7 +1,11 @@
+@file:OptIn(InternalStrataRuntimeApi::class)
+
 package dev.s7a.strata.runtime.paper
 
+import dev.s7a.strata.paper.PaperUi
 import dev.s7a.strata.runtime.remote.RemoteConnection
 import dev.s7a.strata.runtime.remote.RemoteScreenService
+import dev.s7a.strata.spi.InternalStrataRuntimeApi
 import org.bukkit.entity.Player
 import org.bukkit.event.EventHandler
 import org.bukkit.event.EventPriority
@@ -26,12 +30,14 @@ public class StrataPlugin :
     Listener,
     PluginMessageListener {
     private var screens: RemoteScreenService<Player, Plugin>? = null
+    private var uiRegistration: AutoCloseable? = null
     private var ticker: BukkitTask? = null
 
     override fun onEnable() {
         val service = paperScreenService(this)
         screens = service
         PaperScreens.install(service)
+        uiRegistration = PaperUi.install(PaperUiAdapter(service))
         server.messenger.registerOutgoingPluginChannel(this, RemoteConnection.CHANNEL)
         server.messenger.registerIncomingPluginChannel(this, RemoteConnection.CHANNEL, this)
         server.pluginManager.registerEvents(this, this)
@@ -41,6 +47,8 @@ public class StrataPlugin :
 
     override fun onDisable() {
         PaperScreens.install(null)
+        uiRegistration?.close()
+        uiRegistration = null
         ticker?.cancel()
         ticker = null
         val service = screens

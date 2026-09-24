@@ -27,6 +27,7 @@ extensions.configure<SourceSetContainer> {
             recordInputRuntime.resolve("java"),
         )
         java.srcDir(textureBlitRuntime.resolve("java"))
+        java.exclude { it.file == legacyRuntime.resolve("java/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreenAccess.java") }
     }
 }
 

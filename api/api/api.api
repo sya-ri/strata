@@ -1,5 +1,5 @@
 public final class dev/s7a/strata/action/ActionDispatcher {
-	public final fun dispatch (Ldev/s7a/strata/action/ActionKey;Ljava/lang/Object;)Ldev/s7a/strata/action/ActionResult;
+	public final fun dispatch (Ldev/s7a/strata/ui/UiSession;Ldev/s7a/strata/action/ActionKey;Ljava/lang/Object;)Ldev/s7a/strata/action/ActionResult;
 }
 
 public final class dev/s7a/strata/action/ActionKey {
@@ -1469,13 +1469,13 @@ public final class dev/s7a/strata/layout/VerticalAlignment : java/lang/Enum {
 
 public final class dev/s7a/strata/modifier/ActionExtensionsKt {
 	public static final fun actionDispatcher (Ldev/s7a/strata/modifier/Modifier;)Ldev/s7a/strata/action/ActionDispatcher;
-	public static final fun onAction (Ldev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/action/ActionKey;Lkotlin/jvm/functions/Function1;)Ldev/s7a/strata/modifier/Modifier;
+	public static final fun onAction (Ldev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/action/ActionKey;Lkotlin/jvm/functions/Function2;)Ldev/s7a/strata/modifier/Modifier;
 }
 
 public final class dev/s7a/strata/modifier/ActivationExtensionsKt {
-	public static final fun onActivate (Ldev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/state/StateSource;Lkotlin/jvm/functions/Function0;)Ldev/s7a/strata/modifier/Modifier;
-	public static final fun onActivate (Ldev/s7a/strata/modifier/Modifier;Lkotlin/jvm/functions/Function0;)Ldev/s7a/strata/modifier/Modifier;
-	public static final fun onActivate (Ldev/s7a/strata/modifier/Modifier;ZLkotlin/jvm/functions/Function0;)Ldev/s7a/strata/modifier/Modifier;
+	public static final fun onActivate (Ldev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/state/StateSource;Lkotlin/jvm/functions/Function1;)Ldev/s7a/strata/modifier/Modifier;
+	public static final fun onActivate (Ldev/s7a/strata/modifier/Modifier;Lkotlin/jvm/functions/Function1;)Ldev/s7a/strata/modifier/Modifier;
+	public static final fun onActivate (Ldev/s7a/strata/modifier/Modifier;ZLkotlin/jvm/functions/Function1;)Ldev/s7a/strata/modifier/Modifier;
 }
 
 public final class dev/s7a/strata/modifier/BackgroundExtensionsKt {
@@ -1483,52 +1483,52 @@ public final class dev/s7a/strata/modifier/BackgroundExtensionsKt {
 }
 
 public final class dev/s7a/strata/modifier/ComponentActionExtensionsKt {
-	public static final fun onCheckedChange (Ldev/s7a/strata/modifier/Modifier;Lkotlin/jvm/functions/Function1;)Ldev/s7a/strata/modifier/Modifier;
-	public static final fun onCycle (Ldev/s7a/strata/modifier/Modifier;Lkotlin/jvm/functions/Function1;)Ldev/s7a/strata/modifier/Modifier;
-	public static final fun onLeadingItemsRequested (Ldev/s7a/strata/modifier/Modifier;Lkotlin/jvm/functions/Function1;)Ldev/s7a/strata/modifier/Modifier;
-	public static final fun onSelectionChange (Ldev/s7a/strata/modifier/Modifier;Lkotlin/jvm/functions/Function1;)Ldev/s7a/strata/modifier/Modifier;
-	public static final fun onSliderChange (Ldev/s7a/strata/modifier/Modifier;Lkotlin/jvm/functions/Function1;)Ldev/s7a/strata/modifier/Modifier;
-	public static final fun onTrailingItemsRequested (Ldev/s7a/strata/modifier/Modifier;Lkotlin/jvm/functions/Function1;)Ldev/s7a/strata/modifier/Modifier;
+	public static final fun onCheckedChange (Ldev/s7a/strata/modifier/Modifier;Lkotlin/jvm/functions/Function2;)Ldev/s7a/strata/modifier/Modifier;
+	public static final fun onCycle (Ldev/s7a/strata/modifier/Modifier;Lkotlin/jvm/functions/Function2;)Ldev/s7a/strata/modifier/Modifier;
+	public static final fun onLeadingItemsRequested (Ldev/s7a/strata/modifier/Modifier;Lkotlin/jvm/functions/Function2;)Ldev/s7a/strata/modifier/Modifier;
+	public static final fun onSelectionChange (Ldev/s7a/strata/modifier/Modifier;Lkotlin/jvm/functions/Function2;)Ldev/s7a/strata/modifier/Modifier;
+	public static final fun onSliderChange (Ldev/s7a/strata/modifier/Modifier;Lkotlin/jvm/functions/Function2;)Ldev/s7a/strata/modifier/Modifier;
+	public static final fun onTrailingItemsRequested (Ldev/s7a/strata/modifier/Modifier;Lkotlin/jvm/functions/Function2;)Ldev/s7a/strata/modifier/Modifier;
 }
 
 public final class dev/s7a/strata/modifier/DeclaredKeyboardInputExtensionsKt {
-	public static final fun onKeyEvent (Ldev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/input/InputResult;Ldev/s7a/strata/input/KeyboardInputFilter;Lkotlin/jvm/functions/Function1;)Ldev/s7a/strata/modifier/Modifier;
-	public static synthetic fun onKeyEvent$default (Ldev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/input/InputResult;Ldev/s7a/strata/input/KeyboardInputFilter;Lkotlin/jvm/functions/Function1;ILjava/lang/Object;)Ldev/s7a/strata/modifier/Modifier;
-	public static final fun onKeyPress (Ldev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/input/InputResult;Ldev/s7a/strata/input/KeyboardInputFilter;Lkotlin/jvm/functions/Function1;)Ldev/s7a/strata/modifier/Modifier;
-	public static synthetic fun onKeyPress$default (Ldev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/input/InputResult;Ldev/s7a/strata/input/KeyboardInputFilter;Lkotlin/jvm/functions/Function1;ILjava/lang/Object;)Ldev/s7a/strata/modifier/Modifier;
-	public static final fun onKeyRelease (Ldev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/input/InputResult;Ldev/s7a/strata/input/KeyboardInputFilter;Lkotlin/jvm/functions/Function1;)Ldev/s7a/strata/modifier/Modifier;
-	public static synthetic fun onKeyRelease$default (Ldev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/input/InputResult;Ldev/s7a/strata/input/KeyboardInputFilter;Lkotlin/jvm/functions/Function1;ILjava/lang/Object;)Ldev/s7a/strata/modifier/Modifier;
+	public static final fun onKeyEvent (Ldev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/input/InputResult;Ldev/s7a/strata/input/KeyboardInputFilter;Lkotlin/jvm/functions/Function2;)Ldev/s7a/strata/modifier/Modifier;
+	public static synthetic fun onKeyEvent$default (Ldev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/input/InputResult;Ldev/s7a/strata/input/KeyboardInputFilter;Lkotlin/jvm/functions/Function2;ILjava/lang/Object;)Ldev/s7a/strata/modifier/Modifier;
+	public static final fun onKeyPress (Ldev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/input/InputResult;Ldev/s7a/strata/input/KeyboardInputFilter;Lkotlin/jvm/functions/Function2;)Ldev/s7a/strata/modifier/Modifier;
+	public static synthetic fun onKeyPress$default (Ldev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/input/InputResult;Ldev/s7a/strata/input/KeyboardInputFilter;Lkotlin/jvm/functions/Function2;ILjava/lang/Object;)Ldev/s7a/strata/modifier/Modifier;
+	public static final fun onKeyRelease (Ldev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/input/InputResult;Ldev/s7a/strata/input/KeyboardInputFilter;Lkotlin/jvm/functions/Function2;)Ldev/s7a/strata/modifier/Modifier;
+	public static synthetic fun onKeyRelease$default (Ldev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/input/InputResult;Ldev/s7a/strata/input/KeyboardInputFilter;Lkotlin/jvm/functions/Function2;ILjava/lang/Object;)Ldev/s7a/strata/modifier/Modifier;
 }
 
 public final class dev/s7a/strata/modifier/DeclaredPointerInputExtensionsKt {
-	public static final fun onCapturedPointerEvent (Ldev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/input/PointerButton;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function2;)Ldev/s7a/strata/modifier/Modifier;
-	public static final fun onDrag (Ldev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/input/InputResult;Ldev/s7a/strata/input/PointerButton;Lkotlin/jvm/functions/Function2;)Ldev/s7a/strata/modifier/Modifier;
-	public static synthetic fun onDrag$default (Ldev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/input/InputResult;Ldev/s7a/strata/input/PointerButton;Lkotlin/jvm/functions/Function2;ILjava/lang/Object;)Ldev/s7a/strata/modifier/Modifier;
-	public static final fun onMove (Ldev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/input/InputResult;Lkotlin/jvm/functions/Function2;)Ldev/s7a/strata/modifier/Modifier;
-	public static final fun onPointerEvent (Ldev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/input/InputResult;Lkotlin/jvm/functions/Function2;)Ldev/s7a/strata/modifier/Modifier;
-	public static final fun onPress (Ldev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/input/InputResult;Ldev/s7a/strata/input/PointerButton;Lkotlin/jvm/functions/Function2;)Ldev/s7a/strata/modifier/Modifier;
-	public static synthetic fun onPress$default (Ldev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/input/InputResult;Ldev/s7a/strata/input/PointerButton;Lkotlin/jvm/functions/Function2;ILjava/lang/Object;)Ldev/s7a/strata/modifier/Modifier;
-	public static final fun onRelease (Ldev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/input/InputResult;Ldev/s7a/strata/input/PointerButton;Lkotlin/jvm/functions/Function2;)Ldev/s7a/strata/modifier/Modifier;
-	public static synthetic fun onRelease$default (Ldev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/input/InputResult;Ldev/s7a/strata/input/PointerButton;Lkotlin/jvm/functions/Function2;ILjava/lang/Object;)Ldev/s7a/strata/modifier/Modifier;
-	public static final fun onScroll (Ldev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/input/InputResult;Lkotlin/jvm/functions/Function2;)Ldev/s7a/strata/modifier/Modifier;
+	public static final fun onCapturedPointerEvent (Ldev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/input/PointerButton;Lkotlin/jvm/functions/Function2;Lkotlin/jvm/functions/Function3;)Ldev/s7a/strata/modifier/Modifier;
+	public static final fun onDrag (Ldev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/input/InputResult;Ldev/s7a/strata/input/PointerButton;Lkotlin/jvm/functions/Function3;)Ldev/s7a/strata/modifier/Modifier;
+	public static synthetic fun onDrag$default (Ldev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/input/InputResult;Ldev/s7a/strata/input/PointerButton;Lkotlin/jvm/functions/Function3;ILjava/lang/Object;)Ldev/s7a/strata/modifier/Modifier;
+	public static final fun onMove (Ldev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/input/InputResult;Lkotlin/jvm/functions/Function3;)Ldev/s7a/strata/modifier/Modifier;
+	public static final fun onPointerEvent (Ldev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/input/InputResult;Lkotlin/jvm/functions/Function3;)Ldev/s7a/strata/modifier/Modifier;
+	public static final fun onPress (Ldev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/input/InputResult;Ldev/s7a/strata/input/PointerButton;Lkotlin/jvm/functions/Function3;)Ldev/s7a/strata/modifier/Modifier;
+	public static synthetic fun onPress$default (Ldev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/input/InputResult;Ldev/s7a/strata/input/PointerButton;Lkotlin/jvm/functions/Function3;ILjava/lang/Object;)Ldev/s7a/strata/modifier/Modifier;
+	public static final fun onRelease (Ldev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/input/InputResult;Ldev/s7a/strata/input/PointerButton;Lkotlin/jvm/functions/Function3;)Ldev/s7a/strata/modifier/Modifier;
+	public static synthetic fun onRelease$default (Ldev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/input/InputResult;Ldev/s7a/strata/input/PointerButton;Lkotlin/jvm/functions/Function3;ILjava/lang/Object;)Ldev/s7a/strata/modifier/Modifier;
+	public static final fun onScroll (Ldev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/input/InputResult;Lkotlin/jvm/functions/Function3;)Ldev/s7a/strata/modifier/Modifier;
 }
 
 public final class dev/s7a/strata/modifier/DeclaredTextInputExtensionsKt {
-	public static final fun onCharacterInput (Ldev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/input/InputResult;Lkotlin/jvm/functions/Function1;)Ldev/s7a/strata/modifier/Modifier;
-	public static final fun onPreedit (Ldev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/input/InputResult;Lkotlin/jvm/functions/Function1;)Ldev/s7a/strata/modifier/Modifier;
-	public static final fun onTextInput (Ldev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/input/InputResult;Lkotlin/jvm/functions/Function1;)Ldev/s7a/strata/modifier/Modifier;
+	public static final fun onCharacterInput (Ldev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/input/InputResult;Lkotlin/jvm/functions/Function2;)Ldev/s7a/strata/modifier/Modifier;
+	public static final fun onPreedit (Ldev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/input/InputResult;Lkotlin/jvm/functions/Function2;)Ldev/s7a/strata/modifier/Modifier;
+	public static final fun onTextInput (Ldev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/input/InputResult;Lkotlin/jvm/functions/Function2;)Ldev/s7a/strata/modifier/Modifier;
 }
 
 public final class dev/s7a/strata/modifier/FocusedInputExtensionsKt {
 	public static final fun focusable (Ldev/s7a/strata/modifier/Modifier;)Ldev/s7a/strata/modifier/Modifier;
 	public static final fun initialFocus (Ldev/s7a/strata/modifier/Modifier;)Ldev/s7a/strata/modifier/Modifier;
-	public static final fun onCharacterInput (Ldev/s7a/strata/modifier/Modifier;Lkotlin/jvm/functions/Function1;)Ldev/s7a/strata/modifier/Modifier;
-	public static final fun onFocusChanged (Ldev/s7a/strata/modifier/Modifier;Lkotlin/jvm/functions/Function1;)Ldev/s7a/strata/modifier/Modifier;
-	public static final fun onKeyEvent (Ldev/s7a/strata/modifier/Modifier;Lkotlin/jvm/functions/Function1;)Ldev/s7a/strata/modifier/Modifier;
-	public static final fun onKeyPress (Ldev/s7a/strata/modifier/Modifier;Lkotlin/jvm/functions/Function1;)Ldev/s7a/strata/modifier/Modifier;
-	public static final fun onKeyRelease (Ldev/s7a/strata/modifier/Modifier;Lkotlin/jvm/functions/Function1;)Ldev/s7a/strata/modifier/Modifier;
-	public static final fun onPreedit (Ldev/s7a/strata/modifier/Modifier;Lkotlin/jvm/functions/Function1;)Ldev/s7a/strata/modifier/Modifier;
-	public static final fun onTextInput (Ldev/s7a/strata/modifier/Modifier;Lkotlin/jvm/functions/Function1;)Ldev/s7a/strata/modifier/Modifier;
+	public static final fun onCharacterInput (Ldev/s7a/strata/modifier/Modifier;Lkotlin/jvm/functions/Function2;)Ldev/s7a/strata/modifier/Modifier;
+	public static final fun onFocusChanged (Ldev/s7a/strata/modifier/Modifier;Lkotlin/jvm/functions/Function2;)Ldev/s7a/strata/modifier/Modifier;
+	public static final fun onKeyEvent (Ldev/s7a/strata/modifier/Modifier;Lkotlin/jvm/functions/Function2;)Ldev/s7a/strata/modifier/Modifier;
+	public static final fun onKeyPress (Ldev/s7a/strata/modifier/Modifier;Lkotlin/jvm/functions/Function2;)Ldev/s7a/strata/modifier/Modifier;
+	public static final fun onKeyRelease (Ldev/s7a/strata/modifier/Modifier;Lkotlin/jvm/functions/Function2;)Ldev/s7a/strata/modifier/Modifier;
+	public static final fun onPreedit (Ldev/s7a/strata/modifier/Modifier;Lkotlin/jvm/functions/Function2;)Ldev/s7a/strata/modifier/Modifier;
+	public static final fun onTextInput (Ldev/s7a/strata/modifier/Modifier;Lkotlin/jvm/functions/Function2;)Ldev/s7a/strata/modifier/Modifier;
 }
 
 public final class dev/s7a/strata/modifier/ImageBackgroundModifiers {
@@ -1585,22 +1585,22 @@ public final class dev/s7a/strata/modifier/PanZoomExtensionsKt {
 }
 
 public final class dev/s7a/strata/modifier/PointerDragExtensionsKt {
-	public static final fun onDrag (Ldev/s7a/strata/modifier/Modifier;Lkotlin/jvm/functions/Function0;)Ldev/s7a/strata/modifier/Modifier;
-	public static final fun onDrag (Ldev/s7a/strata/modifier/Modifier;Lkotlin/jvm/functions/Function2;)Ldev/s7a/strata/modifier/Modifier;
+	public static final fun onDrag (Ldev/s7a/strata/modifier/Modifier;Lkotlin/jvm/functions/Function1;)Ldev/s7a/strata/modifier/Modifier;
+	public static final fun onDrag (Ldev/s7a/strata/modifier/Modifier;Lkotlin/jvm/functions/Function3;)Ldev/s7a/strata/modifier/Modifier;
 }
 
 public final class dev/s7a/strata/modifier/PointerInputExtensionsKt {
-	public static final fun onCapturedPointerEvent (Ldev/s7a/strata/modifier/Modifier;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function2;)Ldev/s7a/strata/modifier/Modifier;
-	public static final fun onHover (Ldev/s7a/strata/modifier/Modifier;Lkotlin/jvm/functions/Function1;)Ldev/s7a/strata/modifier/Modifier;
-	public static final fun onMove (Ldev/s7a/strata/modifier/Modifier;Lkotlin/jvm/functions/Function0;)Ldev/s7a/strata/modifier/Modifier;
-	public static final fun onMove (Ldev/s7a/strata/modifier/Modifier;Lkotlin/jvm/functions/Function2;)Ldev/s7a/strata/modifier/Modifier;
-	public static final fun onPointerEvent (Ldev/s7a/strata/modifier/Modifier;Lkotlin/jvm/functions/Function2;)Ldev/s7a/strata/modifier/Modifier;
-	public static final fun onPress (Ldev/s7a/strata/modifier/Modifier;Lkotlin/jvm/functions/Function0;)Ldev/s7a/strata/modifier/Modifier;
-	public static final fun onPress (Ldev/s7a/strata/modifier/Modifier;Lkotlin/jvm/functions/Function2;)Ldev/s7a/strata/modifier/Modifier;
-	public static final fun onRelease (Ldev/s7a/strata/modifier/Modifier;Lkotlin/jvm/functions/Function0;)Ldev/s7a/strata/modifier/Modifier;
-	public static final fun onRelease (Ldev/s7a/strata/modifier/Modifier;Lkotlin/jvm/functions/Function2;)Ldev/s7a/strata/modifier/Modifier;
-	public static final fun onScroll (Ldev/s7a/strata/modifier/Modifier;Lkotlin/jvm/functions/Function0;)Ldev/s7a/strata/modifier/Modifier;
-	public static final fun onScroll (Ldev/s7a/strata/modifier/Modifier;Lkotlin/jvm/functions/Function2;)Ldev/s7a/strata/modifier/Modifier;
+	public static final fun onCapturedPointerEvent (Ldev/s7a/strata/modifier/Modifier;Lkotlin/jvm/functions/Function2;Lkotlin/jvm/functions/Function3;)Ldev/s7a/strata/modifier/Modifier;
+	public static final fun onHover (Ldev/s7a/strata/modifier/Modifier;Lkotlin/jvm/functions/Function2;)Ldev/s7a/strata/modifier/Modifier;
+	public static final fun onMove (Ldev/s7a/strata/modifier/Modifier;Lkotlin/jvm/functions/Function1;)Ldev/s7a/strata/modifier/Modifier;
+	public static final fun onMove (Ldev/s7a/strata/modifier/Modifier;Lkotlin/jvm/functions/Function3;)Ldev/s7a/strata/modifier/Modifier;
+	public static final fun onPointerEvent (Ldev/s7a/strata/modifier/Modifier;Lkotlin/jvm/functions/Function3;)Ldev/s7a/strata/modifier/Modifier;
+	public static final fun onPress (Ldev/s7a/strata/modifier/Modifier;Lkotlin/jvm/functions/Function1;)Ldev/s7a/strata/modifier/Modifier;
+	public static final fun onPress (Ldev/s7a/strata/modifier/Modifier;Lkotlin/jvm/functions/Function3;)Ldev/s7a/strata/modifier/Modifier;
+	public static final fun onRelease (Ldev/s7a/strata/modifier/Modifier;Lkotlin/jvm/functions/Function1;)Ldev/s7a/strata/modifier/Modifier;
+	public static final fun onRelease (Ldev/s7a/strata/modifier/Modifier;Lkotlin/jvm/functions/Function3;)Ldev/s7a/strata/modifier/Modifier;
+	public static final fun onScroll (Ldev/s7a/strata/modifier/Modifier;Lkotlin/jvm/functions/Function1;)Ldev/s7a/strata/modifier/Modifier;
+	public static final fun onScroll (Ldev/s7a/strata/modifier/Modifier;Lkotlin/jvm/functions/Function3;)Ldev/s7a/strata/modifier/Modifier;
 }
 
 public final class dev/s7a/strata/modifier/ScaleToFitExtensionsKt {
@@ -1787,7 +1787,9 @@ public abstract class dev/s7a/strata/node/ModifierNode : dev/s7a/strata/node/Nod
 
 public abstract class dev/s7a/strata/node/Node {
 	public fun <init> ()V
-	public final fun bindRuntime (Lkotlin/jvm/functions/Function1;)Lkotlin/jvm/functions/Function0;
+	public final fun bindRuntime (Ldev/s7a/strata/ui/UiSession;Lkotlin/jvm/functions/Function1;)Lkotlin/jvm/functions/Function0;
+	public static synthetic fun bindRuntime$default (Ldev/s7a/strata/node/Node;Ldev/s7a/strata/ui/UiSession;Lkotlin/jvm/functions/Function1;ILjava/lang/Object;)Lkotlin/jvm/functions/Function0;
+	protected final fun getUiSession ()Ldev/s7a/strata/ui/UiSession;
 	protected final fun invalidate-Kf-UNOA (I)V
 }
 
@@ -1911,20 +1913,20 @@ public final class dev/s7a/strata/projection/DeclarationProjection {
 }
 
 public final class dev/s7a/strata/projection/ProjectionAction {
-	public fun <init> (Ldev/s7a/strata/projection/ProjectionType;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function1;)V
-	public final fun dispatch (Ldev/s7a/strata/projection/ProjectionValue;)V
+	public fun <init> (Ldev/s7a/strata/projection/ProjectionType;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function2;)V
+	public final fun dispatch (Ldev/s7a/strata/ui/UiSession;Ldev/s7a/strata/projection/ProjectionValue;)V
 	public final fun getType ()Ldev/s7a/strata/projection/ProjectionType;
-	public final fun prepare (Ldev/s7a/strata/projection/ProjectionValue;)Lkotlin/jvm/functions/Function0;
+	public final fun prepare (Ldev/s7a/strata/projection/ProjectionValue;)Lkotlin/jvm/functions/Function1;
 }
 
 public final class dev/s7a/strata/projection/ProjectionBinding {
-	public fun <init> (Ldev/s7a/strata/projection/ProjectionType;Ljava/lang/Object;Lkotlin/jvm/functions/Function0;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function1;)V
+	public fun <init> (Ldev/s7a/strata/projection/ProjectionType;Ljava/lang/Object;Lkotlin/jvm/functions/Function0;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function2;)V
 	public final fun getDecode ()Lkotlin/jvm/functions/Function1;
 	public final fun getEncode ()Lkotlin/jvm/functions/Function1;
 	public final fun getIdentity ()Ljava/lang/Object;
 	public final fun getRead ()Lkotlin/jvm/functions/Function0;
 	public final fun getType ()Ldev/s7a/strata/projection/ProjectionType;
-	public final fun getWrite ()Lkotlin/jvm/functions/Function1;
+	public final fun getWrite ()Lkotlin/jvm/functions/Function2;
 }
 
 public final class dev/s7a/strata/projection/ProjectionFields {
@@ -2170,6 +2172,7 @@ public final class dev/s7a/strata/screen/ScreenDefinition : java/lang/AutoClosea
 	public synthetic fun <init> (Ldev/s7a/strata/text/UiText;ZLkotlin/jvm/functions/Function1;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public fun <init> (Ljava/lang/String;ZLkotlin/jvm/functions/Function1;)V
 	public synthetic fun <init> (Ljava/lang/String;ZLkotlin/jvm/functions/Function1;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun asUiDefinition ()Ldev/s7a/strata/ui/UiDefinition;
 	public fun close ()V
 	public final fun open ()V
 	public final fun transfer ()Ldev/s7a/strata/screen/ScreenDefinitionPayload;
@@ -2380,6 +2383,16 @@ public final class dev/s7a/strata/spi/ScreenPresenters {
 	public static final field INSTANCE Ldev/s7a/strata/spi/ScreenPresenters;
 	public final fun install (Ldev/s7a/strata/spi/ScreenPresenter;)Ldev/s7a/strata/spi/ScreenPresenterRegistration;
 	public final fun present (Ldev/s7a/strata/screen/ScreenDefinition;)V
+}
+
+public abstract interface class dev/s7a/strata/spi/UiPresenter {
+	public abstract fun present (Ldev/s7a/strata/ui/UiDefinition;)Ldev/s7a/strata/ui/UiSession;
+}
+
+public final class dev/s7a/strata/spi/UiPresenters {
+	public static final field INSTANCE Ldev/s7a/strata/spi/UiPresenters;
+	public final fun install (Ldev/s7a/strata/spi/UiPresenter;)Ljava/lang/AutoCloseable;
+	public final fun present (Ldev/s7a/strata/ui/UiDefinition;)Ldev/s7a/strata/ui/UiSession;
 }
 
 public abstract interface class dev/s7a/strata/state/DerivedStateSource : dev/s7a/strata/state/StateSource {
@@ -2670,5 +2683,261 @@ public final class dev/s7a/strata/text/UiTextArgument$Text : dev/s7a/strata/text
 
 public final class dev/s7a/strata/text/UiTextExtensionsKt {
 	public static final fun withFont (Ldev/s7a/strata/text/UiText;Ldev/s7a/strata/resource/ResourceId;)Ldev/s7a/strata/text/UiText;
+}
+
+public final class dev/s7a/strata/ui/UiCategory {
+	public fun <init> (Ldev/s7a/strata/resource/ResourceId;)V
+	public final fun component1 ()Ldev/s7a/strata/resource/ResourceId;
+	public final fun copy (Ldev/s7a/strata/resource/ResourceId;)Ldev/s7a/strata/ui/UiCategory;
+	public static synthetic fun copy$default (Ldev/s7a/strata/ui/UiCategory;Ldev/s7a/strata/resource/ResourceId;ILjava/lang/Object;)Ldev/s7a/strata/ui/UiCategory;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getId ()Ldev/s7a/strata/resource/ResourceId;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class dev/s7a/strata/ui/UiClientCapabilities {
+	public fun <init> (Ljava/util/Set;I)V
+	public final fun getHudLimit ()I
+	public final fun getTypes ()Ljava/util/Set;
+}
+
+public final class dev/s7a/strata/ui/UiCloseReason : java/lang/Enum {
+	public static final field Closed Ldev/s7a/strata/ui/UiCloseReason;
+	public static final field ContainerChanged Ldev/s7a/strata/ui/UiCloseReason;
+	public static final field Disconnected Ldev/s7a/strata/ui/UiCloseReason;
+	public static final field Failed Ldev/s7a/strata/ui/UiCloseReason;
+	public static final field OwnerDisabled Ldev/s7a/strata/ui/UiCloseReason;
+	public static final field Replaced Ldev/s7a/strata/ui/UiCloseReason;
+	public static final field ResourceLimit Ldev/s7a/strata/ui/UiCloseReason;
+	public static final field Unsupported Ldev/s7a/strata/ui/UiCloseReason;
+	public static final field Visibility Ldev/s7a/strata/ui/UiCloseReason;
+	public static final field WorldExited Ldev/s7a/strata/ui/UiCloseReason;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public static fun valueOf (Ljava/lang/String;)Ldev/s7a/strata/ui/UiCloseReason;
+	public static fun values ()[Ldev/s7a/strata/ui/UiCloseReason;
+}
+
+public final class dev/s7a/strata/ui/UiDefinition : java/lang/AutoCloseable {
+	public fun <init> (Ldev/s7a/strata/text/UiText;Ldev/s7a/strata/ui/UiPresentation;Ldev/s7a/strata/ui/UiCategory;Ldev/s7a/strata/ui/UiInputPolicy;Ldev/s7a/strata/ui/UiVisibilityPolicy;IZLkotlin/jvm/functions/Function1;)V
+	public synthetic fun <init> (Ldev/s7a/strata/text/UiText;Ldev/s7a/strata/ui/UiPresentation;Ldev/s7a/strata/ui/UiCategory;Ldev/s7a/strata/ui/UiInputPolicy;Ldev/s7a/strata/ui/UiVisibilityPolicy;IZLkotlin/jvm/functions/Function1;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public fun <init> (Ljava/lang/String;Ldev/s7a/strata/ui/UiPresentation;Ldev/s7a/strata/ui/UiCategory;Ldev/s7a/strata/ui/UiInputPolicy;Ldev/s7a/strata/ui/UiVisibilityPolicy;IZLkotlin/jvm/functions/Function1;)V
+	public synthetic fun <init> (Ljava/lang/String;Ldev/s7a/strata/ui/UiPresentation;Ldev/s7a/strata/ui/UiCategory;Ldev/s7a/strata/ui/UiInputPolicy;Ldev/s7a/strata/ui/UiVisibilityPolicy;IZLkotlin/jvm/functions/Function1;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public fun close ()V
+	public final fun getCategory ()Ldev/s7a/strata/ui/UiCategory;
+	public final fun getHudOrder ()I
+	public final fun getInputPolicy ()Ldev/s7a/strata/ui/UiInputPolicy;
+	public final fun getPausesGame ()Z
+	public final fun getPresentation ()Ldev/s7a/strata/ui/UiPresentation;
+	public final fun getVisibility ()Ldev/s7a/strata/ui/UiVisibilityPolicy;
+	public final fun open ()Ldev/s7a/strata/ui/UiSession;
+	public final fun transfer ()Ldev/s7a/strata/ui/UiDefinitionPayload;
+}
+
+public final class dev/s7a/strata/ui/UiDefinitionPayload {
+	public final fun getCategory ()Ldev/s7a/strata/ui/UiCategory;
+	public final fun getContent ()Lkotlin/jvm/functions/Function1;
+	public final fun getHudOrder ()I
+	public final fun getInputPolicy ()Ldev/s7a/strata/ui/UiInputPolicy;
+	public final fun getPausesGame ()Z
+	public final fun getPresentation ()Ldev/s7a/strata/ui/UiPresentation;
+	public final fun getTitle ()Ldev/s7a/strata/text/UiText;
+	public final fun getVisibility ()Ldev/s7a/strata/ui/UiVisibilityPolicy;
+}
+
+public final class dev/s7a/strata/ui/UiGameAction : java/lang/Enum {
+	public static final field Attack Ldev/s7a/strata/ui/UiGameAction;
+	public static final field Drop Ldev/s7a/strata/ui/UiGameAction;
+	public static final field Hotbar Ldev/s7a/strata/ui/UiGameAction;
+	public static final field Jump Ldev/s7a/strata/ui/UiGameAction;
+	public static final field Look Ldev/s7a/strata/ui/UiGameAction;
+	public static final field Movement Ldev/s7a/strata/ui/UiGameAction;
+	public static final field Pick Ldev/s7a/strata/ui/UiGameAction;
+	public static final field Sneak Ldev/s7a/strata/ui/UiGameAction;
+	public static final field Sprint Ldev/s7a/strata/ui/UiGameAction;
+	public static final field SwapHands Ldev/s7a/strata/ui/UiGameAction;
+	public static final field Use Ldev/s7a/strata/ui/UiGameAction;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public static fun valueOf (Ljava/lang/String;)Ldev/s7a/strata/ui/UiGameAction;
+	public static fun values ()[Ldev/s7a/strata/ui/UiGameAction;
+}
+
+public final class dev/s7a/strata/ui/UiInputPolicy {
+	public static final field Companion Ldev/s7a/strata/ui/UiInputPolicy$Companion;
+	public fun <init> ()V
+	public fun <init> (ZZZZZZZZZZZ)V
+	public synthetic fun <init> (ZZZZZZZZZZZILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun allows (Ldev/s7a/strata/ui/UiGameAction;)Z
+	public final fun component1 ()Z
+	public final fun component10 ()Z
+	public final fun component11 ()Z
+	public final fun component2 ()Z
+	public final fun component3 ()Z
+	public final fun component4 ()Z
+	public final fun component5 ()Z
+	public final fun component6 ()Z
+	public final fun component7 ()Z
+	public final fun component8 ()Z
+	public final fun component9 ()Z
+	public final fun copy (ZZZZZZZZZZZ)Ldev/s7a/strata/ui/UiInputPolicy;
+	public static synthetic fun copy$default (Ldev/s7a/strata/ui/UiInputPolicy;ZZZZZZZZZZZILjava/lang/Object;)Ldev/s7a/strata/ui/UiInputPolicy;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getAttack ()Z
+	public final fun getDrop ()Z
+	public final fun getHotbar ()Z
+	public final fun getJump ()Z
+	public final fun getLook ()Z
+	public final fun getMovement ()Z
+	public final fun getPick ()Z
+	public final fun getSneak ()Z
+	public final fun getSprint ()Z
+	public final fun getSwapHands ()Z
+	public final fun getUse ()Z
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class dev/s7a/strata/ui/UiInputPolicy$Companion {
+	public final fun getAll ()Ldev/s7a/strata/ui/UiInputPolicy;
+	public final fun getBlockAll ()Ldev/s7a/strata/ui/UiInputPolicy;
+	public final fun getMovement ()Ldev/s7a/strata/ui/UiInputPolicy;
+}
+
+public final class dev/s7a/strata/ui/UiInteractionMode : java/lang/Enum {
+	public static final field Cursor Ldev/s7a/strata/ui/UiInteractionMode;
+	public static final field Look Ldev/s7a/strata/ui/UiInteractionMode;
+	public static final field None Ldev/s7a/strata/ui/UiInteractionMode;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public static fun valueOf (Ljava/lang/String;)Ldev/s7a/strata/ui/UiInteractionMode;
+	public static fun values ()[Ldev/s7a/strata/ui/UiInteractionMode;
+}
+
+public abstract interface class dev/s7a/strata/ui/UiOperationResult {
+}
+
+public final class dev/s7a/strata/ui/UiOperationResult$Accepted : dev/s7a/strata/ui/UiOperationResult {
+	public static final field INSTANCE Ldev/s7a/strata/ui/UiOperationResult$Accepted;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class dev/s7a/strata/ui/UiOperationResult$Rejected : dev/s7a/strata/ui/UiOperationResult {
+	public fun <init> (Ldev/s7a/strata/ui/UiRejection;)V
+	public final fun component1 ()Ldev/s7a/strata/ui/UiRejection;
+	public final fun copy (Ldev/s7a/strata/ui/UiRejection;)Ldev/s7a/strata/ui/UiOperationResult$Rejected;
+	public static synthetic fun copy$default (Ldev/s7a/strata/ui/UiOperationResult$Rejected;Ldev/s7a/strata/ui/UiRejection;ILjava/lang/Object;)Ldev/s7a/strata/ui/UiOperationResult$Rejected;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getReason ()Ldev/s7a/strata/ui/UiRejection;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class dev/s7a/strata/ui/UiPresentation : java/lang/Enum {
+	public static final field Hud Ldev/s7a/strata/ui/UiPresentation;
+	public static final field Screen Ldev/s7a/strata/ui/UiPresentation;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public static fun valueOf (Ljava/lang/String;)Ldev/s7a/strata/ui/UiPresentation;
+	public static fun values ()[Ldev/s7a/strata/ui/UiPresentation;
+}
+
+public final class dev/s7a/strata/ui/UiRejection : java/lang/Enum {
+	public static final field Capacity Ldev/s7a/strata/ui/UiRejection;
+	public static final field Closed Ldev/s7a/strata/ui/UiRejection;
+	public static final field Hidden Ldev/s7a/strata/ui/UiRejection;
+	public static final field ScreenOpen Ldev/s7a/strata/ui/UiRejection;
+	public static final field Unsupported Ldev/s7a/strata/ui/UiRejection;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public static fun valueOf (Ljava/lang/String;)Ldev/s7a/strata/ui/UiRejection;
+	public static fun values ()[Ldev/s7a/strata/ui/UiRejection;
+}
+
+public final class dev/s7a/strata/ui/UiScreenKind : java/lang/Enum {
+	public static final field Chat Ldev/s7a/strata/ui/UiScreenKind;
+	public static final field Inventory Ldev/s7a/strata/ui/UiScreenKind;
+	public static final field Other Ldev/s7a/strata/ui/UiScreenKind;
+	public static final field Pause Ldev/s7a/strata/ui/UiScreenKind;
+	public static final field Strata Ldev/s7a/strata/ui/UiScreenKind;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public static fun valueOf (Ljava/lang/String;)Ldev/s7a/strata/ui/UiScreenKind;
+	public static fun values ()[Ldev/s7a/strata/ui/UiScreenKind;
+}
+
+public abstract interface class dev/s7a/strata/ui/UiSession : java/lang/AutoCloseable {
+	public abstract fun close ()V
+	public abstract fun getInputPolicy ()Ldev/s7a/strata/ui/UiInputPolicy;
+	public abstract fun getInteractionMode ()Ldev/s7a/strata/ui/UiInteractionMode;
+	public abstract fun getPresentation ()Ldev/s7a/strata/ui/UiPresentation;
+	public abstract fun getStatus ()Ldev/s7a/strata/ui/UiSessionStatus;
+	public abstract fun setInputPolicy (Ldev/s7a/strata/ui/UiInputPolicy;)Ldev/s7a/strata/ui/UiOperationResult;
+	public abstract fun setInteractionMode (Ldev/s7a/strata/ui/UiInteractionMode;)Ldev/s7a/strata/ui/UiOperationResult;
+	public abstract fun switch (Ldev/s7a/strata/ui/UiPresentation;)Ldev/s7a/strata/ui/UiOperationResult;
+}
+
+public abstract interface class dev/s7a/strata/ui/UiSessionStatus {
+}
+
+public final class dev/s7a/strata/ui/UiSessionStatus$Closed : dev/s7a/strata/ui/UiSessionStatus {
+	public fun <init> (Ldev/s7a/strata/ui/UiCloseReason;)V
+	public final fun component1 ()Ldev/s7a/strata/ui/UiCloseReason;
+	public final fun copy (Ldev/s7a/strata/ui/UiCloseReason;)Ldev/s7a/strata/ui/UiSessionStatus$Closed;
+	public static synthetic fun copy$default (Ldev/s7a/strata/ui/UiSessionStatus$Closed;Ldev/s7a/strata/ui/UiCloseReason;ILjava/lang/Object;)Ldev/s7a/strata/ui/UiSessionStatus$Closed;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getReason ()Ldev/s7a/strata/ui/UiCloseReason;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class dev/s7a/strata/ui/UiSessionStatus$Opening : dev/s7a/strata/ui/UiSessionStatus {
+	public static final field INSTANCE Ldev/s7a/strata/ui/UiSessionStatus$Opening;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class dev/s7a/strata/ui/UiSessionStatus$Ready : dev/s7a/strata/ui/UiSessionStatus {
+	public fun <init> ()V
+	public fun <init> (Ldev/s7a/strata/ui/UiRejection;)V
+	public synthetic fun <init> (Ldev/s7a/strata/ui/UiRejection;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Ldev/s7a/strata/ui/UiRejection;
+	public final fun copy (Ldev/s7a/strata/ui/UiRejection;)Ldev/s7a/strata/ui/UiSessionStatus$Ready;
+	public static synthetic fun copy$default (Ldev/s7a/strata/ui/UiSessionStatus$Ready;Ldev/s7a/strata/ui/UiRejection;ILjava/lang/Object;)Ldev/s7a/strata/ui/UiSessionStatus$Ready;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getRejection ()Ldev/s7a/strata/ui/UiRejection;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class dev/s7a/strata/ui/UiSessionStatus$Switching : dev/s7a/strata/ui/UiSessionStatus {
+	public fun <init> (Ldev/s7a/strata/ui/UiPresentation;)V
+	public final fun component1 ()Ldev/s7a/strata/ui/UiPresentation;
+	public final fun copy (Ldev/s7a/strata/ui/UiPresentation;)Ldev/s7a/strata/ui/UiSessionStatus$Switching;
+	public static synthetic fun copy$default (Ldev/s7a/strata/ui/UiSessionStatus$Switching;Ldev/s7a/strata/ui/UiPresentation;ILjava/lang/Object;)Ldev/s7a/strata/ui/UiSessionStatus$Switching;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getPresentation ()Ldev/s7a/strata/ui/UiPresentation;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class dev/s7a/strata/ui/UiVisibility : java/lang/Enum {
+	public static final field Close Ldev/s7a/strata/ui/UiVisibility;
+	public static final field Hide Ldev/s7a/strata/ui/UiVisibility;
+	public static final field KeepVisible Ldev/s7a/strata/ui/UiVisibility;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public static fun valueOf (Ljava/lang/String;)Ldev/s7a/strata/ui/UiVisibility;
+	public static fun values ()[Ldev/s7a/strata/ui/UiVisibility;
+}
+
+public final class dev/s7a/strata/ui/UiVisibilityPolicy {
+	public fun <init> ()V
+	public fun <init> (Ldev/s7a/strata/ui/UiVisibility;Ljava/util/Map;Ljava/util/Map;)V
+	public synthetic fun <init> (Ldev/s7a/strata/ui/UiVisibility;Ljava/util/Map;Ljava/util/Map;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getCategories ()Ljava/util/Map;
+	public final fun getDefault ()Ldev/s7a/strata/ui/UiVisibility;
+	public final fun getScreens ()Ljava/util/Map;
+	public fun hashCode ()I
+	public final fun resolve (Ldev/s7a/strata/ui/UiScreenKind;Ldev/s7a/strata/ui/UiCategory;)Ldev/s7a/strata/ui/UiVisibility;
+	public static synthetic fun resolve$default (Ldev/s7a/strata/ui/UiVisibilityPolicy;Ldev/s7a/strata/ui/UiScreenKind;Ldev/s7a/strata/ui/UiCategory;ILjava/lang/Object;)Ldev/s7a/strata/ui/UiVisibility;
 }
 

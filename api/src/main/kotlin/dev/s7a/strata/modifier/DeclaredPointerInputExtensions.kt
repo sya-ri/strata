@@ -5,6 +5,7 @@ import dev.s7a.strata.input.InputResult
 import dev.s7a.strata.input.PointerButton
 import dev.s7a.strata.input.PointerEvent
 import dev.s7a.strata.projection.BuiltinProjection
+import dev.s7a.strata.ui.UiSession
 
 /**
  * Subscribes to typed pointer notifications within the modifier's hit region, including local coordinates.
@@ -13,7 +14,7 @@ import dev.s7a.strata.projection.BuiltinProjection
  */
 public fun Modifier.onPointerEvent(
     propagation: InputResult,
-    action: (PointerEvent, IntOffset) -> Unit,
+    action: UiSession.(PointerEvent, IntOffset) -> Unit,
 ): Modifier =
     then(
         PointerInputModifier.Element(
@@ -33,7 +34,7 @@ public fun Modifier.onPointerEvent(
 public fun Modifier.onPress(
     propagation: InputResult,
     button: PointerButton? = null,
-    action: (PointerEvent.Press, IntOffset) -> Unit,
+    action: UiSession.(PointerEvent.Press, IntOffset) -> Unit,
 ): Modifier =
     then(
         PointerInputModifier.Element(
@@ -57,7 +58,7 @@ public fun Modifier.onPress(
 public fun Modifier.onRelease(
     propagation: InputResult,
     button: PointerButton? = null,
-    action: (PointerEvent.Release, IntOffset) -> Unit,
+    action: UiSession.(PointerEvent.Release, IntOffset) -> Unit,
 ): Modifier =
     then(
         PointerInputModifier.Element(
@@ -80,7 +81,7 @@ public fun Modifier.onRelease(
  */
 public fun Modifier.onMove(
     propagation: InputResult,
-    action: (PointerEvent.Move, IntOffset) -> Unit,
+    action: UiSession.(PointerEvent.Move, IntOffset) -> Unit,
 ): Modifier =
     then(
         PointerInputModifier.Element(
@@ -100,7 +101,7 @@ public fun Modifier.onMove(
 public fun Modifier.onDrag(
     propagation: InputResult,
     button: PointerButton? = null,
-    action: (PointerEvent.Drag, IntOffset) -> Unit,
+    action: UiSession.(PointerEvent.Drag, IntOffset) -> Unit,
 ): Modifier =
     then(
         PointerInputModifier.Element(
@@ -123,7 +124,7 @@ public fun Modifier.onDrag(
  */
 public fun Modifier.onScroll(
     propagation: InputResult,
-    action: (PointerEvent.Scroll, IntOffset) -> Unit,
+    action: UiSession.(PointerEvent.Scroll, IntOffset) -> Unit,
 ): Modifier =
     then(
         PointerInputModifier.Element(
@@ -145,8 +146,8 @@ public fun Modifier.onScroll(
  */
 public fun Modifier.onCapturedPointerEvent(
     button: PointerButton,
-    onCancel: (PointerButton) -> Unit,
-    action: (PointerEvent, IntOffset) -> Unit,
+    onCancel: UiSession.(PointerButton) -> Unit,
+    action: UiSession.(PointerEvent, IntOffset) -> Unit,
 ): Modifier =
     then(
         CapturedPointerInputModifier.Element(

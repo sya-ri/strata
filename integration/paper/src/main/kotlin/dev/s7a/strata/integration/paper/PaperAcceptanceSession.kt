@@ -1,3 +1,5 @@
+@file:Suppress("DEPRECATION") // Compatibility overloads and regression coverage retain the deprecated screen entry points.
+
 package dev.s7a.strata.integration.paper
 
 import dev.s7a.strata.component.Button
@@ -45,6 +47,7 @@ internal class PaperAcceptanceSession(
     private var phase = Phase.Controls
     private var ticks = 0
     private var closed = false
+    private var presentations: PaperUiPresentationVerification? = null
     private var handle: RemoteScreenSession = PaperScreens.open(plugin, player, controls())
 
     /**
@@ -55,7 +58,7 @@ internal class PaperAcceptanceSession(
             runCatching {
                 check(player.isOnline) { "Acceptance client disconnected before completing." }
                 check(ticks++ < 1200) { "Paper acceptance timed out in $phase." }
-                check(handle.status !is RemoteSessionStatus.Closed) { "Acceptance screen closed: ${handle.status}" }
+                if (phase != Phase.Presentations) check(handle.status !is RemoteSessionStatus.Closed) { "Acceptance screen closed: ${handle.status}" }
                 when (phase) {
                     Phase.Controls -> {
                         updates.value++
@@ -68,14 +71,13 @@ internal class PaperAcceptanceSession(
                     }
 
                     Phase.Inventory -> {
-                        if (player.itemOnCursor.type == Material.DIRT && player.itemOnCursor.amount == 7 && player.inventory
-                                .getItem(9)
-                                ?.type
-                                ?.isAir != false
-                        ) {
-                            pickedUp = true
-                        }
-                        if (pickedUp && player.itemOnCursor.type.isAir && player.inventory.getItem(9)?.amount == 7) {
+                        verifyInventory()
+                    }
+
+                    Phase.Presentations -> {
+                        if (checkNotNull(presentations).tick()) {
+                            presentations?.close()
+                            presentations = null
                             complete()
                             return@runCatching true
                         }
@@ -87,6 +89,21 @@ internal class PaperAcceptanceSession(
                 close()
                 true
             }
+    }
+
+    private fun verifyInventory() {
+        if (player.itemOnCursor.type == Material.DIRT && player.itemOnCursor.amount == 7 && player.inventory
+                .getItem(9)
+                ?.type
+                ?.isAir != false
+        ) {
+            pickedUp = true
+        }
+        if (pickedUp && player.itemOnCursor.type.isAir && player.inventory.getItem(9)?.amount == 7) {
+            handle.close()
+            presentations = PaperUiPresentationVerification(plugin, player)
+            phase = Phase.Presentations
+        }
     }
 
     private fun controls(): ScreenDefinition =
@@ -122,7 +139,7 @@ internal class PaperAcceptanceSession(
         val run = requireNotNull(System.getProperty("strata.paper.run"))
         val directory = plugin.dataFolder.toPath()
         Files.createDirectories(directory)
-        Files.writeString(directory.resolve("server.properties"), "runId=$run\nplayer=$playerId\nversion=${plugin.server.bukkitVersion}\ntext=confirmed\ncustomAction=$activated\nbutton=$applied\nslot=round-trip\nupdates=${updates.value}\n")
+        Files.writeString(directory.resolve("server.properties"), "runId=$run\nplayer=$playerId\nversion=${plugin.server.bukkitVersion}\ntext=confirmed\ncustomAction=$activated\nbutton=$applied\nslot=round-trip\nupdates=${updates.value}\nuiPresentations=confirmed\nuiEvents=confirmed\n")
         handle = PaperScreens.open(plugin, player, ScreenDefinition("Strata verification complete") { Column { Text("Complete") } })
         player.inventory.setItem(9, original)
         closed = true
@@ -130,6 +147,8 @@ internal class PaperAcceptanceSession(
     }
 
     override fun close() {
+        presentations?.close()
+        presentations = null
         handle.close()
         if (closed.not()) {
             closed = true
@@ -141,5 +160,5 @@ internal class PaperAcceptanceSession(
     /**
      * Server-owned acceptance progression decoded without protocol string discriminators.
      */
-    private enum class Phase { Controls, Inventory }
+    private enum class Phase { Controls, Inventory, Presentations }
 }

@@ -1,3 +1,5 @@
+@file:Suppress("DEPRECATION") // Compatibility overloads and regression coverage retain the deprecated screen entry points.
+
 package dev.s7a.strata.integration.docs.example
 
 import dev.s7a.strata.component.Column
@@ -19,7 +21,7 @@ import dev.s7a.strata.modifier.imageBackground
 import dev.s7a.strata.modifier.menuBackground
 import dev.s7a.strata.modifier.padding
 import dev.s7a.strata.render.ArgbColor
-import dev.s7a.strata.screen.ScreenDefinition
+import dev.s7a.strata.ui.UiDefinition
 
 /**
  * Builds the basic stage of the README player-list demonstration using only the public API.
@@ -28,8 +30,8 @@ import dev.s7a.strata.screen.ScreenDefinition
 internal fun basicPlayersScreen(
     players: List<ReadmePlayer>,
     panel: ImageSource,
-): ScreenDefinition =
-    ScreenDefinition("Players") {
+): UiDefinition =
+    UiDefinition("Players") {
         playerPanel(players, panel)
     }
 

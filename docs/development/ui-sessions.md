@@ -2,7 +2,29 @@
 
 This is the internal session contract for runtime implementers.
 `runtime:core` coordinates retained trees, local state, revisioned sources, input, and coroutine work so adapters share one lifecycle and failure model.
-Application authors use [ScreenDefinition and component state](../guides/screens-and-state.md); the local delegates and coroutine generations described here are not a public screen-definition API.
+Application authors use [UiDefinition and component state](../guides/screens-and-state.md); the local delegates and coroutine generations described here are not a public screen-definition API.
+
+## Public presentation controls
+
+The public `dev.s7a.strata.ui.UiSession` is a stable event/control handle; the retained engine below owns content independently of native wrappers.
+`RuntimeUiController` sequences desired controls, records only acknowledged application, defers operations to its outer transaction boundary, and releases driver/cleanup captures before terminal notifications.
+A driver must explicitly acknowledge or reject its submitted sequence after native installation; returning from a driver is not application evidence.
+Older replies cannot replace newer pending state, and close supersedes uncommitted controls.
+Nested transition callbacks have a bounded drain; an unending sequence fails and releases ownership.
+
+`Node.bindRuntime` supplies each retained node's event receiver together with its invalidation owner.
+Modifier descriptions and projection handlers carry receiver function types, never a captured declaration scope or process-wide current UI.
+Binding remains available during cleanup notifications, but the owning handle is already terminal when the session closes.
+Standalone trees and engines supply an unpresented receiver that supports deferred close and rejects native presentation/input operations.
+
+Minecraft keeps one retained host and exchanges only its foreground/HUD attachment; native wrapper removal detaches without closing that host.
+Screen/HUD switching clears focus, capture, and native key ownership before installing the next presentation.
+HUD visibility uses category, then native screen kind, then the definition default; hidden content retains source/remote updates.
+The adapter owns version-specific HUD, mouse, and native gameplay hooks; the public runtime has no Fabric API dependency.
+`RuntimeUiInput` bounds held state by the adapter's mapping set and releases it on owner, policy, editing, focus, and terminal boundaries.
+
+Remote controls are ordered by the owning Paper or Velocity session and confirmed after the client applies native presentation.
+See the [remote protocol](../reference/remote-protocol.md) for application versus declaration acknowledgements and connection-wide budgets.
 
 ## Retained observed regions
 
@@ -94,7 +116,7 @@ Repeated close after `Closed` is an owner-thread no-op.
 ### Caller-owned reactive state
 
 `mutableStateOf(initialValue)` creates an owner-thread `MutableState<T>` with a read-only `State<T>` view.
-Create it outside the `ScreenDefinition` content callback so reevaluation does not reset its value.
+Create it outside the `UiDefinition` content callback so reevaluation does not reset its value.
 The retained session tracks reads of `value` during content evaluation, including reads in ordinary Kotlin `if`, `when`, loops, and called composition functions.
 Unequal assignments mark every observing session dirty, and the next frame reevaluates content once before reconciliation.
 Equal assignments do not invalidate content, and multiple writes before a frame are coalesced.

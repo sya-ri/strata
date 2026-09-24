@@ -32,7 +32,7 @@ internal object RemoteFormBindings {
                 requireNotNull(it as? ProjectionValue.Flag).value
             }) { value ->
                 state.checked = value
-                modifier.actionDispatcher().dispatch(ComponentActions.CheckedChange, value)
+                modifier.actionDispatcher().dispatch(this, ComponentActions.CheckedChange, value)
             },
         )
 
@@ -49,7 +49,7 @@ internal object RemoteFormBindings {
                 requireNotNull(it as? ProjectionValue.Real).value.also { value -> require(value in state.range) }
             }) { value ->
                 state.value = value
-                modifier.actionDispatcher().dispatch(ComponentActions.SliderChange, state.value)
+                modifier.actionDispatcher().dispatch(this, ComponentActions.SliderChange, state.value)
             },
         )
 
@@ -68,7 +68,7 @@ internal object RemoteFormBindings {
                 value.toInt()
             }) { index ->
                 state.value = state.values[index]
-                modifier.actionDispatcher().dispatch(ComponentActions.Cycle, state.value)
+                modifier.actionDispatcher().dispatch(this, ComponentActions.Cycle, state.value)
             },
         )
 

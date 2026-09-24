@@ -21,6 +21,7 @@ import dev.s7a.strata.projection.ProjectionAction
 import dev.s7a.strata.projection.ProjectionValue
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
 import dev.s7a.strata.state.StateSource
+import dev.s7a.strata.ui.UiSession
 
 /**
  * Immutable activation description whose source subscription belongs to the retained tree registry.
@@ -28,7 +29,7 @@ import dev.s7a.strata.state.StateSource
 @OptIn(InternalStrataRuntimeApi::class)
 internal class ObservedActivationModifier(
     private val enabled: StateSource<Boolean>,
-    private val action: () -> Unit,
+    private val action: UiSession.() -> Unit,
 ) : ModifierElement {
     override val type: ModifierNodeType<*, *>
         get() = TYPE
@@ -48,7 +49,7 @@ internal class ObservedActivationModifier(
         override var observedSources: List<StateSource<*>> = listOf(initial.enabled)
             private set
         private var enabled = false
-        private var action: (() -> Unit)? = initial.action
+        private var action: (UiSession.() -> Unit)? = initial.action
 
         override val declarationProjection: DeclarationProjection<*>
             get() =
@@ -108,7 +109,7 @@ internal class ObservedActivationModifier(
         }
 
         private fun activate(): InputResult {
-            checkNotNull(action).invoke()
+            checkNotNull(action).invoke(uiSession)
             return InputResult.Consumed
         }
     }

@@ -1,3 +1,5 @@
+@file:Suppress("DEPRECATION") // Compatibility overloads and regression coverage retain the deprecated screen entry points.
+
 package dev.s7a.strata.integration.minecraft.fabric
 
 // showcase-source-begin:cycle-button
@@ -11,7 +13,9 @@ import dev.s7a.strata.modifier.size
 import dev.s7a.strata.render.ArgbColor
 import dev.s7a.strata.screen.ScreenDefinition
 
-/** Difficulty options rendered by the typed CycleButton showcase. */
+/**
+ * Difficulty options rendered by the typed CycleButton showcase.
+ */
 private enum class Difficulty(
     val label: String,
 ) {
@@ -21,7 +25,9 @@ private enum class Difficulty(
     Hard("Hard"),
 }
 
-/** Builds the complete minimal CycleButton showcase frame. */
+/**
+ * Builds the complete minimal CycleButton showcase frame.
+ */
 internal fun createCycleButtonShowcaseScreenDefinition(): ScreenDefinition {
     val state = CycleButtonState(Difficulty.Normal) { value -> "Difficulty: ${value.label}" }
     return ScreenDefinition("CycleButton showcase") {

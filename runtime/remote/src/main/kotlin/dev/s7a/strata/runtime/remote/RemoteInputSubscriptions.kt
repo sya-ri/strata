@@ -25,6 +25,7 @@ import dev.s7a.strata.projection.BuiltinProjection
 import dev.s7a.strata.projection.ProjectionFields
 import dev.s7a.strata.projection.ProjectionInputCodec
 import dev.s7a.strata.projection.ProjectionValue
+import dev.s7a.strata.ui.UiSession
 
 /**
  * Installs only declared event listeners, using the same filters and propagation rules as local screens.
@@ -70,7 +71,7 @@ internal object RemoteInputSubscriptions {
     private fun keyboard(
         registry: RemoteRegistry,
         type: BuiltinProjection,
-        create: (InputResult, KeyboardInputFilter, (KeyboardEvent) -> Unit) -> Modifier,
+        create: (InputResult, KeyboardInputFilter, UiSession.(KeyboardEvent) -> Unit) -> Modifier,
     ) {
         registry.modifier(type.type, { value ->
             val fields = ProjectionFields(value)
@@ -89,7 +90,7 @@ internal object RemoteInputSubscriptions {
     private fun pointer(
         registry: RemoteRegistry,
         type: BuiltinProjection,
-        create: (InputResult, PointerButton?, (PointerEvent, IntOffset) -> Unit) -> Modifier,
+        create: (InputResult, PointerButton?, UiSession.(PointerEvent, IntOffset) -> Unit) -> Modifier,
     ) {
         registry.modifier(type.type, { value ->
             val fields = ProjectionFields(value)
@@ -108,7 +109,7 @@ internal object RemoteInputSubscriptions {
     private fun text(
         registry: RemoteRegistry,
         type: BuiltinProjection,
-        create: (InputResult, (TextInputEvent) -> Unit) -> Modifier,
+        create: (InputResult, UiSession.(TextInputEvent) -> Unit) -> Modifier,
     ) {
         registry.modifier(type.type, { value ->
             val fields = ProjectionFields(value)

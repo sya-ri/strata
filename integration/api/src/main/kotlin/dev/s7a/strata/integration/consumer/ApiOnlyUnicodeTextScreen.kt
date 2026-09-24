@@ -6,9 +6,9 @@ import dev.s7a.strata.component.Text
 import dev.s7a.strata.component.TextField
 import dev.s7a.strata.component.TextFieldState
 import dev.s7a.strata.resource.ResourceId
-import dev.s7a.strata.screen.ScreenDefinition
 import dev.s7a.strata.text.UiText
 import dev.s7a.strata.text.withFont
+import dev.s7a.strata.ui.UiDefinition
 
 /**
  * Creates a one-shot screen with caller-owned [state] created on the host thread.
@@ -17,9 +17,9 @@ import dev.s7a.strata.text.withFont
 internal fun unicodeTextScreen(
     state: TextFieldState,
     font: ResourceId = ResourceId("example", "body"),
-): ScreenDefinition {
+): UiDefinition {
     val heading = UiText.Literal("日本語 한국어 🙂").withFont(font)
-    return ScreenDefinition("Unicode text") {
+    return UiDefinition("Unicode text") {
         Column(spacing = 6) {
             Text(heading)
             Text("同じフォント / 같은 글꼴", font = font)

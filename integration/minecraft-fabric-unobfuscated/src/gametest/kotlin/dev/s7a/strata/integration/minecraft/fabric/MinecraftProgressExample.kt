@@ -1,4 +1,4 @@
-@file:Suppress("FunctionNaming", "ktlint:standard:function-naming")
+@file:Suppress("DEPRECATION", "FunctionNaming", "ktlint:standard:function-naming")
 
 package dev.s7a.strata.integration.minecraft.fabric
 

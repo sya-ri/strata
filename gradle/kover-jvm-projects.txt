@@ -1,3 +1,5 @@
+:paper-api
+:velocity-api
 :api
 :examples:paper
 :examples:velocity

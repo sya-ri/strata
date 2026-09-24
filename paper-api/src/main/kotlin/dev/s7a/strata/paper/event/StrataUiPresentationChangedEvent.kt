@@ -1,0 +1,38 @@
+package dev.s7a.strata.paper.event
+
+import dev.s7a.strata.ui.UiCategory
+import dev.s7a.strata.ui.UiPresentation
+import dev.s7a.strata.ui.UiSession
+import org.bukkit.entity.Player
+import org.bukkit.event.Event
+import org.bukkit.event.HandlerList
+import org.bukkit.plugin.Plugin
+
+/**
+ * The client acknowledged a different presentation for the same retained UI.
+ * Delivered synchronously on Paper's primary thread. Notification only; it is not cancellable.
+ */
+public class StrataUiPresentationChangedEvent(
+    public val player: Player,
+    public val ownerPlugin: Plugin,
+    public val identity: Long,
+    public val session: UiSession,
+    public val previous: UiPresentation,
+    public val presentation: UiPresentation,
+    public val category: UiCategory?,
+) : Event() {
+    override fun getHandlers(): HandlerList = eventHandlers
+
+    /**
+     * Bukkit listener registration for this exact event type.
+     */
+    public companion object {
+        private val eventHandlers = HandlerList()
+
+        /**
+         * Returns the handler list shared by every instance of this event.
+         */
+        @JvmStatic
+        public fun getHandlerList(): HandlerList = eventHandlers
+    }
+}

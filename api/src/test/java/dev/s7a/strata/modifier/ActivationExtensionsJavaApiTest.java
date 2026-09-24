@@ -10,8 +10,8 @@ final class ActivationExtensionsJavaApiTest {
     @Test
     void bothActivationOverloadsCompileFromJava() {
         Modifier empty = Modifier.Companion.getEmpty();
-        Modifier enabled = ActivationExtensionsKt.onActivate(empty, () -> Unit.INSTANCE);
-        Modifier disabled = ActivationExtensionsKt.onActivate(empty, false, () -> Unit.INSTANCE);
+        Modifier enabled = ActivationExtensionsKt.onActivate(empty, session -> Unit.INSTANCE);
+        Modifier disabled = ActivationExtensionsKt.onActivate(empty, false, session -> Unit.INSTANCE);
 
         assertNotSame(empty, enabled);
         assertSame(empty, disabled);

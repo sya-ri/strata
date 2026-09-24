@@ -66,7 +66,7 @@ public fun <T : Any, K : Any> UiScope.SelectionList(
             Modifier.Empty
                 .semantics(Semantics(selected = state.selectedKey == itemKey))
                 .onPress {
-                    if (state.select(itemKey)) actions.dispatch(ComponentActions.SelectionChange, itemKey)
+                    if (state.select(itemKey)) actions.dispatch(this, ComponentActions.SelectionChange, itemKey)
                 }
         element(
             StackElement(

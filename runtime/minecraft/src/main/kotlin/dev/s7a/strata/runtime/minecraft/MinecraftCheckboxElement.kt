@@ -222,7 +222,7 @@ private class MinecraftCheckboxElement private constructor(
 
         private fun activate() {
             val next = checkNotNull(state).toggle()
-            actions.dispatch(ComponentActions.CheckedChange, next)
+            actions.dispatch(uiSession, ComponentActions.CheckedChange, next)
         }
     }
 

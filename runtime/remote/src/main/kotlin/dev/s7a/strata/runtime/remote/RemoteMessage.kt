@@ -2,12 +2,16 @@ package dev.s7a.strata.runtime.remote
 
 import dev.s7a.strata.projection.ProjectionType
 import dev.s7a.strata.projection.ProjectionValue
+import dev.s7a.strata.runtime.spi.RuntimeUiControl
+import dev.s7a.strata.spi.InternalStrataRuntimeApi
+import dev.s7a.strata.ui.UiRejection
 import java.util.Collections
 
 /**
  * Typed messages carried over an already established player connection.
  * Session and sequence validation belongs to the connection/session owners, not the byte decoder.
  */
+@OptIn(InternalStrataRuntimeApi::class)
 public sealed interface RemoteMessage {
     /**
      * Terminal queue owner, or null for a connection-level greeting.
@@ -35,6 +39,8 @@ public sealed interface RemoteMessage {
         public val title: ProjectionValue,
         public val tree: RemoteTree,
         public val pausesGame: Boolean = false,
+        public val settings: RemoteUiSettings = RemoteUiSettings(),
+        public val control: RuntimeUiControl? = null,
     ) : RemoteMessage
 
     /**
@@ -74,6 +80,40 @@ public sealed interface RemoteMessage {
     public data class Applied(
         override val session: Long,
         public val revision: Long,
+    ) : RemoteMessage
+
+    /**
+     * Server-ordered control request; declaration state and session identity remain unchanged.
+     */
+    public data class Control(
+        override val session: Long,
+        public val state: RuntimeUiControl,
+    ) : RemoteMessage
+
+    /**
+     * Native presentation/input application result, independent of declaration and framebuffer acknowledgements.
+     */
+    public data class ControlApplied(
+        override val session: Long,
+        public val sequence: Long,
+        public val rejection: UiRejection? = null,
+    ) : RemoteMessage
+
+    /**
+     * Authenticated client intent, ordered independently and sequenced by the owning server session.
+     */
+    public data class ControlRequest(
+        override val session: Long,
+        public val state: RuntimeUiControl,
+    ) : RemoteMessage
+
+    /**
+     * Confirms admission of a client intent after any resulting server control, including no-op requests.
+     */
+    public data class ControlReceipt(
+        override val session: Long,
+        public val sequence: Long,
+        public val rejection: UiRejection? = null,
     ) : RemoteMessage
 
     /**

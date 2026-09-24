@@ -18,6 +18,7 @@ Strata separates those responsibilities so an interface can be composed, reused,
 
 ## What you can build
 
+- Keep one interface as a screen or HUD, switch its presentation, and control game input through its session.
 - Arrange interfaces with rows, columns, wrapping groups, grids, and overlays.
 - Compose controls, text editors, scrolling views, images, and Minecraft resource-backed content.
 - Add sizing, backgrounds, pointer and keyboard actions, focus, and layout parent data through modifiers.
@@ -55,7 +56,7 @@ dependencies {
 ```
 
 The version-matched runtimes are also available from [Modrinth](https://modrinth.com/mod/strata-ui).
-Declare it as a required dependency in the consuming Mod so `ScreenDefinition.open()` always has a presenter in production:
+Declare it as a required dependency in the consuming Mod so `UiDefinition.open()` always has a presenter in production:
 
 ```json
 {
@@ -70,7 +71,7 @@ The [compatibility reference](docs/reference/compatibility.md) lists supported t
 
 ## Open a screen
 
-Create a new `ScreenDefinition` for each opening and call `open()` on the installed runtime's owner thread.
+Create a new `UiDefinition` for each opening and call `open()` on the installed runtime's owner thread.
 Compose actions with modifiers, as in this API-only example:
 
 <a id="api-only-open-example"></a>
@@ -86,13 +87,13 @@ import dev.s7a.strata.modifier.menuBackground
 import dev.s7a.strata.modifier.onActivate
 import dev.s7a.strata.modifier.padding
 import dev.s7a.strata.modifier.size
-import dev.s7a.strata.screen.ScreenDefinition
+import dev.s7a.strata.ui.UiDefinition
 
 /**
  * Opens a confirmation screen on the installed runtime's owner thread.
  */
 internal fun openConfirmationScreen(onConfirm: () -> Unit) {
-    ScreenDefinition("Confirm action") {
+    UiDefinition("Confirm action") {
         Column(
             modifier =
                 Modifier.Empty
@@ -105,7 +106,7 @@ internal fun openConfirmationScreen(onConfirm: () -> Unit) {
             Text("Continue with this action?")
             Button(
                 "Yes",
-                modifier = Modifier.Empty.onActivate(onConfirm),
+                modifier = Modifier.Empty.onActivate { onConfirm() },
             )
         }
     }.open()
@@ -127,6 +128,8 @@ See the [web build guide](docs/development/build.md#initial-web-documents) for t
 | `api` | Compile application UI and custom components. |
 | `runtime/core` | Integrate the shared retained engine through its runtime contracts. |
 | `runtime/remote` | Encode, negotiate, and synchronize server-owned declarations and typed client events. |
+| `paper-api` | Compile Paper plugins against public opening methods and lifecycle events. |
+| `velocity-api` | Compile Velocity plugins against public asynchronous methods and lifecycle events. |
 | `runtime/paper` | Open server-owned DSL screens through an installed Paper plugin. |
 | `runtime/velocity` | Own DSL screens on a Velocity proxy and coordinate backend connection lifetimes. |
 | `runtime/headless` | Render portable output and inspect UI behavior without launching Minecraft. |

@@ -9,21 +9,21 @@ import dev.s7a.strata.geometry.IntSize
 import dev.s7a.strata.modifier.Modifier
 import dev.s7a.strata.modifier.onActivate
 import dev.s7a.strata.modifier.padding
-import dev.s7a.strata.screen.ScreenDefinition
 import dev.s7a.strata.state.mutableStateOf
+import dev.s7a.strata.ui.UiDefinition
 
 /**
  * Compiled proxy-only authoring example using the standard client components and server event subscriptions.
  */
 public object VelocityDemoScreens {
     /**
-     * Creates independent state inside the factory passed to VelocityScreens.open.
+     * Creates independent state inside the factory passed to VelocityUi.open.
      */
-    public fun counter(): ScreenDefinition {
+    public fun counter(): UiDefinition {
         val name = TextFieldState("Player", 32)
         val clicks = mutableStateOf(0)
         val greeting = mutableStateOf("This screen is owned by the proxy.")
-        return ScreenDefinition("Velocity screen") {
+        return UiDefinition("Velocity screen") {
             Column(Modifier.Empty.padding(8), spacing = 4) {
                 Text(greeting.value)
                 TextField(name, IntSize(180, 20))

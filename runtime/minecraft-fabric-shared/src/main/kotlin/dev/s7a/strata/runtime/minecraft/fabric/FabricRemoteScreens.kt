@@ -1,3 +1,5 @@
+@file:OptIn(InternalStrataRuntimeApi::class)
+
 package dev.s7a.strata.runtime.minecraft.fabric
 
 import dev.s7a.strata.runtime.remote.RemoteAddress
@@ -13,9 +15,17 @@ import dev.s7a.strata.runtime.remote.RemotePacketStream
 import dev.s7a.strata.runtime.remote.RemoteProtocolException
 import dev.s7a.strata.runtime.remote.RemoteRegistry
 import dev.s7a.strata.runtime.remote.RemoteTextCodec
+import dev.s7a.strata.runtime.spi.RuntimeUiControl
+import dev.s7a.strata.runtime.spi.RuntimeUiController
+import dev.s7a.strata.spi.InternalStrataRuntimeApi
+import dev.s7a.strata.ui.UiPresentation
+import dev.s7a.strata.ui.UiRejection
+import dev.s7a.strata.ui.UiSession
+import dev.s7a.strata.ui.UiSessionStatus
 import net.minecraft.client.Minecraft
 import net.minecraft.client.gui.screens.Screen
 import net.minecraft.network.Connection
+import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import java.util.concurrent.ConcurrentHashMap
 
@@ -143,8 +153,8 @@ public object FabricRemoteScreens {
                         FabricRemoteTransport.send(endpoint, frame)
                     }
                 val transport = RemoteConnection(registry.types, RemotePacket.limits, stream::send)
-                Peer(address, stream, transport) {
-                    peers.values.filter { it.address != address }.forEach { it.endScreen(RemoteFailure.Replaced) }
+                Peer(address, stream, transport, logger) {
+                    peers.values.filter { it.address != address }.forEach { it.closeForeground() }
                 }.also { peers[address.endpoint] = it }
             }
         if (peer.isClosed.not()) guard(peer) { peer.stream.offer(packet, now()) }
@@ -164,14 +174,6 @@ public object FabricRemoteScreens {
     private fun now(): Long = System.nanoTime() / 1_000_000
 
     /**
-     * Verifies the captured native container generation immediately before a Slot read or transaction.
-     * Called at the existing versioned inventory boundary; vanilla remains authoritative for item movement.
-     */
-    public fun requireContainer(menu: Any) {
-        peers.values.forEach { it.requireContainer(menu) }
-    }
-
-    /**
      * Contains a native remote-screen failure after the host has performed terminal resource cleanup.
      * Returns false for local screens so their established exception contract remains intact.
      */
@@ -181,7 +183,7 @@ public object FabricRemoteScreens {
     ): Boolean {
         val active = peers.values.firstOrNull { it.owns(view) } ?: return false
         val reason = (failure as? RemoteProtocolException)?.reason ?: RemoteFailure.InvalidMessage
-        runCatching { active.endScreen(reason) }.onFailure { failure.addSuppressed(it) }
+        runCatching { active.endScreen(view, reason) }.onFailure { failure.addSuppressed(it) }
         val minecraft = Minecraft.getInstance()
         if (FabricMinecraftScreenAccess.currentScreen(minecraft) === view) FabricMinecraftScreenAccess.setScreen(minecraft, null)
         logger.warn("Strata remote screen ended", failure)
@@ -189,54 +191,73 @@ public object FabricRemoteScreens {
     }
 
     /**
-     * Owns exactly one transport and at most one visible remote screen.
+     * Authenticated ID routing for an ordinary screen and multiple retained HUD sessions.
      */
+    @Suppress("TooManyFunctions") // One authenticated endpoint owns routing, presentation, transport, and terminal cleanup.
     private class Peer(
         val address: RemoteAddress,
         val stream: RemotePacketStream,
         val connection: RemoteConnection,
+        private val logger: Logger,
         private val beforeOpen: () -> Unit,
     ) {
-        private var session: RemoteClientSession? = null
-        private var screen: Screen? = null
-        private var container: Any? = null
+        private val sessions = linkedMapOf<Long, Active>()
         private var closed = false
         private var lastSession = 0L
         val isClosed: Boolean get() = closed
 
-        fun owns(view: Screen): Boolean = session != null && (screen === view || (screen == null && FabricMinecraftScreenAccess.currentScreen(Minecraft.getInstance()) === view))
+        fun owns(view: Screen): Boolean = sessions.values.any { it.screen === view }
 
-        fun requireContainer(menu: Any) {
-            if (session == null) return
-            val current = FabricMinecraftScreenAccess.currentScreen(Minecraft.getInstance())
-            if ((screen == null || current === screen) && container !== menu) throw RemoteProtocolException(RemoteFailure.ContainerChanged, "Remote screen container generation changed.")
-        }
-
-        fun endScreen(reason: RemoteFailure) {
-            closeScreen(reason, true)
+        fun endScreen(
+            view: Screen,
+            reason: RemoteFailure,
+        ) {
+            sessions.values.find { it.screen === view }?.let { closeSession(it.session.identity, reason, true) }
         }
 
         fun pausePlay() {
-            closeScreen(RemoteFailure.ContainerChanged, notify = true, navigate = false)
+            sessions.values.toList().filter { it.handle.presentation == UiPresentation.Screen || it.screen.boundContainer() != null }.forEach {
+                closeSession(it.session.identity, RemoteFailure.ContainerChanged, notify = true, navigate = false)
+            }
         }
 
         fun receive(message: RemoteMessage) {
             if (closed) return
             when (message) {
                 is RemoteMessage.Snapshot -> snapshot(message)
-                is RemoteMessage.Update -> session?.takeIf { it.identity == message.session }?.receive(message)
-                is RemoteMessage.Acknowledgement -> session?.takeIf { it.identity == message.session }?.receive(message)
-                is RemoteMessage.Close -> if (session?.identity == message.session) closeScreen(message.reason, false)
+                is RemoteMessage.Update -> sessions[message.session]?.session?.receive(message)
+                is RemoteMessage.Acknowledgement -> sessions[message.session]?.session?.receive(message)
+                is RemoteMessage.ControlReceipt -> sessions[message.session]?.session?.receive(message)
+                is RemoteMessage.Control -> sessions[message.session]?.let { applyControl(it, message.state) }
+                is RemoteMessage.Close -> closeSession(message.session, message.reason, false)
                 else -> throw RemoteProtocolException(RemoteFailure.InvalidMessage, "Unexpected client-bound message.")
             }
+            checkNodeBudget()
         }
 
         fun pollScreen() {
-            if (session != null && FabricMinecraftScreenAccess.currentScreen(Minecraft.getInstance()) !== screen) {
-                closeScreen(RemoteFailure.PeerClosed, true)
+            val client = Minecraft.getInstance()
+            sessions.values.toList().forEach { active ->
+                val status = active.handle.status
+                when {
+                    status is UiSessionStatus.Closed -> {
+                        closeSession(active.session.identity, RemoteFailure.entries.first { it.uiReason == status.reason }, true)
+                    }
+
+                    active.handle.presentation == UiPresentation.Screen && FabricMinecraftScreenAccess.currentScreen(client) !== active.screen -> {
+                        closeSession(active.session.identity, RemoteFailure.PeerClosed, true)
+                    }
+
+                    active.handle.presentation == UiPresentation.Screen && client.player?.containerMenu !== active.container -> {
+                        closeSession(active.session.identity, RemoteFailure.ContainerChanged, true)
+                    }
+
+                    else -> {
+                        active.session.synchronizeInteraction()
+                        active.session.flushEdits()
+                    }
+                }
             }
-            if (session != null && Minecraft.getInstance().player?.containerMenu !== container) closeScreen(RemoteFailure.ContainerChanged, true)
-            session?.flushEdits()
         }
 
         fun close(
@@ -245,52 +266,130 @@ public object FabricRemoteScreens {
         ) {
             if (closed) return
             closed = true
-            stream.use {
-                connection.use { closeScreen(reason, false, navigate) }
+            var failure: Throwable? = null
+            try {
+                sessions.keys.toList().forEach { identity ->
+                    runCatching { closeSession(identity, reason, false, navigate) }.exceptionOrNull()?.let { caught ->
+                        val primary = failure
+                        if (primary == null) {
+                            failure = caught
+                        } else if (primary !== caught) {
+                            primary.addSuppressed(caught)
+                        }
+                    }
+                }
+            } finally {
+                stream.close()
+                connection.close()
             }
+            failure?.let { throw it }
         }
 
         private fun snapshot(message: RemoteMessage.Snapshot) {
-            val existing = session
-            if (existing?.identity == message.session) {
-                existing.receive(message)
+            sessions[message.session]?.let { active ->
+                active.session.receive(message)
+                message.control?.let { applyControl(active, it) }
                 return
             }
             if (message.session <= lastSession) return
             lastSession = message.session
-            closeScreen(RemoteFailure.Replaced, false)
-            beforeOpen()
             val limits = checkNotNull(connection.capabilities).limits
+            val presentation = message.control?.presentation ?: message.settings.presentation
+            if (presentation == UiPresentation.Hud && limits.hudSessions <= hudCount()) {
+                connection.send(RemoteMessage.Close(message.session, RemoteFailure.ResourceLimit))
+                return
+            }
+            if (presentation == UiPresentation.Screen) {
+                beforeOpen()
+                closeForeground()
+            }
             val created = RemoteClientSession(message, registry, limits, connection::send)
-            session = created
-            container = Minecraft.getInstance().player?.containerMenu
             runCatching {
-                created.definition(RemoteTextCodec.decode(message.title)).open()
-                if (session === created) screen = FabricMinecraftScreenAccess.currentScreen(Minecraft.getInstance())
+                val handle = FabricUiSessions.open(created.definition(RemoteTextCodec.decode(message.title)), created.uiSession)
+                created.bindUiSession(handle)
+                val screen = FabricUiSessions.nativeScreen(handle)
+                if (screen == null) {
+                    created.close(RemoteFailure.PeerClosed)
+                    return@runCatching
+                }
+                val active = Active(created, handle, screen, Minecraft.getInstance().player?.containerMenu)
+                sessions[message.session] = active
+                message.control?.let { applyControl(active, it) }
             }.onFailure { failure ->
-                closeScreen((failure as? RemoteProtocolException)?.reason ?: RemoteFailure.InvalidMessage, true)
-                LoggerFactory.getLogger(FabricRemoteScreens::class.java).warn("Strata remote screen could not open", failure)
+                closeSession(message.session, RemoteFailure.InvalidMessage, true)
+                created.close(RemoteFailure.InvalidMessage)
+                logger.warn("Strata remote UI could not open", failure)
             }
         }
 
-        private fun closeScreen(
+        private fun applyControl(
+            active: Active,
+            state: RuntimeUiControl,
+        ) {
+            if (state.sequence < active.sequence) return
+            if (state.sequence == active.sequence) {
+                connection.send(RemoteMessage.ControlApplied(active.session.identity, state.sequence, active.rejection))
+                return
+            }
+            val limits = checkNotNull(connection.capabilities).limits
+            val rejected = if (state.presentation == UiPresentation.Hud && limits.hudSessions <= hudCount(active.session.identity)) UiRejection.Capacity else null
+            if (rejected == null) {
+                if (state.presentation == UiPresentation.Screen) {
+                    beforeOpen()
+                    closeForeground(active.session.identity)
+                }
+                val controller = active.handle as RuntimeUiController
+                controller.transaction {
+                    controller.switch(state.presentation)
+                    controller.setInputPolicy(state.inputPolicy)
+                    controller.setInteractionMode(state.interactionMode)
+                }
+            }
+            val status = active.handle.status
+            val reason = rejected ?: (status as? UiSessionStatus.Ready)?.rejection ?: if (status is UiSessionStatus.Closed) UiRejection.Closed else null
+            active.sequence = state.sequence
+            active.rejection = reason
+            active.session.controlApplied(state, reason)
+            connection.send(RemoteMessage.ControlApplied(active.session.identity, state.sequence, reason))
+        }
+
+        private fun hudCount(except: Long? = null): Int = sessions.values.count { it.session.identity != except && it.handle.presentation == UiPresentation.Hud }
+
+        fun closeForeground(except: Long? = null) {
+            sessions.values
+                .toList()
+                .filter { it.session.identity != except && it.handle.presentation == UiPresentation.Screen }
+                .forEach { closeSession(it.session.identity, RemoteFailure.Replaced, true) }
+        }
+
+        private fun checkNodeBudget() {
+            val limits = connection.capabilities?.limits ?: return
+            if (limits.treeNodes < sessions.values.sumOf { it.session.nodeCount }) throw RemoteProtocolException(RemoteFailure.ResourceLimit, "Connection node budget exceeded.")
+        }
+
+        private fun closeSession(
+            identity: Long,
             reason: RemoteFailure,
             notify: Boolean,
             navigate: Boolean = true,
         ) {
-            val previous = session
-            val view = screen
-            session = null
-            screen = null
-            container = null
+            val active = sessions.remove(identity) ?: return
             try {
-                previous?.let { connection.discardSession(it.identity) }
-                val minecraft = Minecraft.getInstance()
-                if (navigate && view != null && FabricMinecraftScreenAccess.currentScreen(minecraft) === view) view.onClose()
-                (view as? AutoCloseable)?.close()
+                connection.discardSession(identity)
+                if (navigate) (active.handle as RuntimeUiController).terminate(reason.uiReason) else active.screen.close()
             } finally {
-                previous?.close(reason, notify)
+                active.session.close(reason, notify)
             }
+        }
+
+        private class Active(
+            val session: RemoteClientSession,
+            val handle: UiSession,
+            val screen: FabricMinecraftScreen,
+            val container: Any?,
+        ) {
+            var sequence = 0L
+            var rejection: UiRejection? = null
         }
     }
 }

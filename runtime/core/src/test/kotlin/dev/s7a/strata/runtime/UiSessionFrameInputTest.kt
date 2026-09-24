@@ -380,7 +380,7 @@ internal class UiSessionFrameInputTest {
                             Modifier.Empty
                                 .size(2, 1)
                                 .initialFocus()
-                                .onFocusChanged(focusEvents::add),
+                                .onFocusChanged({ value -> focusEvents.add(value) }),
                     )
                 }
             }
@@ -510,7 +510,7 @@ internal class UiSessionFrameInputTest {
             UiSession(TestOwnerDispatcher()) {
                 probe.root(
                     emptyList(),
-                    modifier = Modifier.Empty.onCapturedPointerEvent(cancellations::add) { _, _ -> InputResult.Consumed },
+                    modifier = Modifier.Empty.onCapturedPointerEvent({ value -> cancellations.add(value) }) { _, _ -> InputResult.Consumed },
                 )
             }
         val constraints = Constraints.fixed(2, 1)

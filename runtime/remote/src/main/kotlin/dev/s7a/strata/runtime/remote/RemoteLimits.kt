@@ -14,6 +14,7 @@ public data class RemoteLimits(
     public val assemblyMillis: Long = 10000,
     public val valueEntries: Int = minOf(messageBytes, 262144),
     public val reconstructionMillis: Long = 1000,
+    public val hudSessions: Int = 16,
 ) {
     init {
         require(frameBytes in 64..messageBytes) { "Invalid frame bound." }
@@ -24,6 +25,7 @@ public data class RemoteLimits(
         require(0 < assemblyMillis) { "Assembly timeout must be positive." }
         require(valueEntries in 1..messageBytes) { "Invalid aggregate value bound." }
         require(reconstructionMillis in 1..60000) { "Invalid reconstruction time bound." }
+        require(hudSessions in 0..256) { "Invalid HUD session bound." }
     }
 
     /**
@@ -40,5 +42,6 @@ public data class RemoteLimits(
             minOf(assemblyMillis, other.assemblyMillis),
             minOf(valueEntries, other.valueEntries),
             minOf(reconstructionMillis, other.reconstructionMillis),
+            minOf(hudSessions, other.hudSessions),
         )
 }

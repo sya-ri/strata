@@ -1,3 +1,5 @@
+@file:Suppress("DEPRECATION") // Compatibility overloads and regression coverage retain the deprecated screen entry points.
+
 @file:OptIn(InternalStrataRuntimeApi::class)
 
 package dev.s7a.strata.runtime.minecraft
@@ -90,7 +92,7 @@ internal class MinecraftPointerButtonUpdateTest {
         val previous = button(base)
         val node = previous.type.createErased(previous)
         val invalidations = ArrayList<DirtyMask>()
-        val release = node.bindRuntime(invalidations::add)
+        val release = node.bindRuntime(callback = invalidations::add)
         val hover = node as PointerHoverNode
         try {
             hover.onPointerHover(true)

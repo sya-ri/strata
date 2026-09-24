@@ -145,6 +145,8 @@ def main() -> None:
                 proof = properties(server_receipt)
                 if proof.get("runId") != run_id or (proof.get("input") != "operator-confirmed" if arguments.manual_ime else proof.get("slot") != "round-trip"):
                     raise RuntimeError("Missing current server-side action and container evidence.")
+                if not arguments.manual_ime and any(proof.get(key) != "confirmed" for key in ("uiPresentations", "uiEvents")):
+                    raise RuntimeError("Missing acknowledged HUD switching and lifecycle event evidence.")
                 parity = "minecraft-parity" if task == "runClientGameTest" else "minecraft-production-parity"
                 if arguments.version.startswith("1."):
                     parity = "minecraft-verification" if task == "runClientGameTest" else "minecraft-production-verification"

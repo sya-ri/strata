@@ -1,3 +1,5 @@
+@file:Suppress("DEPRECATION")
+
 package dev.s7a.strata.runtime.paper
 
 import dev.s7a.strata.projection.ProjectionType
@@ -21,6 +23,7 @@ public object PaperScreens {
      * Consumes one screen definition and replaces the player's previous Strata screen.
      * Unavailable clients and unsupported declarations return a terminal handle with a typed reason.
      */
+    @Deprecated("Use UiDefinition.open(ownerPlugin, player).")
     public fun open(
         ownerPlugin: Plugin,
         player: Player,

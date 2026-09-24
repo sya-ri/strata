@@ -19,6 +19,7 @@ import java.lang.annotation.ElementType
 import java.lang.annotation.Target
 import java.lang.reflect.Method
 import java.lang.reflect.Modifier
+import dev.s7a.strata.ui.UiSession as EventUiSession
 
 /**
  * Verifies the intentionally narrow JVM-visible runtime bridge surface.
@@ -82,7 +83,7 @@ internal class RuntimeUiSessionBridgeApiContractTest {
         assertTrue(Modifier.isStatic(method.modifiers))
         assertEquals(RuntimeUiSession::class.java, method.returnType)
         assertEquals(
-            listOf(Function0::class.java),
+            listOf(EventUiSession::class.java, Function0::class.java),
             method.parameterTypes.toList(),
         )
         val descriptor = method.toGenericString()

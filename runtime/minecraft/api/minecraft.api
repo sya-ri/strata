@@ -55,6 +55,8 @@ public final class dev/s7a/strata/runtime/minecraft/MinecraftRuntimeFactories {
 	public static final fun createMinecraftUiHost (Ldev/s7a/strata/screen/ScreenDefinition;Ldev/s7a/strata/runtime/minecraft/MinecraftUiProfile;Ldev/s7a/strata/runtime/minecraft/MinecraftUiPlatform;)Ldev/s7a/strata/runtime/minecraft/MinecraftUiHost;
 	public static final fun createMinecraftUiHost (Ldev/s7a/strata/screen/ScreenDefinition;Ldev/s7a/strata/runtime/minecraft/MinecraftUiProfile;Ldev/s7a/strata/runtime/minecraft/MinecraftUiPlatform;Ldev/s7a/strata/runtime/minecraft/font/MinecraftFontBackendFactory;)Ldev/s7a/strata/runtime/minecraft/MinecraftUiHost;
 	public static final fun createMinecraftUiHost (Ldev/s7a/strata/screen/ScreenDefinition;Ldev/s7a/strata/runtime/minecraft/MinecraftUiProfile;Ldev/s7a/strata/runtime/minecraft/font/MinecraftFontBackendFactory;)Ldev/s7a/strata/runtime/minecraft/MinecraftUiHost;
+	public static final fun createMinecraftUiHost (Ldev/s7a/strata/ui/UiDefinition;Ldev/s7a/strata/runtime/minecraft/MinecraftUiProfile;Ldev/s7a/strata/runtime/minecraft/MinecraftUiPlatform;Ldev/s7a/strata/runtime/minecraft/font/MinecraftFontBackendFactory;Ldev/s7a/strata/ui/UiSession;)Ldev/s7a/strata/runtime/minecraft/MinecraftUiHost;
+	public static synthetic fun createMinecraftUiHost$default (Ldev/s7a/strata/ui/UiDefinition;Ldev/s7a/strata/runtime/minecraft/MinecraftUiProfile;Ldev/s7a/strata/runtime/minecraft/MinecraftUiPlatform;Ldev/s7a/strata/runtime/minecraft/font/MinecraftFontBackendFactory;Ldev/s7a/strata/ui/UiSession;ILjava/lang/Object;)Ldev/s7a/strata/runtime/minecraft/MinecraftUiHost;
 	public static final fun createMinecraftUiProfile (Lkotlin/jvm/functions/Function1;)Ldev/s7a/strata/runtime/minecraft/MinecraftUiProfile;
 }
 

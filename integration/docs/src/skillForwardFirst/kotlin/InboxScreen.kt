@@ -1,3 +1,5 @@
+@file:Suppress("DEPRECATION") // Compatibility overloads and regression coverage retain the deprecated screen entry points.
+
 import dev.s7a.strata.component.Button
 import dev.s7a.strata.component.Column
 import dev.s7a.strata.component.Observe
@@ -91,7 +93,7 @@ public fun inboxScreen(
                 label = sendLabel,
                 width = 160,
                 enabled = sendEnabled,
-                modifier = Modifier.Empty.size(160, 20).onActivate(sendEnabled, onSend),
+                modifier = Modifier.Empty.size(160, 20).onActivate(sendEnabled) { onSend() },
             )
         }
     }

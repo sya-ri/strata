@@ -1,5 +1,7 @@
 package dev.s7a.strata.projection
 
+import dev.s7a.strata.ui.UiSession
+
 /**
  * Typed owner-thread binding between a server-owned value and an optimistic client control.
  * [identity] is a stable referential key, normally the caller-owned state object, and is never serialized.
@@ -12,5 +14,5 @@ public class ProjectionBinding<T : Any>(
     public val read: () -> T,
     public val encode: (T) -> ProjectionValue,
     public val decode: (ProjectionValue) -> T,
-    public val write: (T) -> Unit,
+    public val write: UiSession.(T) -> Unit,
 )

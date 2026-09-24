@@ -92,7 +92,7 @@ Diagnostics belong in the runtime test harness, outside application UI source.""
         """## Choose state ownership first
 
 Use `mutableStateOf(initialValue)` for an application-owned `MutableState<T>` and expose `State<T>` for read-only access.
-Import it from `dev.s7a.strata.state`, construct it on the host's owner thread, and retain it outside the `ScreenDefinition` callback.
+Import it from `dev.s7a.strata.state`, construct it on the host's owner thread, and retain it outside the `UiDefinition` callback.
 Reading `.value` during evaluation records a dependency, including ordinary Kotlin `if`, `when`, loops, and called composition functions.
 Changed assignments schedule reevaluation; equal assignments do not, and multiple writes before the next frame coalesce.
 Event-callback-only reads do not subscribe content, and inactive branches stop observing values they no longer read.

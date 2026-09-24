@@ -49,7 +49,7 @@ internal class RemoteServerBindings(
             scope.action(
                 ProjectionAction(binding.type, { decode(binding, it) }) { edit ->
                     if (edit.identity == retained.identity && edit.generation == retained.generation) {
-                        binding.write(edit.value)
+                        binding.write(this, edit.value)
                         retained.value = binding.encode(binding.read())
                         retained.acknowledged = sequence()
                     }

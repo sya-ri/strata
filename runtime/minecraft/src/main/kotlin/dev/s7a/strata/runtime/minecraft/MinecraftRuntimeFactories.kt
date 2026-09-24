@@ -1,3 +1,5 @@
+@file:Suppress("DEPRECATION") // Compatibility overloads and regression coverage retain the deprecated screen entry points.
+
 @file:JvmName("MinecraftRuntimeFactories")
 
 package dev.s7a.strata.runtime.minecraft
@@ -5,6 +7,8 @@ package dev.s7a.strata.runtime.minecraft
 import dev.s7a.strata.runtime.minecraft.font.MinecraftFontBackendFactory
 import dev.s7a.strata.screen.ScreenDefinition
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
+import dev.s7a.strata.ui.UiDefinition
+import dev.s7a.strata.ui.UiSession
 
 /**
  * Creates one owner-thread host for a printable-ASCII compatibility profile by atomically consuming a definition.
@@ -111,3 +115,15 @@ public fun createMinecraftUiHost(
  */
 @InternalStrataRuntimeApi
 public fun createMinecraftUiProfile(content: MinecraftUiProfileBuilder.() -> Unit): MinecraftUiProfile = MinecraftProfileImplementation.create(content)
+
+/**
+ * Transfers a common UI definition and binds its callbacks to the adapter's public session.
+ */
+@InternalStrataRuntimeApi
+public fun createMinecraftUiHost(
+    definition: UiDefinition,
+    profile: MinecraftUiProfile,
+    platform: MinecraftUiPlatform? = null,
+    fontBackend: MinecraftFontBackendFactory? = null,
+    eventSession: UiSession? = null,
+): MinecraftUiHost = MinecraftHostImplementation.create(definition, profile, platform, fontBackend, eventSession)

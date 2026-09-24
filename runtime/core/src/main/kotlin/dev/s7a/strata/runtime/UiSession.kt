@@ -17,6 +17,7 @@ import dev.s7a.strata.runtime.spi.createRuntimeUiFrame
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
 import dev.s7a.strata.state.StateObservation
 import dev.s7a.strata.state.StateSource
+import dev.s7a.strata.ui.UiCloseReason
 import kotlinx.coroutines.CompletableJob
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineExceptionHandler
@@ -32,6 +33,7 @@ import kotlin.coroutines.CoroutineContext
 import kotlin.coroutines.cancellation.CancellationException
 import kotlin.properties.ReadOnlyProperty
 import kotlin.properties.ReadWriteProperty
+import dev.s7a.strata.ui.UiSession as EventUiSession
 
 /**
  * Owns one retained UI description, its state declarations, and its external bindings.
@@ -50,6 +52,7 @@ import kotlin.properties.ReadWriteProperty
 internal class UiSession(
     private val ownerDispatcher: CoroutineDispatcher,
     private val taskFailureHandler: (Throwable) -> UiTaskFailureDecision = { UiTaskFailureDecision.FailSession },
+    private val eventSession: EventUiSession? = null,
     content: () -> Element,
 ) : AutoCloseable {
     private var retainedContent: (() -> Element)? = content
@@ -81,6 +84,8 @@ internal class UiSession(
     private var evaluatingContent: Boolean = false
     private var dirty: Boolean = true
     private var tree: UiTree? = null
+    private var closeRequested = false
+    private val fallbackSession = if (eventSession == null) UnpresentedUiSession(::requestEventClose) else null
 
     /**
      * Starts bounded diagnostics without changing content or requesting a frame.
@@ -213,7 +218,7 @@ internal class UiSession(
             runCatching {
                 if (tree == null) {
                     tree =
-                        UiTree().also {
+                        UiTree(eventSession ?: fallbackSession).also {
                             it.monitoring.operation = UiRenderOperation.Attach
                             it.stateObservation = stateObservation
                         }
@@ -515,6 +520,7 @@ internal class UiSession(
         check(operationKind == null) { "A session operation is already active." }
         if (currentState is UiSessionState.Failed) {
             currentState = UiSessionState.Closed
+            fallbackSession?.finish(UiCloseReason.Closed)
             clearCachedFrame()
             releaseContent()
             return
@@ -523,6 +529,7 @@ internal class UiSession(
         stateObservation.enterOperation()
         try {
             currentState = UiSessionState.Closed
+            fallbackSession?.finish(UiCloseReason.Closed)
             clearCachedFrame()
             releaseContent()
             retireGeneration()
@@ -620,6 +627,15 @@ internal class UiSession(
         stateObservation.leaveOperation()
         operationKind = null
         tree?.monitoring?.operation = UiRenderOperation.Other
+        if (closeRequested) {
+            closeRequested = false
+            if (currentState != UiSessionState.Closed && (currentState is UiSessionState.Failed).not()) close()
+        }
+    }
+
+    private fun requestEventClose() {
+        threadGuard.check()
+        if (operationKind == null) close() else closeRequested = true
     }
 
     private fun beginStateMutation() {
@@ -633,6 +649,7 @@ internal class UiSession(
 
     private fun fail(primary: Throwable): Nothing {
         currentState = UiSessionState.Failed(primary)
+        fallbackSession?.finish(UiCloseReason.Failed)
         clearCachedFrame()
         releaseContent()
         frameAvailable = false
@@ -677,7 +694,7 @@ internal class UiSession(
         failures.capture { binding.disable() }
         val closeFailure =
             runCatching { binding.closeSubscription() }
-                .onFailure(failures::add)
+                .onFailure({ value -> failures.add(value) })
                 .getOrNull()
         failures.addOptional(closeFailure)
     }

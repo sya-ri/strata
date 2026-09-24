@@ -38,20 +38,20 @@ import dev.s7a.strata.modifier.onLeadingItemsRequested
 import dev.s7a.strata.modifier.onTrailingItemsRequested
 import dev.s7a.strata.modifier.padding
 import dev.s7a.strata.modifier.size
-import dev.s7a.strata.screen.ScreenDefinition
+import dev.s7a.strata.ui.UiDefinition
 
 /**
  * Builds a structural storage screen without absolute child coordinates.
  *
  * The 320 by 240 panel and 260-wide viewports leave room for every fixed-height child and inter-child spacing.
  */
-internal fun storageScreen(onDone: () -> Unit): ScreenDefinition {
+internal fun storageScreen(onDone: () -> Unit): UiDefinition {
     val scroll = ScrollState()
     val listState = VirtualListState<String>()
     val items = mutableListOf("Oak chest", "Ender chest", "Machine buffer")
     var nextLeadingKey = 0
     var nextTrailingKey = 0
-    return ScreenDefinition("Storage") {
+    return UiDefinition("Storage") {
         Column(
             modifier =
                 Modifier.Empty
@@ -120,7 +120,7 @@ internal fun storageScreen(onDone: () -> Unit): ScreenDefinition {
             }
             Button(
                 "Done",
-                modifier = Modifier.Empty.onActivate(onDone),
+                modifier = Modifier.Empty.onActivate { onDone() },
             )
         }
     }
@@ -130,7 +130,7 @@ internal fun storageScreen(onDone: () -> Unit): ScreenDefinition {
 ## Choose state ownership first
 
 Use `mutableStateOf(initialValue)` for an application-owned `MutableState<T>` and expose `State<T>` for read-only access.
-Import it from `dev.s7a.strata.state`, construct it on the host's owner thread, and retain it outside the `ScreenDefinition` callback.
+Import it from `dev.s7a.strata.state`, construct it on the host's owner thread, and retain it outside the `UiDefinition` callback.
 Reading `.value` during evaluation records a dependency, including ordinary Kotlin `if`, `when`, loops, and called composition functions.
 Changed assignments schedule reevaluation; equal assignments do not, and multiple writes before the next frame coalesce.
 Event-callback-only reads do not subscribe content, and inactive branches stop observing values they no longer read.
@@ -171,9 +171,9 @@ import dev.s7a.strata.modifier.Modifier
 import dev.s7a.strata.modifier.onActivate
 import dev.s7a.strata.render.ArgbColor
 import dev.s7a.strata.render.createDrawImage
-import dev.s7a.strata.screen.ScreenDefinition
 import dev.s7a.strata.state.StateSource
 import dev.s7a.strata.state.map
+import dev.s7a.strata.ui.UiDefinition
 
 /**
  * A retained API-only screen whose independent clock cannot rebuild its editor or history.
@@ -185,7 +185,7 @@ internal fun reactiveScreen(
     history: StateSource<List<String>>,
     draft: TextAreaState,
     onSend: () -> Unit,
-): ScreenDefinition {
+): UiDefinition {
     val enabled = sending.map { it.not() }
     val sendLabel = sending.map { if (it) "Sending..." else "Send" }
     val historyState = VirtualListState<String>()
@@ -209,13 +209,13 @@ internal fun reactiveScreen(
             ),
         )
     val appearance = TextInputAppearance.Custom(frame, focused, ArgbColor(0xFF203020.toInt()))
-    return ScreenDefinition("Conversation") {
+    return UiDefinition("Conversation") {
         Column(spacing = 4) {
             Text(clock)
             Observe(loading) { active -> if (active) Text("Loading...") }
             VirtualList(items = history, keyOf = { it }, state = historyState, viewportSize = IntSize(160, 60), rowHeight = 12) { Text(it) }
             TextArea(draft, appearance, TextAreaViewport.Size(IntSize(160, 40)), textStyle = TextStyle.ContainerLabel)
-            Button(sendLabel, enabled = enabled, modifier = Modifier.Empty.onActivate(enabled, onSend))
+            Button(sendLabel, enabled = enabled, modifier = Modifier.Empty.onActivate(enabled) { onSend() })
         }
     }
 }
@@ -265,6 +265,7 @@ Diagnostics belong in the runtime test harness, outside application UI source.
 
 ## State, scrolling, resources, and bindings
 
+- Use caller-owned `mutableStateOf` for application values read during content evaluation; changed assignments schedule reevaluation and equal assignments do not.
 - Keep mutable values in caller-owned state objects and receive typed changes through modifiers. Use direct sources for immutable arguments that change automatically.
 - Place `ScrollArea` and `Scrollbar` separately and link them with one `ScrollState`. A viewport may omit its scrollbar or place it away from the content.
 - Use `TextAreaState` for multiline editing and link an optional `Scrollbar` to `state.scrollState`. Creating immutable descriptions does not attach the state, and descriptions may be reused after detachment; simultaneous attachment with the same caller-owned state throws `IllegalStateException`.

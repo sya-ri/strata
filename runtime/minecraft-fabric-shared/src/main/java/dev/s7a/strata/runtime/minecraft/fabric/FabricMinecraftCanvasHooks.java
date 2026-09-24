@@ -3,6 +3,7 @@ package dev.s7a.strata.runtime.minecraft.fabric;
 import com.mojang.blaze3d.systems.RenderSystem;
 import dev.s7a.strata.runtime.minecraft.canvas.NativeCanvasDevices;
 import dev.s7a.strata.spi.InternalStrataRuntimeApi;
+import dev.s7a.strata.ui.UiCloseReason;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screens.Screen;
 
@@ -30,6 +31,7 @@ public final class FabricMinecraftCanvasHooks {
         RenderSystem.assertOnRenderThread();
         shutdownStarted = true;
         FabricRemoteScreens.INSTANCE.shutdown();
+        FabricUiSessions.INSTANCE.closeAll(UiCloseReason.Disconnected);
     }
 
     /**
@@ -101,6 +103,7 @@ public final class FabricMinecraftCanvasHooks {
      */
     public static void resetActiveInput(Minecraft client) {
         if (shutdownStarted) return;
+        FabricUiSessions.INSTANCE.resetInput();
         Screen screen = FabricMinecraftScreenAccess.currentScreen(client);
         if (screen instanceof FabricMinecraftInputReset owner) owner.resetInputFromNative();
     }

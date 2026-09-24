@@ -13,11 +13,11 @@ import dev.s7a.strata.modifier.Modifier
 import dev.s7a.strata.modifier.height
 import dev.s7a.strata.modifier.width
 import dev.s7a.strata.resource.ResourceId
-import dev.s7a.strata.screen.ScreenDefinition
 import dev.s7a.strata.text.TextLayout
 import dev.s7a.strata.text.TextOverflow
 import dev.s7a.strata.text.TextWrap
 import dev.s7a.strata.text.UiText
+import dev.s7a.strata.ui.UiDefinition
 
 /**
  * Creates a one-shot screen with independent message and notes editors.
@@ -27,8 +27,8 @@ internal fun multilineTextScreen(
     message: TextAreaState,
     notes: TextAreaState,
     font: ResourceId,
-): ScreenDefinition =
-    ScreenDefinition("Multiline text") {
+): UiDefinition =
+    UiDefinition("Multiline text") {
         Column(spacing = 6) {
             Text(UiText.Literal("日本語\n한국어 🙂"), TextLayout.Multiline(), modifier = Modifier.Empty.width(240))
             Text("Message composition", TextLayout.SingleLine, font)

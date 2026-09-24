@@ -12,9 +12,13 @@ import dev.s7a.strata.projection.ProjectionType
 import dev.s7a.strata.projection.ProjectionValue
 import dev.s7a.strata.render.DrawImage
 import dev.s7a.strata.runtime.spi.RuntimeDeclaration
+import dev.s7a.strata.runtime.spi.RuntimeUiControl
+import dev.s7a.strata.runtime.spi.RuntimeUiController
 import dev.s7a.strata.runtime.spi.createRuntimeUiSession
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
 import dev.s7a.strata.text.UiText
+import dev.s7a.strata.ui.UiSession
+import dev.s7a.strata.ui.UiSessionStatus
 import java.util.Collections
 
 /**
@@ -30,13 +34,34 @@ public class RemoteServerSession(
     private val limits: RemoteLimits = RemoteLimits(),
     send: (RemoteMessage) -> Unit,
     private val pausesGame: Boolean = false,
+    eventSession: UiSession? = null,
+    controller: RuntimeUiController? = null,
+    private val settings: RemoteUiSettings = RemoteUiSettings(),
     content: () -> Element,
 ) : AutoCloseable {
     private val owner = Thread.currentThread()
     private var outgoing: ((RemoteMessage) -> Unit)? = send
     private val supported = supportedTypes.toSet()
-    private val session = createRuntimeUiSession(content)
+    private val controls = controller ?: RuntimeUiController(settings.presentation, settings.inputPolicy, apply = ::applyControl, close = { close() })
+    private var lastControl: RuntimeUiControl? = null
+    private var clientControlSequence = 0L
+
+    /**
+     * Receiver for authenticated events; a transport owner may supply its public facade.
+     */
+    public val uiSession: UiSession = eventSession ?: controls
+    private val session = createRuntimeUiSession(uiSession, content)
     private var previous: RemoteTree? = null
+
+    /**
+     * Current retained node count for the owning connection's aggregate budget.
+     */
+    public val nodeCount: Int get() = previous?.nodes?.size ?: 0
+
+    /**
+     * Whether current declarations depend on the native container generation.
+     */
+    public val usesNativeSlots: Boolean get() = RemoteProfileComponent.Slot.type in requiredTypes
     private val projectingTypes = mutableSetOf<ProjectionType>()
 
     /**
@@ -74,6 +99,7 @@ public class RemoteServerSession(
      * Attaches once, commits the declaration cutoff, and sends an initial snapshot or changed records.
      */
     public fun tick() {
+        controls.start()
         operation {
             if (started.not()) {
                 session.attach()
@@ -86,7 +112,7 @@ public class RemoteServerSession(
                 val base = revision++
                 previous = projected
                 if (old == null) {
-                    send(RemoteMessage.Snapshot(identity, revision, title, projected, pausesGame))
+                    send(RemoteMessage.Snapshot(identity, revision, title, projected, pausesGame, settings, lastControl))
                     status = RemoteSessionStatus.Open
                 } else {
                     send(RemoteMessage.Update(identity, base, revision, RemotePatch.between(old, projected)))
@@ -119,7 +145,7 @@ public class RemoteServerSession(
                     }
                 executingSequence = action.sequence
                 try {
-                    session.dispatchAction(operation)
+                    session.dispatchAction { operation(uiSession) }
                 } finally {
                     executingSequence = 0
                 }
@@ -138,6 +164,18 @@ public class RemoteServerSession(
                 receive(message)
             }
 
+            is RemoteMessage.ControlApplied -> {
+                operation {
+                    protocol(message.session == identity && message.sequence <= (lastControl?.sequence ?: 0)) { "Invalid UI control acknowledgement." }
+                    val rejection = message.rejection
+                    if (rejection == null) controls.applied(message.sequence) else controls.rejected(message.sequence, rejection)
+                }
+            }
+
+            is RemoteMessage.ControlRequest -> {
+                receiveControlRequest(message)
+            }
+
             is RemoteMessage.Applied -> {
                 operation {
                     protocol(message.session == identity && started && 0 < message.revision && message.revision <= revision) { "Invalid applied revision acknowledgement." }
@@ -151,12 +189,27 @@ public class RemoteServerSession(
         }
     }
 
+    private fun receiveControlRequest(message: RemoteMessage.ControlRequest) {
+        operation {
+            protocol(message.session == identity && 0 < message.state.sequence) { "Invalid client UI control request." }
+            if (message.state.sequence <= clientControlSequence) return@operation
+            protocol(message.state.sequence == clientControlSequence + 1) { "Out-of-order client UI control request." }
+            clientControlSequence = message.state.sequence
+            controls.switch(message.state.presentation)
+            controls.setInputPolicy(message.state.inputPolicy)
+            controls.setInteractionMode(message.state.interactionMode)
+        }
+        if ((status is RemoteSessionStatus.Closed).not()) {
+            send(RemoteMessage.ControlReceipt(identity, message.state.sequence, (controls.status as? UiSessionStatus.Ready)?.rejection))
+        }
+    }
+
     /**
      * Sends the last committed complete snapshot without replaying any operations.
      */
     public fun resynchronize() {
         operation {
-            previous?.let { send(RemoteMessage.Snapshot(identity, revision, title, it, pausesGame)) }
+            previous?.let { send(RemoteMessage.Snapshot(identity, revision, title, it, pausesGame, settings, lastControl)) }
         }
     }
 
@@ -234,7 +287,19 @@ public class RemoteServerSession(
         }
     }
 
-    private fun operation(block: () -> Unit) {
+    /**
+     * Receives a request sequenced by the transport's owning public session.
+     */
+    public fun applyControl(request: RuntimeUiControl) {
+        checkOwner()
+        if (status is RemoteSessionStatus.Closed) return
+        lastControl = request
+        if (previous != null) send(RemoteMessage.Control(identity, request))
+    }
+
+    private fun operation(block: () -> Unit) = controls.transaction { runOperation(block) }
+
+    private fun runOperation(block: () -> Unit) {
         checkOwner()
         check((status is RemoteSessionStatus.Closed).not()) { "Remote session is closed." }
         check(busy.not()) { "Remote session operations cannot reenter." }
@@ -259,6 +324,8 @@ public class RemoteServerSession(
         val notify = outgoing
         outgoing = null
         status = RemoteSessionStatus.Closed(reason)
+        val controlCleanup = runCatching { controls.terminate(reason.uiReason) }
+        lastControl = null
         previous = null
         requiredTypes = emptySet()
         projectingTypes.clear()
@@ -267,12 +334,11 @@ public class RemoteServerSession(
         bindings.close()
         val cleanup = runCatching(session::close)
         val notification = runCatching { if (notifyPeer) notify?.invoke(RemoteMessage.Close(identity, reason)) }
-        val primary = cleanup.exceptionOrNull()
-        if (primary != null) {
-            notification.exceptionOrNull()?.let { if (it !== primary) primary.addSuppressed(it) }
+        val failures = listOfNotNull(controlCleanup.exceptionOrNull(), cleanup.exceptionOrNull(), notification.exceptionOrNull())
+        failures.firstOrNull()?.let { primary ->
+            failures.drop(1).forEach { if (it !== primary) primary.addSuppressed(it) }
             throw primary
         }
-        notification.getOrThrow()
     }
 
     private fun send(message: RemoteMessage) {

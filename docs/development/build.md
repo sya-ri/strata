@@ -105,6 +105,7 @@ These JVM tests do not constitute a loaded Paper/Velocity run or operating-syste
 Paper/native acceptance uses matching game versions only; the [generated compatibility table](../reference/compatibility.md) records missing exact distributions separately from Fabric client targets.
 
 Each versioned integration project verifies its exact adapter through development outputs and packaged production jars.
+Standalone legacy clients create a fixed-seed flat world without structures or mob spawning so native movement assertions do not depend on random terrain or entity collisions.
 The legacy viewport fixture requests both Minecraft's test dimensions and the real GLFW window size, then requires two matching native/window/render-target samples.
 Fabric's test Window mixin can substitute Minecraft's dimensions, so those values alone do not prove that a physical resize completed.
 Run `:integration:minecraft-fabric-<version>:runClientGameTest` and `:integration:minecraft-fabric-<version>:runProductionClientGameTest` for the target being changed.
@@ -162,6 +163,7 @@ These receipts prove the actual shutdown boundary, while the Minecraft-independe
 
 The nonpublished `integration:paper` plugin owns the server assertions for an isolated real-player connection.
 Its screen uses the compiled external component/modifier example and checks confirmed Japanese text, button activation, independent server updates, screen replacement, and a vanilla Slot pickup/restore transaction.
+It also opens two HUDs and checks acknowledged Screen/HUD switches and Bukkit lifecycle events through the public Paper API.
 The client fixture invokes native input callbacks and captures the rendered screens.
 Confirmed-character injection does not establish operating-system IME composition acceptance.
 
@@ -187,6 +189,7 @@ The runner resolves the Velocity version from the catalog, verifies both officia
 The native client first completes Paper's input, extension, and Slot assertions through the proxy.
 It then submits Japanese text and activation to a proxy-owned screen, switches backends through Velocity's native connection API, and opens a new proxy screen after the previous screen has closed.
 A second input/activation transaction and another complete Paper transaction on the new backend establish continued proxy capabilities and fresh backend discovery.
+The proxy then verifies a HUD's opening, Screen/HUD switches, and closure through actual asynchronous Velocity events, queuing live session access on the UI thread.
 Both development and production clients must produce current invocation-bound evidence alongside all three server receipts before `build/velocity-acceptance/<version>/<run>/passed.json` is written.
 `--development-only` is a diagnostic subset.
 The runner records plugin hashes and stops only the processes it owns on every exit.

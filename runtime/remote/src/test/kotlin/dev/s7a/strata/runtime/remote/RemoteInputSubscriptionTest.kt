@@ -37,6 +37,7 @@ import dev.s7a.strata.runtime.spi.createRuntimeUiSession
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
 import dev.s7a.strata.state.mutableStateOf
 import dev.s7a.strata.text.UiText
+import dev.s7a.strata.ui.UiSession
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertNotEquals
 import org.junit.jupiter.api.Assertions.assertThrows
@@ -51,7 +52,7 @@ internal class RemoteInputSubscriptionTest {
     fun filtersBeforeSendingAndRunsTheServerHandlerOnlyAfterDelivery() {
         val accepted = mutableListOf<KeyboardEvent.Press>()
         val filter = KeyboardInputFilter(setOf(KeyCode('S'.code)), KeyboardModifiers(control = true))
-        Harness { Modifier.Empty.initialFocus().onKeyPress(InputResult.Consumed, filter, accepted::add) }.use { fixture ->
+        Harness { Modifier.Empty.initialFocus().onKeyPress(InputResult.Consumed, filter, { accepted.add(it) }) }.use { fixture ->
             assertEquals(InputResult.Ignored, fixture.host.dispatchKeyboard(KeyboardEvent.Press(KeyCode('S'.code), 31)))
             assertEquals(InputResult.Ignored, fixture.host.dispatchKeyboard(KeyboardEvent.Release(KeyCode('S'.code), 31, KeyboardModifiers(control = true))))
             assertTrue(fixture.actions().isEmpty())
@@ -109,7 +110,7 @@ internal class RemoteInputSubscriptionTest {
     @Test
     fun onlySubscribedTextVariantsCrossTheConnection() {
         val accepted = mutableListOf<TextInputEvent.Preedit>()
-        Harness { Modifier.Empty.initialFocus().onPreedit(InputResult.Ignored, accepted::add) }.use { fixture ->
+        Harness { Modifier.Empty.initialFocus().onPreedit(InputResult.Ignored, { accepted.add(it) }) }.use { fixture ->
             fixture.host.dispatchTextInput(TextInputEvent.Character(65))
             assertTrue(fixture.actions().isEmpty())
             val event = TextInputEvent.Preedit("日本語", 2, listOf("日本", "語"), 1)
@@ -130,7 +131,7 @@ internal class RemoteInputSubscriptionTest {
                 PointerEvent.Drag(position, PointerButton.Secondary, 1.0, 2.0),
                 PointerEvent.Scroll(position, 2.0, 3.0),
             )
-        val factories: List<((PointerEvent, IntOffset) -> Unit) -> Modifier> =
+        val factories: List<(UiSession.(PointerEvent, IntOffset) -> Unit) -> Modifier> =
             listOf(
                 { Modifier.Empty.onPress(InputResult.Consumed, PointerButton.Secondary, it) },
                 { Modifier.Empty.onRelease(InputResult.Consumed, PointerButton.Secondary, it) },
@@ -155,14 +156,14 @@ internal class RemoteInputSubscriptionTest {
     fun allKeyboardAndTextOverloadsUseTypedNotifications() {
         val key = KeyboardEvent.Press(KeyCode.Enter, 28)
         val release = KeyboardEvent.Release(key.key, key.scanCode)
-        val keyboardFactories: List<((KeyboardEvent) -> Unit) -> Modifier> =
+        val keyboardFactories: List<(UiSession.(KeyboardEvent) -> Unit) -> Modifier> =
             listOf(
                 { Modifier.Empty.initialFocus().onKeyEvent(InputResult.Ignored, action = it) },
                 { Modifier.Empty.initialFocus().onKeyRelease(InputResult.Ignored, action = it) },
             )
         keyboardFactories.zip(listOf(listOf(key, release), listOf(release))).forEach { (factory, expected) ->
             val accepted = mutableListOf<KeyboardEvent>()
-            Harness { factory(accepted::add) }.use { fixture ->
+            Harness { factory({ accepted.add(it) }) }.use { fixture ->
                 fixture.host.dispatchKeyboard(key)
                 fixture.host.dispatchKeyboard(release)
                 fixture.actions().forEach(fixture.server::receive)
@@ -171,14 +172,14 @@ internal class RemoteInputSubscriptionTest {
         }
         val character = TextInputEvent.Character(0x1F642)
         val preedit = TextInputEvent.Preedit("a", 1, listOf("a"), 0)
-        val textFactories: List<((TextInputEvent) -> Unit) -> Modifier> =
+        val textFactories: List<(UiSession.(TextInputEvent) -> Unit) -> Modifier> =
             listOf(
                 { Modifier.Empty.initialFocus().onTextInput(InputResult.Ignored, it) },
                 { Modifier.Empty.initialFocus().onCharacterInput(InputResult.Ignored, it) },
             )
         textFactories.zip(listOf(listOf(character, preedit), listOf(character))).forEach { (factory, expected) ->
             val accepted = mutableListOf<TextInputEvent>()
-            Harness { factory(accepted::add) }.use { fixture ->
+            Harness { factory({ accepted.add(it) }) }.use { fixture ->
                 fixture.host.dispatchTextInput(character)
                 fixture.host.dispatchTextInput(preedit)
                 fixture.actions().forEach(fixture.server::receive)
@@ -214,7 +215,7 @@ internal class RemoteInputSubscriptionTest {
     fun captureAndCancellationUseTheExistingClientPipeline() {
         val accepted = mutableListOf<PointerEvent>()
         val cancelled = mutableListOf<PointerButton>()
-        Harness { Modifier.Empty.onCapturedPointerEvent(PointerButton.Secondary, cancelled::add) { event, _ -> accepted.add(event) } }.use { fixture ->
+        Harness { Modifier.Empty.onCapturedPointerEvent(PointerButton.Secondary, { cancelled.add(it) }) { event, _ -> accepted.add(event) } }.use { fixture ->
             assertEquals(InputResult.Ignored, fixture.host.dispatchPointer(PointerEvent.Press(IntOffset(2, 2), PointerButton.Primary)))
             assertTrue(fixture.actions().isEmpty())
             val press = PointerEvent.Press(IntOffset(2, 2), PointerButton.Secondary)

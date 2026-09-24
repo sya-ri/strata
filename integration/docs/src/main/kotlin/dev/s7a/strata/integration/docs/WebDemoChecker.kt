@@ -126,7 +126,7 @@ internal object WebDemoChecker {
 
     private fun recordErrors(page: Page): List<String> {
         val errors = ArrayList<String>()
-        page.onPageError(errors::add)
+        page.onPageError({ value -> errors.add(value) })
         page.onConsoleMessage { message -> if (WebDemoConsoleLevel.decode(message.type()) == WebDemoConsoleLevel.Error) errors.add(message.text()) }
         page.onRequestFailed { request -> errors.add("${request.url()}: ${request.failure()}") }
         page.onResponse { response -> if (400 <= response.status()) errors.add("${response.status()}: ${response.url()}") }

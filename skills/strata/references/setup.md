@@ -9,9 +9,9 @@ Use the same Strata release on both ends and select the Fabric runtime for the c
 
 | Host | Public opening API | State and handler owner |
 | --- | --- | --- |
-| Fabric | `ScreenDefinition.open()` | Client thread |
-| Paper | `PaperScreens.open(ownerPlugin, player, definition)` | Paper primary thread |
-| Velocity | `VelocityScreens.open(ownerPlugin, player) { definition }` | Strata's dedicated proxy UI thread |
+| Fabric | `UiDefinition.open()` | Client thread |
+| Paper | `definition.open(ownerPlugin, player)` | Paper primary thread |
+| Velocity | `VelocityUi.open(ownerPlugin, player) { definition }` | Strata's dedicated proxy UI thread |
 
 
 ## Local Fabric installation
@@ -27,7 +27,7 @@ dependencies {
 }
 ```
 
-Declare the runtime as a required Mod dependency so a production instance cannot start without the presenter used by `ScreenDefinition.open()`:
+Declare the runtime as a required Mod dependency so a production instance cannot start without the presenter used by `UiDefinition.open()`:
 
 ```json
 {
@@ -52,13 +52,13 @@ import dev.s7a.strata.modifier.menuBackground
 import dev.s7a.strata.modifier.onActivate
 import dev.s7a.strata.modifier.padding
 import dev.s7a.strata.modifier.size
-import dev.s7a.strata.screen.ScreenDefinition
+import dev.s7a.strata.ui.UiDefinition
 
 /**
  * Opens a confirmation screen on the installed runtime's owner thread.
  */
 internal fun openConfirmationScreen(onConfirm: () -> Unit) {
-    ScreenDefinition("Confirm action") {
+    UiDefinition("Confirm action") {
         Column(
             modifier =
                 Modifier.Empty
@@ -71,19 +71,26 @@ internal fun openConfirmationScreen(onConfirm: () -> Unit) {
             Text("Continue with this action?")
             Button(
                 "Yes",
-                modifier = Modifier.Empty.onActivate(onConfirm),
+                modifier = Modifier.Empty.onActivate { onConfirm() },
             )
         }
     }.open()
 }
 ```
 
+`UiDefinition.open()` returns the owning `UiSession`.
+The optional title is narration metadata, and Screen is the default presentation.
+Choose `presentation = UiPresentation.Hud` on the definition, then use `session.switch(...)` or `session.close()` for the live UI.
+Every `onXxx` callback receives that session as `this`; event controls apply after delivery returns.
+For Paper, import the `dev.s7a.strata.paper.open` extension from `paper-api` and call `definition.open(plugin, player)`.
+See the [UI session guide](https://github.com/sya-ri/strata/blob/master/docs/guides/screens-and-state.md) for categories, visibility, game input, and migration.
+
 See [Authoring patterns](patterns.md) for state, input, and resource ownership.
 
 ## Paper and Velocity installation
 
 Install the chosen host's `plugin` classifier JAR in its `plugins` directory.
-Consumer plugins compile against `dev.s7a.strata:strata-runtime-paper:0.1.6` or `dev.s7a.strata:strata-runtime-velocity:0.1.6` and the host API with `compileOnly` dependencies.
+Consumer plugins compile against `dev.s7a.strata:strata-paper-api:0.1.6` or `dev.s7a.strata:strata-velocity-api:0.1.6` and the host API with `compileOnly` dependencies.
 Declare `depend: [Strata]` for Paper or a required dependency on plugin ID `strata` for Velocity; do not package another Strata runtime in the consumer.
 Players still install their matching Fabric runtime and Fabric Language Kotlin.
 If the screen only uses standard components or custom compositions of them, those client dependencies are sufficient; no application-specific client Mod is needed.
@@ -95,10 +102,10 @@ The Paper guide includes a compiled typed-input screen; use these examples when 
 
 ### Opening, state, and lifecycle
 
-- On Paper's primary thread, inspect `PaperScreens.capabilities(player)`, create independent state outside the DSL callback, and pass a fresh definition to `PaperScreens.open`.
-- On Velocity, inspect the future from `VelocityScreens.capabilities(player)` and construct the definition and owner-thread state inside the factory passed to `VelocityScreens.open`. Its future returns the session handle. Queue external state access with `VelocityScreens.execute(ownerPlugin) { ... }`; never join another UI future from a handler or completion callback.
+- On Paper's primary thread, inspect `PaperUi.capabilities(player)`, create independent state outside the DSL callback, and call `definition.open(ownerPlugin, player)` using `dev.s7a.strata.paper.open`.
+- On Velocity, inspect the future from `VelocityUi.capabilities(player)` and construct the definition and owner-thread state inside the factory passed to `VelocityUi.open`. Its future returns the session handle. Queue external state access with `VelocityUi.execute(ownerPlugin) { ... }`; never join another UI future from a handler or completion callback.
 - A null capability result means negotiation is incomplete or unavailable. Opening with an unsupported declaration returns a terminal session reason; do not silently omit missing components or extensions.
-- Retain the returned `RemoteScreenSession` when status inspection or explicit `close()` is needed. Replacement, disconnect, and failures release its handlers, observations, and transfers. Paper plugin disable releases its owners; a Velocity consumer stopping early calls `VelocityScreens.release(ownerPlugin)`.
+- Retain the returned `UiSession` when status inspection or explicit `close()` is needed. Read live handle properties only on its owner thread; Velocity listeners use detached platform event fields or queue access through `VelocityUi.execute`. Replacement, disconnect, and failures release its handlers, observations, and transfers. Paper plugin disable releases its owners; a Velocity consumer stopping early calls `VelocityUi.release(ownerPlugin)`.
 - Keep database and network work off the UI owner thread. Publish asynchronous results through state sources or the host's state-update boundary; source notifications are queued and committed at the next session cutoff.
 
 ### Remote resources and client behavior
@@ -115,7 +122,7 @@ See the [remote protocol](https://github.com/sya-ri/strata/blob/master/docs/refe
 
 ## Preview the same screen with Web or Headless
 
-Author the application screen for its Mod, Paper, or Velocity owner, then reuse its `ScreenDefinition` factory in the preview harness.
+Author the application screen for its Mod, Paper, or Velocity owner, then reuse its `UiDefinition` factory in the preview harness.
 Pass deterministic sample data and test action implementations through the same application boundary; keep host APIs outside the reusable declaration.
 Do not create a second browser-only layout, silently remove unsupported controls, or treat a reduced preview as full Minecraft parity.
 
@@ -152,7 +159,7 @@ Keep browser-only application effects outside declaration evaluation and close t
 ### Headless preview
 
 Use the [Headless guide](https://github.com/sya-ri/strata/blob/master/docs/guides/headless.md) to select the rendering boundary and supply the viewport, output scale, and resource profile.
-For an application `ScreenDefinition`, follow the [compiled external host tests](https://github.com/sya-ri/strata/blob/master/integration/api/src/test/kotlin/dev/s7a/strata/integration/external/ExternalMinecraftUiHostIntegrationTest.kt); `renderHeadless` directly accepts an Element root, not a screen definition.
+For an application `UiDefinition`, follow the [compiled external host tests](https://github.com/sya-ri/strata/blob/master/integration/api/src/test/kotlin/dev/s7a/strata/integration/external/ExternalMinecraftUiHostIntegrationTest.kt); `renderHeadless` directly accepts an Element root, not a screen definition.
 Keep opt-in host bridge imports in the preview/test harness and create fresh definitions and state for each independent preview.
 Headless images and semantics verify portable behavior; live Slot items and opaque native commands still need Minecraft or a supported exact-generation capture.
 Report missing profile assets and unsupported capabilities instead of substituting a different component tree.

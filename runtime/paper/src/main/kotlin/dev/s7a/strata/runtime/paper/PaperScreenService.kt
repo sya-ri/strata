@@ -14,4 +14,5 @@ internal fun paperScreenService(plugin: Plugin): RemoteScreenService<Player, Plu
         RemoteEndpoint.Server,
         { player, bytes -> player.sendPluginMessage(plugin, RemoteConnection.CHANNEL, bytes) },
         { failure -> plugin.logger.warning("Strata screen ended: ${failure.message}") },
+        notify = { player, event -> plugin.server.pluginManager.callEvent(paperUiEvent(player, event)) },
     )

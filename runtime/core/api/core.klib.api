@@ -261,6 +261,15 @@ sealed interface dev.s7a.strata.runtime/TreeState { // dev.s7a.strata.runtime/Tr
     }
 }
 
+final class <#A: kotlin/Any> dev.s7a.strata.runtime.spi/RuntimeUiInput : kotlin/AutoCloseable { // dev.s7a.strata.runtime.spi/RuntimeUiInput|null[0]
+    constructor <init>(kotlin.collections/Map<#A, dev.s7a.strata.ui/UiGameAction>, kotlin/Function1<#A, kotlin/Unit>, kotlin/Function1<#A, kotlin/Unit>) // dev.s7a.strata.runtime.spi/RuntimeUiInput.<init>|<init>(kotlin.collections.Map<1:0,dev.s7a.strata.ui.UiGameAction>;kotlin.Function1<1:0,kotlin.Unit>;kotlin.Function1<1:0,kotlin.Unit>){}[0]
+
+    final fun close() // dev.s7a.strata.runtime.spi/RuntimeUiInput.close|close(){}[0]
+    final fun configure(kotlin/Any?, dev.s7a.strata.ui/UiInputPolicy, kotlin/Boolean) // dev.s7a.strata.runtime.spi/RuntimeUiInput.configure|configure(kotlin.Any?;dev.s7a.strata.ui.UiInputPolicy;kotlin.Boolean){}[0]
+    final fun event(kotlin.collections/Collection<#A>, kotlin/Boolean, kotlin/Boolean) // dev.s7a.strata.runtime.spi/RuntimeUiInput.event|event(kotlin.collections.Collection<1:0>;kotlin.Boolean;kotlin.Boolean){}[0]
+    final fun reset() // dev.s7a.strata.runtime.spi/RuntimeUiInput.reset|reset(){}[0]
+}
+
 final class dev.s7a.strata.runtime.diagnostics/UiRenderNodeSnapshot { // dev.s7a.strata.runtime.diagnostics/UiRenderNodeSnapshot|null[0]
     constructor <init>(dev.s7a.strata.runtime.diagnostics/UiRenderNodeId, dev.s7a.strata.runtime.diagnostics/UiRenderNodeId?, dev.s7a.strata.runtime.diagnostics/UiRenderNodeKind, kotlin/String, kotlin/Boolean, kotlin.collections/Map<dev.s7a.strata.runtime.diagnostics/UiRenderMetric, kotlin/Long>, kotlin.collections/Map<dev.s7a.strata.runtime.diagnostics/UiRenderOperation, kotlin.collections/Map<dev.s7a.strata.runtime.diagnostics/UiRenderMetric, kotlin/Long>>) // dev.s7a.strata.runtime.diagnostics/UiRenderNodeSnapshot.<init>|<init>(dev.s7a.strata.runtime.diagnostics.UiRenderNodeId;dev.s7a.strata.runtime.diagnostics.UiRenderNodeId?;dev.s7a.strata.runtime.diagnostics.UiRenderNodeKind;kotlin.String;kotlin.Boolean;kotlin.collections.Map<dev.s7a.strata.runtime.diagnostics.UiRenderMetric,kotlin.Long>;kotlin.collections.Map<dev.s7a.strata.runtime.diagnostics.UiRenderOperation,kotlin.collections.Map<dev.s7a.strata.runtime.diagnostics.UiRenderMetric,kotlin.Long>>){}[0]
 
@@ -357,8 +366,53 @@ final class dev.s7a.strata.runtime.spi/RuntimeDeclaration { // dev.s7a.strata.ru
 
 final class dev.s7a.strata.runtime.spi/RuntimeTextInputFocus // dev.s7a.strata.runtime.spi/RuntimeTextInputFocus|null[0]
 
+final class dev.s7a.strata.runtime.spi/RuntimeUiControl { // dev.s7a.strata.runtime.spi/RuntimeUiControl|null[0]
+    constructor <init>(kotlin/Long, dev.s7a.strata.ui/UiPresentation, dev.s7a.strata.ui/UiInputPolicy, dev.s7a.strata.ui/UiInteractionMode) // dev.s7a.strata.runtime.spi/RuntimeUiControl.<init>|<init>(kotlin.Long;dev.s7a.strata.ui.UiPresentation;dev.s7a.strata.ui.UiInputPolicy;dev.s7a.strata.ui.UiInteractionMode){}[0]
+
+    final val inputPolicy // dev.s7a.strata.runtime.spi/RuntimeUiControl.inputPolicy|{}inputPolicy[0]
+        final fun <get-inputPolicy>(): dev.s7a.strata.ui/UiInputPolicy // dev.s7a.strata.runtime.spi/RuntimeUiControl.inputPolicy.<get-inputPolicy>|<get-inputPolicy>(){}[0]
+    final val interactionMode // dev.s7a.strata.runtime.spi/RuntimeUiControl.interactionMode|{}interactionMode[0]
+        final fun <get-interactionMode>(): dev.s7a.strata.ui/UiInteractionMode // dev.s7a.strata.runtime.spi/RuntimeUiControl.interactionMode.<get-interactionMode>|<get-interactionMode>(){}[0]
+    final val presentation // dev.s7a.strata.runtime.spi/RuntimeUiControl.presentation|{}presentation[0]
+        final fun <get-presentation>(): dev.s7a.strata.ui/UiPresentation // dev.s7a.strata.runtime.spi/RuntimeUiControl.presentation.<get-presentation>|<get-presentation>(){}[0]
+    final val sequence // dev.s7a.strata.runtime.spi/RuntimeUiControl.sequence|{}sequence[0]
+        final fun <get-sequence>(): kotlin/Long // dev.s7a.strata.runtime.spi/RuntimeUiControl.sequence.<get-sequence>|<get-sequence>(){}[0]
+
+    final fun component1(): kotlin/Long // dev.s7a.strata.runtime.spi/RuntimeUiControl.component1|component1(){}[0]
+    final fun component2(): dev.s7a.strata.ui/UiPresentation // dev.s7a.strata.runtime.spi/RuntimeUiControl.component2|component2(){}[0]
+    final fun component3(): dev.s7a.strata.ui/UiInputPolicy // dev.s7a.strata.runtime.spi/RuntimeUiControl.component3|component3(){}[0]
+    final fun component4(): dev.s7a.strata.ui/UiInteractionMode // dev.s7a.strata.runtime.spi/RuntimeUiControl.component4|component4(){}[0]
+    final fun copy(kotlin/Long = ..., dev.s7a.strata.ui/UiPresentation = ..., dev.s7a.strata.ui/UiInputPolicy = ..., dev.s7a.strata.ui/UiInteractionMode = ...): dev.s7a.strata.runtime.spi/RuntimeUiControl // dev.s7a.strata.runtime.spi/RuntimeUiControl.copy|copy(kotlin.Long;dev.s7a.strata.ui.UiPresentation;dev.s7a.strata.ui.UiInputPolicy;dev.s7a.strata.ui.UiInteractionMode){}[0]
+    final fun equals(kotlin/Any?): kotlin/Boolean // dev.s7a.strata.runtime.spi/RuntimeUiControl.equals|equals(kotlin.Any?){}[0]
+    final fun hashCode(): kotlin/Int // dev.s7a.strata.runtime.spi/RuntimeUiControl.hashCode|hashCode(){}[0]
+    final fun toString(): kotlin/String // dev.s7a.strata.runtime.spi/RuntimeUiControl.toString|toString(){}[0]
+}
+
+final class dev.s7a.strata.runtime.spi/RuntimeUiController : dev.s7a.strata.ui/UiSession { // dev.s7a.strata.runtime.spi/RuntimeUiController|null[0]
+    constructor <init>(dev.s7a.strata.ui/UiPresentation, dev.s7a.strata.ui/UiInputPolicy = ..., kotlin/Function1<dev.s7a.strata.runtime.spi/RuntimeUiControl, kotlin/Unit>, kotlin/Function1<dev.s7a.strata.ui/UiCloseReason, kotlin/Unit>) // dev.s7a.strata.runtime.spi/RuntimeUiController.<init>|<init>(dev.s7a.strata.ui.UiPresentation;dev.s7a.strata.ui.UiInputPolicy;kotlin.Function1<dev.s7a.strata.runtime.spi.RuntimeUiControl,kotlin.Unit>;kotlin.Function1<dev.s7a.strata.ui.UiCloseReason,kotlin.Unit>){}[0]
+
+    final val inputPolicy // dev.s7a.strata.runtime.spi/RuntimeUiController.inputPolicy|{}inputPolicy[0]
+        final fun <get-inputPolicy>(): dev.s7a.strata.ui/UiInputPolicy // dev.s7a.strata.runtime.spi/RuntimeUiController.inputPolicy.<get-inputPolicy>|<get-inputPolicy>(){}[0]
+    final val interactionMode // dev.s7a.strata.runtime.spi/RuntimeUiController.interactionMode|{}interactionMode[0]
+        final fun <get-interactionMode>(): dev.s7a.strata.ui/UiInteractionMode // dev.s7a.strata.runtime.spi/RuntimeUiController.interactionMode.<get-interactionMode>|<get-interactionMode>(){}[0]
+    final val presentation // dev.s7a.strata.runtime.spi/RuntimeUiController.presentation|{}presentation[0]
+        final fun <get-presentation>(): dev.s7a.strata.ui/UiPresentation? // dev.s7a.strata.runtime.spi/RuntimeUiController.presentation.<get-presentation>|<get-presentation>(){}[0]
+    final val status // dev.s7a.strata.runtime.spi/RuntimeUiController.status|{}status[0]
+        final fun <get-status>(): dev.s7a.strata.ui/UiSessionStatus // dev.s7a.strata.runtime.spi/RuntimeUiController.status.<get-status>|<get-status>(){}[0]
+
+    final fun <#A1: kotlin/Any?> transaction(kotlin/Function0<#A1>): #A1 // dev.s7a.strata.runtime.spi/RuntimeUiController.transaction|transaction(kotlin.Function0<0:0>){0§<kotlin.Any?>}[0]
+    final fun applied(kotlin/Long) // dev.s7a.strata.runtime.spi/RuntimeUiController.applied|applied(kotlin.Long){}[0]
+    final fun close() // dev.s7a.strata.runtime.spi/RuntimeUiController.close|close(){}[0]
+    final fun rejected(kotlin/Long, dev.s7a.strata.ui/UiRejection) // dev.s7a.strata.runtime.spi/RuntimeUiController.rejected|rejected(kotlin.Long;dev.s7a.strata.ui.UiRejection){}[0]
+    final fun setInputPolicy(dev.s7a.strata.ui/UiInputPolicy): dev.s7a.strata.ui/UiOperationResult // dev.s7a.strata.runtime.spi/RuntimeUiController.setInputPolicy|setInputPolicy(dev.s7a.strata.ui.UiInputPolicy){}[0]
+    final fun setInteractionMode(dev.s7a.strata.ui/UiInteractionMode): dev.s7a.strata.ui/UiOperationResult // dev.s7a.strata.runtime.spi/RuntimeUiController.setInteractionMode|setInteractionMode(dev.s7a.strata.ui.UiInteractionMode){}[0]
+    final fun start() // dev.s7a.strata.runtime.spi/RuntimeUiController.start|start(){}[0]
+    final fun switch(dev.s7a.strata.ui/UiPresentation): dev.s7a.strata.ui/UiOperationResult // dev.s7a.strata.runtime.spi/RuntimeUiController.switch|switch(dev.s7a.strata.ui.UiPresentation){}[0]
+    final fun terminate(dev.s7a.strata.ui/UiCloseReason) // dev.s7a.strata.runtime.spi/RuntimeUiController.terminate|terminate(dev.s7a.strata.ui.UiCloseReason){}[0]
+}
+
 final class dev.s7a.strata.runtime/UiTree : dev.s7a.strata.runtime.spi/RuntimeUiDiagnosticsOwner, kotlin/AutoCloseable { // dev.s7a.strata.runtime/UiTree|null[0]
-    constructor <init>() // dev.s7a.strata.runtime/UiTree.<init>|<init>(){}[0]
+    constructor <init>(dev.s7a.strata.ui/UiSession? = ...) // dev.s7a.strata.runtime/UiTree.<init>|<init>(dev.s7a.strata.ui.UiSession?){}[0]
 
     final val state // dev.s7a.strata.runtime/UiTree.state|{}state[0]
         final fun <get-state>(): dev.s7a.strata.runtime/TreeState // dev.s7a.strata.runtime/UiTree.state.<get-state>|<get-state>(){}[0]
@@ -386,4 +440,4 @@ final value class dev.s7a.strata.runtime.diagnostics/UiRenderNodeId { // dev.s7a
     final fun toString(): kotlin/String // dev.s7a.strata.runtime.diagnostics/UiRenderNodeId.toString|toString(){}[0]
 }
 
-final fun dev.s7a.strata.runtime.spi/createRuntimeUiSession(kotlin/Function0<dev.s7a.strata.element/Element>): dev.s7a.strata.runtime.spi/RuntimeUiSession // dev.s7a.strata.runtime.spi/createRuntimeUiSession|createRuntimeUiSession(kotlin.Function0<dev.s7a.strata.element.Element>){}[0]
+final fun dev.s7a.strata.runtime.spi/createRuntimeUiSession(dev.s7a.strata.ui/UiSession? = ..., kotlin/Function0<dev.s7a.strata.element/Element>): dev.s7a.strata.runtime.spi/RuntimeUiSession // dev.s7a.strata.runtime.spi/createRuntimeUiSession|createRuntimeUiSession(dev.s7a.strata.ui.UiSession?;kotlin.Function0<dev.s7a.strata.element.Element>){}[0]

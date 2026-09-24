@@ -2,6 +2,7 @@ package dev.s7a.strata.runtime
 
 import dev.s7a.strata.node.LifecycleNode
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
+import dev.s7a.strata.ui.UiSession
 
 /**
  * Owns node binding, parent-first attachment, and descendant-first cleanup.
@@ -17,6 +18,7 @@ internal class LifecycleManager(
     private val threadGuard: ThreadGuard,
     private val dirtyTracker: DirtyTracker,
     private val monitoring: RenderMonitoring = RenderMonitoring(),
+    private val eventSession: UiSession? = null,
     private val beforeEntryCleanup: (RetainedEntry) -> Unit,
 ) {
     /**
@@ -29,7 +31,7 @@ internal class LifecycleManager(
         registry.claim(retained.node)
         val binding =
             runCatching {
-                retained.node.bindRuntime { mask ->
+                retained.node.bindRuntime(eventSession) { mask ->
                     threadGuard.check()
                     check(retained.cleanupStarted.not()) { "Node invalidation is unavailable during cleanup." }
                     dirtyTracker.record(retained, mask)

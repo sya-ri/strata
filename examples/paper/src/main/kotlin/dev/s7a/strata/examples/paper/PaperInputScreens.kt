@@ -14,8 +14,8 @@ import dev.s7a.strata.modifier.initialFocus
 import dev.s7a.strata.modifier.onKeyPress
 import dev.s7a.strata.modifier.onPreedit
 import dev.s7a.strata.modifier.onPress
-import dev.s7a.strata.screen.ScreenDefinition
 import dev.s7a.strata.state.mutableStateOf
+import dev.s7a.strata.ui.UiDefinition
 
 /**
  * Compiled fixed-policy input subscriptions whose callbacks execute on the server.
@@ -24,10 +24,10 @@ public object PaperInputScreens {
     /**
      * Creates independent editor state and subscribes only to Enter, preedit, and secondary presses.
      */
-    public fun editor(): ScreenDefinition {
+    public fun editor(): UiDefinition {
         val text = TextFieldState("", 128)
         val notice = mutableStateOf("Press Enter to submit.")
-        return ScreenDefinition("Input notifications") {
+        return UiDefinition("Input notifications") {
             Column(spacing = 4) {
                 Text(notice.value)
                 TextField(

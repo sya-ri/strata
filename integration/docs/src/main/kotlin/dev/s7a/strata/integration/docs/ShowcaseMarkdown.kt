@@ -1,3 +1,5 @@
+@file:Suppress("DEPRECATION") // Compatibility overloads and regression coverage retain the deprecated screen entry points.
+
 package dev.s7a.strata.integration.docs
 
 /**
@@ -36,7 +38,7 @@ ${sections.joinToString("\n\n") { section -> section.section.trimEnd('\n') }}
 
 ## Image verification
 
-Each image is the complete frame of its compiled dedicated `ScreenDefinition`, sampled at the stated physical density without upscaling or cropping.
+Each image is the complete frame of its compiled dedicated `UiDefinition`, sampled at the stated physical density without upscaling or cropping.
 Generation renders these definitions with the headless runtime and explicit Minecraft assets without starting Minecraft or creating a GPU context.
 Animated examples use the frame at time zero; the independent native check accepts a complete supported animation phase.
 

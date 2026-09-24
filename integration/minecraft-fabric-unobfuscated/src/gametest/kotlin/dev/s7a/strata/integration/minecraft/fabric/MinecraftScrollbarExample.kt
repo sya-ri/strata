@@ -1,3 +1,5 @@
+@file:Suppress("DEPRECATION") // Compatibility overloads and regression coverage retain the deprecated screen entry points.
+
 package dev.s7a.strata.integration.minecraft.fabric
 
 // showcase-source-begin:scrollbar
@@ -13,7 +15,9 @@ import dev.s7a.strata.modifier.size
 import dev.s7a.strata.render.ArgbColor
 import dev.s7a.strata.screen.ScreenDefinition
 
-/** Builds a Scrollbar with the smallest linked viewport needed to establish its metrics. */
+/**
+ * Builds a Scrollbar with the smallest linked viewport needed to establish its metrics.
+ */
 internal fun createScrollbarShowcaseScreenDefinition(): ScreenDefinition {
     val state = ScrollState(initialOffset = 18.0)
     return ScreenDefinition("Scrollbar showcase") {

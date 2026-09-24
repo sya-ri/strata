@@ -54,6 +54,10 @@ public final class dev/s7a/strata/runtime/remote/RemoteCapabilities {
 	public final fun getTypes ()Ljava/util/Set;
 }
 
+public final class dev/s7a/strata/runtime/remote/RemoteCapabilitiesExtensionsKt {
+	public static final fun toUiCapabilities (Ldev/s7a/strata/runtime/remote/RemoteCapabilities;)Ldev/s7a/strata/ui/UiClientCapabilities;
+}
+
 public abstract interface class dev/s7a/strata/runtime/remote/RemoteClientActions {
 	public abstract fun send (JLdev/s7a/strata/projection/ProjectionType;Ldev/s7a/strata/projection/ProjectionValue;)J
 }
@@ -61,16 +65,22 @@ public abstract interface class dev/s7a/strata/runtime/remote/RemoteClientAction
 public final class dev/s7a/strata/runtime/remote/RemoteClientSession : java/lang/AutoCloseable {
 	public fun <init> (Ldev/s7a/strata/runtime/remote/RemoteMessage$Snapshot;Ldev/s7a/strata/runtime/remote/RemoteRegistry;Ldev/s7a/strata/runtime/remote/RemoteLimits;Lkotlin/jvm/functions/Function1;)V
 	public synthetic fun <init> (Ldev/s7a/strata/runtime/remote/RemoteMessage$Snapshot;Ldev/s7a/strata/runtime/remote/RemoteRegistry;Ldev/s7a/strata/runtime/remote/RemoteLimits;Lkotlin/jvm/functions/Function1;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun bindUiSession (Ldev/s7a/strata/ui/UiSession;)V
 	public fun close ()V
 	public final fun close (Ldev/s7a/strata/runtime/remote/RemoteFailure;Z)V
 	public static synthetic fun close$default (Ldev/s7a/strata/runtime/remote/RemoteClientSession;Ldev/s7a/strata/runtime/remote/RemoteFailure;ZILjava/lang/Object;)V
-	public final fun definition (Ldev/s7a/strata/text/UiText;)Ldev/s7a/strata/screen/ScreenDefinition;
+	public final fun controlApplied (Ldev/s7a/strata/runtime/spi/RuntimeUiControl;Ldev/s7a/strata/ui/UiRejection;)V
+	public final fun definition (Ldev/s7a/strata/text/UiText;)Ldev/s7a/strata/ui/UiDefinition;
 	public final fun flushEdits ()V
 	public final fun getIdentity ()J
+	public final fun getNodeCount ()I
 	public final fun getStatus ()Ldev/s7a/strata/runtime/remote/RemoteSessionStatus;
+	public final fun getUiSession ()Ldev/s7a/strata/ui/UiSession;
 	public final fun receive (Ldev/s7a/strata/runtime/remote/RemoteMessage$Acknowledgement;)V
+	public final fun receive (Ldev/s7a/strata/runtime/remote/RemoteMessage$ControlReceipt;)V
 	public final fun receive (Ldev/s7a/strata/runtime/remote/RemoteMessage$Snapshot;)V
 	public final fun receive (Ldev/s7a/strata/runtime/remote/RemoteMessage$Update;)V
+	public final fun synchronizeInteraction ()V
 }
 
 public final class dev/s7a/strata/runtime/remote/RemoteClientStates : java/lang/AutoCloseable {
@@ -192,13 +202,17 @@ public final class dev/s7a/strata/runtime/remote/RemoteFailure : java/lang/Enum 
 	public static final field HandlerFailed Ldev/s7a/strata/runtime/remote/RemoteFailure;
 	public static final field InvalidMessage Ldev/s7a/strata/runtime/remote/RemoteFailure;
 	public static final field OwnerClosed Ldev/s7a/strata/runtime/remote/RemoteFailure;
+	public static final field OwnerDisabled Ldev/s7a/strata/runtime/remote/RemoteFailure;
 	public static final field PeerClosed Ldev/s7a/strata/runtime/remote/RemoteFailure;
 	public static final field Replaced Ldev/s7a/strata/runtime/remote/RemoteFailure;
 	public static final field ResourceLimit Ldev/s7a/strata/runtime/remote/RemoteFailure;
 	public static final field TimedOut Ldev/s7a/strata/runtime/remote/RemoteFailure;
 	public static final field UnsupportedProtocol Ldev/s7a/strata/runtime/remote/RemoteFailure;
 	public static final field UnsupportedType Ldev/s7a/strata/runtime/remote/RemoteFailure;
+	public static final field Visibility Ldev/s7a/strata/runtime/remote/RemoteFailure;
+	public static final field WorldExited Ldev/s7a/strata/runtime/remote/RemoteFailure;
 	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public final fun getUiReason ()Ldev/s7a/strata/ui/UiCloseReason;
 	public static fun valueOf (Ljava/lang/String;)Ldev/s7a/strata/runtime/remote/RemoteFailure;
 	public static fun values ()[Ldev/s7a/strata/runtime/remote/RemoteFailure;
 }
@@ -231,11 +245,98 @@ public final class dev/s7a/strata/runtime/remote/RemoteImageCodec {
 	public final fun encode (Ldev/s7a/strata/component/ImageSource;)Ldev/s7a/strata/projection/ProjectionValue;
 }
 
+public abstract interface class dev/s7a/strata/runtime/remote/RemoteLifecycleEvent {
+}
+
+public final class dev/s7a/strata/runtime/remote/RemoteLifecycleEvent$Closed : dev/s7a/strata/runtime/remote/RemoteLifecycleEvent {
+	public fun <init> (Ljava/lang/Object;JLdev/s7a/strata/ui/UiSession;Ldev/s7a/strata/ui/UiPresentation;Ldev/s7a/strata/ui/UiCategory;Ldev/s7a/strata/ui/UiCloseReason;)V
+	public final fun component1 ()Ljava/lang/Object;
+	public final fun component2 ()J
+	public final fun component3 ()Ldev/s7a/strata/ui/UiSession;
+	public final fun component4 ()Ldev/s7a/strata/ui/UiPresentation;
+	public final fun component5 ()Ldev/s7a/strata/ui/UiCategory;
+	public final fun component6 ()Ldev/s7a/strata/ui/UiCloseReason;
+	public final fun copy (Ljava/lang/Object;JLdev/s7a/strata/ui/UiSession;Ldev/s7a/strata/ui/UiPresentation;Ldev/s7a/strata/ui/UiCategory;Ldev/s7a/strata/ui/UiCloseReason;)Ldev/s7a/strata/runtime/remote/RemoteLifecycleEvent$Closed;
+	public static synthetic fun copy$default (Ldev/s7a/strata/runtime/remote/RemoteLifecycleEvent$Closed;Ljava/lang/Object;JLdev/s7a/strata/ui/UiSession;Ldev/s7a/strata/ui/UiPresentation;Ldev/s7a/strata/ui/UiCategory;Ldev/s7a/strata/ui/UiCloseReason;ILjava/lang/Object;)Ldev/s7a/strata/runtime/remote/RemoteLifecycleEvent$Closed;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getCategory ()Ldev/s7a/strata/ui/UiCategory;
+	public final fun getIdentity ()J
+	public final fun getOwner ()Ljava/lang/Object;
+	public final fun getPresentation ()Ldev/s7a/strata/ui/UiPresentation;
+	public final fun getReason ()Ldev/s7a/strata/ui/UiCloseReason;
+	public final fun getSession ()Ldev/s7a/strata/ui/UiSession;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class dev/s7a/strata/runtime/remote/RemoteLifecycleEvent$Disconnected : dev/s7a/strata/runtime/remote/RemoteLifecycleEvent {
+	public fun <init> (Ldev/s7a/strata/ui/UiCloseReason;)V
+	public final fun component1 ()Ldev/s7a/strata/ui/UiCloseReason;
+	public final fun copy (Ldev/s7a/strata/ui/UiCloseReason;)Ldev/s7a/strata/runtime/remote/RemoteLifecycleEvent$Disconnected;
+	public static synthetic fun copy$default (Ldev/s7a/strata/runtime/remote/RemoteLifecycleEvent$Disconnected;Ldev/s7a/strata/ui/UiCloseReason;ILjava/lang/Object;)Ldev/s7a/strata/runtime/remote/RemoteLifecycleEvent$Disconnected;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getReason ()Ldev/s7a/strata/ui/UiCloseReason;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class dev/s7a/strata/runtime/remote/RemoteLifecycleEvent$Opened : dev/s7a/strata/runtime/remote/RemoteLifecycleEvent {
+	public fun <init> (Ljava/lang/Object;JLdev/s7a/strata/ui/UiSession;Ldev/s7a/strata/ui/UiPresentation;Ldev/s7a/strata/ui/UiCategory;)V
+	public final fun component1 ()Ljava/lang/Object;
+	public final fun component2 ()J
+	public final fun component3 ()Ldev/s7a/strata/ui/UiSession;
+	public final fun component4 ()Ldev/s7a/strata/ui/UiPresentation;
+	public final fun component5 ()Ldev/s7a/strata/ui/UiCategory;
+	public final fun copy (Ljava/lang/Object;JLdev/s7a/strata/ui/UiSession;Ldev/s7a/strata/ui/UiPresentation;Ldev/s7a/strata/ui/UiCategory;)Ldev/s7a/strata/runtime/remote/RemoteLifecycleEvent$Opened;
+	public static synthetic fun copy$default (Ldev/s7a/strata/runtime/remote/RemoteLifecycleEvent$Opened;Ljava/lang/Object;JLdev/s7a/strata/ui/UiSession;Ldev/s7a/strata/ui/UiPresentation;Ldev/s7a/strata/ui/UiCategory;ILjava/lang/Object;)Ldev/s7a/strata/runtime/remote/RemoteLifecycleEvent$Opened;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getCategory ()Ldev/s7a/strata/ui/UiCategory;
+	public final fun getIdentity ()J
+	public final fun getOwner ()Ljava/lang/Object;
+	public final fun getPresentation ()Ldev/s7a/strata/ui/UiPresentation;
+	public final fun getSession ()Ldev/s7a/strata/ui/UiSession;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class dev/s7a/strata/runtime/remote/RemoteLifecycleEvent$PresentationChanged : dev/s7a/strata/runtime/remote/RemoteLifecycleEvent {
+	public fun <init> (Ljava/lang/Object;JLdev/s7a/strata/ui/UiSession;Ldev/s7a/strata/ui/UiPresentation;Ldev/s7a/strata/ui/UiPresentation;Ldev/s7a/strata/ui/UiCategory;)V
+	public final fun component1 ()Ljava/lang/Object;
+	public final fun component2 ()J
+	public final fun component3 ()Ldev/s7a/strata/ui/UiSession;
+	public final fun component4 ()Ldev/s7a/strata/ui/UiPresentation;
+	public final fun component5 ()Ldev/s7a/strata/ui/UiPresentation;
+	public final fun component6 ()Ldev/s7a/strata/ui/UiCategory;
+	public final fun copy (Ljava/lang/Object;JLdev/s7a/strata/ui/UiSession;Ldev/s7a/strata/ui/UiPresentation;Ldev/s7a/strata/ui/UiPresentation;Ldev/s7a/strata/ui/UiCategory;)Ldev/s7a/strata/runtime/remote/RemoteLifecycleEvent$PresentationChanged;
+	public static synthetic fun copy$default (Ldev/s7a/strata/runtime/remote/RemoteLifecycleEvent$PresentationChanged;Ljava/lang/Object;JLdev/s7a/strata/ui/UiSession;Ldev/s7a/strata/ui/UiPresentation;Ldev/s7a/strata/ui/UiPresentation;Ldev/s7a/strata/ui/UiCategory;ILjava/lang/Object;)Ldev/s7a/strata/runtime/remote/RemoteLifecycleEvent$PresentationChanged;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getCategory ()Ldev/s7a/strata/ui/UiCategory;
+	public final fun getIdentity ()J
+	public final fun getOwner ()Ljava/lang/Object;
+	public final fun getPresentation ()Ldev/s7a/strata/ui/UiPresentation;
+	public final fun getPrevious ()Ldev/s7a/strata/ui/UiPresentation;
+	public final fun getSession ()Ldev/s7a/strata/ui/UiSession;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class dev/s7a/strata/runtime/remote/RemoteLifecycleEvent$Ready : dev/s7a/strata/runtime/remote/RemoteLifecycleEvent {
+	public fun <init> (Ldev/s7a/strata/ui/UiClientCapabilities;)V
+	public final fun component1 ()Ldev/s7a/strata/ui/UiClientCapabilities;
+	public final fun copy (Ldev/s7a/strata/ui/UiClientCapabilities;)Ldev/s7a/strata/runtime/remote/RemoteLifecycleEvent$Ready;
+	public static synthetic fun copy$default (Ldev/s7a/strata/runtime/remote/RemoteLifecycleEvent$Ready;Ldev/s7a/strata/ui/UiClientCapabilities;ILjava/lang/Object;)Ldev/s7a/strata/runtime/remote/RemoteLifecycleEvent$Ready;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getCapabilities ()Ldev/s7a/strata/ui/UiClientCapabilities;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
 public final class dev/s7a/strata/runtime/remote/RemoteLimits {
 	public fun <init> ()V
-	public fun <init> (IIIIIIJIJ)V
-	public synthetic fun <init> (IIIIIIJIJILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public fun <init> (IIIIIIJIJI)V
+	public synthetic fun <init> (IIIIIIJIJIILkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public final fun component1 ()I
+	public final fun component10 ()I
 	public final fun component2 ()I
 	public final fun component3 ()I
 	public final fun component4 ()I
@@ -244,12 +345,13 @@ public final class dev/s7a/strata/runtime/remote/RemoteLimits {
 	public final fun component7 ()J
 	public final fun component8 ()I
 	public final fun component9 ()J
-	public final fun copy (IIIIIIJIJ)Ldev/s7a/strata/runtime/remote/RemoteLimits;
-	public static synthetic fun copy$default (Ldev/s7a/strata/runtime/remote/RemoteLimits;IIIIIIJIJILjava/lang/Object;)Ldev/s7a/strata/runtime/remote/RemoteLimits;
+	public final fun copy (IIIIIIJIJI)Ldev/s7a/strata/runtime/remote/RemoteLimits;
+	public static synthetic fun copy$default (Ldev/s7a/strata/runtime/remote/RemoteLimits;IIIIIIJIJIILjava/lang/Object;)Ldev/s7a/strata/runtime/remote/RemoteLimits;
 	public fun equals (Ljava/lang/Object;)Z
 	public final fun getAssemblyMillis ()J
 	public final fun getCollectionEntries ()I
 	public final fun getFrameBytes ()I
+	public final fun getHudSessions ()I
 	public final fun getMessageBytes ()I
 	public final fun getPendingBytes ()I
 	public final fun getReconstructionMillis ()J
@@ -325,6 +427,64 @@ public final class dev/s7a/strata/runtime/remote/RemoteMessage$Close : dev/s7a/s
 	public fun toString ()Ljava/lang/String;
 }
 
+public final class dev/s7a/strata/runtime/remote/RemoteMessage$Control : dev/s7a/strata/runtime/remote/RemoteMessage {
+	public fun <init> (JLdev/s7a/strata/runtime/spi/RuntimeUiControl;)V
+	public final fun component1 ()J
+	public final fun component2 ()Ldev/s7a/strata/runtime/spi/RuntimeUiControl;
+	public final fun copy (JLdev/s7a/strata/runtime/spi/RuntimeUiControl;)Ldev/s7a/strata/runtime/remote/RemoteMessage$Control;
+	public static synthetic fun copy$default (Ldev/s7a/strata/runtime/remote/RemoteMessage$Control;JLdev/s7a/strata/runtime/spi/RuntimeUiControl;ILjava/lang/Object;)Ldev/s7a/strata/runtime/remote/RemoteMessage$Control;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun getSession ()Ljava/lang/Long;
+	public final fun getState ()Ldev/s7a/strata/runtime/spi/RuntimeUiControl;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class dev/s7a/strata/runtime/remote/RemoteMessage$ControlApplied : dev/s7a/strata/runtime/remote/RemoteMessage {
+	public fun <init> (JJLdev/s7a/strata/ui/UiRejection;)V
+	public synthetic fun <init> (JJLdev/s7a/strata/ui/UiRejection;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()J
+	public final fun component2 ()J
+	public final fun component3 ()Ldev/s7a/strata/ui/UiRejection;
+	public final fun copy (JJLdev/s7a/strata/ui/UiRejection;)Ldev/s7a/strata/runtime/remote/RemoteMessage$ControlApplied;
+	public static synthetic fun copy$default (Ldev/s7a/strata/runtime/remote/RemoteMessage$ControlApplied;JJLdev/s7a/strata/ui/UiRejection;ILjava/lang/Object;)Ldev/s7a/strata/runtime/remote/RemoteMessage$ControlApplied;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getRejection ()Ldev/s7a/strata/ui/UiRejection;
+	public final fun getSequence ()J
+	public fun getSession ()Ljava/lang/Long;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class dev/s7a/strata/runtime/remote/RemoteMessage$ControlReceipt : dev/s7a/strata/runtime/remote/RemoteMessage {
+	public fun <init> (JJLdev/s7a/strata/ui/UiRejection;)V
+	public synthetic fun <init> (JJLdev/s7a/strata/ui/UiRejection;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()J
+	public final fun component2 ()J
+	public final fun component3 ()Ldev/s7a/strata/ui/UiRejection;
+	public final fun copy (JJLdev/s7a/strata/ui/UiRejection;)Ldev/s7a/strata/runtime/remote/RemoteMessage$ControlReceipt;
+	public static synthetic fun copy$default (Ldev/s7a/strata/runtime/remote/RemoteMessage$ControlReceipt;JJLdev/s7a/strata/ui/UiRejection;ILjava/lang/Object;)Ldev/s7a/strata/runtime/remote/RemoteMessage$ControlReceipt;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getRejection ()Ldev/s7a/strata/ui/UiRejection;
+	public final fun getSequence ()J
+	public fun getSession ()Ljava/lang/Long;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class dev/s7a/strata/runtime/remote/RemoteMessage$ControlRequest : dev/s7a/strata/runtime/remote/RemoteMessage {
+	public fun <init> (JLdev/s7a/strata/runtime/spi/RuntimeUiControl;)V
+	public final fun component1 ()J
+	public final fun component2 ()Ldev/s7a/strata/runtime/spi/RuntimeUiControl;
+	public final fun copy (JLdev/s7a/strata/runtime/spi/RuntimeUiControl;)Ldev/s7a/strata/runtime/remote/RemoteMessage$ControlRequest;
+	public static synthetic fun copy$default (Ldev/s7a/strata/runtime/remote/RemoteMessage$ControlRequest;JLdev/s7a/strata/runtime/spi/RuntimeUiControl;ILjava/lang/Object;)Ldev/s7a/strata/runtime/remote/RemoteMessage$ControlRequest;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun getSession ()Ljava/lang/Long;
+	public final fun getState ()Ldev/s7a/strata/runtime/spi/RuntimeUiControl;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
 public final class dev/s7a/strata/runtime/remote/RemoteMessage$Hello : dev/s7a/strata/runtime/remote/RemoteMessage {
 	public fun <init> (ILdev/s7a/strata/runtime/remote/RemoteLimits;Ljava/util/Set;)V
 	public final fun getLimits ()Ldev/s7a/strata/runtime/remote/RemoteLimits;
@@ -345,19 +505,23 @@ public final class dev/s7a/strata/runtime/remote/RemoteMessage$Resynchronize : d
 }
 
 public final class dev/s7a/strata/runtime/remote/RemoteMessage$Snapshot : dev/s7a/strata/runtime/remote/RemoteMessage {
-	public fun <init> (JJLdev/s7a/strata/projection/ProjectionValue;Ldev/s7a/strata/runtime/remote/RemoteTree;Z)V
-	public synthetic fun <init> (JJLdev/s7a/strata/projection/ProjectionValue;Ldev/s7a/strata/runtime/remote/RemoteTree;ZILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public fun <init> (JJLdev/s7a/strata/projection/ProjectionValue;Ldev/s7a/strata/runtime/remote/RemoteTree;ZLdev/s7a/strata/runtime/remote/RemoteUiSettings;Ldev/s7a/strata/runtime/spi/RuntimeUiControl;)V
+	public synthetic fun <init> (JJLdev/s7a/strata/projection/ProjectionValue;Ldev/s7a/strata/runtime/remote/RemoteTree;ZLdev/s7a/strata/runtime/remote/RemoteUiSettings;Ldev/s7a/strata/runtime/spi/RuntimeUiControl;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public final fun component1 ()J
 	public final fun component2 ()J
 	public final fun component3 ()Ldev/s7a/strata/projection/ProjectionValue;
 	public final fun component4 ()Ldev/s7a/strata/runtime/remote/RemoteTree;
 	public final fun component5 ()Z
-	public final fun copy (JJLdev/s7a/strata/projection/ProjectionValue;Ldev/s7a/strata/runtime/remote/RemoteTree;Z)Ldev/s7a/strata/runtime/remote/RemoteMessage$Snapshot;
-	public static synthetic fun copy$default (Ldev/s7a/strata/runtime/remote/RemoteMessage$Snapshot;JJLdev/s7a/strata/projection/ProjectionValue;Ldev/s7a/strata/runtime/remote/RemoteTree;ZILjava/lang/Object;)Ldev/s7a/strata/runtime/remote/RemoteMessage$Snapshot;
+	public final fun component6 ()Ldev/s7a/strata/runtime/remote/RemoteUiSettings;
+	public final fun component7 ()Ldev/s7a/strata/runtime/spi/RuntimeUiControl;
+	public final fun copy (JJLdev/s7a/strata/projection/ProjectionValue;Ldev/s7a/strata/runtime/remote/RemoteTree;ZLdev/s7a/strata/runtime/remote/RemoteUiSettings;Ldev/s7a/strata/runtime/spi/RuntimeUiControl;)Ldev/s7a/strata/runtime/remote/RemoteMessage$Snapshot;
+	public static synthetic fun copy$default (Ldev/s7a/strata/runtime/remote/RemoteMessage$Snapshot;JJLdev/s7a/strata/projection/ProjectionValue;Ldev/s7a/strata/runtime/remote/RemoteTree;ZLdev/s7a/strata/runtime/remote/RemoteUiSettings;Ldev/s7a/strata/runtime/spi/RuntimeUiControl;ILjava/lang/Object;)Ldev/s7a/strata/runtime/remote/RemoteMessage$Snapshot;
 	public fun equals (Ljava/lang/Object;)Z
+	public final fun getControl ()Ldev/s7a/strata/runtime/spi/RuntimeUiControl;
 	public final fun getPausesGame ()Z
 	public final fun getRevision ()J
 	public fun getSession ()Ljava/lang/Long;
+	public final fun getSettings ()Ldev/s7a/strata/runtime/remote/RemoteUiSettings;
 	public final fun getTitle ()Ldev/s7a/strata/projection/ProjectionValue;
 	public final fun getTree ()Ldev/s7a/strata/runtime/remote/RemoteTree;
 	public fun hashCode ()I
@@ -487,8 +651,8 @@ public final class dev/s7a/strata/runtime/remote/RemoteRegistry {
 }
 
 public final class dev/s7a/strata/runtime/remote/RemoteScreenService : java/lang/AutoCloseable {
-	public fun <init> (Ldev/s7a/strata/runtime/remote/RemoteEndpoint;Lkotlin/jvm/functions/Function2;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function1;)V
-	public synthetic fun <init> (Ldev/s7a/strata/runtime/remote/RemoteEndpoint;Lkotlin/jvm/functions/Function2;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function1;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public fun <init> (Ldev/s7a/strata/runtime/remote/RemoteEndpoint;Lkotlin/jvm/functions/Function2;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function2;)V
+	public synthetic fun <init> (Ldev/s7a/strata/runtime/remote/RemoteEndpoint;Lkotlin/jvm/functions/Function2;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function2;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public final fun capabilities (Ljava/lang/Object;)Ldev/s7a/strata/runtime/remote/RemoteCapabilities;
 	public fun close ()V
 	public final fun containerChanged (Ljava/lang/Object;)V
@@ -496,6 +660,7 @@ public final class dev/s7a/strata/runtime/remote/RemoteScreenService : java/lang
 	public final fun enqueue (Ljava/lang/Object;[B)V
 	public final fun join (Ljava/lang/Object;)V
 	public final fun open (Ljava/lang/Object;Ljava/lang/Object;Ldev/s7a/strata/screen/ScreenDefinition;)Ldev/s7a/strata/runtime/remote/RemoteScreenSession;
+	public final fun open (Ljava/lang/Object;Ljava/lang/Object;Ldev/s7a/strata/ui/UiDefinition;)Ldev/s7a/strata/runtime/remote/RemoteScreenSession;
 	public final fun ownerDisabled (Ljava/lang/Object;)V
 	public final fun register (Ljava/lang/Object;Ldev/s7a/strata/projection/ProjectionType;)V
 	public final fun tick ()V
@@ -505,18 +670,23 @@ public final class dev/s7a/strata/runtime/remote/RemoteScreenSession : java/lang
 	public fun close ()V
 	public final fun getIdentity ()J
 	public final fun getStatus ()Ldev/s7a/strata/runtime/remote/RemoteSessionStatus;
+	public final fun getUiSession ()Ldev/s7a/strata/ui/UiSession;
 }
 
 public final class dev/s7a/strata/runtime/remote/RemoteServerSession : java/lang/AutoCloseable {
-	public fun <init> (JLdev/s7a/strata/projection/ProjectionValue;Ljava/util/Set;Ldev/s7a/strata/runtime/remote/RemoteLimits;Lkotlin/jvm/functions/Function1;ZLkotlin/jvm/functions/Function0;)V
-	public synthetic fun <init> (JLdev/s7a/strata/projection/ProjectionValue;Ljava/util/Set;Ldev/s7a/strata/runtime/remote/RemoteLimits;Lkotlin/jvm/functions/Function1;ZLkotlin/jvm/functions/Function0;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public fun <init> (JLdev/s7a/strata/projection/ProjectionValue;Ljava/util/Set;Ldev/s7a/strata/runtime/remote/RemoteLimits;Lkotlin/jvm/functions/Function1;ZLdev/s7a/strata/ui/UiSession;Ldev/s7a/strata/runtime/spi/RuntimeUiController;Ldev/s7a/strata/runtime/remote/RemoteUiSettings;Lkotlin/jvm/functions/Function0;)V
+	public synthetic fun <init> (JLdev/s7a/strata/projection/ProjectionValue;Ljava/util/Set;Ldev/s7a/strata/runtime/remote/RemoteLimits;Lkotlin/jvm/functions/Function1;ZLdev/s7a/strata/ui/UiSession;Ldev/s7a/strata/runtime/spi/RuntimeUiController;Ldev/s7a/strata/runtime/remote/RemoteUiSettings;Lkotlin/jvm/functions/Function0;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun applyControl (Ldev/s7a/strata/runtime/spi/RuntimeUiControl;)V
 	public fun close ()V
 	public final fun close (Ldev/s7a/strata/runtime/remote/RemoteFailure;Z)V
 	public static synthetic fun close$default (Ldev/s7a/strata/runtime/remote/RemoteServerSession;Ldev/s7a/strata/runtime/remote/RemoteFailure;ZILjava/lang/Object;)V
 	public final fun getAppliedRevision ()J
 	public final fun getIdentity ()J
+	public final fun getNodeCount ()I
 	public final fun getRequiredTypes ()Ljava/util/Set;
 	public final fun getStatus ()Ldev/s7a/strata/runtime/remote/RemoteSessionStatus;
+	public final fun getUiSession ()Ldev/s7a/strata/ui/UiSession;
+	public final fun getUsesNativeSlots ()Z
 	public final fun receive (Ldev/s7a/strata/runtime/remote/RemoteMessage$Action;)V
 	public final fun receive (Ldev/s7a/strata/runtime/remote/RemoteMessage;)V
 	public final fun resynchronize ()V
@@ -568,6 +738,27 @@ public final class dev/s7a/strata/runtime/remote/RemoteTree {
 	public final fun getNodes ()Ljava/util/Map;
 	public final fun getRoot ()J
 	public fun hashCode ()I
+}
+
+public final class dev/s7a/strata/runtime/remote/RemoteUiSettings {
+	public fun <init> ()V
+	public fun <init> (Ldev/s7a/strata/ui/UiPresentation;Ldev/s7a/strata/ui/UiCategory;Ldev/s7a/strata/ui/UiInputPolicy;Ldev/s7a/strata/ui/UiVisibilityPolicy;I)V
+	public synthetic fun <init> (Ldev/s7a/strata/ui/UiPresentation;Ldev/s7a/strata/ui/UiCategory;Ldev/s7a/strata/ui/UiInputPolicy;Ldev/s7a/strata/ui/UiVisibilityPolicy;IILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Ldev/s7a/strata/ui/UiPresentation;
+	public final fun component2 ()Ldev/s7a/strata/ui/UiCategory;
+	public final fun component3 ()Ldev/s7a/strata/ui/UiInputPolicy;
+	public final fun component4 ()Ldev/s7a/strata/ui/UiVisibilityPolicy;
+	public final fun component5 ()I
+	public final fun copy (Ldev/s7a/strata/ui/UiPresentation;Ldev/s7a/strata/ui/UiCategory;Ldev/s7a/strata/ui/UiInputPolicy;Ldev/s7a/strata/ui/UiVisibilityPolicy;I)Ldev/s7a/strata/runtime/remote/RemoteUiSettings;
+	public static synthetic fun copy$default (Ldev/s7a/strata/runtime/remote/RemoteUiSettings;Ldev/s7a/strata/ui/UiPresentation;Ldev/s7a/strata/ui/UiCategory;Ldev/s7a/strata/ui/UiInputPolicy;Ldev/s7a/strata/ui/UiVisibilityPolicy;IILjava/lang/Object;)Ldev/s7a/strata/runtime/remote/RemoteUiSettings;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getCategory ()Ldev/s7a/strata/ui/UiCategory;
+	public final fun getHudOrder ()I
+	public final fun getInputPolicy ()Ldev/s7a/strata/ui/UiInputPolicy;
+	public final fun getPresentation ()Ldev/s7a/strata/ui/UiPresentation;
+	public final fun getVisibility ()Ldev/s7a/strata/ui/UiVisibilityPolicy;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
 }
 
 public final class dev/s7a/strata/runtime/remote/RemoteValueCodec {

@@ -1,3 +1,5 @@
+@file:Suppress("DEPRECATION") // Compatibility overloads and regression coverage retain the deprecated screen entry points.
+
 package dev.s7a.strata.integration.docs.recheck
 
 import dev.s7a.strata.component.Button
@@ -67,7 +69,7 @@ public fun messageEditorScreen(
                 label = sendLabel,
                 width = 192,
                 enabled = sendEnabled,
-                modifier = Modifier.Empty.onActivate(sendEnabled, send),
+                modifier = Modifier.Empty.onActivate(sendEnabled) { send() },
             )
             Text(loadingLabel, layout = lineLayout, modifier = Modifier.Empty.size(192, 12))
             VirtualList(

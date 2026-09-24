@@ -1,8 +1,9 @@
 @file:JvmName("FabricMinecraftScreens")
-@file:Suppress("MatchingDeclarationName", "ktlint:standard:filename")
+@file:Suppress("DEPRECATION", "MatchingDeclarationName", "ktlint:standard:filename")
 
 package dev.s7a.strata.runtime.minecraft.fabric
 
+import com.mojang.blaze3d.platform.InputConstants
 import dev.s7a.strata.geometry.IntOffset
 import dev.s7a.strata.geometry.IntSize
 import dev.s7a.strata.input.InputResult
@@ -16,12 +17,19 @@ import dev.s7a.strata.runtime.diagnostics.UiRenderMonitor
 import dev.s7a.strata.runtime.minecraft.MinecraftUiHost
 import dev.s7a.strata.runtime.minecraft.MinecraftUiProfile
 import dev.s7a.strata.runtime.minecraft.createMinecraftUiHost
+import dev.s7a.strata.runtime.minecraft.fabric.mixin.lifecycle.FabricUiKeyMappingAccess
 import dev.s7a.strata.runtime.minecraft.font.lwjgl.LwjglMinecraftFontBackendFactory
 import dev.s7a.strata.runtime.render.DrawCommand
+import dev.s7a.strata.runtime.spi.RuntimeUiController
 import dev.s7a.strata.runtime.spi.RuntimeUiDiagnosticsOwner
 import dev.s7a.strata.screen.ScreenDefinition
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
+import dev.s7a.strata.ui.UiDefinition
+import dev.s7a.strata.ui.UiInteractionMode
+import dev.s7a.strata.ui.UiPresentation
+import dev.s7a.strata.ui.UiSession
 import net.minecraft.Util
+import net.minecraft.client.KeyMapping
 import net.minecraft.client.Minecraft
 import net.minecraft.client.gui.GuiGraphics
 import net.minecraft.client.gui.screens.Screen
@@ -43,8 +51,9 @@ import org.lwjgl.glfw.GLFW
 public class FabricMinecraftScreen private constructor(
     private val host: MinecraftUiHost,
     private val inventory: FabricMinecraftInventoryBridge,
-    private val parent: Screen?,
+    private var parent: Screen?,
     private val minecraftClient: Minecraft,
+    private val controls: RuntimeUiController?,
 ) : Screen(mapMinecraftText(host.title)),
     AutoCloseable,
     RuntimeUiDiagnosticsOwner,
@@ -80,7 +89,7 @@ public class FabricMinecraftScreen private constructor(
             return
         }
         try {
-            lifecycle.run {
+            runHost {
                 super.added()
                 lifecycle.requestAttach()
             }
@@ -98,13 +107,23 @@ public class FabricMinecraftScreen private constructor(
             return
         }
         try {
-            lifecycle.run {
+            runHost {
                 super.removed()
                 lifecycle.requestDetach()
             }
         } catch (failure: Throwable) {
             terminalFailure(failure)
         }
+    }
+
+    override fun renderBackground(
+        graphics: GuiGraphics,
+        mouseX: Int,
+        mouseY: Int,
+        partialTick: Float,
+    ) {
+        requireClientThread()
+        if (controls?.presentation != UiPresentation.Hud) super.renderBackground(graphics, mouseX, mouseY, partialTick)
     }
 
     override fun render(
@@ -114,6 +133,7 @@ public class FabricMinecraftScreen private constructor(
         partialTick: Float,
     ) {
         requireClientThread()
+        if (FabricUiSessions.prepareRender(this).not()) return
         characterInput.reset()
         var guiFailure: Throwable? = null
         try {
@@ -121,25 +141,25 @@ public class FabricMinecraftScreen private constructor(
             val frameTime = FrameTime(System.nanoTime())
             val frame =
                 inventory.withRefreshBatch {
-                    lifecycle.run {
+                    runHost {
                         val viewport = IntSize(width, height)
                         presentation.recordHostFrame()
                         var frame = host.frame(viewport, frameTime)
-                        if (lifecycle.hasPendingExit()) return@run null
+                        if (lifecycle.hasPendingExit()) return@runHost null
                         if (width == 0 || height == 0) {
                             presentation.release()
                             canvasPresentation.release()
-                            return@run null
+                            return@runHost null
                         }
                         val currentPointer = IntOffset(mouseX, mouseY)
                         val pointerNeedsDispatch = presentation.needsPointerDispatch(currentPointer, frame.drawCommands)
-                        if (pointerNeedsDispatch) {
+                        if (pointerNeedsDispatch && FabricUiSessions.acceptsPointer(this)) {
                             presentation.recordExtractedPointerDispatch(currentPointer, frame.drawCommands)
                             inventory.withPointerMove { host.dispatchPointer(PointerEvent.Move(currentPointer)) == InputResult.Consumed }
-                            if (lifecycle.hasPendingExit()) return@run null
+                            if (lifecycle.hasPendingExit()) return@runHost null
                             presentation.recordHostFrame()
                             frame = host.frame(viewport, frameTime)
-                            if (lifecycle.hasPendingExit()) return@run null
+                            if (lifecycle.hasPendingExit()) return@runHost null
                         }
                         frame
                     }
@@ -155,7 +175,7 @@ public class FabricMinecraftScreen private constructor(
                 presentation.present(graphics, commands, frame.size, dispatch::render)
             }
             if (attached.not()) return
-            inventory.renderCarried(graphics, minecraftClient.font, mouseX, mouseY)
+            if (FabricUiSessions.acceptsPointer(this)) inventory.renderCarried(graphics, minecraftClient.font, mouseX, mouseY)
         } catch (failure: Throwable) {
             guiFailure = failure
             terminalFailure(failure)
@@ -168,13 +188,14 @@ public class FabricMinecraftScreen private constructor(
         }
     }
 
-    override fun isPauseScreen(): Boolean = pausePolicy
+    override fun isPauseScreen(): Boolean = pausePolicy && controls?.presentation != UiPresentation.Hud
 
     override fun mouseMoved(
         mouseX: Double,
         mouseY: Double,
     ) {
         requireClientThread()
+        if (FabricUiSessions.acceptsPointer(this).not()) return
         val position = positionOrNull(mouseX, mouseY) ?: return
         inventory.withPointerMove { dispatch(PointerEvent.Move(position)) }
         presentation.recordPointerInput(position)
@@ -185,15 +206,17 @@ public class FabricMinecraftScreen private constructor(
         mouseY: Double,
         buttonValue: Int,
     ): Boolean {
-        requireClientThread()
-        val position = positionOrNull(mouseX, mouseY) ?: return false
-        val button = buttonOrNull(buttonValue) ?: return false
-        val now = Util.getMillis()
-        val doubleClick = buttonValue == lastClickButton && now - lastClickTime < DOUBLE_CLICK_THRESHOLD_MILLIS
-        lastClickTime = now
-        lastClickButton = buttonValue
-        return inventory.withMousePress(buttonValue, currentModifierFlags(), doubleClick) {
-            dispatch(PointerEvent.Press(position, button))
+        return FabricUiInput.button(this, buttonValue, true) {
+            requireClientThread()
+            val position = positionOrNull(mouseX, mouseY) ?: return@button false
+            val button = buttonOrNull(buttonValue) ?: return@button false
+            val now = Util.getMillis()
+            val doubleClick = buttonValue == lastClickButton && now - lastClickTime < DOUBLE_CLICK_THRESHOLD_MILLIS
+            lastClickTime = now
+            lastClickButton = buttonValue
+            return@button inventory.withMousePress(buttonValue, currentModifierFlags(), doubleClick) {
+                dispatch(PointerEvent.Press(position, button))
+            }
         }
     }
 
@@ -202,11 +225,13 @@ public class FabricMinecraftScreen private constructor(
         mouseY: Double,
         buttonValue: Int,
     ): Boolean {
-        requireClientThread()
-        val position = positionOrNull(mouseX, mouseY) ?: return false
-        val button = buttonOrNull(buttonValue) ?: return false
-        return inventory.withMouseRelease(buttonValue, currentModifierFlags()) {
-            dispatch(PointerEvent.Release(position, button))
+        return FabricUiInput.button(this, buttonValue, false) {
+            requireClientThread()
+            val position = positionOrNull(mouseX, mouseY) ?: return@button false
+            val button = buttonOrNull(buttonValue) ?: return@button false
+            return@button inventory.withMouseRelease(buttonValue, currentModifierFlags()) {
+                dispatch(PointerEvent.Release(position, button))
+            }
         }
     }
 
@@ -218,6 +243,7 @@ public class FabricMinecraftScreen private constructor(
         deltaY: Double,
     ): Boolean {
         requireClientThread()
+        if (FabricUiSessions.acceptsPointer(this).not()) return false
         val position = positionOrNull(mouseX, mouseY) ?: return false
         val button = buttonOrNull(buttonValue) ?: return false
         val displacement = mapMinecraftDrag(deltaX, deltaY) ?: return false
@@ -232,10 +258,12 @@ public class FabricMinecraftScreen private constructor(
         deltaX: Double,
         deltaY: Double,
     ): Boolean {
-        requireClientThread()
-        val position = positionOrNull(mouseX, mouseY) ?: return false
-        val scroll = mapMinecraftScroll(deltaX, deltaY) ?: return false
-        return dispatch(PointerEvent.Scroll(position, scroll.first, scroll.second))
+        return FabricUiInput.scroll(this) {
+            requireClientThread()
+            val position = positionOrNull(mouseX, mouseY) ?: return@scroll false
+            val scroll = mapMinecraftScroll(deltaX, deltaY) ?: return@scroll false
+            return@scroll dispatch(PointerEvent.Scroll(position, scroll.first, scroll.second))
+        }
     }
 
     override fun keyPressed(
@@ -243,14 +271,16 @@ public class FabricMinecraftScreen private constructor(
         scanCode: Int,
         modifierFlags: Int,
     ): Boolean {
-        requireClientThread()
-        characterInput.reset()
-        if (inventory.handleKeyPressed(keyValue, scanCode, modifierFlags)) return true
-        val mapped = mapMinecraftKeyPress(keyValue, scanCode, modifierFlags) ?: return false
-        if (mapped.key == KeyCode.Escape) {
-            return dispatchInherited { super.keyPressed(keyValue, scanCode, modifierFlags) }
+        return FabricUiInput.key(this, InputConstants.getKey(keyValue, scanCode), true) {
+            requireClientThread()
+            characterInput.reset()
+            if (inventory.handleKeyPressed(keyValue, scanCode, modifierFlags)) return@key true
+            val mapped = mapMinecraftKeyPress(keyValue, scanCode, modifierFlags) ?: return@key false
+            if (mapped.key == KeyCode.Escape) {
+                return@key dispatchInherited { super.keyPressed(keyValue, scanCode, modifierFlags) }
+            }
+            return@key dispatchFocused(KeyboardInput(mapped)) { super.keyPressed(keyValue, scanCode, modifierFlags) }
         }
-        return dispatchFocused(KeyboardInput(mapped)) { super.keyPressed(keyValue, scanCode, modifierFlags) }
     }
 
     override fun keyReleased(
@@ -258,10 +288,12 @@ public class FabricMinecraftScreen private constructor(
         scanCode: Int,
         modifierFlags: Int,
     ): Boolean {
-        requireClientThread()
-        characterInput.reset()
-        val mapped = mapMinecraftKeyRelease(keyValue, scanCode, modifierFlags) ?: return false
-        return dispatchFocused(KeyboardInput(mapped)) { super.keyReleased(keyValue, scanCode, modifierFlags) }
+        return FabricUiInput.key(this, InputConstants.getKey(keyValue, scanCode), false) {
+            requireClientThread()
+            characterInput.reset()
+            val mapped = mapMinecraftKeyRelease(keyValue, scanCode, modifierFlags) ?: return@key false
+            return@key dispatchFocused(KeyboardInput(mapped)) { super.keyReleased(keyValue, scanCode, modifierFlags) }
+        }
     }
 
     override fun charTyped(
@@ -283,12 +315,16 @@ public class FabricMinecraftScreen private constructor(
 
     override fun onClose() {
         requireClientThread()
+        if (controls?.presentation == UiPresentation.Hud) {
+            controls.setInteractionMode(UiInteractionMode.None)
+            return
+        }
         characterInput.reset()
         if (lifecycle.isActive()) {
             lifecycle.requestCloseThenNavigate()
             return
         }
-        lifecycle.run { lifecycle.requestCloseThenNavigate() }
+        runHost { lifecycle.requestCloseThenNavigate() }
     }
 
     override fun close() {
@@ -299,13 +335,13 @@ public class FabricMinecraftScreen private constructor(
             lifecycle.requestClose()
             return
         }
-        lifecycle.run { lifecycle.requestClose() }
+        runHost { lifecycle.requestClose() }
     }
 
     private fun dispatch(event: PointerEvent): Boolean =
         try {
             characterInput.reset()
-            lifecycle.run {
+            runHost {
                 host.dispatchPointer(event) == InputResult.Consumed
             }
         } catch (failure: Throwable) {
@@ -317,7 +353,7 @@ public class FabricMinecraftScreen private constructor(
         inherited: () -> Boolean,
     ): Boolean =
         try {
-            lifecycle.run {
+            runHost {
                 val result =
                     when (input) {
                         is KeyboardInput -> host.dispatchKeyboard(input.event)
@@ -376,13 +412,71 @@ public class FabricMinecraftScreen private constructor(
         if (closed || attached.not()) return
         characterInput.reset()
         try {
-            lifecycle.run { host.resetInputState() }
+            runHost { host.resetInputState() }
         } catch (failure: Throwable) {
             terminalFailure(failure)
         }
     }
 
+    /**
+     * Prepares the existing retained host for HUD drawing without replacing it.
+     */
+    @JvmSynthetic
+    internal fun prepareHud() {
+        val window = minecraftClient.window
+        if (width != window.guiScaledWidth || height != window.guiScaledHeight) FabricMinecraftScreenAccess.initialize(minecraftClient, this)
+        if (attached.not()) added()
+    }
+
+    /**
+     * Pauses HUD drawing/input while preserving retained state.
+     */
+    @JvmSynthetic
+    internal fun hideHud() {
+        if (attached) removed()
+    }
+
+    /**
+     * Captures the current native screen when a HUD becomes a foreground screen.
+     */
+    @JvmSynthetic
+    internal fun navigationParent(screen: Screen?) {
+        parent = screen
+    }
+
+    /**
+     * Whether retained text editing currently blocks every game action.
+     */
+    @JvmSynthetic
+    internal fun isEditingText(): Boolean = closed.not() && attached && host.textInputFocus != null
+
+    /**
+     * Whether a native inventory binding belongs to this retained host.
+     */
+    @JvmSynthetic
+    internal fun usesNativeSlots(): Boolean = inventory.hasBindings()
+
+    /**
+     * Native container first used by this retained host's Slots, released on terminal close.
+     */
+    @JvmSynthetic
+    internal fun boundContainer(): Any? = inventory.boundContainer()
+
+    /**
+     * Clears native and retained input at a presentation/permission boundary.
+     */
+    @JvmSynthetic
+    internal fun releaseUiInput() {
+        if (attached && closed.not()) resetInputFromNative()
+    }
+
+    private fun <T> runHost(operation: () -> T): T {
+        val controller = controls
+        return (if (controller == null) lifecycle.run { operation() } else controller.transaction { lifecycle.run { operation() } }).also { FabricUiInput.synchronize(this) }
+    }
+
     private fun attachHost() {
+        if (attached) return
         FabricMinecraftCanvasHooks.requireRunning()
         characterInput.reset()
         host.attach()
@@ -406,7 +500,7 @@ public class FabricMinecraftScreen private constructor(
         if (closed) return
         closed = true
         attached = false
-        var failure: Throwable? = null
+        var failure: Throwable? = runCatching { controls?.close() }.exceptionOrNull()
         try {
             host.close()
         } catch (caught: Throwable) {
@@ -466,7 +560,8 @@ public class FabricMinecraftScreen private constructor(
             inventory: FabricMinecraftInventoryBridge,
             parent: Screen?,
             minecraft: Minecraft,
-        ): FabricMinecraftScreen = FabricMinecraftScreen(host, inventory, parent, minecraft)
+            controls: RuntimeUiController?,
+        ): FabricMinecraftScreen = FabricMinecraftScreen(host, inventory, parent, minecraft, controls)
     }
 
     private sealed interface FocusedInput
@@ -496,16 +591,18 @@ public class FabricMinecraftScreen private constructor(
 @OptIn(InternalStrataRuntimeApi::class)
 @Suppress("TooGenericExceptionCaught")
 public fun createMinecraftScreen(
-    definition: ScreenDefinition,
+    definition: UiDefinition,
     profile: MinecraftUiProfile,
     parent: Screen? = currentMinecraftScreen(),
+    controls: RuntimeUiController? = null,
+    eventSession: UiSession? = controls,
 ): FabricMinecraftScreen {
     val minecraft = Minecraft.getInstance()
     check(minecraft.isSameThread) { "Fabric Minecraft screens must be created on the client thread." }
     val inventory = FabricMinecraftInventoryBridge.create(minecraft)
     val host =
         try {
-            createMinecraftUiHost(definition, profile, inventory, LwjglMinecraftFontBackendFactory)
+            createMinecraftUiHost(definition, profile, inventory, LwjglMinecraftFontBackendFactory, eventSession)
         } catch (failure: Throwable) {
             try {
                 inventory.close()
@@ -515,7 +612,7 @@ public fun createMinecraftScreen(
             throw failure
         }
     return try {
-        FabricMinecraftScreen.create(host, inventory, parent, minecraft)
+        FabricMinecraftScreen.create(host, inventory, parent, minecraft, controls)
     } catch (failure: Throwable) {
         try {
             host.close()
@@ -530,4 +627,24 @@ private fun currentMinecraftScreen(): Screen? {
     val minecraft = Minecraft.getInstance()
     check(minecraft.isSameThread) { "Fabric Minecraft screens must be created on the client thread." }
     return FabricMinecraftScreenAccess.currentScreen(minecraft)
+}
+
+/**
+ * Compatibility factory sharing the common UI host path.
+ */
+@OptIn(InternalStrataRuntimeApi::class)
+public fun createMinecraftScreen(
+    definition: ScreenDefinition,
+    profile: MinecraftUiProfile,
+    parent: Screen? = currentMinecraftScreen(),
+): FabricMinecraftScreen = createMinecraftScreen(definition.asUiDefinition(), profile, parent)
+
+/**
+ * Releases forwarded native state, including any version-owned toggle restoration on a later screen close.
+ */
+@JvmSynthetic
+internal fun releaseMinecraftUiBinding(mapping: KeyMapping) {
+    val access = mapping as FabricUiKeyMappingAccess
+    access.strataDown(false)
+    access.strataClicks(0)
 }

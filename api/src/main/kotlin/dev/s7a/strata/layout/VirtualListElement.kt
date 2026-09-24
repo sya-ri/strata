@@ -126,7 +126,7 @@ internal class VirtualListElement(
                                 scope.action(
                                     ProjectionAction(BuiltinProjection.VirtualList.type, { value ->
                                         requireNotNull(value as? ProjectionValue.Real).value.also { require(it in -Int.MAX_VALUE.toDouble()..Int.MAX_VALUE.toDouble()) }
-                                    }, node::requestBoundaryItems),
+                                    }) { delta -> node.requestBoundaryItems(delta) },
                                 ),
                             ),
                         ),
@@ -331,12 +331,12 @@ internal class VirtualListElement(
             val firstVisible = (state.scrollState.metrics.offset / rowHeight.toDouble()).toInt()
             if (delta < 0.0 && canLoadLeading && firstVisible <= LOAD_THRESHOLD_ROWS) {
                 rememberCurrentAnchor()
-                actions.dispatch(ComponentActions.LeadingItemsRequested, ListLoadRequest(suggested))
+                actions.dispatch(uiSession, ComponentActions.LeadingItemsRequested, ListLoadRequest(suggested))
             }
             val lastVisible = minOf(itemCount - 1, firstVisible + visibleRows - 1)
             if (0.0 < delta && canLoadTrailing && itemCount - 1 - lastVisible <= LOAD_THRESHOLD_ROWS) {
                 rememberCurrentAnchor()
-                actions.dispatch(ComponentActions.TrailingItemsRequested, ListLoadRequest(suggested))
+                actions.dispatch(uiSession, ComponentActions.TrailingItemsRequested, ListLoadRequest(suggested))
             }
         }
 

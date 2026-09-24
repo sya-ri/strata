@@ -1,0 +1,66 @@
+public final class dev/s7a/strata/velocity/UiDefinitionExtensionsKt {
+	public static final fun open (Ldev/s7a/strata/ui/UiDefinition;Ljava/lang/Object;Lcom/velocitypowered/api/proxy/Player;)Ljava/util/concurrent/CompletableFuture;
+}
+
+public final class dev/s7a/strata/velocity/VelocityUi {
+	public static final field INSTANCE Ldev/s7a/strata/velocity/VelocityUi;
+	public final fun capabilities (Lcom/velocitypowered/api/proxy/Player;)Ljava/util/concurrent/CompletableFuture;
+	public final fun execute (Ljava/lang/Object;Lkotlin/jvm/functions/Function0;)Ljava/util/concurrent/CompletableFuture;
+	public final fun install (Ldev/s7a/strata/velocity/VelocityUiProvider;)Ljava/lang/AutoCloseable;
+	public final fun open (Ljava/lang/Object;Lcom/velocitypowered/api/proxy/Player;Lkotlin/jvm/functions/Function0;)Ljava/util/concurrent/CompletableFuture;
+	public final fun register (Ljava/lang/Object;Ldev/s7a/strata/projection/ProjectionType;)Ljava/util/concurrent/CompletableFuture;
+	public final fun release (Ljava/lang/Object;)Ljava/util/concurrent/CompletableFuture;
+}
+
+public abstract interface class dev/s7a/strata/velocity/VelocityUiProvider {
+	public abstract fun capabilities (Lcom/velocitypowered/api/proxy/Player;)Ljava/util/concurrent/CompletableFuture;
+	public abstract fun execute (Ljava/lang/Object;Lkotlin/jvm/functions/Function0;)Ljava/util/concurrent/CompletableFuture;
+	public abstract fun open (Ljava/lang/Object;Lcom/velocitypowered/api/proxy/Player;Lkotlin/jvm/functions/Function0;)Ljava/util/concurrent/CompletableFuture;
+	public abstract fun register (Ljava/lang/Object;Ldev/s7a/strata/projection/ProjectionType;)Ljava/util/concurrent/CompletableFuture;
+	public abstract fun release (Ljava/lang/Object;)Ljava/util/concurrent/CompletableFuture;
+}
+
+public final class dev/s7a/strata/velocity/event/StrataClientDisconnectedEvent {
+	public fun <init> (Lcom/velocitypowered/api/proxy/Player;Ldev/s7a/strata/ui/UiCloseReason;)V
+	public final fun getPlayer ()Lcom/velocitypowered/api/proxy/Player;
+	public final fun getReason ()Ldev/s7a/strata/ui/UiCloseReason;
+}
+
+public final class dev/s7a/strata/velocity/event/StrataClientReadyEvent {
+	public fun <init> (Lcom/velocitypowered/api/proxy/Player;Ldev/s7a/strata/ui/UiClientCapabilities;)V
+	public final fun getCapabilities ()Ldev/s7a/strata/ui/UiClientCapabilities;
+	public final fun getPlayer ()Lcom/velocitypowered/api/proxy/Player;
+}
+
+public final class dev/s7a/strata/velocity/event/StrataUiClosedEvent {
+	public fun <init> (Lcom/velocitypowered/api/proxy/Player;Ljava/lang/Object;JLdev/s7a/strata/ui/UiSession;Ldev/s7a/strata/ui/UiPresentation;Ldev/s7a/strata/ui/UiCategory;Ldev/s7a/strata/ui/UiCloseReason;)V
+	public final fun getCategory ()Ldev/s7a/strata/ui/UiCategory;
+	public final fun getIdentity ()J
+	public final fun getOwnerPlugin ()Ljava/lang/Object;
+	public final fun getPlayer ()Lcom/velocitypowered/api/proxy/Player;
+	public final fun getPresentation ()Ldev/s7a/strata/ui/UiPresentation;
+	public final fun getReason ()Ldev/s7a/strata/ui/UiCloseReason;
+	public final fun getSession ()Ldev/s7a/strata/ui/UiSession;
+}
+
+public final class dev/s7a/strata/velocity/event/StrataUiOpenedEvent {
+	public fun <init> (Lcom/velocitypowered/api/proxy/Player;Ljava/lang/Object;JLdev/s7a/strata/ui/UiSession;Ldev/s7a/strata/ui/UiPresentation;Ldev/s7a/strata/ui/UiCategory;)V
+	public final fun getCategory ()Ldev/s7a/strata/ui/UiCategory;
+	public final fun getIdentity ()J
+	public final fun getOwnerPlugin ()Ljava/lang/Object;
+	public final fun getPlayer ()Lcom/velocitypowered/api/proxy/Player;
+	public final fun getPresentation ()Ldev/s7a/strata/ui/UiPresentation;
+	public final fun getSession ()Ldev/s7a/strata/ui/UiSession;
+}
+
+public final class dev/s7a/strata/velocity/event/StrataUiPresentationChangedEvent {
+	public fun <init> (Lcom/velocitypowered/api/proxy/Player;Ljava/lang/Object;JLdev/s7a/strata/ui/UiSession;Ldev/s7a/strata/ui/UiPresentation;Ldev/s7a/strata/ui/UiPresentation;Ldev/s7a/strata/ui/UiCategory;)V
+	public final fun getCategory ()Ldev/s7a/strata/ui/UiCategory;
+	public final fun getIdentity ()J
+	public final fun getOwnerPlugin ()Ljava/lang/Object;
+	public final fun getPlayer ()Lcom/velocitypowered/api/proxy/Player;
+	public final fun getPresentation ()Ldev/s7a/strata/ui/UiPresentation;
+	public final fun getPrevious ()Ldev/s7a/strata/ui/UiPresentation;
+	public final fun getSession ()Ldev/s7a/strata/ui/UiSession;
+}
+

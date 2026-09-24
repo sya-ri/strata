@@ -12,6 +12,7 @@ import dev.s7a.strata.projection.DeclarationProjection
 import dev.s7a.strata.projection.ProjectionAction
 import dev.s7a.strata.projection.ProjectionInputCodec
 import dev.s7a.strata.projection.ProjectionValue
+import dev.s7a.strata.ui.UiSession
 
 /**
  * Projects fixed input subscriptions and revalidates their filters before server handlers run.
@@ -25,7 +26,7 @@ internal object DeclaredInputProjection {
         propagation: InputResult,
         filter: KeyboardInputFilter,
         select: (KeyboardEvent) -> E,
-        action: (E) -> Unit,
+        action: UiSession.(E) -> Unit,
     ): DeclarationProjection<*> {
         val policy = fields(result(propagation), ProjectionInputCodec.filter(filter))
         return DeclarationProjection(type.type, action) { handler, scope ->
@@ -50,7 +51,7 @@ internal object DeclaredInputProjection {
         propagation: InputResult,
         button: PointerButton?,
         select: (PointerEvent) -> E,
-        action: (E, IntOffset) -> Unit,
+        action: UiSession.(E, IntOffset) -> Unit,
     ): DeclarationProjection<*> {
         val policy = fields(result(propagation), button?.let(ProjectionInputCodec::button) ?: ProjectionValue.Absent)
         return DeclarationProjection(type.type, action) { handler, scope ->
@@ -75,7 +76,7 @@ internal object DeclaredInputProjection {
         type: BuiltinProjection,
         propagation: InputResult,
         select: (TextInputEvent) -> E,
-        action: (E) -> Unit,
+        action: UiSession.(E) -> Unit,
     ): DeclarationProjection<*> {
         val policy = result(propagation)
         return DeclarationProjection(type.type, action) { handler, scope ->
@@ -89,8 +90,8 @@ internal object DeclaredInputProjection {
      */
     fun capture(
         button: PointerButton,
-        onCancel: (PointerButton) -> Unit,
-        action: (PointerEvent, IntOffset) -> Unit,
+        onCancel: UiSession.(PointerButton) -> Unit,
+        action: UiSession.(PointerEvent, IntOffset) -> Unit,
     ): DeclarationProjection<*> {
         val type = BuiltinProjection.PointerCapture.type
         val policy = ProjectionInputCodec.button(button)

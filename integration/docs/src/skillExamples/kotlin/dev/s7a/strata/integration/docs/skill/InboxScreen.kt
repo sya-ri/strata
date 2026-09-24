@@ -13,10 +13,10 @@ import dev.s7a.strata.geometry.IntSize
 import dev.s7a.strata.modifier.Modifier
 import dev.s7a.strata.modifier.onActivate
 import dev.s7a.strata.modifier.size
-import dev.s7a.strata.screen.ScreenDefinition
 import dev.s7a.strata.state.StateSource
 import dev.s7a.strata.state.map
 import dev.s7a.strata.text.TextLayout
+import dev.s7a.strata.ui.UiDefinition
 
 /**
  * Immutable message snapshot; construction performs no validation or resource acquisition.
@@ -54,7 +54,7 @@ public fun inboxScreen(
     loading: StateSource<Boolean>,
     draft: TextAreaState,
     onSend: () -> Unit,
-): ScreenDefinition {
+): UiDefinition {
     val clockLabel =
         clockMinutes.map { minutes ->
             val minuteOfDay = ((minutes % 1_440L) + 1_440L) % 1_440L
@@ -66,7 +66,7 @@ public fun inboxScreen(
     val sendEnabled = sending.map { active -> active.not() }
     val historyState = VirtualListState<Long>()
 
-    return ScreenDefinition("Inbox") {
+    return UiDefinition("Inbox") {
         Column(
             modifier = Modifier.Empty.size(160, 160),
             spacing = 4,
@@ -94,7 +94,7 @@ public fun inboxScreen(
                 label = sendLabel,
                 width = 160,
                 enabled = sendEnabled,
-                modifier = Modifier.Empty.size(160, 20).onActivate(sendEnabled, onSend),
+                modifier = Modifier.Empty.size(160, 20).onActivate(sendEnabled) { onSend() },
             )
         }
     }

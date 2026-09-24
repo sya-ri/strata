@@ -1,3 +1,5 @@
+@file:Suppress("DEPRECATION") // Compatibility overloads and regression coverage retain the deprecated screen entry points.
+
 package dev.s7a.strata.integration.minecraft.fabric
 
 import dev.s7a.strata.component.ScrollArea
@@ -46,7 +48,7 @@ internal class MinecraftContinuousInputProbe {
                             Modifier.Empty
                                 .size(80, 180)
                                 .background(ArgbColor(0xFFABCDEF.toInt()))
-                                .onPointerEvent(::observe),
+                                .onPointerEvent { event, local -> observe(event, local) },
                     )
                 }
             }

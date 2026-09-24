@@ -45,13 +45,13 @@ import dev.s7a.strata.modifier.menuBackground
 import dev.s7a.strata.modifier.onActivate
 import dev.s7a.strata.modifier.padding
 import dev.s7a.strata.modifier.size
-import dev.s7a.strata.screen.ScreenDefinition
+import dev.s7a.strata.ui.UiDefinition
 
 /**
  * Opens a confirmation screen on the installed runtime's owner thread.
  */
 internal fun openConfirmationScreen(onConfirm: () -> Unit) {
-    ScreenDefinition("Confirm action") {
+    UiDefinition("Confirm action") {
         Column(
             modifier =
                 Modifier.Empty
@@ -64,7 +64,7 @@ internal fun openConfirmationScreen(onConfirm: () -> Unit) {
             Text("Continue with this action?")
             Button(
                 "Yes",
-                modifier = Modifier.Empty.onActivate(onConfirm),
+                modifier = Modifier.Empty.onActivate { onConfirm() },
             )
         }
     }.open()

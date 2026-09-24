@@ -13,11 +13,11 @@ import dev.s7a.strata.geometry.LongRect
 import dev.s7a.strata.modifier.Modifier
 import dev.s7a.strata.modifier.panZoom
 import dev.s7a.strata.modifier.size
-import dev.s7a.strata.screen.ScreenDefinition
 import dev.s7a.strata.state.StateRevision
 import dev.s7a.strata.state.StateSnapshot
 import dev.s7a.strata.state.StateSource
 import dev.s7a.strata.state.StateSubscription
+import dev.s7a.strata.ui.UiDefinition
 
 /**
  * Creates an API-only tiled image backed by one independently revisioned tile.
@@ -36,7 +36,7 @@ public fun createApiOnlyTiledImageDefinition(
     frames: StateSource<TiledImageTile>,
     size: IntSize,
     navigation: PanZoomState = PanZoomState(),
-): ScreenDefinition {
+): UiDefinition {
     val level = TiledImageLevel(size, contentUnitsPerPixel = 1L)
     val source =
         object : TiledImageSource {
@@ -53,7 +53,7 @@ public fun createApiOnlyTiledImageDefinition(
         StateSource {
             StateSubscription(StateSnapshot(StateRevision(0L), contentCenter)) {}
         }
-    return ScreenDefinition("API-only TiledImage") {
+    return UiDefinition("API-only TiledImage") {
         TiledImage(
             source = source,
             state = navigation,

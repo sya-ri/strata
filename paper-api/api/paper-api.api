@@ -1,0 +1,96 @@
+public final class dev/s7a/strata/paper/PaperUi {
+	public static final field INSTANCE Ldev/s7a/strata/paper/PaperUi;
+	public final fun capabilities (Lorg/bukkit/entity/Player;)Ldev/s7a/strata/ui/UiClientCapabilities;
+	public final fun install (Ldev/s7a/strata/paper/PaperUiProvider;)Ljava/lang/AutoCloseable;
+	public final fun register (Lorg/bukkit/plugin/Plugin;Ldev/s7a/strata/projection/ProjectionType;)V
+}
+
+public abstract interface class dev/s7a/strata/paper/PaperUiProvider {
+	public abstract fun capabilities (Lorg/bukkit/entity/Player;)Ldev/s7a/strata/ui/UiClientCapabilities;
+	public abstract fun open (Lorg/bukkit/plugin/Plugin;Lorg/bukkit/entity/Player;Ldev/s7a/strata/ui/UiDefinition;)Ldev/s7a/strata/ui/UiSession;
+	public abstract fun register (Lorg/bukkit/plugin/Plugin;Ldev/s7a/strata/projection/ProjectionType;)V
+}
+
+public final class dev/s7a/strata/paper/UiDefinitionExtensionsKt {
+	public static final fun open (Ldev/s7a/strata/ui/UiDefinition;Lorg/bukkit/plugin/Plugin;Lorg/bukkit/entity/Player;)Ldev/s7a/strata/ui/UiSession;
+}
+
+public final class dev/s7a/strata/paper/event/StrataClientDisconnectedEvent : org/bukkit/event/Event {
+	public static final field Companion Ldev/s7a/strata/paper/event/StrataClientDisconnectedEvent$Companion;
+	public fun <init> (Lorg/bukkit/entity/Player;Ldev/s7a/strata/ui/UiCloseReason;)V
+	public static final fun getHandlerList ()Lorg/bukkit/event/HandlerList;
+	public fun getHandlers ()Lorg/bukkit/event/HandlerList;
+	public final fun getPlayer ()Lorg/bukkit/entity/Player;
+	public final fun getReason ()Ldev/s7a/strata/ui/UiCloseReason;
+}
+
+public final class dev/s7a/strata/paper/event/StrataClientDisconnectedEvent$Companion {
+	public final fun getHandlerList ()Lorg/bukkit/event/HandlerList;
+}
+
+public final class dev/s7a/strata/paper/event/StrataClientReadyEvent : org/bukkit/event/Event {
+	public static final field Companion Ldev/s7a/strata/paper/event/StrataClientReadyEvent$Companion;
+	public fun <init> (Lorg/bukkit/entity/Player;Ldev/s7a/strata/ui/UiClientCapabilities;)V
+	public final fun getCapabilities ()Ldev/s7a/strata/ui/UiClientCapabilities;
+	public static final fun getHandlerList ()Lorg/bukkit/event/HandlerList;
+	public fun getHandlers ()Lorg/bukkit/event/HandlerList;
+	public final fun getPlayer ()Lorg/bukkit/entity/Player;
+}
+
+public final class dev/s7a/strata/paper/event/StrataClientReadyEvent$Companion {
+	public final fun getHandlerList ()Lorg/bukkit/event/HandlerList;
+}
+
+public final class dev/s7a/strata/paper/event/StrataUiClosedEvent : org/bukkit/event/Event {
+	public static final field Companion Ldev/s7a/strata/paper/event/StrataUiClosedEvent$Companion;
+	public fun <init> (Lorg/bukkit/entity/Player;Lorg/bukkit/plugin/Plugin;JLdev/s7a/strata/ui/UiSession;Ldev/s7a/strata/ui/UiPresentation;Ldev/s7a/strata/ui/UiCategory;Ldev/s7a/strata/ui/UiCloseReason;)V
+	public final fun getCategory ()Ldev/s7a/strata/ui/UiCategory;
+	public static final fun getHandlerList ()Lorg/bukkit/event/HandlerList;
+	public fun getHandlers ()Lorg/bukkit/event/HandlerList;
+	public final fun getIdentity ()J
+	public final fun getOwnerPlugin ()Lorg/bukkit/plugin/Plugin;
+	public final fun getPlayer ()Lorg/bukkit/entity/Player;
+	public final fun getPresentation ()Ldev/s7a/strata/ui/UiPresentation;
+	public final fun getReason ()Ldev/s7a/strata/ui/UiCloseReason;
+	public final fun getSession ()Ldev/s7a/strata/ui/UiSession;
+}
+
+public final class dev/s7a/strata/paper/event/StrataUiClosedEvent$Companion {
+	public final fun getHandlerList ()Lorg/bukkit/event/HandlerList;
+}
+
+public final class dev/s7a/strata/paper/event/StrataUiOpenedEvent : org/bukkit/event/Event {
+	public static final field Companion Ldev/s7a/strata/paper/event/StrataUiOpenedEvent$Companion;
+	public fun <init> (Lorg/bukkit/entity/Player;Lorg/bukkit/plugin/Plugin;JLdev/s7a/strata/ui/UiSession;Ldev/s7a/strata/ui/UiPresentation;Ldev/s7a/strata/ui/UiCategory;)V
+	public final fun getCategory ()Ldev/s7a/strata/ui/UiCategory;
+	public static final fun getHandlerList ()Lorg/bukkit/event/HandlerList;
+	public fun getHandlers ()Lorg/bukkit/event/HandlerList;
+	public final fun getIdentity ()J
+	public final fun getOwnerPlugin ()Lorg/bukkit/plugin/Plugin;
+	public final fun getPlayer ()Lorg/bukkit/entity/Player;
+	public final fun getPresentation ()Ldev/s7a/strata/ui/UiPresentation;
+	public final fun getSession ()Ldev/s7a/strata/ui/UiSession;
+}
+
+public final class dev/s7a/strata/paper/event/StrataUiOpenedEvent$Companion {
+	public final fun getHandlerList ()Lorg/bukkit/event/HandlerList;
+}
+
+public final class dev/s7a/strata/paper/event/StrataUiPresentationChangedEvent : org/bukkit/event/Event {
+	public static final field Companion Ldev/s7a/strata/paper/event/StrataUiPresentationChangedEvent$Companion;
+	public fun <init> (Lorg/bukkit/entity/Player;Lorg/bukkit/plugin/Plugin;JLdev/s7a/strata/ui/UiSession;Ldev/s7a/strata/ui/UiPresentation;Ldev/s7a/strata/ui/UiPresentation;Ldev/s7a/strata/ui/UiCategory;)V
+	public final fun getCategory ()Ldev/s7a/strata/ui/UiCategory;
+	public static final fun getHandlerList ()Lorg/bukkit/event/HandlerList;
+	public fun getHandlers ()Lorg/bukkit/event/HandlerList;
+	public final fun getIdentity ()J
+	public final fun getOwnerPlugin ()Lorg/bukkit/plugin/Plugin;
+	public final fun getPlayer ()Lorg/bukkit/entity/Player;
+	public final fun getPresentation ()Ldev/s7a/strata/ui/UiPresentation;
+	public final fun getPrevious ()Ldev/s7a/strata/ui/UiPresentation;
+	public final fun getSession ()Ldev/s7a/strata/ui/UiSession;
+}
+
+public final class dev/s7a/strata/paper/event/StrataUiPresentationChangedEvent$Companion {
+	public final fun getHandlerList ()Lorg/bukkit/event/HandlerList;
+}
+

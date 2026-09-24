@@ -16,6 +16,7 @@ import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Runnable
 import kotlin.coroutines.CoroutineContext
 import kotlin.jvm.JvmName
+import dev.s7a.strata.ui.UiSession as EventUiSession
 
 /**
  * Creates one owner-thread runtime UI session bridge.
@@ -31,8 +32,9 @@ import kotlin.jvm.JvmName
  */
 @InternalStrataRuntimeApi
 public fun createRuntimeUiSession(
+    eventSession: EventUiSession? = null,
     content: () -> Element,
-): RuntimeUiSession = RuntimeUiSessionBridge(content)
+): RuntimeUiSession = RuntimeUiSessionBridge(eventSession, content)
 
 /**
  * Adapts synchronous runtime calls to the session that owns lifecycle, frame caching, and cleanup.
@@ -40,9 +42,10 @@ public fun createRuntimeUiSession(
 @OptIn(InternalStrataRuntimeApi::class)
 @Suppress("TooManyFunctions") // This adapter implements the complete lifecycle, rendering, input, and declaration contract.
 private class RuntimeUiSessionBridge(
+    eventSession: EventUiSession?,
     content: () -> Element,
 ) : RuntimeUiSession {
-    private val session = UiSession(SynchronousBridgeDispatcher, content = content)
+    private val session = UiSession(SynchronousBridgeDispatcher, eventSession = eventSession, content = content)
 
     override val textInputFocus: RuntimeTextInputFocus?
         get() = session.textInputFocus

@@ -2,6 +2,7 @@ import java.util.zip.CRC32
 import java.util.zip.ZipFile
 
 dependencies {
+    api(project(":velocity-api"))
     api(project(":runtime:remote"))
     compileOnly(libs.velocity.api)
     testImplementation(libs.velocity.api)
@@ -44,6 +45,9 @@ val verifyPluginJar = tasks.register("verifyPluginJar") {
                 "velocity-plugin.json",
                 "dev/s7a/strata/runtime/velocity/StrataVelocityPlugin.class",
                 "dev/s7a/strata/runtime/velocity/VelocityScreens.class",
+                "dev/s7a/strata/velocity/VelocityUi.class",
+                "dev/s7a/strata/velocity/event/StrataUiOpenedEvent.class",
+                "dev/s7a/strata/ui/UiDefinition.class",
                 "dev/s7a/strata/runtime/remote/RemoteConnection.class",
                 "dev/s7a/strata/runtime/spi/RuntimeUiSession.class",
                 "dev/s7a/strata/screen/ScreenDefinition.class",
