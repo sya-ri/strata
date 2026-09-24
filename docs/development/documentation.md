@@ -106,6 +106,7 @@ Preserve the public skill's package structure and README marker pairs; edit thei
 
 The generator compiles `src/readmeExamples/kotlin`, renders its exact player-list stages, and synchronizes `docs/readme-demo` and the README marker region.
 It uses the same four asset properties, fixed offline skins, zero frame time, fixed geometry, and the bundled licensed typeface.
+The visible source includes the complete screen definition, background decoration, and roster heading; imports and player data remain outside the image.
 No loaded client or inventory evidence is needed.
 
 Receipts hash sources after CRLF/CR-to-LF normalization and retain exact binary input/output hashes.

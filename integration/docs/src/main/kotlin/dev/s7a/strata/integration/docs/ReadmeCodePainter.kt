@@ -5,7 +5,7 @@ import java.awt.Font
 import java.awt.Graphics2D
 
 /**
- * Draws the small compiled Kotlin excerpt with lexical colors and changed-line emphasis.
+ * Draws the complete compiled screen definition with lexical colors and changed-line emphasis.
  * All painting is synchronous on caller-owned graphics; it neither edits source nor retains the graphics.
  */
 internal object ReadmeCodePainter {
@@ -27,10 +27,10 @@ internal object ReadmeCodePainter {
         graphics.font = font.deriveFont(18f)
         val metrics = graphics.fontMetrics
         val previousLines = previous?.lines?.map(String::trimStart)?.toSet()
-        require(source.lines.size <= 36) { "README demo source exceeds the code panel height." }
+        require(source.lines.size <= 60) { "README demo source exceeds the code panel height." }
         source.lines.forEachIndexed { index, original ->
             val content = original.trimStart()
-            val line = " ".repeat((original.length - content.length) / 2) + content
+            val line = " ".repeat((original.length - content.length) / 4) + content
             require(metrics.stringWidth(line) <= 612) { "README demo source exceeds the code panel width: $line" }
             val baseline = 48 + index * 24
             val changed = previousLines != null && line.isNotBlank() && line.trimStart() !in previousLines

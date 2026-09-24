@@ -44,7 +44,7 @@ internal class ReadmeDemoArtifactsTest {
                     .use(ImageIO::read)
             assertArrayEquals(
                 screen.getRGB(0, 0, 512, 384, null, 0, 512),
-                composed.getRGB(672, 258, 512, 384, null, 0, 512),
+                composed.getRGB(672, 558, 512, 384, null, 0, 512),
                 "The full-color still must contain the original complete screen pixels.",
             )
             val source = ReadmeDemoSource.read(root, stage)
@@ -95,7 +95,7 @@ internal class ReadmeDemoArtifactsTest {
         val crlf = ReadmeDemoPipeline.prepare(root, assets, "test")
         lf.files.forEach { (name, bytes) -> assertArrayEquals(bytes, crlf.files.getValue(name), name) }
         ReadmeDemoPipeline.check(root, crlf)
-        val helper = sources.resolve("ReadmeDemoChrome.kt")
+        val helper = sources.resolve("ReadmePlayer.kt")
         Files.writeString(helper, Files.readString(helper) + "// Changed helper source.\r\n")
         val edited = ReadmeDemoPipeline.prepare(root, assets, "test")
         assertArrayEquals(crlf.files.getValue("demo.gif"), edited.files.getValue("demo.gif"))
@@ -132,10 +132,16 @@ internal class ReadmeDemoArtifactsTest {
         markdown: String,
     ) {
         assertEquals(1, source.lines.count { it.contains("PlayerHead(") }, "Every stage must retain its inline row definition.")
-        assertTrue(source.lines.size <= 36)
+        assertTrue(source.lines.size <= 60)
         val excerpt = source.lines.joinToString("\n")
         assertFalse(excerpt.contains("rowModifier"))
         assertFalse(excerpt.contains("ReadmeDemoColors"))
+        assertFalse(excerpt.contains("ReadmeDemoChrome"))
+        assertTrue(excerpt.contains("ScreenDefinition(\"Players\")"))
+        assertTrue(excerpt.contains(".menuBackground()"))
+        assertTrue(excerpt.contains(".imageBackground("))
+        assertTrue(excerpt.contains("NineSliceCenterMode.Tiled"))
+        assertTrue(excerpt.contains("Text(\"Players (\${players.size})\")"))
         assertTrue(excerpt.contains("val rowColor = ArgbColor(0xFF4A4A4A.toInt())"))
         assertTrue(excerpt.contains(".background(rowColor)"))
         assertTrue(excerpt.contains(".padding(6)"))
@@ -154,7 +160,7 @@ internal class ReadmeDemoArtifactsTest {
                     (0 until 19).map { index ->
                         val image = reader.read(index)
                         assertEquals(1200, image.width)
-                        assertEquals(900, image.height)
+                        assertEquals(1500, image.height)
                         val metadata = reader.getImageMetadata(index).getAsTree("javax_imageio_gif_image_1.0") as IIOMetadataNode
                         val control = metadata.getElementsByTagName("GraphicControlExtension").item(0) as IIOMetadataNode
                         if (index == 0) {

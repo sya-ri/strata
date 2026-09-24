@@ -19,20 +19,44 @@ Each row takes the width of its contents.
 <details><summary>Complete source for this stage</summary>
 
 ```kotlin
-val rowColor = ArgbColor(0xFF4A4A4A.toInt())
-Column(spacing = 6) {
-    players.forEach { player ->
-        Row(
+ScreenDefinition("Players") {
+    Column(
+        modifier =
+            Modifier.Empty
+                .size(256, 192)
+                .menuBackground()
+                .padding(4),
+        spacing = 4,
+        horizontalAlignment = HorizontalAlignment.Center,
+    ) {
+        Text("Players (${players.size})")
+        Stack(
             modifier =
                 Modifier.Empty
-                    .background(rowColor)
-                    .padding(6),
-            spacing = 8,
-            verticalAlignment = VerticalAlignment.Center,
+                    .size(236, 142)
+                    .imageBackground(
+                        panel,
+                        Insets.all(8),
+                        NineSliceCenterMode.Tiled,
+                    ).padding(8),
         ) {
-            PlayerHead(player.skin, PlayerHeadScale(3))
-            Column(spacing = 4) {
-                Text(player.name)
+            val rowColor = ArgbColor(0xFF4A4A4A.toInt())
+            Column(spacing = 6) {
+                players.forEach { player ->
+                    Row(
+                        modifier =
+                            Modifier.Empty
+                                .background(rowColor)
+                                .padding(6),
+                        spacing = 8,
+                        verticalAlignment = VerticalAlignment.Center,
+                    ) {
+                        PlayerHead(player.skin, PlayerHeadScale(3))
+                        Column(spacing = 4) {
+                            Text(player.name)
+                        }
+                    }
+                }
             }
         }
     }
@@ -52,21 +76,45 @@ One Text adds a role to every player.
 <details><summary>Complete source for this stage</summary>
 
 ```kotlin
-val rowColor = ArgbColor(0xFF4A4A4A.toInt())
-Column(spacing = 6) {
-    players.forEach { player ->
-        Row(
+ScreenDefinition("Players") {
+    Column(
+        modifier =
+            Modifier.Empty
+                .size(256, 192)
+                .menuBackground()
+                .padding(4),
+        spacing = 4,
+        horizontalAlignment = HorizontalAlignment.Center,
+    ) {
+        Text("Players (${players.size})")
+        Stack(
             modifier =
                 Modifier.Empty
-                    .background(rowColor)
-                    .padding(6),
-            spacing = 8,
-            verticalAlignment = VerticalAlignment.Center,
+                    .size(236, 142)
+                    .imageBackground(
+                        panel,
+                        Insets.all(8),
+                        NineSliceCenterMode.Tiled,
+                    ).padding(8),
         ) {
-            PlayerHead(player.skin, PlayerHeadScale(3))
-            Column(spacing = 4) {
-                Text(player.name)
-                Text(player.role)
+            val rowColor = ArgbColor(0xFF4A4A4A.toInt())
+            Column(spacing = 6) {
+                players.forEach { player ->
+                    Row(
+                        modifier =
+                            Modifier.Empty
+                                .background(rowColor)
+                                .padding(6),
+                        spacing = 8,
+                        verticalAlignment = VerticalAlignment.Center,
+                    ) {
+                        PlayerHead(player.skin, PlayerHeadScale(3))
+                        Column(spacing = 4) {
+                            Text(player.name)
+                            Text(player.role)
+                        }
+                    }
+                }
             }
         }
     }
@@ -86,23 +134,47 @@ One Button extends every row without calculating its position.
 <details><summary>Complete source for this stage</summary>
 
 ```kotlin
-val rowColor = ArgbColor(0xFF4A4A4A.toInt())
-Column(spacing = 6) {
-    players.forEach { player ->
-        Row(
+ScreenDefinition("Players") {
+    Column(
+        modifier =
+            Modifier.Empty
+                .size(256, 192)
+                .menuBackground()
+                .padding(4),
+        spacing = 4,
+        horizontalAlignment = HorizontalAlignment.Center,
+    ) {
+        Text("Players (${players.size})")
+        Stack(
             modifier =
                 Modifier.Empty
-                    .background(rowColor)
-                    .padding(6),
-            spacing = 8,
-            verticalAlignment = VerticalAlignment.Center,
+                    .size(236, 142)
+                    .imageBackground(
+                        panel,
+                        Insets.all(8),
+                        NineSliceCenterMode.Tiled,
+                    ).padding(8),
         ) {
-            PlayerHead(player.skin, PlayerHeadScale(3))
-            Column(spacing = 4) {
-                Text(player.name)
-                Text(player.role)
+            val rowColor = ArgbColor(0xFF4A4A4A.toInt())
+            Column(spacing = 6) {
+                players.forEach { player ->
+                    Row(
+                        modifier =
+                            Modifier.Empty
+                                .background(rowColor)
+                                .padding(6),
+                        spacing = 8,
+                        verticalAlignment = VerticalAlignment.Center,
+                    ) {
+                        PlayerHead(player.skin, PlayerHeadScale(3))
+                        Column(spacing = 4) {
+                            Text(player.name)
+                            Text(player.role)
+                        }
+                        Button("Invite", width = 60)
+                    }
+                }
             }
-            Button("Invite", width = 60)
         }
     }
 }
@@ -121,24 +193,48 @@ Set the outer Column width once; every row fills it.
 <details><summary>Complete source for this stage</summary>
 
 ```kotlin
-val rowColor = ArgbColor(0xFF4A4A4A.toInt())
-Column(Modifier.Empty.width(220), spacing = 6) {
-    players.forEach { player ->
-        Row(
+ScreenDefinition("Players") {
+    Column(
+        modifier =
+            Modifier.Empty
+                .size(256, 192)
+                .menuBackground()
+                .padding(4),
+        spacing = 4,
+        horizontalAlignment = HorizontalAlignment.Center,
+    ) {
+        Text("Players (${players.size})")
+        Stack(
             modifier =
                 Modifier.Empty
-                    .background(rowColor)
-                    .padding(6)
-                    .fillMaxWidth(),
-            spacing = 8,
-            verticalAlignment = VerticalAlignment.Center,
+                    .size(236, 142)
+                    .imageBackground(
+                        panel,
+                        Insets.all(8),
+                        NineSliceCenterMode.Tiled,
+                    ).padding(8),
         ) {
-            PlayerHead(player.skin, PlayerHeadScale(3))
-            Column(spacing = 4) {
-                Text(player.name)
-                Text(player.role)
+            val rowColor = ArgbColor(0xFF4A4A4A.toInt())
+            Column(Modifier.Empty.width(220), spacing = 6) {
+                players.forEach { player ->
+                    Row(
+                        modifier =
+                            Modifier.Empty
+                                .background(rowColor)
+                                .padding(6)
+                                .fillMaxWidth(),
+                        spacing = 8,
+                        verticalAlignment = VerticalAlignment.Center,
+                    ) {
+                        PlayerHead(player.skin, PlayerHeadScale(3))
+                        Column(spacing = 4) {
+                            Text(player.name)
+                            Text(player.role)
+                        }
+                        Button("Invite", width = 60)
+                    }
+                }
             }
-            Button("Invite", width = 60)
         }
     }
 }
@@ -157,27 +253,51 @@ Weight expands the text column and lines up the buttons.
 <details><summary>Complete source for this stage</summary>
 
 ```kotlin
-val rowColor = ArgbColor(0xFF4A4A4A.toInt())
-Column(Modifier.Empty.width(220), spacing = 6) {
-    players.forEach { player ->
-        Row(
+ScreenDefinition("Players") {
+    Column(
+        modifier =
+            Modifier.Empty
+                .size(256, 192)
+                .menuBackground()
+                .padding(4),
+        spacing = 4,
+        horizontalAlignment = HorizontalAlignment.Center,
+    ) {
+        Text("Players (${players.size})")
+        Stack(
             modifier =
                 Modifier.Empty
-                    .background(rowColor)
-                    .padding(6)
-                    .fillMaxWidth(),
-            spacing = 8,
-            verticalAlignment = VerticalAlignment.Center,
+                    .size(236, 142)
+                    .imageBackground(
+                        panel,
+                        Insets.all(8),
+                        NineSliceCenterMode.Tiled,
+                    ).padding(8),
         ) {
-            PlayerHead(player.skin, PlayerHeadScale(3))
-            Column(
-                modifier = Modifier.Empty.weight(1f),
-                spacing = 4,
-            ) {
-                Text(player.name)
-                Text(player.role)
+            val rowColor = ArgbColor(0xFF4A4A4A.toInt())
+            Column(Modifier.Empty.width(220), spacing = 6) {
+                players.forEach { player ->
+                    Row(
+                        modifier =
+                            Modifier.Empty
+                                .background(rowColor)
+                                .padding(6)
+                                .fillMaxWidth(),
+                        spacing = 8,
+                        verticalAlignment = VerticalAlignment.Center,
+                    ) {
+                        PlayerHead(player.skin, PlayerHeadScale(3))
+                        Column(
+                            modifier = Modifier.Empty.weight(1f),
+                            spacing = 4,
+                        ) {
+                            Text(player.name)
+                            Text(player.role)
+                        }
+                        Button("Invite", width = 60)
+                    }
+                }
             }
-            Button("Invite", width = 60)
         }
     }
 }
@@ -196,32 +316,56 @@ Wrap the existing Column in ScrollArea to contain the list.
 <details><summary>Complete source for this stage</summary>
 
 ```kotlin
-val rowColor = ArgbColor(0xFF4A4A4A.toInt())
-val scroll = ScrollState()
-ScrollArea(
-    state = scroll,
-    modifier = Modifier.Empty.height(126),
-) {
-    Column(Modifier.Empty.width(220), spacing = 6) {
-        players.forEach { player ->
-            Row(
-                modifier =
-                    Modifier.Empty
-                        .background(rowColor)
-                        .padding(6)
-                        .fillMaxWidth(),
-                spacing = 8,
-                verticalAlignment = VerticalAlignment.Center,
+ScreenDefinition("Players") {
+    Column(
+        modifier =
+            Modifier.Empty
+                .size(256, 192)
+                .menuBackground()
+                .padding(4),
+        spacing = 4,
+        horizontalAlignment = HorizontalAlignment.Center,
+    ) {
+        Text("Players (${players.size})")
+        Stack(
+            modifier =
+                Modifier.Empty
+                    .size(236, 142)
+                    .imageBackground(
+                        panel,
+                        Insets.all(8),
+                        NineSliceCenterMode.Tiled,
+                    ).padding(8),
+        ) {
+            val rowColor = ArgbColor(0xFF4A4A4A.toInt())
+            val scroll = ScrollState()
+            ScrollArea(
+                state = scroll,
+                modifier = Modifier.Empty.height(126),
             ) {
-                PlayerHead(player.skin, PlayerHeadScale(3))
-                Column(
-                    modifier = Modifier.Empty.weight(1f),
-                    spacing = 4,
-                ) {
-                    Text(player.name)
-                    Text(player.role)
+                Column(Modifier.Empty.width(220), spacing = 6) {
+                    players.forEach { player ->
+                        Row(
+                            modifier =
+                                Modifier.Empty
+                                    .background(rowColor)
+                                    .padding(6)
+                                    .fillMaxWidth(),
+                            spacing = 8,
+                            verticalAlignment = VerticalAlignment.Center,
+                        ) {
+                            PlayerHead(player.skin, PlayerHeadScale(3))
+                            Column(
+                                modifier = Modifier.Empty.weight(1f),
+                                spacing = 4,
+                            ) {
+                                Text(player.name)
+                                Text(player.role)
+                            }
+                            Button("Invite", width = 60)
+                        }
+                    }
                 }
-                Button("Invite", width = 60)
             }
         }
     }
@@ -241,32 +385,56 @@ Wheel input reaches the final players; no scrollbar has been added yet.
 <details><summary>Complete source for this stage</summary>
 
 ```kotlin
-val rowColor = ArgbColor(0xFF4A4A4A.toInt())
-val scroll = ScrollState()
-ScrollArea(
-    state = scroll,
-    modifier = Modifier.Empty.height(126),
-) {
-    Column(Modifier.Empty.width(220), spacing = 6) {
-        players.forEach { player ->
-            Row(
-                modifier =
-                    Modifier.Empty
-                        .background(rowColor)
-                        .padding(6)
-                        .fillMaxWidth(),
-                spacing = 8,
-                verticalAlignment = VerticalAlignment.Center,
+ScreenDefinition("Players") {
+    Column(
+        modifier =
+            Modifier.Empty
+                .size(256, 192)
+                .menuBackground()
+                .padding(4),
+        spacing = 4,
+        horizontalAlignment = HorizontalAlignment.Center,
+    ) {
+        Text("Players (${players.size})")
+        Stack(
+            modifier =
+                Modifier.Empty
+                    .size(236, 142)
+                    .imageBackground(
+                        panel,
+                        Insets.all(8),
+                        NineSliceCenterMode.Tiled,
+                    ).padding(8),
+        ) {
+            val rowColor = ArgbColor(0xFF4A4A4A.toInt())
+            val scroll = ScrollState()
+            ScrollArea(
+                state = scroll,
+                modifier = Modifier.Empty.height(126),
             ) {
-                PlayerHead(player.skin, PlayerHeadScale(3))
-                Column(
-                    modifier = Modifier.Empty.weight(1f),
-                    spacing = 4,
-                ) {
-                    Text(player.name)
-                    Text(player.role)
+                Column(Modifier.Empty.width(220), spacing = 6) {
+                    players.forEach { player ->
+                        Row(
+                            modifier =
+                                Modifier.Empty
+                                    .background(rowColor)
+                                    .padding(6)
+                                    .fillMaxWidth(),
+                            spacing = 8,
+                            verticalAlignment = VerticalAlignment.Center,
+                        ) {
+                            PlayerHead(player.skin, PlayerHeadScale(3))
+                            Column(
+                                modifier = Modifier.Empty.weight(1f),
+                                spacing = 4,
+                            ) {
+                                Text(player.name)
+                                Text(player.role)
+                            }
+                            Button("Invite", width = 60)
+                        }
+                    }
                 }
-                Button("Invite", width = 60)
             }
         }
     }
@@ -286,41 +454,65 @@ Pass the same ScrollState to Scrollbar; its thumb reflects the list position.
 <details><summary>Complete source for this stage</summary>
 
 ```kotlin
-val rowColor = ArgbColor(0xFF4A4A4A.toInt())
-val scroll = ScrollState()
-Row(spacing = 4) {
-    ScrollArea(
-        state = scroll,
-        modifier = Modifier.Empty.size(220, 126),
+ScreenDefinition("Players") {
+    Column(
+        modifier =
+            Modifier.Empty
+                .size(256, 192)
+                .menuBackground()
+                .padding(4),
+        spacing = 4,
+        horizontalAlignment = HorizontalAlignment.Center,
     ) {
-        Column(Modifier.Empty.width(220), spacing = 6) {
-            players.forEach { player ->
-                Row(
-                    modifier =
-                        Modifier.Empty
-                            .background(rowColor)
-                            .padding(6)
-                            .fillMaxWidth(),
-                    spacing = 8,
-                    verticalAlignment = VerticalAlignment.Center,
+        Text("Players (${players.size})")
+        Stack(
+            modifier =
+                Modifier.Empty
+                    .size(246, 142)
+                    .imageBackground(
+                        panel,
+                        Insets.all(8),
+                        NineSliceCenterMode.Tiled,
+                    ).padding(8),
+        ) {
+            val rowColor = ArgbColor(0xFF4A4A4A.toInt())
+            val scroll = ScrollState()
+            Row(spacing = 4) {
+                ScrollArea(
+                    state = scroll,
+                    modifier = Modifier.Empty.size(220, 126),
                 ) {
-                    PlayerHead(player.skin, PlayerHeadScale(3))
-                    Column(
-                        modifier = Modifier.Empty.weight(1f),
-                        spacing = 4,
-                    ) {
-                        Text(player.name)
-                        Text(player.role)
+                    Column(Modifier.Empty.width(220), spacing = 6) {
+                        players.forEach { player ->
+                            Row(
+                                modifier =
+                                    Modifier.Empty
+                                        .background(rowColor)
+                                        .padding(6)
+                                        .fillMaxWidth(),
+                                spacing = 8,
+                                verticalAlignment = VerticalAlignment.Center,
+                            ) {
+                                PlayerHead(player.skin, PlayerHeadScale(3))
+                                Column(
+                                    modifier = Modifier.Empty.weight(1f),
+                                    spacing = 4,
+                                ) {
+                                    Text(player.name)
+                                    Text(player.role)
+                                }
+                                Button("Invite", width = 60)
+                            }
+                        }
                     }
-                    Button("Invite", width = 60)
                 }
+                Scrollbar(
+                    state = scroll,
+                    modifier = Modifier.Empty.size(6, 126),
+                )
             }
         }
     }
-    Scrollbar(
-        state = scroll,
-        modifier = Modifier.Empty.size(6, 126),
-    )
 }
 ```
 
@@ -337,41 +529,65 @@ The list and linked scrollbar move together under wheel input.
 <details><summary>Complete source for this stage</summary>
 
 ```kotlin
-val rowColor = ArgbColor(0xFF4A4A4A.toInt())
-val scroll = ScrollState()
-Row(spacing = 4) {
-    ScrollArea(
-        state = scroll,
-        modifier = Modifier.Empty.size(220, 126),
+ScreenDefinition("Players") {
+    Column(
+        modifier =
+            Modifier.Empty
+                .size(256, 192)
+                .menuBackground()
+                .padding(4),
+        spacing = 4,
+        horizontalAlignment = HorizontalAlignment.Center,
     ) {
-        Column(Modifier.Empty.width(220), spacing = 6) {
-            players.forEach { player ->
-                Row(
-                    modifier =
-                        Modifier.Empty
-                            .background(rowColor)
-                            .padding(6)
-                            .fillMaxWidth(),
-                    spacing = 8,
-                    verticalAlignment = VerticalAlignment.Center,
+        Text("Players (${players.size})")
+        Stack(
+            modifier =
+                Modifier.Empty
+                    .size(246, 142)
+                    .imageBackground(
+                        panel,
+                        Insets.all(8),
+                        NineSliceCenterMode.Tiled,
+                    ).padding(8),
+        ) {
+            val rowColor = ArgbColor(0xFF4A4A4A.toInt())
+            val scroll = ScrollState()
+            Row(spacing = 4) {
+                ScrollArea(
+                    state = scroll,
+                    modifier = Modifier.Empty.size(220, 126),
                 ) {
-                    PlayerHead(player.skin, PlayerHeadScale(3))
-                    Column(
-                        modifier = Modifier.Empty.weight(1f),
-                        spacing = 4,
-                    ) {
-                        Text(player.name)
-                        Text(player.role)
+                    Column(Modifier.Empty.width(220), spacing = 6) {
+                        players.forEach { player ->
+                            Row(
+                                modifier =
+                                    Modifier.Empty
+                                        .background(rowColor)
+                                        .padding(6)
+                                        .fillMaxWidth(),
+                                spacing = 8,
+                                verticalAlignment = VerticalAlignment.Center,
+                            ) {
+                                PlayerHead(player.skin, PlayerHeadScale(3))
+                                Column(
+                                    modifier = Modifier.Empty.weight(1f),
+                                    spacing = 4,
+                                ) {
+                                    Text(player.name)
+                                    Text(player.role)
+                                }
+                                Button("Invite", width = 60)
+                            }
+                        }
                     }
-                    Button("Invite", width = 60)
                 }
+                Scrollbar(
+                    state = scroll,
+                    modifier = Modifier.Empty.size(6, 126),
+                )
             }
         }
     }
-    Scrollbar(
-        state = scroll,
-        modifier = Modifier.Empty.size(6, 126),
-    )
 }
 ```
 
@@ -388,41 +604,65 @@ The linked thumb follows the list back to its last player.
 <details><summary>Complete source for this stage</summary>
 
 ```kotlin
-val rowColor = ArgbColor(0xFF4A4A4A.toInt())
-val scroll = ScrollState()
-Row(spacing = 4) {
-    ScrollArea(
-        state = scroll,
-        modifier = Modifier.Empty.size(220, 126),
+ScreenDefinition("Players") {
+    Column(
+        modifier =
+            Modifier.Empty
+                .size(256, 192)
+                .menuBackground()
+                .padding(4),
+        spacing = 4,
+        horizontalAlignment = HorizontalAlignment.Center,
     ) {
-        Column(Modifier.Empty.width(220), spacing = 6) {
-            players.forEach { player ->
-                Row(
-                    modifier =
-                        Modifier.Empty
-                            .background(rowColor)
-                            .padding(6)
-                            .fillMaxWidth(),
-                    spacing = 8,
-                    verticalAlignment = VerticalAlignment.Center,
+        Text("Players (${players.size})")
+        Stack(
+            modifier =
+                Modifier.Empty
+                    .size(246, 142)
+                    .imageBackground(
+                        panel,
+                        Insets.all(8),
+                        NineSliceCenterMode.Tiled,
+                    ).padding(8),
+        ) {
+            val rowColor = ArgbColor(0xFF4A4A4A.toInt())
+            val scroll = ScrollState()
+            Row(spacing = 4) {
+                ScrollArea(
+                    state = scroll,
+                    modifier = Modifier.Empty.size(220, 126),
                 ) {
-                    PlayerHead(player.skin, PlayerHeadScale(3))
-                    Column(
-                        modifier = Modifier.Empty.weight(1f),
-                        spacing = 4,
-                    ) {
-                        Text(player.name)
-                        Text(player.role)
+                    Column(Modifier.Empty.width(220), spacing = 6) {
+                        players.forEach { player ->
+                            Row(
+                                modifier =
+                                    Modifier.Empty
+                                        .background(rowColor)
+                                        .padding(6)
+                                        .fillMaxWidth(),
+                                spacing = 8,
+                                verticalAlignment = VerticalAlignment.Center,
+                            ) {
+                                PlayerHead(player.skin, PlayerHeadScale(3))
+                                Column(
+                                    modifier = Modifier.Empty.weight(1f),
+                                    spacing = 4,
+                                ) {
+                                    Text(player.name)
+                                    Text(player.role)
+                                }
+                                Button("Invite", width = 60)
+                            }
+                        }
                     }
-                    Button("Invite", width = 60)
                 }
+                Scrollbar(
+                    state = scroll,
+                    modifier = Modifier.Empty.size(6, 126),
+                )
             }
         }
     }
-    Scrollbar(
-        state = scroll,
-        modifier = Modifier.Empty.size(6, 126),
-    )
 }
 ```
 
@@ -431,7 +671,7 @@ Row(spacing = 4) {
 ## Running the example
 
 The final example accepts immutable `ReadmePlayer` values with names, roles, and detached `PlayerSkinSource.Pixels` skins.
-Copy [the final screen](../../integration/docs/src/readmeExamples/kotlin/dev/s7a/strata/integration/docs/example/ScrollPlayersExample.kt), [the player model](../../integration/docs/src/readmeExamples/kotlin/dev/s7a/strata/integration/docs/example/ReadmePlayer.kt), and [the screen chrome](../../integration/docs/src/readmeExamples/kotlin/dev/s7a/strata/integration/docs/example/ReadmeDemoChrome.kt) into a Mod using Strata, then call `scrollPlayersScreen(players, panel).open()`.
+Copy [the final screen](../../integration/docs/src/readmeExamples/kotlin/dev/s7a/strata/integration/docs/example/ScrollPlayersExample.kt) and [the player model](../../integration/docs/src/readmeExamples/kotlin/dev/s7a/strata/integration/docs/example/ReadmePlayer.kt) into a Mod using Strata, then call `scrollPlayersScreen(players, panel).open()`.
 Supply the original Minecraft Social Interactions panel as an `ImageSource` alongside the player data; headless generation supplies detached pixels from the same asset.
 The `Invite` button demonstrates layout only; add an `onActivate` modifier to connect application behavior.
 

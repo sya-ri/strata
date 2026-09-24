@@ -11,7 +11,6 @@ import dev.s7a.strata.geometry.IntRect
 import dev.s7a.strata.geometry.IntSize
 import dev.s7a.strata.input.InputResult
 import dev.s7a.strata.input.PointerEvent
-import dev.s7a.strata.integration.docs.example.ReadmeDemoChrome
 import dev.s7a.strata.layout.HorizontalAlignment.Start
 import dev.s7a.strata.layout.VerticalAlignment.Center
 import dev.s7a.strata.modifier.Modifier
@@ -26,6 +25,7 @@ import dev.s7a.strata.runtime.minecraft.font.lwjgl.LwjglMinecraftFontBackendFact
 import dev.s7a.strata.runtime.render.DrawCommand
 import dev.s7a.strata.runtime.semantics.SemanticsEntry
 import dev.s7a.strata.runtime.spi.RuntimeUiFrame
+import dev.s7a.strata.screen.ScreenDefinition
 import dev.s7a.strata.semantics.SemanticsRole
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
 import dev.s7a.strata.text.UiText
@@ -122,28 +122,30 @@ internal class ReadmeDemoLayoutTest {
         val frames =
             listOf(180, 220).map { width ->
                 val screen =
-                    ReadmeDemoChrome.screen(assets.panel, playerCount = assets.players.size) {
-                        Column(Modifier.Empty.width(width), spacing = 6) {
-                            assets.players.forEach { player ->
-                                Row(
-                                    modifier =
-                                        Modifier.Empty
-                                            .background(ArgbColor(0xFF4A4A4A.toInt()))
-                                            .padding(6)
-                                            .fillMaxWidth(),
-                                    spacing = 8,
-                                    verticalAlignment = Center,
-                                ) {
-                                    PlayerHead(player.skin, PlayerHeadScale(3))
-                                    Column(
-                                        modifier = Modifier.Empty.weight(1f),
-                                        spacing = 4,
-                                        horizontalAlignment = Start,
+                    ScreenDefinition("Width comparison") {
+                        Column {
+                            Column(Modifier.Empty.width(width), spacing = 6) {
+                                assets.players.forEach { player ->
+                                    Row(
+                                        modifier =
+                                            Modifier.Empty
+                                                .background(ArgbColor(0xFF4A4A4A.toInt()))
+                                                .padding(6)
+                                                .fillMaxWidth(),
+                                        spacing = 8,
+                                        verticalAlignment = Center,
                                     ) {
-                                        Text(player.name)
-                                        Text(player.role)
+                                        PlayerHead(player.skin, PlayerHeadScale(3))
+                                        Column(
+                                            modifier = Modifier.Empty.weight(1f),
+                                            spacing = 4,
+                                            horizontalAlignment = Start,
+                                        ) {
+                                            Text(player.name)
+                                            Text(player.role)
+                                        }
+                                        Button("Invite", width = 60)
                                     }
-                                    Button("Invite", width = 60)
                                 }
                             }
                         }
