@@ -1,7 +1,7 @@
 package dev.s7a.strata.state
 
 import dev.s7a.strata.internal.platform.EvaluationContext
-import dev.s7a.strata.internal.platform.currentThread
+import dev.s7a.strata.internal.platform.currentOwner
 import dev.s7a.strata.internal.platform.withValue
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
 
@@ -22,7 +22,7 @@ public class StateObservation(
     private val invalidated: () -> Unit,
     private val validateMutation: () -> Unit,
 ) : AutoCloseable {
-    private val owner = currentThread()
+    private val owner = currentOwner()
     private val dependencies = LinkedHashSet<MutableState<*>>()
     private var collecting: MutableSet<MutableState<*>>? = null
     private var closed = false
@@ -111,7 +111,7 @@ public class StateObservation(
     }
 
     private fun checkOwner() {
-        check(currentThread() === owner) { "State observation requires its construction thread." }
+        check(currentOwner() === owner) { "State observation requires its construction execution owner." }
     }
 
     /**

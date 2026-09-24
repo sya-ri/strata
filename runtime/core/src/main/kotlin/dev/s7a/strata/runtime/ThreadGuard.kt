@@ -1,29 +1,30 @@
 package dev.s7a.strata.runtime
 
-import dev.s7a.strata.runtime.platform.currentThread
-import dev.s7a.strata.runtime.platform.threadName
+import dev.s7a.strata.spi.InternalStrataRuntimeApi
+import dev.s7a.strata.spi.RuntimeExecutionOwner
 
 /**
- * Verifies that retained runtime operations run on one owning thread.
+ * Verifies that retained runtime operations run under one execution owner.
  *
- * Construction captures the current thread.
+ * Construction captures the active serial runtime owner, or the current physical thread.
  */
+@OptIn(InternalStrataRuntimeApi::class)
 internal class ThreadGuard {
-    private val owner = currentThread()
+    private val owner = RuntimeExecutionOwner.current()
 
     /**
-     * Fails when the current thread is not the owner.
+     * Fails when the current execution context is not the owner.
      *
-     * @throws IllegalStateException when called from another thread.
+     * @throws IllegalStateException when called from another execution owner.
      */
     internal fun check() {
-        check(currentThread() === owner) {
-            "This runtime object is owned by ${threadName(owner)}."
+        check(RuntimeExecutionOwner.current() === owner) {
+            "This runtime object requires its owning execution context."
         }
     }
 
     /**
-     * Returns whether the current thread owns this guard without throwing.
+     * Returns whether the current execution context owns this guard without throwing.
      */
-    internal fun isOwnerThread(): Boolean = currentThread() === owner
+    internal fun isOwnerThread(): Boolean = RuntimeExecutionOwner.current() === owner
 }

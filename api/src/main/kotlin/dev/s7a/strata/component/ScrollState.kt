@@ -1,12 +1,12 @@
 package dev.s7a.strata.component
 
-import dev.s7a.strata.internal.platform.currentThread
+import dev.s7a.strata.internal.platform.currentOwner
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
 
 /**
  * Caller-owned mutable position shared by a scroll area and zero or more independent scrollbars.
  *
- * Reads, writes, runtime observation, and subscription release are confined to the constructing thread.
+ * Reads, writes, runtime observation, and subscription release are confined to the construction execution owner.
  * Area attachment publishes viewport and content geometry, while application calls may request positions before or after attachment.
  * Requested positions are clamped whenever current geometry is known.
  * The state owns no retained nodes and does not own its observers.
@@ -16,7 +16,7 @@ import dev.s7a.strata.spi.InternalStrataRuntimeApi
 public class ScrollState(
     initialOffset: Double = 0.0,
 ) {
-    private val ownerThread = currentThread()
+    private val ownerThread = currentOwner()
     private val observers: MutableMap<Any, (ScrollMetrics) -> Unit> = LinkedHashMap()
     private var currentMetrics = ScrollMetrics(offset = validateOffset(initialOffset))
     private var geometryKnown = false
@@ -130,7 +130,7 @@ public class ScrollState(
     }
 
     private fun checkThread() {
-        check(currentThread() === ownerThread) { "Scroll state requires its creator thread." }
+        check(currentOwner() === ownerThread) { "Scroll state requires its execution owner." }
     }
 
     private companion object {

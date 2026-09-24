@@ -1,7 +1,7 @@
 package dev.s7a.strata.component
 
 import dev.s7a.strata.element.Element
-import dev.s7a.strata.internal.platform.currentThread
+import dev.s7a.strata.internal.platform.currentOwner
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
 import kotlin.jvm.JvmSynthetic
 
@@ -14,7 +14,7 @@ import kotlin.jvm.JvmSynthetic
  */
 @StrataDsl
 public sealed class UiScope protected constructor() {
-    private val ownerThread: Any = currentThread()
+    private val ownerThread: Any = currentOwner()
     private val emittedElements: MutableList<Element> = ArrayList()
     private var active: Boolean = true
 
@@ -24,7 +24,7 @@ public sealed class UiScope protected constructor() {
      * The call must run on the scope's constructing thread while its enclosing callback is active.
      *
      * @param element immutable description to emit.
-     * @throws IllegalStateException when called from another thread or after the callback has completed.
+     * @throws IllegalStateException when called from another execution owner or after the callback has completed.
      */
     public fun element(element: Element) {
         checkUsable()
@@ -36,12 +36,12 @@ public sealed class UiScope protected constructor() {
      *
      * Internal scope extensions use this guard before creating behavior tied to a scope.
      *
-     * @throws IllegalStateException when called from another thread or after the callback has completed.
+     * @throws IllegalStateException when called from another execution owner or after the callback has completed.
      */
     @JvmSynthetic
     internal fun checkUsable() {
-        check(currentThread() === ownerThread) {
-            "UiScope can only be used from its constructing thread."
+        check(currentOwner() === ownerThread) {
+            "UiScope can only be used from its construction execution owner."
         }
         check(active) {
             "UiScope cannot be used after its callback has completed."

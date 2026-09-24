@@ -2368,6 +2368,16 @@ public final class dev/s7a/strata/spi/ComponentRuntimeBridge {
 public abstract interface annotation class dev/s7a/strata/spi/InternalStrataRuntimeApi : java/lang/annotation/Annotation {
 }
 
+public final class dev/s7a/strata/spi/RuntimeExecutionOwner {
+	public static final field Companion Ldev/s7a/strata/spi/RuntimeExecutionOwner$Companion;
+	public fun <init> ()V
+	public final fun run (Lkotlin/jvm/functions/Function0;)Ljava/lang/Object;
+}
+
+public final class dev/s7a/strata/spi/RuntimeExecutionOwner$Companion {
+	public final fun current ()Ljava/lang/Object;
+}
+
 public abstract interface class dev/s7a/strata/spi/ScreenPresenter {
 	public abstract fun present (Ldev/s7a/strata/screen/ScreenDefinition;)V
 }

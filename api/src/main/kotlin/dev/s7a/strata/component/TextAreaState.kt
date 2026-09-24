@@ -1,7 +1,7 @@
 package dev.s7a.strata.component
 
 import dev.s7a.strata.internal.platform.appendScalar
-import dev.s7a.strata.internal.platform.currentThread
+import dev.s7a.strata.internal.platform.currentOwner
 import dev.s7a.strata.internal.platform.scalarAt
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
 import dev.s7a.strata.state.MutableState
@@ -14,7 +14,7 @@ import dev.s7a.strata.state.mutableStateOf
  * CRLF, CR, VT, FF, NEL, line separator, and paragraph separator normalize to LF before the UTF-16 length limit is applied.
  * Other C0 controls, DEL, isolated surrogates, and the section-sign formatting marker are rejected without changing state.
  * Values own no retained nodes; one live text observer prevents simultaneous editors from sharing this state.
- * Reads, writes, observation, and subscription release are confined to the constructing thread.
+ * Reads, writes, observation, and subscription release are confined to the construction execution owner.
  *
  * @param initialValue initial text, normalized before storage.
  * @property maxLength positive maximum UTF-16 length of the normalized [TextAreaState.value].
@@ -24,7 +24,7 @@ public class TextAreaState(
     initialValue: String = "",
     public val maxLength: Int = 32767,
 ) {
-    private val ownerThread: Any = currentThread()
+    private val ownerThread: Any = currentOwner()
     private val ownedScrollState: ScrollState = ScrollState()
     private var observer: ((String) -> Unit)? = null
     private val currentValue: MutableState<String>
@@ -78,7 +78,7 @@ public class TextAreaState(
      *
      * @param callback callback invoked synchronously after each distinct normalized write.
      * @return an idempotent subscription release operation.
-     * @throws IllegalStateException when called from another thread or while another text observer is live.
+     * @throws IllegalStateException when called from another execution owner or while another text observer is live.
      */
     @InternalStrataRuntimeApi
     public fun observe(callback: (String) -> Unit): AutoCloseable {
@@ -121,6 +121,6 @@ public class TextAreaState(
     }
 
     private fun checkThread() {
-        check(currentThread() === ownerThread) { "Text area state requires its creator thread." }
+        check(currentOwner() === ownerThread) { "Text area state requires its execution owner." }
     }
 }

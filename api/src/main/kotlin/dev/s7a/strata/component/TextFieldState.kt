@@ -1,6 +1,6 @@
 package dev.s7a.strata.component
 
-import dev.s7a.strata.internal.platform.currentThread
+import dev.s7a.strata.internal.platform.currentOwner
 import dev.s7a.strata.internal.platform.scalarAt
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
 import dev.s7a.strata.state.MutableState
@@ -21,7 +21,7 @@ public class TextFieldState(
     initialValue: String = "",
     public val maxLength: Int = 32,
 ) {
-    private val ownerThread: Any = currentThread()
+    private val ownerThread: Any = currentOwner()
     private var observer: ((String) -> Unit)? = null
     private val currentValue: MutableState<String>
 
@@ -58,7 +58,7 @@ public class TextFieldState(
      *
      * @param callback callback invoked synchronously after each distinct successful write.
      * @return an idempotent subscription release operation.
-     * @throws IllegalStateException when called from another thread or while another observer is live.
+     * @throws IllegalStateException when called from another execution owner or while another observer is live.
      */
     @InternalStrataRuntimeApi
     public fun observe(callback: (String) -> Unit): AutoCloseable {
@@ -98,6 +98,6 @@ public class TextFieldState(
         }
 
     private fun checkThread() {
-        check(currentThread() === ownerThread) { "TextField state requires its creator thread." }
+        check(currentOwner() === ownerThread) { "TextField state requires its execution owner." }
     }
 }

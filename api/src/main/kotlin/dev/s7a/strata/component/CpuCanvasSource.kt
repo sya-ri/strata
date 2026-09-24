@@ -2,7 +2,7 @@ package dev.s7a.strata.component
 
 import dev.s7a.strata.geometry.IntRect
 import dev.s7a.strata.geometry.IntSize
-import dev.s7a.strata.internal.platform.currentThread
+import dev.s7a.strata.internal.platform.currentOwner
 import dev.s7a.strata.internal.platform.synchronized
 import dev.s7a.strata.projection.BuiltinProjection
 import dev.s7a.strata.projection.DeclarationProjection
@@ -39,7 +39,7 @@ internal class CpuCanvasSource(
     }
 
     private class Binding : CanvasBinding {
-        private val ownerThread: Any = currentThread()
+        private val ownerThread: Any = currentOwner()
         private val monitor = Any()
         private var committed: StateSnapshot<DrawImage>? = null
         private var pending: StateSnapshot<DrawImage>? = null
@@ -148,7 +148,7 @@ internal class CpuCanvasSource(
         }
 
         private fun checkOwner() {
-            check(currentThread() === ownerThread) { "Canvas bindings are confined to their owner thread." }
+            check(currentOwner() === ownerThread) { "Canvas bindings are confined to their execution owner." }
         }
 
         private fun requireImage(image: DrawImage) {

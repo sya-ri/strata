@@ -1,10 +1,11 @@
 package dev.s7a.strata.state
 
-import dev.s7a.strata.internal.platform.currentThread
+import dev.s7a.strata.internal.platform.currentOwner
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
 
 /**
- * Caller-owned observable value whose reads and writes require its construction thread.
+ * Caller-owned observable value whose reads and writes require its construction execution owner.
+ * This is the physical construction thread unless a runtime explicitly creates it in a serial ownership scope.
  * Equal assignments do not invalidate observers; changed assignments invalidate every observing screen.
  * Screen evaluation and guarded equality reject mutation before changing the value.
  * A throwing equality comparison preserves the previous value and propagates the original failure.
@@ -16,7 +17,7 @@ import dev.s7a.strata.spi.InternalStrataRuntimeApi
 public class MutableState<T> internal constructor(
     initialValue: T,
 ) : State<T> {
-    private val owner = currentThread()
+    private val owner = currentOwner()
     private var current = initialValue
     private val observations = LinkedHashSet<StateObservation>()
 
@@ -56,7 +57,7 @@ public class MutableState<T> internal constructor(
     }
 
     private fun checkAccess() {
-        check(currentThread() === owner) { "State requires its construction thread." }
+        check(currentOwner() === owner) { "State requires its construction execution owner." }
         StateObservation.checkAccess()
     }
 
@@ -72,7 +73,7 @@ public class MutableState<T> internal constructor(
      * Releases an owner-thread screen dependency without disposing the caller-owned value.
      */
     internal fun forget(observation: StateObservation) {
-        check(currentThread() === owner) { "State requires its construction thread." }
+        check(currentOwner() === owner) { "State requires its construction execution owner." }
         observations.remove(observation)
     }
 }
