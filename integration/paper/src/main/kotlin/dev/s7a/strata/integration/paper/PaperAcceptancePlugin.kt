@@ -71,6 +71,7 @@ public class PaperAcceptancePlugin :
     /**
      * Releases test-owned inventory before Strata disconnects the player's UI owner.
      */
+    @Suppress("unused") // Bukkit invokes this registered event handler reflectively.
     @EventHandler(priority = EventPriority.LOWEST)
     public fun onQuit(event: PlayerQuitEvent) {
         fixtures.remove(event.player.uniqueId)?.let { fixture ->

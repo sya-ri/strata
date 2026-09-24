@@ -25,7 +25,7 @@ public class RuntimeExecutionOwner {
      */
     public fun <T> run(operation: () -> T): T {
         if (active.current === this) return operation()
-        check(entered.compareAndSet(false, true)) { "The runtime owner is already executing." }
+        check(entered.compareAndSet(expectedValue = false, newValue = true)) { "The runtime owner is already executing." }
         return try {
             active.withValue(this, operation)
         } finally {
