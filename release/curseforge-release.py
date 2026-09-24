@@ -158,7 +158,6 @@ class CurseForgeRelease:
         self.opener = opener or build_opener(self.NoRedirect())
         self.read_key = os.environ.get("CURSEFORGE_API_KEY", "")
         self.upload_token = os.environ.get("CURSEFORGE_TOKEN", "")
-        self.require(self.read_key, "CURSEFORGE_API_KEY is required; no request was made.")
 
     @staticmethod
     def require(condition, message):
@@ -188,13 +187,20 @@ class CurseForgeRelease:
             self.require(url == f"{self.UPLOAD_API}/projects/{self.project_id}/upload-file", "Unsafe upload endpoint.")
             self.require(self.upload_token, "CURSEFORGE_TOKEN is required; no upload was attempted.")
             headers.update({"X-Api-Token": self.upload_token, "Content-Type": upload[0]})
+        elif url == self.UPLOAD_API + "/game/versions":
+            self.require(self.upload_token, "CURSEFORGE_TOKEN is required to read upload version tags.")
+            headers["X-Api-Token"] = self.upload_token
         elif url.startswith(self.API + "/"):
+            self.require(self.read_key, "CURSEFORGE_API_KEY is required for REST API reads.")
             headers["x-api-key"] = self.read_key
         else:
             parsed = urlsplit(url)
             self.require(parsed.scheme == "https" and parsed.hostname in {"mediafilez.forgecdn.net", "edge.forgecdn.net"}
                          and parsed.port is None and parsed.username is None and not parsed.query and not parsed.fragment,
                          "Unexpected CurseForge download origin.")
+            if parsed.hostname == "edge.forgecdn.net":
+                self.require(self.read_key, "CURSEFORGE_API_KEY is required for authenticated CDN verification.")
+                headers["x-api-key"] = self.read_key
         for attempt in range(1 if upload else 3):
             try:
                 with self.opener.open(Request(url, data=upload[1] if upload else None, headers=headers), timeout=60) as response:
@@ -217,7 +223,19 @@ class CurseForgeRelease:
         return json.loads(self.request(self.API + path))
 
     def catalog(self):
-        """Validate the project and resolve exact version tags without guessed IDs."""
+        """Resolve exact tags; the optional read API also checks remote project and Java version identities."""
+        if not self.read_key:
+            catalog = json.loads(self.request(self.UPLOAD_API + "/game/versions"))
+            self.require(isinstance(catalog, list), "Upload version catalog is malformed.")
+            tags = {}
+            for name in {"Fabric", "Client"} | {a["gameVersion"] for a in self.artifacts}:
+                matches = [item for item in catalog if item.get("name") == name]
+                self.require(len(matches) == 1, f"Missing or ambiguous CurseForge version tag: {name}")
+                identifier = matches[0].get("id")
+                self.require(type(identifier) is int and 0 < identifier, "Invalid version tag ID.")
+                tags[name] = identifier
+            self.require(len(set(tags.values())) == len(tags), "Version tags share an ID.")
+            return tags
         project = self.api(f"/v1/mods/{self.project_id}")["data"]
         self.require(project.get("id") == self.project_id and project.get("slug") == self.project["slug"]
                      and project.get("name") == self.project["title"] and project.get("gameId") == 432
@@ -335,14 +353,22 @@ class CurseForgeRelease:
 
     def run(self, operation, *, may_upload=True):
         """Preflight every target before any append; verification never uploads."""
+        if operation is self.Operation.VERIFY and not self.read_key:
+            summary = {"operation": operation.value, "projectId": self.project_id,
+                       "verification": "skipped", "reason": "CURSEFORGE_API_KEY is not configured"}
+            print(json.dumps(summary))
+            return summary
         tags = self.catalog()
-        files = self.inventory()
+        files = self.inventory() if self.read_key else []
         absent, pending, verified = [], [], []
         for artifact in self.artifacts:
             name = artifact["fileName"]
             matches = [f for f in files if f.get("fileName") == name or f.get("displayName") == artifact["versionName"]]
             self.require(len(matches) <= 1, f"Duplicate CurseForge release file: {name}")
             record = self.receipt["files"].get(name)
+            if not self.read_key and record and record.get("fileId"):
+                pending.append(name)
+                continue
             if not matches and record and record.get("fileId"):
                 try:
                     matches = [self.api(f"/v1/mods/{self.project_id}/files/{record['fileId']}")["data"]]
@@ -370,7 +396,7 @@ class CurseForgeRelease:
                 self.upload(artifact, tags)
                 pending.append(artifact["fileName"])
             absent = []
-        summary = {"operation": operation.value, "projectId": self.project_id,
+        summary = {"operation": operation.value, "projectId": self.project_id, "remoteChecks": bool(self.read_key),
                    "absent": [a["fileName"] for a in absent], "pending": pending, "verified": verified}
         print(json.dumps(summary))
         if operation is self.Operation.VERIFY:

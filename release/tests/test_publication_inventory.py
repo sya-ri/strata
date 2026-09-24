@@ -38,5 +38,11 @@ class PublicationInventoryTest(unittest.TestCase):
             (root / "hangar").mkdir()
             (root / "curseforge/receipt.json").write_text(json.dumps({"files": {"a.jar": {"state": "pending"}}}))
             (root / "hangar/receipt.json").write_text(json.dumps({"state": "exact"}))
+            self.assertEqual({"curseforge": "uploads recorded; public status not checked (no read API key)"},
+                             module.summarize(root, {"curseforge": True}, "release", curseforge_read_enabled=False))
+            (root / "curseforge/receipt.json").write_text(json.dumps({"files": {"a.jar": {"state": "verified"}}}))
+            self.assertEqual({"curseforge": "verification skipped (no read API key)"},
+                             module.summarize(root, {"curseforge": True}, "verify", curseforge_read_enabled=False))
+            (root / "curseforge/receipt.json").write_text(json.dumps({"files": {"a.jar": {"state": "pending"}}}))
             self.assertEqual({"curseforge": "pending", "hangar": "exact", "modrinth": "disabled"},
                              module.summarize(root, {"curseforge": True, "hangar": True, "modrinth": False}, "release"))

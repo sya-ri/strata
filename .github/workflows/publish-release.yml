@@ -442,7 +442,6 @@ jobs:
           REQUESTED_PROJECT_ID: ${{ inputs.modrinth_project_id }}
           MODRINTH_TOKEN: ${{ secrets.MODRINTH_TOKEN }}
           CURSEFORGE_TOKEN: ${{ secrets.CURSEFORGE_TOKEN }}
-          CURSEFORGE_API_KEY: ${{ secrets.CURSEFORGE_API_KEY }}
           HANGAR_API_TOKEN: ${{ secrets.HANGAR_API_TOKEN }}
           SIGNING_KEY: ${{ secrets.SIGNING_KEY }}
           SIGNING_PASSWORD: ${{ secrets.SIGNING_PASSWORD }}
@@ -454,7 +453,7 @@ jobs:
           [[ -n "$tracked" ]] || { echo 'The immutable Modrinth project ID is not tracked.' >&2; exit 1; }
           [[ -z "$REQUESTED_PROJECT_ID" || "$REQUESTED_PROJECT_ID" == "$tracked" ]] || { echo 'Requested Modrinth project ID differs from tracked ID.' >&2; exit 1; }
           [[ "$SELECT_MODRINTH" != true || -n "$MODRINTH_TOKEN" ]] || { echo 'MODRINTH_TOKEN is missing.' >&2; exit 1; }
-          [[ "$SELECT_CURSEFORGE" != true || ( -n "$CURSEFORGE_TOKEN" && -n "$CURSEFORGE_API_KEY" ) ]] || { echo 'CURSEFORGE_TOKEN or CURSEFORGE_API_KEY is missing.' >&2; exit 1; }
+          [[ "$SELECT_CURSEFORGE" != true || -n "$CURSEFORGE_TOKEN" ]] || { echo 'CURSEFORGE_TOKEN is missing.' >&2; exit 1; }
           [[ "$SELECT_HANGAR" != true || -n "$HANGAR_API_TOKEN" ]] || { echo 'HANGAR_API_TOKEN is missing.' >&2; exit 1; }
           [[ -n "$SIGNING_KEY" && -n "$SIGNING_PASSWORD" ]] || { echo 'Release signing credentials are missing.' >&2; exit 1; }
           [[ -n "$MAVEN_CENTRAL_USERNAME" && -n "$MAVEN_CENTRAL_PASSWORD" ]] || { echo 'Maven Central credentials are missing.' >&2; exit 1; }
@@ -1528,6 +1527,7 @@ jobs:
         if: always() && env.CONTROLLER_TOOL_DIRECTORY != ''
         shell: bash
         env:
+          CURSEFORGE_READ_ENABLED: ${{ secrets.CURSEFORGE_API_KEY != '' }}
           PUBLICATION_REQUEST: >-
             {"operation":${{ toJSON(inputs.operation) }},"tag":${{ toJSON(inputs.tag) }},"sourceCommit":${{ toJSON(inputs.source_commit) }},"destinations":{"maven_central":${{ inputs.maven_central }},"github_release":${{ inputs.github_release }},"modrinth":${{ inputs.modrinth }},"curseforge":${{ inputs.curseforge }},"hangar":${{ inputs.hangar }}}}
         run: |
@@ -1975,10 +1975,8 @@ jobs:
         shell: bash
         env:
           SELECT_MODRINTH: ${{ inputs.modrinth }}
-          SELECT_CURSEFORGE: ${{ inputs.curseforge }}
           REQUESTED_PROJECT_ID: ${{ inputs.modrinth_project_id }}
           MODRINTH_TOKEN: ${{ secrets.MODRINTH_TOKEN }}
-          CURSEFORGE_API_KEY: ${{ secrets.CURSEFORGE_API_KEY }}
           SIGNING_KEY: ${{ secrets.SIGNING_KEY }}
           SIGNING_PASSWORD: ${{ secrets.SIGNING_PASSWORD }}
           MAVEN_CENTRAL_USERNAME: ${{ secrets.MAVEN_CENTRAL_USERNAME }}
@@ -1989,7 +1987,6 @@ jobs:
           [[ -n "$tracked" && (-z "$REQUESTED_PROJECT_ID" || "$REQUESTED_PROJECT_ID" == "$tracked") ]] || { echo 'Modrinth project ID differs.' >&2; exit 1; }
           [[ ("$SELECT_MODRINTH" != true || -n "$MODRINTH_TOKEN") && -n "$SIGNING_KEY" && -n "$SIGNING_PASSWORD" ]] || { echo 'Modrinth or signing credentials are missing.' >&2; exit 1; }
           [[ -n "$MAVEN_CENTRAL_USERNAME" && -n "$MAVEN_CENTRAL_PASSWORD" ]] || { echo 'Maven Central credentials are missing.' >&2; exit 1; }
-          [[ "$SELECT_CURSEFORGE" != true || -n "$CURSEFORGE_API_KEY" ]] || { echo 'CURSEFORGE_API_KEY is missing.' >&2; exit 1; }
           echo "project_id=$tracked" >> "$GITHUB_OUTPUT"
       - name: Rebuild and verify Central release evidence
         shell: bash
@@ -2578,6 +2575,7 @@ jobs:
         if: always() && env.CONTROLLER_TOOL_DIRECTORY != ''
         shell: bash
         env:
+          CURSEFORGE_READ_ENABLED: ${{ secrets.CURSEFORGE_API_KEY != '' }}
           PUBLICATION_REQUEST: >-
             {"operation":${{ toJSON(inputs.operation) }},"tag":${{ toJSON(inputs.tag) }},"sourceCommit":${{ toJSON(inputs.source_commit) }},"destinations":{"maven_central":${{ inputs.maven_central }},"github_release":${{ inputs.github_release }},"modrinth":${{ inputs.modrinth }},"curseforge":${{ inputs.curseforge }},"hangar":${{ inputs.hangar }}}}
         run: |

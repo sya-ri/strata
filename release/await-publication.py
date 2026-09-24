@@ -89,16 +89,8 @@ def service_json(url, headers=None):
         raise ValueError("Publication status read failed.") from None
 
 
-def key(name):
-    """Require only the credentials for selected destinations."""
-    value = os.environ.get(name, "")
-    if not value:
-        raise ValueError(name + " is missing.")
-    return value
-
-
 def distributions_ready(request, evidence):
-    """Read moderation readiness only; the protected verifier still checks every byte and all source provenance."""
+    """Check observable destinations; absent optional credentials never imply CurseForge approval."""
     selected = request["destinations"]
     if selected["modrinth"]:
         records = [record for name, record in evidence.items() if name.startswith("modrinth-receipts/")]
@@ -118,11 +110,16 @@ def distributions_ready(request, evidence):
         project_id = receipt["projectId"]
         if type(project_id) is not int or project_id <= 0 or not receipt["files"]:
             raise ValueError("CurseForge receipt is incomplete.")
+        read_key = os.environ.get("CURSEFORGE_API_KEY", "")
+        if not read_key:
+            print(request["tag"] + ": CurseForge public status is not checked (no read API key)")
         for record in receipt["files"].values():
             file_id = record.get("fileId")
             if type(file_id) is not int or file_id <= 0:
                 return False
-            remote = service_json(f"https://api.curseforge.com/v1/mods/{project_id}/files/{file_id}", {"x-api-key": key("CURSEFORGE_API_KEY")})
+            if not read_key:
+                continue
+            remote = service_json(f"https://api.curseforge.com/v1/mods/{project_id}/files/{file_id}", {"x-api-key": read_key})
             if not remote:
                 return False
             file = remote["data"]

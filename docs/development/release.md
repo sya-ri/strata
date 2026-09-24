@@ -16,9 +16,9 @@ Once an immutable tag exists, start **Actions → Publish release → Run workfl
 The optional Modrinth project ID can remain empty because the controller reads the tracked identity.
 Approve the existing `release` environment request when GitHub presents it.
 
-The workflow builds and verifies the release, checks all selected services before upload, reuses exact existing publications, submits missing files, and retains per-service results in its run summary and `publication-…` artifact.
+The workflow builds and verifies the release, checks upload metadata, reuses exact existing publications or accepted CurseForge upload receipts, submits missing files, and retains per-service results in its run summary and `publication-…` artifact.
 Review the actual service states: an accepted upload can still be awaiting moderation.
-[Approval monitoring](#approval-monitoring-and-recovery) requests final verification automatically after the selected distributions become public.
+[Approval monitoring](#approval-monitoring-and-recovery) requests final verification after the distributions it can observe become public; CurseForge observation is optional.
 
 | Secret | Scope | Purpose |
 | --- | --- | --- |
@@ -26,11 +26,12 @@ Review the actual service states: an accepted upload can still be awaiting moder
 | `SIGNING_KEY`, `SIGNING_PASSWORD` | Repository or protected `release` environment | In-memory signing and canonical signature verification |
 | `MODRINTH_TOKEN` | Protected `release` environment | Selected Modrinth publication and project-body finalization |
 | `CURSEFORGE_TOKEN` | Protected `release` environment | Selected CurseForge uploads |
-| `CURSEFORGE_API_KEY` | Repository secret | Read-only CurseForge reconciliation and unattended approval monitoring |
+| `CURSEFORGE_API_KEY` | Optional repository secret | Remote CurseForge reconciliation, approval monitoring, and download verification |
 | `HANGAR_API_TOKEN` | Protected `release` environment | Selected Hangar publication, page synchronization, and private version observation |
 
 Do not shadow the repository's CurseForge read key with a different environment value.
-The approval monitor has no `release` environment and receives no distribution upload tokens; it therefore needs the read key at repository scope.
+CurseForge uploads require only `CURSEFORGE_TOKEN`; leave `CURSEFORGE_API_KEY` unset to publish using the Upload API and trusted upload receipts.
+The optional read key belongs at repository scope so the approval monitor can use it without a `release` environment or distribution upload token.
 Existing required-reviewer and branch protections continue to apply to publication and final verification.
 
 ## Publication inputs
@@ -74,7 +75,7 @@ The five boolean inputs are independent and default to `true`:
 | `maven_central` | Publish a wholly absent release, or verify and reuse an exact publication | Never invoke Maven publication; require existing exact Central evidence |
 | `github_release` | Create or resume the immutable GitHub Release (`verify` checks it without publishing) | Skip GitHub Release lookup, writes, uploads and verification |
 | `modrinth` | Stage, submit or finalize the applicable Modrinth lifecycle; verify public files | Skip Modrinth API calls and require no Modrinth token |
-| `curseforge` | Reconcile missing CurseForge files and verify approved downloads | Skip CurseForge API calls and require no CurseForge credentials |
+| `curseforge` | Upload files not recorded as accepted; with a read key, reconcile remote files and verify approved downloads | Skip CurseForge API calls and require no CurseForge credentials |
 | `hangar` | Publish or reuse one exact Paper/Velocity version, synchronize its project page, and verify public downloads | Skip Hangar tasks and API calls and require no Hangar token |
 
 At least one destination must be enabled.
@@ -108,26 +109,31 @@ The project title distinguishes this UI library from unrelated projects named St
 Record the assigned positive numeric ID in `release/curseforge-project.json`; its initial `null` value deliberately prevents publication to an unconfigured destination.
 Keep CurseForge disabled on other release runs until this setup is complete.
 
-Add `CURSEFORGE_TOKEN` (the author's upload token) to the protected `release` GitHub Environment and `CURSEFORGE_API_KEY` (the separate read API key) as a repository secret, as listed above.
+Add `CURSEFORGE_TOKEN` (the author's upload token) to the protected `release` GitHub Environment.
+Optionally add `CURSEFORGE_API_KEY` (the separate read API key) as a repository secret to enable remote reconciliation, approval monitoring, and public download verification.
 The [Upload API](https://support.curseforge.com/support/solutions/articles/9000197321) uses `X-Api-Token`; the [read API](https://docs.curseforge.com/rest-api/) uses `x-api-key`.
 Third-party read API access requires the application linked from the official API documentation; do not create a game-studio account to represent Minecraft ownership.
-Credentials are never passed as URL parameters, written to receipts, or forwarded to download servers.
-An unreadable or unapproved project is not treated as an empty public project: complete initial project review in the Authors Console before using the ordinary publication controller.
-The initial file submission needed for that review is a one-time setup operation with its own recorded file ID; the normal controller subsequently verifies and reuses that file.
-For that submission, copy the canonical manifest's `fileName`, `versionName` (display name), `gameVersion`, and Markdown `changelog`, and apply the Fabric and Client tags and required Fabric Language Kotlin dependency described below.
+Credentials are never passed as URL parameters or written to receipts.
+Upload tokens stay on the Upload API; the read key is sent only to the REST API and the explicitly allowed `edge.forgecdn.net` origin required by [CDN authentication](https://blog.curseforge.com/introducing-api-key-authentication-for-curseforge-file-downloads/), without following redirects.
+When the read key is configured, an unreadable or unapproved project is not treated as an empty public project: complete initial review before using remote reconciliation.
+Without that key, the first upload can initiate review and retains its accepted file ID for later runs.
+Do not separately upload the same release in the Authors Console: without the read API, CI cannot discover files submitted outside its preserved receipts.
 
 The controller materializes the CurseForge publisher, receipt reader, and project configuration from its frozen Git commit and checks their blob identities alongside its other release tools.
 The publisher consumes the existing generated release manifest and canonical JARs; it does not maintain another Minecraft target inventory or rebuild distribution files.
 Each file is a Release for exactly one supported Java Minecraft version, tagged Fabric and Client, with Fabric Language Kotlin as its required dependency.
-Java Minecraft version IDs are cross-checked against the official Minecraft version catalog, preventing an identically named version in another version type from being selected.
+Without the read key, version IDs come from the Minecraft Upload API's `/api/game/versions` catalog; every Minecraft, Fabric, and Client tag must match exactly once, and missing or ambiguous tags stop before uploading.
+With the read key, Java Minecraft version IDs are additionally cross-checked against the REST API's Minecraft catalog and the remote project and dependency identities are verified.
 Source and documentation JARs, detached signatures, and Maven-only modules are not uploaded.
 
 Preflight checks all target metadata before publication begins.
 After Central publication has completed, staging appends missing files without editing or deleting existing files.
 Serialize Authors Console uploads and local historical imports with this workflow; local receipts do not coordinate independent writers.
 Accepted uploads remain pending until approval and public byte verification; a successful staging step is not proof of publication.
-After moderation, automatic or manually dispatched `operation=verify` for the same tag and source verifies every file's identity, exact game tags, dependency, size, and downloaded SHA-256.
-Rejected, changed, duplicate, or unknown file states stop the operation and require inspection in the Authors Console.
+With the optional read key, automatic or manually dispatched `operation=verify` for the same tag and source verifies every approved file's identity, exact game tags, dependency, size, and downloaded SHA-256.
+Without the key, release summaries report recorded uploads with public status unchecked, and `operation=verify` explicitly reports CurseForge verification as skipped; other selected destinations continue normally.
+An invalid or rejected configured key remains an error and never silently disables these checks.
+When remote checks are enabled, rejected, changed, duplicate, or unknown file states stop the operation and require inspection in the Authors Console.
 Release notes are submitted verbatim as Markdown from the canonical manifest.
 Project description changes remain Authors Console operations using the generated body; the documented upload API does not supply a project-description update endpoint.
 
@@ -136,7 +142,9 @@ The workflow retains the credential-free receipt as an attempt-qualified Actions
 Later runs inspect all relevant workflow attempts and restore receipts only after checking their producer identity, archive size, digest, and product identity.
 Do not rename the workflow run title or the CurseForge stage step independently of this restoration contract.
 Receipts are not caches: expired, missing, or incomplete evidence forbids additional uploads until the uncertain outcome is reconciled.
-A complete exact public release can still be verified without its old receipts.
+A complete exact public release can still be verified without its old receipts when the read key is available.
+Without the key, accepted file IDs prevent repeat uploads and permit completion of unrecorded targets only while the prior-write history remains complete; an uncertain write or missing receipt forbids additional uploads.
+That protection covers this workflow's recorded attempts, not manual or external uploads.
 An accepted ID that is not publicly visible remains pending, and a failed upload is never retried blindly.
 
 For an explicitly authorized one-time historical import, use temporary manifests and the same publisher against previously released, signed, checksum-verified canonical files.
@@ -167,10 +175,12 @@ Final verification requires public metadata and independently hashes both CDN do
 
 `publication-status.yml`, displayed as **Publication approval**, checks successful release runs after completion, hourly, or when manually dispatched.
 It validates the producer-bound result artifact and its digest before reading the selected services' review states.
-Modrinth and Hangar status reads are anonymous; CurseForge uses its separate read key.
+Modrinth and Hangar status reads are anonymous; CurseForge uses its optional separate read key.
+Without that key, the monitor checks that CurseForge has accepted upload IDs, reports its public status as unchecked, and continues observing the other selected destinations.
 The monitor does not upload files, edit project descriptions, or execute code from result artifacts.
 
-When every selected distribution is public, it requests `Publish release` with `operation=verify`, the same immutable tag and commit, and the same destination switches.
+When every observable selected distribution is public, it requests `Publish release` with `operation=verify`, the same immutable tag and commit, and the same destination switches.
+The verification run also skips CurseForge public checks if the optional key is absent; its success does not establish CurseForge approval.
 The protected `release` environment still requires its configured approval before verification can run.
 A release whose distributions are already public follows this path immediately after its successful publication job.
 Maven and GitHub-only runs can also proceed directly to verification.
@@ -178,6 +188,7 @@ Maven and GitHub-only runs can also proceed directly to verification.
 The monitor considers successful release runs from the last 30 days and requests at most one verification attempt per release identity.
 It does not automatically retry a failed or cancelled verification; inspect its error, correct the cause, and manually dispatch `operation=verify` with `verify vX.Y.Z` as confirmation.
 Older releases can also be verified manually.
+After adding the optional CurseForge read key, manually dispatch `operation=verify` to check any release whose earlier verification skipped CurseForge; the monitor does not repeat that earlier attempt.
 If uploading failed partway through, inspect the preserved receipts and rerun `operation=release` with the same inputs after resolving the cause; the successful-run monitor will not hide that failure.
 Review rejection, conflicting metadata, missing evidence, and service errors require investigation before another publication attempt.
 

@@ -2,11 +2,15 @@
 
 set -euo pipefail
 root="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd -P)"
-python3 - "$root/.github/workflows/publish-release.yml" <<'PY'
+python3 - "$root/.github/workflows/publish-release.yml" "$BASH" <<'PY'
 import itertools
+import os
 import pathlib
 import re
+import subprocess
 import sys
+import tempfile
+import textwrap
 
 workflow = pathlib.Path(sys.argv[1]).read_text()
 steps = dict(re.findall(r'^      - name: ([^\n]+)\n(.*?)(?=^      - name:|^  [a-z_]+:|\Z)', workflow, re.M | re.S))
@@ -54,6 +58,24 @@ assert 'curseforge-release.py" verify' in steps['Verify public CurseForge files'
 assert 'if: always() && inputs.curseforge' in steps['Preserve CurseForge upload receipt']
 assert 'github.run_attempt' in steps['Preserve CurseForge upload receipt']
 assert workflow.count('- name: Restore prior CurseForge upload receipts\n        if: inputs.curseforge') == 2
+assert workflow.count("CURSEFORGE_READ_ENABLED: ${{ secrets.CURSEFORGE_API_KEY != '' }}") == 2
+with tempfile.TemporaryDirectory() as temporary:
+    environment = {**os.environ, 'SELECT_MODRINTH': 'false', 'SELECT_CURSEFORGE': 'true', 'SELECT_HANGAR': 'false',
+                   'REQUESTED_PROJECT_ID': '', 'MODRINTH_TOKEN': '', 'CURSEFORGE_TOKEN': 'fixture-upload-token',
+                   'CURSEFORGE_API_KEY': '', 'HANGAR_API_TOKEN': '', 'SIGNING_KEY': 'fixture-signing-key',
+                   'SIGNING_PASSWORD': 'fixture-password', 'MAVEN_CENTRAL_USERNAME': 'fixture-user',
+                   'MAVEN_CENTRAL_PASSWORD': 'fixture-password', 'GITHUB_OUTPUT': pathlib.Path(temporary, 'output').as_posix()}
+    for name in ('Resolve immutable release credentials', 'Resolve final verification credentials'):
+        script = textwrap.dedent(steps[name].split('        run: |\n', 1)[1])
+        if name == 'Resolve final verification credentials':
+            environment['CURSEFORGE_TOKEN'] = ''
+        result = subprocess.run([sys.argv[2], '-c', script], cwd=pathlib.Path(sys.argv[1]).resolve().parents[2],
+                                env=environment, capture_output=True, text=True)
+        assert result.returncode == 0, (name, result.stderr)
+        if name == 'Resolve immutable release credentials':
+            missing = subprocess.run([sys.argv[2], '-c', script], cwd=pathlib.Path(sys.argv[1]).resolve().parents[2],
+                                     env={**environment, 'CURSEFORGE_TOKEN': ''}, capture_output=True, text=True)
+            assert missing.returncode != 0 and 'CURSEFORGE_TOKEN is missing.' in missing.stderr
 hangar_stage = steps['Publish or reuse the exact Hangar version']
 assert hangar_stage.index('revalidate_release_source\n') < hangar_stage.index('hangar-release.py" stage')
 assert 'verify-github-tag-ruleset.sh' in hangar_stage

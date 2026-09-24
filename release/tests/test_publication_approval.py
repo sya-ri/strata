@@ -4,6 +4,7 @@ import hashlib
 import importlib.util
 import io
 import json
+import os
 from pathlib import Path
 import unittest
 from unittest.mock import patch
@@ -67,10 +68,25 @@ class PublicationApprovalTest(unittest.TestCase):
         evidence = {"curseforge/receipt.json": {"sourceCommit": "a" * 40, "tag": "v0.2.0", "projectId": 12,
                                                "files": {"a.jar": {"fileId": 34}}}}
         for status, available, expected in ((3, False, False), (4, False, False), (4, True, True), (10, True, True)):
-            with patch.object(approval, "key", return_value="read-only-key"):
+            with patch.dict(os.environ, {"CURSEFORGE_API_KEY": "read-only-key"}):
                 with patch.object(approval, "service_json", return_value={"data": {"fileStatus": status, "isAvailable": available}}) as read:
                     self.assertEqual(expected, approval.distributions_ready(request, evidence))
                     self.assertEqual({"x-api-key": "read-only-key"}, read.call_args.args[1])
+
+    def test_missing_read_key_checks_accepted_ids_and_all_other_destinations(self):
+        evidence = {"modrinth-receipts/submit.json": {"projectId": "abc123"},
+                    "hangar/receipt.json": {"sourceCommit": "a" * 40, "version": "0.2.0", "namespace": "owner/Strata"},
+                    "curseforge/receipt.json": {"sourceCommit": "a" * 40, "tag": "v0.2.0", "projectId": 12,
+                                               "files": {"a.jar": {"fileId": 34}}}}
+        with patch.dict(os.environ, {"CURSEFORGE_API_KEY": ""}):
+            for visibility, expected in (("new", False), ("public", True)):
+                with patch.object(approval, "service_json", side_effect=[{"status": "approved"}, {"visibility": visibility}]) as read:
+                    self.assertEqual(expected, approval.distributions_ready(self.request, evidence))
+                    self.assertEqual(2, read.call_count)
+                    self.assertTrue(all("curseforge.com" not in call.args[0] for call in read.call_args_list))
+            evidence["curseforge/receipt.json"]["files"]["a.jar"]["fileId"] = None
+            with patch.object(approval, "service_json", return_value={"status": "approved"}):
+                self.assertFalse(approval.distributions_ready(self.request, evidence))
 
     def test_dispatch_can_only_request_verify_and_does_not_repeat_failed_verification(self):
         with patch.object(approval.subprocess, "run") as run:

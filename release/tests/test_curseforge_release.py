@@ -99,6 +99,10 @@ class CurseForgeReleaseTest(unittest.TestCase):
         if url.startswith(Release.UPLOAD_API):
             self.assertEqual("upload-secret", headers.get("x-api-token"))
             self.assertNotIn("x-api-key", headers)
+            if url == Release.UPLOAD_API + "/game/versions":
+                self.assertEqual("GET", request.get_method())
+                body = [item for group in self.catalog for item in group["versions"]]
+                return self.Response(url, json.dumps(body).encode())
             self.assertEqual("POST", request.get_method())
             receipt = json.loads((self.root / "receipt.json").read_text())
             self.assertTrue(any(r["state"] == "attempting" for r in receipt["files"].values()))
@@ -111,8 +115,11 @@ class CurseForgeReleaseTest(unittest.TestCase):
             self.assertEqual(self.content[name], parts[1].get_payload(decode=True))
             self.uploads.append((name, metadata))
             body = {"id": 100 + next(i for i, a in enumerate(self.manifest["artifacts"]) if a["fileName"] == name)}
-        elif url.startswith("https://mediafilez.forgecdn.net/"):
-            self.assertNotIn("x-api-key", headers)
+        elif url.startswith(("https://mediafilez.forgecdn.net/", "https://edge.forgecdn.net/")):
+            if url.startswith("https://edge.forgecdn.net/"):
+                self.assertEqual("read-secret", headers.get("x-api-key"))
+            else:
+                self.assertNotIn("x-api-key", headers)
             self.assertNotIn("x-api-token", headers)
             return self.Response(url, self.content[url.rsplit("/", 1)[1]])
         else:
@@ -286,6 +293,67 @@ class CurseForgeReleaseTest(unittest.TestCase):
         text = (self.root / "receipt.json").read_text()
         self.assertNotIn("read-secret", text)
         self.assertNotIn("upload-secret", text)
+
+    def test_token_only_upload_resumes_from_accepted_receipts_without_rest_reads(self):
+        with patch.dict(os.environ, {"CURSEFORGE_API_KEY": ""}):
+            self.assertFalse(self.run_phase(Release.Operation.PREFLIGHT)["remoteChecks"])
+            release = self.release()
+            release.upload(release.artifacts[0], release.catalog())
+            summary = self.run_phase(Release.Operation.STAGE)
+            self.assertEqual(2, len(summary["pending"]))
+            self.assertEqual([], summary["verified"])
+            self.run_phase(Release.Operation.STAGE, may_upload=False)
+        self.assertEqual(2, len(self.uploads))
+        for index, (_, metadata) in enumerate(self.uploads):
+            self.assertEqual([index + 3, 1, 2], metadata["gameVersions"])
+        self.assertTrue(all(url.startswith(Release.UPLOAD_API + "/") for _, url, _ in self.requests))
+        self.remotes = [self.remote(0), self.remote(1)]
+        self.assertEqual(2, len(self.run_phase(Release.Operation.VERIFY)["verified"]))
+
+    def test_token_only_unknown_write_or_missing_history_prevents_new_uploads(self):
+        with patch.dict(os.environ, {"CURSEFORGE_API_KEY": ""}):
+            with self.assertRaisesRegex(ValueError, "Previous upload evidence is missing"):
+                self.run_phase(Release.Operation.STAGE, may_upload=False)
+            self.assertEqual([], self.uploads)
+            self.upload_failure = URLError("upload outcome unavailable")
+            with self.assertRaisesRegex(ValueError, "unknown outcome"):
+                self.run_phase(Release.Operation.STAGE)
+            with self.assertRaisesRegex(ValueError, "Unresolved prior upload"):
+                self.run_phase(Release.Operation.STAGE)
+        self.assertEqual(1, sum(method == "POST" for method, _, _ in self.requests))
+
+    def test_token_only_ambiguous_catalog_stops_before_upload(self):
+        self.catalog.append({"type": 99, "versions": [{"id": 50, "name": "26.2"}]})
+        with patch.dict(os.environ, {"CURSEFORGE_API_KEY": ""}):
+            with self.assertRaisesRegex(ValueError, "ambiguous CurseForge version tag"):
+                self.run_phase(Release.Operation.STAGE)
+        self.assertEqual([], self.uploads)
+
+    def test_optional_verification_makes_no_requests_and_preserves_receipt(self):
+        self.run_phase(Release.Operation.STAGE)
+        self.requests.clear()
+        path = self.root / "receipt.json"
+        before = path.read_bytes()
+        with patch.dict(os.environ, {"CURSEFORGE_API_KEY": "", "CURSEFORGE_TOKEN": ""}):
+            summary = self.run_phase(Release.Operation.VERIFY)
+        self.assertEqual("skipped", summary["verification"])
+        self.assertEqual([], self.requests)
+        self.assertEqual(before, path.read_bytes())
+
+    def test_configured_read_key_errors_never_fall_back_to_token_only_upload(self):
+        with patch.object(self, "open", side_effect=HTTPError("unused", 403, "forbidden", {}, None)):
+            with self.assertRaisesRegex(ValueError, "HTTP 403"):
+                self.run_phase(Release.Operation.STAGE)
+        self.assertEqual([], self.uploads)
+
+    def test_read_key_is_sent_only_to_the_authenticated_cdn_origin(self):
+        self.remotes = [self.remote(0), self.remote(1)]
+        self.remotes[0]["downloadUrl"] = self.remotes[0]["downloadUrl"].replace("mediafilez", "edge")
+        self.assertEqual(2, len(self.run_phase(Release.Operation.VERIFY)["verified"]))
+        for origin in ("https://edge.forgecdn.net.attacker.invalid/file.jar", "http://edge.forgecdn.net/file.jar",
+                       "https://edge.forgecdn.net:443/file.jar", "https://user@edge.forgecdn.net/file.jar"):
+            with self.assertRaisesRegex(ValueError, "download origin"):
+                self.release().request(origin)
 
 
 if __name__ == "__main__":
