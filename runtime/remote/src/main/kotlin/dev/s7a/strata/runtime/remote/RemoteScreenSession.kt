@@ -2,7 +2,7 @@ package dev.s7a.strata.runtime.remote
 
 /**
  * Detached lifecycle handle for one host-owned screen.
- * Status can be read from any thread; close uses the host's execution contract (Paper primary thread or Velocity's UI queue).
+ * Status can be read from any thread; close uses the host's execution contract (Paper primary thread, Folia player region, or Velocity's UI queue).
  * Terminal handles retain no player, plugin, handler, or UI state references.
  */
 public class RemoteScreenSession internal constructor(

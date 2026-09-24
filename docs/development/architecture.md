@@ -22,7 +22,7 @@ Use ordinary arithmetic when validated input bounds guarantee representable resu
 | `api` | Screen definitions, components and state, resource identifiers, modifiers, and the public Element/Node SPI. | Platform-neutral; sufficient for application compilation. |
 | `runtime:core` | Reconciliation, retained phases, input, semantics, and internal session orchestration. | Depends on `api`; contains no Minecraft integration. |
 | `runtime:remote` | Typed binary protocol, validated declaration differences, capability registries, and authoritative/client sessions. | JVM adapter depending on API and core; no Minecraft or Paper classes. |
-| `runtime:paper` | Plugin messaging, authenticated player ownership, plugin lifecycle, and primary-thread scheduling. | Depends on remote; bundles common runtime and Kotlin dependencies while keeping Paper API compile-only. |
+| `runtime:paper` | Plugin messaging, authenticated player ownership, plugin lifecycle, and Paper primary-thread or Folia entity-region scheduling. | Depends on remote; bundles common runtime and Kotlin dependencies while keeping Paper API compile-only. |
 | `runtime:velocity` | Authenticated proxy/backend routing, bounded UI requests, and a dedicated UI owner thread. | Depends on remote; bundles common runtime and Kotlin while keeping Velocity API compile-only. |
 | `runtime:headless` | Portable command rasterization, immutable frames, and deterministic PNG output. | Uses core contracts without a desktop graphics dependency. |
 | `runtime:web` | Retained native DOM text, buttons, and progress indicators, including deterministic initial HTML adoption. | JavaScript browser adapter using the shared API and core; other profile capabilities currently fail explicitly. |

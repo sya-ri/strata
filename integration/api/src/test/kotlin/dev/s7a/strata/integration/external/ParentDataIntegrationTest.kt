@@ -206,12 +206,12 @@ internal class ParentDataIntegrationTest {
         val measureProbe = ParentDataProbe(captureScopes = true, blockMeasure = true)
         val measureResult = runBlockedOwnerOperation(measureProbe, blockedPhase = BlockedPhase.Measure)
         assertEquals("The callback scope is no longer active.", measureResult.lateFailure.message)
-        assertEquals("This runtime object is owned by parent-data-owner.", measureResult.wrongThreadFailure.message)
+        assertEquals("This runtime object requires its owning execution context.", measureResult.wrongThreadFailure.message)
 
         val layoutProbe = ParentDataProbe(captureScopes = true, blockLayout = true)
         val layoutResult = runBlockedOwnerOperation(layoutProbe, blockedPhase = BlockedPhase.Layout)
         assertEquals("The callback scope is no longer active.", layoutResult.lateFailure.message)
-        assertEquals("This runtime object is owned by parent-data-owner.", layoutResult.wrongThreadFailure.message)
+        assertEquals("This runtime object requires its owning execution context.", layoutResult.wrongThreadFailure.message)
     }
 
     @Test

@@ -18,7 +18,7 @@ import org.bukkit.plugin.messaging.PluginMessageListener
 import org.bukkit.scheduler.BukkitTask
 
 /**
- * Installable Paper plugin owning messaging registrations and primary-thread UI scheduling.
+ * Installable Paper plugin owning messaging registrations and Paper or Folia entity-region UI scheduling.
  * Other plugins use [PaperScreens] and declare Strata as a dependency.
  */
 public class StrataPlugin :
@@ -27,20 +27,35 @@ public class StrataPlugin :
     PluginMessageListener {
     private var screens: RemoteScreenService<Player, Plugin>? = null
     private var ticker: BukkitTask? = null
+    private var folia: FoliaScreenService? = null
 
     override fun onEnable() {
-        val service = paperScreenService(this)
-        screens = service
-        PaperScreens.install(service)
         server.messenger.registerOutgoingPluginChannel(this, RemoteConnection.CHANNEL)
         server.messenger.registerIncomingPluginChannel(this, RemoteConnection.CHANNEL, this)
         server.pluginManager.registerEvents(this, this)
-        ticker = server.scheduler.runTaskTimer(this, Runnable(service::tick), 1L, 1L)
-        server.onlinePlayers.forEach(service::join)
+        if (supportsRegions()) {
+            val service = FoliaScreenService(this)
+            folia = service
+            PaperScreens.installFolia(service)
+            server.onlinePlayers.forEach(service::join)
+        } else {
+            val service = paperScreenService(this)
+            screens = service
+            PaperScreens.install(service)
+            ticker = server.scheduler.runTaskTimer(this, Runnable(service::tick), 1L, 1L)
+            server.onlinePlayers.forEach(service::join)
+        }
     }
 
     override fun onDisable() {
-        PaperScreens.install(null)
+        val regionService = folia
+        if (regionService != null) {
+            PaperScreens.installFolia(null)
+            folia = null
+            regionService.close()
+        } else {
+            PaperScreens.install(null)
+        }
         ticker?.cancel()
         ticker = null
         val service = screens
@@ -56,7 +71,10 @@ public class StrataPlugin :
         player: Player,
         message: ByteArray,
     ) {
-        if (channel == RemoteConnection.CHANNEL) screens?.enqueue(player, message)
+        if (channel == RemoteConnection.CHANNEL) {
+            screens?.enqueue(player, message)
+            folia?.enqueue(player, message)
+        }
     }
 
     /**
@@ -65,6 +83,7 @@ public class StrataPlugin :
     @EventHandler
     public fun onJoin(event: PlayerJoinEvent) {
         screens?.join(event.player)
+        folia?.join(event.player)
     }
 
     /**
@@ -73,6 +92,7 @@ public class StrataPlugin :
     @EventHandler
     public fun onQuit(event: PlayerQuitEvent) {
         screens?.disconnect(event.player)
+        folia?.disconnect(event.player)
     }
 
     /**
@@ -81,6 +101,7 @@ public class StrataPlugin :
     @EventHandler
     public fun onPluginDisable(event: PluginDisableEvent) {
         screens?.ownerDisabled(event.plugin)
+        folia?.ownerDisabled(event.plugin)
     }
 
     /**
@@ -88,7 +109,10 @@ public class StrataPlugin :
      */
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
     public fun onInventoryOpen(event: InventoryOpenEvent) {
-        (event.player as? Player)?.let { screens?.containerChanged(it) }
+        (event.player as? Player)?.let {
+            screens?.containerChanged(it)
+            folia?.containerChanged(it)
+        }
     }
 
     /**
@@ -96,6 +120,17 @@ public class StrataPlugin :
      */
     @EventHandler(priority = EventPriority.MONITOR)
     public fun onInventoryClose(event: InventoryCloseEvent) {
-        (event.player as? Player)?.let { screens?.containerChanged(it) }
+        (event.player as? Player)?.let {
+            screens?.containerChanged(it)
+            folia?.containerChanged(it)
+        }
     }
+
+    private fun supportsRegions(): Boolean =
+        try {
+            Class.forName("io.papermc.paper.threadedregions.RegionizedServer")
+            true
+        } catch (_: ClassNotFoundException) {
+            false
+        }
 }
