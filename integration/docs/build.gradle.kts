@@ -409,6 +409,7 @@ fun JavaExec.configureStrataSkillLauncher(
         inputs.dir(rootProject.layout.projectDirectory.dir("skills/strata"))
         inputs.file(rootProject.layout.projectDirectory.file("docs/publication/modrinth-project.md"))
         inputs.file(rootProject.layout.projectDirectory.file("docs/publication/curseforge-project.md"))
+        inputs.file(rootProject.layout.projectDirectory.file("docs/publication/hangar-project.md"))
         inputs.file(rootProject.layout.projectDirectory.file("LICENSE"))
     }
 }

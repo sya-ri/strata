@@ -2,11 +2,11 @@
 
 # Add components. Let the layout make room.
 
-Build a player list step by step: add content, set width and alignment, then contain overflow with ScrollArea and a linked Scrollbar.
+Build a player list step by step: add content, set width and weight, then contain overflow with ScrollArea and a linked Scrollbar.
 Each frame pairs compiled source with a fresh headless render from original Minecraft assets.
 The GIF compares source revisions, not hot reload.
 
-[Play the 24-second GIF](demo.gif) · [Render receipt](render.properties)
+[Play the 19.25-second GIF](demo.gif) · [Render receipt](render.properties)
 
 ## 1. Start with a row
 
@@ -19,17 +19,56 @@ Each row takes the width of its contents.
 <details><summary>Complete source for this stage</summary>
 
 ```kotlin
-Column(spacing = 6) {
-    players.forEach { player ->
-        Row(
-            modifier = rowModifier,
-            spacing = 8,
-            verticalAlignment = Center,
+private fun UiScope.playerPanel(
+    players: List<ReadmePlayer>,
+    panel: ImageSource,
+) {
+    Column(
+        modifier =
+            Modifier.Empty
+                .menuBackground()
+                .padding(4),
+        spacing = 4,
+        horizontalAlignment = HorizontalAlignment.Center,
+    ) {
+        Text("Players (${players.size})")
+        Stack(
+            modifier =
+                Modifier.Empty
+                    .height(142)
+                    .imageBackground(
+                        panel,
+                        Insets.all(8),
+                        NineSliceCenterMode.Tiled,
+                    ).padding(8),
         ) {
-            PlayerHead(player.skin, PlayerHeadScale(3))
-            Column(spacing = 4) {
-                Text(player.name)
-            }
+            playerList(players)
+        }
+    }
+}
+
+private fun UiScope.playerList(
+    players: List<ReadmePlayer>,
+) {
+    Column(spacing = 6) {
+        players.forEach { player ->
+            playerRow(player)
+        }
+    }
+}
+
+private fun UiScope.playerRow(player: ReadmePlayer) {
+    Row(
+        modifier =
+            Modifier.Empty
+                .background(ArgbColor(0xFF4A4A4A.toInt()))
+                .padding(6),
+        spacing = 8,
+        verticalAlignment = VerticalAlignment.Center,
+    ) {
+        PlayerHead(player.skin, PlayerHeadScale(3))
+        Column(spacing = 4) {
+            Text(player.name)
         }
     }
 }
@@ -48,18 +87,57 @@ One Text adds a role to every player.
 <details><summary>Complete source for this stage</summary>
 
 ```kotlin
-Column(spacing = 6) {
-    players.forEach { player ->
-        Row(
-            modifier = rowModifier,
-            spacing = 8,
-            verticalAlignment = Center,
+private fun UiScope.playerPanel(
+    players: List<ReadmePlayer>,
+    panel: ImageSource,
+) {
+    Column(
+        modifier =
+            Modifier.Empty
+                .menuBackground()
+                .padding(4),
+        spacing = 4,
+        horizontalAlignment = HorizontalAlignment.Center,
+    ) {
+        Text("Players (${players.size})")
+        Stack(
+            modifier =
+                Modifier.Empty
+                    .height(142)
+                    .imageBackground(
+                        panel,
+                        Insets.all(8),
+                        NineSliceCenterMode.Tiled,
+                    ).padding(8),
         ) {
-            PlayerHead(player.skin, PlayerHeadScale(3))
-            Column(spacing = 4) {
-                Text(player.name)
-                Text(player.role)
-            }
+            playerList(players)
+        }
+    }
+}
+
+private fun UiScope.playerList(
+    players: List<ReadmePlayer>,
+) {
+    Column(spacing = 6) {
+        players.forEach { player ->
+            playerRow(player)
+        }
+    }
+}
+
+private fun UiScope.playerRow(player: ReadmePlayer) {
+    Row(
+        modifier =
+            Modifier.Empty
+                .background(ArgbColor(0xFF4A4A4A.toInt()))
+                .padding(6),
+        spacing = 8,
+        verticalAlignment = VerticalAlignment.Center,
+    ) {
+        PlayerHead(player.skin, PlayerHeadScale(3))
+        Column(spacing = 4) {
+            Text(player.name)
+            Text(player.role)
         }
     }
 }
@@ -78,20 +156,59 @@ One Button extends every row without calculating its position.
 <details><summary>Complete source for this stage</summary>
 
 ```kotlin
-Column(spacing = 6) {
-    players.forEach { player ->
-        Row(
-            modifier = rowModifier,
-            spacing = 8,
-            verticalAlignment = Center,
+private fun UiScope.playerPanel(
+    players: List<ReadmePlayer>,
+    panel: ImageSource,
+) {
+    Column(
+        modifier =
+            Modifier.Empty
+                .menuBackground()
+                .padding(4),
+        spacing = 4,
+        horizontalAlignment = HorizontalAlignment.Center,
+    ) {
+        Text("Players (${players.size})")
+        Stack(
+            modifier =
+                Modifier.Empty
+                    .height(142)
+                    .imageBackground(
+                        panel,
+                        Insets.all(8),
+                        NineSliceCenterMode.Tiled,
+                    ).padding(8),
         ) {
-            PlayerHead(player.skin, PlayerHeadScale(3))
-            Column(spacing = 4) {
-                Text(player.name)
-                Text(player.role)
-            }
-            Button("Invite", width = 60)
+            playerList(players)
         }
+    }
+}
+
+private fun UiScope.playerList(
+    players: List<ReadmePlayer>,
+) {
+    Column(spacing = 6) {
+        players.forEach { player ->
+            playerRow(player)
+        }
+    }
+}
+
+private fun UiScope.playerRow(player: ReadmePlayer) {
+    Row(
+        modifier =
+            Modifier.Empty
+                .background(ArgbColor(0xFF4A4A4A.toInt()))
+                .padding(6),
+        spacing = 8,
+        verticalAlignment = VerticalAlignment.Center,
+    ) {
+        PlayerHead(player.skin, PlayerHeadScale(3))
+        Column(spacing = 4) {
+            Text(player.name)
+            Text(player.role)
+        }
+        Button("Invite", width = 60)
     }
 }
 ```
@@ -109,20 +226,60 @@ Set the outer Column width once; every row fills it.
 <details><summary>Complete source for this stage</summary>
 
 ```kotlin
-Column(Modifier.Empty.width(220), spacing = 6) {
-    players.forEach { player ->
-        Row(
-            modifier = rowModifier.fillMaxWidth(),
-            spacing = 8,
-            verticalAlignment = Center,
+private fun UiScope.playerPanel(
+    players: List<ReadmePlayer>,
+    panel: ImageSource,
+) {
+    Column(
+        modifier =
+            Modifier.Empty
+                .menuBackground()
+                .padding(4),
+        spacing = 4,
+        horizontalAlignment = HorizontalAlignment.Center,
+    ) {
+        Text("Players (${players.size})")
+        Stack(
+            modifier =
+                Modifier.Empty
+                    .height(142)
+                    .imageBackground(
+                        panel,
+                        Insets.all(8),
+                        NineSliceCenterMode.Tiled,
+                    ).padding(8),
         ) {
-            PlayerHead(player.skin, PlayerHeadScale(3))
-            Column(spacing = 4) {
-                Text(player.name)
-                Text(player.role)
-            }
-            Button("Invite", width = 60)
+            playerList(players)
         }
+    }
+}
+
+private fun UiScope.playerList(
+    players: List<ReadmePlayer>,
+) {
+    Column(Modifier.Empty.width(220), spacing = 6) {
+        players.forEach { player ->
+            playerRow(player)
+        }
+    }
+}
+
+private fun UiScope.playerRow(player: ReadmePlayer) {
+    Row(
+        modifier =
+            Modifier.Empty
+                .background(ArgbColor(0xFF4A4A4A.toInt()))
+                .padding(6)
+                .fillMaxWidth(),
+        spacing = 8,
+        verticalAlignment = VerticalAlignment.Center,
+    ) {
+        PlayerHead(player.skin, PlayerHeadScale(3))
+        Column(spacing = 4) {
+            Text(player.name)
+            Text(player.role)
+        }
+        Button("Invite", width = 60)
     }
 }
 ```
@@ -140,492 +297,482 @@ Weight expands the text column and lines up the buttons.
 <details><summary>Complete source for this stage</summary>
 
 ```kotlin
-Column(Modifier.Empty.width(220), spacing = 6) {
-    players.forEach { player ->
-        Row(
-            modifier = rowModifier.fillMaxWidth(),
-            spacing = 8,
-            verticalAlignment = Center,
+private fun UiScope.playerPanel(
+    players: List<ReadmePlayer>,
+    panel: ImageSource,
+) {
+    Column(
+        modifier =
+            Modifier.Empty
+                .menuBackground()
+                .padding(4),
+        spacing = 4,
+        horizontalAlignment = HorizontalAlignment.Center,
+    ) {
+        Text("Players (${players.size})")
+        Stack(
+            modifier =
+                Modifier.Empty
+                    .height(142)
+                    .imageBackground(
+                        panel,
+                        Insets.all(8),
+                        NineSliceCenterMode.Tiled,
+                    ).padding(8),
         ) {
-            PlayerHead(player.skin, PlayerHeadScale(3))
-            Column(
-                modifier = Modifier.Empty.weight(1f),
-                spacing = 4,
-            ) {
-                Text(player.name)
-                Text(player.role)
-            }
-            Button("Invite", width = 60)
+            playerList(players)
         }
+    }
+}
+
+private fun UiScope.playerList(
+    players: List<ReadmePlayer>,
+) {
+    Column(Modifier.Empty.width(220), spacing = 6) {
+        players.forEach { player ->
+            playerRow(player)
+        }
+    }
+}
+
+private fun UiScope.playerRow(player: ReadmePlayer) {
+    Row(
+        modifier =
+            Modifier.Empty
+                .background(ArgbColor(0xFF4A4A4A.toInt()))
+                .padding(6)
+                .fillMaxWidth(),
+        spacing = 8,
+        verticalAlignment = VerticalAlignment.Center,
+    ) {
+        PlayerHead(player.skin, PlayerHeadScale(3))
+        Column(
+            modifier = Modifier.Empty.weight(1f),
+            spacing = 4,
+        ) {
+            Text(player.name)
+            Text(player.role)
+        }
+        Button("Invite", width = 60)
     }
 }
 ```
 
 </details>
 
-## 6. Align text to the right
-
-End aligns names and roles; row frames, faces, and buttons stay still.
-
-![End aligns names and roles; row frames, faces, and buttons stay still.](6-right.png)
-
-[Complete screen pixels](6-right-screen.png) · [Compiled source](../../integration/docs/src/readmeExamples/kotlin/dev/s7a/strata/integration/docs/example/RightPlayersExample.kt)
-
-<details><summary>Complete source for this stage</summary>
-
-```kotlin
-Column(Modifier.Empty.width(220), spacing = 6) {
-    players.forEach { player ->
-        Row(
-            modifier = rowModifier.fillMaxWidth(),
-            spacing = 8,
-            verticalAlignment = Center,
-        ) {
-            PlayerHead(player.skin, PlayerHeadScale(3))
-            Column(
-                modifier = Modifier.Empty.weight(1f),
-                spacing = 4,
-                horizontalAlignment = End,
-            ) {
-                Text(player.name)
-                Text(player.role)
-            }
-            Button("Invite", width = 60)
-        }
-    }
-}
-```
-
-</details>
-
-## 7. Align text to the left
-
-Start moves only the text back to the left.
-
-![Start moves only the text back to the left.](7-left.png)
-
-[Complete screen pixels](7-left-screen.png) · [Compiled source](../../integration/docs/src/readmeExamples/kotlin/dev/s7a/strata/integration/docs/example/LeftPlayersExample.kt)
-
-<details><summary>Complete source for this stage</summary>
-
-```kotlin
-Column(Modifier.Empty.width(220), spacing = 6) {
-    players.forEach { player ->
-        Row(
-            modifier = rowModifier.fillMaxWidth(),
-            spacing = 8,
-            verticalAlignment = Center,
-        ) {
-            PlayerHead(player.skin, PlayerHeadScale(3))
-            Column(
-                modifier = Modifier.Empty.weight(1f),
-                spacing = 4,
-                horizontalAlignment = Start,
-            ) {
-                Text(player.name)
-                Text(player.role)
-            }
-            Button("Invite", width = 60)
-        }
-    }
-}
-```
-
-</details>
-
-## 8. Add a fourth player
-
-The same row composition is reused as the list starts to overflow.
-
-![The same row composition is reused as the list starts to overflow.](8-four.png)
-
-[Complete screen pixels](8-four-screen.png) · [Compiled source](../../integration/docs/src/readmeExamples/kotlin/dev/s7a/strata/integration/docs/example/FourPlayersExample.kt)
-
-<details><summary>Complete source for this stage</summary>
-
-```kotlin
-Column(Modifier.Empty.width(220), spacing = 6) {
-    players.take(4).forEach { player ->
-        Row(
-            modifier = rowModifier.fillMaxWidth(),
-            spacing = 8,
-            verticalAlignment = Center,
-        ) {
-            PlayerHead(player.skin, PlayerHeadScale(3))
-            Column(
-                modifier = Modifier.Empty.weight(1f),
-                spacing = 4,
-                horizontalAlignment = Start,
-            ) {
-                Text(player.name)
-                Text(player.role)
-            }
-            Button("Invite", width = 60)
-        }
-    }
-}
-```
-
-</details>
-
-## 9. Add a fifth player
-
-Players arrive one at a time.
-
-![Players arrive one at a time.](9-five.png)
-
-[Complete screen pixels](9-five-screen.png) · [Compiled source](../../integration/docs/src/readmeExamples/kotlin/dev/s7a/strata/integration/docs/example/FivePlayersExample.kt)
-
-<details><summary>Complete source for this stage</summary>
-
-```kotlin
-Column(Modifier.Empty.width(220), spacing = 6) {
-    players.take(5).forEach { player ->
-        Row(
-            modifier = rowModifier.fillMaxWidth(),
-            spacing = 8,
-            verticalAlignment = Center,
-        ) {
-            PlayerHead(player.skin, PlayerHeadScale(3))
-            Column(
-                modifier = Modifier.Empty.weight(1f),
-                spacing = 4,
-                horizontalAlignment = Start,
-            ) {
-                Text(player.name)
-                Text(player.role)
-            }
-            Button("Invite", width = 60)
-        }
-    }
-}
-```
-
-</details>
-
-## 10. Add a sixth player
-
-The list is now taller than the screen.
-
-![The list is now taller than the screen.](10-six.png)
-
-[Complete screen pixels](10-six-screen.png) · [Compiled source](../../integration/docs/src/readmeExamples/kotlin/dev/s7a/strata/integration/docs/example/SixPlayersExample.kt)
-
-<details><summary>Complete source for this stage</summary>
-
-```kotlin
-Column(Modifier.Empty.width(220), spacing = 6) {
-    players.take(6).forEach { player ->
-        Row(
-            modifier = rowModifier.fillMaxWidth(),
-            spacing = 8,
-            verticalAlignment = Center,
-        ) {
-            PlayerHead(player.skin, PlayerHeadScale(3))
-            Column(
-                modifier = Modifier.Empty.weight(1f),
-                spacing = 4,
-                horizontalAlignment = Start,
-            ) {
-                Text(player.name)
-                Text(player.role)
-            }
-            Button("Invite", width = 60)
-        }
-    }
-}
-```
-
-</details>
-
-## 11. Add a seventh player
-
-Additional rows cannot be reached yet.
-
-![Additional rows cannot be reached yet.](11-seven.png)
-
-[Complete screen pixels](11-seven-screen.png) · [Compiled source](../../integration/docs/src/readmeExamples/kotlin/dev/s7a/strata/integration/docs/example/SevenPlayersExample.kt)
-
-<details><summary>Complete source for this stage</summary>
-
-```kotlin
-Column(Modifier.Empty.width(220), spacing = 6) {
-    players.take(7).forEach { player ->
-        Row(
-            modifier = rowModifier.fillMaxWidth(),
-            spacing = 8,
-            verticalAlignment = Center,
-        ) {
-            PlayerHead(player.skin, PlayerHeadScale(3))
-            Column(
-                modifier = Modifier.Empty.weight(1f),
-                spacing = 4,
-                horizontalAlignment = Start,
-            ) {
-                Text(player.name)
-                Text(player.role)
-            }
-            Button("Invite", width = 60)
-        }
-    }
-}
-```
-
-</details>
-
-## 12. Add an eighth player
-
-Eight players now need a scroll viewport.
-
-![Eight players now need a scroll viewport.](12-eight.png)
-
-[Complete screen pixels](12-eight-screen.png) · [Compiled source](../../integration/docs/src/readmeExamples/kotlin/dev/s7a/strata/integration/docs/example/EightPlayersExample.kt)
-
-<details><summary>Complete source for this stage</summary>
-
-```kotlin
-Column(Modifier.Empty.width(220), spacing = 6) {
-    players.take(8).forEach { player ->
-        Row(
-            modifier = rowModifier.fillMaxWidth(),
-            spacing = 8,
-            verticalAlignment = Center,
-        ) {
-            PlayerHead(player.skin, PlayerHeadScale(3))
-            Column(
-                modifier = Modifier.Empty.weight(1f),
-                spacing = 4,
-                horizontalAlignment = Start,
-            ) {
-                Text(player.name)
-                Text(player.role)
-            }
-            Button("Invite", width = 60)
-        }
-    }
-}
-```
-
-</details>
-
-## 13. Add a scroll area
+## 6. Add a scroll area
 
 Wrap the existing Column in ScrollArea to contain the list.
 
-![Wrap the existing Column in ScrollArea to contain the list.](13-area.png)
+![Wrap the existing Column in ScrollArea to contain the list.](6-area.png)
 
-[Complete screen pixels](13-area-screen.png) · [Compiled source](../../integration/docs/src/readmeExamples/kotlin/dev/s7a/strata/integration/docs/example/AreaPlayersExample.kt)
+[Complete screen pixels](6-area-screen.png) · [Compiled source](../../integration/docs/src/readmeExamples/kotlin/dev/s7a/strata/integration/docs/example/AreaPlayersExample.kt)
 
 <details><summary>Complete source for this stage</summary>
 
 ```kotlin
-val scroll = ScrollState()
-ScrollArea(
-    state = scroll,
-    modifier = Modifier.Empty.height(126),
+private fun UiScope.playerPanel(
+    players: List<ReadmePlayer>,
+    panel: ImageSource,
 ) {
-    Column(Modifier.Empty.width(220), spacing = 6) {
-        players.forEach { player ->
-            Row(
-                modifier = rowModifier.fillMaxWidth(),
-                spacing = 8,
-                verticalAlignment = Center,
-            ) {
-                PlayerHead(player.skin, PlayerHeadScale(3))
-                Column(
-                    modifier = Modifier.Empty.weight(1f),
-                    spacing = 4,
-                    horizontalAlignment = Start,
-                ) {
-                    Text(player.name)
-                    Text(player.role)
-                }
-                Button("Invite", width = 60)
+    Column(
+        modifier =
+            Modifier.Empty
+                .menuBackground()
+                .padding(4),
+        spacing = 4,
+        horizontalAlignment = HorizontalAlignment.Center,
+    ) {
+        Text("Players (${players.size})")
+        Stack(
+            modifier =
+                Modifier.Empty
+                    .height(142)
+                    .imageBackground(
+                        panel,
+                        Insets.all(8),
+                        NineSliceCenterMode.Tiled,
+                    ).padding(8),
+        ) {
+            playerList(players)
+        }
+    }
+}
+
+private fun UiScope.playerList(
+    players: List<ReadmePlayer>,
+) {
+    val scroll = ScrollState()
+    ScrollArea(
+        state = scroll,
+        modifier = Modifier.Empty.height(126),
+    ) {
+        Column(Modifier.Empty.width(220), spacing = 6) {
+            players.forEach { player ->
+                playerRow(player)
             }
         }
+    }
+}
+
+private fun UiScope.playerRow(player: ReadmePlayer) {
+    Row(
+        modifier =
+            Modifier.Empty
+                .background(ArgbColor(0xFF4A4A4A.toInt()))
+                .padding(6)
+                .fillMaxWidth(),
+        spacing = 8,
+        verticalAlignment = VerticalAlignment.Center,
+    ) {
+        PlayerHead(player.skin, PlayerHeadScale(3))
+        Column(
+            modifier = Modifier.Empty.weight(1f),
+            spacing = 4,
+        ) {
+            Text(player.name)
+            Text(player.role)
+        }
+        Button("Invite", width = 60)
     }
 }
 ```
 
 </details>
 
-## 14. Scroll without a bar
+## 7. Scroll without a bar
 
 Wheel input reaches the final players; no scrollbar has been added yet.
 
-![Wheel input reaches the final players; no scrollbar has been added yet.](14-areabottom.png)
+![Wheel input reaches the final players; no scrollbar has been added yet.](7-areabottom.png)
 
-[Complete screen pixels](14-areabottom-screen.png) · [Compiled source](../../integration/docs/src/readmeExamples/kotlin/dev/s7a/strata/integration/docs/example/AreaPlayersExample.kt)
+[Complete screen pixels](7-areabottom-screen.png) · [Compiled source](../../integration/docs/src/readmeExamples/kotlin/dev/s7a/strata/integration/docs/example/AreaPlayersExample.kt)
 
 <details><summary>Complete source for this stage</summary>
 
 ```kotlin
-val scroll = ScrollState()
-ScrollArea(
-    state = scroll,
-    modifier = Modifier.Empty.height(126),
+private fun UiScope.playerPanel(
+    players: List<ReadmePlayer>,
+    panel: ImageSource,
 ) {
-    Column(Modifier.Empty.width(220), spacing = 6) {
-        players.forEach { player ->
-            Row(
-                modifier = rowModifier.fillMaxWidth(),
-                spacing = 8,
-                verticalAlignment = Center,
-            ) {
-                PlayerHead(player.skin, PlayerHeadScale(3))
-                Column(
-                    modifier = Modifier.Empty.weight(1f),
-                    spacing = 4,
-                    horizontalAlignment = Start,
-                ) {
-                    Text(player.name)
-                    Text(player.role)
-                }
-                Button("Invite", width = 60)
+    Column(
+        modifier =
+            Modifier.Empty
+                .menuBackground()
+                .padding(4),
+        spacing = 4,
+        horizontalAlignment = HorizontalAlignment.Center,
+    ) {
+        Text("Players (${players.size})")
+        Stack(
+            modifier =
+                Modifier.Empty
+                    .height(142)
+                    .imageBackground(
+                        panel,
+                        Insets.all(8),
+                        NineSliceCenterMode.Tiled,
+                    ).padding(8),
+        ) {
+            playerList(players)
+        }
+    }
+}
+
+private fun UiScope.playerList(
+    players: List<ReadmePlayer>,
+) {
+    val scroll = ScrollState()
+    ScrollArea(
+        state = scroll,
+        modifier = Modifier.Empty.height(126),
+    ) {
+        Column(Modifier.Empty.width(220), spacing = 6) {
+            players.forEach { player ->
+                playerRow(player)
             }
         }
+    }
+}
+
+private fun UiScope.playerRow(player: ReadmePlayer) {
+    Row(
+        modifier =
+            Modifier.Empty
+                .background(ArgbColor(0xFF4A4A4A.toInt()))
+                .padding(6)
+                .fillMaxWidth(),
+        spacing = 8,
+        verticalAlignment = VerticalAlignment.Center,
+    ) {
+        PlayerHead(player.skin, PlayerHeadScale(3))
+        Column(
+            modifier = Modifier.Empty.weight(1f),
+            spacing = 4,
+        ) {
+            Text(player.name)
+            Text(player.role)
+        }
+        Button("Invite", width = 60)
     }
 }
 ```
 
 </details>
 
-## 15. Add a linked scrollbar
+## 8. Add a linked scrollbar
 
 Pass the same ScrollState to Scrollbar; its thumb reflects the list position.
 
-![Pass the same ScrollState to Scrollbar; its thumb reflects the list position.](15-bar.png)
+![Pass the same ScrollState to Scrollbar; its thumb reflects the list position.](8-bar.png)
 
-[Complete screen pixels](15-bar-screen.png) · [Compiled source](../../integration/docs/src/readmeExamples/kotlin/dev/s7a/strata/integration/docs/example/ScrollPlayersExample.kt)
+[Complete screen pixels](8-bar-screen.png) · [Compiled source](../../integration/docs/src/readmeExamples/kotlin/dev/s7a/strata/integration/docs/example/ScrollPlayersExample.kt)
 
 <details><summary>Complete source for this stage</summary>
 
 ```kotlin
-val scroll = ScrollState()
-Row(spacing = 4) {
-    ScrollArea(
-        state = scroll,
-        modifier = Modifier.Empty.size(220, 126),
+private fun UiScope.playerPanel(
+    players: List<ReadmePlayer>,
+    panel: ImageSource,
+) {
+    Column(
+        modifier =
+            Modifier.Empty
+                .menuBackground()
+                .padding(4),
+        spacing = 4,
+        horizontalAlignment = HorizontalAlignment.Center,
     ) {
-        Column(Modifier.Empty.width(220), spacing = 6) {
-            players.forEach { player ->
-                Row(
-                    modifier = rowModifier.fillMaxWidth(),
-                    spacing = 8,
-                    verticalAlignment = Center,
-                ) {
-                    PlayerHead(player.skin, PlayerHeadScale(3))
-                    Column(
-                        modifier = Modifier.Empty.weight(1f),
-                        spacing = 4,
-                        horizontalAlignment = Start,
-                    ) {
-                        Text(player.name)
-                        Text(player.role)
-                    }
-                    Button("Invite", width = 60)
+        Text("Players (${players.size})")
+        Stack(
+            modifier =
+                Modifier.Empty
+                    .height(142)
+                    .imageBackground(
+                        panel,
+                        Insets.all(8),
+                        NineSliceCenterMode.Tiled,
+                    ).padding(8),
+        ) {
+            playerList(players)
+        }
+    }
+}
+
+private fun UiScope.playerList(
+    players: List<ReadmePlayer>,
+) {
+    val scroll = ScrollState()
+    Row(spacing = 4) {
+        ScrollArea(
+            state = scroll,
+            modifier = Modifier.Empty.size(220, 126),
+        ) {
+            Column(Modifier.Empty.width(220), spacing = 6) {
+                players.forEach { player ->
+                    playerRow(player)
                 }
             }
         }
+        Scrollbar(
+            state = scroll,
+            modifier = Modifier.Empty.size(6, 126),
+        )
     }
-    Scrollbar(
-        state = scroll,
-        modifier = Modifier.Empty.size(6, 126),
-    )
+}
+
+private fun UiScope.playerRow(player: ReadmePlayer) {
+    Row(
+        modifier =
+            Modifier.Empty
+                .background(ArgbColor(0xFF4A4A4A.toInt()))
+                .padding(6)
+                .fillMaxWidth(),
+        spacing = 8,
+        verticalAlignment = VerticalAlignment.Center,
+    ) {
+        PlayerHead(player.skin, PlayerHeadScale(3))
+        Column(
+            modifier = Modifier.Empty.weight(1f),
+            spacing = 4,
+        ) {
+            Text(player.name)
+            Text(player.role)
+        }
+        Button("Invite", width = 60)
+    }
 }
 ```
 
 </details>
 
-## 16. Scroll up together
+## 9. Scroll up together
 
 The list and linked scrollbar move together under wheel input.
 
-![The list and linked scrollbar move together under wheel input.](16-bartop.png)
+![The list and linked scrollbar move together under wheel input.](9-bartop.png)
 
-[Complete screen pixels](16-bartop-screen.png) · [Compiled source](../../integration/docs/src/readmeExamples/kotlin/dev/s7a/strata/integration/docs/example/ScrollPlayersExample.kt)
+[Complete screen pixels](9-bartop-screen.png) · [Compiled source](../../integration/docs/src/readmeExamples/kotlin/dev/s7a/strata/integration/docs/example/ScrollPlayersExample.kt)
 
 <details><summary>Complete source for this stage</summary>
 
 ```kotlin
-val scroll = ScrollState()
-Row(spacing = 4) {
-    ScrollArea(
-        state = scroll,
-        modifier = Modifier.Empty.size(220, 126),
+private fun UiScope.playerPanel(
+    players: List<ReadmePlayer>,
+    panel: ImageSource,
+) {
+    Column(
+        modifier =
+            Modifier.Empty
+                .menuBackground()
+                .padding(4),
+        spacing = 4,
+        horizontalAlignment = HorizontalAlignment.Center,
     ) {
-        Column(Modifier.Empty.width(220), spacing = 6) {
-            players.forEach { player ->
-                Row(
-                    modifier = rowModifier.fillMaxWidth(),
-                    spacing = 8,
-                    verticalAlignment = Center,
-                ) {
-                    PlayerHead(player.skin, PlayerHeadScale(3))
-                    Column(
-                        modifier = Modifier.Empty.weight(1f),
-                        spacing = 4,
-                        horizontalAlignment = Start,
-                    ) {
-                        Text(player.name)
-                        Text(player.role)
-                    }
-                    Button("Invite", width = 60)
+        Text("Players (${players.size})")
+        Stack(
+            modifier =
+                Modifier.Empty
+                    .height(142)
+                    .imageBackground(
+                        panel,
+                        Insets.all(8),
+                        NineSliceCenterMode.Tiled,
+                    ).padding(8),
+        ) {
+            playerList(players)
+        }
+    }
+}
+
+private fun UiScope.playerList(
+    players: List<ReadmePlayer>,
+) {
+    val scroll = ScrollState()
+    Row(spacing = 4) {
+        ScrollArea(
+            state = scroll,
+            modifier = Modifier.Empty.size(220, 126),
+        ) {
+            Column(Modifier.Empty.width(220), spacing = 6) {
+                players.forEach { player ->
+                    playerRow(player)
                 }
             }
         }
+        Scrollbar(
+            state = scroll,
+            modifier = Modifier.Empty.size(6, 126),
+        )
     }
-    Scrollbar(
-        state = scroll,
-        modifier = Modifier.Empty.size(6, 126),
-    )
+}
+
+private fun UiScope.playerRow(player: ReadmePlayer) {
+    Row(
+        modifier =
+            Modifier.Empty
+                .background(ArgbColor(0xFF4A4A4A.toInt()))
+                .padding(6)
+                .fillMaxWidth(),
+        spacing = 8,
+        verticalAlignment = VerticalAlignment.Center,
+    ) {
+        PlayerHead(player.skin, PlayerHeadScale(3))
+        Column(
+            modifier = Modifier.Empty.weight(1f),
+            spacing = 4,
+        ) {
+            Text(player.name)
+            Text(player.role)
+        }
+        Button("Invite", width = 60)
+    }
 }
 ```
 
 </details>
 
-## 17. Scroll down together
+## 10. Scroll down together
 
 The linked thumb follows the list back to its last player.
 
-![The linked thumb follows the list back to its last player.](17-barbottom.png)
+![The linked thumb follows the list back to its last player.](10-barbottom.png)
 
-[Complete screen pixels](17-barbottom-screen.png) · [Compiled source](../../integration/docs/src/readmeExamples/kotlin/dev/s7a/strata/integration/docs/example/ScrollPlayersExample.kt)
+[Complete screen pixels](10-barbottom-screen.png) · [Compiled source](../../integration/docs/src/readmeExamples/kotlin/dev/s7a/strata/integration/docs/example/ScrollPlayersExample.kt)
 
 <details><summary>Complete source for this stage</summary>
 
 ```kotlin
-val scroll = ScrollState()
-Row(spacing = 4) {
-    ScrollArea(
-        state = scroll,
-        modifier = Modifier.Empty.size(220, 126),
+private fun UiScope.playerPanel(
+    players: List<ReadmePlayer>,
+    panel: ImageSource,
+) {
+    Column(
+        modifier =
+            Modifier.Empty
+                .menuBackground()
+                .padding(4),
+        spacing = 4,
+        horizontalAlignment = HorizontalAlignment.Center,
     ) {
-        Column(Modifier.Empty.width(220), spacing = 6) {
-            players.forEach { player ->
-                Row(
-                    modifier = rowModifier.fillMaxWidth(),
-                    spacing = 8,
-                    verticalAlignment = Center,
-                ) {
-                    PlayerHead(player.skin, PlayerHeadScale(3))
-                    Column(
-                        modifier = Modifier.Empty.weight(1f),
-                        spacing = 4,
-                        horizontalAlignment = Start,
-                    ) {
-                        Text(player.name)
-                        Text(player.role)
-                    }
-                    Button("Invite", width = 60)
+        Text("Players (${players.size})")
+        Stack(
+            modifier =
+                Modifier.Empty
+                    .height(142)
+                    .imageBackground(
+                        panel,
+                        Insets.all(8),
+                        NineSliceCenterMode.Tiled,
+                    ).padding(8),
+        ) {
+            playerList(players)
+        }
+    }
+}
+
+private fun UiScope.playerList(
+    players: List<ReadmePlayer>,
+) {
+    val scroll = ScrollState()
+    Row(spacing = 4) {
+        ScrollArea(
+            state = scroll,
+            modifier = Modifier.Empty.size(220, 126),
+        ) {
+            Column(Modifier.Empty.width(220), spacing = 6) {
+                players.forEach { player ->
+                    playerRow(player)
                 }
             }
         }
+        Scrollbar(
+            state = scroll,
+            modifier = Modifier.Empty.size(6, 126),
+        )
     }
-    Scrollbar(
-        state = scroll,
-        modifier = Modifier.Empty.size(6, 126),
-    )
+}
+
+private fun UiScope.playerRow(player: ReadmePlayer) {
+    Row(
+        modifier =
+            Modifier.Empty
+                .background(ArgbColor(0xFF4A4A4A.toInt()))
+                .padding(6)
+                .fillMaxWidth(),
+        spacing = 8,
+        verticalAlignment = VerticalAlignment.Center,
+    ) {
+        PlayerHead(player.skin, PlayerHeadScale(3))
+        Column(
+            modifier = Modifier.Empty.weight(1f),
+            spacing = 4,
+        ) {
+            Text(player.name)
+            Text(player.role)
+        }
+        Button("Invite", width = 60)
+    }
 }
 ```
 
@@ -634,7 +781,7 @@ Row(spacing = 4) {
 ## Running the example
 
 The final example accepts immutable `ReadmePlayer` values with names, roles, and detached `PlayerSkinSource.Pixels` skins.
-Copy [the final screen](../../integration/docs/src/readmeExamples/kotlin/dev/s7a/strata/integration/docs/example/ScrollPlayersExample.kt), [the player model](../../integration/docs/src/readmeExamples/kotlin/dev/s7a/strata/integration/docs/example/ReadmePlayer.kt), [the screen chrome](../../integration/docs/src/readmeExamples/kotlin/dev/s7a/strata/integration/docs/example/ReadmeDemoChrome.kt), and [the colors](../../integration/docs/src/readmeExamples/kotlin/dev/s7a/strata/integration/docs/example/ReadmeDemoColors.kt) into a Mod using Strata, then call `scrollPlayersScreen(players, panel).open()`.
+Copy [the final screen](../../integration/docs/src/readmeExamples/kotlin/dev/s7a/strata/integration/docs/example/ScrollPlayersExample.kt) and [the player model](../../integration/docs/src/readmeExamples/kotlin/dev/s7a/strata/integration/docs/example/ReadmePlayer.kt) into a Mod using Strata, then call `scrollPlayersScreen(players, panel).open()`.
 Supply the original Minecraft Social Interactions panel as an `ImageSource` alongside the player data; headless generation supplies detached pixels from the same asset.
 The `Invite` button demonstrates layout only; add an `onActivate` modifier to connect application behavior.
 

@@ -16,7 +16,7 @@ import javax.imageio.ImageIO
 @OptIn(InternalStrataRuntimeApi::class)
 internal object ReadmeDemoPipeline {
     /**
-     * Renders the compiled stages, complete stills, exact extracted source, a 24-second GIF, and input/output hashes.
+     * Renders the compiled stages, complete stills, exact extracted source, a looping GIF, and input/output hashes.
      * The font version is supplied by the version catalog; source hashes use LF-normalized UTF-8 and binary hashes use actual bytes.
      */
     fun prepare(
@@ -35,7 +35,7 @@ internal object ReadmeDemoPipeline {
                 val screen =
                     ShowcaseHeadlessRenderer.render(
                         assets.minecraft.profile,
-                        stage.create(assets.players.take(stage.playerCount), assets.panel),
+                        stage.create(assets.players, assets.panel),
                         ShowcaseViewport(IntSize(256, 192), 2),
                         IntOffset(40, 80),
                         wheelDelta = offset / 9.0,
@@ -52,7 +52,7 @@ internal object ReadmeDemoPipeline {
                 frames += ReadmeGifFrame(image, delay)
             }
         }
-        check(frames.sumOf { it.delayCentiseconds } == 2400) { "README demo must last exactly 24 seconds." }
+        check(frames.sumOf { it.delayCentiseconds } == ReadmeDemoStage.entries.sumOf { it.durationCentiseconds }) { "README demo timing differs from its storyboard." }
         files["demo.gif"] = ReadmeGifEncoder.encode(frames)
         require(files.getValue("demo.gif").size <= 5 * 1024 * 1024) { "README demo GIF exceeds 5 MiB." }
         files["README.md"] = markdown(sources).toByteArray()
@@ -96,11 +96,11 @@ internal object ReadmeDemoPipeline {
             appendLine()
             appendLine("# Add components. Let the layout make room.")
             appendLine()
-            appendLine("Build a player list step by step: add content, set width and alignment, then contain overflow with ScrollArea and a linked Scrollbar.")
+            appendLine("Build a player list step by step: add content, set width and weight, then contain overflow with ScrollArea and a linked Scrollbar.")
             appendLine("Each frame pairs compiled source with a fresh headless render from original Minecraft assets.")
             appendLine("The GIF compares source revisions, not hot reload.")
             appendLine()
-            appendLine("[Play the 24-second GIF](demo.gif) · [Render receipt](render.properties)")
+            appendLine("[Play the ${ReadmeDemoStage.entries.sumOf { it.durationCentiseconds } / 100.0}-second GIF](demo.gif) · [Render receipt](render.properties)")
             appendLine()
             ReadmeDemoStage.entries.forEach { stage ->
                 appendLine("## ${stage.ordinal + 1}. ${stage.title}")
@@ -123,7 +123,7 @@ internal object ReadmeDemoPipeline {
             appendLine("## Running the example")
             appendLine()
             appendLine("The final example accepts immutable `ReadmePlayer` values with names, roles, and detached `PlayerSkinSource.Pixels` skins.")
-            appendLine("Copy [the final screen](../../${ReadmeDemoSource.DIRECTORY}/ScrollPlayersExample.kt), [the player model](../../${ReadmeDemoSource.DIRECTORY}/ReadmePlayer.kt), [the screen chrome](../../${ReadmeDemoSource.DIRECTORY}/ReadmeDemoChrome.kt), and [the colors](../../${ReadmeDemoSource.DIRECTORY}/ReadmeDemoColors.kt) into a Mod using Strata, then call `scrollPlayersScreen(players, panel).open()`.")
+            appendLine("Copy [the final screen](../../${ReadmeDemoSource.DIRECTORY}/ScrollPlayersExample.kt) and [the player model](../../${ReadmeDemoSource.DIRECTORY}/ReadmePlayer.kt) into a Mod using Strata, then call `scrollPlayersScreen(players, panel).open()`.")
             appendLine("Supply the original Minecraft Social Interactions panel as an `ImageSource` alongside the player data; headless generation supplies detached pixels from the same asset.")
             appendLine("The `Invite` button demonstrates layout only; add an `onActivate` modifier to connect application behavior.")
             appendLine()
@@ -138,11 +138,11 @@ internal object ReadmeDemoPipeline {
     ): String =
         buildString {
             appendLine("format=1")
-            appendLine("duration.centiseconds=2400")
+            appendLine("duration.centiseconds=${ReadmeDemoStage.entries.sumOf { it.durationCentiseconds }}")
             appendLine("frame.count=${ReadmeDemoStage.entries.sumOf { it.scrollOffsets.size }}")
             appendLine("viewport=256x192")
             appendLine("scale=2")
-            appendLine("canvas=1200x900")
+            appendLine("canvas=1320x1320")
             appendLine("font.version=$fontVersion")
             appendLine("font.sha256=${ShowcaseAssetIntegrity.sha256(ReadmeDemoAssets.resource("JetBrainsMono-Regular.ttf"))}")
             appendLine("font.license.sha256=${ShowcaseAssetIntegrity.sha256(ReadmeDemoAssets.resource("OFL.txt"))}")

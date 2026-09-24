@@ -6,6 +6,10 @@ Strata is a declarative UI library for Minecraft Fabric Mods.
 Build screens from reusable components, keep application state in your own code, and test UI behavior without launching Minecraft.
 A separately installed runtime connects those definitions to the client version and its resources.
 
+[![Strata: compose player rows, size the list, and link a scrollbar](https://raw.githubusercontent.com/sya-ri/strata/master/docs/readme-demo/demo.gif)](https://github.com/sya-ri/strata/blob/master/docs/readme-demo/README.md)
+
+[Example](https://github.com/sya-ri/strata/blob/master/integration/docs/src/readmeExamples/kotlin/dev/s7a/strata/integration/docs/example/ScrollPlayersExample.kt) · [Still frames](https://github.com/sya-ri/strata/blob/master/docs/readme-demo/README.md)
+
 ## What you can build
 
 - Arrange controls with layouts that measure and place their children.
