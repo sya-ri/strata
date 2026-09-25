@@ -723,12 +723,11 @@ val sharedSourceMarkdown = providers.provider {
                 "FabricNativeCanvasTargetFactory",
             ),
             "GUI drawing" to listOf("FabricNativeCanvasDrawing"),
-            "GUI consumption" to listOf("FabricMinecraftCanvasGuiConsumption"),
-            "Render-state discard access" to listOf("FabricMinecraftCanvasRenderStateAccess"),
+            "GUI consumption and discard" to listOf("FabricMinecraftCanvasGuiConsumption", "FabricMinecraftCanvasRenderStateAccess"),
             "Resource lifecycle" to listOf("FabricNativeCanvasDestructionFactory", "FabricMinecraftCanvasRenderFrameMixin"),
         ),
         "input" to linkedMapOf(
-            "Key-binding bridge" to listOf("FabricMinecraftKeyBindingBridge"),
+            "Inventory key and mouse bindings" to listOf("FabricMinecraftInventoryBridge", "FabricMinecraftKeyBindingBridge"),
             "Focused keyboard and text input" to listOf("FabricMinecraftFocusedInputMapping"),
             "Native keyboard and pointer mapping" to listOf("FabricMinecraftKeyMapping", "FabricMinecraftPointerMapping"),
             "Mouse routing" to listOf("FabricUiMouseMixin"),
@@ -745,12 +744,12 @@ val sharedSourceMarkdown = providers.provider {
         appendLine()
         appendLine("Rows are Minecraft versions; columns are source roots compiled into each runtime's main source set.")
         appendLine("A check marks a selected root. These are source directories, not separately installed or published libraries.")
-        appendLine("Tables are grouped by responsibility; shared-root labels are relative to that responsibility under `runtime/shared/minecraft-fabric/`, while versioned roots use repository-relative paths.")
+        appendLine("Tables are grouped by responsibility; labels omit that responsibility under `runtime/shared/minecraft-fabric/` when it matches the section, and retain it for collaborating roots such as `screen/gui-extractor`.")
         appendLine("Columns follow the first Minecraft version that uses each root, with names breaking ties.")
         appendLine("Canvas and input are split by purpose: each table compares the source roots providing its named adapters, including versioned source directories.")
         appendLine("Multiple checks in one row identify roots used together for that purpose.")
         appendLine("Different purpose tables are combined, not alternatives; one source root can provide several adapters and appear in several tables.")
-        appendLine("An empty purpose row means that no separate source file for its adapters is configured, not that the feature is unsupported.")
+        appendLine("Every purpose must resolve to at least one configured source root for every version; generation fails when an implementation is missing from the comparison.")
         appendLine("See [shared-source ownership](minecraft-versions.md#shared-source-ownership) for naming and compatibility rules.")
         rootsByRole.forEach { (role, roots) ->
             appendLine()
@@ -769,11 +768,13 @@ val sharedSourceMarkdown = providers.provider {
             }
             purposes?.forEach { (purpose, adapters) ->
                 val adapterRootsByVersion = sourceFilesByVersion.mapValues { (version, files) ->
-                    adapters.flatMap { adapter ->
+                    val selected = adapters.flatMap { adapter ->
                         val matches = files.filter { file -> file.nameWithoutExtension == adapter }
                         check(matches.size <= 1) { "Multiple sources provide $adapter in Minecraft $version." }
                         matches.map { file -> rootProject.relativePath(file).replace('\\', '/').substringBefore("/src/") }
                     }.distinct().sorted()
+                    check(selected.isNotEmpty()) { "No configured source provides $purpose in Minecraft $version." }
+                    selected
                 }
                 val adapterRoots = adapterRootsByVersion.values.flatten().distinct()
                 check(adapterRoots.isNotEmpty()) { "No configured source provides $purpose adapters." }
@@ -782,7 +783,7 @@ val sharedSourceMarkdown = providers.provider {
                 appendLine()
                 appendLine("Tracks ${adapters.joinToString(", ") { adapter -> "`$adapter`" }} in each runtime's configured main sources.")
                 appendLine()
-                appendLine("| Minecraft | ${adapterRoots.joinToString(" | ") { path -> "[`${path.removePrefix("runtime/shared/minecraft-fabric/$role/")}`](../../$path)" }} |")
+                appendLine("| Minecraft | ${adapterRoots.joinToString(" | ") { path -> "[`${path.removePrefix("runtime/shared/minecraft-fabric/$role/").removePrefix("runtime/shared/minecraft-fabric/")}`](../../$path)" }} |")
                 appendLine("| --- | ${adapterRoots.joinToString(" | ") { "---" }} |")
                 adapterRootsByVersion.forEach { (version, selected) ->
                     appendLine("| $version | ${adapterRoots.joinToString(" | ") { path -> if (path in selected) "✓" else "" }} |")

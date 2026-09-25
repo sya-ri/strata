@@ -4,12 +4,12 @@
 
 Rows are Minecraft versions; columns are source roots compiled into each runtime's main source set.
 A check marks a selected root. These are source directories, not separately installed or published libraries.
-Tables are grouped by responsibility; shared-root labels are relative to that responsibility under `runtime/shared/minecraft-fabric/`, while versioned roots use repository-relative paths.
+Tables are grouped by responsibility; labels omit that responsibility under `runtime/shared/minecraft-fabric/` when it matches the section, and retain it for collaborating roots such as `screen/gui-extractor`.
 Columns follow the first Minecraft version that uses each root, with names breaking ties.
 Canvas and input are split by purpose: each table compares the source roots providing its named adapters, including versioned source directories.
 Multiple checks in one row identify roots used together for that purpose.
 Different purpose tables are combined, not alternatives; one source root can provide several adapters and appear in several tables.
-An empty purpose row means that no separate source file for its adapters is configured, not that the feature is unsupported.
+Every purpose must resolve to at least one configured source root for every version; generation fails when an implementation is missing from the comparison.
 See [shared-source ownership](minecraft-versions.md#shared-source-ownership) for naming and compatibility rules.
 
 ## canvas
@@ -74,63 +74,34 @@ Tracks `FabricNativeCanvasDrawing` in each runtime's configured main sources.
 | 26.2 |  | ✓ |  |
 | 26.3 |  |  | ✓ |
 
-### GUI consumption
+### GUI consumption and discard
 
-Tracks `FabricMinecraftCanvasGuiConsumption` in each runtime's configured main sources.
+Tracks `FabricMinecraftCanvasGuiConsumption`, `FabricMinecraftCanvasRenderStateAccess` in each runtime's configured main sources.
 
-| Minecraft | [`consumption/flush`](../../runtime/shared/minecraft-fabric/canvas/consumption/flush) | [`consumption/buffer-source`](../../runtime/shared/minecraft-fabric/canvas/consumption/buffer-source) | [`consumption/vertex-buffer`](../../runtime/shared/minecraft-fabric/canvas/consumption/vertex-buffer) |
-| --- | --- | --- | --- |
-| 1.20 | ✓ |  |  |
-| 1.20.1 | ✓ |  |  |
-| 1.20.2 | ✓ |  |  |
-| 1.20.3 | ✓ |  |  |
-| 1.20.4 | ✓ |  |  |
-| 1.20.5 | ✓ |  |  |
-| 1.20.6 | ✓ |  |  |
-| 1.21 | ✓ |  |  |
-| 1.21.1 | ✓ |  |  |
-| 1.21.2 | ✓ |  |  |
-| 1.21.3 | ✓ |  |  |
-| 1.21.4 | ✓ |  |  |
-| 1.21.5 | ✓ |  |  |
-| 1.21.6 |  | ✓ |  |
-| 1.21.7 |  | ✓ |  |
-| 1.21.8 |  | ✓ |  |
-| 1.21.9 |  | ✓ |  |
-| 1.21.10 |  | ✓ |  |
-| 1.21.11 |  | ✓ |  |
-| 26.1 |  | ✓ |  |
-| 26.2 |  |  | ✓ |
-| 26.3 |  |  | ✓ |
-
-### Render-state discard access
-
-Tracks `FabricMinecraftCanvasRenderStateAccess` in each runtime's configured main sources.
-
-| Minecraft | [`discard/gui-graphics`](../../runtime/shared/minecraft-fabric/canvas/discard/gui-graphics) | [`discard/gui-extractor`](../../runtime/shared/minecraft-fabric/canvas/discard/gui-extractor) |
-| --- | --- | --- |
-| 1.20 |  |  |
-| 1.20.1 |  |  |
-| 1.20.2 |  |  |
-| 1.20.3 |  |  |
-| 1.20.4 |  |  |
-| 1.20.5 |  |  |
-| 1.20.6 |  |  |
-| 1.21 |  |  |
-| 1.21.1 |  |  |
-| 1.21.2 |  |  |
-| 1.21.3 |  |  |
-| 1.21.4 |  |  |
-| 1.21.5 |  |  |
-| 1.21.6 | ✓ |  |
-| 1.21.7 | ✓ |  |
-| 1.21.8 | ✓ |  |
-| 1.21.9 | ✓ |  |
-| 1.21.10 | ✓ |  |
-| 1.21.11 | ✓ |  |
-| 26.1 |  | ✓ |
-| 26.2 |  | ✓ |
-| 26.3 |  | ✓ |
+| Minecraft | [`consumption/flush`](../../runtime/shared/minecraft-fabric/canvas/consumption/flush) | [`consumption/buffer-source`](../../runtime/shared/minecraft-fabric/canvas/consumption/buffer-source) | [`discard/gui-graphics`](../../runtime/shared/minecraft-fabric/canvas/discard/gui-graphics) | [`discard/gui-extractor`](../../runtime/shared/minecraft-fabric/canvas/discard/gui-extractor) | [`consumption/vertex-buffer`](../../runtime/shared/minecraft-fabric/canvas/consumption/vertex-buffer) |
+| --- | --- | --- | --- | --- | --- |
+| 1.20 | ✓ |  |  |  |  |
+| 1.20.1 | ✓ |  |  |  |  |
+| 1.20.2 | ✓ |  |  |  |  |
+| 1.20.3 | ✓ |  |  |  |  |
+| 1.20.4 | ✓ |  |  |  |  |
+| 1.20.5 | ✓ |  |  |  |  |
+| 1.20.6 | ✓ |  |  |  |  |
+| 1.21 | ✓ |  |  |  |  |
+| 1.21.1 | ✓ |  |  |  |  |
+| 1.21.2 | ✓ |  |  |  |  |
+| 1.21.3 | ✓ |  |  |  |  |
+| 1.21.4 | ✓ |  |  |  |  |
+| 1.21.5 | ✓ |  |  |  |  |
+| 1.21.6 |  | ✓ | ✓ |  |  |
+| 1.21.7 |  | ✓ | ✓ |  |  |
+| 1.21.8 |  | ✓ | ✓ |  |  |
+| 1.21.9 |  | ✓ | ✓ |  |  |
+| 1.21.10 |  | ✓ | ✓ |  |  |
+| 1.21.11 |  | ✓ | ✓ |  |  |
+| 26.1 |  | ✓ |  | ✓ |  |
+| 26.2 |  |  |  | ✓ | ✓ |
+| 26.3 |  |  |  | ✓ | ✓ |
 
 ### Resource lifecycle
 
@@ -193,34 +164,34 @@ Tracks `FabricNativeCanvasDestructionFactory`, `FabricMinecraftCanvasRenderFrame
 
 Every version also includes [`common`](../../runtime/shared/minecraft-fabric/input/common) support.
 
-### Key-binding bridge
+### Inventory key and mouse bindings
 
-Tracks `FabricMinecraftKeyBindingBridge` in each runtime's configured main sources.
+Tracks `FabricMinecraftInventoryBridge`, `FabricMinecraftKeyBindingBridge` in each runtime's configured main sources.
 
-| Minecraft | [`primitive-callbacks`](../../runtime/shared/minecraft-fabric/input/primitive-callbacks) | [`event-callbacks`](../../runtime/shared/minecraft-fabric/input/event-callbacks) |
-| --- | --- | --- |
-| 1.20 | ✓ |  |
-| 1.20.1 | ✓ |  |
-| 1.20.2 | ✓ |  |
-| 1.20.3 | ✓ |  |
-| 1.20.4 | ✓ |  |
-| 1.20.5 | ✓ |  |
-| 1.20.6 | ✓ |  |
-| 1.21 | ✓ |  |
-| 1.21.1 | ✓ |  |
-| 1.21.2 | ✓ |  |
-| 1.21.3 | ✓ |  |
-| 1.21.4 | ✓ |  |
-| 1.21.5 | ✓ |  |
-| 1.21.6 | ✓ |  |
-| 1.21.7 | ✓ |  |
-| 1.21.8 | ✓ |  |
-| 1.21.9 |  | ✓ |
-| 1.21.10 |  | ✓ |
-| 1.21.11 |  | ✓ |
-| 26.1 |  |  |
-| 26.2 |  |  |
-| 26.3 |  |  |
+| Minecraft | [`primitive-callbacks`](../../runtime/shared/minecraft-fabric/input/primitive-callbacks) | [`screen/gui-graphics`](../../runtime/shared/minecraft-fabric/screen/gui-graphics) | [`event-callbacks`](../../runtime/shared/minecraft-fabric/input/event-callbacks) | [`screen/gui-extractor`](../../runtime/shared/minecraft-fabric/screen/gui-extractor) |
+| --- | --- | --- | --- | --- |
+| 1.20 | ✓ | ✓ |  |  |
+| 1.20.1 | ✓ | ✓ |  |  |
+| 1.20.2 | ✓ | ✓ |  |  |
+| 1.20.3 | ✓ | ✓ |  |  |
+| 1.20.4 | ✓ | ✓ |  |  |
+| 1.20.5 | ✓ | ✓ |  |  |
+| 1.20.6 | ✓ | ✓ |  |  |
+| 1.21 | ✓ | ✓ |  |  |
+| 1.21.1 | ✓ | ✓ |  |  |
+| 1.21.2 | ✓ | ✓ |  |  |
+| 1.21.3 | ✓ | ✓ |  |  |
+| 1.21.4 | ✓ | ✓ |  |  |
+| 1.21.5 | ✓ | ✓ |  |  |
+| 1.21.6 | ✓ | ✓ |  |  |
+| 1.21.7 | ✓ | ✓ |  |  |
+| 1.21.8 | ✓ | ✓ |  |  |
+| 1.21.9 |  | ✓ | ✓ |  |
+| 1.21.10 |  | ✓ | ✓ |  |
+| 1.21.11 |  | ✓ | ✓ |  |
+| 26.1 |  |  |  | ✓ |
+| 26.2 |  |  |  | ✓ |
+| 26.3 |  |  |  | ✓ |
 
 ### Focused keyboard and text input
 
