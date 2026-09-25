@@ -717,6 +717,7 @@ val sharedSourceMarkdown = providers.provider {
     val adaptersByPurpose = mapOf(
         "canvas" to linkedMapOf(
             "Rendering backend" to listOf(
+                "FabricNativeCanvasTarget",
                 "FabricNativeCanvasDriver",
                 "MinecraftCanvasContext",
                 "FabricNativeCanvasTextureFactory",
@@ -729,7 +730,7 @@ val sharedSourceMarkdown = providers.provider {
         "input" to linkedMapOf(
             "Inventory key and mouse bindings" to listOf("FabricMinecraftInventoryBridge", "FabricMinecraftKeyBindingBridge"),
             "Focused keyboard and text input" to listOf("FabricMinecraftFocusedInputMapping"),
-            "Native keyboard and pointer mapping" to listOf("FabricMinecraftKeyMapping", "FabricMinecraftPointerMapping"),
+            "Native keyboard and pointer mapping" to listOf("FabricMinecraftInputMapping", "FabricMinecraftKeyMapping", "FabricMinecraftPointerMapping"),
             "Mouse routing" to listOf("FabricUiMouseMixin"),
             "Window focus hook" to listOf("FabricMinecraftWindowMixin"),
         ),
@@ -762,15 +763,6 @@ val sharedSourceMarkdown = providers.provider {
                 check(sourcesByVersion.values.all { selected -> commonRoot in selected }) {
                     "The $role common support root must be configured for every documented runtime."
                 }
-                appendLine("### Common support")
-                appendLine()
-                appendLine("| Minecraft | [`common`](../../$commonRoot) |")
-                appendLine("| --- | --- |")
-                sourcesByVersion.keys.forEach { version ->
-                    appendLine("| $version | ✓ |")
-                }
-                appendLine()
-                documentedRoots.add(commonRoot)
             }
             purposes?.forEach { (purpose, adapters) ->
                 val adapterRootsByVersion = sourceFilesByVersion.mapValues { (version, files) ->
