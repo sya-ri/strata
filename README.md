@@ -5,6 +5,10 @@
 
 Declarative Minecraft UI with reusable components, caller-owned state, and headless rendering.
 
+Create custom screens and HUDs from Fabric Mods or Paper, Folia, and Velocity plugins.
+For server-driven UIs, the server or proxy owns the definitions, state, and event handlers, while the required Strata Fabric client Mod renders the interface and delivers player input.
+Vanilla clients cannot display these UIs.
+
 [Modrinth](https://modrinth.com/mod/strata-ui) · [Hangar](https://hangar.papermc.io/sya-ri/Strata) · [CurseForge](https://www.curseforge.com/minecraft/mc-mods/strata-ui)
 
 This page documents the development sources; for an installed version, use the documentation at its matching [release tag](https://github.com/sya-ri/strata/releases).
@@ -46,7 +50,10 @@ A confirmation screen combines text, buttons, and layout components into a reusa
 ## Installation
 
 <!-- strata-installation:start -->
-Application UI source needs only `strata-api` on its compile classpath.
+### Fabric client
+
+Players need the Strata Fabric runtime and Fabric Language Kotlin for both client-defined and server-driven UIs.
+Client Mod UI source needs only `strata-api` on its compile classpath.
 Install exactly one version-matched runtime as a separate client Fabric Mod together with Fabric Language Kotlin; do not bundle multiple versioned Strata runtimes.
 
 ```kotlin
@@ -67,6 +74,24 @@ Declare it as a required dependency in the consuming Mod so `UiDefinition.open()
   }
 }
 ```
+
+### Paper, Folia, and Velocity
+
+Install the appropriate Strata plugin JAR with the `plugin` classifier in the server or proxy's `plugins` directory.
+Keep the client and server/proxy on the same Strata release.
+The matching Fabric client Mod is required for every player using the UI.
+
+| Platform | Installed Strata plugin | Consumer dependency (`compileOnly`) |
+| --- | --- | --- |
+| [Paper / Folia](docs/guides/paper.md) | `strata-runtime-paper` | `dev.s7a.strata:strata-paper-api:0.2.0` |
+| [Velocity](docs/guides/velocity.md) | `strata-runtime-velocity` | `dev.s7a.strata:strata-velocity-api:0.2.0` |
+
+Compile against the platform's own API as well, and do not bundle Strata into your plugin.
+Paper consumers declare `depend: [Strata]` in `plugin.yml`; Folia consumers also declare `folia-supported: true`.
+Velocity consumers declare a required dependency on plugin ID `strata`.
+A Velocity-owned UI needs the client Mod and proxy plugin; install Strata on a Paper backend only when that backend also owns UIs.
+
+The [Paper / Folia guide](docs/guides/paper.md) and [Velocity guide](docs/guides/velocity.md) include compiled examples and the state, threading, and lifecycle contracts.
 <!-- strata-installation:end -->
 
 The [compatibility reference](docs/reference/compatibility.md) lists supported targets, artifact names, and Java requirements.
