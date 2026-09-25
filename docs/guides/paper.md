@@ -32,7 +32,7 @@ Build `:runtime:paper:pluginJar :examples:paper:jar`, install both artifacts, an
 Use `onActivate { ... }` for button actions.
 Its receiver is the owning `UiSession`, so `close()` and `switch(UiPresentation.Hud)` control the UI delivering that event.
 Typed input subscriptions declare their propagation policy before the event; event-dependent synchronous decisions require a client extension.
-The [input example](../../examples/paper/src/main/kotlin/dev/s7a/strata/examples/paper/PaperInputScreens.kt) demonstrates filtering and notifications; the [remote protocol](../reference/remote-protocol.md#editing-and-local-behavior) defines their contract.
+Run `/strata-input-demo` to open the [input example](../../examples/paper/src/main/kotlin/dev/s7a/strata/examples/paper/PaperInputScreens.kt) and try its filtering and notifications; the [remote protocol](../reference/remote-protocol.md#editing-and-local-behavior) defines their contract.
 
 Paper evaluates declarations and runs handlers on its primary thread.
 Folia uses the player's entity scheduler, so state, declarations, and handlers follow that player across region and physical-thread changes.
