@@ -20,7 +20,6 @@ val runtimeFabricMain =
         .getByType<SourceSetContainer>()
         .named("main")
 val runtimeJar = runtimeFabricProject.tasks.named<Jar>("jar").flatMap { task -> task.archiveFile }
-val sharedGameTest = rootProject.file("integration/minecraft-fabric-unobfuscated/src/gametest")
 
 fabricApi {
     configureTests {
@@ -34,7 +33,15 @@ fabricApi {
 
 extensions.configure<KotlinJvmProjectExtension> {
     sourceSets.named("gametest") {
-        kotlin.srcDir(sharedGameTest.resolve("kotlin"))
+        kotlin.srcDirs(
+            rootProject.file("integration/shared/minecraft-fabric/canvas/gui-extractor/src/gametest/kotlin"),
+            rootProject.file("integration/shared/minecraft-fabric/input/gui-extractor/src/gametest/kotlin"),
+            rootProject.file("integration/shared/minecraft-fabric/lifecycle/gui-extractor/src/gametest/kotlin"),
+            rootProject.file("integration/shared/minecraft-fabric/runner/gui-extractor/src/gametest/kotlin"),
+            rootProject.file("integration/shared/minecraft-fabric/scenarios/gui-extractor/src/gametest/kotlin"),
+            rootProject.file("integration/shared/minecraft-fabric/screen/gui-extractor/src/gametest/kotlin"),
+            rootProject.file("integration/shared/minecraft-fabric/transport/gui-extractor/src/gametest/kotlin"),
+        )
     }
 }
 
@@ -44,7 +51,7 @@ extensions.configure<DetektExtension> {
 
 extensions.configure<SourceSetContainer> {
     named("gametest") {
-        resources.srcDir(sharedGameTest.resolve("resources"))
+        resources.srcDir(rootProject.file("integration/shared/minecraft-fabric/lifecycle/gui-extractor/src/gametest/resources"))
     }
 }
 

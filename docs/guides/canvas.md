@@ -35,8 +35,8 @@ A custom renderer borrows only its offscreen target, logical and physical sizes,
 Instances belong to attachments and are not shared merely because two canvases share a source description.
 The native binding initially owns only a description; a custom renderer factory runs lazily inside its first reserved target capture so initialization work is covered by that capture fence.
 The callback context expires before returning to the presenter, and application sources are never closed by Strata.
-The [compiled native scene](https://github.com/sya-ri/strata/blob/master/integration/minecraft-fabric-canvas-shared/src/gametest/kotlin/dev/s7a/strata/integration/minecraft/fabric/MinecraftCanvasNativeExample.kt) composes independently produced textures and custom-renderer output with clipping and portable overlays.
-Its [source fixture](https://github.com/sya-ri/strata/blob/master/integration/minecraft-fabric-canvas-shared/src/gametest/kotlin/dev/s7a/strata/integration/minecraft/fabric/MinecraftCanvasTestFixture.kt) demonstrates both typed factories, shared external ownership, per-attachment renderers, and optional matching snapshots; the loaded suite first checks actual native pixels without any snapshots.
+The [compiled native scene](https://github.com/sya-ri/strata/blob/master/integration/shared/minecraft-fabric/canvas/common/src/gametest/kotlin/dev/s7a/strata/integration/minecraft/fabric/MinecraftCanvasNativeExample.kt) composes independently produced textures and custom-renderer output with clipping and portable overlays.
+Its [source fixture](https://github.com/sya-ri/strata/blob/master/integration/shared/minecraft-fabric/canvas/common/src/gametest/kotlin/dev/s7a/strata/integration/minecraft/fabric/MinecraftCanvasTestFixture.kt) demonstrates both typed factories, shared external ownership, per-attachment renderers, and optional matching snapshots; the loaded suite first checks actual native pixels without any snapshots.
 
 Native providers prepare output only for actual presentation, after layout has settled.
 Declaration evaluation, measurement, cached painting, and extra host frames do not execute the producer.

@@ -14,25 +14,33 @@ plugins {
 apply(from = rootProject.file("runtime/minecraft-fabric-publication.gradle.kts"))
 
 val compatibleRuntime = rootProject.file("runtime/minecraft-fabric-1.20.1/src/main")
-val sharedRuntime = rootProject.file("runtime/minecraft-fabric-shared/src/main")
-val legacyRuntime = rootProject.file("runtime/minecraft-fabric-1.21-legacy/src/main")
-val textureBlitRuntime = rootProject.file("runtime/minecraft-fabric-1.21.5-legacy/src/main")
 
 extensions.configure<DetektExtension> {
     source.from(
-        sharedRuntime.resolve("kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftFontResources.kt"),
-        sharedRuntime.resolve("kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftProfileDecorations.kt"),
-        sharedRuntime.resolve("kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftProfileFactory.kt"),
-        sharedRuntime.resolve("kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftProfileWidgets.kt"),
-        sharedRuntime.resolve("kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftSampledBounds.kt"),
-        sharedRuntime.resolve("kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftTextMapping.kt"),
+        rootProject.file("runtime/shared/minecraft-fabric/resources/common/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftFontResources.kt"),
+        rootProject.file("runtime/shared/minecraft-fabric/resources/common/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftProfileDecorations.kt"),
+        rootProject.file("runtime/shared/minecraft-fabric/resources/common/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftProfileFactory.kt"),
+        rootProject.file("runtime/shared/minecraft-fabric/resources/common/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftProfileWidgets.kt"),
+        rootProject.file("runtime/shared/minecraft-fabric/rendering/common/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftSampledBounds.kt"),
+        rootProject.file("runtime/shared/minecraft-fabric/resources/common/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftTextMapping.kt"),
     )
 }
 
 extensions.configure<SourceSetContainer> {
     named("main") {
-        java.srcDirs(compatibleRuntime.resolve("java"), sharedRuntime.resolve("java"), legacyRuntime.resolve("java"))
-        java.srcDir(textureBlitRuntime.resolve("java"))
+        java.srcDirs(
+            compatibleRuntime.resolve("java"),
+            rootProject.file("runtime/shared/minecraft-fabric/input/common/src/main/java"),
+            rootProject.file("runtime/shared/minecraft-fabric/input/primitive-callbacks/src/main/java"),
+            rootProject.file("runtime/shared/minecraft-fabric/lifecycle/common/src/main/java"),
+            rootProject.file("runtime/shared/minecraft-fabric/resources/common/src/main/java"),
+            rootProject.file("runtime/shared/minecraft-fabric/screen/common/src/main/java"),
+            rootProject.file("runtime/shared/minecraft-fabric/transport/common/src/main/java"),
+            rootProject.file("runtime/shared/minecraft-fabric/input/gui-graphics/src/main/java"),
+            rootProject.file("runtime/shared/minecraft-fabric/resources/gui-graphics/src/main/java"),
+            rootProject.file("runtime/shared/minecraft-fabric/screen/gui-graphics/src/main/java"),
+        )
+        java.srcDir(rootProject.file("runtime/shared/minecraft-fabric/rendering/render-type/src/main/java"))
     }
 }
 
@@ -40,8 +48,14 @@ extensions.configure<KotlinJvmProjectExtension> {
     sourceSets.named("main") {
         kotlin.srcDirs(
             compatibleRuntime.resolve("kotlin"),
-            sharedRuntime.resolve("kotlin"),
-            legacyRuntime.resolve("kotlin"),
+            rootProject.file("runtime/shared/minecraft-fabric/input/common/src/main/kotlin"),
+            rootProject.file("runtime/shared/minecraft-fabric/lifecycle/common/src/main/kotlin"),
+            rootProject.file("runtime/shared/minecraft-fabric/rendering/common/src/main/kotlin"),
+            rootProject.file("runtime/shared/minecraft-fabric/resources/common/src/main/kotlin"),
+            rootProject.file("runtime/shared/minecraft-fabric/transport/common/src/main/kotlin"),
+            rootProject.file("runtime/shared/minecraft-fabric/input/gui-graphics/src/main/kotlin"),
+            rootProject.file("runtime/shared/minecraft-fabric/rendering/gui-graphics/src/main/kotlin"),
+            rootProject.file("runtime/shared/minecraft-fabric/resources/gui-graphics/src/main/kotlin"),
         )
     }
 }

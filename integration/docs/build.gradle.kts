@@ -113,8 +113,8 @@ tasks.withType<Test>().configureEach {
     dependsOn(apiKotlinClasses)
     doFirst { systemProperty("strata.test.apiClasses", apiKotlinClasses.get().asFile.absolutePath) }
 }
-val showcaseSources = rootProject.layout.projectDirectory.dir("integration/minecraft-fabric-unobfuscated/src/gametest/kotlin")
-val showcaseFixtureResources = rootProject.layout.projectDirectory.dir("integration/minecraft-fabric-unobfuscated/src/gametest/resources")
+val showcaseSources = rootProject.layout.projectDirectory.dir("integration/shared/minecraft-fabric/scenarios/gui-extractor/src/gametest/kotlin")
+val showcaseFixtureResources = rootProject.layout.projectDirectory.dir("integration/shared/minecraft-fabric/lifecycle/gui-extractor/src/gametest/resources")
 val showcaseExampleSources = objects.sourceDirectorySet("showcaseExamples", "API-only showcase examples").apply {
     srcDir(showcaseSources)
     include("**/*Example.kt")
@@ -455,7 +455,7 @@ val checkDocumentationLinks =
     tasks.register<JavaExec>("checkDocumentationLinks") {
         group = "verification"
         description = "Checks repository-local README, docs, and public-skill links."
-        dependsOn("classes", ":checkCompatibilityDocumentation")
+        dependsOn("classes", ":checkCompatibilityDocumentation", ":checkMinecraftSharedSources")
         mainClass.set("dev.s7a.strata.integration.docs.DocumentationLinkChecker")
         classpath = sourceSets.main.get().runtimeClasspath
         args(repositoryRoot.get().asFile.absolutePath)

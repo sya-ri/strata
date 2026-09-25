@@ -26,7 +26,7 @@ internal object ReadmeDemoLaunch {
                 Path.of(arguments[3]),
                 Path.of(arguments[4]),
                 Path.of(arguments[5]),
-                root.resolve("integration/minecraft-fabric-unobfuscated/src/gametest/resources"),
+                root.resolve("integration/shared/minecraft-fabric/lifecycle/gui-extractor/src/gametest/resources"),
             )
         val output = ReadmeDemoPipeline.prepare(root, ReadmeDemoAssets(inputs), arguments[6])
         val readmePath = root.resolve("README.md")

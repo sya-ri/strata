@@ -12,22 +12,39 @@ plugins {
 
 apply(from = rootProject.file("runtime/minecraft-fabric-publication.gradle.kts"))
 
-val sharedRuntime = rootProject.file("runtime/minecraft-fabric-shared/src/main")
-val legacyRuntime = rootProject.file("runtime/minecraft-fabric-1.21-legacy/src/main")
-val recordInputRuntime = rootProject.file("runtime/minecraft-fabric-1.21.9-legacy/src/main")
-val textureBlitRuntime = rootProject.file("runtime/minecraft-fabric-1.21.6-legacy/src/main")
-
 extensions.configure<SourceSetContainer> {
     named("main") {
-        java.srcDirs(sharedRuntime.resolve("java"), legacyRuntime.resolve("java"), recordInputRuntime.resolve("java"))
-        java.srcDir(textureBlitRuntime.resolve("java"))
+        java.srcDirs(
+            rootProject.file("runtime/shared/minecraft-fabric/input/common/src/main/java"),
+            rootProject.file("runtime/shared/minecraft-fabric/lifecycle/common/src/main/java"),
+            rootProject.file("runtime/shared/minecraft-fabric/resources/common/src/main/java"),
+            rootProject.file("runtime/shared/minecraft-fabric/screen/common/src/main/java"),
+            rootProject.file("runtime/shared/minecraft-fabric/transport/common/src/main/java"),
+            rootProject.file("runtime/shared/minecraft-fabric/input/gui-graphics/src/main/java"),
+            rootProject.file("runtime/shared/minecraft-fabric/resources/gui-graphics/src/main/java"),
+            rootProject.file("runtime/shared/minecraft-fabric/screen/gui-graphics/src/main/java"),
+            rootProject.file("runtime/shared/minecraft-fabric/input/event-callbacks/src/main/java"),
+            rootProject.file("runtime/shared/minecraft-fabric/resources/event-callbacks/src/main/java"),
+        )
+        java.srcDir(rootProject.file("runtime/shared/minecraft-fabric/rendering/render-pipeline/src/main/java"))
     }
 }
 
 extensions.configure<KotlinJvmProjectExtension> {
     sourceSets.named("main") {
-        kotlin.srcDirs(sharedRuntime.resolve("kotlin"), legacyRuntime.resolve("kotlin"), recordInputRuntime.resolve("kotlin"))
-        kotlin.srcDir(textureBlitRuntime.resolve("kotlin"))
+        kotlin.srcDirs(
+            rootProject.file("runtime/shared/minecraft-fabric/input/common/src/main/kotlin"),
+            rootProject.file("runtime/shared/minecraft-fabric/lifecycle/common/src/main/kotlin"),
+            rootProject.file("runtime/shared/minecraft-fabric/rendering/common/src/main/kotlin"),
+            rootProject.file("runtime/shared/minecraft-fabric/resources/common/src/main/kotlin"),
+            rootProject.file("runtime/shared/minecraft-fabric/transport/common/src/main/kotlin"),
+            rootProject.file("runtime/shared/minecraft-fabric/input/gui-graphics/src/main/kotlin"),
+            rootProject.file("runtime/shared/minecraft-fabric/rendering/gui-graphics/src/main/kotlin"),
+            rootProject.file("runtime/shared/minecraft-fabric/resources/gui-graphics/src/main/kotlin"),
+            rootProject.file("runtime/shared/minecraft-fabric/resources/event-callbacks/src/main/kotlin"),
+            rootProject.file("runtime/shared/minecraft-fabric/screen/event-callbacks/src/main/kotlin"),
+        )
+        kotlin.srcDir(rootProject.file("runtime/shared/minecraft-fabric/rendering/render-pipeline/src/main/kotlin"))
     }
 }
 

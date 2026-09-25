@@ -98,28 +98,28 @@ The following distinctions describe implementation ownership, not cross-version 
 
 ## Shared source ownership
 
-The neutral `runtime/minecraft-fabric-shared`, `runtime/minecraft-fabric-identifier`, `runtime/minecraft-fabric-1.21-legacy`, `runtime/minecraft-fabric-1.21.9-legacy`, `runtime/minecraft-fabric-1.21.8-legacy`, `runtime/minecraft-fabric-1.21.6-legacy`, `runtime/minecraft-fabric-1.21.5-legacy`, `runtime/minecraft-fabric-1.21.3-legacy`, `runtime/minecraft-fabric-unobfuscated`, `integration/minecraft-fabric-1.21-legacy`, `integration/minecraft-fabric-client-gametest`, `integration/minecraft-fabric-1.21.3-legacy`, and the other release-family integration trees are source ownership boundaries, not Gradle modules or fallback profiles.
-The 1.21.8 Kotlin input root is shared through 1.20, the complete 1.21.8 Java root is shared through 1.21.4, the 1.21.3 Java root isolates the earlier skin future shared by 1.21.3 through 1.20.5, and the 1.21.5/1.21.6 roots isolate native rendering and version-name accessors.
-A runtime version links the complete shared root only after its compiler and loaded tests prove every file compatible, links an additional release-family root only when applicable, and keeps unexplained divergence in its versioned project until resolved.
-The identifier root is limited to releases whose official mappings expose that native name; releases such as 1.21.10 through 1.20 with `ResourceLocation` own compile-time aliases and factories locally while reusing the compatible implementation roots.
-Do not use file-tree include filters to select individual version-compatible sources because IDE and static-analysis Gradle models operate at source-root granularity.
+Versioned `runtime/minecraft-fabric-<version>` and `integration/minecraft-fabric-<version>` directories own Gradle projects, distributions, and exact-target verification.
+Shared runtime sources live under `runtime/shared/minecraft-fabric/`; matching verification sources live under `integration/shared/minecraft-fabric/`.
+Game-independent font comparison sources live under `integration/shared/font-parity/`.
+These shared directories are source roots, not Gradle projects or published libraries.
+The [generated shared-source matrix](minecraft-shared-sources.md) shows the runtime roots compiled by each target, with purpose-specific Canvas and input tables comparing alternative adapters separately from the roots used together.
 
-The 26.3 target selects its SDL input and RenderPearl Canvas roots while earlier targets retain complete GLFW and Blaze3D source roots.
-The native font oracle shares scene and comparison logic while its GPU capture sources follow the same native API boundary.
-The 26.x projects compile the complete neutral `runtime/minecraft-fabric-shared`, `runtime/minecraft-fabric-identifier`, and `runtime/minecraft-fabric-unobfuscated` source trees and add their version-specific current-screen bridge, font capabilities, input family, Canvas family, and metadata.
-The 1.21.11 project combines the cross-version and identifier-alias roots with the remapped 1.21 adapter sources and the record-input release-family root.
-The 1.21.10 and 1.21.9 projects combine the same cross-version, remapped 1.21, and record-input roots but keep their `ResourceLocation` aliases in each versioned module because that mapped name is not shared by every consumer.
-The 1.21.8 through 1.21.4 projects combine the cross-version and remapped 1.21 roots with the complete primitive-input release-family root, while 1.21.3 through 1.21 reuse its compatible Kotlin screen root and the complete Java bridge root for the direct player-skin result.
-The 1.21.5 through 1.21.2 projects add the render-type and pose-stack bridge root, 1.21.1 and 1.21 supply their older direct texture blitter locally, and 1.21.6 through 1.21.11 add the render-pipeline and stratum bridge root.
-The 1.20.6 and 1.20.5 projects reuse the compiler-proven 1.21.1 capability roots but own their older constructor-based `ResourceLocation` factories and parsers together with their exact native texture bridges.
-The 1.20.4 through 1.20.2 projects keep the compatible complete roots and share the pre-`ResolvableProfile` skin and key-binding bridges; their profiles select active legacy GUI sprites and reproduce the code-defined scrollbar track without version-string dispatch, including 1.20.2's header separator capability.
-The 1.20 and 1.20.1 projects keep only their proven complete shared roots and own exact artifacts and ABIs around the shared earlier atlas extraction, Authlib 4 skin bridge, and client-runner APIs; their portable profile records exact Vanilla atlas borders so the common renderer reproduces those nine-slices without recognizing a game version.
-The shared frame presenter calls compile-time dynamic-texture and native-pixel bridges supplied by the 1.21 through 1.21.5 version projects, the 1.21.6 release-family root, or the unobfuscated release-family root, preserving ABGR-versus-ARGB access and unnamed-versus-named texture construction without reflection.
-Code enters the legacy source root only after every consuming target compiles it and passes both development and production-jar loaded-client verification.
+Group shared sources by responsibility: lifecycle, resources, input, screen, HUD, rendering, Canvas, and transport.
+Verification adds runner, scenarios, and font-parity responsibilities.
+Within a responsibility, name variants after the API contract they implement, such as primitive callbacks, event callbacks, GUI graphics, GUI extraction, render types, render pipelines, texture views, samplers, and bind groups.
+Use `common` only below its owning responsibility.
+Avoid relative names such as legacy or modern and abbreviated version labels.
+If an API name cannot distinguish a verified variant, append the complete Minecraft version as a disambiguator, not as a compatibility-range claim.
+
+A source root is shared only where the compiler and loaded tests establish compatibility.
+Each consumer references complete language roots; do not select compatible files with file-tree include filters, because IDE and static-analysis models operate at source-root granularity.
+Keep package names, resource identities, and native class names independent of physical source ownership.
+Source sets, static analysis, source links, resource packaging, and verification fixtures must follow every source move together.
+Exact target membership remains explicit in the build; no runtime version-string dispatch or directory-name inference selects behavior.
 
 ## Integration runner boundaries
 
-The nonpublished `integration:minecraft-fabric-1.21.11` through `integration:minecraft-fabric-1.20` modules compile the complete shared legacy loaded-client suite and the matching input-generation and version-name roots against their remapped adapters, required Java toolchains, and exact Fabric API dependencies.
+The nonpublished `integration:minecraft-fabric-1.21.11` through `integration:minecraft-fabric-1.20` modules compile the complete shared GUI-graphics loaded-client suite and the matching input-generation and version-name roots against their remapped adapters, required Java toolchains, and exact Fabric API dependencies.
 Minecraft 1.21.4 and later use the Fabric Client GameTest adapter source root, while 1.21.3 through 1.20 use a standalone client entrypoint because their exact official Fabric API fixtures predate that module; 1.20.4 through 1.20.2 share the runner bridge needed for their dirt-message and level-cleanup APIs, while 1.20 and 1.20.1 share the compiler-proven preceding readiness and level-clear variant in exact owning projects.
 Fabric API is confined to these integration modules; the published runtimes do not depend on it.
 The generated Minecraft CI plan invokes `ciMinecraftCheck` for every discovered version pair and writes version-qualified build evidence after exercising each remapped adapter inside its actual client.

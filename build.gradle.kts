@@ -87,14 +87,14 @@ private data class MinecraftFabricTarget(
     val remapped: Boolean,
     val canvasFamily: CanvasFamily,
     val sourceLinkPaths: List<String>,
-    val remoteNetworkFamily: RemoteNetworkFamily = RemoteNetworkFamily.Stream,
+    val remoteNetworkFamily: RemoteNetworkFamily = RemoteNetworkFamily.StreamCodec,
     val paperDistribution: PaperDistribution = PaperDistribution.Available,
     val canvasTestExtraction: CanvasTestExtraction =
         when (canvasFamily) {
-            CanvasFamily.GlLegacy, CanvasFamily.GlModern, CanvasFamily.Gpu125 -> CanvasTestExtraction.Flush
-            CanvasFamily.Gpu126 -> CanvasTestExtraction.Buffered
-            CanvasFamily.Gpu1211 -> CanvasTestExtraction.BufferedPointer
-            CanvasFamily.Gpu261, CanvasFamily.Gpu262, CanvasFamily.Gpu263 -> CanvasTestExtraction.Unobfuscated
+            CanvasFamily.OpenGlPlatformBuffers, CanvasFamily.OpenGlBuffers, CanvasFamily.Blaze3dDirectTextures -> CanvasTestExtraction.Flush
+            CanvasFamily.Blaze3dTextureViews -> CanvasTestExtraction.Buffered
+            CanvasFamily.Blaze3dSamplers -> CanvasTestExtraction.BufferedPointer
+            CanvasFamily.Blaze3dGuiExtractor, CanvasFamily.Blaze3dBindGroups, CanvasFamily.RenderPearl -> CanvasTestExtraction.GuiExtractor
         },
 ) {
     /** Gradle-owned lock service used to limit unrelated tasks that share mutable external resources. */
@@ -103,48 +103,48 @@ private data class MinecraftFabricTarget(
     val runtimeProjectPath: String = ":runtime:minecraft-fabric-$version"
     val integrationProjectPath: String = ":integration:minecraft-fabric-$version"
     val canvasSourcePaths: List<String> =
-        (listOf("shared") + canvasFamily.sourceRoots).map { suffix -> "runtime/minecraft-fabric-canvas-$suffix" }
-    val inputSourcePaths: List<String> = if (canvasFamily == CanvasFamily.Gpu263) emptyList() else listOf("runtime/minecraft-fabric-glfw")
-    val uiInputSourcePath: String = "runtime/minecraft-fabric-input-${if (uiFamily == UiFamily.ExtractHud) "gui" else "legacy"}"
+        (listOf("common") + canvasFamily.sourceRoots).map { suffix -> "runtime/shared/minecraft-fabric/canvas/$suffix" }
+    val inputSourcePaths: List<String> = listOf("runtime/shared/minecraft-fabric/input/${if (canvasFamily == CanvasFamily.RenderPearl) "sdl" else "glfw"}")
+    val uiInputSourcePath: String = "runtime/shared/minecraft-fabric/input/${if (uiFamily == UiFamily.ExtractHud) "gui-holder" else "screen-field"}"
     val allSourceLinkPaths: List<String> =
-        sourceLinkPaths + canvasSourcePaths + inputSourcePaths + uiInputSourcePath + "runtime/minecraft-fabric-hud-${uiFamily.sourceRoot}" + "runtime/minecraft-fabric-remote-${remoteNetworkFamily.sourceRoot}"
+        (sourceLinkPaths + canvasSourcePaths + inputSourcePaths + uiInputSourcePath + "runtime/shared/minecraft-fabric/hud/${uiFamily.sourceRoot}" + "runtime/shared/minecraft-fabric/transport/${remoteNetworkFamily.sourceRoot}").distinct()
     val canvasTestSourcePaths: List<String> =
-        (if (canvasFamily == CanvasFamily.Gpu263) emptyList() else listOf("integration/minecraft-fabric-canvas-target-blaze3d")) + listOf(
-            "integration/minecraft-fabric-canvas-shared",
-            if (canvasFamily == CanvasFamily.Gpu263) "integration/minecraft-fabric-canvas-sdl" else "integration/minecraft-fabric-canvas-glfw",
-            "integration/minecraft-fabric-canvas-${canvasFamily.testSource}",
-            "integration/minecraft-fabric-canvas-extract-${canvasTestExtraction.sourceRoot}",
+        (if (canvasFamily == CanvasFamily.RenderPearl) emptyList() else listOf("integration/shared/minecraft-fabric/canvas/target/blaze3d")) + listOf(
+            "integration/shared/minecraft-fabric/canvas/common",
+            if (canvasFamily == CanvasFamily.RenderPearl) "integration/shared/minecraft-fabric/canvas/window/sdl" else "integration/shared/minecraft-fabric/canvas/window/glfw",
+            "integration/shared/minecraft-fabric/canvas/${canvasFamily.testSource}",
+            "integration/shared/minecraft-fabric/canvas/extraction/${canvasTestExtraction.sourceRoot}",
             when (canvasFamily) {
-                CanvasFamily.GlLegacy, CanvasFamily.GlModern, CanvasFamily.Gpu125 -> "integration/minecraft-fabric-canvas-consumer-flush"
-                CanvasFamily.Gpu126, CanvasFamily.Gpu1211, CanvasFamily.Gpu261 -> "integration/minecraft-fabric-canvas-consumer-buffer"
-                CanvasFamily.Gpu262, CanvasFamily.Gpu263 -> "integration/minecraft-fabric-canvas-consumer-empty"
+                CanvasFamily.OpenGlPlatformBuffers, CanvasFamily.OpenGlBuffers, CanvasFamily.Blaze3dDirectTextures -> "integration/shared/minecraft-fabric/canvas/consumption/flush"
+                CanvasFamily.Blaze3dTextureViews, CanvasFamily.Blaze3dSamplers, CanvasFamily.Blaze3dGuiExtractor -> "integration/shared/minecraft-fabric/canvas/consumption/buffer-source"
+                CanvasFamily.Blaze3dBindGroups, CanvasFamily.RenderPearl -> "integration/shared/minecraft-fabric/canvas/consumption/vertex-buffer"
             },
         )
 
     /** Native HUD extraction signatures verified from the exact client archives. */
     enum class UiFamily(val sourceRoot: String) {
-        Float("float"), Delta("delta"), ExtractGui("extract-gui"), ExtractHud("extract-hud"),
+        Float("float-delta"), Delta("delta-tracker"), ExtractGui("gui-extractor"), ExtractHud("hud-extractor"),
     }
 
     /** Verified native API families, selected explicitly for every supported Minecraft artifact. */
     enum class CanvasFamily(val testSource: String, vararg val sourceRoots: String) {
-        GlLegacy("gl", "gl", "gl-legacy", "gui", "consumer-flush", "release-immediate"),
-        GlModern("gl", "gl", "gl-modern", "gui", "consumer-flush", "release-immediate"),
-        Gpu125("gpu125", "gpu", "gpu125", "gui", "consumer-flush", "release-immediate"),
-        Gpu126("gpu126", "gpu", "gpu126", "gui", "consumer-buffer", "discard-mapped", "release-immediate"),
-        Gpu1211("gpu126", "gpu", "gpu1211", "gpu-sampler", "gui", "consumer-buffer", "discard-mapped", "release-immediate"),
-        Gpu261("gpu126", "gpu", "gpu1211", "gpu-sampler", "extractor", "consumer-buffer", "discard-unobfuscated", "release-immediate", "frame"),
-        Gpu262("gpu262", "gpu", "gpu262", "gpu-sampler", "extractor", "consumer-empty", "discard-unobfuscated", "frame"),
-        Gpu263("gpu263", "gpu263", "consumer-empty", "discard-unobfuscated", "frame"),
+        OpenGlPlatformBuffers("opengl/common", "opengl/common", "opengl/platform-buffer-allocation", "drawing/gui-graphics", "consumption/flush", "lifecycle/immediate-release"),
+        OpenGlBuffers("opengl/common", "opengl/common", "opengl/buffer-allocation", "drawing/gui-graphics", "consumption/flush", "lifecycle/immediate-release"),
+        Blaze3dDirectTextures("blaze3d/direct-textures", "blaze3d/common", "blaze3d/direct-textures", "drawing/gui-graphics", "consumption/flush", "lifecycle/immediate-release"),
+        Blaze3dTextureViews("blaze3d/texture-views", "blaze3d/common", "blaze3d/texture-views", "drawing/gui-graphics", "consumption/buffer-source", "discard/gui-graphics", "lifecycle/immediate-release"),
+        Blaze3dSamplers("blaze3d/texture-views", "blaze3d/common", "blaze3d/samplers", "blaze3d/sampler-textures", "drawing/gui-graphics", "consumption/buffer-source", "discard/gui-graphics", "lifecycle/immediate-release"),
+        Blaze3dGuiExtractor("blaze3d/texture-views", "blaze3d/common", "blaze3d/samplers", "blaze3d/sampler-textures", "drawing/gui-extractor", "consumption/buffer-source", "discard/gui-extractor", "lifecycle/immediate-release", "lifecycle/frame"),
+        Blaze3dBindGroups("blaze3d/bind-groups", "blaze3d/common", "blaze3d/bind-groups", "blaze3d/sampler-textures", "drawing/gui-extractor", "consumption/vertex-buffer", "discard/gui-extractor", "lifecycle/frame"),
+        RenderPearl("renderpearl", "renderpearl", "consumption/vertex-buffer", "discard/gui-extractor", "lifecycle/frame"),
     }
 
     /** Verified test-only native GUI constructor and traversal contracts, independent of the GPU driver family. */
     enum class CanvasTestExtraction(val sourceRoot: String) {
         Flush("flush"),
-        BufferedLayered("buffer-layered"),
-        Buffered("buffer"),
-        BufferedPointer("buffer-pointer"),
-        Unobfuscated("unobfuscated"),
+        BufferedLayered("layered-buffer-source"),
+        Buffered("buffer-source"),
+        BufferedPointer("pointer-buffer-source"),
+        GuiExtractor("gui-extractor"),
     }
 
     /** Native custom-payload families verified against their exact mapped client archives. */
@@ -154,9 +154,9 @@ private data class MinecraftFabricTarget(
     }
 
     enum class RemoteNetworkFamily(val sourceRoot: String) {
-        Legacy("legacy"),
-        Payload("payload"),
-        Stream("stream"),
+        IdentifierBuffer("identifier-buffer"),
+        CustomPayload("custom-payload"),
+        StreamCodec("stream-codec"),
     }
 }
 
@@ -169,321 +169,321 @@ private val fabricLoaderVersion = libs.versions.fabric.loader.get()
 private val fabricMixinDependency = libs.fabric.mixin
 private val canvasMixinDependency = libs.fabric.mixin
 private val canvasMixinExtrasDependency = libs.mixin.extras
-val sharedLegacyRuntimeSourceLinks =
+val guiGraphicsRuntimeSourceLinks =
     listOf(
-        "runtime/minecraft-fabric-1.21-legacy",
-        "runtime/minecraft-fabric-shared",
+        "runtime/shared/minecraft-fabric/input/gui-graphics", "runtime/shared/minecraft-fabric/rendering/gui-graphics", "runtime/shared/minecraft-fabric/resources/gui-graphics", "runtime/shared/minecraft-fabric/screen/gui-graphics",
+        "runtime/shared/minecraft-fabric/canvas/common", "runtime/shared/minecraft-fabric/input/common", "runtime/shared/minecraft-fabric/lifecycle/common", "runtime/shared/minecraft-fabric/rendering/common", "runtime/shared/minecraft-fabric/resources/common", "runtime/shared/minecraft-fabric/screen/common", "runtime/shared/minecraft-fabric/transport/common",
     )
 private val minecraftFabricTargets =
     listOf(
         MinecraftFabricTarget(
             version = libs.versions.minecraft120.get(),
             uiFamily = MinecraftFabricTarget.UiFamily.Float,
-            remoteNetworkFamily = MinecraftFabricTarget.RemoteNetworkFamily.Legacy,
-            canvasFamily = MinecraftFabricTarget.CanvasFamily.GlLegacy,
+            remoteNetworkFamily = MinecraftFabricTarget.RemoteNetworkFamily.IdentifierBuffer,
+            canvasFamily = MinecraftFabricTarget.CanvasFamily.OpenGlPlatformBuffers,
             javaVersion = baselineJavaVersion,
             remapped = true,
             sourceLinkPaths =
                 listOf(
                     "runtime/minecraft-fabric-1.20",
                     "runtime/minecraft-fabric-1.20.1",
-                    "runtime/minecraft-fabric-1.21.5-legacy",
-                ) + sharedLegacyRuntimeSourceLinks,
+                    "runtime/shared/minecraft-fabric/rendering/render-type",
+                ) + guiGraphicsRuntimeSourceLinks,
         ),
         MinecraftFabricTarget(
             version = libs.versions.minecraft1201.get(),
             uiFamily = MinecraftFabricTarget.UiFamily.Float,
-            remoteNetworkFamily = MinecraftFabricTarget.RemoteNetworkFamily.Legacy,
-            canvasFamily = MinecraftFabricTarget.CanvasFamily.GlLegacy,
+            remoteNetworkFamily = MinecraftFabricTarget.RemoteNetworkFamily.IdentifierBuffer,
+            canvasFamily = MinecraftFabricTarget.CanvasFamily.OpenGlPlatformBuffers,
             javaVersion = baselineJavaVersion,
             remapped = true,
             sourceLinkPaths =
                 listOf(
                     "runtime/minecraft-fabric-1.20.1",
-                    "runtime/minecraft-fabric-1.21.5-legacy",
-                ) + sharedLegacyRuntimeSourceLinks,
+                    "runtime/shared/minecraft-fabric/rendering/render-type",
+                ) + guiGraphicsRuntimeSourceLinks,
         ),
         MinecraftFabricTarget(
             version = libs.versions.minecraft1202.get(),
             uiFamily = MinecraftFabricTarget.UiFamily.Float,
-            remoteNetworkFamily = MinecraftFabricTarget.RemoteNetworkFamily.Payload,
-            canvasFamily = MinecraftFabricTarget.CanvasFamily.GlLegacy,
+            remoteNetworkFamily = MinecraftFabricTarget.RemoteNetworkFamily.CustomPayload,
+            canvasFamily = MinecraftFabricTarget.CanvasFamily.OpenGlPlatformBuffers,
             javaVersion = baselineJavaVersion,
             remapped = true,
             sourceLinkPaths =
                 listOf(
                     "runtime/minecraft-fabric-1.20.2",
                     "runtime/minecraft-fabric-1.20.4",
-                    "runtime/minecraft-fabric-1.21.5-legacy",
-                    "runtime/minecraft-fabric-1.21.8-legacy",
-                ) + sharedLegacyRuntimeSourceLinks,
+                    "runtime/shared/minecraft-fabric/rendering/render-type",
+                    "runtime/shared/minecraft-fabric/input/primitive-callbacks", "runtime/shared/minecraft-fabric/resources/primitive-callbacks", "runtime/shared/minecraft-fabric/screen/primitive-callbacks",
+                ) + guiGraphicsRuntimeSourceLinks,
         ),
         MinecraftFabricTarget(
             version = libs.versions.minecraft1203.get(),
             uiFamily = MinecraftFabricTarget.UiFamily.Float,
             paperDistribution = MinecraftFabricTarget.PaperDistribution.Unavailable,
-            remoteNetworkFamily = MinecraftFabricTarget.RemoteNetworkFamily.Payload,
-            canvasFamily = MinecraftFabricTarget.CanvasFamily.GlLegacy,
+            remoteNetworkFamily = MinecraftFabricTarget.RemoteNetworkFamily.CustomPayload,
+            canvasFamily = MinecraftFabricTarget.CanvasFamily.OpenGlPlatformBuffers,
             javaVersion = baselineJavaVersion,
             remapped = true,
             sourceLinkPaths =
                 listOf(
                     "runtime/minecraft-fabric-1.20.3",
                     "runtime/minecraft-fabric-1.20.4",
-                    "runtime/minecraft-fabric-1.21.5-legacy",
-                    "runtime/minecraft-fabric-1.21.8-legacy",
-                ) + sharedLegacyRuntimeSourceLinks,
+                    "runtime/shared/minecraft-fabric/rendering/render-type",
+                    "runtime/shared/minecraft-fabric/input/primitive-callbacks", "runtime/shared/minecraft-fabric/resources/primitive-callbacks", "runtime/shared/minecraft-fabric/screen/primitive-callbacks",
+                ) + guiGraphicsRuntimeSourceLinks,
         ),
         MinecraftFabricTarget(
             version = libs.versions.minecraft1204.get(),
             uiFamily = MinecraftFabricTarget.UiFamily.Float,
-            remoteNetworkFamily = MinecraftFabricTarget.RemoteNetworkFamily.Payload,
-            canvasFamily = MinecraftFabricTarget.CanvasFamily.GlLegacy,
+            remoteNetworkFamily = MinecraftFabricTarget.RemoteNetworkFamily.CustomPayload,
+            canvasFamily = MinecraftFabricTarget.CanvasFamily.OpenGlPlatformBuffers,
             javaVersion = baselineJavaVersion,
             remapped = true,
             sourceLinkPaths =
                 listOf(
                     "runtime/minecraft-fabric-1.20.4",
-                    "runtime/minecraft-fabric-1.21.5-legacy",
-                    "runtime/minecraft-fabric-1.21.8-legacy",
-                ) + sharedLegacyRuntimeSourceLinks,
+                    "runtime/shared/minecraft-fabric/rendering/render-type",
+                    "runtime/shared/minecraft-fabric/input/primitive-callbacks", "runtime/shared/minecraft-fabric/resources/primitive-callbacks", "runtime/shared/minecraft-fabric/screen/primitive-callbacks",
+                ) + guiGraphicsRuntimeSourceLinks,
         ),
         MinecraftFabricTarget(
             version = libs.versions.minecraft1205.get(),
             uiFamily = MinecraftFabricTarget.UiFamily.Float,
-            canvasFamily = MinecraftFabricTarget.CanvasFamily.GlLegacy,
+            canvasFamily = MinecraftFabricTarget.CanvasFamily.OpenGlPlatformBuffers,
             javaVersion = minecraftJava21Version,
             remapped = true,
             sourceLinkPaths =
                 listOf(
                     "runtime/minecraft-fabric-1.20.5",
-                    "runtime/minecraft-fabric-1.21.3-legacy",
-                    "runtime/minecraft-fabric-1.21.5-legacy",
-                    "runtime/minecraft-fabric-1.21.8-legacy",
-                ) + sharedLegacyRuntimeSourceLinks,
+                    "runtime/shared/minecraft-fabric/resources/direct-skin-result",
+                    "runtime/shared/minecraft-fabric/rendering/render-type",
+                    "runtime/shared/minecraft-fabric/input/primitive-callbacks", "runtime/shared/minecraft-fabric/resources/primitive-callbacks", "runtime/shared/minecraft-fabric/screen/primitive-callbacks",
+                ) + guiGraphicsRuntimeSourceLinks,
         ),
         MinecraftFabricTarget(
             version = libs.versions.minecraft1206.get(),
             uiFamily = MinecraftFabricTarget.UiFamily.Float,
-            canvasFamily = MinecraftFabricTarget.CanvasFamily.GlLegacy,
+            canvasFamily = MinecraftFabricTarget.CanvasFamily.OpenGlPlatformBuffers,
             javaVersion = minecraftJava21Version,
             remapped = true,
             sourceLinkPaths =
                 listOf(
                     "runtime/minecraft-fabric-1.20.6",
-                    "runtime/minecraft-fabric-1.21.3-legacy",
-                    "runtime/minecraft-fabric-1.21.5-legacy",
-                    "runtime/minecraft-fabric-1.21.8-legacy",
-                ) + sharedLegacyRuntimeSourceLinks,
+                    "runtime/shared/minecraft-fabric/resources/direct-skin-result",
+                    "runtime/shared/minecraft-fabric/rendering/render-type",
+                    "runtime/shared/minecraft-fabric/input/primitive-callbacks", "runtime/shared/minecraft-fabric/resources/primitive-callbacks", "runtime/shared/minecraft-fabric/screen/primitive-callbacks",
+                ) + guiGraphicsRuntimeSourceLinks,
         ),
         MinecraftFabricTarget(
             version = libs.versions.minecraft121.get(),
             uiFamily = MinecraftFabricTarget.UiFamily.Delta,
-            canvasFamily = MinecraftFabricTarget.CanvasFamily.GlLegacy,
+            canvasFamily = MinecraftFabricTarget.CanvasFamily.OpenGlPlatformBuffers,
             javaVersion = minecraftJava21Version,
             remapped = true,
             sourceLinkPaths =
                 listOf(
                     "runtime/minecraft-fabric-1.21",
-                    "runtime/minecraft-fabric-1.21.3-legacy",
-                    "runtime/minecraft-fabric-1.21.5-legacy",
-                    "runtime/minecraft-fabric-1.21.8-legacy",
-                ) + sharedLegacyRuntimeSourceLinks,
+                    "runtime/shared/minecraft-fabric/resources/direct-skin-result",
+                    "runtime/shared/minecraft-fabric/rendering/render-type",
+                    "runtime/shared/minecraft-fabric/input/primitive-callbacks", "runtime/shared/minecraft-fabric/resources/primitive-callbacks", "runtime/shared/minecraft-fabric/screen/primitive-callbacks",
+                ) + guiGraphicsRuntimeSourceLinks,
         ),
         MinecraftFabricTarget(
             version = libs.versions.minecraft1211.get(),
             uiFamily = MinecraftFabricTarget.UiFamily.Delta,
-            canvasFamily = MinecraftFabricTarget.CanvasFamily.GlLegacy,
+            canvasFamily = MinecraftFabricTarget.CanvasFamily.OpenGlPlatformBuffers,
             javaVersion = minecraftJava21Version,
             remapped = true,
             sourceLinkPaths =
                 listOf(
                     "runtime/minecraft-fabric-1.21.1",
-                    "runtime/minecraft-fabric-1.21.3-legacy",
-                    "runtime/minecraft-fabric-1.21.5-legacy",
-                    "runtime/minecraft-fabric-1.21.8-legacy",
-                ) + sharedLegacyRuntimeSourceLinks,
+                    "runtime/shared/minecraft-fabric/resources/direct-skin-result",
+                    "runtime/shared/minecraft-fabric/rendering/render-type",
+                    "runtime/shared/minecraft-fabric/input/primitive-callbacks", "runtime/shared/minecraft-fabric/resources/primitive-callbacks", "runtime/shared/minecraft-fabric/screen/primitive-callbacks",
+                ) + guiGraphicsRuntimeSourceLinks,
         ),
         MinecraftFabricTarget(
             version = libs.versions.minecraft1212.get(),
             uiFamily = MinecraftFabricTarget.UiFamily.Delta,
             paperDistribution = MinecraftFabricTarget.PaperDistribution.Unavailable,
-            canvasFamily = MinecraftFabricTarget.CanvasFamily.GlModern,
+            canvasFamily = MinecraftFabricTarget.CanvasFamily.OpenGlBuffers,
             javaVersion = minecraftJava21Version,
             remapped = true,
             sourceLinkPaths =
                 listOf(
                     "runtime/minecraft-fabric-1.21.2",
-                    "runtime/minecraft-fabric-1.21.3-legacy",
-                    "runtime/minecraft-fabric-1.21.5-legacy",
-                    "runtime/minecraft-fabric-1.21.8-legacy",
-                ) + sharedLegacyRuntimeSourceLinks,
+                    "runtime/shared/minecraft-fabric/resources/direct-skin-result",
+                    "runtime/shared/minecraft-fabric/rendering/render-type",
+                    "runtime/shared/minecraft-fabric/input/primitive-callbacks", "runtime/shared/minecraft-fabric/resources/primitive-callbacks", "runtime/shared/minecraft-fabric/screen/primitive-callbacks",
+                ) + guiGraphicsRuntimeSourceLinks,
         ),
         MinecraftFabricTarget(
             version = libs.versions.minecraft1213.get(),
             uiFamily = MinecraftFabricTarget.UiFamily.Delta,
-            canvasFamily = MinecraftFabricTarget.CanvasFamily.GlModern,
+            canvasFamily = MinecraftFabricTarget.CanvasFamily.OpenGlBuffers,
             javaVersion = minecraftJava21Version,
             remapped = true,
             sourceLinkPaths =
                 listOf(
                     "runtime/minecraft-fabric-1.21.3",
-                    "runtime/minecraft-fabric-1.21.3-legacy",
-                    "runtime/minecraft-fabric-1.21.5-legacy",
-                    "runtime/minecraft-fabric-1.21.8-legacy",
-                ) + sharedLegacyRuntimeSourceLinks,
+                    "runtime/shared/minecraft-fabric/resources/direct-skin-result",
+                    "runtime/shared/minecraft-fabric/rendering/render-type",
+                    "runtime/shared/minecraft-fabric/input/primitive-callbacks", "runtime/shared/minecraft-fabric/resources/primitive-callbacks", "runtime/shared/minecraft-fabric/screen/primitive-callbacks",
+                ) + guiGraphicsRuntimeSourceLinks,
         ),
         MinecraftFabricTarget(
             version = libs.versions.minecraft1214.get(),
             uiFamily = MinecraftFabricTarget.UiFamily.Delta,
-            canvasFamily = MinecraftFabricTarget.CanvasFamily.GlModern,
+            canvasFamily = MinecraftFabricTarget.CanvasFamily.OpenGlBuffers,
             javaVersion = minecraftJava21Version,
             remapped = true,
             sourceLinkPaths =
                 listOf(
                     "runtime/minecraft-fabric-1.21.4",
-                    "runtime/minecraft-fabric-1.21.5-legacy",
-                    "runtime/minecraft-fabric-1.21.8-legacy",
-                ) + sharedLegacyRuntimeSourceLinks,
+                    "runtime/shared/minecraft-fabric/rendering/render-type",
+                    "runtime/shared/minecraft-fabric/input/primitive-callbacks", "runtime/shared/minecraft-fabric/resources/primitive-callbacks", "runtime/shared/minecraft-fabric/screen/primitive-callbacks",
+                ) + guiGraphicsRuntimeSourceLinks,
         ),
         MinecraftFabricTarget(
             version = libs.versions.minecraft1215.get(),
             uiFamily = MinecraftFabricTarget.UiFamily.Delta,
-            canvasFamily = MinecraftFabricTarget.CanvasFamily.Gpu125,
+            canvasFamily = MinecraftFabricTarget.CanvasFamily.Blaze3dDirectTextures,
             javaVersion = minecraftJava21Version,
             remapped = true,
             sourceLinkPaths =
                 listOf(
                     "runtime/minecraft-fabric-1.21.5",
-                    "runtime/minecraft-fabric-1.21.5-legacy",
-                    "runtime/minecraft-fabric-1.21.8-legacy",
-                ) + sharedLegacyRuntimeSourceLinks,
+                    "runtime/shared/minecraft-fabric/rendering/render-type",
+                    "runtime/shared/minecraft-fabric/input/primitive-callbacks", "runtime/shared/minecraft-fabric/resources/primitive-callbacks", "runtime/shared/minecraft-fabric/screen/primitive-callbacks",
+                ) + guiGraphicsRuntimeSourceLinks,
         ),
         MinecraftFabricTarget(
             version = libs.versions.minecraft1216.get(),
             uiFamily = MinecraftFabricTarget.UiFamily.Delta,
-            canvasFamily = MinecraftFabricTarget.CanvasFamily.Gpu126,
+            canvasFamily = MinecraftFabricTarget.CanvasFamily.Blaze3dTextureViews,
             canvasTestExtraction = MinecraftFabricTarget.CanvasTestExtraction.BufferedLayered,
             javaVersion = minecraftJava21Version,
             remapped = true,
             sourceLinkPaths =
                 listOf(
                     "runtime/minecraft-fabric-1.21.6",
-                    "runtime/minecraft-fabric-1.21.6-legacy",
-                    "runtime/minecraft-fabric-1.21.8-legacy",
-                ) + sharedLegacyRuntimeSourceLinks,
+                    "runtime/shared/minecraft-fabric/rendering/render-pipeline",
+                    "runtime/shared/minecraft-fabric/input/primitive-callbacks", "runtime/shared/minecraft-fabric/resources/primitive-callbacks", "runtime/shared/minecraft-fabric/screen/primitive-callbacks",
+                ) + guiGraphicsRuntimeSourceLinks,
         ),
         MinecraftFabricTarget(
             version = libs.versions.minecraft1217.get(),
             uiFamily = MinecraftFabricTarget.UiFamily.Delta,
-            canvasFamily = MinecraftFabricTarget.CanvasFamily.Gpu126,
+            canvasFamily = MinecraftFabricTarget.CanvasFamily.Blaze3dTextureViews,
             canvasTestExtraction = MinecraftFabricTarget.CanvasTestExtraction.BufferedLayered,
             javaVersion = minecraftJava21Version,
             remapped = true,
             sourceLinkPaths =
                 listOf(
                     "runtime/minecraft-fabric-1.21.7",
-                    "runtime/minecraft-fabric-1.21.6-legacy",
-                    "runtime/minecraft-fabric-1.21.8-legacy",
-                ) + sharedLegacyRuntimeSourceLinks,
+                    "runtime/shared/minecraft-fabric/rendering/render-pipeline",
+                    "runtime/shared/minecraft-fabric/input/primitive-callbacks", "runtime/shared/minecraft-fabric/resources/primitive-callbacks", "runtime/shared/minecraft-fabric/screen/primitive-callbacks",
+                ) + guiGraphicsRuntimeSourceLinks,
         ),
         MinecraftFabricTarget(
             version = libs.versions.minecraft1218.get(),
             uiFamily = MinecraftFabricTarget.UiFamily.Delta,
-            canvasFamily = MinecraftFabricTarget.CanvasFamily.Gpu126,
+            canvasFamily = MinecraftFabricTarget.CanvasFamily.Blaze3dTextureViews,
             canvasTestExtraction = MinecraftFabricTarget.CanvasTestExtraction.BufferedLayered,
             javaVersion = minecraftJava21Version,
             remapped = true,
             sourceLinkPaths =
                 listOf(
                     "runtime/minecraft-fabric-1.21.8",
-                    "runtime/minecraft-fabric-1.21.6-legacy",
-                    "runtime/minecraft-fabric-1.21.8-legacy",
-                ) + sharedLegacyRuntimeSourceLinks,
+                    "runtime/shared/minecraft-fabric/rendering/render-pipeline",
+                    "runtime/shared/minecraft-fabric/input/primitive-callbacks", "runtime/shared/minecraft-fabric/resources/primitive-callbacks", "runtime/shared/minecraft-fabric/screen/primitive-callbacks",
+                ) + guiGraphicsRuntimeSourceLinks,
         ),
         MinecraftFabricTarget(
             version = libs.versions.minecraft1219.get(),
             uiFamily = MinecraftFabricTarget.UiFamily.Delta,
-            canvasFamily = MinecraftFabricTarget.CanvasFamily.Gpu126,
+            canvasFamily = MinecraftFabricTarget.CanvasFamily.Blaze3dTextureViews,
             javaVersion = minecraftJava21Version,
             remapped = true,
             sourceLinkPaths =
                 listOf(
                     "runtime/minecraft-fabric-1.21.9",
-                    "runtime/minecraft-fabric-1.21.6-legacy",
-                    "runtime/minecraft-fabric-1.21.9-legacy",
-                ) + sharedLegacyRuntimeSourceLinks,
+                    "runtime/shared/minecraft-fabric/rendering/render-pipeline",
+                    "runtime/shared/minecraft-fabric/input/event-callbacks", "runtime/shared/minecraft-fabric/resources/event-callbacks", "runtime/shared/minecraft-fabric/screen/event-callbacks",
+                ) + guiGraphicsRuntimeSourceLinks,
         ),
         MinecraftFabricTarget(
             version = libs.versions.minecraft12110.get(),
             uiFamily = MinecraftFabricTarget.UiFamily.Delta,
-            canvasFamily = MinecraftFabricTarget.CanvasFamily.Gpu126,
+            canvasFamily = MinecraftFabricTarget.CanvasFamily.Blaze3dTextureViews,
             javaVersion = minecraftJava21Version,
             remapped = true,
             sourceLinkPaths =
                 listOf(
                     "runtime/minecraft-fabric-1.21.10",
-                    "runtime/minecraft-fabric-1.21.6-legacy",
-                    "runtime/minecraft-fabric-1.21.9-legacy",
-                ) + sharedLegacyRuntimeSourceLinks,
+                    "runtime/shared/minecraft-fabric/rendering/render-pipeline",
+                    "runtime/shared/minecraft-fabric/input/event-callbacks", "runtime/shared/minecraft-fabric/resources/event-callbacks", "runtime/shared/minecraft-fabric/screen/event-callbacks",
+                ) + guiGraphicsRuntimeSourceLinks,
         ),
         MinecraftFabricTarget(
             version = libs.versions.minecraft12111.get(),
             uiFamily = MinecraftFabricTarget.UiFamily.Delta,
-            canvasFamily = MinecraftFabricTarget.CanvasFamily.Gpu1211,
+            canvasFamily = MinecraftFabricTarget.CanvasFamily.Blaze3dSamplers,
             javaVersion = minecraftJava21Version,
             remapped = true,
             sourceLinkPaths =
                 listOf(
                     "runtime/minecraft-fabric-1.21.11",
-                    "runtime/minecraft-fabric-1.21.6-legacy",
-                    "runtime/minecraft-fabric-1.21.9-legacy",
-                    "runtime/minecraft-fabric-identifier",
-                ) + sharedLegacyRuntimeSourceLinks,
+                    "runtime/shared/minecraft-fabric/rendering/render-pipeline",
+                    "runtime/shared/minecraft-fabric/input/event-callbacks", "runtime/shared/minecraft-fabric/resources/event-callbacks", "runtime/shared/minecraft-fabric/screen/event-callbacks",
+                    "runtime/shared/minecraft-fabric/resources/identifier",
+                ) + guiGraphicsRuntimeSourceLinks,
         ),
         MinecraftFabricTarget(
             version = libs.versions.minecraft261.get(),
             uiFamily = MinecraftFabricTarget.UiFamily.ExtractGui,
             paperDistribution = MinecraftFabricTarget.PaperDistribution.Unavailable,
-            canvasFamily = MinecraftFabricTarget.CanvasFamily.Gpu261,
+            canvasFamily = MinecraftFabricTarget.CanvasFamily.Blaze3dGuiExtractor,
             javaVersion = minecraftJavaVersion,
             remapped = false,
             sourceLinkPaths =
                 listOf(
                     "runtime/minecraft-fabric-26.1",
-                    "runtime/minecraft-fabric-unobfuscated-glfw",
-                    "runtime/minecraft-fabric-identifier",
-                    "runtime/minecraft-fabric-shared",
-                    "runtime/minecraft-fabric-unobfuscated",
+                    "runtime/shared/minecraft-fabric/input/glfw-observation", "runtime/shared/minecraft-fabric/lifecycle/glfw-observation", "runtime/shared/minecraft-fabric/resources/glfw-observation",
+                    "runtime/shared/minecraft-fabric/resources/identifier",
+                    "runtime/shared/minecraft-fabric/canvas/common", "runtime/shared/minecraft-fabric/input/common", "runtime/shared/minecraft-fabric/lifecycle/common", "runtime/shared/minecraft-fabric/rendering/common", "runtime/shared/minecraft-fabric/resources/common", "runtime/shared/minecraft-fabric/screen/common", "runtime/shared/minecraft-fabric/transport/common",
+                    "runtime/shared/minecraft-fabric/canvas/gui-extractor", "runtime/shared/minecraft-fabric/input/gui-extractor", "runtime/shared/minecraft-fabric/rendering/gui-extractor", "runtime/shared/minecraft-fabric/resources/gui-extractor", "runtime/shared/minecraft-fabric/screen/gui-extractor",
                 ),
         ),
         MinecraftFabricTarget(
             version = libs.versions.minecraft262.get(),
             uiFamily = MinecraftFabricTarget.UiFamily.ExtractHud,
-            canvasFamily = MinecraftFabricTarget.CanvasFamily.Gpu262,
+            canvasFamily = MinecraftFabricTarget.CanvasFamily.Blaze3dBindGroups,
             javaVersion = minecraftJavaVersion,
             remapped = false,
             sourceLinkPaths =
                 listOf(
                     "runtime/minecraft-fabric-26.2",
-                    "runtime/minecraft-fabric-unobfuscated-glfw",
-                    "runtime/minecraft-fabric-identifier",
-                    "runtime/minecraft-fabric-shared",
-                    "runtime/minecraft-fabric-unobfuscated",
+                    "runtime/shared/minecraft-fabric/input/glfw-observation", "runtime/shared/minecraft-fabric/lifecycle/glfw-observation", "runtime/shared/minecraft-fabric/resources/glfw-observation",
+                    "runtime/shared/minecraft-fabric/resources/identifier",
+                    "runtime/shared/minecraft-fabric/canvas/common", "runtime/shared/minecraft-fabric/input/common", "runtime/shared/minecraft-fabric/lifecycle/common", "runtime/shared/minecraft-fabric/rendering/common", "runtime/shared/minecraft-fabric/resources/common", "runtime/shared/minecraft-fabric/screen/common", "runtime/shared/minecraft-fabric/transport/common",
+                    "runtime/shared/minecraft-fabric/canvas/gui-extractor", "runtime/shared/minecraft-fabric/input/gui-extractor", "runtime/shared/minecraft-fabric/rendering/gui-extractor", "runtime/shared/minecraft-fabric/resources/gui-extractor", "runtime/shared/minecraft-fabric/screen/gui-extractor",
                 ),
         ),
         MinecraftFabricTarget(
             version = libs.versions.minecraft263.get(),
             uiFamily = MinecraftFabricTarget.UiFamily.ExtractHud,
-            canvasFamily = MinecraftFabricTarget.CanvasFamily.Gpu263,
+            canvasFamily = MinecraftFabricTarget.CanvasFamily.RenderPearl,
             javaVersion = minecraftJavaVersion,
             remapped = false,
             sourceLinkPaths =
                 listOf(
                     "runtime/minecraft-fabric-26.3",
-                    "runtime/minecraft-fabric-identifier",
-                    "runtime/minecraft-fabric-shared",
-                    "runtime/minecraft-fabric-unobfuscated",
+                    "runtime/shared/minecraft-fabric/resources/identifier",
+                    "runtime/shared/minecraft-fabric/canvas/common", "runtime/shared/minecraft-fabric/input/common", "runtime/shared/minecraft-fabric/lifecycle/common", "runtime/shared/minecraft-fabric/rendering/common", "runtime/shared/minecraft-fabric/resources/common", "runtime/shared/minecraft-fabric/screen/common", "runtime/shared/minecraft-fabric/transport/common",
+                    "runtime/shared/minecraft-fabric/canvas/gui-extractor", "runtime/shared/minecraft-fabric/input/gui-extractor", "runtime/shared/minecraft-fabric/rendering/gui-extractor", "runtime/shared/minecraft-fabric/resources/gui-extractor", "runtime/shared/minecraft-fabric/screen/gui-extractor",
                 ),
         ),
     )
@@ -696,6 +696,135 @@ val checkCompatibilityDocumentation = tasks.register("checkCompatibilityDocument
         }
     }
 }
+
+val sharedSourceDocumentation = layout.projectDirectory.file("docs/development/minecraft-shared-sources.md")
+val sharedSourceMarkdown = providers.provider {
+    val mainSourcesByVersion = minecraftFabricTargets.associate { target ->
+        val runtime = project(target.runtimeProjectPath)
+        target.version to runtime.extensions.getByType<SourceSetContainer>().named("main").get().allSource
+    }
+    val sourcesByVersion = mainSourcesByVersion.mapValues { (_, sources) ->
+        sources.srcDirs
+            .filter { directory -> directory.isDirectory }
+            .map { directory -> rootProject.relativePath(directory).replace('\\', '/').substringBefore("/src/") }
+            .filter { path -> path.startsWith("runtime/shared/minecraft-fabric/") }
+            .distinct()
+            .sorted()
+    }
+    val rootsByRole = sourcesByVersion.values.flatten().distinct()
+        .groupBy { path -> path.removePrefix("runtime/shared/minecraft-fabric/").substringBefore('/') }
+        .mapValues { (role, roots) -> roots.filter { path -> path != "runtime/shared/minecraft-fabric/$role/common" } }
+        .filterValues { roots -> roots.isNotEmpty() }
+        .toSortedMap()
+    val adaptersByPurpose = mapOf(
+        "canvas" to linkedMapOf(
+            "Rendering backend" to listOf(
+                "FabricNativeCanvasDriver",
+                "MinecraftCanvasContext",
+                "FabricNativeCanvasTextureFactory",
+                "FabricNativeCanvasTargetFactory",
+            ),
+            "GUI drawing" to listOf("FabricNativeCanvasDrawing"),
+            "GUI consumption and discard" to listOf("FabricMinecraftCanvasGuiConsumption", "FabricMinecraftCanvasRenderStateAccess"),
+            "Resource lifecycle" to listOf("FabricNativeCanvasDestructionFactory", "FabricMinecraftCanvasRenderFrameMixin"),
+        ),
+        "input" to linkedMapOf(
+            "Inventory key and mouse bindings" to listOf("FabricMinecraftInventoryBridge", "FabricMinecraftKeyBindingBridge"),
+            "Focused keyboard and text input" to listOf("FabricMinecraftFocusedInputMapping"),
+            "Native keyboard and pointer mapping" to listOf("FabricMinecraftKeyMapping", "FabricMinecraftPointerMapping"),
+            "Mouse routing" to listOf("FabricUiMouseMixin"),
+            "Window focus hook" to listOf("FabricMinecraftWindowMixin"),
+        ),
+    )
+    val sourceFilesByVersion = mainSourcesByVersion.mapValues { (_, sources) ->
+        sources.files.filter { file -> file.extension in setOf("java", "kt") }
+    }
+    buildString {
+        appendLine("<!-- Generated by :generateMinecraftSharedSources. Do not edit. -->")
+        appendLine()
+        appendLine("# Minecraft runtime shared sources")
+        appendLine()
+        appendLine("Rows are Minecraft versions; columns are source roots compiled into each runtime's main source set.")
+        appendLine("A check marks a selected root. These are source directories, not separately installed or published libraries.")
+        appendLine("Responsibility-wide `common` roots are omitted; backend-specific roots such as `opengl/common` and `blaze3d/common` remain visible.")
+        appendLine("Tables are grouped by responsibility; labels omit that responsibility under `runtime/shared/minecraft-fabric/` when it matches the section, and retain it for collaborating roots such as `screen/gui-extractor`.")
+        appendLine("Columns follow the first Minecraft version that uses each root, with names breaking ties.")
+        appendLine("Canvas and input are split by purpose: each table compares the source roots providing its named adapters, including versioned source directories.")
+        appendLine("Multiple checks in one row identify roots used together for that purpose.")
+        appendLine("Different purpose tables are combined, not alternatives; one source root can provide several adapters and appear in several tables.")
+        appendLine("Every purpose must resolve to at least one configured source root for every version; generation fails when an implementation is missing from the comparison.")
+        appendLine("See [shared-source ownership](minecraft-versions.md#shared-source-ownership) for naming and compatibility rules.")
+        rootsByRole.forEach { (role, roots) ->
+            appendLine()
+            appendLine("## $role")
+            appendLine()
+            val purposes = adaptersByPurpose[role]
+            val documentedRoots = mutableSetOf<String>()
+            if (purposes != null) {
+                val commonRoot = "runtime/shared/minecraft-fabric/$role/common"
+                check(sourcesByVersion.values.all { selected -> commonRoot in selected }) {
+                    "The $role common support root must be configured for every documented runtime."
+                }
+            }
+            purposes?.forEach { (purpose, adapters) ->
+                val adapterRootsByVersion = sourceFilesByVersion.mapValues { (version, files) ->
+                    val selected = adapters.flatMap { adapter ->
+                        val matches = files.filter { file -> file.nameWithoutExtension == adapter }
+                        check(matches.size <= 1) { "Multiple sources provide $adapter in Minecraft $version." }
+                        matches.map { file -> rootProject.relativePath(file).replace('\\', '/').substringBefore("/src/") }
+                    }.distinct().sorted()
+                    check(selected.isNotEmpty()) { "No configured source provides $purpose in Minecraft $version." }
+                    selected
+                }
+                val adapterRoots = adapterRootsByVersion.values.flatten().distinct()
+                check(adapterRoots.isNotEmpty()) { "No configured source provides $purpose adapters." }
+                documentedRoots.addAll(adapterRoots)
+                appendLine("### $purpose")
+                appendLine()
+                appendLine("Tracks ${adapters.joinToString(", ") { adapter -> "`$adapter`" }} in each runtime's configured main sources.")
+                appendLine()
+                appendLine("| Minecraft | ${adapterRoots.joinToString(" | ") { path -> "[`${path.removePrefix("runtime/shared/minecraft-fabric/$role/").removePrefix("runtime/shared/minecraft-fabric/")}`](../../$path)" }} |")
+                appendLine("| --- | ${adapterRoots.joinToString(" | ") { "---" }} |")
+                adapterRootsByVersion.forEach { (version, selected) ->
+                    appendLine("| $version | ${adapterRoots.joinToString(" | ") { path -> if (path in selected) "✓" else "" }} |")
+                }
+                appendLine()
+            }
+            if (purposes != null) {
+                check(documentedRoots.containsAll(roots)) {
+                    "Shared $role roots are missing from the purpose tables: ${roots - documentedRoots}"
+                }
+            }
+            if (purposes == null) {
+                appendLine("| Minecraft | ${roots.joinToString(" | ") { path -> "[`${path.removePrefix("runtime/shared/minecraft-fabric/$role/")}`](../../$path)" }} |")
+                appendLine("| --- | ${roots.joinToString(" | ") { "---" }} |")
+                sourcesByVersion.forEach { (version, selected) ->
+                    appendLine("| $version | ${roots.joinToString(" | ") { path -> if (path in selected) "✓" else "" }} |")
+                }
+            }
+        }
+    }
+}
+val generateMinecraftSharedSources = tasks.register("generateMinecraftSharedSources") {
+    group = "documentation"
+    description = "Generates the version-by-shared-source matrix from configured runtime source sets."
+    inputs.property("markdown", sharedSourceMarkdown)
+    outputs.file(sharedSourceDocumentation)
+    doLast { sharedSourceDocumentation.asFile.writeText(sharedSourceMarkdown.get()) }
+}
+val checkMinecraftSharedSources = tasks.register("checkMinecraftSharedSources") {
+    group = "verification"
+    description = "Checks that the shared-source matrix matches the configured runtime source sets."
+    inputs.property("markdown", sharedSourceMarkdown)
+    inputs.file(sharedSourceDocumentation)
+    mustRunAfter(generateMinecraftSharedSources)
+    doLast {
+        check(sharedSourceDocumentation.asFile.readText() == sharedSourceMarkdown.get()) {
+            "The shared-source matrix is stale. Run generateMinecraftSharedSources."
+        }
+    }
+}
+tasks.named("check") { dependsOn(checkMinecraftSharedSources) }
 
 val generateDokkaModuleMarkdown =
     tasks.register("generateDokkaModuleMarkdown") {
@@ -1029,7 +1158,7 @@ subprojects {
     minecraftFabricTargets.firstOrNull { target -> path == target.runtimeProjectPath }?.let { target ->
         dependencies.add("compileOnly", canvasMixinDependency)
         dependencies.add("compileOnly", canvasMixinExtrasDependency)
-        val nativeRoots = (target.canvasSourcePaths + target.inputSourcePaths + target.uiInputSourcePath + "runtime/minecraft-fabric-hud-${target.uiFamily.sourceRoot}").map { sourcePath -> rootProject.file("$sourcePath/src/main") }
+        val nativeRoots = (target.canvasSourcePaths + target.inputSourcePaths + target.uiInputSourcePath + "runtime/shared/minecraft-fabric/hud/${target.uiFamily.sourceRoot}").map { sourcePath -> rootProject.file("$sourcePath/src/main") }
         extensions.configure<SourceSetContainer> {
             named("main") {
                 java.srcDirs(nativeRoots.map { sourceRoot -> sourceRoot.resolve("java") })
@@ -1199,35 +1328,35 @@ subprojects {
         // Why: Loom otherwise selects native library upgrades using the Gradle daemon's Java instead of this game's toolchain.
         extensions.extraProperties["fabric.loom.runtimeJavaCompatibilityVersion"] = target.javaVersion
         if (path == target.integrationProjectPath) {
-            val remoteVerification = rootProject.file("integration/minecraft-fabric-remote-verification/src")
+            val remoteVerification = rootProject.file("integration/shared/minecraft-fabric/transport/verification/src")
             val remoteVerificationFamily = remoteVerification.resolve(target.remoteNetworkFamily.sourceRoot)
             extensions.configure<KotlinJvmProjectExtension> {
                 sourceSets.matching { it.name == "gametest" }.configureEach {
-                    kotlin.srcDir(remoteVerification.resolve("gametest/kotlin"))
+                    kotlin.srcDir(rootProject.file("integration/shared/minecraft-fabric/transport/verification/src/gametest/kotlin"))
                     kotlin.srcDir(remoteVerificationFamily.resolve("kotlin"))
-                    if (target.remapped) kotlin.srcDir(remoteVerification.resolve("legacy-scenario/kotlin"))
+                    if (target.remapped) kotlin.srcDir(rootProject.file("integration/shared/minecraft-fabric/transport/verification/src/gui-graphics-scenario/kotlin"))
                 }
             }
             extensions.configure<SourceSetContainer> {
                 matching { it.name == "gametest" }.configureEach {
-                    java.srcDir(remoteVerification.resolve("gametest/java"))
+                    java.srcDir(rootProject.file("integration/shared/minecraft-fabric/transport/verification/src/gametest/java"))
                     java.srcDir(remoteVerificationFamily.resolve("java"))
                     resources.srcDir(remoteVerificationFamily.resolve("resources"))
                 }
             }
             extensions.configure<DetektExtension> {
-                source.from(remoteVerification.resolve("gametest/kotlin"), remoteVerificationFamily.resolve("kotlin"))
-                if (target.remapped) source.from(remoteVerification.resolve("legacy-scenario/kotlin"))
+                source.from(rootProject.file("integration/shared/minecraft-fabric/transport/verification/src/gametest/kotlin"), remoteVerificationFamily.resolve("kotlin"))
+                if (target.remapped) source.from(rootProject.file("integration/shared/minecraft-fabric/transport/verification/src/gui-graphics-scenario/kotlin"))
             }
-            val profileCacheTests = rootProject.file("integration/minecraft-fabric-client-gametest/src/profile-cache/kotlin")
-            val continuousInputTests = rootProject.file("integration/minecraft-fabric-client-gametest/src/continuous-input/kotlin")
-            val renderMonitoringTests = rootProject.file("integration/minecraft-fabric-client-gametest/src/render-monitoring/kotlin")
+            val profileCacheTests = rootProject.file("integration/shared/minecraft-fabric/resources/fabric-client-gametest/src/profile-cache/kotlin")
+            val continuousInputTests = rootProject.file("integration/shared/minecraft-fabric/input/fabric-client-gametest/src/continuous-input/kotlin")
+            val renderMonitoringTests = rootProject.file("integration/shared/minecraft-fabric/scenarios/fabric-client-gametest/src/render-monitoring/kotlin")
             val continuousScrollTests =
                 rootProject.file(
                     if (target.version in legacyScrollTargets) {
-                        "integration/minecraft-fabric-client-gametest/src/continuous-input-legacy-scroll/kotlin"
+                        "integration/shared/minecraft-fabric/input/fabric-client-gametest/src/continuous-input-legacy-scroll/kotlin"
                     } else {
-                        "integration/minecraft-fabric-client-gametest/src/continuous-input-directional-scroll/kotlin"
+                        "integration/shared/minecraft-fabric/input/fabric-client-gametest/src/continuous-input-directional-scroll/kotlin"
                     },
                 )
             extensions.configure<KotlinJvmProjectExtension> {
@@ -1335,14 +1464,13 @@ subprojects {
                     ZipFile(artifact.get().archiveFile.get().asFile).use(toolchainManifest::verify)
                 }
             }
-            val sharedFabricRuntime = rootProject.file("runtime/minecraft-fabric-shared/src/main")
-            val remoteNetworkingRuntime = rootProject.file("runtime/minecraft-fabric-remote-${target.remoteNetworkFamily.sourceRoot}/src/main")
+            val remoteNetworkingRuntime = rootProject.file("runtime/shared/minecraft-fabric/transport/${target.remoteNetworkFamily.sourceRoot}/src/main")
             extensions.configure<KotlinJvmProjectExtension> {
                 sourceSets.named("main") { kotlin.srcDir(remoteNetworkingRuntime.resolve("kotlin")) }
             }
             extensions.configure<SourceSetContainer> {
                 named("main") {
-                    resources.srcDir(sharedFabricRuntime.resolve("resources"))
+                    resources.srcDir(rootProject.file("runtime/shared/minecraft-fabric/lifecycle/common/src/main/resources"))
                     resources.srcDir(remoteNetworkingRuntime.resolve("resources"))
                     java.srcDir(remoteNetworkingRuntime.resolve("java"))
                 }
@@ -1350,11 +1478,11 @@ subprojects {
             extensions.configure<DetektExtension> {
                 source.from(remoteNetworkingRuntime.resolve("kotlin"))
                 source.from(
-                    sharedFabricRuntime.resolve("kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftProfileLifecycle.kt"),
-                    sharedFabricRuntime.resolve("kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricRemoteScreens.kt"),
-                    sharedFabricRuntime.resolve("kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricUiSessions.kt"),
-                    sharedFabricRuntime.resolve("kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricUiInput.kt"),
-                    sharedFabricRuntime.resolve("kotlin/dev/s7a/strata/runtime/minecraft/fabric/mixin"),
+                    rootProject.file("runtime/shared/minecraft-fabric/resources/common/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftProfileLifecycle.kt"),
+                    rootProject.file("runtime/shared/minecraft-fabric/transport/common/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricRemoteScreens.kt"),
+                    rootProject.file("runtime/shared/minecraft-fabric/lifecycle/common/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricUiSessions.kt"),
+                    rootProject.file("runtime/shared/minecraft-fabric/input/common/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricUiInput.kt"),
+                    rootProject.file("runtime/shared/minecraft-fabric/resources/common/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/mixin"),
                 )
             }
         }

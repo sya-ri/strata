@@ -31,6 +31,12 @@ Write English prose with line breaks at semantic boundaries, not a fixed column.
 Advertise only implemented, tested behavior.
 Showcase layout uses structural arrangement; padding of 20 logical pixels or more needs a geometry or native-frame rationale in its source.
 
+## Shared runtime source matrix
+
+Run `./gradlew generateMinecraftSharedSources` after changing shared Fabric source ownership.
+The generated [matrix](minecraft-shared-sources.md) reads each runtime's configured main source directories and groups its version-by-source check tables by responsibility.
+`./gradlew checkMinecraftSharedSources` checks freshness without rewriting the document and participates in `check` and documentation link verification.
+
 ## Headless showcase generation
 
 `integration:docs` renders compiled API-only examples on the CPU without launching Minecraft or creating a GPU context.

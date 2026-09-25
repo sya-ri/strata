@@ -74,7 +74,7 @@ done
 add_project "$valid_root" runtime '2'
 add_project "$valid_root" integration '2'
 add_documentation "$valid_root" '1.7'
-mkdir -p "$valid_root/runtime/minecraft-fabric-shared" "$valid_root/integration/minecraft-fabric-canvas-shared"
+mkdir -p "$valid_root/runtime/shared/minecraft-fabric/lifecycle/common" "$valid_root/integration/shared/minecraft-fabric/canvas/common"
 
 bash "$project_root/gradle/plan-minecraft-ci.sh" "$valid_root" "$valid_root/output"
 matrix_file="$valid_root/output/minecraft-matrix.json"

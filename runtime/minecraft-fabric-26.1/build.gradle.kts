@@ -13,36 +13,67 @@ plugins {
 
 apply(from = rootProject.file("runtime/minecraft-fabric-publication.gradle.kts"))
 
-val sharedRuntime = rootProject.file("runtime/minecraft-fabric-shared/src/main")
-val identifierRuntime = rootProject.file("runtime/minecraft-fabric-identifier/src/main")
-val unobfuscatedRuntime = rootProject.file("runtime/minecraft-fabric-unobfuscated/src/main")
-val sharedTests = rootProject.file("runtime/minecraft-fabric-unobfuscated/src/test")
-
 tasks.withType<Test>().configureEach {
     jvmArgs("--enable-native-access=ALL-UNNAMED")
 }
 
 extensions.configure<SourceSetContainer> {
     named("main") {
-        java.srcDir(sharedRuntime.resolve("java"))
-        java.srcDir(identifierRuntime.resolve("java"))
-        java.srcDir(unobfuscatedRuntime.resolve("java"))
+        java.srcDirs(
+            rootProject.file("runtime/shared/minecraft-fabric/input/common/src/main/java"),
+            rootProject.file("runtime/shared/minecraft-fabric/lifecycle/common/src/main/java"),
+            rootProject.file("runtime/shared/minecraft-fabric/resources/common/src/main/java"),
+            rootProject.file("runtime/shared/minecraft-fabric/screen/common/src/main/java"),
+            rootProject.file("runtime/shared/minecraft-fabric/transport/common/src/main/java"),
+        )
+        java.srcDir(rootProject.file("runtime/shared/minecraft-fabric/resources/identifier/src/main/java"))
+        java.srcDirs(
+            rootProject.file("runtime/shared/minecraft-fabric/input/gui-extractor/src/main/java"),
+            rootProject.file("runtime/shared/minecraft-fabric/screen/gui-extractor/src/main/java"),
+        )
     }
     named("test") {
-        java.srcDir(sharedTests.resolve("java"))
+        java.srcDirs(
+            rootProject.file("runtime/shared/minecraft-fabric/canvas/gui-extractor/src/test/java"),
+            rootProject.file("runtime/shared/minecraft-fabric/input/gui-extractor/src/test/java"),
+            rootProject.file("runtime/shared/minecraft-fabric/rendering/gui-extractor/src/test/java"),
+            rootProject.file("runtime/shared/minecraft-fabric/resources/gui-extractor/src/test/java"),
+            rootProject.file("runtime/shared/minecraft-fabric/screen/gui-extractor/src/test/java"),
+        )
     }
 }
 
 extensions.configure<KotlinJvmProjectExtension> {
     sourceSets.named("main") {
-        kotlin.srcDir(sharedRuntime.resolve("kotlin"))
-        kotlin.srcDir(identifierRuntime.resolve("kotlin"))
-        kotlin.srcDir(unobfuscatedRuntime.resolve("kotlin"))
-        kotlin.srcDir(rootProject.file("runtime/minecraft-fabric-unobfuscated-glfw/src/main/kotlin"))
+        kotlin.srcDirs(
+            rootProject.file("runtime/shared/minecraft-fabric/input/common/src/main/kotlin"),
+            rootProject.file("runtime/shared/minecraft-fabric/lifecycle/common/src/main/kotlin"),
+            rootProject.file("runtime/shared/minecraft-fabric/rendering/common/src/main/kotlin"),
+            rootProject.file("runtime/shared/minecraft-fabric/resources/common/src/main/kotlin"),
+            rootProject.file("runtime/shared/minecraft-fabric/transport/common/src/main/kotlin"),
+        )
+        kotlin.srcDir(rootProject.file("runtime/shared/minecraft-fabric/resources/identifier/src/main/kotlin"))
+        kotlin.srcDirs(
+            rootProject.file("runtime/shared/minecraft-fabric/input/gui-extractor/src/main/kotlin"),
+            rootProject.file("runtime/shared/minecraft-fabric/rendering/gui-extractor/src/main/kotlin"),
+            rootProject.file("runtime/shared/minecraft-fabric/resources/gui-extractor/src/main/kotlin"),
+            rootProject.file("runtime/shared/minecraft-fabric/screen/gui-extractor/src/main/kotlin"),
+        )
+        kotlin.srcDir(rootProject.file("runtime/shared/minecraft-fabric/input/glfw-observation/src/main/kotlin"))
     }
     sourceSets.named("test") {
-        kotlin.srcDir(sharedTests.resolve("kotlin"))
-        kotlin.srcDir(rootProject.file("runtime/minecraft-fabric-unobfuscated-glfw/src/test/kotlin"))
+        kotlin.srcDirs(
+            rootProject.file("runtime/shared/minecraft-fabric/canvas/gui-extractor/src/test/kotlin"),
+            rootProject.file("runtime/shared/minecraft-fabric/input/gui-extractor/src/test/kotlin"),
+            rootProject.file("runtime/shared/minecraft-fabric/rendering/gui-extractor/src/test/kotlin"),
+            rootProject.file("runtime/shared/minecraft-fabric/resources/gui-extractor/src/test/kotlin"),
+            rootProject.file("runtime/shared/minecraft-fabric/screen/gui-extractor/src/test/kotlin"),
+        )
+        kotlin.srcDirs(
+            rootProject.file("runtime/shared/minecraft-fabric/input/glfw-observation/src/test/kotlin"),
+            rootProject.file("runtime/shared/minecraft-fabric/lifecycle/glfw-observation/src/test/kotlin"),
+            rootProject.file("runtime/shared/minecraft-fabric/resources/glfw-observation/src/test/kotlin"),
+        )
     }
 }
 

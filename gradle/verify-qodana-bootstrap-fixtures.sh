@@ -41,11 +41,11 @@ bash "$fixture_root/gradle/prepare-qodana-idea-model.sh"
 [[ $(wc -l < "$fixture_root/gradle-invocations.txt") -eq 1 ]]
 for argument in --no-daemon --no-configure-on-demand \
   --project-prop=strata.completeIdeaModel=true --system-prop=fabric.loom.ci=true \
-  :api:jvmJar :runtime:core:jvmJar :runtime:headless:jar :runtime:minecraft:jar \
+  cleanIdea :api:jvmJar :runtime:core:jvmJar :runtime:headless:jar :runtime:minecraft:jar \
   :runtime:minecraft-fonts-lwjgl:jar classes gametestClasses idea; do
   [[ $(grep -Fxc -- "$argument" "$fixture_root/gradle-arguments.txt") -eq 1 ]]
 done
-[[ $(wc -l < "$fixture_root/gradle-arguments.txt") -eq 12 ]]
+[[ $(wc -l < "$fixture_root/gradle-arguments.txt") -eq 13 ]]
 grep -F 'runtime-minecraft-fabric-1.21.iml' "$fixture_root/.idea/modules.xml" >/dev/null
 grep -F 'integration-minecraft-fabric-1.21.iml' "$fixture_root/.idea/modules.xml" >/dev/null
 grep -F 'jbr-25' "$fixture_root/.idea/misc.xml" >/dev/null

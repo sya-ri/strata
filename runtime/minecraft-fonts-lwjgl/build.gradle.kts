@@ -3,21 +3,19 @@ import org.gradle.api.tasks.SourceSetContainer
 import org.gradle.language.jvm.tasks.ProcessResources
 import org.jetbrains.kotlin.gradle.dsl.KotlinJvmProjectExtension
 
-val sharedFontParity = rootProject.file("integration/minecraft-font-parity/src/gametest")
-
 extensions.configure<DetektExtension> {
-    source.from(sharedFontParity.resolve("kotlin"))
+    source.from(rootProject.file("integration/shared/font-parity/src/gametest/kotlin"))
 }
 
 extensions.configure<KotlinJvmProjectExtension> {
     sourceSets.named("test") {
-        kotlin.srcDir(sharedFontParity.resolve("kotlin"))
+        kotlin.srcDir(rootProject.file("integration/shared/font-parity/src/gametest/kotlin"))
     }
 }
 
 extensions.configure<SourceSetContainer> {
     named("test") {
-        resources.srcDir(sharedFontParity.resolve("resources"))
+        resources.srcDir(rootProject.file("integration/shared/font-parity/src/gametest/resources"))
     }
 }
 
