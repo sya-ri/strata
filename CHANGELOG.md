@@ -3,7 +3,7 @@
 Each version below summarizes the release and links to its detailed changes and upgrade notes.
 Keep all Strata artifacts on the same release version.
 
-## 0.2.0 - Unreleased
+## 0.2.0 - 2026-09-26
 
 Common Screen/HUD sessions and input controls, reactive application state, Paper, Folia, and Velocity UIs with public APIs and lifecycle events, JVM/JavaScript shared foundations, themed browser rendering, typed remote extensions, and Minecraft 26.3 support. Rebuild consumers for session-receiver event callbacks.
 
