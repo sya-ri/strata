@@ -5,6 +5,8 @@
 
 Declarative Minecraft UI with reusable components, caller-owned state, and headless rendering.
 
+[Modrinth](https://modrinth.com/mod/strata-ui) · [Hangar](https://hangar.papermc.io/sya-ri/Strata) · [CurseForge](https://www.curseforge.com/minecraft/mc-mods/strata-ui)
+
 This page documents the development sources; for an installed version, use the documentation at its matching [release tag](https://github.com/sya-ri/strata/releases).
 
 <!-- strata-readme-demo:start -->
