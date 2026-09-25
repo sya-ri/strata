@@ -11,82 +11,82 @@ See [shared-source ownership](minecraft-versions.md#shared-source-ownership) for
 
 | Minecraft | [`blaze3d/bind-groups`](../../runtime/shared/minecraft-fabric/canvas/blaze3d/bind-groups) | [`blaze3d/common`](../../runtime/shared/minecraft-fabric/canvas/blaze3d/common) | [`blaze3d/direct-textures`](../../runtime/shared/minecraft-fabric/canvas/blaze3d/direct-textures) | [`blaze3d/sampler-textures`](../../runtime/shared/minecraft-fabric/canvas/blaze3d/sampler-textures) | [`blaze3d/samplers`](../../runtime/shared/minecraft-fabric/canvas/blaze3d/samplers) | [`blaze3d/texture-views`](../../runtime/shared/minecraft-fabric/canvas/blaze3d/texture-views) | [`common`](../../runtime/shared/minecraft-fabric/canvas/common) | [`consumption/buffer-source`](../../runtime/shared/minecraft-fabric/canvas/consumption/buffer-source) | [`consumption/flush`](../../runtime/shared/minecraft-fabric/canvas/consumption/flush) | [`consumption/vertex-buffer`](../../runtime/shared/minecraft-fabric/canvas/consumption/vertex-buffer) | [`discard/gui-extractor`](../../runtime/shared/minecraft-fabric/canvas/discard/gui-extractor) | [`discard/gui-graphics`](../../runtime/shared/minecraft-fabric/canvas/discard/gui-graphics) | [`drawing/gui-extractor`](../../runtime/shared/minecraft-fabric/canvas/drawing/gui-extractor) | [`drawing/gui-graphics`](../../runtime/shared/minecraft-fabric/canvas/drawing/gui-graphics) | [`lifecycle/frame`](../../runtime/shared/minecraft-fabric/canvas/lifecycle/frame) | [`lifecycle/immediate-release`](../../runtime/shared/minecraft-fabric/canvas/lifecycle/immediate-release) | [`opengl/buffer-allocation`](../../runtime/shared/minecraft-fabric/canvas/opengl/buffer-allocation) | [`opengl/common`](../../runtime/shared/minecraft-fabric/canvas/opengl/common) | [`opengl/platform-buffer-allocation`](../../runtime/shared/minecraft-fabric/canvas/opengl/platform-buffer-allocation) | [`renderpearl`](../../runtime/shared/minecraft-fabric/canvas/renderpearl) |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| 1.20 | — | — | — | — | — | — | ✓ | — | ✓ | — | — | — | — | ✓ | — | ✓ | — | ✓ | ✓ | — |
-| 1.20.1 | — | — | — | — | — | — | ✓ | — | ✓ | — | — | — | — | ✓ | — | ✓ | — | ✓ | ✓ | — |
-| 1.20.2 | — | — | — | — | — | — | ✓ | — | ✓ | — | — | — | — | ✓ | — | ✓ | — | ✓ | ✓ | — |
-| 1.20.3 | — | — | — | — | — | — | ✓ | — | ✓ | — | — | — | — | ✓ | — | ✓ | — | ✓ | ✓ | — |
-| 1.20.4 | — | — | — | — | — | — | ✓ | — | ✓ | — | — | — | — | ✓ | — | ✓ | — | ✓ | ✓ | — |
-| 1.20.5 | — | — | — | — | — | — | ✓ | — | ✓ | — | — | — | — | ✓ | — | ✓ | — | ✓ | ✓ | — |
-| 1.20.6 | — | — | — | — | — | — | ✓ | — | ✓ | — | — | — | — | ✓ | — | ✓ | — | ✓ | ✓ | — |
-| 1.21 | — | — | — | — | — | — | ✓ | — | ✓ | — | — | — | — | ✓ | — | ✓ | — | ✓ | ✓ | — |
-| 1.21.1 | — | — | — | — | — | — | ✓ | — | ✓ | — | — | — | — | ✓ | — | ✓ | — | ✓ | ✓ | — |
-| 1.21.2 | — | — | — | — | — | — | ✓ | — | ✓ | — | — | — | — | ✓ | — | ✓ | ✓ | ✓ | — | — |
-| 1.21.3 | — | — | — | — | — | — | ✓ | — | ✓ | — | — | — | — | ✓ | — | ✓ | ✓ | ✓ | — | — |
-| 1.21.4 | — | — | — | — | — | — | ✓ | — | ✓ | — | — | — | — | ✓ | — | ✓ | ✓ | ✓ | — | — |
-| 1.21.5 | — | ✓ | ✓ | — | — | — | ✓ | — | ✓ | — | — | — | — | ✓ | — | ✓ | — | — | — | — |
-| 1.21.6 | — | ✓ | — | — | — | ✓ | ✓ | ✓ | — | — | — | ✓ | — | ✓ | — | ✓ | — | — | — | — |
-| 1.21.7 | — | ✓ | — | — | — | ✓ | ✓ | ✓ | — | — | — | ✓ | — | ✓ | — | ✓ | — | — | — | — |
-| 1.21.8 | — | ✓ | — | — | — | ✓ | ✓ | ✓ | — | — | — | ✓ | — | ✓ | — | ✓ | — | — | — | — |
-| 1.21.9 | — | ✓ | — | — | — | ✓ | ✓ | ✓ | — | — | — | ✓ | — | ✓ | — | ✓ | — | — | — | — |
-| 1.21.10 | — | ✓ | — | — | — | ✓ | ✓ | ✓ | — | — | — | ✓ | — | ✓ | — | ✓ | — | — | — | — |
-| 1.21.11 | — | ✓ | — | ✓ | ✓ | — | ✓ | ✓ | — | — | — | ✓ | — | ✓ | — | ✓ | — | — | — | — |
-| 26.1 | — | ✓ | — | ✓ | ✓ | — | ✓ | ✓ | — | — | ✓ | — | ✓ | — | ✓ | ✓ | — | — | — | — |
-| 26.2 | ✓ | ✓ | — | ✓ | — | — | ✓ | — | — | ✓ | ✓ | — | ✓ | — | ✓ | — | — | — | — | — |
-| 26.3 | — | — | — | — | — | — | ✓ | — | — | ✓ | ✓ | — | — | — | ✓ | — | — | — | — | ✓ |
+| 1.20 |  |  |  |  |  |  | ✓ |  | ✓ |  |  |  |  | ✓ |  | ✓ |  | ✓ | ✓ |  |
+| 1.20.1 |  |  |  |  |  |  | ✓ |  | ✓ |  |  |  |  | ✓ |  | ✓ |  | ✓ | ✓ |  |
+| 1.20.2 |  |  |  |  |  |  | ✓ |  | ✓ |  |  |  |  | ✓ |  | ✓ |  | ✓ | ✓ |  |
+| 1.20.3 |  |  |  |  |  |  | ✓ |  | ✓ |  |  |  |  | ✓ |  | ✓ |  | ✓ | ✓ |  |
+| 1.20.4 |  |  |  |  |  |  | ✓ |  | ✓ |  |  |  |  | ✓ |  | ✓ |  | ✓ | ✓ |  |
+| 1.20.5 |  |  |  |  |  |  | ✓ |  | ✓ |  |  |  |  | ✓ |  | ✓ |  | ✓ | ✓ |  |
+| 1.20.6 |  |  |  |  |  |  | ✓ |  | ✓ |  |  |  |  | ✓ |  | ✓ |  | ✓ | ✓ |  |
+| 1.21 |  |  |  |  |  |  | ✓ |  | ✓ |  |  |  |  | ✓ |  | ✓ |  | ✓ | ✓ |  |
+| 1.21.1 |  |  |  |  |  |  | ✓ |  | ✓ |  |  |  |  | ✓ |  | ✓ |  | ✓ | ✓ |  |
+| 1.21.2 |  |  |  |  |  |  | ✓ |  | ✓ |  |  |  |  | ✓ |  | ✓ | ✓ | ✓ |  |  |
+| 1.21.3 |  |  |  |  |  |  | ✓ |  | ✓ |  |  |  |  | ✓ |  | ✓ | ✓ | ✓ |  |  |
+| 1.21.4 |  |  |  |  |  |  | ✓ |  | ✓ |  |  |  |  | ✓ |  | ✓ | ✓ | ✓ |  |  |
+| 1.21.5 |  | ✓ | ✓ |  |  |  | ✓ |  | ✓ |  |  |  |  | ✓ |  | ✓ |  |  |  |  |
+| 1.21.6 |  | ✓ |  |  |  | ✓ | ✓ | ✓ |  |  |  | ✓ |  | ✓ |  | ✓ |  |  |  |  |
+| 1.21.7 |  | ✓ |  |  |  | ✓ | ✓ | ✓ |  |  |  | ✓ |  | ✓ |  | ✓ |  |  |  |  |
+| 1.21.8 |  | ✓ |  |  |  | ✓ | ✓ | ✓ |  |  |  | ✓ |  | ✓ |  | ✓ |  |  |  |  |
+| 1.21.9 |  | ✓ |  |  |  | ✓ | ✓ | ✓ |  |  |  | ✓ |  | ✓ |  | ✓ |  |  |  |  |
+| 1.21.10 |  | ✓ |  |  |  | ✓ | ✓ | ✓ |  |  |  | ✓ |  | ✓ |  | ✓ |  |  |  |  |
+| 1.21.11 |  | ✓ |  | ✓ | ✓ |  | ✓ | ✓ |  |  |  | ✓ |  | ✓ |  | ✓ |  |  |  |  |
+| 26.1 |  | ✓ |  | ✓ | ✓ |  | ✓ | ✓ |  |  | ✓ |  | ✓ |  | ✓ | ✓ |  |  |  |  |
+| 26.2 | ✓ | ✓ |  | ✓ |  |  | ✓ |  |  | ✓ | ✓ |  | ✓ |  | ✓ |  |  |  |  |  |
+| 26.3 |  |  |  |  |  |  | ✓ |  |  | ✓ | ✓ |  |  |  | ✓ |  |  |  |  | ✓ |
 
 ## hud
 
 | Minecraft | [`delta-tracker`](../../runtime/shared/minecraft-fabric/hud/delta-tracker) | [`float-delta`](../../runtime/shared/minecraft-fabric/hud/float-delta) | [`gui-extractor`](../../runtime/shared/minecraft-fabric/hud/gui-extractor) | [`hud-extractor`](../../runtime/shared/minecraft-fabric/hud/hud-extractor) |
 | --- | --- | --- | --- | --- |
-| 1.20 | — | ✓ | — | — |
-| 1.20.1 | — | ✓ | — | — |
-| 1.20.2 | — | ✓ | — | — |
-| 1.20.3 | — | ✓ | — | — |
-| 1.20.4 | — | ✓ | — | — |
-| 1.20.5 | — | ✓ | — | — |
-| 1.20.6 | — | ✓ | — | — |
-| 1.21 | ✓ | — | — | — |
-| 1.21.1 | ✓ | — | — | — |
-| 1.21.2 | ✓ | — | — | — |
-| 1.21.3 | ✓ | — | — | — |
-| 1.21.4 | ✓ | — | — | — |
-| 1.21.5 | ✓ | — | — | — |
-| 1.21.6 | ✓ | — | — | — |
-| 1.21.7 | ✓ | — | — | — |
-| 1.21.8 | ✓ | — | — | — |
-| 1.21.9 | ✓ | — | — | — |
-| 1.21.10 | ✓ | — | — | — |
-| 1.21.11 | ✓ | — | — | — |
-| 26.1 | — | — | ✓ | — |
-| 26.2 | — | — | — | ✓ |
-| 26.3 | — | — | — | ✓ |
+| 1.20 |  | ✓ |  |  |
+| 1.20.1 |  | ✓ |  |  |
+| 1.20.2 |  | ✓ |  |  |
+| 1.20.3 |  | ✓ |  |  |
+| 1.20.4 |  | ✓ |  |  |
+| 1.20.5 |  | ✓ |  |  |
+| 1.20.6 |  | ✓ |  |  |
+| 1.21 | ✓ |  |  |  |
+| 1.21.1 | ✓ |  |  |  |
+| 1.21.2 | ✓ |  |  |  |
+| 1.21.3 | ✓ |  |  |  |
+| 1.21.4 | ✓ |  |  |  |
+| 1.21.5 | ✓ |  |  |  |
+| 1.21.6 | ✓ |  |  |  |
+| 1.21.7 | ✓ |  |  |  |
+| 1.21.8 | ✓ |  |  |  |
+| 1.21.9 | ✓ |  |  |  |
+| 1.21.10 | ✓ |  |  |  |
+| 1.21.11 | ✓ |  |  |  |
+| 26.1 |  |  | ✓ |  |
+| 26.2 |  |  |  | ✓ |
+| 26.3 |  |  |  | ✓ |
 
 ## input
 
 | Minecraft | [`common`](../../runtime/shared/minecraft-fabric/input/common) | [`direct-skin-result`](../../runtime/shared/minecraft-fabric/input/direct-skin-result) | [`event-callbacks`](../../runtime/shared/minecraft-fabric/input/event-callbacks) | [`glfw`](../../runtime/shared/minecraft-fabric/input/glfw) | [`glfw-observation`](../../runtime/shared/minecraft-fabric/input/glfw-observation) | [`gui-extractor`](../../runtime/shared/minecraft-fabric/input/gui-extractor) | [`gui-graphics`](../../runtime/shared/minecraft-fabric/input/gui-graphics) | [`gui-holder`](../../runtime/shared/minecraft-fabric/input/gui-holder) | [`primitive-callbacks`](../../runtime/shared/minecraft-fabric/input/primitive-callbacks) | [`screen-field`](../../runtime/shared/minecraft-fabric/input/screen-field) |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| 1.20 | ✓ | — | — | ✓ | — | — | ✓ | — | — | ✓ |
-| 1.20.1 | ✓ | — | — | ✓ | — | — | ✓ | — | — | ✓ |
-| 1.20.2 | ✓ | — | — | ✓ | — | — | ✓ | — | — | ✓ |
-| 1.20.3 | ✓ | — | — | ✓ | — | — | ✓ | — | — | ✓ |
-| 1.20.4 | ✓ | — | — | ✓ | — | — | ✓ | — | — | ✓ |
-| 1.20.5 | ✓ | ✓ | — | ✓ | — | — | ✓ | — | — | ✓ |
-| 1.20.6 | ✓ | ✓ | — | ✓ | — | — | ✓ | — | — | ✓ |
-| 1.21 | ✓ | ✓ | — | ✓ | — | — | ✓ | — | — | ✓ |
-| 1.21.1 | ✓ | ✓ | — | ✓ | — | — | ✓ | — | — | ✓ |
-| 1.21.2 | ✓ | ✓ | — | ✓ | — | — | ✓ | — | — | ✓ |
-| 1.21.3 | ✓ | ✓ | — | ✓ | — | — | ✓ | — | — | ✓ |
-| 1.21.4 | ✓ | — | — | ✓ | — | — | ✓ | — | ✓ | ✓ |
-| 1.21.5 | ✓ | — | — | ✓ | — | — | ✓ | — | ✓ | ✓ |
-| 1.21.6 | ✓ | — | — | ✓ | — | — | ✓ | — | ✓ | ✓ |
-| 1.21.7 | ✓ | — | — | ✓ | — | — | ✓ | — | ✓ | ✓ |
-| 1.21.8 | ✓ | — | — | ✓ | — | — | ✓ | — | ✓ | ✓ |
-| 1.21.9 | ✓ | — | ✓ | ✓ | — | — | ✓ | — | — | ✓ |
-| 1.21.10 | ✓ | — | ✓ | ✓ | — | — | ✓ | — | — | ✓ |
-| 1.21.11 | ✓ | — | ✓ | ✓ | — | — | ✓ | — | — | ✓ |
-| 26.1 | ✓ | — | — | ✓ | ✓ | ✓ | — | — | — | ✓ |
-| 26.2 | ✓ | — | — | ✓ | ✓ | ✓ | — | ✓ | — | — |
-| 26.3 | ✓ | — | — | — | — | ✓ | — | ✓ | — | — |
+| 1.20 | ✓ |  |  | ✓ |  |  | ✓ |  |  | ✓ |
+| 1.20.1 | ✓ |  |  | ✓ |  |  | ✓ |  |  | ✓ |
+| 1.20.2 | ✓ |  |  | ✓ |  |  | ✓ |  |  | ✓ |
+| 1.20.3 | ✓ |  |  | ✓ |  |  | ✓ |  |  | ✓ |
+| 1.20.4 | ✓ |  |  | ✓ |  |  | ✓ |  |  | ✓ |
+| 1.20.5 | ✓ | ✓ |  | ✓ |  |  | ✓ |  |  | ✓ |
+| 1.20.6 | ✓ | ✓ |  | ✓ |  |  | ✓ |  |  | ✓ |
+| 1.21 | ✓ | ✓ |  | ✓ |  |  | ✓ |  |  | ✓ |
+| 1.21.1 | ✓ | ✓ |  | ✓ |  |  | ✓ |  |  | ✓ |
+| 1.21.2 | ✓ | ✓ |  | ✓ |  |  | ✓ |  |  | ✓ |
+| 1.21.3 | ✓ | ✓ |  | ✓ |  |  | ✓ |  |  | ✓ |
+| 1.21.4 | ✓ |  |  | ✓ |  |  | ✓ |  | ✓ | ✓ |
+| 1.21.5 | ✓ |  |  | ✓ |  |  | ✓ |  | ✓ | ✓ |
+| 1.21.6 | ✓ |  |  | ✓ |  |  | ✓ |  | ✓ | ✓ |
+| 1.21.7 | ✓ |  |  | ✓ |  |  | ✓ |  | ✓ | ✓ |
+| 1.21.8 | ✓ |  |  | ✓ |  |  | ✓ |  | ✓ | ✓ |
+| 1.21.9 | ✓ |  | ✓ | ✓ |  |  | ✓ |  |  | ✓ |
+| 1.21.10 | ✓ |  | ✓ | ✓ |  |  | ✓ |  |  | ✓ |
+| 1.21.11 | ✓ |  | ✓ | ✓ |  |  | ✓ |  |  | ✓ |
+| 26.1 | ✓ |  |  | ✓ | ✓ | ✓ |  |  |  | ✓ |
+| 26.2 | ✓ |  |  | ✓ | ✓ | ✓ |  | ✓ |  |  |
+| 26.3 | ✓ |  |  |  |  | ✓ |  | ✓ |  |  |
 
 ## lifecycle
 
@@ -119,106 +119,106 @@ See [shared-source ownership](minecraft-versions.md#shared-source-ownership) for
 
 | Minecraft | [`common`](../../runtime/shared/minecraft-fabric/rendering/common) | [`gui-extractor`](../../runtime/shared/minecraft-fabric/rendering/gui-extractor) | [`gui-graphics`](../../runtime/shared/minecraft-fabric/rendering/gui-graphics) | [`render-pipeline`](../../runtime/shared/minecraft-fabric/rendering/render-pipeline) | [`render-type`](../../runtime/shared/minecraft-fabric/rendering/render-type) |
 | --- | --- | --- | --- | --- | --- |
-| 1.20 | ✓ | — | ✓ | — | ✓ |
-| 1.20.1 | ✓ | — | ✓ | — | ✓ |
-| 1.20.2 | ✓ | — | ✓ | — | ✓ |
-| 1.20.3 | ✓ | — | ✓ | — | ✓ |
-| 1.20.4 | ✓ | — | ✓ | — | ✓ |
-| 1.20.5 | ✓ | — | ✓ | — | ✓ |
-| 1.20.6 | ✓ | — | ✓ | — | ✓ |
-| 1.21 | ✓ | — | ✓ | — | ✓ |
-| 1.21.1 | ✓ | — | ✓ | — | ✓ |
-| 1.21.2 | ✓ | — | ✓ | — | ✓ |
-| 1.21.3 | ✓ | — | ✓ | — | ✓ |
-| 1.21.4 | ✓ | — | ✓ | — | ✓ |
-| 1.21.5 | ✓ | — | ✓ | — | ✓ |
-| 1.21.6 | ✓ | — | ✓ | ✓ | — |
-| 1.21.7 | ✓ | — | ✓ | ✓ | — |
-| 1.21.8 | ✓ | — | ✓ | ✓ | — |
-| 1.21.9 | ✓ | — | ✓ | ✓ | — |
-| 1.21.10 | ✓ | — | ✓ | ✓ | — |
-| 1.21.11 | ✓ | — | ✓ | ✓ | — |
-| 26.1 | ✓ | ✓ | — | — | — |
-| 26.2 | ✓ | ✓ | — | — | — |
-| 26.3 | ✓ | ✓ | — | — | — |
+| 1.20 | ✓ |  | ✓ |  | ✓ |
+| 1.20.1 | ✓ |  | ✓ |  | ✓ |
+| 1.20.2 | ✓ |  | ✓ |  | ✓ |
+| 1.20.3 | ✓ |  | ✓ |  | ✓ |
+| 1.20.4 | ✓ |  | ✓ |  | ✓ |
+| 1.20.5 | ✓ |  | ✓ |  | ✓ |
+| 1.20.6 | ✓ |  | ✓ |  | ✓ |
+| 1.21 | ✓ |  | ✓ |  | ✓ |
+| 1.21.1 | ✓ |  | ✓ |  | ✓ |
+| 1.21.2 | ✓ |  | ✓ |  | ✓ |
+| 1.21.3 | ✓ |  | ✓ |  | ✓ |
+| 1.21.4 | ✓ |  | ✓ |  | ✓ |
+| 1.21.5 | ✓ |  | ✓ |  | ✓ |
+| 1.21.6 | ✓ |  | ✓ | ✓ |  |
+| 1.21.7 | ✓ |  | ✓ | ✓ |  |
+| 1.21.8 | ✓ |  | ✓ | ✓ |  |
+| 1.21.9 | ✓ |  | ✓ | ✓ |  |
+| 1.21.10 | ✓ |  | ✓ | ✓ |  |
+| 1.21.11 | ✓ |  | ✓ | ✓ |  |
+| 26.1 | ✓ | ✓ |  |  |  |
+| 26.2 | ✓ | ✓ |  |  |  |
+| 26.3 | ✓ | ✓ |  |  |  |
 
 ## resources
 
 | Minecraft | [`common`](../../runtime/shared/minecraft-fabric/resources/common) | [`direct-skin-result`](../../runtime/shared/minecraft-fabric/resources/direct-skin-result) | [`event-callbacks`](../../runtime/shared/minecraft-fabric/resources/event-callbacks) | [`gui-extractor`](../../runtime/shared/minecraft-fabric/resources/gui-extractor) | [`gui-graphics`](../../runtime/shared/minecraft-fabric/resources/gui-graphics) | [`identifier`](../../runtime/shared/minecraft-fabric/resources/identifier) | [`primitive-callbacks`](../../runtime/shared/minecraft-fabric/resources/primitive-callbacks) |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| 1.20 | ✓ | — | — | — | ✓ | — | — |
-| 1.20.1 | ✓ | — | — | — | ✓ | — | — |
-| 1.20.2 | ✓ | — | — | — | ✓ | — | ✓ |
-| 1.20.3 | ✓ | — | — | — | ✓ | — | ✓ |
-| 1.20.4 | ✓ | — | — | — | ✓ | — | ✓ |
-| 1.20.5 | ✓ | ✓ | — | — | ✓ | — | ✓ |
-| 1.20.6 | ✓ | ✓ | — | — | ✓ | — | ✓ |
-| 1.21 | ✓ | ✓ | — | — | ✓ | — | ✓ |
-| 1.21.1 | ✓ | ✓ | — | — | ✓ | — | ✓ |
-| 1.21.2 | ✓ | ✓ | — | — | ✓ | — | ✓ |
-| 1.21.3 | ✓ | ✓ | — | — | ✓ | — | ✓ |
-| 1.21.4 | ✓ | — | — | — | ✓ | — | ✓ |
-| 1.21.5 | ✓ | — | — | — | ✓ | — | ✓ |
-| 1.21.6 | ✓ | — | — | — | ✓ | — | ✓ |
-| 1.21.7 | ✓ | — | — | — | ✓ | — | ✓ |
-| 1.21.8 | ✓ | — | — | — | ✓ | — | ✓ |
-| 1.21.9 | ✓ | — | ✓ | — | ✓ | — | — |
-| 1.21.10 | ✓ | — | ✓ | — | ✓ | — | — |
-| 1.21.11 | ✓ | — | ✓ | — | ✓ | ✓ | — |
-| 26.1 | ✓ | — | — | ✓ | — | ✓ | — |
-| 26.2 | ✓ | — | — | ✓ | — | ✓ | — |
-| 26.3 | ✓ | — | — | ✓ | — | ✓ | — |
+| 1.20 | ✓ |  |  |  | ✓ |  |  |
+| 1.20.1 | ✓ |  |  |  | ✓ |  |  |
+| 1.20.2 | ✓ |  |  |  | ✓ |  | ✓ |
+| 1.20.3 | ✓ |  |  |  | ✓ |  | ✓ |
+| 1.20.4 | ✓ |  |  |  | ✓ |  | ✓ |
+| 1.20.5 | ✓ | ✓ |  |  | ✓ |  | ✓ |
+| 1.20.6 | ✓ | ✓ |  |  | ✓ |  | ✓ |
+| 1.21 | ✓ | ✓ |  |  | ✓ |  | ✓ |
+| 1.21.1 | ✓ | ✓ |  |  | ✓ |  | ✓ |
+| 1.21.2 | ✓ | ✓ |  |  | ✓ |  | ✓ |
+| 1.21.3 | ✓ | ✓ |  |  | ✓ |  | ✓ |
+| 1.21.4 | ✓ |  |  |  | ✓ |  | ✓ |
+| 1.21.5 | ✓ |  |  |  | ✓ |  | ✓ |
+| 1.21.6 | ✓ |  |  |  | ✓ |  | ✓ |
+| 1.21.7 | ✓ |  |  |  | ✓ |  | ✓ |
+| 1.21.8 | ✓ |  |  |  | ✓ |  | ✓ |
+| 1.21.9 | ✓ |  | ✓ |  | ✓ |  |  |
+| 1.21.10 | ✓ |  | ✓ |  | ✓ |  |  |
+| 1.21.11 | ✓ |  | ✓ |  | ✓ | ✓ |  |
+| 26.1 | ✓ |  |  | ✓ |  | ✓ |  |
+| 26.2 | ✓ |  |  | ✓ |  | ✓ |  |
+| 26.3 | ✓ |  |  | ✓ |  | ✓ |  |
 
 ## screen
 
 | Minecraft | [`common`](../../runtime/shared/minecraft-fabric/screen/common) | [`event-callbacks`](../../runtime/shared/minecraft-fabric/screen/event-callbacks) | [`gui-extractor`](../../runtime/shared/minecraft-fabric/screen/gui-extractor) | [`gui-graphics`](../../runtime/shared/minecraft-fabric/screen/gui-graphics) | [`primitive-callbacks`](../../runtime/shared/minecraft-fabric/screen/primitive-callbacks) |
 | --- | --- | --- | --- | --- | --- |
-| 1.20 | ✓ | — | — | ✓ | — |
-| 1.20.1 | ✓ | — | — | ✓ | — |
-| 1.20.2 | ✓ | — | — | ✓ | ✓ |
-| 1.20.3 | ✓ | — | — | ✓ | ✓ |
-| 1.20.4 | ✓ | — | — | ✓ | ✓ |
-| 1.20.5 | ✓ | — | — | ✓ | ✓ |
-| 1.20.6 | ✓ | — | — | ✓ | ✓ |
-| 1.21 | ✓ | — | — | ✓ | ✓ |
-| 1.21.1 | ✓ | — | — | ✓ | ✓ |
-| 1.21.2 | ✓ | — | — | ✓ | ✓ |
-| 1.21.3 | ✓ | — | — | ✓ | ✓ |
-| 1.21.4 | ✓ | — | — | ✓ | ✓ |
-| 1.21.5 | ✓ | — | — | ✓ | ✓ |
-| 1.21.6 | ✓ | — | — | ✓ | ✓ |
-| 1.21.7 | ✓ | — | — | ✓ | ✓ |
-| 1.21.8 | ✓ | — | — | ✓ | ✓ |
-| 1.21.9 | ✓ | ✓ | — | ✓ | — |
-| 1.21.10 | ✓ | ✓ | — | ✓ | — |
-| 1.21.11 | ✓ | ✓ | — | ✓ | — |
-| 26.1 | ✓ | — | ✓ | — | — |
-| 26.2 | ✓ | — | ✓ | — | — |
-| 26.3 | ✓ | — | ✓ | — | — |
+| 1.20 | ✓ |  |  | ✓ |  |
+| 1.20.1 | ✓ |  |  | ✓ |  |
+| 1.20.2 | ✓ |  |  | ✓ | ✓ |
+| 1.20.3 | ✓ |  |  | ✓ | ✓ |
+| 1.20.4 | ✓ |  |  | ✓ | ✓ |
+| 1.20.5 | ✓ |  |  | ✓ | ✓ |
+| 1.20.6 | ✓ |  |  | ✓ | ✓ |
+| 1.21 | ✓ |  |  | ✓ | ✓ |
+| 1.21.1 | ✓ |  |  | ✓ | ✓ |
+| 1.21.2 | ✓ |  |  | ✓ | ✓ |
+| 1.21.3 | ✓ |  |  | ✓ | ✓ |
+| 1.21.4 | ✓ |  |  | ✓ | ✓ |
+| 1.21.5 | ✓ |  |  | ✓ | ✓ |
+| 1.21.6 | ✓ |  |  | ✓ | ✓ |
+| 1.21.7 | ✓ |  |  | ✓ | ✓ |
+| 1.21.8 | ✓ |  |  | ✓ | ✓ |
+| 1.21.9 | ✓ | ✓ |  | ✓ |  |
+| 1.21.10 | ✓ | ✓ |  | ✓ |  |
+| 1.21.11 | ✓ | ✓ |  | ✓ |  |
+| 26.1 | ✓ |  | ✓ |  |  |
+| 26.2 | ✓ |  | ✓ |  |  |
+| 26.3 | ✓ |  | ✓ |  |  |
 
 ## transport
 
 | Minecraft | [`common`](../../runtime/shared/minecraft-fabric/transport/common) | [`custom-payload`](../../runtime/shared/minecraft-fabric/transport/custom-payload) | [`identifier-buffer`](../../runtime/shared/minecraft-fabric/transport/identifier-buffer) | [`stream-codec`](../../runtime/shared/minecraft-fabric/transport/stream-codec) |
 | --- | --- | --- | --- | --- |
-| 1.20 | ✓ | — | ✓ | — |
-| 1.20.1 | ✓ | — | ✓ | — |
-| 1.20.2 | ✓ | ✓ | — | — |
-| 1.20.3 | ✓ | ✓ | — | — |
-| 1.20.4 | ✓ | ✓ | — | — |
-| 1.20.5 | ✓ | — | — | ✓ |
-| 1.20.6 | ✓ | — | — | ✓ |
-| 1.21 | ✓ | — | — | ✓ |
-| 1.21.1 | ✓ | — | — | ✓ |
-| 1.21.2 | ✓ | — | — | ✓ |
-| 1.21.3 | ✓ | — | — | ✓ |
-| 1.21.4 | ✓ | — | — | ✓ |
-| 1.21.5 | ✓ | — | — | ✓ |
-| 1.21.6 | ✓ | — | — | ✓ |
-| 1.21.7 | ✓ | — | — | ✓ |
-| 1.21.8 | ✓ | — | — | ✓ |
-| 1.21.9 | ✓ | — | — | ✓ |
-| 1.21.10 | ✓ | — | — | ✓ |
-| 1.21.11 | ✓ | — | — | ✓ |
-| 26.1 | ✓ | — | — | ✓ |
-| 26.2 | ✓ | — | — | ✓ |
-| 26.3 | ✓ | — | — | ✓ |
+| 1.20 | ✓ |  | ✓ |  |
+| 1.20.1 | ✓ |  | ✓ |  |
+| 1.20.2 | ✓ | ✓ |  |  |
+| 1.20.3 | ✓ | ✓ |  |  |
+| 1.20.4 | ✓ | ✓ |  |  |
+| 1.20.5 | ✓ |  |  | ✓ |
+| 1.20.6 | ✓ |  |  | ✓ |
+| 1.21 | ✓ |  |  | ✓ |
+| 1.21.1 | ✓ |  |  | ✓ |
+| 1.21.2 | ✓ |  |  | ✓ |
+| 1.21.3 | ✓ |  |  | ✓ |
+| 1.21.4 | ✓ |  |  | ✓ |
+| 1.21.5 | ✓ |  |  | ✓ |
+| 1.21.6 | ✓ |  |  | ✓ |
+| 1.21.7 | ✓ |  |  | ✓ |
+| 1.21.8 | ✓ |  |  | ✓ |
+| 1.21.9 | ✓ |  |  | ✓ |
+| 1.21.10 | ✓ |  |  | ✓ |
+| 1.21.11 | ✓ |  |  | ✓ |
+| 26.1 | ✓ |  |  | ✓ |
+| 26.2 | ✓ |  |  | ✓ |
+| 26.3 | ✓ |  |  | ✓ |

@@ -727,7 +727,7 @@ val sharedSourceMarkdown = providers.provider {
             appendLine("| Minecraft | ${roots.joinToString(" | ") { path -> "[`${path.removePrefix("runtime/shared/minecraft-fabric/$role/")}`](../../$path)" }} |")
             appendLine("| --- | ${roots.joinToString(" | ") { "---" }} |")
             sourcesByVersion.forEach { (version, selected) ->
-                appendLine("| $version | ${roots.joinToString(" | ") { path -> if (path in selected) "✓" else "—" }} |")
+                appendLine("| $version | ${roots.joinToString(" | ") { path -> if (path in selected) "✓" else "" }} |")
             }
         }
     }
