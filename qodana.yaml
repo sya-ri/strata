@@ -52,16 +52,16 @@ exclude:
       - api/src/main/kotlin/dev/s7a/strata/component/TiledImageComponents.kt
       - api/src/main/kotlin/dev/s7a/strata/component/UiComponents.kt
       - api/src/main/kotlin/dev/s7a/strata/component/VirtualListComponents.kt
-      - integration/minecraft-fabric-unobfuscated/src/gametest/kotlin/dev/s7a/strata/integration/minecraft/fabric/MinecraftProgressExample.kt
+      - integration/shared/minecraft-fabric/scenarios/gui-extractor/src/gametest/kotlin/dev/s7a/strata/integration/minecraft/fabric/MinecraftProgressExample.kt
   # Gradle's settings model and Fabric's non-versioned client-test and production-run boundaries expose experimental APIs required by their current public integrations.
   - name: UnstableApiUsage
     paths:
       - settings.gradle.kts
-      - integration/minecraft-fabric-client-gametest/src/gametest/kotlin/dev/s7a/strata/integration/minecraft/fabric/StrataMinecraftLegacyClientGameTest.kt
-      - integration/minecraft-fabric-unobfuscated/src/gametest/kotlin/dev/s7a/strata/integration/minecraft/fabric/InventorySlotSynchronizationGameTest.kt
-      - integration/minecraft-fabric-unobfuscated/src/gametest/kotlin/dev/s7a/strata/integration/minecraft/fabric/MinecraftProgressParity.kt
-      - integration/minecraft-fabric-unobfuscated/src/gametest/kotlin/dev/s7a/strata/integration/minecraft/fabric/MinecraftSocialParity.kt
-      - integration/minecraft-fabric-unobfuscated/src/gametest/kotlin/dev/s7a/strata/integration/minecraft/fabric/StrataMinecraftClientGameTest.kt
+      - integration/shared/minecraft-fabric/runner/fabric-client-gametest/src/gametest/kotlin/dev/s7a/strata/integration/minecraft/fabric/StrataMinecraftLegacyClientGameTest.kt
+      - integration/shared/minecraft-fabric/screen/gui-extractor/src/gametest/kotlin/dev/s7a/strata/integration/minecraft/fabric/InventorySlotSynchronizationGameTest.kt
+      - integration/shared/minecraft-fabric/scenarios/gui-extractor/src/gametest/kotlin/dev/s7a/strata/integration/minecraft/fabric/MinecraftProgressParity.kt
+      - integration/shared/minecraft-fabric/scenarios/gui-extractor/src/gametest/kotlin/dev/s7a/strata/integration/minecraft/fabric/MinecraftSocialParity.kt
+      - integration/shared/minecraft-fabric/runner/gui-extractor/src/gametest/kotlin/dev/s7a/strata/integration/minecraft/fabric/StrataMinecraftClientGameTest.kt
   # These geometry checks keep overflow-explicit comparisons instead of relying on range construction.
   - name: ConvertTwoComparisonsToRangeCheck
     paths:
@@ -78,44 +78,44 @@ exclude:
   # Explicit resource lifetime blocks make the GameTest cleanup order and primary-failure ownership auditable.
   - name: ConvertTryFinallyToUseCall
     paths:
-      - integration/minecraft-fabric-1.21-legacy/src/gametest/kotlin/dev/s7a/strata/integration/minecraft/fabric/StrataMinecraftLegacyLoadedSuite.kt
-      - integration/minecraft-fabric-1.21.3-legacy/src/gametest/kotlin/dev/s7a/strata/integration/minecraft/fabric/StrataMinecraftLegacyClientTest.kt
-      - integration/minecraft-fabric-client-gametest/src/gametest/kotlin/dev/s7a/strata/integration/minecraft/fabric/StrataMinecraftLegacyClientGameTest.kt
+      - integration/shared/minecraft-fabric/runner/gui-graphics/src/gametest/kotlin/dev/s7a/strata/integration/minecraft/fabric/StrataMinecraftLegacyLoadedSuite.kt
+      - integration/shared/minecraft-fabric/runner/standalone-client/src/gametest/kotlin/dev/s7a/strata/integration/minecraft/fabric/StrataMinecraftLegacyClientTest.kt
+      - integration/shared/minecraft-fabric/runner/fabric-client-gametest/src/gametest/kotlin/dev/s7a/strata/integration/minecraft/fabric/StrataMinecraftLegacyClientGameTest.kt
       - integration/minecraft-fabric-1.21/src/gametest/kotlin/dev/s7a/strata/integration/minecraft/fabric/MinecraftTestResourceLocation.kt
       - integration/minecraft-fabric-1.21.1/src/gametest/kotlin/dev/s7a/strata/integration/minecraft/fabric/MinecraftTestResourceLocation.kt
       - integration/minecraft-fabric-1.21.2/src/gametest/kotlin/dev/s7a/strata/integration/minecraft/fabric/MinecraftTestResourceLocation.kt
       - integration/minecraft-fabric-1.21.3/src/gametest/kotlin/dev/s7a/strata/integration/minecraft/fabric/MinecraftTestResourceLocation.kt
-      - integration/minecraft-fabric-unobfuscated/src/gametest/kotlin/dev/s7a/strata/integration/minecraft/fabric/MinecraftProgressParity.kt
-      - integration/minecraft-fabric-unobfuscated/src/gametest/kotlin/dev/s7a/strata/integration/minecraft/fabric/MinecraftSocialParity.kt
-      - integration/minecraft-fabric-unobfuscated/src/gametest/kotlin/dev/s7a/strata/integration/minecraft/fabric/StrataMinecraftClientGameTest.kt
+      - integration/shared/minecraft-fabric/scenarios/gui-extractor/src/gametest/kotlin/dev/s7a/strata/integration/minecraft/fabric/MinecraftProgressParity.kt
+      - integration/shared/minecraft-fabric/scenarios/gui-extractor/src/gametest/kotlin/dev/s7a/strata/integration/minecraft/fabric/MinecraftSocialParity.kt
+      - integration/shared/minecraft-fabric/runner/gui-extractor/src/gametest/kotlin/dev/s7a/strata/integration/minecraft/fabric/StrataMinecraftClientGameTest.kt
   # The project deliberately reserves const values for external compile-time API requirements.
   - name: MayBeConstant
     paths:
       - api/src/main/kotlin/dev/s7a/strata/input/KeyCode.kt
-      - integration/minecraft-fabric-1.21-legacy/src/gametest/kotlin/dev/s7a/strata/integration/minecraft/fabric/StrataMinecraftLegacyLoadedSuite.kt
-      - integration/minecraft-fabric-unobfuscated/src/gametest/kotlin/dev/s7a/strata/integration/minecraft/fabric/MinecraftSocialParity.kt
-      - integration/minecraft-fabric-unobfuscated/src/gametest/kotlin/dev/s7a/strata/integration/minecraft/fabric/StrataMinecraftClientGameTest.kt
-      - runtime/minecraft-fabric-shared/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftProfileFactory.kt
+      - integration/shared/minecraft-fabric/runner/gui-graphics/src/gametest/kotlin/dev/s7a/strata/integration/minecraft/fabric/StrataMinecraftLegacyLoadedSuite.kt
+      - integration/shared/minecraft-fabric/scenarios/gui-extractor/src/gametest/kotlin/dev/s7a/strata/integration/minecraft/fabric/MinecraftSocialParity.kt
+      - integration/shared/minecraft-fabric/runner/gui-extractor/src/gametest/kotlin/dev/s7a/strata/integration/minecraft/fabric/StrataMinecraftClientGameTest.kt
+      - runtime/shared/minecraft-fabric/resources/common/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftProfileFactory.kt
   # Java has no Boolean.not() equivalent, so these exact Java boundaries use equality instead of the prohibited prefix-negation form.
   - name: PointlessBooleanExpression
     paths:
-      - runtime/minecraft-fabric-1.21-legacy/src/main/java/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftInventoryBridge.java
-      - runtime/minecraft-fabric-shared/src/main/java/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftFailures.java
-      - runtime/minecraft-fabric-shared/src/main/java/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftProfileCache.java
-      - runtime/minecraft-fabric-unobfuscated/src/main/java/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftInventoryBridge.java
-      - runtime/minecraft-fabric-shared/src/main/java/dev/s7a/strata/runtime/minecraft/fabric/FabricScreenLifecycleTransaction.java
-      - runtime/minecraft-fabric-input-gui/src/main/java/dev/s7a/strata/runtime/minecraft/fabric/mixin/lifecycle/FabricUiMouseMixin.java
-      - runtime/minecraft-fabric-input-legacy/src/main/java/dev/s7a/strata/runtime/minecraft/fabric/mixin/lifecycle/FabricUiMouseMixin.java
+      - runtime/shared/minecraft-fabric/screen/gui-graphics/src/main/java/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftInventoryBridge.java
+      - runtime/shared/minecraft-fabric/lifecycle/common/src/main/java/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftFailures.java
+      - runtime/shared/minecraft-fabric/resources/common/src/main/java/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftProfileCache.java
+      - runtime/shared/minecraft-fabric/screen/gui-extractor/src/main/java/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftInventoryBridge.java
+      - runtime/shared/minecraft-fabric/screen/common/src/main/java/dev/s7a/strata/runtime/minecraft/fabric/FabricScreenLifecycleTransaction.java
+      - runtime/shared/minecraft-fabric/input/gui-holder/src/main/java/dev/s7a/strata/runtime/minecraft/fabric/mixin/lifecycle/FabricUiMouseMixin.java
+      - runtime/shared/minecraft-fabric/input/screen-field/src/main/java/dev/s7a/strata/runtime/minecraft/fabric/mixin/lifecycle/FabricUiMouseMixin.java
   # The Minecraft adapters keep explicit mapped Java getter calls so their authoritative external API mappings remain visible and searchable.
   - name: UsePropertyAccessSyntax
     paths:
-      - integration/minecraft-fabric-1.21-legacy/src/gametest/kotlin/dev/s7a/strata/integration/minecraft/fabric/StrataMinecraftLegacyLoadedSuite.kt
-      - integration/minecraft-fabric-1.21.3-legacy/src/gametest/kotlin/dev/s7a/strata/integration/minecraft/fabric/StandaloneMinecraftLoadedTestContext.kt
-      - integration/minecraft-fabric-unobfuscated/src/gametest/kotlin/dev/s7a/strata/integration/minecraft/fabric/MinecraftSocialParity.kt
-      - integration/minecraft-fabric-unobfuscated/src/gametest/kotlin/dev/s7a/strata/integration/minecraft/fabric/StrataMinecraftClientGameTest.kt
-      - runtime/minecraft-fabric-1.21-legacy/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftCurrentPlayerSkin.kt
-      - runtime/minecraft-fabric-shared/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftAssetLoader.kt
-      - runtime/minecraft-fabric-shared/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/StrataFabricClient.kt
+      - integration/shared/minecraft-fabric/runner/gui-graphics/src/gametest/kotlin/dev/s7a/strata/integration/minecraft/fabric/StrataMinecraftLegacyLoadedSuite.kt
+      - integration/shared/minecraft-fabric/runner/standalone-client/src/gametest/kotlin/dev/s7a/strata/integration/minecraft/fabric/StandaloneMinecraftLoadedTestContext.kt
+      - integration/shared/minecraft-fabric/scenarios/gui-extractor/src/gametest/kotlin/dev/s7a/strata/integration/minecraft/fabric/MinecraftSocialParity.kt
+      - integration/shared/minecraft-fabric/runner/gui-extractor/src/gametest/kotlin/dev/s7a/strata/integration/minecraft/fabric/StrataMinecraftClientGameTest.kt
+      - runtime/shared/minecraft-fabric/resources/gui-graphics/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftCurrentPlayerSkin.kt
+      - runtime/shared/minecraft-fabric/resources/common/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftAssetLoader.kt
+      - runtime/shared/minecraft-fabric/lifecycle/common/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/StrataFabricClient.kt
       - runtime/minecraft-fabric-1.21/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/MinecraftResourceLocation.kt
       - runtime/minecraft-fabric-1.21/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/MinecraftResourceLocationException.kt
       - runtime/minecraft-fabric-1.21.1/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/MinecraftResourceLocation.kt
@@ -124,29 +124,29 @@ exclude:
       - runtime/minecraft-fabric-1.21.2/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/MinecraftResourceLocationException.kt
       - runtime/minecraft-fabric-1.21.3/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/MinecraftResourceLocation.kt
       - runtime/minecraft-fabric-1.21.3/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/MinecraftResourceLocationException.kt
-      - runtime/minecraft-fabric-shared/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftFontContract.kt
-      - runtime/minecraft-fabric-shared/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftProfileFactory.kt
-      - runtime/minecraft-fabric-shared/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftTextMapping.kt
-      - runtime/minecraft-fabric-unobfuscated/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreen.kt
-      - runtime/minecraft-fabric-unobfuscated/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftCurrentPlayerSkin.kt
-      - runtime/minecraft-fabric-unobfuscated/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftNativeImageBridge.kt
+      - runtime/shared/minecraft-fabric/resources/common/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftFontContract.kt
+      - runtime/shared/minecraft-fabric/resources/common/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftProfileFactory.kt
+      - runtime/shared/minecraft-fabric/resources/common/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftTextMapping.kt
+      - runtime/shared/minecraft-fabric/screen/gui-extractor/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreen.kt
+      - runtime/shared/minecraft-fabric/resources/gui-extractor/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftCurrentPlayerSkin.kt
+      - runtime/shared/minecraft-fabric/rendering/gui-extractor/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftNativeImageBridge.kt
   # Explicit Minecraft Java SAM and qualifier syntax pins the loaded GameTest boundary instead of relying on Kotlin inference.
   - name: RedundantSamConstructor
     paths:
-      - integration/minecraft-fabric-1.21-legacy/src/gametest/kotlin/dev/s7a/strata/integration/minecraft/fabric/StrataMinecraftLegacyLoadedSuite.kt
-      - integration/minecraft-fabric-client-gametest/src/gametest/kotlin/dev/s7a/strata/integration/minecraft/fabric/StrataMinecraftLegacyClientGameTest.kt
-      - integration/minecraft-fabric-unobfuscated/src/gametest/kotlin/dev/s7a/strata/integration/minecraft/fabric/InventorySlotSynchronizationGameTest.kt
-      - integration/minecraft-fabric-unobfuscated/src/gametest/kotlin/dev/s7a/strata/integration/minecraft/fabric/MinecraftProgressParity.kt
-      - integration/minecraft-fabric-unobfuscated/src/gametest/kotlin/dev/s7a/strata/integration/minecraft/fabric/MinecraftSocialParity.kt
-      - integration/minecraft-fabric-unobfuscated/src/gametest/kotlin/dev/s7a/strata/integration/minecraft/fabric/StrataMinecraftClientGameTest.kt
+      - integration/shared/minecraft-fabric/runner/gui-graphics/src/gametest/kotlin/dev/s7a/strata/integration/minecraft/fabric/StrataMinecraftLegacyLoadedSuite.kt
+      - integration/shared/minecraft-fabric/runner/fabric-client-gametest/src/gametest/kotlin/dev/s7a/strata/integration/minecraft/fabric/StrataMinecraftLegacyClientGameTest.kt
+      - integration/shared/minecraft-fabric/screen/gui-extractor/src/gametest/kotlin/dev/s7a/strata/integration/minecraft/fabric/InventorySlotSynchronizationGameTest.kt
+      - integration/shared/minecraft-fabric/scenarios/gui-extractor/src/gametest/kotlin/dev/s7a/strata/integration/minecraft/fabric/MinecraftProgressParity.kt
+      - integration/shared/minecraft-fabric/scenarios/gui-extractor/src/gametest/kotlin/dev/s7a/strata/integration/minecraft/fabric/MinecraftSocialParity.kt
+      - integration/shared/minecraft-fabric/runner/gui-extractor/src/gametest/kotlin/dev/s7a/strata/integration/minecraft/fabric/StrataMinecraftClientGameTest.kt
   - name: RemoveRedundantQualifierName
     paths:
-      - integration/minecraft-fabric-unobfuscated/src/gametest/kotlin/dev/s7a/strata/integration/minecraft/fabric/MinecraftSocialParity.kt
-      - integration/minecraft-fabric-unobfuscated/src/gametest/kotlin/dev/s7a/strata/integration/minecraft/fabric/StrataMinecraftClientGameTest.kt
+      - integration/shared/minecraft-fabric/scenarios/gui-extractor/src/gametest/kotlin/dev/s7a/strata/integration/minecraft/fabric/MinecraftSocialParity.kt
+      - integration/shared/minecraft-fabric/runner/gui-extractor/src/gametest/kotlin/dev/s7a/strata/integration/minecraft/fabric/StrataMinecraftClientGameTest.kt
   # These Java interoperability boundaries deliberately validate values that Kotlin's source types consider non-null.
   - name: RedundantRequireNotNullCall
     paths:
-      - integration/minecraft-fabric-unobfuscated/src/gametest/kotlin/dev/s7a/strata/integration/minecraft/fabric/StrataMinecraftClientGameTest.kt
+      - integration/shared/minecraft-fabric/runner/gui-extractor/src/gametest/kotlin/dev/s7a/strata/integration/minecraft/fabric/StrataMinecraftClientGameTest.kt
       - runtime/headless/src/main/kotlin/dev/s7a/strata/runtime/headless/HeadlessRendering.kt
   # Named concrete facades keep internal coroutine/control state distinct from their exposed CoroutineScope and UiSession contracts.
   - name: ConvertToExplicitBackingFields
@@ -167,18 +167,18 @@ exclude:
     paths:
       - integration/docs/src/main/kotlin/dev/s7a/strata/integration/docs/ShowcaseStorage.kt
       - runtime/minecraft/src/main/kotlin/dev/s7a/strata/runtime/minecraft/MinecraftUiProfile.kt
-      - runtime/minecraft-fabric-1.21-legacy/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftCurrentPlayerSkin.kt
-      - runtime/minecraft-fabric-shared/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftAssetLoader.kt
-      - runtime/minecraft-fabric-shared/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftProfileFactory.kt
+      - runtime/shared/minecraft-fabric/resources/gui-graphics/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftCurrentPlayerSkin.kt
+      - runtime/shared/minecraft-fabric/resources/common/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftAssetLoader.kt
+      - runtime/shared/minecraft-fabric/resources/common/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftProfileFactory.kt
   # These receivers provide the implicit DSL or local-coordinate scope consumed through unqualified member resolution; Qodana does not count that implicit use, including when compatibility sources are linked into multiple owners.
   - name: UnusedReceiverParameter
     paths:
       - api/src/main/kotlin/dev/s7a/strata/component/VirtualListComponents.kt
       - runtime/minecraft/src/main/kotlin/dev/s7a/strata/runtime/minecraft/MinecraftRectPaintScope.kt
-      - runtime/minecraft-fabric-canvas-extractor/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricNativeCanvasDrawing.kt
-      - runtime/minecraft-fabric-canvas-gui/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricNativeCanvasDrawing.kt
-      - runtime/minecraft-fabric-canvas-gpu263/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricNativeCanvasDrawing.kt
-      - runtime/minecraft-fabric-shared/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftProfileFactory.kt
+      - runtime/shared/minecraft-fabric/canvas/drawing/gui-extractor/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricNativeCanvasDrawing.kt
+      - runtime/shared/minecraft-fabric/canvas/drawing/gui-graphics/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricNativeCanvasDrawing.kt
+      - runtime/shared/minecraft-fabric/canvas/renderpearl/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricNativeCanvasDrawing.kt
+      - runtime/shared/minecraft-fabric/resources/common/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftProfileFactory.kt
   # The destructured observer token is used to suppress feedback to the originating scroll controller.
   - name: UnusedVariable
     paths:
@@ -186,7 +186,7 @@ exclude:
   # Java definite-assignment rules require the generic result initializer because the primary failure is tracked separately.
   - name: UnusedAssignment
     paths:
-      - runtime/minecraft-fabric-shared/src/main/java/dev/s7a/strata/runtime/minecraft/fabric/FabricScreenLifecycleTransaction.java
+      - runtime/shared/minecraft-fabric/screen/common/src/main/java/dev/s7a/strata/runtime/minecraft/fabric/FabricScreenLifecycleTransaction.java
   # Qodana misresolves ByteArray.plus as array string rendering; byte-exact tests verify the replacement operation.
   - name: KotlinArrayToString
     paths:
@@ -196,46 +196,46 @@ exclude:
     paths:
       - runtime/minecraft-fabric-1.20.1/src/main/java/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftSkinBridge.java
       - runtime/minecraft-fabric-1.20.4/src/main/java/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftSkinBridge.java
-      - runtime/minecraft-fabric-unobfuscated/src/main/java/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftInventoryBridge.java
-      - runtime/minecraft-fabric-1.21-legacy/src/main/java/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftInventoryBridge.java
+      - runtime/shared/minecraft-fabric/screen/gui-extractor/src/main/java/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftInventoryBridge.java
+      - runtime/shared/minecraft-fabric/screen/gui-graphics/src/main/java/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftInventoryBridge.java
   # Qodana treats the Strata minecraft module as a runtime class source and reports its Kotlin and annotation dependencies as classpath overrides.
   # Exact loaded-client tests exercise these inventory bridges with the owning Minecraft runtime and dependency set.
   # The flattened remote module likewise misattributes the native payloads' compile-time nullability annotations; published remote JARs contain no annotation classes.
   # HUD callbacks return Kotlin Unit from the standard library; common remote/font JARs do not package kotlin/Unit.class.
   - name: ClassOverriddenAtRuntime
     paths:
-      - runtime/minecraft-fabric-1.21-legacy/src/main/java/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftInventoryBridge.java
-      - runtime/minecraft-fabric-unobfuscated/src/main/java/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftInventoryBridge.java
-      - runtime/minecraft-fabric-remote-payload/src/main/java/dev/s7a/strata/runtime/minecraft/fabric/FabricRemotePayload.java
-      - runtime/minecraft-fabric-remote-payload/src/main/java/dev/s7a/strata/runtime/minecraft/fabric/FabricRemoteRegistration.java
-      - runtime/minecraft-fabric-remote-stream/src/main/java/dev/s7a/strata/runtime/minecraft/fabric/FabricRemotePayload.java
-      - runtime/minecraft-fabric-remote-stream/src/main/java/dev/s7a/strata/runtime/minecraft/fabric/FabricRemoteRegistration.java
-      - runtime/minecraft-fabric-remote-stream/src/main/java/dev/s7a/strata/runtime/minecraft/fabric/FabricRemoteRegistrationCodec.java
-      - runtime/minecraft-fabric-hud-float/src/main/java/dev/s7a/strata/runtime/minecraft/fabric/mixin/lifecycle/FabricHudMixin.java
-      - runtime/minecraft-fabric-hud-delta/src/main/java/dev/s7a/strata/runtime/minecraft/fabric/mixin/lifecycle/FabricHudMixin.java
-      - runtime/minecraft-fabric-hud-extract-gui/src/main/java/dev/s7a/strata/runtime/minecraft/fabric/mixin/lifecycle/FabricHudMixin.java
-      - runtime/minecraft-fabric-hud-extract-hud/src/main/java/dev/s7a/strata/runtime/minecraft/fabric/mixin/lifecycle/FabricHudMixin.java
+      - runtime/shared/minecraft-fabric/screen/gui-graphics/src/main/java/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftInventoryBridge.java
+      - runtime/shared/minecraft-fabric/screen/gui-extractor/src/main/java/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftInventoryBridge.java
+      - runtime/shared/minecraft-fabric/transport/custom-payload/src/main/java/dev/s7a/strata/runtime/minecraft/fabric/FabricRemotePayload.java
+      - runtime/shared/minecraft-fabric/transport/custom-payload/src/main/java/dev/s7a/strata/runtime/minecraft/fabric/FabricRemoteRegistration.java
+      - runtime/shared/minecraft-fabric/transport/stream-codec/src/main/java/dev/s7a/strata/runtime/minecraft/fabric/FabricRemotePayload.java
+      - runtime/shared/minecraft-fabric/transport/stream-codec/src/main/java/dev/s7a/strata/runtime/minecraft/fabric/FabricRemoteRegistration.java
+      - runtime/shared/minecraft-fabric/transport/stream-codec/src/main/java/dev/s7a/strata/runtime/minecraft/fabric/FabricRemoteRegistrationCodec.java
+      - runtime/shared/minecraft-fabric/hud/float-delta/src/main/java/dev/s7a/strata/runtime/minecraft/fabric/mixin/lifecycle/FabricHudMixin.java
+      - runtime/shared/minecraft-fabric/hud/delta-tracker/src/main/java/dev/s7a/strata/runtime/minecraft/fabric/mixin/lifecycle/FabricHudMixin.java
+      - runtime/shared/minecraft-fabric/hud/gui-extractor/src/main/java/dev/s7a/strata/runtime/minecraft/fabric/mixin/lifecycle/FabricHudMixin.java
+      - runtime/shared/minecraft-fabric/hud/hud-extractor/src/main/java/dev/s7a/strata/runtime/minecraft/fabric/mixin/lifecycle/FabricHudMixin.java
   # Mixin target self-casts are valid only after bytecode transformation, which Qodana deliberately does not execute.
   - name: DataFlowIssue
     paths:
-      - runtime/minecraft-fabric-shared/src/main/java/dev/s7a/strata/runtime/minecraft/fabric/mixin/lifecycle/FabricMinecraftLifetimeMixin.java
-      - runtime/minecraft-fabric-remote-legacy/src/main/java/dev/s7a/strata/runtime/minecraft/fabric/mixin/remote/FabricRemoteReceiveMixin.java
+      - runtime/shared/minecraft-fabric/lifecycle/common/src/main/java/dev/s7a/strata/runtime/minecraft/fabric/mixin/lifecycle/FabricMinecraftLifetimeMixin.java
+      - runtime/shared/minecraft-fabric/transport/identifier-buffer/src/main/java/dev/s7a/strata/runtime/minecraft/fabric/mixin/remote/FabricRemoteReceiveMixin.java
   # Native focus callbacks retain defensive initialization guards across all linked Minecraft owners despite their annotated non-null facade.
   - name: ConstantValue
     paths:
-      - runtime/minecraft-fabric-glfw/src/main/java/dev/s7a/strata/runtime/minecraft/fabric/mixin/lifecycle/FabricMinecraftWindowMixin.java
+      - runtime/shared/minecraft-fabric/input/glfw/src/main/java/dev/s7a/strata/runtime/minecraft/fabric/mixin/lifecycle/FabricMinecraftWindowMixin.java
       - runtime/minecraft-fabric-26.3/src/main/java/dev/s7a/strata/runtime/minecraft/fabric/mixin/lifecycle/FabricMinecraftWindowMixin.java
   # Mixin shadow fields are target-owned runtime fields and cannot be converted into locals in the untransformed mixin source.
   - name: FieldCanBeLocal
     paths:
-      - runtime/minecraft-fabric-canvas-consumer-buffer/src/main/java/dev/s7a/strata/runtime/minecraft/fabric/mixin/canvas/FabricMinecraftCanvasGuiMixin.java
-      - runtime/minecraft-fabric-canvas-consumer-empty/src/main/java/dev/s7a/strata/runtime/minecraft/fabric/mixin/canvas/FabricMinecraftCanvasGuiMixin.java
-      - runtime/minecraft-fabric-canvas-consumer-empty/src/main/java/dev/s7a/strata/runtime/minecraft/fabric/mixin/canvas/FabricMinecraftCanvasVertexBufferMixin.java
+      - runtime/shared/minecraft-fabric/canvas/consumption/buffer-source/src/main/java/dev/s7a/strata/runtime/minecraft/fabric/mixin/canvas/FabricMinecraftCanvasGuiMixin.java
+      - runtime/shared/minecraft-fabric/canvas/consumption/vertex-buffer/src/main/java/dev/s7a/strata/runtime/minecraft/fabric/mixin/canvas/FabricMinecraftCanvasGuiMixin.java
+      - runtime/shared/minecraft-fabric/canvas/consumption/vertex-buffer/src/main/java/dev/s7a/strata/runtime/minecraft/fabric/mixin/canvas/FabricMinecraftCanvasVertexBufferMixin.java
   # The transformed GUI target populates and consumes its shadow draw collection outside Qodana's source-level call graph.
   - name: MismatchedCollectionQueryUpdate
     paths:
-      - runtime/minecraft-fabric-canvas-consumer-buffer/src/main/java/dev/s7a/strata/runtime/minecraft/fabric/mixin/canvas/FabricMinecraftCanvasGuiMixin.java
-      - runtime/minecraft-fabric-canvas-consumer-empty/src/main/java/dev/s7a/strata/runtime/minecraft/fabric/mixin/canvas/FabricMinecraftCanvasGuiMixin.java
+      - runtime/shared/minecraft-fabric/canvas/consumption/buffer-source/src/main/java/dev/s7a/strata/runtime/minecraft/fabric/mixin/canvas/FabricMinecraftCanvasGuiMixin.java
+      - runtime/shared/minecraft-fabric/canvas/consumption/vertex-buffer/src/main/java/dev/s7a/strata/runtime/minecraft/fabric/mixin/canvas/FabricMinecraftCanvasGuiMixin.java
   # Public SPI declarations, including PaintScope drawing operations, are consumed by external clients even when this repository has no call site.
   # Public component configuration and modifier entry points are likewise consumed by downstream Mods rather than every repository fixture.
   # Component evaluation and screen-transfer bridges are cross-module runtime boundaries that the local Kotlin call graph does not resolve reliably.
@@ -272,11 +272,11 @@ exclude:
       - integration/velocity/src/main/kotlin/dev/s7a/strata/integration/velocity/VelocityUiPresentationVerification.kt
       # Shared native sources are indexed under one exact-version owner; even calls within FabricRemoteScreens and Java calls to FabricRemotePayloadTypes lose their matching owner.
       # Every adapter compiles these calls, and integrated/Paper client receipts exercise their negotiation, updates, and teardown.
-      - runtime/minecraft-fabric-shared/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricRemoteScreens.kt
-      - runtime/minecraft-fabric-shared/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricUiInput.kt
-      - runtime/minecraft-fabric-shared/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricUiSessions.kt
+      - runtime/shared/minecraft-fabric/transport/common/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricRemoteScreens.kt
+      - runtime/shared/minecraft-fabric/input/common/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricUiInput.kt
+      - runtime/shared/minecraft-fabric/lifecycle/common/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricUiSessions.kt
       - api/src/main/kotlin/dev/s7a/strata/ui/UiDefinitionPayload.kt
-      - runtime/minecraft-fabric-remote-stream/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricRemotePayloadTypes.kt
+      - runtime/shared/minecraft-fabric/transport/stream-codec/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricRemotePayloadTypes.kt
       # The generated JVM IDEA model co-locates expect/actual declarations without KMP source-set relationships.
       # UnusedSymbol loses references across that boundary, including JVM typealiases and fields used by actual members.
       # These exact bridges are exercised by common/JVM tests; retain every other inspection and remove this exception when the model resolves KMP usages.
@@ -328,26 +328,26 @@ exclude:
       - integration/docs/src/main/kotlin/dev/s7a/strata/integration/docs/FontResourceExample.kt
       - integration/docs/src/main/kotlin/dev/s7a/strata/integration/docs/ShowcaseOutput.kt
       - integration/docs/src/main/kotlin/dev/s7a/strata/integration/docs/ScreenScenario.kt
-      - integration/minecraft-fabric-unobfuscated/src/gametest/kotlin/dev/s7a/strata/integration/minecraft/fabric/MinecraftButtonExample.kt
-      - integration/minecraft-fabric-unobfuscated/src/gametest/kotlin/dev/s7a/strata/integration/minecraft/fabric/MinecraftIndustrialExample.kt
-      - integration/minecraft-fabric-unobfuscated/src/gametest/kotlin/dev/s7a/strata/integration/minecraft/fabric/MinecraftProgressExample.kt
-      - integration/minecraft-fabric-unobfuscated/src/gametest/kotlin/dev/s7a/strata/integration/minecraft/fabric/MinecraftScrollShowcaseExample.kt
-      - integration/minecraft-fabric-unobfuscated/src/gametest/kotlin/dev/s7a/strata/integration/minecraft/fabric/MinecraftTextExample.kt
-      - integration/minecraft-fabric-client-gametest/src/gametest/kotlin/dev/s7a/strata/integration/minecraft/fabric/StrataMinecraftLegacyClientGameTest.kt
-      - integration/minecraft-fabric-1.21.3-legacy/src/gametest/kotlin/dev/s7a/strata/integration/minecraft/fabric/StrataMinecraftLegacyClientTest.kt
+      - integration/shared/minecraft-fabric/scenarios/gui-extractor/src/gametest/kotlin/dev/s7a/strata/integration/minecraft/fabric/MinecraftButtonExample.kt
+      - integration/shared/minecraft-fabric/scenarios/gui-extractor/src/gametest/kotlin/dev/s7a/strata/integration/minecraft/fabric/MinecraftIndustrialExample.kt
+      - integration/shared/minecraft-fabric/scenarios/gui-extractor/src/gametest/kotlin/dev/s7a/strata/integration/minecraft/fabric/MinecraftProgressExample.kt
+      - integration/shared/minecraft-fabric/scenarios/gui-extractor/src/gametest/kotlin/dev/s7a/strata/integration/minecraft/fabric/MinecraftScrollShowcaseExample.kt
+      - integration/shared/minecraft-fabric/scenarios/gui-extractor/src/gametest/kotlin/dev/s7a/strata/integration/minecraft/fabric/MinecraftTextExample.kt
+      - integration/shared/minecraft-fabric/runner/fabric-client-gametest/src/gametest/kotlin/dev/s7a/strata/integration/minecraft/fabric/StrataMinecraftLegacyClientGameTest.kt
+      - integration/shared/minecraft-fabric/runner/standalone-client/src/gametest/kotlin/dev/s7a/strata/integration/minecraft/fabric/StrataMinecraftLegacyClientTest.kt
       - integration/minecraft-fabric-1.21/src/gametest/kotlin/dev/s7a/strata/integration/minecraft/fabric/MinecraftTestResourceLocation.kt
       - integration/minecraft-fabric-1.21.1/src/gametest/kotlin/dev/s7a/strata/integration/minecraft/fabric/MinecraftTestResourceLocation.kt
       - integration/minecraft-fabric-1.21.2/src/gametest/kotlin/dev/s7a/strata/integration/minecraft/fabric/MinecraftTestResourceLocation.kt
       - integration/minecraft-fabric-1.21.4/src/gametest/kotlin/dev/s7a/strata/integration/minecraft/fabric/MinecraftTestResourceLocation.kt
       - integration/minecraft-fabric-1.21.5/src/gametest/kotlin/dev/s7a/strata/integration/minecraft/fabric/MinecraftTestResourceLocation.kt
       - integration/minecraft-fabric-1.21.6/src/gametest/kotlin/dev/s7a/strata/integration/minecraft/fabric/MinecraftTestResourceLocation.kt
-      - integration/minecraft-fabric-1.21.8-legacy/src/gametest/kotlin/dev/s7a/strata/integration/minecraft/fabric/MinecraftScreenInput.kt
+      - integration/shared/minecraft-fabric/input/primitive-callbacks/src/gametest/kotlin/dev/s7a/strata/integration/minecraft/fabric/MinecraftScreenInput.kt
       - integration/minecraft-fabric-1.21.7/src/gametest/kotlin/dev/s7a/strata/integration/minecraft/fabric/MinecraftTestResourceLocation.kt
       - integration/minecraft-fabric-1.21.8/src/gametest/kotlin/dev/s7a/strata/integration/minecraft/fabric/MinecraftTestResourceLocation.kt
       - integration/minecraft-fabric-1.21.9/src/gametest/kotlin/dev/s7a/strata/integration/minecraft/fabric/MinecraftTestResourceLocation.kt
       - integration/minecraft-fabric-1.21.10/src/gametest/kotlin/dev/s7a/strata/integration/minecraft/fabric/MinecraftTestResourceLocation.kt
       - integration/minecraft-fabric-1.21.11/src/gametest/kotlin/dev/s7a/strata/integration/minecraft/fabric/MinecraftTestResourceLocation.kt
-      - integration/minecraft-fabric-unobfuscated/src/gametest/kotlin/dev/s7a/strata/integration/minecraft/fabric/StrataMinecraftClientGameTest.kt
+      - integration/shared/minecraft-fabric/runner/gui-extractor/src/gametest/kotlin/dev/s7a/strata/integration/minecraft/fabric/StrataMinecraftClientGameTest.kt
       - quality/benchmarks/src/jmh/kotlin/dev/s7a/strata/quality/benchmark/RenderingBenchmark.kt
       - runtime/core/src/main/kotlin/dev/s7a/strata/runtime/UiTree.kt
       - runtime/minecraft/src/main/kotlin/dev/s7a/strata/runtime/minecraft/MinecraftCheckboxElement.kt
@@ -364,91 +364,91 @@ exclude:
       - runtime/minecraft/src/main/kotlin/dev/s7a/strata/runtime/minecraft/MinecraftUiProfileBuilder.kt
       - runtime/minecraft-fabric-1.20.1/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftFontMapping.kt
       - runtime/minecraft-fabric-1.20.1/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreen.kt
-      - runtime/minecraft-fabric-1.21-legacy/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftCurrentPlayerSkin.kt
-      - runtime/minecraft-fabric-1.21-legacy/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftFocusedInputMapping.kt
-      - runtime/minecraft-fabric-1.21-legacy/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftFramePresenter.kt
-      - runtime/minecraft-fabric-1.21.8-legacy/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreen.kt
-      - runtime/minecraft-fabric-1.21.9-legacy/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreen.kt
-      - runtime/minecraft-fabric-shared/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftFontContract.kt
-      - runtime/minecraft-fabric-shared/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftGuiScaling.kt
-      - runtime/minecraft-fabric-shared/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftInputMapping.kt
-      - runtime/minecraft-fabric-glfw/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftPointerMapping.kt
-      - runtime/minecraft-fabric-unobfuscated-glfw/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftKeyMapping.kt
+      - runtime/shared/minecraft-fabric/resources/gui-graphics/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftCurrentPlayerSkin.kt
+      - runtime/shared/minecraft-fabric/input/gui-graphics/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftFocusedInputMapping.kt
+      - runtime/shared/minecraft-fabric/rendering/gui-graphics/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftFramePresenter.kt
+      - runtime/shared/minecraft-fabric/screen/primitive-callbacks/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreen.kt
+      - runtime/shared/minecraft-fabric/screen/event-callbacks/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreen.kt
+      - runtime/shared/minecraft-fabric/resources/common/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftFontContract.kt
+      - runtime/shared/minecraft-fabric/rendering/common/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftGuiScaling.kt
+      - runtime/shared/minecraft-fabric/input/common/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftInputMapping.kt
+      - runtime/shared/minecraft-fabric/input/glfw/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftPointerMapping.kt
+      - runtime/shared/minecraft-fabric/input/glfw-observation/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftKeyMapping.kt
       - runtime/minecraft-fabric-26.3/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftKeyMapping.kt
-      - runtime/minecraft-fabric-shared/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftTextMapping.kt
-      - runtime/minecraft-fabric-shared/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftWidgetImages.kt
-      - runtime/minecraft-fabric-unobfuscated/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftFocusedInputMapping.kt
-      - runtime/minecraft-fabric-unobfuscated/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftGuiMetadata.kt
-      - runtime/minecraft-fabric-unobfuscated/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreen.kt
-      - runtime/minecraft-fabric-shared/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftAssetLoader.kt
-      - runtime/minecraft-fabric-shared/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftProfileFactory.kt
-      - runtime/minecraft-fabric-1.21.8-legacy/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftFontMapping.kt
-      - runtime/minecraft-fabric-1.21.9-legacy/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftFontMapping.kt
-      - runtime/minecraft-fabric-identifier/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/MinecraftResourceLocation.kt
-      - runtime/minecraft-fabric-identifier/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/MinecraftResourceLocationException.kt
-      - runtime/minecraft-fabric-shared/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftFontResources.kt
-      - runtime/minecraft-fabric-shared/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftProfileDecorations.kt
-      - runtime/minecraft-fabric-shared/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftProfileLifecycle.kt
-      - runtime/minecraft-fabric-shared/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftProfileWidgets.kt
-      - runtime/minecraft-fabric-shared/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftSampledBounds.kt
-      - runtime/minecraft-fabric-shared/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/mixin/FabricMinecraftResourceReloadMixin.kt
-      - runtime/minecraft-fabric-unobfuscated/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftNativeImageBridge.kt
-      - runtime/minecraft-fabric-unobfuscated/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftFontMapping.kt
-      - runtime/minecraft-fabric-1.21-legacy/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftPortableTexture.kt
-      - runtime/minecraft-fabric-canvas-consumer-buffer/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftCanvasGuiConsumption.kt
-      - runtime/minecraft-fabric-canvas-consumer-empty/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftCanvasGuiConsumption.kt
-      - runtime/minecraft-fabric-canvas-consumer-flush/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftCanvasGuiConsumption.kt
-      - runtime/minecraft-fabric-canvas-extractor/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricNativeCanvasDrawing.kt
-      - runtime/minecraft-fabric-canvas-gl-legacy/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricNativeCanvasTargetFactory.kt
-      - runtime/minecraft-fabric-canvas-gl-modern/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricNativeCanvasTargetFactory.kt
-      - runtime/minecraft-fabric-canvas-gl/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftGuiBlending.kt
-      - runtime/minecraft-fabric-canvas-gl/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftPortableTextureFactory.kt
-      - runtime/minecraft-fabric-canvas-gl/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricNativeCanvasDriver.kt
-      - runtime/minecraft-fabric-canvas-gl/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricNativeCanvasGlFence.kt
-      - runtime/minecraft-fabric-canvas-gl/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricNativeCanvasGlProgram.kt
-      - runtime/minecraft-fabric-canvas-gl/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricNativeCanvasGlState.kt
-      - runtime/minecraft-fabric-canvas-gl/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricNativeCanvasTargetDestruction.kt
-      - runtime/minecraft-fabric-canvas-gl/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricNativeCanvasTextureFactory.kt
-      - runtime/minecraft-fabric-canvas-gl/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/MinecraftCanvasContext.kt
-      - runtime/minecraft-fabric-canvas-gpu-sampler/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricNativeCanvasTextureFactory.kt
-      - runtime/minecraft-fabric-canvas-gpu/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricNativeCanvasGpuFence.kt
-      - runtime/minecraft-fabric-canvas-gpu/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricNativeCanvasTargetDestruction.kt
-      - runtime/minecraft-fabric-canvas-gpu/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/MinecraftCanvasContext.kt
-      - runtime/minecraft-fabric-canvas-gpu1211/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftPortableTextureFactory.kt
-      - runtime/minecraft-fabric-canvas-gpu1211/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricNativeCanvasDriver.kt
-      - runtime/minecraft-fabric-canvas-gpu125/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftPortableTextureFactory.kt
-      - runtime/minecraft-fabric-canvas-gpu125/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricNativeCanvasDriver.kt
-      - runtime/minecraft-fabric-canvas-gpu125/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricNativeCanvasTextureFactory.kt
-      - runtime/minecraft-fabric-canvas-gpu126/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftPortableTextureFactory.kt
-      - runtime/minecraft-fabric-canvas-gpu126/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricNativeCanvasDriver.kt
-      - runtime/minecraft-fabric-canvas-gpu126/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricNativeCanvasTextureFactory.kt
-      - runtime/minecraft-fabric-canvas-gpu262/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftPortableTextureFactory.kt
-      - runtime/minecraft-fabric-canvas-gpu262/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricNativeCanvasDestructionFactory.kt
-      - runtime/minecraft-fabric-canvas-gpu262/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricNativeCanvasDriver.kt
-      - runtime/minecraft-fabric-canvas-gpu263/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftPortableTextureFactory.kt
-      - runtime/minecraft-fabric-canvas-gpu263/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftSampledImageDrawing.kt
-      - runtime/minecraft-fabric-canvas-gpu263/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricNativeCanvasDestructionFactory.kt
-      - runtime/minecraft-fabric-canvas-gpu263/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricNativeCanvasDrawing.kt
-      - runtime/minecraft-fabric-canvas-gpu263/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricNativeCanvasDriver.kt
-      - runtime/minecraft-fabric-canvas-gpu263/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricNativeCanvasTargetDestruction.kt
-      - runtime/minecraft-fabric-canvas-gpu263/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricNativeCanvasTextureFactory.kt
-      - runtime/minecraft-fabric-canvas-gpu263/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/MinecraftCanvasContext.kt
-      - runtime/minecraft-fabric-canvas-gui/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricNativeCanvasDrawing.kt
-      - runtime/minecraft-fabric-canvas-shared/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftCanvasPresentation.kt
-      - runtime/minecraft-fabric-canvas-shared/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftPortableFrames.kt
-      - runtime/minecraft-fabric-canvas-shared/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftPortableImage.kt
-      - runtime/minecraft-fabric-canvas-shared/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricNativeCanvasDestruction.kt
-      - runtime/minecraft-fabric-canvas-shared/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricNativeCanvasPartialTarget.kt
-      - runtime/minecraft-fabric-canvas-shared/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricNativeCanvasRendererProducer.kt
-      - runtime/minecraft-fabric-canvas-shared/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricNativeCanvasShaders.kt
-      - runtime/minecraft-fabric-canvas-shared/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricNativeCanvasSnapshots.kt
-      - runtime/minecraft-fabric-canvas-shared/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricNativeCanvasTarget.kt
-      - runtime/minecraft-fabric-canvas-shared/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricNativeCanvasTextureProducer.kt
-      - runtime/minecraft-fabric-canvas-shared/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/MinecraftCanvasSourceFactory.kt
-      - runtime/minecraft-fabric-canvas-shared/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/MinecraftCanvasTextureOrigin.kt
-      - runtime/minecraft-fabric-canvas-extractor/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftSampledImageDrawing.kt
-      - runtime/minecraft-fabric-canvas-shared/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftFrameLayer.kt
-      - runtime/minecraft-fabric-canvas-shared/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftSampledImageCache.kt
-      - runtime/minecraft-fabric-canvas-shared/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftSampledImageDevice.kt
-      - runtime/minecraft-fabric-canvas-shared/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftSampledImageDevices.kt
-      - runtime/minecraft-fabric-unobfuscated/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftPortableTexture.kt
+      - runtime/shared/minecraft-fabric/resources/common/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftTextMapping.kt
+      - runtime/shared/minecraft-fabric/resources/common/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftWidgetImages.kt
+      - runtime/shared/minecraft-fabric/input/gui-extractor/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftFocusedInputMapping.kt
+      - runtime/shared/minecraft-fabric/rendering/gui-extractor/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftGuiMetadata.kt
+      - runtime/shared/minecraft-fabric/screen/gui-extractor/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreen.kt
+      - runtime/shared/minecraft-fabric/resources/common/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftAssetLoader.kt
+      - runtime/shared/minecraft-fabric/resources/common/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftProfileFactory.kt
+      - runtime/shared/minecraft-fabric/resources/primitive-callbacks/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftFontMapping.kt
+      - runtime/shared/minecraft-fabric/resources/event-callbacks/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftFontMapping.kt
+      - runtime/shared/minecraft-fabric/resources/identifier/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/MinecraftResourceLocation.kt
+      - runtime/shared/minecraft-fabric/resources/identifier/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/MinecraftResourceLocationException.kt
+      - runtime/shared/minecraft-fabric/resources/common/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftFontResources.kt
+      - runtime/shared/minecraft-fabric/resources/common/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftProfileDecorations.kt
+      - runtime/shared/minecraft-fabric/resources/common/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftProfileLifecycle.kt
+      - runtime/shared/minecraft-fabric/resources/common/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftProfileWidgets.kt
+      - runtime/shared/minecraft-fabric/rendering/common/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftSampledBounds.kt
+      - runtime/shared/minecraft-fabric/resources/common/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/mixin/FabricMinecraftResourceReloadMixin.kt
+      - runtime/shared/minecraft-fabric/rendering/gui-extractor/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftNativeImageBridge.kt
+      - runtime/shared/minecraft-fabric/resources/gui-extractor/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftFontMapping.kt
+      - runtime/shared/minecraft-fabric/rendering/gui-graphics/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftPortableTexture.kt
+      - runtime/shared/minecraft-fabric/canvas/consumption/buffer-source/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftCanvasGuiConsumption.kt
+      - runtime/shared/minecraft-fabric/canvas/consumption/vertex-buffer/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftCanvasGuiConsumption.kt
+      - runtime/shared/minecraft-fabric/canvas/consumption/flush/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftCanvasGuiConsumption.kt
+      - runtime/shared/minecraft-fabric/canvas/drawing/gui-extractor/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricNativeCanvasDrawing.kt
+      - runtime/shared/minecraft-fabric/canvas/opengl/platform-buffer-allocation/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricNativeCanvasTargetFactory.kt
+      - runtime/shared/minecraft-fabric/canvas/opengl/buffer-allocation/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricNativeCanvasTargetFactory.kt
+      - runtime/shared/minecraft-fabric/canvas/opengl/common/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftGuiBlending.kt
+      - runtime/shared/minecraft-fabric/canvas/opengl/common/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftPortableTextureFactory.kt
+      - runtime/shared/minecraft-fabric/canvas/opengl/common/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricNativeCanvasDriver.kt
+      - runtime/shared/minecraft-fabric/canvas/opengl/common/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricNativeCanvasGlFence.kt
+      - runtime/shared/minecraft-fabric/canvas/opengl/common/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricNativeCanvasGlProgram.kt
+      - runtime/shared/minecraft-fabric/canvas/opengl/common/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricNativeCanvasGlState.kt
+      - runtime/shared/minecraft-fabric/canvas/opengl/common/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricNativeCanvasTargetDestruction.kt
+      - runtime/shared/minecraft-fabric/canvas/opengl/common/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricNativeCanvasTextureFactory.kt
+      - runtime/shared/minecraft-fabric/canvas/opengl/common/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/MinecraftCanvasContext.kt
+      - runtime/shared/minecraft-fabric/canvas/blaze3d/sampler-textures/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricNativeCanvasTextureFactory.kt
+      - runtime/shared/minecraft-fabric/canvas/blaze3d/common/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricNativeCanvasGpuFence.kt
+      - runtime/shared/minecraft-fabric/canvas/blaze3d/common/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricNativeCanvasTargetDestruction.kt
+      - runtime/shared/minecraft-fabric/canvas/blaze3d/common/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/MinecraftCanvasContext.kt
+      - runtime/shared/minecraft-fabric/canvas/blaze3d/samplers/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftPortableTextureFactory.kt
+      - runtime/shared/minecraft-fabric/canvas/blaze3d/samplers/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricNativeCanvasDriver.kt
+      - runtime/shared/minecraft-fabric/canvas/blaze3d/direct-textures/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftPortableTextureFactory.kt
+      - runtime/shared/minecraft-fabric/canvas/blaze3d/direct-textures/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricNativeCanvasDriver.kt
+      - runtime/shared/minecraft-fabric/canvas/blaze3d/direct-textures/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricNativeCanvasTextureFactory.kt
+      - runtime/shared/minecraft-fabric/canvas/blaze3d/texture-views/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftPortableTextureFactory.kt
+      - runtime/shared/minecraft-fabric/canvas/blaze3d/texture-views/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricNativeCanvasDriver.kt
+      - runtime/shared/minecraft-fabric/canvas/blaze3d/texture-views/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricNativeCanvasTextureFactory.kt
+      - runtime/shared/minecraft-fabric/canvas/blaze3d/bind-groups/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftPortableTextureFactory.kt
+      - runtime/shared/minecraft-fabric/canvas/blaze3d/bind-groups/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricNativeCanvasDestructionFactory.kt
+      - runtime/shared/minecraft-fabric/canvas/blaze3d/bind-groups/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricNativeCanvasDriver.kt
+      - runtime/shared/minecraft-fabric/canvas/renderpearl/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftPortableTextureFactory.kt
+      - runtime/shared/minecraft-fabric/canvas/renderpearl/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftSampledImageDrawing.kt
+      - runtime/shared/minecraft-fabric/canvas/renderpearl/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricNativeCanvasDestructionFactory.kt
+      - runtime/shared/minecraft-fabric/canvas/renderpearl/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricNativeCanvasDrawing.kt
+      - runtime/shared/minecraft-fabric/canvas/renderpearl/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricNativeCanvasDriver.kt
+      - runtime/shared/minecraft-fabric/canvas/renderpearl/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricNativeCanvasTargetDestruction.kt
+      - runtime/shared/minecraft-fabric/canvas/renderpearl/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricNativeCanvasTextureFactory.kt
+      - runtime/shared/minecraft-fabric/canvas/renderpearl/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/MinecraftCanvasContext.kt
+      - runtime/shared/minecraft-fabric/canvas/drawing/gui-graphics/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricNativeCanvasDrawing.kt
+      - runtime/shared/minecraft-fabric/canvas/common/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftCanvasPresentation.kt
+      - runtime/shared/minecraft-fabric/canvas/common/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftPortableFrames.kt
+      - runtime/shared/minecraft-fabric/canvas/common/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftPortableImage.kt
+      - runtime/shared/minecraft-fabric/canvas/common/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricNativeCanvasDestruction.kt
+      - runtime/shared/minecraft-fabric/canvas/common/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricNativeCanvasPartialTarget.kt
+      - runtime/shared/minecraft-fabric/canvas/common/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricNativeCanvasRendererProducer.kt
+      - runtime/shared/minecraft-fabric/canvas/common/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricNativeCanvasShaders.kt
+      - runtime/shared/minecraft-fabric/canvas/common/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricNativeCanvasSnapshots.kt
+      - runtime/shared/minecraft-fabric/canvas/common/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricNativeCanvasTarget.kt
+      - runtime/shared/minecraft-fabric/canvas/common/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricNativeCanvasTextureProducer.kt
+      - runtime/shared/minecraft-fabric/canvas/common/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/MinecraftCanvasSourceFactory.kt
+      - runtime/shared/minecraft-fabric/canvas/common/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/MinecraftCanvasTextureOrigin.kt
+      - runtime/shared/minecraft-fabric/canvas/drawing/gui-extractor/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftSampledImageDrawing.kt
+      - runtime/shared/minecraft-fabric/canvas/common/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftFrameLayer.kt
+      - runtime/shared/minecraft-fabric/canvas/common/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftSampledImageCache.kt
+      - runtime/shared/minecraft-fabric/canvas/common/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftSampledImageDevice.kt
+      - runtime/shared/minecraft-fabric/canvas/common/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftSampledImageDevices.kt
+      - runtime/shared/minecraft-fabric/rendering/gui-extractor/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftPortableTexture.kt

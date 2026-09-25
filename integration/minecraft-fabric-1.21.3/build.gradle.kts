@@ -21,10 +21,6 @@ val runtimeRemappedJar =
     runtimeFabricProject.layout.buildDirectory.file(
         "libs/${runtimeFabricProject.name}-${project.version}.jar",
     )
-val sharedLegacyGameTest = rootProject.file("integration/minecraft-fabric-1.21-legacy/src/gametest")
-val standaloneLegacyGameTest = rootProject.file("integration/minecraft-fabric-1.21.3-legacy/src/gametest")
-val versionGameTest = rootProject.file("integration/minecraft-fabric-1.21.5-legacy/src/gametest")
-val primitiveInputGameTest = rootProject.file("integration/minecraft-fabric-1.21.8-legacy/src/gametest")
 
 fabricApi {
     configureTests {
@@ -38,13 +34,20 @@ fabricApi {
 
 extensions.configure<KotlinJvmProjectExtension> {
     sourceSets.named("gametest") {
-        kotlin.srcDir(rootProject.file("integration/minecraft-fabric-remote-stream/src/gametest/kotlin"))
+        kotlin.srcDir(rootProject.file("integration/shared/minecraft-fabric/transport/stream-codec/src/gametest/kotlin"))
         kotlin.srcDir(rootProject.file("examples/paper/src/main/kotlin"))
         kotlin.exclude("**/PaperDemoPlugin.kt", "**/PaperDemoScreens.kt")
-        kotlin.srcDir(sharedLegacyGameTest.resolve("kotlin"))
-        kotlin.srcDir(standaloneLegacyGameTest.resolve("kotlin"))
-        kotlin.srcDir(versionGameTest.resolve("kotlin"))
-        kotlin.srcDir(primitiveInputGameTest.resolve("kotlin"))
+        kotlin.srcDirs(
+            rootProject.file("integration/shared/minecraft-fabric/canvas/gui-graphics/src/gametest/kotlin"),
+            rootProject.file("integration/shared/minecraft-fabric/runner/gui-graphics/src/gametest/kotlin"),
+            rootProject.file("integration/shared/minecraft-fabric/transport/gui-graphics/src/gametest/kotlin"),
+        )
+        kotlin.srcDir(rootProject.file("integration/shared/minecraft-fabric/runner/standalone-client/src/gametest/kotlin"))
+        kotlin.srcDir(rootProject.file("integration/shared/minecraft-fabric/runner/version-field/src/gametest/kotlin"))
+        kotlin.srcDirs(
+            rootProject.file("integration/shared/minecraft-fabric/input/primitive-callbacks/src/gametest/kotlin"),
+            rootProject.file("integration/shared/minecraft-fabric/transport/primitive-callbacks/src/gametest/kotlin"),
+        )
     }
 }
 

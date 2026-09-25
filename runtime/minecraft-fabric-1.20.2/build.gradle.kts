@@ -12,16 +12,22 @@ plugins {
 
 apply(from = rootProject.file("runtime/minecraft-fabric-publication.gradle.kts"))
 
-val sharedRuntime = rootProject.file("runtime/minecraft-fabric-shared/src/main")
-val legacyRuntime = rootProject.file("runtime/minecraft-fabric-1.21-legacy/src/main")
-val primitiveInputRuntime = rootProject.file("runtime/minecraft-fabric-1.21.8-legacy/src/main")
-val textureBlitRuntime = rootProject.file("runtime/minecraft-fabric-1.21.5-legacy/src/main")
 val previousRuntime = rootProject.file("runtime/minecraft-fabric-1.20.4/src/main")
 
 extensions.configure<SourceSetContainer> {
     named("main") {
-        java.srcDirs(previousRuntime.resolve("java"), sharedRuntime.resolve("java"), legacyRuntime.resolve("java"))
-        java.srcDir(textureBlitRuntime.resolve("java"))
+        java.srcDirs(
+            previousRuntime.resolve("java"),
+            rootProject.file("runtime/shared/minecraft-fabric/input/common/src/main/java"),
+            rootProject.file("runtime/shared/minecraft-fabric/lifecycle/common/src/main/java"),
+            rootProject.file("runtime/shared/minecraft-fabric/resources/common/src/main/java"),
+            rootProject.file("runtime/shared/minecraft-fabric/screen/common/src/main/java"),
+            rootProject.file("runtime/shared/minecraft-fabric/transport/common/src/main/java"),
+            rootProject.file("runtime/shared/minecraft-fabric/input/gui-graphics/src/main/java"),
+            rootProject.file("runtime/shared/minecraft-fabric/resources/gui-graphics/src/main/java"),
+            rootProject.file("runtime/shared/minecraft-fabric/screen/gui-graphics/src/main/java"),
+        )
+        java.srcDir(rootProject.file("runtime/shared/minecraft-fabric/rendering/render-type/src/main/java"))
     }
 }
 
@@ -29,9 +35,16 @@ extensions.configure<KotlinJvmProjectExtension> {
     sourceSets.named("main") {
         kotlin.srcDirs(
             previousRuntime.resolve("kotlin"),
-            sharedRuntime.resolve("kotlin"),
-            legacyRuntime.resolve("kotlin"),
-            primitiveInputRuntime.resolve("kotlin"),
+            rootProject.file("runtime/shared/minecraft-fabric/input/common/src/main/kotlin"),
+            rootProject.file("runtime/shared/minecraft-fabric/lifecycle/common/src/main/kotlin"),
+            rootProject.file("runtime/shared/minecraft-fabric/rendering/common/src/main/kotlin"),
+            rootProject.file("runtime/shared/minecraft-fabric/resources/common/src/main/kotlin"),
+            rootProject.file("runtime/shared/minecraft-fabric/transport/common/src/main/kotlin"),
+            rootProject.file("runtime/shared/minecraft-fabric/input/gui-graphics/src/main/kotlin"),
+            rootProject.file("runtime/shared/minecraft-fabric/rendering/gui-graphics/src/main/kotlin"),
+            rootProject.file("runtime/shared/minecraft-fabric/resources/gui-graphics/src/main/kotlin"),
+            rootProject.file("runtime/shared/minecraft-fabric/resources/primitive-callbacks/src/main/kotlin"),
+            rootProject.file("runtime/shared/minecraft-fabric/screen/primitive-callbacks/src/main/kotlin"),
         )
     }
 }

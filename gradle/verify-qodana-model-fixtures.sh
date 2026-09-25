@@ -162,36 +162,36 @@ for version in "${fixture_versions[@]}"; do
   runtime_roots=(
     'Source;src/font/kotlin'
     'Resource;src/main/resources'
-    'Source;../minecraft-fabric-canvas-shared/src/main/kotlin'
-    'Source;../minecraft-fabric-canvas-fixture-probe/src/main/kotlin'
-    'Source;../minecraft-fabric-shared/src/main/kotlin'
-    'Source;../minecraft-fabric-remote-legacy/src/main/java'
-    'Source;../minecraft-fabric-remote-payload/src/main/java'
-    'Source;../minecraft-fabric-remote-stream/src/main/java'
-    'Source;../minecraft-fabric-input-legacy/src/main/java'
-    'Source;../minecraft-fabric-input-gui/src/main/java'
-    'Source;../minecraft-fabric-hud-float/src/main/java'
-    'Source;../minecraft-fabric-hud-delta/src/main/java'
-    'Source;../minecraft-fabric-hud-extract-gui/src/main/java'
-    'Source;../minecraft-fabric-hud-extract-hud/src/main/java'
-    'Source;../minecraft-fabric-glfw/src/main/java'
-    'Source;../minecraft-fabric-unobfuscated-glfw/src/main/kotlin'
-    'Source;../minecraft-fabric-1.10-legacy/src/main/kotlin'
+    'Source;../shared/minecraft-fabric/canvas/common/src/main/kotlin'
+    'Source;../shared/minecraft-fabric/canvas/fixture-probe/src/main/kotlin'
+    'Source;../shared/minecraft-fabric/lifecycle/common/src/main/kotlin'
+    'Source;../shared/minecraft-fabric/transport/identifier-buffer/src/main/java'
+    'Source;../shared/minecraft-fabric/transport/custom-payload/src/main/java'
+    'Source;../shared/minecraft-fabric/transport/stream-codec/src/main/java'
+    'Source;../shared/minecraft-fabric/input/screen-field/src/main/java'
+    'Source;../shared/minecraft-fabric/input/gui-holder/src/main/java'
+    'Source;../shared/minecraft-fabric/hud/float-delta/src/main/java'
+    'Source;../shared/minecraft-fabric/hud/delta-tracker/src/main/java'
+    'Source;../shared/minecraft-fabric/hud/gui-extractor/src/main/java'
+    'Source;../shared/minecraft-fabric/hud/hud-extractor/src/main/java'
+    'Source;../shared/minecraft-fabric/input/glfw/src/main/java'
+    'Source;../shared/minecraft-fabric/input/glfw-observation/src/main/kotlin'
+    'Source;../shared/minecraft-fabric/input/primitive-callbacks/src/main/kotlin'
   )
   integration_roots=(
     'TestResource;src/gametest/resources'
-    'TestSource;../minecraft-fabric-canvas-shared/src/gametest/kotlin'
-    'TestSource;../minecraft-fabric-remote-legacy/src/gametest/kotlin'
-    'TestSource;../minecraft-fabric-remote-payload/src/gametest/kotlin'
-    'TestSource;../minecraft-fabric-remote-stream/src/gametest/kotlin'
-    'TestSource;../minecraft-fabric-remote-verification/src/gametest/kotlin'
-    'TestSource;../minecraft-fabric-paper-unobfuscated/src/gametest/kotlin'
+    'TestSource;../shared/minecraft-fabric/canvas/common/src/gametest/kotlin'
+    'TestSource;../shared/minecraft-fabric/transport/identifier-buffer/src/gametest/kotlin'
+    'TestSource;../shared/minecraft-fabric/transport/custom-payload/src/gametest/kotlin'
+    'TestSource;../shared/minecraft-fabric/transport/stream-codec/src/gametest/kotlin'
+    'TestSource;../shared/minecraft-fabric/transport/verification/src/gametest/kotlin'
+    'TestSource;../shared/minecraft-fabric/transport/paper-screens/src/gametest/kotlin'
     'TestSource;../../examples/paper/src/main/kotlin'
-    'TestSource;../minecraft-fabric-canvas-fixture-probe/src/gametest/kotlin'
-    'TestSource;../minecraft-fabric-1.10-legacy/src/gametest/kotlin'
-    'TestResource;../minecraft-font-parity/src/gametest/resources'
-    'TestSource;../minecraft-font-parity-blaze3d/src/gametest/kotlin'
-    'TestSource;../minecraft-font-parity-renderpearl/src/gametest/kotlin'
+    'TestSource;../shared/minecraft-fabric/canvas/fixture-probe/src/gametest/kotlin'
+    'TestSource;../shared/minecraft-fabric/input/primitive-callbacks/src/gametest/kotlin'
+    'TestResource;../shared/font-parity/src/gametest/resources'
+    'TestSource;../shared/minecraft-fabric/font-parity/blaze3d/src/gametest/kotlin'
+    'TestSource;../shared/minecraft-fabric/font-parity/renderpearl/src/gametest/kotlin'
   )
   case "$version" in
     1.2)
@@ -249,7 +249,7 @@ printf 'dependsOn(":integration:minecraft-fabric-9:runClientGameTest")\n' > "$do
 write_iml \
   "$docs_directory/docs.iml" \
   'Source;src/main/kotlin' \
-  'Source;../minecraft-fabric-unobfuscated/src/gametest/kotlin' \
+  'Source;../shared/minecraft-fabric/scenarios/gui-extractor/src/gametest/kotlin' \
   'TestSource;src/test/kotlin'
 
 font_backend_directory="$fixture_project/runtime/minecraft-fonts-lwjgl"
@@ -260,12 +260,12 @@ write_iml \
   'Source;src/main/kotlin' \
   'TestSource;src/test/kotlin' \
   'TestResource;src/test/resources' \
-  'TestSource;../../integration/minecraft-font-parity/src/gametest/kotlin' \
-  'TestResource;../../integration/minecraft-font-parity/src/gametest/resources'
+  'TestSource;../../integration/shared/font-parity/src/gametest/kotlin' \
+  'TestResource;../../integration/shared/font-parity/src/gametest/resources'
 
 mkdir -p \
   "$fixture_project/api/src/main/kotlin" \
-  "$fixture_project/integration/minecraft-font-parity/src/gametest/java" \
+  "$fixture_project/integration/shared/font-parity/src/gametest/java" \
   "$fixture_project/runtime/minecraft-fabric-unknown-helper/src/main/kotlin"
 
 fixture_versions_json=$(portable_jq -cn --args '$ARGS.positional' "${fixture_versions[@]}")
@@ -289,21 +289,21 @@ portable_jq -n --argjson versions "$fixture_versions_json" '
     + if $version == "9" then [ownedRoot("integration"; $version; "TestSource"; "src/gametest26/java")] else [] end;
   def runtimeLinkedRoots($version):
     [
-      {type: "Source", path: "file://$PROJECT_DIR$/runtime/minecraft-fabric-canvas-shared/src/main/kotlin"},
-      {type: "Source", path: "file://$PROJECT_DIR$/runtime/minecraft-fabric-canvas-fixture-probe/src/main/kotlin"},
-      {type: "Source", path: "file://$PROJECT_DIR$/runtime/minecraft-fabric-shared/src/main/kotlin"},
-      {type: "Source", path: "file://$PROJECT_DIR$/runtime/minecraft-fabric-remote-legacy/src/main/java"},
-      {type: "Source", path: "file://$PROJECT_DIR$/runtime/minecraft-fabric-remote-payload/src/main/java"},
-      {type: "Source", path: "file://$PROJECT_DIR$/runtime/minecraft-fabric-remote-stream/src/main/java"},
-      {type: "Source", path: "file://$PROJECT_DIR$/runtime/minecraft-fabric-input-legacy/src/main/java"},
-      {type: "Source", path: "file://$PROJECT_DIR$/runtime/minecraft-fabric-input-gui/src/main/java"},
-      {type: "Source", path: "file://$PROJECT_DIR$/runtime/minecraft-fabric-hud-float/src/main/java"},
-      {type: "Source", path: "file://$PROJECT_DIR$/runtime/minecraft-fabric-hud-delta/src/main/java"},
-      {type: "Source", path: "file://$PROJECT_DIR$/runtime/minecraft-fabric-hud-extract-gui/src/main/java"},
-      {type: "Source", path: "file://$PROJECT_DIR$/runtime/minecraft-fabric-hud-extract-hud/src/main/java"},
-      {type: "Source", path: "file://$PROJECT_DIR$/runtime/minecraft-fabric-glfw/src/main/java"},
-      {type: "Source", path: "file://$PROJECT_DIR$/runtime/minecraft-fabric-unobfuscated-glfw/src/main/kotlin"},
-      {type: "Source", path: "file://$PROJECT_DIR$/runtime/minecraft-fabric-1.10-legacy/src/main/kotlin"}
+      {type: "Source", path: "file://$PROJECT_DIR$/runtime/shared/minecraft-fabric/canvas/common/src/main/kotlin"},
+      {type: "Source", path: "file://$PROJECT_DIR$/runtime/shared/minecraft-fabric/canvas/fixture-probe/src/main/kotlin"},
+      {type: "Source", path: "file://$PROJECT_DIR$/runtime/shared/minecraft-fabric/lifecycle/common/src/main/kotlin"},
+      {type: "Source", path: "file://$PROJECT_DIR$/runtime/shared/minecraft-fabric/transport/identifier-buffer/src/main/java"},
+      {type: "Source", path: "file://$PROJECT_DIR$/runtime/shared/minecraft-fabric/transport/custom-payload/src/main/java"},
+      {type: "Source", path: "file://$PROJECT_DIR$/runtime/shared/minecraft-fabric/transport/stream-codec/src/main/java"},
+      {type: "Source", path: "file://$PROJECT_DIR$/runtime/shared/minecraft-fabric/input/screen-field/src/main/java"},
+      {type: "Source", path: "file://$PROJECT_DIR$/runtime/shared/minecraft-fabric/input/gui-holder/src/main/java"},
+      {type: "Source", path: "file://$PROJECT_DIR$/runtime/shared/minecraft-fabric/hud/float-delta/src/main/java"},
+      {type: "Source", path: "file://$PROJECT_DIR$/runtime/shared/minecraft-fabric/hud/delta-tracker/src/main/java"},
+      {type: "Source", path: "file://$PROJECT_DIR$/runtime/shared/minecraft-fabric/hud/gui-extractor/src/main/java"},
+      {type: "Source", path: "file://$PROJECT_DIR$/runtime/shared/minecraft-fabric/hud/hud-extractor/src/main/java"},
+      {type: "Source", path: "file://$PROJECT_DIR$/runtime/shared/minecraft-fabric/input/glfw/src/main/java"},
+      {type: "Source", path: "file://$PROJECT_DIR$/runtime/shared/minecraft-fabric/input/glfw-observation/src/main/kotlin"},
+      {type: "Source", path: "file://$PROJECT_DIR$/runtime/shared/minecraft-fabric/input/primitive-callbacks/src/main/kotlin"}
     ]
     + if $version == "1.2" then
         [{type: "Source", path: "file://$PROJECT_DIR$/runtime/minecraft-fabric-1.10/src/main/java"}]
@@ -312,18 +312,18 @@ portable_jq -n --argjson versions "$fixture_versions_json" '
       end;
   def integrationLinkedRoots($version):
     [
-      {type: "TestSource", path: "file://$PROJECT_DIR$/integration/minecraft-fabric-canvas-shared/src/gametest/kotlin"},
-      {type: "TestSource", path: "file://$PROJECT_DIR$/integration/minecraft-fabric-remote-legacy/src/gametest/kotlin"},
-      {type: "TestSource", path: "file://$PROJECT_DIR$/integration/minecraft-fabric-remote-payload/src/gametest/kotlin"},
-      {type: "TestSource", path: "file://$PROJECT_DIR$/integration/minecraft-fabric-remote-stream/src/gametest/kotlin"},
-      {type: "TestSource", path: "file://$PROJECT_DIR$/integration/minecraft-fabric-remote-verification/src/gametest/kotlin"},
-      {type: "TestSource", path: "file://$PROJECT_DIR$/integration/minecraft-fabric-paper-unobfuscated/src/gametest/kotlin"},
+      {type: "TestSource", path: "file://$PROJECT_DIR$/integration/shared/minecraft-fabric/canvas/common/src/gametest/kotlin"},
+      {type: "TestSource", path: "file://$PROJECT_DIR$/integration/shared/minecraft-fabric/transport/identifier-buffer/src/gametest/kotlin"},
+      {type: "TestSource", path: "file://$PROJECT_DIR$/integration/shared/minecraft-fabric/transport/custom-payload/src/gametest/kotlin"},
+      {type: "TestSource", path: "file://$PROJECT_DIR$/integration/shared/minecraft-fabric/transport/stream-codec/src/gametest/kotlin"},
+      {type: "TestSource", path: "file://$PROJECT_DIR$/integration/shared/minecraft-fabric/transport/verification/src/gametest/kotlin"},
+      {type: "TestSource", path: "file://$PROJECT_DIR$/integration/shared/minecraft-fabric/transport/paper-screens/src/gametest/kotlin"},
       {type: "TestSource", path: "file://$PROJECT_DIR$/examples/paper/src/main/kotlin"},
-      {type: "TestSource", path: "file://$PROJECT_DIR$/integration/minecraft-fabric-canvas-fixture-probe/src/gametest/kotlin"},
-      {type: "TestSource", path: "file://$PROJECT_DIR$/integration/minecraft-fabric-1.10-legacy/src/gametest/kotlin"},
-      {type: "TestResource", path: "file://$PROJECT_DIR$/integration/minecraft-font-parity/src/gametest/resources"},
-      {type: "TestSource", path: "file://$PROJECT_DIR$/integration/minecraft-font-parity-blaze3d/src/gametest/kotlin"},
-      {type: "TestSource", path: "file://$PROJECT_DIR$/integration/minecraft-font-parity-renderpearl/src/gametest/kotlin"}
+      {type: "TestSource", path: "file://$PROJECT_DIR$/integration/shared/minecraft-fabric/canvas/fixture-probe/src/gametest/kotlin"},
+      {type: "TestSource", path: "file://$PROJECT_DIR$/integration/shared/minecraft-fabric/input/primitive-callbacks/src/gametest/kotlin"},
+      {type: "TestResource", path: "file://$PROJECT_DIR$/integration/shared/font-parity/src/gametest/resources"},
+      {type: "TestSource", path: "file://$PROJECT_DIR$/integration/shared/minecraft-fabric/font-parity/blaze3d/src/gametest/kotlin"},
+      {type: "TestSource", path: "file://$PROJECT_DIR$/integration/shared/minecraft-fabric/font-parity/renderpearl/src/gametest/kotlin"}
     ]
     + if $version == "1.2" then
         [{type: "TestSource", path: "file://$PROJECT_DIR$/integration/minecraft-fabric-1.10/src/gametest/java"}]
@@ -353,7 +353,7 @@ portable_jq -n --argjson versions "$fixture_versions_json" '
         {type: "TestSource", path: "file://$PROJECT_DIR$/integration/docs/src/test/kotlin"}
       ];
       [
-        {type: "Source", path: "file://$PROJECT_DIR$/integration/minecraft-fabric-unobfuscated/src/gametest/kotlin"}
+        {type: "Source", path: "file://$PROJECT_DIR$/integration/shared/minecraft-fabric/scenarios/gui-extractor/src/gametest/kotlin"}
       ]
     )]
     + [projectModule(
@@ -372,8 +372,8 @@ portable_jq -n --argjson versions "$fixture_versions_json" '
         {type: "TestResource", path: "file://$PROJECT_DIR$/runtime/minecraft-fonts-lwjgl/src/test/resources"}
       ];
       [
-        {type: "TestSource", path: "file://$PROJECT_DIR$/integration/minecraft-font-parity/src/gametest/kotlin"},
-        {type: "TestResource", path: "file://$PROJECT_DIR$/integration/minecraft-font-parity/src/gametest/resources"}
+        {type: "TestSource", path: "file://$PROJECT_DIR$/integration/shared/font-parity/src/gametest/kotlin"},
+        {type: "TestResource", path: "file://$PROJECT_DIR$/integration/shared/font-parity/src/gametest/resources"}
       ]
     )])
   }
@@ -464,24 +464,24 @@ grep -Fq 'malformed source-folder identity, type, or path' "$fixture_root/invali
   echo 'The Qodana model source path containing NUL was rejected for the wrong reason.' >&2
   exit 1
 }
-assert_rejected '(.modules[] | select(.name == "runtime-minecraft-fabric-1.10").contentEntries[0].sourceFolders) |= map(select(.path != "file://$PROJECT_DIR$/runtime/minecraft-fabric-shared/src/main/kotlin"))'
-for ui_root in input-legacy input-gui hud-float hud-delta hud-extract-gui hud-extract-hud; do
+assert_rejected '(.modules[] | select(.name == "runtime-minecraft-fabric-1.10").contentEntries[0].sourceFolders) |= map(select(.path != "file://$PROJECT_DIR$/runtime/shared/minecraft-fabric/lifecycle/common/src/main/kotlin"))'
+for ui_root in input/screen-field input/gui-holder hud/float-delta hud/delta-tracker hud/gui-extractor hud/hud-extractor; do
   assert_rejected '(.modules[] | select(.name == "runtime-minecraft-fabric-1.10").contentEntries[0].sourceFolders) |= map(select(.path != $sourcePath))' \
-    --arg sourcePath "file://\$PROJECT_DIR\$/runtime/minecraft-fabric-$ui_root/src/main/java"
+    --arg sourcePath "file://\$PROJECT_DIR\$/runtime/shared/minecraft-fabric/$ui_root/src/main/java"
   assert_rejected '(.modules[] | select(.name == "integration-minecraft-fabric-1.10").contentEntries[0].sourceFolders) += [{type: "Source", path: $sourcePath}]' \
-    --arg sourcePath "file://\$PROJECT_DIR\$/runtime/minecraft-fabric-$ui_root/src/main/java"
+    --arg sourcePath "file://\$PROJECT_DIR\$/runtime/shared/minecraft-fabric/$ui_root/src/main/java"
 done
-assert_rejected '(.modules[] | select(.name == "runtime-minecraft-fabric-1.10").contentEntries[0].sourceFolders[] | select(.path == "file://$PROJECT_DIR$/runtime/minecraft-fabric-shared/src/main/kotlin")).path = "file://$PROJECT_DIR$/api/src/main/kotlin"'
-assert_rejected '.modules += [{name: "strata.misc", orderEntries: [{type: "SDK"}, {type: "Library"}, {type: "ModuleSource"}], contentEntries: [{sourceFolders: [{type: "Source", path: "file://$PROJECT_DIR$/runtime/minecraft-fabric-shared/src/main/kotlin"}]}]}]'
+assert_rejected '(.modules[] | select(.name == "runtime-minecraft-fabric-1.10").contentEntries[0].sourceFolders[] | select(.path == "file://$PROJECT_DIR$/runtime/shared/minecraft-fabric/lifecycle/common/src/main/kotlin")).path = "file://$PROJECT_DIR$/api/src/main/kotlin"'
+assert_rejected '.modules += [{name: "strata.misc", orderEntries: [{type: "SDK"}, {type: "Library"}, {type: "ModuleSource"}], contentEntries: [{sourceFolders: [{type: "Source", path: "file://$PROJECT_DIR$/runtime/shared/minecraft-fabric/lifecycle/common/src/main/kotlin"}]}]}]'
 assert_rejected '.modules += [{name: "strata.misc", orderEntries: [{type: "SDK"}, {type: "Library"}, {type: "ModuleSource"}], contentEntries: [{sourceFolders: [{type: "Source", path: "file://$PROJECT_DIR$/runtime/minecraft-fabric-unknown-helper/src/main/kotlin"}]}]}]'
-assert_rejected '(.modules[-1].contentEntries[0].sourceFolders[] | select(.path == "file://$PROJECT_DIR$/integration/minecraft-font-parity/src/gametest/kotlin")).path = "file://$PROJECT_DIR$/integration/minecraft-font-parity/src/gametest/java"'
-assert_rejected '(.modules[] | select(.name == "runtime-minecraft-fabric-1.10").contentEntries[0].sourceFolders[] | select(.path == "file://$PROJECT_DIR$/runtime/minecraft-fabric-1.10/src/main/java")).path = "file://$PROJECT_DIR$/runtime/minecraft-fabric-shared/src/main/java"'
+assert_rejected '(.modules[-1].contentEntries[0].sourceFolders[] | select(.path == "file://$PROJECT_DIR$/integration/shared/font-parity/src/gametest/kotlin")).path = "file://$PROJECT_DIR$/integration/shared/font-parity/src/gametest/java"'
+assert_rejected '(.modules[] | select(.name == "runtime-minecraft-fabric-1.10").contentEntries[0].sourceFolders[] | select(.path == "file://$PROJECT_DIR$/runtime/minecraft-fabric-1.10/src/main/java")).path = "file://$PROJECT_DIR$/runtime/shared/minecraft-fabric/lifecycle/common/src/main/java"'
 assert_rejected '(.modules[] | select(.name == "integration-minecraft-fabric-1.2").contentEntries[0].sourceFolders[] | select(.path == "file://$PROJECT_DIR$/integration/minecraft-fabric-1.2/src/gametest/kotlin")).path = "file://$PROJECT_DIR$/integration/minecraft-fabric-1.10/src/gametest/kotlin"'
 assert_rejected '(.modules[-1].contentEntries[0].sourceFolders[] | select(.path == "file://$PROJECT_DIR$/runtime/minecraft-fonts-lwjgl/src/main/kotlin")).path = "file://$PROJECT_DIR$/runtime/minecraft-fonts-lwjgl-shared/src/main/kotlin"'
 assert_rejected '(.modules[] | select(.name == "integration-minecraft-fabric-9").contentEntries[0].sourceFolders[] | select(.path == "file://$PROJECT_DIR$/integration/minecraft-fabric-9/src/gametest26/java")).type = "Source"'
 assert_rejected '(.modules[] | select(.name == "runtime-minecraft-fabric-1.10").contentEntries[0].sourceFolders) += [{type: "Source", path: "file://$PROJECT_DIR$/runtime/minecraft-fabric-1.10/src/wrong/kotlin"}]'
-assert_rejected '(.modules[] | select(.name == "docs").contentEntries[0].sourceFolders[] | select(.path == "file://$PROJECT_DIR$/integration/minecraft-fabric-unobfuscated/src/gametest/kotlin")).path = "file://$PROJECT_DIR$/integration/minecraft-fabric-1.10/src/gametest/java"'
-assert_rejected '(.modules[] | select(.name == "docs").contentEntries[0].sourceFolders[] | select(.path == "file://$PROJECT_DIR$/integration/minecraft-fabric-unobfuscated/src/gametest/kotlin")).type = "TestSource"'
+assert_rejected '(.modules[] | select(.name == "docs").contentEntries[0].sourceFolders[] | select(.path == "file://$PROJECT_DIR$/integration/shared/minecraft-fabric/scenarios/gui-extractor/src/gametest/kotlin")).path = "file://$PROJECT_DIR$/integration/minecraft-fabric-1.10/src/gametest/java"'
+assert_rejected '(.modules[] | select(.name == "docs").contentEntries[0].sourceFolders[] | select(.path == "file://$PROJECT_DIR$/integration/shared/minecraft-fabric/scenarios/gui-extractor/src/gametest/kotlin")).type = "TestSource"'
 assert_rejected '(.modules[] | select(.name == "docs").contentEntries[0].sourceFolders) += [{type: "Source", path: "file://$PROJECT_DIR$/integration/docs/src/extra/kotlin"}]'
 assert_rejected '(.modules[] | select(.name == "integration-minecraft-fabric-1.2").contentEntries[0].sourceFolders) += [{type: "TestResource", path: "file://$PROJECT_DIR$/integration/minecraft-fabric-1.2/src/gametest/resources"}]'
 assert_rejected '.modules += [{name: "strata.misc", orderEntries: [{type: "SDK"}, {type: "Library"}, {type: "ModuleSource"}], contentEntries: [{sourceFolders: [{type: "Source", path: "file://$PROJECT_DIR$/runtime/minecraft-fabric-1.2/src/main/kotlin"}]}]}]'
@@ -511,7 +511,7 @@ assert_rejected \
   --arg sourcePath "file://$fixture_root/outside-model-source"
 assert_rejected \
   '(.modules[] | select(.name == "runtime-minecraft-fabric-1.10").contentEntries[0].sourceFolders) += [{type: "Source", path: $sourcePath}]' \
-  --arg sourcePath 'file:///data/project/runtime/minecraft-fabric-shared/src/main/kotlin'
+  --arg sourcePath 'file:///data/project/runtime/shared/minecraft-fabric/lifecycle/common/src/main/kotlin'
 grep -Fq 'source URL outside the repository' "$fixture_root/invalid.log" || {
   echo 'The container-root Modules.json source URL was not kept outside the host checkout.' >&2
   exit 1
@@ -732,8 +732,8 @@ grep -Fq 'expected exactly one direct unqualified NewModuleRootManager component
 cp -- "$fixture_iml_backup" "$fixture_runtime_iml"
 
 sed -i \
-  -e '/minecraft-fabric-canvas-shared\/src\/main\/kotlin/d' \
-  -e '/<\/component>/i\    <sourceFolder url="file://$MODULE_DIR$/../minecraft-fabric-canvas-shared/src/main/kotlin" isTestSource="false"/>' \
+  -e '/shared\/minecraft-fabric\/canvas\/common\/src\/main\/kotlin/d' \
+  -e '/<\/component>/i\    <sourceFolder url="file://$MODULE_DIR$/../shared/minecraft-fabric/canvas/common/src/main/kotlin" isTestSource="false"/>' \
   "$fixture_runtime_iml"
 assert_project_rejected 'a sourceFolder outside the content element'
 grep -Fq 'sourceFolder must be in the exact direct module/NewModuleRootManager/content/sourceFolder chain' "$fixture_root/invalid.log" || {
@@ -767,19 +767,19 @@ assert_project_rejected 'a multiline absolute source root outside the repository
 cp -- "$fixture_iml_backup" "$fixture_runtime_iml"
 
 sed -i \
-  's#file://\$MODULE_DIR\$/../minecraft-fabric-canvas-shared/src/main/kotlin#file://'"$fixture_root"'/outside/source#' \
+  's#file://\$MODULE_DIR\$/../shared/minecraft-fabric/canvas/common/src/main/kotlin#file://'"$fixture_root"'/outside/source#' \
   "$fixture_runtime_iml"
 assert_project_rejected 'an absolute source root outside the repository'
 cp -- "$fixture_iml_backup" "$fixture_runtime_iml"
 
 sed -i \
-  '/minecraft-fabric-canvas-shared\/src\/main\/kotlin/s/sourceFolder url=/sourceFolder data-url=/' \
+  '/shared\/minecraft-fabric\/canvas\/common\/src\/main\/kotlin/s/sourceFolder url=/sourceFolder data-url=/' \
   "$fixture_runtime_iml"
 assert_project_rejected 'a source folder with a data-url attribute instead of url'
 cp -- "$fixture_iml_backup" "$fixture_runtime_iml"
 
 sed -i \
-  's#url="file://\$MODULE_DIR\$/../minecraft-fabric-canvas-shared/src/main/kotlin"#url="file://$MODULE_DIR$/../minecraft-fabric-canvas-shared/src/main/kotlin" url="file://$MODULE_DIR$/../minecraft-fabric-canvas-shared/src/main/kotlin"#' \
+  's#url="file://\$MODULE_DIR\$/../shared/minecraft-fabric/canvas/common/src/main/kotlin"#url="file://$MODULE_DIR$/../shared/minecraft-fabric/canvas/common/src/main/kotlin" url="file://$MODULE_DIR$/../shared/minecraft-fabric/canvas/common/src/main/kotlin"#' \
   "$fixture_runtime_iml"
 assert_project_rejected 'a source folder with a duplicate url attribute'
 cp -- "$fixture_iml_backup" "$fixture_runtime_iml"
@@ -799,14 +799,14 @@ assert_project_rejected 'a source folder with a datatype attribute instead of ty
 cp -- "$fixture_iml_backup" "$fixture_runtime_iml"
 
 sed -i \
-  '/minecraft-fabric-canvas-shared\/src\/main\/kotlin/s/isTestSource="false"/otherisTestSource="true"/' \
+  '/shared\/minecraft-fabric\/canvas\/common\/src\/main\/kotlin/s/isTestSource="false"/otherisTestSource="true"/' \
   "$fixture_runtime_iml"
 portable_jq '
   (
     .modules[]
     | select(.name == "strata.runtime.minecraft-fabric-1_2")
     | .contentEntries[0].sourceFolders[]
-    | select(.path == "file://$PROJECT_DIR$/runtime/minecraft-fabric-canvas-shared/src/main/kotlin")
+    | select(.path == "file://$PROJECT_DIR$/runtime/shared/minecraft-fabric/canvas/common/src/main/kotlin")
   ).type = "TestSource"
 ' "$fixture_root/Modules.json" > "$fixture_root/invalid.json"
 assert_project_rejected 'a source folder with an otherisTestSource attribute instead of isTestSource' "$fixture_root/invalid.json"
@@ -819,7 +819,7 @@ assert_project_rejected 'a source folder with an unsupported exact type value'
 cp -- "$fixture_iml_backup" "$fixture_runtime_iml"
 
 sed -i \
-  '/minecraft-fabric-canvas-shared\/src\/main\/kotlin/s/isTestSource="false"/isTestSource="maybe"/' \
+  '/shared\/minecraft-fabric\/canvas\/common\/src\/main\/kotlin/s/isTestSource="false"/isTestSource="maybe"/' \
   "$fixture_runtime_iml"
 assert_project_rejected 'a source folder with an unsupported exact isTestSource value'
 cp -- "$fixture_iml_backup" "$fixture_runtime_iml"
@@ -831,7 +831,7 @@ assert_project_rejected 'a source folder with both type and isTestSource attribu
 cp -- "$fixture_iml_backup" "$fixture_runtime_iml"
 
 sed -i \
-  '/minecraft-fabric-canvas-shared\/src\/main\/kotlin/s/isTestSource="false"/isTestSource="false" isTestSource="false"/' \
+  '/shared\/minecraft-fabric\/canvas\/common\/src\/main\/kotlin/s/isTestSource="false"/isTestSource="false" isTestSource="false"/' \
   "$fixture_runtime_iml"
 assert_project_rejected 'a source folder with a duplicate isTestSource attribute'
 cp -- "$fixture_iml_backup" "$fixture_runtime_iml"
@@ -843,7 +843,7 @@ assert_project_rejected 'a source folder with a duplicate exact type attribute'
 cp -- "$fixture_iml_backup" "$fixture_runtime_iml"
 
 sed -i \
-  's#url="file://\$MODULE_DIR\$/../minecraft-fabric-canvas-shared/src/main/kotlin"#url="file://$MODULE_DIR$/../minecraft-fabric-canvas-shared/src/main/kotlin" url="file://$MODULE_DIR$/../minecraft-fabric-canvas-shared/src/main/kotlin"#' \
+  's#url="file://\$MODULE_DIR\$/../shared/minecraft-fabric/canvas/common/src/main/kotlin"#url="file://$MODULE_DIR$/../shared/minecraft-fabric/canvas/common/src/main/kotlin" url="file://$MODULE_DIR$/../shared/minecraft-fabric/canvas/common/src/main/kotlin"#' \
   "$fixture_runtime_iml"
 assert_project_rejected 'a source folder with a duplicate exact url attribute'
 cp -- "$fixture_iml_backup" "$fixture_runtime_iml"
@@ -862,19 +862,19 @@ assert_project_rejected 'a qualified sourceFolder element'
 cp -- "$fixture_iml_backup" "$fixture_runtime_iml"
 
 sed -i \
-  's#<sourceFolder url="file://\$MODULE_DIR\$/../minecraft-fabric-canvas-shared/src/main/kotlin" isTestSource="false"/>#<sourceFolder url="file://$MODULE_DIR$/../minecraft-fabric-canvas-shared/src/main/kotlin" isTestSource="false" data=">" url="file://$MODULE_DIR$/../minecraft-fabric-canvas-shared/src/main/kotlin" type="java-resource"/>#' \
+  's#<sourceFolder url="file://\$MODULE_DIR\$/../shared/minecraft-fabric/canvas/common/src/main/kotlin" isTestSource="false"/>#<sourceFolder url="file://$MODULE_DIR$/../shared/minecraft-fabric/canvas/common/src/main/kotlin" isTestSource="false" data=">" url="file://$MODULE_DIR$/../shared/minecraft-fabric/canvas/common/src/main/kotlin" type="java-resource"/>#' \
   "$fixture_runtime_iml"
 assert_project_rejected 'a quoted greater-than hiding duplicate url and simultaneous source-kind attributes'
 cp -- "$fixture_iml_backup" "$fixture_runtime_iml"
 
 sed -i \
-  's#<sourceFolder url="file://\$MODULE_DIR\$/../minecraft-fabric-canvas-shared/src/main/kotlin" isTestSource="false"/>#<sourceFolder url="file://$MODULE_DIR$/../minecraft-fabric-canvas-shared/src/main/kotlin" isTestSource="false" data="\&gt;"/>#' \
+  's#<sourceFolder url="file://\$MODULE_DIR\$/../shared/minecraft-fabric/canvas/common/src/main/kotlin" isTestSource="false"/>#<sourceFolder url="file://$MODULE_DIR$/../shared/minecraft-fabric/canvas/common/src/main/kotlin" isTestSource="false" data="\&gt;"/>#' \
   "$fixture_runtime_iml"
 assert_project_rejected 'an entity-encoded greater-than in an unexpected sourceFolder attribute'
 cp -- "$fixture_iml_backup" "$fixture_runtime_iml"
 
 sed -i \
-  's#file://\$MODULE_DIR\$/../minecraft-fabric-canvas-shared/src/main/kotlin#file://$MODULE_DIR$/../minecraft-fabric-canvas-shared/src/main/%6botlin#' \
+  's#file://\$MODULE_DIR\$/../shared/minecraft-fabric/canvas/common/src/main/kotlin#file://$MODULE_DIR$/../shared/minecraft-fabric/canvas/common/src/main/%6botlin#' \
   "$fixture_runtime_iml"
 assert_project_rejected 'a percent-encoded IML source URL'
 grep -Fq 'unsupported percent-encoded URL' "$fixture_root/invalid.log" || {
@@ -885,7 +885,7 @@ cp -- "$fixture_iml_backup" "$fixture_runtime_iml"
 
 for control_reference in 9 10 13; do
   sed -i \
-    's#file://\$MODULE_DIR\$/../minecraft-fabric-canvas-shared/src/main/kotlin#file://$MODULE_DIR$/../minecraft-fabric-canvas-shared/src/main/kotlin\&\#'"$control_reference"';#' \
+    's#file://\$MODULE_DIR\$/../shared/minecraft-fabric/canvas/common/src/main/kotlin#file://$MODULE_DIR$/../shared/minecraft-fabric/canvas/common/src/main/kotlin\&\#'"$control_reference"';#' \
     "$fixture_runtime_iml"
   grep -Fq "kotlin&#$control_reference;" "$fixture_runtime_iml" || {
     echo "The entity-derived XML control character reference &#$control_reference; fixture was not created." >&2
@@ -900,7 +900,7 @@ for control_reference in 9 10 13; do
 done
 
 sed -i \
-  's#file://\$MODULE_DIR\$/../minecraft-fabric-canvas-shared/src/main/kotlin#file://$MODULE_DIR$/../minecraft-fabric-canvas-shared/src/main/kotlin\&\#0;#' \
+  's#file://\$MODULE_DIR\$/../shared/minecraft-fabric/canvas/common/src/main/kotlin#file://$MODULE_DIR$/../shared/minecraft-fabric/canvas/common/src/main/kotlin\&\#0;#' \
   "$fixture_runtime_iml"
 grep -Fq 'kotlin&#0;' "$fixture_runtime_iml" || {
   echo 'The XML NUL character reference fixture was not created.' >&2
@@ -914,13 +914,13 @@ grep -Fq 'not well-formed XML' "$fixture_root/invalid.log" || {
 cp -- "$fixture_iml_backup" "$fixture_runtime_iml"
 
 sed -i \
-  's#file://\$MODULE_DIR\$/../minecraft-fabric-canvas-shared/src/main/kotlin#file://$MODULE_DIR$/#' \
+  's#file://\$MODULE_DIR\$/../shared/minecraft-fabric/canvas/common/src/main/kotlin#file://$MODULE_DIR$/#' \
   "$fixture_runtime_iml"
 assert_project_rejected 'the entire module directory as a source root'
 cp -- "$fixture_iml_backup" "$fixture_runtime_iml"
 
 sed -i \
-  's#file://\$MODULE_DIR\$/../minecraft-fabric-canvas-shared/src/main/kotlin#file://'"$fixture_project_file_path"'#' \
+  's#file://\$MODULE_DIR\$/../shared/minecraft-fabric/canvas/common/src/main/kotlin#file://'"$fixture_project_file_path"'#' \
   "$fixture_runtime_iml"
 assert_project_rejected 'the entire repository as a linked source root'
 cp -- "$fixture_iml_backup" "$fixture_runtime_iml"
@@ -1062,13 +1062,13 @@ fixture_docs_iml="$fixture_project/integration/docs/docs.iml"
 fixture_docs_iml_backup="$fixture_root/docs.iml"
 cp -- "$fixture_docs_iml" "$fixture_docs_iml_backup"
 
-sed -i '/minecraft-fabric-unobfuscated\/src\/gametest\/kotlin/d' "$fixture_docs_iml"
+sed -i '/shared\/minecraft-fabric\/scenarios\/gui-extractor\/src\/gametest\/kotlin/d' "$fixture_docs_iml"
 portable_jq '
   (
     .modules[]
     | select(.name == "docs")
     | .contentEntries[0].sourceFolders
-  ) |= map(select(.path != "file://$PROJECT_DIR$/integration/minecraft-fabric-unobfuscated/src/gametest/kotlin"))
+  ) |= map(select(.path != "file://$PROJECT_DIR$/integration/shared/minecraft-fabric/scenarios/gui-extractor/src/gametest/kotlin"))
 ' "$fixture_root/Modules.json" > "$fixture_root/invalid.json"
 assert_project_rejected 'paired IDEA and Qodana removal of the required documentation showcase Source' "$fixture_root/invalid.json"
 grep -Fq 'must link exactly one showcase Source and no other target source root: source=0 total=0' "$fixture_root/invalid.log" || {
@@ -1078,14 +1078,14 @@ grep -Fq 'must link exactly one showcase Source and no other target source root:
 cp -- "$fixture_docs_iml_backup" "$fixture_docs_iml"
 
 sed -i \
-  '/minecraft-fabric-unobfuscated\/src\/gametest\/kotlin/s/isTestSource="false"/isTestSource="true"/' \
+  '/shared\/minecraft-fabric\/scenarios\/gui-extractor\/src\/gametest\/kotlin/s/isTestSource="false"/isTestSource="true"/' \
   "$fixture_docs_iml"
 portable_jq '
   (
     .modules[]
     | select(.name == "docs")
     | .contentEntries[0].sourceFolders[]
-    | select(.path == "file://$PROJECT_DIR$/integration/minecraft-fabric-unobfuscated/src/gametest/kotlin")
+    | select(.path == "file://$PROJECT_DIR$/integration/shared/minecraft-fabric/scenarios/gui-extractor/src/gametest/kotlin")
   ).type = "TestSource"
 ' "$fixture_root/Modules.json" > "$fixture_root/invalid.json"
 assert_project_rejected 'paired IDEA and Qodana source-kind corruption of the required documentation showcase Source' "$fixture_root/invalid.json"
@@ -1095,14 +1095,14 @@ grep -Fq 'must link exactly one showcase Source and no other target source root:
 }
 cp -- "$fixture_docs_iml_backup" "$fixture_docs_iml"
 
-sed -i '/minecraft-fabric-unobfuscated\/src\/gametest\/kotlin/p' "$fixture_docs_iml"
+sed -i '/shared\/minecraft-fabric\/scenarios\/gui-extractor\/src\/gametest\/kotlin/p' "$fixture_docs_iml"
 portable_jq '
   (
     .modules[]
     | select(.name == "docs")
     | .contentEntries[0].sourceFolders
   ) += [
-      {type: "Source", path: "file://$PROJECT_DIR$/integration/minecraft-fabric-unobfuscated/src/gametest/kotlin"}
+      {type: "Source", path: "file://$PROJECT_DIR$/integration/shared/minecraft-fabric/scenarios/gui-extractor/src/gametest/kotlin"}
     ]
 ' "$fixture_root/Modules.json" > "$fixture_root/invalid.json"
 assert_project_rejected 'paired IDEA and Qodana duplication of the required documentation showcase Source' "$fixture_root/invalid.json"
@@ -1159,10 +1159,10 @@ grep -Fq 'must contain at least one Source and TestSource: source=1 testSource=0
 }
 cp -- "$fixture_backend_iml_backup" "$fixture_backend_iml"
 
-sed -i '/minecraft-font-parity\/src\/gametest\/kotlin/d' "$fixture_backend_iml"
+sed -i '/shared\/font-parity\/src\/gametest\/kotlin/d' "$fixture_backend_iml"
 portable_jq '
   (.modules[-1].contentEntries[0].sourceFolders)
-  |= map(select(.path != "file://$PROJECT_DIR$/integration/minecraft-font-parity/src/gametest/kotlin"))
+  |= map(select(.path != "file://$PROJECT_DIR$/integration/shared/font-parity/src/gametest/kotlin"))
 ' "$fixture_root/Modules.json" > "$fixture_root/invalid.json"
 assert_project_rejected 'a font backend missing its parity TestSource from both IDEA and Qodana models' "$fixture_root/invalid.json"
 grep -Fq 'must link exactly one parity TestSource and TestResource: source=0 resource=1 total=1' "$fixture_root/invalid.log" || {
@@ -1171,10 +1171,10 @@ grep -Fq 'must link exactly one parity TestSource and TestResource: source=0 res
 }
 cp -- "$fixture_backend_iml_backup" "$fixture_backend_iml"
 
-sed -i '/minecraft-font-parity\/src\/gametest\/resources/d' "$fixture_backend_iml"
+sed -i '/shared\/font-parity\/src\/gametest\/resources/d' "$fixture_backend_iml"
 portable_jq '
   (.modules[-1].contentEntries[0].sourceFolders)
-  |= map(select(.path != "file://$PROJECT_DIR$/integration/minecraft-font-parity/src/gametest/resources"))
+  |= map(select(.path != "file://$PROJECT_DIR$/integration/shared/font-parity/src/gametest/resources"))
 ' "$fixture_root/Modules.json" > "$fixture_root/invalid.json"
 assert_project_rejected 'a font backend missing its parity TestResource from both IDEA and Qodana models' "$fixture_root/invalid.json"
 grep -Fq 'must link exactly one parity TestSource and TestResource: source=1 resource=0 total=1' "$fixture_root/invalid.log" || {
@@ -1184,15 +1184,15 @@ grep -Fq 'must link exactly one parity TestSource and TestResource: source=1 res
 cp -- "$fixture_backend_iml_backup" "$fixture_backend_iml"
 
 sed -i \
-  -e '/minecraft-font-parity\/src\/gametest\/kotlin/d' \
-  -e '/minecraft-font-parity\/src\/gametest\/resources/d' \
+  -e '/shared\/font-parity\/src\/gametest\/kotlin/d' \
+  -e '/shared\/font-parity\/src\/gametest\/resources/d' \
   "$fixture_backend_iml"
 portable_jq '
   (.modules[-1].contentEntries[0].sourceFolders)
   |= map(
       select(
-        .path != "file://$PROJECT_DIR$/integration/minecraft-font-parity/src/gametest/kotlin"
-        and .path != "file://$PROJECT_DIR$/integration/minecraft-font-parity/src/gametest/resources"
+        .path != "file://$PROJECT_DIR$/integration/shared/font-parity/src/gametest/kotlin"
+        and .path != "file://$PROJECT_DIR$/integration/shared/font-parity/src/gametest/resources"
       )
     )
 ' "$fixture_root/Modules.json" > "$fixture_root/invalid.json"
@@ -1204,13 +1204,13 @@ grep -Fq 'must link exactly one parity TestSource and TestResource: source=0 res
 cp -- "$fixture_backend_iml_backup" "$fixture_backend_iml"
 
 sed -i \
-  -e '/minecraft-font-parity\/src\/gametest\/kotlin/p' \
-  -e '/minecraft-font-parity\/src\/gametest\/resources/p' \
+  -e '/shared\/font-parity\/src\/gametest\/kotlin/p' \
+  -e '/shared\/font-parity\/src\/gametest\/resources/p' \
   "$fixture_backend_iml"
 portable_jq '
   .modules[-1].contentEntries[0].sourceFolders += [
-    {type: "TestSource", path: "file://$PROJECT_DIR$/integration/minecraft-font-parity/src/gametest/kotlin"},
-    {type: "TestResource", path: "file://$PROJECT_DIR$/integration/minecraft-font-parity/src/gametest/resources"}
+    {type: "TestSource", path: "file://$PROJECT_DIR$/integration/shared/font-parity/src/gametest/kotlin"},
+    {type: "TestResource", path: "file://$PROJECT_DIR$/integration/shared/font-parity/src/gametest/resources"}
   ]
 ' "$fixture_root/Modules.json" > "$fixture_root/invalid.json"
 assert_project_rejected 'duplicate font backend parity roots in both IDEA and Qodana models' "$fixture_root/invalid.json"

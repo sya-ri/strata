@@ -431,7 +431,7 @@ internal object ShowcaseScenarioCatalog {
             ScreenScenario(
                 DocumentedScreen.SocialInteractions,
                 SourceReference(
-                    "integration/minecraft-fabric-unobfuscated/src/gametest/kotlin/dev/s7a/strata/integration/minecraft/fabric/MinecraftSocialExample.kt",
+                    "integration/shared/minecraft-fabric/scenarios/gui-extractor/src/gametest/kotlin/dev/s7a/strata/integration/minecraft/fabric/MinecraftSocialExample.kt",
                     "social-screen",
                 ),
                 ShowcaseViewport(IntSize(320, 240), 1),
@@ -439,7 +439,7 @@ internal object ShowcaseScenarioCatalog {
             ScreenScenario(
                 DocumentedScreen.SynchronizedInventory,
                 SourceReference(
-                    "integration/minecraft-fabric-unobfuscated/src/gametest/kotlin/dev/s7a/strata/integration/minecraft/fabric/MinecraftInventoryExample.kt",
+                    "integration/shared/minecraft-fabric/scenarios/gui-extractor/src/gametest/kotlin/dev/s7a/strata/integration/minecraft/fabric/MinecraftInventoryExample.kt",
                     "inventory-screen",
                 ),
                 ShowcaseViewport(IntSize(320, 240), 1),
@@ -452,7 +452,7 @@ internal object ShowcaseScenarioCatalog {
             ScreenScenario(
                 DocumentedScreen.PowerMilestones,
                 SourceReference(
-                    "integration/minecraft-fabric-unobfuscated/src/gametest/kotlin/dev/s7a/strata/integration/minecraft/fabric/MinecraftProgressExample.kt",
+                    "integration/shared/minecraft-fabric/scenarios/gui-extractor/src/gametest/kotlin/dev/s7a/strata/integration/minecraft/fabric/MinecraftProgressExample.kt",
                     "progress-screen",
                 ),
                 ShowcaseViewport(IntSize(320, 180), 1),
@@ -542,19 +542,19 @@ internal object ShowcaseScenarioCatalog {
         slug: String,
     ): SourceReference =
         SourceReference(
-            "integration/minecraft-fabric-unobfuscated/src/gametest/kotlin/dev/s7a/strata/integration/minecraft/fabric/$fileName",
+            "integration/shared/minecraft-fabric/scenarios/gui-extractor/src/gametest/kotlin/dev/s7a/strata/integration/minecraft/fabric/$fileName",
             slug,
         )
 
     private fun overviewSource(): SourceReference =
         SourceReference(
-            "integration/minecraft-fabric-unobfuscated/src/gametest/kotlin/dev/s7a/strata/integration/minecraft/fabric/MinecraftOverviewExample.kt",
+            "integration/shared/minecraft-fabric/scenarios/gui-extractor/src/gametest/kotlin/dev/s7a/strata/integration/minecraft/fabric/MinecraftOverviewExample.kt",
             "overview",
         )
 
     private fun industrialSource(): SourceReference =
         SourceReference(
-            "integration/minecraft-fabric-unobfuscated/src/gametest/kotlin/dev/s7a/strata/integration/minecraft/fabric/MinecraftIndustrialExample.kt",
+            "integration/shared/minecraft-fabric/scenarios/gui-extractor/src/gametest/kotlin/dev/s7a/strata/integration/minecraft/fabric/MinecraftIndustrialExample.kt",
             "industrial-screen",
         )
 

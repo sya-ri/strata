@@ -115,16 +115,13 @@ val runtimeFabricMain =
         .getByType<SourceSetContainer>()
         .named("main")
 val runtimeJar = runtimeFabricProject.tasks.named<Jar>("jar").flatMap { task -> task.archiveFile }
-val sharedGameTest = rootProject.file("integration/minecraft-fabric-unobfuscated/src/gametest")
-val fontParityGameTest = rootProject.file("integration/minecraft-font-parity/src/gametest")
-val nativeFontParityGameTest = rootProject.file("integration/minecraft-font-parity-26/src/gametest")
 
 extensions.configure<DetektExtension> {
-    source.from(fontParityGameTest.resolve("kotlin"), nativeFontParityGameTest.resolve("kotlin"), rootProject.file("integration/minecraft-font-parity-blaze3d/src/gametest/kotlin"))
+    source.from(rootProject.file("integration/shared/font-parity/src/gametest/kotlin"), rootProject.file("integration/shared/minecraft-fabric/font-parity/gui-extractor/src/gametest/kotlin"), rootProject.file("integration/shared/minecraft-fabric/font-parity/blaze3d/src/gametest/kotlin"))
 }
 
 loom {
-    accessWidenerPath.set(nativeFontParityGameTest.resolve("resources/strata-font-parity.accesswidener"))
+    accessWidenerPath.set(rootProject.file("integration/shared/minecraft-fabric/font-parity/gui-extractor/src/gametest/resources/strata-font-parity.accesswidener"))
 }
 
 fabricApi {
@@ -140,25 +137,33 @@ fabricApi {
 extensions.configure<SourceSetContainer> {
     named("gametest") {
         java.srcDir("src/gametest26/java")
-        resources.srcDir(fontParityGameTest.resolve("resources"))
-        resources.srcDir(nativeFontParityGameTest.resolve("resources"))
+        resources.srcDir(rootProject.file("integration/shared/font-parity/src/gametest/resources"))
+        resources.srcDir(rootProject.file("integration/shared/minecraft-fabric/font-parity/gui-extractor/src/gametest/resources"))
     }
 }
 
 extensions.configure<KotlinJvmProjectExtension> {
     sourceSets.named("gametest") {
-        kotlin.srcDir(rootProject.file("integration/minecraft-fabric-paper-unobfuscated/src/gametest/kotlin"))
+        kotlin.srcDir(rootProject.file("integration/shared/minecraft-fabric/transport/paper-screens/src/gametest/kotlin"))
         kotlin.srcDir(rootProject.file("examples/paper/src/main/kotlin"))
         kotlin.exclude("**/PaperDemoPlugin.kt", "**/PaperDemoScreens.kt")
-        kotlin.srcDir(sharedGameTest.resolve("kotlin"))
-        kotlin.srcDir(fontParityGameTest.resolve("kotlin"))
-        kotlin.srcDir(nativeFontParityGameTest.resolve("kotlin"))
-        kotlin.srcDir(rootProject.file("integration/minecraft-font-parity-blaze3d/src/gametest/kotlin"))
+        kotlin.srcDirs(
+            rootProject.file("integration/shared/minecraft-fabric/canvas/gui-extractor/src/gametest/kotlin"),
+            rootProject.file("integration/shared/minecraft-fabric/input/gui-extractor/src/gametest/kotlin"),
+            rootProject.file("integration/shared/minecraft-fabric/lifecycle/gui-extractor/src/gametest/kotlin"),
+            rootProject.file("integration/shared/minecraft-fabric/runner/gui-extractor/src/gametest/kotlin"),
+            rootProject.file("integration/shared/minecraft-fabric/scenarios/gui-extractor/src/gametest/kotlin"),
+            rootProject.file("integration/shared/minecraft-fabric/screen/gui-extractor/src/gametest/kotlin"),
+            rootProject.file("integration/shared/minecraft-fabric/transport/gui-extractor/src/gametest/kotlin"),
+        )
+        kotlin.srcDir(rootProject.file("integration/shared/font-parity/src/gametest/kotlin"))
+        kotlin.srcDir(rootProject.file("integration/shared/minecraft-fabric/font-parity/gui-extractor/src/gametest/kotlin"))
+        kotlin.srcDir(rootProject.file("integration/shared/minecraft-fabric/font-parity/blaze3d/src/gametest/kotlin"))
     }
 }
 
 extensions.configure<DetektExtension> {
-    source.from(layout.projectDirectory.dir("src/gametest/kotlin"), rootProject.file("integration/minecraft-fabric-paper-unobfuscated/src/gametest/kotlin"))
+    source.from(layout.projectDirectory.dir("src/gametest/kotlin"), rootProject.file("integration/shared/minecraft-fabric/transport/paper-screens/src/gametest/kotlin"))
 }
 
 val gametestSourceSet = extensions.getByType<SourceSetContainer>().named("gametest")
@@ -209,7 +214,7 @@ tasks.named<JavaExec>("runManualPaperIme") {
     }
 }
 tasks.named<ProcessResources>("processGametestResources") {
-    from(sharedGameTest.resolve("resources")) {
+    from(rootProject.file("integration/shared/minecraft-fabric/lifecycle/gui-extractor/src/gametest/resources")) {
         exclude("fabric.mod.json")
     }
     from(rootProject.file("runtime/minecraft-fonts-lwjgl/src/test/resources/fonts/strata-test.ttf")) {

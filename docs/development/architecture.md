@@ -41,7 +41,8 @@ Application source does not need a runtime module on its compile classpath.
 Platform integration belongs at runtime and integration boundaries, and the public SPI never dispatches on a concrete component class.
 
 Each versioned Fabric artifact owns its metadata, dependencies, native ABI, distribution, publication, and verification.
-Compatible complete source roots can be shared without becoming Gradle projects or published artifacts.
+Compatible complete source roots live below `runtime/shared` and `integration/shared` without becoming Gradle projects or published artifacts.
+The [shared-source ownership contract](minecraft-versions.md#shared-source-ownership) defines their responsibility and API-based naming.
 The typed Minecraft target matrix records build ownership; runtime behavior uses compiled capabilities rather than reading version strings from that matrix.
 The [compatibility reference](../reference/compatibility.md) lists consumer choices, while [adapter development](../development/minecraft-versions.md) records native source boundaries.
 

@@ -431,9 +431,11 @@ classify_target_source_path() {
   target_source_root=''
   target_source_uses_target_namespace=false
   case "$repository_relative_path" in
-    runtime/minecraft-fabric-* | \
+    runtime/shared/minecraft-fabric/* | \
+      integration/shared/minecraft-fabric/* | \
+      runtime/minecraft-fabric-* | \
       integration/minecraft-fabric-* | \
-      integration/minecraft-font-parity* | \
+      integration/shared/font-parity* | \
       runtime/minecraft-fonts-lwjgl*)
       target_source_uses_target_namespace=true
       ;;
@@ -448,38 +450,21 @@ classify_target_source_path() {
   elif [[ "$repository_relative_path" == 'runtime/minecraft-fonts-lwjgl/'* ]]; then
     target_source_allowed_owners='font-backend'
     target_source_root='runtime/minecraft-fonts-lwjgl'
-  elif [[ "$repository_relative_path" =~ ^(runtime/minecraft-fabric-[0-9]+([.][0-9]+)*(-legacy)?)(/|$) ]]; then
-    target_source_allowed_owners='runtime'
+  elif [[ "$repository_relative_path" =~ ^((runtime|integration)/minecraft-fabric-[0-9]+([.][0-9]+)*)(/|$) ]]; then
+    target_source_allowed_owners=${BASH_REMATCH[2]}
     target_source_root=${BASH_REMATCH[1]}
     [[ "$repository_relative_path" != "$target_source_root" ]] || target_source_is_module_root=true
-  elif [[ "$repository_relative_path" =~ ^(runtime/minecraft-fabric-(shared|identifier|glfw|unobfuscated(-glfw)?|remote-(legacy|payload|stream)|input-(legacy|gui)|hud-(float|delta|extract-gui|extract-hud)))(/|$) ]]; then
-    target_source_allowed_owners='runtime'
+  elif [[ "$repository_relative_path" =~ ^((runtime|integration)/shared/minecraft-fabric/[a-z0-9/-]+)/src(/|$) ]]; then
+    target_source_allowed_owners=${BASH_REMATCH[2]}
     target_source_root=${BASH_REMATCH[1]}
-    [[ "$repository_relative_path" != "$target_source_root" ]] || target_source_is_module_root=true
-  elif [[ "$repository_relative_path" =~ ^(runtime/minecraft-fabric-canvas-[a-z0-9]+(-[a-z0-9]+)*)(/|$) ]]; then
-    target_source_allowed_owners='runtime'
-    target_source_root=${BASH_REMATCH[1]}
-    [[ "$repository_relative_path" != "$target_source_root" ]] || target_source_is_module_root=true
-  elif [[ "$repository_relative_path" =~ ^(integration/minecraft-fabric-[0-9]+([.][0-9]+)*(-legacy)?)(/|$) ]]; then
-    target_source_allowed_owners='integration'
-    target_source_root=${BASH_REMATCH[1]}
-    [[ "$repository_relative_path" != "$target_source_root" ]] || target_source_is_module_root=true
-  elif [[ "$repository_relative_path" =~ ^(integration/minecraft-fabric-(client-gametest|unobfuscated|remote-(legacy|payload|stream|verification)|paper-unobfuscated))(/|$) ]]; then
-    target_source_allowed_owners='integration'
-    target_source_root=${BASH_REMATCH[1]}
-    [[ "$repository_relative_path" != "$target_source_root" ]] || target_source_is_module_root=true
-    if [[ "$repository_relative_path" == 'integration/minecraft-fabric-unobfuscated/src/gametest/kotlin' ]]; then
+    if [[ "$repository_relative_path" == 'integration/shared/minecraft-fabric/scenarios/gui-extractor/src/gametest/kotlin' ]]; then
       target_source_allowed_owners='integration,docs'
     fi
-  elif [[ "$repository_relative_path" =~ ^(integration/minecraft-fabric-canvas-[a-z0-9]+(-[a-z0-9]+)*)(/|$) ]]; then
+  elif [[ "$repository_relative_path" =~ ^(integration/shared/font-parity)(/|$) ]]; then
     target_source_allowed_owners='integration'
     target_source_root=${BASH_REMATCH[1]}
-    [[ "$repository_relative_path" != "$target_source_root" ]] || target_source_is_module_root=true
-  elif [[ "$repository_relative_path" =~ ^(integration/minecraft-font-parity(-legacy|-26|-blaze3d|-renderpearl)?)(/|$) ]]; then
-    target_source_allowed_owners='integration'
-    target_source_root=${BASH_REMATCH[1]}
-    if [[ "$repository_relative_path" == 'integration/minecraft-font-parity/src/gametest/kotlin' || \
-      "$repository_relative_path" == 'integration/minecraft-font-parity/src/gametest/resources' ]]; then
+    if [[ "$repository_relative_path" == 'integration/shared/font-parity/src/gametest/kotlin' || \
+      "$repository_relative_path" == 'integration/shared/font-parity/src/gametest/resources' ]]; then
       target_source_allowed_owners='integration,font-backend'
     elif [[ "$repository_relative_path" == "$target_source_root" ]]; then
       target_source_is_module_root=true
@@ -796,7 +781,7 @@ record_expected_target_source_roots \
   'examples/paper' \
   'examples-paper.iml'
 
-docs_showcase_source_path='file://$PROJECT_DIR$/integration/minecraft-fabric-unobfuscated/src/gametest/kotlin'
+docs_showcase_source_path='file://$PROJECT_DIR$/integration/shared/minecraft-fabric/scenarios/gui-extractor/src/gametest/kotlin'
 required_docs_showcase_source=$'docs\t-\tSource\t'"$docs_showcase_source_path"
 docs_showcase_source_count=$(grep -Fxc "$required_docs_showcase_source" "$expected_target_source_roots" || true)
 docs_target_source_count=0
@@ -852,8 +837,8 @@ if [[ "$font_backend_source_count" -eq 0 || "$font_backend_test_source_count" -e
   exit 1
 fi
 
-font_backend_parity_source_path='file://$PROJECT_DIR$/integration/minecraft-font-parity/src/gametest/kotlin'
-font_backend_parity_resource_path='file://$PROJECT_DIR$/integration/minecraft-font-parity/src/gametest/resources'
+font_backend_parity_source_path='file://$PROJECT_DIR$/integration/shared/font-parity/src/gametest/kotlin'
+font_backend_parity_resource_path='file://$PROJECT_DIR$/integration/shared/font-parity/src/gametest/resources'
 required_font_backend_parity_source=$'font-backend\t-\tTestSource\t'"$font_backend_parity_source_path"
 required_font_backend_parity_resource=$'font-backend\t-\tTestResource\t'"$font_backend_parity_resource_path"
 required_font_backend_parity_source_count=$(grep -Fxc "$required_font_backend_parity_source" "$expected_target_source_roots" || true)
