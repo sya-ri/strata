@@ -4,6 +4,7 @@
 
 Rows are Minecraft versions; columns are source roots compiled into each runtime's main source set.
 A check marks a selected root. These are source directories, not separately installed or published libraries.
+Responsibility-wide `common` roots are omitted; backend-specific roots such as `opengl/common` and `blaze3d/common` remain visible.
 Tables are grouped by responsibility; labels omit that responsibility under `runtime/shared/minecraft-fabric/` when it matches the section, and retain it for collaborating roots such as `screen/gui-extractor`.
 Columns follow the first Minecraft version that uses each root, with names breaking ties.
 Canvas and input are split by purpose: each table compares the source roots providing its named adapters, including versioned source directories.
@@ -16,32 +17,32 @@ See [shared-source ownership](minecraft-versions.md#shared-source-ownership) for
 
 ### Rendering backend
 
-Tracks `FabricNativeCanvasTarget`, `FabricNativeCanvasDriver`, `MinecraftCanvasContext`, `FabricNativeCanvasTextureFactory`, `FabricNativeCanvasTargetFactory` in each runtime's configured main sources.
+Tracks `FabricNativeCanvasDriver`, `MinecraftCanvasContext`, `FabricNativeCanvasTextureFactory`, `FabricNativeCanvasTargetFactory` in each runtime's configured main sources.
 
-| Minecraft | [`common`](../../runtime/shared/minecraft-fabric/canvas/common) | [`opengl/common`](../../runtime/shared/minecraft-fabric/canvas/opengl/common) | [`opengl/platform-buffer-allocation`](../../runtime/shared/minecraft-fabric/canvas/opengl/platform-buffer-allocation) | [`opengl/buffer-allocation`](../../runtime/shared/minecraft-fabric/canvas/opengl/buffer-allocation) | [`blaze3d/common`](../../runtime/shared/minecraft-fabric/canvas/blaze3d/common) | [`blaze3d/direct-textures`](../../runtime/shared/minecraft-fabric/canvas/blaze3d/direct-textures) | [`blaze3d/texture-views`](../../runtime/shared/minecraft-fabric/canvas/blaze3d/texture-views) | [`blaze3d/sampler-textures`](../../runtime/shared/minecraft-fabric/canvas/blaze3d/sampler-textures) | [`blaze3d/samplers`](../../runtime/shared/minecraft-fabric/canvas/blaze3d/samplers) | [`blaze3d/bind-groups`](../../runtime/shared/minecraft-fabric/canvas/blaze3d/bind-groups) | [`renderpearl`](../../runtime/shared/minecraft-fabric/canvas/renderpearl) |
-| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| 1.20 | ✓ | ✓ | ✓ |  |  |  |  |  |  |  |  |
-| 1.20.1 | ✓ | ✓ | ✓ |  |  |  |  |  |  |  |  |
-| 1.20.2 | ✓ | ✓ | ✓ |  |  |  |  |  |  |  |  |
-| 1.20.3 | ✓ | ✓ | ✓ |  |  |  |  |  |  |  |  |
-| 1.20.4 | ✓ | ✓ | ✓ |  |  |  |  |  |  |  |  |
-| 1.20.5 | ✓ | ✓ | ✓ |  |  |  |  |  |  |  |  |
-| 1.20.6 | ✓ | ✓ | ✓ |  |  |  |  |  |  |  |  |
-| 1.21 | ✓ | ✓ | ✓ |  |  |  |  |  |  |  |  |
-| 1.21.1 | ✓ | ✓ | ✓ |  |  |  |  |  |  |  |  |
-| 1.21.2 | ✓ | ✓ |  | ✓ |  |  |  |  |  |  |  |
-| 1.21.3 | ✓ | ✓ |  | ✓ |  |  |  |  |  |  |  |
-| 1.21.4 | ✓ | ✓ |  | ✓ |  |  |  |  |  |  |  |
-| 1.21.5 | ✓ |  |  |  | ✓ | ✓ |  |  |  |  |  |
-| 1.21.6 | ✓ |  |  |  | ✓ |  | ✓ |  |  |  |  |
-| 1.21.7 | ✓ |  |  |  | ✓ |  | ✓ |  |  |  |  |
-| 1.21.8 | ✓ |  |  |  | ✓ |  | ✓ |  |  |  |  |
-| 1.21.9 | ✓ |  |  |  | ✓ |  | ✓ |  |  |  |  |
-| 1.21.10 | ✓ |  |  |  | ✓ |  | ✓ |  |  |  |  |
-| 1.21.11 | ✓ |  |  |  | ✓ |  |  | ✓ | ✓ |  |  |
-| 26.1 | ✓ |  |  |  | ✓ |  |  | ✓ | ✓ |  |  |
-| 26.2 | ✓ |  |  |  | ✓ |  |  | ✓ |  | ✓ |  |
-| 26.3 | ✓ |  |  |  |  |  |  |  |  |  | ✓ |
+| Minecraft | [`opengl/common`](../../runtime/shared/minecraft-fabric/canvas/opengl/common) | [`opengl/platform-buffer-allocation`](../../runtime/shared/minecraft-fabric/canvas/opengl/platform-buffer-allocation) | [`opengl/buffer-allocation`](../../runtime/shared/minecraft-fabric/canvas/opengl/buffer-allocation) | [`blaze3d/common`](../../runtime/shared/minecraft-fabric/canvas/blaze3d/common) | [`blaze3d/direct-textures`](../../runtime/shared/minecraft-fabric/canvas/blaze3d/direct-textures) | [`blaze3d/texture-views`](../../runtime/shared/minecraft-fabric/canvas/blaze3d/texture-views) | [`blaze3d/sampler-textures`](../../runtime/shared/minecraft-fabric/canvas/blaze3d/sampler-textures) | [`blaze3d/samplers`](../../runtime/shared/minecraft-fabric/canvas/blaze3d/samplers) | [`blaze3d/bind-groups`](../../runtime/shared/minecraft-fabric/canvas/blaze3d/bind-groups) | [`renderpearl`](../../runtime/shared/minecraft-fabric/canvas/renderpearl) |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| 1.20 | ✓ | ✓ |  |  |  |  |  |  |  |  |
+| 1.20.1 | ✓ | ✓ |  |  |  |  |  |  |  |  |
+| 1.20.2 | ✓ | ✓ |  |  |  |  |  |  |  |  |
+| 1.20.3 | ✓ | ✓ |  |  |  |  |  |  |  |  |
+| 1.20.4 | ✓ | ✓ |  |  |  |  |  |  |  |  |
+| 1.20.5 | ✓ | ✓ |  |  |  |  |  |  |  |  |
+| 1.20.6 | ✓ | ✓ |  |  |  |  |  |  |  |  |
+| 1.21 | ✓ | ✓ |  |  |  |  |  |  |  |  |
+| 1.21.1 | ✓ | ✓ |  |  |  |  |  |  |  |  |
+| 1.21.2 | ✓ |  | ✓ |  |  |  |  |  |  |  |
+| 1.21.3 | ✓ |  | ✓ |  |  |  |  |  |  |  |
+| 1.21.4 | ✓ |  | ✓ |  |  |  |  |  |  |  |
+| 1.21.5 |  |  |  | ✓ | ✓ |  |  |  |  |  |
+| 1.21.6 |  |  |  | ✓ |  | ✓ |  |  |  |  |
+| 1.21.7 |  |  |  | ✓ |  | ✓ |  |  |  |  |
+| 1.21.8 |  |  |  | ✓ |  | ✓ |  |  |  |  |
+| 1.21.9 |  |  |  | ✓ |  | ✓ |  |  |  |  |
+| 1.21.10 |  |  |  | ✓ |  | ✓ |  |  |  |  |
+| 1.21.11 |  |  |  | ✓ |  |  | ✓ | ✓ |  |  |
+| 26.1 |  |  |  | ✓ |  |  | ✓ | ✓ |  |  |
+| 26.2 |  |  |  | ✓ |  |  | ✓ |  | ✓ |  |
+| 26.3 |  |  |  |  |  |  |  |  |  | ✓ |
 
 ### GUI drawing
 
@@ -220,32 +221,32 @@ Tracks `FabricMinecraftFocusedInputMapping` in each runtime's configured main so
 
 ### Native keyboard and pointer mapping
 
-Tracks `FabricMinecraftInputMapping`, `FabricMinecraftKeyMapping`, `FabricMinecraftPointerMapping` in each runtime's configured main sources.
+Tracks `FabricMinecraftKeyMapping`, `FabricMinecraftPointerMapping` in each runtime's configured main sources.
 
-| Minecraft | [`common`](../../runtime/shared/minecraft-fabric/input/common) | [`glfw`](../../runtime/shared/minecraft-fabric/input/glfw) | [`glfw-observation`](../../runtime/shared/minecraft-fabric/input/glfw-observation) | [`sdl`](../../runtime/shared/minecraft-fabric/input/sdl) |
-| --- | --- | --- | --- | --- |
-| 1.20 | ✓ | ✓ |  |  |
-| 1.20.1 | ✓ | ✓ |  |  |
-| 1.20.2 | ✓ | ✓ |  |  |
-| 1.20.3 | ✓ | ✓ |  |  |
-| 1.20.4 | ✓ | ✓ |  |  |
-| 1.20.5 | ✓ | ✓ |  |  |
-| 1.20.6 | ✓ | ✓ |  |  |
-| 1.21 | ✓ | ✓ |  |  |
-| 1.21.1 | ✓ | ✓ |  |  |
-| 1.21.2 | ✓ | ✓ |  |  |
-| 1.21.3 | ✓ | ✓ |  |  |
-| 1.21.4 | ✓ | ✓ |  |  |
-| 1.21.5 | ✓ | ✓ |  |  |
-| 1.21.6 | ✓ | ✓ |  |  |
-| 1.21.7 | ✓ | ✓ |  |  |
-| 1.21.8 | ✓ | ✓ |  |  |
-| 1.21.9 | ✓ | ✓ |  |  |
-| 1.21.10 | ✓ | ✓ |  |  |
-| 1.21.11 | ✓ | ✓ |  |  |
-| 26.1 | ✓ | ✓ | ✓ |  |
-| 26.2 | ✓ | ✓ | ✓ |  |
-| 26.3 | ✓ |  |  | ✓ |
+| Minecraft | [`glfw`](../../runtime/shared/minecraft-fabric/input/glfw) | [`glfw-observation`](../../runtime/shared/minecraft-fabric/input/glfw-observation) | [`sdl`](../../runtime/shared/minecraft-fabric/input/sdl) |
+| --- | --- | --- | --- |
+| 1.20 | ✓ |  |  |
+| 1.20.1 | ✓ |  |  |
+| 1.20.2 | ✓ |  |  |
+| 1.20.3 | ✓ |  |  |
+| 1.20.4 | ✓ |  |  |
+| 1.20.5 | ✓ |  |  |
+| 1.20.6 | ✓ |  |  |
+| 1.21 | ✓ |  |  |
+| 1.21.1 | ✓ |  |  |
+| 1.21.2 | ✓ |  |  |
+| 1.21.3 | ✓ |  |  |
+| 1.21.4 | ✓ |  |  |
+| 1.21.5 | ✓ |  |  |
+| 1.21.6 | ✓ |  |  |
+| 1.21.7 | ✓ |  |  |
+| 1.21.8 | ✓ |  |  |
+| 1.21.9 | ✓ |  |  |
+| 1.21.10 | ✓ |  |  |
+| 1.21.11 | ✓ |  |  |
+| 26.1 | ✓ | ✓ |  |
+| 26.2 | ✓ | ✓ |  |
+| 26.3 |  |  | ✓ |
 
 ### Mouse routing
 
@@ -306,137 +307,110 @@ Tracks `FabricMinecraftWindowMixin` in each runtime's configured main sources.
 | 26.3 |  | ✓ |
 
 
-## lifecycle
-
-| Minecraft | [`common`](../../runtime/shared/minecraft-fabric/lifecycle/common) |
-| --- | --- |
-| 1.20 | ✓ |
-| 1.20.1 | ✓ |
-| 1.20.2 | ✓ |
-| 1.20.3 | ✓ |
-| 1.20.4 | ✓ |
-| 1.20.5 | ✓ |
-| 1.20.6 | ✓ |
-| 1.21 | ✓ |
-| 1.21.1 | ✓ |
-| 1.21.2 | ✓ |
-| 1.21.3 | ✓ |
-| 1.21.4 | ✓ |
-| 1.21.5 | ✓ |
-| 1.21.6 | ✓ |
-| 1.21.7 | ✓ |
-| 1.21.8 | ✓ |
-| 1.21.9 | ✓ |
-| 1.21.10 | ✓ |
-| 1.21.11 | ✓ |
-| 26.1 | ✓ |
-| 26.2 | ✓ |
-| 26.3 | ✓ |
-
 ## rendering
 
-| Minecraft | [`common`](../../runtime/shared/minecraft-fabric/rendering/common) | [`gui-graphics`](../../runtime/shared/minecraft-fabric/rendering/gui-graphics) | [`render-type`](../../runtime/shared/minecraft-fabric/rendering/render-type) | [`render-pipeline`](../../runtime/shared/minecraft-fabric/rendering/render-pipeline) | [`gui-extractor`](../../runtime/shared/minecraft-fabric/rendering/gui-extractor) |
-| --- | --- | --- | --- | --- | --- |
-| 1.20 | ✓ | ✓ | ✓ |  |  |
-| 1.20.1 | ✓ | ✓ | ✓ |  |  |
-| 1.20.2 | ✓ | ✓ | ✓ |  |  |
-| 1.20.3 | ✓ | ✓ | ✓ |  |  |
-| 1.20.4 | ✓ | ✓ | ✓ |  |  |
-| 1.20.5 | ✓ | ✓ | ✓ |  |  |
-| 1.20.6 | ✓ | ✓ | ✓ |  |  |
-| 1.21 | ✓ | ✓ | ✓ |  |  |
-| 1.21.1 | ✓ | ✓ | ✓ |  |  |
-| 1.21.2 | ✓ | ✓ | ✓ |  |  |
-| 1.21.3 | ✓ | ✓ | ✓ |  |  |
-| 1.21.4 | ✓ | ✓ | ✓ |  |  |
-| 1.21.5 | ✓ | ✓ | ✓ |  |  |
-| 1.21.6 | ✓ | ✓ |  | ✓ |  |
-| 1.21.7 | ✓ | ✓ |  | ✓ |  |
-| 1.21.8 | ✓ | ✓ |  | ✓ |  |
-| 1.21.9 | ✓ | ✓ |  | ✓ |  |
-| 1.21.10 | ✓ | ✓ |  | ✓ |  |
-| 1.21.11 | ✓ | ✓ |  | ✓ |  |
-| 26.1 | ✓ |  |  |  | ✓ |
-| 26.2 | ✓ |  |  |  | ✓ |
-| 26.3 | ✓ |  |  |  | ✓ |
-
-## resources
-
-| Minecraft | [`common`](../../runtime/shared/minecraft-fabric/resources/common) | [`gui-graphics`](../../runtime/shared/minecraft-fabric/resources/gui-graphics) | [`primitive-callbacks`](../../runtime/shared/minecraft-fabric/resources/primitive-callbacks) | [`direct-skin-result`](../../runtime/shared/minecraft-fabric/resources/direct-skin-result) | [`event-callbacks`](../../runtime/shared/minecraft-fabric/resources/event-callbacks) | [`identifier`](../../runtime/shared/minecraft-fabric/resources/identifier) | [`gui-extractor`](../../runtime/shared/minecraft-fabric/resources/gui-extractor) |
-| --- | --- | --- | --- | --- | --- | --- | --- |
-| 1.20 | ✓ | ✓ |  |  |  |  |  |
-| 1.20.1 | ✓ | ✓ |  |  |  |  |  |
-| 1.20.2 | ✓ | ✓ | ✓ |  |  |  |  |
-| 1.20.3 | ✓ | ✓ | ✓ |  |  |  |  |
-| 1.20.4 | ✓ | ✓ | ✓ |  |  |  |  |
-| 1.20.5 | ✓ | ✓ | ✓ | ✓ |  |  |  |
-| 1.20.6 | ✓ | ✓ | ✓ | ✓ |  |  |  |
-| 1.21 | ✓ | ✓ | ✓ | ✓ |  |  |  |
-| 1.21.1 | ✓ | ✓ | ✓ | ✓ |  |  |  |
-| 1.21.2 | ✓ | ✓ | ✓ | ✓ |  |  |  |
-| 1.21.3 | ✓ | ✓ | ✓ | ✓ |  |  |  |
-| 1.21.4 | ✓ | ✓ | ✓ |  |  |  |  |
-| 1.21.5 | ✓ | ✓ | ✓ |  |  |  |  |
-| 1.21.6 | ✓ | ✓ | ✓ |  |  |  |  |
-| 1.21.7 | ✓ | ✓ | ✓ |  |  |  |  |
-| 1.21.8 | ✓ | ✓ | ✓ |  |  |  |  |
-| 1.21.9 | ✓ | ✓ |  |  | ✓ |  |  |
-| 1.21.10 | ✓ | ✓ |  |  | ✓ |  |  |
-| 1.21.11 | ✓ | ✓ |  |  | ✓ | ✓ |  |
-| 26.1 | ✓ |  |  |  |  | ✓ | ✓ |
-| 26.2 | ✓ |  |  |  |  | ✓ | ✓ |
-| 26.3 | ✓ |  |  |  |  | ✓ | ✓ |
-
-## screen
-
-| Minecraft | [`common`](../../runtime/shared/minecraft-fabric/screen/common) | [`gui-graphics`](../../runtime/shared/minecraft-fabric/screen/gui-graphics) | [`primitive-callbacks`](../../runtime/shared/minecraft-fabric/screen/primitive-callbacks) | [`event-callbacks`](../../runtime/shared/minecraft-fabric/screen/event-callbacks) | [`gui-extractor`](../../runtime/shared/minecraft-fabric/screen/gui-extractor) |
-| --- | --- | --- | --- | --- | --- |
-| 1.20 | ✓ | ✓ |  |  |  |
-| 1.20.1 | ✓ | ✓ |  |  |  |
-| 1.20.2 | ✓ | ✓ | ✓ |  |  |
-| 1.20.3 | ✓ | ✓ | ✓ |  |  |
-| 1.20.4 | ✓ | ✓ | ✓ |  |  |
-| 1.20.5 | ✓ | ✓ | ✓ |  |  |
-| 1.20.6 | ✓ | ✓ | ✓ |  |  |
-| 1.21 | ✓ | ✓ | ✓ |  |  |
-| 1.21.1 | ✓ | ✓ | ✓ |  |  |
-| 1.21.2 | ✓ | ✓ | ✓ |  |  |
-| 1.21.3 | ✓ | ✓ | ✓ |  |  |
-| 1.21.4 | ✓ | ✓ | ✓ |  |  |
-| 1.21.5 | ✓ | ✓ | ✓ |  |  |
-| 1.21.6 | ✓ | ✓ | ✓ |  |  |
-| 1.21.7 | ✓ | ✓ | ✓ |  |  |
-| 1.21.8 | ✓ | ✓ | ✓ |  |  |
-| 1.21.9 | ✓ | ✓ |  | ✓ |  |
-| 1.21.10 | ✓ | ✓ |  | ✓ |  |
-| 1.21.11 | ✓ | ✓ |  | ✓ |  |
-| 26.1 | ✓ |  |  |  | ✓ |
-| 26.2 | ✓ |  |  |  | ✓ |
-| 26.3 | ✓ |  |  |  | ✓ |
-
-## transport
-
-| Minecraft | [`common`](../../runtime/shared/minecraft-fabric/transport/common) | [`identifier-buffer`](../../runtime/shared/minecraft-fabric/transport/identifier-buffer) | [`custom-payload`](../../runtime/shared/minecraft-fabric/transport/custom-payload) | [`stream-codec`](../../runtime/shared/minecraft-fabric/transport/stream-codec) |
+| Minecraft | [`gui-graphics`](../../runtime/shared/minecraft-fabric/rendering/gui-graphics) | [`render-type`](../../runtime/shared/minecraft-fabric/rendering/render-type) | [`render-pipeline`](../../runtime/shared/minecraft-fabric/rendering/render-pipeline) | [`gui-extractor`](../../runtime/shared/minecraft-fabric/rendering/gui-extractor) |
 | --- | --- | --- | --- | --- |
 | 1.20 | ✓ | ✓ |  |  |
 | 1.20.1 | ✓ | ✓ |  |  |
-| 1.20.2 | ✓ |  | ✓ |  |
-| 1.20.3 | ✓ |  | ✓ |  |
-| 1.20.4 | ✓ |  | ✓ |  |
-| 1.20.5 | ✓ |  |  | ✓ |
-| 1.20.6 | ✓ |  |  | ✓ |
-| 1.21 | ✓ |  |  | ✓ |
-| 1.21.1 | ✓ |  |  | ✓ |
-| 1.21.2 | ✓ |  |  | ✓ |
-| 1.21.3 | ✓ |  |  | ✓ |
-| 1.21.4 | ✓ |  |  | ✓ |
-| 1.21.5 | ✓ |  |  | ✓ |
-| 1.21.6 | ✓ |  |  | ✓ |
-| 1.21.7 | ✓ |  |  | ✓ |
-| 1.21.8 | ✓ |  |  | ✓ |
-| 1.21.9 | ✓ |  |  | ✓ |
-| 1.21.10 | ✓ |  |  | ✓ |
-| 1.21.11 | ✓ |  |  | ✓ |
-| 26.1 | ✓ |  |  | ✓ |
-| 26.2 | ✓ |  |  | ✓ |
-| 26.3 | ✓ |  |  | ✓ |
+| 1.20.2 | ✓ | ✓ |  |  |
+| 1.20.3 | ✓ | ✓ |  |  |
+| 1.20.4 | ✓ | ✓ |  |  |
+| 1.20.5 | ✓ | ✓ |  |  |
+| 1.20.6 | ✓ | ✓ |  |  |
+| 1.21 | ✓ | ✓ |  |  |
+| 1.21.1 | ✓ | ✓ |  |  |
+| 1.21.2 | ✓ | ✓ |  |  |
+| 1.21.3 | ✓ | ✓ |  |  |
+| 1.21.4 | ✓ | ✓ |  |  |
+| 1.21.5 | ✓ | ✓ |  |  |
+| 1.21.6 | ✓ |  | ✓ |  |
+| 1.21.7 | ✓ |  | ✓ |  |
+| 1.21.8 | ✓ |  | ✓ |  |
+| 1.21.9 | ✓ |  | ✓ |  |
+| 1.21.10 | ✓ |  | ✓ |  |
+| 1.21.11 | ✓ |  | ✓ |  |
+| 26.1 |  |  |  | ✓ |
+| 26.2 |  |  |  | ✓ |
+| 26.3 |  |  |  | ✓ |
+
+## resources
+
+| Minecraft | [`gui-graphics`](../../runtime/shared/minecraft-fabric/resources/gui-graphics) | [`primitive-callbacks`](../../runtime/shared/minecraft-fabric/resources/primitive-callbacks) | [`direct-skin-result`](../../runtime/shared/minecraft-fabric/resources/direct-skin-result) | [`event-callbacks`](../../runtime/shared/minecraft-fabric/resources/event-callbacks) | [`identifier`](../../runtime/shared/minecraft-fabric/resources/identifier) | [`gui-extractor`](../../runtime/shared/minecraft-fabric/resources/gui-extractor) |
+| --- | --- | --- | --- | --- | --- | --- |
+| 1.20 | ✓ |  |  |  |  |  |
+| 1.20.1 | ✓ |  |  |  |  |  |
+| 1.20.2 | ✓ | ✓ |  |  |  |  |
+| 1.20.3 | ✓ | ✓ |  |  |  |  |
+| 1.20.4 | ✓ | ✓ |  |  |  |  |
+| 1.20.5 | ✓ | ✓ | ✓ |  |  |  |
+| 1.20.6 | ✓ | ✓ | ✓ |  |  |  |
+| 1.21 | ✓ | ✓ | ✓ |  |  |  |
+| 1.21.1 | ✓ | ✓ | ✓ |  |  |  |
+| 1.21.2 | ✓ | ✓ | ✓ |  |  |  |
+| 1.21.3 | ✓ | ✓ | ✓ |  |  |  |
+| 1.21.4 | ✓ | ✓ |  |  |  |  |
+| 1.21.5 | ✓ | ✓ |  |  |  |  |
+| 1.21.6 | ✓ | ✓ |  |  |  |  |
+| 1.21.7 | ✓ | ✓ |  |  |  |  |
+| 1.21.8 | ✓ | ✓ |  |  |  |  |
+| 1.21.9 | ✓ |  |  | ✓ |  |  |
+| 1.21.10 | ✓ |  |  | ✓ |  |  |
+| 1.21.11 | ✓ |  |  | ✓ | ✓ |  |
+| 26.1 |  |  |  |  | ✓ | ✓ |
+| 26.2 |  |  |  |  | ✓ | ✓ |
+| 26.3 |  |  |  |  | ✓ | ✓ |
+
+## screen
+
+| Minecraft | [`gui-graphics`](../../runtime/shared/minecraft-fabric/screen/gui-graphics) | [`primitive-callbacks`](../../runtime/shared/minecraft-fabric/screen/primitive-callbacks) | [`event-callbacks`](../../runtime/shared/minecraft-fabric/screen/event-callbacks) | [`gui-extractor`](../../runtime/shared/minecraft-fabric/screen/gui-extractor) |
+| --- | --- | --- | --- | --- |
+| 1.20 | ✓ |  |  |  |
+| 1.20.1 | ✓ |  |  |  |
+| 1.20.2 | ✓ | ✓ |  |  |
+| 1.20.3 | ✓ | ✓ |  |  |
+| 1.20.4 | ✓ | ✓ |  |  |
+| 1.20.5 | ✓ | ✓ |  |  |
+| 1.20.6 | ✓ | ✓ |  |  |
+| 1.21 | ✓ | ✓ |  |  |
+| 1.21.1 | ✓ | ✓ |  |  |
+| 1.21.2 | ✓ | ✓ |  |  |
+| 1.21.3 | ✓ | ✓ |  |  |
+| 1.21.4 | ✓ | ✓ |  |  |
+| 1.21.5 | ✓ | ✓ |  |  |
+| 1.21.6 | ✓ | ✓ |  |  |
+| 1.21.7 | ✓ | ✓ |  |  |
+| 1.21.8 | ✓ | ✓ |  |  |
+| 1.21.9 | ✓ |  | ✓ |  |
+| 1.21.10 | ✓ |  | ✓ |  |
+| 1.21.11 | ✓ |  | ✓ |  |
+| 26.1 |  |  |  | ✓ |
+| 26.2 |  |  |  | ✓ |
+| 26.3 |  |  |  | ✓ |
+
+## transport
+
+| Minecraft | [`identifier-buffer`](../../runtime/shared/minecraft-fabric/transport/identifier-buffer) | [`custom-payload`](../../runtime/shared/minecraft-fabric/transport/custom-payload) | [`stream-codec`](../../runtime/shared/minecraft-fabric/transport/stream-codec) |
+| --- | --- | --- | --- |
+| 1.20 | ✓ |  |  |
+| 1.20.1 | ✓ |  |  |
+| 1.20.2 |  | ✓ |  |
+| 1.20.3 |  | ✓ |  |
+| 1.20.4 |  | ✓ |  |
+| 1.20.5 |  |  | ✓ |
+| 1.20.6 |  |  | ✓ |
+| 1.21 |  |  | ✓ |
+| 1.21.1 |  |  | ✓ |
+| 1.21.2 |  |  | ✓ |
+| 1.21.3 |  |  | ✓ |
+| 1.21.4 |  |  | ✓ |
+| 1.21.5 |  |  | ✓ |
+| 1.21.6 |  |  | ✓ |
+| 1.21.7 |  |  | ✓ |
+| 1.21.8 |  |  | ✓ |
+| 1.21.9 |  |  | ✓ |
+| 1.21.10 |  |  | ✓ |
+| 1.21.11 |  |  | ✓ |
+| 26.1 |  |  | ✓ |
+| 26.2 |  |  | ✓ |
+| 26.3 |  |  | ✓ |

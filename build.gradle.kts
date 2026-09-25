@@ -713,11 +713,12 @@ val sharedSourceMarkdown = providers.provider {
     }
     val rootsByRole = sourcesByVersion.values.flatten().distinct()
         .groupBy { path -> path.removePrefix("runtime/shared/minecraft-fabric/").substringBefore('/') }
+        .mapValues { (role, roots) -> roots.filter { path -> path != "runtime/shared/minecraft-fabric/$role/common" } }
+        .filterValues { roots -> roots.isNotEmpty() }
         .toSortedMap()
     val adaptersByPurpose = mapOf(
         "canvas" to linkedMapOf(
             "Rendering backend" to listOf(
-                "FabricNativeCanvasTarget",
                 "FabricNativeCanvasDriver",
                 "MinecraftCanvasContext",
                 "FabricNativeCanvasTextureFactory",
@@ -730,7 +731,7 @@ val sharedSourceMarkdown = providers.provider {
         "input" to linkedMapOf(
             "Inventory key and mouse bindings" to listOf("FabricMinecraftInventoryBridge", "FabricMinecraftKeyBindingBridge"),
             "Focused keyboard and text input" to listOf("FabricMinecraftFocusedInputMapping"),
-            "Native keyboard and pointer mapping" to listOf("FabricMinecraftInputMapping", "FabricMinecraftKeyMapping", "FabricMinecraftPointerMapping"),
+            "Native keyboard and pointer mapping" to listOf("FabricMinecraftKeyMapping", "FabricMinecraftPointerMapping"),
             "Mouse routing" to listOf("FabricUiMouseMixin"),
             "Window focus hook" to listOf("FabricMinecraftWindowMixin"),
         ),
@@ -745,6 +746,7 @@ val sharedSourceMarkdown = providers.provider {
         appendLine()
         appendLine("Rows are Minecraft versions; columns are source roots compiled into each runtime's main source set.")
         appendLine("A check marks a selected root. These are source directories, not separately installed or published libraries.")
+        appendLine("Responsibility-wide `common` roots are omitted; backend-specific roots such as `opengl/common` and `blaze3d/common` remain visible.")
         appendLine("Tables are grouped by responsibility; labels omit that responsibility under `runtime/shared/minecraft-fabric/` when it matches the section, and retain it for collaborating roots such as `screen/gui-extractor`.")
         appendLine("Columns follow the first Minecraft version that uses each root, with names breaking ties.")
         appendLine("Canvas and input are split by purpose: each table compares the source roots providing its named adapters, including versioned source directories.")
