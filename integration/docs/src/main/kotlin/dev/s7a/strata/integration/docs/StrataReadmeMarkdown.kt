@@ -77,7 +77,36 @@ The matching Fabric client Mod is required for every player using the UI.
 | [Paper / Folia](docs/guides/paper.md) | `strata-runtime-paper` | `dev.s7a.strata:strata-paper-api:$releaseVersion` |
 | [Velocity](docs/guides/velocity.md) | `strata-runtime-velocity` | `dev.s7a.strata:strata-velocity-api:$releaseVersion` |
 
-Compile against the platform's own API as well, and do not bundle Strata into your plugin.
+Add these repositories to either plugin's `build.gradle.kts`:
+
+```kotlin
+repositories {
+    mavenCentral()
+    maven("https://repo.papermc.io/repository/maven-public/")
+}
+```
+
+Paper / Folia dependencies:
+
+```kotlin
+dependencies {
+    compileOnly("dev.s7a.strata:strata-paper-api:$releaseVersion")
+    compileOnly("io.papermc.paper:paper-api:<paper-api-version>")
+}
+```
+
+Velocity dependencies:
+
+```kotlin
+dependencies {
+    compileOnly("dev.s7a.strata:strata-velocity-api:$releaseVersion")
+    compileOnly("com.velocitypowered:velocity-api:<velocity-api-version>")
+}
+```
+
+Replace the platform API version placeholders with versions compatible with your target server or proxy.
+See the compiled [Paper example build](examples/paper/build.gradle.kts) and [Velocity example build](examples/velocity/build.gradle.kts) for complete consumer projects.
+Do not bundle Strata into your plugin.
 Paper consumers declare `depend: [Strata]` in `plugin.yml`; Folia consumers also declare `folia-supported: true`.
 Velocity consumers declare a required dependency on plugin ID `strata`.
 A Velocity-owned UI needs the client Mod and proxy plugin; install Strata on a Paper backend only when that backend also owns UIs.
