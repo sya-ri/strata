@@ -16,14 +16,21 @@ profile:
       ignore:
         - "runtime/minecraft-fabric-[0-9]*/src/font/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftFontCapabilities.kt"
         - "runtime/minecraft-fabric-[0-9]*/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftDynamicTextureFactory.kt"
+        - "runtime/shared/minecraft-fabric/rendering/render-pipeline/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftDynamicTextureFactory.kt"
     # These compatibility files are linked or selected by every version owner in which they exist, so one IDEA index cannot retain each owner-specific call graph.
     - inspection: UnusedSymbol
       ignore:
         - "runtime/minecraft-fabric-[0-9]*/src/font/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftFontCapabilities.kt"
         - "runtime/minecraft-fabric-[0-9]*/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftDynamicTextureFactory.kt"
+        - "runtime/shared/minecraft-fabric/rendering/render-pipeline/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftDynamicTextureFactory.kt"
         - "runtime/minecraft-fabric-[0-9]*/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftGuiMetadata.kt"
+        - "runtime/shared/minecraft-fabric/rendering/render-pipeline/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftGuiMetadata.kt"
         - "runtime/minecraft-fabric-[0-9]*/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftSampledImageDrawing.kt"
+        - "runtime/shared/minecraft-fabric/rendering/render-type/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftSampledImageDrawing.kt"
+        - "runtime/shared/minecraft-fabric/rendering/render-pipeline/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftSampledImageDrawing.kt"
         - "runtime/minecraft-fabric-[0-9]*/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftTextureBlitter.kt"
+        - "runtime/shared/minecraft-fabric/rendering/render-type/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftTextureBlitter.kt"
+        - "runtime/shared/minecraft-fabric/rendering/render-pipeline/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftTextureBlitter.kt"
         - "runtime/minecraft-fabric-[0-9]*/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricNativeCanvasPipeline.kt"
         - "runtime/minecraft-fabric-[0-9]*/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/MinecraftResourceLocation.kt"
         - "runtime/minecraft-fabric-[0-9]*/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/MinecraftResourceLocationException.kt"
@@ -31,6 +38,9 @@ profile:
     - inspection: PointlessBooleanExpression
       ignore:
         - "runtime/minecraft-fabric-[0-9]*/src/main/java/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftSkinBridge.java"
+        - "runtime/shared/minecraft-fabric/resources/direct-skin-result/src/main/java/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftSkinBridge.java"
+        - "runtime/shared/minecraft-fabric/resources/primitive-callbacks/src/main/java/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftSkinBridge.java"
+        - "runtime/shared/minecraft-fabric/resources/event-callbacks/src/main/java/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftSkinBridge.java"
 failThreshold: 0
 exclude:
   # Kotlin explicit API mode requires visibility modifiers on declarations that Qodana marks as redundant.
