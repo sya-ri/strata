@@ -3,7 +3,6 @@ package dev.s7a.strata.runtime.minecraft.fabric.mixin.lifecycle;
 import com.llamalad7.mixinextras.injector.ModifyExpressionValue;
 import com.llamalad7.mixinextras.injector.v2.WrapWithCondition;
 import dev.s7a.strata.runtime.minecraft.fabric.FabricUiInput;
-import net.minecraft.client.Minecraft;
 import net.minecraft.client.MouseHandler;
 import net.minecraft.client.gui.Gui;
 import net.minecraft.client.gui.screens.Screen;

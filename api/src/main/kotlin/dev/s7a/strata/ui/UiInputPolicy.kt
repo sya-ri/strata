@@ -51,6 +51,19 @@ public data class UiInputPolicy(
         /**
          * Allow every gameplay action that the UI has not consumed.
          */
-        public val All: UiInputPolicy = UiInputPolicy(true, true, true, true, true, true, true, true, true, true, true)
+        public val All: UiInputPolicy =
+            UiInputPolicy(
+                movement = true,
+                jump = true,
+                sneak = true,
+                sprint = true,
+                look = true,
+                attack = true,
+                use = true,
+                hotbar = true,
+                drop = true,
+                swapHands = true,
+                pick = true,
+            )
     }
 }

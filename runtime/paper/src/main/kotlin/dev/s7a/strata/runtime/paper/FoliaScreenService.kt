@@ -180,7 +180,7 @@ internal class FoliaScreenService(
         private val registeredOwners = types.values.toMutableSet()
         private val service =
             owner.run {
-                RemoteScreenService<Player, Plugin>(
+                RemoteScreenService(
                     RemoteEndpoint.Server,
                     { recipient, bytes -> recipient.sendPluginMessage(plugin, RemoteConnection.CHANNEL, bytes) },
                     { failure -> plugin.logger.warning("Strata screen ended: ${failure.message}") },

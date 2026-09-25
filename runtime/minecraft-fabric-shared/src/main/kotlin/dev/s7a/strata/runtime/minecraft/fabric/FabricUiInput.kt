@@ -73,7 +73,7 @@ public object FabricUiInput {
         down: Boolean,
         operation: () -> Boolean,
     ): Boolean {
-        val consumed = if (key.value == InputConstants.KEY_ESCAPE || FabricUiSessions.acceptsPointer(screen)) operation() else false
+        val consumed = (key.value == InputConstants.KEY_ESCAPE || FabricUiSessions.acceptsPointer(screen)) && operation()
         forward(screen, key, down, consumed)
         return consumed
     }
@@ -88,7 +88,7 @@ public object FabricUiInput {
         down: Boolean,
         operation: () -> Boolean,
     ): Boolean {
-        val consumed = if (FabricUiSessions.acceptsPointer(screen)) operation() else false
+        val consumed = FabricUiSessions.acceptsPointer(screen) && operation()
         forward(screen, InputConstants.Type.MOUSE.getOrCreate(button), down, consumed)
         return consumed
     }
@@ -101,7 +101,7 @@ public object FabricUiInput {
         screen: FabricMinecraftScreen,
         operation: () -> Boolean,
     ): Boolean {
-        val consumed = if (FabricUiSessions.acceptsPointer(screen)) operation() else false
+        val consumed = FabricUiSessions.acceptsPointer(screen) && operation()
         val owner = configure(screen)
         val window = scrollWindow
         val permitted = owner?.inputPolicy?.hotbar == true && screen.isEditingText().not()

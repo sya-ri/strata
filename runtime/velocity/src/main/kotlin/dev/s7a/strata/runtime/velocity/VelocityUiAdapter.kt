@@ -4,8 +4,10 @@ import com.velocitypowered.api.proxy.Player
 import dev.s7a.strata.projection.ProjectionType
 import dev.s7a.strata.runtime.remote.toUiCapabilities
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
+import dev.s7a.strata.ui.UiClientCapabilities
 import dev.s7a.strata.ui.UiDefinition
 import dev.s7a.strata.velocity.VelocityUiProvider
+import java.util.concurrent.CompletableFuture
 
 /**
  * Binds the application API to the existing bounded Velocity UI worker.
@@ -20,7 +22,7 @@ internal class VelocityUiAdapter(
         definition: () -> UiDefinition,
     ) = service.openUi(ownerPlugin, player, definition)
 
-    override fun capabilities(player: Player) = service.capabilities(player).thenApply { it?.toUiCapabilities() }
+    override fun capabilities(player: Player): CompletableFuture<UiClientCapabilities?> = service.capabilities(player).thenApply { it?.toUiCapabilities() }
 
     override fun <T> execute(
         ownerPlugin: Any,

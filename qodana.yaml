@@ -104,6 +104,8 @@ exclude:
       - runtime/minecraft-fabric-shared/src/main/java/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftProfileCache.java
       - runtime/minecraft-fabric-unobfuscated/src/main/java/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftInventoryBridge.java
       - runtime/minecraft-fabric-shared/src/main/java/dev/s7a/strata/runtime/minecraft/fabric/FabricScreenLifecycleTransaction.java
+      - runtime/minecraft-fabric-input-gui/src/main/java/dev/s7a/strata/runtime/minecraft/fabric/mixin/lifecycle/FabricUiMouseMixin.java
+      - runtime/minecraft-fabric-input-legacy/src/main/java/dev/s7a/strata/runtime/minecraft/fabric/mixin/lifecycle/FabricUiMouseMixin.java
   # The Minecraft adapters keep explicit mapped Java getter calls so their authoritative external API mappings remain visible and searchable.
   - name: UsePropertyAccessSyntax
     paths:
@@ -113,6 +115,7 @@ exclude:
       - integration/minecraft-fabric-unobfuscated/src/gametest/kotlin/dev/s7a/strata/integration/minecraft/fabric/StrataMinecraftClientGameTest.kt
       - runtime/minecraft-fabric-1.21-legacy/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftCurrentPlayerSkin.kt
       - runtime/minecraft-fabric-shared/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftAssetLoader.kt
+      - runtime/minecraft-fabric-shared/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/StrataFabricClient.kt
       - runtime/minecraft-fabric-1.21/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/MinecraftResourceLocation.kt
       - runtime/minecraft-fabric-1.21/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/MinecraftResourceLocationException.kt
       - runtime/minecraft-fabric-1.21.1/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/MinecraftResourceLocation.kt
@@ -145,10 +148,16 @@ exclude:
     paths:
       - integration/minecraft-fabric-unobfuscated/src/gametest/kotlin/dev/s7a/strata/integration/minecraft/fabric/StrataMinecraftClientGameTest.kt
       - runtime/headless/src/main/kotlin/dev/s7a/strata/runtime/headless/HeadlessRendering.kt
-  # The named concrete scope facade keeps its replaceable CoroutineContext implementation distinct from the exposed CoroutineScope contract.
+  # Named concrete facades keep internal coroutine/control state distinct from their exposed CoroutineScope and UiSession contracts.
   - name: ConvertToExplicitBackingFields
     paths:
       - runtime/core/src/main/kotlin/dev/s7a/strata/runtime/UiSession.kt
+      - runtime/remote/src/main/kotlin/dev/s7a/strata/runtime/remote/RemoteClientSession.kt
+  # Migration changes definition construction and session ownership outside the opening call, so no call-only replacement is valid.
+  - name: DeprecatedCallableAddReplaceWith
+    paths:
+      - api/src/main/kotlin/dev/s7a/strata/screen/Screens.kt
+      - runtime/paper/src/main/kotlin/dev/s7a/strata/runtime/paper/PaperScreens.kt
   # Qodana's Kotlin data-flow pass loses the retained pre-update state across the state replacement even though the compiler and anchor-retention tests preserve it.
   - name: KotlinConstantConditions
     paths:
@@ -192,6 +201,7 @@ exclude:
   # Qodana treats the Strata minecraft module as a runtime class source and reports its Kotlin and annotation dependencies as classpath overrides.
   # Exact loaded-client tests exercise these inventory bridges with the owning Minecraft runtime and dependency set.
   # The flattened remote module likewise misattributes the native payloads' compile-time nullability annotations; published remote JARs contain no annotation classes.
+  # HUD callbacks return Kotlin Unit from the standard library; common remote/font JARs do not package kotlin/Unit.class.
   - name: ClassOverriddenAtRuntime
     paths:
       - runtime/minecraft-fabric-1.21-legacy/src/main/java/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftInventoryBridge.java
@@ -201,6 +211,10 @@ exclude:
       - runtime/minecraft-fabric-remote-stream/src/main/java/dev/s7a/strata/runtime/minecraft/fabric/FabricRemotePayload.java
       - runtime/minecraft-fabric-remote-stream/src/main/java/dev/s7a/strata/runtime/minecraft/fabric/FabricRemoteRegistration.java
       - runtime/minecraft-fabric-remote-stream/src/main/java/dev/s7a/strata/runtime/minecraft/fabric/FabricRemoteRegistrationCodec.java
+      - runtime/minecraft-fabric-hud-float/src/main/java/dev/s7a/strata/runtime/minecraft/fabric/mixin/lifecycle/FabricHudMixin.java
+      - runtime/minecraft-fabric-hud-delta/src/main/java/dev/s7a/strata/runtime/minecraft/fabric/mixin/lifecycle/FabricHudMixin.java
+      - runtime/minecraft-fabric-hud-extract-gui/src/main/java/dev/s7a/strata/runtime/minecraft/fabric/mixin/lifecycle/FabricHudMixin.java
+      - runtime/minecraft-fabric-hud-extract-hud/src/main/java/dev/s7a/strata/runtime/minecraft/fabric/mixin/lifecycle/FabricHudMixin.java
   # Mixin target self-casts are valid only after bytecode transformation, which Qodana deliberately does not execute.
   - name: DataFlowIssue
     paths:
@@ -238,14 +252,30 @@ exclude:
       # Paper invokes annotated event handlers reflectively; the external example plugin exercises the public registration API across linked roots.
       - runtime/paper/src/main/kotlin/dev/s7a/strata/runtime/paper/StrataPlugin.kt
       - runtime/paper/src/main/kotlin/dev/s7a/strata/runtime/paper/PaperScreens.kt
+      - integration/paper/src/main/kotlin/dev/s7a/strata/integration/paper/PaperUiPresentationVerification.kt
+      # External plugins consume event payloads, and Bukkit discovers static handler lists reflectively.
+      - paper-api/src/main/kotlin/dev/s7a/strata/paper/event/StrataClientReadyEvent.kt
+      - paper-api/src/main/kotlin/dev/s7a/strata/paper/event/StrataClientDisconnectedEvent.kt
+      - paper-api/src/main/kotlin/dev/s7a/strata/paper/event/StrataUiOpenedEvent.kt
+      - paper-api/src/main/kotlin/dev/s7a/strata/paper/event/StrataUiPresentationChangedEvent.kt
+      - paper-api/src/main/kotlin/dev/s7a/strata/paper/event/StrataUiClosedEvent.kt
+      - velocity-api/src/main/kotlin/dev/s7a/strata/velocity/event/StrataClientReadyEvent.kt
+      - velocity-api/src/main/kotlin/dev/s7a/strata/velocity/event/StrataClientDisconnectedEvent.kt
+      - velocity-api/src/main/kotlin/dev/s7a/strata/velocity/event/StrataUiOpenedEvent.kt
+      - velocity-api/src/main/kotlin/dev/s7a/strata/velocity/event/StrataUiPresentationChangedEvent.kt
+      - velocity-api/src/main/kotlin/dev/s7a/strata/velocity/event/StrataUiClosedEvent.kt
       # Velocity discovers plugin classes and subscribed handlers reflectively; its public API is consumed by external plugins.
       - runtime/velocity/src/main/kotlin/dev/s7a/strata/runtime/velocity/StrataVelocityPlugin.kt
       - runtime/velocity/src/main/kotlin/dev/s7a/strata/runtime/velocity/VelocityScreens.kt
       - examples/velocity/src/main/kotlin/dev/s7a/strata/examples/velocity/VelocityDemoPlugin.kt
       - integration/velocity/src/main/kotlin/dev/s7a/strata/integration/velocity/VelocityAcceptancePlugin.kt
+      - integration/velocity/src/main/kotlin/dev/s7a/strata/integration/velocity/VelocityUiPresentationVerification.kt
       # Shared native sources are indexed under one exact-version owner; even calls within FabricRemoteScreens and Java calls to FabricRemotePayloadTypes lose their matching owner.
       # Every adapter compiles these calls, and integrated/Paper client receipts exercise their negotiation, updates, and teardown.
       - runtime/minecraft-fabric-shared/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricRemoteScreens.kt
+      - runtime/minecraft-fabric-shared/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricUiInput.kt
+      - runtime/minecraft-fabric-shared/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricUiSessions.kt
+      - api/src/main/kotlin/dev/s7a/strata/ui/UiDefinitionPayload.kt
       - runtime/minecraft-fabric-remote-stream/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricRemotePayloadTypes.kt
       # The generated JVM IDEA model co-locates expect/actual declarations without KMP source-set relationships.
       # UnusedSymbol loses references across that boundary, including JVM typealiases and fields used by actual members.

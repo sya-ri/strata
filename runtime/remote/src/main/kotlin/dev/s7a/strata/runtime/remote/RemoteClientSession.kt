@@ -266,7 +266,7 @@ public class RemoteClientSession(
         }
 
         fun received(receipt: RemoteMessage.ControlReceipt) {
-            require(0 < receipt.sequence && receipt.sequence <= sequence) { "Invalid UI control receipt sequence." }
+            require(receipt.sequence in 1..sequence) { "Invalid UI control receipt sequence." }
             if (desired?.sequence != receipt.sequence) return
             desired = null
             if (receipt.rejection != null) rejection = receipt.rejection

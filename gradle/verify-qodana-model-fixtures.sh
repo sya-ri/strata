@@ -168,6 +168,12 @@ for version in "${fixture_versions[@]}"; do
     'Source;../minecraft-fabric-remote-legacy/src/main/java'
     'Source;../minecraft-fabric-remote-payload/src/main/java'
     'Source;../minecraft-fabric-remote-stream/src/main/java'
+    'Source;../minecraft-fabric-input-legacy/src/main/java'
+    'Source;../minecraft-fabric-input-gui/src/main/java'
+    'Source;../minecraft-fabric-hud-float/src/main/java'
+    'Source;../minecraft-fabric-hud-delta/src/main/java'
+    'Source;../minecraft-fabric-hud-extract-gui/src/main/java'
+    'Source;../minecraft-fabric-hud-extract-hud/src/main/java'
     'Source;../minecraft-fabric-glfw/src/main/java'
     'Source;../minecraft-fabric-unobfuscated-glfw/src/main/kotlin'
     'Source;../minecraft-fabric-1.10-legacy/src/main/kotlin'
@@ -289,6 +295,12 @@ portable_jq -n --argjson versions "$fixture_versions_json" '
       {type: "Source", path: "file://$PROJECT_DIR$/runtime/minecraft-fabric-remote-legacy/src/main/java"},
       {type: "Source", path: "file://$PROJECT_DIR$/runtime/minecraft-fabric-remote-payload/src/main/java"},
       {type: "Source", path: "file://$PROJECT_DIR$/runtime/minecraft-fabric-remote-stream/src/main/java"},
+      {type: "Source", path: "file://$PROJECT_DIR$/runtime/minecraft-fabric-input-legacy/src/main/java"},
+      {type: "Source", path: "file://$PROJECT_DIR$/runtime/minecraft-fabric-input-gui/src/main/java"},
+      {type: "Source", path: "file://$PROJECT_DIR$/runtime/minecraft-fabric-hud-float/src/main/java"},
+      {type: "Source", path: "file://$PROJECT_DIR$/runtime/minecraft-fabric-hud-delta/src/main/java"},
+      {type: "Source", path: "file://$PROJECT_DIR$/runtime/minecraft-fabric-hud-extract-gui/src/main/java"},
+      {type: "Source", path: "file://$PROJECT_DIR$/runtime/minecraft-fabric-hud-extract-hud/src/main/java"},
       {type: "Source", path: "file://$PROJECT_DIR$/runtime/minecraft-fabric-glfw/src/main/java"},
       {type: "Source", path: "file://$PROJECT_DIR$/runtime/minecraft-fabric-unobfuscated-glfw/src/main/kotlin"},
       {type: "Source", path: "file://$PROJECT_DIR$/runtime/minecraft-fabric-1.10-legacy/src/main/kotlin"}
@@ -453,6 +465,12 @@ grep -Fq 'malformed source-folder identity, type, or path' "$fixture_root/invali
   exit 1
 }
 assert_rejected '(.modules[] | select(.name == "runtime-minecraft-fabric-1.10").contentEntries[0].sourceFolders) |= map(select(.path != "file://$PROJECT_DIR$/runtime/minecraft-fabric-shared/src/main/kotlin"))'
+for ui_root in input-legacy input-gui hud-float hud-delta hud-extract-gui hud-extract-hud; do
+  assert_rejected '(.modules[] | select(.name == "runtime-minecraft-fabric-1.10").contentEntries[0].sourceFolders) |= map(select(.path != $sourcePath))' \
+    --arg sourcePath "file://\$PROJECT_DIR\$/runtime/minecraft-fabric-$ui_root/src/main/java"
+  assert_rejected '(.modules[] | select(.name == "integration-minecraft-fabric-1.10").contentEntries[0].sourceFolders) += [{type: "Source", path: $sourcePath}]' \
+    --arg sourcePath "file://\$PROJECT_DIR\$/runtime/minecraft-fabric-$ui_root/src/main/java"
+done
 assert_rejected '(.modules[] | select(.name == "runtime-minecraft-fabric-1.10").contentEntries[0].sourceFolders[] | select(.path == "file://$PROJECT_DIR$/runtime/minecraft-fabric-shared/src/main/kotlin")).path = "file://$PROJECT_DIR$/api/src/main/kotlin"'
 assert_rejected '.modules += [{name: "strata.misc", orderEntries: [{type: "SDK"}, {type: "Library"}, {type: "ModuleSource"}], contentEntries: [{sourceFolders: [{type: "Source", path: "file://$PROJECT_DIR$/runtime/minecraft-fabric-shared/src/main/kotlin"}]}]}]'
 assert_rejected '.modules += [{name: "strata.misc", orderEntries: [{type: "SDK"}, {type: "Library"}, {type: "ModuleSource"}], contentEntries: [{sourceFolders: [{type: "Source", path: "file://$PROJECT_DIR$/runtime/minecraft-fabric-unknown-helper/src/main/kotlin"}]}]}]'

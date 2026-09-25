@@ -35,7 +35,7 @@ internal object WebDemoGenerator {
             playwright.chromium().launch().use { browser ->
                 browser.newPage().use { page ->
                     val failures = ArrayList<String>()
-                    page.onPageError({ value -> failures.add(value) })
+                    page.onPageError { value -> failures.add(value) }
                     page.navigate("about:blank")
                     page.addScriptTag(Page.AddScriptTagOptions().setPath(distribution.resolve("app.js")))
                     val json = page.evaluate("revision => window.strataDemoDocuments(revision)", args[2]) as String

@@ -694,7 +694,7 @@ internal class UiSession(
         failures.capture { binding.disable() }
         val closeFailure =
             runCatching { binding.closeSubscription() }
-                .onFailure({ value -> failures.add(value) })
+                .onFailure { value -> failures.add(value) }
                 .getOrNull()
         failures.addOptional(closeFailure)
     }
