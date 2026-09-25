@@ -19,6 +19,7 @@ extensions.configure<SourceSetContainer> {
         java.srcDirs(
             previousRuntime.resolve("java"),
             rootProject.file("runtime/shared/minecraft-fabric/input/common/src/main/java"),
+            rootProject.file("runtime/shared/minecraft-fabric/input/primitive-callbacks/src/main/java"),
             rootProject.file("runtime/shared/minecraft-fabric/lifecycle/common/src/main/java"),
             rootProject.file("runtime/shared/minecraft-fabric/resources/common/src/main/java"),
             rootProject.file("runtime/shared/minecraft-fabric/screen/common/src/main/java"),

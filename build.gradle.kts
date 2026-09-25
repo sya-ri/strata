@@ -104,7 +104,7 @@ private data class MinecraftFabricTarget(
     val integrationProjectPath: String = ":integration:minecraft-fabric-$version"
     val canvasSourcePaths: List<String> =
         (listOf("common") + canvasFamily.sourceRoots).map { suffix -> "runtime/shared/minecraft-fabric/canvas/$suffix" }
-    val inputSourcePaths: List<String> = if (canvasFamily == CanvasFamily.RenderPearl) emptyList() else listOf("runtime/shared/minecraft-fabric/input/glfw")
+    val inputSourcePaths: List<String> = listOf("runtime/shared/minecraft-fabric/input/${if (canvasFamily == CanvasFamily.RenderPearl) "sdl" else "glfw"}")
     val uiInputSourcePath: String = "runtime/shared/minecraft-fabric/input/${if (uiFamily == UiFamily.ExtractHud) "gui-holder" else "screen-field"}"
     val allSourceLinkPaths: List<String> =
         (sourceLinkPaths + canvasSourcePaths + inputSourcePaths + uiInputSourcePath + "runtime/shared/minecraft-fabric/hud/${uiFamily.sourceRoot}" + "runtime/shared/minecraft-fabric/transport/${remoteNetworkFamily.sourceRoot}").distinct()
@@ -257,7 +257,7 @@ private val minecraftFabricTargets =
             sourceLinkPaths =
                 listOf(
                     "runtime/minecraft-fabric-1.20.5",
-                    "runtime/shared/minecraft-fabric/input/direct-skin-result", "runtime/shared/minecraft-fabric/resources/direct-skin-result",
+                    "runtime/shared/minecraft-fabric/resources/direct-skin-result",
                     "runtime/shared/minecraft-fabric/rendering/render-type",
                     "runtime/shared/minecraft-fabric/input/primitive-callbacks", "runtime/shared/minecraft-fabric/resources/primitive-callbacks", "runtime/shared/minecraft-fabric/screen/primitive-callbacks",
                 ) + guiGraphicsRuntimeSourceLinks,
@@ -271,7 +271,7 @@ private val minecraftFabricTargets =
             sourceLinkPaths =
                 listOf(
                     "runtime/minecraft-fabric-1.20.6",
-                    "runtime/shared/minecraft-fabric/input/direct-skin-result", "runtime/shared/minecraft-fabric/resources/direct-skin-result",
+                    "runtime/shared/minecraft-fabric/resources/direct-skin-result",
                     "runtime/shared/minecraft-fabric/rendering/render-type",
                     "runtime/shared/minecraft-fabric/input/primitive-callbacks", "runtime/shared/minecraft-fabric/resources/primitive-callbacks", "runtime/shared/minecraft-fabric/screen/primitive-callbacks",
                 ) + guiGraphicsRuntimeSourceLinks,
@@ -285,7 +285,7 @@ private val minecraftFabricTargets =
             sourceLinkPaths =
                 listOf(
                     "runtime/minecraft-fabric-1.21",
-                    "runtime/shared/minecraft-fabric/input/direct-skin-result", "runtime/shared/minecraft-fabric/resources/direct-skin-result",
+                    "runtime/shared/minecraft-fabric/resources/direct-skin-result",
                     "runtime/shared/minecraft-fabric/rendering/render-type",
                     "runtime/shared/minecraft-fabric/input/primitive-callbacks", "runtime/shared/minecraft-fabric/resources/primitive-callbacks", "runtime/shared/minecraft-fabric/screen/primitive-callbacks",
                 ) + guiGraphicsRuntimeSourceLinks,
@@ -299,7 +299,7 @@ private val minecraftFabricTargets =
             sourceLinkPaths =
                 listOf(
                     "runtime/minecraft-fabric-1.21.1",
-                    "runtime/shared/minecraft-fabric/input/direct-skin-result", "runtime/shared/minecraft-fabric/resources/direct-skin-result",
+                    "runtime/shared/minecraft-fabric/resources/direct-skin-result",
                     "runtime/shared/minecraft-fabric/rendering/render-type",
                     "runtime/shared/minecraft-fabric/input/primitive-callbacks", "runtime/shared/minecraft-fabric/resources/primitive-callbacks", "runtime/shared/minecraft-fabric/screen/primitive-callbacks",
                 ) + guiGraphicsRuntimeSourceLinks,
@@ -314,7 +314,7 @@ private val minecraftFabricTargets =
             sourceLinkPaths =
                 listOf(
                     "runtime/minecraft-fabric-1.21.2",
-                    "runtime/shared/minecraft-fabric/input/direct-skin-result", "runtime/shared/minecraft-fabric/resources/direct-skin-result",
+                    "runtime/shared/minecraft-fabric/resources/direct-skin-result",
                     "runtime/shared/minecraft-fabric/rendering/render-type",
                     "runtime/shared/minecraft-fabric/input/primitive-callbacks", "runtime/shared/minecraft-fabric/resources/primitive-callbacks", "runtime/shared/minecraft-fabric/screen/primitive-callbacks",
                 ) + guiGraphicsRuntimeSourceLinks,
@@ -328,7 +328,7 @@ private val minecraftFabricTargets =
             sourceLinkPaths =
                 listOf(
                     "runtime/minecraft-fabric-1.21.3",
-                    "runtime/shared/minecraft-fabric/input/direct-skin-result", "runtime/shared/minecraft-fabric/resources/direct-skin-result",
+                    "runtime/shared/minecraft-fabric/resources/direct-skin-result",
                     "runtime/shared/minecraft-fabric/rendering/render-type",
                     "runtime/shared/minecraft-fabric/input/primitive-callbacks", "runtime/shared/minecraft-fabric/resources/primitive-callbacks", "runtime/shared/minecraft-fabric/screen/primitive-callbacks",
                 ) + guiGraphicsRuntimeSourceLinks,
@@ -716,22 +716,23 @@ val sharedSourceMarkdown = providers.provider {
         .toSortedMap()
     val adaptersByPurpose = mapOf(
         "canvas" to linkedMapOf(
-            "GPU driver" to "FabricNativeCanvasDriver",
-            "GPU context and texture leases" to "MinecraftCanvasContext",
-            "Texture creation" to "FabricNativeCanvasTextureFactory",
-            "OpenGL target allocation" to "FabricNativeCanvasTargetFactory",
-            "GUI drawing" to "FabricNativeCanvasDrawing",
-            "GUI consumption" to "FabricMinecraftCanvasGuiConsumption",
-            "Render-state discard access" to "FabricMinecraftCanvasRenderStateAccess",
-            "Resource destruction" to "FabricNativeCanvasDestructionFactory",
-            "Frame lifecycle hook" to "FabricMinecraftCanvasRenderFrameMixin",
+            "Rendering backend" to listOf(
+                "FabricNativeCanvasDriver",
+                "MinecraftCanvasContext",
+                "FabricNativeCanvasTextureFactory",
+                "FabricNativeCanvasTargetFactory",
+            ),
+            "GUI drawing" to listOf("FabricNativeCanvasDrawing"),
+            "GUI consumption" to listOf("FabricMinecraftCanvasGuiConsumption"),
+            "Render-state discard access" to listOf("FabricMinecraftCanvasRenderStateAccess"),
+            "Resource lifecycle" to listOf("FabricNativeCanvasDestructionFactory", "FabricMinecraftCanvasRenderFrameMixin"),
         ),
         "input" to linkedMapOf(
-            "Key-binding bridge" to "FabricMinecraftKeyBindingBridge",
-            "Focused keyboard and text input" to "FabricMinecraftFocusedInputMapping",
-            "Pointer mapping" to "FabricMinecraftPointerMapping",
-            "Mouse routing" to "FabricUiMouseMixin",
-            "Window focus hook" to "FabricMinecraftWindowMixin",
+            "Key-binding bridge" to listOf("FabricMinecraftKeyBindingBridge"),
+            "Focused keyboard and text input" to listOf("FabricMinecraftFocusedInputMapping"),
+            "Native keyboard and pointer mapping" to listOf("FabricMinecraftKeyMapping", "FabricMinecraftPointerMapping"),
+            "Mouse routing" to listOf("FabricUiMouseMixin"),
+            "Window focus hook" to listOf("FabricMinecraftWindowMixin"),
         ),
     )
     val sourceFilesByVersion = mainSourcesByVersion.mapValues { (_, sources) ->
@@ -746,27 +747,40 @@ val sharedSourceMarkdown = providers.provider {
         appendLine("A check marks a selected root. These are source directories, not separately installed or published libraries.")
         appendLine("Tables are grouped by responsibility; shared-root labels are relative to that responsibility under `runtime/shared/minecraft-fabric/`, while versioned roots use repository-relative paths.")
         appendLine("Columns follow the first Minecraft version that uses each root, with names breaking ties.")
-        appendLine("Canvas and input are split by purpose: each table compares the source roots providing the same named adapter, including versioned source directories.")
+        appendLine("Canvas and input are split by purpose: each table compares the source roots providing its named adapters, including versioned source directories.")
+        appendLine("Multiple checks in one row identify roots used together for that purpose.")
         appendLine("Different purpose tables are combined, not alternatives; one source root can provide several adapters and appear in several tables.")
-        appendLine("An empty purpose row means that no separate source file for that adapter is configured, not that the feature is unsupported.")
-        appendLine("Complete shared-root inventories remain available below those tables.")
+        appendLine("An empty purpose row means that no separate source file for its adapters is configured, not that the feature is unsupported.")
         appendLine("See [shared-source ownership](minecraft-versions.md#shared-source-ownership) for naming and compatibility rules.")
         rootsByRole.forEach { (role, roots) ->
             appendLine()
             appendLine("## $role")
             appendLine()
             val purposes = adaptersByPurpose[role]
-            purposes?.forEach { (purpose, adapter) ->
+            val documentedRoots = mutableSetOf<String>()
+            if (purposes != null) {
+                val commonRoot = "runtime/shared/minecraft-fabric/$role/common"
+                check(sourcesByVersion.values.all { selected -> commonRoot in selected }) {
+                    "The $role common support root must be configured for every documented runtime."
+                }
+                appendLine("Every version also includes [`common`](../../$commonRoot) support.")
+                appendLine()
+                documentedRoots.add(commonRoot)
+            }
+            purposes?.forEach { (purpose, adapters) ->
                 val adapterRootsByVersion = sourceFilesByVersion.mapValues { (version, files) ->
-                    val matches = files.filter { file -> file.nameWithoutExtension == adapter }
-                    check(matches.size <= 1) { "Multiple sources provide $adapter in Minecraft $version." }
-                    matches.map { file -> rootProject.relativePath(file).replace('\\', '/').substringBefore("/src/") }
+                    adapters.flatMap { adapter ->
+                        val matches = files.filter { file -> file.nameWithoutExtension == adapter }
+                        check(matches.size <= 1) { "Multiple sources provide $adapter in Minecraft $version." }
+                        matches.map { file -> rootProject.relativePath(file).replace('\\', '/').substringBefore("/src/") }
+                    }.distinct().sorted()
                 }
                 val adapterRoots = adapterRootsByVersion.values.flatten().distinct()
-                check(adapterRoots.isNotEmpty()) { "No configured source provides $adapter." }
+                check(adapterRoots.isNotEmpty()) { "No configured source provides $purpose adapters." }
+                documentedRoots.addAll(adapterRoots)
                 appendLine("### $purpose")
                 appendLine()
-                appendLine("Tracks `$adapter` in each runtime's configured main sources.")
+                appendLine("Tracks ${adapters.joinToString(", ") { adapter -> "`$adapter`" }} in each runtime's configured main sources.")
                 appendLine()
                 appendLine("| Minecraft | ${adapterRoots.joinToString(" | ") { path -> "[`${path.removePrefix("runtime/shared/minecraft-fabric/$role/")}`](../../$path)" }} |")
                 appendLine("| --- | ${adapterRoots.joinToString(" | ") { "---" }} |")
@@ -776,18 +790,16 @@ val sharedSourceMarkdown = providers.provider {
                 appendLine()
             }
             if (purposes != null) {
-                appendLine("<details>")
-                appendLine("<summary>Complete $role shared-source inventory</summary>")
-                appendLine()
+                check(documentedRoots.containsAll(roots)) {
+                    "Shared $role roots are missing from the purpose tables: ${roots - documentedRoots}"
+                }
             }
-            appendLine("| Minecraft | ${roots.joinToString(" | ") { path -> "[`${path.removePrefix("runtime/shared/minecraft-fabric/$role/")}`](../../$path)" }} |")
-            appendLine("| --- | ${roots.joinToString(" | ") { "---" }} |")
-            sourcesByVersion.forEach { (version, selected) ->
-                appendLine("| $version | ${roots.joinToString(" | ") { path -> if (path in selected) "✓" else "" }} |")
-            }
-            if (purposes != null) {
-                appendLine()
-                appendLine("</details>")
+            if (purposes == null) {
+                appendLine("| Minecraft | ${roots.joinToString(" | ") { path -> "[`${path.removePrefix("runtime/shared/minecraft-fabric/$role/")}`](../../$path)" }} |")
+                appendLine("| --- | ${roots.joinToString(" | ") { "---" }} |")
+                sourcesByVersion.forEach { (version, selected) ->
+                    appendLine("| $version | ${roots.joinToString(" | ") { path -> if (path in selected) "✓" else "" }} |")
+                }
             }
         }
     }

@@ -234,7 +234,7 @@ exclude:
   - name: ConstantValue
     paths:
       - runtime/shared/minecraft-fabric/input/glfw/src/main/java/dev/s7a/strata/runtime/minecraft/fabric/mixin/lifecycle/FabricMinecraftWindowMixin.java
-      - runtime/minecraft-fabric-26.3/src/main/java/dev/s7a/strata/runtime/minecraft/fabric/mixin/lifecycle/FabricMinecraftWindowMixin.java
+      - runtime/shared/minecraft-fabric/input/sdl/src/main/java/dev/s7a/strata/runtime/minecraft/fabric/mixin/lifecycle/FabricMinecraftWindowMixin.java
   # Mixin shadow fields are target-owned runtime fields and cannot be converted into locals in the untransformed mixin source.
   - name: FieldCanBeLocal
     paths:
@@ -384,7 +384,7 @@ exclude:
       - runtime/shared/minecraft-fabric/input/common/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftInputMapping.kt
       - runtime/shared/minecraft-fabric/input/glfw/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftPointerMapping.kt
       - runtime/shared/minecraft-fabric/input/glfw-observation/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftKeyMapping.kt
-      - runtime/minecraft-fabric-26.3/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftKeyMapping.kt
+      - runtime/shared/minecraft-fabric/input/sdl/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftKeyMapping.kt
       - runtime/shared/minecraft-fabric/resources/common/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftTextMapping.kt
       - runtime/shared/minecraft-fabric/resources/common/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftWidgetImages.kt
       - runtime/shared/minecraft-fabric/input/gui-extractor/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftFocusedInputMapping.kt

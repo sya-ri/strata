@@ -23,7 +23,7 @@ extensions.configure<SourceSetContainer> {
             rootProject.file("runtime/shared/minecraft-fabric/input/gui-graphics/src/main/java"),
             rootProject.file("runtime/shared/minecraft-fabric/resources/gui-graphics/src/main/java"),
             rootProject.file("runtime/shared/minecraft-fabric/screen/gui-graphics/src/main/java"),
-            rootProject.file("runtime/shared/minecraft-fabric/input/direct-skin-result/src/main/java"),
+            rootProject.file("runtime/shared/minecraft-fabric/input/primitive-callbacks/src/main/java"),
             rootProject.file("runtime/shared/minecraft-fabric/resources/direct-skin-result/src/main/java"),
         )
         java.srcDir(rootProject.file("runtime/shared/minecraft-fabric/rendering/render-type/src/main/java"))
