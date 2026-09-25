@@ -7,4 +7,7 @@ commands:
   strata-demo:
     description: Opens the server-owned Strata example screen.
     usage: /strata-demo
+  strata-input-demo:
+    description: Opens the server-owned Strata input notification example.
+    usage: /strata-input-demo
 folia-supported: true
