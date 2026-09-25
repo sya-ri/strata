@@ -2,13 +2,281 @@
 
 # Minecraft runtime shared sources
 
-Rows are Minecraft versions; columns are shared source roots compiled into each runtime's main source set.
+Rows are Minecraft versions; columns are source roots compiled into each runtime's main source set.
 A check marks a selected root. These are source directories, not separately installed or published libraries.
-Tables are grouped by responsibility; paths are relative to `runtime/shared/minecraft-fabric/`.
+Tables are grouped by responsibility; shared-root labels are relative to that responsibility under `runtime/shared/minecraft-fabric/`, while versioned roots use repository-relative paths.
 Columns follow the first Minecraft version that uses each root, with names breaking ties.
+Canvas and input are split by purpose: each table compares the source roots providing the same named adapter, including versioned source directories.
+Different purpose tables are combined, not alternatives; one source root can provide several adapters and appear in several tables.
+An empty purpose row means that no separate source file for that adapter is configured, not that the feature is unsupported.
+Complete shared-root inventories remain available below those tables.
 See [shared-source ownership](minecraft-versions.md#shared-source-ownership) for naming and compatibility rules.
 
 ## canvas
+
+### GPU driver
+
+Tracks `FabricNativeCanvasDriver` in each runtime's configured main sources.
+
+| Minecraft | [`opengl/common`](../../runtime/shared/minecraft-fabric/canvas/opengl/common) | [`blaze3d/direct-textures`](../../runtime/shared/minecraft-fabric/canvas/blaze3d/direct-textures) | [`blaze3d/texture-views`](../../runtime/shared/minecraft-fabric/canvas/blaze3d/texture-views) | [`blaze3d/samplers`](../../runtime/shared/minecraft-fabric/canvas/blaze3d/samplers) | [`blaze3d/bind-groups`](../../runtime/shared/minecraft-fabric/canvas/blaze3d/bind-groups) | [`renderpearl`](../../runtime/shared/minecraft-fabric/canvas/renderpearl) |
+| --- | --- | --- | --- | --- | --- | --- |
+| 1.20 | ✓ |  |  |  |  |  |
+| 1.20.1 | ✓ |  |  |  |  |  |
+| 1.20.2 | ✓ |  |  |  |  |  |
+| 1.20.3 | ✓ |  |  |  |  |  |
+| 1.20.4 | ✓ |  |  |  |  |  |
+| 1.20.5 | ✓ |  |  |  |  |  |
+| 1.20.6 | ✓ |  |  |  |  |  |
+| 1.21 | ✓ |  |  |  |  |  |
+| 1.21.1 | ✓ |  |  |  |  |  |
+| 1.21.2 | ✓ |  |  |  |  |  |
+| 1.21.3 | ✓ |  |  |  |  |  |
+| 1.21.4 | ✓ |  |  |  |  |  |
+| 1.21.5 |  | ✓ |  |  |  |  |
+| 1.21.6 |  |  | ✓ |  |  |  |
+| 1.21.7 |  |  | ✓ |  |  |  |
+| 1.21.8 |  |  | ✓ |  |  |  |
+| 1.21.9 |  |  | ✓ |  |  |  |
+| 1.21.10 |  |  | ✓ |  |  |  |
+| 1.21.11 |  |  |  | ✓ |  |  |
+| 26.1 |  |  |  | ✓ |  |  |
+| 26.2 |  |  |  |  | ✓ |  |
+| 26.3 |  |  |  |  |  | ✓ |
+
+### GPU context and texture leases
+
+Tracks `MinecraftCanvasContext` in each runtime's configured main sources.
+
+| Minecraft | [`opengl/common`](../../runtime/shared/minecraft-fabric/canvas/opengl/common) | [`blaze3d/common`](../../runtime/shared/minecraft-fabric/canvas/blaze3d/common) | [`renderpearl`](../../runtime/shared/minecraft-fabric/canvas/renderpearl) |
+| --- | --- | --- | --- |
+| 1.20 | ✓ |  |  |
+| 1.20.1 | ✓ |  |  |
+| 1.20.2 | ✓ |  |  |
+| 1.20.3 | ✓ |  |  |
+| 1.20.4 | ✓ |  |  |
+| 1.20.5 | ✓ |  |  |
+| 1.20.6 | ✓ |  |  |
+| 1.21 | ✓ |  |  |
+| 1.21.1 | ✓ |  |  |
+| 1.21.2 | ✓ |  |  |
+| 1.21.3 | ✓ |  |  |
+| 1.21.4 | ✓ |  |  |
+| 1.21.5 |  | ✓ |  |
+| 1.21.6 |  | ✓ |  |
+| 1.21.7 |  | ✓ |  |
+| 1.21.8 |  | ✓ |  |
+| 1.21.9 |  | ✓ |  |
+| 1.21.10 |  | ✓ |  |
+| 1.21.11 |  | ✓ |  |
+| 26.1 |  | ✓ |  |
+| 26.2 |  | ✓ |  |
+| 26.3 |  |  | ✓ |
+
+### Texture creation
+
+Tracks `FabricNativeCanvasTextureFactory` in each runtime's configured main sources.
+
+| Minecraft | [`opengl/common`](../../runtime/shared/minecraft-fabric/canvas/opengl/common) | [`blaze3d/direct-textures`](../../runtime/shared/minecraft-fabric/canvas/blaze3d/direct-textures) | [`blaze3d/texture-views`](../../runtime/shared/minecraft-fabric/canvas/blaze3d/texture-views) | [`blaze3d/sampler-textures`](../../runtime/shared/minecraft-fabric/canvas/blaze3d/sampler-textures) | [`renderpearl`](../../runtime/shared/minecraft-fabric/canvas/renderpearl) |
+| --- | --- | --- | --- | --- | --- |
+| 1.20 | ✓ |  |  |  |  |
+| 1.20.1 | ✓ |  |  |  |  |
+| 1.20.2 | ✓ |  |  |  |  |
+| 1.20.3 | ✓ |  |  |  |  |
+| 1.20.4 | ✓ |  |  |  |  |
+| 1.20.5 | ✓ |  |  |  |  |
+| 1.20.6 | ✓ |  |  |  |  |
+| 1.21 | ✓ |  |  |  |  |
+| 1.21.1 | ✓ |  |  |  |  |
+| 1.21.2 | ✓ |  |  |  |  |
+| 1.21.3 | ✓ |  |  |  |  |
+| 1.21.4 | ✓ |  |  |  |  |
+| 1.21.5 |  | ✓ |  |  |  |
+| 1.21.6 |  |  | ✓ |  |  |
+| 1.21.7 |  |  | ✓ |  |  |
+| 1.21.8 |  |  | ✓ |  |  |
+| 1.21.9 |  |  | ✓ |  |  |
+| 1.21.10 |  |  | ✓ |  |  |
+| 1.21.11 |  |  |  | ✓ |  |
+| 26.1 |  |  |  | ✓ |  |
+| 26.2 |  |  |  | ✓ |  |
+| 26.3 |  |  |  |  | ✓ |
+
+### OpenGL target allocation
+
+Tracks `FabricNativeCanvasTargetFactory` in each runtime's configured main sources.
+
+| Minecraft | [`opengl/platform-buffer-allocation`](../../runtime/shared/minecraft-fabric/canvas/opengl/platform-buffer-allocation) | [`opengl/buffer-allocation`](../../runtime/shared/minecraft-fabric/canvas/opengl/buffer-allocation) |
+| --- | --- | --- |
+| 1.20 | ✓ |  |
+| 1.20.1 | ✓ |  |
+| 1.20.2 | ✓ |  |
+| 1.20.3 | ✓ |  |
+| 1.20.4 | ✓ |  |
+| 1.20.5 | ✓ |  |
+| 1.20.6 | ✓ |  |
+| 1.21 | ✓ |  |
+| 1.21.1 | ✓ |  |
+| 1.21.2 |  | ✓ |
+| 1.21.3 |  | ✓ |
+| 1.21.4 |  | ✓ |
+| 1.21.5 |  |  |
+| 1.21.6 |  |  |
+| 1.21.7 |  |  |
+| 1.21.8 |  |  |
+| 1.21.9 |  |  |
+| 1.21.10 |  |  |
+| 1.21.11 |  |  |
+| 26.1 |  |  |
+| 26.2 |  |  |
+| 26.3 |  |  |
+
+### GUI drawing
+
+Tracks `FabricNativeCanvasDrawing` in each runtime's configured main sources.
+
+| Minecraft | [`drawing/gui-graphics`](../../runtime/shared/minecraft-fabric/canvas/drawing/gui-graphics) | [`drawing/gui-extractor`](../../runtime/shared/minecraft-fabric/canvas/drawing/gui-extractor) | [`renderpearl`](../../runtime/shared/minecraft-fabric/canvas/renderpearl) |
+| --- | --- | --- | --- |
+| 1.20 | ✓ |  |  |
+| 1.20.1 | ✓ |  |  |
+| 1.20.2 | ✓ |  |  |
+| 1.20.3 | ✓ |  |  |
+| 1.20.4 | ✓ |  |  |
+| 1.20.5 | ✓ |  |  |
+| 1.20.6 | ✓ |  |  |
+| 1.21 | ✓ |  |  |
+| 1.21.1 | ✓ |  |  |
+| 1.21.2 | ✓ |  |  |
+| 1.21.3 | ✓ |  |  |
+| 1.21.4 | ✓ |  |  |
+| 1.21.5 | ✓ |  |  |
+| 1.21.6 | ✓ |  |  |
+| 1.21.7 | ✓ |  |  |
+| 1.21.8 | ✓ |  |  |
+| 1.21.9 | ✓ |  |  |
+| 1.21.10 | ✓ |  |  |
+| 1.21.11 | ✓ |  |  |
+| 26.1 |  | ✓ |  |
+| 26.2 |  | ✓ |  |
+| 26.3 |  |  | ✓ |
+
+### GUI consumption
+
+Tracks `FabricMinecraftCanvasGuiConsumption` in each runtime's configured main sources.
+
+| Minecraft | [`consumption/flush`](../../runtime/shared/minecraft-fabric/canvas/consumption/flush) | [`consumption/buffer-source`](../../runtime/shared/minecraft-fabric/canvas/consumption/buffer-source) | [`consumption/vertex-buffer`](../../runtime/shared/minecraft-fabric/canvas/consumption/vertex-buffer) |
+| --- | --- | --- | --- |
+| 1.20 | ✓ |  |  |
+| 1.20.1 | ✓ |  |  |
+| 1.20.2 | ✓ |  |  |
+| 1.20.3 | ✓ |  |  |
+| 1.20.4 | ✓ |  |  |
+| 1.20.5 | ✓ |  |  |
+| 1.20.6 | ✓ |  |  |
+| 1.21 | ✓ |  |  |
+| 1.21.1 | ✓ |  |  |
+| 1.21.2 | ✓ |  |  |
+| 1.21.3 | ✓ |  |  |
+| 1.21.4 | ✓ |  |  |
+| 1.21.5 | ✓ |  |  |
+| 1.21.6 |  | ✓ |  |
+| 1.21.7 |  | ✓ |  |
+| 1.21.8 |  | ✓ |  |
+| 1.21.9 |  | ✓ |  |
+| 1.21.10 |  | ✓ |  |
+| 1.21.11 |  | ✓ |  |
+| 26.1 |  | ✓ |  |
+| 26.2 |  |  | ✓ |
+| 26.3 |  |  | ✓ |
+
+### Render-state discard access
+
+Tracks `FabricMinecraftCanvasRenderStateAccess` in each runtime's configured main sources.
+
+| Minecraft | [`discard/gui-graphics`](../../runtime/shared/minecraft-fabric/canvas/discard/gui-graphics) | [`discard/gui-extractor`](../../runtime/shared/minecraft-fabric/canvas/discard/gui-extractor) |
+| --- | --- | --- |
+| 1.20 |  |  |
+| 1.20.1 |  |  |
+| 1.20.2 |  |  |
+| 1.20.3 |  |  |
+| 1.20.4 |  |  |
+| 1.20.5 |  |  |
+| 1.20.6 |  |  |
+| 1.21 |  |  |
+| 1.21.1 |  |  |
+| 1.21.2 |  |  |
+| 1.21.3 |  |  |
+| 1.21.4 |  |  |
+| 1.21.5 |  |  |
+| 1.21.6 | ✓ |  |
+| 1.21.7 | ✓ |  |
+| 1.21.8 | ✓ |  |
+| 1.21.9 | ✓ |  |
+| 1.21.10 | ✓ |  |
+| 1.21.11 | ✓ |  |
+| 26.1 |  | ✓ |
+| 26.2 |  | ✓ |
+| 26.3 |  | ✓ |
+
+### Resource destruction
+
+Tracks `FabricNativeCanvasDestructionFactory` in each runtime's configured main sources.
+
+| Minecraft | [`lifecycle/immediate-release`](../../runtime/shared/minecraft-fabric/canvas/lifecycle/immediate-release) | [`blaze3d/bind-groups`](../../runtime/shared/minecraft-fabric/canvas/blaze3d/bind-groups) | [`renderpearl`](../../runtime/shared/minecraft-fabric/canvas/renderpearl) |
+| --- | --- | --- | --- |
+| 1.20 | ✓ |  |  |
+| 1.20.1 | ✓ |  |  |
+| 1.20.2 | ✓ |  |  |
+| 1.20.3 | ✓ |  |  |
+| 1.20.4 | ✓ |  |  |
+| 1.20.5 | ✓ |  |  |
+| 1.20.6 | ✓ |  |  |
+| 1.21 | ✓ |  |  |
+| 1.21.1 | ✓ |  |  |
+| 1.21.2 | ✓ |  |  |
+| 1.21.3 | ✓ |  |  |
+| 1.21.4 | ✓ |  |  |
+| 1.21.5 | ✓ |  |  |
+| 1.21.6 | ✓ |  |  |
+| 1.21.7 | ✓ |  |  |
+| 1.21.8 | ✓ |  |  |
+| 1.21.9 | ✓ |  |  |
+| 1.21.10 | ✓ |  |  |
+| 1.21.11 | ✓ |  |  |
+| 26.1 | ✓ |  |  |
+| 26.2 |  | ✓ |  |
+| 26.3 |  |  | ✓ |
+
+### Frame lifecycle hook
+
+Tracks `FabricMinecraftCanvasRenderFrameMixin` in each runtime's configured main sources.
+
+| Minecraft | [`lifecycle/frame`](../../runtime/shared/minecraft-fabric/canvas/lifecycle/frame) |
+| --- | --- |
+| 1.20 |  |
+| 1.20.1 |  |
+| 1.20.2 |  |
+| 1.20.3 |  |
+| 1.20.4 |  |
+| 1.20.5 |  |
+| 1.20.6 |  |
+| 1.21 |  |
+| 1.21.1 |  |
+| 1.21.2 |  |
+| 1.21.3 |  |
+| 1.21.4 |  |
+| 1.21.5 |  |
+| 1.21.6 |  |
+| 1.21.7 |  |
+| 1.21.8 |  |
+| 1.21.9 |  |
+| 1.21.10 |  |
+| 1.21.11 |  |
+| 26.1 | ✓ |
+| 26.2 | ✓ |
+| 26.3 | ✓ |
+
+<details>
+<summary>Complete canvas shared-source inventory</summary>
 
 | Minecraft | [`common`](../../runtime/shared/minecraft-fabric/canvas/common) | [`consumption/flush`](../../runtime/shared/minecraft-fabric/canvas/consumption/flush) | [`drawing/gui-graphics`](../../runtime/shared/minecraft-fabric/canvas/drawing/gui-graphics) | [`lifecycle/immediate-release`](../../runtime/shared/minecraft-fabric/canvas/lifecycle/immediate-release) | [`opengl/common`](../../runtime/shared/minecraft-fabric/canvas/opengl/common) | [`opengl/platform-buffer-allocation`](../../runtime/shared/minecraft-fabric/canvas/opengl/platform-buffer-allocation) | [`opengl/buffer-allocation`](../../runtime/shared/minecraft-fabric/canvas/opengl/buffer-allocation) | [`blaze3d/common`](../../runtime/shared/minecraft-fabric/canvas/blaze3d/common) | [`blaze3d/direct-textures`](../../runtime/shared/minecraft-fabric/canvas/blaze3d/direct-textures) | [`blaze3d/texture-views`](../../runtime/shared/minecraft-fabric/canvas/blaze3d/texture-views) | [`consumption/buffer-source`](../../runtime/shared/minecraft-fabric/canvas/consumption/buffer-source) | [`discard/gui-graphics`](../../runtime/shared/minecraft-fabric/canvas/discard/gui-graphics) | [`blaze3d/sampler-textures`](../../runtime/shared/minecraft-fabric/canvas/blaze3d/sampler-textures) | [`blaze3d/samplers`](../../runtime/shared/minecraft-fabric/canvas/blaze3d/samplers) | [`discard/gui-extractor`](../../runtime/shared/minecraft-fabric/canvas/discard/gui-extractor) | [`drawing/gui-extractor`](../../runtime/shared/minecraft-fabric/canvas/drawing/gui-extractor) | [`lifecycle/frame`](../../runtime/shared/minecraft-fabric/canvas/lifecycle/frame) | [`blaze3d/bind-groups`](../../runtime/shared/minecraft-fabric/canvas/blaze3d/bind-groups) | [`consumption/vertex-buffer`](../../runtime/shared/minecraft-fabric/canvas/consumption/vertex-buffer) | [`renderpearl`](../../runtime/shared/minecraft-fabric/canvas/renderpearl) |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
@@ -34,6 +302,8 @@ See [shared-source ownership](minecraft-versions.md#shared-source-ownership) for
 | 26.1 | ✓ |  |  | ✓ |  |  |  | ✓ |  |  | ✓ |  | ✓ | ✓ | ✓ | ✓ | ✓ |  |  |  |
 | 26.2 | ✓ |  |  |  |  |  |  | ✓ |  |  |  |  | ✓ |  | ✓ | ✓ | ✓ | ✓ | ✓ |  |
 | 26.3 | ✓ |  |  |  |  |  |  |  |  |  |  |  |  |  | ✓ |  | ✓ |  | ✓ | ✓ |
+
+</details>
 
 ## hud
 
@@ -64,6 +334,154 @@ See [shared-source ownership](minecraft-versions.md#shared-source-ownership) for
 
 ## input
 
+### Key-binding bridge
+
+Tracks `FabricMinecraftKeyBindingBridge` in each runtime's configured main sources.
+
+| Minecraft | [`runtime/minecraft-fabric-1.20.1`](../../runtime/minecraft-fabric-1.20.1) | [`runtime/minecraft-fabric-1.20.4`](../../runtime/minecraft-fabric-1.20.4) | [`direct-skin-result`](../../runtime/shared/minecraft-fabric/input/direct-skin-result) | [`primitive-callbacks`](../../runtime/shared/minecraft-fabric/input/primitive-callbacks) | [`event-callbacks`](../../runtime/shared/minecraft-fabric/input/event-callbacks) |
+| --- | --- | --- | --- | --- | --- |
+| 1.20 | ✓ |  |  |  |  |
+| 1.20.1 | ✓ |  |  |  |  |
+| 1.20.2 |  | ✓ |  |  |  |
+| 1.20.3 |  | ✓ |  |  |  |
+| 1.20.4 |  | ✓ |  |  |  |
+| 1.20.5 |  |  | ✓ |  |  |
+| 1.20.6 |  |  | ✓ |  |  |
+| 1.21 |  |  | ✓ |  |  |
+| 1.21.1 |  |  | ✓ |  |  |
+| 1.21.2 |  |  | ✓ |  |  |
+| 1.21.3 |  |  | ✓ |  |  |
+| 1.21.4 |  |  |  | ✓ |  |
+| 1.21.5 |  |  |  | ✓ |  |
+| 1.21.6 |  |  |  | ✓ |  |
+| 1.21.7 |  |  |  | ✓ |  |
+| 1.21.8 |  |  |  | ✓ |  |
+| 1.21.9 |  |  |  |  | ✓ |
+| 1.21.10 |  |  |  |  | ✓ |
+| 1.21.11 |  |  |  |  | ✓ |
+| 26.1 |  |  |  |  |  |
+| 26.2 |  |  |  |  |  |
+| 26.3 |  |  |  |  |  |
+
+### Focused keyboard and text input
+
+Tracks `FabricMinecraftFocusedInputMapping` in each runtime's configured main sources.
+
+| Minecraft | [`gui-graphics`](../../runtime/shared/minecraft-fabric/input/gui-graphics) | [`gui-extractor`](../../runtime/shared/minecraft-fabric/input/gui-extractor) |
+| --- | --- | --- |
+| 1.20 | ✓ |  |
+| 1.20.1 | ✓ |  |
+| 1.20.2 | ✓ |  |
+| 1.20.3 | ✓ |  |
+| 1.20.4 | ✓ |  |
+| 1.20.5 | ✓ |  |
+| 1.20.6 | ✓ |  |
+| 1.21 | ✓ |  |
+| 1.21.1 | ✓ |  |
+| 1.21.2 | ✓ |  |
+| 1.21.3 | ✓ |  |
+| 1.21.4 | ✓ |  |
+| 1.21.5 | ✓ |  |
+| 1.21.6 | ✓ |  |
+| 1.21.7 | ✓ |  |
+| 1.21.8 | ✓ |  |
+| 1.21.9 | ✓ |  |
+| 1.21.10 | ✓ |  |
+| 1.21.11 | ✓ |  |
+| 26.1 |  | ✓ |
+| 26.2 |  | ✓ |
+| 26.3 |  | ✓ |
+
+### Pointer mapping
+
+Tracks `FabricMinecraftPointerMapping` in each runtime's configured main sources.
+
+| Minecraft | [`glfw`](../../runtime/shared/minecraft-fabric/input/glfw) | [`runtime/minecraft-fabric-26.3`](../../runtime/minecraft-fabric-26.3) |
+| --- | --- | --- |
+| 1.20 | ✓ |  |
+| 1.20.1 | ✓ |  |
+| 1.20.2 | ✓ |  |
+| 1.20.3 | ✓ |  |
+| 1.20.4 | ✓ |  |
+| 1.20.5 | ✓ |  |
+| 1.20.6 | ✓ |  |
+| 1.21 | ✓ |  |
+| 1.21.1 | ✓ |  |
+| 1.21.2 | ✓ |  |
+| 1.21.3 | ✓ |  |
+| 1.21.4 | ✓ |  |
+| 1.21.5 | ✓ |  |
+| 1.21.6 | ✓ |  |
+| 1.21.7 | ✓ |  |
+| 1.21.8 | ✓ |  |
+| 1.21.9 | ✓ |  |
+| 1.21.10 | ✓ |  |
+| 1.21.11 | ✓ |  |
+| 26.1 | ✓ |  |
+| 26.2 | ✓ |  |
+| 26.3 |  | ✓ |
+
+### Mouse routing
+
+Tracks `FabricUiMouseMixin` in each runtime's configured main sources.
+
+| Minecraft | [`screen-field`](../../runtime/shared/minecraft-fabric/input/screen-field) | [`gui-holder`](../../runtime/shared/minecraft-fabric/input/gui-holder) |
+| --- | --- | --- |
+| 1.20 | ✓ |  |
+| 1.20.1 | ✓ |  |
+| 1.20.2 | ✓ |  |
+| 1.20.3 | ✓ |  |
+| 1.20.4 | ✓ |  |
+| 1.20.5 | ✓ |  |
+| 1.20.6 | ✓ |  |
+| 1.21 | ✓ |  |
+| 1.21.1 | ✓ |  |
+| 1.21.2 | ✓ |  |
+| 1.21.3 | ✓ |  |
+| 1.21.4 | ✓ |  |
+| 1.21.5 | ✓ |  |
+| 1.21.6 | ✓ |  |
+| 1.21.7 | ✓ |  |
+| 1.21.8 | ✓ |  |
+| 1.21.9 | ✓ |  |
+| 1.21.10 | ✓ |  |
+| 1.21.11 | ✓ |  |
+| 26.1 | ✓ |  |
+| 26.2 |  | ✓ |
+| 26.3 |  | ✓ |
+
+### Window focus hook
+
+Tracks `FabricMinecraftWindowMixin` in each runtime's configured main sources.
+
+| Minecraft | [`glfw`](../../runtime/shared/minecraft-fabric/input/glfw) | [`runtime/minecraft-fabric-26.3`](../../runtime/minecraft-fabric-26.3) |
+| --- | --- | --- |
+| 1.20 | ✓ |  |
+| 1.20.1 | ✓ |  |
+| 1.20.2 | ✓ |  |
+| 1.20.3 | ✓ |  |
+| 1.20.4 | ✓ |  |
+| 1.20.5 | ✓ |  |
+| 1.20.6 | ✓ |  |
+| 1.21 | ✓ |  |
+| 1.21.1 | ✓ |  |
+| 1.21.2 | ✓ |  |
+| 1.21.3 | ✓ |  |
+| 1.21.4 | ✓ |  |
+| 1.21.5 | ✓ |  |
+| 1.21.6 | ✓ |  |
+| 1.21.7 | ✓ |  |
+| 1.21.8 | ✓ |  |
+| 1.21.9 | ✓ |  |
+| 1.21.10 | ✓ |  |
+| 1.21.11 | ✓ |  |
+| 26.1 | ✓ |  |
+| 26.2 | ✓ |  |
+| 26.3 |  | ✓ |
+
+<details>
+<summary>Complete input shared-source inventory</summary>
+
 | Minecraft | [`common`](../../runtime/shared/minecraft-fabric/input/common) | [`glfw`](../../runtime/shared/minecraft-fabric/input/glfw) | [`gui-graphics`](../../runtime/shared/minecraft-fabric/input/gui-graphics) | [`screen-field`](../../runtime/shared/minecraft-fabric/input/screen-field) | [`direct-skin-result`](../../runtime/shared/minecraft-fabric/input/direct-skin-result) | [`primitive-callbacks`](../../runtime/shared/minecraft-fabric/input/primitive-callbacks) | [`event-callbacks`](../../runtime/shared/minecraft-fabric/input/event-callbacks) | [`glfw-observation`](../../runtime/shared/minecraft-fabric/input/glfw-observation) | [`gui-extractor`](../../runtime/shared/minecraft-fabric/input/gui-extractor) | [`gui-holder`](../../runtime/shared/minecraft-fabric/input/gui-holder) |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
 | 1.20 | ✓ | ✓ | ✓ | ✓ |  |  |  |  |  |  |
@@ -88,6 +506,8 @@ See [shared-source ownership](minecraft-versions.md#shared-source-ownership) for
 | 26.1 | ✓ | ✓ |  | ✓ |  |  |  | ✓ | ✓ |  |
 | 26.2 | ✓ | ✓ |  |  |  |  |  | ✓ | ✓ | ✓ |
 | 26.3 | ✓ |  |  |  |  |  |  |  | ✓ | ✓ |
+
+</details>
 
 ## lifecycle
 
