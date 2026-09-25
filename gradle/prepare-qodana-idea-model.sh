@@ -20,11 +20,13 @@ mapfile -t java_toolchains < <(bash gradle/list-java-toolchains.sh gradle/libs.v
 project_jdk=${java_toolchains[${#java_toolchains[@]} - 1]}
 project_language_level="JDK_$project_jdk"
 
+# Qodana scans the base and head in one checkout; do not merge the base revision's source roots into the head model.
 bash ./gradlew \
   --no-daemon \
   --no-configure-on-demand \
   --project-prop=strata.completeIdeaModel=true \
   --system-prop=fabric.loom.ci=true \
+  cleanIdea \
   :api:jvmJar :runtime:core:jvmJar :runtime:headless:jar :runtime:minecraft:jar :runtime:minecraft-fonts-lwjgl:jar \
   classes gametestClasses \
   idea
