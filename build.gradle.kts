@@ -762,7 +762,13 @@ val sharedSourceMarkdown = providers.provider {
                 check(sourcesByVersion.values.all { selected -> commonRoot in selected }) {
                     "The $role common support root must be configured for every documented runtime."
                 }
-                appendLine("Every version also includes [`common`](../../$commonRoot) support.")
+                appendLine("### Common support")
+                appendLine()
+                appendLine("| Minecraft | [`common`](../../$commonRoot) |")
+                appendLine("| --- | --- |")
+                sourcesByVersion.keys.forEach { version ->
+                    appendLine("| $version | ✓ |")
+                }
                 appendLine()
                 documentedRoots.add(commonRoot)
             }
