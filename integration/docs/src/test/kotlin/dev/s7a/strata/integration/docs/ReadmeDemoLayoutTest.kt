@@ -25,10 +25,10 @@ import dev.s7a.strata.runtime.minecraft.font.lwjgl.LwjglMinecraftFontBackendFact
 import dev.s7a.strata.runtime.render.DrawCommand
 import dev.s7a.strata.runtime.semantics.SemanticsEntry
 import dev.s7a.strata.runtime.spi.RuntimeUiFrame
-import dev.s7a.strata.screen.ScreenDefinition
 import dev.s7a.strata.semantics.SemanticsRole
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
 import dev.s7a.strata.text.UiText
+import dev.s7a.strata.ui.UiDefinition
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
@@ -127,7 +127,7 @@ internal class ReadmeDemoLayoutTest {
         val frames =
             listOf(180, 220).map { width ->
                 val screen =
-                    ScreenDefinition("Width comparison") {
+                    UiDefinition("Width comparison") {
                         Column {
                             Column(Modifier.Empty.width(width), spacing = 6) {
                                 assets.players.forEach { player ->
@@ -155,7 +155,7 @@ internal class ReadmeDemoLayoutTest {
                             }
                         }
                     }
-                createMinecraftUiHost(screen, assets.minecraft.profile, LwjglMinecraftFontBackendFactory).use { host ->
+                createMinecraftUiHost(screen, assets.minecraft.profile, fontBackend = LwjglMinecraftFontBackendFactory).use { host ->
                     host.attach()
                     host.frame(IntSize(256, 192), FrameTime(0L))
                 }
@@ -189,7 +189,7 @@ internal class ReadmeDemoLayoutTest {
         createMinecraftUiHost(
             ReadmeDemoStage.Bar.create(assets.players, assets.panel),
             assets.minecraft.profile,
-            LwjglMinecraftFontBackendFactory,
+            fontBackend = LwjglMinecraftFontBackendFactory,
         ).use { host ->
             host.attach()
             val initial = host.frame(IntSize(256, 192), FrameTime(0L))
@@ -237,7 +237,7 @@ internal class ReadmeDemoLayoutTest {
         assets: ReadmeDemoAssets,
         offset: Double,
     ): RuntimeUiFrame =
-        createMinecraftUiHost(stage.create(assets.players, assets.panel), assets.minecraft.profile, LwjglMinecraftFontBackendFactory).use { host ->
+        createMinecraftUiHost(stage.create(assets.players, assets.panel), assets.minecraft.profile, fontBackend = LwjglMinecraftFontBackendFactory).use { host ->
             host.attach()
             host.frame(IntSize(256, 192), FrameTime(0L))
             assertEquals(InputResult.Consumed, host.dispatchPointer(PointerEvent.Scroll(IntOffset(40, 80), 0.0, offset / 9.0)))
@@ -257,7 +257,7 @@ internal class ReadmeDemoLayoutTest {
         stage: ReadmeDemoStage,
         assets: ReadmeDemoAssets,
     ): RuntimeUiFrame =
-        createMinecraftUiHost(stage.create(assets.players, assets.panel), assets.minecraft.profile, LwjglMinecraftFontBackendFactory).use { host ->
+        createMinecraftUiHost(stage.create(assets.players, assets.panel), assets.minecraft.profile, fontBackend = LwjglMinecraftFontBackendFactory).use { host ->
             host.attach()
             host.frame(IntSize(256, 192), FrameTime(0L))
         }

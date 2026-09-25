@@ -1,7 +1,7 @@
 package dev.s7a.strata.examples.web
 
 import dev.s7a.strata.geometry.IntSize
-import dev.s7a.strata.screen.ScreenDefinition
+import dev.s7a.strata.ui.UiDefinition
 
 /**
  * Owns the public demo catalog and deterministic factories shared by build rendering and browser startup.
@@ -12,7 +12,7 @@ internal enum class Demo(
     val title: String,
     val description: String,
     val sourceFile: String,
-    val definition: () -> ScreenDefinition,
+    val definition: () -> UiDefinition,
 ) {
     Counter("counter", "Counter", "Change a value and explore enabled and disabled actions.", "CounterDemo.kt", ::counterDemo),
     Progress("progress", "Progress", "Keep a progress indicator and its label in sync with shared state.", "ProgressDemo.kt", ::progressDemo),

@@ -38,6 +38,11 @@ internal interface MinecraftCanvasTestContext {
     fun setScreen(screen: Screen?)
 
     /**
+     * Reads the native foreground wrapper for presentation ownership assertions.
+     */
+    fun currentScreen(): Screen?
+
+    /**
      * Reports whether the native GUI has an overlay, from the client thread without scheduling.
      *
      * The overlay remains owned by Minecraft; callers use this observation to avoid sending input while loading hides the screen.

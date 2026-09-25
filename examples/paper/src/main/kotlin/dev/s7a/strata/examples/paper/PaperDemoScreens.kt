@@ -9,8 +9,8 @@ import dev.s7a.strata.geometry.IntSize
 import dev.s7a.strata.modifier.Modifier
 import dev.s7a.strata.modifier.onActivate
 import dev.s7a.strata.modifier.padding
-import dev.s7a.strata.screen.ScreenDefinition
 import dev.s7a.strata.state.mutableStateOf
+import dev.s7a.strata.ui.UiDefinition
 
 /**
  * Compiled Paper authoring example using the same DSL as local screens.
@@ -20,11 +20,11 @@ public object PaperDemoScreens {
     /**
      * Creates independent owner-thread state and a one-shot definition for one player.
      */
-    public fun counter(): ScreenDefinition {
+    public fun counter(): UiDefinition {
         val clicks = mutableStateOf(0)
         val name = TextFieldState("Player", 32)
         val greeting = mutableStateOf("Enter a name and press the button.")
-        return ScreenDefinition("Paper screen") {
+        return UiDefinition("Paper screen") {
             Column(modifier = Modifier.Empty.padding(8), spacing = 4) {
                 Text(greeting.value)
                 TextField(name, IntSize(160, 20))

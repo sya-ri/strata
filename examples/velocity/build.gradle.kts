@@ -1,7 +1,7 @@
 group = "dev.s7a.strata.examples"
 
 dependencies {
-    compileOnly(project(":runtime:velocity"))
+    compileOnly(project(":velocity-api"))
     compileOnly(libs.velocity.api)
     testImplementation(project(":runtime:remote"))
     testImplementation(libs.junit.jupiter)

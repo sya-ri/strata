@@ -7,6 +7,21 @@ import net.minecraft.client.gui.screens.Screen;
  * Isolates the compatible 1.21 screen field API from the version-specific adapter.
  */
 final class FabricMinecraftScreenAccess {
+    /** Initializes a HUD wrapper at the current logical viewport. */
+    static void initialize(Minecraft client, Screen screen) {
+        screen.init(client, client.getWindow().getGuiScaledWidth(), client.getWindow().getGuiScaledHeight());
+    }
+
+    /** Reads the native F1 visibility flag for this game version. */
+    static boolean hudHidden(Minecraft client) {
+        return client.options.hideGui;
+    }
+
+    /** Prevents forwarding into gameplay under loading overlays. */
+    static boolean hasOverlay(Minecraft client) {
+        return client.getOverlay() != null;
+    }
+
     private FabricMinecraftScreenAccess() {
     }
 

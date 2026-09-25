@@ -9,6 +9,7 @@ import dev.s7a.strata.node.LifecycleNode
 import dev.s7a.strata.node.ModifierNode
 import dev.s7a.strata.node.PointerCaptureNode
 import dev.s7a.strata.projection.DeclarationProjection
+import dev.s7a.strata.ui.UiSession
 
 /**
  * Owns the stable retained token for captured pointer handlers.
@@ -26,8 +27,8 @@ internal object CapturedPointerInputModifier {
      * @property captureButton fixed policy retained by an active gesture, or null for dynamic local callbacks.
      */
     internal data class Element(
-        val onCancel: (PointerButton) -> Unit,
-        val callback: (PointerEvent, IntOffset) -> InputResult,
+        val onCancel: UiSession.(PointerButton) -> Unit,
+        val callback: UiSession.(PointerEvent, IntOffset) -> InputResult,
         override val projection: DeclarationProjection<*>? = null,
         val captureButton: PointerButton? = null,
     ) : ModifierElement {
@@ -58,7 +59,7 @@ internal object CapturedPointerInputModifier {
         ): InputResult {
             val current = captured ?: element
             if (event is PointerEvent.Release && event.button == heldButton) clearGesture()
-            return current?.callback?.invoke(event, localPosition) ?: InputResult.Ignored
+            return current?.callback?.invoke(uiSession, event, localPosition) ?: InputResult.Ignored
         }
 
         override fun onPointerCaptureAcquired(button: PointerButton) {
@@ -72,7 +73,7 @@ internal object CapturedPointerInputModifier {
         override fun onPointerCaptureCancelled(button: PointerButton) {
             val current = captured ?: element
             clearGesture()
-            current?.onCancel?.invoke(button)
+            current?.onCancel?.invoke(uiSession, button)
         }
 
         override fun attach() = Unit

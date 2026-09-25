@@ -11,6 +11,7 @@ import dev.s7a.strata.node.LifecycleNode
 import dev.s7a.strata.node.ModifierNode
 import dev.s7a.strata.node.TextInputNode
 import dev.s7a.strata.projection.DeclarationProjection
+import dev.s7a.strata.ui.UiSession
 
 /**
  * Internal implementation shared by focused keyboard, text-input, preedit, and focus modifiers.
@@ -40,49 +41,49 @@ internal object FocusedInputModifier {
          * @property callback every-key callback.
          */
         data class EveryKey(
-            val callback: (KeyboardEvent) -> InputResult,
+            val callback: UiSession.(KeyboardEvent) -> InputResult,
         ) : Action
 
         /**
          * @property callback key-press callback.
          */
         data class KeyPress(
-            val callback: (KeyboardEvent.Press) -> InputResult,
+            val callback: UiSession.(KeyboardEvent.Press) -> InputResult,
         ) : Action
 
         /**
          * @property callback key-release callback.
          */
         data class KeyRelease(
-            val callback: (KeyboardEvent.Release) -> InputResult,
+            val callback: UiSession.(KeyboardEvent.Release) -> InputResult,
         ) : Action
 
         /**
          * @property callback every text-input callback.
          */
         data class EveryText(
-            val callback: (TextInputEvent) -> InputResult,
+            val callback: UiSession.(TextInputEvent) -> InputResult,
         ) : Action
 
         /**
          * @property callback committed-character callback.
          */
         data class Character(
-            val callback: (TextInputEvent.Character) -> InputResult,
+            val callback: UiSession.(TextInputEvent.Character) -> InputResult,
         ) : Action
 
         /**
          * @property callback preedit callback.
          */
         data class Preedit(
-            val callback: (TextInputEvent.Preedit) -> InputResult,
+            val callback: UiSession.(TextInputEvent.Preedit) -> InputResult,
         ) : Action
 
         /**
          * @property callback distinct focus-transition callback.
          */
         data class FocusChange(
-            val callback: (FocusEvent) -> Unit,
+            val callback: UiSession.(FocusEvent) -> Unit,
         ) : Action
 
         /**
@@ -124,11 +125,11 @@ internal object FocusedInputModifier {
 
         override fun onKeyboardEvent(event: KeyboardEvent): InputResult =
             when (val current = action) {
-                is Action.EveryKey -> current.callback(event)
+                is Action.EveryKey -> current.callback(uiSession, event)
 
-                is Action.KeyPress -> if (event is KeyboardEvent.Press) current.callback(event) else InputResult.Ignored
+                is Action.KeyPress -> if (event is KeyboardEvent.Press) current.callback(uiSession, event) else InputResult.Ignored
 
-                is Action.KeyRelease -> if (event is KeyboardEvent.Release) current.callback(event) else InputResult.Ignored
+                is Action.KeyRelease -> if (event is KeyboardEvent.Release) current.callback(uiSession, event) else InputResult.Ignored
 
                 is Action.Character,
                 is Action.EveryText,
@@ -142,11 +143,11 @@ internal object FocusedInputModifier {
 
         override fun onTextInput(event: TextInputEvent): InputResult =
             when (val current = action) {
-                is Action.EveryText -> current.callback(event)
+                is Action.EveryText -> current.callback(uiSession, event)
 
-                is Action.Character -> if (event is TextInputEvent.Character) current.callback(event) else InputResult.Ignored
+                is Action.Character -> if (event is TextInputEvent.Character) current.callback(uiSession, event) else InputResult.Ignored
 
-                is Action.Preedit -> if (event is TextInputEvent.Preedit) current.callback(event) else InputResult.Ignored
+                is Action.Preedit -> if (event is TextInputEvent.Preedit) current.callback(uiSession, event) else InputResult.Ignored
 
                 is Action.EveryKey,
                 is Action.FocusChange,
@@ -163,7 +164,7 @@ internal object FocusedInputModifier {
             this.focused = focused
             val current = action
             if (current is Action.FocusChange) {
-                current.callback(if (focused) FocusEvent.Gained else FocusEvent.Lost)
+                current.callback(uiSession, if (focused) FocusEvent.Gained else FocusEvent.Lost)
             }
         }
 

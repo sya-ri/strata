@@ -257,7 +257,7 @@ private class MinecraftSliderElement private constructor(
             val before = currentState.value
             currentState.value = value
             val next = currentState.value
-            if (before != next) actions.dispatch(ComponentActions.SliderChange, next)
+            if (before != next) actions.dispatch(uiSession, ComponentActions.SliderChange, next)
         }
     }
 

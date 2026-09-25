@@ -3,6 +3,7 @@ package dev.s7a.strata.modifier
 import dev.s7a.strata.input.InputResult
 import dev.s7a.strata.input.TextInputEvent
 import dev.s7a.strata.projection.BuiltinProjection
+import dev.s7a.strata.ui.UiSession
 
 /**
  * Subscribes to typed text notifications while deciding [propagation] immediately on the client.
@@ -11,7 +12,7 @@ import dev.s7a.strata.projection.BuiltinProjection
  */
 public fun Modifier.onTextInput(
     propagation: InputResult,
-    action: (TextInputEvent) -> Unit,
+    action: UiSession.(TextInputEvent) -> Unit,
 ): Modifier =
     then(
         FocusedInputModifier.Element(
@@ -30,7 +31,7 @@ public fun Modifier.onTextInput(
  */
 public fun Modifier.onCharacterInput(
     propagation: InputResult,
-    action: (TextInputEvent.Character) -> Unit,
+    action: UiSession.(TextInputEvent.Character) -> Unit,
 ): Modifier =
     then(
         FocusedInputModifier.Element(
@@ -49,7 +50,7 @@ public fun Modifier.onCharacterInput(
  */
 public fun Modifier.onPreedit(
     propagation: InputResult,
-    action: (TextInputEvent.Preedit) -> Unit,
+    action: UiSession.(TextInputEvent.Preedit) -> Unit,
 ): Modifier =
     then(
         FocusedInputModifier.Element(

@@ -2,7 +2,29 @@
 
 This is the internal session contract for runtime implementers.
 `runtime:core` coordinates retained trees, local state, revisioned sources, input, and coroutine work so adapters share one lifecycle and failure model.
-Application authors use [ScreenDefinition and component state](../guides/screens-and-state.md); the local delegates and coroutine generations described here are not a public screen-definition API.
+Application authors use [UiDefinition and component state](../guides/screens-and-state.md); the local delegates and coroutine generations described here are not a public screen-definition API.
+
+## Public presentation controls
+
+The public `dev.s7a.strata.ui.UiSession` is a stable event/control handle; the retained engine below owns content independently of native wrappers.
+`RuntimeUiController` sequences desired controls, records only acknowledged application, defers operations to its outer transaction boundary, and releases driver/cleanup captures before terminal notifications.
+A driver must explicitly acknowledge or reject its submitted sequence after native installation; returning from a driver is not application evidence.
+Older replies cannot replace newer pending state, and close supersedes uncommitted controls.
+Nested transition callbacks have a bounded drain; an unending sequence fails and releases ownership.
+
+`Node.bindRuntime` supplies each retained node's event receiver together with its invalidation owner.
+Modifier descriptions and projection handlers carry receiver function types, never a captured declaration scope or process-wide current UI.
+Binding remains available during cleanup notifications, but the owning handle is already terminal when the session closes.
+Standalone trees and engines supply an unpresented receiver that supports deferred close and rejects native presentation/input operations.
+
+Minecraft keeps one retained host and exchanges only its foreground/HUD attachment; native wrapper removal detaches without closing that host.
+Screen/HUD switching clears focus, capture, and native key ownership before installing the next presentation.
+HUD visibility uses category, then native screen kind, then the definition default; hidden content retains source/remote updates.
+The adapter owns version-specific HUD, mouse, and native gameplay hooks; the public runtime has no Fabric API dependency.
+`RuntimeUiInput` bounds held state by the adapter's mapping set and releases it on input-session, policy, editing, focus, and terminal boundaries.
+
+Remote controls are ordered by the owning Paper, Folia, or Velocity session and confirmed after the client applies native presentation.
+See the [remote protocol](../reference/remote-protocol.md) for application versus declaration acknowledgements and connection-wide budgets.
 
 ## Retained observed regions
 
@@ -96,14 +118,14 @@ The subscriptions retained in `Detached` are session-declared bindings; attachme
 Invalid transitions fail before changing the lifecycle.
 An unrecoverable content, retained-tree, pipeline, or task failure records the exact primary `Throwable` in `Failed` and attempts cleanup.
 Closing a failed session changes only the lifecycle to `Closed`, because failure cleanup has already run.
-Repeated close after `Closed` is an owner-thread no-op.
+Repeated close after `Closed` is an execution-owner-confined no-op.
 
 ## Local and external state
 
 ### Caller-owned reactive state
 
-`mutableStateOf(initialValue)` creates an owner-thread `MutableState<T>` with a read-only `State<T>` view.
-Create it outside the `ScreenDefinition` content callback so reevaluation does not reset its value.
+`mutableStateOf(initialValue)` creates an owner-confined `MutableState<T>` with a read-only `State<T>` view.
+Create it outside the `UiDefinition` content callback so reevaluation does not reset its value.
 The retained session tracks reads of `value` during content evaluation, including reads in ordinary Kotlin `if`, `when`, loops, and called composition functions.
 Unequal assignments mark every observing session dirty, and the next frame reevaluates content once before reconciliation.
 Equal assignments do not invalidate content, and multiple writes before a frame are coalesced.
@@ -140,7 +162,7 @@ A source may still publish a later revision from equality; that callback only en
 
 Each source subscription returns an initial snapshot from the same linearization point that installs its observer.
 Callbacks that race or precede the return from `subscribe` are merged with that snapshot by revision.
-The owner thread first captures every session binding and every retained `FrameCutoffNode`, then commits the captured observations before content reconciliation.
+The execution owner first captures every session binding and every retained `FrameCutoffNode`, then commits the captured observations before content reconciliation.
 Capture cannot invoke caller value equality or publish observations; commit evaluates session-bound value equality after releasing the binding lock.
 A callback arriving after the cutoff remains pending for the following frame.
 Each participating binding retains at most one transaction-local captured observation between these two phases, in addition to its committed and latest pending state.
@@ -165,7 +187,7 @@ An unambiguous placed `initialFocus` request applies after layout whenever the t
 Every Enter or Space `Press` that reaches a focused `onActivate` node, including repeats, invokes its action, while its false enabled overload contributes no pointer, keyboard, focus, or action reference.
 Detach cancels active pointer capture, emits exit for active pointer-hover observers, clears focused ownership, invalidates the committed-frame marker, and retains the tree and state.
 Captured input follows the [Element SPI](../reference/element-spi.md#paint-input-and-semantics); session detach and input reset cancel it even while nodes remain retained.
-Input reset is owner-thread confined, preserves committed pixels and retained ownership, and prohibits session-state mutation from its cleanup callbacks.
+Input reset is execution-owner confined, preserves committed pixels and retained ownership, and prohibits session-state mutation from its cleanup callbacks.
 Capture, hover, and focus cleanup are all attempted when an earlier callback throws; the original failure remains primary and distinct later failures are suppressed in observation order.
 
 ## Coroutine generations

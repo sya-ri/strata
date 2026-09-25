@@ -4,6 +4,7 @@ import dev.s7a.strata.input.InputResult
 import dev.s7a.strata.input.KeyCode
 import dev.s7a.strata.input.KeyboardInputFilter
 import dev.s7a.strata.state.StateSource
+import dev.s7a.strata.ui.UiSession
 
 /**
  * Runs one action for a primary pointer press or a focused Enter or Space press and consumes that event.
@@ -16,7 +17,7 @@ import dev.s7a.strata.state.StateSource
  * @return this chain with one primary-press handler followed by one focused key-press handler.
  * @throws Throwable when [action] fails during input dispatch; the owning tree preserves the exact failure as primary while poisoning and cleaning retained ownership.
  */
-public fun Modifier.onActivate(action: () -> Unit): Modifier = onPress(action).onKeyPress(InputResult.Consumed, KeyboardInputFilter(setOf(KeyCode.Enter, KeyCode.Space))) { action() }
+public fun Modifier.onActivate(action: UiSession.() -> Unit): Modifier = onPress(action).onKeyPress(InputResult.Consumed, KeyboardInputFilter(setOf(KeyCode.Enter, KeyCode.Space))) { action() }
 
 /**
  * Conditionally installs the shared pointer and keyboard activation behavior from [onActivate].
@@ -31,7 +32,7 @@ public fun Modifier.onActivate(action: () -> Unit): Modifier = onPress(action).o
  */
 public fun Modifier.onActivate(
     enabled: Boolean,
-    action: () -> Unit,
+    action: UiSession.() -> Unit,
 ): Modifier = if (enabled) onActivate(action) else this
 
 /**
@@ -47,5 +48,5 @@ public fun Modifier.onActivate(
  */
 public fun Modifier.onActivate(
     enabled: StateSource<Boolean>,
-    action: () -> Unit,
+    action: UiSession.() -> Unit,
 ): Modifier = then(ObservedActivationModifier(enabled, action))

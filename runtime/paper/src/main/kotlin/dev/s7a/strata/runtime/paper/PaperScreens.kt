@@ -1,3 +1,6 @@
+@file:Suppress("DEPRECATION")
+@file:OptIn(InternalStrataRuntimeApi::class)
+
 package dev.s7a.strata.runtime.paper
 
 import dev.s7a.strata.projection.ProjectionType
@@ -5,6 +8,8 @@ import dev.s7a.strata.runtime.remote.RemoteCapabilities
 import dev.s7a.strata.runtime.remote.RemoteScreenService
 import dev.s7a.strata.runtime.remote.RemoteScreenSession
 import dev.s7a.strata.screen.ScreenDefinition
+import dev.s7a.strata.spi.InternalStrataRuntimeApi
+import dev.s7a.strata.ui.UiDefinition
 import org.bukkit.Bukkit
 import org.bukkit.entity.Player
 import org.bukkit.plugin.Plugin
@@ -26,34 +31,39 @@ public object PaperScreens {
      * Unavailable clients and unsupported declarations return a terminal handle with a typed reason.
      * On Folia, create captured mutable state through [execute], or use the definition-factory overload.
      */
+    @Deprecated("Use UiDefinition.open(ownerPlugin, player).")
     public fun open(
         ownerPlugin: Plugin,
         player: Player,
         definition: ScreenDefinition,
-    ): RemoteScreenSession {
-        val regionService = folia
-        if (regionService != null) return regionService.open(ownerPlugin, player) { definition }
-        checkThread()
-        require(ownerPlugin.isEnabled) { "The screen owner plugin must be enabled." }
-        return checkNotNull(service) { "The Strata plugin is not enabled." }.open(ownerPlugin, player, definition)
-    }
+    ): RemoteScreenSession = openUi(ownerPlugin, player) { definition.asUiDefinition() }
 
     /**
      * Creates state and a definition within the player's UI owner, preserving it across Folia region migrations.
      * Call on the player's region (or Paper's primary thread), and construct mutable UI state inside [definition].
      * The factory runs synchronously once, before retained screen evaluation; handlers run on that player's region.
      */
+    @Deprecated("Use PaperUi.open(ownerPlugin, player) with a UiDefinition factory.")
     public fun open(
         ownerPlugin: Plugin,
         player: Player,
         definition: () -> ScreenDefinition,
+    ): RemoteScreenSession = openUi(ownerPlugin, player) { definition().asUiDefinition() }
+
+    /**
+     * Shares native validation and player execution ownership between modern and compatibility entry points.
+     */
+    internal fun openUi(
+        ownerPlugin: Plugin,
+        player: Player,
+        definition: () -> UiDefinition,
     ): RemoteScreenSession {
         val regionService = folia
         if (regionService != null) return regionService.open(ownerPlugin, player, definition)
         checkThread()
-        require(ownerPlugin.isEnabled) { "The screen owner plugin must be enabled." }
-        checkNotNull(service) { "The Strata plugin is not enabled." }
-        return open(ownerPlugin, player, definition())
+        require(ownerPlugin.isEnabled) { "The UI owner plugin must be enabled." }
+        val active = checkNotNull(service) { "The Strata plugin is not enabled." }
+        return active.open(ownerPlugin, player, definition())
     }
 
     /**

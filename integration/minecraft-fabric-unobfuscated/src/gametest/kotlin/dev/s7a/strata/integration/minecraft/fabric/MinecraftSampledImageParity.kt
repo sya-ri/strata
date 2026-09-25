@@ -1,3 +1,5 @@
+@file:Suppress("DEPRECATION") // Compatibility overloads and regression coverage retain the deprecated screen entry points.
+
 @file:OptIn(InternalStrataRuntimeApi::class)
 
 package dev.s7a.strata.integration.minecraft.fabric

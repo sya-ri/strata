@@ -18,9 +18,9 @@ import dev.s7a.strata.modifier.Modifier
 import dev.s7a.strata.modifier.onActivate
 import dev.s7a.strata.render.ArgbColor
 import dev.s7a.strata.render.createDrawImage
-import dev.s7a.strata.screen.ScreenDefinition
 import dev.s7a.strata.state.StateSource
 import dev.s7a.strata.state.map
+import dev.s7a.strata.ui.UiDefinition
 
 /**
  * A retained API-only screen whose independent clock cannot rebuild its editor or history.
@@ -32,7 +32,7 @@ internal fun reactiveScreen(
     history: StateSource<List<String>>,
     draft: TextAreaState,
     onSend: () -> Unit,
-): ScreenDefinition {
+): UiDefinition {
     val enabled = sending.map { it.not() }
     val sendLabel = sending.map { if (it) "Sending..." else "Send" }
     val historyState = VirtualListState<String>()
@@ -56,13 +56,13 @@ internal fun reactiveScreen(
             ),
         )
     val appearance = TextInputAppearance.Custom(frame, focused, ArgbColor(0xFF203020.toInt()))
-    return ScreenDefinition("Conversation") {
+    return UiDefinition("Conversation") {
         Column(spacing = 4) {
             Text(clock)
             Observe(loading) { active -> if (active) Text("Loading...") }
             VirtualList(items = history, keyOf = { it }, state = historyState, viewportSize = IntSize(160, 60), rowHeight = 12) { Text(it) }
             TextArea(draft, appearance, TextAreaViewport.Size(IntSize(160, 40)), textStyle = TextStyle.ContainerLabel)
-            Button(sendLabel, enabled = enabled, modifier = Modifier.Empty.onActivate(enabled, onSend))
+            Button(sendLabel, enabled = enabled, modifier = Modifier.Empty.onActivate(enabled) { onSend() })
         }
     }
 }

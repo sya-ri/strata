@@ -10,6 +10,7 @@ import dev.s7a.strata.node.ModifierNode
 import dev.s7a.strata.node.PointerHoverNode
 import dev.s7a.strata.node.PointerInputNode
 import dev.s7a.strata.projection.DeclarationProjection
+import dev.s7a.strata.ui.UiSession
 
 /**
  * Internal implementation of the general pointer-action modifier family.
@@ -41,7 +42,7 @@ internal object PointerInputModifier {
          * @property callback callback receiving the tree event and modifier-local position.
          */
         data class Every(
-            val callback: (PointerEvent, IntOffset) -> InputResult,
+            val callback: UiSession.(PointerEvent, IntOffset) -> InputResult,
         ) : Action
 
         /**
@@ -50,7 +51,7 @@ internal object PointerInputModifier {
          * @property callback callback receiving the typed event and modifier-local position.
          */
         data class Press(
-            val callback: (PointerEvent.Press, IntOffset) -> InputResult,
+            val callback: UiSession.(PointerEvent.Press, IntOffset) -> InputResult,
         ) : Action
 
         /**
@@ -59,7 +60,7 @@ internal object PointerInputModifier {
          * @property callback callback receiving the typed event and modifier-local position.
          */
         data class Release(
-            val callback: (PointerEvent.Release, IntOffset) -> InputResult,
+            val callback: UiSession.(PointerEvent.Release, IntOffset) -> InputResult,
         ) : Action
 
         /**
@@ -68,7 +69,7 @@ internal object PointerInputModifier {
          * @property callback callback receiving the typed event and modifier-local position.
          */
         data class Move(
-            val callback: (PointerEvent.Move, IntOffset) -> InputResult,
+            val callback: UiSession.(PointerEvent.Move, IntOffset) -> InputResult,
         ) : Action
 
         /**
@@ -77,7 +78,7 @@ internal object PointerInputModifier {
          * @property callback callback receiving the typed event and modifier-local position.
          */
         data class Drag(
-            val callback: (PointerEvent.Drag, IntOffset) -> InputResult,
+            val callback: UiSession.(PointerEvent.Drag, IntOffset) -> InputResult,
         ) : Action
 
         /**
@@ -86,7 +87,7 @@ internal object PointerInputModifier {
          * @property callback callback receiving the typed event and modifier-local position.
          */
         data class Scroll(
-            val callback: (PointerEvent.Scroll, IntOffset) -> InputResult,
+            val callback: UiSession.(PointerEvent.Scroll, IntOffset) -> InputResult,
         ) : Action
 
         /**
@@ -95,7 +96,7 @@ internal object PointerInputModifier {
          * @property callback callback receiving only distinct enter and exit transitions.
          */
         data class Hover(
-            val callback: (PointerHoverEvent) -> Unit,
+            val callback: UiSession.(PointerHoverEvent) -> Unit,
         ) : Action
 
         /**
@@ -124,12 +125,12 @@ internal object PointerInputModifier {
             localPosition: IntOffset,
         ): InputResult =
             when (val current = action) {
-                is Action.Every -> current.callback(event, localPosition)
-                is Action.Press -> if (event is PointerEvent.Press) current.callback(event, localPosition) else InputResult.Ignored
-                is Action.Release -> if (event is PointerEvent.Release) current.callback(event, localPosition) else InputResult.Ignored
-                is Action.Move -> if (event is PointerEvent.Move) current.callback(event, localPosition) else InputResult.Ignored
-                is Action.Drag -> if (event is PointerEvent.Drag) current.callback(event, localPosition) else InputResult.Ignored
-                is Action.Scroll -> if (event is PointerEvent.Scroll) current.callback(event, localPosition) else InputResult.Ignored
+                is Action.Every -> current.callback(uiSession, event, localPosition)
+                is Action.Press -> if (event is PointerEvent.Press) current.callback(uiSession, event, localPosition) else InputResult.Ignored
+                is Action.Release -> if (event is PointerEvent.Release) current.callback(uiSession, event, localPosition) else InputResult.Ignored
+                is Action.Move -> if (event is PointerEvent.Move) current.callback(uiSession, event, localPosition) else InputResult.Ignored
+                is Action.Drag -> if (event is PointerEvent.Drag) current.callback(uiSession, event, localPosition) else InputResult.Ignored
+                is Action.Scroll -> if (event is PointerEvent.Scroll) current.callback(uiSession, event, localPosition) else InputResult.Ignored
                 is Action.Hover, Action.Released -> InputResult.Ignored
             }
 
@@ -138,7 +139,7 @@ internal object PointerInputModifier {
                 is Action.Hover -> {
                     if (this.hovered != hovered) {
                         this.hovered = hovered
-                        current.callback(if (hovered) PointerHoverEvent.Enter else PointerHoverEvent.Exit)
+                        current.callback(uiSession, if (hovered) PointerHoverEvent.Enter else PointerHoverEvent.Exit)
                     }
                 }
 

@@ -152,6 +152,8 @@ def main() -> None:
                 proof = properties(server_receipt)
                 if proof.get("runId") != run_id or (proof.get("input") != "operator-confirmed" if arguments.manual_ime else proof.get("slot") != "round-trip"):
                     raise RuntimeError("Missing current server-side action and container evidence.")
+                if not arguments.manual_ime and any(proof.get(key) != "confirmed" for key in ("uiPresentations", "uiEvents")):
+                    raise RuntimeError("Missing acknowledged HUD switching and lifecycle event evidence.")
                 if arguments.platform == "folia" and not arguments.manual_ime and not arguments.minecart and proof.get("regionMigration") != "true":
                     raise RuntimeError("Missing Folia region-migration evidence.")
                 if arguments.minecart and float(proof.get("minecartDistance", "0")) < 64:

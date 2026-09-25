@@ -4,11 +4,19 @@ package dev.s7a.strata.runtime.remote
 
 import dev.s7a.strata.projection.ProjectionType
 import dev.s7a.strata.projection.ProjectionValue
-import dev.s7a.strata.screen.ScreenDefinition
+import dev.s7a.strata.runtime.spi.RuntimeUiControl
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
 import dev.s7a.strata.spi.RuntimeExecutionOwner
 import dev.s7a.strata.state.mutableStateOf
 import dev.s7a.strata.text.UiText
+import dev.s7a.strata.ui.UiDefinition
+import dev.s7a.strata.ui.UiInputPolicy
+import dev.s7a.strata.ui.UiInteractionMode
+import dev.s7a.strata.ui.UiOperationResult
+import dev.s7a.strata.ui.UiPresentation
+import dev.s7a.strata.ui.UiRejection
+import dev.s7a.strata.ui.UiSession
+import dev.s7a.strata.ui.UiSessionStatus
 
 /**
  * One client-side retained declaration source bound to a server-issued session identity.
@@ -25,6 +33,68 @@ public class RemoteClientSession(
     private val owner = RuntimeExecutionOwner.current()
     public val identity: Long = snapshot.session
     private val pausesGame = snapshot.pausesGame
+    private val settings = snapshot.settings
+    private val initialControl = snapshot.control
+    private val publicSession = ClientUiSession()
+
+    /**
+     * Receiver for synchronous client extension events; all controls are sequenced by the server.
+     */
+    public val uiSession: UiSession get() = publicSession
+
+    /**
+     * Current declaration count for connection-wide admission.
+     */
+    public val nodeCount: Int get() =
+        current.value
+            ?.tree
+            ?.nodes
+            ?.size ?: 0
+
+    /**
+     * Binds native ownership once opening has succeeded.
+     */
+    public fun bindUiSession(session: UiSession) {
+        checkActive()
+        check(publicSession.native == null)
+        publicSession.native = session
+        publicSession.observedInteraction = session.interactionMode
+    }
+
+    /**
+     * Reports native interaction termination, including Escape, hidden HUDs, and focus loss, to the owning server.
+     * Call after native lifecycle processing; unchanged modes never enqueue another request.
+     */
+    public fun synchronizeInteraction() {
+        checkActive()
+        val native = publicSession.native ?: return
+        if (native.status is UiSessionStatus.Closed) return
+        val mode = native.interactionMode
+        if (publicSession.observedInteraction == mode) return
+        publicSession.observedInteraction = mode
+        publicSession.setInteractionMode(mode)
+    }
+
+    /**
+     * Records native application without accepting older authoritative controls.
+     */
+    public fun controlApplied(
+        state: RuntimeUiControl,
+        rejection: UiRejection?,
+    ) {
+        checkActive()
+        publicSession.applied(state, rejection)
+    }
+
+    /**
+     * Completes only the matching client intent; authoritative application is reported separately.
+     */
+    public fun receive(receipt: RemoteMessage.ControlReceipt) {
+        checkActive()
+        require(receipt.session == identity) { "UI control receipt targets another session." }
+        publicSession.received(receipt)
+    }
+
     private val current = mutableStateOf<RemotePreparedTree?>(registry.prepare(snapshot.tree, limits))
     private val states = RemoteClientStates(limits)
     private var outgoing: ((RemoteMessage) -> Unit)? = send
@@ -49,9 +119,9 @@ public class RemoteClientSession(
      * Creates one ordinary screen whose content observes committed remote declarations.
      * The enclosing platform owns presentation and must close this session when that screen terminates.
      */
-    public fun definition(title: UiText): ScreenDefinition {
+    public fun definition(title: UiText): UiDefinition {
         checkActive()
-        return ScreenDefinition(title, pausesGame = pausesGame) {
+        return UiDefinition(title, presentation = initialControl?.presentation ?: settings.presentation, category = settings.category, inputPolicy = initialControl?.inputPolicy ?: settings.inputPolicy, visibility = settings.visibility, hudOrder = settings.hudOrder, pausesGame = pausesGame) {
             element(checkNotNull(current.value) { "Remote screen is closed." }.build(actions, states, limits))
         }
     }
@@ -116,6 +186,7 @@ public class RemoteClientSession(
         checkOwner()
         if (status is RemoteSessionStatus.Closed) return
         status = RemoteSessionStatus.Closed(reason)
+        publicSession.native = null
         val send = outgoing
         outgoing = null
         current.value = null
@@ -139,6 +210,80 @@ public class RemoteClientSession(
     public fun flushEdits() {
         checkActive()
         states.flushEdits(actions)
+    }
+
+    /**
+     * Client control facade retains only detached applied values after native ownership ends.
+     */
+    private inner class ClientUiSession : UiSession {
+        var native: UiSession? = null
+        var observedInteraction: UiInteractionMode? = null
+        private var confirmed: RuntimeUiControl? = null
+        private var desired: RuntimeUiControl? = null
+        private var sequence = 0L
+        private var appliedSequence = 0L
+        private var rejection: UiRejection? = null
+
+        override val presentation: UiPresentation? get() = confirmed?.presentation
+        override val inputPolicy: UiInputPolicy get() = confirmed?.inputPolicy ?: settings.inputPolicy
+        override val interactionMode: UiInteractionMode get() = if (status is UiSessionStatus.Closed) UiInteractionMode.None else confirmed?.interactionMode ?: UiInteractionMode.None
+        override val status: UiSessionStatus
+            get() {
+                val terminal = this@RemoteClientSession.status as? RemoteSessionStatus.Closed
+                if (terminal != null) return UiSessionStatus.Closed(terminal.reason.uiReason)
+                val nativeStatus = native?.status
+                if (nativeStatus is UiSessionStatus.Closed) return nativeStatus
+                if (confirmed == null) return UiSessionStatus.Opening
+                return desired?.let { UiSessionStatus.Switching(it.presentation) } ?: UiSessionStatus.Ready(rejection)
+            }
+
+        override fun switch(presentation: UiPresentation): UiOperationResult =
+            request {
+                if (it.presentation == presentation) it else it.copy(presentation = presentation, interactionMode = if (presentation == UiPresentation.Hud) UiInteractionMode.None else UiInteractionMode.Cursor)
+            }
+
+        override fun setInputPolicy(policy: UiInputPolicy): UiOperationResult = request { it.copy(inputPolicy = policy) }
+
+        override fun setInteractionMode(mode: UiInteractionMode): UiOperationResult = request { it.copy(interactionMode = mode) }
+
+        override fun close() {
+            checkOwner()
+            native?.close()
+        }
+
+        fun applied(
+            state: RuntimeUiControl,
+            failure: UiRejection?,
+        ) {
+            if (appliedSequence < state.sequence) {
+                appliedSequence = state.sequence
+                if (failure == null) {
+                    confirmed = state
+                    observedInteraction = state.interactionMode
+                }
+                rejection = failure
+            }
+        }
+
+        fun received(receipt: RemoteMessage.ControlReceipt) {
+            require(receipt.sequence in 1..sequence) { "Invalid UI control receipt sequence." }
+            if (desired?.sequence != receipt.sequence) return
+            desired = null
+            if (receipt.rejection != null) rejection = receipt.rejection
+        }
+
+        private fun request(change: (RuntimeUiControl) -> RuntimeUiControl): UiOperationResult {
+            checkOwner()
+            if (status is UiSessionStatus.Closed) return UiOperationResult.Rejected(UiRejection.Closed)
+            val before = desired ?: confirmed ?: initialControl ?: RuntimeUiControl(0, settings.presentation, settings.inputPolicy, UiInteractionMode.None)
+            val next = change(before)
+            if (next == before) return UiOperationResult.Accepted
+            check(sequence < Long.MAX_VALUE) { "Client UI control sequence is exhausted." }
+            val request = next.copy(sequence = ++sequence)
+            desired = request
+            checkNotNull(outgoing)(RemoteMessage.ControlRequest(identity, request))
+            return UiOperationResult.Accepted
+        }
     }
 
     private fun sendAction(

@@ -10,7 +10,7 @@ Application screens still use the public API; a test harness selects the runtime
 | --- | --- | --- |
 | An immutable `Element` root | `renderHeadless` | Render a custom primitive or a structural SPI fixture and close its temporary tree. |
 | Portable draw commands | `rasterizeHeadless` | Convert a prepared frame into pixels without retaining a tree. |
-| A `ScreenDefinition` and Minecraft profile | The opt-in Minecraft host bridge | Exercise profile-backed components, frames, input, and lifecycle under a supplied profile. |
+| A `UiDefinition` and Minecraft profile | The opt-in Minecraft host bridge | Exercise profile-backed components, frames, input, and lifecycle under a supplied profile. |
 
 The [headless rendering tests](../../runtime/headless/src/test/kotlin/dev/s7a/strata/runtime/headless/HeadlessRenderTest.kt) demonstrate pixels, semantics, scaling, and CPU Canvas sources.
 The [external host integration tests](../../integration/api/src/test/kotlin/dev/s7a/strata/integration/external/ExternalMinecraftUiHostIntegrationTest.kt) demonstrate a screen definition with a supplied profile.

@@ -1,22 +1,46 @@
+@file:OptIn(InternalStrataRuntimeApi::class)
+
 package dev.s7a.strata.runtime.remote
+
+import dev.s7a.strata.runtime.spi.RuntimeUiControl
+import dev.s7a.strata.runtime.spi.RuntimeUiController
+import dev.s7a.strata.spi.InternalStrataRuntimeApi
+import dev.s7a.strata.ui.UiSession
 
 /**
  * Detached lifecycle handle for one host-owned screen.
  * Status can be read from any thread; close uses the host's execution contract (Paper primary thread, Folia player region, or Velocity's UI queue).
+ * The common [uiSession] requires its execution owner for all property reads and controls.
  * Terminal handles retain no player, plugin, handler, or UI state references.
  */
 public class RemoteScreenSession internal constructor(
     public val identity: Long,
+    settings: RemoteUiSettings = RemoteUiSettings(),
 ) : AutoCloseable {
     @Volatile
     public var status: RemoteSessionStatus = RemoteSessionStatus.Opening
         private set
 
+    private var controlOperation: ((RuntimeUiControl) -> Unit)? = null
+    internal val controls = RuntimeUiController(settings.presentation, settings.inputPolicy, apply = { checkNotNull(controlOperation)(it) }, close = { closeOwned() })
+
+    /**
+     * Common handle used by both opening APIs and server event callbacks.
+     */
+    public val uiSession: UiSession get() = controls
+
+    /**
+     * Installs the sequenced control transport before the first server tick.
+     */
+    internal fun bindControls(operation: (RuntimeUiControl) -> Unit) {
+        controlOperation = operation
+    }
+
     @Volatile
     private var closeOperation: (() -> Unit)? = null
 
     /**
-     * Installs the host's close operation before publishing the handle.
+     * Installs the service's close operation after the session becomes owned.
      */
     internal fun bind(close: () -> Unit) {
         check(closeOperation == null && status == RemoteSessionStatus.Opening)
@@ -24,14 +48,27 @@ public class RemoteScreenSession internal constructor(
     }
 
     /**
-     * Publishes the latest lifecycle status and releases ownership on termination.
+     * Publishes the latest remote lifecycle status and releases ownership on termination.
      */
     internal fun update(status: RemoteSessionStatus) {
-        if (status is RemoteSessionStatus.Closed) closeOperation = null
         this.status = status
+        if (status is RemoteSessionStatus.Closed) {
+            closeOperation = null
+            controlOperation = null
+            controls.terminate(status.reason.uiReason)
+        }
     }
 
     override fun close() {
         closeOperation?.invoke()
+    }
+
+    private fun closeOwned() {
+        val close = closeOperation
+        if (close != null) {
+            close()
+        } else if ((status is RemoteSessionStatus.Closed).not()) {
+            update(RemoteSessionStatus.Closed(RemoteFailure.OwnerClosed))
+        }
     }
 }

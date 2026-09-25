@@ -1,8 +1,16 @@
+@file:OptIn(InternalStrataRuntimeApi::class)
+
 package dev.s7a.strata.runtime.remote
 
 import dev.s7a.strata.projection.ProjectionType
 import dev.s7a.strata.projection.ProjectionValue
 import dev.s7a.strata.resource.ResourceId
+import dev.s7a.strata.runtime.spi.RuntimeUiControl
+import dev.s7a.strata.spi.InternalStrataRuntimeApi
+import dev.s7a.strata.ui.UiInputPolicy
+import dev.s7a.strata.ui.UiInteractionMode
+import dev.s7a.strata.ui.UiPresentation
+import dev.s7a.strata.ui.UiRejection
 import org.junit.jupiter.api.Assertions.assertArrayEquals
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertNull
@@ -20,6 +28,7 @@ internal class RemoteTransportTest {
         val node = RemoteNode(RemoteDeclaration(1, type, ProjectionValue.Text("hello")))
         val tree = RemoteTree(1, listOf(node))
         val codec = RemoteMessageCodec()
+        val control = RuntimeUiControl(3, UiPresentation.Hud, UiInputPolicy.All, UiInteractionMode.Look)
         val messages =
             listOf(
                 RemoteMessage.Hello(1, RemoteLimits(), setOf(type)),
@@ -28,6 +37,11 @@ internal class RemoteTransportTest {
                 RemoteMessage.Action(1, 1, 1, type, ProjectionValue.Absent),
                 RemoteMessage.Acknowledgement(1, 1, 1),
                 RemoteMessage.Applied(1, 1),
+                RemoteMessage.Control(1, control),
+                RemoteMessage.ControlRequest(1, control),
+                RemoteMessage.ControlApplied(1, 3, UiRejection.Capacity),
+                RemoteMessage.ControlReceipt(1, 3),
+                RemoteMessage.Snapshot(1, 1, ProjectionValue.Text("HUD"), tree, settings = RemoteUiSettings(presentation = UiPresentation.Hud), control = control),
                 RemoteMessage.Resynchronize(1),
                 RemoteMessage.Close(1, RemoteFailure.OwnerClosed),
             )

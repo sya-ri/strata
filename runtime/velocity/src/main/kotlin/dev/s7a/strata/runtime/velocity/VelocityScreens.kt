@@ -1,3 +1,5 @@
+@file:Suppress("DEPRECATION") // Compatibility entry delegates to the common UI service.
+
 package dev.s7a.strata.runtime.velocity
 
 import com.velocitypowered.api.proxy.Player
@@ -21,6 +23,7 @@ public object VelocityScreens {
      * Construct owner-thread state inside [definition]; capturing state created on another thread is unsupported.
      * Unavailable clients and declarations return a terminal handle with a typed failure.
      */
+    @Deprecated("Use VelocityUi.open with a UiDefinition factory.")
     public fun open(
         ownerPlugin: Any,
         player: Player,

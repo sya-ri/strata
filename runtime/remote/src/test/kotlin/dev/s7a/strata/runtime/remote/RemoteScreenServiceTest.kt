@@ -1,3 +1,4 @@
+@file:Suppress("DEPRECATION") // Exercises the compatibility screen entry.
 @file:OptIn(InternalStrataRuntimeApi::class)
 
 package dev.s7a.strata.runtime.remote
@@ -115,7 +116,7 @@ internal class RemoteScreenServiceTest {
         }
 
         fun open(action: () -> Unit): RemoteMessage.Snapshot {
-            host.open(Unit, Unit, ScreenDefinition("Backend") { Spacer(Modifier.Empty.onActivate(action)) })
+            host.open(Unit, Unit, ScreenDefinition("Backend") { Spacer(Modifier.Empty.onActivate { action() }) })
             host.tick()
             val packet = RemotePacket.decode(outgoing.removeFirst()) as RemotePacket.Frame
             return client.receive(packet.bytes, 0) as RemoteMessage.Snapshot

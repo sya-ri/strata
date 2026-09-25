@@ -4,6 +4,7 @@ import dev.s7a.strata.action.ActionHandler
 import dev.s7a.strata.action.ActionKey
 import dev.s7a.strata.action.ActionResult
 import dev.s7a.strata.projection.BuiltinProjection
+import dev.s7a.strata.ui.UiSession
 import kotlin.jvm.JvmSynthetic
 
 /**
@@ -13,7 +14,7 @@ import kotlin.jvm.JvmSynthetic
 @JvmSynthetic
 internal fun <T : Any> Modifier.onRemoteComponentAction(
     key: ActionKey<T>,
-    action: (T) -> Unit,
+    action: UiSession.(T) -> Unit,
 ): Modifier =
     then(
         ActionModifier.Element(

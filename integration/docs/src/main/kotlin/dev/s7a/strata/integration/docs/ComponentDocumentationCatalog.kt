@@ -89,7 +89,7 @@ internal object ComponentDocumentationCatalog {
     @Suppress("CyclomaticComplexMethod")
     internal fun parentScopeGuidance(component: DocumentedComponent): String =
         when (component) {
-            DocumentedComponent.Observe -> "Content emits zero or one root on the owner thread. Keep editing and navigation state outside reevaluation."
+            DocumentedComponent.Observe -> "Content emits zero or one root inside the execution owner. Keep editing and navigation state outside reevaluation."
             DocumentedComponent.Row -> "`RowScope` exposes vertical `align` and `weight` for direct children; the scope expires with its callback."
             DocumentedComponent.FlowRow -> "`FlowRow` evaluates a callback-lifetime `FlowRowScope` and exposes only vertical alignment parent data. Wrapping preserves its direct children's retained identity and focus without synthetic Row parents. It has no weight, row-count limit, implicit clipping, or truncation; with unbounded width it produces one row."
             DocumentedComponent.Column -> "`ColumnScope` exposes horizontal `align` and `weight` for direct children; the scope expires with its callback."
@@ -98,10 +98,10 @@ internal object ComponentDocumentationCatalog {
             DocumentedComponent.Spacer -> "No children or content scope; modifiers define its empty footprint."
             DocumentedComponent.Slot -> "`Slot` is a member extension on the active `UiScope`. Its optional callback emits at most one 16 by 16 content root, while its bound overload obtains the version platform implicitly and retains no public Minecraft type."
             DocumentedComponent.Text -> "No children. Fixed and source-backed labels share font and geometry rules; source values commit at frame boundaries."
-            DocumentedComponent.TextField -> "Keep caller-owned `TextFieldState` on its owner thread with a positive UTF-16 maximum length. Editing uses scalars, not grapheme clusters. Preedit stays separate until committed; it does not reproduce Minecraft's native IME popup."
+            DocumentedComponent.TextField -> "Keep caller-owned `TextFieldState` inside its execution owner with a positive UTF-16 maximum length. Editing uses scalars, not grapheme clusters. Preedit stays separate until committed; it does not reproduce Minecraft's native IME popup."
             DocumentedComponent.TextArea -> "One attached editor per owner-thread `TextAreaState`; reuse after detach is allowed. State stores LF text and a positive UTF-16 limit. `SemanticsRole.TextArea` and `Semantics.value` expose committed text; selection, clipboard, typed accessibility edit actions, and grapheme editing are unavailable."
             DocumentedComponent.Button -> "The screen runtime installs its selected Minecraft profile only for the definition callback. Button has no child scope."
-            DocumentedComponent.Checkbox -> "No children. Retain `CheckboxState` on its owner thread."
+            DocumentedComponent.Checkbox -> "No children. Retain `CheckboxState` inside its execution owner."
             DocumentedComponent.CycleButton -> "No children. Labels are snapshotted for the validated option set."
             DocumentedComponent.Slider -> "No children. `SliderState` owns normalization and quantization."
             DocumentedComponent.Tab -> "`Tab` is a top-level extension on the active `UiScope`. A custom selected indicator emits exactly one nested root; the selected value and event actions remain application-owned."

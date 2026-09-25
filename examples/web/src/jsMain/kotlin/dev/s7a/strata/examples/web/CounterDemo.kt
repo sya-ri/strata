@@ -5,15 +5,15 @@ import dev.s7a.strata.component.Row
 import dev.s7a.strata.component.Text
 import dev.s7a.strata.modifier.Modifier
 import dev.s7a.strata.modifier.width
-import dev.s7a.strata.screen.ScreenDefinition
 import dev.s7a.strata.state.mutableStateOf
+import dev.s7a.strata.ui.UiDefinition
 
 /**
  * Creates an independent bounded counter; actions own all state changes outside declaration evaluation.
  */
-internal fun counterDemo(): ScreenDefinition {
+internal fun counterDemo(): UiDefinition {
     val count = mutableStateOf(0)
-    return ScreenDefinition("Counter") {
+    return UiDefinition("Counter") {
         Column(spacing = 16) {
             Text("Count: ${count.value}", modifier = Modifier.Empty.width(304))
             Row(spacing = 8) {

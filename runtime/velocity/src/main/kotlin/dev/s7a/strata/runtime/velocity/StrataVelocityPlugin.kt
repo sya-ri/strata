@@ -1,3 +1,5 @@
+@file:OptIn(InternalStrataRuntimeApi::class)
+
 package dev.s7a.strata.runtime.velocity
 
 import com.google.inject.Inject
@@ -14,6 +16,8 @@ import com.velocitypowered.api.proxy.ProxyServer
 import com.velocitypowered.api.proxy.ServerConnection
 import dev.s7a.strata.runtime.remote.RemoteEndpoint
 import dev.s7a.strata.runtime.remote.RemotePacket
+import dev.s7a.strata.spi.InternalStrataRuntimeApi
+import dev.s7a.strata.velocity.VelocityUi
 import org.slf4j.Logger
 
 /**
@@ -27,6 +31,7 @@ public class StrataVelocityPlugin
         private val proxy: ProxyServer,
         private val logger: Logger,
     ) {
+        private var uiRegistration: AutoCloseable? = null
         private val routingLock = Any()
 
         @Volatile
@@ -41,6 +46,7 @@ public class StrataVelocityPlugin
             val service = VelocityScreenService(proxy) { logger.warn("Strata Velocity screen ended", it) }
             screens = service
             VelocityScreens.install(service)
+            uiRegistration = VelocityUi.install(VelocityUiAdapter(service))
             proxy.channelRegistrar.register(VelocityScreenService.CHANNEL)
         }
 
@@ -104,6 +110,8 @@ public class StrataVelocityPlugin
         @Suppress("UnusedParameter") // Velocity awaits this event while terminal cleanup completes.
         public fun shutdown(event: ProxyShutdownEvent): EventTask? {
             VelocityScreens.install(null)
+            uiRegistration?.close()
+            uiRegistration = null
             val previous = screens
             screens = null
             proxy.channelRegistrar.unregister(VelocityScreenService.CHANNEL)

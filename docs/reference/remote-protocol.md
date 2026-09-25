@@ -1,4 +1,4 @@
-# Remote screen protocol
+# Remote UI protocol
 
 `runtime:remote` owns the JVM wire model and sessions without depending on Paper, Velocity, or mapped Minecraft classes.
 The hosting Paper or Velocity plugin owns declarations, models, handlers, and authoritative state; the client owns retained layout, rendering, focus, hover, pointer capture, scroll gestures, and IME composition.
@@ -13,11 +13,13 @@ A proxy reissues backend discovery and renews its own transport incarnation afte
 Stale-incarnation frames cannot enter a successor's protocol connection.
 Proxy routing admits only authenticated client proxy actions and current-backend server frames.
 It handles the native event and submits safe writes itself, preventing later asynchronous listeners from forwarding retired backend traffic.
+The unreleased wire format remains protocol version 1; use matching Strata revisions until release.
 Both sides require the same protocol version, intersect exact namespace/schema-version capabilities, and negotiate the minimum of each resource limit.
 Registration freezes before a connection captures its capability snapshot.
 No message supplies a class name, executable body, function, or server model.
 
-`Snapshot` opens a complete session or resynchronizes its current revision.
+`Snapshot` opens a complete session or resynchronizes its current revision, including typed presentation, category, visibility, input settings, HUD order, and the latest control sequence.
+A connection routes one foreground Screen and multiple HUDs by stable session ID; switching does not allocate a new ID.
 `Update` carries a base revision, replacement/removal records, and the next revision.
 Every component and active modifier has a unique retained identity; repeated child references, missing children, cycles, excessive depth, and duplicate identities fail validation.
 The client decodes registered properties and prepares state before replacing its declaration source.
@@ -31,6 +33,12 @@ Duplicate sequences and retired endpoints never invoke handlers; gaps or invalid
 The client sends `Applied` only after validating and atomically installing a snapshot or update.
 The server records its largest confirmed revision, ignores older duplicates, and rejects confirmations for future revisions or another session.
 This confirms declaration installation rather than framebuffer presentation or human observation.
+`Control` carries a server-sequenced presentation/input request, and `ControlApplied` confirms native application or a typed rejection.
+Only the newest outstanding sequence may change the server handle's applied values; stale replies, snapshots, and replies after close cannot roll them back.
+`ControlRequest` carries authenticated client intent for that same session, with its own monotonic sequence.
+The owning server handle orders it with server-originated controls.
+`ControlReceipt` completes the matching client intent after resulting authoritative controls, including duplicate and no-op intents, without allowing an older receipt to clear a newer request.
+Rejected switches retain the applied presentation; terminal close supersedes controls.
 `Close` carries a detached typed reason.
 
 ## Editing and local behavior
@@ -60,6 +68,9 @@ Duplicate sequences are ignored; conflicting queued duplicates fail validation.
 The native packet bound includes the fixed envelope; negotiated fragment limits reserve its bytes.
 The binary value codec uses explicit tags, big-endian numeric fields, strict UTF-8, and bounded byte/collection lengths.
 Limits include frame/message bytes, aggregate values, structural depth, declaration count, queued bytes, fragment assembly time, and reconstruction time.
+HUD capacity is negotiated per connection, with a default of 16.
+Retained node and outgoing queue budgets cover all sessions on the connection.
+Hidden HUDs continue receiving updates.
 Extension decoders and factories must be nonblocking; work-budget checks surround trusted callbacks and traversal rather than interrupting a running callback.
 Fragment assembly accepts one ordered message at a time and rejects interleaving, replayed fragments, invalid offsets, and expired assemblies.
 Closing a session removes its unsent messages.
@@ -70,7 +81,8 @@ Images transfer either resource identifiers or detached pixel bytes.
 CPU Canvas projects the committed source revision and image; native Canvas references an installed renderer schema.
 Tiled images retain only the standard bounded working set on the server, transfer its current ready/empty cells with a source generation, and reconstruct the standard tile renderer on the client.
 Each client tile source replaces its complete current set; source replacement and terminal cleanup release pixels and subscribers.
-Native Slot transactions additionally require the same captured client menu identity, and Paper inventory lifecycle events retire the screen generation.
+Native Slot transactions additionally require the same captured client menu identity.
+Container lifecycle changes retire affected Slot HUDs and ordinary remote Screens; unrelated HUDs retain their state.
 
 ## Extensions and ownership
 
@@ -87,5 +99,5 @@ Registrations are optional for local-only components and modifiers.
 A remote screen requiring an absent projection or unsupported schema fails explicitly before it can become a supported screen.
 Plugin disable, disconnect, screen replacement, native container replacement, decoding failure, handler failure, and resource limits release the corresponding owner references and transfer queues.
 Common lifecycle/source-cutoff rules remain in [UI sessions](../development/ui-sessions.md); runtime cache admission remains in [performance](../development/performance.md).
-The shared host queues at most 64 lifecycle transitions requested during one input handler and drains them on its owner thread after that handler returns.
+The shared host queues at most 64 lifecycle transitions requested during one input handler and drains them inside its execution owner after that handler returns.
 Replacement, close, disconnect, inventory changes, and plugin shutdown therefore cannot reenter an active core input operation; excess transition requests fail explicitly.

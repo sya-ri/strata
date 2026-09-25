@@ -1,3 +1,5 @@
+@file:Suppress("DEPRECATION") // Compatibility overloads and regression coverage retain the deprecated screen entry points.
+
 package dev.s7a.strata.integration.docs.recheck
 
 import dev.s7a.strata.component.Button
@@ -65,7 +67,7 @@ public fun playerSearchScreen(
                 label = searchLabel,
                 width = 192,
                 enabled = searchEnabled,
-                modifier = Modifier.Empty.onActivate(searchEnabled, onSearch),
+                modifier = Modifier.Empty.onActivate(searchEnabled) { onSearch() },
             )
             Observe(searching, resultsEmpty, modifier = Modifier.Empty.size(192, 12)) { active, empty ->
                 Text(

@@ -1,8 +1,11 @@
+@file:Suppress("DEPRECATION") // Compatibility overloads and regression coverage retain the deprecated screen entry points.
+
 package dev.s7a.strata.screen
 
 import dev.s7a.strata.component.UiScope
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
 import dev.s7a.strata.text.UiText
+import dev.s7a.strata.ui.UiDefinition
 import kotlin.concurrent.atomics.AtomicReference
 import kotlin.concurrent.atomics.ExperimentalAtomicApi
 
@@ -19,6 +22,7 @@ import kotlin.concurrent.atomics.ExperimentalAtomicApi
  * @param content owner-thread callback that emits exactly one root component when evaluated by a runtime.
  */
 @OptIn(InternalStrataRuntimeApi::class, ExperimentalAtomicApi::class)
+@Deprecated("Use UiDefinition and its returned UiSession.")
 public class ScreenDefinition(
     title: UiText,
     pausesGame: Boolean = false,
@@ -100,6 +104,15 @@ public class ScreenDefinition(
                 State.Transferred, State.Closed -> return
             }
         }
+    }
+
+    /**
+     * Transfers this compatibility definition into the common UI opening path.
+     */
+    @InternalStrataRuntimeApi
+    public fun asUiDefinition(): UiDefinition {
+        val payload = transfer()
+        return UiDefinition(payload.title, pausesGame = payload.pausesGame, content = payload.content)
     }
 
     private sealed interface State {

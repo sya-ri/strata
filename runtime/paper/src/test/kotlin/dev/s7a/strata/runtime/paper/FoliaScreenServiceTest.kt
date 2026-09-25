@@ -1,3 +1,5 @@
+@file:OptIn(InternalStrataRuntimeApi::class)
+
 package dev.s7a.strata.runtime.paper
 
 import dev.s7a.strata.component.Spacer
@@ -13,14 +15,17 @@ import dev.s7a.strata.runtime.remote.RemoteAddress
 import dev.s7a.strata.runtime.remote.RemoteBuiltins
 import dev.s7a.strata.runtime.remote.RemoteConnection
 import dev.s7a.strata.runtime.remote.RemoteFailure
+import dev.s7a.strata.runtime.remote.RemoteLifecycleEvent
 import dev.s7a.strata.runtime.remote.RemoteMessage
 import dev.s7a.strata.runtime.remote.RemotePacket
 import dev.s7a.strata.runtime.remote.RemoteRegistry
 import dev.s7a.strata.runtime.remote.RemoteScreenSession
 import dev.s7a.strata.runtime.remote.RemoteSessionStatus
-import dev.s7a.strata.screen.ScreenDefinition
+import dev.s7a.strata.spi.InternalStrataRuntimeApi
 import dev.s7a.strata.state.MutableState
 import dev.s7a.strata.state.mutableStateOf
+import dev.s7a.strata.ui.UiDefinition
+import dev.s7a.strata.ui.UiPresentation
 import io.papermc.paper.threadedregions.scheduler.EntityScheduler
 import io.papermc.paper.threadedregions.scheduler.ScheduledTask
 import org.bukkit.entity.Player
@@ -42,6 +47,51 @@ import java.util.logging.Logger
  */
 internal class FoliaScreenServiceTest {
     @Test
+    fun hudControlsAndEventsRemainOwnedAfterPhysicalThreadMigration() {
+        Harness().use { fixture ->
+            val player = fixture.PlayerFixture()
+            player.join()
+            val handle =
+                player.region {
+                    fixture.host.open(fixture.plugin, player.player) { UiDefinition(presentation = UiPresentation.Hud) { Spacer() } }
+                }
+            val snapshot = player.receive().filterIsInstance<RemoteMessage.Snapshot>().single()
+            player.send(RemoteMessage.ControlApplied(handle.identity, checkNotNull(snapshot.control).sequence))
+            val opened = fixture.events.filterIsInstance<RemoteLifecycleEvent.Opened<*>>().single()
+            assertEquals(UiPresentation.Hud, opened.presentation)
+            assertThrows(IllegalStateException::class.java) { handle.uiSession.switch(UiPresentation.Screen) }
+            val executor = Executors.newSingleThreadExecutor()
+            try {
+                executor
+                    .submit {
+                        player.region {
+                            fixture.host.execute(player.player) {
+                                handle.uiSession.switch(UiPresentation.Screen)
+                                assertEquals(UiPresentation.Hud, handle.uiSession.presentation)
+                            }
+                        }
+                    }.get(5, TimeUnit.SECONDS)
+                val control = player.receive().filterIsInstance<RemoteMessage.Control>().single()
+                player.send(RemoteMessage.ControlApplied(handle.identity, control.state.sequence))
+                val changed = fixture.events.filterIsInstance<RemoteLifecycleEvent.PresentationChanged<*>>().single()
+                assertEquals(opened.identity, changed.identity)
+                assertEquals(UiPresentation.Screen, changed.presentation)
+                player.region {
+                    fixture.host.execute(player.player) {
+                        assertEquals(UiPresentation.Screen, handle.uiSession.presentation)
+                        handle.uiSession.close()
+                        handle.uiSession.close()
+                    }
+                }
+                assertEquals(1, fixture.events.filterIsInstance<RemoteLifecycleEvent.Closed<*>>().size)
+            } finally {
+                executor.shutdownNow()
+                assertTrue(executor.awaitTermination(5, TimeUnit.SECONDS))
+            }
+        }
+    }
+
+    @Test
     fun aPlayerMigratesThreadsAndKeepsReactiveStateAndAuthenticatedActions() {
         Harness().use { fixture ->
             val player = fixture.PlayerFixture()
@@ -52,7 +102,7 @@ internal class FoliaScreenServiceTest {
                     fixture.host.open(fixture.plugin, player.player) {
                         val counter = mutableStateOf(0)
                         state = counter
-                        ScreenDefinition("Migrating") {
+                        UiDefinition("Migrating") {
                             counter.value
                             Spacer(Modifier.Empty.onActivate { counter.value += 1 })
                         }
@@ -98,7 +148,7 @@ internal class FoliaScreenServiceTest {
             fixture.host.ownerDisabled(fixture.plugin)
             player.region { player.tick() }
             assertEquals(0, calls)
-            assertEquals(RemoteSessionStatus.Closed(RemoteFailure.OwnerClosed), handle.status)
+            assertEquals(RemoteSessionStatus.Closed(RemoteFailure.OwnerDisabled), handle.status)
         }
     }
 
@@ -154,7 +204,8 @@ internal class FoliaScreenServiceTest {
                     else -> error("Unexpected plugin method: $name")
                 }
             }
-        val host = FoliaScreenService(plugin) { player -> region.get() === player }
+        val events = ConcurrentLinkedQueue<RemoteLifecycleEvent<Plugin>>()
+        val host = FoliaScreenService(plugin, ownsPlayer = { player -> region.get() === player }, notify = { _, event -> events.add(event) })
 
         override fun close() {
             host.close()
@@ -248,7 +299,7 @@ internal class FoliaScreenServiceTest {
 
             fun open(action: () -> Unit): RemoteScreenSession =
                 region {
-                    host.open(plugin, player) { ScreenDefinition("Folia") { Spacer(Modifier.Empty.onActivate(action)) } }
+                    host.open(plugin, player) { UiDefinition("Folia") { Spacer(Modifier.Empty.onActivate { action() }) } }
                 }
 
             fun tick() {
@@ -275,6 +326,15 @@ internal class FoliaScreenServiceTest {
                 val endpoint = ((press.value as ProjectionValue.Sequence).values[1] as ProjectionValue.Integer).value
                 client.send(RemoteMessage.Action(snapshot.session, 1, endpoint, press.type, ProjectionInputCodec.pointer(PointerEvent.Press(IntOffset.Zero, PointerButton.Primary), IntOffset.Zero)))
                 client.flush()
+            }
+
+            /**
+             * Delivers an authenticated acknowledgement on the current player region.
+             */
+            fun send(message: RemoteMessage) {
+                client.send(message)
+                client.flush()
+                region { tick() }
             }
         }
 

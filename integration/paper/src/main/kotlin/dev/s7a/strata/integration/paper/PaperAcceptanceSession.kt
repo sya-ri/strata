@@ -1,3 +1,5 @@
+@file:Suppress("DEPRECATION") // Verifies the compatibility screen entry alongside the common UI API.
+
 package dev.s7a.strata.integration.paper
 
 import dev.s7a.strata.component.Button
@@ -56,6 +58,7 @@ internal class PaperAcceptanceSession(
         }
     private var ticks = 0
     private var closed = false
+    private var presentations: PaperUiPresentationVerification? = null
     private var handle: RemoteScreenSession = PaperScreens.open(plugin, player, if (phase != Phase.Controls) ScreenDefinition("Strata verification moving") { Column { Text("Moving") } } else controls())
     private val migration = if (verifyMigration) player.teleportAsync(player.location.add(4096.0, 0.0, 0.0)) else CompletableFuture.completedFuture(true)
 
@@ -69,7 +72,7 @@ internal class PaperAcceptanceSession(
                 check(ticks++ < 1200) { "Paper acceptance timed out in $phase." }
                 journeyFinished = journey?.tick() ?: true
                 if (prepareControls().not()) return@runCatching false
-                check(handle.status !is RemoteSessionStatus.Closed) { "Acceptance screen closed: ${handle.status}" }
+                if (phase != Phase.Presentations) check((handle.status is RemoteSessionStatus.Closed).not()) { "Acceptance screen closed: ${handle.status}" }
                 when (phase) {
                     Phase.Migrating, Phase.Riding -> {
                         error("Migration must complete before controls advance.")
@@ -87,6 +90,16 @@ internal class PaperAcceptanceSession(
 
                     Phase.Inventory -> {
                         if (inventoryRestored() && journeyFinished) {
+                            handle.close()
+                            presentations = PaperUiPresentationVerification(plugin, player)
+                            phase = Phase.Presentations
+                        }
+                    }
+
+                    Phase.Presentations -> {
+                        if (checkNotNull(presentations).tick()) {
+                            presentations?.close()
+                            presentations = null
                             complete()
                             return@runCatching true
                         }
@@ -159,7 +172,7 @@ internal class PaperAcceptanceSession(
         val run = requireNotNull(System.getProperty("strata.paper.run"))
         val directory = plugin.dataFolder.toPath()
         Files.createDirectories(directory)
-        Files.writeString(directory.resolve("server.properties"), "runId=$run\nplayer=$playerId\nversion=${plugin.server.bukkitVersion}\ntext=confirmed\ncustomAction=$activated\nbutton=$applied\nslot=round-trip\nupdates=${updates.value}\nregionMigration=$verifyMigration\nminecartDistance=${journey?.travelled ?: 0.0}\n")
+        Files.writeString(directory.resolve("server.properties"), "runId=$run\nplayer=$playerId\nversion=${plugin.server.bukkitVersion}\ntext=confirmed\ncustomAction=$activated\nbutton=$applied\nslot=round-trip\nupdates=${updates.value}\nuiPresentations=confirmed\nuiEvents=confirmed\nregionMigration=$verifyMigration\nminecartDistance=${journey?.travelled ?: 0.0}\n")
         handle = PaperScreens.open(plugin, player, ScreenDefinition("Strata verification complete") { Column { Text("Complete") } })
         player.inventory.setItem(9, original)
         journey?.close()
@@ -168,6 +181,8 @@ internal class PaperAcceptanceSession(
     }
 
     override fun close() {
+        presentations?.close()
+        presentations = null
         handle.close()
         journey?.close()
         if (closed.not()) {
@@ -180,5 +195,5 @@ internal class PaperAcceptanceSession(
     /**
      * Server-owned acceptance progression decoded without protocol string discriminators.
      */
-    private enum class Phase { Migrating, Riding, Controls, Inventory }
+    private enum class Phase { Migrating, Riding, Controls, Inventory, Presentations }
 }

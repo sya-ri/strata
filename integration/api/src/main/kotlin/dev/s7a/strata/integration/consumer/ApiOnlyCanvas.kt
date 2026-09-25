@@ -10,8 +10,8 @@ import dev.s7a.strata.input.PointerEvent
 import dev.s7a.strata.modifier.Modifier
 import dev.s7a.strata.modifier.onCapturedPointerEvent
 import dev.s7a.strata.render.DrawImage
-import dev.s7a.strata.screen.ScreenDefinition
 import dev.s7a.strata.state.StateSource
+import dev.s7a.strata.ui.UiDefinition
 
 /**
  * Creates an API-only canvas whose caller optionally forwards captured pointer input to its image producer.
@@ -31,13 +31,13 @@ public fun createApiOnlyCanvasDefinition(
     size: IntSize,
     onCancel: (PointerButton) -> Unit,
     onPointerEvent: (PointerEvent, IntOffset) -> InputResult,
-): ScreenDefinition {
+): UiDefinition {
     val source = canvasSource(frames)
-    return ScreenDefinition("API-only Canvas") {
+    return UiDefinition("API-only Canvas") {
         Canvas(
             source = source,
             size = size,
-            modifier = Modifier.Empty.onCapturedPointerEvent(onCancel, onPointerEvent),
+            modifier = Modifier.Empty.onCapturedPointerEvent({ button -> onCancel(button) }) { event, position -> onPointerEvent(event, position) },
         )
     }
 }

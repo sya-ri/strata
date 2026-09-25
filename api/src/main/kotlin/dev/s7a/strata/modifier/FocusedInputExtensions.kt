@@ -8,6 +8,7 @@ import dev.s7a.strata.projection.BuiltinProjection
 import dev.s7a.strata.projection.DeclarationProjection
 import dev.s7a.strata.projection.ProjectionAction
 import dev.s7a.strata.projection.ProjectionValue
+import dev.s7a.strata.ui.UiSession
 
 /**
  * Adds a focused callback for every key press and release.
@@ -17,7 +18,7 @@ import dev.s7a.strata.projection.ProjectionValue
  * @param callback focused key callback deciding propagation.
  * @return a modifier with the active callback appended nearest the component.
  */
-public fun Modifier.onKeyEvent(callback: (KeyboardEvent) -> InputResult): Modifier = then(FocusedInputModifier.Element(FocusedInputModifier.Action.EveryKey(callback)))
+public fun Modifier.onKeyEvent(callback: UiSession.(KeyboardEvent) -> InputResult): Modifier = then(FocusedInputModifier.Element(FocusedInputModifier.Action.EveryKey(callback)))
 
 /**
  * Adds a focused key-press callback.
@@ -25,7 +26,7 @@ public fun Modifier.onKeyEvent(callback: (KeyboardEvent) -> InputResult): Modifi
  * @param callback focused typed callback deciding propagation.
  * @return a modifier with the active callback appended nearest the component.
  */
-public fun Modifier.onKeyPress(callback: (KeyboardEvent.Press) -> InputResult): Modifier = then(FocusedInputModifier.Element(FocusedInputModifier.Action.KeyPress(callback)))
+public fun Modifier.onKeyPress(callback: UiSession.(KeyboardEvent.Press) -> InputResult): Modifier = then(FocusedInputModifier.Element(FocusedInputModifier.Action.KeyPress(callback)))
 
 /**
  * Adds a focused key-release callback.
@@ -33,7 +34,7 @@ public fun Modifier.onKeyPress(callback: (KeyboardEvent.Press) -> InputResult): 
  * @param callback focused typed callback deciding propagation.
  * @return a modifier with the active callback appended nearest the component.
  */
-public fun Modifier.onKeyRelease(callback: (KeyboardEvent.Release) -> InputResult): Modifier = then(FocusedInputModifier.Element(FocusedInputModifier.Action.KeyRelease(callback)))
+public fun Modifier.onKeyRelease(callback: UiSession.(KeyboardEvent.Release) -> InputResult): Modifier = then(FocusedInputModifier.Element(FocusedInputModifier.Action.KeyRelease(callback)))
 
 /**
  * Adds a focused callback for both committed characters and input-method preedit updates.
@@ -41,7 +42,7 @@ public fun Modifier.onKeyRelease(callback: (KeyboardEvent.Release) -> InputResul
  * @param callback focused typed callback deciding propagation.
  * @return a modifier with the active callback appended nearest the component.
  */
-public fun Modifier.onTextInput(callback: (TextInputEvent) -> InputResult): Modifier = then(FocusedInputModifier.Element(FocusedInputModifier.Action.EveryText(callback)))
+public fun Modifier.onTextInput(callback: UiSession.(TextInputEvent) -> InputResult): Modifier = then(FocusedInputModifier.Element(FocusedInputModifier.Action.EveryText(callback)))
 
 /**
  * Adds a focused committed-character callback.
@@ -49,7 +50,7 @@ public fun Modifier.onTextInput(callback: (TextInputEvent) -> InputResult): Modi
  * @param callback focused typed callback deciding propagation.
  * @return a modifier with the active callback appended nearest the component.
  */
-public fun Modifier.onCharacterInput(callback: (TextInputEvent.Character) -> InputResult): Modifier = then(FocusedInputModifier.Element(FocusedInputModifier.Action.Character(callback)))
+public fun Modifier.onCharacterInput(callback: UiSession.(TextInputEvent.Character) -> InputResult): Modifier = then(FocusedInputModifier.Element(FocusedInputModifier.Action.Character(callback)))
 
 /**
  * Adds a focused input-method preedit callback.
@@ -57,7 +58,7 @@ public fun Modifier.onCharacterInput(callback: (TextInputEvent.Character) -> Inp
  * @param callback focused typed callback deciding propagation.
  * @return a modifier with the active callback appended nearest the component.
  */
-public fun Modifier.onPreedit(callback: (TextInputEvent.Preedit) -> InputResult): Modifier = then(FocusedInputModifier.Element(FocusedInputModifier.Action.Preedit(callback)))
+public fun Modifier.onPreedit(callback: UiSession.(TextInputEvent.Preedit) -> InputResult): Modifier = then(FocusedInputModifier.Element(FocusedInputModifier.Action.Preedit(callback)))
 
 /**
  * Makes the logical component a keyboard and text-input focus target.
@@ -85,7 +86,7 @@ public fun Modifier.initialFocus(): Modifier = then(FocusedInputModifier.Element
  * @param callback synchronous distinct transition observer.
  * @return a modifier with the active callback appended nearest the component.
  */
-public fun Modifier.onFocusChanged(callback: (FocusEvent) -> Unit): Modifier =
+public fun Modifier.onFocusChanged(callback: UiSession.(FocusEvent) -> Unit): Modifier =
     then(
         FocusedInputModifier.Element(
             FocusedInputModifier.Action.FocusChange(callback),

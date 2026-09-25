@@ -1,6 +1,7 @@
 package dev.s7a.strata.runtime.minecraft.fabric.mixin.remote;
 
 import dev.s7a.strata.runtime.minecraft.fabric.FabricRemoteScreens;
+import dev.s7a.strata.runtime.minecraft.fabric.FabricUiSessions;
 import net.minecraft.client.Minecraft;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
@@ -14,6 +15,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 abstract class FabricRemoteTickMixin {
     @Inject(method = "tick", at = @At("TAIL"))
     private void strataRemoteTick(CallbackInfo callback) {
+        FabricUiSessions.INSTANCE.tick();
         FabricRemoteScreens.INSTANCE.tick();
     }
 }

@@ -1,5 +1,7 @@
 package dev.s7a.strata.action
 
+import dev.s7a.strata.ui.UiSession
+
 /**
  * Immutable callback snapshot extracted from one component's modifier chain.
  *
@@ -19,11 +21,12 @@ public class ActionDispatcher internal constructor(
      * @throws Throwable when a matching application callback fails.
      */
     public fun <T : Any> dispatch(
+        session: UiSession,
         key: ActionKey<T>,
         value: T,
     ): ActionResult {
         handlers.asReversed().forEach { handler ->
-            if (handler.key === key && handler.dispatch(value) === ActionResult.Consumed) {
+            if (handler.key === key && handler.dispatch(session, value) === ActionResult.Consumed) {
                 return ActionResult.Consumed
             }
         }

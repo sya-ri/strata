@@ -43,7 +43,7 @@ internal class SkillForwardTest {
                 TextAreaState("draft"),
             ) {}
         val profile = ShowcaseMinecraftAssetFixture(temporary).assets().profile
-        createMinecraftUiHost(definition, profile, LwjglMinecraftFontBackendFactory).use { host ->
+        createMinecraftUiHost(definition, profile, fontBackend = LwjglMinecraftFontBackendFactory).use { host ->
             host.attach()
             val failure = assertThrows(IllegalArgumentException::class.java) { host.frame(IntSize(160, 160)) }
             assertTrue(failure.message.orEmpty().contains("text constraints"))
@@ -60,7 +60,7 @@ internal class SkillForwardTest {
         val draft = TextAreaState("draft")
         val definition = acceptedInboxScreen(clock, sending, history, loading, draft) {}
         val profile = ShowcaseMinecraftAssetFixture(temporary).assets().profile
-        createMinecraftUiHost(definition, profile, LwjglMinecraftFontBackendFactory).use { host ->
+        createMinecraftUiHost(definition, profile, fontBackend = LwjglMinecraftFontBackendFactory).use { host ->
             host.attach()
             host.frame(IntSize(160, 160))
             host.dispatchKeyboard(KeyboardEvent.Press(KeyCode.Tab, scanCode = 0))

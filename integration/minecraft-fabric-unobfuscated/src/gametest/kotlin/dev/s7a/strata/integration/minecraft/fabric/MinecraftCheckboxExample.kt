@@ -1,3 +1,5 @@
+@file:Suppress("DEPRECATION") // Compatibility overloads and regression coverage retain the deprecated screen entry points.
+
 package dev.s7a.strata.integration.minecraft.fabric
 
 // showcase-source-begin:checkbox
@@ -11,7 +13,9 @@ import dev.s7a.strata.modifier.size
 import dev.s7a.strata.render.ArgbColor
 import dev.s7a.strata.screen.ScreenDefinition
 
-/** Builds the complete minimal Checkbox showcase frame. */
+/**
+ * Builds the complete minimal Checkbox showcase frame.
+ */
 internal fun createCheckboxShowcaseScreenDefinition(): ScreenDefinition {
     val state = CheckboxState(initialChecked = true)
     return ScreenDefinition("Checkbox showcase") {

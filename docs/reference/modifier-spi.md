@@ -8,6 +8,14 @@ Only the effective pipeline ancestry changes.
 This contract is for authors of custom modifier nodes and layouts.
 For built-in modifier use, start with the [modifier guide](../guides/modifiers.md); exact declarations are in the [API reference](https://gh.s7a.dev/strata/).
 
+## Event ownership
+
+UI callbacks use the owning `UiSession` as their receiver while preserving their event parameters and result.
+A custom event node obtains that receiver from protected `Node.uiSession` at delivery time and passes it when invoking its handler.
+The runtime supplies it through `bindRuntime` and retires it after disposal; never retain the declaration's `UiScope` as an event owner.
+Reusing a modifier description across two trees creates separate event ownership, even when both nodes carry the same callback value.
+Closing or switching from an event takes effect after its delivery boundary, and terminal notifications cannot reopen the session.
+
 ## Composition and identity
 
 The first description is the outermost retained node.

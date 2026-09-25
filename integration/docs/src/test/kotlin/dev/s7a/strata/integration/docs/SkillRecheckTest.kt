@@ -44,7 +44,7 @@ internal class SkillRecheckTest {
         var sends = 0
         val definition = messageEditorScreen(clock, sending, loading, history, draft) { sends += 1 }
         val profile = ShowcaseMinecraftAssetFixture(temporary).assets().profile
-        createMinecraftUiHost(definition, profile, LwjglMinecraftFontBackendFactory).use { host ->
+        createMinecraftUiHost(definition, profile, fontBackend = LwjglMinecraftFontBackendFactory).use { host ->
             host.attach()
             host.frame(viewport)
             host.dispatchKeyboard(KeyboardEvent.Press(KeyCode.Tab, scanCode = 0))
@@ -96,7 +96,7 @@ internal class SkillRecheckTest {
         val query = TextFieldState("query")
         val definition = playerSearchScreen(clock, searching, results, query) {}
         val profile = ShowcaseMinecraftAssetFixture(temporary).assets().profile
-        createMinecraftUiHost(definition, profile, LwjglMinecraftFontBackendFactory).use { host ->
+        createMinecraftUiHost(definition, profile, fontBackend = LwjglMinecraftFontBackendFactory).use { host ->
             host.attach()
             host.frame(viewport)
             host.dispatchKeyboard(KeyboardEvent.Press(KeyCode.Tab, scanCode = 0))

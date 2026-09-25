@@ -52,6 +52,11 @@ private fun withMinecraftCanvasContext(
     output: Path,
     action: (MinecraftCanvasTestContext) -> Unit,
 ) {
+    context.computeOnClient {
+        val handle = minecraftTestWindowHandle()
+        if (GLFW.glfwGetWindowAttrib(handle, GLFW.GLFW_ICONIFIED) == GLFW.GLFW_TRUE) GLFW.glfwRestoreWindow(handle)
+    }
+    context.waitFor { minecraft -> 0 < minecraft.window.screenWidth && 0 < minecraft.window.screenHeight }
     val previous =
         context.computeOnClient { minecraft ->
             // Restore the physical window size; cached Window dimensions can be zero in loaded tests.
@@ -72,6 +77,8 @@ private fun withMinecraftCanvasContext(
             override fun setScreen(screen: Screen?) {
                 Minecraft.getInstance().setScreen(screen)
             }
+
+            override fun currentScreen(): Screen? = Minecraft.getInstance().screen
 
             override fun hasOverlay(): Boolean = Minecraft.getInstance().overlay != null
 
@@ -140,4 +147,14 @@ private fun withMinecraftCanvasContext(
             }
         }
     }
+}
+
+/**
+ * Runs common UI ownership and HUD/input assertions while the suite owns a loaded world.
+ */
+internal fun runMinecraftUiSessionTest(
+    context: MinecraftLoadedTestContext,
+    output: Path,
+) {
+    withMinecraftCanvasContext(context, output, MinecraftUiSessionGameTest::run)
 }

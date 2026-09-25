@@ -7,7 +7,7 @@ import dev.s7a.strata.geometry.IntSize
 import dev.s7a.strata.modifier.Modifier
 import dev.s7a.strata.modifier.onLeadingItemsRequested
 import dev.s7a.strata.modifier.onTrailingItemsRequested
-import dev.s7a.strata.screen.ScreenDefinition
+import dev.s7a.strata.ui.UiDefinition
 
 /**
  * Creates an API-only dynamic list whose load actions prepend and append caller-owned rows.
@@ -23,8 +23,8 @@ import dev.s7a.strata.screen.ScreenDefinition
 public fun createApiOnlyDynamicVirtualListDefinition(
     items: MutableList<Int>,
     state: VirtualListState<Int>,
-): ScreenDefinition =
-    ScreenDefinition("API-only dynamic virtual list") {
+): UiDefinition =
+    UiDefinition("API-only dynamic virtual list") {
         val loadModifier =
             Modifier.Empty
                 .onLeadingItemsRequested { request ->

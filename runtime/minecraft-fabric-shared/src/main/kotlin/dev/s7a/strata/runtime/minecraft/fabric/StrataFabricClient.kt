@@ -1,10 +1,14 @@
+@file:Suppress("DEPRECATION") // Compatibility overloads and regression coverage retain the deprecated screen entry points.
+
 package dev.s7a.strata.runtime.minecraft.fabric
 
 import dev.s7a.strata.screen.ScreenDefinition
+import dev.s7a.strata.screen.ScreenOpenThreadException
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
 import dev.s7a.strata.spi.ScreenPresenter
 import dev.s7a.strata.spi.ScreenPresenterRegistration
 import dev.s7a.strata.spi.ScreenPresenters
+import dev.s7a.strata.spi.UiPresenters
 import net.fabricmc.api.ClientModInitializer
 import net.minecraft.client.Minecraft
 
@@ -17,6 +21,7 @@ import net.minecraft.client.Minecraft
 @Suppress("unused") // Fabric constructs this entrypoint by the class name declared in each version's fabric.mod.json.
 @OptIn(InternalStrataRuntimeApi::class)
 public class StrataFabricClient : ClientModInitializer {
+    private var uiRegistration: AutoCloseable? = null
     private var registration: ScreenPresenterRegistration? = null
 
     /**
@@ -26,27 +31,15 @@ public class StrataFabricClient : ClientModInitializer {
      */
     override fun onInitializeClient() {
         check(registration == null) { "The Strata Fabric client runtime is already initialized." }
+        uiRegistration = UiPresenters.install { FabricUiSessions.open(it) }
         registration = ScreenPresenters.install(Presenter)
     }
 
     private object Presenter : ScreenPresenter {
         override fun present(definition: ScreenDefinition) {
             val minecraft = Minecraft.getInstance()
-            FabricScreenPresentationTransaction.present(
-                minecraft::isSameThread,
-                {
-                    val parent = FabricMinecraftScreenAccess.currentScreen(minecraft)
-                    val profile =
-                        cachedFabricMinecraftProfile(
-                            minecraft.resourceManager,
-                            fabricMinecraftFontCompatibility(),
-                            fabricMinecraftFontOptions(minecraft),
-                            ::extractMinecraftUiProfile,
-                        )
-                    createMinecraftScreen(definition, profile, parent)
-                },
-                { screen -> FabricMinecraftScreenAccess.setScreen(minecraft, screen) },
-            )
+            if (minecraft.isSameThread().not()) throw ScreenOpenThreadException("UI opening requires the Minecraft client thread.")
+            definition.asUiDefinition().open()
         }
     }
 }

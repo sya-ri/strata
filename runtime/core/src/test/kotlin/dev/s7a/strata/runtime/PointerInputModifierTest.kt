@@ -157,7 +157,7 @@ internal class PointerInputModifierTest {
     @Test
     fun clearingRetainedHoverEmitsOneExitAndLeavesTheTreeUsable() {
         val transitions = ArrayList<PointerHoverEvent>()
-        val tree = tree(Modifier.Empty.size(10, 10).onHover(transitions::add))
+        val tree = tree(Modifier.Empty.size(10, 10).onHover({ value -> transitions.add(value) }))
         tree.dispatchPointer(PointerEvent.Move(IntOffset(1, 1)))
 
         tree.clearInputState()
@@ -196,10 +196,10 @@ internal class PointerInputModifierTest {
                     .onPointerEvent { event, _ ->
                         fallback += event
                         InputResult.Consumed
-                    }.onCapturedPointerEvent(cancellations::add) { event, local ->
+                    }.onCapturedPointerEvent({ value -> cancellations.add(value) }) { event, local ->
                         observed += Observation.Raw(event, local)
                         if (event is PointerEvent.Press) InputResult.Consumed else InputResult.Ignored
-                    }.onHover(hover::add),
+                    }.onHover({ value -> hover.add(value) }),
             )
         tree.dispatchPointer(PointerEvent.Move(IntOffset(1, 1)))
         observed.clear()
@@ -228,7 +228,7 @@ internal class PointerInputModifierTest {
         val events = ArrayList<PointerEvent>()
         val tree =
             tree(
-                Modifier.Empty.size(10, 10).onCapturedPointerEvent(cancellations::add) { event, _ ->
+                Modifier.Empty.size(10, 10).onCapturedPointerEvent({ value -> cancellations.add(value) }) { event, _ ->
                     events += event
                     if (event is PointerEvent.Press) InputResult.Ignored else InputResult.Consumed
                 },
@@ -313,7 +313,7 @@ internal class PointerInputModifierTest {
                     probe.element(
                         TestProbe.ProbeId("first"),
                         modifier =
-                            Modifier.Empty.onCapturedPointerEvent(cancellations::add) { event, _ ->
+                            Modifier.Empty.onCapturedPointerEvent({ value -> cancellations.add(value) }) { event, _ ->
                                 first += event
                                 InputResult.Consumed
                             },
@@ -321,7 +321,7 @@ internal class PointerInputModifierTest {
                     probe.element(
                         TestProbe.ProbeId("second"),
                         modifier =
-                            Modifier.Empty.onCapturedPointerEvent(cancellations::add) { event, _ ->
+                            Modifier.Empty.onCapturedPointerEvent({ value -> cancellations.add(value) }) { event, _ ->
                                 second += event
                                 InputResult.Consumed
                             },
@@ -365,7 +365,7 @@ internal class PointerInputModifierTest {
         val newCancellations = ArrayList<PointerButton>()
         val tree =
             tree(
-                Modifier.Empty.size(10, 10).onCapturedPointerEvent(oldCancellations::add) { event, _ ->
+                Modifier.Empty.size(10, 10).onCapturedPointerEvent({ value -> oldCancellations.add(value) }) { event, _ ->
                     oldEvents += event
                     InputResult.Consumed
                 },
@@ -377,7 +377,7 @@ internal class PointerInputModifierTest {
             evaluateComponentTree {
                 Spacer(
                     modifier =
-                        Modifier.Empty.size(10, 10).onCapturedPointerEvent(newCancellations::add) { event, _ ->
+                        Modifier.Empty.size(10, 10).onCapturedPointerEvent({ value -> newCancellations.add(value) }) { event, _ ->
                             newEvents += event
                             InputResult.Ignored
                         },
@@ -402,7 +402,7 @@ internal class PointerInputModifierTest {
             val cancellations = ArrayList<PointerButton>()
             val tree =
                 tree(
-                    Modifier.Empty.size(10, 10).onCapturedPointerEvent(cancellations::add) { _, _ -> InputResult.Consumed },
+                    Modifier.Empty.size(10, 10).onCapturedPointerEvent({ value -> cancellations.add(value) }) { _, _ -> InputResult.Consumed },
                 )
             tree.dispatchPointer(PointerEvent.Press(IntOffset(1, 1), PointerButton.Primary))
             tree.update(evaluateComponentTree { Spacer(modifier = Modifier.Empty.size(10, 10).then(replacement)) })
@@ -420,7 +420,7 @@ internal class PointerInputModifierTest {
         val cancellations = ArrayList<PointerButton>()
         val tree =
             tree(
-                Modifier.Empty.size(10, 10).onCapturedPointerEvent(cancellations::add) { event, _ ->
+                Modifier.Empty.size(10, 10).onCapturedPointerEvent({ value -> cancellations.add(value) }) { event, _ ->
                     if (event is PointerEvent.Release) throw primary
                     InputResult.Consumed
                 },

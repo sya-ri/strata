@@ -13,6 +13,8 @@ import dev.s7a.strata.runtime.minecraft.MinecraftPlayerSkinBinding;
 import dev.s7a.strata.runtime.minecraft.MinecraftPlatformCommandRenderer;
 import dev.s7a.strata.runtime.minecraft.MinecraftUiPlatform;
 import dev.s7a.strata.runtime.render.DrawCommand;
+import dev.s7a.strata.runtime.remote.RemoteFailure;
+import dev.s7a.strata.runtime.remote.RemoteProtocolException;
 import java.util.LinkedHashSet;
 import java.util.Objects;
 import java.util.Set;
@@ -39,6 +41,18 @@ import org.lwjgl.glfw.GLFW;
  */
 final class FabricMinecraftInventoryBridge implements MinecraftUiPlatform, MinecraftPlatformCommandRenderer<GuiGraphics> {
     private final Thread ownerThread = Thread.currentThread();
+    /** Whether any retained native Slot depends on the current container generation. */
+    boolean hasBindings() {
+        return bindings.isEmpty() == false;
+    }
+
+    private AbstractContainerMenu boundContainer;
+
+    /** First native container used by a Slot; observation alone does not bind an unrelated HUD. */
+    AbstractContainerMenu boundContainer() {
+        return boundContainer;
+    }
+
     private final Set<Binding> bindings = new LinkedHashSet<>();
     private final Set<SkinBinding> skinBindings = new LinkedHashSet<>();
     private final Set<Binding> quickCraftSlots = new LinkedHashSet<>();
@@ -196,7 +210,8 @@ final class FabricMinecraftInventoryBridge implements MinecraftUiPlatform, Minec
         private Slot resolveSlot() {
             LocalPlayer player = requirePlayer();
             AbstractContainerMenu menu = activeMenu();
-            int index = locator.getIndex();
+            if (boundContainer == null) boundContainer = activeMenu();
+        int index = locator.getIndex();
             if (locator.getSource() == SlotBinding.Source.PlayerInventory) {
                 Inventory inventory = player.getInventory();
                 int menuIndex = menu.findSlot(inventory, index).orElseThrow(
@@ -460,6 +475,7 @@ final class FabricMinecraftInventoryBridge implements MinecraftUiPlatform, Minec
     public @NotNull MinecraftInventorySlotBinding inventorySlot(@NotNull SlotBinding locator) {
         requireUsable();
         Objects.requireNonNull(locator, "Minecraft Slot binding must not be null.");
+        if (boundContainer == null) boundContainer = activeMenu();
         int index = locator.getIndex();
         if (index < 0) {
             throw new IllegalArgumentException("Minecraft Slot binding index must be non-negative: " + index);
@@ -538,6 +554,7 @@ final class FabricMinecraftInventoryBridge implements MinecraftUiPlatform, Minec
             binding.releaseFromPlatform();
         }
         skinBindings.clear();
+        boundContainer = null;
         minecraft = null;
     }
 
@@ -926,7 +943,9 @@ final class FabricMinecraftInventoryBridge implements MinecraftUiPlatform, Minec
 
     private AbstractContainerMenu activeMenu() {
         AbstractContainerMenu menu = requirePlayer().containerMenu;
-        FabricRemoteScreens.INSTANCE.requireContainer(menu);
+        if (boundContainer != null && boundContainer != menu) {
+            throw new RemoteProtocolException(RemoteFailure.ContainerChanged, "UI Slot container generation changed.", null);
+        }
         return menu;
     }
 

@@ -1,3 +1,5 @@
+@file:Suppress("DEPRECATION") // Compatibility overloads and regression coverage retain the deprecated screen entry points.
+
 @file:OptIn(InternalStrataRuntimeApi::class)
 
 package dev.s7a.strata.runtime.minecraft
@@ -98,8 +100,8 @@ internal class MinecraftRemoteScreenTest {
             Spacer(
                 Modifier.Empty
                     .size(30, 30)
-                    .onHover(hover::add)
-                    .onFocusChanged(focus::add)
+                    .onHover({ value -> hover.add(value) })
+                    .onFocusChanged({ value -> focus.add(value) })
                     .onRelease { released++ },
             )
         }.use { pair ->
@@ -121,7 +123,7 @@ internal class MinecraftRemoteScreenTest {
         val state = SelectionListState<Int>()
         val selected = mutableListOf<Int>()
         Pairing {
-            SelectionList((0 until 100).toList(), { it }, state, IntSize(80, 60), 20, modifier = Modifier.Empty.onSelectionChange(selected::add)) {
+            SelectionList((0 until 100).toList(), { it }, state, IntSize(80, 60), 20, modifier = Modifier.Empty.onSelectionChange<Int>({ value -> selected.add(value) })) {
                 Text("Row $it")
             }
         }.use { pair ->
@@ -253,7 +255,7 @@ internal class MinecraftRemoteScreenTest {
     fun checkboxChangesAuthoritativeStateAndCallsBusinessHandlerExactlyOnce() {
         val state = CheckboxState()
         val received = mutableListOf<Boolean>()
-        Pairing { Checkbox("Check", state, modifier = Modifier.Empty.onCheckedChange(received::add)) }.use { pair ->
+        Pairing { Checkbox("Check", state, modifier = Modifier.Empty.onCheckedChange({ value -> received.add(value) })) }.use { pair ->
             pair.click(2, 2)
             assertFalse(state.checked)
             val action = pair.incoming.filterIsInstance<RemoteMessage.Action>().single()
@@ -280,7 +282,7 @@ internal class MinecraftRemoteScreenTest {
         val second = Choice("Second", Any())
         val state = CycleButtonState(listOf(first, second))
         val selected = mutableListOf<Choice>()
-        Pairing { CycleButton(state, modifier = Modifier.Empty.onCycle(selected::add), label = { UiText.Literal(it.label) }) }.use { pair ->
+        Pairing { CycleButton(state, modifier = Modifier.Empty.onCycle<Choice>({ value -> selected.add(value) }), label = { UiText.Literal(it.label) }) }.use { pair ->
             pair.click(2, 2)
             pair.synchronize()
             assertEquals(second, state.value)
@@ -292,7 +294,7 @@ internal class MinecraftRemoteScreenTest {
     fun sliderDragUsesLocalCaptureAndValidatedServerValues() {
         val state = SliderState(0.0)
         val changes = mutableListOf<Double>()
-        Pairing { Slider("Amount", state, width = 100, modifier = Modifier.Empty.onSliderChange(changes::add)) }.use { pair ->
+        Pairing { Slider("Amount", state, width = 100, modifier = Modifier.Empty.onSliderChange({ value -> changes.add(value) })) }.use { pair ->
             pair.click(10, 10)
             pair.host.dispatchPointer(PointerEvent.Drag(IntOffset(90, 10), PointerButton.Primary, 80.0, 0.0))
             pair.host.dispatchPointer(PointerEvent.Release(IntOffset(90, 10), PointerButton.Primary))

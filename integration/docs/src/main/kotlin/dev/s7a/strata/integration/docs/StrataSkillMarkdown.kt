@@ -107,6 +107,7 @@ ${StateBindingDocumentationCatalog.entries.joinToString("\n\n") { entry -> state
      * @param releaseVersion validated root project version used by every published Strata coordinate.
      * @return LF-normalized Markdown with one terminal newline.
      */
+    @Suppress("LongMethod") // One cohesive setup document keeps its generated section order visible.
     internal fun setup(
         versions: List<String>,
         openExample: String,
@@ -137,7 +138,7 @@ dependencies {
 }
 ```
 
-Declare the runtime as a required Mod dependency so a production instance cannot start without the presenter used by `ScreenDefinition.open()`:
+Declare the runtime as a required Mod dependency so a production instance cannot start without the presenter used by `UiDefinition.open()`:
 
 ```json
 {
@@ -155,6 +156,13 @@ The definition remains owned by the caller when no runtime is installed or the c
 ```kotlin
 $openExample
 ```
+
+`UiDefinition.open()` returns the owning `UiSession`.
+The optional title is narration metadata, and Screen is the default presentation.
+Choose `presentation = UiPresentation.Hud` on the definition, then use `session.switch(...)` or `session.close()` for the live UI.
+Every `onXxx` callback receives that session as `this`; event controls apply after delivery returns.
+For Paper, import the `dev.s7a.strata.paper.open` extension from `paper-api` and call `definition.open(plugin, player)`.
+See the [UI session guide](https://github.com/sya-ri/strata/blob/master/docs/guides/screens-and-state.md) for categories, visibility, game input, and migration.
 
 See [Authoring patterns](patterns.md) for state, input, and resource ownership.
 
@@ -208,6 +216,7 @@ ${StrataReactiveSkillMarkdown.patterns(reactiveExample)}
 
 ## State, scrolling, resources, and bindings
 
+- Use caller-owned `mutableStateOf` for application values read during content evaluation; changed assignments schedule reevaluation and equal assignments do not.
 - Keep mutable values in caller-owned state objects and receive typed changes through modifiers. Use direct sources for immutable arguments that change automatically.
 - Place `ScrollArea` and `Scrollbar` separately and link them with one `ScrollState`. A viewport may omit its scrollbar or place it away from the content.
 - Use `TextAreaState` for multiline editing and link an optional `Scrollbar` to `state.scrollState`. Creating immutable descriptions does not attach the state, and descriptions may be reused after detachment; simultaneous attachment with the same caller-owned state throws `IllegalStateException`.
@@ -307,7 +316,7 @@ A custom retained component or modifier used remotely must provide a typed decla
 Read the [declaration projection SPI]($PROJECTION_GUIDE_URL) for `DeclarationProjection`, `ProjectionType`, detached properties, `ProjectionAction`, and `ProjectionBinding`.
 Transfer properties and typed action endpoints, keeping application models, functions, and native handles on their owning host.
 
-Choose a namespaced type ID and schema version, register it through `PaperScreens.register` or `VelocityScreens.register` before negotiation, and install matching decoders/factories in `FabricRemoteScreens.registry` before its first connection freezes registration.
+Choose a namespaced type ID and schema version, register it through `PaperUi.register` or `VelocityUi.register` before negotiation, and install matching decoders/factories in `FabricRemoteScreens.registry` before its first connection freezes registration.
 Changed wire schemas require a new version; existing connections must reconnect to negotiate newly registered types.
 Missing projections or client capabilities reject the whole screen explicitly.
 Follow the [extension and ownership contract]($REMOTE_PROTOCOL_URL#extensions-and-ownership) for `RemoteRegistry.element`, `modifier`, `statefulModifier`, and release of retained client resources.
@@ -319,16 +328,16 @@ Event-dependent synchronous `InputResult` or capture decisions and native Canvas
     private const val HOSTS: String =
         """| Host | Public opening API | State and handler owner |
 | --- | --- | --- |
-| Fabric | `ScreenDefinition.open()` | Client thread |
-| Paper / Folia | `PaperScreens.open(ownerPlugin, player) { definition }` | Paper primary thread or the player's Folia region |
-| Velocity | `VelocityScreens.open(ownerPlugin, player) { definition }` | Strata's dedicated proxy UI thread |
+| Fabric | `UiDefinition.open()` | Client thread |
+| Paper / Folia | `PaperUi.open(ownerPlugin, player) { definition }` | Paper primary thread or the player's Folia region |
+| Velocity | `VelocityUi.open(ownerPlugin, player) { definition }` | Strata's dedicated proxy UI thread |
 """
 
     private const val REMOTE_SETUP: String =
         """## Paper, Folia, and Velocity installation
 
 Install the chosen host's `plugin` classifier JAR in its `plugins` directory.
-Consumer plugins compile against `dev.s7a.strata:strata-runtime-paper:$RELEASE_VERSION_PLACEHOLDER` or `dev.s7a.strata:strata-runtime-velocity:$RELEASE_VERSION_PLACEHOLDER` and the host API with `compileOnly` dependencies.
+Consumer plugins compile against `dev.s7a.strata:strata-paper-api:$RELEASE_VERSION_PLACEHOLDER` or `dev.s7a.strata:strata-velocity-api:$RELEASE_VERSION_PLACEHOLDER` and the host API with `compileOnly` dependencies.
 Declare `depend: [Strata]` for Paper or a required dependency on plugin ID `strata` for Velocity; do not package another Strata runtime in the consumer.
 Players still install their matching Fabric runtime and Fabric Language Kotlin.
 If the screen only uses standard components or custom compositions of them, those client dependencies are sufficient; no application-specific client Mod is needed.
@@ -340,10 +349,10 @@ The Paper guide includes a compiled typed-input screen; use these examples when 
 
 ### Opening, state, and lifecycle
 
-- On Paper's primary thread or the player's Folia region, inspect `PaperScreens.capabilities(player)` and create mutable state and a fresh definition inside the factory passed to `PaperScreens.open(ownerPlugin, player) { ... }`. On Folia, enter `PaperScreens.execute(player) { ... }` for external state access after scheduling onto that player. Do not share owner-confined state between players. Consuming plugins also declare `folia-supported: true`.
-- On Velocity, inspect the future from `VelocityScreens.capabilities(player)` and construct the definition and owner-thread state inside the factory passed to `VelocityScreens.open`. Its future returns the session handle. Queue external state access with `VelocityScreens.execute(ownerPlugin) { ... }`; never join another UI future from a handler or completion callback.
+- On Paper's primary thread or the player's Folia region, inspect `PaperUi.capabilities(player)` and create mutable state and a fresh definition inside the factory passed to `PaperUi.open(ownerPlugin, player) { ... }`. On Folia, enter `PaperUi.execute(player) { ... }` for external state access after scheduling onto that player. Do not share owner-confined state between players. Consuming plugins also declare `folia-supported: true`.
+- On Velocity, inspect the future from `VelocityUi.capabilities(player)` and construct the definition and owner-thread state inside the factory passed to `VelocityUi.open`. Its future returns the session handle. Queue external state access with `VelocityUi.execute(ownerPlugin) { ... }`; never join another UI future from a handler or completion callback.
 - A null capability result means negotiation is incomplete or unavailable. Opening with an unsupported declaration returns a terminal session reason; do not silently omit missing components or extensions.
-- Retain the returned `RemoteScreenSession` when status inspection or explicit `close()` is needed. Replacement, disconnect, and failures release its handlers, observations, and transfers. Paper plugin disable releases its owners; a Velocity consumer stopping early calls `VelocityScreens.release(ownerPlugin)`.
+- Retain the returned `UiSession` when status inspection or explicit `close()` is needed. Read live handle properties inside its execution owner, using `PaperUi.execute` on Folia; Velocity listeners use detached platform event fields or queue access through `VelocityUi.execute`. Replacement, disconnect, and failures release its handlers, observations, and transfers. Paper plugin disable releases its owners; a Velocity consumer stopping early calls `VelocityUi.release(ownerPlugin)`.
 - Keep database and network work off the UI owner thread. Publish asynchronous results through state sources or the host's state-update boundary; source notifications are queued and committed at the next session cutoff.
 
 ### Remote resources and client behavior
@@ -361,7 +370,7 @@ See the [remote protocol]($REMOTE_PROTOCOL_URL) for editing acknowledgements, ex
     private const val BROWSER_SETUP: String =
         """## Preview the same screen with Web or Headless
 
-Author the application screen for its Mod, Paper, or Velocity owner, then reuse its `ScreenDefinition` factory in the preview harness.
+Author the application screen for its Mod, Paper, or Velocity owner, then reuse its `UiDefinition` factory in the preview harness.
 Pass deterministic sample data and test action implementations through the same application boundary; keep host APIs outside the reusable declaration.
 Do not create a second browser-only layout, silently remove unsupported controls, or treat a reduced preview as full Minecraft parity.
 
@@ -398,7 +407,7 @@ Keep browser-only application effects outside declaration evaluation and close t
 ### Headless preview
 
 Use the [Headless guide](https://github.com/sya-ri/strata/blob/master/docs/guides/headless.md) to select the rendering boundary and supply the viewport, output scale, and resource profile.
-For an application `ScreenDefinition`, follow the [compiled external host tests](https://github.com/sya-ri/strata/blob/master/integration/api/src/test/kotlin/dev/s7a/strata/integration/external/ExternalMinecraftUiHostIntegrationTest.kt); `renderHeadless` directly accepts an Element root, not a screen definition.
+For an application `UiDefinition`, follow the [compiled external host tests](https://github.com/sya-ri/strata/blob/master/integration/api/src/test/kotlin/dev/s7a/strata/integration/external/ExternalMinecraftUiHostIntegrationTest.kt); `renderHeadless` directly accepts an Element root, not a screen definition.
 Keep opt-in host bridge imports in the preview/test harness and create fresh definitions and state for each independent preview.
 Headless images and semantics verify portable behavior; live Slot items and opaque native commands still need Minecraft or a supported exact-generation capture.
 Report missing profile assets and unsupported capabilities instead of substituting a different component tree."""

@@ -19,6 +19,8 @@ on:
       - icon.svg
       - icon.png
       - integration/**
+      - paper-api/**
+      - velocity-api/**
       - qodana.yaml
       - quality/**
       - release/**
@@ -44,6 +46,8 @@ on:
       - icon.svg
       - icon.png
       - integration/**
+      - paper-api/**
+      - velocity-api/**
       - qodana.yaml
       - quality/**
       - release/**

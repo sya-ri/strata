@@ -1,7 +1,7 @@
 package dev.s7a.strata.examples.paper
 
-import dev.s7a.strata.runtime.paper.PaperScreens
-import dev.s7a.strata.runtime.remote.RemoteSessionStatus
+import dev.s7a.strata.paper.PaperUi
+import dev.s7a.strata.ui.UiSessionStatus
 import org.bukkit.command.Command
 import org.bukkit.command.CommandSender
 import org.bukkit.entity.Player
@@ -13,7 +13,7 @@ import org.bukkit.plugin.java.JavaPlugin
  */
 public class PaperDemoPlugin : JavaPlugin() {
     override fun onEnable() {
-        DemoRemoteExtensions.types.forEach { PaperScreens.register(this, it) }
+        DemoRemoteExtensions.types.forEach { PaperUi.register(this, it) }
     }
 
     override fun onCommand(
@@ -23,13 +23,13 @@ public class PaperDemoPlugin : JavaPlugin() {
         args: Array<out String>,
     ): Boolean {
         val player = sender as? Player ?: return false
-        if (PaperScreens.capabilities(player) == null) {
+        if (PaperUi.capabilities(player) == null) {
             player.sendMessage("Install the matching Strata Fabric runtime and reconnect before opening this screen.")
             return true
         }
-        val session = PaperScreens.open(this, player) { PaperDemoScreens.counter() }
-        val status = session.status
-        if (status is RemoteSessionStatus.Closed) player.sendMessage("The screen could not open: ${status.reason}.")
+        val session = PaperUi.open(this, player) { PaperDemoScreens.counter() }
+        val status = PaperUi.execute(player) { session.status }
+        if (status is UiSessionStatus.Closed) player.sendMessage("The screen could not open: ${status.reason}.")
         return true
     }
 }

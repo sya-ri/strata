@@ -123,6 +123,8 @@ rootProject.name = "strata"
 
 include(
     ":api",
+    ":paper-api",
+    ":velocity-api",
     ":examples:web",
     ":examples:paper",
     ":examples:velocity",

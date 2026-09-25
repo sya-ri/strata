@@ -230,13 +230,13 @@ private class MinecraftCycleButtonElement private constructor(
         private fun cycleForward() {
             @Suppress("UNCHECKED_CAST")
             val next = (checkNotNull(state) as CycleButtonState<Any>).next()
-            actions.dispatch(ComponentActions.Cycle, next)
+            actions.dispatch(uiSession, ComponentActions.Cycle, next)
         }
 
         private fun cycleBackward() {
             @Suppress("UNCHECKED_CAST")
             val next = (checkNotNull(state) as CycleButtonState<Any>).previous()
-            actions.dispatch(ComponentActions.Cycle, next)
+            actions.dispatch(uiSession, ComponentActions.Cycle, next)
         }
     }
 

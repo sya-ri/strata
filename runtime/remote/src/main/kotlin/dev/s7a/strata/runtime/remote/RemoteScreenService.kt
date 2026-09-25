@@ -1,3 +1,5 @@
+@file:Suppress("DEPRECATION") // Compatibility overloads and regression coverage retain the deprecated screen entry points.
+
 @file:OptIn(InternalStrataRuntimeApi::class)
 
 package dev.s7a.strata.runtime.remote
@@ -6,6 +8,11 @@ import dev.s7a.strata.projection.ProjectionType
 import dev.s7a.strata.screen.ScreenDefinition
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
 import dev.s7a.strata.spi.RuntimeExecutionOwner
+import dev.s7a.strata.ui.UiCategory
+import dev.s7a.strata.ui.UiDefinition
+import dev.s7a.strata.ui.UiPresentation
+import dev.s7a.strata.ui.UiRejection
+import dev.s7a.strata.ui.UiSessionStatus
 import java.util.concurrent.ConcurrentHashMap
 
 /**
@@ -18,6 +25,7 @@ public class RemoteScreenService<Player : Any, Owner : Any>(
     private val send: (Player, ByteArray) -> Unit,
     private val report: (Throwable) -> Unit,
     private val dispatchClose: (() -> Unit) -> Unit = { it() },
+    private val notify: (Player, RemoteLifecycleEvent<Owner>) -> Unit = { _, _ -> },
 ) : AutoCloseable {
     private val owner = RuntimeExecutionOwner.current()
     private val types = RemoteRegistry().also(RemoteBuiltins::register).types
@@ -25,6 +33,8 @@ public class RemoteScreenService<Player : Any, Owner : Any>(
     private val extensions = mutableMapOf<ProjectionType, Owner>()
     private var nextSession = 1L
     private var dispatching = false
+    private var dispatchDepth = 0
+    private var transitionCount = 0
     private val transitions = ArrayDeque<() -> Unit>()
 
     /**
@@ -36,7 +46,7 @@ public class RemoteScreenService<Player : Any, Owner : Any>(
             val address = RemoteAddress(endpoint)
             val stream = RemotePacketStream(address) { bytes -> send(player, bytes) }
             val connection = RemoteConnection(types + extensions.keys, RemotePacket.limits, stream::send)
-            peers[player] = Peer(address, stream, connection)
+            peers[player] = Peer(address, stream, connection) { event -> emit(player, event) }
         }
     }
 
@@ -76,42 +86,60 @@ public class RemoteScreenService<Player : Any, Owner : Any>(
     public fun open(
         owner: Owner,
         player: Player,
-        definition: ScreenDefinition,
+        definition: UiDefinition,
     ): RemoteScreenSession {
         checkOwner()
+        admitTransition()
         check(nextSession < Long.MAX_VALUE) { "Remote screen identity space is exhausted." }
-        val handle = RemoteScreenSession(nextSession++)
+        val settings = RemoteUiSettings(definition.presentation, definition.category, definition.inputPolicy, definition.visibility, definition.hudOrder)
+        val handle = RemoteScreenSession(nextSession++, settings)
         val content = definition.transfer()
         val peer = peers[player]
         val capabilities = peer?.connection?.capabilities
         if (peer == null || capabilities == null) {
-            handle.update(RemoteSessionStatus.Closed(RemoteFailure.UnsupportedProtocol))
+            closeUnopened(player, owner, handle, settings.category, RemoteFailure.UnsupportedProtocol)
             return handle
         }
         handle.bind {
             dispatchClose {
                 transition {
-                    if (peer.screen?.handle === handle) {
-                        peer.closeScreen(RemoteFailure.OwnerClosed)
+                    if (peer.sessions[handle.identity]?.handle === handle) {
+                        peer.closeSession(handle.identity, RemoteFailure.OwnerClosed)
                     } else {
                         handle.update(RemoteSessionStatus.Closed(RemoteFailure.OwnerClosed))
                     }
                 }
             }
         }
-        transition {
+        transition(admitted = true) {
             if (handle.status is RemoteSessionStatus.Closed) return@transition
             if (peers[player] !== peer) {
-                handle.update(RemoteSessionStatus.Closed(RemoteFailure.Disconnected))
+                closeUnopened(player, owner, handle, settings.category, RemoteFailure.Disconnected)
                 return@transition
             }
-            peer.closeScreen(RemoteFailure.Replaced)
+            if (settings.presentation == UiPresentation.Hud && capabilities.limits.hudSessions <= peer.hudCount()) {
+                closeUnopened(player, owner, handle, settings.category, RemoteFailure.ResourceLimit)
+                return@transition
+            }
+            if (settings.presentation == UiPresentation.Screen) peer.closeForeground(RemoteFailure.Replaced)
             val runtime = RemoteComponentRuntime()
             val session =
-                RemoteServerSession(handle.identity, RemoteTextCodec.encode(content.title), capabilities.types.intersect(types + extensions.keys), capabilities.limits, peer.connection::send, content.pausesGame) {
+                RemoteServerSession(handle.identity, RemoteTextCodec.encode(content.title), capabilities.types.intersect(types + extensions.keys), capabilities.limits, peer.connection::send, content.pausesGame, eventSession = handle.uiSession, controller = handle.controls, settings = settings) {
                     runtime.evaluate(content.content)
                 }
-            peer.screen = Active(owner, handle, session)
+            peer.sessions[handle.identity] = Active(owner, handle, session, settings.presentation, settings.category)
+            handle.bindControls { request ->
+                val active = peer.sessions[handle.identity]
+                if (active != null) {
+                    if (request.presentation == UiPresentation.Hud && capabilities.limits.hudSessions <= peer.hudCount(handle.identity)) {
+                        handle.controls.rejected(request.sequence, UiRejection.Capacity)
+                    } else {
+                        if (request.presentation == UiPresentation.Screen) peer.closeForeground(RemoteFailure.Replaced, handle.identity)
+                        active.presentation = request.presentation
+                        session.applyControl(request)
+                    }
+                }
+            }
             runCatching(session::tick).onFailure { failure -> report(failure) }
             peer.refresh()
         }
@@ -143,9 +171,8 @@ public class RemoteScreenService<Player : Any, Owner : Any>(
         removed.forEach(extensions::remove)
         transition {
             peers.values.forEach { peer ->
-                val screen = peer.screen
-                if (screen != null && (screen.owner === owner || screen.session.requiredTypes.any { it in removed })) {
-                    runCatching { peer.closeScreen(RemoteFailure.OwnerClosed) }.onFailure(report)
+                peer.sessions.values.toList().filter { it.owner === owner || it.session.requiredTypes.any { type -> type in removed } }.forEach { active ->
+                    runCatching { peer.closeSession(active.handle.identity, RemoteFailure.OwnerDisabled) }.onFailure(report)
                 }
             }
         }
@@ -163,7 +190,13 @@ public class RemoteScreenService<Player : Any, Owner : Any>(
      * Subsequent messages still carry the retired session identity and cannot target a replacement screen.
      */
     public fun containerChanged(player: Player) {
-        transition { peers[player]?.let { runCatching { it.closeScreen(RemoteFailure.ContainerChanged) }.onFailure(report) } }
+        transition {
+            peers[player]?.let { peer ->
+                peer.sessions.values.toList().filter { it.presentation == UiPresentation.Screen || it.session.usesNativeSlots }.forEach { active ->
+                    runCatching { peer.closeSession(active.handle.identity, RemoteFailure.ContainerChanged) }.onFailure(report)
+                }
+            }
+        }
     }
 
     override fun close() {
@@ -203,7 +236,11 @@ public class RemoteScreenService<Player : Any, Owner : Any>(
                 peer.connection.capabilities?.let { peer.stream.limitTo(it.limits) }
             }
         }
-        peer.screen?.session?.let { session -> runCatching(session::tick).onFailure(report) }
+
+        peer.sessions.values
+            .toList()
+            .forEach { active -> runCatching(active.session::tick).onFailure(report) }
+        peer.checkNodeBudget()
         peer.refresh()
         if (peer.discovered) {
             peer.connection.tick(now)
@@ -215,10 +252,10 @@ public class RemoteScreenService<Player : Any, Owner : Any>(
         peer: Peer<Owner>,
         message: RemoteMessage,
     ) {
-        val active = peer.screen ?: return
+        val active = peer.sessions[message.session] ?: return
         when (message) {
-            is RemoteMessage.Applied -> {
-                if (message.session == active.handle.identity) runCatching { active.session.receive(message) }.onFailure(report)
+            is RemoteMessage.Applied, is RemoteMessage.ControlApplied, is RemoteMessage.ControlRequest -> {
+                dispatch { runCatching { active.session.receive(message) }.onFailure(report) }
             }
 
             is RemoteMessage.Action -> {
@@ -234,23 +271,55 @@ public class RemoteScreenService<Player : Any, Owner : Any>(
             }
 
             is RemoteMessage.Close -> {
-                if (message.session == active.handle.identity) peer.closeScreen(message.reason, false)
+                if (message.session == active.handle.identity) peer.closeSession(active.handle.identity, message.reason, false)
             }
 
             else -> {
                 throw RemoteProtocolException(RemoteFailure.InvalidMessage, "Unexpected server-bound message.")
             }
         }
+        peer.refresh()
+    }
+
+    private fun closeUnopened(
+        player: Player,
+        owner: Owner,
+        handle: RemoteScreenSession,
+        category: UiCategory?,
+        reason: RemoteFailure,
+    ) {
+        handle.update(RemoteSessionStatus.Closed(reason))
+        emit(player, RemoteLifecycleEvent.Closed(owner, handle.identity, handle.uiSession, null, category, reason.uiReason))
+    }
+
+    private fun emit(
+        player: Player,
+        event: RemoteLifecycleEvent<Owner>,
+    ) {
+        val operation = {
+            runCatching { notify(player, event) }.onFailure(report)
+            Unit
+        }
+        if (dispatching) operation() else dispatch(operation)
     }
 
     private fun checkOwner() {
         check(RuntimeExecutionOwner.current() == owner) { "Remote service belongs to another execution owner." }
     }
 
-    private fun transition(operation: () -> Unit) {
+    private fun admitTransition() {
+        if (dispatchDepth != 0 && 64 <= transitionCount++) {
+            throw RemoteProtocolException(RemoteFailure.ResourceLimit, "Too many UI transitions in one event.")
+        }
+    }
+
+    private fun transition(
+        admitted: Boolean = false,
+        operation: () -> Unit,
+    ) {
         checkOwner()
+        if (admitted.not()) admitTransition()
         if (dispatching) {
-            if (64 <= transitions.size) throw RemoteProtocolException(RemoteFailure.ResourceLimit, "Too many screen transitions in one action.")
             transitions.addLast(operation)
         } else {
             operation()
@@ -259,64 +328,149 @@ public class RemoteScreenService<Player : Any, Owner : Any>(
 
     private fun dispatch(operation: () -> Unit) {
         check(dispatching.not()) { "Remote action dispatch cannot reenter." }
+        if (dispatchDepth++ == 0) transitionCount = 0
         dispatching = true
         try {
             operation()
         } finally {
             dispatching = false
-            while (transitions.isNotEmpty()) runCatching(transitions.removeFirst()).onFailure(report)
+            try {
+                while (transitions.isNotEmpty()) runCatching(transitions.removeFirst()).onFailure(report)
+            } finally {
+                dispatchDepth--
+            }
         }
     }
 
     /**
-     * Authenticated transport and its current optional owner screen.
+     * Compatibility entry sharing the common definition and session path.
+     */
+    public fun open(
+        owner: Owner,
+        player: Player,
+        definition: ScreenDefinition,
+    ): RemoteScreenSession = open(owner, player, definition.asUiDefinition())
+
+    /**
+     * Authenticated transport with one ordinary screen and a bounded set of HUDs.
      */
     private class Peer<Owner>(
         val address: RemoteAddress,
         val stream: RemotePacketStream,
         val connection: RemoteConnection,
+        private val notify: (RemoteLifecycleEvent<Owner>) -> Unit,
     ) {
-        val inbox = RemoteFrameInbox()
+        private var ready = false
         var discovered = false
-        var screen: Active<Owner>? = null
+        val inbox = RemoteFrameInbox()
+        val sessions = linkedMapOf<Long, Active<Owner>>()
 
-        fun refresh() {
-            val active = screen ?: return
-            active.handle.update(active.session.status)
-            if (active.session.status is RemoteSessionStatus.Closed) screen = null
+        fun checkNodeBudget() {
+            val limits = connection.capabilities?.limits ?: return
+            if (limits.treeNodes < sessions.values.sumOf { it.session.nodeCount }) throw RemoteProtocolException(RemoteFailure.ResourceLimit, "Connection node budget exceeded.")
         }
 
-        fun closeScreen(
+        fun hudCount(except: Long? = null): Int = sessions.values.count { it.handle.identity != except && it.presentation == UiPresentation.Hud }
+
+        fun refresh() {
+            if (ready.not()) {
+                connection.capabilities?.let {
+                    ready = true
+                    notify(RemoteLifecycleEvent.Ready(it.toUiCapabilities()))
+                }
+            }
+            sessions.values.toList().forEach { active ->
+                active.handle.update(active.session.status)
+                val status = active.session.status
+                val applied = active.handle.uiSession.presentation
+                val previous = active.notifiedPresentation
+                if (applied != null && previous != applied) {
+                    active.notifiedPresentation = applied
+                    active.handle.controls.transaction {
+                        if (previous == null) {
+                            notify(RemoteLifecycleEvent.Opened(active.owner, active.handle.identity, active.handle.uiSession, applied, active.category))
+                        } else {
+                            notify(RemoteLifecycleEvent.PresentationChanged(active.owner, active.handle.identity, active.handle.uiSession, previous, applied, active.category))
+                        }
+                    }
+                }
+                if (active.handle.uiSession.status is UiSessionStatus.Ready) {
+                    applied?.let { active.presentation = it }
+                }
+                if (status is RemoteSessionStatus.Closed && sessions.remove(active.handle.identity) != null) {
+                    closed(active, status.reason)
+                }
+            }
+        }
+
+        private fun closed(
+            active: Active<Owner>,
+            reason: RemoteFailure,
+        ) {
+            notify(RemoteLifecycleEvent.Closed(active.owner, active.handle.identity, active.handle.uiSession, active.handle.uiSession.presentation, active.category, reason.uiReason))
+        }
+
+        fun closeForeground(
+            reason: RemoteFailure,
+            except: Long? = null,
+        ) {
+            sessions.values
+                .toList()
+                .filter { it.presentation == UiPresentation.Screen && it.handle.identity != except }
+                .forEach { closeSession(it.handle.identity, reason) }
+        }
+
+        fun closeSession(
+            identity: Long,
             reason: RemoteFailure,
             notify: Boolean = true,
         ) {
-            val active = screen ?: return
-            screen = null
+            val active = sessions.remove(identity) ?: return
+            active.handle.update(RemoteSessionStatus.Closed(reason))
             try {
-                connection.discardSession(active.handle.identity)
+                connection.discardSession(identity)
                 active.session.close(reason, notify)
             } finally {
                 active.handle.update(active.session.status)
+                closed(active, reason)
             }
         }
 
         fun close(reason: RemoteFailure) {
+            var failure: Throwable? = null
             try {
-                closeScreen(reason, false)
+                sessions.keys.toList().forEach { identity ->
+                    runCatching { closeSession(identity, reason, false) }.exceptionOrNull()?.let { caught ->
+                        val primary = failure
+                        if (primary == null) {
+                            failure = caught
+                        } else if (primary !== caught) {
+                            primary.addSuppressed(caught)
+                        }
+                    }
+                }
             } finally {
                 inbox.close()
                 stream.close()
                 connection.close()
+                if (ready) {
+                    ready = false
+                    notify(RemoteLifecycleEvent.Disconnected(reason.uiReason))
+                }
             }
+            failure?.let { throw it }
         }
     }
 
     /**
-     * References released together when a screen ends or is replaced.
+     * Plugin ownership released with its public handle and retained server tree.
      */
     private data class Active<Owner>(
         val owner: Owner,
         val handle: RemoteScreenSession,
         val session: RemoteServerSession,
+        var presentation: UiPresentation,
+        val category: UiCategory?,
+        var notifiedPresentation: UiPresentation? = null,
     )
 }

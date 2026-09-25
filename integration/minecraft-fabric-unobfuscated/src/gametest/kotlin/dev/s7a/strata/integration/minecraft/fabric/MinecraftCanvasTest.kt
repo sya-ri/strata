@@ -73,6 +73,8 @@ private fun withMinecraftCanvasContext(
                 MinecraftClientScreenAccess.setScreen(Minecraft.getInstance(), screen)
             }
 
+            override fun currentScreen(): Screen? = MinecraftClientScreenAccess.currentScreen(Minecraft.getInstance())
+
             override fun hasOverlay(): Boolean = MinecraftClientScreenAccess.hasOverlay(Minecraft.getInstance())
 
             override fun exchangeHudHidden(hidden: Boolean): Boolean = MinecraftClientScreenAccess.exchangeHudHidden(Minecraft.getInstance(), hidden)
@@ -154,3 +156,13 @@ private fun IntOffset.canvasMouseEvent(): MouseButtonEvent = MouseButtonEvent(x.
 
 private const val PRIMARY_MOUSE_BUTTON = InputConstants.MOUSE_BUTTON_LEFT
 private const val NO_MODIFIERS = 0
+
+/**
+ * Runs common UI ownership and HUD/input assertions while the suite owns a loaded world.
+ */
+internal fun runMinecraftUiSessionTest(
+    context: ClientGameTestContext,
+    output: Path,
+) {
+    withMinecraftCanvasContext(context, output, MinecraftUiSessionGameTest::run)
+}

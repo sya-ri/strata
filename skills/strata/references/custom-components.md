@@ -95,7 +95,7 @@ A custom retained component or modifier used remotely must provide a typed decla
 Read the [declaration projection SPI](https://github.com/sya-ri/strata/blob/master/docs/reference/declaration-projection.md) for `DeclarationProjection`, `ProjectionType`, detached properties, `ProjectionAction`, and `ProjectionBinding`.
 Transfer properties and typed action endpoints, keeping application models, functions, and native handles on their owning host.
 
-Choose a namespaced type ID and schema version, register it through `PaperScreens.register` or `VelocityScreens.register` before negotiation, and install matching decoders/factories in `FabricRemoteScreens.registry` before its first connection freezes registration.
+Choose a namespaced type ID and schema version, register it through `PaperUi.register` or `VelocityUi.register` before negotiation, and install matching decoders/factories in `FabricRemoteScreens.registry` before its first connection freezes registration.
 Changed wire schemas require a new version; existing connections must reconnect to negotiate newly registered types.
 Missing projections or client capabilities reject the whole screen explicitly.
 Follow the [extension and ownership contract](https://github.com/sya-ri/strata/blob/master/docs/reference/remote-protocol.md#extensions-and-ownership) for `RemoteRegistry.element`, `modifier`, `statefulModifier`, and release of retained client resources.

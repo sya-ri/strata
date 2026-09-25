@@ -57,7 +57,9 @@ public final class dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreen
 
 public final class dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreens {
 	public static final fun createMinecraftScreen (Ldev/s7a/strata/screen/ScreenDefinition;Ldev/s7a/strata/runtime/minecraft/MinecraftUiProfile;Lnet/minecraft/client/gui/screens/Screen;)Ldev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreen;
+	public static final fun createMinecraftScreen (Ldev/s7a/strata/ui/UiDefinition;Ldev/s7a/strata/runtime/minecraft/MinecraftUiProfile;Lnet/minecraft/client/gui/screens/Screen;Ldev/s7a/strata/runtime/spi/RuntimeUiController;Ldev/s7a/strata/ui/UiSession;)Ldev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreen;
 	public static synthetic fun createMinecraftScreen$default (Ldev/s7a/strata/screen/ScreenDefinition;Ldev/s7a/strata/runtime/minecraft/MinecraftUiProfile;Lnet/minecraft/client/gui/screens/Screen;ILjava/lang/Object;)Ldev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreen;
+	public static synthetic fun createMinecraftScreen$default (Ldev/s7a/strata/ui/UiDefinition;Ldev/s7a/strata/runtime/minecraft/MinecraftUiProfile;Lnet/minecraft/client/gui/screens/Screen;Ldev/s7a/strata/runtime/spi/RuntimeUiController;Ldev/s7a/strata/ui/UiSession;ILjava/lang/Object;)Ldev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreen;
 }
 
 public final class dev/s7a/strata/runtime/minecraft/fabric/FabricRemotePayload : net/minecraft/network/protocol/common/custom/CustomPacketPayload {
@@ -87,7 +89,6 @@ public final class dev/s7a/strata/runtime/minecraft/fabric/FabricRemoteScreens {
 	public final fun enqueue (Lnet/minecraft/network/Connection;[B)V
 	public final fun fail (Lnet/minecraft/client/gui/screens/Screen;Ljava/lang/Throwable;)Z
 	public final fun getRegistry ()Ldev/s7a/strata/runtime/remote/RemoteRegistry;
-	public final fun requireContainer (Ljava/lang/Object;)V
 	public final fun shutdown ()V
 	public final fun tick ()V
 }
@@ -95,6 +96,33 @@ public final class dev/s7a/strata/runtime/minecraft/fabric/FabricRemoteScreens {
 public final class dev/s7a/strata/runtime/minecraft/fabric/FabricRemoteTransport {
 	public static fun register (Lnet/minecraft/client/multiplayer/ClientPacketListener;)V
 	public static fun send (Lnet/minecraft/client/multiplayer/ClientPacketListener;[B)V
+}
+
+public final class dev/s7a/strata/runtime/minecraft/fabric/FabricUiInput {
+	public static final field INSTANCE Ldev/s7a/strata/runtime/minecraft/fabric/FabricUiInput;
+	public final fun attackDelay (I)I
+	public final fun beginScroll (JDD)V
+	public final fun blocksLook ()Z
+	public final fun endScroll ()V
+	public final fun getCapturing ()Z
+	public final fun getDispatching ()Z
+	public final fun getScrolling ()Z
+	public final fun reset ()V
+	public final fun tick ()V
+}
+
+public final class dev/s7a/strata/runtime/minecraft/fabric/FabricUiSessions {
+	public static final field INSTANCE Ldev/s7a/strata/runtime/minecraft/fabric/FabricUiSessions;
+	public final fun acceptsPointer (Ldev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreen;)Z
+	public final fun closeAll (Ldev/s7a/strata/ui/UiCloseReason;)V
+	public final fun nativeScreen (Ldev/s7a/strata/ui/UiSession;)Ldev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreen;
+	public final fun open (Ldev/s7a/strata/ui/UiDefinition;Ldev/s7a/strata/ui/UiSession;)Ldev/s7a/strata/ui/UiSession;
+	public static synthetic fun open$default (Ldev/s7a/strata/runtime/minecraft/fabric/FabricUiSessions;Ldev/s7a/strata/ui/UiDefinition;Ldev/s7a/strata/ui/UiSession;ILjava/lang/Object;)Ldev/s7a/strata/ui/UiSession;
+	public final fun prepareRender (Ldev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreen;)Z
+	public final fun renderHuds (Lkotlin/jvm/functions/Function3;)V
+	public final fun resetInput ()V
+	public final fun tick ()V
+	public final fun visibleHuds ()Ljava/util/List;
 }
 
 public final class dev/s7a/strata/runtime/minecraft/fabric/MinecraftCanvasContext {
@@ -147,5 +175,22 @@ public abstract interface class dev/s7a/strata/runtime/minecraft/fabric/mixin/ca
 
 public abstract interface class dev/s7a/strata/runtime/minecraft/fabric/mixin/canvas/FabricMinecraftCanvasRenderStateAccess {
 	public abstract fun strataCanvasRenderState ()Lnet/minecraft/client/renderer/state/gui/GuiRenderState;
+}
+
+public abstract interface class dev/s7a/strata/runtime/minecraft/fabric/mixin/lifecycle/FabricUiKeyMappingAccess {
+	public abstract fun strataClicks ()I
+	public abstract fun strataClicks (I)V
+	public abstract fun strataDown (Z)V
+	public abstract fun strataKey ()Lcom/mojang/blaze3d/platform/InputConstants$Key;
+}
+
+public abstract interface class dev/s7a/strata/runtime/minecraft/fabric/mixin/lifecycle/FabricUiMinecraftAccess {
+	public abstract fun strataHandleKeys ()V
+	public abstract fun strataMissTime ()I
+	public abstract fun strataMissTime (I)V
+}
+
+public abstract interface class dev/s7a/strata/runtime/minecraft/fabric/mixin/lifecycle/FabricUiMouseAccess {
+	public abstract fun strataScroll (JDD)V
 }
 

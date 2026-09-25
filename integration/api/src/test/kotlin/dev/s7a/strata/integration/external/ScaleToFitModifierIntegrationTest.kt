@@ -221,8 +221,8 @@ internal class ScaleToFitModifierIntegrationTest {
                     modifier =
                         Modifier.Empty
                             .scaleToFit(IntSize(3, 3))
-                            .onHover(hoverEvents::add)
-                            .onFocusChanged(focusEvents::add),
+                            .onHover({ value -> hoverEvents.add(value) })
+                            .onFocusChanged({ value -> focusEvents.add(value) }),
                 )
             },
         )

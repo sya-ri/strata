@@ -1,3 +1,5 @@
+@file:OptIn(InternalStrataRuntimeApi::class)
+
 package dev.s7a.strata.runtime.remote
 
 import dev.s7a.strata.component.ImageSource
@@ -8,7 +10,10 @@ import dev.s7a.strata.projection.ProjectionScope
 import dev.s7a.strata.projection.ProjectionType
 import dev.s7a.strata.projection.ProjectionValue
 import dev.s7a.strata.render.DrawImage
+import dev.s7a.strata.runtime.spi.RuntimeUiController
+import dev.s7a.strata.spi.InternalStrataRuntimeApi
 import dev.s7a.strata.text.UiText
+import dev.s7a.strata.ui.UiPresentation
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertNotEquals
 import org.junit.jupiter.api.Test
@@ -17,6 +22,8 @@ import org.junit.jupiter.api.Test
  * Confirms optimistic edits, explicit replacements, source replacement, and native state preservation.
  */
 internal class RemoteBindingTest {
+    private val eventSession = RuntimeUiController(UiPresentation.Screen, apply = {}, close = {})
+
     @Test
     fun staleRepliesPreserveDraftsAndExplicitReplacementAdvancesGeneration() {
         var sequence = 0L
@@ -44,12 +51,12 @@ internal class RemoteBindingTest {
         local.text = "second"
         editing.flushEdits(actions)
         sequence = 1
-        scope.actions.last().dispatch(sent.first())
+        scope.actions.last().dispatch(eventSession, sent.first())
         editing.reconcile(project(scope, binding))
         assertEquals("second", local.text)
         assertEquals(0, writes)
         sequence = 2
-        scope.actions.last().dispatch(sent.last())
+        scope.actions.last().dispatch(eventSession, sent.last())
         editing.reconcile(project(scope, binding))
         assertEquals(0, writes)
         source.text = "reset"
@@ -58,7 +65,7 @@ internal class RemoteBindingTest {
         editing.reconcile(replacement)
         assertEquals("reset", local.text)
         assertEquals(1, writes)
-        scope.actions.last().dispatch(sent.last())
+        scope.actions.last().dispatch(eventSession, sent.last())
         assertEquals("reset", source.text)
         bindings.close()
     }
@@ -71,7 +78,7 @@ internal class RemoteBindingTest {
         val current = Value("new")
         val fresh = project(scope, binding(current))
         assertNotEquals(old.identity, fresh.identity)
-        scope.actions.last().dispatch(old.edit(ProjectionValue.Text("stale")))
+        scope.actions.last().dispatch(eventSession, old.edit(ProjectionValue.Text("stale")))
         assertEquals("new", current.text)
         bindings.close()
     }

@@ -6,16 +6,16 @@ import dev.s7a.strata.component.Text
 import dev.s7a.strata.element.ElementKey
 import dev.s7a.strata.modifier.Modifier
 import dev.s7a.strata.modifier.width
-import dev.s7a.strata.screen.ScreenDefinition
 import dev.s7a.strata.state.mutableStateOf
+import dev.s7a.strata.ui.UiDefinition
 
 /**
  * Creates a bounded list whose stable keys follow items across order changes and removals.
  */
-internal fun keyedListDemo(): ScreenDefinition {
+internal fun keyedListDemo(): UiDefinition {
     val items = mutableStateOf(listOf(1, 2, 3))
     var nextItem = 4
-    return ScreenDefinition("Keyed list") {
+    return UiDefinition("Keyed list") {
         Column(spacing = 12) {
             Text("Items: ${items.value.size} / 5", modifier = Modifier.Empty.width(304))
             Row(spacing = 8) {

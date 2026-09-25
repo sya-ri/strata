@@ -1,5 +1,7 @@
 package dev.s7a.strata.action
 
+import dev.s7a.strata.ui.UiSession
+
 /**
  * Internal type-erased action callback captured from one Modifier entry.
  *
@@ -8,7 +10,7 @@ package dev.s7a.strata.action
  */
 internal class ActionHandler(
     val key: ActionKey<*>,
-    private val callback: (Any) -> ActionResult,
+    private val callback: UiSession.(Any) -> ActionResult,
 ) {
     /**
      * Delivers one already type-checked value and returns its propagation result.
@@ -16,5 +18,8 @@ internal class ActionHandler(
      * @param value action payload whose key matched [key].
      * @return callback propagation result.
      */
-    fun dispatch(value: Any): ActionResult = callback(value)
+    fun dispatch(
+        session: UiSession,
+        value: Any,
+    ): ActionResult = callback(session, value)
 }

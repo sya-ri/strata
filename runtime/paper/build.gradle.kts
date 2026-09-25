@@ -2,6 +2,7 @@ import java.util.zip.CRC32
 import java.util.zip.ZipFile
 
 dependencies {
+    api(project(":paper-api"))
     api(project(":runtime:remote"))
     compileOnly(libs.paper.api)
     testImplementation(libs.paper.api)
@@ -44,6 +45,9 @@ val verifyPluginJar = tasks.register("verifyPluginJar") {
                 "plugin.yml",
                 "dev/s7a/strata/runtime/paper/StrataPlugin.class",
                 "dev/s7a/strata/runtime/paper/PaperScreens.class",
+                "dev/s7a/strata/paper/PaperUi.class",
+                "dev/s7a/strata/paper/event/StrataUiOpenedEvent.class",
+                "dev/s7a/strata/ui/UiDefinition.class",
                 "dev/s7a/strata/runtime/remote/RemoteConnection.class",
                 "dev/s7a/strata/runtime/spi/RuntimeUiSession.class",
                 "dev/s7a/strata/screen/ScreenDefinition.class",

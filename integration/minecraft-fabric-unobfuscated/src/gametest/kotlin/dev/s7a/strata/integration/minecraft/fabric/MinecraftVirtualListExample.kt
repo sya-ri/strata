@@ -1,3 +1,5 @@
+@file:Suppress("DEPRECATION") // Compatibility overloads and regression coverage retain the deprecated screen entry points.
+
 package dev.s7a.strata.integration.minecraft.fabric
 
 // showcase-source-begin:virtual-list
@@ -13,7 +15,9 @@ import dev.s7a.strata.modifier.size
 import dev.s7a.strata.render.ArgbColor
 import dev.s7a.strata.screen.ScreenDefinition
 
-/** Builds a finite VirtualList while materializing only visible rows. */
+/**
+ * Builds a finite VirtualList while materializing only visible rows.
+ */
 internal fun createVirtualListShowcaseScreenDefinition(): ScreenDefinition {
     val items = (1..100).map { index -> "Log entry $index" }
     val state = VirtualListState<String>()

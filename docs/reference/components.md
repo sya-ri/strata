@@ -607,7 +607,7 @@ Observe is one child of its containing layout. Apply weight, alignment, sizing, 
 
 ### Parent scope
 
-Content emits zero or one root on the owner thread. Keep editing and navigation state outside reevaluation.
+Content emits zero or one root inside the execution owner. Keep editing and navigation state outside reevaluation.
 
 </details>
 
@@ -768,7 +768,7 @@ Pointer, keyboard, committed-character, preedit, and focus modifiers run as acti
 
 ### Parent scope
 
-Keep caller-owned `TextFieldState` on its owner thread with a positive UTF-16 maximum length. Editing uses scalars, not grapheme clusters. Preedit stays separate until committed; it does not reproduce Minecraft's native IME popup.
+Keep caller-owned `TextFieldState` inside its execution owner with a positive UTF-16 maximum length. Editing uses scalars, not grapheme clusters. Preedit stays separate until committed; it does not reproduce Minecraft's native IME popup.
 
 </details>
 
@@ -986,7 +986,9 @@ import dev.s7a.strata.modifier.size
 import dev.s7a.strata.render.ArgbColor
 import dev.s7a.strata.screen.ScreenDefinition
 
-/** Builds the complete minimal Checkbox showcase frame. */
+/**
+ * Builds the complete minimal Checkbox showcase frame.
+ */
 internal fun createCheckboxShowcaseScreenDefinition(): ScreenDefinition {
     val state = CheckboxState(initialChecked = true)
     return ScreenDefinition("Checkbox showcase") {
@@ -1006,7 +1008,7 @@ Use typed checked-change modifiers with caller-owned boolean state.
 
 ### Parent scope
 
-No children. Retain `CheckboxState` on its owner thread.
+No children. Retain `CheckboxState` inside its execution owner.
 
 </details>
 
@@ -1052,7 +1054,9 @@ import dev.s7a.strata.modifier.size
 import dev.s7a.strata.render.ArgbColor
 import dev.s7a.strata.screen.ScreenDefinition
 
-/** Difficulty options rendered by the typed CycleButton showcase. */
+/**
+ * Difficulty options rendered by the typed CycleButton showcase.
+ */
 private enum class Difficulty(
     val label: String,
 ) {
@@ -1062,7 +1066,9 @@ private enum class Difficulty(
     Hard("Hard"),
 }
 
-/** Builds the complete minimal CycleButton showcase frame. */
+/**
+ * Builds the complete minimal CycleButton showcase frame.
+ */
 internal fun createCycleButtonShowcaseScreenDefinition(): ScreenDefinition {
     val state = CycleButtonState(Difficulty.Normal) { value -> "Difficulty: ${value.label}" }
     return ScreenDefinition("CycleButton showcase") {
@@ -1128,7 +1134,9 @@ import dev.s7a.strata.modifier.size
 import dev.s7a.strata.render.ArgbColor
 import dev.s7a.strata.screen.ScreenDefinition
 
-/** Builds the complete minimal Slider showcase frame. */
+/**
+ * Builds the complete minimal Slider showcase frame.
+ */
 internal fun createSliderShowcaseScreenDefinition(): ScreenDefinition {
     val state = SliderState(initialValue = 0.65)
     return ScreenDefinition("Slider showcase") {
@@ -1283,7 +1291,9 @@ import dev.s7a.strata.modifier.size
 import dev.s7a.strata.render.ArgbColor
 import dev.s7a.strata.screen.ScreenDefinition
 
-/** Builds a ScrollArea showcase without a scrollbar. */
+/**
+ * Builds a ScrollArea showcase without a scrollbar.
+ */
 internal fun createScrollAreaShowcaseScreenDefinition(): ScreenDefinition {
     val state = ScrollState()
     return ScreenDefinition("ScrollArea showcase") {
@@ -1357,7 +1367,9 @@ import dev.s7a.strata.modifier.size
 import dev.s7a.strata.render.ArgbColor
 import dev.s7a.strata.screen.ScreenDefinition
 
-/** Builds a Scrollbar with the smallest linked viewport needed to establish its metrics. */
+/**
+ * Builds a Scrollbar with the smallest linked viewport needed to establish its metrics.
+ */
 internal fun createScrollbarShowcaseScreenDefinition(): ScreenDefinition {
     val state = ScrollState(initialOffset = 18.0)
     return ScreenDefinition("Scrollbar showcase") {
@@ -1438,7 +1450,9 @@ import dev.s7a.strata.modifier.size
 import dev.s7a.strata.render.ArgbColor
 import dev.s7a.strata.screen.ScreenDefinition
 
-/** Builds a finite VirtualList while materializing only visible rows. */
+/**
+ * Builds a finite VirtualList while materializing only visible rows.
+ */
 internal fun createVirtualListShowcaseScreenDefinition(): ScreenDefinition {
     val items = (1..100).map { index -> "Log entry $index" }
     val state = VirtualListState<String>()
@@ -1508,7 +1522,9 @@ import dev.s7a.strata.modifier.size
 import dev.s7a.strata.render.ArgbColor
 import dev.s7a.strata.screen.ScreenDefinition
 
-/** Builds a selected-row SelectionList showcase. */
+/**
+ * Builds a selected-row SelectionList showcase.
+ */
 internal fun createSelectionListShowcaseScreenDefinition(): ScreenDefinition {
     val items = listOf("Friends", "Blocked", "Invites", "Recent")
     val state = SelectionListState(initialSelection = "Blocked")
@@ -2137,7 +2153,7 @@ No children. The profile resolves resource-pack sprites before retaining their p
 
 ## Image verification
 
-Each image is the complete frame of its compiled dedicated `ScreenDefinition`, sampled at the stated physical density without upscaling or cropping.
+Each image is the complete frame of its compiled dedicated `UiDefinition`, sampled at the stated physical density without upscaling or cropping.
 Generation renders these definitions with the headless runtime and explicit Minecraft assets without starting Minecraft or creating a GPU context.
 Animated examples use the frame at time zero; the independent native check accepts a complete supported animation phase.
 

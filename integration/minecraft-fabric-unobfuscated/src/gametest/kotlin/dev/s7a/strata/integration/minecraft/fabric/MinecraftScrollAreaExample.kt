@@ -1,3 +1,5 @@
+@file:Suppress("DEPRECATION") // Compatibility overloads and regression coverage retain the deprecated screen entry points.
+
 package dev.s7a.strata.integration.minecraft.fabric
 
 // showcase-source-begin:scroll-area
@@ -12,7 +14,9 @@ import dev.s7a.strata.modifier.size
 import dev.s7a.strata.render.ArgbColor
 import dev.s7a.strata.screen.ScreenDefinition
 
-/** Builds a ScrollArea showcase without a scrollbar. */
+/**
+ * Builds a ScrollArea showcase without a scrollbar.
+ */
 internal fun createScrollAreaShowcaseScreenDefinition(): ScreenDefinition {
     val state = ScrollState()
     return ScreenDefinition("ScrollArea showcase") {

@@ -1,3 +1,5 @@
+@file:Suppress("DEPRECATION") // Compatibility overloads and regression coverage retain the deprecated screen entry points.
+
 package dev.s7a.strata.runtime.web
 
 import dev.s7a.strata.geometry.Constraints
@@ -6,12 +8,19 @@ import dev.s7a.strata.geometry.IntSize
 import dev.s7a.strata.input.InputResult
 import dev.s7a.strata.input.PointerButton
 import dev.s7a.strata.input.PointerEvent
+import dev.s7a.strata.runtime.spi.RuntimeUiController
 import dev.s7a.strata.runtime.spi.RuntimeUiFrame
 import dev.s7a.strata.runtime.spi.RuntimeUiSession
 import dev.s7a.strata.runtime.spi.createRuntimeUiSession
 import dev.s7a.strata.screen.ScreenDefinition
 import dev.s7a.strata.spi.ComponentRuntimeBridge
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
+import dev.s7a.strata.ui.UiDefinition
+import dev.s7a.strata.ui.UiInputPolicy
+import dev.s7a.strata.ui.UiInteractionMode
+import dev.s7a.strata.ui.UiPresentation
+import dev.s7a.strata.ui.UiRejection
+import dev.s7a.strata.ui.UiSession
 import kotlinx.browser.window
 import org.w3c.dom.HTMLElement
 import org.w3c.dom.events.EventListener
@@ -29,8 +38,14 @@ public class WebUiHost internal constructor(
     private val root: HTMLElement,
     private val session: RuntimeUiSession,
     private var viewport: IntSize,
+    private val controls: RuntimeUiController,
     theme: WebTheme = WebTheme.Native,
 ) : AutoCloseable {
+    /**
+     * Stable event receiver; unsupported game presentation/input controls return an explicit rejection.
+     */
+    public val uiSession: UiSession get() = controls
+
     private val renderer = WebDomRenderer(root, theme)
     private var lastFrame: RuntimeUiFrame? = null
     private var request: Int? = null
@@ -74,6 +89,7 @@ public class WebUiHost internal constructor(
         guarded {
             session.attach()
             render(viewport)
+            controls.start()
         }
     }
 
@@ -100,7 +116,10 @@ public class WebUiHost internal constructor(
         request = null
         root.removeEventListener("pointerdown", pressListener)
         lastFrame = null
-        val primary = runCatching { session.close() }.exceptionOrNull()
+        val controlFailure = runCatching { controls.close() }.exceptionOrNull()
+        val sessionFailure = runCatching { session.close() }.exceptionOrNull()
+        val primary = controlFailure ?: sessionFailure
+        if (controlFailure != null && sessionFailure != null && controlFailure !== sessionFailure) controlFailure.addSuppressed(sessionFailure)
         val cleanup = runCatching { renderer.close() }.exceptionOrNull()
         if (primary != null) {
             if (cleanup != null && cleanup !== primary) primary.addSuppressed(cleanup)
@@ -109,13 +128,14 @@ public class WebUiHost internal constructor(
         if (cleanup != null) throw cleanup
     }
 
-    private inline fun <T> guarded(action: () -> T): T =
-        runCatching(action).getOrElse { failure ->
+    private fun <T> guarded(action: () -> T): T =
+        runCatching { controls.transaction(action) }.getOrElse { failure ->
             runCatching { close() }.exceptionOrNull()?.let { cleanup -> if (cleanup !== failure) failure.addSuppressed(cleanup) }
             throw failure
         }
 
     private fun schedule() {
+        if (closed) return
         request =
             window.requestAnimationFrame {
                 request = null
@@ -142,7 +162,7 @@ public class WebUiHost internal constructor(
  */
 @OptIn(InternalStrataRuntimeApi::class)
 public fun mountWeb(
-    definition: ScreenDefinition,
+    definition: UiDefinition,
     root: HTMLElement,
     viewport: IntSize,
 ): WebUiHost = createWebHost(definition, root, viewport).also(WebUiHost::start)
@@ -151,8 +171,9 @@ public fun mountWeb(
  * Mounts a themed screen using the ownership and failure contract of [mountWeb].
  * The theme must match initial build rendering; mismatches fail before changing existing HTML.
  */
+@OptIn(InternalStrataRuntimeApi::class)
 public fun mountWeb(
-    definition: ScreenDefinition,
+    definition: UiDefinition,
     root: HTMLElement,
     viewport: IntSize,
     theme: WebTheme,
@@ -163,13 +184,57 @@ public fun mountWeb(
  */
 @OptIn(InternalStrataRuntimeApi::class)
 internal fun createWebHost(
-    definition: ScreenDefinition,
+    definition: UiDefinition,
     root: HTMLElement,
     viewport: IntSize,
     theme: WebTheme = WebTheme.Native,
 ): WebUiHost {
+    require(definition.presentation == UiPresentation.Screen && definition.inputPolicy == UiInputPolicy.BlockAll) {
+        "The Web runtime supports Screen presentation without game input forwarding."
+    }
     val runtime = WebComponentRuntime(theme)
     val transferred = definition.transfer()
-    val session = createRuntimeUiSession { ComponentRuntimeBridge.evaluate(runtime, transferred.content) }
-    return WebUiHost(root, session, viewport, theme)
+    var host: WebUiHost? = null
+    lateinit var controls: RuntimeUiController
+    controls =
+        RuntimeUiController(UiPresentation.Screen, apply = { request ->
+            if (request.presentation != UiPresentation.Screen || request.inputPolicy != UiInputPolicy.BlockAll || request.interactionMode != UiInteractionMode.Cursor) {
+                controls.rejected(request.sequence, UiRejection.Unsupported)
+            } else {
+                controls.applied(request.sequence)
+            }
+        }, close = { host?.close() })
+    val session = createRuntimeUiSession(controls) { ComponentRuntimeBridge.evaluate(runtime, transferred.content) }
+    return WebUiHost(root, session, viewport, controls, theme).also { host = it }
 }
+
+/**
+ * Compatibility overload retaining the same common UI session and browser ownership.
+ */
+@OptIn(InternalStrataRuntimeApi::class)
+public fun mountWeb(
+    definition: ScreenDefinition,
+    root: HTMLElement,
+    viewport: IntSize,
+): WebUiHost = mountWeb(definition.asUiDefinition(), root, viewport)
+
+/**
+ * Compatibility overload for deterministic HTML generation.
+ */
+@OptIn(InternalStrataRuntimeApi::class)
+internal fun createWebHost(
+    definition: ScreenDefinition,
+    root: HTMLElement,
+    viewport: IntSize,
+): WebUiHost = createWebHost(definition.asUiDefinition(), root, viewport)
+
+/**
+ * Compatibility overload for mounting a themed screen.
+ */
+@OptIn(InternalStrataRuntimeApi::class)
+public fun mountWeb(
+    definition: ScreenDefinition,
+    root: HTMLElement,
+    viewport: IntSize,
+    theme: WebTheme,
+): WebUiHost = mountWeb(definition.asUiDefinition(), root, viewport, theme)

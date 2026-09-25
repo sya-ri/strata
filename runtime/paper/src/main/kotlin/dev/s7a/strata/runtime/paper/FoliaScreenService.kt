@@ -7,12 +7,13 @@ import dev.s7a.strata.runtime.remote.RemoteBuiltins
 import dev.s7a.strata.runtime.remote.RemoteCapabilities
 import dev.s7a.strata.runtime.remote.RemoteConnection
 import dev.s7a.strata.runtime.remote.RemoteEndpoint
+import dev.s7a.strata.runtime.remote.RemoteLifecycleEvent
 import dev.s7a.strata.runtime.remote.RemoteRegistry
 import dev.s7a.strata.runtime.remote.RemoteScreenService
 import dev.s7a.strata.runtime.remote.RemoteScreenSession
-import dev.s7a.strata.screen.ScreenDefinition
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
 import dev.s7a.strata.spi.RuntimeExecutionOwner
+import dev.s7a.strata.ui.UiDefinition
 import io.papermc.paper.threadedregions.scheduler.ScheduledTask
 import org.bukkit.Bukkit
 import org.bukkit.entity.Player
@@ -28,6 +29,9 @@ import java.util.concurrent.ConcurrentHashMap
 internal class FoliaScreenService(
     private val plugin: Plugin,
     private val ownsPlayer: (Player) -> Boolean = Bukkit::isOwnedByCurrentRegion,
+    private val notify: (Player, RemoteLifecycleEvent<Plugin>) -> Unit = { player, event ->
+        plugin.server.pluginManager.callEvent(paperUiEvent(player, event))
+    },
 ) : AutoCloseable {
     private val peers = ConcurrentHashMap<Player, Peer>()
     private val extensions = mutableMapOf<ProjectionType, Plugin>()
@@ -75,7 +79,7 @@ internal class FoliaScreenService(
     fun open(
         owner: Plugin,
         player: Player,
-        definition: () -> ScreenDefinition,
+        definition: () -> UiDefinition,
     ): RemoteScreenSession =
         withService(player) { service ->
             require(owner.isEnabled) { "The screen owner plugin must be enabled." }
@@ -176,7 +180,7 @@ internal class FoliaScreenService(
         private val registeredOwners = types.values.toMutableSet()
         private val service =
             owner.run {
-                RemoteScreenService<Player, Plugin>(
+                RemoteScreenService(
                     RemoteEndpoint.Server,
                     { recipient, bytes -> recipient.sendPluginMessage(plugin, RemoteConnection.CHANNEL, bytes) },
                     { failure -> plugin.logger.warning("Strata screen ended: ${failure.message}") },
@@ -184,6 +188,7 @@ internal class FoliaScreenService(
                         checkRegion(player)
                         run { operation() }
                     },
+                    notify = notify,
                 ).also { remote ->
                     types.forEach { (type, pluginOwner) -> remote.register(pluginOwner, type) }
                     remote.join(player)

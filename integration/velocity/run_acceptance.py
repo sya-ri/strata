@@ -130,6 +130,8 @@ def main() -> None:
                 proof = properties(receipt)
                 if proof.get("runId") != run or (proof.get("slot") != "round-trip" if index < 2 else proof.get("activations") != "2"):
                     raise RuntimeError(f"Missing current endpoint evidence: {receipt}")
+                if any(proof.get(key) != "confirmed" for key in ("uiPresentations", "uiEvents")):
+                    raise RuntimeError(f"Missing current endpoint HUD and lifecycle evidence: {receipt}")
                 shutil.copyfile(receipt, output / f"{task}-server-{index}.properties")
             family = "verification" if arguments.version.startswith("1.") else "parity"
             parity = f"minecraft-{family}" if task == "runClientGameTest" else f"minecraft-production-{family}"

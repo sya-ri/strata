@@ -1,3 +1,5 @@
+@file:Suppress("DEPRECATION") // Compatibility overloads and regression coverage retain the deprecated screen entry points.
+
 package dev.s7a.strata.integration.docs
 
 import dev.s7a.strata.component.ImageSource
@@ -45,6 +47,7 @@ import dev.s7a.strata.runtime.minecraft.font.lwjgl.LwjglMinecraftFontBackendFact
 import dev.s7a.strata.runtime.render.DrawCommand
 import dev.s7a.strata.screen.ScreenDefinition
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
+import dev.s7a.strata.ui.UiDefinition
 
 /**
  * Renders the same compiled API-only examples used by the independent Fabric acceptance tests.
@@ -172,8 +175,19 @@ internal object ShowcaseHeadlessRenderer {
         viewport: ShowcaseViewport,
         pointer: IntOffset = IntOffset.Zero,
         wheelDelta: Double = 0.0,
+    ): ByteArray = render(profile, definition.asUiDefinition(), viewport, pointer, wheelDelta)
+
+    /**
+     * Transfers a common UI definition to the same renderer used by compatibility examples.
+     */
+    internal fun render(
+        profile: MinecraftUiProfile,
+        definition: UiDefinition,
+        viewport: ShowcaseViewport,
+        pointer: IntOffset = IntOffset.Zero,
+        wheelDelta: Double = 0.0,
     ): ByteArray =
-        createMinecraftUiHost(definition, profile, LwjglMinecraftFontBackendFactory).use { host ->
+        createMinecraftUiHost(definition, profile, fontBackend = LwjglMinecraftFontBackendFactory).use { host ->
             host.attach()
             host.frame(viewport.size, FrameTime(0L))
             host.dispatchPointer(PointerEvent.Move(pointer))

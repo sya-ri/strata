@@ -32,7 +32,7 @@ import dev.s7a.strata.modifier.padding
 import dev.s7a.strata.modifier.size
 import dev.s7a.strata.render.ArgbColor
 import dev.s7a.strata.resource.ResourceId
-import dev.s7a.strata.screen.ScreenDefinition
+import dev.s7a.strata.ui.UiDefinition
 
 /**
  * Creates a representative screen while compiling against the API artifact alone.
@@ -44,10 +44,10 @@ import dev.s7a.strata.screen.ScreenDefinition
  * @param onClose action invoked by the close button through active modifier behavior.
  * @return a one-shot platform-neutral screen definition.
  */
-public fun createApiOnlyScreenDefinition(onClose: () -> Unit): ScreenDefinition {
+public fun createApiOnlyScreenDefinition(onClose: () -> Unit): UiDefinition {
     val search = TextFieldState()
     val scroll = ScrollState()
-    return ScreenDefinition("API-only screen") {
+    return UiDefinition("API-only screen") {
         Stack(modifier = Modifier.Empty.size(320, 180)) {
             Column(
                 modifier = Modifier.Empty.fillMaxWidth().padding(left = 16, top = 12, right = 16),
@@ -80,7 +80,7 @@ public fun createApiOnlyScreenDefinition(onClose: () -> Unit): ScreenDefinition 
                 )
                 Button(
                     label = "Close",
-                    modifier = Modifier.Empty.onActivate(onClose).align(HorizontalAlignment.Center),
+                    modifier = Modifier.Empty.onActivate { onClose() }.align(HorizontalAlignment.Center),
                 )
             }
         }

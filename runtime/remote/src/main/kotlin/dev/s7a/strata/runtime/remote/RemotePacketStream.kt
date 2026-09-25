@@ -7,7 +7,7 @@ import dev.s7a.strata.spi.RuntimeExecutionOwner
 import java.util.TreeMap
 
 /**
- * Owner-thread ordering boundary for one host incarnation across asynchronous proxy message events.
+ * Execution-owner-confined ordering boundary for one host incarnation across asynchronous proxy message events.
  * Retains at most the negotiated pending bytes and entry count; gaps expire on monotonic adapter ticks.
  * Screen cancellation occupies its ordinary ordered frame position, so dropped transfers cannot leave sequence gaps.
  * Terminal close releases all queued bytes and the native writer.

@@ -1,3 +1,5 @@
+@file:Suppress("DEPRECATION") // Compatibility overloads and regression coverage retain the deprecated screen entry points.
+
 package dev.s7a.strata.runtime.minecraft
 
 import dev.s7a.strata.component.UiScope
@@ -18,8 +20,11 @@ import dev.s7a.strata.runtime.spi.createRuntimeUiSession
 import dev.s7a.strata.screen.ScreenDefinition
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
 import dev.s7a.strata.text.UiText
+import dev.s7a.strata.ui.UiDefinition
+import dev.s7a.strata.ui.UiDefinitionPayload
 import java.util.Collections
 import java.util.IdentityHashMap
+import dev.s7a.strata.ui.UiSession as EventUiSession
 
 /**
  * Owns one-shot definition transfer and the private owner-thread host implementation.
@@ -43,12 +48,32 @@ internal object MinecraftHostImplementation {
         profile: MinecraftUiProfile,
         platform: MinecraftUiPlatform? = null,
         fontBackend: MinecraftFontBackendFactory? = null,
+    ): MinecraftUiHost = createTransferred(profile, platform, fontBackend, null) { definition.asUiDefinition().transfer() }
+
+    /**
+     * Transfers a common UI definition, binding callbacks to the supplied presentation owner.
+     */
+    @JvmSynthetic
+    fun create(
+        definition: UiDefinition,
+        profile: MinecraftUiProfile,
+        platform: MinecraftUiPlatform? = null,
+        fontBackend: MinecraftFontBackendFactory? = null,
+        eventSession: EventUiSession? = null,
+    ): MinecraftUiHost = createTransferred(profile, platform, fontBackend, eventSession, definition::transfer)
+
+    private fun createTransferred(
+        profile: MinecraftUiProfile,
+        platform: MinecraftUiPlatform? = null,
+        fontBackend: MinecraftFontBackendFactory?,
+        eventSession: EventUiSession?,
+        transfer: () -> UiDefinitionPayload,
     ): MinecraftUiHost {
         val textRenderer = MinecraftProfileImplementation.createTextRenderer(profile, fontBackend)
         return runCatching {
-            val transferred = definition.transfer()
+            val transferred = transfer()
             val evaluator = MinecraftProfileImplementation.createEvaluator(profile, platform, textRenderer)
-            val session = createRuntimeUiSession { evaluator(transferred.content) }
+            val session = createRuntimeUiSession(eventSession) { evaluator(transferred.content) }
             Host.create(session, evaluator, platform, textRenderer, transferred.title, transferred.pausesGame)
         }.getOrElse { failure ->
             runCatching { textRenderer.close() }.exceptionOrNull()?.let { cleanup ->

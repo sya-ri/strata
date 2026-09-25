@@ -131,159 +131,159 @@ fun Modifier.menuBackground(): Modifier
 ### `onAction`
 
 ```kotlin
-fun <T : Any> Modifier.onAction(key: ActionKey<T>, callback: (T) -> ActionResult): Modifier
+fun <T : Any> Modifier.onAction(key: ActionKey<T>, callback: UiSession.(T) -> ActionResult): Modifier
 ```
 
 ### `onActivate`
 
 ```kotlin
-fun Modifier.onActivate(action: () -> Unit): Modifier
-fun Modifier.onActivate(enabled: Boolean, action: () -> Unit): Modifier
-fun Modifier.onActivate(enabled: StateSource<Boolean>, action: () -> Unit): Modifier
+fun Modifier.onActivate(action: UiSession.() -> Unit): Modifier
+fun Modifier.onActivate(enabled: Boolean, action: UiSession.() -> Unit): Modifier
+fun Modifier.onActivate(enabled: StateSource<Boolean>, action: UiSession.() -> Unit): Modifier
 ```
 
 ### `onCapturedPointerEvent`
 
 ```kotlin
-fun Modifier.onCapturedPointerEvent(button: PointerButton, onCancel: (PointerButton) -> Unit, action: (PointerEvent, IntOffset) -> Unit): Modifier
-fun Modifier.onCapturedPointerEvent(onCancel: (PointerButton) -> Unit, callback: (PointerEvent, IntOffset) -> InputResult): Modifier
+fun Modifier.onCapturedPointerEvent(button: PointerButton, onCancel: UiSession.(PointerButton) -> Unit, action: UiSession.(PointerEvent, IntOffset) -> Unit): Modifier
+fun Modifier.onCapturedPointerEvent(onCancel: UiSession.(PointerButton) -> Unit, callback: UiSession.(PointerEvent, IntOffset) -> InputResult): Modifier
 ```
 
 ### `onCharacterInput`
 
 ```kotlin
-fun Modifier.onCharacterInput(callback: (TextInputEvent.Character) -> InputResult): Modifier
-fun Modifier.onCharacterInput(propagation: InputResult, action: (TextInputEvent.Character) -> Unit): Modifier
+fun Modifier.onCharacterInput(callback: UiSession.(TextInputEvent.Character) -> InputResult): Modifier
+fun Modifier.onCharacterInput(propagation: InputResult, action: UiSession.(TextInputEvent.Character) -> Unit): Modifier
 ```
 
 ### `onCheckedChange`
 
 ```kotlin
-fun Modifier.onCheckedChange(action: (Boolean) -> Unit): Modifier
+fun Modifier.onCheckedChange(action: UiSession.(Boolean) -> Unit): Modifier
 ```
 
 ### `onCycle`
 
 ```kotlin
-fun <T : Any> Modifier.onCycle(action: (T) -> Unit): Modifier
+fun <T : Any> Modifier.onCycle(action: UiSession.(T) -> Unit): Modifier
 ```
 
 ### `onDrag`
 
 ```kotlin
-fun Modifier.onDrag(action: () -> Unit): Modifier
-fun Modifier.onDrag(callback: (PointerEvent.Drag, IntOffset) -> InputResult): Modifier
-fun Modifier.onDrag(propagation: InputResult, button: PointerButton? = null, action: (PointerEvent.Drag, IntOffset) -> Unit): Modifier
+fun Modifier.onDrag(action: UiSession.() -> Unit): Modifier
+fun Modifier.onDrag(callback: UiSession.(PointerEvent.Drag, IntOffset) -> InputResult): Modifier
+fun Modifier.onDrag(propagation: InputResult, button: PointerButton? = null, action: UiSession.(PointerEvent.Drag, IntOffset) -> Unit): Modifier
 ```
 
 ### `onFocusChanged`
 
 ```kotlin
-fun Modifier.onFocusChanged(callback: (FocusEvent) -> Unit): Modifier
+fun Modifier.onFocusChanged(callback: UiSession.(FocusEvent) -> Unit): Modifier
 ```
 
 ### `onHover`
 
 ```kotlin
-fun Modifier.onHover(callback: (PointerHoverEvent) -> Unit): Modifier
+fun Modifier.onHover(callback: UiSession.(PointerHoverEvent) -> Unit): Modifier
 ```
 
 ### `onKeyEvent`
 
 ```kotlin
-fun Modifier.onKeyEvent(callback: (KeyboardEvent) -> InputResult): Modifier
-fun Modifier.onKeyEvent(propagation: InputResult, filter: KeyboardInputFilter = KeyboardInputFilter(), action: (KeyboardEvent) -> Unit): Modifier
+fun Modifier.onKeyEvent(callback: UiSession.(KeyboardEvent) -> InputResult): Modifier
+fun Modifier.onKeyEvent(propagation: InputResult, filter: KeyboardInputFilter = KeyboardInputFilter(), action: UiSession.(KeyboardEvent) -> Unit): Modifier
 ```
 
 ### `onKeyPress`
 
 ```kotlin
-fun Modifier.onKeyPress(callback: (KeyboardEvent.Press) -> InputResult): Modifier
-fun Modifier.onKeyPress(propagation: InputResult, filter: KeyboardInputFilter = KeyboardInputFilter(), action: (KeyboardEvent.Press) -> Unit): Modifier
+fun Modifier.onKeyPress(callback: UiSession.(KeyboardEvent.Press) -> InputResult): Modifier
+fun Modifier.onKeyPress(propagation: InputResult, filter: KeyboardInputFilter = KeyboardInputFilter(), action: UiSession.(KeyboardEvent.Press) -> Unit): Modifier
 ```
 
 ### `onKeyRelease`
 
 ```kotlin
-fun Modifier.onKeyRelease(callback: (KeyboardEvent.Release) -> InputResult): Modifier
-fun Modifier.onKeyRelease(propagation: InputResult, filter: KeyboardInputFilter = KeyboardInputFilter(), action: (KeyboardEvent.Release) -> Unit): Modifier
+fun Modifier.onKeyRelease(callback: UiSession.(KeyboardEvent.Release) -> InputResult): Modifier
+fun Modifier.onKeyRelease(propagation: InputResult, filter: KeyboardInputFilter = KeyboardInputFilter(), action: UiSession.(KeyboardEvent.Release) -> Unit): Modifier
 ```
 
 ### `onLeadingItemsRequested`
 
 ```kotlin
-fun Modifier.onLeadingItemsRequested(action: (ListLoadRequest) -> Unit): Modifier
+fun Modifier.onLeadingItemsRequested(action: UiSession.(ListLoadRequest) -> Unit): Modifier
 ```
 
 ### `onMove`
 
 ```kotlin
-fun Modifier.onMove(action: () -> Unit): Modifier
-fun Modifier.onMove(callback: (PointerEvent.Move, IntOffset) -> InputResult): Modifier
-fun Modifier.onMove(propagation: InputResult, action: (PointerEvent.Move, IntOffset) -> Unit): Modifier
+fun Modifier.onMove(action: UiSession.() -> Unit): Modifier
+fun Modifier.onMove(callback: UiSession.(PointerEvent.Move, IntOffset) -> InputResult): Modifier
+fun Modifier.onMove(propagation: InputResult, action: UiSession.(PointerEvent.Move, IntOffset) -> Unit): Modifier
 ```
 
 ### `onPointerEvent`
 
 ```kotlin
-fun Modifier.onPointerEvent(callback: (PointerEvent, IntOffset) -> InputResult): Modifier
-fun Modifier.onPointerEvent(propagation: InputResult, action: (PointerEvent, IntOffset) -> Unit): Modifier
+fun Modifier.onPointerEvent(callback: UiSession.(PointerEvent, IntOffset) -> InputResult): Modifier
+fun Modifier.onPointerEvent(propagation: InputResult, action: UiSession.(PointerEvent, IntOffset) -> Unit): Modifier
 ```
 
 ### `onPreedit`
 
 ```kotlin
-fun Modifier.onPreedit(callback: (TextInputEvent.Preedit) -> InputResult): Modifier
-fun Modifier.onPreedit(propagation: InputResult, action: (TextInputEvent.Preedit) -> Unit): Modifier
+fun Modifier.onPreedit(callback: UiSession.(TextInputEvent.Preedit) -> InputResult): Modifier
+fun Modifier.onPreedit(propagation: InputResult, action: UiSession.(TextInputEvent.Preedit) -> Unit): Modifier
 ```
 
 ### `onPress`
 
 ```kotlin
-fun Modifier.onPress(action: () -> Unit): Modifier
-fun Modifier.onPress(callback: (PointerEvent.Press, IntOffset) -> InputResult): Modifier
-fun Modifier.onPress(propagation: InputResult, button: PointerButton? = null, action: (PointerEvent.Press, IntOffset) -> Unit): Modifier
+fun Modifier.onPress(action: UiSession.() -> Unit): Modifier
+fun Modifier.onPress(callback: UiSession.(PointerEvent.Press, IntOffset) -> InputResult): Modifier
+fun Modifier.onPress(propagation: InputResult, button: PointerButton? = null, action: UiSession.(PointerEvent.Press, IntOffset) -> Unit): Modifier
 ```
 
 ### `onRelease`
 
 ```kotlin
-fun Modifier.onRelease(action: () -> Unit): Modifier
-fun Modifier.onRelease(callback: (PointerEvent.Release, IntOffset) -> InputResult): Modifier
-fun Modifier.onRelease(propagation: InputResult, button: PointerButton? = null, action: (PointerEvent.Release, IntOffset) -> Unit): Modifier
+fun Modifier.onRelease(action: UiSession.() -> Unit): Modifier
+fun Modifier.onRelease(callback: UiSession.(PointerEvent.Release, IntOffset) -> InputResult): Modifier
+fun Modifier.onRelease(propagation: InputResult, button: PointerButton? = null, action: UiSession.(PointerEvent.Release, IntOffset) -> Unit): Modifier
 ```
 
 ### `onScroll`
 
 ```kotlin
-fun Modifier.onScroll(action: () -> Unit): Modifier
-fun Modifier.onScroll(callback: (PointerEvent.Scroll, IntOffset) -> InputResult): Modifier
-fun Modifier.onScroll(propagation: InputResult, action: (PointerEvent.Scroll, IntOffset) -> Unit): Modifier
+fun Modifier.onScroll(action: UiSession.() -> Unit): Modifier
+fun Modifier.onScroll(callback: UiSession.(PointerEvent.Scroll, IntOffset) -> InputResult): Modifier
+fun Modifier.onScroll(propagation: InputResult, action: UiSession.(PointerEvent.Scroll, IntOffset) -> Unit): Modifier
 ```
 
 ### `onSelectionChange`
 
 ```kotlin
-fun <K : Any> Modifier.onSelectionChange(action: (K) -> Unit): Modifier
+fun <K : Any> Modifier.onSelectionChange(action: UiSession.(K) -> Unit): Modifier
 ```
 
 ### `onSliderChange`
 
 ```kotlin
-fun Modifier.onSliderChange(action: (Double) -> Unit): Modifier
+fun Modifier.onSliderChange(action: UiSession.(Double) -> Unit): Modifier
 ```
 
 ### `onTextInput`
 
 ```kotlin
-fun Modifier.onTextInput(callback: (TextInputEvent) -> InputResult): Modifier
-fun Modifier.onTextInput(propagation: InputResult, action: (TextInputEvent) -> Unit): Modifier
+fun Modifier.onTextInput(callback: UiSession.(TextInputEvent) -> InputResult): Modifier
+fun Modifier.onTextInput(propagation: InputResult, action: UiSession.(TextInputEvent) -> Unit): Modifier
 ```
 
 ### `onTrailingItemsRequested`
 
 ```kotlin
-fun Modifier.onTrailingItemsRequested(action: (ListLoadRequest) -> Unit): Modifier
+fun Modifier.onTrailingItemsRequested(action: UiSession.(ListLoadRequest) -> Unit): Modifier
 ```
 
 ### `padding`

@@ -1,7 +1,11 @@
+@file:Suppress("DEPRECATION") // Compatibility overloads and regression coverage retain the deprecated screen entry points.
+
 package dev.s7a.strata.runtime.web
 
 import dev.s7a.strata.geometry.IntSize
 import dev.s7a.strata.screen.ScreenDefinition
+import dev.s7a.strata.spi.InternalStrataRuntimeApi
+import dev.s7a.strata.ui.UiDefinition
 import kotlinx.browser.document
 import org.w3c.dom.HTMLElement
 
@@ -15,7 +19,7 @@ import org.w3c.dom.HTMLElement
  * Transfer, rendering, serialization, and cleanup failures propagate with the primary failure preserved.
  */
 public fun renderWebHtml(
-    definition: ScreenDefinition,
+    definition: UiDefinition,
     viewport: IntSize,
 ): String = renderWebHtml(definition, viewport, WebTheme.Native)
 
@@ -24,7 +28,7 @@ public fun renderWebHtml(
  * Use [renderWebDocument] to include the theme stylesheet and root background in a standalone document.
  */
 public fun renderWebHtml(
-    definition: ScreenDefinition,
+    definition: UiDefinition,
     viewport: IntSize,
     theme: WebTheme,
 ): String {
@@ -49,7 +53,7 @@ public fun renderWebHtml(
  * @return serialized HTML document including its doctype, initial body content, and deferred application script.
  */
 public fun renderWebDocument(
-    definition: ScreenDefinition,
+    definition: UiDefinition,
     viewport: IntSize,
     title: String,
     scriptUrl: String,
@@ -60,7 +64,7 @@ public fun renderWebDocument(
  * Client startup must pass the same [theme] to [mountWeb]; all other ownership follows [renderWebDocument].
  */
 public fun renderWebDocument(
-    definition: ScreenDefinition,
+    definition: UiDefinition,
     viewport: IntSize,
     title: String,
     scriptUrl: String,
@@ -98,4 +102,52 @@ public fun renderWebDocument(
     script.setAttribute("src", scriptUrl)
     body.appendChild(script)
     return "<!doctype html>\n${requireNotNull(output.documentElement).outerHTML}"
+}
+
+/**
+ * Compatibility overload for deterministic initial markup.
+ */
+@OptIn(InternalStrataRuntimeApi::class)
+public fun renderWebHtml(
+    definition: ScreenDefinition,
+    viewport: IntSize,
+): String = renderWebHtml(definition.asUiDefinition(), viewport)
+
+/**
+ * Compatibility overload for a complete initial document.
+ */
+@OptIn(InternalStrataRuntimeApi::class)
+public fun renderWebDocument(
+    definition: ScreenDefinition,
+    viewport: IntSize,
+    title: String,
+    scriptUrl: String,
+): String {
+    require(scriptUrl.isNotBlank()) { "The application script URL must not be blank." }
+    return renderWebDocument(definition.asUiDefinition(), viewport, title, scriptUrl)
+}
+
+/**
+ * Compatibility overload for themed initial markup.
+ */
+@OptIn(InternalStrataRuntimeApi::class)
+public fun renderWebHtml(
+    definition: ScreenDefinition,
+    viewport: IntSize,
+    theme: WebTheme,
+): String = renderWebHtml(definition.asUiDefinition(), viewport, theme)
+
+/**
+ * Compatibility overload for a themed initial document.
+ */
+@OptIn(InternalStrataRuntimeApi::class)
+public fun renderWebDocument(
+    definition: ScreenDefinition,
+    viewport: IntSize,
+    title: String,
+    scriptUrl: String,
+    theme: WebTheme,
+): String {
+    require(scriptUrl.isNotBlank()) { "The application script URL must not be blank." }
+    return renderWebDocument(definition.asUiDefinition(), viewport, title, scriptUrl, theme)
 }

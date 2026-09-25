@@ -1,6 +1,7 @@
 package dev.s7a.strata.node
 
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
+import dev.s7a.strata.ui.UiSession
 import kotlin.concurrent.atomics.AtomicReference
 import kotlin.concurrent.atomics.ExperimentalAtomicApi
 
@@ -15,6 +16,12 @@ import kotlin.concurrent.atomics.ExperimentalAtomicApi
 @OptIn(ExperimentalAtomicApi::class)
 public abstract class Node {
     private val binding = AtomicReference<BindingState>(BindingState.Unclaimed)
+
+    /**
+     * Session owning this node; resolved at event delivery, independently of declaration scopes.
+     */
+    protected val uiSession: UiSession
+        get() = checkNotNull((binding.load() as? ActiveBinding)?.session) { "Event delivery requires a session-bound node." }
 
     /**
      * Marks affected phases dirty for a node-local state change.
@@ -46,8 +53,11 @@ public abstract class Node {
      * @throws IllegalStateException when this node is already bound or retired.
      */
     @InternalStrataRuntimeApi
-    public fun bindRuntime(callback: (DirtyMask) -> Unit): () -> Unit {
-        val active = ActiveBinding(callback)
+    public fun bindRuntime(
+        session: UiSession? = null,
+        callback: (DirtyMask) -> Unit,
+    ): () -> Unit {
+        val active = ActiveBinding(session, callback)
         check(binding.compareAndSet(BindingState.Unclaimed, active)) {
             "Node is already bound or retired."
         }
@@ -74,6 +84,7 @@ public abstract class Node {
      * @property callback runtime invalidation callback.
      */
     private class ActiveBinding(
+        val session: UiSession?,
         val callback: (DirtyMask) -> Unit,
     ) : BindingState
 }

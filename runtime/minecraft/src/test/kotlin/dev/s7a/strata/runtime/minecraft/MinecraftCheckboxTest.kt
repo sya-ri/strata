@@ -1,3 +1,5 @@
+@file:Suppress("DEPRECATION") // Compatibility overloads and regression coverage retain the deprecated screen entry points.
+
 @file:OptIn(InternalStrataRuntimeApi::class)
 
 package dev.s7a.strata.runtime.minecraft
@@ -34,7 +36,7 @@ internal class MinecraftCheckboxTest {
                         label = "Enabled",
                         state = state,
                         width = 80,
-                        modifier = Modifier.Empty.onCheckedChange(observed::add),
+                        modifier = Modifier.Empty.onCheckedChange({ value -> observed.add(value) }),
                     )
                 },
                 profile,

@@ -5,7 +5,7 @@ import dev.s7a.strata.component.Column
 import dev.s7a.strata.component.ProgressBar
 import dev.s7a.strata.component.Text
 import dev.s7a.strata.geometry.IntSize
-import dev.s7a.strata.screen.ScreenDefinition
+import dev.s7a.strata.ui.UiDefinition
 import kotlinx.browser.document
 import kotlinx.browser.window
 import org.w3c.dom.HTMLButtonElement
@@ -69,8 +69,8 @@ internal class WebThemeTest {
         assertTrue(assertNotNull(parsed.querySelector("script")).hasAttribute("defer"))
     }
 
-    private fun definition(): ScreenDefinition =
-        ScreenDefinition("Themed") {
+    private fun definition(): UiDefinition =
+        UiDefinition("Themed") {
             Column(spacing = 8) {
                 Text("Menu")
                 Button("Continue")

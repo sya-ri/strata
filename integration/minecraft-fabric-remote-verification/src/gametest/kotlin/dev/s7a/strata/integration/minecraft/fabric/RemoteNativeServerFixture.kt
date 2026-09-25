@@ -1,3 +1,5 @@
+@file:OptIn(InternalStrataRuntimeApi::class)
+
 package dev.s7a.strata.integration.minecraft.fabric
 
 import dev.s7a.strata.component.Button
@@ -27,6 +29,7 @@ import dev.s7a.strata.runtime.remote.RemoteRegistry
 import dev.s7a.strata.runtime.remote.RemoteServerSession
 import dev.s7a.strata.runtime.remote.RemoteSessionStatus
 import dev.s7a.strata.runtime.remote.RemoteTextCodec
+import dev.s7a.strata.spi.InternalStrataRuntimeApi
 import dev.s7a.strata.state.mutableStateOf
 import dev.s7a.strata.text.UiText
 import net.minecraft.server.MinecraftServer
@@ -138,7 +141,7 @@ public object RemoteNativeServerFixture {
             when (val message = connection.receive(bytes, now())) {
                 null -> Unit
                 is RemoteMessage.Action -> checkNotNull(screen).receive(message)
-                is RemoteMessage.Applied -> checkNotNull(screen).receive(message)
+                is RemoteMessage.Applied, is RemoteMessage.ControlApplied, is RemoteMessage.ControlRequest -> checkNotNull(screen).receive(message)
                 is RemoteMessage.Close -> checkNotNull(screen).close(message.reason, false)
                 is RemoteMessage.Resynchronize -> checkNotNull(screen).resynchronize()
                 else -> error("Unexpected integrated-server protocol message.")

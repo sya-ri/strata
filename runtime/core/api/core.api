@@ -24,6 +24,8 @@ public final class dev/s7a/strata/runtime/TreeState$Poisoned : dev/s7a/strata/ru
 
 public final class dev/s7a/strata/runtime/UiTree : dev/s7a/strata/runtime/spi/RuntimeUiDiagnosticsOwner, java/lang/AutoCloseable {
 	public fun <init> ()V
+	public fun <init> (Ldev/s7a/strata/ui/UiSession;)V
+	public synthetic fun <init> (Ldev/s7a/strata/ui/UiSession;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public fun close ()V
 	public final fun dispatchKeyboard (Ldev/s7a/strata/input/KeyboardEvent;)Ldev/s7a/strata/input/InputResult;
 	public final fun dispatchPointer (Ldev/s7a/strata/input/PointerEvent;)Ldev/s7a/strata/input/InputResult;
@@ -298,6 +300,41 @@ public final class dev/s7a/strata/runtime/spi/RuntimeDeclaration$Modifier {
 public final class dev/s7a/strata/runtime/spi/RuntimeTextInputFocus {
 }
 
+public final class dev/s7a/strata/runtime/spi/RuntimeUiControl {
+	public fun <init> (JLdev/s7a/strata/ui/UiPresentation;Ldev/s7a/strata/ui/UiInputPolicy;Ldev/s7a/strata/ui/UiInteractionMode;)V
+	public final fun component1 ()J
+	public final fun component2 ()Ldev/s7a/strata/ui/UiPresentation;
+	public final fun component3 ()Ldev/s7a/strata/ui/UiInputPolicy;
+	public final fun component4 ()Ldev/s7a/strata/ui/UiInteractionMode;
+	public final fun copy (JLdev/s7a/strata/ui/UiPresentation;Ldev/s7a/strata/ui/UiInputPolicy;Ldev/s7a/strata/ui/UiInteractionMode;)Ldev/s7a/strata/runtime/spi/RuntimeUiControl;
+	public static synthetic fun copy$default (Ldev/s7a/strata/runtime/spi/RuntimeUiControl;JLdev/s7a/strata/ui/UiPresentation;Ldev/s7a/strata/ui/UiInputPolicy;Ldev/s7a/strata/ui/UiInteractionMode;ILjava/lang/Object;)Ldev/s7a/strata/runtime/spi/RuntimeUiControl;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getInputPolicy ()Ldev/s7a/strata/ui/UiInputPolicy;
+	public final fun getInteractionMode ()Ldev/s7a/strata/ui/UiInteractionMode;
+	public final fun getPresentation ()Ldev/s7a/strata/ui/UiPresentation;
+	public final fun getSequence ()J
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class dev/s7a/strata/runtime/spi/RuntimeUiController : dev/s7a/strata/ui/UiSession {
+	public fun <init> (Ldev/s7a/strata/ui/UiPresentation;Ldev/s7a/strata/ui/UiInputPolicy;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function1;)V
+	public synthetic fun <init> (Ldev/s7a/strata/ui/UiPresentation;Ldev/s7a/strata/ui/UiInputPolicy;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function1;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun applied (J)V
+	public fun close ()V
+	public fun getInputPolicy ()Ldev/s7a/strata/ui/UiInputPolicy;
+	public fun getInteractionMode ()Ldev/s7a/strata/ui/UiInteractionMode;
+	public fun getPresentation ()Ldev/s7a/strata/ui/UiPresentation;
+	public fun getStatus ()Ldev/s7a/strata/ui/UiSessionStatus;
+	public final fun rejected (JLdev/s7a/strata/ui/UiRejection;)V
+	public fun setInputPolicy (Ldev/s7a/strata/ui/UiInputPolicy;)Ldev/s7a/strata/ui/UiOperationResult;
+	public fun setInteractionMode (Ldev/s7a/strata/ui/UiInteractionMode;)Ldev/s7a/strata/ui/UiOperationResult;
+	public final fun start ()V
+	public fun switch (Ldev/s7a/strata/ui/UiPresentation;)Ldev/s7a/strata/ui/UiOperationResult;
+	public final fun terminate (Ldev/s7a/strata/ui/UiCloseReason;)V
+	public final fun transaction (Lkotlin/jvm/functions/Function0;)Ljava/lang/Object;
+}
+
 public abstract interface class dev/s7a/strata/runtime/spi/RuntimeUiDiagnosticsOwner {
 	public abstract fun startRenderMonitoring ()Ldev/s7a/strata/runtime/diagnostics/UiRenderMonitor;
 }
@@ -306,6 +343,14 @@ public abstract interface class dev/s7a/strata/runtime/spi/RuntimeUiFrame {
 	public abstract fun getDrawCommands ()Ljava/util/List;
 	public abstract fun getSemantics ()Ljava/util/List;
 	public abstract fun getSize ()Ldev/s7a/strata/geometry/IntSize;
+}
+
+public final class dev/s7a/strata/runtime/spi/RuntimeUiInput : java/lang/AutoCloseable {
+	public fun <init> (Ljava/util/Map;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function1;)V
+	public fun close ()V
+	public final fun configure (Ldev/s7a/strata/ui/UiSession;Ldev/s7a/strata/ui/UiInputPolicy;Z)V
+	public final fun event (Ljava/util/Collection;ZZ)V
+	public final fun reset ()V
 }
 
 public abstract interface class dev/s7a/strata/runtime/spi/RuntimeUiSession : dev/s7a/strata/runtime/spi/RuntimeUiDiagnosticsOwner, java/lang/AutoCloseable {
@@ -324,6 +369,7 @@ public abstract interface class dev/s7a/strata/runtime/spi/RuntimeUiSession : de
 }
 
 public final class dev/s7a/strata/runtime/spi/RuntimeUiSessionFactory {
-	public static final fun createRuntimeUiSession (Lkotlin/jvm/functions/Function0;)Ldev/s7a/strata/runtime/spi/RuntimeUiSession;
+	public static final fun createRuntimeUiSession (Ldev/s7a/strata/ui/UiSession;Lkotlin/jvm/functions/Function0;)Ldev/s7a/strata/runtime/spi/RuntimeUiSession;
+	public static synthetic fun createRuntimeUiSession$default (Ldev/s7a/strata/ui/UiSession;Lkotlin/jvm/functions/Function0;ILjava/lang/Object;)Ldev/s7a/strata/runtime/spi/RuntimeUiSession;
 }
 

@@ -1,3 +1,5 @@
+@file:Suppress("DEPRECATION") // Compatibility overloads and regression coverage retain the deprecated screen entry points.
+
 package dev.s7a.strata.integration.docs
 
 import dev.s7a.strata.component.ImageSource
@@ -9,7 +11,7 @@ import dev.s7a.strata.integration.docs.example.fixedPlayersScreen
 import dev.s7a.strata.integration.docs.example.rolesPlayersScreen
 import dev.s7a.strata.integration.docs.example.scrollPlayersScreen
 import dev.s7a.strata.integration.docs.example.weightedPlayersScreen
-import dev.s7a.strata.screen.ScreenDefinition
+import dev.s7a.strata.ui.UiDefinition
 
 /**
  * Immutable storyboard coupling each compiled factory to its exact source, inputs, wheel positions, and timing.
@@ -27,7 +29,7 @@ internal enum class ReadmeDemoStage(
     val caption: String,
     val sourceName: String,
     val durationCentiseconds: Int,
-    val create: (List<ReadmePlayer>, ImageSource) -> ScreenDefinition,
+    val create: (List<ReadmePlayer>, ImageSource) -> UiDefinition,
     val scrollOffsets: List<Int> = listOf(0),
 ) {
     Basic("Start with a row", "Each row takes the width of its contents.", "BasicPlayersExample", 200, ::basicPlayersScreen),

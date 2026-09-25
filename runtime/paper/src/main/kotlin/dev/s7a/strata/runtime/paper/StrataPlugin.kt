@@ -1,7 +1,11 @@
+@file:OptIn(InternalStrataRuntimeApi::class)
+
 package dev.s7a.strata.runtime.paper
 
+import dev.s7a.strata.paper.PaperUi
 import dev.s7a.strata.runtime.remote.RemoteConnection
 import dev.s7a.strata.runtime.remote.RemoteScreenService
+import dev.s7a.strata.spi.InternalStrataRuntimeApi
 import org.bukkit.entity.Player
 import org.bukkit.event.EventHandler
 import org.bukkit.event.EventPriority
@@ -19,13 +23,14 @@ import org.bukkit.scheduler.BukkitTask
 
 /**
  * Installable Paper plugin owning messaging registrations and Paper or Folia entity-region UI scheduling.
- * Other plugins use [PaperScreens] and declare Strata as a dependency.
+ * Other plugins use [PaperUi] and declare Strata as a dependency.
  */
 public class StrataPlugin :
     JavaPlugin(),
     Listener,
     PluginMessageListener {
     private var screens: RemoteScreenService<Player, Plugin>? = null
+    private var uiRegistration: AutoCloseable? = null
     private var ticker: BukkitTask? = null
     private var folia: FoliaScreenService? = null
 
@@ -37,17 +42,22 @@ public class StrataPlugin :
             val service = FoliaScreenService(this)
             folia = service
             PaperScreens.installFolia(service)
-            server.onlinePlayers.forEach(service::join)
         } else {
             val service = paperScreenService(this)
             screens = service
             PaperScreens.install(service)
             ticker = server.scheduler.runTaskTimer(this, Runnable(service::tick), 1L, 1L)
-            server.onlinePlayers.forEach(service::join)
+        }
+        uiRegistration = PaperUi.install(PaperUiAdapter())
+        server.onlinePlayers.forEach { player ->
+            screens?.join(player)
+            folia?.join(player)
         }
     }
 
     override fun onDisable() {
+        uiRegistration?.close()
+        uiRegistration = null
         val regionService = folia
         if (regionService != null) {
             PaperScreens.installFolia(null)

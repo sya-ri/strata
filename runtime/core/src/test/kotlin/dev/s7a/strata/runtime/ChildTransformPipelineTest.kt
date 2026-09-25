@@ -339,7 +339,7 @@ internal class ChildTransformPipelineTest {
                         Modifier.Empty
                             .size(10, 5)
                             .scaleToFit(IntSize(4, 5), contentAlignment = Alignment.CenterEnd)
-                            .onFocusChanged(clippedTransitions::add),
+                            .onFocusChanged({ value -> clippedTransitions.add(value) }),
                 )
             }
         val visibleTransitions = ArrayList<FocusEvent>()
@@ -349,7 +349,7 @@ internal class ChildTransformPipelineTest {
                     modifier =
                         Modifier.Empty
                             .size(4, 5)
-                            .onFocusChanged(visibleTransitions::add),
+                            .onFocusChanged({ value -> visibleTransitions.add(value) }),
                 )
             }
         val root =

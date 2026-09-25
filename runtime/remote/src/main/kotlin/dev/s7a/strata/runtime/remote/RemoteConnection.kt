@@ -7,7 +7,7 @@ import dev.s7a.strata.spi.InternalStrataRuntimeApi
 import dev.s7a.strata.spi.RuntimeExecutionOwner
 
 /**
- * Owner-thread protocol negotiation and ordered transport for one authenticated player connection.
+ * Protocol negotiation and ordered transport for one authenticated connection, confined to its execution owner.
  * The adapter supplies authenticated bytes and synchronous transport writes, never arbitrary peers.
  * The fixed bootstrap limits apply until both greetings have been sent; thereafter both sides use their intersection.
  * All partial buffers and the transport callback are released on close or protocol failure.

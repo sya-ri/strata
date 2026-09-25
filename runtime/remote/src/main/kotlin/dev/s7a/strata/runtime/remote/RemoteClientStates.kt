@@ -6,7 +6,7 @@ import dev.s7a.strata.spi.InternalStrataRuntimeApi
 import dev.s7a.strata.spi.RuntimeExecutionOwner
 
 /**
- * Owner-thread presentation-state store bounded by the current decoded screen and its negotiated entry limit.
+ * Execution-owner-confined presentation-state store bounded by the current decoded screen and its negotiated entry limit.
  * Keys combine a remote identity and a trusted type token; removed identities and terminal screens release their entries.
  * Preparation runs before declaration evaluation, so incoming values never mutate state from a render callback.
  */

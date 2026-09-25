@@ -240,7 +240,7 @@ Run construction and exceptional signed-metric fallback remain proportional to t
 
 ### Fabric profile reuse between screen opens
 
-The installed Fabric presenter retains at most one complete immutable UI profile for ordinary `ScreenDefinition.open()` calls.
+The installed Fabric presenter retains at most one complete immutable UI profile for ordinary `UiDefinition.open()` calls.
 Its key is the active resource-manager identity, the current native resource generation, the complete compiler-selected font compatibility value, and all captured font-selection and language-direction options.
 GUI scale is deliberately absent: profile pixels, resource bytes, and logical font data do not depend on presentation density; the separate prepared-layer cache includes density when rasterizing.
 The public `extractMinecraftUiProfile()` factory still reads and returns a fresh snapshot on every explicit call.

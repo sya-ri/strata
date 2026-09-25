@@ -1,3 +1,5 @@
+@file:Suppress("DEPRECATION") // Compatibility overloads and regression coverage retain the deprecated screen entry points.
+
 package dev.s7a.strata.integration.docs.example
 
 import dev.s7a.strata.component.Button
@@ -26,7 +28,7 @@ import dev.s7a.strata.modifier.padding
 import dev.s7a.strata.modifier.size
 import dev.s7a.strata.modifier.width
 import dev.s7a.strata.render.ArgbColor
-import dev.s7a.strata.screen.ScreenDefinition
+import dev.s7a.strata.ui.UiDefinition
 
 /**
  * Adds a bounded scroll viewport and linked scrollbar around the unchanged player-row composition.
@@ -36,8 +38,8 @@ import dev.s7a.strata.screen.ScreenDefinition
 internal fun scrollPlayersScreen(
     players: List<ReadmePlayer>,
     panel: ImageSource,
-): ScreenDefinition =
-    ScreenDefinition("Players") {
+): UiDefinition =
+    UiDefinition("Players") {
         playerPanel(players, panel)
     }
 

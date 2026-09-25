@@ -5,6 +5,7 @@ import dev.s7a.strata.action.ActionHandler
 import dev.s7a.strata.action.ActionKey
 import dev.s7a.strata.action.ActionResult
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
+import dev.s7a.strata.ui.UiSession
 
 /**
  * Handles one typed component action emitted by the component wrapped by this modifier.
@@ -16,7 +17,7 @@ import dev.s7a.strata.spi.InternalStrataRuntimeApi
  */
 public fun <T : Any> Modifier.onAction(
     key: ActionKey<T>,
-    callback: (T) -> ActionResult,
+    callback: UiSession.(T) -> ActionResult,
 ): Modifier =
     then(
         ActionModifier.Element(

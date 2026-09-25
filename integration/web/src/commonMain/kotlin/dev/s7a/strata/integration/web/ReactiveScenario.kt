@@ -9,8 +9,8 @@ import dev.s7a.strata.geometry.IntSize
 import dev.s7a.strata.modifier.Modifier
 import dev.s7a.strata.modifier.onActivate
 import dev.s7a.strata.modifier.padding
-import dev.s7a.strata.screen.ScreenDefinition
 import dev.s7a.strata.state.mutableStateOf
+import dev.s7a.strata.ui.UiDefinition
 
 /**
  * Independent deterministic state and declarations shared by JVM and browser acceptance runs.
@@ -23,8 +23,8 @@ internal class ReactiveScenario {
     /**
      * Recreates a one-shot definition while retaining this scenario's caller-owned state.
      */
-    fun definition(): ScreenDefinition =
-        ScreenDefinition("Reactive runtime parity") {
+    fun definition(): UiDefinition =
+        UiDefinition("Reactive runtime parity") {
             Column(modifier = Modifier.Empty.padding(16), spacing = 8) {
                 Text("Strata runtime parity")
                 Button("Advance", modifier = Modifier.Empty.onActivate { advance() })

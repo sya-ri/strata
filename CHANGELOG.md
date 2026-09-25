@@ -5,8 +5,7 @@ Keep all Strata artifacts on the same release version.
 
 ## 0.2.0 - Unreleased
 
-Server-owned screens for Paper, Folia, and Velocity, a portable reactive JVM/JavaScript core, an initial browser runtime, and exact Minecraft 26.3 support.
-Paper and Velocity screens require the matching Strata Fabric runtime on each player's client.
+Common Screen/HUD sessions and input controls, reactive application state, Paper, Folia, and Velocity UIs with public APIs and lifecycle events, JVM/JavaScript shared foundations, themed browser rendering, typed remote extensions, and Minecraft 26.3 support. Rebuild consumers for session-receiver event callbacks.
 
 [Detailed changes and upgrade notes](docs/releases/v0.2.0.md)
 

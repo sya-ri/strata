@@ -19,7 +19,9 @@ import dev.s7a.strata.runtime.spi.RuntimeTextInputFocus
 import dev.s7a.strata.runtime.spi.RuntimeUiDiagnosticsOwner
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
 import dev.s7a.strata.state.StateObservation
+import dev.s7a.strata.ui.UiCloseReason
 import kotlin.jvm.JvmSynthetic
+import dev.s7a.strata.ui.UiSession as EventUiSession
 
 // Why: this public owner intentionally exposes each retained lifecycle, frame, input, and inspection operation through one guarded boundary.
 
@@ -39,10 +41,14 @@ import kotlin.jvm.JvmSynthetic
  */
 @OptIn(InternalStrataRuntimeApi::class)
 @Suppress("TooManyFunctions")
-public class UiTree :
-    AutoCloseable,
+public class UiTree(
+    eventSession: EventUiSession? = null,
+) : AutoCloseable,
     RuntimeUiDiagnosticsOwner {
     private val ownerGuard: OwnerGuard = OwnerGuard()
+    private var closeRequested = false
+    private val fallbackSession = if (eventSession == null) UnpresentedUiSession(::requestClose) else null
+    private val callbackSession = eventSession ?: checkNotNull(fallbackSession)
 
     /**
      * Shared nullable diagnostics gate used by the owning session.
@@ -58,7 +64,7 @@ public class UiTree :
     private val pipeline = Pipeline(ownerGuard, monitoring)
     private val observedSources = ObservedSourceRegistry(monitoring)
     private val lifecycle =
-        LifecycleManager(registry, ownerGuard, dirtyTracker, monitoring) { entry ->
+        LifecycleManager(registry, ownerGuard, dirtyTracker, monitoring, callbackSession) { entry ->
             val failures = FailureAccumulator()
             if (entry is RetainedNode) {
                 failures.capture { entry.contentObservation?.close() }
@@ -292,7 +298,7 @@ public class UiTree :
                 observedSources.endOperation()
             }.getOrElse { failure -> poison(failure) }
         } finally {
-            operationActive = false
+            endOperation()
         }
     }
 
@@ -505,6 +511,7 @@ public class UiTree :
         operationActive = true
         try {
             currentState = TreeState.Closed
+            fallbackSession?.finish(UiCloseReason.Closed)
             val capturedRoot = root
             root = null
             registry.clear()
@@ -519,7 +526,7 @@ public class UiTree :
             monitoring.release()
             failures.throwIfPresent()
         } finally {
-            operationActive = false
+            endOperation()
         }
     }
 
@@ -540,14 +547,29 @@ public class UiTree :
                 result
             }.getOrElse { failure -> poison(failure) }
         } finally {
-            operationActive = false
+            endOperation()
         }
+    }
+
+    private fun endOperation() {
+        operationActive = false
+        if (closeRequested) {
+            closeRequested = false
+            if (currentState == TreeState.Active) close()
+        }
+    }
+
+    private fun requestClose() {
+        ownerGuard.check()
+        if (currentState !== TreeState.Active) return
+        if (operationActive) closeRequested = true else close()
     }
 
     private fun poison(failure: Throwable): Nothing {
         if (monitoring.operation == UiRenderOperation.Frame) monitoring.record(UiRenderMetric.FrameFailure)
         monitoring.failed()
         currentState = TreeState.Poisoned
+        fallbackSession?.finish(UiCloseReason.Failed)
         val capturedRoot = root
         root = null
         registry.clear()

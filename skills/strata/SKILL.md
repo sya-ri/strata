@@ -12,7 +12,7 @@ Use Web and Headless to inspect those same screen definitions; their preview cap
 
 ## Consumer scope
 
-Use public component, modifier, layout, resource, and screen APIs.
+Use public component, modifier, layout, resource, and UI APIs.
 Ordinary UI definitions must not import runtime packages, expose `MinecraftUiContext`, add `buildUi`, or construct a mapped screen.
 Integration code uses public host entry points such as `PaperScreens` or `VelocityScreens`; preview harnesses may depend on Web or Headless runtime contracts.
 Read setup before choosing dependencies or opening a screen, and reuse the application definition factory for previews instead of maintaining a separate preview UI.

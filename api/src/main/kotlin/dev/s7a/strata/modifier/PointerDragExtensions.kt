@@ -3,6 +3,7 @@ package dev.s7a.strata.modifier
 import dev.s7a.strata.geometry.IntOffset
 import dev.s7a.strata.input.InputResult
 import dev.s7a.strata.input.PointerEvent
+import dev.s7a.strata.ui.UiSession
 
 /**
  * Handles every pointer drag that hits this modifier's laid-out bounds.
@@ -14,7 +15,7 @@ import dev.s7a.strata.input.PointerEvent
  * @return this chain with one appended active drag handler.
  * @throws Throwable when [callback] fails during dispatch.
  */
-public fun Modifier.onDrag(callback: (PointerEvent.Drag, IntOffset) -> InputResult): Modifier = then(PointerInputModifier.Element(PointerInputModifier.Action.Drag(callback)))
+public fun Modifier.onDrag(callback: UiSession.(PointerEvent.Drag, IntOffset) -> InputResult): Modifier = then(PointerInputModifier.Element(PointerInputModifier.Action.Drag(callback)))
 
 /**
  * Runs [action] for every pointer drag that hits this modifier without consuming the event.
@@ -23,4 +24,4 @@ public fun Modifier.onDrag(callback: (PointerEvent.Drag, IntOffset) -> InputResu
  * @return this chain with one appended non-consuming drag handler.
  * @throws Throwable when [action] fails during dispatch.
  */
-public fun Modifier.onDrag(action: () -> Unit): Modifier = onDrag(InputResult.Ignored) { _, _ -> action() }
+public fun Modifier.onDrag(action: UiSession.() -> Unit): Modifier = onDrag(InputResult.Ignored) { _, _ -> action() }

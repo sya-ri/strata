@@ -196,6 +196,7 @@ internal object InventorySlotSynchronizationGameTest {
             player.inventoryMenu.broadcastChanges()
         }
         waitForPlayerItem(context, playerInventoryIndex, Items.DIRT)
+        runMinecraftUiSessionTest(context, output)
         runMinecraftCanvasSlotTest(context, profile, output, playerInventoryIndex)
         showBoundScreen(context, profile, Slots.playerInventory(playerInventoryIndex))
         context.takeScreenshot(

@@ -4,6 +4,7 @@ import dev.s7a.strata.input.InputResult
 import dev.s7a.strata.input.KeyboardEvent
 import dev.s7a.strata.input.KeyboardInputFilter
 import dev.s7a.strata.projection.BuiltinProjection
+import dev.s7a.strata.ui.UiSession
 
 /**
  * Subscribes to typed keyboard notifications with a fixed immediate dispatch result.
@@ -14,7 +15,7 @@ import dev.s7a.strata.projection.BuiltinProjection
 public fun Modifier.onKeyEvent(
     propagation: InputResult,
     filter: KeyboardInputFilter = KeyboardInputFilter(),
-    action: (KeyboardEvent) -> Unit,
+    action: UiSession.(KeyboardEvent) -> Unit,
 ): Modifier =
     then(
         FocusedInputModifier.Element(
@@ -39,7 +40,7 @@ public fun Modifier.onKeyEvent(
 public fun Modifier.onKeyPress(
     propagation: InputResult,
     filter: KeyboardInputFilter = KeyboardInputFilter(),
-    action: (KeyboardEvent.Press) -> Unit,
+    action: UiSession.(KeyboardEvent.Press) -> Unit,
 ): Modifier =
     then(
         FocusedInputModifier.Element(
@@ -64,7 +65,7 @@ public fun Modifier.onKeyPress(
 public fun Modifier.onKeyRelease(
     propagation: InputResult,
     filter: KeyboardInputFilter = KeyboardInputFilter(),
-    action: (KeyboardEvent.Release) -> Unit,
+    action: UiSession.(KeyboardEvent.Release) -> Unit,
 ): Modifier =
     then(
         FocusedInputModifier.Element(

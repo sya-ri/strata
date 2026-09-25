@@ -24,20 +24,20 @@ import dev.s7a.strata.modifier.onLeadingItemsRequested
 import dev.s7a.strata.modifier.onTrailingItemsRequested
 import dev.s7a.strata.modifier.padding
 import dev.s7a.strata.modifier.size
-import dev.s7a.strata.screen.ScreenDefinition
+import dev.s7a.strata.ui.UiDefinition
 
 /**
  * Builds a structural storage screen without absolute child coordinates.
  *
  * The 320 by 240 panel and 260-wide viewports leave room for every fixed-height child and inter-child spacing.
  */
-internal fun storageScreen(onDone: () -> Unit): ScreenDefinition {
+internal fun storageScreen(onDone: () -> Unit): UiDefinition {
     val scroll = ScrollState()
     val listState = VirtualListState<String>()
     val items = mutableListOf("Oak chest", "Ender chest", "Machine buffer")
     var nextLeadingKey = 0
     var nextTrailingKey = 0
-    return ScreenDefinition("Storage") {
+    return UiDefinition("Storage") {
         Column(
             modifier =
                 Modifier.Empty
@@ -106,7 +106,7 @@ internal fun storageScreen(onDone: () -> Unit): ScreenDefinition {
             }
             Button(
                 "Done",
-                modifier = Modifier.Empty.onActivate(onDone),
+                modifier = Modifier.Empty.onActivate { onDone() },
             )
         }
     }

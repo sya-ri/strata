@@ -11,7 +11,7 @@ For published artifacts, use the documentation at the matching [release tag](htt
 
 | Read | Use it to |
 | --- | --- |
-| [Screens and state](guides/screens-and-state.md) | Declare and open a screen, own its state, and connect application resources. |
+| [Screens and state](guides/screens-and-state.md) | Declare a UI, switch Screen/HUD presentation, control input, own state, and connect resources. |
 | [Paper and Folia screens](guides/paper.md) | Install the server plugin, open player screens, and register matching client extensions. |
 | [Velocity screens](guides/velocity.md) | Own screens on a proxy, queue UI state changes, and coexist with Paper backends. |
 | [Layout](guides/layout.md) | Choose containers and control spacing, sizing, wrapping, and alignment. |
@@ -36,6 +36,7 @@ The [animated README demo](readme-demo/README.md) follows a fixed player list fr
 - [Element SPI](reference/element-spi.md) describes custom primitives, retained phases, and ownership.
 - [Modifier SPI](reference/modifier-spi.md) describes active modifier nodes and typed parent data.
 - [Declaration projection](reference/declaration-projection.md) defines optional typed properties, remote action bindings, and retained resource projection.
+- [Platform events](reference/platform-events.md) defines Paper and Velocity client readiness and applied UI lifecycle notifications.
 - [Remote protocol](reference/remote-protocol.md) defines negotiation, atomic updates, input ordering, resource bounds, and extension ownership.
 - [External state sources](reference/state-sources.md) specifies revisioned observation across threads.
 
