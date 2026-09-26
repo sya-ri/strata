@@ -175,16 +175,16 @@ def stage(manifest, token, source_commit, receipt):
         require(result.returncode == 0, "Official Hangar upload did not complete; no upload was retried. Reconcile the exact version before rerunning.")
     state = inspect(manifest, token, verify_public=True)
     require(state != "absent", "Hangar upload outcome is unknown; no upload was retried.")
-    project = json.loads(request(API + "projects/" + manifest["namespace"], token))
-    if project.get("mainPageContent") != stored_text(manifest["projectBody"]):
+    page_url = API + "pages/main/" + manifest["namespace"].split("/")[1]
+    if request(page_url, token).decode("utf-8") != stored_text(manifest["projectBody"]):
         result = subprocess.run(
             ["bash", "./gradlew", "--no-parallel", "--max-workers=2", "syncStrataPublicationMainResourcePagePageToHangar",
              "-Pstrata.sourceRevision=v" + manifest["version"], "-Pstrata.sourceCommit=" + source_commit],
             capture_output=True, check=False,
         )
         require(result.returncode == 0, "Hangar version is accepted, but its resource page could not be synchronized.")
-        project = json.loads(request(API + "projects/" + manifest["namespace"], token))
-        require(project.get("mainPageContent") == stored_text(manifest["projectBody"]), "Hangar resource page differs after synchronization.")
+        require(request(page_url, token).decode("utf-8") == stored_text(manifest["projectBody"]),
+                "Hangar resource page differs after synchronization.")
     save_receipt(receipt, manifest, source_commit, state)
     return state
 
