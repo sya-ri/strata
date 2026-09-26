@@ -25,11 +25,11 @@ class HangarReleaseTest(unittest.TestCase):
         self.root = Path(self.temporary.name)
         self.manifest = {
             "schemaVersion": 1, "version": "0.2.0", "namespace": "owner/Strata", "channel": "Release",
-            "description": "# Strata 0.2.0\n", "projectBody": "# Strata", "artifacts": {},
+            "description": "# Strata 0.2.0\n", "projectBody": "# Strata\n", "artifacts": {},
         }
         self.remote = {
             "projectId": 123, "name": "0.2.0", "channel": {"name": "Release"}, "visibility": "public",
-            "description": self.manifest["description"], "downloads": {}, "platformDependencies": {}, "pluginDependencies": {},
+            "description": "# Strata 0.2.0", "downloads": {}, "platformDependencies": {}, "pluginDependencies": {},
         }
         self.contents = {}
         for platform, versions in (("PAPER", ["1.20", "26.2"]), ("VELOCITY", ["4.2.0"])):
@@ -78,6 +78,18 @@ class HangarReleaseTest(unittest.TestCase):
         changed["downloads"]["PAPER"]["fileInfo"]["sha256Hash"] = "0" * 64
         with self.assertRaisesRegex(ValueError, "bytes differ"):
             release.compare_version(changed, self.manifest, 123)
+
+    def test_notes_match_server_trimming_without_hiding_content_changes(self):
+        self.manifest["description"] = "\t\r\n# Release\n\nIndented  text\nUnicode space:\u00a0\n"
+        self.remote["description"] = "# Release\n\nIndented  text\nUnicode space:\u00a0"
+        release.compare_version(self.remote, self.manifest, 123)
+        for changed in ("# Release\nIndented  text\nUnicode space:\u00a0",
+                        "# Release\n\nIndented text\nUnicode space:\u00a0",
+                        "# Release\n\nIndented  text\nUnicode space:", None):
+            with self.subTest(description=changed):
+                self.remote["description"] = changed
+                with self.assertRaisesRegex(ValueError, "notes differ"):
+                    release.compare_version(self.remote, self.manifest, 123)
 
     def test_absence_requires_an_accessible_matching_project(self):
         with patch.object(release, "request", side_effect=[json.dumps(self.project).encode(), None]):

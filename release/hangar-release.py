@@ -84,12 +84,17 @@ def local_manifest(path, canonical=False):
     return manifest
 
 
+def stored_text(value):
+    """Match Hangar's StringSanitizerModule: Java trim removes edge characters through U+0020."""
+    return value.strip("".join(chr(code) for code in range(33)))
+
+
 def compare_version(remote, manifest, project_id):
     """Require exact platform metadata and file identities without overwriting a version."""
     require(remote.get("projectId") == project_id, "Hangar project identity differs.")
     require(remote.get("name") == manifest["version"], "Hangar version differs.")
     require(remote.get("channel", {}).get("name") == manifest["channel"], "Hangar channel differs.")
-    require(remote.get("description") == manifest["description"], "Hangar release notes differ.")
+    require(remote.get("description") == stored_text(manifest["description"]), "Hangar release notes differ.")
     require(set(remote.get("downloads", {})) == PLATFORMS, "Hangar platform inventory differs.")
     require(set(remote.get("platformDependencies", {})) == PLATFORMS, "Hangar platform dependencies differ.")
     require(set(remote.get("pluginDependencies", {})).issubset(PLATFORMS), "Unexpected dependency platform.")
@@ -171,7 +176,7 @@ def stage(manifest, token, source_commit, receipt):
     state = inspect(manifest, token, verify_public=True)
     require(state != "absent", "Hangar upload outcome is unknown; no upload was retried.")
     project = json.loads(request(API + "projects/" + manifest["namespace"], token))
-    if project.get("mainPageContent") != manifest["projectBody"]:
+    if project.get("mainPageContent") != stored_text(manifest["projectBody"]):
         result = subprocess.run(
             ["bash", "./gradlew", "--no-parallel", "--max-workers=2", "syncStrataPublicationMainResourcePagePageToHangar",
              "-Pstrata.sourceRevision=v" + manifest["version"], "-Pstrata.sourceCommit=" + source_commit],
@@ -179,7 +184,7 @@ def stage(manifest, token, source_commit, receipt):
         )
         require(result.returncode == 0, "Hangar version is accepted, but its resource page could not be synchronized.")
         project = json.loads(request(API + "projects/" + manifest["namespace"], token))
-        require(project.get("mainPageContent") == manifest["projectBody"], "Hangar resource page differs after synchronization.")
+        require(project.get("mainPageContent") == stored_text(manifest["projectBody"]), "Hangar resource page differs after synchronization.")
     save_receipt(receipt, manifest, source_commit, state)
     return state
 
