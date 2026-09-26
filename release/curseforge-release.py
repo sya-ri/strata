@@ -187,9 +187,6 @@ class CurseForgeRelease:
             self.require(url == f"{self.UPLOAD_API}/projects/{self.project_id}/upload-file", "Unsafe upload endpoint.")
             self.require(self.upload_token, "CURSEFORGE_TOKEN is required; no upload was attempted.")
             headers.update({"X-Api-Token": self.upload_token, "Content-Type": upload[0]})
-        elif url == self.UPLOAD_API + "/game/versions":
-            self.require(self.upload_token, "CURSEFORGE_TOKEN is required to read upload version tags.")
-            headers["X-Api-Token"] = self.upload_token
         elif url.startswith(self.API + "/"):
             self.require(self.read_key, "CURSEFORGE_API_KEY is required for REST API reads.")
             headers["x-api-key"] = self.read_key
@@ -223,19 +220,10 @@ class CurseForgeRelease:
         return json.loads(self.request(self.API + path))
 
     def catalog(self):
-        """Resolve exact tags; the optional read API also checks remote project and Java version identities."""
+        """Resolve numeric tags with the read API, or let the Upload API resolve exact names."""
         if not self.read_key:
-            catalog = json.loads(self.request(self.UPLOAD_API + "/game/versions"))
-            self.require(isinstance(catalog, list), "Upload version catalog is malformed.")
-            tags = {}
-            for name in {"Fabric", "Client"} | {a["gameVersion"] for a in self.artifacts}:
-                matches = [item for item in catalog if item.get("name") == name]
-                self.require(len(matches) == 1, f"Missing or ambiguous CurseForge version tag: {name}")
-                identifier = matches[0].get("id")
-                self.require(type(identifier) is int and 0 < identifier, "Invalid version tag ID.")
-                tags[name] = identifier
-            self.require(len(set(tags.values())) == len(tags), "Version tags share an ID.")
-            return tags
+            self.require(self.upload_token, "CURSEFORGE_TOKEN is required; no upload was attempted.")
+            return None
         project = self.api(f"/v1/mods/{self.project_id}")["data"]
         self.require(project.get("id") == self.project_id and project.get("slug") == self.project["slug"]
                      and project.get("name") == self.project["title"] and project.get("gameId") == 432
@@ -330,10 +318,13 @@ class CurseForgeRelease:
         metadata = {
             "changelog": self.manifest["changelog"], "changelogType": "markdown",
             "displayName": artifact["versionName"], "releaseType": "release",
-            "gameVersions": [tags[artifact["gameVersion"]], tags["Fabric"], tags["Client"]],
             "isMarkedForManualRelease": False,
             "relations": {"projects": [{"slug": "fabric-language-kotlin", "projectID": 308769, "type": "requiredDependency"}]},
         }
+        if tags is None:
+            metadata["gameVersionNames"] = [artifact["gameVersion"], "Fabric", "Client"]
+        else:
+            metadata["gameVersions"] = [tags[artifact["gameVersion"]], tags["Fabric"], tags["Client"]]
         boundary = "strata-" + uuid.uuid4().hex
         body = (
             f'--{boundary}\r\nContent-Disposition: form-data; name="metadata"\r\nContent-Type: application/json\r\n\r\n'.encode()

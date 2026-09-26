@@ -122,11 +122,12 @@ Do not separately upload the same release in the Authors Console: without the re
 The controller materializes the CurseForge publisher, receipt reader, and project configuration from its frozen Git commit and checks their blob identities alongside its other release tools.
 The publisher consumes the existing generated release manifest and canonical JARs; it does not maintain another Minecraft target inventory or rebuild distribution files.
 Each file is a Release for exactly one supported Java Minecraft version, tagged Fabric and Client, with Fabric Language Kotlin as its required dependency.
-Without the read key, version IDs come from the Minecraft Upload API's `/api/game/versions` catalog; every Minecraft, Fabric, and Client tag must match exactly once, and missing or ambiguous tags stop before uploading.
-With the read key, Java Minecraft version IDs are additionally cross-checked against the REST API's Minecraft catalog and the remote project and dependency identities are verified.
+Without the read key, the documented Upload API `gameVersionNames` field carries the exact manifest Minecraft version, Fabric, and Client names; CurseForge resolves these names when accepting each upload.
+This avoids depending on the legacy Upload API catalog, which may not expose the same version names as the Authors Console.
+With the read key, numeric Java Minecraft version IDs are cross-checked against the REST API's Minecraft catalog before upload, and the remote project and dependency identities are verified.
 Source and documentation JARs, detached signatures, and Maven-only modules are not uploaded.
 
-Preflight checks all target metadata before publication begins.
+Preflight checks every local target and available remote evidence before publication begins; without the optional read key, server-side version-name validation occurs during upload.
 After Central publication has completed, staging appends missing files without editing or deleting existing files.
 Serialize Authors Console uploads and local historical imports with this workflow; local receipts do not coordinate independent writers.
 Accepted uploads remain pending until approval and public byte verification; a successful staging step is not proof of publication.
