@@ -99,10 +99,6 @@ class CurseForgeReleaseTest(unittest.TestCase):
         if url.startswith(Release.UPLOAD_API):
             self.assertEqual("upload-secret", headers.get("x-api-token"))
             self.assertNotIn("x-api-key", headers)
-            if url == Release.UPLOAD_API + "/game/versions":
-                self.assertEqual("GET", request.get_method())
-                body = [item for group in self.catalog for item in group["versions"]]
-                return self.Response(url, json.dumps(body).encode())
             self.assertEqual("POST", request.get_method())
             receipt = json.loads((self.root / "receipt.json").read_text())
             self.assertTrue(any(r["state"] == "attempting" for r in receipt["files"].values()))
@@ -305,8 +301,10 @@ class CurseForgeReleaseTest(unittest.TestCase):
             self.run_phase(Release.Operation.STAGE, may_upload=False)
         self.assertEqual(2, len(self.uploads))
         for index, (_, metadata) in enumerate(self.uploads):
-            self.assertEqual([index + 3, 1, 2], metadata["gameVersions"])
-        self.assertTrue(all(url.startswith(Release.UPLOAD_API + "/") for _, url, _ in self.requests))
+            self.assertEqual([self.manifest["artifacts"][index]["gameVersion"], "Fabric", "Client"], metadata["gameVersionNames"])
+            self.assertNotIn("gameVersions", metadata)
+        self.assertTrue(all(method == "POST" and url == Release.UPLOAD_API + "/projects/123/upload-file"
+                            for method, url, _ in self.requests))
         self.remotes = [self.remote(0), self.remote(1)]
         self.assertEqual(2, len(self.run_phase(Release.Operation.VERIFY)["verified"]))
 
@@ -322,12 +320,22 @@ class CurseForgeReleaseTest(unittest.TestCase):
                 self.run_phase(Release.Operation.STAGE)
         self.assertEqual(1, sum(method == "POST" for method, _, _ in self.requests))
 
-    def test_token_only_ambiguous_catalog_stops_before_upload(self):
-        self.catalog.append({"type": 99, "versions": [{"id": 50, "name": "26.2"}]})
+    def test_token_only_upload_does_not_depend_on_the_legacy_catalog(self):
+        self.catalog = []
         with patch.dict(os.environ, {"CURSEFORGE_API_KEY": ""}):
-            with self.assertRaisesRegex(ValueError, "ambiguous CurseForge version tag"):
+            self.run_phase(Release.Operation.PREFLIGHT)
+            self.assertEqual([], self.requests)
+            self.run_phase(Release.Operation.STAGE)
+        self.assertEqual(["26.2", "Fabric", "Client"], self.uploads[1][1]["gameVersionNames"])
+
+    def test_token_only_rejected_names_are_not_retried(self):
+        self.upload_failure = HTTPError("unused", 400, "secret response", {}, None)
+        with patch.dict(os.environ, {"CURSEFORGE_API_KEY": ""}):
+            with self.assertRaisesRegex(ValueError, "HTTP 400"):
                 self.run_phase(Release.Operation.STAGE)
-        self.assertEqual([], self.uploads)
+            with self.assertRaisesRegex(ValueError, "Unresolved prior upload"):
+                self.run_phase(Release.Operation.STAGE)
+        self.assertEqual(1, sum(method == "POST" for method, _, _ in self.requests))
 
     def test_optional_verification_makes_no_requests_and_preserves_receipt(self):
         self.run_phase(Release.Operation.STAGE)
