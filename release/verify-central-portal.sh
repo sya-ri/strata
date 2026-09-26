@@ -22,10 +22,25 @@ if [[ "$inventory" == "$PWD/build/release/maven-coordinates.txt" ]]; then
   [[ -f "$files" && ! -L "$files" ]] || exit 1
 fi
 output="$PWD/build/release/maven-central"
+mkdir -p "$output"
+project="$(mktemp -d "$output/controller-project.XXXXXX")"
+sources=(settings.gradle.kts build.gradle.kts PortalVerifier.kt MavenCentralPortalCoordinator.kt MavenCentralPortalTask.kt MavenPublicationFiles.kt MavenReleaseCoordinates.kt)
+for source in "${sources[@]}"; do
+  cp -- "$controller/$source" "$project/$source"
+  chmod a-w -- "$project/$source"
+  cmp -- "$controller/$source" "$project/$source"
+done
 bash ./gradlew --no-parallel --max-workers=2 --no-build-cache \
-  --project-cache-dir "$output/controller-cache" -p "$controller" verifyPortal \
+  --project-cache-dir "$output/controller-cache" -p "$project" verifyPortal \
   -Pkotlin.project.persistent.dir="$output/controller-kotlin" \
   -Pkotlin.project.persistent.dir.gradle.disableWrite=true \
   -PportalOperation="$operation" -PportalVersion="${tag#v}" \
   -PportalCoordinates="$inventory" -PportalFiles="$files" \
   -PportalRepository="$HOME/.m2/repository" -PportalOutput="$output"
+for source in "${sources[@]}"; do
+  [[ -f "$project/$source" && ! -L "$project/$source" ]] || exit 1
+  [[ "$(stat -c '%A' -- "$project/$source")" != *w* ]] || exit 1
+  cmp -- "$controller/$source" "$project/$source"
+done
+git --no-replace-objects cat-file blob "$GITHUB_SHA:release/verify-controller-tools.sh" |
+  bash -s -- verify "$GITHUB_SHA" "$controller"

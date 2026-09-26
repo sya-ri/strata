@@ -615,6 +615,7 @@ for source in MavenCentralPortalCoordinator MavenCentralPortalTask MavenPublicat
   cp "$repository_root/build-logic/src/main/kotlin/dev/s7a/strata/gradle/release/$source.kt" \
     "$fixture_repository/build-logic/src/main/kotlin/dev/s7a/strata/gradle/release/$source.kt"
 done
+cp "$controller_guard" "$fixture_repository/release/verify-controller-tools.sh"
 fixture_current_commit="$(printf 'a%.0s' {1..40})"
 fixture_current_object="$(printf 'b%.0s' {1..40})"
 fixture_predecessor_commit="$(printf 'c%.0s' {1..40})"
@@ -669,6 +670,37 @@ valid_directory="$controller_test_root/valid"
 mkdir "$valid_directory"
 (cd "$fixture_repository" && bash "$controller_guard" materialize "$valid_commit" "$valid_directory")
 (cd "$fixture_repository" && bash "$controller_guard" verify "$valid_commit" "$valid_directory")
+mkdir -p "$fixture_repository/build/release"
+printf 'dev.s7a.fixture:artifact\n' > "$fixture_repository/build/release/maven-coordinates.txt"
+printf 'dev.s7a.fixture:artifact:.jar\n' > "$fixture_repository/build/release/maven-files.txt"
+cat > "$fixture_repository/gradlew" <<'GRADLE'
+#!/usr/bin/env bash
+set -euo pipefail
+while [[ "$#" != 0 ]]; do
+  if [[ "$1" == -p ]]; then project="$2"; shift; fi
+  shift
+done
+[[ -d "$project" && -w "$project" && "$project" != "$CONTROLLER_TOOL_DIRECTORY" ]] || exit 1
+[[ "$(stat -c '%A' -- "$project")" == *w* ]] || exit 1
+touch "$project/gradle-generated.bin"
+for source in "$project"/*.kt "$project"/*.kts; do
+  [[ "$(stat -c '%A' -- "$source")" != *w* ]] || exit 1
+  cmp -- "$source" "$CONTROLLER_TOOL_DIRECTORY/$(basename "$source")"
+done
+if [[ "${MUTATE_PORTAL_SOURCE:-}" == true ]]; then
+  chmod u+w "$project/PortalVerifier.kt"
+  printf '// changed\n' >> "$project/PortalVerifier.kt"
+  chmod a-w "$project/PortalVerifier.kt"
+fi
+GRADLE
+(
+  cd "$fixture_repository"
+  export GITHUB_SHA="$valid_commit" CONTROLLER_TOOL_DIRECTORY="$valid_directory"
+  bash "$repository_root/release/verify-central-portal.sh" preflight v8.4.2
+  if MUTATE_PORTAL_SOURCE=true bash "$repository_root/release/verify-central-portal.sh" verify v8.4.2 >/dev/null 2>&1; then
+    fail 'Portal runner accepted a modified verifier source.'
+  fi
+)
 for materialized_mode_spec in \
   'release/current-controller.json|current-controller.json' \
   'release/list-release-tags.sh|list-release-tags.sh'; do
