@@ -2,8 +2,8 @@
   "schemaVersion": 1,
   "current": {
     "tag": "v0.2.0",
-    "commit": "5dc65d96cae7747bf2eb4c76a6753799fb402af7",
-    "tagObject": "e0082d6bf4c2a971f55e54f1af954c4ad8a8d09c",
+    "commit": "a7be399ab215509815b3c1d1a0ffdfb949878b96",
+    "tagObject": "ddddc526e62d6a850947db4b5f5bc254738b1262",
     "representativeMinecraftVersions": [
       "1.20",
       "1.20.1",
