@@ -1,3 +1,5 @@
+import org.jetbrains.kotlin.gradle.targets.js.ir.KotlinJsIrLink
+
 // The demo and runtime share a short project name but must not share Gradle component coordinates.
 group = "dev.s7a.strata.examples"
 
@@ -18,4 +20,9 @@ kotlin {
         }
         jsTest.dependencies { implementation(libs.kotlin.test) }
     }
+}
+
+tasks.named<KotlinJsIrLink>("compileProductionExecutableKotlinJs") {
+    // KT-68281 makes DCE supertype metadata order unstable, breaking independent Pages artifact comparison.
+    compilerOptions.freeCompilerArgs.add("-Xir-dce=false")
 }
