@@ -38,7 +38,7 @@
     {
       "id": "inventory",
       "path": "docs/components/screen-inventory.png",
-      "sha256": "3f10867db0641e0274344596cbdb0e58c172c3fc87ee436d226217fce08a396d",
+      "sha256": "448163f73d52441a7f836bf36b58160f98cfdf8fef0f4ec5d1dcff94ea96377d",
       "featured": false,
       "title": "Inventory screen",
       "description": "A vanilla-style inventory composed from Strata primitives.",
