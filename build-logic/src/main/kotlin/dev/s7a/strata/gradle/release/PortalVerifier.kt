@@ -5,9 +5,13 @@ import java.net.URI
 import java.nio.file.Files
 import java.nio.file.Path
 
-/** Runs the controller's read-only verifier against the immutable product's staged inventory. */
+/**
+ * Runs the controller's read-only verifier against the immutable product's staged inventory.
+ */
 internal object PortalVerifier {
-    /** Credentials stay in the process environment; only verified receipt and artifact evidence are written. */
+    /**
+     * Credentials stay in the process environment; only verified receipt and artifact evidence are written.
+     */
     @JvmStatic
     fun main(args: Array<String>) {
         require(args.size == 6) { "Expected operation, version, coordinates, files, repository, and output." }
