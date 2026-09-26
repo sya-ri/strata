@@ -86,7 +86,8 @@ The switches come from immutable workflow inputs and cannot be enabled by a late
 `verify` never publishes to Maven, GitHub, CurseForge, or Hangar and only performs Modrinth finalization when that destination is selected.
 
 Publisher Portal reconciliation runs from the frozen controller's verifier sources against the selected product's generated inventory and local staged artifacts.
-Its isolated Gradle build writes only under the product's build output; it never changes the tagged source or rebuilds publication artifacts.
+Gradle runs in a fresh writable directory under the product's build output, with read-only copies of the verified controller sources.
+The runner compares those copies before and after execution and revalidates the frozen controller; it never changes the tagged source or rebuilds publication artifacts.
 The expected Portal package URLs include `type=klib` for coordinates whose publication inventory contains a Kotlin library; other coordinates retain the default Maven package URL.
 Exact file, byte, checksum, signature, and lifecycle verification remains required.
 
