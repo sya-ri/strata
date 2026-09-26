@@ -582,6 +582,7 @@ write_metadata() {
 }
 
 for source in \
+  release/verify-central-portal.sh \
   release/verify-release-tag.sh \
   release/list-release-tags.sh \
   release/verify-current-controller-release-order.sh \
@@ -606,12 +607,20 @@ printf '{}\n' > "$fixture_repository/release/hangar-project.json"
 for tool in hangar-release.py maven-file-count.py publication-summary.py; do
   printf '"""Distribution fixture."""\n' > "$fixture_repository/release/$tool"
 done
+mkdir -p "$fixture_repository/release/portal-verifier" "$fixture_repository/build-logic/src/main/kotlin/dev/s7a/strata/gradle/release"
+for source in settings.gradle.kts build.gradle.kts; do
+  cp "$repository_root/release/portal-verifier/$source" "$fixture_repository/release/portal-verifier/$source"
+done
+for source in MavenCentralPortalCoordinator MavenCentralPortalTask MavenPublicationFiles MavenReleaseCoordinates PortalVerifier; do
+  cp "$repository_root/build-logic/src/main/kotlin/dev/s7a/strata/gradle/release/$source.kt" \
+    "$fixture_repository/build-logic/src/main/kotlin/dev/s7a/strata/gradle/release/$source.kt"
+done
 fixture_current_commit="$(printf 'a%.0s' {1..40})"
 fixture_current_object="$(printf 'b%.0s' {1..40})"
 fixture_predecessor_commit="$(printf 'c%.0s' {1..40})"
 fixture_predecessor_object="$(printf 'd%.0s' {1..40})"
 write_metadata v8.4.2 "$fixture_current_commit" "$fixture_current_object" v7.9.6 "$fixture_predecessor_commit" "$fixture_predecessor_object"
-git -C "$fixture_repository" add release gradle
+git -C "$fixture_repository" add release gradle build-logic
 git -C "$fixture_repository" update-index --chmod=-x \
   release/verify-release-tag.sh \
   release/verify-github-tag-ruleset.sh \
@@ -675,7 +684,8 @@ for generic in current-controller.json verify-release-tag.sh list-release-tags.s
   github-release-tag-ruleset-receipt.json verify-pages-deployment-source.sh verify-pages-artifact-equivalence.sh wait-for-pages-source-receipt.sh \
   curseforge-release.py curseforge-receipts.py curseforge-project.json \
   hangar-release.py hangar-project.json maven-file-count.py publication-summary.py \
-  run-publish-controller-recovery.sh list-java-toolchains.sh; do
+  run-publish-controller-recovery.sh list-java-toolchains.sh verify-central-portal.sh \
+  settings.gradle.kts build.gradle.kts PortalVerifier.kt MavenCentralPortalCoordinator.kt MavenCentralPortalTask.kt MavenPublicationFiles.kt MavenReleaseCoordinates.kt; do
   [[ -f "$valid_directory/$generic" && ! -L "$valid_directory/$generic" ]] || fail "Generic controller mapping is missing: $generic"
 done
 for absent in backlog-recovery-runner backlog-recovery.json backlog-artifact-evidence.json; do

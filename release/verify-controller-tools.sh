@@ -103,6 +103,7 @@ verify_controller_tool() {
   case "$validation" in
     bash) bash -n "$destination" ;;
     json) portable_jq -e 'type == "object"' "$destination" >/dev/null ;;
+    source) : ;;
     python) python3 -c 'import ast, pathlib, sys; ast.parse(pathlib.Path(sys.argv[1]).read_text())' "$destination" ;;
     controller)
       portable_jq -e '
@@ -157,6 +158,14 @@ verify_controller_tool release/hangar-release.py hangar-release.py python 100644
 verify_controller_tool release/hangar-project.json hangar-project.json json 100644
 verify_controller_tool release/maven-file-count.py maven-file-count.py python 100644
 verify_controller_tool release/publication-summary.py publication-summary.py python 100644
+verify_controller_tool release/portal-verifier/settings.gradle.kts settings.gradle.kts source 100644
+verify_controller_tool release/portal-verifier/build.gradle.kts build.gradle.kts source 100644
+verify_controller_tool build-logic/src/main/kotlin/dev/s7a/strata/gradle/release/PortalVerifier.kt PortalVerifier.kt source 100644
+verify_controller_tool release/verify-central-portal.sh verify-central-portal.sh bash 100644
+verify_controller_tool build-logic/src/main/kotlin/dev/s7a/strata/gradle/release/MavenCentralPortalCoordinator.kt MavenCentralPortalCoordinator.kt source 100644
+verify_controller_tool build-logic/src/main/kotlin/dev/s7a/strata/gradle/release/MavenCentralPortalTask.kt MavenCentralPortalTask.kt source 100644
+verify_controller_tool build-logic/src/main/kotlin/dev/s7a/strata/gradle/release/MavenPublicationFiles.kt MavenPublicationFiles.kt source 100644
+verify_controller_tool build-logic/src/main/kotlin/dev/s7a/strata/gradle/release/MavenReleaseCoordinates.kt MavenReleaseCoordinates.kt source 100644
 
 current_tag="$(portable_jq -er '.current.tag' "$tool_directory/current-controller.json")"
 current_commit="$(portable_jq -er '.current.commit' "$tool_directory/current-controller.json")"

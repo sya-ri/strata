@@ -48,9 +48,14 @@ internal class MavenCentralPortalCoordinatorTest {
             }
         val server = server(fixture)
         server.statuses.add(MavenCentralPortalCoordinator.DeploymentState.PUBLISHED)
+        server.purls = server.purls.mapIndexed { index, purl -> if (index == 0) "$purl?type=klib" else purl }
         val receipt = fixture.coordinator(server, publicationFiles = entries).preflight(fixture.coordinates, temporaryDirectory.resolve("variable-evidence"))
         assertEquals(entries.size * 2, receipt.verifiedContentFileCount)
         assertEquals(entries.size * 4, receipt.verifiedChecksumCount)
+        server.purls = server.purls.map { it.substringBefore('?') }
+        assertThrows(IllegalStateException::class.java) {
+            fixture.coordinator(server, publicationFiles = entries).preflight(fixture.coordinates, temporaryDirectory.resolve("wrong-packaging"))
+        }
         Files.delete(directory.resolve("$artifact-$version-plugin.jar"))
         assertThrows(IllegalStateException::class.java) {
             fixture.coordinator(server, publicationFiles = entries).preflight(fixture.coordinates, temporaryDirectory.resolve("missing-evidence"))
@@ -397,7 +402,7 @@ internal class MavenCentralPortalCoordinatorTest {
         private val executor = Executors.newCachedThreadPool()
         private val server = HttpServer.create(InetSocketAddress("127.0.0.1", 0), 0)
         private val exactFiles = linkedMapOf<String, ByteArray>()
-        private val purls =
+        var purls =
             fixture.coordinates.map { coordinate ->
                 val (group, artifact, version) = coordinate.split(':')
                 "pkg:maven/$group/$artifact@$version"

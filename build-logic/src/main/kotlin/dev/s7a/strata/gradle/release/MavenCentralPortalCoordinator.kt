@@ -747,7 +747,12 @@ internal class MavenCentralPortalCoordinator(
                     version = version,
                     deploymentName = "$group-$version",
                     groupPathPrefix = "${group.replace('.', '/')}/",
-                    purls = coordinates.map { coordinate -> "pkg:maven/${coordinate.group}/${coordinate.artifact}@${coordinate.version}" }.toSet(),
+                    purls =
+                        coordinates
+                            .map { coordinate ->
+                                val packaging = if (".klib" in suffixes.getValue("${coordinate.group}:${coordinate.artifact}")) "?type=klib" else ""
+                                "pkg:maven/${coordinate.group}/${coordinate.artifact}@${coordinate.version}$packaging"
+                            }.toSet(),
                     versionDirectoryPrefixes = coordinates.map(Coordinate::directoryPrefix).toSet(),
                     baseFiles = baseFiles,
                     expectedDeploymentFiles = expectedFiles,

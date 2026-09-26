@@ -85,6 +85,11 @@ The signing and Publisher Portal verification credentials remain necessary for t
 The switches come from immutable workflow inputs and cannot be enabled by a later build step.
 `verify` never publishes to Maven, GitHub, CurseForge, or Hangar and only performs Modrinth finalization when that destination is selected.
 
+Publisher Portal reconciliation runs from the frozen controller's verifier sources against the selected product's generated inventory and local staged artifacts.
+Its isolated Gradle build writes only under the product's build output; it never changes the tagged source or rebuilds publication artifacts.
+The expected Portal package URLs include `type=klib` for coordinates whose publication inventory contains a Kotlin library; other coordinates retain the default Maven package URL.
+Exact file, byte, checksum, signature, and lifecycle verification remains required.
+
 Central preflight distinguishes wholly absent content from a complete exact publication in both the public repository and authenticated Publisher Portal.
 Only the wholly absent pair with `maven_central=true` may invoke the single Vanniktech publication task; partial, conflicting, or cross-service state stops before any write, while an exact publication is verified and reused idempotently.
 Representative client task paths are generated from the frozen metadata array rather than written into the workflow, and the verified controller bundle derives the setup-java matrix from the tagged source's version catalog.

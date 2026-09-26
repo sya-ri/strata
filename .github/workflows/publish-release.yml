@@ -637,9 +637,10 @@ jobs:
         run: |
           set -euo pipefail
           bash ./gradlew --no-parallel --max-workers=2 --no-build-cache \
-            mavenCentralReleasePreflight mavenCentralPortalPreflight \
+            mavenCentralReleasePreflight \
             -Pstrata.sourceRevision="$RELEASE_TAG" \
             -Pstrata.sourceCommit="$RELEASE_SOURCE_COMMIT"
+          bash "$CONTROLLER_TOOL_DIRECTORY/verify-central-portal.sh" preflight "$RELEASE_TAG"
           public_state="$(jq -r '.state' build/release/maven-central/preflight.json)"
           portal_state="$(jq -r '.state' build/release/maven-central/portal-preflight.json)"
           jq -e --argjson coordinates "$RELEASE_COORDINATE_COUNT" '.coordinateCount == $coordinates' \
@@ -901,9 +902,10 @@ jobs:
           git diff --quiet -- . || { echo 'Tracked release source changed before Central publication.' >&2; exit 1; }
           git diff --cached --quiet -- . || { echo 'Tracked release source changed before Central publication.' >&2; exit 1; }
           bash ./gradlew --no-parallel --max-workers=2 --no-build-cache \
-            mavenCentralReleasePreflight mavenCentralPortalPreflight \
+            mavenCentralReleasePreflight \
             -Pstrata.sourceRevision="$RELEASE_TAG" \
             -Pstrata.sourceCommit="$RELEASE_SOURCE_COMMIT"
+          bash "$CONTROLLER_TOOL_DIRECTORY/verify-central-portal.sh" preflight "$RELEASE_TAG"
           jq -e --argjson coordinates "$RELEASE_COORDINATE_COUNT" \
             '.state == "absent" and .coordinateCount == $coordinates and .verifiedFileCount == 0 and .verifiedChecksumCount == 0' \
             build/release/maven-central/preflight.json >/dev/null || { echo 'Fresh public Central preflight is no longer wholly absent.' >&2; exit 1; }
@@ -925,8 +927,7 @@ jobs:
           ORG_GRADLE_PROJECT_mavenCentralPassword: ${{ secrets.MAVEN_CENTRAL_PASSWORD }}
         run: |
           set -euo pipefail
-          bash ./gradlew --no-parallel --max-workers=2 --no-build-cache mavenCentralPortalVerify \
-            -Pstrata.sourceRevision="$RELEASE_TAG" -Pstrata.sourceCommit="$RELEASE_SOURCE_COMMIT"
+          bash "$CONTROLLER_TOOL_DIRECTORY/verify-central-portal.sh" verify "$RELEASE_TAG"
           jq -e --argjson content "$EXPECTED_CENTRAL_CONTENT_COUNT" --argjson checksums "$EXPECTED_CENTRAL_CHECKSUM_COUNT" \
             '.state == "exact" and .deploymentState == "PUBLISHED" and .verifiedContentFileCount == $content and .verifiedChecksumCount == $checksums' \
             build/release/maven-central/portal-verify.json >/dev/null || { echo 'Central Portal verification counts differ.' >&2; exit 1; }
@@ -2039,8 +2040,9 @@ jobs:
           readonly -f portable_jq
           extra_tasks=()
           if [[ "$SELECT_HANGAR" == true ]]; then extra_tasks+=(hangarReleaseManifest); fi
-          bash ./gradlew --no-parallel --max-workers=2 --no-build-cache "${extra_tasks[@]}" verifyPublishedConsumer modrinthReleaseManifest mavenCentralPortalVerify \
+          bash ./gradlew --no-parallel --max-workers=2 --no-build-cache "${extra_tasks[@]}" verifyPublishedConsumer modrinthReleaseManifest \
             -Pstrata.sourceRevision="$RELEASE_TAG" -Pstrata.sourceCommit="$RELEASE_SOURCE_COMMIT" -Pstrata.modrinthProjectId="$PROJECT_ID"
+          bash "$CONTROLLER_TOOL_DIRECTORY/verify-central-portal.sh" verify "$RELEASE_TAG"
           maven_inventory=''
           for candidate in build/release/maven-coordinates.txt release/maven-coordinates.txt; do
             if [[ -f "$candidate" && ! -L "$candidate" ]]; then
@@ -2289,8 +2291,9 @@ jobs:
             jq -e --argjson artifacts "$predecessor_artifact_count" '.operation == "verify" and .projectStatus == "approved" and (.absent | length) == 0 and (.listed | length) == $artifacts' \
               build/release/modrinth-receipts/verify.json >/dev/null
 
+            bash "$CONTROLLER_TOOL_DIRECTORY/verify-central-portal.sh" verify "$previous_tag"
             bash ./gradlew --no-parallel --max-workers=2 --no-build-cache \
-              mavenCentralPortalVerify mavenCentralReleaseVerify githubReleaseBundle \
+              mavenCentralReleaseVerify githubReleaseBundle \
               -Pstrata.sourceRevision="$previous_tag" \
               -Pstrata.sourceCommit="$previous_commit" \
               -Pstrata.modrinthProjectId="$PROJECT_ID"
