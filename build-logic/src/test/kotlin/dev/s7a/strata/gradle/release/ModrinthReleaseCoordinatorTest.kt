@@ -586,12 +586,11 @@ internal class ModrinthReleaseCoordinatorTest {
         val fixture = fixture()
         val server =
             server(fixture).also { mock ->
-                mock.timeoutFirstCreateAfterCommit = true
+                mock.ambiguousFirstCreate = true
                 mock.remainingStaleVersionReadsAfterFirstCreate = 5
             }
-        val client = fixture.client(server, requestTimeoutMillis = 20L, retryBaseMillis = 1L)
 
-        val receipt = fixture.coordinator(server, client).stage()
+        val receipt = fixture.coordinator(server).stage()
 
         assertEquals(fixture.manifest.artifacts.size, receipt.listed.size)
         assertEquals(fixture.manifest.artifacts.size + 1, server.createRequests)
