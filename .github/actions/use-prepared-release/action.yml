@@ -1,0 +1,29 @@
+name: Restore prepared release
+description: Verify the signed tag and restore successful preparation without rebuilding
+inputs:
+  tag:
+    required: true
+    description: Signed product tag
+  commit:
+    required: true
+    description: Product commit
+  run-id:
+    required: true
+    description: Successful preparation run
+  token:
+    required: true
+    description: Read-only repository and Actions token
+runs:
+  using: composite
+  steps:
+    - name: Restore verified publication inputs
+      shell: bash
+      env:
+        GH_TOKEN: ${{ inputs.token }}
+        RELEASE_TAG: ${{ inputs.tag }}
+        SOURCE_COMMIT: ${{ inputs.commit }}
+        PREPARED_RUN_ID: ${{ inputs.run-id }}
+      run: |
+        bash release/verify-release-tag.sh "$RELEASE_TAG" "$SOURCE_COMMIT"
+        bash release/verify-github-tag-ruleset.sh release/github-release-tag-ruleset.json release/github-release-tag-ruleset-receipt.json
+        python3 release/prepared-release.py restore --run-id "$PREPARED_RUN_ID" --tag "$RELEASE_TAG" --commit "$SOURCE_COMMIT" --tag-object "$(git rev-parse "$RELEASE_TAG")"

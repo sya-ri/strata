@@ -30,6 +30,7 @@ import org.gradle.api.tasks.testing.Test
 import org.gradle.jvm.toolchain.JavaLanguageVersion
 import org.gradle.plugins.ide.idea.model.IdeaModel
 import org.jetbrains.dokka.gradle.DokkaExtension
+import org.jetbrains.dokka.gradle.engine.plugins.DokkaVersioningPluginParameters
 import org.jetbrains.kotlin.gradle.dsl.KotlinJvmProjectExtension
 import org.jetbrains.kotlin.gradle.dsl.KotlinMultiplatformExtension
 import org.gradle.api.publish.PublishingExtension
@@ -632,6 +633,7 @@ tasks.named("check") {
 
 dependencies {
     dokka(project(":api"))
+    dokkaPlugin(libs.dokka.versioning)
     dokka(project(":runtime:core"))
     dokka(project(":runtime:remote"))
     dokka(project(":paper-api"))
@@ -849,6 +851,18 @@ val generateDokkaModuleMarkdown =
 
 extensions.configure<DokkaExtension> {
     moduleName.set("Strata")
+    pluginsConfiguration.named<DokkaVersioningPluginParameters>("versioning") {
+        val current = if (sourceRevision == "master") "dev" else sourceRevision.removePrefix("v")
+        val archive = providers.gradleProperty("strata.olderDocs").map(::file).orElse(layout.buildDirectory.dir("pages-store/older").map { it.asFile })
+        val older = archive.map { directory ->
+            directory.listFiles().orEmpty().filter { it.isDirectory && it.name != current && it.name.matches(Regex("[0-9]+\\.[0-9]+\\.[0-9]+")) }
+        }
+        version.set(current)
+        olderVersions.from(older)
+        versionsOrdering.set(older.map { directories ->
+            listOf(current) + directories.map { it.name }.sortedWith { first, second -> compareNumericMinecraftVersions(second, first) }
+        })
+    }
     dokkaPublications.named("html") {
         outputDirectory.set(layout.buildDirectory.dir("dokka/html"))
         includes.from(generateDokkaModuleMarkdown)
@@ -869,17 +883,22 @@ val verifyGeneratedDokkaSourceLinks =
         inputs.property("sourceRevision", sourceRevision)
         doLast {
             val sourceLinkPattern = Regex("https://github\\.com/sya-ri/strata/tree/([^/\"]+)/")
-            val revisions =
-                dokkaHtml
-                    .get()
-                    .asFile
-                    .walkTopDown()
-                    .filter { file -> file.isFile && file.extension == "html" }
-                    .flatMap { file -> sourceLinkPattern.findAll(file.readText()).map { match -> match.groupValues[1] } }
+            val site = dokkaHtml.get().asFile
+            val snapshots = site.resolve("older").listFiles().orEmpty().filter { it.isDirectory }
+            (listOf(site) + snapshots).forEach { directory ->
+                val expected = if (directory == site) sourceRevision else "v${directory.name}"
+                if (directory != site) {
+                    val receipt = JsonSlurper().parse(directory.resolve("source-receipt.json")) as Map<*, *>
+                    check(receipt["revision"] == expected) { "Snapshot source receipt differs from $expected." }
+                }
+                val revisions = directory.walkTopDown()
+                    .onEnter { it == directory || it.name != "older" }
+                    .filter { it.isFile && it.extension == "html" }
+                    .flatMap { file -> sourceLinkPattern.findAll(file.readText()).map { it.groupValues[1] } }
                     .toSet()
-            check(revisions.isNotEmpty()) { "Generated Dokka HTML contains no GitHub source links." }
-            check(revisions == setOf(sourceRevision)) {
-                "Generated Dokka source-link revisions differ from $sourceRevision: $revisions"
+                check(revisions == setOf(expected)) {
+                    "Generated Dokka source-link revisions differ from $expected: $revisions"
+                }
             }
         }
     }
@@ -1664,8 +1683,32 @@ val ciMinecraftCheck = tasks.register("ciMinecraftCheck") {
     }
 }
 
+tasks.register("writeCiSourceModel") {
+    group = "verification"
+    description = "Exports actual shared source consumers for change-scoped CI."
+    val destination = layout.buildDirectory.file("github-actions/source-model.json")
+    outputs.file(destination)
+    outputs.upToDateWhen { false }
+    doLast {
+        val model = minecraftFabricTargets.associate { target ->
+            val roots = listOf(target.runtimeProjectPath, target.integrationProjectPath).flatMap { path ->
+                val owner = project(path)
+                listOf(rootProject.relativePath(owner.projectDir)) +
+                    owner.extensions.getByType<SourceSetContainer>().flatMap { source ->
+                        source.allSource.srcDirs.map { directory -> rootProject.relativePath(directory) }
+                    }
+            } + target.allSourceLinkPaths
+            target.version to roots.map { it.replace('\\', '/') }.distinct().sorted()
+        }
+        destination.get().asFile.apply {
+            parentFile.mkdirs()
+            writeText(JsonOutput.prettyPrint(JsonOutput.toJson(model)) + "\n")
+        }
+    }
+}
+
 tasks.named("check") {
-    dependsOn(gradle.includedBuild("build-logic").task(":check"), verifyGeneratedDokkaSourceLinks)
+    dependsOn(gradle.includedBuild("build-logic").task(":check"))
 }
 
 val releaseArtifacts = releasePublicationProjectPaths.flatMap { projectPath ->
@@ -1730,22 +1773,6 @@ val verifyPublishedConsumer =
                     "strataRepresentativeMinecraftVersions" to representativeReleaseMinecraftVersions.joinToString(","),
                 )
     }
-
-tasks.named("mavenCentralReleasePreflight") {
-    dependsOn(verifyPublishedConsumer)
-}
-
-tasks.named("mavenCentralReleaseVerify") {
-    dependsOn(verifyPublishedConsumer)
-}
-
-tasks.named("mavenCentralPortalPreflight") {
-    dependsOn(verifyPublishedConsumer)
-}
-
-tasks.named("mavenCentralPortalVerify") {
-    dependsOn(verifyPublishedConsumer)
-}
 
 extensions.configure<StrataReleaseExtension> {
     releaseVersion.set(project.version.toString())

@@ -203,7 +203,7 @@ internal object PagesStagingChecker {
     private val HTML_TAG = Regex("<[A-Za-z][^>]*>")
     private const val HTML_SUFFIX = ".html"
     private const val MARKDOWN_SUFFIX = ".md"
-    private const val RELEASES_DIRECTORY = "releases"
+    private const val RELEASES_DIRECTORY = "older"
     private const val INDEX_FILE = "index.html"
     private const val PAGES_HOST = "gh.s7a.dev"
     private const val PAGES_BASE_PATH = "/strata/"

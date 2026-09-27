@@ -153,7 +153,7 @@ internal class PagesStagingCheckerTest {
         val (project, site) = createBaseTrees("markdown-source")
         writeStagedFile(site, "text.md", "# Present")
 
-        listOf("text.md", "releases/../text.md", "releases/%2e%2e/text.md").forEach { target ->
+        listOf("text.md", "older/../text.md", "older/%2e%2e/text.md").forEach { target ->
             Files.writeString(project.resolve("README.md"), "$PAGES_BASE$target#present")
             val failure =
                 assertThrows(IllegalArgumentException::class.java) {
@@ -266,22 +266,22 @@ internal class PagesStagingCheckerTest {
     fun preservesLegacyReleaseSnapshotsWithoutInspectingTheirReaderGuides() {
         val (project, site) = createBaseTrees("legacy-snapshot")
         val legacyContent = "<a href='guide/missing.md#absent'>Legacy reader guide</a>"
-        Files.writeString(project.resolve("README.md"), "${PAGES_BASE}releases/0.1.0/guide/components.md#row")
-        writeStagedFile(site, "index.html", "<a href='releases/0.1.0/index.html'>Previous release</a>")
-        writeStagedFile(site, "releases/0.1.0/index.html", legacyContent)
-        writeStagedFile(site, "releases/0.1.0/guide/components.md", "# Components")
+        Files.writeString(project.resolve("README.md"), "${PAGES_BASE}older/0.1.0/guide/components.md#row")
+        writeStagedFile(site, "index.html", "<a href='older/0.1.0/index.html'>Previous release</a>")
+        writeStagedFile(site, "older/0.1.0/index.html", legacyContent)
+        writeStagedFile(site, "older/0.1.0/guide/components.md", "# Components")
         val inventory = writeInventory(project, site)
 
         PagesStagingChecker.check(project, site, inventory)
-        assertTrue(Files.readAllLines(inventory).contains("/releases/0.1.0/index.html"))
-        assertTrue(Files.readAllLines(inventory).contains("/releases/0.1.0/guide/components.md"))
-        assertEquals(legacyContent, Files.readString(site.resolve("releases/0.1.0/index.html")))
+        assertTrue(Files.readAllLines(inventory).contains("/older/0.1.0/index.html"))
+        assertTrue(Files.readAllLines(inventory).contains("/older/0.1.0/guide/components.md"))
+        assertEquals(legacyContent, Files.readString(site.resolve("older/0.1.0/index.html")))
     }
 
     @Test
     fun rejectsMissingDirectlyAdvertisedReleaseTargets() {
         val (project, site) = createBaseTrees("missing-release")
-        val target = "releases/not-a-version/missing.html"
+        val target = "older/not-a-version/missing.html"
         listOf(false, true).forEach { advertiseInHtml ->
             Files.writeString(project.resolve("README.md"), if (advertiseInHtml) "# Project" else "$PAGES_BASE$target")
             Files.writeString(site.resolve("index.html"), if (advertiseInHtml) "<a href='$target'>Release</a>" else "<h1>API</h1>")
@@ -300,10 +300,10 @@ internal class PagesStagingCheckerTest {
         val (project, site) = createBaseTrees("symbolic-release")
         val externalSnapshot = Files.createDirectories(temporaryRoot.resolve("external-snapshot"))
         Files.writeString(externalSnapshot.resolve("index.html"), "<h1>External release</h1>")
-        Files.createDirectories(site.resolve("releases"))
-        val created = runCatching { Files.createSymbolicLink(site.resolve("releases/0.1.0"), externalSnapshot) }.isSuccess
+        Files.createDirectories(site.resolve("older"))
+        val created = runCatching { Files.createSymbolicLink(site.resolve("older/0.1.0"), externalSnapshot) }.isSuccess
         if (created) {
-            Files.writeString(project.resolve("README.md"), "${PAGES_BASE}releases/0.1.0/index.html")
+            Files.writeString(project.resolve("README.md"), "${PAGES_BASE}older/0.1.0/index.html")
             val inventory = writeInventory(project, site)
 
             val failure =
@@ -320,7 +320,7 @@ internal class PagesStagingCheckerTest {
         val inventory = writeInventory(project, site)
         Files.writeString(site.parent.resolve("outside.html"), "<h1>Outside</h1>")
 
-        listOf("%2e%2e/outside.html", "releases/0.1.0/%2e%2e/%2e%2e/%2e%2e/outside.html").forEach { target ->
+        listOf("%2e%2e/outside.html", "older/0.1.0/%2e%2e/%2e%2e/%2e%2e/outside.html").forEach { target ->
             Files.writeString(site.resolve("index.html"), "<a href='$target'>Outside</a>")
             val failure =
                 assertThrows(IllegalArgumentException::class.java) {
@@ -345,11 +345,11 @@ internal class PagesStagingCheckerTest {
     @Test
     fun ignoresTemplatedPagesUrlPrefix() {
         val (project, site) = createBaseTrees("templated-pages-url")
-        Files.writeString(project.resolve("README.md"), "${PAGES_BASE}releases/${'$'}{version}/")
+        Files.writeString(project.resolve("README.md"), "${PAGES_BASE}older/${'$'}{version}/")
         val inventory = writeInventory(project, site)
 
         PagesStagingChecker.check(project, site, inventory)
-        assertTrue(Files.readAllLines(inventory).none { path -> path.startsWith("/releases/") })
+        assertTrue(Files.readAllLines(inventory).none { path -> path.startsWith("/older/") })
     }
 
     @Test
@@ -357,12 +357,12 @@ internal class PagesStagingCheckerTest {
         val (project, site) = createBaseTrees("bash-parameter-pages-url")
         Files.writeString(
             project.resolve("workflow.yml"),
-            "pages_base=\"${PAGES_BASE}releases/${'$'}{previous_tag#v}\"",
+            "pages_base=\"${PAGES_BASE}older/${'$'}{previous_tag#v}\"",
         )
         val inventory = writeInventory(project, site)
 
         PagesStagingChecker.check(project, site, inventory)
-        assertTrue(Files.readAllLines(inventory).none { path -> path.startsWith("/releases/") })
+        assertTrue(Files.readAllLines(inventory).none { path -> path.startsWith("/older/") })
     }
 
     private fun createBaseTrees(name: String): Pair<Path, Path> {

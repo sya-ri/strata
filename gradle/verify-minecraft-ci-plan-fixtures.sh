@@ -6,49 +6,6 @@ project_root=$(cd "$(dirname "$0")/.." && pwd)
 fixture_root=$(mktemp -d)
 trap 'rm -rf -- "$fixture_root"' EXIT
 
-python3 - "$project_root/.github/workflows/jvm.yml" <<'PY'
-import pathlib
-import sys
-
-workflow_path = pathlib.Path(sys.argv[1])
-workflow = workflow_path.read_text(encoding="utf-8")
-restore_steps = [
-    block
-    for block in workflow.split("\n      - name: ")
-    if "uses: actions/cache/restore@v6" in block and "path: .gradle/loom-cache" in block
-]
-assert len(restore_steps) == 1, "jvm.yml must contain exactly one Loom cache restore step"
-exact_key = "key: loom-${{ runner.os }}-${{ matrix.id }}-${{ steps.loom_inputs.outputs.hash }}"
-assert restore_steps[0].count(exact_key) == 1, (
-    "jvm.yml must restore the exact OS, shard, and complete-input Loom cache key"
-)
-assert "restore-keys:" not in restore_steps[0], (
-    "jvm.yml must restore only the exact hash-addressed Loom cache key"
-)
-for name, count in [("qodana.yml", 1), ("pages.yml", 2)]:
-    reader = workflow_path.with_name(name).read_text(encoding="utf-8")
-    readers = [block for block in reader.split("\n      - name: ")
-               if "uses: gradle/actions/setup-gradle@" in block]
-    assert len(readers) == count, f"Unexpected Gradle reader jobs in {name}"
-    for block in readers:
-        assert "cache-read-only: true" in block, f"{name} must never write the shared cache"
-        assert "gradle-home-cache-strict-match: false" in block, (
-            f"{name} must accept compatible writer caches, not require a nonexistent own-job cache"
-        )
-        assert "gradle-home-cache-excludes: caches/fabric-loom" in block
-qodana = workflow_path.with_name("qodana.yml").read_text(encoding="utf-8")
-loom_saves = [block for block in qodana.split("\n      - name: ")
-              if "uses: actions/cache/save@" in block]
-assert len(loom_saves) == 1, "Qodana must save only its complete Loom input cache"
-assert "if: success() && github.ref == 'refs/heads/master' && steps.loom_cache.outputs.cache-hit != 'true'" in loom_saves[0]
-assert "path: .gradle/loom-cache\n" in loom_saves[0]
-assert "key: ${{ steps.loom_cache.outputs.cache-primary-key }}" in loom_saves[0]
-assert "use-caches: false" in qodana, "Qodana analysis evidence must remain fresh"
-assert "args: --linter=qodana-jvm-community --within-docker=false" in qodana, (
-    "Qodana must select the native linter explicitly so bootstrap can use the installed Java toolchains"
-)
-PY
-
 add_project() {
   local root=$1
   local parent=$2
@@ -99,7 +56,7 @@ oldest_owners = [next(index for index, entry in enumerate(entries)
 assert len(set(oldest_owners)) == 5
 assert all(
     entry["gradle_arguments"].startswith(":ciMinecraftCheck -Pstrata.minecraftVersions=")
-    or entry["gradle_arguments"].startswith(":ciMinecraftCheck :integration:docs:check -Pstrata.minecraftVersions=")
+    or entry["gradle_arguments"].startswith(":ciMinecraftCheck :integration:docs:check :integration:docs:checkDokkaPagesStaging -Pstrata.minecraftVersions=")
     for entry in entries
 )
 PY

@@ -138,9 +138,9 @@ def inspect(manifest, token, required=False, verify_public=False):
 
 def preflight(manifest, token):
     """Check upload permission and exact platform version support before any service publication."""
-    query = urllib.parse.urlencode({"permissions": "view_public_info,create_version,edit_page", "project": manifest["namespace"].split("/")[1]})
+    query = urllib.parse.urlencode({"permissions": "view_public_info,create_version", "project": manifest["namespace"].split("/")[1]})
     permission = json.loads(request(API + "permissions/hasAll?" + query, token))
-    require(permission.get("result") is True, "Hangar token lacks view_public_info, create_version, or edit_page permission for this project.")
+    require(permission.get("result") is True, "Hangar token lacks view_public_info or create_version permission for this project.")
     for platform, artifact in manifest["artifacts"].items():
         catalog = json.loads(request(API + "platforms/" + platform + "/versions"))
         require(isinstance(catalog, list), "Hangar platform catalog is malformed.")
@@ -167,24 +167,15 @@ def stage(manifest, token, source_commit, receipt):
     state = preflight(manifest, token)
     if state == "absent":
         save_receipt(receipt, manifest, source_commit, "attempting")
+        controller = Path(os.environ["STRATA_RELEASE_CONTROLLER"])
         result = subprocess.run(
-            ["bash", "./gradlew", "--no-parallel", "--max-workers=2", "--no-build-cache",
-             "publishStrataPublicationToHangar", "-Pstrata.sourceRevision=v" + manifest["version"],
-             "-Pstrata.sourceCommit=" + source_commit], capture_output=True, check=False,
+            ["bash", str(controller / "gradlew"), "-p", str(controller / "release/tools"),
+             "publishStrataPublicationToHangar", "-PpreparedRelease=" + os.environ["STRATA_PREPARED_RELEASE"]],
+            capture_output=True, check=False,
         )
         require(result.returncode == 0, "Official Hangar upload did not complete; no upload was retried. Reconcile the exact version before rerunning.")
     state = inspect(manifest, token, verify_public=True)
     require(state != "absent", "Hangar upload outcome is unknown; no upload was retried.")
-    page_url = API + "pages/main/" + manifest["namespace"].split("/")[1]
-    if request(page_url, token).decode("utf-8") != stored_text(manifest["projectBody"]):
-        result = subprocess.run(
-            ["bash", "./gradlew", "--no-parallel", "--max-workers=2", "syncStrataPublicationMainResourcePagePageToHangar",
-             "-Pstrata.sourceRevision=v" + manifest["version"], "-Pstrata.sourceCommit=" + source_commit],
-            capture_output=True, check=False,
-        )
-        require(result.returncode == 0, "Hangar version is accepted, but its resource page could not be synchronized.")
-        require(request(page_url, token).decode("utf-8") == stored_text(manifest["projectBody"]),
-                "Hangar resource page differs after synchronization.")
     save_receipt(receipt, manifest, source_commit, state)
     return state
 

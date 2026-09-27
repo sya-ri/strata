@@ -24,29 +24,40 @@ Client tasks seed disposable project-build run directories after cleanup, disabl
 The Canvas/Slot oracle temporarily hides the HUD and restores it even on failure, preventing late tutorial/recipe toasts from covering pixels.
 Ordinary client launches and personal settings are unaffected; frame fences and pixel assertions remain enabled.
 
-## JVM shards and reusable inputs
+## Changes and job selection
 
-The planner numerically sorts paired targets and deals them across bounded shards with fail-fast disabled.
-Documentation checks run exactly once on the shard owning their explicitly declared native input; missing or ambiguous ownership fails planning.
-Common checks include isolated CPU-font workers; native font comparisons stay with their integration targets.
-The web job checks the browser runtime, compiled demo factories, and production demo behavior at both current and release URL prefixes.
-It provisions version-matched Chromium and publishes freshly captured screenshots as acceptance evidence.
-Prose-only changes outside compiled documentation contracts do not launch the JVM workflow.
+Heavy checks run on pull requests, with a manual full run available through `workflow_dispatch`.
+Merging a PR does not repeat JVM or Qodana verification.
+The always-running planner and `CI result` job distinguish planned skips from failures, cancellation, and unexpected skipped checks.
 
-| Cache | Identity and access |
+| Changed input | Selected work |
 | --- | --- |
-| Gradle user home | Common/Minecraft writers use strict job matching and write only after successful `master` runs. Workflow checks, coverage, Qodana, Documentation, and PR jobs restore read-only; readers may use the newest compatible Linux job cache. Loom state is excluded. |
-| Project-local Loom | Exact OS, shard, and complete selected build-model hash. A miss regenerates from authoritative inputs; only a successful `master` miss saves a replacement. |
-| Qodana project-local Loom | Key the complete discovered inventory; fall back to the newest Minecraft cache on a miss and rebuild missing content. Only a successful `master` run saves a missing exact entry, after analysis, model verification, and report upload. |
+| Publication tools or workflows | Syntax, controller behavior fixtures, and isolated publication-tool compilation |
+| Prose and links | Documentation and Skill consistency |
+| Documentation generation, examples, images, or Dokka | Compiled documentation and generated-output checks |
+| One Minecraft runtime or shared source | Every version using that source |
+| API, common runtime, or build-wide settings | Common checks and all affected runtimes |
+| Web | Linux unit/demo checks and Windows browser parity |
+| Unrecognized input | Full verification |
 
-Model hashes include the catalog, wrapper, Gradle properties, root build/settings, and selected version build scripts.
-Minecraft assets remain upstream inputs instead of large per-shard archives.
-Configuration cache is not globally enabled: versioned resource expansion captures `Project`, although the targeted common runtime check supports reuse.
+`writeCiSourceModel` exports the configured runtime/integration source roots from the existing Gradle target model.
+Shared-source selection uses that output; deletions and both sides of renames participate in the diff.
+The planner numerically orders selected versions into bounded shards, with fail-fast disabled.
+Documentation runs once on the shard owning its declared native input.
+Common checks and Kover share one Gradle invocation so JVM tests run once.
+Web unit tests run once on Linux; Windows retains the platform-specific browser checks.
+
+Gradle dependency caches may be saved and restored inside PRs, subject to GitHub's branch/ref isolation.
+Loom project caches use the OS, selected projects, and build-model hash; successful misses save their regenerated inputs.
+These caches contain dependencies and build intermediates, not test worlds, screenshots, parity receipts, or reports.
+Acceptance evidence is generated for the selected revision.
+A signed release's prepared artifacts are immutable publication inputs, as defined in [release publication](release.md).
 Superseded JVM and Qodana runs on the same ref are cancelled.
 
 ## Qodana model
 
-Qodana uses its recommended JVM profile without a baseline and receives every catalog-declared Java toolchain.
+Qodana runs for PRs changing analyzed code or analysis configuration, manual full runs, and first release preparation.
+It uses its recommended JVM profile without a baseline and receives every catalog-declared Java toolchain.
 The workflow explicitly selects `qodana-jvm-community` in native mode so analysis can use the installed toolchains and restored Gradle user home.
 One `--no-daemon` Gradle invocation compiles `classes` and `gametestClasses`, assembles the five plain common jars required by Loom's nested-library model, and generates the IDEA model.
 Its JVM exits before analysis; compiled inputs remain available without assembling remapped distributions.
@@ -68,30 +79,14 @@ Disable an inspection only with an actionable rationale in the checked-in config
 
 ## Controller regression checks
 
-The independent `Workflow checks` job runs alongside Gradle checks: pinned official actionlint, `bash -n` on release scripts, and release, Java-inventory, and CI-model regressions.
-It retains complete Git history and catalog-selected Java toolchains because release fixtures invoke Gradle in temporary checkouts.
-These cover source/tag/ruleset drift, artifact and deployment binding, immutable-subtree comparison, receipt drift, pagination/order, and bounded public polling.
-Benchmark procedures belong in [performance](performance.md#benchmark-methodology).
+`Workflow checks` runs actionlint, shell syntax checks, Python behavior tests, and Java/CI/Qodana model fixtures without starting Minecraft.
+It compiles the isolated publication tools without loading product projects.
+Behavior tests cover changed-path ownership, missing or altered prepared artifacts, successful preparation followed by a failed destination, immutable-release recovery, service conflicts, and receipt restoration.
+Checks do not enforce workflow prose or source statement order.
 
-## Distribution publication
+## Distribution and documentation
 
-`publish-release.yml` owns protected publication and verification across Maven Central, GitHub, Modrinth, CurseForge, and Hangar.
-The independent workflow checks exercise all destination combinations, immutable controller tools, service reconciliation, and approval-monitor artifact validation with local fixtures.
-
-`publication-status.yml` observes successful publication receipts on completion and hourly, then requests one protected verification run when all observable selected distributions become public.
-It uses anonymous Modrinth/Hangar reads and an optional repository-scoped CurseForge read key; distribution upload tokens stay in the protected release job.
-Without the read key, CurseForge upload receipts still prevent repeat submissions, but its review status and final public verification are explicitly unchecked while the other destinations proceed.
-It never bypasses environment approval or retries an upload.
-See [release setup and recovery](release.md) for credentials, artifacts, and manual continuation.
-
-## Documentation ownership
-
-Pages freezes controller/release identities in a read-only job, then runs independent controller-site and immutable-release producers concurrently.
-Both revalidate those identities before building; deployment requires both successful artifacts, byte equivalence, and final current-master verification.
+[Release publication](release.md) owns first-time full validation, immutable preparation, per-destination retries, and moderation monitoring.
+Documentation inputs trigger Pages separately after merge; the checked site is generated once and old rendered versions come from `gh-pages`.
 See [Pages publication](release.md#pages-artifacts-and-deployment) and [documentation ownership](documentation.md#documentation-ownership).
-
-## Evidence
-
-Caches contain reusable intermediates under complete input identities.
-Recreate worlds, screenshots, parity receipts, generated documentation, and quality reports on the selected revision.
-Protected release invocations and immutable-tag Pages reconstruction use `--no-build-cache`.
+Wait for CI using `gh run watch <run-id> --exit-status`; inspect logs after completion or failure.

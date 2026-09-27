@@ -66,6 +66,18 @@ docs_version=${docs_versions[0]}
 [[ "$docs_version" =~ $version_pattern ]] || fail "Invalid documentation native Minecraft input: $docs_version"
 printf '%s\n' "${versions[@]}" | grep -Fx "$docs_version" >/dev/null ||
   fail "Documentation native input has no paired Minecraft target: $docs_version"
+if [[ "${STRATA_MC_VERSIONS:-all}" != all ]]; then
+  selected_versions=()
+  IFS=',' read -r -a requested_versions <<< "${STRATA_MC_VERSIONS}"
+  if [[ "${STRATA_CI_DOCS:-true}" == true ]]; then requested_versions+=("$docs_version"); fi
+  for requested in "${requested_versions[@]}"; do
+    [[ -z "$requested" ]] && continue
+    printf '%s\n' "${versions[@]}" | grep -Fx "$requested" >/dev/null || fail "Unknown Minecraft CI version: $requested"
+    selected_versions+=("$requested")
+  done
+  (( ${#selected_versions[@]} > 0 )) || fail 'The selected Minecraft CI inventory is empty.'
+  mapfile -t versions < <(printf '%s\n' "${selected_versions[@]}" | LC_ALL=C sort -Vu)
+fi
 minimum_shard_count=$(( (${#versions[@]} + maximum_shard_size - 1) / maximum_shard_size ))
 shard_count=$target_parallelism
 (( minimum_shard_count <= shard_count )) || shard_count=$minimum_shard_count
@@ -90,7 +102,7 @@ for (( shard_index = 0; shard_index < shard_count; shard_index++ )); do
   owns_documentation=false
   for version in "${shard_versions[@]}"; do
     shard_loom_projects+=("runtime/minecraft-fabric-$version" "integration/minecraft-fabric-$version")
-    [[ "$version" != "$docs_version" ]] || owns_documentation=true
+    if [[ "$version" == "$docs_version" && "${STRATA_CI_DOCS:-true}" == true ]]; then owns_documentation=true; fi
   done
 
   first_version=${shard_versions[0]}
@@ -99,7 +111,7 @@ for (( shard_index = 0; shard_index < shard_count; shard_index++ )); do
   gradle_arguments=":ciMinecraftCheck -Pstrata.minecraftVersions=$version_csv"
   shard_name="Minecraft $version_csv"
   if [[ "$owns_documentation" == true ]]; then
-    gradle_arguments=":ciMinecraftCheck :integration:docs:check -Pstrata.minecraftVersions=$version_csv"
+    gradle_arguments=":ciMinecraftCheck :integration:docs:check :integration:docs:checkDokkaPagesStaging -Pstrata.minecraftVersions=$version_csv"
     shard_name="$shard_name and documentation"
   fi
   loom_project_lines=$(printf '%s\n' "${shard_loom_projects[@]}")

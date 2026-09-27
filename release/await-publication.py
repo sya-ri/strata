@@ -100,8 +100,11 @@ def distributions_ready(request, evidence):
         project_id = ids.pop()
         if not re.fullmatch(r"[A-Za-z0-9]+", project_id):
             raise ValueError("Invalid Modrinth project ID.")
-        remote = service_json("https://api.modrinth.com/v2/project/" + project_id)
-        if not remote or remote.get("status") != "approved":
+        expected = {version for record in records for version in record.get("listed", [])}
+        if not expected:
+            raise ValueError("Modrinth receipt has no listed versions.")
+        remote = service_json("https://api.modrinth.com/v2/project/" + project_id + "/version")
+        if not remote or not expected.issubset({version["version_number"] for version in remote if version.get("status") == "listed"}):
             return False
     if selected["curseforge"]:
         receipt = evidence["curseforge/receipt.json"]
@@ -147,6 +150,7 @@ def dispatch(request):
     """Request only verify on master; this monitor never publishes or uploads files."""
     inputs = {name: str(enabled).lower() for name, enabled in request["destinations"].items()}
     inputs.update(operation="verify", tag=request["tag"], source_commit=request["sourceCommit"], confirmation="verify " + request["tag"])
+    inputs["prepared_run_id"] = str(request.get("preparedRunId", request["runId"]))
     result = subprocess.run(["gh", "api", "--method", "POST", "repos/sya-ri/strata/actions/workflows/publish-release.yml/dispatches", "--input", "-"],
                             input=json.dumps({"ref": "master", "inputs": inputs}).encode(), capture_output=True, check=False)
     if result.returncode:
@@ -176,6 +180,8 @@ def main():
         artifact = matches[0]
         archive = receipts.github(f"{prefix}/actions/artifacts/{artifact['id']}/zip", binary=True)
         request, evidence = read_bundle(artifact, archive, run)
+        if not request.get("preparedRunId"):
+            continue
         if verification_requested(request, run, runs):
             continue
         if not distributions_ready(request, evidence):

@@ -3,8 +3,8 @@
 set -euo pipefail
 
 repository_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd -P)"
-contract_path="${1:-$repository_root/release/github-tag-ruleset.json}"
-receipt_path="${2:-$repository_root/release/github-tag-ruleset-receipt.json}"
+contract_path="${1:-$repository_root/release/github-release-tag-ruleset.json}"
+receipt_path="${2:-$repository_root/release/github-release-tag-ruleset-receipt.json}"
 
 [[ -n "${GITHUB_REPOSITORY:-}" ]] || { echo 'GITHUB_REPOSITORY is required.' >&2; exit 1; }
 [[ -n "${GH_TOKEN:-}" ]] || { echo 'GH_TOKEN is required.' >&2; exit 1; }
