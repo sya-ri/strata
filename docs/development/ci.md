@@ -83,7 +83,9 @@ Bootstrap may replace its disposable `.idea`/`*.iml` outputs between revisions.
 The workflow validates every discovered owner so an incomplete import cannot pass through exclusions.
 
 Before analysis, disk reclamation runs only when free space is below 40 GiB; free space is logged again afterward.
-The IDE cache is removed after analysis; enabling persistence requires a verified complete import and a key covering all model inputs.
+IDE indexes are restored for the same operating system and build-model inputs, then saved only after successful analysis and complete-model verification.
+The cache key includes the build scripts, Gradle inventory and dependencies, build logic, analysis configuration, and workflow; a commit suffix retains the latest compatible indexes within GitHub's ref isolation.
+Every run recreates the project model and analysis reports and verifies every expected module, including after an index-cache hit.
 Disable an inspection only with an actionable rationale in the checked-in configuration.
 
 ## Controller regression checks

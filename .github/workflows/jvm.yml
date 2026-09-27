@@ -1,4 +1,7 @@
 name: JVM checks
+'on':
+  pull_request: {}
+  workflow_dispatch: {}
 permissions:
   contents: read
 concurrency:
@@ -381,6 +384,3 @@ jobs:
         PY
       env:
         RESULTS: ${{ toJSON(needs) }}
-'on':
-  pull_request: {}
-  workflow_dispatch: {}

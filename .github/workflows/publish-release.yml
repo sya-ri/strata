@@ -1,5 +1,4 @@
 name: Publish release
-run-name: Publish ${{ inputs.operation }} ${{ inputs.tag }} (${{ inputs.source_commit }}) - CurseForge ${{ inputs.curseforge }}
 'on':
   workflow_dispatch:
     inputs:
@@ -46,6 +45,7 @@ run-name: Publish ${{ inputs.operation }} ${{ inputs.tag }} (${{ inputs.source_c
         description: Operation followed by the exact tag
         type: string
         required: true
+run-name: Publish ${{ inputs.operation }} ${{ inputs.tag }} (${{ inputs.source_commit }}) - CurseForge ${{ inputs.curseforge }}
 permissions:
   contents: read
 concurrency:
