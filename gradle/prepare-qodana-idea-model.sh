@@ -20,7 +20,7 @@ mapfile -t java_toolchains < <(bash gradle/list-java-toolchains.sh gradle/libs.v
 project_jdk=${java_toolchains[${#java_toolchains[@]} - 1]}
 project_language_level="JDK_$project_jdk"
 
-# Recreate the selected revision's source roots even when the IDE reuses indexes from an earlier scan.
+# Recreate the selected revision's source roots before each analysis.
 bash ./gradlew \
   --no-daemon \
   --no-configure-on-demand \
