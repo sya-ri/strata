@@ -59,8 +59,12 @@ jobs:
         gradle-home-cache-excludes: caches/fabric-loom
     - name: Check browser runtime and production demos
       run: |-
-        tasks=(:runtime:web:check :examples:web:check)
-        if [[ "$DOCS_FULL" != true ]]; then tasks+=(:integration:docs:checkWebDemos); fi
+        tasks=(:api:jsTest :runtime:core:jsTest :runtime:web:check :examples:web:check)
+        if [[ "$DOCS_FULL" == true ]]; then
+          tasks+=(-Pstrata.webOnly=true)
+        else
+          tasks+=(:integration:docs:checkWebDemos)
+        fi
         bash ./gradlew "${tasks[@]}" -Pstrata.webDemoInstallSystemDependencies=true
       env:
         DOCS_FULL: ${{ needs.plan.outputs.docs_full }}
@@ -128,8 +132,9 @@ jobs:
       uses: gradle/actions/setup-gradle@v6
       with:
         cache-read-only: false
+        gradle-home-cache-excludes: caches/fabric-loom
     - name: Verify Web runtime and static build
-      run: .\gradlew.bat :integration:web:check
+      run: .\gradlew.bat :integration:web:check '-Pstrata.webOnly=true'
     - name: Upload browser evidence
       if: always()
       uses: actions/upload-artifact@v7
@@ -157,6 +162,7 @@ jobs:
       run: bash ./gradlew :check :quality:benchmarks:check :paper-api:check :velocity-api:check :api:check :examples:paper:check :examples:velocity:check
         :integration:api:check :quality:detekt-rules:check :runtime:core:check :runtime:remote:check :runtime:paper:check :runtime:velocity:check
         :runtime:headless:check :runtime:minecraft:check :runtime:minecraft-fonts-lwjgl:check :koverHtmlReport :koverXmlReport -Pkover
+        -x :api:jsBrowserTest -x :api:jsNodeTest -x :runtime:core:jsBrowserTest -x :runtime:core:jsNodeTest
     - name: Upload coverage reports
       uses: actions/upload-artifact@v7
       with:
@@ -235,13 +241,15 @@ jobs:
       run: |-
         args=()
         if [[ "$COMMON_CHECKS" == true ]]; then
-          while IFS= read -r project; do
-            [[ -z "$project" ]] || args+=(-x "$project:test")
-          done < gradle/kover-jvm-projects.txt
+          project=":runtime:minecraft-fabric-$MINECRAFT_VERSION"
+          if grep -Fxq "$project" gradle/kover-jvm-projects.txt; then args+=(-x "$project:test"); fi
+          if [[ "$DOCUMENTATION" == true ]]; then args+=(-x :integration:docs:test); fi
         fi
         bash ./gradlew ${{ matrix.gradle_arguments }} "${args[@]}" -Pstrata.webDemoInstallSystemDependencies=true
       env:
         COMMON_CHECKS: ${{ needs.plan.outputs.common }}
+        MINECRAFT_VERSION: ${{ matrix.version }}
+        DOCUMENTATION: ${{ matrix.documentation }}
     - name: Upload loaded-client failure evidence
       if: failure()
       uses: actions/upload-artifact@v7

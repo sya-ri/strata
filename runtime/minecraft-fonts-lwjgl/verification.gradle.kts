@@ -199,7 +199,7 @@ fun fontRuntime(contract: FontTestContract) {
     contract.nativeOracle?.let { oracle ->
         val nativeProjectPath = ":integration:minecraft-fabric-$minecraftVersion"
         val nativeRunner = "$nativeProjectPath:runClientGameTest"
-        val nativeProject = project(nativeProjectPath)
+        val nativeProject = findProject(nativeProjectPath) ?: return@let
         nativeProject.tasks.matching { it.name == "runClientGameTest" }.configureEach {
             outputs.upToDateWhen { false }
             outputs.cacheIf { false }

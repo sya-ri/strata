@@ -83,14 +83,16 @@ for version in "${versions[@]}"; do
   loom_projects+=("${version_projects[@]}")
   gradle_arguments=":ciMinecraftCheck -Pstrata.minecraftVersions=$version"
   job_name="Minecraft $version"
+  documentation=false
   if [[ "$version" == "$docs_version" && "${STRATA_CI_DOCS:-true}" == true ]]; then
     gradle_arguments=":ciMinecraftCheck :integration:docs:check :integration:docs:checkDokkaPagesStaging -Pstrata.minecraftVersions=$version"
     job_name="$job_name and documentation"
+    documentation=true
   fi
   loom_project_lines=$(printf '%s\n' "${version_projects[@]}")
   loom_project_lines=${loom_project_lines//$'\n'/\\n}
   matrix_entries+=(
-    "{\"id\":\"minecraft-${version//./-}\",\"name\":\"$job_name\",\"gradle_arguments\":\"$gradle_arguments\",\"loom_projects\":\"$loom_project_lines\"}"
+    "{\"id\":\"minecraft-${version//./-}\",\"version\":\"$version\",\"documentation\":$documentation,\"name\":\"$job_name\",\"gradle_arguments\":\"$gradle_arguments\",\"loom_projects\":\"$loom_project_lines\"}"
   )
 done
 

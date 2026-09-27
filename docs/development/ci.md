@@ -10,6 +10,10 @@ It derives task selection, artifact coordinates, sequencing, and runtime Java co
 `verifyMinecraftFabricTargetMatrix` rejects missing owners.
 
 Configuration on demand is disabled because the Kotlin/JS workspace and dependency lock require a complete project model.
+Web-only checks use `-Pstrata.webOnly=true` to include the complete JavaScript workspace and its JVM parity dependencies without loading Minecraft adapters.
+This scope accepts only fully qualified module `check` and `jsTest` tasks; publication, coverage aggregation, and documentation use the complete build.
+An invocation containing only `:ciMinecraftCheck` includes the Minecraft versions selected by `strata.minecraftVersions` and omits the documentation project.
+Adding documentation or any other task restores the complete project inventory.
 Integration projects evaluate their paired runtime before reading compiled output; documentation launchers inherit dependencies from their runtime classpath.
 Full verification selects every required target through task dependencies.
 
@@ -46,7 +50,7 @@ The planner creates one matrix job per selected Minecraft version in numeric ord
 GitHub runs these jobs independently within the available runner concurrency, and a failed version can be retried separately.
 Documentation runs once on the job owning its declared native input.
 Common checks and Kover share one Gradle invocation so JVM tests run once.
-Web unit tests run once on Linux; Windows retains the platform-specific browser checks.
+API/core JavaScript tests and Web unit tests run once on Linux; Windows retains the platform-specific browser checks.
 
 Gradle dependency caches may be saved and restored inside PRs, subject to GitHub's branch/ref isolation.
 Loom project caches use the OS, selected projects, and build-model hash; successful misses save their regenerated inputs.

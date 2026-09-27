@@ -86,6 +86,8 @@ assert sum(":integration:docs:check" in entry["gradle_arguments"] for entry in e
 for entry in entries:
     versions = entry["gradle_arguments"].split("-Pstrata.minecraftVersions=")[1].split(",")
     assert len(versions) == 1
+    assert entry["version"] == versions[0]
+    assert entry["documentation"] == (":integration:docs:check" in entry["gradle_arguments"])
     assert entry["loom_projects"].splitlines() == [f"{kind}/minecraft-fabric-{version}"
         for version in versions for kind in ("runtime", "integration")]
     if ":integration:docs:check" in entry["gradle_arguments"]:

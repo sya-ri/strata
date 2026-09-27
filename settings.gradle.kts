@@ -121,41 +121,63 @@ dependencyResolutionManagement {
 
 rootProject.name = "strata"
 
-include(
-    ":api",
-    ":paper-api",
-    ":velocity-api",
-    ":examples:web",
-    ":examples:paper",
-    ":examples:velocity",
-    ":integration:api",
-    ":integration:docs",
-    ":integration:web",
-    ":integration:paper",
-    ":integration:velocity",
-    ":quality:benchmarks",
-    ":quality:detekt-rules",
-    ":runtime:core",
-    ":runtime:remote",
-    ":runtime:paper",
-    ":runtime:velocity",
-    ":runtime:web",
-    ":runtime:headless",
-    ":runtime:minecraft",
-    ":runtime:minecraft-fonts-lwjgl",
+val webOnly = providers.gradleProperty("strata.webOnly").map(String::toBooleanStrict).getOrElse(false)
+val minecraftCheckVersions =
+    if (gradle.startParameter.taskNames == listOf(":ciMinecraftCheck")) {
+        providers.gradleProperty("strata.minecraftVersions").getOrElse("").split(',').map(String::trim).filter(String::isNotEmpty).toSet()
+    } else {
+        emptySet()
+    }
+val webProjectPaths = setOf(
+    ":api", ":runtime:core", ":runtime:web", ":runtime:headless", ":runtime:minecraft", ":runtime:remote",
+    ":integration:web", ":examples:web", ":quality:detekt-rules",
 )
+if (webOnly) {
+    require(gradle.startParameter.taskNames.isNotEmpty() && gradle.startParameter.taskNames.all { task ->
+        task.substringBeforeLast(':') in webProjectPaths && task.substringAfterLast(':') in setOf("check", "jsTest")
+    }) { "strata.webOnly supports only fully qualified Web check and jsTest tasks; use the complete build for other work." }
+    include(*webProjectPaths.toTypedArray())
+} else {
+    val commonProjectPaths = listOf(
+        ":api",
+        ":paper-api",
+        ":velocity-api",
+        ":examples:web",
+        ":examples:paper",
+        ":examples:velocity",
+        ":integration:api",
+        ":integration:docs",
+        ":integration:web",
+        ":integration:paper",
+        ":integration:velocity",
+        ":quality:benchmarks",
+        ":quality:detekt-rules",
+        ":runtime:core",
+        ":runtime:remote",
+        ":runtime:paper",
+        ":runtime:velocity",
+        ":runtime:web",
+        ":runtime:headless",
+        ":runtime:minecraft",
+        ":runtime:minecraft-fonts-lwjgl",
+    )
+    include(*commonProjectPaths.filter { minecraftCheckVersions.isEmpty() || it != ":integration:docs" }.toTypedArray())
 
-val versionedMinecraftProjectName = Regex("minecraft-fabric-[0-9]+(?:\\.[0-9]+)*")
-val versionedMinecraftProjectPaths =
-    listOf("integration", "runtime")
-        .flatMap { parentName ->
-            file(parentName)
-                .listFiles()
-                .orEmpty()
-                .filter { candidate ->
-                    candidate.isDirectory &&
-                        candidate.name.matches(versionedMinecraftProjectName) &&
-                        candidate.resolve("build.gradle.kts").isFile
-                }.map { candidate -> ":$parentName:${candidate.name}" }
-        }.sorted()
-include(*versionedMinecraftProjectPaths.toTypedArray())
+    val versionedMinecraftProjectName = Regex("minecraft-fabric-[0-9]+(?:\\.[0-9]+)*")
+    val versionedMinecraftProjectPaths =
+        listOf("integration", "runtime")
+            .flatMap { parentName ->
+                file(parentName)
+                    .listFiles()
+                    .orEmpty()
+                    .filter { candidate ->
+                        candidate.isDirectory &&
+                            candidate.name.matches(versionedMinecraftProjectName) &&
+                            candidate.resolve("build.gradle.kts").isFile
+                    }.map { candidate -> ":$parentName:${candidate.name}" }
+            }.sorted()
+    val includedMinecraftProjects = versionedMinecraftProjectPaths.filter { path ->
+        minecraftCheckVersions.isEmpty() || path.substringAfterLast("minecraft-fabric-") in minecraftCheckVersions
+    }
+    include(*includedMinecraftProjects.toTypedArray())
+}

@@ -520,8 +520,8 @@ private val koverJvmProjectPaths = rootProject.file("gradle/kover-jvm-projects.t
 check(koverJvmProjectPaths.distinct().size == koverJvmProjectPaths.size) {
     "gradle/kover-jvm-projects.txt must not contain duplicate project paths."
 }
-check(koverJvmProjectPaths.all { projectPath -> findProject(projectPath) != null }) {
-    "gradle/kover-jvm-projects.txt must contain only included Gradle project paths."
+check(koverJvmProjectPaths.all { projectPath -> rootProject.file("${projectPath.removePrefix(":").replace(':', '/')}/build.gradle.kts").isFile }) {
+    "gradle/kover-jvm-projects.txt must contain only existing Gradle project build files."
 }
 private val minecraftTargetByProjectPath =
     minecraftFabricTargets
@@ -632,18 +632,8 @@ tasks.named("check") {
 }
 
 dependencies {
-    dokka(project(":api"))
     dokkaPlugin(libs.dokka.versioning)
-    dokka(project(":runtime:core"))
-    dokka(project(":runtime:remote"))
-    dokka(project(":paper-api"))
-    dokka(project(":velocity-api"))
-    dokka(project(":runtime:paper"))
-    dokka(project(":runtime:velocity"))
-    dokka(project(":runtime:headless"))
-    dokka(project(":runtime:minecraft"))
-    dokka(project(":runtime:minecraft-fonts-lwjgl"))
-    minecraftFabricTargets.forEach { target -> dokka(project(target.runtimeProjectPath)) }
+    releasePublicationProjectPaths.filter { it != ":runtime:web" }.mapNotNull(::findProject).forEach { dokka(it) }
 }
 
 val compatibilityDocumentation = layout.projectDirectory.file("docs/reference/compatibility.md")
