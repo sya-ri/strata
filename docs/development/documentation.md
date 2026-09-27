@@ -140,7 +140,7 @@ Demo navigation and assets use relative URLs so the same files work inside an im
 
 `./gradlew :integration:docs:checkDokkaPagesStaging` generates the site and checks inventoried HTML links, anchors, assets, and hard-coded Pages targets against real staged files.
 `generateDokkaPagesInventory` records sorted public paths and source receipts.
-The [release contract](release.md#pages-artifacts-and-deployment) owns immutable subtrees, producer identities, deployment permissions, retention, and propagation checks.
+The [release contract](release.md#pages-artifacts-and-deployment) owns saved version directories, source receipts, deployment permissions, and retention.
 
 ## Documentation ownership
 

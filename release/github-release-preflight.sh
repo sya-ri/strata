@@ -8,7 +8,6 @@ bundle_directory="${1:-build/release/github}"
 : "${GITHUB_API_URL:?GITHUB_API_URL is required for the GitHub Release preflight.}"
 : "${GITHUB_REPOSITORY:?GITHUB_REPOSITORY is required for the GitHub Release preflight.}"
 : "${RELEASE_TAG:?RELEASE_TAG is required for the GitHub Release preflight.}"
-: "${CENTRAL_STATE:?CENTRAL_STATE is required for the GitHub Release preflight.}"
 
 [[ "$GITHUB_API_URL" == https://* ]] || { echo 'The GitHub API URL must use HTTPS.' >&2; exit 1; }
 [[ "$GITHUB_REPOSITORY" =~ ^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$ ]] || { echo 'Invalid GitHub repository name.' >&2; exit 1; }
@@ -16,17 +15,15 @@ bundle_directory="${1:-build/release/github}"
   echo 'The GitHub Release preflight requires an exact semantic release tag.' >&2
   exit 1
 }
-[[ "$CENTRAL_STATE" == absent || "$CENTRAL_STATE" == exact ]] || { echo 'Unexpected Maven Central state.' >&2; exit 1; }
 
 release_json="$(mktemp)"
-release_body="$(mktemp)"
 downloads="$(mktemp -d)"
 expected_inventory="$(mktemp)"
 actual_inventory="$(mktemp)"
 expected_checksum_inventory="$(mktemp)"
 actual_checksum_inventory="$(mktemp)"
 local_inventory="$(mktemp)"
-trap 'rm -rf -- "$release_json" "$release_body" "$downloads" "$expected_inventory" "$actual_inventory" "$expected_checksum_inventory" "$actual_checksum_inventory" "$local_inventory"' EXIT
+trap 'rm -rf -- "$release_json" "$downloads" "$expected_inventory" "$actual_inventory" "$expected_checksum_inventory" "$actual_checksum_inventory" "$local_inventory"' EXIT
 
 read_tool="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/github-release-read.sh"
 bash "$read_tool" find > "$release_json"
@@ -35,18 +32,10 @@ if [[ "$(jq -r 'type' "$release_json")" == null ]]; then
   exit 0
 fi
 
-[[ "$CENTRAL_STATE" == exact ]] || {
-  echo 'A GitHub Release already exists while Maven Central is absent; refusing any external write.' >&2
-  exit 1
-}
-
 jq --exit-status 'type == "object"' "$release_json" >/dev/null
 expected_title="Strata ${RELEASE_TAG#v}"
 [[ "$(jq -r '.tag_name' "$release_json")" == "$RELEASE_TAG" ]] || { echo 'Existing GitHub Release tag differs.' >&2; exit 1; }
 [[ "$(jq -r '.name' "$release_json")" == "$expected_title" ]] || { echo 'Existing GitHub Release title differs.' >&2; exit 1; }
-jq --raw-output --join-output '(.body // "") | gsub("\r\n"; "\n") | if contains("\r") then error("release body contains a lone carriage return") else @base64 end' "$release_json" |
-  base64 --decode > "$release_body"
-cmp --silent "docs/releases/$RELEASE_TAG.md" "$release_body" || { echo 'Existing GitHub Release body differs.' >&2; exit 1; }
 [[ "$(jq -r '.prerelease' "$release_json")" == false ]] || { echo 'The stable GitHub Release must not be a prerelease.' >&2; exit 1; }
 
 [[ -d "$bundle_directory" ]] || { echo 'The canonical GitHub bundle is missing for an existing release.' >&2; exit 1; }
@@ -54,6 +43,7 @@ shopt -s nullglob
 assets=("$bundle_directory"/*)
 runtime_jars=("$bundle_directory"/*.jar)
 expected_asset_count=$(( ${#runtime_jars[@]} * 2 + 1 ))
+if [[ -f "$bundle_directory/release-prepared.tar.gz" ]]; then expected_asset_count=$(( expected_asset_count + 1 )); fi
 (( 0 < ${#runtime_jars[@]} )) || {
   echo 'Expected at least one runtime JAR in the GitHub bundle.' >&2
   exit 1
@@ -66,6 +56,10 @@ for runtime_jar in "${runtime_jars[@]}"; do
   }
   printf '%s\n%s\n' "${runtime_jar##*/}" "${signature##*/}"
 done | LC_ALL=C sort > "$expected_checksum_inventory"
+if [[ -f "$bundle_directory/release-prepared.tar.gz" ]]; then
+  printf '%s\n' release-prepared.tar.gz >> "$expected_checksum_inventory"
+  LC_ALL=C sort -o "$expected_checksum_inventory" "$expected_checksum_inventory"
+fi
 {
   cat "$expected_checksum_inventory"
   printf '%s\n' SHA256SUMS

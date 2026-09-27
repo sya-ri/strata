@@ -167,7 +167,7 @@ internal object PagesPublicUrlInventory {
     private const val PAGES_HOST = "gh.s7a.dev"
     private const val PAGES_BASE_PATH = "/strata/"
     private const val GUIDE_DIRECTORY = "guide"
-    private const val RELEASES_DIRECTORY = "releases"
+    private const val RELEASES_DIRECTORY = "older"
     private const val MARKDOWN_SUFFIX = ".md"
     private const val INDEX_FILE = "index.html"
 }

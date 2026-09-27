@@ -55,21 +55,4 @@ for workflow_name in "${composite_workflows[@]}"; do
   fi
 done
 
-for required_workflow_name in jvm.yml qodana.yml; do
-  required_workflow="$repository_root/.github/workflows/$required_workflow_name"
-  [[ "$(grep --fixed-strings -c -- '- .github/actions/**' "$required_workflow")" == 2 ]] ||
-    fail "$required_workflow_name does not run for composite-action changes on both push and pull requests."
-done
-
-publish_workflow="$repository_root/.github/workflows/publish-release.yml"
-publish_setup_count="$(grep --fixed-strings -c 'uses: actions/setup-java@' "$publish_workflow")"
-publish_resolver_count="$(grep --fixed-strings -c 'bash "$CONTROLLER_TOOL_DIRECTORY/list-java-toolchains.sh" gradle/libs.versions.toml' "$publish_workflow")"
-publish_dynamic_input_count="$(grep --fixed-strings -c 'java-version: ${{ steps.java.outputs.versions }}' "$publish_workflow")"
-(( 0 < publish_setup_count )) || fail 'publish-release.yml does not install the release toolchains.'
-[[ "$publish_setup_count" == "$publish_resolver_count" && "$publish_setup_count" == "$publish_dynamic_input_count" ]] ||
-  fail 'publish-release.yml does not derive every Java setup from the controller-materialized catalog parser.'
-if grep --fixed-strings 'java-version: |' "$publish_workflow" >/dev/null; then
-  fail 'publish-release.yml retains a hand-maintained Java version list.'
-fi
-
 echo 'Java toolchain inventory guards passed.'

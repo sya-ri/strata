@@ -1,11 +1,16 @@
 name: Set up Strata Java toolchains
 description: Installs every Java toolchain declared by the Gradle version catalog.
+inputs:
+  directory:
+    description: Product checkout containing the version catalog
+    default: .
 runs:
   using: composite
   steps:
     - name: Read Java toolchains
       id: toolchains
       shell: bash
+      working-directory: ${{ inputs.directory }}
       run: |
         set -euo pipefail
         {

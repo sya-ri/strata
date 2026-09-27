@@ -40,7 +40,7 @@ Minecraft 1.20 is the supported release floor; do not add Minecraft 1.19 or olde
 ## Release the version
 
 1. Confirm that the paired runtime and integration project directories are discovered by the generated CI matrix, then run formatting, static analysis, ABI checks, JVM tests, Kover reports, target-appropriate packaging, GameTests, and visual comparison.
-   Do not add a version-specific workflow entry; the planner must derive its bounded shards from the project inventory.
+   Do not add a version-specific workflow entry; the planner must derive one job per selected version from the project inventory.
 2. Publish all artifacts to an isolated Maven repository and build a clean external consumer using only those publications.
 3. Inspect the target distribution jar, nested jars, POM, Gradle metadata, bytecode target, Fabric metadata, dependency bounds, license, and absence of integration classes or local paths.
 4. Update the typed target matrix and regenerate the [runtime compatibility reference](../reference/compatibility.md), affected screenshots, and release documentation.

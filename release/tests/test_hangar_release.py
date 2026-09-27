@@ -23,6 +23,9 @@ class HangarReleaseTest(unittest.TestCase):
         self.temporary = tempfile.TemporaryDirectory()
         self.addCleanup(self.temporary.cleanup)
         self.root = Path(self.temporary.name)
+        environment = patch.dict(os.environ, {"STRATA_PREPARED_RELEASE": str(self.root), "STRATA_RELEASE_CONTROLLER": str(self.root)})
+        environment.start()
+        self.addCleanup(environment.stop)
         self.manifest = {
             "schemaVersion": 1, "version": "0.2.0", "namespace": "owner/Strata", "channel": "Release",
             "description": "# Strata 0.2.0\n", "projectBody": "# Strata\n", "artifacts": {},
@@ -148,7 +151,7 @@ class HangarReleaseTest(unittest.TestCase):
                 with patch.object(release.subprocess, "run") as upload:
                     self.assertEqual(existing, release.stage(self.manifest, "token", commit, receipt))
                     upload.assert_not_called()
-                    page_request.assert_called_with(release.API + "pages/main/Strata", "token")
+                    page_request.assert_not_called()
         with patch.object(release, "preflight", return_value="absent"), patch.object(release.subprocess, "run") as upload:
             upload.return_value.returncode = 1
             with self.assertRaisesRegex(ValueError, "no upload was retried"):
@@ -163,23 +166,12 @@ class HangarReleaseTest(unittest.TestCase):
                 self.assertEqual(1, upload.call_count)
                 self.assertIn("publishStrataPublicationToHangar", upload.call_args.args[0])
 
-    def test_an_accepted_version_can_retry_only_resource_page_synchronization(self):
-        receipt = self.root / "receipt.json"
+    def test_version_publication_does_not_read_or_modify_the_project_page(self):
         with patch.object(release, "preflight", return_value="exact"), patch.object(release, "inspect", return_value="exact"):
-            with patch.object(release, "request", side_effect=[b"old", b"# Strata"]) as page_request:
-                with patch.object(release.subprocess, "run") as upload:
-                    upload.return_value.returncode = 0
-                    self.assertEqual("exact", release.stage(self.manifest, "token", "a" * 40, receipt))
-                    self.assertEqual(1, upload.call_count)
-                    self.assertIn("syncStrataPublicationMainResourcePagePageToHangar", upload.call_args.args[0])
-                    self.assertNotIn("publishStrataPublicationToHangar", upload.call_args.args[0])
-                    self.assertTrue(all(call.args == (release.API + "pages/main/Strata", "token")
-                                        for call in page_request.call_args_list))
-            with patch.object(release, "request", return_value=b"still different"):
-                with patch.object(release.subprocess, "run") as upload:
-                    upload.return_value.returncode = 0
-                    with self.assertRaisesRegex(ValueError, "page differs"):
-                        release.stage(self.manifest, "token", "a" * 40, receipt)
+            with patch.object(release, "request") as page, patch.object(release.subprocess, "run") as upload:
+                release.stage(self.manifest, "token", "a" * 40, self.root / "receipt.json")
+                page.assert_not_called()
+                upload.assert_not_called()
 
     def test_hidden_versions_are_pending_but_rejected_versions_stop_publication(self):
         for visibility, expected in (("needsApproval", "pending"), ("new", "pending"), ("softDelete", None), ("needsChanges", None)):

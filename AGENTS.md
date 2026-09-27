@@ -71,10 +71,13 @@ Read the linked contract only when the change touches that area; [architecture](
 - Keep tests Minecraft-independent wherever the behavior does not require a loaded game.
   Use a Fabric GameTest only when the behavior genuinely needs the game environment.
 - Keep build caches separate from acceptance evidence.
-  Loaded worlds, screenshots, parity receipts, generated documentation, and analysis or coverage reports must be recreated and verified on the current revision.
+  Loaded worlds, screenshots, parity receipts, and analysis or coverage reports must be recreated for the selected verification revision.
+  Preserve signed release preparation and rendered documentation snapshots for reuse under [release publication](docs/development/release.md); do not regenerate historical evidence during a retry.
 - Keep Detekt, Kotlinter, Qodana, Kotlin explicit API mode, warnings-as-errors, ABI validation, and Kover HTML/XML reports enabled.
   Kover reports must run after JVM tests and do not enforce a coverage threshold.
-- Before review, run `./gradlew check koverHtmlReport koverXmlReport -Pkover` and inspect publication metadata with `./gradlew publishToMavenLocal` when publication code changes.
+- Before review, run affected checks and use the change-scoped PR CI results.
+  Manual full CI and first release preparation run `./gradlew check koverHtmlReport koverXmlReport -Pkover`.
+  Inspect `publishToMavenLocal` metadata when artifact packaging or publication definitions change; controller-only edits use isolated publication tests.
 - For Minecraft-specific facts, use the Minecraft evidence tools first, then inspect authoritative local files or search authoritative web sources.
   Do not infer version-sensitive behavior.
 

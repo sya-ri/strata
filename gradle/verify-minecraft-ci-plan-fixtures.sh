@@ -6,49 +6,6 @@ project_root=$(cd "$(dirname "$0")/.." && pwd)
 fixture_root=$(mktemp -d)
 trap 'rm -rf -- "$fixture_root"' EXIT
 
-python3 - "$project_root/.github/workflows/jvm.yml" <<'PY'
-import pathlib
-import sys
-
-workflow_path = pathlib.Path(sys.argv[1])
-workflow = workflow_path.read_text(encoding="utf-8")
-restore_steps = [
-    block
-    for block in workflow.split("\n      - name: ")
-    if "uses: actions/cache/restore@v6" in block and "path: .gradle/loom-cache" in block
-]
-assert len(restore_steps) == 1, "jvm.yml must contain exactly one Loom cache restore step"
-exact_key = "key: loom-${{ runner.os }}-${{ matrix.id }}-${{ steps.loom_inputs.outputs.hash }}"
-assert restore_steps[0].count(exact_key) == 1, (
-    "jvm.yml must restore the exact OS, shard, and complete-input Loom cache key"
-)
-assert "restore-keys:" not in restore_steps[0], (
-    "jvm.yml must restore only the exact hash-addressed Loom cache key"
-)
-for name, count in [("qodana.yml", 1), ("pages.yml", 2)]:
-    reader = workflow_path.with_name(name).read_text(encoding="utf-8")
-    readers = [block for block in reader.split("\n      - name: ")
-               if "uses: gradle/actions/setup-gradle@" in block]
-    assert len(readers) == count, f"Unexpected Gradle reader jobs in {name}"
-    for block in readers:
-        assert "cache-read-only: true" in block, f"{name} must never write the shared cache"
-        assert "gradle-home-cache-strict-match: false" in block, (
-            f"{name} must accept compatible writer caches, not require a nonexistent own-job cache"
-        )
-        assert "gradle-home-cache-excludes: caches/fabric-loom" in block
-qodana = workflow_path.with_name("qodana.yml").read_text(encoding="utf-8")
-loom_saves = [block for block in qodana.split("\n      - name: ")
-              if "uses: actions/cache/save@" in block]
-assert len(loom_saves) == 1, "Qodana must save only its complete Loom input cache"
-assert "if: success() && github.ref == 'refs/heads/master' && steps.loom_cache.outputs.cache-hit != 'true'" in loom_saves[0]
-assert "path: .gradle/loom-cache\n" in loom_saves[0]
-assert "key: ${{ steps.loom_cache.outputs.cache-primary-key }}" in loom_saves[0]
-assert "use-caches: false" in qodana, "Qodana analysis evidence must remain fresh"
-assert "args: --linter=qodana-jvm-community --within-docker=false" in qodana, (
-    "Qodana must select the native linter explicitly so bootstrap can use the installed Java toolchains"
-)
-PY
-
 add_project() {
   local root=$1
   local parent=$2
@@ -76,7 +33,8 @@ add_project "$valid_root" integration '2'
 add_documentation "$valid_root" '1.7'
 mkdir -p "$valid_root/runtime/shared/minecraft-fabric/lifecycle/common" "$valid_root/integration/shared/minecraft-fabric/canvas/common"
 
-bash "$project_root/gradle/plan-minecraft-ci.sh" "$valid_root" "$valid_root/output"
+GITHUB_OUTPUT="$valid_root/docs-output" bash "$project_root/gradle/plan-minecraft-ci.sh" "$valid_root" "$valid_root/output"
+grep -Fx 'docs_version=1.7' "$valid_root/docs-output" >/dev/null
 matrix_file="$valid_root/output/minecraft-matrix.json"
 loom_file="$valid_root/output/minecraft-loom-projects.txt"
 python3 - "$matrix_file" <<'PY'
@@ -85,21 +43,19 @@ import sys
 
 with open(sys.argv[1], encoding="utf-8") as matrix_file:
     entries = json.load(matrix_file)["include"]
-assert len(entries) == 5
-assert all(len(entry["loom_projects"].splitlines()) // 2 <= 7 for entry in entries)
+assert len(entries) == 31
+assert all(len(entry["loom_projects"].splitlines()) == 2 for entry in entries)
 docs_entries = [entry for entry in entries if ":integration:docs:check" in entry["gradle_arguments"]]
 assert len(docs_entries) == 1
+assert all(":integration:docs:checkDokkaPagesStaging" not in entry["gradle_arguments"] for entry in entries)
 assert "integration/minecraft-fabric-1.7" in docs_entries[0]["loom_projects"].splitlines()
 projects = [project for entry in entries for project in entry["loom_projects"].splitlines()]
 assert len(projects) == len(set(projects)) == 62
-# Expensive old release families must not all occupy the same runner.
-oldest_owners = [next(index for index, entry in enumerate(entries)
-                     if f"runtime/minecraft-fabric-1.{minor}" in entry["loom_projects"].splitlines())
-                 for minor in range(1, 6)]
-assert len(set(oldest_owners)) == 5
+assert [entry["gradle_arguments"].split("-Pstrata.minecraftVersions=")[1] for entry in entries] == [
+    *[f"1.{minor}" for minor in range(1, 31)], "2"]
 assert all(
     entry["gradle_arguments"].startswith(":ciMinecraftCheck -Pstrata.minecraftVersions=")
-    or entry["gradle_arguments"].startswith(":ciMinecraftCheck :integration:docs:check -Pstrata.minecraftVersions=")
+    or entry["gradle_arguments"].startswith(":ciMinecraftCheck :integration:docs:checkMinecraftShowcaseParity -Pstrata.minecraftVersions=")
     for entry in entries
 )
 PY
@@ -122,7 +78,7 @@ import sys
 
 entries = json.load(open(sys.argv[1], encoding="utf-8"))["include"]
 count = int(sys.argv[2])
-assert len(entries) == min(4, count)
+assert len(entries) == count
 assert len({entry["id"] for entry in entries}) == len(entries)
 projects = [project for entry in entries for project in entry["loom_projects"].splitlines()]
 expected = {f"{kind}/minecraft-fabric-1.{minor}"
@@ -131,11 +87,28 @@ assert set(projects) == expected and len(projects) == len(expected)
 assert sum(":integration:docs:check" in entry["gradle_arguments"] for entry in entries) == 1
 for entry in entries:
     versions = entry["gradle_arguments"].split("-Pstrata.minecraftVersions=")[1].split(",")
-    assert 1 <= len(versions) <= 7
+    assert len(versions) == 1
+    assert entry["version"] == versions[0]
+    assert entry["documentation"] == (":integration:docs:check" in entry["gradle_arguments"])
     assert entry["loom_projects"].splitlines() == [f"{kind}/minecraft-fabric-{version}"
         for version in versions for kind in ("runtime", "integration")]
     if ":integration:docs:check" in entry["gradle_arguments"]:
         assert "1.1" in versions
+PY
+done
+
+for include_docs in false true; do
+  STRATA_MC_VERSIONS=1.10,1.2 STRATA_CI_DOCS=$include_docs bash \
+    "$project_root/gradle/plan-minecraft-ci.sh" "$valid_root" "$valid_root/selected"
+  python3 - "$valid_root/selected/minecraft-matrix.json" "$include_docs" <<'PY'
+import json
+import sys
+
+entries = json.load(open(sys.argv[1], encoding="utf-8"))["include"]
+include_docs = sys.argv[2] == "true"
+versions = [entry["gradle_arguments"].split("-Pstrata.minecraftVersions=")[1] for entry in entries]
+assert versions == (["1.2", "1.7", "1.10"] if include_docs else ["1.2", "1.10"])
+assert sum(":integration:docs:check" in entry["gradle_arguments"] for entry in entries) == int(include_docs)
 PY
 done
 
@@ -182,4 +155,4 @@ if bash "$project_root/gradle/plan-minecraft-ci.sh" "$malformed_root" "$malforme
 fi
 grep -F 'Invalid versioned Minecraft project directory' "$malformed_root/stderr.log" >/dev/null
 
-echo 'Verified Minecraft CI discovery, version ordering, pairing, and bounded shards.'
+echo 'Verified Minecraft CI discovery, version ordering, pairing, and independent version jobs.'

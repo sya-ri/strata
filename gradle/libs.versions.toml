@@ -86,6 +86,7 @@ fabric-api1205 = "0.97.8+1.20.5"
 fabric-api1206 = "0.100.8+1.20.6"
 
 [libraries]
+dokka-versioning = { module = "org.jetbrains.dokka:versioning-plugin", version.ref = "dokka" }
 paper-api = { module = "io.papermc.paper:paper-api", version.ref = "paper-api" }
 velocity-api = { module = "com.velocitypowered:velocity-api", version.ref = "velocity-api" }
 playwright = { module = "com.microsoft.playwright:playwright", version.ref = "playwright" }

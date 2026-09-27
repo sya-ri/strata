@@ -1,4 +1,4 @@
-"""Check variable publication shapes and approval summaries using temporary evidence."""
+"""Distinguish accepted uploads from public verification in destination summaries."""
 import importlib.util
 import json
 from pathlib import Path
@@ -13,22 +13,25 @@ def load(name):
     return module
 
 
-class PublicationInventoryTest(unittest.TestCase):
-    def test_file_counts_cover_plugins_and_klibs_and_reject_foreign_owners(self):
-        module = load("maven-file-count")
+class PublicationSummaryTest(unittest.TestCase):
+    def test_disabled_central_does_not_require_or_reuse_a_remote_receipt(self):
+        module = load("publication-summary")
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
-            coordinates, files = root / "coordinates", root / "files"
-            coordinates.write_text("dev.s7a:paper\ndev.s7a:js\n")
-            self.assertEqual(10, module.count_files(coordinates, files))
-            entries = [f"dev.s7a:{owner}:{suffix}" for owner, suffixes in
-                       [("paper", [".pom", ".module", ".jar", "-plugin.jar"]), ("js", [".pom", ".module", ".klib"])] for suffix in suffixes]
-            files.write_text("\n".join(entries))
-            self.assertEqual(7, module.count_files(coordinates, files))
-            for invalid in (entries + entries[:1], entries[:-1], entries + ["dev.s7a:other:.jar"], entries + ["dev.s7a:paper:../escape"]):
-                files.write_text("\n".join(invalid))
-                with self.assertRaises(ValueError):
-                    module.count_files(coordinates, files)
+            for receipt in (False, True):
+                if receipt:
+                    (root / "central-verify.json").write_text(json.dumps({"state": "exact"}))
+                self.assertEqual({"maven_central": "disabled", "hangar": "not completed"},
+                                 module.summarize(root, {"maven_central": False, "hangar": True}, "verify"))
+
+    def test_modrinth_file_results_are_independent_of_project_review(self):
+        module = load("publication-summary")
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            (root / "modrinth-receipts").mkdir()
+            for operation, state in (("stage", "versions listed; public verification pending"), ("verify", "verified files")):
+                (root / f"modrinth-receipts/{operation}.json").write_text(json.dumps({"operation": operation, "projectStatus": "withheld", "listed": ["1.2.3+mc1.20"], "absent": []}))
+                self.assertEqual({"modrinth": state}, module.summarize(root, {"modrinth": True}, "verify" if operation == "verify" else "release"))
 
     def test_summary_keeps_pending_uploads_distinct_from_verified_files(self):
         module = load("publication-summary")

@@ -70,6 +70,22 @@ internal class ModrinthReleaseCoordinatorTest {
     }
 
     @Test
+    fun `version publication is resumable independently of project review and page edits`() {
+        val fixture = fixture()
+        val server = server(fixture).also { it.projectStatus = ProjectStatus.WITHHELD }
+        val coordinator = ModrinthReleaseCoordinator(fixture.manifest, fixture.bundle, fixture.client(server), ModrinthReleaseCoordinator.ProjectPolicy.VERSIONS_ONLY)
+
+        assertEquals(fixture.manifest.artifacts.size, coordinator.stage().listed.size)
+        assertEquals(fixture.manifest.artifacts.size, coordinator.stage().listed.size)
+        assertEquals(fixture.manifest.artifacts.size, coordinator.verify().listed.size)
+        assertEquals(fixture.manifest.artifacts.size, server.createRequests)
+        assertTrue(server.writeEvents.all { it == WriteEvent.CREATE_VERSION })
+        assertEquals(ProjectStatus.WITHHELD, server.projectStatus)
+        assertEquals(0, server.submitRequests)
+        assertFalse(server.cdnReceivedAuthorization)
+    }
+
+    @Test
     fun `manifest and reconciliation derive the configured target count`() {
         val fixture = fixture(listOf("1.20", "26.2"))
         val server = server(fixture)
@@ -570,12 +586,11 @@ internal class ModrinthReleaseCoordinatorTest {
         val fixture = fixture()
         val server =
             server(fixture).also { mock ->
-                mock.timeoutFirstCreateAfterCommit = true
+                mock.ambiguousFirstCreate = true
                 mock.remainingStaleVersionReadsAfterFirstCreate = 5
             }
-        val client = fixture.client(server, requestTimeoutMillis = 20L, retryBaseMillis = 1L)
 
-        val receipt = fixture.coordinator(server, client).stage()
+        val receipt = fixture.coordinator(server).stage()
 
         assertEquals(fixture.manifest.artifacts.size, receipt.listed.size)
         assertEquals(fixture.manifest.artifacts.size + 1, server.createRequests)

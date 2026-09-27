@@ -1,293 +1,386 @@
 name: JVM checks
-
-on:
-  push:
-    branches:
-      - master
-    paths:
-      - .github/actions/**
-      - .github/workflows/**
-      - api/**
-      - build-logic/**
-      - build.gradle.kts
-      - CHANGELOG.md
-      - config/**
-      - docs/**
-      - examples/**
-      - gradle/**
-      - gradle.properties
-      - icon.svg
-      - icon.png
-      - integration/**
-      - paper-api/**
-      - velocity-api/**
-      - qodana.yaml
-      - quality/**
-      - release/**
-      - README.md
-      - runtime/**
-      - settings.gradle.kts
-      - skills/**
-      - tools/web/**
-      - kotlin-js-store/**
-  pull_request:
-    paths:
-      - .github/actions/**
-      - .github/workflows/**
-      - api/**
-      - build-logic/**
-      - build.gradle.kts
-      - CHANGELOG.md
-      - config/**
-      - docs/**
-      - examples/**
-      - gradle/**
-      - gradle.properties
-      - icon.svg
-      - icon.png
-      - integration/**
-      - paper-api/**
-      - velocity-api/**
-      - qodana.yaml
-      - quality/**
-      - release/**
-      - README.md
-      - runtime/**
-      - settings.gradle.kts
-      - skills/**
-      - tools/web/**
-      - kotlin-js-store/**
-
+'on':
+  pull_request: {}
+  workflow_dispatch: {}
 permissions:
   contents: read
-
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
-
 jobs:
+  plan:
+    runs-on: ubuntu-latest
+    outputs:
+      common: ${{ steps.plan.outputs.common }}
+      web: ${{ steps.plan.outputs.web }}
+      docs: ${{ steps.plan.outputs.docs }}
+      docs_full: ${{ steps.plan.outputs.docs_full }}
+      workflow: ${{ steps.plan.outputs.workflow }}
+      qodana: ${{ steps.plan.outputs.qodana }}
+      all_minecraft: ${{ steps.plan.outputs.all_minecraft }}
+      minecraft: ${{ steps.plan.outputs.minecraft }}
+    steps:
+    - uses: actions/checkout@v7
+      with:
+        fetch-depth: 0
+        persist-credentials: false
+    - uses: ./.github/actions/setup-strata-java
+    - uses: gradle/actions/setup-gradle@v6
+      with:
+        gradle-home-cache-excludes: caches/fabric-loom
+    - name: Select changed inputs
+      run: |-
+        args=(--full)
+        if [[ "$EVENT" == pull_request ]]; then
+          args=(--base "$BASE" --head "$HEAD")
+          if git diff --no-renames --name-only "$BASE...$HEAD" | grep -Eq '^(runtime|integration)/(shared/|minecraft-fabric-)'; then
+            GITHUB_OUTPUT='' python3 gradle/plan-ci.py "${args[@]}" > /dev/null
+            if jq --exit-status '.common | not' build/github-actions/ci-plan.json > /dev/null; then
+              bash ./gradlew :writeCiSourceModel
+              args+=(--model build/github-actions/source-model.json)
+            fi
+          fi
+        fi
+        python3 gradle/plan-ci.py "${args[@]}"
+      id: plan
+      env:
+        EVENT: ${{ github.event_name }}
+        BASE: ${{ github.event.pull_request.base.sha }}
+        HEAD: ${{ github.event.pull_request.head.sha }}
   web-demos:
     name: Web runtime and demos
     runs-on: ubuntu-latest
     steps:
-      - name: Check out source
-        uses: actions/checkout@v7
-      - name: Set up Java
-        uses: ./.github/actions/setup-strata-java
-      - name: Set up Gradle
-        uses: gradle/actions/setup-gradle@v6
-        with:
-          cache-read-only: ${{ github.ref != 'refs/heads/master' }}
-          gradle-home-cache-excludes: caches/fabric-loom
-      - name: Check browser runtime and production demos
-        run: >-
-          bash ./gradlew :runtime:web:check :examples:web:check
-          :integration:docs:checkWebDemos
-          -Pstrata.webDemoInstallSystemDependencies=true
-      - name: Upload fresh demo screenshots
-        uses: actions/upload-artifact@v7
-        with:
-          name: web-demo-screenshots
-          path: integration/docs/build/web-demos/evidence
-          if-no-files-found: error
-
+    - name: Check out source
+      uses: actions/checkout@v7
+    - name: Set up Java
+      uses: ./.github/actions/setup-strata-java
+    - name: Set up Gradle
+      uses: gradle/actions/setup-gradle@v6
+      with:
+        cache-read-only: false
+        gradle-home-cache-excludes: caches/fabric-loom
+    - name: Check browser runtime and production demos
+      run: |-
+        tasks=(:api:jsTest :runtime:core:jsTest :runtime:web:check :examples:web:check)
+        if [[ "$DOCS_FULL" == true ]]; then
+          tasks+=(-Pstrata.webOnly=true)
+        else
+          tasks+=(:integration:docs:checkWebDemos)
+        fi
+        bash ./gradlew "${tasks[@]}" -Pstrata.webDemoInstallSystemDependencies=true
+      env:
+        DOCS_FULL: ${{ needs.plan.outputs.docs_full }}
+    - name: Upload fresh demo screenshots
+      uses: actions/upload-artifact@v7
+      with:
+        name: web-demo-screenshots
+        path: integration/docs/build/web-demos/evidence
+        if-no-files-found: error
+      if: needs.plan.outputs.docs_full != 'true'
+    needs: plan
+    if: needs.plan.outputs.web == 'true'
   workflow-checks:
     name: Workflow checks
     runs-on: ubuntu-latest
     steps:
-      - name: Check out source
-        uses: actions/checkout@v7
-        with:
-          fetch-depth: 0
-      - name: Check GitHub Actions workflows
-        uses: docker://rhysd/actionlint:1.7.12
-      - name: Set up Java
-        uses: ./.github/actions/setup-strata-java
-      - name: Set up Gradle for release fixtures
-        uses: gradle/actions/setup-gradle@v6
-        with:
-          cache-read-only: true
-          gradle-home-cache-strict-match: false
-          gradle-home-cache-excludes: caches/fabric-loom
-      - name: Check release shell syntax
-        shell: bash
-        run: |
-          for script in release/*.sh release/tests/*.sh; do
-            bash -n "$script"
-          done
-      - name: Test historical Modrinth recovery
-        shell: bash
-        run: |
-          bash release/tests/verify-modrinth-v0.1.2-backlog-recovery.sh
-          bash release/tests/verify-modrinth-v0.1.3-backlog-recovery.sh
-      - name: Test release source guards
-        shell: bash
-        run: |
-          for source_guard in release/tests/verify-release*-source.sh; do
-            bash "$source_guard"
-          done
-          bash release/tests/verify-versioned-pages-staging.sh
-      - name: Test distribution publication
-        run: |
-          bash release/tests/verify-selected-publication.sh
-          python3 -B -m unittest discover -s release/tests -p "test_*.py"
-      - name: Test Java toolchain inventory
-        shell: bash
-        run: bash release/tests/verify-java-toolchain-inventory.sh
-      - name: Test CI project model guards
-        run: |
-          bash -n gradle/plan-minecraft-ci.sh gradle/verify-minecraft-ci-plan-fixtures.sh gradle/prepare-qodana-idea-model.sh gradle/verify-qodana-model.sh gradle/verify-qodana-model-fixtures.sh gradle/verify-qodana-bootstrap-fixtures.sh
-          bash gradle/verify-minecraft-ci-plan-fixtures.sh
-          bash gradle/verify-qodana-model-fixtures.sh
-          bash gradle/verify-qodana-bootstrap-fixtures.sh
-
+    - name: Check out source
+      uses: actions/checkout@v7
+      with:
+        fetch-depth: 0
+    - name: Check GitHub Actions workflows
+      uses: docker://rhysd/actionlint:1.7.12
+    - name: Set up Java
+      uses: ./.github/actions/setup-strata-java
+    - name: Set up Gradle for release fixtures
+      uses: gradle/actions/setup-gradle@v6
+      with:
+        cache-read-only: false
+        gradle-home-cache-strict-match: false
+        gradle-home-cache-excludes: caches/fabric-loom
+    - name: Check release shell syntax
+      shell: bash
+      run: |
+        for script in release/*.sh release/tests/*.sh; do
+          bash -n "$script"
+        done
+    - name: Test distribution publication
+      run: |-
+        python3 -B -m unittest discover -s release/tests -p "test_*.py"
+        python3 -B -m unittest discover -s gradle/tests -p "test_*.py"
+        bash release/tests/verify-github-release-preflight.sh
+        bash release/tests/verify-github-release-read.sh
+    - name: Test Java toolchain inventory
+      shell: bash
+      run: bash release/tests/verify-java-toolchain-inventory.sh
+    - name: Test CI project model guards
+      run: |
+        bash -n gradle/plan-minecraft-ci.sh gradle/verify-minecraft-ci-plan-fixtures.sh gradle/prepare-qodana-idea-model.sh gradle/verify-qodana-model.sh gradle/verify-qodana-model-fixtures.sh gradle/verify-qodana-bootstrap-fixtures.sh
+        bash gradle/verify-minecraft-ci-plan-fixtures.sh
+        bash gradle/verify-qodana-model-fixtures.sh
+        bash gradle/verify-qodana-bootstrap-fixtures.sh
+    - name: Compile isolated publication tools
+      run: bash ./gradlew -p release/tools classes -PpreparedRelease=../../build/empty-prepared
+    needs: plan
+    if: needs.plan.outputs.workflow == 'true' || needs.plan.outputs.common == 'true'
   web:
     name: Web build and browser parity
     runs-on: windows-latest
     steps:
-      - name: Check out source
-        uses: actions/checkout@v7
-      - name: Set up Java
-        uses: ./.github/actions/setup-strata-java
-      - name: Set up Gradle
-        uses: gradle/actions/setup-gradle@v6
-        with:
-          cache-read-only: ${{ github.ref != 'refs/heads/master' }}
-      - name: Verify Web runtime and static build
-        run: .\gradlew.bat :runtime:web:check :integration:web:check
-      - name: Upload browser evidence
-        if: always()
-        uses: actions/upload-artifact@v7
-        with:
-          name: web-parity
-          path: integration/web/build/parity
-
+    - name: Check out source
+      uses: actions/checkout@v7
+    - name: Set up Java
+      uses: ./.github/actions/setup-strata-java
+    - name: Set up Gradle
+      uses: gradle/actions/setup-gradle@v6
+      with:
+        cache-read-only: false
+        gradle-home-cache-excludes: caches/fabric-loom
+    - name: Verify Web runtime and static build
+      run: .\gradlew.bat :integration:web:check '-Pstrata.webOnly=true'
+    - name: Upload browser evidence
+      if: always()
+      uses: actions/upload-artifact@v7
+      with:
+        name: web-parity
+        path: integration/web/build/parity
+    needs: plan
+    if: needs.plan.outputs.web == 'true'
   checks:
-    name: ${{ matrix.name }}
+    name: JVM checks and coverage
     runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      max-parallel: 2
-      matrix:
-        include:
-          - id: common
-            name: Common checks
-            fetch_depth: 0
-            gradle_arguments: :check :api:check :integration:api:check :quality:benchmarks:check :quality:detekt-rules:check :runtime:core:check :runtime:headless:check :runtime:minecraft:check :runtime:minecraft-fonts-lwjgl:check
-            cache_read_only: false
-            coverage: false
-          - id: coverage
-            name: Coverage
-            fetch_depth: 1
-            gradle_arguments: :koverJvmTests :koverHtmlReport :koverXmlReport -Pkover
-            cache_read_only: true
-            coverage: true
     steps:
-      - name: Check out source
-        uses: actions/checkout@v7
-        with:
-          fetch-depth: ${{ matrix.fetch_depth }}
-      - name: Set up Java
-        uses: ./.github/actions/setup-strata-java
-      - name: Set up Gradle
-        uses: gradle/actions/setup-gradle@v6
-        with:
-          cache-read-only: ${{ matrix.cache_read_only || github.ref != 'refs/heads/master' }}
-          gradle-home-cache-strict-match: ${{ matrix.id != 'coverage' }}
-          gradle-home-cache-excludes: caches/fabric-loom
-      - name: Run ${{ matrix.name }}
-        run: bash ./gradlew ${{ matrix.gradle_arguments }}
-      - name: Upload coverage reports
-        if: matrix.coverage
-        uses: actions/upload-artifact@v7
-        with:
-          name: kover-reports
-          path: build/reports/kover
-          if-no-files-found: error
-
+    - name: Check out source
+      uses: actions/checkout@v7
+      with:
+        fetch-depth: 0
+    - name: Set up Java
+      uses: ./.github/actions/setup-strata-java
+    - name: Set up Gradle
+      uses: gradle/actions/setup-gradle@v6
+      with:
+        cache-read-only: false
+        gradle-home-cache-excludes: caches/fabric-loom
+    - name: Check JVM modules and generate coverage once
+      run: bash ./gradlew :check :quality:benchmarks:check :paper-api:check :velocity-api:check :api:check :examples:paper:check :examples:velocity:check
+        :integration:api:check :quality:detekt-rules:check :runtime:core:check :runtime:remote:check :runtime:paper:check :runtime:velocity:check
+        :runtime:headless:check :runtime:minecraft:check :runtime:minecraft-fonts-lwjgl:check :koverHtmlReport :koverXmlReport -Pkover
+        -x :api:jsBrowserTest -x :api:jsNodeTest -x :runtime:core:jsBrowserTest -x :runtime:core:jsNodeTest
+    - name: Upload coverage reports
+      uses: actions/upload-artifact@v7
+      with:
+        name: kover-reports
+        path: build/reports/kover
+        if-no-files-found: error
+    needs: plan
+    if: needs.plan.outputs.common == 'true'
   minecraft-matrix:
     name: Plan Minecraft checks
     runs-on: ubuntu-latest
     outputs:
       matrix: ${{ steps.matrix.outputs.matrix }}
+      docs_version: ${{ steps.matrix.outputs.docs_version }}
     steps:
-      - name: Check out source
-        uses: actions/checkout@v7
-        with:
-          fetch-depth: 1
-      - name: Generate Minecraft matrix
-        id: matrix
-        shell: bash
-        run: |
-          set -euo pipefail
-          bash gradle/plan-minecraft-ci.sh
-          matrix="$(< build/github-actions/minecraft-matrix.json)"
-          [[ -n "$matrix" ]] || { echo 'The generated Minecraft matrix is empty.' >&2; exit 1; }
-          printf 'matrix=%s\n' "$matrix" >> "$GITHUB_OUTPUT"
-
+    - name: Check out source
+      uses: actions/checkout@v7
+      with:
+        fetch-depth: 1
+    - name: Generate Minecraft matrix
+      id: matrix
+      shell: bash
+      run: |-
+        export STRATA_MC_VERSIONS=all
+        if [[ "$ALL_MINECRAFT" != true ]]; then
+          STRATA_MC_VERSIONS=$(jq -r 'join(",")' <<< "$SELECTED_VERSIONS")
+        fi
+        bash gradle/plan-minecraft-ci.sh
+        echo "matrix=$(cat build/github-actions/minecraft-matrix.json)" >> "$GITHUB_OUTPUT"
+      env:
+        SELECTED_VERSIONS: ${{ needs.plan.outputs.minecraft }}
+        ALL_MINECRAFT: ${{ needs.plan.outputs.all_minecraft }}
+        STRATA_CI_DOCS: ${{ needs.plan.outputs.docs_full }}
+    needs: plan
+    if: needs.plan.outputs.all_minecraft == 'true' || needs.plan.outputs.minecraft != '[]' || needs.plan.outputs.docs_full == 'true'
   minecraft:
     name: ${{ matrix.name }}
-    needs: minecraft-matrix
+    needs:
+    - plan
+    - minecraft-matrix
     runs-on: ubuntu-latest
     env:
-      # Xvfb's GLX lacks the sRGB visual required by SDL; EGL preserves that requirement.
-      SDL_VIDEO_FORCE_EGL: "1"
+      SDL_VIDEO_FORCE_EGL: '1'
     strategy:
       fail-fast: false
-      max-parallel: 4
       matrix: ${{ fromJSON(needs.minecraft-matrix.outputs.matrix) }}
     steps:
-      - name: Check out source
-        uses: actions/checkout@v7
-        with:
-          fetch-depth: 1
-      - name: Set up Java
-        uses: ./.github/actions/setup-strata-java
-      - name: Set up Gradle
-        uses: gradle/actions/setup-gradle@v6
-        with:
-          cache-read-only: ${{ github.ref != 'refs/heads/master' }}
-          gradle-home-cache-strict-match: true
-          gradle-home-cache-excludes: caches/fabric-loom
-      - name: Hash Loom cache inputs
-        id: loom_inputs
-        shell: bash
-        env:
-          LOOM_PROJECTS: ${{ matrix.loom_projects }}
-        run: bash gradle/loom-cache-key.sh >> "$GITHUB_OUTPUT"
-      - name: Restore Loom project cache
-        id: loom_cache
-        uses: actions/cache/restore@v6
-        with:
-          path: .gradle/loom-cache
-          # Never fall back by prefix: Loom's generated Minecraft artifacts are valid only for this complete input hash.
-          key: loom-${{ runner.os }}-${{ matrix.id }}-${{ steps.loom_inputs.outputs.hash }}
-      - name: Install EGL libraries
-        run: |
-          sudo apt-get update
-          sudo apt-get install --yes --no-install-recommends libegl1 libegl-mesa0
-      - name: Run ${{ matrix.name }}
-        # Loom's client run tasks select xvfb-run automatically on Linux when CI is true.
-        run: bash ./gradlew ${{ matrix.gradle_arguments }} -Pstrata.webDemoInstallSystemDependencies=true
-      - name: Upload loaded-client failure evidence
-        # Loaded-client assertions retain their framebuffer PNGs, receipts with GUI scale and lease/frame
-        # counters, and the client's crash reports in the build directories; CI keeps them diagnosable.
-        if: failure()
-        uses: actions/upload-artifact@v7
-        with:
-          name: minecraft-failure-evidence-${{ matrix.id }}
-          path: |
-            integration/*/build/minecraft-verification/
-            integration/*/build/minecraft-production-verification/
-            integration/*/build/minecraft-*parity*/
-            integration/docs/build/component-showcase/check/
-            integration/*/build/run/*/crash-reports/
-            integration/*/build/run/*/logs/latest.log
-          if-no-files-found: ignore
-          retention-days: 7
-      - name: Save Loom project cache
-        if: success() && github.ref == 'refs/heads/master' && steps.loom_cache.outputs.cache-hit != 'true'
-        uses: actions/cache/save@v6
-        with:
-          path: .gradle/loom-cache
-          key: ${{ steps.loom_cache.outputs.cache-primary-key }}
+    - name: Check out source
+      uses: actions/checkout@v7
+      with:
+        fetch-depth: 1
+    - name: Set up Java
+      uses: ./.github/actions/setup-strata-java
+    - name: Set up Gradle
+      uses: gradle/actions/setup-gradle@v6
+      with:
+        cache-read-only: true
+        gradle-home-cache-strict-match: true
+        gradle-home-cache-excludes: caches/fabric-loom
+    - name: Hash Loom cache inputs
+      id: loom_inputs
+      shell: bash
+      env:
+        LOOM_PROJECTS: ${{ matrix.loom_projects }}
+      run: bash gradle/loom-cache-key.sh >> "$GITHUB_OUTPUT"
+    - name: Restore Loom project cache
+      id: loom_cache
+      uses: actions/cache/restore@v6
+      with:
+        path: .gradle/loom-cache
+        key: loom-${{ runner.os }}-${{ matrix.id }}-${{ steps.loom_inputs.outputs.hash }}
+    - name: Install EGL libraries
+      run: |
+        sudo apt-get update
+        sudo apt-get install --yes --no-install-recommends libegl1 libegl-mesa0
+    - name: Run ${{ matrix.name }}
+      run: |-
+        args=()
+        if [[ "$COMMON_CHECKS" == true ]]; then
+          project=":runtime:minecraft-fabric-$MINECRAFT_VERSION"
+          if grep -Fxq "$project" gradle/kover-jvm-projects.txt; then args+=(-x "$project:test"); fi
+        fi
+        bash ./gradlew ${{ matrix.gradle_arguments }} "${args[@]}" -Pstrata.webDemoInstallSystemDependencies=true
+      env:
+        COMMON_CHECKS: ${{ needs.plan.outputs.common }}
+        MINECRAFT_VERSION: ${{ matrix.version }}
+    - name: Upload native showcase comparison
+      if: success() && matrix.documentation
+      uses: actions/upload-artifact@v7
+      with:
+        name: native-showcase
+        path: |
+          integration/minecraft-fabric-${{ matrix.version }}/build/minecraft-parity
+          integration/docs/build/component-showcase/check
+        if-no-files-found: error
+        retention-days: 7
+    - name: Upload loaded-client failure evidence
+      if: failure()
+      uses: actions/upload-artifact@v7
+      with:
+        name: minecraft-failure-evidence-${{ matrix.id }}
+        path: |
+          integration/*/build/minecraft-verification/
+          integration/*/build/minecraft-production-verification/
+          integration/*/build/minecraft-*parity*/
+          integration/docs/build/component-showcase/check/
+          integration/*/build/run/*/crash-reports/
+          integration/*/build/run/*/logs/latest.log
+        if-no-files-found: ignore
+        retention-days: 7
+    - name: Save Loom project cache
+      if: success() && steps.loom_cache.outputs.cache-hit != 'true'
+      uses: actions/cache/save@v6
+      with:
+        path: .gradle/loom-cache
+        key: ${{ steps.loom_cache.outputs.cache-primary-key }}
+  documentation:
+    name: Documentation and Dokka
+    needs:
+    - plan
+    - minecraft-matrix
+    if: needs.plan.outputs.docs_full == 'true'
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v7
+    - uses: ./.github/actions/setup-strata-java
+    - uses: gradle/actions/setup-gradle@v6
+      with:
+        cache-read-only: false
+        gradle-home-cache-excludes: caches/fabric-loom
+    - name: Hash documentation Loom inputs
+      id: loom_inputs
+      shell: bash
+      run: |-
+        LOOM_PROJECTS="$(find runtime -mindepth 1 -maxdepth 1 -type d -name 'minecraft-fabric-*' | sort)
+        integration/minecraft-fabric-$MINECRAFT_VERSION"
+        export LOOM_PROJECTS
+        bash gradle/loom-cache-key.sh >> "$GITHUB_OUTPUT"
+      env:
+        MINECRAFT_VERSION: ${{ needs.minecraft-matrix.outputs.docs_version }}
+    - name: Restore documentation Loom cache
+      id: loom_cache
+      uses: actions/cache/restore@v6
+      with:
+        path: .gradle/loom-cache
+        key: loom-${{ runner.os }}-documentation-${{ steps.loom_inputs.outputs.hash }}
+        restore-keys: |
+          loom-${{ runner.os }}-documentation-
+          loom-${{ runner.os }}-minecraft-all-
+    - name: Generate and check documentation
+      run: |-
+        args=(-x :integration:docs:checkMinecraftShowcaseParity -x :integration:docs:checkComponentShowcase)
+        if [[ "$COMMON_CHECKS" == true ]]; then args+=(-x :integration:docs:test); fi
+        bash ./gradlew :integration:docs:check :integration:docs:checkDokkaPagesStaging \
+          -Pstrata.minecraftVersions="$MINECRAFT_VERSION" -Pstrata.webDemoInstallSystemDependencies=true "${args[@]}"
+      env:
+        COMMON_CHECKS: ${{ needs.plan.outputs.common }}
+        MINECRAFT_VERSION: ${{ needs.minecraft-matrix.outputs.docs_version }}
+    - name: Upload checked documentation
+      uses: actions/upload-artifact@v7
+      with:
+        name: documentation-site
+        path: build/dokka/html
+        if-no-files-found: error
+        retention-days: 7
+    - name: Save documentation Loom cache
+      if: success() && steps.loom_cache.outputs.cache-hit != 'true'
+      uses: actions/cache/save@v6
+      with:
+        path: .gradle/loom-cache
+        key: ${{ steps.loom_cache.outputs.cache-primary-key }}
+  docs:
+    name: Documentation links
+    needs: plan
+    if: needs.plan.outputs.docs == 'true' && needs.plan.outputs.docs_full != 'true'
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v7
+      with:
+        fetch-depth: 0
+        persist-credentials: false
+    - uses: ./.github/actions/setup-strata-java
+    - uses: gradle/actions/setup-gradle@v6
+      with:
+        gradle-home-cache-excludes: caches/fabric-loom
+    - name: Check reader documentation
+      run: bash ./gradlew :integration:docs:checkDocumentationLinks :integration:docs:checkStrataSkill
+  result:
+    name: CI result
+    needs:
+    - plan
+    - web-demos
+    - workflow-checks
+    - web
+    - checks
+    - minecraft-matrix
+    - minecraft
+    - documentation
+    - docs
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+    - name: Check planned job outcomes
+      run: |-
+        python3 - <<'PY'
+        import json, os
+        jobs = json.loads(os.environ['RESULTS'])
+        assert jobs['plan']['result'] == 'success', 'CI planning failed'
+        p = jobs['plan']['outputs']
+        common, web, docs, full_docs, workflow = (p[key] == 'true' for key in ('common', 'web', 'docs', 'docs_full', 'workflow'))
+        minecraft = p['all_minecraft'] == 'true' or json.loads(p['minecraft']) != [] or full_docs
+        expected = {'checks': common, 'web-demos': web, 'web': web, 'workflow-checks': workflow or common, 'minecraft-matrix': minecraft, 'minecraft': minecraft, 'documentation': full_docs, 'docs': docs and not full_docs}
+        for job, selected in expected.items():
+            required = 'success' if selected else 'skipped'
+            assert jobs[job]['result'] == required, f"{job}: expected {required}, got {jobs[job]['result']}"
+        PY
+      env:
+        RESULTS: ${{ toJSON(needs) }}

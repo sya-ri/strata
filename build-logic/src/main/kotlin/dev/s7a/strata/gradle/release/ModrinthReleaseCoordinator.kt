@@ -29,7 +29,16 @@ internal class ModrinthReleaseCoordinator(
     private val manifest: ModrinthManifest,
     private val bundleDirectory: File,
     private val api: ModrinthApiClient,
+    private val projectPolicy: ProjectPolicy = ProjectPolicy.COMPLETE,
 ) {
+    /**
+     * Separates file publication from optional project-page and review operations.
+     */
+    internal enum class ProjectPolicy {
+        COMPLETE,
+        VERSIONS_ONLY,
+    }
+
     private val remoteContract = ModrinthRemoteContract(manifest, api)
 
     /**
@@ -57,7 +66,7 @@ internal class ModrinthReleaseCoordinator(
                 bootstrapPolicy = BootstrapPolicy.ELIGIBLE_DRAFT,
                 bodyPolicy = BodyPolicy.ALLOW_TRACKED_PREDECESSOR,
             )
-        check(initial.projectStatus in VERSION_APPEND_PROJECT_STATUSES) {
+        check(initial.projectStatus in appendProjectStatuses) {
             "Unsupported Modrinth project lifecycle state."
         }
         stageMissingVersions(initial)
@@ -144,7 +153,7 @@ internal class ModrinthReleaseCoordinator(
         val snapshot =
             reconcile(
                 requirePresent = true,
-                requireApproved = true,
+                requireApproved = projectPolicy == ProjectPolicy.COMPLETE,
                 bootstrapPolicy = BootstrapPolicy.STRICT,
                 bodyPolicy = BodyPolicy.STRICT,
             )
@@ -170,7 +179,7 @@ internal class ModrinthReleaseCoordinator(
         check(project.id == manifest.projectId) {
             "Configured Modrinth project ID ${manifest.projectId} does not match immutable remote ID ${project.id}."
         }
-        check(project.status in MUTABLE_PROJECT_STATUSES + READ_ONLY_PROJECT_STATUSES) {
+        check(project.status in appendProjectStatuses) {
             "Modrinth project ${manifest.projectId} cannot participate in this release while status is ${project.status.wireValue}."
         }
         if (requireApproved) {
@@ -180,8 +189,14 @@ internal class ModrinthReleaseCoordinator(
         }
         val remote = api.getProjectVersions(manifest.projectId)
         remoteContract.assertReleaseProjectType(project, remote, requirePresent, bootstrapPolicy)
-        val bodyTransitionRequired = remoteContract.assertBasicProjectMetadata(project, bodyPolicy)
-        remoteContract.assertProjectAssets(project)
+        val bodyTransitionRequired =
+            if (projectPolicy == ProjectPolicy.COMPLETE) {
+                remoteContract.assertProjectAssets(project)
+                remoteContract.assertBasicProjectMetadata(project, bodyPolicy)
+            } else {
+                check(project.projectType == ProjectType.MOD) { "Version publication requires an existing mod project." }
+                false
+            }
 
         val supportedTags = api.getGameVersions()
         val unsupported = manifest.artifacts.map(ModrinthManifest.Artifact::gameVersion).filterNot(supportedTags::contains)
@@ -238,11 +253,7 @@ internal class ModrinthReleaseCoordinator(
                     false
                 }
             }
-        val bootstrapPlan =
-            BootstrapPlan(
-                projectPatch = remoteContract.inspectProjectClassification(project, allowBootstrap),
-                disclosureMissing = remoteContract.inspectProjectDisclosures(api.getProjectDisclosures(manifest.projectId), allowBootstrap),
-            )
+        val bootstrapPlan = projectBootstrapPlan(project, allowBootstrap)
         return Snapshot(
             manifest.projectId,
             project.projectType,
@@ -253,6 +264,22 @@ internal class ModrinthReleaseCoordinator(
             bodyTransitionRequired,
         )
     }
+
+    private fun projectBootstrapPlan(
+        project: RemoteProject,
+        allowBootstrap: Boolean,
+    ): BootstrapPlan =
+        if (projectPolicy == ProjectPolicy.COMPLETE) {
+            BootstrapPlan(
+                projectPatch = remoteContract.inspectProjectClassification(project, allowBootstrap),
+                disclosureMissing = remoteContract.inspectProjectDisclosures(api.getProjectDisclosures(manifest.projectId), allowBootstrap),
+            )
+        } else {
+            BootstrapPlan(ProjectPatchPlan(false, false, false), false)
+        }
+
+    private val appendProjectStatuses: Set<ProjectStatus>
+        get() = if (projectPolicy == ProjectPolicy.VERSIONS_ONLY) VERSION_APPEND_PROJECT_STATUSES + ProjectStatus.WITHHELD else VERSION_APPEND_PROJECT_STATUSES
 
     private fun stageMissingVersions(initial: Snapshot) {
         if (initial.projectType != ProjectType.UNCLASSIFIED) {

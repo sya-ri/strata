@@ -59,7 +59,8 @@ Common modules use the baseline toolchain, while adapters use their target's req
 
 ## Quality checks
 
-Run affected module checks while developing, then run the required aggregate checks before review:
+Run affected module checks while developing and wait for change-scoped PR CI before review.
+Manual full CI and first release preparation run the complete suite:
 
 ```shell
 ./gradlew check koverHtmlReport koverXmlReport -Pkover
@@ -80,7 +81,8 @@ Run aggregate coverage with `./gradlew :koverHtmlReport :koverXmlReport -Pkover`
 
 ## Packaging and publication checks
 
-When publication code changes, run `./gradlew publishToMavenLocal` and inspect artifact contents and publication metadata.
+When artifact packaging or publication definitions change, run `./gradlew publishToMavenLocal` and inspect artifact contents and publication metadata.
+Controller-only changes use isolated publication fixtures and do not rebuild the product.
 The [release procedure](release.md) defines external publication and credentials.
 
 Each versioned Fabric artifact packages the `api`, `runtime:core`, `runtime:remote`, `runtime:headless`, `runtime:minecraft`, and `runtime:minecraft-fonts-lwjgl` jars under `META-INF/jars` exactly once.

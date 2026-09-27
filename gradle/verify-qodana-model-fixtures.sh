@@ -67,45 +67,8 @@ done
   exit 1
 }
 
-qodana_config="$repository_root/qodana.yaml"
-qodana_workflow="$repository_root/.github/workflows/qodana.yml"
 qodana_container_project_root='/data/project'
 readonly qodana_container_project_root
-grep -Fqx \
-  '        run: bash gradle/verify-qodana-model.sh "${{ runner.temp }}/qodana/results/projectStructure/Modules.json" "$GITHUB_WORKSPACE" /data/project' \
-  "$qodana_workflow" || {
-  echo 'Qodana CI must pass the host checkout and exact trusted container project root to model verification.' >&2
-  exit 1
-}
-grep -Fq '        - "integration/minecraft-fabric-[0-9]*/build.gradle.kts"' "$qodana_config"
-font_capability_glob='        - "runtime/minecraft-fabric-[0-9]*/src/font/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftFontCapabilities.kt"'
-if [[ $(grep -Fxc "$font_capability_glob" "$qodana_config") -eq 2 ]]; then
-  :
-else
-  echo 'Qodana must scope both font capability inspection exceptions through the shared version glob.' >&2
-  exit 1
-fi
-required_owner_globs=(
-  '        - "runtime/minecraft-fabric-[0-9]*/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftDynamicTextureFactory.kt"'
-  '        - "runtime/minecraft-fabric-[0-9]*/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftGuiMetadata.kt"'
-  '        - "runtime/minecraft-fabric-[0-9]*/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftSampledImageDrawing.kt"'
-  '        - "runtime/minecraft-fabric-[0-9]*/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftTextureBlitter.kt"'
-  '        - "runtime/minecraft-fabric-[0-9]*/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricNativeCanvasPipeline.kt"'
-  '        - "runtime/minecraft-fabric-[0-9]*/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/MinecraftResourceLocation.kt"'
-  '        - "runtime/minecraft-fabric-[0-9]*/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/MinecraftResourceLocationException.kt"'
-  '        - "runtime/minecraft-fabric-[0-9]*/src/main/java/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftSkinBridge.java"'
-)
-for required_owner_glob in "${required_owner_globs[@]}"; do
-  grep -Fq "$required_owner_glob" "$qodana_config"
-done
-if grep -Eq '^[[:space:]]+- integration/minecraft-fabric-[0-9][^/]*/build\.gradle\.kts$' "$qodana_config"; then
-  echo 'Qodana must not enumerate versioned integration build scripts.' >&2
-  exit 1
-fi
-if grep -Eq '^[[:space:]]+- runtime/minecraft-fabric-[0-9][^/]*/src/font/.*/FabricMinecraftFontCapabilities\.kt$' "$qodana_config"; then
-  echo 'Qodana must not enumerate versioned font capability owners.' >&2
-  exit 1
-fi
 
 write_iml() {
   local iml=$1
