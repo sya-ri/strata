@@ -92,6 +92,7 @@ jobs:
         cache-dir: ${{ runner.temp }}/qodana/caches
         results-dir: ${{ runner.temp }}/qodana/results
         use-caches: false
+        pr-mode: false
         args: --linter=qodana-jvm-community --within-docker=false
     - name: Verify complete Gradle IDE model
       if: always()
