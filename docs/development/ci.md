@@ -56,6 +56,7 @@ Common checks and Kover share one Gradle invocation so JVM tests run once.
 API/core JavaScript tests and Web unit tests run once on Linux; Windows retains the platform-specific browser checks.
 
 Gradle dependency caches may be saved and restored inside PRs, subject to GitHub's branch/ref isolation.
+Independent Minecraft jobs read Gradle dependency caches but do not each save another large copy; the documentation and Qodana jobs retain full-model cache writers.
 Loom project caches use the OS, selected projects, and build-model hash; successful misses save their regenerated inputs.
 These caches contain dependencies and build intermediates, not test worlds, screenshots, parity receipts, or reports.
 Acceptance evidence is generated for the selected revision.
@@ -83,7 +84,8 @@ Bootstrap may replace its disposable `.idea`/`*.iml` outputs between revisions.
 The workflow validates every discovered owner so an incomplete import cannot pass through exclusions.
 
 Before analysis, disk reclamation runs only when free space is below 40 GiB; free space is logged again afterward.
-The disposable IDE cache is removed after analysis; measured index reuse did not shorten the job and the complete Loom project cache remains the priority.
+IDE indexes are restored for matching build-model inputs and saved only after successful analysis and complete-model verification.
+Keeping matrix Gradle caches read-only limits storage pressure so these indexes and the complete Loom project cache can coexist.
 Every run recreates the project model and analysis reports and verifies every expected module.
 Disable an inspection only with an actionable rationale in the checked-in configuration.
 

@@ -94,6 +94,14 @@ jobs:
         key: loom-${{ runner.os }}-minecraft-all-${{ steps.loom_inputs.outputs.hash }}
         restore-keys: |
           loom-${{ runner.os }}-minecraft-
+    - name: Restore Qodana indexes
+      id: analysis_cache
+      uses: actions/cache/restore@v6
+      with:
+        path: ${{ runner.temp }}/qodana/caches
+        key: qodana-index-${{ runner.os }}-${{ hashFiles('**/*.gradle.kts', 'gradle/**', 'build-logic/src/**', 'gradle.properties', 'qodana.yaml', '.github/workflows/qodana.yml') }}-${{ github.sha }}
+        restore-keys: |
+          qodana-index-${{ runner.os }}-${{ hashFiles('**/*.gradle.kts', 'gradle/**', 'build-logic/src/**', 'gradle.properties', 'qodana.yaml', '.github/workflows/qodana.yml') }}-
     - name: Run Qodana
       uses: JetBrains/qodana-action@v2026.2
       with:
@@ -115,9 +123,6 @@ jobs:
         else
           echo 'Qodana did not create an IDE cache directory.'
         fi
-    - name: Release Qodana cache
-      if: always()
-      run: rm -rf -- "${{ runner.temp }}/qodana/caches"
     - name: Upload Qodana report
       if: always()
       uses: actions/upload-artifact@v7
@@ -125,6 +130,12 @@ jobs:
         name: qodana-report
         path: ${{ runner.temp }}/qodana/results
         if-no-files-found: error
+    - name: Save verified Qodana indexes
+      if: success() && steps.analysis_cache.outputs.cache-hit != 'true'
+      uses: actions/cache/save@v6
+      with:
+        path: ${{ runner.temp }}/qodana/caches
+        key: ${{ steps.analysis_cache.outputs.cache-primary-key }}
     - name: Save complete Minecraft Loom project cache
       if: success() && steps.loom_cache.outputs.cache-hit != 'true'
       uses: actions/cache/save@v6
